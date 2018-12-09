@@ -1,0 +1,44 @@
+<effect>
+<name>Round Health Bar</name>
+<author>Defisym</author>
+<description>Creat Round Health Bar,Like Diablo</description>
+<parameter>
+		<name>Radius</name>
+		<code>fR</code>
+		<description>Pixels</description>
+		<type>float</type>
+		<property>edit</property>
+		<value>100</value>						
+</parameter>
+<parameter>
+		<name>Health</name>
+		<code>health</code>
+		<description></description>
+		<type>float</type>
+		<property>edit</property>
+		<value>50</value>	
+</parameter>
+<parameter>
+		<name>Max Health</name>
+		<code>maxhealth</code>
+		<description></description>
+		<type>float</type>
+		<property>edit</property>
+		<value>100</value>	
+</parameter>
+<parameter>
+	<name>front</name>
+	<code>frontpic</code>
+	<description>front image</description>
+	<type>IMAGE</type>
+	<property>image</property>
+</parameter>
+<parameter>
+	<name>back</name>
+	<code>backpic</code>
+	<description>back image</description>
+	<type>IMAGE</type>
+	<property>image</property>
+</parameter>
+</effect>
+

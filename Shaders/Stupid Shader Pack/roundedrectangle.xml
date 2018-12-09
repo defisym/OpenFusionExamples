@@ -1,0 +1,14 @@
+<effect>
+<name>Rounded Rectangle</name>
+<author>Defisym</author>
+<description>Creat Rounded Rectangles</description>
+<parameter>
+		<name>Radius</name>
+		<code>fR</code>
+		<description></description>
+		<type>float</type>
+		<property>edit</property>
+		<value>50</value>
+</parameter>
+</effect>
+

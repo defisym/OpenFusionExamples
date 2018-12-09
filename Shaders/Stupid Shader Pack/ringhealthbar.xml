@@ -1,0 +1,30 @@
+<effect>
+<name>Ring Health Bar</name>
+<author>Defisym</author>
+<description>Creat Ring Health Bar</description>
+<parameter>
+		<name>Radius</name>
+		<code>fR</code>
+		<description>Pixels</description>
+		<type>float</type>
+		<property>edit</property>
+		<value>100</value>						
+</parameter>
+<parameter>
+		<name>Breadth</name>
+		<code>fD</code>
+		<description>Breadth of the ring</description>
+		<type>float</type>
+		<property>edit</property>
+		<value>10</value>						
+</parameter>
+<parameter>
+		<name>Angle</name>
+		<code>angle</code>
+		<description></description>
+		<type>float</type>
+		<property>edit</property>
+		<value>300</value>	
+</parameter>
+</effect>
+
