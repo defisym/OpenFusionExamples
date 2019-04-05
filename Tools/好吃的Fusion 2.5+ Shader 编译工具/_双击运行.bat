@@ -14,8 +14,34 @@ set error=0
 set FXCOPTS=/nologo /WX /Ges /Qstrip_reflect /Qstrip_debug
 set FXCOPTSNS=/nologo /Ges /Qstrip_reflect /Qstrip_debug
 
+@rem 带有空格的路径使用引号圈起来
+set PCFXC="%~dp0"fxc\fxc.exe
+set mode=32767
+
+:Drag
+
+@rem 编译拖拽至Bat的文件，并输出至源文件目录
+
+@rem @for %%a in (%*) do (
+@for %%a in (%*) do (
+	set mode=0
+	set error=0
+	set FileName=%%~na
+	set OUTPUT_PATH=%%~dpa
+	call :compile
+)
+
+if %mode% equ 0 (	
+	echo.
+	echo 编译的.fxc文件输出于源文件目录下
+	echo.
+	
+	@pause		
+)
+
+@rem 常规的批处理菜单界面
 set PCFXC=fxc\fxc.exe
-set OUTPUT_PATH=%~dp0\Shader_Output\
+set OUTPUT_PATH=%~dp0Shader_Output\
 
 :0
 
@@ -24,7 +50,7 @@ echo ------------------------------------
 echo Fusion 2.5+ DX11 Shader 编译工具
 echo Custom By Defisym
 echo.
-echo Ver. 1.5.190404
+echo Ver. 1.8.190405
 echo ------------------------------------
 echo.
 
@@ -34,6 +60,7 @@ cd /d %~dp0
 
 echo 请将需要编译的shader文件 (扩展名.hlsl) 拷贝至本文件夹根目录
 echo 保证与批处理文件处于同一路径下
+echo 编译的.fxc文件输出于\Shader_Output\文件夹下
 echo.
 echo 模式【1】：输入文件名编译指定文件
 echo.
@@ -62,6 +89,7 @@ goto :1
 
 :mode1
 set mode=1
+set FileName=
 
 cls
 echo.
@@ -79,8 +107,7 @@ echo.
 echo 开始编译……
 echo.
 
-for /f  %%a in ('dir  /b "*.hlsl*" ') do (
-	setlocal EnableDelayedExpansion
+for /f  %%a in ('dir  /b "*.hlsl" ') do (	
 	
 	set error=0	
 	set FileName=%%~na
@@ -133,11 +160,14 @@ echo .
 if %error% == 0 (
     echo DX11 预乘 版本编译成功！
 	echo.
-) else (
+) else (	
     echo DX11 预乘 版本编译错误！
 	echo.
 )
 
+if %mode% equ 0 (	
+	exit /b
+)
 
 if %mode% equ 1 (
 
@@ -159,7 +189,7 @@ if %mode% equ 2 (
 
 :CompileShader
 @rem set fxc=%PCFXC% %1.fx %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -167,7 +197,7 @@ exit /b
 
 :CompileShaderSM4
 @rem set fxc=%PCFXC% %1.fx %FXCOPTS% /T%2_4_0 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -175,7 +205,7 @@ exit /b
 
 :CompileShaderHLSL
 @rem set fxc=%PCFXC% %1.hlsl %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.hlsl" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.hlsl" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -193,7 +223,7 @@ exit /b
 
 :CompileShaderHLSL4ns
 @rem set fxc=%PCFXC% %1.hlsl %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.hlsl" %FXCOPTSNS% /T%2_4_0 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.hlsl" %FXCOPTSNS% /T%2_4_0 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -202,4 +232,4 @@ exit /b
 
 
 @rem ------------------------------------------------
-@rem Hello from Dalian China
+@rem Hello from Dalian, China

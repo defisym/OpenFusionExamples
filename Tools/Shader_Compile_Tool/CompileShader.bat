@@ -14,8 +14,34 @@ set error=0
 set FXCOPTS=/nologo /WX /Ges /Qstrip_reflect /Qstrip_debug
 set FXCOPTSNS=/nologo /Ges /Qstrip_reflect /Qstrip_debug
 
+@rem ??????????????
+set PCFXC="%~dp0"fxc\fxc.exe
+set mode=32767
+
+:Drag
+
+@rem ?????Bat???,?????????
+
+@rem @for %%a in (%*) do (
+@for %%a in (%*) do (
+	set mode=0
+	set error=0
+	set FileName=%%~na
+	set OUTPUT_PATH=%%~dpa
+	call :compile
+)
+
+if %mode% equ 0 (	
+	echo.
+	echo The compiled .fxc file is output in the source file directory.
+	echo.
+	
+	@pause		
+)
+
+@rem ??????????
 set PCFXC=fxc\fxc.exe
-set OUTPUT_PATH=%~dp0\Shader_Output\
+set OUTPUT_PATH=%~dp0Shader_Output\
 
 :0
 
@@ -24,7 +50,7 @@ echo ------------------------------------
 echo Fusion 2.5+ DX11 Shader Compile Tool
 echo Custom By Defisym
 echo.
-echo Ver. 1.5.190404
+echo Ver. 1.8.190405
 echo ------------------------------------
 echo.
 
@@ -35,6 +61,7 @@ cd /d %~dp0
 echo Please copy the shader file (.hlsl) that needs to be compiled
 echo to the root directory of this folder.
 echo Guaranteed to be in the same path as the batch file.
+echo The compiled .fxc file is output in the \Shader_Output\ folder.
 echo.
 echo Mode [1] : Enter the file name to compile the specified file
 echo.
@@ -63,6 +90,7 @@ goto :1
 
 :mode1
 set mode=1
+set FileName=
 
 cls
 echo.
@@ -138,6 +166,9 @@ if %error% == 0 (
 	echo.
 )
 
+if %mode% equ 0 (	
+	exit /b
+)
 
 if %mode% equ 1 (
 
@@ -159,7 +190,7 @@ if %mode% equ 2 (
 
 :CompileShader
 @rem set fxc=%PCFXC% %1.fx %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -167,7 +198,7 @@ exit /b
 
 :CompileShaderSM4
 @rem set fxc=%PCFXC% %1.fx %FXCOPTS% /T%2_4_0 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.fx11" %FXCOPTS% /T%2_4_0 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -175,7 +206,7 @@ exit /b
 
 :CompileShaderHLSL
 @rem set fxc=%PCFXC% %1.hlsl %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.hlsl" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.hlsl" %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -193,7 +224,7 @@ exit /b
 
 :CompileShaderHLSL4ns
 @rem set fxc=%PCFXC% %1.hlsl %FXCOPTS% /T%2_4_0_level_9_1 /E%3 /FhCompiled\%1_%3.inc /FdCompiled\%1_%3.pdb /Vn%1_%3
-set fxc=%PCFXC% "%~1.hlsl" %FXCOPTSNS% /T%2_4_0 /E%3 /Fo"%~1.%FXCEXT%"
+set fxc=%PCFXC% "%~1.hlsl" %FXCOPTSNS% /T%2_4_0 /E%3 /Fo"%OUTPUT_PATH%%~1.%FXCEXT%"
 echo.
 echo %fxc%
 %fxc% || set error=1
@@ -202,4 +233,4 @@ exit /b
 
 
 @rem ------------------------------------------------
-@rem Hello from Dalian China
+@rem Hello from Dalian, China
