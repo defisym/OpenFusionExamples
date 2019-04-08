@@ -36,7 +36,10 @@ if %mode% equ 0 (
 	echo 编译的.fxc文件输出于源文件目录下
 	echo.
 	
-	@pause		
+	@pause
+	
+	endlocal
+	exit /b	
 )
 
 @rem 常规的批处理菜单界面
@@ -50,7 +53,7 @@ echo ------------------------------------
 echo Fusion 2.5+ DX11 Shader 编译工具
 echo Custom By Defisym
 echo.
-echo Ver. 1.8.190405
+echo Ver. 1.9.190405
 echo ------------------------------------
 echo.
 
@@ -107,7 +110,8 @@ echo.
 echo 开始编译……
 echo.
 
-for /f  %%a in ('dir  /b "*.hlsl" ') do (	
+for %%a in ("*.hlsl") do (
+@rem for /f  %%a in ('dir  /b "*.hlsl" ') do (	
 	
 	set error=0	
 	set FileName=%%~na
@@ -148,6 +152,15 @@ if %error% == 0 (
 )
 
 @rem *** compile premultiplied version
+find /c "ps_main_pm" "%FileName%.hlsl"
+
+if %errorlevel% equ 1 (
+	echo.
+	echo 未找到预乘版本函数入口
+	echo.
+	goto :Finish
+)
+
 set FXCEXT=premultiplied.%FXCEXT%
 
 echo ------------------------------------
@@ -164,6 +177,8 @@ if %error% == 0 (
     echo DX11 预乘 版本编译错误！
 	echo.
 )
+
+:Finish
 
 if %mode% equ 0 (	
 	exit /b

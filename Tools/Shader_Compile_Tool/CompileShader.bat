@@ -36,7 +36,10 @@ if %mode% equ 0 (
 	echo The compiled .fxc file is output in the source file directory.
 	echo.
 	
-	@pause		
+	@pause
+	
+	endlocal
+	exit /b	
 )
 
 @rem ??????????
@@ -50,7 +53,7 @@ echo ------------------------------------
 echo Fusion 2.5+ DX11 Shader Compile Tool
 echo Custom By Defisym
 echo.
-echo Ver. 1.8.190405
+echo Ver. 1.9.190405
 echo ------------------------------------
 echo.
 
@@ -105,10 +108,11 @@ set mode=2
 
 cls
 echo.
-echo Compiling¡­¡­
+echo Compiling.........
 echo.
 
-for /f  %%a in ('dir  /b "*.hlsl*" ') do (
+for %%a in ("*.hlsl") do (
+@rem for /f  %%a in ('dir  /b "*.hlsl*" ') do (
 	
 	set error=0	
 	set FileName=%%~na
@@ -150,6 +154,14 @@ if %error% == 0 (
 
 @rem *** compile premultiplied version
 set FXCEXT=premultiplied.%FXCEXT%
+find /c "ps_main_pm" "%FileName%.hlsl"
+
+if %errorlevel% equ 1 (
+	echo.
+	echo Pre-multiplied version not found
+	echo.
+	goto :Finish
+)
 
 echo ------------------------------------
 echo.
@@ -165,6 +177,8 @@ if %error% == 0 (
     echo DX11 premultiplied version compile failed!
 	echo.
 )
+
+:Finish
 
 if %mode% equ 0 (	
 	exit /b
