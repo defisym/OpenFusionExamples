@@ -1,4 +1,3 @@
-
 // Pixel shader input structure
 struct PS_INPUT
 {
