@@ -17,7 +17,11 @@
 #define ACT_ACTION_RUN_16			1
 #define ACT_ACTION_STOPBYNAME		2
 #define ACT_ACTION_STOPBYID			3
-#define	ACT_LAST					4
+#define ACT_ACTION_LOCKMOUSE		4
+#define ACT_ACTION_LOCKMOUSEBWN		5
+#define ACT_ACTION_LOCKMOUSEBR		6
+#define ACT_ACTION_UNLOCKMOUSE		7
+#define	ACT_LAST					8
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

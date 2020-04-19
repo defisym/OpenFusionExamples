@@ -1,6 +1,12 @@
 // Common Include
 #include	"common.h"
 
+
+//全局窗口句柄
+HWND CurrentWindowHandle;
+//窗口锁定情况
+bool Lock;
+
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
 
@@ -76,4 +82,5 @@ void StopAllApplication() {
 	delete info;
 	return;
 }
+
 

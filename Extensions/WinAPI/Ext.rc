@@ -138,6 +138,15 @@ BEGIN
             MENUITEM "Stop Application By Process ID", IDMN_ACTION_STOPBYID
         END
         MENUITEM SEPARATOR
+        POPUP "Mouse"
+        BEGIN
+            MENUITEM "Lock Mouse",                  IDMN_ACTION_LOCKMOUSE
+            MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
+            MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
+            MENUITEM SEPARATOR
+            MENUITEM "Unlock Mouse",                IDMN_ACTION_UNLOCKMOUSE
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -298,6 +307,35 @@ END
 STRINGTABLE
 BEGIN
     PARA_CONDITION_INAPM    "Input Application Name, include .exe"
+END
+
+STRINGTABLE
+BEGIN
+    M_ACTION_LOCKMOUSE      "Lock Mouse Pointer in Current Window"
+END
+
+STRINGTABLE
+BEGIN
+    M_ACTION_UNLOCKMOUSE    "Unlock Mouse Pointer"
+END
+
+STRINGTABLE
+BEGIN
+    PARA_ACTION_LOCKMOUSEBWN "Input Window Name"
+    PARA_ACTION_LOCKMOUSEBR_L "Input Left Coordination"
+    PARA_ACTION_LOCKMOUSEBR_R "Input Right Coordination"
+END
+
+STRINGTABLE
+BEGIN
+    M_ACTION_LOCKMOUSEBWN   "Lock Mouse Pointer in Named Window %0"
+    M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ]"
+END
+
+STRINGTABLE
+BEGIN
+    PARA_ACTION_LOCKMOUSEBR_T "Input Top Coordination"
+    PARA_ACTION_LOCKMOUSEBR_B "Input Bottom Coordination"
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

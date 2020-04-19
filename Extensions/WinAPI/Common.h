@@ -50,6 +50,12 @@ extern short expressionsInfos[];
 //My Global
 //定义extern后还需要再对应的cpp里初始化
 
+//全局窗口句柄
+extern HWND CurrentWindowHandle;
+//窗口锁定情况
+extern bool Lock;
+
+
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;
 
@@ -65,7 +71,6 @@ void DeleteRunApplicationName(LPCTSTR ApplicationName);
 void DeleteRunApplicationNameByPos(size_t pos);
 void AddNewApplicationName(LPTSTR lpApplicationName);
 void DeleteAllApplicationName();
-
 
 // Used to ensure the MMF version is 1.5, you can safely ignore this
 #if defined(MMFEXT)
