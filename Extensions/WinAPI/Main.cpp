@@ -1,4 +1,4 @@
-// ============================================================================
+ï»¿// ============================================================================
 //
 // This file are where the Conditions/Actions/Expressions are defined.
 // You can manually enter these, or use CICK (recommended)
@@ -69,21 +69,21 @@ short expressionsInfos[]=
 // 
 
 long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {
-	//ÊäÈë²ÎÊı
+	//è¾“å…¥å‚æ•°
 	LPCTSTR ApplicationName = (LPCTSTR)param1;
 
-	//»ñÈ¡¿ìÕÕ
+	//è·å–å¿«ç…§
 	HANDLE	snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-	//Ñ­»·±éÀú
+	//å¾ªç¯éå†
 	PROCESSENTRY32* info;
 	info = new PROCESSENTRY32;
 	info->dwSize = sizeof(PROCESSENTRY32);
 
 	Process32First(snapshot, info);
 	while (Process32Next(snapshot, info) != FALSE) {
-		//½ø³ÌÃûÒ»ÖÂÔò½áÊø½ø³Ì		
+		//è¿›ç¨‹åä¸€è‡´åˆ™ç»“æŸè¿›ç¨‹		
 		if (wcscmp(ApplicationName, info->szExeFile) == 0) {			
 			delete info;
 			return TRUE;
@@ -163,10 +163,10 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
 
-	//Èç¹û¿ÉÖ´ĞĞÄ£¿éÊÇ16Î»Ó¦ÓÃ³ÌĞò£¬lpApplicationNameÓ¦ÎªNULL
-	//lpCommandLineÖ¸ÏòµÄ×Ö·û´®Ó¦Ö¸¶¨¿ÉÖ´ĞĞÄ£¿é¼°Æä²ÎÊı¡£
+	//å¦‚æœå¯æ‰§è¡Œæ¨¡å—æ˜¯16ä½åº”ç”¨ç¨‹åºï¼ŒlpApplicationNameåº”ä¸ºNULL
+	//lpCommandLineæŒ‡å‘çš„å­—ç¬¦ä¸²åº”æŒ‡å®šå¯æ‰§è¡Œæ¨¡å—åŠå…¶å‚æ•°ã€‚
 
-	//Æ´½Ó×Ö·û´®
+	//æ‹¼æ¥å­—ç¬¦ä¸²
 	size_t total_length;
 		
 	LPTSTR Space = L" ";
@@ -175,7 +175,7 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 	
 	AddNewApplicationName(lpApplicationName);
 
-	//Ô¤Áô½áÎ²·Ö¸ô·û
+	//é¢„ç•™ç»“å°¾åˆ†éš”ç¬¦
 	total_length = wcslen(lpApplicationName) + wcslen(Space) + wcslen(lpCommandLine) + 1;
 	
 	if (total_length > _MAX_PATH) {
@@ -221,23 +221,23 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 }
 
 short WINAPI DLLExport StopApplicationByName(LPRDATA rdPtr, long param1, long param2) {
-	//ÊäÈë²ÎÊı
+	//è¾“å…¥å‚æ•°
 	LPCTSTR ApplicationName = (LPCTSTR)param1;
 
-	//»ñÈ¡¿ìÕÕ
+	//è·å–å¿«ç…§
 	HANDLE	snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	
-	//Ñ­»·±éÀú
+	//å¾ªç¯éå†
 	PROCESSENTRY32* info;
 	info = new PROCESSENTRY32;
 	info->dwSize = sizeof(PROCESSENTRY32);
 	
 	Process32First(snapshot, info);
 	while (Process32Next(snapshot, info) != FALSE) {	
-		//½ø³ÌÃûÒ»ÖÂÔò½áÊø½ø³Ì		
+		//è¿›ç¨‹åä¸€è‡´åˆ™ç»“æŸè¿›ç¨‹		
 		if (wcscmp(ApplicationName, info->szExeFile) == 0) {
-			//PROCESS_TERMINATE±íÊ¾Îª½áÊø²Ù×÷´ò¿ª,FALSE=¿É¼Ì³Ğ,info.th32ProcessID=½ø³ÌID    
+			//PROCESS_TERMINATEè¡¨ç¤ºä¸ºç»“æŸæ“ä½œæ‰“å¼€,FALSE=å¯ç»§æ‰¿,info.th32ProcessID=è¿›ç¨‹ID    
 			TerminateProcess(OpenProcess(PROCESS_TERMINATE, FALSE, info->th32ProcessID), 0);
 		}
 	}
@@ -261,16 +261,19 @@ short WINAPI DLLExport StopApplicationByPID(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
-//Ã¶¾Ù´°Ìå»Øµ÷
+//æšä¸¾çª—ä½“å›è°ƒ
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 	HWND hwnd,      // handle to parent window
 	LPARAM lParam   // application-defined value
 	) {
 	DWORD PID;	
 	GetWindowThreadProcessId(hwnd, &PID);
-	if (PID == GetCurrentProcessId()) {
-		CurrentWindowHandle = hwnd;//Õâ¸ög_hwinÔÚÄãµÄDLLÀï¶¨ÒåÎªÒ»¸öÈ«¾ÖµÄHWND,Ò²ÊÇÄãÏëÒªµÄ¾ä±ú
-		return FALSE;
+	//ä¸ºçˆ¶çª—å£ä¸”ä¸å½“å‰è¿›ç¨‹PIDä¸€è‡´
+	if ((PID == GetCurrentProcessId())&&(GetParent(hwnd) == NULL)) {
+		//ä¼ é€’ä¸ç›®æ ‡PIDç›¸ç¬¦çš„å¥æŸ„è‡³å…¨å±€å˜é‡CurrentWindowHandle
+		CurrentWindowHandle = hwnd;
+		WS.push_back(hwnd);
+		//return FALSE;
 	}
 	return TRUE;
 }
@@ -280,14 +283,15 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 		return 0;
 	}
 
-	//»ñÈ¡µ±Ç°´°¿Ú¾ä±ú
+	//é‡ç½®å…¨å±€çª—å£å¥æŸ„
+	CurrentWindowHandle = NULL;
+	//HWND Show = FindWindow(NULL, L"LockMouse");
+
+	//è·å–å½“å‰çª—å£å¥æŸ„
 	EnumWindows(
 		WINAPIEXT_EnumWindowsProc,
 		NULL
 		);
-
-	RECT TestRect;
-	::GetWindowRect(FindWindow(NULL, L"LockMouse"), &TestRect);
 
 	RECT WndRect;
 	::GetWindowRect(CurrentWindowHandle, &WndRect);
@@ -401,26 +405,26 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 	return *((int*)&fp1);
 }
 
-//·µ»ØÖ¸¶¨½ø³ÌÃûµÄProcess ID
+//è¿”å›æŒ‡å®šè¿›ç¨‹åçš„Process ID
 long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
 	long param = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-	//ÊäÈë²ÎÊı
+	//è¾“å…¥å‚æ•°
 	LPCTSTR ApplicationName = (LPCTSTR)param;
-	//·µ»Ø²ÎÊı
+	//è¿”å›å‚æ•°
 	DWORD	ProcessID = 0;
 
-	//»ñÈ¡¿ìÕÕ
+	//è·å–å¿«ç…§
 	HANDLE	snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-	//Ñ­»·±éÀú
+	//å¾ªç¯éå†
 	PROCESSENTRY32* info;
 	info = new PROCESSENTRY32;
 	info->dwSize = sizeof(PROCESSENTRY32);
 
 	Process32First(snapshot, info);
 	while (Process32Next(snapshot, info) != FALSE) {
-		//½ø³ÌÃûÒ»ÖÂÔò½áÊø½ø³Ì		
+		//è¿›ç¨‹åä¸€è‡´åˆ™ç»“æŸè¿›ç¨‹		
 		if (wcscmp(ApplicationName, info->szExeFile) == 0) {
 			ProcessID = info->th32ProcessID;
 			break;
@@ -447,18 +451,18 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			//ÔËĞĞ
+			//è¿è¡Œ
 			RunApplication,
 			Run16BitApplication,
-			//Í£Ö¹
+			//åœæ­¢
 			StopApplicationByName,
 			StopApplicationByPID,
-			//Ëø¶¨/½âËøÊó±ê
+			//é”å®š/è§£é”é¼ æ ‡
 			LockMouse,
 			LockMouseByWindowName,
 			LockMouseByRect,
 			UnlockMouse,
-			//½áÎ²±Ø¶¨ÊÇÁã
+			//ç»“å°¾å¿…å®šæ˜¯é›¶
 			0
 			};
 

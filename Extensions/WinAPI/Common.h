@@ -52,6 +52,8 @@ extern short expressionsInfos[];
 
 //全局窗口句柄
 extern HWND CurrentWindowHandle;
+extern std::deque <HWND> WS;
+
 //窗口锁定情况
 extern bool Lock;
 

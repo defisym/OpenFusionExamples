@@ -3,9 +3,11 @@
 
 
 //全局窗口句柄
-HWND CurrentWindowHandle;
+HWND CurrentWindowHandle = NULL;
+std::deque <HWND> WS;
+
 //窗口锁定情况
-bool Lock;
+bool Lock = false;
 
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
