@@ -7,6 +7,9 @@
 #define IDST_COPYRIGHT                  130
 #define IDST_COMMENT                    131
 #define IDST_HTTP                       132
+#define IDS_PROP_MOUSE_TEXTTITLE		1000
+#define IDS_PROP_KEEPLOCK_CHECK         1100
+#define IDS_PROP_KEEPLOCK_CHECK_INFO    1110
 #define M_ACTION                        5000
 #define M_ACTION_RUN                    5100
 #define M_ACTION_RUN_16                 5116
@@ -28,9 +31,14 @@
 #define PARA_ACTION_LOCKMOUSEBR_T       5552
 #define PARA_ACTION_LOCKMOUSEBR_B       5553
 #define M_CONDITION_INAP                6000
+#define M_CONDITION_IML                 6100
 #define PARA_CONDITION_INAPM            6500
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
+#define M_EXPRESSION_GCWR_L             7020
+#define M_EXPRESSION_GCWR_R             7021
+#define M_EXPRESSION_GCWR_T             7022
+#define M_EXPRESSION_GCWR_B             7023
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -49,15 +57,13 @@
 #define IDMN_ACTION_LOCKMOUSEBR         25420
 #define IDMN_ACTION_UNLOCKMOUSE         25500
 #define IDMN_CONDITION_INAP             26000
+#define IDMN_CONDITION_IML              26100
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27100
-#define ID__MOUSE                       40009
-#define ID_MOUSE_LOCKMOUSE              40010
-#define ID_MOUSE_UNLOCKMOUSE            40011
-#define ID_Menu                         40012
-#define ID_Menu40013                    40013
-#define ID_Menu40014                    40014
-#define ID_MOUSE_LOCKMOUSEBYRECT        40015
+#define IDMN_EXPRESSION_GCWR_L          27200
+#define IDMN_EXPRESSION_GCWR_R          27210
+#define IDMN_EXPRESSION_GCWR_T          27220
+#define IDMN_EXPRESSION_GCWR_B          27230
 
 // Next default values for new objects
 // 
@@ -65,7 +71,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        101
-#define _APS_NEXT_COMMAND_VALUE         40016
+#define _APS_NEXT_COMMAND_VALUE         40025
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -52,10 +52,21 @@ extern short expressionsInfos[];
 
 //全局窗口句柄
 extern HWND CurrentWindowHandle;
-extern std::deque <HWND> WS;
 
 //窗口锁定情况
 extern bool Lock;
+
+//当前鼠标锁定的矩形区域
+extern RECT CurrentWindowRect;
+
+//枚举窗体回调
+BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
+	HWND hwnd,      // handle to parent window
+	LPARAM lParam   // application-defined value
+);
+
+void UnlockLockedMouse();
+HWND ReturnCurrentWindowHandle();
 
 
 //所有创建线程的句柄
@@ -73,6 +84,7 @@ void DeleteRunApplicationName(LPCTSTR ApplicationName);
 void DeleteRunApplicationNameByPos(size_t pos);
 void AddNewApplicationName(LPTSTR lpApplicationName);
 void DeleteAllApplicationName();
+DWORD GetProcessIDByName(LPCTSTR ApplicationName);
 
 // Used to ensure the MMF version is 1.5, you can safely ignore this
 #if defined(MMFEXT)

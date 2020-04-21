@@ -8,7 +8,8 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_INAP			0
-#define	CND_LAST					1
+#define	CND_CONDITION_IML			1
+#define	CND_LAST					2
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -27,7 +28,11 @@
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GPIDBN		0
-#define	EXP_LAST                    1
+#define	EXP_EXPRESSION_GCWR_L		1
+#define	EXP_EXPRESSION_GCWR_R		2
+#define	EXP_EXPRESSION_GCWR_T		3
+#define	EXP_EXPRESSION_GCWR_B		4
+#define	EXP_LAST                    5
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -40,8 +45,11 @@ typedef struct tagEDATA_V1
 	extHeader		eHeader;
 
 	// Object's data
-//	short			swidth;
-//	short			sheight;
+	//	short			swidth;
+	//	short			sheight;
+
+	//切换窗口后保持锁定
+	bool KeepLock;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -71,6 +79,9 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+
+	//切换窗口后保持锁定
+	bool KeepLock;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

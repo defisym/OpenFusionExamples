@@ -65,6 +65,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+	rdPtr->KeepLock = edPtr->KeepLock;
 	// No errors
 	return 0;
 }
@@ -81,7 +82,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	//停止创建的进程
 	StopAllApplication();
+	
+	//释放鼠标
+	UnlockLockedMouse();
+
 	// No errors
 	return 0;
 }
@@ -93,7 +99,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 // Called (if you want) each loop, this routine makes the object live
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
-{
+{	
 /*
    If your extension will draw to the MMF window you should first 
    check if anything about its display has changed :
@@ -122,8 +128,14 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
+	
+	// 若设定了保持锁定，并已启用锁定，且当前窗口为活动窗口，则继续锁定窗口
+	if (Lock && rdPtr->KeepLock && (GetForegroundWindow() == ReturnCurrentWindowHandle())) {
+		::ClipCursor(&CurrentWindowRect);		
+	}
+	return 0;
 	// Will not be called next loop	
-	return REFLAG_ONESHOT;
+	//return REFLAG_ONESHOT;
 }
 
 // ----------------

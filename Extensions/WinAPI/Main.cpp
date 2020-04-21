@@ -24,6 +24,7 @@ short conditionsInfos[]=
 		{
 		//IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
 		IDMN_CONDITION_INAP, M_CONDITION_INAP, CND_CONDITION_INAP, EVFLAGS_ALWAYS|EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,PARA_CONDITION_INAPM,
+		IDMN_CONDITION_IML, M_CONDITION_IML, CND_CONDITION_IML, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -36,14 +37,17 @@ short actionsInfos[]=
 		IDMN_ACTION_LOCKMOUSE,M_ACTION_LOCKMOUSE,ACT_ACTION_LOCKMOUSE,0, 0,
 		IDMN_ACTION_LOCKMOUSEBWN,M_ACTION_LOCKMOUSEBWN,ACT_ACTION_LOCKMOUSEBWN,0, 1, PARAM_EXPSTRING, PARA_ACTION_LOCKMOUSEBWN,
 		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,
-		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
-		
+		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,		
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
 		IDMN_EXPRESSION_GPIDBN, M_EXPRESSION_GPIDBN, EXP_EXPRESSION_GPIDBN, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_GPIDBN,
+		IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 0,
+		IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 0,
+		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 0,
+		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 0,
 		
 		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
 		
@@ -94,6 +98,9 @@ long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {
 	return FALSE;
 }
 
+long WINAPI DLLExport IsMouseLocked(LPRDATA rdPtr, long param1, long param2) {
+	return Lock ? TRUE : FALSE;	
+}
 
 // ============================================================================
 //
@@ -221,30 +228,9 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 }
 
 short WINAPI DLLExport StopApplicationByName(LPRDATA rdPtr, long param1, long param2) {
-	//输入参数
-	LPCTSTR ApplicationName = (LPCTSTR)param1;
-
-	//获取快照
-	HANDLE	snapshot;
-	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	
-	//循环遍历
-	PROCESSENTRY32* info;
-	info = new PROCESSENTRY32;
-	info->dwSize = sizeof(PROCESSENTRY32);
-	
-	Process32First(snapshot, info);
-	while (Process32Next(snapshot, info) != FALSE) {	
-		//进程名一致则结束进程		
-		if (wcscmp(ApplicationName, info->szExeFile) == 0) {
-			//PROCESS_TERMINATE表示为结束操作打开,FALSE=可继承,info.th32ProcessID=进程ID    
-			TerminateProcess(OpenProcess(PROCESS_TERMINATE, FALSE, info->th32ProcessID), 0);
-		}
-	}
-
-	DeleteRunApplicationName(ApplicationName);
-
-	delete info;
+	//输入参数	
+	TerminateProcess(OpenProcess(PROCESS_TERMINATE, FALSE, GetProcessIDByName((LPCTSTR)param1)), 0);
+	DeleteRunApplicationName((LPCTSTR)param1);
 	return 0;
 }
 
@@ -261,23 +247,6 @@ short WINAPI DLLExport StopApplicationByPID(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
-//枚举窗体回调
-BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
-	HWND hwnd,      // handle to parent window
-	LPARAM lParam   // application-defined value
-	) {
-	DWORD PID;	
-	GetWindowThreadProcessId(hwnd, &PID);
-	//为父窗口且与当前进程PID一致
-	if ((PID == GetCurrentProcessId())&&(GetParent(hwnd) == NULL)) {
-		//传递与目标PID相符的句柄至全局变量CurrentWindowHandle
-		CurrentWindowHandle = hwnd;
-		WS.push_back(hwnd);
-		//return FALSE;
-	}
-	return TRUE;
-}
-
 short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {	
 	if (Lock) {
 		return 0;
@@ -285,18 +254,13 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 
 	//重置全局窗口句柄
 	CurrentWindowHandle = NULL;
-	//HWND Show = FindWindow(NULL, L"LockMouse");
-
-	//获取当前窗口句柄
-	EnumWindows(
-		WINAPIEXT_EnumWindowsProc,
-		NULL
-		);
-
-	RECT WndRect;
-	::GetWindowRect(CurrentWindowHandle, &WndRect);
-	::ClipCursor(&WndRect);
 	
+	//获取当前窗口矩形
+	RECT WndRect;
+	::GetWindowRect(ReturnCurrentWindowHandle(), &WndRect);
+	::ClipCursor(&WndRect);
+
+	CurrentWindowRect = WndRect;	
 	Lock = true;
 
 	return 0;
@@ -312,6 +276,7 @@ short WINAPI DLLExport LockMouseByWindowName(LPRDATA rdPtr, long param1, long pa
 	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &WndRect);
 	::ClipCursor(&WndRect);
 
+	CurrentWindowRect = WndRect;
 	Lock = true;
 
 	return 0;
@@ -329,18 +294,15 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 	WndRect.bottom = CNC_GetParameter(rdPtr);
 
 	::ClipCursor(&WndRect);
-
+	
+	CurrentWindowRect = WndRect;
 	Lock = true;
 
 	return 0;
 }
 
 short WINAPI DLLExport UnlockMouse(LPRDATA rdPtr, long param1, long param2) {
-	if (Lock) {
-		::ClipCursor(NULL);
-		Lock = false;
-	}
-	
+	UnlockLockedMouse();	
 	return 0;
 }
 // ============================================================================
@@ -407,34 +369,25 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 
 //返回指定进程名的Process ID
 long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
-	long param = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	//输入参数
-	LPCTSTR ApplicationName = (LPCTSTR)param;
-	//返回参数
-	DWORD	ProcessID = 0;
-
-	//获取快照
-	HANDLE	snapshot;
-	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-	//循环遍历
-	PROCESSENTRY32* info;
-	info = new PROCESSENTRY32;
-	info->dwSize = sizeof(PROCESSENTRY32);
-
-	Process32First(snapshot, info);
-	while (Process32Next(snapshot, info) != FALSE) {
-		//进程名一致则结束进程		
-		if (wcscmp(ApplicationName, info->szExeFile) == 0) {
-			ProcessID = info->th32ProcessID;
-			break;
-		}
-	}
+	long param = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	return GetProcessIDByName((LPCTSTR)param);
 	
-	delete info;
-	return ProcessID;
 }
 
+//返回鼠标锁定区域
+long WINAPI DLLExport GetCurrentWindowRect_L(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentWindowRect.left : 0;
+}
+long WINAPI DLLExport GetCurrentWindowRect_R(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentWindowRect.right : 0;
+}
+long WINAPI DLLExport GetCurrentWindowRect_T(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentWindowRect.top : 0;
+}
+long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentWindowRect.bottom : 0;
+}
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -446,6 +399,7 @@ long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			IsNameAProcess,
+			IsMouseLocked,
 			0
 			};
 	
@@ -469,5 +423,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
 			GetProcessIDByName,
+			GetCurrentWindowRect_L,
+			GetCurrentWindowRect_R,
+			GetCurrentWindowRect_T,
+			GetCurrentWindowRect_B,
 			0
 			};

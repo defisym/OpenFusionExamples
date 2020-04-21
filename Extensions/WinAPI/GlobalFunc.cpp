@@ -4,10 +4,45 @@
 
 //全局窗口句柄
 HWND CurrentWindowHandle = NULL;
-std::deque <HWND> WS;
 
 //窗口锁定情况
 bool Lock = false;
+
+//当前鼠标锁定的矩形区域
+RECT CurrentWindowRect;
+
+//枚举窗体回调
+BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
+	HWND hwnd,      // handle to parent window
+	LPARAM lParam   // application-defined value
+) {
+	DWORD PID;
+	GetWindowThreadProcessId(hwnd, &PID);
+	//为父窗口且与当前进程PID一致
+	if ((PID == GetCurrentProcessId()) && (GetParent(hwnd) == NULL)) {
+		//传递与目标PID相符的句柄至全局变量CurrentWindowHandle
+		CurrentWindowHandle = hwnd;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+//返回当前窗口句柄
+HWND ReturnCurrentWindowHandle() {
+	EnumWindows(
+		WINAPIEXT_EnumWindowsProc,
+		NULL
+	);
+	return CurrentWindowHandle;
+}
+
+//释放鼠标
+void UnlockLockedMouse() {
+	if (Lock) {
+		::ClipCursor(NULL);
+		Lock = false;
+	}
+}
 
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
@@ -83,6 +118,33 @@ void StopAllApplication() {
 	
 	delete info;
 	return;
+}
+
+
+DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
+	//返回参数
+	DWORD	ProcessID = 0;
+
+	//获取快照
+	HANDLE	snapshot;
+	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	//循环遍历
+	PROCESSENTRY32* info;
+	info = new PROCESSENTRY32;
+	info->dwSize = sizeof(PROCESSENTRY32);
+
+	Process32First(snapshot, info);
+	while (Process32Next(snapshot, info) != FALSE) {
+		//进程名一致则结束进程		
+		if (wcscmp(ApplicationName, info->szExeFile) == 0) {
+			ProcessID = info->th32ProcessID;
+			break;
+		}
+	}
+
+	delete info;
+	return ProcessID;
 }
 
 

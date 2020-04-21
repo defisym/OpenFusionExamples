@@ -26,6 +26,8 @@ enum {
 //	PROPID_CHECK,
 //	PROPID_COMBO,
 //	PROPID_COLOR,
+	PROPID_MOUSE_TEXTTITLE,
+	PROPID_KEEPLOCK_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -51,6 +53,9 @@ PropData Properties[] = {
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
 
+	PropData_Group(PROPID_MOUSE_TEXTTITLE, IDS_PROP_MOUSE_TEXTTITLE, 0),
+	PropData_CheckBox(PROPID_KEEPLOCK_CHECK, IDS_PROP_KEEPLOCK_CHECK, IDS_PROP_KEEPLOCK_CHECK_INFO),
+
 	// End of table (required)
 	PropData_End()
 };
@@ -58,7 +63,7 @@ PropData Properties[] = {
 // SETUP PROC /////////////////////////////////////////////////////////////////
 
 // Prototype of setup procedure
-BOOL CALLBACK DLLExport setupProc(HWND hDlg,uint msgType,WPARAM wParam,LPARAM lParam);
+//BOOL CALLBACK DLLExport setupProc(HWND hDlg,uint msgType,WPARAM wParam,LPARAM lParam);
 
 // Structure defined to pass edptr and mv into setup box
 typedef struct tagSetP
@@ -187,131 +192,131 @@ int WINAPI DLLExport MakeIconEx ( mv _far *mV, cSurface* pIconSf, LPTSTR lpName,
 }
 */
 
-// --------------------
-// SetupProc
-// --------------------
-// This routine is yours. You may even not need a setup dialog box.
-// I have put it as an example...
-
-#ifndef RUN_ONLY
-
-BOOL CALLBACK DLLExport setupProc(HWND hDlg,uint msgType,WPARAM wParam,LPARAM lParam)
-{
-	setupParams	_far *	spa;
-	EDITDATA _far *		edPtr;
-
-	switch (msgType)
-	{
-	case WM_INITDIALOG: // Init dialog
-		SetWindowLong(hDlg, DWL_USER, lParam);
-		spa = (setupParams far *)lParam;
-		edPtr = spa->edpt;
-
-		/*
-			Insert your code to initalise the dialog!
-			Try the following code snippets:
-
-			** Change an editbox's text:
-
-			SetDlgItemText(hDlg, IDC_YOUR_EDITBOX_ID, edPtr->YourTextVariable);
-
-			** (Un)check a checkbox:
-
-			CheckDlgButton(hDlg, IDC_YOUR_CHECKBOX_ID,
-				edPtr->YourBooleanValue ? BST_CHECKED : BST_UNCHECKED);
-			
-			** If the variable is not of type 'bool' then include a comparison
-			** before the question mark (conditional operator):
-
-			CheckDlgButton(hDlg, IDC_YOUR_CHECKBOX_ID,
-				edPtr->YourLongValue == 1 ? BST_CHECKED : BST_UNCHECKED);
-
-			** Check a radio button, deselecting the others at the same time
-
-			CheckRadioButton(hDlg, IDC_FIRST_RADIO_IN_GROUP, IDC_LAST_RADIO_IN_GROUP, IDC_RADIO_TO_CHECK);
-
-			** You should know how to add radio buttons properly in MSVC++'s dialog editor first...
-			** Make sure to add radiobuttons in order, and use the 'Group' property to signal a new group
-			** of radio buttons.
-
-			** Disable a control. Replace 'FALSE' with 'TRUE' to enable the control:
-
-			EnableWindow(GetDlgItem(hDlg, IDC_YOUR_CONTROL_ID), FALSE);
-		*/
-		
-		return TRUE;
-
-	case WM_COMMAND: // Command
-		spa = (setupParams far *)GetWindowLong(hDlg, DWL_USER);
-		edPtr = spa->edpt;
-
-		switch (wmCommandID)
-		{
-		case IDOK:
-			/*
-				The user has pressed OK! Save our data with the following commands:
-
-				** Get text from an editbox. There is a limit to how much you can retrieve,
-				** make sure this limit is reasonable and your variable can hold this data.
-				** (Replace 'MAXIMUM_TEXT_LENGTH' with a value or defined constant!)
-
-				GetDlgItemText(hDlg, IDC_YOUR_EDITBOX_ID, edPtr->YourTextVariable, MAXIMUM_TEXT_LENGTH);
-
-				** Check if a checkbox or radiobutton is checked. This is the basic code:
-
-				(IsDlgButtonChecked(hDlg, IDC_YOUR_CHECKBOX_ID)==BST_CHECKED)
-
-				** This will return true if checked, false if not.
-				** If your variable is a bool, set it to this code
-				** If not, use an if statement or the conditional operator
-
-				if (IsDlgButtonChecked(hDlg, IDC_YOUR_CHECKBOX_ID)==BST_CHECKED)
-					edPtr->YourLongValue = 100;
-				else
-					edPtr->YourLongValue = 50;
-			*/
-
-			// Close the dialog
-			EndDialog(hDlg, IDOK);
-			return 0;
-
-		case IDCANCEL:
-			// User pressed cancel, don't save anything
-			// Close the dialog
-			EndDialog(hDlg, IDCANCEL);
-			return 0;
-
-		case ID_HELP:
-			{
-				// Call the mvHelp function
-				spa->kv->mvHelp(GetHelpFileName(), 0 /*HH_DISPLAY_TOPIC*/, NULL /*(LPARAM)"index.html"*/);
-			}
-			return 0;
-
-		/*
-			If you have a button or checkbox which, when clicked, will change
-			something on the dialog, add them like so:
-
-		case IDC_YOUR_CLICKED_CONTROL:
-			// your code here
-			return 0;
-
-			You can use any of the commands added previously, (including the Help code,)
-			but it's a good idea NOT to save data to edPtr until the user presses OK.
-		*/
-
-		default:
-			break;
-		}
-		break;
-
-	default:
-		break;
-	}
-	return FALSE;
-}
-
-#endif // !defined(RUN_ONLY)
+//// --------------------
+//// SetupProc
+//// --------------------
+//// This routine is yours. You may even not need a setup dialog box.
+//// I have put it as an example...
+//
+//#ifndef RUN_ONLY
+//
+//BOOL CALLBACK DLLExport setupProc(HWND hDlg,uint msgType,WPARAM wParam,LPARAM lParam)
+//{
+//	setupParams	_far *	spa;
+//	EDITDATA _far *		edPtr;
+//
+//	switch (msgType)
+//	{
+//	case WM_INITDIALOG: // Init dialog
+//		SetWindowLong(hDlg, DWL_USER, lParam);
+//		spa = (setupParams far *)lParam;
+//		edPtr = spa->edpt;
+//
+//		/*
+//			Insert your code to initalise the dialog!
+//			Try the following code snippets:
+//
+//			** Change an editbox's text:
+//
+//			SetDlgItemText(hDlg, IDC_YOUR_EDITBOX_ID, edPtr->YourTextVariable);
+//
+//			** (Un)check a checkbox:
+//
+//			CheckDlgButton(hDlg, IDC_YOUR_CHECKBOX_ID,
+//				edPtr->YourBooleanValue ? BST_CHECKED : BST_UNCHECKED);
+//			
+//			** If the variable is not of type 'bool' then include a comparison
+//			** before the question mark (conditional operator):
+//
+//			CheckDlgButton(hDlg, IDC_YOUR_CHECKBOX_ID,
+//				edPtr->YourLongValue == 1 ? BST_CHECKED : BST_UNCHECKED);
+//
+//			** Check a radio button, deselecting the others at the same time
+//
+//			CheckRadioButton(hDlg, IDC_FIRST_RADIO_IN_GROUP, IDC_LAST_RADIO_IN_GROUP, IDC_RADIO_TO_CHECK);
+//
+//			** You should know how to add radio buttons properly in MSVC++'s dialog editor first...
+//			** Make sure to add radiobuttons in order, and use the 'Group' property to signal a new group
+//			** of radio buttons.
+//
+//			** Disable a control. Replace 'FALSE' with 'TRUE' to enable the control:
+//
+//			EnableWindow(GetDlgItem(hDlg, IDC_YOUR_CONTROL_ID), FALSE);
+//		*/
+//		
+//		return TRUE;
+//
+//	case WM_COMMAND: // Command
+//		spa = (setupParams far *)GetWindowLong(hDlg, DWL_USER);
+//		edPtr = spa->edpt;
+//
+//		switch (wmCommandID)
+//		{
+//		case IDOK:
+//			/*
+//				The user has pressed OK! Save our data with the following commands:
+//
+//				** Get text from an editbox. There is a limit to how much you can retrieve,
+//				** make sure this limit is reasonable and your variable can hold this data.
+//				** (Replace 'MAXIMUM_TEXT_LENGTH' with a value or defined constant!)
+//
+//				GetDlgItemText(hDlg, IDC_YOUR_EDITBOX_ID, edPtr->YourTextVariable, MAXIMUM_TEXT_LENGTH);
+//
+//				** Check if a checkbox or radiobutton is checked. This is the basic code:
+//
+//				(IsDlgButtonChecked(hDlg, IDC_YOUR_CHECKBOX_ID)==BST_CHECKED)
+//
+//				** This will return true if checked, false if not.
+//				** If your variable is a bool, set it to this code
+//				** If not, use an if statement or the conditional operator
+//
+//				if (IsDlgButtonChecked(hDlg, IDC_YOUR_CHECKBOX_ID)==BST_CHECKED)
+//					edPtr->YourLongValue = 100;
+//				else
+//					edPtr->YourLongValue = 50;
+//			*/
+//
+//			// Close the dialog
+//			EndDialog(hDlg, IDOK);
+//			return 0;
+//
+//		case IDCANCEL:
+//			// User pressed cancel, don't save anything
+//			// Close the dialog
+//			EndDialog(hDlg, IDCANCEL);
+//			return 0;
+//
+//		case ID_HELP:
+//			{
+//				// Call the mvHelp function
+//				spa->kv->mvHelp(GetHelpFileName(), 0 /*HH_DISPLAY_TOPIC*/, NULL /*(LPARAM)"index.html"*/);
+//			}
+//			return 0;
+//
+//		/*
+//			If you have a button or checkbox which, when clicked, will change
+//			something on the dialog, add them like so:
+//
+//		case IDC_YOUR_CLICKED_CONTROL:
+//			// your code here
+//			return 0;
+//
+//			You can use any of the commands added previously, (including the Help code,)
+//			but it's a good idea NOT to save data to edPtr until the user presses OK.
+//		*/
+//
+//		default:
+//			break;
+//		}
+//		break;
+//
+//	default:
+//		break;
+//	}
+//	return FALSE;
+//}
+//
+//#endif // !defined(RUN_ONLY)
 
 // --------------------
 // CreateObject
@@ -325,18 +330,19 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 	// Check compatibility
 	if ( IS_COMPATIBLE(mV) )
 	{
-		// Set default object settings
-//		edPtr->swidth = 32;
-//		edPtr->sheight = 32;
-
-		// Call setup (remove this and return 0 if your object does not need a setup)
-		setupParams	spa;
-		spa.edpt = edPtr;
-		spa.kv = mV;
-		if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
-		{
-			return 0;	// No error
-		}
+//		// Set default object settings
+////		edPtr->swidth = 32;
+////		edPtr->sheight = 32;
+//
+//		// Call setup (remove this and return 0 if your object does not need a setup)
+//		setupParams	spa;
+//		spa.edpt = edPtr;
+//		spa.kv = mV;
+//		if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
+//		{
+//			return 0;	// No error
+//		}
+		return 0;	// No error
 	}
 #endif // !defined(RUN_ONLY)
 
@@ -352,18 +358,18 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
-	// Check compatibility
-	if ( IS_COMPATIBLE(mV) )
-	{
-		// Remove this if your object does not need a setup
-		setupParams		spa;
-		spa.edpt = edPtr;
-		spa.kv = mV;
-		if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
-		{
-			return TRUE;
-		}
-	}
+	//// Check compatibility
+	//if ( IS_COMPATIBLE(mV) )
+	//{
+	//	// Remove this if your object does not need a setup
+	//	setupParams		spa;
+	//	spa.edpt = edPtr;
+	//	spa.kv = mV;
+	//	if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
+	//	{
+	//		return TRUE;
+	//	}
+	//}
 #endif // !defined(RUN_ONLY)
 	return FALSE;
 }
@@ -671,6 +677,7 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_COMBO:
 //		return new CPropDWordValue(edPtr->nComboIndex);
 //	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -691,6 +698,12 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_CHECK:
 //		return edPtr->nCheck;
 //	}
+	switch (nPropID) {
+	
+	// 切换窗口后保持锁定
+	case PROPID_KEEPLOCK_CHECK:
+		return edPtr->KeepLock;
+	}
 
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
@@ -769,6 +782,13 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 #ifndef RUN_ONLY
 	// Example
 	// -------
+	switch (nPropID) {
+
+	// 切换窗口后保持锁定
+	case PROPID_KEEPLOCK_CHECK:
+		edPtr->KeepLock = nCheck;
+		break;
+	}
 //	switch (nPropID)
 //	{
 //	case PROPID_CHECK:

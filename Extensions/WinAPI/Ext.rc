@@ -48,7 +48,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright©2019 Defisym"
+            VALUE "LegalCopyright", "Copyright?019 Defisym"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -113,6 +113,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
         MENUITEM SEPARATOR
+        MENUITEM "Mouse is Locked",             IDMN_CONDITION_IML
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -140,9 +142,12 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Mouse"
         BEGIN
-            MENUITEM "Lock Mouse",                  IDMN_ACTION_LOCKMOUSE
-            MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
-            MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
+            POPUP "Lock Mouse"
+            BEGIN
+                MENUITEM "Lock Mouse in Current Window", IDMN_ACTION_LOCKMOUSE
+                MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
+                MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
+            END
             MENUITEM SEPARATOR
             MENUITEM "Unlock Mouse",                IDMN_ACTION_UNLOCKMOUSE
         END
@@ -162,6 +167,14 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Process ID By Name",      IDMN_EXPRESSION_GPIDBN
+        MENUITEM SEPARATOR
+        POPUP "Get Locked Rect"
+        BEGIN
+            MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
+            MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
+            MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
+            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -187,7 +200,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,5,151,50,14
     PUSHBUTTON      "Help",ID_HELP,145,151,50,14
     GROUPBOX        "",-1,5,6,190,135
-    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nDefisym© 2019",-1,21,31,155,60
+    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nDefisym?2019",-1,21,31,155,60
 END
 #endif
 
@@ -252,7 +265,7 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright©2019"
+    IDST_COPYRIGHT          "Copyright?019"
     IDST_COMMENT            "WinAPI, For ExtDev Practise."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -292,6 +305,10 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GPIDBN     "Get Process ID ("
+    M_EXPRESSION_GCWR_L     "GCLR_L ("
+    M_EXPRESSION_GCWR_R     "GCLR_R ("
+    M_EXPRESSION_GCWR_T     "GCLR_T ("
+    M_EXPRESSION_GCWR_B     "GCLR_B ("
 END
 
 STRINGTABLE
@@ -336,6 +353,26 @@ STRINGTABLE
 BEGIN
     PARA_ACTION_LOCKMOUSEBR_T "Input Top Coordination"
     PARA_ACTION_LOCKMOUSEBR_B "Input Bottom Coordination"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IML         "Mouse is Locked"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_KEEPLOCK_CHECK "Keep Lock"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_KEEPLOCK_CHECK_INFO "Keep the Mouse Locked After You Switch Back"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_MOUSE_TEXTTITLE "Mouse Properties"
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources
