@@ -29,10 +29,14 @@ BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 
 //返回当前窗口句柄
 HWND ReturnCurrentWindowHandle() {
+
+	CurrentWindowHandle = NULL;
+
 	EnumWindows(
 		WINAPIEXT_EnumWindowsProc,
 		NULL
 	);
+
 	return CurrentWindowHandle;
 }
 

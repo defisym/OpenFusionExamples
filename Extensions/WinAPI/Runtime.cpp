@@ -131,7 +131,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	
 	// 若设定了保持锁定，并已启用锁定，且当前窗口为活动窗口，则继续锁定窗口
 	if (Lock && rdPtr->KeepLock && (GetForegroundWindow() == ReturnCurrentWindowHandle())) {
-		::ClipCursor(&CurrentWindowRect);		
+		::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+		::ClipCursor(&CurrentWindowRect);
 	}
 	return 0;
 	// Will not be called next loop	

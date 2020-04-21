@@ -251,16 +251,11 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 	if (Lock) {
 		return 0;
 	}
-
-	//重置全局窗口句柄
-	CurrentWindowHandle = NULL;
 	
-	//获取当前窗口矩形
-	RECT WndRect;
-	::GetWindowRect(ReturnCurrentWindowHandle(), &WndRect);
-	::ClipCursor(&WndRect);
-
-	CurrentWindowRect = WndRect;	
+	//获取当前窗口矩形	
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+	::ClipCursor(&CurrentWindowRect);
+	
 	Lock = true;
 
 	return 0;
@@ -271,12 +266,10 @@ short WINAPI DLLExport LockMouseByWindowName(LPRDATA rdPtr, long param1, long pa
 	if (Lock) {
 		return 0;
 	}
-	
-	RECT WndRect;	
-	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &WndRect);
-	::ClipCursor(&WndRect);
+		
+	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &CurrentWindowRect);
+	::ClipCursor(&CurrentWindowRect);
 
-	CurrentWindowRect = WndRect;
 	Lock = true;
 
 	return 0;
@@ -286,16 +279,14 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 	if (Lock) {
 		return 0;
 	}
+		
+	CurrentWindowRect.left = CNC_GetParameter(rdPtr);
+	CurrentWindowRect.right = CNC_GetParameter(rdPtr);
+	CurrentWindowRect.top = CNC_GetParameter(rdPtr);
+	CurrentWindowRect.bottom = CNC_GetParameter(rdPtr);
 
-	RECT WndRect;
-	WndRect.left = CNC_GetParameter(rdPtr);
-	WndRect.right = CNC_GetParameter(rdPtr);
-	WndRect.top = CNC_GetParameter(rdPtr);
-	WndRect.bottom = CNC_GetParameter(rdPtr);
-
-	::ClipCursor(&WndRect);
+	::ClipCursor(&CurrentWindowRect);
 	
-	CurrentWindowRect = WndRect;
 	Lock = true;
 
 	return 0;
