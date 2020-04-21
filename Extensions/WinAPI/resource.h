@@ -7,9 +7,11 @@
 #define IDST_COPYRIGHT                  130
 #define IDST_COMMENT                    131
 #define IDST_HTTP                       132
-#define IDS_PROP_MOUSE_TEXTTITLE		1000
+#define IDS_PROP_MOUSE_TEXTTITLE        1000
 #define IDS_PROP_KEEPLOCK_CHECK         1100
 #define IDS_PROP_KEEPLOCK_CHECK_INFO    1110
+#define IDS_PROP_UPDATELOCK_CHECK       1200
+#define IDS_PROP_UPDATELOCK_CHECK_INFO  1210
 #define M_ACTION                        5000
 #define M_ACTION_RUN                    5100
 #define M_ACTION_RUN_16                 5116

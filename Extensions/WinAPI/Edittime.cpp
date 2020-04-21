@@ -28,6 +28,7 @@ enum {
 //	PROPID_COLOR,
 	PROPID_MOUSE_TEXTTITLE,
 	PROPID_KEEPLOCK_CHECK,
+	PROPID_UPDATELOCK_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -55,6 +56,7 @@ PropData Properties[] = {
 
 	PropData_Group(PROPID_MOUSE_TEXTTITLE, IDS_PROP_MOUSE_TEXTTITLE, 0),
 	PropData_CheckBox(PROPID_KEEPLOCK_CHECK, IDS_PROP_KEEPLOCK_CHECK, IDS_PROP_KEEPLOCK_CHECK_INFO),
+	PropData_CheckBox(PROPID_UPDATELOCK_CHECK, IDS_PROP_UPDATELOCK_CHECK, IDS_PROP_UPDATELOCK_CHECK_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -703,6 +705,9 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	// 切换窗口后保持锁定
 	case PROPID_KEEPLOCK_CHECK:
 		return edPtr->KeepLock;
+	//拖拽窗口后更新锁定
+	case PROPID_UPDATELOCK_CHECK:
+		return edPtr->UpdateLock;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -787,6 +792,10 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	// 切换窗口后保持锁定
 	case PROPID_KEEPLOCK_CHECK:
 		edPtr->KeepLock = nCheck;
+		break;
+	//拖拽窗口后更新锁定
+	case PROPID_UPDATELOCK_CHECK:
+		edPtr->UpdateLock = nCheck;
 		break;
 	}
 //	switch (nPropID)

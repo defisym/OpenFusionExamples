@@ -50,6 +50,8 @@ typedef struct tagEDATA_V1
 
 	//切换窗口后保持锁定
 	bool KeepLock;
+	//拖拽窗口后更新锁定
+	bool UpdateLock;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -82,6 +84,8 @@ typedef struct tagRDATA
 
 	//切换窗口后保持锁定
 	bool KeepLock;
+	//拖拽窗口后更新锁定
+	bool UpdateLock;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

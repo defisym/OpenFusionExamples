@@ -372,7 +372,13 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROP_MOUSE_TEXTTITLE "Mouse Properties"
+    IDS_PROP_MOUSE_TEXTTITLE "Lock Mouse Properties"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_UPDATELOCK_CHECK "Update Lock Rect"
+    IDS_PROP_UPDATELOCK_CHECK_INFO "Update Lock Rect When Dragging"
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources
