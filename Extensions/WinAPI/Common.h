@@ -57,7 +57,7 @@ extern HWND CurrentWindowHandle;
 extern bool Lock;
 
 //当前鼠标锁定的矩形区域
-extern RECT CurrentWindowRect;
+extern RECT CurrentLockRect;
 
 //枚举窗体回调
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(

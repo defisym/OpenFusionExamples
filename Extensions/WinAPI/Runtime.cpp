@@ -134,9 +134,9 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	if (Lock && rdPtr->KeepLock && (GetForegroundWindow() == ReturnCurrentWindowHandle())) {
 		if (rdPtr->UpdateLock) {
 			// 若设定了更新锁定，则更新锁定
-			::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+			::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
 		}
-		::ClipCursor(&CurrentWindowRect);
+		::ClipCursor(&CurrentLockRect);
 	}
 	return 0;
 	// Will not be called next loop	

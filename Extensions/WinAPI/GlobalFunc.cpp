@@ -9,7 +9,7 @@ HWND CurrentWindowHandle = NULL;
 bool Lock = false;
 
 //当前鼠标锁定的矩形区域
-RECT CurrentWindowRect;
+RECT CurrentLockRect;
 
 //枚举窗体回调
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(

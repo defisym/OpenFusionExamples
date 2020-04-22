@@ -37,10 +37,14 @@
 #define PARA_CONDITION_INAPM            6500
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
-#define M_EXPRESSION_GCWR_L             7020
-#define M_EXPRESSION_GCWR_R             7021
-#define M_EXPRESSION_GCWR_T             7022
-#define M_EXPRESSION_GCWR_B             7023
+#define M_EXPRESSION_GCLR_L             7020
+#define M_EXPRESSION_GCLR_R             7021
+#define M_EXPRESSION_GCLR_T             7022
+#define M_EXPRESSION_GCLR_B             7023
+#define M_EXPRESSION_GCWR_L             7030
+#define M_EXPRESSION_GCWR_R             7031
+#define M_EXPRESSION_GCWR_T             7032
+#define M_EXPRESSION_GCWR_B             7033
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -62,10 +66,14 @@
 #define IDMN_CONDITION_IML              26100
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27100
-#define IDMN_EXPRESSION_GCWR_L          27200
-#define IDMN_EXPRESSION_GCWR_R          27210
-#define IDMN_EXPRESSION_GCWR_T          27220
-#define IDMN_EXPRESSION_GCWR_B          27230
+#define IDMN_EXPRESSION_GCLR_L          27200
+#define IDMN_EXPRESSION_GCLR_R          27210
+#define IDMN_EXPRESSION_GCLR_T          27220
+#define IDMN_EXPRESSION_GCLR_B          27230
+#define IDMN_EXPRESSION_GCWR_L          27300
+#define IDMN_EXPRESSION_GCWR_R          27310
+#define IDMN_EXPRESSION_GCWR_T          27320
+#define IDMN_EXPRESSION_GCWR_B          27330
 
 // Next default values for new objects
 // 

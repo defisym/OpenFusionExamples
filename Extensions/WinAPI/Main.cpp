@@ -44,10 +44,17 @@ short actionsInfos[]=
 short expressionsInfos[]=
 		{
 		IDMN_EXPRESSION_GPIDBN, M_EXPRESSION_GPIDBN, EXP_EXPRESSION_GPIDBN, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_GPIDBN,
+
+		IDMN_EXPRESSION_GCLR_L, M_EXPRESSION_GCLR_L, EXP_EXPRESSION_GCLR_L, 0, 0,
+		IDMN_EXPRESSION_GCLR_R, M_EXPRESSION_GCLR_R, EXP_EXPRESSION_GCLR_R, 0, 0,
+		IDMN_EXPRESSION_GCLR_T, M_EXPRESSION_GCLR_T, EXP_EXPRESSION_GCLR_T, 0, 0,
+		IDMN_EXPRESSION_GCLR_B, M_EXPRESSION_GCLR_B, EXP_EXPRESSION_GCLR_B, 0, 0,
+
 		IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 0,
 		IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 0,
 		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 0,
 		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 0,
+
 		
 		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
 		
@@ -253,8 +260,8 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 	}
 	
 	//获取当前窗口矩形	
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	::ClipCursor(&CurrentWindowRect);
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+	::ClipCursor(&CurrentLockRect);
 	
 	Lock = true;
 
@@ -267,8 +274,8 @@ short WINAPI DLLExport LockMouseByWindowName(LPRDATA rdPtr, long param1, long pa
 		return 0;
 	}
 		
-	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &CurrentWindowRect);
-	::ClipCursor(&CurrentWindowRect);
+	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &CurrentLockRect);
+	::ClipCursor(&CurrentLockRect);
 
 	Lock = true;
 
@@ -280,12 +287,12 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 		return 0;
 	}
 		
-	CurrentWindowRect.left = CNC_GetParameter(rdPtr);
-	CurrentWindowRect.right = CNC_GetParameter(rdPtr);
-	CurrentWindowRect.top = CNC_GetParameter(rdPtr);
-	CurrentWindowRect.bottom = CNC_GetParameter(rdPtr);
+	CurrentLockRect.left = CNC_GetParameter(rdPtr);
+	CurrentLockRect.right = CNC_GetParameter(rdPtr);
+	CurrentLockRect.top = CNC_GetParameter(rdPtr);
+	CurrentLockRect.bottom = CNC_GetParameter(rdPtr);
 
-	::ClipCursor(&CurrentWindowRect);
+	::ClipCursor(&CurrentLockRect);
 	
 	Lock = true;
 
@@ -367,17 +374,39 @@ long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
 }
 
 //返回鼠标锁定区域
+long WINAPI DLLExport GetCurrentLockRect_L(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentLockRect.left : 0;
+}
+long WINAPI DLLExport GetCurrentLockRect_R(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentLockRect.right : 0;
+}
+long WINAPI DLLExport GetCurrentLockRect_T(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentLockRect.top : 0;
+}
+long WINAPI DLLExport GetCurrentLockRect_B(LPRDATA rdPtr, long param1) {
+	return Lock ? CurrentLockRect.bottom : 0;
+}
+
+//返回当前窗口矩形区域
 long WINAPI DLLExport GetCurrentWindowRect_L(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentWindowRect.left : 0;
+	RECT CurrentWindowRect;
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+	return CurrentWindowRect.left;
 }
 long WINAPI DLLExport GetCurrentWindowRect_R(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentWindowRect.right : 0;
+	RECT CurrentWindowRect;
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+	return CurrentWindowRect.right;	
 }
 long WINAPI DLLExport GetCurrentWindowRect_T(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentWindowRect.top : 0;
+	RECT CurrentWindowRect;
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+	return CurrentWindowRect.top;	
 }
 long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentWindowRect.bottom : 0;
+	RECT CurrentWindowRect;
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+	return CurrentWindowRect.bottom;	
 }
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -414,6 +443,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
 			GetProcessIDByName,
+			
+			GetCurrentLockRect_L,
+			GetCurrentLockRect_R,
+			GetCurrentLockRect_T,
+			GetCurrentLockRect_B,
+
 			GetCurrentWindowRect_L,
 			GetCurrentWindowRect_R,
 			GetCurrentWindowRect_T,

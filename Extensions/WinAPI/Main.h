@@ -28,11 +28,15 @@
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GPIDBN		0
-#define	EXP_EXPRESSION_GCWR_L		1
-#define	EXP_EXPRESSION_GCWR_R		2
-#define	EXP_EXPRESSION_GCWR_T		3
-#define	EXP_EXPRESSION_GCWR_B		4
-#define	EXP_LAST                    5
+#define	EXP_EXPRESSION_GCLR_L		1
+#define	EXP_EXPRESSION_GCLR_R		2
+#define	EXP_EXPRESSION_GCLR_T		3
+#define	EXP_EXPRESSION_GCLR_B		4
+#define	EXP_EXPRESSION_GCWR_L		5
+#define	EXP_EXPRESSION_GCWR_R		6
+#define	EXP_EXPRESSION_GCWR_T		7
+#define	EXP_EXPRESSION_GCWR_B		8
+#define	EXP_LAST                    9
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

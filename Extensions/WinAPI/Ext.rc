@@ -170,10 +170,17 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Get Locked Rect"
         BEGIN
-            MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
-            MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
-            MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
-            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
+            MENUITEM "Left",                        IDMN_EXPRESSION_GCLR_L
+            MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
+            MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
+            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
+        END
+        POPUP "Get Current Window Rect"
+        BEGIN
+            MENUITEM "Left", IDMN_EXPRESSION_GCWR_L
+            MENUITEM "Right", IDMN_EXPRESSION_GCWR_R
+            MENUITEM "Top", IDMN_EXPRESSION_GCWR_T
+            MENUITEM "Bottom", IDMN_EXPRESSION_GCWR_B
         END
         MENUITEM SEPARATOR
     END
@@ -305,10 +312,14 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GPIDBN     "Get Process ID ("
-    M_EXPRESSION_GCWR_L     "GCLR_L ("
-    M_EXPRESSION_GCWR_R     "GCLR_R ("
-    M_EXPRESSION_GCWR_T     "GCLR_T ("
-    M_EXPRESSION_GCWR_B     "GCLR_B ("
+    M_EXPRESSION_GCLR_L     "GCLR_L ("
+    M_EXPRESSION_GCLR_R     "GCLR_R ("
+    M_EXPRESSION_GCLR_T     "GCLR_T ("
+    M_EXPRESSION_GCLR_B     "GCLR_B ("
+    M_EXPRESSION_GCWR_L     "GCWR_L ("
+    M_EXPRESSION_GCWR_R     "GCWR_R ("
+    M_EXPRESSION_GCWR_T     "GCWR_T ("
+    M_EXPRESSION_GCWR_B     "GCWR_B ("
 END
 
 STRINGTABLE
