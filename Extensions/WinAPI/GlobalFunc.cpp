@@ -11,6 +11,27 @@ bool Lock = false;
 //当前鼠标锁定的矩形区域
 RECT CurrentLockRect;
 
+//当前鼠标锁定的矩形区域相对于窗口的偏移
+RECT RectOffset;
+
+//RECT运算符重载 +
+RECT operator +(RECT A, RECT B) {
+	A.left += B.left;
+	A.right += B.right;
+	A.top += B.top;
+	A.bottom += B.bottom;
+	return A;
+}
+
+//RECT运算符重载 -
+RECT operator -(RECT A, RECT B) {
+	A.left -= B.left;
+	A.right -= B.right;
+	A.top -= B.top;
+	A.bottom -= B.bottom;
+	return A;
+}
+
 //枚举窗体回调
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 	HWND hwnd,      // handle to parent window

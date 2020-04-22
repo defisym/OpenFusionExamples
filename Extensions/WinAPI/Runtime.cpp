@@ -67,6 +67,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	rdPtr->KeepLock = edPtr->KeepLock;
 	rdPtr->UpdateLock = edPtr->UpdateLock;
+	rdPtr->RectOffest = edPtr->RectOffest;
 	// No errors
 	return 0;
 }
@@ -132,10 +133,23 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	
 	// 若设定了保持锁定，并已启用锁定，且当前窗口为活动窗口，则继续锁定窗口
 	if (Lock && rdPtr->KeepLock && (GetForegroundWindow() == ReturnCurrentWindowHandle())) {
+		// 若设定了更新锁定，则更新锁定
 		if (rdPtr->UpdateLock) {
-			// 若设定了更新锁定，则更新锁定
-			::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+			switch (rdPtr->LockType) {
+				case LOCK_BYRECT: {
+					// 若设定了相对锁定，则更新锁定
+					if (rdPtr->RectOffest) {
+						::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+						CurrentLockRect = CurrentLockRect + RectOffset;
+					}
+					break;
+				}
+				default: {
+					::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+				}
+			}
 		}
+		
 		::ClipCursor(&CurrentLockRect);
 	}
 	return 0;

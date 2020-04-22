@@ -12,6 +12,8 @@
 #define IDS_PROP_KEEPLOCK_CHECK_INFO    1110
 #define IDS_PROP_UPDATELOCK_CHECK       1200
 #define IDS_PROP_UPDATELOCK_CHECK_INFO  1210
+#define IDS_PROP_RECTOFFSET_CHECK       1300
+#define IDS_PROP_RECTOFFSET_CHECK_INFO  1310
 #define M_ACTION                        5000
 #define M_ACTION_RUN                    5100
 #define M_ACTION_RUN_16                 5116

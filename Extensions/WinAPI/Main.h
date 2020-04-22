@@ -56,6 +56,8 @@ typedef struct tagEDATA_V1
 	bool KeepLock;
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
+	//区域锁定相对窗口坐标
+	bool RectOffest;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -85,11 +87,15 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
-
+	
+	//窗口锁定类别
+	int LockType;
 	//切换窗口后保持锁定
 	bool KeepLock;
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
+	//区域锁定相对窗口坐标
+	bool RectOffest;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

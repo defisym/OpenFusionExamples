@@ -177,10 +177,10 @@ BEGIN
         END
         POPUP "Get Current Window Rect"
         BEGIN
-            MENUITEM "Left", IDMN_EXPRESSION_GCWR_L
-            MENUITEM "Right", IDMN_EXPRESSION_GCWR_R
-            MENUITEM "Top", IDMN_EXPRESSION_GCWR_T
-            MENUITEM "Bottom", IDMN_EXPRESSION_GCWR_B
+            MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
+            MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
+            MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
+            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
         END
         MENUITEM SEPARATOR
     END
@@ -316,6 +316,10 @@ BEGIN
     M_EXPRESSION_GCLR_R     "GCLR_R ("
     M_EXPRESSION_GCLR_T     "GCLR_T ("
     M_EXPRESSION_GCLR_B     "GCLR_B ("
+END
+
+STRINGTABLE
+BEGIN
     M_EXPRESSION_GCWR_L     "GCWR_L ("
     M_EXPRESSION_GCWR_R     "GCWR_R ("
     M_EXPRESSION_GCWR_T     "GCWR_T ("
@@ -390,6 +394,12 @@ STRINGTABLE
 BEGIN
     IDS_PROP_UPDATELOCK_CHECK "Update Lock Rect"
     IDS_PROP_UPDATELOCK_CHECK_INFO "Update Lock Rect When Dragging"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
+    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect offect from current window"
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

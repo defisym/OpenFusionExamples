@@ -79,30 +79,8 @@ short expressionsInfos[]=
 // Returns TRUE when the two values are equal!
 // 
 
-long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {
-	//输入参数
-	LPCTSTR ApplicationName = (LPCTSTR)param1;
-
-	//获取快照
-	HANDLE	snapshot;
-	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-	//循环遍历
-	PROCESSENTRY32* info;
-	info = new PROCESSENTRY32;
-	info->dwSize = sizeof(PROCESSENTRY32);
-
-	Process32First(snapshot, info);
-	while (Process32Next(snapshot, info) != FALSE) {
-		//进程名一致则结束进程		
-		if (wcscmp(ApplicationName, info->szExeFile) == 0) {			
-			delete info;
-			return TRUE;
-		}
-	}
-	
-	delete info;
-	return FALSE;
+long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {	
+	return (GetProcessIDByName((LPCTSTR)param1) != 0) ? TRUE : FALSE;
 }
 
 long WINAPI DLLExport IsMouseLocked(LPRDATA rdPtr, long param1, long param2) {
@@ -263,6 +241,7 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
 	::ClipCursor(&CurrentLockRect);
 	
+	rdPtr->LockType = LOCK_CURRENTWINDOW;
 	Lock = true;
 
 	return 0;
@@ -277,6 +256,7 @@ short WINAPI DLLExport LockMouseByWindowName(LPRDATA rdPtr, long param1, long pa
 	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &CurrentLockRect);
 	::ClipCursor(&CurrentLockRect);
 
+	rdPtr->LockType = LOCK_BYWINDOWNAME;
 	Lock = true;
 
 	return 0;
@@ -286,14 +266,22 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 	if (Lock) {
 		return 0;
 	}
-		
+
 	CurrentLockRect.left = CNC_GetParameter(rdPtr);
 	CurrentLockRect.right = CNC_GetParameter(rdPtr);
 	CurrentLockRect.top = CNC_GetParameter(rdPtr);
 	CurrentLockRect.bottom = CNC_GetParameter(rdPtr);
 
+	// 若设定了相对锁定，则更新锁定
+	if (rdPtr->RectOffest) {
+		RECT CurrentWindowRect;
+		::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+		RectOffset = CurrentLockRect - CurrentWindowRect;
+	}
+
 	::ClipCursor(&CurrentLockRect);
 	
+	rdPtr->LockType = LOCK_BYRECT;
 	Lock = true;
 
 	return 0;
