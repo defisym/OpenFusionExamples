@@ -712,7 +712,7 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->UpdateLock;
 	//区域锁定相对窗口坐标
 	case PROPID_RECTOFFSET_CHECK:
-		return edPtr->RectOffest;
+		return edPtr->RectOffset;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -804,7 +804,7 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		break;
 	//区域锁定相对窗口坐标
 	case PROPID_RECTOFFSET_CHECK:
-		edPtr->RectOffest = nCheck;
+		edPtr->RectOffset = nCheck;
 	}
 //	switch (nPropID)
 //	{

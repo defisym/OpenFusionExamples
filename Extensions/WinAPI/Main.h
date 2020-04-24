@@ -18,25 +18,39 @@
 #define ACT_ACTION_RUN_16			1
 #define ACT_ACTION_STOPBYNAME		2
 #define ACT_ACTION_STOPBYID			3
+
 #define ACT_ACTION_LOCKMOUSE		4
 #define ACT_ACTION_LOCKMOUSEBWN		5
 #define ACT_ACTION_LOCKMOUSEBR		6
 #define ACT_ACTION_UNLOCKMOUSE		7
-#define	ACT_LAST					8
+
+#define ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON			8
+#define ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF			9
+#define ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON			10
+#define ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF			11
+#define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON			12
+#define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF			13
+
+#define	ACT_LAST					13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GPIDBN		0
+
 #define	EXP_EXPRESSION_GCLR_L		1
 #define	EXP_EXPRESSION_GCLR_R		2
 #define	EXP_EXPRESSION_GCLR_T		3
 #define	EXP_EXPRESSION_GCLR_B		4
+
 #define	EXP_EXPRESSION_GCWR_L		5
 #define	EXP_EXPRESSION_GCWR_R		6
 #define	EXP_EXPRESSION_GCWR_T		7
 #define	EXP_EXPRESSION_GCWR_B		8
-#define	EXP_LAST                    9
+
+#define	EXP_EXPRESSION_GCLT			9
+
+#define	EXP_LAST                    10
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -57,7 +71,7 @@ typedef struct tagEDATA_V1
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
 	//区域锁定相对窗口坐标
-	bool RectOffest;
+	bool RectOffset;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -95,7 +109,7 @@ typedef struct tagRDATA
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
 	//区域锁定相对窗口坐标
-	bool RectOffest;
+	bool RectOffset;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

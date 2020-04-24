@@ -67,7 +67,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	rdPtr->KeepLock = edPtr->KeepLock;
 	rdPtr->UpdateLock = edPtr->UpdateLock;
-	rdPtr->RectOffest = edPtr->RectOffest;
+	rdPtr->RectOffset = edPtr->RectOffset;
 	// No errors
 	return 0;
 }
@@ -138,7 +138,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 			switch (rdPtr->LockType) {
 				case LOCK_BYRECT: {
 					// 若设定了相对锁定，则更新锁定
-					if (rdPtr->RectOffest) {
+					if (rdPtr->RectOffset) {
 						::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
 						CurrentLockRect = CurrentLockRect + RectOffset;
 					}

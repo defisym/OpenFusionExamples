@@ -48,7 +48,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright?019 Defisym"
+            VALUE "LegalCopyright", "Copyright 2019~2020 Defisym"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -147,9 +147,27 @@ BEGIN
                 MENUITEM "Lock Mouse in Current Window", IDMN_ACTION_LOCKMOUSE
                 MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
                 MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
-            END
+            END            
+            MENUITEM "Unlock Mouse", IDMN_ACTION_UNLOCKMOUSE
             MENUITEM SEPARATOR
-            MENUITEM "Unlock Mouse",                IDMN_ACTION_UNLOCKMOUSE
+            POPUP "Settings"
+            BEGIN
+                POPUP "Keep Lock"
+                BEGIN
+                    MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON
+                    MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF
+                END
+                POPUP "Update Lock"
+                BEGIN
+                    MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON
+                    MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF
+                END
+                POPUP "Rect Offest"
+                BEGIN
+                    MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON
+                    MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF
+                END
+            END
         END
         MENUITEM SEPARATOR
     END
@@ -174,7 +192,7 @@ BEGIN
             MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
             MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
             MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
-        END
+        END        
         POPUP "Get Current Window Rect"
         BEGIN
             MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
@@ -182,6 +200,8 @@ BEGIN
             MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
             MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
         MENUITEM SEPARATOR
     END
 END
@@ -207,7 +227,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,5,151,50,14
     PUSHBUTTON      "Help",ID_HELP,145,151,50,14
     GROUPBOX        "",-1,5,6,190,135
-    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nDefisym?2019",-1,21,31,155,60
+    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2020 Defisym",-1,21,31,155,60
 END
 #endif
 
@@ -272,7 +292,7 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright?019"
+    IDST_COPYRIGHT          "Copyright 2019~2020 Defisym"
     IDST_COMMENT            "WinAPI, For ExtDev Practise."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -280,22 +300,15 @@ END
 STRINGTABLE
 BEGIN
     M_ACTION_RUN            "Run Application %0, Command Line %1"
+    M_ACTION_RUN_16         "Run 16Bit Application %0, Command Line %1"
+    M_ACTION_STOPBYNAME     "Stop Application %0"
+    M_ACTION_STOPBYID       "Stop Process %0"
 END
 
 STRINGTABLE
 BEGIN
     PARA_ACTION_RUN_1       "Input Application Path"
     PARA_ACTION_RUN_2       "Input Application Command Line"
-END
-
-STRINGTABLE
-BEGIN
-    M_ACTION_RUN_16         "Run 16Bit Application %0, Command Line %1"
-END
-
-STRINGTABLE
-BEGIN
-    M_ACTION_STOPBYNAME     "Stop Application %0"
 END
 
 STRINGTABLE
@@ -328,11 +341,6 @@ END
 
 STRINGTABLE
 BEGIN
-    M_ACTION_STOPBYID       "Stop Process %0"
-END
-
-STRINGTABLE
-BEGIN
     M_CONDITION_INAP        "Process %0 Exists"
 END
 
@@ -344,11 +352,19 @@ END
 STRINGTABLE
 BEGIN
     M_ACTION_LOCKMOUSE      "Lock Mouse Pointer in Current Window"
+    M_ACTION_LOCKMOUSEBWN   "Lock Mouse Pointer in Named Window %0"
+    M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ]"
 END
 
 STRINGTABLE
 BEGIN
     M_ACTION_UNLOCKMOUSE    "Unlock Mouse Pointer"
+    M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON "Set Keep Lock On"
+    M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF "Set Keep Lock Off"
+    M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON "Set Update Lock On"
+    M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF "Set Update Lock Off"
+    M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON "Set Rect Offset On"
+    M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF "Set Rect Offset Off"
 END
 
 STRINGTABLE
@@ -356,12 +372,6 @@ BEGIN
     PARA_ACTION_LOCKMOUSEBWN "Input Window Name"
     PARA_ACTION_LOCKMOUSEBR_L "Input Left Coordination"
     PARA_ACTION_LOCKMOUSEBR_R "Input Right Coordination"
-END
-
-STRINGTABLE
-BEGIN
-    M_ACTION_LOCKMOUSEBWN   "Lock Mouse Pointer in Named Window %0"
-    M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ]"
 END
 
 STRINGTABLE
@@ -398,8 +408,13 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
-    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect offect from current window"
+    IDS_PROP_RECTOFFSET_CHECK "Rect OFFect"
+    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect OFFect from current window"
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GCLT       "GCLT ("
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

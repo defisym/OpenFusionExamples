@@ -34,10 +34,19 @@ short actionsInfos[]=
 		IDMN_ACTION_RUN_16,M_ACTION_RUN_16,ACT_ACTION_RUN_16,0, 2, PARAM_FILENAME2, PARAM_EXPSTRING,PARA_ACTION_RUN_1,PARA_ACTION_RUN_2,
 		IDMN_ACTION_STOPBYNAME,M_ACTION_STOPBYNAME,ACT_ACTION_STOPBYNAME,0, 1, PARAM_EXPSTRING, PARA_ACTION_STOPBYNAME,
 		IDMN_ACTION_STOPBYID,M_ACTION_STOPBYID,ACT_ACTION_STOPBYID,0, 1, PARAM_EXPRESSION, PARA_ACTION_STOPBYID,
+
 		IDMN_ACTION_LOCKMOUSE,M_ACTION_LOCKMOUSE,ACT_ACTION_LOCKMOUSE,0, 0,
 		IDMN_ACTION_LOCKMOUSEBWN,M_ACTION_LOCKMOUSEBWN,ACT_ACTION_LOCKMOUSEBWN,0, 1, PARAM_EXPSTRING, PARA_ACTION_LOCKMOUSEBWN,
 		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,
-		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,		
+		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
+		
+		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,0, 0,
+		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,0, 0,
+		IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,0, 0,
+		IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,0, 0,
+		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,0, 0,
+		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,0, 0,
+
 		};
 
 // Definitions of parameters for each expression
@@ -55,7 +64,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 0,
 		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 0,
 
-		
+		IDMN_EXPRESSION_GCLT, M_EXPRESSION_GCLT, EXP_EXPRESSION_GCLT, 0, 0,
+
 		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
 		
 		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
@@ -273,7 +283,7 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 	CurrentLockRect.bottom = CNC_GetParameter(rdPtr);
 
 	// 若设定了相对锁定，则更新锁定
-	if (rdPtr->RectOffest) {
+	if (rdPtr->RectOffset) {
 		RECT CurrentWindowRect;
 		::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
 		RectOffset = CurrentLockRect - CurrentWindowRect;
@@ -291,6 +301,33 @@ short WINAPI DLLExport UnlockMouse(LPRDATA rdPtr, long param1, long param2) {
 	UnlockLockedMouse();	
 	return 0;
 }
+
+//更新设定
+short WINAPI DLLExport KeepLock_SetON(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->KeepLock = true;
+	return 0;
+}
+short WINAPI DLLExport KeepLock_SetOFF(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->KeepLock = false;
+	return 0;
+}
+short WINAPI DLLExport UpdateLock_SetON(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->UpdateLock = true;
+	return 0;
+}
+short WINAPI DLLExport UpdateLock_SetOFF(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->UpdateLock = false;
+	return 0;
+}
+short WINAPI DLLExport RectOffset_SetON(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->RectOffset = true;
+	return 0;
+}
+short WINAPI DLLExport RectOffset_SetOFF(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->RectOffset = false;
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -302,56 +339,56 @@ short WINAPI DLLExport UnlockMouse(LPRDATA rdPtr, long param1, long param2) {
 // -----------------
 // Add three values
 // 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-
-	// Performs the wonderfull calculation
-	return p1+p2+p3;
-}
-
-//Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
-	char *temp;
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
-
-	//Reversing the string.
-	_strrev(temp);
-	
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
-	//This returns a pointer to the string for MMF.
-	return (long)temp;
-}
-
-//Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-
-	//Floats are tricky.  If you want to pass in a float, you must do the
-	//following to convert the long to a true float, but only when you use
-	//TYPE_FLOAT.
-	float fp1 = *(float *)&p1;
-
-	//Just doing simple math now.
-	fp1 /=2;
-
-	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-	rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-	//Return the float without conversion
-	return *((int*)&fp1);
-}
+//long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
+//{
+//
+//	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+//	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+//	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+//
+//	// Performs the wonderfull calculation
+//	return p1+p2+p3;
+//}
+//
+////Reverse the string passed in.
+//long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
+//{
+//	char *temp;
+//
+//	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+//
+//	//I'm storing the string pointer returned into a char *
+//	temp = (LPSTR)p1;
+//
+//	//Reversing the string.
+//	_strrev(temp);
+//	
+//	//Setting the HOF_STRING flag lets MMF know that you are a string.
+//	rdPtr->rHo.hoFlags |= HOF_STRING;
+//	
+//	//This returns a pointer to the string for MMF.
+//	return (long)temp;
+//}
+//
+////Divide the float by 2.
+//long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
+//{
+//	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+//
+//	//Floats are tricky.  If you want to pass in a float, you must do the
+//	//following to convert the long to a true float, but only when you use
+//	//TYPE_FLOAT.
+//	float fp1 = *(float *)&p1;
+//
+//	//Just doing simple math now.
+//	fp1 /=2;
+//
+//	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+//	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+//
+//	//Return the float without conversion
+//	return *((int*)&fp1);
+//}
 
 //返回指定进程名的Process ID
 long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
@@ -396,6 +433,11 @@ long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
 	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
 	return CurrentWindowRect.bottom;	
 }
+
+//返回当前锁定模式
+long WINAPI DLLExport ReturnCurrentLockType(LPRDATA rdPtr, long param1) {
+	return rdPtr->LockType;
+}
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -424,6 +466,13 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			LockMouseByWindowName,
 			LockMouseByRect,
 			UnlockMouse,
+			//更新设定
+			KeepLock_SetON,
+			KeepLock_SetOFF,
+			UpdateLock_SetON,
+			UpdateLock_SetOFF,
+			RectOffset_SetON,
+			RectOffset_SetOFF,
 			//结尾必定是零
 			0
 			};
@@ -441,5 +490,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentWindowRect_R,
 			GetCurrentWindowRect_T,
 			GetCurrentWindowRect_B,
+
+			ReturnCurrentLockType,
 			0
 			};
