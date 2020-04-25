@@ -436,7 +436,7 @@ long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
 
 //返回当前锁定模式
 long WINAPI DLLExport ReturnCurrentLockType(LPRDATA rdPtr, long param1) {
-	return rdPtr->LockType;
+	return Lock?rdPtr->LockType:-1;
 }
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
