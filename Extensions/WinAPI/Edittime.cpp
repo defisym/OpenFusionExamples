@@ -30,6 +30,8 @@ enum {
 	PROPID_KEEPLOCK_CHECK,
 	PROPID_UPDATELOCK_CHECK,
 	PROPID_RECTOFFSET_CHECK,
+	PROPID_APPHASCAPTION_CHECK,
+	PROPID_APPHASMENU_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -59,6 +61,8 @@ PropData Properties[] = {
 	PropData_CheckBox(PROPID_KEEPLOCK_CHECK, IDS_PROP_KEEPLOCK_CHECK, IDS_PROP_KEEPLOCK_CHECK_INFO),
 	PropData_CheckBox(PROPID_UPDATELOCK_CHECK, IDS_PROP_UPDATELOCK_CHECK, IDS_PROP_UPDATELOCK_CHECK_INFO),
 	PropData_CheckBox(PROPID_RECTOFFSET_CHECK, IDS_PROP_RECTOFFSET_CHECK, IDS_PROP_RECTOFFSET_CHECK_INFO),
+	PropData_CheckBox(PROPID_APPHASCAPTION_CHECK, IDS_PROP_APPHASCAPTION_CHECK, NULL),
+	PropData_CheckBox(PROPID_APPHASMENU_CHECK, IDS_PROP_APPHASMENU_CHECK, NULL),
 
 	// End of table (required)
 	PropData_End()
@@ -713,6 +717,12 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	//区域锁定相对窗口坐标
 	case PROPID_RECTOFFSET_CHECK:
 		return edPtr->RectOffset;
+	//应用程序拥有标题栏
+	case PROPID_APPHASCAPTION_CHECK:
+		return edPtr->AppHasCaption;
+	//应用程序拥有菜单栏
+	case PROPID_APPHASMENU_CHECK:
+		return edPtr->AppHasMenu;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -805,6 +815,12 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	//区域锁定相对窗口坐标
 	case PROPID_RECTOFFSET_CHECK:
 		edPtr->RectOffset = nCheck;
+	//应用程序拥有标题栏
+	case PROPID_APPHASCAPTION_CHECK:
+		edPtr->AppHasCaption = nCheck;
+	//应用程序拥有菜单栏
+	case PROPID_APPHASMENU_CHECK:
+		edPtr->AppHasMenu = nCheck;
 	}
 //	switch (nPropID)
 //	{

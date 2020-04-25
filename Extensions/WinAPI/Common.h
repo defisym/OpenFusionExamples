@@ -84,6 +84,19 @@ BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 void UnlockLockedMouse();
 HWND ReturnCurrentWindowHandle();
 
+//MMF偏移
+#define MMF_Offset_X 3
+#define MMF_Offset_Y 3
+
+//返回注册表字符串值
+int ReturnRegValue(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue);
+
+//返回窗体菜单栏高度
+int ReturnMenuHeight();
+
+//返回窗体标题栏高度
+int ReturnCaptionHeight();
+
 
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;

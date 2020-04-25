@@ -142,6 +142,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Mouse"
         BEGIN
+            MENUITEM "Set Mouse Position", IDMN_ACTION_SETMOUSE
+            MENUITEM SEPARATOR
             POPUP "Lock Mouse"
             BEGIN
                 MENUITEM "Lock Mouse in Current Window", IDMN_ACTION_LOCKMOUSE
@@ -414,7 +416,21 @@ END
 
 STRINGTABLE
 BEGIN
+IDS_PROP_APPHASCAPTION_CHECK "App has caption"
+IDS_PROP_APPHASMENU_CHECK    "App has menu"
+END
+
+
+STRINGTABLE
+BEGIN
     M_EXPRESSION_GCLT       "GCLT ("
+END
+STRINGTABLE
+BEGIN
+    M_ACTION_SETMOUSE "Set Mouse Position to [ %0 , %1 ]"
+    PARA_ACTION_SETMOUSE_X       "Input X Position"
+    PARA_ACTION_SETMOUSE_Y       "Input Y Position"
+        
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

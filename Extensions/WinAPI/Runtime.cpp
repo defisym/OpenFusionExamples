@@ -68,6 +68,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->KeepLock = edPtr->KeepLock;
 	rdPtr->UpdateLock = edPtr->UpdateLock;
 	rdPtr->RectOffset = edPtr->RectOffset;
+	rdPtr->AppHasCaption = edPtr->AppHasCaption;
+	rdPtr->AppHasMenu = edPtr->AppHasMenu;
 	// No errors
 	return 0;
 }

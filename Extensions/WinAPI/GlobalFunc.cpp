@@ -69,6 +69,38 @@ void UnlockLockedMouse() {
 	}
 }
 
+//返回注册表字符串值
+int ReturnRegValue(HKEY hkey,LPCSTR lpSubKey,LPCSTR lpValue) {
+	DWORD reg_type = REG_SZ;
+	char* reg_value = new char[MAX_PATH];
+	DWORD res_size;
+
+	RegGetValueA(
+		hkey,
+		lpSubKey,
+		lpValue,
+		reg_type,
+		NULL,
+		(LPBYTE)reg_value,
+		&res_size
+	);
+
+	int result = atoi(reg_value);
+	delete[] reg_value;
+	return result;
+}
+
+//返回窗体菜单栏高度
+int ReturnMenuHeight() {
+	return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "MenuHeight") / 15.0));
+}
+
+//返回窗体标题栏高度
+int ReturnCaptionHeight() {
+	return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "CaptionHeight") / 15.0));
+}
+
+
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
 

@@ -40,6 +40,8 @@ short actionsInfos[]=
 		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,
 		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
 		
+		IDMN_ACTION_SETMOUSE,M_ACTION_SETMOUSE,ACT_ACTION_SETMOUSE,0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_SETMOUSE_X, PARA_ACTION_SETMOUSE_Y,
+
 		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,0, 0,
 		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,0, 0,
 		IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,0, 0,
@@ -328,6 +330,17 @@ short WINAPI DLLExport RectOffset_SetOFF(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+//指定鼠标坐标
+short WINAPI DLLExport SetMousePosRelativetoCurrentWindow(LPRDATA rdPtr, long param1, long param2) {	
+	RECT CurrentWindowRect;
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
+	::SetCursorPos(CurrentWindowRect.left+ MMF_Offset_X+(int)param1, 
+				CurrentWindowRect.top + MMF_Offset_Y+ + (int)param2+
+				(rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0));
+	
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -431,7 +444,7 @@ long WINAPI DLLExport GetCurrentWindowRect_T(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
 	RECT CurrentWindowRect;
 	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	return CurrentWindowRect.bottom;	
+	return CurrentWindowRect.bottom;
 }
 
 //返回当前锁定模式
@@ -466,13 +479,15 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			LockMouseByWindowName,
 			LockMouseByRect,
 			UnlockMouse,
+			//设定鼠标位置
+			SetMousePosRelativetoCurrentWindow,
 			//更新设定
 			KeepLock_SetON,
 			KeepLock_SetOFF,
 			UpdateLock_SetON,
 			UpdateLock_SetOFF,
 			RectOffset_SetON,
-			RectOffset_SetOFF,
+			RectOffset_SetOFF,			
 			//结尾必定是零
 			0
 			};
