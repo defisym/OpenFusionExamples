@@ -92,12 +92,14 @@ int ReturnRegValue(HKEY hkey,LPCSTR lpSubKey,LPCSTR lpValue) {
 
 //返回窗体菜单栏高度
 int ReturnMenuHeight() {
-	return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "MenuHeight") / 15.0));
+	return GetSystemMetrics(SM_CYMENU);
+	//return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "MenuHeight") / 15.0));
 }
 
 //返回窗体标题栏高度
 int ReturnCaptionHeight() {
-	return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "CaptionHeight") / 15.0));
+	return GetSystemMetrics(SM_CYCAPTION);
+	//return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "CaptionHeight") / 15.0));
 }
 
 

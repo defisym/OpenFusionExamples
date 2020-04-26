@@ -146,7 +146,8 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Lock Mouse"
             BEGIN
-                MENUITEM "Lock Mouse in Current Window", IDMN_ACTION_LOCKMOUSE
+                MENUITEM "Lock Mouse in Current Window",IDMN_ACTION_LOCKMOUSEICW
+                MENUITEM "Lock Mouse in Frame Area",    IDMN_ACTION_LOCKMOUSEIFA
                 MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
                 MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
             END            
@@ -353,7 +354,8 @@ END
 
 STRINGTABLE
 BEGIN
-    M_ACTION_LOCKMOUSE      "Lock Mouse Pointer in Current Window"
+    M_ACTION_LOCKMOUSEICW      "Lock Mouse Pointer in Current Window"
+    M_ACTION_LOCKMOUSEIFA      "Lock Mouse Pointer in Frame Area"
     M_ACTION_LOCKMOUSEBWN   "Lock Mouse Pointer in Named Window %0"
     M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ]"
 END
@@ -410,7 +412,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_PROP_RECTOFFSET_CHECK "Rect OFFect"
+    IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
     IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect OFFect from current window"
 END
 

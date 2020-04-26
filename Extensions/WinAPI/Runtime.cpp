@@ -70,6 +70,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->RectOffset = edPtr->RectOffset;
 	rdPtr->AppHasCaption = edPtr->AppHasCaption;
 	rdPtr->AppHasMenu = edPtr->AppHasMenu;
+
+	rdPtr->OffsetHeight=(rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0);
+	rdPtr->BorderOffsetX = GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXEDGE);
+	rdPtr->BorderOffsetY = GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CYEDGE);	
+
 	// No errors
 	return 0;
 }
@@ -137,17 +142,22 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	if (Lock && rdPtr->KeepLock && (GetForegroundWindow() == ReturnCurrentWindowHandle())) {
 		// 若设定了更新锁定，则更新锁定
 		if (rdPtr->UpdateLock) {
+			::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+
 			switch (rdPtr->LockType) {
 				case LOCK_BYRECT: {
 					// 若设定了相对锁定，则更新锁定
-					if (rdPtr->RectOffset) {
-						::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+					if (rdPtr->RectOffset) {						
 						CurrentLockRect = CurrentLockRect + RectOffset;
 					}
 					break;
 				}
+				case LOCK_FRAMEAREA: {
+					CurrentLockRect = CurrentLockRect + RectOffset;
+					break;
+				}
 				default: {
-					::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+					
 				}
 			}
 		}

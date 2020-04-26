@@ -59,6 +59,7 @@ extern bool Lock;
 //窗口锁定类别
 enum {
 	LOCK_CURRENTWINDOW,
+	LOCK_FRAMEAREA,
 	LOCK_BYWINDOWNAME,
 	LOCK_BYRECT,
 };
@@ -84,12 +85,8 @@ BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 void UnlockLockedMouse();
 HWND ReturnCurrentWindowHandle();
 
-//MMF偏移
-#define MMF_Offset_X 3
-#define MMF_Offset_Y 3
-
 //返回注册表字符串值
-int ReturnRegValue(HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpValue);
+int ReturnRegValue(HKEY hkey, LPCSTR lpSubKey, LPCSTR lpValue);
 
 //返回窗体菜单栏高度
 int ReturnMenuHeight();

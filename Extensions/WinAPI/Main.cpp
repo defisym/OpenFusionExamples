@@ -35,7 +35,8 @@ short actionsInfos[]=
 		IDMN_ACTION_STOPBYNAME,M_ACTION_STOPBYNAME,ACT_ACTION_STOPBYNAME,0, 1, PARAM_EXPSTRING, PARA_ACTION_STOPBYNAME,
 		IDMN_ACTION_STOPBYID,M_ACTION_STOPBYID,ACT_ACTION_STOPBYID,0, 1, PARAM_EXPRESSION, PARA_ACTION_STOPBYID,
 
-		IDMN_ACTION_LOCKMOUSE,M_ACTION_LOCKMOUSE,ACT_ACTION_LOCKMOUSE,0, 0,
+		IDMN_ACTION_LOCKMOUSEICW,M_ACTION_LOCKMOUSEICW,ACT_ACTION_LOCKMOUSEICW,0, 0,
+		IDMN_ACTION_LOCKMOUSEIFA,M_ACTION_LOCKMOUSEIFA,ACT_ACTION_LOCKMOUSEIFA,0, 0,
 		IDMN_ACTION_LOCKMOUSEBWN,M_ACTION_LOCKMOUSEBWN,ACT_ACTION_LOCKMOUSEBWN,0, 1, PARAM_EXPSTRING, PARA_ACTION_LOCKMOUSEBWN,
 		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,
 		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
@@ -244,7 +245,7 @@ short WINAPI DLLExport StopApplicationByPID(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
-short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport LockMouseInCurrentWindow(LPRDATA rdPtr, long param1, long param2) {	
 	if (Lock) {
 		return 0;
 	}
@@ -254,6 +255,27 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 	::ClipCursor(&CurrentLockRect);
 	
 	rdPtr->LockType = LOCK_CURRENTWINDOW;
+	Lock = true;
+
+	return 0;
+
+}
+
+short WINAPI DLLExport LockMouseInFrameArea(LPRDATA rdPtr, long param1, long param2) {
+	if (Lock) {
+		return 0;
+	}
+
+	//获取当前窗口矩形	
+	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+	RectOffset.left = rdPtr->BorderOffsetX;
+	RectOffset.right = -1* rdPtr->BorderOffsetX;
+	RectOffset.top = rdPtr->OffsetHeight+ rdPtr->BorderOffsetY;
+	RectOffset.bottom = -1 * rdPtr->BorderOffsetY;
+	CurrentLockRect = CurrentLockRect + RectOffset;
+	::ClipCursor(&CurrentLockRect);
+
+	rdPtr->LockType = LOCK_FRAMEAREA;
 	Lock = true;
 
 	return 0;
@@ -334,9 +356,8 @@ short WINAPI DLLExport RectOffset_SetOFF(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport SetMousePosRelativetoCurrentWindow(LPRDATA rdPtr, long param1, long param2) {	
 	RECT CurrentWindowRect;
 	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	::SetCursorPos(CurrentWindowRect.left+ MMF_Offset_X+(int)param1, 
-				CurrentWindowRect.top + MMF_Offset_Y+ + (int)param2+
-				(rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0));
+	::SetCursorPos(CurrentWindowRect.left+ rdPtr->BorderOffsetX +(int)param1,
+				CurrentWindowRect.top + rdPtr->BorderOffsetY + (int)param2+rdPtr->OffsetHeight);
 	
 	return 0;
 }
@@ -475,7 +496,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			StopApplicationByName,
 			StopApplicationByPID,
 			//锁定/解锁鼠标
-			LockMouse,
+			LockMouseInCurrentWindow,
+			LockMouseInFrameArea,
 			LockMouseByWindowName,
 			LockMouseByRect,
 			UnlockMouse,
