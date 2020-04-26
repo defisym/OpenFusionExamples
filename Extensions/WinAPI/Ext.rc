@@ -206,6 +206,11 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
         MENUITEM SEPARATOR
+        POPUP "Get Border Offset"
+        BEGIN
+            MENUITEM "X Offset", IDMN_EXPRESSION_RXO
+            MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+        END
     END
 END
 #endif
@@ -344,6 +349,12 @@ END
 
 STRINGTABLE
 BEGIN
+    M_EXPRESSION_RXO     "RXO ("
+    M_EXPRESSION_RYO     "RYO ("
+END
+
+STRINGTABLE
+BEGIN
     M_CONDITION_INAP        "Process %0 Exists"
 END
 
@@ -427,6 +438,7 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_GCLT       "GCLT ("
 END
+
 STRINGTABLE
 BEGIN
     M_ACTION_SETMOUSE "Set Mouse Position to [ %0 , %1 ]"

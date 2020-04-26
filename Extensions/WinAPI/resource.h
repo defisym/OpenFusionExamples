@@ -60,6 +60,8 @@
 #define M_EXPRESSION_GCWR_T             7032
 #define M_EXPRESSION_GCWR_B             7033
 #define M_EXPRESSION_GCLT               7040
+#define M_EXPRESSION_RXO               7050
+#define M_EXPRESSION_RYO               7051
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -98,6 +100,8 @@
 #define IDMN_EXPRESSION_GCWR_T          27320
 #define IDMN_EXPRESSION_GCWR_B          27330
 #define IDMN_EXPRESSION_GCLT            27400
+#define IDMN_EXPRESSION_RXO            27500
+#define IDMN_EXPRESSION_RYO            27510
 #define ID_Menu                         40025
 
 // Next default values for new objects

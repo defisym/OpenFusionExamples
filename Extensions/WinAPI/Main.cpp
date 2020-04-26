@@ -55,6 +55,13 @@ short actionsInfos[]=
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
+
+		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,		
+		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
+		//IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,		
+		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
+		//IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+
 		IDMN_EXPRESSION_GPIDBN, M_EXPRESSION_GPIDBN, EXP_EXPRESSION_GPIDBN, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_GPIDBN,
 
 		IDMN_EXPRESSION_GCLR_L, M_EXPRESSION_GCLR_L, EXP_EXPRESSION_GCLR_L, 0, 0,
@@ -69,13 +76,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GCLT, M_EXPRESSION_GCLT, EXP_EXPRESSION_GCLT, 0, 0,
 
-		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
-		
-		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
-		//IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
-		
-		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
-		//IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 0,
+		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 0,
+	
 		};
 
 
@@ -472,6 +475,17 @@ long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport ReturnCurrentLockType(LPRDATA rdPtr, long param1) {
 	return Lock?rdPtr->LockType:-1;
 }
+
+//返回X偏移量
+long WINAPI DLLExport ReturnXOffset(LPRDATA rdPtr, long param1) {
+	return rdPtr->BorderOffsetX;
+}
+
+//返回Y偏移量
+long WINAPI DLLExport ReturnYOffset(LPRDATA rdPtr, long param1) {
+	return rdPtr->BorderOffsetY + rdPtr->OffsetHeight;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -529,5 +543,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentWindowRect_B,
 
 			ReturnCurrentLockType,
+
+			ReturnXOffset,
+			ReturnYOffset,
+
 			0
 			};

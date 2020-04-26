@@ -53,7 +53,10 @@
 
 #define	EXP_EXPRESSION_GCLT			9
 
-#define	EXP_LAST                    10
+#define	EXP_EXPRESSION_RXO			10
+#define	EXP_EXPRESSION_RYO			11
+
+#define	EXP_LAST                    12
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
