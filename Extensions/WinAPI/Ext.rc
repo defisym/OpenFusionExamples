@@ -211,6 +211,7 @@ BEGIN
             MENUITEM "X Offset", IDMN_EXPRESSION_RXO
             MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
         END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -424,7 +425,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
-    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect OFFect from current window"
+    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect offset from current window"
 END
 
 STRINGTABLE
