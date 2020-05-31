@@ -1,2 +1,8 @@
-
+# MMF Auto Backup #
 *.001
+
+# Debug Object Log File #
+*.log
+
+# Deque Output File #
+*.File

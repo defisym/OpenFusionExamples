@@ -1,7 +1,6 @@
 // Common Include
 #include	"common.h"
 
-
 //È«¾Ö´°¿Ú¾ä±ú
 HWND CurrentWindowHandle = NULL;
 

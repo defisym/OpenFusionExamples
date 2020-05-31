@@ -130,6 +130,9 @@
     <ClInclude Include="..\..\Inc\WinMacro.h">
       <Filter>MMF Headers</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalFunc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="RES\EXTICON.BMP">
