@@ -42,6 +42,7 @@
 #include	<tlhelp32.h>
 #include	<shlwapi.h>
 #pragma	comment(lib,"shlwapi.lib") 
+#pragma   comment(lib, "Imm32.lib")
 
 //Global Func
 #include "GlobalFunc.h"

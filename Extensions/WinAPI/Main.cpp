@@ -50,6 +50,8 @@ short actionsInfos[]=
 		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,0, 0,
 		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,0, 0,
 
+		IDMN_ACTION_IME_DISABLE,M_ACTION_IME_DISABLE,ACT_ACTION_IME_DISABLE,0, 0,
+		IDMN_ACTION_IME_ENABLE,M_ACTION_IME_ENABLE,ACT_ACTION_IME_ENABLE,0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -79,6 +81,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 0,
 		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 0,
 	
+		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
 		};
 
 
@@ -365,6 +368,19 @@ short WINAPI DLLExport SetMousePosRelativetoCurrentWindow(LPRDATA rdPtr, long pa
 	return 0;
 }
 
+//禁用输入法
+short WINAPI DLLExport IME_Disable(LPRDATA rdPtr, long param1, long param2) {
+	IMEStateControl(false);
+	return 0;
+}
+
+//启用输入法
+short WINAPI DLLExport IME_Enable(LPRDATA rdPtr, long param1, long param2) {
+	IMEStateControl(true);	
+	return 0;
+}
+
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -486,6 +502,12 @@ long WINAPI DLLExport ReturnYOffset(LPRDATA rdPtr, long param1) {
 	return rdPtr->BorderOffsetY + rdPtr->OffsetHeight;
 }
 
+//返回IME状态
+long WINAPI DLLExport ReturnIMEState(LPRDATA rdPtr, long param1) {	
+	return ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -523,7 +545,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			UpdateLock_SetON,
 			UpdateLock_SetOFF,
 			RectOffset_SetON,
-			RectOffset_SetOFF,			
+			RectOffset_SetOFF,
+			//输入法控制
+			IME_Disable,
+			IME_Enable,
 			//结尾必定是零
 			0
 			};
@@ -546,6 +571,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			ReturnXOffset,
 			ReturnYOffset,
+
+			ReturnIMEState,
 
 			0
 			};

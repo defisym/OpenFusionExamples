@@ -16,13 +16,15 @@
 #define IDS_PROP_RECTOFFSET_CHECK_INFO  1310
 #define IDS_PROP_APPHASCAPTION_CHECK	1400
 #define IDS_PROP_APPHASMENU_CHECK		1500
+#define IDS_PROP_IME_TEXTTITLE			1600
+#define IDS_PROP_KEEPIMESTATE_CHECK		1610
 #define M_ACTION                        5000
 #define M_ACTION_RUN                    5010
 #define M_ACTION_RUN_16                 5011
 #define M_ACTION_STOPBYNAME             5020
 #define M_ACTION_STOPBYID               5021
-#define M_ACTION_LOCKMOUSEICW              5030
-#define M_ACTION_LOCKMOUSEIFA              5031
+#define M_ACTION_LOCKMOUSEICW           5030
+#define M_ACTION_LOCKMOUSEIFA           5031
 #define M_ACTION_LOCKMOUSEBWN           5032
 #define M_ACTION_LOCKMOUSEBR            5033
 #define M_ACTION_UNLOCKMOUSE            5040
@@ -33,6 +35,8 @@
 #define M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON 5054
 #define M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF 5055
 #define M_ACTION_SETMOUSE				5060
+#define M_ACTION_IME_DISABLE			5070
+#define M_ACTION_IME_ENABLE				5071
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -60,8 +64,9 @@
 #define M_EXPRESSION_GCWR_T             7032
 #define M_EXPRESSION_GCWR_B             7033
 #define M_EXPRESSION_GCLT               7040
-#define M_EXPRESSION_RXO               7050
-#define M_EXPRESSION_RYO               7051
+#define M_EXPRESSION_RXO				7050
+#define M_EXPRESSION_RYO				7051
+#define M_EXPRESSION_IME_STATE          7070
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -87,6 +92,8 @@
 #define IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF 25435
 #define IDMN_ACTION_UNLOCKMOUSE         25500
 #define IDMN_ACTION_SETMOUSE			25600
+#define IDMN_ACTION_IME_DISABLE			25700
+#define IDMN_ACTION_IME_ENABLE			25710
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26100
 #define IDMN_EXPRESSION                 27000
@@ -100,8 +107,9 @@
 #define IDMN_EXPRESSION_GCWR_T          27320
 #define IDMN_EXPRESSION_GCWR_B          27330
 #define IDMN_EXPRESSION_GCLT            27400
-#define IDMN_EXPRESSION_RXO            27500
-#define IDMN_EXPRESSION_RYO            27510
+#define IDMN_EXPRESSION_RXO				27500
+#define IDMN_EXPRESSION_RYO				27510
+#define IDMN_EXPRESSION_IME_STATE		27600
 #define ID_Menu                         40025
 
 // Next default values for new objects

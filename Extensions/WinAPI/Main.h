@@ -34,7 +34,10 @@
 #define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON			14
 #define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF			15
 
-#define	ACT_LAST					16
+#define ACT_ACTION_IME_DISABLE		16
+#define ACT_ACTION_IME_ENABLE		17
+
+#define	ACT_LAST					18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -56,7 +59,9 @@
 #define	EXP_EXPRESSION_RXO			10
 #define	EXP_EXPRESSION_RYO			11
 
-#define	EXP_LAST                    12
+#define	EXP_EXPRESSION_IME_STATE	12
+
+#define	EXP_LAST                    13
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -83,6 +88,9 @@ typedef struct tagEDATA_V1
 	bool AppHasCaption;
 	//应用程序拥有菜单栏
 	bool AppHasMenu;
+
+	//持续保持输入法状态
+	bool KeepIMEState;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -133,6 +141,10 @@ typedef struct tagRDATA
 	int BorderOffsetX;
 	//应用程序边框高度
 	int BorderOffsetY;
+
+	//持续保持输入法状态
+	bool KeepIMEState;
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

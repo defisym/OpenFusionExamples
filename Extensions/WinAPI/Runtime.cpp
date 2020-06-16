@@ -75,6 +75,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->BorderOffsetX = GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXEDGE);
 	rdPtr->BorderOffsetY = GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CYEDGE);	
 
+	rdPtr->KeepIMEState = edPtr->KeepIMEState;
+
 	// No errors
 	return 0;
 }
@@ -163,6 +165,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		}
 		
 		::ClipCursor(&CurrentLockRect);
+	}
+	// 若设定了保持输入法状态，且当前状态与保持状态不一致，则更新状态
+	if (rdPtr->KeepIMEState&&(IMEState != (bool)ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle())))) {
+		IMEStateControl(IMEState);
 	}
 	return 0;
 	// Will not be called next loop	

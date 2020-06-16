@@ -32,6 +32,8 @@ enum {
 	PROPID_RECTOFFSET_CHECK,
 	PROPID_APPHASCAPTION_CHECK,
 	PROPID_APPHASMENU_CHECK,
+	PROPID_IME_TEXTTITLE,
+	PROPID_KEEPIMESTATE_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -63,6 +65,8 @@ PropData Properties[] = {
 	PropData_CheckBox(PROPID_RECTOFFSET_CHECK, IDS_PROP_RECTOFFSET_CHECK, IDS_PROP_RECTOFFSET_CHECK_INFO),
 	PropData_CheckBox(PROPID_APPHASCAPTION_CHECK, IDS_PROP_APPHASCAPTION_CHECK, NULL),
 	PropData_CheckBox(PROPID_APPHASMENU_CHECK, IDS_PROP_APPHASMENU_CHECK, NULL),
+	PropData_Group(PROPID_IME_TEXTTITLE, IDS_PROP_IME_TEXTTITLE, 0),
+	PropData_CheckBox(PROPID_KEEPIMESTATE_CHECK, IDS_PROP_KEEPIMESTATE_CHECK, NULL),
 
 	// End of table (required)
 	PropData_End()
@@ -723,6 +727,9 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	//应用程序拥有菜单栏
 	case PROPID_APPHASMENU_CHECK:
 		return edPtr->AppHasMenu;
+	//保持输入法状态
+	case PROPID_KEEPIMESTATE_CHECK:
+		return edPtr->KeepIMEState;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -821,6 +828,9 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	//应用程序拥有菜单栏
 	case PROPID_APPHASMENU_CHECK:
 		edPtr->AppHasMenu = nCheck;
+	//保持输入法状态
+	case PROPID_KEEPIMESTATE_CHECK:
+		edPtr->KeepIMEState = nCheck;
 	}
 //	switch (nPropID)
 //	{

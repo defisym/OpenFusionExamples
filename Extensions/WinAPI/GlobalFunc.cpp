@@ -101,6 +101,16 @@ int ReturnCaptionHeight() {
 	//return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "CaptionHeight") / 15.0));
 }
 
+//输入法状态
+bool IMEState = ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));
+
+//输入法控制
+BOOL IMEStateControl(bool State)
+{
+	IMEState = State;
+	return ImmSetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()), State);
+}
+
 
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;

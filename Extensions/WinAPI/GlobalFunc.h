@@ -45,6 +45,12 @@ int ReturnMenuHeight();
 //返回窗体标题栏高度
 int ReturnCaptionHeight();
 
+//输入法状态
+extern bool IMEState;
+
+//输入法控制
+BOOL IMEStateControl(bool State);
+
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;
 

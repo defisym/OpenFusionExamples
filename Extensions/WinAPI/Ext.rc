@@ -172,6 +172,12 @@ BEGIN
                 END
             END
         END
+        MENUITEM SEPARATOR    
+        POPUP "IME"
+        BEGIN
+            MENUITEM "Disable IME", IDMN_ACTION_IME_DISABLE
+            MENUITEM "Enable IME", IDMN_ACTION_IME_ENABLE
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -211,6 +217,8 @@ BEGIN
             MENUITEM "X Offset", IDMN_EXPRESSION_RXO
             MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Get IME State", IDMN_EXPRESSION_IME_STATE
         MENUITEM SEPARATOR
     END
 END
@@ -434,6 +442,12 @@ IDS_PROP_APPHASCAPTION_CHECK "App has caption"
 IDS_PROP_APPHASMENU_CHECK    "App has menu"
 END
 
+STRINGTABLE
+BEGIN
+IDS_PROP_IME_TEXTTITLE    "IME Properties"
+IDS_PROP_KEEPIMESTATE_CHECK "Keep IME State"
+END
+
 
 STRINGTABLE
 BEGIN
@@ -446,6 +460,13 @@ BEGIN
     PARA_ACTION_SETMOUSE_X       "Input X Position"
     PARA_ACTION_SETMOUSE_Y       "Input Y Position"
         
+END
+
+STRINGTABLE
+BEGIN
+    M_ACTION_IME_DISABLE        "Disable IME"
+    M_ACTION_IME_ENABLE         "Enable IME"
+    M_EXPRESSION_IME_STATE      "IMEState ("
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources
