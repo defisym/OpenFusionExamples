@@ -195,30 +195,39 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Process ID By Name",      IDMN_EXPRESSION_GPIDBN
         MENUITEM SEPARATOR
-        POPUP "Get Locked Rect"
+        POPUP "Lock Mouse"
         BEGIN
-            MENUITEM "Left",                        IDMN_EXPRESSION_GCLR_L
-            MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
-            MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
-            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
-        END        
-        POPUP "Get Current Window Rect"
-        BEGIN
-            MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
-            MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
-            MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
-            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
-        MENUITEM SEPARATOR
-        POPUP "Get Border Offset"
-        BEGIN
-            MENUITEM "X Offset", IDMN_EXPRESSION_RXO
-            MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+            POPUP "Get Locked Rect"
+            BEGIN
+                MENUITEM "Left",                        IDMN_EXPRESSION_GCLR_L
+                MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
+                MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
+                MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
+            END        
+            POPUP "Get Current Window Rect"
+            BEGIN
+                MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
+                MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
+                MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
+                MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
+            END
+            MENUITEM SEPARATOR
+            MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
+            MENUITEM SEPARATOR
+            POPUP "Get Border Offset"
+            BEGIN
+                MENUITEM "X Offset", IDMN_EXPRESSION_RXO
+                MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+            END
         END
         MENUITEM SEPARATOR
         MENUITEM "Get IME State", IDMN_EXPRESSION_IME_STATE
+        MENUITEM SEPARATOR
+        POPUP "String Converter"
+        BEGIN
+            MENUITEM "Convert ANSI to UTF-8", IDMN_EXPRESSION_A2U
+            MENUITEM "Convert UTF-8 to ANSI", IDMN_EXPRESSION_U2A
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -467,6 +476,12 @@ BEGIN
     M_ACTION_IME_DISABLE        "Disable IME"
     M_ACTION_IME_ENABLE         "Enable IME"
     M_EXPRESSION_IME_STATE      "IMEState ("
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_A2U            "A2U ("
+    M_EXPRESSION_U2A            "U2A ("
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

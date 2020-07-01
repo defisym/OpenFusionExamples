@@ -61,7 +61,10 @@
 
 #define	EXP_EXPRESSION_IME_STATE	12
 
-#define	EXP_LAST                    13
+#define	EXP_EXPRESSION_A2U			13
+#define	EXP_EXPRESSION_U2A			14
+
+#define	EXP_LAST                    15
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

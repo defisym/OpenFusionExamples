@@ -67,6 +67,8 @@
 #define M_EXPRESSION_RXO				7050
 #define M_EXPRESSION_RYO				7051
 #define M_EXPRESSION_IME_STATE          7070
+#define M_EXPRESSION_A2U				7080
+#define M_EXPRESSION_U2A				7081
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -110,6 +112,8 @@
 #define IDMN_EXPRESSION_RXO				27500
 #define IDMN_EXPRESSION_RYO				27510
 #define IDMN_EXPRESSION_IME_STATE		27600
+#define IDMN_EXPRESSION_A2U				27700
+#define IDMN_EXPRESSION_U2A				27710
 #define ID_Menu                         40025
 
 // Next default values for new objects

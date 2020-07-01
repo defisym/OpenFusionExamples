@@ -82,6 +82,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 0,
 	
 		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
+
+		IDMN_EXPRESSION_A2U, M_EXPRESSION_A2U, EXP_EXPRESSION_A2U,EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
+		IDMN_EXPRESSION_U2A, M_EXPRESSION_U2A, EXP_EXPRESSION_U2A,EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
 		};
 
 
@@ -507,7 +510,57 @@ long WINAPI DLLExport ReturnIMEState(LPRDATA rdPtr, long param1) {
 	return ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));
 }
 
+//编码转换
+//ANSI→UTF8
+long WINAPI DLLExport ANSI2UTF8(LPRDATA rdPtr, long param1) {
+	//I'm storing the string pointer returned into a char *
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	char* ANSI = (char*)p1;
 
+	//ANSI→Unicode
+	wchar_t* ret = new wchar_t[strlen(ANSI) * 2];
+	ret[MultiByteToWideChar(CP_ACP, 0, ANSI, strlen(ANSI), ret, strlen(ANSI) * 2)] = 0;
+
+	//Unicode→UTF8
+	char* UTF8 = new char[lstrlen(ret) * 4];
+	UTF8[WideCharToMultiByte(CP_UTF8, 0, ret, lstrlen(ret), UTF8, lstrlen(ret) * 4, NULL, NULL)] = 0;
+
+	delete[] ret;
+	ret = NULL;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+	//This returns a pointer to the string for MMF.
+	return (long)UTF8;
+}
+
+//UTF8→ANSI
+long WINAPI DLLExport UTF82ANSI(LPRDATA rdPtr, long param1) {
+	//I'm storing the string pointer returned into a char *
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);			
+	wchar_t* Input = (LPTSTR)p1;
+	int size = WideCharToMultiByte(CP_ACP, 0, Input, -1, NULL, 0, NULL, NULL);
+	char* UTF8 = new char[size];
+	WideCharToMultiByte(CP_ACP, 0, Input, -1, UTF8, size, NULL, NULL);
+
+	//UTF8→Unicode
+	wchar_t* ret = new wchar_t[strlen(UTF8) * 2];
+	ret[MultiByteToWideChar(CP_UTF8, 0, UTF8, strlen(UTF8), ret, strlen(UTF8) * 2)] = 0;	
+	
+	//Unicode→ANSI
+	char* ANSI=new char[lstrlen(ret) * 4];
+	ANSI[WideCharToMultiByte(CP_ACP, 0, ret, lstrlen(ret), ANSI, lstrlen(ret) * 4, NULL, NULL)] = 0;
+	
+	delete[] ret;
+	ret = NULL;
+	delete[] UTF8;
+	UTF8 = NULL;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;	
+	//This returns a pointer to the string for MMF.
+	return (long)ANSI;
+}
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -573,6 +626,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			ReturnYOffset,
 
 			ReturnIMEState,
+
+			ANSI2UTF8,
+			UTF82ANSI,
 
 			0
 			};
