@@ -129,15 +129,18 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        POPUP "Run Application"
-        BEGIN
-            MENUITEM "Run Application",             IDMN_ACTION_RUN
-            MENUITEM "Run 16Bit Application",       IDMN_ACTION_RUN_16
-        END
-        POPUP "Stop Application"
-        BEGIN
-            MENUITEM "Stop Application By Name",    IDMN_ACTION_STOPBYNAME
-            MENUITEM "Stop Application By Process ID", IDMN_ACTION_STOPBYID
+         POPUP "Application"
+         BEGIN
+            POPUP "Run Application"
+            BEGIN
+                MENUITEM "Run Application",             IDMN_ACTION_RUN
+                MENUITEM "Run 16Bit Application",       IDMN_ACTION_RUN_16
+            END
+            POPUP "Stop Application"
+            BEGIN
+                MENUITEM "Stop Application By Name",    IDMN_ACTION_STOPBYNAME
+                MENUITEM "Stop Application By Process ID", IDMN_ACTION_STOPBYID
+            END
         END
         MENUITEM SEPARATOR
         POPUP "Mouse"
@@ -195,27 +198,30 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Process ID By Name",      IDMN_EXPRESSION_GPIDBN
         MENUITEM SEPARATOR
-        POPUP "Get Locked Rect"
+        POPUP "Lock Mouse"
         BEGIN
-            MENUITEM "Left",                        IDMN_EXPRESSION_GCLR_L
-            MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
-            MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
-            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
-        END        
-        POPUP "Get Current Window Rect"
-        BEGIN
-            MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
-            MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
-            MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
-            MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
-        MENUITEM SEPARATOR
-        POPUP "Get Border Offset"
-        BEGIN
-            MENUITEM "X Offset", IDMN_EXPRESSION_RXO
-            MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+            POPUP "Get Locked Rect"
+            BEGIN
+                MENUITEM "Left",                        IDMN_EXPRESSION_GCLR_L
+                MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
+                MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
+                MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
+            END        
+            POPUP "Get Current Window Rect"
+            BEGIN
+                MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
+                MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
+                MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
+                MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
+            END
+            MENUITEM SEPARATOR
+            MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
+            MENUITEM SEPARATOR
+            POPUP "Get Border Offset"
+            BEGIN
+                MENUITEM "X Offset", IDMN_EXPRESSION_RXO
+                MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+            END
         END
         MENUITEM SEPARATOR
         MENUITEM "Get IME State", IDMN_EXPRESSION_IME_STATE
