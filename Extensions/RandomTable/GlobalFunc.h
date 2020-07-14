@@ -5,14 +5,19 @@
 
 #include <deque>
 
+#include <wincrypt.h>
+#pragma comment(lib,"crypt32.lib")
+
 using namespace std;
 
-#define MAXSIZE 50
-extern 	deque<char> RandomTable;
+//#define MAXSIZE 50
+#define MAXSIZE 5
 
-char GenerateRandom();
+extern 	deque<byte> RandomTable;
 
-void PushWithRandomLoop();
+byte GenerateRandom();
+
+LPWSTR Base64Encode();
 
 #endif // !_GLOBALFUNC_
 

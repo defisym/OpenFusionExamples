@@ -330,14 +330,16 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 //		edPtr->swidth = 32;
 //		edPtr->sheight = 32;
 
-		// Call setup (remove this and return 0 if your object does not need a setup)
-		setupParams	spa;
-		spa.edpt = edPtr;
-		spa.kv = mV;
-		if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
-		{
-			return 0;	// No error
-		}
+		//// Call setup (remove this and return 0 if your object does not need a setup)
+		//setupParams	spa;
+		//spa.edpt = edPtr;
+		//spa.kv = mV;
+		//if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
+		//{
+		//	return 0;	// No error
+		//}
+
+		return 0;
 	}
 #endif // !defined(RUN_ONLY)
 
@@ -356,14 +358,16 @@ BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA ed
 	// Check compatibility
 	if ( IS_COMPATIBLE(mV) )
 	{
-		// Remove this if your object does not need a setup
-		setupParams		spa;
-		spa.edpt = edPtr;
-		spa.kv = mV;
-		if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
-		{
-			return TRUE;
-		}
+		//// Remove this if your object does not need a setup
+		//setupParams		spa;
+		//spa.edpt = edPtr;
+		//spa.kv = mV;
+		//if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
+		//{
+		//	return TRUE;
+		//}
+
+		return TRUE;
 	}
 #endif // !defined(RUN_ONLY)
 	return FALSE;

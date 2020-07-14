@@ -45,6 +45,7 @@ short expressionsInfos[]=
 		//IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
 
 		IDMN_EXPRESSION_GRN, M_EXPRESSION_GRN, EXP_EXPRESSION_GRN, 0,0,
+		IDMN_EXPRESSION_SRN, M_EXPRESSION_SRN, EXP_EXPRESSION_SRN, 0,1,EXPPARAM_LONG,M_EXPRESSION_SRN_P1,
 		IDMN_EXPRESSION_S2B64, M_EXPRESSION_S2B64, EXP_EXPRESSION_S2B64, EXPFLAG_STRING,0,
 		};
 
@@ -109,16 +110,30 @@ short expressionsInfos[]=
 // Generate Random Table
 short WINAPI DLLExport GenerateRandomTable(LPRDATA rdPtr, long param1, long param2)
 {
-	return 0;
+	for (auto t = RandomTable.begin(); t != RandomTable.end(); t++) {
+		*t = GenerateRandom();
+	}
+
+	return 0;	
 }
 
 // Generate Random Table From Base64
 short WINAPI DLLExport GenerateFromBase64(LPRDATA rdPtr, long param1, long param2)
 {
+	LPWSTR Input = (LPWSTR)param1;
+
+	byte lpBuffer[MAXSIZE];
+	DWORD dwNeed = MAXSIZE;
+	DWORD dwLen = lstrlen(Input);
+
+	CryptStringToBinary(Input, 0, CRYPT_STRING_BASE64, lpBuffer, &dwNeed, NULL, NULL);
+
+	for (auto t = 0; t != MAXSIZE; t++) {
+		RandomTable[t] = lpBuffer[t];
+	}
+
 	return 0;
 }
-
-
 
 // ============================================================================
 //
@@ -186,30 +201,27 @@ short WINAPI DLLExport GenerateFromBase64(LPRDATA rdPtr, long param1, long param
 // Get Random Number
 long WINAPI DLLExport GetRandomNumber(LPRDATA rdPtr,long param1)
 {
-	int result = RandomTable[0];
+	int result = RandomTable[0];	
 	RandomTable.pop_front();
 	RandomTable.push_back(GenerateRandom());
 	return result;
 }
 
+long WINAPI DLLExport ShowRandomNumber(LPRDATA rdPtr, long param1)
+{	
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	int Pos = min(max(0, p1), MAXSIZE-1);
+	return (int)RandomTable[Pos];
+}
+
 // Save to Base64
 long WINAPI DLLExport SavetoBase64(LPRDATA rdPtr, long param1)
-{
-	char* temp;
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
-
-	//Reversing the string.
-	_strrev(temp);
-
+{	
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
-	//This returns a pointer to the string for MMF.
-	return (long)temp;
+	//This returns a pointer to the string for MMF.	
+	return (long)Base64Encode();
 }
 
 // ----------------------------------------------------------
@@ -236,6 +248,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
 			GetRandomNumber,
+			ShowRandomNumber,
 			SavetoBase64,
 			0
 			};

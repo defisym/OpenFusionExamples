@@ -15,9 +15,9 @@
 #define M_CND_P2                        6502
 #define M_CND_P3                        6503
 #define M_EXPRESSION_GRN                7000
-#define M_EXPRESSION_S2B64              7001
-#define M_EXP_P1                        7500
-#define M_EXP_P2                        7501
+#define M_EXPRESSION_SRN                7001
+#define M_EXPRESSION_S2B64              7002
+#define M_EXPRESSION_SRN_P1             7500
 #define MN_ACTIONS                      20000
 #define MN_CONDITIONS                   20001
 #define MN_EXPRESSIONS                  20002
@@ -27,7 +27,8 @@
 #define IDMN_ACTION_GFB64               25001
 #define IDMN_CONDITION                  26000
 #define IDMN_EXPRESSION_GRN             27000
-#define IDMN_EXPRESSION_S2B64           27001
+#define IDMN_EXPRESSION_SRN             27001
+#define IDMN_EXPRESSION_S2B64           27002
 
 // Next default values for new objects
 // 

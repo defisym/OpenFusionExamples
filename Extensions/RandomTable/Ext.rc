@@ -121,11 +121,13 @@ MN_ACTIONS MENU
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         POPUP "Generate"
         BEGIN
             MENUITEM "Generate Random Table",       IDMN_ACTION_GRT
             MENUITEM "Generate Random Table From Base64", IDMN_ACTION_GFB64
         END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -139,9 +141,12 @@ MN_EXPRESSIONS MENU
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Get Random Number",           IDMN_EXPRESSION_GRN
+        MENUITEM "Show Random Number",          IDMN_EXPRESSION_SRN
         MENUITEM SEPARATOR
         MENUITEM "Save to Base64",              IDMN_EXPRESSION_S2B64
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -208,13 +213,13 @@ END
 STRINGTABLE
 BEGIN
     KPX_MARK                "MF2"
-    KPX_NAME                "RandomTable"
+    KPX_NAME                "RandomTable FE"
 END
 
 STRINGTABLE
 BEGIN
-    M_ACTION_GRT            "00Generate Random Table"
-    M_ACTION_GFB64          "00Generate Random Table From Base64"
+    M_ACTION_GRT            "Generate Random Table"
+    M_ACTION_GFB64          "Generate Random Table From Base64 Code %0"
 END
 
 STRINGTABLE
@@ -237,12 +242,18 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GRN        "GRN("
-    M_EXPRESSION_S2B64      "S2B46$("
+    M_EXPRESSION_SRN        "SRN("
+    M_EXPRESSION_S2B64      "S2B64$("
 END
 
 STRINGTABLE
 BEGIN
-    IDST_OBJNAME            "RandomTable"
+    M_EXPRESSION_SRN_P1     "Random Table Pos (Start from 0)"
+END
+
+STRINGTABLE
+BEGIN
+    IDST_OBJNAME            "RandomTable FE"
     IDST_AUTHOR             "Defisym"
     IDST_COPYRIGHT          "Copyright 2020 Defisym"
     IDST_COMMENT            "Random Table Like Fire Emblem Series"

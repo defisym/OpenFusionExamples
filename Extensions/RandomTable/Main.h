@@ -21,8 +21,9 @@
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GRN			0
-#define EXP_EXPRESSION_S2B64		1
-#define	EXP_LAST                    2
+#define	EXP_EXPRESSION_SRN			1
+#define EXP_EXPRESSION_S2B64		2
+#define	EXP_LAST                    3
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -1,18 +1,28 @@
 // Common Include
 #include "common.h"
 
-deque<char> RandomTable;
+deque<byte> RandomTable;
 
-char GenerateRandom() {
-
-	return 0;
+byte GenerateRandom() {
+	return rand() % 99;
 }
 
-void PushWithRandomLoop() {
+LPWSTR Base64Encode()
+{	
+	DWORD dwNeed;
+	LPWSTR lpBase64Str;
+	byte Input[MAXSIZE];
 
-	for (auto t = RandomTable.begin(); t != RandomTable.end(); t++) {
-		*t = 0;
+	for (auto t = 0; t != MAXSIZE; t++) {
+		Input[t] = RandomTable[t];
 	}
+	
+	CryptBinaryToString(Input,MAXSIZE, CRYPT_STRING_BASE64,NULL, &dwNeed);
 
-	return;
+	lpBase64Str = (LPWSTR)malloc(dwNeed);
+	ZeroMemory(lpBase64Str, dwNeed);
+
+	CryptBinaryToString(Input, MAXSIZE, CRYPT_STRING_BASE64, lpBase64Str, &dwNeed);
+
+	return lpBase64Str;
 }
