@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="My Extension object">
+		<param name="Name" value="Object">
+		<param name="Local" value="htm\desc.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Properties">
+			<param name="Name" value="Properties">
+			<param name="Local" value="htm\prop.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Conditions">
+			<param name="Name" value="Conditions">
+			<param name="Local" value="htm\cnd.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Actions">
+			<param name="Name" value="Object">
+			<param name="Local" value="htm\act.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Expressions">
+			<param name="Name" value="Expressions">
+			<param name="Local" value="htm\exp.htm">
+			</OBJECT>
+	</UL>
+</UL>
+</BODY></HTML>
