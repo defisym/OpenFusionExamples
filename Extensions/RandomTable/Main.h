@@ -23,7 +23,8 @@
 #define	EXP_EXPRESSION_GRN			0
 #define	EXP_EXPRESSION_SRN			1
 #define EXP_EXPRESSION_S2B64		2
-#define	EXP_LAST                    3
+#define EXP_EXPRESSION_GS			3
+#define	EXP_LAST                    4
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -38,6 +39,8 @@ typedef struct tagEDATA_V1
 	// Object's data
 //	short			swidth;
 //	short			sheight;
+	
+	unsigned int MaxSize;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -67,6 +70,8 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+
+	unsigned int MaxSize;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

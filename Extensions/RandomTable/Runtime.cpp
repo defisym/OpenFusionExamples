@@ -65,9 +65,22 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+	
+	//变量传递
+	rdPtr->MaxSize = edPtr->MaxSize;
+	
+	//为缓冲区申请内存
+	Buffer = (byte*)calloc(rdPtr->MaxSize, sizeof(byte));
 
+	//为转换结果申请内存
+	StrLength = 1 + 4 * (int)ceil(rdPtr->MaxSize / 3.0);
+	lpBase64Str = (LPWSTR)calloc(StrLength, sizeof(WCHAR));	
+
+	//初始化随机种
 	srand((unsigned int)(time(NULL)));
-	RandomTable.resize(MAXSIZE);
+	
+	//为乱数表申请内存
+	RandomTable.resize(rdPtr->MaxSize);
 
 	// No errors
 	return 0;
@@ -85,6 +98,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	//释放为lpBase64Str申请的内存
+	free(lpBase64Str);
+	free(Buffer);
+
 	// No errors
 	return 0;
 }

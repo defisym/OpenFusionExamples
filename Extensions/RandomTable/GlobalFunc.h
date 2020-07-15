@@ -10,14 +10,12 @@
 
 using namespace std;
 
-//#define MAXSIZE 50
-#define MAXSIZE 5
-
-extern 	deque<byte> RandomTable;
+extern byte* Buffer;
+extern DWORD StrLength;
+extern LPWSTR lpBase64Str;
+extern deque<byte> RandomTable;
 
 byte GenerateRandom();
-
-LPWSTR Base64Encode();
 
 #endif // !_GLOBALFUNC_
 

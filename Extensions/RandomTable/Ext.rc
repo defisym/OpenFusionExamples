@@ -147,6 +147,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Save to Base64",              IDMN_EXPRESSION_S2B64
         MENUITEM SEPARATOR
+        MENUITEM "Get Random Table Size",       IDMN_EXPRESSION_GS
+        MENUITEM SEPARATOR
+
     END
 END
 #endif
@@ -218,6 +221,13 @@ END
 
 STRINGTABLE
 BEGIN
+IDS_PROP_TEXTTITLE_SIZE             "Random Number Table"
+IDS_PROP_EN_SIZE                    "Size"
+IDS_PROP_EN_SIZE_M                  "Size of the Random Number Table"
+END
+
+STRINGTABLE
+BEGIN
     M_ACTION_GRT            "Generate Random Table"
     M_ACTION_GFB64          "Generate Random Table From Base64 Code %0"
 END
@@ -244,6 +254,7 @@ BEGIN
     M_EXPRESSION_GRN        "GRN("
     M_EXPRESSION_SRN        "SRN("
     M_EXPRESSION_S2B64      "S2B64$("
+    M_EXPRESSION_GS         "GRTS("
 END
 
 STRINGTABLE

@@ -47,6 +47,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GRN, M_EXPRESSION_GRN, EXP_EXPRESSION_GRN, 0,0,
 		IDMN_EXPRESSION_SRN, M_EXPRESSION_SRN, EXP_EXPRESSION_SRN, 0,1,EXPPARAM_LONG,M_EXPRESSION_SRN_P1,
 		IDMN_EXPRESSION_S2B64, M_EXPRESSION_S2B64, EXP_EXPRESSION_S2B64, EXPFLAG_STRING,0,
+		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0,0,
 		};
 
 
@@ -121,15 +122,12 @@ short WINAPI DLLExport GenerateRandomTable(LPRDATA rdPtr, long param1, long para
 short WINAPI DLLExport GenerateFromBase64(LPRDATA rdPtr, long param1, long param2)
 {
 	LPWSTR Input = (LPWSTR)param1;
+	DWORD dwNeed = rdPtr->MaxSize;
 
-	byte lpBuffer[MAXSIZE];
-	DWORD dwNeed = MAXSIZE;
-	DWORD dwLen = lstrlen(Input);
+	CryptStringToBinary(Input, 0, CRYPT_STRING_BASE64, Buffer, &dwNeed, NULL, NULL);
 
-	CryptStringToBinary(Input, 0, CRYPT_STRING_BASE64, lpBuffer, &dwNeed, NULL, NULL);
-
-	for (auto t = 0; t != MAXSIZE; t++) {
-		RandomTable[t] = lpBuffer[t];
+	for (auto t = 0; t != rdPtr->MaxSize; t++) {
+		RandomTable[t] = Buffer[t];
 	}
 
 	return 0;
@@ -210,20 +208,31 @@ long WINAPI DLLExport GetRandomNumber(LPRDATA rdPtr,long param1)
 long WINAPI DLLExport ShowRandomNumber(LPRDATA rdPtr, long param1)
 {	
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	int Pos = min(max(0, p1), MAXSIZE-1);
+	int Pos = min(max(0, p1), (int)(rdPtr->MaxSize)-1);
 	return (int)RandomTable[Pos];
 }
 
 // Save to Base64
 long WINAPI DLLExport SavetoBase64(LPRDATA rdPtr, long param1)
-{	
+{
+	for (auto t = 0; t != rdPtr->MaxSize; t++) {
+		Buffer[t] = RandomTable[t];
+	}
+
+	DWORD Size= StrLength;
+	CryptBinaryToString(Buffer, rdPtr->MaxSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, lpBase64Str, &Size);
+	
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.	
-	return (long)Base64Encode();
+	return (long)lpBase64Str;
 }
 
+long WINAPI DLLExport GetRandomTableSize(LPRDATA rdPtr, long param1)
+{	
+	return rdPtr->MaxSize;
+}
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -250,5 +259,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetRandomNumber,
 			ShowRandomNumber,
 			SavetoBase64,
+			GetRandomTableSize,
 			0
 			};

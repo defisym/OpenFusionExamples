@@ -18,6 +18,10 @@
 // Property identifiers
 enum {
 	PROPID_SETTINGS = PROPID_EXTITEM_CUSTOM_FIRST,
+	PROPID_TEXTTITLE_SIZE,
+	PROPID_SIZE,
+	
+
 
 // Example
 // -------
@@ -50,6 +54,9 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group(PROPID_TEXTTITLE_SIZE,IDS_PROP_TEXTTITLE_SIZE,0),	
+	PropData_EditNumber(PROPID_SIZE,IDS_PROP_EN_SIZE,IDS_PROP_EN_SIZE_M),	
 
 	// End of table (required)
 	PropData_End()
@@ -660,22 +667,11 @@ void WINAPI DLLExport ReleasePropCreateParam(LPMV mV, LPEDATA edPtr, UINT nPropI
 LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Returns a color.
-//	case PROPID_COLOR:
-//		return new CPropDWordValue(edPtr->dwColor);
-//
-//	// Returns a string
-//	case PROPID_TEXT:
-//		return new CPropStringValue(&edPtr->szText[0]);
-//
-//	// Returns the value of the combo box
-//	case PROPID_COMBO:
-//		return new CPropDWordValue(edPtr->nComboIndex);
-//	}
+	switch (nPropID) {
+	// 乱数表大小
+	case PROPID_SIZE:
+		return new CPropDWordValue(edPtr->MaxSize);
+	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -712,50 +708,12 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	// Gets the pointer to the CPropValue structure
 	CPropValue* pValue = (CPropValue*)lParam;
 
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	case PROPID_COMBO:
-//		// Simply grab the value
-//		edPtr->nComboIndex = ((CPropDWordValue*)pValue)->m_dwValue;
-//		break;
-
-//	case PROPID_COLOR:
-//		// Here too, gets the value
-//		edPtr->dwColor = ((CPropDWordValue*)pValue)->m_dwValue;
-//		break;
-
-//	case PROPID_TEXT:
-//		{
-//			// Gets the string
-//			LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
-//
-//			// You can simply poke the string if your EDITDATA structure has a fixed size,
-//			// or have an adaptive size of structure like below
-//
-//			// If the length is different
-//			if (_tcslen(pStr)!=_tcslen(edPtr->text))
-//			{
-//				// Asks MMF to reallocate the structure with the new size
-//				LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA)+_tcslen(pStr) * sizeof(TCHAR));
-//				
-//				// If reallocation worked
-//				if (pNewPtr!=NULL)
-//				{
-//					// Copy the string
-//					edPtr=pNewPtr;
-//					_tcscpy(edPtr->text, pStr);
-//				}
-//			}
-//			else
-//			{	
-//				// Same size : simply copy
-//				_tcscpy(edPtr->text, pStr);
-//			}
-//		}
-//		break;
-//	}
+	switch (nPropID) {	
+	// 乱数表大小
+	case PROPID_SIZE:
+		edPtr->MaxSize = ((CPropDWordValue*)pValue)->m_dwValue;
+		break;
+	}
 
 	// You may want to have your object redrawn in the frame editor after the modifications,
 	// in this case, just call this function
