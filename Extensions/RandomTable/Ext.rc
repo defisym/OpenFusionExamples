@@ -125,8 +125,15 @@ BEGIN
         POPUP "Generate"
         BEGIN
             MENUITEM "Generate Random Table",       IDMN_ACTION_GRT
-            MENUITEM "Generate Random Table From Base64", IDMN_ACTION_GFB64
+            MENUITEM "Generate Random Table From Base64", IDMN_ACTION_GFB64            
         END
+        MENUITEM SEPARATOR
+         POPUP "Consume"
+         BEGIN
+             MENUITEM "Consume a Random Number", IDMN_ACTION_CRN
+             MENUITEM "Consume N Random Numbers", IDMN_ACTION_CNRN
+         END
+        
         MENUITEM SEPARATOR
     END
 END
@@ -230,11 +237,14 @@ STRINGTABLE
 BEGIN
     M_ACTION_GRT            "Generate Random Table"
     M_ACTION_GFB64          "Generate Random Table From Base64 Code %0"
+    M_ACTION_CRN            "Consume a Random Number"
+    M_ACTION_CNRN           "Consume %0 Random Numbers"
 END
 
 STRINGTABLE
 BEGIN
     M_ACTION_GFB64_P1       "Input Base64 Code"
+    M_ACTION_CNRN_P1        "Input the Number of Random Numbers"
 END
 
 STRINGTABLE

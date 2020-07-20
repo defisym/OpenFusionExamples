@@ -12,7 +12,10 @@
 #define IDS_PROP_EN_SIZE_M				1011
 #define M_ACTION_GRT                    5000
 #define M_ACTION_GFB64                  5001
+#define M_ACTION_CRN					5002
+#define M_ACTION_CNRN					5003
 #define M_ACTION_GFB64_P1               5501
+#define M_ACTION_CNRN_P1	            5502
 #define M_CONDITION                     6000
 #define M_CND_P1                        6501
 #define M_CND_P2                        6502
@@ -29,6 +32,8 @@
 #define ID_HELP                         20004
 #define IDMN_ACTION_GRT                 25000
 #define IDMN_ACTION_GFB64               25001
+#define IDMN_ACTION_CRN					25002
+#define IDMN_ACTION_CNRN				25003
 #define IDMN_CONDITION                  26000
 #define IDMN_EXPRESSION_GRN             27000
 #define IDMN_EXPRESSION_SRN             27001

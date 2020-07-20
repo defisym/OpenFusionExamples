@@ -16,6 +16,7 @@ extern LPWSTR lpBase64Str;
 extern deque<byte> RandomTable;
 
 byte GenerateRandom();
+int _GetRandomNumber();
 
 #endif // !_GLOBALFUNC_
 

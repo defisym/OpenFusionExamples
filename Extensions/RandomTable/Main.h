@@ -15,7 +15,9 @@
 // ---------------------------
 #define	ACT_ACTION_GRT				0
 #define	ACT_ACTION_GFB64			1
-#define	ACT_LAST					2
+#define	ACT_ACTION_CRN				2
+#define	ACT_ACTION_CNRN				3
+#define	ACT_LAST					4
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
