@@ -61,7 +61,9 @@
 
 #define	EXP_EXPRESSION_IME_STATE	12
 
-#define	EXP_LAST                    13
+#define	EXP_EXPRESSION_DPISCALING	13
+
+#define	EXP_LAST                    14
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -144,6 +146,9 @@ typedef struct tagRDATA
 
 	//持续保持输入法状态
 	bool KeepIMEState;
+
+	//程序是否已经缩放
+	bool AppScaled;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

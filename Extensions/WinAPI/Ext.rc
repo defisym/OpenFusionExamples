@@ -226,6 +226,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get IME State", IDMN_EXPRESSION_IME_STATE
         MENUITEM SEPARATOR
+        MENUITEM "Get DPI Scaling", IDMN_EXPRESSION_DPISCALING
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -473,6 +475,11 @@ BEGIN
     M_ACTION_IME_DISABLE        "Disable IME"
     M_ACTION_IME_ENABLE         "Enable IME"
     M_EXPRESSION_IME_STATE      "IMEState ("
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_DPISCALING      "DPIScaling ("
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

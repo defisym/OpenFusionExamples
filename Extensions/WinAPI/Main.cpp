@@ -82,6 +82,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 0,
 	
 		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
+		
+		IDMN_EXPRESSION_DPISCALING, M_EXPRESSION_DPISCALING, EXP_EXPRESSION_DPISCALING, 0, 0,
 		};
 
 
@@ -507,6 +509,31 @@ long WINAPI DLLExport ReturnIMEState(LPRDATA rdPtr, long param1) {
 	return ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));
 }
 
+//返回DPI Sacling
+long WINAPI DLLExport ReturnDPIScaling(LPRDATA rdPtr, long param1) {
+	
+	// Get desktop dc
+	HDC desktopDc = GetDC(NULL);
+	if (rdPtr->AppScaled) {
+		return 100;
+	}
+
+	// Get native resolution	
+	switch (GetDeviceCaps(desktopDc, LOGPIXELSX)) 
+	{
+		case 96:
+			return 100;
+		case 120:
+			return 125;
+		case 144:
+			return 150;
+		case 192:
+			return 200;
+		default:
+			return 0;
+	}
+}
+
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -573,6 +600,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			ReturnYOffset,
 
 			ReturnIMEState,
+
+			ReturnDPIScaling,
 
 			0
 			};

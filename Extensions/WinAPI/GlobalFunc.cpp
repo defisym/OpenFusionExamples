@@ -69,12 +69,12 @@ void UnlockLockedMouse() {
 }
 
 //返回注册表字符串值
-int ReturnRegValue(HKEY hkey,LPCSTR lpSubKey,LPCSTR lpValue) {
+char* ReturnRegValue(HKEY hkey,LPWSTR lpSubKey, LPWSTR lpValue) {
 	DWORD reg_type = REG_SZ;
 	char* reg_value = new char[MAX_PATH];
 	DWORD res_size;
 
-	RegGetValueA(
+	RegGetValue(
 		hkey,
 		lpSubKey,
 		lpValue,
@@ -84,9 +84,10 @@ int ReturnRegValue(HKEY hkey,LPCSTR lpSubKey,LPCSTR lpValue) {
 		&res_size
 	);
 
-	int result = atoi(reg_value);
+	/*int result = atoi(reg_value);
 	delete[] reg_value;
-	return result;
+	return result;*/
+	return reg_value;
 }
 
 //返回窗体菜单栏高度

@@ -75,8 +75,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->BorderOffsetX = GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXEDGE);
 	rdPtr->BorderOffsetY = GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CYEDGE);	
 
-	rdPtr->KeepIMEState = edPtr->KeepIMEState;
+	rdPtr->KeepIMEState = edPtr->KeepIMEState; 
 
+	rdPtr->AppScaled = !IsProcessDPIAware();
 	// No errors
 	return 0;
 }

@@ -37,7 +37,7 @@ void UnlockLockedMouse();
 HWND ReturnCurrentWindowHandle();
 
 //返回注册表字符串值
-int ReturnRegValue(HKEY hkey, LPCSTR lpSubKey, LPCSTR lpValue);
+char* ReturnRegValue(HKEY hkey, LPWSTR lpSubKey, LPWSTR lpValue);
 
 //返回窗体菜单栏高度
 int ReturnMenuHeight();
