@@ -9,7 +9,8 @@
 // ------------------------------
 #define	CND_CONDITION_INAP			0
 #define	CND_CONDITION_IML			1
-#define	CND_LAST					2
+#define	CND_CONDITION_RKS			2
+#define	CND_LAST					3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

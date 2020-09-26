@@ -52,7 +52,9 @@
 #define PARA_ACTION_SETMOUSE_Y		    5561
 #define M_CONDITION_INAP                6000
 #define M_CONDITION_IML                 6100
-#define PARA_CONDITION_INAPM            6500
+#define M_CONDITION_RKS                 6110
+#define PARA_CONDITION_INAP	            6500
+#define PARA_CONDITION_RKS	            6510
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
 #define M_EXPRESSION_GCLR_L             7020
@@ -97,6 +99,7 @@
 #define IDMN_ACTION_IME_ENABLE			25710
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26100
+#define IDMN_CONDITION_RKS              26200
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27100
 #define IDMN_EXPRESSION_GCLR_L          27200

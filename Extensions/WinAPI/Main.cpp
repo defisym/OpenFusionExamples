@@ -23,8 +23,9 @@
 short conditionsInfos[]=
 		{
 		//IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
-		IDMN_CONDITION_INAP, M_CONDITION_INAP, CND_CONDITION_INAP, EVFLAGS_ALWAYS|EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,PARA_CONDITION_INAPM,
+		IDMN_CONDITION_INAP, M_CONDITION_INAP, CND_CONDITION_INAP, EVFLAGS_ALWAYS|EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,PARA_CONDITION_INAP,
 		IDMN_CONDITION_IML, M_CONDITION_IML, CND_CONDITION_IML, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_RKS, M_CONDITION_RKS, CND_CONDITION_RKS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION,PARA_CONDITION_RKS,
 		};
 
 // Definitions of parameters for each action
@@ -106,6 +107,11 @@ long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {
 
 long WINAPI DLLExport IsMouseLocked(LPRDATA rdPtr, long param1, long param2) {
 	return Lock ? TRUE : FALSE;	
+}
+
+//按键检测
+long WINAPI DLLExport ReturnKeyState(LPRDATA rdPtr, long param1, long param2) {
+	return  (GetKeyState((int)param1) & 1);
 }
 
 // ============================================================================
@@ -534,7 +540,6 @@ long WINAPI DLLExport ReturnDPIScaling(LPRDATA rdPtr, long param1) {
 	}
 }
 
-
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -547,6 +552,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{ 
 			IsNameAProcess,
 			IsMouseLocked,
+			ReturnKeyState,
 			0
 			};
 	

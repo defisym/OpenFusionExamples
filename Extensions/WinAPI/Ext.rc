@@ -115,6 +115,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Mouse is Locked",             IDMN_CONDITION_IML
         MENUITEM SEPARATOR
+        MENUITEM "Return Key State",            IDMN_CONDITION_RKS
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -377,7 +379,7 @@ END
 
 STRINGTABLE
 BEGIN
-    PARA_CONDITION_INAPM    "Input Application Name, include .exe"
+    PARA_CONDITION_INAP    "Input Application Name, include .exe"
 END
 
 STRINGTABLE
@@ -415,6 +417,12 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_IML         "Mouse is Locked"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_RKS         "Key %0 is toggled"
+    PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
 END
 
 STRINGTABLE
