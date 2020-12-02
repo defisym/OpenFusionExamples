@@ -45,6 +45,9 @@ int ReturnMenuHeight();
 //返回窗体标题栏高度
 int ReturnCaptionHeight();
 
+//返回YOffset
+int ReturnYOffset(LPRDATA rdPtr);
+
 //输入法状态
 extern bool IMEState;
 

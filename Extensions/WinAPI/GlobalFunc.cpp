@@ -101,6 +101,11 @@ int ReturnCaptionHeight() {
 	return GetSystemMetrics(SM_CYCAPTION);
 	//return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "CaptionHeight") / 15.0));
 }
+//·µ»ØYOffset
+int ReturnYOffset(LPRDATA rdPtr){
+	int gundam= (rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0);
+	return (rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0);
+}
 
 //ÊäÈë·¨×´Ì¬
 bool IMEState = ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));

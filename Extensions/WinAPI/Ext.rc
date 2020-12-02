@@ -131,8 +131,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-         POPUP "Application"
-         BEGIN
+        POPUP "Application"
+        BEGIN
             POPUP "Run Application"
             BEGIN
                 MENUITEM "Run Application",             IDMN_ACTION_RUN
@@ -147,16 +147,16 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Mouse"
         BEGIN
-            MENUITEM "Set Mouse Position", IDMN_ACTION_SETMOUSE
+            MENUITEM "Set Mouse Position",          IDMN_ACTION_SETMOUSE
             MENUITEM SEPARATOR
             POPUP "Lock Mouse"
             BEGIN
-                MENUITEM "Lock Mouse in Current Window",IDMN_ACTION_LOCKMOUSEICW
+                MENUITEM "Lock Mouse in Current Window", IDMN_ACTION_LOCKMOUSEICW
                 MENUITEM "Lock Mouse in Frame Area",    IDMN_ACTION_LOCKMOUSEIFA
                 MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
                 MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
-            END            
-            MENUITEM "Unlock Mouse", IDMN_ACTION_UNLOCKMOUSE
+            END
+            MENUITEM "Unlock Mouse",                IDMN_ACTION_UNLOCKMOUSE
             MENUITEM SEPARATOR
             POPUP "Settings"
             BEGIN
@@ -175,13 +175,26 @@ BEGIN
                     MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON
                     MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF
                 END
+                POPUP "App Settings"
+                BEGIN
+                    POPUP "App Has Menu"
+                    BEGIN
+                        MENUITEM "Set On",                      IDMN_ACTION_SMP_Menu_ON
+                        MENUITEM "Set Off",                     IDMN_ACTION_SMP_Menu_OFF
+                    END
+                    POPUP "App Has Caption"
+                    BEGIN
+                        MENUITEM "Set On",                      IDMN_ACTION_SMP_Caption_ON
+                        MENUITEM "Set Off",                     IDMN_ACTION_SMP_Caption_OFF
+                    END
+                END
             END
         END
-        MENUITEM SEPARATOR    
+        MENUITEM SEPARATOR
         POPUP "IME"
         BEGIN
-            MENUITEM "Disable IME", IDMN_ACTION_IME_DISABLE
-            MENUITEM "Enable IME", IDMN_ACTION_IME_ENABLE
+            MENUITEM "Disable IME",                 IDMN_ACTION_IME_DISABLE
+            MENUITEM "Enable IME",                  IDMN_ACTION_IME_ENABLE
         END
         MENUITEM SEPARATOR
     END
@@ -208,7 +221,7 @@ BEGIN
                 MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
                 MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
                 MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
-            END        
+            END
             POPUP "Get Current Window Rect"
             BEGIN
                 MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
@@ -221,14 +234,14 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Get Border Offset"
             BEGIN
-                MENUITEM "X Offset", IDMN_EXPRESSION_RXO
-                MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+                MENUITEM "X Offset",                    IDMN_EXPRESSION_RXO
+                MENUITEM "Y Offset",                    IDMN_EXPRESSION_RYO
             END
         END
         MENUITEM SEPARATOR
-        MENUITEM "Get IME State", IDMN_EXPRESSION_IME_STATE
+        MENUITEM "Get IME State",               IDMN_EXPRESSION_IME_STATE
         MENUITEM SEPARATOR
-        MENUITEM "Get DPI Scaling", IDMN_EXPRESSION_DPISCALING
+        MENUITEM "Get DPI Scaling",             IDMN_EXPRESSION_DPISCALING
         MENUITEM SEPARATOR
     END
 END
@@ -368,8 +381,9 @@ END
 
 STRINGTABLE
 BEGIN
-    M_EXPRESSION_RXO     "RXO ("
-    M_EXPRESSION_RYO     "RYO ("
+    M_EXPRESSION_GCLT       "GCLT ("
+    M_EXPRESSION_RXO        "RXO ("
+    M_EXPRESSION_RYO        "RYO ("
 END
 
 STRINGTABLE
@@ -379,13 +393,14 @@ END
 
 STRINGTABLE
 BEGIN
-    PARA_CONDITION_INAP    "Input Application Name, include .exe"
+    PARA_CONDITION_INAP     "Input Application Name, include .exe"
+    PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
 END
 
 STRINGTABLE
 BEGIN
-    M_ACTION_LOCKMOUSEICW      "Lock Mouse Pointer in Current Window"
-    M_ACTION_LOCKMOUSEIFA      "Lock Mouse Pointer in Frame Area"
+    M_ACTION_LOCKMOUSEICW   "Lock Mouse Pointer in Current Window"
+    M_ACTION_LOCKMOUSEIFA   "Lock Mouse Pointer in Frame Area"
     M_ACTION_LOCKMOUSEBWN   "Lock Mouse Pointer in Named Window %0"
     M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ]"
 END
@@ -399,6 +414,10 @@ BEGIN
     M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF "Set Update Lock Off"
     M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON "Set Rect Offset On"
     M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF "Set Rect Offset Off"
+    M_ACTION_SMP_Menu_ON "Set App Has Menu On"
+    M_ACTION_SMP_Menu_OFF "Set App Has Menu Off"
+    M_ACTION_SMP_Caption_ON "Set App Has Caption On"
+    M_ACTION_SMP_Caption_OFF "Set App Has Caption Off"
 END
 
 STRINGTABLE
@@ -412,17 +431,14 @@ STRINGTABLE
 BEGIN
     PARA_ACTION_LOCKMOUSEBR_T "Input Top Coordination"
     PARA_ACTION_LOCKMOUSEBR_B "Input Bottom Coordination"
+    PARA_ACTION_SETMOUSE_X  "Input X Position"
+    PARA_ACTION_SETMOUSE_Y  "Input Y Position"
 END
 
 STRINGTABLE
 BEGIN
     M_CONDITION_IML         "Mouse is Locked"
-END
-
-STRINGTABLE
-BEGIN
     M_CONDITION_RKS         "Key %0 is toggled"
-    PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
 END
 
 STRINGTABLE
@@ -454,40 +470,35 @@ END
 
 STRINGTABLE
 BEGIN
-IDS_PROP_APPHASCAPTION_CHECK "App has caption"
-IDS_PROP_APPHASMENU_CHECK    "App has menu"
+    IDS_PROP_APPHASCAPTION_CHECK "App has caption"
 END
 
 STRINGTABLE
 BEGIN
-IDS_PROP_IME_TEXTTITLE    "IME Properties"
-IDS_PROP_KEEPIMESTATE_CHECK "Keep IME State"
-END
-
-
-STRINGTABLE
-BEGIN
-    M_EXPRESSION_GCLT       "GCLT ("
+    IDS_PROP_APPHASMENU_CHECK "App has menu"
 END
 
 STRINGTABLE
 BEGIN
-    M_ACTION_SETMOUSE "Set Mouse Position to [ %0 , %1 ]"
-    PARA_ACTION_SETMOUSE_X       "Input X Position"
-    PARA_ACTION_SETMOUSE_Y       "Input Y Position"
-        
+    IDS_PROP_IME_TEXTTITLE  "IME Properties"
+    IDS_PROP_KEEPIMESTATE_CHECK "Keep IME State"
 END
 
 STRINGTABLE
 BEGIN
-    M_ACTION_IME_DISABLE        "Disable IME"
-    M_ACTION_IME_ENABLE         "Enable IME"
-    M_EXPRESSION_IME_STATE      "IMEState ("
+    M_ACTION_SETMOUSE       "Set Mouse Position to [ %0 , %1 ]"
+    M_ACTION_IME_DISABLE    "Disable IME"
+    M_ACTION_IME_ENABLE     "Enable IME"
 END
 
 STRINGTABLE
 BEGIN
-    M_EXPRESSION_DPISCALING      "DPIScaling ("
+    M_EXPRESSION_IME_STATE  "IMEState ("
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_DPISCALING "DPIScaling ("
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources

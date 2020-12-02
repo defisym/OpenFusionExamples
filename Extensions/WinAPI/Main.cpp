@@ -51,6 +51,11 @@ short actionsInfos[]=
 		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,0, 0,
 		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,0, 0,
 
+		IDMN_ACTION_SMP_Menu_ON,M_ACTION_SMP_Menu_ON,ACT_ACTIONSMP_Menu_ON,0, 0,
+		IDMN_ACTION_SMP_Menu_OFF,M_ACTION_SMP_Menu_OFF,ACT_ACTIONSMP_Menu_OFF,0, 0,
+		IDMN_ACTION_SMP_Caption_ON,M_ACTION_SMP_Caption_ON,ACT_ACTIONSMP_Caption_ON,0, 0,
+		IDMN_ACTION_SMP_Caption_OFF,M_ACTION_SMP_Caption_OFF,ACT_ACTIONSMP_Caption_OFF,0, 0,
+		
 		IDMN_ACTION_IME_DISABLE,M_ACTION_IME_DISABLE,ACT_ACTION_IME_DISABLE,0, 0,
 		IDMN_ACTION_IME_ENABLE,M_ACTION_IME_ENABLE,ACT_ACTION_IME_ENABLE,0, 0,
 		};
@@ -376,6 +381,28 @@ short WINAPI DLLExport SetMousePosRelativetoCurrentWindow(LPRDATA rdPtr, long pa
 	return 0;
 }
 
+//更新设定
+short WINAPI DLLExport SMP_Menu_SetON(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->AppHasMenu = true;
+	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
+	return 0;
+}
+short WINAPI DLLExport SMP_Menu_SetOFF(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->AppHasMenu = false;
+	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
+	return 0;
+}
+short WINAPI DLLExport SMP_Caption_SetON(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->AppHasCaption = true;
+	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
+	return 0;
+}
+short WINAPI DLLExport SMP_Caption_SetOFF(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->AppHasCaption = false;
+	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
+	return 0;
+}
+
 //禁用输入法
 short WINAPI DLLExport IME_Disable(LPRDATA rdPtr, long param1, long param2) {
 	IMEStateControl(false);
@@ -579,6 +606,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			UpdateLock_SetOFF,
 			RectOffset_SetON,
 			RectOffset_SetOFF,
+			SMP_Menu_SetON,
+			SMP_Menu_SetOFF,
+			SMP_Caption_SetON,
+			SMP_Caption_SetOFF,
 			//输入法控制
 			IME_Disable,
 			IME_Enable,

@@ -71,7 +71,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->AppHasCaption = edPtr->AppHasCaption;
 	rdPtr->AppHasMenu = edPtr->AppHasMenu;
 
-	rdPtr->OffsetHeight=(rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0);
+	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);		
 	rdPtr->BorderOffsetX = GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXEDGE);
 	rdPtr->BorderOffsetY = GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CYEDGE);	
 

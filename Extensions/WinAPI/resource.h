@@ -14,10 +14,10 @@
 #define IDS_PROP_UPDATELOCK_CHECK_INFO  1210
 #define IDS_PROP_RECTOFFSET_CHECK       1300
 #define IDS_PROP_RECTOFFSET_CHECK_INFO  1310
-#define IDS_PROP_APPHASCAPTION_CHECK	1400
-#define IDS_PROP_APPHASMENU_CHECK		1500
-#define IDS_PROP_IME_TEXTTITLE			1600
-#define IDS_PROP_KEEPIMESTATE_CHECK		1610
+#define IDS_PROP_APPHASCAPTION_CHECK    1400
+#define IDS_PROP_APPHASMENU_CHECK       1500
+#define IDS_PROP_IME_TEXTTITLE          1600
+#define IDS_PROP_KEEPIMESTATE_CHECK     1610
 #define M_ACTION                        5000
 #define M_ACTION_RUN                    5010
 #define M_ACTION_RUN_16                 5011
@@ -34,9 +34,13 @@
 #define M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF 5053
 #define M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON 5054
 #define M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF 5055
-#define M_ACTION_SETMOUSE				5060
-#define M_ACTION_IME_DISABLE			5070
-#define M_ACTION_IME_ENABLE				5071
+#define M_ACTION_SMP_Menu_ON            5056
+#define M_ACTION_SMP_Menu_OFF           5057
+#define M_ACTION_SMP_Caption_ON         5058
+#define M_ACTION_SMP_Caption_OFF        5059
+#define M_ACTION_SETMOUSE               5060
+#define M_ACTION_IME_DISABLE            5070
+#define M_ACTION_IME_ENABLE             5071
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -48,13 +52,13 @@
 #define PARA_ACTION_LOCKMOUSEBR_R       5551
 #define PARA_ACTION_LOCKMOUSEBR_T       5552
 #define PARA_ACTION_LOCKMOUSEBR_B       5553
-#define PARA_ACTION_SETMOUSE_X		    5560
-#define PARA_ACTION_SETMOUSE_Y		    5561
+#define PARA_ACTION_SETMOUSE_X          5560
+#define PARA_ACTION_SETMOUSE_Y          5561
 #define M_CONDITION_INAP                6000
 #define M_CONDITION_IML                 6100
 #define M_CONDITION_RKS                 6110
-#define PARA_CONDITION_INAP	            6500
-#define PARA_CONDITION_RKS	            6510
+#define PARA_CONDITION_INAP             6500
+#define PARA_CONDITION_RKS              6510
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
 #define M_EXPRESSION_GCLR_L             7020
@@ -66,8 +70,8 @@
 #define M_EXPRESSION_GCWR_T             7032
 #define M_EXPRESSION_GCWR_B             7033
 #define M_EXPRESSION_GCLT               7040
-#define M_EXPRESSION_RXO				7050
-#define M_EXPRESSION_RYO				7051
+#define M_EXPRESSION_RXO                7050
+#define M_EXPRESSION_RYO                7051
 #define M_EXPRESSION_IME_STATE          7070
 #define M_EXPRESSION_DPISCALING         7080
 #define M_EXP_P1                        7500
@@ -93,10 +97,14 @@
 #define IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF 25433
 #define IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON 25434
 #define IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF 25435
+#define IDMN_ACTION_SMP_Menu_ON         25436
+#define IDMN_ACTION_SMP_Menu_OFF        25437
+#define IDMN_ACTION_SMP_Caption_ON      25438
+#define IDMN_ACTION_SMP_Caption_OFF     25439
 #define IDMN_ACTION_UNLOCKMOUSE         25500
-#define IDMN_ACTION_SETMOUSE			25600
-#define IDMN_ACTION_IME_DISABLE			25700
-#define IDMN_ACTION_IME_ENABLE			25710
+#define IDMN_ACTION_SETMOUSE            25600
+#define IDMN_ACTION_IME_DISABLE         25700
+#define IDMN_ACTION_IME_ENABLE          25710
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26100
 #define IDMN_CONDITION_RKS              26200
@@ -111,11 +119,18 @@
 #define IDMN_EXPRESSION_GCWR_T          27320
 #define IDMN_EXPRESSION_GCWR_B          27330
 #define IDMN_EXPRESSION_GCLT            27400
-#define IDMN_EXPRESSION_RXO				27500
-#define IDMN_EXPRESSION_RYO				27510
-#define IDMN_EXPRESSION_IME_STATE		27600
-#define IDMN_EXPRESSION_DPISCALING		27610
+#define IDMN_EXPRESSION_RXO             27500
+#define IDMN_EXPRESSION_RYO             27510
+#define IDMN_EXPRESSION_IME_STATE       27600
+#define IDMN_EXPRESSION_DPISCALING      27610
 #define ID_Menu                         40025
+#define ID_SETTINGS_APPSETTINGS         40026
+#define ID_APPSETTINGS_APPHASMENU       40027
+#define ID_APPHASMENU_SETON             40028
+#define ID_APPHASMENU_SETOFF            40029
+#define ID_APPSETTINGS_APPHASCAPTION    40030
+#define ID_APPHASCAPTION_SETON          40031
+#define ID_APPHASCAPTION_SETOFF         40032
 
 // Next default values for new objects
 // 
@@ -123,7 +138,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        101
-#define _APS_NEXT_COMMAND_VALUE         40026
+#define _APS_NEXT_COMMAND_VALUE         40033
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
