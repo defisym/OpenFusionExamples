@@ -63,8 +63,8 @@
     <IntDir>.\Obj\Unicode\Debug\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\Extension Dev\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\DEV\Extension Dev\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
@@ -72,8 +72,8 @@
     <IntDir>.\Obj\Unicode\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\Extension Dev\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\DEV\Extension Dev\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -81,8 +81,8 @@
     <IntDir>.\Obj\Unicode\Run_Only\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\Extension Dev\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\DEV\Extension Dev\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -158,6 +158,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -209,6 +210,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;RUN_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
