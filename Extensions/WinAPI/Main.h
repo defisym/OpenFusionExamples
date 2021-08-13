@@ -20,30 +20,23 @@
 #define ACT_ACTION_STOPBYNAME		2
 #define ACT_ACTION_STOPBYID			3
 
-#define ACT_ACTION_LOCKMOUSEICW		4
-#define ACT_ACTION_LOCKMOUSEIFA		5
-#define ACT_ACTION_LOCKMOUSEBWN		6
-#define ACT_ACTION_LOCKMOUSEBR		7
-#define ACT_ACTION_UNLOCKMOUSE		8
+#define ACT_ACTION_LOCKMOUSE		4
+#define ACT_ACTION_LOCKMOUSEBR		5
+#define ACT_ACTION_UNLOCKMOUSE		6
 
-#define ACT_ACTION_SETMOUSE			9
+#define ACT_ACTION_SETMOUSE			7
 
-#define ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON			10
-#define ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF			11
-#define ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON			12
-#define ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF			13
-#define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON			14
-#define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF			15
+#define ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON			8
+#define ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF			9
+#define ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON			10
+#define ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF			11
+#define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON			12
+#define ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF			13
 
-#define ACT_ACTIONSMP_Menu_ON			16
-#define ACT_ACTIONSMP_Menu_OFF			17
-#define ACT_ACTIONSMP_Caption_ON		18
-#define ACT_ACTIONSMP_Caption_OFF		19
+#define ACT_ACTION_IME_DISABLE		14
+#define ACT_ACTION_IME_ENABLE		15
 
-#define ACT_ACTION_IME_DISABLE		20
-#define ACT_ACTION_IME_ENABLE		21
-
-#define	ACT_LAST					22
+#define	ACT_LAST					16
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -84,18 +77,13 @@ typedef struct tagEDATA_V1
 	// Object's data
 	//	short			swidth;
 	//	short			sheight;
-
+	
 	//切换窗口后保持锁定
 	bool KeepLock;
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
 	//区域锁定相对窗口坐标
-	bool RectOffset;
-
-	//应用程序拥有标题栏
-	bool AppHasCaption;
-	//应用程序拥有菜单栏
-	bool AppHasMenu;
+	bool RectOffset_State;
 
 	//持续保持输入法状态
 	bool KeepIMEState;
@@ -128,27 +116,41 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
-	
+
+	//用于保存的RunHeader
+	fprh rhPtr = NULL;
+
+	//主窗口句柄
+	HWND MainWindowHandle = NULL;
+	//场景区域窗口句柄
+	HWND FrameWindowHandle = NULL;
+
+	//APP分辨率
+	int AppW;
+	int AppH;
+
+	//场景大小
+	int FrameW;
+	int FrameH;
+		
+	//窗口是否锁定
+	bool Lock = false;
 	//窗口锁定类别
 	int LockType;
 	//切换窗口后保持锁定
 	bool KeepLock;
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
+
+	//区域锁定类型
+	int RectOffset_Type;
 	//区域锁定相对窗口坐标
-	bool RectOffset;
+	bool RectOffset_State;
+	//当前鼠标锁定的矩形区域相对于窗口的偏移
+	RECT RectOffset = { 0,0,0,0 };
 
-	//应用程序拥有标题栏
-	bool AppHasCaption;
-	//应用程序拥有菜单栏
-	bool AppHasMenu;
-
-	//应用程序标题栏和菜单栏的高度总和
-	int OffsetHeight;
-	//应用程序边框宽度
-	int BorderOffsetX;
-	//应用程序边框高度
-	int BorderOffsetY;
+	//当前鼠标锁定的矩形区域
+	RECT CurrentLockRect;
 
 	//持续保持输入法状态
 	bool KeepIMEState;

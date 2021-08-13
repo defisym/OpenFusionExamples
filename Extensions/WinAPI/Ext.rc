@@ -151,10 +151,8 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Lock Mouse"
             BEGIN
-                MENUITEM "Lock Mouse in Current Window", IDMN_ACTION_LOCKMOUSEICW
-                MENUITEM "Lock Mouse in Frame Area",    IDMN_ACTION_LOCKMOUSEIFA
-                MENUITEM "Lock Mouse By Window Name",   IDMN_ACTION_LOCKMOUSEBWN
-                MENUITEM "Lock Mouse By Rect",          IDMN_ACTION_LOCKMOUSEBR
+                MENUITEM "Lock Mouse",              IDMN_ACTION_LOCKMOUSE
+                MENUITEM "Lock Mouse By Rect",      IDMN_ACTION_LOCKMOUSEBR
             END
             MENUITEM "Unlock Mouse",                IDMN_ACTION_UNLOCKMOUSE
             MENUITEM SEPARATOR
@@ -174,20 +172,7 @@ BEGIN
                 BEGIN
                     MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON
                     MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF
-                END
-                POPUP "App Settings"
-                BEGIN
-                    POPUP "App Has Menu"
-                    BEGIN
-                        MENUITEM "Set On",                      IDMN_ACTION_SMP_Menu_ON
-                        MENUITEM "Set Off",                     IDMN_ACTION_SMP_Menu_OFF
-                    END
-                    POPUP "App Has Caption"
-                    BEGIN
-                        MENUITEM "Set On",                      IDMN_ACTION_SMP_Caption_ON
-                        MENUITEM "Set Off",                     IDMN_ACTION_SMP_Caption_OFF
-                    END
-                END
+                END                
             END
         END
         MENUITEM SEPARATOR
@@ -213,6 +198,23 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Process ID By Name",      IDMN_EXPRESSION_GPIDBN
         MENUITEM SEPARATOR
+        POPUP "Window"
+        BEGIN
+            POPUP "Get Rect"
+            BEGIN
+                MENUITEM "Left", IDMN_EXPRESSION_GCWR_L
+                MENUITEM "Right", IDMN_EXPRESSION_GCWR_R
+                MENUITEM "Top", IDMN_EXPRESSION_GCWR_T
+                MENUITEM "Bottom", IDMN_EXPRESSION_GCWR_B
+            END
+            MENUITEM SEPARATOR
+            POPUP "Get Border Offset"
+            BEGIN
+                MENUITEM "X Offset", IDMN_EXPRESSION_RXO
+                MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+            END
+        END
+        MENUITEM SEPARATOR
         POPUP "Lock Mouse"
         BEGIN
             POPUP "Get Locked Rect"
@@ -221,22 +223,9 @@ BEGIN
                 MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
                 MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
                 MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
-            END
-            POPUP "Get Current Window Rect"
-            BEGIN
-                MENUITEM "Left",                        IDMN_EXPRESSION_GCWR_L
-                MENUITEM "Right",                       IDMN_EXPRESSION_GCWR_R
-                MENUITEM "Top",                         IDMN_EXPRESSION_GCWR_T
-                MENUITEM "Bottom",                      IDMN_EXPRESSION_GCWR_B
-            END
+            END           
             MENUITEM SEPARATOR
-            MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT
-            MENUITEM SEPARATOR
-            POPUP "Get Border Offset"
-            BEGIN
-                MENUITEM "X Offset",                    IDMN_EXPRESSION_RXO
-                MENUITEM "Y Offset",                    IDMN_EXPRESSION_RYO
-            END
+            MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT            
         END
         MENUITEM SEPARATOR
         MENUITEM "Get IME State",               IDMN_EXPRESSION_IME_STATE
@@ -322,6 +311,7 @@ END
 // String Table
 //
 
+//Infos
 STRINGTABLE
 BEGIN
     KPX_MARK                "MF2"
@@ -332,43 +322,68 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2019~2020 Defisym"
-    IDST_COMMENT            "WinAPI, For ExtDev Practise."
+    IDST_COPYRIGHT          "Copyright 2019~2021 Defisym"
+    IDST_COMMENT            "Functions that use WinAPI, For Personal Use."
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
+//Actions
 STRINGTABLE
 BEGIN
     M_ACTION_RUN            "Run Application %0, Command Line %1"
     M_ACTION_RUN_16         "Run 16Bit Application %0, Command Line %1"
-    M_ACTION_STOPBYNAME     "Stop Application %0"
-    M_ACTION_STOPBYID       "Stop Process %0"
-END
-
-STRINGTABLE
-BEGIN
     PARA_ACTION_RUN_1       "Input Application Path"
     PARA_ACTION_RUN_2       "Input Application Command Line"
-END
 
-STRINGTABLE
-BEGIN
+    M_ACTION_STOPBYNAME     "Stop Application %0"
     PARA_ACTION_STOPBYNAME  "Input Application Name, include .exe"
+
+    M_ACTION_STOPBYID       "Stop Process %0"
     PARA_ACTION_STOPBYID    "Input Application Process ID"
 END
 
 STRINGTABLE
 BEGIN
-    PARA_EXPRESSION_GPIDBN  "Input Application Name, include .exe"
+    M_ACTION_SETMOUSE       "Set Mouse Position to [ %0 , %1 ] , Type %2"
+    PARA_ACTION_SETMOUSE_X  "Input X Position"
+    PARA_ACTION_SETMOUSE_Y  "Input Y Position"
+    PARA_ACTION_SETMOUSE_TYPE   "SetType, relative to 0 = Screen, 0 = Current Window, 1 = Client Area, 2 = Frame Area"
+
+    M_ACTION_LOCKMOUSE      "Lock Mouse Pointer, Type %0"
+    PARA_ACTION_LOCKMOUSE "LockType, 0 = Current Window, 1 = Client Area, 2 = Frame Area"
+
+    M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ], Type %4"
+    PARA_ACTION_LOCKMOUSEBR_L "Input Left Coordination"
+    PARA_ACTION_LOCKMOUSEBR_R "Input Right Coordination"
+    PARA_ACTION_LOCKMOUSEBR_T "Input Top Coordination"
+    PARA_ACTION_LOCKMOUSEBR_B "Input Bottom Coordination"
+    PARA_ACTION_LOCKMOUSEBR_TYPE "RectType, relative to 0 = Screen, 1 = Current Window, 2 = Client Area, 3 = Frame Area"
+
+    M_ACTION_UNLOCKMOUSE    "Unlock Mouse Pointer"
+
+    M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON "Set Keep Lock On"
+    M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF "Set Keep Lock Off"
+    M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON "Set Update Lock On"
+    M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF "Set Update Lock Off"
+    M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON "Set Rect Offset On"
+    M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF "Set Rect Offset Off"
 END
 
 STRINGTABLE
 BEGIN
+    
+    M_ACTION_IME_DISABLE    "Disable IME"
+    M_ACTION_IME_ENABLE     "Enable IME"
+END
+
+
+//Condition
+
+//Expression
+STRINGTABLE
+BEGIN
     M_EXPRESSION_GPIDBN     "Get Process ID ("
-    M_EXPRESSION_GCLR_L     "GCLR_L ("
-    M_EXPRESSION_GCLR_R     "GCLR_R ("
-    M_EXPRESSION_GCLR_T     "GCLR_T ("
-    M_EXPRESSION_GCLR_B     "GCLR_B ("
+    PARA_EXPRESSION_GPIDBN  "Input Application Name, include .exe"    
 END
 
 STRINGTABLE
@@ -377,118 +392,21 @@ BEGIN
     M_EXPRESSION_GCWR_R     "GCWR_R ("
     M_EXPRESSION_GCWR_T     "GCWR_T ("
     M_EXPRESSION_GCWR_B     "GCWR_B ("
-END
+    PARA_EXPRESSION_GCWR_TYPE    "0 = Current Window, 1 = Client Area, 2 = Frame Area"
 
-STRINGTABLE
-BEGIN
-    M_EXPRESSION_GCLT       "GCLT ("
     M_EXPRESSION_RXO        "RXO ("
     M_EXPRESSION_RYO        "RYO ("
+    PARA_EXPRESSION_RO_TYPE    "0 = Client to Current Window, 1 = Frame to Client Area, 2 = Frame Area to Current Window"
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_INAP        "Process %0 Exists"
-END
+    M_EXPRESSION_GCLR_L     "GCLR_L ("
+    M_EXPRESSION_GCLR_R     "GCLR_R ("
+    M_EXPRESSION_GCLR_T     "GCLR_T ("
+    M_EXPRESSION_GCLR_B     "GCLR_B ("
 
-STRINGTABLE
-BEGIN
-    PARA_CONDITION_INAP     "Input Application Name, include .exe"
-    PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
-END
-
-STRINGTABLE
-BEGIN
-    M_ACTION_LOCKMOUSEICW   "Lock Mouse Pointer in Current Window"
-    M_ACTION_LOCKMOUSEIFA   "Lock Mouse Pointer in Frame Area"
-    M_ACTION_LOCKMOUSEBWN   "Lock Mouse Pointer in Named Window %0"
-    M_ACTION_LOCKMOUSEBR    "Lock Mouse Pointer in Rect [ %0 , %1 ] , [ %2 , %3 ]"
-END
-
-STRINGTABLE
-BEGIN
-    M_ACTION_UNLOCKMOUSE    "Unlock Mouse Pointer"
-    M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON "Set Keep Lock On"
-    M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF "Set Keep Lock Off"
-    M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON "Set Update Lock On"
-    M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF "Set Update Lock Off"
-    M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON "Set Rect Offset On"
-    M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF "Set Rect Offset Off"
-    M_ACTION_SMP_Menu_ON "Set App Has Menu On"
-    M_ACTION_SMP_Menu_OFF "Set App Has Menu Off"
-    M_ACTION_SMP_Caption_ON "Set App Has Caption On"
-    M_ACTION_SMP_Caption_OFF "Set App Has Caption Off"
-END
-
-STRINGTABLE
-BEGIN
-    PARA_ACTION_LOCKMOUSEBWN "Input Window Name"
-    PARA_ACTION_LOCKMOUSEBR_L "Input Left Coordination"
-    PARA_ACTION_LOCKMOUSEBR_R "Input Right Coordination"
-END
-
-STRINGTABLE
-BEGIN
-    PARA_ACTION_LOCKMOUSEBR_T "Input Top Coordination"
-    PARA_ACTION_LOCKMOUSEBR_B "Input Bottom Coordination"
-    PARA_ACTION_SETMOUSE_X  "Input X Position"
-    PARA_ACTION_SETMOUSE_Y  "Input Y Position"
-END
-
-STRINGTABLE
-BEGIN
-    M_CONDITION_IML         "Mouse is Locked"
-    M_CONDITION_RKS         "Key %0 is toggled"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_KEEPLOCK_CHECK "Keep Lock"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_KEEPLOCK_CHECK_INFO "Keep the Mouse Locked After You Switch Back"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_MOUSE_TEXTTITLE "Lock Mouse Properties"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_UPDATELOCK_CHECK "Update Lock Rect"
-    IDS_PROP_UPDATELOCK_CHECK_INFO "Update Lock Rect When Dragging"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
-    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect offset from current window"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_APPHASCAPTION_CHECK "App has caption"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_APPHASMENU_CHECK "App has menu"
-END
-
-STRINGTABLE
-BEGIN
-    IDS_PROP_IME_TEXTTITLE  "IME Properties"
-    IDS_PROP_KEEPIMESTATE_CHECK "Keep IME State"
-END
-
-STRINGTABLE
-BEGIN
-    M_ACTION_SETMOUSE       "Set Mouse Position to [ %0 , %1 ]"
-    M_ACTION_IME_DISABLE    "Disable IME"
-    M_ACTION_IME_ENABLE     "Enable IME"
+    M_EXPRESSION_GCLT       "GCLT ("
 END
 
 STRINGTABLE
@@ -500,6 +418,48 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_DPISCALING "DPIScaling ("
 END
+
+//Conditions
+STRINGTABLE
+BEGIN
+    M_CONDITION_INAP        "Process %0 Exists"
+    PARA_CONDITION_INAP     "Input Application Name, include .exe"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IML         "Mouse is Locked"    
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_RKS         "Key %0 is toggled"
+    PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
+END
+
+//Porperties
+STRINGTABLE
+BEGIN
+    IDS_PROP_MOUSE_TEXTTITLE "Lock Mouse Properties"
+
+    IDS_PROP_KEEPLOCK_CHECK "Keep Lock"
+    IDS_PROP_KEEPLOCK_CHECK_INFO "Keep the Mouse Locked After You Switch Back"
+
+    IDS_PROP_UPDATELOCK_CHECK "Update Lock Rect"
+    IDS_PROP_UPDATELOCK_CHECK_INFO "Update Lock Rect When Dragging"
+
+    IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
+    IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect offset from current window when locking mouse by rect relative to screen"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_IME_TEXTTITLE  "IME Properties"
+
+    IDS_PROP_KEEPIMESTATE_CHECK "Keep IME State"
+    IDS_PROP_KEEPIMESTATE_CHECK_INFO "Keep IME State After You Switch Back"
+END
+
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources
 /////////////////////////////////////////////////////////////////////////////

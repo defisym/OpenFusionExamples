@@ -65,16 +65,31 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+	//rhPtr
+	rdPtr->rhPtr = rdPtr->rHo.hoAdRunHeader;
+	
+	//主窗口句柄	
+	rdPtr->MainWindowHandle = rdPtr->rhPtr->rhHMainWin;
+	//场景区域窗口句柄
+	rdPtr->FrameWindowHandle = rdPtr->rhPtr->rhHEditWin;
+
+	//APP分辨率
+	rdPtr->AppW = rdPtr->rhPtr->rhApp->m_hdr.gaCxWin;
+	rdPtr->AppH = rdPtr->rhPtr->rhApp->m_hdr.gaCyWin;	
+
+	//场景大小
+	rdPtr->FrameW = rdPtr->rhPtr->rhFrame->m_hdr.leWidth;
+	rdPtr->FrameH = rdPtr->rhPtr->rhFrame->m_hdr.leHeight;
+	
+	//锁定模式
 	rdPtr->KeepLock = edPtr->KeepLock;
 	rdPtr->UpdateLock = edPtr->UpdateLock;
-	rdPtr->RectOffset = edPtr->RectOffset;
-	rdPtr->AppHasCaption = edPtr->AppHasCaption;
-	rdPtr->AppHasMenu = edPtr->AppHasMenu;
+	rdPtr->RectOffset_State = edPtr->RectOffset_State;
+	
+	//锁定区域
+	rdPtr->CurrentLockRect = InitRect();
 
-	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);		
-	rdPtr->BorderOffsetX = GetSystemMetrics(SM_CXBORDER) + GetSystemMetrics(SM_CXEDGE);
-	rdPtr->BorderOffsetY = GetSystemMetrics(SM_CYBORDER) + GetSystemMetrics(SM_CYEDGE);	
-
+	IMEState = ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle));
 	rdPtr->KeepIMEState = edPtr->KeepIMEState; 
 
 	rdPtr->AppScaled = !IsProcessDPIAware();
@@ -98,7 +113,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	StopAllApplication();
 	
 	//释放鼠标
-	UnlockLockedMouse();
+	UnlockMouse(rdPtr);
 
 	// No errors
 	return 0;
@@ -142,35 +157,71 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 	
 	// 若设定了保持锁定，并已启用锁定，且当前窗口为活动窗口，则继续锁定窗口
-	if (Lock && rdPtr->KeepLock && (GetForegroundWindow() == ReturnCurrentWindowHandle())) {
+	if (rdPtr->Lock && rdPtr->KeepLock && (GetForegroundWindow() == rdPtr->MainWindowHandle)) {
 		// 若设定了更新锁定，则更新锁定
 		if (rdPtr->UpdateLock) {
-			::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
+			bool UpdateFlag = false;
+			::GetWindowRect(rdPtr->MainWindowHandle, &(rdPtr->CurrentLockRect));
 
 			switch (rdPtr->LockType) {
-				case LOCK_BYRECT: {
-					// 若设定了相对锁定，则更新锁定
-					if (rdPtr->RectOffset) {						
-						CurrentLockRect = CurrentLockRect + RectOffset;
-					}
+				case LOCK_CURRENTWINDOW: {
+					UpdateFlag = true;
+					break;
+				}
+				case LOCK_CLIENTAREA: {
+					UpdateFlag = true;
 					break;
 				}
 				case LOCK_FRAMEAREA: {
-					CurrentLockRect = CurrentLockRect + RectOffset;
+					UpdateFlag = true;
 					break;
 				}
+				case LOCK_BYRECT: {
+					// 若设定了相对锁定，且处于相对于屏幕锁定模式，则更新锁定
+					//相对于其他模式则是强制开启
+					switch (rdPtr->RectOffset_Type) {
+						case RELATIVE_SCREEN:{
+							if (rdPtr->RectOffset_State) {
+								UpdateFlag = true;
+							}
+							break;
+						}
+						case RELATIVE_CURRENTWINDOW: {
+							UpdateFlag = true;
+							break;
+						}
+						case RELATIVE_CLIENTAREA: {
+							UpdateFlag = true;
+							break;
+						}
+						case RELATIVE_FRAMEAREA: {
+							UpdateFlag = true;
+							break;
+						}
+						default: {
+
+						}
+					}
+					break;
+				}				
 				default: {
 					
 				}
 			}
+			
+			if (UpdateFlag) {
+				rdPtr->CurrentLockRect = rdPtr->CurrentLockRect + rdPtr->RectOffset;
+			}
 		}
 		
-		::ClipCursor(&CurrentLockRect);
+		::ClipCursor(&(rdPtr->CurrentLockRect));
 	}
+
 	// 若设定了保持输入法状态，且当前状态与保持状态不一致，则更新状态
-	if (rdPtr->KeepIMEState&&(IMEState != (bool)ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle())))) {
-		IMEStateControl(IMEState);
+	if (rdPtr->KeepIMEState&&(IMEState != (bool)ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle)))) {
+		IMEStateControl(rdPtr->MainWindowHandle,IMEState);
 	}
+
 	return 0;
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;

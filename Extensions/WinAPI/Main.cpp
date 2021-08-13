@@ -36,13 +36,11 @@ short actionsInfos[]=
 		IDMN_ACTION_STOPBYNAME,M_ACTION_STOPBYNAME,ACT_ACTION_STOPBYNAME,0, 1, PARAM_EXPSTRING, PARA_ACTION_STOPBYNAME,
 		IDMN_ACTION_STOPBYID,M_ACTION_STOPBYID,ACT_ACTION_STOPBYID,0, 1, PARAM_EXPRESSION, PARA_ACTION_STOPBYID,
 
-		IDMN_ACTION_LOCKMOUSEICW,M_ACTION_LOCKMOUSEICW,ACT_ACTION_LOCKMOUSEICW,0, 0,
-		IDMN_ACTION_LOCKMOUSEIFA,M_ACTION_LOCKMOUSEIFA,ACT_ACTION_LOCKMOUSEIFA,0, 0,
-		IDMN_ACTION_LOCKMOUSEBWN,M_ACTION_LOCKMOUSEBWN,ACT_ACTION_LOCKMOUSEBWN,0, 1, PARAM_EXPSTRING, PARA_ACTION_LOCKMOUSEBWN,
-		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,
+		IDMN_ACTION_LOCKMOUSE,M_ACTION_LOCKMOUSE,ACT_ACTION_LOCKMOUSE,0, 1,PARAM_EXPRESSION,PARA_ACTION_LOCKMOUSE,
+		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 5, PARAM_EXPRESSION,PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,PARA_ACTION_LOCKMOUSEBR_TYPE,
 		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
 		
-		IDMN_ACTION_SETMOUSE,M_ACTION_SETMOUSE,ACT_ACTION_SETMOUSE,0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_SETMOUSE_X, PARA_ACTION_SETMOUSE_Y,
+		IDMN_ACTION_SETMOUSE,M_ACTION_SETMOUSE,ACT_ACTION_SETMOUSE,0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION,  PARAM_EXPRESSION, PARA_ACTION_SETMOUSE_X, PARA_ACTION_SETMOUSE_Y,PARA_ACTION_SETMOUSE_TYPE,
 
 		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,0, 0,
 		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,0, 0,
@@ -51,11 +49,6 @@ short actionsInfos[]=
 		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,0, 0,
 		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,0, 0,
 
-		IDMN_ACTION_SMP_Menu_ON,M_ACTION_SMP_Menu_ON,ACT_ACTIONSMP_Menu_ON,0, 0,
-		IDMN_ACTION_SMP_Menu_OFF,M_ACTION_SMP_Menu_OFF,ACT_ACTIONSMP_Menu_OFF,0, 0,
-		IDMN_ACTION_SMP_Caption_ON,M_ACTION_SMP_Caption_ON,ACT_ACTIONSMP_Caption_ON,0, 0,
-		IDMN_ACTION_SMP_Caption_OFF,M_ACTION_SMP_Caption_OFF,ACT_ACTIONSMP_Caption_OFF,0, 0,
-		
 		IDMN_ACTION_IME_DISABLE,M_ACTION_IME_DISABLE,ACT_ACTION_IME_DISABLE,0, 0,
 		IDMN_ACTION_IME_ENABLE,M_ACTION_IME_ENABLE,ACT_ACTION_IME_ENABLE,0, 0,
 		};
@@ -77,22 +70,20 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCLR_T, M_EXPRESSION_GCLR_T, EXP_EXPRESSION_GCLR_T, 0, 0,
 		IDMN_EXPRESSION_GCLR_B, M_EXPRESSION_GCLR_B, EXP_EXPRESSION_GCLR_B, 0, 0,
 
-		IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 0,
-		IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 0,
-		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 0,
-		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 0,
+		IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+		IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
 
 		IDMN_EXPRESSION_GCLT, M_EXPRESSION_GCLT, EXP_EXPRESSION_GCLT, 0, 0,
 
-		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 0,
-		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 0,
+		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
+		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
 	
 		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
 		
 		IDMN_EXPRESSION_DPISCALING, M_EXPRESSION_DPISCALING, EXP_EXPRESSION_DPISCALING, 0, 0,
 		};
-
-
 
 // ============================================================================
 //
@@ -111,7 +102,7 @@ long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport IsMouseLocked(LPRDATA rdPtr, long param1, long param2) {
-	return Lock ? TRUE : FALSE;	
+	return rdPtr->Lock ? TRUE : FALSE;
 }
 
 //按键检测
@@ -135,7 +126,7 @@ long WINAPI DLLExport ReturnKeyState(LPRDATA rdPtr, long param1, long param2) {
 //	long p3 = CNC_GetParameter(rdPtr);
 //	etc.
 
-
+//运行程序
 short WINAPI DLLExport RunApplication(LPRDATA rdPtr, long param1, long param2){
 
 	STARTUPINFO si;
@@ -264,84 +255,28 @@ short WINAPI DLLExport StopApplicationByPID(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
-short WINAPI DLLExport LockMouseInCurrentWindow(LPRDATA rdPtr, long param1, long param2) {	
-	if (Lock) {
-		return 0;
-	}
-	
-	//获取当前窗口矩形	
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
-	::ClipCursor(&CurrentLockRect);
-	
-	rdPtr->LockType = LOCK_CURRENTWINDOW;
-	Lock = true;
-
-	return 0;
-
-}
-
-short WINAPI DLLExport LockMouseInFrameArea(LPRDATA rdPtr, long param1, long param2) {
-	if (Lock) {
-		return 0;
-	}
-
-	//获取当前窗口矩形	
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentLockRect);
-	RectOffset.left = rdPtr->BorderOffsetX;
-	RectOffset.right = -1* rdPtr->BorderOffsetX;
-	RectOffset.top = rdPtr->OffsetHeight+ rdPtr->BorderOffsetY;
-	RectOffset.bottom = -1 * rdPtr->BorderOffsetY;
-	CurrentLockRect = CurrentLockRect + RectOffset;
-	::ClipCursor(&CurrentLockRect);
-
-	rdPtr->LockType = LOCK_FRAMEAREA;
-	Lock = true;
-
-	return 0;
-
-}
-
-short WINAPI DLLExport LockMouseByWindowName(LPRDATA rdPtr, long param1, long param2) {
-	if (Lock) {
-		return 0;
-	}
-		
-	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &CurrentLockRect);
-	::ClipCursor(&CurrentLockRect);
-
-	rdPtr->LockType = LOCK_BYWINDOWNAME;
-	Lock = true;
-
+//锁定鼠标
+short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
+	LockMouse(rdPtr, LT((int)param1));
 	return 0;
 }
 
 short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) {
-	if (Lock) {
-		return 0;
-	}
-
-	CurrentLockRect.left = CNC_GetParameter(rdPtr);
-	CurrentLockRect.right = CNC_GetParameter(rdPtr);
-	CurrentLockRect.top = CNC_GetParameter(rdPtr);
-	CurrentLockRect.bottom = CNC_GetParameter(rdPtr);
-
-	// 若设定了相对锁定，则更新锁定
-	if (rdPtr->RectOffset) {
-		RECT CurrentWindowRect;
-		::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-		RectOffset = CurrentLockRect - CurrentWindowRect;
-	}
-
-	::ClipCursor(&CurrentLockRect);
 	
-	rdPtr->LockType = LOCK_BYRECT;
-	Lock = true;
+	LONG left = CNC_GetParameter(rdPtr);
+	LONG right = CNC_GetParameter(rdPtr);
+	LONG top = CNC_GetParameter(rdPtr);
+	LONG bottom = CNC_GetParameter(rdPtr);
 
+	int Type = CNC_GetIntParameter(rdPtr);
+
+	LockMouse(rdPtr, RECT{ left ,top ,right ,bottom }, RT(Type));
+	
 	return 0;
 }
 
 short WINAPI DLLExport UnlockMouse(LPRDATA rdPtr, long param1, long param2) {
-	UnlockLockedMouse();	
+	UnlockMouse(rdPtr);	
 	return 0;
 }
 
@@ -363,55 +298,32 @@ short WINAPI DLLExport UpdateLock_SetOFF(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 short WINAPI DLLExport RectOffset_SetON(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->RectOffset = true;
+	rdPtr->RectOffset_State = true;
 	return 0;
 }
 short WINAPI DLLExport RectOffset_SetOFF(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->RectOffset = false;
+	rdPtr->RectOffset_State = false;
 	return 0;
 }
 
 //指定鼠标坐标
-short WINAPI DLLExport SetMousePosRelativetoCurrentWindow(LPRDATA rdPtr, long param1, long param2) {	
-	RECT CurrentWindowRect;
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	::SetCursorPos(CurrentWindowRect.left+ rdPtr->BorderOffsetX +(int)param1,
-				CurrentWindowRect.top + rdPtr->BorderOffsetY + (int)param2+rdPtr->OffsetHeight);
-	
-	return 0;
-}
-
-//更新设定
-short WINAPI DLLExport SMP_Menu_SetON(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->AppHasMenu = true;
-	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
-	return 0;
-}
-short WINAPI DLLExport SMP_Menu_SetOFF(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->AppHasMenu = false;
-	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
-	return 0;
-}
-short WINAPI DLLExport SMP_Caption_SetON(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->AppHasCaption = true;
-	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
-	return 0;
-}
-short WINAPI DLLExport SMP_Caption_SetOFF(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->AppHasCaption = false;
-	rdPtr->OffsetHeight = ReturnYOffset(rdPtr);
+short WINAPI DLLExport SetMousePos(LPRDATA rdPtr, long param1, long param2) {	
+	int X = CNC_GetIntParameter(rdPtr);
+	int Y = CNC_GetIntParameter(rdPtr);
+	int Type = CNC_GetIntParameter(rdPtr);
+	SetMousePosition(rdPtr, X, Y, ST(Type));
 	return 0;
 }
 
 //禁用输入法
 short WINAPI DLLExport IME_Disable(LPRDATA rdPtr, long param1, long param2) {
-	IMEStateControl(false);
+	IMEStateControl(rdPtr->MainWindowHandle, false);
 	return 0;
 }
 
 //启用输入法
 short WINAPI DLLExport IME_Enable(LPRDATA rdPtr, long param1, long param2) {
-	IMEStateControl(true);	
+	IMEStateControl(rdPtr->MainWindowHandle, true);
 	return 0;
 }
 
@@ -488,83 +400,91 @@ long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
 
 //返回鼠标锁定区域
 long WINAPI DLLExport GetCurrentLockRect_L(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentLockRect.left : 0;
+	return  rdPtr->Lock ? rdPtr->CurrentLockRect.left : 0;
 }
 long WINAPI DLLExport GetCurrentLockRect_R(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentLockRect.right : 0;
+	return  rdPtr->Lock ? rdPtr->CurrentLockRect.right : 0;
 }
 long WINAPI DLLExport GetCurrentLockRect_T(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentLockRect.top : 0;
+	return  rdPtr->Lock ? rdPtr->CurrentLockRect.top : 0;
 }
 long WINAPI DLLExport GetCurrentLockRect_B(LPRDATA rdPtr, long param1) {
-	return Lock ? CurrentLockRect.bottom : 0;
+	return  rdPtr->Lock ? rdPtr->CurrentLockRect.bottom : 0;
 }
 
 //返回当前窗口矩形区域
-long WINAPI DLLExport GetCurrentWindowRect_L(LPRDATA rdPtr, long param1) {
-	RECT CurrentWindowRect;
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	return CurrentWindowRect.left;
+long WINAPI DLLExport GetRect_L(LPRDATA rdPtr, long param1) {
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);	
+	return GetRect(rdPtr, GR(Type)).left;
 }
-long WINAPI DLLExport GetCurrentWindowRect_R(LPRDATA rdPtr, long param1) {
-	RECT CurrentWindowRect;
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	return CurrentWindowRect.right;	
+long WINAPI DLLExport GetRect_R(LPRDATA rdPtr, long param1) {
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetRect(rdPtr, GR(Type)).right;
 }
-long WINAPI DLLExport GetCurrentWindowRect_T(LPRDATA rdPtr, long param1) {
-	RECT CurrentWindowRect;
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	return CurrentWindowRect.top;	
+long WINAPI DLLExport GetRect_T(LPRDATA rdPtr, long param1) {
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetRect(rdPtr, GR(Type)).top;
 }
-long WINAPI DLLExport GetCurrentWindowRect_B(LPRDATA rdPtr, long param1) {
-	RECT CurrentWindowRect;
-	::GetWindowRect(ReturnCurrentWindowHandle(), &CurrentWindowRect);
-	return CurrentWindowRect.bottom;
+long WINAPI DLLExport GetRect_B(LPRDATA rdPtr, long param1) {
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetRect(rdPtr, GR(Type)).bottom;
 }
 
 //返回当前锁定模式
 long WINAPI DLLExport ReturnCurrentLockType(LPRDATA rdPtr, long param1) {
-	return Lock?rdPtr->LockType:-1;
+	return rdPtr->Lock?rdPtr->LockType:-1;
 }
 
-//返回X偏移量
+//返回相对X偏移量
 long WINAPI DLLExport ReturnXOffset(LPRDATA rdPtr, long param1) {
-	return rdPtr->BorderOffsetX;
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetOffset(rdPtr, GT(Type)).x;
 }
 
-//返回Y偏移量
+//返回相对于Y偏移量
 long WINAPI DLLExport ReturnYOffset(LPRDATA rdPtr, long param1) {
-	return rdPtr->BorderOffsetY + rdPtr->OffsetHeight;
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetOffset(rdPtr, GT(Type)).y;
+}
+
+//返回Client相对于窗口的X偏移量
+long WINAPI DLLExport ReturnXClinetToWindowXOffset(LPRDATA rdPtr, long param1) {
+	return GetOffset(rdPtr, GET_CLIENTTOCURRENTWINDOW).x;
+}
+
+//返回Client相对于窗口的Y偏移量
+long WINAPI DLLExport ReturnYClinetToWindowYOffset(LPRDATA rdPtr, long param1) {
+	return GetOffset(rdPtr, GET_CLIENTTOCURRENTWINDOW).y;
+}
+
+//返回Frame相对于Client的X偏移量
+long WINAPI DLLExport ReturnXFrameToClientXOffset(LPRDATA rdPtr, long param1) {
+	return GetOffset(rdPtr, GET_FRAMETOCLIENTAREA).x;
+}
+
+//返回Frame相对于Client的Y偏移量
+long WINAPI DLLExport ReturnYFrameToClientYOffset(LPRDATA rdPtr, long param1) {
+	return GetOffset(rdPtr, GET_FRAMETOCLIENTAREA).y;
+}
+
+//返回Frame相对于窗口的X偏移量
+long WINAPI DLLExport ReturnXFrameToWindowXOffset(LPRDATA rdPtr, long param1) {
+	return GetOffset(rdPtr, GET_FRAMEAREATOCURRENTWINDOW).x;
+}
+
+//返回Frame相对于窗口的Y偏移量
+long WINAPI DLLExport ReturnYFrameToWindowYOffset(LPRDATA rdPtr, long param1) {
+	return GetOffset(rdPtr, GET_FRAMEAREATOCURRENTWINDOW).y;
 }
 
 //返回IME状态
 long WINAPI DLLExport ReturnIMEState(LPRDATA rdPtr, long param1) {	
-	return ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));
+	return ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle));
 }
 
 //返回DPI Sacling
 long WINAPI DLLExport ReturnDPIScaling(LPRDATA rdPtr, long param1) {
-	
-	// Get desktop dc
-	HDC desktopDc = GetDC(NULL);
-	if (rdPtr->AppScaled) {
-		return 100;
-	}
-
-	// Get native resolution	
-	switch (GetDeviceCaps(desktopDc, LOGPIXELSX)) 
-	{
-		case 96:
-			return 100;
-		case 120:
-			return 125;
-		case 144:
-			return 150;
-		case 192:
-			return 200;
-		default:
-			return 0;
-	}
+	return ReturnDPIScaling(rdPtr->AppScaled);	
 }
 
 // ----------------------------------------------------------
@@ -588,17 +508,19 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			//运行
 			RunApplication,
 			Run16BitApplication,
+
 			//停止
 			StopApplicationByName,
 			StopApplicationByPID,
+
 			//锁定/解锁鼠标
-			LockMouseInCurrentWindow,
-			LockMouseInFrameArea,
-			LockMouseByWindowName,
+			LockMouse,
 			LockMouseByRect,
 			UnlockMouse,
+
 			//设定鼠标位置
-			SetMousePosRelativetoCurrentWindow,
+			SetMousePos,
+
 			//更新设定
 			KeepLock_SetON,
 			KeepLock_SetOFF,
@@ -606,13 +528,11 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			UpdateLock_SetOFF,
 			RectOffset_SetON,
 			RectOffset_SetOFF,
-			SMP_Menu_SetON,
-			SMP_Menu_SetOFF,
-			SMP_Caption_SetON,
-			SMP_Caption_SetOFF,
+
 			//输入法控制
 			IME_Disable,
 			IME_Enable,
+
 			//结尾必定是零
 			0
 			};
@@ -626,10 +546,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentLockRect_T,
 			GetCurrentLockRect_B,
 
-			GetCurrentWindowRect_L,
-			GetCurrentWindowRect_R,
-			GetCurrentWindowRect_T,
-			GetCurrentWindowRect_B,
+			GetRect_L,
+			GetRect_R,
+			GetRect_T,
+			GetRect_B,
 
 			ReturnCurrentLockType,
 

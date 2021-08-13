@@ -4,17 +4,17 @@
 //全局窗口句柄
 HWND CurrentWindowHandle = NULL;
 
-//窗口锁定情况
-bool Lock = false;
-
-//当前鼠标锁定的矩形区域
-RECT CurrentLockRect;
-
-//当前鼠标锁定的矩形区域相对于窗口的偏移
-RECT RectOffset;
-
 //RECT运算符重载 +
 RECT operator +(RECT A, RECT B) {
+	A.left += B.left;
+	A.right += B.right;
+	A.top += B.top;
+	A.bottom += B.bottom;
+	return A;
+}
+
+//RECT运算符重载 +=
+RECT operator +=(RECT A, RECT B) {
 	A.left += B.left;
 	A.right += B.right;
 	A.top += B.top;
@@ -28,6 +28,57 @@ RECT operator -(RECT A, RECT B) {
 	A.right -= B.right;
 	A.top -= B.top;
 	A.bottom -= B.bottom;
+	return A;
+}
+
+//RECT运算符重载 -
+RECT operator -=(RECT A, RECT B) {
+	A.left -= B.left;
+	A.right -= B.right;
+	A.top -= B.top;
+	A.bottom -= B.bottom;
+	return A;
+}
+
+//POINT运算符重载 +
+POINT operator +(POINT A, POINT B) {
+	A.x += B.x;
+	A.y += B.y;
+	return A;
+}
+
+//POINT运算符重载 +=
+POINT operator +=(POINT A, POINT B) {
+	A.x += B.x;
+	A.y += B.y;
+	return A;
+}
+
+//POINT运算符重载 -
+POINT operator -(POINT A, POINT B) {
+	A.x -= B.x;
+	A.y -= B.y;
+	return A;
+}
+
+//POINT运算符重载 -=
+POINT operator -=(POINT A, POINT B) {
+	A.x -= B.x;
+	A.y -= B.y;
+	return A;
+}
+
+//POINT运算符重载 *
+POINT operator *(POINT A, LONG B) {
+	A.x *= B;
+	A.y *= B;
+	return A;
+}
+
+//POINT运算符重载 /
+POINT operator /(POINT A, LONG B) {
+	A.x /= B;
+	A.y /= B;
 	return A;
 }
 
@@ -60,11 +111,276 @@ HWND ReturnCurrentWindowHandle() {
 	return CurrentWindowHandle;
 }
 
+//初始化矩形为整个显示器大小
+RECT InitRect(){
+	return RECT{ 0,0, GetSystemMetrics(SM_CXSCREEN) , GetSystemMetrics(SM_CYSCREEN) };
+}
+
+//锁定鼠标
+//基于窗口
+void LockMouse(LPRDATA rdPtr, LT Type) {
+	//当前窗口矩形
+	RECT CurrentWindowRect;
+	::GetWindowRect(rdPtr->MainWindowHandle, &CurrentWindowRect);
+
+	//获取锁定矩形
+	RECT ClipRect = InitRect();
+
+	switch (Type) {
+		case LOCK_CURRENTWINDOW: {
+			::GetWindowRect(rdPtr->MainWindowHandle, &ClipRect);
+			break;
+		}
+		case LOCK_CLIENTAREA: {
+			GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &ClipRect);
+			break;
+		}
+		case LOCK_FRAMEAREA: {
+			::GetWindowRect(rdPtr->FrameWindowHandle, &ClipRect);
+			break;
+		}
+		//case:LOCK_WINDOWNAME{
+		//	::GetWindowRect(FindWindow(NULL, (LPTSTR)param1), &ClipRect);
+		//}
+		default: {
+
+		}
+	}
+
+	rdPtr->Lock = true;
+	rdPtr->LockType = Type;	
+	rdPtr->RectOffset = ClipRect - CurrentWindowRect;
+	
+	rdPtr->CurrentLockRect = ClipRect;
+	::ClipCursor(&(rdPtr->CurrentLockRect));
+
+	return;
+}
+//基于矩形
+void LockMouse(LPRDATA rdPtr, RECT Rect, RT Type) {
+	//当前窗口矩形
+	RECT MainWindowRect;
+	::GetWindowRect(rdPtr->MainWindowHandle, &MainWindowRect);
+
+	//获取锁定矩形
+	RECT ClipRect = InitRect();
+
+	DPOINT Scale = GetFrameScale(rdPtr);
+
+	switch (Type) {
+		case RELATIVE_SCREEN: {
+			ClipRect = Rect;
+			break;
+		}
+		case RELATIVE_CURRENTWINDOW: {
+			RECT CurrentWindowRect;
+			::GetWindowRect(rdPtr->MainWindowHandle, &CurrentWindowRect);
+			ClipRect = { Rect.left+ CurrentWindowRect.left,Rect.top+ CurrentWindowRect.top ,Rect.right+ CurrentWindowRect.left,Rect.bottom + CurrentWindowRect.top };
+			break;
+		}
+		case RELATIVE_CLIENTAREA: {
+			RECT CurrentClinetRect;
+			GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &CurrentClinetRect);
+			ClipRect = { Rect.left + CurrentClinetRect.left,Rect.top + CurrentClinetRect.top ,Rect.right + CurrentClinetRect.left,Rect.bottom + CurrentClinetRect.top };
+			break;
+		}
+		case RELATIVE_FRAMEAREA: {
+			RECT CurrentFrameRect;
+			::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);
+			ClipRect = { (LONG)(Rect.left * Scale.x) + CurrentFrameRect.left,(LONG)(Rect.top * Scale.y) + CurrentFrameRect.top ,(LONG)(Rect.right * Scale.x) + CurrentFrameRect.left,(LONG)(Rect.bottom * Scale.y) + CurrentFrameRect.top };
+			break;
+		}
+		default: {
+
+		}
+	}
+
+	rdPtr->Lock = true;
+	rdPtr->LockType = LOCK_BYRECT;
+	rdPtr->RectOffset_Type = Type;
+	rdPtr->RectOffset = ClipRect - MainWindowRect;
+
+	rdPtr->CurrentLockRect = ClipRect;
+	::ClipCursor(&(rdPtr->CurrentLockRect));
+
+	return;
+}
+
 //释放鼠标
-void UnlockLockedMouse() {
-	if (Lock) {
-		::ClipCursor(NULL);
-		Lock = false;
+void UnlockMouse(LPRDATA rdPtr) {
+	::ClipCursor(NULL);
+	rdPtr->Lock = false;
+}
+
+//获取当前客户区域相对于屏幕的矩形区域
+BOOL GetCurrentClientRectToScreen(HWND hWnd, LPRECT lpRect)
+{
+	BOOL RetBool = 1;
+	
+	RECT CurrentWindowRect;
+	POINT Point = { 0,0 };
+
+	RetBool = RetBool && ::GetClientRect(hWnd, &CurrentWindowRect);
+	RetBool = RetBool && ::ClientToScreen(hWnd,&Point);
+	*lpRect = CurrentWindowRect + RECT{ Point.x , Point.y , Point.x , Point.y };
+
+	return RetBool;
+}
+
+//获取当前场景区域相对于屏幕的矩形区域
+BOOL GetCurrentFrameRectToScreen(HWND hWnd, LPRECT lpRect,POINT WindowSize)
+{
+	BOOL RetBool = 1;
+
+	RECT CurrentClientRect;
+	POINT Offset = { 0,0 };
+	
+	RetBool = RetBool && GetCurrentClientRectToScreen(hWnd, &CurrentClientRect);
+	Offset = (POINT{ CurrentClientRect.right - CurrentClientRect.left, CurrentClientRect.bottom - CurrentClientRect.top }- WindowSize)/2;
+
+	*lpRect = CurrentClientRect + RECT{ Offset.x , Offset.y , -Offset.x , -Offset.y };
+
+	return RetBool;
+}
+
+//返回场景窗口缩放比例
+DPOINT GetFrameScale(LPRDATA rdPtr) {
+	//获取当前场景显示区域大小
+	RECT CurrentFrameRect;
+	::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);
+	POINT Cur = { CurrentFrameRect.right - CurrentFrameRect.left,CurrentFrameRect.bottom - CurrentFrameRect.top };
+
+	//获取缩放前显示的最小区域大小
+	POINT Min = { min(rdPtr->AppW,rdPtr->FrameW),min(rdPtr->AppH,rdPtr->FrameH) };
+
+	return DPOINT{ Cur.x / (double)Min.x,Cur.y / (double)Min.y };
+}
+
+//指定鼠标坐标
+void SetMousePosition(LPRDATA rdPtr, int x, int y, ST Type) {
+
+	//最终指定的坐标
+	POINT Coordinate = {0,0};
+
+	//如果类型不合法，则返回当前坐标
+	::GetCursorPos(&Coordinate);
+
+	DPOINT Scale = GetFrameScale(rdPtr);
+
+	switch (Type) {
+		case SET_SCREEN: {
+			Coordinate = { x,y };
+			break;
+		}
+		case SET_CURRENTWINDOW: {
+			RECT CurrentWindowRect;
+			::GetWindowRect(rdPtr->MainWindowHandle, &CurrentWindowRect);
+			Coordinate = POINT{ x,y } + POINT{ CurrentWindowRect.left, CurrentWindowRect.top };
+			break;
+		}
+		case SET_CLIENTAREA: {
+			RECT CurrentClinetRect;
+			GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &CurrentClinetRect);
+			Coordinate = POINT{ x,y } + POINT{ CurrentClinetRect.left, CurrentClinetRect.top };
+			break;
+		}
+		case SET_FRAMEAREA: {
+			RECT CurrentFrameRect;
+			::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);			
+			Coordinate = POINT{ (LONG)(x * Scale.x),(LONG)(x * Scale.y) } + POINT{ CurrentFrameRect.left, CurrentFrameRect.top };
+			break;
+		}
+		default: {
+			
+		}
+	}
+	
+	::SetCursorPos(Coordinate.x, Coordinate.y);
+
+	return;
+}
+
+//返回偏差值
+POINT GetOffset(LPRDATA rdPtr, GT Type) {
+	
+	POINT Offset = { 0,0 };
+	RECT Src = { 0,0,0,0 }, Des = { 0,0,0,0 }, Res = { 0,0,0,0 };
+
+	switch (Type) {
+		case GET_CLIENTTOCURRENTWINDOW: {
+			::GetWindowRect(rdPtr->MainWindowHandle, &Des);
+			GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &Src);
+			break;
+		}
+		case GET_FRAMETOCLIENTAREA: {			
+			GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &Des);
+			::GetWindowRect(rdPtr->FrameWindowHandle, &Src);
+			break;
+		}
+		case GET_FRAMEAREATOCURRENTWINDOW: {
+			::GetWindowRect(rdPtr->MainWindowHandle, &Des);
+			::GetWindowRect(rdPtr->FrameWindowHandle, &Src);
+			break;
+		}
+		default: {
+			
+		}
+	}
+
+	Res = Src - Des;
+	Offset = { Res.left,Res.top };
+
+	return Offset;
+}
+
+//返回矩形区域
+RECT GetRect(LPRDATA rdPtr,GR Type) {
+	//Windows在处理DPI缩放时，是将整个显示器的分辨率进行缩放后再处理
+	//即一个50*50的窗口无论是否进行缩放，获取到的大小均是50*50
+	RECT CurrentRect = InitRect();
+
+	switch (Type) {
+		case GET_CURRENTWINDOW: {
+			::GetWindowRect(rdPtr->MainWindowHandle, &CurrentRect);		
+			break;
+		}
+		case GET_CLIENTAREA: {
+			GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &CurrentRect);		
+			break;
+		}
+		case GET_FRAMEAREA: {
+			::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentRect);
+			break;
+		}
+		default: {
+
+		}
+	}
+
+	return CurrentRect;
+}
+
+//返回DPI缩放
+int ReturnDPIScaling(bool AppScaled) {
+	// Get desktop dc
+	HDC desktopDc = GetDC(NULL);
+	if (AppScaled) {
+		return 100;
+	}
+
+	// Get native resolution	
+	switch (GetDeviceCaps(desktopDc, LOGPIXELSX))
+	{
+	case 96:
+		return 100;
+	case 120:
+		return 125;
+	case 144:
+		return 150;
+	case 192:
+		return 200;
+	default:
+		return 0;
 	}
 }
 
@@ -72,7 +388,7 @@ void UnlockLockedMouse() {
 char* ReturnRegValue(HKEY hkey,LPWSTR lpSubKey, LPWSTR lpValue) {
 	DWORD reg_type = REG_SZ;
 	char* reg_value = new char[MAX_PATH];
-	DWORD res_size;
+	DWORD res_size = 0;
 
 	RegGetValue(
 		hkey,
@@ -90,31 +406,14 @@ char* ReturnRegValue(HKEY hkey,LPWSTR lpSubKey, LPWSTR lpValue) {
 	return reg_value;
 }
 
-//返回窗体菜单栏高度
-int ReturnMenuHeight() {
-	return GetSystemMetrics(SM_CYMENU);
-	//return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "MenuHeight") / 15.0));
-}
-
-//返回窗体标题栏高度
-int ReturnCaptionHeight() {
-	return GetSystemMetrics(SM_CYCAPTION);
-	//return (int)ceil((-1) * (ReturnRegValue(HKEY_CURRENT_USER, "Control Panel\\Desktop\\WindowMetrics", "CaptionHeight") / 15.0));
-}
-//返回YOffset
-int ReturnYOffset(LPRDATA rdPtr){
-	int gundam= (rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0);
-	return (rdPtr->AppHasCaption ? ReturnCaptionHeight() : 0) + (rdPtr->AppHasMenu ? ReturnMenuHeight() : 0);
-}
-
 //输入法状态
-bool IMEState = ImmGetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()));
+bool IMEState;
 
 //输入法控制
-BOOL IMEStateControl(bool State)
+BOOL IMEStateControl(HWND hWnd, bool State)
 {
 	IMEState = State;
-	return ImmSetOpenStatus(ImmGetContext(ReturnCurrentWindowHandle()), State);
+	return ImmSetOpenStatus(ImmGetContext(hWnd), State);
 }
 
 
