@@ -4,84 +4,6 @@
 //全局窗口句柄
 HWND CurrentWindowHandle = NULL;
 
-//RECT运算符重载 +
-RECT operator +(RECT A, RECT B) {
-	A.left += B.left;
-	A.right += B.right;
-	A.top += B.top;
-	A.bottom += B.bottom;
-	return A;
-}
-
-//RECT运算符重载 +=
-RECT operator +=(RECT A, RECT B) {
-	A.left += B.left;
-	A.right += B.right;
-	A.top += B.top;
-	A.bottom += B.bottom;
-	return A;
-}
-
-//RECT运算符重载 -
-RECT operator -(RECT A, RECT B) {
-	A.left -= B.left;
-	A.right -= B.right;
-	A.top -= B.top;
-	A.bottom -= B.bottom;
-	return A;
-}
-
-//RECT运算符重载 -
-RECT operator -=(RECT A, RECT B) {
-	A.left -= B.left;
-	A.right -= B.right;
-	A.top -= B.top;
-	A.bottom -= B.bottom;
-	return A;
-}
-
-//POINT运算符重载 +
-POINT operator +(POINT A, POINT B) {
-	A.x += B.x;
-	A.y += B.y;
-	return A;
-}
-
-//POINT运算符重载 +=
-POINT operator +=(POINT A, POINT B) {
-	A.x += B.x;
-	A.y += B.y;
-	return A;
-}
-
-//POINT运算符重载 -
-POINT operator -(POINT A, POINT B) {
-	A.x -= B.x;
-	A.y -= B.y;
-	return A;
-}
-
-//POINT运算符重载 -=
-POINT operator -=(POINT A, POINT B) {
-	A.x -= B.x;
-	A.y -= B.y;
-	return A;
-}
-
-//POINT运算符重载 *
-POINT operator *(POINT A, LONG B) {
-	A.x *= B;
-	A.y *= B;
-	return A;
-}
-
-//POINT运算符重载 /
-POINT operator /(POINT A, LONG B) {
-	A.x /= B;
-	A.y /= B;
-	return A;
-}
-
 //枚举窗体回调
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 	HWND hwnd,      // handle to parent window
@@ -163,7 +85,7 @@ void LockMouse(LPRDATA rdPtr, RECT Rect, RT Type) {
 	::GetWindowRect(rdPtr->MainWindowHandle, &MainWindowRect);
 
 	//获取锁定矩形
-	RECT ClipRect = InitRect();
+	RECT ClipRect = InitRect();	
 
 	DPOINT Scale = GetFrameScale(rdPtr);
 
@@ -188,6 +110,7 @@ void LockMouse(LPRDATA rdPtr, RECT Rect, RT Type) {
 			RECT CurrentFrameRect;
 			::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);
 			ClipRect = { (LONG)(Rect.left * Scale.x) + CurrentFrameRect.left,(LONG)(Rect.top * Scale.y) + CurrentFrameRect.top ,(LONG)(Rect.right * Scale.x) + CurrentFrameRect.left,(LONG)(Rect.bottom * Scale.y) + CurrentFrameRect.top };
+			rdPtr->FrameScale = Scale;
 			break;
 		}
 		default: {
@@ -287,7 +210,7 @@ void SetMousePosition(LPRDATA rdPtr, int x, int y, ST Type) {
 		case SET_FRAMEAREA: {
 			RECT CurrentFrameRect;
 			::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);			
-			Coordinate = POINT{ (LONG)(x * Scale.x),(LONG)(x * Scale.y) } + POINT{ CurrentFrameRect.left, CurrentFrameRect.top };
+			Coordinate = POINT{ (LONG)(x * Scale.x),(LONG)(y * Scale.y) } + POINT{ CurrentFrameRect.left, CurrentFrameRect.top };
 			break;
 		}
 		default: {

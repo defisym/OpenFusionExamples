@@ -28,6 +28,9 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+//Definitions
+#include "Definition.h"
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"

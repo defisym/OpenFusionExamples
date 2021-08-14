@@ -238,6 +238,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Definition.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="GlobalFunc.cpp" />
@@ -281,6 +282,7 @@
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="Definition.h" />
     <ClInclude Include="GlobalFunc.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />

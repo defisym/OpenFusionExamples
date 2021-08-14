@@ -207,11 +207,15 @@ BEGIN
                 MENUITEM "Top", IDMN_EXPRESSION_GCWR_T
                 MENUITEM "Bottom", IDMN_EXPRESSION_GCWR_B
             END
-            MENUITEM SEPARATOR
             POPUP "Get Border Offset"
             BEGIN
                 MENUITEM "X Offset", IDMN_EXPRESSION_RXO
                 MENUITEM "Y Offset", IDMN_EXPRESSION_RYO
+            END
+            POPUP "Get Frame Scale"
+            BEGIN
+                MENUITEM "X Scale", IDMN_EXPRESSION_RXS
+                MENUITEM "Y Scale", IDMN_EXPRESSION_RYS
             END
         END
         MENUITEM SEPARATOR
@@ -223,8 +227,7 @@ BEGIN
                 MENUITEM "Right",                       IDMN_EXPRESSION_GCLR_R
                 MENUITEM "Top",                         IDMN_EXPRESSION_GCLR_T
                 MENUITEM "Bottom",                      IDMN_EXPRESSION_GCLR_B
-            END           
-            MENUITEM SEPARATOR
+            END
             MENUITEM "Get Current Lock Type",       IDMN_EXPRESSION_GCLT            
         END
         MENUITEM SEPARATOR
@@ -347,7 +350,7 @@ BEGIN
     M_ACTION_SETMOUSE       "Set Mouse Position to [ %0 , %1 ] , Type %2"
     PARA_ACTION_SETMOUSE_X  "Input X Position"
     PARA_ACTION_SETMOUSE_Y  "Input Y Position"
-    PARA_ACTION_SETMOUSE_TYPE   "SetType, relative to 0 = Screen, 0 = Current Window, 1 = Client Area, 2 = Frame Area"
+    PARA_ACTION_SETMOUSE_TYPE   "SetType, relative to 0 = Screen, 1 = Current Window, 2 = Client Area, 3 = Frame Area"
 
     M_ACTION_LOCKMOUSE      "Lock Mouse Pointer, Type %0"
     PARA_ACTION_LOCKMOUSE "LockType, 0 = Current Window, 1 = Client Area, 2 = Frame Area"
@@ -397,6 +400,9 @@ BEGIN
     M_EXPRESSION_RXO        "RXO ("
     M_EXPRESSION_RYO        "RYO ("
     PARA_EXPRESSION_RO_TYPE    "0 = Client to Current Window, 1 = Frame to Client Area, 2 = Frame Area to Current Window"
+
+    M_EXPRESSION_RXS        "RXS ("
+    M_EXPRESSION_RYS        "RYS ("
 END
 
 STRINGTABLE
@@ -445,8 +451,8 @@ BEGIN
     IDS_PROP_KEEPLOCK_CHECK "Keep Lock"
     IDS_PROP_KEEPLOCK_CHECK_INFO "Keep the Mouse Locked After You Switch Back"
 
-    IDS_PROP_UPDATELOCK_CHECK "Update Lock Rect"
-    IDS_PROP_UPDATELOCK_CHECK_INFO "Update Lock Rect When Dragging"
+    IDS_PROP_UPDATELOCK_CHECK "Update Lock"
+    IDS_PROP_UPDATELOCK_CHECK_INFO "Update Lock When Dragging/Resizing, Etc"
 
     IDS_PROP_RECTOFFSET_CHECK "Rect Offect"
     IDS_PROP_RECTOFFSET_CHECK_INFO "Keep rect offset from current window when locking mouse by rect relative to screen"

@@ -155,25 +155,22 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
-	
 	// 若设定了保持锁定，并已启用锁定，且当前窗口为活动窗口，则继续锁定窗口
-	if (rdPtr->Lock && rdPtr->KeepLock && (GetForegroundWindow() == rdPtr->MainWindowHandle)) {
+	//if (rdPtr->Lock && rdPtr->KeepLock && (GetForegroundWindow() == rdPtr->MainWindowHandle)) {
+	if (rdPtr->Lock && rdPtr->KeepLock && (GetActiveWindow() == rdPtr->MainWindowHandle)) {
 		// 若设定了更新锁定，则更新锁定
 		if (rdPtr->UpdateLock) {
-			bool UpdateFlag = false;
-			::GetWindowRect(rdPtr->MainWindowHandle, &(rdPtr->CurrentLockRect));
-
 			switch (rdPtr->LockType) {
 				case LOCK_CURRENTWINDOW: {
-					UpdateFlag = true;
+					LockMouse(rdPtr, LOCK_CURRENTWINDOW);
 					break;
 				}
 				case LOCK_CLIENTAREA: {
-					UpdateFlag = true;
+					LockMouse(rdPtr, LOCK_CLIENTAREA);
 					break;
 				}
 				case LOCK_FRAMEAREA: {
-					UpdateFlag = true;
+					LockMouse(rdPtr, LOCK_FRAMEAREA);
 					break;
 				}
 				case LOCK_BYRECT: {
@@ -182,20 +179,26 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 					switch (rdPtr->RectOffset_Type) {
 						case RELATIVE_SCREEN:{
 							if (rdPtr->RectOffset_State) {
-								UpdateFlag = true;
+								RECT CurrentWindowRect;
+								::GetWindowRect(rdPtr->MainWindowHandle, &CurrentWindowRect);
+								CurrentWindowRect += rdPtr->RectOffset;
+								LockMouse(rdPtr, CurrentWindowRect, RELATIVE_SCREEN);
+							}
+							else {
+								LockMouse(rdPtr, rdPtr->UserSetRect, RELATIVE_SCREEN);
 							}
 							break;
 						}
 						case RELATIVE_CURRENTWINDOW: {
-							UpdateFlag = true;
+							LockMouse(rdPtr, rdPtr->UserSetRect, RELATIVE_CURRENTWINDOW);
 							break;
 						}
 						case RELATIVE_CLIENTAREA: {
-							UpdateFlag = true;
+							LockMouse(rdPtr, rdPtr->UserSetRect, RELATIVE_CLIENTAREA);
 							break;
 						}
 						case RELATIVE_FRAMEAREA: {
-							UpdateFlag = true;
+							LockMouse(rdPtr, rdPtr->UserSetRect, RELATIVE_FRAMEAREA);
 							break;
 						}
 						default: {
@@ -207,11 +210,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 				default: {
 					
 				}
-			}
-			
-			if (UpdateFlag) {
-				rdPtr->CurrentLockRect = rdPtr->CurrentLockRect + rdPtr->RectOffset;
-			}
+			}			
 		}
 		
 		::ClipCursor(&(rdPtr->CurrentLockRect));

@@ -37,6 +37,9 @@
     <ClCompile Include="GlobalFunc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Definition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -131,6 +134,9 @@
       <Filter>MMF Headers</Filter>
     </ClInclude>
     <ClInclude Include="GlobalFunc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

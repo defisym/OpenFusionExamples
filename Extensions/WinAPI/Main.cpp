@@ -70,15 +70,18 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCLR_T, M_EXPRESSION_GCLR_T, EXP_EXPRESSION_GCLR_T, 0, 0,
 		IDMN_EXPRESSION_GCLR_B, M_EXPRESSION_GCLR_B, EXP_EXPRESSION_GCLR_B, 0, 0,
 
+		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
+		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
+
+		IDMN_EXPRESSION_RXS, M_EXPRESSION_RXS, EXP_EXPRESSION_RXS, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_RYS, M_EXPRESSION_RYS, EXP_EXPRESSION_RYS, EXPFLAG_DOUBLE, 0,
+
 		IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
 		IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
 		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
 		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
 
 		IDMN_EXPRESSION_GCLT, M_EXPRESSION_GCLT, EXP_EXPRESSION_GCLT, 0, 0,
-
-		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
-		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
 	
 		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
 		
@@ -270,6 +273,7 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 
 	int Type = CNC_GetIntParameter(rdPtr);
 
+	rdPtr->UserSetRect = { left ,top ,right ,bottom };
 	LockMouse(rdPtr, RECT{ left ,top ,right ,bottom }, RT(Type));
 	
 	return 0;
@@ -412,6 +416,38 @@ long WINAPI DLLExport GetCurrentLockRect_B(LPRDATA rdPtr, long param1) {
 	return  rdPtr->Lock ? rdPtr->CurrentLockRect.bottom : 0;
 }
 
+
+//返回相对X偏移量
+long WINAPI DLLExport ReturnXOffset(LPRDATA rdPtr, long param1) {
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetOffset(rdPtr, GT(Type)).x;
+}
+
+//返回相对于Y偏移量
+long WINAPI DLLExport ReturnYOffset(LPRDATA rdPtr, long param1) {
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return GetOffset(rdPtr, GT(Type)).y;
+}
+
+
+//返回Frame X Scale
+long WINAPI DLLExport ReturnXScale(LPRDATA rdPtr, long param1) {	
+	float fp1 = (float)GetFrameScale(rdPtr).x;	
+	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+	//Return the float without conversion
+	return *((int*)&fp1);
+}
+
+//返回Frame Y Scale
+long WINAPI DLLExport ReturnYScale(LPRDATA rdPtr, long param1) {
+	float fp1 = (float)GetFrameScale(rdPtr).y;
+	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+	//Return the float without conversion
+	return *((int*)&fp1);
+}
+
 //返回当前窗口矩形区域
 long WINAPI DLLExport GetRect_L(LPRDATA rdPtr, long param1) {
 	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);	
@@ -433,48 +469,6 @@ long WINAPI DLLExport GetRect_B(LPRDATA rdPtr, long param1) {
 //返回当前锁定模式
 long WINAPI DLLExport ReturnCurrentLockType(LPRDATA rdPtr, long param1) {
 	return rdPtr->Lock?rdPtr->LockType:-1;
-}
-
-//返回相对X偏移量
-long WINAPI DLLExport ReturnXOffset(LPRDATA rdPtr, long param1) {
-	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	return GetOffset(rdPtr, GT(Type)).x;
-}
-
-//返回相对于Y偏移量
-long WINAPI DLLExport ReturnYOffset(LPRDATA rdPtr, long param1) {
-	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	return GetOffset(rdPtr, GT(Type)).y;
-}
-
-//返回Client相对于窗口的X偏移量
-long WINAPI DLLExport ReturnXClinetToWindowXOffset(LPRDATA rdPtr, long param1) {
-	return GetOffset(rdPtr, GET_CLIENTTOCURRENTWINDOW).x;
-}
-
-//返回Client相对于窗口的Y偏移量
-long WINAPI DLLExport ReturnYClinetToWindowYOffset(LPRDATA rdPtr, long param1) {
-	return GetOffset(rdPtr, GET_CLIENTTOCURRENTWINDOW).y;
-}
-
-//返回Frame相对于Client的X偏移量
-long WINAPI DLLExport ReturnXFrameToClientXOffset(LPRDATA rdPtr, long param1) {
-	return GetOffset(rdPtr, GET_FRAMETOCLIENTAREA).x;
-}
-
-//返回Frame相对于Client的Y偏移量
-long WINAPI DLLExport ReturnYFrameToClientYOffset(LPRDATA rdPtr, long param1) {
-	return GetOffset(rdPtr, GET_FRAMETOCLIENTAREA).y;
-}
-
-//返回Frame相对于窗口的X偏移量
-long WINAPI DLLExport ReturnXFrameToWindowXOffset(LPRDATA rdPtr, long param1) {
-	return GetOffset(rdPtr, GET_FRAMEAREATOCURRENTWINDOW).x;
-}
-
-//返回Frame相对于窗口的Y偏移量
-long WINAPI DLLExport ReturnYFrameToWindowYOffset(LPRDATA rdPtr, long param1) {
-	return GetOffset(rdPtr, GET_FRAMEAREATOCURRENTWINDOW).y;
 }
 
 //返回IME状态
@@ -546,15 +540,18 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentLockRect_T,
 			GetCurrentLockRect_B,
 
+			ReturnXOffset,
+			ReturnYOffset,
+
+			ReturnXScale,
+			ReturnYScale,
+
 			GetRect_L,
 			GetRect_R,
 			GetRect_T,
 			GetRect_B,
 
 			ReturnCurrentLockType,
-
-			ReturnXOffset,
-			ReturnYOffset,
 
 			ReturnIMEState,
 

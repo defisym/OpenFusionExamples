@@ -48,21 +48,24 @@
 #define	EXP_EXPRESSION_GCLR_T		3
 #define	EXP_EXPRESSION_GCLR_B		4
 
-#define	EXP_EXPRESSION_GCWR_L		5
-#define	EXP_EXPRESSION_GCWR_R		6
-#define	EXP_EXPRESSION_GCWR_T		7
-#define	EXP_EXPRESSION_GCWR_B		8
+#define	EXP_EXPRESSION_RXO			5
+#define	EXP_EXPRESSION_RYO			6
 
-#define	EXP_EXPRESSION_GCLT			9
+#define	EXP_EXPRESSION_RXS			7
+#define	EXP_EXPRESSION_RYS			8
 
-#define	EXP_EXPRESSION_RXO			10
-#define	EXP_EXPRESSION_RYO			11
+#define	EXP_EXPRESSION_GCWR_L		9
+#define	EXP_EXPRESSION_GCWR_R		10
+#define	EXP_EXPRESSION_GCWR_T		11
+#define	EXP_EXPRESSION_GCWR_B		12
 
-#define	EXP_EXPRESSION_IME_STATE	12
+#define	EXP_EXPRESSION_GCLT			13
 
-#define	EXP_EXPRESSION_DPISCALING	13
+#define	EXP_EXPRESSION_IME_STATE	14
 
-#define	EXP_LAST                    14
+#define	EXP_EXPRESSION_DPISCALING	15
+
+#define	EXP_LAST                    16
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -141,6 +144,8 @@ typedef struct tagRDATA
 	bool KeepLock;
 	//拖拽窗口后更新锁定
 	bool UpdateLock;
+	//相对于场景区域以矩形区域锁定时的缩放比例
+	DPOINT FrameScale = { 1,1 };
 
 	//区域锁定类型
 	int RectOffset_Type;
@@ -148,6 +153,8 @@ typedef struct tagRDATA
 	bool RectOffset_State;
 	//当前鼠标锁定的矩形区域相对于窗口的偏移
 	RECT RectOffset = { 0,0,0,0 };
+	//指定的矩形区域
+	RECT UserSetRect = { 0,0,0,0 };
 
 	//当前鼠标锁定的矩形区域
 	RECT CurrentLockRect;
