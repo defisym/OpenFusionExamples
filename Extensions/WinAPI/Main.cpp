@@ -26,6 +26,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_INAP, M_CONDITION_INAP, CND_CONDITION_INAP, EVFLAGS_ALWAYS|EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,PARA_CONDITION_INAP,
 		IDMN_CONDITION_IML, M_CONDITION_IML, CND_CONDITION_IML, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_RKS, M_CONDITION_RKS, CND_CONDITION_RKS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION,PARA_CONDITION_RKS,
+		IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -51,6 +52,9 @@ short actionsInfos[]=
 
 		IDMN_ACTION_IME_DISABLE,M_ACTION_IME_DISABLE,ACT_ACTION_IME_DISABLE,0, 0,
 		IDMN_ACTION_IME_ENABLE,M_ACTION_IME_ENABLE,ACT_ACTION_IME_ENABLE,0, 0,
+
+		IDMN_ACTION_WINDOW_GF,M_ACTION_WINDOW_GF,ACT_ACTION_WINDOW_GF,0, 0,
+		IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -86,6 +90,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
 		
 		IDMN_EXPRESSION_DPISCALING, M_EXPRESSION_DPISCALING, EXP_EXPRESSION_DPISCALING, 0, 0,
+		
+		IDMN_EXPRESSION_IFS, M_EXPRESSION_IFS, EXP_EXPRESSION_IFS, 0, 0,
 		};
 
 // ============================================================================
@@ -111,6 +117,11 @@ long WINAPI DLLExport IsMouseLocked(LPRDATA rdPtr, long param1, long param2) {
 //按键检测
 long WINAPI DLLExport ReturnKeyState(LPRDATA rdPtr, long param1, long param2) {
 	return  (GetKeyState((int)param1) & 1);
+}
+
+//全屏状态
+long WINAPI DLLExport IsFullScreen(LPRDATA rdPtr, long param1, long param2) {
+	return  IsZoomed(rdPtr->MainWindowHandle) ? TRUE : FALSE;
 }
 
 // ============================================================================
@@ -331,6 +342,15 @@ short WINAPI DLLExport IME_Enable(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+//窗口控制
+short WINAPI DLLExport GoFullScreen(LPRDATA rdPtr, long param1, long param2) {	
+	ShowWindow(rdPtr->MainWindowHandle, SW_MAXIMIZE);
+	return 0;
+}
+short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
+	ShowWindow(rdPtr->MainWindowHandle, SW_RESTORE);
+	return 0;
+}
 
 // ============================================================================
 //
@@ -481,6 +501,11 @@ long WINAPI DLLExport ReturnDPIScaling(LPRDATA rdPtr, long param1) {
 	return ReturnDPIScaling(rdPtr->AppScaled);	
 }
 
+//返回全屏状态
+long WINAPI DLLExport ReturnFullScreen(LPRDATA rdPtr, long param1) {
+	return  IsZoomed(rdPtr->MainWindowHandle) ? TRUE : FALSE;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -494,6 +519,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IsNameAProcess,
 			IsMouseLocked,
 			ReturnKeyState,
+			IsFullScreen,
 			0
 			};
 	
@@ -527,6 +553,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IME_Disable,
 			IME_Enable,
 
+			//窗口控制
+			GoFullScreen,
+			GoWindowed,
+
 			//结尾必定是零
 			0
 			};
@@ -556,6 +586,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			ReturnIMEState,
 
 			ReturnDPIScaling,
+			
+			ReturnFullScreen,
 
 			0
 			};

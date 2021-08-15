@@ -10,7 +10,8 @@
 #define	CND_CONDITION_INAP			0
 #define	CND_CONDITION_IML			1
 #define	CND_CONDITION_RKS			2
-#define	CND_LAST					3
+#define	CND_CONDITION_IFS			3
+#define	CND_LAST					4
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -36,7 +37,10 @@
 #define ACT_ACTION_IME_DISABLE		14
 #define ACT_ACTION_IME_ENABLE		15
 
-#define	ACT_LAST					16
+#define ACT_ACTION_WINDOW_GF		16
+#define ACT_ACTION_WINDOW_GW		17
+
+#define	ACT_LAST					18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -65,7 +69,9 @@
 
 #define	EXP_EXPRESSION_DPISCALING	15
 
-#define	EXP_LAST                    16
+#define	EXP_EXPRESSION_IFS			16
+
+#define	EXP_LAST                    17
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

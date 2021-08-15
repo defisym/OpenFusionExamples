@@ -117,6 +117,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Return Key State",            IDMN_CONDITION_RKS
         MENUITEM SEPARATOR
+        MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -182,6 +184,12 @@ BEGIN
             MENUITEM "Enable IME",                  IDMN_ACTION_IME_ENABLE
         END
         MENUITEM SEPARATOR
+        POPUP "Window"
+        BEGIN
+            MENUITEM "Go FullScreen", IDMN_ACTION_WINDOW_GF
+            MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -234,6 +242,8 @@ BEGIN
         MENUITEM "Get IME State",               IDMN_EXPRESSION_IME_STATE
         MENUITEM SEPARATOR
         MENUITEM "Get DPI Scaling",             IDMN_EXPRESSION_DPISCALING
+        MENUITEM SEPARATOR
+        MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
         MENUITEM SEPARATOR
     END
 END
@@ -374,13 +384,15 @@ END
 
 STRINGTABLE
 BEGIN
-    
     M_ACTION_IME_DISABLE    "Disable IME"
     M_ACTION_IME_ENABLE     "Enable IME"
 END
 
-
-//Condition
+STRINGTABLE
+BEGIN
+    M_ACTION_WINDOW_GF    "Go FullScreen"
+    M_ACTION_WINDOW_GW     "Go Windowed"
+END
 
 //Expression
 STRINGTABLE
@@ -425,6 +437,11 @@ BEGIN
     M_EXPRESSION_DPISCALING "DPIScaling ("
 END
 
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_IFS "FullScreen ("
+END
+
 //Conditions
 STRINGTABLE
 BEGIN
@@ -442,6 +459,12 @@ BEGIN
     M_CONDITION_RKS         "Key %0 is toggled"
     PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
 END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IFS    "Application Is Maximized"
+END
+
 
 //Porperties
 STRINGTABLE
