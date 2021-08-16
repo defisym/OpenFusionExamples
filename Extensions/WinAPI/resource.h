@@ -36,6 +36,7 @@
 #define M_ACTION_IME_ENABLE             5071
 #define M_ACTION_WINDOW_GF				5080
 #define M_ACTION_WINDOW_GW				5081
+#define M_ACTION_WINDOW_BFA				5082
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -102,6 +103,7 @@
 #define IDMN_ACTION_IME_ENABLE          25401
 #define IDMN_ACTION_WINDOW_GF			25410
 #define IDMN_ACTION_WINDOW_GW			25411
+#define IDMN_ACTION_WINDOW_BFA			25412
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020

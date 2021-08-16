@@ -55,6 +55,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_WINDOW_GF,M_ACTION_WINDOW_GF,ACT_ACTION_WINDOW_GF,0, 0,
 		IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
+
+		IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -352,6 +354,50 @@ short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+//截取场景区域到剪贴板
+short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) {
+	//截取
+	//Source Area
+	RECT CurrentFrameRect;
+	::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);
+	int FrameWidth = CurrentFrameRect.right - CurrentFrameRect.left;
+	int FrameHeight = CurrentFrameRect.bottom - CurrentFrameRect.top;
+
+	//Defination
+	HDC hdcWindow;
+	HDC hdcMemDC = NULL;
+	HBITMAP hbmScreen = NULL;	
+
+	// Retrieve the handle to a display device context for the client 
+	// area of the window. 	
+	hdcWindow = GetDC(rdPtr->FrameWindowHandle);
+
+	// Create a compatible DC, which is used in a BitBlt from the window DC.
+	hdcMemDC = CreateCompatibleDC(hdcWindow);
+
+	// Create a compatible bitmap from the Window DC.
+	hbmScreen = CreateCompatibleBitmap(hdcWindow, FrameWidth, FrameHeight);
+
+	// Select the compatible bitmap into the compatible memory DC.
+	SelectObject(hdcMemDC, hbmScreen);
+
+	// Bit block transfer into our compatible memory DC.
+	BitBlt(hdcMemDC,
+		0, 0,
+		FrameWidth, FrameHeight,
+		hdcWindow,
+		0, 0,
+		SRCCOPY);
+
+	//保存到剪贴板
+	OpenClipboard(rdPtr->MainWindowHandle);
+	EmptyClipboard();
+	SetClipboardData(CF_BITMAP, hbmScreen);
+	CloseClipboard();
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -556,6 +602,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			//窗口控制
 			GoFullScreen,
 			GoWindowed,
+
+			//截取场景区域到剪贴板
+			BitBltFrameArea,
 
 			//结尾必定是零
 			0

@@ -188,6 +188,8 @@ BEGIN
         BEGIN
             MENUITEM "Go FullScreen", IDMN_ACTION_WINDOW_GF
             MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW
+            MENUITEM SEPARATOR
+            MENUITEM "Capture Frame Area to Clipboard", IDMN_ACTION_WINDOW_BFA
         END
         MENUITEM SEPARATOR
     END
@@ -392,6 +394,7 @@ STRINGTABLE
 BEGIN
     M_ACTION_WINDOW_GF    "Go FullScreen"
     M_ACTION_WINDOW_GW     "Go Windowed"
+    M_ACTION_WINDOW_BFA     "Capture Frame Area to Clipboard"
 END
 
 //Expression

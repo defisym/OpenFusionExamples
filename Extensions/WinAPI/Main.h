@@ -40,7 +40,9 @@
 #define ACT_ACTION_WINDOW_GF		16
 #define ACT_ACTION_WINDOW_GW		17
 
-#define	ACT_LAST					18
+#define ACT_ACTION_WINDOW_BFA		18
+
+#define	ACT_LAST					19
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
