@@ -1,0 +1,263 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "ccx.h"
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 0,0,0,1
+ PRODUCTVERSION 0,0,0,1
+ FILEFLAGSMASK 0x0L
+#ifdef _DEBUG
+ FILEFLAGS 0x21L
+#else
+ FILEFLAGS 0x20L
+#endif
+ FILEOS 0x10001L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN            
+            VALUE "CompanyName", "Defisym\0"
+            VALUE "FileDescription", "Steamworks API\0"
+            VALUE "FileVersion", "0.0.0.1\0"
+            VALUE "InternalName", "SteamworksAPI\0"
+            VALUE "LegalCopyright", "Copyright 2021 Defisym\0"
+            VALUE "OriginalFilename", "SteamworksAPI.mfx\0"        
+            VALUE "ProductVersion", "0.0.0.1\0"          
+            VALUE "SpecialBuild", "00000001\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Data
+//
+
+KPX_MAGICNUMBER RCDATA MOVEABLE PURE 
+BEGIN
+    0x2516, 0x5908
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+EXO_ICON$(EDITOR)       BITMAP  MOVEABLE PURE   "RES\\EXTICON.BMP"
+#else
+EXO_ICON                BITMAP  MOVEABLE PURE   "RES\\EXTICON.BMP"
+#endif
+#endif
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+EXO_IMAGE$(EDITOR)      BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
+#else
+EXO_IMAGE               BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
+#endif
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+MN_CONDITIONS$(EDITOR) MENU DISCARDABLE 
+#else
+MN_CONDITIONS MENU DISCARDABLE 
+#endif
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+    END
+END
+#endif
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+MN_ACTIONS$(EDITOR) MENU DISCARDABLE 
+#else
+MN_ACTIONS MENU DISCARDABLE 
+#endif
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Action example",              IDMN_ACTION
+    END
+END
+#endif
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+MN_EXPRESSIONS$(EDITOR) MENU DISCARDABLE 
+#else
+MN_EXPRESSIONS MENU DISCARDABLE 
+#endif
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
+        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
+        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+    END
+END
+#endif
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+DB_SETUP$(EDITOR) DIALOG DISCARDABLE  0, 4, 200, 172
+#else
+DB_SETUP DIALOG DISCARDABLE  0, 4, 200, 172
+#endif
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Setup sample object"
+FONT 8, "Helv"
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,75,150,50,14
+    DEFPUSHBUTTON   "OK",IDOK,5,150,50,14
+    PUSHBUTTON      "Help",ID_HELP,145,150,50,14
+    GROUPBOX        "",-1,5,6,190,135
+    LTEXT           "Steamworks API",-1,21,50,155,60
+END
+#endif
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""ccx.h""\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    KPX_MARK                "MF2"
+    KPX_NAME                "Steamworks API"
+END
+
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDST_OBJNAME            "Steamworks API"
+    IDST_AUTHOR             "Defisym"
+    IDST_COPYRIGHT          "Copyright 2019~2021 Defisym"
+    IDST_COMMENT            "Steamworks API not included in Steamworks Obj"
+    IDST_HTTP               "https://twitter.com/defisym"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_ACTION                "00Action example"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_CONDITION             "Condition example: %0 + %1 = %2"
+    M_CND_P1                "Enter First Value"
+    M_CND_P2                "Enter Second Value"
+    M_CND_P3                "Enter Value to Match"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_EXPRESSION            "Function("
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_EXPRESSION2           "Reverse$("
+    M_EXPRESSION3           "DivFloatByTwo("
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
