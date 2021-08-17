@@ -356,20 +356,22 @@ short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
 
 //截取场景区域到剪贴板
 short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) {
-	//截取
-	//Source Area
+	// 截取
+	// 参考范例：
+	// https://docs.microsoft.com/en-us/windows/win32/gdi/capturing-an-image
+	
+	// Source Area
 	RECT CurrentFrameRect;
 	::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);
 	int FrameWidth = CurrentFrameRect.right - CurrentFrameRect.left;
 	int FrameHeight = CurrentFrameRect.bottom - CurrentFrameRect.top;
 
-	//Defination
+	// Defination
 	HDC hdcWindow;
 	HDC hdcMemDC = NULL;
 	HBITMAP hbmScreen = NULL;	
 
-	// Retrieve the handle to a display device context for the client 
-	// area of the window. 	
+	// Retrieve the handle to a display device context.
 	hdcWindow = GetDC(rdPtr->FrameWindowHandle);
 
 	// Create a compatible DC, which is used in a BitBlt from the window DC.
@@ -389,11 +391,16 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 		0, 0,
 		SRCCOPY);
 
-	//保存到剪贴板
+	// 保存到剪贴板
 	OpenClipboard(rdPtr->MainWindowHandle);
 	EmptyClipboard();
 	SetClipboardData(CF_BITMAP, hbmScreen);
 	CloseClipboard();
+
+	// Clean up.
+	DeleteObject(hbmScreen);
+	DeleteObject(hdcMemDC);	
+	ReleaseDC(rdPtr->FrameWindowHandle, hdcWindow);
 
 	return 0;
 }
