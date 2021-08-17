@@ -48,7 +48,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright 2019~2020 Defisym"
+            VALUE "LegalCopyright", "Copyright 2019~2021 Defisym"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -271,7 +271,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,5,151,50,14
     PUSHBUTTON      "Help",ID_HELP,145,151,50,14
     GROUPBOX        "",-1,5,6,190,135
-    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2020 Defisym",-1,21,31,155,60
+    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2021 Defisym",-1,21,31,155,60
 END
 #endif
 
