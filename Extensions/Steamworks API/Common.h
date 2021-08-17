@@ -31,6 +31,10 @@
 #include	"main.h"
 #include	"TigsExt.hpp"
 
+////DLL
+#pragma comment(lib,"steam_api.lib")
+#pragma comment(lib,"sdkencryptedappticket.lib")
+
 // My headers
 #include "steam/steam_api.h"
 

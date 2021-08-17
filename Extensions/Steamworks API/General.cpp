@@ -156,14 +156,15 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // Data\Runtime folder).
 // 
 
-//LPCTSTR szDep[] = {
-//	_T("MyDll.dll"),
-//	NULL
-//};
+LPCTSTR szDep[] = {
+	//_T("Unicode\\Nsteam_api.dll"),
+	_T("steam_api.dll"),
+	NULL
+};
 
 LPCTSTR* WINAPI DLLExport GetDependencies()
 {
-	return NULL;	// szDep;
+	return szDep;	// szDep;
 }
 
 // -----------------
