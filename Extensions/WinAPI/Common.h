@@ -29,7 +29,7 @@
 #include	"Surface.h"
 
 //Definitions
-#include "Definition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"
@@ -48,8 +48,13 @@
 #pragma	comment(lib,"shlwapi.lib") 
 #pragma   comment(lib, "Imm32.lib")
 
+//MMF
+#include	"ImgFlt.h"
+#include	"ImageFlt.h"
+#include	"CfcFile.h"
+
 //Global Func
-#include "GlobalFunc.h"
+#include	"GlobalFunc.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

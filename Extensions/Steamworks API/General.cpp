@@ -164,6 +164,7 @@ LPCTSTR szDep[] = {
 
 LPCTSTR* WINAPI DLLExport GetDependencies()
 {
+	//return NULL;	// szDep;
 	return szDep;	// szDep;
 }
 
