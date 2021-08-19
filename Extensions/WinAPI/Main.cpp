@@ -544,8 +544,19 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 		return 0;
 	}
 
+	//字符串转小写
+	auto LowerWStr = [](LPWSTR Str)->LPWSTR {
+		int i = 0;
+		while (Str[i]) {
+			Str[i] = towlower(Str[i]);
+			i++;
+		}
+		return Str;
+	};
+
 	//获取扩展名对应的FilterName
-	auto  GetFilterName = [](LPCWSTR Name)->LPCWSTR {
+	auto  GetFilterName = [LowerWStr](LPCWSTR Name)->LPCWSTR {
+		//常量会被放入全局变量区
 		LPCWSTR ExtList[8][2] = {
 			_T(".png"),_T("Portable Network Graphics"),
 			_T(".tga"),_T("Targa Bitmap"),
@@ -555,21 +566,29 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 			_T(".gif"),_T("Compuserve Bitmap"),
 			_T(".avi"),_T("Video For Windows"),
 			_T(".pcx"),_T("PaintBrush")
-		};		
+		};
+
+		WCHAR* Ext = new WCHAR[FILENAME_MAX];
+		wcscpy_s(Ext, FILENAME_MAX, Name);		
+		LowerWStr(Ext);		
+
 		for (int i = 0; i < 8; i++) {			
-			if (wcscmp(Name, ExtList[i][0]) == 0) {
+			if (wcscmp(Ext, ExtList[i][0]) == 0) {
+				delete[] Ext;
 				return ExtList[i][1];
 			}
 		}
-		return _T("Windows Bitmap");
-
+		
+		delete[] Ext;
+		//return _T("Windows Bitmap");
+		return ExtList[2][1];
 	};
 	
 	//获取扩展名对应的FilterID
 	auto GetFilterID = [pImgMgr, GetFilterName](LPCWSTR Name) -> DWORD {
-		for (int i = 0; i < pImgMgr->GetFilterCount(); i++)
-		{
-			if (wcscmp(pImgMgr->GetFilterNameW(i), GetFilterName(Name)) == 0) {
+		LPCWSTR FilterName = GetFilterName(Name);
+		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
+			if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
 				return pImgMgr->GetFilterID(i);
 			}
 		}
@@ -577,11 +596,13 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	};
 
 	//获取扩展名
-	WCHAR* Ext = new WCHAR;
-	_wsplitpath(FilePath, NULL, NULL, NULL, Ext);
-
+	WCHAR* Ext = new WCHAR[FILENAME_MAX];
+	_wsplitpath_s(FilePath, NULL, 0, NULL, 0, NULL, 0, Ext, FILENAME_MAX);
+		
 	//输出文件
 	ExportImage(pImgMgr, FilePath, &img, GetFilterID(Ext));
+
+	delete[] Ext;
 	
 	return 0;
 }

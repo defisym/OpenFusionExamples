@@ -394,7 +394,7 @@ STRINGTABLE
 BEGIN
     M_ACTION_WINDOW_GF    "Go FullScreen"
     M_ACTION_WINDOW_GW     "Go Windowed"
-    M_ACTION_WINDOW_BFA     "Capture Frame Area to Clipboard, Width = %0, Height = %1, SaveToFile = %2, FilePath %3"
+    M_ACTION_WINDOW_BFA     "Capture Frame Area to Clipboard, Stretch to Width = %0, Height = %1, SaveToFile = %2, FilePath %3"
     PARA_ACTION_WINDOW_BFA_WIDTH "Width"
     PARA_ACTION_WINDOW_BFA_HEIGHT "Heigth"
     PARA_ACTION_WINDOW_BFA_SAVETOFILE "SaveToFile, 1 = Save, 0 = Don't Save"
