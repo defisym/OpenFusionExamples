@@ -86,8 +86,10 @@ typedef struct tagEDATA_V1
 	extHeader		eHeader;
 
 	// Object's data
-	//	short			swidth;
-	//	short			sheight;
+	short			swidth;
+	short			sheight;
+
+	bool Display = false;
 	
 	//切换窗口后保持锁定
 	bool KeepLock;
@@ -121,12 +123,19 @@ typedef struct tagRDATA
 	// Main header - required
 	headerObject	rHo;					// Header	
 	// Optional headers - depend on the OEFLAGS value, see documentation and examples for more info
-//	rCom			rc;				// Common structure for movements & animations
-//	rMvt			rm;				// Movements
-//	rSpr			rs;				// Sprite (displayable objects)
+	rCom			rc;				// Common structure for movements & animations
+	rMvt			rm;				// Movements
+	rSpr			rs;				// Sprite (displayable objects)
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	short			swidth;
+	short			sheight;
+
+	bool Display = false;
+
+	//显示Surface
+	cSurface img;
 
 	//用于保存的RunHeader
 	fprh rhPtr = NULL;
@@ -182,8 +191,9 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP 
-#define	OEPREFS      			OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_KILL|OEPREFS_SLEEP 
+#define	OEFLAGS      			OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_SPRITES|OEFLAG_BACKSAVE|OEFLAG_MOVEMENTS
+#define	OEPREFS      			OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_KILL|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS
+//#define	OEPREFS      			OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_KILL|OEPREFS_SLEEP|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS
 
 
 // If to handle message, specify the priority of the handling procedure

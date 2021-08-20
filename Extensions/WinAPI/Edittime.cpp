@@ -32,6 +32,8 @@ enum {
 	PROPID_RECTOFFSET_CHECK,
 	PROPID_IME_TEXTTITLE,
 	PROPID_KEEPIMESTATE_CHECK,
+	PROPID_DISPLAY_TEXTTITLE,
+	PROPID_DISPLAY_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -64,6 +66,9 @@ PropData Properties[] = {
 
 	PropData_Group(PROPID_IME_TEXTTITLE, IDS_PROP_IME_TEXTTITLE, 0),
 	PropData_CheckBox(PROPID_KEEPIMESTATE_CHECK, IDS_PROP_KEEPIMESTATE_CHECK, IDS_PROP_KEEPIMESTATE_CHECK_INFO),
+
+	PropData_Group(PROPID_DISPLAY_TEXTTITLE, IDS_PROP_DISPLAY_TEXTTITLE, 0),
+	PropData_CheckBox(PROPID_DISPLAY_CHECK, IDS_PROP_DISPLAY_CHECK, IDS_PROP_DISPLAY_CHECK_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -339,10 +344,10 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 	// Check compatibility
 	if ( IS_COMPATIBLE(mV) )
 	{
-//		// Set default object settings
-////		edPtr->swidth = 32;
-////		edPtr->sheight = 32;
-//
+		// Set default object settings
+		edPtr->swidth = 32;
+		edPtr->sheight = 32;
+
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
 //		spa.edpt = edPtr;
@@ -389,7 +394,7 @@ BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA ed
 // Called when the object has been resized
 //
 // Note: remove the comments if your object can be resized (and remove the comments in the .def file)
-/*
+
 BOOL WINAPI SetEditSize(LPMV mv, LPEDATA edPtr, int cx, int cy)
 {
 #ifndef RUN_ONLY
@@ -398,7 +403,7 @@ BOOL WINAPI SetEditSize(LPMV mv, LPEDATA edPtr, int cx, int cy)
 #endif // !defined(RUN_ONLY)
 	return TRUE;	// OK
 }
-*/
+
 
 // --------------------
 // PutObject
@@ -446,8 +451,14 @@ void WINAPI DLLExport DuplicateObject(mv __far *mV, fpObjInfo oiPtr, LPEDATA edP
 void WINAPI DLLExport GetObjectRect(mv _far *mV, RECT FAR *rc, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
-	rc->right = rc->left + 32;	// edPtr->swidth;
-	rc->bottom = rc->top + 32;	// edPtr->sheight;
+	if (edPtr->Display) {
+		rc->right = rc->left + edPtr->swidth;
+		rc->bottom = rc->top + edPtr->sheight;
+	}
+	else{
+		rc->right = rc->left + 32;
+		rc->bottom = rc->top + 32;
+	}
 #endif // !defined(RUN_ONLY)
 	return;
 }
@@ -463,7 +474,7 @@ void WINAPI DLLExport GetObjectRect(mv _far *mV, RECT FAR *rc, fpLevObj loPtr, L
 //
 // If you need to draw the icon manually, remove the comments around this function and in the .def file.
 //
-/*
+
 void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR *rc)
 {
 #ifndef RUN_ONLY
@@ -483,7 +494,39 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 		is.Create(4, 4, ps);	// Create a surface implementation from a prototype (frame editor win)
 		is.LoadImage(hInstLib, EXO_IMAGE, LI_REMAP);	// Load our bitmap from the resource,
 														// and remap palette if necessary
-		is.Blit(*ps, x, y, BMODE_TRANSP, BOP_COPY, 0);	// Blit the image to the frame editor surface!
+		
+		if (edPtr->Display) {
+			ps->Rectangle(rc->left, rc->top, rc->right, rc->bottom, RGB(200, 200, 200), 1, BLACK);
+			ps->Line(rc->left, rc->top, rc->right - 1, rc->bottom - 1);
+			ps->Line(rc->right - 1, rc->top + 1, rc->left + 1, rc->bottom - 1);
+
+			/*cSurface bg;
+			bg.Create(w, h, ps);
+
+			bg.Rectangle(0, 0, w, h, RGB(200, 200, 200), 1, BLACK);
+			bg.Line(0, 0, w - 1, h - 1);
+			bg.Line(w - 1, 0 + 1, 0 + 1, h - 1);
+
+			BlitMode bm = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
+			BOOL bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
+			BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
+			int effectParam = oiPtr->oiHdr.oiInkEffectParam;
+
+			bg.Blit(*ps, x, y , bm, bo, effectParam, bAntiA ? BLTF_ANTIA : 0);*/
+		}
+		
+		//is.Blit(*ps, x + w / 2 - 16, y + h / 2 - 16, BMODE_TRANSP, BOP_COPY, 0);		
+
+		////缩放
+		//cSurface ResizedImg;
+		//ResizedImg.Clone(is);
+
+		//is.Delete();
+		//is.Create(w, h, ps);
+
+		//ResizedImg.Stretch(is, 0, 0, w, h, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+
+		//is.Blit(*ps, x, y, BMODE_TRANSP, BOP_COPY, 0);	// Blit the image to the frame editor surface!
 		// This actually blits (or copies) the whole of our surface onto the frame editor's surface
 		// at a specified position.
 		// We could use different image effects when we copy, e.g. invert, AND, OR, XOR,
@@ -493,7 +536,7 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 
 #endif // !defined(RUN_ONLY)
 }
-*/
+
 
 // --------------------
 // IsTransparent
@@ -722,6 +765,10 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	//保持输入法状态
 	case PROPID_KEEPIMESTATE_CHECK:
 		return edPtr->KeepIMEState;
+
+	//显示截屏
+	case PROPID_DISPLAY_CHECK:
+		return edPtr->Display;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -817,6 +864,9 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	//保持输入法状态
 	case PROPID_KEEPIMESTATE_CHECK:
 		edPtr->KeepIMEState = nCheck;
+	//显示截屏
+	case PROPID_DISPLAY_CHECK:
+		edPtr->Display= nCheck;
 	}
 //	switch (nPropID)
 //	{

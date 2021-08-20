@@ -496,6 +496,13 @@ BEGIN
     IDS_PROP_KEEPIMESTATE_CHECK_INFO "Keep IME State After You Switch Back"
 END
 
+STRINGTABLE
+BEGIN
+    IDS_PROP_DISPLAY_TEXTTITLE  "Display Properties"
+
+    IDS_PROP_DISPLAY_CHECK "Display Captured Picture"
+    IDS_PROP_DISPLAY_CHECK_INFO "Display Picture Captured in 'Capture Frame Area to Clipboard'"
+END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources
 /////////////////////////////////////////////////////////////////////////////

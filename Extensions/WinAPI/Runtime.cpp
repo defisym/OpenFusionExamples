@@ -58,15 +58,34 @@ ushort WINAPI DLLExport GetRunObjectDataSize(fprh rhPtr, LPEDATA edPtr)
 // 
 short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPtr)
 {
-/*
-   This routine runs when your object is created, as you might have guessed.
-   It is here that you must transfer any data you need in rdPtr from edPtr,
-   because after this has finished you cannot access it again!
-   Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
-   you should do it here, and free your resources in DestroyRunObject.
-*/
+	/*
+	   This routine runs when your object is created, as you might have guessed.
+	   It is here that you must transfer any data you need in rdPtr from edPtr,
+	   because after this has finished you cannot access it again!
+	   Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
+	   you should do it here, and free your resources in DestroyRunObject.
+	*/
 	//rhPtr
 	rdPtr->rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+	//Size
+	rdPtr->rHo.hoX = cobPtr->cobX;
+	rdPtr->rHo.hoY = cobPtr->cobY;
+	rdPtr->swidth = edPtr->swidth;
+	rdPtr->sheight = edPtr->sheight;
+
+	rdPtr->Display = edPtr->Display;
+
+	if (rdPtr->Display) {
+		//Surface
+		LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+		CImageFilter    pFilter(pImgMgr);
+
+		//Surface获取位图信息
+		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+	}
 	
 	//主窗口句柄	
 	rdPtr->MainWindowHandle = rdPtr->rhPtr->rhHMainWin;
@@ -114,6 +133,13 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	//释放鼠标
 	UnlockMouse(rdPtr);
+
+	//删除Surface
+	if (rdPtr->Display) {
+		if (rdPtr->img.IsValid()) {
+			DeleteSurface(&(rdPtr->img));
+		}
+	}
 
 	// No errors
 	return 0;
@@ -250,12 +276,17 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 //
 // Note: do not forget to enable the function in the .def file 
 // if you remove the comments below.
-/*
+
 cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
 {
-	return NULL;
+	if (rdPtr->Display) {
+		return &(rdPtr->img);
+	}
+	else {
+		return NULL;
+	}
 }
-*/
+
 
 // -------------------------
 // GetRunObjectCollisionMask
