@@ -79,7 +79,7 @@ EXPORTS
 	EndFrame				@88
  	GetExpressionParam		@89
 
-	GetRunObjectSurface		@90
+;	GetRunObjectSurface		@90
 ;	GetRunObjectCollisionMask		@91
 
 ;	GetRunObjectFont		@92

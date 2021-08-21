@@ -55,6 +55,9 @@ extern bool IMEState;
 //输入法控制
 BOOL IMEStateControl(HWND hWnd, bool State);
 
+//Surface
+DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
+
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;
 

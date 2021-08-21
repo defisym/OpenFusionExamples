@@ -57,6 +57,8 @@ short actionsInfos[]=
 		IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
 
 		IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 4,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,PARA_ACTION_WINDOW_BFA_SAVETOFILE,PARA_ACTION_WINDOW_BFA_FILEPATH,
+		IDMN_ACTION_WINDOW_LFC,M_ACTION_WINDOW_LFC,ACT_ACTION_WINDOW_LFC,0, 0,
+		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0
 		};
 
 // Definitions of parameters for each expression
@@ -407,15 +409,17 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	ResizedImg.Stretch(img, 0, 0, Width, Height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
 	
 	if (rdPtr->Display) {
-		// Redraw object
+		// Update Display Surface
 		ResizedImg.Clone(img);
 
 		rdPtr->img.Delete();
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
 		ResizedImg.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
-
-		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+				
+		// Redraw object
+		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		rdPtr->UpdateDisplay = true;		
 	}
 
 	//输出缩放后的图像到剪贴板
@@ -436,68 +440,72 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 		return 0;
 	}
 
-	//字符串转小写
-	auto LowerWStr = [](LPWSTR Str)->LPWSTR {
-		int i = 0;
-		while (Str[i]) {
-			Str[i] = towlower(Str[i]);
-			i++;
-		}
-		return Str;
-	};
-
-	//获取扩展名对应的FilterName
-	auto  GetFilterName = [LowerWStr](LPCWSTR Name)->LPCWSTR {
-		//常量会被放入全局变量区
-		LPCWSTR ExtList[8][2] = {
-			_T(".png"),_T("Portable Network Graphics"),
-			_T(".tga"),_T("Targa Bitmap"),
-			_T(".bmp"),_T("Windows Bitmap"),
-			_T(".jpg"),_T("JPEG"),
-			_T(".flc"),_T("Autodesk FLIC"),
-			_T(".gif"),_T("Compuserve Bitmap"),
-			_T(".avi"),_T("Video For Windows"),
-			_T(".pcx"),_T("PaintBrush")
-		};
-
-		WCHAR* Ext = new WCHAR[FILENAME_MAX];
-		wcscpy_s(Ext, FILENAME_MAX, Name);		
-		LowerWStr(Ext);		
-
-		for (int i = 0; i < 8; i++) {			
-			if (wcscmp(Ext, ExtList[i][0]) == 0) {
-				delete[] Ext;
-				return ExtList[i][1];
-			}
-		}
-		
-		delete[] Ext;
-		//return _T("Windows Bitmap");
-		return ExtList[2][1];
-	};
-	
-	//获取扩展名对应的FilterID
-	auto GetFilterID = [pImgMgr, GetFilterName](LPCWSTR Name) -> DWORD {
-		LPCWSTR FilterName = GetFilterName(Name);
-		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
-			if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
-				return pImgMgr->GetFilterID(i);
-			}
-		}
-		return pImgMgr->GetFilterID(0);
-	};
-
-	//获取扩展名
-	WCHAR* Ext = new WCHAR[FILENAME_MAX];
-	_wsplitpath_s(FilePath, NULL, 0, NULL, 0, NULL, 0, Ext, FILENAME_MAX);
-		
 	//输出文件
-	ExportImage(pImgMgr, FilePath, &img, GetFilterID(Ext));
-
-	delete[] Ext;	
+	ExportImage(pImgMgr, FilePath, &img, GetFilterIDByFileName(rdPtr, FilePath));	
 	
 	return 0;
 }
+
+short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->Display) {
+		if (IsClipboardFormatAvailable(CF_DIB) && OpenClipboard(rdPtr->MainWindowHandle)) {
+
+			HANDLE handle = GetClipboardData(CF_DIB);
+			BITMAPINFO* bmp = (BITMAPINFO*)GlobalLock(handle);
+
+			//Surface相关
+			cSurface img;
+			LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+			CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+			CImageFilter    pFilter(pImgMgr);
+
+			//Surface获取位图信息
+			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+			img.Delete();
+			img.Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
+			img.LoadImage(bmp, GetDIBBitmap(bmp));
+
+			rdPtr->img.Delete();
+			rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+
+			img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+
+			// Redraw object			
+			rdPtr->UpdateDisplay = true;
+		}
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->Display) {
+
+		LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+		//Surface相关
+		cSurface img;
+		LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+		CImageFilter    pFilter(pImgMgr);
+
+		//Surface获取位图信息		
+		ImportImage(pImgMgr, FilePath, &img, 0, 0);
+		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+		rdPtr->img.Delete();
+		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+
+		img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+
+		// Redraw object			
+		rdPtr->UpdateDisplay = true;
+	}
+
+	return 0;
+}
+
 
 // ============================================================================
 //
@@ -706,6 +714,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			//截取场景区域到剪贴板
 			BitBltFrameArea,
+			LoadFromClipBoard,
+			LoadFromFile,
 
 			//结尾必定是零
 			0

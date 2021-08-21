@@ -398,8 +398,13 @@ BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA ed
 BOOL WINAPI SetEditSize(LPMV mv, LPEDATA edPtr, int cx, int cy)
 {
 #ifndef RUN_ONLY
-	edPtr->swidth = cx;
-	edPtr->sheight = cy;
+	if (edPtr->Display) {
+		edPtr->swidth = cx;
+		edPtr->sheight = cy;
+	}
+	else {
+		
+	}
 #endif // !defined(RUN_ONLY)
 	return TRUE;	// OK
 }
@@ -515,7 +520,7 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 			bg.Blit(*ps, x, y , bm, bo, effectParam, bAntiA ? BLTF_ANTIA : 0);*/
 		}
 		
-		//is.Blit(*ps, x + w / 2 - 16, y + h / 2 - 16, BMODE_TRANSP, BOP_COPY, 0);		
+		is.Blit(*ps, x + w / 2 - 16, y + h / 2 - 16, BMODE_TRANSP, BOP_COPY, 0);		
 
 		////Ëõ·Å
 		//cSurface ResizedImg;

@@ -84,7 +84,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 		//Surface获取位图信息
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);		
+
+		////Surface指针
+		//LPSURFACE DIS;
+		//DIS = NewSurface();
+		//DIS->Create(rdPtr->swidth, rdPtr->sheight, proto);
+		//DeleteSurface(DIS);
 	}
 	
 	//主窗口句柄	
@@ -112,6 +118,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->KeepIMEState = edPtr->KeepIMEState; 
 
 	rdPtr->AppScaled = !IsProcessDPIAware();
+	
 	// No errors
 	return 0;
 }
@@ -237,9 +244,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 					
 				}
 			}			
-		}
-		
-		::ClipCursor(&(rdPtr->CurrentLockRect));
+		}		
 	}
 
 	// 若设定了保持输入法状态，且当前状态与保持状态不一致，则更新状态
@@ -247,9 +252,17 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		IMEStateControl(rdPtr->MainWindowHandle,IMEState);
 	}
 
-	return 0;
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;
+
+	//更新显示
+	if ((rdPtr->Display) && (rdPtr->UpdateDisplay)) {
+		rdPtr->UpdateDisplay = false;
+		return REFLAG_DISPLAY;
+	}
+	else {
+		return 0;
+	}	
 }
 
 // ----------------
@@ -262,6 +275,25 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
+	//使用GetRunObjectSurface不会正确处理当对象并非全部位于场景内时的Shader
+
+	// Begin render process...
+	LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);
+	
+	// On-screen coords
+	int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
+	int screenY = rdPtr->rHo.hoY - rdPtr->rhPtr->rhWindowY;
+
+	// Hot spot (transform center)
+	POINT point = {0, 0};
+
+	rdPtr->img.BlitEx(*ps, (float)screenX, (float)screenY,
+		rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
+		rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
+		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+
 	// Ok
 	return 0;
 }
@@ -277,15 +309,16 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 // Note: do not forget to enable the function in the .def file 
 // if you remove the comments below.
 
-cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
-{
-	if (rdPtr->Display) {
-		return &(rdPtr->img);
-	}
-	else {
-		return NULL;
-	}
-}
+//cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
+//{
+//	//if (rdPtr->Display) {
+//	//	return &(rdPtr->img);
+//	//}
+//	//else {
+//	//	return NULL;
+//	//}
+//	return NULL;
+//}
 
 
 // -------------------------

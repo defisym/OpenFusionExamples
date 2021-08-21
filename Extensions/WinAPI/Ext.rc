@@ -187,9 +187,15 @@ BEGIN
         POPUP "Window"
         BEGIN
             MENUITEM "Go FullScreen", IDMN_ACTION_WINDOW_GF
-            MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW
-            MENUITEM SEPARATOR
+            MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW            
+        END
+        MENUITEM SEPARATOR
+        POPUP "Display"
+        BEGIN
             MENUITEM "Capture Frame Area to Clipboard", IDMN_ACTION_WINDOW_BFA
+            MENUITEM SEPARATOR
+            MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC
+            MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
         END
         MENUITEM SEPARATOR
     END
@@ -399,6 +405,9 @@ BEGIN
     PARA_ACTION_WINDOW_BFA_HEIGHT "Heigth"
     PARA_ACTION_WINDOW_BFA_SAVETOFILE "SaveToFile, 1 = Save, 0 = Don't Save"
     PARA_ACTION_WINDOW_BFA_FILEPATH "FilePath, Keep Empty if SaveToFile is Set to 0"
+
+    M_ACTION_WINDOW_LFC "Load From Clipboard"
+    M_ACTION_WINDOW_LFF "Load From File %0"
 END
 
 //Expression
