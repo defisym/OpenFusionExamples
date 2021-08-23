@@ -577,8 +577,8 @@ BOOL WINAPI GetFilters(LPMV mV, LPEDATA edPtr, DWORD dwFlags, LPVOID pReserved)
 {
 #ifndef RUN_ONLY
 	// If your extension uses image filters
-//	if ( (dwFlags & GETFILTERS_IMAGES) != 0 )
-//		return TRUE;
+	if ( (dwFlags & GETFILTERS_IMAGES) != 0 )
+		return TRUE;
 
 	// If your extension uses sound filters
 //	if ( (dwFlags & GETFILTERS_SOUNDS) != 0 )
@@ -749,12 +749,6 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 #ifndef RUN_ONLY
 	// Example
 	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
 	switch (nPropID) {
 	
 	// 切换窗口后保持锁定
@@ -771,7 +765,7 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_KEEPIMESTATE_CHECK:
 		return edPtr->KeepIMEState;
 
-	//显示截屏
+	//允许显示
 	case PROPID_DISPLAY_CHECK:
 		return edPtr->Display;
 	}
@@ -854,7 +848,12 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	// Example
 	// -------
 	switch (nPropID) {
-
+	//case PROPID_CHECK:
+		//		edPtr->nCheck = nCheck;
+		//		mvInvalidateObject(mV, edPtr);
+		//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
+		//		break;
+		
 	// 切换窗口后保持锁定
 	case PROPID_KEEPLOCK_CHECK:
 		edPtr->KeepLock = nCheck;
@@ -869,18 +868,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	//保持输入法状态
 	case PROPID_KEEPIMESTATE_CHECK:
 		edPtr->KeepIMEState = nCheck;
-	//显示截屏
+	//允许显示
 	case PROPID_DISPLAY_CHECK:
 		edPtr->Display= nCheck;
 	}
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
+
 #endif // !defined(RUN_ONLY)
 }
 

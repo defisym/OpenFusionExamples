@@ -281,10 +281,10 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) {
 	
-	LONG left = CNC_GetParameter(rdPtr);
-	LONG right = CNC_GetParameter(rdPtr);
-	LONG top = CNC_GetParameter(rdPtr);
-	LONG bottom = CNC_GetParameter(rdPtr);
+	LONG left = CNC_GetIntParameter(rdPtr);
+	LONG right = CNC_GetIntParameter(rdPtr);
+	LONG top = CNC_GetIntParameter(rdPtr);
+	LONG bottom = CNC_GetIntParameter(rdPtr);
 
 	int Type = CNC_GetIntParameter(rdPtr);
 
@@ -418,8 +418,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 		ResizedImg.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
 				
 		// Redraw object
-		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
-		rdPtr->UpdateDisplay = true;		
+		ReDisplay(rdPtr);
 	}
 
 	//输出缩放后的图像到剪贴板
@@ -472,7 +471,7 @@ short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2
 			img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
 
 			// Redraw object			
-			rdPtr->UpdateDisplay = true;
+			ReDisplay(rdPtr);
 		}
 	}
 
@@ -500,7 +499,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
 
 		// Redraw object			
-		rdPtr->UpdateDisplay = true;
+		ReDisplay(rdPtr);
 	}
 
 	return 0;

@@ -340,6 +340,12 @@ BOOL IMEStateControl(HWND hWnd, bool State)
 }
 
 //Surface
+
+void ReDisplay(LPRDATA rdPtr) {
+	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+	rdPtr->rc.rcChanged = true;
+}
+
 DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
 
 	//Surfaceœ‡πÿ

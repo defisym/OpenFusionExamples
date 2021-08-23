@@ -56,6 +56,7 @@ extern bool IMEState;
 BOOL IMEStateControl(HWND hWnd, bool State);
 
 //Surface
+void ReDisplay(LPRDATA rdPtr);
 DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
 
 //所有创建线程的句柄

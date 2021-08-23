@@ -65,6 +65,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	   Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
 	   you should do it here, and free your resources in DestroyRunObject.
 	*/
+	
 	//rhPtr
 	rdPtr->rhPtr = rdPtr->rHo.hoAdRunHeader;
 
@@ -74,6 +75,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 
+	
+	//Display
 	rdPtr->Display = edPtr->Display;
 
 	if (rdPtr->Display) {
@@ -140,13 +143,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	//释放鼠标
 	UnlockMouse(rdPtr);
-
-	//删除Surface
-	if (rdPtr->Display) {
-		if (rdPtr->img.IsValid()) {
-			DeleteSurface(&(rdPtr->img));
-		}
-	}
 
 	// No errors
 	return 0;
@@ -256,13 +252,12 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	//return REFLAG_ONESHOT;
 
 	//更新显示
-	if ((rdPtr->Display) && (rdPtr->UpdateDisplay)) {
-		rdPtr->UpdateDisplay = false;
-		return REFLAG_DISPLAY;
+	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {		
+		return REFLAG_DISPLAY;		
 	}
 	else {
 		return 0;
-	}	
+	}
 }
 
 // ----------------
@@ -277,23 +272,25 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 */
 	//使用GetRunObjectSurface不会正确处理当对象并非全部位于场景内时的Shader
 
-	// Begin render process...
-	LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);
-	
-	// On-screen coords
-	int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
-	int screenY = rdPtr->rHo.hoY - rdPtr->rhPtr->rhWindowY;
+	if ((rdPtr->Display) && (rdPtr->img.IsValid())) {
+		// Begin render process...
+		LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);
 
-	// Hot spot (transform center)
-	POINT point = {0, 0};
+		// On-screen coords
+		int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
+		int screenY = rdPtr->rHo.hoY - rdPtr->rhPtr->rhWindowY;
 
-	rdPtr->img.BlitEx(*ps, (float)screenX, (float)screenY,
-		rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-		rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
-		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+		// Hot spot (transform center)
+		POINT point = { 0, 0 };
 
+		rdPtr->img.BlitEx(*ps, (float)screenX, (float)screenY,
+			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
+			rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
+			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+			rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+	}
+		
 	// Ok
 	return 0;
 }
