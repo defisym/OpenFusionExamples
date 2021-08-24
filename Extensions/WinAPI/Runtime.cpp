@@ -308,13 +308,13 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 
 //cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
 //{
-//	//if (rdPtr->Display) {
-//	//	return &(rdPtr->img);
-//	//}
-//	//else {
-//	//	return NULL;
-//	//}
-//	return NULL;
+//	if (rdPtr->Display) {
+//		return &(rdPtr->img);
+//	}
+//	else {
+//		return NULL;
+//	}
+//	//return NULL;
 //}
 
 
