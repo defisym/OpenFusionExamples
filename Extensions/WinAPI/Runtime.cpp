@@ -275,6 +275,8 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 	if ((rdPtr->Display) && (rdPtr->img.IsValid())) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);
+		//int nDrv = ps->GetDriver();
+		//bool HWA = nDrv >= SD_3DFX;
 
 		// On-screen coords
 		int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
@@ -283,6 +285,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		// Hot spot (transform center)
 		POINT point = { 0, 0 };
 
+		//rdPtr->img.Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
 		rdPtr->img.BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
 			rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
