@@ -87,9 +87,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 		//Surface获取位图信息
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);		
+		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+		rdPtr->img.Fill(BLACK);
 
-		////Surface指针
+		////Surface指针使用流程
 		//LPSURFACE DIS;
 		//DIS = NewSurface();
 		//DIS->Create(rdPtr->swidth, rdPtr->sheight, proto);
@@ -253,7 +254,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	//更新显示
 	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {		
-		return REFLAG_DISPLAY;		
+		return REFLAG_DISPLAY;
 	}
 	else {
 		return 0;

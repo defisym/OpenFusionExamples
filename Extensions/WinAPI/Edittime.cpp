@@ -488,55 +488,61 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 	// First, we must get a pointer to the surface used by the frame editor
 
 	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
-	if ( ps != NULL )		// Do the following if this surface exists
-	{
+	// Do the following if this surface exists
+	if (ps != NULL) {
 		int x = rc->left;	// get our boundaries
 		int y = rc->top;
 		int w = rc->right-rc->left;
-		int h = rc->bottom-rc->top;
-
-		cSurface is;			// New surface variable for us to use
-		is.Create(4, 4, ps);	// Create a surface implementation from a prototype (frame editor win)
-		is.LoadImage(hInstLib, EXO_IMAGE, LI_REMAP);	// Load our bitmap from the resource,
-														// and remap palette if necessary
+		int h = rc->bottom-rc->top;		
 		
 		if (edPtr->Display) {
-			ps->Rectangle(rc->left, rc->top, rc->right, rc->bottom, RGB(200, 200, 200), 1, BLACK);
-			ps->Line(rc->left, rc->top, rc->right - 1, rc->bottom - 1);
-			ps->Line(rc->right - 1, rc->top + 1, rc->left + 1, rc->bottom - 1);
+			//ps->Rectangle(rc->left, rc->top, rc->right, rc->bottom, RGB(200, 200, 200), 1, BLACK);
+			//ps->Line(rc->left, rc->top, rc->right - 1, rc->bottom - 1);
+			//ps->Line(rc->right - 1, rc->top + 1, rc->left + 1, rc->bottom - 1);
 
-			/*cSurface bg;
-			bg.Create(w, h, ps);
+			LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);			
+			
+			cSurface tile;
+			tile.Create(16, 16, proto);
+			tile.Fill(LIGHT_GRAY);
+			tile.Rectangle(0, 0, 8, 8, DARK_GRAY, 0, 0, TRUE);
+			tile.Rectangle(16, 16, 8, 8, DARK_GRAY, 0, 0, TRUE);
 
-			bg.Rectangle(0, 0, w, h, RGB(200, 200, 200), 1, BLACK);
-			bg.Line(0, 0, w - 1, h - 1);
-			bg.Line(w - 1, 0 + 1, 0 + 1, h - 1);
+			CFillMosaic mosaic(&tile);
+			//CFillFlat light(LIGHT_GRAY);
+			//CFillFlat dark(DARK_GRAY);
+			//CFillFlat outline(BLACK);
+
+			cSurface bg;
+			bg.Create(w, h, proto);
+			bg.Fill(&mosaic);
+
+			//bg.Fill(LIGHT_GRAY);
+			//bg.Rectangle(0, 0, w, h, RGB(200, 200, 200), 1, BLACK);
+			//bg.Line(0, 0, w - 1, h - 1);
+			//bg.Line(w - 1, 0 + 1, 0 + 1, h - 1);
 
 			BlitMode bm = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
 			BOOL bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
 			BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
 			int effectParam = oiPtr->oiHdr.oiInkEffectParam;
 
-			bg.Blit(*ps, x, y , bm, bo, effectParam, bAntiA ? BLTF_ANTIA : 0);*/
-		}
+			bg.Blit(*ps, x, y , bm, bo, effectParam, bAntiA ? BLTF_ANTIA : 0);
+		}		
 		
-		is.Blit(*ps, x + w / 2 - 16, y + h / 2 - 16, BMODE_TRANSP, BOP_COPY, 0);		
-
-		////Ëõ·Å
-		//cSurface ResizedImg;
-		//ResizedImg.Clone(is);
-
-		//is.Delete();
-		//is.Create(w, h, ps);
-
-		//ResizedImg.Stretch(is, 0, 0, w, h, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
-
+		//Draw icon
+		cSurface is;			// New surface variable for us to use
+		is.Create(4, 4, ps);	// Create a surface implementation from a prototype (frame editor win)
+		is.LoadImage(hInstLib, EXO_IMAGE, LI_REMAP);	// Load our bitmap from the resource,
+														// and remap palette if necessary
 		//is.Blit(*ps, x, y, BMODE_TRANSP, BOP_COPY, 0);	// Blit the image to the frame editor surface!
 		// This actually blits (or copies) the whole of our surface onto the frame editor's surface
 		// at a specified position.
 		// We could use different image effects when we copy, e.g. invert, AND, OR, XOR,
 		// blend (semi-transparent, the 6th param is amount of transparency)
 		// You can 'anti-alias' with the 7th param (default=0 or off)
+		is.Blit(*ps, x + w / 2 - 16, y + h / 2 - 16, BMODE_TRANSP, BOP_COPY, 0);
 	}
 
 #endif // !defined(RUN_ONLY)
