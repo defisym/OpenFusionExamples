@@ -344,6 +344,9 @@ BOOL IMEStateControl(HWND hWnd, bool State)
 void ReDisplay(LPRDATA rdPtr) {
 	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	rdPtr->rc.rcChanged = true;
+	rdPtr->rHo.hoImgWidth = rdPtr->img.GetWidth();
+	rdPtr->rHo.hoImgHeight = rdPtr->img.GetHeight();
+	return;
 }
 
 DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {

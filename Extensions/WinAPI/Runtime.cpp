@@ -69,12 +69,22 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rhPtr
 	rdPtr->rhPtr = rdPtr->rHo.hoAdRunHeader;
 
-	//Size
+	//坐标
 	rdPtr->rHo.hoX = cobPtr->cobX;
-	rdPtr->rHo.hoY = cobPtr->cobY;
+	rdPtr->rHo.hoY = cobPtr->cobY;	
+	
+	//you must set the fields rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight, rdPtr->rHo.hoImgXSpotand rdPtr->rHo.hoImgYSpot of your object to obtain a correct display.
+
+	//热点
+	rdPtr->rHo.hoImgXSpot = 0;
+	rdPtr->rHo.hoImgYSpot = 0;
+	
+	//大小
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 
+	rdPtr->rHo.hoImgWidth = edPtr->swidth;
+	rdPtr->rHo.hoImgHeight = edPtr->sheight;	
 	
 	//Display
 	rdPtr->Display = edPtr->Display;
@@ -253,7 +263,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	//return REFLAG_ONESHOT;
 
 	//更新显示
-	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {		
+	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {
 		return REFLAG_DISPLAY;
 	}
 	else {
