@@ -10,5 +10,13 @@
 		<property>edit</property>
 		<value>50</value>
 </parameter>
+<parameter>
+		<name>Mono</name>
+		<code>Mono</code>
+	<description>Check for Mono Effect</description>
+		<type>INT</type>
+		<property>CHECKBOX</property>
+		<value>0</value>
+</parameter>
 </effect>
 
