@@ -30,8 +30,10 @@ enum {
 	PROPID_KEEPLOCK_CHECK,
 	PROPID_UPDATELOCK_CHECK,
 	PROPID_RECTOFFSET_CHECK,
+
 	PROPID_IME_TEXTTITLE,
 	PROPID_KEEPIMESTATE_CHECK,
+
 	PROPID_DISPLAY_TEXTTITLE,
 	PROPID_DISPLAY_CHECK,
 };
@@ -871,12 +873,17 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	//区域锁定相对窗口坐标
 	case PROPID_RECTOFFSET_CHECK:
 		edPtr->RectOffset_State = nCheck;
+		break;
+
 	//保持输入法状态
 	case PROPID_KEEPIMESTATE_CHECK:
 		edPtr->KeepIMEState = nCheck;
+		break;
+
 	//允许显示
 	case PROPID_DISPLAY_CHECK:
 		edPtr->Display= nCheck;
+		break;
 	}
 
 #endif // !defined(RUN_ONLY)
