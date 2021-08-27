@@ -252,6 +252,14 @@ BEGIN
         MENUITEM "Get DPI Scaling",             IDMN_EXPRESSION_DPISCALING
         MENUITEM SEPARATOR
         MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
+        MENUITEM SEPARATOR        
+        POPUP "Fusion"
+        BEGIN
+            POPUP "Frame"
+            BEGIN
+                MENUITEM "Get Frame Name",      IDMN_EXPRESSION_GFN              
+            END            
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -456,6 +464,11 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_IFS "FullScreen ("
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GFN "FrameName$ ("
 END
 
 //Conditions

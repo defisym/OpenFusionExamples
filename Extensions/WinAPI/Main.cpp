@@ -96,6 +96,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_DPISCALING, M_EXPRESSION_DPISCALING, EXP_EXPRESSION_DPISCALING, 0, 0,
 		
 		IDMN_EXPRESSION_IFS, M_EXPRESSION_IFS, EXP_EXPRESSION_IFS, 0, 0,
+
+		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
 		};
 
 // ============================================================================
@@ -660,6 +662,15 @@ long WINAPI DLLExport ReturnFullScreen(LPRDATA rdPtr, long param1) {
 	return  IsZoomed(rdPtr->MainWindowHandle) ? TRUE : FALSE;
 }
 
+//获取当前场景名称
+long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+	
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->rhPtr->rhFrame->m_name;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -747,6 +758,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			ReturnDPIScaling,
 			
 			ReturnFullScreen,
+
+			GetFrameName,
 
 			0
 			};

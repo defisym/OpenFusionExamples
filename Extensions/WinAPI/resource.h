@@ -87,6 +87,7 @@
 #define M_EXPRESSION_IME_STATE          7070
 #define M_EXPRESSION_DPISCALING         7080
 #define M_EXPRESSION_IFS				7090
+#define M_EXPRESSION_GFN				7100
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -139,6 +140,7 @@
 #define IDMN_EXPRESSION_IME_STATE       27060
 #define IDMN_EXPRESSION_DPISCALING      27070
 #define IDMN_EXPRESSION_IFS				27080
+#define IDMN_EXPRESSION_GFN				27090
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027
