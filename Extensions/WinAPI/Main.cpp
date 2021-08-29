@@ -57,8 +57,11 @@ short actionsInfos[]=
 		IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
 
 		IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 4,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,PARA_ACTION_WINDOW_BFA_SAVETOFILE,PARA_ACTION_WINDOW_BFA_FILEPATH,
+
 		IDMN_ACTION_WINDOW_LFC,M_ACTION_WINDOW_LFC,ACT_ACTION_WINDOW_LFC,0, 0,
-		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0
+		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0,
+
+		IDMN_ACTION_WINDOW_RGB,M_ACTION_WINDOW_RGB,ACT_ACTION_WINDOW_RGB,0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_RGB_SIGMA,PARA_ACTION_WINDOW_RGB_SCALE,
 		};
 
 // Definitions of parameters for each expression
@@ -507,6 +510,142 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->Display) {
+		#define MIN_SIGMA 0
+		#define MAX_SIGMA 1.615
+		
+		long p1 = CNC_GetFloatParameter(rdPtr);
+		double sigma = *(float*)&p1;
+		sigma = min(MAX_SIGMA, max(MIN_SIGMA, sigma));
+
+		long p2 = CNC_GetFloatParameter(rdPtr);
+		float scale = *(float*)&p2;
+
+		auto GetCoef = [](double sigma) -> GCoef {
+			double q1, q2, q3;
+
+			if (sigma >= 2.5) {
+				q1 = 0.98711 * sigma - 0.96330;
+			}
+			else if ((sigma >= 0.5) && (sigma < 2.5)) {
+				q1 = 3.97156 - 4.14554 * (double)sqrt((double)1.0 - 0.26891 * sigma);
+			}
+			else {
+				q1 = 0.1147705018520355224609375;
+			}
+
+			q2 = q1 * q1;
+			q3 = q1 * q2;
+			
+			GCoef c;
+
+			c.b[0] = (1.57825 + (2.44413 * q1) + (1.4281 * q2) + (0.422205 * q3));
+			c.b[1] = ((2.44413 * q1) + (2.85619 * q2) + (1.26661 * q3));
+			c.b[2] = (-(1.4281 * q2) + (1.26661 * q3));
+			c.b[3] = (0.422205 * q3);
+			c.B = 1.0 - ((c.b[1] + c.b[2] + c.b[3]) / c.b[0]);
+
+			c.sigma = sigma;
+			c.N = 3;
+
+			return c;
+		};
+
+		GCoef c = GetCoef(sigma);		
+		
+		//Dimensions
+		int owidth = rdPtr->img.GetWidth(), oheight = rdPtr->img.GetHeight();
+		int width = (int)(owidth / scale);
+		int height = (int)(oheight / scale);
+		
+		//降采样		
+		LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+		cSurface ResizedImg;
+		ResizedImg.Clone(rdPtr->img);
+
+		rdPtr->img.Delete();
+		rdPtr->img.Create(width, height, proto);
+
+		ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+
+		//Lock buffer, get pitch etc.
+		BYTE* buff = rdPtr->img.LockBuffer();		
+		if (!buff) return 0;
+
+		int pitch = rdPtr->img.GetPitch();
+		if (pitch < 0)
+		{
+			pitch *= -1;
+			buff -= pitch * (height - 1);
+		}
+		int size = pitch * height;
+		int byte = rdPtr->img.GetDepth() >> 3;
+
+		auto RecursiveGaussFilter = [c](BYTE* src, BYTE* des, int size, int stride) {
+			RGBA* W = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
+			RGBA* W_Temp = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
+
+			//init			
+			RGBA Input = { (double)src[2],(double)src[1],(double)src[0],0 };
+			RGBA Output = { 0,0,0,0 };
+
+			//forward
+			W[0] = W[1] = W[2] = Input;
+			for (int n1 = 3; n1 < size + 3; n1++) {
+				int offset = (n1 - 3) * stride;
+				Input = { (double)src[offset + 2],(double)src[offset + 1],(double)src[offset + 0],0 };
+				W[n1] = (c.B * Input + (c.b[1] * W[n1 - 1] + c.b[2] * W[n1 - 2] + c.b[3] * W[n1 - 3]) / c.b[0]);
+			}
+
+			//backword
+			W_Temp[size] = W_Temp[size + 1] = W_Temp[size + 2] = W[size + 2];
+			for (int n2 = size - 1; n2 >= 0; n2--) {
+				int offset = n2 * stride;
+				W_Temp[n2] = (c.B * W[n2] + (c.b[1] * W_Temp[n2 + 1] + c.b[2] * W_Temp[n2 + 2] + c.b[3] * W_Temp[n2 + 3]) / c.b[0]);
+				Output = Range(W_Temp[n2]);
+				des[offset + 2] = (BYTE)Output.r;
+				des[offset + 1] = (BYTE)Output.g;
+				des[offset + 0] = (BYTE)Output.b;
+			}
+
+			free(W);
+			free(W_Temp);
+		};
+
+		for (int y = 0; y < height; y++) {	
+			//Xstride = byte;		
+			RecursiveGaussFilter(buff + y * pitch, buff + y * pitch, width, byte);
+		}
+		for (int x = 0; x < width; x++) {
+			//Ystride = pitch;
+			RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
+		}
+
+		//for (int y = 0; y < height; y++) {
+		//	for (int x = 0; x < width; x++) {
+		//		int offset = x * byte + y * pitch;
+		//		buff[offset + 2] = buff[offset + 1];
+		//		buff[offset + 1] = buff[offset + 0];
+		//		buff[offset + 0] = buff[offset + 2];
+		//	}
+		//}
+	
+		rdPtr->img.UnlockBuffer(buff);
+
+		//还原大小
+		ResizedImg.Clone(rdPtr->img);
+
+		rdPtr->img.Delete();
+		rdPtr->img.Create(owidth, oheight, proto);
+
+		ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+	}
+	return 0;
+}
+
 
 // ============================================================================
 //
@@ -726,6 +865,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			BitBltFrameArea,
 			LoadFromClipBoard,
 			LoadFromFile,
+
+			RecursiveGaussBlur,
 
 			//结尾必定是零
 			0

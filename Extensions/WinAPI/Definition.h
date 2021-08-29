@@ -7,6 +7,24 @@ typedef struct DOUBLEPOINT
 	DOUBLE  y;
 } DPOINT;
 
+typedef struct Gauss3_Coefs {
+	int N;
+	double sigma;
+	double B;
+	double b[4];
+} GCoef;
+
+struct RGBA {
+	double r;
+	double g;
+	double b;
+	double a;
+	//int r;
+	//int g;
+	//int b;
+	//int a;
+};
+
 //窗口锁定类别
 typedef enum _LOCKTYPE {
 	LOCK_CURRENTWINDOW,
@@ -74,6 +92,28 @@ POINT operator *(POINT A, LONG B);
 
 //POINT运算符重载 /
 POINT operator /(POINT A, LONG B);
+
+//RGBA运算符重载 *
+RGBA operator +(RGBA A, RGBA B);
+
+//RGBA运算符重载 /
+RGBA operator -(RGBA A, RGBA B);
+
+//RGBA数值更正
+RGBA Range(RGBA A);
+double Range(double A);
+
+//RGBA运算符重载 *
+RGBA operator *(RGBA A, double B);
+
+//RGBA运算符重载 /
+RGBA operator /(RGBA A, double B);
+
+//RGBA运算符重载 *
+RGBA operator *(double B, RGBA A);
+
+//RGBA运算符重载 /
+RGBA operator /(double B, RGBA A);
 
 #endif // !_DEFINITION_
 
