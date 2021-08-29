@@ -564,6 +564,12 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
 		cSurface ResizedImg;
+
+		//LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);
+		//ResizedImg.Clone(*ps);
+		//RECT rc = { 0,0,rdPtr->FrameW,rdPtr->FrameH };
+		//WinAddZone(rdPtr->rhPtr->rhIdEditWin, &rc);
+
 		ResizedImg.Clone(rdPtr->img);
 
 		rdPtr->img.Delete();
@@ -624,15 +630,6 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
 		}
 
-		//for (int y = 0; y < height; y++) {
-		//	for (int x = 0; x < width; x++) {
-		//		int offset = x * byte + y * pitch;
-		//		buff[offset + 2] = buff[offset + 1];
-		//		buff[offset + 1] = buff[offset + 0];
-		//		buff[offset + 0] = buff[offset + 2];
-		//	}
-		//}
-	
 		rdPtr->img.UnlockBuffer(buff);
 
 		//还原大小
