@@ -93,11 +93,18 @@ POINT operator *(POINT A, LONG B);
 //POINT运算符重载 /
 POINT operator /(POINT A, LONG B);
 
-//RGBA运算符重载 *
+//RGBA运算符重载 +
 RGBA operator +(RGBA A, RGBA B);
 
-//RGBA运算符重载 /
+//RGBA运算符重载 -
 RGBA operator -(RGBA A, RGBA B);
+
+//RGBA运算符重载 +=
+RGBA operator +=(RGBA A, RGBA B);
+
+//RGBA运算符重载 -=
+RGBA operator -=(RGBA A, RGBA B);
+
 
 //RGBA数值更正
 RGBA Range(RGBA A);

@@ -198,6 +198,7 @@ BEGIN
             MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
             MENUITEM SEPARATOR
             MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
+            MENUITEM "MultiThread Gauss Blur", IDMN_ACTION_WINDOW_MTGB
         END
         MENUITEM SEPARATOR
     END
@@ -422,6 +423,10 @@ BEGIN
     M_ACTION_WINDOW_RGB "Recursice Gauss Blur, Sigma = %0 , Scale = %1"
     PARA_ACTION_WINDOW_RGB_SIGMA "Sigma of Blur, 0 <= Sigma <= 1.615"
     PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale"
+
+    M_ACTION_WINDOW_MTGB "MultiThread Gauss Blur, Radius = %0 , Scale = %1 , Divide = %2"
+    PARA_ACTION_WINDOW_MTGB_RADIUS "Radius of Blur"
+    PARA_ACTION_WINDOW_MTGB_DIVIDE "Divide"
 END
 
 //Expression

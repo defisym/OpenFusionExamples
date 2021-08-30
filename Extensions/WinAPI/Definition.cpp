@@ -92,7 +92,7 @@ double Range(double A) {
 	return max(0.0, min(255.0, A));
 }
 
-//RGBA运算符重载 *
+//RGBA运算符重载 +
 RGBA operator +(RGBA A, RGBA B) {
 	A.r += B.r;
 	A.g += B.g;
@@ -107,7 +107,7 @@ RGBA operator +(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBA运算符重载 /
+//RGBA运算符重载 -
 RGBA operator -(RGBA A, RGBA B) {
 	A.r -= B.r;
 	A.g -= B.g;
@@ -120,6 +120,16 @@ RGBA operator -(RGBA A, RGBA B) {
 	//A.a = max(0, min(255, A.a));
 
 	return A;
+}
+
+//RGBA运算符重载 +=
+RGBA operator +=(RGBA A, RGBA B) {	
+	return A + B;
+}
+
+//RGBA运算符重载 -=
+RGBA operator -=(RGBA A, RGBA B) {
+	return A - B;
 }
 
 //RGBA运算符重载 *

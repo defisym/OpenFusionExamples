@@ -40,6 +40,8 @@
 
 //STL
 #include	<deque>
+#include	<vector>
+#include	<thread>
 
 //WinAPI
 #include	<tlhelp32.h>

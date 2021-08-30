@@ -62,6 +62,7 @@ short actionsInfos[]=
 		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0,
 
 		IDMN_ACTION_WINDOW_RGB,M_ACTION_WINDOW_RGB,ACT_ACTION_WINDOW_RGB,0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_RGB_SIGMA,PARA_ACTION_WINDOW_RGB_SCALE,
+		IDMN_ACTION_WINDOW_MTGB,M_ACTION_WINDOW_MTGB,ACT_ACTION_WINDOW_MTGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_MTGB_RADIUS,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE
 		};
 
 // Definitions of parameters for each expression
@@ -512,6 +513,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
+		//获取参数
 		#define MIN_SIGMA 0
 		#define MAX_SIGMA 1.615
 		
@@ -630,6 +632,19 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
 		}
 
+		//auto Filter = [RecursiveGaussFilter,byte, pitch, c](BYTE* buff, int width, int height) {
+		//	for (int y = 0; y < height; y++) {
+		//		//Xstride = byte;		
+		//		RecursiveGaussFilter(buff + y * pitch, buff + y * pitch, width, byte);
+		//	}
+		//	for (int x = 0; x < width; x++) {
+		//		//Ystride = pitch;
+		//		RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
+		//	}
+		//};
+
+		//Filter(buff,width,height);
+
 		rdPtr->img.UnlockBuffer(buff);
 
 		//还原大小
@@ -642,7 +657,179 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 	}
 	return 0;
 }
+short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->Display) {
+		//获取参数
+		int radius = CNC_GetIntParameter(rdPtr);
+		float sigma = (float)(radius - 0.5) / 3;
 
+		long p2 = CNC_GetFloatParameter(rdPtr);
+		float scale = *(float*)&p2;
+
+		int divide = CNC_GetIntParameter(rdPtr);
+
+		//计算参数
+		float a = (float)(1 / (sigma * sqrt(2 * 3.1415926)));
+		float* weight = (float*)malloc(sizeof(float) * (2 * radius + 1));
+
+		auto GetGauss = [a,sigma](int x) -> float {
+			float index = (float)(-1.0 * ((float)x * (float)x) / (2.0 * sigma * sigma));
+			float result = (float)(a * exp(index));
+			return result;
+		};
+		
+		auto GetGaussWeight1D = [GetGauss, radius, sigma](float* weight) {
+			float Normalization = 0;
+			for (int i = 0; i < 2 * radius + 1; i++) {
+				weight[i] = GetGauss(abs(i - radius));
+				Normalization += weight[i];
+			}
+			for (int j = 0; j < 2 * radius + 1; j++) {
+				weight[j] = weight[j] / Normalization;
+			}
+		};
+
+		GetGaussWeight1D(weight);
+
+		//Dimensions
+		int owidth = rdPtr->img.GetWidth(), oheight = rdPtr->img.GetHeight();
+		int width = (int)(owidth / scale);
+		int height = (int)(oheight / scale);
+
+		//X=false,Y=true
+		auto Edge = [width,height](int Input,bool dir)->int {
+			if (Input < 0) {
+				Input = 0 + (0 - Input);
+			}
+			else {
+				if (dir && (Input > height)) {
+					Input = height - (Input - height);
+				}
+				if (!dir && (Input > width)) {
+					Input = width - (Input - width);
+				}
+			}
+			
+			return Input;
+		};
+
+		// 降采样
+		LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+		cSurface ResizedImg;
+
+		ResizedImg.Clone(rdPtr->img);
+
+		rdPtr->img.Delete();
+		rdPtr->img.Create(width, height, proto);
+
+		ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+
+		//Lock buffer, get pitch etc.
+		BYTE* buff = rdPtr->img.LockBuffer();
+		if (!buff) return 0;
+
+		int pitch = rdPtr->img.GetPitch();
+		if (pitch < 0)
+		{
+			pitch *= -1;
+			buff -= pitch * (height - 1);
+		}
+		int size = pitch * height;
+		int byte = rdPtr->img.GetDepth() >> 3;		
+
+		//多线程				
+		int t_width = width / divide;
+		int t_height = height / divide;
+				
+		auto Gauss1DFilter = [Edge, radius, weight, byte, pitch, t_width, t_height](BYTE* src, BYTE* des, int size, bool dir, int DivX, int DivY) {
+			int stride;
+			if (!dir) {
+				stride = byte;
+			}
+			else {
+				stride = pitch;
+			}
+			for (int i = 0; i < size; i++) {
+				int RealPos;
+				if (!dir) {
+					RealPos = DivX * t_width;
+				}
+				else {
+					RealPos = DivY * t_height;
+				}
+				RealPos += i;
+				RGBA Sum = { 0,0,0,0 };				
+
+				for (int j = -radius; j <= radius; j++) {
+					int Pos= Edge(RealPos + j, dir);
+					int RPos = 0;					
+					if (!dir) {
+						RPos = Pos - DivX * t_width;
+					}
+					else {
+						RPos = Pos - DivY * t_height;
+					}
+					int offset = RPos * stride;
+					BYTE* Pixel = src + offset;					
+					RGBA calcpixels = RGBA{ (double)Pixel[2],(double)Pixel[1],(double)Pixel[0],0 }*weight[j + radius];
+					Sum = Sum + calcpixels;
+				}
+
+				des[i * stride + 2] = (BYTE)Sum.r;
+				des[i * stride + 1] = (BYTE)Sum.g;
+				des[i * stride + 0] = (BYTE)Sum.b;
+			}
+		};
+
+		auto Filter = [Gauss1DFilter, byte, pitch](BYTE* src, BYTE* temp, int fwidth, int fheight, int DivX, int DivY) {
+			for (int y = 0; y < fheight; y++) {
+				Gauss1DFilter(src + y * pitch, temp + y * pitch, fwidth, false, DivX, DivY);
+			}
+			for (int x = 0; x < fwidth; x++) {
+				Gauss1DFilter(temp + x * byte, src + x * byte, fheight, true, DivX, DivY);
+			}
+		};
+				
+		BYTE* temp = (BYTE*)malloc(size);
+
+		for (int x = 0; x < divide; x++) {
+			//边缘处理
+			int t_rwidth = t_width;
+			if (x == divide - 1) {
+				t_rwidth = width - x * t_width;
+			}
+			for (int y = 0; y < divide; y++) {
+				//边缘处理
+				int t_rheight = t_height;
+				if (y == divide - 1) {
+					t_rheight = height - y * t_height;
+				}
+
+				int offset = x * t_width * byte + y * t_height * pitch;
+				std::thread t(Filter, buff + offset, temp + offset, t_rwidth, t_rheight, x, y);
+				t.join();
+			}
+		}
+
+		free(temp);
+
+		rdPtr->img.UnlockBuffer(buff);
+
+		//还原大小
+		ResizedImg.Clone(rdPtr->img);
+
+		rdPtr->img.Delete();
+		rdPtr->img.Create(owidth, oheight, proto);
+
+		ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+
+		//清理
+		free(weight);
+	}
+	return 0;
+}
 
 // ============================================================================
 //
@@ -864,6 +1051,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			LoadFromFile,
 
 			RecursiveGaussBlur,
+			MultiThreadGaussBlur,
 
 			//结尾必定是零
 			0
