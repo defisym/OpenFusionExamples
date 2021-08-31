@@ -1,6 +1,9 @@
 #ifndef _DEFINITION_
 #define _DEFINITION_
 
+#define Dir_X	false
+#define Dir_Y	true
+
 typedef struct DOUBLEPOINT
 {
 	DOUBLE  x;

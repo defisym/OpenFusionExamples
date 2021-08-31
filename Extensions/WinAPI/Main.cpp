@@ -61,7 +61,8 @@ short actionsInfos[]=
 		IDMN_ACTION_WINDOW_LFC,M_ACTION_WINDOW_LFC,ACT_ACTION_WINDOW_LFC,0, 0,
 		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0,
 
-		IDMN_ACTION_WINDOW_RGB,M_ACTION_WINDOW_RGB,ACT_ACTION_WINDOW_RGB,0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_RGB_SIGMA,PARA_ACTION_WINDOW_RGB_SCALE,
+		IDMN_ACTION_WINDOW_RGB,M_ACTION_WINDOW_RGB,ACT_ACTION_WINDOW_RGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_RGB_SIGMA,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
+
 		IDMN_ACTION_WINDOW_MTGB,M_ACTION_WINDOW_MTGB,ACT_ACTION_WINDOW_MTGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_MTGB_RADIUS,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE
 		};
 
@@ -524,6 +525,9 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		long p2 = CNC_GetFloatParameter(rdPtr);
 		float scale = *(float*)&p2;
 
+		int divide = CNC_GetIntParameter(rdPtr);
+		GetMaxmiumDivide(&divide);
+
 		auto GetCoef = [](double sigma) -> GCoef {
 			double q1, q2, q3;
 
@@ -623,27 +627,70 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			free(W_Temp);
 		};
 
-		for (int y = 0; y < height; y++) {	
-			//Xstride = byte;		
-			RecursiveGaussFilter(buff + y * pitch, buff + y * pitch, width, byte);
-		}
-		for (int x = 0; x < width; x++) {
-			//Ystride = pitch;
-			RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
-		}
+		//单线程
+		if (divide == 1) {
+			//通常写法
+			//for (int y = 0; y < height; y++) {	
+			//	//Xstride = byte;		
+			//	RecursiveGaussFilter(buff + y * pitch, buff + y * pitch, width, byte);
+			//}
+			//for (int x = 0; x < width; x++) {
+			//	//Ystride = pitch;
+			//	RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
+			//}
 
-		//auto Filter = [RecursiveGaussFilter,byte, pitch, c](BYTE* buff, int width, int height) {
-		//	for (int y = 0; y < height; y++) {
-		//		//Xstride = byte;		
-		//		RecursiveGaussFilter(buff + y * pitch, buff + y * pitch, width, byte);
-		//	}
-		//	for (int x = 0; x < width; x++) {
-		//		//Ystride = pitch;
-		//		RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
-		//	}
-		//};
+			//单线程Lambda
+			auto Filter = [RecursiveGaussFilter, byte, pitch, c](BYTE* buff, int width, int height) {
+				for (int y = 0; y < height; y++) {
+					//Xstride = byte;		
+					RecursiveGaussFilter(buff + y * pitch, buff + y * pitch, width, byte);
+				}
+				for (int x = 0; x < width; x++) {
+					//Ystride = pitch;
+					RecursiveGaussFilter(buff + x * byte, buff + x * byte, height, pitch);
+				}
+			};
 
-		//Filter(buff,width,height);
+			Filter(buff, width, height);
+		}
+		//多线程
+		else {
+			int t_width = width / divide;
+			int t_height = height / divide;
+
+			auto Filter1D = [RecursiveGaussFilter, byte, pitch, c](BYTE* buff, int it_size, int filter_size, int it_stride, int filter_stride) {
+				for (int i = 0; i < it_size; i++) {
+					RecursiveGaussFilter(buff + i * it_stride, buff + i * it_stride, filter_size, filter_stride);
+				}
+			};
+
+			auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch](BYTE* buff, bool dir) {
+				std::vector<std::thread> t_vec;
+				int stride = dir ? pitch : byte;
+				int o_stride = (!dir) ? pitch : byte;
+
+				for (int i = 0; i < divide; i++) {
+					//边缘处理
+					int t_rsize = dir ? height : width;
+					int t_risize = ((!dir) ? t_height : t_width);
+
+					if (i == divide - 1) {
+						t_risize = ((!dir) ? height : width) - i * t_risize;
+					}
+
+					int offset = i * ((!dir) ? t_height : t_width);
+					//Filter1D(buff + offset * o_stride, t_risize, t_rsize, o_stride, stride);
+					t_vec.emplace_back(std::thread(Filter1D, buff + offset * o_stride, t_risize, t_rsize, o_stride, stride));
+				}
+
+				for (auto& it : t_vec) {
+					it.join();
+				}
+			};
+
+			multithread(buff, Dir_X);
+			multithread(buff, Dir_Y);
+		}
 
 		rdPtr->img.UnlockBuffer(buff);
 
@@ -667,6 +714,8 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		float scale = *(float*)&p2;
 
 		int divide = CNC_GetIntParameter(rdPtr);
+		GetMaxmiumDivide(&divide);
+		divide = (int)sqrt(divide);
 
 		//计算参数
 		float a = (float)(1 / (sigma * sqrt(2 * 3.1415926)));
@@ -794,6 +843,8 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 				
 		BYTE* temp = (BYTE*)malloc(size);
 
+		std::vector<std::thread> t_vec;
+
 		for (int x = 0; x < divide; x++) {
 			//边缘处理
 			int t_rwidth = t_width;
@@ -808,10 +859,16 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 				}
 
 				int offset = x * t_width * byte + y * t_height * pitch;
-				std::thread t(Filter, buff + offset, temp + offset, t_rwidth, t_rheight, x, y);
-				t.join();
+				Filter(buff + offset, temp + offset, t_rwidth, t_rheight, x, y);
+				//t_vec.emplace_back(std::thread(Filter, buff + offset, temp + offset, t_rwidth, t_rheight, x, y));				
+				//std::thread t(Filter, buff + offset, temp + offset, t_rwidth, t_rheight, x, y);
+				//t.join();
 			}
 		}
+
+		//for (auto& it : t_vec) {
+		//	it.join();
+		//}
 
 		free(temp);
 

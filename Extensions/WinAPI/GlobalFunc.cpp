@@ -417,6 +417,18 @@ DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
 
 	return FilterID;
 }
+void GetMaxmiumDivide(int* divide) {
+	//获取CPU最大线程数
+	int Max = std::thread::hardware_concurrency();
+
+	if (*divide == -1) {
+		*divide = Max;
+	}
+	else {
+		*divide = max(1, min(*divide, Max));
+	}
+	return;
+}
 
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
