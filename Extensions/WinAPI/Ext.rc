@@ -196,9 +196,10 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC
             MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
+            MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
             MENUITEM SEPARATOR
-            MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
-            MENUITEM "MultiThread Gauss Blur", IDMN_ACTION_WINDOW_MTGB
+            MENUITEM "Gauss Blur", IDMN_ACTION_WINDOW_MTGB
+            MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB            
         END
         MENUITEM SEPARATOR
     END
@@ -419,6 +420,7 @@ BEGIN
 
     M_ACTION_WINDOW_LFC "Load From Clipboard"
     M_ACTION_WINDOW_LFF "Load From File %0"
+    M_ACTION_WINDOW_LBG "Load From BackDrop"
 
     M_ACTION_WINDOW_RGB "Recursice Gauss Blur, Sigma = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_RGB_SIGMA "Sigma of Blur, 0 <= Sigma <= 1.615"

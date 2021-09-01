@@ -45,8 +45,9 @@
 #define ACT_ACTION_WINDOW_LFF		20
 #define	ACT_ACTION_WINDOW_RGB		21
 #define	ACT_ACTION_WINDOW_MTGB		22
+#define	ACT_ACTION_WINDOW_LBG		23
 
-#define	ACT_LAST					23
+#define	ACT_LAST					24
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
