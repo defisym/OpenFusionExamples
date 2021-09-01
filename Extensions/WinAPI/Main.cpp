@@ -830,7 +830,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 			for (int i = 0; i < size; i++) {
 				RGBA Sum = { 0,0,0,0 };
 				for (int j = -radius; j <= radius; j++) {
-					int Pos = Edge(i + j, EdgeSize);
+					int Pos = Edge(i + j, EdgeSize-1);
 					int offset = Pos * stride;
 					BYTE* Pixel = src + offset;
 					RGBA calcpixels = RGBA{ (double)Pixel[2],(double)Pixel[1],(double)Pixel[0],0 }*weight[j + radius];
