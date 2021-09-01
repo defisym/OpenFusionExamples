@@ -181,3 +181,13 @@ RGBA operator *(double B, RGBA A) {
 RGBA operator /(double B, RGBA A) {
 	return A / B;
 }
+
+//RGBAÔËËã·ûÖØÔØ >>
+RGBA operator >>(RGBA A, int B) {
+	A.r = (double)((int)A.r >> B);
+	A.g = (double)((int)A.g >> B);
+	A.b = (double)((int)A.b >> B);
+	A.a = (double)((int)A.a >> B);
+
+	return A;
+}

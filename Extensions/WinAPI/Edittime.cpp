@@ -502,7 +502,7 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 			//ps->Line(rc->left, rc->top, rc->right - 1, rc->bottom - 1);
 			//ps->Line(rc->right - 1, rc->top + 1, rc->left + 1, rc->bottom - 1);
 
-			LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+			LPSURFACE proto = nullptr;
 			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);			
 			
 			cSurface tile;

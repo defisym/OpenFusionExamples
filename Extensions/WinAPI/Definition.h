@@ -1,8 +1,8 @@
 #ifndef _DEFINITION_
 #define _DEFINITION_
 
-#define Dir_X	false
-#define Dir_Y	true
+constexpr auto Dir_X = false;
+constexpr auto Dir_Y = true;
 
 typedef struct DOUBLEPOINT
 {
@@ -124,6 +124,9 @@ RGBA operator *(double B, RGBA A);
 
 //RGBA运算符重载 /
 RGBA operator /(double B, RGBA A);
+
+//RGBA运算符重载 >>
+RGBA operator >>(RGBA A, int B);
 
 #endif // !_DEFINITION_
 

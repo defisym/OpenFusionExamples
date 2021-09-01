@@ -56,7 +56,7 @@
 //	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 //
 //	cSurface img;
-//	LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
+//	LPSURFACE proto = nullptr;
 //	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
 //	CImageFilter    pFilter(pImgMgr);
 //

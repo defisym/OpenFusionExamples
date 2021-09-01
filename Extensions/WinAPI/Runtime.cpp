@@ -65,7 +65,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	   Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
 	   you should do it here, and free your resources in DestroyRunObject.
 	*/
-	
+
 	//rhPtr
 	rdPtr->rhPtr = rdPtr->rHo.hoAdRunHeader;
 
@@ -90,13 +90,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->Display = edPtr->Display;
 
 	if (rdPtr->Display) {
-		//Surface
-		LPSURFACE proto = (LPSURFACE)malloc(sizeof(cSurface));
-		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-		CImageFilter    pFilter(pImgMgr);
-
-		//Surface获取位图信息
+		//Proto
+		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+		
+		//Surface初始化		
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 		rdPtr->img.Fill(BLACK);
 

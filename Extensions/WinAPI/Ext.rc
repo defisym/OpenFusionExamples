@@ -199,7 +199,9 @@ BEGIN
             MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
             MENUITEM SEPARATOR
             MENUITEM "Gauss Blur", IDMN_ACTION_WINDOW_MTGB
-            MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB            
+            MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
+            MENUITEM SEPARATOR
+            MENUITEM "Stack Blur", IDMN_ACTION_WINDOW_MTSB
         END
         MENUITEM SEPARATOR
     END
@@ -429,6 +431,8 @@ BEGIN
     M_ACTION_WINDOW_MTGB "MultiThread Gauss Blur, Radius = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_MTGB_RADIUS "Radius of Blur"
     PARA_ACTION_WINDOW_MTGB_DIVIDE "Divide, -1 = Max"
+
+    M_ACTION_WINDOW_MTSB "Stack Blur, Radius = %0 , Scale = %1 , Divide = %2"
 END
 
 //Expression
