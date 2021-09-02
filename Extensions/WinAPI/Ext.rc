@@ -197,7 +197,7 @@ BEGIN
             MENUITEM "Save Current Image to File", IDMN_ACTION_WINDOW_STF
             MENUITEM SEPARATOR
             MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
-            MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
+            //MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
             MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC            
             MENUITEM SEPARATOR
             MENUITEM "Stack Blur", IDMN_ACTION_WINDOW_MTSB

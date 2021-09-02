@@ -417,7 +417,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	img.Delete();
 	img.Create(Width, Height, proto);
 
-	ResizedImg.Stretch(img, 0, 0, Width, Height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+	ResizedImg.Stretch(img, 0, 0, Width, Height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
 	
 	if (rdPtr->Display) {
 		// Update Display Surface
@@ -426,7 +426,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 		rdPtr->img.Delete();
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-		ResizedImg.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+		ResizedImg.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
 				
 		// Redraw object
 		ReDisplay(rdPtr);
@@ -458,7 +458,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;	
+	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
 	ExportImage(pImgMgr, FilePath, &(rdPtr->img), GetFilterIDByFileName(rdPtr, FilePath));
 	return 0;
 }
@@ -486,7 +486,7 @@ short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2
 			rdPtr->img.Delete();
 			rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-			img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+			img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
 
 			// Redraw object			
 			ReDisplay(rdPtr);
@@ -514,7 +514,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		rdPtr->img.Delete();
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-		img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+		img.Stretch(rdPtr->img, 0, 0, rdPtr->swidth, rdPtr->sheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
 
 		// Redraw object			
 		ReDisplay(rdPtr);
@@ -525,34 +525,34 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport LoadBackDrop(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		//Dimensions
-		int width = rdPtr->img.GetWidth(), height = rdPtr->img.GetHeight();
-		int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
-		int screenY = rdPtr->rHo.hoY - rdPtr->rhPtr->rhWindowY;
+		////Dimensions
+		//int width = rdPtr->img.GetWidth(), height = rdPtr->img.GetHeight();
+		//int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
+		//int screenY = rdPtr->rHo.hoY - rdPtr->rhPtr->rhWindowY;
 
-		//LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);		
-		LPSURFACE ps = rdPtr->rhPtr->rhFrame->m_pSurface;
-		if (!ps) return 0;
+		////LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);		
+		//LPSURFACE ps = rdPtr->rhPtr->rhFrame->m_pSurface;
+		//if (!ps) return 0;
 
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-		
-		rdPtr->img.Delete();
-		rdPtr->img.Create(width, height, proto);
-		
-		// Hot spot (transform center)
-		POINT point = { 0, 0 };
+		//LPSURFACE proto = nullptr;
+		//GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+		//
+		//rdPtr->img.Delete();
+		//rdPtr->img.Create(width, height, proto);
+		//
+		//// Hot spot (transform center)
+		//POINT point = { 0, 0 };
 
-		//ps->Blit(rdPtr->img, 0, 0, screenX, screenY, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
-		ps->BlitEx(rdPtr->img, 0, 0,
-			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, screenX, screenY,
-			rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
-			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-			rdPtr->rs.rsEffectParam, BLTF_ANTIA);		
+		////ps->Blit(rdPtr->img, 0, 0, screenX, screenY, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+		//ps->BlitEx(rdPtr->img, 0, 0,
+		//	rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, screenX, screenY,
+		//	rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
+		//	(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+		//	BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+		//	rdPtr->rs.rsEffectParam, BLTF_ANTIA);		
 
-		// Redraw object			
-		ReDisplay(rdPtr);
+		//// Redraw object			
+		//ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -612,17 +612,19 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		int width = (int)(owidth / scale);
 		int height = (int)(oheight / scale);
 		
-		//降采样		
+		// 降采样
+		cSurface ResizedImg;
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
-		cSurface ResizedImg;
-		ResizedImg.Clone(rdPtr->img);
+		if (!(scale == 1.0)) {
+			ResizedImg.Clone(rdPtr->img);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(width, height, proto);
+			rdPtr->img.Delete();
+			rdPtr->img.Create(width, height, proto);
 
-		ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+			ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
 
 		//Lock buffer, get pitch etc.
 		BYTE* buff = rdPtr->img.LockBuffer();		
@@ -734,12 +736,14 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		rdPtr->img.UnlockBuffer(buff);
 
 		//还原大小
-		ResizedImg.Clone(rdPtr->img);
+		if (!(scale == 1.0)) {
+			ResizedImg.Clone(rdPtr->img);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(owidth, oheight, proto);
+			rdPtr->img.Delete();
+			rdPtr->img.Create(owidth, oheight, proto);
 
-		ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+			ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
 
 		// Redraw object			
 		ReDisplay(rdPtr);
@@ -795,17 +799,18 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		int height = (int)(oheight / scale);
 
 		// 降采样
+		cSurface ResizedImg;
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
-		cSurface ResizedImg;
+		if (!(scale == 1.0)) {
+			ResizedImg.Clone(rdPtr->img);
 
-		ResizedImg.Clone(rdPtr->img);
+			rdPtr->img.Delete();
+			rdPtr->img.Create(width, height, proto);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(width, height, proto);
-
-		ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+			ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
 
 		//Lock buffer, get pitch etc.
 		BYTE* buff = rdPtr->img.LockBuffer();
@@ -895,12 +900,14 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		rdPtr->img.UnlockBuffer(buff);
 
 		//还原大小
-		ResizedImg.Clone(rdPtr->img);
+		if (!(scale == 1.0)) {
+			ResizedImg.Clone(rdPtr->img);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(owidth, oheight, proto);
+			rdPtr->img.Delete();
+			rdPtr->img.Create(owidth, oheight, proto);
 
-		ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+			ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
 
 		//清理
 		free(weight);
@@ -934,17 +941,18 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 		int height = (int)(oheight / scale);
 
 		// 降采样
+		cSurface ResizedImg;
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+		
+		if (!(scale == 1.0)) {
+			ResizedImg.Clone(rdPtr->img);
 
-		cSurface ResizedImg;
+			rdPtr->img.Delete();
+			rdPtr->img.Create(width, height, proto);
 
-		ResizedImg.Clone(rdPtr->img);
-
-		rdPtr->img.Delete();
-		rdPtr->img.Create(width, height, proto);
-
-		ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+			ResizedImg.Stretch(rdPtr->img, 0, 0, width, height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
 
 		//Lock buffer, get pitch etc.
 		BYTE* buff = rdPtr->img.LockBuffer();
@@ -1129,13 +1137,15 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 		rdPtr->img.UnlockBuffer(buff);
 
 		//还原大小
-		ResizedImg.Clone(rdPtr->img);
+		if (!(scale == 1.0)) {
+			ResizedImg.Clone(rdPtr->img);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(owidth, oheight, proto);
+			rdPtr->img.Delete();
+			rdPtr->img.Create(owidth, oheight, proto);
 
-		ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
-		
+			ResizedImg.Stretch(rdPtr->img, 0, 0, owidth, oheight, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
+
 		// Redraw object			
 		ReDisplay(rdPtr);
 	}

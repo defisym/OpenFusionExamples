@@ -4,6 +4,9 @@
 constexpr auto Dir_X = false;
 constexpr auto Dir_Y = true;
 
+constexpr auto Do_Normal = false;
+constexpr auto Do_Alpha = true;
+
 typedef struct DOUBLEPOINT
 {
 	DOUBLE  x;
