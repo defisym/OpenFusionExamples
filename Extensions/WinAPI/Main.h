@@ -144,7 +144,7 @@ typedef struct tagRDATA
 	short			swidth;
 	short			sheight;
 
-	bool Display = false;	
+	bool Display = false;
 
 	//œ‘ æSurface
 	cSurface img;	

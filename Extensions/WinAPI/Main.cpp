@@ -849,6 +849,8 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 					int Pos = Edge(i + j, EdgeSize - 1);
 					int offset = Pos * stride;
 					BYTE* Pixel = src + offset;
+					//This method will take transparent pixels as black/{0,0,0,0}, which will cause black edges around pic with alpha channel.
+					//I will not fix this cause this method is **VERY** slow and useless in game.
 					RGBA calcpixels = RGBA{ (double)Pixel[2],(double)Pixel[1],(double)Pixel[0],0 }*weight[j + radius];
 					Sum = Sum + calcpixels;
 				}
