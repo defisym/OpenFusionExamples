@@ -58,6 +58,8 @@ BOOL IMEStateControl(HWND hWnd, bool State);
 //Surface
 void ReDisplay(LPRDATA rdPtr);
 DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
+
+void GetValidScale(float* scale);
 void GetMaxmiumDivide(int* divide);
 
 //所有创建线程的句柄

@@ -194,14 +194,17 @@ BEGIN
         BEGIN
             MENUITEM "Capture Frame Area to Clipboard", IDMN_ACTION_WINDOW_BFA
             MENUITEM SEPARATOR
-            MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC
+            MENUITEM "Save Current Image to File", IDMN_ACTION_WINDOW_STF
+            MENUITEM SEPARATOR
             MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
             MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
+            MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC            
+            MENUITEM SEPARATOR
+            MENUITEM "Stack Blur", IDMN_ACTION_WINDOW_MTSB
             MENUITEM SEPARATOR
             MENUITEM "Gauss Blur", IDMN_ACTION_WINDOW_MTGB
             MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
-            MENUITEM SEPARATOR
-            MENUITEM "Stack Blur", IDMN_ACTION_WINDOW_MTSB
+            
         END
         MENUITEM SEPARATOR
     END
@@ -420,17 +423,19 @@ BEGIN
     PARA_ACTION_WINDOW_BFA_SAVETOFILE "SaveToFile, 1 = Save, 0 = Don't Save"
     PARA_ACTION_WINDOW_BFA_FILEPATH "FilePath, Keep Empty if SaveToFile is Set to 0"
 
+    M_ACTION_WINDOW_STF "Save Current Image to File %0"
+
     M_ACTION_WINDOW_LFC "Load From Clipboard"
     M_ACTION_WINDOW_LFF "Load From File %0"
     M_ACTION_WINDOW_LBG "Load From BackDrop"
 
     M_ACTION_WINDOW_RGB "Recursice Gauss Blur, Sigma = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_RGB_SIGMA "Sigma of Blur, 0 <= Sigma <= 1.615"
-    PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale"
+    PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale, Scale >= 1.0. E.g. PicA = 100*100 , Scale = 2.0 , ProcessResoution = 50*50"
 
     M_ACTION_WINDOW_MTGB "MultiThread Gauss Blur, Radius = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_MTGB_RADIUS "Radius of Blur"
-    PARA_ACTION_WINDOW_MTGB_DIVIDE "Divide, -1 = Max"
+    PARA_ACTION_WINDOW_MTGB_DIVIDE "Divide of threads, -1 = Max"
 
     M_ACTION_WINDOW_MTSB "Stack Blur, Radius = %0 , Scale = %1 , Divide = %2"
 END

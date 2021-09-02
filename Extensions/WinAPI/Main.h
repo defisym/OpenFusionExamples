@@ -48,7 +48,10 @@
 #define	ACT_ACTION_WINDOW_LBG		23
 #define ACT_ACTION_WINDOW_MTSB		24
 
-#define	ACT_LAST					25
+#define ACT_ACTION_WINDOW_STF		25
+
+
+#define	ACT_LAST					26
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

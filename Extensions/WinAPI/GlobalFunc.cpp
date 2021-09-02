@@ -417,6 +417,12 @@ DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
 
 	return FilterID;
 }
+
+void GetValidScale(float* scale) {
+	*scale = max(1, *scale);
+	return;
+}
+
 void GetMaxmiumDivide(int* divide) {
 	//获取CPU最大线程数
 	int Max = std::thread::hardware_concurrency();
