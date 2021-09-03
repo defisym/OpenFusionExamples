@@ -48,7 +48,8 @@
 #include	<shlwapi.h>
 #include	<shellscalingapi.h>
 #pragma	comment(lib,"shlwapi.lib") 
-#pragma   comment(lib, "Imm32.lib")
+#pragma comment(lib,"Imm32.lib")
+//#pragma	comment(lib,"msimg32.lib") 
 
 //MMF
 #include	"ImgFlt.h"

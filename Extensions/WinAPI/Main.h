@@ -49,9 +49,9 @@
 #define ACT_ACTION_WINDOW_MTSB		24
 
 #define ACT_ACTION_WINDOW_STF		25
+#define ACT_ACTION_WINDOW_STC		26
 
-
-#define	ACT_LAST					26
+#define	ACT_LAST					27
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -147,7 +147,11 @@ typedef struct tagRDATA
 	bool Display = false;
 
 	//显示Surface
-	cSurface img;	
+	cSurface img;
+	//Alpha
+	LPBYTE Alpha = nullptr;
+	int AlphaPitch = 0;
+	bool AlphaAttached = false;
 
 	//用于保存的RunHeader
 	fprh rhPtr = NULL;

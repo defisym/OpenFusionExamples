@@ -62,6 +62,16 @@ DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
 void GetValidScale(float* scale);
 void GetMaxmiumDivide(int* divide);
 
+//GetAlphaBuff
+LPBYTE GetBuff(LPSURFACE Src);
+//StretchAlpha
+BOOL Stretch(LPBYTE Src, int SW, int SH, LPBYTE Des, int DW, int DH);
+//StretchSurfaceWithAlpha
+BOOL Stretch(LPSURFACE Src, LPSURFACE Des, LPRDATA rdPtr);
+//StretchSurface
+BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
+
+
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;
 
