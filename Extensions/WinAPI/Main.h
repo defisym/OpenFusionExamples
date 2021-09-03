@@ -50,8 +50,10 @@
 
 #define ACT_ACTION_WINDOW_STF		25
 #define ACT_ACTION_WINDOW_STC		26
+#define ACT_ACTION_WINDOW_STT		27
+#define ACT_ACTION_WINDOW_LFT		28
 
-#define	ACT_LAST					27
+#define	ACT_LAST					29
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -148,6 +150,9 @@ typedef struct tagRDATA
 
 	//œ‘ æSurface
 	cSurface img;
+	//±∏∑›Surface
+	cSurface temp;
+
 	//Alpha
 	LPBYTE Alpha = nullptr;
 	int AlphaPitch = 0;

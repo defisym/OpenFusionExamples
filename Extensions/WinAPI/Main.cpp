@@ -69,6 +69,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_WINDOW_STF,M_ACTION_WINDOW_STF,ACT_ACTION_WINDOW_STF,0, 1,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_FILEPATH,
 		IDMN_ACTION_WINDOW_STC,M_ACTION_WINDOW_STC,ACT_ACTION_WINDOW_STC,0, 0,
+		IDMN_ACTION_WINDOW_STT,M_ACTION_WINDOW_STT,ACT_ACTION_WINDOW_STT,0, 0,
+		IDMN_ACTION_WINDOW_LFT,M_ACTION_WINDOW_LFT,ACT_ACTION_WINDOW_LFT,0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -455,6 +457,22 @@ short WINAPI DLLExport SaveToClipBoard(LPRDATA rdPtr, long param1, long param2) 
 
 		GlobalUnlock(cb);
 		CloseClipboard();
+	}
+	return 0;
+}
+
+short WINAPI DLLExport SaveToTemp(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->Display) {
+		rdPtr->temp.Delete();
+		rdPtr->temp.Clone(rdPtr->img);
+	}
+	return 0;
+}
+
+short WINAPI DLLExport LoadFromTemp(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->Display) {
+		rdPtr->img.Delete();
+		rdPtr->img.Clone(rdPtr->temp);
 	}
 	return 0;
 }
@@ -1372,6 +1390,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			MultiThreadStackBlur,
 			SaveToFile,
 			SaveToClipBoard,
+			SaveToTemp,
+			LoadFromTemp,
 
 			//结尾必定是零
 			0

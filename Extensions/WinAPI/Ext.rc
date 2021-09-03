@@ -193,11 +193,13 @@ BEGIN
         POPUP "Display"
         BEGIN
             MENUITEM "Capture Frame Area", IDMN_ACTION_WINDOW_BFA
-            MENUITEM SEPARATOR
+            MENUITEM SEPARATOR            
             MENUITEM "Save Current Image to File", IDMN_ACTION_WINDOW_STF
+            MENUITEM "Save Current Image to Temp", IDMN_ACTION_WINDOW_STT            
             MENUITEM "Save Current Image to Clipboard", IDMN_ACTION_WINDOW_STC
-            MENUITEM SEPARATOR
+            MENUITEM SEPARATOR            
             MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
+            MENUITEM "Load From Temp", IDMN_ACTION_WINDOW_LFT
             MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
             MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC            
             MENUITEM SEPARATOR
@@ -424,9 +426,11 @@ BEGIN
     PARA_ACTION_WINDOW_BFA_SAVETOFILE "SaveToFile, 1 = Save, 0 = Don't Save"
     PARA_ACTION_WINDOW_BFA_FILEPATH "FilePath, Keep Empty if SaveToFile is Set to 0"
 
+    M_ACTION_WINDOW_STT "Save Current Image to Temp"
     M_ACTION_WINDOW_STF "Save Current Image to File %0"
     M_ACTION_WINDOW_STC "Save Current Image to Clipboard"
 
+    M_ACTION_WINDOW_LFT "Load From Temp"
     M_ACTION_WINDOW_LFC "Load From Clipboard"
     M_ACTION_WINDOW_LFF "Load From File %0"
     M_ACTION_WINDOW_LBG "Load From BackDrop"

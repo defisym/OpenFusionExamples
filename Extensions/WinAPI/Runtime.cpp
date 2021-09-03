@@ -96,7 +96,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		
 		//Surface初始化		
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
-		rdPtr->img.Fill(BLACK);
+		rdPtr->img.Fill(BLACK);		
 
 		////Surface指针使用流程
 		//LPSURFACE DIS;
