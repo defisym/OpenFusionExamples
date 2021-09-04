@@ -192,6 +192,12 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Display"
         BEGIN
+            POPUP "Stretch Quality"
+            BEGIN
+                MENUITEM "Fast", IDMN_ACTION_SQ_F
+                MENUITEM "Resample", IDMN_ACTION_SQ_H
+            END
+            MENUITEM SEPARATOR
             MENUITEM "Capture Frame Area", IDMN_ACTION_WINDOW_BFA
             MENUITEM SEPARATOR            
             MENUITEM "Save Current Image to File", IDMN_ACTION_WINDOW_STF
@@ -420,6 +426,10 @@ STRINGTABLE
 BEGIN
     M_ACTION_WINDOW_GF    "Go FullScreen"
     M_ACTION_WINDOW_GW     "Go Windowed"
+
+    M_ACTION_SQ_F "Set Stretch Quality to Fast"
+    M_ACTION_SQ_H "Set Stretch Quality to Resample"
+
     M_ACTION_WINDOW_BFA     "Capture Frame Area to Clipboard, Stretch to Width = %0, Height = %1, SaveToFile = %2, FilePath %3"
     PARA_ACTION_WINDOW_BFA_WIDTH "Width"
     PARA_ACTION_WINDOW_BFA_HEIGHT "Heigth"

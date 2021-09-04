@@ -7,6 +7,9 @@ constexpr auto Dir_Y = true;
 constexpr auto Do_Normal = false;
 constexpr auto Do_Alpha = true;
 
+constexpr auto Fast = false;
+constexpr auto HighQuality = true;
+
 typedef struct DOUBLEPOINT
 {
 	DOUBLE  x;

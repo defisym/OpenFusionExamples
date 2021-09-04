@@ -436,88 +436,99 @@ void GetMaxmiumDivide(int* divide) {
 	return;
 }
 
-//GetAlphaBuff
-LPBYTE GetBuff(LPSURFACE Src) {
-	//Lock buffer, get pitch etc.
-	BYTE* buff = Src->LockAlpha();
-	if (!buff) return nullptr;
+//CustomStretch
+void Stretch(bool YReverse, LPBYTE Src, unsigned int SW, unsigned int SH, unsigned int SBW, LPBYTE Des, unsigned int DW, unsigned int DH, unsigned int DBW) {
+	float ScaleX = (float)(1.0 * SW / DW);
+	float ScaleY = (float)(1.0 * SH / DH);
 
-	int pitch = Src->GetAlphaPitch();
-	if (pitch < 0)
-	{
-		pitch *= -1;
-		buff -= pitch * (Src->GetHeight() - 1);
-	}
+	int SP = SBW * SW;
+	int DP = DBW * DW;
+
+
 	
-	int size = pitch * Src->GetHeight();
-	int byte = Src->GetDepth() >> 3;
+	unsigned long* SrcX_Table = (unsigned long*)malloc(sizeof(unsigned long) * DW);
+	for (unsigned long x = 0; x < DW; ++x) {
+		SrcX_Table[x] = (unsigned long)(x * ScaleX);
+	}
 
-	BYTE* res = (BYTE*)malloc(size);
-	memcpy(res,buff,size);
-
-	Src->UnlockAlpha();
-
-	return res;
-}
-
-//StretchAlpha
-BOOL Stretch(LPBYTE Src, int SW, int SH, LPBYTE Des, int DW, int DH) {
-	unsigned long xrIntFloat_16 = (SW << 16) / DW + 1;
-	unsigned long yrIntFloat_16 = (SH << 16) / DH + 1;
-	unsigned long dst_width = DW;
-	unsigned long srcy_16 = 0;
 	LPBYTE pDstLine = Des;
 
-	for (unsigned long y = 0; y < DH; ++y)
-	{
-		LPBYTE pSrcLine = Src + SW * (srcy_16 >> 16);
-
-		unsigned long srcx_16 = 0;
-		for (unsigned long x = 0; x < dst_width; ++x)
-		{
-			pDstLine[x] = pSrcLine[srcx_16 >> 16];
-			srcx_16 += xrIntFloat_16;
+	for (unsigned long y = 0; y < DH; ++y) {
+		unsigned long srcy = (unsigned long)(y * ScaleY);
+		LPBYTE pSrcLine = Src + (YReverse ? ((SH - 1 - srcy) * SP) : (srcy * SP));
+		for (unsigned long x = 0; x < DW; ++x) {
+			for (unsigned int i = 0; i < DBW; i++) {
+				pDstLine[x * DBW + i] = pSrcLine[SrcX_Table[x] * SBW + i];
+			}
 		}
-		srcy_16 += yrIntFloat_16;
-		pDstLine += DW;
+		pDstLine += DP;
 	}
 
-	return TRUE;
-}
+	free(SrcX_Table);	
 
-//StretchSurfaceWithAlpha
-BOOL Stretch(LPSURFACE Src, LPSURFACE Des, LPRDATA rdPtr) {
-	BOOL res = 0;
-
-	if (Src->HasAlpha() && !Des->HasAlpha()) {
-		LPBYTE sbuff = GetBuff(Src);
-		if (rdPtr->Alpha) {
-			free(rdPtr->Alpha);
-		}
-		rdPtr->Alpha = (BYTE*)malloc(Des->GetWidth() * Des->GetHeight());
-		Stretch(sbuff, Src->GetWidth(), Src->GetHeight(), rdPtr->Alpha, Des->GetWidth(), Des->GetHeight());
-
-		cSurface nalpha;
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-		nalpha.Create(Src->GetWidth(), Src->GetHeight(), proto);
-		Src->Blit(nalpha, 0, 0, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
-
-		res = Stretch(&nalpha, Des);
-
-		Des->CreateAlpha();
-		Des->AttachAlpha(rdPtr->Alpha,Src->GetWidth());
-	}
-	else {
-		res = Stretch(Src, Des);
-	}
-	return res;
+	return;
 }
 
 //StretchSurface
+void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
+	if (HighQuality) {
+		if (Src->HasAlpha()) {
+			Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
+		}
+		else {
+			Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
+		}
+		return;
+	}
+
+	auto GetBuff = [=](LPSURFACE Tar, LPBYTE buff,bool alpha)->LPBYTE{
+		if (!buff) { return nullptr; }
+		LPBYTE Res = buff;
+
+		int pitch = alpha ? Tar->GetAlphaPitch() : Tar->GetPitch();
+		if (pitch < 0)
+		{
+			pitch *= -1;
+			Res -= pitch * (Tar->GetHeight() - 1);
+		}
+		return Res;
+	};
+
+	auto YUpSideDown = [=](LPSURFACE Tar, bool alpha)->bool {
+		return ((alpha ? Tar->GetAlphaPitch() : Tar->GetPitch()) < 0) ? true : false;
+	};
+
+	auto DoStretch = [=](LPSURFACE  Src, LPSURFACE Des, bool alpha) {
+		BYTE* Sbuff = GetBuff(Src, alpha ? Src->LockAlpha() : Src->LockBuffer(), alpha);
+		BYTE* Dbuff = GetBuff(Des, alpha ? Des->LockAlpha() : Des->LockBuffer(), alpha);
+
+		int Sbyte = abs(alpha ? Src->GetAlphaPitch() : Src->GetPitch()) / Src->GetWidth();
+		int Dbyte = abs(alpha ? Des->GetAlphaPitch() : Des->GetPitch()) / Des->GetWidth();
+		bool YReverse = YUpSideDown(Src, alpha) || YUpSideDown(Des, alpha);
+
+		Stretch(YReverse, Sbuff, Src->GetWidth(), Src->GetHeight(), Sbyte, Dbuff, Des->GetWidth(), Des->GetHeight(), Dbyte);
+
+		alpha ? Src->UnlockAlpha() : Src->UnlockBuffer(Sbuff);
+		alpha ? Des->UnlockAlpha() : Des->UnlockBuffer(Dbuff);
+	};
+
+	DoStretch(Src, Des, Do_Normal);
+
+	if (Src->HasAlpha()) {
+		if (!Des->HasAlpha()) {
+			Des->CreateAlpha();
+		}
+		
+		DoStretch(Src, Des, Do_Alpha);
+	}
+
+	return;
+}
+
+//StretchBlt Stretch Surface
 BOOL Stretch(LPSURFACE Src, LPSURFACE Des) {
 	BOOL res = 0;
-	
+
 	if (Src->HasAlpha()) {
 		res = Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
 		return res;
@@ -539,7 +550,7 @@ BOOL Stretch(LPSURFACE Src, LPSURFACE Des) {
 		res = StretchBlt(ddc, 0, 0, Des->GetWidth(), Des->GetHeight(), sdc, 0, 0, Src->GetWidth(), Src->GetHeight(), SRCCOPY);
 
 		src.ReleaseDC(sdc);
-		Des->ReleaseDC(ddc);		
+		Des->ReleaseDC(ddc);
 	}
 	else {
 		HDC sdc = Src->GetDC();
@@ -551,7 +562,7 @@ BOOL Stretch(LPSURFACE Src, LPSURFACE Des) {
 		res = StretchBlt(ddc, 0, 0, Des->GetWidth(), Des->GetHeight(), sdc, 0, 0, Src->GetWidth(), Src->GetHeight(), SRCCOPY);
 
 		Src->ReleaseDC(sdc);
-		Des->ReleaseDC(ddc);		
+		Des->ReleaseDC(ddc);
 	}
 	return res;
 }

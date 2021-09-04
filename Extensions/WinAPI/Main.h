@@ -53,7 +53,10 @@
 #define ACT_ACTION_WINDOW_STT		27
 #define ACT_ACTION_WINDOW_LFT		28
 
-#define	ACT_LAST					29
+#define ACT_ACTION_SQ_F				29
+#define ACT_ACTION_SQ_H				30
+
+#define	ACT_LAST					31
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -153,10 +156,7 @@ typedef struct tagRDATA
 	//备份Surface
 	cSurface temp;
 
-	//Alpha
-	LPBYTE Alpha = nullptr;
-	int AlphaPitch = 0;
-	bool AlphaAttached = false;
+	bool StretchQuality = Fast;
 
 	//用于保存的RunHeader
 	fprh rhPtr = NULL;

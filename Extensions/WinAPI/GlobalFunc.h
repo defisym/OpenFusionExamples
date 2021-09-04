@@ -62,13 +62,11 @@ DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
 void GetValidScale(float* scale);
 void GetMaxmiumDivide(int* divide);
 
-//GetAlphaBuff
-LPBYTE GetBuff(LPSURFACE Src);
-//StretchAlpha
-BOOL Stretch(LPBYTE Src, int SW, int SH, LPBYTE Des, int DW, int DH);
-//StretchSurfaceWithAlpha
-BOOL Stretch(LPSURFACE Src, LPSURFACE Des, LPRDATA rdPtr);
+//CustomStretch
+void Stretch(bool YReverse, LPBYTE Src, unsigned int SW, unsigned int SH, unsigned int SBW, LPBYTE Des, unsigned int DW, unsigned int DH, unsigned int DBW);
 //StretchSurface
+void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality);
+//StretchBlt Stretch Surface
 BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
 
 

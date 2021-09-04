@@ -71,6 +71,9 @@ short actionsInfos[]=
 		IDMN_ACTION_WINDOW_STC,M_ACTION_WINDOW_STC,ACT_ACTION_WINDOW_STC,0, 0,
 		IDMN_ACTION_WINDOW_STT,M_ACTION_WINDOW_STT,ACT_ACTION_WINDOW_STT,0, 0,
 		IDMN_ACTION_WINDOW_LFT,M_ACTION_WINDOW_LFT,ACT_ACTION_WINDOW_LFT,0, 0,
+
+		IDMN_ACTION_SQ_F,M_ACTION_SQ_F,ACT_ACTION_SQ_F,0, 0,
+		IDMN_ACTION_SQ_H,M_ACTION_SQ_H,ACT_ACTION_SQ_H,0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -370,7 +373,15 @@ short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-//截取场景区域到剪贴板
+short WINAPI DLLExport StretchQuality_Fast(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->StretchQuality = Fast;
+	return 0;
+}
+short WINAPI DLLExport StretchQuality_High(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->StretchQuality = HighQuality;
+	return 0;
+}
+
 short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) {
 	//获取参数
 	int Width = CNC_GetIntParameter(rdPtr);
@@ -500,7 +511,7 @@ short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2
 			rdPtr->img.Delete();
 			rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 						
-			Stretch(&img, &rdPtr->img);
+			Stretch(&img, &rdPtr->img, rdPtr->StretchQuality);
 
 			// Redraw object
 			ReDisplay(rdPtr);
@@ -525,10 +536,15 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		ImportImage(pImgMgr, FilePath, &img, 0, 0);
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
+		//rdPtr->img.Delete();
+		//rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+
+		//Stretch(&img, &rdPtr->img);
+
 		rdPtr->img.Delete();
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-		Stretch(&img, &rdPtr->img);
+		Stretch(&img, &rdPtr->img, rdPtr->StretchQuality);
 
 		// Redraw object
 		ReDisplay(rdPtr);
@@ -633,7 +649,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			rdPtr->img.Delete();
 			rdPtr->img.Create(width, height, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img);
+			Stretch(&ResizedImg, &rdPtr->img, Fast);
 		}
 
 		//Lock buffer, get pitch etc.
@@ -752,7 +768,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			rdPtr->img.Delete();
 			rdPtr->img.Create(owidth, oheight, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img);
+			Stretch(&ResizedImg, &rdPtr->img, Fast);
 		}
 
 		// Redraw object			
@@ -819,7 +835,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 			rdPtr->img.Delete();
 			rdPtr->img.Create(width, height, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img);
+			Stretch(&ResizedImg, &rdPtr->img, Fast);
 		}
 
 		//Lock buffer, get pitch etc.
@@ -918,7 +934,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 			rdPtr->img.Delete();
 			rdPtr->img.Create(owidth, oheight, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img);
+			Stretch(&ResizedImg, &rdPtr->img, Fast);
 		}
 
 		//清理
@@ -963,7 +979,7 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 			rdPtr->img.Delete();
 			rdPtr->img.Create(width, height, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img);
+			Stretch(&ResizedImg, &rdPtr->img, Fast);			
 		}
 
 		//Lock buffer, get pitch etc.
@@ -1155,6 +1171,7 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 			rdPtr->img.Delete();
 			rdPtr->img.Create(owidth, oheight, proto);
 
+			Stretch(&ResizedImg, &rdPtr->img, Fast);
 			Stretch(&ResizedImg, &rdPtr->img);
 		}
 
@@ -1392,6 +1409,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SaveToClipBoard,
 			SaveToTemp,
 			LoadFromTemp,
+
+			StretchQuality_Fast,
+			StretchQuality_High,
 
 			//结尾必定是零
 			0
