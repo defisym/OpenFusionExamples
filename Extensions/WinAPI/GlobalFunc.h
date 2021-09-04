@@ -63,7 +63,7 @@ void GetValidScale(float* scale);
 void GetMaxmiumDivide(int* divide);
 
 //CustomStretch
-void Stretch(bool YReverse, LPBYTE Src, unsigned int SW, unsigned int SH, unsigned int SBW, LPBYTE Des, unsigned int DW, unsigned int DH, unsigned int DBW);
+void Stretch(bool YReverse, LPBYTE Src, uint SW, uint SH, uint SBW, LPBYTE Des, uint DW, uint DH, uint DBW);
 //StretchSurface
 void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality);
 //StretchBlt Stretch Surface

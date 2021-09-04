@@ -437,92 +437,138 @@ void GetMaxmiumDivide(int* divide) {
 }
 
 //CustomStretch
-void Stretch(bool YReverse, LPBYTE Src, unsigned int SW, unsigned int SH, unsigned int SBW, LPBYTE Des, unsigned int DW, unsigned int DH, unsigned int DBW) {
+void Stretch(bool YReverse, LPBYTE Src, uint SW, uint SH, uint SBW, LPBYTE Des, uint DW, uint DH, uint DBW) {
 	float ScaleX = (float)(1.0 * SW / DW);
 	float ScaleY = (float)(1.0 * SH / DH);
 
 	int SP = SBW * SW;
 	int DP = DBW * DW;
 
-
-	
-	unsigned long* SrcX_Table = (unsigned long*)malloc(sizeof(unsigned long) * DW);
-	for (unsigned long x = 0; x < DW; ++x) {
-		SrcX_Table[x] = (unsigned long)(x * ScaleX);
+	ulong* SrcX_Table = (ulong*)malloc(sizeof(ulong) * DW);
+	for (ulong x = 0; x < DW; ++x) {
+		SrcX_Table[x] = (ulong)(x * ScaleX);
 	}
-
+	
 	LPBYTE pDstLine = Des;
 
-	for (unsigned long y = 0; y < DH; ++y) {
-		unsigned long srcy = (unsigned long)(y * ScaleY);
+	for (ulong y = 0; y < DH; ++y) {
+		ulong srcy = (ulong)(y * ScaleY);
 		LPBYTE pSrcLine = Src + (YReverse ? ((SH - 1 - srcy) * SP) : (srcy * SP));
-		for (unsigned long x = 0; x < DW; ++x) {
-			for (unsigned int i = 0; i < DBW; i++) {
+		for (ulong x = 0; x < DW; ++x) {
+			for (uint i = 0; i < DBW; i++) {
 				pDstLine[x * DBW + i] = pSrcLine[SrcX_Table[x] * SBW + i];
 			}
 		}
 		pDstLine += DP;
 	}
 
-	free(SrcX_Table);	
+	free(SrcX_Table);
 
 	return;
+
+	//auto StretchCore = [=](LPBYTE Src, LPBYTE Des, uint DH, int div) {
+	//	LPBYTE pDstLine = Des;
+	//	for (ulong y = 0; y < DH; ++y) {
+	//		ulong srcy = (ulong)(y * ScaleY);
+	//		LPBYTE pSrcLine = Src + (YReverse ? ((SH - 1 - DH * div - srcy) * SP) : (srcy * SP));
+	//		for (ulong x = 0; x < DW; ++x) {
+	//			for (uint i = 0; i < DBW; i++) {
+	//				pDstLine[x * DBW + i] = pSrcLine[SrcX_Table[x] * SBW + i];
+	//			}
+	//		}
+	//		pDstLine += DP;
+	//	}
+	//};
+
+	//auto StretchMT = [=](LPBYTE Src, LPBYTE Des, uint divide) {
+	//	std::vector<std::thread> t_vec;
+
+	//	int t_sheight = SH / divide;
+	//	int t_dheight = DH / divide;
+
+	//	for (int i = 0; i < divide; i++) {
+	//		//±ßÔµ´¦Àí
+	//		int t_risize = t_dheight;
+
+	//		if (i == divide - 1) {
+	//			t_risize = DH - i * t_risize;
+	//		}
+
+	//		int soffset = i * t_sheight;
+	//		int doffset = i * t_dheight;
+
+	//		//StretchCore(Src + soffset * SP, Des + doffset * DP, t_risize, i);
+	//		t_vec.emplace_back(std::thread(StretchCore, Src + soffset * SP, Des + doffset * DP, t_risize, i));
+	//	}
+
+	//	for (auto& it : t_vec) {
+	//		it.join();
+	//	}
+	//};
+
+	////StretchMT(Src, Des, std::thread::hardware_concurrency());
+	//StretchMT(Src, Des, 2);
+
+	//free(SrcX_Table);	
+
+	//return;
 }
 
 //StretchSurface
 void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
-	if (HighQuality) {
-		if (Src->HasAlpha()) {
-			Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_COPYALPHA);
-		}
-		else {
-			Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
-		}
-		return;
-	}
+	DWORD flag = 0;
 
-	auto GetBuff = [=](LPSURFACE Tar, LPBYTE buff,bool alpha)->LPBYTE{
-		if (!buff) { return nullptr; }
-		LPBYTE Res = buff;
+	if (HighQuality)
+		flag = flag | STRF_RESAMPLE;
+	if(Src->HasAlpha())
+		flag = flag | STRF_COPYALPHA;
 
-		int pitch = alpha ? Tar->GetAlphaPitch() : Tar->GetPitch();
-		if (pitch < 0)
-		{
-			pitch *= -1;
-			Res -= pitch * (Tar->GetHeight() - 1);
-		}
-		return Res;
-	};
-
-	auto YUpSideDown = [=](LPSURFACE Tar, bool alpha)->bool {
-		return ((alpha ? Tar->GetAlphaPitch() : Tar->GetPitch()) < 0) ? true : false;
-	};
-
-	auto DoStretch = [=](LPSURFACE  Src, LPSURFACE Des, bool alpha) {
-		BYTE* Sbuff = GetBuff(Src, alpha ? Src->LockAlpha() : Src->LockBuffer(), alpha);
-		BYTE* Dbuff = GetBuff(Des, alpha ? Des->LockAlpha() : Des->LockBuffer(), alpha);
-
-		int Sbyte = abs(alpha ? Src->GetAlphaPitch() : Src->GetPitch()) / Src->GetWidth();
-		int Dbyte = abs(alpha ? Des->GetAlphaPitch() : Des->GetPitch()) / Des->GetWidth();
-		bool YReverse = YUpSideDown(Src, alpha) || YUpSideDown(Des, alpha);
-
-		Stretch(YReverse, Sbuff, Src->GetWidth(), Src->GetHeight(), Sbyte, Dbuff, Des->GetWidth(), Des->GetHeight(), Dbyte);
-
-		alpha ? Src->UnlockAlpha() : Src->UnlockBuffer(Sbuff);
-		alpha ? Des->UnlockAlpha() : Des->UnlockBuffer(Dbuff);
-	};
-
-	DoStretch(Src, Des, Do_Normal);
-
-	if (Src->HasAlpha()) {
-		if (!Des->HasAlpha()) {
-			Des->CreateAlpha();
-		}
-		
-		DoStretch(Src, Des, Do_Alpha);
-	}
+	Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, flag);
 
 	return;
+
+	//auto GetBuff = [=](LPSURFACE Tar, LPBYTE buff,bool alpha)->LPBYTE{
+	//	if (!buff) { return nullptr; }
+	//	LPBYTE Res = buff;
+
+	//	int pitch = alpha ? Tar->GetAlphaPitch() : Tar->GetPitch();
+	//	if (pitch < 0)
+	//	{
+	//		pitch *= -1;
+	//		Res -= pitch * (Tar->GetHeight() - 1);
+	//	}
+	//	return Res;
+	//};
+
+	//auto YUpSideDown = [=](LPSURFACE Tar, bool alpha)->bool {
+	//	return ((alpha ? Tar->GetAlphaPitch() : Tar->GetPitch()) < 0) ? true : false;
+	//};
+
+	//auto DoStretch = [=](LPSURFACE  Src, LPSURFACE Des, bool alpha) {
+	//	BYTE* Sbuff = GetBuff(Src, alpha ? Src->LockAlpha() : Src->LockBuffer(), alpha);
+	//	BYTE* Dbuff = GetBuff(Des, alpha ? Des->LockAlpha() : Des->LockBuffer(), alpha);
+
+	//	int Sbyte = abs(alpha ? Src->GetAlphaPitch() : Src->GetPitch()) / Src->GetWidth();
+	//	int Dbyte = abs(alpha ? Des->GetAlphaPitch() : Des->GetPitch()) / Des->GetWidth();
+	//	bool YReverse = YUpSideDown(Src, alpha) || YUpSideDown(Des, alpha);
+
+	//	Stretch(YReverse, Sbuff, Src->GetWidth(), Src->GetHeight(), Sbyte, Dbuff, Des->GetWidth(), Des->GetHeight(), Dbyte);
+
+	//	alpha ? Src->UnlockAlpha() : Src->UnlockBuffer(Sbuff);
+	//	alpha ? Des->UnlockAlpha() : Des->UnlockBuffer(Dbuff);
+	//};
+
+	//DoStretch(Src, Des, Do_Normal);
+
+	//if (Src->HasAlpha()) {
+	//	if (!Des->HasAlpha()) {
+	//		Des->CreateAlpha();
+	//	}
+	//	
+	//	DoStretch(Src, Des, Do_Alpha);
+	//}
+
+	//return;
 }
 
 //StretchBlt Stretch Surface

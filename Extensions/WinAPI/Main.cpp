@@ -536,11 +536,6 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		ImportImage(pImgMgr, FilePath, &img, 0, 0);
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
-		//rdPtr->img.Delete();
-		//rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
-
-		//Stretch(&img, &rdPtr->img);
-
 		rdPtr->img.Delete();
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
@@ -1171,8 +1166,7 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 			rdPtr->img.Delete();
 			rdPtr->img.Create(owidth, oheight, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img, Fast);
-			Stretch(&ResizedImg, &rdPtr->img);
+			Stretch(&ResizedImg, &rdPtr->img, Fast);			
 		}
 
 		// Redraw object			
