@@ -435,7 +435,20 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	ReleaseDC(rdPtr->FrameWindowHandle, hdcWindow);	
 	img.ReleaseDC(sdc);
 
-	//保存到文件	
+	//保存到剪贴板
+	OpenClipboard(rdPtr->MainWindowHandle);
+	EmptyClipboard();
+
+	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, rdPtr->img.GetDIBSize());
+	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
+
+	rdPtr->img.SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
+	SetClipboardData(CF_DIB, OutPut);
+
+	GlobalUnlock(cb);
+	CloseClipboard();
+
+	//保存到文件
 	if (!SaveToFile) {
 		return 0;
 	}

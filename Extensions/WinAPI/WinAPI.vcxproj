@@ -323,7 +323,6 @@
     <ClCompile Include="General.cpp" />
     <ClCompile Include="GlobalFunc.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Obsolete.cpp" />
     <ClCompile Include="Runtime.cpp" />
   </ItemGroup>
   <ItemGroup>
