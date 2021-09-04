@@ -439,10 +439,10 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	OpenClipboard(rdPtr->MainWindowHandle);
 	EmptyClipboard();
 
-	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, rdPtr->img.GetDIBSize());
+	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, img.GetDIBSize());
 	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
 
-	rdPtr->img.SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
+	img.SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
 	SetClipboardData(CF_DIB, OutPut);
 
 	GlobalUnlock(cb);
