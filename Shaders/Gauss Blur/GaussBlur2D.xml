@@ -1,0 +1,14 @@
+<effect>
+<name>Gauss Blur 2D</name>
+<author>Defisym</author>
+<description>Creat Gauss Blur</description>
+<parameter>
+		<name>Radius</name>
+		<code>fR</code>
+		<description></description>
+		<type>int</type>
+		<property>edit</property>
+		<value>1</value>
+</parameter>
+</effect>
+

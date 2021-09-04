@@ -1,0 +1,23 @@
+<effect>
+<name>Gauss Blur 1D</name>
+<author>Defisym</author>
+<description>Creat BackGround Gauss Blur 1D, Only For DX11</description>
+<parameter>
+		<name>Radius</name>
+		<code>fR</code>
+		<description>Radius of Blur, Max is 1024</description>
+		<type>int</type>
+		<property>edit</property>
+		<value>1</value>
+</parameter>
+<parameter>
+		<name>Direction</name>
+		<code>Dir</code>
+		<description>X = False, Y =True</description>
+		<type>INT</type>
+		<property>CHECKBOX</property>
+		<value>0</value>
+</parameter>
+<BackgroundTexture>1</BackgroundTexture>
+</effect>
+
