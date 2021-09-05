@@ -123,6 +123,9 @@ PS_OUTPUT ps_main( in PS_INPUT In)
 	}else{
 		Out.Color.rgb = Sum.rgb;
 	}
+
+	Out.Color.rgb = Out.Color.rgb*Out.Color.a+(bkd.Sample(bkdSampler, In.texCoord)).rgb*(1-Out.Color.a);
+
     return Out;
 }
 
