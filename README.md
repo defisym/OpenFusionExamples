@@ -20,7 +20,7 @@ To check if a value has decimals
 
 ### DirNormalization
 
-convert fusion directions (0~31) to 4Dir (0~3)
+convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)
 
 ### EasyStack
 
