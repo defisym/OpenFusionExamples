@@ -56,7 +56,7 @@ short actionsInfos[]=
 		IDMN_ACTION_WINDOW_GF,M_ACTION_WINDOW_GF,ACT_ACTION_WINDOW_GF,0, 0,
 		IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
 
-		IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 4,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,PARA_ACTION_WINDOW_BFA_SAVETOFILE,PARA_ACTION_WINDOW_BFA_FILEPATH,
+		IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 5,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD,PARA_ACTION_WINDOW_BFA_SAVETOFILE,PARA_ACTION_WINDOW_BFA_FILEPATH,
 
 		IDMN_ACTION_WINDOW_LFC,M_ACTION_WINDOW_LFC,ACT_ACTION_WINDOW_LFC,0, 0,
 		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0,
@@ -386,6 +386,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	//获取参数
 	int Width = CNC_GetIntParameter(rdPtr);
 	int Height = CNC_GetIntParameter(rdPtr);
+	bool SaveToClipboard = CNC_GetIntParameter(rdPtr);
 	bool SaveToFile = CNC_GetIntParameter(rdPtr);
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -395,67 +396,45 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	int FrameWidth = CurrentFrameRect.right - CurrentFrameRect.left;
 	int FrameHeight = CurrentFrameRect.bottom - CurrentFrameRect.top;
 
-	//Surface相关
-	cSurface img;
-	LPSURFACE proto = nullptr;
-	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-	CImageFilter    pFilter(pImgMgr);
-
-	//Surface获取位图信息
+	//Surface Prototype
+	LPSURFACE proto = nullptr;	
 	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-	img.Create(Width, Height, proto);
-	
+
 	HDC hdcWindow = GetDC(rdPtr->FrameWindowHandle);
-	HDC sdc = img.GetDC();
-
-	SetStretchBltMode(sdc, COLORONCOLOR);
-	SetBrushOrgEx(sdc, 0, 0, NULL);
-
-	StretchBlt(sdc, 0, 0, Width,Height, hdcWindow, 0, 0, FrameWidth, FrameHeight, SRCCOPY);
 
 	if (rdPtr->Display) {
 		// Update Display Surface
 		rdPtr->img.Delete();
 		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-		HDC temp = rdPtr->img.GetDC();
-
-		SetStretchBltMode(temp, COLORONCOLOR);
-		SetBrushOrgEx(temp, 0, 0, NULL);
-
-		StretchBlt(temp, 0, 0, rdPtr->swidth, rdPtr->sheight, hdcWindow, 0, 0, FrameWidth, FrameHeight, SRCCOPY);
-
-		rdPtr->img.ReleaseDC(temp);
+		BltToSurface(hdcWindow, FrameWidth, FrameHeight, &(rdPtr->img));
 
 		// Redraw object
 		ReDisplay(rdPtr);
 	}
 
-	//清理
-	ReleaseDC(rdPtr->FrameWindowHandle, hdcWindow);	
-	img.ReleaseDC(sdc);
+	//需要输出
+	if (SaveToClipboard || SaveToFile) {
+		cSurface img;
+		img.Create(Width, Height, proto);
+		BltToSurface(hdcWindow, FrameWidth, FrameHeight, &img);		
+		
+		//保存到剪贴板
+		if (SaveToClipboard) {
+			SavetoClipBoard(&img, rdPtr->MainWindowHandle);
+		}
 
-	//保存到剪贴板
-	OpenClipboard(rdPtr->MainWindowHandle);
-	EmptyClipboard();
-
-	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, img.GetDIBSize());
-	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
-
-	img.SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
-	SetClipboardData(CF_DIB, OutPut);
-
-	GlobalUnlock(cb);
-	CloseClipboard();
-
-	//保存到文件
-	if (!SaveToFile) {
-		return 0;
+		//保存到文件
+		if (SaveToFile) {
+			//输出文件
+			CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+			ExportImage(pImgMgr, FilePath, &img, GetFilterIDByFileName(rdPtr, FilePath));
+		}
 	}
 
-	//输出文件
-	ExportImage(pImgMgr, FilePath, &img, GetFilterIDByFileName(rdPtr, FilePath));
-	
+	//清理
+	ReleaseDC(rdPtr->FrameWindowHandle, hdcWindow);
+
 	return 0;
 }
 
@@ -470,17 +449,7 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport SaveToClipBoard(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		OpenClipboard(rdPtr->MainWindowHandle);
-		EmptyClipboard();
-
-		HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, rdPtr->img.GetDIBSize());
-		BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
-
-		rdPtr->img.SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
-		SetClipboardData(CF_DIB, OutPut);
-
-		GlobalUnlock(cb);
-		CloseClipboard();
+		SavetoClipBoard(&(rdPtr->img),rdPtr->MainWindowHandle);
 	}
 	return 0;
 }

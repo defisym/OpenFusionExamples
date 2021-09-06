@@ -69,6 +69,10 @@ void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality);
 //StretchBlt Stretch Surface
 BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
 
+//Blt To Surface
+void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des);
+//Save to Clipboard
+void SavetoClipBoard(LPSURFACE Src, HWND hWndNewOwner);
 
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;

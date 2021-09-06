@@ -613,6 +613,34 @@ BOOL Stretch(LPSURFACE Src, LPSURFACE Des) {
 	return res;
 }
 
+//Blt To Surface
+void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des) {
+	HDC temp = Des->GetDC();
+
+	SetStretchBltMode(temp, COLORONCOLOR);
+	SetBrushOrgEx(temp, 0, 0, NULL);
+
+	StretchBlt(temp, 0, 0, Des->GetWidth(), Des->GetHeight(), Src, 0, 0, SH, SW, SRCCOPY);
+
+	Des->ReleaseDC(temp);
+}
+
+//Save to Clipboard
+void SavetoClipBoard(LPSURFACE Src, HWND hWndNewOwner) {
+	//保存到剪贴板
+	OpenClipboard(hWndNewOwner);
+	EmptyClipboard();
+
+	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
+	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
+
+	Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
+	SetClipboardData(CF_DIB, OutPut);
+
+	GlobalUnlock(cb);
+	CloseClipboard();
+}
+
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
 

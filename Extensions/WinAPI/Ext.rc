@@ -430,9 +430,10 @@ BEGIN
     M_ACTION_SQ_F "Set Stretch Quality to Fast"
     M_ACTION_SQ_H "Set Stretch Quality to Resample"
 
-    M_ACTION_WINDOW_BFA     "Capture Frame Area to Clipboard, Stretch to Width = %0, Height = %1, SaveToFile = %2, FilePath %3"
+    M_ACTION_WINDOW_BFA     "Capture Frame Area, Stretch to Width = %0, Height = %1,  SaveToClipboard = %2, SaveToFile = %3, FilePath %4"
     PARA_ACTION_WINDOW_BFA_WIDTH "Width"
     PARA_ACTION_WINDOW_BFA_HEIGHT "Heigth"
+    PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD "SaveToClipboard, 1 = Save, 0 = Don't Save"
     PARA_ACTION_WINDOW_BFA_SAVETOFILE "SaveToFile, 1 = Save, 0 = Don't Save"
     PARA_ACTION_WINDOW_BFA_FILEPATH "FilePath, Keep Empty if SaveToFile is Set to 0"
 
@@ -560,8 +561,8 @@ STRINGTABLE
 BEGIN
     IDS_PROP_DISPLAY_TEXTTITLE  "Display Properties"
 
-    IDS_PROP_DISPLAY_CHECK "Display Captured Picture"
-    IDS_PROP_DISPLAY_CHECK_INFO "Display Picture Captured in 'Capture Frame Area to Clipboard'"
+    IDS_PROP_DISPLAY_CHECK "Display Image"
+    IDS_PROP_DISPLAY_CHECK_INFO "Picture Captured in 'Capture Frame Area to Clipboard' will be Automaticly Displayed"
 END
 
 #endif    // Ó¢Óï(ÃÀ¹ú) resources
