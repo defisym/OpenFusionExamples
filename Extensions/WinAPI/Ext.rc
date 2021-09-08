@@ -192,27 +192,43 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Display"
         BEGIN
-            POPUP "Stretch Quality"
+            POPUP "Settings"
             BEGIN
-                MENUITEM "Fast", IDMN_ACTION_SQ_F
-                MENUITEM "Resample", IDMN_ACTION_SQ_H
+                POPUP "Stretch Quality"
+                BEGIN
+                    MENUITEM "Fast", IDMN_ACTION_SQ_F
+                    MENUITEM "Resample", IDMN_ACTION_SQ_H
+                END
+                POPUP "MultiThread Save"
+                BEGIN
+                    MENUITEM "On", IDMN_ACTION_SMS_ON
+                    MENUITEM "Off", IDMN_ACTION_SMS_OFF
+                END
             END
             MENUITEM SEPARATOR
             MENUITEM "Capture Frame Area", IDMN_ACTION_WINDOW_BFA
-            MENUITEM SEPARATOR            
-            MENUITEM "Save Current Image to File", IDMN_ACTION_WINDOW_STF
-            MENUITEM "Save Current Image to Temp", IDMN_ACTION_WINDOW_STT            
-            MENUITEM "Save Current Image to Clipboard", IDMN_ACTION_WINDOW_STC
-            MENUITEM SEPARATOR            
-            MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
-            MENUITEM "Load From Temp", IDMN_ACTION_WINDOW_LFT
-            MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
-            MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC            
             MENUITEM SEPARATOR
-            MENUITEM "Stack Blur", IDMN_ACTION_WINDOW_MTSB
+            POPUP "Save"
+            BEGIN
+                MENUITEM "Save Current Image to File", IDMN_ACTION_WINDOW_STF
+                MENUITEM "Save Current Image to Temp", IDMN_ACTION_WINDOW_STT            
+                MENUITEM "Save Current Image to Clipboard", IDMN_ACTION_WINDOW_STC
+            END
+            POPUP "Load"
+            BEGIN
+                MENUITEM "Load From File", IDMN_ACTION_WINDOW_LFF
+                MENUITEM "Load From Temp", IDMN_ACTION_WINDOW_LFT
+                MENUITEM "Load From BackDrop", IDMN_ACTION_WINDOW_LBG
+                MENUITEM "Load From Clipboard", IDMN_ACTION_WINDOW_LFC
+            END
             MENUITEM SEPARATOR
-            MENUITEM "Gauss Blur", IDMN_ACTION_WINDOW_MTGB
-            MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
+            POPUP "Blur"
+            BEGIN
+                MENUITEM "Stack Blur", IDMN_ACTION_WINDOW_MTSB
+                MENUITEM SEPARATOR
+                MENUITEM "Gauss Blur", IDMN_ACTION_WINDOW_MTGB
+                MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
+            END
             
         END
         MENUITEM SEPARATOR
@@ -429,6 +445,9 @@ BEGIN
 
     M_ACTION_SQ_F "Set Stretch Quality to Fast"
     M_ACTION_SQ_H "Set Stretch Quality to Resample"
+
+    M_ACTION_SMS_ON "Set MultiThread Save On"
+    M_ACTION_SMS_OFF "Set MultiThread Save Off"
 
     M_ACTION_WINDOW_BFA     "Capture Frame Area, Stretch to Width = %0, Height = %1,  SaveToClipboard = %2, SaveToFile = %3, FilePath %4"
     PARA_ACTION_WINDOW_BFA_WIDTH "Width"

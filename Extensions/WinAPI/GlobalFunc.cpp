@@ -623,23 +623,94 @@ void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des) {
 	StretchBlt(temp, 0, 0, Des->GetWidth(), Des->GetHeight(), Src, 0, 0, SH, SW, SRCCOPY);
 
 	Des->ReleaseDC(temp);
+
+	return;
 }
+
+//Mutex
+std::mutex mtx;
 
 //Save to Clipboard
-void SavetoClipBoard(LPSURFACE Src, HWND hWndNewOwner) {
-	//保存到剪贴板
-	OpenClipboard(hWndNewOwner);
-	EmptyClipboard();
+void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr) {
+	auto core = [](LPSURFACE Src, LPRDATA rdPtr, bool release) {
+		std::lock_guard<std::mutex> lock(mtx);
 
-	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
-	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
+		if (rdPtr->MultiThreadSave_ClipBoard) {
+			return;
+		}
 
-	Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
-	SetClipboardData(CF_DIB, OutPut);
+		rdPtr->MultiThreadSave_ClipBoard = true;
 
-	GlobalUnlock(cb);
-	CloseClipboard();
+		if (Src == nullptr) {
+			return;
+		}
+
+		OpenClipboard(rdPtr->MainWindowHandle);
+		EmptyClipboard();
+
+		HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
+		BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
+
+		Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
+		SetClipboardData(CF_DIB, OutPut);
+
+		GlobalUnlock(cb);
+		CloseClipboard();
+
+		if (release) {
+			delete Src;
+		}
+
+		rdPtr->MultiThreadSave_ClipBoard = false;
+	};
+
+	if (!rdPtr->MultiThreadSave) {
+		core(Src, rdPtr, false);
+	}
+	else {
+		std::thread t(core, Src, rdPtr, !rdPtr->MultiThreadSave_NextStep);
+		t.detach();
+	}
+
+	return;
 }
+
+//Save to File
+void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr) {
+	auto core = [](LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
+		std::lock_guard<std::mutex> lock(mtx);
+
+		if (rdPtr->MultiThreadSave_File) {
+			return;
+		}	
+
+		rdPtr->MultiThreadSave_ClipBoard = true;
+
+		if (Src == nullptr) {
+			return;
+		}
+
+		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;		
+		ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath));
+
+		if (release) {
+			delete Src;
+		}
+
+		rdPtr->MultiThreadSave_ClipBoard = false;
+	};
+
+	if (!rdPtr->MultiThreadSave) {
+		core(Src, FilePath, rdPtr, false);
+	}
+	else {
+		std::thread t(core, Src, FilePath, rdPtr, !rdPtr->MultiThreadSave_NextStep);
+		t.detach();
+	}
+
+	return;
+}
+
 
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;

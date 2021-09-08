@@ -56,7 +56,10 @@
 #define ACT_ACTION_SQ_F				29
 #define ACT_ACTION_SQ_H				30
 
-#define	ACT_LAST					31
+#define ACT_ACTION_SMS_ON			31
+#define ACT_ACTION_SMS_OFF			32
+
+#define	ACT_LAST					33
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -157,6 +160,11 @@ typedef struct tagRDATA
 	cSurface temp;
 
 	bool StretchQuality = Fast;
+	bool MultiThreadSave = true;
+	bool MultiThreadSave_NextStep = false;
+
+	bool MultiThreadSave_ClipBoard = false;
+	bool MultiThreadSave_File = false;
 
 	//用于保存的RunHeader
 	fprh rhPtr = NULL;

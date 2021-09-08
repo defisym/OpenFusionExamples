@@ -31,17 +31,11 @@
 //Definitions
 #include	"Definition.h"
 
-// Specific to this cox
-#include	"resource.h"
-#include	"main.h"
-#include	"TigsExt.hpp"
-
-//My headers
-
 //STL
 #include	<deque>
 #include	<vector>
 #include	<thread>
+#include	<mutex>
 
 //WinAPI
 #include	<tlhelp32.h>
@@ -50,6 +44,13 @@
 #pragma	comment(lib,"shlwapi.lib") 
 #pragma comment(lib,"Imm32.lib")
 //#pragma	comment(lib,"msimg32.lib") 
+
+// Specific to this cox
+#include	"resource.h"
+#include	"main.h"
+#include	"TigsExt.hpp"
+
+//My headers
 
 //MMF
 #include	"ImgFlt.h"

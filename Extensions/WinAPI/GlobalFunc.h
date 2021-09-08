@@ -71,8 +71,14 @@ BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
 
 //Blt To Surface
 void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des);
+
+
+//Mutex
+extern std::mutex mtx;
 //Save to Clipboard
-void SavetoClipBoard(LPSURFACE Src, HWND hWndNewOwner);
+void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr);
+//Save to File
+void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr);
 
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;

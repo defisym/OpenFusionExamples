@@ -74,12 +74,14 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SQ_F,M_ACTION_SQ_F,ACT_ACTION_SQ_F,0, 0,
 		IDMN_ACTION_SQ_H,M_ACTION_SQ_H,ACT_ACTION_SQ_H,0, 0,
+
+		IDMN_ACTION_SMS_ON,M_ACTION_SMS_ON,ACT_ACTION_SMS_ON,0, 0,
+		IDMN_ACTION_SMS_OFF,M_ACTION_SMS_OFF,ACT_ACTION_SMS_OFF,0, 0,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-
 		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,		
 		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
 		//IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,		
@@ -382,6 +384,15 @@ short WINAPI DLLExport StretchQuality_High(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
+short WINAPI DLLExport MultiThreadSave_ON(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->MultiThreadSave = true;
+	return 0;
+}
+short WINAPI DLLExport MultiThreadSave_OFF(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->MultiThreadSave = false;
+	return 0;
+}
+
 short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) {
 	//获取参数
 	int Width = CNC_GetIntParameter(rdPtr);
@@ -415,20 +426,29 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 
 	//需要输出
 	if (SaveToClipboard || SaveToFile) {
-		cSurface img;
-		img.Create(Width, Height, proto);
-		BltToSurface(hdcWindow, FrameWidth, FrameHeight, &img);		
+		//Blt to Surface
+		//cSurface img;
+		//img.Create(Width, Height, proto);
+		//BltToSurface(hdcWindow, FrameWidth, FrameHeight, &img);
+
+		LPSURFACE img = new cSurface;
+		img->Create(Width, Height, proto);
+		BltToSurface(hdcWindow, FrameWidth, FrameHeight, img);		
 		
 		//保存到剪贴板
 		if (SaveToClipboard) {
-			SavetoClipBoard(&img, rdPtr->MainWindowHandle);
+			rdPtr->MultiThreadSave_NextStep = SaveToFile;
+			SavetoClipBoard(img, rdPtr);
 		}
 
 		//保存到文件
 		if (SaveToFile) {
-			//输出文件
-			CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-			ExportImage(pImgMgr, FilePath, &img, GetFilterIDByFileName(rdPtr, FilePath));
+			rdPtr->MultiThreadSave_NextStep = false;
+			SavetoFile(img, FilePath, rdPtr);
+		}
+
+		if (!rdPtr->MultiThreadSave) {
+			delete img;
 		}
 	}
 
@@ -439,17 +459,16 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->Display) {
+	if (rdPtr->Display) {		
 		LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-		ExportImage(pImgMgr, FilePath, &(rdPtr->img), GetFilterIDByFileName(rdPtr, FilePath));
+		SavetoFile(&(rdPtr->img), FilePath, rdPtr);		
 	}
 	return 0;
 }
 
 short WINAPI DLLExport SaveToClipBoard(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		SavetoClipBoard(&(rdPtr->img),rdPtr->MainWindowHandle);
+		SavetoClipBoard(&(rdPtr->img),rdPtr);
 	}
 	return 0;
 }
@@ -1388,6 +1407,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			StretchQuality_Fast,
 			StretchQuality_High,
+
+			MultiThreadSave_ON,
+			MultiThreadSave_OFF,
 
 			//结尾必定是零
 			0
