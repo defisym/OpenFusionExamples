@@ -27,6 +27,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_IML, M_CONDITION_IML, CND_CONDITION_IML, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_RKS, M_CONDITION_RKS, CND_CONDITION_RKS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION,PARA_CONDITION_RKS,
 		IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -147,6 +148,10 @@ long WINAPI DLLExport IsFullScreen(LPRDATA rdPtr, long param1, long param2) {
 	return  IsZoomed(rdPtr->MainWindowHandle) ? TRUE : FALSE;
 }
 
+//全屏状态
+long WINAPI DLLExport IsClipBoardAvailable(LPRDATA rdPtr, long param1, long param2) {
+	return  IsClipboardFormatAvailable(CF_DIB) ? TRUE : FALSE;
+}
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -426,29 +431,22 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 
 	//需要输出
 	if (SaveToClipboard || SaveToFile) {
-		//Blt to Surface
-		//cSurface img;
-		//img.Create(Width, Height, proto);
-		//BltToSurface(hdcWindow, FrameWidth, FrameHeight, &img);
-
-		LPSURFACE img = new cSurface;
-		img->Create(Width, Height, proto);
-		BltToSurface(hdcWindow, FrameWidth, FrameHeight, img);		
-		
 		//保存到剪贴板
 		if (SaveToClipboard) {
-			rdPtr->MultiThreadSave_NextStep = SaveToFile;
-			SavetoClipBoard(img, rdPtr);
+			LPSURFACE img = new cSurface;
+			img->Create(Width, Height, proto);
+			BltToSurface(hdcWindow, FrameWidth, FrameHeight, img);
+
+			SavetoClipBoard(img, rdPtr, true);
 		}
 
 		//保存到文件
 		if (SaveToFile) {
-			rdPtr->MultiThreadSave_NextStep = false;
-			SavetoFile(img, FilePath, rdPtr);
-		}
+			LPSURFACE img = new cSurface;
+			img->Create(Width, Height, proto);
+			BltToSurface(hdcWindow, FrameWidth, FrameHeight, img);
 
-		if (!rdPtr->MultiThreadSave) {
-			delete img;
+			SavetoFile(img, FilePath, rdPtr, true);
 		}
 	}
 
@@ -461,14 +459,14 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {		
 		LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-		SavetoFile(&(rdPtr->img), FilePath, rdPtr);		
+		SavetoFile(&(rdPtr->img), FilePath, rdPtr, false);
 	}
 	return 0;
 }
 
 short WINAPI DLLExport SaveToClipBoard(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		SavetoClipBoard(&(rdPtr->img),rdPtr);
+		SavetoClipBoard(&(rdPtr->img),rdPtr, false);
 	}
 	return 0;
 }
@@ -1354,6 +1352,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IsMouseLocked,
 			ReturnKeyState,
 			IsFullScreen,
+			IsClipBoardAvailable,
 			0
 			};
 	

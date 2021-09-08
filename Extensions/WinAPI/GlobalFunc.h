@@ -75,10 +75,15 @@ void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des);
 
 //Mutex
 extern std::mutex mtx;
+
 //Save to Clipboard
-void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr);
+void _SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release);
+//Save to Clipboard
+void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release);
 //Save to File
-void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr);
+void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
+//Save to File
+void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
 
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;

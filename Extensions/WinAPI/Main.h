@@ -11,7 +11,9 @@
 #define	CND_CONDITION_IML			1
 #define	CND_CONDITION_RKS			2
 #define	CND_CONDITION_IFS			3
-#define	CND_LAST					4
+#define	CND_CONDITION_ICA			4
+
+#define	CND_LAST					5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -161,10 +163,6 @@ typedef struct tagRDATA
 
 	bool StretchQuality = Fast;
 	bool MultiThreadSave = true;
-	bool MultiThreadSave_NextStep = false;
-
-	bool MultiThreadSave_ClipBoard = false;
-	bool MultiThreadSave_File = false;
 
 	//用于保存的RunHeader
 	fprh rhPtr = NULL;

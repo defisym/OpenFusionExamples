@@ -36,6 +36,7 @@
 #include	<vector>
 #include	<thread>
 #include	<mutex>
+#include	<memory>
 
 //WinAPI
 #include	<tlhelp32.h>

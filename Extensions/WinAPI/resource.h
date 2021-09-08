@@ -82,6 +82,7 @@
 #define M_CONDITION_IML                 6010
 #define M_CONDITION_RKS                 6020
 #define M_CONDITION_IFS                 6030
+#define M_CONDITION_ICA                 6031
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define M_EXPRESSION                    7000
@@ -151,6 +152,7 @@
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020
 #define IDMN_CONDITION_IFS              26030
+#define IDMN_CONDITION_ICA              26031
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020

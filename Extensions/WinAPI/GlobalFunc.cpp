@@ -631,80 +631,62 @@ void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des) {
 std::mutex mtx;
 
 //Save to Clipboard
-void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr) {
-	auto core = [](LPSURFACE Src, LPRDATA rdPtr, bool release) {
-		std::lock_guard<std::mutex> lock(mtx);
+void _SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
+	if (!Src->IsValid()) {
+		return;
+	}
 
-		if (rdPtr->MultiThreadSave_ClipBoard) {
-			return;
-		}
+	OpenClipboard(rdPtr->MainWindowHandle);
+	EmptyClipboard();
 
-		rdPtr->MultiThreadSave_ClipBoard = true;
+	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
+	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
 
-		if (Src == nullptr) {
-			return;
-		}
+	Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
+	SetClipboardData(CF_DIB, OutPut);
 
-		OpenClipboard(rdPtr->MainWindowHandle);
-		EmptyClipboard();
+	GlobalUnlock(cb);
+	CloseClipboard();
 
-		HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
-		BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
+	if (release) {
+		delete Src;
+	}
+}
 
-		Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
-		SetClipboardData(CF_DIB, OutPut);
-
-		GlobalUnlock(cb);
-		CloseClipboard();
-
-		if (release) {
-			delete Src;
-		}
-
-		rdPtr->MultiThreadSave_ClipBoard = false;
-	};
-
+//Save to Clipboard
+void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
 	if (!rdPtr->MultiThreadSave) {
-		core(Src, rdPtr, false);
+		_SavetoClipBoard(Src, rdPtr,false);
 	}
 	else {
-		std::thread t(core, Src, rdPtr, !rdPtr->MultiThreadSave_NextStep);
-		t.detach();
+		std::thread t(_SavetoClipBoard, Src, rdPtr, release && true);
+		t.detach();		
 	}
 
 	return;
 }
 
 //Save to File
-void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr) {
-	auto core = [](LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
-		std::lock_guard<std::mutex> lock(mtx);
+void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
+	if (!Src->IsValid()) {
+		return;
+	}
 
-		if (rdPtr->MultiThreadSave_File) {
-			return;
-		}	
+	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath));
 
-		rdPtr->MultiThreadSave_ClipBoard = true;
+	if (release) {
+		delete Src;
+	}
+}
 
-		if (Src == nullptr) {
-			return;
-		}
-
-		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;		
-		ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath));
-
-		if (release) {
-			delete Src;
-		}
-
-		rdPtr->MultiThreadSave_ClipBoard = false;
-	};
-
+//Save to File
+void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
 	if (!rdPtr->MultiThreadSave) {
-		core(Src, FilePath, rdPtr, false);
+		_SavetoFile(Src, FilePath, rdPtr, false);
 	}
 	else {
-		std::thread t(core, Src, FilePath, rdPtr, !rdPtr->MultiThreadSave_NextStep);
+		std::thread t(_SavetoFile, Src, FilePath, rdPtr, release && true);
 		t.detach();
 	}
 

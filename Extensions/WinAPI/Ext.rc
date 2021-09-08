@@ -119,6 +119,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
         MENUITEM SEPARATOR
+        MENUITEM "Image Available in ClipBoard", IDMN_CONDITION_ICA
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -552,6 +554,10 @@ BEGIN
     M_CONDITION_IFS    "Application Is Maximized"
 END
 
+STRINGTABLE
+BEGIN
+    M_CONDITION_ICA    "Image Available in ClipBoard"
+END
 
 //Porperties
 STRINGTABLE
