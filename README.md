@@ -95,6 +95,10 @@ Ext template, but converted to VS 2019
 
 some simple and stupid shader
 
+### AlphaMono
+
+make semi-mono effect
+
 ### Gauss Blur
 
 Finally here comes the gauss blur shader for DX11

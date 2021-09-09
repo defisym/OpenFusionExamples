@@ -1,0 +1,22 @@
+<effect>
+<name>AlphaMono</name>
+<description>AlphaMono</description>
+<author>Defisym</author>
+<parameter>
+	<name>Alpha</name>
+	<code>fA</code>
+	<description>Transparency of Mono</description>
+	<type>int</type>
+	<property>edit</property>
+	<value>0.0</value>
+</parameter>
+<parameter>
+		<name>BG</name>
+		<code>BG</code>
+		<description>Mono BG</description>
+		<type>INT</type>
+		<property>CHECKBOX</property>
+		<value>0</value>
+</parameter>
+<BackgroundTexture>1</BackgroundTexture>
+</effect>
