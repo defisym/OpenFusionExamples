@@ -180,7 +180,8 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Copy file to installer directory</Message>
-      <Command>copy $(TargetPath) .\ToInstall\Files\Extensions\Unicode</Command>
+      <Command>copy $(TargetPath) ".\ToInstall\Files\Extensions\Unicode"
+copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Unicode"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -233,7 +234,8 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Copy extension to installer directory</Message>
-      <Command>copy $(TargetPath) .\ToInstall\Files\Data\Runtime\Unicode</Command>
+      <Command>copy $(TargetPath) ".\ToInstall\Files\Data\Runtime\Unicode"
+copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\Unicode"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
