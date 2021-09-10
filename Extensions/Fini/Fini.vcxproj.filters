@@ -34,6 +34,9 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConvertUTF.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -127,13 +130,16 @@
     <ClInclude Include="..\..\Inc\WinMacro.h">
       <Filter>MMF Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inicpp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Defination.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvertUTF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -182,7 +182,8 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Copy file to installer directory</Message>
-      <Command>copy $(TargetPath) .\ToInstall\Files\Extensions\Unicode</Command>
+      <Command>copy $(TargetPath) ".\ToInstall\Files\Extensions\Unicode"
+copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Unicode"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -236,10 +237,12 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Copy extension to installer directory</Message>
-      <Command>copy $(TargetPath) .\ToInstall\Files\Data\Runtime\Unicode</Command>
+      <Command>copy $(TargetPath) “.\ToInstall\Files\Data\Runtime\Unicode”
+copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\Unicode"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConvertUTF.c" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -282,11 +285,12 @@
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="ConvertUTF.h" />
     <ClInclude Include="Defination.h" />
     <ClInclude Include="Func.h" />
-    <ClInclude Include="inicpp.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SimpleIni.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP" />

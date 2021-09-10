@@ -78,8 +78,6 @@ typedef struct tagRDATA
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 
-#define Fini rdPtr->ini
-
 // Size when editing the object under level editor
 // -----------------------------------------------
 #define	MAX_EDITSIZE			sizeof(EDITDATA)

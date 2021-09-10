@@ -28,7 +28,8 @@
 #include	"Surface.h"
 
 // My headers
-#include	"inicpp.h"
+#include	"SimpleIni.h"
+#include	"Defination.h"
 
 // Specific to this cox
 #include	"resource.h"

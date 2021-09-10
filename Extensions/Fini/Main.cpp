@@ -107,10 +107,6 @@ short WINAPI DLLExport New(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
-	if (!valid()) {
-		return 0;
-	}
-		
 	release();
 
 	return 0;
@@ -118,72 +114,57 @@ short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
+	
 	Init();
 
-	Fini->load(FilePath);
+	Fini->LoadFile(FilePath);
 
 	return 0;
 }
 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR FilePath = (LPCTSTR)param1;
-	if (!valid()) {
-		return 0;
-	}
+	invalid();
 	
-	Fini->save(FilePath);
+	LPCTSTR FilePath = (LPCTSTR)param1;	
+	
+	Fini->SaveFile(FilePath, false);
 
 	return 0;
 }
 
-short WINAPI DLLExport SaveSecItem_Value(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {
+	invalid();
+	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	long p = CNC_GetFloatParameter(rdPtr);
-	double Value = *(float*)&p;
-	
-	if (!valid()) {
-		return 0;
-	}
+	float Value = *(float*)&p;
 
-	(*Fini)[_B(Section)][_B(Item)] = Value;	
+	LPTSTR String = new WCHAR[FLOAT_MAX];
+
+	swprintf(String,_T("%f"),Value);
+
+	Fini->SetValue(Section, Item, String);
+
+	delete String;
 
 	return 0;
 }
 
-short WINAPI DLLExport SaveSecItem_String(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {
+	invalid();
+	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	std::wstring String = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
 
-	if (!valid()) {
-		return 0;
-	}
-
-	(*Fini)[_B(Section)][_B(Item)] = String;
+	Fini->SetValue(Section, Item, String);
 
 	return 0;
 }
 
-
-
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
-	//LPTSTR t = _T("´óÐÍGundam");
-	//WTBC c;
-
-	//ini::IniFile* myIni2 = new ini::IniFile;
-	//ini::IniFile myIni;
-	//std::string a = "abc";
-
-	//myIni.load(t);
-	//myIni2->load("qsave.ini");
-	//std::wstring myStr = (*myIni2)["string"]["talk"].as<std::wstring>();
-	//delete  myIni2;
-	//std::wstring a2 = t;
-	return 0;
-}
 
 // ============================================================================
 //
@@ -248,31 +229,36 @@ short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
 //	return *((int*)&fp1);
 //}
 
-long WINAPI DLLExport GeySecItem_Value(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
+	invalid();
+
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	float Val = (*Fini)[_B(Section)][_B(Item)].as<float>();
-	//int Val = (*Fini)[_B(Section)][_B(Item)].as<int>();
+	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
+
+	float Val = std::stof(String);
 	
 	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
 	rdPtr->rHo.hoFlags |= HOF_FLOAT;
 	
 	//Return the float without conversion
-	return *((int*)&Val);
+	return *((long*)&Val);
 }
 
-long WINAPI DLLExport GeySecItem_String(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
+	invalid();
+
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 	
-	NewStr((*Fini)[_B(Section)][_B(Item)].as<std::wstring>());
+	NewStr(Fini->GetValue(Section, Item, Default_Str));
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	
 	//This returns a pointer to the string for MMF.
-	return (long)rdPtr->Str;
+	return (long)OStr;
 }
 
 
@@ -295,14 +281,14 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Release,
 			LoadFromFile,
 			SaveToFile,
-			SaveSecItem_Value,
-			SaveSecItem_String,		
+			SetSecItem_Value,
+			SetSecItem_String,
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			GeySecItem_Value,
-			GeySecItem_String,
+			GetSecItem_Value,
+			GetSecItem_String,
 			0
 			};
