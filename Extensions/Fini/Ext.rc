@@ -115,7 +115,13 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
+        POPUP "Iterate"
+        BEGIN
+            MENUITEM "On Iterate Sections", IDMN_CONDITION_ITS
+            MENUITEM "On Iterate Items", IDMN_CONDITION_ITI
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -139,6 +145,14 @@ BEGIN
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
         MENUITEM SEPARATOR
+        MENUITEM "Delete (Section - Item)", IDMN_ACTION_DSI
+        MENUITEM SEPARATOR
+        POPUP "Iterate"
+        BEGIN
+            MENUITEM "Iterate Sections", IDMN_ACTION_ITS
+            MENUITEM "Iterate Items", IDMN_ACTION_ITI
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -155,6 +169,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Value (Section - Item)", IDMN_EXPRESSION_GSIV
         MENUITEM "Get String (Section - Item)", IDMN_EXPRESSION_GSIS
+        MENUITEM SEPARATOR
+        MENUITEM "Get Current Section", IDMN_EXPRESSION_GCS
+        MENUITEM "Get Current Item", IDMN_EXPRESSION_GCI
         MENUITEM SEPARATOR
     END
 END
@@ -242,29 +259,38 @@ BEGIN
 
     M_ACTION_LF     "Load From File %0"
     M_ACTION_SF     "Save to File %0"
-    ACT_ACTION_F "FileName"
+    ACT_ACTION_F    "FileName"
     
-    M_ACTION_SSIV   "Set Value %2 (Section %0 - Item %1)"
-    M_ACTION_SSIS   "Set String %2 (Section %0 - Item %1)"
-    ACT_ACTION_SSI_S "Section"
-    ACT_ACTION_SSI_I "Item"
-    ACT_ACTION_SSI_VAL "Value"
-    ACT_ACTION_SSI_STR "String"
+    M_ACTION_SSIV       "Set Value %2 (Section %0 - Item %1)"
+    M_ACTION_SSIS       "Set String %2 (Section %0 - Item %1)"
+    ACT_ACTION_SSI_S    "Section"
+    ACT_ACTION_SSI_I    "Item"
+    ACT_ACTION_SSI_VAL  "Value"
+    ACT_ACTION_SSI_STR  "String"
+    
+    M_ACTION_DSI        "Delete (Section %0 - Item %1)"
 
+    M_ACTION_ITS        "Iterate Sections, Loop Name %0"
+    M_ACTION_ITI        "Iterate Items in Section %0, Loop Name %1"
+    ACT_ACTION_IT       "Loop Name"
+    ACT_ACTION_ITSN     "Section Name"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+    M_CONDITION_ITS             "%o On Iterate Sections, Loop Name %0"
+    M_CONDITION_ITI             "%o On Iterate Items, Loop Name %0"
+
+    M_CND_ITN                   "Loop Name"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION_GSIV            "SecItemVal("
+    M_EXPRESSION_GSIV           "SecItemVal("
     M_EXPRESSION_GSIS           "SecItemStr$("
+
+    M_EXPRESSION_GCS           "GetCurSec$("
+    M_EXPRESSION_GCI           "GetCurItem$("
 END
 
 

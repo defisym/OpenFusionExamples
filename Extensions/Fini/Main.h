@@ -6,8 +6,10 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-//#define	CND_CONDITION				0
-#define	CND_LAST					0
+#define	CND_CONDITION_ITS			0
+#define	CND_CONDITION_ITI			1
+
+#define	CND_LAST					2
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -18,16 +20,21 @@
 #define	ACT_ACTION_SF				3
 #define	ACT_ACTION_SSIV				4
 #define	ACT_ACTION_SSIS				5
+#define	ACT_ACTION_DSI				6
+#define	ACT_ACTION_ITS				7
+#define	ACT_ACTION_ITI				8
 
-#define	ACT_LAST					6
+#define	ACT_LAST					9
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GSIV			0
 #define	EXP_EXPRESSION_GSIS			1
+#define	EXP_EXPRESSION_GCS			2
+#define	EXP_EXPRESSION_GCI			3
 
-#define	EXP_LAST                    2
+#define	EXP_LAST                    4
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -72,8 +79,17 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
-	LPINI ini = nullptr;
+	//ReturnStr
 	LPTSTR Str = nullptr;
+	
+	//ini
+	LPINI ini = nullptr;
+
+	LPTSTR SecLoopName = nullptr;
+	LPTSTR ItemLoopName = nullptr;
+
+	LPTSTR CurrentSec = nullptr;
+	LPTSTR CurrentItem = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

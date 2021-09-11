@@ -31,6 +31,9 @@
 #define IDMN_ACTION_SF	       		25003
 #define IDMN_ACTION_SSIV	       	25004
 #define IDMN_ACTION_SSIS	       	25005
+#define IDMN_ACTION_DSI		       	25006
+#define IDMN_ACTION_ITS		       	25007
+#define IDMN_ACTION_ITI		       	25008
 
 // Action strings
 #define M_ACTION_NF                 5000
@@ -39,6 +42,9 @@
 #define M_ACTION_SF                 5003
 #define M_ACTION_SSIV               5004
 #define M_ACTION_SSIS               5005
+#define M_ACTION_DSI                5006
+#define M_ACTION_ITS                5007
+#define M_ACTION_ITI                5008
 
 // Titles of action parameters
 #define ACT_ACTION_F				 5501
@@ -46,6 +52,8 @@
 #define ACT_ACTION_SSI_I			 5503
 #define ACT_ACTION_SSI_VAL			 5504
 #define ACT_ACTION_SSI_STR			 5505
+#define ACT_ACTION_IT				 5506
+#define ACT_ACTION_ITSN				 5507
 
 
 //	Conditions
@@ -55,15 +63,15 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_ITS		26000
+#define IDMN_CONDITION_ITI		26001
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_ITS			 6000
+#define M_CONDITION_ITI			 6001
 
 // Titles of condition parameters
-#define M_CND_P1				 6501
-#define M_CND_P2				 6502
-#define M_CND_P3				 6503
+#define M_CND_ITN				 6501
 
 //	EXPRESSIONS
 //---------------------
@@ -74,14 +82,17 @@
 // Commands of expressions menu
 #define IDMN_EXPRESSION_GSIV		27000
 #define IDMN_EXPRESSION_GSIS		27001
+#define IDMN_EXPRESSION_GCS			27002
+#define IDMN_EXPRESSION_GCI			27003
 
 // Expression strings
 #define M_EXPRESSION_GSIV		 7000
 #define M_EXPRESSION_GSIS		 7001
+#define M_EXPRESSION_GCS		 7002
+#define M_EXPRESSION_GCI		 7003
 
 // Names of expression parameters
-#define M_EXP_P1				 7500
-#define	M_EXP_P2				 7501
+//#define M_EXP_P1				 7500
 
 // Next default values for new objects
 // 

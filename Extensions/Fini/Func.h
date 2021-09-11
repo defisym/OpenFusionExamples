@@ -27,17 +27,17 @@ inline void Init(LPRDATA rdPtr) {
 
 #define Init() Init(rdPtr)
 
-inline void NewStr(LPRDATA rdPtr, LPCTSTR Str) {
-	if (OStr != nullptr) {
-		delete OStr;
+inline void NewStr(LPTSTR& Tar, LPCTSTR Str) {
+	if (Tar != nullptr) {
+		delete[] Tar;
 	}
 	rsize_t total_length = wcslen(Str) + 1;
 
-	OStr = new WCHAR[total_length];
-	wcscpy_s(OStr, total_length, Str);
+	Tar = new WCHAR[total_length];
+	wcscpy_s(Tar, total_length, Str);
 }
 
-#define NewStr(X) NewStr(rdPtr,X)
+#define InvalidSecItem(X) if ((wcscmp(Section, Empty_Str) == 0) || (wcscmp(Item, Empty_Str) == 0)) { return X; }
 
 #endif // !_FUNC_
 

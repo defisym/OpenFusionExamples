@@ -84,7 +84,21 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	release();
 
 	if (OStr != nullptr) {
-		delete OStr;
+		delete[] OStr;
+	}
+
+	if (rdPtr->SecLoopName != nullptr) {
+		delete[] rdPtr->SecLoopName;
+	}
+	if (rdPtr->ItemLoopName != nullptr) {
+		delete[] rdPtr->ItemLoopName;
+	}
+
+	if (rdPtr->CurrentSec != nullptr) {
+		delete[] rdPtr->CurrentSec;
+	}	
+	if (rdPtr->CurrentItem != nullptr) {
+		delete[] rdPtr->CurrentItem;
 	}
 
 	// No errors
