@@ -220,11 +220,9 @@ long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
 		
 	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
 		
-	if (!StrIsNum(String)) {
-		return *((long*)&Val);
+	if (StrIsNum(String)) {
+		Val = std::stof(String);
 	}
-
-	Val = std::stof(String);
 	
 	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
 	rdPtr->rHo.hoFlags |= HOF_FLOAT;
