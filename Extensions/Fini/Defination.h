@@ -21,4 +21,27 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 #define ONIT_SEC	0
 #define ONIT_ITEM	1
 
+#define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
+
+#define valid(X) (X != nullptr)
+
+#define invalid(X) if (!valid(Fini)) { return X; }
+
+#define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
+#define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
+
+#define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);
+
+#define release() release_ptr(Fini);release_str();
+#define Init() release();Fini = new INI;Fini->SetUnicode();
+
+#define StrEqu(X,Y) (wcscmp(X,Y) == 0)
+#define StrEmpty(X) StrEqu(X,Empty_Str)
+#define InvalidSecItem(X) if (StrEmpty(Section) || StrEmpty(Item)) { return X; }
+
+//You need "\\+" to escape +
+#define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
+
+#define StrIsNum(X) (std::regex_match(X, rdPtr->Regex))
+
 #endif // !_DEFINATION_

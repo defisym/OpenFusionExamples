@@ -28,6 +28,8 @@
 #include	"Surface.h"
 
 // My headers
+#include	<regex>
+
 #include	"SimpleIni.h"
 #include	"Defination.h"
 

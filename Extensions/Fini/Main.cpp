@@ -58,13 +58,13 @@ short expressionsInfos[]=
 long WINAPI DLLExport OnIterate_Section(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return (wcscmp(LoopName, rdPtr->SecLoopName) == 0) ? TRUE : FALSE;
+	return StrEqu(LoopName, rdPtr->SecLoopName) ? TRUE : FALSE;
 }
 
 long WINAPI DLLExport OnIterate_Item(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return (wcscmp(LoopName, rdPtr->ItemLoopName) == 0) ? TRUE : FALSE;
+	return StrEqu(LoopName, rdPtr->ItemLoopName) ? TRUE : FALSE;
 }
 
 
@@ -97,7 +97,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	invalid();
+	invalid(0);
 	
 	LPCTSTR FilePath = (LPCTSTR)param1;	
 	
@@ -107,7 +107,7 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {
-	invalid();
+	invalid(0);
 	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -129,7 +129,7 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {
-	invalid();
+	invalid(0);
 	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -144,14 +144,14 @@ short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
-	invalid();
+	invalid(0);
 
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	InvalidSecItem(0);
 
-	if (wcscmp(Item, Empty_Str) == 0) {
+	if (StrEqu(Item, Empty_Str)) {
 		Item = nullptr;
 	}
 
@@ -161,7 +161,7 @@ short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Iterate_Section(LPRDATA rdPtr, long param1, long param2) {
-	invalid();
+	invalid(0);
 
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->SecLoopName, LoopName);
@@ -172,22 +172,22 @@ short WINAPI DLLExport Iterate_Section(LPRDATA rdPtr, long param1, long param2) 
 	INIIT it;
 	for (it = Temp.begin(); it != Temp.end(); ++it) {
 		NewStr(rdPtr->CurrentSec, it->pItem);
-		callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, ONIT_SEC, 0);
+		CallEvent(ONIT_SEC);
 	}
 
 	return 0;
 }
 
 short WINAPI DLLExport Iterate_Item(LPRDATA rdPtr, long param1, long param2) {
-	invalid();
+	invalid(0);
 
 	LPCTSTR SectionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
 	
 	NewStr(rdPtr->ItemLoopName, LoopName);	
 
-	if (!(wcscmp(SectionName, Empty_Str) == 0)) {
-		if ((rdPtr->CurrentSec == nullptr) || (!(wcscmp(SectionName, rdPtr->CurrentSec) == 0))) {
+	if (!StrEqu(SectionName, Empty_Str)) {
+		if (!valid(rdPtr->CurrentSec) || !StrEqu(SectionName, rdPtr->CurrentSec)) {
 			NewStr(rdPtr->CurrentSec, SectionName);
 		}
 	}
@@ -198,7 +198,7 @@ short WINAPI DLLExport Iterate_Item(LPRDATA rdPtr, long param1, long param2) {
 	INIIT it;
 	for (it = Temp.begin(); it != Temp.end(); ++it) {
 		NewStr(rdPtr->CurrentItem, it->pItem);
-		callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, ONIT_ITEM, 0);
+		CallEvent(ONIT_ITEM);
 	}
 
 	return 0;
@@ -214,11 +214,15 @@ long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 	
-	float Val = 0;
-
+	float Val = 0.0f;
+	invalid(*((long*)&Val));
 	InvalidSecItem(*((long*)&Val));
-
+		
 	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
+		
+	if (!StrIsNum(String)) {
+		return *((long*)&Val);
+	}
 
 	Val = std::stof(String);
 	
@@ -232,7 +236,8 @@ long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
-	
+
+	invalid((long)Default_Str);	
 	InvalidSecItem((long)Default_Str);
 
 	NewStr(OStr,Fini->GetValue(Section, Item, Default_Str));
@@ -249,12 +254,7 @@ long WINAPI DLLExport GetCurrentSection(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	if (rdPtr->CurrentSec == nullptr) {
-		return (long)Empty_Str;
-	}
-	else {
-		return (long)rdPtr->CurrentSec;
-	}
+	return valid(rdPtr->CurrentSec) ? (long)rdPtr->CurrentSec : (long)Empty_Str;
 }
 
 long WINAPI DLLExport GetCurrentItem(LPRDATA rdPtr, long param1) {
@@ -262,12 +262,7 @@ long WINAPI DLLExport GetCurrentItem(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	if (rdPtr->CurrentItem == nullptr) {
-		return (long)Empty_Str;
-	}
-	else {
-		return (long)rdPtr->CurrentItem;
-	}	
+	return valid(rdPtr->CurrentItem) ? (long)rdPtr->CurrentItem : (long)Empty_Str;
 }
 
 // ----------------------------------------------------------
