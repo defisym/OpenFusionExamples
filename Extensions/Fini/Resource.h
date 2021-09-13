@@ -54,6 +54,7 @@
 #define ACT_ACTION_SSI_STR			 5505
 #define ACT_ACTION_IT				 5506
 #define ACT_ACTION_ITSN				 5507
+#define ACT_ACTION_K				 5508
 
 
 //	Conditions

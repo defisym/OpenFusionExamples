@@ -244,6 +244,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <ItemGroup>
     <ClCompile Include="ConvertUTF.c" />
     <ClCompile Include="Edittime.cpp" />
+    <ClCompile Include="Encryption.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Runtime.cpp" />
@@ -287,6 +288,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="Common.h" />
     <ClInclude Include="ConvertUTF.h" />
     <ClInclude Include="Defination.h" />
+    <ClInclude Include="Encryption.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />

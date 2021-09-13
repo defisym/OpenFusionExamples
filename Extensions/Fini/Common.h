@@ -32,6 +32,7 @@
 
 #include	"SimpleIni.h"
 #include	"Defination.h"
+#include	"Encryption.h"
 
 // Specific to this cox
 #include	"resource.h"

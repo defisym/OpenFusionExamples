@@ -257,9 +257,10 @@ BEGIN
     M_ACTION_NF     "00New"
     M_ACTION_DF     "00Release"
 
-    M_ACTION_LF     "Load From File %0"
-    M_ACTION_SF     "Save to File %0"
+    M_ACTION_LF     "Load From File %0, Decrypt Key %1"
+    M_ACTION_SF     "Save to File %0, Encrypt Key %1"
     ACT_ACTION_F    "FileName"
+    ACT_ACTION_K    "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
     
     M_ACTION_SSIV       "Set Value %2 (Section %0 - Item %1)"
     M_ACTION_SSIS       "Set String %2 (Section %0 - Item %1)"

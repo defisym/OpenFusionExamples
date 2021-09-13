@@ -31,8 +31,8 @@ short actionsInfos[]=
 		{
 		IDMN_ACTION_NF, M_ACTION_NF,	ACT_ACTION_NF,	0, 0,
 		IDMN_ACTION_DF, M_ACTION_DF,	ACT_ACTION_DF,	0, 0,
-		IDMN_ACTION_LF, M_ACTION_LF,	ACT_ACTION_LF,	0, 1,PARAM_FILENAME2,ACT_ACTION_F,
-		IDMN_ACTION_SF, M_ACTION_SF,	ACT_ACTION_SF,	0, 1,PARAM_FILENAME2,ACT_ACTION_F,
+		IDMN_ACTION_LF, M_ACTION_LF,	ACT_ACTION_LF,	0, 2,PARAM_FILENAME2,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
+		IDMN_ACTION_SF, M_ACTION_SF,	ACT_ACTION_SF,	0, 2,PARAM_FILENAME2,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
 		IDMN_ACTION_SSIV, M_ACTION_SSIV,	ACT_ACTION_SSIV,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPRESSION,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,ACT_ACTION_SSI_VAL,
 		IDMN_ACTION_SSIS, M_ACTION_SSIS,	ACT_ACTION_SSIS,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,ACT_ACTION_SSI_STR,
 		IDMN_ACTION_DSI, M_ACTION_DSI,	ACT_ACTION_DSI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
@@ -88,10 +88,26 @@ short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
-	
+	LPCTSTR Key = (LPCTSTR)param2;
+
 	Init();
 
-	Fini->LoadFile(FilePath);
+	//Key has value, try to Decry
+	if (!StrEmpty(Key)) {
+		Encryption Decrypt;
+		Decrypt.GenerateKey(Key);
+
+		Decrypt.OpenFile(FilePath);
+		Decrypt.Decrypt();
+
+		std::string Temp = Decrypt.GetDecryptStr();
+
+		Fini->LoadData(Decrypt.GetDecryptStr(), Decrypt.GetDecryptStrLength());
+		Decrypt.ReleaseDecryptStr();
+	}
+	else {
+		Fini->LoadFile(FilePath);
+	}
 
 	return 0;
 }
@@ -99,9 +115,25 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	invalid(0);
 	
-	LPCTSTR FilePath = (LPCTSTR)param1;	
+	LPCTSTR FilePath = (LPCTSTR)param1;
+	LPCTSTR Key = (LPCTSTR)param2;
 	
-	Fini->SaveFile(FilePath, false);
+	//Key has value, try to Encry
+	if (!StrEmpty(Key)) {
+		std::string Output;
+		Fini->Save(Output);
+
+		Encryption Encrypt;
+		Encrypt.GenerateKey(Key);
+		
+		Encrypt.GetEncryptStr(Output);
+		Encrypt.Encrypt();
+
+		Encrypt.SaveFile(FilePath);
+	}
+	else {
+		Fini->SaveFile(FilePath, false);
+	}	
 
 	return 0;
 }
