@@ -37,7 +37,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SSIS, M_ACTION_SSIS,	ACT_ACTION_SSIS,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,ACT_ACTION_SSI_STR,
 		IDMN_ACTION_DSI, M_ACTION_DSI,	ACT_ACTION_DSI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
 		IDMN_ACTION_ITS, M_ACTION_ITS,	ACT_ACTION_ITS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_IT,
-		IDMN_ACTION_ITI, M_ACTION_ITI,	ACT_ACTION_ITI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_ITSN,ACT_ACTION_IT
+		IDMN_ACTION_ITI, M_ACTION_ITI,	ACT_ACTION_ITI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_ITSN,ACT_ACTION_IT,
+		//IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_S,ACT_ACTION_K,
+		IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_S,
 		};
 
 // Definitions of parameters for each expression
@@ -47,6 +49,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GSIS, M_EXPRESSION_GSIS, EXP_EXPRESSION_GSIS, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, ACT_ACTION_SSI_S, ACT_ACTION_SSI_I,
 		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GCI, M_EXPRESSION_GCI, EXP_EXPRESSION_GCI, EXPFLAG_STRING, 0,
+		//IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 1,EXPPARAM_STRING,ACT_ACTION_K,
+		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
 		};
 
 // ============================================================================
@@ -86,6 +90,37 @@ short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
+	//LPCTSTR String = (LPCTSTR)param1;
+	//LPCTSTR Key = (LPCTSTR)param2;
+
+	//Init();
+
+	////Key has value, try to Decry
+	//if (!StrEmpty(Key)) {
+	//	Encryption Decrypt;
+	//	Decrypt.GenerateKey(Key);
+
+	//	Decrypt.SetEncryptStr(String, wcslen(String));
+	//	//Decrypt.SetEncryptStr(to_byte_string(String));
+	//	Decrypt.Decrypt();
+
+	//	Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetDecryptStrLength());
+	//	Decrypt.ReleaseOutputStr();
+	//}
+	//else {		
+	//	Fini->LoadData(to_byte_string(String));
+	//}
+
+	LPCTSTR String = (LPCTSTR)param1;
+
+	Init();
+	
+	Fini->LoadData(to_byte_string(String));
+
+	return 0;
+}
+
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
@@ -100,10 +135,8 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		Decrypt.OpenFile(FilePath);
 		Decrypt.Decrypt();
 
-		std::string Temp = Decrypt.GetDecryptStr();
-
-		Fini->LoadData(Decrypt.GetDecryptStr(), Decrypt.GetDecryptStrLength());
-		Decrypt.ReleaseDecryptStr();
+		Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetDecryptStrLength());
+		Decrypt.ReleaseOutputStr();
 	}
 	else {
 		Fini->LoadFile(FilePath);
@@ -126,7 +159,7 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 		Encryption Encrypt;
 		Encrypt.GenerateKey(Key);
 		
-		Encrypt.GetEncryptStr(Output);
+		Encrypt.SetEncryptStr(Output);
 		Encrypt.Encrypt();
 
 		Encrypt.SaveFile(FilePath);
@@ -270,7 +303,7 @@ long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
 	invalid((long)Default_Str);	
 	InvalidSecItem((long)Default_Str);
 
-	NewStr(OStr,Fini->GetValue(Section, Item, Default_Str));
+	NewStr(OStr, Fini->GetValue(Section, Item, Default_Str));
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -293,6 +326,47 @@ long WINAPI DLLExport GetCurrentItem(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	return valid(rdPtr->CurrentItem) ? (long)rdPtr->CurrentItem : (long)Empty_Str;
+}
+
+long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
+	//LPCTSTR Key = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	//std::string Output;
+	//
+	////Key has value, try to Encry
+	//if (!StrEmpty(Key)) {		
+	//	std::string Temp;
+	//	Fini->Save(Temp);
+
+	//	Encryption Encrypt;
+	//	Encrypt.GenerateKey(Key);
+
+	//	Encrypt.SetEncryptStr(Temp);
+	//	Encrypt.Encrypt();
+	//			
+	//	Output = Encrypt.GetOutputStr();
+
+	//	wchar_t* Result = new wchar_t[(int)ceil(Output.length() / 2)];
+	//	memcpy(Result, Output.c_str(), Output.length());
+
+	//	NewStr(OStr, Result);
+	//	
+	//	delete[] Result;
+	//}
+	//else {
+	//	Fini->Save(Output);
+	//	NewStr(OStr, to_wide_string(Output).c_str());
+	//}
+
+	std::string Output;
+	Fini->Save(Output);
+	
+	NewStr(OStr, to_wide_string(Output).c_str());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)OStr;
 }
 
 // ----------------------------------------------------------
@@ -320,6 +394,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			DeleteSecItem,
 			Iterate_Section,
 			Iterate_Item,
+			LoadFromString,
 			0
 			};
 
@@ -329,5 +404,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetSecItem_String,
 			GetCurrentSection,
 			GetCurrentItem,
+			SaveToString,
 			0
 			};

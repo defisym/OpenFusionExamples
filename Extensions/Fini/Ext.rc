@@ -139,8 +139,10 @@ BEGIN
         MENUITEM "New", IDMN_ACTION_NF
         MENUITEM "Release", IDMN_ACTION_DF
         MENUITEM SEPARATOR
-        MENUITEM "Load", IDMN_ACTION_LF
-        MENUITEM "Save", IDMN_ACTION_SF
+        MENUITEM "Load From File", IDMN_ACTION_LF
+        MENUITEM "Save to File", IDMN_ACTION_SF
+        MENUITEM SEPARATOR
+        MENUITEM "Load From String", IDMN_ACTION_LS
         MENUITEM SEPARATOR
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
@@ -172,6 +174,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Current Section", IDMN_EXPRESSION_GCS
         MENUITEM "Get Current Item", IDMN_EXPRESSION_GCI
+        MENUITEM SEPARATOR
+        MENUITEM "Save to String", IDMN_EXPRESSION_SS
         MENUITEM SEPARATOR
     END
 END
@@ -259,6 +263,10 @@ BEGIN
 
     M_ACTION_LF     "Load From File %0, Decrypt Key %1"
     M_ACTION_SF     "Save to File %0, Encrypt Key %1"
+    //M_ACTION_LS     "Load From String %0, Decrypt Key %1"
+    M_ACTION_LS     "Load From String %0"
+
+    ACT_ACTION_S    "String"
     ACT_ACTION_F    "FileName"
     ACT_ACTION_K    "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
     
@@ -292,6 +300,8 @@ BEGIN
 
     M_EXPRESSION_GCS           "GetCurSec$("
     M_EXPRESSION_GCI           "GetCurItem$("
+
+    M_EXPRESSION_SS             "SaveToStr$("
 END
 
 

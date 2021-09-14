@@ -5,6 +5,8 @@
 #include <bcrypt.h>
 #include <string>
 
+//#include <ntstatus.h>
+
 #pragma comment(lib, "bcrypt.lib")
 
 constexpr auto ENCRY = true;
@@ -38,10 +40,10 @@ private:
 	DWORD KeyLength = 16;
 	DWORD IVLength = 16;
 
-	char* DecryptPutStr = nullptr;
+	char* OutPutStr = nullptr;
 
 	void Release(PBYTE Pointer);
-	void Encrypt_Core(bool Encrypt);
+	bool Encrypt_Core(bool Encrypt);
 	
 public:
 	Encryption();
@@ -50,20 +52,24 @@ public:
 	void OpenFile(const wchar_t* FileName);
 	void SaveFile(const wchar_t* FileName);
 
-	void GetEncryptStr(std::string& Str);
-	void GetEncryptStr(const char* Str, DWORD StrLength);
+	void SetEncryptStr(std::string& Str);
+	void SetEncryptStr(const char* Str, DWORD StrLength);
 
-	char* GetDecryptStr();
-	void ReleaseDecryptStr();
+	void SetEncryptStr(std::wstring& Str);
+	void SetEncryptStr(const wchar_t* Str, DWORD StrLength);
+
+	char* GetOutputStr();		
+	void ReleaseOutputStr();
+
 	DWORD GetDecryptStrLength();
 
 	void GenerateKey(const wchar_t* KeyStr);
 
-	inline void Encrypt() {
-		Encrypt_Core(ENCRY);
+	inline bool Encrypt() {
+		return Encrypt_Core(ENCRY);
 	}
-	inline void Decrypt() {
-		Encrypt_Core(DECRY);
+	inline bool Decrypt() {
+		return Encrypt_Core(DECRY);
 	}
 };
 

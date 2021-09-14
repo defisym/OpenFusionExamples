@@ -59,11 +59,11 @@ void Encryption::SaveFile(const wchar_t* FileName) {
     return;
 }
 
-void Encryption::GetEncryptStr(std::string& Str) {
-    GetEncryptStr(Str.c_str(), Str.length());
+void Encryption::SetEncryptStr(std::string& Str) {
+    SetEncryptStr(Str.c_str(), Str.length());
 }
 
-void Encryption::GetEncryptStr(const char* Str, DWORD StrLength) {
+void Encryption::SetEncryptStr(const char* Str, DWORD StrLength) {
     Release(this->InputText);
 
     this->InputLength = StrLength;
@@ -73,26 +73,40 @@ void Encryption::GetEncryptStr(const char* Str, DWORD StrLength) {
     return;
 }
 
-char* Encryption::GetDecryptStr() {
+void Encryption::SetEncryptStr(std::wstring& Str) {
+    SetEncryptStr(Str.c_str(), Str.length());
+}
+
+void Encryption::SetEncryptStr(const wchar_t* Str, DWORD StrLength) {
+    Release(this->InputText);
+
+    this->InputLength = StrLength * sizeof(wchar_t);
+    this->InputText = new BYTE[this->InputLength];
+    memcpy(this->InputText, Str, this->InputLength);
+
+    return;
+}
+
+char* Encryption::GetOutputStr() {
     if (this->OutputText == nullptr) {
         return nullptr;
     }
 
-    this->ReleaseDecryptStr();
+    this->ReleaseOutputStr();
 
     //allocate and ensure NULL terminated
-    this->DecryptPutStr = new char[this->OutputLength + 1];
-    this->DecryptPutStr[this->OutputLength] = 0;
-    memcpy(DecryptPutStr, this->OutputText, this->OutputLength);
+    this->OutPutStr = new char[this->OutputLength + 1];
+    this->OutPutStr[this->OutputLength] = 0;
+    memcpy(OutPutStr, this->OutputText, this->OutputLength);
 
-    return DecryptPutStr;
+    return OutPutStr;
 }
 
-void Encryption::ReleaseDecryptStr() {
-    if (this->DecryptPutStr != nullptr) {
-        delete[] this->DecryptPutStr;
+void Encryption::ReleaseOutputStr() {
+    if (this->OutPutStr != nullptr) {
+        delete[] this->OutPutStr;
     }
-    this->DecryptPutStr = nullptr;
+    this->OutPutStr = nullptr;
 }
 
 DWORD Encryption::GetDecryptStrLength() {
@@ -119,14 +133,14 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
     this->Key = new BYTE[16];
     this->IV = new BYTE[16];
 
-    memcpy(this->Key, KeyStr, 8);
-    memcpy(this->IV, KeyStr + 8, 8);
+    memcpy(this->Key, KeyStr, 8 * sizeof(wchar_t));
+    memcpy(this->IV, KeyStr + 8, 8 * sizeof(wchar_t));
 
     return;
 }
 
-void Encryption::Encrypt_Core(bool Encrypt) {
-    //If no key, generate default key
+bool Encryption::Encrypt_Core(bool Encrypt) {
+    //If no key generated, generate default key
     if ((this->IV == nullptr) || (this->Key == nullptr)) {
         this->GenerateKey(L"");
     }
@@ -149,6 +163,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         pbIV = NULL,
         pbBlob = NULL;
 
+    bool result = true;
+
     //General routine of En/Decrypt
     // Open an algorithm handle.
     if (!NT_SUCCESS(status = BCryptOpenAlgorithmProvider(
@@ -157,7 +173,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         NULL,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptOpenAlgorithmProvider\n", status);
+        //wprintf(L"**** Error 0x%x returned by BCryptOpenAlgorithmProvider\n", status);
+        result = false;
         goto Cleanup;
     }
 
@@ -170,7 +187,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         &cbData,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptGetProperty\n", status);
+        //wprintf(L"**** Error 0x%x returned by BCryptGetProperty\n", status);
+        result = false;
         goto Cleanup;
     }
 
@@ -178,7 +196,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
     pbKeyObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbKeyObject);
     if (NULL == pbKeyObject)
     {
-        wprintf(L"**** memory allocation failed\n");
+        //wprintf(L"**** memory allocation failed\n");
+        result = false;
         goto Cleanup;
     }
 
@@ -191,14 +210,16 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         &cbData,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptGetProperty\n", status);
+        //wprintf(L"**** Error 0x%x returned by BCryptGetProperty\n", status);
+        result = false;
         goto Cleanup;
     }
 
     // Determine whether the cbBlockLen is not longer than the IV length.
     if (cbBlockLen > this->IVLength)
     {
-        wprintf(L"**** block length is longer than the provided IV length\n");
+        //wprintf(L"**** block length is longer than the provided IV length\n");
+        result = false;
         goto Cleanup;
     }
 
@@ -207,7 +228,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
     pbIV = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbBlockLen);
     if (NULL == pbIV)
     {
-        wprintf(L"**** memory allocation failed\n");
+        //wprintf(L"**** memory allocation failed\n");
+        result = false;
         goto Cleanup;
     }
 
@@ -220,7 +242,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         sizeof(BCRYPT_CHAIN_MODE_CBC),
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptSetProperty\n", status);
+        //wprintf(L"**** Error 0x%x returned by BCryptSetProperty\n", status);
+        result = false;
         goto Cleanup;
     }
 
@@ -234,7 +257,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         this->KeyLength,
         0)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptGenerateSymmetricKey\n", status);
+        //wprintf(L"**** Error 0x%x returned by BCryptGenerateSymmetricKey\n", status);
+        result = false;
         goto Cleanup;
     }
 
@@ -243,7 +267,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
     pbInputText = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbInputText);
     if (NULL == pbInputText)
     {
-        wprintf(L"**** memory allocation failed\n");
+        //wprintf(L"**** memory allocation failed\n");
+        result = false;
         goto Cleanup;
     }
 
@@ -262,14 +287,16 @@ void Encryption::Encrypt_Core(bool Encrypt) {
         &cbOuputText,
         BCRYPT_BLOCK_PADDING)))
     {
-        wprintf(L"**** Error 0x%x returned by BCryptEncrypt\n", status);
+        //wprintf(L"**** Error 0x%x returned by BCryptEncrypt\n", status);
+        result = false;
         goto Cleanup;
     }
 
     pbOuputText = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbOuputText);
     if (NULL == pbOuputText)
     {
-        wprintf(L"**** memory allocation failed\n");
+        //wprintf(L"**** memory allocation failed\n");
+        result = false;
         goto Cleanup;
     }
 
@@ -288,7 +315,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
             &cbData,
             BCRYPT_BLOCK_PADDING)))
         {
-            wprintf(L"**** Error 0x%x returned by BCryptEncrypt\n", status);
+            //wprintf(L"**** Error 0x%x returned by BCryptEncrypt\n", status);
+            result = false;
             goto Cleanup;
         }
     }
@@ -305,7 +333,8 @@ void Encryption::Encrypt_Core(bool Encrypt) {
             &cbOuputText,
             BCRYPT_BLOCK_PADDING)))
         {
-            wprintf(L"**** Error 0x%x returned by BCryptDecrypt\n", status);
+            //wprintf(L"**** Error 0x%x returned by BCryptDecrypt\n", status);
+            result = false;
             goto Cleanup;
         }
     }
@@ -350,5 +379,7 @@ Cleanup:
     {
         HeapFree(GetProcessHeap(), 0, pbIV);
     }
+
+    return result;
 
 }

@@ -34,6 +34,7 @@
 #define IDMN_ACTION_DSI		       	25006
 #define IDMN_ACTION_ITS		       	25007
 #define IDMN_ACTION_ITI		       	25008
+#define IDMN_ACTION_LS		       	25009
 
 // Action strings
 #define M_ACTION_NF                 5000
@@ -45,6 +46,7 @@
 #define M_ACTION_DSI                5006
 #define M_ACTION_ITS                5007
 #define M_ACTION_ITI                5008
+#define M_ACTION_LS					5009
 
 // Titles of action parameters
 #define ACT_ACTION_F				 5501
@@ -55,6 +57,7 @@
 #define ACT_ACTION_IT				 5506
 #define ACT_ACTION_ITSN				 5507
 #define ACT_ACTION_K				 5508
+#define ACT_ACTION_S				 5509
 
 
 //	Conditions
@@ -85,12 +88,14 @@
 #define IDMN_EXPRESSION_GSIS		27001
 #define IDMN_EXPRESSION_GCS			27002
 #define IDMN_EXPRESSION_GCI			27003
+#define IDMN_EXPRESSION_SS			27004
 
 // Expression strings
 #define M_EXPRESSION_GSIV		 7000
 #define M_EXPRESSION_GSIS		 7001
 #define M_EXPRESSION_GCS		 7002
 #define M_EXPRESSION_GCI		 7003
+#define M_EXPRESSION_SS			 7004
 
 // Names of expression parameters
 //#define M_EXP_P1				 7500

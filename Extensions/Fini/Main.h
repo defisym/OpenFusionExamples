@@ -23,8 +23,9 @@
 #define	ACT_ACTION_DSI				6
 #define	ACT_ACTION_ITS				7
 #define	ACT_ACTION_ITI				8
+#define	ACT_ACTION_LS				9
 
-#define	ACT_LAST					9
+#define	ACT_LAST					10
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -33,8 +34,9 @@
 #define	EXP_EXPRESSION_GSIS			1
 #define	EXP_EXPRESSION_GCS			2
 #define	EXP_EXPRESSION_GCI			3
+#define	EXP_EXPRESSION_SS			4
 
-#define	EXP_LAST                    4
+#define	EXP_LAST                    5
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
