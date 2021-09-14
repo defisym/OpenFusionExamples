@@ -71,6 +71,10 @@ Something I made for someone else long long ago and now I couldn't tell what the
 
 some extensions I made for my game
 
+### Fini
+
+based on brofield's brilliant work simpleini, is a faster ini ext for fusion.
+
 ### RandomTable
 
 Generate a random table like *Fire Emblem*, save/load by base64 string, for my own game.
