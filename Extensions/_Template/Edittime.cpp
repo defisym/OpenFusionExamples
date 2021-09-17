@@ -111,7 +111,7 @@ LPCTSTR WINAPI GetHelpFileName()
 
 	// Or return the path of your file, relatively to the MMF directory
 	// if your file is not loaded by the MMF help file.
-	return _T("Help\\MyExt.chm");
+	return _T("Help\\Template\\Template.md");
 #else
 	return NULL;
 #endif // !defined(RUN_ONLY)
