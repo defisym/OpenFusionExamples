@@ -11,7 +11,7 @@ Encryption::~Encryption() {
     Release(this->IV);
 }
 
-inline void Encryption::Release(PBYTE Pointer){
+inline void Encryption::Release(PBYTE Pointer) {
     if (Pointer != nullptr) {
         delete[] Pointer;
     }
@@ -20,11 +20,11 @@ inline void Encryption::Release(PBYTE Pointer){
     return;
 }
 
-void Encryption::OpenFile(const wchar_t* FileName) {    
+void Encryption::OpenFile(const wchar_t* FileName) {
     Release(this->InputText);
-    
+
     FILE* fp = nullptr;
-    
+
     _wfopen_s(&fp, FileName, L"rb");
     if (fp == nullptr) {
         return;
@@ -33,7 +33,7 @@ void Encryption::OpenFile(const wchar_t* FileName) {
     fseek(fp, 0, SEEK_END);
     this->InputLength = ftell(fp);
     rewind(fp);
-    
+
     this->InputText = new BYTE[this->InputLength];
     fread(this->InputText, this->InputLength, 1, fp);
     fclose(fp);
@@ -87,6 +87,32 @@ void Encryption::SetEncryptStr(const wchar_t* Str, DWORD StrLength) {
     return;
 }
 
+char* Encryption::GetInputStr() {
+    if (this->InputText == nullptr) {
+        return nullptr;
+    }
+
+    this->ReleaseInputStr();
+
+    //allocate and ensure NULL terminated
+    this->InputStr = new char[this->InputLength + 1];
+    this->InputStr[this->InputLength] = 0;
+    memcpy(this->InputStr, this->InputText, this->InputLength);
+
+    return this->InputStr;
+}
+
+void Encryption::ReleaseInputStr() {
+    if (this->InputStr != nullptr) {
+        delete[] this->InputStr;
+    }
+    this->InputStr = nullptr;
+}
+
+DWORD Encryption::GetInputStrLength() {
+    return this->InputLength + 1;
+}
+
 char* Encryption::GetOutputStr() {
     if (this->OutputText == nullptr) {
         return nullptr;
@@ -95,21 +121,21 @@ char* Encryption::GetOutputStr() {
     this->ReleaseOutputStr();
 
     //allocate and ensure NULL terminated
-    this->OutPutStr = new char[this->OutputLength + 1];
-    this->OutPutStr[this->OutputLength] = 0;
-    memcpy(OutPutStr, this->OutputText, this->OutputLength);
+    this->OutputStr = new char[this->OutputLength + 1];
+    this->OutputStr[this->OutputLength] = 0;
+    memcpy(this->OutputStr, this->OutputText, this->OutputLength);
 
-    return OutPutStr;
+    return this->OutputStr;
 }
 
 void Encryption::ReleaseOutputStr() {
-    if (this->OutPutStr != nullptr) {
-        delete[] this->OutPutStr;
+    if (this->OutputStr != nullptr) {
+        delete[] this->OutputStr;
     }
-    this->OutPutStr = nullptr;
+    this->OutputStr = nullptr;
 }
 
-DWORD Encryption::GetDecryptStrLength() {
+DWORD Encryption::GetOutputStrLength() {
     return this->OutputLength + 1;
 }
 
@@ -117,10 +143,10 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
     //release old
     Release(this->Key);
     Release(this->IV);
-    
+
     //invalid keystr
     if ((sizeof(wchar_t) * wcslen(KeyStr)) < (this->KeyLength + this->IVLength)) {
-        this->Key = new BYTE[16];        
+        this->Key = new BYTE[16];
         this->IV = new BYTE[16];
 
         memcpy(this->Key, this->DefaultKey, 16);
@@ -149,7 +175,7 @@ bool Encryption::Encrypt_Core(bool Encrypt) {
     BCRYPT_ALG_HANDLE       hAesAlg = NULL;
     BCRYPT_KEY_HANDLE       hKey = NULL;
     NTSTATUS                status = STATUS_UNSUCCESSFUL;
-    DWORD                   
+    DWORD
         cbOuputText = 0,
         cbInputText = 0,
         cbData = 0,
@@ -273,7 +299,7 @@ bool Encryption::Encrypt_Core(bool Encrypt) {
     }
 
     memcpy(pbInputText, this->InputText, this->InputLength);
-    
+
     // Get the output buffer size.
     if (!NT_SUCCESS(status = BCryptEncrypt(
         hKey,

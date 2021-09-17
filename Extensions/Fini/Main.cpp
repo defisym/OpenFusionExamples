@@ -135,7 +135,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		Decrypt.OpenFile(FilePath);
 		Decrypt.Decrypt();
 
-		Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetDecryptStrLength());
+		Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
 		Decrypt.ReleaseOutputStr();
 	}
 	else {

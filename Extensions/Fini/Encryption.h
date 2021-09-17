@@ -28,11 +28,11 @@ private:
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 	};
+
 	BYTE DefaultIV[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 	};
-
 
 	PBYTE Key = nullptr;
 	PBYTE IV = nullptr;
@@ -40,11 +40,12 @@ private:
 	DWORD KeyLength = 16;
 	DWORD IVLength = 16;
 
-	char* OutPutStr = nullptr;
+	char* InputStr = nullptr;
+	char* OutputStr = nullptr;
 
 	void Release(PBYTE Pointer);
 	bool Encrypt_Core(bool Encrypt);
-	
+
 public:
 	Encryption();
 	~Encryption();
@@ -58,10 +59,15 @@ public:
 	void SetEncryptStr(std::wstring& Str);
 	void SetEncryptStr(const wchar_t* Str, DWORD StrLength);
 
-	char* GetOutputStr();		
+	char* GetInputStr();
+	void ReleaseInputStr();
+
+	DWORD GetInputStrLength();
+
+	char* GetOutputStr();
 	void ReleaseOutputStr();
 
-	DWORD GetDecryptStrLength();
+	DWORD GetOutputStrLength();
 
 	void GenerateKey(const wchar_t* KeyStr);
 

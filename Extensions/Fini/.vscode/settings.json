@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.bsc": "ini",
+        "*.file": "plaintext",
+        "_GlobalProgress": "ini",
+        "*.vdf": "plaintext",
+        "*.txt": "json",
+        "*.asc": "log",
+        "xiosbase": "cpp"
+    }
+}
