@@ -12,12 +12,21 @@ ZH:<https://github.com/EZLippi/practical-programming-books/blob/master/src/30-mi
 
 This object has no properties.
 
+## Note
+
+- this object only support UTF-8
+- if you input `\` in fusion, ext will get `\\`, because Windows use `\\` to escape `\`. that is to say, if you want to use `\s`, just input `\s` in fusion instead of `\\s` like you do when setting with `std::wregex regex = L"\\s"` in cpp.
+- if you need to match `\r\n`, just simply input `\r\n` in fusion, ext will escape `\\r\\n` it got to `\r\n`, or you can use `NewLine$` with multiple `+` to append strings.
+
 ## Action
 
 - Reset Split
+  - *reset object if needed*
 
 - Load From File
+  - *if the file is not encrypted, keep the key section empty.*
 - Load From String
+  - *load from string, e.g.`Hello/r/nWorld`*
 
 - Regex
   - Regex Flag
@@ -49,45 +58,73 @@ This object has no properties.
         ```
 
     - Set Case Insensitive
+      - *1 = Case Insensitive, 0 = Case Sensitive*
       - *perform an or/xor icase to flag*
 
   - Set Regex
     - Set All Regex
+      - *set all five regex at the same time, has the same effect if you set them separately use the actions below*
+      - *if you set regex will active it's flag to take effect in `Split Data` action*
+      - *if you don't want any of this regex work, just keep section blank*
 
     - Set Split Regex
+      - *main regex, use this to split data, e.g. `\r\n`, ext will split by lines.*
     - Set EmptyLine Regex
+      - *if you want to remove empty lines or some lines, set this regex, e.g. `^\s*$|#begin.*`, remove empty lines and lines contain `#begin`*
     - Set Comment Regex
+      - *if you want to remove comments in data, set this regex. e.g. C++ style comments `(\/\*(.|[\r\n])*?\*\/)|(\/\/[^\r\n]*)`*
     - Set Indent Regex
+      - *remove indents of a line, aka all blank characters in the beginning or ending, e.g. `^(\s*)|(\s*)$`*
     - Set Keyword Regex
+      - *add a line(which match this regex)'s content and it's line number to a vector, and you can get them later by keyword actions/conditions/expressions*
 
 - Split
-  - Split
+  - Split Data
+    - *split data with regex defined above.*
+    - *cost about 35ms for a 1000 line file*
+    - *routine*
+      - *remove comments*
+      - *itearte all lines splited by split regex*
+      - *if a line is empty, skip it*
+      - *remove indent*
+      - *save result to SplitStrVec*
+      - *if current line matches keyword, save it and it's line number after split*
 
   - Iterate SplitStrVec
+    - *iterate split results*
   - Iterate KeyWordPairVec
+    - *iterate keywords*
 
 - SubString
   - Get All Matched SubString
-    - *Keep src empty to match data*
+    - *Keep src empty to match source string*
   - Iterate Matched SubString
+    - *iterate substrings matched by `Get All Matched SubString`*
 
 ## Condition
 
 - Iterate
   - On Iterate SplitStrVec
+    - *you can get current split str here*
   - On Iterate KeyWordPairVec
+    - *you can get current KeyWord here*
 
   - On Iterate Matched SubString
+    - *you can get current SubString here*
 
 ## Expression
 
 - Replace String (Matchable)
+  - *replace string with given regex*
+  - *Keep src empty to replace source string*
 
 - SubString (Matchable)
   - Get Nst SubString Position in Str
+    - *Keep src empty to search source string*
 
   - Get Last Matched SubString
   - Get Nst Matched SubString in Str
+    - *Keep src empty to search source string*
 
   - Get SubStringVec Size
   - Get Nst SubString in SubStringVec
@@ -102,6 +139,7 @@ This object has no properties.
 
 - Keyword
   - Get Next Keyword Pos (Matchable)
+    - *get the line number of next matched keyword after given position. if you keep the regex section empty, ext will return next keyword after given position*
 
   - Get KeyWordPairVec Size
   - Get Nst Keyword in KeyWordPairVec
