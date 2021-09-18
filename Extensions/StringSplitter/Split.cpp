@@ -1,19 +1,6 @@
 ﻿#include "Split.h"
 
-size_t Split::GetSize(const char* Src, size_t Len) {
-    int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)Len, 0, 0);
-
-    return (size_t)((Size > 0) ? Size : -1);
-}
-
-bool Split::Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen) {
-    int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
-
-    return (Size > 0);
-}
-
 Split::Split() {
-
 }
 
 Split::~Split() {
@@ -26,9 +13,8 @@ void Split::ResetSplit() {
 
     //release vec
     this->SplitStrVec.clear();
-
-    //release map
-    this->KeyWordMap.clear();
+    this->SubStringVec.clear();
+    this->KeyWordPairVec.clear();
 
     //release strs
     this->MatchedStr.clear();
@@ -39,6 +25,8 @@ void Split::ResetSplit() {
     this->RemoveCommnet = false;
     this->RemoveIndent = false;
     this->KeyWord = false;
+
+    this->Flag = this->DefaultFlag;
 }
 
 void Split::LoadData() {
@@ -150,6 +138,10 @@ void Split::InitRegex(const wchar_t* Split, const wchar_t* EnptyLine, const wcha
 }
 
 void Split::SplitData() {
+    //Reset
+    this->SplitStrVec.clear();
+    this->KeyWordPairVec.clear();
+
     //remove comment
     this->SplitScrStrNoComment = this->RemoveCommnet ? std::regex_replace(this->SplitSrcStr, this->CommentReg, L"") : this->SplitSrcStr;
 
@@ -171,7 +163,7 @@ void Split::SplitData() {
 
         //update keyword
         if (this->KeyWord && std::regex_match(this->SplitStrVec.back(), this->KeyWordReg)) {
-            this->KeyWordMap.insert(std::map<size_t, std::wstring>::value_type(this->SplitStrVec.size() - 1, this->SplitStrVec.back()));
+            this->KeyWordPairVec.emplace_back(std::pair<size_t, std::wstring>(this->SplitStrVec.size() - 1, this->SplitStrVec.back()));
         }
     }
 }
@@ -199,6 +191,9 @@ int Split::GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_
         CurPos = PrePos + MatchedStr.position(0);
         if (SaveAll) {
             this->SubStringVec.emplace_back(MatchedStr[0]);
+        }
+        if (Sub == -1) {
+            this->MatchedStr = MatchedStr[0];
         }
         if (i == Sub) {
             this->MatchedStr = MatchedStr[0];
@@ -228,7 +223,7 @@ int Split::GetNextKeyWordPos(size_t StartPos) {
         return -1;
     }
 
-    for (auto& it : this->KeyWordMap) {
+    for (auto& it : this->KeyWordPairVec) {
         if (it.first > StartPos)
             return it.first;
     }
@@ -244,7 +239,7 @@ int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) {
 
     std::wregex KW(KeyWord, this->Flag);
 
-    for (auto& it : this->KeyWordMap) {
+    for (auto& it : this->KeyWordPairVec) {
         if ((it.first > StartPos) && std::regex_match(it.second.c_str(), KW))
             return it.first;
     }

@@ -3,7 +3,7 @@
 #include "Encryption.h"
 
 #include <regex>
-#include <map>
+#include <vector>
 
 #define UTF8_SIGNATURE     "\xEF\xBB\xBF"
 
@@ -54,11 +54,19 @@ private:
     bool KeyWord = false;
 
     //Keyword list
-    std::map<size_t, std::wstring> KeyWordMap;
+    std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
 
     //Convert
-    size_t GetSize(const char* Src, size_t Len);
-    bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen);
+    inline size_t GetSize(const char* Src, size_t Len) {
+        int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)Len, 0, 0);
+
+        return (size_t)((Size > 0) ? Size : -1);
+    }
+    inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen) {
+        int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
+
+        return (Size > 0);
+    }
 
     inline void InsertItem(const std::wstring& Src) {
         this->SplitStrVec.emplace_back(Src);
@@ -88,6 +96,10 @@ public:
     void LoadData(const wchar_t* Src);
     void LoadData(const wchar_t* Src, size_t Len);
 
+    inline void InitRegexFlag() {
+        this->DefaultFlag = std::regex_constants::ECMAScript | std::regex_constants::optimize;
+        this->Flag = DefaultFlag;
+    }
     void ReSetRegexFlag();
 
     //E.g. SetRegexFlag(std::regex_constants::ECMAScript | std::regex_constants::icase);
@@ -159,11 +171,11 @@ public:
     int GetNextKeyWordPos(size_t StartPos);
     int GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord);
 
-    inline size_t GetKeyWordListSize() {
-        return this->KeyWordMap.size();
+    inline size_t GetKeyWordPairVecSize() {
+        return this->KeyWordPairVec.size();
     }
     inline const wchar_t* GetKeyWord(size_t Pos) {
-        return (Pos < this->KeyWordMap.size()) && (Pos >= 0) ? this->KeyWordMap[Pos].c_str() : nullptr;
+        return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
     }
 
     inline void SetSplitReserve(size_t Size) {

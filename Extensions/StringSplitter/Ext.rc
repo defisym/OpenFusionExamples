@@ -48,13 +48,13 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "Comments", "\0"
-            VALUE "CompanyName", "Clickteam\0"
-            VALUE "FileDescription", "V2Template32 Object\0"
-            VALUE "FileVersion", "2.00\0"
-            VALUE "InternalName", "V2TEMPLATE32\0"
-            VALUE "LegalCopyright", "Copyright ?2000 Clickteam\0"
+            VALUE "CompanyName", "Defisym\0"
+            VALUE "FileDescription", "String Spliter\0"
+            VALUE "FileVersion", "0.00\0"
+            VALUE "InternalName", "StringSpliter\0"
+            VALUE "LegalCopyright", "Copyright 2021 Defisym\0"
             VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "V2TEMPLATE32.mfx\0"
+            VALUE "OriginalFilename", "StringSpliter.mfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "\0"
             VALUE "ProductVersion", "1, 0, 0, 0\0"
@@ -115,7 +115,15 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
+        POPUP "Iterate"
+        BEGIN
+            MENUITEM "On Iterate Split String Vec", IDMN_CONDITION_OISSV
+            MENUITEM "On Iterate KeywordPair Vec", IDMN_CONDITION_OIKWPV
+            MENUITEM SEPARATOR
+            MENUITEM "On Iterate SubString Vec", IDMN_CONDITION_OIMSS
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -129,7 +137,47 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM SEPARATOR
+        MENUITEM "Reset Split",              IDMN_ACTION_RP
+        MENUITEM SEPARATOR
+        MENUITEM "Load From File",              IDMN_ACTION_LFF
+        MENUITEM "Load From String",              IDMN_ACTION_LFS
+        MENUITEM SEPARATOR
+        POPUP "Regex"
+            BEGIN
+                POPUP "Regex Flag"
+                    BEGIN
+                        MENUITEM "Reset Regex Flag",  IDMN_ACTION_RRF
+                        MENUITEM SEPARATOR
+                        MENUITEM "Set Regex Flag",  IDMN_ACTION_SRF
+                        MENUITEM "Set Case Insensitive", IDMN_ACTION_SCI 
+                    END
+                POPUP "Set Regex"
+                    BEGIN
+                        MENUITEM "Set All Regex",  IDMN_ACTION_SR
+                        MENUITEM SEPARATOR
+                        MENUITEM "Set Split Regex",  IDMN_ACTION_SR_S
+                        MENUITEM "Set EmptyLine Regex", IDMN_ACTION_SR_EL 
+                        MENUITEM "Set Comment Regex", IDMN_ACTION_SR_C 
+                        MENUITEM "Set Indent Regex", IDMN_ACTION_SR_ID 
+                        MENUITEM "Set Keyword Regex", IDMN_ACTION_SR_K 
+                    END
+            END
+        MENUITEM SEPARATOR
+        POPUP "Split"
+            BEGIN
+                MENUITEM "Split Data",  IDMN_ACTION_SD
+                MENUITEM SEPARATOR
+                MENUITEM "Iterate SplitStrVec",  IDMN_ACTION_ITSSV
+                MENUITEM "Iterate KeyWordPairVec",  IDMN_ACTION_ITKWPV
+                MENUITEM SEPARATOR
+                POPUP "SubString"
+                    BEGIN
+                        MENUITEM "Get All Matched SubString",  IDMN_ACTION_GASSIS
+                        MENUITEM "Iterate Matched SubString",  IDMN_ACTION_ITMSS
+                    END
+            END
+        MENUITEM SEPARATOR    
     END
 END
 #endif
@@ -143,9 +191,38 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM SEPARATOR
+        MENUITEM "Replace String", IDMN_EXPRESSION_RS
+        MENUITEM SEPARATOR
+        POPUP "SubString"
+            BEGIN
+                MENUITEM "Get Nst SubString Position in Str", IDMN_EXPRESSION_GMSSP
+                MENUITEM SEPARATOR
+                MENUITEM "Get Last Matched SubString", IDMN_EXPRESSION_GLMSS
+                MENUITEM "Get Nst Matched SubString in Str", IDMN_EXPRESSION_GMSSPIS
+                MENUITEM SEPARATOR
+                MENUITEM "Get SubStringVec Size", IDMN_EXPRESSION_GMSSS
+                MENUITEM "Get Nst SubString in SubStringVec", IDMN_EXPRESSION_GMSSIMSSV
+                MENUITEM SEPARATOR
+                MENUITEM "Iterate: Get Current SubString", IDMN_EXPRESSION_ITGCMSS
+            END
+        POPUP "SplitStr"
+            BEGIN
+                MENUITEM "Get SplitStrVec Size", IDMN_EXPRESSION_GSSVS
+                MENUITEM "Get Nst SplitStr in SplitStrVec", IDMN_EXPRESSION_GSSISSV
+                MENUITEM SEPARATOR
+                MENUITEM "Iterate: Get Current SplitStr", IDMN_EXPRESSION_ITGCSS
+            END
+        POPUP "KeyWord"
+            BEGIN
+                MENUITEM "Get Next Keyword Position", IDMN_EXPRESSION_GNKWP
+                MENUITEM SEPARATOR
+                MENUITEM "Get KeyWordPairVec Size", IDMN_EXPRESSION_GKWPVS
+                MENUITEM "Get Nst Keyword in KeyWordPairVec", IDMN_EXPRESSION_GKWIKWPV
+                MENUITEM SEPARATOR
+                MENUITEM "Iterate: Get Current KeyWord", IDMN_EXPRESSION_ITGCKW
+            END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -213,40 +290,100 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     KPX_MARK                "MF2"
-    KPX_NAME                "My New Extension"
+    KPX_NAME                "String Spliter"
+END
+
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDST_OBJNAME            "String Spliter"
+    IDST_AUTHOR             "Defisym"
+    IDST_COPYRIGHT          "Copyright 2021 Defisym"
+    IDST_COMMENT            "This object is a string splitter base on C++ regex."
+    IDST_HTTP               "https://twitter.com/defisym"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_RP             "00Reset Split"
+
+    M_ACTION_LFF            "Load From File %0, Decrypt Key %1"
+    M_ACTION_LFS            "Load From String %0"
+
+    M_ACTION_RRF            "00Reset Regex Flag"
+    M_ACTION_SRF            "Set Regex Flag to %0"
+    M_ACTION_SCI            "Set Case Insensitive to %0"
+
+    M_ACTION_SR             "Set Regex, Split Regex %0, EmptyLine Regex %1, Comment Regex %2, Indent Regex %3, Keyword Regex %4"
+    M_ACTION_SR_S           "Set Split Regex to %0"
+    M_ACTION_SR_EL          "Set EmptyLine Regex to %0"
+    M_ACTION_SR_C           "Set Comment Regex to %0"
+    M_ACTION_SR_ID          "Set Indent Regex to %0"
+    M_ACTION_SR_K           "Set Keyword Regex to %0"
+
+    M_ACTION_SD             "00Split Data"
+
+    M_ACTION_ITSSV          "Iterate SplitStrVec, Loop Name %0"
+    M_ACTION_ITKWPV         "Iterate KeyWordPairVec, Loop Name %0"
+
+    M_ACTION_GASSIS         "Get All Matched SubString %1 in String %0"
+    M_ACTION_ITMSS          "Iterate Matched SubString, Loop Name %0"
+
+    M_ACT_STR			    "Set Source String"
+    M_ACT_REGEX			    "Set Regex"
+
+    M_ACT_FILENAME		    "FileName"
+    M_ACT_KEY			    "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
+
+    M_ACT_SRF			    "Regex Flag"
+    M_ACT_SCI			    "1 = Case Insensitive, 0 = Case Sensitive"
+
+    M_ACT_SR_S			    "Split Regex"
+    M_ACT_SR_EL			    "EmptyLine Regex"
+    M_ACT_SR_C			    "Comment Regex"
+    M_ACT_SR_ID			    "Indent Regex"
+    M_ACT_SR_K			    "Keyword Regex"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+    M_CONDITION_OISSV             "%o On Iterate Split String Vec, Loop Name %0"
+    M_CONDITION_OIKWPV            "%o On Iterate Keyword PairVec, Loop Name %0"
+    M_CONDITION_OIMSS             "%o On Iterate SubString Vec, Loop Name %0"
+
+    M_CND_LOOPNAME                "Loop Name"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
+    M_EXPRESSION_RS		            "ReplaceStr$("
 
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
-END
+    M_EXPRESSION_GMSSP	            "GetNstSubStrPos("
+    
+    M_EXPRESSION_GLMSS	            "GetLastMatchedSubStr$("
+    M_EXPRESSION_GMSSPIS            "GetNstMatchedSubStrInStr$("
+    
+    M_EXPRESSION_GMSSS	            "GetSubStrVecSize("
+    M_EXPRESSION_GMSSIMSSV          "GetNstSubStrInVec$("
+    
+    M_EXPRESSION_ITGCMSS            "GetCurrentSubStr$("
+    
+    M_EXPRESSION_GSSVS	            "GetSplitStrVecSize("
+    M_EXPRESSION_GSSISSV            "GetNstSplitStrInVec$("
+    
+    M_EXPRESSION_ITGCSS	            "GetCurrentSplitStr$("
+    
+    M_EXPRESSION_GNKWP	            "GetNextKeyWordPos("
+    
+    M_EXPRESSION_GKWPVS	            "GetKeyWordPairVecSize("
+    M_EXPRESSION_GKWIKWPV           "GetNstKeyWordInVec$("
+    
+    M_EXPRESSION_ITGCKW	            "GetCurrentKeyWord$("
 
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDST_OBJNAME            "My New Extension"
-    IDST_AUTHOR             "The extension's author"
-    IDST_COPYRIGHT          "Copyright ?2005 Extension Author"
-    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
-    IDST_HTTP               "http://www.authorswebpage.com"
+    M_EXP_REPREGEX	                "Set Replace Regex"
+    M_EXP_POS		                "Position"
+    M_EXP_STARTPOS	                "Search Start Position"
+    M_EXP_NST		                "Nst Occurence, -1 to Get Last"
 END
 
 #endif    // English (U.S.) resources

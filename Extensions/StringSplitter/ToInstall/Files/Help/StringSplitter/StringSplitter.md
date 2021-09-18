@@ -14,7 +14,7 @@ This object has no properties.
 
 ## Action
 
-- Reset Splitter
+- Reset Split
 
 - Load From File
 - Load From String
@@ -64,17 +64,18 @@ This object has no properties.
   - Split
 
   - Iterate SplitStrVec
-  - Iterate KeyWordMap
+  - Iterate KeyWordPairVec
 
 - SubString
-  - Get All SubString (Matchable)
+  - Get All Matched SubString
+    - *Keep src empty to match data*
   - Iterate Matched SubString
 
 ## Condition
 
 - Iterate
   - On Iterate SplitStrVec
-  - On Iterate KeyWordMap
+  - On Iterate KeyWordPairVec
 
   - On Iterate Matched SubString
 
@@ -83,20 +84,26 @@ This object has no properties.
 - Replace String (Matchable)
 
 - SubString (Matchable)
-  - Get Nst Pos in Str
+  - Get Nst SubString Position in Str
 
-  - Get Last Match Result
-  - Get Match Result in Str
+  - Get Last Matched SubString
+  - Get Nst Matched SubString in Str
 
   - Get SubStringVec Size
-  - Get SubString in SubStringVec
+  - Get Nst SubString in SubStringVec
+
+  - Iterate Get Current SubString
 
 - SplitStr
   - Get SplitStrVec Size
-  - Get SPlitStr in SplitStrVec
+  - Get Nst SplitStr in SplitStrVec
+
+  - Iterate Get Current SplitStr
 
 - Keyword
   - Get Next Keyword Pos (Matchable)
 
-  - Get KeyWordMap Size
-  - Get Keyword in KeyWordMap
+  - Get KeyWordPairVec Size
+  - Get Nst Keyword in KeyWordPairVec
+
+  - Iterate Get Current KeyWord
