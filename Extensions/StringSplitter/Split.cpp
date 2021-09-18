@@ -159,7 +159,7 @@ void Split::SplitData() {
         }
 
         //remove indent
-        this->InsertItem(this->RemoveIndent ? std::regex_replace(Tmp, this->IndentReg, L"") : Tmp);
+        this->SplitStrVec.emplace_back(this->RemoveIndent ? std::regex_replace(Tmp, this->IndentReg, L"") : Tmp);
 
         //update keyword
         if (this->KeyWord && std::regex_match(this->SplitStrVec.back(), this->KeyWordReg)) {
@@ -218,22 +218,13 @@ void Split::GetAllSubString(const std::wstring& Src, const wchar_t* SubStr) {
 }
 
 int Split::GetNextKeyWordPos(size_t StartPos) {
-    //valid current pos
-    if (!((StartPos < this->SplitStrVec.size()) && (StartPos >= 0))) {
-        return -1;
-    }
-
-    for (auto& it : this->KeyWordPairVec) {
-        if (it.first > StartPos)
-            return it.first;
-    }
-
-    return -1;
+    //match all in this case
+    return this->GetNextKeyWordPos(StartPos, ALL);
 }
 
 int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) {
     //valid current pos
-    if (!((StartPos < this->SplitStrVec.size()) && (StartPos >= 0))) {
+    if (!((StartPos < this->KeyWordPairVec.size()) && (StartPos >= 0))) {
         return -1;
     }
 

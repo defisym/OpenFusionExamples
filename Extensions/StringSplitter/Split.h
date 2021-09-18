@@ -11,6 +11,8 @@
 #define TAB         L"\t"
 #define SPACE       L" "
 
+#define ALL         L".*"
+
 typedef std::regex_constants::syntax_option_type RegexFlag;
 
 class Split :
@@ -66,10 +68,6 @@ private:
         int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
 
         return (Size > 0);
-    }
-
-    inline void InsertItem(const std::wstring& Src) {
-        this->SplitStrVec.emplace_back(Src);
     }
 
     inline void ReleaseSplitSrcStr() {

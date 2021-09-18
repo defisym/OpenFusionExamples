@@ -83,8 +83,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-	delete Spliter;
+	release_ptr(Spliter);
 	release_str();
+
 	// No errors
 	return 0;
 }
