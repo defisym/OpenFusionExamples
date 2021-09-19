@@ -10,128 +10,113 @@ Something still under development, aka WIP.
 
 Simple examples
 
-### Bullet Time
+- SubStretch
+  - Stretch Sub-application properly with WinAPI
 
-A simple bullet time example
+- FastloopSave
+  - *Save by Fastloop, could be easily extended to fit any systems*
 
-### DecimalVerdiction
+- Bullet Time
+  - *A simple bullet time example*
 
-To check if a value has decimals
+- DecimalVerdiction
+  - *To check if a value has decimals*
 
-### DirNormalization
+- DirNormalization
+  - *convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)*
 
-convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)
+- EasyStack
+  - *Push/Pop value without extension*
 
-### EasyStack
+- Ellipse
+  - *move like a ellipse*
 
-Push/Pop value without extension
+- IniControlInit
+  - *How to init a ini file*
 
-### Ellipse
+- MouseState
+  - *to show if LMB/RMB is pushed down*
 
-move like a ellipse
+- PauseWithTextBox
+  - *pause app with an explanation*
 
-### IniControlInit
+- Shotgun
+  - *Simple Shotgun*
 
-How to init a ini file
+- StringScan
+  - *Search the string and excerpt text in ()*
 
-### MouseState
+- Stupid Drag
+  - *Drag to move camera*
 
-to show if LMB/RMB is pushed down
+- Stupid HeatWave
+  - *simple heatwave effect*
 
-### PauseWithTextBox
+- Stupid SRPG
+  - *a SRPG example like **Fire Emblem** I wrote in 2017.*
+  - *it's totally a mess of spaghetti code, but it's enough for a start.*
 
-pause app with an explanation
-
-### Shotgun
-
-Simple Shotgun
-
-### StringScan
-
-Search the string and excerpt text in ()
-
-### Stupid Drag
-
-Drag to move camera
-
-### Stupid HeatWave
-
-simple heatwave effect
-
-### Stupid SRPG
-
-a SRPG example like *Fire Emblem* I wrote in 2017.
-it's totally a mess of spaghetti code, but it's enough for a start.
-
-### Stupid Things
-
-Something I made for someone else long long ago and now I couldn't tell what the hell it actually is
+- Stupid Things
+  - *Something I made for someone else long long ago and now I couldn't tell what the hell it actually is*
 
 ## Extensions
 
 some extensions I made for my game
 
-### Fini
+- Encrypter
+  - *En/decrtypt file with WinAPI CNG.*
+  - *You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSpliter*
 
-based on brofield's brilliant work simpleini, is a faster ini ext for fusion.
+- String Spliter
+  - *This object is a string splitter base on C++ regex.*
 
-### RandomTable
+- Fini
+  - *based on brofield's brilliant work simpleini, is a faster ini ext for fusion.*
 
-Generate a random table like *Fire Emblem*, save/load by base64 string, for my own game.
+- RandomTable
+  - *Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.*
 
-### WinAPI
+- WinAPI
+  - *a bunch of small functions.*
 
-a bunch of small functions.
+- Help
+  - *Help File from MMF SDK*
 
-### Help
+- Steamworks API
+  - *still didn't get it running tbh*
 
-Help File from MMF SDK
-
-### Steamworks API
-
-still didn't get it running tbh
-
-### _Template
-
-Ext template, but converted to VS 2019
+- _Template
+  - *Ext template, but converted to VS 2019*
 
 ## Shaders
 
 some simple and stupid shader
 
-### AlphaMono
+- AlphaMono
+  - *make semi-mono effect*
 
-make semi-mono effect
+- Gauss Blur
+  - *Finally here comes the gauss blur shader for DX11*
+  - *GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur*
 
-### Gauss Blur
+- Ring Health Bar
+  - *simple health bar*
 
-Finally here comes the gauss blur shader for DX11
+- Round Health Bar
+  - *simple health bar again*
 
-GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur
-
-### Ring Health Bar
-
-simple health bar
-
-### Round Health Bar
-
-simple health bar again
-
-### Round Rectangle
-
-draw a round rectangle
+- Round Rectangle
+  - *draw a round rectangle*
 
 ## Tools
 
 small tools
 
-### CallofAS Toolbar
+- CallofAS Toolbar
+  - *a handy tool bar set*
 
-a handy tool bar set
-
-### DX11 Shader Compile Tool
-
-compile DX11 shaders by a simple drag
+- DX11 Shader Compile Tool
+  - *compile DX11 shaders by a simple drag*
 
 ## Tutorials
 
