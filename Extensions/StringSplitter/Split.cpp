@@ -78,6 +78,7 @@ void Split::LoadData(const wchar_t* Src) {
 }
 
 void Split::LoadData(const wchar_t* Src, size_t Len) {
+    this->ReleaseSplitSrcStr();
     this->SplitSrcStrLength = Len + 1;
     this->SplitSrcStr = new wchar_t[this->SplitSrcStrLength];
     memset(this->SplitSrcStr, 0, sizeof(wchar_t) * (this->SplitSrcStrLength));
@@ -217,6 +218,27 @@ void Split::GetAllSubString(const std::wstring& Src, const wchar_t* SubStr) {
     this->GetSubStringPos(Src, SubStr, -1, true);;
 }
 
+const wchar_t* Split::GetNextKeyWord(size_t StartPos) {
+    //match all in this case
+    return this->GetNextKeyWord(StartPos, ALL);
+}
+
+const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) {
+    //valid current pos
+    if (!((StartPos < this->KeyWordPairVec.size()) && (StartPos >= 0))) {
+        return nullptr;
+    }
+
+    std::wregex KW(KeyWord, this->Flag);
+
+    for (auto& it : this->KeyWordPairVec) {
+        if ((it.first > StartPos) && std::regex_match(it.second.c_str(), KW))
+            return it.second.c_str();
+    }
+
+    return nullptr;
+}
+
 int Split::GetNextKeyWordPos(size_t StartPos) {
     //match all in this case
     return this->GetNextKeyWordPos(StartPos, ALL);
@@ -237,5 +259,3 @@ int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) {
 
     return -1;
 }
-
-

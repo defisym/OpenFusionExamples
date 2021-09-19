@@ -75,12 +75,15 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_ITGCSS, M_EXPRESSION_ITGCSS, EXP_EXPRESSION_ITGCSS, EXPFLAG_STRING, 0,
 
+		IDMN_EXPRESSION_GNKW, M_EXPRESSION_GNKW, EXP_EXPRESSION_GNKW, EXPFLAG_STRING, 2, EXPPARAM_LONG, EXPPARAM_STRING, M_EXP_STARTPOS,M_ACT_REGEX,
 		IDMN_EXPRESSION_GNKWP, M_EXPRESSION_GNKWP, EXP_EXPRESSION_GNKWP, 0, 2, EXPPARAM_LONG, EXPPARAM_STRING, M_EXP_STARTPOS,M_ACT_REGEX,
 
 		IDMN_EXPRESSION_GKWPVS, M_EXPRESSION_GKWPVS, EXP_EXPRESSION_GKWPVS, 0, 0,
 		IDMN_EXPRESSION_GKWIKWPV, M_EXPRESSION_GKWIKWPV, EXP_EXPRESSION_GKWIKWPV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_EXP_POS,
+		IDMN_EXPRESSION_GKWPIKWPV, M_EXPRESSION_GKWPIKWPV, EXP_EXPRESSION_GKWPIKWPV, 0, 1,EXPPARAM_LONG, M_EXP_POS,
 
-		IDMN_EXPRESSION_ITGCKW, M_EXPRESSION_ITGCKW, EXP_EXPRESSION_ITGCKW, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_ITGCKW, M_EXPRESSION_ITGCKW, EXP_EXPRESSION_ITGCKW, EXPFLAG_STRING, 0,		
+		IDMN_EXPRESSION_ITGCKWP, M_EXPRESSION_ITGCKWP, EXP_EXPRESSION_ITGCKWP, 0, 0,
 		};
 
 
@@ -215,8 +218,9 @@ short WINAPI DLLExport IterateSplitStrVec(LPRDATA rdPtr, long param1, long param
 short WINAPI DLLExport IterateKeyWordPairVec(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->KeyWordPairVecLoopName, LoopName);
-	for (size_t i = 0; i < Spliter->GetKeyWordPairVecSize(); i++) {
+	for (size_t i = 0; i < Spliter->GetKeyWordPairVecSize(); i++) {		
 		rdPtr->CurrentKeyWord = Spliter->GetKeyWord(i);
+		rdPtr->CurrentKeyWordPos = Spliter->GetKeyWordPos(i);
 		CallEvent(ONIT_KWPV);
 	}
 	return 0;
@@ -355,6 +359,22 @@ long WINAPI DLLExport GetCurrentSplitStr(LPRDATA rdPtr, long param1) {
 	return (long)(rdPtr->CurrentSplitStr != nullptr ? rdPtr->CurrentSplitStr : Default_Str);
 }
 
+long WINAPI DLLExport GetNextKeyWord(LPRDATA rdPtr, long param1) {
+	size_t StartPos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	long p1 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const std::wstring Regex = NewLineEscape((LPCTSTR)p1);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	if (!StrEmpty(Regex.c_str())) {
+		return (long)Spliter->GetNextKeyWord(StartPos, Regex.c_str());
+	}
+	else {
+		return (long)Spliter->GetNextKeyWord(StartPos);
+	}
+}
 long WINAPI DLLExport GetNextKeyWordPos(LPRDATA rdPtr, long param1) {
 	size_t StartPos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	long p1 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
@@ -380,6 +400,10 @@ long WINAPI DLLExport GetKeyWordInKeyWordPairVec(LPRDATA rdPtr, long param1) {
 	//This returns a pointer to the string for MMF.
 	return (long)(Spliter->GetKeyWord(Pos) != nullptr ? Spliter->GetKeyWord(Pos) : Default_Str);
 }
+long WINAPI DLLExport GetKeyWordPosInKeyWordPairVec(LPRDATA rdPtr, long param1) {
+	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	return Spliter->GetKeyWordPos(Pos);
+}
 
 long WINAPI DLLExport GetCurrentKeyWord(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -387,6 +411,9 @@ long WINAPI DLLExport GetCurrentKeyWord(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	return (long)(rdPtr->CurrentKeyWord != nullptr ? rdPtr->CurrentKeyWord : Default_Str);
+}
+long WINAPI DLLExport GetCurrentKeyWordPos(LPRDATA rdPtr, long param1) {
+	return rdPtr->CurrentKeyWordPos;
 }
 
 // ----------------------------------------------------------
@@ -455,12 +482,15 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetCurrentSplitStr,
 
+			GetNextKeyWord,
 			GetNextKeyWordPos,
 
 			GetKeyWordPairVecSize,
 			GetKeyWordInKeyWordPairVec,
+			GetKeyWordPosInKeyWordPairVec,
 
 			GetCurrentKeyWord,
+			GetCurrentKeyWordPos,
 
 			0
 			};

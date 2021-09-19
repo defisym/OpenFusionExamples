@@ -118,7 +118,7 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Iterate"
         BEGIN
-            MENUITEM "On Iterate Split String Vec", IDMN_CONDITION_OISSV
+            MENUITEM "On Iterate SplitString Vec", IDMN_CONDITION_OISSV
             MENUITEM "On Iterate KeywordPair Vec", IDMN_CONDITION_OIKWPV
             MENUITEM SEPARATOR
             MENUITEM "On Iterate SubString Vec", IDMN_CONDITION_OIMSS
@@ -215,12 +215,15 @@ BEGIN
             END
         POPUP "KeyWord"
             BEGIN
+                MENUITEM "Get Next Keyword", IDMN_EXPRESSION_GNKW
                 MENUITEM "Get Next Keyword Position", IDMN_EXPRESSION_GNKWP
                 MENUITEM SEPARATOR
                 MENUITEM "Get KeyWordPairVec Size", IDMN_EXPRESSION_GKWPVS
                 MENUITEM "Get Nst Keyword in KeyWordPairVec", IDMN_EXPRESSION_GKWIKWPV
+                MENUITEM "Get Nst Keyword Pos in KeyWordPairVec", IDMN_EXPRESSION_GKWPIKWPV
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate: Get Current KeyWord", IDMN_EXPRESSION_ITGCKW
+                MENUITEM "Iterate: Get Current KeyWord Pos", IDMN_EXPRESSION_ITGCKWP
             END
         MENUITEM SEPARATOR
     END
@@ -347,8 +350,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION_OISSV             "%o On Iterate Split String Vec, Loop Name %0"
-    M_CONDITION_OIKWPV            "%o On Iterate Keyword PairVec, Loop Name %0"
+    M_CONDITION_OISSV             "%o On Iterate SplitString Vec, Loop Name %0"
+    M_CONDITION_OIKWPV            "%o On Iterate KeywordPair Vec, Loop Name %0"
     M_CONDITION_OIMSS             "%o On Iterate SubString Vec, Loop Name %0"
 
     M_CND_LOOPNAME                "Loop Name"
@@ -373,12 +376,15 @@ BEGIN
     
     M_EXPRESSION_ITGCSS	            "GetCurrentSplitStr$("
     
+    M_EXPRESSION_GNKW	            "GetNextKeyWord$("
     M_EXPRESSION_GNKWP	            "GetNextKeyWordPos("
     
     M_EXPRESSION_GKWPVS	            "GetKeyWordPairVecSize("
     M_EXPRESSION_GKWIKWPV           "GetNstKeyWordInVec$("
+    M_EXPRESSION_GKWPIKWPV           "GetNstKeyWordPosInVec("
     
     M_EXPRESSION_ITGCKW	            "GetCurrentKeyWord$("
+    M_EXPRESSION_ITGCKWP	            "GetCurrentKeyWordPos("
 
     M_EXP_REPREGEX	                "Set Replace Regex"
     M_EXP_POS		                "Position"

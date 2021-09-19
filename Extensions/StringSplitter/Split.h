@@ -166,6 +166,9 @@ public:
         return this->MatchedStr.c_str();
     }
 
+    const wchar_t* GetNextKeyWord(size_t StartPos);
+    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord);
+
     int GetNextKeyWordPos(size_t StartPos);
     int GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord);
 
@@ -174,6 +177,9 @@ public:
     }
     inline const wchar_t* GetKeyWord(size_t Pos) {
         return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
+    }
+    inline int GetKeyWordPos(size_t Pos) {
+        return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? (int)this->KeyWordPairVec[Pos].first : -1;
     }
 
     inline void SetSplitReserve(size_t Size) {

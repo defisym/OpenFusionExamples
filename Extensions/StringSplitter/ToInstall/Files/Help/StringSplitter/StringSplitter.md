@@ -129,19 +129,22 @@ This object has no properties.
   - Get SubStringVec Size
   - Get Nst SubString in SubStringVec
 
-  - Iterate Get Current SubString
+  - Iterate: Get Current SubString
 
 - SplitStr
   - Get SplitStrVec Size
   - Get Nst SplitStr in SplitStrVec
 
-  - Iterate Get Current SplitStr
+  - Iterate: Get Current SplitStr
 
 - Keyword
+  - Get Next Keyword (Matchable)
   - Get Next Keyword Pos (Matchable)
     - *get the line number of next matched keyword after given position. if you keep the regex section empty, ext will return next keyword after given position*
 
   - Get KeyWordPairVec Size
   - Get Nst Keyword in KeyWordPairVec
+  - Get Nst Keyword Pos in KeyWordPairVec
 
-  - Iterate Get Current KeyWord
+  - Iterate: Get Current KeyWord
+  - Iterate: Get Current KeyWord Pos

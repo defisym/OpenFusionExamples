@@ -61,14 +61,17 @@
 
 #define	EXP_EXPRESSION_ITGCSS			9
 
-#define EXP_EXPRESSION_GNKWP			10
+#define EXP_EXPRESSION_GNKW				10
+#define EXP_EXPRESSION_GNKWP			11
 
-#define EXP_EXPRESSION_GKWPVS			11
-#define EXP_EXPRESSION_GKWIKWPV			12
+#define EXP_EXPRESSION_GKWPVS			12
+#define EXP_EXPRESSION_GKWIKWPV			13
+#define EXP_EXPRESSION_GKWPIKWPV		14
 
-#define EXP_EXPRESSION_ITGCKW			13
+#define EXP_EXPRESSION_ITGCKW			15
+#define EXP_EXPRESSION_ITGCKWP			16
 
-#define	EXP_LAST                    	14
+#define	EXP_LAST                    	17
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -125,6 +128,7 @@ typedef struct tagRDATA
 
 	LPTSTR KeyWordPairVecLoopName = nullptr;
 	LPCTSTR CurrentKeyWord = nullptr;
+	int CurrentKeyWordPos = 0;
 
 	LPTSTR SubStringVecLoopName = nullptr;
 	LPCTSTR CurrentSubString = nullptr;

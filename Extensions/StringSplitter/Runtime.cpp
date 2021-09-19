@@ -65,7 +65,22 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+	//Split
 	rdPtr->S = new Split;
+	
+	//ReturnStr
+	rdPtr->Str = nullptr;
+	
+	//LoopName
+	rdPtr->SplitStrVecLoopName = nullptr;
+	rdPtr->CurrentSplitStr = nullptr;
+	
+	rdPtr->KeyWordPairVecLoopName = nullptr;
+	rdPtr->CurrentKeyWord = nullptr;
+	rdPtr->CurrentKeyWordPos = 0;
+	
+	rdPtr->SubStringVecLoopName = nullptr;
+	rdPtr->CurrentSubString = nullptr;
 	
 	// No errors
 	return 0;
