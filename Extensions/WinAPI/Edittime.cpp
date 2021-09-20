@@ -132,7 +132,7 @@ LPCTSTR WINAPI GetHelpFileName()
 
 	// Or return the path of your file, relatively to the MMF directory
 	// if your file is not loaded by the MMF help file.
-	return _T("Help\\WinAPI.chm");
+	return _T("Help\\WinAPI\\WinAPI.md");
 #else
 	return NULL;
 #endif // !defined(RUN_ONLY)

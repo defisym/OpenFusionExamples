@@ -84,7 +84,7 @@ This object has no properties.
     - *cost about 35ms for a 1000 line file*
     - *routine*
       - *remove comments*
-      - *itearte all lines splited by split regex*
+      - *iterate all lines splited by split regex*
       - *if a line is empty, skip it*
       - *remove indent*
       - *save result to SplitStrVec*

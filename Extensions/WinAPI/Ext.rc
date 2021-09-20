@@ -230,8 +230,7 @@ BEGIN
                 MENUITEM SEPARATOR
                 MENUITEM "Gauss Blur", IDMN_ACTION_WINDOW_MTGB
                 MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
-            END
-            
+            END            
         END
         MENUITEM SEPARATOR
     END

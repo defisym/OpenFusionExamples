@@ -11,7 +11,7 @@ Something still under development, aka WIP.
 Simple examples
 
 - SubStretch
-  - Stretch Sub-application properly with WinAPI
+  - *Stretch Sub-application properly with WinAPI*
 
 - FastloopSave
   - *Save by Fastloop, could be easily extended to fit any systems*
