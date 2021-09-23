@@ -19,6 +19,9 @@ class Split :
     public Encryption
 {
 private:
+    //Unicode
+    bool Unicode = true;
+
     //Converted str
     wchar_t* SplitSrcStr = nullptr;
     size_t SplitSrcStrLength = 0;
@@ -59,13 +62,13 @@ private:
     std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
 
     //Convert
-    inline size_t GetSize(const char* Src, size_t Len) {
-        int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)Len, 0, 0);
+    inline size_t GetSize(const char* Src, size_t Len, UINT CodePage = CP_UTF8) {
+        int Size = MultiByteToWideChar(CodePage, 0, Src, (int)Len, 0, 0);
 
         return (size_t)((Size > 0) ? Size : -1);
     }
-    inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen) {
-        int Size = MultiByteToWideChar(CP_UTF8, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
+    inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen, UINT CodePage = CP_UTF8) {
+        int Size = MultiByteToWideChar(CodePage, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
 
         return (Size > 0);
     }
@@ -82,6 +85,10 @@ public:
     ~Split();
 
     void ResetSplit();
+    
+    inline void SetUnicode(bool Unicode) {
+        this->Unicode = Unicode;
+    }
 
     //load data loaded by parent class
     void LoadData();

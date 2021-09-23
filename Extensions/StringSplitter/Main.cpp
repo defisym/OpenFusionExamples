@@ -32,7 +32,7 @@ short actionsInfos[]=
 		{
 		IDMN_ACTION_RP, M_ACTION_RP, ACT_ACTION_RP,	0, 0,
 
-		IDMN_ACTION_LFF, M_ACTION_LFF, ACT_ACTION_LFF,	0, 2,PARAM_FILENAME2,PARAM_EXPSTRING,M_ACT_FILENAME,M_ACT_KEY,
+		IDMN_ACTION_LFF, M_ACTION_LFF, ACT_ACTION_LFF,	0, 3,PARAM_FILENAME2,PARAM_EXPSTRING,PARAM_EXPRESSION,M_ACT_FILENAME,M_ACT_KEY,M_ACT_UNICODE,
 		IDMN_ACTION_LFS, M_ACTION_LFS, ACT_ACTION_LFS,	0, 1,PARAM_EXPSTRING,M_ACT_STR,
 		
 		IDMN_ACTION_RRF, M_ACTION_RRF, ACT_ACTION_RRF,	0, 0,
@@ -128,9 +128,11 @@ short WINAPI DLLExport ResetSplit(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR FilePath = (LPCTSTR)param1;
-	LPCTSTR Key = (LPCTSTR)param2;
+	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	bool Enable = (bool)CNC_GetIntParameter(rdPtr);
 
+	Spliter->SetUnicode(Enable);
 	Spliter->OpenFile(FilePath);
 
 	if (!StrEmpty(Key)) {
@@ -141,11 +143,14 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	else {
 		Spliter->LoadData(Spliter->GetInputStr());
 	}
+
 	return 0;
 }
 short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR String = (LPCTSTR)param1;
+	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	Spliter->LoadData(String);
+
 	return 0;
 }
 

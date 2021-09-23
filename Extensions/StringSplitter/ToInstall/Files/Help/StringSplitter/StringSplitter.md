@@ -14,9 +14,9 @@ This object has no properties.
 
 ## Note
 
-- this object only support UTF-8
 - if you input `\` in fusion, ext will get `\\`, because Windows use `\\` to escape `\`. that is to say, if you want to use `\s`, just input `\s` in fusion instead of `\\s` like you do when setting with `std::wregex regex = L"\\s"` in cpp.
-- if you need to match `\r\n`, just simply input `\r\n` in fusion, ext will escape `\\r\\n` it got to `\r\n`, or you can use `NewLine$` with multiple `+` to append strings.
+- if you need to match `\`, you need to input `\\` in regex to match it, cause ext get `\\` as string, and you need `\\\\` to match it.
+- if you need to match `NewLine`(AKA`\r\n`), just simply input `\r\n` in fusion, ext will escape `\\r\\n` it got to `\r\n`, or you can use `NewLine$` with multiple `+` to append strings.
 
 ## Action
 
@@ -25,6 +25,7 @@ This object has no properties.
 
 - Load From File
   - *if the file is not encrypted, keep the key section empty.*
+  - *you need to define the file code page, 1 = `Unicode`, 0 = `ANSI`*
 - Load From String
   - *load from string, e.g.`Hello/r/nWorld`*
 

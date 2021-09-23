@@ -80,16 +80,16 @@
 
 #define M_ACT_FILENAME			 5503
 #define M_ACT_KEY				 5504
+#define M_ACT_UNICODE			 5505
 
-#define M_ACT_SRF				 5505
-#define M_ACT_SCI				 5506
+#define M_ACT_SRF				 5506
+#define M_ACT_SCI				 5507
 
-#define M_ACT_SR_S				 5507
-#define M_ACT_SR_EL				 5508
-#define M_ACT_SR_C				 5509
-#define M_ACT_SR_ID				 5510
-#define M_ACT_SR_K				 5511
-
+#define M_ACT_SR_S				 5508
+#define M_ACT_SR_EL				 5509
+#define M_ACT_SR_C				 5510
+#define M_ACT_SR_ID				 5511
+#define M_ACT_SR_K				 5512
 
 //	Conditions
 //--------------------

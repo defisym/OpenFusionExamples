@@ -310,7 +310,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_ACTION_RP             "00Reset Split"
 
-    M_ACTION_LFF            "Load From File %0, Decrypt Key %1"
+    M_ACTION_LFF            "Load From File %0, Decrypt Key %1, Unicode = %2"
     M_ACTION_LFS            "Load From String %0"
 
     M_ACTION_RRF            "00Reset Regex Flag"
@@ -337,6 +337,7 @@ BEGIN
 
     M_ACT_FILENAME		    "FileName"
     M_ACT_KEY			    "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
+    M_ACT_UNICODE			    "1 = Unicode, 0 = ANSI"
 
     M_ACT_SRF			    "Regex Flag"
     M_ACT_SCI			    "1 = Case Insensitive, 0 = Case Sensitive"

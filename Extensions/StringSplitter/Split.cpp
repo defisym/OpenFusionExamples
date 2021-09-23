@@ -8,6 +8,9 @@ Split::~Split() {
 }
 
 void Split::ResetSplit() {
+    //reset unicode
+    this->Unicode = true;
+
     //release str
     this->ReleaseSplitSrcStr();
 
@@ -49,13 +52,16 @@ void Split::LoadData(const char* Src, size_t Len) {
     if ((Len >= 3) && (memcmp(Src, UTF8_SIGNATURE, 3) == 0)) {
         Src += 3;
         Len -= 3;
+        this->Unicode = true;
     }
 
     if (Len == 0) {
         return;
     }
 
-    size_t OutputLenth = this->GetSize(Src, Len);
+    UINT CodePage = this->Unicode ? CP_UTF8 : CP_ACP;
+
+    size_t OutputLenth = this->GetSize(Src, Len, CodePage);
     if (OutputLenth == (size_t)(-1)) {
         return;
     }
@@ -64,7 +70,7 @@ void Split::LoadData(const char* Src, size_t Len) {
     this->SplitSrcStr = new wchar_t[this->SplitSrcStrLength];
     memset(this->SplitSrcStr, 0, sizeof(wchar_t) * (this->SplitSrcStrLength));
 
-    if (!this->Convert(Src, Len, this->SplitSrcStr, OutputLenth)) {
+    if (!this->Convert(Src, Len, this->SplitSrcStr, OutputLenth, CodePage)) {
         return;
     }
 }
