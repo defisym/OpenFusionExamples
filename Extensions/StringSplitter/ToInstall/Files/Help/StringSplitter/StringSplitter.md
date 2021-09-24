@@ -24,10 +24,12 @@ This object has no properties.
   - *reset object if needed*
 
 - Load From File
-  - *if the file is not encrypted, keep the key section empty.*
+  - *if the file is not encrypted, keep the key section empty.*  
   - *you need to define the file code page, 1 = `Unicode`, 0 = `ANSI`*
+  - *this action will automatically start split if auto split is set to on*
 - Load From String
   - *load from string, e.g.`Hello/r/nWorld`*
+  - *this action will automatically start split if auto split is set to on*
 
 - Regex
   - Regex Flag
@@ -80,6 +82,10 @@ This object has no properties.
       - *add a line(which match this regex)'s content and it's line number to a vector, and you can get them later by keyword actions/conditions/expressions*
 
 - Split
+  - Auto Split
+    - *1 = Enable, 0 = Disable, default is disable*
+    - *ext will automatically split data when you load them, or you need to use `Split Data` to start split*
+
   - Split Data
     - *split data with regex defined above.*
     - *cost about 35ms for a 1000 line file*

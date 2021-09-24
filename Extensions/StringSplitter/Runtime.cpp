@@ -67,9 +67,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	//Split
 	rdPtr->S = new Split;
-	
-	//ReturnStr
-	rdPtr->Str = nullptr;
+
+	//Auto Split
+	rdPtr->AutoSplit = false;
 	
 	//LoopName
 	rdPtr->SplitStrVecLoopName = nullptr;

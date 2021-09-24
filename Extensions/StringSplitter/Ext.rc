@@ -166,6 +166,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Split"
             BEGIN
+                MENUITEM "Set Auto Split",  IDMN_ACTION_AS
+                MENUITEM SEPARATOR
                 MENUITEM "Split Data",  IDMN_ACTION_SD
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate SplitStrVec",  IDMN_ACTION_ITSSV
@@ -327,6 +329,8 @@ BEGIN
     M_ACTION_SR_ID          "Set Indent Regex to %0"
     M_ACTION_SR_K           "Set Keyword Regex to %0"
 
+    M_ACTION_AS             "Set Auto Split to %0"
+
     M_ACTION_SD             "00Split Data"
 
     M_ACTION_ITSSV          "Iterate SplitStrVec, Loop Name %0"
@@ -350,6 +354,8 @@ BEGIN
     M_ACT_SR_C			    "Comment Regex"
     M_ACT_SR_ID			    "Indent Regex"
     M_ACT_SR_K			    "Keyword Regex"
+
+    M_ACT_AUTO			    "1 = Enable, 0 = Disable"
 END
 
 STRINGTABLE DISCARDABLE 

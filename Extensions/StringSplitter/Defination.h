@@ -1,7 +1,6 @@
 #ifndef _DEFINATION_
 #define _DEFINATION_
 
-#define OStr rdPtr->Str
 #define Spliter rdPtr->S
 
 #define Empty_Str	_T("")

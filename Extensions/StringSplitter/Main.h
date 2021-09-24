@@ -39,7 +39,9 @@
 #define	ACT_ACTION_GASSIS			15
 #define	ACT_ACTION_ITMSS			16
 
-#define	ACT_LAST					17
+#define	ACT_ACTION_AS				17
+
+#define	ACT_LAST					18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -121,8 +123,8 @@ typedef struct tagRDATA
 	//Split
 	Split* S;
 	
-	//ReturnStr
-	LPTSTR Str = nullptr;
+	//Auto Split
+	bool AutoSplit = false;
 
 	//LoopName
 	LPTSTR SplitStrVecLoopName = nullptr;

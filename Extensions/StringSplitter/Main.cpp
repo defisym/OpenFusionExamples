@@ -53,6 +53,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_GASSIS, M_ACTION_GASSIS, ACT_ACTION_GASSIS,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,M_ACT_STR,M_ACT_REGEX,
 		IDMN_ACTION_ITMSS, M_ACTION_ITMSS, ACT_ACTION_ITMSS,	0, 1,PARAM_EXPSTRING,M_CND_LOOPNAME,
+
+		IDMN_ACTION_AS, M_ACTION_AS, ACT_ACTION_AS,	0, 1,PARAM_EXPRESSION,M_ACT_AUTO,
 		};
 
 // Definitions of parameters for each expression
@@ -121,7 +123,6 @@ long WINAPI DLLExport OnIterateSubStringVec(LPRDATA rdPtr, long param1, long par
 short WINAPI DLLExport ResetSplit(LPRDATA rdPtr, long param1, long param2) {
 	Spliter->ResetSplit();
 
-	ResertPtr(rdPtr->Str);
 	ResertPtr(rdPtr->CurrentSplitStr);
 	ResertPtr(rdPtr->CurrentKeyWord);
 	ResertPtr(rdPtr->CurrentSubString);
@@ -146,12 +147,20 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		Spliter->LoadData(Spliter->GetInputStr());
 	}
 
+	if (rdPtr->AutoSplit) {
+		Spliter->SplitData();
+	}
+
 	return 0;
 }
 short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	Spliter->LoadData(String);
+
+	if (rdPtr->AutoSplit) {
+		Spliter->SplitData();
+	}
 
 	return 0;
 }
@@ -205,6 +214,13 @@ short WINAPI DLLExport SetIndentRegex(LPRDATA rdPtr, long param1, long param2) {
 }short WINAPI DLLExport SetKeyWordRegex(LPRDATA rdPtr, long param1, long param2) {
 	const std::wstring Regex = NewLineEscape((LPCTSTR)CNC_GetStringParameter(rdPtr));
 	Spliter->InitKeyWord(Regex.c_str());
+	return 0;
+}
+
+short WINAPI DLLExport SetAutoSplit(LPRDATA rdPtr, long param1, long param2) {
+	bool Enable = (bool)CNC_GetIntParameter(rdPtr);
+	rdPtr->AutoSplit = Enable;
+
 	return 0;
 }
 
@@ -474,6 +490,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			GetAllSubStringInString,
 			IterateMatchedSubString,
+
+			SetAutoSplit,
 
 			0
 			};
