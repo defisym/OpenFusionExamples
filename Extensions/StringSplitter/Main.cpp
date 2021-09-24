@@ -25,6 +25,9 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OISSV, M_CONDITION_OISSV, CND_CONDITION_OISSV, 0, 1, PARAM_EXPSTRING, M_CND_LOOPNAME,
 		IDMN_CONDITION_OIKWPV, M_CONDITION_OIKWPV, CND_CONDITION_OIKWPV, 0, 1, PARAM_EXPSTRING, M_CND_LOOPNAME,
 		IDMN_CONDITION_OIMSS, M_CONDITION_OIMSS, CND_CONDITION_OIMSS, 0, 1, PARAM_EXPSTRING, M_CND_LOOPNAME,
+
+		IDMN_CONDITION_SMR, M_CONDITION_SMR, CND_CONDITION_SMR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_STR, M_ACT_REGEX,
+		IDMN_CONDITION_SHR, M_CONDITION_SHR, CND_CONDITION_SHR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_STR, M_ACT_REGEX,
 		};
 
 // Definitions of parameters for each action
@@ -112,6 +115,30 @@ long WINAPI DLLExport OnIterateSubStringVec(LPRDATA rdPtr, long param1, long par
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return StrEqu(LoopName, rdPtr->SubStringVecLoopName) ? TRUE : FALSE;
+}
+
+
+long WINAPI DLLExport StringMatchRegex(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR Src = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring Regex = NewLineEscape((LPCTSTR)CNC_GetStringParameter(rdPtr));
+
+	if (!StrEmpty(Src)) {
+		return Spliter->StringMatchRegex(Src, Regex.c_str(), false);
+	}
+	else {
+		return Spliter->StringMatchRegex(Regex.c_str(), false);
+	}
+}
+long WINAPI DLLExport StringHasRegex(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR Src = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring Regex = NewLineEscape((LPCTSTR)CNC_GetStringParameter(rdPtr));
+
+	if (!StrEmpty(Src)) {
+		return Spliter->StringMatchRegex(Src, Regex.c_str(), true);
+	}
+	else {
+		return Spliter->StringMatchRegex(Regex.c_str(), true);
+	}
 }
 
 // ============================================================================
@@ -462,6 +489,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			OnIterateSubStringVec,
 
+			StringMatchRegex,
+			StringHasRegex,
+			
 			0
 			};
 	

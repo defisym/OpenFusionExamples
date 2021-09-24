@@ -108,10 +108,16 @@
 #define IDMN_CONDITION_OIKWPV	26001
 #define IDMN_CONDITION_OIMSS	26002
 
+#define IDMN_CONDITION_SMR	    26003
+#define IDMN_CONDITION_SHR	    26004
+
 // Condition strings
 #define M_CONDITION_OISSV		 6000
 #define M_CONDITION_OIKWPV		 6001
 #define M_CONDITION_OIMSS		 6002
+
+#define M_CONDITION_SMR	    	 6003
+#define M_CONDITION_SHR	    	 6004
 
 // Titles of condition parameters
 #define M_CND_LOOPNAME           6501

@@ -156,6 +156,18 @@ public:
     void GetAllSubString(const wchar_t* Src, const wchar_t* SubStr);
     void GetAllSubString(const std::wstring& Src, const wchar_t* SubStr);
 
+    //Type == true search
+    //Type == false match
+    inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) {
+        return this->StringMatchRegex(this->SplitDataStr, SubStr,Type);
+    }
+    inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) {
+        return this->StringMatchRegex((std::wstring)Src, SubStr, Type);
+    }
+    inline bool StringMatchRegex(const std::wstring& Src, const wchar_t* SubStr, bool Type = false) {
+        return Type ? std::regex_search(Src, std::wregex(SubStr, this->Flag)) : std::regex_match(Src, std::wregex(SubStr, this->Flag));
+    }
+
     inline size_t GetSubStringSize() {
         return this->SubStringVec.size();
     }

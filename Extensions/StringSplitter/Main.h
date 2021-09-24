@@ -7,10 +7,13 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_OISSV			0
-#define	CND_CONDITION_OIKWPV			1
+#define	CND_CONDITION_OIKWPV		1
 #define	CND_CONDITION_OIMSS			2
 
-#define	CND_LAST					3
+#define	CND_CONDITION_SMR			3
+#define	CND_CONDITION_SHR			4
+
+#define	CND_LAST					5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

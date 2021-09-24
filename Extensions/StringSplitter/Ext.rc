@@ -124,6 +124,9 @@ BEGIN
             MENUITEM "On Iterate SubString Vec", IDMN_CONDITION_OIMSS
         END
         MENUITEM SEPARATOR
+        MENUITEM "String Match Regex", IDMN_CONDITION_SMR
+        MENUITEM "String Has Regex", IDMN_CONDITION_SHR
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -363,6 +366,9 @@ BEGIN
     M_CONDITION_OISSV             "%o On Iterate SplitString Vec, Loop Name %0"
     M_CONDITION_OIKWPV            "%o On Iterate KeywordPair Vec, Loop Name %0"
     M_CONDITION_OIMSS             "%o On Iterate SubString Vec, Loop Name %0"
+
+    M_CONDITION_SMR               "String %0 Match Regex %1"
+    M_CONDITION_SHR               "String %0 Has Regex %1"
 
     M_CND_LOOPNAME                "Loop Name"
 END

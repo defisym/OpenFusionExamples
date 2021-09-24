@@ -110,6 +110,13 @@ This object has no properties.
 
 ## Condition
 
+- String Match Regex
+  - *return ture if string matches regex*
+  - *Keep src empty to search source string*
+- String Has Regex
+  - *return ture if string's substring matches regex*
+  - *Keep src empty to search source string*
+
 - Iterate
   - On Iterate SplitStrVec
     - *you can get current split str here*
