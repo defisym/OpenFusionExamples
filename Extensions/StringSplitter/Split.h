@@ -26,7 +26,8 @@ private:
     wchar_t* SplitSrcStr = nullptr;
     size_t SplitSrcStrLength = 0;
 
-    std::wstring SplitScrStrNoComment;
+    std::wstring SplitDataStr;
+
     std::wstring MatchedStr;
     std::wstring ReplacedStr;
 
@@ -38,6 +39,7 @@ private:
 
     //Main regex, split lines
     std::wregex LineReg;
+    std::wstring LineRegStr;
 
     //EmptyLine regex, remove empty lines
     std::wregex EmptyLineReg;
@@ -122,10 +124,14 @@ public:
 
     void SplitData();
 
+    inline const wchar_t* GetSplitData() {
+        return this->SplitDataStr.c_str();
+    }
+
     //Replace string
     inline const wchar_t* ReplaceStr(const wchar_t* SubStr, const wchar_t* Replace) {
         std::wregex SubString(SubStr, this->Flag);
-        this->ReplacedStr = std::regex_replace(this->SplitScrStrNoComment, SubString, Replace);
+        this->ReplacedStr = std::regex_replace(this->SplitDataStr, SubString, Replace);
         return this->ReplacedStr.c_str();
     }
     inline const wchar_t* ReplaceStr(const wchar_t* Src, const wchar_t* SubStr, const wchar_t* Replace) {
@@ -161,7 +167,7 @@ public:
         return this->MatchedStr.c_str();
     }
     inline const wchar_t* GetMatchResult(const wchar_t* SubStr, size_t Sub) {
-        this->GetSubStringPos(this->SplitScrStrNoComment, SubStr, Sub);
+        this->GetSubStringPos(this->SplitDataStr, SubStr, Sub);
         return this->MatchedStr.c_str();
     }
     inline const wchar_t* GetMatchResult(const wchar_t* Src, const wchar_t* SubStr, size_t Sub) {

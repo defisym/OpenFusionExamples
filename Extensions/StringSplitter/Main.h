@@ -71,7 +71,9 @@
 #define EXP_EXPRESSION_ITGCKW			15
 #define EXP_EXPRESSION_ITGCKWP			16
 
-#define	EXP_LAST                    	17
+#define EXP_EXPRESSION_GSD				17
+
+#define	EXP_LAST                    	18
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

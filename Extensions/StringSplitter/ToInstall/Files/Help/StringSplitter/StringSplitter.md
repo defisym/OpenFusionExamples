@@ -115,6 +115,9 @@ This object has no properties.
 
 ## Expression
 
+- Get Split Data
+  - *Get split result*
+
 - Replace String (Matchable)
   - *replace string with given regex*
   - *Keep src empty to replace source string*

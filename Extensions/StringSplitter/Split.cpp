@@ -104,6 +104,7 @@ void Split::SetCaseInsensitive(bool Enable) {
 
 void Split::InitSplit(const wchar_t* Split) {
     this->LineReg.assign(Split, this->Flag);
+    this->LineRegStr = Split;
 }
 
 void Split::InitEmptyLine(const wchar_t* EnptyLine) {
@@ -150,11 +151,17 @@ void Split::SplitData() {
     this->KeyWordPairVec.clear();
 
     //remove comment
-    this->SplitScrStrNoComment = this->RemoveCommnet ? std::regex_replace(this->SplitSrcStr, this->CommentReg, L"") : this->SplitSrcStr;
+    this->SplitDataStr = this->RemoveCommnet ? std::regex_replace(this->SplitSrcStr, this->CommentReg, L"") : this->SplitSrcStr;
+    
+    //merge multiple
+    //std::wregex Merge(std::regex_replace(L"(REPLACE){2,}", std::wregex(L"REPLACE"), this->LineRegStr));
+    //this->SplitScrStrNoComment = std::regex_replace(this->SplitScrStrNoComment, Merge, this->LineRegStr);
 
-    //lterate lines
-    std::wsregex_token_iterator pos(this->SplitScrStrNoComment.begin(), this->SplitScrStrNoComment.end(), this->LineReg, -1);
+    //iterate lines
+    std::wsregex_token_iterator pos(this->SplitDataStr.begin(), this->SplitDataStr.end(), this->LineReg, -1);
     std::wsregex_token_iterator end;
+
+    std::wstring result;
 
     for (; pos != end; pos++) {
         //current str
@@ -168,15 +175,23 @@ void Split::SplitData() {
         //remove indent
         this->SplitStrVec.emplace_back(this->RemoveIndent ? std::regex_replace(Tmp, this->IndentReg, L"") : Tmp);
 
+        //generate result
+        result.append(this->SplitStrVec.back());
+        result.append(this->LineRegStr);
+
         //update keyword
         if (this->KeyWord && std::regex_match(this->SplitStrVec.back(), this->KeyWordReg)) {
             this->KeyWordPairVec.emplace_back(std::pair<size_t, std::wstring>(this->SplitStrVec.size() - 1, this->SplitStrVec.back()));
         }
     }
+
+    this->SplitDataStr = result.substr(0, result.length() - this->LineRegStr.length());
+
+    return;
 }
 
 int Split::GetSubStringPos(const wchar_t* SubStr, size_t Sub) {
-    return this->GetSubStringPos(this->SplitScrStrNoComment, SubStr, Sub);
+    return this->GetSubStringPos(this->SplitDataStr, SubStr, Sub);
 }
 
 int Split::GetSubStringPos(const wchar_t* Src, const wchar_t* SubStr, size_t Sub) {
@@ -212,7 +227,7 @@ int Split::GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_
 }
 
 void Split::GetAllSubString(const wchar_t* SubStr) {
-    this->GetAllSubString(this->SplitScrStrNoComment, SubStr);
+    this->GetAllSubString(this->SplitDataStr, SubStr);
 }
 
 void Split::GetAllSubString(const wchar_t* Src, const wchar_t* SubStr) {

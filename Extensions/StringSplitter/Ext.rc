@@ -192,20 +192,10 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Get SplitData", IDMN_EXPRESSION_GSD
+        MENUITEM SEPARATOR
         MENUITEM "Replace String", IDMN_EXPRESSION_RS
         MENUITEM SEPARATOR
-        POPUP "SubString"
-            BEGIN
-                MENUITEM "Get Nst SubString Position in Str", IDMN_EXPRESSION_GMSSP
-                MENUITEM SEPARATOR
-                MENUITEM "Get Last Matched SubString", IDMN_EXPRESSION_GLMSS
-                MENUITEM "Get Nst Matched SubString in Str", IDMN_EXPRESSION_GMSSPIS
-                MENUITEM SEPARATOR
-                MENUITEM "Get SubStringVec Size", IDMN_EXPRESSION_GMSSS
-                MENUITEM "Get Nst SubString in SubStringVec", IDMN_EXPRESSION_GMSSIMSSV
-                MENUITEM SEPARATOR
-                MENUITEM "Iterate: Get Current SubString", IDMN_EXPRESSION_ITGCMSS
-            END
         POPUP "SplitStr"
             BEGIN
                 MENUITEM "Get SplitStrVec Size", IDMN_EXPRESSION_GSSVS
@@ -224,6 +214,19 @@ BEGIN
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate: Get Current KeyWord", IDMN_EXPRESSION_ITGCKW
                 MENUITEM "Iterate: Get Current KeyWord Pos", IDMN_EXPRESSION_ITGCKWP
+            END
+        MENUITEM SEPARATOR
+        POPUP "SubString"
+            BEGIN
+                MENUITEM "Get Nst SubString Position in Str", IDMN_EXPRESSION_GMSSP
+                MENUITEM SEPARATOR
+                MENUITEM "Get Last Matched SubString", IDMN_EXPRESSION_GLMSS
+                MENUITEM "Get Nst Matched SubString in Str", IDMN_EXPRESSION_GMSSPIS
+                MENUITEM SEPARATOR
+                MENUITEM "Get SubStringVec Size", IDMN_EXPRESSION_GMSSS
+                MENUITEM "Get Nst SubString in SubStringVec", IDMN_EXPRESSION_GMSSIMSSV
+                MENUITEM SEPARATOR
+                MENUITEM "Iterate: Get Current SubString", IDMN_EXPRESSION_ITGCMSS
             END
         MENUITEM SEPARATOR
     END
@@ -360,6 +363,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_EXPRESSION_GSD	            "GetSplitData$("
+
     M_EXPRESSION_RS		            "ReplaceStr$("
 
     M_EXPRESSION_GMSSP	            "GetNstSubStrPos("

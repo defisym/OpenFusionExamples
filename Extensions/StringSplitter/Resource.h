@@ -144,6 +144,8 @@
 #define IDMN_EXPRESSION_ITGCKW		27015
 #define IDMN_EXPRESSION_ITGCKWP		27016
 
+#define IDMN_EXPRESSION_GSD		    27017
+
 
 // Expression strings
 #define M_EXPRESSION_RS			     7000
@@ -172,6 +174,8 @@
 
 #define M_EXPRESSION_ITGCKW			 7015
 #define M_EXPRESSION_ITGCKWP		 7016
+
+#define M_EXPRESSION_GSD    		 7017
 
 // Names of expression parameters
 #define M_EXP_REPREGEX				 7500

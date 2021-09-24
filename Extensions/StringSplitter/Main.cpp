@@ -84,6 +84,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_ITGCKW, M_EXPRESSION_ITGCKW, EXP_EXPRESSION_ITGCKW, EXPFLAG_STRING, 0,		
 		IDMN_EXPRESSION_ITGCKWP, M_EXPRESSION_ITGCKWP, EXP_EXPRESSION_ITGCKWP, 0, 0,
+
+		IDMN_EXPRESSION_GSD, M_EXPRESSION_GSD, EXP_EXPRESSION_GSD, EXPFLAG_STRING, 0,
 		};
 
 
@@ -421,6 +423,14 @@ long WINAPI DLLExport GetCurrentKeyWordPos(LPRDATA rdPtr, long param1) {
 	return rdPtr->CurrentKeyWordPos;
 }
 
+long WINAPI DLLExport GetSplitData(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(Spliter->GetSplitData());
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -496,6 +506,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetCurrentKeyWord,
 			GetCurrentKeyWordPos,
+
+			GetSplitData,
 
 			0
 			};
