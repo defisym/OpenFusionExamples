@@ -347,7 +347,7 @@ BEGIN
 
     M_ACT_FILENAME		    "FileName"
     M_ACT_KEY			    "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
-    M_ACT_UNICODE			 "1 = Unicode, 0 = ANSI"
+    M_ACT_UNICODE			"1 = Unicode, 0 = ANSI"
 
     M_ACT_SRF			    "Regex Flag"
     M_ACT_SCI			    "1 = Case Insensitive, 0 = Case Sensitive"
@@ -367,8 +367,8 @@ BEGIN
     M_CONDITION_OIKWPV            "%o On Iterate KeywordPair Vec, Loop Name %0"
     M_CONDITION_OIMSS             "%o On Iterate SubString Vec, Loop Name %0"
 
-    M_CONDITION_SMR               "String %0 Match Regex %1"
-    M_CONDITION_SHR               "String %0 Has Regex %1"
+    M_CONDITION_SMR               "%o String %0 Match Regex %1"
+    M_CONDITION_SHR               "%o String %0 Has Regex %1"
 
     M_CND_LOOPNAME                "Loop Name"
 END
