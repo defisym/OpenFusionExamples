@@ -176,8 +176,8 @@ void Split::SplitData() {
         this->SplitStrVec.emplace_back(this->RemoveIndent ? std::regex_replace(Tmp, this->IndentReg, L"") : Tmp);
 
         //generate result
-        result.append(this->SplitStrVec.back());
-        result.append(this->LineRegStr);
+        //result.append(this->SplitStrVec.back());
+        //result.append(this->LineRegStr);
 
         //update keyword
         if (this->KeyWord && std::regex_match(this->SplitStrVec.back(), this->KeyWordReg)) {
@@ -185,7 +185,7 @@ void Split::SplitData() {
         }
     }
 
-    this->SplitDataStr = result.substr(0, result.length() - this->LineRegStr.length());
+    //this->SplitDataStr = result.substr(0, result.length() - this->LineRegStr.length());
 
     return;
 }
@@ -245,8 +245,8 @@ const wchar_t* Split::GetNextKeyWord(size_t StartPos) {
 }
 
 const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) {
-    //valid current pos
-    if (!((StartPos < this->KeyWordPairVec.size()) && (StartPos >= 0))) {
+    //valid current pos    
+    if (!((this->KeyWordPairVec.size() > 0) && (StartPos < this->KeyWordPairVec.back().first) && (StartPos >= 0))) {
         return nullptr;
     }
 
@@ -267,7 +267,7 @@ int Split::GetNextKeyWordPos(size_t StartPos) {
 
 int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) {
     //valid current pos
-    if (!((StartPos < this->KeyWordPairVec.size()) && (StartPos >= 0))) {
+    if (!((this->KeyWordPairVec.size() > 0) &&(StartPos < this->KeyWordPairVec.back().first) && (StartPos >= 0))) {
         return -1;
     }
 
