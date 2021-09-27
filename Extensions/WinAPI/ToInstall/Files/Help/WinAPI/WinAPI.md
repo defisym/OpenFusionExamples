@@ -69,6 +69,11 @@ WinAPI, a bunch of small functions that uses Win32 API
 
 - Display
   - Settings
+    - Default File Format
+      - *set default file format*
+      - *save action uses the format you inputted in filename, e.g. 'File.bmp', ext will save file to '.bmp'. if the format is not supported by fusion's image filter, ext will save as the format you defined here*
+      - *if default format not set, ext will save image as '.jpg'*
+
     - Stretch Quality
       - *all image will be stretched to the object size*
       - *Note: blur functions will downscale image before blur and stretch them back later. if you set quality to resample blur will take more time*

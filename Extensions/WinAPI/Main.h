@@ -61,7 +61,9 @@
 #define ACT_ACTION_SMS_ON			31
 #define ACT_ACTION_SMS_OFF			32
 
-#define	ACT_LAST					33
+#define ACT_ACTION_SDFN				33
+
+#define	ACT_LAST					34
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -208,6 +210,10 @@ typedef struct tagRDATA
 
 	//程序是否已经缩放
 	bool AppScaled;
+
+	//图像的默认存储格式
+	//指向常量，因此无需释放
+	LPCWSTR DefaultFilterName;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

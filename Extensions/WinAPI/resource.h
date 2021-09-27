@@ -56,6 +56,7 @@
 #define M_ACTION_SQ_H					5094
 #define M_ACTION_SMS_ON					5095
 #define M_ACTION_SMS_OFF				5096
+#define M_ACTION_SDFN					5097
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -78,6 +79,7 @@
 #define PARA_ACTION_WINDOW_MTGB_RADIUS			5576
 #define PARA_ACTION_WINDOW_MTGB_DIVIDE			5577
 #define PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD	5578
+#define PARA_ACTION_SDFN				5579
 #define M_CONDITION_INAP                6000
 #define M_CONDITION_IML                 6010
 #define M_CONDITION_RKS                 6020
@@ -148,6 +150,7 @@
 #define IDMN_ACTION_SQ_H				25424
 #define IDMN_ACTION_SMS_ON				25425
 #define IDMN_ACTION_SMS_OFF				25426
+#define IDMN_ACTION_SDFN				25427
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020

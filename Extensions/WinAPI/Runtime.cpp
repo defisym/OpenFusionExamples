@@ -131,6 +131,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->AppScaled = !IsProcessDPIAware();
 	
+	//³õÊ¼»¯FilterID
+	rdPtr->DefaultFilterName = nullptr;
+
 	// No errors
 	return 0;
 }

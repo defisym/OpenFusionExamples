@@ -57,6 +57,9 @@ BOOL IMEStateControl(HWND hWnd, bool State);
 
 //Surface
 void ReDisplay(LPRDATA rdPtr);
+
+//获取扩展名对应的FilterName
+LPCWSTR GetFilterName(LPRDATA rdPtr, LPCWSTR Name);
 DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
 
 void GetValidScale(float* scale);
@@ -71,7 +74,6 @@ BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
 
 //Blt To Surface
 void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des);
-
 
 //Mutex
 extern std::mutex mtx;

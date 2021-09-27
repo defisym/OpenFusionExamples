@@ -349,12 +349,8 @@ void ReDisplay(LPRDATA rdPtr) {
 	return;
 }
 
-DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
-
-	//Surface相关
-	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-	CImageFilter    pFilter(pImgMgr);
-
+//获取扩展名对应的FilterName
+LPCWSTR GetFilterName(LPRDATA rdPtr, LPCWSTR Name){
 	//字符串转小写
 	auto LowerWStr = [](LPWSTR Str)->LPWSTR {
 		int i = 0;
@@ -364,40 +360,45 @@ DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
 		}
 		return Str;
 	};
-
-	//获取扩展名对应的FilterName
-	auto  GetFilterName = [LowerWStr](LPCWSTR Name)->LPCWSTR {
-		//常量会被放入全局变量区
-		LPCWSTR ExtList[8][2] = {
-			_T(".png"),_T("Portable Network Graphics"),
-			_T(".tga"),_T("Targa Bitmap"),
-			_T(".bmp"),_T("Windows Bitmap"),
-			_T(".jpg"),_T("JPEG"),
-			_T(".flc"),_T("Autodesk FLIC"),
-			_T(".gif"),_T("Compuserve Bitmap"),
-			_T(".avi"),_T("Video For Windows"),
-			_T(".pcx"),_T("PaintBrush")
-		};
-
-		WCHAR* Ext = new WCHAR[FILENAME_MAX];
-		wcscpy_s(Ext, FILENAME_MAX, Name);
-		LowerWStr(Ext);
-
-		for (int i = 0; i < 8; i++) {
-			if (wcscmp(Ext, ExtList[i][0]) == 0) {
-				delete[] Ext;
-				return ExtList[i][1];
-			}
-		}
-
-		delete[] Ext;
-		//return _T("Windows Bitmap");
-		return ExtList[2][1];
+	
+	//常量会被放入全局变量区
+	LPCWSTR ExtList[8][2] = {
+		_T(".png"),_T("Portable Network Graphics"),
+		_T(".tga"),_T("Targa Bitmap"),
+		_T(".bmp"),_T("Windows Bitmap"),
+		_T(".jpg"),_T("JPEG"),
+		_T(".flc"),_T("Autodesk FLIC"),
+		_T(".gif"),_T("Compuserve Bitmap"),
+		_T(".avi"),_T("Video For Windows"),
+		_T(".pcx"),_T("PaintBrush")
 	};
 
+	WCHAR* Ext = new WCHAR[FILENAME_MAX];
+	wcscpy_s(Ext, FILENAME_MAX, Name);
+	LowerWStr(Ext);
+
+	for (int i = 0; i < 8; i++) {
+		if (wcscmp(Ext, ExtList[i][0]) == 0) {
+			delete[] Ext;
+			return ExtList[i][1];
+		}
+	}
+
+	delete[] Ext;
+
+	//default format is JPEG
+	//return _T("JPEG");
+	return (rdPtr->DefaultFilterName == nullptr) ? ExtList[3][1] : rdPtr->DefaultFilterName;
+};
+
+DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
+	//Surface相关
+	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+	CImageFilter    pFilter(pImgMgr);
+	
 	//获取扩展名对应的FilterID
-	auto GetFilterID = [pImgMgr, GetFilterName](LPCWSTR Name) -> DWORD {
-		LPCWSTR FilterName = GetFilterName(Name);
+	auto GetFilterID = [pImgMgr, rdPtr](LPCWSTR Name) -> DWORD {
+		LPCWSTR FilterName = GetFilterName(rdPtr,Name);
 		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
 			if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
 				DWORD FilterID = pImgMgr->GetFilterID(i);

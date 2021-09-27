@@ -196,6 +196,7 @@ BEGIN
         BEGIN
             POPUP "Settings"
             BEGIN
+                MENUITEM "Default File Format", IDMN_ACTION_SDFN
                 POPUP "Stretch Quality"
                 BEGIN
                     MENUITEM "Fast", IDMN_ACTION_SQ_F
@@ -443,6 +444,9 @@ STRINGTABLE
 BEGIN
     M_ACTION_WINDOW_GF    "Go FullScreen"
     M_ACTION_WINDOW_GW     "Go Windowed"
+    
+    M_ACTION_SDFN "Set Default File Format to %0"
+    PARA_ACTION_SDFN "Default File Format, e.g. '.jpg'"
 
     M_ACTION_SQ_F "Set Stretch Quality to Fast"
     M_ACTION_SQ_H "Set Stretch Quality to Resample"

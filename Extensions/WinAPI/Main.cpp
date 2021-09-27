@@ -78,6 +78,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SMS_ON,M_ACTION_SMS_ON,ACT_ACTION_SMS_ON,0, 0,
 		IDMN_ACTION_SMS_OFF,M_ACTION_SMS_OFF,ACT_ACTION_SMS_OFF,0, 0,
+
+		IDMN_ACTION_SDFN,M_ACTION_SDFN,ACT_ACTION_SDFN,0, 1,PARAM_EXPSTRING,PARA_ACTION_SDFN,
 		};
 
 // Definitions of parameters for each expression
@@ -395,6 +397,13 @@ short WINAPI DLLExport MultiThreadSave_ON(LPRDATA rdPtr, long param1, long param
 }
 short WINAPI DLLExport MultiThreadSave_OFF(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->MultiThreadSave = false;
+	return 0;
+}
+
+short WINAPI DLLExport SetDefaultFilterName(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR DefaultFilterName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	rdPtr->DefaultFilterName = GetFilterName(rdPtr, DefaultFilterName);
+
 	return 0;
 }
 
@@ -1409,6 +1418,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			MultiThreadSave_ON,
 			MultiThreadSave_OFF,
+
+			SetDefaultFilterName,
 
 			//结尾必定是零
 			0
