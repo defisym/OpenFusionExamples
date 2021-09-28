@@ -289,7 +289,11 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
         MENUITEM SEPARATOR
-        MENUITEM "Get Current Time",        IDMN_EXPRESSION_GT
+        POPUP "Time"
+        BEGIN
+            MENUITEM "Get Current Time",        IDMN_EXPRESSION_GT
+            MENUITEM "Get Total Play Time",        IDMN_EXPRESSION_GTPT
+        END
         MENUITEM SEPARATOR 
         POPUP "Fusion"
         BEGIN
@@ -539,6 +543,8 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GT "CurrentTime$ ("
+    M_EXPRESSION_GTPT "TotalPlayTime$ ("
+    PARA_EXPRESSION_GTPT "TotalPlayFrame"
 END
 
 //Conditions

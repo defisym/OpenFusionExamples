@@ -120,6 +120,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
 
 		IDMN_EXPRESSION_GT, M_EXPRESSION_GT, EXP_EXPRESSION_GT, EXPFLAG_STRING, 0,
+		
+		IDMN_EXPRESSION_GTPT, M_EXPRESSION_GTPT, EXP_EXPRESSION_GTPT, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GTPT,
 		};
 
 // ============================================================================
@@ -1371,6 +1373,36 @@ long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->CurrentTime;
 }
 
+//获取游玩时间
+long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
+	int TotalPlayFrame = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	
+	//60FPS Per Sec
+	TotalPlayFrame /= 60;
+
+	int Hour = TotalPlayFrame / 3600;
+	TotalPlayFrame %= 3600;
+
+	int Minute = TotalPlayFrame / 60;
+	TotalPlayFrame %= 60;
+
+	int Second = TotalPlayFrame;
+
+	//00:00:01
+	//格式长19字符，留出1字符用作结束符号
+	size_t Length = 14;
+	rdPtr->TotalPlayTime = new WCHAR[Length + 1];
+	memset(rdPtr->TotalPlayTime, 0, Length + 1);
+
+	swprintf(rdPtr->TotalPlayTime, Length + 1, _T("%.2d:%.2d:%.2d"), Hour, Minute, Second);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->TotalPlayTime;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1480,6 +1512,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetFrameName,
 
 			GetTime,
+			GetPlayTime,
 
 			0
 			};

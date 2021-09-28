@@ -97,8 +97,9 @@
 #define	EXP_EXPRESSION_GFN			17
 
 #define	EXP_EXPRESSION_GT			18
+#define	EXP_EXPRESSION_GTPT			19
 
-#define	EXP_LAST                    19
+#define	EXP_LAST                    20
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -219,6 +220,9 @@ typedef struct tagRDATA
 
 	//当前时间字符串
 	LPWSTR CurrentTime;
+
+	//总游玩时间字符串
+	LPWSTR TotalPlayTime;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

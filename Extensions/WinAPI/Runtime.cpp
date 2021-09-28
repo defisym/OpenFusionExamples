@@ -160,6 +160,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	if (rdPtr->CurrentTime != nullptr) {
 		delete[] rdPtr->CurrentTime;
 	}
+	if (rdPtr->TotalPlayTime != nullptr) {
+		delete[] rdPtr->TotalPlayTime;
+	}
 
 	// No errors
 	return 0;

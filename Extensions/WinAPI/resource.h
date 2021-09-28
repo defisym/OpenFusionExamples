@@ -109,9 +109,11 @@
 #define M_EXPRESSION_IFS				7090
 #define M_EXPRESSION_GFN				7100
 #define M_EXPRESSION_GT 				7101
+#define M_EXPRESSION_GTPT 				7102
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
+#define PARA_EXPRESSION_GTPT            7511
 #define MN_ACTIONS                      20000
 #define MN_CONDITIONS                   20001
 #define MN_EXPRESSIONS                  20002
@@ -177,6 +179,7 @@
 #define IDMN_EXPRESSION_IFS				27080
 #define IDMN_EXPRESSION_GFN				27090
 #define IDMN_EXPRESSION_GT				27091
+#define IDMN_EXPRESSION_GTPT			27092
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027
