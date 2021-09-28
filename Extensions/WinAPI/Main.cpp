@@ -118,6 +118,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_IFS, M_EXPRESSION_IFS, EXP_EXPRESSION_IFS, 0, 0,
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GT, M_EXPRESSION_GT, EXP_EXPRESSION_GT, EXPFLAG_STRING, 0,
 		};
 
 // ============================================================================
@@ -1347,6 +1349,28 @@ long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->rhPtr->rhFrame->m_name;
 }
 
+//获取当前时间
+long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
+	LPSYSTEMTIME lpSystemTime = new SYSTEMTIME;
+	GetLocalTime(lpSystemTime);
+	
+	//2000-01-01 00:00:01
+	//格式长19字符，留出1字符用作结束符号
+	size_t Length = 19;
+	rdPtr->CurrentTime = new WCHAR[Length+1];
+	rdPtr->CurrentTime[Length] = 0;
+	
+	swprintf(rdPtr->CurrentTime, Length+1, _T("%.4d-%.2d-%.2d %.2d:%.2d:%.2d"), (int)lpSystemTime->wYear, (int)lpSystemTime->wMonth, (int)lpSystemTime->wDay, (int)lpSystemTime->wHour, (int)lpSystemTime->wMinute, (int)lpSystemTime->wSecond);
+
+	delete lpSystemTime;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->CurrentTime;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1454,6 +1478,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			ReturnFullScreen,
 
 			GetFrameName,
+
+			GetTime,
 
 			0
 			};

@@ -288,7 +288,9 @@ BEGIN
         MENUITEM "Get DPI Scaling",             IDMN_EXPRESSION_DPISCALING
         MENUITEM SEPARATOR
         MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
-        MENUITEM SEPARATOR        
+        MENUITEM SEPARATOR
+        MENUITEM "Get Current Time",        IDMN_EXPRESSION_GT
+        MENUITEM SEPARATOR 
         POPUP "Fusion"
         BEGIN
             POPUP "Frame"
@@ -532,6 +534,11 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GT "CurrentTime$ ("
 END
 
 //Conditions

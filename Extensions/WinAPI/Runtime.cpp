@@ -156,6 +156,11 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//释放鼠标
 	UnlockMouse(rdPtr);
 
+	//释放时间字符串
+	if (rdPtr->CurrentTime != nullptr) {
+		delete[] rdPtr->CurrentTime;
+	}
+
 	// No errors
 	return 0;
 }

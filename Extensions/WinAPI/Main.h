@@ -96,7 +96,9 @@
 
 #define	EXP_EXPRESSION_GFN			17
 
-#define	EXP_LAST                    18
+#define	EXP_EXPRESSION_GT			18
+
+#define	EXP_LAST                    19
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -214,6 +216,9 @@ typedef struct tagRDATA
 	//图像的默认存储格式
 	//指向常量，因此无需释放
 	LPCWSTR DefaultFilterName;
+
+	//当前时间字符串
+	LPWSTR CurrentTime;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
