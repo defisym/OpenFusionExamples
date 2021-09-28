@@ -1356,6 +1356,11 @@ long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
 	LPSYSTEMTIME lpSystemTime = new SYSTEMTIME;
 	GetLocalTime(lpSystemTime);
 	
+	//Release Old
+	if (rdPtr->CurrentTime != nullptr) {
+		delete[] rdPtr->CurrentTime;
+	}
+	
 	//2000-01-01 00:00:01
 	//格式长19字符，留出1字符用作结束符号
 	size_t Length = 19;
@@ -1388,8 +1393,15 @@ long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 
 	int Second = TotalPlayFrame;
 
+	//Release Old
+	if (rdPtr->TotalPlayTime != nullptr) {
+		delete[] rdPtr->TotalPlayTime;
+	}
+
 	//00:00:01
-	//格式长19字符，留出1字符用作结束符号
+	//格式至少长8字符，留出1字符用作结束符号，至少9字符
+	//99999999:59:59
+	//格式最长14字符
 	size_t Length = 14;
 	rdPtr->TotalPlayTime = new WCHAR[Length + 1];
 	memset(rdPtr->TotalPlayTime, 0, Length + 1);
