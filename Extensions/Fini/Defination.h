@@ -30,7 +30,7 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 #define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
 
-#define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);
+#define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);release_arr(rdPtr->AutoSaveFilePath);release_arr(rdPtr->AutoSaveKey);
 
 #define release() release_ptr(Fini);release_str();
 #define Init() release();Fini = new INI;Fini->SetUnicode();

@@ -14,6 +14,16 @@ This object has no properties
 
 ## Action
 
+- Auto Save
+  - *auto save file when object is destroyed, e.g. jump to another frame*
+  - *if filename or key is nullptr(default), file will not be saved*
+  
+  - Set On
+    - *update auto filename and key here*
+    - *if you open another file by `Load From File`, auto filename and key will be overwrited*
+  - Set Off
+    - *disable auto save*
+
 - New
   - *you need this action to initialize.*
 - Release
@@ -35,6 +45,9 @@ This object has no properties
 - Set String (Section - Item)
   - *extension will auto initialize itself.*
   - *Note: you can only set values in a section, doesn't support item-only file like MMF.*
+
+- Copy Section
+  - *Copy all items under SectionA to SectionB*
 
 - Delete (Section - Item)
   - *Keep Item empty to delete the entire section.*

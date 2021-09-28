@@ -40,6 +40,11 @@ short actionsInfos[]=
 		IDMN_ACTION_ITI, M_ACTION_ITI,	ACT_ACTION_ITI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_ITSN,ACT_ACTION_IT,
 		//IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_S,ACT_ACTION_K,
 		IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_S,
+
+		IDMN_ACTION_SAON, M_ACTION_SAON,	ACT_ACTION_SAON,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
+		IDMN_ACTION_SAOFF, M_ACTION_SAOFF,	ACT_ACTION_SAOFF,	0, 0,
+
+		IDMN_ACTION_CS, M_ACTION_CS,	ACT_ACTION_CS,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPRESSION,ACT_ACTION_CS_SRC,ACT_ACTION_CS_DES,ACT_ACTION_CS_DEL
 		};
 
 // Definitions of parameters for each expression
@@ -77,6 +82,23 @@ long WINAPI DLLExport OnIterate_Item(LPRDATA rdPtr, long param1, long param2) {
 // ACTIONS ROUTINES
 // 
 // ============================================================================
+
+short WINAPI DLLExport SetAutoSaveOn(LPRDATA rdPtr, long param1, long param2) {	
+	LPCTSTR FilePath = (LPCTSTR)param1;
+	LPCTSTR Key = (LPCTSTR)param2;
+
+	rdPtr->AutoSave = true;
+
+	NewStr(rdPtr->AutoSaveFilePath, FilePath);
+	NewStr(rdPtr->AutoSaveKey, Key);
+
+	return 0;
+}
+short WINAPI DLLExport SetAutoSaveOff(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->AutoSave = false;
+
+	return 0;
+}
 
 short WINAPI DLLExport New(LPRDATA rdPtr, long param1, long param2) {
 	Init();
@@ -126,6 +148,11 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Key = (LPCTSTR)param2;
 
 	Init();
+
+	if (rdPtr->AutoSave) {
+		NewStr(rdPtr->AutoSaveFilePath, FilePath);
+		NewStr(rdPtr->AutoSaveKey, Key);
+	}	
 
 	//Key has value, try to Decry
 	if (!StrEmpty(Key)) {
@@ -217,6 +244,34 @@ short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2
 	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
 
 	Fini->SetValue(Section, Item, String);
+
+	return 0;
+}
+
+short WINAPI DLLExport CopySection(LPRDATA rdPtr, long param1, long param2) {
+	invalid(0);
+
+	LPCTSTR Src = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR Des = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	bool DeleteSrc = (bool)CNC_GetIntParameter(rdPtr);
+
+	if (StrEmpty(Src) || StrEmpty(Des)) {
+		return 0;
+	}
+
+	INILIST Temp;
+	Fini->GetAllKeys(Src, Temp);
+
+	INIIT it;
+	for (it = Temp.begin(); it != Temp.end(); ++it) {
+		//need not to check if the value is string or number to set default value, cause src is valid
+		Fini->SetValue(Des, it->pItem, Fini->GetValue(Src, it->pItem));
+	}
+
+	if (DeleteSrc) {
+		Fini->Delete(Src, nullptr, true);
+	}
 
 	return 0;
 }
@@ -415,6 +470,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Iterate_Section,
 			Iterate_Item,
 			LoadFromString,
+			SetAutoSaveOn,
+			SetAutoSaveOff,
+			CopySection,
 			0
 			};
 

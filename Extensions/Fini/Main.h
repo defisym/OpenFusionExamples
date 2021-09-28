@@ -24,8 +24,11 @@
 #define	ACT_ACTION_ITS				7
 #define	ACT_ACTION_ITI				8
 #define	ACT_ACTION_LS				9
+#define	ACT_ACTION_SAON				10
+#define	ACT_ACTION_SAOFF			11
+#define	ACT_ACTION_CS				12
 
-#define	ACT_LAST					10
+#define	ACT_LAST					13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -81,6 +84,11 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	//Auto Save
+	bool AutoSave = false;
+	LPTSTR AutoSaveFilePath = nullptr;
+	LPTSTR AutoSaveKey = nullptr;
+	
 	//ReturnStr
 	LPTSTR Str = nullptr;
 	

@@ -136,6 +136,12 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        POPUP "Auto Save"
+        BEGIN
+            MENUITEM "Set On", IDMN_ACTION_SAON
+            MENUITEM "Set Off", IDMN_ACTION_SAOFF
+        END
+        MENUITEM SEPARATOR
         MENUITEM "New", IDMN_ACTION_NF
         MENUITEM "Release", IDMN_ACTION_DF
         MENUITEM SEPARATOR
@@ -147,6 +153,7 @@ BEGIN
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
         MENUITEM SEPARATOR
+        MENUITEM "Copy Section (Src -> Des)",IDMN_ACTION_CS
         MENUITEM "Delete (Section - Item)", IDMN_ACTION_DSI
         MENUITEM SEPARATOR
         POPUP "Iterate"
@@ -258,6 +265,9 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN    
+    M_ACTION_SAON   "Set Auto Save On, Save to File %0, Encrypt Key %1"
+    M_ACTION_SAOFF  "00Set Auto Save Off"
+
     M_ACTION_NF     "00New"
     M_ACTION_DF     "00Release"
 
@@ -277,6 +287,11 @@ BEGIN
     ACT_ACTION_SSI_VAL  "Value"
     ACT_ACTION_SSI_STR  "String"
     
+    M_ACTION_CS         "Copy Section (Src %0 -> Des %1), Delete Src = %2"
+    ACT_ACTION_CS_SRC   "Source Section"
+    ACT_ACTION_CS_DES   "Destination Section"
+    ACT_ACTION_CS_DEL   "Delete Source Section, 1 = Delete, 0 = Reserve"
+
     M_ACTION_DSI        "Delete (Section %0 - Item %1)"
 
     M_ACTION_ITS        "Iterate Sections, Loop Name %0"

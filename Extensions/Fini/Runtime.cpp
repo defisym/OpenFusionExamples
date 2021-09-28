@@ -67,6 +67,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	//InitRegex
 	rdPtr->Regex.assign(RegStr_IsNum);
+	
+	rdPtr->AutoSave = true;
 
 	// No errors
 	return 0;
@@ -84,6 +86,25 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	//Auto Save
+	if (rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
+		if (!StrEmpty(rdPtr->AutoSaveKey)) {
+			std::string Output;
+			Fini->Save(Output);
+
+			Encryption Encrypt;
+			Encrypt.GenerateKey(rdPtr->AutoSaveKey);
+
+			Encrypt.SetEncryptStr(Output);
+			Encrypt.Encrypt();
+
+			Encrypt.SaveFile(rdPtr->AutoSaveFilePath);
+		}
+		else {
+			Fini->SaveFile(rdPtr->AutoSaveFilePath, false);
+		}
+	}
+
 	release();
 
 	release_arr(OStr);
