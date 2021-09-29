@@ -336,9 +336,11 @@ short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param
 		//Call event, update replace string
 		CallEvent(ONIT_RPE);
 
-		//DO replace		
-		Replace.assign(MatchedStr[0].str());
-		Result = std::regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
+		//DO replace
+		if (rdPtr->CurrentReplaceString != nullptr) {
+			Replace.assign(MatchedStr[0].str());
+			Result = std::regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
+		}
 	}
 
 	NewStr(rdPtr->ReplacEachResult, Result.c_str());
