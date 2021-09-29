@@ -122,6 +122,8 @@ BEGIN
             MENUITEM "On Iterate KeywordPair Vec", IDMN_CONDITION_OIKWPV
             MENUITEM SEPARATOR
             MENUITEM "On Iterate SubString Vec", IDMN_CONDITION_OIMSS
+            MENUITEM SEPARATOR
+            MENUITEM "On Iterate Replace Each", IDMN_CONDITION_OIRPE
         END
         MENUITEM SEPARATOR
         MENUITEM "String Match Regex", IDMN_CONDITION_SMR
@@ -175,12 +177,18 @@ BEGIN
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate SplitStrVec",  IDMN_ACTION_ITSSV
                 MENUITEM "Iterate KeyWordPairVec",  IDMN_ACTION_ITKWPV
-                MENUITEM SEPARATOR
-                POPUP "SubString"
-                    BEGIN
-                        MENUITEM "Get All Matched SubString",  IDMN_ACTION_GASSIS
-                        MENUITEM "Iterate Matched SubString",  IDMN_ACTION_ITMSS
-                    END
+            END
+        MENUITEM SEPARATOR
+        POPUP "SubString"
+            BEGIN
+                MENUITEM "Get All Matched SubString",  IDMN_ACTION_GASSIS
+                MENUITEM "Iterate Matched SubString",  IDMN_ACTION_ITMSS
+            END
+        MENUITEM SEPARATOR
+        POPUP "Replace Each"
+            BEGIN
+                MENUITEM "Iterate Replace Each",  IDMN_ACTION_ITRE
+                MENUITEM "Set Replace String",  IDMN_ACTION_ITRE_SRS
             END
         MENUITEM SEPARATOR    
     END
@@ -199,7 +207,16 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get SplitData", IDMN_EXPRESSION_GSD
         MENUITEM SEPARATOR
-        MENUITEM "Replace String", IDMN_EXPRESSION_RS
+        POPUP "Replace"
+            BEGIN
+                MENUITEM "Replace String", IDMN_EXPRESSION_RS
+                MENUITEM SEPARATOR        
+                POPUP "Replace Each"
+                    BEGIN
+                        MENUITEM "Iterate: Get Current Match", IDMN_EXPRESSION_GRECM
+                        MENUITEM "Get Replace Result", IDMN_EXPRESSION_GRES
+                    END
+                END
         MENUITEM SEPARATOR
         POPUP "SplitStr"
             BEGIN
@@ -232,7 +249,7 @@ BEGIN
                 MENUITEM "Get Nst SubString in SubStringVec", IDMN_EXPRESSION_GMSSIMSSV
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate: Get Current SubString", IDMN_EXPRESSION_ITGCMSS
-            END
+            END        
         MENUITEM SEPARATOR
     END
 END
@@ -342,6 +359,9 @@ BEGIN
     M_ACTION_GASSIS         "Get All Matched SubString %1 in String %0"
     M_ACTION_ITMSS          "Iterate Matched SubString, Loop Name %0"
 
+    M_ACTION_ITRE          "Iterate Replace Each in String %0, Regex %1, Loop Name %2"
+    M_ACTION_ITRE_SRS      "Iterate Replace Each Set Replace String to %0"
+
     M_ACT_STR			    "Set Source String"
     M_ACT_REGEX			    "Set Regex"
 
@@ -369,6 +389,8 @@ BEGIN
 
     M_CONDITION_SMR               "%o String %0 Match Regex %1"
     M_CONDITION_SHR               "%o String %0 Has Regex %1"
+
+    M_CONDITION_OIRPE             "%o On Iterate Replace Each, Loop Name %0"
 
     M_CND_LOOPNAME                "Loop Name"
 END
@@ -403,6 +425,9 @@ BEGIN
     
     M_EXPRESSION_ITGCKW	            "GetCurrentKeyWord$("
     M_EXPRESSION_ITGCKWP	            "GetCurrentKeyWordPos("
+
+    M_EXPRESSION_GRECM	            "GetRepEachCurMatch$("
+    M_EXPRESSION_GRES	            "GetRepEachResult$("
 
     M_EXP_REPREGEX	                "Set Replace Regex"
     M_EXP_POS		                "Position"

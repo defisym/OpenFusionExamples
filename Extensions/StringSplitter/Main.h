@@ -13,7 +13,9 @@
 #define	CND_CONDITION_SMR			3
 #define	CND_CONDITION_SHR			4
 
-#define	CND_LAST					5
+#define	CND_CONDITION_OIRPE			5
+
+#define	CND_LAST					6
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -44,7 +46,10 @@
 
 #define	ACT_ACTION_AS				17
 
-#define	ACT_LAST					18
+#define	ACT_ACTION_ITRE				18
+#define	ACT_ACTION_ITRE_SRS			19
+
+#define	ACT_LAST					20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -78,7 +83,10 @@
 
 #define EXP_EXPRESSION_GSD				17
 
-#define	EXP_LAST                    	18
+#define EXP_EXPRESSION_GRECM			18
+#define EXP_EXPRESSION_GRES				19
+
+#define	EXP_LAST                    	20
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -139,6 +147,14 @@ typedef struct tagRDATA
 
 	LPTSTR SubStringVecLoopName = nullptr;
 	LPCTSTR CurrentSubString = nullptr;
+
+	//ReplaceEach
+	LPTSTR ReplaceEachLoopName = nullptr;
+
+	LPCTSTR CurrentMatchString = nullptr;
+	LPTSTR CurrentReplaceString = nullptr;
+
+	LPTSTR ReplacEachResult = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

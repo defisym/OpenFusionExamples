@@ -114,6 +114,10 @@ public:
 
     void SetCaseInsensitive(bool Enable);
 
+    inline RegexFlag GetRegexFlag() {
+        return this->Flag;
+    }
+
     void InitSplit(const wchar_t* Split);
     void InitEmptyLine(const wchar_t* EnptyLine);
     void InitComment(const wchar_t* Comment);
@@ -125,7 +129,12 @@ public:
     void SplitData();
 
     inline const wchar_t* GetSplitData() {
-        return this->SplitDataStr.c_str();
+        if (this->SplitDataStr.empty()) {
+            return this->SplitSrcStr;
+        }
+        else{
+            return this->SplitDataStr.c_str();
+        }
     }
 
     //Replace string

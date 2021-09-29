@@ -81,6 +81,14 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->SubStringVecLoopName = nullptr;
 	rdPtr->CurrentSubString = nullptr;
+
+	
+	rdPtr->ReplaceEachLoopName = nullptr;
+
+	rdPtr->CurrentMatchString = nullptr;
+	rdPtr->CurrentReplaceString = nullptr;
+
+	rdPtr->ReplacEachResult = nullptr;
 	
 	// No errors
 	return 0;

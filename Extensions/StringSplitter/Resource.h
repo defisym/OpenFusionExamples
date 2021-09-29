@@ -51,6 +51,9 @@
 
 #define IDMN_ACTION_AS  		25017
 
+#define IDMN_ACTION_ITRE  		25018
+#define IDMN_ACTION_ITRE_SRS	25019
+
 // Action strings
 #define M_ACTION_RP             5000
 
@@ -77,6 +80,9 @@
 #define M_ACTION_ITMSS          5016
 
 #define M_ACTION_AS             5017
+
+#define M_ACTION_ITRE           5018
+#define M_ACTION_ITRE_SRS       5019
 
 // Titles of action parameters
 #define M_ACT_STR				 5501
@@ -111,6 +117,8 @@
 #define IDMN_CONDITION_SMR	    26003
 #define IDMN_CONDITION_SHR	    26004
 
+#define IDMN_CONDITION_OIRPE    26005
+
 // Condition strings
 #define M_CONDITION_OISSV		 6000
 #define M_CONDITION_OIKWPV		 6001
@@ -118,6 +126,8 @@
 
 #define M_CONDITION_SMR	    	 6003
 #define M_CONDITION_SHR	    	 6004
+
+#define M_CONDITION_OIRPE    	 6005
 
 // Titles of condition parameters
 #define M_CND_LOOPNAME           6501
@@ -158,6 +168,9 @@
 
 #define IDMN_EXPRESSION_GSD		    27017
 
+#define IDMN_EXPRESSION_GRECM	    27018
+#define IDMN_EXPRESSION_GRES	    27019
+
 
 // Expression strings
 #define M_EXPRESSION_RS			     7000
@@ -188,6 +201,9 @@
 #define M_EXPRESSION_ITGCKWP		 7016
 
 #define M_EXPRESSION_GSD    		 7017
+
+#define M_EXPRESSION_GRECM    		 7018
+#define M_EXPRESSION_GRES    		 7019
 
 // Names of expression parameters
 #define M_EXP_REPREGEX				 7500

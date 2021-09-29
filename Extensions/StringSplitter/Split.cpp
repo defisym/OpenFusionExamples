@@ -13,6 +13,7 @@ void Split::ResetSplit() {
 
     //release str
     this->ReleaseSplitSrcStr();
+    this->SplitDataStr.clear();
 
     //release vec
     this->SplitStrVec.clear();

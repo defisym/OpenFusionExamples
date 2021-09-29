@@ -102,11 +102,23 @@ This object has no properties.
   - Iterate KeyWordPairVec
     - *iterate keywords*
 
+  - On Iterate Replace Each
+    - *iterate each matched result*
+
 - SubString
   - Get All Matched SubString
     - *Keep src empty to match source string*
   - Iterate Matched SubString
     - *iterate substrings matched by `Get All Matched SubString`*
+
+- Replace Each
+  - *this set of A/C/Es are used to replace each relative to matched substring. e.g. if you want to replace `<num>` to the num-st alterable value, you need to use this function. sadly `SubString` functions couldn't do this.*
+
+  - Iterate Replace Each
+    - *start a for each loop to iterate all substrings that match regex*
+    - *use `On Iterate Replace Each` condition to start process loop*
+    - *use `Get Current Match` to get current match result, then use `Set Replace String` to set replace*
+  - Set Replace String
 
 ## Condition
 
@@ -129,24 +141,17 @@ This object has no properties.
 ## Expression
 
 - Get Split Data
-  - *Get split result*
+  - *Get the string that removed comment*
+  - *if data not splitted before this (or auto split not enabled), ext will return source data instead*
 
 - Replace String (Matchable)
   - *replace string with given regex*
   - *Keep src empty to replace source string*
 
-- SubString (Matchable)
-  - Get Nst SubString Position in Str
-    - *Keep src empty to search source string*
-
-  - Get Last Matched SubString
-  - Get Nst Matched SubString in Str
-    - *Keep src empty to search source string*
-
-  - Get SubStringVec Size
-  - Get Nst SubString in SubStringVec
-
-  - Iterate: Get Current SubString
+- Replace Each
+  - Get Current Match
+    - *Get current match subtring, you can do some work with it to get the replace string you want*
+  - Get Replace Result
 
 - SplitStr
   - Get SplitStrVec Size
@@ -165,3 +170,16 @@ This object has no properties.
 
   - Iterate: Get Current KeyWord
   - Iterate: Get Current KeyWord Pos
+
+- SubString (Matchable)
+  - Get Nst SubString Position in Str
+    - *Keep src empty to search source string*
+
+  - Get Last Matched SubString
+  - Get Nst Matched SubString in Str
+    - *Keep src empty to search source string*
+
+  - Get SubStringVec Size
+  - Get Nst SubString in SubStringVec
+
+  - Iterate: Get Current SubString

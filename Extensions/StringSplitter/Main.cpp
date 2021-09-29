@@ -28,6 +28,8 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_SMR, M_CONDITION_SMR, CND_CONDITION_SMR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_STR, M_ACT_REGEX,
 		IDMN_CONDITION_SHR, M_CONDITION_SHR, CND_CONDITION_SHR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_STR, M_ACT_REGEX,
+
+		IDMN_CONDITION_OIRPE, M_CONDITION_OIRPE, CND_CONDITION_OIRPE, 0, 1, PARAM_EXPSTRING, M_CND_LOOPNAME,
 		};
 
 // Definitions of parameters for each action
@@ -58,6 +60,9 @@ short actionsInfos[]=
 		IDMN_ACTION_ITMSS, M_ACTION_ITMSS, ACT_ACTION_ITMSS,	0, 1,PARAM_EXPSTRING,M_CND_LOOPNAME,
 
 		IDMN_ACTION_AS, M_ACTION_AS, ACT_ACTION_AS,	0, 1,PARAM_EXPRESSION,M_ACT_AUTO,
+
+		IDMN_ACTION_ITRE, M_ACTION_ITRE, ACT_ACTION_ITRE,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_ACT_STR,M_ACT_REGEX,M_CND_LOOPNAME,
+		IDMN_ACTION_ITRE_SRS, M_ACTION_ITRE_SRS, ACT_ACTION_ITRE_SRS,	0, 1,PARAM_EXPSTRING,M_ACT_STR,
 		};
 
 // Definitions of parameters for each expression
@@ -91,6 +96,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_ITGCKWP, M_EXPRESSION_ITGCKWP, EXP_EXPRESSION_ITGCKWP, 0, 0,
 
 		IDMN_EXPRESSION_GSD, M_EXPRESSION_GSD, EXP_EXPRESSION_GSD, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GRECM, M_EXPRESSION_GRECM, EXP_EXPRESSION_GRECM, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GRES, M_EXPRESSION_GRES, EXP_EXPRESSION_GRES, EXPFLAG_STRING, 0,
 		};
 
 
@@ -139,6 +147,12 @@ long WINAPI DLLExport StringHasRegex(LPRDATA rdPtr, long param1, long param2) {
 	else {
 		return Spliter->StringMatchRegex(Regex.c_str(), true);
 	}
+}
+
+long WINAPI DLLExport OnIterateReplaceEach(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return StrEqu(LoopName, rdPtr->ReplaceEachLoopName) ? TRUE : FALSE;
 }
 
 // ============================================================================
@@ -299,6 +313,47 @@ short WINAPI DLLExport IterateMatchedSubString(LPRDATA rdPtr, long param1, long 
 	return 0;
 }
 
+short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring Src= (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring Regex = NewLineEscape((LPCTSTR)CNC_GetStringParameter(rdPtr));
+	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	NewStr(rdPtr->ReplaceEachLoopName, LoopName);
+
+	std::wregex SubString(Regex, Spliter->GetRegexFlag());
+	std::wsmatch MatchedStr;
+
+	std::wstring::const_iterator StrBegin = Src.begin();
+	std::wstring::const_iterator StrEnd = Src.end();
+
+	std::wregex Replace;
+	std::wstring Result = Src;	
+
+	for (; std::regex_search(StrBegin, StrEnd, MatchedStr, SubString); StrBegin = MatchedStr[0].second) {
+		//Get match result
+		std::wstring MatchResult= MatchedStr[0].str().c_str();
+		rdPtr->CurrentMatchString = MatchResult.c_str();
+		
+		//Call event, update replace string
+		CallEvent(ONIT_RPE);
+
+		//DO replace		
+		Replace.assign(MatchedStr[0].str());
+		Result = std::regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
+	}
+
+	NewStr(rdPtr->ReplacEachResult, Result.c_str());
+
+	return 0;
+}
+
+short WINAPI DLLExport IterateReplaceEachSetReplaceString(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR Replace = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	NewStr(rdPtr->CurrentReplaceString, Replace);
+
+	return 0;
+}
+
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -316,12 +371,16 @@ long WINAPI DLLExport ReplaceString(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
+	LPCTSTR Result = nullptr;
+
 	if (!StrEmpty(Src)) {
-		return (long)Spliter->ReplaceStr(Src, Regex.c_str(), Replace);
+		Result = Spliter->ReplaceStr(Src, Regex.c_str(), Replace);
 	}
 	else {
-		return (long)Spliter->ReplaceStr(Regex.c_str(), Replace);
+		Result = Spliter->ReplaceStr(Regex.c_str(), Replace);
 	}
+
+	return (long)(Result != nullptr ? Result : Default_Str);
 }
 
 long WINAPI DLLExport GetSubStringPosInString(LPRDATA rdPtr, long param1) {
@@ -345,7 +404,7 @@ long WINAPI DLLExport GetLastMatchedSubString(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	//This returns a pointer to the string for MMF.
-	return (long)Spliter->GetMatchResult();
+	return (long)(Spliter->GetMatchResult() != nullptr ? Spliter->GetMatchResult() : Default_Str);
 }
 long WINAPI DLLExport GetMatchedSubStringInString(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
@@ -359,12 +418,16 @@ long WINAPI DLLExport GetMatchedSubStringInString(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
+	LPCTSTR Result = nullptr;
+
 	if (!StrEmpty(Src)) {
-		return (long)Spliter->GetMatchResult(Src, Regex.c_str(), Pos);
+		Result = Spliter->GetMatchResult(Src, Regex.c_str(), Pos);
 	}
 	else {
-		return (long)Spliter->GetMatchResult(Regex.c_str(), Pos);
+		Result = Spliter->GetMatchResult(Regex.c_str(), Pos);
 	}
+
+	return (long)(Result != nullptr ? Result : Default_Str);
 }
 
 long WINAPI DLLExport GetSubStringVecSize(LPRDATA rdPtr, long param1) {
@@ -418,12 +481,15 @@ long WINAPI DLLExport GetNextKeyWord(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
+	LPCTSTR Result = nullptr;
+
 	if (!StrEmpty(Regex.c_str())) {
-		return (long)Spliter->GetNextKeyWord(StartPos, Regex.c_str());
+		Result = Spliter->GetNextKeyWord(StartPos, Regex.c_str());
 	}
 	else {
-		return (long)Spliter->GetNextKeyWord(StartPos);
+		Result = Spliter->GetNextKeyWord(StartPos);
 	}
+	return (long)(Result != nullptr ? Result : Default_Str);
 }
 long WINAPI DLLExport GetNextKeyWordPos(LPRDATA rdPtr, long param1) {
 	size_t StartPos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -471,7 +537,23 @@ long WINAPI DLLExport GetSplitData(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)(Spliter->GetSplitData());
+	return (long)(Spliter->GetSplitData() != nullptr ? Spliter->GetSplitData() : Default_Str);
+}
+
+long WINAPI DLLExport GetReplaceEachCurrentMatch(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->CurrentMatchString != nullptr ? rdPtr->CurrentMatchString : Default_Str);
+}
+
+long WINAPI DLLExport GetReplaceEachResult(LPRDATA rdPtr, long param1) {	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->ReplacEachResult != nullptr ? rdPtr->ReplacEachResult : Default_Str);
 }
 
 // ----------------------------------------------------------
@@ -491,6 +573,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			StringMatchRegex,
 			StringHasRegex,
+
+			OnIterateReplaceEach,
 			
 			0
 			};
@@ -522,6 +606,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IterateMatchedSubString,
 
 			SetAutoSplit,
+			
+			IterateReplaceEach,
+			IterateReplaceEachSetReplaceString,
 
 			0
 			};
@@ -556,6 +643,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentKeyWordPos,
 
 			GetSplitData,
+
+			GetReplaceEachCurrentMatch,
+			GetReplaceEachResult,
 
 			0
 			};
