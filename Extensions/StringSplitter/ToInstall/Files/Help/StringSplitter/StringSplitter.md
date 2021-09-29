@@ -102,9 +102,6 @@ This object has no properties.
   - Iterate KeyWordPairVec
     - *iterate keywords*
 
-  - On Iterate Replace Each
-    - *iterate each matched result*
-
 - SubString
   - Get All Matched SubString
     - *Keep src empty to match source string*
@@ -138,6 +135,10 @@ This object has no properties.
   - On Iterate Matched SubString
     - *you can get current SubString here*
 
+  - On Iterate Replace Each
+    - *iterate each matched result*
+    - *please read `Iterate Replace Each` section to get more information about `Replace Each`*
+
 ## Expression
 
 - Get Split Data
@@ -149,6 +150,7 @@ This object has no properties.
   - *Keep src empty to replace source string*
 
 - Replace Each
+  - *please read `Iterate Replace Each` section to get more information about `Replace Each`*
   - Get Current Match
     - *Get current match subtring, you can do some work with it to get the replace string you want*
   - Get Replace Result
