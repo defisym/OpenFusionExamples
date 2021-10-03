@@ -60,7 +60,7 @@ typedef struct tagRDATA
 //	rCom			rc;				// Common structure for movements & animations
 //	rMvt			rm;				// Movements
 //	rSpr			rs;				// Sprite (displayable objects)
-//	rVal			rv;				// Alterable values
+	rVal			rv;				// Alterable values
 
 	// Object's runtime data
 
@@ -73,7 +73,7 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			0
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP)
 #define	OEPREFS      			0
 
 

@@ -124,6 +124,7 @@ MN_ACTIONS MENU
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Encrypt",                     IDMN_ACTION_EN
         MENUITEM "Decrypt",                     IDMN_ACTION_DE
         MENUITEM SEPARATOR
