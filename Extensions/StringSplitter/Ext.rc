@@ -221,7 +221,7 @@ BEGIN
         POPUP "SplitStr"
             BEGIN
                 MENUITEM "Get SplitStrVec Size", IDMN_EXPRESSION_GSSVS
-                MENUITEM "Get Nst SplitStr in SplitStrVec", IDMN_EXPRESSION_GSSISSV
+                MENUITEM "Get Nth SplitStr in SplitStrVec", IDMN_EXPRESSION_GSSISSV
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate: Get Current SplitStr", IDMN_EXPRESSION_ITGCSS
             END
@@ -231,8 +231,8 @@ BEGIN
                 MENUITEM "Get Next Keyword Position", IDMN_EXPRESSION_GNKWP
                 MENUITEM SEPARATOR
                 MENUITEM "Get KeyWordPairVec Size", IDMN_EXPRESSION_GKWPVS
-                MENUITEM "Get Nst Keyword in KeyWordPairVec", IDMN_EXPRESSION_GKWIKWPV
-                MENUITEM "Get Nst Keyword Pos in KeyWordPairVec", IDMN_EXPRESSION_GKWPIKWPV
+                MENUITEM "Get Nth Keyword in KeyWordPairVec", IDMN_EXPRESSION_GKWIKWPV
+                MENUITEM "Get Nth Keyword Pos in KeyWordPairVec", IDMN_EXPRESSION_GKWPIKWPV
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate: Get Current KeyWord", IDMN_EXPRESSION_ITGCKW
                 MENUITEM "Iterate: Get Current KeyWord Pos", IDMN_EXPRESSION_ITGCKWP
@@ -240,13 +240,13 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "SubString"
             BEGIN
-                MENUITEM "Get Nst SubString Position in Str", IDMN_EXPRESSION_GMSSP
+                MENUITEM "Get Nth SubString Position in Str", IDMN_EXPRESSION_GMSSP
                 MENUITEM SEPARATOR
                 MENUITEM "Get Last Matched SubString", IDMN_EXPRESSION_GLMSS
-                MENUITEM "Get Nst Matched SubString in Str", IDMN_EXPRESSION_GMSSPIS
+                MENUITEM "Get Nth Matched SubString in Str", IDMN_EXPRESSION_GMSSPIS
                 MENUITEM SEPARATOR
                 MENUITEM "Get SubStringVec Size", IDMN_EXPRESSION_GMSSS
-                MENUITEM "Get Nst SubString in SubStringVec", IDMN_EXPRESSION_GMSSIMSSV
+                MENUITEM "Get Nth SubString in SubStringVec", IDMN_EXPRESSION_GMSSIMSSV
                 MENUITEM SEPARATOR
                 MENUITEM "Iterate: Get Current SubString", IDMN_EXPRESSION_ITGCMSS
             END        
@@ -401,18 +401,18 @@ BEGIN
 
     M_EXPRESSION_RS		            "ReplaceStr$("
 
-    M_EXPRESSION_GMSSP	            "GetNstSubStrPos("
+    M_EXPRESSION_GMSSP	            "GetNthSubStrPos("
     
     M_EXPRESSION_GLMSS	            "GetLastMatchedSubStr$("
-    M_EXPRESSION_GMSSPIS            "GetNstMatchedSubStrInStr$("
+    M_EXPRESSION_GMSSPIS            "GetNthMatchedSubStrInStr$("
     
     M_EXPRESSION_GMSSS	            "GetSubStrVecSize("
-    M_EXPRESSION_GMSSIMSSV          "GetNstSubStrInVec$("
+    M_EXPRESSION_GMSSIMSSV          "GetNthSubStrInVec$("
     
     M_EXPRESSION_ITGCMSS            "GetCurrentSubStr$("
     
     M_EXPRESSION_GSSVS	            "GetSplitStrVecSize("
-    M_EXPRESSION_GSSISSV            "GetNstSplitStrInVec$("
+    M_EXPRESSION_GSSISSV            "GetNthSplitStrInVec$("
     
     M_EXPRESSION_ITGCSS	            "GetCurrentSplitStr$("
     
@@ -420,8 +420,8 @@ BEGIN
     M_EXPRESSION_GNKWP	            "GetNextKeyWordPos("
     
     M_EXPRESSION_GKWPVS	            "GetKeyWordPairVecSize("
-    M_EXPRESSION_GKWIKWPV           "GetNstKeyWordInVec$("
-    M_EXPRESSION_GKWPIKWPV           "GetNstKeyWordPosInVec("
+    M_EXPRESSION_GKWIKWPV           "GetNthKeyWordInVec$("
+    M_EXPRESSION_GKWPIKWPV           "GetNthKeyWordPosInVec("
     
     M_EXPRESSION_ITGCKW	            "GetCurrentKeyWord$("
     M_EXPRESSION_ITGCKWP	            "GetCurrentKeyWordPos("
@@ -432,7 +432,7 @@ BEGIN
     M_EXP_REPREGEX	                "Set Replace Regex"
     M_EXP_POS		                "Position"
     M_EXP_STARTPOS	                "Search Start Position"
-    M_EXP_NST		                "Nst Occurence, -1 to Get Last"
+    M_EXP_NTH		                "NTH Occurence, -1 to Get Last"
 END
 
 #endif    // English (U.S.) resources

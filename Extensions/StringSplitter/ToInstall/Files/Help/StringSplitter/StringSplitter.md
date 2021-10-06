@@ -157,7 +157,8 @@ This object has no properties.
 
 - SplitStr
   - Get SplitStrVec Size
-  - Get Nst SplitStr in SplitStrVec
+  - Get Nth SplitStr in SplitStrVec
+    - *0-based*
 
   - Iterate: Get Current SplitStr
 
@@ -167,21 +168,26 @@ This object has no properties.
     - *get the line number of next matched keyword after given position. if you keep the regex section empty, ext will return next keyword after given position*
 
   - Get KeyWordPairVec Size
-  - Get Nst Keyword in KeyWordPairVec
-  - Get Nst Keyword Pos in KeyWordPairVec
+  - Get Nth Keyword in KeyWordPairVec
+    - *0-based*
+  - Get Nth Keyword Pos in KeyWordPairVec
+    - *0-based*
 
   - Iterate: Get Current KeyWord
   - Iterate: Get Current KeyWord Pos
 
 - SubString (Matchable)
-  - Get Nst SubString Position in Str
+  - Get Nth SubString Position in Str
     - *Keep src empty to search source string*
+    - *0-based*
 
   - Get Last Matched SubString
-  - Get Nst Matched SubString in Str
+  - Get Nth Matched SubString in Str
     - *Keep src empty to search source string*
+    - *0-based*
 
   - Get SubStringVec Size
-  - Get Nst SubString in SubStringVec
+  - Get Nth SubString in SubStringVec
+    - *0-based*
 
   - Iterate: Get Current SubString

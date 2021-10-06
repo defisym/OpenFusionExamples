@@ -209,7 +209,7 @@
 #define M_EXP_REPREGEX				 7500
 #define	M_EXP_POS				     7501
 #define	M_EXP_STARTPOS				 7502
-#define	M_EXP_NST				     7503
+#define	M_EXP_NTH				     7503
 
 // Next default values for new objects
 // 
