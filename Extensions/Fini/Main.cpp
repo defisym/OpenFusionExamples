@@ -24,6 +24,8 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_ITS, M_CONDITION_ITS, CND_CONDITION_ITS, 0, 1, PARAM_EXPSTRING,M_CND_ITN,
 		IDMN_CONDITION_ITI, M_CONDITION_ITI, CND_CONDITION_ITI, 0, 1, PARAM_EXPSTRING,M_CND_ITN,
+
+		IDMN_CONDITION_SIHV, M_CONDITION_SIHV, CND_CONDITION_SIHV, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
 		};
 
 // Definitions of parameters for each action
@@ -74,6 +76,17 @@ long WINAPI DLLExport OnIterate_Item(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return StrEqu(LoopName, rdPtr->ItemLoopName) ? TRUE : FALSE;
+}
+
+long WINAPI DLLExport SecItemHasValue(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	InvalidSecItem(FALSE);
+
+	LPCTSTR DefaultStr = _T("");
+
+	return !StrEqu(Default_Str, Fini->GetValue(Section, Item, Default_Str));
 }
 
 
@@ -464,6 +477,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{ 
 			OnIterate_Section,
 			OnIterate_Item,
+
+			SecItemHasValue,
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =

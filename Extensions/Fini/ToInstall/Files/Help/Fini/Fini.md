@@ -67,6 +67,9 @@ This object has no properties
   - On Iterate Sections
   - On Iterate Items
 
+- Section - Item Has Value
+  - *return ture if it is not empty*
+
 ## Expression
 
 - Get Value (Section - Item)

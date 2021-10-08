@@ -78,9 +78,13 @@
 #define IDMN_CONDITION_ITS		26000
 #define IDMN_CONDITION_ITI		26001
 
+#define IDMN_CONDITION_SIHV		26002
+
 // Condition strings
 #define M_CONDITION_ITS			 6000
 #define M_CONDITION_ITI			 6001
+
+#define M_CONDITION_SIHV		 6002
 
 // Titles of condition parameters
 #define M_CND_ITN				 6501

@@ -9,7 +9,9 @@
 #define	CND_CONDITION_ITS			0
 #define	CND_CONDITION_ITI			1
 
-#define	CND_LAST					2
+#define	CND_CONDITION_SIHV			2
+
+#define	CND_LAST					3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
