@@ -15,8 +15,9 @@ This object has no properties
 ## Action
 
 - Auto Save
-  - *auto save file when object is destroyed, e.g. jump to another frame*
+  - *auto save file when object is destroyed, e.g. jump to another frame, or load from new file/string. use release to reset object before loading to avoid auto save*
   - *if filename or key is nullptr(default), file will not be saved*
+  - *if file is not modified (e.g. set value), file will not be saved*
   - *Note: if you run your mfa in fusion, when changing frames, destroy routine may not be called. Don't worry, according to my rigorous test and precise calculation, everything works properly in stand-along*
   
   - Set On

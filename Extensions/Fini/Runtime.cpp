@@ -69,6 +69,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->Regex.assign(RegStr_IsNum);
 	
 	rdPtr->AutoSave = true;
+	rdPtr->Modified = false;
 
 	// No errors
 	return 0;
@@ -87,23 +88,25 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	//Auto Save
-	if (rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
-		if (!StrEmpty(rdPtr->AutoSaveKey)) {
-			std::string Output;
-			Fini->Save(Output);
+	AutoSave(rdPtr);
 
-			Encryption Encrypt;
-			Encrypt.GenerateKey(rdPtr->AutoSaveKey);
+	//if (rdPtr->Modified && rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
+	//	if (!StrEmpty(rdPtr->AutoSaveKey)) {
+	//		std::string Output;
+	//		Fini->Save(Output);
 
-			Encrypt.SetEncryptStr(Output);
-			Encrypt.Encrypt();
+	//		Encryption Encrypt;
+	//		Encrypt.GenerateKey(rdPtr->AutoSaveKey);
 
-			Encrypt.SaveFile(rdPtr->AutoSaveFilePath);
-		}
-		else {
-			Fini->SaveFile(rdPtr->AutoSaveFilePath, false);
-		}
-	}
+	//		Encrypt.SetEncryptStr(Output);
+	//		Encrypt.Encrypt();
+
+	//		Encrypt.SaveFile(rdPtr->AutoSaveFilePath);
+	//	}
+	//	else {
+	//		Fini->SaveFile(rdPtr->AutoSaveFilePath, false);
+	//	}
+	//}
 
 	release();
 

@@ -32,7 +32,7 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 
 #define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);release_arr(rdPtr->AutoSaveFilePath);release_arr(rdPtr->AutoSaveKey);
 
-#define release() release_ptr(Fini);release_str();
+#define release() release_ptr(Fini);release_str();rdPtr->Modified = false;
 #define Init() release();Fini = new INI;Fini->SetUnicode();
 
 #define StrEqu(X,Y) (wcscmp(X,Y) == 0)

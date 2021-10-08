@@ -136,6 +136,8 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 
 	LPCTSTR String = (LPCTSTR)param1;
 
+	AutoSave(rdPtr);
+
 	Init();
 	
 	Fini->LoadData(to_byte_string(String));
@@ -146,6 +148,8 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
+
+	AutoSave(rdPtr);
 
 	Init();
 
@@ -178,22 +182,24 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
 	
-	//Key has value, try to Encry
-	if (!StrEmpty(Key)) {
-		std::string Output;
-		Fini->Save(Output);
+	SaveFile(Fini, FilePath, Key);
 
-		Encryption Encrypt;
-		Encrypt.GenerateKey(Key);
-		
-		Encrypt.SetEncryptStr(Output);
-		Encrypt.Encrypt();
+	////Key has value, try to Encry
+	//if (!StrEmpty(Key)) {
+	//	std::string Output;
+	//	Fini->Save(Output);
 
-		Encrypt.SaveFile(FilePath);
-	}
-	else {
-		Fini->SaveFile(FilePath, false);
-	}	
+	//	Encryption Encrypt;
+	//	Encrypt.GenerateKey(Key);
+	//	
+	//	Encrypt.SetEncryptStr(Output);
+	//	Encrypt.Encrypt();
+
+	//	Encrypt.SaveFile(FilePath);
+	//}
+	//else {
+	//	Fini->SaveFile(FilePath, false);
+	//}	
 
 	return 0;
 }
@@ -223,7 +229,7 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 		swprintf(String, FLOAT_MAX, _T("%f"), Value);
 	}
 	
-	Fini->SetValue(Section, Item, String);
+	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String));	
 
 	delete[] String;
 
@@ -243,7 +249,7 @@ short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2
 
 	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
 
-	Fini->SetValue(Section, Item, String);
+	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String));
 
 	return 0;
 }
@@ -262,6 +268,8 @@ short WINAPI DLLExport CopySection(LPRDATA rdPtr, long param1, long param2) {
 
 	INILIST Temp;
 	Fini->GetAllKeys(Src, Temp);
+	
+	rdPtr->Modified = (Temp.size() != 0);
 
 	INIIT it;
 	for (it = Temp.begin(); it != Temp.end(); ++it) {
@@ -288,7 +296,7 @@ short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
 		Item = nullptr;
 	}
 
-	Fini->Delete(Section, Item, true);
+	rdPtr->Modified = Fini->Delete(Section, Item, true);
 
 	return 0;
 }

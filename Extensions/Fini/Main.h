@@ -86,6 +86,8 @@ typedef struct tagRDATA
 	// Object's runtime data
 	//Auto Save
 	bool AutoSave = false;
+	bool Modified = false;
+
 	LPTSTR AutoSaveFilePath = nullptr;
 	LPTSTR AutoSaveKey = nullptr;
 	
