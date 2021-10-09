@@ -12,6 +12,11 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 
 This object has no properties
 
+## Note
+
+- This object is case-insensitive (like MMF's default ini object)
+- This object is UTF-8 only
+
 ## Action
 
 - Auto Save
