@@ -241,8 +241,8 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 	else {
 		swprintf(String, FLOAT_MAX, _T("%f"), Value);
 	}
-	
-	rdPtr->Modified = rdPtr->Modified || Modified(Fini->SetValue(Section, Item, String));
+		
+	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String)) || rdPtr->Modified;
 
 	delete[] String;
 
@@ -262,7 +262,7 @@ short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2
 
 	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
 
-	rdPtr->Modified = rdPtr->Modified || Modified(Fini->SetValue(Section, Item, String));
+	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String)) || rdPtr->Modified;
 
 	return 0;
 }
@@ -282,7 +282,7 @@ short WINAPI DLLExport CopySection(LPRDATA rdPtr, long param1, long param2) {
 	INILIST Temp;
 	Fini->GetAllKeys(Src, Temp);
 	
-	rdPtr->Modified = rdPtr->Modified || (Temp.size() != 0);
+	rdPtr->Modified = (Temp.size() != 0) || rdPtr->Modified;
 
 	INIIT it;
 	for (it = Temp.begin(); it != Temp.end(); ++it) {
@@ -309,7 +309,7 @@ short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
 		Item = nullptr;
 	}
 
-	rdPtr->Modified = rdPtr->Modified || Fini->Delete(Section, Item, true);
+	rdPtr->Modified = Fini->Delete(Section, Item, true) || rdPtr->Modified;
 
 	return 0;
 }
