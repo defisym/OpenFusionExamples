@@ -63,6 +63,9 @@ Simple examples
 
 some extensions I made for my game
 
+- Func
+  - *Call Functions via Expression or Action*
+
 - Encrypter
   - *En/decrtypt file with WinAPI CNG.*
   - *You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSpliter*
