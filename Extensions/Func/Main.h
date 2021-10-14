@@ -12,11 +12,12 @@
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION_PR				0
+#define	ACT_ACTION_SR				0
+#define	ACT_ACTION_PR				1
 
-#define	ACT_ACTION_CF				1
+#define	ACT_ACTION_CF				2
 
-#define	ACT_LAST					2
+#define	ACT_LAST					3
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -32,7 +33,10 @@
 
 #define EXP_EXPRESSION_GRI			6
 
-#define	EXP_LAST                    7
+#define EXP_EXPRESSION_GPS			7
+#define EXP_EXPRESSION_GRS			8
+
+#define	EXP_LAST                    9
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -133,7 +133,12 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Call Func (multiple or void return value)", IDMN_ACTION_CF
-        MENUITEM "Push Return Value", IDMN_ACTION_PR
+        MENUITEM SEPARATOR
+        POPUP "Return Value"
+        BEGIN
+            MENUITEM "Set Return Value", IDMN_ACTION_SR
+            MENUITEM "Push Return Value", IDMN_ACTION_PR
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -153,17 +158,23 @@ BEGIN
         BEGIN
             MENUITEM "Call Func (return value)", IDMN_EXPRESSION_RV
             MENUITEM "Call Func (return string)", IDMN_EXPRESSION_RS
-        END        
+        END
+        MENUITEM SEPARATOR        
         POPUP "Get Param"
         BEGIN
             MENUITEM "Get Param (return value)", IDMN_EXPRESSION_GVP
             MENUITEM "Get Param (return string)", IDMN_EXPRESSION_GSP
+            MENUITEM SEPARATOR
+            MENUITEM "Get Param Size", IDMN_EXPRESSION_GPS
         END
         POPUP "Get Return"
         BEGIN
             MENUITEM "Get Return (return value)", IDMN_EXPRESSION_GVR
             MENUITEM "Get Return (return string)", IDMN_EXPRESSION_GSR
+            MENUITEM SEPARATOR
+            MENUITEM "Get Return Size", IDMN_EXPRESSION_GRS
         END
+        MENUITEM SEPARATOR
         MENUITEM "Get Recursive Index", IDMN_EXPRESSION_GRI
         MENUITEM SEPARATOR
     END
@@ -247,6 +258,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_ACTION_SR             "Set Return Value %0"
     M_ACTION_PR             "Push Return Value %0"
     M_ACTION_CF             "Call Func %0, Param %1"
 
@@ -271,6 +283,9 @@ BEGIN
     M_EXPRESSION_GSR            "GetRet$("
 
     M_EXPRESSION_GRI            "GetRecIdx("
+
+    M_EXPRESSION_GPS            "GetParamSize("
+    M_EXPRESSION_GRS            "GetRetSize("
     
     M_EXP_PARAM                 "Func Param, E.G. Param1|Param2|Param3|..."
     M_EXP_GP                    "Param Position"

@@ -13,11 +13,17 @@ This object has no properties
 - Call Func
   - *multiple or void return value*
 
-- Push Return Value
-  - *Add a return value to current function*
-  - *if function is called by expression, expression will only return the first return value you pushed by this action*
-  - *use action `Call Func` above to return multiple values*
+- Return Value
   - *Note : ret values will be erased on next function call*
+  - *Note : currently has a bug, if you call a function via expression, return value must be the last action of the event*
+
+  - Set Return Value
+    - *Clear return vector and set a return value*
+
+  - Push Return Value
+    - *Add a return value to current function*
+    - *if function is called by expression, expression will only return the first return value you pushed by this action*
+    - *use action `Call Func` above to return multiple values*
 
 ## Condition
 
@@ -39,6 +45,8 @@ This object has no properties
   - Get Param (return value)
   - Get Param (return string)
 
+  - Get Param Size
+
 - Get Return
   - *Note : ret values will be erased on next function call*
   - *Get return value of current function*
@@ -46,6 +54,8 @@ This object has no properties
   
   - Get Return (return value)
   - Get Return (return string)
+
+  - Get Return Size
 
 - Get Recursive Index
   - *Get current call num of current function in function stack*

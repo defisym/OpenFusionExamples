@@ -10,6 +10,9 @@ typedef LIDX* LPLIDX;
 typedef std::vector<std::vector<std::wstring>> STACK;
 typedef STACK* LPSTACK;
 
+typedef std::wstring STRING;
+typedef STRING* LPSTRING;
+
 #define Spliter rdPtr->S
 
 #define Empty_Str	_T("")

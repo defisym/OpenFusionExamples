@@ -28,6 +28,7 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
+		IDMN_ACTION_SR, M_ACTION_SR, ACT_ACTION_SR,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
 		IDMN_ACTION_PR, M_ACTION_PR, ACT_ACTION_PR,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
 
 		IDMN_ACTION_CF, M_ACTION_CF, ACT_ACTION_CF,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING, M_CND_FUNCNAME, M_EXP_PARAM,
@@ -47,6 +48,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GRI, M_EXPRESSION_GRI, EXP_EXPRESSION_GRI, 0, 0,
 
+		IDMN_EXPRESSION_GPS, M_EXPRESSION_GPS, EXP_EXPRESSION_GPS, 0, 0,
+		IDMN_EXPRESSION_GRS, M_EXPRESSION_GRS, EXP_EXPRESSION_GRS, 0, 0,
+
 		};
 
 
@@ -59,7 +63,7 @@ short expressionsInfos[]=
 
 long WINAPI DLLExport OnFunc(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	return StrEqu(FuncName, rdPtr->FuncNameStack->back().c_str()) ? TRUE : FALSE;	
+	return StrEqu(FuncName, rdPtr->FuncNameStack->back().c_str()) ? TRUE : FALSE;
 }
 
 
@@ -68,6 +72,14 @@ long WINAPI DLLExport OnFunc(LPRDATA rdPtr, long param1, long param2) {
 // ACTIONS ROUTINES
 // 
 // ============================================================================
+
+short WINAPI DLLExport SetReturnValue(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	rdPtr->FuncReturn->clear();
+	rdPtr->FuncReturn->emplace_back(Return);
+
+	return 0;
+}
 
 short WINAPI DLLExport PushReturnValue(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -156,7 +168,7 @@ long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	
 	//This returns a pointer to the string for MMF.
-	return (long)Return(0).c_str();
+	return (long)Return(0).c_str();	
 }
 
 long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
@@ -236,6 +248,15 @@ long WINAPI DLLExport GetRecursiveIndex(LPRDATA rdPtr, long param1) {
 	
 	return RecursiveIndex;
 }
+
+long WINAPI DLLExport GetParamSize(LPRDATA rdPtr, long param1) {	
+	return rdPtr->FuncParamStack->back().size();
+}
+
+long WINAPI DLLExport GetRetSize(LPRDATA rdPtr, long param1) {
+	return rdPtr->FuncReturn->size();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -253,7 +274,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
+			SetReturnValue,
 			PushReturnValue,
+
 			CallFunc,
 
 			0
@@ -271,6 +294,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetRetRS,
 
 			GetRecursiveIndex,
+
+			GetParamSize,
+			GetRetSize,
 
 			0
 			};

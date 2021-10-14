@@ -25,12 +25,16 @@
 #define MN_ACTIONS				20000
 
 // Commands of action menu
-#define IDMN_ACTION_PR     		25000
-#define IDMN_ACTION_CF     		25001
+#define IDMN_ACTION_SR     		25000
+#define IDMN_ACTION_PR     		25001
+
+#define IDMN_ACTION_CF     		25002
 
 // Action strings
-#define M_ACTION_PR             5000
-#define M_ACTION_CF             5001
+#define M_ACTION_SR             5000
+#define M_ACTION_PR             5001
+
+#define M_ACTION_CF             5002
 
 // Titles of action parameters
 #define M_ACT_RET				 5501
@@ -69,6 +73,9 @@
 
 #define IDMN_EXPRESSION_GRI		27006
 
+#define IDMN_EXPRESSION_GPS		27007
+#define IDMN_EXPRESSION_GRS		27008
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -80,6 +87,9 @@
 #define M_EXPRESSION_GSR		 7005
 
 #define M_EXPRESSION_GRI		 7006
+
+#define M_EXPRESSION_GPS		 7007
+#define M_EXPRESSION_GRS		 7008
 
 // Names of expression parameters
 #define M_EXP_PARAM				 7500
