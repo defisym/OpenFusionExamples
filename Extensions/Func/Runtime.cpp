@@ -73,6 +73,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->FuncReturn = new VEC;
 
+	//rdPtr->OutPut = new STRING;
+	rdPtr->OutPut = nullptr;
+
 	// No errors
 	return 0;
 }
@@ -96,6 +99,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->FuncCurLoopIndex;
 
 	delete rdPtr->FuncReturn;
+
+	//delete rdPtr->OutPut;
+
+	release_arr(rdPtr->OutPut);
 
 	// No errors
 	return 0;

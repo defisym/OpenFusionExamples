@@ -133,6 +133,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Call Func (multiple or void return value)", IDMN_ACTION_CF
+        MENUITEM "Call Func (Ternary)", IDMN_ACTION_T
         MENUITEM SEPARATOR
         POPUP "Return Value"
         BEGIN
@@ -158,6 +159,12 @@ BEGIN
         BEGIN
             MENUITEM "Call Func (return value)", IDMN_EXPRESSION_RV
             MENUITEM "Call Func (return string)", IDMN_EXPRESSION_RS
+        END
+        MENUITEM SEPARATOR        
+        POPUP "Ternary"
+        BEGIN
+            MENUITEM "Ternary (return value)", IDMN_EXPRESSION_TRV
+            MENUITEM "Ternary (return string)", IDMN_EXPRESSION_TRS
         END
         MENUITEM SEPARATOR        
         POPUP "Get Param"
@@ -262,6 +269,8 @@ BEGIN
     M_ACTION_PR             "Push Return Value %0"
     M_ACTION_CF             "Call Func %0, Param %1"
 
+    M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
+
     M_ACT_RET               "Return Value"
 END
 
@@ -286,9 +295,16 @@ BEGIN
 
     M_EXPRESSION_GPS            "GetParamSize("
     M_EXPRESSION_GRS            "GetRetSize("
+
+    M_EXPRESSION_TRV            "Ternary("
+    M_EXPRESSION_TRS            "Ternary$("
     
     M_EXP_PARAM                 "Func Param, E.G. Param1|Param2|Param3|..."
     M_EXP_GP                    "Param Position"
+
+    M_EXP_BOOL                  "Bool, True = Return A, False = Return B"
+    M_EXP_RETA                  "Return Value A"
+    M_EXP_RETB                  "Return Value B"
 END
 
 #endif    // English (U.S.) resources

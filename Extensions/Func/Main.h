@@ -17,7 +17,9 @@
 
 #define	ACT_ACTION_CF				2
 
-#define	ACT_LAST					3
+#define	ACT_ACTION_T				3
+
+#define	ACT_LAST					4
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -36,7 +38,10 @@
 #define EXP_EXPRESSION_GPS			7
 #define EXP_EXPRESSION_GRS			8
 
-#define	EXP_LAST                    9
+#define EXP_EXPRESSION_TRV			9
+#define EXP_EXPRESSION_TRS			10
+
+#define	EXP_LAST                    11
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -89,6 +94,9 @@ typedef struct tagRDATA
 	LPLIDX FuncCurLoopIndex;
 
 	LPVEC FuncReturn;
+
+	//LPSTRING OutPut;
+	LPTSTR OutPut = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

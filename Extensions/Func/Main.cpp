@@ -32,6 +32,8 @@ short actionsInfos[]=
 		IDMN_ACTION_PR, M_ACTION_PR, ACT_ACTION_PR,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
 
 		IDMN_ACTION_CF, M_ACTION_CF, ACT_ACTION_CF,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING, M_CND_FUNCNAME, M_EXP_PARAM,
+		
+		IDMN_ACTION_T, M_ACTION_T, ACT_ACTION_T,	0, 5,PARAM_EXPRESSION,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_EXP_BOOL, M_CND_FUNCNAME, M_EXP_PARAM, M_CND_FUNCNAME, M_EXP_PARAM,
 		};
 
 // Definitions of parameters for each expression
@@ -50,6 +52,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GPS, M_EXPRESSION_GPS, EXP_EXPRESSION_GPS, 0, 0,
 		IDMN_EXPRESSION_GRS, M_EXPRESSION_GRS, EXP_EXPRESSION_GRS, 0, 0,
+		
+		IDMN_EXPRESSION_TRV, M_EXPRESSION_TRV, EXP_EXPRESSION_TRV, 0, 3,EXPPARAM_LONG,EXPPARAM_LONG,EXPPARAM_LONG,M_EXP_BOOL,M_EXP_RETA,M_EXP_RETB,
+		IDMN_EXPRESSION_TRS, M_EXPRESSION_TRS, EXP_EXPRESSION_TRS, EXPFLAG_STRING, 3,EXPPARAM_LONG,EXPPARAM_STRING,EXPPARAM_STRING,M_EXP_BOOL,M_EXP_RETA,M_EXP_RETB,
 
 		};
 
@@ -107,6 +112,31 @@ short WINAPI DLLExport CallFunc(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Ternary(LPRDATA rdPtr, long param1, long param2) {
+	bool Result = (bool)CNC_GetIntParameter(rdPtr);
+	
+	std::wstring FuncNameA = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring ParamA = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	std::wstring FuncNameB = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring ParamB = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	
+	rdPtr->FuncNameStack->emplace_back(Result ? FuncNameA : FuncNameB);
+
+	rdPtr->FuncParamStack->emplace_back();
+	UpdateParam(rdPtr, Result ? ParamA : ParamB);
+
+	rdPtr->FuncReturn->clear();
+
+	//Call Func;
+	CallEvent(ONFUNC);
+
+	rdPtr->FuncNameStack->pop_back();
+	rdPtr->FuncParamStack->pop_back();
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -128,20 +158,9 @@ long WINAPI DLLExport CallFuncRV(LPRDATA rdPtr,long param1) {
 
 	rdPtr->FuncNameStack->pop_back();
 	rdPtr->FuncParamStack->pop_back();
-
+	
 	if (StrIsNum(Return(0))) {
-		float Val = std::stof(Return(0));
-
-		if (Val == (int)Val) {			
-			return (int)Val;
-		}
-		else {
-			//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-			rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-			//Return the float without conversion
-			return *((long*)&Val);
-		}
+		return ReturnFloat(std::stof(Return(0)));
 	}
 	else {
 		return 0;
@@ -176,17 +195,7 @@ long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
 	Pos = max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1));
 		
 	if (StrIsNum(Param(Pos))) {
-		float  Val = std::stof(Param(Pos));
-		if (Val == (int)Val) {
-			return (int)Val;
-		}
-		else {
-			//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-			rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-			//Return the float without conversion
-			return *((long*)&Val);
-		}
+		return ReturnFloat(std::stof(Param(Pos)));
 	}
 	else {
 		return 0;
@@ -209,17 +218,7 @@ long WINAPI DLLExport GetRetRV(LPRDATA rdPtr, long param1) {
 	Pos = max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1));
 
 	if (StrIsNum(Return(Pos))) {
-		float  Val = std::stof(Return(Pos));
-		if (Val == (int)Val) {
-			return (int)Val;
-		}
-		else {
-			//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-			rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-			//Return the float without conversion
-			return *((long*)&Val);
-		}
+		return ReturnFloat(std::stof(Return(Pos)));
 	}
 	else {
 		return 0;
@@ -257,6 +256,33 @@ long WINAPI DLLExport GetRetSize(LPRDATA rdPtr, long param1) {
 	return rdPtr->FuncReturn->size();
 }
 
+long WINAPI DLLExport TernaryRV(LPRDATA rdPtr,long param1) {
+	bool Result = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	long p1 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float RetrunA = *(float*)&p1;
+
+	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float RetrunB = *(float*)&p2;
+		
+	return ReturnFloat(Result ? RetrunA : RetrunB);
+}
+
+long WINAPI DLLExport TernaryRS(LPRDATA rdPtr, long param1) {
+	bool Result = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	std::wstring RetrunA = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring RetrunB = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	NewStr(OStr, Result ? RetrunA : RetrunB);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)OStr;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -279,6 +305,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			CallFunc,
 
+			Ternary,
+
 			0
 			};
 
@@ -297,6 +325,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetParamSize,
 			GetRetSize,
+
+			TernaryRV,
+			TernaryRS,
 
 			0
 			};

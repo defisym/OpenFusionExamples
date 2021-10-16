@@ -10,6 +10,11 @@ inline void NewStr(LPTSTR& Tar, LPCTSTR Str) {
 	wcscpy_s(Tar, total_length, Str);
 }
 
+inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
+	NewStr(Tar, Str.c_str());
+}
+
+
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
 inline const std::wstring NewLineEscape(const wchar_t* Src) {
 	std::wregex NewLineEscape(_T("(\\\\r\\\\n)"));
@@ -39,6 +44,21 @@ inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
 		rdPtr->FuncParamStack->back().emplace_back(Tmp);
 	}
 }
+
+inline long ReturnFloat(LPRDATA rdPtr, float Val) {
+	if (Val == (int)Val) {
+		return (int)Val;
+	}
+	else {
+		//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+		rdPtr->rHo.hoFlags |= HOF_FLOAT;
+
+		//Return the float without conversion
+		return *((long*)&Val);
+	}
+}
+
+#define ReturnFloat(Val) ReturnFloat(rdPtr,Val)
 
 #endif // !_FUNC_
 

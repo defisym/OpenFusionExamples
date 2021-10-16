@@ -12,6 +12,8 @@ This object has no properties
 
 - Call Func
   - *multiple or void return value*
+- Call Func (Ternary)
+  - *Call function A or B by the bool value*
 
 - Return Value
   - *Note : ret values will be erased on next function call*
@@ -37,6 +39,12 @@ This object has no properties
   
   - Call Func (return value)
   - Call Func (return string)
+
+- Ternary
+  - *return bool?A:B*
+  
+  - Ternary (return value)
+  - Ternary (return string)
 
 - Get Param
   - *Get param of current function*

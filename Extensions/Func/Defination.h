@@ -13,7 +13,7 @@ typedef STACK* LPSTACK;
 typedef std::wstring STRING;
 typedef STRING* LPSTRING;
 
-#define Spliter rdPtr->S
+#define OStr rdPtr->OutPut
 
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
