@@ -260,21 +260,21 @@ long WINAPI DLLExport TernaryRV(LPRDATA rdPtr,long param1) {
 	bool Result = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	long p1 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-	float RetrunA = *(float*)&p1;
+	float ReturnA = *(float*)&p1;
 
 	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-	float RetrunB = *(float*)&p2;
+	float ReturnB = *(float*)&p2;
 		
-	return ReturnFloat(Result ? RetrunA : RetrunB);
+	return ReturnFloat(Result ? ReturnA : ReturnB);
 }
 
 long WINAPI DLLExport TernaryRS(LPRDATA rdPtr, long param1) {
 	bool Result = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	std::wstring RetrunA = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
-	std::wstring RetrunB = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring ReturnA = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring ReturnB = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	NewStr(OStr, Result ? RetrunA : RetrunB);
+	NewStr(OStr, Result ? ReturnA : ReturnB);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
