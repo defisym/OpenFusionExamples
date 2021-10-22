@@ -63,7 +63,9 @@
 
 #define ACT_ACTION_SDFN				33
 
-#define	ACT_LAST					34
+#define ACT_ACTION_GFL				34
+
+#define	ACT_LAST					35
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -99,7 +101,10 @@
 #define	EXP_EXPRESSION_GT			18
 #define	EXP_EXPRESSION_GTPT			19
 
-#define	EXP_LAST                    20
+#define	EXP_EXPRESSION_GFLS			20
+#define	EXP_EXPRESSION_GFLA			21
+
+#define	EXP_LAST                    22
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -223,6 +228,10 @@ typedef struct tagRDATA
 
 	//总游玩时间字符串
 	LPWSTR TotalPlayTime;
+
+	//文件列表
+	std::vector<std::wstring>* FileList;
+	LPWSTR FileListOutPut;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

@@ -80,6 +80,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SMS_OFF,M_ACTION_SMS_OFF,ACT_ACTION_SMS_OFF,0, 0,
 
 		IDMN_ACTION_SDFN,M_ACTION_SDFN,ACT_ACTION_SDFN,0, 1,PARAM_EXPSTRING,PARA_ACTION_SDFN,
+		
+		IDMN_ACTION_GFL,M_ACTION_GFL,ACT_ACTION_GFL,0, 1,PARAM_EXPSTRING,PARA_ACTION_GFL,
 		};
 
 // Definitions of parameters for each expression
@@ -122,6 +124,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GT, M_EXPRESSION_GT, EXP_EXPRESSION_GT, EXPFLAG_STRING, 0,
 		
 		IDMN_EXPRESSION_GTPT, M_EXPRESSION_GTPT, EXP_EXPRESSION_GTPT, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GTPT,
+		
+		IDMN_EXPRESSION_GFLS, M_EXPRESSION_GFLS, EXP_EXPRESSION_GFLS, 0, 0,
+		IDMN_EXPRESSION_GFLA, M_EXPRESSION_GFLA, EXP_EXPRESSION_GFLA, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GFLA,
 		};
 
 // ============================================================================
@@ -1188,6 +1193,15 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
+short WINAPI DLLExport LoadFileList(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	
+	rdPtr->FileList->clear();
+	GetFileList(rdPtr, FilePath);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1415,6 +1429,23 @@ long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->TotalPlayTime;
 }
 
+long WINAPI DLLExport GetFileListSize(LPRDATA rdPtr, long param1) {	
+	return rdPtr->FileList->size();
+}
+
+long WINAPI DLLExport GetFileListAt(LPRDATA rdPtr, long param1) {
+	size_t Pos = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	Pos = max(0, min(Pos, rdPtr->FileList->size() - 1));
+	
+	NewStr(rdPtr->FileListOutPut,rdPtr->FileList->at(Pos));
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->FileListOutPut;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1489,6 +1520,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetDefaultFilterName,
 
+			LoadFileList,
+
 			//结尾必定是零
 			0
 			};
@@ -1525,6 +1558,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetTime,
 			GetPlayTime,
+
+			GetFileListSize,
+			GetFileListAt,
 
 			0
 			};

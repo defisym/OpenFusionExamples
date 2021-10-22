@@ -57,6 +57,7 @@
 #define M_ACTION_SMS_ON					5095
 #define M_ACTION_SMS_OFF				5096
 #define M_ACTION_SDFN					5097
+#define M_ACTION_GFL					5098
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -80,6 +81,7 @@
 #define PARA_ACTION_WINDOW_MTGB_DIVIDE			5577
 #define PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD	5578
 #define PARA_ACTION_SDFN				5579
+#define PARA_ACTION_GFL					5580
 #define M_CONDITION_INAP                6000
 #define M_CONDITION_IML                 6010
 #define M_CONDITION_RKS                 6020
@@ -110,10 +112,13 @@
 #define M_EXPRESSION_GFN				7100
 #define M_EXPRESSION_GT 				7101
 #define M_EXPRESSION_GTPT 				7102
+#define M_EXPRESSION_GFLS 				7103
+#define M_EXPRESSION_GFLA 				7104
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
 #define PARA_EXPRESSION_GTPT            7511
+#define PARA_EXPRESSION_GFLA            7512
 #define MN_ACTIONS                      20000
 #define MN_CONDITIONS                   20001
 #define MN_EXPRESSIONS                  20002
@@ -154,6 +159,7 @@
 #define IDMN_ACTION_SMS_ON				25425
 #define IDMN_ACTION_SMS_OFF				25426
 #define IDMN_ACTION_SDFN				25427
+#define IDMN_ACTION_GFL					25428
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020
@@ -180,6 +186,8 @@
 #define IDMN_EXPRESSION_GFN				27090
 #define IDMN_EXPRESSION_GT				27091
 #define IDMN_EXPRESSION_GTPT			27092
+#define IDMN_EXPRESSION_GFLS			27093
+#define IDMN_EXPRESSION_GFLA			27094
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

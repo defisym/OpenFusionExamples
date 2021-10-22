@@ -67,6 +67,9 @@ WinAPI, a bunch of small functions that uses Win32 API
   - Go FullScreen
   - Go Windowed
 
+- Get FileList
+  - *Get all files (including sub-folders)*
+
 - Display
   - Settings
     - Default File Format
@@ -154,6 +157,16 @@ WinAPI, a bunch of small functions that uses Win32 API
   - *font size issue: if you disable DPI scaling and set a string's font size to a value that euqals it's current size, the font will get bigger as DPI scaling is on incorrectly*
 
 - Get FullScreen State
+
+- Time
+  - Get Current Time
+    - *output a time string in syntax YYYY-MM-DD HH:MM:SS, e.g. 2000-01-01 00:00:01*
+  - Get Total Play Time
+    - *input total play frame number and return the time string in syntax HH:MM:SS, e.g. 00:00:01, Max 99999999:59:59*
+
+- FileList
+  - Get FileList Size
+  - Get FileList At
 
 - Fusion
   - Frame

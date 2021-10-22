@@ -192,6 +192,8 @@ BEGIN
             MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW            
         END
         MENUITEM SEPARATOR
+        MENUITEM "Get FileList", IDMN_ACTION_GFL
+        MENUITEM SEPARATOR
         POPUP "Display"
         BEGIN
             POPUP "Settings"
@@ -293,6 +295,12 @@ BEGIN
         BEGIN
             MENUITEM "Get Current Time",        IDMN_EXPRESSION_GT
             MENUITEM "Get Total Play Time",        IDMN_EXPRESSION_GTPT
+        END
+        MENUITEM SEPARATOR 
+        POPUP "FileList"
+        BEGIN
+            MENUITEM "Get FileList Size",      IDMN_EXPRESSION_GFLS  
+            MENUITEM "Get FileList At",      IDMN_EXPRESSION_GFLA  
         END
         MENUITEM SEPARATOR 
         POPUP "Fusion"
@@ -485,6 +493,9 @@ BEGIN
     PARA_ACTION_WINDOW_MTGB_DIVIDE "Divide of threads, -1 = Max"
 
     M_ACTION_WINDOW_MTSB "Stack Blur, Radius = %0 , Scale = %1 , Divide = %2"
+
+    M_ACTION_GFL "Get File List of %0"
+    PARA_ACTION_GFL "File Path"
 END
 
 //Expression
@@ -545,6 +556,13 @@ BEGIN
     M_EXPRESSION_GT "CurrentTime$ ("
     M_EXPRESSION_GTPT "TotalPlayTime$ ("
     PARA_EXPRESSION_GTPT "TotalPlayFrame"
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GFLS "GetFileListSize ("
+    M_EXPRESSION_GFLA "GetFileListAt$ ("
+    PARA_EXPRESSION_GFLA "Position"
 END
 
 //Conditions

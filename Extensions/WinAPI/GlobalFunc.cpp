@@ -694,6 +694,30 @@ void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
 	return;
 }
 
+//iterate file
+void GetFileList(LPRDATA rdPtr, std::wstring& Src) {
+	WIN32_FIND_DATA stFD;
+	HANDLE h;
+	std::wstring temp;
+
+	temp = Src + L"\\*";
+	h = FindFirstFile(temp.c_str(), &stFD);
+
+	while (FindNextFile(h, &stFD)) {
+		temp = Src + L"\\" + stFD.cFileName;
+		if (temp == Src + L"\\..") {
+			continue;
+		}
+		else if (PathIsDirectory(temp.c_str())) {
+			GetFileList(rdPtr, temp);
+		}
+		else {			
+			rdPtr->FileList->emplace_back(Src + L"\\" + stFD.cFileName);
+		}
+	}
+
+	return;
+}
 
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;

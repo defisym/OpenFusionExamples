@@ -134,6 +134,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//³õÊ¼»¯FilterID
 	rdPtr->DefaultFilterName = nullptr;
 
+	rdPtr->FileList = new std::vector<std::wstring>;
+
 	// No errors
 	return 0;
 }
@@ -163,6 +165,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	if (rdPtr->TotalPlayTime != nullptr) {
 		delete[] rdPtr->TotalPlayTime;
 	}
+
+	delete rdPtr->FileList;
+	delete[] rdPtr->FileListOutPut;
 
 	// No errors
 	return 0;

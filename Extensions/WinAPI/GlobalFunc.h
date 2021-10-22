@@ -1,6 +1,19 @@
 #ifndef _GLOBALFUNC_
 #define _GLOBALFUNC_
 
+//don't use this func if Str = nullptr, return Default_Str directly
+inline void NewStr(LPTSTR& Tar, LPCTSTR Str) {
+	release_arr(Tar);
+	rsize_t total_length = wcslen(Str) + 1;
+
+	Tar = new WCHAR[total_length];
+	wcscpy_s(Tar, total_length, Str);
+}
+
+inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
+	NewStr(Tar, Str.c_str());
+}
+
 //全局窗口句柄
 extern HWND CurrentWindowHandle;
 
@@ -86,6 +99,9 @@ void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release);
 void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
 //Save to File
 void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
+
+//iterate file
+void GetFileList(LPRDATA rdPtr, std::wstring& Src);
 
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;

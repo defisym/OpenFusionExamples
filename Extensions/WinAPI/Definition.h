@@ -1,6 +1,13 @@
 #ifndef _DEFINITION_
 #define _DEFINITION_
 
+#define valid(X) (X != nullptr)
+
+#define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
+
+#define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
+#define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
+
 constexpr auto Dir_X = false;
 constexpr auto Dir_Y = true;
 
