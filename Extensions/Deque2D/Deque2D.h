@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "Split.h"
 #include "RandGenerator.h"
 
 using namespace std;
@@ -15,20 +16,103 @@ typedef variant<int, double, wstring> Data;
 typedef deque<Data> DataDeq;
 typedef deque<DataDeq> DataDeq2D;
 
+#define DELIMITER L","
+#define STRQUOTATIONMARK L"\""
+
 class Deque2D {
 private:
 	DataDeq2D Dat;
 
 public:
 	//Save&Load
-	inline void Load(const wstring& Src) {
+	//Load from file
+	inline void Load(const wstring& FilePath, const wstring& Key, bool Unicode = true) {
+		Split Spliter;
+		Spliter.SetUnicode(Unicode);
+		Spliter.OpenFile(FilePath.c_str());
 
+		if (Key != L"") {
+			Spliter.GenerateKey(Key.c_str());
+			Spliter.Decrypt();
+			Spliter.LoadData(Spliter.GetOutputStr());
+		}
+		else {
+			Spliter.LoadData(Spliter.GetInputStr());
+		}
+
+		this->Load(Spliter.GetSplitData());
 	}
+	//Load from string
+	inline void Load(const wstring& Src) {
+		Dat.clear();
+
+		Split Spliter;
+		Spliter.InitSplit(NEWLINE);
+		Spliter.LoadData(Src);
+		Spliter.SplitData();
+
+		wstring StringRegex = L"(\")(.*)(\")";
+		wstring NumberRegex = L".*\\..*";
+
+		for (size_t i = 0; i < Spliter.GetSplitSize(); i++) {
+			this->ArrayPushBack();
+
+			Split SpliterLine;
+			SpliterLine.InitSplit(DELIMITER);
+			SpliterLine.LoadData(Spliter[i]);
+			SpliterLine.SplitData();
+
+			for (size_t j = 0; j < SpliterLine.GetSplitSize(); j++) {
+				//is string
+				if (SpliterLine.StringMatchRegex(SpliterLine[j], StringRegex.c_str(), false)) {
+					this->DataPushBack(this->ArrayBackPos(), SpliterLine.ReplaceStr(SpliterLine[j], StringRegex.c_str(), L"$2"));
+				}
+				//is double
+				else if (SpliterLine.StringMatchRegex(SpliterLine[j], NumberRegex.c_str(), false)) {
+					this->DataPushBack(this->ArrayBackPos(), stod(SpliterLine[j]));
+				}
+				//is int
+				else {
+					this->DataPushBack(this->ArrayBackPos(), stoi(SpliterLine[j]));
+				}
+			}
+
+		}
+	}
+
+	//Save to file
+	inline void Save(const wstring& FilePath, const wstring& Key, bool Unicode = true) {
+		wstring Output = this->Save();
+		UINT CodePage = Unicode ? CP_UTF8 : CP_ACP;
+
+		DWORD dbuffsize = WideCharToMultiByte(CodePage, 0, Output.c_str(), -1, NULL, 0, NULL, FALSE);
+		if (dbuffsize == (size_t)(-1)) {
+			return;
+		}
+
+		char* dbuff = new char[dbuffsize + 1];
+		memset(dbuff, 0, dbuffsize + 1);
+
+		if (!WideCharToMultiByte(CodePage, 0, Output.c_str(), -1, dbuff, dbuffsize, NULL, FALSE)) {
+			return;
+		}
+
+		Split Spliter;
+		Spliter.SetEncryptStr(dbuff, strlen(dbuff));
+		delete[] dbuff;
+
+		if (Key != L"") {
+			Spliter.GenerateKey(Key.c_str());
+			Spliter.Encrypt();
+			Spliter.SaveFile(FilePath.c_str());
+		}
+		else {
+			Spliter.SaveFile(FilePath.c_str(), true);
+		}
+	}
+	//Save to string
 	inline wstring Save() {
 		wstring Output;
-
-		wstring NewLine = L"\r\n";
-		wstring Delimiter = L",";
 
 		for (auto it2D = Dat.begin(); it2D != Dat.end(); it2D++) {
 			for (auto it = (*it2D).begin(); it != (*it2D).end(); it++) {
@@ -43,16 +127,16 @@ public:
 					break;
 					//wstring
 				case 2:
-					Output += L"\"" + get<wstring>((*it)) + L"\"";
+					Output += STRQUOTATIONMARK + get<wstring>((*it)) + STRQUOTATIONMARK;
 					break;
 				}
 
 				//end() point to the next value
 				if (it != (*it2D).end() - 1) {
-					Output += Delimiter;
+					Output += DELIMITER;
 				}
 				else if (it2D != Dat.end() - 1) {
-					Output += NewLine;
+					Output += NEWLINE;
 				}
 			}
 		}
@@ -92,7 +176,7 @@ public:
 	inline size_t ArrayBackPos() {
 		return ArraySize() - 1;
 	}
-	
+
 	inline DataDeq ArrayPopFront() {
 		DataDeq Ret = Dat.front();
 		Dat.pop_front();
@@ -194,7 +278,7 @@ public:
 
 		return ret;
 	}
-	inline const wstring* DataAtStringPtr(size_t ArrayPos, size_t Pos) {		
+	inline const wstring* DataAtStringPtr(size_t ArrayPos, size_t Pos) {
 		return get_if<wstring>(&Dat[ArrayPos][Pos]);
 	}
 
