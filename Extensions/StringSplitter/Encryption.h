@@ -51,7 +51,7 @@ public:
 	~Encryption();
 
 	void OpenFile(const wchar_t* FileName);
-	void SaveFile(const wchar_t* FileName);
+	void SaveFile(const wchar_t* FileName, bool SaveSrc = false);
 
 	void SetEncryptStr(std::string& Str);
 	void SetEncryptStr(const char* Str, DWORD StrLength);

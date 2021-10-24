@@ -45,13 +45,13 @@ private:
 
 	void Release(PBYTE Pointer);
 	bool Encrypt_Core(bool Encrypt);
-
+	
 public:
 	Encryption();
 	~Encryption();
 
 	void OpenFile(const wchar_t* FileName);
-	void SaveFile(const wchar_t* FileName);
+	void SaveFile(const wchar_t* FileName, bool SaveSrc = false);
 
 	void SetEncryptStr(std::string& Str);
 	void SetEncryptStr(const char* Str, DWORD StrLength);
@@ -64,7 +64,7 @@ public:
 
 	DWORD GetInputStrLength();
 
-	char* GetOutputStr();
+	char* GetOutputStr();		
 	void ReleaseOutputStr();
 
 	DWORD GetOutputStrLength();

@@ -41,8 +41,11 @@ void Encryption::OpenFile(const wchar_t* FileName) {
     return;
 }
 
-void Encryption::SaveFile(const wchar_t* FileName) {
-    if (this->OutputText == nullptr) {
+void Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) {
+    PBYTE Output = SaveSrc ? this->InputText : this->OutputText;
+    DWORD Length = SaveSrc ? this->InputLength : this->OutputLength;
+
+    if (Output == nullptr) {
         return;
     }
 
@@ -53,7 +56,7 @@ void Encryption::SaveFile(const wchar_t* FileName) {
         return;
     }
 
-    fwrite(this->OutputText, this->OutputLength, 1, fp);
+    fwrite(Output, Length, 1, fp);
     fclose(fp);
 
     return;
