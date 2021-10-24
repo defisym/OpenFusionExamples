@@ -48,11 +48,11 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "Comments", "\0"
-            VALUE "CompanyName", "Clickteam\0"
+            VALUE "CompanyName", "Defisym\0"
             VALUE "FileDescription", "V2Template32 Object\0"
-            VALUE "FileVersion", "2.00\0"
+            VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "V2TEMPLATE32\0"
-            VALUE "LegalCopyright", "Copyright ?2000 Clickteam\0"
+            VALUE "LegalCopyright", "Copyright 2021 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "V2TEMPLATE32.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -218,6 +218,16 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDST_OBJNAME            "My New Extension"
+    IDST_AUTHOR             "Defisym"
+    IDST_COPYRIGHT          "Copyright 2021 Defisym"
+    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
+    IDST_HTTP               "https://twitter.com/defisym"
+END
+
+
+STRINGTABLE DISCARDABLE 
+BEGIN
     M_ACTION                "00Action example"
 END
 
@@ -238,15 +248,6 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_EXPRESSION2           "Reverse$("
     M_EXPRESSION3           "DivFloatByTwo("
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDST_OBJNAME            "My New Extension"
-    IDST_AUTHOR             "The extension's author"
-    IDST_COPYRIGHT          "Copyright ?2005 Extension Author"
-    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
-    IDST_HTTP               "http://www.authorswebpage.com"
 END
 
 #endif    // English (U.S.) resources
