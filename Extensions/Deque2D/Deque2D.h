@@ -11,6 +11,10 @@
 
 using namespace std;
 
+enum class DataType {
+	INT,DOUBLE,STRING,
+};
+
 typedef variant<int, double, wstring> Data;
 
 typedef deque<Data> DataDeq;
@@ -22,6 +26,13 @@ typedef deque<DataDeq> DataDeq2D;
 class Deque2D {
 private:
 	DataDeq2D Dat;
+	
+	inline size_t GetValidArrayPos(size_t ArrayPos) {
+		return min(this->ArrayBackPos(), ArrayPos);
+	}
+	inline size_t GetValidDataPos(size_t ArrayPos,size_t Pos) {
+		return min(this->DataBackPos(ArrayPos), Pos);
+	}
 
 public:
 	//Save&Load
@@ -148,8 +159,9 @@ public:
 	inline void ArrayClear() {
 		Dat.clear();
 	}
-	inline void ArrayErase(size_t Pos) {
-		Dat.erase(Dat.begin() + Pos);
+	inline void ArrayErase(size_t ArrayPos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		Dat.erase(Dat.begin() + ValidArrayPos);
 	}
 
 	inline void ArrayPushBack() {
@@ -159,15 +171,21 @@ public:
 		Dat.emplace_front();
 	}
 
-	inline void ArrayInsert(size_t Pos) {
-		Dat.insert(Dat.begin() + Pos, DataDeq());
+	inline void ArrayInsert(size_t ArrayPos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Dat.insert(Dat.begin() + ValidArrayPos, DataDeq());
 	}
-	inline void ArrayInsert(size_t Pos, DataDeq D) {
-		Dat.insert(Dat.begin() + Pos, D);
+	inline void ArrayInsert(size_t ArrayPos, DataDeq D) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Dat.insert(Dat.begin() + ValidArrayPos, D);
 	}
 
 	inline void ArraySetAt(size_t ArrayPos, DataDeq D) {
-		Dat[ArrayPos] = D;
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Dat[ValidArrayPos] = D;
 	}
 
 	inline size_t ArraySize() {
@@ -188,11 +206,20 @@ public:
 		return Ret;
 	}
 
-	inline DataDeq ArrayAt(size_t Pos) {
-		return Dat.at(Pos);
+	inline DataDeq ArrayAt(size_t ArrayPos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		return Dat.at(ValidArrayPos);
 	}
 
 	inline void ArraySort(size_t Pos, bool descend = true) {
+		//not sort if array pos don't has value
+		for (size_t it = 0; it != ArraySize(); it++) {
+			if (Pos != GetValidDataPos(it, Pos)) {
+				break;
+			}
+		}
+
 		sort(Dat.begin(), Dat.end(), [=](const DataDeq& a, const DataDeq& b) { return descend ? a[Pos] > b[Pos]: a[Pos] < b[Pos]; });
 	}
 	inline void  ArrayShuffle() {
@@ -204,57 +231,117 @@ public:
 
 	//Data
 	inline void DataClear(size_t ArrayPos) {
-		Dat[ArrayPos].clear();
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Dat[ValidArrayPos].clear();
 	}
 	inline void DataErase(size_t ArrayPos, size_t Pos) {
-		Dat[ArrayPos].erase(Dat[ArrayPos].begin() + Pos);
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		Dat[ValidArrayPos].erase(Dat[ValidArrayPos].begin() + ValidDataPos);
 	}
 
 	inline void DataPushBack(size_t ArrayPos, Data D) {
-		Dat[ArrayPos].emplace_back(D);
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Dat[ValidArrayPos].emplace_back(D);
 	}
 	inline void DataPushFront(size_t ArrayPos, Data D) {
-		Dat[ArrayPos].emplace_front(D);
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Dat[ValidArrayPos].emplace_front(D);
 	}
 
 	inline void DataInsert(size_t ArrayPos, size_t Pos) {
-		Dat[ArrayPos].insert(Dat[ArrayPos].begin() + Pos, Data());
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		Dat[ValidArrayPos].insert(Dat[ValidArrayPos].begin() + ValidDataPos, Data());
 	}
 	inline void DataInsert(size_t ArrayPos, size_t Pos, Data D) {
-		Dat[ArrayPos].insert(Dat[ArrayPos].begin() + Pos, D);
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		Dat[ValidArrayPos].insert(Dat[ValidArrayPos].begin() + ValidDataPos, D);
 	}
 
 	inline void DataSetAt(size_t ArrayPos, size_t Pos, Data D) {
-		Dat[ArrayPos][Pos] = D;
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		Dat[ValidArrayPos][ValidDataPos] = D;
 	}
 
 	inline size_t DataSize(size_t ArrayPos) {
-		return Dat[ArrayPos].size();
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		return Dat[ValidArrayPos].size();
 	}
 	inline size_t DataBackPos(size_t ArrayPos) {
-		return DataSize(ArrayPos) - 1;
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		return DataSize(ValidArrayPos) - 1;
 	}
 
 	inline Data DataPopFront(size_t ArrayPos) {
-		Data Ret = Dat[ArrayPos].front();
-		Dat[ArrayPos].pop_front();
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Data Ret = Dat[ValidArrayPos].front();
+		Dat[ValidArrayPos].pop_front();
 		return Ret;
 	}
 	inline Data DataPopBack(size_t ArrayPos) {
-		Data Ret = Dat[ArrayPos].back();
-		Dat[ArrayPos].pop_back();
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+
+		Data Ret = Dat[ValidArrayPos].back();
+		Dat[ValidArrayPos].pop_back();
 		return Ret;
 	}
 
 	inline Data DataAt(size_t ArrayPos, size_t Pos) {
-		return Dat[ArrayPos].at(Pos);
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		return Dat[ValidArrayPos][ValidDataPos];
+	}
+	inline size_t DataAtType(size_t ArrayPos, size_t Pos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		return Dat[ValidArrayPos][ValidDataPos].index();
 	}
 
-	inline double DataAtValue(size_t ArrayPos, size_t Pos) {
+	inline int DataAtInt(size_t ArrayPos, size_t Pos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		int ret;
+
+		try {
+			ret = get<int>(Dat[ValidArrayPos][ValidDataPos]);
+		}
+		catch (const std::bad_variant_access& e) {
+			ret = 0;
+		}
+
+		return ret;
+	}
+	inline const int* DataAtIntPtr(size_t ArrayPos, size_t Pos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		return get_if<int>(&Dat[ValidArrayPos][ValidDataPos]);
+	}
+
+	inline double DataAtDouble(size_t ArrayPos, size_t Pos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
 		double ret;
 
 		try {
-			ret = get<double>(Dat[ArrayPos].at(Pos));
+			ret = get<double>(Dat[ValidArrayPos][ValidDataPos]);
 		}
 		catch (const std::bad_variant_access& e) {
 			ret = 0.0;
@@ -262,15 +349,21 @@ public:
 
 		return ret;
 	}
-	inline const double* DataAtValuePtr(size_t ArrayPos, size_t Pos) {
-		return get_if<double>(&Dat[ArrayPos][Pos]);
+	inline const double* DataAtDoublePtr(size_t ArrayPos, size_t Pos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		return get_if<double>(&Dat[ValidArrayPos][ValidDataPos]);
 	}
 
 	inline wstring DataAtString(size_t ArrayPos, size_t Pos) {
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
 		wstring ret;
 
 		try {
-			ret = get<wstring>(Dat[ArrayPos].at(Pos));
+			ret = get<wstring>(Dat[ValidArrayPos][ValidDataPos]);
 		}
 		catch (const std::bad_variant_access& e) {
 			ret = L"";
@@ -279,15 +372,26 @@ public:
 		return ret;
 	}
 	inline const wstring* DataAtStringPtr(size_t ArrayPos, size_t Pos) {
-		return get_if<wstring>(&Dat[ArrayPos][Pos]);
+		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+
+		return get_if<wstring>(&Dat[ValidArrayPos][ValidDataPos]);
 	}
 
 	inline void DataSort(size_t ArrayPos, bool descend = true) {
+		if (ArrayPos != GetValidArrayPos(ArrayPos)) {
+			return;
+		}
+
 		sort(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), [=](const Data& a, const Data& b) { return descend ? a > b:a < b; });
 	}
 	inline void DataShuffle(size_t ArrayPos) {
+		if (ArrayPos != GetValidArrayPos(ArrayPos)) {
+			return;
+		}
+
 		std::random_device rd;
-		std::mt19937 eng{ rd() };
+		std::mt19937 eng{ rd() };		
 
 		shuffle(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), eng);
 	}
