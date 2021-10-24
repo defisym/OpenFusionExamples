@@ -76,8 +76,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	StrLength = 1 + 4 * (int)ceil(rdPtr->MaxSize / 3.0);
 	lpBase64Str = (LPWSTR)calloc(StrLength, sizeof(WCHAR));	
 
-	//初始化随机种
-	srand((unsigned int)(time(NULL)));
+	////初始化随机种
+	//srand((unsigned int)(time(NULL)));
 	
 	//为乱数表申请内存
 	RandomTable.resize(rdPtr->MaxSize);

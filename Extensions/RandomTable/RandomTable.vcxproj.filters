@@ -134,6 +134,9 @@
     <ClInclude Include="GlobalFunc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RandGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="RES\EXTICON.BMP">

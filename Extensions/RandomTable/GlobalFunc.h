@@ -3,6 +3,9 @@
 #ifndef _GLOBALFUNC_
 #define	_GLOBALFUNC_
 
+// Common Include
+#include "common.h"
+
 #include <deque>
 
 #include <wincrypt.h>
@@ -14,6 +17,7 @@ extern byte* Buffer;
 extern DWORD StrLength;
 extern LPWSTR lpBase64Str;
 extern deque<byte> RandomTable;
+extern RandGenerator<int> R;
 
 byte GenerateRandom();
 int _GetRandomNumber();
