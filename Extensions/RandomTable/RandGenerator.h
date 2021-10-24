@@ -15,6 +15,10 @@ private:
 	std::uniform_int_distribution<T>* uniform_dist;
 
 public:
+	~RandGenerator() {
+		delete uniform_dist;
+	}
+
 	inline RandGenerator(T a, T b) {
 		uniform_dist = new std::uniform_int_distribution<T>(a, b);
 	}
