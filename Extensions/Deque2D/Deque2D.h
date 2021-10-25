@@ -12,7 +12,7 @@
 using namespace std;
 
 enum class DataType {
-	INT,DOUBLE,STRING,
+	INT, DOUBLE, STRING,
 };
 
 typedef variant<int, double, wstring> Data;
@@ -26,32 +26,25 @@ typedef deque<DataDeq> DataDeq2D;
 class Deque2D {
 private:
 	DataDeq2D Dat;
-	
+
+	typedef struct {
+		size_t ArrayPos;
+		size_t DataPos;
+	}Pos;
+
 	inline size_t GetValidArrayPos(size_t ArrayPos) {
 		return min(this->ArrayBackPos(), ArrayPos);
 	}
-	inline size_t GetValidDataPos(size_t ArrayPos, size_t Pos) {
-		return min(this->DataBackPos(ArrayPos), Pos);
+	inline size_t GetValidDataPos(size_t ArrayPos, size_t DataPos) {
+		return min(this->DataBackPos(ArrayPos), DataPos);
 	}
 
-	inline bool ArrayPosValid(size_t ArrayPos) {
-		if (ArrayPos != GetValidArrayPos(ArrayPos)) {
-			return false;
-		}
-		else {
-			return true;
-		}
-	}
-	inline bool DataPosValid(size_t ArrayPos, size_t Pos) {
-		if (!ArrayPosValid(ArrayPos)) {
-			return false;
-		}
-		else if (Pos != GetValidDataPos(ArrayPos, Pos)) {
-			return false;
-		}
-		else {
-			return true;
-		}
+	inline Pos GetValidPos(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos;
+		ValidPos.ArrayPos = GetValidArrayPos(ArrayPos);
+		ValidPos.DataPos = GetValidDataPos(ValidPos.ArrayPos, DataPos);
+
+		return ValidPos;
 	}
 
 public:
@@ -180,32 +173,44 @@ public:
 	//If position is invaild
 	// fallback to valid pos in range when retriving values[0,size()-1]
 	// stop process in other cases
-	
+
 	// Array
 	//  ArrayAt(size_t ArrayPos)
 
 	// Data
-	//  DataAt(size_t ArrayPos, size_t Pos)	
-	//  DataAtType(size_t ArrayPos, size_t Pos)
+	//  DataAt(size_t ArrayPos, size_t DataPos)	
+	//  DataAtType(size_t ArrayPos, size_t DataPos)
 
-	//  DataAtInt(size_t ArrayPos, size_t Pos)
-	//  DataAtIntPtr(size_t ArrayPos, size_t Pos)
+	//  DataAtInt(size_t ArrayPos, size_t DataPos)
+	//  DataAtIntPtr(size_t ArrayPos, size_t DataPos)
 
-	//  DataAtDouble(size_t ArrayPos, size_t Pos)
-	//  DataAtDoublePtr(size_t ArrayPos, size_t Pos)
+	//  DataAtDouble(size_t ArrayPos, size_t DataPos)
+	//  DataAtDoublePtr(size_t ArrayPos, size_t DataPos)
 
-	//  DataAtString(size_t ArrayPos, size_t Pos)
-	//  DataAtStringPtr(size_t ArrayPos, size_t Pos)
+	//  DataAtString(size_t ArrayPos, size_t DataPos)
+	//  DataAtStringPtr(size_t ArrayPos, size_t DataPos)
 
 
 	//Array
+	inline bool ArrayPosValid(size_t ArrayPos) {
+		if (Dat.empty()) {
+			return false;
+		}
+		else if (ArrayPos != GetValidArrayPos(ArrayPos)) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
 	inline void ArrayClear() {
 		Dat.clear();
 	}
 	inline void ArrayErase(size_t ArrayPos) {
 		if (ArrayPosValid(ArrayPos)) {
 			Dat.erase(Dat.begin() + ArrayPos);
-		}		
+		}
 	}
 
 	inline void ArrayPushBack() {
@@ -226,6 +231,19 @@ public:
 		}
 	}
 
+	inline void ArrayMove(size_t SrcArrayPos, size_t DesArrayPos) {
+		if (ArrayPosValid(SrcArrayPos) && ArrayPosValid(DesArrayPos)) {
+			ArrayInsert(DesArrayPos, ArrayAt(SrcArrayPos));
+
+			if (SrcArrayPos > DesArrayPos) {
+				ArrayErase(SrcArrayPos + 1);
+			}
+			else {
+				ArrayErase(SrcArrayPos);
+			}
+
+		}
+	}
 	inline void ArraySwap(size_t SrcArrayPos, size_t DesArrayPos) {
 		if (ArrayPosValid(SrcArrayPos) && ArrayPosValid(DesArrayPos)) {
 			Dat[SrcArrayPos].swap(Dat[DesArrayPos]);
@@ -234,7 +252,7 @@ public:
 	inline void ArrayCopy(size_t SrcArrayPos, size_t DesArrayPos) {
 		if (ArrayPosValid(SrcArrayPos) && ArrayPosValid(DesArrayPos)) {
 			Dat[DesArrayPos] = Dat[SrcArrayPos];
-		}		
+		}
 	}
 
 	inline void ArraySetAt(size_t ArrayPos, DataDeq D) {
@@ -251,7 +269,7 @@ public:
 	}
 
 	inline DataDeq ArrayPopFront() {
-		if (Dat.size() == 0) {
+		if (Dat.empty()) {
 			return DataDeq();
 		}
 
@@ -260,7 +278,7 @@ public:
 		return Ret;
 	}
 	inline DataDeq ArrayPopBack() {
-		if (Dat.size() == 0) {
+		if (Dat.empty()) {
 			return DataDeq();
 		}
 
@@ -270,20 +288,24 @@ public:
 	}
 
 	inline DataDeq ArrayAt(size_t ArrayPos) {
+		if (Dat.empty()) {
+			return DataDeq();
+		}
+
 		return Dat[GetValidArrayPos(ArrayPos)];
 	}
 
-	inline void ArraySort(size_t Pos, bool descend = true) {
+	inline void ArraySort(size_t DataPos, bool descend = true) {
 		//not sort if data pos doesn't has value
 		for (size_t it = 0; it != ArraySize(); it++) {
-			if (!DataPosValid(it, Pos)) {
+			if (!DataPosValid(it, DataPos)) {
 				return;
 			}
 		}
 
-		sort(Dat.begin(), Dat.end(), [=](const DataDeq& a, const DataDeq& b) { return descend ? a[Pos] > b[Pos]: a[Pos] < b[Pos]; });
+		sort(Dat.begin(), Dat.end(), [=](const DataDeq& a, const DataDeq& b) { return descend ? a[DataPos] > b[DataPos]: a[DataPos] < b[DataPos]; });
 	}
-	inline void  ArrayShuffle() {
+	inline void ArrayShuffle() {
 		std::random_device rd;
 		std::mt19937 eng{ rd() };
 
@@ -291,14 +313,29 @@ public:
 	}
 
 	//Data
+	inline bool DataPosValid(size_t ArrayPos, size_t DataPos) {
+		if (!ArrayPosValid(ArrayPos)) {
+			return false;
+		}
+		else if (Dat[ArrayPos].empty()) {
+			return false;
+		}
+		else if (DataPos != GetValidDataPos(ArrayPos, DataPos)) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
 	inline void DataClear(size_t ArrayPos) {
 		if (ArrayPosValid(ArrayPos)) {
 			Dat[ArrayPos].clear();
 		}
 	}
-	inline void DataErase(size_t ArrayPos, size_t Pos) {
-		if (DataPosValid(ArrayPos, Pos)) {
-			Dat[ArrayPos].erase(Dat[ArrayPos].begin() + Pos);
+	inline void DataErase(size_t ArrayPos, size_t DataPos) {
+		if (DataPosValid(ArrayPos, DataPos)) {
+			Dat[ArrayPos].erase(Dat[ArrayPos].begin() + DataPos);
 		}
 	}
 
@@ -313,48 +350,65 @@ public:
 		}
 	}
 
-	inline void DataInsert(size_t ArrayPos, size_t Pos) {
-		if (DataPosValid(ArrayPos, Pos)) {
-			Dat[ArrayPos].insert(Dat[ArrayPos].begin() + Pos, Data());
+	inline void DataInsert(size_t ArrayPos, size_t DataPos) {
+		if (DataPosValid(ArrayPos, DataPos)) {
+			Dat[ArrayPos].insert(Dat[ArrayPos].begin() + DataPos, Data());
 		}
 	}
-	inline void DataInsert(size_t ArrayPos, size_t Pos, Data D) {
-		if (DataPosValid(ArrayPos, Pos)) {
-			Dat[ArrayPos].insert(Dat[ArrayPos].begin() + Pos, D);
-		}
-	}
-
-	inline void DataSwap(size_t ArrayPos, size_t SrcPos, size_t DesPos) {
-		if (DataPosValid(ArrayPos, SrcPos) && DataPosValid(ArrayPos, DesPos)) {
-			Dat[SrcPos].swap(Dat[DesPos]);
-		}
-	}
-	inline void DataCopy(size_t ArrayPos, size_t SrcPos,size_t DesPos) {
-		if (DataPosValid(ArrayPos, SrcPos) && DataPosValid(ArrayPos, DesPos)) {
-			Dat[DesPos] = Dat[SrcPos];
+	inline void DataInsert(size_t ArrayPos, size_t DataPos, Data D) {
+		if (DataPosValid(ArrayPos, DataPos)) {
+			Dat[ArrayPos].insert(Dat[ArrayPos].begin() + DataPos, D);
 		}
 	}
 
-	inline void DataSetAt(size_t ArrayPos, size_t Pos, Data D) {
-		if (DataPosValid(ArrayPos, Pos)) {
-			Dat[ArrayPos][Pos] = D;
+	inline void DataMove(size_t ArrayPos, size_t SrcDataPos, size_t DesDataPos) {
+		if (DataPosValid(ArrayPos, SrcDataPos) && DataPosValid(ArrayPos, DesDataPos)) {
+			DataInsert(ArrayPos, DesDataPos, DataAt(ArrayPos, SrcDataPos));
+
+			if (SrcDataPos > DesDataPos) {
+				DataErase(ArrayPos, SrcDataPos + 1);
+			}
+			else {
+				DataErase(ArrayPos, SrcDataPos);
+			}
+
+		}
+	}
+	inline void DataSwap(size_t ArrayPos, size_t SrcDataPos, size_t DesDataPos) {
+		if (DataPosValid(ArrayPos, SrcDataPos) && DataPosValid(ArrayPos, DesDataPos)) {
+			Dat[SrcDataPos].swap(Dat[DesDataPos]);
+		}
+	}
+	inline void DataCopy(size_t ArrayPos, size_t SrcDataPos, size_t DesDataPos) {
+		if (DataPosValid(ArrayPos, SrcDataPos) && DataPosValid(ArrayPos, DesDataPos)) {
+			Dat[DesDataPos] = Dat[SrcDataPos];
 		}
 	}
 
-	inline size_t DataSize(size_t ArrayPos) {		
+	inline void DataSetAt(size_t ArrayPos, size_t DataPos, Data D) {
+		if (DataPosValid(ArrayPos, DataPos)) {
+			Dat[ArrayPos][DataPos] = D;
+		}
+	}
+
+	inline size_t DataSize(size_t ArrayPos) {
 		if (ArrayPosValid(ArrayPos)) {
 			return Dat[ArrayPos].size();
 		}
-		
-		return 0;		
+
+		return 0;
 	}
 	inline size_t DataBackPos(size_t ArrayPos) {
-		return DataSize(ArrayPos) - 1;
+		if (ArrayPosValid(ArrayPos)) {
+			return DataSize(ArrayPos) - 1;
+		}
+
+		return 0;
 	}
 
 	inline Data DataPopFront(size_t ArrayPos) {
-		if(ArrayPosValid(ArrayPos)){
-			if (Dat[ArrayPos].size() == 0) {
+		if (ArrayPosValid(ArrayPos)) {
+			if (Dat[ArrayPos].empty()) {
 				return 0;
 			}
 
@@ -367,7 +421,7 @@ public:
 	}
 	inline Data DataPopBack(size_t ArrayPos) {
 		if (ArrayPosValid(ArrayPos)) {
-			if (Dat[ArrayPos].size() == 0) {
+			if (Dat[ArrayPos].empty()) {
 				return 0;
 			}
 
@@ -379,83 +433,117 @@ public:
 		return 0;
 	}
 
-	inline Data DataAt(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+	inline Data DataAt(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
 
-		return Dat[ValidArrayPos][ValidDataPos];
-	}
-	inline size_t DataAtType(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
-
-		return Dat[ValidArrayPos][ValidDataPos].index();
-	}
-
-	inline int DataAtInt(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
-
-		int ret;
-
-		try {
-			ret = get<int>(Dat[ValidArrayPos][ValidDataPos]);
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			return Dat[ValidPos.ArrayPos][ValidPos.DataPos];
 		}
-		catch (bad_variant_access) {
-			ret = 0;
+		else {
+			return 0;
 		}
-
-		return ret;
 	}
-	inline const int* DataAtIntPtr(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+	inline Data* DataAtPtr(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
 
-		return get_if<int>(&Dat[ValidArrayPos][ValidDataPos]);
-	}
-
-	inline double DataAtDouble(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
-
-		double ret;
-
-		try {
-			ret = get<double>(Dat[ValidArrayPos][ValidDataPos]);
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			return &Dat[ValidPos.ArrayPos][ValidPos.DataPos];
 		}
-		catch (bad_variant_access) {
-			ret = 0.0;
+		else {
+			return nullptr;
+		}
+	}
+
+	inline size_t DataAtType(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
+
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			return Dat[ValidPos.ArrayPos][ValidPos.DataPos].index();
+		}
+		else {
+			return -1;
+		}
+	}
+
+	inline int DataAtInt(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
+
+		int ret = 0;
+
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			try {
+				ret = get<int>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
+			}
+			catch (bad_variant_access) {
+				//
+			}
 		}
 
 		return ret;
 	}
-	inline const double* DataAtDoublePtr(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+	inline const int* DataAtIntPtr(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
 
-		return get_if<double>(&Dat[ValidArrayPos][ValidDataPos]);
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			return get_if<int>(&Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
+		}
+		else {
+			return nullptr;
+		}
 	}
 
-	inline wstring DataAtString(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+	inline double DataAtDouble(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
 
-		wstring ret;
+		double ret = 0.0;
 
-		try {
-			ret = get<wstring>(Dat[ValidArrayPos][ValidDataPos]);
-		}
-		catch (bad_variant_access) {
-			ret = L"";
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			try {
+				ret = get<double>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
+			}
+			catch (bad_variant_access) {
+				//
+			}
 		}
 
 		return ret;
 	}
-	inline const wstring* DataAtStringPtr(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+	inline const double* DataAtDoublePtr(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
 
-		return get_if<wstring>(&Dat[ValidArrayPos][ValidDataPos]);
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			return get_if<double>(&Dat[ValidPos.ArrayPos][ValidPos.DataPos]);;
+		}
+		else {
+			return nullptr;
+		}
+	}
+
+	inline wstring DataAtString(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
+
+		wstring ret = L"";
+
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			try {
+				ret = get<wstring>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
+			}
+			catch (bad_variant_access) {
+				//
+			}
+		}
+
+		return ret;
+	}
+	inline const wstring* DataAtStringPtr(size_t ArrayPos, size_t DataPos) {
+		Pos ValidPos = GetValidPos(ArrayPos, DataPos);
+
+		if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
+			return get_if<wstring>(&Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
+		}
+		else {
+			return nullptr;
+		}
 	}
 
 	inline void DataSort(size_t ArrayPos, bool descend = true) {
@@ -469,7 +557,7 @@ public:
 			std::mt19937 eng{ rd() };
 
 			shuffle(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), eng);
-		}		
+		}
 	}
 };
 
