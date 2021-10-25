@@ -30,8 +30,28 @@ private:
 	inline size_t GetValidArrayPos(size_t ArrayPos) {
 		return min(this->ArrayBackPos(), ArrayPos);
 	}
-	inline size_t GetValidDataPos(size_t ArrayPos,size_t Pos) {
+	inline size_t GetValidDataPos(size_t ArrayPos, size_t Pos) {
 		return min(this->DataBackPos(ArrayPos), Pos);
+	}
+
+	inline bool ArrayPosValid(size_t ArrayPos) {
+		if (ArrayPos != GetValidArrayPos(ArrayPos)) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	inline bool DataPosValid(size_t ArrayPos, size_t Pos) {
+		if (!ArrayPosValid(ArrayPos)) {
+			return false;
+		}
+		else if (Pos != GetValidDataPos(ArrayPos, Pos)) {
+			return false;
+		}
+		else {
+			return true;
+		}
 	}
 
 public:
@@ -63,7 +83,7 @@ public:
 		Spliter.SplitData();
 
 		wstring StringRegex = L"(\")(.*)(\")";
-		wstring NumberRegex = L".*\\..*";
+		wstring DoubleRegex = L".*\\..*";
 
 		for (size_t i = 0; i < Spliter.GetSplitSize(); i++) {
 			this->ArrayPushBack();
@@ -79,7 +99,7 @@ public:
 					this->DataPushBack(this->ArrayBackPos(), SpliterLine.ReplaceStr(SpliterLine[j], StringRegex.c_str(), L"$2"));
 				}
 				//is double
-				else if (SpliterLine.StringMatchRegex(SpliterLine[j], NumberRegex.c_str(), false)) {
+				else if (SpliterLine.StringMatchRegex(SpliterLine[j], DoubleRegex.c_str(), false)) {
 					this->DataPushBack(this->ArrayBackPos(), stod(SpliterLine[j]));
 				}
 				//is int
@@ -155,13 +175,37 @@ public:
 		return Output;
 	}
 
+	//Data Operation
+
+	//If position is invaild
+	// fallback to valid pos in range when retriving values[0,size()-1]
+	// stop process in other cases
+	
+	// Array
+	//  ArrayAt(size_t ArrayPos)
+
+	// Data
+	//  DataAt(size_t ArrayPos, size_t Pos)	
+	//  DataAtType(size_t ArrayPos, size_t Pos)
+
+	//  DataAtInt(size_t ArrayPos, size_t Pos)
+	//  DataAtIntPtr(size_t ArrayPos, size_t Pos)
+
+	//  DataAtDouble(size_t ArrayPos, size_t Pos)
+	//  DataAtDoublePtr(size_t ArrayPos, size_t Pos)
+
+	//  DataAtString(size_t ArrayPos, size_t Pos)
+	//  DataAtStringPtr(size_t ArrayPos, size_t Pos)
+
+
 	//Array
 	inline void ArrayClear() {
 		Dat.clear();
 	}
 	inline void ArrayErase(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		Dat.erase(Dat.begin() + ValidArrayPos);
+		if (ArrayPosValid(ArrayPos)) {
+			Dat.erase(Dat.begin() + ArrayPos);
+		}		
 	}
 
 	inline void ArrayPushBack() {
@@ -172,20 +216,31 @@ public:
 	}
 
 	inline void ArrayInsert(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		Dat.insert(Dat.begin() + ValidArrayPos, DataDeq());
+		if (ArrayPosValid(ArrayPos)) {
+			Dat.insert(Dat.begin() + ArrayPos, DataDeq());
+		}
 	}
 	inline void ArrayInsert(size_t ArrayPos, DataDeq D) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		if (ArrayPosValid(ArrayPos)) {
+			Dat.insert(Dat.begin() + ArrayPos, D);
+		}
+	}
 
-		Dat.insert(Dat.begin() + ValidArrayPos, D);
+	inline void ArraySwap(size_t SrcArrayPos, size_t DesArrayPos) {
+		if (ArrayPosValid(SrcArrayPos) && ArrayPosValid(DesArrayPos)) {
+			Dat[SrcArrayPos].swap(Dat[DesArrayPos]);
+		}
+	}
+	inline void ArrayCopy(size_t SrcArrayPos, size_t DesArrayPos) {
+		if (ArrayPosValid(SrcArrayPos) && ArrayPosValid(DesArrayPos)) {
+			Dat[DesArrayPos] = Dat[SrcArrayPos];
+		}		
 	}
 
 	inline void ArraySetAt(size_t ArrayPos, DataDeq D) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		Dat[ValidArrayPos] = D;
+		if (ArrayPosValid(ArrayPos)) {
+			Dat[ArrayPos] = D;
+		}
 	}
 
 	inline size_t ArraySize() {
@@ -196,27 +251,33 @@ public:
 	}
 
 	inline DataDeq ArrayPopFront() {
+		if (Dat.size() == 0) {
+			return DataDeq();
+		}
+
 		DataDeq Ret = Dat.front();
 		Dat.pop_front();
 		return Ret;
 	}
 	inline DataDeq ArrayPopBack() {
+		if (Dat.size() == 0) {
+			return DataDeq();
+		}
+
 		DataDeq Ret = Dat.back();
 		Dat.pop_back();
 		return Ret;
 	}
 
 	inline DataDeq ArrayAt(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		return Dat.at(ValidArrayPos);
+		return Dat[GetValidArrayPos(ArrayPos)];
 	}
 
 	inline void ArraySort(size_t Pos, bool descend = true) {
-		//not sort if array pos don't has value
+		//not sort if data pos doesn't has value
 		for (size_t it = 0; it != ArraySize(); it++) {
-			if (Pos != GetValidDataPos(it, Pos)) {
-				break;
+			if (!DataPosValid(it, Pos)) {
+				return;
 			}
 		}
 
@@ -231,72 +292,91 @@ public:
 
 	//Data
 	inline void DataClear(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		Dat[ValidArrayPos].clear();
+		if (ArrayPosValid(ArrayPos)) {
+			Dat[ArrayPos].clear();
+		}
 	}
 	inline void DataErase(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
-
-		Dat[ValidArrayPos].erase(Dat[ValidArrayPos].begin() + ValidDataPos);
+		if (DataPosValid(ArrayPos, Pos)) {
+			Dat[ArrayPos].erase(Dat[ArrayPos].begin() + Pos);
+		}
 	}
 
 	inline void DataPushBack(size_t ArrayPos, Data D) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		Dat[ValidArrayPos].emplace_back(D);
+		if (ArrayPosValid(ArrayPos)) {
+			Dat[ArrayPos].emplace_back(D);
+		}
 	}
 	inline void DataPushFront(size_t ArrayPos, Data D) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		Dat[ValidArrayPos].emplace_front(D);
+		if (ArrayPosValid(ArrayPos)) {
+			Dat[ArrayPos].emplace_front(D);
+		}
 	}
 
 	inline void DataInsert(size_t ArrayPos, size_t Pos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
-
-		Dat[ValidArrayPos].insert(Dat[ValidArrayPos].begin() + ValidDataPos, Data());
+		if (DataPosValid(ArrayPos, Pos)) {
+			Dat[ArrayPos].insert(Dat[ArrayPos].begin() + Pos, Data());
+		}
 	}
 	inline void DataInsert(size_t ArrayPos, size_t Pos, Data D) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
+		if (DataPosValid(ArrayPos, Pos)) {
+			Dat[ArrayPos].insert(Dat[ArrayPos].begin() + Pos, D);
+		}
+	}
 
-		Dat[ValidArrayPos].insert(Dat[ValidArrayPos].begin() + ValidDataPos, D);
+	inline void DataSwap(size_t ArrayPos, size_t SrcPos, size_t DesPos) {
+		if (DataPosValid(ArrayPos, SrcPos) && DataPosValid(ArrayPos, DesPos)) {
+			Dat[SrcPos].swap(Dat[DesPos]);
+		}
+	}
+	inline void DataCopy(size_t ArrayPos, size_t SrcPos,size_t DesPos) {
+		if (DataPosValid(ArrayPos, SrcPos) && DataPosValid(ArrayPos, DesPos)) {
+			Dat[DesPos] = Dat[SrcPos];
+		}
 	}
 
 	inline void DataSetAt(size_t ArrayPos, size_t Pos, Data D) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-		size_t ValidDataPos = GetValidDataPos(ValidArrayPos, Pos);
-
-		Dat[ValidArrayPos][ValidDataPos] = D;
+		if (DataPosValid(ArrayPos, Pos)) {
+			Dat[ArrayPos][Pos] = D;
+		}
 	}
 
-	inline size_t DataSize(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		return Dat[ValidArrayPos].size();
+	inline size_t DataSize(size_t ArrayPos) {		
+		if (ArrayPosValid(ArrayPos)) {
+			return Dat[ArrayPos].size();
+		}
+		
+		return 0;		
 	}
 	inline size_t DataBackPos(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
-
-		return DataSize(ValidArrayPos) - 1;
+		return DataSize(ArrayPos) - 1;
 	}
 
 	inline Data DataPopFront(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		if(ArrayPosValid(ArrayPos)){
+			if (Dat[ArrayPos].size() == 0) {
+				return 0;
+			}
 
-		Data Ret = Dat[ValidArrayPos].front();
-		Dat[ValidArrayPos].pop_front();
-		return Ret;
+			Data Ret = Dat[ArrayPos].front();
+			Dat[ArrayPos].pop_front();
+			return Ret;
+		}
+
+		return 0;
 	}
 	inline Data DataPopBack(size_t ArrayPos) {
-		size_t ValidArrayPos = GetValidArrayPos(ArrayPos);
+		if (ArrayPosValid(ArrayPos)) {
+			if (Dat[ArrayPos].size() == 0) {
+				return 0;
+			}
 
-		Data Ret = Dat[ValidArrayPos].back();
-		Dat[ValidArrayPos].pop_back();
-		return Ret;
+			Data Ret = Dat[ArrayPos].back();
+			Dat[ArrayPos].pop_back();
+			return Ret;
+		}
+
+		return 0;
 	}
 
 	inline Data DataAt(size_t ArrayPos, size_t Pos) {
@@ -321,7 +401,7 @@ public:
 		try {
 			ret = get<int>(Dat[ValidArrayPos][ValidDataPos]);
 		}
-		catch (const std::bad_variant_access& e) {
+		catch (bad_variant_access) {
 			ret = 0;
 		}
 
@@ -343,7 +423,7 @@ public:
 		try {
 			ret = get<double>(Dat[ValidArrayPos][ValidDataPos]);
 		}
-		catch (const std::bad_variant_access& e) {
+		catch (bad_variant_access) {
 			ret = 0.0;
 		}
 
@@ -365,7 +445,7 @@ public:
 		try {
 			ret = get<wstring>(Dat[ValidArrayPos][ValidDataPos]);
 		}
-		catch (const std::bad_variant_access& e) {
+		catch (bad_variant_access) {
 			ret = L"";
 		}
 
@@ -379,21 +459,17 @@ public:
 	}
 
 	inline void DataSort(size_t ArrayPos, bool descend = true) {
-		if (ArrayPos != GetValidArrayPos(ArrayPos)) {
-			return;
+		if (ArrayPosValid(ArrayPos)) {
+			sort(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), [=](const Data& a, const Data& b) { return descend ? a > b:a < b; });
 		}
-
-		sort(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), [=](const Data& a, const Data& b) { return descend ? a > b:a < b; });
 	}
 	inline void DataShuffle(size_t ArrayPos) {
-		if (ArrayPos != GetValidArrayPos(ArrayPos)) {
-			return;
-		}
+		if (ArrayPosValid(ArrayPos)) {
+			std::random_device rd;
+			std::mt19937 eng{ rd() };
 
-		std::random_device rd;
-		std::mt19937 eng{ rd() };		
-
-		shuffle(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), eng);
+			shuffle(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), eng);
+		}		
 	}
 };
 
