@@ -168,6 +168,9 @@ WinAPI, a bunch of small functions that uses Win32 API
   - Get FileList Size
   - Get FileList At
 
+- Hash
+  - Get File Hash (MD5)
+
 - Fusion
   - Frame
     - Get Frame Name

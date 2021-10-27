@@ -104,7 +104,9 @@
 #define	EXP_EXPRESSION_GFLS			20
 #define	EXP_EXPRESSION_GFLA			21
 
-#define	EXP_LAST                    22
+#define	EXP_EXPRESSION_GFH			22
+
+#define	EXP_LAST                    23
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -232,6 +234,8 @@ typedef struct tagRDATA
 	//文件列表
 	std::vector<std::wstring>* FileList;
 	LPWSTR FileListOutPut;
+
+	LPWSTR HashOutput;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

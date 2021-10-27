@@ -127,6 +127,8 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GFLS, M_EXPRESSION_GFLS, EXP_EXPRESSION_GFLS, 0, 0,
 		IDMN_EXPRESSION_GFLA, M_EXPRESSION_GFLA, EXP_EXPRESSION_GFLA, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GFLA,
+
+		IDMN_EXPRESSION_GFH, M_EXPRESSION_GFH, EXP_EXPRESSION_GFH, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_EXPRESSION_GFH,
 		};
 
 // ============================================================================
@@ -1446,6 +1448,27 @@ long WINAPI DLLExport GetFileListAt(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->FileListOutPut;
 }
 
+long WINAPI DLLExport GetFileHash(LPRDATA rdPtr, long param1) {
+	LPCWSTR FilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	Encryption Hash;
+	Hash.OpenFile(FilePath);
+
+	LPCWSTR Temp = Hash.GetHash();
+	if (Temp != nullptr) {
+		NewStr(rdPtr->HashOutput, Hash.GetHash());
+	}
+	else {
+		NewStr(rdPtr->HashOutput, Empty_Str);
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->HashOutput;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1561,6 +1584,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetFileListSize,
 			GetFileListAt,
+
+			GetFileHash,
 
 			0
 			};

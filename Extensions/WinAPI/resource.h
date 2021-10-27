@@ -114,11 +114,13 @@
 #define M_EXPRESSION_GTPT 				7102
 #define M_EXPRESSION_GFLS 				7103
 #define M_EXPRESSION_GFLA 				7104
+#define M_EXPRESSION_GFH 				7105
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
 #define PARA_EXPRESSION_GTPT            7511
 #define PARA_EXPRESSION_GFLA            7512
+#define PARA_EXPRESSION_GFH	            7513
 #define MN_ACTIONS                      20000
 #define MN_CONDITIONS                   20001
 #define MN_EXPRESSIONS                  20002
@@ -188,6 +190,7 @@
 #define IDMN_EXPRESSION_GTPT			27092
 #define IDMN_EXPRESSION_GFLS			27093
 #define IDMN_EXPRESSION_GFLA			27094
+#define IDMN_EXPRESSION_GFH				27095
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

@@ -1,6 +1,9 @@
 #ifndef _DEFINITION_
 #define _DEFINITION_
 
+#define Empty_Str	_T("")
+#define Default_Str	_T("")
+
 #define valid(X) (X != nullptr)
 
 #define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }

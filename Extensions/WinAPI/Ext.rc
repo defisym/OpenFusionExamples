@@ -302,6 +302,12 @@ BEGIN
             MENUITEM "Get FileList Size",      IDMN_EXPRESSION_GFLS  
             MENUITEM "Get FileList At",      IDMN_EXPRESSION_GFLA  
         END
+        MENUITEM SEPARATOR
+        POPUP "Hash"
+        
+        BEGIN
+            MENUITEM "Get File Hash (MD5)",      IDMN_EXPRESSION_GFH  
+        END
         MENUITEM SEPARATOR 
         POPUP "Fusion"
         BEGIN
@@ -563,6 +569,12 @@ BEGIN
     M_EXPRESSION_GFLS "GetFileListSize ("
     M_EXPRESSION_GFLA "GetFileListAt$ ("
     PARA_EXPRESSION_GFLA "Position"
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GFH "GetFileHash$ ("
+    PARA_EXPRESSION_GFH "FilePath"
 END
 
 //Conditions

@@ -169,6 +169,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->FileList;
 	delete[] rdPtr->FileListOutPut;
 
+	delete[] rdPtr->HashOutput;
+
 	// No errors
 	return 0;
 }

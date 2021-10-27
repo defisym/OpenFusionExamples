@@ -52,6 +52,7 @@
 #include	"TigsExt.hpp"
 
 //My headers
+#include	"..\_DeLib\Encryption.h"
 
 //MMF
 #include	"ImgFlt.h"
