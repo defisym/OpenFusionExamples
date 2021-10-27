@@ -3,11 +3,13 @@
 #include <windows.h>
 #include <stdio.h>
 #include <bcrypt.h>
+#include <wincrypt.h>
 #include <string>
 
 //#include <ntstatus.h>
 
 #pragma comment(lib, "bcrypt.lib")
+#pragma comment(lib, "Crypt32.lib")
 
 constexpr auto ENCRY = true;
 constexpr auto DECRY = false;
@@ -18,8 +20,8 @@ constexpr auto DECRY = false;
 class Encryption
 {
 private:
-	PBYTE InputText = nullptr;
-	PBYTE OutputText = nullptr;
+	PBYTE InputData = nullptr;
+	PBYTE OutputData = nullptr;
 
 	DWORD InputLength = 0;
 	DWORD OutputLength = 0;
@@ -43,9 +45,12 @@ private:
 	char* InputStr = nullptr;
 	char* OutputStr = nullptr;
 
-	void Release(PBYTE Pointer);
-	bool Encrypt_Core(bool Encrypt);
-	
+	DWORD HashLength = 0;
+	LPWSTR HashStr = nullptr;
+
+	void Release(void* Pointer);
+	bool Encrypt_Core(bool Encrypt, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM);
+
 public:
 	Encryption();
 	~Encryption();
@@ -64,18 +69,20 @@ public:
 
 	DWORD GetInputStrLength();
 
-	char* GetOutputStr();		
+	char* GetOutputStr();
 	void ReleaseOutputStr();
 
 	DWORD GetOutputStrLength();
 
 	void GenerateKey(const wchar_t* KeyStr);
 
-	inline bool Encrypt() {
-		return Encrypt_Core(ENCRY);
+	inline bool Encrypt(LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+		return Encrypt_Core(ENCRY, Algorithm);
 	}
-	inline bool Decrypt() {
-		return Encrypt_Core(DECRY);
+	inline bool Decrypt(LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+		return Encrypt_Core(DECRY, Algorithm);
 	}
+
+	LPCWSTR GetHash(LPCWSTR Algorithm = BCRYPT_MD5_ALGORITHM);
 };
 

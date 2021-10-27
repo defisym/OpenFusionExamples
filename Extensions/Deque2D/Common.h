@@ -28,7 +28,7 @@
 #include	"Surface.h"
 
 // My headers
-#include	"Deque2D.h"
+#include	"..\_DeLib\Deque2D.h"
 #include	"Defination.h"
 
 // Specific to this cox
