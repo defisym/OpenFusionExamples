@@ -19,7 +19,12 @@
 
 #define	ACT_ACTION_T				3
 
-#define	ACT_LAST					4
+#define	ACT_ACTION_STV				4
+#define	ACT_ACTION_SCTV				5
+
+#define	ACT_ACTION_SAR				6
+
+#define	ACT_LAST					7
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -41,7 +46,15 @@
 #define EXP_EXPRESSION_TRV			9
 #define EXP_EXPRESSION_TRS			10
 
-#define	EXP_LAST                    11
+#define EXP_EXPRESSION_GVTP			11
+#define EXP_EXPRESSION_GSTP			12
+
+#define EXP_EXPRESSION_GCFN			13
+
+#define EXP_EXPRESSION_GVCTP		14
+#define EXP_EXPRESSION_GSCTP		15
+
+#define	EXP_LAST                    16
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -89,9 +102,12 @@ typedef struct tagRDATA
 	LPVEC FuncNameStack;
 
 	LPSTACK FuncParamStack;
+	LPTPARAM FuncTempParamStack;
 
 	LPLIDX FuncLoopIndex;
 	LPLIDX FuncCurLoopIndex;
+
+	LPLIDX RecursiveIndex;
 
 	LPVEC FuncReturn;
 

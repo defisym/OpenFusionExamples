@@ -66,10 +66,14 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 	rdPtr->FuncNameStack = new VEC;
+
 	rdPtr->FuncParamStack = new STACK;
+	rdPtr->FuncTempParamStack = new TPARAM;
 
 	rdPtr->FuncLoopIndex = new LIDX;
 	rdPtr->FuncCurLoopIndex = new LIDX;
+
+	rdPtr->RecursiveIndex = new LIDX;	
 
 	rdPtr->FuncReturn = new VEC;
 
@@ -93,10 +97,14 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	delete rdPtr->FuncNameStack;
+
 	delete rdPtr->FuncParamStack;
+	delete rdPtr->FuncTempParamStack;
 
 	delete rdPtr->FuncLoopIndex;
 	delete rdPtr->FuncCurLoopIndex;
+
+	delete rdPtr->RecursiveIndex;
 
 	delete rdPtr->FuncReturn;
 

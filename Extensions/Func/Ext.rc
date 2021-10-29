@@ -135,8 +135,16 @@ BEGIN
         MENUITEM "Call Func (multiple or void return value)", IDMN_ACTION_CF
         MENUITEM "Call Func (Ternary)", IDMN_ACTION_T
         MENUITEM SEPARATOR
+        POPUP "Temp Param"
+        BEGIN
+            MENUITEM "Set Temp Param", IDMN_ACTION_STV
+            MENUITEM "Set Temp Param of Current Func", IDMN_ACTION_SCTV
+        END
+        MENUITEM SEPARATOR
         POPUP "Return Value"
         BEGIN
+            MENUITEM "Set Return", IDMN_ACTION_SAR
+            MENUITEM SEPARATOR
             MENUITEM "Set Return Value", IDMN_ACTION_SR
             MENUITEM "Push Return Value", IDMN_ACTION_PR
         END
@@ -173,7 +181,16 @@ BEGIN
             MENUITEM "Get Param (return string)", IDMN_EXPRESSION_GSP
             MENUITEM SEPARATOR
             MENUITEM "Get Param Size", IDMN_EXPRESSION_GPS
+        END        
+        POPUP "Get Temp Param"
+        BEGIN
+            MENUITEM "Get Temp Param (return value)", IDMN_EXPRESSION_GVTP
+            MENUITEM "Get Temp Param (return string)", IDMN_EXPRESSION_GSTP
+            MENUITEM SEPARATOR
+            MENUITEM "Get Current Temp Param (return value)", IDMN_EXPRESSION_GVCTP
+            MENUITEM "Get Current Temp Param (return string)", IDMN_EXPRESSION_GSCTP    
         END
+        MENUITEM SEPARATOR
         POPUP "Get Return"
         BEGIN
             MENUITEM "Get Return (return value)", IDMN_EXPRESSION_GVR
@@ -183,6 +200,8 @@ BEGIN
         END
         MENUITEM SEPARATOR
         MENUITEM "Get Recursive Index", IDMN_EXPRESSION_GRI
+        MENUITEM SEPARATOR
+        MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN
         MENUITEM SEPARATOR
     END
 END
@@ -265,13 +284,20 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_ACTION_SAR            "Set Return %0"
     M_ACTION_SR             "Set Return Value %0"
     M_ACTION_PR             "Push Return Value %0"
     M_ACTION_CF             "Call Func %0, Param %1"
+    M_ACTION_STV            "Set Temp Param %1 = %2 of Func %0"
+    M_ACTION_SCTV           "Set Temp Param %0 = %1 of Current Func"
 
     M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
 
     M_ACT_RET               "Return Value"
+    M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
+
+    M_ACT_PARAMNAME         "Param Name"
+    M_ACT_PARAM             "Param"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -282,12 +308,18 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION_RV            "Func("
-    M_EXPRESSION_RS            "Func$("
+    M_EXPRESSION_RV             "Func("
+    M_EXPRESSION_RS             "Func$("
     
     M_EXPRESSION_GVP            "GetParam("
     M_EXPRESSION_GSP            "GetParam$("
+
+    M_EXPRESSION_GVTP           "GetTempParam("
+    M_EXPRESSION_GSTP           "GetTempParam$("
     
+    M_EXPRESSION_GVCTP          "GetCurTempParam("
+    M_EXPRESSION_GSCTP          "GetCurTempParam$("
+
     M_EXPRESSION_GVR            "GetRet("
     M_EXPRESSION_GSR            "GetRet$("
 
@@ -298,6 +330,8 @@ BEGIN
 
     M_EXPRESSION_TRV            "Ternary("
     M_EXPRESSION_TRS            "Ternary$("
+
+    M_EXPRESSION_GCFN           "CurFuncName$("
     
     M_EXP_PARAM                 "Func Param, E.G. Param1|Param2|Param3|..."
     M_EXP_GP                    "Param Position"
@@ -305,6 +339,8 @@ BEGIN
     M_EXP_BOOL                  "Bool, True = Return A, False = Return B"
     M_EXP_RETA                  "Return Value A"
     M_EXP_RETB                  "Return Value B"
+
+    M_EXP_TEMPPARAM             "Temp Param Name"
 END
 
 #endif    // English (U.S.) resources

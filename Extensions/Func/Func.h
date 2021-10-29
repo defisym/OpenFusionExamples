@@ -45,6 +45,20 @@ inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
 	}
 }
 
+inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
+	std::wregex Regex(L"\\|");
+
+	//iterate lines
+	std::wsregex_token_iterator pos(Param.begin(), Param.end(), Regex, -1);
+	std::wsregex_token_iterator end;
+
+	for (; pos != end; pos++) {
+		//current str
+		std::wstring Tmp = pos->str();
+		rdPtr->FuncReturn->emplace_back(Tmp);
+	}
+}
+
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	if (Val == (int)Val) {
 		return (int)Val;
@@ -58,7 +72,38 @@ inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	}
 }
 
-#define ReturnFloat(Val) ReturnFloat(rdPtr,Val)
+#define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
+
+inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Param) {
+	rdPtr->FuncNameStack->emplace_back(FuncName);
+	rdPtr->FuncParamStack->emplace_back();
+	UpdateParam(rdPtr, Param);
+	rdPtr->FuncReturn->clear();
+
+	(*rdPtr->RecursiveIndex)[FuncName] += 1;
+
+	//Note: if your MMF version is under R293.9, you need to use code below instead of just a single line CallEvent(ONFUNC) to avoid crash
+
+	//LPRH pRh = rdPtr->rHo.hoAdRunHeader;
+	//expression* saveExpToken = pRh->rh4.rh4ExpToken;
+	//CallEvent(ONFUNC);
+	//pRh->rh4.rh4ExpToken = saveExpToken;
+
+	//Call Func;
+	CallEvent(ONFUNC);
+
+	rdPtr->FuncNameStack->pop_back();
+	rdPtr->FuncParamStack->pop_back();
+	rdPtr->FuncTempParamStack->erase(FuncName);
+
+	(*rdPtr->RecursiveIndex)[FuncName] -= 1;
+
+	if ((*rdPtr->RecursiveIndex)[FuncName] == 0) {
+		rdPtr->RecursiveIndex->erase(FuncName);
+	}
+}
+
+#define CallFuncCore(FuncName, Param) CallFuncCore(rdPtr, FuncName, Param)
 
 #endif // !_FUNC_
 

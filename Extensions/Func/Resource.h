@@ -32,6 +32,11 @@
 
 #define IDMN_ACTION_T     		25003
 
+#define IDMN_ACTION_STV    		25004
+#define IDMN_ACTION_SCTV   		25005
+
+#define IDMN_ACTION_SAR   		25006
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -40,8 +45,18 @@
 
 #define M_ACTION_T              5003
 
+#define M_ACTION_STV            5004
+#define M_ACTION_SCTV           5005
+
+#define M_ACTION_SAR            5006
+
 // Titles of action parameters
 #define M_ACT_RET				 5501
+
+#define M_ACT_PARAMNAME			 5502
+#define M_ACT_PARAM				 5503
+
+#define M_ACT_RETA				 5504
 
 
 //	Conditions
@@ -83,6 +98,14 @@
 #define IDMN_EXPRESSION_TRV		27009
 #define IDMN_EXPRESSION_TRS		27010
 
+#define IDMN_EXPRESSION_GVTP	27011
+#define IDMN_EXPRESSION_GSTP	27012
+
+#define IDMN_EXPRESSION_GCFN	27013
+
+#define IDMN_EXPRESSION_GVCTP	27014
+#define IDMN_EXPRESSION_GSCTP	27015
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -101,6 +124,14 @@
 #define M_EXPRESSION_TRV		 7009
 #define M_EXPRESSION_TRS		 7010
 
+#define M_EXPRESSION_GVTP	     7011
+#define M_EXPRESSION_GSTP	     7012
+
+#define M_EXPRESSION_GCFN	     7013
+
+#define M_EXPRESSION_GVCTP	     7014
+#define M_EXPRESSION_GSCTP	     7015
+
 // Names of expression parameters
 #define M_EXP_PARAM				 7500
 #define M_EXP_GP				 7501
@@ -108,6 +139,8 @@
 #define M_EXP_BOOL				 7502
 #define M_EXP_RETA				 7503
 #define M_EXP_RETB				 7504
+
+#define M_EXP_TEMPPARAM			 7505
 
 // Next default values for new objects
 // 

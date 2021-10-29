@@ -4,8 +4,11 @@
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
 
-typedef std::vector<size_t> LIDX;
+typedef std::map<std::wstring, size_t> LIDX;
 typedef LIDX* LPLIDX;
+
+typedef std::map<std::wstring, std::map<std::wstring, std::wstring>> TPARAM;
+typedef TPARAM* LPTPARAM;
 
 typedef std::vector<std::vector<std::wstring>> STACK;
 typedef STACK* LPSTACK;
@@ -37,7 +40,10 @@ typedef STRING* LPSTRING;
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
 
-#define Param(Pos) rdPtr->FuncParamStack->back().at(Pos)
+#define GetParam(Pos) rdPtr->FuncParamStack->back().at(Pos)
+
+#define HasTempParam(FuncName, ParamName) (((*rdPtr->FuncTempParamStack).count(FuncName) != 0)&&((*rdPtr->FuncTempParamStack)[FuncName].count(ParamName) != 0))
+#define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParamStack)[FuncName][ParamName]
 
 #define Return(Pos) rdPtr->FuncReturn->at(Pos)
 
