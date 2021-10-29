@@ -24,7 +24,10 @@
 
 #define	ACT_ACTION_SAR				6
 
-#define	ACT_LAST					7
+#define	ACT_ACTION_SLI				7
+#define	ACT_ACTION_SL				8
+
+#define	ACT_LAST					9
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -54,7 +57,9 @@
 #define EXP_EXPRESSION_GVCTP		14
 #define EXP_EXPRESSION_GSCTP		15
 
-#define	EXP_LAST                    16
+#define EXP_EXPRESSION_GLI			16
+
+#define	EXP_LAST                    17
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -133,7 +133,13 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Call Func (multiple or void return value)", IDMN_ACTION_CF
-        MENUITEM "Call Func (Ternary)", IDMN_ACTION_T
+        MENUITEM "Call Func (ternary)", IDMN_ACTION_T
+        MENUITEM SEPARATOR
+        POPUP "Loop"
+        BEGIN
+            MENUITEM "Set LoopIndex", IDMN_ACTION_SLI
+            MENUITEM "Stop Loop", IDMN_ACTION_SL
+        END
         MENUITEM SEPARATOR
         POPUP "Temp Param"
         BEGIN
@@ -202,6 +208,8 @@ BEGIN
         MENUITEM "Get Recursive Index", IDMN_EXPRESSION_GRI
         MENUITEM SEPARATOR
         MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN
+        MENUITEM SEPARATOR
+        MENUITEM "Get Func LoopIndex",IDMN_EXPRESSION_GLI
         MENUITEM SEPARATOR
     END
 END
@@ -287,7 +295,11 @@ BEGIN
     M_ACTION_SAR            "Set Return %0"
     M_ACTION_SR             "Set Return Value %0"
     M_ACTION_PR             "Push Return Value %0"
-    M_ACTION_CF             "Call Func %0, Param %1"
+    
+    M_ACTION_CF             "Call Func %0, Param %1, Loop %2 Times"
+    M_ACTION_SLI            "Set Func %0 LoopIndex to %1"
+    M_ACTION_SL             "Stop Func %0 Loop"
+    
     M_ACTION_STV            "Set Temp Param %1 = %2 of Func %0"
     M_ACTION_SCTV           "Set Temp Param %0 = %1 of Current Func"
 
@@ -298,6 +310,9 @@ BEGIN
 
     M_ACT_PARAMNAME         "Param Name"
     M_ACT_PARAM             "Param"
+
+    M_ACT_LOOP              "Number of Loop"
+    M_ACT_LOOPINDEX         "Set LoopIndex"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -332,6 +347,8 @@ BEGIN
     M_EXPRESSION_TRS            "Ternary$("
 
     M_EXPRESSION_GCFN           "CurFuncName$("
+
+    M_EXPRESSION_GLI            "FuncLoopIndex("
     
     M_EXP_PARAM                 "Func Param, E.G. Param1|Param2|Param3|..."
     M_EXP_GP                    "Param Position"

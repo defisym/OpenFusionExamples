@@ -31,7 +31,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SR, M_ACTION_SR, ACT_ACTION_SR,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
 		IDMN_ACTION_PR, M_ACTION_PR, ACT_ACTION_PR,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
 
-		IDMN_ACTION_CF, M_ACTION_CF, ACT_ACTION_CF,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING, M_CND_FUNCNAME, M_EXP_PARAM,
+		IDMN_ACTION_CF, M_ACTION_CF, ACT_ACTION_CF,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING, PARAM_EXPRESSION, M_CND_FUNCNAME, M_EXP_PARAM, M_ACT_LOOP,
 		
 		IDMN_ACTION_T, M_ACTION_T, ACT_ACTION_T,	0, 5,PARAM_EXPRESSION,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_EXP_BOOL, M_CND_FUNCNAME, M_EXP_PARAM, M_CND_FUNCNAME, M_EXP_PARAM,
 
@@ -39,6 +39,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SCTV, M_ACTION_SCTV, ACT_ACTION_SCTV,	0, 2,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_PARAMNAME, M_ACT_PARAM,
 
 		IDMN_ACTION_SAR, M_ACTION_SAR, ACT_ACTION_SAR,	0, 1,PARAM_EXPSTRING, M_ACT_RETA,
+
+		IDMN_ACTION_SLI, M_ACTION_SLI, ACT_ACTION_SLI,	0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION, M_CND_FUNCNAME, M_ACT_LOOPINDEX,
+		IDMN_ACTION_SL, M_ACTION_SL, ACT_ACTION_SL,	0, 1, PARAM_EXPSTRING, M_CND_FUNCNAME,
 		};
 
 // Definitions of parameters for each expression
@@ -77,6 +80,9 @@ short expressionsInfos[]=
 		//Get Current Temp Param
 		IDMN_EXPRESSION_GVCTP, M_EXPRESSION_GVCTP, EXP_EXPRESSION_GVCTP, 0, 1, EXPPARAM_STRING,  M_EXP_TEMPPARAM,
 		IDMN_EXPRESSION_GSCTP, M_EXPRESSION_GSCTP, EXP_EXPRESSION_GSCTP, EXPFLAG_STRING,1, EXPPARAM_STRING, M_EXP_TEMPPARAM,
+
+		//GetLoopIndex
+		IDMN_EXPRESSION_GLI, M_EXPRESSION_GLI, EXP_EXPRESSION_GLI, 0, 1,EXPPARAM_STRING,M_CND_FUNCNAME,
 
 		};
 
@@ -145,8 +151,37 @@ short WINAPI DLLExport PushReturnValue(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport CallFunc(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
 
-	CallFuncCore(FuncName, Param);
+	(*rdPtr->FuncLoopIndex)[FuncName] = LoopIndex;
+
+	for ((*rdPtr->FuncCurLoopIndex)[FuncName] = 0; (*rdPtr->FuncCurLoopIndex)[FuncName] < LoopIndex; (*rdPtr->FuncCurLoopIndex)[FuncName]++) {
+		CallFuncCore(FuncName, Param);
+	}
+
+	rdPtr->FuncLoopIndex->erase(FuncName);
+	rdPtr->FuncCurLoopIndex->erase(FuncName);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetLoopIndex(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
+
+	if (rdPtr->FuncLoopIndex->count(FuncName) != 0) {
+		(*rdPtr->FuncCurLoopIndex)[FuncName] = LoopIndex;
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport StopLoop(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->FuncLoopIndex->count(FuncName) != 0) {
+		(*rdPtr->FuncCurLoopIndex)[FuncName] = (*rdPtr->FuncLoopIndex)[FuncName];
+	}
 
 	return 0;
 }
@@ -362,6 +397,17 @@ long WINAPI DLLExport GetCurrentFuncName(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->FuncNameStack->back().c_str();
 }
 
+long WINAPI DLLExport GetLoopIndex(LPRDATA rdPtr, long param1) {
+	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	if (rdPtr->FuncLoopIndex->count(FuncName) != 0) {
+		return (*rdPtr->FuncCurLoopIndex)[FuncName];
+	}
+	else {
+		return -1;
+	}
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -390,6 +436,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetCurrentTempParam,
 
 			SetAllReturn,
+
+			SetLoopIndex,
+			StopLoop,
 
 			0
 			};
@@ -420,6 +469,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetCurrentTempParamRV,
 			GetCurrentTempParamRS,
+
+			GetLoopIndex,
 
 			0
 			};

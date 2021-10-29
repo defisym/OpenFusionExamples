@@ -37,6 +37,9 @@
 
 #define IDMN_ACTION_SAR   		25006
 
+#define IDMN_ACTION_SLI   		25007
+#define IDMN_ACTION_SL   		25008
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -50,6 +53,9 @@
 
 #define M_ACTION_SAR            5006
 
+#define M_ACTION_SLI            5007
+#define M_ACTION_SL             5008
+
 // Titles of action parameters
 #define M_ACT_RET				 5501
 
@@ -57,6 +63,9 @@
 #define M_ACT_PARAM				 5503
 
 #define M_ACT_RETA				 5504
+
+#define M_ACT_LOOP  			 5505
+#define M_ACT_LOOPINDEX			 5506
 
 
 //	Conditions
@@ -106,6 +115,8 @@
 #define IDMN_EXPRESSION_GVCTP	27014
 #define IDMN_EXPRESSION_GSCTP	27015
 
+#define IDMN_EXPRESSION_GLI 	27016
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -131,6 +142,8 @@
 
 #define M_EXPRESSION_GVCTP	     7014
 #define M_EXPRESSION_GSCTP	     7015
+
+#define M_EXPRESSION_GLI	     7016
 
 // Names of expression parameters
 #define M_EXP_PARAM				 7500

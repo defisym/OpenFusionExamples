@@ -73,7 +73,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->FuncLoopIndex = new LIDX;
 	rdPtr->FuncCurLoopIndex = new LIDX;
 
-	rdPtr->RecursiveIndex = new LIDX;	
+	rdPtr->RecursiveIndex = new LIDX;
 
 	rdPtr->FuncReturn = new VEC;
 

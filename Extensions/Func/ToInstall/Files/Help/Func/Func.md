@@ -66,10 +66,16 @@ pRh->rh4.rh4ExpToken = saveExpToken;
 ## Expression
 
 - Call Func
-  - *Use function name and params to call a function*
+  - *Use function name and params to call and loop a function*
   
   - Call Func (return value)
   - Call Func (return string)
+
+- Loop
+  - *Loop control for action funcs, works alomst the same as fastloop, but make it easier to pass temp values*
+  
+  - Set LoopIndex
+  - Stop Loop
 
 - Ternary
   - *return bool?A:B*
@@ -108,6 +114,10 @@ pRh->rh4.rh4ExpToken = saveExpToken;
 - Get Recursive Index
   - *Get current call num of current function in function stack*
   - *check `Recursive` section in example mfa to get more information about usage*
+  - *return -1 if no func match*
 
 - Get Current FuncName
   - *e.g. when retriving temp values of current func, `GetTempParam$( "Func", CurFuncName$( "Func" ), "ParamName" )`*
+
+- Get Func LoopIndex
+  - *return -1 if no func match*
