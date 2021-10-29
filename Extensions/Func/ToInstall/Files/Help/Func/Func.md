@@ -45,8 +45,7 @@ pRh->rh4.rh4ExpToken = saveExpToken;
 
 - Return Value
   - *Note : ret values will be erased on next function call*
-  - *Note : currently has a bug, if you call a function via expression, return value must be the last action of the event*
-
+  
   - Set Return
     - *Clear return vector and set return use the same syntax of `Call Func` param*
 
@@ -67,6 +66,7 @@ pRh->rh4.rh4ExpToken = saveExpToken;
 
 - Call Func
   - *Use function name and params to call and loop a function*
+  - *if you encountered crash issues, and your fusion is older than `R293.9`, please check the `Note` section and follow steps to build a compatible version*
   
   - Call Func (return value)
   - Call Func (return string)
