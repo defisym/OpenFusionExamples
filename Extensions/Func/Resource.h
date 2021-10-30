@@ -77,8 +77,20 @@
 // Commands of condition menu
 #define IDMN_CONDITION_OF		26000
 
+#define IDMN_CONDITION_FHPA		26001
+#define IDMN_CONDITION_FHRA		26002
+
+#define IDMN_CONDITION_FHTP		26003
+#define IDMN_CONDITION_CFHTP	26004
+
 // Condition strings
 #define M_CONDITION_OF			 6000
+
+#define M_CONDITION_FHPA	     6001
+#define M_CONDITION_FHRA		 6002
+
+#define M_CONDITION_FHTP		 6003
+#define M_CONDITION_CFHTP		 6004
 
 // Titles of condition parameters
 #define M_CND_FUNCNAME  		 6501

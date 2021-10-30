@@ -118,6 +118,25 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Func", IDMN_CONDITION_OF
         MENUITEM SEPARATOR
+        POPUP "Validity"
+        BEGIN
+            POPUP "Return"
+            BEGIN
+                MENUITEM "Previous Func Has Return At", IDMN_CONDITION_FHRA
+            END
+            MENUITEM SEPARATOR
+            POPUP "Param"
+            BEGIN
+                MENUITEM "Curernt Func Has Param At", IDMN_CONDITION_FHPA
+            END
+            MENUITEM SEPARATOR
+            POPUP "Temp Param"
+            BEGIN                
+                MENUITEM "Func Has Temp Param", IDMN_CONDITION_FHTP
+                MENUITEM "Curernt Func Has Temp Param", IDMN_CONDITION_CFHTP                
+            END
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -137,22 +156,22 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Loop"
         BEGIN
-            MENUITEM "Set LoopIndex", IDMN_ACTION_SLI
-            MENUITEM "Stop Loop", IDMN_ACTION_SL
+            MENUITEM "Set Func's Loop Index", IDMN_ACTION_SLI
+            MENUITEM "Stop Func Loop", IDMN_ACTION_SL
         END
         MENUITEM SEPARATOR
         POPUP "Temp Param"
         BEGIN
-            MENUITEM "Set Temp Param", IDMN_ACTION_STV
-            MENUITEM "Set Temp Param of Current Func", IDMN_ACTION_SCTV
+            MENUITEM "Set Func's Temp Param", IDMN_ACTION_STV
+            MENUITEM "Set Current Func's Temp Param", IDMN_ACTION_SCTV
         END
         MENUITEM SEPARATOR
         POPUP "Return Value"
         BEGIN
-            MENUITEM "Set Return", IDMN_ACTION_SAR
+            MENUITEM "Set Current Func's Return", IDMN_ACTION_SAR
             MENUITEM SEPARATOR
-            MENUITEM "Set Return Value", IDMN_ACTION_SR
-            MENUITEM "Push Return Value", IDMN_ACTION_PR
+            MENUITEM "Set Current Func's Return Value", IDMN_ACTION_SR
+            MENUITEM "Push Current Func's Return Value", IDMN_ACTION_PR
         END
         MENUITEM SEPARATOR
     END
@@ -183,33 +202,36 @@ BEGIN
         MENUITEM SEPARATOR        
         POPUP "Get Param"
         BEGIN
-            MENUITEM "Get Param (return value)", IDMN_EXPRESSION_GVP
-            MENUITEM "Get Param (return string)", IDMN_EXPRESSION_GSP
+            MENUITEM "Get Current Func's Param (return value)", IDMN_EXPRESSION_GVP
+            MENUITEM "Get Current Func's Param (return string)", IDMN_EXPRESSION_GSP
             MENUITEM SEPARATOR
-            MENUITEM "Get Param Size", IDMN_EXPRESSION_GPS
+            MENUITEM "Get Current Func's Number of Params ", IDMN_EXPRESSION_GPS
         END        
         POPUP "Get Temp Param"
         BEGIN
-            MENUITEM "Get Temp Param (return value)", IDMN_EXPRESSION_GVTP
-            MENUITEM "Get Temp Param (return string)", IDMN_EXPRESSION_GSTP
+            MENUITEM "Get Func's Temp Param (return value)", IDMN_EXPRESSION_GVTP
+            MENUITEM "Get Func's Temp Param (return string)", IDMN_EXPRESSION_GSTP
             MENUITEM SEPARATOR
-            MENUITEM "Get Current Temp Param (return value)", IDMN_EXPRESSION_GVCTP
-            MENUITEM "Get Current Temp Param (return string)", IDMN_EXPRESSION_GSCTP    
+            MENUITEM "Get Current Func's Temp Param (return value)", IDMN_EXPRESSION_GVCTP
+            MENUITEM "Get Current Func's Temp Param (return string)", IDMN_EXPRESSION_GSCTP    
         END
         MENUITEM SEPARATOR
         POPUP "Get Return"
         BEGIN
-            MENUITEM "Get Return (return value)", IDMN_EXPRESSION_GVR
-            MENUITEM "Get Return (return string)", IDMN_EXPRESSION_GSR
+            MENUITEM "Get Previous Func's Return Value (return value)", IDMN_EXPRESSION_GVR
+            MENUITEM "Get Previous Func's Return Value (return string)", IDMN_EXPRESSION_GSR
             MENUITEM SEPARATOR
-            MENUITEM "Get Return Size", IDMN_EXPRESSION_GRS
+            MENUITEM "Get Previous Func's Number of Return Values", IDMN_EXPRESSION_GRS
         END
         MENUITEM SEPARATOR
-        MENUITEM "Get Recursive Index", IDMN_EXPRESSION_GRI
+        POPUP "Get Index"
+        BEGIN
+            MENUITEM "Get Func's Loop Index",IDMN_EXPRESSION_GLI
+            MENUITEM SEPARATOR
+            MENUITEM "Get Func's Recursive Index", IDMN_EXPRESSION_GRI
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN
-        MENUITEM SEPARATOR
-        MENUITEM "Get Func LoopIndex",IDMN_EXPRESSION_GLI
+        MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN        
         MENUITEM SEPARATOR
     END
 END
@@ -318,6 +340,14 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_OF          "%o On Func %0"
+    
+    M_CONDITION_FHRA        "%o Previous Func Has Return At %0"
+        
+    M_CONDITION_FHTP        "%o Func %0 Has Temp Param %1"
+    M_CONDITION_CFHTP       "%o Curernt Func Has Temp Param %0"
+
+    M_CONDITION_FHPA        "%o Curernt Func Has Param At %0"
+
     M_CND_FUNCNAME          "Func Name"
 END
 

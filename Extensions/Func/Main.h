@@ -7,7 +7,14 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_OF			0
-#define	CND_LAST					1
+
+#define	CND_CONDITION_FHPA			1
+#define	CND_CONDITION_FHRA			2
+
+#define	CND_CONDITION_FHTP			3
+#define	CND_CONDITION_CFHTP			4
+
+#define	CND_LAST					5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

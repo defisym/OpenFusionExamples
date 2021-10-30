@@ -32,6 +32,10 @@ inline bool StrIsNum(const std::wstring& Src) {
 }
 
 inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
+	if (Param == Empty_Str) {
+		return;
+	}
+
 	std::wregex Regex(L"\\|");
 
 	//iterate lines
@@ -46,6 +50,10 @@ inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
 }
 
 inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
+	if (Param == Empty_Str) {
+		return;
+	}
+
 	std::wregex Regex(L"\\|");
 
 	//iterate lines
@@ -82,7 +90,7 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 
 	(*rdPtr->RecursiveIndex)[FuncName] += 1;
 
-	//Note: if your MMF version is under R293.9, you need to use code below instead of just a single line CallEvent(ONFUNC) to avoid crash
+	//Note: if your MMF version is below R293.9, you need to use code below instead of just a single line CallEvent(ONFUNC) to avoid crash
 
 	//LPRH pRh = rdPtr->rHo.hoAdRunHeader;
 	//expression* saveExpToken = pRh->rh4.rh4ExpToken;
@@ -93,13 +101,13 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 	CallEvent(ONFUNC);
 
 	rdPtr->FuncNameStack->pop_back();
-	rdPtr->FuncParamStack->pop_back();
-	rdPtr->FuncTempParamStack->erase(FuncName);
+	rdPtr->FuncParamStack->pop_back();	
 
 	(*rdPtr->RecursiveIndex)[FuncName] -= 1;
 
 	if ((*rdPtr->RecursiveIndex)[FuncName] == 0) {
 		rdPtr->RecursiveIndex->erase(FuncName);
+		rdPtr->FuncTempParamStack->erase(FuncName);
 	}
 }
 
