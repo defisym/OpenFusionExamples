@@ -6,29 +6,23 @@ Call Functions via Expression or Action
 
 ## Properties
 
-This object has no properties
+- Compatibility
+  - Compatible Mode
+    - *If your fusion version is below R293.9, please enable compatible mode to avoid crash in some cases when calling event by expression.*
 
 ## Known issue
 
-First function call will cost much more time than the second and following ones
+If you set an func's return value or temp param to another expression func's return value directly, you will got a blank string instead of it's return value.
+
+Please use another alterable value or global value to store the previous return value and then use it somewhere.
+
+For cases that you only need to use an expression's return as parent's return, use `Pass Prevous Func's Return` instead of `Set Current Func's Return` as a temporary solution.
 
 ## Note
 
 To use this object, you need to update to `R293.9`, which contains a fix to avoid crash when calling event via expression [Changelog](http://www.clickteam.com/webftp/files/mmf2/ChangeLogs/293.9.txt)
 
-Or you need to use the code below to replace `CallEvent(ONFUNC)` in function `CallFuncCore` at `Func.h`, then build your own `.mfx`(don't forget to change the Inc/Lib/Output path in properties)
-
-```C++
-// Note: if your MMF version is below R293.9, you need to use code below instead of just a single line CallEvent(ONFUNC) to avoid crash
-
-LPRH pRh = rdPtr->rHo.hoAdRunHeader;
-expression* saveExpToken = pRh->rh4.rh4ExpToken;
-CallEvent(ONFUNC);
-pRh->rh4.rh4ExpToken = saveExpToken;
-
-//Call Func;
-//CallEvent(ONFUNC);
-```
+Or you need to open compatible mode in object properties
 
 ## Action
 
@@ -71,6 +65,9 @@ pRh->rh4.rh4ExpToken = saveExpToken;
     - *Add a return value to current function*
     - *if function is called by expression, expression will only return the first return value you pushed by this action*
     - *use action `Call Func` above to return multiple values*
+  
+  - Pass Prevous Func's Return
+    - *pass an expression's return value as parent's return value*
 
 ## Condition
 

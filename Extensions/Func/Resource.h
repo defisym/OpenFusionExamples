@@ -46,6 +46,8 @@
 #define IDMN_ACTION_SLI   		25007
 #define IDMN_ACTION_SL   		25008
 
+#define IDMN_ACTION_PASSRET		25009
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -61,6 +63,8 @@
 
 #define M_ACTION_SLI            5007
 #define M_ACTION_SL             5008
+
+#define M_ACTION_PASSRET        5009
 
 // Titles of action parameters
 #define M_ACT_RET				 5501

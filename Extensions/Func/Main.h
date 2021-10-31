@@ -34,7 +34,9 @@
 #define	ACT_ACTION_SLI				7
 #define	ACT_ACTION_SL				8
 
-#define	ACT_LAST					9
+#define	ACT_ACTION_PASSRET			9
+
+#define	ACT_LAST					10
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

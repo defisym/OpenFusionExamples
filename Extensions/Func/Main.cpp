@@ -48,6 +48,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SLI, M_ACTION_SLI, ACT_ACTION_SLI,	0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION, M_CND_FUNCNAME, M_ACT_LOOPINDEX,
 		IDMN_ACTION_SL, M_ACTION_SL, ACT_ACTION_SL,	0, 1, PARAM_EXPSTRING, M_CND_FUNCNAME,
+
+		IDMN_ACTION_PASSRET, M_ACTION_PASSRET, ACT_ACTION_PASSRET,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
 		};
 
 // Definitions of parameters for each expression
@@ -157,6 +159,12 @@ short WINAPI DLLExport SetCurrentTempParam(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
+short WINAPI DLLExport PassReturn(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return 0;
+}
+
 short WINAPI DLLExport SetAllReturn(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	rdPtr->FuncReturn->clear();
@@ -165,8 +173,9 @@ short WINAPI DLLExport SetAllReturn(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetReturnValue(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport SetReturnValue(LPRDATA rdPtr, long param1, long param2) {	
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	rdPtr->FuncReturn->clear();
 	rdPtr->FuncReturn->emplace_back(Return);
 
@@ -488,6 +497,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetLoopIndex,
 			StopLoop,
+
+			PassReturn,
 
 			0
 			};

@@ -167,11 +167,13 @@ BEGIN
         END
         MENUITEM SEPARATOR
         POPUP "Return Value"
-        BEGIN
+        BEGIN            
             MENUITEM "Set Current Func's Return", IDMN_ACTION_SAR
             MENUITEM SEPARATOR
             MENUITEM "Set Current Func's Return Value", IDMN_ACTION_SR
             MENUITEM "Push Current Func's Return Value", IDMN_ACTION_PR
+            MENUITEM SEPARATOR
+            MENUITEM "Pass Prevous Func's Return", IDMN_ACTION_PASSRET            
         END
         MENUITEM SEPARATOR
     END
@@ -314,9 +316,11 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_SAR            "Set Return %0"
-    M_ACTION_SR             "Set Return Value %0"
+    M_ACTION_SAR            "Set Return to %0"
+    M_ACTION_SR             "Set Return Value to %0"
     M_ACTION_PR             "Push Return Value %0"
+
+    M_ACTION_PASSRET        "Pass Return of %0"
     
     M_ACTION_CF             "Call Func %0, Param %1, Loop %2 Times"
     M_ACTION_SLI            "Set Func %0 LoopIndex to %1"
