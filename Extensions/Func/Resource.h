@@ -11,6 +11,12 @@
 #define	IDST_COMMENT			131
 #define	IDST_HTTP				132
 
+// Obj properties
+#define IDS_PROP_COMPATIBLEMODE_TEXTTITLE       200
+
+#define IDS_PROP_COMPATIBLEMODE_CHECK           201
+#define IDS_PROP_COMPATIBLEMODE_CHECK_INFO      202
+
 // Dialog Box ID
 #define DB_SETUP                20003
 

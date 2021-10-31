@@ -26,6 +26,8 @@ enum {
 //	PROPID_CHECK,
 //	PROPID_COMBO,
 //	PROPID_COLOR,
+	PROPID_COMPATIBLEMODE_TEXTTITLE,
+	PROPID_COMPATIBLEMODE_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -50,6 +52,9 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group		(PROPID_COMPATIBLEMODE_TEXTTITLE,	IDS_PROP_COMPATIBLEMODE_TEXTTITLE,		IDS_PROP_COMPATIBLEMODE_TEXTTITLE),
+	PropData_CheckBox	(PROPID_COMPATIBLEMODE_CHECK,		IDS_PROP_COMPATIBLEMODE_CHECK,			IDS_PROP_COMPATIBLEMODE_CHECK_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -673,6 +678,7 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_COMBO:
 //		return new CPropDWordValue(edPtr->nComboIndex);
 //	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -693,6 +699,11 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_CHECK:
 //		return edPtr->nCheck;
 //	}
+
+	switch (nPropID) {
+	case PROPID_COMPATIBLEMODE_CHECK:
+		return edPtr->CompatibleMode;
+	}
 
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
@@ -779,6 +790,13 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 //		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
 //		break;
 //	}
+
+	switch (nPropID) {
+	case PROPID_COMPATIBLEMODE_CHECK:
+		edPtr->CompatibleMode = nCheck;
+		break;
+	}
+
 #endif // !defined(RUN_ONLY)
 }
 

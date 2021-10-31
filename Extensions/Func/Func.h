@@ -35,11 +35,9 @@ inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
 	if (Param == Empty_Str) {
 		return;
 	}
-
-	std::wregex Regex(L"\\|");
-
+		
 	//iterate lines
-	std::wsregex_token_iterator pos(Param.begin(), Param.end(), Regex, -1);
+	std::wsregex_token_iterator pos(Param.begin(), Param.end(), *rdPtr->ParamRegex, -1);
 	std::wsregex_token_iterator end;
 
 	for (; pos != end; pos++) {
@@ -54,10 +52,8 @@ inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
 		return;
 	}
 
-	std::wregex Regex(L"\\|");
-
 	//iterate lines
-	std::wsregex_token_iterator pos(Param.begin(), Param.end(), Regex, -1);
+	std::wsregex_token_iterator pos(Param.begin(), Param.end(), *rdPtr->ParamRegex, -1);
 	std::wsregex_token_iterator end;
 
 	for (; pos != end; pos++) {
@@ -90,15 +86,17 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 
 	(*rdPtr->RecursiveIndex)[FuncName] += 1;
 
-	//Note: if your MMF version is below R293.9, you need to use code below instead of just a single line CallEvent(ONFUNC) to avoid crash
-
-	//LPRH pRh = rdPtr->rHo.hoAdRunHeader;
-	//expression* saveExpToken = pRh->rh4.rh4ExpToken;
-	//CallEvent(ONFUNC);
-	//pRh->rh4.rh4ExpToken = saveExpToken;
-
 	//Call Func;
-	CallEvent(ONFUNC);
+	if (rdPtr->CompatibleMode) {
+		//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
+		LPRH pRh = rdPtr->rHo.hoAdRunHeader;
+		expression* saveExpToken = pRh->rh4.rh4ExpToken;
+		CallEvent(ONFUNC);
+		pRh->rh4.rh4ExpToken = saveExpToken;
+	}
+	else {
+		CallEvent(ONFUNC);
+	}	
 
 	rdPtr->FuncNameStack->pop_back();
 	rdPtr->FuncParamStack->pop_back();	

@@ -390,6 +390,14 @@ BEGIN
     M_EXP_TEMPPARAM             "Temp Param Name"
 END
 
+STRINGTABLE
+BEGIN
+    IDS_PROP_COMPATIBLEMODE_TEXTTITLE   "Compatibility"
+    
+    IDS_PROP_COMPATIBLEMODE_CHECK       "Compatible Mode"
+    IDS_PROP_COMPATIBLEMODE_CHECK_INFO  "If your fusion version is below R293.9, please enable compatible mode to avoid crash in some cases when calling event by expression."
+END
+
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

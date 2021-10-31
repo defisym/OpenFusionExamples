@@ -82,6 +82,8 @@ typedef struct tagEDATA_V1
 //	short			swidth;
 //	short			sheight;
 
+	bool CompatibleMode;
+
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
 
@@ -111,7 +113,11 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	bool CompatibleMode;
+
 	LPVEC FuncNameStack;
+
+	std::wregex* ParamRegex;
 
 	LPSTACK FuncParamStack;
 	LPTPARAM FuncTempParamStack;
