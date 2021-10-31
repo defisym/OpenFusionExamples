@@ -9,6 +9,7 @@ Call Functions via Expression or Action
 - Compatibility
   - Compatible Mode
     - *If your fusion version is below R293.9, please enable compatible mode to avoid crash in some cases when calling event by expression.*
+    - *some work to avoid crash before calling event is done by runtime above R293.9.*
 
 ## Known issue
 
@@ -67,7 +68,7 @@ Or you need to open compatible mode in object properties
     - *use action `Call Func` above to return multiple values*
   
   - Pass Prevous Func's Return
-    - *pass an expression's return value as parent's return value*
+    - *pass an expression's return value as parent's return value, to bypass a known issue to pass return values by `Set Current Func's Return`*
 
 ## Condition
 
