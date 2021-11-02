@@ -21,6 +21,8 @@ typedef STRING* LPSTRING;
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 
+#define Delimiter _T("|")
+
 #define ONFUNC	0
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);

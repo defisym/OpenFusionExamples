@@ -14,10 +14,46 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
-//if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
-inline const std::wstring NewLineEscape(const wchar_t* Src) {
-	std::wregex NewLineEscape(_T("(\\\\r\\\\n)"));
-	return std::regex_replace(Src, NewLineEscape, L"\r\n").c_str();
+inline double stod(const wchar_t* p) {
+	double r = 0.0;
+	bool neg = false;
+
+	if (*p == L'-') {
+		neg = true;
+		++p;
+	}
+	if (*p == L'+') {
+		++p;
+	}
+
+	while (*p >= L'0' && *p <= L'9') {
+		r = (r * 10.0) + (*p - L'0');
+		++p;
+	}
+
+	if (*p == L'.') {
+		double f = 0.0;
+		int n = 0;
+		++p;
+
+		while (*p >= L'0' && *p <= L'9') {
+			f = (f * 10.0) + (*p - L'0');
+			++p;
+			++n;
+		}
+
+		r += f / std::pow(10.0, n);
+	}
+
+	if (neg) {
+		r = -r;
+	}
+
+	return r;
+}
+
+inline float stof(const std::wstring& p) {
+	return (float)stod(p.c_str());
 }
 
 inline bool StrIsNum(const wchar_t* Src) {
@@ -40,15 +76,18 @@ inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPVEC Tar) {
 		return;
 	}
 
-	//iterate
-	std::wsregex_token_iterator pos(Param.begin(), Param.end(), *rdPtr->ParamRegex, -1);
-	std::wsregex_token_iterator end;
+	size_t start = Param.find_first_not_of(Delimiter), end = start;
 
-	for (; pos != end; pos++) {
-		//current str
-		std::wstring Tmp = pos->str();
-		Tar->emplace_back(Tmp);
+	while (start != std::wstring::npos) {
+		// Find next occurence of delimiter
+		end = Param.find(Delimiter, start);
+		// Push back the token found into vector
+		Tar->emplace_back(Param.substr(start, end - start));
+		// Skip all occurences of the delimiter to find new start
+		start = Param.find_first_not_of(Delimiter, end);
 	}
+	
+	return;
 }
 
 inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {

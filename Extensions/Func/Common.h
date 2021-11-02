@@ -31,7 +31,9 @@
 #include	<map>
 #include	<vector>
 #include	<string>
-#include	<regex>
+#include	<cmath>
+#include	<stdexcept>
+
 
 // My headers
 #include	"Defination.h"

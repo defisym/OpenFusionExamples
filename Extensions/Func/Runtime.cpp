@@ -69,9 +69,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->FuncNameStack = new VEC;
 
-	rdPtr->ParamRegex = new std::wregex;
-	rdPtr->ParamRegex->assign(L"\\|");
-
 	rdPtr->FuncParamStack = new STACK;
 	rdPtr->FuncTempParamStack = new TPARAM;
 
@@ -102,8 +99,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	delete rdPtr->FuncNameStack;
-
-	delete rdPtr->ParamRegex;
 
 	delete rdPtr->FuncParamStack;
 	delete rdPtr->FuncTempParamStack;

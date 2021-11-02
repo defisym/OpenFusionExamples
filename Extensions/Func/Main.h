@@ -119,8 +119,6 @@ typedef struct tagRDATA
 
 	LPVEC FuncNameStack;
 
-	std::wregex* ParamRegex;
-
 	LPSTACK FuncParamStack;
 	LPTPARAM FuncTempParamStack;
 
