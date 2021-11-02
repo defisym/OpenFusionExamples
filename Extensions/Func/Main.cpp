@@ -253,12 +253,12 @@ long WINAPI DLLExport CallFuncRV(LPRDATA rdPtr,long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Param = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);	
 	
-	CallFuncCore(FuncName, Param);	
-	
-	if (StrIsNum(Return(0))) {
+	CallFuncCore(FuncName, Param);
+
+	try {
 		return ReturnFloat(std::stof(Return(0)));
 	}
-	else {
+	catch (const std::invalid_argument) {
 		return 0;
 	}
 }
@@ -279,9 +279,13 @@ long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
 long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	if (!rdPtr->FuncParamStack->back().empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))
-		&& StrIsNum(GetParam(Pos))) {
-		return ReturnFloat(std::stof(GetParam(Pos)));
+	if (!rdPtr->FuncParamStack->back().empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {		
+		try {
+			return ReturnFloat(std::stof(GetParam(Pos)));
+		}
+		catch(const std::invalid_argument){
+			return 0;
+		}
 	}
 	else {
 		return 0;
@@ -308,8 +312,13 @@ long WINAPI DLLExport GetTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 		
-	if (HasTempParam(FuncName, ParamName) && StrIsNum(TempParam(FuncName, ParamName))) {
-		return ReturnFloat(std::stof(TempParam(FuncName, ParamName)));
+	if (HasTempParam(FuncName, ParamName)) {
+		try {
+			return ReturnFloat(std::stof(TempParam(FuncName, ParamName)));
+		}
+		catch (const std::invalid_argument) {
+			return 0;
+		}
 	}
 	else {
 		return 0;
@@ -335,8 +344,13 @@ long WINAPI DLLExport GetTempParamRS(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetCurrentTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if (HasTempParam(rdPtr->FuncNameStack->back(), ParamName) && StrIsNum(TempParam(rdPtr->FuncNameStack->back(), ParamName))) {
-		return ReturnFloat(std::stof(TempParam(rdPtr->FuncNameStack->back(), ParamName)));
+	if (HasTempParam(rdPtr->FuncNameStack->back(), ParamName)) {
+		try {
+			return ReturnFloat(std::stof(TempParam(rdPtr->FuncNameStack->back(), ParamName)));
+		}
+		catch (const std::invalid_argument) {
+			return 0;
+		}		
 	}
 	else {
 		return 0;
@@ -361,9 +375,13 @@ long WINAPI DLLExport GetCurrentTempParamRS(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetRetRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))
-		&& StrIsNum(Return(Pos))) {
-		return ReturnFloat(std::stof(Return(Pos)));
+	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
+		try {
+			return ReturnFloat(std::stof(Return(Pos)));
+		}
+		catch (const std::invalid_argument) {
+			return 0;
+		}
 	}
 	else {
 		return 0;

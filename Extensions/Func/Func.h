@@ -14,7 +14,6 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
-
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
 inline const std::wstring NewLineEscape(const wchar_t* Src) {
 	std::wregex NewLineEscape(_T("(\\\\r\\\\n)"));
@@ -22,45 +21,42 @@ inline const std::wstring NewLineEscape(const wchar_t* Src) {
 }
 
 inline bool StrIsNum(const wchar_t* Src) {
-	std::wregex Regex(RegStr_IsNum);
-	return std::regex_match(Src, Regex);
+	try {
+		std::stof(Src);
+	}
+	catch(const std::invalid_argument){
+		return false;
+	}
+
+	return true;
 }
 
 inline bool StrIsNum(const std::wstring& Src) {
-	std::wregex Regex(RegStr_IsNum);
-	return std::regex_match(Src, Regex);
+	return StrIsNum(Src.c_str());
+}
+
+inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPVEC Tar) {
+	if (Param == Empty_Str) {
+		return;
+	}
+
+	//iterate
+	std::wsregex_token_iterator pos(Param.begin(), Param.end(), *rdPtr->ParamRegex, -1);
+	std::wsregex_token_iterator end;
+
+	for (; pos != end; pos++) {
+		//current str
+		std::wstring Tmp = pos->str();
+		Tar->emplace_back(Tmp);
+	}
 }
 
 inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
-	if (Param == Empty_Str) {
-		return;
-	}
-		
-	//iterate lines
-	std::wsregex_token_iterator pos(Param.begin(), Param.end(), *rdPtr->ParamRegex, -1);
-	std::wsregex_token_iterator end;
-
-	for (; pos != end; pos++) {
-		//current str
-		std::wstring Tmp = pos->str();
-		rdPtr->FuncParamStack->back().emplace_back(Tmp);
-	}
+	UpdateCore(rdPtr, Param, &rdPtr->FuncParamStack->back());
 }
 
 inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
-	if (Param == Empty_Str) {
-		return;
-	}
-
-	//iterate lines
-	std::wsregex_token_iterator pos(Param.begin(), Param.end(), *rdPtr->ParamRegex, -1);
-	std::wsregex_token_iterator end;
-
-	for (; pos != end; pos++) {
-		//current str
-		std::wstring Tmp = pos->str();
-		rdPtr->FuncReturn->emplace_back(Tmp);
-	}
+	UpdateCore(rdPtr, Param, rdPtr->FuncReturn);	
 }
 
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
