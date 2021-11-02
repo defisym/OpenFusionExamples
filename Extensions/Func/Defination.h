@@ -4,10 +4,10 @@
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
 
-typedef std::map<std::wstring, size_t> LIDX;
+typedef std::unordered_map<std::wstring, size_t> LIDX;
 typedef LIDX* LPLIDX;
 
-typedef std::map<std::wstring, std::map<std::wstring, std::wstring>> TPARAM;
+typedef std::unordered_map<std::wstring, std::unordered_map<std::wstring, std::wstring>> TPARAM;
 typedef TPARAM* LPTPARAM;
 
 typedef std::vector<std::vector<std::wstring>> STACK;

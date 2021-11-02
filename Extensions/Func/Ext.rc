@@ -136,6 +136,24 @@ BEGIN
                 MENUITEM "Curernt Func Has Temp Param", IDMN_CONDITION_CFHTP                
             END
         END
+        POPUP "is Number"
+        BEGIN
+            POPUP "Return"
+            BEGIN
+                MENUITEM "Previous Func's Return At...is Number", IDMN_CONDITION_FRAIN
+            END
+            MENUITEM SEPARATOR
+            POPUP "Param"
+            BEGIN
+                MENUITEM "Curernt Func's Param At...is Number", IDMN_CONDITION_FPAIN
+            END
+            MENUITEM SEPARATOR
+            POPUP "Temp Param"
+            BEGIN                
+                MENUITEM "Func's Temp Param is Number", IDMN_CONDITION_FTPIN
+                MENUITEM "Curernt Func's Temp Param is Number", IDMN_CONDITION_CFTPIN                
+            END
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -351,6 +369,13 @@ BEGIN
     M_CONDITION_CFHTP       "%o Curernt Func Has Temp Param %0"
 
     M_CONDITION_FHPA        "%o Curernt Func Has Param At %0"
+
+    M_CONDITION_FRAIN       "%o Previous Func's Return At %0 is Number"
+        
+    M_CONDITION_FTPIN       "%o Func %0's Temp Param %1 is Number"
+    M_CONDITION_CFTPIN      "%o Curernt Func's Temp Param %0 is Number"
+
+    M_CONDITION_FPAIN       "%o Curernt Func's Param At %0 is Number"
 
     M_CND_FUNCNAME          "Func Name"
 END

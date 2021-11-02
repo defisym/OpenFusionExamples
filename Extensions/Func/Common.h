@@ -28,12 +28,12 @@
 #include	"Surface.h"
 
 // STL
-#include	<map>
+#include	<unordered_map>
+
+#include	<cmath>
 #include	<vector>
 #include	<string>
-#include	<cmath>
 #include	<stdexcept>
-
 
 // My headers
 #include	"Defination.h"

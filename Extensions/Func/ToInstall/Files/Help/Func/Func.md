@@ -92,12 +92,30 @@ Or you need to open compatible mode in object properties
     - Curernt Func Has Temp Param
       - *check if current func has temp param of target name*
 
+- is Number
+  - *check if a param is number*
+  - *note : please check validity before using this condition*
+  
+  - Return
+    - Previous Func's Return At...is Number
+  
+  - Param
+    - Curernt Func's Param At...is Number
+  
+  - Temp Param
+    - Func's Temp Param is Number
+    - Curernt Func's Temp Param is Number
+
 ## Expression
 
 - Call Func
   - *Use function name and params to call and loop a function*
   - *if you encountered crash issues, and your fusion is older than `R293.9`, please check the `Note` section and follow steps to build a compatible version*
-  
+  - *if you trying to get a value from a string that not a value, expression will return the "value part" of the beginning*
+    - *`123YuruYuri`->`123`*
+    - *`YuruYuri.123`->`0`*
+    - *`YuruYuri`->`0`*
+
   - Call Func (return value)
   - Call Func (return string)
 
@@ -123,14 +141,12 @@ Or you need to open compatible mode in object properties
   - *return `0`(value) or empty string `""` (string) if no match*
   
   - Get Func's Temp Param (return value)
-    - *return `0` if target pos is not a value*
   - Get Func's Temp Param (return string)
 
   - *Get current func's temp param by paramname*
   - *return `0`(value) or empty string `""` (string) if no match*
   
   - Get Current Func's Temp Param (return value)
-    - *return `0` if target pos is not a value*
   - Get Current Func's Temp Param (return string)
 
 - Get Return
@@ -142,7 +158,6 @@ Or you need to open compatible mode in object properties
   - *return `0`(value) or empty string `""` (string) if there is no value at the pos you want to retrieve*
   
   - Get Previous Func's Return Value (return value)
-    - *return `0` if target pos is not a value*
   - Get Previous Func's Return Value (return string)
 
   - Get Previous Func's Number of Return Values

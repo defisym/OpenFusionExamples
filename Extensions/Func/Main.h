@@ -14,7 +14,13 @@
 #define	CND_CONDITION_FHTP			3
 #define	CND_CONDITION_CFHTP			4
 
-#define	CND_LAST					5
+#define	CND_CONDITION_FPAIN			5
+#define	CND_CONDITION_FRAIN			6
+
+#define	CND_CONDITION_FTPIN			7
+#define	CND_CONDITION_CFTPIN		8
+
+#define	CND_LAST					9
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

@@ -14,7 +14,8 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
-inline double stod(const wchar_t* p) {
+//convert string to double, 5X faster than std::stod
+inline double _stod(const wchar_t* p) {
 	double r = 0.0;
 	bool neg = false;
 
@@ -52,8 +53,8 @@ inline double stod(const wchar_t* p) {
 	return r;
 }
 
-inline float stof(const std::wstring& p) {
-	return (float)stod(p.c_str());
+inline float _stof(const std::wstring& p) {
+	return (float)_stod(p.c_str());
 }
 
 inline bool StrIsNum(const wchar_t* Src) {
