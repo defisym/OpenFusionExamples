@@ -105,9 +105,6 @@ typedef struct tagRDATA
 	LPTSTR CurrentSec = nullptr;
 	LPTSTR CurrentItem = nullptr;
 
-	//Regax
-	std::wregex Regex;
-
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

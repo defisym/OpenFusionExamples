@@ -114,13 +114,13 @@ short WINAPI DLLExport SetAutoSaveOff(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport New(LPRDATA rdPtr, long param1, long param2) {
-	Init();
+	init_ini();
 
 	return 0;
 }
 
 short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
-	release();
+	release_ini();
 
 	return 0;
 }
@@ -129,7 +129,7 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 	//LPCTSTR String = (LPCTSTR)param1;
 	//LPCTSTR Key = (LPCTSTR)param2;
 
-	//Init();
+	//init_ini();
 
 	////Key has value, try to Decry
 	//if (!StrEmpty(Key)) {
@@ -151,7 +151,7 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 
 	AutoSave(rdPtr);
 
-	Init();
+	init_ini();
 	
 	Fini->LoadData(to_byte_string(String));
 
@@ -164,7 +164,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 
 	AutoSave(rdPtr);
 
-	Init();
+	init_ini();
 
 	if (rdPtr->AutoSave) {
 		NewStr(rdPtr->AutoSaveFilePath, FilePath);
@@ -220,7 +220,7 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {
 	//invalid(0);
 	if (!valid(Fini)) {
-		Init();
+		init_ini();
 	}
 	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -252,7 +252,7 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {
 	//invalid(0);
 	if (!valid(Fini)) {
-		Init();
+		init_ini();
 	}
 	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -372,24 +372,8 @@ long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
 	InvalidSecItem(0);
 		
 	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
-		
-	if (StrIsNum(String)) {
-		float Val = std::stof(String);
 
-		if (Val == (int)Val) {
-			return (int)Val;
-		}
-		else {
-			//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-			rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-			//Return the float without conversion
-			return *((long*)&Val);
-		}
-	}
-	else {
-		return 0;
-	}	
+	return ReturnFloat(_stof(String));
 }
 
 long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {

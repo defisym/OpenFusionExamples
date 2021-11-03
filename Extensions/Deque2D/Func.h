@@ -20,14 +20,37 @@ inline const std::wstring NewLineEscape(const wchar_t* Src) {
 	return std::regex_replace(Src, NewLineEscape, L"\r\n").c_str();
 }
 
-inline bool StrIsNum(const wchar_t* Src) {
-	std::wregex Regex(RegStr_IsNum);
-	return std::regex_match(Src, Regex);
+//chekc if a string is number
+inline bool StrIsNum(const wchar_t* p) {
+	if (*p == L'-') {
+		++p;
+	}
+	if (*p == L'+') {
+		++p;
+	}
+
+	while (*p >= L'0' && *p <= L'9') {
+		++p;
+	}
+
+	if (*p == L'.') {
+		++p;
+
+		while (*p >= L'0' && *p <= L'9') {
+			++p;
+		}
+
+	}
+
+	if (*p != L'\0') {
+		return false;
+	}
+
+	return true;
 }
 
-inline bool StrIsNum(const std::wstring& Src) {
-	std::wregex Regex(RegStr_IsNum);
-	return std::regex_match(Src, Regex);
+inline bool StrIsNum(const std::wstring& p) {
+	return StrIsNum(p.c_str());
 }
 
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {

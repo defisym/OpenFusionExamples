@@ -65,9 +65,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
-	//InitRegex
-	rdPtr->Regex.assign(RegStr_IsNum);
-	
 	rdPtr->AutoSave = true;
 	rdPtr->Modified = false;
 
@@ -108,7 +105,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//	}
 	//}
 
-	release();
+	release_ini();
 
 	release_arr(OStr);
 

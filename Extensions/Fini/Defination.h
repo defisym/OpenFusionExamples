@@ -32,8 +32,8 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 
 #define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);release_arr(rdPtr->AutoSaveFilePath);release_arr(rdPtr->AutoSaveKey);
 
-#define release() release_ptr(Fini);release_str();rdPtr->Modified = false;
-#define Init() release();Fini = new INI;Fini->SetUnicode();
+#define release_ini() release_ptr(Fini);release_str();rdPtr->Modified = false;
+#define init_ini() release_ini();Fini = new INI;Fini->SetUnicode();
 
 #define StrEqu(X,Y) (wcscmp(X,Y) == 0)
 #define StrEmpty(X) StrEqu(X,Empty_Str)
@@ -41,7 +41,5 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
-
-#define StrIsNum(X) (std::regex_match(X, rdPtr->Regex))
 
 #endif // !_DEFINATION_

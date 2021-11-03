@@ -37,7 +37,7 @@
     <ClCompile Include="ConvertUTF.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Encryption.cpp">
+    <ClCompile Include="..\_DeLib\Encryption.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -145,7 +145,7 @@
     <ClInclude Include="SimpleIni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Encryption.h">
+    <ClInclude Include="..\_DeLib\Encryption.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
