@@ -33,7 +33,6 @@
 #include	<cmath>
 #include	<vector>
 #include	<string>
-#include	<stdexcept>
 
 // My headers
 #include	"Defination.h"
