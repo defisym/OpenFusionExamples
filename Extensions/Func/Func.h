@@ -99,6 +99,9 @@ inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPVEC Tar) {
 		return;
 	}
 
+	//Ref
+	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
+
 	size_t start = Param.find_first_not_of(Delimiter), end = start;
 
 	while (start != std::wstring::npos) {
