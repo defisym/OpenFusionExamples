@@ -93,7 +93,7 @@ Or you need to open compatible mode in object properties
       - *check if current func has temp param of target name*
 
 - is Number
-  - *check if a param is number*
+  - *check if a param is number, using the same algorithm*
   - *note : please check validity before using this condition*
   
   - Return
@@ -111,8 +111,9 @@ Or you need to open compatible mode in object properties
 - Call Func
   - *Use function name and params to call and loop a function*
   - *if you encountered crash issues, and your fusion is older than `R293.9`, please check the `Note` section and follow steps to build a compatible version*
-  - *if you trying to get a value from a string that not a value, expression will return the "value part" of the beginning*
-    - *`123YuruYuri`->`123`*
+  - *if you trying to get a value from a string that not a value, expression will return `0`*
+  - *the conversion function will convert the number part of string, e.g. `123.456` of `123.456YuruYuri`, then check if the next char is `\0` (end of string). If not, func will return `0`*
+    - *`123.YuruYuri`->`0`*
     - *`YuruYuri.123`->`0`*
     - *`YuruYuri`->`0`*
 

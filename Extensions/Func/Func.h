@@ -46,6 +46,10 @@ inline double _stod(const wchar_t* p) {
 		r += f / std::pow(10.0, n);
 	}
 
+	if (*p != L'\0') {
+		return 0.0;
+	}
+
 	if (neg) {
 		r = -r;
 	}
@@ -57,19 +61,37 @@ inline float _stof(const std::wstring& p) {
 	return (float)_stod(p.c_str());
 }
 
-inline bool StrIsNum(const wchar_t* Src) {
-	try {
-		std::stof(Src);
+//chekc if a string is number
+inline bool StrIsNum(const wchar_t* p) {
+	if (*p == L'-') {
+		++p;
 	}
-	catch(const std::invalid_argument){
+	if (*p == L'+') {
+		++p;
+	}
+
+	while (*p >= L'0' && *p <= L'9') {
+		++p;
+	}
+
+	if (*p == L'.') {
+		++p;
+
+		while (*p >= L'0' && *p <= L'9') {
+			++p;
+		}
+
+	}
+
+	if (*p != L'\0') {
 		return false;
 	}
 
 	return true;
 }
 
-inline bool StrIsNum(const std::wstring& Src) {
-	return StrIsNum(Src.c_str());
+inline bool StrIsNum(const std::wstring& p) {
+	return StrIsNum(p.c_str());
 }
 
 inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPVEC Tar) {
