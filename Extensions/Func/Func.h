@@ -157,11 +157,13 @@ inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPPARAMVEC Tar) {
 }
 
 inline void UpdateParam(LPRDATA rdPtr, std::wstring& Param) {
+	rdPtr->FuncParamStack->back().reserve(DefaultVecSize);
 	UpdateCore(rdPtr, Param, &rdPtr->FuncParamStack->back());
 }
 
 inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
-	UpdateCore(rdPtr, Param, rdPtr->FuncReturn);	
+	rdPtr->FuncReturn->reserve(DefaultVecSize);
+	UpdateCore(rdPtr, Param, rdPtr->FuncReturn);
 }
 
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {

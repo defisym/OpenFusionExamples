@@ -31,6 +31,8 @@ typedef TPARAM* LPTPARAM;
 typedef std::wstring STRING;
 typedef STRING* LPSTRING;
 
+#define DefaultVecSize 20
+
 #define OStr rdPtr->OutPut
 
 #define Empty_Str	_T("")

@@ -239,6 +239,7 @@ short WINAPI DLLExport SetReturnValueStr(LPRDATA rdPtr, long param1, long param2
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->FuncReturn->clear();
+	rdPtr->FuncReturn->reserve(DefaultVecSize);
 	rdPtr->FuncReturn->emplace_back(Data_Str(Return));
 
 	return 0;
@@ -248,6 +249,7 @@ short WINAPI DLLExport SetReturnValueVal(LPRDATA rdPtr, long param1, long param2
 	float Return = *(float*)&p1;
 
 	rdPtr->FuncReturn->clear();
+	rdPtr->FuncReturn->reserve(DefaultVecSize);
 	rdPtr->FuncReturn->emplace_back(Data_Val(Return));
 
 	return 0;
