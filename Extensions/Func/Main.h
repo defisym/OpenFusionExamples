@@ -41,8 +41,15 @@
 #define	ACT_ACTION_SL				8
 
 #define	ACT_ACTION_PASSRET			9
+#define	ACT_ACTION_PASSRETV			10
 
-#define	ACT_LAST					10
+#define	ACT_ACTION_STVV				11
+#define	ACT_ACTION_SCTVV			12
+
+#define	ACT_ACTION_SRV				13
+#define	ACT_ACTION_PRV				14
+
+#define	ACT_LAST					15
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -125,15 +132,15 @@ typedef struct tagRDATA
 
 	LPVEC FuncNameStack;
 
-	LPSTACK FuncParamStack;
+	LPPARAMSTACK FuncParamStack;
 	LPTPARAM FuncTempParamStack;
+
+	LPPARAMVEC FuncReturn;
 
 	LPLIDX FuncLoopIndex;
 	LPLIDX FuncCurLoopIndex;
 
-	LPLIDX RecursiveIndex;
-
-	LPVEC FuncReturn;
+	LPLIDX RecursiveIndex;	
 
 	//LPSTRING OutPut;
 	LPTSTR OutPut = nullptr;

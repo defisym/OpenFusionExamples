@@ -46,7 +46,14 @@
 #define IDMN_ACTION_SLI   		25007
 #define IDMN_ACTION_SL   		25008
 
-#define IDMN_ACTION_PASSRET		25009
+#define IDMN_ACTION_PASSRET 	25009
+#define IDMN_ACTION_PASSRETV	25010
+
+#define IDMN_ACTION_STVV    	25011
+#define IDMN_ACTION_SCTVV   	25012
+
+#define IDMN_ACTION_SRV   	    25013
+#define IDMN_ACTION_PRV   	    25014
 
 // Action strings
 #define M_ACTION_SR             5000
@@ -65,6 +72,13 @@
 #define M_ACTION_SL             5008
 
 #define M_ACTION_PASSRET        5009
+#define M_ACTION_PASSRETV       5010
+
+#define M_ACTION_STVV           5011
+#define M_ACTION_SCTVV          5012
+
+#define M_ACTION_SRV            5013
+#define M_ACTION_PRV            5014
 
 // Titles of action parameters
 #define M_ACT_RET				 5501

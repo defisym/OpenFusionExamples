@@ -10,17 +10,23 @@ typedef struct Data{
 	DataType Type;
 }Data;
 
+#define Data_Val(Val) Data{ Val, L"", false, DataType::VALUE}
+#define Data_Str(Str) Data{ 0, Str, false, DataType::STRING}
+
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
 
 typedef std::unordered_map<std::wstring, size_t> LIDX;
 typedef LIDX* LPLIDX;
 
-typedef std::unordered_map<std::wstring, std::unordered_map<std::wstring, std::wstring>> TPARAM;
-typedef TPARAM* LPTPARAM;
+typedef std::vector<Data> PARAMVEC;
+typedef PARAMVEC* LPPARAMVEC;
 
-typedef std::vector<std::vector<std::wstring>> STACK;
-typedef STACK* LPSTACK;
+typedef std::vector<PARAMVEC> PARAMSTACK;
+typedef PARAMSTACK* LPPARAMSTACK;
+
+typedef std::unordered_map<std::wstring, std::unordered_map<std::wstring, Data>> TPARAM;
+typedef TPARAM* LPTPARAM;
 
 typedef std::wstring STRING;
 typedef STRING* LPSTRING;

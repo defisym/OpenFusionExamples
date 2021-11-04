@@ -56,6 +56,13 @@ short actionsInfos[]=
 		IDMN_ACTION_SL, M_ACTION_SL, ACT_ACTION_SL,	0, 1, PARAM_EXPSTRING, M_CND_FUNCNAME,
 
 		IDMN_ACTION_PASSRET, M_ACTION_PASSRET, ACT_ACTION_PASSRET,	0, 1,PARAM_EXPSTRING, M_ACT_RET,
+		IDMN_ACTION_PASSRETV, M_ACTION_PASSRETV, ACT_ACTION_PASSRETV,	0, 1,PARAM_EXPRESSION, M_ACT_RET,
+
+		IDMN_ACTION_STVV, M_ACTION_STVV, ACT_ACTION_STVV,	0, 3,PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_CND_FUNCNAME, M_ACT_PARAMNAME, M_ACT_PARAM,
+		IDMN_ACTION_SCTVV, M_ACTION_SCTVV, ACT_ACTION_SCTVV,	0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACT_PARAMNAME, M_ACT_PARAM,
+
+		IDMN_ACTION_SRV, M_ACTION_SRV, ACT_ACTION_SRV,	0, 1,PARAM_EXPRESSION, M_ACT_RET,
+		IDMN_ACTION_PRV, M_ACTION_PRV, ACT_ACTION_PRV,	0, 1,PARAM_EXPRESSION, M_ACT_RET,
 		};
 
 // Definitions of parameters for each expression
@@ -114,7 +121,6 @@ long WINAPI DLLExport OnFunc(LPRDATA rdPtr, long param1, long param2) {
 	return StrEqu(FuncName, rdPtr->FuncNameStack->back().c_str()) ? TRUE : FALSE;
 }
 
-
 long WINAPI DLLExport FuncHasParamAt(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
@@ -140,28 +146,27 @@ long WINAPI DLLExport CurerntFuncHasTempParam(LPRDATA rdPtr, long param1, long p
 	return !rdPtr->FuncNameStack->empty() && HasTempParam(rdPtr->FuncNameStack->back(), ParamName) ? TRUE : FALSE;
 }
 
-
 long WINAPI DLLExport FuncParamAtIsNum(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
-	return StrIsNum(rdPtr->FuncParamStack->back().at(Pos)) ? TRUE : FALSE;
+	return DataIsNum(rdPtr->FuncParamStack->back().at(Pos)) ? TRUE : FALSE;
 }
 long WINAPI DLLExport FuncReturnAtIsNum(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
-	return StrIsNum(rdPtr->FuncReturn->at(Pos)) ? TRUE : FALSE;
+	return DataIsNum(rdPtr->FuncReturn->at(Pos)) ? TRUE : FALSE;
 }
 
 long WINAPI DLLExport FuncTempParamIsNum(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return StrIsNum(TempParam(FuncName, ParamName)) ? TRUE : FALSE;
+	return DataIsNum(TempParam(FuncName, ParamName)) ? TRUE : FALSE;
 }
 long WINAPI DLLExport CurerntFuncTempParamIsNum(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return StrIsNum(TempParam(rdPtr->FuncNameStack->back(), ParamName)) ? TRUE : FALSE;
+	return DataIsNum(TempParam(rdPtr->FuncNameStack->back(), ParamName)) ? TRUE : FALSE;
 }
 
 // ============================================================================
@@ -170,27 +175,54 @@ long WINAPI DLLExport CurerntFuncTempParamIsNum(LPRDATA rdPtr, long param1, long
 // 
 // ============================================================================
 
-short WINAPI DLLExport SetTempParam(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport SetTempParamStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	TempParam(FuncName, ParamName) = Param;
+	
+	TempParam(FuncName, ParamName) = Data_Str(Param);
 
 	return 0;
 }
+short WINAPI DLLExport SetTempParamVal(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-short WINAPI DLLExport SetCurrentTempParam(LPRDATA rdPtr, long param1, long param2) {
+	long p1 = CNC_GetFloatParameter(rdPtr);
+	float Param = *(float*)&p1;
+
+	TempParam(FuncName, ParamName) = Data_Val(Param);
+	return 0;
+}
+
+short WINAPI DLLExport SetCurrentTempParamStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	TempParam(rdPtr->FuncNameStack->back(), ParamName) = Param;
+	TempParam(rdPtr->FuncNameStack->back(), ParamName) = Data_Str(Param);
+
+	return 0;
+}
+short WINAPI DLLExport SetCurrentTempParamVal(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	long p1 = CNC_GetFloatParameter(rdPtr);
+	float Param = *(float*)&p1;
+
+	TempParam(rdPtr->FuncNameStack->back(), ParamName) = Data_Val(Param);
 
 	return 0;
 }
 
-short WINAPI DLLExport PassReturn(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport PassReturnStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return 0;
+}
+short WINAPI DLLExport PassReturnVal(LPRDATA rdPtr, long param1, long param2) {
+	long p1 = CNC_GetFloatParameter(rdPtr);
+	float Return = *(float*)&p1;
 
 	return 0;
 }
@@ -203,19 +235,36 @@ short WINAPI DLLExport SetAllReturn(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetReturnValue(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport SetReturnValueStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->FuncReturn->clear();
-	rdPtr->FuncReturn->emplace_back(Return);
+	rdPtr->FuncReturn->emplace_back(Data_Str(Return));
+
+	return 0;
+}
+short WINAPI DLLExport SetReturnValueVal(LPRDATA rdPtr, long param1, long param2) {
+	long p1 = CNC_GetFloatParameter(rdPtr);
+	float Return = *(float*)&p1;
+
+	rdPtr->FuncReturn->clear();
+	rdPtr->FuncReturn->emplace_back(Data_Val(Return));
 
 	return 0;
 }
 
-short WINAPI DLLExport PushReturnValue(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport PushReturnValueStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	rdPtr->FuncReturn->emplace_back(Return);
+	rdPtr->FuncReturn->emplace_back(Data_Str(Return));
 	
+	return 0;
+}
+short WINAPI DLLExport PushReturnValueVal(LPRDATA rdPtr, long param1, long param2) {
+	long p1 = CNC_GetFloatParameter(rdPtr);
+	float Return = *(float*)&p1;
+
+	rdPtr->FuncReturn->emplace_back(Data_Val(Return));
+
 	return 0;
 }
 
@@ -285,7 +334,8 @@ long WINAPI DLLExport CallFuncRV(LPRDATA rdPtr,long param1) {
 	
 	CallFuncCore(FuncName, Param);	
 
-	return ReturnFloat(_stof(Return(0)));
+	Data_StoV(Return(0));
+	return ReturnFloat(Return(0).Val);
 }
 
 long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
@@ -298,14 +348,16 @@ long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	
 	//This returns a pointer to the string for MMF.
-	return (long)Return(0).c_str();	
+	Data_VtoS(Return(0));
+	return (long)Return(0).Str.c_str();	
 }
 
 long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	
 	if (!rdPtr->FuncParamStack->back().empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {		
-		return ReturnFloat(_stof(GetParam(Pos)));
+		Data_StoV(GetParam(Pos));
+		return ReturnFloat(GetParam(Pos).Val);
 	}
 	else {
 		return 0;
@@ -320,7 +372,8 @@ long WINAPI DLLExport GetParamRS(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	if (!rdPtr->FuncParamStack->back().empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {
-		return (long)GetParam(Pos).c_str();
+		Data_VtoS(GetParam(Pos));
+		return (long)GetParam(Pos).Str.c_str();
 	}
 	else {
 		return (long)Default_Str;
@@ -332,7 +385,8 @@ long WINAPI DLLExport GetTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 		
 	if (HasTempParam(FuncName, ParamName)) {
-		return ReturnFloat(_stof(TempParam(FuncName, ParamName)));
+		Data_StoV(TempParam(FuncName, ParamName));
+		return ReturnFloat(TempParam(FuncName, ParamName).Val);
 	}
 	else {
 		return 0;
@@ -348,7 +402,8 @@ long WINAPI DLLExport GetTempParamRS(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	if (HasTempParam(FuncName, ParamName)) {
-		return (long)TempParam(FuncName, ParamName).c_str();
+		Data_VtoS(TempParam(FuncName, ParamName));
+		return (long)TempParam(FuncName, ParamName).Str.c_str();
 	}
 	else {
 		return (long)Default_Str;
@@ -359,7 +414,8 @@ long WINAPI DLLExport GetCurrentTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	if (HasTempParam(rdPtr->FuncNameStack->back(), ParamName)) {
-		return ReturnFloat(_stof(TempParam(rdPtr->FuncNameStack->back(), ParamName)));
+		Data_StoV(TempParam(rdPtr->FuncNameStack->back(), ParamName));
+		return ReturnFloat(TempParam(rdPtr->FuncNameStack->back(), ParamName).Val);
 	}
 	else {
 		return 0;
@@ -374,7 +430,8 @@ long WINAPI DLLExport GetCurrentTempParamRS(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	if (HasTempParam(rdPtr->FuncNameStack->back(), ParamName)) {
-		return (long)TempParam(rdPtr->FuncNameStack->back(), ParamName).c_str();
+		Data_VtoS(TempParam(rdPtr->FuncNameStack->back(), ParamName));
+		return (long)TempParam(rdPtr->FuncNameStack->back(), ParamName).Str.c_str();
 	}
 	else {
 		return (long)Default_Str;
@@ -384,8 +441,9 @@ long WINAPI DLLExport GetCurrentTempParamRS(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetRetRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {		
-		return ReturnFloat(_stof(Return(Pos)));
+	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
+		Data_StoV(Return(Pos));
+		return ReturnFloat(Return(Pos).Val);
 	}
 	else {
 		return 0;
@@ -400,7 +458,8 @@ long WINAPI DLLExport GetRetRS(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
-		return (long)Return(Pos).c_str();
+		Data_VtoS(Return(Pos));
+		return (long)Return(Pos).Str.c_str();
 	}
 	else {
 		return (long)Default_Str;
@@ -501,22 +560,29 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			SetReturnValue,
-			PushReturnValue,
+			SetReturnValueStr,
+			PushReturnValueStr,
 
 			CallFunc,
 
 			Ternary,
 
-			SetTempParam,
-			SetCurrentTempParam,
+			SetTempParamStr,
+			SetCurrentTempParamStr,
 
 			SetAllReturn,
 
 			SetLoopIndex,
 			StopLoop,
 
-			PassReturn,
+			PassReturnStr,
+			PassReturnVal,
+
+			SetTempParamVal,
+			SetCurrentTempParamVal,
+
+			SetReturnValueVal,
+			PushReturnValueVal,
 
 			0
 			};

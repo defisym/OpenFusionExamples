@@ -80,12 +80,14 @@ inline float _stof(const std::wstring& p) {
 inline void Data_StoV(Data& Data) {
 	if (Data.Type == DataType::STRING && !Data.Converted) {
 		Data.Val = _stof(Data.Str);
+		Data.Converted = true;
 	}
 }
 
 inline void Data_VtoS(Data& Data) {
 	if (Data.Type == DataType::VALUE && !Data.Converted) {
 		Data.Str = _ftos(Data.Val);
+		Data.Converted = true;
 	}
 }
 
@@ -122,7 +124,17 @@ inline bool StrIsNum(const std::wstring& p) {
 	return StrIsNum(p.c_str());
 }
 
-inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPVEC Tar) {
+//chekc if data can be convert to number
+inline bool DataIsNum(Data& Data) {
+	if (Data.Type == DataType::VALUE) {
+		return true;
+	}
+	else {
+		return StrIsNum(Data.Str);
+	}	
+}
+
+inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPPARAMVEC Tar) {
 	if (Param == Empty_Str) {
 		return;
 	}
@@ -136,7 +148,7 @@ inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPVEC Tar) {
 		// Find next occurence of delimiter
 		end = Param.find(Delimiter, start);
 		// Push back the token found into vector
-		Tar->emplace_back(Param.substr(start, end - start));
+		Tar->emplace_back(Data_Str(Param.substr(start, end - start)));
 		// Skip all occurences of the delimiter to find new start
 		start = Param.find_first_not_of(Delimiter, end);
 	}

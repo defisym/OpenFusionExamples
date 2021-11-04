@@ -180,18 +180,25 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Temp Param"
         BEGIN
-            MENUITEM "Set Func's Temp Param", IDMN_ACTION_STV
-            MENUITEM "Set Current Func's Temp Param", IDMN_ACTION_SCTV
+            MENUITEM "Set Func's Temp Param (value)", IDMN_ACTION_STVV
+            MENUITEM "Set Func's Temp Param (string)", IDMN_ACTION_STV
+            MENUITEM SEPARATOR
+            MENUITEM "Set Current Func's Temp Param (value)", IDMN_ACTION_SCTVV
+            MENUITEM "Set Current Func's Temp Param (string)", IDMN_ACTION_SCTV
         END
         MENUITEM SEPARATOR
-        POPUP "Return Value"
+        POPUP "Return"
         BEGIN            
-            MENUITEM "Set Current Func's Return", IDMN_ACTION_SAR
+            MENUITEM "Set Current Func's All Return", IDMN_ACTION_SAR
             MENUITEM SEPARATOR
-            MENUITEM "Set Current Func's Return Value", IDMN_ACTION_SR
-            MENUITEM "Push Current Func's Return Value", IDMN_ACTION_PR
+            MENUITEM "Set Current Func's Return (value)", IDMN_ACTION_SRV
+            MENUITEM "Set Current Func's Return (string)", IDMN_ACTION_SR
             MENUITEM SEPARATOR
-            MENUITEM "Pass Prevous Func's Return", IDMN_ACTION_PASSRET            
+            MENUITEM "Push Current Func's Return (value)", IDMN_ACTION_PRV
+            MENUITEM "Push Current Func's Return (string)", IDMN_ACTION_PR
+            MENUITEM SEPARATOR
+            MENUITEM "Pass Prevous Func's Return (value)", IDMN_ACTION_PASSRET            
+            MENUITEM "Pass Prevous Func's Return (string)", IDMN_ACTION_PASSRETV            
         END
         MENUITEM SEPARATOR
     END
@@ -334,18 +341,25 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_SAR            "Set Return to %0"
-    M_ACTION_SR             "Set Return Value to %0"
-    M_ACTION_PR             "Push Return Value %0"
+    M_ACTION_SAR            "Set All Return to %0"
+    
+    M_ACTION_SR             "Set Return to %0"
+    M_ACTION_SRV            "Set Return to %0"
+    M_ACTION_PR             "Push Return %0"
+    M_ACTION_PRV            "Push Return %0"
 
     M_ACTION_PASSRET        "Pass Return of %0"
+    M_ACTION_PASSRETV       "Pass Return of %0"
     
     M_ACTION_CF             "Call Func %0, Param %1, Loop %2 Times"
     M_ACTION_SLI            "Set Func %0 LoopIndex to %1"
     M_ACTION_SL             "Stop Func %0 Loop"
     
     M_ACTION_STV            "Set Temp Param %1 = %2 of Func %0"
+    M_ACTION_STVV           "Set Temp Param %1 = %2 of Func %0"
+
     M_ACTION_SCTV           "Set Temp Param %0 = %1 of Current Func"
+    M_ACTION_SCTVV          "Set Temp Param %0 = %1 of Current Func"
 
     M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
 

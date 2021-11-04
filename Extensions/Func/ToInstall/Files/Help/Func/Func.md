@@ -25,6 +25,12 @@ To use this object, you need to update to `R293.9`, which contains a fix to avoi
 
 Or you need to open compatible mode in object properties
 
+Func supports two data type : string and value. All data saved in extension will be converted to the data type you need when retrieving it, and the convert result will be saved. when you retrieve the same type later, ext will not do the convert again.
+
+Please use the same data type to get avoid of convertion to get better profermance
+
+Note: Func's params and return set by `Set Current Func's All Return` is always string.
+
 ## Action
 
 - Call Func
@@ -45,24 +51,28 @@ Or you need to open compatible mode in object properties
   - *Temp params are saved in a map, so recursive funcs share the same temp param. That is to say, temp params of a func is not separated as `C/C++` if you call it recurisively, use normal param to pass temp values in this case*
   - *all temp params of current func will be erased after func return (`On Func` event finish) if it's recursive index is 1*
 
-  - Set Func's Temp Param
+  - Set Func's Temp Param (value)
+  - Set Func's Temp Param (string)
     - *use this to change or set parent func's temp param in it's child*
     - *Althougth you can set a never called func's temp param, but actually I do not recommend this*
   
-  - Set Current Func's Temp Param
+  - Set Current Func's Temp Param (value)
+  - Set Current Func's Temp Param (string)
     - *like the action above but only effect the current func(recommended)*
 
 - Return Value
   - *Please use this inside a func event to avoid unexpected behaviour*
   - *Note : ret values will be erased on next function call*
   
-  - Set Current Func's Return
+  - Set Current Func's All Return
     - *Clear return vector and set return use the same syntax of `Call Func` param*
 
-  - Set Current Func's Return Value
+  - Set Current Func's Return (value)
+  - Set Current Func's Return (string)
     - *Clear return vector and set a return value*
 
-  - Push Current Func's Return Value
+  - Push Current Func's Return (value)
+  - Push Current Func's Return (string)
     - *Add a return value to current function*
     - *if function is called by expression, expression will only return the first return value you pushed by this action*
     - *use action `Call Func` above to return multiple values*
@@ -93,7 +103,7 @@ Or you need to open compatible mode in object properties
       - *check if current func has temp param of target name*
 
 - is Number
-  - *check if a param is number, using the same algorithm*
+  - *check if a param can be converted to a number, using the same convert algorithm*
   - *note : please check validity before using this condition*
   
   - Return
