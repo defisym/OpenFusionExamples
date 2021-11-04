@@ -1,6 +1,15 @@
 #ifndef _DEFINATION_
 #define _DEFINATION_
 
+enum class DataType { VALUE, STRING };
+
+typedef struct Data{
+	float Val;
+	std::wstring Str;	
+	bool Converted = false;
+	DataType Type;
+}Data;
+
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
 

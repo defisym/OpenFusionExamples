@@ -14,6 +14,21 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
+//convert double to string, 2X faster than to_string
+inline std::wstring _dtos(double Val) {
+	//auto size = swprintf(nullptr, 0, L"%f", Val);
+	auto size = 50;
+	std::wstring ret(size + 1, '\0');
+
+	swprintf(&ret[0], size + 1, L"%f", Val);
+
+	return ret;
+}
+
+inline std::wstring _ftos(float Val) {
+	return _dtos(Val);
+}
+
 //convert string to double, 5X faster than std::stod
 inline double _stod(const wchar_t* p) {
 	double r = 0.0;
@@ -59,6 +74,19 @@ inline double _stod(const wchar_t* p) {
 
 inline float _stof(const std::wstring& p) {
 	return (float)_stod(p.c_str());
+}
+
+//convert data
+inline void Data_StoV(Data& Data) {
+	if (Data.Type == DataType::STRING && !Data.Converted) {
+		Data.Val = _stof(Data.Str);
+	}
+}
+
+inline void Data_VtoS(Data& Data) {
+	if (Data.Type == DataType::VALUE && !Data.Converted) {
+		Data.Str = _ftos(Data.Val);
+	}
 }
 
 //chekc if a string is number
