@@ -3,15 +3,18 @@
 
 enum class DataType { VALUE, STRING };
 
-typedef struct Data{
-	float Val;
-	std::wstring Str;	
+typedef struct Data {
+	float Val = 0.0;
+	std::wstring Str;
+
+	DataType Type = DataType::VALUE;
 	bool Converted = false;
-	DataType Type;
+	bool IsNumber = false;
+	bool IsNumberChecked = false;
 }Data;
 
-#define Data_Val(Val) Data{ Val, L"", false, DataType::VALUE}
-#define Data_Str(Str) Data{ 0, Str, false, DataType::STRING}
+#define Data_Val(Val) Data{ Val, L"", DataType::VALUE, false, true, true}
+#define Data_Str(Str) Data{ 0, Str, DataType::STRING, false, false, false}
 
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
@@ -32,6 +35,7 @@ typedef std::wstring STRING;
 typedef STRING* LPSTRING;
 
 #define DefaultVecSize 20
+#define DoubleStrSize 50+1
 
 #define OStr rdPtr->OutPut
 

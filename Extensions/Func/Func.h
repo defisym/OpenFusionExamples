@@ -17,10 +17,8 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 //convert double to string, 2X faster than to_string
 inline std::wstring _dtos(double Val) {
 	//auto size = swprintf(nullptr, 0, L"%f", Val);
-	auto size = 50;
-	std::wstring ret(size + 1, '\0');
-
-	swprintf(&ret[0], size + 1, L"%f", Val);
+	std::wstring ret(DoubleStrSize, '\0');
+	swprintf(&ret[0], DoubleStrSize, L"%f", Val);
 
 	return ret;
 }
@@ -91,7 +89,7 @@ inline void Data_VtoS(Data& Data) {
 	}
 }
 
-//chekc if a string is number
+//check if a string is number
 inline bool StrIsNum(const wchar_t* p) {
 	if (*p == L'-') {
 		++p;
@@ -124,14 +122,14 @@ inline bool StrIsNum(const std::wstring& p) {
 	return StrIsNum(p.c_str());
 }
 
-//chekc if data can be convert to number
+//check if data can be convert to number
 inline bool DataIsNum(Data& Data) {
-	if (Data.Type == DataType::VALUE) {
-		return true;
+	if (!Data.IsNumberChecked) {
+		Data.IsNumberChecked = true;
+		Data.IsNumber = StrIsNum(Data.Str);
 	}
-	else {
-		return StrIsNum(Data.Str);
-	}	
+
+	return Data.IsNumber;
 }
 
 inline void UpdateCore(LPRDATA rdPtr, std::wstring& Param, LPPARAMVEC Tar) {
