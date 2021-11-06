@@ -27,6 +27,14 @@ inline std::wstring _ftos(float Val) {
 	return _dtos(Val);
 }
 
+inline void _dtos(double Val, std::wstring& Str) {
+	swprintf(&Str[0], DoubleStrSize, L"%f", Val);
+}
+
+inline void _ftos(double Val, std::wstring& Str) {
+	_dtos(Val, Str);
+}
+
 //convert string to double, 5X faster than std::stod
 inline double _stod(const wchar_t* p) {
 	double r = 0.0;
