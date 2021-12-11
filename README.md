@@ -11,102 +11,155 @@ Something still under development, aka WIP.
 Simple examples
 
 - SubStretch
-  - *Stretch Sub-application properly with WinAPI*
+
+  - _Stretch Sub-application properly with WinAPI_
+
 - FastloopSave
-  - *Save by Fastloop, could be easily extended to fit any systems*
+
+  - _Save by Fastloop, could be easily extended to fit any systems_
+
 - Bullet Time
-  - *A simple bullet time example*
+
+  - _A simple bullet time example_
+
 - DecimalVerdiction
-  - *To check if a value has decimals*
+
+  - _To check if a value has decimals_
+
 - DirNormalization
-  - *convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)*
+
+  - _convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)_
+
 - EasyStack
-  - *Push/Pop value without extension*
+
+  - _Push/Pop value without extension_
+
 - Ellipse
-  - *move like a ellipse*
+
+  - _move like a ellipse_
+
 - IniControlInit
-  - *How to init a ini file*
+
+  - _How to init a ini file_
+
 - MouseState
-  - *to show if LMB/RMB is pushed down*
+
+  - _to show if LMB/RMB is pushed down_
+
 - PauseWithTextBox
-  - *pause app with an explanation*
+
+  - _pause app with an explanation_
+
 - Regex_IsNum
-  - *check if a string is number by using string spliter*
+
+  - _check if a string is number by using string spliter_
+
 - Shotgun
-  - *Simple Shotgun*
+
+  - _Simple Shotgun_
+
 - StringScan
-  - *Search the string and excerpt text in ()*
+
+  - _Search the string and excerpt text in ()_
+
 - Stupid Drag
-  - *Drag to move camera*
+
+  - _Drag to move camera_
+
 - Stupid HeatWave
-  - *simple heatwave effect*
+
+  - _simple heatwave effect_
+
 - Stupid SRPG
-  - *a SRPG example like **Fire Emblem** I wrote in 2017.*
-  - *it's totally a mess of spaghetti code, but it's enough for a start.*
+
+  - _a SRPG example like **Fire Emblem** I wrote in 2017._
+  - _it's totally a mess of spaghetti code, but it's enough for a start._
+
 - Stupid Things
-  - *Something I made for someone else long long ago and now I couldn't tell what the hell it actually is*
+
+  - _Something I made for someone else long long ago and now I couldn't tell what the hell it actually is_
+
+- 简易贝塞尔Bezier_v2
+
+  - _Some Bezier examples. Create by CallofAS._
 
 ## Extensions
 
 some extensions I made for my game
 
 - Func
-  - *Call Functions via Expression or Action*
+
+  - _Call Functions via Expression or Action_
 
 - Encrypter
-  - *En/decrtypt file with WinAPI CNG.*
-  - *You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSpliter*
+
+  - _En/decrtypt file with WinAPI CNG._
+  - _You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSpliter_
 
 - String Spliter
-  - *This object is a string splitter base on C++ regex.*
+
+  - _This object is a string splitter base on C++ regex._
 
 - Fini
-  - *based on brofield's brilliant work simpleini, is a faster ini ext for fusion.*
+
+  - _based on brofield's brilliant work simpleini, is a faster ini ext for fusion._
 
 - RandomTable
-  - *Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.*
+
+  - _Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game._
 
 - WinAPI
-  - *a bunch of small functions.*
+
+  - _a bunch of small functions._
 
 - Help
-  - *Help File from MMF SDK*
+
+  - _Help File from MMF SDK_
 
 - Steamworks API
-  - *still didn't get it running tbh*
+
+  - _still didn't get it running tbh_
 
 - _Template
-  - *Ext template, but converted to VS 2019*
+
+  - _Ext template, but converted to VS 2019_
 
 ## Shaders
 
 some simple and stupid shader
 
 - AlphaMono
-  - *make semi-mono effect*
+
+  - _make semi-mono effect_
 
 - Gauss Blur
-  - *Finally here comes the gauss blur shader for DX11*
-  - *GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur*
+
+  - _Finally here comes the gauss blur shader for DX11_
+  - _GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur_
 
 - Ring Health Bar
-  - *simple health bar*
+
+  - _simple health bar_
 
 - Round Health Bar
-  - *simple health bar again*
+
+  - _simple health bar again_
 
 - Round Rectangle
-  - *draw a round rectangle*
+
+  - _draw a round rectangle_
 
 ## Tools
 
 small tools
 
 - CallofAS Toolbar
-  - *a handy tool bar set*
+
+  - _a handy tool bar set_
 
 - DX11 Shader Compile Tool
-  - *compile DX11 shaders by a simple drag*
+
+  - _compile DX11 shaders by a simple drag_
 
 ## Tutorials
 
