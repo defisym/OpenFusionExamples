@@ -97,11 +97,6 @@ short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
 //	long p2 = CNC_GetParameter(rdPtr);
 //	long p3 = CNC_GetParameter(rdPtr);
 //	etc.
-	
-	
-	int result;
-	SteamApps()->GetAppBuildId();
-	//result = SteamApps()->GetAppBuildId();
 
 	return 0;
 }

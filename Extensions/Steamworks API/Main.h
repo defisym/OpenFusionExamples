@@ -68,6 +68,8 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	HINSTANCE SteamAPI;
+	HINSTANCE SKDEncry;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

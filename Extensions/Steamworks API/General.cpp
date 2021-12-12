@@ -157,8 +157,8 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // 
 
 LPCTSTR szDep[] = {
-	//_T("Unicode\\Nsteam_api.dll"),
-	_T("steam_api.dll"),
+	////_T("Unicode\\Nsteam_api.dll"),
+	//_T("steam_api.dll"),
 	NULL
 };
 
