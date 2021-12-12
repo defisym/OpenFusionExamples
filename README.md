@@ -6,43 +6,63 @@ This is a Repo of several open source stuff about Fusion.
 
 Something still under development, aka WIP.
 
-## Example
+## Examples
 
 Simple examples
 
 - SubStretch
   - *Stretch Sub-application properly with WinAPI*
+
 - FastloopSave
   - *Save by Fastloop, could be easily extended to fit any systems*
+
 - Bullet Time
   - *A simple bullet time example*
+
 - DecimalVerdiction
   - *To check if a value has decimals*
+
 - DirNormalization
   - *convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)*
+
+- EasyBezier_v2
+  - *Created by CallofAS.
+  - *A WYSIWYG Bezier example. You can modify points and see the curve result directly, and move object with easing effect.*
+
 - EasyStack
   - *Push/Pop value without extension*
+
 - Ellipse
   - *move like a ellipse*
+
 - IniControlInit
   - *How to init a ini file*
+
 - MouseState
   - *to show if LMB/RMB is pushed down*
+
 - PauseWithTextBox
   - *pause app with an explanation*
+
 - Regex_IsNum
   - *check if a string is number by using string spliter*
+
 - Shotgun
   - *Simple Shotgun*
+
 - StringScan
   - *Search the string and excerpt text in ()*
+
 - Stupid Drag
   - *Drag to move camera*
+
 - Stupid HeatWave
   - *simple heatwave effect*
+
 - Stupid SRPG
   - *a SRPG example like **Fire Emblem** I wrote in 2017.*
   - *it's totally a mess of spaghetti code, but it's enough for a start.*
+
 - Stupid Things
   - *Something I made for someone else long long ago and now I couldn't tell what the hell it actually is*
 
@@ -80,7 +100,7 @@ some extensions I made for my game
 
 ## Shaders
 
-some simple and stupid shader
+some simple and stupid shaders
 
 - AlphaMono
   - *make semi-mono effect*
@@ -103,6 +123,7 @@ some simple and stupid shader
 small tools
 
 - CallofAS Toolbar
+  - *Created by CallofAS.
   - *a handy tool bar set*
 
 - DX11 Shader Compile Tool
