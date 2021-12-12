@@ -1,0 +1,23 @@
+<effect>
+<name>HeatWave_WindWaker</name>
+<description>HeatWave_WindWaker</description>
+<author>Defisym</author>
+<parameter>
+		<name>Offset</name>
+		<code>offset</code>
+		<description>Offset</description>
+		<type>int</type>
+		<property>edit</property>
+		<value>1</value>
+</parameter>
+<parameter>
+		<name>Side</name>
+		<code>side</code>
+		<description>Side</description>
+		<type>int</type>
+		<property>checkbox</property>
+		<value>1</value>
+</parameter>
+<BackgroundTexture>1</BackgroundTexture>
+</effect>
+

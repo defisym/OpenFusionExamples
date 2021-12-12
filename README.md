@@ -1,28 +1,27 @@
 # ReadMe
 
-This is a Repo of several open source stuff about Fusion.
+## Introduction
 
-## Develop
+This is a Repo of several open source stuff about [Clickteam Fusion](https://www.clickteam.com/).
 
-Something still under development, aka WIP.
+## How to Contribute
 
-## Examples
+If you have some good examples or something else and want to share, just simply fork this repo, then put files in a folder named by your works, place this folder by it's type, e.g. shaders in shaders folder, add a explanation to this file (ReadMe.md, alphabetically), and feel free to send a PR.
 
-Simple examples
+## Folders
 
-- SubStretch
-  - *Stretch Sub-application properly with WinAPI*
-
-- FastloopSave
-  - *Save by Fastloop, could be easily extended to fit any systems*
+### Examples
 
 - Bullet Time
+  - *Created by Defisym.
   - *A simple bullet time example*
 
 - DecimalVerdiction
+  - *Created by Defisym.
   - *To check if a value has decimals*
 
 - DirNormalization
+  - *Created by Defisym.
   - *convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)*
 
 - EasyBezier_v2
@@ -30,95 +29,133 @@ Simple examples
   - *A WYSIWYG Bezier example. You can modify points and see the curve result directly, and move object with easing effect.*
 
 - EasyStack
+  - *Created by Defisym.
   - *Push/Pop value without extension*
 
 - Ellipse
+  - *Created by Defisym.
   - *move like a ellipse*
 
+- FastloopSave
+  - *Created by Defisym.
+  - *Save by Fastloop, could be easily extended to fit any systems*
+
 - IniControlInit
+  - *Created by Defisym.
   - *How to init a ini file*
 
 - MouseState
+  - *Created by Defisym.
   - *to show if LMB/RMB is pushed down*
 
 - PauseWithTextBox
+  - *Created by Defisym.
   - *pause app with an explanation*
 
 - Regex_IsNum
+  - *Created by Defisym.
   - *check if a string is number by using string spliter*
 
 - Shotgun
+  - *Created by Defisym.
   - *Simple Shotgun*
 
 - StringScan
+  - *Created by Defisym.
   - *Search the string and excerpt text in ()*
 
 - Stupid Drag
+  - *Created by Defisym.
   - *Drag to move camera*
 
 - Stupid HeatWave
+  - *Created by Defisym.
   - *simple heatwave effect*
 
 - Stupid SRPG
+  - *Created by Defisym.
   - *a SRPG example like **Fire Emblem** I wrote in 2017.*
   - *it's totally a mess of spaghetti code, but it's enough for a start.*
 
-- Stupid Things
-  - *Something I made for someone else long long ago and now I couldn't tell what the hell it actually is*
+- SubStretch
+  - *Created by Defisym.
+  - *Stretch Sub-application properly with WinAPI*
 
-## Extensions
+### Extensions
 
-some extensions I made for my game
-
-- Func
-  - *Call Functions via Expression or Action*
+- Deque2D
+  - *Created by Defisym.
+  - *Under dev*
+  - *A morden version of MagicDeque based on std::variant*
 
 - Encrypter
+  - *Created by Defisym.
   - *En/decrtypt file with WinAPI CNG.*
   - *You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSpliter*
 
-- String Spliter
-  - *This object is a string splitter base on C++ regex.*
-
 - Fini
+  - *Created by Defisym.
   - *based on brofield's brilliant work simpleini, is a faster ini ext for fusion.*
 
+- Func
+  - *Created by Defisym.
+  - *Call Functions via Expression or Action*
+
 - RandomTable
+  - *Created by Defisym.
   - *Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.*
 
-- WinAPI
-  - *a bunch of small functions.*
-
-- Help
-  - *Help File from MMF SDK*
+- String Spliter
+  - *Created by Defisym.
+  - *This object is a string splitter base on C++ regex.*
 
 - Steamworks API
+  - *Created by Defisym.
+  - *Under dev*
   - *still didn't get it running tbh*
+
+- WinAPI
+  - *Created by Defisym.
+  - *a bunch of small functions.*
+
+- _DeLib
+  - *Created by Defisym.
+  - *several functions that my extensions share*
 
 - _Template
   - *Ext template, but converted to VS 2019*
 
-## Shaders
+- Help
+  - *Help File from MMF SDK*
 
-some simple and stupid shaders
+### Shaders
 
 - AlphaMono
+  - *Created by Defisym.
   - *make semi-mono effect*
 
 - Gauss Blur
+  - *Created by Defisym.
   - *Finally here comes the gauss blur shader for DX11*
   - *GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur*
 
+- Heatwave
+  - *Created by Defisym.
+  - *Create heatwave effect*
+
 - Ring Health Bar
+  - *Created by Defisym.
   - *simple health bar*
 
 - Round Health Bar
+  - *Created by Defisym.
   - *simple health bar again*
 
 - Round Rectangle
+  - *Created by Defisym.
   - *draw a round rectangle*
 
-## Tools
+### Tools
 
 small tools
 
@@ -127,8 +164,9 @@ small tools
   - *a handy tool bar set*
 
 - DX11 Shader Compile Tool
+  - *Created by Defisym.
   - *compile DX11 shaders by a simple drag*
 
-## Tutorials
+### Tutorials
 
-Some mfa files uses for Fusion tutorials on my blog.
+Some mfa files used for Fusion tutorials in [my blog](https://www.zhihu.com/column/FusionGamers).
