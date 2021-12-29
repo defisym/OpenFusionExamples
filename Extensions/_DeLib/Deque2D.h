@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+#include "StrNum.h"
+
 #include "Split.h"
 #include "RandGenerator.h"
 
@@ -20,8 +22,9 @@ typedef variant<int, double, wstring> Data;
 typedef deque<Data> DataDeq;
 typedef deque<DataDeq> DataDeq2D;
 
-#define DELIMITER L","
-#define STRQUOTATIONMARK L"\""
+#define END L'\0'
+#define DELIMITER L','
+#define STRQUOTATIONMARK L'\"'
 
 class Deque2D {
 private:
@@ -51,6 +54,7 @@ public:
 	//Save&Load
 	//Load from file
 	inline void Load(const wstring& FilePath, const wstring& Key, bool Unicode = true) {
+		//Spliter is used here to convert code page, inorder to support UTF-8 or ANSI
 		Split Spliter;
 		Spliter.SetUnicode(Unicode);
 		Spliter.OpenFile(FilePath.c_str());
@@ -70,38 +74,82 @@ public:
 	inline void Load(const wstring& Src) {
 		Dat.clear();
 
-		Split Spliter;
-		Spliter.InitSplit(NEWLINE);
-		Spliter.LoadData(Src);
-		Spliter.SplitData();
-
-		wstring StringRegex = L"(\")(.*)(\")";
-		wstring DoubleRegex = L".*\\..*";
-
-		for (size_t i = 0; i < Spliter.GetSplitSize(); i++) {
+		//prase
+		size_t start = Src.find_first_not_of(NEWLINE), end = start;
+		
+		while (start != std::wstring::npos) {
+			// Find next occurence of delimiter
+			end = Src.find(NEWLINE, start);
+			
+			// Process
 			this->ArrayPushBack();
 
-			Split SpliterLine;
-			SpliterLine.InitSplit(DELIMITER);
-			SpliterLine.LoadData(Spliter[i]);
-			SpliterLine.SplitData();
+			std::wstring Line = Src.substr(start, end - start);
 
-			for (size_t j = 0; j < SpliterLine.GetSplitSize(); j++) {
-				//is string
-				if (SpliterLine.StringMatchRegex(SpliterLine[j], StringRegex.c_str(), false)) {
-					this->DataPushBack(this->ArrayBackPos(), SpliterLine.ReplaceStr(SpliterLine[j], StringRegex.c_str(), L"$2"));
+			size_t tokenstart = 0, tokenend = 0, pos = 0;
+			bool InStrQuota = false;
+			bool CurInQuota = false;
+			
+			for (size_t pos = 0; pos !=Line.length(); pos++) {
+				bool End = (pos == Line.length() - 1);
+				
+				auto Cur = Line[pos];
+				auto Next= End?Line[pos+1]:END;
+
+
+				if ((Line[pos] == STRQUOTATIONMARK)&& (Line[pos+1] != STRQUOTATIONMARK)) {
+					if (!InStrQuota) {
+						tokenstart++;
+					}
+
+					InStrQuota = !InStrQuota;
 				}
-				//is double
-				else if (SpliterLine.StringMatchRegex(SpliterLine[j], DoubleRegex.c_str(), false)) {
-					this->DataPushBack(this->ArrayBackPos(), stod(SpliterLine[j]));
-				}
-				//is int
-				else {
-					this->DataPushBack(this->ArrayBackPos(), stoi(SpliterLine[j]));
+
+				if (!InStrQuota && ((Line[pos] == DELIMITER) || (pos == Line.length() - 1))) {
+					tokenend = pos;
+					std::wstring Token = Line.substr(tokenstart, tokenend - tokenstart);
+					tokenstart = pos + 1;
 				}
 			}
 
+			// Skip all occurences of the delimiter to find new start
+			start = Src.find_first_not_of(NEWLINE, end);
 		}
+
+
+
+		//Split Spliter;
+		//Spliter.InitSplit(NEWLINE);
+		//Spliter.LoadData(Src);
+		//Spliter.SplitData();
+
+		//wstring StringRegex = L"(\")(.*)(\")";
+		//wstring DoubleRegex = L".*\\..*";
+
+		//for (size_t i = 0; i < Spliter.GetSplitSize(); i++) {
+		//	this->ArrayPushBack();
+
+		//	Split SpliterLine;
+		//	SpliterLine.InitSplit(DELIMITER);
+		//	SpliterLine.LoadData(Spliter[i]);
+		//	SpliterLine.SplitData();
+
+		//	for (size_t j = 0; j < SpliterLine.GetSplitSize(); j++) {
+		//		//is string
+		//		if (SpliterLine.StringMatchRegex(SpliterLine[j], StringRegex.c_str(), false)) {
+		//			this->DataPushBack(this->ArrayBackPos(), SpliterLine.ReplaceStr(SpliterLine[j], StringRegex.c_str(), L"$2"));
+		//		}
+		//		//is double
+		//		else if (SpliterLine.StringMatchRegex(SpliterLine[j], DoubleRegex.c_str(), false)) {
+		//			this->DataPushBack(this->ArrayBackPos(), stod(SpliterLine[j]));
+		//		}
+		//		//is int
+		//		else {
+		//			this->DataPushBack(this->ArrayBackPos(), stoi(SpliterLine[j]));
+		//		}
+		//	}
+
+		//}
 	}
 
 	//Save to file
