@@ -248,6 +248,11 @@ public:
 		return Output;
 	}
 
+	//Search
+	inline bool LastSearchMatched() {
+		return SearchResultVec.size() != 0;
+	}
+
 	inline size_t GetSearchResultVecSize() {
 		return SearchResultVec.size();
 	}
