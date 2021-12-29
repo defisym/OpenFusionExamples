@@ -34,10 +34,17 @@ class Deque2D {
 private:
 	DataDeq2D Dat;
 
-	typedef struct {
+	typedef struct ElementPos{
 		size_t ArrayPos;
 		size_t DataPos;
 	}Pos;
+
+	typedef struct SearchResult {
+		Data Data;
+		Pos Pos;
+	}SearchResult;
+
+	vector<SearchResult> SearchResultVec;
 
 	inline size_t GetValidArrayPos(size_t ArrayPos) {
 		return min(this->ArrayBackPos(), ArrayPos);
@@ -54,20 +61,47 @@ private:
 		return ValidPos;
 	}
 
+	//process quota escape
+	inline std::wstring EscapeDoubleToSingle(const std::wstring& Src) {
+		std::wstring Escape;
+
+		for (size_t pos = 0; pos != Src.length(); pos++) {
+			bool End = (pos == Src.length() - 1);
+
+			auto Cur = Src[pos];
+			auto Next = !End ? Src[pos + 1] : CHARSTREND;
+
+			Escape += Src[pos];
+
+			if ((Cur == CHARSTRQUOTATIONMARK) && (Next == CHARSTRQUOTATIONMARK)) {
+				pos++;
+			}
+		}
+
+		return Escape;
+	}
+	inline std::wstring EscapeSingleToDouble(const std::wstring& Src) {
+		std::wstring Escape;
+
+		for (size_t pos = 0; pos != Src.length(); pos++) {
+			auto Cur = Src[pos];
+
+			Escape += Src[pos];
+			if (Cur == CHARSTRQUOTATIONMARK) {
+				Escape += Src[pos];
+			}
+		}
+
+		return Escape;
+	}
+
 	//Get token between tokenstart and tokenstart (don't include Src[tokenend])
 	inline void GetToken(const std::wstring& Src, size_t tokenstart, size_t tokenend) {
 		std::wstring Token;
 
 		//String
 		if (Src[tokenstart] == CHARSTRQUOTATIONMARK) {
-			Token = Src.substr(tokenstart + 1, tokenend - tokenstart - 2);
-
-			size_t RepPos = Token.find(L"\"\"");
-			
-			if (RepPos != std::wstring::npos) {
-				Token = Token.replace(RepPos, 2, L"\"");
-			}
-
+			Token = EscapeDoubleToSingle(Src.substr(tokenstart + 1, tokenend - tokenstart - 2));
 			this->DataPushBack(this->ArrayBackPos(), Token);
 		}
 		//Number
@@ -108,7 +142,7 @@ public:
 			bool End = (pos == Src.length() - 1);
 
 			auto Cur = Src[pos];
-			auto Next = !End ? Src[pos + 1] : CHARSTREND;		
+			auto Next = !End ? Src[pos + 1] : CHARSTREND;
 
 			//new line
 			if (!InStrQuota && (Cur == L'\r') && (Next == L'\n')) {
@@ -197,7 +231,7 @@ public:
 					break;
 					//wstring
 				case 2:
-					Output += STRQUOTATIONMARK + get<wstring>((*it)) + STRQUOTATIONMARK;
+					Output += STRQUOTATIONMARK + EscapeSingleToDouble(get<wstring>((*it))) + STRQUOTATIONMARK;
 					break;
 				}
 
@@ -213,6 +247,55 @@ public:
 
 		return Output;
 	}
+
+	inline size_t GetSearchResultVecSize() {
+		return SearchResultVec.size();
+	}
+
+	inline size_t GetSearchResultArrayPos(size_t index) {
+		return SearchResultVec.at(index).Pos.ArrayPos;
+	}
+	inline size_t GetSearchResultDataPos(size_t index) {
+		return SearchResultVec.at(index).Pos.DataPos;
+	}
+
+	inline int GetSearchResultDataInt(size_t index) {
+		int ret = 0;
+
+		try {
+			ret = get<int>(SearchResultVec.at(index).Data);
+		}
+		catch (bad_variant_access) {
+			//
+		}
+		
+		return ret;
+	}
+	inline double GetSearchResultDataDouble(size_t index) {
+		double ret = 0.0;
+
+		try {
+			ret = get<double>(SearchResultVec.at(index).Data);
+		}
+		catch (bad_variant_access) {
+			//
+		}
+
+		return ret;
+	}
+	inline wstring GetSearchResultDataString(size_t index) {
+		wstring ret = L"";
+
+		try {
+			ret = get<wstring>(SearchResultVec.at(index).Data);
+		}
+		catch (bad_variant_access) {
+			//
+		}
+
+		return ret;
+	}
+
 
 	//Data Operation
 
@@ -356,6 +439,27 @@ public:
 		std::mt19937 eng{ rd() };
 
 		shuffle(Dat.begin(), Dat.end(), eng);
+	}
+
+	inline void ArraySearch(Data Data) {
+		SearchResultVec.clear();
+
+		size_t ArrayPos = 0;
+
+		for (auto& it : Dat) {
+			DataSearch(Data,ArrayPos);
+			ArrayPos++;
+		}
+	}
+	inline void ArraySearchStr(wstring Regex) {
+		SearchResultVec.clear();
+
+		size_t ArrayPos = 0;
+
+		for (auto& it : Dat) {
+			DataSearchStr(Regex, ArrayPos);
+			ArrayPos++;
+		}
 	}
 
 	//Data
@@ -603,6 +707,34 @@ public:
 			std::mt19937 eng{ rd() };
 
 			shuffle(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), eng);
+		}
+	}
+
+	inline void DataSearch(Data Data, size_t ArrayPos) {
+		size_t DataPos = 0;
+
+		if (ArrayPosValid(ArrayPos)) {
+			for (auto& it : Dat[ArrayPos]) {
+				if (it == Data) {
+					this->SearchResultVec.emplace_back(SearchResult{ it,Pos{ArrayPos,DataPos} });
+				}
+
+				DataPos++;
+			}
+		}
+	}
+	inline void DataSearchStr(wstring Regex, size_t ArrayPos) {
+		size_t DataPos = 0;
+		std::wregex Reg(Regex);
+
+		if (ArrayPosValid(ArrayPos)) {
+			for (auto& it : Dat[ArrayPos]) {				
+				if ((it.index() == (size_t)DataType::STRING) && std::regex_match(get<wstring>(it), Reg)) {
+					this->SearchResultVec.emplace_back(SearchResult{ it,Pos{ArrayPos,DataPos} });
+				}
+
+				DataPos++;
+			}
 		}
 	}
 };
