@@ -22,7 +22,11 @@ typedef variant<int, double, wstring> Data;
 typedef deque<Data> DataDeq;
 typedef deque<DataDeq> DataDeq2D;
 
-#define END L'\0'
+#define CHARSTREND L'\0'
+#define CHARDELIMITER L','
+#define CHARSTRQUOTATIONMARK L'\"'
+
+#define STREND L'\0'
 #define DELIMITER L','
 #define STRQUOTATIONMARK L'\"'
 
@@ -50,106 +54,100 @@ private:
 		return ValidPos;
 	}
 
+	//Get token between tokenstart and tokenstart (don't include Src[tokenend])
+	inline void GetToken(const std::wstring& Src, size_t tokenstart, size_t tokenend) {
+		std::wstring Token;
+
+		//String
+		if (Src[tokenstart] == CHARSTRQUOTATIONMARK) {
+			Token = Src.substr(tokenstart + 1, tokenend - tokenstart - 2);
+
+			size_t RepPos = Token.find(L"\"\"");
+			
+			if (RepPos != std::wstring::npos) {
+				Token = Token.replace(RepPos, 2, L"\"");
+			}
+
+			this->DataPushBack(this->ArrayBackPos(), Token);
+		}
+		//Number
+		else {
+			Token = Src.substr(tokenstart, tokenend - tokenstart);
+			this->DataPushBack(this->ArrayBackPos(), StrIsFloat(Token) ? _stod(Token) : _stoi(Token));
+		}
+	}
+
 public:
 	//Save&Load
 	//Load from file
 	inline void Load(const wstring& FilePath, const wstring& Key, bool Unicode = true) {
 		//Spliter is used here to convert code page, inorder to support UTF-8 or ANSI
 		Split Spliter;
-		Spliter.SetUnicode(Unicode);
-		Spliter.OpenFile(FilePath.c_str());
-
-		if (Key != L"") {
-			Spliter.GenerateKey(Key.c_str());
-			Spliter.Decrypt();
-			Spliter.LoadData(Spliter.GetOutputStr());
-		}
-		else {
-			Spliter.LoadData(Spliter.GetInputStr());
-		}
+		Spliter.LoadFile(FilePath, Key, Unicode);
 
 		this->Load(Spliter.GetSplitData());
 	}
 	//Load from string
 	inline void Load(const wstring& Src) {
+		if (Src.length() == 0) {
+			return;
+		}
+
+		//Reset
 		Dat.clear();
+		this->ArrayPushBack();
 
-		//prase
-		size_t start = Src.find_first_not_of(NEWLINE), end = start;
+		//Start phrase
+		size_t tokenstart = 0, tokenend = 0;
 		
-		while (start != std::wstring::npos) {
-			// Find next occurence of delimiter
-			end = Src.find(NEWLINE, start);
-			
-			// Process
-			this->ArrayPushBack();
+		bool InStrQuota = false;
+		bool CurInQuota = false;
 
-			std::wstring Line = Src.substr(start, end - start);
+		for (size_t pos = 0; pos != Src.length(); pos++) {
+			//define vairable values
+			bool End = (pos == Src.length() - 1);
 
-			size_t tokenstart = 0, tokenend = 0, pos = 0;
-			bool InStrQuota = false;
-			bool CurInQuota = false;
-			
-			for (size_t pos = 0; pos !=Line.length(); pos++) {
-				bool End = (pos == Line.length() - 1);
-				
-				auto Cur = Line[pos];
-				auto Next= End?Line[pos+1]:END;
+			auto Cur = Src[pos];
+			auto Next = !End ? Src[pos + 1] : CHARSTREND;		
 
+			//new line
+			if (!InStrQuota && (Cur == L'\r') && (Next == L'\n')) {
+				GetToken(Src, tokenstart, pos);
+				pos++;
+				tokenstart = pos+1;				
 
-				if ((Line[pos] == STRQUOTATIONMARK)&& (Line[pos+1] != STRQUOTATIONMARK)) {
-					if (!InStrQuota) {
-						tokenstart++;
-					}
-
-					InStrQuota = !InStrQuota;
+				//not end, push value
+				if ((pos + 1) != Src.length()) {
+					this->ArrayPushBack();
 				}
 
-				if (!InStrQuota && ((Line[pos] == DELIMITER) || (pos == Line.length() - 1))) {
-					tokenend = pos;
-					std::wstring Token = Line.substr(tokenstart, tokenend - tokenstart);
-					tokenstart = pos + 1;
+				continue;
+			}
+
+			//Quota
+			if (!InStrQuota && (Cur == CHARSTRQUOTATIONMARK)) {
+				InStrQuota = true;
+				continue;
+			}
+			
+			if (InStrQuota && (Cur == CHARSTRQUOTATIONMARK)) {
+				//double quota
+				if (Next == CHARSTRQUOTATIONMARK) {
+					pos++;
+
+					continue;
+				}
+				else {
+					InStrQuota = false;
 				}
 			}
 
-			// Skip all occurences of the delimiter to find new start
-			start = Src.find_first_not_of(NEWLINE, end);
+			//get token
+			if (!InStrQuota && (End||(Cur == CHARDELIMITER))) {
+				GetToken(Src, tokenstart, pos + End);
+				tokenstart = pos + 1;
+			}
 		}
-
-
-
-		//Split Spliter;
-		//Spliter.InitSplit(NEWLINE);
-		//Spliter.LoadData(Src);
-		//Spliter.SplitData();
-
-		//wstring StringRegex = L"(\")(.*)(\")";
-		//wstring DoubleRegex = L".*\\..*";
-
-		//for (size_t i = 0; i < Spliter.GetSplitSize(); i++) {
-		//	this->ArrayPushBack();
-
-		//	Split SpliterLine;
-		//	SpliterLine.InitSplit(DELIMITER);
-		//	SpliterLine.LoadData(Spliter[i]);
-		//	SpliterLine.SplitData();
-
-		//	for (size_t j = 0; j < SpliterLine.GetSplitSize(); j++) {
-		//		//is string
-		//		if (SpliterLine.StringMatchRegex(SpliterLine[j], StringRegex.c_str(), false)) {
-		//			this->DataPushBack(this->ArrayBackPos(), SpliterLine.ReplaceStr(SpliterLine[j], StringRegex.c_str(), L"$2"));
-		//		}
-		//		//is double
-		//		else if (SpliterLine.StringMatchRegex(SpliterLine[j], DoubleRegex.c_str(), false)) {
-		//			this->DataPushBack(this->ArrayBackPos(), stod(SpliterLine[j]));
-		//		}
-		//		//is int
-		//		else {
-		//			this->DataPushBack(this->ArrayBackPos(), stoi(SpliterLine[j]));
-		//		}
-		//	}
-
-		//}
 	}
 
 	//Save to file

@@ -33,6 +33,20 @@ void Split::ResetSplit() {
     this->Flag = this->DefaultFlag;
 }
 
+void Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode) {
+    this->SetUnicode(Unicode);
+    this->OpenFile(FilePath.c_str());
+
+    if (Key != L"") {
+        this->GenerateKey(Key.c_str());
+        this->Decrypt();
+        this->LoadData(this->GetOutputStr());
+    }
+    else {
+        this->LoadData(this->GetInputStr());
+    }
+}
+
 void Split::LoadData() {
     this->LoadData(this->GetInputStr(), this->GetInputStrLength());
     this->ReleaseInputStr();

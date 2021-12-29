@@ -1,5 +1,7 @@
 #pragma once
 
+#include	<cmath>
+
 enum class StrType
 {
 	NotNum,
@@ -40,14 +42,26 @@ inline StrType StrIsNumCore(const wchar_t* p) {
 	return Type;
 }
 
+inline StrType StrIsNumCore(const std::wstring& p) {
+	return StrIsNumCore(p.c_str());
+}
+
 //check if a string is number
 inline bool StrIsNum(const wchar_t* p) {
 	return StrIsNumCore(p) == StrType::NotNum ? false : true;
 }
 
+inline bool StrIsNum(const std::wstring& p) {
+	return StrIsNum(p.c_str());
+}
+
 //check if a string is float
 inline bool StrIsFloat(const wchar_t* p) {
 	return StrIsNumCore(p) == StrType::IsFloat;
+}
+
+inline bool StrIsFloat(const std::wstring& p) {
+	return StrIsFloat(p.c_str());
 }
 
 constexpr auto DoubleStrSize = 50+1;
@@ -114,6 +128,10 @@ inline double _stod(const wchar_t* p) {
 	}
 
 	return r;
+}
+
+inline double _stod(const std::wstring& p) {
+	return _stod(p.c_str());
 }
 
 inline float _stof(const std::wstring& p) {

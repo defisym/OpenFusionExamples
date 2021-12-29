@@ -51,6 +51,14 @@ private:
 	void Release(void* Pointer);
 	bool Encrypt_Core(bool Encrypt, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM);
 
+protected:
+	char* GetInputData() {
+		return (char*)this->InputData;
+	}
+	char* GetOutputData() {
+		return (char*)this->OutputData;
+	}
+
 public:
 	Encryption();
 	~Encryption();

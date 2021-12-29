@@ -92,6 +92,9 @@ public:
         this->Unicode = Unicode;
     }
 
+    //load file and decrypt it
+    void LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode = true);
+
     //load data loaded by parent class
     void LoadData();
     //load data from byte str (convert to wchar)
