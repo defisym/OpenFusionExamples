@@ -34,10 +34,10 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Encryption.cpp">
+    <ClCompile Include="..\_DeLib\Encryption.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Split.cpp">
+    <ClCompile Include="..\_DeLib\Split.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -133,16 +133,16 @@
     <ClInclude Include="..\..\Inc\WinMacro.h">
       <Filter>MMF Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Encryption.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Split.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Defination.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Func.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\Encryption.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\Split.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

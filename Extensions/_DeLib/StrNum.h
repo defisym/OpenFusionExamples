@@ -1,0 +1,149 @@
+#pragma once
+
+enum class StrType
+{
+	NotNum,
+	IsNum,
+	IsFloat,
+};
+
+//check if a string is number
+inline StrType StrIsNumCore(const wchar_t* p) {
+	StrType Type= StrType::IsNum;
+
+	if (*p == L'-') {
+		++p;
+	}
+	if (*p == L'+') {
+		++p;
+	}
+
+	while (*p >= L'0' && *p <= L'9') {
+		++p;
+	}
+
+	if (*p == L'.') {
+		Type = StrType::IsFloat;
+
+		++p;
+
+		while (*p >= L'0' && *p <= L'9') {
+			++p;
+		}
+
+	}
+
+	if (*p != L'\0') {
+		Type = StrType::NotNum;
+	}
+
+	return Type;
+}
+
+//check if a string is number
+inline bool StrIsNum(const wchar_t* p) {
+	return StrIsNumCore(p) == StrType::NotNum ? false : true;
+}
+
+//check if a string is float
+inline bool StrIsFloat(const wchar_t* p) {
+	return StrIsNumCore(p) == StrType::IsFloat;
+}
+
+constexpr auto DoubleStrSize = 50+1;
+
+//convert double to string, 2X faster than to_string
+inline std::wstring _dtos(double Val) {
+	//auto size = swprintf(nullptr, 0, L"%f", Val);
+	std::wstring ret(DoubleStrSize, '\0');
+	swprintf(&ret[0], DoubleStrSize, L"%f", Val);
+
+	return ret;
+}
+
+inline std::wstring _ftos(float Val) {
+	return _dtos(Val);
+}
+
+inline void _dtos(double Val, std::wstring& Str) {
+	swprintf(&Str[0], DoubleStrSize, L"%f", Val);
+}
+
+inline void _ftos(double Val, std::wstring& Str) {
+	_dtos(Val, Str);
+}
+
+//convert string to double, 5X faster than std::stod
+inline double _stod(const wchar_t* p) {
+	double r = 0.0;
+	bool neg = false;
+
+	if (*p == L'-') {
+		neg = true;
+		++p;
+	}
+	if (*p == L'+') {
+		++p;
+	}
+
+	while (*p >= L'0' && *p <= L'9') {
+		r = (r * 10.0) + (*p - L'0');
+		++p;
+	}
+
+	if (*p == L'.') {
+		double f = 0.0;
+		int n = 0;
+		++p;
+
+		while (*p >= L'0' && *p <= L'9') {
+			f = (f * 10.0) + (*p - L'0');
+			++p;
+			++n;
+		}
+
+		r += f / std::pow(10.0, n);
+	}
+
+	if (*p != L'\0') {
+		return 0.0;
+	}
+
+	if (neg) {
+		r = -r;
+	}
+
+	return r;
+}
+
+inline float _stof(const std::wstring& p) {
+	return (float)_stod(p.c_str());
+}
+
+inline int _stoi(const wchar_t* p) {
+	int r = 0;
+	bool neg = false;
+
+	if (*p == L'-') {
+		neg = true;
+		++p;
+	}
+	if (*p == L'+') {
+		++p;
+	}
+
+	while (*p >= L'0' && *p <= L'9') {
+		r = (r * 10) + (*p - L'0');
+		++p;
+	}
+
+	if (neg) {
+		r = -r;
+	}
+
+	return r;
+}
+
+inline int _stoi(const std::wstring& p) {
+	return _stoi(p.c_str());
+}
