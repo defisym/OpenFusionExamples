@@ -30,7 +30,8 @@
 // My headers
 #include	"SimpleIni.h"
 #include	"Defination.h"
-#include	"..\_DeLib\Encryption.h"
+#include	"Encryption.h"
+#include	"StrNum.h"
 
 // Specific to this cox
 #include	"resource.h"

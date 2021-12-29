@@ -30,12 +30,12 @@
 // STL
 #include	<unordered_map>
 
-#include	<cmath>
 #include	<vector>
 #include	<string>
 
 // My headers
 #include	"Defination.h"
+#include	"StrNum.h"
 
 // Specific to this cox
 #include	"resource.h"

@@ -14,45 +14,6 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
-//if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
-inline const std::wstring NewLineEscape(const wchar_t* Src) {
-	std::wregex NewLineEscape(_T("(\\\\r\\\\n)"));
-	return std::regex_replace(Src, NewLineEscape, L"\r\n").c_str();
-}
-
-//chekc if a string is number
-inline bool StrIsNum(const wchar_t* p) {
-	if (*p == L'-') {
-		++p;
-	}
-	if (*p == L'+') {
-		++p;
-	}
-
-	while (*p >= L'0' && *p <= L'9') {
-		++p;
-	}
-
-	if (*p == L'.') {
-		++p;
-
-		while (*p >= L'0' && *p <= L'9') {
-			++p;
-		}
-
-	}
-
-	if (*p != L'\0') {
-		return false;
-	}
-
-	return true;
-}
-
-inline bool StrIsNum(const std::wstring& p) {
-	return StrIsNum(p.c_str());
-}
-
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	if (Val == (int)Val) {
 		return (int)Val;

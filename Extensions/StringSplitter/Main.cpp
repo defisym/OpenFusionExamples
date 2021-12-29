@@ -176,17 +176,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	bool Enable = (bool)CNC_GetIntParameter(rdPtr);
 
-	Spliter->SetUnicode(Enable);
-	Spliter->OpenFile(FilePath);
-
-	if (!StrEmpty(Key)) {
-		Spliter->GenerateKey(Key);
-		Spliter->Decrypt();
-		Spliter->LoadData(Spliter->GetOutputStr());
-	}
-	else {
-		Spliter->LoadData(Spliter->GetInputStr());
-	}
+	Spliter->LoadFile(FilePath, Key, Enable);	
 
 	if (rdPtr->AutoSplit) {
 		Spliter->SplitData();

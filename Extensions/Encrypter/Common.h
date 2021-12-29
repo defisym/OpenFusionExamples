@@ -28,7 +28,7 @@
 #include	"Surface.h"
 
 // My headers
-#include	"..\_DeLib\Encryption.h"
+#include	"Encryption.h"
 
 // Specific to this cox
 #include	"resource.h"

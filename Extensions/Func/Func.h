@@ -14,74 +14,6 @@ inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
-//convert double to string, 2X faster than to_string
-inline std::wstring _dtos(double Val) {
-	//auto size = swprintf(nullptr, 0, L"%f", Val);
-	std::wstring ret(DoubleStrSize, '\0');
-	swprintf(&ret[0], DoubleStrSize, L"%f", Val);
-
-	return ret;
-}
-
-inline std::wstring _ftos(float Val) {
-	return _dtos(Val);
-}
-
-inline void _dtos(double Val, std::wstring& Str) {
-	swprintf(&Str[0], DoubleStrSize, L"%f", Val);
-}
-
-inline void _ftos(double Val, std::wstring& Str) {
-	_dtos(Val, Str);
-}
-
-//convert string to double, 5X faster than std::stod
-inline double _stod(const wchar_t* p) {
-	double r = 0.0;
-	bool neg = false;
-
-	if (*p == L'-') {
-		neg = true;
-		++p;
-	}
-	if (*p == L'+') {
-		++p;
-	}
-
-	while (*p >= L'0' && *p <= L'9') {
-		r = (r * 10.0) + (*p - L'0');
-		++p;
-	}
-
-	if (*p == L'.') {
-		double f = 0.0;
-		int n = 0;
-		++p;
-
-		while (*p >= L'0' && *p <= L'9') {
-			f = (f * 10.0) + (*p - L'0');
-			++p;
-			++n;
-		}
-
-		r += f / std::pow(10.0, n);
-	}
-
-	if (*p != L'\0') {
-		return 0.0;
-	}
-
-	if (neg) {
-		r = -r;
-	}
-
-	return r;
-}
-
-inline float _stof(const std::wstring& p) {
-	return (float)_stod(p.c_str());
-}
-
 //convert data
 inline void Data_StoV(Data& Data) {
 	if (Data.Type == DataType::STRING && !Data.Converted) {
@@ -95,39 +27,6 @@ inline void Data_VtoS(Data& Data) {
 		Data.Str = _ftos(Data.Val);
 		Data.Converted = true;
 	}
-}
-
-//check if a string is number
-inline bool StrIsNum(const wchar_t* p) {
-	if (*p == L'-') {
-		++p;
-	}
-	if (*p == L'+') {
-		++p;
-	}
-
-	while (*p >= L'0' && *p <= L'9') {
-		++p;
-	}
-
-	if (*p == L'.') {
-		++p;
-
-		while (*p >= L'0' && *p <= L'9') {
-			++p;
-		}
-
-	}
-
-	if (*p != L'\0') {
-		return false;
-	}
-
-	return true;
-}
-
-inline bool StrIsNum(const std::wstring& p) {
-	return StrIsNum(p.c_str());
 }
 
 //check if data can be convert to number

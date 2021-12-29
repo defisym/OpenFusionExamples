@@ -36,7 +36,6 @@ typedef std::wstring STRING;
 typedef STRING* LPSTRING;
 
 #define DefaultVecSize 20
-#define DoubleStrSize 50+1
 
 #define OStr rdPtr->OutPut
 
