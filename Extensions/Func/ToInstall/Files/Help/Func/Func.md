@@ -17,7 +17,7 @@ If you set an func's return value or temp param to another expression func's ret
 
 Please use another alterable value or global value to store the previous return value and then use it somewhere.
 
-For cases that you only need to use an expression's return as parent's return, use `Pass Prevous Func's Return` instead of `Set Current Func's Return` as a temporary solution.
+For cases that you only need to use an expression's return as parent's return, use `Pass Previous Func's Return` instead of `Set Current Func's Return` as a temporary solution.
 
 ## Note
 
@@ -27,9 +27,11 @@ Or you need to open compatible mode in object properties
 
 Func supports two data type : string and value. All data saved in extension will be converted to the data type you need when retrieving it, and the convert result will be saved. when you retrieve the same type later, ext will not do the convert again.
 
-Please use the same data type to get avoid of convertion to get better profermance
+Please use the same data type to get avoid of conversion to get better performance
 
 Note: Func's params and return set by `Set Current Func's All Return` is always string.
+
+Fusion only maintain one scope list, that is to say, if you jump out an event, this event's scope will be broken. So Func works like fastloop, both are scope breaker.
 
 ## Action
 
@@ -40,7 +42,7 @@ Note: Func's params and return set by `Set Current Func's All Return` is always 
 
 - Loop
   - *Please use this inside a func event to avoid unexpected behaviour*
-  - *Loop control for action funcs, works alomst the same as fastloop, but make it easier to pass temp values*
+  - *Loop control for action funcs, works almost the same as fastloop, but make it easier to pass temp values*
   
   - Set Func's LoopIndex
   - Stop Func Loop
@@ -48,13 +50,13 @@ Note: Func's params and return set by `Set Current Func's All Return` is always 
 - Temp Param
   - *Please use this inside a func event to avoid unexpected behaviour*
   - *You can set several temp params, and retrieve then for calculation, etc*
-  - *Temp params are saved in a map, so recursive funcs share the same temp param. That is to say, temp params of a func is not separated as `C/C++` if you call it recurisively, use normal param to pass temp values in this case*
+  - *Temp params are saved in a map, so recursive funcs share the same temp param. That is to say, temp params of a func is not separated as `C/C++` if you call it recursively, use normal param to pass temp values in this case*
   - *all temp params of current func will be erased after func return (`On Func` event finish) if it's recursive index is 1*
 
   - Set Func's Temp Param (value)
   - Set Func's Temp Param (string)
     - *use this to change or set parent func's temp param in it's child*
-    - *Althougth you can set a never called func's temp param, but actually I do not recommend this*
+    - *Although you can set a never called func's temp param, but actually I do not recommend this*
   
   - Set Current Func's Temp Param (value)
   - Set Current Func's Temp Param (string)
@@ -77,7 +79,7 @@ Note: Func's params and return set by `Set Current Func's All Return` is always 
     - *if function is called by expression, expression will only return the first return value you pushed by this action*
     - *use action `Call Func` above to return multiple values*
   
-  - Pass Prevous Func's Return
+  - Pass Previous Func's Return
     - *pass an expression's return value as parent's return value, to bypass a known issue to pass return values by `Set Current Func's Return`*
 
 ## Condition
@@ -93,13 +95,13 @@ Note: Func's params and return set by `Set Current Func's All Return` is always 
       - *check if last func has return value at target pos*
 
   - Param
-    - Curernt Func Has Param At
-      - *check if curernt func has param at target pos*
+    - Current Func Has Param At
+      - *check if current func has param at target pos*
 
   - Temp Param
     - Func Has Temp Param
       - *check if target func has temp param of target name*
-    - Curernt Func Has Temp Param
+    - Current Func Has Temp Param
       - *check if current func has temp param of target name*
 
 - is Number
@@ -110,11 +112,11 @@ Note: Func's params and return set by `Set Current Func's All Return` is always 
     - Previous Func's Return At...is Number
   
   - Param
-    - Curernt Func's Param At...is Number
+    - Current Func's Param At...is Number
   
   - Temp Param
     - Func's Temp Param is Number
-    - Curernt Func's Temp Param is Number
+    - Current Func's Temp Param is Number
 
 ## Expression
 
@@ -186,4 +188,4 @@ Note: Func's params and return set by `Set Current Func's All Return` is always 
 
 - Get Current FuncName
   - *Please use this inside a func event to avoid unexpected behaviour*
-  - *e.g. when retriving temp values of current func, `GetTempParam$( "Func", CurFuncName$( "Func" ), "ParamName" )`*
+  - *e.g. when retrieving temp values of current func, `GetTempParam$( "Func", CurFuncName$( "Func" ), "ParamName" )`*
