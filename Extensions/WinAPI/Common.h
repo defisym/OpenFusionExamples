@@ -52,6 +52,7 @@
 #include	"TigsExt.hpp"
 
 //My headers
+#include	"Fusion.h"
 #include	"Encryption.h"
 
 //MMF

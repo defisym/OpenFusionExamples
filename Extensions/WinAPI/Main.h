@@ -12,8 +12,9 @@
 #define	CND_CONDITION_RKS			2
 #define	CND_CONDITION_IFS			3
 #define	CND_CONDITION_ICA			4
+#define	CND_CONDITION_IDHA			5
 
-#define	CND_LAST					5
+#define	CND_LAST					6
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -106,7 +107,9 @@
 
 #define	EXP_EXPRESSION_GFH			22
 
-#define	EXP_LAST                    23
+#define	EXP_EXPRESSION_GAD			23
+
+#define	EXP_LAST                    24
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

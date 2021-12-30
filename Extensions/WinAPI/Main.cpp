@@ -28,6 +28,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_RKS, M_CONDITION_RKS, CND_CONDITION_RKS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION,PARA_CONDITION_RKS,
 		IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_IDHA, M_CONDITION_IDHA, CND_CONDITION_IDHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_DIR,
 		};
 
 // Definitions of parameters for each action
@@ -129,6 +130,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GFLA, M_EXPRESSION_GFLA, EXP_EXPRESSION_GFLA, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GFLA,
 
 		IDMN_EXPRESSION_GFH, M_EXPRESSION_GFH, EXP_EXPRESSION_GFH, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_EXPRESSION_GFH,
+		
+		IDMN_EXPRESSION_GAD, M_EXPRESSION_GAD, EXP_EXPRESSION_GAD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
 		};
 
 // ============================================================================
@@ -165,6 +168,15 @@ long WINAPI DLLExport IsFullScreen(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport IsClipBoardAvailable(LPRDATA rdPtr, long param1, long param2) {
 	return  IsClipboardFormatAvailable(CF_DIB) ? TRUE : FALSE;
 }
+
+//朝向动画
+long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1, long param2) {
+	int Fixed = (int)CNC_GetIntParameter(rdPtr);
+	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
+
+	return DirHasAnimation(Fixed, Dir);
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -1469,6 +1481,13 @@ long WINAPI DLLExport GetFileHash(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->HashOutput;
 }
 
+//获取对象当前显示动画朝向
+long WINAPI DLLExport GetObjectAnimationDirection(LPRDATA rdPtr, long param1) {
+	int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	
+	return DisplayAnimationDirection(Fixed);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1484,6 +1503,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ReturnKeyState,
 			IsFullScreen,
 			IsClipBoardAvailable,
+			IsObjectHasAnimationInDirection,
 			0
 			};
 	
@@ -1586,6 +1606,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetFileListAt,
 
 			GetFileHash,
+
+			GetObjectAnimationDirection,
 
 			0
 			};

@@ -121,6 +121,11 @@ WinAPI, a bunch of small functions that uses Win32 API
 
 - Image Available in ClipBoard
 
+- Fusion  
+  - Object
+    - Object has Animation in Direction
+      - *check if object's direction has animation*
+
 ## Expression
 
 - Get Process ID By Name
@@ -174,3 +179,6 @@ WinAPI, a bunch of small functions that uses Win32 API
 - Fusion
   - Frame
     - Get Frame Name
+  - Object
+    - Get Object Display Animation Direction
+      - *fusion will use another direction's animation when object's direction is set to a direction that doesn't have animation, this expression will do some calculation and return the displayed animation direction*

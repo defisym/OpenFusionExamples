@@ -121,6 +121,14 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Image Available in ClipBoard", IDMN_CONDITION_ICA
         MENUITEM SEPARATOR
+        POPUP "Fusion"
+        BEGIN
+            POPUP "Object"
+            BEGIN
+                MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
+            END            
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -303,8 +311,7 @@ BEGIN
             MENUITEM "Get FileList At",      IDMN_EXPRESSION_GFLA  
         END
         MENUITEM SEPARATOR
-        POPUP "Hash"
-        
+        POPUP "Hash"        
         BEGIN
             MENUITEM "Get File Hash (MD5)",      IDMN_EXPRESSION_GFH  
         END
@@ -314,6 +321,11 @@ BEGIN
             POPUP "Frame"
             BEGIN
                 MENUITEM "Get Frame Name",      IDMN_EXPRESSION_GFN              
+            END
+            MENUITEM SEPARATOR
+            POPUP "Object"
+            BEGIN
+                MENUITEM "Get Object Display Animation Direction",      IDMN_EXPRESSION_GAD              
             END            
         END
         MENUITEM SEPARATOR
@@ -555,6 +567,8 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
+    M_EXPRESSION_GAD "DisAniDir ("
+    PARA_EXPRESSION_FIXED "Object's Fixed Value"
 END
 
 STRINGTABLE
@@ -603,6 +617,13 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_ICA    "Image Available in ClipBoard"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IDHA    "Object %0 has Animation in Direction %1"
+    PARA_CONDITION_OBJ    "Object to Test"
+    PARA_CONDITION_DIR    "Direction to Test"
 END
 
 //Porperties
