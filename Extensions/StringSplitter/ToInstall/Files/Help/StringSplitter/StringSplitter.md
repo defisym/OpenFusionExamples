@@ -91,7 +91,7 @@ This object has no properties.
     - *cost about 35ms for a 1000 line file*
     - *routine*
       - *remove comments*
-      - *iterate all lines splited by split regex*
+      - *iterate all lines split by split regex*
       - *if a line is empty, skip it*
       - *remove indent*
       - *save result to SplitStrVec*
@@ -120,10 +120,10 @@ This object has no properties.
 ## Condition
 
 - String Match Regex
-  - *return ture if string matches regex*
+  - *return true if string matches regex*
   - *Keep src empty to search source string*
 - String Has Regex
-  - *return ture if string's substring matches regex*
+  - *return true if string's substring matches regex*
   - *Keep src empty to search source string*
 
 - Iterate
@@ -143,7 +143,7 @@ This object has no properties.
 
 - Get Split Data
   - *Get the string that removed comment*
-  - *if data not splitted before this (or auto split not enabled), ext will return source data instead*
+  - *if data not split before this (or auto split not enabled), ext will return source data instead*
 
 - Replace String (Matchable)
   - *replace string with given regex*

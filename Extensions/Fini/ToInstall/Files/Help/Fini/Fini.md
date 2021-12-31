@@ -27,7 +27,7 @@ This object has no properties
   
   - Set On
     - *update auto filename and key here*
-    - *if you open another file by `Load From File`, auto filename and key will be overwrited*
+    - *if you open another file by `Load From File`, auto filename and key will be overwritten*
   - Set Off
     - *disable auto save*
 
@@ -58,13 +58,13 @@ This object has no properties
 
 - Delete (Section - Item)
   - *Keep Item empty to delete the entire section.*
-  - *Note: if a scetion is empty after you delete a item, this section will be deleted automatically*
+  - *Note: if a section is empty after you delete a item, this section will be deleted automatically*
 
 - Iterate
   - Iterate Sections
   - Iterate Items
     - *need section name to start iterate.*
-    - *if you start loop, "Currenct Section" will be set to the section name you inputted*
+    - *if you start loop, "Current Section" will be set to the section name you inputted*
 
 ## Condition
 
@@ -73,7 +73,7 @@ This object has no properties
   - On Iterate Items
 
 - Section - Item Has Value
-  - *return ture if it is not empty*
+  - *return true if it is not empty*
 
 ## Expression
 

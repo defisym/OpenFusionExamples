@@ -11,7 +11,7 @@ WinAPI, a bunch of small functions that uses Win32 API
     - *Keep the Mouse Locked After You Switch Back*
   - Update Lock
     - *Update Lock When Dragging/Resizing, Etc*
-  - Rect Offect
+  - Rect Offset
     - *Keep rect offset from current window when locking mouse by rect relative to screen*
 
 - IME Properties
@@ -20,7 +20,7 @@ WinAPI, a bunch of small functions that uses Win32 API
 
 - Display Properties
   - Display Image
-    - *Picture Captured in 'Capture Frame Area to Clipboard' will be Automaticly Displayed*
+    - *Picture Captured in 'Capture Frame Area to Clipboard' will be Automatically Displayed*
 
 ## Action
 
@@ -53,7 +53,7 @@ WinAPI, a bunch of small functions that uses Win32 API
       - Set On
       - Set Off
 
-    - Rect Offest
+    - Rect Offset
       - Set On
       - Set Off
 
@@ -159,7 +159,7 @@ WinAPI, a bunch of small functions that uses Win32 API
 
 - Get DPI Scaling
   - *Get application's DPI scale, to fix font size issue*
-  - *font size issue: if you disable DPI scaling and set a string's font size to a value that euqals it's current size, the font will get bigger as DPI scaling is on incorrectly*
+  - *font size issue: if you disable DPI scaling and set a string's font size to a value that equals it's current size, the font will get bigger as DPI scaling is on incorrectly*
 
 - Get FullScreen State
 

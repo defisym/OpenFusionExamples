@@ -2,7 +2,7 @@
 
 ## Description
 
-En/decrtypt file with WinAPI CNG
+En/decrypt file with WinAPI CNG
 
 ## Properties
 
