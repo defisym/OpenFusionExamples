@@ -60,7 +60,7 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 	}
 
 	//former
-	for (size_t pos = curdir; pos >= 0; pos--) {
+	for (size_t pos = curdir; pos != (size_t)(-1); pos--) {
 		if (DirHasAnimation(object, pos)) {
 			former = pos;
 			break;
@@ -619,4 +619,16 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 	}
 
 	return;
+}
+
+//AT array
+struct ATArray {
+	double Arr[3][3];
+};
+
+//Affine transformation
+inline void AffineTransformation(LPSURFACE img, ATArray Arr, int divide) {
+	auto Interpolation = [=]()->RGBA {
+
+	};
 }
