@@ -425,7 +425,7 @@ short WINAPI DLLExport MultiThreadSave_OFF(LPRDATA rdPtr, long param1, long para
 
 short WINAPI DLLExport SetDefaultFilterName(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR DefaultFilterName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	rdPtr->DefaultFilterName = GetFilterName(rdPtr, DefaultFilterName);
+	rdPtr->DefaultFilterName = GetFilterName(DefaultFilterName);
 
 	return 0;
 }
@@ -521,32 +521,10 @@ short WINAPI DLLExport LoadFromTemp(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		if (IsClipboardFormatAvailable(CF_DIB) && OpenClipboard(rdPtr->MainWindowHandle)) {
+		_LoadFromClipBoard(rdPtr->img, rdPtr->swidth, rdPtr->sheight, false, rdPtr->StretchQuality, rdPtr->MainWindowHandle);
 
-			HANDLE handle = GetClipboardData(CF_DIB);
-			BITMAPINFO* bmp = (BITMAPINFO*)GlobalLock(handle);
-
-			//Surface相关
-			cSurface img;
-			LPSURFACE proto = nullptr;
-			CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-			CImageFilter    pFilter(pImgMgr);
-
-			//Surface获取位图信息
-			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
-			img.Delete();
-			img.Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
-			img.LoadImage(bmp, GetDIBBitmap(bmp));
-
-			rdPtr->img->Delete();
-			rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
-						
-			Stretch(&img, rdPtr->img, rdPtr->StretchQuality);
-
-			// Redraw object
-			ReDisplay(rdPtr);
-		}
+		// Redraw object
+		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -554,23 +532,8 @@ short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2
 
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-
 		LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-
-		//Surface相关
-		cSurface img;
-		LPSURFACE proto = nullptr;
-		CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-		CImageFilter    pFilter(pImgMgr);
-
-		//Surface获取位图信息	
-		ImportImage(pImgMgr, FilePath, &img, 0, 0);
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
-		rdPtr->img->Delete();
-		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
-
-		Stretch(&img, rdPtr->img, rdPtr->StretchQuality);
+		_LoadFromFile(rdPtr->img, FilePath, rdPtr, rdPtr->swidth, rdPtr->sheight, false, rdPtr->StretchQuality);
 
 		// Redraw object
 		ReDisplay(rdPtr);

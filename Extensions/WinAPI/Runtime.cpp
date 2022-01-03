@@ -94,6 +94,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 		
+		////Surface指针使用流程
+		//LPSURFACE DIS;
+		//DIS = NewSurface();
+		//DIS->Create(rdPtr->swidth, rdPtr->sheight, proto);
+		//DeleteSurface(DIS);
+		
 		//Surface初始化
 		rdPtr->img = new cSurface;
 		rdPtr->temp = new cSurface;
@@ -101,11 +107,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
 		rdPtr->img->Fill(BLACK);
 
-		////Surface指针使用流程
-		//LPSURFACE DIS;
-		//DIS = NewSurface();
-		//DIS->Create(rdPtr->swidth, rdPtr->sheight, proto);
-		//DeleteSurface(DIS);
+		rdPtr->FilterIDListPtr = new FilterIDList;
 	}
 	
 	//主窗口句柄	
@@ -164,6 +166,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//Release Surface
 	delete rdPtr->img;
 	delete rdPtr->temp;
+
+	delete rdPtr->FilterIDListPtr;
 
 	//释放时间字符串
 	if (rdPtr->CurrentTime != nullptr) {

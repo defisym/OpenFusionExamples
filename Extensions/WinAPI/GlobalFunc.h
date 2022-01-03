@@ -84,11 +84,7 @@ void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des);
 extern std::mutex mtx;
 
 //Save to Clipboard
-void _SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release);
-//Save to Clipboard
 void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release);
-//Save to File
-void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
 //Save to File
 void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
 

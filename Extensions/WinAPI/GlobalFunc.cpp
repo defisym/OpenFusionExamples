@@ -486,35 +486,12 @@ void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des) {
 std::mutex mtx;
 
 //Save to Clipboard
-void _SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
-	if (!Src->IsValid()) {
-		return;
-	}
-
-	OpenClipboard(rdPtr->MainWindowHandle);
-	EmptyClipboard();
-
-	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
-	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
-
-	Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
-	SetClipboardData(CF_DIB, OutPut);
-
-	GlobalUnlock(cb);
-	CloseClipboard();
-
-	if (release) {
-		delete Src;
-	}
-}
-
-//Save to Clipboard
 void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
 	if (!rdPtr->MultiThreadSave) {
-		_SavetoClipBoard(Src, rdPtr,false);
+		_SavetoClipBoard(Src, false, rdPtr->MainWindowHandle);
 	}
 	else {
-		std::thread t(_SavetoClipBoard, Src, rdPtr, release && true);
+		std::thread t(_SavetoClipBoard, Src, release && true, rdPtr->MainWindowHandle);
 		t.detach();		
 	}
 
@@ -522,26 +499,12 @@ void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
 }
 
 //Save to File
-void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
-	if (!Src->IsValid()) {
-		return;
-	}
-
-	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
-	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath));
-
-	if (release) {
-		delete Src;
-	}
-}
-
-//Save to File
 void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
 	if (!rdPtr->MultiThreadSave) {
-		_SavetoFile(Src, FilePath, rdPtr, false);
+		_SavetoFile(Src, FilePath, rdPtr, false, rdPtr->FilterIDListPtr, rdPtr->DefaultFilterName);
 	}
 	else {
-		std::thread t(_SavetoFile, Src, FilePath, rdPtr, release && true);
+		std::thread t(_SavetoFile, Src, FilePath, rdPtr, release && true, rdPtr->FilterIDListPtr, rdPtr->DefaultFilterName);
 		t.detach();
 	}
 

@@ -11,6 +11,13 @@
 #define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
 
+struct GetFilterID_Compare
+{
+	bool operator()(LPCWSTR l, LPCWSTR r)  const noexcept { return (wcscmp(l, r) < 0); };
+};
+
+typedef std::map<LPCWSTR, DWORD, GetFilterID_Compare> FilterIDList;
+
 typedef struct DOUBLEPOINT
 {
 	DOUBLE  x;

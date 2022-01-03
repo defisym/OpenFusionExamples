@@ -28,10 +28,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
-//Definitions
-#include	"Definition.h"
-
 //STL
+#include	<map>
 #include	<deque>
 #include	<vector>
 #include	<thread>
@@ -46,19 +44,22 @@
 #pragma comment(lib,"Imm32.lib")
 //#pragma	comment(lib,"msimg32.lib") 
 
+//Definitions
+#include	"Definition.h"
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"
 #include	"TigsExt.hpp"
 
-//My headers
-#include	"Fusion.h"
-#include	"Encryption.h"
-
 //MMF
 #include	"ImgFlt.h"
 #include	"ImageFlt.h"
 #include	"CfcFile.h"
+
+//My headers
+#include	"Fusion.h"
+#include	"Encryption.h"
 
 //Global Func
 #include	"GlobalFunc.h"

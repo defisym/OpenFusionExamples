@@ -227,6 +227,7 @@ typedef struct tagRDATA
 	//图像的默认存储格式
 	//指向常量，因此无需释放
 	LPCWSTR DefaultFilterName;
+	FilterIDList* FilterIDListPtr;
 
 	//当前时间字符串
 	LPWSTR CurrentTime;

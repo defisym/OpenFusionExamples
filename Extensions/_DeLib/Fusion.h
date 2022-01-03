@@ -7,6 +7,7 @@
 #include	"ImageFlt.h"
 #include	"CfcFile.h"
 
+#include	<map>
 #include	<vector>
 #include	<thread>
 
@@ -205,7 +206,14 @@ inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
 }
 
 //Get Ext's FilterName
-inline LPCWSTR GetFilterName(LPRDATA rdPtr, LPCWSTR Name) {
+
+//指针Map需要使用自定义比较
+struct GetFilterName_Compare
+{
+	bool operator()(LPCWSTR l, LPCWSTR r)  const noexcept { return (wcscmp(l, r) < 0); };
+};
+
+inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) {
 	//To Lower
 	auto LowerWStr = [](LPWSTR Str)->LPWSTR {
 		int i = 0;
@@ -217,50 +225,54 @@ inline LPCWSTR GetFilterName(LPRDATA rdPtr, LPCWSTR Name) {
 	};
 
 	//常量会被放入全局变量区
-	LPCWSTR ExtList[8][2] = {
-		_T(".png"),_T("Portable Network Graphics"),
-		_T(".tga"),_T("Targa Bitmap"),
-		_T(".bmp"),_T("Windows Bitmap"),
-		_T(".jpg"),_T("JPEG"),
-		_T(".flc"),_T("Autodesk FLIC"),
-		_T(".gif"),_T("Compuserve Bitmap"),
-		_T(".avi"),_T("Video For Windows"),
-		_T(".pcx"),_T("PaintBrush")
+	const std::map<LPCWSTR, LPCWSTR, GetFilterName_Compare> ExtList{
+		{_T(".png"),_T("Portable Network Graphics")},
+		{_T(".tga"),_T("Targa Bitmap")},
+		{_T(".bmp"),_T("Windows Bitmap")},
+		{_T(".jpg"),_T("JPEG")},
+		{_T(".flc"),_T("Autodesk FLIC")},
+		{_T(".gif"),_T("Compuserve Bitmap")},
+		{_T(".avi"),_T("Video For Windows")},
+		{_T(".pcx"),_T("PaintBrush")}
 	};
-
-	WCHAR* Ext = new WCHAR[FILENAME_MAX];
-	wcscpy_s(Ext, FILENAME_MAX, Name);
+	
+	WCHAR* Ext = new WCHAR[wcslen(Name) + 1];
+	wcscpy_s(Ext, wcslen(Name)+1, Name);
 	LowerWStr(Ext);
 
-	for (int i = 0; i < 8; i++) {
-		if (wcscmp(Ext, ExtList[i][0]) == 0) {
-			delete[] Ext;
-			return ExtList[i][1];
-		}
-	}
-
+	auto& it = ExtList.find(Ext);
 	delete[] Ext;
 
 	//default format is JPEG
 	//return _T("JPEG");
-	return (rdPtr->DefaultFilterName == nullptr) ? ExtList[3][1] : rdPtr->DefaultFilterName;
+	return (it != ExtList.end()) ? it->second : ((DefaultFilterName == nullptr) ? _T("JPEG") : DefaultFilterName);
 };
 
 //Get Filter ID By File Name
-inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
+inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, FilterIDList* List, LPCWSTR DefaultFilterName = nullptr) {
 	//Surface
-	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
+	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
 	//Get Ext's FilterID
-	auto GetFilterID = [pImgMgr, rdPtr](LPCWSTR Name) -> DWORD {
-		LPCWSTR FilterName = GetFilterName(rdPtr, Name);
+	auto GetFilterID = [pImgMgr, List,DefaultFilterName](LPCWSTR Name) -> DWORD {
+		LPCWSTR FilterName = GetFilterName(Name, DefaultFilterName);
+		auto& it = List->find(FilterName);
+
+		if (it != List->end()) {
+			return it->second;
+		}
+
 		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
 			if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
 				DWORD FilterID = pImgMgr->GetFilterID(i);
-				return pImgMgr->GetFilterID(i);
+				
+				List->emplace(FilterName, FilterID);
+
+				return FilterID;
 			}
 		}
+
 		return pImgMgr->GetFilterID(0);
 	};
 
@@ -273,6 +285,104 @@ inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath) {
 	delete[] Ext;
 
 	return FilterID;
+}
+
+//Save && Load
+
+//Save to Clipboard
+inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL) {
+	if (!Src->IsValid()) {
+		return;
+	}
+
+	OpenClipboard(Handle);
+	EmptyClipboard();
+
+	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
+	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
+
+	Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
+	SetClipboardData(CF_DIB, OutPut);
+
+	GlobalUnlock(cb);
+	CloseClipboard();
+
+	if (release) {
+		delete Src;
+	}
+}
+
+//Save to File
+inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, FilterIDList* List, LPCWSTR DefaultFilterName = nullptr) {
+	if (!Src->IsValid()) {
+		return;
+	}
+
+	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath, List, DefaultFilterName));
+
+	if (release) {
+		delete Src;
+	}
+}
+
+//Load From ClipBoard
+inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStretch, bool HighQuality, HWND Handle = NULL) {
+	if (IsClipboardFormatAvailable(CF_DIB) && OpenClipboard(Handle)) {
+		//BMP
+		HANDLE handle = GetClipboardData(CF_DIB);
+		BITMAPINFO* bmp = (BITMAPINFO*)GlobalLock(handle);
+
+		//Proto
+		LPSURFACE proto = nullptr;
+		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+		if (NoStretch) {
+			Src->Delete();
+			Src->Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
+			Src->LoadImage(bmp, GetDIBBitmap(bmp));
+		}
+		else {
+			cSurface img;
+
+			img.Delete();
+			img.Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
+			img.LoadImage(bmp, GetDIBBitmap(bmp));
+
+			Src->Delete();
+			Src->Create(width, height, proto);
+
+			Stretch(&img, Src, HighQuality);
+		}
+	}
+}
+
+//Load From File
+inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	//Proto
+	LPSURFACE proto = nullptr;
+	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+	//MGR
+	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+	CImageFilter    pFilter(pImgMgr);
+
+	//Surface相关
+	cSurface img;
+
+	if (NoStretch) {
+		ImportImage(pImgMgr, FilePath, Src, 0, 0);
+	}
+	else {
+		cSurface img;
+
+		ImportImage(pImgMgr, FilePath, &img, 0, 0);
+
+		Src->Delete();
+		Src->Create(width, height, proto);
+
+		Stretch(&img, Src, HighQuality);
+	}
 }
 
 //Get Valid Sacle
