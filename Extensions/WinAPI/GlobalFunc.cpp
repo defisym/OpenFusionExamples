@@ -501,10 +501,10 @@ void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
 //Save to File
 void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
 	if (!rdPtr->MultiThreadSave) {
-		_SavetoFile(Src, FilePath, rdPtr, false, rdPtr->FilterIDListPtr, rdPtr->DefaultFilterName);
+		_SavetoFile(Src, FilePath, rdPtr, false, rdPtr->DefaultFilterName);
 	}
 	else {
-		std::thread t(_SavetoFile, Src, FilePath, rdPtr, release && true, rdPtr->FilterIDListPtr, rdPtr->DefaultFilterName);
+		std::thread t(_SavetoFile, Src, FilePath, rdPtr, release && true, rdPtr->DefaultFilterName);
 		t.detach();
 	}
 

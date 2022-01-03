@@ -29,7 +29,6 @@
 #include	"Surface.h"
 
 //STL
-#include	<map>
 #include	<deque>
 #include	<vector>
 #include	<thread>

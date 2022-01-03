@@ -22,7 +22,7 @@ inline bool DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
 	return (object->roa.raAnimOffset->anOffsetToDir[Dir] > 0) ? true : false;
 }
 
-inline bool DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {	
+inline bool DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
 	return DirHasAnimation(rdPtr, LproFromFixed(rdPtr, Fixed), Dir);
 }
 
@@ -122,13 +122,13 @@ inline RGBA Range(RGBA A) {
 }
 
 //RGBA运算符重载 +
-inline RGBA operator +(RGBA A, RGBA B) {	
+inline RGBA operator +(RGBA A, RGBA B) {
 	A.r += B.r;
 	A.g += B.g;
 	A.b += B.b;
 	A.a += B.a;
 
-	return A;	
+	return A;
 }
 
 //RGBA运算符重载 -
@@ -208,7 +208,7 @@ inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
 //Get Ext's FilterName
 
 //指针Map需要使用自定义比较
-struct GetFilterName_Compare
+struct LPWSTR_Compare
 {
 	bool operator()(LPCWSTR l, LPCWSTR r)  const noexcept { return (wcscmp(l, r) < 0); };
 };
@@ -225,7 +225,7 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 	};
 
 	//常量会被放入全局变量区
-	const std::map<LPCWSTR, LPCWSTR, GetFilterName_Compare> ExtList{
+	const std::map<LPCWSTR, LPCWSTR, LPWSTR_Compare> ExtList{
 		{_T(".png"),_T("Portable Network Graphics")},
 		{_T(".tga"),_T("Targa Bitmap")},
 		{_T(".bmp"),_T("Windows Bitmap")},
@@ -235,9 +235,9 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 		{_T(".avi"),_T("Video For Windows")},
 		{_T(".pcx"),_T("PaintBrush")}
 	};
-	
+
 	WCHAR* Ext = new WCHAR[wcslen(Name) + 1];
-	wcscpy_s(Ext, wcslen(Name)+1, Name);
+	wcscpy_s(Ext, wcslen(Name) + 1, Name);
 	LowerWStr(Ext);
 
 	auto& it = ExtList.find(Ext);
@@ -249,27 +249,18 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 };
 
 //Get Filter ID By File Name
-inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, FilterIDList* List, LPCWSTR DefaultFilterName = nullptr) {
+inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, LPCWSTR DefaultFilterName = nullptr) {
 	//Surface
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
 	//Get Ext's FilterID
-	auto GetFilterID = [pImgMgr, List,DefaultFilterName](LPCWSTR Name) -> DWORD {
+	auto GetFilterID = [pImgMgr, DefaultFilterName](LPCWSTR Name) -> DWORD {
 		LPCWSTR FilterName = GetFilterName(Name, DefaultFilterName);
-		auto& it = List->find(FilterName);
-
-		if (it != List->end()) {
-			return it->second;
-		}
 
 		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
 			if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
-				DWORD FilterID = pImgMgr->GetFilterID(i);
-				
-				List->emplace(FilterName, FilterID);
-
-				return FilterID;
+				return pImgMgr->GetFilterID(i);
 			}
 		}
 
@@ -313,13 +304,13 @@ inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL) {
 }
 
 //Save to File
-inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, FilterIDList* List, LPCWSTR DefaultFilterName = nullptr) {
+inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, LPCWSTR DefaultFilterName = nullptr) {
 	if (!Src->IsValid()) {
 		return;
 	}
 
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath, List, DefaultFilterName));
+	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
 
 	if (release) {
 		delete Src;
@@ -436,8 +427,8 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 
 	//Lock buffer, get pitch etc.
 	BYTE* buff = img->LockBuffer();
-	if (!buff) { 
-		return; 
+	if (!buff) {
+		return;
 	}
 
 	int pitch = img->GetPitch();

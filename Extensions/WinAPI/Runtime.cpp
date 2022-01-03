@@ -106,8 +106,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
 		rdPtr->img->Fill(BLACK);
-
-		rdPtr->FilterIDListPtr = new FilterIDList;
 	}
 	
 	//主窗口句柄	
@@ -166,8 +164,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//Release Surface
 	delete rdPtr->img;
 	delete rdPtr->temp;
-
-	delete rdPtr->FilterIDListPtr;
 
 	//释放时间字符串
 	if (rdPtr->CurrentTime != nullptr) {
