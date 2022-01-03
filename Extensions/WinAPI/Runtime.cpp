@@ -94,9 +94,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 		
-		//Surface初始化		
-		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
-		rdPtr->img.Fill(BLACK);		
+		//Surface初始化
+		rdPtr->img = new cSurface;
+		rdPtr->temp = new cSurface;
+
+		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
+		rdPtr->img->Fill(BLACK);
 
 		////Surface指针使用流程
 		//LPSURFACE DIS;
@@ -157,6 +160,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	//释放鼠标
 	UnlockMouse(rdPtr);
+
+	//Release Surface
+	delete rdPtr->img;
+	delete rdPtr->temp;
 
 	//释放时间字符串
 	if (rdPtr->CurrentTime != nullptr) {
@@ -299,7 +306,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 */
 	//使用GetRunObjectSurface不会正确处理当对象并非全部位于场景内时的Shader
 
-	if ((rdPtr->Display) && (rdPtr->img.IsValid())) {
+	if ((rdPtr->Display) && (rdPtr->img->IsValid())) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rhPtr->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
@@ -313,9 +320,9 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		POINT point = { 0, 0 };
 
 		//rdPtr->img.Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-		rdPtr->img.BlitEx(*ps, (float)screenX, (float)screenY,
+		rdPtr->img->BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-			rdPtr->img.GetWidth(), rdPtr->img.GetHeight(), &point, rdPtr->rc.rcAngle,
+			rdPtr->img->GetWidth(), rdPtr->img->GetHeight(), &point, rdPtr->rc.rcAngle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, BLTF_ANTIA);

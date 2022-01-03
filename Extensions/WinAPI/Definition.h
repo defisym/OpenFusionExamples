@@ -11,15 +11,6 @@
 #define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
 
-constexpr auto Dir_X = false;
-constexpr auto Dir_Y = true;
-
-constexpr auto Do_Normal = false;
-constexpr auto Do_Alpha = true;
-
-constexpr auto Fast = false;
-constexpr auto HighQuality = true;
-
 typedef struct DOUBLEPOINT
 {
 	DOUBLE  x;
@@ -32,17 +23,6 @@ typedef struct Gauss3_Coefs {
 	double B;
 	double b[4];
 } GCoef;
-
-struct RGBA {
-	double r;
-	double g;
-	double b;
-	double a;
-	//int r;
-	//int g;
-	//int b;
-	//int a;
-};
 
 //窗口锁定类别
 typedef enum _LOCKTYPE {
@@ -83,66 +63,82 @@ typedef enum _GETRECT {
 }GR;
 
 //RECT运算符重载 +
-RECT operator+(RECT A, RECT B);
+inline RECT operator+(RECT A, RECT B) {
+	A.left += B.left;
+	A.right += B.right;
+	A.top += B.top;
+	A.bottom += B.bottom;
+	return A;
+}
 
 //RECT运算符重载 +=
-RECT operator +=(RECT A, RECT B);
+inline RECT operator +=(RECT A, RECT B) {
+	A.left += B.left;
+	A.right += B.right;
+	A.top += B.top;
+	A.bottom += B.bottom;
+	return A;
+}
 
 //RECT运算符重载 -
-RECT operator-(RECT A, RECT B);
+inline RECT operator-(RECT A, RECT B) {
+	A.left -= B.left;
+	A.right -= B.right;
+	A.top -= B.top;
+	A.bottom -= B.bottom;
+	return A;
+}
 
 //RECT运算符重载 -=
-RECT operator -=(RECT A, RECT B);
+inline RECT operator -=(RECT A, RECT B) {
+	A.left -= B.left;
+	A.right -= B.right;
+	A.top -= B.top;
+	A.bottom -= B.bottom;
+	return A;
+}
 
 //POINT运算符重载 +
-POINT operator +(POINT A, POINT B);
+inline POINT operator +(POINT A, POINT B) {
+	A.x += B.x;
+	A.y += B.y;
+	return A;
+}
 
 //POINT运算符重载 +=
-POINT operator +=(POINT A, POINT B);
+inline POINT operator +=(POINT A, POINT B) {
+	A.x += B.x;
+	A.y += B.y;
+	return A;
+}
 
 //POINT运算符重载 -
-POINT operator -(POINT A, POINT B);
+inline POINT operator -(POINT A, POINT B) {
+	A.x -= B.x;
+	A.y -= B.y;
+	return A;
+}
 
 //POINT运算符重载 -=
-POINT operator -=(POINT A, POINT B);
+inline POINT operator -=(POINT A, POINT B) {
+	A.x -= B.x;
+	A.y -= B.y;
+	return A;
+}
 
 //POINT运算符重载 *
-POINT operator *(POINT A, LONG B);
+inline POINT operator *(POINT A, LONG B) {
+	A.x *= B;
+	A.y *= B;
+	return A;
+}
 
 //POINT运算符重载 /
-POINT operator /(POINT A, LONG B);
-
-//RGBA运算符重载 +
-RGBA operator +(RGBA A, RGBA B);
-
-//RGBA运算符重载 -
-RGBA operator -(RGBA A, RGBA B);
-
-//RGBA运算符重载 +=
-RGBA operator +=(RGBA A, RGBA B);
-
-//RGBA运算符重载 -=
-RGBA operator -=(RGBA A, RGBA B);
-
-
-//RGBA数值更正
-RGBA Range(RGBA A);
-double Range(double A);
-
-//RGBA运算符重载 *
-RGBA operator *(RGBA A, double B);
-
-//RGBA运算符重载 /
-RGBA operator /(RGBA A, double B);
-
-//RGBA运算符重载 *
-RGBA operator *(double B, RGBA A);
-
-//RGBA运算符重载 /
-RGBA operator /(double B, RGBA A);
-
-//RGBA运算符重载 >>
-RGBA operator >>(RGBA A, int B);
+inline POINT operator /(POINT A, LONG B) {
+	A.x /= B;
+	A.y /= B;
+	return A;
+}
 
 #endif // !_DEFINITION_
 

@@ -172,11 +172,11 @@ typedef struct tagRDATA
 	bool Display = false;
 
 	//显示Surface
-	cSurface img;
+	LPSURFACE img;
 	//备份Surface
-	cSurface temp;
+	LPSURFACE temp;
 
-	bool StretchQuality = Fast;
+	bool StretchQuality = false;
 	bool MultiThreadSave = true;
 
 	//用于保存的RunHeader

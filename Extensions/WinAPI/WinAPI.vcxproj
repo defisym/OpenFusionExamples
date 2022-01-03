@@ -321,7 +321,6 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
-    <ClCompile Include="Definition.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="GlobalFunc.cpp" />

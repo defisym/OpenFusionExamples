@@ -452,10 +452,10 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 
 	if (rdPtr->Display) {
 		// Update Display Surface
-		rdPtr->img.Delete();
-		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+		rdPtr->img->Delete();
+		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-		BltToSurface(hdcWindow, FrameWidth, FrameHeight, &(rdPtr->img));
+		BltToSurface(hdcWindow, FrameWidth, FrameHeight, rdPtr->img);
 
 		// Redraw object
 		ReDisplay(rdPtr);
@@ -491,30 +491,30 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {		
 		LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-		SavetoFile(&(rdPtr->img), FilePath, rdPtr, false);
+		SavetoFile(rdPtr->img, FilePath, rdPtr, false);
 	}
 	return 0;
 }
 
 short WINAPI DLLExport SaveToClipBoard(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		SavetoClipBoard(&(rdPtr->img),rdPtr, false);
+		SavetoClipBoard(rdPtr->img,rdPtr, false);
 	}
 	return 0;
 }
 
 short WINAPI DLLExport SaveToTemp(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		rdPtr->temp.Delete();
-		rdPtr->temp.Clone(rdPtr->img);
+		rdPtr->temp->Delete();
+		rdPtr->temp->Clone(*rdPtr->img);
 	}
 	return 0;
 }
 
 short WINAPI DLLExport LoadFromTemp(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		rdPtr->img.Delete();
-		rdPtr->img.Clone(rdPtr->temp);
+		rdPtr->img->Delete();
+		rdPtr->img->Clone(*rdPtr->temp);
 	}
 	return 0;
 }
@@ -539,10 +539,10 @@ short WINAPI DLLExport LoadFromClipBoard(LPRDATA rdPtr, long param1, long param2
 			img.Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
 			img.LoadImage(bmp, GetDIBBitmap(bmp));
 
-			rdPtr->img.Delete();
-			rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+			rdPtr->img->Delete();
+			rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
 						
-			Stretch(&img, &rdPtr->img, rdPtr->StretchQuality);
+			Stretch(&img, rdPtr->img, rdPtr->StretchQuality);
 
 			// Redraw object
 			ReDisplay(rdPtr);
@@ -567,10 +567,10 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		ImportImage(pImgMgr, FilePath, &img, 0, 0);
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(rdPtr->swidth, rdPtr->sheight, proto);
+		rdPtr->img->Delete();
+		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
 
-		Stretch(&img, &rdPtr->img, rdPtr->StretchQuality);
+		Stretch(&img, rdPtr->img, rdPtr->StretchQuality);
 
 		// Redraw object
 		ReDisplay(rdPtr);
@@ -582,18 +582,18 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport LoadFromBackDrop(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
 		//Dimensions
-		int width = rdPtr->img.GetWidth(), height = rdPtr->img.GetHeight();
+		int width = rdPtr->img->GetWidth(), height = rdPtr->img->GetHeight();
 		int screenX = rdPtr->rHo.hoX - rdPtr->rhPtr->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rdPtr->rhPtr->rhWindowY;
 
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
-		rdPtr->img.Delete();
-		rdPtr->img.Create(width, height, proto);
+		rdPtr->img->Delete();
+		rdPtr->img->Create(width, height, proto);
 
 		HDC sdc = GetDC(rdPtr->FrameWindowHandle);		
-		HDC ddc = rdPtr->img.GetDC();		
+		HDC ddc = rdPtr->img->GetDC();
 
 		SetStretchBltMode(ddc, COLORONCOLOR);
 		SetBrushOrgEx(ddc, 0, 0, NULL);
@@ -601,7 +601,7 @@ short WINAPI DLLExport LoadFromBackDrop(LPRDATA rdPtr, long param1, long param2)
 		StretchBlt(ddc, 0, 0, width, height, sdc, screenX, screenY, width, height, SRCCOPY);
 
 		ReleaseDC(rdPtr->FrameWindowHandle,sdc);
-		rdPtr->img.ReleaseDC(ddc);
+		rdPtr->img->ReleaseDC(ddc);
 	
 		// Redraw object			
 		ReDisplay(rdPtr);
@@ -660,7 +660,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		GCoef c = GetCoef(sigma);		
 		
 		//Dimensions
-		int owidth = rdPtr->img.GetWidth(), oheight = rdPtr->img.GetHeight();
+		int owidth = rdPtr->img->GetWidth(), oheight = rdPtr->img->GetHeight();
 		int width = (int)(owidth / scale);
 		int height = (int)(oheight / scale);
 		
@@ -670,26 +670,26 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
 		if (!(scale == 1.0)) {
-			ResizedImg.Clone(rdPtr->img);
+			ResizedImg.Clone(*rdPtr->img);
 
-			rdPtr->img.Delete();
-			rdPtr->img.Create(width, height, proto);
+			rdPtr->img->Delete();
+			rdPtr->img->Create(width, height, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img, Fast);
+			Stretch(&ResizedImg, rdPtr->img, Fast);
 		}
 
 		//Lock buffer, get pitch etc.
-		BYTE* buff = rdPtr->img.LockBuffer();		
+		BYTE* buff = rdPtr->img->LockBuffer();
 		if (!buff) return 0;
 
-		int pitch = rdPtr->img.GetPitch();
+		int pitch = rdPtr->img->GetPitch();
 		if (pitch < 0)
 		{
 			pitch *= -1;
 			buff -= pitch * (height - 1);
 		}
 		int size = pitch * height;
-		int byte = rdPtr->img.GetDepth() >> 3;
+		int byte = rdPtr->img->GetDepth() >> 3;
 
 		auto RecursiveGaussFilter = [c](BYTE* src, BYTE* des, int size, int stride) {
 			RGBA* W = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
@@ -785,16 +785,16 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		multithread(buff, Dir_X);
 		multithread(buff, Dir_Y);
 
-		rdPtr->img.UnlockBuffer(buff);
+		rdPtr->img->UnlockBuffer(buff);
 
 		//还原大小
 		if (!(scale == 1.0)) {
-			ResizedImg.Clone(rdPtr->img);
+			ResizedImg.Clone(*rdPtr->img);
 
-			rdPtr->img.Delete();
-			rdPtr->img.Create(owidth, oheight, proto);
+			rdPtr->img->Delete();
+			rdPtr->img->Create(owidth, oheight, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img, Fast);
+			Stretch(&ResizedImg, rdPtr->img, Fast);
 		}
 
 		// Redraw object			
@@ -846,7 +846,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		GetGaussWeight1D(weight);
 
 		//Dimensions
-		int owidth = rdPtr->img.GetWidth(), oheight = rdPtr->img.GetHeight();
+		int owidth = rdPtr->img->GetWidth(), oheight = rdPtr->img->GetHeight();
 		int width = (int)(owidth / scale);
 		int height = (int)(oheight / scale);
 
@@ -856,26 +856,26 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
 		if (!(scale == 1.0)) {
-			ResizedImg.Clone(rdPtr->img);
+			ResizedImg.Clone(*rdPtr->img);
 
-			rdPtr->img.Delete();
-			rdPtr->img.Create(width, height, proto);
+			rdPtr->img->Delete();
+			rdPtr->img->Create(width, height, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img, Fast);
+			Stretch(&ResizedImg, rdPtr->img, Fast);
 		}
 
 		//Lock buffer, get pitch etc.
-		BYTE* buff = rdPtr->img.LockBuffer();
+		BYTE* buff = rdPtr->img->LockBuffer();
 		if (!buff) return 0;
 
-		int pitch = rdPtr->img.GetPitch();
+		int pitch = rdPtr->img->GetPitch();
 		if (pitch < 0)
 		{
 			pitch *= -1;
 			buff -= pitch * (height - 1);
 		}
 		int size = pitch * height;
-		int byte = rdPtr->img.GetDepth() >> 3;		
+		int byte = rdPtr->img->GetDepth() >> 3;
 				
 		auto Edge = [](int Input, int Max)->int {
 			if (Input < 0) {
@@ -951,16 +951,16 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 
 		free(temp);
 
-		rdPtr->img.UnlockBuffer(buff);
+		rdPtr->img->UnlockBuffer(buff);
 
 		//还原大小
 		if (!(scale == 1.0)) {
-			ResizedImg.Clone(rdPtr->img);
+			ResizedImg.Clone(*rdPtr->img);
 
-			rdPtr->img.Delete();
-			rdPtr->img.Create(owidth, oheight, proto);
+			rdPtr->img->Delete();
+			rdPtr->img->Create(owidth, oheight, proto);
 
-			Stretch(&ResizedImg, &rdPtr->img, Fast);
+			Stretch(&ResizedImg, rdPtr->img, Fast);
 		}
 
 		//清理
@@ -974,231 +974,16 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->Display) {
+	if (rdPtr->Display) {		
 		//获取参数
-		constexpr auto SB_MIN_RADIUS = 0;
-		constexpr auto SB_MAX_RADIUS = 254;		
-		
 		int radius = CNC_GetIntParameter(rdPtr);		
-		radius = min(SB_MAX_RADIUS, max(SB_MIN_RADIUS, radius));
 
 		long p2 = CNC_GetFloatParameter(rdPtr);
 		float scale = *(float*)&p2;
-		GetValidScale(&scale);
 
 		int divide = CNC_GetIntParameter(rdPtr);
-		GetMaxmiumDivide(&divide);
 
-		//Dimensions
-		int owidth = rdPtr->img.GetWidth(), oheight = rdPtr->img.GetHeight();
-		int width = (int)(owidth / scale);
-		int height = (int)(oheight / scale);
-
-		// 降采样
-		cSurface ResizedImg;
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-		
-		if (!(scale == 1.0)) {
-			ResizedImg.Clone(rdPtr->img);
-
-			rdPtr->img.Delete();
-			rdPtr->img.Create(width, height, proto);
-
-			Stretch(&ResizedImg, &rdPtr->img, Fast);			
-		}
-
-		//Lock buffer, get pitch etc.
-		BYTE* buff = rdPtr->img.LockBuffer();
-		if (!buff) return 0;
-
-		int pitch = rdPtr->img.GetPitch();
-		if (pitch < 0)
-		{
-			pitch *= -1;
-			buff -= pitch * (height - 1);
-		}
-		int size = pitch * height;
-		int byte = rdPtr->img.GetDepth() >> 3;
-
-		static unsigned short const stackblur_mul[255] =
-		{
-				512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,
-				454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,
-				482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,
-				437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,
-				497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,
-				320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,
-				446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,
-				329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,
-				505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,
-				399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,
-				324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,
-				268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,
-				451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,
-				385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,
-				332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,
-				289,287,285,282,280,278,275,273,271,269,267,265,263,261,259
-		};
-
-		static unsigned char const stackblur_shr[255] =
-		{
-				9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17,
-				17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19,
-				19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20,
-				20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21,
-				21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
-				21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22,
-				22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22,
-				22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23,
-				23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-				23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-				23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-				23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-				24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-				24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-				24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-				24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24
-		};
-
-		int t_width = width / divide;
-		int t_height = height / divide;
-
-		auto StackBlur1DFilter = [=](BYTE* src, BYTE* des, int size, bool dir) {
-			int div = radius * 2 + 1;
-			int sizem = size - 1;
-			int stride = dir ? pitch : byte;		
-
-			int src_offset = 0;
-			int des_offset = 0;
-
-			int mul_sum = stackblur_mul[radius];
-			char shr_sum = stackblur_shr[radius];
-
-			RGBA Sum = { 0,0,0,0 };
-			RGBA Sum_In = { 0,0,0,0 };
-			RGBA Sum_Out = { 0,0,0,0 };
-			RGBA* stack = (RGBA*)malloc(sizeof(RGBA) * (div));
-
-			for (int i = 0; i <= radius; i++) {
-				int stack_offset = i;
-				RGBA src_pixel = { (double)src[2],(double)src[1],(double)src[0],0 };
-				stack[stack_offset]=src_pixel;
-				Sum = Sum + src_pixel * (i + 1);
-				Sum_Out = Sum_Out + src_pixel;
-			}
-
-			src_offset = 0;
-
-			for (int i = 1; i <= radius; i++) {				
-				if (i <= sizem) {
-					src_offset += stride;
-				}
-				int stack_offset = i + radius;
-				RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
-				stack[stack_offset] = src_pixel;
-				Sum = Sum + src_pixel * (radius + 1 - i);
-				Sum_In = Sum_In + src_pixel;
-			}
-			
-			int sp = radius;
-			int xp = radius;
-
-			if (xp > sizem) {
-				xp = sizem;
-			}
-
-			src_offset = xp * stride;
-			des_offset = 0;
-
-			for (int i = 0; i < size; i++) {
-				RGBA des_pixel = (Sum * mul_sum) >> shr_sum;
-				des[des_offset + 2] = (BYTE)des_pixel.r;
-				des[des_offset + 1] = (BYTE)des_pixel.g;
-				des[des_offset + 0] = (BYTE)des_pixel.b;
-				des_offset += stride;
-
-				Sum = Sum - Sum_Out;
-
-				int stack_offset = sp + div - radius;
-				if (stack_offset >= div) {
-					stack_offset -= div;
-				}
-				Sum_Out = Sum_Out - stack[stack_offset];
-
-				if (xp < sizem) {
-					src_offset += stride;
-					xp++;
-				}
-
-				RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
-				stack[stack_offset] = src_pixel;
-
-				Sum_In = Sum_In + src_pixel;
-				Sum = Sum + Sum_In;
-
-				sp++;
-
-				if (sp >= div) {
-					sp = 0;
-				}
-
-				stack_offset = sp;
-
-				Sum_Out = Sum_Out + stack[stack_offset];
-				Sum_In = Sum_In - stack[stack_offset];
-			}
-
-			free(stack);
-		};
-
-		auto Filter1D = [StackBlur1DFilter, byte, pitch](BYTE* src, int it_size, int filter_size, bool dir) {
-			int stride = dir ? pitch : byte;
-			int o_stride = (!dir) ? pitch : byte;
-
-			for (int i = 0; i < it_size; i++) {
-				StackBlur1DFilter(src + i * o_stride, src + i * o_stride, filter_size, dir);
-			}
-		};
-
-		auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch](BYTE* buff, bool dir) {
-			std::vector<std::thread> t_vec;
-			int stride = dir ? pitch : byte;
-			int o_stride = (!dir) ? pitch : byte;
-
-			for (int i = 0; i < divide; i++) {
-				//边缘处理
-				int t_rsize = dir ? height : width;
-				int t_risize = ((!dir) ? t_height : t_width);
-
-				if (i == divide - 1) {
-					t_risize = ((!dir) ? height : width) - i * t_risize;
-				}
-
-				int offset = i * ((!dir) ? t_height : t_width);
-				//Filter1D(buff + offset * o_stride, t_risize, t_rsize, dir);
-				t_vec.emplace_back(std::thread(Filter1D, buff + offset * o_stride, t_risize, t_rsize, dir));
-			}
-
-			for (auto& it : t_vec) {
-				it.join();
-			}
-		};
-
-		multithread(buff, Dir_X);
-		multithread(buff, Dir_Y);
-
-		rdPtr->img.UnlockBuffer(buff);
-
-		//还原大小
-		if (!(scale == 1.0)) {
-			ResizedImg.Clone(rdPtr->img);
-
-			rdPtr->img.Delete();
-			rdPtr->img.Create(owidth, oheight, proto);
-
-			Stretch(&ResizedImg, &rdPtr->img, Fast);			
-		}
+		StackBlur(rdPtr->img, radius, scale, divide);
 
 		// Redraw object			
 		ReDisplay(rdPtr);

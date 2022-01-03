@@ -16,7 +16,7 @@
     <Filter Include="MMF Headers">
       <UniqueIdentifier>{384df596-8fbf-4abb-8ca5-b6720eda1a93}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Information">
+    <Filter Include="Information">
       <UniqueIdentifier>{aeb5b5db-84b6-4869-b544-d00abc756e07}</UniqueIdentifier>
       <Extensions>txt</Extensions>
     </Filter>
@@ -35,9 +35,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GlobalFunc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Definition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\_DeLib\Encryption.cpp">
@@ -159,7 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\Help\ExtSdk.chm">
-      <Filter>Header Files\Information</Filter>
+      <Filter>Information</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

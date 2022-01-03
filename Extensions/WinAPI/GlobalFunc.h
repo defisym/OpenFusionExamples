@@ -71,17 +71,9 @@ BOOL IMEStateControl(HWND hWnd, bool State);
 //Surface
 void ReDisplay(LPRDATA rdPtr);
 
-//获取扩展名对应的FilterName
-LPCWSTR GetFilterName(LPRDATA rdPtr, LPCWSTR Name);
-DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath);
-
-void GetValidScale(float* scale);
-void GetMaxmiumDivide(int* divide);
-
 //CustomStretch
 void Stretch(bool YReverse, LPBYTE Src, uint SW, uint SH, uint SBW, LPBYTE Des, uint DW, uint DH, uint DBW);
-//StretchSurface
-void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality);
+
 //StretchBlt Stretch Surface
 BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
 
