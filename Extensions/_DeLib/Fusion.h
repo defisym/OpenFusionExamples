@@ -11,6 +11,30 @@
 #include	<vector>
 #include	<thread>
 
+//Free collision mask
+inline void FreeColMask(LPSMASK& pColMask) {
+	if (pColMask != NULL) {
+		free(pColMask);
+		pColMask = NULL;
+	}
+}
+
+//Return float
+inline long ReturnFloat(LPRDATA rdPtr, float Val) {
+	if (Val == (int)Val) {
+		return (int)Val;
+	}
+	else {
+		//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+		rdPtr->rHo.hoFlags |= HOF_FLOAT;
+
+		//Return the float without conversion
+		return *((long*)&Val);
+	}
+}
+
+#define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
+
 //Check if a dir has animation
 inline bool DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
 	Dir = max(0, min(DIRID_MAX - 1, Dir));
@@ -248,30 +272,30 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 	return (it != ExtList.end()) ? it->second : ((DefaultFilterName == nullptr) ? _T("JPEG") : DefaultFilterName);
 };
 
-//Get Filter ID By File Name
-inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, LPCWSTR DefaultFilterName = nullptr) {
+//Get Filter ID By Ext
+inline DWORD GetFilterIDByExt(LPRDATA rdPtr, LPCTSTR Ext, LPCWSTR DefaultFilterName = nullptr) {
 	//Surface
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
-	//Get Ext's FilterID
-	auto GetFilterID = [pImgMgr, DefaultFilterName](LPCWSTR Name) -> DWORD {
-		LPCWSTR FilterName = GetFilterName(Name, DefaultFilterName);
+	LPCWSTR FilterName = GetFilterName(Ext, DefaultFilterName);
 
-		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
-			if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
-				return pImgMgr->GetFilterID(i);
-			}
+	for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
+		if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
+			return pImgMgr->GetFilterID(i);
 		}
+	}
 
-		return pImgMgr->GetFilterID(0);
-	};
+	return pImgMgr->GetFilterID(0);
+}
 
+//Get Filter ID By File Name
+inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, LPCWSTR DefaultFilterName = nullptr) {
 	//Get Ext from FileName
 	WCHAR* Ext = new WCHAR[FILENAME_MAX];
 	_wsplitpath_s(FilePath, NULL, 0, NULL, 0, NULL, 0, Ext, FILENAME_MAX);
 
-	DWORD FilterID = GetFilterID(Ext);
+	DWORD FilterID = GetFilterIDByExt(rdPtr, Ext);
 
 	delete[] Ext;
 
@@ -358,21 +382,18 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int wi
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
-	//SurfaceÏà¹Ø
-	cSurface img;
-
 	if (NoStretch) {
 		ImportImage(pImgMgr, FilePath, Src, 0, 0);
 	}
 	else {
 		cSurface img;
 
-		ImportImage(pImgMgr, FilePath, &img, 0, 0);
+		if (ImportImage(pImgMgr, FilePath, &img, 0, 0)) {
+			Src->Delete();
+			Src->Create(width, height, proto);
 
-		Src->Delete();
-		Src->Create(width, height, proto);
-
-		Stretch(&img, Src, HighQuality);
+			Stretch(&img, Src, HighQuality);
+		}		
 	}
 }
 

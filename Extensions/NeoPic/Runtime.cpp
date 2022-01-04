@@ -100,6 +100,14 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//Display
 	delete rdPtr->img;
 
+	if (!rdPtr->FromLib) {
+		delete rdPtr->src;
+	}
+
+	if (!rdPtr->IsLib) {
+		FreeColMask(rdPtr->pColMask);
+	}
+
 	//Save Lib
 	if (rdPtr->IsLib) {
 		SetExtUserData(rdPtr->Lib);
@@ -214,42 +222,46 @@ cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
 // Note: do not forget to enable the function in the .def file 
 // if you remove the comments below.
 //
-/*
+
 LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 {
 	// Typical example for active objects
 	// ----------------------------------
-	// Opaque? collide with box
-	if ( (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) == 0 )	// Note: only if your object has the OEPREFS_INKEFFECTS option
-		return NULL;
+	if (!rdPtr->IsLib) {
+		// Opaque? collide with box	
+		// Note: only if your object has the OEPREFS_INKEFFECTS option
+		if ((rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) == 0) {
+			return NULL;
+		}
 
-	// Transparent? Create mask
-	LPSMASK pMask = rdPtr->m_pColMask;
-	if ( pMask == NULL )
-	{
-		if ( rdPtr->m_pSurface != NULL )
-		{
-			DWORD dwMaskSize = rdPtr->m_pSurface->CreateMask(NULL, lParam);
-			if ( dwMaskSize != 0 )
-			{
-				pMask = (LPSMASK)calloc(dwMaskSize, 1);
-				if ( pMask != NULL )
-				{
-					rdPtr->m_pSurface->CreateMask(pMask, lParam);
-					rdPtr->m_pColMask = pMask;
+		// Transparent? Create mask
+		LPSMASK pMask = rdPtr->pColMask;
+		if (pMask == NULL) {
+			if (rdPtr->img != NULL) {
+				DWORD dwMaskSize = rdPtr->img->CreateMask(NULL, lParam);
+
+				if (dwMaskSize != 0) {
+					pMask = (LPSMASK)calloc(dwMaskSize, 1);
+
+					if (pMask != NULL) {
+						rdPtr->img->CreateMask(pMask, lParam);
+						rdPtr->pColMask = pMask;
+					}
 				}
 			}
 		}
+
+		// Note: for active objects, lParam is always the same.
+		// For background objects (OEFLAG_BACKGROUND), lParam maybe be different if the user uses your object
+		// as obstacle and as platform. In this case, you should store 2 collision masks
+		// in your data: one if lParam is 0 and another one if lParam is different from 0.
+
+		return pMask;
 	}
-
-	// Note: for active objects, lParam is always the same.
-	// For background objects (OEFLAG_BACKGROUND), lParam maybe be different if the user uses your object
-	// as obstacle and as platform. In this case, you should store 2 collision masks
-	// in your data: one if lParam is 0 and another one if lParam is different from 0.
-
-	return pMask;
+	else {
+		return NULL;
+	}
 }
-*/
 
 // ----------------
 // PauseRunObject

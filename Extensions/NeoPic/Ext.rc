@@ -129,7 +129,31 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM SEPARATOR
+        POPUP "Load"
+        BEGIN
+            MENUITEM "Load From File",              IDMN_ACTION_LFF
+            MENUITEM "Load From Lib",              IDMN_ACTION_LFL
+        END
+        MENUITEM SEPARATOR
+        POPUP "Lib"
+        BEGIN
+            MENUITEM "Reset Lib",              IDMN_ACTION_RL
+            MENUITEM SEPARATOR
+            MENUITEM "Erase Lib Item",              IDMN_ACTION_EL
+            MENUITEM "Update Lib Item",              IDMN_ACTION_UL
+        END
+        MENUITEM SEPARATOR
+        POPUP "Display"
+        BEGIN
+            MENUITEM "Update Src",              IDMN_ACTION_US
+            MENUITEM "Restore Cur",              IDMN_ACTION_RC
+            MENUITEM SEPARATOR            
+            MENUITEM "Set HotSpot",              IDMN_ACTION_SH
+            MENUITEM "Zoom",              IDMN_ACTION_Z
+            MENUITEM "Rotate",              IDMN_ACTION_R
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -143,9 +167,30 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM SEPARATOR
+        POPUP "HotSpot"
+        BEGIN
+            MENUITEM "Get X HotSpot", IDMN_EXPRESSION_GHSX
+            MENUITEM "Get Y HotSpot", IDMN_EXPRESSION_GHSY
+        END
+        POPUP "Size"
+        BEGIN
+            MENUITEM "Get Original Height", IDMN_EXPRESSION_GOW
+            MENUITEM "Get Original Width", IDMN_EXPRESSION_GOH
+            MENUITEM SEPARATOR
+            MENUITEM "Get Current Height", IDMN_EXPRESSION_GCW
+            MENUITEM "Get Current Width", IDMN_EXPRESSION_GCH
+        END
+        POPUP "Zoom"
+        BEGIN
+            MENUITEM "Get X Zoom Scale", IDMN_EXPRESSION_GXZS
+            MENUITEM "Get Y Zoom Scale", IDMN_EXPRESSION_GYZS
+        END
+        POPUP "Rotate"
+        BEGIN
+            MENUITEM "Get Angle", IDMN_EXPRESSION_GA
+        END        
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -228,7 +273,35 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_LFF             "Load From File %0, Decrypt Key %1"
+    M_ACTION_LFL             "Load From Lib %0, File %1, Decrypt Key %2"
+
+    M_ACTION_OBJECT             "Lib Object"
+    M_ACTION_FILENAME           "FileName"
+    M_ACTION_EXT                "FileType, E.g. '.jpg'"
+    M_ACTION_KEY                "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
+
+    M_ACTION_RL             "Reset Lib"
+    M_ACTION_EL             "Erase Lib Item %0"
+    M_ACTION_UL             "Update Lib Item %0, Key %1"
+
+    M_ACTION_SH             "Set HotSpot to %0, Custom X = %1, Y = %2"
+
+    M_ACTION_HOTSPOT             "HotSpot Type, 0 = LT = Left Top, etc. 9 = Custom, Uses X/Y Defined Later"
+    M_ACTION_HOTSPOT_X           "Set Custom HotSpot X"
+    M_ACTION_HOTSPOT_Y           "Set Custom HotSpot Y"
+
+    M_ACTION_Z             "Zoom, X Scale = %0, Y Scale = %1"
+
+    M_ACTION_Z_XSCALE             "X Scale"
+    M_ACTION_Z_YSCALE             "Y Scale"
+
+    M_ACTION_R             "Rotate, Angle = %0"
+
+    M_ACTION_A             "Angle"
+
+    M_ACTION_US            "Update Src"
+    M_ACTION_RC            "Restore Cur"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -241,20 +314,26 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
+    M_EXPRESSION_GHSX            "GetXHotSpot("
+    M_EXPRESSION_GHSY            "GetYHotSpot("
 
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_GOW            "GetOriginalHeight("
+    M_EXPRESSION_GOH            "GetOriginalWidth("
+    
+    M_EXPRESSION_GCW            "GetCurrentHeight("
+    M_EXPRESSION_GCH            "GetCurrentWidth("
+    
+    M_EXPRESSION_GXZS            "GetXZoomScale("
+    M_EXPRESSION_GYZS            "GetYZoomScale("
+    
+    M_EXPRESSION_GA            "GetAngle("
 END
 
 STRINGTABLE
 BEGIN
     IDS_PROP_LIB_TEXTTITLE  "Lib Settings"
-    IDS_PROP_CHECK          "This Object is Lib"
-    IDS_PROP_CHECK_INFO     "Lib Object Will Hold Surface for Other Objects"
+    IDS_PROP_ISLIB_CHECK          "Lib Object"
+    IDS_PROP_ISLIB_CHECK_INFO     "Lib Object will hold surfaces for other objects, you can retrieve them by filename. Lib will keep them over frames."
 END
 
 #endif    // English (U.S.) resources

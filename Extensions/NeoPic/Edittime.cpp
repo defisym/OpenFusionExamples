@@ -57,7 +57,7 @@ PropData Properties[] = {
 
 	// End of table (required)
 	PropData_Group		(PROPID_LIB_TEXTTITLE,	IDS_PROP_LIB_TEXTTITLE,		IDS_PROP_LIB_TEXTTITLE),
-	PropData_CheckBox	(PROPID_ISLIB_CHECK,	IDS_PROP_CHECK,		IDS_PROP_CHECK_INFO),
+	PropData_CheckBox	(PROPID_ISLIB_CHECK,	IDS_PROP_ISLIB_CHECK,		IDS_PROP_ISLIB_CHECK_INFO),
 
 	PropData_End()
 };

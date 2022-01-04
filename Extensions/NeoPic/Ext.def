@@ -80,7 +80,7 @@ EXPORTS
  	GetExpressionParam		@89
 
 ;	GetRunObjectSurface		@90
-;	GetRunObjectCollisionMask		@91
+	GetRunObjectCollisionMask		@91
 
 ;	GetRunObjectFont		@92
 ;	SetRunObjectFont		@93

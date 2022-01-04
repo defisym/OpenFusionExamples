@@ -52,12 +52,6 @@ private:
 	bool Encrypt_Core(bool Encrypt, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM);
 
 protected:
-	char* GetInputData() {
-		return (char*)this->InputData;
-	}
-	char* GetOutputData() {
-		return (char*)this->OutputData;
-	}
 
 public:
 	Encryption();
@@ -65,6 +59,20 @@ public:
 
 	void OpenFile(const wchar_t* FileName);
 	void SaveFile(const wchar_t* FileName, bool SaveSrc = false);
+
+	inline PBYTE GetInputData() {
+		return this->InputData;
+	}
+	inline DWORD GetInputDataLength() {
+		return this->InputLength;
+	}
+
+	inline PBYTE GetOutputData() {
+		return this->OutputData;
+	}
+	inline DWORD GetOutputDataLength() {
+		return this->OutputLength;
+	}
 
 	void SetEncryptStr(std::string& Str);
 	void SetEncryptStr(const char* Str, DWORD StrLength);

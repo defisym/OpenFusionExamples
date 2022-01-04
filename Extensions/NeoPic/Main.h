@@ -12,16 +12,40 @@
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
-#define	ACT_LAST					1
+#define	ACT_ACTION_LFF				0
+#define	ACT_ACTION_LFL				1
+
+#define	ACT_ACTION_RL				2
+#define	ACT_ACTION_EL				3
+#define	ACT_ACTION_UL				4
+
+#define	ACT_ACTION_SH				5
+#define	ACT_ACTION_Z				6
+#define	ACT_ACTION_R				7
+
+#define	ACT_ACTION_US				8
+#define	ACT_ACTION_RC				9
+
+#define	ACT_LAST					10
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
-#define	EXP_LAST                    3
+#define	EXP_EXPRESSION_GHSX				0
+#define EXP_EXPRESSION_GHSY				1
+
+#define EXP_EXPRESSION_GOW				2
+#define EXP_EXPRESSION_GOH				3
+
+#define EXP_EXPRESSION_GCW				4
+#define EXP_EXPRESSION_GCH				5
+
+#define EXP_EXPRESSION_GXZS				6
+#define EXP_EXPRESSION_GYZS				7
+
+#define EXP_EXPRESSION_GA				8
+
+#define	EXP_LAST                    	9
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -76,10 +100,22 @@ typedef struct tagRDATA
 	bool IsLib = false;
 	SurfaceLib* Lib = nullptr;
 
+	//Collision
+	LPSMASK pColMask = nullptr;
+
 	//Display
 	LPSURFACE img = nullptr;
+	LPSURFACE src = nullptr;
+
+	bool FromLib = false;
 
 	POINT HotSpot = { 0,0 };
+	POINT SrcHotSpot = { 0,0 };
+
+	ZoomScale ZoomScale = { 1.0,1.0 };
+
+	int Angle = 0;
+
 	bool StretchQuality = false;
 
 } RUNDATA;
@@ -92,7 +128,7 @@ typedef	RUNDATA	*			LPRDATA;
 // Default flags - see documentation for more info
 // -------------
 #define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_SPRITES|OEFLAG_QUICKDISPLAY|OEFLAG_BACKSAVE|OEFLAG_MOVEMENTS)
-#define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS)
+#define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS|OEPREFS_FINECOLLISIONS)
 
 
 // If to handle message, specify the priority of the handling procedure

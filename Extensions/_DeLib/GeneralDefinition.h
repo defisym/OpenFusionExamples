@@ -5,6 +5,9 @@
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 
+#define StrEqu(X,Y) (wcscmp(X,Y) == 0)
+#define StrEmpty(X) StrEqu(X,Empty_Str)
+
 #define valid(X) (X != nullptr)
 
 #define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
