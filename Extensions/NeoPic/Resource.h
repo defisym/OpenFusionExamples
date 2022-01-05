@@ -17,6 +17,11 @@
 #define IDS_PROP_ISLIB_CHECK           201
 #define IDS_PROP_ISLIB_CHECK_INFO      202
 
+#define IDS_PROP_DISPLAY_TEXTTITLE      203
+
+#define IDS_PROP_HWA_CHECK           204
+#define IDS_PROP_HWA_CHECK_INFO      205
+
 // Dialog Box ID
 #define DB_SETUP                20003
 
@@ -45,6 +50,10 @@
 #define IDMN_ACTION_US	       		25008
 #define IDMN_ACTION_RC	       		25009
 
+#define IDMN_ACTION_S	       		25010
+
+#define IDMN_ACTION_AB	       		25011
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -59,6 +68,10 @@
 
 #define M_ACTION_US                  5008
 #define M_ACTION_RC                  5009
+
+#define M_ACTION_S                   5010
+
+#define M_ACTION_AB          	     5011
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -75,6 +88,8 @@
 
 #define M_ACTION_A          		 5510
 
+#define M_ACTION_S_WIDTH          	 5511
+#define M_ACTION_S_HEIGHT          	 5512
 
 //	Conditions
 //--------------------

@@ -67,9 +67,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 
 	rdPtr->IsLib = edPtr->IsLib;
+	rdPtr->HWA = edPtr->HWA;
 
 	//Display
 	rdPtr->img = new cSurface;
+
+	rdPtr->FromLib = true;
+	rdPtr->ZoomScale = { 1.0,1.0 };
 
 	//Load Lib
 	if(rdPtr->IsLib){

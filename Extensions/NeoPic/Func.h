@@ -1,5 +1,28 @@
 #pragma once
 
+inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
+	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
+}
+
+inline void ConvertHWA(LPRDATA rdPtr) {
+	LPSURFACE srchwa = ConvertHWATexture(rdPtr, rdPtr->src);
+	LPSURFACE imghwa = ConvertHWATarget(rdPtr, rdPtr->img);
+
+	if (rdPtr->src != srchwa) {
+		if (!rdPtr->FromLib) {
+			delete rdPtr->src;
+		}
+		rdPtr->FromLib = false;
+
+		rdPtr->src = srchwa;
+	}
+
+	if (rdPtr->img != imghwa) {
+		delete rdPtr->img;
+		rdPtr->img = imghwa;
+	}
+}
+
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (!rdPtr->IsLib) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
@@ -12,6 +35,53 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->rHo.hoImgHeight = rdPtr->img->GetHeight();
 
 		FreeColMask(rdPtr->pColMask);
+	}
+}
+
+inline void Zoom(LPRDATA rdPtr,float XScale,float YScale) {
+	if (rdPtr->ZoomScale == ZoomScale{ XScale, YScale }) {
+		return;
+	}
+
+	rdPtr->ZoomScale = { XScale ,YScale };
+
+	XScale = abs(XScale);
+	YScale = abs(YScale);
+
+	int width = (int)(rdPtr->src->GetWidth() * XScale);
+	int height = (int)(rdPtr->src->GetHeight() * YScale);
+
+	rdPtr->HotSpot = rdPtr->SrcHotSpot;
+
+	rdPtr->HotSpot.x = (int)(rdPtr->HotSpot.x * XScale);
+	rdPtr->HotSpot.y = (int)(rdPtr->HotSpot.y * YScale);
+
+	delete rdPtr->img;
+	rdPtr->img = CreateSurface(24, width, height);
+
+	Stretch(rdPtr->src, rdPtr->img, rdPtr->StretchQuality);
+
+	//if (rdPtr->HWA) {
+	//	ConvertHWA(rdPtr);
+
+	//	POINT Center = { 0,0 };
+
+	//	rdPtr->src->BlitEx(*rdPtr->img, 0, 0,
+	//		XScale, YScale, 0, 0,
+	//		rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &Center, 0,
+	//		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+	//		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+	//		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+	//}
+	//else{
+	//	Stretch(rdPtr->src, rdPtr->img, rdPtr->StretchQuality);
+	//}
+
+	if (rdPtr->ZoomScale.XScale < 0.0) {
+		rdPtr->img->ReverseX();
+	}
+	if (rdPtr->ZoomScale.YScale < 0.0) {
+		rdPtr->img->ReverseY();
 	}
 }
 
@@ -37,6 +107,10 @@ inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 	//Update hotspot
 	*hotX = (int)(round(hx * co + hy * si)-dx);
 	*hotY = (int)(round(hy * co - hx * si)-dy);
+}
+
+inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {	
+	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
 inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
@@ -95,10 +169,6 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA 
 		CInputMemFile MemFile;
 		MemFile.Create(E.GetOutputData(), E.GetOutputDataLength());
 
-		//Proto
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
 		//MGR
 		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 		CImageFilter    pFilter(pImgMgr);
@@ -110,12 +180,12 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA 
 			cSurface img;
 
 			if(ImportImageFromInputFile(pImgMgr, &MemFile, &img, 0, 0)){
-				Src->Delete();
-				Src->Create(width, height, proto);
+				delete Src;
+				Src = CreateSurface(24, width, height);
 
 				Stretch(&img, Src, HighQuality);
 			}
-		}
+		}	
 	}
 }
 

@@ -150,8 +150,12 @@ BEGIN
             MENUITEM "Restore Cur",              IDMN_ACTION_RC
             MENUITEM SEPARATOR            
             MENUITEM "Set HotSpot",              IDMN_ACTION_SH
+            MENUITEM SEPARATOR            
             MENUITEM "Zoom",              IDMN_ACTION_Z
             MENUITEM "Rotate",              IDMN_ACTION_R
+            MENUITEM "Stretch",              IDMN_ACTION_S
+            MENUITEM SEPARATOR
+            MENUITEM "Add Backdrop",              IDMN_ACTION_AB
         END
         MENUITEM SEPARATOR
     END
@@ -175,11 +179,11 @@ BEGIN
         END
         POPUP "Size"
         BEGIN
-            MENUITEM "Get Original Height", IDMN_EXPRESSION_GOW
             MENUITEM "Get Original Width", IDMN_EXPRESSION_GOH
-            MENUITEM SEPARATOR
-            MENUITEM "Get Current Height", IDMN_EXPRESSION_GCW
+            MENUITEM "Get Original Height", IDMN_EXPRESSION_GOW            
+            MENUITEM SEPARATOR            
             MENUITEM "Get Current Width", IDMN_EXPRESSION_GCH
+            MENUITEM "Get Current Height", IDMN_EXPRESSION_GCW
         END
         POPUP "Zoom"
         BEGIN
@@ -302,6 +306,13 @@ BEGIN
 
     M_ACTION_US            "Update Src"
     M_ACTION_RC            "Restore Cur"
+
+    M_ACTION_S             "Stretch, Width = %0, Height = %1"
+    
+    M_ACTION_S_WIDTH            "Width"
+    M_ACTION_S_HEIGHT           "Height"
+
+    M_ACTION_AB             "Add Backdrop %0"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -317,11 +328,11 @@ BEGIN
     M_EXPRESSION_GHSX            "GetXHotSpot("
     M_EXPRESSION_GHSY            "GetYHotSpot("
 
-    M_EXPRESSION_GOW            "GetOriginalHeight("
-    M_EXPRESSION_GOH            "GetOriginalWidth("
+    M_EXPRESSION_GOW            "GetOriginalWidth("
+    M_EXPRESSION_GOH            "GetOriginalHeight("
     
-    M_EXPRESSION_GCW            "GetCurrentHeight("
-    M_EXPRESSION_GCH            "GetCurrentWidth("
+    M_EXPRESSION_GCW            "GetCurrentWidth("
+    M_EXPRESSION_GCH            "GetCurrentHeight("
     
     M_EXPRESSION_GXZS            "GetXZoomScale("
     M_EXPRESSION_GYZS            "GetYZoomScale("
@@ -332,8 +343,14 @@ END
 STRINGTABLE
 BEGIN
     IDS_PROP_LIB_TEXTTITLE  "Lib Settings"
+
     IDS_PROP_ISLIB_CHECK          "Lib Object"
     IDS_PROP_ISLIB_CHECK_INFO     "Lib Object will hold surfaces for other objects, you can retrieve them by filename. Lib will keep them over frames."
+
+    IDS_PROP_DISPLAY_TEXTTITLE  "Display Settings"
+
+    IDS_PROP_HWA_CHECK  "HWA"
+    IDS_PROP_HWA_CHECK_INFO  "Use HWA When Stretching or Rotating"
 END
 
 #endif    // English (U.S.) resources

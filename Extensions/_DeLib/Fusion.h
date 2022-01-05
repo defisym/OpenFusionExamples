@@ -215,14 +215,58 @@ inline RGBA operator >>(RGBA A, int B) {
 	return A;
 }
 
+//Create surface
+inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height, int type) {
+	LPSURFACE proto = nullptr;
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	int sfDrv = wSurf->GetDriver();
+	GetSurfacePrototype(&proto, depth, type, sfDrv);
+
+	cSurface* hwa = new cSurface;
+	hwa->Create(width, height, proto);
+
+	return hwa;
+}
+inline LPSURFACE CreateSurface(int depth, int width, int height) {
+	LPSURFACE proto = nullptr;
+	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
+
+	cSurface* sur = new cSurface;
+	sur->Create(width, height, proto);
+
+	return sur;
+}
+
+//Convert to HWA
+inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
+	if (Src->GetType() >= ST_HWA_SCREEN) {
+		return Src;
+	}	
+
+	return CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
+}
+
+inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
+	if (Src->GetType() >= ST_HWA_SCREEN) {
+		return Src;
+	}
+
+	cSurface* hwa = CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_ROMTEXTURE);
+	Src->Blit(*hwa);
+
+	return hwa;
+}
+
 //Stretch Surface
 inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
 	DWORD flag = 0;
 
-	if (HighQuality)
+	if (HighQuality) {
 		flag = flag | STRF_RESAMPLE;
-	if (Src->HasAlpha())
+	}
+	if (Src->HasAlpha()) {
 		flag = flag | STRF_COPYALPHA;
+	}
 
 	Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, flag);
 
@@ -348,36 +392,28 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 		HANDLE handle = GetClipboardData(CF_DIB);
 		BITMAPINFO* bmp = (BITMAPINFO*)GlobalLock(handle);
 
-		//Proto
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
 		if (NoStretch) {
-			Src->Delete();
-			Src->Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
+			delete Src;
+			Src = CreateSurface(24, bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight);
 			Src->LoadImage(bmp, GetDIBBitmap(bmp));
 		}
 		else {
-			cSurface img;
+			LPSURFACE img;
+			img = CreateSurface(24, bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight);
+			img->LoadImage(bmp, GetDIBBitmap(bmp));
 
-			img.Delete();
-			img.Create(bmp->bmiHeader.biWidth, bmp->bmiHeader.biHeight, proto);
-			img.LoadImage(bmp, GetDIBBitmap(bmp));
+			delete Src;
+			Src = CreateSurface(24, width, height);
 
-			Src->Delete();
-			Src->Create(width, height, proto);
+			Stretch(img, Src, HighQuality);
 
-			Stretch(&img, Src, HighQuality);
+			delete img;
 		}
 	}
 }
 
 //Load From File
 inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
-	//Proto
-	LPSURFACE proto = nullptr;
-	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
@@ -389,11 +425,11 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int wi
 		cSurface img;
 
 		if (ImportImage(pImgMgr, FilePath, &img, 0, 0)) {
-			Src->Delete();
-			Src->Create(width, height, proto);
+			delete Src;
+			Src = CreateSurface(24, width, height);
 
 			Stretch(&img, Src, HighQuality);
-		}		
+		}
 	}
 }
 
@@ -434,14 +470,12 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 
 	// ½µ²ÉÑù
 	cSurface ResizedImg;
-	LPSURFACE proto = nullptr;
-	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
 	if (!(scale == 1.0)) {
 		ResizedImg.Clone(*img);
 
-		img->Delete();
-		img->Create(width, height, proto);
+		delete img;
+		img = CreateSurface(24, width, height);
 
 		Stretch(&ResizedImg, img, Fast);
 	}
@@ -633,8 +667,8 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 	if (!(scale == 1.0)) {
 		ResizedImg.Clone(*img);
 
-		img->Delete();
-		img->Create(owidth, oheight, proto);
+		delete img;
+		img = CreateSurface(24, owidth, oheight);
 
 		Stretch(&ResizedImg, img, Fast);
 	}

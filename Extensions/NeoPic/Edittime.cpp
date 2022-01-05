@@ -29,6 +29,8 @@ enum {
 	
 	PROPID_LIB_TEXTTITLE,
 	PROPID_ISLIB_CHECK,
+	PROPID_DISPLAY_TEXTTITLE,
+	PROPID_HWA_CHECK,
 
 };
 
@@ -58,6 +60,9 @@ PropData Properties[] = {
 	// End of table (required)
 	PropData_Group		(PROPID_LIB_TEXTTITLE,	IDS_PROP_LIB_TEXTTITLE,		IDS_PROP_LIB_TEXTTITLE),
 	PropData_CheckBox	(PROPID_ISLIB_CHECK,	IDS_PROP_ISLIB_CHECK,		IDS_PROP_ISLIB_CHECK_INFO),
+
+	//PropData_Group(PROPID_DISPLAY_TEXTTITLE,	IDS_PROP_DISPLAY_TEXTTITLE,		IDS_PROP_DISPLAY_TEXTTITLE),
+	//PropData_CheckBox(PROPID_HWA_CHECK,	IDS_PROP_HWA_CHECK,		IDS_PROP_HWA_CHECK_INFO),
 
 	PropData_End()
 };
@@ -736,6 +741,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		// Return 0 (unchecked) or 1 (checked)
 		case PROPID_ISLIB_CHECK:
 			return edPtr->IsLib;
+		case PROPID_HWA_CHECK:
+			return edPtr->HWA;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -820,6 +827,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->IsLib = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_ISLIB_CHECK, TRUE);
+		break;
+	case PROPID_HWA_CHECK:
+		edPtr->HWA = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_HWA_CHECK, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

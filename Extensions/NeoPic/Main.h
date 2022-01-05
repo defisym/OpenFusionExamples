@@ -26,7 +26,11 @@
 #define	ACT_ACTION_US				8
 #define	ACT_ACTION_RC				9
 
-#define	ACT_LAST					10
+#define	ACT_ACTION_S				10
+
+#define	ACT_ACTION_AB				11
+
+#define	ACT_LAST					12
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -63,6 +67,9 @@ typedef struct tagEDATA_V1
 
 	//Lib
 	bool IsLib = false;
+
+	//Display
+	bool HWA = false;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -104,6 +111,8 @@ typedef struct tagRDATA
 	LPSMASK pColMask = nullptr;
 
 	//Display
+	bool HWA = false;
+
 	LPSURFACE img = nullptr;
 	LPSURFACE src = nullptr;
 

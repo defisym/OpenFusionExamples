@@ -44,6 +44,10 @@ short actionsInfos[]=
 		IDMN_ACTION_US, M_ACTION_US,	ACT_ACTION_US,	0, 0,
 		IDMN_ACTION_RC, M_ACTION_RC,	ACT_ACTION_RC,	0, 0,
 
+		IDMN_ACTION_S, M_ACTION_S,	ACT_ACTION_S,	0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_S_WIDTH,M_ACTION_S_HEIGHT,
+
+		IDMN_ACTION_AB, M_ACTION_AB,	ACT_ACTION_AB,	0, 1,PARAM_PASTE,0,
+
 		};
 
 // Definitions of parameters for each expression
@@ -190,24 +194,7 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	float YScale = GetFloatParam(rdPtr);
 	
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
-		rdPtr->ZoomScale = { XScale ,YScale };
-
-		int nwidth = (int)(rdPtr->src->GetWidth() * XScale);
-		int nheight = (int)(rdPtr->src->GetHeight() * YScale);
-		
-		rdPtr->HotSpot = rdPtr->SrcHotSpot;
-
-		rdPtr->HotSpot.x = (int)(rdPtr->HotSpot.x * XScale);
-		rdPtr->HotSpot.y = (int)(rdPtr->HotSpot.y * YScale);
-
-		//Proto
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
-		rdPtr->img->Delete();
-		rdPtr->img->Create(nwidth, nheight, proto);
-
-		Stretch(rdPtr->src, rdPtr->img, rdPtr->StretchQuality);
+		Zoom(rdPtr, XScale, YScale);
 
 		ReDisplay(rdPtr);
 	}	
@@ -217,22 +204,50 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	int Angle = (int)CNC_GetIntParameter(rdPtr);
+	Angle = Angle % 360;
 	
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+		if (rdPtr->Angle == Angle) {
+			return 0;
+		}
+
 		rdPtr->Angle = Angle;
 
 		rdPtr->HotSpot = rdPtr->SrcHotSpot;
 		RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
 
-		//Proto
-		LPSURFACE proto = nullptr;
-		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+		//int width = rdPtr->src->GetWidth();
+		//int height = rdPtr->src->GetHeight();
 
-		rdPtr->img->Delete();
-		rdPtr->img->Create(4, 4, proto);
+		//rdPtr->src->GetSizeOfRotatedRect(&width, &height, (float)Angle);
 
-		//rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality);
-		rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality,DARK_GREEN);
+		delete rdPtr->img;
+		//rdPtr->img = CreateSurface(24, width, height);
+		rdPtr->img = CreateSurface(24, 4, 4);
+		
+		rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality);
+		//rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
+
+		//if (rdPtr->HWA) {
+		//	ConvertHWA(rdPtr);
+		//	
+		//	POINT Center = { 0,0 };			
+
+		//	//RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y);
+
+		//	rdPtr->src->BlitEx(*rdPtr->img, 0, 0,
+		//		1.0, 1.0, 0, 0,
+		//		rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &Center, (float)Angle,
+		//		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+		//		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+		//		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+		//}
+		//else {
+		//	RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
+
+		//	rdPtr->src->Rotate(*rdPtr->img, Angle, rdPtr->StretchQuality);
+		//	//rdPtr->src->Rotate(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
+		//}
 
 		ReDisplay(rdPtr);
 	}
@@ -240,6 +255,34 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
+	int Width = (int)CNC_GetIntParameter(rdPtr);
+	int Height = (int)CNC_GetIntParameter(rdPtr);
+
+	float XScale = (1.0f * Width/ rdPtr->src->GetWidth());
+	float YScale = (1.0f * Height / rdPtr->src->GetHeight());
+
+	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+		Zoom(rdPtr, XScale, YScale);
+
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
+	int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
+
+	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+		AddBackdrop(rdPtr, rdPtr->img,
+			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->HotSpot.x, 
+			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->HotSpot.y,
+			rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
+	}
+
+	return 0;
+}
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -278,65 +321,6 @@ long WINAPI DLLExport GetAngle(LPRDATA rdPtr, long param1) {
 	return rdPtr->img->IsValid() ? rdPtr->Angle : -1;
 }
 
-// -----------------
-// Sample expression
-// -----------------
-// Add three values
-// 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-
-	// Performs the wonderfull calculation
-	return p1+p2+p3;
-}
-
-
-//Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
-	char *temp;
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
-
-	//Reversing the string.
-	_strrev(temp);
-	
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
-	//This returns a pointer to the string for MMF.
-	return (long)temp;
-}
-
-//Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-
-	//Floats are tricky.  If you want to pass in a float, you must do the
-	//following to convert the long to a true float, but only when you use
-	//TYPE_FLOAT.
-	float fp1 = *(float *)&p1;
-
-	//Just doing simple math now.
-	fp1 /=2;
-
-	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-	rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-	//Return the float without conversion
-	return *((int*)&fp1);
-}
-
-
-
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -368,6 +352,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			UpdateSrc,
 			RestoreCur,
+
+			Stretch,
+
+			AddBackdrop,
 
 			0
 			};

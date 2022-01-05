@@ -15,6 +15,9 @@
 #define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
 
+#define RAD(DEG) ((PI*DEG)/180)
+#define DEG(RAD) ((180*RAD)/PI)
+
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
 	release_arr(Tar);

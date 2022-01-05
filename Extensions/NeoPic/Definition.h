@@ -15,10 +15,19 @@ enum class HotSpotPos {
 	CUSTOM
 };
 
+struct Size {
+	int width;
+	int height;
+};
+
 struct ZoomScale {
 	float XScale;
 	float YScale;
 };
+
+inline bool operator ==(ZoomScale A, ZoomScale B) {
+	return (A.XScale == B.XScale) && (A.YScale == B.YScale);
+}
 
 typedef std::map<std::wstring, LPSURFACE> SurfaceLib;
 
