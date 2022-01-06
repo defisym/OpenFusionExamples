@@ -29,8 +29,14 @@
 #define	ACT_ACTION_S				10
 
 #define	ACT_ACTION_AB				11
+#define	ACT_ACTION_UC				12
 
-#define	ACT_LAST					12
+#define	ACT_ACTION_SC				13
+#define	ACT_ACTION_SQ				14
+
+#define	ACT_ACTION_AT				15
+
+#define	ACT_LAST					16
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -68,8 +74,15 @@ typedef struct tagEDATA_V1
 	//Lib
 	bool IsLib = false;
 
+	//Collision
+	bool Collision = false;
+	bool AutoUpdateCollision = false;
+
 	//Display
+
+	//Settings
 	bool HWA = false;
+	bool StretchQuality = false;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -108,24 +121,35 @@ typedef struct tagRDATA
 	SurfaceLib* Lib = nullptr;
 
 	//Collision
+	bool Collision = false;
+	bool AutoUpdateCollision = false;
+
 	LPSMASK pColMask = nullptr;
 
 	//Display
+
+	//Settings
 	bool HWA = false;
+	bool StretchQuality = false;
 
-	LPSURFACE img = nullptr;
-	LPSURFACE src = nullptr;
-
+	//Source
 	bool FromLib = false;
 
-	POINT HotSpot = { 0,0 };
-	POINT SrcHotSpot = { 0,0 };
+	//img->collision & add backdrop
+	LPSURFACE img = nullptr;
+	
+	POINT ImgHotSpot = { 0,0 };
+	ZoomScale ImgZoomScale = { 1.0,1.0 };
+	
+	int ImgAngle = 0;
 
+	//src->display	
+	LPSURFACE src = nullptr;
+	
+	POINT HotSpot = { 0,0 };	
 	ZoomScale ZoomScale = { 1.0,1.0 };
 
 	int Angle = 0;
-
-	bool StretchQuality = false;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

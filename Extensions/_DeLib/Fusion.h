@@ -682,8 +682,12 @@ struct ATArray {
 };
 
 //Affine transformation
-inline void AffineTransformation(LPSURFACE img, ATArray Arr, int divide) {
+inline void AffineTransformation(LPSURFACE Src, ATArray Arr, int divide) {
+	GetMaxmiumDivide(&divide);
+
 	auto Interpolation = [=]()->RGBA {
 
 	};
+
+	LPSURFACE Trans = new cSurface;
 }

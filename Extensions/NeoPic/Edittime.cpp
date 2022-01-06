@@ -29,8 +29,15 @@ enum {
 	
 	PROPID_LIB_TEXTTITLE,
 	PROPID_ISLIB_CHECK,
+
 	PROPID_DISPLAY_TEXTTITLE,
 	PROPID_HWA_CHECK,
+
+	PROPID_QUALITY_TEXTTITLE,
+	PROPID_QUALITY_CHECK,
+
+	PROPID_HASCOLLISION_CHECK,
+	PROPID_AUTOUPDATECOLLISION_CHECK,
 
 };
 
@@ -47,7 +54,22 @@ enum {
 //
 // Type, ID, Text, Text of Info box [, Options, Init Param]
 //
-PropData Properties[] = {
+
+// PropData Properties[] = {
+
+// // Example
+// // -------
+// //	PropData_Group		(PROPID_TEXTTITLE,	IDS_PROP_TEXTTITLE,		IDS_PROP_TEXTTITLE),
+// //	PropData_EditString	(PROPID_TEXT,		IDS_PROP_TEXT,			IDS_PROP_TEXT_INFO),
+// //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
+// //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
+// //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+	
+// 	PropData_End()
+
+// };
+
+PropData PropertiesGerneral[] = {
 
 // Example
 // -------
@@ -67,6 +89,19 @@ PropData Properties[] = {
 	PropData_End()
 };
 
+PropData PropertiesDisplay[] = {
+	PropData_Group	(PROPID_QUALITY_TEXTTITLE,	IDS_PROP_QUALITY_TEXTTITLE,		IDS_PROP_QUALITY_TEXTTITLE),
+	PropData_CheckBox	(PROPID_QUALITY_CHECK,	IDS_PROP_QUALITY_CHECK,		IDS_PROP_QUALITY_CHECK_INFO),
+	
+	PropData_End()
+};
+
+PropData PropertiesRuntime[] = {
+	PropData_CheckBox	(PROPID_HASCOLLISION_CHECK,	IDS_PROP_HASCOLLISION_CHECK,		IDS_PROP_HASCOLLISION_CHECK_INFO),
+	PropData_CheckBox	(PROPID_AUTOUPDATECOLLISION_CHECK,	IDS_PROP_AUTOUPDATECOLLISION_CHECK,		IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO),
+	
+	PropData_End()
+};
 // SETUP PROC /////////////////////////////////////////////////////////////////
 
 // Prototype of setup procedure
@@ -642,7 +677,11 @@ void WINAPI	DLLExport CreateFromFile (LPMV mV, LPTSTR fileName, LPEDATA edPtr)
 BOOL WINAPI DLLExport GetProperties(LPMV mV, LPEDATA edPtr, BOOL bMasterItem)
 {
 #ifndef RUN_ONLY
-	mvInsertProps(mV, edPtr, Properties, PROPID_TAB_GENERAL, TRUE);
+	mvInsertProps(mV, edPtr, PropertiesGerneral, PROPID_TAB_GENERAL, TRUE);
+	mvInsertProps(mV, edPtr, PropertiesDisplay, PROPID_TAB_DISPLAY, TRUE);
+	mvInsertProps(mV, edPtr, PropertiesRuntime, PROPID_TAB_RUNOPT, TRUE);
+
+	mvRemoveProp(mV, edPtr, PROPID_DYNITEM_FINECOLL);
 #endif // !defined(RUN_ONLY)
 
 	// OK
@@ -741,8 +780,17 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		// Return 0 (unchecked) or 1 (checked)
 		case PROPID_ISLIB_CHECK:
 			return edPtr->IsLib;
+
 		case PROPID_HWA_CHECK:
 			return edPtr->HWA;
+
+		case PROPID_QUALITY_CHECK:
+			return edPtr->StretchQuality;
+
+		case PROPID_HASCOLLISION_CHECK:
+			return edPtr->Collision;
+		case PROPID_AUTOUPDATECOLLISION_CHECK:
+			return edPtr->AutoUpdateCollision;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -828,10 +876,28 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_ISLIB_CHECK, TRUE);
 		break;
+
 	case PROPID_HWA_CHECK:
 		edPtr->HWA = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_HWA_CHECK, TRUE);
+		break;
+
+	case PROPID_QUALITY_CHECK:
+		edPtr->StretchQuality = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_QUALITY_CHECK, TRUE);
+		break;
+
+	case PROPID_HASCOLLISION_CHECK:
+		edPtr->Collision = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, TRUE);
+		break;
+	case PROPID_AUTOUPDATECOLLISION_CHECK:
+		edPtr->AutoUpdateCollision = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

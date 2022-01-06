@@ -22,6 +22,17 @@
 #define IDS_PROP_HWA_CHECK           204
 #define IDS_PROP_HWA_CHECK_INFO      205
 
+#define IDS_PROP_HASCOLLISION_CHECK      206
+#define IDS_PROP_HASCOLLISION_CHECK_INFO      207
+
+#define IDS_PROP_AUTOUPDATECOLLISION_CHECK      208
+#define IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO      209
+
+#define IDS_PROP_QUALITY_TEXTTITLE      210
+
+#define IDS_PROP_QUALITY_CHECK          211
+#define IDS_PROP_QUALITY_CHECK_INFO     212
+
 // Dialog Box ID
 #define DB_SETUP                20003
 
@@ -53,6 +64,12 @@
 #define IDMN_ACTION_S	       		25010
 
 #define IDMN_ACTION_AB	       		25011
+#define IDMN_ACTION_UC	       		25012
+
+#define IDMN_ACTION_SQ	       		25013
+#define IDMN_ACTION_SC	       		25014
+
+#define IDMN_ACTION_AT	       		25015
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -72,6 +89,12 @@
 #define M_ACTION_S                   5010
 
 #define M_ACTION_AB          	     5011
+#define M_ACTION_UC          	     5012
+
+#define M_ACTION_SC          	     5013
+#define M_ACTION_SQ          	     5014
+
+#define M_ACTION_AT          	     5015
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -90,6 +113,11 @@
 
 #define M_ACTION_S_WIDTH          	 5511
 #define M_ACTION_S_HEIGHT          	 5512
+
+#define M_ACTION_HC          	     5513
+#define M_ACTION_AUC          	     5514
+
+#define M_ACTION_RS           	     5515
 
 //	Conditions
 //--------------------

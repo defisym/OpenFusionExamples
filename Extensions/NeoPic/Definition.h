@@ -29,6 +29,10 @@ inline bool operator ==(ZoomScale A, ZoomScale B) {
 	return (A.XScale == B.XScale) && (A.YScale == B.YScale);
 }
 
+inline bool operator !=(ZoomScale A, ZoomScale B) {
+	return (A.XScale != B.XScale) || (A.YScale != B.YScale);
+}
+
 typedef std::map<std::wstring, LPSURFACE> SurfaceLib;
 
 #define SetExtUserData(pData) rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvSetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib,pData)

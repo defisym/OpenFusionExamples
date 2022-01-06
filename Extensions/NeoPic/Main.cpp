@@ -47,6 +47,12 @@ short actionsInfos[]=
 		IDMN_ACTION_S, M_ACTION_S,	ACT_ACTION_S,	0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_S_WIDTH,M_ACTION_S_HEIGHT,
 
 		IDMN_ACTION_AB, M_ACTION_AB,	ACT_ACTION_AB,	0, 1,PARAM_PASTE,0,
+		IDMN_ACTION_UC, M_ACTION_UC,	ACT_ACTION_UC,	0, 0,
+
+		IDMN_ACTION_SC, M_ACTION_SC,	ACT_ACTION_SC,	0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_HC,M_ACTION_AUC,
+		IDMN_ACTION_SQ, M_ACTION_SQ,	ACT_ACTION_SQ,	0, 1,PARAM_EXPRESSION,M_ACTION_RS,
+
+		IDMN_ACTION_AT, M_ACTION_AT,	ACT_ACTION_AT,	0, 0,
 
 		};
 
@@ -157,20 +163,21 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
 	if (!rdPtr->IsLib && rdPtr->img->IsValid()) {
-		rdPtr->src->Delete();
-		rdPtr->src->Clone(*rdPtr->img);
+		//rdPtr->src->Delete();
+		//rdPtr->src->Clone(*rdPtr->img);
 
-		rdPtr->SrcHotSpot = rdPtr->HotSpot;
+		//rdPtr->HotSpot = rdPtr->ImgHotSpot;
+		
 	}
 
 	return 0;
 }
 short WINAPI DLLExport RestoreCur(LPRDATA rdPtr, long param1, long param2) {
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
-		rdPtr->HotSpot = rdPtr->SrcHotSpot;
+		//rdPtr->ImgHotSpot = rdPtr->HotSpot;
 
-		rdPtr->img->Delete();
-		rdPtr->img->Clone(*rdPtr->src);
+		//rdPtr->img->Delete();
+		//rdPtr->img->Clone(*rdPtr->src);
 	}
 
 	return 0;
@@ -183,9 +190,8 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	int Y = (int)CNC_GetIntParameter(rdPtr);
 	
 	UpdateHotSpot(rdPtr, Pos, X, Y);
+	rdPtr->ImgHotSpot = rdPtr->HotSpot;
 	
-	rdPtr->SrcHotSpot = rdPtr->HotSpot;
-
 	return 0;
 }
 
@@ -207,47 +213,7 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	Angle = Angle % 360;
 	
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
-		if (rdPtr->Angle == Angle) {
-			return 0;
-		}
-
-		rdPtr->Angle = Angle;
-
-		rdPtr->HotSpot = rdPtr->SrcHotSpot;
-		RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
-
-		//int width = rdPtr->src->GetWidth();
-		//int height = rdPtr->src->GetHeight();
-
-		//rdPtr->src->GetSizeOfRotatedRect(&width, &height, (float)Angle);
-
-		delete rdPtr->img;
-		//rdPtr->img = CreateSurface(24, width, height);
-		rdPtr->img = CreateSurface(24, 4, 4);
-		
-		rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality);
-		//rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
-
-		//if (rdPtr->HWA) {
-		//	ConvertHWA(rdPtr);
-		//	
-		//	POINT Center = { 0,0 };			
-
-		//	//RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y);
-
-		//	rdPtr->src->BlitEx(*rdPtr->img, 0, 0,
-		//		1.0, 1.0, 0, 0,
-		//		rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &Center, (float)Angle,
-		//		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-		//		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-		//		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-		//}
-		//else {
-		//	RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
-
-		//	rdPtr->src->Rotate(*rdPtr->img, Angle, rdPtr->StretchQuality);
-		//	//rdPtr->src->Rotate(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
-		//}
+		Rotate(rdPtr, Angle);
 
 		ReDisplay(rdPtr);
 	}
@@ -273,16 +239,72 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
+	
+	UpdateImg(rdPtr);
 
-	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+	if (!rdPtr->IsLib && rdPtr->img->IsValid()) {
 		AddBackdrop(rdPtr, rdPtr->img,
-			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->HotSpot.x, 
-			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->HotSpot.y,
+			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->ImgHotSpot.x,
+			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->ImgHotSpot.y,
 			rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
 	}
 
 	return 0;
 }
+short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) {
+	UpdateImg(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetCollision(LPRDATA rdPtr, long param1, long param2) {
+	bool Collision = (bool)CNC_GetIntParameter(rdPtr);
+	bool AutoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->Collision = Collision;
+	rdPtr->AutoUpdateCollision = AutoUpdateCollision;
+
+	FreeColMask(rdPtr->pColMask);	
+
+	return 0;
+}
+
+short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
+	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->StretchQuality = Quality;
+
+	UpdateImg(rdPtr, true);
+
+	return 0;
+}
+
+short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
+	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
+
+	ATArray A;
+
+	//Save Src
+	if (!rdPtr->FromLib) {
+		LPSURFACE Trans = rdPtr->src;
+	}
+
+	rdPtr->FromLib = false;
+
+	//Affine Transformation
+	//Recreate a surface and transform Src to it.
+	AffineTransformation(rdPtr->src, A, -1);
+
+	//Update img
+	delete rdPtr->img;
+	rdPtr->img = new cSurface;
+	rdPtr->img->Clone(*rdPtr->src);
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -356,6 +378,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Stretch,
 
 			AddBackdrop,
+			UpdateCollision,
+
+			SetCollision,
+			SetQuality,
+
+			AffineTrans,
 
 			0
 			};

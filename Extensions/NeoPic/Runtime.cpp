@@ -67,13 +67,21 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 
 	rdPtr->IsLib = edPtr->IsLib;
+
 	rdPtr->HWA = edPtr->HWA;
 
+	rdPtr->StretchQuality = edPtr->StretchQuality;
+
+	rdPtr->Collision = edPtr->Collision;
+	rdPtr->AutoUpdateCollision = edPtr->AutoUpdateCollision;
+
 	//Display
-	rdPtr->img = new cSurface;
+	rdPtr->img = nullptr;
 
 	rdPtr->FromLib = true;
+
 	rdPtr->ZoomScale = { 1.0,1.0 };
+	rdPtr->ImgZoomScale = { 1.0,1.0 };
 
 	//Load Lib
 	if(rdPtr->IsLib){
@@ -176,7 +184,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
-	if (!rdPtr->IsLib && rdPtr->img->IsValid()) {
+	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
@@ -187,12 +195,46 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
 
 		//rdPtr->img.Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-		rdPtr->img->BlitEx(*ps, (float)screenX, (float)screenY,
-			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-			rdPtr->img->GetWidth(), rdPtr->img->GetHeight(), &rdPtr->HotSpot, rdPtr->rc.rcAngle,
+		//rdPtr->img->BlitEx(*ps, (float)screenX, (float)screenY,
+		//	rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
+		//	rdPtr->img->GetWidth(), rdPtr->img->GetHeight(), &rdPtr->HotSpot, rdPtr->rc.rcAngle,
+		//	(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+		//	BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+		//	rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+
+		LPSURFACE Display=nullptr;
+
+		if ((rdPtr->ZoomScale.XScale < 0.0) || (rdPtr->ZoomScale.YScale < 0.0)) {
+			Display = CreateSurface(24, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
+			Display->Clone(*rdPtr->src);
+
+			if (rdPtr->ZoomScale.XScale < 0.0) {
+				Display->ReverseX();
+			}
+			if (rdPtr->ZoomScale.YScale < 0.0) {
+				Display->ReverseY();
+			}			
+		}
+		else {
+			Display = rdPtr->src;
+		}
+
+		DWORD flags = 0;
+
+		if (rdPtr->StretchQuality) {
+			flags |= BLTF_ANTIA;
+		}
+
+		Display->BlitEx(*ps, (float)screenX, (float)screenY,
+			abs(rdPtr->ZoomScale.XScale), abs(rdPtr->ZoomScale.YScale), 0, 0,
+			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->HotSpot, (float)rdPtr->Angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+
+		if (Display != rdPtr->src) {
+			delete Display;
+		}
 	}
 	// Ok
 	return 0;
@@ -242,16 +284,32 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 		LPSMASK pMask = rdPtr->pColMask;
 		if (pMask == NULL) {
 			if (rdPtr->img != NULL) {
-				DWORD dwMaskSize = rdPtr->img->CreateMask(NULL, lParam);
+				LPSURFACE collide = nullptr;
+				collide = CreateSurface(24,rdPtr->src->GetWidth(),rdPtr->src->GetHeight());
+
+				if (rdPtr->Collision) {
+					if (rdPtr->AutoUpdateCollision) {
+						UpdateImg(rdPtr);
+					}
+
+					int desX = rdPtr->HotSpot.x - rdPtr->ImgHotSpot.x;
+					int desY = rdPtr->HotSpot.y - rdPtr->ImgHotSpot.y;
+
+					rdPtr->img->Blit(*collide, desX, desY);
+				}
+
+				DWORD dwMaskSize = collide->CreateMask(NULL, lParam);
 
 				if (dwMaskSize != 0) {
 					pMask = (LPSMASK)calloc(dwMaskSize, 1);
 
 					if (pMask != NULL) {
-						rdPtr->img->CreateMask(pMask, lParam);
+						collide->CreateMask(pMask, lParam);						
 						rdPtr->pColMask = pMask;
 					}
 				}
+
+				delete collide;
 			}
 		}
 

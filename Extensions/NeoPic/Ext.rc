@@ -146,16 +146,28 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Display"
         BEGIN
-            MENUITEM "Update Src",              IDMN_ACTION_US
-            MENUITEM "Restore Cur",              IDMN_ACTION_RC
-            MENUITEM SEPARATOR            
-            MENUITEM "Set HotSpot",              IDMN_ACTION_SH
-            MENUITEM SEPARATOR            
-            MENUITEM "Zoom",              IDMN_ACTION_Z
-            MENUITEM "Rotate",              IDMN_ACTION_R
-            MENUITEM "Stretch",              IDMN_ACTION_S
+            //MENUITEM "Update Src",              IDMN_ACTION_US
+            //MENUITEM "Restore Cur",              IDMN_ACTION_RC
+            //MENUITEM SEPARATOR
+            POPUP "Settings"
+            BEGIN            
+                MENUITEM "Set HotSpot",              IDMN_ACTION_SH
+                MENUITEM SEPARATOR
+                MENUITEM "Set Collision",              IDMN_ACTION_SC
+                MENUITEM "Set Quality",              IDMN_ACTION_SQ
+            END
+            MENUITEM SEPARATOR
+            POPUP "Transform"
+            BEGIN         
+                MENUITEM "Zoom",              IDMN_ACTION_Z
+                MENUITEM "Rotate",              IDMN_ACTION_R
+                MENUITEM "Stretch",              IDMN_ACTION_S
+                MENUITEM SEPARATOR
+                MENUITEM "Affine",              IDMN_ACTION_AT
+            END
             MENUITEM SEPARATOR
             MENUITEM "Add Backdrop",              IDMN_ACTION_AB
+            MENUITEM "Update Collision",              IDMN_ACTION_UC
         END
         MENUITEM SEPARATOR
     END
@@ -313,6 +325,18 @@ BEGIN
     M_ACTION_S_HEIGHT           "Height"
 
     M_ACTION_AB             "Add Backdrop %0"
+    M_ACTION_UC             "Update Collision"
+
+    M_ACTION_SC             "Set Collision to : Has Collision = %0, Auto Update Collision = %1"
+
+    M_ACTION_HC             "0 = No Collision, 1 = Has Collision"
+    M_ACTION_AUC            "0 = Don't Auto Update Collision, 1 = Auto Update Collision"
+
+    M_ACTION_SQ             "Set Quality to %0"
+
+    M_ACTION_RS             "0 = Fast, 1 = Resample"
+
+    M_ACTION_AT             "Affine Transformation"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -351,6 +375,15 @@ BEGIN
 
     IDS_PROP_HWA_CHECK  "HWA"
     IDS_PROP_HWA_CHECK_INFO  "Use HWA When Stretching or Rotating"
+
+    IDS_PROP_HASCOLLISION_CHECK  "Has Collision"
+    IDS_PROP_HASCOLLISION_CHECK_INFO  "This Object Has Collision"
+    IDS_PROP_AUTOUPDATECOLLISION_CHECK  "Auto Update Collision"
+    IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO  "Auto Update Collision When Stretching or Rotating, May Slow Down App if Texture is Big"
+
+    IDS_PROP_QUALITY_TEXTTITLE   "Quality"
+    IDS_PROP_QUALITY_CHECK       "Resample"
+    IDS_PROP_QUALITY_CHECK_INFO  "Resample When Stretching or Rotating"
 END
 
 #endif    // English (U.S.) resources
