@@ -257,8 +257,7 @@ inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
 	return hwa;
 }
 
-//Stretch Surface
-inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
+inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
 	DWORD flag = 0;
 
 	if (HighQuality) {
@@ -268,9 +267,41 @@ inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
 		flag = flag | STRF_COPYALPHA;
 	}
 
-	Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, flag);
+	return flag;
+}
+
+//Stretch Surface
+inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {	
+	Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
 
 	return;
+}
+
+inline LPSURFACE Offset(LPSURFACE Src, int X, int Y, bool Wrap = true) {
+	LPSURFACE Des = CreateSurface(24, Src->GetWidth(), Src->GetHeight());
+	
+	if (X == 0 && Y == 0) {
+		Des->Clone(*Src);
+		return Des;
+	}
+
+	//Src->Blit(*Des, X, Y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+	Src->Blit(*Des, X, Y);
+
+	if (Wrap) {
+		int XWrap = X > 0 ? X - Src->GetWidth() : X + Src->GetWidth();
+		int YWrap = Y > 0 ? Y - Src->GetHeight() : Y + Src->GetHeight();
+
+		Src->Blit(*Des, X, YWrap);
+		Src->Blit(*Des, XWrap, Y);
+		Src->Blit(*Des, XWrap, YWrap);
+	}
+
+	return Des;
+}
+
+inline LPSURFACE Offset(LPSURFACE Src, OffsetCoef O) {
+	return Offset(Src, O.XOffset,O.YOffset, O.Wrap);
 }
 
 //Get Ext's FilterName
@@ -682,7 +713,7 @@ struct ATArray {
 };
 
 //Affine transformation
-inline void AffineTransformation(LPSURFACE Src, ATArray Arr, int divide) {
+inline void AffineTransformation(LPSURFACE& Src, ATArray Arr, int divide) {
 	GetMaxmiumDivide(&divide);
 
 	auto Interpolation = [=]()->RGBA {

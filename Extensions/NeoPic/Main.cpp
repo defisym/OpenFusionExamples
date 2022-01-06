@@ -53,6 +53,10 @@ short actionsInfos[]=
 		IDMN_ACTION_SQ, M_ACTION_SQ,	ACT_ACTION_SQ,	0, 1,PARAM_EXPRESSION,M_ACTION_RS,
 
 		IDMN_ACTION_AT, M_ACTION_AT,	ACT_ACTION_AT,	0, 0,
+		IDMN_ACTION_O, M_ACTION_O,	ACT_ACTION_O,	0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_XO,M_ACTION_YO,
+		M_ACTION_W,
+
+		IDMN_ACTION_LFD, M_ACTION_LFD,	ACT_ACTION_LFD,	0, 2,PARAM_OBJECT,PARAM_EXPRESSION,M_ACTION_OBJECT,M_ACTION_COPYCOEF,
 
 		};
 
@@ -112,7 +116,7 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-short WINAPI DLLExport LoadFromeFile(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -121,13 +125,22 @@ short WINAPI DLLExport LoadFromeFile(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromeLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	LoadFromLib(rdPtr, object, FilePath, Key);
+
+	return 0;
+}
+
+short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	bool UpdateCoef = (bool)CNC_GetIntParameter(rdPtr);
+
+	LoadFromDisplay(rdPtr, object, UpdateCoef);
 
 	return 0;
 }
@@ -282,9 +295,11 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
 
-	ATArray A;
+	ATArray A = { 1,2,3,4,5,6,7,8,9 };
 
 	//Save Src
+	LPSURFACE Trans = nullptr;
+
 	if (!rdPtr->FromLib) {
 		LPSURFACE Trans = rdPtr->src;
 	}
@@ -295,16 +310,46 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	//Recreate a surface and transform Src to it.
 	AffineTransformation(rdPtr->src, A, -1);
 
+	//Release Old Src
+	delete Trans;
+
 	//Update img
-	delete rdPtr->img;
-	rdPtr->img = new cSurface;
-	rdPtr->img->Clone(*rdPtr->src);
+	NewImg(rdPtr);
 
 	ReDisplay(rdPtr);
 
 	return 0;
 }
 
+short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
+	int XOffset = (int)CNC_GetIntParameter(rdPtr);
+	int YOffset = (int)CNC_GetIntParameter(rdPtr);
+
+	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->Offset = { XOffset ,YOffset, Wrap };
+
+	////Save Src
+	//LPSURFACE Trans = nullptr;
+
+	//if (!rdPtr->FromLib) {
+	//	LPSURFACE Trans = rdPtr->src;
+	//}
+
+	//rdPtr->FromLib = false;
+
+	//Offset(rdPtr->src, XOffset, YOffset, Wrap);
+
+	////Release Old Src
+	//delete Trans;
+
+	//Update img
+	//NewImg(rdPtr);
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -360,8 +405,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			LoadFromeFile,
-			LoadFromeLib,
+			LoadFromFile,
+			LoadFromLib,
 
 			ResetLib,
 			EraseLib,
@@ -384,6 +429,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetQuality,
 
 			AffineTrans,
+			Offset,
+
+			LoadFromDisplay,
 
 			0
 			};

@@ -1,5 +1,7 @@
 #pragma once
 
+inline void UpdateImg(LPRDATA rdPtr, bool ForceUpdate = false);
+
 inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
 	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
 }
@@ -31,22 +33,55 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->rHo.hoImgXSpot = rdPtr->HotSpot.x;
 		rdPtr->rHo.hoImgYSpot = rdPtr->HotSpot.y;
 
-		//int width = rdPtr->src->GetWidth();
-		//int height = rdPtr->src->GetHeight();
-
-		//width *= abs(rdPtr->ZoomScale.XScale);
-		//height *= abs(rdPtr->ZoomScale.YScale);
-
-		//rdPtr->src->GetSizeOfRotatedRect(&width, &height, rdPtr->Angle);
-
-		//rdPtr->rHo.hoImgWidth = width;
-		//rdPtr->rHo.hoImgHeight = height;
-
 		rdPtr->rHo.hoImgWidth = rdPtr->src->GetWidth();
 		rdPtr->rHo.hoImgHeight = rdPtr->src->GetHeight();
 
+		rdPtr->rHo.hoRect;
+
 		FreeColMask(rdPtr->pColMask);		
 	}
+}
+
+inline void NewImg(LPRDATA rdPtr) {
+	delete rdPtr->img;
+	rdPtr->img = new cSurface;
+	rdPtr->img->Clone(*rdPtr->src);
+}
+
+inline void NewPic(LPRDATA rdPtr){
+	rdPtr->HotSpot = { 0,0 };
+	rdPtr->ZoomScale = { 1.0,1.0 };
+	rdPtr->Angle = 0;
+
+	rdPtr->Offset = { 0,0,false };	
+
+	rdPtr->ImgHotSpot = rdPtr->HotSpot;
+	rdPtr->ImgZoomScale = rdPtr->ZoomScale;
+	rdPtr->ImgAngle = rdPtr->Angle;
+
+	rdPtr->ImgOffset = rdPtr->Offset;
+
+	NewImg(rdPtr);
+
+	ReDisplay(rdPtr);
+}
+
+inline void NewPic(LPRDATA rdPtr, LPRDATA Copy) {
+	rdPtr->HotSpot = Copy->HotSpot;
+	rdPtr->ZoomScale = Copy->ZoomScale;
+	rdPtr->Angle = Copy->Angle;
+
+	rdPtr->Offset = Copy->Offset;
+
+	rdPtr->ImgHotSpot = rdPtr->HotSpot;
+	rdPtr->ImgZoomScale = rdPtr->ZoomScale;
+	rdPtr->ImgAngle = rdPtr->Angle;
+
+	rdPtr->ImgOffset = rdPtr->Offset;
+
+	NewImg(rdPtr);
+
+	ReDisplay(rdPtr);
 }
 
 inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
@@ -119,44 +154,29 @@ inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {
 	ReDisplay(rdPtr);
 }
 
-inline void DoZoom(LPRDATA rdPtr, LPSURFACE Src, POINT HotSpot,float XScale, float YScale) {
+inline void DoZoom(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& Des, POINT& DesHotSpot, float XScale, float YScale) {
+	bool ReverseX = XScale < 0.0;
+	bool ReverseY = YScale < 0.0;
+
 	XScale = abs(XScale);
 	YScale = abs(YScale);
 
-	rdPtr->ImgHotSpot = HotSpot;
-
-	rdPtr->ImgHotSpot.x = (int)(rdPtr->ImgHotSpot.x * XScale);
-	rdPtr->ImgHotSpot.y = (int)(rdPtr->ImgHotSpot.y * YScale);
+	DesHotSpot.x = (int)(SrcHotSpot.x * XScale);
+	DesHotSpot.y = (int)(SrcHotSpot.y * YScale);
 
 	int width = (int)(Src->GetWidth() * XScale);
 	int height = (int)(Src->GetHeight() * YScale);
 
-	delete rdPtr->img;
-	rdPtr->img = CreateSurface(24, width, height);
+	delete Des;
+	Des = CreateSurface(24, width, height);
 
-	Stretch(Src, rdPtr->img, rdPtr->StretchQuality);
+	Stretch(Src, Des, rdPtr->StretchQuality);
 
-	//if (rdPtr->HWA) {
-	//	ConvertHWA(rdPtr);
-
-	//	POINT Center = { 0,0 };
-
-	//	rdPtr->src->BlitEx(*rdPtr->img, 0, 0,
-	//		XScale, YScale, 0, 0,
-	//		rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &Center, 0,
-	//		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-	//		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-	//		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-	//}
-	//else{
-	//	Stretch(rdPtr->src, rdPtr->img, rdPtr->StretchQuality);
-	//}
-
-	if (rdPtr->ZoomScale.XScale < 0.0) {
-		rdPtr->img->ReverseX();
+	if (ReverseX) {
+		Des->ReverseX();
 	}
-	if (rdPtr->ZoomScale.YScale < 0.0) {
-		rdPtr->img->ReverseY();
+	if (ReverseY) {
+		Des->ReverseY();
 	}
 }
 
@@ -166,51 +186,17 @@ inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = fal
 	}
 
 	rdPtr->ZoomScale = { XScale ,YScale };
-
-	if (UpdateCur) {
-		DoZoom(rdPtr, rdPtr->src, rdPtr->HotSpot,XScale, YScale);
-	}
-	else {
-		return;
-	}
 }
 
-inline void DoRotate(LPRDATA rdPtr, LPSURFACE Src, POINT HotSpot,int Angle) {
-	rdPtr->ImgHotSpot = HotSpot;
-	RotatePoint(Angle, (int*)&rdPtr->ImgHotSpot.x, (int*)&rdPtr->ImgHotSpot.y, Src->GetWidth(), Src->GetHeight());
+inline void DoRotate(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& Des, POINT& DesHotSpot, int Angle) {
+	DesHotSpot = SrcHotSpot;
+	RotatePoint(Angle, (int*)&DesHotSpot.x, (int*)&DesHotSpot.y, Src->GetWidth(), Src->GetHeight());
 
-	//int width = rdPtr->src->GetWidth();
-	//int height = rdPtr->src->GetHeight();
+	delete Des;
+	Des = CreateSurface(24, 4, 4);
 
-	//rdPtr->src->GetSizeOfRotatedRect(&width, &height, (float)Angle);
-
-	delete rdPtr->img;
-	//rdPtr->img = CreateSurface(24, width, height);
-	rdPtr->img = CreateSurface(24, 4, 4);
-
-	Src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality);
-	//rdPtr->src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
-
-	//if (rdPtr->HWA) {
-	//	ConvertHWA(rdPtr);
-	//	
-	//	POINT Center = { 0,0 };			
-
-	//	//RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y);
-
-	//	rdPtr->src->BlitEx(*rdPtr->img, 0, 0,
-	//		1.0, 1.0, 0, 0,
-	//		rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &Center, (float)Angle,
-	//		(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-	//		BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-	//		rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-	//}
-	//else {
-	//	RotatePoint(Angle, (int*)&rdPtr->HotSpot.x, (int*)&rdPtr->HotSpot.y, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
-
-	//	rdPtr->src->Rotate(*rdPtr->img, Angle, rdPtr->StretchQuality);
-	//	//rdPtr->src->Rotate(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
-	//}
+	Src->CreateRotatedSurface(*Des, Angle, rdPtr->StretchQuality);
+	//Src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
 }
 
 inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
@@ -219,30 +205,37 @@ inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 	}
 
 	rdPtr->Angle = Angle;
-
-	if (UpdateCur) {
-		DoRotate(rdPtr, rdPtr->src, rdPtr->HotSpot,Angle);
-	}
-	else {
-		return;
-	}
 }
 
-inline void UpdateImg(LPRDATA rdPtr, bool ForceUpdate = false) {
-	if (ForceUpdate||rdPtr->ZoomScale != rdPtr->ImgZoomScale) {
+inline void UpdateImg(LPRDATA rdPtr, bool ForceUpdate) {
+	if (ForceUpdate ||
+		rdPtr->ZoomScale != rdPtr->ImgZoomScale ||
+		rdPtr->Angle != rdPtr->ImgAngle ||
+		rdPtr->Offset != rdPtr->ImgOffset) {
+		//Update Coef
 		rdPtr->ImgZoomScale = rdPtr->ZoomScale;
-		DoZoom(rdPtr, rdPtr->src, rdPtr->HotSpot, rdPtr->ZoomScale.XScale, rdPtr->ZoomScale.YScale);
-	}
-
-	if (ForceUpdate || rdPtr->Angle != rdPtr->ImgAngle) {
 		rdPtr->ImgAngle = rdPtr->Angle;
+		rdPtr->ImgOffset = rdPtr->Offset;
 
-		LPSURFACE Rot = new cSurface;
+		//Delete old
+		delete rdPtr->img;
 
-		Rot->Clone(*rdPtr->img);
-		DoRotate(rdPtr, Rot, rdPtr->ImgHotSpot, rdPtr->Angle);
+		//Temp
+		LPSURFACE Temp = nullptr;
 
-		delete Rot;
+		//Offset
+		rdPtr->img = Offset(rdPtr->src, rdPtr->ImgOffset);
+
+		//NewImg(rdPtr);
+
+		//Zoom
+		DoZoom(rdPtr, rdPtr->img, rdPtr->HotSpot, Temp, rdPtr->ImgHotSpot, rdPtr->ZoomScale.XScale, rdPtr->ZoomScale.YScale);
+
+		//Rotate
+		DoRotate(rdPtr, Temp, rdPtr->ImgHotSpot, rdPtr->img, rdPtr->ImgHotSpot, rdPtr->Angle);
+
+		//Delete temo
+		delete Temp;
 	}
 }
 
@@ -306,11 +299,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 		_LoadFromFile(rdPtr->src, FileName, Key, rdPtr, -1, -1, true, rdPtr->StretchQuality);
 		
 		if (rdPtr->src->IsValid()) {
-			delete rdPtr->img;
-			rdPtr->img = new cSurface;
-			rdPtr->img->Clone(*rdPtr->src);
-
-			ReDisplay(rdPtr);
+			NewPic(rdPtr);
 		}
 	}	
 }
@@ -344,11 +333,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		rdPtr->FromLib = true;
 		rdPtr->src = it->second;
 
-		delete rdPtr->img;
-		rdPtr->img = new cSurface;
-		rdPtr->img->Clone(*rdPtr->src);
-
-		ReDisplay(rdPtr);
+		NewPic(rdPtr);
 	}
 	else {
 		auto& thisit = rdPtr->Lib->find(FileName);
@@ -360,6 +345,53 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 
 inline void LoadFromLib(LPRDATA rdPtr, int Fixed, LPCWSTR FileName, LPCTSTR Key = _T("")) {
 	return LoadFromLib(rdPtr, LproFromFixed(rdPtr, Fixed), FileName, Key);
+}
+
+inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
+	LPRDATA obj = (LPRDATA)object;
+
+	if (!obj || obj->rHo.hoIdentifier != IDENTIFIER) {
+		return;
+	}
+
+	if (obj->IsLib) {
+		return;
+	}
+
+	if (!obj->src->IsValid()) {
+		return;
+	}
+
+	if (obj->FromLib) {
+		if (!rdPtr->FromLib) {
+			delete rdPtr->src;
+		}
+
+		rdPtr->FromLib = true;
+		rdPtr->src = obj->src;
+	}
+	else {
+		if (rdPtr->FromLib) {
+			rdPtr->src = nullptr;
+		}
+
+		rdPtr->FromLib = false;
+		
+		delete rdPtr->src;
+		rdPtr->src = new cSurface;
+		rdPtr->src->Clone(*obj->src);
+	}
+
+	if (CopyCoef) {
+		NewPic(rdPtr, obj);
+	}
+	else {
+		NewPic(rdPtr);
+	}	
+}
+
+inline void LoadFromDisplay(LPRDATA rdPtr, int Fixed, bool CopyCoef = false) {
+	return LoadFromDisplay(rdPtr, LproFromFixed(rdPtr, Fixed), CopyCoef);
 }
 
 inline void ResetLib(SurfaceLib* pData) {

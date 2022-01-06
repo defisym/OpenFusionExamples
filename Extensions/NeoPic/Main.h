@@ -35,8 +35,11 @@
 #define	ACT_ACTION_SQ				14
 
 #define	ACT_ACTION_AT				15
+#define	ACT_ACTION_O				16
 
-#define	ACT_LAST					16
+#define	ACT_ACTION_LFD				17
+
+#define	ACT_LAST					18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -140,14 +143,18 @@ typedef struct tagRDATA
 	
 	POINT ImgHotSpot = { 0,0 };
 	ZoomScale ImgZoomScale = { 1.0,1.0 };
+
+	OffsetCoef ImgOffset = { 0,0,false };
 	
 	int ImgAngle = 0;
 
-	//src->display	
+	//src->display
 	LPSURFACE src = nullptr;
 	
 	POINT HotSpot = { 0,0 };	
 	ZoomScale ZoomScale = { 1.0,1.0 };
+
+	OffsetCoef Offset = { 0,0,false };
 
 	int Angle = 0;
 

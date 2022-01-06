@@ -70,6 +70,9 @@
 #define IDMN_ACTION_SC	       		25014
 
 #define IDMN_ACTION_AT	       		25015
+#define IDMN_ACTION_O	       		25016
+
+#define IDMN_ACTION_LFD	       		25017
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -95,6 +98,9 @@
 #define M_ACTION_SQ          	     5014
 
 #define M_ACTION_AT          	     5015
+#define M_ACTION_O          	     5016
+
+#define M_ACTION_LFD          	     5017
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -118,6 +124,12 @@
 #define M_ACTION_AUC          	     5514
 
 #define M_ACTION_RS           	     5515
+
+#define M_ACTION_XO           	     5516
+#define M_ACTION_YO           	     5517
+#define M_ACTION_W           	     5518
+
+#define M_ACTION_COPYCOEF            5519
 
 //	Conditions
 //--------------------

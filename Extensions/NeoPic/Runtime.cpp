@@ -77,6 +77,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	//Display
 	rdPtr->img = nullptr;
+	rdPtr->src = nullptr;
 
 	rdPtr->FromLib = true;
 
@@ -204,16 +205,15 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 
 		LPSURFACE Display=nullptr;
 
-		if ((rdPtr->ZoomScale.XScale < 0.0) || (rdPtr->ZoomScale.YScale < 0.0)) {
-			Display = CreateSurface(24, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
-			Display->Clone(*rdPtr->src);
+		if (DoOffset(rdPtr->Offset) || (rdPtr->ZoomScale.XScale < 0.0) || (rdPtr->ZoomScale.YScale < 0.0)) {
+			Display = Offset(rdPtr->src, rdPtr->Offset);
 
 			if (rdPtr->ZoomScale.XScale < 0.0) {
 				Display->ReverseX();
 			}
 			if (rdPtr->ZoomScale.YScale < 0.0) {
 				Display->ReverseY();
-			}			
+			}
 		}
 		else {
 			Display = rdPtr->src;
@@ -230,7 +230,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->HotSpot, (float)rdPtr->Angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-			rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+			rdPtr->rs.rsEffectParam, BLTF_ANTIA);		
 
 		if (Display != rdPtr->src) {
 			delete Display;
@@ -304,7 +304,7 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 					pMask = (LPSMASK)calloc(dwMaskSize, 1);
 
 					if (pMask != NULL) {
-						collide->CreateMask(pMask, lParam);						
+						collide->CreateMask(pMask, lParam);
 						rdPtr->pColMask = pMask;
 					}
 				}

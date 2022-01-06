@@ -134,6 +134,7 @@ BEGIN
         BEGIN
             MENUITEM "Load From File",              IDMN_ACTION_LFF
             MENUITEM "Load From Lib",              IDMN_ACTION_LFL
+            MENUITEM "Load From Display",              IDMN_ACTION_LFD
         END
         MENUITEM SEPARATOR
         POPUP "Lib"
@@ -162,6 +163,7 @@ BEGIN
                 MENUITEM "Zoom",              IDMN_ACTION_Z
                 MENUITEM "Rotate",              IDMN_ACTION_R
                 MENUITEM "Stretch",              IDMN_ACTION_S
+                MENUITEM "Offset",              IDMN_ACTION_O
                 MENUITEM SEPARATOR
                 MENUITEM "Affine",              IDMN_ACTION_AT
             END
@@ -291,11 +293,13 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_ACTION_LFF             "Load From File %0, Decrypt Key %1"
     M_ACTION_LFL             "Load From Lib %0, File %1, Decrypt Key %2"
+    M_ACTION_LFD             "Load From Display %0, CopyCoef = %1"
 
     M_ACTION_OBJECT             "Lib Object"
     M_ACTION_FILENAME           "FileName"
     M_ACTION_EXT                "FileType, E.g. '.jpg'"
     M_ACTION_KEY                "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
+    M_ACTION_COPYCOEF                "Copy Coefs Like Zoom Scale, 0 = Don't Copy, 1 = Copy"
 
     M_ACTION_RL             "Reset Lib"
     M_ACTION_EL             "Erase Lib Item %0"
@@ -337,6 +341,12 @@ BEGIN
     M_ACTION_RS             "0 = Fast, 1 = Resample"
 
     M_ACTION_AT             "Affine Transformation"
+
+    M_ACTION_O              "Offset, X = %0, Y = %1, Wrap = %2"
+    
+    M_ACTION_XO             "X Offset"
+    M_ACTION_YO             "Y Offset"
+    M_ACTION_W              "0 = Don't Wrap, 1 = Wrap"
 END
 
 STRINGTABLE DISCARDABLE 
