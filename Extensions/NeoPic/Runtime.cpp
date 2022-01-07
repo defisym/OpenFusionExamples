@@ -66,6 +66,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 
+	//Settings
 	rdPtr->IsLib = edPtr->IsLib;
 
 	rdPtr->HWA = edPtr->HWA;
@@ -76,6 +77,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->AutoUpdateCollision = edPtr->AutoUpdateCollision;
 
 	//Display
+	rdPtr->FileName = new std::wstring;
+	rdPtr->Key = new std::wstring;
+
 	rdPtr->img = nullptr;
 	rdPtr->src = nullptr;
 
@@ -83,6 +87,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->ZoomScale = { 1.0,1.0 };
 	rdPtr->ImgZoomScale = { 1.0,1.0 };
+
+	rdPtr->AT = { 1,0,0,1 };
+	rdPtr->ImgAT = { 1,0,0,1 };
 
 	//Load Lib
 	if(rdPtr->IsLib){
@@ -111,14 +118,20 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	//Display
-	delete rdPtr->img;
-
-	if (!rdPtr->FromLib) {
-		delete rdPtr->src;
-	}
+	delete rdPtr->FileName;
+	delete rdPtr->Key;
 
 	if (!rdPtr->IsLib) {
-		FreeColMask(rdPtr->pColMask);
+		delete rdPtr->img;
+		delete rdPtr->trans;
+
+		if (!rdPtr->FromLib) {
+			delete rdPtr->src;
+		}
+
+		if (!rdPtr->IsLib) {
+			FreeColMask(rdPtr->pColMask);
+		}
 	}
 
 	//Save Lib
@@ -205,18 +218,31 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 
 		LPSURFACE Display=nullptr;
 
-		if (DoOffset(rdPtr->Offset) || (rdPtr->ZoomScale.XScale < 0.0) || (rdPtr->ZoomScale.YScale < 0.0)) {
-			Display = Offset(rdPtr->src, rdPtr->Offset);
+		if (rdPtr->Changed) {
+			rdPtr->Changed = false;
 
-			if (rdPtr->ZoomScale.XScale < 0.0) {
-				Display->ReverseX();
+			if (DoOffset(rdPtr->Offset) ||
+				DoAffineTrans(rdPtr->AT) ||
+				(rdPtr->ZoomScale.XScale < 0.0) || (rdPtr->ZoomScale.YScale < 0.0)) {
+
+				Display = Offset(rdPtr->src, rdPtr->Offset);
+
+				if (rdPtr->ZoomScale.XScale < 0.0) {
+					Display->ReverseX();
+				}
+				if (rdPtr->ZoomScale.YScale < 0.0) {
+					Display->ReverseY();
+				}
+
+				delete rdPtr->trans;
+				rdPtr->trans = Display;
 			}
-			if (rdPtr->ZoomScale.YScale < 0.0) {
-				Display->ReverseY();
+			else {
+				Display = rdPtr->src;
 			}
 		}
 		else {
-			Display = rdPtr->src;
+			Display = rdPtr->trans != nullptr ? rdPtr->trans : rdPtr->src;
 		}
 
 		DWORD flags = 0;
@@ -230,11 +256,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->HotSpot, (float)rdPtr->Angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-			rdPtr->rs.rsEffectParam, BLTF_ANTIA);		
-
-		if (Display != rdPtr->src) {
-			delete Display;
-		}
+			rdPtr->rs.rsEffectParam, flags);
 	}
 	// Ok
 	return 0;
@@ -283,13 +305,13 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 		// Transparent? Create mask
 		LPSMASK pMask = rdPtr->pColMask;
 		if (pMask == NULL) {
-			if (rdPtr->img != NULL) {
+			if (rdPtr->src != NULL) {
 				LPSURFACE collide = nullptr;
-				collide = CreateSurface(24,rdPtr->src->GetWidth(),rdPtr->src->GetHeight());
+				collide = CreateSurface(24, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
 
 				if (rdPtr->Collision) {
 					if (rdPtr->AutoUpdateCollision) {
-						UpdateImg(rdPtr);
+						UpdateImg(rdPtr, true);
 					}
 
 					int desX = rdPtr->HotSpot.x - rdPtr->ImgHotSpot.x;
@@ -297,6 +319,28 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 
 					rdPtr->img->Blit(*collide, desX, desY);
 				}
+
+				//UpdateImg(rdPtr, true);
+
+				//int width = max(rdPtr->src->GetWidth(), rdPtr->img->GetWidth());
+				//int height = max(rdPtr->src->GetHeight(), rdPtr->img->GetHeight());
+
+				//bool SrcWidthLarger = (rdPtr->src->GetWidth() == width);
+				//bool SrcHeightLarger = (rdPtr->src->GetHeight() == height);
+
+				//LPSURFACE collide = nullptr;
+				//collide = CreateSurface(24, width, height);
+
+				//if (rdPtr->Collision) {
+				//	if (rdPtr->AutoUpdateCollision) {						
+				//		UpdateImg(rdPtr, true);
+				//	}
+
+				//	int desX = SrcWidthLarger ? rdPtr->HotSpot.x - rdPtr->ImgHotSpot.x : 0;
+				//	int desY = SrcHeightLarger ? rdPtr->HotSpot.y - rdPtr->ImgHotSpot.y : 0;
+
+				//	rdPtr->img->Blit(*collide, desX, desY);
+				//}
 
 				DWORD dwMaskSize = collide->CreateMask(NULL, lParam);
 

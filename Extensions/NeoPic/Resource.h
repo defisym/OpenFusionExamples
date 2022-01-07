@@ -169,6 +169,9 @@
 
 #define IDMN_EXPRESSION_GA		27008
 
+#define IDMN_EXPRESSION_GFN		27009
+#define IDMN_EXPRESSION_GK		27010
+
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
 #define M_EXPRESSION_GHSY			 7001
@@ -182,7 +185,10 @@
 #define M_EXPRESSION_GXZS			 7006
 #define M_EXPRESSION_GYZS			 7007
 
-#define M_EXPRESSION_GA			 7008
+#define M_EXPRESSION_GA			     7008
+
+#define M_EXPRESSION_GFN			 7009
+#define M_EXPRESSION_GK			     7010
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

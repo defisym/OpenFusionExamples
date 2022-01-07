@@ -186,6 +186,12 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        POPUP "Load"
+        BEGIN
+            MENUITEM "Get FileName", IDMN_EXPRESSION_GFN
+            MENUITEM "Get Key", IDMN_EXPRESSION_GK
+        END
+        MENUITEM SEPARATOR
         POPUP "HotSpot"
         BEGIN
             MENUITEM "Get X HotSpot", IDMN_EXPRESSION_GHSX
@@ -372,6 +378,9 @@ BEGIN
     M_EXPRESSION_GYZS            "GetYZoomScale("
     
     M_EXPRESSION_GA            "GetAngle("
+    
+    M_EXPRESSION_GFN            "GetFileName$("
+    M_EXPRESSION_GK            "GetKey$("
 END
 
 STRINGTABLE

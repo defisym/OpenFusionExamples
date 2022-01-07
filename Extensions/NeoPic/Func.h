@@ -1,6 +1,10 @@
 #pragma once
 
-inline void UpdateImg(LPRDATA rdPtr, bool ForceUpdate = false);
+inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality = false, bool ForceUpdate = false);
+
+inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,1.0 }, int Angle = 0, ATArray AT = { 1,0,0,1 });
+
+//-----------------------------
 
 inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
 	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
@@ -36,7 +40,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->rHo.hoImgWidth = rdPtr->src->GetWidth();
 		rdPtr->rHo.hoImgHeight = rdPtr->src->GetHeight();
 
-		rdPtr->rHo.hoRect;
+		rdPtr->Changed = true;
 
 		FreeColMask(rdPtr->pColMask);		
 	}
@@ -54,12 +58,14 @@ inline void NewPic(LPRDATA rdPtr){
 	rdPtr->Angle = 0;
 
 	rdPtr->Offset = { 0,0,false };	
+	rdPtr->AT = { 1,0,0,1 };
 
 	rdPtr->ImgHotSpot = rdPtr->HotSpot;
 	rdPtr->ImgZoomScale = rdPtr->ZoomScale;
 	rdPtr->ImgAngle = rdPtr->Angle;
 
 	rdPtr->ImgOffset = rdPtr->Offset;
+	rdPtr->ImgAT = rdPtr->AT;
 
 	NewImg(rdPtr);
 
@@ -186,6 +192,8 @@ inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = fal
 	}
 
 	rdPtr->ZoomScale = { XScale ,YScale };
+
+	ReDisplay(rdPtr);
 }
 
 inline void DoRotate(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& Des, POINT& DesHotSpot, int Angle) {
@@ -205,23 +213,58 @@ inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 	}
 
 	rdPtr->Angle = Angle;
+
+	ReDisplay(rdPtr);
 }
 
-inline void UpdateImg(LPRDATA rdPtr, bool ForceUpdate) {
+inline LPSURFACE Offset(LPSURFACE Src, OffsetCoef O) {
+	return Offset(Src, O.XOffset, O.YOffset, O.Wrap);
+}
+
+inline void GetTransformedSize(int& width, int& height, ZoomScale Scale, int Angle, ATArray AT) {
+	//Affine Transform
+
+
+	//Zoom
+	width *= (int)abs(Scale.XScale);
+	height *= (int)abs(Scale.YScale);
+
+	//Rotate
+	cSurface Rotate;
+	Rotate.GetSizeOfRotatedRect(&width, &height, (float)Angle);
+}
+
+inline void AffineTransformation(LPSURFACE& Src,ATArray A, int divide) {
+	AffineTransformation(Src, A.a11, A.a12, A.a21, A.a22, divide);
+}
+
+inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
 	if (ForceUpdate ||
+		rdPtr->Offset != rdPtr->ImgOffset||
+		rdPtr->AT != rdPtr->ImgAT ||
 		rdPtr->ZoomScale != rdPtr->ImgZoomScale ||
-		rdPtr->Angle != rdPtr->ImgAngle ||
-		rdPtr->Offset != rdPtr->ImgOffset) {
+		rdPtr->Angle != rdPtr->ImgAngle) {
 		//Update Coef
+		rdPtr->ImgOffset = rdPtr->Offset;
+		rdPtr->ImgAT = rdPtr->AT;
 		rdPtr->ImgZoomScale = rdPtr->ZoomScale;
 		rdPtr->ImgAngle = rdPtr->Angle;
-		rdPtr->ImgOffset = rdPtr->Offset;
+
+		//Fast
+		bool OldQuality;
+
+		if (ForceLowQuality) {
+			OldQuality = rdPtr->StretchQuality;
+			rdPtr->StretchQuality = false;
+		}
 
 		//Delete old
 		delete rdPtr->img;
 
 		//Temp
 		LPSURFACE Temp = nullptr;
+
+		//AffineTrans(rdPtr->AT)
 
 		//Offset
 		rdPtr->img = Offset(rdPtr->src, rdPtr->ImgOffset);
@@ -234,8 +277,13 @@ inline void UpdateImg(LPRDATA rdPtr, bool ForceUpdate) {
 		//Rotate
 		DoRotate(rdPtr, Temp, rdPtr->ImgHotSpot, rdPtr->img, rdPtr->ImgHotSpot, rdPtr->Angle);
 
-		//Delete temo
+		//Delete temp
 		delete Temp;
+
+		//Fast
+		if (ForceLowQuality) {			 
+			rdPtr->StretchQuality = OldQuality;
+		}
 	}
 }
 
@@ -300,6 +348,9 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 		
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
+
+			*rdPtr->FileName = FileName;
+			*rdPtr->Key = Key;
 		}
 	}	
 }
@@ -341,6 +392,9 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 			rdPtr->Lib->emplace(it->first, it->second);
 		}
 	}
+
+	*rdPtr->FileName = FileName;
+	*rdPtr->Key = Key;
 }
 
 inline void LoadFromLib(LPRDATA rdPtr, int Fixed, LPCWSTR FileName, LPCTSTR Key = _T("")) {
@@ -381,6 +435,9 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 		rdPtr->src = new cSurface;
 		rdPtr->src->Clone(*obj->src);
 	}
+
+	*rdPtr->FileName = *obj->FileName;
+	*rdPtr->Key = *obj->Key;
 
 	if (CopyCoef) {
 		NewPic(rdPtr, obj);

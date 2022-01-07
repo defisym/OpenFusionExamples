@@ -58,7 +58,10 @@
 
 #define EXP_EXPRESSION_GA				8
 
-#define	EXP_LAST                    	9
+#define EXP_EXPRESSION_GFN				9
+#define EXP_EXPRESSION_GK				10
+
+#define	EXP_LAST                    	11
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -138,6 +141,9 @@ typedef struct tagRDATA
 	//Source
 	bool FromLib = false;
 
+	std::wstring* FileName = nullptr;
+	std::wstring* Key = nullptr;
+
 	//img->collision & add backdrop
 	LPSURFACE img = nullptr;
 	
@@ -147,6 +153,7 @@ typedef struct tagRDATA
 	OffsetCoef ImgOffset = { 0,0,false };
 	
 	int ImgAngle = 0;
+	ATArray ImgAT = {};
 
 	//src->display
 	LPSURFACE src = nullptr;
@@ -157,6 +164,12 @@ typedef struct tagRDATA
 	OffsetCoef Offset = { 0,0,false };
 
 	int Angle = 0;
+	ATArray AT = {};
+
+	//trans->transform
+	LPSURFACE trans = nullptr;
+
+	bool Changed = false;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

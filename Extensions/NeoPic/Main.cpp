@@ -76,6 +76,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GYZS, M_EXPRESSION_GYZS, EXP_EXPRESSION_GYZS, EXPFLAG_DOUBLE, 0,
 
 		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
+
+		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GK, M_EXPRESSION_GK, EXP_EXPRESSION_GK, EXPFLAG_STRING, 0,
 		};
 
 
@@ -119,6 +122,9 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	*rdPtr->FileName = FilePath;
+	*rdPtr->Key = Key;
 
 	LoadFromFile(rdPtr, FilePath, Key);
 
@@ -214,8 +220,6 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
 		Zoom(rdPtr, XScale, YScale);
-
-		ReDisplay(rdPtr);
 	}	
 
 	return 0;
@@ -227,8 +231,6 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
 		Rotate(rdPtr, Angle);
-
-		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -243,8 +245,6 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 
 	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
 		Zoom(rdPtr, XScale, YScale);
-
-		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -287,7 +287,7 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 
 	rdPtr->StretchQuality = Quality;
 
-	UpdateImg(rdPtr, true);
+	UpdateImg(rdPtr, false, true);
 
 	return 0;
 }
@@ -295,28 +295,13 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
 
-	ATArray A = { 1,2,3,4,5,6,7,8,9 };
+	ATArray A = {};
 
-	//Save Src
-	LPSURFACE Trans = nullptr;
+	if (rdPtr->AT != A) {
+		rdPtr->AT = A;
 
-	if (!rdPtr->FromLib) {
-		LPSURFACE Trans = rdPtr->src;
+		ReDisplay(rdPtr);
 	}
-
-	rdPtr->FromLib = false;
-
-	//Affine Transformation
-	//Recreate a surface and transform Src to it.
-	AffineTransformation(rdPtr->src, A, -1);
-
-	//Release Old Src
-	delete Trans;
-
-	//Update img
-	NewImg(rdPtr);
-
-	ReDisplay(rdPtr);
 
 	return 0;
 }
@@ -327,26 +312,11 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 
 	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->Offset = { XOffset ,YOffset, Wrap };
+	if (rdPtr->Offset != OffsetCoef{ XOffset, YOffset, Wrap }) {
+		rdPtr->Offset = { XOffset ,YOffset, Wrap };
 
-	////Save Src
-	//LPSURFACE Trans = nullptr;
-
-	//if (!rdPtr->FromLib) {
-	//	LPSURFACE Trans = rdPtr->src;
-	//}
-
-	//rdPtr->FromLib = false;
-
-	//Offset(rdPtr->src, XOffset, YOffset, Wrap);
-
-	////Release Old Src
-	//delete Trans;
-
-	//Update img
-	//NewImg(rdPtr);
-
-	ReDisplay(rdPtr);
+		ReDisplay(rdPtr);
+	}
 
 	return 0;
 }
@@ -386,6 +356,22 @@ long WINAPI DLLExport GetYZoomScale(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport GetAngle(LPRDATA rdPtr, long param1) {
 	return rdPtr->img->IsValid() ? rdPtr->Angle : -1;
+}
+
+long WINAPI DLLExport GetFileName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->FileName->c_str();
+}
+
+long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->Key->c_str();
 }
 
 // ----------------------------------------------------------
@@ -451,6 +437,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetYZoomScale,
 
 			GetAngle,
+
+			GetFileName,
+			GetKey,
 
 			0
 			};

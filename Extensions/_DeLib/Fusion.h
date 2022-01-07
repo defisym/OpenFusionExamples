@@ -292,16 +292,16 @@ inline LPSURFACE Offset(LPSURFACE Src, int X, int Y, bool Wrap = true) {
 		int XWrap = X > 0 ? X - Src->GetWidth() : X + Src->GetWidth();
 		int YWrap = Y > 0 ? Y - Src->GetHeight() : Y + Src->GetHeight();
 
+		//Src->Blit(*Des, X, YWrap, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+		//Src->Blit(*Des, XWrap, Y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+		//Src->Blit(*Des, XWrap, YWrap, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+
 		Src->Blit(*Des, X, YWrap);
 		Src->Blit(*Des, XWrap, Y);
 		Src->Blit(*Des, XWrap, YWrap);
 	}
 
 	return Des;
-}
-
-inline LPSURFACE Offset(LPSURFACE Src, OffsetCoef O) {
-	return Offset(Src, O.XOffset,O.YOffset, O.Wrap);
 }
 
 //Get Ext's FilterName
@@ -707,13 +707,12 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 	return;
 }
 
-//AT array
-struct ATArray {
-	double Arr[3][3];
-};
-
 //Affine transformation
-inline void AffineTransformation(LPSURFACE& Src, ATArray Arr, int divide) {
+inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double a21, double a22, int divide) {
+	if (a11 == 1 && a12 == 0 && a21 == 0 && a22 == 1) {
+		return;
+	}
+
 	GetMaxmiumDivide(&divide);
 
 	auto Interpolation = [=]()->RGBA {
