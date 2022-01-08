@@ -115,6 +115,9 @@ This object has no properties.
     - *start a for each loop to iterate all substrings that match regex*
     - *use `On Iterate Replace Each` condition to start process loop*
     - *use `Get Current Match` to get current match result, then use `Set Replace String` to set replace*
+  - Iterate Replace Each All
+    - *start a for each loop to iterate all substrings that match regex, but will check the replaced string and loop until no match in replaced string or nothing replaced this loop*
+    - *used for nest replace, e.g., `<Keep><LocalCodeDisplayName_<LocalCode>>`, match `(<)([^<>]+?)(>)`, replace rule is replace `<LocalCode>` to `EN`, `<LocalCodeDisplayName_EN>` to `English`, the replace result is `<Keep>English`*
   - Set Replace String
 
 ## Condition

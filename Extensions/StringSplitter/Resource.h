@@ -53,6 +53,7 @@
 
 #define IDMN_ACTION_ITRE  		25018
 #define IDMN_ACTION_ITRE_SRS	25019
+#define IDMN_ACTION_ITREA   	25020
 
 // Action strings
 #define M_ACTION_RP             5000
@@ -83,6 +84,7 @@
 
 #define M_ACTION_ITRE           5018
 #define M_ACTION_ITRE_SRS       5019
+#define M_ACTION_ITREA          5020
 
 // Titles of action parameters
 #define M_ACT_STR				 5501

@@ -188,6 +188,8 @@ BEGIN
         POPUP "Replace Each"
             BEGIN
                 MENUITEM "Iterate Replace Each",  IDMN_ACTION_ITRE
+                MENUITEM "Iterate Replace Each All",  IDMN_ACTION_ITREA
+                MENUITEM SEPARATOR
                 MENUITEM "Set Replace String",  IDMN_ACTION_ITRE_SRS
             END
         MENUITEM SEPARATOR    
@@ -361,6 +363,7 @@ BEGIN
 
     M_ACTION_ITRE          "Iterate Replace Each in String %0, Regex %1, Loop Name %2"
     M_ACTION_ITRE_SRS      "Iterate Replace Each Set Replace String to %0"
+    M_ACTION_ITREA          "Iterate Replace Each All in String %0, Regex %1, Loop Name %2"
 
     M_ACT_STR			    "Set Source String"
     M_ACT_REGEX			    "Set Regex"

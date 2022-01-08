@@ -48,8 +48,9 @@
 
 #define	ACT_ACTION_ITRE				18
 #define	ACT_ACTION_ITRE_SRS			19
+#define	ACT_ACTION_ITREA			20
 
-#define	ACT_LAST					20
+#define	ACT_LAST					21
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
