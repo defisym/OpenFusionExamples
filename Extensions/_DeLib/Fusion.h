@@ -353,15 +353,34 @@ inline DWORD GetFilterIDByExt(LPRDATA rdPtr, LPCTSTR Ext, LPCWSTR DefaultFilterN
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
-	LPCWSTR FilterName = GetFilterName(Ext, DefaultFilterName);
+	//LPCWSTR FilterName = GetFilterName(Ext, DefaultFilterName);
 
-	for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
-		if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
-			return pImgMgr->GetFilterID(i);
+	//for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
+	//	if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
+	//		return pImgMgr->GetFilterID(i);
+	//	}
+	//}
+
+	auto GetFilterID = [pImgMgr](LPCWSTR Ext)->DWORD {
+		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
+			auto Exts = pImgMgr->GetFilterExtsW(i);
+			if (Exts == nullptr) {
+				return 0;
+			}
+
+			for (size_t j = 0; Exts[j] != nullptr; j++) {
+				if (_wcsicmp(Exts[j], Ext) == 0) {
+					return pImgMgr->GetFilterID(i);
+				}
+			}
 		}
-	}
 
-	return pImgMgr->GetFilterID(0);
+		return 0;
+	};
+
+	auto Result = GetFilterID(Ext);
+
+	return Result != 0 ? Result : GetFilterID(L"JPG");
 }
 
 //Get Filter ID By File Name
@@ -370,7 +389,8 @@ inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, LPCWSTR Defa
 	WCHAR* Ext = new WCHAR[FILENAME_MAX];
 	_wsplitpath_s(FilePath, NULL, 0, NULL, 0, NULL, 0, Ext, FILENAME_MAX);
 
-	DWORD FilterID = GetFilterIDByExt(rdPtr, Ext);
+	//DWORD FilterID = GetFilterIDByExt(rdPtr, Ext);
+	DWORD FilterID = GetFilterIDByExt(rdPtr, Ext + 1);
 
 	delete[] Ext;
 

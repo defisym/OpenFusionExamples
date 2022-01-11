@@ -65,7 +65,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
-
 	//Settings
 	rdPtr->IsLib = edPtr->IsLib;
 
@@ -319,28 +318,6 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 
 					rdPtr->img->Blit(*collide, desX, desY);
 				}
-
-				//UpdateImg(rdPtr, true);
-
-				//int width = max(rdPtr->src->GetWidth(), rdPtr->img->GetWidth());
-				//int height = max(rdPtr->src->GetHeight(), rdPtr->img->GetHeight());
-
-				//bool SrcWidthLarger = (rdPtr->src->GetWidth() == width);
-				//bool SrcHeightLarger = (rdPtr->src->GetHeight() == height);
-
-				//LPSURFACE collide = nullptr;
-				//collide = CreateSurface(24, width, height);
-
-				//if (rdPtr->Collision) {
-				//	if (rdPtr->AutoUpdateCollision) {						
-				//		UpdateImg(rdPtr, true);
-				//	}
-
-				//	int desX = SrcWidthLarger ? rdPtr->HotSpot.x - rdPtr->ImgHotSpot.x : 0;
-				//	int desY = SrcHeightLarger ? rdPtr->HotSpot.y - rdPtr->ImgHotSpot.y : 0;
-
-				//	rdPtr->img->Blit(*collide, desX, desY);
-				//}
 
 				DWORD dwMaskSize = collide->CreateMask(NULL, lParam);
 
