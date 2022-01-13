@@ -11,6 +11,40 @@
 #include	<vector>
 #include	<thread>
 
+//GetString
+inline void GetPropString(CPropValue* pValue, LPTSTR Des) {
+	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
+
+	_tcscpy_s(Des, _MAX_PATH, pStr);
+}
+inline void GetPropString(LPMV mV, LPEDATA edPtr, CPropValue* pValue, LPTSTR Des) {
+	// Gets the string
+	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
+
+	// You can simply poke the string if your EDITDATA structure has a fixed size,
+	// or have an adaptive size of structure like below
+
+	// If the length is different
+	if (_tcslen(pStr) != _tcslen(Des))
+	{
+		// Asks MMF to reallocate the structure with the new size
+		LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA) + _tcslen(pStr) * sizeof(TCHAR));
+
+		// If reallocation worked
+		if (pNewPtr != NULL)
+		{
+			// Copy the string
+			edPtr = pNewPtr;
+			_tcscpy_s(Des, _tcslen(Des), pStr);
+		}
+	}
+	else
+	{
+		// Same size : simply copy
+		_tcscpy_s(Des, _tcslen(Des), pStr);
+	}
+}
+
 //Free collision mask
 inline void FreeColMask(LPSMASK& pColMask) {
 	if (pColMask != NULL) {

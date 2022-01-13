@@ -67,7 +67,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	//Settings
 	rdPtr->IsLib = edPtr->IsLib;
-
+	
 	rdPtr->HWA = edPtr->HWA;
 
 	rdPtr->StretchQuality = edPtr->StretchQuality;
