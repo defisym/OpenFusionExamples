@@ -523,7 +523,7 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 		int w = rc->right-rc->left;
 		int h = rc->bottom-rc->top;
 
-		if (!edPtr->IsLib) {
+		if (!edPtr->IsLib && (edPtr->swidth != 32 || edPtr->sheight != 32)) {
 			LPSURFACE proto = nullptr;
 			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
@@ -560,6 +560,9 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 		// We could use different image effects when we copy, e.g. invert, AND, OR, XOR,
 		// blend (semi-transparent, the 6th param is amount of transparency)
 		// You can 'anti-alias' with the 7th param (default=0 or off)
+		COLORREF TransParentColor;
+		is.GetPixel(0, 0, TransParentColor);
+		is.SetTransparentColor(TransParentColor);
 		is.Blit(*ps, x + w / 2 - 16, y + h / 2 - 16, BMODE_TRANSP, BOP_COPY, 0);
 	}
 

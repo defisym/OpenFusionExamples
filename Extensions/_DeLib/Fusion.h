@@ -25,7 +25,7 @@ inline void GetPropString(LPMV mV, LPEDATA edPtr, CPropValue* pValue, LPTSTR Des
 	// or have an adaptive size of structure like below
 
 	// If the length is different
-	if (_tcslen(pStr) != _tcslen(Des))
+	if (Des == nullptr || _tcslen(pStr) != _tcslen(Des))
 	{
 		// Asks MMF to reallocate the structure with the new size
 		LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA) + _tcslen(pStr) * sizeof(TCHAR));
@@ -35,13 +35,13 @@ inline void GetPropString(LPMV mV, LPEDATA edPtr, CPropValue* pValue, LPTSTR Des
 		{
 			// Copy the string
 			edPtr = pNewPtr;
-			_tcscpy_s(Des, _tcslen(Des), pStr);
+			_tcscpy_s(Des, _tcslen(pStr), pStr);
 		}
 	}
 	else
 	{
 		// Same size : simply copy
-		_tcscpy_s(Des, _tcslen(Des), pStr);
+		_tcscpy_s(Des, _tcslen(pStr), pStr);
 	}
 }
 
