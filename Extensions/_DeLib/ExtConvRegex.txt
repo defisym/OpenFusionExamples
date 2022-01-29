@@ -1,0 +1,29 @@
+
+([0-9]+)
+70$1
+
+IDMN->Menu
+(.*)(IDMN_)([\S]*)([\s]*)([0-9]*)
+MENUITEM "",$2$3
+
+IDMN->String table
+(.*)(IDMN_)([\S]*)([\s]*)([0-9]*)
+M_$3 ""
+
+Menu->String table
+
+Action
+(.*)(")(.*")(.*)(IDMN_)(.*)
+M_$6 $2$3
+M_$6 $200$3
+
+Condition
+(.*)(")(.*")(.*)(IDMN_)(.*)
+M_$6 $2$3
+M_$6 $2%o$3
+
+Expression
+(.*)(")(.*")(.*)(IDMN_)(.*)
+M_$6 $2($3
+
+
