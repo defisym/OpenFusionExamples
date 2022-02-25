@@ -132,6 +132,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GFH, M_EXPRESSION_GFH, EXP_EXPRESSION_GFH, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_EXPRESSION_GFH,
 		
 		IDMN_EXPRESSION_GAD, M_EXPRESSION_GAD, EXP_EXPRESSION_GAD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+		
+		IDMN_EXPRESSION_GSON, M_EXPRESSION_GSON, EXP_EXPRESSION_GSON, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
 		};
 
 // ============================================================================
@@ -1236,6 +1238,31 @@ long WINAPI DLLExport GetObjectAnimationDirection(LPRDATA rdPtr, long param1) {
 	return DisplayAnimationDirection(Fixed);
 }
 
+long WINAPI DLLExport GetScopedObjectNumber(LPRDATA rdPtr, long param1) {
+	int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	LPRO object =LproFromFixed(rdPtr, Fixed);
+	LPHO objHeader = &(object->roHo);
+	short oi = objHeader->hoOi;
+
+	int oiListItemSize = sizeof(objInfoList);
+	if (rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0) == 1) {
+		oiListItemSize += 24;
+	}
+	if (rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvCallFunction(NULL, EF_ISUNICODE, 0, 0, 0) == 1) {
+		oiListItemSize += sizeof(LPVOID);
+	}
+
+	//LPOIL pObjectInfo = rdPtr->rhPtr->rhOiList;
+	LPOIL pObjectInfo = (LPOIL)(((char*)rdPtr->rhPtr->rhOiList) + oiListItemSize * oi);
+	LPOIL pObjectInfoFromFixed = objHeader->hoOiList;
+
+
+	//rdPtr->rhPtr->rhQualToOiList;
+
+	return 0;
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1356,6 +1383,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetFileHash,
 
 			GetObjectAnimationDirection,
+
+			GetScopedObjectNumber,
 
 			0
 			};

@@ -109,7 +109,9 @@
 
 #define	EXP_EXPRESSION_GAD			23
 
-#define	EXP_LAST                    24
+#define	EXP_EXPRESSION_GSON			24
+
+#define	EXP_LAST                    25
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

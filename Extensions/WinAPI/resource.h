@@ -119,6 +119,7 @@
 #define M_EXPRESSION_GFLA 				7104
 #define M_EXPRESSION_GFH 				7105
 #define M_EXPRESSION_GAD 				7106
+#define M_EXPRESSION_GSON 				7107
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -198,6 +199,7 @@
 #define IDMN_EXPRESSION_GFLA			27094
 #define IDMN_EXPRESSION_GFH				27095
 #define IDMN_EXPRESSION_GAD				27096
+#define IDMN_EXPRESSION_GSON			27097
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027
