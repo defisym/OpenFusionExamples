@@ -29,6 +29,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_IDHA, M_CONDITION_IDHA, CND_CONDITION_IDHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_DIR,
+		IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1,PARAM_EXPRESSION,PARA_CONDITION_IAIR,
 		};
 
 // Definitions of parameters for each action
@@ -132,6 +133,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GFH, M_EXPRESSION_GFH, EXP_EXPRESSION_GFH, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_EXPRESSION_GFH,
 		
 		IDMN_EXPRESSION_GAD, M_EXPRESSION_GAD, EXP_EXPRESSION_GAD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+
+		IDMN_EXPRESSION_GVWS, M_EXPRESSION_GVWS, EXP_EXPRESSION_GVWS, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
 		};
 
 // ============================================================================
@@ -175,6 +178,76 @@ long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1
 	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
 
 	return DirHasAnimation(Fixed, Dir);
+}
+
+long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long param2) {
+	bool byFullPath = (bool)CNC_GetIntParameter(rdPtr);
+
+	bool ret = false;
+
+	HANDLE snapshot;
+	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+	PROCESSENTRY32* info = new PROCESSENTRY32;
+	PROCESSENTRY32* curInfo = new PROCESSENTRY32;
+
+	info->dwSize = sizeof(PROCESSENTRY32);
+	curInfo->dwSize = sizeof(PROCESSENTRY32);
+	
+	MODULEENTRY32* minfo = new MODULEENTRY32;
+	MODULEENTRY32* curMinfo = new MODULEENTRY32;
+
+	minfo->dwSize = sizeof(MODULEENTRY32);
+	curMinfo->dwSize = sizeof(MODULEENTRY32);
+
+	DWORD ProcessID = _getpid();
+
+	auto getMinfo = [byFullPath](PROCESSENTRY32* info, MODULEENTRY32* minfo)->void {
+		if (!byFullPath) {
+			return;
+		}
+
+		HANDLE hModule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, info->th32ProcessID);
+		Module32First(hModule, minfo);
+	};
+
+	Process32First(snapshot, curInfo);
+	while (Process32Next(snapshot, curInfo) != FALSE) {
+		if (curInfo->th32ProcessID == ProcessID) {
+			getMinfo(curInfo, curMinfo);
+			break;
+		}
+	}
+
+	Process32First(snapshot, info);
+	while (Process32Next(snapshot, info) != FALSE) {
+		if ((wcscmp(curInfo->szExeFile, info->szExeFile) == 0)
+			&& (curInfo->th32ProcessID != info->th32ProcessID)) {
+			getMinfo(info, minfo);
+
+			if (byFullPath) {
+				if (wcscmp(curMinfo->szExePath, minfo->szExePath) == 0) {
+					ret = true;
+				}
+				else {
+					ret = false;
+				}
+			}
+			else {
+				ret = true;
+			}
+
+			break;
+		}
+	}
+
+	delete info;
+	delete curInfo;
+
+	delete minfo;
+	delete curMinfo;
+
+	return ret ? TRUE : FALSE;
 }
 
 // ============================================================================
@@ -1236,6 +1309,22 @@ long WINAPI DLLExport GetObjectAnimationDirection(LPRDATA rdPtr, long param1) {
 	return DisplayAnimationDirection(Fixed);
 }
 
+long WINAPI DLLExport GetValWithSign(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float Val = *(float*)&p1;
+
+	delete[] rdPtr->ValWithSignOutput;
+	rdPtr->ValWithSignOutput = nullptr;
+
+	_ftos_signed(Val, &rdPtr->ValWithSignOutput);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->ValWithSignOutput;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1252,6 +1341,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IsFullScreen,
 			IsClipBoardAvailable,
 			IsObjectHasAnimationInDirection,
+
+			IsAnotherInstanceRunning,
+
 			0
 			};
 	
@@ -1356,6 +1448,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetFileHash,
 
 			GetObjectAnimationDirection,
+
+			GetValWithSign,
 
 			0
 			};

@@ -112,6 +112,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
+        MENUITEM "Another Instance Is Running",    IDMN_CONDITION_IAIR
         MENUITEM SEPARATOR
         MENUITEM "Mouse is Locked",             IDMN_CONDITION_IML
         MENUITEM SEPARATOR
@@ -327,6 +328,11 @@ BEGIN
             BEGIN
                 MENUITEM "Get Object Display Animation Direction",      IDMN_EXPRESSION_GAD              
             END            
+        END
+        MENUITEM SEPARATOR 
+        POPUP "Misc."
+        BEGIN
+            MENUITEM "Get Val With Sign",      IDMN_EXPRESSION_GVWS              
         END
         MENUITEM SEPARATOR
     END
@@ -591,6 +597,12 @@ BEGIN
     PARA_EXPRESSION_GFH "FilePath"
 END
 
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GVWS "GetValWithSign$ ("
+    PARA_EXPRESSION_GVWS "Value"
+END
+
 //Conditions
 STRINGTABLE
 BEGIN
@@ -624,6 +636,12 @@ BEGIN
     M_CONDITION_IDHA    "Object %0 has Animation in Direction %1"
     PARA_CONDITION_OBJ    "Object to Test"
     PARA_CONDITION_DIR    "Direction to Test"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IAIR    "Is Another Instance Running (By FullPath = %0)"
+    PARA_CONDITION_IAIR    "By Process Name = 0, By FullPath = 1"
 END
 
 //Porperties

@@ -59,6 +59,7 @@
 //My headers
 #include	"Fusion.h"
 #include	"Encryption.h"
+#include	"StrNum.h"
 
 //Global Func
 #include	"GlobalFunc.h"

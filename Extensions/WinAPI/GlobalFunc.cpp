@@ -638,5 +638,3 @@ DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	delete info;
 	return ProcessID;
 }
-
-

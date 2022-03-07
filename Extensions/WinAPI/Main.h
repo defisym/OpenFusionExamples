@@ -13,8 +13,9 @@
 #define	CND_CONDITION_IFS			3
 #define	CND_CONDITION_ICA			4
 #define	CND_CONDITION_IDHA			5
+#define	CND_CONDITION_IAIR			6
 
-#define	CND_LAST					6
+#define	CND_LAST					7
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -109,7 +110,9 @@
 
 #define	EXP_EXPRESSION_GAD			23
 
-#define	EXP_LAST                    24
+#define	EXP_EXPRESSION_GVWS			24
+
+#define	EXP_LAST                    25
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -239,6 +242,8 @@ typedef struct tagRDATA
 	LPWSTR FileListOutPut;
 
 	LPWSTR HashOutput;
+
+	LPWSTR ValWithSignOutput;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

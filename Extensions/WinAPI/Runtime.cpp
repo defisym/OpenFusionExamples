@@ -178,6 +178,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete[] rdPtr->HashOutput;
 
+	delete[] rdPtr->ValWithSignOutput;
+
 	// No errors
 	return 0;
 }

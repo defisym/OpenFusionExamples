@@ -87,6 +87,38 @@ inline void _ftos(double Val, std::wstring& Str) {
 	_dtos(Val, Str);
 }
 
+//Same, but with sign
+inline std::wstring _dtos_signed(double Val) {
+	std::wstring ret(DoubleStrSize, '\0');
+	swprintf(&ret[0], DoubleStrSize, L"%+g", Val);
+
+	return ret;
+}
+
+inline std::wstring _ftos_signed(float Val) {
+	return _dtos_signed(Val);
+}
+
+inline void _dtos_signed(double Val, std::wstring& Str) {
+	swprintf(&Str[0], DoubleStrSize, L"%+g", Val);
+}
+
+inline void _dtos_signed(double Val, wchar_t** Str) {
+	auto size = swprintf(nullptr, 0, L"%+g", Val);
+	auto bufsz = size + 1;
+	*Str = new wchar_t[bufsz];
+
+	swprintf(*Str, bufsz, L"%+g", Val);
+}
+
+inline void _ftos_signed(double Val, std::wstring& Str) {
+	_dtos_signed(Val, Str);
+}
+
+inline void _ftos_signed(double Val, wchar_t** Str) {
+	_dtos_signed(Val, Str);
+}
+
 //convert string to double, 5X faster than std::stod
 inline double _stod(const wchar_t* p) {
 	double r = 0.0;
