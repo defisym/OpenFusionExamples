@@ -111,12 +111,30 @@ inline void _dtos_signed(double Val, wchar_t** Str) {
 	swprintf(*Str, bufsz, L"%+g", Val);
 }
 
+inline void _dtos_signed_s(double Val, wchar_t** Str) {
+	auto positive = Val >= 0;
+	Val = abs(Val);
+
+	auto size = swprintf(nullptr, 0, L"%g", Val);
+	auto bufsz = size + 1;
+	*Str = new wchar_t[2 + bufsz];
+
+	**Str = positive ? L'+' : L'-';
+	*(*Str + 1) = L' ';
+
+	swprintf(*Str + 2, bufsz, L"%g", Val);
+}
+
 inline void _ftos_signed(double Val, std::wstring& Str) {
 	_dtos_signed(Val, Str);
 }
 
 inline void _ftos_signed(double Val, wchar_t** Str) {
 	_dtos_signed(Val, Str);
+}
+
+inline void _ftos_signed_s(double Val, wchar_t** Str) {
+	_dtos_signed_s(Val, Str);
 }
 
 //convert string to double, 5X faster than std::stod

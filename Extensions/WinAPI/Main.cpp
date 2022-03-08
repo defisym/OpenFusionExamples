@@ -1316,7 +1316,7 @@ long WINAPI DLLExport GetValWithSign(LPRDATA rdPtr, long param1) {
 	delete[] rdPtr->ValWithSignOutput;
 	rdPtr->ValWithSignOutput = nullptr;
 
-	_ftos_signed(Val, &rdPtr->ValWithSignOutput);
+	_ftos_signed_s(Val, &rdPtr->ValWithSignOutput);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
