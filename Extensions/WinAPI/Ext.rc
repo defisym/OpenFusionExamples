@@ -112,7 +112,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
-        MENUITEM "Another Instance Is Running",    IDMN_CONDITION_IAIR
+        MENUITEM "Another Instance is Running",    IDMN_CONDITION_IAIR
         MENUITEM SEPARATOR
         MENUITEM "Mouse is Locked",             IDMN_CONDITION_IML
         MENUITEM SEPARATOR
@@ -606,41 +606,41 @@ END
 //Conditions
 STRINGTABLE
 BEGIN
-    M_CONDITION_INAP        "Process %0 Exists"
+    M_CONDITION_INAP        "%o Process %0 Exists"
     PARA_CONDITION_INAP     "Input Application Name, include .exe"
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_IML         "Mouse is Locked"    
+    M_CONDITION_IML         "%o Mouse is Locked"    
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_RKS         "Key %0 is toggled"
+    M_CONDITION_RKS         "%o Key %0 is toggled"
     PARA_CONDITION_RKS      "Key value to check, E.g. Numlock = VK_NUMLOCK = 0x90 = 144"
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_IFS    "Application Is Maximized"
+    M_CONDITION_IFS    "%o Application Is Maximized"
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_ICA    "Image Available in ClipBoard"
+    M_CONDITION_ICA    "%o Image Available in ClipBoard"
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_IDHA    "Object %0 has Animation in Direction %1"
+    M_CONDITION_IDHA    "%o Object %0 has Animation in Direction %1"
     PARA_CONDITION_OBJ    "Object to Test"
     PARA_CONDITION_DIR    "Direction to Test"
 END
 
 STRINGTABLE
 BEGIN
-    M_CONDITION_IAIR    "Is Another Instance Running (By FullPath = %0)"
+    M_CONDITION_IAIR    "%o Is Another Instance Running (By FullPath = %0)"
     PARA_CONDITION_IAIR    "By Process Name = 0, By FullPath = 1"
 END
 

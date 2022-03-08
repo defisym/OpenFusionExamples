@@ -111,6 +111,9 @@ WinAPI, a bunch of small functions that uses Win32 API
 ## Condition
 
 - Application is a Process
+  - *check if a process of given name is running*
+- Another Instance is Running
+  - *check if another instance of current application is running, able to check by name or file path*
 
 - Mouse is Locked
 
@@ -182,3 +185,7 @@ WinAPI, a bunch of small functions that uses Win32 API
   - Object
     - Get Object Display Animation Direction
       - *fusion will use another direction's animation when object's direction is set to a direction that doesn't have animation, this expression will do some calculation and return the displayed animation direction*
+
+- Misc.
+  - Get Val With Sign
+    - *add signs in the beginning of numbers when converting to string, available for positive ones*
