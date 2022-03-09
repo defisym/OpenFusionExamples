@@ -112,7 +112,9 @@
 
 #define	EXP_EXPRESSION_GVWS			24
 
-#define	EXP_LAST                    25
+#define	EXP_EXPRESSION_HEX2RGB		25
+
+#define	EXP_LAST                    26
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

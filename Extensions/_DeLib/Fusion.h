@@ -775,3 +775,6 @@ inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double 
 
 	LPSURFACE Trans = new cSurface;
 }
+
+//dec2rgb
+#define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)

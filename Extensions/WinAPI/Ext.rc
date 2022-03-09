@@ -332,7 +332,8 @@ BEGIN
         MENUITEM SEPARATOR 
         POPUP "Misc."
         BEGIN
-            MENUITEM "Get Val With Sign",      IDMN_EXPRESSION_GVWS              
+            MENUITEM "Get Val With Sign",      IDMN_EXPRESSION_GVWS         
+            MENUITEM "Hex 2 RGB",      IDMN_EXPRESSION_HEX2RGB           
         END
         MENUITEM SEPARATOR
     END
@@ -601,6 +602,12 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_GVWS "GetValWithSign$ ("
     PARA_EXPRESSION_GVWS "Value"
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_HEX2RGB "Hex2RGB ("
+    PARA_EXPRESSION_HEX2RGB "Hex String, E.g., 0xFFFFFF/#FFFFFF"
 END
 
 //Conditions

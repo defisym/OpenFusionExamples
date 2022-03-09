@@ -135,6 +135,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GAD, M_EXPRESSION_GAD, EXP_EXPRESSION_GAD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
 
 		IDMN_EXPRESSION_GVWS, M_EXPRESSION_GVWS, EXP_EXPRESSION_GVWS, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
+		
+		IDMN_EXPRESSION_HEX2RGB, M_EXPRESSION_HEX2RGB, EXP_EXPRESSION_HEX2RGB, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_HEX2RGB,
 		};
 
 // ============================================================================
@@ -1325,6 +1327,12 @@ long WINAPI DLLExport GetValWithSign(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->ValWithSignOutput;
 }
 
+long WINAPI DLLExport Hex2RGB(LPRDATA rdPtr, long param1) {
+	LPCWSTR Hex = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	return DEC2RGB(_h2d(Hex));
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1451,5 +1459,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetValWithSign,
 
+			Hex2RGB,
 			0
 			};

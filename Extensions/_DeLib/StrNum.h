@@ -215,3 +215,106 @@ inline int _stoi(const wchar_t* p) {
 inline int _stoi(const std::wstring& p) {
 	return _stoi(p.c_str());
 }
+
+//convert Hex to Dex
+inline int _hexSheet(const wchar_t p) {
+	switch (p) {
+	//numbers
+	case L'0': {
+		return 0;
+	}
+	case L'1': {
+		return 1;
+	}
+	case L'2': {
+		return 2;
+	}
+	case L'3': {
+		return 3;
+	}
+	case L'4': {
+		return 4;
+	}
+	case L'5': {
+		return 5;
+	}
+	case L'6': {
+		return 6;
+	}
+	case L'7': {
+		return 7;
+	}
+	case L'8': {
+		return 8;
+	}
+	case L'9': {
+		return 9;
+	}
+	//char
+	case L'A': {
+		return 10;
+	}
+	case L'a': {
+		return 10;
+	}
+	case L'B': {
+		return 11;
+	}
+	case L'b': {
+		return 11;
+	}
+	case L'C': {
+		return 12;
+	}
+	case L'c': {
+		return 12;
+	}
+	case L'D': {
+		return 13;
+	}
+	case L'd': {
+		return 13;
+	}
+	case L'E': {
+		return 14;
+	}
+	case L'e': {
+		return 14;
+	}
+	case L'F': {
+		return 15;
+	}
+	case L'f': {
+		return 15;
+	}
+
+	 //Error
+	default: {
+		return -1;
+	}
+	}
+}
+
+inline int _h2d(const wchar_t* p) {
+	if (*p == L'#') {
+		p += 1;
+	}
+	if ((*p == L'0') && (*(p + 1) == L'x' || *(p + 1) == L'X')) {
+		p += 2;
+	}
+
+	auto len = wcslen(p);
+	int ret = 0;
+
+	for (int pow = 1; len != 0; pow = pow << 4, len--) {
+		auto conv = _hexSheet(*(p + len - 1));
+
+		if (conv == -1) {
+			break;
+		}
+
+		ret += conv * pow;
+	}
+
+	return ret;
+}
