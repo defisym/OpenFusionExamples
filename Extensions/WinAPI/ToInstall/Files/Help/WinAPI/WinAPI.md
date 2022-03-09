@@ -189,3 +189,5 @@ WinAPI, a bunch of small functions that uses Win32 API
 - Misc.
   - Get Val With Sign
     - *add signs in the beginning of numbers when converting to string, available for positive ones*
+  - Hex 2 RGB
+    - *convert Hex string `0xFFFFFF`/`#FFFFFF` to RGB coef used in fusion*
