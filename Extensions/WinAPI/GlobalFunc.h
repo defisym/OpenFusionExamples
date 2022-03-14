@@ -101,6 +101,4 @@ void DeleteRunApplicationNameByPos(size_t pos);
 void AddNewApplicationName(LPTSTR lpApplicationName);
 void DeleteAllApplicationName();
 
-DWORD GetProcessIDByName(LPCTSTR ApplicationName);
-
 #endif // !_GLOBALFUNC_

@@ -114,6 +114,33 @@ WinAPI, a bunch of small functions that uses Win32 API
   - *check if a process of given name is running*
 - Another Instance is Running
   - *check if another instance of current application is running, able to check by name or file path*
+  - *CMP is a binary value, 0b000001000001 = 65 means compare the first and the seventh item in `DefaultBlock`, AKA `Comments` & `FileDescription`*
+
+`DefaultBlock` Define:
+
+```C++
+  LPCWSTR DefaultBlock[] = { L"Comments", L"InternalName", L"ProductName",
+              L"CompanyName", L"LegalCopyright", L"ProductVersion",
+              L"FileDescription", L"LegalTrademarks", L"PrivateBuild",
+              L"FileVersion", L"OriginalFilename", L"SpecialBuild" };
+```
+
+Example Output:
+
+```PlainText
+  Name : Comments    Content : NULL
+  Name : InternalName    Content : NULL
+  Name : ProductName    Content : NULL
+  Name : CompanyName    Content : Decade Studio/Alabaster Works
+  Name : LegalCopyright    Content : Defisym 2016 ~ 2022
+  Name : ProductVersion    Content : NULL
+  Name : FileDescription    Content : AVG+SRPG
+  Name : LegalTrademarks    Content : NULL
+  Name : PrivateBuild    Content : NULL
+  Name : FileVersion    Content : 0.0.6.4
+  Name : OriginalFilename    Content : NULL
+  Name : SpecialBuild    Content : NULL
+```
 
 - Mouse is Locked
 

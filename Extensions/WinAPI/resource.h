@@ -94,6 +94,7 @@
 #define PARA_CONDITION_OBJ              6511
 #define PARA_CONDITION_DIR              6512
 #define PARA_CONDITION_IAIR             6513
+#define PARA_CONDITION_CMP              6514
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
 #define M_EXPRESSION_GCLR_L             7020

@@ -29,7 +29,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_IDHA, M_CONDITION_IDHA, CND_CONDITION_IDHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_DIR,
-		IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1,PARAM_EXPRESSION,PARA_CONDITION_IAIR,
+		IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_CONDITION_IAIR,PARA_CONDITION_CMP,
 		};
 
 // Definitions of parameters for each action
@@ -184,6 +184,7 @@ long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1
 
 long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long param2) {
 	bool byFullPath = (bool)CNC_GetIntParameter(rdPtr);
+	int CMP = (int)CNC_GetIntParameter(rdPtr);
 
 	bool ret = false;
 
@@ -204,11 +205,7 @@ long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long 
 
 	DWORD ProcessID = _getpid();
 
-	auto getMinfo = [byFullPath](PROCESSENTRY32* info, MODULEENTRY32* minfo)->void {
-		if (!byFullPath) {
-			return;
-		}
-
+	auto getMinfo = [](PROCESSENTRY32* info, MODULEENTRY32* minfo)->void {
 		HANDLE hModule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, info->th32ProcessID);
 		Module32First(hModule, minfo);
 	};
@@ -221,27 +218,41 @@ long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long 
 		}
 	}
 
+	BYTE* pCurData = GetFileVersion_GetFileVersionInfo(curMinfo->szExePath);
+
 	Process32First(snapshot, info);
 	while (Process32Next(snapshot, info) != FALSE) {
 		if ((wcscmp(curInfo->szExeFile, info->szExeFile) == 0)
 			&& (curInfo->th32ProcessID != info->th32ProcessID)) {
+			bool localRet = true;
+
 			getMinfo(info, minfo);
 
-			if (byFullPath) {
-				if (wcscmp(curMinfo->szExePath, minfo->szExePath) == 0) {
-					ret = true;
-				}
-				else {
-					ret = false;
-				}
-			}
-			else {
-				ret = true;
+			if (localRet && (CMP != 0)) {
+				BYTE* pData = GetFileVersion_GetFileVersionInfo(minfo->szExePath);
+
+				localRet = localRet && GetFileVersion_CMPDefault(pCurData, pData, CMP);
+
+				delete[] pData;
 			}
 
-			break;
+			if (localRet && byFullPath) {
+				if (wcscmp(curMinfo->szExePath, minfo->szExePath) == 0) {
+					localRet = localRet && true;
+				}
+				else {
+					localRet = localRet && false;
+				}
+			}
+
+			if (localRet) {
+				ret = localRet;
+				break;
+			}
 		}
 	}
+
+	delete[] pCurData;
 
 	delete info;
 	delete curInfo;

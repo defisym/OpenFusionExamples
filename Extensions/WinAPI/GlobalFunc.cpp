@@ -611,30 +611,3 @@ void StopAllApplication() {
 	delete info;
 	return;
 }
-
-
-DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
-	//返回参数
-	DWORD	ProcessID = 0;
-
-	//获取快照
-	HANDLE	snapshot;
-	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-	//循环遍历
-	PROCESSENTRY32* info;
-	info = new PROCESSENTRY32;
-	info->dwSize = sizeof(PROCESSENTRY32);
-
-	Process32First(snapshot, info);
-	while (Process32Next(snapshot, info) != FALSE) {
-		//进程名一致则结束进程		
-		if (wcscmp(ApplicationName, info->szExeFile) == 0) {
-			ProcessID = info->th32ProcessID;
-			break;
-		}
-	}
-
-	delete info;
-	return ProcessID;
-}

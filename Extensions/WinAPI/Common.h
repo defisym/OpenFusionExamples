@@ -36,12 +36,16 @@
 #include	<memory>
 
 //WinAPI
-#include	<tlhelp32.h>
+
+//Thread
+//#include	<tlhelp32.h>
+
+//FileList
 #include	<shlwapi.h>
-#include	<shellscalingapi.h>
 #pragma	comment(lib,"shlwapi.lib") 
+
+//IME
 #pragma comment(lib,"Imm32.lib")
-//#pragma	comment(lib,"msimg32.lib") 
 
 //Definitions
 #include	"Definition.h"
@@ -60,6 +64,7 @@
 #include	"Fusion.h"
 #include	"Encryption.h"
 #include	"StrNum.h"
+#include	"WindowsCommon.h"
 
 //Global Func
 #include	"GlobalFunc.h"
