@@ -650,7 +650,6 @@ BEGIN
     M_CONDITION_IAIR    "%o Is Another Instance Running (By FullPath = %0) , (By FileInfo = %1)"
     PARA_CONDITION_IAIR   "By Process Name = 0, By FullPath = 1"
     PARA_CONDITION_CMP    "CMP Base"
-
 END
 
 //Porperties
