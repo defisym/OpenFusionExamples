@@ -168,6 +168,13 @@ namespace FindTheWay {
 			pathAvailable = false;
 		}
 
+		inline void ClearMap(MapType type) {
+			BYTE* pMap = GetMapPointer(type);
+			size_t size = width * height;
+
+			memset(pMap, 0, size);
+		}
+
 		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type) {
 			BYTE* pMapPos = GetMapPosPointer(x, y, type);
 
@@ -259,6 +266,25 @@ namespace FindTheWay {
 		}
 
 		inline void Find(Step start, Step destination, Heuristic h = FindTheWayClass::GetManhattanDistance) {
+			//*初始化open_set和close_set；
+			//* 将起点加入open_set中，并设置优先级为0（优先级最高）；
+			//* 如果open_set不为空，则从open_set中选取优先级最高的节点n：
+			//	* 如果节点n为终点，则：
+			//		* 从终点开始逐步追踪parent节点，一直达到起点；
+			//		* 返回找到的结果路径，算法结束；
+			//	* 如果节点n不是终点，则：
+			//		* 将节点n从open_set中删除，并加入close_set中；
+			//		* 遍历节点n所有的邻近节点：
+			//		* 如果邻近节点m在close_set中，则：
+			//			* 跳过，选取下一个邻近节点
+			//		* 如果邻近节点m不在open_set中，则：
+			//			* 设置节点m的parent为节点n
+			//			* 计算节点m的优先级
+			//			* 将节点m加入open_set中
+			//		* 如果邻近节点m在open_set中且优先级更低，则：
+			//			* 设置节点m的parent为节点n
+			//			* 计算节点m的优先级
+
 			struct Point {
 				Step step;
 
@@ -295,18 +321,22 @@ namespace FindTheWay {
 				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });				
 				
 				if (open_set.back().step == destination) {
-					path.emplace_back(open_set.back().step);
+					Point* parent = &open_set.back();
 
-					Point* parent = open_set.back().parent;
 					while (parent != nullptr) {
 						path.emplace_back((*parent).step);
 						parent = (*parent).parent;
 					}
 
+					pathAvailable = true;
+
 					return;
 				}
 				else {
-					close_set.emplace_back(open_set.back());					
+					Point base = open_set.back();
+
+					close_set.emplace_back(base);
+					open_set.erase(open_set.cend() - 1);
 
 					auto find = [](Set& v, Point& p)->Point* {
 						//return std::find(v.begin(), v.end(), p) != v.end();
@@ -328,9 +358,9 @@ namespace FindTheWay {
 
 					for (auto& it : neighbour) {
 						Point neighPoint = Point{ 
-							Step{(size_t)(open_set.back().step.x + it.x)
-							,(size_t)(open_set.back().step.y + it.y)}
-							, nullptr, 0, open_set.back().curStep + 1
+							Step{(size_t)(base.step.x + it.x)
+							,(size_t)(base.step.y + it.y)}
+							, nullptr, 0, base.curStep + 1
 							};
 
 						if (PointObstacle(neighPoint.step)) {
@@ -341,43 +371,32 @@ namespace FindTheWay {
 							continue;
 						}
 
-						Point* next = find(open_set, neighPoint);
 						auto heuristic = [&](Point& p)->size_t {return h(neighPoint.step, destination); };
-						//auto getParentPointer = [&](Point& p)->Point* {
+						auto updateParentPointer = [&](Point& cur)->void {
+							Point* p = find(point_set, cur);
 
-						//};
+							if (p == nullptr) {
+								point_set.emplace_back(base);
+								cur.parent = &point_set.back();
+							}
+							else {
+								cur.parent = p;
+							}							
+						};
+
+						Point* next = find(open_set, neighPoint);
 
 						if (next == nullptr) {							
 							neighPoint.priority = heuristic(neighPoint) + neighPoint.curStep * STEP_GENERALCOST;
+							updateParentPointer(neighPoint);							
 							
-							Point* p = find(point_set, neighPoint);
-
-							if (p == nullptr) {
-								point_set.emplace_back(open_set.back());
-								neighPoint.parent = &point_set.back();
-							}
-							else {
-								neighPoint.parent = p;
-							}
-
-							open_set.erase(open_set.cend() - 1);
 							open_set.emplace_back(neighPoint);
 						}
 						else if (next->curStep > neighPoint.curStep) {
 							next->curStep = neighPoint.curStep;
 							next->priority = heuristic(neighPoint) + neighPoint.curStep * STEP_GENERALCOST;
 
-							Point* p = find(point_set, neighPoint);
-
-							if (p == nullptr) {
-								point_set.emplace_back(open_set.back());
-								next->parent = &point_set.back();
-							}
-							else {
-								next->parent = p;
-							}
-
-							open_set.erase(open_set.cend() - 1);
+							updateParentPointer(*next);
 						}
 					}
 				}
