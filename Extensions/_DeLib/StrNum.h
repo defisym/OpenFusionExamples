@@ -67,6 +67,13 @@ inline bool StrIsFloat(const std::wstring& p) {
 constexpr auto DoubleStrSize = 50+1;
 
 //convert double to string, 2X faster than to_string
+inline std::wstring _itos(int Val) {
+	std::wstring ret(DoubleStrSize, '\0');
+	swprintf(&ret[0], DoubleStrSize, L"%d", Val);
+
+	return ret;
+}
+
 inline std::wstring _dtos(double Val) {
 	//auto size = swprintf(nullptr, 0, L"%f", Val);
 	std::wstring ret(DoubleStrSize, '\0');
