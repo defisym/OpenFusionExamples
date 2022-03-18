@@ -9,6 +9,9 @@
 #include <cmath>
 #include <map>
 
+#include <wincrypt.h>
+#pragma comment(lib,"crypt32.lib")
+
 #include "StrNum.h"
 
 namespace FindTheWay {
@@ -74,7 +77,7 @@ namespace FindTheWay {
 
 	constexpr auto PATH_RESERVE = 50;
 	constexpr auto SAVEDPATH_RESERVE = 10;
-	
+
 	constexpr auto MAP_PATH = 0;
 	constexpr auto MAP_OBSTACLE = 255;
 
@@ -82,6 +85,8 @@ namespace FindTheWay {
 	constexpr auto STEP_GENERALCOST = 10;
 
 	constexpr auto COORD_INVALID = 65536;
+
+	constexpr auto DELIMETER = ':';
 
 	class FindTheWayClass {
 	private:
@@ -105,11 +110,26 @@ namespace FindTheWay {
 
 		Paths savedPath;
 
+		struct Point {
+			Coord coord;
+
+			Point* parent = nullptr;
+
+			int priority;
+			size_t cost;
+		};
+
+		using Set = vector<Point>;
+
+		Set open_set;
+		Set close_set;
+		Set point_set;
+
 		inline size_t pOffset(size_t x, size_t y) {
 			return y * width + x;
 		}
 
-		inline bool PosValid(size_t x, size_t y) {			
+		inline bool PosValid(size_t x, size_t y) {
 			return (x < width) && (y < height) && ((y * width + x) < (mapSize));
 		}
 
@@ -140,13 +160,12 @@ namespace FindTheWay {
 		}
 
 		inline BYTE* GetMapPosPointer(size_t x, size_t y, MapType type) {
-			return GetMapPosPointer(x, y, GetMapPointer(type));			
+			return GetMapPosPointer(x, y, GetMapPointer(type));
 		}
 
 	public:
 		FindTheWayClass(size_t width, size_t height) {
-			path.reserve(PATH_RESERVE);
-			savedPath.reserve(SAVEDPATH_RESERVE);
+			Reserve();
 
 			this->width = width;
 			this->height = height;
@@ -162,11 +181,11 @@ namespace FindTheWay {
 			memset(unit, 0, mapSize);
 		}
 		FindTheWayClass(const wstring& base64) {
-			path.reserve(PATH_RESERVE);
-			savedPath.reserve(SAVEDPATH_RESERVE);
+			Reserve();
 
 			SetMap(base64);
 		}
+
 		~FindTheWayClass() {
 			Reset();
 
@@ -177,6 +196,15 @@ namespace FindTheWay {
 			map = nullptr;
 			terrain = nullptr;
 			unit = nullptr;
+		}
+
+		inline void Reserve() {
+			path.reserve(PATH_RESERVE);
+			savedPath.reserve(SAVEDPATH_RESERVE);
+
+			open_set.reserve(2 * PATH_RESERVE);
+			close_set.reserve(2 * PATH_RESERVE);
+			point_set.reserve(2 * PATH_RESERVE);
 		}
 
 		inline void Reset() {
@@ -203,8 +231,9 @@ namespace FindTheWay {
 			return girdSize;
 		}
 
-		inline void SetGirdSize(size_t girdSize=1,size_t girdOffestX=0, size_t girdOffestY = 0) {
+		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
 			this->girdSize = girdSize;
+
 			this->girdOffestX = girdOffestX;
 			this->girdOffestY = girdOffestY;
 		}
@@ -216,16 +245,19 @@ namespace FindTheWay {
 			updateMap = true;
 		}
 
-		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type) {
-			BYTE* pMapPos = GetMapPosPointer(x, y, type);
+		inline void SetMap(size_t x, size_t y, BYTE cost, BYTE* pMap) {
+			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
 
 			if (pMapPos == nullptr) {
 				return;
 			}
 
 			*pMapPos = Range(cost);
-			
+
 			updateMap = true;
+		}
+		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type) {
+			SetMap(x, y, cost, GetMapPointer(type));
 		}
 
 		inline void SetMap(const wstring& base64) {
@@ -233,10 +265,8 @@ namespace FindTheWay {
 			size_t start = 0;
 			size_t end = 0;
 
-			wchar_t delimeter = ':';
-
-			auto GetSubStr = [base64, delimeter](size_t& start, size_t& end)->wstring {
-				end = base64.find(delimeter, start);
+			auto GetSubStr = [base64](size_t& start, size_t& end)->wstring {
+				end = base64.find(DELIMETER, start);
 				wstring result = base64.substr(start, end - start);
 
 				start = end + 1;
@@ -245,11 +275,19 @@ namespace FindTheWay {
 			};
 
 			//size
-			width = _stoi(GetSubStr(start, end));
-			height = _stoi(GetSubStr(start, end));			
+			size_t width = _stoi(GetSubStr(start, end));
+			size_t height = _stoi(GetSubStr(start, end));
 
 			//map
-			mapSize = width * height;
+			size_t mapSize = width * height;
+
+			if (mapSize == 0) {
+				return;
+			}
+
+			this->width = width;
+			this->height = height;
+			this->mapSize = mapSize;
 
 			delete[] map;
 			delete[] terrain;
@@ -260,10 +298,10 @@ namespace FindTheWay {
 			unit = new BYTE[mapSize];
 
 			wstring mapTemp;
-			DWORD dwNeed;
+			DWORD dwNeed = mapSize;
 
 			mapTemp = GetSubStr(start, end);
-			CryptStringToBinary(mapTemp.c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL);
+			CryptStringToBinary(mapTemp.c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL);			
 
 			mapTemp = GetSubStr(start, end);
 			CryptStringToBinary(mapTemp.c_str(), 0, CRYPT_STRING_BASE64, unit, &dwNeed, NULL, NULL);
@@ -271,8 +309,8 @@ namespace FindTheWay {
 			UpdateMap();
 		}
 
-		inline BYTE GetMap(size_t x, size_t y, MapType type) {
-			BYTE* pMapPos = GetMapPosPointer(x, y, type);
+		inline BYTE GetMap(size_t x, size_t y, BYTE* pMap) {
+			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
 
 			if (pMapPos == nullptr) {
 				return MAP_OBSTACLE;
@@ -281,14 +319,16 @@ namespace FindTheWay {
 				return *pMapPos;
 			}
 		}
+		inline BYTE GetMap(size_t x, size_t y, MapType type) {
+			return GetMap(x, y, GetMapPointer(type));
+		}
 
 		inline wstring GetMap() {
 			wstring base64;
-			wchar_t delimeter = L':';
 
 			base64 += _itos(width).c_str();
-			base64 += delimeter;
-			base64 +=_itos(height).c_str();
+			base64 += DELIMETER;
+			base64 += _itos(height).c_str();
 
 			DWORD dwSize;
 			CryptBinaryToString(terrain, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &dwSize);
@@ -296,11 +336,11 @@ namespace FindTheWay {
 			wchar_t* base64Str = new wchar_t[dwSize];
 
 			CryptBinaryToString(terrain, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str, &dwSize);
-			base64 += delimeter;
+			base64 += DELIMETER;
 			base64 += base64Str;
 
 			CryptBinaryToString(unit, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str, &dwSize);
-			base64 += delimeter;
+			base64 += DELIMETER;
 			base64 += base64Str;
 
 			delete[] base64Str;
@@ -308,7 +348,7 @@ namespace FindTheWay {
 			return base64;
 		}
 
-		inline void UpdateMap() {			
+		inline void UpdateMap() {
 			for (size_t i = 0; i < mapSize; i++) {
 				*(map + i) = Range(*(terrain + i) + *(unit + i));
 			}
@@ -321,7 +361,7 @@ namespace FindTheWay {
 		}
 
 		inline Path* GetPathPointer(wstring* name = nullptr) {
-			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath[*name] : &path); 
+			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath[*name] : &path);
 		}
 
 		inline bool GetPathValidity(wstring* name = nullptr) {
@@ -426,25 +466,6 @@ namespace FindTheWay {
 			// 			* 设置节点m的parent为节点n
 			// 			* 计算节点m的优先级
 
-			struct Point {
-				Coord coord;
-
-				Point* parent = nullptr;
-				
-				int priority;
-				size_t cost;
-			};
-			
-			using Set = vector<Point>;
-
-			Set open_set;
-			Set close_set;
-			Set point_set;
-
-			open_set.reserve(2 * PATH_RESERVE);
-			close_set.reserve(2 * PATH_RESERVE);
-			point_set.reserve(2 * PATH_RESERVE);
-
 			if (updateMap) {
 				UpdateMap();
 			}
@@ -452,16 +473,21 @@ namespace FindTheWay {
 			pathAvailable = false;
 			path.clear();
 
-			if (PointObstacle(start) || PointObstacle(destination)) {
+			if ((GetMap(start.x, start.y, this->map) == MAP_OBSTACLE)
+				|| (GetMap(destination.x, destination.y, this->map) == MAP_OBSTACLE)) {
 				return;
 			}
 
+			open_set.clear();
+			close_set.clear();
+			point_set.clear();
+
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
-			
+
 			while (!open_set.empty()) {
 				//Descending
-				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });				
-				
+				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });
+
 				if (open_set.back().coord == destination) {
 					Point* parent = &open_set.back();
 
@@ -498,7 +524,7 @@ namespace FindTheWay {
 						Coord neighCoord = Coord{ (size_t)(base.coord.x + it.x)
 												,(size_t)(base.coord.y + it.y) };
 
-						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, MapType::MAP);
+						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + STEP_GENERALCOST };
 
 						if (curCost == MAP_OBSTACLE) {
@@ -519,15 +545,15 @@ namespace FindTheWay {
 							}
 							else {
 								cur.parent = p;
-							}							
+							}
 						};
 
 						Point* next = find(open_set, neighPoint);
 
-						if (next == nullptr) {							
+						if (next == nullptr) {
 							neighPoint.priority = heuristic(neighPoint) + neighPoint.cost;
-							updateParentPointer(neighPoint);							
-							
+							updateParentPointer(neighPoint);
+
 							open_set.emplace_back(neighPoint);
 						}
 						else if (next->cost > neighPoint.cost) {
