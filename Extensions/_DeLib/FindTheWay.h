@@ -17,8 +17,24 @@ namespace FindTheWay {
 		size_t y;
 	};
 
-	bool operator==(const Coord& A, const Coord& B) {
+	inline bool operator==(const Coord& A, const Coord& B) {
 		return (A.x == B.x) && (A.y == B.y);
+	}
+
+	inline Coord operator+(const Coord& A, const Coord& B) {
+		return Coord{ A.x + B.x ,A.y + B.y };
+	}
+
+	inline Coord operator+(const Coord& A, const size_t& B) {
+		return Coord{ A.x + B ,A.y + B };
+	}
+
+	inline Coord operator*(const Coord& A, const size_t& B) {
+		return Coord{ A.x * B ,A.y * B };
+	}
+
+	inline Coord operator/(const Coord& A, const size_t& B) {
+		return Coord{ A.x / B ,A.y / B };
 	}
 
 	enum class CoordType {
@@ -73,7 +89,10 @@ namespace FindTheWay {
 		size_t height = 0;
 
 		size_t mapSize = 0;
+
 		size_t girdSize = 1;
+		size_t girdOffestX = 0;
+		size_t girdOffestY = 0;
 
 		bool updateMap = false;
 
@@ -113,7 +132,7 @@ namespace FindTheWay {
 		}
 
 		inline BYTE* GetMapPosPointer(size_t x, size_t y, BYTE* pMap) {
-			if (!PosValid(x,y)) {
+			if (pMap == nullptr || !PosValid(x, y)) {
 				return nullptr;
 			}
 
@@ -121,17 +140,7 @@ namespace FindTheWay {
 		}
 
 		inline BYTE* GetMapPosPointer(size_t x, size_t y, MapType type) {
-			if (!PosValid(x, y)) {
-				return nullptr;
-			}
-
-			BYTE* pMap = GetMapPointer(type);
-
-			if (pMap == nullptr) {
-				return nullptr;
-			}
-
-			return pMap + y * width + x;
+			return GetMapPosPointer(x, y, GetMapPointer(type));			
 		}
 
 	public:
@@ -182,11 +191,11 @@ namespace FindTheWay {
 			pathAvailable = false;
 		}
 
-		inline size_t GetGirdCoord(size_t realCoord) {
+		inline Coord GetGirdCoord(Coord realCoord) {
 			return realCoord / girdSize;
 		}
 
-		inline size_t GetRealCoord(size_t girdCoord) {
+		inline Coord GetRealCoord(Coord girdCoord) {
 			return girdCoord * girdSize + (size_t)(girdSize / 2);
 		}
 
@@ -194,8 +203,10 @@ namespace FindTheWay {
 			return girdSize;
 		}
 
-		inline void SetGirdSize(size_t girdSize) {
+		inline void SetGirdSize(size_t girdSize=1,size_t girdOffestX=0, size_t girdOffestY = 0) {
 			this->girdSize = girdSize;
+			this->girdOffestX = girdOffestX;
+			this->girdOffestY = girdOffestY;
 		}
 
 		inline void ClearMap(MapType type) {
