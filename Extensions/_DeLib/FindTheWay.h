@@ -10,16 +10,16 @@
 #include <map>
 
 namespace FindTheWay {
-	struct Step {
+	struct Coord {
 		size_t x;
 		size_t y;
 	};
 
-	bool operator==(Step& A, Step& B) {
+	bool operator==(const Coord& A, const Coord& B) {
 		return (A.x == B.x) && (A.y == B.y);
 	}
 
-	enum class StepPos {
+	enum class CoordType {
 		X,
 		Y,
 	};
@@ -47,14 +47,15 @@ namespace FindTheWay {
 		return out;
 	}
 
-	using Path = vector<Step>;
+	using Path = vector<Coord>;
 	using Paths = unordered_map<wstring, Path>;
-	using Heuristic = std::function<size_t(Step, Step)>;
+	using Heuristic = std::function<size_t(Coord, Coord)>;
 
 	template<typename T>
 	constexpr auto Range(T X) { return (max(0, min(255, X))); }
 
 	constexpr auto PATH_RESERVE = 50;
+	constexpr auto SAVEDPATH_RESERVE = 10;
 	
 	constexpr auto MAP_PATH = 0;
 	constexpr auto MAP_OBSTACLE = 255;
@@ -62,10 +63,15 @@ namespace FindTheWay {
 	constexpr auto STEP_UNREACHABLE = 65536;
 	constexpr auto STEP_GENERALCOST = 10;
 
+	constexpr auto COORD_INVALID = 65536;
+
 	class FindTheWayClass {
 	private:
 		size_t width = 0;
 		size_t height = 0;
+
+		size_t mapSize = 0;
+		size_t girdSize = 1;
 
 		bool updateMap = false;
 
@@ -129,19 +135,20 @@ namespace FindTheWay {
 	public:
 		FindTheWayClass(size_t width, size_t height) {
 			path.reserve(PATH_RESERVE);
+			savedPath.reserve(SAVEDPATH_RESERVE);
 
 			this->width = width;
 			this->height = height;
 
-			size_t size = width * height;
+			this->mapSize = width * height;
 
-			map = new BYTE[size];
-			terrain = new BYTE[size];
-			unit = new BYTE[size];
+			map = new BYTE[mapSize];
+			terrain = new BYTE[mapSize];
+			unit = new BYTE[mapSize];
 
-			memset(map, 0, size);
-			memset(terrain, 0, size);
-			memset(unit, 0, size);
+			memset(map, 0, mapSize);
+			memset(terrain, 0, mapSize);
+			memset(unit, 0, mapSize);
 		}
 		~FindTheWayClass() {
 			Reset();
@@ -157,22 +164,39 @@ namespace FindTheWay {
 
 		inline void Reset() {
 			path.clear();
+			savedPath.clear();
 
-			size_t size = width * height;
-
-			memset(map, 0, size);
-			memset(terrain, 0, size);
-			memset(unit, 0, size);
+			memset(map, 0, mapSize);
+			memset(terrain, 0, mapSize);
+			memset(unit, 0, mapSize);
 
 			updateMap = true;
 			pathAvailable = false;
 		}
 
+		inline size_t GetGirdCoord(size_t realCoord) {
+			return realCoord / girdSize;
+		}
+
+		inline size_t GetRealCoord(size_t girdCoord) {
+			return girdCoord * girdSize + (size_t)(girdSize / 2);
+		}
+
+		inline size_t GetGirdSize() {
+			return girdSize;
+		}
+
+		inline void SetGirdSize(size_t girdSize) {
+			this->girdSize = girdSize;
+		}
+
 		inline void ClearMap(MapType type) {
 			BYTE* pMap = GetMapPointer(type);
-			size_t size = width * height;
+			mapSize = width * height;
 
-			memset(pMap, 0, size);
+			memset(pMap, 0, mapSize);
+
+			updateMap = true;
 		}
 
 		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type) {
@@ -198,29 +222,42 @@ namespace FindTheWay {
 			}
 		}
 
-		inline bool PosObstacle(size_t x, size_t y, MapType type) {
-			return GetMap(x, y, type) == MAP_OBSTACLE;
-		}
-
-		inline void UpdateMap() {
-			size_t size = width * height;
-			for (size_t i = 0; i < size; i++) {
+		inline void UpdateMap() {			
+			for (size_t i = 0; i < mapSize; i++) {
 				*(map + i) = Range(*(terrain + i) + *(unit + i));
 			}
 
 			updateMap = false;
 		}
 
-		inline bool PathAvailable() {
-			return pathAvailable;
+		inline bool CoordObstacle(size_t x, size_t y, MapType type) {
+			return GetMap(x, y, type) == MAP_OBSTACLE;
 		}
 
-		inline size_t GetDistance() {
-			return pathAvailable ? path.size() : STEP_UNREACHABLE;
+		inline Path* GetPathPointer(wstring* name = nullptr) {
+			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath[*name] : &path); 
 		}
 
-		inline size_t GetStepAt(size_t pos, StepPos type) {
-			return type == StepPos::X ? path.at(pos).x : path.at(pos).y;
+		inline bool GetPathValidity(wstring* name = nullptr) {
+			return ((name == nullptr) && this->pathAvailable) || ((name != nullptr) && (savedPath.count(*name) != 0));
+		}
+
+		inline size_t GetDistance(wstring* name = nullptr) {
+			Path* pPath = GetPathPointer(name);
+			bool curPathAvaliable = GetPathValidity(name);
+
+			return curPathAvaliable ? pPath->size() : STEP_UNREACHABLE;
+		}
+
+		inline size_t GetCoordAtPath(size_t pos, CoordType type, wstring* name = nullptr) {
+			Path* pPath = GetPathPointer(name);
+			bool curPathAvaliable = GetPathValidity(name);
+
+			if (!curPathAvaliable) {
+				return COORD_INVALID;
+			}
+
+			return type == CoordType::X ? pPath->at(pos).x : pPath->at(pos).y;
 		}
 
 		inline size_t GetWidth() {
@@ -232,10 +269,22 @@ namespace FindTheWay {
 		}
 
 		inline void OutPutMap(MapType type) {
+			auto find = [](Path& path, Coord& coord)->bool {
+				return std::find(path.begin(), path.end(), coord) != path.end();
+			};
+
 			cout << "MapType : " << type << endl;
 			for (size_t y = 0; y < height; y++) {
-				for (size_t x = 0; x < width; x++) {					
-					cout << (((*GetMapPosPointer(x, y, type)) == MAP_PATH) ? '#' : '*' )<< ' ';
+				for (size_t x = 0; x < width; x++) {
+					Coord cur = { x,y };
+
+					if (find(path, cur)) {
+						cout << '-';
+					}
+					else {
+						cout << (((*GetMapPosPointer(x, y, type)) == MAP_PATH) ? '#' : '*');
+					}
+					cout << ' ';
 				}
 				cout << endl;
 			}
@@ -249,23 +298,24 @@ namespace FindTheWay {
 			savedPath[name] = path;
 		}
 
-		static inline size_t GetEuclideanDistancePow(Step start, Step destination) {
+		static inline size_t GetEuclideanDistancePow(Coord start, Coord destination) {
 			return (size_t)(pow(start.x - destination.x, 2) + pow(start.y - destination.y, 2));
 		}
 
-		static inline size_t GetEuclideanDistance(Step start, Step destination) {
+		static inline size_t GetEuclideanDistance(Coord start, Coord destination) {
 			return (size_t)sqrt(GetEuclideanDistancePow(start, destination));
 		}
 
-		static inline size_t GetManhattanDistance(Step start, Step destination) {
+		static inline size_t GetManhattanDistance(Coord start, Coord destination) {
 			return abs((int)(start.x - destination.x)) + abs((int)(start.y - destination.y));
 		}
 
-		inline bool PointObstacle(Step p) {
-			return PosObstacle(p.x, p.y, MapType::MAP);
+		inline bool PointObstacle(Coord p) {
+			return CoordObstacle(p.x, p.y, MapType::MAP);
 		}
 
-		inline void Find(Step start, Step destination, Heuristic h = FindTheWayClass::GetManhattanDistance) {
+		inline void Find(Coord start, Coord destination, Heuristic h = FindTheWayClass::GetManhattanDistance) {
+			//A*寻路
 			//*初始化open_set和close_set；
 			//* 将起点加入open_set中，并设置优先级为0（优先级最高）；
 			//* 如果open_set不为空，则从open_set中选取优先级最高的节点n：
@@ -286,7 +336,7 @@ namespace FindTheWay {
 			//			* 计算节点m的优先级
 
 			struct Point {
-				Step step;
+				Coord coord;
 
 				Point* parent = nullptr;
 				
@@ -320,14 +370,15 @@ namespace FindTheWay {
 			while (!open_set.empty()) {
 				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });				
 				
-				if (open_set.back().step == destination) {
+				if (open_set.back().coord == destination) {
 					Point* parent = &open_set.back();
 
 					while (parent != nullptr) {
-						path.emplace_back((*parent).step);
+						path.emplace_back((*parent).coord);
 						parent = (*parent).parent;
 					}
 
+					std::reverse(path.begin(), path.end());
 					pathAvailable = true;
 
 					return;
@@ -341,7 +392,7 @@ namespace FindTheWay {
 					auto find = [](Set& v, Point& p)->Point* {
 						//return std::find(v.begin(), v.end(), p) != v.end();
 						for (auto& it : v) {
-							if (it.step == p.step) {
+							if (it.coord == p.coord) {
 								return &it;
 							}
 						}
@@ -358,12 +409,12 @@ namespace FindTheWay {
 
 					for (auto& it : neighbour) {
 						Point neighPoint = Point{ 
-							Step{(size_t)(base.step.x + it.x)
-							,(size_t)(base.step.y + it.y)}
+							Coord{(size_t)(base.coord.x + it.x)
+							,(size_t)(base.coord.y + it.y)}
 							, nullptr, 0, base.curStep + 1
 							};
 
-						if (PointObstacle(neighPoint.step)) {
+						if (PointObstacle(neighPoint.coord)) {
 							continue;
 						}
 
@@ -371,7 +422,7 @@ namespace FindTheWay {
 							continue;
 						}
 
-						auto heuristic = [&](Point& p)->size_t {return h(neighPoint.step, destination); };
+						auto heuristic = [&](Point& p)->size_t {return h(neighPoint.coord, destination); };
 						auto updateParentPointer = [&](Point& cur)->void {
 							Point* p = find(point_set, cur);
 
