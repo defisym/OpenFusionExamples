@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-//進んだ道の先　光が見つかるから
-//YOU'LL FIND THE WAY
+// 進んだ道の先　光が見つかるから
+// YOU'LL FIND THE WAY
 
 #include <functional>
 #include <string>
@@ -10,7 +10,7 @@
 #include <map>
 
 #include <wincrypt.h>
-#pragma comment(lib,"crypt32.lib")
+#pragma comment(lib, "crypt32.lib")
 
 #include "StrNum.h"
 
@@ -72,7 +72,7 @@ namespace FindTheWay {
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
 
-	template<typename T>
+	template <typename T>
 	constexpr auto Range(T X) { return (max(0, min(255, X))); }
 
 	constexpr auto PATH_RESERVE = 50;
@@ -274,13 +274,14 @@ namespace FindTheWay {
 				return result;
 			};
 
-			//size
+			// size
 			size_t width = _stoi(GetSubStr(start, end));
 			size_t height = _stoi(GetSubStr(start, end));
 
-			//map
+			// map
 			size_t mapSize = width * height;
 
+			// invalid
 			if (mapSize == 0) {
 				return;
 			}
@@ -485,7 +486,7 @@ namespace FindTheWay {
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
 			while (!open_set.empty()) {
-				//Descending
+				// Descending
 				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });
 
 				if (open_set.back().coord == destination) {
