@@ -72,6 +72,36 @@ namespace FindTheWay {
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
 
+	using Exception = unsigned char;
+
+	// try {
+	// 	// Invalid Size
+	// 	FindTheWayClass* pFTW = new FindTheWayClass(0, 0);
+	// }
+	// catch (FindTheWay::Exception& e) {
+	// 	// Do something...
+	// 	// cout << e << endl;
+	// }
+
+	// Map size invalid
+	constexpr unsigned char INVALID_SIZE = 0;
+	// Map data invalid, e.g. non-base64 string
+	constexpr unsigned char INVALID_DATA = 1;
+
+	ostream& operator<<(ostream& out, Exception type) {
+		switch (type)
+		{
+		case INVALID_SIZE:
+			out << "INVALID_SIZE";
+			break;
+		case INVALID_DATA:
+			out << "INVALID_DATA";
+			break;
+		}
+
+		return out;
+	}
+
 	template <typename T>
 	constexpr auto Range(T X) { return (max(0, min(255, X))); }
 
@@ -163,14 +193,24 @@ namespace FindTheWay {
 			return GetMapPosPointer(x, y, GetMapPointer(type));
 		}
 
-	public:
-		FindTheWayClass(size_t width, size_t height) {
-			Reserve();
+		inline void Reserve() {
+			path.reserve(PATH_RESERVE);
+			savedPath.reserve(SAVEDPATH_RESERVE);
 
+			open_set.reserve(2 * PATH_RESERVE);
+			close_set.reserve(2 * PATH_RESERVE);
+			point_set.reserve(2 * PATH_RESERVE);
+		}
+
+		inline void Allocate(size_t width, size_t height) {
 			this->width = width;
 			this->height = height;
 
 			this->mapSize = width * height;
+
+			if (mapSize == 0) {
+				throw INVALID_SIZE;
+			}
 
 			map = new BYTE[mapSize];
 			terrain = new BYTE[mapSize];
@@ -180,15 +220,8 @@ namespace FindTheWay {
 			memset(terrain, 0, mapSize);
 			memset(unit, 0, mapSize);
 		}
-		FindTheWayClass(const wstring& base64) {
-			Reserve();
 
-			SetMap(base64);
-		}
-
-		~FindTheWayClass() {
-			Reset();
-
+		inline void Free() {
 			delete[] map;
 			delete[] terrain;
 			delete[] unit;
@@ -198,13 +231,18 @@ namespace FindTheWay {
 			unit = nullptr;
 		}
 
-		inline void Reserve() {
-			path.reserve(PATH_RESERVE);
-			savedPath.reserve(SAVEDPATH_RESERVE);
+	public:
+		FindTheWayClass(size_t width, size_t height) {
+			Reserve();
+			Allocate(width,height);
+		}
+		FindTheWayClass(const wstring& base64) {
+			Reserve();
+			SetMap(base64);
+		}
 
-			open_set.reserve(2 * PATH_RESERVE);
-			close_set.reserve(2 * PATH_RESERVE);
-			point_set.reserve(2 * PATH_RESERVE);
+		~FindTheWayClass() {
+			Free();
 		}
 
 		inline void Reset() {
@@ -219,6 +257,13 @@ namespace FindTheWay {
 			pathAvailable = false;
 		}
 
+		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
+			this->girdSize = girdSize;
+
+			this->girdOffestX = girdOffestX;
+			this->girdOffestY = girdOffestY;
+		}
+
 		inline Coord GetGirdCoord(Coord realCoord) {
 			return realCoord / girdSize;
 		}
@@ -229,13 +274,6 @@ namespace FindTheWay {
 
 		inline size_t GetGirdSize() {
 			return girdSize;
-		}
-
-		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
-			this->girdSize = girdSize;
-
-			this->girdOffestX = girdOffestX;
-			this->girdOffestY = girdOffestY;
 		}
 
 		inline void ClearMap(MapType type) {
@@ -266,46 +304,30 @@ namespace FindTheWay {
 			size_t end = 0;
 
 			auto GetSubStr = [base64](size_t& start, size_t& end)->wstring {
-				end = base64.find(DELIMETER, start);
-				wstring result = base64.substr(start, end - start);
+				if (end != wstring::npos) {
+					end = base64.find(DELIMETER, start);
+					wstring result = base64.substr(start, end - start);
 
-				start = end + 1;
+					start = end + 1;
 
-				return result;
+					return result;
+				}
+				else {
+					return wstring();
+				}
 			};
 
-			// size
-			size_t width = _stoi(GetSubStr(start, end));
-			size_t height = _stoi(GetSubStr(start, end));
+			Free();
+			Allocate(_stoi(GetSubStr(start, end)), _stoi(GetSubStr(start, end)));
 
-			// map
-			size_t mapSize = width * height;
-
-			// invalid
-			if (mapSize == 0) {
-				return;
-			}
-
-			this->width = width;
-			this->height = height;
-			this->mapSize = mapSize;
-
-			delete[] map;
-			delete[] terrain;
-			delete[] unit;
-
-			map = new BYTE[mapSize];
-			terrain = new BYTE[mapSize];
-			unit = new BYTE[mapSize];
-
-			wstring mapTemp;
 			DWORD dwNeed = mapSize;
 
-			mapTemp = GetSubStr(start, end);
-			CryptStringToBinary(mapTemp.c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL);			
-
-			mapTemp = GetSubStr(start, end);
-			CryptStringToBinary(mapTemp.c_str(), 0, CRYPT_STRING_BASE64, unit, &dwNeed, NULL, NULL);
+			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL)) {
+				throw INVALID_DATA;
+			}
+			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, unit, &dwNeed, NULL, NULL)) {
+				throw INVALID_DATA;
+			}
 
 			UpdateMap();
 		}
