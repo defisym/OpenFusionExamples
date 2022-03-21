@@ -48,7 +48,7 @@ namespace FindTheWay {
 	enum class MapType {
 		MAP,
 		TERRAIN,
-		UNIT,
+		DYNAMIC,
 	};
 
 	ostream& operator<<(ostream& out, MapType type) {
@@ -60,8 +60,8 @@ namespace FindTheWay {
 		case FindTheWay::MapType::TERRAIN:
 			out << "Terrain";
 			break;
-		case FindTheWay::MapType::UNIT:
-			out << "Unit";
+		case FindTheWay::MapType::DYNAMIC:
+			out << "Dynamic";
 			break;
 		}
 
@@ -112,7 +112,9 @@ namespace FindTheWay {
 	constexpr auto MAP_OBSTACLE = 255;
 
 	constexpr auto STEP_UNREACHABLE = 65536;
-	constexpr auto STEP_GENERALCOST = 10;
+
+	constexpr auto STEP_GENERALCOST_NORMAL = 10;
+	constexpr auto STEP_GENERALCOST_DIAGONAL = 14;	// 1.414
 
 	constexpr auto COORD_INVALID = 65536;
 
@@ -133,7 +135,28 @@ namespace FindTheWay {
 
 		BYTE* map = nullptr;
 		BYTE* terrain = nullptr;
-		BYTE* unit = nullptr;
+		BYTE* dynamic = nullptr;
+
+		struct offset {
+			char x;
+			char y;
+			char generalCost;
+		};
+
+		const vector<offset> normalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
+										,{1,0,STEP_GENERALCOST_NORMAL}
+										,{0,-1,STEP_GENERALCOST_NORMAL}
+										,{0,1,STEP_GENERALCOST_NORMAL} };
+
+		const vector<offset> diagonalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
+												,{1,0,STEP_GENERALCOST_NORMAL}
+												,{0,-1,STEP_GENERALCOST_NORMAL}
+												,{0,1,STEP_GENERALCOST_NORMAL}
+												// diagonal part
+												,{-1,-1,STEP_GENERALCOST_DIAGONAL}
+												,{1,-1,STEP_GENERALCOST_DIAGONAL}
+												,{-1,1,STEP_GENERALCOST_DIAGONAL}
+												,{1,1,STEP_GENERALCOST_DIAGONAL} };
 
 		bool pathAvailable = false;
 		Path path;
@@ -172,8 +195,8 @@ namespace FindTheWay {
 			case FindTheWay::MapType::TERRAIN:
 				return terrain;
 				break;
-			case FindTheWay::MapType::UNIT:
-				return unit;
+			case FindTheWay::MapType::DYNAMIC:
+				return dynamic;
 				break;
 			default:
 				return nullptr;
@@ -214,21 +237,21 @@ namespace FindTheWay {
 
 			map = new BYTE[mapSize];
 			terrain = new BYTE[mapSize];
-			unit = new BYTE[mapSize];
+			dynamic = new BYTE[mapSize];
 
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
-			memset(unit, 0, mapSize);
+			memset(dynamic, 0, mapSize);
 		}
 
 		inline void Free() {
 			delete[] map;
 			delete[] terrain;
-			delete[] unit;
+			delete[] dynamic;
 
 			map = nullptr;
 			terrain = nullptr;
-			unit = nullptr;
+			dynamic = nullptr;
 		}
 
 	public:
@@ -251,7 +274,7 @@ namespace FindTheWay {
 
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
-			memset(unit, 0, mapSize);
+			memset(dynamic, 0, mapSize);
 
 			updateMap = true;
 			pathAvailable = false;
@@ -299,7 +322,7 @@ namespace FindTheWay {
 		}
 
 		inline void SetMap(const wstring& base64) {
-			// Format: width:height:terrian:unit
+			// Format: width:height:terrian:dynamic
 			size_t start = 0;
 			size_t end = 0;
 
@@ -325,7 +348,7 @@ namespace FindTheWay {
 			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL)) {
 				throw INVALID_DATA;
 			}
-			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, unit, &dwNeed, NULL, NULL)) {
+			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, dynamic, &dwNeed, NULL, NULL)) {
 				throw INVALID_DATA;
 			}
 
@@ -362,7 +385,7 @@ namespace FindTheWay {
 			base64 += DELIMETER;
 			base64 += base64Str;
 
-			CryptBinaryToString(unit, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str, &dwSize);
+			CryptBinaryToString(dynamic, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str, &dwSize);
 			base64 += DELIMETER;
 			base64 += base64Str;
 
@@ -373,7 +396,7 @@ namespace FindTheWay {
 
 		inline void UpdateMap() {
 			for (size_t i = 0; i < mapSize; i++) {
-				*(map + i) = Range(*(terrain + i) + *(unit + i));
+				*(map + i) = Range(*(terrain + i) + *(dynamic + i));
 			}
 
 			updateMap = false;
@@ -467,7 +490,7 @@ namespace FindTheWay {
 			return GetMap(p.x, p.y, MapType::MAP);
 		}
 
-		inline void Find(Coord start, Coord destination, Heuristic h = FindTheWayClass::GetManhattanDistance) {
+		inline void Find(Coord start, Coord destination, bool diagonal = false, Heuristic h = FindTheWayClass::GetManhattanDistance) {
 			// A*寻路
 			// https://www.redblobgames.com/pathfinding/a-star/introduction.html
 			// *初始化open_set和close_set；
@@ -507,6 +530,8 @@ namespace FindTheWay {
 
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
+			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
+
 			while (!open_set.empty()) {
 				// Descending
 				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });
@@ -534,21 +559,14 @@ namespace FindTheWay {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
 
 						return it != v.end() ? &(*it) : nullptr;
-					};
+					};					
 
-					struct offset {
-						char x;
-						char y;
-					};
-
-					const vector<offset> neighbour = { {-1,0},{1,0},{0,-1},{0,1} };
-
-					for (auto& it : neighbour) {
+					for (auto& it : *pNeighbour) {
 						Coord neighCoord = Coord{ (size_t)(base.coord.x + it.x)
 												,(size_t)(base.coord.y + it.y) };
 
 						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
-						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + STEP_GENERALCOST };
+						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + it.generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
 							continue;
