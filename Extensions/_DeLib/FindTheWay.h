@@ -143,12 +143,14 @@ namespace FindTheWay {
 			char generalCost;
 		};
 
-		const vector<offset> normalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
+		using Neighbour = vector<offset>;
+
+		const Neighbour normalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
 										,{1,0,STEP_GENERALCOST_NORMAL}
 										,{0,-1,STEP_GENERALCOST_NORMAL}
 										,{0,1,STEP_GENERALCOST_NORMAL} };
 
-		const vector<offset> diagonalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
+		const Neighbour diagonalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
 												,{1,0,STEP_GENERALCOST_NORMAL}
 												,{0,-1,STEP_GENERALCOST_NORMAL}
 												,{0,1,STEP_GENERALCOST_NORMAL}
@@ -299,14 +301,17 @@ namespace FindTheWay {
 			return girdSize;
 		}
 
-		inline void ClearMap(MapType type) {
-			BYTE* pMap = GetMapPointer(type);
+		inline void ClearMap(BYTE* pMap, bool needUpdate = true) {
 			memset(pMap, 0, mapSize);
 
-			updateMap = true;
+			updateMap = needUpdate;
 		}
 
-		inline void SetMap(size_t x, size_t y, BYTE cost, BYTE* pMap) {
+		inline void ClearMap(MapType type, bool needUpdate = true) {
+			ClearMap(GetMapPointer(type), needUpdate);
+		}
+
+		inline void SetMap(size_t x, size_t y, BYTE cost, BYTE* pMap, bool needUpdate = true) {
 			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
 
 			if (pMapPos == nullptr) {
@@ -315,10 +320,10 @@ namespace FindTheWay {
 
 			*pMapPos = Range(cost);
 
-			updateMap = true;
+			updateMap = needUpdate;
 		}
-		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type) {
-			SetMap(x, y, cost, GetMapPointer(type));
+		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type, bool needUpdate = true) {
+			SetMap(x, y, cost, GetMapPointer(type), needUpdate);
 		}
 
 		inline void SetMap(const wstring& base64) {
@@ -462,7 +467,7 @@ namespace FindTheWay {
 			}
 		}
 
-		inline void SavePath(wstring name) {
+		inline void SaveLastPath(wstring name) {
 			if (!pathAvailable) {
 				return;
 			}
@@ -490,7 +495,24 @@ namespace FindTheWay {
 			return GetMap(p.x, p.y, MapType::MAP);
 		}
 
-		inline void Find(Coord start, Coord destination, bool diagonal = false, Heuristic h = FindTheWayClass::GetManhattanDistance) {
+		inline void ForceFind(Coord start, Coord destination, bool diagonal = false
+			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
+			// Still try to find a way even start & destination is obstacle
+			// ......By setting them to path
+			BYTE startCost = GetMap(start.x, start.y, this->map);
+			BYTE destinationCost = GetMap(destination.x, destination.y, this->map);
+
+			SetMap(start.x, start.y, MAP_PATH, this->map, false);
+			SetMap(destination.x, destination.y, MAP_PATH, this->map, false);
+
+			Find(start, destination, diagonal, h);
+
+			SetMap(start.x, start.y, startCost, this->map, false);
+			SetMap(destination.x, destination.y, destinationCost, this->map, false);
+		}
+
+		inline void Find(Coord start, Coord destination, bool diagonal = false
+						, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// A*寻路
 			// https://www.redblobgames.com/pathfinding/a-star/introduction.html
 			// *初始化open_set和close_set；
