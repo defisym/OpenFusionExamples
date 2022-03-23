@@ -1,0 +1,16 @@
+.gradle
+gradle
+
+.idea
+
+androidSdk.pdf
+build.gradle
+gradle.properties
+gradlew
+gradlew.bat
+loacl.properties
+RuntimeAndroid.iml
+settings.gradle
+local.properties
+
+_Release

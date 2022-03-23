@@ -9,3 +9,6 @@
 *.chw
 Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/Collision.png
 Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/ZoomOutCollision.png
+
+Extensions/*_B*.zip
+Extensions/*_Release.zip

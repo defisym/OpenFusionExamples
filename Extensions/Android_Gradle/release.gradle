@@ -1,0 +1,105 @@
+
+//AddPrePlugins
+apply plugin: 'com.android.application'
+
+//AddPostPlugins
+android {
+    compileSdkVersion BUILD_API.toInteger()
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+    defaultConfig {
+        applicationId BUILD_APPID
+        minSdkVersion BUILD_MIN.toInteger()
+        targetSdkVersion BUILD_TARGET.toInteger()
+        versionCode BUILD_VERS_CODE.toInteger()
+        versionName BUILD_VERS_NAME
+        if (BUILD_API.toInteger() == 29
+                && BUILD_TARGET.toInteger() == 29
+                    && BUILD_WITH_LEGACY.toBoolean()==true)
+        {
+            manifestPlaceholders = [MaxWrite: "29", Legacy: "true"]
+        }
+        else
+        {
+            manifestPlaceholders = [MaxWrite: "28", Legacy: "false"]
+        }
+        //DefaultConfigs
+    }
+    if(project.hasProperty("RELEASE_STORE_FILE")) {
+        signingConfigs {
+            release {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
+            }
+        }
+    }
+    //SigningOptions
+    buildTypes {
+        if(project.hasProperty("RELEASE_STORE_FILE")) {
+            release {
+                signingConfig signingConfigs.release
+                minifyEnabled false
+                if(BUILD_OBFUSCATE.toBoolean()==true)
+                    proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            }
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+    aaptOptions {
+        noCompress "ccn", "mp3", "wav", "ogg", "aac", "mp4", "m4v", "mov", "avi"
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+    repositories {
+    //add Repository
+        flatDir {
+            dirs 'libs'
+        }
+    }	
+    dexOptions {
+        preDexLibraries false
+        javaMaxHeapSize "4g"
+    }
+}
+
+dependencies {
+    //Projectsdk
+    implementation "androidx.annotation:annotation:$version_X_annotation"
+    implementation "androidx.exifinterface:exifinterface:$version_X_exif"
+    implementation "androidx.appcompat:appcompat:$version_X_appcompat"
+    implementation "androidx.core:core:$version_X_core"
+    implementation "androidx.documentfile:documentfile:$version_X_documentfile"
+    implementation "com.google.android.play:core:$version_X_play_core"
+    implementation 'org.apache.commons:commons-io:1.3.2'
+    //Googlelibs
+    implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
+
+    //TapTap
+    // implementation name:'TapAchievement_3.6.0', ext:'aar'
+    // implementation name:'TapBootstrap_3.6.0', ext:'aar'
+    // implementation name:'TapCommon_3.6.0', ext:'aar'
+    // implementation name:'TapDB_3.6.0', ext:'aar'
+    // implementation name:'TapFriend_3.6.0', ext:'aar'
+    // implementation name:'TapLicense_3.6.0', ext:'aar'
+    // implementation name:'TapLogin_3.6.0', ext:'aar'
+    // implementation name:'TapMoment_3.6.0', ext:'aar'
+    // implementation name:'TapSupport_3.6.0', ext:'aar'
+
+    // implementation name:'AntiAddiction_1.0.2', ext:'aar'
+    // implementation name:'AntiAddictionUI_1.0.2', ext:'aar'    
+    
+    implementation 'cn.leancloud:realtime-android:8.2.4'
+    implementation 'cn.leancloud:storage-android:8.2.4'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+}
