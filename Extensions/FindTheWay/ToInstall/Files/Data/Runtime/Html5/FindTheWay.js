@@ -1,49 +1,30 @@
 //----------------------------------------------------------------------------------
 //
-// CRunTemplate.js
-// Clickteam Fusion 2.5 HTML5 runtime extension template
+// CRunFindTheWay.js
 //
 //----------------------------------------------------------------------------------
-/* Copyright (c) 1996-2014 Clickteam
-*
-* This source code is part of the HTML5 exporter for Clickteam Fusion 2.5
-* 
-* Permission is hereby granted to any person obtaining a legal copy 
-* of Clickteam Fusion 2.5 to use or modify this source code for 
-* debugging, optimizing, or customizing applications created with 
-* Clickteam Fusion 2.5. 
-* Any other use of this source code is prohibited.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-* IN THE SOFTWARE.
-*/
 
 // Definition of the conditions, actions and expressions codes.
 // ---------------------------------------------------------------
 // This list must be identical to the list defined in the C version
 // of your extension.
-CRunTemplate.CND_DUMMY = 0;
-CRunTemplate.CND_DUMMY2 = 1;
+CRunFindTheWay.CND_DUMMY = 0;
+CRunFindTheWay.CND_DUMMY2 = 1;
 // Important. CND_LAST must contain the number of conditions. 
 // Do not forget to update it if you add or remove a condition from the list.
-CRunTemplate.CND_LAST = 2;
+CRunFindTheWay.CND_LAST = 2;
 
-CRunTemplate.ACT_DUMMY = 0;
-CRunTemplate.ACT_DUMMY2 = 1;
-CRunTemplate.EXP_DUMMY = 0;
-CRunTemplate.EXP_DUMMY2 = 1;
+CRunFindTheWay.ACT_DUMMY = 0;
+CRunFindTheWay.ACT_DUMMY2 = 1;
+CRunFindTheWay.EXP_DUMMY = 0;
+CRunFindTheWay.EXP_DUMMY2 = 1;
 
 // Constructor of the object.
 // ----------------------------------------------------------------
 // Called during the creation process of the object, but before any 
 // initialization. You may want (although you can do it in CreateRunObject), 
 // to instantiate variables.
-function CRunTemplate()
+function CRunFindTheWay()
 {
     // this.myVariable = 0;
     // this.anObject = null;
@@ -56,14 +37,14 @@ function CRunTemplate()
 // the parent class to the new class when it is created.
 // As all the necessary functions are defined in the parent class,
 // you only need to keep the ones that you actually need in your code.
-CRunTemplate.prototype = CServices.extend(new CRunExtension(),
+CRunFindTheWay.prototype = CServices.extend(new CRunExtension(),
 {
     // Returns the number of conditions
     // --------------------------------------------------------------------
     // Warning, if this number is not correct, the application _will_ crash
     getNumberOfConditions:function()
     {
-        return CRunTemplate.CND_LAST;
+        return CRunFindTheWay.CND_LAST;
     },                                              // Don't forget the comma between each function
 	
     // Creation of the object
@@ -190,7 +171,7 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
     // -----------------------------------------------------------------
     // Called when a condition of this object is evaluated
     //    - num : the number of the condition, as defined on top of this source
-    //    - cnd : a CCndExtension object, allowing you to retreive the parameters
+    //    - cnd : a CCndExtension object, allowing you to retrieve the parameters
     //            of the condition
     // Return value :
     //    true or false
@@ -200,14 +181,14 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
         switch (num)
         {
             // Dummy condition : true if the parameter is equal to 0
-            case CRunTemplate.CND_DUMMY:
+            case CRunFindTheWay.CND_DUMMY:
                 var parameter = cnd.getParamExpression(this.rh, 0);
                 return (parameter == 0);
 
             // Dummy condition. Example of a condition called from within the object
             // by an action. Returns true if the parameter of the action is 
             // equal to the parameter of the condition.
-            case CRunTemplate.CND_DUMMY2:
+            case CRunFindTheWay.CND_DUMMY2:
                 var string = cnd.getParamExpString(this.rh, 0);
                 var fromAction = this.rh.rhEvtProg.rhCurParam0;
                 if (string == fromAction)
@@ -221,23 +202,23 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
     // --------------------------------------------------------------
     // Called when an action of this object is executed
     //   - num : number of the action, as defined in the list on top of this source
-    //   - act : a CActExtension object, allowing you to retreive the parameters
+    //   - act : a CActExtension object, allowing you to retrieve the parameters
     //           of the action
     action:function(num, act)
     {   
         switch (num)
         {
             // Dummy action : changes the position of the object
-            case CRunTemplate.ACT_DUMMY:
+            case CRunFindTheWay.ACT_DUMMY:
                 var x = act.getParamExpression(this.rh, 0);
                 var y = act.getParamExpression(this.rh, 1);
                 this.setPosition(x, y);
                 break;
 
             // Dummy action : calls the CND_DUMMY2 condition of this object
-            case CRunTemplate.ACT_DUMMY2;
+            case CRunFindTheWay.ACT_DUMMY2:
                 var string = act.getParamExpString(this.rh, 0);
-                this.generateEvent(CRunTemplate.CND_DUMMY2, string);
+                this.generateEvent(CRunFindTheWay.CND_DUMMY2, string);
                 break;
         }
     },
@@ -256,13 +237,13 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
         switch (num)
         {
             // Dummy expression : adds the two parameters
-            case CRunTemplate.EXP_DUMMY:
+            case CRunFindTheWay.EXP_DUMMY:
                 var param1 = this.ho.getExpParam();     // Get first parameter
                 var param2 = this.ho.getExpParam();     // Get second parameter
                 return param1 + param2;
             
             // Dummy expression : returns the length of a string
-            case CRunTemplate.EXP_DUMMY2:
+            case CRunFindTheWay.EXP_DUMMY2:
                 var string = this.ho.getExpParam();     // Get the string parameter
                 return string.length;
         }
