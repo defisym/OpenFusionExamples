@@ -130,6 +130,9 @@
     <ClInclude Include="..\_DeLib\FindTheWay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Defination.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
