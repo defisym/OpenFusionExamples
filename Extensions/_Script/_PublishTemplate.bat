@@ -82,11 +82,9 @@ set Date=%date:~2,8%
 
 set Date=%Date:/=%
 
-"C:\Program Files\7-Zip\7z.exe" a -tzip %ProjectName%_B%Date%.zip %ToInstallPath%\*
+"C:\Program Files\7-Zip\7z.exe" a -tzip %ParentPath%\%ProjectName%_B%Date%.zip %ToInstallPath%\*
 
-move %ProjectName%_B%Date%.zip %CD%\..\
-
-copy "%CD%\..\%ProjectName%_B%Date%.zip" "%CD%\..\%ProjectName%_Release.zip"
+copy "%ParentPath%\%ProjectName%_B%Date%.zip" "%ParentPath%\%ProjectName%_Release.zip"
 
 @echo Stop JDK...
 
