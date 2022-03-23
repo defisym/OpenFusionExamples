@@ -377,7 +377,11 @@ namespace FindTheWay {
 				return *pMapPos;
 			}
 		}
-		inline BYTE GetMap(size_t x, size_t y, MapType type) {
+		inline BYTE GetMap(size_t x, size_t y, MapType type, bool forceUpdate = true) {
+			if (forceUpdate && updateMap && type == MapType::MAP) {
+				UpdateMap();
+			}
+
 			return GetMap(x, y, GetMapPointer(type));
 		}
 
