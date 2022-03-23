@@ -1,27 +1,8 @@
 //----------------------------------------------------------------------------------
 //
 // CRunTemplate.js
-// Clickteam Fusion 2.5 HTML5 runtime extension template
 //
 //----------------------------------------------------------------------------------
-/* Copyright (c) 1996-2014 Clickteam
-*
-* This source code is part of the HTML5 exporter for Clickteam Fusion 2.5
-* 
-* Permission is hereby granted to any person obtaining a legal copy 
-* of Clickteam Fusion 2.5 to use or modify this source code for 
-* debugging, optimizing, or customizing applications created with 
-* Clickteam Fusion 2.5. 
-* Any other use of this source code is prohibited.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-* IN THE SOFTWARE.
-*/
 
 // Definition of the conditions, actions and expressions codes.
 // ---------------------------------------------------------------
@@ -190,7 +171,7 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
     // -----------------------------------------------------------------
     // Called when a condition of this object is evaluated
     //    - num : the number of the condition, as defined on top of this source
-    //    - cnd : a CCndExtension object, allowing you to retreive the parameters
+    //    - cnd : a CCndExtension object, allowing you to retrieve the parameters
     //            of the condition
     // Return value :
     //    true or false
@@ -221,7 +202,7 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
     // --------------------------------------------------------------
     // Called when an action of this object is executed
     //   - num : number of the action, as defined in the list on top of this source
-    //   - act : a CActExtension object, allowing you to retreive the parameters
+    //   - act : a CActExtension object, allowing you to retrieve the parameters
     //           of the action
     action:function(num, act)
     {   
@@ -235,7 +216,7 @@ CRunTemplate.prototype = CServices.extend(new CRunExtension(),
                 break;
 
             // Dummy action : calls the CND_DUMMY2 condition of this object
-            case CRunTemplate.ACT_DUMMY2;
+            case CRunTemplate.ACT_DUMMY2:
                 var string = act.getParamExpString(this.rh, 0);
                 this.generateEvent(CRunTemplate.CND_DUMMY2, string);
                 break;
