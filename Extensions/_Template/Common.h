@@ -27,10 +27,16 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+// My lib
+#include	"FindTheWay.h"
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"
 #include	"TigsExt.hpp"
+
+// My header
+//#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
