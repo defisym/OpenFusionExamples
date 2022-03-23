@@ -4,15 +4,22 @@
 // YOU'LL FIND THE WAY
 
 #include <functional>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <cmath>
+
+#include <unordered_map>
 #include <map>
+
+#include <iostream>
 
 #include <wincrypt.h>
 #pragma comment(lib, "crypt32.lib")
 
 #include "StrNum.h"
+
+using namespace std;
 
 namespace FindTheWay {
 	struct Coord {
@@ -51,7 +58,7 @@ namespace FindTheWay {
 		DYNAMIC,
 	};
 
-	ostream& operator<<(ostream& out, MapType type) {
+	inline ostream& operator<<(ostream& out, MapType type) {
 		switch (type)
 		{
 		case FindTheWay::MapType::MAP:
@@ -88,7 +95,7 @@ namespace FindTheWay {
 	// Map data invalid, e.g. non-base64 string
 	constexpr unsigned char INVALID_DATA = 1;
 
-	ostream& operator<<(ostream& out, Exception type) {
+	inline ostream& operator<<(ostream& out, Exception type) {
 		switch (type)
 		{
 		case INVALID_SIZE:
