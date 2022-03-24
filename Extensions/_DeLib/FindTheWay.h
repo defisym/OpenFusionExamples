@@ -113,6 +113,8 @@ namespace FindTheWay {
 	constexpr unsigned char INVALID_SIZE = 0;
 	// Map data invalid, e.g. non-base64 string
 	constexpr unsigned char INVALID_DATA = 1;
+	// Base64 encode failed
+	constexpr unsigned char BASE64_FAILED = 2;
 
 	inline ostream& operator<<(ostream& out, Exception type) {
 		switch (type)
@@ -397,8 +399,11 @@ namespace FindTheWay {
 				}
 			};
 
+			auto width = _stoi(GetSubStr(start, end));
+			auto height = _stoi(GetSubStr(start, end));
+
 			Free();
-			Allocate(_stoi(GetSubStr(start, end)), _stoi(GetSubStr(start, end)));
+			Allocate(width, height);
 
 			DWORD dwNeed = mapSize;
 
@@ -427,20 +432,23 @@ namespace FindTheWay {
 			base64 += DELIMETER;
 			base64 += _itos(height).c_str();
 
-			DWORD dwSize;
-			CryptBinaryToString(terrain, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &dwSize);
+			auto Convert = [&](BYTE* pData)->void {
+				DWORD dwSize;
+				CryptBinaryToString(pData, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &dwSize);
 
-			wchar_t* base64Str = new wchar_t[dwSize];
+				auto base64Str = std::make_unique<wchar_t[]>(dwSize);
 
-			CryptBinaryToString(terrain, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str, &dwSize);
-			base64 += DELIMETER;
-			base64 += base64Str;
+				if (CryptBinaryToString(pData, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str.get(), &dwSize)) {
+					base64 += DELIMETER;
+					base64 += base64Str.get();
+				}
+				else {
+					throw(BASE64_FAILED);
+				}				
+			};
 
-			CryptBinaryToString(dynamic, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str, &dwSize);
-			base64 += DELIMETER;
-			base64 += base64Str;
-
-			delete[] base64Str;
+			Convert(terrain);
+			Convert(dynamic);
 
 			return base64;
 		}
