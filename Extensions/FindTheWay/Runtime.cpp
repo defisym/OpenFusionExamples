@@ -67,6 +67,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 
 	rdPtr->pFTW = nullptr;
+	rdPtr->diagonal = false;
 
 	// No errors
 	return 0;

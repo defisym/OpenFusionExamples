@@ -6,22 +6,29 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
-#define	CND_LAST					1
+#define	CND_CONDITION_SMBS				0
+#define	CND_CONDITION_SMBB				1
+#define	CND_CONDITION_SMBC				2
+#define	CND_CONDITION_OSMBC				3
+
+#define	CND_CONDITION_OPF				4
+
+#define	CND_LAST						5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
-#define	ACT_LAST					1
+#define	ACT_ACTION_SM					0
+
+#define	ACT_LAST						1
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
-#define	EXP_LAST                    3
+#define	EXP_EXPRESSION_OSMBC_GX				0
+#define EXP_EXPRESSION_OSMBC_GY				1
+
+#define	EXP_LAST                    		2
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -67,7 +74,10 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	FindTheWayClass* pFTW;
+	bool diagonal;
 
+	Coord itRealCoord;
+	Coord itGirdCoord;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

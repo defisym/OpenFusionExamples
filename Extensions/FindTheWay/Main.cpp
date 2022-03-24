@@ -22,25 +22,25 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+		IDMN_CONDITION_SMBS, M_CONDITION_SMBS, CND_CONDITION_SMBS, EVFLAGS_ALWAYS, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
+		IDMN_CONDITION_SMBB, M_CONDITION_SMBB, CND_CONDITION_SMBB, EVFLAGS_ALWAYS, 1, PARAM_EXPSTRING, M_BASE64,
+		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
+		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 0,
+
+		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
 		};
 
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 0,
+		IDMN_ACTION_SM, M_ACTION_SM, ACT_ACTION_SM,	0, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_X, M_Y, M_COST, M_TYPE, M_USEREALCOORD, M_USEITERATECOORD,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-		IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
-		
-		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
-		IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
-		
-		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
-		IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+		IDMN_EXPRESSION_OSMBC_GX, M_EXPRESSION_OSMBC_GX, EXP_EXPRESSION_OSMBC_GX, 0, 0,
+		IDMN_EXPRESSION_OSMBC_GY, M_EXPRESSION_OSMBC_GY, EXP_EXPRESSION_OSMBC_GY, 0, 0,
 		};
 
 
@@ -51,29 +51,123 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-// -----------------
-// Sample Condition
-// -----------------
-// Returns TRUE when the two values are equal!
-// 
+long WINAPI DLLExport SetMapBySize(LPRDATA rdPtr, long param1, long param2) {
+	delete rdPtr->pFTW;
+	rdPtr->pFTW = nullptr;
 
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
+	size_t width = (size_t)CNC_GetParameter(rdPtr);
+	size_t height = (size_t)CNC_GetParameter(rdPtr);
 
-//  **** Still use this method for 1 or 2 parameters ****	
-//	if (param1==param2)	
-//		return TRUE;
+	try {
+		rdPtr->pFTW = new FindTheWayClass(width, height);
+	}
+	catch (Exception) {
+		return FALSE;
+	}
 
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
+	//auto map = rdPtr->pFTW->OutPutMapStr();
 
-	if ((p1 + p2)==p3)
-		return TRUE;
-		 
-	return FALSE;
+	return TRUE;
 }
 
+long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
+	delete rdPtr->pFTW;
+	rdPtr->pFTW = nullptr;
+
+	wstring base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	try {
+		rdPtr->pFTW = new FindTheWayClass(base64);
+	}
+	catch (Exception) {
+		return FALSE;
+	}
+
+	//auto map = rdPtr->pFTW->OutPutMapStr();
+
+	return TRUE;
+}
+
+long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
+	delete rdPtr->pFTW;
+	rdPtr->pFTW = nullptr;
+
+	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
+
+	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
+
+	auto frameWidth = frameRect.right - frameRect.left;
+	auto frameHeight = frameRect.bottom - frameRect.top;
+
+	size_t width = frameWidth / girdSize;
+	size_t height = frameHeight / girdSize;
+
+	try {
+		rdPtr->pFTW = new FindTheWayClass(width, height);
+	}
+	catch (Exception) {
+		return FALSE;
+	}
+	
+	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
+
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
+			rdPtr->itRealCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });
+			rdPtr->itGirdCoord = Coord{ x,y };
+
+			CallEvent(ONSETMAPBYCOLLISION);
+		}
+	}
+
+	//auto map = rdPtr->pFTW->OutPutMapStr();
+
+	return TRUE;
+}
+
+long WINAPI DLLExport OnSetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
+}
+
+long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
+	size_t startX = (size_t)CNC_GetParameter(rdPtr);
+	size_t startY = (size_t)CNC_GetParameter(rdPtr);
+
+	size_t destinationX = (size_t)CNC_GetParameter(rdPtr);
+	size_t destinationY = (size_t)CNC_GetParameter(rdPtr);
+
+	bool forceFind=(bool)CNC_GetParameter(rdPtr);
+	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
+
+	wstring saveName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	Coord start = Coord{ startX ,startY };
+	Coord destination = Coord{ destinationX ,destinationY };
+
+	if (useRealCoord) {
+		start = rdPtr->pFTW->GetGirdCoord(start);
+		destination = rdPtr->pFTW->GetGirdCoord(destination);
+	}
+
+	if (!forceFind) {
+		rdPtr->pFTW->Find(start, destination, rdPtr->diagonal);
+	}
+	else {
+		rdPtr->pFTW->ForceFind(start, destination, rdPtr->diagonal);
+	}
+	
+	if (saveName != L"") {
+		rdPtr->pFTW->SaveLastPath(saveName);
+	}
+
+	//auto map = rdPtr->pFTW->OutPutMapStr();
+
+	return rdPtr->pFTW->GetPathValidity();
+}
 
 // ============================================================================
 //
@@ -81,26 +175,65 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample Action
-// -----------------
-// Does nothing!
-// 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
-{
-	// Actions work just like Conditions
+short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
+	size_t x = (size_t)CNC_GetParameter(rdPtr);
+	size_t y = (size_t)CNC_GetParameter(rdPtr);
 
-	// Use directly param1 and/or param2 if this action has 1 or 2 parameters
+	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
+	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
-	// Use this if this action has 3 parameters or more
-//	long p1 = CNC_GetParameter(rdPtr);
-//	long p2 = CNC_GetParameter(rdPtr);
-//	long p3 = CNC_GetParameter(rdPtr);
-//	etc.
+	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
+	bool useIterateCoord = (bool)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	if (useIterateCoord) {
+		x = rdPtr->itGirdCoord.x;
+		y = rdPtr->itGirdCoord.y;
+	}
+	else {
+		if (useRealCoord) {
+			Coord girdCoord = rdPtr->pFTW->GetGirdCoord(Coord{ x, y });
+
+			x = girdCoord.x;
+			y = girdCoord.y;
+		}
+	}
+
+	rdPtr->pFTW->SetMap(x, y, cost, type);
 
 	return 0;
 }
 
+
+//short WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
+//	delete rdPtr->pFTW;
+//	rdPtr->pFTW = nullptr;
+//
+//	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
+//	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
+//	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
+//
+//	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
+//	
+//	auto frameWidth = frameRect.right - frameRect.left;
+//	auto frameHeight = frameRect.bottom - frameRect.top;
+//
+//	size_t width = frameWidth / girdSize;
+//	size_t height = frameHeight / girdSize;
+//
+//	rdPtr->pFTW = new FindTheWayClass(width, height);
+//	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
+//
+//	for (size_t y = 0; y < height; y++) {
+//		for (size_t x = 0; x < width; x++) {
+//			rdPtr->itRealCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });			
+//			CallEvent(ONSETMAPBYCOLLISION);
+//		}
+//	}
+//
+//	return 0;
+//}
 
 // ============================================================================
 //
@@ -108,64 +241,13 @@ short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample expression
-// -----------------
-// Add three values
-// 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-
-	// Performs the wonderfull calculation
-	return p1+p2+p3;
+long WINAPI DLLExport OnSetMapByCollision_GetX(LPRDATA rdPtr, long param1) {
+	return rdPtr->itRealCoord.x;
 }
 
-
-//Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
-	char *temp;
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
-
-	//Reversing the string.
-	_strrev(temp);
-	
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
-	//This returns a pointer to the string for MMF.
-	return (long)temp;
+long WINAPI DLLExport OnSetMapByCollision_GetY(LPRDATA rdPtr, long param1) {
+	return rdPtr->itRealCoord.y;
 }
-
-//Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-
-	//Floats are tricky.  If you want to pass in a float, you must do the
-	//following to convert the long to a true float, but only when you use
-	//TYPE_FLOAT.
-	float fp1 = *(float *)&p1;
-
-	//Just doing simple math now.
-	fp1 /=2;
-
-	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-	rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-	//Return the float without conversion
-	return *((int*)&fp1);
-}
-
-
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -177,20 +259,27 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			Condition,
+			SetMapBySize,
+			SetMapByBase64,
+			SetMapByCollision,
+			OnSetMapByCollision,
+			
+			OnPathFound,
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action,
+			//SetMapByCollision,
+			SetMap,
+
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			Expression,
-			Expression2,
-			Expression3,
+			OnSetMapByCollision_GetX,
+			OnSetMapByCollision_GetY,
+
 			0
 			};

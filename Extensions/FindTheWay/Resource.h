@@ -25,14 +25,17 @@
 #define MN_ACTIONS				20000
 
 // Commands of action menu
-#define IDMN_ACTION	       		25000
+#define IDMN_ACTION_SM	       		25000
 
 // Action strings
-#define M_ACTION                 5000
+#define M_ACTION_SM                 5000
 
 // Titles of action parameters
-#define M_ACT_P1				 5501
-#define M_ACT_P2				 5502
+#define M_X				     5501
+#define M_Y				     5502
+#define M_COST				 5503
+#define M_TYPE				 5504
+#define M_USEITERATECOORD	 5505
 
 
 //	Conditions
@@ -42,15 +45,35 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define	IDMN_CONDITION_SMBS				26000
+#define	IDMN_CONDITION_SMBB				26001
+#define	IDMN_CONDITION_SMBC				26002
+#define	IDMN_CONDITION_OSMBC			26003
+
+#define	IDMN_CONDITION_OPF				26004
 
 // Condition strings
-#define M_CONDITION				 6000
+#define	M_CONDITION_SMBS				6000
+#define	M_CONDITION_SMBB				6001
+#define	M_CONDITION_SMBC				6002
+#define	M_CONDITION_OSMBC			    6003
+
+#define	M_CONDITION_OPF				    6004
 
 // Titles of condition parameters
-#define M_CND_P1				 6501
-#define M_CND_P2				 6502
-#define M_CND_P3				 6503
+#define M_WIDTH				        6501
+#define M_HEIGHT				    6502
+#define M_BASE64				    6503
+#define M_GIRDSIZE				    6504
+#define M_GIRDOFFSETX				6505
+#define M_GIRDOFFSETY				6506
+#define M_STARTX				    6507
+#define M_STARTY				    6508
+#define M_DESTINATIONX				6509
+#define M_DESTINATIONY				6510
+#define M_FORCEFIND				    6511
+#define M_USEREALCOORD				6512
+#define M_SAVENAME				    6513
 
 //	EXPRESSIONS
 //---------------------
@@ -59,14 +82,12 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION			27000
-#define IDMN_EXPRESSION2		27001
-#define IDMN_EXPRESSION3		27002
+#define IDMN_EXPRESSION_OSMBC_GX			27000
+#define IDMN_EXPRESSION_OSMBC_GY		27001
 
 // Expression strings
-#define M_EXPRESSION			 7000
-#define M_EXPRESSION2			 7001
-#define M_EXPRESSION3			 7002
+#define M_EXPRESSION_OSMBC_GX			 7000
+#define M_EXPRESSION_OSMBC_GY			 7001
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

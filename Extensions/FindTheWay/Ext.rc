@@ -115,7 +115,11 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM "Set Map By Size", IDMN_CONDITION_SMBS
+        MENUITEM "Set Map By Base64", IDMN_CONDITION_SMBB
+        MENUITEM "Set Map By Collision", IDMN_CONDITION_SMBC
+        MENUITEM "On Set Map By Collision", IDMN_CONDITION_OSMBC
+        MENUITEM "On Path Found", IDMN_CONDITION_OPF
     END
 END
 #endif
@@ -129,7 +133,7 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM "Set Map",              IDMN_ACTION_SM
     END
 END
 #endif
@@ -143,9 +147,8 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM "Get Iterate X", IDMN_EXPRESSION_OSMBC_GX
+        MENUITEM "Get Iterate Y", IDMN_EXPRESSION_OSMBC_GY
     END
 END
 #endif
@@ -228,26 +231,22 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_SM                "Set Map Type %3 at [ %0 , %1 ] to Cost %2, UseRealCoord = %4, UseIterateCoord = %5"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+    M_CONDITION_SMBS             "%o Set Map to ( Width = %0, Height = %1 ) Success"
+    M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
+    M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2 ) Success"
+    M_CONDITION_OSMBC            "%o On Set Map By Collision"
+    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], ForceFind = %4, UseRealCoord = %5, SaveName = %6) Found"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_OSMBC_GX           "GetIterateX("
+    M_EXPRESSION_OSMBC_GY           "GetIterateY("
 END
 
 #endif    // English (U.S.) resources

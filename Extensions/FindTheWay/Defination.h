@@ -4,11 +4,14 @@
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 
+#define ONSETMAPBYCOLLISION	3
 #define ONMAPCHANGE	0
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
 
 #define valid(X) (X != nullptr)
+
+#define RetIfMapInvalid(X) if (rdPtr->pFTW == nullptr) { return X; }
 
 #define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
 
