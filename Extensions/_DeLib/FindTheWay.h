@@ -9,6 +9,8 @@
 #include <vector>
 #include <cmath>
 
+#include <sstream>
+
 #include <unordered_map>
 #include <map>
 
@@ -75,6 +77,23 @@ namespace FindTheWay {
 		return out;
 	}
 
+	inline wostream& operator<<(wostream& out, MapType type) {
+		switch (type)
+		{
+		case FindTheWay::MapType::MAP:
+			out << L"Map";
+			break;
+		case FindTheWay::MapType::TERRAIN:
+			out << L"Terrain";
+			break;
+		case FindTheWay::MapType::DYNAMIC:
+			out << L"Dynamic";
+			break;
+		}
+
+		return out;
+	}
+
 	using Path = vector<Coord>;
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
@@ -103,6 +122,20 @@ namespace FindTheWay {
 			break;
 		case INVALID_DATA:
 			out << "INVALID_DATA";
+			break;
+		}
+
+		return out;
+	}
+
+	inline wostream& operator<<(wostream& out, Exception type) {
+		switch (type)
+		{
+		case INVALID_SIZE:
+			out << L"INVALID_SIZE";
+			break;
+		case INVALID_DATA:
+			out << L"INVALID_DATA";
 			break;
 		}
 
@@ -225,6 +258,35 @@ namespace FindTheWay {
 			return GetMapPosPointer(x, y, GetMapPointer(type));
 		}
 
+		inline void ClearMap(BYTE* pMap, bool needUpdate = true) {
+			memset(pMap, 0, mapSize);
+
+			updateMap = needUpdate;
+		}
+
+		inline void SetMap(size_t x, size_t y, BYTE cost, BYTE* pMap, bool needUpdate = true) {
+			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
+
+			if (pMapPos == nullptr) {
+				return;
+			}
+
+			*pMapPos = Range(cost);
+
+			updateMap = needUpdate;
+		}
+
+		inline BYTE GetMap(size_t x, size_t y, BYTE* pMap) {
+			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
+
+			if (pMapPos == nullptr) {
+				return MAP_OBSTACLE;
+			}
+			else {
+				return *pMapPos;
+			}
+		}
+
 		inline void Reserve() {
 			path.reserve(PATH_RESERVE);
 			savedPath.reserve(SAVEDPATH_RESERVE);
@@ -308,27 +370,10 @@ namespace FindTheWay {
 			return girdSize;
 		}
 
-		inline void ClearMap(BYTE* pMap, bool needUpdate = true) {
-			memset(pMap, 0, mapSize);
-
-			updateMap = needUpdate;
-		}
-
 		inline void ClearMap(MapType type, bool needUpdate = true) {
 			ClearMap(GetMapPointer(type), needUpdate);
 		}
 
-		inline void SetMap(size_t x, size_t y, BYTE cost, BYTE* pMap, bool needUpdate = true) {
-			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
-
-			if (pMapPos == nullptr) {
-				return;
-			}
-
-			*pMapPos = Range(cost);
-
-			updateMap = needUpdate;
-		}
 		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type, bool needUpdate = true) {
 			SetMap(x, y, cost, GetMapPointer(type), needUpdate);
 		}
@@ -367,16 +412,6 @@ namespace FindTheWay {
 			UpdateMap();
 		}
 
-		inline BYTE GetMap(size_t x, size_t y, BYTE* pMap) {
-			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
-
-			if (pMapPos == nullptr) {
-				return MAP_OBSTACLE;
-			}
-			else {
-				return *pMapPos;
-			}
-		}
 		inline BYTE GetMap(size_t x, size_t y, MapType type, bool forceUpdate = true) {
 			if (forceUpdate && updateMap && type == MapType::MAP) {
 				UpdateMap();
@@ -456,7 +491,7 @@ namespace FindTheWay {
 			return height;
 		}
 
-		inline void OutPutMap(MapType type) {
+		inline void OutPutMap(MapType type = MapType::MAP) {
 			auto find = [](Path& path, Coord& coord)->bool {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
@@ -476,6 +511,32 @@ namespace FindTheWay {
 				}
 				cout << endl;
 			}
+		}
+
+		inline wstring OutPutMapStr(MapType type = MapType::MAP) {
+			auto find = [](Path& path, Coord& coord)->bool {
+				return std::find(path.begin(), path.end(), coord) != path.end();
+			};
+			
+			std::wstringstream ss;
+
+			ss << L"MapType : " << type << endl;
+			for (size_t y = 0; y < height; y++) {
+				for (size_t x = 0; x < width; x++) {
+					Coord cur = { x,y };
+
+					if (find(path, cur)) {
+						ss << L'-';
+					}
+					else {
+						ss << (((*GetMapPosPointer(x, y, type)) != MAP_OBSTACLE) ? L'#' : L'*');
+					}
+					ss << ' ';
+				}
+				ss << endl;
+			}
+
+			return ss.str();
 		}
 
 		inline void SaveLastPath(wstring name) {
