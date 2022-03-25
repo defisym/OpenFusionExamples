@@ -6,7 +6,7 @@ robots.txt
 main.m
 
 /Vorbis.framework
-/SDK.xcodeproj
+# /SDK.xcodeproj
 /SDK
 /Resources
 /Ogg.framework
@@ -31,4 +31,7 @@ main.m
 /Classes/RuntimeIPhoneAppDelegate.m
 
 /Classes/Extensions/*
+
 !/Classes/Extensions/CExtLoad.m
+!/Classes/Extensions/CRunTemplate.h
+!/Classes/Extensions/CRunTemplate.m

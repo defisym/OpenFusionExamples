@@ -27,7 +27,8 @@
 #import "CRunExtension.h"
 
 //F01
-#import "CRunGDPRConsent.h"
+#import "CRunTemplate.h"
+
 #import "CRunKcArray.h"
 #import "CRunActiveBackdrop.h"
 #import "CRunAdvGameBoard.h"
@@ -131,12 +132,13 @@
 	CRunExtension* object=nil;
 	
 //F02 			
-	
-if ([name caseInsensitiveCompare:@"GDPRConsent"]==0)
-{
-object=[[CRunGDPRConsent alloc] init];
-}
-if ([name caseInsensitiveCompare:@"kcarray"]==0)
+    if ([name caseInsensitiveCompare:@"Template"]==0)
+    {
+        object=[[CRunTemplate alloc] init];
+    }
+    
+    
+	if ([name caseInsensitiveCompare:@"kcarray"]==0)
 	{
 		object=[[CRunKcArray alloc] init];
 	}
