@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <tuple>
 
 #include <sstream>
 
@@ -28,6 +29,10 @@ namespace FindTheWay {
 		size_t x;
 		size_t y;
 	};
+
+	inline bool operator<(const Coord& A, const Coord& B) {
+		return (A.x < B.x) && (A.y < B.y);
+	}
 
 	inline bool operator==(const Coord& A, const Coord& B) {
 		return (A.x == B.x) && (A.y == B.y);
@@ -207,6 +212,22 @@ namespace FindTheWay {
 
 		Paths savedPath;
 
+		using StashPathKey = tuple<Coord, Coord>;
+
+		struct StashPathKeyCompare
+		{
+			bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
+				auto& [lKeyS, lKeyD] = lKey;
+				auto& [rKeyS, rKeyD] = rKey;
+
+				return (lKeyS < rKeyS) && (lKeyD < rKeyD);
+			};
+		};
+
+		using Stash = std::map<StashPathKey, Path, StashPathKeyCompare>;
+
+		Stash stashPath;
+
 		struct Point {
 			Coord coord;
 
@@ -344,6 +365,7 @@ namespace FindTheWay {
 		inline void Reset() {
 			path.clear();
 			savedPath.clear();
+			stashPath.clear();
 
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
@@ -459,6 +481,7 @@ namespace FindTheWay {
 			}
 
 			updateMap = false;
+			stashPath.clear();
 		}
 
 		inline bool CoordObstacle(size_t x, size_t y, MapType type) {
@@ -579,6 +602,10 @@ namespace FindTheWay {
 			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// Still try to find a way even start & destination is obstacle
 			// ......By setting them to path
+			if (updateMap) {
+				UpdateMap();
+			}
+
 			BYTE startCost = GetMap(start.x, start.y, this->map);
 			BYTE destinationCost = GetMap(destination.x, destination.y, this->map);
 
@@ -621,6 +648,14 @@ namespace FindTheWay {
 			pathAvailable = false;
 			path.clear();
 
+			auto stashPathKey = make_tuple(start, destination);
+
+			if (stashPath.count(stashPathKey)) {
+				path = stashPath[stashPathKey];
+
+				return;
+			}
+
 			if ((GetMap(start.x, start.y, this->map) == MAP_OBSTACLE)
 				|| (GetMap(destination.x, destination.y, this->map) == MAP_OBSTACLE)) {
 				return;
@@ -648,6 +683,8 @@ namespace FindTheWay {
 
 					std::reverse(path.begin(), path.end());
 					pathAvailable = true;
+
+					stashPath[stashPathKey] = path;
 
 					return;
 				}
