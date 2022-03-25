@@ -135,7 +135,8 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 				rdPtr->itGirdCoord = Coord{ x,y };
 				CallEvent(ONSETMAPBYCOLLISION);
 			}
-			else if (!callColMaskTestPoint(hoPtr
+			// Ref: https://community.clickteam.com/threads/59029-Accessing-backdrops-from-extensions
+			else if (!callColMaskTestPoint(hoPtr					// colMaskTestPoint in Java/OC/JS
 				, rdPtr->itRealCoord.x - layerOffsetX
 				, rdPtr->itRealCoord.y - layerOffsetY
 				, baseLayer, 0)) {

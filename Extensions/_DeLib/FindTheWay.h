@@ -645,16 +645,16 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			pathAvailable = false;
-			path.clear();
-
 			auto stashPathKey = make_tuple(start, destination);
+			pathAvailable = stashPath.count(stashPathKey);
 
-			if (stashPath.count(stashPathKey)) {
+			if (pathAvailable) {
 				path = stashPath[stashPathKey];
 
 				return;
 			}
+
+			path.clear();
 
 			if ((GetMap(start.x, start.y, this->map) == MAP_OBSTACLE)
 				|| (GetMap(destination.x, destination.y, this->map) == MAP_OBSTACLE)) {
