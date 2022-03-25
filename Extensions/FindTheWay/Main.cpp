@@ -24,7 +24,7 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_SMBS, M_CONDITION_SMBS, CND_CONDITION_SMBS, EVFLAGS_ALWAYS, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		IDMN_CONDITION_SMBB, M_CONDITION_SMBB, CND_CONDITION_SMBB, EVFLAGS_ALWAYS, 1, PARAM_EXPSTRING, M_BASE64,
-		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
+		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASEALYER, M_TYPE,
 		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 0,
 
 		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
@@ -65,7 +65,9 @@ long WINAPI DLLExport SetMapBySize(LPRDATA rdPtr, long param1, long param2) {
 		return FALSE;
 	}
 
-	//auto map = rdPtr->pFTW->OutPutMapStr();
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr();
+#endif // _DEBUG
 
 	return TRUE;
 }
@@ -83,7 +85,9 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 		return FALSE;
 	}
 
-	//auto map = rdPtr->pFTW->OutPutMapStr();
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr();
+#endif // _DEBUG
 
 	return TRUE;
 }
@@ -95,6 +99,10 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
 	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
 	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
+
+	bool eventIterate = (bool)CNC_GetParameter(rdPtr);
+	size_t baseLayer = (size_t)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
+	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
 	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
 
@@ -113,16 +121,32 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	
 	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
 
+	auto hoPtr = &(rdPtr->rHo);
+	npWin win = hoPtr->hoAdRunHeader->rh4.rh4Mv->mvIdEditWin;
+
+	int layerOffsetX = hoPtr->hoAdRunHeader->rh3.rh3DisplayX;
+	int layerOffsetY = hoPtr->hoAdRunHeader->rh3.rh3DisplayY;
+
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
 			rdPtr->itRealCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });
-			rdPtr->itGirdCoord = Coord{ x,y };
 
-			CallEvent(ONSETMAPBYCOLLISION);
+			if (eventIterate) {
+				rdPtr->itGirdCoord = Coord{ x,y };
+				CallEvent(ONSETMAPBYCOLLISION);
+			}
+			else if (!callColMaskTestPoint(hoPtr
+				, rdPtr->itRealCoord.x - layerOffsetX
+				, rdPtr->itRealCoord.y - layerOffsetY
+				, baseLayer, 0)) {
+				rdPtr->pFTW->SetMap(x, y, MAP_OBSTACLE, MapType::TERRAIN);
+			}
 		}
 	}
 
-	//auto map = rdPtr->pFTW->OutPutMapStr();
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
+#endif // _DEBUG
 
 	return TRUE;
 }
@@ -164,7 +188,9 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 		rdPtr->pFTW->SaveLastPath(saveName);
 	}
 
-	//auto map = rdPtr->pFTW->OutPutMapStr();
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr();
+#endif // _DEBUG
 
 	return rdPtr->pFTW->GetPathValidity();
 }
@@ -204,36 +230,6 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 
 	return 0;
 }
-
-
-//short WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
-//	delete rdPtr->pFTW;
-//	rdPtr->pFTW = nullptr;
-//
-//	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
-//	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
-//	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
-//
-//	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
-//	
-//	auto frameWidth = frameRect.right - frameRect.left;
-//	auto frameHeight = frameRect.bottom - frameRect.top;
-//
-//	size_t width = frameWidth / girdSize;
-//	size_t height = frameHeight / girdSize;
-//
-//	rdPtr->pFTW = new FindTheWayClass(width, height);
-//	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
-//
-//	for (size_t y = 0; y < height; y++) {
-//		for (size_t x = 0; x < width; x++) {
-//			rdPtr->itRealCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });			
-//			CallEvent(ONSETMAPBYCOLLISION);
-//		}
-//	}
-//
-//	return 0;
-//}
 
 // ============================================================================
 //

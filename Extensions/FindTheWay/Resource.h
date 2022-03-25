@@ -74,6 +74,8 @@
 #define M_FORCEFIND				    6511
 #define M_USEREALCOORD				6512
 #define M_SAVENAME				    6513
+#define M_EVEIT 				    6514
+#define M_BASEALYER				    6515
 
 //	EXPRESSIONS
 //---------------------

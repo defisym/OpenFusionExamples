@@ -238,9 +238,9 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_SMBS             "%o Set Map to ( Width = %0, Height = %1 ) Success"
     M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
-    M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2 ) Success"
+    M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5 ) Success"
     M_CONDITION_OSMBC            "%o On Set Map By Collision"
-    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], ForceFind = %4, UseRealCoord = %5, SaveName = %6) Found"
+    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], ForceFind = %4, UseRealCoord = %5, SaveName = %6 ) Found"
 END
 
 STRINGTABLE DISCARDABLE 
