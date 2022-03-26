@@ -39,7 +39,7 @@ using namespace FindTheWay;
 #include	"TigsExt.hpp"
 
 // My header
-//#include	"Func.h"
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

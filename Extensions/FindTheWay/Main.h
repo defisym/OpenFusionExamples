@@ -12,15 +12,17 @@
 #define	CND_CONDITION_OSMBC				3
 
 #define	CND_CONDITION_OPF				4
+#define	CND_CONDITION_PA				5
 
-#define	CND_LAST						5
+#define	CND_LAST						6
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_SM					0
+#define	ACT_ACTION_C					1
 
-#define	ACT_LAST						1
+#define	ACT_LAST						2
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -28,7 +30,14 @@
 #define	EXP_EXPRESSION_OSMBC_GX				0
 #define EXP_EXPRESSION_OSMBC_GY				1
 
-#define	EXP_LAST                    		2
+#define EXP_EXPRESSION_GS					2
+#define EXP_EXPRESSION_GSOP					3
+#define EXP_EXPRESSION_GSCOP				4
+
+#define EXP_EXPRESSION_GGC					5
+#define EXP_EXPRESSION_GRC					6
+
+#define	EXP_LAST                    		7
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

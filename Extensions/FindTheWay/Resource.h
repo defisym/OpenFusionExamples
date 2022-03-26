@@ -26,9 +26,11 @@
 
 // Commands of action menu
 #define IDMN_ACTION_SM	       		25000
+#define IDMN_ACTION_C	       		25001
 
 // Action strings
 #define M_ACTION_SM                 5000
+#define M_ACTION_C                  5001
 
 // Titles of action parameters
 #define M_X				     5501
@@ -51,6 +53,7 @@
 #define	IDMN_CONDITION_OSMBC			26003
 
 #define	IDMN_CONDITION_OPF				26004
+#define	IDMN_CONDITION_PA				26005
 
 // Condition strings
 #define	M_CONDITION_SMBS				6000
@@ -59,6 +62,7 @@
 #define	M_CONDITION_OSMBC			    6003
 
 #define	M_CONDITION_OPF				    6004
+#define	M_CONDITION_PA				    6005
 
 // Titles of condition parameters
 #define M_WIDTH				        6501
@@ -76,6 +80,7 @@
 #define M_SAVENAME				    6513
 #define M_EVEIT 				    6514
 #define M_BASEALYER				    6515
+#define M_PATHNAME				    6516
 
 //	EXPRESSIONS
 //---------------------
@@ -84,16 +89,31 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION_OSMBC_GX			27000
+#define IDMN_EXPRESSION_OSMBC_GX		27000
 #define IDMN_EXPRESSION_OSMBC_GY		27001
+
+#define IDMN_EXPRESSION_GS		        27002
+#define IDMN_EXPRESSION_GSOP		    27003
+#define IDMN_EXPRESSION_GSCOP		    27004
+
+#define IDMN_EXPRESSION_GGC		        27005
+#define IDMN_EXPRESSION_GRC		        27006
 
 // Expression strings
 #define M_EXPRESSION_OSMBC_GX			 7000
 #define M_EXPRESSION_OSMBC_GY			 7001
 
+#define M_EXPRESSION_GS			         7002
+#define M_EXPRESSION_GSOP			     7003
+#define M_EXPRESSION_GSCOP			     7004
+
+#define M_EXPRESSION_GGC			     7005
+#define M_EXPRESSION_GRC			     7006
+
 // Names of expression parameters
-#define M_EXP_P1				 7500
-#define	M_EXP_P2				 7501
+#define M_STEP				    7500
+#define M_COORDTYPE			    7501
+#define M_COORD				    7502
 
 // Next default values for new objects
 // 

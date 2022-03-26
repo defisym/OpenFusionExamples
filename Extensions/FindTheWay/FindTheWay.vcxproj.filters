@@ -133,6 +133,9 @@
     <ClInclude Include="Defination.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Func.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

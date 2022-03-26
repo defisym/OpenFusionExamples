@@ -28,12 +28,15 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 0,
 
 		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
+
+		IDMN_CONDITION_PA, M_CONDITION_PA, CND_CONDITION_PA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_PATHNAME,
 		};
 
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
 		IDMN_ACTION_SM, M_ACTION_SM, ACT_ACTION_SM,	0, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_X, M_Y, M_COST, M_TYPE, M_USEREALCOORD, M_USEITERATECOORD,
+		IDMN_ACTION_C, M_ACTION_C, ACT_ACTION_C,	0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -41,6 +44,13 @@ short expressionsInfos[]=
 		{
 		IDMN_EXPRESSION_OSMBC_GX, M_EXPRESSION_OSMBC_GX, EXP_EXPRESSION_OSMBC_GX, 0, 0,
 		IDMN_EXPRESSION_OSMBC_GY, M_EXPRESSION_OSMBC_GY, EXP_EXPRESSION_OSMBC_GY, 0, 0,
+
+		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 7, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
+		IDMN_EXPRESSION_GSOP, M_EXPRESSION_GSOP, EXP_EXPRESSION_GSOP, 0, 1, EXPPARAM_STRING, M_PATHNAME,
+		IDMN_EXPRESSION_GSCOP, M_EXPRESSION_GSCOP, EXP_EXPRESSION_GSCOP, 0, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_PATHNAME, M_STEP, M_COORDTYPE,
+
+		IDMN_EXPRESSION_GGC, M_EXPRESSION_GGC, EXP_EXPRESSION_GGC, 0, 1, EXPPARAM_LONG, M_COORD,
+		IDMN_EXPRESSION_GRC, M_EXPRESSION_GRC, EXP_EXPRESSION_GRC, 0, 1, EXPPARAM_LONG, M_COORD,
 		};
 
 
@@ -166,34 +176,23 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 	bool forceFind=(bool)CNC_GetParameter(rdPtr);
 	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
 
-	wstring saveName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring saveName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
-	Coord start = Coord{ startX ,startY };
-	Coord destination = Coord{ destinationX ,destinationY };
-
-	if (useRealCoord) {
-		start = rdPtr->pFTW->GetGirdCoord(start);
-		destination = rdPtr->pFTW->GetGirdCoord(destination);
-	}
-
-	if (!forceFind) {
-		rdPtr->pFTW->Find(start, destination, rdPtr->diagonal);
-	}
-	else {
-		rdPtr->pFTW->ForceFind(start, destination, rdPtr->diagonal);
-	}
-	
-	if (saveName != L"") {
-		rdPtr->pFTW->SaveLastPath(saveName);
-	}
+	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
 #endif // _DEBUG
 
 	return rdPtr->pFTW->GetPathValidity();
+}
+
+long WINAPI DLLExport PathAvailable(LPRDATA rdPtr, long param1, long param2) {
+	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	return rdPtr->pFTW->GetPathValidity(&pathName);
 }
 
 // ============================================================================
@@ -232,6 +231,10 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Continue(LPRDATA rdPtr, long param1, long param2) {
+	return 0;		// Force fusion to evaluate conditions, as empty events will be skipped
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -241,9 +244,74 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport OnSetMapByCollision_GetX(LPRDATA rdPtr, long param1) {
 	return rdPtr->itRealCoord.x;
 }
-
+ 
 long WINAPI DLLExport OnSetMapByCollision_GetY(LPRDATA rdPtr, long param1) {
 	return rdPtr->itRealCoord.y;
+}
+
+long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
+	size_t startX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t startY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	size_t destinationX = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t destinationY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	bool forceFind = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	wstring saveName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	RetIfMapInvalid(STEP_UNREACHABLE);
+
+	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, forceFind, useRealCoord, saveName);
+
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr();
+#endif // _DEBUG
+
+	return rdPtr->pFTW->GetDistance();
+}
+
+long WINAPI DLLExport GetStepOfPath(LPRDATA rdPtr, long param1) {
+	wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	RetIfMapInvalid(STEP_UNREACHABLE);
+
+	if (pathName == L"") {
+		return STEP_UNREACHABLE;
+	}
+
+	return rdPtr->pFTW->GetDistance(&pathName);
+}
+
+long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
+	wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t step = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	RetIfMapInvalid(COORD_INVALID);
+
+	if (pathName == L"") {
+		return COORD_INVALID;
+	}
+
+	return rdPtr->pFTW->GetCoordAtPath(step, type, &pathName);
+}
+
+long WINAPI DLLExport GetGirdCoord(LPRDATA rdPtr, long param1) {
+	size_t coord = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	RetIfMapInvalid(COORD_INVALID);
+
+	return rdPtr->pFTW->GetGirdCoord(Coord{ coord ,0 }).x;
+}
+
+long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
+	size_t coord = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	RetIfMapInvalid(REAL_INVALID);
+
+	return rdPtr->pFTW->GetRealCoord(Coord{ coord ,0 }).x;
 }
 
 // ----------------------------------------------------------
@@ -262,13 +330,14 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			OnSetMapByCollision,
 			
 			OnPathFound,
+			PathAvailable,
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			//SetMapByCollision,
 			SetMap,
+			Continue,
 
 			0
 			};
@@ -277,6 +346,13 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			{     
 			OnSetMapByCollision_GetX,
 			OnSetMapByCollision_GetY,
+
+			GetStep,
+			GetStepOfPath,
+			GetStepCoordOfPath,
+
+			GetGirdCoord,
+			GetRealCoord,
 
 			0
 			};
