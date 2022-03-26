@@ -130,6 +130,9 @@ namespace FindTheWay {
 		case INVALID_DATA:
 			out << "INVALID_DATA";
 			break;
+		case BASE64_FAILED:
+			out << "BASE64_FAILED";
+			break;
 		}
 
 		return out;
@@ -144,13 +147,13 @@ namespace FindTheWay {
 		case INVALID_DATA:
 			out << L"INVALID_DATA";
 			break;
+		case BASE64_FAILED:
+			out << L"BASE64_FAILED";
+			break;
 		}
 
 		return out;
 	}
-
-	template <typename T>
-	constexpr auto Range(T X) { return (max(0, min(255, X))); }
 
 	constexpr auto PATH_RESERVE = 50;
 	constexpr auto SAVEDPATH_RESERVE = 10;
@@ -158,12 +161,16 @@ namespace FindTheWay {
 	constexpr auto MAP_PATH = 0;
 	constexpr auto MAP_OBSTACLE = 255;
 
+	template <typename T>
+	constexpr auto Range(T X) { return (max(MAP_PATH, min(MAP_OBSTACLE, X))); }
+
 	constexpr auto STEP_UNREACHABLE = 65536;
 
 	constexpr auto STEP_GENERALCOST_NORMAL = 10;
 	constexpr auto STEP_GENERALCOST_DIAGONAL = 14;	// 1.414
 
 	constexpr auto COORD_INVALID = 65536;
+	constexpr auto REAL_INVALID = 2147483647;
 
 	constexpr auto DELIMETER = ':';
 
@@ -184,13 +191,13 @@ namespace FindTheWay {
 		BYTE* terrain = nullptr;
 		BYTE* dynamic = nullptr;
 
-		struct offset {
+		struct Offset {
 			char x;
 			char y;
 			char generalCost;
 		};
 
-		using Neighbour = vector<offset>;
+		using Neighbour = vector<Offset>;
 
 		const Neighbour normalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
 										,{1,0,STEP_GENERALCOST_NORMAL}
@@ -214,8 +221,7 @@ namespace FindTheWay {
 
 		using StashPathKey = tuple<Coord, Coord>;
 
-		struct StashPathKeyCompare
-		{
+		struct StashPathKeyCompare {
 			bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
 				auto& [lKeyS, lKeyD] = lKey;
 				auto& [rKeyS, rKeyD] = rKey;
@@ -310,6 +316,10 @@ namespace FindTheWay {
 			}
 		}
 
+		inline Path* GetPathPointer(wstring* name = nullptr) {
+			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath[*name] : &path);
+		}
+
 		inline void Reserve() {
 			path.reserve(PATH_RESERVE);
 			savedPath.reserve(SAVEDPATH_RESERVE);
@@ -376,7 +386,7 @@ namespace FindTheWay {
 		}
 
 		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
-			this->girdSize = girdSize;
+			this->girdSize = girdSize ? girdSize : 1;		// Protection for 0
 
 			this->girdOffestX = girdOffestX;
 			this->girdOffestY = girdOffestY;
@@ -403,7 +413,7 @@ namespace FindTheWay {
 		}
 
 		inline void SetMap(const wstring& base64) {
-			// Format: width:height:terrian:dynamic
+			// Format: width:height:terrain:dynamic
 			size_t start = 0;
 			size_t end = 0;
 
@@ -481,15 +491,17 @@ namespace FindTheWay {
 			}
 
 			updateMap = false;
+
+			// Path invalidation when map changes, clear path
+			path.clear();
+			savedPath.clear();
 			stashPath.clear();
+
+			pathAvailable = false;
 		}
 
 		inline bool CoordObstacle(size_t x, size_t y, MapType type) {
 			return GetMap(x, y, type) == MAP_OBSTACLE;
-		}
-
-		inline Path* GetPathPointer(wstring* name = nullptr) {
-			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath[*name] : &path);
 		}
 
 		inline bool GetPathValidity(wstring* name = nullptr) {
@@ -507,11 +519,11 @@ namespace FindTheWay {
 			Path* pPath = GetPathPointer(name);
 			bool curPathAvaliable = GetPathValidity(name);
 
-			if (!curPathAvaliable) {
+			if (!curPathAvaliable || pPath->size() <= pos) {
 				return COORD_INVALID;
 			}
 
-			return type == CoordType::X ? pPath->at(pos).x : pPath->at(pos).y;
+			return type == CoordType::X ? (*pPath)[pos].x : (*pPath)[pos].y;
 		}
 
 		inline size_t GetWidth() {
