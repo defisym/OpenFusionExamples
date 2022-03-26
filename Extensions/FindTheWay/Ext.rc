@@ -121,6 +121,7 @@ BEGIN
         MENUITEM "On Set Map By Collision", IDMN_CONDITION_OSMBC
         MENUITEM "Path Found", IDMN_CONDITION_OPF
         MENUITEM "Path Available", IDMN_CONDITION_PA
+        MENUITEM "On Iterate Path", IDMN_CONDITION_OITP
     END
 END
 #endif
@@ -136,6 +137,7 @@ BEGIN
     BEGIN
         MENUITEM "Set Map",              IDMN_ACTION_SM
         MENUITEM "Continue",              IDMN_ACTION_C
+        MENUITEM "Iterate Path",              IDMN_ACTION_ITP
     END
 END
 #endif
@@ -151,6 +153,7 @@ BEGIN
     BEGIN
         MENUITEM "Get Iterate X", IDMN_EXPRESSION_OSMBC_GX
         MENUITEM "Get Iterate Y", IDMN_EXPRESSION_OSMBC_GY
+        MENUITEM "Get Iterate Index", IDMN_EXPRESSION_OITP_GI
 
         MENUITEM "Get Step", IDMN_EXPRESSION_GS
         MENUITEM "Get Step of Path", IDMN_EXPRESSION_GSOP
@@ -242,6 +245,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_ACTION_SM                "Set Map Type %3 at [ %0 , %1 ] to Cost %2, UseRealCoord = %4, UseIterateCoord = %5"
     M_ACTION_C                "Continue"
+    M_ACTION_ITP              "Iterate Path %0, UseRealCoord = %1 "
 END
 
 STRINGTABLE DISCARDABLE 
@@ -253,6 +257,8 @@ BEGIN
     M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], Diagonal = %4, ForceFind = %5, UseRealCoord = %6, SaveName = %7 ) Found"
 
     M_CONDITION_PA               "%o Path %0 Available"
+
+    M_CONDITION_OITP             "%o On Iterate Path"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -266,6 +272,8 @@ BEGIN
     
     M_EXPRESSION_GGC                "GetGirdCoord("
     M_EXPRESSION_GRC                "GetRealCoord("
+    
+    M_EXPRESSION_OITP_GI            "GetIterateIndex("
 END
 
 STRINGTABLE DISCARDABLE

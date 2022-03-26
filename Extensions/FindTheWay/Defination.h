@@ -5,6 +5,8 @@
 #define Default_Str	_T("")
 
 #define ONSETMAPBYCOLLISION	3
+#define ONITERATESTEP		6
+
 #define ONMAPCHANGE	0
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);

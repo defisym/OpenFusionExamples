@@ -27,10 +27,12 @@
 // Commands of action menu
 #define IDMN_ACTION_SM	       		25000
 #define IDMN_ACTION_C	       		25001
+#define IDMN_ACTION_ITP	       		25002
 
 // Action strings
 #define M_ACTION_SM                 5000
 #define M_ACTION_C                  5001
+#define M_ACTION_ITP                5002
 
 // Titles of action parameters
 #define M_X				     5501
@@ -54,6 +56,7 @@
 
 #define	IDMN_CONDITION_OPF				26004
 #define	IDMN_CONDITION_PA				26005
+#define	IDMN_CONDITION_OITP				26006
 
 // Condition strings
 #define	M_CONDITION_SMBS				6000
@@ -63,6 +66,7 @@
 
 #define	M_CONDITION_OPF				    6004
 #define	M_CONDITION_PA				    6005
+#define	M_CONDITION_OITP				6006
 
 // Titles of condition parameters
 #define M_WIDTH				        6501
@@ -100,6 +104,8 @@
 #define IDMN_EXPRESSION_GGC		        27005
 #define IDMN_EXPRESSION_GRC		        27006
 
+#define IDMN_EXPRESSION_OITP_GI	        27007
+
 // Expression strings
 #define M_EXPRESSION_OSMBC_GX			 7000
 #define M_EXPRESSION_OSMBC_GY			 7001
@@ -110,6 +116,8 @@
 
 #define M_EXPRESSION_GGC			     7005
 #define M_EXPRESSION_GRC			     7006
+
+#define M_EXPRESSION_OITP_GI		     7007
 
 // Names of expression parameters
 #define M_STEP				    7500

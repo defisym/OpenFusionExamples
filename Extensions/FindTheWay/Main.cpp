@@ -30,13 +30,18 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 8, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
 
 		IDMN_CONDITION_PA, M_CONDITION_PA, CND_CONDITION_PA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_PATHNAME,
+		
+		IDMN_CONDITION_OITP, M_CONDITION_OITP, CND_CONDITION_OITP, 0, 0,
 		};
 
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
 		IDMN_ACTION_SM, M_ACTION_SM, ACT_ACTION_SM,	0, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_X, M_Y, M_COST, M_TYPE, M_USEREALCOORD, M_USEITERATECOORD,
+		
 		IDMN_ACTION_C, M_ACTION_C, ACT_ACTION_C,	0, 0,
+		
+		IDMN_ACTION_ITP, M_ACTION_ITP, ACT_ACTION_ITP,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_PATHNAME, M_USEREALCOORD,
 		};
 
 // Definitions of parameters for each expression
@@ -51,6 +56,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GGC, M_EXPRESSION_GGC, EXP_EXPRESSION_GGC, 0, 1, EXPPARAM_LONG, M_COORD,
 		IDMN_EXPRESSION_GRC, M_EXPRESSION_GRC, EXP_EXPRESSION_GRC, 0, 1, EXPPARAM_LONG, M_COORD,
+
+		IDMN_EXPRESSION_OITP_GI, M_EXPRESSION_OITP_GI, EXP_EXPRESSION_OITP_GI, 0, 0,
 		};
 
 
@@ -196,6 +203,10 @@ long WINAPI DLLExport PathAvailable(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->pFTW->GetPathValidity(&pathName);
 }
 
+long WINAPI DLLExport OnIteratePath(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -236,18 +247,46 @@ short WINAPI DLLExport Continue(LPRDATA rdPtr, long param1, long param2) {
 	return 0;		// Force fusion to evaluate conditions, as empty events will be skipped
 }
 
+short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
+	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	bool realCoord = (bool)CNC_GetIntParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+
+	if (!rdPtr->pFTW->GetPathValidity(pPathName)) {
+		return 0;
+	}
+	rdPtr->itIndex = 0;
+	size_t totapStep = rdPtr->pFTW->GetDistance(pPathName);
+	for (size_t step = 0; step < totapStep; step++) {
+		auto coord = Coord{ rdPtr->pFTW->GetCoordAtPath(step, CoordType::X, pPathName)
+						,rdPtr->pFTW->GetCoordAtPath(step, CoordType::Y, pPathName) };
+		rdPtr->itRealCoord = realCoord ? rdPtr->pFTW->GetRealCoord(coord) : coord;
+		rdPtr->itIndex = step;
+
+		CallEvent(ONITERATESTEP);
+	}
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
 // 
 // ============================================================================
 
-long WINAPI DLLExport OnSetMapByCollision_GetX(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetIterateX(LPRDATA rdPtr, long param1) {
 	return rdPtr->itRealCoord.x;
 }
  
-long WINAPI DLLExport OnSetMapByCollision_GetY(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetIterateY(LPRDATA rdPtr, long param1) {
 	return rdPtr->itRealCoord.y;
+}
+
+long WINAPI DLLExport GetIterateIndex(LPRDATA rdPtr, long param1) {
+	return rdPtr->itIndex;
 }
 
 long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
@@ -279,11 +318,9 @@ long WINAPI DLLExport GetStepOfPath(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
-	if (pathName == L"") {
-		return STEP_UNREACHABLE;
-	}
+	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
-	return rdPtr->pFTW->GetDistance(&pathName);
+	return rdPtr->pFTW->GetDistance(pPathName);
 }
 
 long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
@@ -293,11 +330,9 @@ long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(COORD_INVALID);
 
-	if (pathName == L"") {
-		return COORD_INVALID;
-	}
+	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
-	return rdPtr->pFTW->GetCoordAtPath(step, type, &pathName);
+	return rdPtr->pFTW->GetCoordAtPath(step, type, pPathName);
 }
 
 long WINAPI DLLExport GetGirdCoord(LPRDATA rdPtr, long param1) {
@@ -333,6 +368,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			
 			OnPathFound,
 			PathAvailable,
+			OnIteratePath,
+
 			0
 			};
 	
@@ -341,13 +378,15 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetMap,
 			Continue,
 
+			IteratePath,
+
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			OnSetMapByCollision_GetX,
-			OnSetMapByCollision_GetY,
+			GetIterateX,
+			GetIterateY,
 
 			GetStep,
 			GetStepOfPath,
@@ -355,6 +394,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetGirdCoord,
 			GetRealCoord,
+
+			GetIterateIndex,
 
 			0
 			};

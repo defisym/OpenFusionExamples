@@ -14,15 +14,20 @@
 #define	CND_CONDITION_OPF				4
 #define	CND_CONDITION_PA				5
 
-#define	CND_LAST						6
+#define	CND_CONDITION_OITP				6
+
+#define	CND_LAST						7
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_SM					0
+
 #define	ACT_ACTION_C					1
 
-#define	ACT_LAST						2
+#define	ACT_ACTION_ITP					2
+
+#define	ACT_LAST						3
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -37,7 +42,9 @@
 #define EXP_EXPRESSION_GGC					5
 #define EXP_EXPRESSION_GRC					6
 
-#define	EXP_LAST                    		7
+#define EXP_EXPRESSION_OITP_GI				7
+
+#define	EXP_LAST                    		8
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -84,6 +91,7 @@ typedef struct tagRDATA
 	// Object's runtime data
 	FindTheWayClass* pFTW;
 
+	size_t itIndex;
 	Coord itRealCoord;
 	Coord itGirdCoord;
 
