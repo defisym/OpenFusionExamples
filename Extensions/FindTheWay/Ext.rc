@@ -250,7 +250,7 @@ BEGIN
     M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
     M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5 ) Success"
     M_CONDITION_OSMBC            "%o On Set Map By Collision"
-    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], ForceFind = %4, UseRealCoord = %5, SaveName = %6 ) Found"
+    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], Diagonal = %4, ForceFind = %5, UseRealCoord = %6, SaveName = %7 ) Found"
 
     M_CONDITION_PA               "%o Path %0 Available"
 END
@@ -280,6 +280,7 @@ BEGIN
     M_STARTY		                "Start Y"
     M_DESTINATIONX	                "Destination X"
     M_DESTINATIONY	                "Destination Y"
+    M_DIAGONAL  	                "1 = Move 8-Dir, 0 = Move 4-Dir"
     M_FORCEFIND		                "Force to Find Path Even Start/Destination is Obstacle"
     M_USEREALCOORD	                "Use Real Coord Instead of Gird Coord, 1 = Enable, 0 = Disable"
     M_SAVENAME		                "Save Path by Name, Keep Blank if Don't Need to Save"

@@ -83,7 +83,6 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	FindTheWayClass* pFTW;
-	bool diagonal;
 
 	Coord itRealCoord;
 	Coord itGirdCoord;

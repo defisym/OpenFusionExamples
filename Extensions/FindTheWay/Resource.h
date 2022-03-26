@@ -81,6 +81,7 @@
 #define M_EVEIT 				    6514
 #define M_BASEALYER				    6515
 #define M_PATHNAME				    6516
+#define M_DIAGONAL				    6517
 
 //	EXPRESSIONS
 //---------------------
