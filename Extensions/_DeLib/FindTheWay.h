@@ -696,7 +696,7 @@ namespace FindTheWay {
 					std::reverse(path.begin(), path.end());
 					pathAvailable = true;
 
-					stashPath[stashPathKey] = path;
+					//stashPath[stashPathKey] = path;
 
 					return;
 				}
@@ -708,8 +708,11 @@ namespace FindTheWay {
 
 					auto find = [](Set& v, Point& p)->Point* {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
-
 						return it != v.end() ? &(*it) : nullptr;
+					};
+					auto rfind = [](Set& v, Point& p)->Point* {
+						auto it = std::find_if(v.rbegin(), v.rend(), [&p](Point& it)->bool { return it.coord == p.coord; });
+						return it != v.rend() ? &(*it) : nullptr;
 					};
 
 					for (auto& it : *pNeighbour) {
@@ -732,6 +735,9 @@ namespace FindTheWay {
 							Point* p = find(point_set, cur);
 
 							if (p == nullptr) {
+								//point_set.emplace_back(base);
+								//cur.parent = &point_set.back();
+
 								Point* pBase = find(point_set, base);
 
 								if (pBase == nullptr) {
