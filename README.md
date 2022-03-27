@@ -24,7 +24,8 @@ If you have some good examples or something else and want to share, just simply 
 
 - FindTheWay
   - *Created by Defisym.*
-  - *A* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible.*
+  - *Under dev*
+  - *A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible.*
 
 - Fini
   - *Created by Defisym.*
@@ -36,6 +37,7 @@ If you have some good examples or something else and want to share, just simply 
 
 - NeoPic
   - *Created by Defisym.*
+  - *Under dev*
   - *Another active picture, but with encrypt support, all object shares a lib that over frame, significantly reduce load time*
 
 - RandomTable
