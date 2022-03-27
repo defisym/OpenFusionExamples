@@ -122,6 +122,7 @@ BEGIN
         MENUITEM "Path Found", IDMN_CONDITION_OPF
         MENUITEM "Path Available", IDMN_CONDITION_PA
         MENUITEM "On Iterate Path", IDMN_CONDITION_OITP
+        MENUITEM "Map Available", IDMN_CONDITION_MA
     END
 END
 #endif
@@ -161,6 +162,10 @@ BEGIN
 
         MENUITEM "Get Gird Coord", IDMN_EXPRESSION_GGC
         MENUITEM "Get Real Coord", IDMN_EXPRESSION_GRC
+        
+        MENUITEM "Get Map Cost", IDMN_EXPRESSION_GMC
+        MENUITEM "Get Map Base64", IDMN_EXPRESSION_GMB64
+        MENUITEM "Get Map String", IDMN_EXPRESSION_GMS
     END
 END
 #endif
@@ -259,6 +264,8 @@ BEGIN
     M_CONDITION_PA               "%o Path %0 Available"
 
     M_CONDITION_OITP             "%o On Iterate Path, IterateName = %0"
+    
+    M_CONDITION_MA               "%o Map Available"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -274,6 +281,10 @@ BEGIN
     M_EXPRESSION_GRC                "GetRealCoord("
     
     M_EXPRESSION_GITI               "GetIterateIndex("
+    
+    M_EXPRESSION_GMC                "GetMapCost("
+    M_EXPRESSION_GMB64              "GetMapBase64$("
+    M_EXPRESSION_GMS                "GetMapStr$("
 END
 
 STRINGTABLE DISCARDABLE
@@ -300,12 +311,13 @@ BEGIN
     M_X				                "X Coord"
     M_Y				                "Y Coord"
     M_COST			                "Map Cost, 255 = Obstacle"
-    M_TYPE			                "Map to Set, 1 = Terrain, 2 = Dynamic"
+    M_TYPE			                "Map Type, 1 = Terrain, 2 = Dynamic"
     M_USEITERATECOORD               "Auto Set Coord in 'On Set Map By Collision', 1 = Enable, 0 = Disable, 'X/Y Coord' && 'Use Real Coord' is Ignored When Enable"
     
     M_STEP                          "Step in the Path"
     M_COORDTYPE                     "Coord Type, 0 = X, 1 = Y"
     M_COORD                         "Coord to Convert"
+    M_SHOWPATH                      "Show Path"
 END
 
 #endif    // English (U.S.) resources

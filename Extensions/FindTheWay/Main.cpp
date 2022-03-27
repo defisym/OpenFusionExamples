@@ -32,6 +32,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_PA, M_CONDITION_PA, CND_CONDITION_PA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_PATHNAME,
 		
 		IDMN_CONDITION_OITP, M_CONDITION_OITP, CND_CONDITION_OITP, 0, 1, PARAM_EXPSTRING, M_ITNAME,
+		
+		IDMN_CONDITION_MA, M_CONDITION_MA, CND_CONDITION_MA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -58,6 +60,10 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GRC, M_EXPRESSION_GRC, EXP_EXPRESSION_GRC, 0, 1, EXPPARAM_LONG, M_COORD,
 
 		IDMN_EXPRESSION_GITI, M_EXPRESSION_GITI, EXP_EXPRESSION_GITI, 0, 0,
+
+		IDMN_EXPRESSION_GMC, M_EXPRESSION_GMC, EXP_EXPRESSION_GMC, 0, 4, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_TYPE,
+		IDMN_EXPRESSION_GMB64, M_EXPRESSION_GMB64, EXP_EXPRESSION_GMB64, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GMS, M_EXPRESSION_GMS, EXP_EXPRESSION_GMS, EXPFLAG_STRING, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_TYPE, M_SHOWPATH, M_PATHNAME,
 		};
 
 
@@ -202,6 +208,7 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 
 long WINAPI DLLExport PathAvailable(LPRDATA rdPtr, long param1, long param2) {
 	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	RetIfMapInvalid(FALSE);
 
 	return rdPtr->pFTW->GetPathValidity(&pathName);
 }
@@ -210,6 +217,12 @@ long WINAPI DLLExport OnIteratePath(LPRDATA rdPtr, long param1, long param2) {
 	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return (*rdPtr->pOnItPathName) == iterateName;
+}
+
+long WINAPI DLLExport MapAvailable(LPRDATA rdPtr, long param1, long param2) {
+	RetIfMapInvalid(FALSE);
+
+	return TRUE;
 }
 
 // ============================================================================
@@ -356,6 +369,53 @@ long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
 	return rdPtr->pFTW->GetRealCoord(Coord{ coord ,0 }).x;
 }
 
+long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {
+	size_t x = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t y = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	MapType type = (MapType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	RetIfMapInvalid(MAP_OBSTACLE);
+
+	Coord girdCoord = Coord{ x, y };
+
+	if (useRealCoord) {
+		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+	}
+
+	auto& [girdX, girdY] = girdCoord;
+
+	return rdPtr->pFTW->GetMap(girdX, girdY, type);
+}
+
+long WINAPI DLLExport GetMapBase64(LPRDATA rdPtr, long param1) {
+	*rdPtr->pMapBase64Str = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->GetMap();
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(*rdPtr->pMapBase64Str).c_str();
+}
+
+long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
+	MapType type = (MapType)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool showPath = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+
+	*rdPtr->pMapStr = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->OutPutMapStr(type, showPath, pPathName);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(*rdPtr->pMapStr).c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -374,6 +434,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			OnPathFound,
 			PathAvailable,
 			OnIteratePath,
+
+			MapAvailable,
 
 			0
 			};
@@ -401,6 +463,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetRealCoord,
 
 			GetIterateIndex,
+			
+			GetMapCost,
+			GetMapBase64,
+			GetMapStr,
 
 			0
 			};

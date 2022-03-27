@@ -55,17 +55,17 @@ PropData Properties[] = {
 	PropData_End()
 };
 
-// SETUP PROC /////////////////////////////////////////////////////////////////
+//// SETUP PROC /////////////////////////////////////////////////////////////////
 
-// Prototype of setup procedure
-BOOL CALLBACK DLLExport setupProc(HWND hDlg,uint msgType,WPARAM wParam,LPARAM lParam);
+//// Prototype of setup procedure
+//BOOL CALLBACK DLLExport setupProc(HWND hDlg,uint msgType,WPARAM wParam,LPARAM lParam);
 
-// Structure defined to pass edptr and mv into setup box
-typedef struct tagSetP
-{
-	EDITDATA _far *	edpt;
-	mv _far	*		kv;
-} setupParams;
+//// Structure defined to pass edptr and mv into setup box
+//typedef struct tagSetP
+//{
+//	EDITDATA _far *	edpt;
+//	mv _far	*		kv;
+//} setupParams;
 
 #endif // !defined(RUN_ONLY)
 

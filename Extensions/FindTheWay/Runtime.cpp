@@ -70,6 +70,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pOnItCollisionName = new wstring;
 	rdPtr->pOnItPathName = new wstring;
+	rdPtr->pMapBase64Str = new wstring;
+	rdPtr->pMapStr = new wstring;
 
 	// No errors
 	return 0;
@@ -91,6 +93,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pOnItCollisionName;
 	delete rdPtr->pOnItPathName;
+	delete rdPtr->pMapBase64Str;
+	delete rdPtr->pMapStr;
 
 	// No errors
 	return 0;

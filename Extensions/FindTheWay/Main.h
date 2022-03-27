@@ -16,7 +16,9 @@
 
 #define	CND_CONDITION_OITP				6
 
-#define	CND_LAST						7
+#define	CND_CONDITION_MA				7
+
+#define	CND_LAST						8
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -35,16 +37,20 @@
 #define	EXP_EXPRESSION_GITX				0
 #define EXP_EXPRESSION_GITY				1
 
-#define EXP_EXPRESSION_GS					2
-#define EXP_EXPRESSION_GSOP					3
-#define EXP_EXPRESSION_GSCOP				4
+#define EXP_EXPRESSION_GS				2
+#define EXP_EXPRESSION_GSOP				3
+#define EXP_EXPRESSION_GSCOP			4
 
-#define EXP_EXPRESSION_GGC					5
-#define EXP_EXPRESSION_GRC					6
+#define EXP_EXPRESSION_GGC				5
+#define EXP_EXPRESSION_GRC				6
 
 #define EXP_EXPRESSION_GITI				7
 
-#define	EXP_LAST                    		8
+#define EXP_EXPRESSION_GMC				8
+#define EXP_EXPRESSION_GMB64			9
+#define EXP_EXPRESSION_GMS				10
+
+#define	EXP_LAST                    	11
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -96,6 +102,8 @@ typedef struct tagRDATA
 
 	wstring* pOnItCollisionName;
 	wstring* pOnItPathName;
+	wstring* pMapBase64Str;
+	wstring* pMapStr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

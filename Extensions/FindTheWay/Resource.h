@@ -58,6 +58,8 @@
 #define	IDMN_CONDITION_PA				26005
 #define	IDMN_CONDITION_OITP				26006
 
+#define	IDMN_CONDITION_MA				26007
+
 // Condition strings
 #define	M_CONDITION_SMBS				6000
 #define	M_CONDITION_SMBB				6001
@@ -67,6 +69,8 @@
 #define	M_CONDITION_OPF				    6004
 #define	M_CONDITION_PA				    6005
 #define	M_CONDITION_OITP				6006
+
+#define	M_CONDITION_MA  				6007
 
 // Titles of condition parameters
 #define M_WIDTH				        6501
@@ -107,6 +111,10 @@
 
 #define IDMN_EXPRESSION_GITI	        27007
 
+#define IDMN_EXPRESSION_GMC		        27008
+#define IDMN_EXPRESSION_GMB64		    27009
+#define IDMN_EXPRESSION_GMS	    	    27010
+
 // Expression strings
 #define M_EXPRESSION_GITX			    7000
 #define M_EXPRESSION_GITY			    7001
@@ -120,10 +128,15 @@
 
 #define M_EXPRESSION_GITI		        7007
 
+#define M_EXPRESSION_GMC		        7008
+#define M_EXPRESSION_GMB64		        7009
+#define M_EXPRESSION_GMS		        7010
+
 // Names of expression parameters
 #define M_STEP				    7500
 #define M_COORDTYPE			    7501
 #define M_COORD				    7502
+#define M_SHOWPATH			    7503
 
 // Next default values for new objects
 // 
