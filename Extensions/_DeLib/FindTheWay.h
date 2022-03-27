@@ -556,7 +556,7 @@ namespace FindTheWay {
 			}
 		}
 
-		inline wstring OutPutMapStr(MapType type = MapType::MAP) {
+		inline wstring OutPutMapStr(MapType type = MapType::MAP, bool showPath = true, wstring* name = nullptr) {
 			auto find = [](Path& path, Coord& coord)->bool {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
@@ -564,11 +564,29 @@ namespace FindTheWay {
 			std::wstringstream ss;
 
 			ss << L"MapType : " << type << endl;
+			ss << L"Obstacle = \'*\', Path = \'#\'" << endl;
+
+			Path* pPath = nullptr;
+			bool curPathAvaliable = false;
+
+			if (showPath) {
+				pPath = GetPathPointer(name);
+				curPathAvaliable = GetPathValidity(name);
+
+				if (curPathAvaliable) {
+					wstring displayName = name == nullptr ? L"Last Path" : *name;
+					ss << "Step of \"" << displayName << "\" = \'-\'" << endl;
+				}
+				else {
+					ss << "Target Path \"" << *name << "\" Invalid" << endl;
+				}
+			}
+
+			ss << L"----------" << endl;
+
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
-					Coord cur = { x,y };
-
-					if (find(path, cur)) {
+					if (showPath && curPathAvaliable && find(*pPath, Coord{ x,y })) {
 						ss << L'-';
 					}
 					else {
