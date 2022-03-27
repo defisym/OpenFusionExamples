@@ -326,7 +326,7 @@ namespace FindTheWay {
 
 			open_set.reserve(2 * PATH_RESERVE);
 			close_set.reserve(2 * PATH_RESERVE);
-			point_set.reserve(2 * PATH_RESERVE);
+			point_set.reserve(8 * this->mapSize);
 		}
 
 		inline void Allocate(size_t width, size_t height) {
@@ -359,13 +359,13 @@ namespace FindTheWay {
 		}
 
 	public:
-		FindTheWayClass(size_t width, size_t height) {
-			Reserve();
+		FindTheWayClass(size_t width, size_t height) {			
 			Allocate(width,height);
-		}
-		FindTheWayClass(const wstring& base64) {
 			Reserve();
+		}
+		FindTheWayClass(const wstring& base64) {			
 			SetMap(base64);
+			Reserve();
 		}
 
 		~FindTheWayClass() {
@@ -392,12 +392,12 @@ namespace FindTheWay {
 			this->girdOffestY = girdOffestY;
 		}
 
-		inline Coord GetGirdCoord(Coord realCoord) {
+		inline Coord GetGirdCoord(const Coord& realCoord) {
 			return realCoord / girdSize;
 		}
 
-		inline Coord GetRealCoord(Coord girdCoord) {
-			return girdCoord * girdSize + (size_t)(girdSize / 2);
+		inline Coord GetRealCoord(const Coord& girdCoord) {
+			return girdCoord * girdSize + (size_t)(girdSize >> 1);	// girdCoord * girdSize + (size_t)(girdSize / 2);
 		}
 
 		inline size_t GetGirdSize() {
@@ -710,7 +710,7 @@ namespace FindTheWay {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
 
 						return it != v.end() ? &(*it) : nullptr;
-					};					
+					};
 
 					for (auto& it : *pNeighbour) {
 						Coord neighCoord = Coord{ (size_t)(base.coord.x + it.x)
@@ -732,8 +732,15 @@ namespace FindTheWay {
 							Point* p = find(point_set, cur);
 
 							if (p == nullptr) {
-								point_set.emplace_back(base);
-								cur.parent = &point_set.back();
+								Point* pBase = find(point_set, base);
+
+								if (pBase == nullptr) {
+									point_set.emplace_back(base);
+									cur.parent = &point_set.back();
+								}
+								else {
+									cur.parent = pBase;
+								}
 							}
 							else {
 								cur.parent = p;
