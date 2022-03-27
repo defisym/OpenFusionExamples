@@ -151,9 +151,9 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Get Iterate X", IDMN_EXPRESSION_OSMBC_GX
-        MENUITEM "Get Iterate Y", IDMN_EXPRESSION_OSMBC_GY
-        MENUITEM "Get Iterate Index", IDMN_EXPRESSION_OITP_GI
+        MENUITEM "Get Iterate X", IDMN_EXPRESSION_GITX
+        MENUITEM "Get Iterate Y", IDMN_EXPRESSION_GITY
+        MENUITEM "Get Iterate Index", IDMN_EXPRESSION_GITI
 
         MENUITEM "Get Step", IDMN_EXPRESSION_GS
         MENUITEM "Get Step of Path", IDMN_EXPRESSION_GSOP
@@ -245,26 +245,26 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_ACTION_SM                "Set Map Type %3 at [ %0 , %1 ] to Cost %2, UseRealCoord = %4, UseIterateCoord = %5"
     M_ACTION_C                "Continue"
-    M_ACTION_ITP              "Iterate Path %0, UseRealCoord = %1 "
+    M_ACTION_ITP              "Iterate Path %0, UseRealCoord = %1, IterateName = %2 "
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_SMBS             "%o Set Map to ( Width = %0, Height = %1 ) Success"
     M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
-    M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5 ) Success"
-    M_CONDITION_OSMBC            "%o On Set Map By Collision"
+    M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5, IterateName = %6 ) Success"
+    M_CONDITION_OSMBC            "%o On Set Map By Collision, IterateName = %0"
     M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], Diagonal = %4, ForceFind = %5, UseRealCoord = %6, SaveName = %7 ) Found"
 
     M_CONDITION_PA               "%o Path %0 Available"
 
-    M_CONDITION_OITP             "%o On Iterate Path"
+    M_CONDITION_OITP             "%o On Iterate Path, IterateName = %0"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION_OSMBC_GX           "GetIterateX("
-    M_EXPRESSION_OSMBC_GY           "GetIterateY("
+    M_EXPRESSION_GITX               "GetIterateX("
+    M_EXPRESSION_GITY               "GetIterateY("
     
     M_EXPRESSION_GS                 "GetStep("
     M_EXPRESSION_GSOP               "GetStepofPath("
@@ -273,7 +273,7 @@ BEGIN
     M_EXPRESSION_GGC                "GetGirdCoord("
     M_EXPRESSION_GRC                "GetRealCoord("
     
-    M_EXPRESSION_OITP_GI            "GetIterateIndex("
+    M_EXPRESSION_GITI               "GetIterateIndex("
 END
 
 STRINGTABLE DISCARDABLE
@@ -295,6 +295,7 @@ BEGIN
     M_EVEIT 		                "1 = Call 'On Set Map By Collision' to Check Collision Manually, 0 = Use Layer's Collision Mask"
     M_BASEALYER		                "Layer (Index Start From 1) to Check, 0 = All Layer"
     M_PATHNAME		                "Saved Path Name, Keep Blank to Check Last Path"
+    M_ITNAME		                "Iterate Name"
 
     M_X				                "X Coord"
     M_Y				                "Y Coord"

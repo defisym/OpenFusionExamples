@@ -22,16 +22,16 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION_SMBS, M_CONDITION_SMBS, CND_CONDITION_SMBS, EVFLAGS_ALWAYS, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
-		IDMN_CONDITION_SMBB, M_CONDITION_SMBB, CND_CONDITION_SMBB, EVFLAGS_ALWAYS, 1, PARAM_EXPSTRING, M_BASE64,
-		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASEALYER, M_TYPE,
-		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 0,
+		IDMN_CONDITION_SMBS, M_CONDITION_SMBS, CND_CONDITION_SMBS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
+		IDMN_CONDITION_SMBB, M_CONDITION_SMBB, CND_CONDITION_SMBB, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_BASE64,
+		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASEALYER, M_TYPE, M_ITNAME,
+		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 
 		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 8, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
 
 		IDMN_CONDITION_PA, M_CONDITION_PA, CND_CONDITION_PA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_PATHNAME,
 		
-		IDMN_CONDITION_OITP, M_CONDITION_OITP, CND_CONDITION_OITP, 0, 0,
+		IDMN_CONDITION_OITP, M_CONDITION_OITP, CND_CONDITION_OITP, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 		};
 
 // Definitions of parameters for each action
@@ -41,14 +41,14 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_C, M_ACTION_C, ACT_ACTION_C,	0, 0,
 		
-		IDMN_ACTION_ITP, M_ACTION_ITP, ACT_ACTION_ITP,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_PATHNAME, M_USEREALCOORD,
+		IDMN_ACTION_ITP, M_ACTION_ITP, ACT_ACTION_ITP,	0, 3, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PATHNAME, M_USEREALCOORD, M_ITNAME,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-		IDMN_EXPRESSION_OSMBC_GX, M_EXPRESSION_OSMBC_GX, EXP_EXPRESSION_OSMBC_GX, 0, 0,
-		IDMN_EXPRESSION_OSMBC_GY, M_EXPRESSION_OSMBC_GY, EXP_EXPRESSION_OSMBC_GY, 0, 0,
+		IDMN_EXPRESSION_GITX, M_EXPRESSION_GITX, EXP_EXPRESSION_GITX, 0, 0,
+		IDMN_EXPRESSION_GITY, M_EXPRESSION_GITY, EXP_EXPRESSION_GITY, 0, 0,
 
 		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 8, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
 		IDMN_EXPRESSION_GSOP, M_EXPRESSION_GSOP, EXP_EXPRESSION_GSOP, 0, 1, EXPPARAM_STRING, M_PATHNAME,
@@ -57,7 +57,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GGC, M_EXPRESSION_GGC, EXP_EXPRESSION_GGC, 0, 1, EXPPARAM_LONG, M_COORD,
 		IDMN_EXPRESSION_GRC, M_EXPRESSION_GRC, EXP_EXPRESSION_GRC, 0, 1, EXPPARAM_LONG, M_COORD,
 
-		IDMN_EXPRESSION_OITP_GI, M_EXPRESSION_OITP_GI, EXP_EXPRESSION_OITP_GI, 0, 0,
+		IDMN_EXPRESSION_GITI, M_EXPRESSION_GITI, EXP_EXPRESSION_GITI, 0, 0,
 		};
 
 
@@ -121,6 +121,8 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	size_t baseLayer = (size_t)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
+	*rdPtr->pOnItCollisionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
 
 	auto frameWidth = frameRect.right - frameRect.left;
@@ -146,16 +148,15 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
-			rdPtr->itRealCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });
+			rdPtr->itCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });
 
 			if (eventIterate) {
-				rdPtr->itGirdCoord = Coord{ x,y };
 				CallEvent(ONSETMAPBYCOLLISION);
 			}
 			// Ref: https://community.clickteam.com/threads/59029-Accessing-backdrops-from-extensions
 			else if (!callColMaskTestPoint(hoPtr					// colMaskTestPoint in Java/OC/JS
-				, rdPtr->itRealCoord.x - layerOffsetX
-				, rdPtr->itRealCoord.y - layerOffsetY
+				, rdPtr->itCoord.x - layerOffsetX
+				, rdPtr->itCoord.y - layerOffsetY
 				, baseLayer, 0)) {
 				rdPtr->pFTW->SetMap(x, y, MAP_OBSTACLE, MapType::TERRAIN);
 			}
@@ -170,7 +171,9 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 }
 
 long WINAPI DLLExport OnSetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
-	return TRUE;
+	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return (*rdPtr->pOnItCollisionName) == iterateName;
 }
 
 long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
@@ -204,7 +207,9 @@ long WINAPI DLLExport PathAvailable(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnIteratePath(LPRDATA rdPtr, long param1, long param2) {
-	return TRUE;
+	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return (*rdPtr->pOnItPathName) == iterateName;
 }
 
 // ============================================================================
@@ -225,20 +230,18 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
+	Coord girdCoord = Coord{ x, y };
+
 	if (useIterateCoord) {
-		x = rdPtr->itGirdCoord.x;
-		y = rdPtr->itGirdCoord.y;
+		girdCoord = rdPtr->pFTW->GetGirdCoord(rdPtr->itCoord);
 	}
-	else {
-		if (useRealCoord) {
-			Coord girdCoord = rdPtr->pFTW->GetGirdCoord(Coord{ x, y });
-
-			x = girdCoord.x;
-			y = girdCoord.y;
-		}
+	else if (useRealCoord) {
+		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
 	}
 
-	rdPtr->pFTW->SetMap(x, y, cost, type);
+	auto& [girdX, girdY] = girdCoord;
+
+	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
 
 	return 0;
 }
@@ -250,6 +253,8 @@ short WINAPI DLLExport Continue(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	bool realCoord = (bool)CNC_GetIntParameter(rdPtr);
+
+	*rdPtr->pOnItPathName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -263,7 +268,7 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 	for (size_t step = 0; step < totapStep; step++) {
 		auto coord = Coord{ rdPtr->pFTW->GetCoordAtPath(step, CoordType::X, pPathName)
 						,rdPtr->pFTW->GetCoordAtPath(step, CoordType::Y, pPathName) };
-		rdPtr->itRealCoord = realCoord ? rdPtr->pFTW->GetRealCoord(coord) : coord;
+		rdPtr->itCoord = realCoord ? rdPtr->pFTW->GetRealCoord(coord) : coord;
 		rdPtr->itIndex = step;
 
 		CallEvent(ONITERATESTEP);
@@ -278,11 +283,11 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 // ============================================================================
 
 long WINAPI DLLExport GetIterateX(LPRDATA rdPtr, long param1) {
-	return rdPtr->itRealCoord.x;
+	return rdPtr->itCoord.x;
 }
  
 long WINAPI DLLExport GetIterateY(LPRDATA rdPtr, long param1) {
-	return rdPtr->itRealCoord.y;
+	return rdPtr->itCoord.y;
 }
 
 long WINAPI DLLExport GetIterateIndex(LPRDATA rdPtr, long param1) {

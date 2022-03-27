@@ -32,8 +32,8 @@
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION_OSMBC_GX				0
-#define EXP_EXPRESSION_OSMBC_GY				1
+#define	EXP_EXPRESSION_GITX				0
+#define EXP_EXPRESSION_GITY				1
 
 #define EXP_EXPRESSION_GS					2
 #define EXP_EXPRESSION_GSOP					3
@@ -42,7 +42,7 @@
 #define EXP_EXPRESSION_GGC					5
 #define EXP_EXPRESSION_GRC					6
 
-#define EXP_EXPRESSION_OITP_GI				7
+#define EXP_EXPRESSION_GITI				7
 
 #define	EXP_LAST                    		8
 
@@ -92,8 +92,10 @@ typedef struct tagRDATA
 	FindTheWayClass* pFTW;
 
 	size_t itIndex;
-	Coord itRealCoord;
-	Coord itGirdCoord;
+	Coord itCoord;
+
+	wstring* pOnItCollisionName;
+	wstring* pOnItPathName;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

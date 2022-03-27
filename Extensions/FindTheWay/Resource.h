@@ -86,6 +86,7 @@
 #define M_BASEALYER				    6515
 #define M_PATHNAME				    6516
 #define M_DIAGONAL				    6517
+#define M_ITNAME				    6518
 
 //	EXPRESSIONS
 //---------------------
@@ -94,8 +95,8 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION_OSMBC_GX		27000
-#define IDMN_EXPRESSION_OSMBC_GY		27001
+#define IDMN_EXPRESSION_GITX		27000
+#define IDMN_EXPRESSION_GITY		27001
 
 #define IDMN_EXPRESSION_GS		        27002
 #define IDMN_EXPRESSION_GSOP		    27003
@@ -104,20 +105,20 @@
 #define IDMN_EXPRESSION_GGC		        27005
 #define IDMN_EXPRESSION_GRC		        27006
 
-#define IDMN_EXPRESSION_OITP_GI	        27007
+#define IDMN_EXPRESSION_GITI	        27007
 
 // Expression strings
-#define M_EXPRESSION_OSMBC_GX			 7000
-#define M_EXPRESSION_OSMBC_GY			 7001
+#define M_EXPRESSION_GITX			    7000
+#define M_EXPRESSION_GITY			    7001
 
-#define M_EXPRESSION_GS			         7002
-#define M_EXPRESSION_GSOP			     7003
-#define M_EXPRESSION_GSCOP			     7004
+#define M_EXPRESSION_GS			        7002
+#define M_EXPRESSION_GSOP			    7003
+#define M_EXPRESSION_GSCOP			    7004
 
-#define M_EXPRESSION_GGC			     7005
-#define M_EXPRESSION_GRC			     7006
+#define M_EXPRESSION_GGC			    7005
+#define M_EXPRESSION_GRC			    7006
 
-#define M_EXPRESSION_OITP_GI		     7007
+#define M_EXPRESSION_GITI		        7007
 
 // Names of expression parameters
 #define M_STEP				    7500

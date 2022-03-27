@@ -68,6 +68,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pFTW = nullptr;
 
+	rdPtr->pOnItCollisionName = new wstring;
+	rdPtr->pOnItPathName = new wstring;
+
 	// No errors
 	return 0;
 }
@@ -85,6 +88,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	delete rdPtr->pFTW;
+
+	delete rdPtr->pOnItCollisionName;
+	delete rdPtr->pOnItPathName;
 
 	// No errors
 	return 0;
