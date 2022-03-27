@@ -28,6 +28,7 @@
 
 //F01
 #import "CRunTemplate.h"
+#import "CRunFindTheWay.h"
 
 #import "CRunKcArray.h"
 #import "CRunActiveBackdrop.h"
@@ -136,7 +137,10 @@
     {
         object=[[CRunTemplate alloc] init];
     }
-    
+    if ([name caseInsensitiveCompare:@"FindTheWay"]==0)
+    {
+        object=[[CRunFindTheWay alloc] init];
+    }
     
 	if ([name caseInsensitiveCompare:@"kcarray"]==0)
 	{

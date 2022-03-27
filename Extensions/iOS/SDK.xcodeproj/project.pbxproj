@@ -45,6 +45,7 @@
 		1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DF5F4DF0D08C38300B7A737 /* UIKit.framework */; };
 		288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 288765FC0DF74451002DB57D /* CoreGraphics.framework */; };
 		3DA0F3A819FE38140080FDC5 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DA0F3A719FE38140080FDC5 /* Images.xcassets */; };
+		8103571C27EFE941000AD374 /* CRunFindTheWay.m in Sources */ = {isa = PBXBuildFile; fileRef = 8103571B27EFE941000AD374 /* CRunFindTheWay.m */; };
 		81B13D9127EC884000AF5BF4 /* CRunTemplate.m in Sources */ = {isa = PBXBuildFile; fileRef = 81B13D9027EC884000AF5BF4 /* CRunTemplate.m */; };
 		8B0D31BB18366251005202BD /* b2BroadPhase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8B0D312E18366234005202BD /* b2BroadPhase.cpp */; };
 		8B0D31BC18366251005202BD /* b2CollideCircle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8B0D313018366234005202BD /* b2CollideCircle.cpp */; };
@@ -428,6 +429,8 @@
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		32CA4F630368D1EE00C91783 /* SDK_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDK_Prefix.pch; sourceTree = "<group>"; };
 		3DA0F3A719FE38140080FDC5 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SDK/Images.xcassets; sourceTree = "<group>"; };
+		8103571A27EFE941000AD374 /* CRunFindTheWay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CRunFindTheWay.h; sourceTree = "<group>"; };
+		8103571B27EFE941000AD374 /* CRunFindTheWay.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CRunFindTheWay.m; sourceTree = "<group>"; };
 		81B13D8F27EC884000AF5BF4 /* CRunTemplate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CRunTemplate.h; sourceTree = "<group>"; };
 		81B13D9027EC884000AF5BF4 /* CRunTemplate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CRunTemplate.m; sourceTree = "<group>"; };
 		8B0D30FC183661D0005202BD /* Box2D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Box2D.h; path = Classes/Box2D/Box2D.h; sourceTree = "<group>"; };
@@ -1572,6 +1575,8 @@
 				EDE55AF61D2D490500B5AA42 /* CRunWebView2.m */,
 				81B13D8F27EC884000AF5BF4 /* CRunTemplate.h */,
 				81B13D9027EC884000AF5BF4 /* CRunTemplate.m */,
+				8103571A27EFE941000AD374 /* CRunFindTheWay.h */,
+				8103571B27EFE941000AD374 /* CRunFindTheWay.m */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -2163,6 +2168,7 @@
 				A72B59AD151A16F800223DD0 /* CCounter.m in Sources */,
 				A72B59AE151A16F800223DD0 /* CExtension.m in Sources */,
 				A72B59AF151A16F800223DD0 /* CLives.m in Sources */,
+				8103571C27EFE941000AD374 /* CRunFindTheWay.m in Sources */,
 				A72B59B0151A16F800223DD0 /* CObject.m in Sources */,
 				A72B59B1151A16F800223DD0 /* CQuestion.m in Sources */,
 				A72B59B2151A16F800223DD0 /* CRCom.m in Sources */,
