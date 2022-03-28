@@ -1,12 +1,10 @@
 # MMF Auto Backup #
 *.001
 
-# Debug Object Log File #
-*.log
-
-# Deque Output File #
-*.File
+#SDK
 *.chw
+Inc/*
+
 Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/Collision.png
 Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/ZoomOutCollision.png
 
