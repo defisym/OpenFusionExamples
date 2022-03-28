@@ -1,4 +1,5 @@
 Set ProjectName=FindTheWay
+Set CompressPath="C:\Program Files\7-Zip\7z.exe"
 
 Set ParentPath=%CD%\..\
 
@@ -46,7 +47,7 @@ echo f | xcopy "%SrcPath%\src\main\java\Extensions\CRun%ProjectName%.java" "%Con
 
 del %AndroidPath%\%ProjectName%.zip /f /s /q
 
-"C:\Program Files\7-Zip\7z.exe" a -tzip %AndroidPath%\%ProjectName%.zip %ContentPath%\*
+%CompressPath% a -tzip %AndroidPath%\%ProjectName%.zip %ContentPath%\*
 
 @echo Install...
 
@@ -82,7 +83,8 @@ set Date=%date:~2,8%
 
 set Date=%Date:/=%
 
-"C:\Program Files\7-Zip\7z.exe" a -tzip %ParentPath%\%ProjectName%_B%Date%.zip %ToInstallPath%\*
+%CompressPath% a -tzip %ParentPath%\%ProjectName%_B%Date%.zip %ToInstallPath%\*
+%CompressPath% d %ParentPath%\%ProjectName%_B%Date%.zip *.001 -r
 
 copy "%ParentPath%\%ProjectName%_B%Date%.zip" "%ParentPath%\%ProjectName%_Release.zip"
 
