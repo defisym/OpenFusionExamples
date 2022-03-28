@@ -85,6 +85,8 @@ set Date=%Date:/=%
 
 %CompressPath% a -tzip %ParentPath%\%ProjectName%_B%Date%.zip %ToInstallPath%\*
 %CompressPath% d %ParentPath%\%ProjectName%_B%Date%.zip *.001 -r
+%CompressPath% d %ParentPath%\%ProjectName%_B%Date%.zip *.keep -r
+%CompressPath% d %ParentPath%\%ProjectName%_B%Date%.zip *.DS_Store -r
 
 copy "%ParentPath%\%ProjectName%_B%Date%.zip" "%ParentPath%\%ProjectName%_Release.zip"
 
