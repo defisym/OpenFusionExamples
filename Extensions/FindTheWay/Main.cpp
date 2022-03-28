@@ -27,13 +27,20 @@ short conditionsInfos[]=
 		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASEALYER, M_TYPE, M_ITNAME,
 		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 
-		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 8, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
+		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 9, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_CHECKDIAGONALCORNER, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
 
 		IDMN_CONDITION_PA, M_CONDITION_PA, CND_CONDITION_PA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_PATHNAME,
 		
 		IDMN_CONDITION_OITP, M_CONDITION_OITP, CND_CONDITION_OITP, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 		
 		IDMN_CONDITION_MA, M_CONDITION_MA, CND_CONDITION_MA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_CMCAC, M_CONDITION_CMCAC, CND_CONDITION_CMCAC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 5, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION,M_X, M_Y, M_COST_CHECK, M_TYPE, M_USEREALCOORD,
+
+		IDMN_CONDITION_OAG, M_CONDITION_OAG, CND_CONDITION_OAG, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
+		IDMN_CONDITION_OAO, M_CONDITION_OAO, CND_CONDITION_OAO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_TYPE,
+		IDMN_CONDITION_OAC, M_CONDITION_OAC, CND_CONDITION_OAC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
+
+		IDMN_CONDITION_SMBP, M_CONDITION_SMBP, CND_CONDITION_SMBP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FILEPATH, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
 		};
 
 // Definitions of parameters for each action
@@ -44,6 +51,9 @@ short actionsInfos[]=
 		IDMN_ACTION_C, M_ACTION_C, ACT_ACTION_C,	0, 0,
 		
 		IDMN_ACTION_ITP, M_ACTION_ITP, ACT_ACTION_ITP,	0, 3, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PATHNAME, M_USEREALCOORD, M_ITNAME,
+
+		IDMN_ACTION_SMBO, M_ACTION_SMBO, ACT_ACTION_SMBO,	0, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_COST, M_TYPE,
+		IDMN_ACTION_CM, M_ACTION_CM, ACT_ACTION_CM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_COST, M_TYPE,
 		};
 
 // Definitions of parameters for each expression
@@ -52,7 +62,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GITX, M_EXPRESSION_GITX, EXP_EXPRESSION_GITX, 0, 0,
 		IDMN_EXPRESSION_GITY, M_EXPRESSION_GITY, EXP_EXPRESSION_GITY, 0, 0,
 
-		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 8, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
+		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 9, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_STARTX_EXP, M_STARTY_EXP, M_DESTINATIONX_EXP, M_DESTINATIONY_EXP, M_DIAGONAL_EXP, M_CHECKDIAGONALCORNER_EXP, M_FORCEFIND_EXP, M_USEREALCOORD_EXP, M_SAVENAME_EXP,
 		IDMN_EXPRESSION_GSOP, M_EXPRESSION_GSOP, EXP_EXPRESSION_GSOP, 0, 1, EXPPARAM_STRING, M_PATHNAME,
 		IDMN_EXPRESSION_GSCOP, M_EXPRESSION_GSCOP, EXP_EXPRESSION_GSCOP, 0, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_PATHNAME, M_STEP, M_COORDTYPE,
 
@@ -110,6 +120,78 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
+#endif // _DEBUG
+
+	return TRUE;
+}
+
+long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
+	delete rdPtr->pFTW;
+	rdPtr->pFTW = nullptr;
+
+	wstring filePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
+
+	auto pSf = new cSurface();
+
+	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+	CImageFilter    pFilter(pImgMgr);
+
+	ImportImage(pImgMgr, filePath.c_str(), pSf, 0, 0);
+
+	if (!pSf->IsValid()) {
+		return FALSE;
+	}
+
+	size_t width = pSf->GetWidth();
+	size_t height = pSf->GetHeight();
+
+	try {
+		rdPtr->pFTW = new FindTheWayClass(width, height);
+	}
+	catch (Exception) {
+		return FALSE;
+	}
+
+	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
+
+	auto& [girdWidth, girdHeight] = rdPtr->pFTW->GetGirdCoord(Coord{ width ,height });
+
+	BYTE* buff = pSf->LockBuffer();
+	if (!buff) {
+		return 0;
+	}
+
+	int pitch = pSf->GetPitch();
+	if (pitch < 0) {
+		pitch *= -1;
+		buff -= pitch * (height - 1);
+	}
+
+	size_t size = pitch * height;
+	size_t byte = pSf->GetDepth() >> 3;
+
+	for (size_t y = 0; y < girdHeight; y++) {
+		for (size_t x = 0; x < girdWidth; x++) {
+			auto& [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
+			auto offset = realY * pitch + realX * byte;
+
+			if (offset >= size) {
+				continue;
+			}
+
+			auto cost = buff[offset + 2];		// R value
+			rdPtr->pFTW->SetMap(x,y,cost,MapType::TERRAIN);
+		}
+	}
+
+	pSf->UnlockBuffer(buff);
+
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
 #endif // _DEBUG
 
 	return TRUE;
@@ -190,6 +272,8 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 	size_t destinationY = (size_t)CNC_GetParameter(rdPtr);
 
 	bool diagonal = (bool)CNC_GetParameter(rdPtr);
+	bool checkDiagonalCorner = (bool)CNC_GetParameter(rdPtr);
+
 	bool forceFind=(bool)CNC_GetParameter(rdPtr);
 	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
 
@@ -197,7 +281,7 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, diagonal, forceFind, useRealCoord, saveName);
+	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
@@ -223,6 +307,94 @@ long WINAPI DLLExport MapAvailable(LPRDATA rdPtr, long param1, long param2) {
 	RetIfMapInvalid(FALSE);
 
 	return TRUE;
+}
+
+long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param2) {
+	size_t x = (size_t)CNC_GetParameter(rdPtr);
+	size_t y = (size_t)CNC_GetParameter(rdPtr);
+
+	int cost = (int)CNC_GetParameter(rdPtr);
+	MapType type = (MapType)CNC_GetParameter(rdPtr);
+
+	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	Coord girdCoord = Coord{ x, y };
+
+	if (useRealCoord) {
+		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+	}
+
+	auto& [girdX, girdY] = girdCoord;
+
+	auto mapCost = rdPtr->pFTW->GetMap(girdX, girdY, type);
+
+	if (cost ==-1 && mapCost != MAP_OBSTACLE) {					// Check for path
+		return TRUE;
+	}
+	else if (cost == 65536 && mapCost == MAP_OBSTACLE) {		// Check for obstacle
+		return TRUE;
+	}
+	else if (cost == mapCost) {									// Check accurate cost
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
+}
+
+long WINAPI DLLExport ObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	size_t x = (size_t)CNC_GetParameter(rdPtr);
+	size_t y = (size_t)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+		if (object->roHo.hoX < 0 || object->roHo.hoY < 0) {
+			return false;
+		}
+		else {
+			return Coord{ x,y } == rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+		}
+		});
+}
+
+long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	MapType type = (MapType)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+		if (object->roHo.hoX < 0 || object->roHo.hoY < 0) {
+			return false;
+		}
+		else {
+			auto& [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+
+			return rdPtr->pFTW->GetMap(girdX, girdY, type) == MAP_OBSTACLE;
+		}
+		});
+}
+
+long WINAPI DLLExport ObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	int x = (int)CNC_GetParameter(rdPtr);
+	int y = (int)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+		return object->roHo.hoX == x && object->roHo.hoY == y;
+		});
 }
 
 // ============================================================================
@@ -255,6 +427,30 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 	auto& [girdX, girdY] = girdCoord;
 
 	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
+	MapType type = (MapType)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	auto& [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
+
+	return 0;
+}
+
+short WINAPI DLLExport ClearMap(LPRDATA rdPtr, long param1, long param2) {
+	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
+	MapType type = (MapType)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	rdPtr->pFTW->ClearMap(type, cost);
 
 	return 0;
 }
@@ -315,6 +511,8 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 	size_t destinationY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	bool diagonal = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool checkDiagonalCorner = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
 	bool forceFind = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
@@ -322,7 +520,7 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
-	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, diagonal, forceFind, useRealCoord, saveName);
+	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
@@ -436,6 +634,13 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			OnIteratePath,
 
 			MapAvailable,
+			CheckMapCostAtPoint,
+
+			ObjectAtGird,
+			ObjectAtObstacle,
+			ObjectAtCoord,
+
+			SetMapByPicture,
 
 			0
 			};
@@ -446,6 +651,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Continue,
 
 			IteratePath,
+
+			SetMapByObject,
+			ClearMap,
 
 			0
 			};

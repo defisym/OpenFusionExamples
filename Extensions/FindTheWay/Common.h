@@ -26,12 +26,15 @@
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
+#include	"ImageFlt.h"
+#include	"ImgFlt.h"
 
 // My lib
 #include	"Defination.h"
 #include	"FindTheWay.h"
 
 using namespace FindTheWay;
+class ObjectSelection;
 
 // Specific to this cox
 #include	"resource.h"
@@ -39,6 +42,7 @@ using namespace FindTheWay;
 #include	"TigsExt.hpp"
 
 // My header
+#include	"ObjectSelection.h"
 #include	"Func.h"
 
 // Globals and Prototypes

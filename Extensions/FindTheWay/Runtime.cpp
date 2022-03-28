@@ -73,6 +73,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pMapBase64Str = new wstring;
 	rdPtr->pMapStr = new wstring;
 
+	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
+
 	// No errors
 	return 0;
 }
@@ -95,6 +97,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pOnItPathName;
 	delete rdPtr->pMapBase64Str;
 	delete rdPtr->pMapStr;
+
+	delete rdPtr->pSelect;
 
 	// No errors
 	return 0;

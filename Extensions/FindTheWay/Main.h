@@ -17,19 +17,26 @@
 #define	CND_CONDITION_OITP				6
 
 #define	CND_CONDITION_MA				7
+#define	CND_CONDITION_CMCAC				8
 
-#define	CND_LAST						8
+#define	CND_CONDITION_OAG				9
+#define	CND_CONDITION_OAO				10
+#define	CND_CONDITION_OAC				11
+
+#define	CND_CONDITION_SMBP				12
+
+#define	CND_LAST						13
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_SM					0
-
 #define	ACT_ACTION_C					1
-
 #define	ACT_ACTION_ITP					2
+#define	ACT_ACTION_SMBO					3
+#define	ACT_ACTION_CM					4
 
-#define	ACT_LAST						3
+#define	ACT_LAST						5
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -104,6 +111,8 @@ typedef struct tagRDATA
 	wstring* pOnItPathName;
 	wstring* pMapBase64Str;
 	wstring* pMapStr;
+
+	ObjectSelection* pSelect;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

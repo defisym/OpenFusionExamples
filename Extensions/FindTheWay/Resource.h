@@ -28,11 +28,15 @@
 #define IDMN_ACTION_SM	       		25000
 #define IDMN_ACTION_C	       		25001
 #define IDMN_ACTION_ITP	       		25002
+#define IDMN_ACTION_SMBO       		25003
+#define IDMN_ACTION_CM	       		25004
 
 // Action strings
 #define M_ACTION_SM                 5000
 #define M_ACTION_C                  5001
 #define M_ACTION_ITP                5002
+#define M_ACTION_SMBO               5003
+#define M_ACTION_CM                 5004
 
 // Titles of action parameters
 #define M_X				     5501
@@ -59,6 +63,13 @@
 #define	IDMN_CONDITION_OITP				26006
 
 #define	IDMN_CONDITION_MA				26007
+#define	IDMN_CONDITION_CMCAC			26008
+
+#define	IDMN_CONDITION_OAG  			26009
+#define	IDMN_CONDITION_OAO  			26010
+#define	IDMN_CONDITION_OAC  			26011
+
+#define	IDMN_CONDITION_SMBP  			26012
 
 // Condition strings
 #define	M_CONDITION_SMBS				6000
@@ -71,6 +82,13 @@
 #define	M_CONDITION_OITP				6006
 
 #define	M_CONDITION_MA  				6007
+#define	M_CONDITION_CMCAC  				6008
+
+#define	M_CONDITION_OAG  				6009
+#define	M_CONDITION_OAO  				6010
+#define	M_CONDITION_OAC  			    6011
+
+#define	M_CONDITION_SMBP  			    6012
 
 // Titles of condition parameters
 #define M_WIDTH				        6501
@@ -91,6 +109,10 @@
 #define M_PATHNAME				    6516
 #define M_DIAGONAL				    6517
 #define M_ITNAME				    6518
+#define M_CHECKDIAGONALCORNER	    6519
+#define M_COST_CHECK        	    6520
+#define M_OBJECT            	    6521
+#define M_FILEPATH            	    6522
 
 //	EXPRESSIONS
 //---------------------
@@ -99,8 +121,8 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION_GITX		27000
-#define IDMN_EXPRESSION_GITY		27001
+#define IDMN_EXPRESSION_GITX		    27000
+#define IDMN_EXPRESSION_GITY		    27001
 
 #define IDMN_EXPRESSION_GS		        27002
 #define IDMN_EXPRESSION_GSOP		    27003
@@ -133,10 +155,19 @@
 #define M_EXPRESSION_GMS		        7010
 
 // Names of expression parameters
-#define M_STEP				    7500
-#define M_COORDTYPE			    7501
-#define M_COORD				    7502
-#define M_SHOWPATH			    7503
+#define M_STEP				            7500
+#define M_COORDTYPE			            7501
+#define M_COORD				            7502
+#define M_SHOWPATH			            7503
+#define M_STARTX_EXP		            7504  
+#define M_STARTY_EXP		            7505  
+#define M_DESTINATIONX_EXP	            7506  
+#define M_DESTINATIONY_EXP	            7507  
+#define M_DIAGONAL_EXP  	            7508  
+#define M_CHECKDIAGONALCORNER_EXP       7509
+#define M_FORCEFIND_EXP		            7510  
+#define M_USEREALCOORD_EXP	            7511  
+#define M_SAVENAME_EXP		            7512  
 
 // Next default values for new objects
 // 
