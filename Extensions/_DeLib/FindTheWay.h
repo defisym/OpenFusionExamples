@@ -65,6 +65,8 @@ namespace FindTheWay {
 		DYNAMIC,
 	};
 
+	constexpr auto MAPTYPENUM = 3;
+
 	inline ostream& operator<<(ostream& out, MapType type) {
 		switch (type)
 		{
@@ -191,28 +193,34 @@ namespace FindTheWay {
 		BYTE* terrain = nullptr;
 		BYTE* dynamic = nullptr;
 
+		//BYTE* pMap[MAPTYPENUM];
+
 		struct Offset {
 			char x;
 			char y;
 			char generalCost;
 		};
 
+		// Neighbour offset
+		//| [ -1 , -1 ] | [ 0 , -1 ] | [ 1 , -1 ] |
+		//| [ -1 , 0 ]  | [ 0 , 0 ]  | [ 1 , 0 ]  |
+		//| [ -1 , 1 ]  | [ 0 , 1 ]  | [ 1 , 1 ]  |
+
 		using Neighbour = vector<Offset>;
 
-		const Neighbour normalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
-										,{1,0,STEP_GENERALCOST_NORMAL}
-										,{0,-1,STEP_GENERALCOST_NORMAL}
-										,{0,1,STEP_GENERALCOST_NORMAL} };
+		const Neighbour normalNeighbour = { {1,0,STEP_GENERALCOST_NORMAL}
+										,{0,1,STEP_GENERALCOST_NORMAL}
+										,{-1,0,STEP_GENERALCOST_NORMAL}
+										,{0,-1,STEP_GENERALCOST_NORMAL} };
 
-		const Neighbour diagonalNeighbour = { {-1,0,STEP_GENERALCOST_NORMAL}
-												,{1,0,STEP_GENERALCOST_NORMAL}
-												,{0,-1,STEP_GENERALCOST_NORMAL}
-												,{0,1,STEP_GENERALCOST_NORMAL}
-												// diagonal part
-												,{-1,-1,STEP_GENERALCOST_DIAGONAL}
-												,{1,-1,STEP_GENERALCOST_DIAGONAL}
-												,{-1,1,STEP_GENERALCOST_DIAGONAL}
-												,{1,1,STEP_GENERALCOST_DIAGONAL} };
+		const Neighbour diagonalNeighbour = { {1,0,STEP_GENERALCOST_NORMAL}
+										,{1,1,STEP_GENERALCOST_DIAGONAL}		// diagonal
+										,{0,1,STEP_GENERALCOST_NORMAL}
+										,{-1,1,STEP_GENERALCOST_DIAGONAL}		// diagonal
+										,{-1,0,STEP_GENERALCOST_NORMAL}
+										,{-1,-1,STEP_GENERALCOST_DIAGONAL}		// diagonal
+										,{0,-1,STEP_GENERALCOST_NORMAL}
+										,{1,-1,STEP_GENERALCOST_DIAGONAL} };	// diagonal
 
 		bool pathAvailable = false;
 		Path path;
@@ -275,6 +283,12 @@ namespace FindTheWay {
 			}
 		}
 
+		//inline BYTE* _GetMapPointer(MapType type) {
+		//	auto pos = (int)type;		
+
+		//	return pos < MAPTYPENUM ? *(pMap+pos) : nullptr;
+		//}
+
 		inline BYTE* GetMapPosPointer(size_t x, size_t y, BYTE* pMap) {
 			if (pMap == nullptr || !PosValid(x, y)) {
 				return nullptr;
@@ -287,8 +301,8 @@ namespace FindTheWay {
 			return GetMapPosPointer(x, y, GetMapPointer(type));
 		}
 
-		inline void ClearMap(BYTE* pMap, bool needUpdate = true) {
-			memset(pMap, 0, mapSize);
+		inline void ClearMap(BYTE* pMap, BYTE cost = MAP_PATH, bool needUpdate = true) {
+			memset(pMap, cost, mapSize);
 
 			updateMap = needUpdate;
 		}
@@ -346,6 +360,10 @@ namespace FindTheWay {
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
 			memset(dynamic, 0, mapSize);
+
+			//pMap[(int)MapType::MAP] = map;
+			//pMap[(int)MapType::TERRAIN] = terrain;
+			//pMap[(int)MapType::DYNAMIC] = dynamic;
 		}
 
 		inline void Free() {
@@ -404,8 +422,8 @@ namespace FindTheWay {
 			return girdSize;
 		}
 
-		inline void ClearMap(MapType type, bool needUpdate = true) {
-			ClearMap(GetMapPointer(type), needUpdate);
+		inline void ClearMap(MapType type, BYTE cost = MAP_PATH, bool needUpdate = true) {
+			ClearMap(GetMapPointer(type), cost, needUpdate);
 		}
 
 		inline void SetMap(size_t x, size_t y, BYTE cost, MapType type, bool needUpdate = true) {
@@ -557,7 +575,7 @@ namespace FindTheWay {
 		}
 
 		inline wstring OutPutMapStr(MapType type = MapType::MAP, bool showPath = true, wstring* name = nullptr) {
-			auto find = [](Path& path, Coord& coord)->bool {
+			auto find = [](const Path& path, const Coord& coord)->bool {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
 			
@@ -577,7 +595,7 @@ namespace FindTheWay {
 					wstring displayName = name == nullptr ? L"Last Path" : *name;
 					ss << "Step of \"" << displayName << "\" = \'-\'" << endl;
 				}
-				else {
+				else if (name != nullptr) {
 					ss << "Target Path \"" << *name << "\" Invalid" << endl;
 				}
 			}
@@ -628,7 +646,7 @@ namespace FindTheWay {
 			return GetMap(p.x, p.y, MapType::MAP);
 		}
 
-		inline void ForceFind(Coord start, Coord destination, bool diagonal = false
+		inline void ForceFind(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true
 			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// Still try to find a way even start & destination is obstacle
 			// ......By setting them to path
@@ -642,14 +660,14 @@ namespace FindTheWay {
 			SetMap(start.x, start.y, MAP_PATH, this->map, false);
 			SetMap(destination.x, destination.y, MAP_PATH, this->map, false);
 
-			Find(start, destination, diagonal, h);
+			Find(start, destination, diagonal, checkDiagonalCorner, h);
 
 			SetMap(start.x, start.y, startCost, this->map, false);
 			SetMap(destination.x, destination.y, destinationCost, this->map, false);
 		}
 
-		inline void Find(Coord start, Coord destination, bool diagonal = false
-						, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
+		inline void Find(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true
+			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// A*寻路
 			// https://www.redblobgames.com/pathfinding/a-star/introduction.html
 			// *初始化open_set和close_set；
@@ -733,15 +751,32 @@ namespace FindTheWay {
 						return it != v.rend() ? &(*it) : nullptr;
 					};
 
-					for (auto& it : *pNeighbour) {
-						Coord neighCoord = Coord{ (size_t)(base.coord.x + it.x)
-												,(size_t)(base.coord.y + it.y) };
+					auto neighbourSize = pNeighbour->size();
+
+					for (size_t i = 0; i < neighbourSize; i++) {
+						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
+						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
 
 						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
-						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + it.generalCost };
+						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
 							continue;
+						}
+
+						if (diagonal && checkDiagonalCorner		// check corner
+							&&(i % 2 == 1)) {					// when checking diagonal points
+							size_t prev = i - 1;
+							size_t next = (i + 1) % neighbourSize;
+
+							if ((GetMap(base.coord.x + (*pNeighbour)[prev].x
+									, base.coord.y + (*pNeighbour)[prev].y
+									, this->map) == MAP_OBSTACLE)
+							&& (GetMap(base.coord.x + (*pNeighbour)[next].x
+								, base.coord.y + (*pNeighbour)[next].y
+								, this->map) == MAP_OBSTACLE)) {
+								continue;
+							}
 						}
 
 						if (find(close_set, neighPoint) != nullptr) {
