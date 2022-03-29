@@ -34,9 +34,6 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GlobalFunc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -131,10 +128,13 @@
     <ClInclude Include="..\..\Inc\WinMacro.h">
       <Filter>MMF Headers</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalFunc.h">
+    <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\RandGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\Base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

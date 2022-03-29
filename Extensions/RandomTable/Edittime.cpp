@@ -670,7 +670,7 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	switch (nPropID) {
 	// 乱数表大小
 	case PROPID_SIZE:
-		return new CPropDWordValue(edPtr->MaxSize);
+		return new CPropDWordValue(edPtr->maxSize);
 	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
@@ -711,7 +711,7 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	switch (nPropID) {	
 	// 乱数表大小
 	case PROPID_SIZE:
-		edPtr->MaxSize = ((CPropDWordValue*)pValue)->m_dwValue;
+		edPtr->maxSize = ((CPropDWordValue*)pValue)->m_dwValue;
 		break;
 	}
 

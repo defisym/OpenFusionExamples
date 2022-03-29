@@ -29,6 +29,10 @@
 
 // My headers
 #include	"RandGenerator.h"
+#include	"Base64.h"
+
+#include	<string>
+#include	<deque>
 
 // Specific to this cox
 #include	"resource.h"
@@ -36,9 +40,7 @@
 #include	"TigsExt.hpp"
 
 // My headers
-
-//Global Func
-#include	"GlobalFunc.h"
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

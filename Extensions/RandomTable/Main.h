@@ -42,7 +42,7 @@ typedef struct tagEDATA_V1
 //	short			swidth;
 //	short			sheight;
 	
-	unsigned int MaxSize;
+	size_t maxSize;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -73,7 +73,15 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 
-	unsigned int MaxSize;
+	size_t maxSize;
+	
+	BYTE* pBuffer;
+	deque<BYTE>* pRandomTable;
+
+	Base64<std::wstring>* pBase64;
+	RandGenerator<int>* pRand;
+
+	std::wstring* pBase64Str;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
