@@ -177,7 +177,7 @@ public:
                 char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
                 for (i = 0; (i < 3); i++) {
-                    deRet.emplace_back(char_array_3[i]);
+                    deRet.emplace_back((BYTE)char_array_3[i]);
                 }
 
                 i = 0;
@@ -198,7 +198,7 @@ public:
             char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
             for (j = 0; (j < i - 1); j++) {
-                deRet.emplace_back(char_array_3[j]);
+                deRet.emplace_back((BYTE)char_array_3[j]);
             }
         }
 
