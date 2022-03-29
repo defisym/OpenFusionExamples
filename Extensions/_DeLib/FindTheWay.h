@@ -105,6 +105,8 @@ namespace FindTheWay {
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
 
+	using Area = vector<vector<Coord>>;
+
 	using Exception = unsigned char;
 
 	// try {
@@ -258,6 +260,8 @@ namespace FindTheWay {
 		Set point_set;
 
 		Base64<wstring> base64;
+
+		Area area;
 
 		inline size_t pOffset(size_t x, size_t y) {
 			return y * width + x;
@@ -711,6 +715,7 @@ namespace FindTheWay {
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
+			auto neighbourSize = pNeighbour->size();
 
 			while (!open_set.empty()) {
 				// Descending
@@ -735,7 +740,7 @@ namespace FindTheWay {
 					Point base = open_set.back();
 
 					close_set.emplace_back(base);
-					open_set.erase(open_set.cend() - 1);
+					open_set.pop_back();
 
 					auto find = [](Set& v, Point& p)->Point* {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
@@ -745,8 +750,6 @@ namespace FindTheWay {
 						auto it = std::find_if(v.rbegin(), v.rend(), [&p](Point& it)->bool { return it.coord == p.coord; });
 						return it != v.rend() ? &(*it) : nullptr;
 					};
-
-					auto neighbourSize = pNeighbour->size();
 
 					for (size_t i = 0; i < neighbourSize; i++) {
 						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
@@ -818,6 +821,120 @@ namespace FindTheWay {
 					}
 				}
 			}
+		}
+
+		inline void GetArea(Coord start, size_t range, Path* zoc, bool diagonal = false) {
+			if (updateMap) {
+				UpdateMap();
+			}
+
+			if ((GetMap(start.x, start.y, this->map) == MAP_OBSTACLE)) {
+				return;
+			}
+
+			open_set.clear();
+			close_set.clear();
+			point_set.clear();
+
+			open_set.emplace_back(Point{ start,nullptr,0,0 });
+
+			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
+			auto neighbourSize = pNeighbour->size();
+
+			for (size_t nest = 0; nest < range; nest++) {
+				area.emplace_back();
+
+				auto cur_set = std::move(open_set);
+				open_set.reserve(1 + nest * 4);
+
+				while (!cur_set.empty()) {
+					Point base = cur_set.back();
+
+					close_set.emplace_back(base);
+					area[nest].emplace_back(base.coord);
+
+					cur_set.pop_back();
+
+					auto find = [](Set& v, Point& p)->Point* {
+						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
+						return it != v.end() ? &(*it) : nullptr;
+					};
+					auto findZoc = [](Path& v, Point& p) {
+						auto it = std::find_if(v.begin(), v.end(), [&p](Coord& it)->bool { return it == p.coord; });
+						return it != v.end() ? &(*it) : nullptr;
+					};
+
+					if (zoc != nullptr && findZoc(*zoc, base) != nullptr) {
+						continue;
+					}
+
+					for (size_t i = 0; i < neighbourSize; i++) {
+						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
+						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+
+						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
+						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
+
+						if (curCost == MAP_OBSTACLE) {
+							continue;
+						}
+
+						if (find(close_set, neighPoint) != nullptr) {
+							continue;
+						}
+
+						if (find(open_set, neighPoint) == nullptr) {
+							open_set.emplace_back(neighPoint);
+						}
+					}
+				}
+			}
+
+#ifdef _DEBUG
+			std::wstringstream ss,sso;
+
+			BYTE* temp = new BYTE[mapSize];
+			memcpy(temp, map, mapSize);
+
+			auto out = [&](BYTE cost)->wchar_t {
+				switch (cost) {
+				case MAP_OBSTACLE:
+					return L'*';
+				case 125:
+					return L'@';
+				case 50:
+					return L'Z';
+				default:
+					return L'#';
+				}
+			};
+
+
+			for (auto& it : *zoc) {
+				*GetMapPosPointer(it.x, it.y, temp) = 50;
+			}
+
+			for (auto& it : area) {
+				for (auto& it_C : it) {
+					*GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
+				}
+			}
+
+			for (size_t y = 0; y < height; y++) {
+				for (size_t x = 0; x < width; x++) {
+					sso << out(*GetMapPosPointer(x, y, map)) << ' ';
+					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
+				}
+				sso << endl;
+				ss << endl;
+				
+			}
+
+			auto stro = sso.str();
+			auto str = ss.str();
+
+			delete[] temp;
+#endif
 		}
 	};
 }
