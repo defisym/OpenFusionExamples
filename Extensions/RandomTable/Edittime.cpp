@@ -1,4 +1,4 @@
-
+ï»¿
 // ============================================================================
 //
 // This file contains routines that are handled only during the Edittime,
@@ -668,7 +668,7 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
 	switch (nPropID) {
-	// ÂÒÊý±í´óÐ¡
+	// ä¹±æ•°è¡¨å¤§å°
 	case PROPID_SIZE:
 		return new CPropDWordValue(edPtr->maxSize);
 	}
@@ -709,7 +709,7 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	CPropValue* pValue = (CPropValue*)lParam;
 
 	switch (nPropID) {	
-	// ÂÒÊý±í´óÐ¡
+	// ä¹±æ•°è¡¨å¤§å°
 	case PROPID_SIZE:
 		edPtr->maxSize = ((CPropDWordValue*)pValue)->m_dwValue;
 		break;

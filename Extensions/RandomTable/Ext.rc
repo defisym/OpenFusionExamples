@@ -1,4 +1,4 @@
-// Microsoft Visual C++ generated resource script.
+ï»¿// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -16,7 +16,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Ó¢Óï(ÃÀ¹ú) resources
+// è‹±è¯­(ç¾Žå›½) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -134,7 +134,7 @@ BEGIN
         MENUITEM SEPARATOR
          POPUP "Consume"
          BEGIN
-             MENUITEM "Consume a Random Number", IDMN_ACTION_CRN
+             MENUITEM "Consume 1 Random Number", IDMN_ACTION_CRN
              MENUITEM "Consume N Random Numbers", IDMN_ACTION_CNRN
          END
         
@@ -154,6 +154,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Random Number",           IDMN_EXPRESSION_GRN
+        MENUITEM "Get Random Percent",          IDMN_EXPRESSION_GRP
         MENUITEM "Get N Random Number Average", IDMN_EXPRESSION_GNRNA
         MENUITEM SEPARATOR
         MENUITEM "Show Random Number",          IDMN_EXPRESSION_SRN
@@ -258,7 +259,7 @@ STRINGTABLE
 BEGIN
     M_ACTION_GRT            "Generate Random Table"
     M_ACTION_GFB64          "Generate Random Table From Base64 Code %0"
-    M_ACTION_CRN            "Consume a Random Number"
+    M_ACTION_CRN            "Consume 1 Random Number"
     M_ACTION_CNRN           "Consume %0 Random Numbers"
 
     M_ACTION_GFB64_P1       "Input Base64 Code"
@@ -273,11 +274,13 @@ BEGIN
     M_EXPRESSION_GS         "GRTS("
     M_EXPRESSION_GNRNA      "GNRNA("
     M_EXPRESSION_GCRT       "GCRT$("
+    M_EXPRESSION_GRP        "GRP("
 
     M_EXPRESSION_SRN_P1     "Random Table Pos (Start from 0)"
+    M_EXPRESSION_GRP_P1     "NewLine Pos"
 END
 
-#endif    // Ó¢Óï(ÃÀ¹ú) resources
+#endif    // è‹±è¯­(ç¾Žå›½) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

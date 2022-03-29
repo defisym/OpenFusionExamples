@@ -28,7 +28,8 @@
 #define EXP_EXPRESSION_GS			3
 #define EXP_EXPRESSION_GNRNA		4
 #define EXP_EXPRESSION_GCRT			5
-#define	EXP_LAST                    6
+#define EXP_EXPRESSION_GRP			6
+#define	EXP_LAST                    7
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

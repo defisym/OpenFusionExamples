@@ -42,7 +42,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_S2B64, M_EXPRESSION_S2B64, EXP_EXPRESSION_S2B64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 0,
 		IDMN_EXPRESSION_GNRNA, M_EXPRESSION_GNRNA, EXP_EXPRESSION_GNRNA, 0, 1, EXPPARAM_LONG, M_ACTION_CNRN_P1,
-		IDMN_EXPRESSION_GCRT, M_EXPRESSION_GCRT, EXP_EXPRESSION_GCRT, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GCRT, M_EXPRESSION_GCRT, EXP_EXPRESSION_GCRT, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_EXPRESSION_GRP_P1,
+		IDMN_EXPRESSION_GRP, M_EXPRESSION_GRP, EXP_EXPRESSION_GRP, EXPFLAG_DOUBLE, 0,
 		};
 
 
@@ -104,7 +105,7 @@ short WINAPI DLLExport ConsumeNRandomNumber(LPRDATA rdPtr, long param1, long par
 
 // Get Random Number
 long WINAPI DLLExport GetRandomNumber(LPRDATA rdPtr,long param1) {
-	return GetRandomNumber(rdPtr);;
+	return GetRandomNumber(rdPtr);
 }
 
 long WINAPI DLLExport ShowRandomNumber(LPRDATA rdPtr, long param1) {	
@@ -143,11 +144,27 @@ long WINAPI DLLExport GetNRandomNumberAverage(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetCurRandomTable(LPRDATA rdPtr, long param1) {
+	size_t newline = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
 	rdPtr->pCurTableStr->clear();
 
+	size_t count = 0;
 	for (auto& it : *rdPtr->pRandomTable) {
-		(*rdPtr->pCurTableStr) += _itos(it).c_str();
+		std::wstring ret(3, '\0');
+		swprintf(&ret[0], 3, L"%2d", it);
+
+		(*rdPtr->pCurTableStr) += ret.c_str();
 		(*rdPtr->pCurTableStr) +=L" ";
+
+		count++;
+		if (count == newline) {
+			(*rdPtr->pCurTableStr) += L"\r\n";
+			count = 0;
+		}
+	}
+	
+	if (count == 0) {
+		*rdPtr->pCurTableStr = rdPtr->pCurTableStr->substr(0, rdPtr->pCurTableStr->length() - 2);
 	}
 	
 	*rdPtr->pCurTableStr = rdPtr->pCurTableStr->substr(0, rdPtr->pCurTableStr->length() - 1);
@@ -157,6 +174,16 @@ long WINAPI DLLExport GetCurRandomTable(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.	
 	return (long)rdPtr->pCurTableStr->c_str();
+}
+
+long WINAPI DLLExport GetRandomNumberPercent(LPRDATA rdPtr, long param1) {
+	float fResult = (float)(GetRandomNumber(rdPtr) / 100.0);
+
+	// Set the "Float" flag
+	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+
+	// Return the float
+	return *((long*)&fResult);        // Do not return fResult directly as it would be converted to long
 }
 
 // ----------------------------------------------------------
@@ -190,5 +217,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetRandomTableSize,
 			GetNRandomNumberAverage,
 			GetCurRandomTable,
+			GetRandomNumberPercent,
 			0
 			};
