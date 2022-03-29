@@ -158,7 +158,7 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
 
-	auto& [girdWidth, girdHeight] = rdPtr->pFTW->GetGirdCoord(Coord{ width ,height });
+	auto [girdWidth, girdHeight] = rdPtr->pFTW->GetGirdCoord(Coord{ width ,height });
 
 	BYTE* buff = pSf->LockBuffer();
 	if (!buff) {
@@ -176,7 +176,7 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	for (size_t y = 0; y < girdHeight; y++) {
 		for (size_t x = 0; x < girdWidth; x++) {
-			auto& [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
+			auto [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
 			auto offset = realY * pitch + realX * byte;
 
 			if (offset >= size) {
@@ -376,7 +376,7 @@ long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) 
 			return false;
 		}
 		else {
-			auto& [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			auto [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 			return rdPtr->pFTW->GetMap(girdX, girdY, type) == MAP_OBSTACLE;
 		}
@@ -438,7 +438,7 @@ short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	auto& [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	auto [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
 
 	return 0;

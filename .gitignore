@@ -3,7 +3,9 @@
 
 #SDK
 *.chw
+
 Inc/*
+Extensions/Lib/mmfs2.lib
 
 Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/Collision.png
 Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/ZoomOutCollision.png
