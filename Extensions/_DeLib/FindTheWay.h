@@ -17,14 +17,14 @@
 
 #include <iostream>
 
-#include <wincrypt.h>
-#pragma comment(lib, "crypt32.lib")
-
+#include "Base64.h"
 #include "StrNum.h"
 
 using namespace std;
 
 namespace FindTheWay {
+	using  BYTE = unsigned char;
+
 	struct Coord {
 		size_t x;
 		size_t y;
@@ -257,6 +257,8 @@ namespace FindTheWay {
 		Set close_set;
 		Set point_set;
 
+		Base64<wstring> base64;
+
 		inline size_t pOffset(size_t x, size_t y) {
 			return y * width + x;
 		}
@@ -377,11 +379,11 @@ namespace FindTheWay {
 		}
 
 	public:
-		FindTheWayClass(size_t width, size_t height) {			
+		FindTheWayClass(size_t width, size_t height) {
 			Allocate(width,height);
 			Reserve();
 		}
-		FindTheWayClass(const wstring& base64) {			
+		FindTheWayClass(const wstring& base64) {
 			SetMap(base64);
 			Reserve();
 		}
@@ -454,15 +456,23 @@ namespace FindTheWay {
 
 			Free();
 			Allocate(width, height);
-
-			DWORD dwNeed = mapSize;
-
-			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL)) {
+			
+			try {
+				this->base64.base64_decode_to_pointer(GetSubStr(start, end), terrain, mapSize);
+				this->base64.base64_decode_to_pointer(GetSubStr(start, end), dynamic, mapSize);
+			}
+			catch (decltype(BASE64_DECODEERROR)) {
 				throw INVALID_DATA;
 			}
-			if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, dynamic, &dwNeed, NULL, NULL)) {
-				throw INVALID_DATA;
-			}
+
+			//DWORD dwNeed = mapSize;
+
+			//if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL)) {
+			//	throw INVALID_DATA;
+			//}
+			//if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, dynamic, &dwNeed, NULL, NULL)) {
+			//	throw INVALID_DATA;
+			//}
 
 			UpdateMap();
 		}
@@ -482,23 +492,8 @@ namespace FindTheWay {
 			base64 += DELIMETER;
 			base64 += _itos(height).c_str();
 
-			auto Convert = [&](BYTE* pData)->void {
-				DWORD dwSize;
-				CryptBinaryToString(pData, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &dwSize);
-
-				auto base64Str = std::make_unique<wchar_t[]>(dwSize);
-
-				if (CryptBinaryToString(pData, mapSize, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, base64Str.get(), &dwSize)) {
-					base64 += DELIMETER;
-					base64 += base64Str.get();
-				}
-				else {
-					throw(BASE64_FAILED);
-				}				
-			};
-
-			Convert(terrain);
-			Convert(dynamic);
+			base64 += this->base64.base64_encode(terrain, mapSize);
+			base64 += this->base64.base64_encode(dynamic, mapSize);
 
 			return base64;
 		}
