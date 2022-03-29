@@ -40,45 +40,46 @@ std::string base64_chars_G(const std::string type) {
 }
 
 template<STR base64Str>
-std::wstring base64_char_G(const std::wstring type, size_t retType) {
+wchar_t base64_char_G(const std::wstring type, size_t retType) {
     switch (retType) {
     case 0:
-        return L"=";
+        return L'=';
     case 1:
-        return L"+";
+        return L'+';
     case 2:
-        return L"/";
+        return L'/';
     default:
-        return L"\0";
+        return L'\0';
     }
 }
 
 template<STR base64Str>
-std::string base64_char_G(const std::string type, size_t retType) {
+char base64_char_G(const std::string type, size_t retType) {
     switch (retType) {
     case 0:
-        return "=";
+        return '=';
     case 1:
-        return "+";
+        return '+';
     case 2:
-        return "/";
+        return '/';
     default:
-        return "\0";
+        return '\0';
     }
 }
 
 template<STR base64Str>
 class Base64 {
 private:
-    using base64Char = std::remove_const_t<std::remove_reference_t<decltype(base64_chars_G<base64Str>(base64Str())[0])>>;
+    const base64Str type;
+    using base64Char = std::remove_const_t<std::remove_reference_t<decltype(type[0])>>;
     
-    const base64Char b64EndChar = base64_char_G<base64Str>(base64Str(), 0)[0];
+    const base64Char b64EndChar = base64_char_G<base64Str>(type, 0);
     
-    const base64Char plusChar = base64_char_G<base64Str>(base64Str(), 1)[0];
-    const base64Char slashChar = base64_char_G<base64Str>(base64Str(), 2)[0];
-    const base64Char strEndChar = base64_char_G<base64Str>(base64Str(), -1)[0];
+    const base64Char plusChar = base64_char_G<base64Str>(type, 1);
+    const base64Char slashChar = base64_char_G<base64Str>(type, 2);
+    const base64Char strEndChar = base64_char_G<base64Str>(type, -1);
 
-    const base64Str base64_chars = base64_chars_G<base64Str>(base64Str());
+    const base64Str base64_chars = base64_chars_G<base64Str>(type);
 
     base64Str enRet;
     std::vector<BYTE> deRet;
