@@ -72,6 +72,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pBuffer = new BYTE[rdPtr->maxSize];	
 	rdPtr->pRandomTable = new deque<BYTE>;
 	rdPtr->pBase64Str = new std::wstring;
+	rdPtr->pCurTableStr = new std::wstring;
 
 	rdPtr->pRandomTable->resize(rdPtr->maxSize);
 
@@ -96,6 +97,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pBuffer;
 	delete rdPtr->pRandomTable;
 	delete rdPtr->pBase64Str;
+	delete rdPtr->pCurTableStr;
 
 	// No errors
 	return 0;

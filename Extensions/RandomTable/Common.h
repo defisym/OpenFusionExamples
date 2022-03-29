@@ -41,6 +41,7 @@
 
 // My headers
 #include	"Func.h"
+#include	"StrNum.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

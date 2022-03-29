@@ -26,7 +26,9 @@
 #define	EXP_EXPRESSION_SRN			1
 #define EXP_EXPRESSION_S2B64		2
 #define EXP_EXPRESSION_GS			3
-#define	EXP_LAST                    4
+#define EXP_EXPRESSION_GNRNA		4
+#define EXP_EXPRESSION_GCRT			5
+#define	EXP_LAST                    6
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -82,6 +84,7 @@ typedef struct tagRDATA
 	RandGenerator<int>* pRand;
 
 	std::wstring* pBase64Str;
+	std::wstring* pCurTableStr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

@@ -154,11 +154,14 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Random Number",           IDMN_EXPRESSION_GRN
+        MENUITEM "Get N Random Number Average", IDMN_EXPRESSION_GNRNA
+        MENUITEM SEPARATOR
         MENUITEM "Show Random Number",          IDMN_EXPRESSION_SRN
         MENUITEM SEPARATOR
         MENUITEM "Save to Base64",              IDMN_EXPRESSION_S2B64
         MENUITEM SEPARATOR
         MENUITEM "Get Random Table Size",       IDMN_EXPRESSION_GS
+        MENUITEM "Get Current Random Table",    IDMN_EXPRESSION_GCRT
         MENUITEM SEPARATOR
 
     END
@@ -268,6 +271,8 @@ BEGIN
     M_EXPRESSION_SRN        "SRN("
     M_EXPRESSION_S2B64      "S2B64$("
     M_EXPRESSION_GS         "GRTS("
+    M_EXPRESSION_GNRNA      "GNRNA("
+    M_EXPRESSION_GCRT       "GCRT$("
 
     M_EXPRESSION_SRN_P1     "Random Table Pos (Start from 0)"
 END

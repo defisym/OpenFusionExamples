@@ -41,6 +41,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_SRN, M_EXPRESSION_SRN, EXP_EXPRESSION_SRN, 0, 1, EXPPARAM_LONG, M_EXPRESSION_SRN_P1,
 		IDMN_EXPRESSION_S2B64, M_EXPRESSION_S2B64, EXP_EXPRESSION_S2B64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 0,
+		IDMN_EXPRESSION_GNRNA, M_EXPRESSION_GNRNA, EXP_EXPRESSION_GNRNA, 0, 1, EXPPARAM_LONG, M_ACTION_CNRN_P1,
+		IDMN_EXPRESSION_GCRT, M_EXPRESSION_GCRT, EXP_EXPRESSION_GCRT, EXPFLAG_STRING, 0,
 		};
 
 
@@ -68,13 +70,10 @@ short WINAPI DLLExport GenerateRandomTable(LPRDATA rdPtr, long param1, long para
 
 // Generate Random Table From Base64
 short WINAPI DLLExport GenerateFromBase64(LPRDATA rdPtr, long param1, long param2) {
-	LPWSTR Input = (LPWSTR)param1;
+	LPCWSTR Input = (LPCWSTR)CNC_GetParameter(rdPtr);
 
 	rdPtr->pBase64->base64_decode_to_pointer(Input, rdPtr->pBuffer, rdPtr->maxSize);
-
-	for (size_t i = 0; i < rdPtr->maxSize; i++) {
-		(*rdPtr->pRandomTable)[i] = (rdPtr->pBuffer[i]);
-	}
+	GeneralLoop<deque<BYTE>, BYTE>(*rdPtr->pRandomTable, rdPtr->maxSize, [&](size_t pos) { return rdPtr->pBuffer[pos]; });
 
 	return 0;
 }
@@ -88,7 +87,7 @@ short WINAPI DLLExport ConsumeRandomNumber(LPRDATA rdPtr, long param1, long para
 
 // Consume N Random Number
 short WINAPI DLLExport ConsumeNRandomNumber(LPRDATA rdPtr, long param1, long param2) {
-	size_t num = (size_t)param1;
+	size_t num = (size_t)CNC_GetParameter(rdPtr);
 	
 	for (size_t i = 0; i < num; i++) {
 		GetRandomNumber(rdPtr);
@@ -117,10 +116,7 @@ long WINAPI DLLExport ShowRandomNumber(LPRDATA rdPtr, long param1) {
 
 // Save to Base64
 long WINAPI DLLExport SavetoBase64(LPRDATA rdPtr, long param1) {
-	for (size_t i = 0; i < rdPtr->maxSize; i++) {
-		(rdPtr->pBuffer[i]) = (*rdPtr->pRandomTable)[i];
-	}
-
+	GeneralLoop<BYTE*, BYTE>(rdPtr->pBuffer, rdPtr->maxSize, [&](size_t pos) { return (*rdPtr->pRandomTable)[pos]; });
 	*rdPtr->pBase64Str = rdPtr->pBase64->base64_encode(rdPtr->pBuffer, rdPtr->maxSize);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -133,6 +129,36 @@ long WINAPI DLLExport SavetoBase64(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetRandomTableSize(LPRDATA rdPtr, long param1) {	
 	return rdPtr->maxSize;
 }
+
+long WINAPI DLLExport GetNRandomNumberAverage(LPRDATA rdPtr, long param1) {
+	size_t p1 = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t size = min(max(0, p1), (size_t)(rdPtr->maxSize - 1));
+
+	int result = 0;
+	for (size_t i = 0; i < size; i++) {
+		result += GetRandomNumber(rdPtr);
+	}
+
+	return result/ size;
+}
+
+long WINAPI DLLExport GetCurRandomTable(LPRDATA rdPtr, long param1) {
+	rdPtr->pCurTableStr->clear();
+
+	for (auto& it : *rdPtr->pRandomTable) {
+		(*rdPtr->pCurTableStr) += _itos(it).c_str();
+		(*rdPtr->pCurTableStr) +=L" ";
+	}
+	
+	*rdPtr->pCurTableStr = rdPtr->pCurTableStr->substr(0, rdPtr->pCurTableStr->length() - 1);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.	
+	return (long)rdPtr->pCurTableStr->c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -162,5 +188,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			ShowRandomNumber,
 			SavetoBase64,
 			GetRandomTableSize,
+			GetNRandomNumberAverage,
+			GetCurRandomTable,
 			0
 			};

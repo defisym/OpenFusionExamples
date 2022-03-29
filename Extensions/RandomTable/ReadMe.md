@@ -1,18 +1,5 @@
-# RandomTable FE
+# ReadMe
 
-- Action
-  - Generate
-    - Generate Random Table
-    - Generate From Base64
-  - Consume
-    - Consume a Random Number
-    - Consume N Random Numbers
+Generate a random table like Fire Emblem, save/load by base64 string
 
-- Expression
-  - Get Random Number
-  - Show Random Number
-  - Get Random Table Size
-  - Save to Base64
-
-- Property
-  - Table Size
+for more information, please check the [Help File](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/RandomTable/ToInstall/Files/Help/RandomTable/RandomTable.md)

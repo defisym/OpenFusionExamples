@@ -76,12 +76,16 @@
 #define IDMN_EXPRESSION_SRN             27001
 #define IDMN_EXPRESSION_S2B64           27002
 #define IDMN_EXPRESSION_GS				27003
+#define IDMN_EXPRESSION_GNRNA			27004
+#define IDMN_EXPRESSION_GCRT			27005
 
 // Expression strings
 #define M_EXPRESSION_GRN                7000
 #define M_EXPRESSION_SRN                7001
 #define M_EXPRESSION_S2B64              7002
 #define M_EXPRESSION_GS					7003
+#define M_EXPRESSION_GNRNA				7004
+#define M_EXPRESSION_GCRT				7005
 
 // Names of expression parameters
 #define M_EXPRESSION_SRN_P1             7500
