@@ -265,15 +265,18 @@ namespace FindTheWay {
 
 		Area area;
 		Set cur_set;
+		Set continue_set;
 
-		using StashAreaKey = tuple<Coord, size_t>;
+		vector<size_t> ranges;
+
+		using StashAreaKey = tuple<Coord, size_t, size_t, size_t>;
 
 		struct StashAreaKeyCompare {
 			bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
-				auto& [lKeyS, lKeyD] = lKey;
-				auto& [rKeyS, rKeyD] = rKey;
+				auto& [lc, lr, lsr, lm] = lKey;
+				auto& [rc, rr, rsr, rm] = rKey;
 
-				return (lKeyS < rKeyS) && (lKeyD < rKeyD);
+				return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
 			};
 		};
 
@@ -368,7 +371,8 @@ namespace FindTheWay {
 			point_set.reserve(8 * this->mapSize);
 
 			area.reserve(AREA_RESERVE);
-			cur_set.reserve(AREA_RESERVE);
+			cur_set.reserve(2 * PATH_RESERVE);
+			continue_set.reserve(2 * PATH_RESERVE);
 		}
 
 		inline void Allocate(size_t width, size_t height) {
@@ -763,9 +767,9 @@ namespace FindTheWay {
 				}
 				else {
 					Point base = open_set.back();
-
-					close_set.emplace_back(base);
 					open_set.pop_back();
+
+					close_set.emplace_back(base);					
 
 					auto find = [](Set& v, Point& p)->Point* {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
@@ -848,12 +852,43 @@ namespace FindTheWay {
 			}
 		}
 
-		inline void GetArea(Coord start, size_t range, Path* zoc = nullptr, bool diagonal = false) {
+		inline void GenerateZoc(Coord start, Path* zoc, bool diagonal = true) {
+			zoc->clear();
+
+			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
+
+			for (auto& it : *pNeighbour) {
+				zoc->emplace_back(Coord{ (size_t)(start.x + it.x),(size_t)(start.y + it.y) });
+			}
+		}
+
+		inline size_t GetMoveableRange(Coord start, size_t range, size_t dir) {
 			if (updateMap) {
 				UpdateMap();
 			}
 
-			auto stashAreaKey = make_tuple(start, range);
+			auto offset = normalNeighbour[dir];
+			auto coord = start;
+			size_t moveable = 0;
+
+			while ((moveable <= range) && (GetMap(coord.x, coord.y, this->map) != MAP_OBSTACLE)) {
+				coord.x += offset.x;
+				coord.y += offset.y;
+				
+				moveable++;
+			}
+
+			moveable--;			// remove last while add
+
+			return moveable;
+		}
+
+		inline void GetLineArea(Coord start, size_t range, size_t startRange = 0) {
+			if (updateMap) {
+				UpdateMap();
+			}
+
+			auto stashAreaKey = make_tuple(start, range, startRange, 1);
 
 			if (stashArea.count(stashAreaKey)) {
 				area = stashArea[stashAreaKey];
@@ -863,28 +898,155 @@ namespace FindTheWay {
 
 			area.clear();
 
-			if ((GetMap(start.x, start.y, this->map) == MAP_OBSTACLE)) {
+			if (GetMap(start.x, start.y, this->map) == MAP_OBSTACLE) {
+				return;
+			}
+
+			ranges = { 0,0,0,0 };
+
+			for (size_t i = 0; i < 4; i++) {
+				ranges[i] = GetMoveableRange(start, range, i);
+			}
+
+			for (size_t nest = 0; nest <= range; nest++) {
+				if (!(nest > startRange)) {
+					continue;
+				}
+
+				area.emplace_back();
+				area.back().reserve(4);
+
+				bool updated = false;
+				for (size_t it = 0; it < ranges.size(); it++) {
+					if (ranges[it] >= nest) {
+						area.back().emplace_back(Coord{ start.x + nest * normalNeighbour[it].x
+													,start.y + nest * normalNeighbour[it].y });
+
+						updated = true;
+					}
+				}
+
+				if (!updated) {
+					break;
+				}
+			}
+
+			stashArea[stashAreaKey] = area;
+
+#ifdef _DEBUG
+			std::wstringstream ss;
+
+			BYTE* temp = new BYTE[mapSize];
+			memcpy(temp, map, mapSize);
+
+			auto out = [&](BYTE cost)->wchar_t {
+				switch (cost) {
+				case MAP_OBSTACLE:
+					return L'O';
+				case 254:
+					return L'+';
+				case 125:
+					return L'M';
+				case 124:
+					return L'A';
+				case 50:
+					return L'Z';
+				default:
+					return L'P';
+				}
+			};
+
+			for (auto& it : area) {
+				for (auto& it_C : it) {
+					*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
+				}
+			}
+
+			*GetMapPosPointer(start.x, start.y, temp) = 254;
+
+			for (size_t y = 0; y < height; y++) {
+				for (size_t x = 0; x < width; x++) {
+					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
+				}
+				ss << endl;
+
+			}
+
+			auto stro = OutPutMapStr(MapType::MAP);
+			auto str = ss.str();
+
+			//std::wcout << stro << endl;
+			//std::wcout << str << endl;
+
+			delete[] temp;
+
+			updateMap = true;
+#endif
+		}
+
+		inline void GetArea(Coord start, size_t range, size_t startRange = 0, Path* zoc = nullptr
+			, bool allRange = false, size_t allRangeAttackRange = 0
+			, bool diagonal = false) {
+			if (updateMap) {
+				UpdateMap();
+			}
+
+			bool stash = zoc == nullptr && allRange == false;
+			auto stashAreaKey = make_tuple(start, range, startRange, 0);
+
+			if (stash) {
+				if (stashArea.count(stashAreaKey)) {
+					area = stashArea[stashAreaKey];
+
+					return;
+				}
+			}
+
+			area.clear();
+
+			if (GetMap(start.x, start.y, this->map) == MAP_OBSTACLE) {
 				return;
 			}
 
 			cur_set.clear();
+			continue_set.clear();
 
 			open_set.clear();
 			close_set.clear();
-			point_set.clear();			
+			point_set.clear();
 
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
 
-			for (size_t nest = 0; nest <= range; nest++) {
-				std::swap(cur_set, open_set);
-				
-				open_set.clear();
+			size_t totalRange = range + allRange * allRangeAttackRange
+							+ allRange;	// Extra loop with allRange due to restart from continue_set
+			size_t extraRangeStartPos = range;
 
-				area.emplace_back();
-				area[nest].reserve(1 + nest * 4);
+			bool extraRangeCalc = false;	// Extra range calc start
+
+			for (size_t nest = 0; nest <= totalRange; nest++) {
+				bool addArea = nest > startRange;
+
+				bool updateContiuneSet = allRange && (nest == range);		// Update contiune_set for extra range
+				bool extraRangeStart = allRange && (nest == range + 1);		// Extra range start, don't add new area
+
+				if (extraRangeStart) {
+					extraRangeCalc = true;					
+					extraRangeStartPos = area.size();
+
+					std::swap(cur_set, continue_set);
+					open_set.clear();
+				}
+				else {
+					std::swap(cur_set, open_set);
+				}
+
+				if (addArea && !extraRangeStart) {
+					area.emplace_back();
+					area.back().reserve(1 + area.size() * 4);
+				}
 
 				if (cur_set.empty()) {
 					break;
@@ -892,22 +1054,40 @@ namespace FindTheWay {
 
 				while (!cur_set.empty()) {
 					Point base = cur_set.back();
+					cur_set.pop_back();
 
 					close_set.emplace_back(base);
-					area[nest].emplace_back(base.coord);
 
-					cur_set.pop_back();
+					if (addArea && !extraRangeStart) {
+						area.back().emplace_back(base.coord);
+					}
 
 					auto find = [](Set& v, Point& p)->Point* {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
+
 					auto findZoc = [](Path& v, Point& p) {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Coord& it)->bool { return it == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
 
-					if (zoc != nullptr && findZoc(*zoc, base) != nullptr) {
+					auto addContinue = [&](Point& p) {
+						if (find(continue_set, p) == nullptr) {
+							continue_set.emplace_back(p);
+
+							return true;
+						}
+						else {
+							return false;
+						}
+					};
+
+					if ((!extraRangeCalc) && zoc != nullptr && findZoc(*zoc, base) != nullptr) {
+						if (allRange) {
+							addContinue(base);
+						}
+
 						continue;
 					}
 
@@ -927,16 +1107,23 @@ namespace FindTheWay {
 						}
 
 						if (find(open_set, neighPoint) == nullptr) {
-							open_set.emplace_back(neighPoint);
+							if (updateContiuneSet) {
+								addContinue(base);
+							}
+							else {
+								open_set.emplace_back(neighPoint);
+							}
 						}
 					}
 				}
 			}
 
-			stashArea[stashAreaKey] = area;
+			if (stash) {
+				stashArea[stashAreaKey] = area;
+			}
 
 #ifdef _DEBUG
-			std::wstringstream ss,sso;
+			std::wstringstream ss;
 
 			BYTE* temp = new BYTE[mapSize];
 			memcpy(temp, map, mapSize);
@@ -944,49 +1131,59 @@ namespace FindTheWay {
 			auto out = [&](BYTE cost)->wchar_t {
 				switch (cost) {
 				case MAP_OBSTACLE:
-					return L'*';
+					return L'O';
 				case 254:
 					return L'+';
 				case 125:
-					return L'@';
+					return L'M';
+				case 124:
+					return L'A';
 				case 50:
 					return L'Z';
 				default:
-					return L'#';
+					return L'P';
 				}
 			};
 
 			if (zoc != nullptr) {
 				for (auto& it : *zoc) {
 					*GetMapPosPointer(it.x, it.y, temp) = 50;
+					*GetMapPosPointer(it.x, it.y, map) = 50;
 				}
 			}
 
-			for (auto& it : area) {
-				for (auto& it_C : it) {
-					*GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
+			for (size_t it = 0; it < area.size(); it++) {
+				if (it < extraRangeStartPos) {
+					for (auto& it_C : area[it]) {
+						*GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
+					}
+				}
+				else {
+					for (auto& it_C : area[it]) {
+						*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
+					}
 				}
 			}
 
-			*GetMapPosPointer(area[0][0].x, area[0][0].y, temp) = 254;			
+			*GetMapPosPointer(start.x, start.y, temp) = 254;
 
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
-					sso << out(*GetMapPosPointer(x, y, map)) << ' ';
 					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
 				}
-				sso << endl;
 				ss << endl;
-				
+
 			}
 
-			auto stro = sso.str();
+			auto stro = OutPutMapStr(MapType::MAP);
 			auto str = ss.str();
 
-			wcout << stro << endl;
-			wcout << str << endl;
+			//std::wcout << stro << endl;
+			//std::wcout << str << endl;
 
 			delete[] temp;
+
+			updateMap = true;
 #endif
 		}
 	};
