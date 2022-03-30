@@ -30,6 +30,9 @@
 #define IDMN_ACTION_ITP	       		25002
 #define IDMN_ACTION_SMBO       		25003
 #define IDMN_ACTION_CM	       		25004
+#define	IDMN_ACTION_SZBO			25005
+#define	IDMN_ACTION_CZ				25006
+#define	IDMN_ACTION_ITA				25007
 
 // Action strings
 #define M_ACTION_SM                 5000
@@ -37,6 +40,9 @@
 #define M_ACTION_ITP                5002
 #define M_ACTION_SMBO               5003
 #define M_ACTION_CM                 5004
+#define	M_ACTION_SZBO				5005
+#define	M_ACTION_CZ					5006
+#define	M_ACTION_ITA				5007
 
 // Titles of action parameters
 #define M_X				     5501
@@ -44,6 +50,8 @@
 #define M_COST				 5503
 #define M_TYPE				 5504
 #define M_USEITERATECOORD	 5505
+#define M_CENTER        	 5506
+#define M_COUNT         	 5507
 
 
 //	Conditions
@@ -71,6 +79,11 @@
 
 #define	IDMN_CONDITION_SMBP  			26012
 
+#define	IDMN_CONDITION_CA				26013
+#define	IDMN_CONDITION_OITA				26014
+#define	IDMN_CONDITION_OITAA			26015
+#define	IDMN_CONDITION_AITA 			26016
+
 // Condition strings
 #define	M_CONDITION_SMBS				6000
 #define	M_CONDITION_SMBB				6001
@@ -89,6 +102,11 @@
 #define	M_CONDITION_OAC  			    6011
 
 #define	M_CONDITION_SMBP  			    6012
+
+#define	M_CONDITION_CA				    6013
+#define	M_CONDITION_OITA				6014
+#define	M_CONDITION_OITAA				6015
+#define	M_CONDITION_AITA				6016
 
 // Titles of condition parameters
 #define M_WIDTH				        6501
@@ -113,6 +131,13 @@
 #define M_COST_CHECK        	    6520
 #define M_OBJECT            	    6521
 #define M_FILEPATH            	    6522
+#define M_LINEMODE            	    6523
+#define M_ATTACK            	    6524
+#define M_RANGE            	        6525
+#define M_STARTRANGE            	6526
+#define M_ALLRANGE            	    6527
+#define M_ALLRANGEATTACKRANGE       6528
+#define M_ZOC                       6529
 
 //	EXPRESSIONS
 //---------------------
@@ -137,6 +162,8 @@
 #define IDMN_EXPRESSION_GMB64		    27009
 #define IDMN_EXPRESSION_GMS	    	    27010
 
+#define IDMN_EXPRESSION_GALR    	    27011
+
 // Expression strings
 #define M_EXPRESSION_GITX			    7000
 #define M_EXPRESSION_GITY			    7001
@@ -154,6 +181,8 @@
 #define M_EXPRESSION_GMB64		        7009
 #define M_EXPRESSION_GMS		        7010
 
+#define M_EXPRESSION_GALR		        7011
+
 // Names of expression parameters
 #define M_STEP				            7500
 #define M_COORDTYPE			            7501
@@ -168,6 +197,7 @@
 #define M_FORCEFIND_EXP		            7510  
 #define M_USEREALCOORD_EXP	            7511  
 #define M_SAVENAME_EXP		            7512  
+#define M_DIR       		            7513
 
 // Next default values for new objects
 // 

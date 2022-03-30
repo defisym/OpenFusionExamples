@@ -41,6 +41,13 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OAC, M_CONDITION_OAC, CND_CONDITION_OAC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
 
 		IDMN_CONDITION_SMBP, M_CONDITION_SMBP, CND_CONDITION_SMBP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FILEPATH, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
+
+		//IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_LINEMODE, M_ATTACK, M_X, M_Y, M_USEREALCOORD, M_RANGE, M_STARTRANGE, M_ZOC, M_ALLRANGE, M_ALLRANGEATTACKRANGE,
+		IDMN_CONDITION_OITA, M_CONDITION_OITA, CND_CONDITION_OITA, 0, 1, PARAM_EXPSTRING, M_ITNAME,
+		IDMN_CONDITION_OITAA, M_CONDITION_OITAA, CND_CONDITION_OITAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_AITA, M_CONDITION_AITA, CND_CONDITION_AITA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -54,6 +61,11 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SMBO, M_ACTION_SMBO, ACT_ACTION_SMBO,	0, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_COST, M_TYPE,
 		IDMN_ACTION_CM, M_ACTION_CM, ACT_ACTION_CM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_COST, M_TYPE,
+
+		IDMN_ACTION_SZBO, M_ACTION_SZBO, ACT_ACTION_SZBO,	0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_COST, M_CENTER,
+		IDMN_ACTION_CZ, M_ACTION_CZ, ACT_ACTION_CZ,	0, 0,
+
+		IDMN_ACTION_ITA, M_ACTION_ITA, ACT_ACTION_ITA,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_ITNAME, M_COUNT,
 		};
 
 // Definitions of parameters for each expression
@@ -74,6 +86,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GMC, M_EXPRESSION_GMC, EXP_EXPRESSION_GMC, 0, 4, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_TYPE,
 		IDMN_EXPRESSION_GMB64, M_EXPRESSION_GMB64, EXP_EXPRESSION_GMB64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GMS, M_EXPRESSION_GMS, EXP_EXPRESSION_GMS, EXPFLAG_STRING, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_TYPE, M_SHOWPATH, M_PATHNAME,
+
+		IDMN_EXPRESSION_GALR, M_EXPRESSION_GALR, EXP_EXPRESSION_GALR, 0, 6, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_DIR, M_RANGE, M_ATTACK,
 		};
 
 
@@ -397,6 +411,62 @@ long WINAPI DLLExport ObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 		});
 }
 
+long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
+	bool lineMode = (bool)CNC_GetParameter(rdPtr);
+	bool attack = (bool)CNC_GetParameter(rdPtr);
+
+	size_t x = (size_t)CNC_GetParameter(rdPtr);
+	size_t y = (size_t)CNC_GetParameter(rdPtr);
+
+	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);	
+
+	size_t range = (size_t)CNC_GetParameter(rdPtr);
+	size_t startRange = (size_t)CNC_GetParameter(rdPtr);
+
+	bool zoc = (bool)CNC_GetParameter(rdPtr);	
+
+	bool allRange = (bool)CNC_GetParameter(rdPtr);
+	size_t allRangeAttackRange = (size_t)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	rdPtr->isAttack = allRange ? false : attack;
+
+	rdPtr->areaPos = 0;
+	rdPtr->extraRangeStartPos = 65536;
+
+	Coord girdCoord = Coord{ x, y };
+
+	if (useRealCoord) {
+		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+	}
+
+	if (!lineMode) {
+		auto pZoc = zoc ? rdPtr->pZoc : nullptr;
+		rdPtr->pFTW->CalcArea(girdCoord, range, startRange, pZoc, attack, allRange, allRangeAttackRange, &rdPtr->extraRangeStartPos);
+	}
+	else {
+		rdPtr->pFTW->CalcLineArea(girdCoord, range, startRange, attack);
+	}
+
+	return TRUE;
+}
+
+long WINAPI DLLExport OnItArea(LPRDATA rdPtr, long param1, long param2) {
+	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return (*rdPtr->pOnItAreaName) == iterateName;
+}
+
+long WINAPI DLLExport OnItAttackArea(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->isAttack;
+}
+
+long WINAPI DLLExport AbleItArea(LPRDATA rdPtr, long param1, long param2) {
+	RetIfMapInvalid(FALSE);
+
+	return rdPtr->areaPos < rdPtr->pFTW->GetArea().size();
+}
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -482,6 +552,71 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 
 		CallEvent(ONITERATESTEP);
 	}
+	return 0;
+}
+
+short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	bool center = (bool)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	Coord objectCoord = Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY };
+
+	if (center) {
+		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pZoc, true);
+	}
+	else {
+		rdPtr->pZoc->emplace_back(objectCoord);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport ClearZoc(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pZoc->clear();
+
+	return 0;
+}
+
+short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
+	*rdPtr->pOnItAreaName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	bool once = (bool)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	auto& area = rdPtr->pFTW->GetArea();
+
+	auto loop = [&](const CoordSet& s) {
+		for (auto& it_c : s) {
+			rdPtr->itCoord = it_c;
+
+			CallEvent(ONITERATEAREA)
+		}
+	};
+
+	if (once) {
+		if (rdPtr->areaPos < area.size()) {
+			rdPtr->isAttack = !(rdPtr->areaPos < rdPtr->extraRangeStartPos);
+
+			loop(area[rdPtr->areaPos]);
+
+			rdPtr->areaPos++;
+		}
+	
+	}
+	else {
+		for (size_t it = 0; it < area.size(); it++) {
+			rdPtr->isAttack = !(it < rdPtr->extraRangeStartPos);
+
+			loop(area[it]);
+
+			rdPtr->areaPos++;
+		}
+	}
+
+	rdPtr->pZoc->clear();
+
 	return 0;
 }
 
@@ -588,6 +723,8 @@ long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetMapBase64(LPRDATA rdPtr, long param1) {
+	RetIfMapInvalid((long)Empty_Str);
+
 	*rdPtr->pMapBase64Str = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->GetMap();
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -603,6 +740,8 @@ long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
 
 	wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
+	RetIfMapInvalid((long)Empty_Str);
+
 	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
 	*rdPtr->pMapStr = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->OutPutMapStr(type, showPath, pPathName);
@@ -612,6 +751,28 @@ long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	return (long)(*rdPtr->pMapStr).c_str();
+}
+
+long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
+	size_t x = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t y = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	size_t dir = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t range = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	bool attack = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	RetIfMapInvalid(0);
+
+	Coord girdCoord = Coord{ x, y };
+
+	if (useRealCoord) {
+		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+	}
+
+	return rdPtr->pFTW->GetAbleLineRange(girdCoord, range, dir, attack);
 }
 
 // ----------------------------------------------------------
@@ -642,6 +803,11 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetMapByPicture,
 
+			CalcArea,
+			OnItArea,
+			OnItAttackArea,
+			AbleItArea,
+
 			0
 			};
 	
@@ -654,6 +820,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetMapByObject,
 			ClearMap,
+
+			SetZocByObject,
+			ClearZoc,
+			IterateArea,
 
 			0
 			};
@@ -675,6 +845,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetMapCost,
 			GetMapBase64,
 			GetMapStr,
+
+			GetAbleLineRange,
 
 			0
 			};

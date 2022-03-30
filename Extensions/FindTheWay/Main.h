@@ -25,7 +25,12 @@
 
 #define	CND_CONDITION_SMBP				12
 
-#define	CND_LAST						13
+#define	CND_CONDITION_CA				13
+#define	CND_CONDITION_OITA				14
+#define	CND_CONDITION_OITAA				15
+#define	CND_CONDITION_AITA				16
+
+#define	CND_LAST						17
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -35,8 +40,11 @@
 #define	ACT_ACTION_ITP					2
 #define	ACT_ACTION_SMBO					3
 #define	ACT_ACTION_CM					4
+#define	ACT_ACTION_SZBO					5
+#define	ACT_ACTION_CZ					6
+#define	ACT_ACTION_ITA					7
 
-#define	ACT_LAST						5
+#define	ACT_LAST						8
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -57,7 +65,9 @@
 #define EXP_EXPRESSION_GMB64			9
 #define EXP_EXPRESSION_GMS				10
 
-#define	EXP_LAST                    	11
+#define EXP_EXPRESSION_GALR				11
+
+#define	EXP_LAST                    	12
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -113,6 +123,14 @@ typedef struct tagRDATA
 	wstring* pMapStr;
 
 	ObjectSelection* pSelect;
+
+	bool isAttack;
+	size_t areaSize;
+	size_t areaPos;
+	size_t extraRangeStartPos;
+	CoordSet* pZoc;
+
+	wstring* pOnItAreaName;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

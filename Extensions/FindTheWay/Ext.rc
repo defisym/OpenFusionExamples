@@ -128,6 +128,10 @@ BEGIN
         MENUITEM "Object At Gird", IDMN_CONDITION_OAG
         MENUITEM "Object At Coord", IDMN_CONDITION_OAC
         MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
+        MENUITEM "Calc Area", IDMN_CONDITION_CA
+        MENUITEM "On Iterate Area", IDMN_CONDITION_OITA
+        MENUITEM "On Iterate Attack Area", IDMN_CONDITION_OITAA
+        MENUITEM "Able to Iterate Area", IDMN_CONDITION_AITA
     END
 END
 #endif
@@ -146,6 +150,9 @@ BEGIN
         MENUITEM "Clear Map",              IDMN_ACTION_CM
         MENUITEM "Continue",              IDMN_ACTION_C
         MENUITEM "Iterate Path",              IDMN_ACTION_ITP
+        MENUITEM "Set Zoc By Object",              IDMN_ACTION_SZBO
+        MENUITEM "Clear Zoc",              IDMN_ACTION_CZ
+        MENUITEM "Iterate Area",              IDMN_ACTION_ITA
     END
 END
 #endif
@@ -173,6 +180,8 @@ BEGIN
         MENUITEM "Get Map Cost", IDMN_EXPRESSION_GMC
         MENUITEM "Get Map Base64", IDMN_EXPRESSION_GMB64
         MENUITEM "Get Map String", IDMN_EXPRESSION_GMS
+        
+        MENUITEM "Get Available Line Range", IDMN_EXPRESSION_GALR
     END
 END
 #endif
@@ -260,6 +269,9 @@ BEGIN
     M_ACTION_ITP              "Iterate Path %0, UseRealCoord = %1, IterateName = %2"
     M_ACTION_SMBO             "Set Map Type %2 By Object %0 Position to Cost %1"
     M_ACTION_CM               "Clear Map Type %1 to Cost %0"
+    M_ACTION_SZBO             "Set Zoc By Object %0, as Center = %1"
+    M_ACTION_CZ               "Clear Zoc"
+    M_ACTION_ITA              "Iterate Area, Iterate Name %0, Iterate Once = %1"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -281,6 +293,12 @@ BEGIN
     M_CONDITION_OAG            "%o Object %0 At Gird [ %1 , %2 ]"
     M_CONDITION_OAC            "%o Object %0 At Coord [ %1 , %2 ]"
     M_CONDITION_OAO            "%o Object %0 At Obstacle of Map Type %1"
+
+    M_CONDITION_CA             "%o Calculate Area ( LineMode = %0, Attack = %1, Start = [ %2 , %3 ], UseRealCoord = %4, Range = %5, StartRange = %6, Zoc = %7, AllRange = %8, AllRangeAttackRange = %9 ) Success"
+    M_CONDITION_OITA           "%o On Iterate Area, IterateName = %0"
+    M_CONDITION_OITAA          "%o On Iterate Attack Area"
+    M_CONDITION_AITA          "%o Able to Iterate Area"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -300,6 +318,8 @@ BEGIN
     M_EXPRESSION_GMC                "GetMapCost("
     M_EXPRESSION_GMB64              "GetMapBase64$("
     M_EXPRESSION_GMS                "GetMapStr$("
+    
+    M_EXPRESSION_GALR               "GALR$("
 END
 
 STRINGTABLE DISCARDABLE
@@ -325,6 +345,13 @@ BEGIN
     M_ITNAME		                "Iterate Name"
     M_OBJECT		                "Select Object to Test"
     M_FILEPATH		                "FileName"
+    M_LINEMODE                      "Line Mode"
+    M_ATTACK                        "Attack Mode (Ignore Unit & Zoc)"
+    M_RANGE            	            "Range"
+    M_STARTRANGE                    "Start Range"
+    M_ALLRANGE                      "AllRange Mode, Calculate Move & Attack Range"
+    M_ALLRANGEATTACKRANGE           "Attack Range in AllRange Mode"
+    M_ZOC                           "Use Zoc"
 
     M_X				                "X Coord"
     M_Y				                "Y Coord"
@@ -347,6 +374,7 @@ BEGIN
     M_FORCEFIND_EXP		            "ForceFind"
     M_USEREALCOORD_EXP	            "UseRealCoord"
     M_SAVENAME_EXP		            "SavePathName"
+    M_DIR       		            "Calc Dir"
 END
 
 #endif    // English (U.S.) resources
