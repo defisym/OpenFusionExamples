@@ -102,6 +102,7 @@ namespace FindTheWay {
 	}
 
 	using Path = vector<Coord>;
+	using CoordSet = Path;	// for zoc
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
 
@@ -233,16 +234,16 @@ namespace FindTheWay {
 
 		using StashPathKey = tuple<Coord, Coord>;
 
-		struct StashPathKeyCompare {
-			bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
-				auto& [lKeyS, lKeyD] = lKey;
-				auto& [rKeyS, rKeyD] = rKey;
+		//struct StashPathKeyCompare {
+		//	bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
+		//		auto& [lKeyS, lKeyD] = lKey;
+		//		auto& [rKeyS, rKeyD] = rKey;
 
-				return (lKeyS < rKeyS) && (lKeyD < rKeyD);
-			};
-		};
+		//		return (lKeyS < rKeyS) && (lKeyD < rKeyD);
+		//	};
+		//};
 
-		using StashPath = std::map<StashPathKey, Path, StashPathKeyCompare>;
+		using StashPath = std::map<StashPathKey, Path>;
 
 		StashPath stashPath;
 
@@ -271,16 +272,16 @@ namespace FindTheWay {
 
 		using StashAreaKey = tuple<Coord, size_t, size_t, size_t>;
 
-		struct StashAreaKeyCompare {
-			bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
-				auto& [lc, lr, lsr, lm] = lKey;
-				auto& [rc, rr, rsr, rm] = rKey;
+		//struct StashAreaKeyCompare {
+		//	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
+		//		auto& [lc, lr, lsr, lm] = lKey;
+		//		auto& [rc, rr, rsr, rm] = rKey;
 
-				return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
-			};
-		};
+		//		return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
+		//	};
+		//};
 
-		using StashArea = std::map<StashAreaKey, Area, StashAreaKeyCompare>;
+		using StashArea = std::map<StashAreaKey, Area>;
 
 		StashArea stashArea;
 
@@ -852,8 +853,10 @@ namespace FindTheWay {
 			}
 		}
 
-		inline void GenerateZoc(Coord start, Path* zoc, bool diagonal = true) {
-			zoc->clear();
+		inline void GenerateZoc(Coord start, CoordSet* zoc, bool add = false, bool diagonal = true) {
+			if (!add) {
+				zoc->clear();
+			}
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 
@@ -862,8 +865,78 @@ namespace FindTheWay {
 			}
 		}
 
-		inline size_t GetMoveableRange(Coord start, size_t range, size_t dir) {
-			if (updateMap) {
+		inline void GenerateZoc(CoordSet& start, CoordSet* zoc, bool add = false, bool diagonal = true) {
+			if (!add) {
+				zoc->clear();
+			}
+
+			for (auto& it : start) {
+				GenerateZoc(it, zoc, true);
+			}
+		}
+
+		inline wstring OutPutAreaStr(Coord start, size_t range, CoordSet* zoc = nullptr
+			, bool allRange = false, size_t extraRangeStartPos = 0) {
+			std::wstringstream ss;
+			if (!extraRangeStartPos) {
+				extraRangeStartPos = range;
+			}
+
+			BYTE* temp = new BYTE[mapSize];
+			memcpy(temp, map, mapSize);
+
+			auto out = [&](BYTE cost)->wchar_t {
+				switch (cost) {
+				case MAP_OBSTACLE:
+					return L'*';
+				case 254:
+					return L'+';
+				case 125:
+					return L'□';
+				case 124:
+					return L'■';
+				case 50:
+					return L'Z';
+				default:
+					return L'#';
+				}
+			};
+
+			if (zoc != nullptr) {
+				for (auto& it : *zoc) {
+					*GetMapPosPointer(it.x, it.y, temp) = 50;
+				}
+			}
+
+			for (size_t it = 0; it < area.size(); it++) {
+				if (it < extraRangeStartPos) {
+					for (auto& it_C : area[it]) {
+						*GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
+					}
+				}
+				else {
+					for (auto& it_C : area[it]) {
+						*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
+					}
+				}
+			}
+
+			*GetMapPosPointer(start.x, start.y, temp) = 254;
+
+			for (size_t y = 0; y < height; y++) {
+				for (size_t x = 0; x < width; x++) {
+					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
+				}
+				ss << endl;
+			}
+
+			delete[] temp;
+
+			return ss.str();
+		}
+
+		inline size_t GetAbleLineRange(Coord start, size_t range, size_t dir, bool attack) {
+			if (updateMap && !attack) {
 				UpdateMap();
 			}
 
@@ -871,7 +944,9 @@ namespace FindTheWay {
 			auto coord = start;
 			size_t moveable = 0;
 
-			while ((moveable <= range) && (GetMap(coord.x, coord.y, this->map) != MAP_OBSTACLE)) {
+			while ((moveable <= range)
+				&& (GetMap(coord.x, coord.y, range ? this->terrain : this->map) != MAP_OBSTACLE)) {
+
 				coord.x += offset.x;
 				coord.y += offset.y;
 				
@@ -883,8 +958,8 @@ namespace FindTheWay {
 			return moveable;
 		}
 
-		inline void GetLineArea(Coord start, size_t range, size_t startRange = 0) {
-			if (updateMap) {
+		inline void CalcLineArea(Coord start, size_t range, size_t startRange = 0, bool attack = true) {
+			if (updateMap && !attack) {
 				UpdateMap();
 			}
 
@@ -898,14 +973,14 @@ namespace FindTheWay {
 
 			area.clear();
 
-			if (GetMap(start.x, start.y, this->map) == MAP_OBSTACLE) {
+			if (GetMap(start.x, start.y, attack ? this->terrain : this->map) == MAP_OBSTACLE) {
 				return;
 			}
 
 			ranges = { 0,0,0,0 };
 
 			for (size_t i = 0; i < 4; i++) {
-				ranges[i] = GetMoveableRange(start, range, i);
+				ranges[i] = GetAbleLineRange(start, range, i, attack);
 			}
 
 			for (size_t nest = 0; nest <= range; nest++) {
@@ -934,64 +1009,18 @@ namespace FindTheWay {
 			stashArea[stashAreaKey] = area;
 
 #ifdef _DEBUG
-			std::wstringstream ss;
-
-			BYTE* temp = new BYTE[mapSize];
-			memcpy(temp, map, mapSize);
-
-			auto out = [&](BYTE cost)->wchar_t {
-				switch (cost) {
-				case MAP_OBSTACLE:
-					return L'O';
-				case 254:
-					return L'+';
-				case 125:
-					return L'M';
-				case 124:
-					return L'A';
-				case 50:
-					return L'Z';
-				default:
-					return L'P';
-				}
-			};
-
-			for (auto& it : area) {
-				for (auto& it_C : it) {
-					*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
-				}
-			}
-
-			*GetMapPosPointer(start.x, start.y, temp) = 254;
-
-			for (size_t y = 0; y < height; y++) {
-				for (size_t x = 0; x < width; x++) {
-					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
-				}
-				ss << endl;
-
-			}
-
-			auto stro = OutPutMapStr(MapType::MAP);
-			auto str = ss.str();
-
-			//std::wcout << stro << endl;
-			//std::wcout << str << endl;
-
-			delete[] temp;
-
-			updateMap = true;
-#endif
+			OutPutAreaStr(start, range, nullptr);
+#endif // _DEBUG
 		}
 
-		inline void GetArea(Coord start, size_t range, size_t startRange = 0, Path* zoc = nullptr
-			, bool allRange = false, size_t allRangeAttackRange = 0
+		inline void CalcArea(Coord start, size_t range, size_t startRange = 0, CoordSet* zoc = nullptr, bool attack = false
+			, bool allRange = false, size_t allRangeAttackRange = 0, size_t* extraRangeStartPosOut = nullptr
 			, bool diagonal = false) {
-			if (updateMap) {
+			if (updateMap && (!attack || allRange)) {
 				UpdateMap();
 			}
 
-			bool stash = zoc == nullptr && allRange == false;
+			bool stash = zoc == nullptr || allRange == false;
 			auto stashAreaKey = make_tuple(start, range, startRange, 0);
 
 			if (stash) {
@@ -1025,6 +1054,8 @@ namespace FindTheWay {
 			size_t extraRangeStartPos = range;
 
 			bool extraRangeCalc = false;	// Extra range calc start
+			bool updateAttack = allRange ? false : attack;		// ignore dynamic unit part when calc attack range
+																// force to evaluate them in allRange mode
 
 			for (size_t nest = 0; nest <= totalRange; nest++) {
 				bool addArea = nest > startRange;
@@ -1033,8 +1064,13 @@ namespace FindTheWay {
 				bool extraRangeStart = allRange && (nest == range + 1);		// Extra range start, don't add new area
 
 				if (extraRangeStart) {
-					extraRangeCalc = true;					
+					updateAttack = true;								// Attack when extra range start
+					extraRangeCalc = true;
 					extraRangeStartPos = area.size();
+
+					if (extraRangeStartPosOut != nullptr) {
+						*extraRangeStartPosOut = extraRangeStartPos;
+					}
 
 					std::swap(cur_set, continue_set);
 					open_set.clear();
@@ -1083,7 +1119,8 @@ namespace FindTheWay {
 						}
 					};
 
-					if ((!extraRangeCalc) && zoc != nullptr && findZoc(*zoc, base) != nullptr) {
+					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
+					if ((!updateAttack) && (!extraRangeCalc) && zoc != nullptr && findZoc(*zoc, base) != nullptr) {
 						if (allRange) {
 							addContinue(base);
 						}
@@ -1095,7 +1132,8 @@ namespace FindTheWay {
 						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
 						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
 
-						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
+						// ignore dynamic unit part when calc attack range
+						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, updateAttack ? this->terrain : this->map);
 						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
@@ -1118,73 +1156,17 @@ namespace FindTheWay {
 				}
 			}
 
-			if (stash) {
+			if (stash) {		// only stash without ZOC & allRange
 				stashArea[stashAreaKey] = area;
 			}
 
 #ifdef _DEBUG
-			std::wstringstream ss;
-
-			BYTE* temp = new BYTE[mapSize];
-			memcpy(temp, map, mapSize);
-
-			auto out = [&](BYTE cost)->wchar_t {
-				switch (cost) {
-				case MAP_OBSTACLE:
-					return L'O';
-				case 254:
-					return L'+';
-				case 125:
-					return L'M';
-				case 124:
-					return L'A';
-				case 50:
-					return L'Z';
-				default:
-					return L'P';
-				}
-			};
-
-			if (zoc != nullptr) {
-				for (auto& it : *zoc) {
-					*GetMapPosPointer(it.x, it.y, temp) = 50;
-					*GetMapPosPointer(it.x, it.y, map) = 50;
-				}
-			}
-
-			for (size_t it = 0; it < area.size(); it++) {
-				if (it < extraRangeStartPos) {
-					for (auto& it_C : area[it]) {
-						*GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
-					}
-				}
-				else {
-					for (auto& it_C : area[it]) {
-						*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
-					}
-				}
-			}
-
-			*GetMapPosPointer(start.x, start.y, temp) = 254;
-
-			for (size_t y = 0; y < height; y++) {
-				for (size_t x = 0; x < width; x++) {
-					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
-				}
-				ss << endl;
-
-			}
-
-			auto stro = OutPutMapStr(MapType::MAP);
-			auto str = ss.str();
-
-			//std::wcout << stro << endl;
-			//std::wcout << str << endl;
-
-			delete[] temp;
-
-			updateMap = true;
-#endif
+			OutPutAreaStr(start, range, zoc, allRange, extraRangeStartPos);
+#endif // _DEBUG
+		}
+	
+		inline const Area& GetArea() {
+			return area;
 		}
 	};
 }
