@@ -106,7 +106,7 @@ namespace FindTheWay {
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
 
-	using Area = vector<vector<Coord>>;
+	using Area = vector<CoordSet>;
 
 	using Exception = unsigned char;
 
@@ -232,7 +232,7 @@ namespace FindTheWay {
 
 		Paths savedPath;
 
-		using StashPathKey = tuple<Coord, Coord>;
+		using StashPathKey = tuple<size_t, size_t, size_t, size_t>;
 
 		//struct StashPathKeyCompare {
 		//	bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
@@ -270,7 +270,8 @@ namespace FindTheWay {
 
 		vector<size_t> ranges;
 
-		using StashAreaKey = tuple<Coord, size_t, size_t, size_t>;
+		using StashAreaKey = tuple<size_t, size_t, size_t, size_t, size_t>;
+		using StashAreaValue = tuple<Area, size_t>;
 
 		//struct StashAreaKeyCompare {
 		//	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
@@ -281,7 +282,7 @@ namespace FindTheWay {
 		//	};
 		//};
 
-		using StashArea = std::map<StashAreaKey, Area>;
+		using StashArea = std::map<StashAreaKey, StashAreaValue>;
 
 		StashArea stashArea;
 
@@ -722,7 +723,7 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			auto stashPathKey = make_tuple(start, destination);
+			auto stashPathKey = make_tuple(start.x, start.y, destination.x, destination.y);
 			pathAvailable = stashPath.count(stashPathKey);
 
 			if (pathAvailable) {
@@ -963,10 +964,12 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			auto stashAreaKey = make_tuple(start, range, startRange, 1);
+			auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 1);
 
 			if (stashArea.count(stashAreaKey)) {
-				area = stashArea[stashAreaKey];
+				auto& [sa, sp] = stashArea[stashAreaKey];
+
+				area = sa;
 
 				return;
 			}
@@ -1006,7 +1009,7 @@ namespace FindTheWay {
 				}
 			}
 
-			stashArea[stashAreaKey] = area;
+			stashArea[stashAreaKey] = std::make_tuple(area, 0);
 
 #ifdef _DEBUG
 			OutPutAreaStr(start, range, nullptr);
@@ -1021,11 +1024,14 @@ namespace FindTheWay {
 			}
 
 			bool stash = zoc == nullptr || allRange == false;
-			auto stashAreaKey = make_tuple(start, range, startRange, 0);
+			auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 0);
 
 			if (stash) {
 				if (stashArea.count(stashAreaKey)) {
-					area = stashArea[stashAreaKey];
+					auto& [sa,sp]= stashArea[stashAreaKey];
+
+					area = sa;
+					*extraRangeStartPosOut = sp;
 
 					return;
 				}
@@ -1157,7 +1163,7 @@ namespace FindTheWay {
 			}
 
 			if (stash) {		// only stash without ZOC & allRange
-				stashArea[stashAreaKey] = area;
+				stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
 			}
 
 #ifdef _DEBUG
