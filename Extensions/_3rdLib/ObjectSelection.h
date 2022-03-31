@@ -7,11 +7,10 @@
 
 #include "ccxhdr.h"
 
-using ForEachCallBack = std::function<void(LPRO)>;
-
 class ObjectSelection {
 private:
 	using Filter = std::function<bool(LPRDATA, LPRO)>;
+	using ForEachCallBack = std::function<void(LPRO)>;
 
 	LPRH rhPtr;
 	LPOBL ObjectList;
