@@ -17,3 +17,8 @@ inline void FindPath(LPRDATA rdPtr, Coord start, Coord destination, bool diagona
 		rdPtr->pFTW->SaveLastPath(saveName);
 	}
 }
+
+inline void UpdateMapCallBackFunc(void* rdPtr) {
+	LPRDATA pCast = (LPRDATA)rdPtr;
+	callRunTimeFunction(pCast, RFUNCTION_GENERATEEVENT, ONMAPCHANGE, 0);
+}

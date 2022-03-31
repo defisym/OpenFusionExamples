@@ -30,7 +30,9 @@
 #define	CND_CONDITION_OITAA				15
 #define	CND_CONDITION_AITA				16
 
-#define	CND_LAST						17
+#define	CND_CONDITION_OMC				17
+
+#define	CND_LAST						18
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -71,7 +73,14 @@
 
 #define EXP_EXPRESSION_GIF				12
 
-#define	EXP_LAST                    	13
+#define EXP_EXPRESSION_GMTM				13
+#define EXP_EXPRESSION_GMTT				14
+#define EXP_EXPRESSION_GMTD				15
+#define EXP_EXPRESSION_GMCP				16
+#define EXP_EXPRESSION_GMCO				17
+#define EXP_EXPRESSION_GMCV				18
+
+#define	EXP_LAST                    	19
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

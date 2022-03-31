@@ -120,6 +120,8 @@ BEGIN
         BEGIN
             MENUITEM "Map Available", IDMN_CONDITION_MA
             MENUITEM "Check Map Cost At Coord", IDMN_CONDITION_CMCAC
+            MENUITEM SEPARATOR
+            MENUITEM "On Map Change", IDMN_CONDITION_OMC
         END
         MENUITEM SEPARATOR
         POPUP "Set Map"
@@ -230,6 +232,14 @@ BEGIN
             MENUITEM "Get Map Cost", IDMN_EXPRESSION_GMC
             MENUITEM "Get Map Base64", IDMN_EXPRESSION_GMB64
             MENUITEM "Get Map String", IDMN_EXPRESSION_GMS
+            MENUITEM SEPARATOR
+            MENUITEM "Get MapType Map", IDMN_EXPRESSION_GMTM
+            MENUITEM "Get MapType Terrain", IDMN_EXPRESSION_GMTT
+            MENUITEM "Get MapType Dynamic", IDMN_EXPRESSION_GMTD
+            MENUITEM SEPARATOR
+            MENUITEM "Get Map Cost Path", IDMN_EXPRESSION_GMCP
+            MENUITEM "Get Map Cost Obstacle", IDMN_EXPRESSION_GMCO
+            MENUITEM "Get Map Cost Valid", IDMN_EXPRESSION_GMCV
         END
         MENUITEM SEPARATOR
         POPUP "Path"
@@ -364,7 +374,9 @@ BEGIN
     M_CONDITION_CA             "%o Calculate Area ( LineMode = %0, Attack = %1, Start = [ %2 , %3 ], UseRealCoord = %4, Range = %5, StartRange = %6, Zoc = %7, AllRange = %8, AllRangeAttackRange = %9 ) Success"
     M_CONDITION_OITA           "%o On Iterate Area, IterateName = %0"
     M_CONDITION_OITAA          "%o On Iterate Attack Area"
-    M_CONDITION_AITA          "%o Able to Iterate Area"
+    M_CONDITION_AITA           "%o Able to Iterate Area"
+    
+    M_CONDITION_OMC           "%o On Map Change"
 
 END
 
@@ -388,7 +400,14 @@ BEGIN
     
     M_EXPRESSION_GALR               "GALR$("
     
-    M_EXPRESSION_GIF               "GetIgnoreFlag("
+    M_EXPRESSION_GIF                "GetIgnoreFlag("
+
+    M_EXPRESSION_GMTM               "MapTypeMap("
+    M_EXPRESSION_GMTT               "MapTypeTerrain("
+    M_EXPRESSION_GMTD               "MapTypeDynamic("
+    M_EXPRESSION_GMCP               "MapCostPath("
+    M_EXPRESSION_GMCO               "MapCostObstacle("
+    M_EXPRESSION_GMCV               "MapCostValid("
 END
 
 STRINGTABLE DISCARDABLE
@@ -426,7 +445,7 @@ BEGIN
     M_Y				                "Y Coord"
     M_COST			                "Map Cost, 255 = Obstacle"
     M_COST_CHECK	                "Map Cost to Check, -1 = All Path, 65536 = All Obstacle, Other = Check Accurate Cost"
-    M_TYPE			                "Map Type, 1 = Terrain, 2 = Dynamic"
+    M_TYPE			                "Map Type, 0 = Map (Read Only, Ignored When Setting/Clearing), 1 = Terrain, 2 = Dynamic"
     M_USEITERATECOORD               "Auto Set Coord in 'On Set Map By Collision', 1 = Enable, 0 = Disable, 'X/Y Coord' && 'Use Real Coord' is Ignored When Enable"
     M_ENEMY                         "0 = Ally, 1 = Enemy"
     

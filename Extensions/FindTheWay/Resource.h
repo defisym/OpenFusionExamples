@@ -88,6 +88,8 @@
 #define	IDMN_CONDITION_OITAA			26015
 #define	IDMN_CONDITION_AITA 			26016
 
+#define	IDMN_CONDITION_OMC   			26017
+
 // Condition strings
 #define	M_CONDITION_SMBS				6000
 #define	M_CONDITION_SMBB				6001
@@ -111,6 +113,8 @@
 #define	M_CONDITION_OITA				6014
 #define	M_CONDITION_OITAA				6015
 #define	M_CONDITION_AITA				6016
+
+#define	M_CONDITION_OMC 				6017
 
 // Titles of condition parameters
 #define M_WIDTH				        6501
@@ -171,6 +175,13 @@
 
 #define IDMN_EXPRESSION_GIF     	    27012
 
+#define IDMN_EXPRESSION_GMTM			27013
+#define IDMN_EXPRESSION_GMTT			27014
+#define IDMN_EXPRESSION_GMTD			27015
+#define IDMN_EXPRESSION_GMCP			27016
+#define IDMN_EXPRESSION_GMCO			27017
+#define IDMN_EXPRESSION_GMCV			27018
+
 // Expression strings
 #define M_EXPRESSION_GITX			    7000
 #define M_EXPRESSION_GITY			    7001
@@ -190,7 +201,14 @@
 
 #define M_EXPRESSION_GALR		        7011
 
-#define M_EXPRESSION_GIF     	    7012
+#define M_EXPRESSION_GIF     	        7012
+
+#define M_EXPRESSION_GMTM				7013
+#define M_EXPRESSION_GMTT				7014
+#define M_EXPRESSION_GMTD				7015
+#define M_EXPRESSION_GMCP				7016
+#define M_EXPRESSION_GMCO				7017
+#define M_EXPRESSION_GMCV				7018
 
 // Names of expression parameters
 #define M_STEP				            7500

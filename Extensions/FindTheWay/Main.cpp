@@ -48,6 +48,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OITAA, M_CONDITION_OITAA, CND_CONDITION_OITAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_AITA, M_CONDITION_AITA, CND_CONDITION_AITA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
+		IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
 		};
 
 // Definitions of parameters for each action
@@ -93,6 +94,15 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GALR, M_EXPRESSION_GALR, EXP_EXPRESSION_GALR, 0, 6, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_DIR, M_RANGE, M_ATTACK,
 
 		IDMN_EXPRESSION_GIF, M_EXPRESSION_GIF, EXP_EXPRESSION_GIF, 0, 5, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_MIZ, M_MIA, M_MIE, M_AIA, M_AIE,
+
+		IDMN_EXPRESSION_GMTM, M_EXPRESSION_GMTM, EXP_EXPRESSION_GMTM, 0, 0,
+		IDMN_EXPRESSION_GMTT, M_EXPRESSION_GMTT, EXP_EXPRESSION_GMTT, 0, 0,
+		IDMN_EXPRESSION_GMTD, M_EXPRESSION_GMTD, EXP_EXPRESSION_GMTD, 0, 0,
+
+		IDMN_EXPRESSION_GMCP, M_EXPRESSION_GMCP, EXP_EXPRESSION_GMCP, 0, 0,
+		IDMN_EXPRESSION_GMCO, M_EXPRESSION_GMCO, EXP_EXPRESSION_GMCO, 0, 0,
+		IDMN_EXPRESSION_GMCV, M_EXPRESSION_GMCV, EXP_EXPRESSION_GMCV, 0, 1, EXPPARAM_LONG, M_COST,
+
 		};
 
 
@@ -112,6 +122,7 @@ long WINAPI DLLExport SetMapBySize(LPRDATA rdPtr, long param1, long param2) {
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
+		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -132,6 +143,7 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(base64);
+		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -170,6 +182,7 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
+		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -202,8 +215,11 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 				continue;
 			}
 
-			auto cost = buff[offset + 2];		// R value
-			rdPtr->pFTW->SetMap(x,y,cost,MapType::TERRAIN);
+			auto costT = buff[offset + 2];		// R value
+			auto costD = buff[offset + 1];		// G value
+
+			rdPtr->pFTW->SetMap(x, y, costT, MapType::TERRAIN);
+			rdPtr->pFTW->SetMap(x, y, costD, MapType::DYNAMIC);
 		}
 	}
 
@@ -230,6 +246,8 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 
 	*rdPtr->pOnItCollisionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	RetIfSetMapDirectly(type, FALSE);
+
 	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
 
 	auto frameWidth = frameRect.right - frameRect.left;
@@ -240,6 +258,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
+		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -265,7 +284,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 				, rdPtr->itCoord.x - layerOffsetX
 				, rdPtr->itCoord.y - layerOffsetY
 				, baseLayer, 0)) {
-				rdPtr->pFTW->SetMap(x, y, MAP_OBSTACLE, MapType::TERRAIN);
+				rdPtr->pFTW->SetMap(x, y, MAP_OBSTACLE, type);
 			}
 		}
 	}
@@ -438,7 +457,8 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->isAttack = allRange ? false : attack;
 
 	rdPtr->areaPos = 0;
-	rdPtr->extraRangeStartPos = 65536;
+	rdPtr->areaSize = 0;
+	rdPtr->extraRangeStartPos = DEFAULT_EXTRARANGESTARTPOS;
 
 	Coord girdCoord = Coord{ x, y };
 
@@ -456,6 +476,8 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 		rdPtr->pFTW->CalcLineArea(girdCoord, range, startRange, attack);
 	}
 
+	rdPtr->areaSize = rdPtr->pFTW->GetArea().size();
+
 	return TRUE;
 }
 
@@ -469,11 +491,14 @@ long WINAPI DLLExport OnItAttackArea(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->isAttack;
 }
 
-long WINAPI DLLExport AbleItArea(LPRDATA rdPtr, long param1, long param2) {
-	RetIfMapInvalid(FALSE);
-
-	return rdPtr->areaPos < rdPtr->pFTW->GetArea().size();
+long WINAPI DLLExport AbletoItArea(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->areaPos < rdPtr->areaSize;
 }
+
+long WINAPI DLLExport OnMapChange(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -491,6 +516,7 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 	bool useIterateCoord = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
+	RetIfSetMapDirectly(type, 0);
 
 	Coord girdCoord = Coord{ x, y };
 
@@ -514,6 +540,7 @@ short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
+	RetIfSetMapDirectly(type, 0);
 
 	auto [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
@@ -526,6 +553,7 @@ short WINAPI DLLExport ClearMap(LPRDATA rdPtr, long param1, long param2) {
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
+	RetIfSetMapDirectly(type, 0);
 
 	rdPtr->pFTW->ClearMap(type, cost);
 
@@ -568,7 +596,7 @@ short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY };
+	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY }); 
 
 	if (center) {
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pZoc, true);
@@ -622,8 +650,6 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 		}
 	}
 
-	rdPtr->pZoc->clear();
-
 	return 0;
 }
 
@@ -631,7 +657,7 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	bool enemy = (bool)CNC_GetParameter(rdPtr);
 
-	Coord objectCoord = Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY };
+	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 	if (!enemy) {
 		rdPtr->pAlly->emplace_back(objectCoord);
@@ -661,7 +687,6 @@ short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 
 	return 0;
 }
-
 
 // ============================================================================
 //
@@ -829,6 +854,33 @@ long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
 
 	return rdPtr->pFTW->GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
 }
+
+long WINAPI DLLExport GetMapTypeMap(LPRDATA rdPtr, long param1) {
+	return (long)MapType::MAP;
+}
+
+long WINAPI DLLExport GetMapTypeTerrain(LPRDATA rdPtr, long param1) {
+	return (long)MapType::TERRAIN;
+}
+
+long WINAPI DLLExport GetMapTypeDynamic(LPRDATA rdPtr, long param1) {
+	return (long)MapType::DYNAMIC;
+}
+
+long WINAPI DLLExport GetMapCostPath(LPRDATA rdPtr, long param1) {
+	return MAP_PATH;
+}
+
+long WINAPI DLLExport GetMapCostObstacle(LPRDATA rdPtr, long param1) {
+	return MAP_OBSTACLE;
+}
+
+long WINAPI DLLExport GetMapCostValid(LPRDATA rdPtr, long param1) {
+	size_t cost = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return Range(cost);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -860,8 +912,10 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CalcArea,
 			OnItArea,
 			OnItAttackArea,
-			AbleItArea,
+			AbletoItArea,
 
+			OnMapChange,
+			
 			0
 			};
 	
@@ -905,6 +959,13 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetAbleLineRange,
 			GetIgnoreFlag,
+
+			GetMapTypeMap,
+			GetMapTypeTerrain,
+			GetMapTypeDynamic,
+			GetMapCostPath,
+			GetMapCostObstacle,
+			GetMapCostValid,
 
 			0
 			};

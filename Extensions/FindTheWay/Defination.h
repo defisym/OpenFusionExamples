@@ -7,14 +7,14 @@
 #define ONSETMAPBYCOLLISION	3
 #define ONITERATESTEP		6
 #define ONITERATEAREA		14
-
-#define ONMAPCHANGE	0
+#define ONMAPCHANGE			17
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
 
 #define valid(X) (X != nullptr)
 
 #define RetIfMapInvalid(X) if (rdPtr->pFTW == nullptr) { return X; }
+#define RetIfSetMapDirectly(type,X) if (type == MapType::MAP) { return X; }
 
 #define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
 
