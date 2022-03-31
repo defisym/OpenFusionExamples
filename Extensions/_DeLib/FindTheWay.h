@@ -1145,7 +1145,8 @@ namespace FindTheWay {
 					area.back().reserve(1 + area.size() * 4);
 				}
 
-				if (cur_set.empty()) {
+				if (cur_set.empty()
+					&& (allRange && continue_set.empty())) {		// cannot move, start attack check in allRange mode
 					break;
 				}
 
