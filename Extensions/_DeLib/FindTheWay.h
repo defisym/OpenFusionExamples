@@ -181,6 +181,8 @@ namespace FindTheWay {
 
 	constexpr auto DELIMETER = ':';
 
+	constexpr auto DEFAULT_IGNOREFLAG = 0b01001U;
+
 	class FindTheWayClass {
 	private:
 		size_t width = 0;
@@ -254,6 +256,10 @@ namespace FindTheWay {
 
 			int priority;
 			size_t cost;
+
+			inline operator Coord() {
+				return coord;
+			}
 		};
 
 		using Set = vector<Point>;
@@ -267,25 +273,25 @@ namespace FindTheWay {
 		Area area;
 		Set cur_set;
 		Set continue_set;
+		CoordSet extra_set;
 
 		vector<size_t> ranges;
 
-		using StashAreaKey = tuple<size_t, size_t, size_t, size_t, size_t>;
-		using StashAreaValue = tuple<Area, size_t>;
+		//using StashAreaKey = tuple<size_t, size_t, size_t, size_t, size_t>;
+		//using StashAreaValue = tuple<Area, size_t>;
 
-		//struct StashAreaKeyCompare {
-		//	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
-		//		auto& [lc, lr, lsr, lm] = lKey;
-		//		auto& [rc, rr, rsr, rm] = rKey;
+		////struct StashAreaKeyCompare {
+		////	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
+		////		auto& [lc, lr, lsr, lm] = lKey;
+		////		auto& [rc, rr, rsr, rm] = rKey;
 
-		//		return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
-		//	};
-		//};
+		////		return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
+		////	};
+		////};
 
-		using StashArea = std::map<StashAreaKey, StashAreaValue>;
+		//using StashArea = std::map<StashAreaKey, StashAreaValue>;
 
-		StashArea stashArea;
-
+		//StashArea stashArea;
 
 		inline size_t pOffset(size_t x, size_t y) {
 			return y * width + x;
@@ -375,6 +381,7 @@ namespace FindTheWay {
 			area.reserve(AREA_RESERVE);
 			cur_set.reserve(2 * PATH_RESERVE);
 			continue_set.reserve(2 * PATH_RESERVE);
+			extra_set.reserve(AREA_RESERVE);
 		}
 
 		inline void Allocate(size_t width, size_t height) {
@@ -543,7 +550,7 @@ namespace FindTheWay {
 			stashPath.clear();
 
 			area.clear();
-			stashArea.clear();
+			//stashArea.clear();
 
 			pathAvailable = false;
 		}
@@ -854,6 +861,14 @@ namespace FindTheWay {
 			}
 		}
 
+		inline void GenerateSet(Coord start, CoordSet* set, bool add = false, bool diagonal = true) {
+			if (!add) {
+				set->clear();
+			}
+
+			set->emplace_back(start);
+		}
+		
 		inline void GenerateZoc(Coord start, CoordSet* zoc, bool add = false, bool diagonal = true) {
 			if (!add) {
 				zoc->clear();
@@ -876,7 +891,9 @@ namespace FindTheWay {
 			}
 		}
 
-		inline wstring OutPutAreaStr(Coord start, size_t range, CoordSet* zoc = nullptr
+		inline wstring OutPutAreaStr(Coord start, size_t range
+			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr
+			, CoordSet* zoc = nullptr
 			, bool allRange = false, size_t extraRangeStartPos = 0) {
 			std::wstringstream ss;
 			if (!extraRangeStartPos) {
@@ -898,16 +915,22 @@ namespace FindTheWay {
 					return L'■';
 				case 50:
 					return L'Z';
+				case 49:
+					return L'A';
+				case 48:
+					return L'E';
 				default:
 					return L'#';
 				}
 			};
 
-			if (zoc != nullptr) {
-				for (auto& it : *zoc) {
-					*GetMapPosPointer(it.x, it.y, temp) = 50;
+			auto updateSet = [&](CoordSet* p, BYTE cost) {
+				if (p != nullptr) {
+					for (auto& it : *p) {
+						*GetMapPosPointer(it.x, it.y, temp) = cost;
+					}
 				}
-			}
+			};
 
 			for (size_t it = 0; it < area.size(); it++) {
 				if (it < extraRangeStartPos) {
@@ -917,10 +940,17 @@ namespace FindTheWay {
 				}
 				else {
 					for (auto& it_C : area[it]) {
+						if (it_C == Coord{ 5, 4 }) {
+							cout << "1" << endl;
+						}
 						*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
 					}
 				}
 			}
+
+			//updateSet(zoc, 50);
+			//updateSet(ally, 49);
+			//updateSet(enemy, 48);
 
 			*GetMapPosPointer(start.x, start.y, temp) = 254;
 
@@ -964,15 +994,15 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 1);
+			//auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 1);
 
-			if (stashArea.count(stashAreaKey)) {
-				auto& [sa, sp] = stashArea[stashAreaKey];
+			//if (stashArea.count(stashAreaKey)) {
+			//	auto& [sa, sp] = stashArea[stashAreaKey];
 
-				area = sa;
+			//	area = sa;
 
-				return;
-			}
+			//	return;
+			//}
 
 			area.clear();
 
@@ -1009,33 +1039,37 @@ namespace FindTheWay {
 				}
 			}
 
-			stashArea[stashAreaKey] = std::make_tuple(area, 0);
+			//stashArea[stashAreaKey] = std::make_tuple(area, 0);
 
 #ifdef _DEBUG
-			OutPutAreaStr(start, range, nullptr);
+			OutPutAreaStr(start, range);
 #endif // _DEBUG
 		}
 
-		inline void CalcArea(Coord start, size_t range, size_t startRange = 0, CoordSet* zoc = nullptr, bool attack = false
+		inline void CalcArea(Coord start, size_t range, size_t startRange = 0
+			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
+			, size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
+			, bool attack = false	// ignored if allRange = true
+			// allRange: Calc move & attack at the same time
 			, bool allRange = false, size_t allRangeAttackRange = 0, size_t* extraRangeStartPosOut = nullptr
 			, bool diagonal = false) {
 			if (updateMap && (!attack || allRange)) {
 				UpdateMap();
 			}
 
-			bool stash = zoc == nullptr || allRange == false;
-			auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 0);
+			//bool stash = zoc == nullptr || allRange == false;
+			//auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 0);
 
-			if (stash) {
-				if (stashArea.count(stashAreaKey)) {
-					auto& [sa,sp]= stashArea[stashAreaKey];
+			//if (stash) {
+			//	if (stashArea.count(stashAreaKey)) {
+			//		auto& [sa,sp]= stashArea[stashAreaKey];
 
-					area = sa;
-					*extraRangeStartPosOut = sp;
+			//		area = sa;
+			//		*extraRangeStartPosOut = sp;
 
-					return;
-				}
-			}
+			//		return;
+			//	}
+			//}
 
 			area.clear();
 
@@ -1045,6 +1079,7 @@ namespace FindTheWay {
 
 			cur_set.clear();
 			continue_set.clear();
+			extra_set.clear();
 
 			open_set.clear();
 			close_set.clear();
@@ -1062,6 +1097,12 @@ namespace FindTheWay {
 			bool extraRangeCalc = false;	// Extra range calc start
 			bool updateAttack = allRange ? false : attack;		// ignore dynamic unit part when calc attack range
 																// force to evaluate them in allRange mode
+
+			bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+			bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+			bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
+			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
+			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
 			for (size_t nest = 0; nest <= totalRange; nest++) {
 				bool addArea = nest > startRange;
@@ -1109,14 +1150,14 @@ namespace FindTheWay {
 						return it != v.end() ? &(*it) : nullptr;
 					};
 
-					auto findZoc = [](Path& v, Point& p) {
+					auto findSet = [](CoordSet& v, Point& p) {
 						auto it = std::find_if(v.begin(), v.end(), [&p](Coord& it)->bool { return it == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
 
-					auto addContinue = [&](Point& p) {
-						if (find(continue_set, p) == nullptr) {
-							continue_set.emplace_back(p);
+					auto add = [&](Set& v, Point& p) {
+						if (find(v, p) == nullptr) {
+							v.emplace_back(p);
 
 							return true;
 						}
@@ -1125,10 +1166,59 @@ namespace FindTheWay {
 						}
 					};
 
+					auto addSet = [&](CoordSet& v, Point& p) {
+						if (findSet(v, p) == nullptr) {
+							v.emplace_back(p.coord);
+
+							return true;
+						}
+						else {
+							return false;
+						}
+					};
+
+					auto ignorePoint = [&](Point& p) {
+						bool curAlly = ally != nullptr && findSet(*ally, p) != nullptr;
+						bool curEnemy = enemy != nullptr && findSet(*enemy, p) != nullptr;
+
+						if (!curAlly && !curEnemy) {
+							return true;
+						}
+
+						if (updateAttack) {
+							if (attackIgnoreAlly && curAlly) {
+								return true;
+							}
+							if (attackIgnoreEnemy && curEnemy) {
+								return true;
+							}
+						}
+						else {
+							if (moveIgnoreAlly && curAlly) {
+								if (allRange && attackIgnoreAlly) {
+									addSet(extra_set,p);		// Add to attack area if ignored during move
+								}
+
+								return true;
+							}
+							if (moveIgnoreEnemy && curEnemy) {
+								if (allRange && attackIgnoreEnemy) {
+									addSet(extra_set, p);		// Add to attack area if ignored during move
+								}
+
+								return true;
+							}
+						}
+
+						return false;
+					};
+
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
-					if ((!updateAttack) && (!extraRangeCalc) && zoc != nullptr && findZoc(*zoc, base) != nullptr) {
+					if ((!moveIgnoreZoc)											// stop move if dosen't ignore zoc
+						&& (!updateAttack) && (!extraRangeCalc)						// during move
+						&& zoc != nullptr && findSet(*zoc, base) != nullptr) {		// current point zoc
 						if (allRange) {
-							addContinue(base);
+							add(continue_set, base);						// start calc attack range from zoc
 						}
 
 						continue;
@@ -1139,10 +1229,14 @@ namespace FindTheWay {
 						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
 
 						// ignore dynamic unit part when calc attack range
-						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, updateAttack ? this->terrain : this->map);
+						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->terrain);
+						// BYTE curCost = GetMap(neighCoord.x, neighCoord.y, updateAttack ? this->terrain : this->map);
 						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
+							continue;
+						}
+						else if(!ignorePoint(neighPoint)) {
 							continue;
 						}
 
@@ -1152,7 +1246,7 @@ namespace FindTheWay {
 
 						if (find(open_set, neighPoint) == nullptr) {
 							if (updateContiuneSet) {
-								addContinue(base);
+								add(continue_set, base);
 							}
 							else {
 								open_set.emplace_back(neighPoint);
@@ -1162,17 +1256,33 @@ namespace FindTheWay {
 				}
 			}
 
-			if (stash) {		// only stash without ZOC & allRange
-				stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
+			if (!extra_set.empty()) {
+				area.emplace_back(extra_set);
 			}
 
+			//if (stash) {		// only stash without ZOC & allRange
+			//	stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
+			//}
+
 #ifdef _DEBUG
-			OutPutAreaStr(start, range, zoc, allRange, extraRangeStartPos);
+			OutPutAreaStr(start, range, ally, enemy, zoc, allRange, extraRangeStartPos);
 #endif // _DEBUG
 		}
 	
 		inline const Area& GetArea() {
 			return area;
+		}
+
+		inline size_t GetIgnoreFlag(bool moveIgnoreZoc
+								, bool moveIgnoreAlly
+								, bool moveIgnoreEnemy
+								, bool attackIgnoreAlly
+								, bool attackIgnoreEnemy) {
+			return (size_t)moveIgnoreZoc << 4 
+				| (size_t)moveIgnoreAlly << 3 
+				| (size_t)moveIgnoreEnemy << 2 
+				| (size_t)attackIgnoreAlly << 1 
+				| (size_t)attackIgnoreEnemy;
 		}
 	};
 }
