@@ -32,7 +32,9 @@
 
 #define	CND_CONDITION_OMC				17
 
-#define	CND_LAST						18
+#define	CND_CONDITION_OCOZ				18
+
+#define	CND_LAST						19
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -47,8 +49,9 @@
 #define	ACT_ACTION_ITA					7
 #define	ACT_ACTION_SUBO					8
 #define	ACT_ACTION_CU					9
+#define	ACT_ACTION_COZ					10
 
-#define	ACT_LAST						10
+#define	ACT_LAST						11
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -146,6 +149,9 @@ typedef struct tagRDATA
 	CoordSet* pEnemy;
 
 	wstring* pOnItAreaName;
+
+	LPRO pObject;
+	wstring* pOnItZocName;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

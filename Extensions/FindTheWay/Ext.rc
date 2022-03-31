@@ -144,6 +144,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Area"
         BEGIN
+            MENUITEM "On Create Object Zoc", IDMN_CONDITION_OCOZ
+            MENUITEM SEPARATOR            
             MENUITEM "Calc Area", IDMN_CONDITION_CA
             MENUITEM SEPARATOR
             MENUITEM "On Iterate Area", IDMN_CONDITION_OITA
@@ -191,6 +193,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Area"
         BEGIN
+            MENUITEM "Create Object Zoc",               IDMN_ACTION_COZ
+            MENUITEM SEPARATOR
             MENUITEM "Set Zoc By Object",               IDMN_ACTION_SZBO
             MENUITEM "Clear Zoc",                       IDMN_ACTION_CZ
             MENUITEM SEPARATOR
@@ -349,6 +353,9 @@ BEGIN
 
     M_ACTION_SUBO             "Set Unit By Object %0, as Type = %1"
     M_ACTION_CU               "Clear Unit Type %0"
+
+    M_ACTION_COZ              "Create Object %0 Zoc, IterateName = %1"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -376,7 +383,9 @@ BEGIN
     M_CONDITION_OITAA          "%o On Iterate Attack Area"
     M_CONDITION_AITA           "%o Able to Iterate Area"
     
-    M_CONDITION_OMC           "%o On Map Change"
+    M_CONDITION_OMC            "%o On Map Change"
+    
+    M_CONDITION_OCOZ           "%o On Create Object %0 Zoc %1, IterateName = %2"
 
 END
 

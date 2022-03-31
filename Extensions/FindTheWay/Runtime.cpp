@@ -80,6 +80,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pEnemy = new CoordSet;
 	rdPtr->pOnItAreaName = new wstring;
 
+	rdPtr->pObject = nullptr;
+	rdPtr->pOnItZocName = new wstring;
+
 	// No errors
 	return 0;
 }
@@ -109,6 +112,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pAlly;
 	delete rdPtr->pEnemy;
 	delete rdPtr->pOnItAreaName;
+
+	delete rdPtr->pOnItZocName;
 
 	// No errors
 	return 0;

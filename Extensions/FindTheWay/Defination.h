@@ -8,6 +8,7 @@
 #define ONITERATESTEP		6
 #define ONITERATEAREA		14
 #define ONMAPCHANGE			17
+#define ONCREATEZOC			18
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
 

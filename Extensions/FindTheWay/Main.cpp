@@ -49,6 +49,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_AITA, M_CONDITION_AITA, CND_CONDITION_AITA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
 		IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
+
+		IDMN_CONDITION_OCOZ, M_CONDITION_OCOZ, CND_CONDITION_OCOZ, 0,3, PARAM_OBJECT, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_OBJECT, M_ITNAME,
 		};
 
 // Definitions of parameters for each action
@@ -70,6 +72,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SUBO, M_ACTION_SUBO, ACT_ACTION_SUBO,	0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ENEMY,
 		IDMN_ACTION_CU, M_ACTION_CU, ACT_ACTION_CU,	0, 1, PARAM_EXPRESSION, M_ENEMY,
+
+		IDMN_ACTION_COZ, M_ACTION_COZ, ACT_ACTION_COZ, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
 		};
 
 // Definitions of parameters for each expression
@@ -499,6 +503,21 @@ long WINAPI DLLExport OnMapChange(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
+long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	short oilZoc = (short)OIL_GetParameter(rdPtr);
+	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return iterateName == *rdPtr->pOnItZocName
+		&& rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
+			, [&](LPRDATA rdPtr, LPRO object)->bool { return object == rdPtr->pObject; })
+		&& !rdPtr->pSelect->FilterObjects(rdPtr, oilZoc, negated
+			, [&](LPRDATA rdPtr, LPRO object)->bool { return object->roHo.hoX == rdPtr->itCoord.x
+															&& object->roHo.hoY == rdPtr->itCoord.y; });
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -684,6 +703,33 @@ short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 	if (target == 1) {
 		rdPtr->pEnemy->clear();
 	}
+
+	return 0;
+}
+
+short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {
+	short oil = (short)OIL_GetParameter(rdPtr);
+	*rdPtr->pOnItZocName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	CoordSet zoc;
+	zoc.reserve(8);
+
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+
+		rdPtr->pObject = object;
+		rdPtr->pFTW->GenerateZoc(objectCoord, &zoc, false);
+
+		for (auto& it : zoc) {
+			rdPtr->itCoord = rdPtr->pFTW->GetRealCoord(it);
+
+			CallEvent(ONCREATEZOC)
+		}
+
+		rdPtr->pObject = nullptr;
+	});
 
 	return 0;
 }
@@ -915,6 +961,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			AbletoItArea,
 
 			OnMapChange,
+			OnCreateObjectZoc,
 			
 			0
 			};
@@ -936,6 +983,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetUnitByObject,
 			ClearUnit,
 
+			CreateObjectZoc,
 			0
 			};
 
