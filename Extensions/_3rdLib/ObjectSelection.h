@@ -7,6 +7,8 @@
 
 #include "ccxhdr.h"
 
+using ForEachCallBack = std::function<void(LPRO)>;
+
 class ObjectSelection {
 private:
 	using Filter = std::function<bool(LPRDATA, LPRO)>;
@@ -120,10 +122,10 @@ public:
 		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
 			oiListItemSize += sizeof(LPVOID);
 #endif
-	}
+	}	
 
 	//Get oil
-	inline static short GetOil(LPRDATA rdPtr) {
+	inline static short GetOil(LPRDATA rdPtr, LPRO* pObj = nullptr) {
 		// pParam points to 1st parameter, which should be of type object
 		// Offset it if you have used second or other parameter for object selection using code below
 		// LPEVP pParam2nd = (LPEVP)((LPBYTE)pParam + pParam->evpSize);
@@ -132,6 +134,10 @@ public:
 
 		// Don't forget to skip to next param
 		LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+
+		if (pObj != nullptr) {
+			*pObj = object;
+		}
 
 		return oil;
 	}
@@ -263,6 +269,7 @@ public:
 			return pObjectInfo->oilNumOfSelected;
 		}
 	}
+	//Check if object is given type
 	inline bool ObjectIsOfType(LPRO object, short oiList) {
 		LPOIL pObjectInfo = GetOIL(oiList);
 
@@ -290,6 +297,47 @@ public:
 		}
 		else {
 			return (object->roHo.hoOi == Oi);
+		}
+	}
+	//For Each, used in action
+	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f) {
+		auto iterate = [&](objInfoList* list, bool selected = true) {
+			short num = selected ? list->oilListSelected : list->oilObject;
+
+			while (num >= 0) {
+				RunObject* obj = reinterpret_cast<RunObject*>(rhPtr->rhObjectList[num].oblOffset);
+				
+				if (obj && !(static_cast<ushort>(obj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED))) {
+					f(obj);
+				}
+
+				num = selected ? obj->roHo.hoNextSelected : obj->roHo.hoNumNext;
+			}
+		};
+
+		auto iterateCall = [&](objInfoList* list) {
+			if (list->oilEventCount == rhPtr->rh2.rh2EventCount) {
+				// Object type already filtered, loop through selected list
+				iterate(list, true);
+			}
+			else {
+				// Object type not filtered yet, loop through all objects instead
+				iterate(list, false);
+			}
+		};
+
+		// Single object type
+		if (oiList >= 0) {
+			iterateCall(OiList + oiList);
+		}
+		// Qualifier object type
+		else if (oiList != -1) {
+			auto qualifier_iterator = reinterpret_cast<qualToOi*>(reinterpret_cast<unsigned char*>(QualToOiList) + (oiList & 0x7FFF));
+
+			while (qualifier_iterator->qoiOiList >= 0) {
+				iterateCall(OiList + qualifier_iterator->qoiOiList);
+				qualifier_iterator = reinterpret_cast<qualToOi*>(reinterpret_cast<unsigned char*>(qualifier_iterator) + 4);
+			}
 		}
 	}
 };
