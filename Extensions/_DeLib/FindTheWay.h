@@ -105,6 +105,7 @@ namespace FindTheWay {
 	using CoordSet = Path;	// for zoc
 	using Paths = unordered_map<wstring, Path>;
 	using Heuristic = std::function<size_t(Coord, Coord)>;
+	using UpdateMapCallBack = std::function<void(void*)>;
 
 	using Area = vector<CoordSet>;
 
@@ -113,6 +114,9 @@ namespace FindTheWay {
 	// try {
 	// 	// Invalid Size
 	// 	FindTheWayClass* pFTW = new FindTheWayClass(0, 0);
+	//	// Reg callback if needed
+	//	pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
+	// 
 	// }
 	// catch (FindTheWay::Exception& e) {
 	// 	// Do something...
@@ -182,6 +186,7 @@ namespace FindTheWay {
 	constexpr auto DELIMETER = ':';
 
 	constexpr auto DEFAULT_IGNOREFLAG = 0b01001U;
+	constexpr auto DEFAULT_EXTRARANGESTARTPOS = 65536;
 
 	class FindTheWayClass {
 	private:
@@ -195,6 +200,8 @@ namespace FindTheWay {
 		size_t girdOffestY = 0;
 
 		bool updateMap = false;
+		UpdateMapCallBack updateCallBack = nullptr;
+		void* updateCallBackCoef = nullptr;
 
 		BYTE* map = nullptr;
 		BYTE* terrain = nullptr;
@@ -338,7 +345,7 @@ namespace FindTheWay {
 		}
 
 		inline void ClearMap(BYTE* pMap, BYTE cost = MAP_PATH, bool needUpdate = true) {
-			memset(pMap, cost, mapSize);
+			memset(pMap, Range(cost), mapSize);
 
 			updateMap = needUpdate;
 		}
@@ -407,6 +414,25 @@ namespace FindTheWay {
 			//pMap[(int)MapType::DYNAMIC] = dynamic;
 		}
 
+		inline void ClearData() {
+			path.clear();
+			savedPath.clear();
+			stashPath.clear();
+
+			area.clear();
+
+			updateMap = false;
+			pathAvailable = false;
+		}
+		
+		inline void ClearMap() {
+			memset(map, 0, mapSize);
+			memset(terrain, 0, mapSize);
+			memset(dynamic, 0, mapSize);
+
+			ClearData();
+		}
+
 		inline void Free() {
 			delete[] map;
 			delete[] terrain;
@@ -429,19 +455,6 @@ namespace FindTheWay {
 
 		~FindTheWayClass() {
 			Free();
-		}
-
-		inline void Reset() {
-			path.clear();
-			savedPath.clear();
-			stashPath.clear();
-
-			memset(map, 0, mapSize);
-			memset(terrain, 0, mapSize);
-			memset(dynamic, 0, mapSize);
-
-			updateMap = true;
-			pathAvailable = false;
 		}
 
 		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
@@ -542,17 +555,18 @@ namespace FindTheWay {
 				*(map + i) = Range(*(terrain + i) + *(dynamic + i));
 			}
 
-			updateMap = false;
+			// Path/Area invalidation when map changes, clear
+			ClearData();
 
-			// Path invalidation when map changes, clear path
-			path.clear();
-			savedPath.clear();
-			stashPath.clear();
+			//Callback
+			if (updateCallBack != nullptr) {
+				updateCallBack(updateCallBackCoef);
+			}
+		}
 
-			area.clear();
-			//stashArea.clear();
-
-			pathAvailable = false;
+		inline void SetUpdateMapCallBack(UpdateMapCallBack f, void* p) {
+			updateCallBack = f;
+			updateCallBackCoef = p;
 		}
 
 		inline bool CoordObstacle(size_t x, size_t y, MapType type) {
@@ -1216,7 +1230,8 @@ namespace FindTheWay {
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
 					if ((!moveIgnoreZoc)											// stop move if dosen't ignore zoc
 						&& (!updateAttack) && (!extraRangeCalc)						// during move
-						&& zoc != nullptr && findSet(*zoc, base) != nullptr) {		// current point zoc
+						&& zoc != nullptr && findSet(*zoc, base) != nullptr			// current point zoc
+						&& base.coord != start) {									// not start
 						if (allRange) {
 							add(continue_set, base);						// start calc attack range from zoc
 						}
