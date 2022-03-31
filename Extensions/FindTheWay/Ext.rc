@@ -115,23 +115,49 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Set Map By Size", IDMN_CONDITION_SMBS
-        MENUITEM "Set Map By Base64", IDMN_CONDITION_SMBB
-        MENUITEM "Set Map By Picture", IDMN_CONDITION_SMBP
-        MENUITEM "Set Map By Collision", IDMN_CONDITION_SMBC
-        MENUITEM "On Set Map By Collision", IDMN_CONDITION_OSMBC
-        MENUITEM "Path Found", IDMN_CONDITION_OPF
-        MENUITEM "Path Available", IDMN_CONDITION_PA
-        MENUITEM "On Iterate Path", IDMN_CONDITION_OITP
-        MENUITEM "Map Available", IDMN_CONDITION_MA
-        MENUITEM "Check Map Cost At Coord", IDMN_CONDITION_CMCAC
-        MENUITEM "Object At Gird", IDMN_CONDITION_OAG
-        MENUITEM "Object At Coord", IDMN_CONDITION_OAC
-        MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
-        MENUITEM "Calc Area", IDMN_CONDITION_CA
-        MENUITEM "On Iterate Area", IDMN_CONDITION_OITA
-        MENUITEM "On Iterate Attack Area", IDMN_CONDITION_OITAA
-        MENUITEM "Able to Iterate Area", IDMN_CONDITION_AITA
+        MENUITEM SEPARATOR
+        POPUP "Map"
+        BEGIN
+            MENUITEM "Map Available", IDMN_CONDITION_MA
+            MENUITEM "Check Map Cost At Coord", IDMN_CONDITION_CMCAC
+        END
+        MENUITEM SEPARATOR
+        POPUP "Set Map"
+        BEGIN            
+            MENUITEM "Set Map By Size", IDMN_CONDITION_SMBS
+            MENUITEM "Set Map By Base64", IDMN_CONDITION_SMBB
+            MENUITEM "Set Map By Picture", IDMN_CONDITION_SMBP
+            MENUITEM "Set Map By Collision", IDMN_CONDITION_SMBC
+            MENUITEM SEPARATOR
+            MENUITEM "On Set Map By Collision", IDMN_CONDITION_OSMBC
+        END
+        MENUITEM SEPARATOR
+        POPUP "Path"
+        BEGIN
+            MENUITEM "Path Found", IDMN_CONDITION_OPF
+            MENUITEM "Path Available", IDMN_CONDITION_PA
+            MENUITEM SEPARATOR
+            MENUITEM "On Iterate Path", IDMN_CONDITION_OITP
+        END
+        MENUITEM SEPARATOR
+        POPUP "Area"
+        BEGIN
+            MENUITEM "Calc Area", IDMN_CONDITION_CA
+            MENUITEM SEPARATOR
+            MENUITEM "On Iterate Area", IDMN_CONDITION_OITA
+            MENUITEM "On Iterate Attack Area", IDMN_CONDITION_OITAA
+            MENUITEM SEPARATOR
+            MENUITEM "Able to Iterate Area", IDMN_CONDITION_AITA
+        END
+        MENUITEM SEPARATOR
+        POPUP "Object"
+        BEGIN
+            MENUITEM "Object At Gird", IDMN_CONDITION_OAG
+            MENUITEM "Object At Coord", IDMN_CONDITION_OAC
+            MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
+        END
+        MENUITEM SEPARATOR
+
     END
 END
 #endif
@@ -145,14 +171,33 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Set Map",              IDMN_ACTION_SM
-        MENUITEM "Set Map By Object",              IDMN_ACTION_SMBO
-        MENUITEM "Clear Map",              IDMN_ACTION_CM
-        MENUITEM "Continue",              IDMN_ACTION_C
-        MENUITEM "Iterate Path",              IDMN_ACTION_ITP
-        MENUITEM "Set Zoc By Object",              IDMN_ACTION_SZBO
-        MENUITEM "Clear Zoc",              IDMN_ACTION_CZ
-        MENUITEM "Iterate Area",              IDMN_ACTION_ITA
+        MENUITEM SEPARATOR
+        MENUITEM "Continue", IDMN_ACTION_C
+        MENUITEM SEPARATOR
+        POPUP "Set Map"
+        BEGIN
+            MENUITEM "Set Map",                         IDMN_ACTION_SM
+            MENUITEM "Set Map By Object",               IDMN_ACTION_SMBO
+            MENUITEM SEPARATOR
+            MENUITEM "Clear Map",                       IDMN_ACTION_CM
+        END
+        MENUITEM SEPARATOR
+        POPUP "Path"
+        BEGIN
+            MENUITEM "Iterate Path",                    IDMN_ACTION_ITP
+        END
+        MENUITEM SEPARATOR
+        POPUP "Area"
+        BEGIN
+            MENUITEM "Set Zoc By Object",               IDMN_ACTION_SZBO
+            MENUITEM "Clear Zoc",                       IDMN_ACTION_CZ
+            MENUITEM SEPARATOR
+            MENUITEM "Set Unit By Object",              IDMN_ACTION_SUBO
+            MENUITEM "Clear Unit",                      IDMN_ACTION_CU
+            MENUITEM SEPARATOR
+            MENUITEM "Iterate Area",                    IDMN_ACTION_ITA
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -166,22 +211,41 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Get Iterate X", IDMN_EXPRESSION_GITX
-        MENUITEM "Get Iterate Y", IDMN_EXPRESSION_GITY
-        MENUITEM "Get Iterate Index", IDMN_EXPRESSION_GITI
-
-        MENUITEM "Get Step", IDMN_EXPRESSION_GS
-        MENUITEM "Get Step of Path", IDMN_EXPRESSION_GSOP
-        MENUITEM "Get Step Coord of Path", IDMN_EXPRESSION_GSCOP
-
-        MENUITEM "Get Gird Coord", IDMN_EXPRESSION_GGC
-        MENUITEM "Get Real Coord", IDMN_EXPRESSION_GRC
-        
-        MENUITEM "Get Map Cost", IDMN_EXPRESSION_GMC
-        MENUITEM "Get Map Base64", IDMN_EXPRESSION_GMB64
-        MENUITEM "Get Map String", IDMN_EXPRESSION_GMS
-        
-        MENUITEM "Get Available Line Range", IDMN_EXPRESSION_GALR
+        MENUITEM SEPARATOR
+        POPUP "Iterate"
+        BEGIN
+            MENUITEM "Get Iterate X", IDMN_EXPRESSION_GITX
+            MENUITEM "Get Iterate Y", IDMN_EXPRESSION_GITY
+            MENUITEM "Get Iterate Index", IDMN_EXPRESSION_GITI
+        END
+        MENUITEM SEPARATOR
+        POPUP "Gird"
+        BEGIN
+            MENUITEM "Get Gird Coord", IDMN_EXPRESSION_GGC
+            MENUITEM "Get Real Coord", IDMN_EXPRESSION_GRC
+        END
+        MENUITEM SEPARATOR
+        POPUP "Map"
+        BEGIN
+            MENUITEM "Get Map Cost", IDMN_EXPRESSION_GMC
+            MENUITEM "Get Map Base64", IDMN_EXPRESSION_GMB64
+            MENUITEM "Get Map String", IDMN_EXPRESSION_GMS
+        END
+        MENUITEM SEPARATOR
+        POPUP "Path"
+        BEGIN
+            MENUITEM "Get Step", IDMN_EXPRESSION_GS
+            MENUITEM "Get Step of Path", IDMN_EXPRESSION_GSOP
+            MENUITEM "Get Step Coord of Path", IDMN_EXPRESSION_GSCOP
+        END
+        MENUITEM SEPARATOR
+        POPUP "Area"
+        BEGIN
+            MENUITEM "Get Ignore Flag", IDMN_EXPRESSION_GIF
+            MENUITEM SEPARATOR
+            MENUITEM "Get Available Line Range", IDMN_EXPRESSION_GALR
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -272,6 +336,9 @@ BEGIN
     M_ACTION_SZBO             "Set Zoc By Object %0, as Center = %1"
     M_ACTION_CZ               "Clear Zoc"
     M_ACTION_ITA              "Iterate Area, Iterate Name %0, Iterate Once = %1"
+
+    M_ACTION_SUBO             "Set Unit By Object %0, as Type = %1"
+    M_ACTION_CU               "Clear Unit Type %0"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -320,6 +387,8 @@ BEGIN
     M_EXPRESSION_GMS                "GetMapStr$("
     
     M_EXPRESSION_GALR               "GALR$("
+    
+    M_EXPRESSION_GIF               "GetIgnoreFlag("
 END
 
 STRINGTABLE DISCARDABLE
@@ -351,7 +420,7 @@ BEGIN
     M_STARTRANGE                    "Start Range"
     M_ALLRANGE                      "AllRange Mode, Calculate Move & Attack Range"
     M_ALLRANGEATTACKRANGE           "Attack Range in AllRange Mode"
-    M_ZOC                           "Use Zoc"
+    M_IGNOREFLAG                    "Ignore Flag"
 
     M_X				                "X Coord"
     M_Y				                "Y Coord"
@@ -359,6 +428,7 @@ BEGIN
     M_COST_CHECK	                "Map Cost to Check, -1 = All Path, 65536 = All Obstacle, Other = Check Accurate Cost"
     M_TYPE			                "Map Type, 1 = Terrain, 2 = Dynamic"
     M_USEITERATECOORD               "Auto Set Coord in 'On Set Map By Collision', 1 = Enable, 0 = Disable, 'X/Y Coord' && 'Use Real Coord' is Ignored When Enable"
+    M_ENEMY                         "0 = Ally, 1 = Enemy"
     
     M_STEP                          "Step in the Path"
     M_COORDTYPE                     "Coord Type, 0 = X, 1 = Y"
@@ -375,6 +445,11 @@ BEGIN
     M_USEREALCOORD_EXP	            "UseRealCoord"
     M_SAVENAME_EXP		            "SavePathName"
     M_DIR       		            "Calc Dir"
+    M_MIZ                           "Move Ignore Zoc"
+    M_MIA                           "Move Ignore Ally"
+    M_MIE                           "Move Ignore Enemy"
+    M_AIA                           "Attack Ignore Ally"
+    M_AIE                           "Attack Ignore Enemy"
 END
 
 #endif    // English (U.S.) resources

@@ -43,8 +43,10 @@
 #define	ACT_ACTION_SZBO					5
 #define	ACT_ACTION_CZ					6
 #define	ACT_ACTION_ITA					7
+#define	ACT_ACTION_SUBO					8
+#define	ACT_ACTION_CU					9
 
-#define	ACT_LAST						8
+#define	ACT_LAST						10
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -67,7 +69,9 @@
 
 #define EXP_EXPRESSION_GALR				11
 
-#define	EXP_LAST                    	12
+#define EXP_EXPRESSION_GIF				12
+
+#define	EXP_LAST                    	13
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -129,6 +133,8 @@ typedef struct tagRDATA
 	size_t areaPos;
 	size_t extraRangeStartPos;
 	CoordSet* pZoc;
+	CoordSet* pAlly;
+	CoordSet* pEnemy;
 
 	wstring* pOnItAreaName;
 

@@ -33,6 +33,8 @@
 #define	IDMN_ACTION_SZBO			25005
 #define	IDMN_ACTION_CZ				25006
 #define	IDMN_ACTION_ITA				25007
+#define	IDMN_ACTION_SUBO			25008
+#define	IDMN_ACTION_CU 				25009
 
 // Action strings
 #define M_ACTION_SM                 5000
@@ -43,6 +45,8 @@
 #define	M_ACTION_SZBO				5005
 #define	M_ACTION_CZ					5006
 #define	M_ACTION_ITA				5007
+#define	M_ACTION_SUBO				5008
+#define	M_ACTION_CU 				5009
 
 // Titles of action parameters
 #define M_X				     5501
@@ -137,7 +141,8 @@
 #define M_STARTRANGE            	6526
 #define M_ALLRANGE            	    6527
 #define M_ALLRANGEATTACKRANGE       6528
-#define M_ZOC                       6529
+#define M_IGNOREFLAG                6529
+#define M_ENEMY                     6530
 
 //	EXPRESSIONS
 //---------------------
@@ -164,6 +169,8 @@
 
 #define IDMN_EXPRESSION_GALR    	    27011
 
+#define IDMN_EXPRESSION_GIF     	    27012
+
 // Expression strings
 #define M_EXPRESSION_GITX			    7000
 #define M_EXPRESSION_GITY			    7001
@@ -183,6 +190,8 @@
 
 #define M_EXPRESSION_GALR		        7011
 
+#define M_EXPRESSION_GIF     	    7012
+
 // Names of expression parameters
 #define M_STEP				            7500
 #define M_COORDTYPE			            7501
@@ -198,6 +207,11 @@
 #define M_USEREALCOORD_EXP	            7511  
 #define M_SAVENAME_EXP		            7512  
 #define M_DIR       		            7513
+#define M_MIZ       		            7514
+#define M_MIA       		            7515
+#define M_MIE       		            7516
+#define M_AIA       		            7517
+#define M_AIE       		            7518
 
 // Next default values for new objects
 // 

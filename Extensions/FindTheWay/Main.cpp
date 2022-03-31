@@ -43,7 +43,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_SMBP, M_CONDITION_SMBP, CND_CONDITION_SMBP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FILEPATH, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
 
 		//IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_LINEMODE, M_ATTACK, M_X, M_Y, M_USEREALCOORD, M_RANGE, M_STARTRANGE, M_ZOC, M_ALLRANGE, M_ALLRANGEATTACKRANGE,
+		IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_LINEMODE, M_ATTACK, M_X, M_Y, M_USEREALCOORD, M_RANGE, M_STARTRANGE, M_IGNOREFLAG, M_ALLRANGE, M_ALLRANGEATTACKRANGE,
 		IDMN_CONDITION_OITA, M_CONDITION_OITA, CND_CONDITION_OITA, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 		IDMN_CONDITION_OITAA, M_CONDITION_OITAA, CND_CONDITION_OITAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_AITA, M_CONDITION_AITA, CND_CONDITION_AITA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
@@ -62,10 +62,13 @@ short actionsInfos[]=
 		IDMN_ACTION_SMBO, M_ACTION_SMBO, ACT_ACTION_SMBO,	0, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_COST, M_TYPE,
 		IDMN_ACTION_CM, M_ACTION_CM, ACT_ACTION_CM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_COST, M_TYPE,
 
-		IDMN_ACTION_SZBO, M_ACTION_SZBO, ACT_ACTION_SZBO,	0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_COST, M_CENTER,
+		IDMN_ACTION_SZBO, M_ACTION_SZBO, ACT_ACTION_SZBO,	0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_CENTER,
 		IDMN_ACTION_CZ, M_ACTION_CZ, ACT_ACTION_CZ,	0, 0,
 
 		IDMN_ACTION_ITA, M_ACTION_ITA, ACT_ACTION_ITA,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_ITNAME, M_COUNT,
+
+		IDMN_ACTION_SUBO, M_ACTION_SUBO, ACT_ACTION_SUBO,	0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ENEMY,
+		IDMN_ACTION_CU, M_ACTION_CU, ACT_ACTION_CU,	0, 1, PARAM_EXPRESSION, M_ENEMY,
 		};
 
 // Definitions of parameters for each expression
@@ -88,6 +91,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GMS, M_EXPRESSION_GMS, EXP_EXPRESSION_GMS, EXPFLAG_STRING, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_TYPE, M_SHOWPATH, M_PATHNAME,
 
 		IDMN_EXPRESSION_GALR, M_EXPRESSION_GALR, EXP_EXPRESSION_GALR, 0, 6, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_DIR, M_RANGE, M_ATTACK,
+
+		IDMN_EXPRESSION_GIF, M_EXPRESSION_GIF, EXP_EXPRESSION_GIF, 0, 5, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_MIZ, M_MIA, M_MIE, M_AIA, M_AIE,
 		};
 
 
@@ -423,7 +428,7 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 	size_t range = (size_t)CNC_GetParameter(rdPtr);
 	size_t startRange = (size_t)CNC_GetParameter(rdPtr);
 
-	bool zoc = (bool)CNC_GetParameter(rdPtr);	
+	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);	
 
 	bool allRange = (bool)CNC_GetParameter(rdPtr);
 	size_t allRangeAttackRange = (size_t)CNC_GetParameter(rdPtr);
@@ -442,8 +447,10 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 	}
 
 	if (!lineMode) {
-		auto pZoc = zoc ? rdPtr->pZoc : nullptr;
-		rdPtr->pFTW->CalcArea(girdCoord, range, startRange, pZoc, attack, allRange, allRangeAttackRange, &rdPtr->extraRangeStartPos);
+		rdPtr->pFTW->CalcArea(girdCoord, range, startRange
+			, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag
+			, attack
+			, allRange, allRangeAttackRange, &rdPtr->extraRangeStartPos);
 	}
 	else {
 		rdPtr->pFTW->CalcLineArea(girdCoord, range, startRange, attack);
@@ -620,6 +627,42 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	bool enemy = (bool)CNC_GetParameter(rdPtr);
+
+	Coord objectCoord = Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY };
+
+	if (!enemy) {
+		rdPtr->pAlly->emplace_back(objectCoord);
+	}
+	else {
+		rdPtr->pEnemy->emplace_back(objectCoord);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
+	int target = (int)CNC_GetParameter(rdPtr);
+
+	if (target == -1) {
+		rdPtr->pAlly->clear();
+		rdPtr->pEnemy->clear();
+	}
+
+	if (target == 0) {
+		rdPtr->pAlly->clear();
+	}
+
+	if (target == 1) {
+		rdPtr->pEnemy->clear();
+	}
+
+	return 0;
+}
+
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -775,6 +818,17 @@ long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
 	return rdPtr->pFTW->GetAbleLineRange(girdCoord, range, dir, attack);
 }
 
+long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
+	bool moveIgnoreZoc = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool moveIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool moveIgnoreEnemy = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool attackIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool attackIgnoreEnemy= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	
+	RetIfMapInvalid(DEFAULT_IGNOREFLAG);
+
+	return rdPtr->pFTW->GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
+}
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -825,6 +879,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ClearZoc,
 			IterateArea,
 
+			SetUnitByObject,
+			ClearUnit,
+
 			0
 			};
 
@@ -847,6 +904,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetMapStr,
 
 			GetAbleLineRange,
+			GetIgnoreFlag,
 
 			0
 			};
