@@ -891,7 +891,11 @@ namespace FindTheWay {
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 
 			for (auto& it : *pNeighbour) {
-				zoc->emplace_back(Coord{ (size_t)(start.x + it.x),(size_t)(start.y + it.y) });
+				auto cur = Coord{ (size_t)(start.x + it.x),(size_t)(start.y + it.y) };
+				
+				if (std::find(zoc->begin(), zoc->end(), cur) == zoc->end()) {
+					zoc->emplace_back(cur);
+				}
 			}
 		}
 
