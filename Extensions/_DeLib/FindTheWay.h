@@ -1239,13 +1239,17 @@ namespace FindTheWay {
 							|| (curEnemy && getIgnore(moveIgnoreEnemy, attackIgnoreEnemy));	// ignore enemy?
 					};
 
+					int X = 0;
+
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
 					if ((!moveIgnoreZoc)											// stop move if dosen't ignore zoc
 						&& (!updateAttack) && (!extraRangeCalc)						// during move
 						&& zoc != nullptr && findSet(*zoc, base) != nullptr			// current point zoc
+						&& findSet(*ally, base) == nullptr							// current point not unit
+						&& findSet(*enemy, base) == nullptr
 						&& base.coord != start) {									// not start
 						if (allRange) {
-							add(continue_set, base);						// start calc attack range from zoc
+							add(continue_set, base);								// start calc attack range from zoc
 						}
 
 						continue;

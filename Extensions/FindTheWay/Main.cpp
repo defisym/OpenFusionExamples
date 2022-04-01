@@ -42,7 +42,6 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_SMBP, M_CONDITION_SMBP, CND_CONDITION_SMBP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FILEPATH, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
 
-		//IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_LINEMODE, M_ATTACK, M_X, M_Y, M_USEREALCOORD, M_RANGE, M_STARTRANGE, M_IGNOREFLAG, M_ALLRANGE, M_ALLRANGEATTACKRANGE,
 		IDMN_CONDITION_OITA, M_CONDITION_OITA, CND_CONDITION_OITA, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 		IDMN_CONDITION_OITAA, M_CONDITION_OITAA, CND_CONDITION_OITAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
@@ -51,6 +50,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
 
 		IDMN_CONDITION_OCOZ, M_CONDITION_OCOZ, CND_CONDITION_OCOZ, 0,3, PARAM_OBJECT, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_OBJECT, M_ITNAME,
+		IDMN_CONDITION_ZV, M_CONDITION_ZV, CND_CONDITION_ZV, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
 		};
 
 // Definitions of parameters for each action
@@ -74,6 +74,8 @@ short actionsInfos[]=
 		IDMN_ACTION_CU, M_ACTION_CU, ACT_ACTION_CU,	0, 1, PARAM_EXPRESSION, M_ENEMY,
 
 		IDMN_ACTION_COZ, M_ACTION_COZ, ACT_ACTION_COZ, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
+
+		IDMN_ACTION_DA, M_ACTION_DA, ACT_ACTION_DA, 0, 1, PARAM_OBJECT, M_OBJECT,
 		};
 
 // Definitions of parameters for each expression
@@ -488,7 +490,7 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport OnItArea(LPRDATA rdPtr, long param1, long param2) {
 	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return (*rdPtr->pOnItAreaName) == iterateName;
+	return iterateName == *rdPtr->pOnItAreaName;
 }
 
 long WINAPI DLLExport OnItAttackArea(LPRDATA rdPtr, long param1, long param2) {
@@ -510,12 +512,70 @@ long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2)
 	short oilZoc = (short)OIL_GetParameter(rdPtr);
 	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	RetIfMapInvalid(FALSE);
+
+	auto itGirdCoord = rdPtr->pFTW->GetGirdCoord(rdPtr->itCoord);
+
 	return iterateName == *rdPtr->pOnItZocName
+		//// is overlap obstacle
+		//&& (rdPtr->pFTW->GetMap(itGirdCoord.x, itGirdCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
+		//// is overlap unit
+		//&& !OverlapUnit(rdPtr, itGirdCoord)
+		// is current it object
 		&& rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
 			, [&](LPRDATA rdPtr, LPRO object)->bool { return object == rdPtr->pObject; })
-		&& !rdPtr->pSelect->FilterObjects(rdPtr, oilZoc, negated
-			, [&](LPRDATA rdPtr, LPRO object)->bool { return object->roHo.hoX == rdPtr->itCoord.x
-															&& object->roHo.hoY == rdPtr->itCoord.y; });
+		// no zoc overlap
+		//&& !rdPtr->pSelect->FilterObjects(rdPtr, oilZoc, negated
+		//	, [&](LPRDATA rdPtr, LPRO object)->bool { return object->roHo.hoX == rdPtr->itCoord.x
+		//												&& object->roHo.hoY == rdPtr->itCoord.y; })		
+		;
+}
+
+long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	auto ret = FALSE;
+
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		bool overlapZoc = false;
+		auto pCur = object;
+
+		rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+			overlapZoc = object->roHo.hoX == pCur->roHo.hoX
+				&& object->roHo.hoY == pCur->roHo.hoY;
+			return overlapZoc;
+			});
+
+		ret = !overlapZoc
+			// is overlap obstacle
+			&& (rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
+			// is overlap unit
+			&& !OverlapUnit(rdPtr, objectCoord);
+		}, true);
+
+	return ret;
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		bool overlapZoc = false;
+		auto pCur = object;
+
+		rdPtr->pSelect->ForEach(rdPtr, oil, [&overlapZoc, pCur](LPRO object) {
+			overlapZoc = object->roHo.hoX == pCur->roHo.hoX
+				&& object->roHo.hoY == pCur->roHo.hoY;
+			}, true);
+
+		return !overlapZoc
+			// is overlap obstacle
+			&&(rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
+			// is overlap unit
+			&& !OverlapUnit(rdPtr, objectCoord);
+		});
 }
 
 // ============================================================================
@@ -617,10 +677,11 @@ short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 
 	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY }); 
 
-	if (center) {
+	if (center) {		
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pZoc, true);
 	}
 	else {
+	//else if (!OverlapUnit(rdPtr, objectCoord)) {
 		rdPtr->pZoc->emplace_back(objectCoord);
 	}
 
@@ -730,6 +791,18 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 
 		rdPtr->pObject = nullptr;
 	});
+
+	return 0;
+}
+
+short WINAPI DLLExport DestroyAll(LPRDATA rdPtr, long param1, long param2) {
+	short oil = (short)OIL_GetParameter(rdPtr);
+	rdPtr->pSelect->SelectNone(oil);
+
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		DestroyObject(object);
+
+		}, true);
 
 	return 0;
 }
@@ -962,6 +1035,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			OnMapChange,
 			OnCreateObjectZoc,
+			ZocValid,
 			
 			0
 			};
@@ -984,6 +1058,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ClearUnit,
 
 			CreateObjectZoc,
+
+			DestroyAll,
 			0
 			};
 

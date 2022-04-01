@@ -145,6 +145,7 @@ BEGIN
         POPUP "Area"
         BEGIN
             MENUITEM "On Create Object Zoc", IDMN_CONDITION_OCOZ
+            MENUITEM "Zoc Valid", IDMN_CONDITION_ZV
             MENUITEM SEPARATOR            
             MENUITEM "Calc Area", IDMN_CONDITION_CA
             MENUITEM SEPARATOR
@@ -194,6 +195,7 @@ BEGIN
         POPUP "Area"
         BEGIN
             MENUITEM "Create Object Zoc",               IDMN_ACTION_COZ
+            //MENUITEM "Destroy All Object",              IDMN_ACTION_DA
             MENUITEM SEPARATOR
             MENUITEM "Set Zoc By Object",               IDMN_ACTION_SZBO
             MENUITEM "Clear Zoc",                       IDMN_ACTION_CZ
@@ -355,6 +357,8 @@ BEGIN
     M_ACTION_CU               "Clear Unit Type %0"
 
     M_ACTION_COZ              "Create Object %0 Zoc, IterateName = %1"
+    
+    M_ACTION_DA               "Destroy All Object %0"
 
 END
 
@@ -386,6 +390,7 @@ BEGIN
     M_CONDITION_OMC            "%o On Map Change"
     
     M_CONDITION_OCOZ           "%o On Create Object %0 Zoc %1, IterateName = %2"
+    M_CONDITION_ZV             "%o Zoc %0 Valid"
 
 END
 
@@ -440,7 +445,7 @@ BEGIN
     M_BASEALYER		                "Layer (Index Start From 1) to Check, 0 = All Layer"
     M_PATHNAME		                "Saved Path Name, Keep Blank to Check Last Path"
     M_ITNAME		                "Iterate Name"
-    M_OBJECT		                "Select Object to Test"
+    M_OBJECT		                "Select Object"
     M_FILEPATH		                "FileName"
     M_LINEMODE                      "Line Mode"
     M_ATTACK                        "Attack Mode (Ignore Unit & Zoc)"
@@ -456,6 +461,7 @@ BEGIN
     M_COST_CHECK	                "Map Cost to Check, -1 = All Path, 65536 = All Obstacle, Other = Check Accurate Cost"
     M_TYPE			                "Map Type, 0 = Map (Read Only, Ignored When Setting/Clearing), 1 = Terrain, 2 = Dynamic"
     M_USEITERATECOORD               "Auto Set Coord in 'On Set Map By Collision', 1 = Enable, 0 = Disable, 'X/Y Coord' && 'Use Real Coord' is Ignored When Enable"
+    M_CENTER                        "0 = Add Itself, 1 = Add Neighbours"
     M_ENEMY                         "0 = Ally, 1 = Enemy"
     
     M_STEP                          "Step in the Path"

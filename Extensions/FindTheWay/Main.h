@@ -33,8 +33,9 @@
 #define	CND_CONDITION_OMC				17
 
 #define	CND_CONDITION_OCOZ				18
+#define	CND_CONDITION_ZV				19
 
-#define	CND_LAST						19
+#define	CND_LAST						20
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -50,8 +51,9 @@
 #define	ACT_ACTION_SUBO					8
 #define	ACT_ACTION_CU					9
 #define	ACT_ACTION_COZ					10
+#define	ACT_ACTION_DA					11
 
-#define	ACT_LAST						11
+#define	ACT_LAST						12
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

@@ -22,3 +22,8 @@ inline void UpdateMapCallBackFunc(void* rdPtr) {
 	LPRDATA pCast = (LPRDATA)rdPtr;
 	callRunTimeFunction(pCast, RFUNCTION_GENERATEEVENT, ONMAPCHANGE, 0);
 }
+
+inline bool OverlapUnit(LPRDATA rdPtr,const Coord& c) {
+	return std::find(rdPtr->pAlly->begin(), rdPtr->pAlly->end(), c) != rdPtr->pAlly->end()
+		|| std::find(rdPtr->pEnemy->begin(), rdPtr->pEnemy->end(), c) != rdPtr->pEnemy->end();
+}
