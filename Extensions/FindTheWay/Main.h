@@ -34,8 +34,10 @@
 
 #define	CND_CONDITION_OCOZ				18
 #define	CND_CONDITION_ZV				19
+#define	CND_CONDITION_ZAA				20
+#define	CND_CONDITION_SA				21
 
-#define	CND_LAST						20
+#define	CND_LAST						22
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

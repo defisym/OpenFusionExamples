@@ -27,7 +27,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASEALYER, M_TYPE, M_ITNAME,
 		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 
-		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 9, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_DIAGONAL, M_CHECKDIAGONALCORNER, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
+		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_IGNOREFLAG, M_DIAGONAL, M_CHECKDIAGONALCORNER, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
 
 		IDMN_CONDITION_PA, M_CONDITION_PA, CND_CONDITION_PA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_PATHNAME,
 		
@@ -51,6 +51,8 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_OCOZ, M_CONDITION_OCOZ, CND_CONDITION_OCOZ, 0,3, PARAM_OBJECT, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_OBJECT, M_ITNAME,
 		IDMN_CONDITION_ZV, M_CONDITION_ZV, CND_CONDITION_ZV, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
+		IDMN_CONDITION_ZAA, M_CONDITION_ZAA, CND_CONDITION_ZAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ATTACKAREA,
+		IDMN_CONDITION_SA, M_CONDITION_SA, CND_CONDITION_SA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
 		};
 
 // Definitions of parameters for each action
@@ -84,7 +86,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GITX, M_EXPRESSION_GITX, EXP_EXPRESSION_GITX, 0, 0,
 		IDMN_EXPRESSION_GITY, M_EXPRESSION_GITY, EXP_EXPRESSION_GITY, 0, 0,
 
-		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 9, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_STARTX_EXP, M_STARTY_EXP, M_DESTINATIONX_EXP, M_DESTINATIONY_EXP, M_DIAGONAL_EXP, M_CHECKDIAGONALCORNER_EXP, M_FORCEFIND_EXP, M_USEREALCOORD_EXP, M_SAVENAME_EXP,
+		IDMN_EXPRESSION_GS, M_EXPRESSION_GS, EXP_EXPRESSION_GS, 0, 10, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_STARTX_EXP, M_STARTY_EXP, M_DESTINATIONX_EXP, M_DESTINATIONY_EXP, M_IGNOREFLAG, M_DIAGONAL_EXP, M_CHECKDIAGONALCORNER_EXP, M_FORCEFIND_EXP, M_USEREALCOORD_EXP, M_SAVENAME_EXP,
 		IDMN_EXPRESSION_GSOP, M_EXPRESSION_GSOP, EXP_EXPRESSION_GSOP, 0, 1, EXPPARAM_STRING, M_PATHNAME,
 		IDMN_EXPRESSION_GSCOP, M_EXPRESSION_GSCOP, EXP_EXPRESSION_GSCOP, 0, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_PATHNAME, M_STEP, M_COORDTYPE,
 
@@ -315,6 +317,8 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 	size_t destinationX = (size_t)CNC_GetParameter(rdPtr);
 	size_t destinationY = (size_t)CNC_GetParameter(rdPtr);
 
+	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+
 	bool diagonal = (bool)CNC_GetParameter(rdPtr);
 	bool checkDiagonalCorner = (bool)CNC_GetParameter(rdPtr);
 
@@ -325,7 +329,7 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
+	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, ignoreFlag, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
@@ -501,7 +505,7 @@ long WINAPI DLLExport AbletoItArea(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->areaPos < rdPtr->areaSize;
 }
 
-long WINAPI DLLExport OnMapChange(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport OnMapUpdate(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
@@ -561,8 +565,11 @@ long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	bool atAttack = (bool)CNC_GetParameter(rdPtr);
+	short oil = (short)OIL_GetParameter(rdPtr);	
+	int mode = (int)CNC_GetParameter(rdPtr);
+	
+	bool atAttack = mode == 1;	// 0 = Move Area, 1 = Attack Area
+	bool all = mode == -1;
 
 	RetIfMapInvalid(FALSE);
 
@@ -576,13 +583,24 @@ long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 				auto isAttack = !(it < rdPtr->extraRangeStartPos);
 				
 				if (std::find(area[it].begin(), area[it].end(), objectCoord) != area[it].end()) {
-					return (atAttack && isAttack)
+					return all
+						|| (atAttack && isAttack)
 						|| (!atAttack && !isAttack);
 				}
 			}
 
 			return false;
 		});
+}
+
+long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	rdPtr->pSelect->SelectAll(oil);
+
+	return TRUE;
 }
 
 // ============================================================================
@@ -828,12 +846,11 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport DestroyAll(LPRDATA rdPtr, long param1, long param2) {
 	short oil = (short)OIL_GetParameter(rdPtr);
-	rdPtr->pSelect->SelectNone(oil);
+	//rdPtr->pSelect->SelectAll(oil);
 
-	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		DestroyObject(object);
-
-		}, true);
+	//rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+	//	DestroyObject(object);
+	//	});
 
 	return 0;
 }
@@ -863,6 +880,8 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 	size_t destinationX = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	size_t destinationY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
+	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+
 	bool diagonal = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	bool checkDiagonalCorner = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
@@ -873,7 +892,7 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
-	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
+	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, ignoreFlag, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
@@ -1064,9 +1083,11 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			OnItAttackArea,
 			AbletoItArea,
 
-			OnMapChange,
+			OnMapUpdate,
 			OnCreateObjectZoc,
 			ZocValid,
+			ZocAtArea,
+			SelectAll,
 			
 			0
 			};

@@ -121,7 +121,7 @@ BEGIN
             MENUITEM "Map Available", IDMN_CONDITION_MA
             MENUITEM "Check Map Cost At Coord", IDMN_CONDITION_CMCAC
             MENUITEM SEPARATOR
-            MENUITEM "On Map Change", IDMN_CONDITION_OMC
+            MENUITEM "On Map Update", IDMN_CONDITION_OMC
         END
         MENUITEM SEPARATOR
         POPUP "Set Map"
@@ -143,26 +143,29 @@ BEGIN
         END
         MENUITEM SEPARATOR
         POPUP "Area"
-        BEGIN
-            MENUITEM "On Create Object Zoc", IDMN_CONDITION_OCOZ
+        BEGIN            
             MENUITEM "Zoc Valid", IDMN_CONDITION_ZV
-            MENUITEM SEPARATOR            
+            MENUITEM "Zoc At Area", IDMN_CONDITION_ZAA
+            MENUITEM SEPARATOR
+            MENUITEM "On Create Object Zoc", IDMN_CONDITION_OCOZ
+            MENUITEM SEPARATOR
             MENUITEM "Calc Area", IDMN_CONDITION_CA
             MENUITEM SEPARATOR
             MENUITEM "On Iterate Area", IDMN_CONDITION_OITA
             MENUITEM "On Iterate Attack Area", IDMN_CONDITION_OITAA
             MENUITEM SEPARATOR
-            MENUITEM "Able to Iterate Area", IDMN_CONDITION_AITA
+            MENUITEM "Able to Iterate Area", IDMN_CONDITION_AITA            
         END
         MENUITEM SEPARATOR
         POPUP "Object"
         BEGIN
+            MENUITEM "Select All", IDMN_CONDITION_SA
+            MENUITEM SEPARATOR
             MENUITEM "Object At Gird", IDMN_CONDITION_OAG
             MENUITEM "Object At Coord", IDMN_CONDITION_OAC
             MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
         END
         MENUITEM SEPARATOR
-
     END
 END
 #endif
@@ -369,7 +372,7 @@ BEGIN
     M_CONDITION_SMBP             "%o Set Map to ( Picture, FileName = %0, GirdSize = %1, GirdOffsetX = %2, GirdOffsetY = %3 ) Success"
     M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5, IterateName = %6 ) Success"
     M_CONDITION_OSMBC            "%o On Set Map By Collision, IterateName = %0"
-    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], Diagonal = %4, CheckDiagonalCorner = %5, ForceFind = %6, UseRealCoord = %7, SaveName = %8 ) Found"
+    M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], IgnoreFlag = %4, Diagonal = %5, CheckDiagonalCorner = %6, ForceFind = %7, UseRealCoord = %8, SaveName = %9 ) Found"
 
     M_CONDITION_PA               "%o Path %0 Available"
 
@@ -382,15 +385,17 @@ BEGIN
     M_CONDITION_OAC            "%o Object %0 At Coord [ %1 , %2 ]"
     M_CONDITION_OAO            "%o Object %0 At Obstacle of Map Type %1"
 
-    M_CONDITION_CA             "%o Calculate Area ( LineMode = %0, Attack = %1, Start = [ %2 , %3 ], UseRealCoord = %4, Range = %5, StartRange = %6, Zoc = %7, AllRange = %8, AllRangeAttackRange = %9 ) Success"
+    M_CONDITION_CA             "%o Calculate Area ( LineMode = %0, Attack = %1, Start = [ %2 , %3 ], UseRealCoord = %4, Range = %5, StartRange = %6, IgnoreFlag = %7, AllRange = %8, AllRangeAttackRange = %9 ) Success"
     M_CONDITION_OITA           "%o On Iterate Area, IterateName = %0"
     M_CONDITION_OITAA          "%o On Iterate Attack Area"
     M_CONDITION_AITA           "%o Able to Iterate Area"
     
-    M_CONDITION_OMC            "%o On Map Change"
+    M_CONDITION_OMC            "%o On Map Update"
     
     M_CONDITION_OCOZ           "%o On Create Object %0 Zoc %1, IterateName = %2"
     M_CONDITION_ZV             "%o Zoc %0 Valid"
+    M_CONDITION_ZAA            "%o Zoc %0 At Area %1 ( 0 = Move Area, 1 = Attack Area )"
+    M_CONDITION_SA            "Select All %0"
 
 END
 
@@ -454,6 +459,7 @@ BEGIN
     M_ALLRANGE                      "AllRange Mode, Calculate Move & Attack Range"
     M_ALLRANGEATTACKRANGE           "Attack Range in AllRange Mode"
     M_IGNOREFLAG                    "Ignore Flag"
+    M_ATTACKAREA                    "0 = Move Area, 1 = Attack Area"
 
     M_X				                "X Coord"
     M_Y				                "Y Coord"

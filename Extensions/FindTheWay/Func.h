@@ -1,16 +1,16 @@
 #pragma once
 
-inline void FindPath(LPRDATA rdPtr, Coord start, Coord destination, bool diagonal, bool checkDiagonalCorner, bool forceFind, bool useRealCoord, const wstring& saveName) {
+inline void FindPath(LPRDATA rdPtr, Coord start, Coord destination, size_t ignoreFlag, bool diagonal, bool checkDiagonalCorner, bool forceFind, bool useRealCoord, const wstring& saveName) {
 	if (useRealCoord) {
 		start = rdPtr->pFTW->GetGirdCoord(start);
 		destination = rdPtr->pFTW->GetGirdCoord(destination);
 	}
 
 	if (!forceFind) {
-		rdPtr->pFTW->Find(start, destination, diagonal, checkDiagonalCorner);
+		rdPtr->pFTW->Find(start, destination, diagonal, checkDiagonalCorner, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag);
 	}
 	else {
-		rdPtr->pFTW->ForceFind(start, destination, diagonal, checkDiagonalCorner);
+		rdPtr->pFTW->ForceFind(start, destination, diagonal, checkDiagonalCorner, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag);
 	}
 
 	if (saveName != L"") {
