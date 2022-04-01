@@ -1101,6 +1101,9 @@ namespace FindTheWay {
 
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
+			area.emplace_back();
+			area.back().emplace_back(start);
+
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
 
@@ -1133,21 +1136,35 @@ namespace FindTheWay {
 						*extraRangeStartPosOut = extraRangeStartPos;
 					}
 
-					std::swap(cur_set, continue_set);
+ 					if (!continue_set.empty()) {
+						std::swap(cur_set, continue_set);
+					}
+					else {
+						for (auto& it : area.back()) {
+							cur_set.emplace_back(Point{ it,nullptr,0,0 });
+						}
+					}
+
 					open_set.clear();
 				}
 				else {
 					std::swap(cur_set, open_set);
 				}
 
+				if (cur_set.empty()) {
+					// cannot move, start attack check in allRange mode
+					if (allRange) {
+						if (!extraRangeStart) {
+							continue;
+						}
+					}
+
+					break;
+				}
+
 				if (addArea && !extraRangeStart) {
 					area.emplace_back();
 					area.back().reserve(1 + area.size() * 4);
-				}
-
-				if (cur_set.empty()
-					&& (allRange && continue_set.empty())) {		// cannot move, start attack check in allRange mode
-					break;
 				}
 
 				while (!cur_set.empty()) {
@@ -1196,36 +1213,30 @@ namespace FindTheWay {
 						bool curAlly = ally != nullptr && findSet(*ally, p) != nullptr;
 						bool curEnemy = enemy != nullptr && findSet(*enemy, p) != nullptr;
 
-						if (!curAlly && !curEnemy) {
-							return true;
-						}
-
-						if (updateAttack) {
-							if (attackIgnoreAlly && curAlly) {
-								return true;
+						auto getIgnore = [&](bool moveIgnore, bool attackIgnore) {
+							if (updateAttack) {
+								if (attackIgnore) {
+									return true;
+								}
 							}
-							if (attackIgnoreEnemy && curEnemy) {
-								return true;
-							}
-						}
-						else {
-							if (moveIgnoreAlly && curAlly) {
-								if (allRange && attackIgnoreAlly) {
-									addSet(extra_set,p);		// Add to attack area if ignored during move
+							else {
+								if (!moveIgnore) {
+									if (allRange && attackIgnore) {
+										addSet(extra_set, p);		// Add to attack area if ignored during move
+									}
 								}
 
-								return true;
-							}
-							if (moveIgnoreEnemy && curEnemy) {
-								if (allRange && attackIgnoreEnemy) {
-									addSet(extra_set, p);		// Add to attack area if ignored during move
+								if (moveIgnore) {
+									return true;
 								}
-
-								return true;
 							}
-						}
 
-						return false;
+							return false;
+						};
+
+						return  (!curAlly && !curEnemy)		// currentPoint is not unit, ignore							
+							|| (curAlly && getIgnore(moveIgnoreAlly, attackIgnoreAlly))		// ignore ally?
+							|| (curEnemy && getIgnore(moveIgnoreEnemy, attackIgnoreEnemy));	// ignore enemy?
 					};
 
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
