@@ -299,7 +299,7 @@ public:
 		}
 	}
 	//For Each, used in action
-	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f) {
+	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f, bool forceAll = false) {
 		auto iterate = [&](objInfoList* list, bool selected = true) {
 			short num = selected ? list->oilListSelected : list->oilObject;
 
@@ -315,7 +315,12 @@ public:
 		};
 
 		auto iterateCall = [&](objInfoList* list) {
-			if (list->oilEventCount == rhPtr->rh2.rh2EventCount) {
+			if (forceAll) {
+				iterate(list, false);
+				return;
+			}
+
+			if(list->oilEventCount == rhPtr->rh2.rh2EventCount){
 				// Object type already filtered, loop through selected list
 				iterate(list, true);
 			}
