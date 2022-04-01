@@ -24,6 +24,5 @@ inline void UpdateMapCallBackFunc(void* rdPtr) {
 }
 
 inline bool OverlapUnit(LPRDATA rdPtr,const Coord& c) {
-	return std::find(rdPtr->pAlly->begin(), rdPtr->pAlly->end(), c) != rdPtr->pAlly->end()
-		|| std::find(rdPtr->pEnemy->begin(), rdPtr->pEnemy->end(), c) != rdPtr->pEnemy->end();
+	return std::find(rdPtr->pUnit->begin(), rdPtr->pUnit->end(), c) != rdPtr->pUnit->end();
 }

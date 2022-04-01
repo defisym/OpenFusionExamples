@@ -538,43 +538,50 @@ long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	auto ret = FALSE;
+	std::vector<LPRO> objects;
+	
+	rdPtr->pSelect->SelectAll(oil);
+	objects.reserve(rdPtr->pSelect->GetNumberOfSelected(oil));
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
-		bool overlapZoc = false;
-		auto pCur = object;
+			// not overlap obstacle
+		if ((rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
+			// not overlap unit
+			&& !OverlapUnit(rdPtr, objectCoord)) {
+			objects.emplace_back(object);
+		}
+		});
 
-		rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
-			overlapZoc = object->roHo.hoX == pCur->roHo.hoX
-				&& object->roHo.hoY == pCur->roHo.hoY;
-			return overlapZoc;
-			});
+	rdPtr->pSelect->SelectObjects(oil,objects);
 
-		ret = !overlapZoc
-			// is overlap obstacle
-			&& (rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
-			// is overlap unit
-			&& !OverlapUnit(rdPtr, objectCoord);
-		}, true);
+	return !objects.empty();
+}
 
-	return ret;
+long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
-		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
-		bool overlapZoc = false;
-		auto pCur = object;
+	short oil = (short)OIL_GetParameter(rdPtr);
+	bool atAttack = (bool)CNC_GetParameter(rdPtr);
 
-		rdPtr->pSelect->ForEach(rdPtr, oil, [&overlapZoc, pCur](LPRO object) {
-			overlapZoc = object->roHo.hoX == pCur->roHo.hoX
-				&& object->roHo.hoY == pCur->roHo.hoY;
-			}, true);
+	RetIfMapInvalid(FALSE);
 
-		return !overlapZoc
-			// is overlap obstacle
-			&&(rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
-			// is overlap unit
-			&& !OverlapUnit(rdPtr, objectCoord);
+	auto& area = rdPtr->pFTW->GetArea();
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
+		, [&](LPRDATA rdPtr, LPRO object)->bool {
+			auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+			
+			for (size_t it = 0; it < area.size(); it++) {
+				auto isAttack = !(it < rdPtr->extraRangeStartPos);
+				
+				if (std::find(area[it].begin(), area[it].end(), objectCoord) != area[it].end()) {
+					return (atAttack && isAttack)
+						|| (!atAttack && !isAttack);
+				}
+			}
+
+			return false;
 		});
 }
 
@@ -680,9 +687,8 @@ short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 	if (center) {		
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pZoc, true);
 	}
-	else {
-	//else if (!OverlapUnit(rdPtr, objectCoord)) {
-		rdPtr->pZoc->emplace_back(objectCoord);
+	else if (std::find(rdPtr->pZoc->begin(), rdPtr->pZoc->end(), objectCoord) == rdPtr->pZoc->end()) {
+		rdPtr->pZoc->emplace_back(objectCoord); 
 	}
 
 	return 0;
@@ -735,15 +741,27 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	bool enemy = (bool)CNC_GetParameter(rdPtr);
+	int type = (int)CNC_GetParameter(rdPtr);
 
 	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
-	if (!enemy) {
+	constexpr auto ALLY = 0;
+	constexpr auto ENEMY = 1;
+	constexpr auto UNIT = 255;
+
+	switch (type) {
+	case ALLY: {
 		rdPtr->pAlly->emplace_back(objectCoord);
+		break;
 	}
-	else {
+	case ENEMY: {
 		rdPtr->pEnemy->emplace_back(objectCoord);
+		break;
+	}
+	case UNIT: {
+		rdPtr->pUnit->emplace_back(objectCoord);
+		break;
+	}
 	}
 
 	return 0;
@@ -752,17 +770,30 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 	int target = (int)CNC_GetParameter(rdPtr);
 
-	if (target == -1) {
+	constexpr auto ALL = -1;
+	constexpr auto ALLY = 0;
+	constexpr auto ENEMY = 1;
+	constexpr auto UNIT = 255;
+
+	switch (target) {
+	case ALL: {
 		rdPtr->pAlly->clear();
 		rdPtr->pEnemy->clear();
+		rdPtr->pUnit->clear();
+		break;
 	}
-
-	if (target == 0) {
+	case ALLY: {
 		rdPtr->pAlly->clear();
+		break;
 	}
-
-	if (target == 1) {
+	case ENEMY: {
 		rdPtr->pEnemy->clear();
+		break;
+	}
+	case UNIT: {
+		rdPtr->pUnit->clear();
+		break;
+	}
 	}
 
 	return 0;

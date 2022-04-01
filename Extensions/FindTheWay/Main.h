@@ -149,6 +149,7 @@ typedef struct tagRDATA
 	CoordSet* pZoc;
 	CoordSet* pAlly;
 	CoordSet* pEnemy;
+	CoordSet* pUnit;
 
 	wstring* pOnItAreaName;
 
