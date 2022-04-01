@@ -166,6 +166,7 @@ namespace FindTheWay {
 
 	constexpr auto PATH_RESERVE = 50;
 	constexpr auto SAVEDPATH_RESERVE = 10;
+	constexpr auto UNIT_RESERVE = 50;
 
 	constexpr auto AREA_RESERVE = 50;
 
@@ -274,6 +275,7 @@ namespace FindTheWay {
 		Set open_set;
 		Set close_set;
 		Set point_set;
+		CoordSet unit_set;
 
 		Base64<wstring> base64;
 
@@ -384,6 +386,7 @@ namespace FindTheWay {
 			open_set.reserve(2 * PATH_RESERVE);
 			close_set.reserve(2 * PATH_RESERVE);
 			point_set.reserve(8 * this->mapSize);
+			unit_set.reserve(UNIT_RESERVE);
 
 			area.reserve(AREA_RESERVE);
 			cur_set.reserve(2 * PATH_RESERVE);
@@ -698,6 +701,8 @@ namespace FindTheWay {
 		}
 
 		inline void ForceFind(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true
+			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
+			, size_t ignoreFlag = DEFAULT_IGNOREFLAG
 			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// Still try to find a way even start & destination is obstacle
 			// ......By setting them to path
@@ -711,13 +716,16 @@ namespace FindTheWay {
 			SetMap(start.x, start.y, MAP_PATH, this->map, false);
 			SetMap(destination.x, destination.y, MAP_PATH, this->map, false);
 
-			Find(start, destination, diagonal, checkDiagonalCorner, h);
+			Find(start, destination, diagonal, checkDiagonalCorner, ally, enemy, zoc, ignoreFlag, h);
 
 			SetMap(start.x, start.y, startCost, this->map, false);
 			SetMap(destination.x, destination.y, destinationCost, this->map, false);
 		}
 
-		inline void Find(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true
+		//TODO Ally&Enemy Ignore
+		inline void Find(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true			
+			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
+			, size_t ignoreFlag = DEFAULT_IGNOREFLAG
 			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// A*寻路
 			// https://www.redblobgames.com/pathfinding/a-star/introduction.html
@@ -747,7 +755,8 @@ namespace FindTheWay {
 			auto stashPathKey = make_tuple(start.x, start.y, destination.x, destination.y);
 			pathAvailable = stashPath.count(stashPathKey);
 
-			if (pathAvailable) {
+			if (pathAvailable
+				&& ally == nullptr && enemy == nullptr && zoc == nullptr) {
 				path = stashPath[stashPathKey];
 
 				return;
@@ -768,6 +777,50 @@ namespace FindTheWay {
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
+
+			bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+			bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+			bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
+			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
+			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
+
+			auto findSet = [](CoordSet& v, Coord& p) {
+				auto it = std::find_if(v.begin(), v.end(), [&p](Coord& it)->bool { return it == p; });
+				return it != v.end() ? &(*it) : nullptr;
+			};
+
+			auto addSet = [&](CoordSet* src) {
+				if (src == nullptr) {
+					return;
+				}
+
+				for (auto& it : *src) {
+					if (findSet(unit_set, it) == nullptr) {
+						unit_set.emplace_back(it);
+					}
+				}
+			};
+
+			unit_set.clear();
+
+			if (!moveIgnoreAlly) {
+				addSet(ally);
+			}
+
+			if (!moveIgnoreEnemy) {
+				addSet(enemy);
+			}
+
+			if (!moveIgnoreZoc) {
+				for (auto& it : *zoc) {
+					if (findSet(unit_set, it) == nullptr
+						&& findSet(*ally, it) == nullptr				// current point not unit
+						&& findSet(*enemy, it) == nullptr
+						&& it != start && it != destination) {
+						unit_set.emplace_back(it);
+					}
+				}
+			}
 
 			while (!open_set.empty()) {
 				// Descending
@@ -811,6 +864,10 @@ namespace FindTheWay {
 						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
+							continue;
+						}
+
+						if (findSet(unit_set, neighCoord) != nullptr) {
 							continue;
 						}
 
@@ -1105,8 +1162,11 @@ namespace FindTheWay {
 
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
-			area.emplace_back();
-			area.back().emplace_back(start);
+			//add start when interval == range
+			if (startRange == 0) {
+				area.emplace_back();
+				area.back().emplace_back(start);
+			}
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
@@ -1126,7 +1186,7 @@ namespace FindTheWay {
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
 			for (size_t nest = 0; nest <= totalRange; nest++) {
-				bool addArea = nest > startRange;
+				bool addArea = nest > startRange;							//After start range
 
 				bool updateContiuneSet = allRange && (nest == range);		// Update contiune_set for extra range
 				bool extraRangeStart = allRange && (nest == range + 1);		// Extra range start, don't add new area
@@ -1279,7 +1339,8 @@ namespace FindTheWay {
 							continue;
 						}
 
-						if (find(open_set, neighPoint) == nullptr) {
+						if (find(cur_set, neighPoint) == nullptr
+							&& find(open_set, neighPoint) == nullptr) {
 							if (updateContiuneSet) {
 								add(continue_set, base);
 							}
