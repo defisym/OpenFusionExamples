@@ -1365,17 +1365,10 @@ namespace FindTheWay {
 					return false;
 				};
 
-				bool add = true;
-
 				for (auto& it : extra_set) {
-					if (findArea(it)) {
-						add = false;
-						break;
+					if (!findArea(it)) {
+						area.emplace_back(extra_set);
 					}
-				}
-
-				if (add) {
-					area.emplace_back(extra_set);
 				}
 			}
 
