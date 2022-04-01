@@ -1353,7 +1353,30 @@ namespace FindTheWay {
 			}
 
 			if (!extra_set.empty()) {
-				area.emplace_back(extra_set);
+				auto findArea = [&](Coord c) {
+					for (auto& it : area) {
+						for (auto& it_c : it) {
+							if (it_c == c) {
+								return true;
+							}
+						}
+					}
+
+					return false;
+				};
+
+				bool add = true;
+
+				for (auto& it : extra_set) {
+					if (findArea(it)) {
+						add = false;
+						break;
+					}
+				}
+
+				if (add) {
+					area.emplace_back(extra_set);
+				}
 			}
 
 			//if (stash) {		// only stash without ZOC & allRange
