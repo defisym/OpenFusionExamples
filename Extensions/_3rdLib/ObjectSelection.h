@@ -4,6 +4,7 @@
 
 // Add functional to support lambda
 #include <functional>
+#include <vector>
 
 #include "ccxhdr.h"
 
@@ -18,12 +19,12 @@ private:
 	LPQOI QualToOiList;
 	int oiListItemSize;
 
-	inline LPOIL GetOIL(short oiList) {
+	inline LPOIL GetLPOIL(short oiList) {
 		return (LPOIL)(((char*)OiList) + oiListItemSize * oiList);
 	}
 
 	inline bool FilterQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
-		LPOIL pObjectInfo = GetOIL(oiList);
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return false;
@@ -49,8 +50,9 @@ private:
 
 		return hasSelected;
 	}
+	
 	inline bool FilterNonQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
-		LPOIL pObjectInfo = GetOIL(oiList);
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return false;
@@ -101,7 +103,6 @@ private:
 
 		return hasSelected;
 	}
-
 
 public:
 	ObjectSelection(LPRH rhPtr) {
@@ -158,7 +159,7 @@ public:
 
 	//Selects *all* objects of the given object-type
 	inline void SelectAll(short oiList) {
-		const LPOIL pObjectInfo = GetOIL(oiList);
+		const LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return;
@@ -175,9 +176,10 @@ public:
 			i = pObject->hoNumNext;
 		}
 	}
+	
 	//Resets all objects of the given object-type
 	inline void SelectNone(short oiList) {
-		LPOIL pObjectInfo = GetOIL(oiList);
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return;
@@ -187,10 +189,11 @@ public:
 		pObjectInfo->oilListSelected = -1;
 		pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount;
 	}
+	
 	//Resets the SOL and inserts only one given object
 	inline void SelectOneObject(LPRO object) {
 		// LPOIL pObjectInfo = object->roHo.hoOiList;
-		LPOIL pObjectInfo = GetOIL(object->roHo.hoOi);
+		LPOIL pObjectInfo = GetLPOIL(object->roHo.hoOi);
 
 		if (pObjectInfo == nullptr) {
 			return;
@@ -201,13 +204,10 @@ public:
 		pObjectInfo->oilListSelected = object->roHo.hoNumber;
 		ObjectList[object->roHo.hoNumber].oblOffset->hoNextSelected = -1;
 	}
+	
 	//Resets the SOL and inserts the given list of objects
-	inline void SelectObjects(short oiList, LPRO* objects, int count) {
-		if (count <= 0) {
-			return;
-		}
-
-		LPOIL pObjectInfo = GetOIL(oiList);
+	inline void SelectObjects(short oiList, const LPRO* objects, size_t count) {
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return;
@@ -219,16 +219,20 @@ public:
 		short prevNumber = objects[0]->roHo.hoNumber;
 		pObjectInfo->oilListSelected = prevNumber;
 
-		for (int i = 1; i < count; i++) {
+		for (size_t i = 1; i < count; i++) {
 			short currentNumber = objects[i]->roHo.hoNumber;
 			ObjectList[prevNumber].oblOffset->hoNextSelected = currentNumber;
 			prevNumber = currentNumber;
 		}
 		ObjectList[prevNumber].oblOffset->hoNextSelected = -1;
 	}
+	inline void SelectObjects(short oiList, const std::vector<LPRO> objects) {
+		SelectObjects(oiList, &objects[0], objects.size());
+	}
+	
 	//Run a custom filter on the SOL (via function callback)
 	inline bool FilterObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
-		LPOIL pObjectInfo = GetOIL(oiList);
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return false;
@@ -241,9 +245,10 @@ public:
 			return FilterNonQualifierObjects(rdPtr, oiList, negate, filterFunction) ^ negate;
 		}
 	}
+	
 	//Return the number of selected objects for the given object-type
 	inline int GetNumberOfSelected(short oiList) {
-		LPOIL pObjectInfo = GetOIL(oiList);
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return 0;
@@ -257,20 +262,21 @@ public:
 			LPQOI CurrentQualToOi = CurrentQualToOiStart;
 
 			while (CurrentQualToOi->qoiOiList >= 0) {
-				LPOIL CurrentOi = GetOIL(CurrentQualToOi->qoiOiList);
+				LPOIL CurrentOi = GetLPOIL(CurrentQualToOi->qoiOiList);
 				numberSelected += CurrentOi->oilNumOfSelected;
 				CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
 			}
 			return numberSelected;
 		}
 		else {
-			LPOIL pObjectInfo = GetOIL(oiList);
+			LPOIL pObjectInfo = GetLPOIL(oiList);
 			return pObjectInfo->oilNumOfSelected;
 		}
 	}
+	
 	//Check if object is given type
 	inline bool ObjectIsOfType(LPRO object, short oiList) {
-		LPOIL pObjectInfo = GetOIL(oiList);
+		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
 			return false;
@@ -284,7 +290,7 @@ public:
 			LPQOI CurrentQualToOi = CurrentQualToOiStart;
 
 			while (CurrentQualToOi->qoiOiList >= 0) {
-				LPOIL CurrentOi = GetOIL(CurrentQualToOi->qoiOiList);
+				LPOIL CurrentOi = GetLPOIL(CurrentQualToOi->qoiOiList);
 
 				if (CurrentOi->oilOi == object->roHo.hoOi) {
 					return true;
@@ -298,6 +304,7 @@ public:
 			return (object->roHo.hoOi == Oi);
 		}
 	}
+	
 	//For Each, used in action
 	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f, bool forceAll = false) {
 		auto iterate = [&](objInfoList* list, bool selected = true) {
