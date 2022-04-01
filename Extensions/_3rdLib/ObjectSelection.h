@@ -207,6 +207,10 @@ public:
 	
 	//Resets the SOL and inserts the given list of objects
 	inline void SelectObjects(short oiList, const LPRO* objects, size_t count) {
+		if (count == 0) {
+			return;
+		}
+
 		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
@@ -227,6 +231,10 @@ public:
 		ObjectList[prevNumber].oblOffset->hoNextSelected = -1;
 	}
 	inline void SelectObjects(short oiList, const std::vector<LPRO> objects) {
+		if (objects.empty()) {
+			return;
+		}
+
 		SelectObjects(oiList, &objects[0], objects.size());
 	}
 	
