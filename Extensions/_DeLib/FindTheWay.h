@@ -201,6 +201,7 @@ namespace FindTheWay {
 		size_t girdOffestY = 0;
 
 		bool updateMap = false;
+
 		UpdateMapCallBack updateCallBack = nullptr;
 		void* updateCallBackCoef = nullptr;
 
@@ -242,7 +243,13 @@ namespace FindTheWay {
 
 		Paths savedPath;
 
-		using StashPathKey = tuple<size_t, size_t, size_t, size_t>;
+		bool stash = true;
+
+		using CoordHash = size_t;
+		using CoordSetHash = size_t;
+		using IgnoreFlagHash = size_t;
+
+		using StashPathKey = tuple<CoordHash, CoordHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash>;
 
 		//struct StashPathKeyCompare {
 		//	bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
@@ -252,6 +259,8 @@ namespace FindTheWay {
 		//		return (lKeyS < rKeyS) && (lKeyD < rKeyD);
 		//	};
 		//};
+
+		StashPathKey stashPathKey;
 
 		using StashPath = std::map<StashPathKey, Path>;
 
@@ -286,21 +295,73 @@ namespace FindTheWay {
 
 		vector<size_t> ranges;
 
-		//using StashAreaKey = tuple<size_t, size_t, size_t, size_t, size_t>;
-		//using StashAreaValue = tuple<Area, size_t>;
+		struct AreaRange {
+			size_t range = 0;
+			size_t startRange = 0;
+			bool attack = false;
+			bool allRange = false;
+			size_t allRangeAttackRange = 0;
+		};
 
-		////struct StashAreaKeyCompare {
-		////	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
-		////		auto& [lc, lr, lsr, lm] = lKey;
-		////		auto& [rc, rr, rsr, rm] = rKey;
+		using AreaRangeHash = size_t;
+		using IsLine = bool;
 
-		////		return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
-		////	};
-		////};
+		using StashAreaKey = tuple<IsLine, CoordHash, AreaRangeHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash>;
+		using StashAreaValue = tuple<Area, size_t>;
 
-		//using StashArea = std::map<StashAreaKey, StashAreaValue>;
+		AreaRange settings;
+		StashAreaKey stashAreaKey;
 
-		//StashArea stashArea;
+		//struct StashAreaKeyCompare {
+		//	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
+		//		auto& [lc, lr, lsr, lm] = lKey;
+		//		auto& [rc, rr, rsr, rm] = rKey;
+
+		//		return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
+		//	};
+		//};
+
+		using StashArea = std::map<StashAreaKey, StashAreaValue>;
+
+		StashArea stashArea;
+
+		static constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
+		static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); }
+
+		inline static size_t Hasher(const AreaRange& c) {
+			size_t seed = 5;
+
+			seed ^= c.range + HASHER_MOVE(seed);
+			seed ^= c.startRange + HASHER_MOVE(seed);
+			seed ^= c.attack + HASHER_MOVE(seed);
+			seed ^= c.allRange + HASHER_MOVE(seed);
+			seed ^= c.allRangeAttackRange + HASHER_MOVE(seed);
+
+			return seed;
+		}
+
+		inline static size_t Hasher(const Coord& c) {
+			size_t seed = 2;
+
+			seed ^= c.x + HASHER_MOVE(seed);
+			seed ^= c.y + HASHER_MOVE(seed);
+
+			return seed;
+		}
+
+		inline static size_t Hasher(const CoordSet* c) {
+			if (c == nullptr) {
+				return 0;
+			}
+
+			size_t seed = c->size();
+
+			for (auto& it : *c) {
+				seed ^= Hasher(it) + HASHER_MOVE(seed);
+			}
+
+			return seed;
+		}
 
 		inline size_t pOffset(size_t x, size_t y) {
 			return y * width + x;
@@ -418,14 +479,15 @@ namespace FindTheWay {
 		}
 
 		inline void ClearData() {
+			updateMap = false;
+
 			path.clear();
 			savedPath.clear();
-			stashPath.clear();
+			pathAvailable = false;
 
 			area.clear();
 
-			updateMap = false;
-			pathAvailable = false;
+			ClearStash();
 		}
 		
 		inline void ClearMap() {
@@ -752,14 +814,17 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			auto stashPathKey = make_tuple(start.x, start.y, destination.x, destination.y);
-			pathAvailable = stashPath.count(stashPathKey);
+			pathAvailable = false;
 
-			if (pathAvailable
-				&& ally == nullptr && enemy == nullptr && zoc == nullptr) {
-				path = stashPath[stashPathKey];
+			if (stash) {
+				stashPathKey = make_tuple(Hasher(start), Hasher(destination), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
 
-				return;
+				if (stashPath.count(stashPathKey)) {
+					pathAvailable = true;
+					path = stashPath[stashPathKey];
+
+					return;
+				}
 			}
 
 			path.clear();
@@ -1064,20 +1129,25 @@ namespace FindTheWay {
 			return moveable;
 		}
 
-		inline void CalcLineArea(Coord start, size_t range, size_t startRange = 0, bool attack = true) {
+		inline void CalcLineArea(Coord start, size_t range, size_t startRange = 0
+			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
+			, size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
+			, bool attack = true) {
 			if (updateMap && !attack) {
 				UpdateMap();
 			}
 
-			//auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 1);
+			if (stash) {
+				settings = { range,startRange,attack,false,0 };
+				stashAreaKey = make_tuple(true, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
 
-			//if (stashArea.count(stashAreaKey)) {
-			//	auto& [sa, sp] = stashArea[stashAreaKey];
+				if (stashArea.count(stashAreaKey)) {
+					auto& [sa, sp] = stashArea[stashAreaKey];
+					area = sa;
 
-			//	area = sa;
-
-			//	return;
-			//}
+					return;
+				}
+			}
 
 			area.clear();
 
@@ -1114,7 +1184,9 @@ namespace FindTheWay {
 				}
 			}
 
-			//stashArea[stashAreaKey] = std::make_tuple(area, 0);
+			if (stash) {
+				stashArea[stashAreaKey] = std::make_tuple(area, 0);
+			}
 
 #ifdef _DEBUG
 			OutPutAreaStr(start, range);
@@ -1132,19 +1204,22 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			//bool stash = zoc == nullptr || allRange == false;
-			//auto stashAreaKey = make_tuple(start.x, start.y, range, startRange, 0);
+			if (stash) {
+				settings = { range,startRange,attack,allRange,allRangeAttackRange };
+				stashAreaKey = make_tuple(false, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
 
-			//if (stash) {
-			//	if (stashArea.count(stashAreaKey)) {
-			//		auto& [sa,sp]= stashArea[stashAreaKey];
+				if (stashArea.count(stashAreaKey)) {
+					auto& [sa,sp]= stashArea[stashAreaKey];
 
-			//		area = sa;
-			//		*extraRangeStartPosOut = sp;
+					area = sa;
+					
+					if (extraRangeStartPosOut != nullptr) {
+						*extraRangeStartPosOut = sp;
+					}
 
-			//		return;
-			//	}
-			//}
+					return;
+				}
+			}
 
 			area.clear();
 
@@ -1372,9 +1447,9 @@ namespace FindTheWay {
 				}
 			}
 
-			//if (stash) {		// only stash without ZOC & allRange
-			//	stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
-			//}
+			if (stash) {
+				stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
+			}
 
 #ifdef _DEBUG
 			OutPutAreaStr(start, range, ally, enemy, zoc, allRange, extraRangeStartPos);
@@ -1385,7 +1460,7 @@ namespace FindTheWay {
 			return area;
 		}
 
-		inline size_t GetIgnoreFlag(bool moveIgnoreZoc
+		inline static size_t GetIgnoreFlag(bool moveIgnoreZoc
 								, bool moveIgnoreAlly
 								, bool moveIgnoreEnemy
 								, bool attackIgnoreAlly
@@ -1395,6 +1470,14 @@ namespace FindTheWay {
 				| (size_t)moveIgnoreEnemy << 2 
 				| (size_t)attackIgnoreAlly << 1 
 				| (size_t)attackIgnoreEnemy;
+		}
+
+		inline void SetStash(bool state = true) {
+			stash = state;
+		}
+		inline void ClearStash() {
+			stashPath.clear();
+			stashArea.clear();
 		}
 	};
 }
