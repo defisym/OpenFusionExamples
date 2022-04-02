@@ -98,6 +98,8 @@
 #define	IDMN_CONDITION_ZV   			26019
 #define	IDMN_CONDITION_ZAA   			26020
 #define	IDMN_CONDITION_SA   			26021
+#define	IDMN_CONDITION_ZAO   			26022
+#define	IDMN_CONDITION_POAO   			26023
 
 // Condition strings
 #define	M_CONDITION_SMBS				6000
@@ -129,6 +131,8 @@
 #define	M_CONDITION_ZV  				6019
 #define	M_CONDITION_ZAA  				6020
 #define	M_CONDITION_SA  				6021
+#define	M_CONDITION_ZAO  				6022
+#define	M_CONDITION_POAO  				6023
 
 // Titles of condition parameters
 #define M_WIDTH				        6501

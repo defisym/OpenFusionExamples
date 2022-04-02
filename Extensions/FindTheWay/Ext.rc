@@ -146,6 +146,7 @@ BEGIN
         BEGIN            
             MENUITEM "Zoc Valid", IDMN_CONDITION_ZV
             MENUITEM "Zoc At Area", IDMN_CONDITION_ZAA
+            MENUITEM "Zoc At Object", IDMN_CONDITION_ZAO
             MENUITEM SEPARATOR
             MENUITEM "On Create Object Zoc", IDMN_CONDITION_OCOZ
             MENUITEM SEPARATOR
@@ -164,6 +165,8 @@ BEGIN
             MENUITEM "Object At Gird", IDMN_CONDITION_OAG
             MENUITEM "Object At Coord", IDMN_CONDITION_OAC
             MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
+            MENUITEM SEPARATOR
+            MENUITEM "Pick One Object At Object", IDMN_CONDITION_POAO
         END
         MENUITEM SEPARATOR
     END
@@ -395,7 +398,9 @@ BEGIN
     M_CONDITION_OCOZ           "%o On Create Object %0 Zoc %1, IterateName = %2"
     M_CONDITION_ZV             "%o Zoc %0 Valid"
     M_CONDITION_ZAA            "%o Zoc %0 At Area %1 ( 0 = Move Area, 1 = Attack Area )"
-    M_CONDITION_SA            "Select All %0"
+    M_CONDITION_SA             "Select All %0"
+    M_CONDITION_ZAO            "%o Zoc %0 At Object %1"
+    M_CONDITION_POAO           "%o Pick One %0 At %0"
 
 END
 

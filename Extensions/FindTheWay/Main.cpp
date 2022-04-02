@@ -53,6 +53,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ZV, M_CONDITION_ZV, CND_CONDITION_ZV, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
 		IDMN_CONDITION_ZAA, M_CONDITION_ZAA, CND_CONDITION_ZAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ATTACKAREA,
 		IDMN_CONDITION_SA, M_CONDITION_SA, CND_CONDITION_SA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
+		IDMN_CONDITION_ZAO, M_CONDITION_ZAO, CND_CONDITION_ZAO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_OBJECT, M_OBJECT, M_OBJECT,
+		IDMN_CONDITION_POAO, M_CONDITION_POAO, CND_CONDITION_POAO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
 		};
 
 // Definitions of parameters for each action
@@ -603,6 +605,91 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
+long WINAPI DLLExport ZocAtObject(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oilZoc = (short)OIL_GetParameter(rdPtr);
+	short oilObj = (short)OIL_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	CoordSet objects;
+
+	rdPtr->pSelect->ForEach(rdPtr, oilObj, [&](LPRO object) {
+		objects.emplace_back(rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY }));
+		});
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oilZoc, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+		if (std::find(objects.begin(), objects.end()
+			, rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })) != objects.end()) {
+			return true;
+		}
+
+		return false;
+		});
+}
+
+long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	vector<tuple<Coord, LPRO>> objects;
+	vector<tuple<Coord, LPRO>> selected;
+	vector<LPRO> toSelect;
+
+	//auto num = rdPtr->pSelect->GetNumberOfSelected(oil);
+	auto num = rdPtr->pSelect->GetNumberOfObject(oil);
+	
+	objects.reserve(num);
+	selected.reserve(num);
+	toSelect.reserve(num);
+
+	auto find = [](vector<tuple<Coord, LPRO>>& objects, Coord objectCoord) {
+		return std::find_if(objects.begin(), objects.end(), [&](tuple<Coord, LPRO>& it)->bool {
+			auto& [c, p] = it;
+			return c == objectCoord;
+			}) != objects.end();
+	};
+
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		objects.emplace_back(
+			std::make_tuple(rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })
+				, object));
+		});
+
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+
+		if (!find(selected, objectCoord)) {
+			selected.emplace_back(std::make_tuple(objectCoord, object));
+		}
+		});
+
+	if (!negated) {
+		for (auto& it : selected) {
+			auto& [c, p] = it;
+			toSelect.emplace_back(p);
+		}
+	}
+	else {
+		for (auto& it : objects) {
+			auto& [c, p] = it;
+
+			if (std::find(selected.begin(), selected.end(), it) == selected.end()) {
+				toSelect.emplace_back(p);
+			}
+		}
+	}
+
+	rdPtr->pSelect->SelectObjects(oil, toSelect);
+
+	return !toSelect.empty();
+}
+
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -1088,6 +1175,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ZocValid,
 			ZocAtArea,
 			SelectAll,
+			ZocAtObject,
+			PickOneObjectAtObject,
 			
 			0
 			};
