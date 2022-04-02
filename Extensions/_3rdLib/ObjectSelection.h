@@ -281,6 +281,34 @@ public:
 			return pObjectInfo->oilNumOfSelected;
 		}
 	}
+
+	//Return the number of objects for the given object-type
+	inline int GetNumberOfObject(short oiList) {
+		LPOIL pObjectInfo = GetLPOIL(oiList);
+
+		if (pObjectInfo == nullptr) {
+			return 0;
+		}
+
+		if (oiList & 0x8000) {
+			oiList &= 0x7FFF;	//Mask out the qualifier part
+			int number = 0;
+
+			LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
+			LPQOI CurrentQualToOi = CurrentQualToOiStart;
+
+			while (CurrentQualToOi->qoiOiList >= 0) {
+				LPOIL CurrentOi = GetLPOIL(CurrentQualToOi->qoiOiList);
+				number += CurrentOi->oilNObjects;
+				CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
+			}
+			return number;
+		}
+		else {
+			LPOIL pObjectInfo = GetLPOIL(oiList);
+			return pObjectInfo->oilNObjects;
+		}
+	}
 	
 	//Check if object is given type
 	inline bool ObjectIsOfType(LPRO object, short oiList) {
