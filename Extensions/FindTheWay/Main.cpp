@@ -79,7 +79,7 @@ short actionsInfos[]=
 
 		IDMN_ACTION_COZ, M_ACTION_COZ, ACT_ACTION_COZ, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
 
-		IDMN_ACTION_DA, M_ACTION_DA, ACT_ACTION_DA, 0, 1, PARAM_OBJECT, M_OBJECT,
+		IDMN_ACTION_SS, M_ACTION_SS, ACT_ACTION_SS, 0, 1, PARAM_EXPRESSION, M_STASH,
 		};
 
 // Definitions of parameters for each expression
@@ -485,7 +485,9 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 			, allRange, allRangeAttackRange, &rdPtr->extraRangeStartPos);
 	}
 	else {
-		rdPtr->pFTW->CalcLineArea(girdCoord, range, startRange, attack);
+		rdPtr->pFTW->CalcLineArea(girdCoord, range, startRange
+			, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag
+			, attack);
 	}
 
 	rdPtr->areaSize = rdPtr->pFTW->GetArea().size();
@@ -931,13 +933,16 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 	return 0;
 }
 
-short WINAPI DLLExport DestroyAll(LPRDATA rdPtr, long param1, long param2) {
-	short oil = (short)OIL_GetParameter(rdPtr);
-	//rdPtr->pSelect->SelectAll(oil);
+short WINAPI DLLExport SetStash(LPRDATA rdPtr, long param1, long param2) {
+	bool enable = (bool)CNC_GetParameter(rdPtr);
 
-	//rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-	//	DestroyObject(object);
-	//	});
+	RetIfMapInvalid(0);
+
+	rdPtr->pFTW->SetStash(enable);
+
+	if (!enable) {
+		rdPtr->pFTW->ClearStash();
+	}
 
 	return 0;
 }
@@ -1106,9 +1111,7 @@ long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
 	bool attackIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	bool attackIgnoreEnemy= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	RetIfMapInvalid(DEFAULT_IGNOREFLAG);
-
-	return rdPtr->pFTW->GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
+	return FindTheWayClass::GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
 }
 
 long WINAPI DLLExport GetMapTypeMap(LPRDATA rdPtr, long param1) {
@@ -1200,7 +1203,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			CreateObjectZoc,
 
-			DestroyAll,
+			SetStash,
 			0
 			};
 

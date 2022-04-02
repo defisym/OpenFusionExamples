@@ -184,6 +184,8 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Continue", IDMN_ACTION_C
+        MENUITEM SEPARATOR        
+        MENUITEM "Set Stash", IDMN_ACTION_SS
         MENUITEM SEPARATOR
         POPUP "Set Map"
         BEGIN
@@ -200,8 +202,7 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Area"
         BEGIN
-            MENUITEM "Create Object Zoc",               IDMN_ACTION_COZ
-            //MENUITEM "Destroy All Object",              IDMN_ACTION_DA
+            MENUITEM "Create Object Zoc",               IDMN_ACTION_COZ            
             MENUITEM SEPARATOR
             MENUITEM "Set Zoc By Object",               IDMN_ACTION_SZBO
             MENUITEM "Clear Zoc",                       IDMN_ACTION_CZ
@@ -364,7 +365,7 @@ BEGIN
 
     M_ACTION_COZ              "Create Object %0 Zoc, IterateName = %1"
     
-    M_ACTION_DA               "Destroy All Object %0"
+    M_ACTION_SS               "Set Stash = %0"
 
 END
 
@@ -474,6 +475,7 @@ BEGIN
     M_USEITERATECOORD               "Auto Set Coord in 'On Set Map By Collision', 1 = Enable, 0 = Disable, 'X/Y Coord' && 'Use Real Coord' is Ignored When Enable"
     M_CENTER                        "0 = Add Itself, 1 = Add Neighbours"
     M_ENEMY                         "0 = Ally, 1 = Enemy"
+    M_STASH                         "0 = Don't Stash & Clear Stash, 1 = Stash"
     
     M_STEP                          "Step in the Path"
     M_COORDTYPE                     "Coord Type, 0 = X, 1 = Y"

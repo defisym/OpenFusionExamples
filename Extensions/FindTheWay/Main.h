@@ -55,7 +55,7 @@
 #define	ACT_ACTION_SUBO					8
 #define	ACT_ACTION_CU					9
 #define	ACT_ACTION_COZ					10
-#define	ACT_ACTION_DA					11
+#define	ACT_ACTION_SS					11
 
 #define	ACT_LAST						12
 
