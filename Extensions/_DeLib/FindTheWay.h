@@ -187,7 +187,12 @@ namespace FindTheWay {
 	constexpr auto DELIMETER = ':';
 
 	constexpr auto DEFAULT_IGNOREFLAG = 0b01001U;
+	constexpr auto REPEL_IGNOREFLAG = 0b11100U;
 	constexpr auto DEFAULT_EXTRARANGESTARTPOS = 65536;
+
+	constexpr auto ATTACK = true;
+	constexpr auto MOVE = false;
+	constexpr auto REPEL = false;
 
 	class FindTheWayClass {
 	private:
@@ -290,7 +295,6 @@ namespace FindTheWay {
 
 		Area area;
 		Set cur_set;
-		Set continue_set;
 		CoordSet extra_set;
 
 		vector<size_t> ranges;
@@ -451,7 +455,6 @@ namespace FindTheWay {
 
 			area.reserve(AREA_RESERVE);
 			cur_set.reserve(2 * PATH_RESERVE);
-			continue_set.reserve(2 * PATH_RESERVE);
 			extra_set.reserve(AREA_RESERVE);
 		}
 
@@ -849,9 +852,8 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
-			auto findSet = [](CoordSet& v, Coord& p) {
-				auto it = std::find_if(v.begin(), v.end(), [&p](Coord& it)->bool { return it == p; });
-				return it != v.end() ? &(*it) : nullptr;
+			auto findSet = [](const CoordSet& v, const Coord& p) {
+				return std::find_if(v.begin(), v.end(), [&p](auto& it)->bool { return it == p; }) != v.end();
 			};
 
 			auto addSet = [&](CoordSet* src) {
@@ -860,7 +862,7 @@ namespace FindTheWay {
 				}
 
 				for (auto& it : *src) {
-					if (findSet(unit_set, it) == nullptr) {
+					if (!findSet(unit_set, it)) {
 						unit_set.emplace_back(it);
 					}
 				}
@@ -876,11 +878,11 @@ namespace FindTheWay {
 				addSet(enemy);
 			}
 
-			if (!moveIgnoreZoc) {
+			if (!moveIgnoreZoc && zoc != nullptr) {
 				for (auto& it : *zoc) {
-					if (findSet(unit_set, it) == nullptr
-						&& findSet(*ally, it) == nullptr				// current point not unit
-						&& findSet(*enemy, it) == nullptr
+					if (!findSet(unit_set, it)
+						&& !findSet(*ally, it)				// current point not unit
+						&& !findSet(*enemy, it)
 						&& it != start && it != destination) {
 						unit_set.emplace_back(it);
 					}
@@ -932,7 +934,7 @@ namespace FindTheWay {
 							continue;
 						}
 
-						if (findSet(unit_set, neighCoord) != nullptr) {
+						if (findSet(unit_set, neighCoord)) {
 							continue;
 						}
 
@@ -1106,17 +1108,61 @@ namespace FindTheWay {
 			return ss.str();
 		}
 
-		inline size_t GetAbleLineRange(Coord start, size_t range, size_t dir, bool attack) {
+		inline size_t GetAbleLineRange(Coord start, size_t range, size_t dir
+			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
+			, size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
+			, bool attack= false) {					// Attack = use ignore flag, only consider map collision
+													// Repel = consider both map collision & unit
 			if (updateMap && !attack) {
 				UpdateMap();
 			}
 
-			auto offset = normalNeighbour[dir];
+			bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+			bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+			bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
+			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
+			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
+
+			auto ignoreCoord = [&](const Coord& p) {
+				auto findSet = [](const CoordSet& v, const Coord& p) {
+					return std::find_if(v.begin(), v.end(), [&p](auto& it)->bool { return it == p; }) != v.end();
+				};
+
+				if (GetMap(p.x, p.y, this->map) == MAP_OBSTACLE) {
+					return false;
+				}
+
+				bool curAlly = ally == nullptr ? false : findSet(*ally, p);
+				bool curEnemy = enemy == nullptr ? false : findSet(*enemy, p);
+
+				if (attack) {
+					if (!attackIgnoreAlly && curAlly) {
+						return false;
+					}
+					if (!attackIgnoreEnemy && curEnemy) {
+						return false;
+					}
+				}
+				else {		// Repel
+					if (curAlly) {
+						return false;
+					}
+					if (curEnemy) {
+						return false;
+					}
+				}
+
+				return true;
+			};
+			
+			auto& offset = normalNeighbour[dir];
 			auto coord = start;
 			size_t moveable = 0;
 
-			while ((moveable <= range)
-				&& (GetMap(coord.x, coord.y, range ? this->terrain : this->map) != MAP_OBSTACLE)) {
+			while (moveable <= range) {
+				if (!ignoreCoord(coord)) {
+					break;
+				}
 
 				coord.x += offset.x;
 				coord.y += offset.y;
@@ -1132,8 +1178,8 @@ namespace FindTheWay {
 		inline void CalcLineArea(Coord start, size_t range, size_t startRange = 0
 			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
 			, size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
-			, bool attack = true) {
-			if (updateMap && !attack) {
+			, bool attack = false) {
+			if (updateMap) {
 				UpdateMap();
 			}
 
@@ -1151,14 +1197,14 @@ namespace FindTheWay {
 
 			area.clear();
 
-			if (GetMap(start.x, start.y, attack ? this->terrain : this->map) == MAP_OBSTACLE) {
+			if (GetMap(start.x, start.y, this->map) == MAP_OBSTACLE) {
 				return;
 			}
 
 			ranges = { 0,0,0,0 };
 
-			for (size_t i = 0; i < 4; i++) {
-				ranges[i] = GetAbleLineRange(start, range, i, attack);
+			for (size_t dir = 0; dir < 4; dir++) {
+				ranges[dir] = GetAbleLineRange(start, range, dir, ally, enemy, zoc, ignoreFlag, attack);
 			}
 
 			for (size_t nest = 0; nest <= range; nest++) {
@@ -1200,7 +1246,7 @@ namespace FindTheWay {
 			// allRange: Calc move & attack at the same time
 			, bool allRange = false, size_t allRangeAttackRange = 0, size_t* extraRangeStartPosOut = nullptr
 			, bool diagonal = false) {
-			if (updateMap && (!attack || allRange)) {
+			if (updateMap) {
 				UpdateMap();
 			}
 
@@ -1228,7 +1274,6 @@ namespace FindTheWay {
 			}
 
 			cur_set.clear();
-			continue_set.clear();
 			extra_set.clear();
 
 			open_set.clear();
@@ -1237,17 +1282,11 @@ namespace FindTheWay {
 
 			open_set.emplace_back(Point{ start,nullptr,0,0 });
 
-			//add start when interval == range
-			if (startRange == 0) {
-				area.emplace_back();
-				area.back().emplace_back(start);
-			}
-
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
 
 			size_t totalRange = range + allRange * allRangeAttackRange
-							+ allRange;	// Extra loop with allRange due to restart from continue_set
+							+ allRange;	// Extra loop with allRange due to restart
 			size_t extraRangeStartPos = range;
 
 			bool extraRangeCalc = false;	// Extra range calc start
@@ -1260,14 +1299,20 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
+			//add start when interval == range
+			if (!updateAttack && startRange == 0) {
+				area.emplace_back();
+				area.back().emplace_back(start);
+			}
+
 			for (size_t nest = 0; nest <= totalRange; nest++) {
 				bool addArea = nest > startRange;							//After start range
 
-				bool updateContiuneSet = allRange && (nest == range);		// Update contiune_set for extra range
-				bool extraRangeStart = allRange && (nest == range + 1);		// Extra range start, don't add new area
+				bool nextExtraRange = allRange && (nest == range);			// Update for extra range
+				bool startExtraRange = allRange && (nest == range + 1);		// Extra range start, don't add new area
 
-				if (extraRangeStart) {
-					updateAttack = true;								// Attack when extra range start
+				if (startExtraRange) {
+					updateAttack = true;									// Attack when extra range start
 					extraRangeCalc = true;
 					extraRangeStartPos = area.size();
 
@@ -1275,13 +1320,9 @@ namespace FindTheWay {
 						*extraRangeStartPosOut = extraRangeStartPos;
 					}
 
- 					if (!continue_set.empty()) {
-						std::swap(cur_set, continue_set);
-					}
-					else {
-						for (auto& it : area.back()) {
-							cur_set.emplace_back(Point{ it,nullptr,0,0 });
-						}
+					// add current area edge
+					for (auto& it : area.back()) {
+						cur_set.emplace_back(Point{ it,nullptr,0,0 });
 					}
 
 					open_set.clear();
@@ -1292,16 +1333,14 @@ namespace FindTheWay {
 
 				if (cur_set.empty()) {
 					// cannot move, start attack check in allRange mode
-					if (allRange) {
-						if (!extraRangeStart) {
-							continue;
-						}
+					if (allRange && !startExtraRange) {
+						continue;
 					}
 
 					break;
 				}
 
-				if (addArea && !extraRangeStart) {
+				if (addArea && !startExtraRange) {
 					area.emplace_back();
 					area.back().reserve(1 + area.size() * 4);
 				}
@@ -1312,7 +1351,7 @@ namespace FindTheWay {
 
 					close_set.emplace_back(base);
 
-					if (addArea && !extraRangeStart) {
+					if (addArea && !startExtraRange) {
 						area.back().emplace_back(base.coord);
 					}
 
@@ -1380,17 +1419,14 @@ namespace FindTheWay {
 
 					int X = 0;
 
+					// Zoc : stop search
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
-					if ((!moveIgnoreZoc)											// stop move if dosen't ignore zoc
+					if ((!moveIgnoreZoc)											// stop move if doesn't ignore zoc
 						&& (!updateAttack) && (!extraRangeCalc)						// during move
 						&& zoc != nullptr && findSet(*zoc, base) != nullptr			// current point zoc
 						&& findSet(*ally, base) == nullptr							// current point not unit
 						&& findSet(*enemy, base) == nullptr
 						&& base.coord != start) {									// not start
-						if (allRange) {
-							add(continue_set, base);								// start calc attack range from zoc
-						}
-
 						continue;
 					}
 
@@ -1398,9 +1434,7 @@ namespace FindTheWay {
 						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
 						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
 
-						// ignore dynamic unit part when calc attack range
-						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->terrain);
-						// BYTE curCost = GetMap(neighCoord.x, neighCoord.y, updateAttack ? this->terrain : this->map);
+						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
@@ -1416,10 +1450,7 @@ namespace FindTheWay {
 
 						if (find(cur_set, neighPoint) == nullptr
 							&& find(open_set, neighPoint) == nullptr) {
-							if (updateContiuneSet) {
-								add(continue_set, base);
-							}
-							else {
+							if (!nextExtraRange) {
 								open_set.emplace_back(neighPoint);
 							}
 						}
