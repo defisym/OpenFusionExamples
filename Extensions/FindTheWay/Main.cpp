@@ -101,7 +101,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GMB64, M_EXPRESSION_GMB64, EXP_EXPRESSION_GMB64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GMS, M_EXPRESSION_GMS, EXP_EXPRESSION_GMS, EXPFLAG_STRING, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_STRING, M_TYPE, M_SHOWPATH, M_PATHNAME,
 
-		IDMN_EXPRESSION_GALR, M_EXPRESSION_GALR, EXP_EXPRESSION_GALR, 0, 6, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_DIR, M_RANGE, M_ATTACK,
+		IDMN_EXPRESSION_GALR, M_EXPRESSION_GALR, EXP_EXPRESSION_GALR, 0, 7, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_X, M_Y, M_USEREALCOORD, M_DIR, M_RANGE, M_IGNOREFLAG, M_ATTACK,
 
 		IDMN_EXPRESSION_GIF, M_EXPRESSION_GIF, EXP_EXPRESSION_GIF, 0, 5, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_MIZ, M_MIA, M_MIE, M_AIA, M_AIE,
 
@@ -1091,6 +1091,8 @@ long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
 	size_t dir = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	size_t range = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
+	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+
 	bool attack = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(0);
@@ -1101,7 +1103,7 @@ long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
 		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
 	}
 
-	return rdPtr->pFTW->GetAbleLineRange(girdCoord, range, dir, attack);
+	return rdPtr->pFTW->GetAbleLineRange(girdCoord, range, dir, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag, attack);
 }
 
 long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
