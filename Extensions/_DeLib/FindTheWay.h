@@ -248,7 +248,14 @@ namespace FindTheWay {
 
 		Paths savedPath;
 
+		// do not stash in debug mode
+#ifdef _DEBUG
+		bool stash = false;
+#endif
+
+#ifdef NDEBUG
 		bool stash = true;
+#endif
 
 		using CoordHash = size_t;
 		using CoordSetHash = size_t;
@@ -295,6 +302,7 @@ namespace FindTheWay {
 
 		Area area;
 		Set cur_set;
+		Set continue_set;
 		CoordSet extra_set;
 
 		vector<size_t> ranges;
@@ -454,7 +462,8 @@ namespace FindTheWay {
 			unit_set.reserve(UNIT_RESERVE);
 
 			area.reserve(AREA_RESERVE);
-			cur_set.reserve(2 * PATH_RESERVE);
+			cur_set.reserve(2 * AREA_RESERVE);
+			continue_set.reserve(2 * AREA_RESERVE);
 			extra_set.reserve(AREA_RESERVE);
 		}
 
@@ -1274,6 +1283,7 @@ namespace FindTheWay {
 			}
 
 			cur_set.clear();
+			continue_set.clear();
 			extra_set.clear();
 
 			open_set.clear();
@@ -1320,9 +1330,18 @@ namespace FindTheWay {
 						*extraRangeStartPosOut = extraRangeStartPos;
 					}
 
+					// add & last point
+					if (!continue_set.empty()) {
+						std::swap(cur_set, continue_set);
+					}
+
 					// add current area edge
 					for (auto& it : area.back()) {
-						cur_set.emplace_back(Point{ it,nullptr,0,0 });
+						if (std::find_if(cur_set.begin(), cur_set.end(), [&](const Point& it_c) { 
+							return it_c.coord == it; 
+							}) == cur_set.end()) {
+							cur_set.emplace_back(Point{ it,nullptr,0,0 });
+						}
 					}
 
 					open_set.clear();
@@ -1427,6 +1446,10 @@ namespace FindTheWay {
 						&& findSet(*ally, base) == nullptr							// current point not unit
 						&& findSet(*enemy, base) == nullptr
 						&& base.coord != start) {									// not start
+						if (allRange) {
+							add(continue_set, base);								// start calc attack range from zoc
+						}
+
 						continue;
 					}
 
@@ -1453,6 +1476,9 @@ namespace FindTheWay {
 							if (!nextExtraRange) {
 								open_set.emplace_back(neighPoint);
 							}
+							else {
+								add(continue_set, base);
+							}
 						}
 					}
 				}
@@ -1471,9 +1497,18 @@ namespace FindTheWay {
 					return false;
 				};
 
+				bool added = false;
+
 				for (auto& it : extra_set) {
 					if (!findArea(it)) {
-						area.emplace_back(extra_set);
+						if (!added) {
+							added = true;
+
+							area.emplace_back();
+							area.back().reserve(extra_set.size());
+						}
+
+						area.back().emplace_back(it);
 					}
 				}
 			}
