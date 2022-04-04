@@ -615,6 +615,12 @@ long WINAPI DLLExport ZocAtObject(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
+	ObjectCreation oc(rdPtr);
+	oc.OCCreateBackdrop([&](ObjectCreation* oc, LPOI& objOI, BKDParam& bkdParam) {
+		objOI = oc->GetBackdropOI(L"Backdrop");
+		bkdParam = BKDParam{ 0,0,0,0 };
+		});
+
 	CoordSet objects;
 
 	rdPtr->pSelect->ForEach(rdPtr, oilObj, [&](LPRO object) {

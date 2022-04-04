@@ -34,6 +34,7 @@
 #include	"FindTheWay.h"
 
 using namespace FindTheWay;
+class ObjectCreation;
 class ObjectSelection;
 
 // Specific to this cox
@@ -42,6 +43,7 @@ class ObjectSelection;
 #include	"TigsExt.hpp"
 
 // My header
+#include	"ObjectCreation.h"
 #include	"ObjectSelection.h"
 #include	"Func.h"
 
