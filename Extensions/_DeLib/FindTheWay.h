@@ -1420,6 +1420,7 @@ namespace FindTheWay {
 								if (!moveIgnore) {
 									if (allRange && attackIgnore) {
 										addSet(extra_set, p);		// Add to attack area if ignored during move
+										add(continue_set, base);	// Add parent to continue set in case it's egde
 									}
 								}
 
@@ -1435,8 +1436,6 @@ namespace FindTheWay {
 							|| (curAlly && getIgnore(moveIgnoreAlly, attackIgnoreAlly))		// ignore ally?
 							|| (curEnemy && getIgnore(moveIgnoreEnemy, attackIgnoreEnemy));	// ignore enemy?
 					};
-
-					int X = 0;
 
 					// Zoc : stop search
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
