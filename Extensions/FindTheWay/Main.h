@@ -63,8 +63,9 @@
 #define	ACT_ACTION_COZBN				13
 #define	ACT_ACTION_CAO					14
 #define	ACT_ACTION_CABNO				15
+#define	ACT_ACTION_CAOE					16
 
-#define	ACT_LAST						16
+#define	ACT_LAST						17
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -168,6 +169,9 @@ typedef struct tagRDATA
 	ObjectCreation* pOc;
 	CoordSet* pObjZoc;
 	wstring* pOnItZocName;
+
+	AOEClass* pAOE;
+	vector<AOEClass::coord>* pAOECoord;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

@@ -89,6 +89,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_CAO, M_ACTION_CAO, ACT_ACTION_CAO, 0, 1, PARAM_CREATE, M_OBJECT,
 		IDMN_ACTION_CABNO, M_ACTION_CABNO, ACT_ACTION_CABNO, 0, 1, PARAM_EXPSTRING, M_OBJECT,
+
+		IDMN_ACTION_CAOE, M_ACTION_CAOE, ACT_ACTION_CAOE, 0, 5, PARAM_CREATE, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_OBJECT, M_DIR, M_AOETYPE, M_IGNOREFLAG,
 		};
 
 // Definitions of parameters for each expression
@@ -1113,6 +1115,60 @@ short WINAPI DLLExport SetStash(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
+	auto param = OCP_GetParameter(0);
+	CNC_GetParameter(rdPtr);
+
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	size_t dir = (size_t)CNC_GetParameter(rdPtr);
+	size_t type = (size_t)CNC_GetParameter(rdPtr);
+
+	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+
+	bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+	bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+	bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
+	bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
+	bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
+
+	RetIfMapInvalid(0);
+
+	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	AOEClass::coord start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
+
+	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
+
+	auto find = [](CoordSet* c,Coord& p) {
+		return std::find(c->begin(), c->end(), p) != c->end();
+	};
+
+	for (auto& it : *rdPtr->pAOECoord) {
+		auto girdCoord = Coord{ (size_t)it.x,(size_t)it.y };
+		auto realCoord = rdPtr->pFTW->GetRealCoord(girdCoord);
+
+		if (rdPtr->pFTW->GetMap(girdCoord.x, girdCoord.y, MapType::MAP) == MAP_OBSTACLE) {
+			continue;
+		}
+
+		if (!attackIgnoreAlly && find(rdPtr->pAlly, girdCoord)) {
+			continue;
+		}
+		if (!attackIgnoreEnemy && find(rdPtr->pEnemy, girdCoord)) {
+			continue;
+		}
+
+		rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
+			*cdp = param;
+
+			cdp->cdpPos.posX = (short)realCoord.x;
+			cdp->cdpPos.posY = (short)realCoord.y;
+			});
+	}
+
+	return 0;
+}
+
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1381,6 +1437,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			CreateAreaOnce,
 			CreateAreaByNameOnce,
+			CreateAOE,
 
 			0
 			};

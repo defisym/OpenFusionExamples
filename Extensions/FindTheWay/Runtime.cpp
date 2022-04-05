@@ -88,6 +88,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pObjZoc->reserve(8);
 
+	rdPtr->pAOE = new AOEClass;
+	rdPtr->pAOECoord = new vector<AOEClass::coord>;
+
 	// No errors
 	return 0;
 }
@@ -122,6 +125,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pOc;
 	delete rdPtr->pObjZoc;
 	delete rdPtr->pOnItZocName;
+
+	delete rdPtr->pAOE;
+	delete rdPtr->pAOECoord;
 
 	// No errors
 	return 0;

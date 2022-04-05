@@ -30,12 +30,15 @@
 #include	"ImgFlt.h"
 
 // My lib
-#include	"Defination.h"
-#include	"FindTheWay.h"
-
-using namespace FindTheWay;
 class ObjectCreation;
 class ObjectSelection;
+
+#include	"Defination.h"
+#include	"FindTheWay.h"
+using namespace FindTheWay;
+
+#include	"AOE.h"
+using namespace AOE;
 
 // Specific to this cox
 #include	"resource.h"

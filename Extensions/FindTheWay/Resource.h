@@ -41,6 +41,7 @@
 #define	IDMN_ACTION_COZBN  			25013
 #define	IDMN_ACTION_CAO				25014
 #define	IDMN_ACTION_CABNO			25015
+#define	IDMN_ACTION_CAOE			25016
 
 
 // Action strings
@@ -60,6 +61,7 @@
 #define	M_ACTION_COZBN 				5013
 #define	M_ACTION_CAO				5014
 #define	M_ACTION_CABNO				5015
+#define	M_ACTION_CAOE				5016
 
 
 // Titles of action parameters
@@ -71,6 +73,7 @@
 #define M_CENTER        	 5506
 #define M_COUNT         	 5507
 #define M_STASH         	 5508
+#define M_AOETYPE         	 5509
 
 //	Conditions
 //--------------------

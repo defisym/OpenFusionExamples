@@ -225,6 +225,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Create Area Once",                IDMN_ACTION_CAO            
             MENUITEM "Create Area By Name Once",        IDMN_ACTION_CABNO
+            MENUITEM SEPARATOR
+            MENUITEM "Create AOE",                      IDMN_ACTION_CAOE
         END
         MENUITEM SEPARATOR
     END
@@ -385,6 +387,8 @@ BEGIN
 
     M_ACTION_CAO              "Create Area %0 Once"
     M_ACTION_CABNO            "Create Area %0 Once"
+    
+    M_ACTION_CAOE             "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
 
 END
 
@@ -498,6 +502,7 @@ BEGIN
     M_CENTER                        "0 = Add Itself, 1 = Add Neighbours"
     M_ENEMY                         "0 = Ally, 1 = Enemy"
     M_STASH                         "0 = Don't Stash & Clear Stash, 1 = Stash"
+    M_AOETYPE                       "AOE type"
     
     M_STEP                          "Step in the Path"
     M_COORDTYPE                     "Coord Type, 0 = X, 1 = Y"

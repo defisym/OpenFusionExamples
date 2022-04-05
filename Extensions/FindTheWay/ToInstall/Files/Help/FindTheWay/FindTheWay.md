@@ -64,6 +64,11 @@ This object has no properties
 
   - Iterate Area
 
+  - Create Area Once
+  - Create Area By Name Once
+
+  - Create AOE
+
 ## Condition
 
 - Map
