@@ -11,14 +11,18 @@
 //ObjectCreation oc(rdPtr);
 // 
 //oc.OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
-//	//cdp->cdpOi = creationOI;
-//	cdp->cdpOi = oc->GetCreationOI(L"Zoc");
-//
+//  ////PARAM_CREATE
+//  *cdp = *(CreateDuplicateParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+// 
 //	////PARAM_SYSCREATE
+//	cdp->cdpOi = oc->GetCreationOI(L"Zoc");
+// 
 //	//cdp->cdpPos = *(PositionParam*)&(oc->GetNthEvtParam(rdPtr, 0)->evp);
 //	//cdp->cdpPos.posLayer = 0;
 //
 //	//PARAM_EXPRESSION
+//  cdp->cdpOi = oc->GetCreationOI(L"Zoc");
+// 
 //	cdp->cdpPos.posX = 50;
 //	cdp->cdpPos.posY = 50;
 //	cdp->cdpPos.posLayer = 1;
@@ -53,6 +57,7 @@ private:
 	RunFrameLayer* layerPtr;
 	int additionalLayerSize;
 
+	int bufferSize = sizeof(event) + sizeof(eventParam) + sizeof(CreateDuplicateParam);
 	char* buffer=nullptr;
 	event* evt=nullptr;
 	eventParam* creationParams=nullptr;
@@ -63,6 +68,11 @@ private:
 	//Put the layer number in to a proper range
 	inline int GetValidLayer(int layer){		
 		return (max(-1, min(rhPtr->rhFrame->m_nLayers-1, layer)));
+	}
+
+	inline void ResetEVP() {
+		memset(buffer, 0, bufferSize);
+		cdp->cdpHFII = rhPtr->rhNumberOi;
 	}
 
 public:
@@ -97,8 +107,8 @@ public:
 #endif
 	
 		//Create the event buffer (with plenty space):
-		int bufferSize = sizeof(event)+sizeof(eventParam)+sizeof(CreateDuplicateParam);
-		char* buffer = new char[bufferSize];
+		bufferSize = sizeof(event)+sizeof(eventParam)+sizeof(CreateDuplicateParam);
+		buffer = new char[bufferSize];
 		memset(buffer, 0, bufferSize);
 
 		//The event that should be passed to the CreateObject routine		
@@ -149,7 +159,7 @@ public:
 	}
 
 	inline short GetCreationOI(std::wstring& objName) {
-		GetCreationOI(objName.c_str());
+		return GetCreationOI(objName.c_str());
 	}
 
 	inline void OCCreateBackdrop(std::function<void(ObjectCreation* oc, LPOI& objOI, BKDParam& bkdParam)> updateParam) {
@@ -208,11 +218,15 @@ public:
 		return GetBackdropOI(objName.c_str());
 	}
 
-	// must be called at first
-	inline eventParam* GetNthEvtParam(LPRDATA rdPtr, size_t index = 0) {
+	// must be called at first, starts from 0
+	inline static eventParam* GetNthEvtParam(LPRDATA rdPtr, size_t index = 0) {
 		eventParam* param = rdPtr->rHo.hoCurrentParam;
 		param = reinterpret_cast<eventParam*>(reinterpret_cast<unsigned char*>(param) + param->evpSize * index);
 
 		return param;
 	}
+	
+	#define OCP_GetParameter(X) *(CreateDuplicateParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+	#define POS_GetParameter(X) *(PositionParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+	#define STO_GetParameter(X) *(ShootParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
 };
