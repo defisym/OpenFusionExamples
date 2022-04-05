@@ -938,6 +938,9 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 
 	RetIfMapInvalid(0);
 
+	// usually fusion will do a internal for-each for all selected objects
+	// but when you call immediate events, this for-each will be terminated
+	// so here need a manual for-each to force it
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
@@ -962,6 +965,8 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 
 	RetIfMapInvalid(0);
 
+	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
+
 	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
@@ -969,7 +974,7 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 		auto realCoord = rdPtr->pFTW->GetRealCoord(it);
 
 		rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
-			cdp->cdpOi = oc->GetCreationOI(objectName);
+			cdp->cdpOi = Oi;
 
 			cdp->cdpPos.posX = (short)realCoord.x;
 			cdp->cdpPos.posY = (short)realCoord.y;
