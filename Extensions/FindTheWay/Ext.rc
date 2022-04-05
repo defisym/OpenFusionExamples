@@ -145,8 +145,7 @@ BEGIN
         POPUP "Area"
         BEGIN            
             MENUITEM "Zoc Valid", IDMN_CONDITION_ZV
-            MENUITEM "Zoc At Area", IDMN_CONDITION_ZAA
-            MENUITEM "Zoc At Object", IDMN_CONDITION_ZAO
+            MENUITEM "Zoc At Area", IDMN_CONDITION_ZAA            
             MENUITEM SEPARATOR
             MENUITEM "On Create Object Zoc", IDMN_CONDITION_OCOZ
             MENUITEM SEPARATOR
@@ -160,13 +159,23 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Object"
         BEGIN
-            MENUITEM "Select All", IDMN_CONDITION_SA
-            MENUITEM SEPARATOR
-            MENUITEM "Object At Gird", IDMN_CONDITION_OAG
-            MENUITEM "Object At Coord", IDMN_CONDITION_OAC
-            MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
-            MENUITEM SEPARATOR
-            MENUITEM "Pick One Object At Object", IDMN_CONDITION_POAO
+            POPUP "Select"
+            BEGIN
+                MENUITEM "Select All", IDMN_CONDITION_SA
+                MENUITEM SEPARATOR
+                MENUITEM "Object At Gird", IDMN_CONDITION_OAG
+                MENUITEM "Object At Coord", IDMN_CONDITION_OAC
+                MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
+                MENUITEM SEPARATOR
+                MENUITEM "Object At Object", IDMN_CONDITION_OAOBJ
+                MENUITEM SEPARATOR
+                MENUITEM "Pick One Object At Object", IDMN_CONDITION_POAO
+            END
+            POPUP "Non-Select"
+            BEGIN
+                MENUITEM "No Object At Gird", IDMN_CONDITION_NOAG
+                MENUITEM "No Object At Coord", IDMN_CONDITION_NOAC
+            END
         END
         MENUITEM SEPARATOR
     END
@@ -213,6 +222,9 @@ BEGIN
             MENUITEM "Clear Unit",                      IDMN_ACTION_CU
             MENUITEM SEPARATOR
             MENUITEM "Iterate Area",                    IDMN_ACTION_ITA
+            MENUITEM SEPARATOR
+            MENUITEM "Create Area Once",                IDMN_ACTION_CAO            
+            MENUITEM "Create Area By Name Once",        IDMN_ACTION_CABNO
         END
         MENUITEM SEPARATOR
     END
@@ -371,6 +383,9 @@ BEGIN
     
     M_ACTION_SS               "Set Stash = %0"
 
+    M_ACTION_CAO              "Create Area %0 Once"
+    M_ACTION_CABNO            "Create Area %0 Once"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -393,6 +408,9 @@ BEGIN
     M_CONDITION_OAC            "%o Object %0 At Coord [ %1 , %2 ]"
     M_CONDITION_OAO            "%o Object %0 At Obstacle of Map Type %1"
 
+    M_CONDITION_NOAG           "%o No Object %0 At Gird [ %1 , %2 ]"
+    M_CONDITION_NOAC           "%o No Object %0 At Coord [ %1 , %2 ]"
+
     M_CONDITION_CA             "%o Calculate Area ( LineMode = %0, Attack = %1, Start = [ %2 , %3 ], UseRealCoord = %4, Range = %5, StartRange = %6, IgnoreFlag = %7, AllRange = %8, AllRangeAttackRange = %9 ) Success"
     M_CONDITION_OITA           "%o On Iterate Area, IterateName = %0"
     M_CONDITION_OITAA          "%o On Iterate Attack Area"
@@ -404,7 +422,7 @@ BEGIN
     M_CONDITION_ZV             "%o Zoc %0 Valid"
     M_CONDITION_ZAA            "%o Zoc %0 At Area %1 ( 0 = Move Area, 1 = Attack Area )"
     M_CONDITION_SA             "Select All %0"
-    M_CONDITION_ZAO            "%o Zoc %0 At Object %1"
+    M_CONDITION_OAOBJ          "%o Object %0 At Object %1"
     M_CONDITION_POAO           "%o Pick One %0 At %0"
 
 END

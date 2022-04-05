@@ -50,7 +50,7 @@ This object has no properties
 
 - Area
   - Create Object Zoc
-    - *iterate zoc position for object, auto create zoc area*
+    - *iterate zoc position for object, auto create zoc area, coord param is ignored*
   - Create Object Zoc By Name
     - *same as above*
   - Create Object Zoc By Event
@@ -96,8 +96,6 @@ This object has no properties
     - *need to update unit before using*
   - Zoc At Area
     - *check if zoc at calculated area*
-  - Zoc At Object
-    - *check if zoc and the given object has the same gird coord*
 
   - On Create Object Zoc
 
@@ -118,15 +116,23 @@ This object has no properties
     - *if you want create areas procedurally by `Iterate Area` with param once, this condition is here for you to check if it is able to iterate.*
 
 - Object
-  - Select All
-    - *save fastloops when click on an area, move character to that point, then destroy all areas*
+  - Select
+    - Select All
+      - *save fastloops when click on an area, move character to that point, then destroy all areas*
 
-  - Object At Gird
-  - Object At Coord
-  - Object At Obstacle
+    - Object At Gird
+    - Object At Coord
+    - Object At Obstacle
 
-  - Pick One Object At Object
-    - *only display one instance when overlapping*
+    - Object At Object
+      - *check if former object and the latter object has the same gird coord*
+
+    - Pick One Object At Object
+      - *only display one instance when overlapping itself*
+
+  - Non-Select
+    - No Object At Gird
+    - No Object At Coord
 
 ## Expression
 

@@ -53,8 +53,11 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ZV, M_CONDITION_ZV, CND_CONDITION_ZV, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
 		IDMN_CONDITION_ZAA, M_CONDITION_ZAA, CND_CONDITION_ZAA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ATTACKAREA,
 		IDMN_CONDITION_SA, M_CONDITION_SA, CND_CONDITION_SA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
-		IDMN_CONDITION_ZAO, M_CONDITION_ZAO, CND_CONDITION_ZAO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_OBJECT, M_OBJECT, M_OBJECT,
+		IDMN_CONDITION_OAOBJ, M_CONDITION_OAOBJ, CND_CONDITION_OAOBJ, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_OBJECT, M_OBJECT, M_OBJECT,
 		IDMN_CONDITION_POAO, M_CONDITION_POAO, CND_CONDITION_POAO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
+
+		IDMN_CONDITION_NOAG, M_CONDITION_NOAG, CND_CONDITION_NOAG, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
+		IDMN_CONDITION_NOAC, M_CONDITION_NOAC, CND_CONDITION_NOAC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
 		};
 
 // Definitions of parameters for each action
@@ -83,6 +86,9 @@ short actionsInfos[]=
 
 		IDMN_ACTION_COZBE, M_ACTION_COZBE, ACT_ACTION_COZBE, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
 		IDMN_ACTION_COZBN, M_ACTION_COZBN, ACT_ACTION_COZBN, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_OBJECT,
+
+		IDMN_ACTION_CAO, M_ACTION_CAO, ACT_ACTION_CAO, 0, 1, PARAM_CREATE, M_OBJECT,
+		IDMN_ACTION_CABNO, M_ACTION_CABNO, ACT_ACTION_CABNO, 0, 1, PARAM_EXPSTRING, M_OBJECT,
 		};
 
 // Definitions of parameters for each expression
@@ -416,6 +422,30 @@ long WINAPI DLLExport ObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
 		});
 }
 
+long WINAPI DLLExport NoObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	size_t x = (size_t)CNC_GetParameter(rdPtr);
+	size_t y = (size_t)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	try {
+		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+			Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			if (objectCoord == Coord{ x,y }) {
+				throw false;
+			}
+		});
+	}
+	catch (bool) {
+		return false;
+	}
+
+	return true;
+}
+
 long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
@@ -448,6 +478,30 @@ long WINAPI DLLExport ObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
 		return object->roHo.hoX == x && object->roHo.hoY == y;
 		});
+}
+
+long WINAPI DLLExport NoObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	int x = (int)CNC_GetParameter(rdPtr);
+	int y = (int)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(FALSE);
+
+	try {
+		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+			if (object->roHo.hoX == x && object->roHo.hoY == y) {
+				throw false;
+			}
+
+			});
+	}
+	catch (bool) {
+		return false;
+	}
+
+	return true;
 }
 
 long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
@@ -610,21 +664,21 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
-long WINAPI DLLExport ZocAtObject(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
-	short oilZoc = (short)OIL_GetParameter(rdPtr);
-	short oilObj = (short)OIL_GetParameter(rdPtr);
+	short oilObjA = (short)OIL_GetParameter(rdPtr);
+	short oilObjB = (short)OIL_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
 	CoordSet objects;
 
-	rdPtr->pSelect->ForEach(rdPtr, oilObj, [&](LPRO object) {
+	rdPtr->pSelect->ForEach(rdPtr, oilObjB, [&](LPRO object) {
 		objects.emplace_back(rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY }));
 		});
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oilZoc, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+	return rdPtr->pSelect->FilterObjects(rdPtr, oilObjA, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
 		if (std::find(objects.begin(), objects.end()
 			, rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })) != objects.end()) {
 			return true;
@@ -844,6 +898,64 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 
 			rdPtr->areaPos++;
 		}
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport CreateAreaOnce(LPRDATA rdPtr, long param1, long param2) {
+	auto param = OCP_GetParameter(0);
+
+	RetIfMapInvalid(0);
+
+	auto& area = rdPtr->pFTW->GetArea();
+
+	if (rdPtr->areaPos < area.size()) {
+		rdPtr->isAttack = !(rdPtr->areaPos + 1 < rdPtr->extraRangeStartPos);
+
+		for (auto& it : area[rdPtr->areaPos]) {
+			auto realCoord = rdPtr->pFTW->GetRealCoord(it);
+
+			rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
+				*cdp = param;
+
+				cdp->cdpPos.posX = (short)realCoord.x;
+				cdp->cdpPos.posY = (short)realCoord.y;
+				});
+		}
+
+		rdPtr->areaPos++;
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport CreateAreaByNameOnce(LPRDATA rdPtr, long param1, long param2) {
+	wstring objectName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
+
+	RetIfMapInvalid(0);
+
+	auto& area = rdPtr->pFTW->GetArea();
+
+	if (rdPtr->areaPos < area.size()) {
+		rdPtr->isAttack = !(rdPtr->areaPos + 1 < rdPtr->extraRangeStartPos);
+
+		for (auto& it : area[rdPtr->areaPos]) {
+			auto realCoord = rdPtr->pFTW->GetRealCoord(it);
+
+			rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
+				cdp->cdpOi = Oi;
+
+				cdp->cdpPos.posX = (short)realCoord.x;
+				cdp->cdpPos.posY = (short)realCoord.y;
+				cdp->cdpPos.posLayer = 1;
+				cdp->cdpPos.posOINUMParent = -1;
+				cdp->cdpPos.posFlags = 8;
+				});
+		}
+
+		rdPtr->areaPos++;
 	}
 
 	return 0;
@@ -1234,8 +1346,11 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ZocValid,
 			ZocAtArea,
 			SelectAll,
-			ZocAtObject,
+			ObjectAtObject,
 			PickOneObjectAtObject,
+
+			NoObjectAtGird,
+			NoObjectAtCoord,
 			
 			0
 			};
@@ -1263,6 +1378,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			CreateObjectZocByEvent,
 			CreateObjectZocByName,
+
+			CreateAreaOnce,
+			CreateAreaByNameOnce,
 
 			0
 			};

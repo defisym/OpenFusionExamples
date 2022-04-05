@@ -39,6 +39,9 @@
 #define	IDMN_ACTION_SS   			25011
 #define	IDMN_ACTION_COZBE   		25012
 #define	IDMN_ACTION_COZBN  			25013
+#define	IDMN_ACTION_CAO				25014
+#define	IDMN_ACTION_CABNO			25015
+
 
 // Action strings
 #define M_ACTION_SM                 5000
@@ -55,6 +58,9 @@
 #define	M_ACTION_SS 				5011
 #define	M_ACTION_COZBE 				5012
 #define	M_ACTION_COZBN 				5013
+#define	M_ACTION_CAO				5014
+#define	M_ACTION_CABNO				5015
+
 
 // Titles of action parameters
 #define M_X				     5501
@@ -102,8 +108,11 @@
 #define	IDMN_CONDITION_ZV   			26019
 #define	IDMN_CONDITION_ZAA   			26020
 #define	IDMN_CONDITION_SA   			26021
-#define	IDMN_CONDITION_ZAO   			26022
+#define	IDMN_CONDITION_OAOBJ   			26022
 #define	IDMN_CONDITION_POAO   			26023
+
+#define	IDMN_CONDITION_NOAG				26024
+#define	IDMN_CONDITION_NOAC				26025
 
 // Condition strings
 #define	M_CONDITION_SMBS				6000
@@ -135,8 +144,11 @@
 #define	M_CONDITION_ZV  				6019
 #define	M_CONDITION_ZAA  				6020
 #define	M_CONDITION_SA  				6021
-#define	M_CONDITION_ZAO  				6022
+#define	M_CONDITION_OAOBJ  				6022
 #define	M_CONDITION_POAO  				6023
+
+#define	M_CONDITION_NOAG				6024
+#define	M_CONDITION_NOAC				6025
 
 // Titles of condition parameters
 #define M_WIDTH				        6501

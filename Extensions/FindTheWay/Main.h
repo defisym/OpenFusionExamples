@@ -36,10 +36,13 @@
 #define	CND_CONDITION_ZV				19
 #define	CND_CONDITION_ZAA				20
 #define	CND_CONDITION_SA				21
-#define	CND_CONDITION_ZAO				22
+#define	CND_CONDITION_OAOBJ				22
 #define	CND_CONDITION_POAO				23
 
-#define	CND_LAST						24
+#define	CND_CONDITION_NOAG				24
+#define	CND_CONDITION_NOAC				25
+
+#define	CND_LAST						26
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -58,8 +61,10 @@
 #define	ACT_ACTION_SS					11
 #define	ACT_ACTION_COZBE				12
 #define	ACT_ACTION_COZBN				13
+#define	ACT_ACTION_CAO					14
+#define	ACT_ACTION_CABNO				15
 
-#define	ACT_LAST						14
+#define	ACT_LAST						16
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
