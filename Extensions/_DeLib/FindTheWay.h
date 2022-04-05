@@ -3,6 +3,14 @@
 // 進んだ道の先　光が見つかるから
 // YOU'LL FIND THE WAY
 
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
 #include <functional>
 #include <algorithm>
 #include <string>
