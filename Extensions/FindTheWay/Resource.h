@@ -37,6 +37,8 @@
 #define	IDMN_ACTION_CU 				25009
 #define	IDMN_ACTION_COZ 			25010
 #define	IDMN_ACTION_SS   			25011
+#define	IDMN_ACTION_COZBE   		25012
+#define	IDMN_ACTION_COZBN  			25013
 
 // Action strings
 #define M_ACTION_SM                 5000
@@ -51,6 +53,8 @@
 #define	M_ACTION_CU 				5009
 #define	M_ACTION_COZ 				5010
 #define	M_ACTION_SS 				5011
+#define	M_ACTION_COZBE 				5012
+#define	M_ACTION_COZBN 				5013
 
 // Titles of action parameters
 #define M_X				     5501
@@ -61,7 +65,6 @@
 #define M_CENTER        	 5506
 #define M_COUNT         	 5507
 #define M_STASH         	 5508
-
 
 //	Conditions
 //--------------------

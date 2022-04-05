@@ -56,8 +56,10 @@
 #define	ACT_ACTION_CU					9
 #define	ACT_ACTION_COZ					10
 #define	ACT_ACTION_SS					11
+#define	ACT_ACTION_COZBE				12
+#define	ACT_ACTION_COZBN				13
 
-#define	ACT_LAST						12
+#define	ACT_LAST						14
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -158,6 +160,8 @@ typedef struct tagRDATA
 	wstring* pOnItAreaName;
 
 	LPRO pObject;
+	ObjectCreation* pOc;
+	CoordSet* pObjZoc;
 	wstring* pOnItZocName;
 
 } RUNDATA;

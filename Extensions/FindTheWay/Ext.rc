@@ -203,6 +203,8 @@ BEGIN
         POPUP "Area"
         BEGIN
             MENUITEM "Create Object Zoc",               IDMN_ACTION_COZ            
+            MENUITEM "Create Object Zoc By Name",       IDMN_ACTION_COZBN            
+            MENUITEM "Create Object Zoc By Event",      IDMN_ACTION_COZBE                        
             MENUITEM SEPARATOR
             MENUITEM "Set Zoc By Object",               IDMN_ACTION_SZBO
             MENUITEM "Clear Zoc",                       IDMN_ACTION_CZ
@@ -363,7 +365,9 @@ BEGIN
     M_ACTION_SUBO             "Set Unit By Object %0, as Type = %1"
     M_ACTION_CU               "Clear Unit Type %0"
 
-    M_ACTION_COZ              "Create Object %0 Zoc, IterateName = %1"
+    M_ACTION_COZ              "Create Object %0 Zoc %1"
+    M_ACTION_COZBN            "Create Object %0 Zoc %1"
+    M_ACTION_COZBE            "Create Object %0 Zoc, IterateName = %1"
     
     M_ACTION_SS               "Set Stash = %0"
 

@@ -50,7 +50,11 @@ This object has no properties
 
 - Area
   - Create Object Zoc
-    - iterate zoc position for object, trigger `On Create Object Zoc` for you to create real zoc area
+    - *iterate zoc position for object, auto create zoc area*
+  - Create Object Zoc By Name
+    - *same as above*
+  - Create Object Zoc By Event
+    - *iterate zoc position for object, trigger `On Create Object Zoc` for you to create real zoc area*
 
   - Set Zoc By Object
   - Clear Zoc

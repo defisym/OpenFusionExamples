@@ -77,9 +77,12 @@ short actionsInfos[]=
 		IDMN_ACTION_SUBO, M_ACTION_SUBO, ACT_ACTION_SUBO,	0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ENEMY,
 		IDMN_ACTION_CU, M_ACTION_CU, ACT_ACTION_CU,	0, 1, PARAM_EXPRESSION, M_ENEMY,
 
-		IDMN_ACTION_COZ, M_ACTION_COZ, ACT_ACTION_COZ, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
+		IDMN_ACTION_COZ, M_ACTION_COZ, ACT_ACTION_COZ, 0, 2, PARAM_OBJECT, PARAM_CREATE, M_OBJECT, M_OBJECT,
 
 		IDMN_ACTION_SS, M_ACTION_SS, ACT_ACTION_SS, 0, 1, PARAM_EXPRESSION, M_STASH,
+
+		IDMN_ACTION_COZBE, M_ACTION_COZBE, ACT_ACTION_COZBE, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
+		IDMN_ACTION_COZBN, M_ACTION_COZBN, ACT_ACTION_COZBN, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_OBJECT,
 		};
 
 // Definitions of parameters for each expression
@@ -615,12 +618,6 @@ long WINAPI DLLExport ZocAtObject(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	ObjectCreation oc(rdPtr);
-	oc.OCCreateBackdrop([&](ObjectCreation* oc, LPOI& objOI, BKDParam& bkdParam) {
-		objOI = oc->GetBackdropOI(L"Backdrop");
-		bkdParam = BKDParam{ 0,0,0,0 };
-		});
-
 	CoordSet objects;
 
 	rdPtr->pSelect->ForEach(rdPtr, oilObj, [&](LPRO object) {
@@ -913,28 +910,74 @@ short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {
+	auto param = OCP_GetParameter(1);
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
+
+	for (auto& it : *rdPtr->pObjZoc) {
+		auto realCoord = rdPtr->pFTW->GetRealCoord(it);
+
+		rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
+			*cdp = param;
+
+			cdp->cdpPos.posX = (short)realCoord.x;
+			cdp->cdpPos.posY = (short)realCoord.y;
+			});
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long param2) {
 	short oil = (short)OIL_GetParameter(rdPtr);
 	*rdPtr->pOnItZocName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
-	CoordSet zoc;
-	zoc.reserve(8);
-
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 		rdPtr->pObject = object;
-		rdPtr->pFTW->GenerateZoc(objectCoord, &zoc, false);
+		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
-		for (auto& it : zoc) {
+		for (auto& it : *rdPtr->pObjZoc) {
 			rdPtr->itCoord = rdPtr->pFTW->GetRealCoord(it);
 
 			CallEvent(ONCREATEZOC)
 		}
 
 		rdPtr->pObject = nullptr;
-	});
+		});
+
+	return 0;
+}
+
+short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	wstring objectName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
+
+	for (auto& it : *rdPtr->pObjZoc) {
+		auto realCoord = rdPtr->pFTW->GetRealCoord(it);
+
+		rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
+			cdp->cdpOi = oc->GetCreationOI(objectName);
+
+			cdp->cdpPos.posX = (short)realCoord.x;
+			cdp->cdpPos.posY = (short)realCoord.y;
+			cdp->cdpPos.posLayer = 1;
+			cdp->cdpPos.posOINUMParent = -1;
+			cdp->cdpPos.posFlags = 8;
+			});
+	}
 
 	return 0;
 }
@@ -1212,6 +1255,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CreateObjectZoc,
 
 			SetStash,
+
+			CreateObjectZocByEvent,
+			CreateObjectZocByName,
+
 			0
 			};
 
