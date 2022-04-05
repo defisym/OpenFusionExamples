@@ -16,7 +16,7 @@ private:
 	LPRH rhPtr;
 	LPOBL ObjectList;
 	LPOIL OiList;
-	LPQOI QualToOiList;
+	LPQOI QualToOiList;		// need update every time before using
 	int oiListItemSize;
 
 	inline LPOIL GetLPOIL(short oiList) {
@@ -31,6 +31,7 @@ private:
 		}
 
 		bool hasSelected = false;
+		
 		this->QualToOiList = rhPtr->rhQualToOiList;
 		LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
 		LPQOI CurrentQualToOi = CurrentQualToOiStart;
@@ -266,6 +267,7 @@ public:
 			oiList &= 0x7FFF;	//Mask out the qualifier part
 			int numberSelected = 0;
 
+			this->QualToOiList = rhPtr->rhQualToOiList;
 			LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
 			LPQOI CurrentQualToOi = CurrentQualToOiStart;
 
@@ -294,6 +296,7 @@ public:
 			oiList &= 0x7FFF;	//Mask out the qualifier part
 			int number = 0;
 
+			this->QualToOiList = rhPtr->rhQualToOiList;
 			LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
 			LPQOI CurrentQualToOi = CurrentQualToOiStart;
 
@@ -322,6 +325,8 @@ public:
 
 		if (oiList & 0x8000) {
 			oiList &= 0x7FFF;	//Mask out the qualifier part
+
+			this->QualToOiList = rhPtr->rhQualToOiList;
 			LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
 			LPQOI CurrentQualToOi = CurrentQualToOiStart;
 
@@ -375,15 +380,39 @@ public:
 
 		// Single object type
 		if (oiList >= 0) {
+			LPOIL pObjectInfo = GetLPOIL(oiList);
+
+			if (pObjectInfo == nullptr) {
+				return;
+			}
+
 			iterateCall(OiList + oiList);
 		}
 		// Qualifier object type
 		else if (oiList != -1) {
-			auto qualifier_iterator = reinterpret_cast<qualToOi*>(reinterpret_cast<unsigned char*>(QualToOiList) + (oiList & 0x7FFF));
+			oiList = oiList & 0x7FFF;
 
-			while (qualifier_iterator->qoiOiList >= 0) {
-				iterateCall(OiList + qualifier_iterator->qoiOiList);
-				qualifier_iterator = reinterpret_cast<qualToOi*>(reinterpret_cast<unsigned char*>(qualifier_iterator) + 4);
+			LPOIL pObjectInfo = GetLPOIL(oiList);
+
+			if (pObjectInfo == nullptr) {
+				return;
+			}
+
+			this->QualToOiList = rhPtr->rhQualToOiList;
+			LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
+			LPQOI CurrentQualToOi = CurrentQualToOiStart;
+
+			if (CurrentQualToOi == nullptr) {
+				return;
+			}
+
+			while (CurrentQualToOi->qoiOiList >= 0) {
+				iterateCall(OiList + CurrentQualToOi->qoiOiList);
+				CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
+
+				if (CurrentQualToOi == nullptr) {
+					break;
+				}
 			}
 		}
 	}
