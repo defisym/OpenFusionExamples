@@ -258,7 +258,6 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">true</ExcludedFromBuild>
     </CustomBuild>
     <None Include="Ext.def" />
-    <None Include="ReadMe.md" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Ext.rc" />

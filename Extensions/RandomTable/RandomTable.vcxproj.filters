@@ -39,7 +39,6 @@
     <None Include="Ext.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="ReadMe.md" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Ext.rc">
