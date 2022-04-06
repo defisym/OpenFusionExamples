@@ -54,6 +54,10 @@ namespace FindTheWay {
 		return Coord{ A.x + B ,A.y + B };
 	}
 
+	inline Coord operator-(const Coord& A, const Coord& B) {
+		return Coord{ A.x - B.x ,A.y - B.y };
+	}
+
 	inline Coord operator*(const Coord& A, const size_t& B) {
 		return Coord{ A.x * B ,A.y * B };
 	}
@@ -212,6 +216,11 @@ namespace FindTheWay {
 		size_t girdSize = 1;
 		size_t girdOffestX = 0;
 		size_t girdOffestY = 0;
+
+		size_t isoGirdWidth = 1;
+		size_t isoGirdHeight = 1;
+
+		bool isometric = false;
 
 		bool updateMap = false;
 
@@ -550,15 +559,41 @@ namespace FindTheWay {
 		}
 
 		inline Coord GetGirdCoord(const Coord& realCoord) {
-			return realCoord / girdSize;
+			return (realCoord - Coord{ girdOffestX ,girdOffestY }) / girdSize;
 		}
 
 		inline Coord GetRealCoord(const Coord& girdCoord) {
-			return girdCoord * girdSize + (size_t)(girdSize >> 1);	// girdCoord * girdSize + (size_t)(girdSize / 2);
+			return (girdCoord * girdSize + (size_t)(girdSize >> 1)) + Coord{ girdOffestX ,girdOffestY };	// girdCoord * girdSize + (size_t)(girdSize / 2);
 		}
 
 		inline size_t GetGirdSize() {
 			return girdSize;
+		}
+
+		inline void SetIsoGirdSize(size_t isoGirdWidth = 1, size_t isoGirdHeight = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
+			this->isoGirdWidth = isoGirdWidth ? isoGirdWidth : 1;		// Protection for 0
+			this->isoGirdHeight = isoGirdHeight ? isoGirdHeight : 1;
+
+			this->girdOffestX = girdOffestX;
+			this->girdOffestY = girdOffestY;
+		}
+
+		inline Coord GetIsoGirdCoord(const Coord& realCoord) {
+			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
+			size_t A = (2 * (realCoord.x - girdOffestX)) / isoGirdWidth;
+			size_t B = (2 * (realCoord.y - girdOffestY)) / isoGirdHeight;
+
+			size_t coordX = ((width + 1 + A - B) >> 1) - 1;
+			size_t coordY = (((height << 1) + width + 1 - A - B) >> 1) - 1;
+
+			return Coord{ coordX,coordY };
+		}
+
+		inline Coord GetIsoRealCoord(const Coord& girdCoord) {
+			size_t realX = ((isoGirdWidth * (girdCoord.x + height - girdCoord.y)) >> 1) + girdOffestX;
+			size_t realY = ((isoGirdHeight * (height - girdCoord.y - 1 + width - girdCoord.x)) >> 1) + girdOffestY;
+
+			return Coord{ realX,realY };
 		}
 
 		inline void ClearMap(MapType type, BYTE cost = MAP_PATH, bool needUpdate = true) {
