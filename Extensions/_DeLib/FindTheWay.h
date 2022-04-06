@@ -1317,14 +1317,15 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
-			//add start when interval == range
-			if (!updateAttack && startRange == 0) {
-				area.emplace_back();
-				area.back().emplace_back(start);
-			}
+			//// add first gird?
+			//// add start when interval == range
+			//if (!updateAttack && startRange == 0) {
+			//	area.emplace_back();
+			//	area.back().emplace_back(start);
+			//}
 
 			for (size_t nest = 0; nest <= totalRange; nest++) {
-				bool addArea = nest > startRange;							//After start range
+				bool addArea = nest > startRange;							// After start range
 
 				bool nextExtraRange = allRange && (nest == range);			// Update for extra range
 				bool startExtraRange = allRange && (nest == range + 1);		// Extra range start, don't add new area
