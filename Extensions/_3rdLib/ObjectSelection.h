@@ -145,6 +145,22 @@ public:
 
 	#define OIL_GetParameter(rdPtr) ObjectSelection::GetOil(rdPtr)
 
+	// Get Oi for creation
+	inline short GetOiFromOiList(short oiList) {
+		LPOIL pObjectInfo = GetLPOIL(oiList);
+
+		if (pObjectInfo == nullptr) {
+			return -1;
+		}
+
+		// you cannot create qualifier
+		if (oiList & 0x8000) {
+			return -1;
+		}
+
+		return pObjectInfo->oilOi;
+	}
+
 	//Get Neg, must be called at first
 	inline static bool IsNegated(LPRDATA rdPtr) {
 		// pParam points to 1st parameter, which should be of type object
@@ -312,7 +328,7 @@ public:
 			return pObjectInfo->oilNObjects;
 		}
 	}
-	
+
 	//Check if object is given type
 	inline bool ObjectIsOfType(LPRO object, short oiList) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
