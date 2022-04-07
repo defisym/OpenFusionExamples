@@ -42,6 +42,7 @@
 #define	IDMN_ACTION_CAO				25014
 #define	IDMN_ACTION_CABNO			25015
 #define	IDMN_ACTION_CAOE			25016
+#define	IDMN_ACTION_CAOEBN			25017
 
 
 // Action strings
@@ -62,6 +63,7 @@
 #define	M_ACTION_CAO				5014
 #define	M_ACTION_CABNO				5015
 #define	M_ACTION_CAOE				5016
+#define	M_ACTION_CAOEBN				5017
 
 
 // Titles of action parameters

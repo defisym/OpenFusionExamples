@@ -91,6 +91,8 @@ short actionsInfos[]=
 		IDMN_ACTION_CABNO, M_ACTION_CABNO, ACT_ACTION_CABNO, 0, 1, PARAM_EXPSTRING, M_OBJECT,
 
 		IDMN_ACTION_CAOE, M_ACTION_CAOE, ACT_ACTION_CAOE, 0, 5, PARAM_CREATE, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_OBJECT, M_DIR, M_AOETYPE, M_IGNOREFLAG,
+
+		IDMN_ACTION_CAOEBN, M_ACTION_CAOEBN, ACT_ACTION_CAOEBN, 0, 5, PARAM_EXPSTRING, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_OBJECT, M_DIR, M_AOETYPE, M_IGNOREFLAG,
 		};
 
 // Definitions of parameters for each expression
@@ -750,7 +752,6 @@ long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long par
 	return !toSelect.empty();
 }
 
-
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -906,7 +907,7 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAreaOnce(LPRDATA rdPtr, long param1, long param2) {
-	auto param = OCP_GetParameter(0);
+	auto param = OCP_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -1023,9 +1024,9 @@ short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {
-	auto param = OCP_GetParameter(1);
+short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {	
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	auto param = OCP_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -1116,8 +1117,7 @@ short WINAPI DLLExport SetStash(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
-	auto param = OCP_GetParameter(0);
-	CNC_GetParameter(rdPtr);
+	auto param = OCP_GetParameter(rdPtr);
 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	size_t dir = (size_t)CNC_GetParameter(rdPtr);
@@ -1138,7 +1138,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
 
-	auto find = [](CoordSet* c,Coord& p) {
+	auto find = [](CoordSet* c, Coord& p) {
 		return std::find(c->begin(), c->end(), p) != c->end();
 	};
 
@@ -1168,6 +1168,62 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) {
+	wstring objectName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	size_t dir = (size_t)CNC_GetParameter(rdPtr);
+	size_t type = (size_t)CNC_GetParameter(rdPtr);
+
+	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+
+	bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+	bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+	bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
+	bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
+	bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
+
+	RetIfMapInvalid(0);
+
+	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
+
+	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	AOEClass::coord start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
+
+	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
+
+	auto find = [](CoordSet* c,Coord& p) {
+		return std::find(c->begin(), c->end(), p) != c->end();
+	};
+
+	for (auto& it : *rdPtr->pAOECoord) {
+		auto girdCoord = Coord{ (size_t)it.x,(size_t)it.y };
+		auto realCoord = rdPtr->pFTW->GetRealCoord(girdCoord);
+
+		if (rdPtr->pFTW->GetMap(girdCoord.x, girdCoord.y, MapType::MAP) == MAP_OBSTACLE) {
+			continue;
+		}
+
+		if (!attackIgnoreAlly && find(rdPtr->pAlly, girdCoord)) {
+			continue;
+		}
+		if (!attackIgnoreEnemy && find(rdPtr->pEnemy, girdCoord)) {
+			continue;
+		}
+
+		rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
+			cdp->cdpOi = Oi;
+
+			cdp->cdpPos.posX = (short)realCoord.x;
+			cdp->cdpPos.posY = (short)realCoord.y;
+			cdp->cdpPos.posLayer = 1;
+			cdp->cdpPos.posOINUMParent = -1;
+			cdp->cdpPos.posFlags = 8;
+			});
+	}
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -1438,6 +1494,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CreateAreaOnce,
 			CreateAreaByNameOnce,
 			CreateAOE,
+			CreateAOEByName,
 
 			0
 			};

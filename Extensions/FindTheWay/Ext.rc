@@ -227,6 +227,7 @@ BEGIN
             MENUITEM "Create Area By Name Once",        IDMN_ACTION_CABNO
             MENUITEM SEPARATOR
             MENUITEM "Create AOE",                      IDMN_ACTION_CAOE
+            MENUITEM "Create AOE By Name",              IDMN_ACTION_CAOEBN
         END
         MENUITEM SEPARATOR
     END
@@ -389,6 +390,7 @@ BEGIN
     M_ACTION_CABNO            "Create Area %0 Once"
     
     M_ACTION_CAOE             "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
+    M_ACTION_CAOEBN           "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
 
 END
 
