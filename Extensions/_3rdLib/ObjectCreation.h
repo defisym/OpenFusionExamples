@@ -226,7 +226,19 @@ public:
 		return param;
 	}
 	
-	#define OCP_GetParameter(X) *(CreateDuplicateParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
-	#define POS_GetParameter(X) *(PositionParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
-	#define STO_GetParameter(X) *(ShootParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+	#define OCP_GetNthParameter(X) *(CreateDuplicateParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+	#define POS_GetNthParameter(X) *(PositionParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+	#define STO_GetNthParameter(X) *(ShootParam*)&(ObjectCreation::GetNthEvtParam(rdPtr, X)->evp);
+
+	// normally get current param then read next
+	inline static eventParam* GetEvtParam(LPRDATA rdPtr) {
+		eventParam* param = rdPtr->rHo.hoCurrentParam;
+		CNC_GetParameter(rdPtr);
+
+		return param;
+	}
+
+	#define OCP_GetParameter(rdPtr) *(CreateDuplicateParam*)&(ObjectCreation::GetEvtParam(rdPtr)->evp);
+	#define POS_GetParameter(rdPtr) *(PositionParam*)&(ObjectCreation::GetEvtParam(rdPtr)->evp);
+	#define STO_GetParameter(rdPtr) *(ShootParam*)&(ObjectCreation::GetEvtParam(rdPtr)->evp);
 };
