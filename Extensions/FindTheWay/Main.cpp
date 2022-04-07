@@ -162,7 +162,7 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	wstring base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring base64 = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(base64);
@@ -183,7 +183,7 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	wstring filePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
 	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
@@ -267,7 +267,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	size_t baseLayer = (size_t)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
-	*rdPtr->pOnItCollisionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	*rdPtr->pOnItCollisionName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfSetMapDirectly(type, FALSE);
 
@@ -320,14 +320,14 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 }
 
 long WINAPI DLLExport OnSetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
-	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return (*rdPtr->pOnItCollisionName) == iterateName;
 }
 
 long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 	size_t startX = (size_t)CNC_GetParameter(rdPtr);
-	size_t startY = (size_t)CNC_GetParameter(rdPtr);
+	size_t startY = (size_t)CNC_GetParameter(rdPtr);	
 
 	size_t destinationX = (size_t)CNC_GetParameter(rdPtr);
 	size_t destinationY = (size_t)CNC_GetParameter(rdPtr);
@@ -361,7 +361,7 @@ long WINAPI DLLExport PathAvailable(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnIteratePath(LPRDATA rdPtr, long param1, long param2) {
-	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return (*rdPtr->pOnItPathName) == iterateName;
 }
@@ -557,7 +557,7 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnItArea(LPRDATA rdPtr, long param1, long param2) {
-	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return iterateName == *rdPtr->pOnItAreaName;
 }
@@ -579,7 +579,7 @@ long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2)
 
 	short oil = (short)OIL_GetParameter(rdPtr);
 	short oilZoc = (short)OIL_GetParameter(rdPtr);
-	wstring iterateName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -821,7 +821,7 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	bool realCoord = (bool)CNC_GetIntParameter(rdPtr);
 
-	*rdPtr->pOnItPathName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	*rdPtr->pOnItPathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -868,7 +868,7 @@ short WINAPI DLLExport ClearZoc(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
-	*rdPtr->pOnItAreaName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	*rdPtr->pOnItAreaName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	bool once = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
@@ -934,7 +934,7 @@ short WINAPI DLLExport CreateAreaOnce(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAreaByNameOnce(LPRDATA rdPtr, long param1, long param2) {
-	wstring objectName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
 	RetIfMapInvalid(0);
@@ -1049,7 +1049,7 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long param2) {
 	short oil = (short)OIL_GetParameter(rdPtr);
-	*rdPtr->pOnItZocName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	*rdPtr->pOnItZocName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -1076,7 +1076,7 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 
 short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	wstring objectName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -1169,7 +1169,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) {
-	wstring objectName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	size_t dir = (size_t)CNC_GetParameter(rdPtr);
