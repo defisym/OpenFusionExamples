@@ -114,7 +114,9 @@
 
 #define	EXP_EXPRESSION_HEX2RGB		25
 
-#define	EXP_LAST                    26
+#define	EXP_EXPRESSION_GSON			26
+
+#define	EXP_LAST                    27
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -246,6 +248,8 @@ typedef struct tagRDATA
 	LPWSTR HashOutput;
 
 	LPWSTR ValWithSignOutput;
+
+	ObjectSelection* pSelect;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

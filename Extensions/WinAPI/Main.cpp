@@ -137,6 +137,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GVWS, M_EXPRESSION_GVWS, EXP_EXPRESSION_GVWS, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
 		
 		IDMN_EXPRESSION_HEX2RGB, M_EXPRESSION_HEX2RGB, EXP_EXPRESSION_HEX2RGB, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_HEX2RGB,
+
+		IDMN_EXPRESSION_GSON, M_EXPRESSION_GSON, EXP_EXPRESSION_GSON, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
 		};
 
 // ============================================================================
@@ -337,7 +339,7 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 	//拼接字符串
 	size_t total_length;
 		
-	LPTSTR Space = L" ";
+	LPCTSTR Space = L" ";
 	LPTSTR lpApplicationName = (LPTSTR)param1;
 	LPTSTR lpCommandLine = (LPTSTR)param2;
 	
@@ -1344,6 +1346,25 @@ long WINAPI DLLExport Hex2RGB(LPRDATA rdPtr, long param1) {
 	return DEC2RGB(_h2d(Hex));
 }
 
+long WINAPI DLLExport GetScopedObjectNumber(LPRDATA rdPtr, long param1) {
+	int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	LPRO object = LproFromFixed(rdPtr, Fixed);
+
+	LPOIL pObjectInfo = rdPtr->pSelect->GetLPOIL(object->roHo.hoOi);
+	if (pObjectInfo == nullptr) {
+		return 0;
+	}
+	
+	auto next = object->roHo.hoNextSelected;
+
+	if (next == -1) {		// unselected, return total
+		return pObjectInfo->oilNObjects;
+	}
+	else {
+		return pObjectInfo->oilNumOfSelected;
+	}
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1471,5 +1492,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetValWithSign,
 
 			Hex2RGB,
+
+			GetScopedObjectNumber,
+
 			0
 			};

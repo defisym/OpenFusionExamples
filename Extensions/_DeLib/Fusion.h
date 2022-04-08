@@ -373,7 +373,7 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 	wcscpy_s(Ext, wcslen(Name) + 1, Name);
 	LowerWStr(Ext);
 
-	auto& it = ExtList.find(Ext);
+	auto it = ExtList.find(Ext);
 	delete[] Ext;
 
 	//default format is JPEG

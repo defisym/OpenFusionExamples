@@ -77,8 +77,8 @@
     <IntDir>.\Obj\Unicode\Debug\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\OpenFusionExamples\Extensions\_DeLib;C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Edittime|Win32'">
@@ -86,8 +86,8 @@
     <IntDir>.\Obj\Unicode\Debug\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\OpenFusionExamples\Extensions\_DeLib;C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
@@ -95,8 +95,8 @@
     <IntDir>.\Obj\Unicode\Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\OpenFusionExamples\Extensions\_DeLib;C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -104,8 +104,8 @@
     <IntDir>.\Obj\Unicode\Run_Only\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
-    <IncludePath>F:\DEV\OpenFusionExamples\Extensions\_DeLib;C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
     <TargetExt>.mfx</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -119,7 +119,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>F:\DEV\OpenFusionExamples\Extensions\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -133,6 +133,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -168,7 +169,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>F:\DEV\OpenFusionExamples\Extensions\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -182,6 +183,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -217,7 +219,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>F:\DEV\OpenFusionExamples\Extensions\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -234,6 +236,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -274,7 +277,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>F:\DEV\OpenFusionExamples\Extensions\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -291,6 +294,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;RUN_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -364,6 +368,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\Surface.h" />
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
+    <ClInclude Include="..\_3rdLib\ObjectSelection.h" />
     <ClInclude Include="..\_DeLib\Encryption.h" />
     <ClInclude Include="..\_DeLib\Fusion.h" />
     <ClInclude Include="..\_DeLib\StrNum.h" />

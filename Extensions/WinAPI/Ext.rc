@@ -327,6 +327,7 @@ BEGIN
             POPUP "Object"
             BEGIN
                 MENUITEM "Get Object Display Animation Direction",      IDMN_EXPRESSION_GAD              
+                MENUITEM "Get Scoped Object Number",      IDMN_EXPRESSION_GSON    
             END            
         END
         MENUITEM SEPARATOR 
@@ -575,6 +576,7 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
     M_EXPRESSION_GAD "DisAniDir ("
+    M_EXPRESSION_GSON "NSObject ("
     PARA_EXPRESSION_FIXED "Object's Fixed Value"
 END
 

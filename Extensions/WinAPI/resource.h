@@ -124,6 +124,7 @@
 #define M_EXPRESSION_GAD 				7106
 #define M_EXPRESSION_GVWS 				7107
 #define M_EXPRESSION_HEX2RGB			7108
+#define M_EXPRESSION_GSON 				7109
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -208,6 +209,7 @@
 #define IDMN_EXPRESSION_GAD				27096
 #define IDMN_EXPRESSION_GVWS			27097
 #define IDMN_EXPRESSION_HEX2RGB			27098
+#define IDMN_EXPRESSION_GSON			27099
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

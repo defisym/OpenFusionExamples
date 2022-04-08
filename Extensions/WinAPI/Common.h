@@ -50,6 +50,8 @@
 //Definitions
 #include	"Definition.h"
 
+class ObjectSelection;
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"
@@ -65,6 +67,7 @@
 #include	"Encryption.h"
 #include	"StrNum.h"
 #include	"WindowsCommon.h"
+#include	"ObjectSelection.h"
 
 //Global Func
 #include	"GlobalFunc.h"

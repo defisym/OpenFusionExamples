@@ -19,10 +19,6 @@ private:
 	LPQOI QualToOiList;		// need update every time before using
 	int oiListItemSize;
 
-	inline LPOIL GetLPOIL(short oiList) {
-		return (LPOIL)(((char*)OiList) + oiListItemSize * oiList);
-	}
-
 	inline bool FilterQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
 
@@ -144,6 +140,11 @@ public:
 	}
 
 	#define OIL_GetParameter(rdPtr) ObjectSelection::GetOil(rdPtr)
+
+	// Get LPOIL
+	inline LPOIL GetLPOIL(short oiList) {
+		return (LPOIL)(((char*)OiList) + oiListItemSize * oiList);
+	}
 
 	// Get Oi for creation
 	inline short GetOiFromOiList(short oiList) {

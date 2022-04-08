@@ -139,6 +139,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->FileList = new std::vector<std::wstring>;
 
+	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
+
 	// No errors
 	return 0;
 }
@@ -179,6 +181,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete[] rdPtr->HashOutput;
 
 	delete[] rdPtr->ValWithSignOutput;
+
+	delete rdPtr->pSelect;
 
 	// No errors
 	return 0;
