@@ -2,6 +2,7 @@ Set ProjectName=FindTheWay
 Set CompressPath="C:\Program Files\7-Zip\7z.exe"
 
 Set ParentPath=%CD%\..\
+Set ToInstallPath=%CD%\..\%ProjectName%\ToInstall\Files\
 
 @echo Android...
 
@@ -10,8 +11,6 @@ Set AndroidPath=%CD%\..\Android_Gradle
 Set SrcPath=%AndroidPath%\app
 
 Set ContentPath=%AndroidPath%\_Release
-
-Set ToInstallPath=%CD%\..\%ProjectName%\ToInstall\Files\
 
 Set ReleasePath=%ToInstallPath%\Data\Runtime\Android
 
