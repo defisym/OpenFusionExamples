@@ -5,6 +5,19 @@
 
 // Use template to support both wstring/string
 
+// Usage
+// 1.
+// auto data = base64_decode(encoded_string);
+// 2.
+// size_t bufsz = BIGENOUGH;
+// BYTE* buffer = new BYTE[BIGENOUGH];
+// base64_decode(encoded_string, buffer, bufsz);
+// 3.
+// base64_decode(encoded_string);
+// size_t bufsz = base64_decode_size();
+// BYTE* buffer = new BYTE[bufsz];
+// base64_decode(buffer, bufsz);
+
 #ifndef _BASE64_H_
 #define _BASE64_H_
 
@@ -206,9 +219,17 @@ public:
         return deRet;
     }
 
+    inline size_t base64_decode_size() {
+        return deRet.size();
+    }
+
+    inline void base64_decode_to_pointer(BYTE* buff, size_t size) {
+        memcpy(buff, &deRet[0], min(size, deRet.size()));
+    }
+
     inline void base64_decode_to_pointer(const base64Str& encoded_string, BYTE* buff, size_t size) {
         base64_decode(encoded_string);
-        memcpy(buff, &deRet[0], min(size, deRet.size()));
+        base64_decode_to_pointer(buff, size);
     }
 };
 
