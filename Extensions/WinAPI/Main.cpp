@@ -84,6 +84,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SDFN,M_ACTION_SDFN,ACT_ACTION_SDFN,0, 1,PARAM_EXPSTRING,PARA_ACTION_SDFN,
 		
 		IDMN_ACTION_GFL,M_ACTION_GFL,ACT_ACTION_GFL,0, 1,PARAM_EXPSTRING,PARA_ACTION_GFL,
+		IDMN_ACTION_SB642I,M_ACTION_SB642I,ACT_ACTION_SB642I,0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_B64,PARA_ACTION_WINDOW_BFA_FILEPATH,
 		};
 
 // Definitions of parameters for each expression
@@ -1052,6 +1053,49 @@ short WINAPI DLLExport LoadFileList(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long param2){
+	// read param
+	std::wstring base64 = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	// decode
+	Base64<std::wstring> base64Decoder;
+
+	try {
+		base64Decoder.base64_decode(base64);
+	}
+	catch (decltype(BASE64_DECODEERROR)) {
+		return 0;
+	}
+
+	size_t bufsz = base64Decoder.base64_decode_size();
+	BYTE* buffer = new BYTE[bufsz];
+
+	base64Decoder.base64_decode_to_pointer(buffer, bufsz);
+
+	// Load to surface
+	CInputMemFile MemFile;
+	MemFile.Create(buffer, bufsz);
+
+	//MGR
+	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+	CImageFilter    pFilter(pImgMgr);
+
+	cSurface* pSf = new cSurface;
+	ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
+
+	if (!pSf->IsValid()) {
+		return 0;
+	}
+
+	_SavetoFile(pSf, filePath.c_str(), rdPtr, false, rdPtr->DefaultFilterName);
+
+	delete[] buffer;
+	delete pSf;
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1444,6 +1488,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetDefaultFilterName,
 
 			LoadFileList,
+			SaveBase64ImgToFile,
 
 			//结尾必定是零
 			0

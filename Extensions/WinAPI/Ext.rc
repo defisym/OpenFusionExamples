@@ -244,6 +244,11 @@ BEGIN
                 MENUITEM "Recursive Gauss Blur", IDMN_ACTION_WINDOW_RGB
             END            
         END
+        MENUITEM SEPARATOR 
+        POPUP "Misc."
+        BEGIN
+            MENUITEM "Save Base64 to Image",      IDMN_ACTION_SB642I         
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -522,6 +527,9 @@ BEGIN
 
     M_ACTION_GFL "Get File List of %0"
     PARA_ACTION_GFL "File Path"
+
+    M_ACTION_SB642I "Save Base64 %0 to Image %1"
+    PARAM_B64 "Base64 String"
 END
 
 //Expression

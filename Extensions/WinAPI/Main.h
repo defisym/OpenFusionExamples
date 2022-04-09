@@ -66,8 +66,9 @@
 #define ACT_ACTION_SDFN				33
 
 #define ACT_ACTION_GFL				34
+#define ACT_ACTION_SB642I			35
 
-#define	ACT_LAST					35
+#define	ACT_LAST					36
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

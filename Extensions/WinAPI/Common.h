@@ -68,6 +68,7 @@ class ObjectSelection;
 #include	"StrNum.h"
 #include	"WindowsCommon.h"
 #include	"ObjectSelection.h"
+#include	"Base64.h"
 
 //Global Func
 #include	"GlobalFunc.h"
