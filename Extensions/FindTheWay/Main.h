@@ -98,7 +98,9 @@
 #define EXP_EXPRESSION_GMCO				17
 #define EXP_EXPRESSION_GMCV				18
 
-#define	EXP_LAST                    	19
+#define EXP_EXPRESSION_GIGS				19
+
+#define	EXP_LAST                    	20
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -113,6 +115,8 @@ typedef struct tagEDATA_V1
 	// Object's data
 //	short			swidth;
 //	short			sheight;
+
+	bool isometric;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -143,6 +147,8 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	bool isometric;
+
 	FindTheWayClass* pFTW;
 
 	size_t itIndex;

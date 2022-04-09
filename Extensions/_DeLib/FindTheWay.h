@@ -47,23 +47,23 @@ namespace FindTheWay {
 	}
 
 	inline Coord operator+(const Coord& A, const Coord& B) {
-		return Coord{ A.x + B.x ,A.y + B.y };
+		return Coord { A.x + B.x ,A.y + B.y };
 	}
 
 	inline Coord operator+(const Coord& A, const size_t& B) {
-		return Coord{ A.x + B ,A.y + B };
+		return Coord { A.x + B ,A.y + B };
 	}
 
 	inline Coord operator-(const Coord& A, const Coord& B) {
-		return Coord{ A.x - B.x ,A.y - B.y };
+		return Coord { A.x - B.x ,A.y - B.y };
 	}
 
 	inline Coord operator*(const Coord& A, const size_t& B) {
-		return Coord{ A.x * B ,A.y * B };
+		return Coord { A.x * B ,A.y * B };
 	}
 
 	inline Coord operator/(const Coord& A, const size_t& B) {
-		return Coord{ A.x / B ,A.y / B };
+		return Coord { A.x / B ,A.y / B };
 	}
 
 	enum class CoordType {
@@ -80,8 +80,7 @@ namespace FindTheWay {
 	constexpr auto MAPTYPENUM = 3;
 
 	inline ostream& operator<<(ostream& out, MapType type) {
-		switch (type)
-		{
+		switch (type) {
 		case FindTheWay::MapType::MAP:
 			out << "Map";
 			break;
@@ -97,8 +96,7 @@ namespace FindTheWay {
 	}
 
 	inline wostream& operator<<(wostream& out, MapType type) {
-		switch (type)
-		{
+		switch (type) {
 		case FindTheWay::MapType::MAP:
 			out << L"Map";
 			break;
@@ -143,8 +141,7 @@ namespace FindTheWay {
 	constexpr unsigned char BASE64_FAILED = 2;
 
 	inline ostream& operator<<(ostream& out, Exception type) {
-		switch (type)
-		{
+		switch (type) {
 		case INVALID_SIZE:
 			out << "INVALID_SIZE";
 			break;
@@ -160,8 +157,7 @@ namespace FindTheWay {
 	}
 
 	inline wostream& operator<<(wostream& out, Exception type) {
-		switch (type)
-		{
+		switch (type) {
 		case INVALID_SIZE:
 			out << L"INVALID_SIZE";
 			break;
@@ -401,8 +397,7 @@ namespace FindTheWay {
 		}
 
 		inline BYTE* GetMapPointer(MapType type) {
-			switch (type)
-			{
+			switch (type) {
 			case FindTheWay::MapType::MAP:
 				return map;
 				break;
@@ -466,7 +461,11 @@ namespace FindTheWay {
 		}
 
 		inline Path* GetPathPointer(wstring* name = nullptr) {
-			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath[*name] : &path);
+			return ((name != nullptr) && (savedPath.count(*name) != 0) ? &savedPath [*name] : &path);
+		}
+
+		inline static size_t ZeroProtection(size_t v) {
+			return v ? v : 1;		// Protection for 0
 		}
 
 		inline void Reserve() {
@@ -494,9 +493,9 @@ namespace FindTheWay {
 				throw INVALID_SIZE;
 			}
 
-			map = new BYTE[mapSize];
-			terrain = new BYTE[mapSize];
-			dynamic = new BYTE[mapSize];
+			map = new BYTE [mapSize];
+			terrain = new BYTE [mapSize];
+			dynamic = new BYTE [mapSize];
 
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
@@ -518,7 +517,7 @@ namespace FindTheWay {
 
 			ClearStash();
 		}
-		
+
 		inline void ClearMap() {
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
@@ -539,7 +538,7 @@ namespace FindTheWay {
 
 	public:
 		FindTheWayClass(size_t width, size_t height) {
-			Allocate(width,height);
+			Allocate(width, height);
 			Reserve();
 		}
 		FindTheWayClass(const wstring& base64) {
@@ -551,37 +550,83 @@ namespace FindTheWay {
 			Free();
 		}
 
-		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
-			this->girdSize = girdSize ? girdSize : 1;		// Protection for 0
+		inline static size_t GetMapWidth(size_t width, size_t girdSize, bool isometric = false) {
+			return isometric ? GetIsometricMapWidth(width, girdSize) : GetTraditionalMapWidth(width, girdSize);
+		}
+
+		inline static size_t GetMapHeight(size_t height, size_t girdSize, bool isometric = false) {
+			return isometric ? GetIsometricMapHeight(height, girdSize) : GetTraditionalMapHeight(height, girdSize);
+		}
+
+		// Only support n x n map
+		inline static size_t GetIsometricMapWidth(size_t width, size_t girdSize) {
+			auto isoGirdWidth = ZeroProtection((girdSize & 0xFFFF0000) >> 16);
+
+			return width / isoGirdWidth;
+		}
+
+		inline static size_t GetIsometricMapHeight(size_t height, size_t girdSize) {
+			auto isoGirdHeight = ZeroProtection((girdSize & 0x0000FFFF));
+
+			return height / isoGirdHeight;
+		}
+		
+		inline static size_t GetTraditionalMapWidth(size_t width, size_t girdSize) {
+			girdSize = ZeroProtection(girdSize);
+			
+			return width / girdSize;
+		}
+
+		inline static size_t GetTraditionalMapHeight(size_t height, size_t girdSize) {
+			girdSize = ZeroProtection(girdSize);
+
+			return height / girdSize;
+		}
+
+		inline void SetIsometric(bool isometric) {
+			this->isometric = isometric;
+		}
+
+		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {			
+			if (!isometric) {
+				this->girdSize = ZeroProtection(girdSize);
+			}
+			else {
+				this->isoGirdWidth = ZeroProtection((girdSize & 0xFFFF0000) >> 16);
+				this->isoGirdHeight = ZeroProtection((girdSize & 0x0000FFFF));
+			}
 
 			this->girdOffestX = girdOffestX;
 			this->girdOffestY = girdOffestY;
 		}
 
 		inline Coord GetGirdCoord(const Coord& realCoord) {
-			return (realCoord - Coord{ girdOffestX ,girdOffestY }) / girdSize;
+			return isometric ? GetIsometricGirdCoord(realCoord) : GetTraditionalGirdCoord(realCoord);
 		}
 
 		inline Coord GetRealCoord(const Coord& girdCoord) {
-			return (girdCoord * girdSize + (size_t)(girdSize >> 1)) + Coord{ girdOffestX ,girdOffestY };	// girdCoord * girdSize + (size_t)(girdSize / 2);
+			return isometric ? GetIsometricRealCoord(girdCoord) : GetTraditionalRealCoord(girdCoord);
 		}
 
-		inline size_t GetGirdSize() {
-			return girdSize;
+		inline Coord GetTraditionalGirdCoord(const Coord& realCoord) {
+			return (realCoord - Coord { girdOffestX ,girdOffestY }) / girdSize;
 		}
 
-		inline void SetIsoGirdSize(size_t isoGirdWidth = 1, size_t isoGirdHeight = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {
-			this->isoGirdWidth = isoGirdWidth ? isoGirdWidth : 1;		// Protection for 0
-			this->isoGirdHeight = isoGirdHeight ? isoGirdHeight : 1;
-
-			this->girdOffestX = girdOffestX;
-			this->girdOffestY = girdOffestY;
+		inline Coord GetTraditionalRealCoord(const Coord& girdCoord) {
+			return (girdCoord * girdSize + (size_t)(girdSize >> 1)) + Coord { girdOffestX ,girdOffestY };	// girdCoord * girdSize + (size_t)(girdSize / 2);
 		}
 
-		inline Coord GetIsoGirdCoord(const Coord& realCoord) {
+		inline static size_t GetIsometricGirdSize(size_t isoGirdWidth = 1, size_t isoGirdHeight = 1) {
+			isoGirdWidth = isoGirdWidth & 0xFFFF;
+			isoGirdHeight = isoGirdHeight & 0xFFFF;
+
+			return (isoGirdWidth << 16) | isoGirdHeight;
+		}
+
+		inline Coord GetIsometricGirdCoord(const Coord& realCoord) {
 			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
-			size_t A = (2 * (realCoord.x - girdOffestX)) / isoGirdWidth;
-			size_t B = (2 * (realCoord.y - girdOffestY)) / isoGirdHeight;
+			size_t A = ((realCoord.x - girdOffestX) << 1) / isoGirdWidth;
+			size_t B = ((isoGirdHeight * height - realCoord.y - girdOffestY) << 1) / isoGirdHeight;
 
 			size_t coordX = ((width + 1 + A - B) >> 1) - 1;
 			size_t coordY = (((height << 1) + width + 1 - A - B) >> 1) - 1;
@@ -589,9 +634,9 @@ namespace FindTheWay {
 			return Coord{ coordX,coordY };
 		}
 
-		inline Coord GetIsoRealCoord(const Coord& girdCoord) {
-			size_t realX = ((isoGirdWidth * (girdCoord.x + height - girdCoord.y)) >> 1) + girdOffestX;
-			size_t realY = ((isoGirdHeight * (height - girdCoord.y - 1 + width - girdCoord.x)) >> 1) + girdOffestY;
+		inline Coord GetIsometricRealCoord(const Coord& girdCoord) {
+			size_t realX = ((isoGirdWidth * (height + girdCoord.x - girdCoord.y)) >> 1) + girdOffestX;
+			size_t realY = ((isoGirdHeight * (height + 1 + girdCoord.y - width + girdCoord.x)) >> 1) + girdOffestY;
 
 			return Coord{ realX,realY };
 		}
@@ -609,7 +654,7 @@ namespace FindTheWay {
 			size_t start = 0;
 			size_t end = 0;
 
-			auto GetSubStr = [base64](size_t& start, size_t& end)->wstring {
+			auto GetSubStr = [base64] (size_t& start, size_t& end)->wstring {
 				if (end != wstring::npos) {
 					end = base64.find(DELIMETER, start);
 					wstring result = base64.substr(start, end - start);
@@ -628,7 +673,7 @@ namespace FindTheWay {
 
 			Free();
 			Allocate(width, height);
-			
+
 			try {
 				this->base64.base64_decode_to_pointer(GetSubStr(start, end), terrain, mapSize);
 				this->base64.base64_decode_to_pointer(GetSubStr(start, end), dynamic, mapSize);
@@ -712,7 +757,7 @@ namespace FindTheWay {
 				return COORD_INVALID;
 			}
 
-			return type == CoordType::X ? (*pPath)[pos].x : (*pPath)[pos].y;
+			return type == CoordType::X ? (*pPath) [pos].x : (*pPath) [pos].y;
 		}
 
 		inline size_t GetWidth() {
@@ -724,7 +769,7 @@ namespace FindTheWay {
 		}
 
 		inline void OutPutMap(MapType type = MapType::MAP) {
-			auto find = [](Path& path, Coord& coord)->bool {
+			auto find = [] (Path& path, Coord& coord)->bool {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
 
@@ -746,10 +791,10 @@ namespace FindTheWay {
 		}
 
 		inline wstring OutPutMapStr(MapType type = MapType::MAP, bool showPath = true, wstring* name = nullptr) {
-			auto find = [](const Path& path, const Coord& coord)->bool {
+			auto find = [] (const Path& path, const Coord& coord)->bool {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
-			
+
 			std::wstringstream ss;
 
 			ss << L"MapType : " << type << endl;
@@ -775,7 +820,7 @@ namespace FindTheWay {
 
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
-					if (showPath && curPathAvaliable && find(*pPath, Coord{ x,y })) {
+					if (showPath && curPathAvaliable && find(*pPath, Coord { x,y })) {
 						ss << L'-';
 					}
 					else {
@@ -794,7 +839,7 @@ namespace FindTheWay {
 				return;
 			}
 
-			savedPath[name] = path;
+			savedPath [name] = path;
 		}
 
 		static inline size_t GetEuclideanDistancePow(Coord start, Coord destination) {
@@ -839,8 +884,7 @@ namespace FindTheWay {
 			SetMap(destination.x, destination.y, destinationCost, this->map, false);
 		}
 
-		//TODO Ally&Enemy Ignore
-		inline void Find(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true			
+		inline void Find(Coord start, Coord destination, bool diagonal = false, bool checkDiagonalCorner = true
 			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
 			, size_t ignoreFlag = DEFAULT_IGNOREFLAG
 			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
@@ -876,7 +920,7 @@ namespace FindTheWay {
 
 				if (stashPath.count(stashPathKey)) {
 					pathAvailable = true;
-					path = stashPath[stashPathKey];
+					path = stashPath [stashPathKey];
 
 					return;
 				}
@@ -893,7 +937,7 @@ namespace FindTheWay {
 			close_set.clear();
 			point_set.clear();
 
-			open_set.emplace_back(Point{ start,nullptr,0,0 });
+			open_set.emplace_back(Point { start,nullptr,0,0 });
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
@@ -904,11 +948,11 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
-			auto findSet = [](const CoordSet& v, const Coord& p) {
-				return std::find_if(v.begin(), v.end(), [&p](auto& it)->bool { return it == p; }) != v.end();
+			auto findSet = [] (const CoordSet& v, const Coord& p) {
+				return std::find_if(v.begin(), v.end(), [&p] (auto& it)->bool { return it == p; }) != v.end();
 			};
 
-			auto addSet = [&](CoordSet* src) {
+			auto addSet = [&] (CoordSet* src) {
 				if (src == nullptr) {
 					return;
 				}
@@ -943,7 +987,7 @@ namespace FindTheWay {
 
 			while (!open_set.empty()) {
 				// Descending
-				std::sort(open_set.begin(), open_set.end(), [](Point A, Point B) ->bool { return A.priority > B.priority; });
+				std::sort(open_set.begin(), open_set.end(), [] (Point A, Point B) ->bool { return A.priority > B.priority; });
 
 				if (open_set.back().coord == destination) {
 					Point* parent = &open_set.back();
@@ -956,7 +1000,7 @@ namespace FindTheWay {
 					std::reverse(path.begin(), path.end());
 					pathAvailable = true;
 
-					stashPath[stashPathKey] = path;
+					stashPath [stashPathKey] = path;
 
 					return;
 				}
@@ -964,23 +1008,23 @@ namespace FindTheWay {
 					Point base = open_set.back();
 					open_set.pop_back();
 
-					close_set.emplace_back(base);					
+					close_set.emplace_back(base);
 
-					auto find = [](Set& v, Point& p)->Point* {
-						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
+					auto find = [] (Set& v, Point& p)->Point* {
+						auto it = std::find_if(v.begin(), v.end(), [&p] (Point& it)->bool { return it.coord == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
-					auto rfind = [](Set& v, Point& p)->Point* {
-						auto it = std::find_if(v.rbegin(), v.rend(), [&p](Point& it)->bool { return it.coord == p.coord; });
+					auto rfind = [] (Set& v, Point& p)->Point* {
+						auto it = std::find_if(v.rbegin(), v.rend(), [&p] (Point& it)->bool { return it.coord == p.coord; });
 						return it != v.rend() ? &(*it) : nullptr;
 					};
 
 					for (size_t i = 0; i < neighbourSize; i++) {
-						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
-						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+						Coord neighCoord = Coord { (size_t)(base.coord.x + (*pNeighbour) [i].x)
+						,(size_t)(base.coord.y + (*pNeighbour) [i].y) };
 
 						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
-						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
+						Point neighPoint = Point { neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour) [i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
 							continue;
@@ -991,16 +1035,16 @@ namespace FindTheWay {
 						}
 
 						if (diagonal && checkDiagonalCorner		// check corner
-							&&(i % 2 == 1)) {					// when checking diagonal points
+							&& (i % 2 == 1)) {					// when checking diagonal points
 							size_t prev = i - 1;
 							size_t next = (i + 1) % neighbourSize;
 
-							if ((GetMap(base.coord.x + (*pNeighbour)[prev].x
-									, base.coord.y + (*pNeighbour)[prev].y
-									, this->map) == MAP_OBSTACLE)
-							&& (GetMap(base.coord.x + (*pNeighbour)[next].x
-								, base.coord.y + (*pNeighbour)[next].y
-								, this->map) == MAP_OBSTACLE)) {
+							if ((GetMap(base.coord.x + (*pNeighbour) [prev].x
+								, base.coord.y + (*pNeighbour) [prev].y
+								, this->map) == MAP_OBSTACLE)
+								&& (GetMap(base.coord.x + (*pNeighbour) [next].x
+									, base.coord.y + (*pNeighbour) [next].y
+									, this->map) == MAP_OBSTACLE)) {
 								continue;
 							}
 						}
@@ -1009,8 +1053,8 @@ namespace FindTheWay {
 							continue;
 						}
 
-						auto heuristic = [&](Point& p)->size_t { return h(neighPoint.coord, destination); };
-						auto updateParentPointer = [&](Point& cur)->void {
+						auto heuristic = [&] (Point& p)->size_t { return h(neighPoint.coord, destination); };
+						auto updateParentPointer = [&] (Point& cur)->void {
 							Point* p = find(point_set, cur);
 
 							if (p == nullptr) {
@@ -1058,7 +1102,7 @@ namespace FindTheWay {
 
 			set->emplace_back(start);
 		}
-		
+
 		inline void GenerateZoc(Coord start, CoordSet* zoc, bool add = false, bool diagonal = true) {
 			if (!add) {
 				zoc->clear();
@@ -1067,8 +1111,8 @@ namespace FindTheWay {
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 
 			for (auto& it : *pNeighbour) {
-				auto cur = Coord{ (size_t)(start.x + it.x),(size_t)(start.y + it.y) };
-				
+				auto cur = Coord { (size_t)(start.x + it.x),(size_t)(start.y + it.y) };
+
 				if (std::find(zoc->begin(), zoc->end(), cur) == zoc->end()) {
 					zoc->emplace_back(cur);
 				}
@@ -1094,10 +1138,10 @@ namespace FindTheWay {
 				extraRangeStartPos = range;
 			}
 
-			BYTE* temp = new BYTE[mapSize];
+			BYTE* temp = new BYTE [mapSize];
 			memcpy(temp, map, mapSize);
 
-			auto out = [&](BYTE cost)->wchar_t {
+			auto out = [&] (BYTE cost)->wchar_t {
 				switch (cost) {
 				case MAP_OBSTACLE:
 					return L'*';
@@ -1118,7 +1162,7 @@ namespace FindTheWay {
 				}
 			};
 
-			auto updateSet = [&](CoordSet* p, BYTE cost) {
+			auto updateSet = [&] (CoordSet* p, BYTE cost) {
 				if (p != nullptr) {
 					for (auto& it : *p) {
 						*GetMapPosPointer(it.x, it.y, temp) = cost;
@@ -1128,13 +1172,13 @@ namespace FindTheWay {
 
 			for (size_t it = 0; it < area.size(); it++) {
 				if (it < extraRangeStartPos) {
-					for (auto& it_C : area[it]) {
+					for (auto& it_C : area [it]) {
 						*GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
 					}
 				}
 				else {
-					for (auto& it_C : area[it]) {
-						if (it_C == Coord{ 5, 4 }) {
+					for (auto& it_C : area [it]) {
+						if (it_C == Coord { 5, 4 }) {
 							cout << "1" << endl;
 						}
 						*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
@@ -1163,7 +1207,7 @@ namespace FindTheWay {
 		inline size_t GetAbleLineRange(Coord start, size_t range, size_t dir
 			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
 			, size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
-			, bool attack= false) {					// Attack = use ignore flag, only consider map collision
+			, bool attack = false) {					// Attack = use ignore flag, only consider map collision
 													// Repel = consider both map collision & unit
 			if (updateMap && !attack) {
 				UpdateMap();
@@ -1175,9 +1219,9 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
-			auto ignoreCoord = [&](const Coord& p) {
-				auto findSet = [](const CoordSet& v, const Coord& p) {
-					return std::find_if(v.begin(), v.end(), [&p](auto& it)->bool { return it == p; }) != v.end();
+			auto ignoreCoord = [&] (const Coord& p) {
+				auto findSet = [] (const CoordSet& v, const Coord& p) {
+					return std::find_if(v.begin(), v.end(), [&p] (auto& it)->bool { return it == p; }) != v.end();
 				};
 
 				if (GetMap(p.x, p.y, this->map) == MAP_OBSTACLE) {
@@ -1206,8 +1250,8 @@ namespace FindTheWay {
 
 				return true;
 			};
-			
-			auto& offset = normalNeighbour[dir];
+
+			auto& offset = normalNeighbour [dir];
 			auto coord = start;
 			size_t moveable = 0;
 
@@ -1218,7 +1262,7 @@ namespace FindTheWay {
 
 				coord.x += offset.x;
 				coord.y += offset.y;
-				
+
 				moveable++;
 			}
 
@@ -1240,7 +1284,7 @@ namespace FindTheWay {
 				stashAreaKey = make_tuple(true, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
 
 				if (stashArea.count(stashAreaKey)) {
-					auto& [sa, sp] = stashArea[stashAreaKey];
+					auto& [sa, sp] = stashArea [stashAreaKey];
 					area = sa;
 
 					return;
@@ -1256,7 +1300,7 @@ namespace FindTheWay {
 			ranges = { 0,0,0,0 };
 
 			for (size_t dir = 0; dir < 4; dir++) {
-				ranges[dir] = GetAbleLineRange(start, range, dir, ally, enemy, zoc, ignoreFlag, attack);
+				ranges [dir] = GetAbleLineRange(start, range, dir, ally, enemy, zoc, ignoreFlag, attack);
 			}
 
 			for (size_t nest = 0; nest <= range; nest++) {
@@ -1269,9 +1313,9 @@ namespace FindTheWay {
 
 				bool updated = false;
 				for (size_t it = 0; it < ranges.size(); it++) {
-					if (ranges[it] >= nest) {
-						area.back().emplace_back(Coord{ start.x + nest * normalNeighbour[it].x
-													,start.y + nest * normalNeighbour[it].y });
+					if (ranges [it] >= nest) {
+						area.back().emplace_back(Coord { start.x + nest * normalNeighbour [it].x
+													,start.y + nest * normalNeighbour [it].y });
 
 						updated = true;
 					}
@@ -1283,7 +1327,7 @@ namespace FindTheWay {
 			}
 
 			if (stash) {
-				stashArea[stashAreaKey] = std::make_tuple(area, 0);
+				stashArea [stashAreaKey] = std::make_tuple(area, 0);
 			}
 
 #ifdef _DEBUG
@@ -1307,10 +1351,10 @@ namespace FindTheWay {
 				stashAreaKey = make_tuple(false, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
 
 				if (stashArea.count(stashAreaKey)) {
-					auto& [sa,sp]= stashArea[stashAreaKey];
+					auto& [sa, sp] = stashArea [stashAreaKey];
 
 					area = sa;
-					
+
 					if (extraRangeStartPosOut != nullptr) {
 						*extraRangeStartPosOut = sp;
 					}
@@ -1333,13 +1377,13 @@ namespace FindTheWay {
 			close_set.clear();
 			point_set.clear();
 
-			open_set.emplace_back(Point{ start,nullptr,0,0 });
+			open_set.emplace_back(Point { start,nullptr,0,0 });
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			auto neighbourSize = pNeighbour->size();
 
 			size_t totalRange = range + allRange * allRangeAttackRange
-							+ allRange;	// Extra loop with allRange due to restart
+				+ allRange;	// Extra loop with allRange due to restart
 			size_t extraRangeStartPos = range;
 
 			bool extraRangeCalc = false;	// Extra range calc start
@@ -1381,10 +1425,10 @@ namespace FindTheWay {
 
 					// add current area edge
 					for (auto& it : area.back()) {
-						if (std::find_if(cur_set.begin(), cur_set.end(), [&](const Point& it_c) { 
-							return it_c.coord == it; 
+						if (std::find_if(cur_set.begin(), cur_set.end(), [&] (const Point& it_c) {
+							return it_c.coord == it;
 							}) == cur_set.end()) {
-							cur_set.emplace_back(Point{ it,nullptr,0,0 });
+							cur_set.emplace_back(Point { it,nullptr,0,0 });
 						}
 					}
 
@@ -1418,17 +1462,17 @@ namespace FindTheWay {
 						area.back().emplace_back(base.coord);
 					}
 
-					auto find = [](Set& v, Point& p)->Point* {
-						auto it = std::find_if(v.begin(), v.end(), [&p](Point& it)->bool { return it.coord == p.coord; });
+					auto find = [] (Set& v, Point& p)->Point* {
+						auto it = std::find_if(v.begin(), v.end(), [&p] (Point& it)->bool { return it.coord == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
 
-					auto findSet = [](CoordSet& v, Point& p) {
-						auto it = std::find_if(v.begin(), v.end(), [&p](Coord& it)->bool { return it == p.coord; });
+					auto findSet = [] (CoordSet& v, Point& p) {
+						auto it = std::find_if(v.begin(), v.end(), [&p] (Coord& it)->bool { return it == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
 
-					auto add = [&](Set& v, Point& p) {
+					auto add = [&] (Set& v, Point& p) {
 						if (find(v, p) == nullptr) {
 							v.emplace_back(p);
 
@@ -1439,7 +1483,7 @@ namespace FindTheWay {
 						}
 					};
 
-					auto addSet = [&](CoordSet& v, Point& p) {
+					auto addSet = [&] (CoordSet& v, Point& p) {
 						if (findSet(v, p) == nullptr) {
 							v.emplace_back(p.coord);
 
@@ -1450,11 +1494,11 @@ namespace FindTheWay {
 						}
 					};
 
-					auto ignorePoint = [&](Point& p) {
+					auto ignorePoint = [&] (Point& p) {
 						bool curAlly = ally != nullptr && findSet(*ally, p) != nullptr;
 						bool curEnemy = enemy != nullptr && findSet(*enemy, p) != nullptr;
 
-						auto getIgnore = [&](bool moveIgnore, bool attackIgnore) {
+						auto getIgnore = [&] (bool moveIgnore, bool attackIgnore) {
 							if (updateAttack) {
 								if (attackIgnore) {
 									return true;
@@ -1464,7 +1508,7 @@ namespace FindTheWay {
 								if (!moveIgnore) {
 									if (allRange && attackIgnore) {
 										addSet(extra_set, p);		// Add to attack area if ignored during move
-										add(continue_set, base);	// Add parent to continue set in case it's egde
+										add(continue_set, base);	// Add parent to continue set in case it's edge
 									}
 								}
 
@@ -1497,16 +1541,16 @@ namespace FindTheWay {
 					}
 
 					for (size_t i = 0; i < neighbourSize; i++) {
-						Coord neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
-						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+						Coord neighCoord = Coord { (size_t)(base.coord.x + (*pNeighbour) [i].x)
+						,(size_t)(base.coord.y + (*pNeighbour) [i].y) };
 
 						BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
-						Point neighPoint = Point{ neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour)[i].generalCost };
+						Point neighPoint = Point { neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour) [i].generalCost };
 
 						if (curCost == MAP_OBSTACLE) {
 							continue;
 						}
-						else if(!ignorePoint(neighPoint)) {
+						else if (!ignorePoint(neighPoint)) {
 							continue;
 						}
 
@@ -1528,7 +1572,7 @@ namespace FindTheWay {
 			}
 
 			if (!extra_set.empty()) {
-				auto findArea = [&](Coord c) {
+				auto findArea = [&] (Coord c) {
 					for (auto& it : area) {
 						for (auto& it_c : it) {
 							if (it_c == c) {
@@ -1557,27 +1601,27 @@ namespace FindTheWay {
 			}
 
 			if (stash) {
-				stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
+				stashArea [stashAreaKey] = make_tuple(area, extraRangeStartPos);
 			}
 
 #ifdef _DEBUG
 			OutPutAreaStr(start, range, ally, enemy, zoc, allRange, extraRangeStartPos);
 #endif // _DEBUG
 		}
-	
+
 		inline const Area& GetArea() {
 			return area;
 		}
 
 		inline static size_t GetIgnoreFlag(bool moveIgnoreZoc
-								, bool moveIgnoreAlly
-								, bool moveIgnoreEnemy
-								, bool attackIgnoreAlly
-								, bool attackIgnoreEnemy) {
-			return (size_t)moveIgnoreZoc << 4 
-				| (size_t)moveIgnoreAlly << 3 
-				| (size_t)moveIgnoreEnemy << 2 
-				| (size_t)attackIgnoreAlly << 1 
+			, bool moveIgnoreAlly
+			, bool moveIgnoreEnemy
+			, bool attackIgnoreAlly
+			, bool attackIgnoreEnemy) {
+			return (size_t)moveIgnoreZoc << 4
+				| (size_t)moveIgnoreAlly << 3
+				| (size_t)moveIgnoreEnemy << 2
+				| (size_t)attackIgnoreAlly << 1
 				| (size_t)attackIgnoreEnemy;
 		}
 

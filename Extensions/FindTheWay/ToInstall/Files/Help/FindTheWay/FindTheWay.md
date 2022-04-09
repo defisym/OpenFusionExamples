@@ -6,7 +6,10 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 
 ## Properties
 
-This object has no properties
+- Settings
+  - Isometric
+    - *use isometric mode*
+    - *in isometric mode, use `GIGS( >Isometric Gird Width<, >Isometric Gird Height< )` to generate valid girdSize, then pass it to A/C/Es that ask for girdSize*
 
 ## Terminology
 
@@ -150,6 +153,17 @@ This object has no properties
   - Get Iterate Index
 
 - Gird
+  - Get Isometric Gird Size
+    - *used in isometric mode, to generate valid girdSize*
+    - *algorithm:*
+
+      ```C++
+        isoGirdWidth = isoGirdWidth & 0xFFFF;
+        isoGirdHeight = isoGirdHeight & 0xFFFF;
+
+        return (isoGirdWidth << 16) | isoGirdHeight;
+      ```
+
   - Get Gird Coord
   - Get Real Coord
 

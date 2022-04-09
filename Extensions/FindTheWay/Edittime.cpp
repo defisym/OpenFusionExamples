@@ -26,6 +26,9 @@ enum {
 //	PROPID_CHECK,
 //	PROPID_COMBO,
 //	PROPID_COLOR,
+
+	PROPID_ISOMETRIC_TEXTTITLE,	
+	PROPID_ISOMETRIC_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -52,6 +55,9 @@ PropData Properties[] = {
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
 
 	// End of table (required)
+	PropData_Group		(PROPID_ISOMETRIC_TEXTTITLE,	IDS_PROP_ISOMETRIC_TEXTTITLE,		IDS_PROP_ISOMETRIC_TEXTTITLE),
+	PropData_CheckBox	(PROPID_ISOMETRIC_CHECK,		IDS_PROP_ISOMETRIC_CHECK,			IDS_PROP_ISOMETRIC_CHECK_INFO),
+
 	PropData_End()
 };
 
@@ -694,6 +700,12 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //		return edPtr->nCheck;
 //	}
 
+	switch (nPropID) {
+	// Return 0 (unchecked) or 1 (checked)
+	case PROPID_ISOMETRIC_CHECK:
+		return edPtr->isometric;
+	}
+
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
 }
@@ -779,6 +791,14 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 //		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
 //		break;
 //	}
+
+	switch (nPropID) {
+	case PROPID_ISOMETRIC_CHECK:
+		edPtr->isometric = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	}
+
 #endif // !defined(RUN_ONLY)
 }
 

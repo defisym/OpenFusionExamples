@@ -66,6 +66,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 
+	rdPtr->isometric = edPtr->isometric;
+
 	rdPtr->pFTW = nullptr;
 
 	rdPtr->pOnItCollisionName = new wstring;

@@ -17,6 +17,12 @@
 // Help ID
 #define ID_HELP                 20004
 
+// 	Properties
+//-------------------
+#define	IDS_PROP_ISOMETRIC_TEXTTITLE				200
+#define	IDS_PROP_ISOMETRIC_CHECK				    201
+#define	IDS_PROP_ISOMETRIC_CHECK_INFO				202
+
 
 // 	Actions
 //-------------------
@@ -222,6 +228,8 @@
 #define IDMN_EXPRESSION_GMCO			27017
 #define IDMN_EXPRESSION_GMCV			27018
 
+#define IDMN_EXPRESSION_GIGS			27019
+
 // Expression strings
 #define M_EXPRESSION_GITX			    7000
 #define M_EXPRESSION_GITY			    7001
@@ -250,6 +258,8 @@
 #define M_EXPRESSION_GMCO				7017
 #define M_EXPRESSION_GMCV				7018
 
+#define M_EXPRESSION_GIGS				7019
+
 // Names of expression parameters
 #define M_STEP				            7500
 #define M_COORDTYPE			            7501
@@ -270,6 +280,8 @@
 #define M_MIE       		            7516
 #define M_AIA       		            7517
 #define M_AIE       		            7518
+#define M_ISOGW       		            7519
+#define M_ISOGH       		            7520
 
 // Next default values for new objects
 // 

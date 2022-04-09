@@ -105,8 +105,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GSOP, M_EXPRESSION_GSOP, EXP_EXPRESSION_GSOP, 0, 1, EXPPARAM_STRING, M_PATHNAME,
 		IDMN_EXPRESSION_GSCOP, M_EXPRESSION_GSCOP, EXP_EXPRESSION_GSCOP, 0, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_PATHNAME, M_STEP, M_COORDTYPE,
 
-		IDMN_EXPRESSION_GGC, M_EXPRESSION_GGC, EXP_EXPRESSION_GGC, 0, 1, EXPPARAM_LONG, M_COORD,
-		IDMN_EXPRESSION_GRC, M_EXPRESSION_GRC, EXP_EXPRESSION_GRC, 0, 1, EXPPARAM_LONG, M_COORD,
+		IDMN_EXPRESSION_GGC, M_EXPRESSION_GGC, EXP_EXPRESSION_GGC, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_COORD, M_COORD, M_COORDTYPE,
+		IDMN_EXPRESSION_GRC, M_EXPRESSION_GRC, EXP_EXPRESSION_GRC, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, M_COORD, M_COORD, M_COORDTYPE,
 
 		IDMN_EXPRESSION_GITI, M_EXPRESSION_GITI, EXP_EXPRESSION_GITI, 0, 0,
 
@@ -125,6 +125,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GMCP, M_EXPRESSION_GMCP, EXP_EXPRESSION_GMCP, 0, 0,
 		IDMN_EXPRESSION_GMCO, M_EXPRESSION_GMCO, EXP_EXPRESSION_GMCO, 0, 0,
 		IDMN_EXPRESSION_GMCV, M_EXPRESSION_GMCV, EXP_EXPRESSION_GMCV, 0, 1, EXPPARAM_LONG, M_COST,
+
+		IDMN_EXPRESSION_GIGS, M_EXPRESSION_GIGS, EXP_EXPRESSION_GIGS, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ISOGW, M_ISOGH,
 
 		};
 
@@ -146,6 +148,7 @@ long WINAPI DLLExport SetMapBySize(LPRDATA rdPtr, long param1, long param2) {
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -167,6 +170,7 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 	try {
 		rdPtr->pFTW = new FindTheWayClass(base64);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -206,6 +210,7 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -276,12 +281,13 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	auto frameWidth = frameRect.right - frameRect.left;
 	auto frameHeight = frameRect.bottom - frameRect.top;
 
-	size_t width = frameWidth / girdSize;
-	size_t height = frameHeight / girdSize;
+	size_t width = FindTheWayClass::GetMapWidth(frameWidth, girdSize, rdPtr->isometric);
+	size_t height = FindTheWayClass::GetMapHeight(frameHeight, girdSize, rdPtr->isometric); 
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -1294,19 +1300,27 @@ long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetGirdCoord(LPRDATA rdPtr, long param1) {
-	size_t coord = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(COORD_INVALID);
 
-	return rdPtr->pFTW->GetGirdCoord(Coord{ coord ,0 }).x;
+	return type == CoordType::X
+		? rdPtr->pFTW->GetGirdCoord(Coord{ coordX ,coordY }).x
+		: rdPtr->pFTW->GetGirdCoord(Coord{ coordX ,coordY }).y;
 }
 
 long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
-	size_t coord = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(REAL_INVALID);
 
-	return rdPtr->pFTW->GetRealCoord(Coord{ coord ,0 }).x;
+	return type == CoordType::X
+		? rdPtr->pFTW->GetRealCoord(Coord{ coordX ,coordY }).x
+		: rdPtr->pFTW->GetRealCoord(Coord{ coordX ,coordY }).y;
 }
 
 long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {
@@ -1420,6 +1434,13 @@ long WINAPI DLLExport GetMapCostValid(LPRDATA rdPtr, long param1) {
 	return Range(cost);
 }
 
+long WINAPI DLLExport GetIsometricGirdSize(LPRDATA rdPtr, long param1) {
+	size_t isoGirdWidth = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t isoGirdHeight = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return FindTheWayClass::GetIsometricGirdSize(isoGirdWidth, isoGirdHeight);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1526,6 +1547,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetMapCostPath,
 			GetMapCostObstacle,
 			GetMapCostValid,
+
+			GetIsometricGirdSize,
 
 			0
 			};

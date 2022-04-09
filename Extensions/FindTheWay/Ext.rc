@@ -253,6 +253,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Gird"
         BEGIN
+            MENUITEM "Get Isometric Gird Size", IDMN_EXPRESSION_GIGS
+            MENUITEM SEPARATOR            
             MENUITEM "Get Gird Coord", IDMN_EXPRESSION_GGC
             MENUITEM "Get Real Coord", IDMN_EXPRESSION_GRC
         END
@@ -365,6 +367,12 @@ BEGIN
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROP_ISOMETRIC_TEXTTITLE        "Settings"
+    IDS_PROP_ISOMETRIC_CHECK            "Isometric"
+    IDS_PROP_ISOMETRIC_CHECK_INFO       "Isometric"
+END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
@@ -442,6 +450,8 @@ BEGIN
     M_EXPRESSION_GSOP               "GetStepofPath("
     M_EXPRESSION_GSCOP              "GetStepCoordofPath("
     
+    M_EXPRESSION_GIGS               "GIGS("
+
     M_EXPRESSION_GGC                "GetGirdCoord("
     M_EXPRESSION_GRC                "GetRealCoord("
     
@@ -460,7 +470,7 @@ BEGIN
     M_EXPRESSION_GMTD               "MapTypeDynamic("
     M_EXPRESSION_GMCP               "MapCostPath("
     M_EXPRESSION_GMCO               "MapCostObstacle("
-    M_EXPRESSION_GMCV               "MapCostValid("
+    M_EXPRESSION_GMCV               "MapCostValid("    
 END
 
 STRINGTABLE DISCARDABLE
@@ -526,6 +536,8 @@ BEGIN
     M_MIE                           "Move Ignore Enemy"
     M_AIA                           "Attack Ignore Ally"
     M_AIE                           "Attack Ignore Enemy"
+    M_ISOGW                         "Isometric Gird Width"
+    M_ISOGH                         "Isometric Gird Height"
 END
 
 #endif    // English (U.S.) resources
