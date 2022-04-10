@@ -9,7 +9,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 - Settings
   - Isometric
     - *use isometric mode*
-    - *in isometric mode, use `GIGS( >Isometric Gird Width<, >Isometric Gird Height< )` to generate valid girdSize, then pass it to A/C/Es that ask for girdSize*
+    - *in isometric mode, use `GIGS( >Isometric Grid Width<, >Isometric Grid Height< )` to generate valid gridSize, then pass it to A/C/Es that ask for gridSize*
 
 ## Terminology
 
@@ -23,7 +23,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - `0 ~ 255`, 255 = obstacle, others = path
 
 - UseRealCoord
-  - convert input to gird coord
+  - convert input to grid coord
 
 - UseIterateCoord
   - use internal coord in `On ...` events
@@ -49,14 +49,14 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 
   - Clear Map
 
-- Gird
-  - Create Gird
-    - *paste gird object as backdrop to non-obstacle gird*
-    - *pasted backdrop will has the same image of gird object's current frame and the same effect*
+- Grid
+  - Create Grid
+    - *paste grid object as backdrop to non-obstacle grid*
+    - *pasted backdrop will has the same image of grid object's current frame and the same effect*
     - *pasted backdrop has no effect on collisions, aka `OBSTACLE_TRANSPARENT`*
-    - *gird object **must** exist*
-    - *gird object **must** has the **same size** of map gird, gird object's hot spot **must** be set to **center** (traditional mode)*
-    - *gird object **must** has the **same height and half width** of map gird, gird object's hot spot **must** be set to **right-center** (isometric mode)*
+    - *grid object **must** exist*
+    - *grid object **must** has the **same size** of map grid, grid object's hot spot **must** be set to **center** (traditional mode)*
+    - *grid object **must** has the **same height and half width** of map grid, grid object's hot spot **must** be set to **right-center** (isometric mode)*
 
 - Path
   - Iterate Path
@@ -99,7 +99,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - Set Map By Base64
   - Set Map By Picture
   - Set Map By Collision
-    - *you can let extension retrieve collision of layers, or call `On Set Map By Collision` for each gird for you to check & set collisions directly*
+    - *you can let extension retrieve collision of layers, or call `On Set Map By Collision` for each grid for you to check & set collisions directly*
 
   - On Set Map By Collision
 
@@ -139,18 +139,18 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
     - Select All
       - *save fastloops when click on an area, move character to that point, then destroy all areas*
 
-    - Object At Gird
+    - Object At Grid
     - Object At Coord
     - Object At Obstacle
 
     - Object At Object
-      - *check if former object and the latter object has the same gird coord*
+      - *check if former object and the latter object has the same grid coord*
 
     - Pick One Object At Object
       - *only display one instance when overlapping itself*
 
   - Non-Select
-    - No Object At Gird
+    - No Object At Grid
     - No Object At Coord
 
 ## Expression
@@ -162,19 +162,19 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - Get Iterate Y
   - Get Iterate Index
 
-- Gird
-  - Get Isometric Gird Size
-    - *used in isometric mode, to generate valid girdSize*
+- Grid
+  - Get Isometric Grid Size
+    - *used in isometric mode, to generate valid gridSize*
     - *algorithm:*
 
       ```C++
-        isoGirdWidth = isoGirdWidth & 0xFFFF;
-        isoGirdHeight = isoGirdHeight & 0xFFFF;
+        isoGridWidth = isoGridWidth & 0xFFFF;
+        isoGridHeight = isoGridHeight & 0xFFFF;
 
-        return (isoGirdWidth << 16) | isoGirdHeight;
+        return (isoGridWidth << 16) | isoGridHeight;
       ```
 
-  - Get Gird Coord
+  - Get Grid Coord
   - Get Real Coord
 
 - Map
@@ -207,7 +207,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 
 ### AOE
 
-if attack unit at blue gird, other valid units (usually the ally of the former one) at yellow gird will also take splash damage.
+if attack unit at blue grid, other valid units (usually the ally of the former one) at yellow grid will also take splash damage.
 
 #### Type 11
 

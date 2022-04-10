@@ -24,7 +24,7 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_SMBS, M_CONDITION_SMBS, CND_CONDITION_SMBS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		IDMN_CONDITION_SMBB, M_CONDITION_SMBB, CND_CONDITION_SMBB, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_BASE64,
-		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASELAYER, M_TYPE, M_ITNAME,
+		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GRIDSIZE, M_GRIDOFFSETX, M_GRIDOFFSETY, M_EVEIT, M_BASELAYER, M_TYPE, M_ITNAME,
 		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 
 		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_IGNOREFLAG, M_DIAGONAL, M_CHECKDIAGONALCORNER, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
@@ -40,7 +40,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OAO, M_CONDITION_OAO, CND_CONDITION_OAO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_TYPE,
 		IDMN_CONDITION_OAC, M_CONDITION_OAC, CND_CONDITION_OAC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
 
-		IDMN_CONDITION_SMBP, M_CONDITION_SMBP, CND_CONDITION_SMBP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FILEPATH, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY,
+		IDMN_CONDITION_SMBP, M_CONDITION_SMBP, CND_CONDITION_SMBP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FILEPATH, M_GRIDSIZE, M_GRIDOFFSETX, M_GRIDOFFSETY,
 
 		IDMN_CONDITION_CA, M_CONDITION_CA, CND_CONDITION_CA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_LINEMODE, M_ATTACK, M_X, M_Y, M_USEREALCOORD, M_RANGE, M_STARTRANGE, M_IGNOREFLAG, M_ALLRANGE, M_ALLRANGEATTACKRANGE,
 		IDMN_CONDITION_OITA, M_CONDITION_OITA, CND_CONDITION_OITA, 0, 1, PARAM_EXPSTRING, M_ITNAME,
@@ -192,9 +192,9 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	wstring filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
 	auto pSf = new cSurface();
 
@@ -219,9 +219,9 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 		return FALSE;
 	}
 
-	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
+	rdPtr->pFTW->SetGridSize(gridSize, gridOffsetX, gridOffsetY);
 
-	auto [girdWidth, girdHeight] = rdPtr->pFTW->GetGirdCoord(Coord{ width ,height });
+	auto [gridWidth, gridHeight] = rdPtr->pFTW->GetGridCoord(Coord{ width ,height });
 
 	BYTE* buff = pSf->LockBuffer();
 	if (!buff) {
@@ -237,8 +237,8 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 	size_t size = pitch * height;
 	size_t byte = pSf->GetDepth() >> 3;
 
-	for (size_t y = 0; y < girdHeight; y++) {
-		for (size_t x = 0; x < girdWidth; x++) {
+	for (size_t y = 0; y < gridHeight; y++) {
+		for (size_t x = 0; x < gridWidth; x++) {
 			auto [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
 			auto offset = realY * pitch + realX * byte;
 
@@ -267,9 +267,9 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	size_t girdSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t girdOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t girdOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
 	bool eventIterate = (bool)CNC_GetParameter(rdPtr);
 	size_t baseLayer = (size_t)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
@@ -284,8 +284,8 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	auto frameWidth = frameRect.right - frameRect.left;
 	auto frameHeight = frameRect.bottom - frameRect.top;
 
-	size_t width = FindTheWayClass::GetMapWidth(frameWidth, girdSize, rdPtr->isometric);
-	size_t height = FindTheWayClass::GetMapHeight(frameHeight, girdSize, rdPtr->isometric); 
+	size_t width = FindTheWayClass::GetMapWidth(frameWidth, gridSize, rdPtr->isometric);
+	size_t height = FindTheWayClass::GetMapHeight(frameHeight, gridSize, rdPtr->isometric); 
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
@@ -296,7 +296,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 		return FALSE;
 	}
 	
-	rdPtr->pFTW->SetGirdSize(girdSize, girdOffsetX, girdOffsetY);
+	rdPtr->pFTW->SetGridSize(gridSize, gridOffsetX, gridOffsetY);
 
 	auto hoPtr = &(rdPtr->rHo);
 	npWin win = hoPtr->hoAdRunHeader->rh4.rh4Mv->mvIdEditWin;
@@ -392,15 +392,15 @@ long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param
 
 	RetIfMapInvalid(FALSE);
 
-	Coord girdCoord = Coord{ x, y };
+	Coord gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
-		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
 	}
 
-	auto& [girdX, girdY] = girdCoord;
+	auto& [gridX, gridY] = gridCoord;
 
-	auto mapCost = rdPtr->pFTW->GetMap(girdX, girdY, type);
+	auto mapCost = rdPtr->pFTW->GetMap(gridX, gridY, type);
 
 	if (cost ==-1 && mapCost != MAP_OBSTACLE) {					// Check for path
 		return TRUE;
@@ -416,7 +416,7 @@ long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param
 	}
 }
 
-long WINAPI DLLExport ObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport ObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
 	short oil = (short)OIL_GetParameter(rdPtr);
@@ -430,12 +430,12 @@ long WINAPI DLLExport ObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
 			return false;
 		}
 		else {
-			return Coord{ x,y } == rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			return Coord{ x,y } == rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 		}
 		});
 }
 
-long WINAPI DLLExport NoObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport NoObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
 	short oil = (short)OIL_GetParameter(rdPtr);
@@ -446,7 +446,7 @@ long WINAPI DLLExport NoObjectAtGird(LPRDATA rdPtr, long param1, long param2) {
 
 	try {
 		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-			Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 			if (objectCoord == Coord{ x,y }) {
 				throw false;
 			}
@@ -472,9 +472,9 @@ long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) 
 			return false;
 		}
 		else {
-			auto [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
-			return rdPtr->pFTW->GetMap(girdX, girdY, type) == MAP_OBSTACLE;
+			return rdPtr->pFTW->GetMap(gridX, gridY, type) == MAP_OBSTACLE;
 		}
 		});
 }
@@ -542,20 +542,20 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->areaSize = 0;
 	rdPtr->extraRangeStartPos = DEFAULT_EXTRARANGESTARTPOS;
 
-	Coord girdCoord = Coord{ x, y };
+	Coord gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
-		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
 	}
 
 	if (!lineMode) {
-		rdPtr->pFTW->CalcArea(girdCoord, range, startRange
+		rdPtr->pFTW->CalcArea(gridCoord, range, startRange
 			, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag
 			, attack
 			, allRange, allRangeAttackRange, &rdPtr->extraRangeStartPos);
 	}
 	else {
-		rdPtr->pFTW->CalcLineArea(girdCoord, range, startRange
+		rdPtr->pFTW->CalcLineArea(gridCoord, range, startRange
 			, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag
 			, attack);
 	}
@@ -592,13 +592,13 @@ long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2)
 
 	RetIfMapInvalid(FALSE);
 
-	auto itGirdCoord = rdPtr->pFTW->GetGirdCoord(rdPtr->itCoord);
+	auto itGridCoord = rdPtr->pFTW->GetGridCoord(rdPtr->itCoord);
 
 	return iterateName == *rdPtr->pOnItZocName
 		//// is overlap obstacle
-		//&& (rdPtr->pFTW->GetMap(itGirdCoord.x, itGirdCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
+		//&& (rdPtr->pFTW->GetMap(itGridCoord.x, itGridCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
 		//// is overlap unit
-		//&& !OverlapUnit(rdPtr, itGirdCoord)
+		//&& !OverlapUnit(rdPtr, itGridCoord)
 		// is current it object
 		&& rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
 			, [&](LPRDATA rdPtr, LPRO object)->bool { return object == rdPtr->pObject; })
@@ -622,7 +622,7 @@ long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 	objects.reserve(rdPtr->pSelect->GetNumberOfSelected(oil));
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 			// not overlap obstacle
 		if ((rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
 			// not overlap unit
@@ -651,7 +651,7 @@ long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
 		, [&](LPRDATA rdPtr, LPRO object)->bool {
-			auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+			auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 			
 			for (size_t it = 0; it < area.size(); it++) {
 				auto isAttack = !(it < rdPtr->extraRangeStartPos);
@@ -688,12 +688,12 @@ long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 	CoordSet objects;
 
 	rdPtr->pSelect->ForEach(rdPtr, oilObjB, [&](LPRO object) {
-		objects.emplace_back(rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY }));
+		objects.emplace_back(rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY }));
 		});
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oilObjA, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
 		if (std::find(objects.begin(), objects.end()
-			, rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })) != objects.end()) {
+			, rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })) != objects.end()) {
 			return true;
 		}
 
@@ -728,12 +728,12 @@ long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long par
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		objects.emplace_back(
-			std::make_tuple(rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })
+			std::make_tuple(rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })
 				, object));
 		});
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		auto objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 
 		if (!find(selected, objectCoord)) {
 			selected.emplace_back(std::make_tuple(objectCoord, object));
@@ -780,18 +780,18 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
 
-	Coord girdCoord = Coord{ x, y };
+	Coord gridCoord = Coord{ x, y };
 
 	if (useIterateCoord) {
-		girdCoord = rdPtr->pFTW->GetGirdCoord(rdPtr->itCoord);
+		gridCoord = rdPtr->pFTW->GetGridCoord(rdPtr->itCoord);
 	}
 	else if (useRealCoord) {
-		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
 	}
 
-	auto& [girdX, girdY] = girdCoord;
+	auto& [gridX, gridY] = gridCoord;
 
-	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
+	rdPtr->pFTW->SetMap(gridX, gridY, cost, type);
 
 	return 0;
 }
@@ -804,8 +804,8 @@ short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
 
-	auto [girdX, girdY] = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
-	rdPtr->pFTW->SetMap(girdX, girdY, cost, type);
+	auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	rdPtr->pFTW->SetMap(gridX, gridY, cost, type);
 
 	return 0;
 }
@@ -858,7 +858,7 @@ short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY }); 
+	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY }); 
 
 	if (center) {		
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pZoc, true);
@@ -977,7 +977,7 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	int type = (int)CNC_GetParameter(rdPtr);
 
-	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 	constexpr auto ALLY = 0;
 	constexpr auto ENEMY = 1;
@@ -1039,7 +1039,7 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
 	for (auto& it : *rdPtr->pObjZoc) {
@@ -1066,7 +1066,7 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 	// but when you call immediate events, this for-each will be terminated
 	// so here need a manual for-each to force it
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+		Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 		rdPtr->pObject = object;
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
@@ -1091,7 +1091,7 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 
 	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
-	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
 	for (auto& it : *rdPtr->pObjZoc) {
@@ -1142,7 +1142,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	AOEClass::coord start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
@@ -1152,17 +1152,17 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 	};
 
 	for (auto& it : *rdPtr->pAOECoord) {
-		auto girdCoord = Coord{ (size_t)it.x,(size_t)it.y };
-		auto realCoord = rdPtr->pFTW->GetRealCoord(girdCoord);
+		auto gridCoord = Coord{ (size_t)it.x,(size_t)it.y };
+		auto realCoord = rdPtr->pFTW->GetRealCoord(gridCoord);
 
-		if (rdPtr->pFTW->GetMap(girdCoord.x, girdCoord.y, MapType::MAP) == MAP_OBSTACLE) {
+		if (rdPtr->pFTW->GetMap(gridCoord.x, gridCoord.y, MapType::MAP) == MAP_OBSTACLE) {
 			continue;
 		}
 
-		if (!attackIgnoreAlly && find(rdPtr->pAlly, girdCoord)) {
+		if (!attackIgnoreAlly && find(rdPtr->pAlly, gridCoord)) {
 			continue;
 		}
-		if (!attackIgnoreEnemy && find(rdPtr->pEnemy, girdCoord)) {
+		if (!attackIgnoreEnemy && find(rdPtr->pEnemy, gridCoord)) {
 			continue;
 		}
 
@@ -1196,7 +1196,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 
 	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
-	Coord objectCoord = rdPtr->pFTW->GetGirdCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	AOEClass::coord start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
@@ -1206,17 +1206,17 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 	};
 
 	for (auto& it : *rdPtr->pAOECoord) {
-		auto girdCoord = Coord{ (size_t)it.x,(size_t)it.y };
-		auto realCoord = rdPtr->pFTW->GetRealCoord(girdCoord);
+		auto gridCoord = Coord{ (size_t)it.x,(size_t)it.y };
+		auto realCoord = rdPtr->pFTW->GetRealCoord(gridCoord);
 
-		if (rdPtr->pFTW->GetMap(girdCoord.x, girdCoord.y, MapType::MAP) == MAP_OBSTACLE) {
+		if (rdPtr->pFTW->GetMap(gridCoord.x, gridCoord.y, MapType::MAP) == MAP_OBSTACLE) {
 			continue;
 		}
 
-		if (!attackIgnoreAlly && find(rdPtr->pAlly, girdCoord)) {
+		if (!attackIgnoreAlly && find(rdPtr->pAlly, gridCoord)) {
 			continue;
 		}
-		if (!attackIgnoreEnemy && find(rdPtr->pEnemy, girdCoord)) {
+		if (!attackIgnoreEnemy && find(rdPtr->pEnemy, gridCoord)) {
 			continue;
 		}
 
@@ -1234,7 +1234,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 	return 0;
 }
 
-short WINAPI DLLExport CreateGird(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	size_t nLayer = (size_t)CNC_GetParameter(rdPtr) - 1;
 	
@@ -1349,7 +1349,7 @@ long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
 	return rdPtr->pFTW->GetCoordAtPath(step, type, pPathName);
 }
 
-long WINAPI DLLExport GetGirdCoord(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetGridCoord(LPRDATA rdPtr, long param1) {
 	size_t coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	size_t coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -1357,8 +1357,8 @@ long WINAPI DLLExport GetGirdCoord(LPRDATA rdPtr, long param1) {
 	RetIfMapInvalid(COORD_INVALID);
 
 	return type == CoordType::X
-		? rdPtr->pFTW->GetGirdCoord(Coord{ coordX ,coordY }).x
-		: rdPtr->pFTW->GetGirdCoord(Coord{ coordX ,coordY }).y;
+		? rdPtr->pFTW->GetGridCoord(Coord{ coordX ,coordY }).x
+		: rdPtr->pFTW->GetGridCoord(Coord{ coordX ,coordY }).y;
 }
 
 long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
@@ -1382,15 +1382,15 @@ long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(MAP_OBSTACLE);
 
-	Coord girdCoord = Coord{ x, y };
+	Coord gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
-		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
 	}
 
-	auto& [girdX, girdY] = girdCoord;
+	auto& [gridX, gridY] = gridCoord;
 
-	return rdPtr->pFTW->GetMap(girdX, girdY, type);
+	return rdPtr->pFTW->GetMap(gridX, gridY, type);
 }
 
 long WINAPI DLLExport GetMapBase64(LPRDATA rdPtr, long param1) {
@@ -1439,13 +1439,13 @@ long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(0);
 
-	Coord girdCoord = Coord{ x, y };
+	Coord gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
-		girdCoord = rdPtr->pFTW->GetGirdCoord(girdCoord);
+		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
 	}
 
-	return rdPtr->pFTW->GetAbleLineRange(girdCoord, range, dir, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag, attack);
+	return rdPtr->pFTW->GetAbleLineRange(gridCoord, range, dir, rdPtr->pAlly, rdPtr->pEnemy, rdPtr->pZoc, ignoreFlag, attack);
 }
 
 long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
@@ -1484,11 +1484,11 @@ long WINAPI DLLExport GetMapCostValid(LPRDATA rdPtr, long param1) {
 	return Range(cost);
 }
 
-long WINAPI DLLExport GetIsometricGirdSize(LPRDATA rdPtr, long param1) {
-	size_t isoGirdWidth = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t isoGirdHeight = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+long WINAPI DLLExport GetIsometricGridSize(LPRDATA rdPtr, long param1) {
+	size_t isoGridWidth = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	size_t isoGridHeight = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return FindTheWayClass::GetIsometricGirdSize(isoGirdWidth, isoGirdHeight);
+	return FindTheWayClass::GetIsometricGridSize(isoGridWidth, isoGridHeight);
 }
 
 // ----------------------------------------------------------
@@ -1513,7 +1513,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			MapAvailable,
 			CheckMapCostAtPoint,
 
-			ObjectAtGird,
+			ObjectAtGrid,
 			ObjectAtObstacle,
 			ObjectAtCoord,
 
@@ -1532,7 +1532,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ObjectAtObject,
 			PickOneObjectAtObject,
 
-			NoObjectAtGird,
+			NoObjectAtGrid,
 			NoObjectAtCoord,
 			
 			0
@@ -1567,7 +1567,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CreateAOE,
 			CreateAOEByName,
 
-			CreateGird,
+			CreateGrid,
 
 			0
 			};
@@ -1581,7 +1581,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetStepOfPath,
 			GetStepCoordOfPath,
 
-			GetGirdCoord,
+			GetGridCoord,
 			GetRealCoord,
 
 			GetIterateIndex,
@@ -1600,7 +1600,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetMapCostObstacle,
 			GetMapCostValid,
 
-			GetIsometricGirdSize,
+			GetIsometricGridSize,
 
 			0
 			};

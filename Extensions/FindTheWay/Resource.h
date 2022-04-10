@@ -172,9 +172,9 @@
 #define M_WIDTH				        6501
 #define M_HEIGHT				    6502
 #define M_BASE64				    6503
-#define M_GIRDSIZE				    6504
-#define M_GIRDOFFSETX				6505
-#define M_GIRDOFFSETY				6506
+#define M_GRIDSIZE				    6504
+#define M_GRIDOFFSETX				6505
+#define M_GRIDOFFSETY				6506
 #define M_STARTX				    6507
 #define M_STARTY				    6508
 #define M_DESTINATIONX				6509

@@ -163,7 +163,7 @@ BEGIN
             BEGIN
                 MENUITEM "Select All", IDMN_CONDITION_SA
                 MENUITEM SEPARATOR
-                MENUITEM "Object At Gird", IDMN_CONDITION_OAG
+                MENUITEM "Object At Grid", IDMN_CONDITION_OAG
                 MENUITEM "Object At Coord", IDMN_CONDITION_OAC
                 MENUITEM "Object At Obstacle", IDMN_CONDITION_OAO
                 MENUITEM SEPARATOR
@@ -173,7 +173,7 @@ BEGIN
             END
             POPUP "Non-Select"
             BEGIN
-                MENUITEM "No Object At Gird", IDMN_CONDITION_NOAG
+                MENUITEM "No Object At Grid", IDMN_CONDITION_NOAG
                 MENUITEM "No Object At Coord", IDMN_CONDITION_NOAC
             END
         END
@@ -204,9 +204,9 @@ BEGIN
             MENUITEM "Clear Map",                       IDMN_ACTION_CM
         END
         MENUITEM SEPARATOR
-        POPUP "Gird"
+        POPUP "Grid"
         BEGIN
-            MENUITEM "Create Gird",                     IDMN_ACTION_CG
+            MENUITEM "Create Grid",                     IDMN_ACTION_CG
         END
         MENUITEM SEPARATOR
         POPUP "Path"
@@ -256,11 +256,11 @@ BEGIN
             MENUITEM "Get Iterate Index", IDMN_EXPRESSION_GITI
         END
         MENUITEM SEPARATOR
-        POPUP "Gird"
+        POPUP "Grid"
         BEGIN
-            MENUITEM "Get Isometric Gird Size", IDMN_EXPRESSION_GIGS
+            MENUITEM "Get Isometric Grid Size", IDMN_EXPRESSION_GIGS
             MENUITEM SEPARATOR            
-            MENUITEM "Get Gird Coord", IDMN_EXPRESSION_GGC
+            MENUITEM "Get Grid Coord", IDMN_EXPRESSION_GGC
             MENUITEM "Get Real Coord", IDMN_EXPRESSION_GRC
         END
         MENUITEM SEPARATOR
@@ -410,7 +410,7 @@ BEGIN
     M_ACTION_CAOE             "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
     M_ACTION_CAOEBN           "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
     
-    M_ACTION_CG               "Create Gird %0 at Layer %1"
+    M_ACTION_CG               "Create Grid %0 at Layer %1"
 
 END
 
@@ -418,8 +418,8 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_SMBS             "%o Set Map to ( Width = %0, Height = %1 ) Success"
     M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
-    M_CONDITION_SMBP             "%o Set Map to ( Picture, FileName = %0, GirdSize = %1, GirdOffsetX = %2, GirdOffsetY = %3 ) Success"
-    M_CONDITION_SMBC             "%o Set Map to ( Collision, GirdSize = %0, GirdOffsetX = %1, GirdOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5, IterateName = %6 ) Success"
+    M_CONDITION_SMBP             "%o Set Map to ( Picture, FileName = %0, GridSize = %1, GridOffsetX = %2, GridOffsetY = %3 ) Success"
+    M_CONDITION_SMBC             "%o Set Map to ( Collision, GridSize = %0, GridOffsetX = %1, GridOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5, IterateName = %6 ) Success"
     M_CONDITION_OSMBC            "%o On Set Map By Collision, IterateName = %0"
     M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], IgnoreFlag = %4, Diagonal = %5, CheckDiagonalCorner = %6, ForceFind = %7, UseRealCoord = %8, SaveName = %9 ) Found"
 
@@ -430,11 +430,11 @@ BEGIN
     M_CONDITION_MA               "%o Map Available"
     M_CONDITION_CMCAC            "%o Check Map Type %3 Cost at [ %0 , %1 ] Equal to Cost %2, UseRealCoord = %4"
 
-    M_CONDITION_OAG            "%o Object %0 At Gird [ %1 , %2 ]"
+    M_CONDITION_OAG            "%o Object %0 At Grid [ %1 , %2 ]"
     M_CONDITION_OAC            "%o Object %0 At Coord [ %1 , %2 ]"
     M_CONDITION_OAO            "%o Object %0 At Obstacle of Map Type %1"
 
-    M_CONDITION_NOAG           "%o No Object %0 At Gird [ %1 , %2 ]"
+    M_CONDITION_NOAG           "%o No Object %0 At Grid [ %1 , %2 ]"
     M_CONDITION_NOAC           "%o No Object %0 At Coord [ %1 , %2 ]"
 
     M_CONDITION_CA             "%o Calculate Area ( LineMode = %0, Attack = %1, Start = [ %2 , %3 ], UseRealCoord = %4, Range = %5, StartRange = %6, IgnoreFlag = %7, AllRange = %8, AllRangeAttackRange = %9 ) Success"
@@ -464,7 +464,7 @@ BEGIN
     
     M_EXPRESSION_GIGS               "GIGS("
 
-    M_EXPRESSION_GGC                "GetGirdCoord("
+    M_EXPRESSION_GGC                "GetGridCoord("
     M_EXPRESSION_GRC                "GetRealCoord("
     
     M_EXPRESSION_GITI               "GetIterateIndex("
@@ -490,9 +490,9 @@ BEGIN
     M_WIDTH			                "Map Width"
     M_HEIGHT		                "Map Height"
     M_BASE64		                "Base64 String, Format: width:height:terrainStr:dynamicStr"
-    M_GIRDSIZE		                "Gird Size"
-    M_GIRDOFFSETX	                "Gird Offset X"
-    M_GIRDOFFSETY	                "Gird Offset Y"
+    M_GRIDSIZE		                "Grid Size"
+    M_GRIDOFFSETX	                "Grid Offset X"
+    M_GRIDOFFSETY	                "Grid Offset Y"
     M_STARTX		                "Start X"
     M_STARTY		                "Start Y"
     M_DESTINATIONX	                "Destination X"
@@ -500,7 +500,7 @@ BEGIN
     M_DIAGONAL  	                "Move Mode, 1 = Move 8-Dir, 0 = Move 4-Dir"
     M_CHECKDIAGONALCORNER           "Avoid Move Through Corner Diagonally, 1 = Enable, 0 = Disable"
     M_FORCEFIND		                "Force to Find Path Even Start/Destination is Obstacle"
-    M_USEREALCOORD	                "Use Real Coord Instead of Gird Coord, 1 = Enable, 0 = Disable"
+    M_USEREALCOORD	                "Use Real Coord Instead of Grid Coord, 1 = Enable, 0 = Disable"
     M_SAVENAME		                "Save Path by Name, Keep Blank if Don't Need to Save"
     M_EVEIT 		                "1 = Call 'On Set Map By Collision' to Check Collision Manually, 0 = Use Layer's Collision Mask"
     M_BASELAYER		                "Layer (Index Start From 1) to Check, 0 = All Layer"
@@ -549,8 +549,8 @@ BEGIN
     M_MIE                           "Move Ignore Enemy"
     M_AIA                           "Attack Ignore Ally"
     M_AIE                           "Attack Ignore Enemy"
-    M_ISOGW                         "Isometric Gird Width"
-    M_ISOGH                         "Isometric Gird Height"
+    M_ISOGW                         "Isometric Grid Width"
+    M_ISOGH                         "Isometric Grid Height"
 END
 
 #endif    // English (U.S.) resources

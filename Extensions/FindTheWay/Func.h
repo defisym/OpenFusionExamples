@@ -2,8 +2,8 @@
 
 inline void FindPath(LPRDATA rdPtr, Coord start, Coord destination, size_t ignoreFlag, bool diagonal, bool checkDiagonalCorner, bool forceFind, bool useRealCoord, const wstring& saveName) {
 	if (useRealCoord) {
-		start = rdPtr->pFTW->GetGirdCoord(start);
-		destination = rdPtr->pFTW->GetGirdCoord(destination);
+		start = rdPtr->pFTW->GetGridCoord(start);
+		destination = rdPtr->pFTW->GetGridCoord(destination);
 	}
 
 	if (!forceFind) {

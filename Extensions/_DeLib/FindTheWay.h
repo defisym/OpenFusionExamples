@@ -209,12 +209,12 @@ namespace FindTheWay {
 
 		size_t mapSize = 0;
 
-		size_t girdSize = 1;
-		size_t girdOffestX = 0;
-		size_t girdOffestY = 0;
+		size_t gridSize = 1;
+		size_t gridOffestX = 0;
+		size_t gridOffestY = 0;
 
-		size_t isoGirdWidth = 1;
-		size_t isoGirdHeight = 1;
+		size_t isoGridWidth = 1;
+		size_t isoGridHeight = 1;
 
 		bool isometric = false;
 
@@ -550,86 +550,86 @@ namespace FindTheWay {
 			Free();
 		}
 
-		inline static size_t GetMapWidth(size_t width, size_t girdSize, bool isometric = false) {
-			return isometric ? GetIsometricMapWidth(width, girdSize) : GetTraditionalMapWidth(width, girdSize);
+		inline static size_t GetMapWidth(size_t width, size_t gridSize, bool isometric = false) {
+			return isometric ? GetIsometricMapWidth(width, gridSize) : GetTraditionalMapWidth(width, gridSize);
 		}
 
-		inline static size_t GetMapHeight(size_t height, size_t girdSize, bool isometric = false) {
-			return isometric ? GetIsometricMapHeight(height, girdSize) : GetTraditionalMapHeight(height, girdSize);
+		inline static size_t GetMapHeight(size_t height, size_t gridSize, bool isometric = false) {
+			return isometric ? GetIsometricMapHeight(height, gridSize) : GetTraditionalMapHeight(height, gridSize);
 		}
 
 		// Only support n x n map
-		inline static size_t GetIsometricMapWidth(size_t width, size_t girdSize) {
-			auto isoGirdWidth = ZeroProtection((girdSize & 0xFFFF0000) >> 16);
+		inline static size_t GetIsometricMapWidth(size_t width, size_t gridSize) {
+			auto isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
 
-			return width / isoGirdWidth;
+			return width / isoGridWidth;
 		}
 
-		inline static size_t GetIsometricMapHeight(size_t height, size_t girdSize) {
-			auto isoGirdHeight = ZeroProtection((girdSize & 0x0000FFFF));
+		inline static size_t GetIsometricMapHeight(size_t height, size_t gridSize) {
+			auto isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
 
-			return height / isoGirdHeight;
+			return height / isoGridHeight;
 		}
 		
-		inline static size_t GetTraditionalMapWidth(size_t width, size_t girdSize) {
-			girdSize = ZeroProtection(girdSize);
+		inline static size_t GetTraditionalMapWidth(size_t width, size_t gridSize) {
+			gridSize = ZeroProtection(gridSize);
 			
-			return width / girdSize;
+			return width / gridSize;
 		}
 
-		inline static size_t GetTraditionalMapHeight(size_t height, size_t girdSize) {
-			girdSize = ZeroProtection(girdSize);
+		inline static size_t GetTraditionalMapHeight(size_t height, size_t gridSize) {
+			gridSize = ZeroProtection(gridSize);
 
-			return height / girdSize;
+			return height / gridSize;
 		}
 
 		inline void SetIsometric(bool isometric) {
 			this->isometric = isometric;
 		}
 
-		inline void SetGirdSize(size_t girdSize = 1, size_t girdOffestX = 0, size_t girdOffestY = 0) {			
+		inline void SetGridSize(size_t gridSize = 1, size_t gridOffestX = 0, size_t gridOffestY = 0) {			
 			if (!isometric) {
-				this->girdSize = ZeroProtection(girdSize);
+				this->gridSize = ZeroProtection(gridSize);
 			}
 			else {
-				this->isoGirdWidth = ZeroProtection((girdSize & 0xFFFF0000) >> 16);
-				this->isoGirdHeight = ZeroProtection((girdSize & 0x0000FFFF));
+				this->isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
+				this->isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
 			}
 
-			this->girdOffestX = girdOffestX;
-			this->girdOffestY = girdOffestY;
+			this->gridOffestX = gridOffestX;
+			this->gridOffestY = gridOffestY;
 		}
 
-		inline Coord GetGirdCoord(const Coord& realCoord) {
-			return isometric ? GetIsometricGirdCoord(realCoord) : GetTraditionalGirdCoord(realCoord);
+		inline Coord GetGridCoord(const Coord& realCoord) {
+			return isometric ? GetIsometricGridCoord(realCoord) : GetTraditionalGridCoord(realCoord);
 		}
 
-		inline Coord GetRealCoord(const Coord& girdCoord) {
-			return isometric ? GetIsometricRealCoord(girdCoord) : GetTraditionalRealCoord(girdCoord);
+		inline Coord GetRealCoord(const Coord& gridCoord) {
+			return isometric ? GetIsometricRealCoord(gridCoord) : GetTraditionalRealCoord(gridCoord);
 		}
 
-		inline Coord GetTraditionalGirdCoord(const Coord& realCoord) {
-			return (realCoord - Coord { girdOffestX ,girdOffestY }) / girdSize;
+		inline Coord GetTraditionalGridCoord(const Coord& realCoord) {
+			return (realCoord - Coord { gridOffestX ,gridOffestY }) / gridSize;
 		}
 
-		inline Coord GetTraditionalRealCoord(const Coord& girdCoord) {
-			return (girdCoord * girdSize + (size_t)(girdSize >> 1)) + Coord { girdOffestX ,girdOffestY };	// girdCoord * girdSize + (size_t)(girdSize / 2);
+		inline Coord GetTraditionalRealCoord(const Coord& gridCoord) {
+			return (gridCoord * gridSize + (size_t)(gridSize >> 1)) + Coord { gridOffestX ,gridOffestY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
 		}
 
-		inline static size_t GetIsometricGirdSize(size_t isoGirdWidth = 1, size_t isoGirdHeight = 1) {
-			isoGirdWidth = isoGirdWidth & 0xFFFF;
-			isoGirdHeight = isoGirdHeight & 0xFFFF;
+		inline static size_t GetIsometricGridSize(size_t isoGridWidth = 1, size_t isoGridHeight = 1) {
+			isoGridWidth = isoGridWidth & 0xFFFF;
+			isoGridHeight = isoGridHeight & 0xFFFF;
 
-			return (isoGirdWidth << 16) | isoGirdHeight;
+			return (isoGridWidth << 16) | isoGridHeight;
 		}
 
-		inline Coord GetIsometricGirdCoord(const Coord& realCoord) {
+		inline Coord GetIsometricGridCoord(const Coord& realCoord) {
 			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
-			size_t A = ((realCoord.x - girdOffestX) << 1) / isoGirdWidth;
+			size_t A = ((realCoord.x - gridOffestX) << 1) / isoGridWidth;
 			// Y from top (fusion)
-			size_t B = ((isoGirdHeight * height - realCoord.y - girdOffestY) << 1) / isoGirdHeight;
+			size_t B = ((isoGridHeight * height - realCoord.y - gridOffestY) << 1) / isoGridHeight;
 			// Y from bottom (Cartesian)
-			// size_t B = ((realCoord.y - girdOffestY) << 1) / isoGirdHeight;
+			// size_t B = ((realCoord.y - gridOffestY) << 1) / isoGridHeight;
 
 			size_t coordX = ((width - 1 + A - B) >> 1);
 			size_t coordY = (((height << 1) + width - 1 - A - B) >> 1);
@@ -637,12 +637,12 @@ namespace FindTheWay {
 			return Coord{ coordX,coordY };
 		}
 
-		inline Coord GetIsometricRealCoord(const Coord& girdCoord) {
-			size_t realX = ((isoGirdWidth * (height + girdCoord.x - girdCoord.y)) >> 1) + girdOffestX;
+		inline Coord GetIsometricRealCoord(const Coord& gridCoord) {
+			size_t realX = ((isoGridWidth * (height + gridCoord.x - gridCoord.y)) >> 1) + gridOffestX;
 			// Y from top (fusion)
-			size_t realY = ((isoGirdHeight * (height + 1 + girdCoord.y - width + girdCoord.x)) >> 1) + girdOffestY;
+			size_t realY = ((isoGridHeight * (height + 1 + gridCoord.y - width + gridCoord.x)) >> 1) + gridOffestY;
 			// Y from bottom (Cartesian)
-			// size_t realY = ((isoGirdHeight * (height - 1 - girdCoord.y + width - girdCoord.x)) >> 1) + girdOffestY;
+			// size_t realY = ((isoGridHeight * (height - 1 - gridCoord.y + width - gridCoord.x)) >> 1) + gridOffestY;
 
 			return Coord{ realX,realY };
 		}
@@ -1402,7 +1402,7 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
-			//// add first gird?
+			//// add first grid?
 			//// add start when interval == range
 			//if (!updateAttack && startRange == 0) {
 			//	area.emplace_back();
