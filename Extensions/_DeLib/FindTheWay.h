@@ -210,8 +210,8 @@ namespace FindTheWay {
 		size_t mapSize = 0;
 
 		size_t gridSize = 1;
-		size_t gridOffestX = 0;
-		size_t gridOffestY = 0;
+		size_t gridOffsetX = 0;
+		size_t gridOffsetY = 0;
 
 		size_t isoGridWidth = 1;
 		size_t isoGridHeight = 1;
@@ -550,34 +550,34 @@ namespace FindTheWay {
 			Free();
 		}
 
-		inline static size_t GetMapWidth(size_t width, size_t gridSize, bool isometric = false) {
-			return isometric ? GetIsometricMapWidth(width, gridSize) : GetTraditionalMapWidth(width, gridSize);
+		inline static size_t CalcMapWidth(size_t width, size_t gridSize, bool isometric = false) {
+			return isometric ? CalcIsometricMapWidth(width, gridSize) : CalcTraditionalMapWidth(width, gridSize);
 		}
 
-		inline static size_t GetMapHeight(size_t height, size_t gridSize, bool isometric = false) {
-			return isometric ? GetIsometricMapHeight(height, gridSize) : GetTraditionalMapHeight(height, gridSize);
+		inline static size_t CalcMapHeight(size_t height, size_t gridSize, bool isometric = false) {
+			return isometric ? CalcIsometricMapHeight(height, gridSize) : CalcTraditionalMapHeight(height, gridSize);
 		}
 
 		// Only support n x n map
-		inline static size_t GetIsometricMapWidth(size_t width, size_t gridSize) {
+		inline static size_t CalcIsometricMapWidth(size_t width, size_t gridSize) {
 			auto isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
 
 			return width / isoGridWidth;
 		}
 
-		inline static size_t GetIsometricMapHeight(size_t height, size_t gridSize) {
+		inline static size_t CalcIsometricMapHeight(size_t height, size_t gridSize) {
 			auto isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
 
 			return height / isoGridHeight;
 		}
 		
-		inline static size_t GetTraditionalMapWidth(size_t width, size_t gridSize) {
+		inline static size_t CalcTraditionalMapWidth(size_t width, size_t gridSize) {
 			gridSize = ZeroProtection(gridSize);
 			
 			return width / gridSize;
 		}
 
-		inline static size_t GetTraditionalMapHeight(size_t height, size_t gridSize) {
+		inline static size_t CalcTraditionalMapHeight(size_t height, size_t gridSize) {
 			gridSize = ZeroProtection(gridSize);
 
 			return height / gridSize;
@@ -587,7 +587,33 @@ namespace FindTheWay {
 			this->isometric = isometric;
 		}
 
-		inline void SetGridSize(size_t gridSize = 1, size_t gridOffestX = 0, size_t gridOffestY = 0) {			
+		inline size_t GetGridWidth() {
+			if (!isometric) {
+				return gridSize;
+			}
+			else {
+				return isoGridWidth;
+			}
+		}
+
+		inline size_t GetGridHeight() {
+			if (!isometric) {
+				return gridSize;
+			}
+			else {
+				return isoGridHeight;
+			}
+		}
+
+		inline size_t GetGridOffsetX(){
+			return gridOffsetX;
+		}
+
+		inline size_t GetGridOffsetY(){
+			return gridOffsetY;
+		}
+
+		inline void SetGridSize(size_t gridSize = 1, size_t gridOffsetX = 0, size_t gridOffsetY = 0) {			
 			if (!isometric) {
 				this->gridSize = ZeroProtection(gridSize);
 			}
@@ -596,8 +622,8 @@ namespace FindTheWay {
 				this->isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
 			}
 
-			this->gridOffestX = gridOffestX;
-			this->gridOffestY = gridOffestY;
+			this->gridOffsetX = gridOffsetX;
+			this->gridOffsetY = gridOffsetY;
 		}
 
 		inline Coord GetGridCoord(const Coord& realCoord) {
@@ -609,11 +635,11 @@ namespace FindTheWay {
 		}
 
 		inline Coord GetTraditionalGridCoord(const Coord& realCoord) {
-			return (realCoord - Coord { gridOffestX ,gridOffestY }) / gridSize;
+			return (realCoord - Coord { gridOffsetX ,gridOffsetY }) / gridSize;
 		}
 
 		inline Coord GetTraditionalRealCoord(const Coord& gridCoord) {
-			return (gridCoord * gridSize + (size_t)(gridSize >> 1)) + Coord { gridOffestX ,gridOffestY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
+			return (gridCoord * gridSize + (size_t)(gridSize >> 1)) + Coord { gridOffsetX ,gridOffsetY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
 		}
 
 		inline static size_t GetIsometricGridSize(size_t isoGridWidth = 1, size_t isoGridHeight = 1) {
@@ -625,11 +651,11 @@ namespace FindTheWay {
 
 		inline Coord GetIsometricGridCoord(const Coord& realCoord) {
 			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
-			size_t A = ((realCoord.x - gridOffestX) << 1) / isoGridWidth;
+			size_t A = ((realCoord.x - gridOffsetX) << 1) / isoGridWidth;
 			// Y from top (fusion)
-			size_t B = ((isoGridHeight * height - realCoord.y - gridOffestY) << 1) / isoGridHeight;
+			size_t B = ((isoGridHeight * height - realCoord.y - gridOffsetY) << 1) / isoGridHeight;
 			// Y from bottom (Cartesian)
-			// size_t B = ((realCoord.y - gridOffestY) << 1) / isoGridHeight;
+			// size_t B = ((realCoord.y - gridOffsetY) << 1) / isoGridHeight;
 
 			size_t coordX = ((width - 1 + A - B) >> 1);
 			size_t coordY = (((height << 1) + width - 1 - A - B) >> 1);
@@ -638,11 +664,11 @@ namespace FindTheWay {
 		}
 
 		inline Coord GetIsometricRealCoord(const Coord& gridCoord) {
-			size_t realX = ((isoGridWidth * (height + gridCoord.x - gridCoord.y)) >> 1) + gridOffestX;
+			size_t realX = ((isoGridWidth * (height + gridCoord.x - gridCoord.y)) >> 1) + gridOffsetX;
 			// Y from top (fusion)
-			size_t realY = ((isoGridHeight * (height + 1 + gridCoord.y - width + gridCoord.x)) >> 1) + gridOffestY;
+			size_t realY = ((isoGridHeight * (height + 1 + gridCoord.y - width + gridCoord.x)) >> 1) + gridOffsetY;
 			// Y from bottom (Cartesian)
-			// size_t realY = ((isoGridHeight * (height - 1 - gridCoord.y + width - gridCoord.x)) >> 1) + gridOffestY;
+			// size_t realY = ((isoGridHeight * (height - 1 - gridCoord.y + width - gridCoord.x)) >> 1) + gridOffsetY;
 
 			return Coord{ realX,realY };
 		}
@@ -766,11 +792,11 @@ namespace FindTheWay {
 			return type == CoordType::X ? (*pPath) [pos].x : (*pPath) [pos].y;
 		}
 
-		inline size_t GetWidth() {
+		inline size_t GetMapWidth() {
 			return width;
 		}
 
-		inline size_t GetHeight() {
+		inline size_t GetMapHeight() {
 			return height;
 		}
 
@@ -1631,12 +1657,21 @@ namespace FindTheWay {
 				| (size_t)attackIgnoreEnemy;
 		}
 
+		inline bool GetStash() {
+			return stash;
+		}
 		inline void SetStash(bool state = true) {
 			stash = state;
 		}
 		inline void ClearStash() {
 			stashPath.clear();
 			stashArea.clear();
+		}
+		inline size_t GetPathStashSize(){
+			return stashPath.size();
+		}
+		inline size_t GetAreaStashSize(){
+			return stashArea.size();
 		}
 	};
 }
