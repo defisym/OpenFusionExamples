@@ -225,6 +225,15 @@ BEGIN
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROP_TEXTTITLE        "Settings"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_SEPARATOR                      "====================="
+END
 
 STRINGTABLE DISCARDABLE 
 BEGIN

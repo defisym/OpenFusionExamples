@@ -17,6 +17,13 @@
 // Help ID
 #define ID_HELP                 20004
 
+// 	Properties
+//-------------------
+#define	IDS_PROP_TEXTTITLE				200
+
+// 	Debug tree
+//-------------------
+#define	IDS_SEPARATOR   				300
 
 // 	Actions
 //-------------------
