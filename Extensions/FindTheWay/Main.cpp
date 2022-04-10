@@ -284,8 +284,8 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	auto frameWidth = frameRect.right - frameRect.left;
 	auto frameHeight = frameRect.bottom - frameRect.top;
 
-	size_t width = FindTheWayClass::GetMapWidth(frameWidth, gridSize, rdPtr->isometric);
-	size_t height = FindTheWayClass::GetMapHeight(frameHeight, gridSize, rdPtr->isometric); 
+	size_t width = FindTheWayClass::CalcMapWidth(frameWidth, gridSize, rdPtr->isometric);
+	size_t height = FindTheWayClass::CalcMapHeight(frameHeight, gridSize, rdPtr->isometric); 
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
@@ -1255,8 +1255,8 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	auto width = rdPtr->pFTW->GetWidth();
-	auto height = rdPtr->pFTW->GetHeight();
+	auto width = rdPtr->pFTW->GetMapWidth();
+	auto height = rdPtr->pFTW->GetMapHeight();
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {

@@ -19,6 +19,9 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - Set : terrain & dynamic
   - Retrieve : real map & terrain & dynamic
 
+- Grid offset
+  - if play area is smaller than frame size, and you need to make it at the center, then here comes the offset to main frame, this param is needed to convert coord properly.
+
 - Cost
   - `0 ~ 255`, 255 = obstacle, others = path
 

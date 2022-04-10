@@ -25,7 +25,20 @@
 
 // 	Debug tree
 //-------------------
-#define	IDS_DB_ISOMETRIC							300
+#define	IDS_SEPARATOR   							300
+
+#define	IDS_DB_ISOMETRIC							301
+
+#define	IDS_DB_MAPINFO_INVALID						302
+#define	IDS_DB_MAPINFO_VALID						303
+
+#define	IDS_DB_GRID							        304
+#define	IDS_DB_ISOGRID							    305
+#define	IDS_DB_GRIDOFFSET							306
+
+#define	IDS_DB_STASH							    307
+#define	IDS_DB_STASH_PATH							308
+#define	IDS_DB_STASH_AREA							309
 
 
 // 	Actions

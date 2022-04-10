@@ -381,7 +381,18 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDS_SEPARATOR                      "====================="
     IDS_DB_ISOMETRIC                    "Isometric: %s"
+
+    IDS_DB_MAPINFO_INVALID              "Map Not Initialized"
+    IDS_DB_MAPINFO_VALID                "Map Width: %5d, Height: %5d"
+    
+    IDS_DB_GRID                         "Grid Width: %5d, Height: %5d"
+    IDS_DB_GRIDOFFSET                   "Grid Offset X: %5d, Offset Y: %5d"
+    
+    IDS_DB_STASH                        "Stash: %s"
+    IDS_DB_STASH_PATH                   "Stashed Path(s): %s"
+    IDS_DB_STASH_AREA                   "Stashed Area(s): %s"
 END
 
 STRINGTABLE DISCARDABLE 
