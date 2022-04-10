@@ -204,6 +204,11 @@ BEGIN
             MENUITEM "Clear Map",                       IDMN_ACTION_CM
         END
         MENUITEM SEPARATOR
+        POPUP "Gird"
+        BEGIN
+            MENUITEM "Create Gird",                     IDMN_ACTION_CG
+        END
+        MENUITEM SEPARATOR
         POPUP "Path"
         BEGIN
             MENUITEM "Iterate Path",                    IDMN_ACTION_ITP
@@ -376,6 +381,11 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDS_DB_ISOMETRIC                    "Isometric: %s"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
     M_ACTION_SM               "Set Map Type %3 at [ %0 , %1 ] to Cost %2, UseRealCoord = %4, UseIterateCoord = %5"
     M_ACTION_C                "Continue"
     M_ACTION_ITP              "Iterate Path %0, UseRealCoord = %1, IterateName = %2"
@@ -399,6 +409,8 @@ BEGIN
     
     M_ACTION_CAOE             "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
     M_ACTION_CAOEBN           "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
+    
+    M_ACTION_CG               "Create Gird %0 at Layer %1"
 
 END
 
@@ -491,7 +503,7 @@ BEGIN
     M_USEREALCOORD	                "Use Real Coord Instead of Gird Coord, 1 = Enable, 0 = Disable"
     M_SAVENAME		                "Save Path by Name, Keep Blank if Don't Need to Save"
     M_EVEIT 		                "1 = Call 'On Set Map By Collision' to Check Collision Manually, 0 = Use Layer's Collision Mask"
-    M_BASEALYER		                "Layer (Index Start From 1) to Check, 0 = All Layer"
+    M_BASELAYER		                "Layer (Index Start From 1) to Check, 0 = All Layer"
     M_PATHNAME		                "Saved Path Name, Keep Blank to Check Last Path"
     M_ITNAME		                "Iterate Name"
     M_OBJECT		                "Select Object"
@@ -515,6 +527,7 @@ BEGIN
     M_ENEMY                         "0 = Ally, 1 = Enemy"
     M_STASH                         "0 = Don't Stash & Clear Stash, 1 = Stash"
     M_AOETYPE                       "AOE type"
+    M_LAYER		                    "Layer (Index Start From 1) to Check"
     
     M_STEP                          "Step in the Path"
     M_COORDTYPE                     "Coord Type, 0 = X, 1 = Y"

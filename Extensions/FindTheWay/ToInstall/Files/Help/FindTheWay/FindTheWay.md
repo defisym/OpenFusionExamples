@@ -35,6 +35,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 
 - Continue
   - *This extension put find/calc area in condition to check if params area valid. If you don't need following actions immediately, use this action to avoid fusion remove the empty event*
+
 - Set Stash
   - *with this on, path & area will be stashed, then retrieve it with out calculate if states are the same (map/zoc/ignore flag, etc.)*
   - *stash will be clear automatically once map updated*
@@ -47,6 +48,15 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - Set Map By Object
 
   - Clear Map
+
+- Gird
+  - Create Gird
+    - *paste gird object as backdrop to non-obstacle gird*
+    - *pasted backdrop will has the same image of gird object's current frame and the same effect*
+    - *pasted backdrop has no effect on collisions, aka `OBSTACLE_TRANSPARENT`*
+    - *gird object **must** exist*
+    - *gird object **must** has the **same size** of map gird, gird object's hot spot **must** be set to **center** (traditional mode)*
+    - *gird object **must** has the **same height and half width** of map gird, gird object's hot spot **must** be set to **right-center** (isometric mode)*
 
 - Path
   - Iterate Path

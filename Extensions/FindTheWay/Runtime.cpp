@@ -21,6 +21,8 @@ enum
 //	DB_CURRENTVALUE,
 //	DB_CURRENTCHECK,
 //	DB_CURRENTCOMBO
+
+	DB_ISOMETRIC,
 };
 
 // Items displayed in the debugger
@@ -32,6 +34,8 @@ WORD DebugTree[]=
 //	DB_CURRENTVALUE|DB_EDITABLE,
 //	DB_CURRENTCHECK,
 //	DB_CURRENTCOMBO,
+
+	DB_ISOMETRIC,
 
 	// End of table (required)
 	DB_END
@@ -561,6 +565,14 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		break;
 	}
 */
+	wchar_t temp[DB_BUFFERSIZE];
+
+	switch (id) {
+	case DB_ISOMETRIC:
+		LoadString(hInstLib, IDS_DB_ISOMETRIC, temp, DB_BUFFERSIZE);
+		wsprintf(pBuffer, temp, rdPtr->isometric ? L"True" : L"False");
+		break;
+	}
 
 #endif // !defined(RUN_ONLY)
 }

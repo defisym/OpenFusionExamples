@@ -23,6 +23,10 @@
 #define	IDS_PROP_ISOMETRIC_CHECK				    201
 #define	IDS_PROP_ISOMETRIC_CHECK_INFO				202
 
+// 	Debug tree
+//-------------------
+#define	IDS_DB_ISOMETRIC							300
+
 
 // 	Actions
 //-------------------
@@ -49,6 +53,7 @@
 #define	IDMN_ACTION_CABNO			25015
 #define	IDMN_ACTION_CAOE			25016
 #define	IDMN_ACTION_CAOEBN			25017
+#define	IDMN_ACTION_CG  			25018
 
 
 // Action strings
@@ -70,6 +75,7 @@
 #define	M_ACTION_CABNO				5015
 #define	M_ACTION_CAOE				5016
 #define	M_ACTION_CAOEBN				5017
+#define	M_ACTION_CG 				5018
 
 
 // Titles of action parameters
@@ -82,6 +88,7 @@
 #define M_COUNT         	 5507
 #define M_STASH         	 5508
 #define M_AOETYPE         	 5509
+#define M_LAYER         	 5510
 
 //	Conditions
 //--------------------
@@ -176,7 +183,7 @@
 #define M_USEREALCOORD				6512
 #define M_SAVENAME				    6513
 #define M_EVEIT 				    6514
-#define M_BASEALYER				    6515
+#define M_BASELAYER				    6515
 #define M_PATHNAME				    6516
 #define M_DIAGONAL				    6517
 #define M_ITNAME				    6518

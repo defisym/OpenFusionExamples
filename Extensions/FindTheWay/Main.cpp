@@ -24,7 +24,7 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_SMBS, M_CONDITION_SMBS, CND_CONDITION_SMBS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		IDMN_CONDITION_SMBB, M_CONDITION_SMBB, CND_CONDITION_SMBB, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_BASE64,
-		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASEALYER, M_TYPE, M_ITNAME,
+		IDMN_CONDITION_SMBC, M_CONDITION_SMBC, CND_CONDITION_SMBC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 7, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_GIRDSIZE, M_GIRDOFFSETX, M_GIRDOFFSETY, M_EVEIT, M_BASELAYER, M_TYPE, M_ITNAME,
 		IDMN_CONDITION_OSMBC, M_CONDITION_OSMBC, CND_CONDITION_OSMBC, 0, 1, PARAM_EXPSTRING, M_ITNAME,
 
 		IDMN_CONDITION_OPF, M_CONDITION_OPF, CND_CONDITION_OPF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 10, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_STARTX, M_STARTY, M_DESTINATIONX, M_DESTINATIONY, M_IGNOREFLAG, M_DIAGONAL, M_CHECKDIAGONALCORNER, M_FORCEFIND, M_USEREALCOORD, M_SAVENAME,
@@ -93,6 +93,9 @@ short actionsInfos[]=
 		IDMN_ACTION_CAOE, M_ACTION_CAOE, ACT_ACTION_CAOE, 0, 5, PARAM_CREATE, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_OBJECT, M_DIR, M_AOETYPE, M_IGNOREFLAG,
 
 		IDMN_ACTION_CAOEBN, M_ACTION_CAOEBN, ACT_ACTION_CAOEBN, 0, 5, PARAM_EXPSTRING, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_OBJECT, M_DIR, M_AOETYPE, M_IGNOREFLAG,
+
+		IDMN_ACTION_CG, M_ACTION_CG, ACT_ACTION_CG, 0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_LAYER,
+
 		};
 
 // Definitions of parameters for each expression
@@ -1231,6 +1234,53 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 	return 0;
 }
 
+short WINAPI DLLExport CreateGird(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	size_t nLayer = (size_t)CNC_GetParameter(rdPtr) - 1;
+	
+	// int nObstacleType = rdPtr->rHo.hoCurrentParam->evp.evpW.evpW0;
+	// CNC_GetParameter(rdPtr);
+	int nObstacleType = OBSTACLE_TRANSPARENT;		// no effect on collisions
+
+	auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+	cSurface imageSurface;
+	LockImageSurface(rhPtr->rhIdAppli, object->roc.rcImage, imageSurface);
+
+	auto hoX = object->roHo.hoImgXSpot;
+	auto hoY = object->roHo.hoImgYSpot;
+
+	auto effect = object->ros.rsEffect;
+	auto effectParam = object->ros.rsEffectParam;
+
+	RetIfMapInvalid(0);
+
+	auto width = rdPtr->pFTW->GetWidth();
+	auto height = rdPtr->pFTW->GetHeight();
+
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
+			if (rdPtr->pFTW->GetMap(x, y, MapType::MAP) != MAP_OBSTACLE) {
+				auto [rx, ry] = rdPtr->pFTW->GetRealCoord(Coord { x, y });
+
+				rhPtr->rh4.rh4Mv->mvAddBackdrop(
+					&imageSurface,
+					rx - hoX,
+					ry - hoY,
+					effect,
+					effectParam,
+					nObstacleType,
+					nLayer
+				);
+			}
+		}
+	}
+
+	UnlockImageSurface(imageSurface);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1516,6 +1566,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CreateAreaByNameOnce,
 			CreateAOE,
 			CreateAOEByName,
+
+			CreateGird,
 
 			0
 			};
