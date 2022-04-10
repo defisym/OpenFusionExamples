@@ -63,7 +63,7 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION_SM, M_ACTION_SM, ACT_ACTION_SM,	0, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_X, M_Y, M_COST, M_TYPE, M_USEREALCOORD, M_USEITERATECOORD,
+		IDMN_ACTION_SM, M_ACTION_SM, ACT_ACTION_SM,	0, 5, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_X, M_Y, M_COST, M_TYPE, M_USEREALCOORD,
 		
 		IDMN_ACTION_C, M_ACTION_C, ACT_ACTION_C,	0, 0,
 		
@@ -95,6 +95,8 @@ short actionsInfos[]=
 		IDMN_ACTION_CAOEBN, M_ACTION_CAOEBN, ACT_ACTION_CAOEBN, 0, 5, PARAM_EXPSTRING, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_OBJECT, M_DIR, M_AOETYPE, M_IGNOREFLAG,
 
 		IDMN_ACTION_CG, M_ACTION_CG, ACT_ACTION_CG, 0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_LAYER,
+
+		IDMN_ACTION_SGS, M_ACTION_SGS, ACT_ACTION_SGS, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_GRIDSIZE, M_GRIDOFFSETX, M_GRIDOFFSETY,
 
 		};
 
@@ -207,8 +209,11 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 		return FALSE;
 	}
 
-	size_t width = pSf->GetWidth();
-	size_t height = pSf->GetHeight();
+	size_t picWidth = pSf->GetWidth();
+	size_t picHeight = pSf->GetHeight();
+
+	size_t width = FindTheWayClass::CalcMapWidth(pSf->GetWidth(), gridSize, rdPtr->isometric);
+	size_t height = FindTheWayClass::CalcMapHeight(pSf->GetHeight(), gridSize, rdPtr->isometric); 
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
@@ -221,8 +226,6 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	rdPtr->pFTW->SetGridSize(gridSize, gridOffsetX, gridOffsetY);
 
-	auto [gridWidth, gridHeight] = rdPtr->pFTW->GetGridCoord(Coord{ width ,height });
-
 	BYTE* buff = pSf->LockBuffer();
 	if (!buff) {
 		return 0;
@@ -231,14 +234,14 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 	int pitch = pSf->GetPitch();
 	if (pitch < 0) {
 		pitch *= -1;
-		buff -= pitch * (height - 1);
+		buff -= pitch * (picHeight - 1);
 	}
 
-	size_t size = pitch * height;
+	size_t size = pitch * picHeight;
 	size_t byte = pSf->GetDepth() >> 3;
 
-	for (size_t y = 0; y < gridHeight; y++) {
-		for (size_t x = 0; x < gridWidth; x++) {
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
 			auto [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
 			auto offset = realY * pitch + realX * byte;
 
@@ -775,17 +778,13 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
 	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
-	bool useIterateCoord = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
 
 	Coord gridCoord = Coord{ x, y };
 
-	if (useIterateCoord) {
-		gridCoord = rdPtr->pFTW->GetGridCoord(rdPtr->itCoord);
-	}
-	else if (useRealCoord) {
+	if (useRealCoord) {
 		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
 	}
 
@@ -1281,6 +1280,19 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+
+short WINAPI DLLExport SetGridSize(LPRDATA rdPtr, long param1, long param2) {
+	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+
+	RetIfMapInvalid(0);
+
+	rdPtr->pFTW->SetGridSize(gridSize, gridOffsetX, gridOffsetY);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1568,6 +1580,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CreateAOEByName,
 
 			CreateGrid,
+			SetGridSize,
 
 			0
 			};

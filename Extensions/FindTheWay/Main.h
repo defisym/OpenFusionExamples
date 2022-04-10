@@ -66,8 +66,9 @@
 #define	ACT_ACTION_CAOE					16
 #define	ACT_ACTION_CAOEBN				17
 #define	ACT_ACTION_CG					18
+#define	ACT_ACTION_SGS					19
 
-#define	ACT_LAST						19
+#define	ACT_LAST						20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

@@ -60,6 +60,9 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
     - *grid object **must** exist*
     - *grid object **must** has the **same size** of map grid, grid object's hot spot **must** be set to **center** (traditional mode)*
     - *grid object **must** has the **same height and half width** of map grid, grid object's hot spot **must** be set to **right-center** (isometric mode)*
+  
+  - Set Grid Size
+    - *when using `Set Map By Size`, `Set Map By Base64` or `Set Map By Picture`, you need to set grid size to make coord convert work properly*
 
 - Path
   - Iterate Path
@@ -99,8 +102,11 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 
 - Set Map
   - Set Map By Size
+    - *please update gird size later*
   - Set Map By Base64
+    - *please update gird size later*
   - Set Map By Picture
+    - *in this mode, `gridSize` & `gridOffset` are used to find the proper pixel of picture, if your picture size is different from real map size, please update gird size later*
   - Set Map By Collision
     - *you can let extension retrieve collision of layers, or call `On Set Map By Collision` for each grid for you to check & set collisions directly*
 

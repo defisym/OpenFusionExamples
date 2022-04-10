@@ -207,6 +207,8 @@ BEGIN
         POPUP "Grid"
         BEGIN
             MENUITEM "Create Grid",                     IDMN_ACTION_CG
+            MENUITEM SEPARATOR            
+            MENUITEM "Set Grid Size",                   IDMN_ACTION_SGS
         END
         MENUITEM SEPARATOR
         POPUP "Path"
@@ -397,7 +399,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_SM               "Set Map Type %3 at [ %0 , %1 ] to Cost %2, UseRealCoord = %4, UseIterateCoord = %5"
+    M_ACTION_SM               "Set Map Type %3 at [ %0 , %1 ] to Cost %2, UseRealCoord = %4"
     M_ACTION_C                "Continue"
     M_ACTION_ITP              "Iterate Path %0, UseRealCoord = %1, IterateName = %2"
     M_ACTION_SMBO             "Set Map Type %2 By Object %0 Position to Cost %1"
@@ -422,6 +424,8 @@ BEGIN
     M_ACTION_CAOEBN           "Create %1 AOE %0, Dir %2, AOE type %3, IgnoreFlag = %4"
     
     M_ACTION_CG               "Create Grid %0 at Layer %1"
+    M_ACTION_SGS              "Set GridSize = %0, GridOffsetX = %1, GridOffsetY = %2"
+
 
 END
 

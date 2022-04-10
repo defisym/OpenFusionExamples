@@ -67,6 +67,7 @@
 #define	IDMN_ACTION_CAOE			25016
 #define	IDMN_ACTION_CAOEBN			25017
 #define	IDMN_ACTION_CG  			25018
+#define	IDMN_ACTION_SGS  			25019
 
 
 // Action strings
@@ -89,6 +90,7 @@
 #define	M_ACTION_CAOE				5016
 #define	M_ACTION_CAOEBN				5017
 #define	M_ACTION_CG 				5018
+#define	M_ACTION_SGS 				5019
 
 
 // Titles of action parameters
