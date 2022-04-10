@@ -626,17 +626,23 @@ namespace FindTheWay {
 		inline Coord GetIsometricGirdCoord(const Coord& realCoord) {
 			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
 			size_t A = ((realCoord.x - girdOffestX) << 1) / isoGirdWidth;
+			// Y from top (fusion)
 			size_t B = ((isoGirdHeight * height - realCoord.y - girdOffestY) << 1) / isoGirdHeight;
+			// Y from bottom (Cartesian)
+			// size_t B = ((realCoord.y - girdOffestY) << 1) / isoGirdHeight;
 
-			size_t coordX = ((width + 1 + A - B) >> 1) - 1;
-			size_t coordY = (((height << 1) + width + 1 - A - B) >> 1) - 1;
+			size_t coordX = ((width - 1 + A - B) >> 1);
+			size_t coordY = (((height << 1) + width - 1 - A - B) >> 1);
 
 			return Coord{ coordX,coordY };
 		}
 
 		inline Coord GetIsometricRealCoord(const Coord& girdCoord) {
 			size_t realX = ((isoGirdWidth * (height + girdCoord.x - girdCoord.y)) >> 1) + girdOffestX;
+			// Y from top (fusion)
 			size_t realY = ((isoGirdHeight * (height + 1 + girdCoord.y - width + girdCoord.x)) >> 1) + girdOffestY;
+			// Y from bottom (Cartesian)
+			// size_t realY = ((isoGirdHeight * (height - 1 - girdCoord.y + width - girdCoord.x)) >> 1) + girdOffestY;
 
 			return Coord{ realX,realY };
 		}
