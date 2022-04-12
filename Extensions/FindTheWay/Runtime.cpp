@@ -599,50 +599,56 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 */
 	wchar_t temp[DB_BUFFERSIZE];
 
+	auto output = [&](size_t id, ...) {
+		va_list args;
+		va_start(args, id);
+
+		LoadString(hInstLib, id, temp, DB_BUFFERSIZE);
+		vswprintf(pBuffer, DB_BUFFERSIZE, temp, args);
+
+		va_end(args);
+	};
+
+	bool notSeparator = (id != DB_SEPARATOR_START)
+					&& (id != DB_SEPARATOR_1)
+					&& (id != DB_SEPARATOR_2)
+					&& (id != DB_SEPARATOR_END);
+
+	if (rdPtr->pFTW == nullptr && notSeparator) {
+		output(IDS_DB_MAPINFO_INVALID);
+		return;
+	}
+
 	switch (id) {
 	case DB_SEPARATOR_START:
 	case DB_SEPARATOR_1:
 	case DB_SEPARATOR_2:
 	case DB_SEPARATOR_END:
-		LoadString(hInstLib, IDS_SEPARATOR, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp);
+		output(IDS_SEPARATOR);
 		break;
-
+	
 	case DB_ISOMETRIC:
-		LoadString(hInstLib, IDS_DB_ISOMETRIC, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->isometric ? L"True" : L"False");
+		output(IDS_DB_ISOMETRIC, rdPtr->isometric ? L"True" : L"False");
 		break;
 	case DB_MAPINFO:
-		if (rdPtr->pFTW == nullptr) {
-			LoadString(hInstLib, IDS_DB_MAPINFO_INVALID, temp, DB_BUFFERSIZE);
-			wsprintf(pBuffer, temp);
-		}
-		else {
-			LoadString(hInstLib, IDS_DB_MAPINFO_VALID, temp, DB_BUFFERSIZE);
-			wsprintf(pBuffer, temp, rdPtr->pFTW->GetMapWidth(), rdPtr->pFTW->GetMapHeight());
-		}
+		output(IDS_DB_MAPINFO_VALID,rdPtr->pFTW->GetMapWidth(), rdPtr->pFTW->GetMapHeight());
 		break;
 	case DB_GRID:
-		LoadString(hInstLib, IDS_DB_GRID, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->pFTW->GetGridWidth(), rdPtr->pFTW->GetGridHeight());
+		output(IDS_DB_GRID, rdPtr->pFTW->GetGridWidth(), rdPtr->pFTW->GetGridHeight());
 		break;
 	case DB_GRIDOFFSET:
-		LoadString(hInstLib, IDS_DB_GRIDOFFSET, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->pFTW->GetGridOffsetX(), rdPtr->pFTW->GetGridOffsetY());
+		output(IDS_DB_GRIDOFFSET, rdPtr->pFTW->GetGridOffsetX(), rdPtr->pFTW->GetGridOffsetY());
 		break;
 	case DB_STASH:
-		LoadString(hInstLib, IDS_DB_STASH, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->pFTW->GetStash() ? L"Enabled" : L"Disabled");
+		output(IDS_DB_STASH, rdPtr->pFTW->GetStash() ? L"Enabled" : L"Disabled");
 		break;
 	case DB_STASH_PATH:
-		LoadString(hInstLib, IDS_DB_STASH_PATH, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->pFTW->GetStash()
+		output(IDS_DB_STASH_PATH, rdPtr->pFTW->GetStash()
 			? _itos(rdPtr->pFTW->GetPathStashSize()).c_str()
 			: L"Disabled");
 		break;
 	case DB_STASH_AREA:
-		LoadString(hInstLib, IDS_DB_STASH_AREA, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->pFTW->GetStash()
+		output(IDS_DB_STASH_AREA, rdPtr->pFTW->GetStash()
 			? _itos(rdPtr->pFTW->GetAreaStashSize()).c_str()
 			: L"Disabled");
 		break;

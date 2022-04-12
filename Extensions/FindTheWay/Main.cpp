@@ -976,6 +976,8 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	int type = (int)CNC_GetParameter(rdPtr);
 
+	RetIfMapInvalid(0);
+
 	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 	constexpr auto ALLY = 0;
@@ -1236,15 +1238,35 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	size_t nLayer = (size_t)CNC_GetParameter(rdPtr) - 1;
-	
+
 	// int nObstacleType = rdPtr->rHo.hoCurrentParam->evp.evpW.evpW0;
 	// CNC_GetParameter(rdPtr);
 	int nObstacleType = OBSTACLE_TRANSPARENT;		// no effect on collisions
 
 	auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	short nFrame = object->roa.raAnimDirOffset->adNumberOfFrame;
 
-	cSurface imageSurface;
-	LockImageSurface(rhPtr->rhIdAppli, object->roc.rcImage, imageSurface);
+	// get alterable value
+	long rOffset = ((CValue*)(object->rov.rvpValues))->m_long;
+	long bOffset = ((CValue*)(object->rov.rvpValues) + 1)->m_long;
+
+	auto lockSf=[&](cSurface& sf,short offset)->BOOL{
+		if (offset >= nFrame) {
+			return false;
+		}
+
+		// get animation
+		DWORD hImage = object->roa.raAnimDirOffset->adFrame[offset];
+		return LockImageSurface(rhPtr->rhIdAppli, hImage, sf);
+	};
+
+	cSurface imageSurfaceLT;
+	cSurface imageSurfaceR;
+	cSurface imageSurfaceB;
+
+	lockSf(imageSurfaceLT, 0);
+	lockSf(imageSurfaceR, 1);
+	lockSf(imageSurfaceB, 2);
 
 	auto hoX = object->roHo.hoImgXSpot;
 	auto hoY = object->roHo.hoImgYSpot;
@@ -1257,25 +1279,41 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	auto width = rdPtr->pFTW->GetMapWidth();
 	auto height = rdPtr->pFTW->GetMapHeight();
 
-	for (size_t y = 0; y < height; y++) {
-		for (size_t x = 0; x < width; x++) {
-			if (rdPtr->pFTW->GetMap(x, y, MapType::MAP) != MAP_OBSTACLE) {
-				auto [rx, ry] = rdPtr->pFTW->GetRealCoord(Coord { x, y });
+	auto addBKD = [&](cSurface* pSf, int x, int y) {
+		if (!pSf->IsValid()) {
+			return;
+		}
 
-				rhPtr->rh4.rh4Mv->mvAddBackdrop(
-					&imageSurface,
-					rx - hoX,
-					ry - hoY,
+		rhPtr->rh4.rh4Mv->mvAddBackdrop(
+					pSf,
+					x,
+					y,
 					effect,
 					effectParam,
 					nObstacleType,
 					nLayer
 				);
+	};
+
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
+			if (rdPtr->pFTW->GetMap(x, y, MapType::MAP) != MAP_OBSTACLE) {
+				auto [rx, ry] = rdPtr->pFTW->GetRealCoord(Coord{ x, y });
+
+				addBKD(&imageSurfaceLT, rx - hoX, ry - hoY);
+
+				if (rdPtr->pFTW->GetMap(x + 1, y, MapType::MAP) == MAP_OBSTACLE) {
+					addBKD(&imageSurfaceR, rx - hoX + (x + 1 == width ? 0 : rOffset), ry - hoY);
+				}
+
+				if (rdPtr->pFTW->GetMap(x, y + 1, MapType::MAP) == MAP_OBSTACLE) {
+					addBKD(&imageSurfaceB, rx - hoX, ry - hoY + (y + 1 == height ? 0 : bOffset));
+				}
 			}
 		}
 	}
 
-	UnlockImageSurface(imageSurface);
+	UnlockImageSurface(imageSurfaceLT);
 
 	return 0;
 }

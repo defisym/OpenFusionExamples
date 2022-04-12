@@ -54,12 +54,14 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 
 - Grid
   - Create Grid
-    - *paste grid object as backdrop to non-obstacle grid*
-    - *pasted backdrop will has the same image of grid object's current frame and the same effect*
+    - *paste grid object as backdrop to non-obstacle grid, pasted backdrops will has the same effect (alpha blending coef for example) of grid object*
     - *pasted backdrop has no effect on collisions, aka `OBSTACLE_TRANSPARENT`*
     - *grid object **must** exist*
-    - *grid object **must** has the **same size** of map grid, grid object's hot spot **must** be set to **center** (traditional mode)*
-    - *grid object **must** has the **same height and half width** of map grid, grid object's hot spot **must** be set to **right-center** (isometric mode)*
+    - *grid object **must** has the **same size** of map grid, grid object's hot spot **must** be set to **center***
+    - *the first frame of grid object's `stopped` animation sequence's direction `0` is used as top & left border, second is used as right border and third for bottom*
+    - *this action will paste first frame to all walkable grid, and if the one right to current grid is obstacle, second frame is also pasted with coordinate offset, third frame is pasted if the one below is obstacle*
+    - *usually you will notice a 'grid line width in pixel' offset when closing to obstacle, this action will use grid object's first & second alterable value to offset back*
+    - *the first alterable value is right offset and the second is bottom offset, set it to the width of grid line (in pixels)*
   
   - Set Grid Size
     - *when using `Set Map By Size`, `Set Map By Base64` or `Set Map By Picture`, you need to set grid size to make coord convert work properly*
