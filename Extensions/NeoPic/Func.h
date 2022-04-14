@@ -366,7 +366,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		return;
 	}
 
-	auto& it = obj->Lib->find(FileName);
+	auto it = obj->Lib->find(FileName);
 	if (it == obj->Lib->end()) {
 		LoadFromFile(obj, FileName, Key);
 	}
@@ -387,7 +387,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		NewPic(rdPtr);
 	}
 	else {
-		auto& thisit = rdPtr->Lib->find(FileName);
+		auto thisit = rdPtr->Lib->find(FileName);
 		if (thisit == rdPtr->Lib->end()) {
 			rdPtr->Lib->emplace(it->first, it->second);
 		}
@@ -472,9 +472,19 @@ inline void DeleteLib(SurfaceLib* pData) {
 }
 
 inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
-	auto& it = pData->find(Item);
+	auto it = pData->find(Item);
 	if (it != pData->end()) {
 		delete it->second;
 		pData->erase(it);
 	}
+}
+
+template<typename T>
+constexpr inline long ConvertToLong(T t) {
+	return *((long*)&t);
+}
+
+template<typename T>
+constexpr inline T ConvertToType(long l) {
+	return *((T*)&l);
 }

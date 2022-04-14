@@ -190,6 +190,8 @@ BEGIN
         BEGIN
             MENUITEM "Get FileName", IDMN_EXPRESSION_GFN
             MENUITEM "Get Key", IDMN_EXPRESSION_GK
+            MENUITEM SEPARATOR
+            MENUITEM "Get Surface Pointer", IDMN_EXPRESSION_GSP
         END
         MENUITEM SEPARATOR
         POPUP "HotSpot"
@@ -381,6 +383,8 @@ BEGIN
     
     M_EXPRESSION_GFN            "GetFileName$("
     M_EXPRESSION_GK            "GetKey$("
+    
+    M_EXPRESSION_GSP            "GetSurfacePointer("
 END
 
 STRINGTABLE

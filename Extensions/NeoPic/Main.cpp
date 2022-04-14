@@ -79,6 +79,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GK, M_EXPRESSION_GK, EXP_EXPRESSION_GK, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GSP, M_EXPRESSION_GSP, EXP_EXPRESSION_GSP, 0, 2, EXPPARAM_STRING, EXPPARAM_STRING, M_ACTION_FILENAME, M_ACTION_KEY,
 		};
 
 
@@ -374,6 +376,38 @@ long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->Key->c_str();
 }
 
+long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
+	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring Key = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	cSurface* ret = nullptr;
+
+	if (!rdPtr->IsLib) {
+		if (*rdPtr->FileName != FilePath || *rdPtr->Key != Key) {
+			ret = nullptr;
+		}
+		else {
+			ret = rdPtr->src;
+		}
+	}
+	else {
+		auto it = rdPtr->Lib->find(FilePath);
+		if (it == rdPtr->Lib->end()) {
+			LoadFromFile(rdPtr, FilePath.c_str(), Key.c_str());
+		}
+
+		it = rdPtr->Lib->find(FilePath);
+		if (it == rdPtr->Lib->end()) {
+			ret = nullptr;
+		}
+		else {
+			ret = it->second;
+		}
+	}
+	
+	return ConvertToLong<cSurface*>(ret);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -440,6 +474,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetFileName,
 			GetKey,
+
+			GetSurfacePointer,
 
 			0
 			};

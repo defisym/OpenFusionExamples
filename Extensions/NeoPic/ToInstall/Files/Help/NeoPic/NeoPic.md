@@ -22,3 +22,7 @@ Enable the power to load encrypted image files, to store them to a lib that keep
 ## Condition
 
 ## Expression
+
+- GetSurfacePointer
+  - *if exists, return the target surface's pointer*
+  - *make sure you **KNOW WHAT YOU ARE DOING WITH THIS EXPRESSION***
