@@ -27,6 +27,10 @@
 #define StrEqu(X,Y) (wcscmp(X,Y) == 0)
 #define StrEmpty(X) StrEqu(X,Empty_Str)
 
+// obj->rHo.hoIdentifier
+#define IDENTIFIER_ACTIVE		1230131283
+#define IDENTIFIER_NEOPIC		MAKEID(N,P,I,C)
+
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
 

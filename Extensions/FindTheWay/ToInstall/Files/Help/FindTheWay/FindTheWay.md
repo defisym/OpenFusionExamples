@@ -107,8 +107,24 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
     - *please update gird size later*
   - Set Map By Base64
     - *please update gird size later*
-  - Set Map By Picture
+
+  - Set Map By Active
     - *in this mode, `gridSize` & `gridOffset` are used to find the proper pixel of picture, if your picture size is different from real map size, please update gird size later*
+    - *picture should be in traditional mode, even map mode is set to isometric*
+    - *red channel will be used as `terrain` cost and green channel is `dynamic` cost*
+    - *uses the frame from an active object's `stopped` animation sequence's direction `0`*
+    - *source object **must** exist*
+  - Set Map By Picture
+    - *ditto*
+    - *ditto*
+    - *ditto*
+    - *load from file*
+  - Set Map By Surface
+    - *ditto*
+    - *ditto*
+    - *ditto*
+    - *load from `cSurface*`, extension will cast input to pointer the try to retrieve*
+
   - Set Map By Collision
     - *you can let extension retrieve collision of layers, or call `On Set Map By Collision` for each grid for you to check & set collisions directly*
 

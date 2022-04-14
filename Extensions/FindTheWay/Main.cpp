@@ -58,6 +58,10 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_NOAG, M_CONDITION_NOAG, CND_CONDITION_NOAG, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
 		IDMN_CONDITION_NOAC, M_CONDITION_NOAC, CND_CONDITION_NOAC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_OBJECT, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_X, M_Y,
+
+		IDMN_CONDITION_SMBA, M_CONDITION_SMBA, CND_CONDITION_SMBA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 5, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_FIXED, M_FRAME, M_GRIDSIZE, M_GRIDOFFSETX, M_GRIDOFFSETY,
+		IDMN_CONDITION_SMBSF, M_CONDITION_SMBSF, CND_CONDITION_SMBSF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_PSF, M_GRIDSIZE, M_GRIDOFFSETX, M_GRIDOFFSETY,
+
 		};
 
 // Definitions of parameters for each action
@@ -205,65 +209,76 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	ImportImage(pImgMgr, filePath.c_str(), pSf, 0, 0);
 
-	if (!pSf->IsValid()) {
-		return FALSE;
-	}
+	auto ret = SetMapBySurface(rdPtr, pSf, gridSize, gridOffsetX, gridOffsetY);
 
-	size_t picWidth = pSf->GetWidth();
-	size_t picHeight = pSf->GetHeight();
-
-	size_t width = FindTheWayClass::CalcMapWidth(pSf->GetWidth(), gridSize, rdPtr->isometric);
-	size_t height = FindTheWayClass::CalcMapHeight(pSf->GetHeight(), gridSize, rdPtr->isometric); 
-
-	try {
-		rdPtr->pFTW = new FindTheWayClass(width, height);
-		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
-		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
-	}
-	catch (Exception) {
-		return FALSE;
-	}
-
-	rdPtr->pFTW->SetGridSize(gridSize, gridOffsetX, gridOffsetY);
-
-	BYTE* buff = pSf->LockBuffer();
-	if (!buff) {
-		return 0;
-	}
-
-	int pitch = pSf->GetPitch();
-	if (pitch < 0) {
-		pitch *= -1;
-		buff -= pitch * (picHeight - 1);
-	}
-
-	size_t size = pitch * picHeight;
-	size_t byte = pSf->GetDepth() >> 3;
-
-	for (size_t y = 0; y < height; y++) {
-		for (size_t x = 0; x < width; x++) {
-			auto [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
-			auto offset = realY * pitch + realX * byte;
-
-			if (offset >= size) {
-				continue;
-			}
-
-			auto costT = buff[offset + 2];		// R value
-			auto costD = buff[offset + 1];		// G value
-
-			rdPtr->pFTW->SetMap(x, y, costT, MapType::TERRAIN);
-			rdPtr->pFTW->SetMap(x, y, costD, MapType::DYNAMIC);
-		}
-	}
-
-	pSf->UnlockBuffer(buff);
+	delete pSf;
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
 #endif // _DEBUG
 
-	return TRUE;
+	return ret;
+}
+
+long WINAPI DLLExport SetMapByActive(LPRDATA rdPtr, long param1, long param2) {
+	delete rdPtr->pFTW;
+	rdPtr->pFTW = nullptr;
+
+	long fixed = (long)CNC_GetParameter(rdPtr);
+
+	size_t frame = (size_t)CNC_GetParameter(rdPtr);
+
+	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+
+	LPRO object = LproFromFixed(rdPtr, fixed);
+
+	if (!LPROValid(object, IDENTIFIER_ACTIVE)) {		// must be active object
+		return 0;
+	}
+
+	cSurface imageSurface;
+	auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	short nFrame = object->roa.raAnimDirOffset->adNumberOfFrame;
+
+	if (frame >= (size_t)nFrame) {
+		return false;
+	}
+
+	DWORD hImage = object->roa.raAnimDirOffset->adFrame[frame];
+	LockImageSurface(rhPtr->rhIdAppli, hImage, imageSurface);
+
+	auto ret = SetMapBySurface(rdPtr, &imageSurface, gridSize, gridOffsetX, gridOffsetY);
+
+	UnlockImageSurface(imageSurface);
+
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
+#endif // _DEBUG
+
+	return ret;
+}
+
+long WINAPI DLLExport SetMapBySurface(LPRDATA rdPtr, long param1, long param2) {
+	delete rdPtr->pFTW;
+	rdPtr->pFTW = nullptr;
+
+	long p1 = (long)CNC_GetParameter(rdPtr);
+	//cSurface* imageSurface = *((cSurface**)&p1);
+	cSurface* imageSurface = ConvertToType<cSurface*>(p1);	
+
+	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+
+	auto ret = SetMapBySurface(rdPtr, imageSurface, gridSize, gridOffsetX, gridOffsetY);
+
+#ifdef _DEBUG
+	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
+#endif // _DEBUG
+
+	return ret;
 }
 
 long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
@@ -800,6 +815,10 @@ short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
 	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
+	if (!LPROValid(object)) {
+		return 0;
+	}
+
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
 
@@ -854,6 +873,10 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	bool center = (bool)CNC_GetParameter(rdPtr);
+
+	if (!LPROValid(object)) {
+		return 0;
+	}
 
 	RetIfMapInvalid(0);
 
@@ -976,6 +999,10 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	int type = (int)CNC_GetParameter(rdPtr);
 
+	if (!LPROValid(object)) {
+		return 0;
+	}
+
 	RetIfMapInvalid(0);
 
 	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
@@ -1038,6 +1065,10 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	auto param = OCP_GetParameter(rdPtr);
 
+	if (!LPROValid(object)) {
+		return 0;
+	}
+
 	RetIfMapInvalid(0);
 
 	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
@@ -1087,6 +1118,10 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (!LPROValid(object)) {
+		return 0;
+	}
 
 	RetIfMapInvalid(0);
 
@@ -1141,6 +1176,10 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 	bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 	bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
+	if (!LPROValid(object)) {
+		return 0;
+	}
+
 	RetIfMapInvalid(0);
 
 	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
@@ -1193,6 +1232,11 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 	bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
 	bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
 
+
+	if (!LPROValid(object)) {
+		return 0;
+	}
+
 	RetIfMapInvalid(0);
 
 	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
@@ -1238,6 +1282,10 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
 	size_t nLayer = (size_t)CNC_GetParameter(rdPtr) - 1;
+
+	if (!LPROValid(object, IDENTIFIER_ACTIVE)) {		// must be active object
+		return 0;
+	}
 
 	// int nObstacleType = rdPtr->rHo.hoCurrentParam->evp.evpW.evpW0;
 	// CNC_GetParameter(rdPtr);
@@ -1314,6 +1362,8 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	}
 
 	UnlockImageSurface(imageSurfaceLT);
+	UnlockImageSurface(imageSurfaceR);
+	UnlockImageSurface(imageSurfaceB);
 
 	return 0;
 }
@@ -1584,6 +1634,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			NoObjectAtGrid,
 			NoObjectAtCoord,
+
+			SetMapByActive,
+			SetMapBySurface,
 			
 			0
 			};

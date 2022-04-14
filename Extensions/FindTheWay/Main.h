@@ -42,7 +42,10 @@
 #define	CND_CONDITION_NOAG				24
 #define	CND_CONDITION_NOAC				25
 
-#define	CND_LAST						26
+#define	CND_CONDITION_SMBA				26
+#define	CND_CONDITION_SMBSF				27
+
+#define	CND_LAST						28
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

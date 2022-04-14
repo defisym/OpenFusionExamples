@@ -128,7 +128,11 @@ BEGIN
         BEGIN            
             MENUITEM "Set Map By Size", IDMN_CONDITION_SMBS
             MENUITEM "Set Map By Base64", IDMN_CONDITION_SMBB
+            MENUITEM SEPARATOR
+            MENUITEM "Set Map By Active", IDMN_CONDITION_SMBA
             MENUITEM "Set Map By Picture", IDMN_CONDITION_SMBP
+            MENUITEM "Set Map By Surface", IDMN_CONDITION_SMBSF
+            MENUITEM SEPARATOR
             MENUITEM "Set Map By Collision", IDMN_CONDITION_SMBC
             MENUITEM SEPARATOR
             MENUITEM "On Set Map By Collision", IDMN_CONDITION_OSMBC
@@ -434,6 +438,8 @@ BEGIN
     M_CONDITION_SMBS             "%o Set Map to ( Width = %0, Height = %1 ) Success"
     M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
     M_CONDITION_SMBP             "%o Set Map to ( Picture, FileName = %0, GridSize = %1, GridOffsetX = %2, GridOffsetY = %3 ) Success"
+    M_CONDITION_SMBA             "%o Set Map to ( Frame %1 of Active Object %0, GridSize = %2, GridOffsetX = %3, GridOffsetY = %4 ) Success"
+    M_CONDITION_SMBSF            "%o Set Map to ( Surface %0, GridSize = %2, GridOffsetX = %3, GridOffsetY = %4 ) Success"
     M_CONDITION_SMBC             "%o Set Map to ( Collision, GridSize = %0, GridOffsetX = %1, GridOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5, IterateName = %6 ) Success"
     M_CONDITION_OSMBC            "%o On Set Map By Collision, IterateName = %0"
     M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], IgnoreFlag = %4, Diagonal = %5, CheckDiagonalCorner = %6, ForceFind = %7, UseRealCoord = %8, SaveName = %9 ) Found"
@@ -505,6 +511,9 @@ BEGIN
     M_WIDTH			                "Map Width"
     M_HEIGHT		                "Map Height"
     M_BASE64		                "Base64 String, Format: width:height:terrainStr:dynamicStr"
+    M_FIXED 		                "Fixed Value"
+    M_FRAME 		                "Frame ID ( Start From 0 )"
+    M_PSF    		                "cSurface*"
     M_GRIDSIZE		                "Grid Size"
     M_GRIDOFFSETX	                "Grid Offset X"
     M_GRIDOFFSETY	                "Grid Offset Y"

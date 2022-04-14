@@ -147,6 +147,10 @@
 #define	IDMN_CONDITION_NOAG				26024
 #define	IDMN_CONDITION_NOAC				26025
 
+#define	IDMN_CONDITION_SMBA				26026
+#define	IDMN_CONDITION_SMBSF			26027
+
+
 // Condition strings
 #define	M_CONDITION_SMBS				6000
 #define	M_CONDITION_SMBB				6001
@@ -183,6 +187,9 @@
 #define	M_CONDITION_NOAG				6024
 #define	M_CONDITION_NOAC				6025
 
+#define	M_CONDITION_SMBA				6026
+#define	M_CONDITION_SMBSF				6027
+
 // Titles of condition parameters
 #define M_WIDTH				        6501
 #define M_HEIGHT				    6502
@@ -215,6 +222,9 @@
 #define M_IGNOREFLAG                6529
 #define M_ENEMY                     6530
 #define M_ATTACKAREA                6531
+#define M_FIXED                     6532
+#define M_FRAME                     6533
+#define M_PSF                       6534
 
 //	EXPRESSIONS
 //---------------------
