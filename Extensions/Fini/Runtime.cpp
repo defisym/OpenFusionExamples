@@ -21,6 +21,8 @@ enum
 //	DB_CURRENTVALUE,
 //	DB_CURRENTCHECK,
 //	DB_CURRENTCOMBO
+
+	DB_CF25P,
 };
 
 // Items displayed in the debugger
@@ -32,6 +34,8 @@ WORD DebugTree[]=
 //	DB_CURRENTVALUE|DB_EDITABLE,
 //	DB_CURRENTCHECK,
 //	DB_CURRENTCOMBO,
+
+	DB_CF25P,
 
 	// End of table (required)
 	DB_END
@@ -67,6 +71,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	rdPtr->AutoSave = true;
 	rdPtr->Modified = false;
+
+	rdPtr->pB64 = new Base64<std::wstring>;
+	rdPtr->b64Str = new std::wstring;
+
+	rdPtr->cf25p = edPtr->cf25p;
 
 	// No errors
 	return 0;
@@ -108,6 +117,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	release_ini();
 
 	release_arr(OStr);
+
+	delete rdPtr->pB64;
+	delete rdPtr->b64Str;
 
 	// No errors
 	return 0;
@@ -539,6 +551,15 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		break;
 	}
 */
+
+	wchar_t temp[DB_BUFFERSIZE];
+
+	switch (id)	{
+	case DB_CF25P:
+		LoadString(hInstLib, IDS_CF25P, temp, DB_BUFFERSIZE);
+		wsprintf(pBuffer, temp, rdPtr->cf25p ? L"True" : L"False");
+		break;
+	}
 
 #endif // !defined(RUN_ONLY)
 }

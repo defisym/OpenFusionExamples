@@ -34,9 +34,6 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConvertUTF.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\_DeLib\Encryption.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -149,6 +146,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\StrNum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\Base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

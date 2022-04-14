@@ -29,8 +29,9 @@
 #define	ACT_ACTION_SAON				10
 #define	ACT_ACTION_SAOFF			11
 #define	ACT_ACTION_CS				12
+#define	ACT_ACTION_LAV				13
 
-#define	ACT_LAST					13
+#define	ACT_LAST					14
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -40,8 +41,9 @@
 #define	EXP_EXPRESSION_GCS			2
 #define	EXP_EXPRESSION_GCI			3
 #define	EXP_EXPRESSION_SS			4
+#define	EXP_EXPRESSION_SAV			5
 
-#define	EXP_LAST                    5
+#define	EXP_LAST                    6
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -56,6 +58,8 @@ typedef struct tagEDATA_V1
 	// Object's data
 //	short			swidth;
 //	short			sheight;
+
+	bool cf25p;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -104,6 +108,11 @@ typedef struct tagRDATA
 
 	LPTSTR CurrentSec = nullptr;
 	LPTSTR CurrentItem = nullptr;
+
+	Base64<std::wstring>* pB64 = nullptr;
+	std::wstring* b64Str = nullptr;
+
+	bool cf25p;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

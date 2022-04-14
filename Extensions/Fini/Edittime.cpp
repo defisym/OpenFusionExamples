@@ -26,6 +26,10 @@ enum {
 //	PROPID_CHECK,
 //	PROPID_COMBO,
 //	PROPID_COLOR,
+
+	PROPID_CF25P_TEXTTITLE,	
+	PROPID_CF25P_CHECK,
+
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -51,7 +55,11 @@ PropData Properties[] = {
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
 
-	// End of table (required)
+	PropData_Group		(PROPID_CF25P_TEXTTITLE,	IDS_PROP_CF25P_TEXTTITLE,		IDS_PROP_CF25P_TEXTTITLE),
+	PropData_CheckBox	(PROPID_CF25P_CHECK,		IDS_PROP_CF25P_CHECK,			IDS_PROP_CF25P_CHECK_INFO),
+
+
+// End of table (required)
 	PropData_End()
 };
 
@@ -694,6 +702,12 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //		return edPtr->nCheck;
 //	}
 
+	switch (nPropID) {
+	// return 0 (unchecked) or 1 (checked)
+	case PROPID_CF25P_CHECK:
+		return edPtr->cf25p;
+	}
+
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
 }
@@ -779,6 +793,14 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 //		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
 //		break;
 //	}
+
+	switch (nPropID) {
+	case PROPID_CF25P_CHECK:
+		edPtr->cf25p = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	}
+
 #endif // !defined(RUN_ONLY)
 }
 

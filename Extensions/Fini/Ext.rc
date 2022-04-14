@@ -164,6 +164,8 @@ BEGIN
             MENUITEM "Iterate Items", IDMN_ACTION_ITI
         END
         MENUITEM SEPARATOR
+            MENUITEM "Load Alterable Value", IDMN_ACTION_LAV
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -185,6 +187,8 @@ BEGIN
         MENUITEM "Get Current Item", IDMN_EXPRESSION_GCI
         MENUITEM SEPARATOR
         MENUITEM "Save to String", IDMN_EXPRESSION_SS
+        MENUITEM SEPARATOR
+        MENUITEM "Save Alterable Value", IDMN_EXPRESSION_SAV
         MENUITEM SEPARATOR
     END
 END
@@ -266,6 +270,18 @@ BEGIN
 END
 
 STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROP_CF25P_TEXTTITLE        "Settings"
+    IDS_PROP_CF25P_CHECK            "2.5 Plus"
+    IDS_PROP_CF25P_CHECK_INFO       "Check this to support 2.5+ unlimited alterable values"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_CF25P            "2.5 Plus: %s"
+END
+
+STRINGTABLE DISCARDABLE 
 BEGIN    
     M_ACTION_SAON   "Set Auto Save On, Save to File %0, Encrypt Key %1"
     M_ACTION_SAOFF  "00Set Auto Save Off"
@@ -300,6 +316,9 @@ BEGIN
     M_ACTION_ITI        "Iterate Items in Section %0, Loop Name %1"
     ACT_ACTION_IT       "Loop Name"
     ACT_ACTION_ITSN     "Section Name"
+
+    M_ACTION_LAV        "Load Alterable Value %1 to Object %0"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -317,10 +336,15 @@ BEGIN
     M_EXPRESSION_GSIV           "SecItemVal("
     M_EXPRESSION_GSIS           "SecItemStr$("
 
-    M_EXPRESSION_GCS           "GetCurSec$("
-    M_EXPRESSION_GCI           "GetCurItem$("
+    M_EXPRESSION_GCS            "GetCurSec$("
+    M_EXPRESSION_GCI            "GetCurItem$("
 
     M_EXPRESSION_SS             "SaveToStr$("
+    
+    M_EXPRESSION_SAV            "SaveAV$("
+    
+    M_FIXED                     "Fixed Value"
+    M_CF25P                     "2.5Plus"
 END
 
 

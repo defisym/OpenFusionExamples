@@ -32,6 +32,7 @@
 #include	"Defination.h"
 #include	"Encryption.h"
 #include	"StrNum.h"
+#include	"Base64.h"
 
 // Specific to this cox
 #include	"resource.h"

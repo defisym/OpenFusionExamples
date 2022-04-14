@@ -43,10 +43,12 @@ short actionsInfos[]=
 		//IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_S,ACT_ACTION_K,
 		IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_S,
 
-		IDMN_ACTION_SAON, M_ACTION_SAON,	ACT_ACTION_SAON,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
-		IDMN_ACTION_SAOFF, M_ACTION_SAOFF,	ACT_ACTION_SAOFF,	0, 0,
+		IDMN_ACTION_SAON, M_ACTION_SAON, ACT_ACTION_SAON,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
+		IDMN_ACTION_SAOFF, M_ACTION_SAOFF, ACT_ACTION_SAOFF,	0, 0,
 
-		IDMN_ACTION_CS, M_ACTION_CS,	ACT_ACTION_CS,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPRESSION,ACT_ACTION_CS_SRC,ACT_ACTION_CS_DES,ACT_ACTION_CS_DEL
+		IDMN_ACTION_CS, M_ACTION_CS, ACT_ACTION_CS,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPRESSION,ACT_ACTION_CS_SRC,ACT_ACTION_CS_DES,ACT_ACTION_CS_DEL,
+
+		IDMN_ACTION_LAV, M_ACTION_LAV,ACT_ACTION_LAV, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 		};
 
 // Definitions of parameters for each expression
@@ -58,6 +60,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCI, M_EXPRESSION_GCI, EXP_EXPRESSION_GCI, EXPFLAG_STRING, 0,
 		//IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 1,EXPPARAM_STRING,ACT_ACTION_K,
 		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_SAV, M_EXPRESSION_SAV, EXP_EXPRESSION_SAV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		};
 
 // ============================================================================
@@ -358,6 +361,87 @@ short WINAPI DLLExport Iterate_Item(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {	
+	size_t fixed = (size_t)CNC_GetParameter(rdPtr);
+	LPCTSTR base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPRO object = LproFromFixed(rdPtr, fixed);
+
+	try {
+		rdPtr->pB64->base64_decode(base64);
+	}
+	catch (decltype(BASE64_DECODEERROR)) {
+		return 0;
+	}
+
+	auto sz = rdPtr->pB64->base64_decode_size();
+
+	BYTE* buf = new BYTE [sz];
+	memset(buf, 0, sz);
+
+	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
+
+	BYTE* buffer = buf;
+
+	if (rdPtr->cf25p) {
+		object->rov.rvValueFlags = ((long*)buffer)[0];
+		buffer += sizeof(long);
+
+		for (int i = 0; i < object->rov.rvNumberOfValues; i++) {
+			object->rov.rvpValues[i] = ((CValue*)buffer)[0];
+			buffer += sizeof(CValue);
+		}
+
+		for (int i = 0; i < object->rov.rvNumberOfStrings; i++) {
+			if (((wchar_t*)buffer)[0] == L'\0') {
+				object->rov.rvpStrings[i] = nullptr;
+
+				buffer += sizeof(wchar_t);
+			}
+			else {
+				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
+
+				object->rov.rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+				wcscpy_s(object->rov.rvpStrings[i], strlen, (wchar_t*)buffer);
+
+				buffer += sizeof(wchar_t) * strlen;
+			}
+		}
+	}
+	else {
+		auto pRV = ((tagRV20U*)(&object->rov));
+
+		pRV->rvValueFlags= ((long*)buffer)[0];
+		buffer += sizeof(long);
+
+		for (int i = 0; i < VALUES_NUMBEROF_ALTERABLE; i++) {
+			pRV->rvpValues[i] = ((CValue*)buffer)[0];
+			buffer += sizeof(CValue);
+		}
+
+		for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
+			if (((wchar_t*)buffer)[0] == L'\0') {
+				pRV->rvStrings[i] = nullptr;
+
+				buffer += sizeof(wchar_t);
+			}
+			else {
+				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
+
+				pRV->rvStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+				wcscpy_s(pRV->rvStrings[i], strlen, (wchar_t*)buffer);
+
+				buffer += sizeof(wchar_t) * strlen;
+			}
+		}
+
+	}
+
+	delete[] buf;
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -449,6 +533,121 @@ long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
 	return (long)OStr;
 }
 
+long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
+	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	LPRO object = LproFromFixed(rdPtr, fixed);
+
+	if (rdPtr->cf25p) {
+		size_t sz = sizeof(long) + sizeof(CValue) * object->rov.rvNumberOfValues;
+		
+		for (int i = 0; i < object->rov.rvNumberOfStrings; i++) {
+			auto ptr = object->rov.rvpStrings[i];
+
+			if (ptr == nullptr) {
+				sz += sizeof(wchar_t);
+			}
+			else {
+				sz += sizeof(wchar_t) * (wcslen(ptr) + 1);
+			}
+		}
+
+		BYTE* buf = new BYTE[sz];
+		memset(buf, 0, sz);
+
+		BYTE* buffer = buf;
+
+		((long*)buffer)[0] = object->rov.rvValueFlags;
+		buffer += sizeof(long);
+
+		for (int i = 0; i < object->rov.rvNumberOfValues; i++) {
+			((CValue*)buffer)[0] = object->rov.rvpValues[i];
+
+			auto view = ((CValue*)buffer)[0];
+
+			buffer += sizeof(CValue);
+		}
+
+		for (int i = 0; i < object->rov.rvNumberOfStrings; i++) {
+			auto ptr = object->rov.rvpStrings[i];
+
+			if (ptr == nullptr) {
+				((wchar_t*)buffer)[0] = L'\0';
+
+				buffer += sizeof(wchar_t);
+			}
+			else {
+				size_t strlen = (wcslen(ptr) + 1);
+				wcscpy_s((wchar_t*)buffer, strlen, ptr);
+
+				buffer += sizeof(wchar_t) * strlen;
+			}
+		}
+
+		*rdPtr->b64Str = rdPtr->pB64->base64_encode(buf, sz);
+
+		delete[] buf;
+	}
+	else {
+		auto pRV = ((tagRV20U*)(&object->rov));
+
+		size_t sz = sizeof(long) + sizeof(CValue) * VALUES_NUMBEROF_ALTERABLE;
+
+		for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
+			auto ptr = pRV->rvStrings[i];
+
+			if (ptr == nullptr) {
+				sz += sizeof(wchar_t);
+			}
+			else {
+				sz += sizeof(wchar_t) * (wcslen(ptr) + 1);
+			}
+		}
+
+		BYTE* buf = new BYTE[sz];
+		memset(buf, 0, sz);
+
+		BYTE* buffer = buf;
+
+		((long*)buffer)[0] = pRV->rvValueFlags;
+		buffer += sizeof(long);
+
+		for (int i = 0; i < VALUES_NUMBEROF_ALTERABLE; i++) {
+			((CValue*)buffer)[0] = pRV->rvpValues[i];
+
+			auto view = ((CValue*)buffer)[0];
+
+			buffer += sizeof(CValue);
+		}
+
+		for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
+			auto ptr = pRV->rvStrings[i];
+
+			if (ptr == nullptr) {
+				((wchar_t*)buffer)[0] = L'\0';
+
+				buffer += sizeof(wchar_t);
+			}
+			else {
+				size_t strlen = (wcslen(ptr) + 1);
+				wcscpy_s((wchar_t*)buffer, strlen, ptr);
+
+				buffer += sizeof(wchar_t) * strlen;
+			}
+		}
+
+		*rdPtr->b64Str = rdPtr->pB64->base64_encode(buf, sz);
+
+		delete[] buf;
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -480,6 +679,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetAutoSaveOn,
 			SetAutoSaveOff,
 			CopySection,
+			LoadAlterValue,
 			0
 			};
 
@@ -490,5 +690,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentSection,
 			GetCurrentItem,
 			SaveToString,
+			SaveAlterValue,
 			0
 			};

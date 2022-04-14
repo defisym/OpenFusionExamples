@@ -1,19 +1,24 @@
 #ifndef _FUNC_
 #define _FUNC_
 
-#include	<locale>
-#include	<codecvt>
-
 // convert string to wstring
 inline std::wstring to_wide_string(const std::string& input) {
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-	return converter.from_bytes(input);
+	const auto size_needed = MultiByteToWideChar(CP_UTF8, 0, &input.at(0), (int)input.size(), nullptr, 0);
+
+	std::wstring result(size_needed, 0);
+	MultiByteToWideChar(CP_UTF8, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed);
+
+	return result;
 }
 
 // convert wstring to string 
 inline std::string to_byte_string(const std::wstring& input) {
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-	return converter.to_bytes(input);
+	const auto size_needed = WideCharToMultiByte(CP_UTF8, 0, &input.at(0), (int)input.size(), nullptr, 0, nullptr, nullptr);
+
+	std::string result(size_needed, 0);
+	WideCharToMultiByte(CP_UTF8, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed, nullptr, nullptr);
+
+	return result;
 }
 
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
