@@ -1,12 +1,12 @@
 Set ProjectName=FindTheWay
 Set CompressPath="C:\Program Files\7-Zip\7z.exe"
 
-Set ParentPath=%CD%\..\
-Set ToInstallPath=%CD%\..\%ProjectName%\ToInstall\Files\
+Set ParentPath=%~dp0\..\
+Set ToInstallPath=%~dp0\..\%ProjectName%\ToInstall\Files\
 
 @echo Android...
 
-Set AndroidPath=%CD%\..\Android_Gradle
+Set AndroidPath=%~dp0\..\Android_Gradle
 
 Set SrcPath=%AndroidPath%\app
 
@@ -62,7 +62,7 @@ del %AndroidPath%\%ProjectName%.zip /f /s /q
 
 @echo HTML5
 
-Set HTML5Path=%CD%\..\HTML5
+Set HTML5Path=%~dp0\..\HTML5
 
 Set ReleasePath=%ToInstallPath%\Data\Runtime\Html5
 

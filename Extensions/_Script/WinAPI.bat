@@ -1,12 +1,12 @@
 Set ProjectName=WinAPI
 Set CompressPath="C:\Program Files\7-Zip\7z.exe"
 
-Set ParentPath=%CD%\..\
-Set ToInstallPath=%CD%\..\%ProjectName%\ToInstall\Files\
+Set ParentPath=%~dp0\..\
+Set ToInstallPath=%~dp0\..\%ProjectName%\ToInstall\Files\
 
 @REM @echo Android...
 
-@REM Set AndroidPath=%CD%\..\Android_Gradle
+@REM Set AndroidPath=%~dp0\..\Android_Gradle
 
 @REM Set SrcPath=%AndroidPath%\app
 
@@ -62,7 +62,7 @@ Set ToInstallPath=%CD%\..\%ProjectName%\ToInstall\Files\
 
 @REM @echo HTML5
 
-@REM Set HTML5Path=%CD%\..\HTML5
+@REM Set HTML5Path=%~dp0\..\HTML5
 
 @REM Set ReleasePath=%ToInstallPath%\Data\Runtime\Html5
 
