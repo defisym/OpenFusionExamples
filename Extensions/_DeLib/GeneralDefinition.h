@@ -18,6 +18,8 @@
 #define RAD(DEG) ((PI*DEG)/180)
 #define DEG(RAD) ((180*RAD)/PI)
 
+#define IDENTIFIER_ACTIVE 1230131283
+
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
 	release_arr(Tar);
