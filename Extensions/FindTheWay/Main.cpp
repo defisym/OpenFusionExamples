@@ -213,6 +213,10 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 
 	delete pSf;
 
+	if (ret) {
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
+	}
+
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
 #endif // _DEBUG
@@ -253,6 +257,10 @@ long WINAPI DLLExport SetMapByActive(LPRDATA rdPtr, long param1, long param2) {
 
 	UnlockImageSurface(imageSurface);
 
+	if (ret) {
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
+	}
+
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);
 #endif // _DEBUG
@@ -265,7 +273,6 @@ long WINAPI DLLExport SetMapBySurface(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pFTW = nullptr;
 
 	long p1 = (long)CNC_GetParameter(rdPtr);
-	//cSurface* imageSurface = *((cSurface**)&p1);
 	cSurface* imageSurface = ConvertToType<cSurface*>(p1);	
 
 	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
@@ -273,6 +280,10 @@ long WINAPI DLLExport SetMapBySurface(LPRDATA rdPtr, long param1, long param2) {
 	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
 	auto ret = SetMapBySurface(rdPtr, imageSurface, gridSize, gridOffsetX, gridOffsetY);
+
+	if (ret) {
+		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
+	}
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr(MapType::TERRAIN);

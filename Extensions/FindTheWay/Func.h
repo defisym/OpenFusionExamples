@@ -62,13 +62,13 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 	size_t picWidth = pSf->GetWidth();
 	size_t picHeight = pSf->GetHeight();
 
-	size_t width = FindTheWayClass::CalcMapWidth(pSf->GetWidth(), gridSize, rdPtr->isometric);
-	size_t height = FindTheWayClass::CalcMapHeight(pSf->GetHeight(), gridSize, rdPtr->isometric);
+	size_t width = FindTheWayClass::CalcMapWidth(pSf->GetWidth(), gridSize, false);
+	size_t height = FindTheWayClass::CalcMapHeight(pSf->GetHeight(), gridSize, false);
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
-		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
+		rdPtr->pFTW->SetIsometric(false);
 	}
 	catch (Exception) {
 		return FALSE;
@@ -82,9 +82,13 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 	}
 
 	int pitch = pSf->GetPitch();
+	bool reverse = false;
+
 	if (pitch < 0) {
 		pitch *= -1;
 		buff -= pitch * (picHeight - 1);
+
+		reverse = true;
 	}
 
 	size_t size = pitch * picHeight;
@@ -100,15 +104,19 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 			}
 
 			auto costT = buff[offset + 2];		// R value
-			auto costD = buff[offset + 1];		// G value
+			auto costD = buff[offset + 1];		// G valu
 
 			//auto B = buff[offset];
 			//auto G = buff[offset + 1];
 			//auto R = buff[offset + 2];
 			//auto U = buff[offset + 3];
 
-			rdPtr->pFTW->SetMap(x, y, costT, MapType::TERRAIN);
-			rdPtr->pFTW->SetMap(x, y, costD, MapType::DYNAMIC);
+			auto revY = reverse
+				? (height - 1) - y				// reverse y if pitch < 0
+				: y;
+
+			rdPtr->pFTW->SetMap(x, revY, costT, MapType::TERRAIN);
+			rdPtr->pFTW->SetMap(x, revY, costD, MapType::DYNAMIC);
 		}
 	}
 

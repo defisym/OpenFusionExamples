@@ -439,7 +439,7 @@ BEGIN
     M_CONDITION_SMBB             "%o Set Map to ( Base64 = %0 ) Success"
     M_CONDITION_SMBP             "%o Set Map to ( Picture, FileName = %0, GridSize = %1, GridOffsetX = %2, GridOffsetY = %3 ) Success"
     M_CONDITION_SMBA             "%o Set Map to ( Frame %1 of Active Object %0, GridSize = %2, GridOffsetX = %3, GridOffsetY = %4 ) Success"
-    M_CONDITION_SMBSF            "%o Set Map to ( Surface %0, GridSize = %2, GridOffsetX = %3, GridOffsetY = %4 ) Success"
+    M_CONDITION_SMBSF            "%o Set Map to ( Surface %0, GridSize = %1, GridOffsetX = %2, GridOffsetY = %3 ) Success"
     M_CONDITION_SMBC             "%o Set Map to ( Collision, GridSize = %0, GridOffsetX = %1, GridOffsetY = %2, EventIterate = %3, BaseLayer = %4, MapType = %5, IterateName = %6 ) Success"
     M_CONDITION_OSMBC            "%o On Set Map By Collision, IterateName = %0"
     M_CONDITION_OPF              "%o On Path ( Start = [ %0 , %1 ], Destination = [ %2 , %3 ], IgnoreFlag = %4, Diagonal = %5, CheckDiagonalCorner = %6, ForceFind = %7, UseRealCoord = %8, SaveName = %9 ) Found"
