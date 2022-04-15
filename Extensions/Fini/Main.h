@@ -60,6 +60,7 @@ typedef struct tagEDATA_V1
 //	short			sheight;
 
 	bool cf25p;
+	bool allowRVforCS;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -113,6 +114,7 @@ typedef struct tagRDATA
 	std::wstring* b64Str = nullptr;
 
 	bool cf25p;
+	bool allowRVforCS;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

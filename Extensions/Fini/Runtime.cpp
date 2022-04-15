@@ -23,6 +23,7 @@ enum
 //	DB_CURRENTCOMBO
 
 	DB_CF25P,
+	DB_ARVFCS,
 };
 
 // Items displayed in the debugger
@@ -36,6 +37,7 @@ WORD DebugTree[]=
 //	DB_CURRENTCOMBO,
 
 	DB_CF25P,
+	DB_ARVFCS,
 
 	// End of table (required)
 	DB_END
@@ -76,6 +78,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->b64Str = new std::wstring;
 
 	rdPtr->cf25p = edPtr->cf25p;
+	rdPtr->allowRVforCS = edPtr->allowRVforCS;
 
 	// No errors
 	return 0;
@@ -558,6 +561,10 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	case DB_CF25P:
 		LoadString(hInstLib, IDS_CF25P, temp, DB_BUFFERSIZE);
 		wsprintf(pBuffer, temp, rdPtr->cf25p ? L"True" : L"False");
+		break;
+	case DB_ARVFCS:
+		LoadString(hInstLib, IDS_ARVFCS, temp, DB_BUFFERSIZE);
+		wsprintf(pBuffer, temp, rdPtr->allowRVforCS ? L"True" : L"False");
 		break;
 	}
 

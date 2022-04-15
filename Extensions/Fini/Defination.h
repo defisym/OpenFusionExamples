@@ -39,6 +39,14 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 #define StrEmpty(X) StrEqu(X,Empty_Str)
 #define InvalidSecItem(X) if (StrEmpty(Section) || StrEmpty(Item)) { return X; }
 
+// obj->rHo.hoIdentifier
+#define IDENTIFIER_ACTIVE		1230131283
+#define IDENTIFIER_STRING		1415071060
+#define IDENTIFIER_COUNTER		1381256771
+#define IDENTIFIER_LIVES		1163282764
+#define IDENTIFIER_QUESTION		IDENTIFIER_STRING
+#define IDENTIFIER_SCORE		1163019091
+
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
 

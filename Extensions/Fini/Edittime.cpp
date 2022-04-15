@@ -29,6 +29,7 @@ enum {
 
 	PROPID_CF25P_TEXTTITLE,	
 	PROPID_CF25P_CHECK,
+	PROPID_ARVFCS_CHECK,
 
 };
 
@@ -57,6 +58,7 @@ PropData Properties[] = {
 
 	PropData_Group		(PROPID_CF25P_TEXTTITLE,	IDS_PROP_CF25P_TEXTTITLE,		IDS_PROP_CF25P_TEXTTITLE),
 	PropData_CheckBox	(PROPID_CF25P_CHECK,		IDS_PROP_CF25P_CHECK,			IDS_PROP_CF25P_CHECK_INFO),
+	PropData_CheckBox	(PROPID_ARVFCS_CHECK,		IDS_PROP_ARVFCS_CHECK,			IDS_PROP_ARVFCS_CHECK_INFO),
 
 
 // End of table (required)
@@ -706,6 +708,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	// return 0 (unchecked) or 1 (checked)
 	case PROPID_CF25P_CHECK:
 		return edPtr->cf25p;
+	case PROPID_ARVFCS_CHECK:
+		return edPtr->allowRVforCS;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -797,6 +801,19 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	switch (nPropID) {
 	case PROPID_CF25P_CHECK:
 		edPtr->cf25p = nCheck;
+		if (!edPtr->cf25p) {
+			edPtr->allowRVforCS = false;
+			mvRefreshProp(mV, edPtr, PROPID_ARVFCS_CHECK, false);
+		}
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_ARVFCS_CHECK:
+		if (edPtr->cf25p) {
+			edPtr->allowRVforCS = nCheck;			
+		}
+		else {
+			edPtr->allowRVforCS = false;
+		}
 		mvInvalidateObject(mV, edPtr);
 		break;
 	}

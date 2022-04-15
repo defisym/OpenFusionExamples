@@ -274,11 +274,14 @@ BEGIN
     IDS_PROP_CF25P_TEXTTITLE        "Settings"
     IDS_PROP_CF25P_CHECK            "2.5 Plus"
     IDS_PROP_CF25P_CHECK_INFO       "Check this to support 2.5+ unlimited alterable values"
+    IDS_PROP_ARVFCS_CHECK           "Allow alterable values for counters and strings"
+    IDS_PROP_ARVFCS_CHECK_INFO      "to allow save for counters and strings"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDS_CF25P            "2.5 Plus: %s"
+    IDS_ARVFCS           "Allow AV: %s"
 END
 
 STRINGTABLE DISCARDABLE 

@@ -22,10 +22,13 @@
 #define	IDS_PROP_CF25P_TEXTTITLE				200
 #define	IDS_PROP_CF25P_CHECK				    201
 #define	IDS_PROP_CF25P_CHECK_INFO				202
+#define	IDS_PROP_ARVFCS_CHECK				    203
+#define	IDS_PROP_ARVFCS_CHECK_INFO				204
 
 // 	Debug tree
 //-------------------
 #define	IDS_CF25P   							300
+#define	IDS_ARVFCS  							301
 
 // 	Actions
 //-------------------

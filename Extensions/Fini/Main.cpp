@@ -367,6 +367,12 @@ short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {
 
 	LPRO object = LproFromFixed(rdPtr, fixed);
 
+	size_t offset = GetRVOffset(rdPtr, object);
+
+	if (offset == -1) {
+		return 0;
+	}
+
 	try {
 		rdPtr->pB64->base64_decode(base64);
 	}
@@ -384,32 +390,34 @@ short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {
 	BYTE* buffer = buf;
 
 	if (rdPtr->cf25p) {
-		object->rov.rvValueFlags = ((long*)buffer)[0];
+		rVal* pRV = (rVal*)(((BYTE*)object) + offset);
+
+		pRV->rvValueFlags = ((long*)buffer)[0];
 		buffer += sizeof(long);
 
-		for (int i = 0; i < object->rov.rvNumberOfValues; i++) {
-			object->rov.rvpValues[i] = ((CValue*)buffer)[0];
+		for (int i = 0; i < pRV->rvNumberOfValues; i++) {
+			pRV->rvpValues[i] = ((CValue*)buffer)[0];
 			buffer += sizeof(CValue);
 		}
 
-		for (int i = 0; i < object->rov.rvNumberOfStrings; i++) {
+		for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
 			if (((wchar_t*)buffer)[0] == L'\0') {
-				object->rov.rvpStrings[i] = nullptr;
+				pRV->rvpStrings[i] = nullptr;
 
 				buffer += sizeof(wchar_t);
 			}
 			else {
 				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
 
-				object->rov.rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
-				wcscpy_s(object->rov.rvpStrings[i], strlen, (wchar_t*)buffer);
+				pRV->rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+				wcscpy_s(pRV->rvpStrings[i], strlen, (wchar_t*)buffer);
 
 				buffer += sizeof(wchar_t) * strlen;
 			}
 		}
 	}
 	else {
-		auto pRV = ((tagRV20U*)(&object->rov));
+		auto pRV = (tagRV20U*)(((BYTE*)object) + offset);
 
 		pRV->rvValueFlags= ((long*)buffer)[0];
 		buffer += sizeof(long);
@@ -536,13 +544,21 @@ long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	LPRO object = LproFromFixed(rdPtr, fixed);
+	LPRO object = LproFromFixed(rdPtr, fixed);	
+
+	size_t offset = GetRVOffset(rdPtr, object);
+
+	if (offset == -1) {
+		return (long)nullptr;
+	}
 
 	if (rdPtr->cf25p) {
-		size_t sz = sizeof(long) + sizeof(CValue) * object->rov.rvNumberOfValues;
+		rVal* pRV = (rVal*)(((BYTE*)object) + offset);
+
+		size_t sz = sizeof(long) + sizeof(CValue) * pRV->rvNumberOfValues;
 		
-		for (int i = 0; i < object->rov.rvNumberOfStrings; i++) {
-			auto ptr = object->rov.rvpStrings[i];
+		for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
+			auto ptr = pRV->rvpStrings[i];
 
 			if (ptr == nullptr) {
 				sz += sizeof(wchar_t);
@@ -557,19 +573,19 @@ long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 
 		BYTE* buffer = buf;
 
-		((long*)buffer)[0] = object->rov.rvValueFlags;
+		((long*)buffer)[0] = pRV->rvValueFlags;
 		buffer += sizeof(long);
 
-		for (int i = 0; i < object->rov.rvNumberOfValues; i++) {
-			((CValue*)buffer)[0] = object->rov.rvpValues[i];
+		for (int i = 0; i < pRV->rvNumberOfValues; i++) {
+			((CValue*)buffer)[0] = pRV->rvpValues[i];
 
 			auto view = ((CValue*)buffer)[0];
 
 			buffer += sizeof(CValue);
 		}
 
-		for (int i = 0; i < object->rov.rvNumberOfStrings; i++) {
-			auto ptr = object->rov.rvpStrings[i];
+		for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
+			auto ptr = pRV->rvpStrings[i];
 
 			if (ptr == nullptr) {
 				((wchar_t*)buffer)[0] = L'\0';
@@ -589,7 +605,7 @@ long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 		delete[] buf;
 	}
 	else {
-		auto pRV = ((tagRV20U*)(&object->rov));
+		auto pRV = (tagRV20U*)(((BYTE*)object) + offset);
 
 		size_t sz = sizeof(long) + sizeof(CValue) * VALUES_NUMBEROF_ALTERABLE;
 
