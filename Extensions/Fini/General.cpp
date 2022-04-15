@@ -196,8 +196,14 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // 
 HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
 {
-	// We do nothing here
-	return 0;
+	HGLOBAL hgNew = NULL;
+
+	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(OldEdPtr, hgNew, KCX_VERSION_V2, [](tagEDATA_V2* newEdPtr) {
+		newEdPtr->cf25p = true;
+		newEdPtr->allowRVforCS = true;
+		});
+
+	return hgNew;
 }
 
 // --------------------

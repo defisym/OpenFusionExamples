@@ -10,7 +10,11 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 
 ## Properties
 
-This object has no properties
+- Settings
+  - 2.5 Plus
+    - *used when saving object's alterable value, as 2.5+ unlimited alterable values has a different data struct as 2.5*
+  - Allow alterable values for counters and strings
+    - *only available when `2.5 Plus` is checked, to determine save string & counter's alterable value or not*
 
 ## Note
 
@@ -66,6 +70,11 @@ This object has no properties
     - *need section name to start iterate.*
     - *if you start loop, "Current Section" will be set to the section name you inputted*
 
+- Load Alterable Value
+  - *load from base64*
+- Load Position
+  - *load from base64*
+
 ## Condition
 
 - Iterate
@@ -94,3 +103,8 @@ This object has no properties
 
 - Save to String
   - *save the entire file to string.*
+
+- Save Alterable Value
+  - *Save alterable value/string/flag to base64*
+- Save Position
+  - *Save to base64*

@@ -119,7 +119,7 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	}
 
 	// General extensions
-	auto flags = object->roHo.hoAdRunHeader->rhApp->m_kpxDataTable->kpx[1].infos.editFlags;
+	auto flags = object->roHo.hoOEFlags;
 
 	if (!(flags & OEFLAG_VALUES)) {
 		return -1;
@@ -132,6 +132,26 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	offset += (flags & OEFLAG_SPRITES) ? sizeof(rSpr) : 0;
 
 	return offset;
+}
+
+#include <functional>
+
+template<typename Old, typename New>
+inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(New*)> updateFunc) {
+	if (((Old*)OldEdPtr)->eHeader.extVersion < targetVersion) {
+		if ((hgNew = GlobalAlloc(GPTR, sizeof(New))) != NULL) {
+			New* newEdPtr;
+
+			newEdPtr = (New*)GlobalLock(hgNew);
+			memcpy(&newEdPtr->eHeader, &((Old*)OldEdPtr)->eHeader, sizeof(extHeader));
+			newEdPtr->eHeader.extVersion = targetVersion;			// Update the version number
+			newEdPtr->eHeader.extSize = sizeof(New);				// Update the EDITDATA structure size
+
+			updateFunc(newEdPtr);
+
+			GlobalUnlock(hgNew);
+		}
+	}
 }
 
 #endif // !_FUNC_

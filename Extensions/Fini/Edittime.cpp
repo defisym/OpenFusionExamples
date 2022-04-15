@@ -801,19 +801,17 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	switch (nPropID) {
 	case PROPID_CF25P_CHECK:
 		edPtr->cf25p = nCheck;
+
 		if (!edPtr->cf25p) {
-			edPtr->allowRVforCS = false;
-			mvRefreshProp(mV, edPtr, PROPID_ARVFCS_CHECK, false);
+			edPtr->allowRVforCS = false;			
 		}
+
+		mvRefreshProp(mV, edPtr, PROPID_ARVFCS_CHECK, false);
 		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_ARVFCS_CHECK:
-		if (edPtr->cf25p) {
-			edPtr->allowRVforCS = nCheck;			
-		}
-		else {
-			edPtr->allowRVforCS = false;
-		}
+		edPtr->allowRVforCS = nCheck;		
+
 		mvInvalidateObject(mV, edPtr);
 		break;
 	}
@@ -861,6 +859,14 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return (edPtr->nComboIndex != 0);
 	}
 */
+	switch (nPropID) {
+
+	case PROPID_CF25P_CHECK:
+		return true;
+	case PROPID_ARVFCS_CHECK:
+		return edPtr->cf25p;
+	}
+
 #endif // !defined(RUN_ONLY)
 	return TRUE;
 }

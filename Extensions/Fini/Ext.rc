@@ -165,6 +165,7 @@ BEGIN
         END
         MENUITEM SEPARATOR
             MENUITEM "Load Alterable Value", IDMN_ACTION_LAV
+            MENUITEM "Load Position", IDMN_ACTION_LP
         MENUITEM SEPARATOR
     END
 END
@@ -189,6 +190,7 @@ BEGIN
         MENUITEM "Save to String", IDMN_EXPRESSION_SS
         MENUITEM SEPARATOR
         MENUITEM "Save Alterable Value", IDMN_EXPRESSION_SAV
+        MENUITEM "Save Position", IDMN_EXPRESSION_SP
         MENUITEM SEPARATOR
     END
 END
@@ -321,6 +323,7 @@ BEGIN
     ACT_ACTION_ITSN     "Section Name"
 
     M_ACTION_LAV        "Load Alterable Value %1 to Object %0"
+    M_ACTION_LP        "Load Position %1 to Object %0"
 
 END
 
@@ -345,9 +348,10 @@ BEGIN
     M_EXPRESSION_SS             "SaveToStr$("
     
     M_EXPRESSION_SAV            "SaveAV$("
+    M_EXPRESSION_SP             "SavePos$("
     
     M_FIXED                     "Fixed Value"
-    M_CF25P                     "2.5Plus"
+    M_BASE64                    "Base64 Str"
 END
 
 

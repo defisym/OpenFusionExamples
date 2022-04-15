@@ -49,6 +49,7 @@ short actionsInfos[]=
 		IDMN_ACTION_CS, M_ACTION_CS, ACT_ACTION_CS,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPRESSION,ACT_ACTION_CS_SRC,ACT_ACTION_CS_DES,ACT_ACTION_CS_DEL,
 
 		IDMN_ACTION_LAV, M_ACTION_LAV,ACT_ACTION_LAV, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
+		IDMN_ACTION_LP, M_ACTION_LP,ACT_ACTION_LP, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 		};
 
 // Definitions of parameters for each expression
@@ -61,6 +62,7 @@ short expressionsInfos[]=
 		//IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 1,EXPPARAM_STRING,ACT_ACTION_K,
 		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SAV, M_EXPRESSION_SAV, EXP_EXPRESSION_SAV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
+		IDMN_EXPRESSION_SP, M_EXPRESSION_SP, EXP_EXPRESSION_SP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		};
 
 // ============================================================================
@@ -450,6 +452,40 @@ short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport LoadPosition(LPRDATA rdPtr, long param1, long param2) {
+	size_t fixed = (size_t)CNC_GetParameter(rdPtr);
+	LPCTSTR base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPRO object = LproFromFixed(rdPtr, fixed);
+
+	if (!LPROValid(object)) {
+		return 0;
+	}
+
+	try {
+		rdPtr->pB64->base64_decode(base64);
+	}
+	catch (decltype(BASE64_DECODEERROR)) {
+		return 0;
+	}
+
+	auto sz = rdPtr->pB64->base64_decode_size();
+
+	BYTE* buf = new BYTE[sz];
+	memset(buf, 0, sz);
+
+	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
+
+	int* buffer = (int*)buf;
+
+	object->roHo.hoX = buffer[0];
+	object->roHo.hoY = buffer[1];
+
+	delete[] buf;
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -544,11 +580,12 @@ long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	LPRO object = LproFromFixed(rdPtr, fixed);	
+	LPRO object = LproFromFixed(rdPtr, fixed);
 
 	size_t offset = GetRVOffset(rdPtr, object);
 
 	if (offset == -1) {
+		rdPtr->rHo.hoFlags |= HOF_STRING;
 		return (long)nullptr;
 	}
 
@@ -664,6 +701,36 @@ long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->b64Str->c_str();
 }
 
+long WINAPI DLLExport SavePosition(LPRDATA rdPtr, long param1) {
+	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	LPRO object = LproFromFixed(rdPtr, fixed);
+
+	if (!LPROValid(object)) {
+		rdPtr->rHo.hoFlags |= HOF_STRING;
+		return (long)nullptr;
+	}
+
+	size_t sz = 2 * sizeof(int);
+	BYTE* buf = new BYTE[sz];
+	memset(buf, 0, sz);
+
+	int* buffer = (int*)buf;
+
+	buffer[0] = object->roHo.hoX;
+	buffer[1] = object->roHo.hoY;
+
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode(buf, sz);
+
+	delete[] buf;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -696,6 +763,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetAutoSaveOff,
 			CopySection,
 			LoadAlterValue,
+			LoadPosition,
 			0
 			};
 
@@ -707,5 +775,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentItem,
 			SaveToString,
 			SaveAlterValue,
+			SavePosition,
 			0
 			};

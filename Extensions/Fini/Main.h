@@ -30,8 +30,9 @@
 #define	ACT_ACTION_SAOFF			11
 #define	ACT_ACTION_CS				12
 #define	ACT_ACTION_LAV				13
+#define	ACT_ACTION_LP				14
 
-#define	ACT_LAST					14
+#define	ACT_LAST					15
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -42,8 +43,9 @@
 #define	EXP_EXPRESSION_GCI			3
 #define	EXP_EXPRESSION_SS			4
 #define	EXP_EXPRESSION_SAV			5
+#define	EXP_EXPRESSION_SP			6
 
-#define	EXP_LAST                    6
+#define	EXP_LAST                    7
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -59,6 +61,17 @@ typedef struct tagEDATA_V1
 //	short			swidth;
 //	short			sheight;
 
+} EDITDATA_V1;
+
+typedef struct tagEDATA_V2
+{
+	// Header - required
+	extHeader		eHeader;
+
+	// Object's data
+//	short			swidth;
+//	short			sheight;
+
 	bool cf25p;
 	bool allowRVforCS;
 
@@ -66,7 +79,10 @@ typedef struct tagEDATA_V1
 typedef EDITDATA *			LPEDATA;
 
 // Object versions
-#define	KCX_CURRENT_VERSION			1
+#define	KCX_VERSION_V1				1
+#define	KCX_VERSION_V2				2
+
+#define	KCX_CURRENT_VERSION			2
 
 // --------------------------------
 // RUNNING OBJECT DATA STRUCTURE
