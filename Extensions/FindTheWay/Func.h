@@ -36,7 +36,7 @@ inline bool LPROValid(LPRO object, unsigned long identifier = 0) {
 		return object->roHo.hoIdentifier == identifier;
 	}
 
-	return true;		// need not to check indntifier
+	return true;		// need not to check identifier
 }
 
 inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_t gridOffsetX, size_t gridOffsetY) {
