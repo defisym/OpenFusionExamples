@@ -192,7 +192,7 @@ namespace FindTheWay {
 	constexpr auto COORD_INVALID = 65536;
 	constexpr auto REAL_INVALID = 2147483647;
 
-	constexpr auto DELIMETER = ':';
+	constexpr auto DELIMITER = ':';
 
 	constexpr auto DEFAULT_IGNOREFLAG = 0b01001U;
 	constexpr auto REPEL_IGNOREFLAG = 0b11100U;
@@ -688,7 +688,7 @@ namespace FindTheWay {
 
 			auto GetSubStr = [base64] (size_t& start, size_t& end)->wstring {
 				if (end != wstring::npos) {
-					end = base64.find(DELIMETER, start);
+					end = base64.find(DELIMITER, start);
 					wstring result = base64.substr(start, end - start);
 
 					start = end + 1;
@@ -738,7 +738,7 @@ namespace FindTheWay {
 			wstring base64;
 
 			base64 += _itos(width).c_str();
-			base64 += DELIMETER;
+			base64 += DELIMITER;
 			base64 += _itos(height).c_str();
 
 			base64 += this->base64.base64_encode(terrain, mapSize);
@@ -805,6 +805,10 @@ namespace FindTheWay {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
 
+			if (updateMap) {
+				UpdateMap();
+			}
+
 			cout << "MapType : " << type << endl;
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
@@ -826,6 +830,10 @@ namespace FindTheWay {
 			auto find = [] (const Path& path, const Coord& coord)->bool {
 				return std::find(path.begin(), path.end(), coord) != path.end();
 			};
+
+			if (updateMap) {
+				UpdateMap();
+			}
 
 			std::wstringstream ss;
 
@@ -1201,6 +1209,10 @@ namespace FindTheWay {
 					}
 				}
 			};
+
+			if (updateMap) {
+				UpdateMap();
+			}
 
 			for (size_t it = 0; it < area.size(); it++) {
 				if (it < extraRangeStartPos) {
