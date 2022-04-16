@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "*.bsc": "ini",
+        "*.file": "plaintext",
+        "_GlobalProgress": "ini",
+        "*.vdf": "plaintext",
+        "*.asc": "AvgScript",
+        "*.dat": "ini",
+        "*.sav": "ini",
+        "xstring": "cpp",
+        "compare": "cpp",
+        "functional": "cpp",
+        "memory": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "xmemory": "cpp",
+        "xtr1common": "cpp",
+        "xutility": "cpp"
+    }
+}

@@ -301,7 +301,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
 	bool eventIterate = (bool)CNC_GetParameter(rdPtr);
-	size_t baseLayer = (size_t)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
+	int baseLayer = (int)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
 	MapType type = (MapType)CNC_GetParameter(rdPtr);
 
 	*rdPtr->pOnItCollisionName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -1292,7 +1292,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	size_t nLayer = (size_t)CNC_GetParameter(rdPtr) - 1;
+	int nLayer = (int)CNC_GetParameter(rdPtr) - 1;
 
 	if (!LPROValid(object, IDENTIFIER_ACTIVE)) {		// must be active object
 		return 0;
