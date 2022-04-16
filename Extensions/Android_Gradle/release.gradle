@@ -85,21 +85,5 @@ dependencies {
     //Googlelibs
     implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
 
-    //TapTap
-    // implementation name:'TapAchievement_3.6.0', ext:'aar'
-    // implementation name:'TapBootstrap_3.6.0', ext:'aar'
-    // implementation name:'TapCommon_3.6.0', ext:'aar'
-    // implementation name:'TapDB_3.6.0', ext:'aar'
-    // implementation name:'TapFriend_3.6.0', ext:'aar'
-    // implementation name:'TapLicense_3.6.0', ext:'aar'
-    // implementation name:'TapLogin_3.6.0', ext:'aar'
-    // implementation name:'TapMoment_3.6.0', ext:'aar'
-    // implementation name:'TapSupport_3.6.0', ext:'aar'
-
-    // implementation name:'AntiAddiction_1.0.2', ext:'aar'
-    // implementation name:'AntiAddictionUI_1.0.2', ext:'aar'    
-    
-    implementation 'cn.leancloud:realtime-android:8.2.4'
-    implementation 'cn.leancloud:storage-android:8.2.4'
-    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    implementation 'org.jetbrains:annotations:20.1.0'
 }

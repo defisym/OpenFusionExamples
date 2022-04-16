@@ -1,3 +1,4 @@
 {
-    "search.useIgnoreFiles": false
+    "search.useIgnoreFiles": false,
+    "java.configuration.updateBuildConfiguration": "automatic"
 }

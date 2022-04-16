@@ -84,9 +84,13 @@ public class CExtLoad
 			// STARTCUT
 			// STARTCUT
 			// STARTCUT
-			if (name.compareToIgnoreCase("TapTap")==0)
+			if (name.compareToIgnoreCase("FindTheWay")==0)
 			{
-				object=new CRunTapTap();
+				object=new CRunFindTheWay();
+			}
+			if (name.compareToIgnoreCase("Layer")==0)
+			{
+				object=new CRunLayer();
 			}
 
 
