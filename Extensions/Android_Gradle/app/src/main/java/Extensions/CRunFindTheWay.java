@@ -6,13 +6,11 @@ import Conditions.CCndExtension;
 import Expressions.CValue;
 
 import Frame.CLayer;
-import OI.COCBackground;
 import Objects.CExtension;
 import Objects.CObject;
 import RunLoop.CBackDrawPaste;
 import RunLoop.CBkd2;
 import RunLoop.CCreateObjectInfo;
-import RunLoop.CRun;
 import Services.CBinaryFile;
 
 import Services.CRect;
@@ -21,10 +19,9 @@ import _DeLib.FindTheWayClass;
 import _DeLib.Coord;
 import _DeLib.MapType;
 import android.graphics.Bitmap;
-import com.yourcompany.yourapplication.BuildConfig;
+
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Vector;
 
 import static RunLoop.CRun.OBSTACLE_TRANSPARENT;

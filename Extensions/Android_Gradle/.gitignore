@@ -14,3 +14,5 @@ settings.gradle
 local.properties
 
 _Release
+
+*.apk

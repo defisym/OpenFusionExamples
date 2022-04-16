@@ -43,8 +43,8 @@ echo f | xcopy "%SrcPath%\src\main\java\_DeLib\UpdateMapCallBack.java" "%Content
 
 @REM xcopy "%SrcPath%\libs\*.*" "%ContentPath%\app\libs\" /s /e
 
-@REM copy "%AndroidPath%\release.gradle" "%ContentPath%\app\build.gradle"
-@REM copy "%AndroidPath%\ReleaseSettings.gradle" "%ContentPath%\settings.gradle"
+copy "%AndroidPath%\release.gradle" "%ContentPath%\app\build.gradle"
+copy "%AndroidPath%\ReleaseSettings.gradle" "%ContentPath%\settings.gradle"
 
 @REM del "%ContentPath%\app\libs\gson-2.8.6.jar" /f /s /q
 

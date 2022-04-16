@@ -85,5 +85,5 @@ dependencies {
     //Googlelibs
     implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
 
-    implementation 'org.jetbrains:annotations:20.1.0'
+    implementation 'org.jetbrains:annotations:23.0.0'
 }
