@@ -1,10 +1,5 @@
 package _DeLib;
 
-enum CoordType{
-    X,
-    Y,
-}
-
 public class Coord {
     public int x;
     public int y;
