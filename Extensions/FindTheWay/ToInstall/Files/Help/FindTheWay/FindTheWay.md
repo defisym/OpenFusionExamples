@@ -34,6 +34,9 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 - Path name
   - keep it empty to retrieve last path
 
+- Creation
+  - all objects created by this extension will be put to layer 1 by default, please move then to target layer manually if needed
+
 ## Action
 
 - Continue
