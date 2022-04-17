@@ -1040,7 +1040,9 @@ namespace FindTheWay {
 					std::reverse(path.begin(), path.end());
 					pathAvailable = true;
 
-					stashPath [stashPathKey] = path;
+					if (stash) {
+						stashPath [stashPathKey] = path;
+					}
 
 					return;
 				}
