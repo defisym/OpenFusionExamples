@@ -23,6 +23,11 @@ import java.util.function.Consumer;
 
 import static Objects.CObject.HOF_DESTROYED;
 
+// Usage
+// boolean negated = ObjectSelectionClass.IsNegated(cnd);
+// short oil = ObjectSelectionClass.GetOil(act, rh, 0);
+// short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+
 public class ObjectSelectionClass {
     private CRunApp rhPtr;
     private CRun run;

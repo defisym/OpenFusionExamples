@@ -16,6 +16,28 @@ import RunLoop.CRun;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+// Usage
+
+// PARAM_CREATE param = (PARAM_CREATE) GetEvtParam(act, rh, 1);
+// 
+// PARAM_POSITION param = (PARAM_POSITION) ObjectCreationClass.GetEvtParam(act, rh, 1);
+// CPositionInfo pInfo = new CPositionInfo();
+// param.read_Position(rhPtr, 0x11, pInfo)
+// 
+// Oc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+//     @Override
+//     public void CreationParam(ObjectCreationClass oc,
+//             ObjectCreationClass.CreateDuplicateParam cdp) {
+//                 cdp.HFII = param.cdpHFII;
+//                 cdp.oi = param.cdpOi;
+//                 cdp.x = realCoord.x;
+//                 cdp.y = realCoord.y;
+//                 cdp.layer = param.posLayer;
+//                 // cdp.layer = 0;
+//             }
+//         });
+// }
+
 public class ObjectCreationClass {
     private CRunApp rhPtr;
     private CRun run;
