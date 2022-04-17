@@ -1,8 +1,7 @@
 package _DeLib;
 
 import java.util.*;
-import java.util.function.BiPredicate;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 import static java.lang.Math.*;
 
@@ -24,6 +23,13 @@ class Point {
 
     int priority;
     int cost;
+
+    public Point(Coord coord, int parent, int priority, int cost) {
+        this.coord = coord;
+        this.parent = parent;
+        this.priority = priority;
+        this.cost = cost;
+    }
 
     Coord getCoord() {
         return coord;
@@ -452,11 +458,11 @@ public class FindTheWayClass {
     }
 
     public Coord GetTraditionalGridCoord(Coord realCoord) {
-        return realCoord.sub(new Coord(gridOffsetX, gridOffsetY).div(gridSize));
+        return realCoord.sub(new Coord(gridOffsetX, gridOffsetY)).div(gridSize);
     }
 
     public Coord GetTraditionalRealCoord(Coord gridCoord) {
-        // gridCoord * gridSize + (size_t)(gridSize / 2);
+        // gridCoord * gridSize + (int)(gridSize / 2);
         return gridCoord.mul(gridSize).add(new Coord(gridOffsetX, gridOffsetY).add(gridSize >> 1));
     }
 
@@ -597,13 +603,13 @@ public class FindTheWayClass {
     }
 
     // inline void OutPutMap(MapType type = MapType::MAP) {
-    // auto find = [] (Path& path, Coord& coord)->bool {
+    // auto find = [] (Path& path, Coord& coord).boolean {
     // return std::find(path.begin(), path.end(), coord) != path.end();
     // };
     //
     // cout << "MapType : " << type << endl;
-    // for (size_t y = 0; y < height; y++) {
-    // for (size_t x = 0; x < width; x++) {
+    // for (int y = 0; y < height; y++) {
+    // for (int x = 0; x < width; x++) {
     // Coord cur = { x,y };
     //
     // if (find(path, cur)) {
@@ -712,10 +718,195 @@ public class FindTheWayClass {
 
     public void Find(Coord start, Coord destination, boolean diagonal, boolean checkDiagonalCorner, Vector<Coord> ally,
             Vector<Coord> enemy, Vector<Coord> zoc, int ignoreFlag, Heuristic h) {
+        if (updateMap) {
+            UpdateMap();
+        }
 
-        // TODO
-        h.Heuristic(start, destination);
+        pathAvailable = false;
 
+        if (stash) {
+            stashPathKey = new StashPathKey(start, destination, ignoreFlag, ally, enemy, zoc);
+
+            if (stashPath.containsKey(stashPathKey)) {
+                pathAvailable = true;
+                path = stashPath.get(stashPathKey);
+
+                return;
+            }
+        }
+
+        path.clear();
+
+        if ((GetMap(start.x, start.y, this.map) == MAP_OBSTACLE)
+                || (GetMap(destination.x, destination.y, this.map) == MAP_OBSTACLE)) {
+            return;
+        }
+
+        open_set.clear();
+        close_set.clear();
+        point_set.clear();
+
+        open_set.add(new Point(start, -1, 0, 0));
+
+        Offset[] pNeighbour = diagonal ? diagonalNeighbour : normalNeighbour;
+        int neighbourSize = pNeighbour.length;
+
+        boolean moveIgnoreZoc = (ignoreFlag & 0b10000) != 0; // Move through zoc
+        boolean moveIgnoreAlly = (ignoreFlag & 0b01000) != 0; // Move through ally
+        boolean moveIgnoreEnemy = (ignoreFlag & 0b00100) != 0; // Move through enemy
+        boolean attackIgnoreAlly = (ignoreFlag & 0b00010) != 0; // Attack ally (e.g., heal)
+        boolean attackIgnoreEnemy = (ignoreFlag & 0b00001) != 0; // Attack enemy
+
+        BiFunction<Vector<Coord>, Coord, Boolean> findSet = (Vector<Coord> v, Coord p) -> {
+            for (Coord c : v) {
+                if (c.isEqual(p)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        Consumer<Vector<Coord>> addSet = (Vector<Coord> src) -> {
+            if (src == null) {
+                return;
+            }
+
+            for (Coord c : src) {
+                if (!findSet.apply(unit_set, c)) {
+                    unit_set.add(c);
+                }
+            }
+        };
+
+        unit_set.clear();
+
+        if (!moveIgnoreAlly) {
+            addSet.accept(ally);
+        }
+
+        if (!moveIgnoreEnemy) {
+            addSet.accept(enemy);
+        }
+
+        if (!moveIgnoreZoc && zoc != null) {
+            for (Coord it : zoc) {
+                if (!findSet.apply(unit_set, it)
+                        && !findSet.apply(ally, it) // current point not unit
+                        && !findSet.apply(enemy, it)
+                        && !it.isEqual(start) && !it.isEqual(destination)) {
+                    unit_set.add(it);
+                }
+            }
+        }
+
+        while (open_set.size() != 0) {
+            // Descending
+            open_set.sort((Point A, Point B) -> {
+                return B.priority - A.priority;
+            });
+
+            if (open_set.lastElement().coord.isEqual(destination)) {
+                path.add(open_set.lastElement().coord);
+
+                int parent = open_set.lastElement().parent;
+
+                while (parent != -1) {
+                    path.add(point_set.get(parent).coord);
+                    parent = point_set.get(parent).parent;
+                }
+
+                Collections.reverse(path);
+                pathAvailable = true;
+
+                if (stash) {
+                    stashPath.put(stashPathKey, path);
+                }
+
+                return;
+            } else {
+                Point base = open_set.lastElement();
+                open_set.remove(open_set.lastElement());
+
+                close_set.add(base);
+
+                BiFunction<Vector<Point>, Point, Integer> find = (Vector<Point> v, Point p) -> {
+                    for (int pos = 0; pos < v.size(); pos++) {
+                        if (v.get(pos).coord.isEqual(p.coord)) {
+                            return pos;
+                        }
+                    }
+
+                    return -1;
+                };
+
+                for (int i = 0; i < neighbourSize; i++) {
+                    Coord neighCoord = new Coord(base.coord.x + pNeighbour[i].x, base.coord.y + pNeighbour[i].y);
+
+                    int curCost = GetMap(neighCoord.x, neighCoord.y, this.map);
+                    Point neighPoint = new Point(neighCoord, -1, 0, base.cost + curCost + pNeighbour[i].generalCost);
+
+                    if (curCost == MAP_OBSTACLE) {
+                        continue;
+                    }
+
+                    if (findSet.apply(unit_set, neighCoord)) {
+                        continue;
+                    }
+
+                    if (diagonal && checkDiagonalCorner // check corner
+                            && (i % 2 == 1)) { // when checking diagonal points
+                        int prev = i - 1;
+                        int next = (i + 1) % neighbourSize;
+
+                        if (GetMap(base.coord.x + pNeighbour[prev].x, base.coord.y + pNeighbour[prev].y,
+                                this.map) == MAP_OBSTACLE
+                                && GetMap(base.coord.x + pNeighbour[next].x, base.coord.y + pNeighbour[next].y,
+                                        this.map) == MAP_OBSTACLE) {
+                            continue;
+                        }
+                    }
+
+                    if (find.apply(close_set, neighPoint) != -1) {
+                        continue;
+                    }
+
+                    Function<Point, Integer> heuristic = (Point p) -> {
+                        return h.Heuristic(neighPoint.coord, destination);
+                    };
+
+                    Consumer<Point> updateParentPointer = (Point cur) -> {
+                        int p = find.apply(point_set, cur);
+
+                        if (p == -1) {
+                            int pBase = find.apply(point_set, base);
+
+                            if (pBase == -1) {
+                                point_set.add(base);
+                                cur.parent = point_set.size() - 1;
+                            } else {
+                                cur.parent = pBase;
+                            }
+                        } else {
+                            cur.parent = p;
+                        }
+                    };
+
+                    int next = find.apply(open_set, neighPoint);
+
+                    if (next == -1) {
+                        neighPoint.priority = heuristic.apply(neighPoint) + neighPoint.cost;
+                        updateParentPointer.accept(neighPoint);
+
+                        open_set.add(neighPoint);
+                    } else if (open_set.get(next).cost > neighPoint.cost) {
+                        open_set.get(next).cost = neighPoint.cost;
+                        open_set.get(next).priority = heuristic.apply(neighPoint) + neighPoint.cost;
+
+                        updateParentPointer.accept(open_set.get(next));
+                    }
+                }
+            }
+        }
     }
 
     public void GenerateSet(Coord start, Vector<Coord> set, boolean add, boolean diagonal) {
@@ -751,80 +942,78 @@ public class FindTheWayClass {
         }
     }
 
-    // inline wstring OutPutAreaStr(Coord start, size_t range
-    // , CoordSet* ally = nullptr, CoordSet* enemy = nullptr
-    // , CoordSet* zoc = nullptr
-    // , bool allRange = false, size_t extraRangeStartPos = 0) {
-    // std::wstringstream ss;
-    // if (!extraRangeStartPos) {
-    // extraRangeStartPos = range;
-    // }
-    //
-    // BYTE* temp = new BYTE [mapSize];
-    // memcpy(temp, map, mapSize);
-    //
-    // auto out = [&] (BYTE cost)->wchar_t {
-    // switch (cost) {
-    // case MAP_OBSTACLE:
-    // return L'*';
-    // case 254:
-    // return L'+';
-    // case 125:
-    // return L'□';
-    // case 124:
-    // return L'■';
-    // case 50:
-    // return L'Z';
-    // case 49:
-    // return L'A';
-    // case 48:
-    // return L'E';
-    // default:
-    // return L'#';
-    // }
-    // };
-    //
-    // auto updateSet = [&] (CoordSet* p, BYTE cost) {
-    // if (p != nullptr) {
-    // for (auto& it : *p) {
-    // *GetMapPosPointer(it.x, it.y, temp) = cost;
-    // }
-    // }
-    // };
-    //
-    // for (size_t it = 0; it < area.size(); it++) {
-    // if (it < extraRangeStartPos) {
-    // for (auto& it_C : area [it]) {
-    // *GetMapPosPointer(it_C.x, it_C.y, temp) = 125;
-    // }
-    // }
-    // else {
-    // for (auto& it_C : area [it]) {
-    // if (it_C == Coord { 5, 4 }) {
-    // cout << "1" << endl;
-    // }
-    // *GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
-    // }
-    // }
-    // }
-    //
-    // //updateSet(zoc, 50);
-    // //updateSet(ally, 49);
-    // //updateSet(enemy, 48);
-    //
-    // *GetMapPosPointer(start.x, start.y, temp) = 254;
-    //
-    // for (size_t y = 0; y < height; y++) {
-    // for (size_t x = 0; x < width; x++) {
-    // ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
-    // }
-    // ss << endl;
-    // }
-    //
-    // delete[] temp;
-    //
-    // return ss.str();
-    // }
+    public String OutPutAreaStr(Coord start, int range, Vector<Coord> ally, Vector<Coord> enemy, Vector<Coord> zoc,
+            boolean allRange, int extraRangeStartPos) {
+        StringBuilder output = new StringBuilder();
+
+        if (extraRangeStartPos == 0) {
+            extraRangeStartPos = range;
+        }
+
+        int[] temp = new int[mapSize];
+        System.arraycopy(map, 0, temp, 0, mapSize);
+
+        Function<Integer, Character> out = (Integer cost) -> {
+            switch (cost) {
+                case MAP_OBSTACLE:
+                    return '*';
+                case 254:
+                    return '+';
+                case 125:
+                    return '□';
+                case 124:
+                    return '■';
+                case 50:
+                    return 'Z';
+                case 49:
+                    return 'A';
+                case 48:
+                    return 'E';
+                default:
+                    return '#';
+            }
+        };
+
+        BiFunction<Vector<Coord>, Integer, Integer> updateSet = (Vector<Coord> p, Integer cost) -> {
+            for (Coord it : p) {
+                SetMap(it.x, it.y, cost, temp, false);
+            }
+
+            return 0;
+        };
+
+        if (updateMap) {
+            UpdateMap();
+        }
+
+        for (int it = 0; it < area.size(); it++) {
+            if (it < extraRangeStartPos) {
+                for (Coord it_C : area.get(it)) {
+                    SetMap(it_C.x, it_C.y, 125, temp, false);
+                }
+            } else {
+                for (Coord it_C : area.get(it)) {
+                    SetMap(it_C.x, it_C.y, 124, temp, false);
+                }
+            }
+        }
+
+        updateSet.apply(zoc, 50);
+        updateSet.apply(ally, 49);
+        updateSet.apply(enemy, 48);
+
+        SetMap(start.x, start.y, 254, temp, false);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                output.append(out.apply(temp[y * width + x]));
+                output.append(" ");
+            }
+            output.append("\n");
+        }
+
+        return output.toString();
+    }
 
     public int GetAbleLineRange(Coord start, int range, int dir, Vector<Coord> ally, Vector<Coord> enemy,
             Vector<Coord> zoc, int ignoreFlag // Move range ignore ally && Attack range ignore enemy by default
