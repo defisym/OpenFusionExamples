@@ -1,0 +1,84 @@
+
+//AddPrePlugins
+apply plugin: 'com.android.application'
+
+//AddPostPlugins
+android {
+    //compileSdkVersion BUILD_API.toInteger()
+    compileSdkVersion 30.toInteger()
+
+    defaultConfig {
+        //DefaultConfigs
+
+        //applicationId BUILD_APPID
+        //minSdkVersion BUILD_MIN.toInteger()
+        //targetSdkVersion BUILD_TARGET.toInteger()
+        //versionCode BUILD_VERS_CODE.toInteger()
+        //versionName BUILD_VERS_NAME
+        
+        applicationId "com.yourcompany.yourapplication"
+        minSdkVersion 30.toInteger()
+        targetSdkVersion 30.toInteger()
+        versionCode 1.toInteger()
+        versionName "1.0.0"
+    }
+    if(project.hasProperty("RELEASE_STORE_FILE")) {
+        signingConfigs {
+            release {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
+            }
+        }
+    }
+    //SigningOptions
+    buildTypes {
+        if(project.hasProperty("RELEASE_STORE_FILE")) {
+            release {
+                signingConfig signingConfigs.release
+                minifyEnabled false
+                //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            }
+        }
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+    repositories {
+    //add Repository
+        flatDir {
+            dirs 'libs'
+        }
+    }	
+    dexOptions {
+        preDexLibraries false
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    //Projectsdk
+    implementation "androidx.annotation:annotation:1.3.0"
+    implementation "androidx.exifinterface:exifinterface:1.3.3"
+    implementation "androidx.appcompat:appcompat:1.3.0"
+    implementation "androidx.core:core:1.5.0"
+    implementation "androidx.documentfile:documentfile:1.0.1"
+    implementation "com.google.android.play:core:1.10.3"
+    implementation "org.apache.commons:commons-io:1.3.2"
+
+    //Googlelibs
+    implementation fileTree(include: '*.jar', dir: 'libs')
+
+    implementation 'org.jetbrains:annotations:23.0.0'
+}
+
+
+
+//AddTasks
