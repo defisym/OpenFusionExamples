@@ -39,6 +39,29 @@ echo f | xcopy "%SrcPath%\src\main\java\_DeLib\Heuristic.java" "%ContentPath%\ap
 echo f | xcopy "%SrcPath%\src\main\java\_DeLib\MapType.java" "%ContentPath%\app\src\main\java\_DeLib\MapType.java" /s /e
 echo f | xcopy "%SrcPath%\src\main\java\_DeLib\UpdateMapCallBack.java" "%ContentPath%\app\src\main\java\_DeLib\UpdateMapCallBack.java" /s /e
 
+@REM remove debug mode
+
+@REM set "source_1=private static final boolean DEBUG = true;"
+@REM set "source_2=private static final boolean DEBUG = false;"
+@REM set "source_1_1=// private static final boolean DEBUG = true;"
+@REM set "source_2_1=// private static final boolean DEBUG = false;"
+@REM set "source_del="
+
+@REM del temp.java
+
+@REM @echo off
+@REM setlocal enabledelayedexpansion
+
+@REM for /f %%i in (%SrcPath%\src\main\java\Extensions\CRun%ProjectName%.java) do (
+@REM     set str=%%i
+@REM 	@REM set rep=!str:%source_2%=%source_del%!
+@REM 	set "rep=!str:%source_1%=%source_2%!"
+	
+@REM     echo !rep!>>temp.java
+@REM )
+
+@REM pause
+
 @REM Use these commands if extra lib & build script are needed
 
 @REM xcopy "%SrcPath%\libs\*.*" "%ContentPath%\app\libs\" /s /e
