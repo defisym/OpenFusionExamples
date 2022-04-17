@@ -8,6 +8,7 @@ import Expressions.CValue;
 import Frame.CLayer;
 import Objects.CExtension;
 import Objects.CObject;
+import Params.*;
 import RunLoop.CBackDrawPaste;
 import RunLoop.CBkd2;
 import RunLoop.CCreateObjectInfo;
@@ -15,23 +16,26 @@ import Services.CBinaryFile;
 
 import Services.CRect;
 import Sprites.CSpriteGen;
-import _DeLib.FindTheWayClass;
-import _DeLib.Coord;
-import _DeLib.MapType;
+import _3rdLib.ObjectCreationClass;
+import _3rdLib.ObjectSelectionClass;
+import _DeLib.*;
 import android.graphics.Bitmap;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
 import java.util.Vector;
+import java.util.function.Consumer;
 
 import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
-import static _DeLib.FindTheWayClass.MAP_OBSTACLE;
+import static _3rdLib.ObjectCreationClass.GetEvtParam;
+import static _DeLib.FindTheWayClass.*;
 import static _DeLib.FusionCommon.IDENTIFIER_ACTIVE;
 
 public class CRunFindTheWay extends CRunExtension {
     // TODO DEBUG
-    // private static final boolean DEBUG = true;
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
+    // private static final boolean DEBUG = false;
 
     // Define ACE ID here
     // Condition
@@ -144,7 +148,7 @@ public class CRunFindTheWay extends CRunExtension {
     String pMapBase64Str;
     String pMapStr;
 
-    // ObjectSelection* pSelect;
+    ObjectSelectionClass pSelect;
 
     boolean isAttack;
     int areaSize;
@@ -159,12 +163,12 @@ public class CRunFindTheWay extends CRunExtension {
     String pOnItAreaName;
 
     CObject pObject;
-    // ObjectCreation* pOc;
+    ObjectCreationClass pOc;
     Vector<Coord> pObjZoc;
-    String OnItZocName;
+    String pOnItZocName;
 
-    // AOEClass* pAOE;
-    // vector<AOEClass::coord>* pAOECoord;
+    AOEClass pAOE;
+    Vector<AOECoord> pAOECoord;
 
     // Constructor
     public CRunFindTheWay() {
@@ -197,11 +201,9 @@ public class CRunFindTheWay extends CRunExtension {
 
         this.pObjZoc.ensureCapacity(8);
 
-        // FTW.ForceFind(new Coord(0,0),new Coord(0,0)
-        // ,true,true
-        // ,null,null,null
-        // , FindTheWay.GetIgnoreFlag(true,true,true,true,true)
-        // , FindTheWay::GetManhattanDistance);
+        pSelect = new ObjectSelectionClass(rh.rhApp);
+        pOc = new ObjectCreationClass(rh.rhApp);
+
         // Return
         return true;
     }
@@ -222,8 +224,48 @@ public class CRunFindTheWay extends CRunExtension {
     @Override
     public boolean condition(int num, CCndExtension cnd) {
         switch (num) {
+            case CND_CONDITION_SMBS: {
+                this.pFTW = null;
 
+                int width = cnd.getParamExpression(rh, 0);
+                int height = cnd.getParamExpression(rh, 1);
+
+                try {
+                    this.pFTW = new FindTheWayClass(width, height);
+                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, (Object) ho);
+                    this.pFTW.SetIsometric(this.isometric);
+                } catch (Throwable e) {
+                    return false;
+                }
+
+                if (DEBUG) {
+                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
+                }
+
+                return true;
+            }
+            case CND_CONDITION_SMBB: {
+                this.pFTW = null;
+
+                String base64 = cnd.getParamExpString(rh, 0);
+
+                try {
+                    this.pFTW = new FindTheWayClass(base64);
+                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, (Object) ho);
+                    this.pFTW.SetIsometric(this.isometric);
+                } catch (Throwable e) {
+                    return false;
+                }
+
+                if (DEBUG) {
+                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
+                }
+
+                return true;
+            }
             case CND_CONDITION_SMBC: {
+                this.pFTW = null;
+
                 int gridSize = cnd.getParamExpression(rh, 0);
                 int gridOffsetX = cnd.getParamExpression(rh, 1);
                 int gridOffsetY = cnd.getParamExpression(rh, 2);
@@ -277,6 +319,125 @@ public class CRunFindTheWay extends CRunExtension {
 
                 return true;
             }
+            case CND_CONDITION_OSMBC: {
+                String iterateName = cnd.getParamExpString(rh, 0);
+                return Objects.equals(this.pOnItCollisionName, iterateName);
+            }
+            case CND_CONDITION_OPF: {
+                int startX = cnd.getParamExpression(rh, 0);
+                int startY = cnd.getParamExpression(rh, 1);
+
+                int destinationX = cnd.getParamExpression(rh, 2);
+                int destinationY = cnd.getParamExpression(rh, 3);
+
+                int ignoreFlag = cnd.getParamExpression(rh, 4);
+
+                boolean diagonal = (cnd.getParamExpression(rh, 5) != 0);
+                boolean checkDiagonalCorner = (cnd.getParamExpression(rh, 6) != 0);
+
+                boolean forceFind = (cnd.getParamExpression(rh, 7) != 0);
+                boolean useRealCoord = (cnd.getParamExpression(rh, 8) != 0);
+
+                String saveName = cnd.getParamExpString(rh, 9);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                FindPath(new Coord(startX, startY), new Coord(destinationX, destinationY), ignoreFlag, diagonal,
+                        checkDiagonalCorner, forceFind, useRealCoord, saveName);
+
+                if (DEBUG) {
+                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
+                }
+
+                return this.pFTW.GetPathValidity(null);
+            }
+            case CND_CONDITION_PA: {
+                String pathName = cnd.getParamExpString(rh, 0);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                return this.pFTW.GetPathValidity(pathName);
+            }
+            case CND_CONDITION_OITP: {
+                String iterateName = cnd.getParamExpString(rh, 0);
+
+                return Objects.equals(this.pOnItPathName, iterateName);
+            }
+            case CND_CONDITION_MA: {
+                return this.pFTW != null;
+            }
+            case CND_CONDITION_CMCAC: {
+                int x = cnd.getParamExpression(rh, 0);
+                int y = cnd.getParamExpression(rh, 1);
+
+                int cost = cnd.getParamExpression(rh, 2);
+                MapType type = MapType.values()[cnd.getParamExpression(rh, 3)];
+
+                boolean useRealCoord = (cnd.getParamExpression(rh, 4) != 0);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                Coord gridCoord = new Coord(x, y);
+
+                if (useRealCoord) {
+                    gridCoord = this.pFTW.GetGridCoord(gridCoord);
+                }
+
+                int mapCost = this.pFTW.GetMap(gridCoord.x, gridCoord.y, type, true);
+
+                if (cost == -1 && mapCost != MAP_OBSTACLE) {
+                    // Check for path
+                    return true;
+                } else if (cost == 65536 && mapCost == MAP_OBSTACLE) { // Check for obstacle
+                    return true;
+                } else if (cost == mapCost) { // Check accurate cost
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            case CND_CONDITION_OITA: {
+                String iterateName = cnd.getParamExpString(rh, 0);
+
+                return Objects.equals(this.pOnItAreaName, iterateName);
+            }
+            case CND_CONDITION_OITAA: {
+                return this.isAttack;
+            }
+            case CND_CONDITION_AITA: {
+                return this.areaPos < this.areaSize;
+            }
+            case CND_CONDITION_OMC: {
+                return true;
+            }
+            case CND_CONDITION_OCOZ: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oilZoc = ObjectSelectionClass.GetOil(cnd, rh, 1);
+
+                String iterateName = cnd.getParamExpString(rh, 2);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                Coord itGridCoord = this.pFTW.GetGridCoord(this.itCoord);
+
+                return Objects.equals(this.pOnItZocName, iterateName)
+                        && this.pSelect.FilterObjects(this, oil, negated, new ObjectSelectionClass.FilterClass() {
+                            @Override
+                            public boolean Filter(Object rdPtr, CObject object) {
+                                return object == CRunFindTheWay.this.pObject;
+                            }
+                        });
+            }
         }
 
         return false;
@@ -286,14 +447,347 @@ public class CRunFindTheWay extends CRunExtension {
     @Override
     public void action(int num, CActExtension act) {
         switch (num) {
-            // case ACT: {
-            // // act.getParamExpression(rh, 0);
-            //
-            // break;
-            // }
+            case ACT_ACTION_SM: {
+                int x = act.getParamExpression(rh, 0);
+                int y = act.getParamExpression(rh, 1);
 
+                int cost = act.getParamExpression(rh, 2);
+                MapType type = MapType.values()[act.getParamExpression(rh, 3)];
+
+                boolean useRealCoord = (act.getParamExpression(rh, 4) != 0);
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                if (type == MapType.MAP) {
+                    return;
+                }
+
+                Coord gridCoord = new Coord(x, y);
+
+                if (useRealCoord) {
+                    gridCoord = this.pFTW.GetGridCoord(gridCoord);
+                }
+
+                this.pFTW.SetMap(gridCoord.x, gridCoord.y, cost, type, true);
+
+                return;
+            }
+            case ACT_ACTION_SMBO: {
+                CObject object = act.getParamObject(rh, 0);
+                int cost = act.getParamExpression(rh, 1);
+                MapType type = MapType.values()[act.getParamExpression(rh, 2)];
+
+                if (!LPROValid(object, 0)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+                if (type == MapType.MAP) {
+                    return;
+                }
+
+                Coord gridCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+                this.pFTW.SetMap(gridCoord.x, gridCoord.y, cost, type, true);
+
+                return;
+            }
+            case ACT_ACTION_CM: {
+                int cost = act.getParamExpression(rh, 0);
+                MapType type = MapType.values()[act.getParamExpression(rh, 1)];
+
+                if (this.pFTW == null) {
+                    return;
+                }
+                if (type == MapType.MAP) {
+                    return;
+                }
+
+                this.pFTW.ClearMap(type, cost, true);
+
+                return;
+            }
             case ACT_ACTION_C: {
-                break;
+                return; // Force fusion to evaluate conditions, as empty events will be skipped
+            }
+            case ACT_ACTION_ITP: {
+                String pathName = act.getParamExpString(rh, 0);
+                boolean useRealCoord = (act.getParamExpression(rh, 1) != 0);
+
+                this.pOnItPathName = act.getParamExpString(rh, 2);
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                String pPathName = Objects.equals(pathName, "") ? null : pathName;
+
+                if (!this.pFTW.GetPathValidity(pPathName)) {
+                    return;
+                }
+
+                this.itIndex = 0;
+                int totalSteps = this.pFTW.GetDistance(pPathName);
+
+                for (int step = 0; step < totalSteps; step++) {
+                    Coord coord = new Coord(this.pFTW.GetCoordAtPath(step, CoordType.X, pPathName),
+                            this.pFTW.GetCoordAtPath(step, CoordType.Y, pPathName));
+
+                    this.itCoord = useRealCoord ? this.pFTW.GetRealCoord(coord) : coord;
+                    this.itIndex = step;
+
+                    CallEvent(CND_CONDITION_OITP);
+                }
+
+                return;
+            }
+            case ACT_ACTION_SZBO: {
+                CObject object = act.getParamObject(rh, 0);
+                boolean center = (act.getParamExpression(rh, 1) != 0);
+
+                if (!LPROValid(object, 0)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                if (center) {
+                    this.pFTW.GenerateZoc(objectCoord, this.pZoc, true, true);
+                } else if (!this.pZoc.contains(objectCoord)) {
+                    this.pZoc.add(objectCoord);
+                }
+
+                return;
+            }
+            case ACT_ACTION_CZ: {
+                this.pZoc.clear();
+
+                return;
+            }
+            case ACT_ACTION_ITA: {
+                this.pOnItAreaName = act.getParamExpString(rh, 0);
+                boolean once = (act.getParamExpression(rh, 1) != 0);
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Vector<Vector<Coord>> area = this.pFTW.GetArea();
+
+                Consumer<Vector<Coord>> loop = (Vector<Coord> s) -> {
+                    for (Coord it_c : s) {
+                        this.itCoord = it_c;
+
+                        CallEvent(CND_CONDITION_OITA);
+                    }
+                };
+
+                if (once) {
+                    if (this.areaPos < area.size()) {
+                        this.isAttack = !(this.areaPos < this.extraRangeStartPos);
+
+                        loop.accept(area.get(this.areaPos));
+
+                        this.areaPos++;
+                    }
+                } else {
+                    for (int it = 0; it < area.size(); it++) {
+                        this.isAttack = !(it < this.extraRangeStartPos);
+
+                        loop.accept(area.get(it));
+
+                        this.areaPos++;
+                    }
+                }
+
+                return;
+            }
+            case ACT_ACTION_SUBO: {
+                CObject object = act.getParamObject(rh, 0);
+                int type = act.getParamExpression(rh, 1);
+
+                if (!LPROValid(object, 0)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                final int ALLY = 0;
+                final int ENEMY = 1;
+                final int UNIT = 2;
+
+                switch (type) {
+                    case ALLY: {
+                        this.pAlly.add(objectCoord);
+                        break;
+                    }
+                    case ENEMY: {
+                        this.pEnemy.add(objectCoord);
+                        break;
+                    }
+                    case UNIT: {
+                        this.pUnit.add(objectCoord);
+                        break;
+                    }
+                }
+
+                return;
+            }
+            case ACT_ACTION_CU: {
+                int target = act.getParamExpression(rh, 0);
+
+                final int ALL = -1;
+                final int ALLY = 0;
+                final int ENEMY = 1;
+                final int UNIT = 2;
+
+                switch (target) {
+                    case ALL: {
+                        this.pAlly.clear();
+                        this.pEnemy.clear();
+                        this.pUnit.clear();
+                        break;
+                    }
+                    case ALLY: {
+                        this.pAlly.clear();
+                        break;
+                    }
+                    case ENEMY: {
+                        this.pEnemy.clear();
+                        break;
+                    }
+                    case UNIT: {
+                        this.pUnit.clear();
+                        break;
+                    }
+                }
+
+                return;
+            }
+            case ACT_ACTION_SS: {
+                boolean enable = act.getParamExpression(rh, 0) != 0;
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                this.pFTW.SetStash(enable);
+
+                if (!enable) {
+                    this.pFTW.ClearStash();
+                }
+
+                return;
+            }
+            case ACT_ACTION_COZ: {
+                CObject object = act.getParamObject(rh, 0);
+                PARAM_CREATE param = (PARAM_CREATE) GetEvtParam(act, rh, 1);
+
+                // CPositionInfo pInfo = new CPositionInfo();
+                // param.read_Position(rh,0x11,pInfo);
+
+                if (!LPROValid(object, 0)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+                this.pFTW.GenerateZoc(objectCoord, this.pObjZoc, false, true);
+
+                for (Coord it : this.pObjZoc) {
+                    Coord realCoord = this.pFTW.GetRealCoord(it);
+
+                    this.pOc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+                        @Override
+                        public void CreationParam(ObjectCreationClass oc,
+                                ObjectCreationClass.CreateDuplicateParam cdp) {
+                            cdp.HFII = param.cdpHFII;
+                            cdp.oi = param.cdpOi;
+                            cdp.x = realCoord.x;
+                            cdp.y = realCoord.y;
+                            cdp.layer = param.posLayer;
+                        }
+                    });
+                }
+
+                return;
+            }
+            case ACT_ACTION_COZBE: {
+                short oil = ObjectSelectionClass.GetOil(act, rh, 0);
+                this.pOnItZocName = act.getParamExpString(rh, 1);
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
+                    @Override
+                    public void ForEachCallBack(CObject object) {
+                        Coord objectCoord = pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                        CRunFindTheWay.this.pObject = object;
+                        CRunFindTheWay.this.pFTW.GenerateZoc(objectCoord, CRunFindTheWay.this.pObjZoc, false, true);
+
+                        for (Coord it : CRunFindTheWay.this.pObjZoc) {
+                            CRunFindTheWay.this.itCoord = CRunFindTheWay.this.pFTW.GetRealCoord(it);
+
+                            CallEvent(CND_CONDITION_OCOZ);
+                        }
+
+                        CRunFindTheWay.this.pObject = null;
+                    }
+                });
+
+                return;
+            }
+            case ACT_ACTION_COZBN: {
+                CObject object = act.getParamObject(rh, 0);
+                String objectName = act.getParamExpString(rh, 1);
+
+                if (!LPROValid(object, 0)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                short Oi = this.pOc.GetCreationOI(objectName);
+
+                Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+                this.pFTW.GenerateZoc(objectCoord, this.pObjZoc, false, true);
+
+                for (Coord it : this.pObjZoc) {
+                    Coord realCoord = this.pFTW.GetRealCoord(it);
+
+                    this.pOc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+                        @Override
+                        public void CreationParam(ObjectCreationClass oc,
+                                ObjectCreationClass.CreateDuplicateParam cdp) {
+                            cdp.oi = Oi;
+                            cdp.x = realCoord.x;
+                            cdp.y = realCoord.y;
+                            cdp.layer = 1;
+                        }
+                    });
+                }
+
+                return;
+
             }
             case ACT_ACTION_CG: {
                 CObject object = act.getParamObject(rh, 0);
@@ -397,19 +891,257 @@ public class CRunFindTheWay extends CRunExtension {
     @Override
     public CValue expression(int num) {
         switch (num) {
-            // case EXP: {
-            // expRet.forceString("Null");
-            //
-            // // ho.getExpParam().getInt();
-            //
-            // return expRet;
-            // }
+            case EXP_EXPRESSION_GITX: {
+                expRet.forceInt(this.itCoord.x);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GITY: {
+                expRet.forceInt(this.itCoord.y);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GITI: {
+                expRet.forceInt(this.itIndex);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GS: {
+                int startX = ho.getExpParam().getInt();
+                int startY = ho.getExpParam().getInt();
+
+                int destinationX = ho.getExpParam().getInt();
+                int destinationY = ho.getExpParam().getInt();
+
+                int ignoreFlag = ho.getExpParam().getInt();
+
+                boolean diagonal = ho.getExpParam().getInt() != 0;
+                boolean checkDiagonalCorner = ho.getExpParam().getInt() != 0;
+
+                boolean forceFind = ho.getExpParam().getInt() != 0;
+                boolean useRealCoord = ho.getExpParam().getInt() != 0;
+
+                String saveName = ho.getExpParam().getString();
+
+                if (this.pFTW == null) {
+                    expRet.forceInt(STEP_UNREACHABLE);
+                    return expRet;
+                }
+
+                FindPath(new Coord(startX, startY), new Coord(destinationX, destinationY), ignoreFlag, diagonal,
+                        checkDiagonalCorner, forceFind, useRealCoord, saveName);
+
+                if (DEBUG) {
+                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
+                }
+
+                expRet.forceInt(this.pFTW.GetDistance(null));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GSOP: {
+                String pathName = ho.getExpParam().getString();
+                if (this.pFTW == null) {
+                    expRet.forceInt(STEP_UNREACHABLE);
+                    return expRet;
+                }
+
+                String pPathName = Objects.equals(pathName, "") ? null : pathName;
+
+                expRet.forceInt(this.pFTW.GetDistance(pPathName));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GSCOP: {
+                String pathName = ho.getExpParam().getString();
+                int step = ho.getExpParam().getInt();
+                CoordType type = CoordType.values()[ho.getExpParam().getInt()];
+
+                if (this.pFTW == null) {
+                    expRet.forceInt(COORD_INVALID);
+                    return expRet;
+                }
+
+                String pPathName = Objects.equals(pathName, "") ? null : pathName;
+
+                expRet.forceInt(this.pFTW.GetCoordAtPath(step, type, pPathName));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GGC: {
+                int coordX = ho.getExpParam().getInt();
+                int coordY = ho.getExpParam().getInt();
+                CoordType type = CoordType.values()[ho.getExpParam().getInt()];
+
+                if (this.pFTW == null) {
+                    expRet.forceInt(COORD_INVALID);
+                    return expRet;
+                }
+
+                expRet.forceInt(type == CoordType.X
+                        ? this.pFTW.GetGridCoord(new Coord(coordX, coordY)).x
+                        : this.pFTW.GetGridCoord(new Coord(coordX, coordY)).y);
+                return expRet;
+            }
+
+            case EXP_EXPRESSION_GRC: {
+                int coordX = ho.getExpParam().getInt();
+                int coordY = ho.getExpParam().getInt();
+                CoordType type = CoordType.values()[ho.getExpParam().getInt()];
+
+                if (this.pFTW == null) {
+                    expRet.forceInt(COORD_INVALID);
+                    return expRet;
+                }
+
+                expRet.forceInt(type == CoordType.X
+                        ? this.pFTW.GetRealCoord(new Coord(coordX, coordY)).x
+                        : this.pFTW.GetRealCoord(new Coord(coordX, coordY)).y);
+                return expRet;
+            }
+
+            case EXP_EXPRESSION_GMC: {
+                int x = ho.getExpParam().getInt();
+                int y = ho.getExpParam().getInt();
+
+                boolean useRealCoord = ho.getExpParam().getInt() != 0;
+                MapType type = MapType.values()[ho.getExpParam().getInt()];
+
+                if (this.pFTW == null) {
+                    expRet.forceInt(COORD_INVALID);
+                    return expRet;
+                }
+
+                Coord gridCoord = new Coord(x, y);
+
+                if (useRealCoord) {
+                    gridCoord = this.pFTW.GetGridCoord(gridCoord);
+                }
+
+                expRet.forceInt(this.pFTW.GetMap(gridCoord.x, gridCoord.y, type, true));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMB64: {
+                // if(this.pFTW==null){
+                // expRet.forceString("");
+                // return expRet;
+                // }
+
+                this.pMapBase64Str = this.pFTW == null ? "InvalidMap" : this.pFTW.GetMap();
+
+                expRet.forceString(this.pMapBase64Str);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMS: {
+                MapType type = MapType.values()[ho.getExpParam().getInt()];
+                boolean showPath = ho.getExpParam().getInt() != 0;
+
+                String pathName = ho.getExpParam().getString();
+
+                // if(this.pFTW==null){
+                // expRet.forceString("");
+                // return expRet;
+                // }
+
+                String pPathName = Objects.equals(pathName, "") ? null : pathName;
+
+                this.pMapStr = this.pFTW == null ? "InvalidMap" : this.pFTW.OutPutMapStr(type, showPath, pPathName);
+
+                expRet.forceString(this.pMapStr);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GALR: {
+                int x = ho.getExpParam().getInt();
+                int y = ho.getExpParam().getInt();
+
+                boolean useRealCoord = ho.getExpParam().getInt() != 0;
+
+                int dir = ho.getExpParam().getInt();
+                int range = ho.getExpParam().getInt();
+
+                int ignoreFlag = ho.getExpParam().getInt();
+
+                boolean attack = ho.getExpParam().getInt() != 0;
+
+                if (this.pFTW == null) {
+                    expRet.forceInt(0);
+                    return expRet;
+                }
+
+                Coord gridCoord = new Coord(x, y);
+
+                if (useRealCoord) {
+                    gridCoord = this.pFTW.GetGridCoord(gridCoord);
+                }
+
+                expRet.forceInt(this.pFTW.GetAbleLineRange(gridCoord, range, dir, this.pAlly, this.pEnemy, this.pZoc,
+                        ignoreFlag, attack));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GIF: {
+                boolean moveIgnoreZoc = ho.getExpParam().getInt() != 0;
+                boolean moveIgnoreAlly = ho.getExpParam().getInt() != 0;
+                boolean moveIgnoreEnemy = ho.getExpParam().getInt() != 0;
+                boolean attackIgnoreAlly = ho.getExpParam().getInt() != 0;
+                boolean attackIgnoreEnemy = ho.getExpParam().getInt() != 0;
+
+                expRet.forceInt(GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly,
+                        attackIgnoreEnemy));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMTM: {
+                expRet.forceInt(MapType.MAP.ordinal());
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMTT: {
+                expRet.forceInt(MapType.TERRAIN.ordinal());
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMTD: {
+                expRet.forceInt(MapType.DYNAMIC.ordinal());
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMCP: {
+                expRet.forceInt(MAP_PATH);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMCO: {
+                expRet.forceInt(MAP_OBSTACLE);
+                return expRet;
+            }
+            case EXP_EXPRESSION_GMCV: {
+                int cost = ho.getExpParam().getInt();
+
+                expRet.forceInt(Range(cost));
+                return expRet;
+            }
+            case EXP_EXPRESSION_GIGS: {
+                int isoGridWidth = ho.getExpParam().getInt();
+                int isoGridHeight = ho.getExpParam().getInt();
+
+                expRet.forceInt(GetIsometricGridSize(isoGridWidth, isoGridHeight));
+                return expRet;
+            }
         }
 
         return new CValue(0);
     }
 
     // Functions
+    public void FindPath(Coord start, Coord destination, int ignoreFlag, boolean diagonal, boolean checkDiagonalCorner,
+            boolean forceFind, boolean useRealCoord, String saveName) {
+        if (useRealCoord) {
+            start = this.pFTW.GetGridCoord(start);
+            destination = this.pFTW.GetGridCoord(destination);
+        }
+
+        if (!forceFind) {
+            this.pFTW.Find(start, destination, diagonal, checkDiagonalCorner, this.pAlly, this.pEnemy, this.pZoc,
+                    ignoreFlag, FindTheWayClass::GetManhattanDistance);
+        } else {
+            this.pFTW.ForceFind(start, destination, diagonal, checkDiagonalCorner, this.pAlly, this.pEnemy, this.pZoc,
+                    ignoreFlag, FindTheWayClass::GetManhattanDistance);
+        }
+
+        if (!Objects.equals(saveName, "")) {
+            this.pFTW.SaveLastPath(saveName);
+        }
+    }
+
     public void UpdateMapCallBackFunc(Object ho) {
         ((CExtension) ho).generateEvent(CND_CONDITION_OMC, 0);
     }
