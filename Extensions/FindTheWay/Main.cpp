@@ -857,7 +857,7 @@ short WINAPI DLLExport Continue(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	bool realCoord = (bool)CNC_GetIntParameter(rdPtr);
+	bool useRealCoord = (bool)CNC_GetIntParameter(rdPtr);
 
 	*rdPtr->pOnItPathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -868,12 +868,14 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 	if (!rdPtr->pFTW->GetPathValidity(pPathName)) {
 		return 0;
 	}
+
 	rdPtr->itIndex = 0;
-	size_t totapStep = rdPtr->pFTW->GetDistance(pPathName);
-	for (size_t step = 0; step < totapStep; step++) {
+	size_t totalStep = rdPtr->pFTW->GetDistance(pPathName);
+
+	for (size_t step = 0; step < totalStep; step++) {
 		auto coord = Coord{ rdPtr->pFTW->GetCoordAtPath(step, CoordType::X, pPathName)
 						,rdPtr->pFTW->GetCoordAtPath(step, CoordType::Y, pPathName) };
-		rdPtr->itCoord = realCoord ? rdPtr->pFTW->GetRealCoord(coord) : coord;
+		rdPtr->itCoord = useRealCoord ? rdPtr->pFTW->GetRealCoord(coord) : coord;
 		rdPtr->itIndex = step;
 
 		CallEvent(ONITERATESTEP);
@@ -1505,7 +1507,7 @@ long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetMapBase64(LPRDATA rdPtr, long param1) {
-	RetIfMapInvalid((long)Empty_Str);
+	// RetIfMapInvalid((long)Empty_Str);
 
 	*rdPtr->pMapBase64Str = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->GetMap();
 
@@ -1522,7 +1524,7 @@ long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
 
 	wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	RetIfMapInvalid((long)Empty_Str);
+	// RetIfMapInvalid((long)Empty_Str);
 
 	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
