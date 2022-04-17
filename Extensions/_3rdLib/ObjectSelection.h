@@ -3,6 +3,7 @@
 // Origin version by Anders Riggelsen (Andos)
 
 // Add functional to support lambda
+// Add For-Each support
 #include <functional>
 #include <vector>
 
