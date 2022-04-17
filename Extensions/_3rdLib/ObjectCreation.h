@@ -25,7 +25,7 @@
 // 
 //	cdp->cdpPos.posX = 50;
 //	cdp->cdpPos.posY = 50;
-//	cdp->cdpPos.posLayer = 1;
+//	cdp->cdpPos.posLayer = 0;
 //	cdp->cdpPos.posOINUMParent = -1;
 //	cdp->cdpPos.posFlags = 8;
 //

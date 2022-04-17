@@ -781,7 +781,7 @@ public class CRunFindTheWay extends CRunExtension {
                             cdp.oi = Oi;
                             cdp.x = realCoord.x;
                             cdp.y = realCoord.y;
-                            cdp.layer = 1;
+                            cdp.layer = 0;
                         }
                     });
                 }

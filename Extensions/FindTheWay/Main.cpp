@@ -996,7 +996,7 @@ short WINAPI DLLExport CreateAreaByNameOnce(LPRDATA rdPtr, long param1, long par
 
 				cdp->cdpPos.posX = (short)realCoord.x;
 				cdp->cdpPos.posY = (short)realCoord.y;
-				cdp->cdpPos.posLayer = 1;
+				cdp->cdpPos.posLayer = 0;
 				cdp->cdpPos.posOINUMParent = -1;
 				cdp->cdpPos.posFlags = 8;
 				});
@@ -1151,7 +1151,7 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 
 			cdp->cdpPos.posX = (short)realCoord.x;
 			cdp->cdpPos.posY = (short)realCoord.y;
-			cdp->cdpPos.posLayer = 1;
+			cdp->cdpPos.posLayer = 0;
 			cdp->cdpPos.posOINUMParent = -1;
 			cdp->cdpPos.posFlags = 8;
 			});
@@ -1283,7 +1283,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 
 			cdp->cdpPos.posX = (short)realCoord.x;
 			cdp->cdpPos.posY = (short)realCoord.y;
-			cdp->cdpPos.posLayer = 1;
+			cdp->cdpPos.posLayer = 0;
 			cdp->cdpPos.posOINUMParent = -1;
 			cdp->cdpPos.posFlags = 8;
 			});
