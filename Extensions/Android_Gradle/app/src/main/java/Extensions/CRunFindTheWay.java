@@ -25,11 +25,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.Vector;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
 import static _3rdLib.ObjectCreationClass.GetEvtParam;
 import static _DeLib.FindTheWayClass.*;
+import static _DeLib.FindTheWayClass.VecContains;
 import static _DeLib.FusionCommon.IDENTIFIER_ACTIVE;
 
 public class CRunFindTheWay extends CRunExtension {
@@ -169,6 +171,11 @@ public class CRunFindTheWay extends CRunExtension {
 
     AOEClass pAOE;
     Vector<AOECoord> pAOECoord;
+
+    final int ALL = -1;
+    final int ALLY = 0;
+    final int ENEMY = 1;
+    final int UNIT = 255;
 
     // Constructor
     public CRunFindTheWay() {
@@ -402,6 +409,135 @@ public class CRunFindTheWay extends CRunExtension {
                     return false;
                 }
             }
+            case CND_CONDITION_OAG: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                int x = cnd.getParamExpression(rh, 1);
+                int y = cnd.getParamExpression(rh, 2);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                return this.pSelect.FilterObjects(this, oil, negated, new ObjectSelectionClass.FilterClass() {
+                    @Override
+                    public boolean Filter(Object rdPtr, CObject object) {
+                        if (object.hoX < 0 || object.hoY < 0) {
+                            return false;
+                        } else {
+                            Coord coord = new Coord(x, y);
+                            Coord gridCoord = CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                            boolean e=coord
+                                    .isEqual(gridCoord);
+
+                            if(e){
+                                int x=5;
+                            }else{
+                                int y =6;
+                            }
+
+                            return new Coord(x, y)
+                                    .isEqual(CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY)));
+                        }
+                    }
+                });
+            }
+            case CND_CONDITION_OAC: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                int x = cnd.getParamExpression(rh, 1);
+                int y = cnd.getParamExpression(rh, 2);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                return this.pSelect.FilterObjects(this, oil, negated, new ObjectSelectionClass.FilterClass() {
+                    @Override
+                    public boolean Filter(Object rdPtr, CObject object) {
+                        return object.hoX == x && object.hoY == y;
+                    }
+                });
+            }
+            case CND_CONDITION_NOAC: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                int x = cnd.getParamExpression(rh, 1);
+                int y = cnd.getParamExpression(rh, 2);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                try {
+                    this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
+                        @Override
+                        public void ForEachCallBack(CObject object) {
+                            if (object.hoX == x && object.hoY == y) {
+                                throw new RuntimeException("Object found");
+                            }
+                        }
+                    });
+                } catch (RuntimeException e) {
+                    return false;
+                }
+
+                return true;
+            }
+            case CND_CONDITION_CA: {
+                boolean lineMode = (cnd.getParamExpression(rh, 0) != 0);
+                boolean attack = (cnd.getParamExpression(rh, 1) != 0);
+
+                int x = cnd.getParamExpression(rh, 2);
+                int y = cnd.getParamExpression(rh, 3);
+
+                boolean useRealCoord = (cnd.getParamExpression(rh, 4) != 0);
+
+                int range = cnd.getParamExpression(rh, 5);
+                int startRange = cnd.getParamExpression(rh, 6);
+
+                int ignoreFlag = cnd.getParamExpression(rh, 7);
+
+                boolean allRange = (cnd.getParamExpression(rh, 8) != 0);
+                int allRangeAttackRange = cnd.getParamExpression(rh, 9);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                this.isAttack = allRange ? false : attack;
+
+                this.areaPos = 0;
+                this.areaSize = 0;
+                this.extraRangeStartPos = DEFAULT_EXTRARANGESTARTPOS;
+
+                Coord gridCoord = new Coord(x, y);
+
+                if (useRealCoord) {
+                    gridCoord = this.pFTW.GetGridCoord(gridCoord);
+                }
+
+                if (!lineMode) {
+                    this.pFTW.CalcArea(gridCoord, range, startRange, this.pAlly, this.pEnemy, this.pZoc, ignoreFlag,
+                            attack, allRange, allRangeAttackRange, new UpdateCallBack<Integer>() {
+                                @Override
+                                public void CallBack(Integer v) {
+                                    CRunFindTheWay.this.extraRangeStartPos = v;
+                                }
+                            }, false);
+                } else {
+                    this.pFTW.CalcLineArea(gridCoord, range, startRange, this.pAlly, this.pEnemy, this.pZoc, ignoreFlag,
+                            attack);
+                }
+
+                this.areaSize = this.pFTW.GetArea().size();
+
+                return true;
+            }
             case CND_CONDITION_OITA: {
                 String iterateName = cnd.getParamExpString(rh, 0);
 
@@ -415,6 +551,38 @@ public class CRunFindTheWay extends CRunExtension {
             }
             case CND_CONDITION_OMC: {
                 return true;
+            }
+            case CND_CONDITION_ZV: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                Vector<CObject> objects = new Vector<>();
+
+                this.pSelect.SelectAll(oil);
+                objects.ensureCapacity(this.pSelect.GetNumberOfSelected(oil));
+
+                this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
+                    @Override
+                    public void ForEachCallBack(CObject object) {
+                        Coord objectCoord = CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+                        // not overlap obstacle
+                        if (CRunFindTheWay.this.pFTW.GetMap(objectCoord.x, objectCoord.y, MapType.TERRAIN,
+                                true) != MAP_OBSTACLE
+                                // not overlap unit
+                                && !OverlapUnit(objectCoord)) {
+                            objects.add(object);
+                        }
+                    }
+                });
+
+                this.pSelect.SelectObjects(oil, objects);
+
+                return !objects.isEmpty();
             }
             case CND_CONDITION_OCOZ: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
@@ -437,6 +605,116 @@ public class CRunFindTheWay extends CRunExtension {
                                 return object == CRunFindTheWay.this.pObject;
                             }
                         });
+            }
+            case CND_CONDITION_SA: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+
+                this.pSelect.SelectAll(oil);
+
+                return true;
+            }
+            case CND_CONDITION_OAOBJ: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oilObjA = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oilObjB = ObjectSelectionClass.GetOil(cnd, rh, 1);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                Vector<Coord> objects = new Vector<>();
+
+                this.pSelect.ForEach(oilObjB, new ObjectSelectionClass.ForEachCallBackClass() {
+                    @Override
+                    public void ForEachCallBack(CObject object) {
+                        objects.add(CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY)));
+                    }
+                });
+
+                return this.pSelect.FilterObjects(this, oilObjA, negated, new ObjectSelectionClass.FilterClass() {
+                    @Override
+                    public boolean Filter(Object rdPtr, CObject object) {
+                        return VecContains(objects,
+                                CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY)));
+                    }
+                });
+            }
+            case CND_CONDITION_POAO: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                class tuple {
+                    public Coord coord;
+                    public CObject object;
+
+                    tuple(Coord coord, CObject object) {
+                        this.coord = coord;
+                        this.object = object;
+                    }
+                }
+
+                Vector<tuple> objects = new Vector<>();
+                Vector<tuple> selected = new Vector<>();
+
+                Vector<CObject> toSelect = new Vector<>();
+
+                int oNum = this.pSelect.GetNumberOfObject(oil);
+
+                objects.ensureCapacity(oNum);
+                selected.ensureCapacity(oNum);
+                toSelect.ensureCapacity(oNum);
+
+                BiPredicate<Vector<tuple>, Coord> find = (Vector<tuple> fObjects, Coord objectCoord) -> {
+                    for (tuple t : fObjects) {
+                        if (t.coord.isEqual(objectCoord)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                };
+
+                this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
+                    @Override
+                    public void ForEachCallBack(CObject object) {
+                        objects.add(new tuple(new Coord(object.hoX, object.hoY), object));
+                    }
+                });
+
+                this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
+                    @Override
+                    public void ForEachCallBack(CObject object) {
+                        Coord objectCoord = CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                        if (!find.test(selected, objectCoord)) {
+                            selected.add(new tuple(objectCoord, object));
+                        }
+                    }
+                });
+
+                if (!negated) {
+                    for (tuple t : selected) {
+                        toSelect.add(t.object);
+                    }
+                } else {
+                    for (tuple t : objects) {
+                        if (!find.test(selected, t.coord)) {
+                            toSelect.add(t.object);
+                        }
+                    }
+                }
+
+                this.pSelect.SelectObjects(oil, toSelect);
+
+                return !toSelect.isEmpty();
             }
         }
 
@@ -560,7 +838,7 @@ public class CRunFindTheWay extends CRunExtension {
 
                 if (center) {
                     this.pFTW.GenerateZoc(objectCoord, this.pZoc, true, true);
-                } else if (!this.pZoc.contains(objectCoord)) {
+                } else if (!VecContains(this.pZoc, objectCoord)) {
                     this.pZoc.add(objectCoord);
                 }
 
@@ -609,6 +887,41 @@ public class CRunFindTheWay extends CRunExtension {
 
                 return;
             }
+            case ACT_ACTION_CAO: {
+                PARAM_CREATE param = (PARAM_CREATE) GetEvtParam(act, rh, 0);
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Vector<Vector<Coord>> area = this.pFTW.GetArea();
+
+                if (this.areaPos < area.size()) {
+                    this.isAttack = !(this.areaPos + 1 < this.extraRangeStartPos);
+
+                    for (Coord it : area.get(this.areaPos)) {
+                        Coord realCoord = this.pFTW.GetRealCoord(it);
+
+                        this.pOc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+                            @Override
+                            public void CreationParam(ObjectCreationClass oc,
+                                    ObjectCreationClass.CreateDuplicateParam cdp) {
+                                cdp.HFII = param.cdpHFII;
+                                cdp.oi = param.cdpOi;
+                                cdp.layer = param.posLayer;
+                                cdp.dir = param.posDir;
+
+                                cdp.x = realCoord.x;
+                                cdp.y = realCoord.y;
+                            }
+                        });
+                    }
+
+                    this.areaPos++;
+                }
+
+                return;
+            }
             case ACT_ACTION_SUBO: {
                 CObject object = act.getParamObject(rh, 0);
                 int type = act.getParamExpression(rh, 1);
@@ -622,10 +935,6 @@ public class CRunFindTheWay extends CRunExtension {
                 }
 
                 Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
-
-                final int ALLY = 0;
-                final int ENEMY = 1;
-                final int UNIT = 2;
 
                 switch (type) {
                     case ALLY: {
@@ -646,11 +955,6 @@ public class CRunFindTheWay extends CRunExtension {
             }
             case ACT_ACTION_CU: {
                 int target = act.getParamExpression(rh, 0);
-
-                final int ALL = -1;
-                final int ALLY = 0;
-                final int ENEMY = 1;
-                final int UNIT = 2;
 
                 switch (target) {
                     case ALL: {
@@ -1140,6 +1444,10 @@ public class CRunFindTheWay extends CRunExtension {
         if (!Objects.equals(saveName, "")) {
             this.pFTW.SaveLastPath(saveName);
         }
+    }
+
+    public boolean OverlapUnit(Coord objectCoord) {
+        return VecContains(this.pUnit, objectCoord);
     }
 
     public void UpdateMapCallBackFunc(Object ho) {
