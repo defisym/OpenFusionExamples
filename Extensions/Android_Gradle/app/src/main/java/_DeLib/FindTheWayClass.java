@@ -105,7 +105,26 @@ class AreaRange {
 }
 
 public class FindTheWayClass {
+    public enum MapType {
+        MAP,
+        TERRAIN,
+        DYNAMIC,
+    }
+
     public final static int MAPTYPENUM = 3;
+
+    public interface UpdateMapCallBack {
+        void CallBack(Object rh);
+    }
+
+    public interface UpdateCallBack<T> {
+        void CallBack(T v);
+    }
+
+    @FunctionalInterface
+    public interface HeuristicClass {
+        int Heuristic(Coord start, Coord destination);
+    }
 
     public final static Throwable INVALID_SIZE = new Throwable("Invalid size");
     public final static Throwable INVALID_DATA = new Throwable("Invalid data");
@@ -326,7 +345,7 @@ public class FindTheWayClass {
         point_set = new Vector<>();
         unit_set = new Vector<Coord>();
 
-        area = new Vector<>();
+        area = new Vector<Vector<Coord>>();
         cur_set = new Vector<>();
         continue_set = new Vector<>();
         extra_set = new Vector<>();
@@ -654,7 +673,7 @@ public class FindTheWayClass {
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                if (showPath && curPathAvaliable && pPath.contains(new Coord(x, y))) {
+                if (showPath && curPathAvaliable && VecContains(pPath, new Coord(x, y))) {
                     output.append('-');
                 } else {
                     output.append(((GetMap(x, y, type, true)) != MAP_OBSTACLE) ? '#' : '*');
@@ -697,7 +716,7 @@ public class FindTheWayClass {
     }
 
     public void ForceFind(Coord start, Coord destination, boolean diagonal, boolean checkDiagonalCorner,
-            Vector<Coord> ally, Vector<Coord> enemy, Vector<Coord> zoc, int ignoreFlag, Heuristic h) {
+            Vector<Coord> ally, Vector<Coord> enemy, Vector<Coord> zoc, int ignoreFlag, HeuristicClass h) {
         // Still try to find a way even start & destination is obstacle
         // ......By setting them to path
         if (updateMap) {
@@ -717,7 +736,7 @@ public class FindTheWayClass {
     }
 
     public void Find(Coord start, Coord destination, boolean diagonal, boolean checkDiagonalCorner, Vector<Coord> ally,
-            Vector<Coord> enemy, Vector<Coord> zoc, int ignoreFlag, Heuristic h) {
+            Vector<Coord> enemy, Vector<Coord> zoc, int ignoreFlag, HeuristicClass h) {
         if (updateMap) {
             UpdateMap();
         }
@@ -926,7 +945,7 @@ public class FindTheWayClass {
         for (Offset it : pNeighbour) {
             Coord cur = new Coord(start.x + it.x, start.y + it.y);
 
-            if (!zoc.contains(cur)) {
+            if (!VecContains(zoc, cur)) {
                 zoc.add(cur);
             }
         }
@@ -1031,7 +1050,7 @@ public class FindTheWayClass {
 
         Predicate<Coord> ignoreCoord = (Coord p) -> {
             BiPredicate<Vector<Coord>, Coord> findSet = (Vector<Coord> set, Coord fp) -> {
-                return set.contains(fp);
+                return VecContains(set, fp);
             };
 
             if (GetMap(p.x, p.y, this.map) == MAP_OBSTACLE) {
@@ -1080,7 +1099,7 @@ public class FindTheWayClass {
         return moveable;
     }
 
-    public void CalcLineArea(Coord start, int range, int startRange, int dir, Vector<Coord> ally, Vector<Coord> enemy,
+    public void CalcLineArea(Coord start, int range, int startRange, Vector<Coord> ally, Vector<Coord> enemy,
             Vector<Coord> zoc, int ignoreFlag // Move range ignore ally && Attack range ignore enemy by default
             , boolean attack) { // Attack = use ignore flag, only consider map collision
         if (updateMap) {
@@ -1092,7 +1111,7 @@ public class FindTheWayClass {
             stashAreaKey = new StashAreaKey(true, start, settings, ignoreFlag, ally, enemy, zoc);
 
             if (stashArea.containsKey(stashAreaKey)) {
-                area = stashArea.get(stashAreaKey).area;
+                area = Objects.requireNonNull(stashArea.get(stashAreaKey)).area;
 
                 return;
             }
@@ -1142,9 +1161,277 @@ public class FindTheWayClass {
             Vector<Coord> zoc, int ignoreFlag // Move range ignore ally && Attack range ignore enemy by default
             , boolean attack // ignored if allRange = true
             // allRange: Calc move & attack at the same time
-            , boolean allRange, int allRangeAttackRange, int extraRangeStartPosOut, boolean diagonal) {
-        // TODO
+            , boolean allRange, int allRangeAttackRange, UpdateCallBack<Integer> extraRangeStartPosOut,
+            boolean diagonal) {
+        if (updateMap) {
+            UpdateMap();
+        }
 
+        if (stash) {
+            settings = new AreaRange(range, startRange, attack, allRange, allRangeAttackRange);
+            stashAreaKey = new StashAreaKey(false, start, settings, ignoreFlag, ally, enemy, zoc);
+
+            if (stashArea.containsKey(stashAreaKey)) {
+                area = Objects.requireNonNull(stashArea.get(stashAreaKey)).area;
+
+                if (extraRangeStartPosOut != null) {
+                    extraRangeStartPosOut
+                            .CallBack(Objects.requireNonNull(stashArea.get(stashAreaKey)).extraRangeStartPos);
+                }
+
+                return;
+            }
+        }
+
+        area.clear();
+
+        if (GetMap(start.x, start.y, this.map) == MAP_OBSTACLE) {
+            return;
+        }
+
+        cur_set.clear();
+        continue_set.clear();
+        extra_set.clear();
+
+        open_set.clear();
+        close_set.clear();
+        point_set.clear();
+
+        open_set.add(new Point(start, -1, 0, 0));
+
+        Offset[] pNeighbour = diagonal ? diagonalNeighbour : normalNeighbour;
+        int neighbourSize = pNeighbour.length;
+
+        int totalRange = range + (allRange ? allRangeAttackRange : 0) + (allRange ? 1 : 0);
+        int extraRangeStartPos = range;
+
+        boolean extraRangeCalc = false; // Extra range calc start
+        boolean updateAttack = allRange ? false : attack; // ignore dynamic unit part when calc attack range
+                                                          // force to evaluate them in allRange mode
+
+        boolean moveIgnoreZoc = (ignoreFlag & 0b10000) != 0; // Move through zoc
+        boolean moveIgnoreAlly = (ignoreFlag & 0b01000) != 0; // Move through ally
+        boolean moveIgnoreEnemy = (ignoreFlag & 0b00100) != 0; // Move through enemy
+        boolean attackIgnoreAlly = (ignoreFlag & 0b00010) != 0; // Attack ally (e.g., heal)
+        boolean attackIgnoreEnemy = (ignoreFlag & 0b00001) != 0; // Attack enemy
+
+        BiFunction<Vector<Point>, Coord, Boolean> findCoord = (Vector<Point> v, Coord p) -> {
+            for (Point c : v) {
+                if (c.coord.isEqual(p)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        for (int nest = 0; nest < totalRange; nest++) {
+            boolean addArea = nest > startRange; // After start range
+
+            boolean nextExtraRange = allRange && (nest == range); // Update for extra range
+            boolean startExtraRange = allRange && (nest == (range + 1)); // Extra range start, don't add new area
+
+            if (startExtraRange) {
+                updateAttack = true;
+                extraRangeCalc = true;
+                extraRangeStartPos = area.size();
+
+                if (extraRangeStartPosOut != null) {
+                    extraRangeStartPosOut.CallBack(extraRangeStartPos);
+                }
+
+                // add & last point
+                if (!continue_set.isEmpty()) {
+                    cur_set = new Vector<>(continue_set);
+                    continue_set.clear();
+                }
+
+                // add current area edge
+                for (Coord it : area.lastElement()) {
+                    if (!findCoord.apply(cur_set, it)) {
+                        cur_set.add(new Point(it, -1, 0, 0));
+                    }
+                }
+
+                open_set.clear();
+            } else {
+                cur_set = new Vector<>(open_set);
+                open_set.clear();
+            }
+
+            if (cur_set.isEmpty()) {
+                // cannot move, start attack check in allRange mode
+                if (allRange && !startExtraRange) {
+                    continue;
+                }
+
+                break;
+            }
+
+            if (addArea && !startExtraRange) {
+                area.add(new Vector<>());
+                area.lastElement().ensureCapacity(1 + area.size() * 4);
+            }
+
+            while (!cur_set.isEmpty()) {
+                Point base = cur_set.lastElement();
+                cur_set.remove(cur_set.lastElement());
+
+                close_set.add(base);
+
+                if (addArea && !startExtraRange) {
+                    area.lastElement().add(base.coord);
+                }
+
+                BiFunction<Vector<Point>, Point, Integer> find = (Vector<Point> v, Point p) -> {
+                    for (int pos = 0; pos < v.size(); pos++) {
+                        if (v.get(pos).coord.isEqual(p.coord)) {
+                            return pos;
+                        }
+                    }
+
+                    return -1;
+                };
+
+                BiFunction<Vector<Coord>, Point, Integer> findSet = (Vector<Coord> v, Point p) -> {
+                    for (int pos = 0; pos < v.size(); pos++) {
+                        if (v.get(pos).isEqual(p.coord)) {
+                            return pos;
+                        }
+                    }
+
+                    return -1;
+                };
+
+                BiFunction<Vector<Point>, Point, Boolean> add = (Vector<Point> v, Point p) -> {
+                    if (find.apply(v, p) == -1) {
+                        v.add(p);
+
+                        return true;
+                    } else {
+                        return false;
+                    }
+                };
+
+                BiFunction<Vector<Coord>, Point, Boolean> addSet = (Vector<Coord> v, Point p) -> {
+                    if (findSet.apply(v, p) == -1) {
+                        v.add(p.coord);
+
+                        return true;
+                    } else {
+                        return false;
+                    }
+                };
+
+                boolean finalUpdateAttack = updateAttack;
+
+                Predicate<Point> ignorePoint = (Point p) -> {
+                    boolean curAlly = ally != null && findSet.apply(ally, p) != -1;
+                    boolean curEnemy = enemy != null && findSet.apply(enemy, p) != -1;
+
+                    BiFunction<Boolean, Boolean, Boolean> getIgnore = (Boolean moveIgnore, Boolean attackIgnore) -> {
+                        if (finalUpdateAttack) {
+                            if (attackIgnore) {
+                                return true;
+                            }
+                        } else {
+                            if (!moveIgnore) {
+                                if (allRange && attackIgnore) {
+                                    addSet.apply(extra_set, p); // Add to attack area if ignored during move
+                                    add.apply(continue_set, base); // Add parent to continue set in case it's edge
+                                }
+                            }
+
+                            if (moveIgnore) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    };
+
+                    return (!curAlly && !curEnemy) // currentPoint is not unit, ignore
+                            || (curAlly && getIgnore.apply(moveIgnoreAlly, attackIgnoreAlly)) // ignore ally?
+                            || (curEnemy && getIgnore.apply(moveIgnoreEnemy, attackIgnoreEnemy)); // ignore enemy?
+                };
+
+                // Zoc : stop search
+                // You must need zoc instead of treat them as dynamic, as you need to restart
+                // attack search in allRange mode
+                if ((!moveIgnoreZoc) // stop move if doesn't ignore zoc
+                        && (!updateAttack) && (!extraRangeCalc) // during move
+                        && zoc != null && findSet.apply(zoc, base) != -1 // current point zoc
+                        && findSet.apply(ally, base) == -1 // current point not unit
+                        && findSet.apply(enemy, base) == -1
+                        && base.coord != start) { // not start
+                    if (allRange) {
+                        add.apply(continue_set, base); // start calc attack range from zoc
+                    }
+
+                    continue;
+                }
+
+                for (int i = 0; i < neighbourSize; i++) {
+                    Coord neighCoord = new Coord(base.coord.x + pNeighbour[i].x, base.coord.y + pNeighbour[i].y);
+
+                    int curCost = GetMap(neighCoord.x, neighCoord.y, this.map);
+                    Point neighPoint = new Point(neighCoord, -1, 0, base.cost + curCost + pNeighbour[i].generalCost);
+
+                    if (curCost == MAP_OBSTACLE) {
+                        continue;
+                    } else if (!ignorePoint.test(neighPoint)) {
+                        continue;
+                    }
+
+                    if (find.apply(close_set, neighPoint) != -1) {
+                        continue;
+                    }
+
+                    if (find.apply(cur_set, neighPoint) == -1
+                            && find.apply(open_set, neighPoint) == -1) {
+                        if (!nextExtraRange) {
+                            open_set.add(neighPoint);
+                        } else {
+                            add.apply(continue_set, base);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!extra_set.isEmpty()) {
+            Predicate<Coord> findArea = (Coord c) -> {
+                for (Vector<Coord> it : area) {
+                    for (Coord it_c : it) {
+                        if (it_c.isEqual(c)) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            };
+
+            boolean added = false;
+
+            for (Coord it : extra_set) {
+                if (!findArea.test(it)) {
+                    if (!added) {
+                        added = true;
+
+                        area.add(new Vector<Coord>());
+                        area.lastElement().ensureCapacity(extra_set.size());
+                    }
+
+                    area.lastElement().add(it);
+                }
+            }
+        }
+
+        if (stash) {
+            stashArea.put(stashAreaKey, new StashAreaValue(area, extraRangeStartPos));
+        }
+
+        // OutPutAreaStr(start, range, ally, enemy, zoc, allRange, extraRangeStartPos);
     }
 
     public Vector<Vector<Coord>> GetArea() {
@@ -1179,5 +1466,15 @@ public class FindTheWayClass {
 
     public int GetAreaStashSize() {
         return stashArea.size();
+    }
+
+    public static <T extends Coord> boolean VecContains(Vector<T> vec, T obj) {
+        for (T it : vec) {
+            if (it.isEqual(obj)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
