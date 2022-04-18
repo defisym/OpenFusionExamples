@@ -5,8 +5,8 @@ public class Coord {
     public int y;
 
     public Coord(int x, int y){
-        this.x = x;
-        this.y = y;
+        this.x = x>=0?x:Integer.MAX_VALUE;
+        this.y = y>=0?y:Integer.MAX_VALUE;
     }
 
     public boolean isEqual(Coord coord){
