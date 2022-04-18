@@ -4,14 +4,12 @@ package _3rdLib;
 
 // Add For-Each support
 
-import Actions.CActExtension;
 import Application.CRunApp;
 import Conditions.CCndExtension;
 import Events.CEvent;
 import Events.CEventProgram;
 import Events.CQualToOiList;
 import Objects.CObject;
-import Params.CParam;
 import Params.PARAM_OBJECT;
 import RunLoop.CObjInfo;
 import RunLoop.CRun;
@@ -38,15 +36,16 @@ public class ObjectSelectionClass {
     private CQualToOiList[] QualToOiList;
 
     public static abstract class FilterClass {
-        public abstract boolean Filter(Object rdPtr, CObject pObject);
+        public abstract boolean Filter(Object rdPtr, CObject object);
     }
 
     public static abstract class ForEachCallBackClass {
-        public abstract void ForEachCallBack(CObject pObject);
+        public abstract void ForEachCallBack(CObject object);
     }
 
     // Filter qualifier objects
     private boolean FilterQualifierObjects(Object rdPtr, int OiList, boolean negate, FilterClass filter) {
+        QualToOiList = eventProgram.qualToOiList;
         CQualToOiList CurrentQualToOi = QualToOiList[OiList];
 
         boolean hasSelected = false;
@@ -193,7 +192,7 @@ public class ObjectSelectionClass {
     }
 
     // Resets the SOL and inserts only one given object
-    public void selectOneObject(CObject object) {
+    public void SelectOneObject(CObject object) {
         CObjInfo pObjectInfo = object.hoOiList;
         if (pObjectInfo == null)
             return;
@@ -206,7 +205,7 @@ public class ObjectSelectionClass {
     }
 
     // Resets the SOL and inserts the given list of objects
-    public void selectObjects(int oiList, List<CObject> objects) {
+    public void SelectObjects(int oiList, List<CObject> objects) {
         CObjInfo pObjectInfo = this.OiList[oiList]; // GetOILFromOI(Oi);
 
         if (pObjectInfo == null)
@@ -248,6 +247,7 @@ public class ObjectSelectionClass {
             oiList &= 0x7FFF; // Mask out the qualifier part
             int numberSelected = 0;
 
+            QualToOiList = eventProgram.qualToOiList;
             CQualToOiList CurrentQualToOi = QualToOiList[oiList];
 
             int i = 0;
@@ -274,6 +274,7 @@ public class ObjectSelectionClass {
             oiList &= 0x7FFF; // Mask out the qualifier part
             int number = 0;
 
+            QualToOiList = eventProgram.qualToOiList;
             CQualToOiList CurrentQualToOi = QualToOiList[oiList];
 
             int i = 0;
@@ -299,6 +300,7 @@ public class ObjectSelectionClass {
         if ((oiList & 0x8000) != 0) {
             oiList &= 0x7FFF; // Mask out the qualifier part
 
+            QualToOiList = eventProgram.qualToOiList;
             CQualToOiList CurrentQualToOi = QualToOiList[oiList];
 
             int i = 0;
@@ -361,6 +363,7 @@ public class ObjectSelectionClass {
         } else if (oiList != -1) {
             oiList &= 0x7FFF;
 
+            QualToOiList = eventProgram.qualToOiList;
             CQualToOiList CurrentQualToOi = QualToOiList[oiList];
 
             if (CurrentQualToOi == null) {
@@ -370,7 +373,7 @@ public class ObjectSelectionClass {
             int i = 0;
             int length = CurrentQualToOi.qoiList.length;
             while (i < length) {
-                CObjInfo CurrentOi = GetLPOIL(CurrentQualToOi.qoiList[i + 1]);
+                CObjInfo CurrentOi = this.OiList[CurrentQualToOi.qoiList[i + 1]];
 
                 if (CurrentOi == null) {
                     return;
