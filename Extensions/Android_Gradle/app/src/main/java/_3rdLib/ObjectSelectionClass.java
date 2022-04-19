@@ -27,12 +27,12 @@ import static Objects.CObject.HOF_DESTROYED;
 // short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
 
 public class ObjectSelectionClass {
-    private CRunApp rhPtr;
-    private CRun run;
-    private CEventProgram eventProgram;
+    private final CRunApp rhPtr;
+    private final CRun run;
+    private final CEventProgram eventProgram;
 
-    private CObject[] ObjectList;
-    private CObjInfo[] OiList;
+    private final CObject[] ObjectList;
+    private final CObjInfo[] OiList;
     private CQualToOiList[] QualToOiList;
 
     public static abstract class FilterClass {
@@ -65,9 +65,11 @@ public class ObjectSelectionClass {
     // Filter normal objects
     private boolean FilterNonQualifierObjects(Object rdPtr, int OiList, boolean negate, FilterClass filter) {
         CObjInfo pObjectInfo = this.OiList[OiList]; // GetOILFromOI(Oi);
-        if (pObjectInfo == null)
+
+        if (pObjectInfo == null) {
             return false;
-        boolean hasSelected = false;
+        }
+
         if (pObjectInfo.oilEventCount != eventProgram.rh2EventCount) {
             SelectAll(OiList); // The SOL is invalid, must reset.
         }
@@ -77,6 +79,8 @@ public class ObjectSelectionClass {
             return false;
         }
 
+        boolean hasSelected = false;
+
         int firstSelected = -1;
         int count = 0;
         int current = pObjectInfo.oilListSelected;
@@ -84,8 +88,11 @@ public class ObjectSelectionClass {
 
         while ((current & 0x80000000) == 0) {
             CObject pObject = ObjectList[current];
-            if (pObject == null)
+
+            if (pObject == null) {
                 continue;
+            }
+
             boolean filterResult = filter.Filter(rdPtr, pObject);
             boolean useObject = ((filterResult ? 1 : 0) ^ (negate ? 1 : 0)) != 0;
             hasSelected = ((hasSelected ? 1 : 0) | (useObject ? 1 : 0)) != 0;

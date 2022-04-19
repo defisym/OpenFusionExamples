@@ -93,7 +93,7 @@ class AreaRange {
     int startRange;
     boolean attack;
     boolean allRange;
-    int allRangeAttackRange = 0;
+    int allRangeAttackRange;
 
     AreaRange(int range, int startRange, boolean attack, boolean allRange, int allRangeAttackRange) {
         this.range = range;
@@ -704,7 +704,7 @@ public class FindTheWayClass {
     }
 
     static public int GetManhattanDistance(Coord start, Coord destination) {
-        return abs((int) (start.x - destination.x)) + abs((int) (start.y - destination.y));
+        return abs((start.x - destination.x)) + abs((start.y - destination.y));
     }
 
     public boolean PointObstacle(Coord p) {

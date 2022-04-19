@@ -39,13 +39,13 @@ import static java.lang.Math.min;
 // }
 
 public class ObjectCreationClass {
-    private CRunApp rhPtr;
-    private CRun run;
-    private CEventProgram eventProgram;
+    private final CRunApp rhPtr;
+    private final CRun run;
+    private final CEventProgram eventProgram;
 
-    private CObject[] ObjectList;
-    private CObjInfo[] OiList;
-    private CQualToOiList[] QualToOiList;
+    private final CObject[] ObjectList;
+    private final CObjInfo[] OiList;
+    private final CQualToOiList[] QualToOiList;
 
     int GetValidLayer(int layer) {
         return (max(-1, min(run.rhFrame.nLayers - 1, layer)));
