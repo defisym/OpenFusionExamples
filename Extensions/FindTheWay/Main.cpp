@@ -239,7 +239,7 @@ long WINAPI DLLExport SetMapByActive(LPRDATA rdPtr, long param1, long param2) {
 	LPRO object = LproFromFixed(rdPtr, fixed);
 
 	if (!LPROValid(object, IDENTIFIER_ACTIVE)) {		// must be active object
-		return 0;
+		return false;
 	}
 
 	cSurface imageSurface;
