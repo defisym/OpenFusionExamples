@@ -1,5 +1,7 @@
 package _DeLib;
 
+import java.util.Vector;
+
 public class Coord {
     public int x;
     public int y;
@@ -9,8 +11,18 @@ public class Coord {
         this.y = y>=0?y:Integer.MAX_VALUE;
     }
 
+    public Coord(int x, int y,boolean minus){
+        this.x = x;
+        this.y = y;
+    }
+
     public boolean isEqual(Coord coord){
         return this.x == coord.x && this.y == coord.y;
+    }
+
+    public enum CoordType {
+        X,
+        Y,
     }
 
     public Coord add(Coord coord){
@@ -47,5 +59,15 @@ public class Coord {
         }else{
             this.y = value;
         }
+    }
+
+    public static <T extends Coord> boolean VecContains(Vector<T> vec, T obj) {
+        for (T it : vec) {
+            if (it.isEqual(obj)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
