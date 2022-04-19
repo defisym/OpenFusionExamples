@@ -1068,8 +1068,45 @@ HMENU WINAPI DLLExport GetConditionMenu(mv _far *mV, fpObjInfo oiPtr, LPEDATA ed
 {
 #ifndef RUN_ONLY
 	// Check compatibility
-	if ( IS_COMPATIBLE(mV) )
-		return GetPopupMenu(MN_CONDITIONS);
+	//if ( IS_COMPATIBLE(mV) )
+	//	return GetPopupMenu(MN_CONDITIONS);
+
+	if (IS_COMPATIBLE(mV)) {	
+		//std::wstring str=L"init";
+		//MessageBox(NULL,str.c_str(),L"MSGB", MB_OK);
+
+		auto pValue = (CPropIntValue*)mvGetAppPropValue(mV, edPtr, PROPID_APP_BUILDTYPE);
+		if (pValue != NULL) {
+			auto version = pValue->m_nValue;
+
+			//str = _itos(version);
+			//MessageBox(NULL, str.c_str(), L"MSGB", MB_OK);
+
+			constexpr auto INCOMPATIBLE_BUILDTYPE_ANDROID = 5;
+			constexpr auto INCOMPATIBLE_BUILDTYPE_ANDROID_AAB = 6;
+			constexpr auto INCOMPATIBLE_BUILDTYPE_ANDROID_AAB_EXP = 7;
+
+			auto inCompatibleType = { INCOMPATIBLE_BUILDTYPE_ANDROID
+									,INCOMPATIBLE_BUILDTYPE_ANDROID_AAB
+									,INCOMPATIBLE_BUILDTYPE_ANDROID_AAB_EXP };
+
+			for(auto&it: inCompatibleType){
+				if (it == version) {
+					auto hMenu = GetPopupMenu(MN_CONDITIONS);
+
+					EnableMenuItem(hMenu, IDMN_CONDITION_SMBP, MF_DISABLED | MF_GRAYED);
+					EnableMenuItem(hMenu, IDMN_CONDITION_SMBSF, MF_DISABLED | MF_GRAYED);
+
+					return hMenu;
+				}
+			}
+
+			return GetPopupMenu(MN_CONDITIONS);
+		}
+		else {
+			return GetPopupMenu(MN_CONDITIONS);
+		}
+	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
