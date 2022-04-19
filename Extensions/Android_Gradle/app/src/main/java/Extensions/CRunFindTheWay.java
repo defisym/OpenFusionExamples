@@ -5,42 +5,39 @@ import Banks.CImage;
 import Conditions.CCndExtension;
 import Expressions.CValue;
 
-import Frame.CLayer;
 import Objects.CExtension;
 import Objects.CObject;
-import OpenGL.GLRenderer;
 import Params.*;
-import RunLoop.CBackDrawPaste;
-import RunLoop.CBkd2;
 import RunLoop.CCreateObjectInfo;
 import Services.CBinaryFile;
 
 import Services.CRect;
-import Sprites.CSpriteGen;
-import _3rdLib.ObjectCreationClass;
-import _3rdLib.ObjectSelectionClass;
-import _DeLib.*;
 import android.graphics.Bitmap;
 
 import android.graphics.Color;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
 import java.util.Vector;
-import java.util.function.BiPredicate;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.BiPredicate;
 
-import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
-import static _3rdLib.ObjectCreationClass.GetEvtParam;
+import _DeLib.*;
+import _DeLib.Coord.*;
+import _3rdLib.ObjectCreationClass;
+import _3rdLib.ObjectSelectionClass;
+
+import static _DeLib.Coord.VecContains;
 import static _DeLib.FindTheWayClass.*;
-import static _DeLib.FindTheWayClass.VecContains;
-import static _DeLib.FusionCommon.IDENTIFIER_ACTIVE;
 import static _DeLib.FusionUtilities.*;
+import static _3rdLib.ObjectSelectionClass.GetOil;
+import static _3rdLib.ObjectCreationClass.GetEvtParam;
+import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
 
 public class CRunFindTheWay extends CRunExtension {
     // TODO DEBUG
-    // private static final boolean DEBUG = true;
-    private static final boolean DEBUG = false;
+//    private static final boolean DEBUG = true;
+     private static final boolean DEBUG = false;
 
     // Define ACE ID here
     // Condition
@@ -173,7 +170,7 @@ public class CRunFindTheWay extends CRunExtension {
     String pOnItZocName;
 
     AOEClass pAOE;
-    Vector<AOECoord> pAOECoord;
+    Vector<Coord> pAOECoord;
 
     final int ALL = -1;
     final int ALLY = 0;
@@ -191,6 +188,9 @@ public class CRunFindTheWay extends CRunExtension {
         pUnit = new Vector<Coord>();
 
         pObjZoc = new Vector<Coord>();
+
+        pAOE = new AOEClass();
+        pAOECoord = new Vector<Coord>();
     }
 
     // Fusion Funcs
@@ -213,6 +213,9 @@ public class CRunFindTheWay extends CRunExtension {
 
         pSelect = new ObjectSelectionClass(rh.rhApp);
         pOc = new ObjectCreationClass(rh.rhApp);
+
+        Vector<Coord> A = new Vector<Coord>();
+        Vector<Coord> B = new Vector<Coord>();
 
         // Return
         return true;
@@ -378,11 +381,11 @@ public class CRunFindTheWay extends CRunExtension {
                         this.itCoord = this.pFTW.GetRealCoord(new Coord(x, y));
 
                         if (eventIterate) {
-                            CallEvent(CND_CONDITION_OSMBC);
+                            CallEvent(ho, CND_CONDITION_OSMBC);
                         }
                         // Ref:
                         // https://community.clickteam.com/threads/59029-Accessing-backdrops-from-extensions
-                        else if (!colMaskTestPoint(this.itCoord.x, this.itCoord.y, baseLayer, 0)) {
+                        else if (!colMaskTestPoint(ho, this.itCoord.x, this.itCoord.y, baseLayer, 0)) {
                             this.pFTW.SetMap(x, y, MAP_OBSTACLE, type, true);
                         }
                     }
@@ -480,7 +483,7 @@ public class CRunFindTheWay extends CRunExtension {
             case CND_CONDITION_OAG: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oil = GetOil(cnd, rh, 0);
                 int x = cnd.getParamExpression(rh, 1);
                 int y = cnd.getParamExpression(rh, 2);
 
@@ -503,10 +506,62 @@ public class CRunFindTheWay extends CRunExtension {
                     }
                 });
             }
+            case CND_CONDITION_NOAG: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = GetOil(cnd, rh, 0);
+                int x = cnd.getParamExpression(rh, 1);
+                int y = cnd.getParamExpression(rh, 2);
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                try {
+                    this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
+                        @Override
+                        public void ForEachCallBack(CObject object) {
+                            Coord objectCoord = CRunFindTheWay.this.pFTW
+                                    .GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                            if (objectCoord.isEqual(new Coord(x, y))) {
+                                throw new RuntimeException("Object found");
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    return false;
+                }
+
+                return true;
+            }
+            case CND_CONDITION_OAO: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = GetOil(cnd, rh, 0);
+                MapType type = MapType.values()[cnd.getParamExpression(rh, 1)];
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                return this.pSelect.FilterObjects(this, oil, negated, new ObjectSelectionClass.FilterClass() {
+                    @Override
+                    public boolean Filter(Object rdPtr, CObject object) {
+                        if (object.hoX < 0 || object.hoY < 0) {
+                            return false;
+                        } else {
+                            Coord coord = CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                            return CRunFindTheWay.this.pFTW.GetMap(coord.x, coord.y, type, true) == MAP_OBSTACLE;
+                        }
+                    }
+                });
+            }
             case CND_CONDITION_OAC: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oil = GetOil(cnd, rh, 0);
                 int x = cnd.getParamExpression(rh, 1);
                 int y = cnd.getParamExpression(rh, 2);
 
@@ -524,7 +579,7 @@ public class CRunFindTheWay extends CRunExtension {
             case CND_CONDITION_NOAC: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oil = GetOil(cnd, rh, 0);
                 int x = cnd.getParamExpression(rh, 1);
                 int y = cnd.getParamExpression(rh, 2);
 
@@ -614,7 +669,7 @@ public class CRunFindTheWay extends CRunExtension {
             case CND_CONDITION_ZV: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oil = GetOil(cnd, rh, 0);
 
                 if (this.pFTW == null) {
                     return false;
@@ -643,11 +698,45 @@ public class CRunFindTheWay extends CRunExtension {
 
                 return !objects.isEmpty();
             }
+            case CND_CONDITION_ZAA: {
+                boolean negated = ObjectSelectionClass.IsNegated(cnd);
+
+                short oil = GetOil(cnd, rh, 0);
+                int mode = cnd.getParamExpression(rh, 1);
+
+                boolean atAttack = mode == 1; // 0 = Move Area, 1 = Attack Area
+                boolean all = mode == -1;
+
+                if (this.pFTW == null) {
+                    return false;
+                }
+
+                Vector<Vector<Coord>> area = this.pFTW.GetArea();
+
+                return this.pSelect.FilterObjects(this, oil, negated, new ObjectSelectionClass.FilterClass() {
+                    @Override
+                    public boolean Filter(Object rdPtr, CObject object) {
+                        Coord objectCoord = CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+
+                        for (int it = 0; it < area.size(); it++) {
+                            boolean isAttack = !(it < CRunFindTheWay.this.extraRangeStartPos);
+
+                            if (VecContains(area.get(it), objectCoord)) {
+                                return all
+                                        || (atAttack && isAttack)
+                                        || (!atAttack && !isAttack);
+                            }
+                        }
+
+                        return false;
+                    }
+                });
+            }
             case CND_CONDITION_OCOZ: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
-                short oilZoc = ObjectSelectionClass.GetOil(cnd, rh, 1);
+                short oil = GetOil(cnd, rh, 0);
+                short oilZoc = GetOil(cnd, rh, 1);
 
                 String iterateName = cnd.getParamExpString(rh, 2);
 
@@ -668,7 +757,7 @@ public class CRunFindTheWay extends CRunExtension {
             case CND_CONDITION_SA: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oil = GetOil(cnd, rh, 0);
 
                 this.pSelect.SelectAll(oil);
 
@@ -677,8 +766,8 @@ public class CRunFindTheWay extends CRunExtension {
             case CND_CONDITION_OAOBJ: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oilObjA = ObjectSelectionClass.GetOil(cnd, rh, 0);
-                short oilObjB = ObjectSelectionClass.GetOil(cnd, rh, 1);
+                short oilObjA = GetOil(cnd, rh, 0);
+                short oilObjB = GetOil(cnd, rh, 1);
 
                 if (this.pFTW == null) {
                     return false;
@@ -704,7 +793,7 @@ public class CRunFindTheWay extends CRunExtension {
             case CND_CONDITION_POAO: {
                 boolean negated = ObjectSelectionClass.IsNegated(cnd);
 
-                short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
+                short oil = GetOil(cnd, rh, 0);
 
                 if (this.pFTW == null) {
                     return false;
@@ -876,7 +965,7 @@ public class CRunFindTheWay extends CRunExtension {
                     this.itCoord = useRealCoord ? this.pFTW.GetRealCoord(coord) : coord;
                     this.itIndex = step;
 
-                    CallEvent(CND_CONDITION_OITP);
+                    CallEvent(ho, CND_CONDITION_OITP);
                 }
 
                 return;
@@ -922,7 +1011,7 @@ public class CRunFindTheWay extends CRunExtension {
                     for (Coord it_c : s) {
                         this.itCoord = it_c;
 
-                        CallEvent(CND_CONDITION_OITA);
+                        CallEvent(ho, CND_CONDITION_OITA);
                     }
                 };
 
@@ -969,6 +1058,40 @@ public class CRunFindTheWay extends CRunExtension {
                                 cdp.oi = param.cdpOi;
                                 cdp.layer = param.posLayer;
                                 cdp.dir = param.posDir;
+
+                                cdp.x = realCoord.x;
+                                cdp.y = realCoord.y;
+                            }
+                        });
+                    }
+
+                    this.areaPos++;
+                }
+
+                return;
+            }
+            case ACT_ACTION_CABNO: {
+                String objectName = act.getParamExpString(rh, 0);
+                short Oi = this.pOc.GetCreationOI(objectName);
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Vector<Vector<Coord>> area = this.pFTW.GetArea();
+
+                if (this.areaPos < area.size()) {
+                    this.isAttack = !(this.areaPos + 1 < this.extraRangeStartPos);
+
+                    for (Coord it : area.get(this.areaPos)) {
+                        Coord realCoord = this.pFTW.GetRealCoord(it);
+
+                        this.pOc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+                            @Override
+                            public void CreationParam(ObjectCreationClass oc,
+                                    ObjectCreationClass.CreateDuplicateParam cdp) {
+                                cdp.oi = Oi;
+                                cdp.layer = 0;
 
                                 cdp.x = realCoord.x;
                                 cdp.y = realCoord.y;
@@ -1090,7 +1213,7 @@ public class CRunFindTheWay extends CRunExtension {
                 return;
             }
             case ACT_ACTION_COZBE: {
-                short oil = ObjectSelectionClass.GetOil(act, rh, 0);
+                short oil = GetOil(act, rh, 0);
                 this.pOnItZocName = act.getParamExpString(rh, 1);
 
                 if (this.pFTW == null) {
@@ -1108,7 +1231,7 @@ public class CRunFindTheWay extends CRunExtension {
                         for (Coord it : CRunFindTheWay.this.pObjZoc) {
                             CRunFindTheWay.this.itCoord = CRunFindTheWay.this.pFTW.GetRealCoord(it);
 
-                            CallEvent(CND_CONDITION_OCOZ);
+                            CallEvent(ho, CND_CONDITION_OCOZ);
                         }
 
                         CRunFindTheWay.this.pObject = null;
@@ -1151,6 +1274,130 @@ public class CRunFindTheWay extends CRunExtension {
 
                 return;
 
+            }
+            case ACT_ACTION_CAOE: {
+                PARAM_CREATE param = (PARAM_CREATE) GetEvtParam(act, rh, 0);
+
+                CObject object = act.getParamObject(rh, 1);
+                int dir = act.getParamExpression(rh, 2);
+                int type = act.getParamExpression(rh, 3);
+
+                int ignoreFlag = act.getParamExpression(rh, 4);
+
+                boolean moveIgnoreZoc = (ignoreFlag & 0b10000) != 0; // Move through zoc
+                boolean moveIgnoreAlly = (ignoreFlag & 0b01000) != 0; // Move through ally
+                boolean moveIgnoreEnemy = (ignoreFlag & 0b00100) != 0; // Move through enemy
+                boolean attackIgnoreAlly = (ignoreFlag & 0b00010) != 0; // Attack ally (e.g., heal)
+                boolean attackIgnoreEnemy = (ignoreFlag & 0b00001) != 0; // Attack enemy
+
+                if (!LPROValid(object)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+                Coord start = new Coord(objectCoord.x, objectCoord.y, true);
+
+                this.pAOE.GetAOE(start, dir, type, this.pAOECoord);
+
+                BiPredicate<Vector<Coord>, Coord> find = Coord::VecContains;
+
+                for (Coord it : this.pAOECoord) {
+                    Coord gridCoord = new Coord(it.x, it.y);
+                    Coord realCoord = this.pFTW.GetRealCoord(gridCoord);
+
+                    if (this.pFTW.GetMap(gridCoord.x, gridCoord.y, MapType.MAP, true) == MAP_OBSTACLE) {
+                        continue;
+                    }
+
+                    if (!attackIgnoreAlly && find.test(this.pAlly, gridCoord)) {
+                        continue;
+                    }
+                    if (!attackIgnoreEnemy && find.test(this.pEnemy, gridCoord)) {
+                        continue;
+                    }
+
+                    this.pOc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+                        @Override
+                        public void CreationParam(ObjectCreationClass oc,
+                                ObjectCreationClass.CreateDuplicateParam cdp) {
+                            cdp.HFII = param.cdpHFII;
+                            cdp.oi = param.cdpOi;
+                            cdp.layer = param.posLayer;
+                            cdp.dir = param.posDir;
+
+                            cdp.x = realCoord.x;
+                            cdp.y = realCoord.y;
+                        }
+                    });
+                }
+
+                return;
+            }
+            case ACT_ACTION_CAOEBN: {
+                String objectName = act.getParamExpString(rh, 0);
+
+                CObject object = act.getParamObject(rh, 1);
+                int dir = act.getParamExpression(rh, 2);
+                int type = act.getParamExpression(rh, 3);
+
+                int ignoreFlag = act.getParamExpression(rh, 4);
+
+                boolean moveIgnoreZoc = (ignoreFlag & 0b10000) != 0; // Move through zoc
+                boolean moveIgnoreAlly = (ignoreFlag & 0b01000) != 0; // Move through ally
+                boolean moveIgnoreEnemy = (ignoreFlag & 0b00100) != 0; // Move through enemy
+                boolean attackIgnoreAlly = (ignoreFlag & 0b00010) != 0; // Attack ally (e.g., heal)
+                boolean attackIgnoreEnemy = (ignoreFlag & 0b00001) != 0; // Attack enemy
+
+                if (!LPROValid(object)) {
+                    return;
+                }
+
+                if (this.pFTW == null) {
+                    return;
+                }
+
+                short Oi = this.pOc.GetCreationOI(objectName);
+
+                Coord objectCoord = this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
+                Coord start = new Coord(objectCoord.x, objectCoord.y, true);
+
+                this.pAOE.GetAOE(start, dir, type, this.pAOECoord);
+
+                BiPredicate<Vector<Coord>, Coord> find = Coord::VecContains;
+
+                for (Coord it : this.pAOECoord) {
+                    Coord gridCoord = new Coord(it.x, it.y);
+                    Coord realCoord = this.pFTW.GetRealCoord(gridCoord);
+
+                    if (this.pFTW.GetMap(gridCoord.x, gridCoord.y, MapType.MAP, true) == MAP_OBSTACLE) {
+                        continue;
+                    }
+
+                    if (!attackIgnoreAlly && find.test(this.pAlly, gridCoord)) {
+                        continue;
+                    }
+                    if (!attackIgnoreEnemy && find.test(this.pEnemy, gridCoord)) {
+                        continue;
+                    }
+
+                    this.pOc.OCCreateObject(new ObjectCreationClass.CreationParamClass() {
+                        @Override
+                        public void CreationParam(ObjectCreationClass oc,
+                                ObjectCreationClass.CreateDuplicateParam cdp) {
+                            cdp.oi = Oi;
+                            cdp.layer = 0;
+
+                            cdp.x = realCoord.x;
+                            cdp.y = realCoord.y;
+                        }
+                    });
+                }
+
+                return;
             }
             case ACT_ACTION_CG: {
                 CObject object = act.getParamObject(rh, 0);
@@ -1214,17 +1461,17 @@ public class CRunFindTheWay extends CRunExtension {
                         if (this.pFTW.GetMap(x, y, MapType.MAP, true) != MAP_OBSTACLE) {
                             Coord coord = this.pFTW.GetRealCoord(new Coord(x, y));
 
-                            addBackdrop(cImageLT, coord.x - hoX, coord.y - hoY, nLayer, nObstacleType, effect,
+                            addBackdrop(ho, cImageLT, coord.x - hoX, coord.y - hoY, nLayer, nObstacleType, effect,
                                     effectParam);
 
                             if (this.pFTW.GetMap(x + 1, y, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(cImageR, coord.x - hoX + (x + 1 == width ? 0 : rOffset), coord.y - hoY,
+                                addBackdrop(ho, cImageR, coord.x - hoX + (x + 1 == width ? 0 : rOffset), coord.y - hoY,
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
 
                             if (this.pFTW.GetMap(x, y + 1, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(cImageB, coord.x - hoX, coord.y - hoY + (y + 1 == height ? 0 : bOffset),
+                                addBackdrop(ho, cImageB, coord.x - hoX, coord.y - hoY + (y + 1 == height ? 0 : bOffset),
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
@@ -1511,75 +1758,5 @@ public class CRunFindTheWay extends CRunExtension {
 
     public void UpdateMapCallBackFunc(Object ho) {
         ((CExtension) ho).generateEvent(CND_CONDITION_OMC, 0);
-    }
-
-    public void CallEvent(int event) {
-        ho.generateEvent(event, 0);
-    }
-
-    public boolean colMaskTestPoint(int x, int y, int layer, int plan) {
-        if (ho.hoAdRunHeader.rhFrame.bkdCol_TestPoint(x - ho.hoAdRunHeader.rhWindowX, y - ho.hoAdRunHeader.rhWindowY,
-                layer, plan)) {
-            return false;
-        }
-        return true;
-    }
-
-    public void addBackdrop(CImage cImage, int x, int y, int nLayer, int typeObst, int dwEffect, int dwEffectParam) {
-        // Duplique
-        int[] mImage = cImage.getRawPixels();
-
-        if (mImage == null) {
-            return;
-        }
-
-        Bitmap bImage = Bitmap.createBitmap(cImage.getWidth(), cImage.getHeight(), cImage.getFormat());
-        bImage.setPixels(mImage, 0, cImage.getWidth(), 0, 0, cImage.getWidth(), cImage.getHeight());
-
-        short handle = ho.hoAdRunHeader.rhApp.imageBank.addImage(bImage, (short) cImage.getXSpot(),
-                (short) cImage.getYSpot(), (short) cImage.getXAP(), (short) cImage.getYAP(), true);
-
-        // Ajoute a la liste
-        CBkd2 toadd = new CBkd2();
-        toadd.img = handle;
-        toadd.loHnd = 0;
-        toadd.oiHnd = 0;
-        toadd.x = x;
-        toadd.y = y;
-        toadd.width = cImage.getWidth();
-        toadd.height = cImage.getHeight();
-        toadd.nLayer = (short) nLayer;
-        toadd.inkEffect = dwEffect;
-        toadd.inkEffectParam = dwEffectParam;
-        toadd.colMode = CSpriteGen.CM_BITMAP;
-        toadd.obstacleType = (short) typeObst; // a voir
-        for (int ns = 0; ns < 4; ns++) {
-            toadd.pSpr[ns] = null;
-        }
-        ho.hoAdRunHeader.addBackdrop2(toadd);
-
-        // Add paste routine
-        if ((ho.hoAdRunHeader.rhFrame.layers[0].dwOptions
-                & (CLayer.FLOPT_TOHIDE | CLayer.FLOPT_VISIBLE)) == CLayer.FLOPT_VISIBLE) {
-            // if (nLayer == 0 && (ho.hoAdRunHeader.rhFrame.layers[0].dwOptions
-            // & (CLayer.FLOPT_TOHIDE | CLayer.FLOPT_VISIBLE)) == CLayer.FLOPT_VISIBLE) {
-            CBackDrawPaste paste;
-            paste = new CBackDrawPaste();
-            paste.img = handle;
-            paste.x = x;
-            paste.y = y;
-            paste.typeObst = (short) typeObst;
-            paste.inkEffect = dwEffect;
-            paste.inkEffectParam = dwEffectParam;
-            ho.hoAdRunHeader.addBackDrawRoutine(paste);
-
-            // Redraw sprites that intersect with the rectangle
-            CRect rc = new CRect();
-            rc.left = x - ho.hoAdRunHeader.rhWindowX;
-            rc.top = y - ho.hoAdRunHeader.rhWindowY;
-            rc.right = rc.left + cImage.getWidth();
-            rc.bottom = rc.top + cImage.getHeight();
-            ho.hoAdRunHeader.spriteGen.activeSprite(null, CSpriteGen.AS_REDRAW_RECT, rc);
-        }
     }
 }
