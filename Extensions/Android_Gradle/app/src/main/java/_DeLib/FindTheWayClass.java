@@ -3,6 +3,10 @@ package _DeLib;
 import java.util.*;
 import java.util.function.*;
 
+import _DeLib.Coord.*;
+
+import static _DeLib.Coord.VecContains;
+import static _DeLib.FusionUtilities.move;
 import static java.lang.Math.*;
 
 class Offset {
@@ -1241,8 +1245,7 @@ public class FindTheWayClass {
 
                 // add & last point
                 if (!continue_set.isEmpty()) {
-                    cur_set = new Vector<>(continue_set);
-                    continue_set.clear();
+                    move(cur_set, continue_set);
                 }
 
                 // add current area edge
@@ -1254,8 +1257,7 @@ public class FindTheWayClass {
 
                 open_set.clear();
             } else {
-                cur_set = new Vector<>(open_set);
-                open_set.clear();
+                move(cur_set, open_set);
             }
 
             if (cur_set.isEmpty()) {
@@ -1466,15 +1468,5 @@ public class FindTheWayClass {
 
     public int GetAreaStashSize() {
         return stashArea.size();
-    }
-
-    public static <T extends Coord> boolean VecContains(Vector<T> vec, T obj) {
-        for (T it : vec) {
-            if (it.isEqual(obj)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
