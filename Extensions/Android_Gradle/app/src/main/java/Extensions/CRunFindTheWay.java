@@ -8,6 +8,7 @@ import Expressions.CValue;
 import Frame.CLayer;
 import Objects.CExtension;
 import Objects.CObject;
+import OpenGL.GLRenderer;
 import Params.*;
 import RunLoop.CBackDrawPaste;
 import RunLoop.CBkd2;
@@ -21,6 +22,7 @@ import _3rdLib.ObjectSelectionClass;
 import _DeLib.*;
 import android.graphics.Bitmap;
 
+import android.graphics.Color;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -33,11 +35,12 @@ import static _3rdLib.ObjectCreationClass.GetEvtParam;
 import static _DeLib.FindTheWayClass.*;
 import static _DeLib.FindTheWayClass.VecContains;
 import static _DeLib.FusionCommon.IDENTIFIER_ACTIVE;
+import static _DeLib.FusionUtilities.*;
 
 public class CRunFindTheWay extends CRunExtension {
     // TODO DEBUG
-    private static final boolean DEBUG = true;
-    // private static final boolean DEBUG = false;
+    // private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     // Define ACE ID here
     // Condition
@@ -239,7 +242,7 @@ public class CRunFindTheWay extends CRunExtension {
 
                 try {
                     this.pFTW = new FindTheWayClass(width, height);
-                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, (Object) ho);
+                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, ho);
                     this.pFTW.SetIsometric(this.isometric);
                 } catch (Throwable e) {
                     return false;
@@ -258,11 +261,76 @@ public class CRunFindTheWay extends CRunExtension {
 
                 try {
                     this.pFTW = new FindTheWayClass(base64);
-                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, (Object) ho);
+                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, ho);
                     this.pFTW.SetIsometric(this.isometric);
                 } catch (Throwable e) {
                     return false;
                 }
+
+                if (DEBUG) {
+                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
+                }
+
+                return true;
+            }
+            case CND_CONDITION_SMBA: {
+                this.pFTW = null;
+
+                int fixed = cnd.getParamExpression(rh, 0);
+
+                int frame = cnd.getParamExpression(rh, 1);
+
+                int gridSize = cnd.getParamExpression(rh, 2);
+                int gridOffsetX = cnd.getParamExpression(rh, 3);
+                int gridOffsetY = cnd.getParamExpression(rh, 4);
+
+                CObject object = LproFromFixed(ho, fixed);
+
+                if (!LPROValid(object, IDENTIFIER_ACTIVE)) {
+                    // must be active object
+                    return false;
+                }
+
+                short nFrame = object.roa.raAnimDirOffset.adNumberOfFrame;
+
+                if (frame >= (int) nFrame) {
+                    return false;
+                }
+
+                short hImage = object.roa.raAnimDirOffset.adFrames[0];
+                Bitmap image = GenerateBitmapFromHandle(ho, hImage);
+
+                int picWidth = image.getWidth();
+                int picHeight = image.getHeight();
+
+                int width = FindTheWayClass.CalcMapWidth(picWidth, gridSize, false);
+                int height = FindTheWayClass.CalcMapHeight(picHeight, gridSize, false);
+
+                try {
+                    this.pFTW = new FindTheWayClass(width, height);
+                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, ho);
+                    this.pFTW.SetIsometric(false);
+                } catch (Throwable e) {
+                    return false;
+                }
+
+                this.pFTW.SetGridSize(gridSize, gridOffsetX, gridOffsetY);
+
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        Coord realCoord = this.pFTW.GetRealCoord(new Coord(x, y));
+
+                        int color = image.getPixel(realCoord.x, realCoord.y);
+
+                        int costT = Color.red(color);
+                        int costD = Color.green(color);
+
+                        this.pFTW.SetMap(x, y, costT, MapType.TERRAIN, true);
+                        this.pFTW.SetMap(x, y, costD, MapType.DYNAMIC, true);
+                    }
+                }
+
+                this.pFTW.SetIsometric(this.isometric);
 
                 if (DEBUG) {
                     String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
@@ -297,7 +365,7 @@ public class CRunFindTheWay extends CRunExtension {
 
                 try {
                     this.pFTW = new FindTheWayClass(width, height);
-                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, (Object) ho);
+                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, ho);
                     this.pFTW.SetIsometric(this.isometric);
                 } catch (Throwable e) {
                     return false;
@@ -429,17 +497,8 @@ public class CRunFindTheWay extends CRunExtension {
                             Coord coord = new Coord(x, y);
                             Coord gridCoord = CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY));
 
-                            boolean e=coord
+                            return coord
                                     .isEqual(gridCoord);
-
-                            if(e){
-                                int x=5;
-                            }else{
-                                int y =6;
-                            }
-
-                            return new Coord(x, y)
-                                    .isEqual(CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY)));
                         }
                     }
                 });
@@ -652,8 +711,8 @@ public class CRunFindTheWay extends CRunExtension {
                 }
 
                 class tuple {
-                    public Coord coord;
-                    public CObject object;
+                    public final Coord coord;
+                    public final CObject object;
 
                     tuple(Coord coord, CObject object) {
                         this.coord = coord;
@@ -1465,86 +1524,6 @@ public class CRunFindTheWay extends CRunExtension {
         }
         return true;
     }
-
-    public static boolean LPROValid(CObject object, int identifier) {
-        if (object == null) {
-            return false;
-        }
-
-        if (identifier != 0) {
-            return object.hoIdentifier == identifier;
-        }
-
-        return true; // need not to check identifier
-    }
-
-    // public short getBKDHandle(CImage cImage, int x, int y, int nLayer, int
-    // typeObst, int dwEffect, int dwEffectParam){
-    // // Duplique
-    // int[] mImage = cImage.getRawPixels();
-    //
-    // if (mImage == null) {
-    // return -1;
-    // }
-    //
-    // Bitmap bImage = Bitmap.createBitmap(cImage.getWidth(), cImage.getHeight(),
-    // cImage.getFormat());
-    // bImage.setPixels(mImage, 0, cImage.getWidth(), 0, 0, cImage.getWidth(),
-    // cImage.getHeight());
-    //
-    // short handle = ho.hoAdRunHeader.rhApp.imageBank.addImage(bImage, (short)
-    // cImage.getXSpot(),
-    // (short) cImage.getYSpot(), (short) cImage.getXAP(), (short) cImage.getYAP(),
-    // true);
-    //
-    // // Ajoute a la liste
-    // CBkd2 toadd = new CBkd2();
-    // toadd.img = handle;
-    // toadd.loHnd = 0;
-    // toadd.oiHnd = 0;
-    // toadd.x = x;
-    // toadd.y = y;
-    // toadd.width = cImage.getWidth();
-    // toadd.height = cImage.getHeight();
-    // toadd.nLayer = (short) nLayer;
-    // toadd.inkEffect = dwEffect;
-    // toadd.inkEffectParam = dwEffectParam;
-    // toadd.colMode = CSpriteGen.CM_BITMAP;
-    // toadd.obstacleType = (short) typeObst; // a voir
-    // for (int ns = 0; ns < 4; ns++) {
-    // toadd.pSpr[ns] = null;
-    // }
-    // ho.hoAdRunHeader.addBackdrop2(toadd);
-    //
-    // return handle;
-    // }
-    //
-    // public void addBackdropNC(CImage cImage, short handle, int x, int y, int
-    // nLayer, int typeObst, int dwEffect, int dwEffectParam) {
-    // // Add paste routine
-    // if ((ho.hoAdRunHeader.rhFrame.layers[0].dwOptions
-    // & (CLayer.FLOPT_TOHIDE | CLayer.FLOPT_VISIBLE)) == CLayer.FLOPT_VISIBLE) {
-    //// if (nLayer == 0 && (ho.hoAdRunHeader.rhFrame.layers[0].dwOptions
-    //// & (CLayer.FLOPT_TOHIDE | CLayer.FLOPT_VISIBLE)) == CLayer.FLOPT_VISIBLE) {
-    // CBackDrawPaste paste;
-    // paste = new CBackDrawPaste();
-    // paste.img = handle;
-    // paste.x = x;
-    // paste.y = y;
-    // paste.typeObst = (short) typeObst;
-    // paste.inkEffect = dwEffect;
-    // paste.inkEffectParam = dwEffectParam;
-    // ho.hoAdRunHeader.addBackDrawRoutine(paste);
-    //
-    // // Redraw sprites that intersect with the rectangle
-    // CRect rc = new CRect();
-    // rc.left = x - ho.hoAdRunHeader.rhWindowX;
-    // rc.top = y - ho.hoAdRunHeader.rhWindowY;
-    // rc.right = rc.left + cImage.getWidth();
-    // rc.bottom = rc.top + cImage.getHeight();
-    // ho.hoAdRunHeader.spriteGen.activeSprite(null, CSpriteGen.AS_REDRAW_RECT, rc);
-    // }
-    // }
 
     public void addBackdrop(CImage cImage, int x, int y, int nLayer, int typeObst, int dwEffect, int dwEffectParam) {
         // Duplique
