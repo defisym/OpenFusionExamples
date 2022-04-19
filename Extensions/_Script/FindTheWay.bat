@@ -32,12 +32,12 @@ rmdir /s /q "%ContentPath%\src"
 
 @REM Add content here
 echo f | xcopy "%SrcPath%\src\main\java\Extensions\CRun%ProjectName%.java" "%ContentPath%\app\src\main\java\Extensions\CRun%ProjectName%.java" /s /e
+echo f | xcopy "%SrcPath%\src\main\java\_DeLib\AOEClass.java" "%ContentPath%\app\src\main\java\_DeLib\AOEClass.java" /s /e
 echo f | xcopy "%SrcPath%\src\main\java\_DeLib\Coord.java" "%ContentPath%\app\src\main\java\_DeLib\Coord.java" /s /e
 echo f | xcopy "%SrcPath%\src\main\java\_DeLib\FindTheWayClass.java" "%ContentPath%\app\src\main\java\_DeLib\FindTheWayClass.java" /s /e
-echo f | xcopy "%SrcPath%\src\main\java\_DeLib\FusionCommon.java" "%ContentPath%\app\src\main\java\_DeLib\FusionCommon.java" /s /e
-echo f | xcopy "%SrcPath%\src\main\java\_DeLib\Heuristic.java" "%ContentPath%\app\src\main\java\_DeLib\Heuristic.java" /s /e
-echo f | xcopy "%SrcPath%\src\main\java\_DeLib\MapType.java" "%ContentPath%\app\src\main\java\_DeLib\MapType.java" /s /e
-echo f | xcopy "%SrcPath%\src\main\java\_DeLib\UpdateMapCallBack.java" "%ContentPath%\app\src\main\java\_DeLib\UpdateMapCallBack.java" /s /e
+echo f | xcopy "%SrcPath%\src\main\java\_DeLib\FusionUtilities.java" "%ContentPath%\app\src\main\java\_DeLib\FusionUtilities.java" /s /e
+echo f | xcopy "%SrcPath%\src\main\java\_3rdLib\ObjectCreationClass.java" "%ContentPath%\app\src\main\java\_3rdLib\ObjectCreationClass.java" /s /e
+echo f | xcopy "%SrcPath%\src\main\java\_3rdLib\ObjectSelectionClass.java" "%ContentPath%\app\src\main\java\_3rdLib\ObjectSelectionClass.java" /s /e
 
 @REM remove debug mode
 
