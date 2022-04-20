@@ -51,14 +51,15 @@ template<typename Old, typename New>
 inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(New*)> updateFunc) {
 	if (((Old*)OldEdPtr)->eHeader.extVersion < targetVersion) {
 		if ((hgNew = GlobalAlloc(GPTR, sizeof(New))) != NULL) {
-			New* newEdPtr;
+			New* newEdPtr = (New*)GlobalLock(hgNew);
 
-			newEdPtr = (New*)GlobalLock(hgNew);
-			memcpy(&newEdPtr->eHeader, &((Old*)OldEdPtr)->eHeader, sizeof(extHeader));
-			newEdPtr->eHeader.extVersion = targetVersion;			// Update the version number
-			newEdPtr->eHeader.extSize = sizeof(New);				// Update the EDITDATA structure size
+			if (newEdPtr != nullptr) {
+				memcpy(&newEdPtr->eHeader, &((Old*)OldEdPtr)->eHeader, sizeof(extHeader));
+				newEdPtr->eHeader.extVersion = targetVersion;			// Update the version number
+				newEdPtr->eHeader.extSize = sizeof(New);				// Update the EDITDATA structure size
 
-			updateFunc(newEdPtr);
+				updateFunc(newEdPtr);
+			}
 
 			GlobalUnlock(hgNew);
 		}
