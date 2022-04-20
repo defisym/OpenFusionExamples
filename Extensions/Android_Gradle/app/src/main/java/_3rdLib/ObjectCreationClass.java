@@ -9,10 +9,12 @@ import OI.COI;
 import OI.CObjectCommon;
 import Objects.CObject;
 import Params.CParam;
-import Params.PARAM_OBJECT;
+import Params.CPositionInfo;
+import Params.PARAM_CREATE;
 import RunLoop.CObjInfo;
 import RunLoop.CRun;
 
+import static _DeLib.FusionUtilities.GetPositionInfo;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -28,12 +30,10 @@ import static java.lang.Math.min;
 //     @Override
 //     public void CreationParam(ObjectCreationClass oc,
 //             ObjectCreationClass.CreateDuplicateParam cdp) {
-//                 cdp.HFII = param.cdpHFII;
-//                 cdp.oi = param.cdpOi;
+//                 cdp.AssignParam(rh, param);
+//
 //                 cdp.x = realCoord.x;
 //                 cdp.y = realCoord.y;
-//                 cdp.layer = param.posLayer;
-//                 // cdp.layer = 0;
 //             }
 //         });
 // }
@@ -55,7 +55,7 @@ public class ObjectCreationClass {
         public abstract void CreationParam(ObjectCreationClass oc, CreateDuplicateParam cdp);
     }
 
-    public class CreateDuplicateParam {
+    public static class CreateDuplicateParam {
         public short HFII;
         public short oi;
         public int x;
@@ -79,6 +79,22 @@ public class ObjectCreationClass {
             this.y = y;
             this.dir = dir;
             this.layer = layer;
+        }
+
+        public CreateDuplicateParam(CRun rhPtr,PARAM_CREATE param) {
+            AssignParam(rhPtr, param);
+        }
+
+        public void AssignParam(CRun rhPtr, PARAM_CREATE param){
+            CPositionInfo pInfo = GetPositionInfo(rhPtr,param);
+
+            this.HFII = param.cdpHFII;
+            this.oi = param.cdpOi;
+
+            this.x = pInfo.x;
+            this.y = pInfo.y;
+            this.dir = pInfo.dir;
+            this.layer = pInfo.layer;
         }
     }
 
