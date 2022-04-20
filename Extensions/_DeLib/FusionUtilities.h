@@ -133,6 +133,10 @@ constexpr auto DISABLEALL = -1;
 constexpr disableList disableMenus_Empty = {};
 
 // Usage
+// 
+// if disableList is started with DISABLEALL, and it's the only element, all menu items will be disabled
+// if disableList is started with DISABLEALL, and it's not the only element, menu items except the defined ones will be disabled
+// 
 // // Predefine
 // constexpr disableList disableMenus_Windows = {};
 // constexpr disableList disableMenus_Android = { IDMN_CONDITION_SMBP,IDMN_CONDITION_SMBSF };
@@ -199,19 +203,23 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 
 		for (size_t platform = 0; platform < ic_V.size(); platform++) {
 			if (buildForPlatform(ic_V[platform])) {
-				if (dM_V[platform].size() == 1 && dM_V[platform][0] == DISABLEALL) {
-					iterateMenu(hMenu, [](HMENU hMenu, int id) {
-						EnableMenuItem(hMenu, id, MF_DISABLED | MF_GRAYED);
+				if (dM_V[platform][0] == DISABLEALL) {
+					iterateMenu(hMenu, [&](HMENU hMenu, int id) {
+						if (dM_V[platform].size() == 1
+							|| std::find(dM_V[platform].begin() + 1, dM_V[platform].end(), id) == dM_V[platform].end()) {
+							EnableMenuItem(hMenu, id, MF_DISABLED | MF_GRAYED);
+						}
 						});
 
 					break;
 				}
+				else {
+					for (auto& it : dM_V[platform]) {
+						EnableMenuItem(hMenu, it, MF_DISABLED | MF_GRAYED);
+					}
 
-				for (auto& it : dM_V[platform]) {
-					EnableMenuItem(hMenu, it, MF_DISABLED | MF_GRAYED);
+					break;
 				}
-
-				break;
 			}
 		}
 	}
