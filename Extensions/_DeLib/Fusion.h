@@ -3,8 +3,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
-#include	"ImgFlt.h"
 #include	"ImageFlt.h"
+#include	"ImgFlt.h"
 #include	"CfcFile.h"
 
 #include	<map>
