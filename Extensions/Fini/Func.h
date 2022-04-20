@@ -77,18 +77,6 @@ inline void AutoSave(LPRDATA rdPtr) {
 	}
 }
 
-inline bool LPROValid(LPRO object, unsigned long identifier = 0) {
-	if (object == nullptr) {
-		return false;
-	}
-
-	if (identifier) {
-		return object->roHo.hoIdentifier == identifier;
-	}
-
-	return true;		// need not to check indntifier
-}
-
 inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	if (!LPROValid(object)) {
 		return -1;
@@ -132,26 +120,6 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	offset += (flags & OEFLAG_SPRITES) ? sizeof(rSpr) : 0;
 
 	return offset;
-}
-
-#include <functional>
-
-template<typename Old, typename New>
-inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(New*)> updateFunc) {
-	if (((Old*)OldEdPtr)->eHeader.extVersion < targetVersion) {
-		if ((hgNew = GlobalAlloc(GPTR, sizeof(New))) != NULL) {
-			New* newEdPtr;
-
-			newEdPtr = (New*)GlobalLock(hgNew);
-			memcpy(&newEdPtr->eHeader, &((Old*)OldEdPtr)->eHeader, sizeof(extHeader));
-			newEdPtr->eHeader.extVersion = targetVersion;			// Update the version number
-			newEdPtr->eHeader.extSize = sizeof(New);				// Update the EDITDATA structure size
-
-			updateFunc(newEdPtr);
-
-			GlobalUnlock(hgNew);
-		}
-	}
 }
 
 #endif // !_FUNC_
