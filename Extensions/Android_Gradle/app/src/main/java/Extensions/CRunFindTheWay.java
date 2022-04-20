@@ -36,8 +36,8 @@ import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
 
 public class CRunFindTheWay extends CRunExtension {
     // TODO DEBUG
-//    private static final boolean DEBUG = true;
-     private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
+    // private static final boolean DEBUG = false;
 
     // Define ACE ID here
     // Condition
@@ -213,9 +213,6 @@ public class CRunFindTheWay extends CRunExtension {
 
         pSelect = new ObjectSelectionClass(rh.rhApp);
         pOc = new ObjectCreationClass(rh.rhApp);
-
-        Vector<Coord> A = new Vector<Coord>();
-        Vector<Coord> B = new Vector<Coord>();
 
         // Return
         return true;
@@ -1054,10 +1051,7 @@ public class CRunFindTheWay extends CRunExtension {
                             @Override
                             public void CreationParam(ObjectCreationClass oc,
                                     ObjectCreationClass.CreateDuplicateParam cdp) {
-                                cdp.HFII = param.cdpHFII;
-                                cdp.oi = param.cdpOi;
-                                cdp.layer = param.posLayer;
-                                cdp.dir = param.posDir;
+                                cdp.AssignParam(rh, param);
 
                                 cdp.x = realCoord.x;
                                 cdp.y = realCoord.y;
@@ -1180,9 +1174,6 @@ public class CRunFindTheWay extends CRunExtension {
                 CObject object = act.getParamObject(rh, 0);
                 PARAM_CREATE param = (PARAM_CREATE) GetEvtParam(act, rh, 1);
 
-                // CPositionInfo pInfo = new CPositionInfo();
-                // param.read_Position(rh,0x11,pInfo);
-
                 if (!LPROValid(object, 0)) {
                     return;
                 }
@@ -1201,11 +1192,10 @@ public class CRunFindTheWay extends CRunExtension {
                         @Override
                         public void CreationParam(ObjectCreationClass oc,
                                 ObjectCreationClass.CreateDuplicateParam cdp) {
-                            cdp.HFII = param.cdpHFII;
-                            cdp.oi = param.cdpOi;
+                            cdp.AssignParam(rh, param);
+
                             cdp.x = realCoord.x;
                             cdp.y = realCoord.y;
-                            cdp.layer = param.posLayer;
                         }
                     });
                 }
@@ -1324,10 +1314,7 @@ public class CRunFindTheWay extends CRunExtension {
                         @Override
                         public void CreationParam(ObjectCreationClass oc,
                                 ObjectCreationClass.CreateDuplicateParam cdp) {
-                            cdp.HFII = param.cdpHFII;
-                            cdp.oi = param.cdpOi;
-                            cdp.layer = param.posLayer;
-                            cdp.dir = param.posDir;
+                            cdp.AssignParam(rh, param);
 
                             cdp.x = realCoord.x;
                             cdp.y = realCoord.y;
