@@ -1,14 +1,11 @@
 package _DeLib;
 
-import _DeLib.Coord.*;
-
 import java.util.Vector;
 import java.util.function.BiPredicate;
 
-import static _DeLib.Coord.VecContains;
-import static _DeLib.FusionUtilities.swap;
 import static java.lang.Math.min;
 import static java.lang.Math.max;
+import static _DeLib.FusionUtilities.swap;
 
 public class AOEClass {
     public final static int RESERVE = 50;
@@ -25,7 +22,7 @@ public class AOEClass {
 
     public void GetAOE_1_X(int size, Vector<Coord> output) {
         for (int i = 1; i <= size; i++) {
-            output.add(start.add(new Coord(dirOffset[dir].x * (int) i, dirOffset[dir].y * (int) i, true)));
+            output.add(start.add(new Coord(dirOffset[dir].x * i, dirOffset[dir].y * i, true)));
         }
     }
 
