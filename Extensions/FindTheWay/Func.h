@@ -27,18 +27,6 @@ inline bool OverlapUnit(LPRDATA rdPtr,const Coord& c) {
 	return std::find(rdPtr->pUnit->begin(), rdPtr->pUnit->end(), c) != rdPtr->pUnit->end();
 }
 
-inline bool LPROValid(LPRO object, unsigned long identifier = 0) {
-	if (object == nullptr) {
-		return false;
-	}
-
-	if (identifier) {
-		return object->roHo.hoIdentifier == identifier;
-	}
-
-	return true;		// need not to check identifier
-}
-
 inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_t gridOffsetX, size_t gridOffsetY) {
 	if (!pSf->IsValid()) {
 		return FALSE;
@@ -127,14 +115,4 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 	}
 
 	return TRUE;
-}
-
-template<typename T>
-constexpr inline long ConvertToLong(T t) {
-	return *((long*)&t);
-}
-
-template<typename T>
-constexpr inline T ConvertToType(long l) {
-	return *((T*)&l);
 }

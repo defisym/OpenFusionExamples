@@ -293,6 +293,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_3rdLib\ObjectSelection.h" />
     <ClInclude Include="..\_DeLib\AOE.h" />
     <ClInclude Include="..\_DeLib\FindTheWay.h" />
+    <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Defination.h" />
     <ClInclude Include="Func.h" />
