@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StrNum.h"
+
 // Object identifier
 // obj->rHo.hoIdentifier
 constexpr auto IDENTIFIER_ACTIVE = 1230131283;
@@ -34,7 +36,7 @@ inline bool LPROValid(LPRO object, unsigned long identifier = 0) {
 // 		});
 
 // 	// V3->V3
-//     UpdateEditData<tagEDATA_V2, tagEDATA_V3>(OldEdPtr, hgNew, KCX_VERSION_V3, [](tagEDATA_V2* newEdPtr) {
+//     UpdateEditData<tagEDATA_V2, tagEDATA_V3>(OldEdPtr, hgNew, KCX_VERSION_V3, [](tagEDATA_V3* newEdPtr) {
 // 		newEdPtr->newData = newDataDefault;
 // 		});
 
@@ -127,7 +129,7 @@ using disableArray = std::remove_const_t<decltype(INCOMPATIBLE)>;
 
 HMENU GetPopupMenu(short mn);
 
-constexpr auto NODISABLEMENUS = -1;
+constexpr auto DISABLEALL = -1;
 constexpr disableList disableMenus_Empty = {};
 
 // Usage
@@ -170,8 +172,41 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 			return std::find(lst.begin(), lst.end(), buildType) != lst.end();
 		};
 
+		auto iterateMenu = [](HMENU hMenu, std::function<void(HMENU, int)> f) {
+			constexpr auto SUBMENU = -1;
+			constexpr auto SEPARATOR = 0;
+
+			std::function<void(HMENU)> iterateMenu_Func;
+
+			iterateMenu_Func = [&](HMENU hMenu) {
+				auto nCount = GetMenuItemCount(hMenu);
+
+				for (int item = 0; item < nCount; item++) {
+					auto id = GetMenuItemID(hMenu, item);
+
+					if (id == SUBMENU) {
+						auto subMenu = GetSubMenu(hMenu, item);
+						iterateMenu_Func(subMenu);
+					}
+					else if (id != SEPARATOR) {
+						f(hMenu, id);
+					}
+				}
+			};
+
+			iterateMenu_Func(hMenu);
+		};
+
 		for (size_t platform = 0; platform < ic_V.size(); platform++) {
 			if (buildForPlatform(ic_V[platform])) {
+				if (dM_V[platform].size() == 1 && dM_V[platform][0] == DISABLEALL) {
+					iterateMenu(hMenu, [](HMENU hMenu, int id) {
+						EnableMenuItem(hMenu, id, MF_DISABLED | MF_GRAYED);
+						});
+
+					break;
+				}
+
 				for (auto& it : dM_V[platform]) {
 					EnableMenuItem(hMenu, it, MF_DISABLED | MF_GRAYED);
 				}
