@@ -8,6 +8,8 @@ import Frame.CLayer;
 import Objects.CExtension;
 import Objects.CObject;
 import Params.CParam;
+import Params.CPositionInfo;
+import Params.PARAM_CREATE;
 import Params.PARAM_OBJECT;
 import RunLoop.CBackDrawPaste;
 import RunLoop.CBkd2;
@@ -52,6 +54,19 @@ public class FusionUtilities {
 
     public static CParam GetEvtParam(CEvent evt, CRun rhPtr, int _num) {
         return evt.evtParams[_num];
+    }
+
+    public static CPositionInfo GetPositionInfo(CRun rhPtr, PARAM_CREATE param) {
+        CPositionInfo pInfo = new CPositionInfo();
+        param.read_Position(rhPtr, 0x11, pInfo);
+
+        return pInfo;
+    }
+
+    public static CPositionInfo GetPositionInfo(CEvent evt, CRun rhPtr, int _num) {
+        PARAM_CREATE param = (PARAM_CREATE) evt.evtParams[_num];
+
+        return GetPositionInfo(rhPtr, param);
     }
 
     public static short GetOil(CEvent evt, CRun rhPtr, int _num) {
