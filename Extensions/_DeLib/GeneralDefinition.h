@@ -8,6 +8,8 @@
 #define StrEqu(X,Y) (wcscmp(X,Y) == 0)
 #define StrEmpty(X) StrEqu(X,Empty_Str)
 
+#define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
+
 #define valid(X) (X != nullptr)
 
 #define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
@@ -17,6 +19,9 @@
 
 #define RAD(DEG) ((PI*DEG)/180)
 #define DEG(RAD) ((180*RAD)/PI)
+
+#define SetExtUserData(pData) rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvSetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib, pData)
+#define GetExtUserData() rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
 
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
