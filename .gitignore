@@ -12,4 +12,8 @@ Extensions/NeoPic/ToInstall/Files/Examples/NeoPic/ZoomOutCollision.png
 
 Extensions/*_B*.zip
 Extensions/*_Release.zip
+
 .DS_Store
+
+Extensions/*/ToInstall/Files/Data/Runtime/Android/*.zip
+Extensions/*/ToInstall/Files/Data/Runtime/Html5/*.js
