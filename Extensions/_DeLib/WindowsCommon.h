@@ -225,3 +225,31 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 
 	return info;
 }
+
+//FileList
+#include	<shlwapi.h>
+#pragma	comment(lib,"shlwapi.lib") 
+
+inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src) {
+	WIN32_FIND_DATA stFD;
+	HANDLE h;
+	std::wstring temp;
+
+	temp = Src + L"\\*";
+	h = FindFirstFile(temp.c_str(), &stFD);
+
+	while (FindNextFile(h, &stFD)) {
+		temp = Src + L"\\" + stFD.cFileName;
+		if (temp == Src + L"\\..") {
+			continue;
+		}
+		else if (PathIsDirectory(temp.c_str())) {
+			GetFileList(Des, temp);
+		}
+		else {
+			Des->emplace_back(Src + L"\\" + stFD.cFileName);
+		}
+	}
+
+	return;
+}
