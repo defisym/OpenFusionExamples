@@ -1,0 +1,7 @@
+function ObjectCreationClass(){
+
+}
+
+ObjectCreationClass.prototype={
+    
+}
