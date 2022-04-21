@@ -119,7 +119,7 @@ Some mfa files used for Fusion tutorials in [my blog](https://www.zhihu.com/colu
   - *Created by Defisym.*
   - *A simple bullet time example*
 
-- DecimalVerdiction
+- DecimalVerdict
   - *Created by Defisym.*
   - *To check if a value has decimals*
 
