@@ -58,8 +58,8 @@ class ObjectSelection;
 #include	"TigsExt.hpp"
 
 //MMF
-#include	"ImgFlt.h"
 #include	"ImageFlt.h"
+#include	"ImgFlt.h"
 #include	"CfcFile.h"
 
 //My headers
