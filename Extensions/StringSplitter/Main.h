@@ -87,7 +87,9 @@
 #define EXP_EXPRESSION_GRECM			18
 #define EXP_EXPRESSION_GRES				19
 
-#define	EXP_LAST                    	20
+#define EXP_EXPRESSION_GSSVP			20
+
+#define	EXP_LAST                    	21
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -156,6 +158,9 @@ typedef struct tagRDATA
 	LPTSTR CurrentReplaceString = nullptr;
 
 	LPTSTR ReplacEachResult = nullptr;
+
+	//Work with other ext
+	//std::vector<std::wstring>* pSubVec = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

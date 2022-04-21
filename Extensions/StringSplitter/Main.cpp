@@ -100,6 +100,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GRECM, M_EXPRESSION_GRECM, EXP_EXPRESSION_GRECM, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GRES, M_EXPRESSION_GRES, EXP_EXPRESSION_GRES, EXPFLAG_STRING, 0,
+		
+		IDMN_EXPRESSION_GSSVP, M_EXPRESSION_GSSVP, EXP_EXPRESSION_GSSVP, 0, 0,
 		};
 
 
@@ -598,6 +600,12 @@ long WINAPI DLLExport GetReplaceEachResult(LPRDATA rdPtr, long param1) {
 	return (long)(rdPtr->ReplacEachResult != nullptr ? rdPtr->ReplacEachResult : Default_Str);
 }
 
+long WINAPI DLLExport GetSubStringVecPointer(LPRDATA rdPtr, long param1) {
+	const std::vector<std::wstring>* pSubVec = Spliter->GetSubStringVec();
+	
+	return ConvertToLong(pSubVec);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -689,6 +697,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetReplaceEachCurrentMatch,
 			GetReplaceEachResult,
+
+			GetSubStringVecPointer,
 
 			0
 			};

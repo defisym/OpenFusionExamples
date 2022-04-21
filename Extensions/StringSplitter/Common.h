@@ -37,6 +37,7 @@
 #include	"TigsExt.hpp"
 
 // My headers
+#include	"FusionUtilities.h"
 #include	"Func.h"
 
 // Globals and Prototypes

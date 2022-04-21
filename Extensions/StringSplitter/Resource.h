@@ -173,6 +173,8 @@
 #define IDMN_EXPRESSION_GRECM	    27018
 #define IDMN_EXPRESSION_GRES	    27019
 
+#define IDMN_EXPRESSION_GSSVP	    27020
+
 
 // Expression strings
 #define M_EXPRESSION_RS			     7000
@@ -206,6 +208,8 @@
 
 #define M_EXPRESSION_GRECM    		 7018
 #define M_EXPRESSION_GRES    		 7019
+
+#define M_EXPRESSION_GSSVP    		 7020
 
 // Names of expression parameters
 #define M_EXP_REPREGEX				 7500
