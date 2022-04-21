@@ -183,6 +183,9 @@ public:
     inline size_t GetSubStringSize() {
         return this->SubStringVec.size();
     }
+    inline const std::vector<std::wstring>* GetSubStringVec() {
+        return &this->SubStringVec;
+    }
     inline const wchar_t* GetSubString(size_t Pos) {
         return (Pos < this->SubStringVec.size()) && (Pos >= 0) ? this->SubStringVec[Pos].c_str() : nullptr;
     }
@@ -226,7 +229,13 @@ public:
     inline size_t GetSplitSize() {
         return this->SplitStrVec.size();
     }
-
+    inline const std::vector<std::wstring>* GetSplit() {
+        return &this->SplitStrVec;
+    }
+    inline const wchar_t* GetSplitVec(size_t Pos) {
+        return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
+    }
+    // the same as GetSplit(size_t Pos)
     inline const wchar_t* operator[](size_t Pos) {
         return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
     };
