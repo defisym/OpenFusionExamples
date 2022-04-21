@@ -367,6 +367,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	}
 
 	auto it = obj->Lib->find(FileName);
+	
 	if (it == obj->Lib->end()) {
 		LoadFromFile(obj, FileName, Key);
 	}
@@ -479,12 +480,78 @@ inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
 	}
 }
 
-template<typename T>
-constexpr inline long ConvertToLong(T t) {
-	return *((long*)&t);
+#include <functional>
+
+using LoadLibCallBack = std::function<void(SurfaceLib&)>;
+
+inline void PreloadLibFromVec(LPRDATA rdPtr, const std::vector<std::wstring> PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
+	if (PreloadList.empty()) {
+		return;
+	}
+	
+	std::vector<std::wstring> tempList;
+	tempList.reserve(PreloadList.size());
+	
+	std::vector<std::wstring> fileList;
+	GetFileList(&fileList, BasePath);
+
+	for (auto& it : PreloadList) {
+		for (auto fileIt = fileList.begin(); fileIt != fileList.end();) {
+			fileIt = std::find_if(fileIt+1, fileList.end(), [&](std::wstring& file) {
+				auto pos = file.find_last_of(L"\\")+1;
+				auto fileName = file.substr(pos, file.size() - pos);
+
+				if (fileName == it) {
+					return true;
+				}
+
+				return false;
+				});
+			
+			if (fileIt != fileList.end()) {
+				tempList.emplace_back(*fileIt);
+			}
+		}
+	}
+
+	SurfaceLib tempLib;
+
+	for (auto& it : tempList) {
+		LPSURFACE img = new cSurface;
+		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->StretchQuality);
+
+		if (img->IsValid()) {
+			tempLib.emplace(it, img);
+		}
+		else {
+			delete img;
+		}
+	}
+
+	if (!tempLib.empty()) {
+		callBack(tempLib);
+	}
 }
 
-template<typename T>
-constexpr inline T ConvertToType(long l) {
-	return *((T*)&l);
+inline void PreloadLibFromPath(LPRDATA rdPtr, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {	
+	std::vector<std::wstring> fileList;
+	GetFileList(&fileList, BasePath);
+
+	SurfaceLib tempLib;
+
+	for (auto& it : fileList) {
+		LPSURFACE img = new cSurface;
+		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->StretchQuality);
+
+		if (img->IsValid()) {
+			tempLib.emplace(it, img);
+		}
+		else {
+			delete img;
+		}
+	}
+
+	if (!tempLib.empty()) {
+		callBack(tempLib);
+	}
 }

@@ -6,7 +6,8 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
+#define	CND_CONDITION_OPLC			0
+
 #define	CND_LAST					1
 
 // ---------------------------
@@ -39,7 +40,10 @@
 
 #define	ACT_ACTION_LFD				17
 
-#define	ACT_LAST					18
+#define	ACT_ACTION_SPL				18
+#define	ACT_ACTION_SPP				19
+
+#define	ACT_LAST					20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -172,6 +176,9 @@ typedef struct tagRDATA
 	LPSURFACE trans = nullptr;
 
 	bool Changed = false;
+
+	//preload
+	std::vector<std::wstring>* pPreloadList = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

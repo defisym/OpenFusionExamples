@@ -113,10 +113,12 @@ MN_CONDITIONS$(EDITOR) MENU DISCARDABLE
 MN_CONDITIONS MENU DISCARDABLE 
 #endif
 BEGIN
+    MENUITEM SEPARATOR
     POPUP ""
     BEGIN
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
     END
+    MENUITEM SEPARATOR
 END
 #endif
 
@@ -135,6 +137,9 @@ BEGIN
             MENUITEM "Load From File",              IDMN_ACTION_LFF
             MENUITEM "Load From Lib",              IDMN_ACTION_LFL
             MENUITEM "Load From Display",              IDMN_ACTION_LFD
+            MENUITEM SEPARATOR
+            MENUITEM "Set Preload List",              IDMN_ACTION_SPL
+            MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
         END
         MENUITEM SEPARATOR
         POPUP "Lib"
@@ -302,12 +307,17 @@ BEGIN
     M_ACTION_LFF             "Load From File %0, Decrypt Key %1"
     M_ACTION_LFL             "Load From Lib %0, File %1, Decrypt Key %2"
     M_ACTION_LFD             "Load From Display %0, CopyCoef = %1"
+    
+    M_ACTION_SPL             "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
+    M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
 
     M_ACTION_OBJECT             "Lib Object"
     M_ACTION_FILENAME           "FileName"
     M_ACTION_EXT                "FileType, E.g. '.jpg'"
-    M_ACTION_KEY                "16 Characters Long En/Decryt Key, E.g. '12345678ABCDEFGH'"
-    M_ACTION_COPYCOEF                "Copy Coefs Like Zoom Scale, 0 = Don't Copy, 1 = Copy"
+    M_ACTION_KEY                "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
+    M_ACTION_COPYCOEF           "Copy Coefs Like Zoom Scale, 0 = Don't Copy, 1 = Copy"
+    M_ACTION_PRELOAD            "std::vector<std::wstring>* pPreloadList"
+    M_ACTION_BASEPATH           "Base Path to Search"
 
     M_ACTION_RL             "Reset Lib"
     M_ACTION_EL             "Erase Lib Item %0"
@@ -359,7 +369,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
+    M_CONDITION_OPLC     "%o On Preload Complete"
+
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"
     M_CND_P3                "Enter Value to Match"

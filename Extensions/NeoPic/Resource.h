@@ -74,6 +74,9 @@
 
 #define IDMN_ACTION_LFD	       		25017
 
+#define IDMN_ACTION_SPL	       		25018
+#define IDMN_ACTION_SPP	       		25019
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -101,6 +104,9 @@
 #define M_ACTION_O          	     5016
 
 #define M_ACTION_LFD          	     5017
+
+#define M_ACTION_SPL          	     5018
+#define M_ACTION_SPP          	     5019
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -131,6 +137,9 @@
 
 #define M_ACTION_COPYCOEF            5519
 
+#define M_ACTION_PRELOAD             5520
+#define M_ACTION_BASEPATH            5521
+
 //	Conditions
 //--------------------
 
@@ -138,10 +147,10 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_OPLC                 26000
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_OPLC                     6000
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

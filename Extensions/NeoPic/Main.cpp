@@ -22,7 +22,7 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+		IDMN_CONDITION_OPLC, M_CONDITION_OPLC, CND_CONDITION_OPLC, 0, 0,
 		};
 
 // Definitions of parameters for each action
@@ -57,6 +57,9 @@ short actionsInfos[]=
 		M_ACTION_W,
 
 		IDMN_ACTION_LFD, M_ACTION_LFD,	ACT_ACTION_LFD,	0, 2,PARAM_OBJECT,PARAM_EXPRESSION,M_ACTION_OBJECT,M_ACTION_COPYCOEF,
+		
+		IDMN_ACTION_SPL, M_ACTION_SPL, ACT_ACTION_SPL,	0, 3, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_PRELOAD,M_ACTION_BASEPATH,M_ACTION_KEY,
+		IDMN_ACTION_SPP, M_ACTION_SPP, ACT_ACTION_SPP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_BASEPATH,M_ACTION_KEY,
 
 		};
 
@@ -97,21 +100,8 @@ short expressionsInfos[]=
 // Returns TRUE when the two values are equal!
 // 
 
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
-
-//  **** Still use this method for 1 or 2 parameters ****	
-//	if (param1==param2)	
-//		return TRUE;
-
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
-
-	if ((p1 + p2)==p3)
-		return TRUE;
-		 
-	return FALSE;
+long WINAPI DLLExport OnPreloadComplete(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
 }
 
 
@@ -149,6 +139,76 @@ short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) 
 	bool UpdateCoef = (bool)CNC_GetIntParameter(rdPtr);
 
 	LoadFromDisplay(rdPtr, object, UpdateCoef);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
+	long list = (long)CNC_GetIntParameter(rdPtr);
+
+	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	using pPreLoadList = decltype(rdPtr->pPreloadList);
+	using PreLoadList = std::remove_pointer_t<pPreLoadList>;
+
+	if (rdPtr->IsLib) {
+		delete rdPtr->pPreloadList;
+		rdPtr->pPreloadList = nullptr;
+
+		auto pList = ConvertToType<pPreLoadList>(list);
+
+		if (pList != nullptr) {
+			rdPtr->pPreloadList = new std::remove_pointer_t<PreLoadList>;
+			rdPtr->pPreloadList->reserve(pList->size());
+
+			// filter duplicate
+			for (auto& it : *pList) {
+				if (std::find(rdPtr->pPreloadList->begin(), rdPtr->pPreloadList->end(), it) == rdPtr->pPreloadList->end()) {
+					rdPtr->pPreloadList->emplace_back(it);
+				}
+			}
+
+			std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, BasePath, Key
+				, [rdPtr](const SurfaceLib& lib) {
+					for (auto& it : lib) {
+						auto& [name, pSf] = it;
+
+						if (rdPtr->Lib->find(name) == rdPtr->Lib->end()) {
+							rdPtr->Lib->emplace(name, pSf);
+						}
+					}
+
+					CallEvent(ONPRELOADCOMPLETE);				
+				});
+
+			pl.detach();
+		}
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->IsLib) {
+		std::thread pl(PreloadLibFromPath, rdPtr, BasePath, Key
+			, [rdPtr](const SurfaceLib& lib) {
+				for (auto& it : lib) {
+					auto& [name, pSf] = it;
+
+					if (rdPtr->Lib->find(name) == rdPtr->Lib->end()) {
+						rdPtr->Lib->emplace(name, pSf);
+					}
+				}
+
+				CallEvent(ONPRELOADCOMPLETE);
+			});
+
+		pl.detach();
+	}
 
 	return 0;
 }
@@ -322,6 +382,7 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 
 	return 0;
 }
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -418,7 +479,7 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			Condition,
+			OnPreloadComplete,
 
 			0
 			};
@@ -452,6 +513,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Offset,
 
 			LoadFromDisplay,
+
+			SetPreloadList,
+			SetPreloadPath,
 
 			0
 			};

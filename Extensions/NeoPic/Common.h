@@ -30,6 +30,9 @@
 #include	"ImgFlt.h"
 
 #include	<map>
+#include	<vector>
+#include	<string>
+#include	<thread>
 
 #include	"GeneralDefinition.h"
 #include	"Definition.h"
@@ -40,6 +43,9 @@
 #include	"TigsExt.hpp"
 
 #include	"Encryption.h"
+
+#include	"WindowsCommon.h"
+#include	"FusionUtilities.h"
 #include	"Fusion.h"
 
 #include	"Func.h"

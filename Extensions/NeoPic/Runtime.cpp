@@ -99,6 +99,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			rdPtr->Lib = (SurfaceLib*)GetExtUserData();
 		}
 	}
+	
+	rdPtr->pPreloadList = nullptr;
 
 	// No errors
 	return 0;
@@ -137,6 +139,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	if (rdPtr->IsLib) {
 		SetExtUserData(rdPtr->Lib);
 	}
+
+	delete rdPtr->pPreloadList;
 
 	// No errors
 	return 0;
