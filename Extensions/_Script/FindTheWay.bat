@@ -97,8 +97,20 @@ Set ReleasePath=%ToInstallPath%\Data\Runtime\Html5
 
 Set FusionPath=C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\Html5
 
+Set H5ContentPath=%HTML5Path%\_Release
+
 del "%ReleasePath%\%ProjectName%.js" /f /s /q
-echo f | xcopy "%HTML5Path%\%ProjectName%.js" "%ReleasePath%\%ProjectName%.js" /s /e
+
+type "%HTML5Path%\_3rdLib\ObjectCreationClass.js">>"%H5ContentPath%\%ProjectName%.js"
+type "%HTML5Path%\_3rdLib\ObjectSelectionClass.js">>"%H5ContentPath%\%ProjectName%.js"
+type "%HTML5Path%\_DeLib\FusionUtilities.js">>"%H5ContentPath%\%ProjectName%.js"
+type "%HTML5Path%\_DeLib\Coord.js">>"%H5ContentPath%\%ProjectName%.js"
+type "%HTML5Path%\_DeLib\FindTheWayClass.js">>"%H5ContentPath%\%ProjectName%.js"
+type "%HTML5Path%\_DeLib\AOEClass.js">>"%H5ContentPath%\%ProjectName%.js"
+
+type "%HTML5Path%\%ProjectName%.js">>"%H5ContentPath%\%ProjectName%.js"
+
+echo f | xcopy "%H5ContentPath%\%ProjectName%.js" "%ReleasePath%\%ProjectName%.js" /s /e
 
 @echo Install...
 
