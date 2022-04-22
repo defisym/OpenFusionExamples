@@ -33,6 +33,27 @@
 #define IDS_PROP_QUALITY_CHECK          211
 #define IDS_PROP_QUALITY_CHECK_INFO     212
 
+#define IDS_PROP_MEMORYLIMIT            213
+#define IDS_PROP_MEMORYLIMIT_INFO       214
+
+#define IDS_PROP_AUTOCLEAN_CHECK       215
+#define IDS_PROP_AUTOCLEAN_CHECK_INFO       216
+#define IDS_PROP_SIZELIMIT       217
+#define IDS_PROP_SIZELIMIT_INFO       218
+
+#define IDS_HOTSPOT_TEXTTITLE             219
+#define IDS_PROP_HOTSPOT_LT               220
+#define IDS_PROP_HOTSPOT_LM               221
+#define IDS_PROP_HOTSPOT_LB               222
+#define IDS_PROP_HOTSPOT_MT               223
+#define IDS_PROP_HOTSPOT_MM               224
+#define IDS_PROP_HOTSPOT_MB               225
+#define IDS_PROP_HOTSPOT_RT               226
+#define IDS_PROP_HOTSPOT_RM               227
+#define IDS_PROP_HOTSPOT_RB               228
+#define IDS_PROP_HOTSPOT               229
+#define IDS_PROP_HOTSPOT_INFO               230
+
 // Dialog Box ID
 #define DB_SETUP                20003
 

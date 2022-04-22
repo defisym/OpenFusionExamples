@@ -152,7 +152,8 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	using pPreLoadList = decltype(rdPtr->pPreloadList);
 	using PreLoadList = std::remove_pointer_t<pPreLoadList>;
 
-	if (rdPtr->IsLib) {
+	if (!rdPtr->preloading
+		&& rdPtr->IsLib) {
 		delete rdPtr->pPreloadList;
 		rdPtr->pPreloadList = nullptr;
 
@@ -169,6 +170,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 				}
 			}
 
+			rdPtr->preloading = true;
 			std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, BasePath, Key
 				, [rdPtr](const SurfaceLib& lib) {
 					for (auto& it : lib) {
@@ -179,6 +181,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 						}
 					}
 
+					rdPtr->preloading = false;
 					CallEvent(ONPRELOADCOMPLETE);				
 				});
 

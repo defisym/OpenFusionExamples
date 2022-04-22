@@ -1,5 +1,7 @@
 #pragma once
 
+inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X = 0, int Y = 0);
+
 inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality = false, bool ForceUpdate = false);
 
 inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,1.0 }, int Angle = 0, ATArray AT = { 1,0,0,1 });
@@ -52,8 +54,11 @@ inline void NewImg(LPRDATA rdPtr) {
 	rdPtr->img->Clone(*rdPtr->src);
 }
 
+//Set default values
 inline void NewPic(LPRDATA rdPtr){
 	rdPtr->HotSpot = { 0,0 };
+	UpdateHotSpot(rdPtr, rdPtr->DefaultHotSpot);
+	
 	rdPtr->ZoomScale = { 1.0,1.0 };
 	rdPtr->Angle = 0;
 
@@ -123,7 +128,7 @@ inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
 	rdPtr->HotSpot.y = Y;
 }
 
-inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {
+inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y ) {
 	switch (Type) {
 	case HotSpotPos::LT:
 		UpdateHotSpot(rdPtr, 0, 0);
@@ -331,7 +336,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->StretchQuality);
 
 		if (img->IsValid()) {
-			rdPtr->Lib->emplace(FileName, img);
+			(*rdPtr->Lib)[FileName] = img;
 		}
 		else {
 			delete img;
@@ -376,7 +381,17 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	if (it == obj->Lib->end()) {
 		return;
 	}
-
+	
+	auto countit = obj->pCount->find(FileName);	
+	if (countit != obj->pCount->end()) {
+		auto count = countit->second;
+	}
+	auto curCount = countit != obj->pCount->end()
+		? countit->second + 1
+		: 1;
+	
+	(*obj->pCount)[FileName] = curCount;
+	
 	if(!rdPtr->IsLib){
 		if (!rdPtr->FromLib) {
 			delete rdPtr->src;
@@ -517,6 +532,10 @@ inline void PreloadLibFromVec(LPRDATA rdPtr, const std::vector<std::wstring> Pre
 	SurfaceLib tempLib;
 
 	for (auto& it : tempList) {
+		if (min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
+			break;
+		}
+
 		LPSURFACE img = new cSurface;
 		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->StretchQuality);
 
@@ -540,6 +559,10 @@ inline void PreloadLibFromPath(LPRDATA rdPtr, std::wstring BasePath, std::wstrin
 	SurfaceLib tempLib;
 
 	for (auto& it : fileList) {
+		if (min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
+			break;
+		}
+
 		LPSURFACE img = new cSurface;
 		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->StretchQuality);
 

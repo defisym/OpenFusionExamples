@@ -96,6 +96,12 @@ typedef struct tagEDATA_V1
 	bool HWA = false;
 	bool StretchQuality = false;
 
+	size_t memoryLimit;
+	size_t sizeLimit;
+	bool autoClean;
+
+	size_t HotSpotComboID;
+
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
 
@@ -178,7 +184,17 @@ typedef struct tagRDATA
 	bool Changed = false;
 
 	//preload
+	bool preloading = false;
 	std::vector<std::wstring>* pPreloadList = nullptr;
+
+	size_t memoryLimit;
+	size_t sizeLimit;
+	bool autoClean;
+
+	std::map<std::wstring, size_t>* pCount = nullptr;
+	std::vector<mapPair>* pCountVec = nullptr;
+
+	HotSpotPos DefaultHotSpot;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

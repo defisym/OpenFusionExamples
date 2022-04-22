@@ -67,6 +67,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 	//Settings
 	rdPtr->IsLib = edPtr->IsLib;
+	rdPtr->memoryLimit = edPtr->memoryLimit;
+	rdPtr->autoClean = edPtr->autoClean;
+	rdPtr->DefaultHotSpot = (HotSpotPos)edPtr->HotSpotComboID;
 	
 	rdPtr->HWA = edPtr->HWA;
 
@@ -100,6 +103,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		}
 	}
 	
+	rdPtr->pCount = new std::map<std::wstring, size_t>;
+	rdPtr->pCountVec = new std::vector<mapPair>;
 	rdPtr->pPreloadList = nullptr;
 
 	// No errors
@@ -140,6 +145,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		SetExtUserData(rdPtr->Lib);
 	}
 
+	delete rdPtr->pCount;
+	delete rdPtr->pCountVec;
 	delete rdPtr->pPreloadList;
 
 	// No errors
@@ -183,6 +190,30 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
+	if (!rdPtr->preloading
+		&& rdPtr->IsLib) {
+		if (rdPtr->pCount->size()> CLEAR_NUMTHRESHOLD
+			&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
+			*rdPtr->pCountVec = { rdPtr->pCount->begin(), rdPtr->pCount->end() };
+			std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [](mapPair& l, mapPair& r) {
+				return l.second < r.second;
+				});
+			
+			while (!rdPtr->pCount->empty()
+				&& rdPtr->memoryLimit / 2 <= (GetProcessMemoryUsage() >> 20)) {
+				auto& fileName = rdPtr->pCountVec->back().first;
+				
+				auto pSf = (*rdPtr->Lib)[fileName];
+				delete pSf;
+				
+				rdPtr->Lib->erase(fileName);
+				rdPtr->pCount->erase(fileName);
+				
+				rdPtr->pCountVec->pop_back();
+			}
+		}
+	}
+
 	if (!rdPtr->IsLib && rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
@@ -201,7 +232,9 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
-	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+	if (!rdPtr->IsLib
+		&& rdPtr->src != nullptr
+		&& rdPtr->src->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();

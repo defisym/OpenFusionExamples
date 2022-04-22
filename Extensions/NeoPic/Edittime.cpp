@@ -29,12 +29,18 @@ enum {
 	
 	PROPID_LIB_TEXTTITLE,
 	PROPID_ISLIB_CHECK,
+	PROPID_AUTOCLEAN_CHECK,
+	PROPID_MEMORYLIMIT,
+	PROPID_SIZELIMIT,
 
 	PROPID_DISPLAY_TEXTTITLE,
 	PROPID_HWA_CHECK,
 
 	PROPID_QUALITY_TEXTTITLE,
 	PROPID_QUALITY_CHECK,
+
+	PROPID_HOTSPOT_TEXTTITLE,
+	PROPID_HOTSPOT,
 
 	PROPID_HASCOLLISION_CHECK,
 	PROPID_AUTOUPDATECOLLISION_CHECK,
@@ -49,6 +55,20 @@ enum {
 //	MAKEINTRESOURCE(IDS_THIRDOPTION),	
 //	NULL
 //};
+
+LPCWSTR HotSpotComboList[] = {
+	0,	// reserved
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_LT),	
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_LM),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_LB),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_MT),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_MM),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_MB),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_RT),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_RM),
+	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_RB),
+	NULL
+};
 
 // Property definitions
 //
@@ -82,6 +102,9 @@ PropData PropertiesGerneral[] = {
 	// End of table (required)
 	PropData_Group		(PROPID_LIB_TEXTTITLE,	IDS_PROP_LIB_TEXTTITLE,		IDS_PROP_LIB_TEXTTITLE),
 	PropData_CheckBox	(PROPID_ISLIB_CHECK,	IDS_PROP_ISLIB_CHECK,		IDS_PROP_ISLIB_CHECK_INFO),
+	PropData_CheckBox	(PROPID_AUTOCLEAN_CHECK,	IDS_PROP_AUTOCLEAN_CHECK,		IDS_PROP_AUTOCLEAN_CHECK_INFO),
+	PropData_EditNumber (PROPID_MEMORYLIMIT,	IDS_PROP_MEMORYLIMIT,		IDS_PROP_MEMORYLIMIT_INFO),
+	PropData_EditNumber (PROPID_SIZELIMIT,		IDS_PROP_SIZELIMIT,			IDS_PROP_SIZELIMIT_INFO),
 
 	//PropData_Group(PROPID_DISPLAY_TEXTTITLE,	IDS_PROP_DISPLAY_TEXTTITLE,		IDS_PROP_DISPLAY_TEXTTITLE),
 	//PropData_CheckBox(PROPID_HWA_CHECK,	IDS_PROP_HWA_CHECK,		IDS_PROP_HWA_CHECK_INFO),
@@ -90,8 +113,11 @@ PropData PropertiesGerneral[] = {
 };
 
 PropData PropertiesDisplay[] = {
-	PropData_Group	(PROPID_QUALITY_TEXTTITLE,	IDS_PROP_QUALITY_TEXTTITLE,		IDS_PROP_QUALITY_TEXTTITLE),
+	PropData_Group		(PROPID_QUALITY_TEXTTITLE,	IDS_PROP_QUALITY_TEXTTITLE,		IDS_PROP_QUALITY_TEXTTITLE),
 	PropData_CheckBox	(PROPID_QUALITY_CHECK,	IDS_PROP_QUALITY_CHECK,		IDS_PROP_QUALITY_CHECK_INFO),
+
+	PropData_Group(PROPID_HOTSPOT_TEXTTITLE,	IDS_HOTSPOT_TEXTTITLE,		IDS_HOTSPOT_TEXTTITLE),
+	PropData_ComboBox(PROPID_HOTSPOT,	IDS_PROP_HOTSPOT,		IDS_PROP_HOTSPOT_INFO,HotSpotComboList),
 	
 	PropData_End()
 };
@@ -376,6 +402,12 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		// Set default object settings
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
+
+		edPtr->memoryLimit = DEFAULT_MEMORYLIMIT;
+		edPtr->sizeLimit = CLEAR_NUMTHRESHOLD;
+
+		edPtr->HotSpotComboID = 0;
+
 //
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -765,6 +797,16 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_COMBO:
 //		return new CPropDWordValue(edPtr->nComboIndex);
 //	}
+
+	switch (nPropID) {
+	case PROPID_MEMORYLIMIT:
+		return new CPropDWordValue(edPtr->memoryLimit);
+	case PROPID_SIZELIMIT:
+		return new CPropDWordValue(edPtr->sizeLimit);
+	case PROPID_HOTSPOT:
+		return new CPropDWordValue(edPtr->HotSpotComboID);
+	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -783,6 +825,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		// Return 0 (unchecked) or 1 (checked)
 		case PROPID_ISLIB_CHECK:
 			return edPtr->IsLib;
+		case PROPID_AUTOCLEAN_CHECK:
+			return edPtr->autoClean;
 
 		case PROPID_HWA_CHECK:
 			return edPtr->HWA;
@@ -856,6 +900,20 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 //		break;
 //	}
 
+	switch (nPropID) {
+	case PROPID_MEMORYLIMIT: {
+		edPtr->memoryLimit = MemRange(((CPropDWordValue*)pValue)->m_dwValue);
+		break;
+	}
+	case PROPID_SIZELIMIT: {
+		edPtr->sizeLimit = max(0,((CPropDWordValue*)pValue)->m_dwValue);
+		break;
+	}
+	case PROPID_HOTSPOT: {
+		edPtr->HotSpotComboID= ((CPropDWordValue*)pValue)->m_dwValue;
+	}
+	}
+
 	// You may want to have your object redrawn in the frame editor after the modifications,
 	// in this case, just call this function
 	// mvInvalidateObject(mV, edPtr);
@@ -876,31 +934,41 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	switch (nPropID) {
 	case PROPID_ISLIB_CHECK:
 		edPtr->IsLib = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_ISLIB_CHECK, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_AUTOCLEAN_CHECK, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_MEMORYLIMIT, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_SIZELIMIT, FALSE);
 		mvInvalidateObject(mV, edPtr);
-		mvRefreshProp(mV, edPtr, PROPID_ISLIB_CHECK, TRUE);
+		break;
+	case PROPID_AUTOCLEAN_CHECK:
+		edPtr->autoClean = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_AUTOCLEAN_CHECK, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_MEMORYLIMIT, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_SIZELIMIT, FALSE);
+		mvInvalidateObject(mV, edPtr);
 		break;
 
 	case PROPID_HWA_CHECK:
 		edPtr->HWA = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_HWA_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
-		mvRefreshProp(mV, edPtr, PROPID_HWA_CHECK, TRUE);
 		break;
 
 	case PROPID_QUALITY_CHECK:
 		edPtr->StretchQuality = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_QUALITY_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
-		mvRefreshProp(mV, edPtr, PROPID_QUALITY_CHECK, TRUE);
 		break;
 
 	case PROPID_HASCOLLISION_CHECK:
 		edPtr->Collision = nCheck;
-		mvInvalidateObject(mV, edPtr);
-		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, TRUE);
+		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, FALSE);
+		mvInvalidateObject(mV, edPtr); 
 		break;
 	case PROPID_AUTOUPDATECOLLISION_CHECK:
-		edPtr->AutoUpdateCollision = nCheck;
+		edPtr->AutoUpdateCollision = nCheck;		
+		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
-		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)
@@ -946,6 +1014,21 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return (edPtr->nComboIndex != 0);
 	}
 */
+
+	switch (nPropID) {
+	case PROPID_HWA_CHECK:
+	case PROPID_QUALITY_CHECK:
+	case PROPID_HOTSPOT:
+	case PROPID_HASCOLLISION_CHECK:
+	case PROPID_AUTOUPDATECOLLISION_CHECK:
+		return !edPtr->IsLib;
+	case PROPID_AUTOCLEAN_CHECK:
+		return edPtr->IsLib;
+	case PROPID_MEMORYLIMIT:
+	case PROPID_SIZELIMIT:
+		return edPtr->IsLib && edPtr->autoClean;
+	}
+
 #endif // !defined(RUN_ONLY)
 	return TRUE;
 }

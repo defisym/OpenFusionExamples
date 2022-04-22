@@ -405,6 +405,15 @@ BEGIN
     IDS_PROP_ISLIB_CHECK          "Lib Object"
     IDS_PROP_ISLIB_CHECK_INFO     "Lib Object will hold surfaces for other objects, you can retrieve them by filename. Lib will keep them over frames."
 
+    IDS_PROP_AUTOCLEAN_CHECK          "Auto Clean"
+    IDS_PROP_AUTOCLEAN_CHECK_INFO     "Auto Clean"
+
+    IDS_PROP_MEMORYLIMIT      "Memory Limit" 
+    IDS_PROP_MEMORYLIMIT_INFO "Max Cache Limit (MB)" 
+
+    IDS_PROP_SIZELIMIT          "Size Limit" 
+    IDS_PROP_SIZELIMIT_INFO     "Won't Start Cleaning Cache Until Used Size Images" 
+
     IDS_PROP_DISPLAY_TEXTTITLE  "Display Settings"
 
     IDS_PROP_HWA_CHECK  "HWA"
@@ -418,6 +427,19 @@ BEGIN
     IDS_PROP_QUALITY_TEXTTITLE   "Quality"
     IDS_PROP_QUALITY_CHECK       "Resample"
     IDS_PROP_QUALITY_CHECK_INFO  "Resample When Stretching or Rotating"
+
+    IDS_HOTSPOT_TEXTTITLE       "Hot Spot"
+    IDS_PROP_HOTSPOT_LT         "Left Top"
+    IDS_PROP_HOTSPOT_LM         "Left Middle"
+    IDS_PROP_HOTSPOT_LB         "Left Bottom"
+    IDS_PROP_HOTSPOT_MT         "Middle Top"
+    IDS_PROP_HOTSPOT_MM         "Middle Middle"
+    IDS_PROP_HOTSPOT_MB         "Middle Bottom"
+    IDS_PROP_HOTSPOT_RT         "Right Top"
+    IDS_PROP_HOTSPOT_RM         "Right Middle"
+    IDS_PROP_HOTSPOT_RB         "Right Bottom"
+    IDS_PROP_HOTSPOT            "Default Hot Spot"
+    IDS_PROP_HOTSPOT_INFO       "Default Hot Spot"
 END
 
 #endif    // English (U.S.) resources

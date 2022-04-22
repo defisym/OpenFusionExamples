@@ -72,4 +72,15 @@ inline bool DoAffineTrans(ATArray A) {
 }
 
 typedef std::map<std::wstring, LPSURFACE> SurfaceLib;
+using mapPair = std::pair<std::wstring, size_t>;
+
 #define ONPRELOADCOMPLETE 0
+
+constexpr auto CLEAR_MEMRANGE = 100;
+constexpr auto CLEAR_NUMTHRESHOLD = 50;
+
+constexpr auto MAX_MEMORYLIMIT = 2048;
+constexpr auto DEFAULT_MEMORYLIMIT = 1800;
+
+template<typename T>
+constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
