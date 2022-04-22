@@ -1,8 +1,24 @@
 #pragma once
 
-#include <tlhelp32.h>
+//STL
+#include <string>
+#include <vector>
+#include <thread>
 
+//Windows
+#include <windows.h>
+
+//Thread
+#include <tlhelp32.h>
 #pragma comment(lib,"version.lib")
+#pragma comment(lib,"Kernel32.lib")
+
+//FileList
+#include	<shlwapi.h>
+#pragma	comment(lib,"shlwapi.lib")
+
+//Memory
+#include <psapi.h>
 
 inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	//返回参数
@@ -166,6 +182,63 @@ inline bool GetFileVersion_CMPDefaultFile(LPCWSTR FileNameA, LPCWSTR FileNameB, 
 	return ret;
 }
 
+enum class MemoryUsageType {
+	PeakWorkingSetSize,
+	WorkingSetSize,
+	QuotaPeakPagedPoolUsage,
+	QuotaPagedPoolUsage,
+	QuotaPeakNonPagedPoolUsage,
+	QuotaNonPagedPoolUsage,
+	PagefileUsage,
+	PeakPagefileUsage,
+};
+
+inline SIZE_T GetMemoryUsage(const PROCESS_MEMORY_COUNTERS& pmc, MemoryUsageType type) {
+	switch (type) {
+	case MemoryUsageType::PeakWorkingSetSize:
+		return pmc.PeakWorkingSetSize;
+	case MemoryUsageType::WorkingSetSize:
+		return pmc.WorkingSetSize;
+	case MemoryUsageType::QuotaPeakPagedPoolUsage:
+		return pmc.QuotaPeakPagedPoolUsage;
+	case MemoryUsageType::QuotaPagedPoolUsage:
+		return pmc.QuotaPagedPoolUsage;
+	case MemoryUsageType::QuotaPeakNonPagedPoolUsage:
+		return pmc.QuotaPeakNonPagedPoolUsage;
+	case MemoryUsageType::QuotaNonPagedPoolUsage:
+		return pmc.QuotaNonPagedPoolUsage;
+	case MemoryUsageType::PagefileUsage:
+		return pmc.PagefileUsage;
+	case MemoryUsageType::PeakPagefileUsage:
+		return pmc.PeakPagefileUsage;
+	default:
+		return 0;
+	}
+}
+
+inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
+	HANDLE hProcess;
+	PROCESS_MEMORY_COUNTERS pmc;
+
+	SIZE_T ret = 0;
+
+	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+		PROCESS_VM_READ,
+		FALSE, processID);
+
+	if (hProcess == NULL) {
+		return ret;
+	}
+
+	if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+		ret = GetMemoryUsage(pmc, type);
+	}
+
+	CloseHandle(hProcess);
+
+	return ret;
+}
+
 inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	// Get FileVersionInfo
 	auto size = GetFileVersionInfoSize(FileName, NULL);	
@@ -225,10 +298,6 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 
 	return info;
 }
-
-//FileList
-#include	<shlwapi.h>
-#pragma	comment(lib,"shlwapi.lib") 
 
 inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src) {
 	WIN32_FIND_DATA stFD;
