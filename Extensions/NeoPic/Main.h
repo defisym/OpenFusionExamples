@@ -42,8 +42,9 @@
 
 #define	ACT_ACTION_SPL				18
 #define	ACT_ACTION_SPP				19
+#define	ACT_ACTION_CC				20
 
-#define	ACT_LAST					20
+#define	ACT_LAST					21
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -84,23 +85,23 @@ typedef struct tagEDATA_V1
 	short			sheight;
 
 	//Lib
-	bool IsLib = false;
+	bool isLib = false;
 
 	//Collision
-	bool Collision = false;
-	bool AutoUpdateCollision = false;
+	bool collision = false;
+	bool autoUpdateCollision = false;
 
 	//Display
 
 	//Settings
 	bool HWA = false;
-	bool StretchQuality = false;
+	bool stretchQuality = false;
 
 	size_t memoryLimit;
 	size_t sizeLimit;
 	bool autoClean;
 
-	size_t HotSpotComboID;
+	size_t hotSpotComboID;
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -135,12 +136,12 @@ typedef struct tagRDATA
 	short			sheight;
 
 	//Lib
-	bool IsLib = false;
-	SurfaceLib* Lib = nullptr;
+	bool isLib = false;
+	SurfaceLib* lib = nullptr;
 
 	//Collision
-	bool Collision = false;
-	bool AutoUpdateCollision = false;
+	bool collision = false;
+	bool autoUpdateCollision = false;
 
 	LPSMASK pColMask = nullptr;
 
@@ -148,10 +149,10 @@ typedef struct tagRDATA
 
 	//Settings
 	bool HWA = false;
-	bool StretchQuality = false;
+	bool stretchQuality = false;
 
 	//Source
-	bool FromLib = false;
+	bool fromLib = false;
 
 	std::wstring* FileName = nullptr;
 	std::wstring* Key = nullptr;
@@ -159,29 +160,29 @@ typedef struct tagRDATA
 	//img->collision & add backdrop
 	LPSURFACE img = nullptr;
 	
-	POINT ImgHotSpot = { 0,0 };
-	ZoomScale ImgZoomScale = { 1.0,1.0 };
+	POINT imgHotSpot = { 0,0 };
+	ZoomScale imgZoomScale = { 1.0,1.0 };
 
-	OffsetCoef ImgOffset = { 0,0,false };
+	OffsetCoef imgOffset = { 0,0,false };
 	
-	int ImgAngle = 0;
-	ATArray ImgAT = {};
+	int imgAngle = 0;
+	ATArray imgAT = {};
 
 	//src->display
 	LPSURFACE src = nullptr;
 	
-	POINT HotSpot = { 0,0 };	
-	ZoomScale ZoomScale = { 1.0,1.0 };
+	POINT hotSpot = { 0,0 };	
+	ZoomScale zoomScale = { 1.0,1.0 };
 
-	OffsetCoef Offset = { 0,0,false };
+	OffsetCoef offset = { 0,0,false };
 
-	int Angle = 0;
+	int angle = 0;
 	ATArray AT = {};
 
 	//trans->transform
 	LPSURFACE trans = nullptr;
 
-	bool Changed = false;
+	bool changed = false;
 
 	//preload
 	bool preloading = false;
@@ -194,7 +195,7 @@ typedef struct tagRDATA
 	std::map<std::wstring, size_t>* pCount = nullptr;
 	std::vector<mapPair>* pCountVec = nullptr;
 
-	HotSpotPos DefaultHotSpot;
+	HotSpotPos defaultHotSpot;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

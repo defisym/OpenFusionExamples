@@ -58,8 +58,9 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LFD, M_ACTION_LFD,	ACT_ACTION_LFD,	0, 2,PARAM_OBJECT,PARAM_EXPRESSION,M_ACTION_OBJECT,M_ACTION_COPYCOEF,
 		
-		IDMN_ACTION_SPL, M_ACTION_SPL, ACT_ACTION_SPL,	0, 3, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_PRELOAD,M_ACTION_BASEPATH,M_ACTION_KEY,
-		IDMN_ACTION_SPP, M_ACTION_SPP, ACT_ACTION_SPP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_BASEPATH,M_ACTION_KEY,
+		IDMN_ACTION_SPL, M_ACTION_SPL, ACT_ACTION_SPL,	0, 3, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_PRELOAD, M_ACTION_BASEPATH, M_ACTION_KEY,
+		IDMN_ACTION_SPP, M_ACTION_SPP, ACT_ACTION_SPP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_BASEPATH, M_ACTION_KEY,
+		IDMN_ACTION_CC, M_ACTION_CC, ACT_ACTION_CC,	0, 0,
 
 		};
 
@@ -153,7 +154,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	using PreLoadList = std::remove_pointer_t<pPreLoadList>;
 
 	if (!rdPtr->preloading
-		&& rdPtr->IsLib) {
+		&& rdPtr->isLib) {
 		delete rdPtr->pPreloadList;
 		rdPtr->pPreloadList = nullptr;
 
@@ -176,8 +177,8 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 					for (auto& it : lib) {
 						auto& [name, pSf] = it;
 
-						if (rdPtr->Lib->find(name) == rdPtr->Lib->end()) {
-							rdPtr->Lib->emplace(name, pSf);
+						if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
+							rdPtr->lib->emplace(name, pSf);
 						}
 					}
 
@@ -196,14 +197,14 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	if (rdPtr->IsLib) {
+	if (rdPtr->isLib) {
 		std::thread pl(PreloadLibFromPath, rdPtr, BasePath, Key
 			, [rdPtr](const SurfaceLib& lib) {
 				for (auto& it : lib) {
 					auto& [name, pSf] = it;
 
-					if (rdPtr->Lib->find(name) == rdPtr->Lib->end()) {
-						rdPtr->Lib->emplace(name, pSf);
+					if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
+						rdPtr->lib->emplace(name, pSf);
 					}
 				}
 
@@ -217,8 +218,8 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
-	if(rdPtr->IsLib){
-		ResetLib(rdPtr->Lib);
+	if(rdPtr->isLib){
+		ResetLib(rdPtr->lib);
 	}
 
 	return 0;
@@ -226,8 +227,8 @@ short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	if (rdPtr->IsLib) {
-		EraseLib(rdPtr->Lib, FilePath);		
+	if (rdPtr->isLib) {
+		EraseLib(rdPtr->lib, FilePath);		
 	}
 
 	return 0;
@@ -237,8 +238,8 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
-	if (rdPtr->IsLib) {
-		EraseLib(rdPtr->Lib, FilePath);
+	if (rdPtr->isLib) {
+		EraseLib(rdPtr->lib, FilePath);
 		LoadFromFile(rdPtr, FilePath, Key);
 	}
 
@@ -246,19 +247,19 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->IsLib && rdPtr->img->IsValid()) {
+	if (!rdPtr->isLib && rdPtr->img->IsValid()) {
 		//rdPtr->src->Delete();
 		//rdPtr->src->Clone(*rdPtr->img);
 
-		//rdPtr->HotSpot = rdPtr->ImgHotSpot;
+		//rdPtr->hotSpot = rdPtr->imgHotSpot;
 		
 	}
 
 	return 0;
 }
 short WINAPI DLLExport RestoreCur(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
-		//rdPtr->ImgHotSpot = rdPtr->HotSpot;
+	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+		//rdPtr->imgHotSpot = rdPtr->hotSpot;
 
 		//rdPtr->img->Delete();
 		//rdPtr->img->Clone(*rdPtr->src);
@@ -274,7 +275,7 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	int Y = (int)CNC_GetIntParameter(rdPtr);
 	
 	UpdateHotSpot(rdPtr, Pos, X, Y);
-	rdPtr->ImgHotSpot = rdPtr->HotSpot;
+	rdPtr->imgHotSpot = rdPtr->hotSpot;
 	
 	return 0;
 }
@@ -283,7 +284,7 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	float XScale = GetFloatParam(rdPtr);
 	float YScale = GetFloatParam(rdPtr);
 	
-	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
 		Zoom(rdPtr, XScale, YScale);
 	}	
 
@@ -294,7 +295,7 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	int Angle = (int)CNC_GetIntParameter(rdPtr);
 	Angle = Angle % 360;
 	
-	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
 		Rotate(rdPtr, Angle);
 	}
 
@@ -308,7 +309,7 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 	float XScale = (1.0f * Width/ rdPtr->src->GetWidth());
 	float YScale = (1.0f * Height / rdPtr->src->GetHeight());
 
-	if (!rdPtr->IsLib && rdPtr->src->IsValid()) {
+	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
 		Zoom(rdPtr, XScale, YScale);
 	}
 
@@ -320,10 +321,10 @@ short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	
 	UpdateImg(rdPtr);
 
-	if (!rdPtr->IsLib && rdPtr->img->IsValid()) {
+	if (!rdPtr->isLib && rdPtr->img->IsValid()) {
 		AddBackdrop(rdPtr, rdPtr->img,
-			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->ImgHotSpot.x,
-			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->ImgHotSpot.y,
+			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->imgHotSpot.x,
+			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->imgHotSpot.y,
 			rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
 	}
 
@@ -336,11 +337,11 @@ short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport SetCollision(LPRDATA rdPtr, long param1, long param2) {
-	bool Collision = (bool)CNC_GetIntParameter(rdPtr);
-	bool AutoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
+	bool collision = (bool)CNC_GetIntParameter(rdPtr);
+	bool autoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->Collision = Collision;
-	rdPtr->AutoUpdateCollision = AutoUpdateCollision;
+	rdPtr->collision = collision;
+	rdPtr->autoUpdateCollision = autoUpdateCollision;
 
 	FreeColMask(rdPtr->pColMask);	
 
@@ -350,7 +351,7 @@ short WINAPI DLLExport SetCollision(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->StretchQuality = Quality;
+	rdPtr->stretchQuality = Quality;
 
 	UpdateImg(rdPtr, false, true);
 
@@ -377,11 +378,17 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 
 	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
 
-	if (rdPtr->Offset != OffsetCoef{ XOffset, YOffset, Wrap }) {
-		rdPtr->Offset = { XOffset ,YOffset, Wrap };
+	if (rdPtr->offset != OffsetCoef{ XOffset, YOffset, Wrap }) {
+		rdPtr->offset = { XOffset ,YOffset, Wrap };
 
 		ReDisplay(rdPtr);
 	}
+
+	return 0;
+}
+
+short WINAPI DLLExport CleanCache(LPRDATA rdPtr, long param1, long param2) {
+	CleanCache(rdPtr, true);
 
 	return 0;
 }
@@ -393,35 +400,35 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 // ============================================================================
 
 long WINAPI DLLExport GetHotSpotX(LPRDATA rdPtr, long param1) {
-	return rdPtr->HotSpot.x;
+	return GetHotSpotX(rdPtr);
 }
 long WINAPI DLLExport GetHotSpotY(LPRDATA rdPtr, long param1) {
-	return rdPtr->HotSpot.y;
+	return  GetHotSpotY(rdPtr);
 }
 
 long WINAPI DLLExport GetOriginalWidth(LPRDATA rdPtr, long param1) {
-	return rdPtr->src->IsValid() ? rdPtr->src->GetWidth() : -1;
+	return GetOriginalWidth(rdPtr);
 }
 long WINAPI DLLExport GetOriginalHeight(LPRDATA rdPtr, long param1) {
-	return rdPtr->src->IsValid() ? rdPtr->src->GetHeight() : -1;
+	return GetOriginalHeight(rdPtr);
 }
 
 long WINAPI DLLExport GetCurrentWidth(LPRDATA rdPtr, long param1) {
-	return rdPtr->img->IsValid() ? rdPtr->img->GetWidth() : -1;
+	return GetCurrentWidth(rdPtr);
 }
 long WINAPI DLLExport GetCurrentHeight(LPRDATA rdPtr, long param1) {
-	return rdPtr->img->IsValid() ? rdPtr->img->GetHeight() : -1;
+	return GetCurrentHeight(rdPtr);
 }
 
 long WINAPI DLLExport GetXZoomScale(LPRDATA rdPtr, long param1) {
-	return ReturnFloat(rdPtr->img->IsValid() ? rdPtr->ZoomScale.XScale : -1);
+	return ReturnFloat(GetXZoomScale(rdPtr));
 }
 long WINAPI DLLExport GetYZoomScale(LPRDATA rdPtr, long param1) {
-	return ReturnFloat(rdPtr->img->IsValid() ? rdPtr->ZoomScale.YScale : -1);
+	return ReturnFloat(GetYZoomScale(rdPtr));
 }
 
 long WINAPI DLLExport GetAngle(LPRDATA rdPtr, long param1) {
-	return rdPtr->img->IsValid() ? rdPtr->Angle : -1;
+	return GetAngle(rdPtr);
 }
 
 long WINAPI DLLExport GetFileName(LPRDATA rdPtr, long param1) {
@@ -446,7 +453,7 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 
 	cSurface* ret = nullptr;
 
-	if (!rdPtr->IsLib) {
+	if (!rdPtr->isLib) {
 		if (*rdPtr->FileName != FilePath || *rdPtr->Key != Key) {
 			ret = nullptr;
 		}
@@ -455,13 +462,13 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 		}
 	}
 	else {
-		auto it = rdPtr->Lib->find(FilePath);
-		if (it == rdPtr->Lib->end()) {
+		auto it = rdPtr->lib->find(FilePath);
+		if (it == rdPtr->lib->end()) {
 			LoadFromFile(rdPtr, FilePath.c_str(), Key.c_str());
 		}
 
-		it = rdPtr->Lib->find(FilePath);
-		if (it == rdPtr->Lib->end()) {
+		it = rdPtr->lib->find(FilePath);
+		if (it == rdPtr->lib->end()) {
 			ret = nullptr;
 		}
 		else {
@@ -519,6 +526,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetPreloadList,
 			SetPreloadPath,
+			CleanCache,
 
 			0
 			};

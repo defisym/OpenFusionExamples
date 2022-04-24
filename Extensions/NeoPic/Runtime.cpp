@@ -21,6 +21,26 @@ enum
 //	DB_CURRENTVALUE,
 //	DB_CURRENTCHECK,
 //	DB_CURRENTCOMBO
+
+	DB_SAPARATOR_START,
+	DB_OBJECTTYPE,
+	DB_SAPARATOR_1,
+	DB_LIBSIZE,
+	DB_LIBMEMUSE,
+	DB_SAPARATOR_2,
+	DB_FROMLIB,
+	DB_FILENAME,
+	DB_KEY,
+	DB_SAPARATOR_3,
+	DB_COLLISION,
+	DB_AUTOUPDATECOLLISION,
+	DB_SAPARATOR_4,
+	DB_STRETCHQUALITY,
+	DB_HOTSPOT,
+	DB_ZOOMSCALE,
+	DB_ORIGINSIZE,
+	DB_CURRENTSIZE,
+	DB_SAPARATOR_END,
 };
 
 // Items displayed in the debugger
@@ -34,6 +54,26 @@ WORD DebugTree[]=
 //	DB_CURRENTCOMBO,
 
 	// End of table (required)
+	DB_SAPARATOR_START,
+	DB_OBJECTTYPE,
+	DB_SAPARATOR_1,
+	DB_LIBSIZE,
+	DB_LIBMEMUSE,
+	DB_SAPARATOR_2,
+	DB_FROMLIB,
+	DB_FILENAME,
+	DB_KEY,
+	DB_SAPARATOR_3,
+	DB_COLLISION,
+	DB_AUTOUPDATECOLLISION,
+	DB_SAPARATOR_4,
+	DB_STRETCHQUALITY,
+	DB_HOTSPOT,
+	DB_ZOOMSCALE,
+	DB_ORIGINSIZE,
+	DB_CURRENTSIZE,
+	DB_SAPARATOR_END,
+	
 	DB_END
 };
 
@@ -66,17 +106,17 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 	//Settings
-	rdPtr->IsLib = edPtr->IsLib;
+	rdPtr->isLib = edPtr->isLib;
 	rdPtr->memoryLimit = edPtr->memoryLimit;
 	rdPtr->autoClean = edPtr->autoClean;
-	rdPtr->DefaultHotSpot = (HotSpotPos)edPtr->HotSpotComboID;
+	rdPtr->defaultHotSpot = (HotSpotPos)edPtr->hotSpotComboID;
 	
 	rdPtr->HWA = edPtr->HWA;
 
-	rdPtr->StretchQuality = edPtr->StretchQuality;
+	rdPtr->stretchQuality = edPtr->stretchQuality;
 
-	rdPtr->Collision = edPtr->Collision;
-	rdPtr->AutoUpdateCollision = edPtr->AutoUpdateCollision;
+	rdPtr->collision = edPtr->collision;
+	rdPtr->autoUpdateCollision = edPtr->autoUpdateCollision;
 
 	//Display
 	rdPtr->FileName = new std::wstring;
@@ -85,21 +125,21 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->img = nullptr;
 	rdPtr->src = nullptr;
 
-	rdPtr->FromLib = true;
+	rdPtr->fromLib = true;
 
-	rdPtr->ZoomScale = { 1.0,1.0 };
-	rdPtr->ImgZoomScale = { 1.0,1.0 };
+	rdPtr->zoomScale = { 1.0,1.0 };
+	rdPtr->imgZoomScale = { 1.0,1.0 };
 
 	rdPtr->AT = { 1,0,0,1 };
-	rdPtr->ImgAT = { 1,0,0,1 };
+	rdPtr->imgAT = { 1,0,0,1 };
 
 	//Load Lib
-	if(rdPtr->IsLib){
+	if(rdPtr->isLib){
 		if (GetExtUserData() == nullptr) {
-			rdPtr->Lib = new SurfaceLib;
+			rdPtr->lib = new SurfaceLib;
 		}
 		else {
-			rdPtr->Lib = (SurfaceLib*)GetExtUserData();
+			rdPtr->lib = (SurfaceLib*)GetExtUserData();
 		}
 	}
 	
@@ -127,22 +167,25 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->FileName;
 	delete rdPtr->Key;
 
-	if (!rdPtr->IsLib) {
-		delete rdPtr->img;
-		delete rdPtr->trans;
+	if (!rdPtr->isLib) {
+		if (rdPtr->src != rdPtr->img) {
+			delete rdPtr->img;
+		}
 
-		if (!rdPtr->FromLib) {
+		if (!rdPtr->fromLib) {
 			delete rdPtr->src;
 		}
 
-		if (!rdPtr->IsLib) {
+		delete rdPtr->trans;
+
+		if (!rdPtr->isLib) {
 			FreeColMask(rdPtr->pColMask);
 		}
 	}
 
 	//Save Lib
-	if (rdPtr->IsLib) {
-		SetExtUserData(rdPtr->Lib);
+	if (rdPtr->isLib) {
+		SetExtUserData(rdPtr->lib);
 	}
 
 	delete rdPtr->pCount;
@@ -190,31 +233,9 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
-	if (!rdPtr->preloading
-		&& rdPtr->IsLib) {
-		if (rdPtr->pCount->size()> CLEAR_NUMTHRESHOLD
-			&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
-			*rdPtr->pCountVec = { rdPtr->pCount->begin(), rdPtr->pCount->end() };
-			std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [](mapPair& l, mapPair& r) {
-				return l.second < r.second;
-				});
-			
-			while (!rdPtr->pCount->empty()
-				&& rdPtr->memoryLimit / 2 <= (GetProcessMemoryUsage() >> 20)) {
-				auto& fileName = rdPtr->pCountVec->back().first;
-				
-				auto pSf = (*rdPtr->Lib)[fileName];
-				delete pSf;
-				
-				rdPtr->Lib->erase(fileName);
-				rdPtr->pCount->erase(fileName);
-				
-				rdPtr->pCountVec->pop_back();
-			}
-		}
-	}
+	CleanCache(rdPtr, false);
 
-	if (!rdPtr->IsLib && rdPtr->rc.rcChanged) {
+	if (!rdPtr->isLib && rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
 	else {
@@ -232,7 +253,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
-	if (!rdPtr->IsLib
+	if (!rdPtr->isLib
 		&& rdPtr->src != nullptr
 		&& rdPtr->src->IsValid()) {
 		// Begin render process...
@@ -247,26 +268,26 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		//rdPtr->img.Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
 		//rdPtr->img->BlitEx(*ps, (float)screenX, (float)screenY,
 		//	rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-		//	rdPtr->img->GetWidth(), rdPtr->img->GetHeight(), &rdPtr->HotSpot, rdPtr->rc.rcAngle,
+		//	rdPtr->img->GetWidth(), rdPtr->img->GetHeight(), &rdPtr->hotSpot, rdPtr->rc.rcAngle,
 		//	(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 		//	BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 		//	rdPtr->rs.rsEffectParam, BLTF_ANTIA);
 
 		LPSURFACE Display=nullptr;
 
-		if (rdPtr->Changed) {
-			rdPtr->Changed = false;
+		if (rdPtr->changed) {
+			rdPtr->changed = false;
 
-			if (DoOffset(rdPtr->Offset) ||
+			if (DoOffset(rdPtr->offset) ||
 				DoAffineTrans(rdPtr->AT) ||
-				(rdPtr->ZoomScale.XScale < 0.0) || (rdPtr->ZoomScale.YScale < 0.0)) {
+				(rdPtr->zoomScale.XScale < 0.0) || (rdPtr->zoomScale.YScale < 0.0)) {
 
-				Display = Offset(rdPtr->src, rdPtr->Offset);
+				Display = Offset(rdPtr->src, rdPtr->offset);
 
-				if (rdPtr->ZoomScale.XScale < 0.0) {
+				if (rdPtr->zoomScale.XScale < 0.0) {
 					Display->ReverseX();
 				}
-				if (rdPtr->ZoomScale.YScale < 0.0) {
+				if (rdPtr->zoomScale.YScale < 0.0) {
 					Display->ReverseY();
 				}
 
@@ -283,13 +304,13 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 
 		DWORD flags = 0;
 
-		if (rdPtr->StretchQuality) {
+		if (rdPtr->stretchQuality) {
 			flags |= BLTF_ANTIA;
 		}
 
 		Display->BlitEx(*ps, (float)screenX, (float)screenY,
-			abs(rdPtr->ZoomScale.XScale), abs(rdPtr->ZoomScale.YScale), 0, 0,
-			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->HotSpot, (float)rdPtr->Angle,
+			abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0,
+			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, flags);
@@ -331,7 +352,7 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 {
 	// Typical example for active objects
 	// ----------------------------------
-	if (!rdPtr->IsLib) {
+	if (!rdPtr->isLib) {
 		// Opaque? collide with box	
 		// Note: only if your object has the OEPREFS_INKEFFECTS option
 		if ((rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) == 0) {
@@ -345,13 +366,13 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 				LPSURFACE collide = nullptr;
 				collide = CreateSurface(24, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
 
-				if (rdPtr->Collision) {
-					if (rdPtr->AutoUpdateCollision) {
+				if (rdPtr->collision) {
+					if (rdPtr->autoUpdateCollision) {
 						UpdateImg(rdPtr, true);
 					}
 
-					int desX = rdPtr->HotSpot.x - rdPtr->ImgHotSpot.x;
-					int desY = rdPtr->HotSpot.y - rdPtr->ImgHotSpot.y;
+					int desX = rdPtr->hotSpot.x - rdPtr->imgHotSpot.x;
+					int desY = rdPtr->hotSpot.y - rdPtr->imgHotSpot.y;
 
 					rdPtr->img->Blit(*collide, desX, desY);
 				}
@@ -483,7 +504,7 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// -------
 	// Delete global data	
 	SurfaceLib* pData = (SurfaceLib*)mV->mvGetExtUserData(pApp, hInstLib);
-	if ( pData != NULL ) {
+	if (pData != NULL) {
 		DeleteLib(pData);
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
@@ -688,6 +709,104 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		break;
 	}
 */
+
+	//wchar_t temp[DB_BUFFERSIZE];
+
+	auto libFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, std::function<void(LPCWSTR)> f) {
+		if (rdPtr->isLib) {
+			f(pattern);
+		}
+		else {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, negativePattern, negative);
+		}
+	};
+
+	auto displayFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, std::function<void(LPCWSTR)> f) {
+		if (!rdPtr->isLib) {
+			f(pattern);
+		}
+		else {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, negativePattern, negative);
+		}
+	};
+
+	auto libNegative = L"Not Lib";
+	auto displayNegative = L"Not Display";
+
+	switch (id)
+	{
+	case DB_SAPARATOR_START:
+	case DB_SAPARATOR_1:
+	case DB_SAPARATOR_2:
+	case DB_SAPARATOR_3:
+	case DB_SAPARATOR_4:
+	case DB_SAPARATOR_END:
+		swprintf_s(pBuffer, DB_BUFFERSIZE, L"=====================");
+		break;
+	case DB_OBJECTTYPE:
+		swprintf_s(pBuffer, DB_BUFFERSIZE, L"Object Type: %s", rdPtr->isLib ? L"Lib" : L"Display");
+		break;
+	case DB_LIBSIZE:
+		libFilter(L"Lib Size: %d", L"Lib Size: %s", libNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->lib->size());
+			});
+		break;
+	case DB_LIBMEMUSE:
+		libFilter(L"Auto Clean Cache: %s", L"Auto Clean Cache: %s", libNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoClean ? L"True" : L"False");
+			});
+		break;
+	case DB_FROMLIB:
+		displayFilter(L"From Lib: %s", L"From Lib: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->fromLib ? L"True" : L"False");
+			});
+		break;
+	case DB_FILENAME:
+		displayFilter(L"FileName: %s", L"FileName: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FileName->c_str());
+			});
+		break;
+	case DB_KEY:
+		displayFilter(L"Key: %s", L"Key: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, (*rdPtr->Key)==L""? L"Not Encrypted" : rdPtr->Key->c_str());
+			});
+		break;
+	case DB_COLLISION:
+		displayFilter(L"Has Collision: %s", L"Has Collision: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->collision ? L"True" : L"False");
+			});
+		break;
+	case DB_AUTOUPDATECOLLISION:
+		displayFilter(L"Auto Update Collision: %s", L"Auto Update Collision: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoUpdateCollision ? L"True" : L"False");
+			});
+		break;
+	case DB_STRETCHQUALITY:
+		displayFilter(L"Stretch Quality: %s", L"Stretch Quality: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->stretchQuality ? L"Resample" : L"Fast");
+			});
+		break;
+	case DB_HOTSPOT:
+		displayFilter(L"HotSpot: %d, %d", L"HotSpot: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetHotSpotX(rdPtr), GetHotSpotY(rdPtr));
+			});
+		break;
+	case DB_ZOOMSCALE:
+		displayFilter(L"Zoom Scale: %f, %f", L"Zoom Scale: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetXZoomScale(rdPtr), GetYZoomScale(rdPtr));
+			});
+		break;
+	case DB_ORIGINSIZE:
+		displayFilter(L"Origin Size: %d, %d", L"Origin Size: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetOriginalWidth(rdPtr), GetOriginalHeight(rdPtr));
+			});
+		break;
+	case DB_CURRENTSIZE:
+		displayFilter(L"Current Size: %d, %d", L"Current Size: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetCurrentWidth(rdPtr), GetCurrentHeight(rdPtr));
+			});
+		break;
+	}
 
 #endif // !defined(RUN_ONLY)
 }

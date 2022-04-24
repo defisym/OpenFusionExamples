@@ -403,10 +403,12 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
 
+		edPtr->stretchQuality = true;
+
 		edPtr->memoryLimit = DEFAULT_MEMORYLIMIT;
 		edPtr->sizeLimit = CLEAR_NUMTHRESHOLD;
 
-		edPtr->HotSpotComboID = 0;
+		edPtr->hotSpotComboID = 0;
 
 //
 //		// Call setup (remove this and return 0 if your object does not need a setup)
@@ -459,7 +461,7 @@ BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA ed
 BOOL WINAPI SetEditSize(LPMV mv, LPEDATA edPtr, int cx, int cy)
 {
 #ifndef RUN_ONLY
-	if (!edPtr->IsLib) {
+	if (!edPtr->isLib) {
 		edPtr->swidth = cx;
 		edPtr->sheight = cy;
 	}
@@ -514,7 +516,7 @@ void WINAPI DLLExport DuplicateObject(mv __far *mV, fpObjInfo oiPtr, LPEDATA edP
 void WINAPI DLLExport GetObjectRect(mv _far *mV, RECT FAR *rc, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
-	if (!edPtr->IsLib) {
+	if (!edPtr->isLib) {
 		rc->right = rc->left + edPtr->swidth;
 		rc->bottom = rc->top + edPtr->sheight;
 	}
@@ -555,7 +557,7 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 		int w = rc->right-rc->left;
 		int h = rc->bottom-rc->top;
 
-		if (!edPtr->IsLib && (edPtr->swidth != 32 || edPtr->sheight != 32)) {
+		if (!edPtr->isLib && (edPtr->swidth != 32 || edPtr->sheight != 32)) {
 			LPSURFACE proto = nullptr;
 			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
@@ -804,7 +806,7 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_SIZELIMIT:
 		return new CPropDWordValue(edPtr->sizeLimit);
 	case PROPID_HOTSPOT:
-		return new CPropDWordValue(edPtr->HotSpotComboID);
+		return new CPropDWordValue(edPtr->hotSpotComboID);
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -824,7 +826,7 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	switch (nPropID) {
 		// Return 0 (unchecked) or 1 (checked)
 		case PROPID_ISLIB_CHECK:
-			return edPtr->IsLib;
+			return edPtr->isLib;
 		case PROPID_AUTOCLEAN_CHECK:
 			return edPtr->autoClean;
 
@@ -832,12 +834,12 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 			return edPtr->HWA;
 
 		case PROPID_QUALITY_CHECK:
-			return edPtr->StretchQuality;
+			return edPtr->stretchQuality;
 
 		case PROPID_HASCOLLISION_CHECK:
-			return edPtr->Collision;
+			return edPtr->collision;
 		case PROPID_AUTOUPDATECOLLISION_CHECK:
-			return edPtr->AutoUpdateCollision;
+			return edPtr->autoUpdateCollision;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -910,7 +912,7 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 	}
 	case PROPID_HOTSPOT: {
-		edPtr->HotSpotComboID= ((CPropDWordValue*)pValue)->m_dwValue;
+		edPtr->hotSpotComboID= ((CPropDWordValue*)pValue)->m_dwValue;
 	}
 	}
 
@@ -933,7 +935,7 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	// -------
 	switch (nPropID) {
 	case PROPID_ISLIB_CHECK:
-		edPtr->IsLib = nCheck;
+		edPtr->isLib = nCheck;
 		mvRefreshProp(mV, edPtr, PROPID_ISLIB_CHECK, FALSE);
 		mvRefreshProp(mV, edPtr, PROPID_AUTOCLEAN_CHECK, FALSE);
 		mvRefreshProp(mV, edPtr, PROPID_MEMORYLIMIT, FALSE);
@@ -955,18 +957,18 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		break;
 
 	case PROPID_QUALITY_CHECK:
-		edPtr->StretchQuality = nCheck;
+		edPtr->stretchQuality = nCheck;
 		mvRefreshProp(mV, edPtr, PROPID_QUALITY_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
 		break;
 
 	case PROPID_HASCOLLISION_CHECK:
-		edPtr->Collision = nCheck;
+		edPtr->collision = nCheck;
 		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr); 
 		break;
 	case PROPID_AUTOUPDATECOLLISION_CHECK:
-		edPtr->AutoUpdateCollision = nCheck;		
+		edPtr->autoUpdateCollision = nCheck;		
 		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
 		break;
@@ -1021,12 +1023,12 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_HOTSPOT:
 	case PROPID_HASCOLLISION_CHECK:
 	case PROPID_AUTOUPDATECOLLISION_CHECK:
-		return !edPtr->IsLib;
+		return !edPtr->isLib;
 	case PROPID_AUTOCLEAN_CHECK:
-		return edPtr->IsLib;
+		return edPtr->isLib;
 	case PROPID_MEMORYLIMIT:
 	case PROPID_SIZELIMIT:
-		return edPtr->IsLib && edPtr->autoClean;
+		return edPtr->isLib && edPtr->autoClean;
 	}
 
 #endif // !defined(RUN_ONLY)

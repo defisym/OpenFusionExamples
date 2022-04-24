@@ -17,10 +17,10 @@ inline void ConvertHWA(LPRDATA rdPtr) {
 	LPSURFACE imghwa = ConvertHWATarget(rdPtr, rdPtr->img);
 
 	if (rdPtr->src != srchwa) {
-		if (!rdPtr->FromLib) {
+		if (!rdPtr->fromLib) {
 			delete rdPtr->src;
 		}
-		rdPtr->FromLib = false;
+		rdPtr->fromLib = false;
 
 		rdPtr->src = srchwa;
 	}
@@ -32,45 +32,47 @@ inline void ConvertHWA(LPRDATA rdPtr) {
 }
 
 inline void ReDisplay(LPRDATA rdPtr) {
-	if (!rdPtr->IsLib) {
+	if (!rdPtr->isLib) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 		rdPtr->rc.rcChanged = true;
 
-		rdPtr->rHo.hoImgXSpot = rdPtr->HotSpot.x;
-		rdPtr->rHo.hoImgYSpot = rdPtr->HotSpot.y;
+		rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
+		rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
 
 		rdPtr->rHo.hoImgWidth = rdPtr->src->GetWidth();
 		rdPtr->rHo.hoImgHeight = rdPtr->src->GetHeight();
 
-		rdPtr->Changed = true;
+		rdPtr->changed = true;
 
 		FreeColMask(rdPtr->pColMask);		
 	}
 }
 
 inline void NewImg(LPRDATA rdPtr) {
-	delete rdPtr->img;
-	rdPtr->img = new cSurface;
-	rdPtr->img->Clone(*rdPtr->src);
+	//delete rdPtr->img;
+	//rdPtr->img = new cSurface;
+	//rdPtr->img->Clone(*rdPtr->src);
+	
+	rdPtr->img = rdPtr->src;
 }
 
 //Set default values
 inline void NewPic(LPRDATA rdPtr){
-	rdPtr->HotSpot = { 0,0 };
-	UpdateHotSpot(rdPtr, rdPtr->DefaultHotSpot);
+	rdPtr->hotSpot = { 0,0 };
+	UpdateHotSpot(rdPtr, rdPtr->defaultHotSpot);
 	
-	rdPtr->ZoomScale = { 1.0,1.0 };
-	rdPtr->Angle = 0;
+	rdPtr->zoomScale = { 1.0,1.0 };
+	rdPtr->angle = 0;
 
-	rdPtr->Offset = { 0,0,false };	
+	rdPtr->offset = { 0,0,false };	
 	rdPtr->AT = { 1,0,0,1 };
 
-	rdPtr->ImgHotSpot = rdPtr->HotSpot;
-	rdPtr->ImgZoomScale = rdPtr->ZoomScale;
-	rdPtr->ImgAngle = rdPtr->Angle;
+	rdPtr->imgHotSpot = rdPtr->hotSpot;
+	rdPtr->imgZoomScale = rdPtr->zoomScale;
+	rdPtr->imgAngle = rdPtr->angle;
 
-	rdPtr->ImgOffset = rdPtr->Offset;
-	rdPtr->ImgAT = rdPtr->AT;
+	rdPtr->imgOffset = rdPtr->offset;
+	rdPtr->imgAT = rdPtr->AT;
 
 	NewImg(rdPtr);
 
@@ -78,17 +80,17 @@ inline void NewPic(LPRDATA rdPtr){
 }
 
 inline void NewPic(LPRDATA rdPtr, LPRDATA Copy) {
-	rdPtr->HotSpot = Copy->HotSpot;
-	rdPtr->ZoomScale = Copy->ZoomScale;
-	rdPtr->Angle = Copy->Angle;
+	rdPtr->hotSpot = Copy->hotSpot;
+	rdPtr->zoomScale = Copy->zoomScale;
+	rdPtr->angle = Copy->angle;
 
-	rdPtr->Offset = Copy->Offset;
+	rdPtr->offset = Copy->offset;
 
-	rdPtr->ImgHotSpot = rdPtr->HotSpot;
-	rdPtr->ImgZoomScale = rdPtr->ZoomScale;
-	rdPtr->ImgAngle = rdPtr->Angle;
+	rdPtr->imgHotSpot = rdPtr->hotSpot;
+	rdPtr->imgZoomScale = rdPtr->zoomScale;
+	rdPtr->imgAngle = rdPtr->angle;
 
-	rdPtr->ImgOffset = rdPtr->Offset;
+	rdPtr->imgOffset = rdPtr->offset;
 
 	NewImg(rdPtr);
 
@@ -124,8 +126,8 @@ inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 }
 
 inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
-	rdPtr->HotSpot.x = X;
-	rdPtr->HotSpot.y = Y;
+	rdPtr->hotSpot.x = X;
+	rdPtr->hotSpot.y = Y;
 }
 
 inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y ) {
@@ -181,7 +183,7 @@ inline void DoZoom(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& De
 	delete Des;
 	Des = CreateSurface(24, width, height);
 
-	Stretch(Src, Des, rdPtr->StretchQuality);
+	Stretch(Src, Des, rdPtr->stretchQuality);
 
 	if (ReverseX) {
 		Des->ReverseX();
@@ -192,11 +194,11 @@ inline void DoZoom(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& De
 }
 
 inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = false) {
-	if (rdPtr->ZoomScale == ZoomScale{ XScale, YScale }) {
+	if (rdPtr->zoomScale == ZoomScale{ XScale, YScale }) {
 		return;
 	}
 
-	rdPtr->ZoomScale = { XScale ,YScale };
+	rdPtr->zoomScale = { XScale ,YScale };
 
 	ReDisplay(rdPtr);
 }
@@ -208,16 +210,16 @@ inline void DoRotate(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& 
 	delete Des;
 	Des = CreateSurface(24, 4, 4);
 
-	Src->CreateRotatedSurface(*Des, Angle, rdPtr->StretchQuality);
-	//Src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->StretchQuality, DARK_GREEN);
+	Src->CreateRotatedSurface(*Des, Angle, rdPtr->stretchQuality);
+	//Src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->stretchQuality, DARK_GREEN);
 }
 
 inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
-	if (rdPtr->Angle == Angle) {
+	if (rdPtr->angle == Angle) {
 		return;
 	}
 
-	rdPtr->Angle = Angle;
+	rdPtr->angle = Angle;
 
 	ReDisplay(rdPtr);
 }
@@ -245,26 +247,28 @@ inline void AffineTransformation(LPSURFACE& Src,ATArray A, int divide) {
 
 inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
 	if (ForceUpdate ||
-		rdPtr->Offset != rdPtr->ImgOffset||
-		rdPtr->AT != rdPtr->ImgAT ||
-		rdPtr->ZoomScale != rdPtr->ImgZoomScale ||
-		rdPtr->Angle != rdPtr->ImgAngle) {
+		rdPtr->offset != rdPtr->imgOffset||
+		rdPtr->AT != rdPtr->imgAT ||
+		rdPtr->zoomScale != rdPtr->imgZoomScale ||
+		rdPtr->angle != rdPtr->imgAngle) {
 		//Update Coef
-		rdPtr->ImgOffset = rdPtr->Offset;
-		rdPtr->ImgAT = rdPtr->AT;
-		rdPtr->ImgZoomScale = rdPtr->ZoomScale;
-		rdPtr->ImgAngle = rdPtr->Angle;
+		rdPtr->imgOffset = rdPtr->offset;
+		rdPtr->imgAT = rdPtr->AT;
+		rdPtr->imgZoomScale = rdPtr->zoomScale;
+		rdPtr->imgAngle = rdPtr->angle;
 
 		//Fast
 		bool OldQuality;
 
 		if (ForceLowQuality) {
-			OldQuality = rdPtr->StretchQuality;
-			rdPtr->StretchQuality = false;
+			OldQuality = rdPtr->stretchQuality;
+			rdPtr->stretchQuality = false;
 		}
 
-		//Delete old
-		delete rdPtr->img;
+		//Delete old if it's direct reference from source
+		if (rdPtr->img != rdPtr->src) {
+			delete rdPtr->img;
+		}		
 
 		//Temp
 		LPSURFACE Temp = nullptr;
@@ -272,22 +276,23 @@ inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
 		//AffineTrans(rdPtr->AT)
 
 		//Offset
-		rdPtr->img = Offset(rdPtr->src, rdPtr->ImgOffset);
+		//create then return new surface
+		rdPtr->img = Offset(rdPtr->src, rdPtr->imgOffset);
 
 		//NewImg(rdPtr);
 
 		//Zoom
-		DoZoom(rdPtr, rdPtr->img, rdPtr->HotSpot, Temp, rdPtr->ImgHotSpot, rdPtr->ZoomScale.XScale, rdPtr->ZoomScale.YScale);
+		DoZoom(rdPtr, rdPtr->img, rdPtr->hotSpot, Temp, rdPtr->imgHotSpot, rdPtr->zoomScale.XScale, rdPtr->zoomScale.YScale);
 
 		//Rotate
-		DoRotate(rdPtr, Temp, rdPtr->ImgHotSpot, rdPtr->img, rdPtr->ImgHotSpot, rdPtr->Angle);
+		DoRotate(rdPtr, Temp, rdPtr->imgHotSpot, rdPtr->img, rdPtr->imgHotSpot, rdPtr->angle);
 
 		//Delete temp
 		delete Temp;
 
 		//Fast
 		if (ForceLowQuality) {			 
-			rdPtr->StretchQuality = OldQuality;
+			rdPtr->stretchQuality = OldQuality;
 		}
 	}
 }
@@ -327,29 +332,29 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA 
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
-	if (rdPtr->IsLib) {
-		if (rdPtr->Lib->find(FileName) != rdPtr->Lib->end()) {
+	if (rdPtr->isLib) {
+		if (rdPtr->lib->find(FileName) != rdPtr->lib->end()) {
 			return;
 		}
 
 		LPSURFACE img = new cSurface;
-		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->StretchQuality);
+		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (img->IsValid()) {
-			(*rdPtr->Lib)[FileName] = img;
+			(*rdPtr->lib)[FileName] = img;
 		}
 		else {
 			delete img;
 		}
 	}
 	else {
-		if (rdPtr->FromLib) {
+		if (rdPtr->fromLib) {			
 			rdPtr->src = new cSurface;
 		}
 
-		rdPtr->FromLib = false;
+		rdPtr->fromLib = false;
 
-		_LoadFromFile(rdPtr->src, FileName, Key, rdPtr, -1, -1, true, rdPtr->StretchQuality);
+		_LoadFromFile(rdPtr->src, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 		
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
@@ -367,18 +372,18 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		return;
 	}
 
-	if (!obj->IsLib) {
+	if (!obj->isLib) {
 		return;
 	}
 
-	auto it = obj->Lib->find(FileName);
+	auto it = obj->lib->find(FileName);
 	
-	if (it == obj->Lib->end()) {
+	if (it == obj->lib->end()) {
 		LoadFromFile(obj, FileName, Key);
 	}
 
-	it = obj->Lib->find(FileName);
-	if (it == obj->Lib->end()) {
+	it = obj->lib->find(FileName);
+	if (it == obj->lib->end()) {
 		return;
 	}
 	
@@ -392,20 +397,20 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	
 	(*obj->pCount)[FileName] = curCount;
 	
-	if(!rdPtr->IsLib){
-		if (!rdPtr->FromLib) {
+	if(!rdPtr->isLib){
+		if (!rdPtr->fromLib) {
 			delete rdPtr->src;
 		}
 
-		rdPtr->FromLib = true;
+		rdPtr->fromLib = true;
 		rdPtr->src = it->second;
 
 		NewPic(rdPtr);
 	}
 	else {
-		auto thisit = rdPtr->Lib->find(FileName);
-		if (thisit == rdPtr->Lib->end()) {
-			rdPtr->Lib->emplace(it->first, it->second);
+		auto thisit = rdPtr->lib->find(FileName);
+		if (thisit == rdPtr->lib->end()) {
+			rdPtr->lib->emplace(it->first, it->second);
 		}
 	}
 
@@ -424,7 +429,7 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 		return;
 	}
 
-	if (obj->IsLib) {
+	if (obj->isLib) {
 		return;
 	}
 
@@ -432,20 +437,20 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 		return;
 	}
 
-	if (obj->FromLib) {
-		if (!rdPtr->FromLib) {
+	if (obj->fromLib) {
+		if (!rdPtr->fromLib) {
 			delete rdPtr->src;
 		}
 
-		rdPtr->FromLib = true;
+		rdPtr->fromLib = true;
 		rdPtr->src = obj->src;
 	}
 	else {
-		if (rdPtr->FromLib) {
+		if (rdPtr->fromLib) {
 			rdPtr->src = nullptr;
 		}
 
-		rdPtr->FromLib = false;
+		rdPtr->fromLib = false;
 		
 		delete rdPtr->src;
 		rdPtr->src = new cSurface;
@@ -537,7 +542,7 @@ inline void PreloadLibFromVec(LPRDATA rdPtr, const std::vector<std::wstring> Pre
 		}
 
 		LPSURFACE img = new cSurface;
-		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->StretchQuality);
+		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (img->IsValid()) {
 			tempLib.emplace(it, img);
@@ -564,7 +569,7 @@ inline void PreloadLibFromPath(LPRDATA rdPtr, std::wstring BasePath, std::wstrin
 		}
 
 		LPSURFACE img = new cSurface;
-		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->StretchQuality);
+		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (img->IsValid()) {
 			tempLib.emplace(it, img);
@@ -577,4 +582,68 @@ inline void PreloadLibFromPath(LPRDATA rdPtr, std::wstring BasePath, std::wstrin
 	if (!tempLib.empty()) {
 		callBack(tempLib);
 	}
+}
+
+inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
+	if (!rdPtr->preloading
+		&& rdPtr->isLib) {
+		if (forceClean
+			||(rdPtr->pCount->size() > CLEAR_NUMTHRESHOLD
+			&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20))
+			) {
+			*rdPtr->pCountVec = { rdPtr->pCount->begin(), rdPtr->pCount->end() };
+			std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [](mapPair& l, mapPair& r) {
+				return l.second < r.second;
+				});
+
+			while (!rdPtr->pCount->empty()
+				&& rdPtr->memoryLimit / 2 <= (GetProcessMemoryUsage() >> 20)) {
+				auto& fileName = rdPtr->pCountVec->back().first;
+
+				auto pSf = (*rdPtr->lib)[fileName];
+				delete pSf;
+
+				rdPtr->lib->erase(fileName);
+				rdPtr->pCount->erase(fileName);
+
+				rdPtr->pCountVec->pop_back();
+			}
+		}
+	}
+}
+
+inline long GetHotSpotX(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->hotSpot.x : -1;
+}
+
+inline long GetHotSpotY(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->hotSpot.y : -1;
+}
+
+inline int GetOriginalWidth(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->src->GetWidth() : -1;
+}
+
+inline int GetOriginalHeight(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->src->GetHeight() : -1;
+}
+
+inline int GetCurrentWidth(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? (int)(rdPtr->src->GetWidth() * abs(rdPtr->zoomScale.XScale)) : -1;
+}
+
+inline int GetCurrentHeight(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? (int)(rdPtr->src->GetHeight() * abs(rdPtr->zoomScale.YScale)) : -1;
+}
+
+inline float GetXZoomScale(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->zoomScale.XScale : -1;
+}
+
+inline float GetYZoomScale(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->zoomScale.YScale : -1;
+}
+
+inline int GetAngle(LPRDATA rdPtr) {
+	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->angle : -1;
 }

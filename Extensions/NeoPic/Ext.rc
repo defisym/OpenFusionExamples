@@ -140,6 +140,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Set Preload List",              IDMN_ACTION_SPL
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
+            MENUITEM SEPARATOR
+            MENUITEM "Clear Preload Cache",              IDMN_ACTION_CC
         END
         MENUITEM SEPARATOR
         POPUP "Lib"
@@ -206,11 +208,11 @@ BEGIN
         END
         POPUP "Size"
         BEGIN
-            MENUITEM "Get Original Width", IDMN_EXPRESSION_GOH
-            MENUITEM "Get Original Height", IDMN_EXPRESSION_GOW            
+            MENUITEM "Get Original Width", IDMN_EXPRESSION_GOW
+            MENUITEM "Get Original Height", IDMN_EXPRESSION_GOH            
             MENUITEM SEPARATOR            
-            MENUITEM "Get Current Width", IDMN_EXPRESSION_GCH
-            MENUITEM "Get Current Height", IDMN_EXPRESSION_GCW
+            MENUITEM "Get Current Width", IDMN_EXPRESSION_GCW
+            MENUITEM "Get Current Height", IDMN_EXPRESSION_GCH
         END
         POPUP "Zoom"
         BEGIN
