@@ -84,6 +84,8 @@ inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"AL
 }
 
 // Build Types
+#include <initializer_list>
+
 constexpr auto PLATFORM_WINDOWS = 0;
 constexpr auto PLATFORM_ANDROID = 1;
 constexpr auto PLATFORM_IOS = 2;
@@ -104,34 +106,24 @@ constexpr auto INCOMPATIBLE_BUILDTYPE_IOS_XCODEPROJ_FINAL = 11;
 constexpr auto INCOMPATIBLE_BUILDTYPE_HTML5_DEV = 13;
 constexpr auto INCOMPATIBLE_BUILDTYPE_HTML5_FINAL = 14;
 
-constexpr auto INCOMPATIBLE_WINDOWS = { INCOMPATIBLE_BUILDTYPE_WINDOWS_STANDALONE
-								, INCOMPATIBLE_BUILDTYPE_WINDOWS_SCREENSAVER
-								, INCOMPATIBLE_BUILDTYPE_WINDOWS_SUBAPPLICATION };
+#define INCOMPATIBLE_WINDOWS { INCOMPATIBLE_BUILDTYPE_WINDOWS_STANDALONE, INCOMPATIBLE_BUILDTYPE_WINDOWS_SCREENSAVER, INCOMPATIBLE_BUILDTYPE_WINDOWS_SUBAPPLICATION }
 
-constexpr auto INCOMPATIBLE_ANDROID = { INCOMPATIBLE_BUILDTYPE_ANDROID
-									, INCOMPATIBLE_BUILDTYPE_ANDROID_AAB
-									, INCOMPATIBLE_BUILDTYPE_ANDROID_AAB_EXP };
+#define INCOMPATIBLE_ANDROID { INCOMPATIBLE_BUILDTYPE_ANDROID, INCOMPATIBLE_BUILDTYPE_ANDROID_AAB, INCOMPATIBLE_BUILDTYPE_ANDROID_AAB_EXP }
 
-constexpr auto INCOMPATIBLE_IOS = { INCOMPATIBLE_BUILDTYPE_IOS_APPLICATION
-								, INCOMPATIBLE_BUILDTYPE_IOS_XCODEPROJ
-								, INCOMPATIBLE_BUILDTYPE_IOS_XCODEPROJ_FINAL };
+#define INCOMPATIBLE_IOS { INCOMPATIBLE_BUILDTYPE_IOS_APPLICATION, INCOMPATIBLE_BUILDTYPE_IOS_XCODEPROJ, INCOMPATIBLE_BUILDTYPE_IOS_XCODEPROJ_FINAL }
 
-constexpr auto INCOMPATIBLE_HTML5 = { INCOMPATIBLE_BUILDTYPE_HTML5_DEV
-									, INCOMPATIBLE_BUILDTYPE_HTML5_FINAL };
+#define INCOMPATIBLE_HTML5 { INCOMPATIBLE_BUILDTYPE_HTML5_DEV, INCOMPATIBLE_BUILDTYPE_HTML5_FINAL }
 
-constexpr auto INCOMPATIBLE = { INCOMPATIBLE_WINDOWS
-									, INCOMPATIBLE_ANDROID
-									, INCOMPATIBLE_IOS
-									, INCOMPATIBLE_HTML5 };
+#define INCOMPATIBLE { INCOMPATIBLE_WINDOWS, INCOMPATIBLE_ANDROID, INCOMPATIBLE_IOS, INCOMPATIBLE_HTML5 }
 
 using disableItem = std::remove_const_t<decltype(INCOMPATIBLE_BUILDTYPE_WINDOWS_STANDALONE)>;
-using disableList = std::remove_const_t<decltype(INCOMPATIBLE_WINDOWS)>;
-using disableArray = std::remove_const_t<decltype(INCOMPATIBLE)>;
+using disableArray = std::vector<std::vector<disableItem>>;
 
 HMENU GetPopupMenu(short mn);
 
-constexpr auto DISABLEALL = -1;
-constexpr disableList disableMenus_Empty = {};
+#define DISABLEALL  -1
+#define disableMenus_Empty {}
+#define disableMenus_DisableAll  { DISABLEALL }
 
 // Usage
 // 
@@ -160,8 +152,8 @@ constexpr disableList disableMenus_Empty = {};
 // return GetPlatformPopupMenu(MN_CONDITIONS, disableMenus);
 
 inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short mn, const disableArray& disableMenus) {
-	std::vector<std::vector<disableItem>> ic_V(INCOMPATIBLE.begin(), INCOMPATIBLE.end());
-	std::vector<std::vector<disableItem>> dM_V(disableMenus.begin(), disableMenus.end());
+	std::vector<std::vector<disableItem>> ic_V = INCOMPATIBLE;
+	std::vector<std::vector<disableItem>> dM_V = disableMenus;
 
 	auto hMenu = GetPopupMenu(mn);
 
@@ -204,7 +196,8 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 
 		for (size_t platform = 0; platform < ic_V.size(); platform++) {
 			if (buildForPlatform(ic_V[platform])) {
-				if (dM_V[platform][0] == DISABLEALL) {
+				if (!dM_V[platform].empty()
+					&&dM_V[platform][0] == DISABLEALL) {
 					iterateMenu(hMenu, [&](HMENU hMenu, int id) {
 						if (dM_V[platform].size() == 1
 							|| std::find(dM_V[platform].begin() + 1, dM_V[platform].end(), id) == dM_V[platform].end()) {
