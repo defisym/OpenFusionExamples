@@ -85,6 +85,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GK, M_EXPRESSION_GK, EXP_EXPRESSION_GK, EXPFLAG_STRING, 0,
 
 		IDMN_EXPRESSION_GSP, M_EXPRESSION_GSP, EXP_EXPRESSION_GSP, 0, 2, EXPPARAM_STRING, EXPPARAM_STRING, M_ACTION_FILENAME, M_ACTION_KEY,
+
+		IDMN_EXPRESSION_GAVGCX, M_EXPRESSION_GAVGCX, EXP_EXPRESSION_GAVGCX, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_COORD, M_EXPRESSION_REALCOORDMODE,
+		IDMN_EXPRESSION_GAVGCY, M_EXPRESSION_GAVGCY, EXP_EXPRESSION_GAVGCY, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_COORD, M_EXPRESSION_REALCOORDMODE,
 		};
 
 
@@ -479,6 +482,38 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	return ConvertToLong<cSurface*>(ret);
 }
 
+long WINAPI DLLExport GetAVGCoordX(LPRDATA rdPtr, long param1) {
+	//Get AVG Coord
+	int coord=(int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool realCoordMode = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	
+	auto XLF = rdPtr->rHo.hoAdRunHeader->rh3.rh3DisplayX;
+	auto WW = rdPtr->rHo.hoAdRunHeader->rh3.rh3WindowSx;
+
+	if (!realCoordMode) {
+		return XLF + coord + WW / 2;
+	}
+	else {
+		return XLF + coord;
+	}
+}
+
+long WINAPI DLLExport GetAVGCoordY(LPRDATA rdPtr, long param1) {
+	//Get AVG Coord
+	int coord = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool realCoordMode = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	auto YTF = rdPtr->rHo.hoAdRunHeader->rh3.rh3DisplayY;
+	auto WH = rdPtr->rHo.hoAdRunHeader->rh3.rh3WindowSy;
+
+	if (!realCoordMode) {
+		return YTF + (WH - coord) - GetCurrentHeight(rdPtr) / 2;
+	}
+	else {
+		return YTF + coord;
+	}
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -551,6 +586,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetKey,
 
 			GetSurfacePointer,
+
+			GetAVGCoordX,
+			GetAVGCoordY,
 
 			0
 			};

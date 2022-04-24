@@ -68,7 +68,10 @@
 
 #define EXP_EXPRESSION_GSP				11
 
-#define	EXP_LAST                    	12
+#define EXP_EXPRESSION_GAVGCX			12
+#define EXP_EXPRESSION_GAVGCY			13
+
+#define	EXP_LAST                    	14
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -787,22 +787,22 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 			});
 		break;
 	case DB_HOTSPOT:
-		displayFilter(L"HotSpot: %d, %d", L"HotSpot: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"HotSpot: [ %d, %d ]", L"HotSpot: %s", displayNegative, [&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetHotSpotX(rdPtr), GetHotSpotY(rdPtr));
 			});
 		break;
 	case DB_ZOOMSCALE:
-		displayFilter(L"Zoom Scale: %f, %f", L"Zoom Scale: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"Zoom Scale: [ %f, %f ]", L"Zoom Scale: %s", displayNegative, [&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetXZoomScale(rdPtr), GetYZoomScale(rdPtr));
 			});
 		break;
 	case DB_ORIGINSIZE:
-		displayFilter(L"Origin Size: %d, %d", L"Origin Size: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"Origin Size: [ %d ¡Á %d ]", L"Origin Size: %s", displayNegative, [&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetOriginalWidth(rdPtr), GetOriginalHeight(rdPtr));
 			});
 		break;
 	case DB_CURRENTSIZE:
-		displayFilter(L"Current Size: %d, %d", L"Current Size: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"Current Size: [ %d ¡Á %d ]", L"Current Size: %s", displayNegative, [&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetCurrentWidth(rdPtr), GetCurrentHeight(rdPtr));
 			});
 		break;

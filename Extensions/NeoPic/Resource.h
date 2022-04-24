@@ -206,6 +206,9 @@
 
 #define IDMN_EXPRESSION_GSP		27011
 
+#define IDMN_EXPRESSION_GAVGCX	27012
+#define IDMN_EXPRESSION_GAVGCY	27013
+
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
 #define M_EXPRESSION_GHSY			 7001
@@ -226,9 +229,12 @@
 
 #define M_EXPRESSION_GSP		     7011
 
+#define M_EXPRESSION_GAVGCX		     7012
+#define M_EXPRESSION_GAVGCY		     7013
+
 // Names of expression parameters
-#define M_EXP_P1				 7500
-#define	M_EXP_P2				 7501
+#define M_EXPRESSION_COORD				         7500
+#define	M_EXPRESSION_REALCOORDMODE				 7501
 
 // Next default values for new objects
 // 

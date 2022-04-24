@@ -222,7 +222,13 @@ BEGIN
         POPUP "Rotate"
         BEGIN
             MENUITEM "Get Angle", IDMN_EXPRESSION_GA
-        END        
+        END       
+        MENUITEM SEPARATOR        
+        POPUP "Hibiscus AVG Engine"
+        BEGIN 
+            MENUITEM "Get AVG Coord X", IDMN_EXPRESSION_GAVGCX
+            MENUITEM "Get AVG Coord Y", IDMN_EXPRESSION_GAVGCY
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -398,6 +404,12 @@ BEGIN
     M_EXPRESSION_GK            "GetKey$("
     
     M_EXPRESSION_GSP            "GetSurfacePointer("
+    
+    M_EXPRESSION_GAVGCX            "GetAVGCoordX("
+    M_EXPRESSION_GAVGCY            "GetAVGCoordY("
+    
+    M_EXPRESSION_COORD                      "Coord"
+    M_EXPRESSION_REALCOORDMODE              "Use Real Coord Mode"
 END
 
 STRINGTABLE
