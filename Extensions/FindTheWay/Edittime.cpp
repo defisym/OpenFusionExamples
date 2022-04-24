@@ -1070,8 +1070,8 @@ HMENU WINAPI DLLExport GetConditionMenu(mv _far *mV, fpObjInfo oiPtr, LPEDATA ed
 	if (IS_COMPATIBLE(mV)) {
 		disableArray disableMenus = { disableMenus_Empty
 									, { IDMN_CONDITION_SMBP,IDMN_CONDITION_SMBSF }
-									, disableMenus_Empty
-									, disableMenus_Empty };
+									, disableMenus_DisableAll
+									, disableMenus_DisableAll };
 
 		return GetPlatformPopupMenu(MN_CONDITIONS, disableMenus);
 	}
@@ -1083,8 +1083,14 @@ HMENU WINAPI DLLExport GetActionMenu(mv _far *mV, fpObjInfo oiPtr, LPEDATA edPtr
 {
 #ifndef RUN_ONLY
 	// Check compatibility
-	if ( IS_COMPATIBLE(mV) )
-		return GetPopupMenu(MN_ACTIONS);
+	if (IS_COMPATIBLE(mV)) {
+		disableArray disableMenus = { disableMenus_Empty
+							, disableMenus_Empty
+							, disableMenus_DisableAll
+							, disableMenus_DisableAll };
+
+		return GetPlatformPopupMenu(MN_ACTIONS, disableMenus);
+	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -1093,8 +1099,14 @@ HMENU WINAPI DLLExport GetExpressionMenu(mv _far *mV, fpObjInfo oiPtr, LPEDATA e
 {
 #ifndef RUN_ONLY
 	// Check compatibility
-	if ( IS_COMPATIBLE(mV) )
-		return GetPopupMenu(MN_EXPRESSIONS);
+	if (IS_COMPATIBLE(mV)) {
+		disableArray disableMenus = { disableMenus_Empty
+							, disableMenus_Empty
+							, disableMenus_DisableAll
+							, disableMenus_DisableAll };
+
+		return GetPlatformPopupMenu(MN_EXPRESSIONS, disableMenus);
+	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
