@@ -106,18 +106,18 @@ PropData PropertiesGerneral[] = {
 	PropData_EditNumber (PROPID_MEMORYLIMIT,	IDS_PROP_MEMORYLIMIT,		IDS_PROP_MEMORYLIMIT_INFO),
 	PropData_EditNumber (PROPID_SIZELIMIT,		IDS_PROP_SIZELIMIT,			IDS_PROP_SIZELIMIT_INFO),
 
-	//PropData_Group(PROPID_DISPLAY_TEXTTITLE,	IDS_PROP_DISPLAY_TEXTTITLE,		IDS_PROP_DISPLAY_TEXTTITLE),
-	//PropData_CheckBox(PROPID_HWA_CHECK,	IDS_PROP_HWA_CHECK,		IDS_PROP_HWA_CHECK_INFO),
-
 	PropData_End()
 };
 
 PropData PropertiesDisplay[] = {
+	PropData_Group(PROPID_DISPLAY_TEXTTITLE,	IDS_PROP_DISPLAY_TEXTTITLE,		IDS_PROP_DISPLAY_TEXTTITLE),
+	PropData_CheckBox(PROPID_HWA_CHECK,	IDS_PROP_HWA_CHECK,		IDS_PROP_HWA_CHECK_INFO),
+
 	PropData_Group		(PROPID_QUALITY_TEXTTITLE,	IDS_PROP_QUALITY_TEXTTITLE,		IDS_PROP_QUALITY_TEXTTITLE),
 	PropData_CheckBox	(PROPID_QUALITY_CHECK,	IDS_PROP_QUALITY_CHECK,		IDS_PROP_QUALITY_CHECK_INFO),
 
 	PropData_Group(PROPID_HOTSPOT_TEXTTITLE,	IDS_HOTSPOT_TEXTTITLE,		IDS_HOTSPOT_TEXTTITLE),
-	PropData_ComboBox(PROPID_HOTSPOT,	IDS_PROP_HOTSPOT,		IDS_PROP_HOTSPOT_INFO,HotSpotComboList),
+	PropData_ComboBox(PROPID_HOTSPOT,	IDS_PROP_HOTSPOT,		IDS_PROP_HOTSPOT_INFO, HotSpotComboList),
 	
 	PropData_End()
 };
@@ -403,12 +403,13 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
 
+		edPtr->HWA = true;
 		edPtr->stretchQuality = true;
 
 		edPtr->memoryLimit = DEFAULT_MEMORYLIMIT;
 		edPtr->sizeLimit = CLEAR_NUMTHRESHOLD;
 
-		edPtr->hotSpotComboID = 0;
+		edPtr->hotSpotComboID = (size_t)HotSpotPos::MM;
 
 //
 //		// Call setup (remove this and return 0 if your object does not need a setup)
@@ -1018,7 +1019,7 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 */
 
 	switch (nPropID) {
-	case PROPID_HWA_CHECK:
+	//case PROPID_HWA_CHECK:
 	case PROPID_QUALITY_CHECK:
 	case PROPID_HOTSPOT:
 	case PROPID_HASCOLLISION_CHECK:

@@ -71,7 +71,9 @@
 #define EXP_EXPRESSION_GAVGCX			12
 #define EXP_EXPRESSION_GAVGCY			13
 
-#define	EXP_LAST                    	14
+#define EXP_EXPRESSION_GFP				14
+
+#define	EXP_LAST                    	15
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -158,6 +160,7 @@ typedef struct tagRDATA
 	bool fromLib = false;
 
 	std::wstring* FileName = nullptr;
+	std::wstring* FilePath = nullptr;
 	std::wstring* Key = nullptr;
 
 	//img->collision & add backdrop
@@ -195,10 +198,12 @@ typedef struct tagRDATA
 	size_t sizeLimit;
 	bool autoClean;
 
-	std::map<std::wstring, size_t>* pCount = nullptr;
-	std::vector<mapPair>* pCountVec = nullptr;
+	RefCount* pCount = nullptr;
+	std::vector<mapPair>* pCountVec = nullptr;			//update when trigger clear
 
 	HotSpotPos defaultHotSpot;
+
+	GlobalData* pData;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

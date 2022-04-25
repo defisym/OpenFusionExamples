@@ -88,6 +88,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GAVGCX, M_EXPRESSION_GAVGCX, EXP_EXPRESSION_GAVGCX, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_COORD, M_EXPRESSION_REALCOORDMODE,
 		IDMN_EXPRESSION_GAVGCY, M_EXPRESSION_GAVGCY, EXP_EXPRESSION_GAVGCY, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_COORD, M_EXPRESSION_REALCOORDMODE,
+
+		IDMN_EXPRESSION_GFP, M_EXPRESSION_GFP, EXP_EXPRESSION_GFP, EXPFLAG_STRING, 0,
 		};
 
 
@@ -119,7 +121,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	*rdPtr->FileName = FilePath;
+	*rdPtr->FilePath = FilePath;
 	*rdPtr->Key = Key;
 
 	LoadFromFile(rdPtr, FilePath, Key);
@@ -442,6 +444,14 @@ long WINAPI DLLExport GetFileName(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->FileName->c_str();
 }
 
+long WINAPI DLLExport GetFilePath(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->FilePath->c_str();
+}
+
 long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -457,7 +467,7 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	cSurface* ret = nullptr;
 
 	if (!rdPtr->isLib) {
-		if (*rdPtr->FileName != FilePath || *rdPtr->Key != Key) {
+		if (*rdPtr->FilePath != FilePath || *rdPtr->Key != Key) {
 			ret = nullptr;
 		}
 		else {
@@ -589,6 +599,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetAVGCoordX,
 			GetAVGCoordY,
+
+			GetFilePath,
 
 			0
 			};

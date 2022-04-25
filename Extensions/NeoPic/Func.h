@@ -6,6 +6,8 @@ inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality = false, bool ForceUpd
 
 inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,1.0 }, int Angle = 0, ATArray AT = { 1,0,0,1 });
 
+inline void GetFileName(LPRDATA rdPtr);
+
 //-----------------------------
 
 inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
@@ -297,7 +299,7 @@ inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
 	}
 }
 
-inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality){
+inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	if (StrEmpty(Key)) {
 		_LoadFromFile(Src, FilePath, rdPtr, width, height, NoStretch, HighQuality);
 	}
@@ -329,6 +331,13 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA 
 			}
 		}	
 	}
+
+	if (rdPtr->HWA) {
+		auto pSf = Src;
+		Src = ConvertHWATexture(rdPtr, Src);
+		
+		delete pSf;
+	}
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
@@ -339,7 +348,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 
 		LPSURFACE img = new cSurface;
 		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
-
+		
 		if (img->IsValid()) {
 			(*rdPtr->lib)[FileName] = img;
 		}
@@ -359,8 +368,10 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
 
-			*rdPtr->FileName = FileName;
+			*rdPtr->FilePath = FileName;
 			*rdPtr->Key = Key;
+
+			GetFileName(rdPtr);			
 		}
 	}	
 }
@@ -414,8 +425,10 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		}
 	}
 
-	*rdPtr->FileName = FileName;
+	*rdPtr->FilePath = FileName;
 	*rdPtr->Key = Key;
+
+	GetFileName(rdPtr);
 }
 
 inline void LoadFromLib(LPRDATA rdPtr, int Fixed, LPCWSTR FileName, LPCTSTR Key = _T("")) {
@@ -457,8 +470,10 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 		rdPtr->src->Clone(*obj->src);
 	}
 
-	*rdPtr->FileName = *obj->FileName;
+	*rdPtr->FilePath = *obj->FileName;
 	*rdPtr->Key = *obj->Key;
+
+	GetFileName(rdPtr);
 
 	if (CopyCoef) {
 		NewPic(rdPtr, obj);
@@ -646,4 +661,9 @@ inline float GetYZoomScale(LPRDATA rdPtr) {
 
 inline int GetAngle(LPRDATA rdPtr) {
 	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->angle : -1;
+}
+
+inline void GetFileName(LPRDATA rdPtr) {	
+	auto pos = rdPtr->FilePath->find_last_of(L"\\") + 1;
+	*rdPtr->FileName = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
 }

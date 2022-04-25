@@ -30,6 +30,7 @@ enum
 	DB_SAPARATOR_2,
 	DB_FROMLIB,
 	DB_FILENAME,
+	DB_FILEPATH,
 	DB_KEY,
 	DB_SAPARATOR_3,
 	DB_COLLISION,
@@ -62,6 +63,7 @@ WORD DebugTree[]=
 	DB_SAPARATOR_2,
 	DB_FROMLIB,
 	DB_FILENAME,
+	DB_FILEPATH,
 	DB_KEY,
 	DB_SAPARATOR_3,
 	DB_COLLISION,
@@ -120,6 +122,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	//Display
 	rdPtr->FileName = new std::wstring;
+	rdPtr->FilePath = new std::wstring;
 	rdPtr->Key = new std::wstring;
 
 	rdPtr->img = nullptr;
@@ -136,14 +139,19 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//Load Lib
 	if(rdPtr->isLib){
 		if (GetExtUserData() == nullptr) {
+			rdPtr->pData=new GlobalData;
+			
 			rdPtr->lib = new SurfaceLib;
+			rdPtr->pCount = new RefCount;
 		}
 		else {
-			rdPtr->lib = (SurfaceLib*)GetExtUserData();
+			rdPtr->pData = (GlobalData*)GetExtUserData();
+
+			rdPtr->lib = rdPtr->pData->pLib;
+			rdPtr->pCount = rdPtr->pData->pCount;
 		}
 	}
-	
-	rdPtr->pCount = new std::map<std::wstring, size_t>;
+
 	rdPtr->pCountVec = new std::vector<mapPair>;
 	rdPtr->pPreloadList = nullptr;
 
@@ -165,6 +173,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 */
 	//Display
 	delete rdPtr->FileName;
+	delete rdPtr->FilePath;
 	delete rdPtr->Key;
 
 	if (!rdPtr->isLib) {
@@ -185,10 +194,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	//Save Lib
 	if (rdPtr->isLib) {
-		SetExtUserData(rdPtr->lib);
+		rdPtr->pData->pLib = rdPtr->lib;
+		rdPtr->pData->pCount = rdPtr->pCount;
+
+		SetExtUserData(rdPtr->pData);
 	}
 
-	delete rdPtr->pCount;
 	delete rdPtr->pCountVec;
 	delete rdPtr->pPreloadList;
 
@@ -486,9 +497,9 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data (if restarts application)
-	SurfaceLib* pData = (SurfaceLib*)mV->mvGetExtUserData(pApp, hInstLib);
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		DeleteLib(pData);
+		DeleteGlobalData(pData);
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
 }
@@ -503,9 +514,9 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data	
-	SurfaceLib* pData = (SurfaceLib*)mV->mvGetExtUserData(pApp, hInstLib);
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		DeleteLib(pData);
+		DeleteGlobalData(pData);
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
 }
@@ -764,6 +775,11 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	case DB_FILENAME:
 		displayFilter(L"FileName: %s", L"FileName: %s", displayNegative, [&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FileName->c_str());
+			});
+		break;
+	case DB_FILEPATH:
+		displayFilter(L"FilePath: %s", L"FilePath: %s", displayNegative, [&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FilePath->c_str());
 			});
 		break;
 	case DB_KEY:

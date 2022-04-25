@@ -71,7 +71,8 @@ inline bool DoAffineTrans(ATArray A) {
 	return A != ATArray{ 1,0,0,1 };
 }
 
-typedef std::map<std::wstring, LPSURFACE> SurfaceLib;
+using SurfaceLib = std::map<std::wstring, LPSURFACE>;
+using RefCount = std::map<std::wstring, size_t>;
 using mapPair = std::pair<std::wstring, size_t>;
 
 #define ONPRELOADCOMPLETE 0
@@ -84,3 +85,16 @@ constexpr auto DEFAULT_MEMORYLIMIT = 1800;
 
 template<typename T>
 constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
+
+struct GlobalData {
+	SurfaceLib* pLib;
+	RefCount* pCount;
+};
+
+inline void DeleteLib(SurfaceLib* pData);
+
+inline void DeleteGlobalData(GlobalData* pData) {
+	DeleteLib(pData->pLib);
+	delete pData->pCount;
+	delete pData;
+}
