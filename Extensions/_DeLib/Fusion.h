@@ -270,6 +270,12 @@ inline LPSURFACE CreateSurface(int depth, int width, int height) {
 
 	return sur;
 }
+inline void CreateBlankSurface(LPSURFACE Src) {
+	// failed to load, display blank
+	LPSURFACE proto = nullptr;
+	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+	Src->Create(4, 4, proto);
+}
 
 //Convert to HWA
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
@@ -502,9 +508,11 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int wi
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
-
+	
 	if (NoStretch) {
-		ImportImage(pImgMgr, FilePath, Src, 0, 0);
+		if (!ImportImage(pImgMgr, FilePath, Src, 0, 0)) {
+			CreateBlankSurface(Src);
+		}
 	}
 	else {
 		cSurface img;
@@ -514,6 +522,9 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int wi
 			Src = CreateSurface(24, width, height);
 
 			Stretch(&img, Src, HighQuality);
+		}
+		else {
+			CreateBlankSurface(Src);
 		}
 	}
 }

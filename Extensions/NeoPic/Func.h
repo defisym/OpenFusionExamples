@@ -318,7 +318,9 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 		CImageFilter    pFilter(pImgMgr);
 
 		if (NoStretch) {
-			ImportImageFromInputFile(pImgMgr, &MemFile, Src, 0, 0);
+			if (!ImportImageFromInputFile(pImgMgr, &MemFile, Src, 0, 0)) {
+				CreateBlankSurface(Src);
+			}
 		}
 		else {
 			cSurface img;
@@ -328,6 +330,9 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 				Src = CreateSurface(24, width, height);
 
 				Stretch(&img, Src, HighQuality);
+			}
+			else {
+				CreateBlankSurface(Src);
 			}
 		}	
 	}
