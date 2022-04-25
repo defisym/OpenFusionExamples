@@ -210,6 +210,7 @@
 #define IDMN_EXPRESSION_GAVGCY	27013
 
 #define IDMN_EXPRESSION_GFP		27014
+#define IDMN_EXPRESSION_GRFP	27015
 
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
@@ -235,10 +236,12 @@
 #define M_EXPRESSION_GAVGCY		     7013
 
 #define M_EXPRESSION_GFP		     7014
+#define M_EXPRESSION_GRFP		     7015
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500
 #define	M_EXPRESSION_REALCOORDMODE				 7501
+#define	M_EXPRESSION_BASEPATH				     7502
 
 // Next default values for new objects
 // 

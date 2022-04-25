@@ -941,6 +941,10 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvRefreshProp(mV, edPtr, PROPID_AUTOCLEAN_CHECK, FALSE);
 		mvRefreshProp(mV, edPtr, PROPID_MEMORYLIMIT, FALSE);
 		mvRefreshProp(mV, edPtr, PROPID_SIZELIMIT, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_QUALITY_CHECK, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_HOTSPOT, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, FALSE);
+		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_AUTOCLEAN_CHECK:

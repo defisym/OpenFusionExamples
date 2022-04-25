@@ -123,6 +123,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//Display
 	rdPtr->FileName = new std::wstring;
 	rdPtr->FilePath = new std::wstring;
+	rdPtr->RelativeFilePath = new std::wstring;
 	rdPtr->Key = new std::wstring;
 
 	rdPtr->img = nullptr;
@@ -174,6 +175,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//Display
 	delete rdPtr->FileName;
 	delete rdPtr->FilePath;
+	delete rdPtr->RelativeFilePath;
 	delete rdPtr->Key;
 
 	if (!rdPtr->isLib) {

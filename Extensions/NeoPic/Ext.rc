@@ -197,6 +197,7 @@ BEGIN
         BEGIN
             MENUITEM "Get FileName", IDMN_EXPRESSION_GFN
             MENUITEM "Get FilePath", IDMN_EXPRESSION_GFP
+            MENUITEM "Get Relative FilePath", IDMN_EXPRESSION_GRFP
             MENUITEM "Get Key", IDMN_EXPRESSION_GK
             MENUITEM SEPARATOR
             MENUITEM "Get Surface Pointer", IDMN_EXPRESSION_GSP
@@ -403,6 +404,7 @@ BEGIN
     
     M_EXPRESSION_GFN            "GetFileName$("
     M_EXPRESSION_GFP            "GetFilePath$("
+    M_EXPRESSION_GRFP            "GetRelativeFilePath$("
     M_EXPRESSION_GK            "GetKey$("
     
     M_EXPRESSION_GSP            "GetSurfacePointer("
@@ -412,6 +414,7 @@ BEGIN
     
     M_EXPRESSION_COORD                      "Coord"
     M_EXPRESSION_REALCOORDMODE              "Use Real Coord Mode"
+    M_EXPRESSION_BASEPATH                   "Base Path"
 END
 
 STRINGTABLE

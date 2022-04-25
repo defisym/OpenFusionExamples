@@ -90,6 +90,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GAVGCY, M_EXPRESSION_GAVGCY, EXP_EXPRESSION_GAVGCY, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_COORD, M_EXPRESSION_REALCOORDMODE,
 
 		IDMN_EXPRESSION_GFP, M_EXPRESSION_GFP, EXP_EXPRESSION_GFP, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GRFP, M_EXPRESSION_GRFP, EXP_EXPRESSION_GRFP, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_EXPRESSION_BASEPATH,
 		};
 
 
@@ -452,6 +453,19 @@ long WINAPI DLLExport GetFilePath(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->FilePath->c_str();
 }
 
+long WINAPI DLLExport GetRelativeFilePath(LPRDATA rdPtr, long param1) {
+	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	
+	auto pos = FilePath.size();
+	*rdPtr->RelativeFilePath = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->RelativeFilePath->c_str();
+}
+
 long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -601,6 +615,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetAVGCoordY,
 
 			GetFilePath,
+			GetRelativeFilePath,
 
 			0
 			};
