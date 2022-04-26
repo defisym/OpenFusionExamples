@@ -504,6 +504,20 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 }
 
 //Load From File
+inline void _AddAlpha(LPSURFACE Src) {
+	if (!Src->HasAlpha()) {
+		auto pitch = Src->GetWidth();
+		auto size = pitch * Src->GetHeight();
+
+		BYTE* pAlpha = new BYTE[size];
+		memset(pAlpha, 255, size);
+
+		Src->SetAlpha(pAlpha, pitch);
+		
+		delete[] pAlpha;
+	}
+}
+
 inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
