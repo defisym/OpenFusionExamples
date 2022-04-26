@@ -141,6 +141,7 @@ BEGIN
             MENUITEM "Set Preload List",              IDMN_ACTION_SPL
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
             MENUITEM SEPARATOR
+            MENUITEM "Set Keep List",              IDMN_ACTION_SKL
             MENUITEM "Clear Preload Cache",              IDMN_ACTION_CC
         END
         MENUITEM SEPARATOR
@@ -168,8 +169,9 @@ BEGIN
             POPUP "Transform"
             BEGIN         
                 MENUITEM "Zoom",              IDMN_ACTION_Z
-                MENUITEM "Rotate",              IDMN_ACTION_R
                 MENUITEM "Stretch",              IDMN_ACTION_S
+                MENUITEM SEPARATOR                
+                MENUITEM "Rotate",              IDMN_ACTION_R                
                 MENUITEM "Offset",              IDMN_ACTION_O
                 MENUITEM SEPARATOR
                 MENUITEM "Affine",              IDMN_ACTION_AT
@@ -320,6 +322,8 @@ BEGIN
     
     M_ACTION_SPL             "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
+    M_ACTION_CC              "Clear Preload Cache"
+    M_ACTION_SKL             "Set Keep List to %0, BasePath = %1"
 
     M_ACTION_OBJECT             "Lib Object"
     M_ACTION_FILENAME           "FileName"
@@ -328,6 +332,7 @@ BEGIN
     M_ACTION_COPYCOEF           "Copy Coefs Like Zoom Scale, 0 = Don't Copy, 1 = Copy"
     M_ACTION_PRELOAD            "std::vector<std::wstring>* pPreloadList"
     M_ACTION_BASEPATH           "Base Path to Search"
+    M_ACTION_KEEPLIST           "FileA|FileB|..."
 
     M_ACTION_RL             "Reset Lib"
     M_ACTION_EL             "Erase Lib Item %0"

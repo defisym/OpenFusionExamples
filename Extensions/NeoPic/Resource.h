@@ -99,6 +99,8 @@
 #define IDMN_ACTION_SPP	       		25019
 #define IDMN_ACTION_CC	       		25020
 
+#define IDMN_ACTION_SKL	       		25021
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -131,6 +133,8 @@
 #define M_ACTION_SPP          	     5019
 #define M_ACTION_CC          	     5020
 
+#define M_ACTION_SKL          	     5021
+
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
 #define M_ACTION_FILENAME		     5502
@@ -162,6 +166,7 @@
 
 #define M_ACTION_PRELOAD             5520
 #define M_ACTION_BASEPATH            5521
+#define M_ACTION_KEEPLIST            5522
 
 //	Conditions
 //--------------------

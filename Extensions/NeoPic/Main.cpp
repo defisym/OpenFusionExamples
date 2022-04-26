@@ -62,6 +62,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SPP, M_ACTION_SPP, ACT_ACTION_SPP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_BASEPATH, M_ACTION_KEY,
 		IDMN_ACTION_CC, M_ACTION_CC, ACT_ACTION_CC,	0, 0,
 
+		IDMN_ACTION_SKL, M_ACTION_SKL, ACT_ACTION_SKL,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_KEEPLIST, M_ACTION_BASEPATH,
 		};
 
 // Definitions of parameters for each expression
@@ -223,6 +224,34 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+
+short WINAPI DLLExport CleanCache(LPRDATA rdPtr, long param1, long param2) {
+	CleanCache(rdPtr, true);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring keepListSrc = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring basePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->isLib) {
+		KeepList keepList;
+		size_t start = keepListSrc.find_first_not_of(L'|');
+		size_t end = start;
+
+		while (start != std::wstring::npos) {
+			end = keepListSrc.find(L'|', start);
+			keepList.emplace_back(keepListSrc.substr(start, end - start));
+			start = keepListSrc.find_first_not_of(L'|', end);
+		}
+
+		GetKeepList(rdPtr, keepList, basePath);
+	}
+
+	return 0;
+}
+
 short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 	if(rdPtr->isLib){
 		ResetLib(rdPtr->lib);
@@ -233,6 +262,7 @@ short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	
 	if (rdPtr->isLib) {
 		EraseLib(rdPtr->lib, FilePath);		
 	}
@@ -389,12 +419,6 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 
 		ReDisplay(rdPtr);
 	}
-
-	return 0;
-}
-
-short WINAPI DLLExport CleanCache(LPRDATA rdPtr, long param1, long param2) {
-	CleanCache(rdPtr, true);
 
 	return 0;
 }
@@ -586,6 +610,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetPreloadList,
 			SetPreloadPath,
 			CleanCache,
+
+			SetKeepList,
 
 			0
 			};

@@ -144,16 +144,18 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			
 			rdPtr->lib = new SurfaceLib;
 			rdPtr->pCount = new RefCount;
+			rdPtr->pKeepList = new KeepList;
 		}
 		else {
 			rdPtr->pData = (GlobalData*)GetExtUserData();
 
 			rdPtr->lib = rdPtr->pData->pLib;
 			rdPtr->pCount = rdPtr->pData->pCount;
+			rdPtr->pKeepList = rdPtr->pData->pKeepList;
 		}
 	}
 
-	rdPtr->pCountVec = new std::vector<mapPair>;
+	rdPtr->pCountVec = new std::vector<MapPair>;
 	rdPtr->pPreloadList = nullptr;
 
 	// No errors
@@ -198,6 +200,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	if (rdPtr->isLib) {
 		rdPtr->pData->pLib = rdPtr->lib;
 		rdPtr->pData->pCount = rdPtr->pCount;
+		rdPtr->pData->pKeepList = rdPtr->pKeepList;
 
 		SetExtUserData(rdPtr->pData);
 	}
@@ -320,6 +323,8 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		if (rdPtr->stretchQuality) {
 			flags |= BLTF_ANTIA;
 		}
+
+		// auto bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
 
 		Display->BlitEx(*ps, (float)screenX, (float)screenY,
 			abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0,

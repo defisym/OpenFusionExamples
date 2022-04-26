@@ -73,7 +73,8 @@ inline bool DoAffineTrans(ATArray A) {
 
 using SurfaceLib = std::map<std::wstring, LPSURFACE>;
 using RefCount = std::map<std::wstring, size_t>;
-using mapPair = std::pair<std::wstring, size_t>;
+using MapPair = std::pair<std::wstring, size_t>;
+using KeepList = std::vector<std::wstring>;
 
 #define ONPRELOADCOMPLETE 0
 
@@ -89,6 +90,7 @@ constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
 struct GlobalData {
 	SurfaceLib* pLib;
 	RefCount* pCount;
+	KeepList* pKeepList;
 };
 
 inline void DeleteLib(SurfaceLib* pData);

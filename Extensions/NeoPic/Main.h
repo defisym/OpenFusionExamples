@@ -44,7 +44,9 @@
 #define	ACT_ACTION_SPP				19
 #define	ACT_ACTION_CC				20
 
-#define	ACT_LAST					21
+#define	ACT_ACTION_SKL				21
+
+#define	ACT_LAST					22
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -143,7 +145,7 @@ typedef struct tagRDATA
 
 	//Lib
 	bool isLib = false;
-	SurfaceLib* lib = nullptr;
+	SurfaceLib* lib = nullptr;							// kept over frames
 
 	//Collision
 	bool collision = false;
@@ -200,8 +202,9 @@ typedef struct tagRDATA
 	size_t sizeLimit;
 	bool autoClean;
 
-	RefCount* pCount = nullptr;
-	std::vector<mapPair>* pCountVec = nullptr;			//update when trigger clear
+	RefCount* pCount = nullptr;							// kept over frames
+	KeepList* pKeepList = nullptr;						// kept over frames
+	std::vector<MapPair>* pCountVec = nullptr;			// update when trigger clear
 
 	HotSpotPos defaultHotSpot;
 

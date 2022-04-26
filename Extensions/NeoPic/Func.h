@@ -334,8 +334,10 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 			else {
 				CreateBlankSurface(Src);
 			}
-		}	
+		}
 	}
+
+	_AddAlpha(Src);
 
 	if (rdPtr->HWA) {
 		auto pSf = Src;
@@ -523,22 +525,18 @@ inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
 #include <functional>
 
 using LoadLibCallBack = std::function<void(SurfaceLib&)>;
+using FileList = std::vector<std::wstring>;
 
-inline void PreloadLibFromVec(LPRDATA rdPtr, const std::vector<std::wstring> PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
-	if (PreloadList.empty()) {
-		return;
-	}
-	
-	std::vector<std::wstring> tempList;
-	tempList.reserve(PreloadList.size());
-	
-	std::vector<std::wstring> fileList;
-	GetFileList(&fileList, BasePath);
+inline void GetFullPathFromName(FileList& outList, const FileList inList, const std::wstring basePath) {
+	outList.reserve(inList.size());
 
-	for (auto& it : PreloadList) {
+	FileList fileList;
+	GetFileList(&fileList, basePath);
+
+	for (auto& it : inList) {
 		for (auto fileIt = fileList.begin(); fileIt != fileList.end();) {
-			fileIt = std::find_if(fileIt+1, fileList.end(), [&](std::wstring& file) {
-				auto pos = file.find_last_of(L"\\")+1;
+			fileIt = std::find_if(fileIt + 1, fileList.end(), [&](std::wstring& file) {
+				auto pos = file.find_last_of(L"\\") + 1;
 				auto fileName = file.substr(pos, file.size() - pos);
 
 				if (fileName == it) {
@@ -547,12 +545,22 @@ inline void PreloadLibFromVec(LPRDATA rdPtr, const std::vector<std::wstring> Pre
 
 				return false;
 				});
-			
+
 			if (fileIt != fileList.end()) {
-				tempList.emplace_back(*fileIt);
+				outList.emplace_back(*fileIt);
 			}
 		}
 	}
+}
+
+// do not ref PreloadList as this function is for multithread
+inline void PreloadLibFromVec(LPRDATA rdPtr, const FileList PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
+	if (PreloadList.empty()) {
+		return;
+	}
+	
+	FileList tempList;
+	GetFullPathFromName(tempList, PreloadList, BasePath);
 
 	SurfaceLib tempLib;
 
@@ -604,6 +612,11 @@ inline void PreloadLibFromPath(LPRDATA rdPtr, std::wstring BasePath, std::wstrin
 	}
 }
 
+inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring basePath) {
+	rdPtr->pKeepList->clear();
+	GetFullPathFromName(*rdPtr->pKeepList, keepList, basePath);
+}
+
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
@@ -611,8 +624,19 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
 			||(rdPtr->pCount->size() > CLEAR_NUMTHRESHOLD
 			&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20))
 			) {
-			*rdPtr->pCountVec = { rdPtr->pCount->begin(), rdPtr->pCount->end() };
-			std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [](mapPair& l, mapPair& r) {
+			rdPtr->pCountVec->clear();
+			rdPtr->pCountVec->reserve(rdPtr->pCount->size());
+
+			for (auto& it : *rdPtr->pCount) {
+				if (std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
+					rdPtr->pCountVec->emplace_back(it);
+				}
+			}
+
+			// reverse it to keep newest if no ref
+			std::reverse(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end());
+
+			std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [](MapPair& l, MapPair& r) {
 				return l.second < r.second;
 				});
 
@@ -631,6 +655,8 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
 		}
 	}
 }
+
+// Get information
 
 inline long GetHotSpotX(LPRDATA rdPtr) {
 	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->hotSpot.x : -1;
