@@ -152,6 +152,7 @@ typedef struct tagRDATA
 	bool autoUpdateCollision = false;
 
 	LPSMASK pColMask = nullptr;
+	LPSURFACE pCollisionSf = nullptr;
 
 	//Display
 

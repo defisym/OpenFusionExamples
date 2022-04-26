@@ -392,7 +392,18 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 					int desX = rdPtr->hotSpot.x - rdPtr->imgHotSpot.x;
 					int desY = rdPtr->hotSpot.y - rdPtr->imgHotSpot.y;
 
-					rdPtr->img->Blit(*collide, desX, desY);
+					//bool blitResult;
+
+					//if (rdPtr->HWA) {
+					//	collide = CreateHWASurface(rdPtr, rdPtr->src->GetDepth(), rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), ST_HWA_ROMTEXTURE);
+					//	blitResult = rdPtr->src->Blit(*collide, desX, desY);
+					//}
+					//else {
+					//	collide = CreateSurface(rdPtr->src->GetDepth(), rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
+					//	blitResult = rdPtr->src->Blit(*collide, desX, desY);
+					//}
+
+					rdPtr->src->Blit(*collide, desX, desY);
 				}
 
 				DWORD dwMaskSize = collide->CreateMask(NULL, lParam);
