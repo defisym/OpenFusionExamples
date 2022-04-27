@@ -46,7 +46,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 
 		rdPtr->changed = true;
 
-		FreeColMask(rdPtr->pColMask);		
+		FreeColMask(rdPtr->pColMask);
 	}
 }
 
@@ -228,6 +228,10 @@ inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 
 inline LPSURFACE Offset(LPSURFACE Src, OffsetCoef O) {
 	return Offset(Src, O.XOffset, O.YOffset, O.Wrap);
+}
+
+inline auto OffsetHWA(LPSURFACE Src, LPSURFACE Des, OffsetCoef O) {
+	return OffsetHWA(Src, Des, O.XOffset, O.YOffset, O.Wrap);
 }
 
 inline void GetTransformedSize(int& width, int& height, ZoomScale Scale, int Angle, ATArray AT) {
@@ -697,4 +701,96 @@ inline int GetAngle(LPRDATA rdPtr) {
 inline void GetFileName(LPRDATA rdPtr) {	
 	auto pos = rdPtr->FilePath->find_last_of(L"\\") + 1;
 	*rdPtr->FileName = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
+}
+
+inline auto GetSurface(LPRDATA rdPtr, int width, int height) {
+	if (rdPtr->HWA) {
+		return CreateHWASurface(rdPtr, rdPtr->src->GetDepth(), width, height, ST_HWA_RTTEXTURE);
+	}
+	else {
+		return CreateSurface(rdPtr->src->GetDepth(), width, height);
+	}
+}
+
+inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> callback) {
+	// decl
+	LPSURFACE pDisplay = rdPtr->src;
+
+	std::unique_ptr<cSurface> pOffset = nullptr;
+	LPSURFACE pTransform = nullptr;
+	LPSURFACE pTransformBitmap = nullptr;
+
+	// get size
+	auto width = GetCurrentWidth(rdPtr);
+	auto height = GetCurrentHeight(rdPtr);
+
+	rdPtr->src->GetSizeOfRotatedRect(&width, &height, (float)GetAngle(rdPtr));
+
+	if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
+		pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
+		OffsetHWA(rdPtr->src, pOffset.get(), rdPtr->offset);
+#ifdef _DEBUG
+		_SavetoClipBoard(pOffset.get(), false);
+#endif
+
+		pDisplay = pOffset.get();
+	}
+
+	pTransform = GetSurface(rdPtr, width, height);
+
+	pTransformBitmap = CreateSurface(rdPtr->src->GetDepth(), max(width, rdPtr->src->GetWidth())
+		, max(height, rdPtr->src->GetHeight()));
+
+	bool blitResult = false;
+
+	DWORD flags = 0;
+
+	if (rdPtr->stretchQuality) {
+		flags |= BLTF_ANTIA;
+	}
+
+	POINT hotSpot = { 0,0 };
+
+	blitResult = pDisplay->BlitEx(*pTransform
+		, rdPtr->hotSpot.x * abs(rdPtr->zoomScale.XScale), rdPtr->hotSpot.y * abs(rdPtr->zoomScale.YScale)
+		, abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0
+		, rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle
+		, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE
+		, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK)
+		, rdPtr->rs.rsEffectParam, flags);
+
+#ifdef _DEBUG	
+	if (pOffset.get() != nullptr) {
+		auto blitExTest = GetSurface(rdPtr, width, height);
+		blitResult = pDisplay->BlitEx(*blitExTest
+			, rdPtr->hotSpot.x * abs(rdPtr->zoomScale.XScale), rdPtr->hotSpot.y * abs(rdPtr->zoomScale.YScale)
+			, abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0
+			, rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle
+			, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE
+			, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK)
+			, rdPtr->rs.rsEffectParam, flags);
+
+		_SavetoClipBoard(blitExTest, false);
+		_SavetoClipBoard(pDisplay, false);
+
+		delete blitExTest;
+	}
+#endif
+
+	int desX = int(rdPtr->hotSpot.x * (1 - abs(rdPtr->zoomScale.XScale)));
+	int desY = int(rdPtr->hotSpot.y * (1 - abs(rdPtr->zoomScale.YScale)));
+
+	blitResult = pTransform->Blit(*pTransformBitmap, desX, desY);
+
+	callback(pTransformBitmap);
+
+#ifdef _DEBUG	
+	_SavetoClipBoard(rdPtr->src, false);
+	_SavetoClipBoard(pTransform, false);
+	_SavetoClipBoard(pTransformBitmap, false);
+#endif
+
+	// delete
+	delete pTransform;
+	delete pTransformBitmap;
 }

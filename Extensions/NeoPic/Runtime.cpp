@@ -117,8 +117,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->stretchQuality = edPtr->stretchQuality;
 
-	rdPtr->collision = edPtr->collision;
-	rdPtr->autoUpdateCollision = edPtr->autoUpdateCollision;
+	//rdPtr->collision = edPtr->collision;
+	//rdPtr->autoUpdateCollision = edPtr->autoUpdateCollision;
 
 	//Display
 	rdPtr->FileName = new std::wstring;
@@ -274,48 +274,20 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		&& rdPtr->src->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-		//int nDrv = ps->GetDriver();
-		//bool HWA = nDrv >= SD_3DFX;
 
 		// On-screen coords
 		int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
 
-		//rdPtr->img.Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-		//rdPtr->img->BlitEx(*ps, (float)screenX, (float)screenY,
-		//	rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-		//	rdPtr->img->GetWidth(), rdPtr->img->GetHeight(), &rdPtr->hotSpot, rdPtr->rc.rcAngle,
-		//	(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-		//	BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-		//	rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+		LPSURFACE pDisplay = rdPtr->src;
+		
+		std::unique_ptr<cSurface> pOffset = nullptr;
+		
+		if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
+			pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
+			OffsetHWA(rdPtr->src, pOffset.get(), rdPtr->offset);
 
-		LPSURFACE Display=nullptr;
-
-		if (rdPtr->changed) {
-			rdPtr->changed = false;
-
-			if (DoOffset(rdPtr->offset) ||
-				DoAffineTrans(rdPtr->AT) ||
-				(rdPtr->zoomScale.XScale < 0.0) || (rdPtr->zoomScale.YScale < 0.0)) {
-
-				Display = Offset(rdPtr->src, rdPtr->offset);
-
-				if (rdPtr->zoomScale.XScale < 0.0) {
-					Display->ReverseX();
-				}
-				if (rdPtr->zoomScale.YScale < 0.0) {
-					Display->ReverseY();
-				}
-
-				delete rdPtr->trans;
-				rdPtr->trans = Display;
-			}
-			else {
-				Display = rdPtr->src;
-			}
-		}
-		else {
-			Display = rdPtr->trans != nullptr ? rdPtr->trans : rdPtr->src;
+			pDisplay = pOffset.get();
 		}
 
 		DWORD flags = 0;
@@ -324,9 +296,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 			flags |= BLTF_ANTIA;
 		}
 
-		// auto bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
-
-		Display->BlitEx(*ps, (float)screenX, (float)screenY,
+		pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,
 			abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0,
 			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
@@ -379,45 +349,20 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 
 		// Transparent? Create mask
 		LPSMASK pMask = rdPtr->pColMask;
-		if (pMask == NULL) {
-			if (rdPtr->src != NULL) {
-				LPSURFACE collide = nullptr;
-				collide = CreateSurface(24, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
+		if (pMask == nullptr) {
+			if (rdPtr->src != nullptr){
+				GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
+					DWORD dwMaskSize = pCollideBitmap->CreateMask(NULL, lParam);
 
-				if (rdPtr->collision) {
-					if (rdPtr->autoUpdateCollision) {
-						UpdateImg(rdPtr, true);
+					if (dwMaskSize != 0) {
+						pMask = (LPSMASK)calloc(dwMaskSize, 1);
+
+						if (pMask != NULL) {
+							pCollideBitmap->CreateMask(pMask, lParam);
+							rdPtr->pColMask = pMask;
+						}
 					}
-
-					int desX = rdPtr->hotSpot.x - rdPtr->imgHotSpot.x;
-					int desY = rdPtr->hotSpot.y - rdPtr->imgHotSpot.y;
-
-					//bool blitResult;
-
-					//if (rdPtr->HWA) {
-					//	collide = CreateHWASurface(rdPtr, rdPtr->src->GetDepth(), rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), ST_HWA_ROMTEXTURE);
-					//	blitResult = rdPtr->src->Blit(*collide, desX, desY);
-					//}
-					//else {
-					//	collide = CreateSurface(rdPtr->src->GetDepth(), rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
-					//	blitResult = rdPtr->src->Blit(*collide, desX, desY);
-					//}
-
-					rdPtr->src->Blit(*collide, desX, desY);
-				}
-
-				DWORD dwMaskSize = collide->CreateMask(NULL, lParam);
-
-				if (dwMaskSize != 0) {
-					pMask = (LPSMASK)calloc(dwMaskSize, 1);
-
-					if (pMask != NULL) {
-						collide->CreateMask(pMask, lParam);
-						rdPtr->pColMask = pMask;
-					}
-				}
-
-				delete collide;
+					});
 			}
 		}
 
@@ -805,16 +750,16 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, (*rdPtr->Key)==L""? L"Not Encrypted" : rdPtr->Key->c_str());
 			});
 		break;
-	case DB_COLLISION:
-		displayFilter(L"Has Collision: %s", L"Has Collision: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->collision ? L"True" : L"False");
-			});
-		break;
-	case DB_AUTOUPDATECOLLISION:
-		displayFilter(L"Auto Update Collision: %s", L"Auto Update Collision: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoUpdateCollision ? L"True" : L"False");
-			});
-		break;
+	//case DB_COLLISION:
+	//	displayFilter(L"Has Collision: %s", L"Has Collision: %s", displayNegative, [&](LPCWSTR pattern) {
+	//		swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->collision ? L"True" : L"False");
+	//		});
+	//	break;
+	//case DB_AUTOUPDATECOLLISION:
+	//	displayFilter(L"Auto Update Collision: %s", L"Auto Update Collision: %s", displayNegative, [&](LPCWSTR pattern) {
+	//		swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoUpdateCollision ? L"True" : L"False");
+	//		});
+	//	break;
 	case DB_STRETCHQUALITY:
 		displayFilter(L"Stretch Quality: %s", L"Stretch Quality: %s", displayNegative, [&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->stretchQuality ? L"Resample" : L"Fast");

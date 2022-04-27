@@ -173,12 +173,12 @@ BEGIN
                 MENUITEM SEPARATOR                
                 MENUITEM "Rotate",              IDMN_ACTION_R                
                 MENUITEM "Offset",              IDMN_ACTION_O
-                MENUITEM SEPARATOR
-                MENUITEM "Affine",              IDMN_ACTION_AT
+                //MENUITEM SEPARATOR
+                //MENUITEM "Affine",              IDMN_ACTION_AT
             END
             MENUITEM SEPARATOR
             MENUITEM "Add Backdrop",              IDMN_ACTION_AB
-            MENUITEM "Update Collision",              IDMN_ACTION_UC
+            //MENUITEM "Update Collision",              IDMN_ACTION_UC
         END
         MENUITEM SEPARATOR
     END

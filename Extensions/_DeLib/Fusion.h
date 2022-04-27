@@ -344,6 +344,46 @@ inline LPSURFACE Offset(LPSURFACE Src, int X, int Y, bool Wrap = true) {
 	return Des;
 }
 
+inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = true) {
+	if (X == 0 && Y == 0) {
+		return false;
+	}
+
+	POINT hotSpot = { 0,0 };
+	
+	auto width = Src->GetWidth();
+	auto height = Src->GetHeight();
+	
+	Src->BlitEx(*Des, (float)X, (float)Y,
+		1.0, 1.0, 0, 0,
+		width, height, &hotSpot, (float)0,
+		BMODE_OPAQUE,
+		BOP_COPY);
+
+	if (Wrap) {
+		int XWrap = X > 0 ? X - width : X + width;
+		int YWrap = Y > 0 ? Y - height : Y + height;
+
+		Src->BlitEx(*Des, (float)X, (float)YWrap,
+			1.0, 1.0, 0, 0,
+			width, height, &hotSpot, (float)0,
+			BMODE_OPAQUE,
+			BOP_COPY);
+		Src->BlitEx(*Des, (float)XWrap, (float)Y,
+			1.0, 1.0, 0, 0,
+			width, height, &hotSpot, (float)0,
+			BMODE_OPAQUE,
+			BOP_COPY);
+		Src->BlitEx(*Des, (float)XWrap, (float)YWrap,
+			1.0, 1.0, 0, 0,
+			width, height, &hotSpot, (float)0,
+			BMODE_OPAQUE,
+			BOP_COPY);
+	}
+
+	return true;
+}
+
 //Get Ext's FilterName
 
 //指针Map需要使用自定义比较
@@ -392,14 +432,6 @@ inline DWORD GetFilterIDByExt(LPRDATA rdPtr, LPCTSTR Ext, LPCWSTR DefaultFilterN
 	//Surface
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
-
-	//LPCWSTR FilterName = GetFilterName(Ext, DefaultFilterName);
-
-	//for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {
-	//	if (wcscmp(pImgMgr->GetFilterNameW(i), FilterName) == 0) {
-	//		return pImgMgr->GetFilterID(i);
-	//	}
-	//}
 
 	auto GetFilterID = [pImgMgr](LPCWSTR Ext)->DWORD {
 		for (int i = 0; i < pImgMgr->GetFilterCount(); i++) {

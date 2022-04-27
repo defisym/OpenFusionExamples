@@ -157,6 +157,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
+#ifndef _DEBUG		// only works in runtime due to /MD & /MDd
 	using pPreLoadList = decltype(rdPtr->pPreloadList);
 	using PreLoadList = std::remove_pointer_t<pPreLoadList>;
 
@@ -196,6 +197,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 			pl.detach();
 		}
 	}
+#endif // !_DEBUG	
 
 	return 0;
 }
@@ -355,14 +357,21 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
 	
-	UpdateImg(rdPtr);
-
-	if (!rdPtr->isLib && rdPtr->img->IsValid()) {
-		AddBackdrop(rdPtr, rdPtr->img,
-			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->imgHotSpot.x,
-			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->imgHotSpot.y,
+	GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
+		AddBackdrop(rdPtr, rdPtr->src,
+			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->hotSpot.x,
+			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->hotSpot.y,
 			rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
-	}
+		});
+
+	//UpdateImg(rdPtr);
+
+	//if (!rdPtr->isLib && rdPtr->img->IsValid()) {
+	//	AddBackdrop(rdPtr, rdPtr->img,
+	//		rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->imgHotSpot.x,
+	//		rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->imgHotSpot.y,
+	//		rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
+	//}
 
 	return 0;
 }
@@ -373,13 +382,13 @@ short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport SetCollision(LPRDATA rdPtr, long param1, long param2) {
-	bool collision = (bool)CNC_GetIntParameter(rdPtr);
-	bool autoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
+	//bool collision = (bool)CNC_GetIntParameter(rdPtr);
+	//bool autoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->collision = collision;
-	rdPtr->autoUpdateCollision = autoUpdateCollision;
+	//rdPtr->collision = collision;
+	//rdPtr->autoUpdateCollision = autoUpdateCollision;
 
-	FreeColMask(rdPtr->pColMask);	
+	//FreeColMask(rdPtr->pColMask);	
 
 	return 0;
 }
@@ -389,7 +398,7 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 
 	rdPtr->stretchQuality = Quality;
 
-	UpdateImg(rdPtr, false, true);
+	//UpdateImg(rdPtr, false, true);
 
 	return 0;
 }
