@@ -196,8 +196,19 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		}
 	}
 
-	//Save Lib
 	if (rdPtr->isLib) {
+		if (rdPtr->threadID) {
+			rdPtr->forceExit = true;
+
+			DWORD ret;
+			while (GetExitCodeThread(rdPtr->threadID, &ret)) {
+				if (ret == 0) {
+					break;
+				}
+			}
+		}
+		
+		//Save Lib
 		rdPtr->pData->pLib = rdPtr->lib;
 		rdPtr->pData->pCount = rdPtr->pCount;
 		rdPtr->pData->pKeepList = rdPtr->pKeepList;
@@ -250,6 +261,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 	CleanCache(rdPtr, false);
+	MergeLib(rdPtr);
 
 	if (!rdPtr->isLib && rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
@@ -352,12 +364,13 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 		if (pMask == nullptr) {
 			if (rdPtr->src != nullptr){
 				GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
+					_SavetoClipBoard(pCollideBitmap, false);
 					DWORD dwMaskSize = pCollideBitmap->CreateMask(NULL, lParam);
 
 					if (dwMaskSize != 0) {
 						pMask = (LPSMASK)calloc(dwMaskSize, 1);
 
-						if (pMask != NULL) {
+						if (pMask != nullptr) {
 							pCollideBitmap->CreateMask(pMask, lParam);
 							rdPtr->pColMask = pMask;
 						}

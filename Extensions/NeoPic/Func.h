@@ -528,7 +528,7 @@ inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
 
 #include <functional>
 
-using LoadLibCallBack = std::function<void(SurfaceLib&)>;
+using LoadLibCallBack = std::function<void(SurfaceLib*)>;
 using FileList = std::vector<std::wstring>;
 
 inline void GetFullPathFromName(FileList& outList, const FileList inList, const std::wstring basePath) {
@@ -557,18 +557,32 @@ inline void GetFullPathFromName(FileList& outList, const FileList inList, const 
 	}
 }
 
+constexpr auto PRELOAD_TERMIANTE = 1;
+
 // do not ref PreloadList as this function is for multithread
-inline void PreloadLibFromVec(LPRDATA rdPtr, const FileList PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
+inline int PreloadLibFromVec(LPRDATA rdPtr, FileList PreloadList, bool fullPath, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
 	if (PreloadList.empty()) {
-		return;
+		rdPtr->forceExit = false;
+		rdPtr->threadID = 0;
+
+		return 0;
 	}
+
+	FileList* list;
 	
-	FileList tempList;
-	GetFullPathFromName(tempList, PreloadList, BasePath);
+	FileList fullPathList;	
+	
+	if (!fullPath) {
+		GetFullPathFromName(fullPathList, PreloadList, BasePath);
+		list = &fullPathList;
+	}
+	else {
+		list = &PreloadList;
+	}
 
-	SurfaceLib tempLib;
+	SurfaceLib* tempLib = new SurfaceLib;
 
-	for (auto& it : tempList) {
+	for (auto& it : *list) {
 		if (min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
 			break;
 		}
@@ -577,42 +591,77 @@ inline void PreloadLibFromVec(LPRDATA rdPtr, const FileList PreloadList, std::ws
 		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (img->IsValid()) {
-			tempLib.emplace(it, img);
+			tempLib->emplace(it, img);
 		}
 		else {
 			delete img;
 		}
+
+		if (rdPtr->forceExit) {
+			for (auto& it : *tempLib) {
+				delete it.second;
+			}
+
+			delete tempLib;
+			tempLib = nullptr;
+
+			break;
+		}
 	}
 
-	if (!tempLib.empty()) {
+	if (tempLib != nullptr
+		&& !tempLib->empty()) {
 		callBack(tempLib);
 	}
+
+	rdPtr->forceExit = false;
+	rdPtr->threadID = 0;
+
+	return 0;
 }
 
-inline void PreloadLibFromPath(LPRDATA rdPtr, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {	
-	std::vector<std::wstring> fileList;
-	GetFileList(&fileList, BasePath);
+inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, std::wstring BasePath, std::wstring Key) {
+	delete rdPtr->pPreloadList;
+	rdPtr->pPreloadList = new PreLoadList;
+	rdPtr->pPreloadList->reserve(pList->size());
 
-	SurfaceLib tempLib;
-
-	for (auto& it : fileList) {
-		if (min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
-			break;
-		}
-
-		LPSURFACE img = new cSurface;
-		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
-
-		if (img->IsValid()) {
-			tempLib.emplace(it, img);
-		}
-		else {
-			delete img;
+	// filter duplicate
+	for (auto& it : *pList) {
+		if (std::find(rdPtr->pPreloadList->begin(), rdPtr->pPreloadList->end(), it) == rdPtr->pPreloadList->end()
+			&& std::find_if(rdPtr->lib->begin(), rdPtr->lib->end(), [it](auto& p) {
+				return p.first == it;
+				}) == rdPtr->lib->end()) {
+			rdPtr->pPreloadList->emplace_back(it);
 		}
 	}
 
-	if (!tempLib.empty()) {
-		callBack(tempLib);
+	rdPtr->preloading = true;
+	std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, fullPath, BasePath, Key
+		, [rdPtr](const SurfaceLib* lib) {
+			rdPtr->preloading = false;
+			rdPtr->preloadMerge = true;
+			rdPtr->preloadLib = lib;
+		});
+
+	DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &rdPtr->threadID, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
+	pl.detach();
+}
+
+inline void MergeLib(LPRDATA rdPtr) {
+	if (!rdPtr->preloading
+		&& rdPtr->preloadMerge) {
+		for (auto& it : *rdPtr->preloadLib) {
+			auto& [name, pSf] = it;
+
+			if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
+				rdPtr->lib->emplace(name, pSf);
+			}
+		}
+
+		delete rdPtr->preloadLib;
+		rdPtr->preloading = false;
+		rdPtr->preloadMerge = false;
+		CallEvent(ONPRELOADCOMPLETE);
 	}
 }
 
@@ -720,6 +769,8 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 	LPSURFACE pTransform = nullptr;
 	LPSURFACE pTransformBitmap = nullptr;
 
+	bool blitResult = false;
+
 	// get size
 	auto width = GetCurrentWidth(rdPtr);
 	auto height = GetCurrentHeight(rdPtr);
@@ -729,19 +780,18 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 	if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
 		pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
 		OffsetHWA(rdPtr->src, pOffset.get(), rdPtr->offset);
+
+		pDisplay = pOffset.get();
+		
 #ifdef _DEBUG
 		_SavetoClipBoard(pOffset.get(), false);
 #endif
-
-		pDisplay = pOffset.get();
 	}
 
 	pTransform = GetSurface(rdPtr, width, height);
 
 	pTransformBitmap = CreateSurface(rdPtr->src->GetDepth(), max(width, rdPtr->src->GetWidth())
 		, max(height, rdPtr->src->GetHeight()));
-
-	bool blitResult = false;
 
 	DWORD flags = 0;
 
@@ -770,8 +820,8 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 			, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK)
 			, rdPtr->rs.rsEffectParam, flags);
 
-		_SavetoClipBoard(blitExTest, false);
 		_SavetoClipBoard(pDisplay, false);
+		_SavetoClipBoard(blitExTest, false);		
 
 		delete blitExTest;
 	}

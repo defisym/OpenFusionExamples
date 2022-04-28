@@ -71,6 +71,9 @@ inline bool DoAffineTrans(ATArray A) {
 	return A != ATArray{ 1,0,0,1 };
 }
 
+using pPreLoadList = std::vector<std::wstring>*;
+using PreLoadList = std::remove_pointer_t<pPreLoadList>;
+
 using SurfaceLib = std::map<std::wstring, LPSURFACE>;
 using RefCount = std::map<std::wstring, size_t>;
 using MapPair = std::pair<std::wstring, size_t>;

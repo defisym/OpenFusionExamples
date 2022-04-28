@@ -47,9 +47,9 @@ inline void GetPropString(LPMV mV, LPEDATA edPtr, CPropValue* pValue, LPTSTR Des
 
 //Free collision mask
 inline void FreeColMask(LPSMASK& pColMask) {
-	if (pColMask != NULL) {
+	if (pColMask != nullptr) {
 		free(pColMask);
-		pColMask = NULL;
+		pColMask = nullptr;
 	}
 }
 
@@ -275,6 +275,7 @@ inline void CreateBlankSurface(LPSURFACE Src) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 	Src->Create(4, 4, proto);
+	Src->CreateAlpha();
 }
 
 //Convert to HWA

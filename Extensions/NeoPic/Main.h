@@ -195,9 +195,15 @@ typedef struct tagRDATA
 
 	bool changed = false;
 
-	//preload
+	//preload	
 	bool preloading = false;
 	std::vector<std::wstring>* pPreloadList = nullptr;
+
+	HANDLE threadID;
+	
+	bool forceExit = false;
+	bool preloadMerge = false;
+	const SurfaceLib* preloadLib = nullptr;
 
 	size_t memoryLimit;
 	size_t sizeLimit;

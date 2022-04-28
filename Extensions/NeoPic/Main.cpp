@@ -158,43 +158,12 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 #ifndef _DEBUG		// only works in runtime due to /MD & /MDd
-	using pPreLoadList = decltype(rdPtr->pPreloadList);
-	using PreLoadList = std::remove_pointer_t<pPreLoadList>;
-
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
-		delete rdPtr->pPreloadList;
-		rdPtr->pPreloadList = nullptr;
-
 		auto pList = ConvertToType<pPreLoadList>(list);
 
 		if (pList != nullptr) {
-			rdPtr->pPreloadList = new std::remove_pointer_t<PreLoadList>;
-			rdPtr->pPreloadList->reserve(pList->size());
-
-			// filter duplicate
-			for (auto& it : *pList) {
-				if (std::find(rdPtr->pPreloadList->begin(), rdPtr->pPreloadList->end(), it) == rdPtr->pPreloadList->end()) {
-					rdPtr->pPreloadList->emplace_back(it);
-				}
-			}
-
-			rdPtr->preloading = true;
-			std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, BasePath, Key
-				, [rdPtr](const SurfaceLib& lib) {
-					for (auto& it : lib) {
-						auto& [name, pSf] = it;
-
-						if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
-							rdPtr->lib->emplace(name, pSf);
-						}
-					}
-
-					rdPtr->preloading = false;
-					CallEvent(ONPRELOADCOMPLETE);				
-				});
-
-			pl.detach();
+			CreatePreloadProcess(rdPtr, pList, false, BasePath, Key);
 		}
 	}
 #endif // !_DEBUG	
@@ -206,21 +175,12 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	if (rdPtr->isLib) {
-		std::thread pl(PreloadLibFromPath, rdPtr, BasePath, Key
-			, [rdPtr](const SurfaceLib& lib) {
-				for (auto& it : lib) {
-					auto& [name, pSf] = it;
-
-					if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
-						rdPtr->lib->emplace(name, pSf);
-					}
-				}
-
-				CallEvent(ONPRELOADCOMPLETE);
-			});
-
-		pl.detach();
+	if (!rdPtr->preloading
+		&&rdPtr->isLib) {
+		std::vector<std::wstring> fileList;
+		GetFileList(&fileList, BasePath);
+		
+		CreatePreloadProcess(rdPtr, &fileList, true, BasePath, Key);
 	}
 
 	return 0;
@@ -329,6 +289,20 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
+	int Width = (int)CNC_GetIntParameter(rdPtr);
+	int Height = (int)CNC_GetIntParameter(rdPtr);
+
+	float XScale = (1.0f * Width / rdPtr->src->GetWidth());
+	float YScale = (1.0f * Height / rdPtr->src->GetHeight());
+
+	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+		Zoom(rdPtr, XScale, YScale);
+	}
+
+	return 0;
+}
+
 short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	int Angle = (int)CNC_GetIntParameter(rdPtr);
 	Angle = Angle % 360;
@@ -340,15 +314,16 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
-	int Width = (int)CNC_GetIntParameter(rdPtr);
-	int Height = (int)CNC_GetIntParameter(rdPtr);
+short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
+	int XOffset = (int)CNC_GetIntParameter(rdPtr);
+	int YOffset = (int)CNC_GetIntParameter(rdPtr);
 
-	float XScale = (1.0f * Width/ rdPtr->src->GetWidth());
-	float YScale = (1.0f * Height / rdPtr->src->GetHeight());
+	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
 
-	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
-		Zoom(rdPtr, XScale, YScale);
+	if (rdPtr->offset != OffsetCoef{ XOffset, YOffset, Wrap }) {
+		rdPtr->offset = { XOffset ,YOffset, Wrap };
+
+		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -410,21 +385,6 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 
 	if (rdPtr->AT != A) {
 		rdPtr->AT = A;
-
-		ReDisplay(rdPtr);
-	}
-
-	return 0;
-}
-
-short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
-	int XOffset = (int)CNC_GetIntParameter(rdPtr);
-	int YOffset = (int)CNC_GetIntParameter(rdPtr);
-
-	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
-
-	if (rdPtr->offset != OffsetCoef{ XOffset, YOffset, Wrap }) {
-		rdPtr->offset = { XOffset ,YOffset, Wrap };
 
 		ReDisplay(rdPtr);
 	}
