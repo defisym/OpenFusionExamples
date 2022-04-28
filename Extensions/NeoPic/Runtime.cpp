@@ -364,7 +364,7 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 		if (pMask == nullptr) {
 			if (rdPtr->src != nullptr){
 				GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
-					_SavetoClipBoard(pCollideBitmap, false);
+					//_SavetoClipBoard(pCollideBitmap, false);
 					DWORD dwMaskSize = pCollideBitmap->CreateMask(NULL, lParam);
 
 					if (dwMaskSize != 0) {

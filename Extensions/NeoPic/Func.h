@@ -643,7 +643,10 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 			rdPtr->preloadLib = lib;
 		});
 
-	DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &rdPtr->threadID, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
+	HANDLE handle;
+	DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &handle, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
+
+	rdPtr->threadID = handle;
 	pl.detach();
 }
 

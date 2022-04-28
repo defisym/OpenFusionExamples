@@ -333,20 +333,11 @@ short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
 	
 	GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
-		AddBackdrop(rdPtr, rdPtr->src,
+		AddBackdrop(rdPtr, pCollideBitmap,
 			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->hotSpot.x,
 			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->hotSpot.y,
 			rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
 		});
-
-	//UpdateImg(rdPtr);
-
-	//if (!rdPtr->isLib && rdPtr->img->IsValid()) {
-	//	AddBackdrop(rdPtr, rdPtr->img,
-	//		rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->imgHotSpot.x,
-	//		rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->imgHotSpot.y,
-	//		rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
-	//}
 
 	return 0;
 }
