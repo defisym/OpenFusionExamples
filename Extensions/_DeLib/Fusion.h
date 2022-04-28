@@ -350,6 +350,8 @@ inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = tr
 		return false;
 	}
 
+	Des->BeginRendering(TRUE, 0);
+
 	POINT hotSpot = { 0,0 };
 	
 	auto width = Src->GetWidth();
@@ -360,6 +362,8 @@ inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = tr
 		width, height, &hotSpot, (float)0,
 		BMODE_OPAQUE,
 		BOP_COPY);
+
+	//Src->Blit(*Des, X, Y);
 
 	if (Wrap) {
 		int XWrap = X > 0 ? X - width : X + width;
@@ -380,7 +384,13 @@ inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = tr
 			width, height, &hotSpot, (float)0,
 			BMODE_OPAQUE,
 			BOP_COPY);
+
+		//Src->Blit(*Des, X, YWrap);
+		//Src->Blit(*Des, XWrap, Y);
+		//Src->Blit(*Des, XWrap, YWrap);
 	}
+
+	Des->EndRendering();
 
 	return true;
 }

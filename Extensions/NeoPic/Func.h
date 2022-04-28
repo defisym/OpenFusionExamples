@@ -803,14 +803,20 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 	}
 
 	POINT hotSpot = { 0,0 };
+	
+	auto ds = pDisplay->GetRenderTargetSurface();
+	pTransform->BeginRendering(TRUE, 0);
 
-	blitResult = pDisplay->BlitEx(*pTransform
+	blitResult = ds->BlitEx(*pTransform
 		, rdPtr->hotSpot.x * abs(rdPtr->zoomScale.XScale), rdPtr->hotSpot.y * abs(rdPtr->zoomScale.YScale)
 		, abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0
 		, rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle
 		, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE
 		, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK)
 		, rdPtr->rs.rsEffectParam, flags);
+	
+	pTransform->EndRendering();
+	pDisplay->ReleaseRenderTargetSurface(ds);
 
 #ifdef _DEBUG	
 	if (pOffset.get() != nullptr) {
@@ -832,9 +838,13 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 
 	int desX = int(rdPtr->hotSpot.x * (1 - abs(rdPtr->zoomScale.XScale)));
 	int desY = int(rdPtr->hotSpot.y * (1 - abs(rdPtr->zoomScale.YScale)));
+	
+	auto ps = pTransform->GetRenderTargetSurface();	
 
-	blitResult = pTransform->Blit(*pTransformBitmap, desX, desY);
+	blitResult = ps->Blit(*pTransformBitmap, desX, desY);
 
+	pTransform->ReleaseRenderTargetSurface(ps);
+	
 	callback(pTransformBitmap);
 
 #ifdef _DEBUG	
