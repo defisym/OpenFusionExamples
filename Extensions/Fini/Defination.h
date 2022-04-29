@@ -37,6 +37,7 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 
 #define StrEqu(X,Y) (wcscmp(X,Y) == 0)
 #define StrEmpty(X) StrEqu(X,Empty_Str)
+#define InvalidSec(X) if (StrEmpty(Section)) { return X; }
 #define InvalidSecItem(X) if (StrEmpty(Section) || StrEmpty(Item)) { return X; }
 
 //You need "\\+" to escape +

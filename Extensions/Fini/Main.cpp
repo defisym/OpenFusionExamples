@@ -308,7 +308,7 @@ short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	InvalidSecItem(0);
+	InvalidSec(0);
 
 	if (StrEqu(Item, Empty_Str)) {
 		Item = nullptr;
