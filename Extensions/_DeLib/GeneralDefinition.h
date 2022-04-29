@@ -20,8 +20,10 @@
 #define RAD(DEG) ((PI*DEG)/180)
 #define DEG(RAD) ((180*RAD)/PI)
 
-#define SetExtUserData(pData) rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvSetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib, pData)
-#define GetExtUserData() rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
+#define MV rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv
+
+#define SetExtUserData(pData) MV->mvSetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib, pData)
+#define GetExtUserData() MV->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
 
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
