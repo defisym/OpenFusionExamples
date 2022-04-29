@@ -201,8 +201,12 @@ BEGIN
         POPUP "Load"
         BEGIN
             MENUITEM "Get FileName", IDMN_EXPRESSION_GFN
+            MENUITEM "Get File FileName", IDMN_EXPRESSION_GFFN
+            MENUITEM SEPARATOR
             MENUITEM "Get FilePath", IDMN_EXPRESSION_GFP
             MENUITEM "Get Relative FilePath", IDMN_EXPRESSION_GRFP
+            MENUITEM "Get File Relative FilePath", IDMN_EXPRESSION_GFRFP
+            MENUITEM SEPARATOR
             MENUITEM "Get Key", IDMN_EXPRESSION_GK
             MENUITEM SEPARATOR
             MENUITEM "Get Surface Pointer", IDMN_EXPRESSION_GSP
@@ -418,8 +422,10 @@ BEGIN
     M_EXPRESSION_GA            "GetAngle("
     
     M_EXPRESSION_GFN            "GetFileName$("
+    M_EXPRESSION_GFFN            "GetFileFileName$("
     M_EXPRESSION_GFP            "GetFilePath$("
     M_EXPRESSION_GRFP            "GetRelativeFilePath$("
+    M_EXPRESSION_GFRFP            "GetFileRelativeFilePath$("
     M_EXPRESSION_GK            "GetKey$("
     
     M_EXPRESSION_GSP            "GetSurfacePointer("

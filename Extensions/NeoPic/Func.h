@@ -753,6 +753,16 @@ inline void GetFileName(LPRDATA rdPtr) {
 	*rdPtr->FileName = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
 }
 
+inline auto GetFileName(std::wstring& FilePath) {
+	auto pos = FilePath.find_last_of(L"\\") + 1;
+	return FilePath.substr(pos, FilePath.size() - pos);
+}
+
+inline auto GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {
+	auto pos = BasePath.size();
+	return FilePath.substr(pos, FilePath.size() - pos);
+}
+
 inline auto GetSurface(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->HWA) {
 		return CreateHWASurface(rdPtr, rdPtr->src->GetDepth(), width, height, ST_HWA_RTTEXTURE);

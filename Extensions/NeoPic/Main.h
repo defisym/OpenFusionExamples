@@ -83,7 +83,10 @@
 #define EXP_EXPRESSION_GITRCVC			17
 #define EXP_EXPRESSION_GITRCVP			18
 
-#define	EXP_LAST                    	19
+#define EXP_EXPRESSION_GFFN				19
+#define EXP_EXPRESSION_GFRFP			20
+
+#define	EXP_LAST                    	21
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
