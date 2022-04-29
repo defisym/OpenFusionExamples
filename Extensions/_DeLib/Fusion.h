@@ -11,6 +11,10 @@
 #include	<vector>
 #include	<thread>
 
+inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL);
+
+//-----------------------------
+
 //GetString
 inline void GetPropString(CPropValue* pValue, LPTSTR Des) {
 	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
@@ -483,7 +487,7 @@ inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, LPCWSTR Defa
 //Save && Load
 
 //Save to Clipboard
-inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL) {
+inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle) {
 	if (!Src->IsValid()) {
 		return;
 	}
