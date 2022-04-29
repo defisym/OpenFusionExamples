@@ -112,13 +112,14 @@ MN_CONDITIONS$(EDITOR) MENU DISCARDABLE
 #else
 MN_CONDITIONS MENU DISCARDABLE 
 #endif
-BEGIN
-    MENUITEM SEPARATOR
+BEGIN    
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
-    END
-    MENUITEM SEPARATOR
+        MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
+        MENUITEM SEPARATOR
+    END    
 END
 #endif
 
@@ -143,6 +144,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Set Keep List",              IDMN_ACTION_SKL
             MENUITEM "Clear Preload Cache",              IDMN_ACTION_CC
+            MENUITEM SEPARATOR
+            MENUITEM "Iterate Ref Count",              IDMN_ACTION_ITRC
         END
         MENUITEM SEPARATOR
         POPUP "Lib"
@@ -203,6 +206,10 @@ BEGIN
             MENUITEM "Get Key", IDMN_EXPRESSION_GK
             MENUITEM SEPARATOR
             MENUITEM "Get Surface Pointer", IDMN_EXPRESSION_GSP
+            MENUITEM SEPARATOR
+            MENUITEM "Get Iterate Ref Count Key", IDMN_EXPRESSION_GITRCK	
+            MENUITEM "Get Iterate Ref Count Value Count", IDMN_EXPRESSION_GITRCVC
+            MENUITEM "Get Iterate Ref Count Value Priority", IDMN_EXPRESSION_GITRCVP
         END
         MENUITEM SEPARATOR
         POPUP "HotSpot"
@@ -324,6 +331,7 @@ BEGIN
     M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
     M_ACTION_CC              "Clear Preload Cache"
     M_ACTION_SKL             "Set Keep List to %0, BasePath = %1"
+    M_ACTION_ITRC            "Iterate Most Referenced %0 Objects"
 
     M_ACTION_OBJECT             "Lib Object"
     M_ACTION_FILENAME           "FileName"
@@ -333,6 +341,7 @@ BEGIN
     M_ACTION_PRELOAD            "std::vector<std::wstring>* pPreloadList"
     M_ACTION_BASEPATH           "Base Path to Search"
     M_ACTION_KEEPLIST           "FileA|FileB|..."
+    M_ACTION_ITSIZE             "Object Num"
 
     M_ACTION_RL             "Reset Lib"
     M_ACTION_EL             "Erase Lib Item %0"
@@ -385,6 +394,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_OPLC     "%o On Preload Complete"
+    M_CONDITION_OITRC     "%o On Iterate Ref Count"
 
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"
@@ -420,6 +430,11 @@ BEGIN
     M_EXPRESSION_COORD                      "Coord"
     M_EXPRESSION_REALCOORDMODE              "Use Real Coord Mode"
     M_EXPRESSION_BASEPATH                   "Base Path"
+    
+    M_EXPRESSION_GITRCK	           "GetITRCK$("
+    M_EXPRESSION_GITRCVC           "GetITRCVC("
+    M_EXPRESSION_GITRCVP           "GetITRCVP("
+
 END
 
 STRINGTABLE

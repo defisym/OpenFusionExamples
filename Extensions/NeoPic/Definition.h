@@ -71,15 +71,27 @@ inline bool DoAffineTrans(ATArray A) {
 	return A != ATArray{ 1,0,0,1 };
 }
 
-using pPreLoadList = std::vector<std::wstring>*;
-using PreLoadList = std::remove_pointer_t<pPreLoadList>;
+using List = std::vector<std::wstring>;
+using KeepList = List;
+using pPreLoadList = List*;
+using PreLoadList = List;
+
+struct Count {
+	size_t count;			// ref times
+	size_t priority;		// lib size when first time ref
+
+	inline size_t GetWeight(size_t countWeight) {
+		return this->count * countWeight + this->priority;
+	}
+};
 
 using SurfaceLib = std::map<std::wstring, LPSURFACE>;
-using RefCount = std::map<std::wstring, size_t>;
-using MapPair = std::pair<std::wstring, size_t>;
-using KeepList = std::vector<std::wstring>;
+using RefCount = std::map<std::wstring, Count>;
+using RefCountPair = std::pair<std::wstring, Count>;
+using RefCountVec = std::vector<RefCountPair>;
 
-#define ONPRELOADCOMPLETE 0
+constexpr auto ONPRELOADCOMPLETE = 0;
+constexpr auto ONITREFCOUNT = 1;
 
 constexpr auto CLEAR_MEMRANGE = 100;
 constexpr auto CLEAR_NUMTHRESHOLD = 50;

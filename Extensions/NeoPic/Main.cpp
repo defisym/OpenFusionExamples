@@ -23,6 +23,7 @@
 short conditionsInfos[]=
 		{
 		IDMN_CONDITION_OPLC, M_CONDITION_OPLC, CND_CONDITION_OPLC, 0, 0,
+		IDMN_CONDITION_OITRC, M_CONDITION_OITRC, CND_CONDITION_OITRC, 0, 0,
 		};
 
 // Definitions of parameters for each action
@@ -63,6 +64,8 @@ short actionsInfos[]=
 		IDMN_ACTION_CC, M_ACTION_CC, ACT_ACTION_CC,	0, 0,
 
 		IDMN_ACTION_SKL, M_ACTION_SKL, ACT_ACTION_SKL,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_KEEPLIST, M_ACTION_BASEPATH,
+
+		IDMN_ACTION_ITRC, M_ACTION_ITRC, ACT_ACTION_ITRC,	0, 1, PARAM_EXPRESSION, M_ACTION_ITSIZE,
 		};
 
 // Definitions of parameters for each expression
@@ -92,6 +95,10 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GFP, M_EXPRESSION_GFP, EXP_EXPRESSION_GFP, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GRFP, M_EXPRESSION_GRFP, EXP_EXPRESSION_GRFP, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_EXPRESSION_BASEPATH,
+
+		IDMN_EXPRESSION_GITRCK, M_EXPRESSION_GITRCK, EXP_EXPRESSION_GITRCK, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GITRCVC, M_EXPRESSION_GITRCVC, EXP_EXPRESSION_GITRCVC, 0, 0,
+		IDMN_EXPRESSION_GITRCVP, M_EXPRESSION_GITRCVP, EXP_EXPRESSION_GITRCVP, 0, 0,
 		};
 
 
@@ -112,6 +119,9 @@ long WINAPI DLLExport OnPreloadComplete(LPRDATA rdPtr, long param1, long param2)
 	return TRUE;
 }
 
+long WINAPI DLLExport OnIterateRefCount(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
+}
 
 // ============================================================================
 //
@@ -211,6 +221,26 @@ short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
 		GetKeepList(rdPtr, keepList, basePath);
 	}
 
+	return 0;
+}
+
+short WINAPI DLLExport IterateRefCount(LPRDATA rdPtr, long param1, long param2) {
+	size_t num = (size_t)CNC_GetIntParameter(rdPtr);
+
+	if (rdPtr->isLib) {
+		UpdateRefCountVec(rdPtr);
+
+		auto itSz = min(num, rdPtr->pCountVec->size());
+
+		for (size_t it = 0; it < itSz; it++) {
+			auto& refCount = (*rdPtr->pCountVec)[it];
+			*rdPtr->itCountVecStr = refCount.first;
+			*rdPtr->itCountVecCount = refCount.second;
+
+			CallEvent(ONITREFCOUNT);
+		}
+	}
+	
 	return 0;
 }
 
@@ -522,6 +552,22 @@ long WINAPI DLLExport GetAVGCoordY(LPRDATA rdPtr, long param1) {
 	}
 }
 
+long WINAPI DLLExport GetIterateRefCountKey(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->itCountVecStr->c_str();
+}
+
+long WINAPI DLLExport GetIterateRefCountValueCount(LPRDATA rdPtr, long param1) {
+	return rdPtr->itCountVecCount->count;
+}
+
+long WINAPI DLLExport GetIterateRefCountValuePriority(LPRDATA rdPtr, long param1) {
+	return rdPtr->itCountVecCount->priority;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -533,6 +579,7 @@ long WINAPI DLLExport GetAVGCoordY(LPRDATA rdPtr, long param1) {
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			OnPreloadComplete,
+			OnIterateRefCount,
 
 			0
 			};
@@ -573,6 +620,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetKeepList,
 
+			IterateRefCount,
+
 			0
 			};
 
@@ -602,6 +651,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetFilePath,
 			GetRelativeFilePath,
+
+			GetIterateRefCountKey,
+			GetIterateRefCountValueCount,
+			GetIterateRefCountValuePriority,
 
 			0
 			};

@@ -343,12 +343,12 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 
 	_AddAlpha(Src);
 
-	if (rdPtr->HWA) {
-		auto pSf = Src;
-		Src = ConvertHWATexture(rdPtr, Src);
-		
-		delete pSf;
-	}
+	//if (rdPtr->HWA) {
+	//	auto pSf = Src;
+	//	Src = ConvertHWATexture(rdPtr, Src);
+	//	
+	//	delete pSf;
+	//}
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
@@ -357,7 +357,9 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 			return;
 		}
 
-		LPSURFACE img = new cSurface;
+		//LPSURFACE img = new cSurface;
+		LPSURFACE img = rdPtr->HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
+
 		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 		
 		if (img->IsValid()) {
@@ -369,7 +371,8 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 	}
 	else {
 		if (rdPtr->fromLib) {			
-			rdPtr->src = new cSurface;
+			//rdPtr->src = new cSurface;
+			rdPtr->src = rdPtr->HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
 		}
 
 		rdPtr->fromLib = false;
@@ -411,14 +414,12 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	
 	auto countit = obj->pCount->find(FileName);	
 	if (countit != obj->pCount->end()) {
-		auto count = countit->second;
+		countit->second.count++;
 	}
-	auto curCount = countit != obj->pCount->end()
-		? countit->second + 1
-		: 1;
-	
-	(*obj->pCount)[FileName] = curCount;
-	
+	else {
+		(*obj->pCount)[FileName] = Count{ 1, obj->lib->size() };
+	}
+
 	if(!rdPtr->isLib){
 		if (!rdPtr->fromLib) {
 			delete rdPtr->src;
@@ -637,7 +638,7 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 
 	rdPtr->preloading = true;
 	std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, fullPath, BasePath, Key
-		, [rdPtr](const SurfaceLib* lib) {
+		, [rdPtr](SurfaceLib* lib) {
 			rdPtr->preloading = false;
 			rdPtr->preloadMerge = true;
 			rdPtr->preloadLib = lib;
@@ -655,7 +656,6 @@ inline void MergeLib(LPRDATA rdPtr) {
 		&& rdPtr->preloadMerge) {
 		for (auto& it : *rdPtr->preloadLib) {
 			auto& [name, pSf] = it;
-
 			if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
 				rdPtr->lib->emplace(name, pSf);
 			}
@@ -664,6 +664,7 @@ inline void MergeLib(LPRDATA rdPtr) {
 		delete rdPtr->preloadLib;
 		rdPtr->preloading = false;
 		rdPtr->preloadMerge = false;
+		
 		CallEvent(ONPRELOADCOMPLETE);
 	}
 }
@@ -673,28 +674,32 @@ inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring ba
 	GetFullPathFromName(*rdPtr->pKeepList, keepList, basePath);
 }
 
+inline void UpdateRefCountVec(LPRDATA rdPtr) {
+	auto mapSz = rdPtr->pCount->size();
+
+	rdPtr->pCountVec->clear();
+	rdPtr->pCountVec->reserve(mapSz);
+
+	for (auto& it : *rdPtr->pCount) {
+		if (std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
+			rdPtr->pCountVec->emplace_back(it);
+		}
+	}
+
+	auto countWeight = mapSz;		// weight of ref count
+	std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [&](RefCountPair& l, RefCountPair& r) {
+		return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
+		});
+}
+
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
 		if (forceClean
-			||(rdPtr->pCount->size() > CLEAR_NUMTHRESHOLD
-			&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20))
-			) {
-			rdPtr->pCountVec->clear();
-			rdPtr->pCountVec->reserve(rdPtr->pCount->size());
-
-			for (auto& it : *rdPtr->pCount) {
-				if (std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
-					rdPtr->pCountVec->emplace_back(it);
-				}
-			}
-
-			// reverse it to keep newest if no ref
-			std::reverse(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end());
-
-			std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [](MapPair& l, MapPair& r) {
-				return l.second < r.second;
-				});
+			|| (rdPtr->autoClean
+				&& rdPtr->pCount->size() > CLEAR_NUMTHRESHOLD
+				&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20))) {
+			UpdateRefCountVec(rdPtr);
 
 			while (!rdPtr->pCount->empty()
 				&& rdPtr->memoryLimit / 2 <= (GetProcessMemoryUsage() >> 20)) {

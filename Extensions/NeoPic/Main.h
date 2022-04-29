@@ -7,8 +7,9 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_OPLC			0
+#define	CND_CONDITION_OITRC			1
 
-#define	CND_LAST					1
+#define	CND_LAST					2
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -46,7 +47,9 @@
 
 #define	ACT_ACTION_SKL				21
 
-#define	ACT_LAST					22
+#define	ACT_ACTION_ITRC				22
+
+#define	ACT_LAST					23
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -76,7 +79,11 @@
 #define EXP_EXPRESSION_GFP				14
 #define EXP_EXPRESSION_GRFP				15
 
-#define	EXP_LAST                    	16
+#define EXP_EXPRESSION_GITRCK			16
+#define EXP_EXPRESSION_GITRCVC			17
+#define EXP_EXPRESSION_GITRCVP			18
+
+#define	EXP_LAST                    	19
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -197,7 +204,7 @@ typedef struct tagRDATA
 
 	//preload		
 	std::vector<std::wstring>* pPreloadList = nullptr;
-	const SurfaceLib* preloadLib = nullptr;
+	SurfaceLib* preloadLib = nullptr;
 
 	volatile HANDLE threadID;
 	volatile bool forceExit = false;
@@ -210,11 +217,14 @@ typedef struct tagRDATA
 
 	RefCount* pCount = nullptr;							// kept over frames
 	KeepList* pKeepList = nullptr;						// kept over frames
-	std::vector<MapPair>* pCountVec = nullptr;			// update when trigger clear
+	RefCountVec* pCountVec = nullptr;					// update when trigger clear
 
 	HotSpotPos defaultHotSpot;
 
 	GlobalData* pData;
+
+	std::wstring* itCountVecStr = nullptr;
+	Count* itCountVecCount = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

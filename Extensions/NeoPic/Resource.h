@@ -101,6 +101,8 @@
 
 #define IDMN_ACTION_SKL	       		25021
 
+#define IDMN_ACTION_ITRC       		25022
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -135,6 +137,8 @@
 
 #define M_ACTION_SKL          	     5021
 
+#define M_ACTION_ITRC         	     5022
+
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
 #define M_ACTION_FILENAME		     5502
@@ -168,6 +172,8 @@
 #define M_ACTION_BASEPATH            5521
 #define M_ACTION_KEEPLIST            5522
 
+#define M_ACTION_ITSIZE              5523
+
 //	Conditions
 //--------------------
 
@@ -176,9 +182,11 @@
 
 // Commands of condition menu
 #define IDMN_CONDITION_OPLC                 26000
+#define IDMN_CONDITION_OITRC                26001
 
 // Condition strings
 #define M_CONDITION_OPLC                     6000
+#define M_CONDITION_OITRC                    6001
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -217,6 +225,10 @@
 #define IDMN_EXPRESSION_GFP		27014
 #define IDMN_EXPRESSION_GRFP	27015
 
+#define IDMN_EXPRESSION_GITRCK	27016
+#define IDMN_EXPRESSION_GITRCVC	27017
+#define IDMN_EXPRESSION_GITRCVP	27018
+
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
 #define M_EXPRESSION_GHSY			 7001
@@ -242,6 +254,10 @@
 
 #define M_EXPRESSION_GFP		     7014
 #define M_EXPRESSION_GRFP		     7015
+
+#define M_EXPRESSION_GITRCK			 7016
+#define M_EXPRESSION_GITRCVC		 7017
+#define M_EXPRESSION_GITRCVP		 7018
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500

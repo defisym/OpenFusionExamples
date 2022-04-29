@@ -66,9 +66,9 @@ WORD DebugTree[]=
 	DB_FILEPATH,
 	DB_KEY,
 	DB_SAPARATOR_3,
-	DB_COLLISION,
-	DB_AUTOUPDATECOLLISION,
-	DB_SAPARATOR_4,
+	//DB_COLLISION,
+	//DB_AUTOUPDATECOLLISION,
+	//DB_SAPARATOR_4,
 	DB_STRETCHQUALITY,
 	DB_HOTSPOT,
 	DB_ZOOMSCALE,
@@ -155,8 +155,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		}
 	}
 
-	rdPtr->pCountVec = new std::vector<MapPair>;
+	rdPtr->pCountVec = new RefCountVec;
 	rdPtr->pPreloadList = nullptr;
+
+	rdPtr->itCountVecStr = new std::wstring;
+	rdPtr->itCountVecCount = new Count;
 
 	// No errors
 	return 0;
@@ -218,6 +221,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pCountVec;
 	delete rdPtr->pPreloadList;
+
+	delete rdPtr->itCountVecStr;
+	delete rdPtr->itCountVecCount;
 
 	// No errors
 	return 0;
