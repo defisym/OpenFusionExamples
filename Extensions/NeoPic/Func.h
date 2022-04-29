@@ -342,13 +342,6 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 	}
 
 	_AddAlpha(Src);
-
-	//if (rdPtr->HWA) {
-	//	auto pSf = Src;
-	//	Src = ConvertHWATexture(rdPtr, Src);
-	//	
-	//	delete pSf;
-	//}
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
