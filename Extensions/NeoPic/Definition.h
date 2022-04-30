@@ -77,8 +77,9 @@ using pPreLoadList = List*;
 using PreLoadList = List;
 
 struct Count {
-	size_t count;			// ref times
+	size_t count;			// total ref times
 	size_t priority;		// lib size when first time ref
+	size_t curRef;			// current ref times
 
 	inline size_t GetWeight(size_t countWeight) {
 		return this->count * countWeight + this->priority;

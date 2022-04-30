@@ -51,8 +51,8 @@
 #define IDS_PROP_HOTSPOT_RT               226
 #define IDS_PROP_HOTSPOT_RM               227
 #define IDS_PROP_HOTSPOT_RB               228
-#define IDS_PROP_HOTSPOT               229
-#define IDS_PROP_HOTSPOT_INFO               230
+#define IDS_PROP_HOTSPOT                  229
+#define IDS_PROP_HOTSPOT_INFO             230
 
 // Dialog Box ID
 #define DB_SETUP                20003
@@ -173,6 +173,7 @@
 #define M_ACTION_KEEPLIST            5522
 
 #define M_ACTION_ITSIZE              5523
+#define M_ACTION_MEMLIMIT            5524
 
 //	Conditions
 //--------------------

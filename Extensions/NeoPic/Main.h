@@ -167,11 +167,12 @@ typedef struct tagRDATA
 	//Display
 
 	//Settings
-	bool HWA = false;
-	bool stretchQuality = false;
+	volatile bool HWA = false;
+	volatile bool stretchQuality = false;
 
 	//Source
 	bool fromLib = false;
+	size_t* pRefCount = nullptr;
 
 	std::wstring* FileName = nullptr;
 	std::wstring* FilePath = nullptr;

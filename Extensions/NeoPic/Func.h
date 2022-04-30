@@ -10,6 +10,11 @@ inline void GetFileName(LPRDATA rdPtr);
 
 //-----------------------------
 
+// Create new surface according to HWA
+inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
+	return HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
+}
+
 inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
 	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
 }
@@ -344,14 +349,20 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 	_AddAlpha(Src);
 }
 
+inline auto UpdateRef(LPRDATA rdPtr, bool add) {
+	if (rdPtr->pRefCount != nullptr) {
+		return add ? (*rdPtr->pRefCount)++ : (*rdPtr->pRefCount)--;
+	}
+	return (size_t)-1;
+}
+
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
 	if (rdPtr->isLib) {
 		if (rdPtr->lib->find(FileName) != rdPtr->lib->end()) {
 			return;
 		}
 
-		//LPSURFACE img = new cSurface;
-		LPSURFACE img = rdPtr->HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
+		LPSURFACE img = CreateNewSurface(rdPtr, rdPtr->HWA);;
 
 		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 		
@@ -364,8 +375,10 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 	}
 	else {
 		if (rdPtr->fromLib) {			
-			//rdPtr->src = new cSurface;
-			rdPtr->src = rdPtr->HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
+			rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);
+			
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
 		}
 
 		rdPtr->fromLib = false;
@@ -404,13 +417,19 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	if (it == obj->lib->end()) {
 		return;
 	}
+
+	// convert to HWA if needed
+	if (obj->HWA && !IsHWA(it->second)) {
+		ConvertToHWATexture(rdPtr, it->second);
+	}
 	
 	auto countit = obj->pCount->find(FileName);	
 	if (countit != obj->pCount->end()) {
 		countit->second.count++;
 	}
 	else {
-		(*obj->pCount)[FileName] = Count{ 1, obj->lib->size() };
+		(*obj->pCount)[FileName] = Count{ 1, obj->lib->size(),0 };
+		countit = obj->pCount->find(FileName);
 	}
 
 	if(!rdPtr->isLib){
@@ -418,8 +437,14 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 			delete rdPtr->src;
 		}
 
+		// Update ref
+		UpdateRef(rdPtr, false);
+
 		rdPtr->fromLib = true;
-		rdPtr->src = it->second;
+		rdPtr->src = it->second;		
+		rdPtr->pRefCount = &(countit->second.curRef);
+
+		UpdateRef(rdPtr, true);
 
 		NewPic(rdPtr);
 	}
@@ -466,19 +491,21 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 	else {
 		if (rdPtr->fromLib) {
 			rdPtr->src = nullptr;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
 		}
 
 		rdPtr->fromLib = false;
 		
 		delete rdPtr->src;
-		rdPtr->src = new cSurface;
+		rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);;
 		rdPtr->src->Clone(*obj->src);
 	}
 
-	*rdPtr->FilePath = *obj->FileName;
+	*rdPtr->FileName = *obj->FileName;
+	*rdPtr->FilePath = *obj->FilePath;
 	*rdPtr->Key = *obj->Key;
-
-	GetFileName(rdPtr);
 
 	if (CopyCoef) {
 		NewPic(rdPtr, obj);
@@ -554,7 +581,7 @@ inline void GetFullPathFromName(FileList& outList, const FileList inList, const 
 constexpr auto PRELOAD_TERMIANTE = 1;
 
 // do not ref PreloadList as this function is for multithread
-inline int PreloadLibFromVec(LPRDATA rdPtr, FileList PreloadList, bool fullPath, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
+inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, bool fullPath, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
 	if (PreloadList.empty()) {
 		rdPtr->forceExit = false;
 		rdPtr->threadID = 0;
@@ -581,7 +608,9 @@ inline int PreloadLibFromVec(LPRDATA rdPtr, FileList PreloadList, bool fullPath,
 			break;
 		}
 
-		LPSURFACE img = new cSurface;
+		// can only load bitmap in sub thread, cannot load HWA here
+		LPSURFACE img = CreateNewSurface(rdPtr, false);
+
 		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (img->IsValid()) {
@@ -667,6 +696,35 @@ inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring ba
 	GetFullPathFromName(*rdPtr->pKeepList, keepList, basePath);
 }
 
+inline void UpdateCleanVec(LPRDATA rdPtr) {
+	auto mapSz = rdPtr->lib->size();
+
+	rdPtr->pCountVec->clear();
+	rdPtr->pCountVec->reserve(mapSz);
+
+	for (auto& it : *rdPtr->lib) {
+		auto pCountIt = rdPtr->pCount->find(it.first);
+		auto pCountContain = pCountIt != rdPtr->pCount->end();
+		
+		Count count = pCountContain 
+			? pCountIt->second 
+			: Count{ 0,0,0 };			// lowest weight
+
+		if ((!pCountContain
+			|| pCountIt->second.curRef == 0) // only release assets that currently is not used
+			&& std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
+			auto pSf = it.second;
+			
+			rdPtr->pCountVec->emplace_back(RefCountPair{ it.first,count });
+		}
+	}
+
+	auto countWeight = mapSz;		// weight of ref count
+	std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [&](RefCountPair& l, RefCountPair& r) {
+		return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
+		});
+}
+
 inline void UpdateRefCountVec(LPRDATA rdPtr) {
 	auto mapSz = rdPtr->pCount->size();
 
@@ -674,7 +732,8 @@ inline void UpdateRefCountVec(LPRDATA rdPtr) {
 	rdPtr->pCountVec->reserve(mapSz);
 
 	for (auto& it : *rdPtr->pCount) {
-		if (std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
+		if (it.second.curRef == 0
+			&& std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
 			rdPtr->pCountVec->emplace_back(it);
 		}
 	}
@@ -685,17 +744,28 @@ inline void UpdateRefCountVec(LPRDATA rdPtr) {
 		});
 }
 
-inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
+inline void ClearCurRef(LPRDATA rdPtr) {
+	for (auto& it : *rdPtr->pCount) {
+		it.second.curRef = 0;
+	}
+}
+
+inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit = -1) {
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
 		if (forceClean
 			|| (rdPtr->autoClean
 				&& rdPtr->pCount->size() > CLEAR_NUMTHRESHOLD
 				&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20))) {
-			UpdateRefCountVec(rdPtr);
+			auto tarMemLimit = forceClean && (memLimit != -1)
+				? memLimit
+				: rdPtr->memoryLimit / 2;
 
-			while (!rdPtr->pCount->empty()
-				&& rdPtr->memoryLimit / 2 <= (GetProcessMemoryUsage() >> 20)) {
+			UpdateCleanVec(rdPtr);
+
+			while (!rdPtr->pCountVec->empty()
+				&& tarMemLimit <= (GetProcessMemoryUsage() >> 20)) {
+
 				auto& fileName = rdPtr->pCountVec->back().first;
 
 				auto pSf = (*rdPtr->lib)[fileName];
@@ -711,7 +781,6 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false) {
 }
 
 // Get information
-
 inline long GetHotSpotX(LPRDATA rdPtr) {
 	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->hotSpot.x : -1;
 }
@@ -763,6 +832,7 @@ inline auto GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) 
 	return FilePath.substr(pos, FilePath.size() - pos);
 }
 
+// for display
 inline auto GetSurface(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->HWA) {
 		return CreateHWASurface(rdPtr, rdPtr->src->GetDepth(), width, height, ST_HWA_RTTEXTURE);

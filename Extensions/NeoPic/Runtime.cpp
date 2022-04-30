@@ -197,6 +197,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		if (!rdPtr->isLib) {
 			FreeColMask(rdPtr->pColMask);
 		}
+
+		UpdateRef(rdPtr, false);
+		rdPtr->pRefCount = nullptr;
 	}
 
 	if (rdPtr->isLib) {
@@ -211,7 +214,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 			}
 		}
 		
-		//Save Lib
+		// Clear ref
+		ClearCurRef(rdPtr);
+
+		// Save Lib
 		rdPtr->pData->pLib = rdPtr->lib;
 		rdPtr->pData->pCount = rdPtr->pCount;
 		rdPtr->pData->pKeepList = rdPtr->pKeepList;
