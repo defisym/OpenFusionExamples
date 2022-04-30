@@ -255,9 +255,10 @@ inline RGBA operator >>(RGBA A, int B) {
 
 //Create surface
 inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height, int type) {
-	LPSURFACE proto = nullptr;
 	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 	int sfDrv = wSurf->GetDriver();
+
+	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, sfDrv);
 
 	cSurface* hwa = new cSurface;
@@ -265,6 +266,7 @@ inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int heigh
 
 	return hwa;
 }
+
 inline LPSURFACE CreateSurface(int depth, int width, int height) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
@@ -274,6 +276,7 @@ inline LPSURFACE CreateSurface(int depth, int width, int height) {
 
 	return sur;
 }
+
 inline void CreateBlankSurface(LPSURFACE Src) {
 	// failed to load, display blank
 	LPSURFACE proto = nullptr;
@@ -283,16 +286,16 @@ inline void CreateBlankSurface(LPSURFACE Src) {
 }
 
 //Convert to HWA
-inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
-	if (Src->GetType() >= ST_HWA_SCREEN) {
-		return Src;
-	}	
+inline bool IsHWA(LPSURFACE Src) {
+	return Src->GetType() >= ST_HWA_SCREEN;
+}
 
-	return CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
+inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
+	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
 }
 
 inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
-	if (Src->GetType() >= ST_HWA_SCREEN) {
+	if (IsHWA(Src)) {
 		return Src;
 	}
 
@@ -300,6 +303,18 @@ inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
 	Src->Blit(*hwa);
 
 	return hwa;
+}
+
+inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
+	auto pBitmap = Src;
+	Src = ConvertHWATarget(rdPtr, Src);
+	delete pBitmap;
+}
+
+inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src) {
+	auto pBitmap = Src;
+	Src = ConvertHWATexture(rdPtr, Src);
+	delete pBitmap;
 }
 
 inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
@@ -569,7 +584,7 @@ inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int wi
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
-	
+
 	if (NoStretch) {
 		if (!ImportImage(pImgMgr, FilePath, Src, 0, 0)) {
 			CreateBlankSurface(Src);
