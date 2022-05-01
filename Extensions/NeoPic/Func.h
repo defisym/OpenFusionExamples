@@ -546,7 +546,7 @@ inline void DeleteLib(SurfaceLib* pData) {
 }
 
 inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
-	auto it = pData->find(Item);
+	auto it = pData->find(GetFullPathNameStr(Item));
 	if (it != pData->end()) {
 		delete it->second;
 		pData->erase(it);

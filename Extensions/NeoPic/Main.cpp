@@ -176,16 +176,16 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 			CreatePreloadProcess(rdPtr, pList, false, BasePath, Key);
 		}
 #else				// load base path instead for test
-		std::vector<std::wstring> fileList = { L"dialog1.png",
-												L"dialog2.png",
-												L"dialog3.png",
-												L"dianull.png",
-												L"nameback1.png",
-												L"nameback2.png",
-												L"nameback3.png",
-												L"nameback4.png",
-												L"namenull.png" };
-		CreatePreloadProcess(rdPtr, &fileList, false, BasePath, Key);
+		//std::vector<std::wstring> fileList = { L"dialog1.png",
+		//										L"dialog2.png",
+		//										L"dialog3.png",
+		//										L"dianull.png",
+		//										L"nameback1.png",
+		//										L"nameback2.png",
+		//										L"nameback3.png",
+		//										L"nameback4.png",
+		//										L"namenull.png" };
+		//CreatePreloadProcess(rdPtr, &fileList, false, BasePath, Key);
 		
 		//std::vector<std::wstring> fileList;
 		//GetFileList(&fileList, BasePath);
