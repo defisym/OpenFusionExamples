@@ -136,10 +136,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	*rdPtr->FilePath = FilePath;
-	*rdPtr->Key = Key;
-
-	LoadFromFile(rdPtr, GetFullPathNameStr(FilePath).c_str(), Key);
+	LoadFromFile(rdPtr, FilePath, Key);
 
 	return 0;
 }
@@ -150,7 +147,7 @@ short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LoadFromLib(rdPtr, object, GetFullPathNameStr(FilePath).c_str(), Key);
+	LoadFromLib(rdPtr, object, FilePath, Key);
 
 	return 0;
 }
@@ -508,7 +505,7 @@ long WINAPI DLLExport GetFilePath(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetRelativeFilePath(LPRDATA rdPtr, long param1) {
 	std::wstring BasePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	
-	auto pos = BasePath.size();
+	auto pos = BasePath.size() + 1;
 	*rdPtr->RelativeFilePath = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.

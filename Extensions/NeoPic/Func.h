@@ -359,17 +359,19 @@ inline auto UpdateRef(LPRDATA rdPtr, bool add) {
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+	auto fullPath = GetFullPathNameStr(FileName);
+
 	if (rdPtr->isLib) {
-		if (rdPtr->lib->find(FileName) != rdPtr->lib->end()) {
+		if (rdPtr->lib->find(fullPath) != rdPtr->lib->end()) {
 			return;
 		}
 
 		LPSURFACE img = CreateNewSurface(rdPtr, rdPtr->HWA);;
 
-		_LoadFromFile(img, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
+		_LoadFromFile(img, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 		
 		if (img->IsValid()) {
-			(*rdPtr->lib)[FileName] = img;
+			(*rdPtr->lib)[fullPath] = img;
 		}
 		else {
 			delete img;
@@ -385,7 +387,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 
 		rdPtr->fromLib = false;
 
-		_LoadFromFile(rdPtr->src, FileName, Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
+		_LoadFromFile(rdPtr->src, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 		
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
@@ -409,13 +411,15 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		return;
 	}
 
-	auto it = obj->lib->find(FileName);
+	auto fullPath = GetFullPathNameStr(FileName);
+	
+	auto it = obj->lib->find(fullPath);
 	
 	if (it == obj->lib->end()) {
 		LoadFromFile(obj, FileName, Key);
 	}
 
-	it = obj->lib->find(FileName);
+	it = obj->lib->find(fullPath);
 	if (it == obj->lib->end()) {
 		return;
 	}
@@ -425,13 +429,13 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		ConvertToHWATexture(rdPtr, it->second);
 	}
 	
-	auto countit = obj->pCount->find(FileName);	
+	auto countit = obj->pCount->find(fullPath);
 	if (countit != obj->pCount->end()) {
 		countit->second.count++;
 	}
 	else {
-		(*obj->pCount)[FileName] = Count{ 1, obj->lib->size(),0 };
-		countit = obj->pCount->find(FileName);
+		(*obj->pCount)[fullPath] = Count{ 1, obj->lib->size(),0 };
+		countit = obj->pCount->find(fullPath);
 	}
 
 	if(!rdPtr->isLib){
@@ -451,7 +455,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		NewPic(rdPtr);
 	}
 	else {
-		auto thisit = rdPtr->lib->find(FileName);
+		auto thisit = rdPtr->lib->find(fullPath);
 		if (thisit == rdPtr->lib->end()) {
 			rdPtr->lib->emplace(it->first, it->second);
 		}
@@ -837,7 +841,7 @@ inline auto GetFileName(std::wstring& FilePath) {
 }
 
 inline auto GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {
-	auto pos = BasePath.size();
+	auto pos = BasePath.size() + 1;
 	return FilePath.substr(pos, FilePath.size() - pos);
 }
 
