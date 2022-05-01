@@ -8,6 +8,8 @@ inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,
 
 inline void GetFileName(LPRDATA rdPtr);
 
+inline bool ExceedDefaultMemLimit(size_t memLimit);
+
 //-----------------------------
 
 // Create new surface according to HWA
@@ -572,7 +574,7 @@ inline void GetFullPathFromName(FileList& outList, const FileList inList, const 
 				});
 
 			if (fileIt != fileList.end()) {
-				outList.emplace_back(*fileIt);
+				outList.emplace_back(GetFullPathNameStr(*fileIt));
 			}
 		}
 	}
@@ -581,30 +583,17 @@ inline void GetFullPathFromName(FileList& outList, const FileList inList, const 
 constexpr auto PRELOAD_TERMIANTE = 1;
 
 // do not ref PreloadList as this function is for multithread
-inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, bool fullPath, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
+inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
 	if (PreloadList.empty()) {
-		rdPtr->forceExit = false;
-		rdPtr->threadID = 0;
-
+		callBack(nullptr);
 		return 0;
-	}
-
-	FileList* list;
-	
-	FileList fullPathList;	
-	
-	if (!fullPath) {
-		GetFullPathFromName(fullPathList, PreloadList, BasePath);
-		list = &fullPathList;
-	}
-	else {
-		list = &PreloadList;
 	}
 
 	SurfaceLib* tempLib = new SurfaceLib;
 
-	for (auto& it : *list) {
-		if (min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20)) {
+	for (auto& it : PreloadList) {
+		// Stop loading when exceed limit		
+		if (ExceedDefaultMemLimit(rdPtr->memoryLimit)) {
 			break;
 		}
 
@@ -637,9 +626,6 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, bool 
 		callBack(tempLib);
 	}
 
-	rdPtr->forceExit = false;
-	rdPtr->threadID = 0;
-
 	return 0;
 }
 
@@ -648,19 +634,35 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 	rdPtr->pPreloadList = new PreLoadList;
 	rdPtr->pPreloadList->reserve(pList->size());
 
+	FileList* list;
+	FileList fullPathList;
+
+	if (!fullPath) {
+		GetFullPathFromName(fullPathList, *pList, BasePath);
+		list = &fullPathList;
+	}
+	else {
+		list = pList;
+	}
+	
 	// filter duplicate
-	for (auto& it : *pList) {
-		if (std::find(rdPtr->pPreloadList->begin(), rdPtr->pPreloadList->end(), it) == rdPtr->pPreloadList->end()
-			&& std::find_if(rdPtr->lib->begin(), rdPtr->lib->end(), [it](auto& p) {
-				return p.first == it;
+	for (auto& it : *list) {
+		std::wstring fullPath = GetFullPathNameStr(it);
+		
+		if (std::find(rdPtr->pPreloadList->begin(), rdPtr->pPreloadList->end(), fullPath) == rdPtr->pPreloadList->end()
+			&& std::find_if(rdPtr->lib->begin(), rdPtr->lib->end(), [fullPath](auto& p) {
+				return p.first == fullPath;
 				}) == rdPtr->lib->end()) {
-			rdPtr->pPreloadList->emplace_back(it);
+			rdPtr->pPreloadList->emplace_back(fullPath);
 		}
 	}
 
 	rdPtr->preloading = true;
-	std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, fullPath, BasePath, Key
+	std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, BasePath, Key
 		, [rdPtr](SurfaceLib* lib) {
+			rdPtr->forceExit = false;
+			rdPtr->threadID = 0;
+			
 			rdPtr->preloading = false;
 			rdPtr->preloadMerge = true;
 			rdPtr->preloadLib = lib;
@@ -675,7 +677,8 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 
 inline void MergeLib(LPRDATA rdPtr) {
 	if (!rdPtr->preloading
-		&& rdPtr->preloadMerge) {
+		&& rdPtr->preloadMerge
+		&& rdPtr->preloadLib != nullptr) {
 		for (auto& it : *rdPtr->preloadLib) {
 			auto& [name, pSf] = it;
 			if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
@@ -684,9 +687,11 @@ inline void MergeLib(LPRDATA rdPtr) {
 		}
 
 		delete rdPtr->preloadLib;
+		rdPtr->preloadLib = nullptr;
+		
 		rdPtr->preloading = false;
 		rdPtr->preloadMerge = false;
-		
+
 		CallEvent(ONPRELOADCOMPLETE);
 	}
 }
@@ -750,13 +755,17 @@ inline void ClearCurRef(LPRDATA rdPtr) {
 	}
 }
 
+inline bool ExceedDefaultMemLimit(size_t memLimit) {
+	return min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= GetProcessMemoryUsageMB();
+}
+
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit = -1) {
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
 		if (forceClean
 			|| (rdPtr->autoClean
-				&& rdPtr->pCount->size() > CLEAR_NUMTHRESHOLD
-				&& min(rdPtr->memoryLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= (GetProcessMemoryUsage() >> 20))) {
+				&& rdPtr->lib->size() > CLEAR_NUMTHRESHOLD
+				&& ExceedDefaultMemLimit(rdPtr->memoryLimit))) {
 			auto tarMemLimit = forceClean && (memLimit != -1)
 				? memLimit
 				: rdPtr->memoryLimit / 2;
@@ -764,7 +773,7 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 			UpdateCleanVec(rdPtr);
 
 			while (!rdPtr->pCountVec->empty()
-				&& tarMemLimit <= (GetProcessMemoryUsage() >> 20)) {
+				&& tarMemLimit <= GetProcessMemoryUsageMB()) {
 
 				auto& fileName = rdPtr->pCountVec->back().first;
 

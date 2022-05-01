@@ -212,8 +212,8 @@ typedef struct tagRDATA
 
 	volatile HANDLE threadID;
 	volatile bool forceExit = false;
-	bool preloading = false;
-	bool preloadMerge = false;
+	volatile bool preloading = false;
+	volatile bool preloadMerge = false;
 
 	size_t memoryLimit;
 	size_t sizeLimit;

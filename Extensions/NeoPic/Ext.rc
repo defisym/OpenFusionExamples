@@ -333,7 +333,7 @@ BEGIN
     
     M_ACTION_SPL             "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
-    M_ACTION_CC              "Clear Preload Cache, Memory Limit %0"
+    M_ACTION_CC              "Clear Cache, Memory Limit %0"
     M_ACTION_SKL             "Set Keep List to %0, BasePath = %1"
     M_ACTION_ITRC            "Iterate Most Referenced %0 Objects"
 

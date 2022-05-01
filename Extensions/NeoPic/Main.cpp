@@ -139,7 +139,7 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	*rdPtr->FilePath = FilePath;
 	*rdPtr->Key = Key;
 
-	LoadFromFile(rdPtr, FilePath, Key);
+	LoadFromFile(rdPtr, GetFullPathNameStr(FilePath).c_str(), Key);
 
 	return 0;
 }
@@ -150,7 +150,7 @@ short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LoadFromLib(rdPtr, object, FilePath, Key);
+	LoadFromLib(rdPtr, object, GetFullPathNameStr(FilePath).c_str(), Key);
 
 	return 0;
 }
@@ -170,16 +170,33 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-#ifndef _DEBUG		// only works in runtime due to /MD & /MDd
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
+#ifndef _DEBUG		// only works in runtime due to /MD & /MDd
 		auto pList = ConvertToType<pPreLoadList>(list);
 
 		if (pList != nullptr) {
 			CreatePreloadProcess(rdPtr, pList, false, BasePath, Key);
 		}
-	}
+#else				// load base path instead for test
+		std::vector<std::wstring> fileList = { L"dialog1.png",
+												L"dialog2.png",
+												L"dialog3.png",
+												L"dianull.png",
+												L"nameback1.png",
+												L"nameback2.png",
+												L"nameback3.png",
+												L"nameback4.png",
+												L"namenull.png" };
+		CreatePreloadProcess(rdPtr, &fileList, false, BasePath, Key);
+		
+		//std::vector<std::wstring> fileList;
+		//GetFileList(&fileList, BasePath);
+
+		//CreatePreloadProcess(rdPtr, &fileList, true, BasePath, Key);
 #endif // !_DEBUG	
+	}
+
 
 	return 0;
 }
