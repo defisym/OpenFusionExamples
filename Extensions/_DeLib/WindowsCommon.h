@@ -239,6 +239,10 @@ inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType
 	return ret;
 }
 
+inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
+	return (GetProcessMemoryUsage(processID, type) >> 20);
+}
+
 inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	// Get FileVersionInfo
 	auto size = GetFileVersionInfoSize(FileName, NULL);	
@@ -321,4 +325,11 @@ inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src)
 	}
 
 	return;
+}
+
+inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
+	std::wstring ret(MAX_PATH, '\0');
+	GetFullPathName(fileName.c_str(), MAX_PATH, &ret[0], nullptr);
+
+	return ret;
 }
