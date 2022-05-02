@@ -116,6 +116,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Can Display", IDMN_CONDITION_CD
+        MENUITEM SEPARATOR
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
         MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
         MENUITEM SEPARATOR
@@ -398,8 +400,10 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION_OPLC     "%o On Preload Complete"
+    M_CONDITION_OPLC      "%o On Preload Complete"
     M_CONDITION_OITRC     "%o On Iterate Ref Count"
+    
+    M_CONDITION_CD        "%o Can Display"
 
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"

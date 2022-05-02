@@ -24,6 +24,8 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_OPLC, M_CONDITION_OPLC, CND_CONDITION_OPLC, 0, 0,
 		IDMN_CONDITION_OITRC, M_CONDITION_OITRC, CND_CONDITION_OITRC, 0, 0,
+
+		IDMN_CONDITION_CD, M_CONDITION_CD, CND_CONDITION_CD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -125,6 +127,11 @@ long WINAPI DLLExport OnPreloadComplete(LPRDATA rdPtr, long param1, long param2)
 long WINAPI DLLExport OnIterateRefCount(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
+
+long WINAPI DLLExport CanDisplay(LPRDATA rdPtr, long param1, long param2) {
+	return !rdPtr->isLib && rdPtr->src != nullptr && rdPtr->src->IsValid();
+}
+
 
 // ============================================================================
 //
@@ -342,10 +349,10 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 	int Width = (int)CNC_GetIntParameter(rdPtr);
 	int Height = (int)CNC_GetIntParameter(rdPtr);
 
-	float XScale = (1.0f * Width / rdPtr->src->GetWidth());
-	float YScale = (1.0f * Height / rdPtr->src->GetHeight());
-
 	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+		float XScale = (1.0f * Width / rdPtr->src->GetWidth());
+		float YScale = (1.0f * Height / rdPtr->src->GetHeight());
+
 		Zoom(rdPtr, XScale, YScale);
 	}
 
@@ -632,6 +639,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{ 
 			OnPreloadComplete,
 			OnIterateRefCount,
+
+			CanDisplay,
 
 			0
 			};

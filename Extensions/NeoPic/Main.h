@@ -9,7 +9,9 @@
 #define	CND_CONDITION_OPLC			0
 #define	CND_CONDITION_OITRC			1
 
-#define	CND_LAST					2
+#define	CND_CONDITION_CD			2
+
+#define	CND_LAST					3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
