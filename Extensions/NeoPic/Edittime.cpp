@@ -517,9 +517,18 @@ void WINAPI DLLExport DuplicateObject(mv __far *mV, fpObjInfo oiPtr, LPEDATA edP
 void WINAPI DLLExport GetObjectRect(mv _far *mV, RECT FAR *rc, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
-	if (!edPtr->isLib) {
+	if (!edPtr->isLib) {		
+		int hoX;
+		int hoY;
+		
+		UpdateHotSpot((HotSpotPos)edPtr->hotSpotComboID, (size_t)edPtr->swidth, (size_t)edPtr->sheight, hoX, hoY);
+
+		rc->left -= hoX;
+		rc->top -= hoY;
+		
 		rc->right = rc->left + edPtr->swidth;
 		rc->bottom = rc->top + edPtr->sheight;
+
 	}
 	else {
 		rc->right = rc->left + 32;
@@ -582,7 +591,7 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 			BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
 			int effectParam = oiPtr->oiHdr.oiInkEffectParam;
 
-			bg.Blit(*ps, x, y, bm, bo, effectParam, bAntiA ? BLTF_ANTIA : 0);
+			bg.Blit(*ps, x, y, bm, bo, effectParam, bAntiA ? BLTF_ANTIA : 0);			
 		}
 
 		cSurface is;			// New surface variable for us to use

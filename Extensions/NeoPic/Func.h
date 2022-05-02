@@ -134,44 +134,64 @@ inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
+// Update real hot sopt
 inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
 	rdPtr->hotSpot.x = X;
 	rdPtr->hotSpot.y = Y;
 }
 
-inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y ) {
+// Update X/Y according to width/height
+inline void UpdateHotSpot(HotSpotPos Type, size_t width, size_t height, int& X, int& Y) {
 	switch (Type) {
 	case HotSpotPos::LT:
-		UpdateHotSpot(rdPtr, 0, 0);
+		X = 0;
+		Y = 0;
 		break;
 	case HotSpotPos::LM:
-		UpdateHotSpot(rdPtr, 0, (int)(rdPtr->src->GetHeight() / 2));
+		X = 0;
+		Y = height / 2;
 		break;
 	case HotSpotPos::LB:
-		UpdateHotSpot(rdPtr, 0, rdPtr->src->GetHeight());
+		X = 0;
+		Y = height;
 		break;
 	case HotSpotPos::MT:
-		UpdateHotSpot(rdPtr, (int)(rdPtr->src->GetWidth() / 2), 0);
+		X = width / 2;
+		Y = 0;
 		break;
 	case HotSpotPos::MM:
-		UpdateHotSpot(rdPtr, (int)(rdPtr->src->GetWidth() / 2), (int)(rdPtr->src->GetHeight() / 2));
+		X = width / 2;
+		Y = height / 2;
 		break;
 	case HotSpotPos::MB:
-		UpdateHotSpot(rdPtr, (int)(rdPtr->src->GetWidth() / 2), Y);
+		X = width / 2;
+		Y = height;
 		break;
 	case HotSpotPos::RT:
-		UpdateHotSpot(rdPtr, rdPtr->src->GetWidth(), 0);
+		X = width;
+		Y = 0;
 		break;
 	case HotSpotPos::RM:
-		UpdateHotSpot(rdPtr, rdPtr->src->GetWidth(), (int)(rdPtr->src->GetHeight() / 2));
+		X = width;
+		Y = height / 2;
 		break;
 	case HotSpotPos::RB:
-		UpdateHotSpot(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
+		X = width;
+		Y = height;
 		break;
 	case HotSpotPos::CUSTOM:
-		UpdateHotSpot(rdPtr, X, Y);
+		X = X;
+		Y = Y;
 		break;
 	}
+}
+
+inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y ) {
+	auto width = rdPtr->src->GetWidth();
+	auto height = rdPtr->src->GetHeight();
+
+	UpdateHotSpot(Type, width, height, X, Y);
+	UpdateHotSpot(rdPtr, X, Y);
 
 	ReDisplay(rdPtr);
 }
