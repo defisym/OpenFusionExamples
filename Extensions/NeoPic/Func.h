@@ -330,9 +330,16 @@ inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
 	}
 }
 
+// Load file then convert to Src type
 inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	// HWA?
+	auto srcHWA = IsHWA(Src);
+
+	// Load by bitmap, as HWA texture cannot add alpha channel
+	LPSURFACE pBitmap = srcHWA ? CreateNewSurface(rdPtr, false) : Src;
+	
 	if (StrEmpty(Key)) {
-		_LoadFromFile(Src, FilePath, rdPtr, width, height, NoStretch, HighQuality);
+		_LoadFromFile(pBitmap, FilePath, rdPtr, width, height, NoStretch, HighQuality);
 	}
 	else {
 		Encryption E;
@@ -341,34 +348,18 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 		E.OpenFile(FilePath);
 		E.Decrypt();
 
-		CInputMemFile MemFile;
-		MemFile.Create(E.GetOutputData(), E.GetOutputDataLength());
-
-		//MGR
-		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-		CImageFilter    pFilter(pImgMgr);
-
-		if (NoStretch) {
-			if (!ImportImageFromInputFile(pImgMgr, &MemFile, Src, 0, 0)) {
-				CreateBlankSurface(Src);
-			}
-		}
-		else {
-			cSurface img;
-
-			if(ImportImageFromInputFile(pImgMgr, &MemFile, &img, 0, 0)){
-				delete Src;
-				Src = CreateSurface(24, width, height);
-
-				Stretch(&img, Src, HighQuality);
-			}
-			else {
-				CreateBlankSurface(Src);
-			}
-		}
+		_LoadFromMemFile(pBitmap, E.GetOutputData(), E.GetOutputDataLength(), rdPtr, width, height, NoStretch, HighQuality);
 	}
 
-	_AddAlpha(Src);
+	// Add alpha to avoid Fusion set (0,0,0) to transparent
+	_AddAlpha(pBitmap);
+
+	if (srcHWA) {
+		delete Src;
+		Src = pBitmap;
+		
+		ConvertToHWATexture(rdPtr, Src);
+	}
 }
 
 inline auto UpdateRef(LPRDATA rdPtr, bool add) {
@@ -386,36 +377,34 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 			return;
 		}
 
-		LPSURFACE img = CreateNewSurface(rdPtr, rdPtr->HWA);;
+		LPSURFACE pImg = CreateNewSurface(rdPtr, rdPtr->HWA);
+		_LoadFromFile(pImg, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
-		_LoadFromFile(img, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
-		
-		if (img->IsValid()) {
-			(*rdPtr->lib)[fullPath] = img;
+		if (pImg->IsValid()) {
+			(*rdPtr->lib)[fullPath] = pImg;
 		}
 		else {
-			delete img;
+			delete pImg;
 		}
 	}
 	else {
 		if (rdPtr->fromLib) {			
+			rdPtr->fromLib = false;
 			rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);
 			
 			UpdateRef(rdPtr, false);
 			rdPtr->pRefCount = nullptr;
-		}
-
-		rdPtr->fromLib = false;
+		}	
 
 		_LoadFromFile(rdPtr->src, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
-		
+
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
 
 			*rdPtr->FilePath = FileName;
 			*rdPtr->Key = Key;
 
-			GetFileName(rdPtr);			
+			GetFileName(rdPtr);
 		}
 	}	
 }
@@ -477,7 +466,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	else {
 		auto thisit = rdPtr->lib->find(fullPath);
 		if (thisit == rdPtr->lib->end()) {
-			rdPtr->lib->emplace(it->first, it->second);
+			(*rdPtr->lib)[it->first]=it->second;
 		}
 	}
 
@@ -622,15 +611,14 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 		}
 
 		// can only load bitmap in sub thread, cannot load HWA here
-		LPSURFACE img = CreateNewSurface(rdPtr, false);
+		LPSURFACE pBitmap = CreateNewSurface(rdPtr, false);
+		_LoadFromFile(pBitmap, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
-		_LoadFromFile(img, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
-
-		if (img->IsValid()) {
-			tempLib->emplace(it, img);
+		if (pBitmap->IsValid()) {
+			(*tempLib)[it] = pBitmap;
 		}
 		else {
-			delete img;
+			delete pBitmap;
 		}
 
 		if (rdPtr->forceExit) {
@@ -669,7 +657,7 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 		list = pList;
 	}
 	
-	// filter duplicate
+	// filter duplicate items
 	for (auto& it : *list) {
 		std::wstring fullPath = GetFullPathNameStr(it);
 		
@@ -706,7 +694,7 @@ inline void MergeLib(LPRDATA rdPtr) {
 		for (auto& it : *rdPtr->preloadLib) {
 			auto& [name, pSf] = it;
 			if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
-				rdPtr->lib->emplace(name, pSf);
+				(*rdPtr->lib)[name] = pSf;
 			}
 		}
 
