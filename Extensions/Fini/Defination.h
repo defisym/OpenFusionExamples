@@ -43,4 +43,35 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
 
+//// 2.5+ unlimited values and strings
+//typedef struct tagRV25P {
+//	CValue* rvpValues;
+//	int		rvNumberOfValues;
+//	int		rvFree1[VALUES_NUMBEROF_ALTERABLE - 2];		// for compatiblity with old extensions
+//	int		rvValueFlags;
+//	BYTE	rvFree2[VALUES_NUMBEROF_ALTERABLE];			// for compatiblity with old extensions
+//	LPTSTR* rvpStrings;
+//	int		rvNumberOfStrings;
+//	LPTSTR	rvFree3[STRINGS_NUMBEROF_ALTERABLE - 2];		// for compatiblity with old extensions
+//} rVal25P;
+//
+//// 2.5 unlimited values
+//typedef struct tagRV25 {
+//	CValue* rvpValues;
+//	long	rvNumberOfValues;
+//	long	rvFree1[VALUES_NUMBEROF_ALTERABLE - 2];
+//	long	rvValueFlags;
+//	BYTE	rvFree2[VALUES_NUMBEROF_ALTERABLE];
+//	LPTSTR	rvStrings[STRINGS_NUMBEROF_ALTERABLE];
+//} rVal25;
+//
+//// 2.0 Unicode
+//typedef struct tagRV20U {
+//	CValue* rvpValues;
+//	long	rvFree1[VALUES_NUMBEROF_ALTERABLE - 1];
+//	long	rvValueFlags;
+//	BYTE	rvFree2[VALUES_NUMBEROF_ALTERABLE];
+//	LPTSTR	rvStrings[STRINGS_NUMBEROF_ALTERABLE];
+//} tagRV20U;
+
 #endif // !_DEFINATION_
