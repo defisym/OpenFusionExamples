@@ -129,7 +129,7 @@ long WINAPI DLLExport OnIterateRefCount(LPRDATA rdPtr, long param1, long param2)
 }
 
 long WINAPI DLLExport CanDisplay(LPRDATA rdPtr, long param1, long param2) {
-	return !rdPtr->isLib && rdPtr->src != nullptr && rdPtr->src->IsValid();
+	return CanDisplay(rdPtr);
 }
 
 
@@ -301,7 +301,7 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->isLib && rdPtr->img->IsValid()) {
+	if (CanDisplay(rdPtr)) {
 		//rdPtr->src->Delete();
 		//rdPtr->src->Clone(*rdPtr->img);
 
@@ -312,7 +312,7 @@ short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 short WINAPI DLLExport RestoreCur(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+	if (CanDisplay(rdPtr)) {
 		//rdPtr->imgHotSpot = rdPtr->hotSpot;
 
 		//rdPtr->img->Delete();
@@ -338,7 +338,7 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	float XScale = GetFloatParam(rdPtr);
 	float YScale = GetFloatParam(rdPtr);
 	
-	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+	if (CanDisplay(rdPtr)) {
 		Zoom(rdPtr, XScale, YScale);
 	}	
 
@@ -349,7 +349,7 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 	int Width = (int)CNC_GetIntParameter(rdPtr);
 	int Height = (int)CNC_GetIntParameter(rdPtr);
 
-	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+	if (CanDisplay(rdPtr)) {
 		float XScale = (1.0f * Width / rdPtr->src->GetWidth());
 		float YScale = (1.0f * Height / rdPtr->src->GetHeight());
 
@@ -363,7 +363,7 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	int Angle = (int)CNC_GetIntParameter(rdPtr);
 	Angle = Angle % 360;
 	
-	if (!rdPtr->isLib && rdPtr->src->IsValid()) {
+	if (CanDisplay(rdPtr)) {
 		Rotate(rdPtr, Angle);
 	}
 
@@ -376,7 +376,7 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 
 	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
 
-	if (rdPtr->offset != OffsetCoef{ XOffset, YOffset, Wrap }) {
+	if (CanDisplay(rdPtr)) {
 		rdPtr->offset = { XOffset ,YOffset, Wrap };
 
 		ReDisplay(rdPtr);
@@ -388,13 +388,15 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
 	
-	GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
-		AddBackdrop(rdPtr, pCollideBitmap,
-			rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->hotSpot.x,
-			rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->hotSpot.y,
-			rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
-		});
-
+	if (CanDisplay(rdPtr)) {
+		GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
+			AddBackdrop(rdPtr, pCollideBitmap,
+				rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->hotSpot.x,
+				rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->hotSpot.y,
+				rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
+			});
+	}
+	
 	return 0;
 }
 short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) {
@@ -430,7 +432,7 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 
 	ATArray A = {};
 
-	if (rdPtr->AT != A) {
+	if (CanDisplay(rdPtr)) {
 		rdPtr->AT = A;
 
 		ReDisplay(rdPtr);

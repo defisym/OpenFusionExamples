@@ -40,6 +40,10 @@ inline void ConvertHWA(LPRDATA rdPtr) {
 	}
 }
 
+inline bool CanDisplay(LPRDATA rdPtr) {
+	return !rdPtr->isLib && rdPtr->src != nullptr && rdPtr->src->IsValid();
+}
+
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (!rdPtr->isLib) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
@@ -830,39 +834,39 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 
 // Get information
 inline long GetHotSpotX(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->hotSpot.x : -1;
+	return CanDisplay(rdPtr) ? rdPtr->hotSpot.x : -1;
 }
 
 inline long GetHotSpotY(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->hotSpot.y : -1;
+	return CanDisplay(rdPtr) ? rdPtr->hotSpot.y : -1;
 }
 
 inline int GetOriginalWidth(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->src->GetWidth() : -1;
+	return CanDisplay(rdPtr) ? rdPtr->src->GetWidth() : -1;
 }
 
 inline int GetOriginalHeight(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->src->GetHeight() : -1;
+	return CanDisplay(rdPtr) ? rdPtr->src->GetHeight() : -1;
 }
 
 inline int GetCurrentWidth(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? (int)(rdPtr->src->GetWidth() * abs(rdPtr->zoomScale.XScale)) : -1;
+	return CanDisplay(rdPtr) ? (int)(rdPtr->src->GetWidth() * abs(rdPtr->zoomScale.XScale)) : -1;
 }
 
 inline int GetCurrentHeight(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? (int)(rdPtr->src->GetHeight() * abs(rdPtr->zoomScale.YScale)) : -1;
+	return CanDisplay(rdPtr) ? (int)(rdPtr->src->GetHeight() * abs(rdPtr->zoomScale.YScale)) : -1;
 }
 
 inline float GetXZoomScale(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->zoomScale.XScale : -1;
+	return CanDisplay(rdPtr) ? rdPtr->zoomScale.XScale : -1;
 }
 
 inline float GetYZoomScale(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->zoomScale.YScale : -1;
+	return CanDisplay(rdPtr) ? rdPtr->zoomScale.YScale : -1;
 }
 
 inline int GetAngle(LPRDATA rdPtr) {
-	return rdPtr->src != nullptr && rdPtr->src->IsValid() ? rdPtr->angle : -1;
+	return CanDisplay(rdPtr) ? rdPtr->angle : -1;
 }
 
 inline void GetFileName(LPRDATA rdPtr) {	
