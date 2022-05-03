@@ -580,29 +580,46 @@ inline void _AddAlpha(LPSURFACE Src) {
 	}
 }
 
-inline void _LoadFromFile(LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+inline void _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool NoStretch, bool HighQuality,std::function<bool(CImageFilterMgr*,LPSURFACE&)> load) {
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
 	if (NoStretch) {
-		if (!ImportImage(pImgMgr, FilePath, Src, 0, 0)) {
+		if (!load(pImgMgr, Src)) {
 			CreateBlankSurface(Src);
 		}
 	}
 	else {
-		cSurface img;
+		LPSURFACE pImg = new cSurface;
 
-		if (ImportImage(pImgMgr, FilePath, &img, 0, 0)) {
+		if (load(pImgMgr, pImg)) {
 			delete Src;
-			Src = CreateSurface(24, width, height);
+			Src = CreateSurface(pImg->GetDepth(), width, height);
 
-			Stretch(&img, Src, HighQuality);
+			Stretch(pImg, Src, HighQuality);
 		}
 		else {
 			CreateBlankSurface(Src);
 		}
-	}
+
+		delete pImg;
+	}	
+}
+
+inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	_LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
+		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
+		});
+}
+
+inline void _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	CInputMemFile MemFile;
+	MemFile.Create(pData, dataSz);
+
+	_LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
+		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
+		});
 }
 
 //Get Valid Sacle
