@@ -87,6 +87,7 @@ struct Count {
 };
 
 using SurfaceLib = std::map<std::wstring, LPSURFACE>;
+using SurfaceLibIt = SurfaceLib::iterator;
 using RefCount = std::map<std::wstring, Count>;
 using RefCountPair = std::pair<std::wstring, Count>;
 using RefCountVec = std::vector<RefCountPair>;

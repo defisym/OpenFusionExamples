@@ -409,35 +409,61 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 	}	
 }
 
-inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Key = _T("")) {
-	LPRDATA obj = (LPRDATA)object;
-
+inline bool ObjIsLib(LPRDATA obj) {
 	if (!obj || obj->rHo.hoIdentifier != IDENTIFIER) {
-		return;
+		return false;
 	}
 
 	if (!obj->isLib) {
-		return;
+		return false;
+	}
+
+	return true;
+}
+
+// lib load core
+inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+	if (!ObjIsLib(obj)) {
+		return obj->lib->end();
 	}
 
 	auto fullPath = GetFullPathNameStr(FileName);
-	
+
 	auto it = obj->lib->find(fullPath);
-	
+
 	if (it == obj->lib->end()) {
 		LoadFromFile(obj, FileName, Key);
 	}
 
 	it = obj->lib->find(fullPath);
 	if (it == obj->lib->end()) {
-		return;
+		return obj->lib->end();
 	}
 
 	// convert to HWA if needed
 	if (obj->HWA && !IsHWA(it->second)) {
 		ConvertToHWATexture(rdPtr, it->second);
 	}
-	
+
+	return it;
+}
+
+inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+	LPRDATA obj = (LPRDATA)object;
+
+	if (!ObjIsLib(obj)) {
+		return;
+	}
+
+	auto fullPath = GetFullPathNameStr(FileName);
+
+	// load
+	auto it = _LoadLib(rdPtr, obj, FileName, Key);
+	if (it == obj->lib->end()) {
+		return;
+	}
+
+	// update ref count
 	auto countit = obj->pCount->find(fullPath);
 	if (countit != obj->pCount->end()) {
 		countit->second.count++;
@@ -447,6 +473,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		countit = obj->pCount->find(fullPath);
 	}
 
+	// update src
 	if(!rdPtr->isLib){
 		if (!rdPtr->fromLib) {
 			delete rdPtr->src;

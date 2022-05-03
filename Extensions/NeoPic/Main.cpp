@@ -562,12 +562,8 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 		}
 	}
 	else {
-		auto it = rdPtr->lib->find(FilePath);
-		if (it == rdPtr->lib->end()) {
-			LoadFromFile(rdPtr, FilePath.c_str(), Key.c_str());
-		}
+		auto it = _LoadLib(rdPtr, rdPtr, FilePath.c_str(), Key.c_str());
 
-		it = rdPtr->lib->find(FilePath);
 		if (it == rdPtr->lib->end()) {
 			ret = nullptr;
 		}
