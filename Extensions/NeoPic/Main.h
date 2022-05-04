@@ -232,6 +232,8 @@ typedef struct tagRDATA
 	std::wstring* itCountVecStr = nullptr;
 	Count* itCountVecCount = nullptr;
 
+	FileListMap* pFileListMap = nullptr;
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

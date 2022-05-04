@@ -633,17 +633,39 @@ inline bool NeedUpdateLib(SurfaceLib* pData, LPCTSTR Item) {
 #include <functional>
 
 using LoadLibCallBack = std::function<void(SurfaceLib*)>;
-using FileList = std::vector<std::wstring>;
 
-inline void GetFullPathFromName(FileList& outList, const FileList inList, const std::wstring basePath) {
+inline auto GetFileList(LPRDATA rdPtr, const std::wstring& basePath) {
+	FileList* pFileList = nullptr;
+
+	auto stashPath = basePath + L"\\";
+	auto fullPath = GetFullPathNameStr(stashPath);
+	auto searchPath = fullPath.substr(0, fullPath.size() - 1);
+	
+	auto fileListMapIt = rdPtr->pFileListMap->find(fullPath);
+
+	if (fileListMapIt == rdPtr->pFileListMap->end()) {
+		pFileList = new FileList;
+		pFileList->reserve(DEFAULT_FILELISTSIZE);
+
+		GetFileList(pFileList, searchPath);
+
+		(*rdPtr->pFileListMap)[fullPath] = pFileList;
+	}
+	else {
+		pFileList = fileListMapIt->second;
+	}
+
+	return pFileList;
+}
+
+inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList inList, const std::wstring& basePath) {
 	outList.reserve(inList.size());
-
-	FileList fileList;
-	GetFileList(&fileList, basePath);
+	
+	FileList* pFileList = GetFileList(rdPtr, basePath);
 
 	for (auto& it : inList) {
-		for (auto fileIt = fileList.begin(); fileIt != fileList.end();) {
-			fileIt = std::find_if(fileIt + 1, fileList.end(), [&](std::wstring& file) {
+		for (auto fileIt = pFileList->begin(); fileIt != pFileList->end();) {
+			fileIt = std::find_if(fileIt + 1, pFileList->end(), [&](std::wstring& file) {
 				auto pos = file.find_last_of(L"\\") + 1;
 				auto fileName = file.substr(pos, file.size() - pos);
 
@@ -654,7 +676,7 @@ inline void GetFullPathFromName(FileList& outList, const FileList inList, const 
 				return false;
 				});
 
-			if (fileIt != fileList.end()) {
+			if (fileIt != pFileList->end()) {
 				outList.emplace_back(GetFullPathNameStr(*fileIt));
 			}
 		}
@@ -716,7 +738,7 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 	FileList fullPathList;
 
 	if (!fullPath) {
-		GetFullPathFromName(fullPathList, *pList, BasePath);
+		GetFullPathFromName(rdPtr, fullPathList, *pList, BasePath);
 		list = &fullPathList;
 	}
 	else {
@@ -776,7 +798,7 @@ inline void MergeLib(LPRDATA rdPtr) {
 
 inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring basePath) {
 	rdPtr->pKeepList->clear();
-	GetFullPathFromName(*rdPtr->pKeepList, keepList, basePath);
+	GetFullPathFromName(rdPtr, *rdPtr->pKeepList, keepList, basePath);
 }
 
 inline void UpdateCleanVec(LPRDATA rdPtr) {

@@ -146,6 +146,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			rdPtr->lib = new SurfaceLib;
 			rdPtr->pCount = new RefCount;
 			rdPtr->pKeepList = new KeepList;
+			rdPtr->pFileListMap = new FileListMap;
 		}
 		else {
 			rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -153,6 +154,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			rdPtr->lib = rdPtr->pData->pLib;
 			rdPtr->pCount = rdPtr->pData->pCount;
 			rdPtr->pKeepList = rdPtr->pData->pKeepList;
+			rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
 		}
 	}
 
@@ -222,6 +224,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		rdPtr->pData->pLib = rdPtr->lib;
 		rdPtr->pData->pCount = rdPtr->pCount;
 		rdPtr->pData->pKeepList = rdPtr->pKeepList;
+		rdPtr->pData->pFileListMap = rdPtr->pFileListMap;
 
 		SetExtUserData(rdPtr->pData);
 	}

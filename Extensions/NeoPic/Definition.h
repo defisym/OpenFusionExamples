@@ -96,6 +96,8 @@ using SurfaceLibIt = SurfaceLib::iterator;
 using RefCount = std::map<std::wstring, Count>;
 using RefCountPair = std::pair<std::wstring, Count>;
 using RefCountVec = std::vector<RefCountPair>;
+using FileList = std::vector<std::wstring>;
+using FileListMap = std::map<std::wstring, FileList*>;
 
 constexpr auto ONPRELOADCOMPLETE = 0;
 constexpr auto ONITREFCOUNT = 1;
@@ -113,6 +115,7 @@ struct GlobalData {
 	SurfaceLib* pLib;
 	RefCount* pCount;
 	KeepList* pKeepList;
+	FileListMap* pFileListMap;
 };
 
 inline void DeleteLib(SurfaceLib* pData);
@@ -120,5 +123,14 @@ inline void DeleteLib(SurfaceLib* pData);
 inline void DeleteGlobalData(GlobalData* pData) {
 	DeleteLib(pData->pLib);
 	delete pData->pCount;
+	delete pData->pKeepList;
+	
+	for(auto& it : *pData->pFileListMap) {
+		delete it.second;
+	}
+	delete pData->pFileListMap;
+
 	delete pData;
 }
+
+constexpr auto DEFAULT_FILELISTSIZE = 1000;

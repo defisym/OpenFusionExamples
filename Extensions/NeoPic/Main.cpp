@@ -211,10 +211,9 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 
 	if (!rdPtr->preloading
 		&&rdPtr->isLib) {
-		std::vector<std::wstring> fileList;
-		GetFileList(&fileList, BasePath);
+		FileList* pFileList = GetFileList(rdPtr, BasePath);
 		
-		CreatePreloadProcess(rdPtr, &fileList, true, BasePath, Key);
+		CreatePreloadProcess(rdPtr, pFileList, true, BasePath, Key);
 	}
 
 	return 0;
