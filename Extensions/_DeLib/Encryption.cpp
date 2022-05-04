@@ -9,6 +9,8 @@ Encryption::~Encryption() {
     Release(this->OutputData);
     Release(this->Key);
     Release(this->IV);
+    Release(this->InputStr);
+    Release(this->OutputStr);
 
     Release(this->HashStr);
 }
