@@ -334,16 +334,39 @@ inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
 	}
 }
 
+// hash
+inline std::wstring GetFileHash(LPBYTE pData, DWORD StrLength) {
+	Encryption Hash;
+	Hash.SetEncryptStr((char*)pData, StrLength);
+
+	return Hash.GetHash();
+}
+inline std::wstring GetFileHash(LPCWSTR filePath) {
+	// protection for null file
+	if (wcscmp(filePath, Empty_Str) == 0) {
+		return Empty_Str;
+	}
+
+	Encryption Hash;
+	Hash.OpenFile(filePath);
+
+	return Hash.GetHash();
+}
+inline std::wstring GetFileHash(std::wstring& filePath) {
+	return GetFileHash(filePath.c_str());
+}
+
 // Load file then convert to Src type
-inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	// HWA?
 	auto srcHWA = IsHWA(Src);
+	bool ret = true;
 
 	// Load by bitmap, as HWA texture cannot add alpha channel
 	LPSURFACE pBitmap = srcHWA ? CreateNewSurface(rdPtr, false) : Src;
 	
 	if (StrEmpty(Key)) {
-		_LoadFromFile(pBitmap, FilePath, rdPtr, width, height, NoStretch, HighQuality);
+		ret = _LoadFromFile(pBitmap, FilePath, rdPtr, width, height, NoStretch, HighQuality);
 	}
 	else {
 		Encryption E;
@@ -352,7 +375,7 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 		E.OpenFile(FilePath);
 		E.Decrypt();
 
-		_LoadFromMemFile(pBitmap, E.GetOutputData(), E.GetOutputDataLength(), rdPtr, width, height, NoStretch, HighQuality);
+		ret = _LoadFromMemFile(pBitmap, E.GetOutputData(), E.GetOutputDataLength(), rdPtr, width, height, NoStretch, HighQuality);
 	}
 
 	// Add alpha to avoid Fusion set (0,0,0) to transparent
@@ -364,6 +387,8 @@ inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA
 		
 		ConvertToHWATexture(rdPtr, Src);
 	}
+
+	return ret;
 }
 
 inline auto UpdateRef(LPRDATA rdPtr, bool add) {
@@ -385,7 +410,8 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 		_LoadFromFile(pImg, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (pImg->IsValid()) {
-			(*rdPtr->lib)[fullPath] = pImg;
+			// need not to get decrypted file hash, as it must different if file is different, even encrypted
+			(*rdPtr->lib)[fullPath] = SurfaceLibKey{ pImg ,GetFileHash(fullPath) };
 		}
 		else {
 			delete pImg;
@@ -445,8 +471,8 @@ inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCTS
 	}
 
 	// convert to HWA if needed
-	if (obj->HWA && !IsHWA(it->second)) {
-		ConvertToHWATexture(rdPtr, it->second);
+	if (obj->HWA && !IsHWA(it->second.pSf)) {
+		ConvertToHWATexture(rdPtr, it->second.pSf);
 	}
 
 	return it;
@@ -487,7 +513,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		UpdateRef(rdPtr, false);
 
 		rdPtr->fromLib = true;
-		rdPtr->src = it->second;		
+		rdPtr->src = it->second.pSf;		
 		rdPtr->pRefCount = &(countit->second.curRef);
 
 		UpdateRef(rdPtr, true);
@@ -568,7 +594,7 @@ inline void LoadFromDisplay(LPRDATA rdPtr, int Fixed, bool CopyCoef = false) {
 inline void ResetLib(SurfaceLib* pData) {
 	if (pData != NULL) {
 		for (auto& it : *pData) {
-			delete it.second;
+			delete it.second.pSf;
 		}
 
 		pData->clear();
@@ -578,7 +604,7 @@ inline void ResetLib(SurfaceLib* pData) {
 inline void DeleteLib(SurfaceLib* pData) {
 	if (pData != NULL) {
 		for (auto& it : *pData) {
-			delete it.second;
+			delete it.second.pSf;
 		}
 
 		delete pData;
@@ -588,9 +614,20 @@ inline void DeleteLib(SurfaceLib* pData) {
 inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
 	auto it = pData->find(GetFullPathNameStr(Item));
 	if (it != pData->end()) {
-		delete it->second;
+		delete it->second.pSf;
 		pData->erase(it);
 	}
+}
+
+inline bool NeedUpdateLib(SurfaceLib* pData, LPCTSTR Item) {
+	auto fullPath = GetFullPathNameStr(Item);
+	auto it = pData->find(fullPath);
+	if (it != pData->end()
+		&& it->second.Hash != GetFileHash(fullPath)) {
+		return true;
+	}
+
+	return false;
 }
 
 #include <functional>
@@ -624,8 +661,6 @@ inline void GetFullPathFromName(FileList& outList, const FileList inList, const 
 	}
 }
 
-constexpr auto PRELOAD_TERMIANTE = 1;
-
 // do not ref PreloadList as this function is for multithread
 inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
 	if (PreloadList.empty()) {
@@ -646,7 +681,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 		_LoadFromFile(pBitmap, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (pBitmap->IsValid()) {
-			(*tempLib)[it] = pBitmap;
+			(*tempLib)[it] = SurfaceLibKey{ pBitmap ,GetFileHash(it) };
 		}
 		else {
 			delete pBitmap;
@@ -654,7 +689,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 
 		if (rdPtr->forceExit) {
 			for (auto& it : *tempLib) {
-				delete it.second;
+				delete it.second.pSf;
 			}
 
 			delete tempLib;
@@ -723,9 +758,9 @@ inline void MergeLib(LPRDATA rdPtr) {
 		&& rdPtr->preloadMerge
 		&& rdPtr->preloadLib != nullptr) {
 		for (auto& it : *rdPtr->preloadLib) {
-			auto& [name, pSf] = it;
+			auto& [name, key] = it;
 			if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
-				(*rdPtr->lib)[name] = pSf;
+				(*rdPtr->lib)[name] = key;
 			}
 		}
 
@@ -820,8 +855,7 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 
 				auto& fileName = rdPtr->pCountVec->back().first;
 
-				auto pSf = (*rdPtr->lib)[fileName];
-				delete pSf;
+				delete (*rdPtr->lib)[fileName].pSf;
 
 				rdPtr->lib->erase(fileName);
 				rdPtr->pCount->erase(fileName);

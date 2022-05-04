@@ -293,8 +293,10 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	if (rdPtr->isLib) {
-		EraseLib(rdPtr->lib, FilePath);
-		LoadFromFile(rdPtr, FilePath, Key);
+		if (NeedUpdateLib(rdPtr->lib, FilePath)) {
+			EraseLib(rdPtr->lib, FilePath);
+			LoadFromFile(rdPtr, FilePath, Key);
+		}
 	}
 
 	return 0;
@@ -570,7 +572,7 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 			ret = nullptr;
 		}
 		else {
-			ret = it->second;
+			ret = it->second.pSf;
 		}
 	}
 	
