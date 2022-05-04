@@ -303,6 +303,7 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	return info;
 }
 
+// must end without L'\\'
 inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src) {
 	WIN32_FIND_DATA stFD;
 	HANDLE h;
@@ -328,8 +329,9 @@ inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src)
 }
 
 inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
-	std::wstring ret(MAX_PATH, '\0');
-	GetFullPathName(fileName.c_str(), MAX_PATH, &ret[0], nullptr);
+	LPWSTR pFullPathName = new wchar_t[MAX_PATH];
+	GetFullPathName(fileName.c_str(), MAX_PATH, pFullPathName, nullptr);
+	std::wstring ret = pFullPathName;
 
 	return ret;
 }
