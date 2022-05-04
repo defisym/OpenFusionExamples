@@ -580,14 +580,18 @@ inline void _AddAlpha(LPSURFACE Src) {
 	}
 }
 
-inline void _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool NoStretch, bool HighQuality,std::function<bool(CImageFilterMgr*,LPSURFACE&)> load) {
+// return false if created the blank surface
+inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool NoStretch, bool HighQuality,std::function<bool(CImageFilterMgr*,LPSURFACE&)> load) {
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
+	bool ret = true;
+
 	if (NoStretch) {
 		if (!load(pImgMgr, Src)) {
 			CreateBlankSurface(Src);
+			ret = false;
 		}
 	}
 	else {
@@ -601,23 +605,26 @@ inline void _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool
 		}
 		else {
 			CreateBlankSurface(Src);
+			ret = false;
 		}
 
 		delete pImg;
-	}	
+	}
+
+	return ret;
 }
 
-inline void _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
-	_LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
+inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
 		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
 		});
 }
 
-inline void _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	CInputMemFile MemFile;
 	MemFile.Create(pData, dataSz);
 
-	_LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
+	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
 		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
 		});
 }
