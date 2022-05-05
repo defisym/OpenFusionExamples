@@ -312,16 +312,16 @@ short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->ReplaceEachLoopName, LoopName);
 
-	std::wregex SubString(Regex, Spliter->GetRegexFlag());
-	std::wsmatch MatchedStr;
+	wregex SubString(Regex, Spliter->GetRegexFlag());
+	wsmatch MatchedStr;
 
 	std::wstring::const_iterator StrBegin = Src.begin();
 	std::wstring::const_iterator StrEnd = Src.end();
 
-	std::wregex Replace;
+	wregex Replace;
 	std::wstring Result = Src;	
 
-	for (; std::regex_search(StrBegin, StrEnd, MatchedStr, SubString); StrBegin = MatchedStr[0].second) {
+	for (; regex_search(StrBegin, StrEnd, MatchedStr, SubString); StrBegin = MatchedStr[0].second) {
 		//Get match result
 		std::wstring MatchResult= MatchedStr[0].str().c_str();
 		rdPtr->CurrentMatchString = MatchResult.c_str();
@@ -332,7 +332,7 @@ short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param
 		//DO replace
 		if (rdPtr->CurrentReplaceString != nullptr) {
 			Replace.assign(MatchedStr[0].str());
-			Result = std::regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
+			Result = regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
 		}
 
 		delete rdPtr->CurrentReplaceString;
@@ -350,17 +350,17 @@ short WINAPI DLLExport IterateReplaceEachAll(LPRDATA rdPtr, long param1, long pa
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->ReplaceEachLoopName, LoopName);
 
-	std::wregex SubString(Regex, Spliter->GetRegexFlag());
-	std::wsmatch MatchedStr;
+	wregex SubString(Regex, Spliter->GetRegexFlag());
+	wsmatch MatchedStr;
 
 	do {
 		std::wstring::const_iterator StrBegin = Src.begin();
 		std::wstring::const_iterator StrEnd = Src.end();
 
-		std::wregex Replace;
+		wregex Replace;
 		std::wstring Result = Src;
 
-		for (; std::regex_search(StrBegin, StrEnd, MatchedStr, SubString); StrBegin = MatchedStr[0].second) {
+		for (; regex_search(StrBegin, StrEnd, MatchedStr, SubString); StrBegin = MatchedStr[0].second) {
 			//Get match result
 			std::wstring MatchResult = MatchedStr[0].str().c_str();
 			rdPtr->CurrentMatchString = MatchResult.c_str();
@@ -371,7 +371,7 @@ short WINAPI DLLExport IterateReplaceEachAll(LPRDATA rdPtr, long param1, long pa
 			//DO replace
 			if (rdPtr->CurrentReplaceString != nullptr) {
 				Replace.assign(MatchedStr[0].str());
-				Result = std::regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
+				Result = regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
 			}
 
 			delete rdPtr->CurrentReplaceString;
@@ -384,7 +384,7 @@ short WINAPI DLLExport IterateReplaceEachAll(LPRDATA rdPtr, long param1, long pa
 		}
 
 		Src = Result;		
-	} while (std::regex_search(Src, SubString));
+	} while (regex_search(Src, SubString));
 
 	NewStr(rdPtr->ReplacEachResult, Src.c_str());
 

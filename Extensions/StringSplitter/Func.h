@@ -10,11 +10,5 @@ inline void NewStr(LPTSTR& Tar, LPCTSTR Str) {
 	wcscpy_s(Tar, total_length, Str);
 }
 
-//if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
-inline const std::wstring NewLineEscape(const wchar_t* Src) {
-	std::wregex NewLineEscape(_T("(\\\\r\\\\n)"));
-	return std::regex_replace(Src, NewLineEscape, L"\r\n").c_str();
-}
-
 #endif // !_FUNC_
 
