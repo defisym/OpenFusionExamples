@@ -2,7 +2,6 @@
 
 #include "Encryption.h"
 
-#include <regex>
 #include <vector>
 
 #define UTF8_SIGNATURE     "\xEF\xBB\xBF"
@@ -13,7 +12,49 @@
 
 #define ALL         L".*"
 
-typedef std::regex_constants::syntax_option_type RegexFlag;
+#define BOOST
+
+#ifndef BOOST
+
+#include <regex>
+
+using std::wregex;
+using std::wsregex_token_iterator;
+using std::wsmatch;
+
+using std::regex_match;
+using std::regex_search;
+using std::regex_replace;
+
+using RegexFlag = std::regex_constants::syntax_option_type;
+using std::regex_constants::icase;
+using std::regex_constants::ECMAScript;
+using std::regex_constants::optimize;
+
+#else
+
+#include <boost/regex.hpp>
+
+using boost::wregex;
+using boost::wsregex_token_iterator;
+using boost::wsmatch;
+
+using boost::regex_match;
+using boost::regex_search;
+using boost::regex_replace;
+
+using RegexFlag = boost::regex_constants::syntax_option_type;
+using boost::regex_constants::icase;
+using boost::regex_constants::ECMAScript;
+using boost::regex_constants::optimize;
+
+#endif
+
+constexpr auto RESERVE_DEFAULT = 50;
+// usually the vec size is SplitSrcStrLength / RESERVE_MAGNUM
+constexpr auto RESERVE_MAGNUM = 16;
+
+constexpr auto DEFAULE_REGEXFLAG = ECMAScript | optimize;
 
 class Split :
     public Encryption
@@ -34,34 +75,40 @@ private:
     std::vector<std::wstring> SubStringVec;
 
     //regex flags
-    RegexFlag DefaultFlag = std::regex_constants::ECMAScript | std::regex_constants::optimize;
+    RegexFlag DefaultFlag = DEFAULE_REGEXFLAG;
     RegexFlag Flag = DefaultFlag;
 
     //Main regex, split lines
-    std::wregex LineReg;
+    wregex LineReg;
     std::wstring LineRegStr;
 
     //EmptyLine regex, remove empty lines
-    std::wregex EmptyLineReg;
+    wregex EmptyLineReg;
     bool RemoveEmptyLine = false;
 
     //Comment regex, remove comments
-    std::wregex CommentReg;
+    wregex CommentReg;
     bool RemoveCommnet = false;
 
     //Indent regex, escape SPACE and TAB at the beginning and ending of string
-    std::wregex IndentReg;
+    wregex IndentReg;
     bool RemoveIndent = false;
 
     //Result
     std::vector<std::wstring> SplitStrVec;
 
     //Keyword that you can quick get it's pos in vec
-    std::wregex KeyWordReg;
+    wregex KeyWordReg;
     bool KeyWord = false;
 
     //Keyword list
     std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
+
+    inline void Reserve(size_t size = RESERVE_DEFAULT) {
+		SplitStrVec.reserve(size);
+        SubStringVec.reserve(size);
+        KeyWordPairVec.reserve(size);
+    }
 
     //Convert
     inline size_t GetSize(const char* Src, size_t Len, UINT CodePage = CP_UTF8) {
@@ -75,6 +122,11 @@ private:
         return (Size > 0);
     }
 
+    inline void NewSplitSrc(size_t Len) {
+        this->SplitSrcStrLength = Len + 1;
+        this->SplitSrcStr = new wchar_t[this->SplitSrcStrLength];
+        memset(this->SplitSrcStr, 0, sizeof(wchar_t) * (this->SplitSrcStrLength));
+    }
     inline void ReleaseSplitSrcStr() {
         if (this->SplitSrcStr != nullptr) {
             delete[] this->SplitSrcStr;
@@ -93,6 +145,7 @@ public:
     }
 
     //load file and decrypt it
+    void LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode = true);
     void LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode = true);
 
     //load data loaded by parent class
@@ -107,12 +160,12 @@ public:
     void LoadData(const wchar_t* Src, size_t Len);
 
     inline void InitRegexFlag() {
-        this->DefaultFlag = std::regex_constants::ECMAScript | std::regex_constants::optimize;
+        this->DefaultFlag = DEFAULE_REGEXFLAG;
         this->Flag = DefaultFlag;
     }
     void ReSetRegexFlag();
 
-    //E.g. SetRegexFlag(std::regex_constants::ECMAScript | std::regex_constants::icase);
+    //E.g. SetRegexFlag(ECMAScript | icase);
     void SetRegexFlag(RegexFlag Flag);
 
     void SetCaseInsensitive(bool Enable);
@@ -142,18 +195,17 @@ public:
 
     //Replace string
     inline const wchar_t* ReplaceStr(const wchar_t* SubStr, const wchar_t* Replace) {
-        std::wregex SubString(SubStr, this->Flag);
-        this->ReplacedStr = std::regex_replace(this->SplitDataStr, SubString, Replace);
+        wregex SubString(SubStr, this->Flag);
+        this->ReplacedStr = regex_replace(this->SplitDataStr, SubString, Replace);
         return this->ReplacedStr.c_str();
     }
+	
     inline const wchar_t* ReplaceStr(const wchar_t* Src, const wchar_t* SubStr, const wchar_t* Replace) {
-        std::wregex SubString(SubStr, this->Flag);
-        this->ReplacedStr = std::regex_replace(Src, SubString, Replace);
-        return this->ReplacedStr.c_str();
+        return ReplaceStr(std::wstring(Src), SubStr, Replace);        
     }
     inline const wchar_t* ReplaceStr(const std::wstring& Src, const wchar_t* SubStr, const wchar_t* Replace) {
-        std::wregex SubString(SubStr, this->Flag);
-        this->ReplacedStr = std::regex_replace(Src, SubString, Replace);
+        wregex SubString(SubStr, this->Flag);
+        this->ReplacedStr = regex_replace(Src, SubString, Replace);
         return this->ReplacedStr.c_str();
     }
 
@@ -174,10 +226,10 @@ public:
         return this->StringMatchRegex(this->SplitDataStr, SubStr,Type);
     }
     inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) {
-        return this->StringMatchRegex((std::wstring)Src, SubStr, Type);
+        return this->StringMatchRegex(std::wstring(Src), SubStr, Type);
     }
     inline bool StringMatchRegex(const std::wstring& Src, const wchar_t* SubStr, bool Type = false) {
-        return Type ? std::regex_search(Src, std::wregex(SubStr, this->Flag)) : std::regex_match(Src, std::wregex(SubStr, this->Flag));
+        return Type ? regex_search(Src, wregex(SubStr, this->Flag)) : regex_match(Src, wregex(SubStr, this->Flag));
     }
 
     inline size_t GetSubStringSize() {
@@ -241,3 +293,9 @@ public:
     };
 };
 
+//if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
+inline const std::wstring NewLineEscape(const wchar_t* Src) {
+    wregex NewLineEscape(L"(\\\\r\\\\n)");
+    return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n").c_str();
+
+}
