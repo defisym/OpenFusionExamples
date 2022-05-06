@@ -658,13 +658,15 @@ inline auto GetFileList(LPRDATA rdPtr, const std::wstring& basePath) {
 	return pFileList;
 }
 
-inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList inList, const std::wstring& basePath) {
+inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList& inList, const std::wstring& basePath) {
 	outList.reserve(inList.size());
 	
 	FileList* pFileList = GetFileList(rdPtr, basePath);
 
 	for (auto& it : inList) {
-		for (auto fileIt = pFileList->begin(); fileIt != pFileList->end();) {
+		// auto fileIt = pFileList->begin() - 1
+		// fix first element miss
+		for (auto fileIt = pFileList->begin() - 1; fileIt != pFileList->end();) {
 			fileIt = std::find_if(fileIt + 1, pFileList->end(), [&](std::wstring& file) {
 				auto pos = file.find_last_of(L"\\") + 1;
 				auto fileName = file.substr(pos, file.size() - pos);
@@ -681,6 +683,8 @@ inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList
 			}
 		}
 	}
+
+	return;
 }
 
 // do not ref PreloadList as this function is for multithread
@@ -730,30 +734,41 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 }
 
 inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, std::wstring BasePath, std::wstring Key) {
-	delete rdPtr->pPreloadList;
-	rdPtr->pPreloadList = new PreLoadList;
-	rdPtr->pPreloadList->reserve(pList->size());
+	// filter duplicate items
+	FileList singleList;
+	singleList.reserve(pList->size());
 
+	for (auto& it : *pList) {
+		if (std::find(singleList.begin(), singleList.end(), it) == singleList.end()){
+			singleList.emplace_back(it);
+		}
+	}
+
+	// Get real path
 	FileList* list;
 	FileList fullPathList;
 
 	if (!fullPath) {
-		GetFullPathFromName(rdPtr, fullPathList, *pList, BasePath);
+		GetFullPathFromName(rdPtr, fullPathList, singleList, BasePath);
 		list = &fullPathList;
 	}
 	else {
 		list = pList;
 	}
 	
-	// filter duplicate items
+	// filter exist items
+	delete rdPtr->pPreloadList;
+	rdPtr->pPreloadList = new PreLoadList;
+	rdPtr->pPreloadList->reserve(pList->size());
+
+	std::wstring fullPathStr;
 	for (auto& it : *list) {
-		std::wstring fullPath = GetFullPathNameStr(it);
+		fullPathStr = GetFullPathNameStr(it);
 		
-		if (std::find(rdPtr->pPreloadList->begin(), rdPtr->pPreloadList->end(), fullPath) == rdPtr->pPreloadList->end()
-			&& std::find_if(rdPtr->lib->begin(), rdPtr->lib->end(), [fullPath](auto& p) {
-				return p.first == fullPath;
+		if (std::find_if(rdPtr->lib->begin(), rdPtr->lib->end(), [fullPathStr](auto& p) {
+				return p.first == fullPathStr;
 				}) == rdPtr->lib->end()) {
-			rdPtr->pPreloadList->emplace_back(fullPath);
+			rdPtr->pPreloadList->emplace_back(fullPathStr);
 		}
 	}
 
