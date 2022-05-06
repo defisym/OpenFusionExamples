@@ -1,5 +1,10 @@
 #pragma once
 
+#include <functional>
+#include <string_view>
+
+//-----------------------------
+
 inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X = 0, int Y = 0);
 
 inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality = false, bool ForceUpdate = false);
@@ -630,16 +635,26 @@ inline bool NeedUpdateLib(SurfaceLib* pData, LPCTSTR Item) {
 	return false;
 }
 
-#include <functional>
+// filter duplicate items
+inline void GetSingleList(FileList* pList) {
+	FileList singleList;
+	singleList.reserve(pList->size());
 
-using LoadLibCallBack = std::function<void(SurfaceLib*)>;
+	for (auto& it : *pList) {
+		if (std::find(singleList.begin(), singleList.end(), it) == singleList.end()) {
+			singleList.emplace_back(it);
+		}
+	}
+	
+	*pList = std::move(singleList);
+}
 
 inline auto GetFileList(LPRDATA rdPtr, const std::wstring& basePath) {
 	FileList* pFileList = nullptr;
 
-	auto stashPath = basePath + L"\\";
-	auto fullPath = GetFullPathNameStr(stashPath);
-	auto searchPath = fullPath.substr(0, fullPath.size() - 1);
+	auto fullPath = GetFullPathNameStr(basePath);
+	bool removeSlash = fullPath.find_last_of(L'\\') == fullPath.size() - 1;
+	auto searchPath = fullPath.substr(0, fullPath.size() - removeSlash);
 	
 	auto fileListMapIt = rdPtr->pFileListMap->find(fullPath);
 
@@ -649,7 +664,7 @@ inline auto GetFileList(LPRDATA rdPtr, const std::wstring& basePath) {
 
 		GetFileList(pFileList, searchPath);
 
-		(*rdPtr->pFileListMap)[fullPath] = pFileList;
+		(*rdPtr->pFileListMap)[searchPath] = pFileList;
 	}
 	else {
 		pFileList = fileListMapIt->second;
@@ -664,13 +679,14 @@ inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList
 	FileList* pFileList = GetFileList(rdPtr, basePath);
 
 	for (auto& it : inList) {
-		// auto fileIt = pFileList->begin() - 1
 		// fix first element miss
-		for (auto fileIt = pFileList->begin() - 1; fileIt != pFileList->end();) {
-			fileIt = std::find_if(fileIt + 1, pFileList->end(), [&](std::wstring& file) {
-				auto pos = file.find_last_of(L"\\") + 1;
-				auto fileName = file.substr(pos, file.size() - pos);
+		bool initFinish = false;
 
+		for (auto fileIt = pFileList->begin(); fileIt != pFileList->end();) {
+			fileIt = std::find_if(fileIt + initFinish, pFileList->end(), [&](std::wstring& file) {
+				auto pos = file.find_last_of(L"\\") + 1;
+				std::wstring_view fileName(file.c_str() + pos, file.size() - pos);
+				
 				if (fileName == it) {
 					return true;
 				}
@@ -681,6 +697,8 @@ inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList
 			if (fileIt != pFileList->end()) {
 				outList.emplace_back(GetFullPathNameStr(*fileIt));
 			}
+
+			initFinish = true;
 		}
 	}
 
@@ -688,6 +706,8 @@ inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList
 }
 
 // do not ref PreloadList as this function is for multithread
+using LoadLibCallBack = std::function<void(SurfaceLib*)>;
+
 inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
 	if (PreloadList.empty()) {
 		callBack(nullptr);
@@ -735,21 +755,14 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 
 inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, std::wstring BasePath, std::wstring Key) {
 	// filter duplicate items
-	FileList singleList;
-	singleList.reserve(pList->size());
-
-	for (auto& it : *pList) {
-		if (std::find(singleList.begin(), singleList.end(), it) == singleList.end()){
-			singleList.emplace_back(it);
-		}
-	}
+	GetSingleList(pList);
 
 	// Get real path
 	FileList* list;
 	FileList fullPathList;
 
 	if (!fullPath) {
-		GetFullPathFromName(rdPtr, fullPathList, singleList, BasePath);
+		GetFullPathFromName(rdPtr, fullPathList, *pList, BasePath);
 		list = &fullPathList;
 	}
 	else {

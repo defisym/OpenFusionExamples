@@ -212,7 +212,7 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	if (!rdPtr->preloading
 		&&rdPtr->isLib) {
 		FileList* pFileList = GetFileList(rdPtr, BasePath);
-		
+
 		CreatePreloadProcess(rdPtr, pFileList, true, BasePath, Key);
 	}
 
@@ -239,7 +239,7 @@ short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
 
 		while (start != std::wstring::npos) {
 			end = keepListSrc.find(L'|', start);
-			keepList.emplace_back(keepListSrc.substr(start, end - start));
+			keepList.emplace_back(std::wstring_view(keepListSrc.c_str() + start, end - start));
 			start = keepListSrc.find_first_not_of(L'|', end);
 		}
 
