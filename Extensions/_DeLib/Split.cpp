@@ -34,20 +34,6 @@ void Split::ResetSplit() {
     this->Flag = this->DefaultFlag;
 }
 
-//void Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode) {
-//    this->SetUnicode(Unicode);
-//    this->OpenFile(FilePath.c_str());
-//
-//    if (Key != L"") {
-//        this->GenerateKey(Key.c_str());
-//        this->Decrypt();
-//        this->LoadData(this->GetOutputStr());
-//    }
-//    else {
-//        this->LoadData(this->GetInputStr());
-//    }
-//}
-
 void Split::LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode) {
     this->SetUnicode(Unicode);
     this->OpenFile(FilePath);
@@ -226,7 +212,7 @@ void Split::SplitData() {
 }
 
 int Split::GetSubStringPos(const wchar_t* SubStr, size_t Sub) {
-    return this->GetSubStringPos(this->SplitDataStr, SubStr, Sub);
+    return this->GetSubStringPos(this->GetSplitData(), SubStr, Sub);
 }
 
 int Split::GetSubStringPos(const wchar_t* Src, const wchar_t* SubStr, size_t Sub) {
@@ -263,7 +249,7 @@ int Split::GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_
 }
 
 void Split::GetAllSubString(const wchar_t* SubStr) {
-    this->GetAllSubString(this->SplitDataStr, SubStr);
+    this->GetAllSubString(this->GetSplitData(), SubStr);
 }
 
 void Split::GetAllSubString(const wchar_t* Src, const wchar_t* SubStr) {

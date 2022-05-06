@@ -195,11 +195,8 @@ public:
 
     //Replace string
     inline const wchar_t* ReplaceStr(const wchar_t* SubStr, const wchar_t* Replace) {
-        wregex SubString(SubStr, this->Flag);
-        this->ReplacedStr = regex_replace(this->SplitDataStr, SubString, Replace);
-        return this->ReplacedStr.c_str();
-    }
-	
+        return ReplaceStr(this->GetSplitData(), Replace, Replace);
+    }	
     inline const wchar_t* ReplaceStr(const wchar_t* Src, const wchar_t* SubStr, const wchar_t* Replace) {
         return ReplaceStr(std::wstring(Src), SubStr, Replace);        
     }
@@ -223,7 +220,7 @@ public:
     //Type == true search
     //Type == false match
     inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) {
-        return this->StringMatchRegex(this->SplitDataStr, SubStr,Type);
+        return this->StringMatchRegex(this->GetSplitData(), SubStr,Type);
     }
     inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) {
         return this->StringMatchRegex(std::wstring(Src), SubStr, Type);
@@ -246,7 +243,7 @@ public:
         return this->MatchedStr.c_str();
     }
     inline const wchar_t* GetMatchResult(const wchar_t* SubStr, size_t Sub) {
-        this->GetSubStringPos(this->SplitDataStr, SubStr, Sub);
+        this->GetSubStringPos(this->GetSplitData(), SubStr, Sub);
         return this->MatchedStr.c_str();
     }
     inline const wchar_t* GetMatchResult(const wchar_t* Src, const wchar_t* SubStr, size_t Sub) {
