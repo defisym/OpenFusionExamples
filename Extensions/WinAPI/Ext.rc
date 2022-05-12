@@ -339,7 +339,11 @@ BEGIN
         POPUP "Misc."
         BEGIN
             MENUITEM "Get Val With Sign",      IDMN_EXPRESSION_GVWS         
+            MENUITEM SEPARATOR            
             MENUITEM "Hex 2 RGB",      IDMN_EXPRESSION_HEX2RGB           
+            MENUITEM SEPARATOR            
+            MENUITEM "WChar To Long",      IDMN_EXPRESSION_W2L          
+            MENUITEM "Long To WChar",      IDMN_EXPRESSION_L2W          
         END
         MENUITEM SEPARATOR
     END
@@ -618,6 +622,14 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_HEX2RGB "Hex2RGB ("
     PARA_EXPRESSION_HEX2RGB "Hex String, E.g., 0xFFFFFF/#FFFFFF"
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_W2L "W2L ("
+    M_EXPRESSION_L2W "L2W$ ("
+    PARA_EXPRESSION_W2L "String"
+    PARA_EXPRESSION_L2W "Long"
 END
 
 //Conditions

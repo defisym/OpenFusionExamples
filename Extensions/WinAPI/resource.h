@@ -127,6 +127,8 @@
 #define M_EXPRESSION_GVWS 				7107
 #define M_EXPRESSION_HEX2RGB			7108
 #define M_EXPRESSION_GSON 				7109
+#define	M_EXPRESSION_W2L			    7110
+#define	M_EXPRESSION_L2W			    7111
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -136,6 +138,8 @@
 #define PARA_EXPRESSION_FIXED           7514
 #define PARA_EXPRESSION_GVWS            7515
 #define PARA_EXPRESSION_HEX2RGB         7516
+#define PARA_EXPRESSION_W2L             7517
+#define PARA_EXPRESSION_L2W             7518
 #define MN_ACTIONS                      20000
 #define MN_CONDITIONS                   20001
 #define MN_EXPRESSIONS                  20002
@@ -213,6 +217,8 @@
 #define IDMN_EXPRESSION_GVWS			27097
 #define IDMN_EXPRESSION_HEX2RGB			27098
 #define IDMN_EXPRESSION_GSON			27099
+#define	IDMN_EXPRESSION_W2L			    27100
+#define	IDMN_EXPRESSION_L2W			    27101
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

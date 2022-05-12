@@ -140,6 +140,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_HEX2RGB, M_EXPRESSION_HEX2RGB, EXP_EXPRESSION_HEX2RGB, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_HEX2RGB,
 
 		IDMN_EXPRESSION_GSON, M_EXPRESSION_GSON, EXP_EXPRESSION_GSON, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+
+		IDMN_EXPRESSION_W2L, M_EXPRESSION_W2L, EXP_EXPRESSION_W2L, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_W2L,
+		IDMN_EXPRESSION_L2W, M_EXPRESSION_L2W, EXP_EXPRESSION_L2W, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_L2W,
 		};
 
 // ============================================================================
@@ -1409,6 +1412,35 @@ long WINAPI DLLExport GetScopedObjectNumber(LPRDATA rdPtr, long param1) {
 	}
 }
 
+long WINAPI DLLExport WCharToLong(LPRDATA rdPtr, long param1) {
+	LPWSTR pStr = (LPWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	short high = ConvertToType<wchar_t,short>(pStr[0]);
+	short low = ConvertToType<wchar_t, short>(pStr[1]);
+
+	return (high << 16) + low;
+}
+
+long WINAPI DLLExport LongToWChar(LPRDATA rdPtr, long param1) {
+	long num = (long)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	short low = num & 0b00000000000000001111111111111111;
+	short high = (num - low) >> 16;
+
+	auto pStr = (wchar_t*)_mvCalloc((2 + 1) * sizeof(wchar_t));
+	
+	pStr[0]=ConvertToType<short, wchar_t>(high);
+	pStr[1]=ConvertToType<short, wchar_t>(low);
+
+	pStr[2] = '\0';
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)pStr;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1540,5 +1572,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetScopedObjectNumber,
 
+			WCharToLong,
+			LongToWChar,
+			
 			0
 			};

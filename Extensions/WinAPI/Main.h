@@ -117,7 +117,10 @@
 
 #define	EXP_EXPRESSION_GSON			26
 
-#define	EXP_LAST                    27
+#define	EXP_EXPRESSION_W2L			27
+#define	EXP_EXPRESSION_L2W			28
+
+#define	EXP_LAST                    29
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

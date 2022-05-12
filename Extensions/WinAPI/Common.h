@@ -64,6 +64,7 @@ class ObjectSelection;
 
 //My headers
 #include	"Fusion.h"
+#include	"FusionUtilities.h"
 #include	"Encryption.h"
 #include	"StrNum.h"
 #include	"WindowsCommon.h"
