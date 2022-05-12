@@ -78,6 +78,13 @@ constexpr inline T ConvertToType(long l) {
 	return *((T*)&l);
 }
 
+// Cast anytype
+
+template<typename Input, typename Output>
+constexpr inline Output ConvertToType(Input l) {
+	return *((Output*)&l);
+}
+
 // MSBOX
 inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
 	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
@@ -222,3 +229,5 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 }
 
 #define GetPlatformPopupMenu(mn,disableMenus) GetPlatformPopupMenu(mV,oiPtr,edPtr,mn,disableMenus)
+
+#define _mvCalloc(size) mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, size)
