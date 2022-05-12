@@ -10,6 +10,7 @@
 #include	<map>
 #include	<vector>
 #include	<thread>
+#include	<functional>
 
 inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL);
 
