@@ -1415,6 +1415,12 @@ long WINAPI DLLExport GetScopedObjectNumber(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport WCharToLong(LPRDATA rdPtr, long param1) {
 	LPWSTR pStr = (LPWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
+	auto len = wcslen(pStr);
+
+	if (len == 0) {
+		return 0;
+	}
+
 	short high = ConvertToType<wchar_t,short>(pStr[0]);
 	short low = ConvertToType<wchar_t, short>(pStr[1]);
 
