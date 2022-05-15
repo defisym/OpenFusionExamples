@@ -26,6 +26,7 @@ void Split::ResetSplit() {
     this->ReplacedStr.clear();
 
     //reset flag
+    this->Init = false;
     this->RemoveEmptyLine = false;
     this->RemoveCommnet = false;
     this->RemoveIndent = false;
@@ -122,6 +123,7 @@ void Split::SetCaseInsensitive(bool Enable) {
 void Split::InitSplit(const wchar_t* Split) {
     this->LineReg.assign(Split, this->Flag);
     this->LineRegStr = Split;
+    this->Init = true;
 }
 
 void Split::InitEmptyLine(const wchar_t* EnptyLine) {
@@ -176,7 +178,11 @@ void Split::SplitData() {
     //wregex Merge(regex_replace(L"(REPLACE){2,}", wregex(L"REPLACE"), this->LineRegStr));
     //this->SplitScrStrNoComment = regex_replace(this->SplitScrStrNoComment, Merge, this->LineRegStr);
 
-    //iterate lines
+    //iterate lines	
+    if (!this->Init) {
+        return;
+    }
+
     wsregex_token_iterator pos(this->SplitDataStr.begin(), this->SplitDataStr.end(), this->LineReg, -1);
     wsregex_token_iterator end;
 

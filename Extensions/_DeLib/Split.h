@@ -81,6 +81,8 @@ private:
     //Main regex, split lines
     wregex LineReg;
     std::wstring LineRegStr;
+	
+    bool Init = false;
 
     //EmptyLine regex, remove empty lines
     wregex EmptyLineReg;
