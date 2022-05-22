@@ -50,6 +50,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LAV, M_ACTION_LAV,ACT_ACTION_LAV, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 		IDMN_ACTION_LP, M_ACTION_LP,ACT_ACTION_LP, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
+
+		IDMN_ACTION_LB64, M_ACTION_LB64, ACT_ACTION_LB64, 0, 1,PARAM_EXPSTRING, M_BASE64,
 		};
 
 // Definitions of parameters for each expression
@@ -63,6 +65,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SAV, M_EXPRESSION_SAV, EXP_EXPRESSION_SAV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		IDMN_EXPRESSION_SP, M_EXPRESSION_SP, EXP_EXPRESSION_SP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
+		IDMN_EXPRESSION_SB64, M_EXPRESSION_SB64, EXP_EXPRESSION_SB64, EXPFLAG_STRING, 0,
 		};
 
 // ============================================================================
@@ -163,6 +166,32 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport LoadFromBase64(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR base64 = (LPCTSTR)param1;
+
+	AutoSave(rdPtr);
+
+	init_ini();
+
+	try {
+		rdPtr->pB64->base64_decode(base64);
+	}
+	catch (decltype(BASE64_DECODEERROR)) {
+		return 0;
+	}
+
+	auto sz = rdPtr->pB64->base64_decode_size();
+
+	BYTE* buf = new BYTE[sz];
+	memset(buf, 0, sz);
+
+	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
+
+	Fini->LoadData((char*)buf,sz);
+
+	return 0;
+}
+
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
@@ -246,7 +275,7 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 	else {
 		swprintf(String, FLOAT_MAX, _T("%f"), Value);
 	}
-		
+
 	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String)) || rdPtr->Modified;
 
 	delete[] String;
@@ -577,6 +606,19 @@ long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
 	return (long)OStr;
 }
 
+long WINAPI DLLExport SaveToBase64(LPRDATA rdPtr, long param1) {	
+	std::string Output;
+	Fini->Save(Output);
+
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(&Output[0]), Output.length());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
 long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
@@ -764,6 +806,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CopySection,
 			LoadAlterValue,
 			LoadPosition,
+			LoadFromBase64,
 			0
 			};
 
@@ -776,5 +819,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			SaveToString,
 			SaveAlterValue,
 			SavePosition,
+			SaveToBase64,
 			0
 			};

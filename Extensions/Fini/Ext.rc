@@ -151,6 +151,7 @@ BEGIN
         MENUITEM "Save to File", IDMN_ACTION_SF
         MENUITEM SEPARATOR
         MENUITEM "Load From String", IDMN_ACTION_LS
+        MENUITEM "Load From Base64 String", IDMN_ACTION_LB64
         MENUITEM SEPARATOR
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
@@ -188,6 +189,7 @@ BEGIN
         MENUITEM "Get Current Item", IDMN_EXPRESSION_GCI
         MENUITEM SEPARATOR
         MENUITEM "Save to String", IDMN_EXPRESSION_SS
+        MENUITEM "Save to Base64 String", IDMN_EXPRESSION_SB64
         MENUITEM SEPARATOR
         MENUITEM "Save Alterable Value", IDMN_EXPRESSION_SAV
         MENUITEM "Save Position", IDMN_EXPRESSION_SP
@@ -298,6 +300,7 @@ BEGIN
     M_ACTION_SF     "Save to File %0, Encrypt Key %1"
     //M_ACTION_LS     "Load From String %0, Decrypt Key %1"
     M_ACTION_LS     "Load From String %0"
+    M_ACTION_LB64   "Load From Base64 String %0"
 
     ACT_ACTION_S    "String"
     ACT_ACTION_F    "FileName"
@@ -323,7 +326,7 @@ BEGIN
     ACT_ACTION_ITSN     "Section Name"
 
     M_ACTION_LAV        "Load Alterable Value %1 to Object %0"
-    M_ACTION_LP        "Load Position %1 to Object %0"
+    M_ACTION_LP         "Load Position %1 to Object %0"
 
 END
 
@@ -332,7 +335,7 @@ BEGIN
     M_CONDITION_ITS             "%o On Iterate Sections, Loop Name %0"
     M_CONDITION_ITI             "%o On Iterate Items, Loop Name %0"
 
-    M_CONDITION_SIHV             "%o Section %0 - Item %1 Has Value"
+    M_CONDITION_SIHV            "%o Section %0 - Item %1 Has Value"
 
     M_CND_ITN                   "Loop Name"
 END
@@ -346,6 +349,7 @@ BEGIN
     M_EXPRESSION_GCI            "GetCurItem$("
 
     M_EXPRESSION_SS             "SaveToStr$("
+    M_EXPRESSION_SB64           "SaveToB64Str$("
     
     M_EXPRESSION_SAV            "SaveAV$("
     M_EXPRESSION_SP             "SavePos$("

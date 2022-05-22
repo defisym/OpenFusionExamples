@@ -31,8 +31,9 @@
 #define	ACT_ACTION_CS				12
 #define	ACT_ACTION_LAV				13
 #define	ACT_ACTION_LP				14
+#define	ACT_ACTION_LB64				15
 
-#define	ACT_LAST					15
+#define	ACT_LAST					16
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -44,8 +45,9 @@
 #define	EXP_EXPRESSION_SS			4
 #define	EXP_EXPRESSION_SAV			5
 #define	EXP_EXPRESSION_SP			6
+#define	EXP_EXPRESSION_SB64			7
 
-#define	EXP_LAST                    7
+#define	EXP_LAST                    8
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
