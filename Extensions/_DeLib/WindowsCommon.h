@@ -330,6 +330,8 @@ inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src)
 
 inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 	LPWSTR pFullPathName = new wchar_t[MAX_PATH];
+	memset(pFullPathName, 0, MAX_PATH);
+	
 	GetFullPathName(fileName.c_str(), MAX_PATH, pFullPathName, nullptr);
 	std::wstring ret = pFullPathName;
 
