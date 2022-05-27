@@ -134,6 +134,9 @@ typedef struct tagRDATA
 	bool cf25p;
 	bool allowRVforCS;
 
+	int (*CompressToBuffer)(const std::string& srcStr, char*& buf);
+	std::string(*DeCompressToString)(const char* srcBuf, const unsigned int bufSz);
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

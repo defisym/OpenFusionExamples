@@ -187,7 +187,8 @@ short WINAPI DLLExport LoadFromBase64(LPRDATA rdPtr, long param1, long param2) {
 
 	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
 
-	Fini->LoadData((char*)buf,sz);
+	//Fini->LoadData((char*)buf,sz);
+	Fini->LoadData(rdPtr->DeCompressToString((char*)buf, sz));
 
 	return 0;
 }
@@ -610,7 +611,11 @@ long WINAPI DLLExport SaveToBase64(LPRDATA rdPtr, long param1) {
 	std::string Output;
 	Fini->Save(Output);
 
-	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(&Output[0]), Output.length());
+	char* buf = nullptr;
+	auto compressSz = rdPtr->CompressToBuffer(Output, buf);
+
+	//*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(&Output[0]), Output.length());
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;

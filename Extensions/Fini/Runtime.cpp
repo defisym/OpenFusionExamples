@@ -80,6 +80,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->cf25p = edPtr->cf25p;
 	rdPtr->allowRVforCS = edPtr->allowRVforCS;
 
+	rdPtr->CompressToBuffer = ZLIBI_CompressToBufferDefault;
+	rdPtr->DeCompressToString = ZLIBI_DeCompressToStringDefault;
+
 	// No errors
 	return 0;
 }
