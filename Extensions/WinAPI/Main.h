@@ -14,8 +14,10 @@
 #define	CND_CONDITION_ICA			4
 #define	CND_CONDITION_IDHA			5
 #define	CND_CONDITION_IAIR			6
+#define	CND_CONDITION_IWF			7
 
-#define	CND_LAST					7
+#define	CND_LAST					8
+#define	CND_LAST					8
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

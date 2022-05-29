@@ -30,6 +30,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_IDHA, M_CONDITION_IDHA, CND_CONDITION_IDHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_DIR,
 		IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_CONDITION_IAIR,PARA_CONDITION_CMP,
+		IDMN_CONDITION_IWF, M_CONDITION_IWF, CND_CONDITION_IWF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -267,6 +268,10 @@ long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long 
 	delete curMinfo;
 
 	return ret ? TRUE : FALSE;
+}
+
+long WINAPI DLLExport IsWindowForcused(LPRDATA rdPtr, long param1, long param2) {
+	return GetForegroundWindow() == rdPtr->MainWindowHandle;
 }
 
 // ============================================================================
@@ -1465,6 +1470,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IsObjectHasAnimationInDirection,
 
 			IsAnotherInstanceRunning,
+
+			IsWindowForcused,
 
 			0
 			};
