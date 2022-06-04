@@ -344,7 +344,9 @@ inline std::wstring GetFileHash(LPBYTE pData, DWORD StrLength) {
 	Encryption Hash;
 	Hash.SetEncryptStr((char*)pData, StrLength);
 
-	return Hash.GetHash();
+	auto ret = Hash.GetHash();
+
+	return std::wstring(ret == nullptr ? L"" : ret);
 }
 inline std::wstring GetFileHash(LPCWSTR filePath) {
 	// protection for null file
@@ -355,7 +357,9 @@ inline std::wstring GetFileHash(LPCWSTR filePath) {
 	Encryption Hash;
 	Hash.OpenFile(filePath);
 
-	return Hash.GetHash();
+	auto ret = Hash.GetHash();
+
+	return std::wstring(ret == nullptr ? L"" : ret);
 }
 inline std::wstring GetFileHash(std::wstring& filePath) {
 	return GetFileHash(filePath.c_str());
