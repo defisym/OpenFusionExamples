@@ -552,8 +552,8 @@ short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
 	auto oldX = wRect.left;
 	auto oldY = wRect.top;
 
-	auto newX = oldX + int(owWidth - wWidth) / 2;
-	auto newY = oldY + int(owHeight - wHeight) / 2;
+	auto newX = oldX + int(clientWidth - wWidth) / 2;
+	auto newY = oldY + int(clientHeight - wHeight) / 2;
 
 	SetWindowPos(rdPtr->MainWindowHandle, NULL, newX, newY, wWidth + cwOffsetW, wHeight + cwOffsetH, SWP_SHOWWINDOW);
 	

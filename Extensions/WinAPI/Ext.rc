@@ -542,7 +542,7 @@ BEGIN
     M_ACTION_SB642I "Save Base64 %0 to Image %1"
     PARAM_B64 "Base64 String"
 
-    M_ACTION_SWS "Set Window Size to [ %0 ¡Á %1 ]"
+    M_ACTION_SWS "Set Window Size to [ %0 x %1 ]"
 END
 
 //Expression
