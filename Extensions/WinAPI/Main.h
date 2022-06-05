@@ -15,9 +15,9 @@
 #define	CND_CONDITION_IDHA			5
 #define	CND_CONDITION_IAIR			6
 #define	CND_CONDITION_IWF			7
+#define	CND_CONDITION_ICLIHP		8
 
-#define	CND_LAST					8
-#define	CND_LAST					8
+#define	CND_LAST					9
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -122,7 +122,9 @@
 #define	EXP_EXPRESSION_W2L			27
 #define	EXP_EXPRESSION_L2W			28
 
-#define	EXP_LAST                    29
+#define	EXP_EXPRESSION_GCLI			29
+
+#define	EXP_LAST                    30
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -256,6 +258,9 @@ typedef struct tagRDATA
 	LPWSTR ValWithSignOutput;
 
 	ObjectSelection* pSelect;
+
+	int argc;
+	char** argv;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

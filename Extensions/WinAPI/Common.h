@@ -24,6 +24,9 @@
 #define	MINBUILD	292
 #endif
 
+// must be here to avoid conflict of min/max macro
+#include	"CLI11.hpp"
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"

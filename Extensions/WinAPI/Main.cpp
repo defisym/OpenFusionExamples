@@ -20,131 +20,134 @@
 // Parameter_TitleString [Number_of_parameters]
 
 // Definitions of parameters for each condition
-short conditionsInfos[]=
-		{
-		//IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
-		IDMN_CONDITION_INAP, M_CONDITION_INAP, CND_CONDITION_INAP, EVFLAGS_ALWAYS|EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,PARA_CONDITION_INAP,
-		IDMN_CONDITION_IML, M_CONDITION_IML, CND_CONDITION_IML, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		IDMN_CONDITION_RKS, M_CONDITION_RKS, CND_CONDITION_RKS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION,PARA_CONDITION_RKS,
-		IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		IDMN_CONDITION_IDHA, M_CONDITION_IDHA, CND_CONDITION_IDHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_DIR,
-		IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_CONDITION_IAIR,PARA_CONDITION_CMP,
-		IDMN_CONDITION_IWF, M_CONDITION_IWF, CND_CONDITION_IWF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		};
+short conditionsInfos[] =
+{
+	//IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+	IDMN_CONDITION_INAP, M_CONDITION_INAP, CND_CONDITION_INAP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,PARA_CONDITION_INAP,
+	IDMN_CONDITION_IML, M_CONDITION_IML, CND_CONDITION_IML, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_RKS, M_CONDITION_RKS, CND_CONDITION_RKS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION,PARA_CONDITION_RKS,
+	IDMN_CONDITION_IFS, M_CONDITION_IFS, CND_CONDITION_IFS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_ICA, M_CONDITION_ICA, CND_CONDITION_ICA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_IDHA, M_CONDITION_IDHA, CND_CONDITION_IDHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_DIR,
+	IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_CONDITION_IAIR,PARA_CONDITION_CMP,
+	IDMN_CONDITION_IWF, M_CONDITION_IWF, CND_CONDITION_IWF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_ICLIHP, M_CONDITION_ICLIHP, CND_CONDITION_ICLIHP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
+};
 
 // Definitions of parameters for each action
-short actionsInfos[]=
-		{
-		IDMN_ACTION_RUN,M_ACTION_RUN,ACT_ACTION_RUN,0, 2, PARAM_FILENAME2, PARAM_EXPSTRING,PARA_ACTION_RUN_1,PARA_ACTION_RUN_2,
-		IDMN_ACTION_RUN_16,M_ACTION_RUN_16,ACT_ACTION_RUN_16,0, 2, PARAM_FILENAME2, PARAM_EXPSTRING,PARA_ACTION_RUN_1,PARA_ACTION_RUN_2,
-		IDMN_ACTION_STOPBYNAME,M_ACTION_STOPBYNAME,ACT_ACTION_STOPBYNAME,0, 1, PARAM_EXPSTRING, PARA_ACTION_STOPBYNAME,
-		IDMN_ACTION_STOPBYID,M_ACTION_STOPBYID,ACT_ACTION_STOPBYID,0, 1, PARAM_EXPRESSION, PARA_ACTION_STOPBYID,
+short actionsInfos[] =
+{
+	IDMN_ACTION_RUN,M_ACTION_RUN,ACT_ACTION_RUN,0, 2, PARAM_FILENAME2, PARAM_EXPSTRING,PARA_ACTION_RUN_1,PARA_ACTION_RUN_2,
+	IDMN_ACTION_RUN_16,M_ACTION_RUN_16,ACT_ACTION_RUN_16,0, 2, PARAM_FILENAME2, PARAM_EXPSTRING,PARA_ACTION_RUN_1,PARA_ACTION_RUN_2,
+	IDMN_ACTION_STOPBYNAME,M_ACTION_STOPBYNAME,ACT_ACTION_STOPBYNAME,0, 1, PARAM_EXPSTRING, PARA_ACTION_STOPBYNAME,
+	IDMN_ACTION_STOPBYID,M_ACTION_STOPBYID,ACT_ACTION_STOPBYID,0, 1, PARAM_EXPRESSION, PARA_ACTION_STOPBYID,
 
-		IDMN_ACTION_LOCKMOUSE,M_ACTION_LOCKMOUSE,ACT_ACTION_LOCKMOUSE,0, 1,PARAM_EXPRESSION,PARA_ACTION_LOCKMOUSE,
-		IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 5, PARAM_EXPRESSION,PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,PARA_ACTION_LOCKMOUSEBR_TYPE,
-		IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
-		
-		IDMN_ACTION_SETMOUSE,M_ACTION_SETMOUSE,ACT_ACTION_SETMOUSE,0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION,  PARAM_EXPRESSION, PARA_ACTION_SETMOUSE_X, PARA_ACTION_SETMOUSE_Y,PARA_ACTION_SETMOUSE_TYPE,
+	IDMN_ACTION_LOCKMOUSE,M_ACTION_LOCKMOUSE,ACT_ACTION_LOCKMOUSE,0, 1,PARAM_EXPRESSION,PARA_ACTION_LOCKMOUSE,
+	IDMN_ACTION_LOCKMOUSEBR,M_ACTION_LOCKMOUSEBR,ACT_ACTION_LOCKMOUSEBR,0, 5, PARAM_EXPRESSION,PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARA_ACTION_LOCKMOUSEBR_L, PARA_ACTION_LOCKMOUSEBR_R, PARA_ACTION_LOCKMOUSEBR_T, PARA_ACTION_LOCKMOUSEBR_B,PARA_ACTION_LOCKMOUSEBR_TYPE,
+	IDMN_ACTION_UNLOCKMOUSE,M_ACTION_UNLOCKMOUSE,ACT_ACTION_UNLOCKMOUSE,0, 0,
 
-		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,0, 0,
-		IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,0, 0,
-		IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,0, 0,
-		IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,0, 0,
-		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,0, 0,
-		IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,0, 0,
+	IDMN_ACTION_SETMOUSE,M_ACTION_SETMOUSE,ACT_ACTION_SETMOUSE,0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION,  PARAM_EXPRESSION, PARA_ACTION_SETMOUSE_X, PARA_ACTION_SETMOUSE_Y,PARA_ACTION_SETMOUSE_TYPE,
 
-		IDMN_ACTION_IME_DISABLE,M_ACTION_IME_DISABLE,ACT_ACTION_IME_DISABLE,0, 0,
-		IDMN_ACTION_IME_ENABLE,M_ACTION_IME_ENABLE,ACT_ACTION_IME_ENABLE,0, 0,
+	IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_ON,0, 0,
+	IDMN_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_KEEPLOCK_OFF,0, 0,
+	IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON,0, 0,
+	IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,M_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,ACT_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF,0, 0,
+	IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON,0, 0,
+	IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,M_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,ACT_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF,0, 0,
 
-		IDMN_ACTION_WINDOW_GF,M_ACTION_WINDOW_GF,ACT_ACTION_WINDOW_GF,0, 0,
-		IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
+	IDMN_ACTION_IME_DISABLE,M_ACTION_IME_DISABLE,ACT_ACTION_IME_DISABLE,0, 0,
+	IDMN_ACTION_IME_ENABLE,M_ACTION_IME_ENABLE,ACT_ACTION_IME_ENABLE,0, 0,
 
-		IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 5,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD,PARA_ACTION_WINDOW_BFA_SAVETOFILE,PARA_ACTION_WINDOW_BFA_FILEPATH,
+	IDMN_ACTION_WINDOW_GF,M_ACTION_WINDOW_GF,ACT_ACTION_WINDOW_GF,0, 0,
+	IDMN_ACTION_WINDOW_GW,M_ACTION_WINDOW_GW,ACT_ACTION_WINDOW_GW,0, 0,
 
-		IDMN_ACTION_WINDOW_LFC,M_ACTION_WINDOW_LFC,ACT_ACTION_WINDOW_LFC,0, 0,
-		IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0,
+	IDMN_ACTION_WINDOW_BFA,M_ACTION_WINDOW_BFA,ACT_ACTION_WINDOW_BFA,0, 5,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD,PARA_ACTION_WINDOW_BFA_SAVETOFILE,PARA_ACTION_WINDOW_BFA_FILEPATH,
 
-		IDMN_ACTION_WINDOW_RGB,M_ACTION_WINDOW_RGB,ACT_ACTION_WINDOW_RGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_RGB_SIGMA,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
+	IDMN_ACTION_WINDOW_LFC,M_ACTION_WINDOW_LFC,ACT_ACTION_WINDOW_LFC,0, 0,
+	IDMN_ACTION_WINDOW_LFF,M_ACTION_WINDOW_LFF,ACT_ACTION_WINDOW_LFF,0, 1,PARAM_FILENAME2,0,
 
-		IDMN_ACTION_WINDOW_MTGB,M_ACTION_WINDOW_MTGB,ACT_ACTION_WINDOW_MTGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_MTGB_RADIUS,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
-		IDMN_ACTION_WINDOW_LBG,M_ACTION_WINDOW_LBG,ACT_ACTION_WINDOW_LBG,0, 0,
-		IDMN_ACTION_WINDOW_MTSB,M_ACTION_WINDOW_MTSB,ACT_ACTION_WINDOW_MTSB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_MTGB_RADIUS,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
+	IDMN_ACTION_WINDOW_RGB,M_ACTION_WINDOW_RGB,ACT_ACTION_WINDOW_RGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_RGB_SIGMA,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
 
-		IDMN_ACTION_WINDOW_STF,M_ACTION_WINDOW_STF,ACT_ACTION_WINDOW_STF,0, 1,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_FILEPATH,
-		IDMN_ACTION_WINDOW_STC,M_ACTION_WINDOW_STC,ACT_ACTION_WINDOW_STC,0, 0,
-		IDMN_ACTION_WINDOW_STT,M_ACTION_WINDOW_STT,ACT_ACTION_WINDOW_STT,0, 0,
-		IDMN_ACTION_WINDOW_LFT,M_ACTION_WINDOW_LFT,ACT_ACTION_WINDOW_LFT,0, 0,
+	IDMN_ACTION_WINDOW_MTGB,M_ACTION_WINDOW_MTGB,ACT_ACTION_WINDOW_MTGB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_MTGB_RADIUS,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
+	IDMN_ACTION_WINDOW_LBG,M_ACTION_WINDOW_LBG,ACT_ACTION_WINDOW_LBG,0, 0,
+	IDMN_ACTION_WINDOW_MTSB,M_ACTION_WINDOW_MTSB,ACT_ACTION_WINDOW_MTSB,0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_MTGB_RADIUS,PARA_ACTION_WINDOW_RGB_SCALE,PARA_ACTION_WINDOW_MTGB_DIVIDE,
 
-		IDMN_ACTION_SQ_F,M_ACTION_SQ_F,ACT_ACTION_SQ_F,0, 0,
-		IDMN_ACTION_SQ_H,M_ACTION_SQ_H,ACT_ACTION_SQ_H,0, 0,
+	IDMN_ACTION_WINDOW_STF,M_ACTION_WINDOW_STF,ACT_ACTION_WINDOW_STF,0, 1,PARAM_FILENAME2,PARA_ACTION_WINDOW_BFA_FILEPATH,
+	IDMN_ACTION_WINDOW_STC,M_ACTION_WINDOW_STC,ACT_ACTION_WINDOW_STC,0, 0,
+	IDMN_ACTION_WINDOW_STT,M_ACTION_WINDOW_STT,ACT_ACTION_WINDOW_STT,0, 0,
+	IDMN_ACTION_WINDOW_LFT,M_ACTION_WINDOW_LFT,ACT_ACTION_WINDOW_LFT,0, 0,
 
-		IDMN_ACTION_SMS_ON,M_ACTION_SMS_ON,ACT_ACTION_SMS_ON,0, 0,
-		IDMN_ACTION_SMS_OFF,M_ACTION_SMS_OFF,ACT_ACTION_SMS_OFF,0, 0,
+	IDMN_ACTION_SQ_F,M_ACTION_SQ_F,ACT_ACTION_SQ_F,0, 0,
+	IDMN_ACTION_SQ_H,M_ACTION_SQ_H,ACT_ACTION_SQ_H,0, 0,
 
-		IDMN_ACTION_SDFN,M_ACTION_SDFN,ACT_ACTION_SDFN,0, 1,PARAM_EXPSTRING,PARA_ACTION_SDFN,
-		
-		IDMN_ACTION_GFL,M_ACTION_GFL,ACT_ACTION_GFL,0, 1,PARAM_EXPSTRING,PARA_ACTION_GFL,
-		IDMN_ACTION_SB642I,M_ACTION_SB642I,ACT_ACTION_SB642I,0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_B64,PARA_ACTION_WINDOW_BFA_FILEPATH,
-		};
+	IDMN_ACTION_SMS_ON,M_ACTION_SMS_ON,ACT_ACTION_SMS_ON,0, 0,
+	IDMN_ACTION_SMS_OFF,M_ACTION_SMS_OFF,ACT_ACTION_SMS_OFF,0, 0,
+
+	IDMN_ACTION_SDFN,M_ACTION_SDFN,ACT_ACTION_SDFN,0, 1,PARAM_EXPSTRING,PARA_ACTION_SDFN,
+
+	IDMN_ACTION_GFL,M_ACTION_GFL,ACT_ACTION_GFL,0, 1,PARAM_EXPSTRING,PARA_ACTION_GFL,
+	IDMN_ACTION_SB642I,M_ACTION_SB642I,ACT_ACTION_SB642I,0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_B64,PARA_ACTION_WINDOW_BFA_FILEPATH,
+};
 
 // Definitions of parameters for each expression
-short expressionsInfos[]=
-		{
-		//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,		
-		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
-		//IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,		
-		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
-		//IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+short expressionsInfos[] =
+{
+	//IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,		
+	//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
+	//IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,		
+	//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
+	//IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
 
-		IDMN_EXPRESSION_GPIDBN, M_EXPRESSION_GPIDBN, EXP_EXPRESSION_GPIDBN, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_GPIDBN,
+	IDMN_EXPRESSION_GPIDBN, M_EXPRESSION_GPIDBN, EXP_EXPRESSION_GPIDBN, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_GPIDBN,
 
-		IDMN_EXPRESSION_GCLR_L, M_EXPRESSION_GCLR_L, EXP_EXPRESSION_GCLR_L, 0, 0,
-		IDMN_EXPRESSION_GCLR_R, M_EXPRESSION_GCLR_R, EXP_EXPRESSION_GCLR_R, 0, 0,
-		IDMN_EXPRESSION_GCLR_T, M_EXPRESSION_GCLR_T, EXP_EXPRESSION_GCLR_T, 0, 0,
-		IDMN_EXPRESSION_GCLR_B, M_EXPRESSION_GCLR_B, EXP_EXPRESSION_GCLR_B, 0, 0,
+	IDMN_EXPRESSION_GCLR_L, M_EXPRESSION_GCLR_L, EXP_EXPRESSION_GCLR_L, 0, 0,
+	IDMN_EXPRESSION_GCLR_R, M_EXPRESSION_GCLR_R, EXP_EXPRESSION_GCLR_R, 0, 0,
+	IDMN_EXPRESSION_GCLR_T, M_EXPRESSION_GCLR_T, EXP_EXPRESSION_GCLR_T, 0, 0,
+	IDMN_EXPRESSION_GCLR_B, M_EXPRESSION_GCLR_B, EXP_EXPRESSION_GCLR_B, 0, 0,
 
-		IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
-		IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
+	IDMN_EXPRESSION_RXO, M_EXPRESSION_RXO, EXP_EXPRESSION_RXO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
+	IDMN_EXPRESSION_RYO, M_EXPRESSION_RYO, EXP_EXPRESSION_RYO, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_RO_TYPE,
 
-		IDMN_EXPRESSION_RXS, M_EXPRESSION_RXS, EXP_EXPRESSION_RXS, EXPFLAG_DOUBLE, 0,
-		IDMN_EXPRESSION_RYS, M_EXPRESSION_RYS, EXP_EXPRESSION_RYS, EXPFLAG_DOUBLE, 0,
+	IDMN_EXPRESSION_RXS, M_EXPRESSION_RXS, EXP_EXPRESSION_RXS, EXPFLAG_DOUBLE, 0,
+	IDMN_EXPRESSION_RYS, M_EXPRESSION_RYS, EXP_EXPRESSION_RYS, EXPFLAG_DOUBLE, 0,
 
-		IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
-		IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
-		IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
-		IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+	IDMN_EXPRESSION_GCWR_L, M_EXPRESSION_GCWR_L, EXP_EXPRESSION_GCWR_L, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+	IDMN_EXPRESSION_GCWR_R, M_EXPRESSION_GCWR_R, EXP_EXPRESSION_GCWR_R, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+	IDMN_EXPRESSION_GCWR_T, M_EXPRESSION_GCWR_T, EXP_EXPRESSION_GCWR_T, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
+	IDMN_EXPRESSION_GCWR_B, M_EXPRESSION_GCWR_B, EXP_EXPRESSION_GCWR_B, 0, 1,EXPPARAM_LONG,PARA_EXPRESSION_GCWR_TYPE,
 
-		IDMN_EXPRESSION_GCLT, M_EXPRESSION_GCLT, EXP_EXPRESSION_GCLT, 0, 0,
-	
-		IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
-		
-		IDMN_EXPRESSION_DPISCALING, M_EXPRESSION_DPISCALING, EXP_EXPRESSION_DPISCALING, 0, 0,
-		
-		IDMN_EXPRESSION_IFS, M_EXPRESSION_IFS, EXP_EXPRESSION_IFS, 0, 0,
+	IDMN_EXPRESSION_GCLT, M_EXPRESSION_GCLT, EXP_EXPRESSION_GCLT, 0, 0,
 
-		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
+	IDMN_EXPRESSION_IME_STATE, M_EXPRESSION_IME_STATE, EXP_EXPRESSION_IME_STATE, 0, 0,
 
-		IDMN_EXPRESSION_GT, M_EXPRESSION_GT, EXP_EXPRESSION_GT, EXPFLAG_STRING, 0,
-		
-		IDMN_EXPRESSION_GTPT, M_EXPRESSION_GTPT, EXP_EXPRESSION_GTPT, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GTPT,
-		
-		IDMN_EXPRESSION_GFLS, M_EXPRESSION_GFLS, EXP_EXPRESSION_GFLS, 0, 0,
-		IDMN_EXPRESSION_GFLA, M_EXPRESSION_GFLA, EXP_EXPRESSION_GFLA, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GFLA,
+	IDMN_EXPRESSION_DPISCALING, M_EXPRESSION_DPISCALING, EXP_EXPRESSION_DPISCALING, 0, 0,
 
-		IDMN_EXPRESSION_GFH, M_EXPRESSION_GFH, EXP_EXPRESSION_GFH, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_EXPRESSION_GFH,
-		
-		IDMN_EXPRESSION_GAD, M_EXPRESSION_GAD, EXP_EXPRESSION_GAD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+	IDMN_EXPRESSION_IFS, M_EXPRESSION_IFS, EXP_EXPRESSION_IFS, 0, 0,
 
-		IDMN_EXPRESSION_GVWS, M_EXPRESSION_GVWS, EXP_EXPRESSION_GVWS, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
-		
-		IDMN_EXPRESSION_HEX2RGB, M_EXPRESSION_HEX2RGB, EXP_EXPRESSION_HEX2RGB, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_HEX2RGB,
+	IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
 
-		IDMN_EXPRESSION_GSON, M_EXPRESSION_GSON, EXP_EXPRESSION_GSON, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+	IDMN_EXPRESSION_GT, M_EXPRESSION_GT, EXP_EXPRESSION_GT, EXPFLAG_STRING, 0,
 
-		IDMN_EXPRESSION_W2L, M_EXPRESSION_W2L, EXP_EXPRESSION_W2L, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_W2L,
-		IDMN_EXPRESSION_L2W, M_EXPRESSION_L2W, EXP_EXPRESSION_L2W, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_L2W,
-		};
+	IDMN_EXPRESSION_GTPT, M_EXPRESSION_GTPT, EXP_EXPRESSION_GTPT, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GTPT,
+
+	IDMN_EXPRESSION_GFLS, M_EXPRESSION_GFLS, EXP_EXPRESSION_GFLS, 0, 0,
+	IDMN_EXPRESSION_GFLA, M_EXPRESSION_GFLA, EXP_EXPRESSION_GFLA, EXPFLAG_STRING, 1,EXPPARAM_LONG,PARA_EXPRESSION_GFLA,
+
+	IDMN_EXPRESSION_GFH, M_EXPRESSION_GFH, EXP_EXPRESSION_GFH, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_EXPRESSION_GFH,
+
+	IDMN_EXPRESSION_GAD, M_EXPRESSION_GAD, EXP_EXPRESSION_GAD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+
+	IDMN_EXPRESSION_GVWS, M_EXPRESSION_GVWS, EXP_EXPRESSION_GVWS, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
+
+	IDMN_EXPRESSION_HEX2RGB, M_EXPRESSION_HEX2RGB, EXP_EXPRESSION_HEX2RGB, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_HEX2RGB,
+
+	IDMN_EXPRESSION_GSON, M_EXPRESSION_GSON, EXP_EXPRESSION_GSON, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+
+	IDMN_EXPRESSION_W2L, M_EXPRESSION_W2L, EXP_EXPRESSION_W2L, 0, 1, EXPPARAM_STRING, PARA_EXPRESSION_W2L,
+	IDMN_EXPRESSION_L2W, M_EXPRESSION_L2W, EXP_EXPRESSION_L2W, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_L2W,
+
+	IDMN_EXPRESSION_GCLI, M_EXPRESSION_GCLI, EXP_EXPRESSION_GCLI, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
+};
 
 // ============================================================================
 //
@@ -158,7 +161,7 @@ short expressionsInfos[]=
 // Returns TRUE when the two values are equal!
 // 
 
-long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {	
+long WINAPI DLLExport IsNameAProcess(LPRDATA rdPtr, long param1, long param2) {
 	return (GetProcessIDByName((LPCTSTR)param1) != 0) ? TRUE : FALSE;
 }
 
@@ -203,7 +206,7 @@ long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long 
 
 	info->dwSize = sizeof(PROCESSENTRY32);
 	curInfo->dwSize = sizeof(PROCESSENTRY32);
-	
+
 	MODULEENTRY32* minfo = new MODULEENTRY32;
 	MODULEENTRY32* curMinfo = new MODULEENTRY32;
 
@@ -212,7 +215,7 @@ long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long 
 
 	DWORD ProcessID = _getpid();
 
-	auto getMinfo = [](PROCESSENTRY32* info, MODULEENTRY32* minfo)->void {
+	auto getMinfo = [] (PROCESSENTRY32* info, MODULEENTRY32* minfo)->void {
 		HANDLE hModule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, info->th32ProcessID);
 		Module32First(hModule, minfo);
 	};
@@ -274,6 +277,30 @@ long WINAPI DLLExport IsWindowForcused(LPRDATA rdPtr, long param1, long param2) 
 	return GetForegroundWindow() == rdPtr->MainWindowHandle;
 }
 
+long WINAPI DLLExport IsCommandLineHasParam(LPRDATA rdPtr, long param1, long param2) {
+	auto commandLine = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	auto param = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	CLI::App app;
+
+	app.allow_windows_style_options();
+
+	bool result = false;
+	app.add_flag(param, result);
+
+	//commandLine = "\"C:\\example.exe\"";
+
+	//CLI11_PARSE(app, commandLine, true);	
+	try {
+		app.parse(commandLine, true);
+	}
+	catch (const CLI::ParseError& e) {
+		//return app.exit(e);
+	}
+
+	return result ? TRUE : FALSE;
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -291,23 +318,23 @@ long WINAPI DLLExport IsWindowForcused(LPRDATA rdPtr, long param1, long param2) 
 //	etc.
 
 //运行程序
-short WINAPI DLLExport RunApplication(LPRDATA rdPtr, long param1, long param2){
+short WINAPI DLLExport RunApplication(LPRDATA rdPtr, long param1, long param2) {
 
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
 	ZeroMemory(&si, sizeof(si));
-	ZeroMemory(&pi, sizeof(pi));	
-		
+	ZeroMemory(&pi, sizeof(pi));
+
 	LPCTSTR lpApplicationName = (LPCTSTR)param1;
 	LPTSTR lpCommandLine = (LPTSTR)param2;
-	
+
 	AddNewApplicationName((LPTSTR)param1);
-	
+
 	CreateProcess
 	(
 		//LPCTSTR lpApplicationName,		
-		lpApplicationName,		
+		lpApplicationName,
 		//LPTSTR lpCommandLine,		
 		lpCommandLine,
 		//LPSECURITY_ATTRIBUTES lpProcessAttributes,
@@ -347,22 +374,22 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 
 	//拼接字符串
 	size_t total_length;
-		
+
 	LPCTSTR Space = L" ";
 	LPTSTR lpApplicationName = (LPTSTR)param1;
 	LPTSTR lpCommandLine = (LPTSTR)param2;
-	
+
 	AddNewApplicationName(lpApplicationName);
 
 	//预留结尾分隔符
 	total_length = wcslen(lpApplicationName) + wcslen(Space) + wcslen(lpCommandLine) + 1;
-	
+
 	if (total_length > _MAX_PATH) {
 		return 0;
 	}
 
-	LPTSTR ANCL = new WCHAR[total_length];
-	
+	LPTSTR ANCL = new WCHAR [total_length];
+
 	wcscpy_s(ANCL, total_length, lpApplicationName);
 	wcscat_s(ANCL, total_length, Space);
 	wcscat_s(ANCL, total_length, lpCommandLine);
@@ -390,7 +417,7 @@ short WINAPI DLLExport Run16BitApplication(LPRDATA rdPtr, long param1, long para
 		//LPPROCESS_INFORMATION lpProcessInformation
 		&pi
 	);
-	
+
 	delete[] ANCL;
 
 	CloseHandle(pi.hProcess);
@@ -407,7 +434,7 @@ short WINAPI DLLExport StopApplicationByName(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport StopApplicationByPID(LPRDATA rdPtr, long param1, long param2) {
-	
+
 	DWORD ProcessID = (DWORD)param1;
 
 	if (ProcessID == 0) {
@@ -415,7 +442,7 @@ short WINAPI DLLExport StopApplicationByPID(LPRDATA rdPtr, long param1, long par
 	}
 
 	TerminateProcess(OpenProcess(PROCESS_TERMINATE, FALSE, ProcessID), 0);
-	
+
 	return 0;
 }
 
@@ -426,7 +453,7 @@ short WINAPI DLLExport LockMouse(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) {
-	
+
 	LONG left = CNC_GetIntParameter(rdPtr);
 	LONG right = CNC_GetIntParameter(rdPtr);
 	LONG top = CNC_GetIntParameter(rdPtr);
@@ -435,13 +462,13 @@ short WINAPI DLLExport LockMouseByRect(LPRDATA rdPtr, long param1, long param2) 
 	int Type = CNC_GetIntParameter(rdPtr);
 
 	rdPtr->UserSetRect = { left ,top ,right ,bottom };
-	LockMouse(rdPtr, RECT{ left ,top ,right ,bottom }, RT(Type));
-	
+	LockMouse(rdPtr, RECT { left ,top ,right ,bottom }, RT(Type));
+
 	return 0;
 }
 
 short WINAPI DLLExport UnlockMouse(LPRDATA rdPtr, long param1, long param2) {
-	UnlockMouse(rdPtr);	
+	UnlockMouse(rdPtr);
 	return 0;
 }
 
@@ -472,7 +499,7 @@ short WINAPI DLLExport RectOffset_SetOFF(LPRDATA rdPtr, long param1, long param2
 }
 
 //指定鼠标坐标
-short WINAPI DLLExport SetMousePos(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport SetMousePos(LPRDATA rdPtr, long param1, long param2) {
 	int X = CNC_GetIntParameter(rdPtr);
 	int Y = CNC_GetIntParameter(rdPtr);
 	int Type = CNC_GetIntParameter(rdPtr);
@@ -493,7 +520,7 @@ short WINAPI DLLExport IME_Enable(LPRDATA rdPtr, long param1, long param2) {
 }
 
 //窗口控制
-short WINAPI DLLExport GoFullScreen(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport GoFullScreen(LPRDATA rdPtr, long param1, long param2) {
 	ShowWindow(rdPtr->MainWindowHandle, SW_MAXIMIZE);
 	return 0;
 }
@@ -542,7 +569,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 	int FrameHeight = CurrentFrameRect.bottom - CurrentFrameRect.top;
 
 	//Surface Prototype
-	LPSURFACE proto = nullptr;	
+	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
 	HDC hdcWindow = GetDC(rdPtr->FrameWindowHandle);
@@ -586,7 +613,7 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->Display) {		
+	if (rdPtr->Display) {
 		LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 		SavetoFile(rdPtr->img, FilePath, rdPtr, false);
 	}
@@ -595,7 +622,7 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport SaveToClipBoard(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
-		SavetoClipBoard(rdPtr->img,rdPtr, false);
+		SavetoClipBoard(rdPtr->img, rdPtr, false);
 	}
 	return 0;
 }
@@ -652,7 +679,7 @@ short WINAPI DLLExport LoadFromBackDrop(LPRDATA rdPtr, long param1, long param2)
 		rdPtr->img->Delete();
 		rdPtr->img->Create(width, height, proto);
 
-		HDC sdc = GetDC(rdPtr->FrameWindowHandle);		
+		HDC sdc = GetDC(rdPtr->FrameWindowHandle);
 		HDC ddc = rdPtr->img->GetDC();
 
 		SetStretchBltMode(ddc, COLORONCOLOR);
@@ -660,9 +687,9 @@ short WINAPI DLLExport LoadFromBackDrop(LPRDATA rdPtr, long param1, long param2)
 
 		StretchBlt(ddc, 0, 0, width, height, sdc, screenX, screenY, width, height, SRCCOPY);
 
-		ReleaseDC(rdPtr->FrameWindowHandle,sdc);
+		ReleaseDC(rdPtr->FrameWindowHandle, sdc);
 		rdPtr->img->ReleaseDC(ddc);
-	
+
 		// Redraw object			
 		ReDisplay(rdPtr);
 	}
@@ -675,7 +702,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		//获取参数
 		constexpr auto MIN_SIGMA = 0;
 		constexpr auto MAX_SIGMA = 1.615;
-		
+
 		long p1 = CNC_GetFloatParameter(rdPtr);
 		double sigma = *(float*)&p1;
 		sigma = min(MAX_SIGMA, max(MIN_SIGMA, sigma));
@@ -687,7 +714,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		int divide = CNC_GetIntParameter(rdPtr);
 		GetMaxmiumDivide(&divide);
 
-		auto GetCoef = [](double sigma) -> GCoef {
+		auto GetCoef = [] (double sigma) -> GCoef {
 			double q1, q2, q3;
 
 			if (sigma >= 2.5) {
@@ -702,14 +729,14 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 
 			q2 = q1 * q1;
 			q3 = q1 * q2;
-			
+
 			GCoef c;
 
-			c.b[0] = (1.57825 + (2.44413 * q1) + (1.4281 * q2) + (0.422205 * q3));
-			c.b[1] = ((2.44413 * q1) + (2.85619 * q2) + (1.26661 * q3));
-			c.b[2] = (-(1.4281 * q2) + (1.26661 * q3));
-			c.b[3] = (0.422205 * q3);
-			c.B = 1.0 - ((c.b[1] + c.b[2] + c.b[3]) / c.b[0]);
+			c.b [0] = (1.57825 + (2.44413 * q1) + (1.4281 * q2) + (0.422205 * q3));
+			c.b [1] = ((2.44413 * q1) + (2.85619 * q2) + (1.26661 * q3));
+			c.b [2] = (-(1.4281 * q2) + (1.26661 * q3));
+			c.b [3] = (0.422205 * q3);
+			c.B = 1.0 - ((c.b [1] + c.b [2] + c.b [3]) / c.b [0]);
 
 			c.sigma = sigma;
 			c.N = 3;
@@ -717,13 +744,13 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			return c;
 		};
 
-		GCoef c = GetCoef(sigma);		
-		
+		GCoef c = GetCoef(sigma);
+
 		//Dimensions
 		int owidth = rdPtr->img->GetWidth(), oheight = rdPtr->img->GetHeight();
 		int width = (int)(owidth / scale);
 		int height = (int)(oheight / scale);
-		
+
 		// 降采样
 		cSurface ResizedImg;
 		LPSURFACE proto = nullptr;
@@ -743,39 +770,38 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		if (!buff) return 0;
 
 		int pitch = rdPtr->img->GetPitch();
-		if (pitch < 0)
-		{
+		if (pitch < 0) {
 			pitch *= -1;
 			buff -= pitch * (height - 1);
 		}
 		int size = pitch * height;
 		int byte = rdPtr->img->GetDepth() >> 3;
 
-		auto RecursiveGaussFilter = [c](BYTE* src, BYTE* des, int size, int stride) {
+		auto RecursiveGaussFilter = [c] (BYTE* src, BYTE* des, int size, int stride) {
 			RGBA* W = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
 			RGBA* W_Temp = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
 
 			//init			
-			RGBA Input = { (double)src[2],(double)src[1],(double)src[0],0 };
+			RGBA Input = { (double)src [2],(double)src [1],(double)src [0],0 };
 			RGBA Output = { 0,0,0,0 };
 
 			//forward
-			W[0] = W[1] = W[2] = Input;
+			W [0] = W [1] = W [2] = Input;
 			for (int n1 = 3; n1 < size + 3; n1++) {
 				int offset = (n1 - 3) * stride;
-				Input = { (double)src[offset + 2],(double)src[offset + 1],(double)src[offset + 0],0 };
-				W[n1] = (c.B * Input + (c.b[1] * W[n1 - 1] + c.b[2] * W[n1 - 2] + c.b[3] * W[n1 - 3]) / c.b[0]);
+				Input = { (double)src [offset + 2],(double)src [offset + 1],(double)src [offset + 0],0 };
+				W [n1] = (c.B * Input + (c.b [1] * W [n1 - 1] + c.b [2] * W [n1 - 2] + c.b [3] * W [n1 - 3]) / c.b [0]);
 			}
 
 			//backword
-			W_Temp[size] = W_Temp[size + 1] = W_Temp[size + 2] = W[size + 2];
+			W_Temp [size] = W_Temp [size + 1] = W_Temp [size + 2] = W [size + 2];
 			for (int n2 = size - 1; n2 >= 0; n2--) {
 				int offset = n2 * stride;
-				W_Temp[n2] = (c.B * W[n2] + (c.b[1] * W_Temp[n2 + 1] + c.b[2] * W_Temp[n2 + 2] + c.b[3] * W_Temp[n2 + 3]) / c.b[0]);
-				Output = Range(W_Temp[n2]);
-				des[offset + 2] = (BYTE)Output.r;
-				des[offset + 1] = (BYTE)Output.g;
-				des[offset + 0] = (BYTE)Output.b;
+				W_Temp [n2] = (c.B * W [n2] + (c.b [1] * W_Temp [n2 + 1] + c.b [2] * W_Temp [n2 + 2] + c.b [3] * W_Temp [n2 + 3]) / c.b [0]);
+				Output = Range(W_Temp [n2]);
+				des [offset + 2] = (BYTE)Output.r;
+				des [offset + 1] = (BYTE)Output.g;
+				des [offset + 0] = (BYTE)Output.b;
 			}
 
 			free(W);
@@ -812,13 +838,13 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		int t_width = width / divide;
 		int t_height = height / divide;
 
-		auto Filter1D = [RecursiveGaussFilter, byte, pitch, c](BYTE* buff, int it_size, int filter_size, int it_stride, int filter_stride) {
+		auto Filter1D = [RecursiveGaussFilter, byte, pitch, c] (BYTE* buff, int it_size, int filter_size, int it_stride, int filter_stride) {
 			for (int i = 0; i < it_size; i++) {
 				RecursiveGaussFilter(buff + i * it_stride, buff + i * it_stride, filter_size, filter_stride);
 			}
 		};
 
-		auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch](BYTE* buff, bool dir) {
+		auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch] (BYTE* buff, bool dir) {
 			std::vector<std::thread> t_vec;
 			int stride = dir ? pitch : byte;
 			int o_stride = (!dir) ? pitch : byte;
@@ -865,7 +891,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 }
 
 short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->Display) {		
+	if (rdPtr->Display) {
 		//获取参数
 		constexpr auto GB_MIN_RADIUS = 0;
 		constexpr auto GB_MAX_RADIUS = 65535;
@@ -880,26 +906,26 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		GetValidScale(&scale);
 
 		int divide = CNC_GetIntParameter(rdPtr);
-		GetMaxmiumDivide(&divide);		
+		GetMaxmiumDivide(&divide);
 
 		//计算参数
 		float a = (float)(1 / (sigma * sqrt(2 * 3.1415926)));
 		float* weight = (float*)malloc(sizeof(float) * (2 * radius + 1));
 
-		auto GetGauss = [a,sigma](int x) -> float {
+		auto GetGauss = [a, sigma] (int x) -> float {
 			float index = (float)(-1.0 * ((double)x * (double)x) / (2.0 * sigma * sigma));
 			float result = (float)(a * exp(index));
 			return result;
 		};
-		
-		auto GetGaussWeight1D = [GetGauss, radius, sigma](float* weight) {
+
+		auto GetGaussWeight1D = [GetGauss, radius, sigma] (float* weight) {
 			float Normalization = 0;
 			for (int i = 0; i < 2 * radius + 1; i++) {
-				weight[i] = GetGauss(abs(i - radius));
-				Normalization += weight[i];
+				weight [i] = GetGauss(abs(i - radius));
+				Normalization += weight [i];
 			}
 			for (int j = 0; j < 2 * radius + 1; j++) {
-				weight[j] = weight[j] / Normalization;
+				weight [j] = weight [j] / Normalization;
 			}
 		};
 
@@ -929,15 +955,14 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		if (!buff) return 0;
 
 		int pitch = rdPtr->img->GetPitch();
-		if (pitch < 0)
-		{
+		if (pitch < 0) {
 			pitch *= -1;
 			buff -= pitch * (height - 1);
 		}
 		int size = pitch * height;
 		int byte = rdPtr->img->GetDepth() >> 3;
-				
-		auto Edge = [](int Input, int Max)->int {
+
+		auto Edge = [] (int Input, int Max)->int {
 			if (Input < 0) {
 				Input = 0 + (0 - Input);
 			}
@@ -950,8 +975,8 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 
 		int t_width = width / divide;
 		int t_height = height / divide;
-				
-		auto Gauss1DFilter = [Edge, radius, weight, byte, pitch, height, width](BYTE* src, BYTE* des, int size, bool dir) {
+
+		auto Gauss1DFilter = [Edge, radius, weight, byte, pitch, height, width] (BYTE* src, BYTE* des, int size, bool dir) {
 			int stride = dir ? pitch : byte;
 			int EdgeSize = dir ? height : width;
 
@@ -963,16 +988,16 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 					BYTE* Pixel = src + offset;
 					//This method will take transparent pixels as black/{0,0,0,0}, which will cause black edges around pic with alpha channel.
 					//I will not fix this cause this method is **VERY** slow and useless in game.
-					RGBA calcpixels = RGBA{ (double)Pixel[2],(double)Pixel[1],(double)Pixel[0],0 }*weight[j + radius];
+					RGBA calcpixels = RGBA { (double)Pixel [2],(double)Pixel [1],(double)Pixel [0],0 }*weight [j + radius];
 					Sum = Sum + calcpixels;
 				}
-				des[i * stride + 2] = (BYTE)Sum.r;
-				des[i * stride + 1] = (BYTE)Sum.g;
-				des[i * stride + 0] = (BYTE)Sum.b;
+				des [i * stride + 2] = (BYTE)Sum.r;
+				des [i * stride + 1] = (BYTE)Sum.g;
+				des [i * stride + 0] = (BYTE)Sum.b;
 			}
 		};
 
-		auto Filter1D = [Gauss1DFilter, byte, pitch](BYTE* src, BYTE* temp, int it_size, int filter_size, bool dir) {
+		auto Filter1D = [Gauss1DFilter, byte, pitch] (BYTE* src, BYTE* temp, int it_size, int filter_size, bool dir) {
 			int stride = dir ? pitch : byte;
 			int o_stride = (!dir) ? pitch : byte;
 
@@ -980,8 +1005,8 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 				Gauss1DFilter(src + i * o_stride, temp + i * o_stride, filter_size, dir);
 			}
 		};
-		
-		auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch](BYTE* buff, BYTE* temp, bool dir) {
+
+		auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch] (BYTE* buff, BYTE* temp, bool dir) {
 			std::vector<std::thread> t_vec;
 			int stride = dir ? pitch : byte;
 			int o_stride = (!dir) ? pitch : byte;
@@ -995,7 +1020,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 					t_risize = ((!dir) ? height : width) - i * t_risize;
 				}
 
-				int offset = i * ((!dir) ? t_height : t_width);				
+				int offset = i * ((!dir) ? t_height : t_width);
 				t_vec.emplace_back(std::thread(Filter1D, buff + offset * o_stride, temp + offset * o_stride, t_risize, t_rsize, dir));
 			}
 
@@ -1034,9 +1059,9 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->Display) {		
+	if (rdPtr->Display) {
 		//获取参数
-		int radius = CNC_GetIntParameter(rdPtr);		
+		int radius = CNC_GetIntParameter(rdPtr);
 
 		long p2 = CNC_GetFloatParameter(rdPtr);
 		float scale = *(float*)&p2;
@@ -1054,14 +1079,14 @@ short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long par
 
 short WINAPI DLLExport LoadFileList(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	
+
 	rdPtr->FileList->clear();
 	GetFileList(rdPtr, FilePath);
 
 	return 0;
 }
 
-short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long param2){
+short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long param2) {
 	// read param
 	std::wstring base64 = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -1077,7 +1102,7 @@ short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long para
 	}
 
 	size_t bufsz = base64Decoder.base64_decode_size();
-	BYTE* buffer = new BYTE[bufsz];
+	BYTE* buffer = new BYTE [bufsz];
 
 	base64Decoder.base64_decode_to_pointer(buffer, bufsz);
 
@@ -1167,11 +1192,11 @@ short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long para
 //}
 
 //返回指定进程名的Process ID
-long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1){
+long WINAPI DLLExport GetProcessIDByName(LPRDATA rdPtr, long param1) {
 	//输入参数
 	long param = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	return GetProcessIDByName((LPCTSTR)param);
-	
+
 }
 
 //返回鼠标锁定区域
@@ -1203,8 +1228,8 @@ long WINAPI DLLExport ReturnYOffset(LPRDATA rdPtr, long param1) {
 
 
 //返回Frame X Scale
-long WINAPI DLLExport ReturnXScale(LPRDATA rdPtr, long param1) {	
-	float fp1 = (float)GetFrameScale(rdPtr).x;	
+long WINAPI DLLExport ReturnXScale(LPRDATA rdPtr, long param1) {
+	float fp1 = (float)GetFrameScale(rdPtr).x;
 	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
 	rdPtr->rHo.hoFlags |= HOF_FLOAT;
 	//Return the float without conversion
@@ -1222,7 +1247,7 @@ long WINAPI DLLExport ReturnYScale(LPRDATA rdPtr, long param1) {
 
 //返回当前窗口矩形区域
 long WINAPI DLLExport GetRect_L(LPRDATA rdPtr, long param1) {
-	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);	
+	int Type = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	return GetRect(rdPtr, GR(Type)).left;
 }
 long WINAPI DLLExport GetRect_R(LPRDATA rdPtr, long param1) {
@@ -1240,17 +1265,17 @@ long WINAPI DLLExport GetRect_B(LPRDATA rdPtr, long param1) {
 
 //返回当前锁定模式
 long WINAPI DLLExport ReturnCurrentLockType(LPRDATA rdPtr, long param1) {
-	return rdPtr->Lock?rdPtr->LockType:-1;
+	return rdPtr->Lock ? rdPtr->LockType : -1;
 }
 
 //返回IME状态
-long WINAPI DLLExport ReturnIMEState(LPRDATA rdPtr, long param1) {	
+long WINAPI DLLExport ReturnIMEState(LPRDATA rdPtr, long param1) {
 	return ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle));
 }
 
 //返回DPI Sacling
 long WINAPI DLLExport ReturnDPIScaling(LPRDATA rdPtr, long param1) {
-	return ReturnDPIScaling(rdPtr->AppScaled);	
+	return ReturnDPIScaling(rdPtr->AppScaled);
 }
 
 //返回全屏状态
@@ -1262,7 +1287,7 @@ long WINAPI DLLExport ReturnFullScreen(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
+
 	//This returns a pointer to the string for MMF.
 	return (long)rdPtr->rhPtr->rhFrame->m_name;
 }
@@ -1271,19 +1296,19 @@ long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
 	LPSYSTEMTIME lpSystemTime = new SYSTEMTIME;
 	GetLocalTime(lpSystemTime);
-	
+
 	//Release Old
 	if (rdPtr->CurrentTime != nullptr) {
 		delete[] rdPtr->CurrentTime;
 	}
-	
+
 	//2000-01-01 00:00:01
 	//格式长19字符，留出1字符用作结束符号
 	size_t Length = 19;
-	rdPtr->CurrentTime = new WCHAR[Length+1];
-	rdPtr->CurrentTime[Length] = 0;
-	
-	swprintf(rdPtr->CurrentTime, Length+1, _T("%.4d-%.2d-%.2d %.2d:%.2d:%.2d"), (int)lpSystemTime->wYear, (int)lpSystemTime->wMonth, (int)lpSystemTime->wDay, (int)lpSystemTime->wHour, (int)lpSystemTime->wMinute, (int)lpSystemTime->wSecond);
+	rdPtr->CurrentTime = new WCHAR [Length + 1];
+	rdPtr->CurrentTime [Length] = 0;
+
+	swprintf(rdPtr->CurrentTime, Length + 1, _T("%.4d-%.2d-%.2d %.2d:%.2d:%.2d"), (int)lpSystemTime->wYear, (int)lpSystemTime->wMonth, (int)lpSystemTime->wDay, (int)lpSystemTime->wHour, (int)lpSystemTime->wMinute, (int)lpSystemTime->wSecond);
 
 	delete lpSystemTime;
 
@@ -1297,7 +1322,7 @@ long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
 //获取游玩时间
 long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 	int TotalPlayFrame = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	
+
 	//60FPS Per Sec
 	TotalPlayFrame /= 60;
 
@@ -1319,7 +1344,7 @@ long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 	//99999999:59:59
 	//格式最长14字符
 	size_t Length = 14;
-	rdPtr->TotalPlayTime = new WCHAR[Length + 1];
+	rdPtr->TotalPlayTime = new WCHAR [Length + 1];
 	memset(rdPtr->TotalPlayTime, 0, Length + 1);
 
 	swprintf(rdPtr->TotalPlayTime, Length + 1, _T("%.2d:%.2d:%.2d"), Hour, Minute, Second);
@@ -1331,15 +1356,15 @@ long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->TotalPlayTime;
 }
 
-long WINAPI DLLExport GetFileListSize(LPRDATA rdPtr, long param1) {	
+long WINAPI DLLExport GetFileListSize(LPRDATA rdPtr, long param1) {
 	return rdPtr->FileList->size();
 }
 
 long WINAPI DLLExport GetFileListAt(LPRDATA rdPtr, long param1) {
 	size_t Pos = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	Pos = max(0, min(Pos, rdPtr->FileList->size() - 1));
-	
-	NewStr(rdPtr->FileListOutPut,rdPtr->FileList->at(Pos));
+
+	NewStr(rdPtr->FileListOutPut, rdPtr->FileList->at(Pos));
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1372,7 +1397,7 @@ long WINAPI DLLExport GetFileHash(LPRDATA rdPtr, long param1) {
 //获取对象当前显示动画朝向
 long WINAPI DLLExport GetObjectAnimationDirection(LPRDATA rdPtr, long param1) {
 	int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	
+
 	return DisplayAnimationDirection(Fixed);
 }
 
@@ -1406,7 +1431,7 @@ long WINAPI DLLExport GetScopedObjectNumber(LPRDATA rdPtr, long param1) {
 	if (pObjectInfo == nullptr) {
 		return 0;
 	}
-	
+
 	auto next = object->roHo.hoNextSelected;
 
 	if (next == -1) {		// unselected, return total
@@ -1426,8 +1451,8 @@ long WINAPI DLLExport WCharToLong(LPRDATA rdPtr, long param1) {
 		return 0;
 	}
 
-	short high = ConvertToType<wchar_t,short>(pStr[0]);
-	short low = ConvertToType<wchar_t, short>(pStr[1]);
+	short high = ConvertToType<wchar_t, short>(pStr [0]);
+	short low = ConvertToType<wchar_t, short>(pStr [1]);
 
 	return (high << 16) + low;
 }
@@ -1439,17 +1464,42 @@ long WINAPI DLLExport LongToWChar(LPRDATA rdPtr, long param1) {
 	short high = (num - low) >> 16;
 
 	auto pStr = (wchar_t*)_mvCalloc((2 + 1) * sizeof(wchar_t));
-	
-	pStr[0]=ConvertToType<short, wchar_t>(high);
-	pStr[1]=ConvertToType<short, wchar_t>(low);
 
-	pStr[2] = '\0';
+	pStr [0] = ConvertToType<short, wchar_t>(high);
+	pStr [1] = ConvertToType<short, wchar_t>(low);
+
+	pStr [2] = '\0';
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
 	return (long)pStr;
+}
+
+long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
+	auto commandLine = ConvertWStrToStr((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
+	auto param = ConvertWStrToStr((LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING));
+
+	//commandLine = "\"C:\\Steam\\steamapps\\common\\Clickteam Fusion 2.5\\Data\\Runtime\\Unicode\\edrt.exe\" -f \"gundamAGE\" -v /J1";
+	//commandLine = "\"C:\\Steam\\steamapps\\common\\Clickteam Fusion 2.5\\Data\\Runtime\\Unicode\\edrt.exe\" -f /J1";
+
+	CLI::App app;
+
+	app.allow_windows_style_options();
+
+	std::string coef = "";
+	app.add_option(param, coef);
+
+	//CLI11_PARSE(app, commandLine, true);	
+	try {
+		app.parse(commandLine, true);
+	}
+	catch (const CLI::ParseError& e) {
+		//return app.exit(e);                                                                                          
+	}
+
+	return ReturnString(rdPtr, ConvertStrToWStr(coef));
 }
 
 // ----------------------------------------------------------
@@ -1460,133 +1510,137 @@ long WINAPI DLLExport LongToWChar(LPRDATA rdPtr, long param1) {
 // Located at the end of the source for convinience
 // Must finish with a 0
 //
-long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
-			{ 
-			IsNameAProcess,
-			IsMouseLocked,
-			ReturnKeyState,
-			IsFullScreen,
-			IsClipBoardAvailable,
-			IsObjectHasAnimationInDirection,
+long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
+{
+	IsNameAProcess,
+	IsMouseLocked,
+	ReturnKeyState,
+	IsFullScreen,
+	IsClipBoardAvailable,
+	IsObjectHasAnimationInDirection,
 
-			IsAnotherInstanceRunning,
+	IsAnotherInstanceRunning,
 
-			IsWindowForcused,
+	IsWindowForcused,
 
-			0
-			};
-	
-short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
-			{
-			//运行
-			RunApplication,
-			Run16BitApplication,
+	IsCommandLineHasParam,
 
-			//停止
-			StopApplicationByName,
-			StopApplicationByPID,
+	0
+};
 
-			//锁定/解锁鼠标
-			LockMouse,
-			LockMouseByRect,
-			UnlockMouse,
+short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
+{
+	//运行
+	RunApplication,
+	Run16BitApplication,
 
-			//设定鼠标位置
-			SetMousePos,
+	//停止
+	StopApplicationByName,
+	StopApplicationByPID,
 
-			//更新设定
-			KeepLock_SetON,
-			KeepLock_SetOFF,
-			UpdateLock_SetON,
-			UpdateLock_SetOFF,
-			RectOffset_SetON,
-			RectOffset_SetOFF,
+	//锁定/解锁鼠标
+	LockMouse,
+	LockMouseByRect,
+	UnlockMouse,
 
-			//输入法控制
-			IME_Disable,
-			IME_Enable,
+	//设定鼠标位置
+	SetMousePos,
 
-			//窗口控制
-			GoFullScreen,
-			GoWindowed,
+	//更新设定
+	KeepLock_SetON,
+	KeepLock_SetOFF,
+	UpdateLock_SetON,
+	UpdateLock_SetOFF,
+	RectOffset_SetON,
+	RectOffset_SetOFF,
 
-			//截取场景区域到剪贴板
-			BitBltFrameArea,
-			LoadFromClipBoard,
-			LoadFromFile,
+	//输入法控制
+	IME_Disable,
+	IME_Enable,
 
-			RecursiveGaussBlur,
-			MultiThreadGaussBlur,
-			LoadFromBackDrop,
-			MultiThreadStackBlur,
-			SaveToFile,
-			SaveToClipBoard,
-			SaveToTemp,
-			LoadFromTemp,
+	//窗口控制
+	GoFullScreen,
+	GoWindowed,
 
-			StretchQuality_Fast,
-			StretchQuality_High,
+	//截取场景区域到剪贴板
+	BitBltFrameArea,
+	LoadFromClipBoard,
+	LoadFromFile,
 
-			MultiThreadSave_ON,
-			MultiThreadSave_OFF,
+	RecursiveGaussBlur,
+	MultiThreadGaussBlur,
+	LoadFromBackDrop,
+	MultiThreadStackBlur,
+	SaveToFile,
+	SaveToClipBoard,
+	SaveToTemp,
+	LoadFromTemp,
 
-			SetDefaultFilterName,
+	StretchQuality_Fast,
+	StretchQuality_High,
 
-			LoadFileList,
-			SaveBase64ImgToFile,
+	MultiThreadSave_ON,
+	MultiThreadSave_OFF,
 
-			//结尾必定是零
-			0
-			};
+	SetDefaultFilterName,
 
-long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
-			{     
-			GetProcessIDByName,
-			
-			GetCurrentLockRect_L,
-			GetCurrentLockRect_R,
-			GetCurrentLockRect_T,
-			GetCurrentLockRect_B,
+	LoadFileList,
+	SaveBase64ImgToFile,
 
-			ReturnXOffset,
-			ReturnYOffset,
+	//结尾必定是零
+	0
+};
 
-			ReturnXScale,
-			ReturnYScale,
+long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
+{
+	GetProcessIDByName,
 
-			GetRect_L,
-			GetRect_R,
-			GetRect_T,
-			GetRect_B,
+	GetCurrentLockRect_L,
+	GetCurrentLockRect_R,
+	GetCurrentLockRect_T,
+	GetCurrentLockRect_B,
 
-			ReturnCurrentLockType,
+	ReturnXOffset,
+	ReturnYOffset,
 
-			ReturnIMEState,
+	ReturnXScale,
+	ReturnYScale,
 
-			ReturnDPIScaling,
-			
-			ReturnFullScreen,
+	GetRect_L,
+	GetRect_R,
+	GetRect_T,
+	GetRect_B,
 
-			GetFrameName,
+	ReturnCurrentLockType,
 
-			GetTime,
-			GetPlayTime,
+	ReturnIMEState,
 
-			GetFileListSize,
-			GetFileListAt,
+	ReturnDPIScaling,
 
-			GetFileHash,
+	ReturnFullScreen,
 
-			GetObjectAnimationDirection,
+	GetFrameName,
 
-			GetValWithSign,
+	GetTime,
+	GetPlayTime,
 
-			Hex2RGB,
+	GetFileListSize,
+	GetFileListAt,
 
-			GetScopedObjectNumber,
+	GetFileHash,
 
-			WCharToLong,
-			LongToWChar,
-			
-			0
-			};
+	GetObjectAnimationDirection,
+
+	GetValWithSign,
+
+	Hex2RGB,
+
+	GetScopedObjectNumber,
+
+	WCharToLong,
+	LongToWChar,
+
+	GetCommandLineByCLI,
+
+0
+};

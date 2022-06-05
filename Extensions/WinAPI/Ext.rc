@@ -121,6 +121,8 @@ BEGIN
         MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
         MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
         MENUITEM SEPARATOR
+        MENUITEM "CommandLine Has Param", IDMN_CONDITION_ICLIHP
+        MENUITEM SEPARATOR
         MENUITEM "Image Available in ClipBoard", IDMN_CONDITION_ICA
         MENUITEM SEPARATOR
         POPUP "Fusion"
@@ -345,6 +347,8 @@ BEGIN
             MENUITEM SEPARATOR            
             MENUITEM "WChar To Long",      IDMN_EXPRESSION_W2L          
             MENUITEM "Long To WChar",      IDMN_EXPRESSION_L2W          
+            MENUITEM SEPARATOR            
+            MENUITEM "Get Command Line Param",      IDMN_EXPRESSION_GCLI
         END
         MENUITEM SEPARATOR
     END
@@ -633,6 +637,13 @@ BEGIN
     PARA_EXPRESSION_L2W "Long"
 END
 
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GCLI "GCLI$ ("
+    PARA_EXPRESSION_CLI "CLI"
+    PARA_EXPRESSION_PARAM "Param"
+END
+
 //Conditions
 STRINGTABLE
 BEGIN
@@ -678,6 +689,11 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_IWF    "%o Application Has Focus"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_ICLIHP    "%o CommandLine %0 Has Param %1"
 END
 
 //Porperties
