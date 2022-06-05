@@ -202,6 +202,8 @@ BEGIN
         BEGIN
             MENUITEM "Go FullScreen", IDMN_ACTION_WINDOW_GF
             MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW            
+            MENUITEM SEPARATOR
+            MENUITEM "Set Window Size", IDMN_ACTION_SWS            
         END
         MENUITEM SEPARATOR
         MENUITEM "Get FileList", IDMN_ACTION_GFL
@@ -539,6 +541,8 @@ BEGIN
 
     M_ACTION_SB642I "Save Base64 %0 to Image %1"
     PARAM_B64 "Base64 String"
+
+    M_ACTION_SWS "Set Window Size to [ %0 ¡Á %1 ]"
 END
 
 //Expression

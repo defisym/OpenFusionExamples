@@ -87,6 +87,8 @@ short actionsInfos[] =
 
 	IDMN_ACTION_GFL,M_ACTION_GFL,ACT_ACTION_GFL,0, 1,PARAM_EXPSTRING,PARA_ACTION_GFL,
 	IDMN_ACTION_SB642I,M_ACTION_SB642I,ACT_ACTION_SB642I,0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_B64,PARA_ACTION_WINDOW_BFA_FILEPATH,
+
+	IDMN_ACTION_SWS,M_ACTION_SWS,ACT_ACTION_SWS,0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,
 };
 
 // Definitions of parameters for each expression
@@ -526,6 +528,26 @@ short WINAPI DLLExport GoFullScreen(LPRDATA rdPtr, long param1, long param2) {
 }
 short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
 	ShowWindow(rdPtr->MainWindowHandle, SW_RESTORE);
+	return 0;
+}
+short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
+	size_t wWidth = (size_t)CNC_GetIntParameter(rdPtr);
+	size_t wHeight = (size_t)CNC_GetIntParameter(rdPtr);
+	
+	RECT wRect;
+	::GetWindowRect(rdPtr->MainWindowHandle, &wRect);
+	
+	size_t oldWidth = wRect.right - wRect.left;
+	size_t oldHeight = wRect.bottom - wRect.top;
+
+	auto oldX = wRect.left;
+	auto oldY = wRect.top;
+
+	auto newX = oldX + int(oldWidth - wWidth) / 2;
+	auto newY = oldY + int(oldHeight - wHeight) / 2;
+
+	SetWindowPos(rdPtr->MainWindowHandle, NULL, newX, newY, wWidth, wHeight, SWP_SHOWWINDOW);
+	
 	return 0;
 }
 
@@ -1496,7 +1518,7 @@ long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
-		//return app.exit(e);                                                                                          
+		//return app.exit(e);
 	}
 
 	return ReturnString(rdPtr, ConvertStrToWStr(coef));
@@ -1586,6 +1608,8 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	LoadFileList,
 	SaveBase64ImgToFile,
+
+	SetSize,
 
 	//结尾必定是零
 	0
