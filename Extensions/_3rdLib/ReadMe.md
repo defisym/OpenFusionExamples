@@ -7,3 +7,4 @@ Files listed in gitignore are also used but remain untouched, you need to clone 
 - [LZ4](https://github.com/lz4/lz4)
 - [ZLib](https://zlib.net/)
 - [ZPaq](https://github.com/zpaq/zpaq)
+- [CLI11](https://github.com/CLIUtils/CLI11)
