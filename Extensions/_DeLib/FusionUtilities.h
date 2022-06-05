@@ -172,17 +172,17 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 		// Display BuildType if needed
 		// MSGBOX(_itos(buildType), L"BuildType");
 
-		auto buildForPlatform = [buildType](std::vector<disableItem>& lst) {
+		auto buildForPlatform = [buildType] (std::vector<disableItem>& lst) {
 			return std::find(lst.begin(), lst.end(), buildType) != lst.end();
 		};
 
-		auto iterateMenu = [](HMENU hMenu, std::function<void(HMENU, int)> f) {
+		auto iterateMenu = [] (HMENU hMenu, std::function<void(HMENU, int)> f) {
 			constexpr auto SUBMENU = -1;
 			constexpr auto SEPARATOR = 0;
 
 			std::function<void(HMENU)> iterateMenu_Func;
 
-			iterateMenu_Func = [&](HMENU hMenu) {
+			iterateMenu_Func = [&] (HMENU hMenu) {
 				auto nCount = GetMenuItemCount(hMenu);
 
 				for (int item = 0; item < nCount; item++) {
@@ -202,12 +202,12 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 		};
 
 		for (size_t platform = 0; platform < ic_V.size(); platform++) {
-			if (buildForPlatform(ic_V[platform])) {
-				if (!dM_V[platform].empty()
-					&&dM_V[platform][0] == DISABLEALL) {
-					iterateMenu(hMenu, [&](HMENU hMenu, int id) {
-						if (dM_V[platform].size() == 1
-							|| std::find(dM_V[platform].begin() + 1, dM_V[platform].end(), id) == dM_V[platform].end()) {
+			if (buildForPlatform(ic_V [platform])) {
+				if (!dM_V [platform].empty()
+					&& dM_V [platform][0] == DISABLEALL) {
+					iterateMenu(hMenu, [&] (HMENU hMenu, int id) {
+						if (dM_V [platform].size() == 1
+							|| std::find(dM_V [platform].begin() + 1, dM_V [platform].end(), id) == dM_V [platform].end()) {
 							EnableMenuItem(hMenu, id, MF_DISABLED | MF_GRAYED);
 						}
 						});
@@ -215,7 +215,7 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 					break;
 				}
 				else {
-					for (auto& it : dM_V[platform]) {
+					for (auto& it : dM_V [platform]) {
 						EnableMenuItem(hMenu, it, MF_DISABLED | MF_GRAYED);
 					}
 
@@ -231,3 +231,16 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 #define GetPlatformPopupMenu(mn,disableMenus) GetPlatformPopupMenu(mV,oiPtr,edPtr,mn,disableMenus)
 
 #define _mvCalloc(size) mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, size)
+
+inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
+	auto sz = str.size() + 1;
+	auto pStr = (wchar_t*)_mvCalloc(sz * sizeof(wchar_t));
+	memset(pStr, 0, sz * sizeof(wchar_t));
+	memcpy(pStr, str.c_str(), sz * sizeof(wchar_t));
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)pStr;
+}
