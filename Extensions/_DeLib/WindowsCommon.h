@@ -56,7 +56,7 @@ inline bool operator ==(const TRANSLATION& A, const TRANSLATION& B) {
 }
 
 inline bool operator !=(const TRANSLATION& A, const TRANSLATION& B) {
-	return !(A==B);
+	return !(A == B);
 }
 
 static LPCWSTR DefaultBlock[] = { L"Comments",	L"InternalName",	L"ProductName",
@@ -72,7 +72,7 @@ inline BYTE* GetFileVersion_GetFileVersionInfo(LPCWSTR FileName) {
 		return nullptr;
 	}
 
-	BYTE* pData = new BYTE[size * sizeof(BYTE)];
+	BYTE* pData = new BYTE [size * sizeof(BYTE)];
 
 	GetFileVersionInfo(FileName, NULL, size, pData);
 
@@ -99,23 +99,23 @@ inline LPWSTR GetFileVersion_GetSubBlock(BYTE* pData, TRANSLATION* pTranslation,
 	// Query
 	void* Buffer = nullptr;
 	UINT Len = 0;
-	
+
 	// Get SubBlock based on translation
 	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
 	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 	auto bufsz = sz + 1;
 
-	LPWSTR block = new wchar_t[bufsz];
+	LPWSTR block = new wchar_t [bufsz];
 	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 
 	// Get the real STR
 	LPWSTR info = nullptr;
 
-	auto newStr = [](LPWSTR* des, LPCWSTR src)->void {
+	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
 		auto isz = swprintf(nullptr, 0, L"%s", src);
 		auto ibufsz = isz + 1;
 
-		*des = new wchar_t[ibufsz];
+		*des = new wchar_t [ibufsz];
 		swprintf(*des, ibufsz, L"%s", src);
 	};
 
@@ -148,8 +148,8 @@ inline bool GetFileVersion_CMPDefault(BYTE* pDataA, BYTE* pDataB, int CMP) {
 
 	for (int i = 0b000000000001, count = 0; i != 0b100000000000; i = i << 1, count++) {
 		if (i & CMP) {
-			LPCWSTR infoA = GetFileVersion_GetSubBlock(pDataA, pTranslationA, DefaultBlock[count]);
-			LPCWSTR infoB = GetFileVersion_GetSubBlock(pDataB, pTranslationB, DefaultBlock[count]);
+			LPCWSTR infoA = GetFileVersion_GetSubBlock(pDataA, pTranslationA, DefaultBlock [count]);
+			LPCWSTR infoB = GetFileVersion_GetSubBlock(pDataB, pTranslationB, DefaultBlock [count]);
 
 			bool unequal = (wcscmp(infoA, infoB) != 0);
 
@@ -245,8 +245,8 @@ inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageTy
 
 inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	// Get FileVersionInfo
-	auto size = GetFileVersionInfoSize(FileName, NULL);	
-	BYTE* pData = new BYTE[size * sizeof(BYTE)];
+	auto size = GetFileVersionInfoSize(FileName, NULL);
+	BYTE* pData = new BYTE [size * sizeof(BYTE)];
 	//unique_ptr<BYTE> pData(new BYTE[size * sizeof(BYTE)]);
 
 	GetFileVersionInfo(FileName, NULL, size, pData);
@@ -268,21 +268,21 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	memcpy(pTranslation, Buffer, sizeof(TRANSLATION));
 
 	// Get SubBlock based on translation
-	LPCWSTR Format= L"\\StringFileInfo\\%04x%04x\\%s";
+	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
 	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 	auto bufsz = sz + 1;
-	
-	LPWSTR block = new wchar_t[bufsz];
+
+	LPWSTR block = new wchar_t [bufsz];
 	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 
 	// Get the real STR
 	LPWSTR info = nullptr;
 
-	auto newStr = [](LPWSTR* des, LPCWSTR src)->void {
+	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
 		auto isz = swprintf(nullptr, 0, L"%s", src);
 		auto ibufsz = isz + 1;
 
-		*des = new wchar_t[ibufsz];
+		*des = new wchar_t [ibufsz];
 		swprintf(*des, ibufsz, L"%s", src);
 	};
 
@@ -329,11 +329,41 @@ inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src)
 }
 
 inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
-	LPWSTR pFullPathName = new wchar_t[MAX_PATH];
+	LPWSTR pFullPathName = new wchar_t [MAX_PATH];
 	memset(pFullPathName, 0, MAX_PATH);
-	
+
 	GetFullPathName(fileName.c_str(), MAX_PATH, pFullPathName, nullptr);
 	std::wstring ret = pFullPathName;
 
+	return ret;
+}
+
+inline std::string ConvertWStrToStr(const std::wstring& input) {
+	std::string ret;
+	
+	int len = WideCharToMultiByte(CP_ACP, 0, input.c_str(), input.size(), NULL, 0, NULL, NULL);
+	char* pStr = new char[len + 1];
+	memset(pStr, 0, len + 1);
+	
+	WideCharToMultiByte(CP_ACP, 0, input.c_str(), input.size(), pStr, len, NULL, NULL);
+	
+	ret = pStr;
+	delete[] pStr;
+	
+	return ret;
+}
+
+inline std::wstring ConvertStrToWStr(const std::string& input) {
+	std::wstring ret;
+	
+	int len = MultiByteToWideChar(CP_ACP, 0, input.c_str(), input.size(), NULL, 0);
+	wchar_t* pStr = new wchar_t[len + 1];
+	memset(pStr, 0, (len + 1) * sizeof(wchar_t));
+	
+	MultiByteToWideChar(CP_ACP, 0, input.c_str(), input.size(), pStr, len);
+	
+	ret = pStr;
+	delete[] pStr;
+	
 	return ret;
 }
