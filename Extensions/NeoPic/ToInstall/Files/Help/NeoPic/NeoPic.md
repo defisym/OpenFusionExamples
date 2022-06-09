@@ -4,6 +4,11 @@
 
 Enable the power to load encrypted image files, to store them to a lib that keeps data over frames, or to do something like stack blur or affine transformation.
 
+## Known issue
+
+- doesn't support PNG-8
+- collision mask is not right when image is wrapped
+
 ## Properties
 
 - Lib Settings
