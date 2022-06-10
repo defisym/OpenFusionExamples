@@ -333,14 +333,6 @@ public:
 
 	//Check if object is given type
 	inline bool ObjectIsOfType(LPRO object, short oiList) {
-		LPOIL pObjectInfo = GetLPOIL(oiList);
-
-		if (pObjectInfo == nullptr) {
-			return false;
-		}
-
-		short Oi = pObjectInfo->oilOi;
-
 		if (oiList & 0x8000) {
 			oiList &= 0x7FFF;	//Mask out the qualifier part
 
@@ -360,12 +352,23 @@ public:
 			return false;
 		}
 		else {
+			LPOIL pObjectInfo = GetLPOIL(oiList);
+
+			if (pObjectInfo == nullptr) {
+				return false;
+			}
+
+			short Oi = pObjectInfo->oilOi;
+			
 			return (object->roHo.hoOi == Oi);
 		}
 	}
 	
 	//For Each, used in action
-	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f, bool forceAll = false) {
+	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f, char flag = 0x00) {
+		bool forceAll = flag & 0b00000001;			// force iterate all
+		bool selectedOnly = flag & 0b00000010;		// only iterate selected
+
 		auto iterate = [&](objInfoList* list, bool selected = true) {
 			short num = selected ? list->oilListSelected : list->oilObject;
 
@@ -390,7 +393,7 @@ public:
 				// Object type already filtered, loop through selected list
 				iterate(list, true);
 			}
-			else {
+			else if (!selectedOnly) {
 				// Object type not filtered yet, loop through all objects instead
 				iterate(list, false);
 			}
