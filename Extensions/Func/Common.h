@@ -33,6 +33,9 @@
 #include	<vector>
 #include	<string>
 
+// My lib
+class ObjectSelection;
+
 // My headers
 #include	"Defination.h"
 #include	"StrNum.h"
@@ -43,6 +46,7 @@
 #include	"TigsExt.hpp"
 
 // My headers
+#include	"ObjectSelection.h"
 #include	"Func.h"
 
 // Globals and Prototypes

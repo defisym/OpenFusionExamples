@@ -45,6 +45,7 @@ typedef STRING* LPSTRING;
 #define Delimiter _T("|")
 
 #define ONFUNC	0
+#define ONITOBJ	9
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
 

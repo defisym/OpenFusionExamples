@@ -117,6 +117,9 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Func", IDMN_CONDITION_OF
+        MENUITEM SEPARATOR                
+        MENUITEM "On Iterate Object", IDMN_CONDITION_OITO
+        MENUITEM "Select All", IDMN_CONDITION_SA
         MENUITEM SEPARATOR
         POPUP "Validity"
         BEGIN
@@ -171,6 +174,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Call Func (multiple or void return value)", IDMN_ACTION_CF
         MENUITEM "Call Func (ternary)", IDMN_ACTION_T
+        MENUITEM SEPARATOR
+        MENUITEM "Iterate Object", IDMN_ACTION_ITO
         MENUITEM SEPARATOR
         POPUP "Loop"
         BEGIN
@@ -362,6 +367,8 @@ BEGIN
     M_ACTION_SCTVV          "Set Temp Param %0 = %1 of Current Func"
 
     M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
+    
+    M_ACTION_ITO              "Iterate Object %0, Iterate Name %1"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -371,11 +378,17 @@ BEGIN
 
     M_ACT_LOOP              "Number of Loop"
     M_ACT_LOOPINDEX         "Set LoopIndex"
+    
+    M_OBJECT                "Select Object"
+    M_ITNAME                "Iterate Name"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_OF          "%o On Func %0"
+    
+    M_CONDITION_OITO        "%o On Iterate Object %0, Iterate Name %1"
+    M_CONDITION_SA          "Select All %0"
     
     M_CONDITION_FHRA        "%o Previous Func Has Return At %0"
         

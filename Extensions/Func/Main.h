@@ -20,7 +20,10 @@
 #define	CND_CONDITION_FTPIN			7
 #define	CND_CONDITION_CFTPIN		8
 
-#define	CND_LAST					9
+#define	CND_CONDITION_OITO			9
+#define	CND_CONDITION_SA			10
+
+#define	CND_LAST					11
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -49,7 +52,9 @@
 #define	ACT_ACTION_SRV				13
 #define	ACT_ACTION_PRV				14
 
-#define	ACT_LAST					15
+#define	ACT_ACTION_ITO				15
+
+#define	ACT_LAST					16
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -144,6 +149,10 @@ typedef struct tagRDATA
 
 	//LPSTRING OutPut;
 	LPTSTR OutPut = nullptr;
+
+	ObjectSelection* pSelect;
+	std::wstring* pOnItObjName;
+	LPRO pObject;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

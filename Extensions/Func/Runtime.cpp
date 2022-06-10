@@ -90,6 +90,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rdPtr->OutPut = new STRING;
 	rdPtr->OutPut = nullptr;
 
+	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
+	rdPtr->pOnItObjName = new std::wstring;
+	rdPtr->pObject = nullptr;
+
 	// No errors
 	return 0;
 }
@@ -121,6 +125,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//delete rdPtr->OutPut;
 
 	release_arr(rdPtr->OutPut);
+
+	delete rdPtr->pSelect;
+	delete rdPtr->pOnItObjName;
 
 	// No errors
 	return 0;

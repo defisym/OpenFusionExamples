@@ -35,6 +35,10 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_FTPIN, M_CONDITION_FTPIN, CND_CONDITION_FTPIN, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_CND_FUNCNAME, M_ACT_PARAMNAME,
 		IDMN_CONDITION_CFTPIN, M_CONDITION_CFTPIN, CND_CONDITION_CFTPIN, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_CND_FUNCNAME,
+
+		IDMN_CONDITION_OITO, M_CONDITION_OITO, CND_CONDITION_OITO, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
+		IDMN_CONDITION_SA, M_CONDITION_SA, CND_CONDITION_SA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
+		
 		};
 
 // Definitions of parameters for each action
@@ -63,6 +67,9 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SRV, M_ACTION_SRV, ACT_ACTION_SRV,	0, 1,PARAM_EXPRESSION, M_ACT_RET,
 		IDMN_ACTION_PRV, M_ACTION_PRV, ACT_ACTION_PRV,	0, 1,PARAM_EXPRESSION, M_ACT_RET,
+
+		IDMN_ACTION_ITO, M_ACTION_ITO, ACT_ACTION_ITO, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
+
 		};
 
 // Definitions of parameters for each expression
@@ -167,6 +174,35 @@ long WINAPI DLLExport CurerntFuncTempParamIsNum(LPRDATA rdPtr, long param1, long
 	LPCTSTR ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return DataIsNum(TempParam(rdPtr->FuncNameStack->back(), ParamName)) ? TRUE : FALSE;
+}
+
+long WINAPI DLLExport OnIterateObject(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	std::wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	
+	if (iterateName == *rdPtr->pOnItObjName
+		&& rdPtr->pSelect->ObjectIsOfType(rdPtr->pObject, oil)) {
+		rdPtr->pSelect->SelectOneObject(rdPtr->pObject);
+		return true;
+	}
+
+	return false;
+
+	//return iterateName == *rdPtr->pOnItObjName
+	//	&& rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
+	//		, [&](LPRDATA rdPtr, LPRO object)->bool { return object == rdPtr->pObject; });
+}
+
+long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	rdPtr->pSelect->SelectAll(oil);
+
+	return TRUE;
 }
 
 // ============================================================================
@@ -320,6 +356,30 @@ short WINAPI DLLExport Ternary(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamB = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	CallFuncCore(Result ? FuncNameA : FuncNameB, Result ? ParamA : ParamB);	
+
+	return 0;
+}
+
+short WINAPI DLLExport IterateObject(LPRDATA rdPtr, long param1, long param2) {
+	short oil = (short)OIL_GetParameter(rdPtr);
+	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	
+	std::vector<LPRO> toIterate;
+
+	// usually fusion will do a internal for-each for all selected objects
+	// but when you call immediate events, this for-each will be terminated
+	// so here need a manual for-each to force it
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		toIterate.emplace_back(object);
+		}, 0b00000010);
+
+	for (auto& object : toIterate) {
+		rdPtr->pObject = object;
+		
+		CallEvent(ONITOBJ);
+
+		rdPtr->pObject = nullptr;
+	}
 
 	return 0;
 }
@@ -557,6 +617,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			FuncTempParamIsNum,
 			CurerntFuncTempParamIsNum,
 
+			OnIterateObject,
+			SelectAll,
+
 			0
 			};
 	
@@ -585,6 +648,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetReturnValueVal,
 			PushReturnValueVal,
+
+			IterateObject,
 
 			0
 			};

@@ -55,6 +55,8 @@
 #define IDMN_ACTION_SRV   	    25013
 #define IDMN_ACTION_PRV   	    25014
 
+#define IDMN_ACTION_ITO   	    25015
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -80,6 +82,8 @@
 #define M_ACTION_SRV            5013
 #define M_ACTION_PRV            5014
 
+#define M_ACTION_ITO            5015
+
 // Titles of action parameters
 #define M_ACT_RET				 5501
 
@@ -90,6 +94,9 @@
 
 #define M_ACT_LOOP  			 5505
 #define M_ACT_LOOPINDEX			 5506
+
+#define M_OBJECT			     5507
+#define M_ITNAME			     5508
 
 
 //	Conditions
@@ -113,6 +120,9 @@
 #define IDMN_CONDITION_FTPIN	26007
 #define IDMN_CONDITION_CFTPIN	26008
 
+#define IDMN_CONDITION_OITO 	26009
+#define IDMN_CONDITION_SA    	26010
+
 // Condition strings
 #define M_CONDITION_OF			 6000
 
@@ -127,6 +137,9 @@
 
 #define M_CONDITION_FTPIN		 6007
 #define M_CONDITION_CFTPIN		 6008
+
+#define M_CONDITION_OITO		 6009
+#define M_CONDITION_SA  		 6010
 
 // Titles of condition parameters
 #define M_CND_FUNCNAME  		 6501
