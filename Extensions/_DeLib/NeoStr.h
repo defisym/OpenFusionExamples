@@ -65,6 +65,11 @@ private:
 	}
 
 public:
+	struct CharPos {
+		long x;
+		long y;
+	};
+
 	NeoStr(DWORD dwAlignFlags, COLORREF color, HFONT hFont) {
 		this->hdc = GetDC(NULL);
 		SelectObject(this->hdc, hFont);
@@ -108,7 +113,7 @@ public:
 		return;
 	}
 
-	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
+	inline CharPos DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
 		, size_t nRowSpace = 0, size_t nColSpace = 0
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
@@ -185,7 +190,9 @@ public:
 		}
 
 		const auto& lastStrPos = strPos.back();
-		int y = GetStartPosY(totalHeight, rcHeight);
+		int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
+		
+		auto lastCharPos = CharPos{ 0,0 };
 
 		for (auto& curStrPos : this->strPos) {
 			
@@ -193,27 +200,34 @@ public:
 			std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 			
-			int x = GetStartPosX(curStrPos.width, rcWidth);
-				
+			int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
+			StrSize charSz = { 0,0 };
+
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto pCurChar = pText + curStrPos.start + curChar;			
-				auto charSz = GetCharSize(*pCurChar);
+				charSz = GetCharSize(*pCurChar);
 
 				RECT curRc = { pRc->left + x
 					, pRc->top + y + curStrPos.y
 					, pRc->left + x + charSz.width
-					,pRc->top + y + curStrPos.y + charSz.height };
+					, pRc->top + y + curStrPos.y + curStrPos.height };
 				
-				auto height = pDst->DrawText(pCurChar, 1, &curRc
-					, 0, this->color, this->hFont
-					//, this->dwDTFlags, this->color, this->hFont
-					, bm, bo, boParam, bAntiA);
+				if (pDst != nullptr) {
+					auto height = pDst->DrawText(pCurChar, 1, &curRc
+						, 0, this->color, this->hFont
+						//, this->dwDTFlags, this->color, this->hFont
+						, bm, bo, boParam, bAntiA);
+				}
 				
 				x += (charSz.width + nColSpace);
 			}
+			
+			// lastCharPos = CharPos{ x,y + curStrPos.y };
+			lastCharPos = CharPos{ x + (charSz.width >> 1)
+				,y + curStrPos.y + (charSz.height >> 1) };
 		}
 
-		return;
+		return lastCharPos;
 	}
 };
 

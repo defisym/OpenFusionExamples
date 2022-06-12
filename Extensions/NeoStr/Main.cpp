@@ -43,6 +43,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GSTR, M_EXPRESSION_GSTR, EXP_EXPRESSION_GSTR, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GRS, M_EXPRESSION_GRS, EXP_EXPRESSION_GRS, 0, 0,
 		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, 0, 0,
+		
+		IDMN_EXPRESSION_GLCX, M_EXPRESSION_GLCX, EXP_EXPRESSION_GLCX, 0, 0,
+		IDMN_EXPRESSION_GLCY, M_EXPRESSION_GLCY, EXP_EXPRESSION_GLCY, 0, 0,
 		};
 
 
@@ -167,6 +170,14 @@ long WINAPI DLLExport Expression_GetColSpace(LPRDATA rdPtr, long param1) {
 	return rdPtr->nColSpace;
 }
 
+long WINAPI DLLExport Expression_GetLastCharX(LPRDATA rdPtr, long param1) {
+	return UpdateLastCharPos(rdPtr).x;
+}
+
+long WINAPI DLLExport Expression_GetLastCharY(LPRDATA rdPtr, long param1) {
+	return UpdateLastCharPos(rdPtr).y;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -200,6 +211,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetString,
 			Expression_GetRowSpace,
 			Expression_GetColSpace,
+			
+			Expression_GetLastCharX,
+			Expression_GetLastCharY,
 			
 			0
 			};

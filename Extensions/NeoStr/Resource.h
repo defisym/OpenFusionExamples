@@ -94,10 +94,16 @@
 #define IDMN_EXPRESSION_GRS					27001
 #define IDMN_EXPRESSION_GCS					27002
 
+#define IDMN_EXPRESSION_GLCX				27003
+#define IDMN_EXPRESSION_GLCY				27004
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
 #define M_EXPRESSION_GCS					7002
+
+#define M_EXPRESSION_GLCX				    7003
+#define M_EXPRESSION_GLCY				    7004
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

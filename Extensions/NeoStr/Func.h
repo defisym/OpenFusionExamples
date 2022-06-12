@@ -86,3 +86,16 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			DeleteObject(hFont);
 	}
 }
+
+inline auto UpdateLastCharPos(LPRDATA rdPtr) {
+	RECT rc;
+
+	rc.left = rdPtr->rHo.hoX;
+	rc.top = rdPtr->rHo.hoY;
+	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
+	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+
+	NeoStr neoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+	return neoStr.DisplayPerChar(nullptr, rdPtr->pStr->c_str(), &rc
+		, rdPtr->nRowSpace, rdPtr->nColSpace);
+}
