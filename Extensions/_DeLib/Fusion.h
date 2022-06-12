@@ -890,3 +890,42 @@ inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double 
 
 //dec2rgb
 #define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
+
+inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,int,BYTE*,BYTE*)> process) {
+	//Dimensions
+	int width = pSf->GetWidth();
+	int height = pSf->GetHeight();
+
+	//Lock buffer, get pitch etc.
+	BYTE* buff;
+	buff = pSf->LockBuffer();
+	if (!buff) { return; }
+
+	int pitch = pSf->GetPitch();
+	if (pitch < 0) {
+		pitch *= -1;
+		buff -= pitch * (height - 1);
+	}
+	int size = pitch * height;
+	int byte = pSf->GetDepth() >> 3;
+
+	//Backup buffer
+	BYTE* temp = new BYTE[size];
+	memcpy(temp, buff, size);
+
+	//Loop through all pixels
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			auto offset = y * pitch + x * byte;
+			BYTE* srcPixel = buff + offset;
+			BYTE* tempPixel = temp + offset;
+
+			process(x, y, offset
+				, srcPixel, tempPixel);
+		}
+	}
+
+	pSf->UnlockBuffer(buff);
+
+	delete[] temp;
+}
