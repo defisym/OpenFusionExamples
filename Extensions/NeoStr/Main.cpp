@@ -29,18 +29,20 @@ short conditionsInfos[]=
 short actionsInfos[]=
 		{
 		IDMN_ACTION_CS, M_ACTION_CS, ACT_ACTION_CS,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
+		IDMN_ACTION_CSTR, M_ACTION_CSTR, ACT_ACTION_CSTR,	0, 1, PARAM_EXPSTRING, M_STR,
+		IDMN_ACTION_CRS, M_ACTION_CRS, ACT_ACTION_CRS,	0, 1, PARAM_EXPRESSION, M_ROWSPACE,
+		IDMN_ACTION_CCS, M_ACTION_CCS, ACT_ACTION_CCS,	0, 1, PARAM_EXPRESSION, M_COLSPACE,
+
+		IDMN_ACTION_CHA, M_ACTION_CHA, ACT_ACTION_CHA,	0, 1, PARAM_EXPRESSION, M_HA,
+		IDMN_ACTION_CVA, M_ACTION_CVA, ACT_ACTION_CVA,	0, 1, PARAM_EXPRESSION, M_VA,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-		IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
-		
-		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
-		IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
-		
-		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
-		IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+		IDMN_EXPRESSION_GSTR, M_EXPRESSION_GSTR, EXP_EXPRESSION_GSTR, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GRS, M_EXPRESSION_GRS, EXP_EXPRESSION_GRS, 0, 0,
+		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, 0, 0,
 		};
 
 
@@ -81,11 +83,6 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample Action
-// -----------------
-// Does nothing!
-// 
 short WINAPI DLLExport Action_ChangeSize(LPRDATA rdPtr, long param1, long param2) {
 	short width = (short)CNC_GetIntParameter(rdPtr);
 	short height = (short)CNC_GetIntParameter(rdPtr);
@@ -98,6 +95,55 @@ short WINAPI DLLExport Action_ChangeSize(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+short WINAPI DLLExport Action_ChangeString(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	*rdPtr->pStr = pStr;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ChangeRowSpace(LPRDATA rdPtr, long param1, long param2) {
+	short nRowSpace = (short)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->nRowSpace = nRowSpace;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ChangeColSpace(LPRDATA rdPtr, long param1, long param2) {
+	short nColSpace = (short)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->nColSpace = nColSpace;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ChangeHorizontalAlign(LPRDATA rdPtr, long param1, long param2) {
+	short horizontalFlag = (short)CNC_GetIntParameter(rdPtr);
+	
+	rdPtr->dwAlignFlags = (rdPtr->dwAlignFlags & ~(DT_LEFT | DT_CENTER | DT_RIGHT)) | (horizontalFlag);
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ChangeVerticalAlign(LPRDATA rdPtr, long param1, long param2) {
+	short verticalFlag = (short)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->dwAlignFlags = (rdPtr->dwAlignFlags & ~(DT_TOP | DT_VCENTER | DT_BOTTOM)) | (verticalFlag);
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -105,64 +151,21 @@ short WINAPI DLLExport Action_ChangeSize(LPRDATA rdPtr, long param1, long param2
 // 
 // ============================================================================
 
-// -----------------
-// Sample expression
-// -----------------
-// Add three values
-// 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-
-	// Performs the wonderfull calculation
-	return p1+p2+p3;
-}
-
-
-//Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
-	char *temp;
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
-
-	//Reversing the string.
-	_strrev(temp);
-	
+long WINAPI DLLExport Expression_GetString(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
+
 	//This returns a pointer to the string for MMF.
-	return (long)temp;
+	return (long)(rdPtr->pStr->c_str());
 }
 
-//Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-
-	//Floats are tricky.  If you want to pass in a float, you must do the
-	//following to convert the long to a true float, but only when you use
-	//TYPE_FLOAT.
-	float fp1 = *(float *)&p1;
-
-	//Just doing simple math now.
-	fp1 /=2;
-
-	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-	rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-	//Return the float without conversion
-	return *((int*)&fp1);
+long WINAPI DLLExport Expression_GetRowSpace(LPRDATA rdPtr,long param1) {
+	return rdPtr->nRowSpace;
 }
 
-
+long WINAPI DLLExport Expression_GetColSpace(LPRDATA rdPtr, long param1) {
+	return rdPtr->nColSpace;
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -182,15 +185,21 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
 			Action_ChangeSize,
+			Action_ChangeString,
+			Action_ChangeRowSpace,
+			Action_ChangeColSpace,
+			
+			Action_ChangeHorizontalAlign,
+			Action_ChangeVerticalAlign,
 			
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			Expression,
-			Expression2,
-			Expression3,
+			Expression_GetString,
+			Expression_GetRowSpace,
+			Expression_GetColSpace,
 			
 			0
 			};

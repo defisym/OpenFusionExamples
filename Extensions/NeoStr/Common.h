@@ -38,6 +38,7 @@ class NeoStr;
 #include	"TigsExt.hpp"
 
 // My header
+#include	"Fusion.h"
 #include	"FusionUtilities.h"
 #include	"NeoStr.h"
 

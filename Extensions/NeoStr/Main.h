@@ -14,17 +14,23 @@
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_CS					0
+#define	ACT_ACTION_CSTR					1
+#define	ACT_ACTION_CRS					2
+#define	ACT_ACTION_CCS					3
 
-#define	ACT_LAST						1
+#define	ACT_ACTION_CHA					4
+#define	ACT_ACTION_CVA					5
+
+#define	ACT_LAST						6
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION					0
-#define EXP_EXPRESSION2					1
-#define EXP_EXPRESSION3					2
+#define	EXP_EXPRESSION_GSTR					0
+#define EXP_EXPRESSION_GRS					1
+#define EXP_EXPRESSION_GCS					2
 
-#define	EXP_LAST                    	3
+#define	EXP_LAST                    		3
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -39,13 +39,31 @@
 
 // Commands of action menu
 #define IDMN_ACTION_CS	       		25000
+#define	IDMN_ACTION_CSTR			25001
+#define	IDMN_ACTION_CRS				25002
+#define	IDMN_ACTION_CCS				25003
+
+#define	IDMN_ACTION_CHA				25004
+#define	IDMN_ACTION_CVA				25005
 
 // Action strings
 #define M_ACTION_CS                 5000
+#define	M_ACTION_CSTR				5001
+#define	M_ACTION_CRS				5002
+#define	M_ACTION_CCS				5003
+
+#define	M_ACTION_CHA				5004
+#define	M_ACTION_CVA				5005
 
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
+#define M_STR				        5503
+#define M_ROWSPACE				    5504
+#define M_COLSPACE				    5505
+
+#define M_HA				        5506
+#define M_VA				        5507
 
 
 //	Conditions
@@ -72,14 +90,14 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION			27000
-#define IDMN_EXPRESSION2		27001
-#define IDMN_EXPRESSION3		27002
+#define	IDMN_EXPRESSION_GSTR				27000
+#define IDMN_EXPRESSION_GRS					27001
+#define IDMN_EXPRESSION_GCS					27002
 
 // Expression strings
-#define M_EXPRESSION			 7000
-#define M_EXPRESSION2			 7001
-#define M_EXPRESSION3			 7002
+#define	M_EXPRESSION_GSTR				    7000
+#define M_EXPRESSION_GRS					7001
+#define M_EXPRESSION_GCS					7002
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

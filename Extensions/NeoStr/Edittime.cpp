@@ -65,8 +65,10 @@ PropData Properties[] = {
 };
 
 PropData FontPorperties[] = {
-	PropData_EditNumber_Check(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
-	PropData_EditNumber_Check(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
+	//PropData_EditNumber_Check(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
+	//PropData_EditNumber_Check(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
+	PropData_EditNumber(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
+	PropData_EditNumber(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
 	
 	// End of table (required)
 	PropData_End()
@@ -411,6 +413,17 @@ BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA ed
 	// 		return TRUE;
 	// 	}
 	// }
+
+	if (IS_COMPATIBLE(mV)) {
+		// Remove this if your object does not need a setup
+		//setupParams		spa;
+		//spa.edpt = edPtr;
+		//spa.kv = mV;
+		//if (DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK)
+		//{
+		//	return TRUE;
+		//}
+	}
 #endif // !defined(RUN_ONLY)
 	return FALSE;
 }

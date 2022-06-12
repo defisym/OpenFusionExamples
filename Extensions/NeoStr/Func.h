@@ -3,13 +3,21 @@
 #include <functional>
 #include <string_view>
 
-constexpr auto a = L"a";
-constexpr auto b = L"b";
-constexpr auto c = L"c";
-constexpr auto pStr = L"abc";
-constexpr auto pStr0 = L"入目的也";
-constexpr auto pStr1 = L"入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么";
-constexpr auto pStr2 = L"入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么";
+//constexpr auto a = L"a";
+//constexpr auto b = L"b";
+//constexpr auto c = L"c";
+//constexpr auto pStr = L"abc";
+//constexpr auto pStr0 = L"入目的也";
+//constexpr auto pStr1 = L"入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么";
+//constexpr auto pStr2 = L"入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么";
+
+//auto sz1 = neoStr.GetStrSize(a);
+//auto sz2 = neoStr.GetStrSize(b);
+//auto sz3 = neoStr.GetStrSize(c);
+//auto sz4 = neoStr.GetStrSize(pStr);
+//auto sz5 = neoStr.GetStrSize(pStr0);
+//auto sz6 = neoStr.GetStrSize(pStr1);
+//auto sz7 = neoStr.GetStrSize(pStr2);
 
 inline void ReDisplay(LPRDATA rdPtr) {		
 		rdPtr->rc.rcChanged = true;
@@ -43,16 +51,11 @@ inline void Display(LPRDATA rdPtr) {
 
 		// Draw text
 		NeoStr neoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
-		neoStr.Display(ps, rdPtr->pStr->c_str(), &rc
+		//neoStr.Display(ps, rdPtr->pStr->c_str(), &rc
+		//	, bm, bo, boParam, bAntiA);
+		neoStr.DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
+			, rdPtr->nRowSpace, rdPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
-		
-		//auto sz1 = neoStr.GetStrSize(a);
-		//auto sz2 = neoStr.GetStrSize(b);
-		//auto sz3 = neoStr.GetStrSize(c);
-		//auto sz4 = neoStr.GetStrSize(pStr);
-		//auto sz5 = neoStr.GetStrSize(pStr0);
-		//auto sz6 = neoStr.GetStrSize(pStr1);
-		//auto sz7 = neoStr.GetStrSize(pStr2);
 	}
 }
 
@@ -72,7 +75,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 		// Draw text
 		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
-		neoStr.Display(ps, &edPtr->pText, rc
+		//neoStr.Display(ps, &edPtr->pText, rc
+		//	, bm, bo, boParam, bAntiA);
+		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
+			, edPtr->nRowSpace, edPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
 
 		// Delete font

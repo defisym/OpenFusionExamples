@@ -115,7 +115,9 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        //MENUITEM SEPARATOR
+        //MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -129,7 +131,16 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Change Size",              IDMN_ACTION_CS
+        MENUITEM SEPARATOR
+        MENUITEM "Change Size", IDMN_ACTION_CS
+        MENUITEM SEPARATOR
+        MENUITEM "Change Display String", IDMN_ACTION_CS
+        MENUITEM "Change Row Space", IDMN_ACTION_CRS
+        MENUITEM "Change Col Space", IDMN_ACTION_CCS
+        MENUITEM SEPARATOR
+        MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
+        MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -143,9 +154,12 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM SEPARATOR
+        MENUITEM "Get Display String", IDMN_EXPRESSION_GSTR
+        MENUITEM SEPARATOR
+        MENUITEM "Get Row Space", IDMN_EXPRESSION_GRS
+        MENUITEM "Get Col Space", IDMN_EXPRESSION_GCS
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -247,6 +261,21 @@ BEGIN
 
     M_WIDTH                     "Width"
     M_HEIGHT                    "Height"
+
+    M_ACTION_CSTR               "Change Display String to %0"
+    M_ACTION_CRS                "Change Row Space to %0"
+    M_ACTION_CCS                "Change Col Space to %0"
+
+    M_STR                       "Display String"
+    M_ROWSPACE                  "Row Space"
+    M_COLSPACE                  "Col Space"
+
+    M_ACTION_CHA                "Change Horizontal Align to %0"
+    M_ACTION_CVA                "Change Vertical Align to %0"
+    
+    M_HA                        "Horizontal Align, DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2"
+    M_VA                        "Vertical Align, DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -259,13 +288,9 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_GSTR		"DisplayStr$("
+    M_EXPRESSION_GRS		"RowSpace("
+    M_EXPRESSION_GCS		"ColSpace("
 END
 
 #endif    // English (U.S.) resources
