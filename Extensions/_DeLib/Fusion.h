@@ -512,6 +512,11 @@ inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle) {
 	EmptyClipboard();
 
 	HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, Src->GetDIBSize());
+	
+	if (cb == NULL) {
+		return;
+	}
+
 	BITMAPINFO* OutPut = (BITMAPINFO*)GlobalLock(cb);
 
 	Src->SaveImage(OutPut, (BYTE*)(OutPut + 1) - 4);
@@ -545,6 +550,10 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 		//BMP
 		HANDLE handle = GetClipboardData(CF_DIB);
 		BITMAPINFO* bmp = (BITMAPINFO*)GlobalLock(handle);
+
+		if (bmp == NULL) {
+			return;
+		}
 
 		if (NoStretch) {
 			delete Src;
