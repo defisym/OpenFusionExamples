@@ -102,6 +102,37 @@ private:
 		return hasSelected;
 	}
 
+	inline void IterateQualifier(short oiList, std::function<void(objInfoList*)> f) {
+		if (!ObjectIsQualifier(oiList)) {
+			return;
+		}
+
+		oiList = oiList & 0x7FFF;
+
+		LPOIL pObjectInfo = GetLPOIL(oiList);
+
+		if (pObjectInfo == nullptr) {
+			return;
+		}
+
+		this->QualToOiList = rhPtr->rhQualToOiList;
+		LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
+		LPQOI CurrentQualToOi = CurrentQualToOiStart;
+
+		if (CurrentQualToOi == nullptr) {
+			return;
+		}
+
+		while (CurrentQualToOi->qoiOiList >= 0) {
+			f(OiList + CurrentQualToOi->qoiOiList);
+			CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
+
+			if (CurrentQualToOi == nullptr) {
+				break;
+			}
+		}
+	}
+
 public:
 	ObjectSelection(LPRH rhPtr) {
 		this->rhPtr = rhPtr;
@@ -364,6 +395,37 @@ public:
 		}
 	}
 	
+	//Check if object is qualifier
+	inline bool ObjectIsQualifier(short oiList) {
+		return (oiList & 0x8000);
+	}
+
+	//Check if object is selected
+	inline bool ObjectIsSelected(objInfoList* list) {
+		if (list == nullptr) {
+			return false;
+		}
+		
+		return list->oilEventCount == rhPtr->rh2.rh2EventCount;
+	}
+	
+	inline bool ObjectIsSelected(short oiList) {
+		if (!ObjectIsQualifier(oiList)) {
+			return ObjectIsSelected(OiList + oiList);
+		}
+		else {
+			bool selected = false;
+			
+			IterateQualifier(oiList, [&](objInfoList* list) {
+				selected |= ObjectIsSelected(list);
+				});
+
+			return selected;
+		}
+
+		return false;
+	}
+
 	//For Each, used in action
 	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f, char flag = 0x00) {
 		bool forceAll = flag & 0b00000001;			// force iterate all
@@ -375,6 +437,10 @@ public:
 			while (num >= 0) {
 				RunObject* obj = reinterpret_cast<RunObject*>(rhPtr->rhObjectList[num].oblOffset);
 				
+				if (obj == nullptr) {
+					continue;
+				}
+
 				if (obj && !(static_cast<ushort>(obj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED))) {
 					f(obj);
 				}
