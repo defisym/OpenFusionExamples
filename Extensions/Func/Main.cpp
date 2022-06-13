@@ -365,13 +365,14 @@ short WINAPI DLLExport IterateObject(LPRDATA rdPtr, long param1, long param2) {
 	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	
 	std::vector<LPRO> toIterate;
+	char flag = rdPtr->pSelect->ObjectIsSelected(oil) ? 0b00000010 : 0;
 
 	// usually fusion will do a internal for-each for all selected objects
 	// but when you call immediate events, this for-each will be terminated
 	// so here need a manual for-each to force it
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		toIterate.emplace_back(object);
-		}, 0b00000010);
+		}, flag);
 
 	for (auto& object : toIterate) {
 		rdPtr->pObject = object;
