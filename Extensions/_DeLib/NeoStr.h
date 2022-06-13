@@ -8,6 +8,13 @@
 #include <assert.h>
 #endif
 
+inline RECT operator+(RECT rA, RECT rB) {
+	return RECT{ rA.left + rB.left
+				,rA.top + rB.top
+				,rA.right + rB.right
+				,rA.bottom + rB.bottom };
+}
+
 class NeoStr
 {
 private:
@@ -16,6 +23,11 @@ private:
 	HFONT hFont;
 
 	DWORD dwDTFlags;
+
+	bool bOutLine = false;
+	bool bShadow = false;
+
+	COLORREF dwOutLineColor = RGB(255, 255, 0);
 
 	struct StrPos {
 		size_t start;
@@ -82,6 +94,15 @@ public:
 	}
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
+	}
+
+	inline void EnableOutLine(DWORD color) {
+		this->bOutLine = true;
+		this->dwOutLineColor = color;
+	}
+
+	inline void DisableOutLine() {
+		this->bOutLine = false;
 	}
 
 	inline StrSize GetCharSize(wchar_t wChar) {
@@ -193,6 +214,12 @@ public:
 		int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 		
 		auto lastCharPos = CharPos{ 0,0 };
+		
+		//LOGFONT outLineLogFont;
+		//GetObject(this->hFont, sizeof(LOGFONT), &outLineLogFont);
+		//outLineLogFont.lfWeight += 200;
+		//
+		//HFONT outLineHFont = CreateFontIndirect(&outLineLogFont);
 
 		for (auto& curStrPos : this->strPos) {
 			
@@ -213,6 +240,36 @@ public:
 					, pRc->top + y + curStrPos.y + curStrPos.height };
 				
 				if (pDst != nullptr) {
+					//pDst->DrawText(pCurChar, 1, &curRc
+					//	, 0, this->dwOutLineColor, outLineHFont
+					//	, bm, bo, boParam, bAntiA);
+					
+					//auto pDstDC = pDst->GetDC();
+
+					auto outLineRect = curRc + RECT{ -1, -1, -1, -1 };
+
+					pDst->DrawText(pCurChar, 1, &outLineRect
+						, 0, this->dwOutLineColor, this->hFont
+						, bm, bo, boParam, bAntiA);
+
+					outLineRect = curRc + RECT{ 1, 1, 1, 1 };
+
+					pDst->DrawText(pCurChar, 1, &outLineRect
+						, 0, this->dwOutLineColor, this->hFont
+						, bm, bo, boParam, bAntiA);
+
+					outLineRect = curRc + RECT{ -1, 1, -1, 1 };
+
+					pDst->DrawText(pCurChar, 1, &outLineRect
+						, 0, this->dwOutLineColor, this->hFont
+						, bm, bo, boParam, bAntiA);
+
+					outLineRect = curRc + RECT{ 1, -1, 1, -1 };
+
+					pDst->DrawText(pCurChar, 1, &outLineRect
+						, 0, this->dwOutLineColor, this->hFont
+						, bm, bo, boParam, bAntiA);
+
 					auto height = pDst->DrawText(pCurChar, 1, &curRc
 						, 0, this->color, this->hFont
 						//, this->dwDTFlags, this->color, this->hFont
