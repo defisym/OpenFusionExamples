@@ -126,6 +126,7 @@
       <ProgramDatabaseFile>$(IntDir)Template.pdb</ProgramDatabaseFile>
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <Profile>true</Profile>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>

@@ -106,7 +106,11 @@ public:
 	}
 
 	inline StrSize GetCharSize(wchar_t wChar) {
-		return GetStrSize(&wChar, 1);
+		SIZE sz;
+		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+
+		return StrSize{ sz.cx,sz.cy };
+		// return GetStrSize(&wChar, 1);
 	}
 
 	inline StrSize GetStrSize(LPCWSTR pStr, size_t pStrLen = -1) {
@@ -142,6 +146,8 @@ public:
 		this->strPos.clear();
 		
 		size_t pTextLen = wcslen(pText);
+		auto pStrSizeArr = new StrSize[pTextLen + 1];
+		memset(pStrSizeArr, 0, sizeof(StrSize) * (pTextLen+1));
 		
 		long rcWidth = pRc->right - pRc->left;
 		long rcHeight = pRc->bottom - pRc->top;
@@ -179,12 +185,13 @@ public:
 					break;
 				}
 
-				auto charSz = GetCharSize(curChar);
+				pStrSizeArr[pChar] = GetCharSize(curChar);
+				auto charSz = &pStrSizeArr[pChar];
 
 				totalWidth = curWidth;
 				
-				curWidth += (charSz.width + nColSpace);
-				curHeight = max(curHeight, charSz.height);
+				curWidth += (charSz->width + nColSpace);
+				curHeight = max(curHeight, charSz->height);
 				
 				if (curWidth > rcWidth) {					
 					continue;
@@ -214,7 +221,85 @@ public:
 		int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 		
 		auto lastCharPos = CharPos{ 0,0 };
+
+#define MEMDC
+
+#ifdef MEMDC
+		auto dwInvertColor = WHITE - this->color;
+		auto pMemSf = CreateSurface(24, rcWidth, totalHeight - nRowSpace);
+		pMemSf->Fill(BLACK);
 		
+		auto hMemDc = pMemSf->GetDC();
+		SelectObject(hMemDc, this->hFont);
+		SetTextColor(hMemDc, this->color);
+		//SetTextColor(hMemDc, WHITE);
+		SetBkMode(hMemDc, TRANSPARENT);
+
+		BeginPath(hMemDc);
+
+		for (auto& curStrPos : this->strPos) {
+
+#ifdef _DEBUG
+			std::wstring str(pText + curStrPos.start, curStrPos.length);
+#endif // _DEBUG
+
+			int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
+			StrSize* charSz = nullptr;
+
+			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
+				auto offset= curStrPos.start + curChar;
+				auto pCurChar = pText + offset;
+				charSz = &pStrSizeArr[offset];
+				
+				TextOut(hMemDc, x, y + curStrPos.y, pCurChar, 1);
+
+				x += (charSz->width + nColSpace);
+			}
+
+			// lastCharPos = CharPos{ x,y + curStrPos.y };
+			lastCharPos = CharPos{ x + (charSz->width >> 1)
+				,y + curStrPos.y + (charSz->height >> 1) };
+		}
+
+		EndPath(hMemDc);
+
+		auto hStrokePen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+		//auto hStrokePen = ExtCreatePen(PS_GEOMETRIC| PS_SOLID| PS_JOIN_ROUND, 1, RGB(0, 255, 0));
+		SelectObject(hMemDc, hStrokePen);
+		//StrokePath(hMemDc);
+		
+		auto hFillBrush = CreateSolidBrush(this->color);
+		SelectObject(hMemDc, hFillBrush);
+		//FillPath(hMemDc);
+		
+		StrokeAndFillPath(hMemDc);
+
+		delete[] pStrSizeArr;
+
+#ifdef _DEBUG
+		// _SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
+
+		pMemSf->ReleaseDC(hMemDc);
+
+		//IteratePixel(pMemSf, [](int x, int y, int offset, BYTE* src, BYTE* temp) {
+		//	auto A= src[3];
+		//	auto R = src[2];
+		//	auto G = src[1];
+		//	auto B = src[0];
+
+		//	printf("%d %d %d %d\n", A, R, G, B);
+		//	});
+		
+		if (pDst != nullptr) {
+			pMemSf->Blit(*pDst, pRc->left, pRc->top, bm, bo, boParam, bAntiA);
+		}
+
+		delete pMemSf;
+		
+		return lastCharPos;
+
+#else
 		//LOGFONT outLineLogFont;
 		//GetObject(this->hFont, sizeof(LOGFONT), &outLineLogFont);
 		//outLineLogFont.lfWeight += 200;
@@ -285,6 +370,8 @@ public:
 		}
 
 		return lastCharPos;
+#endif // MEMDC
+		
 	}
 };
 
