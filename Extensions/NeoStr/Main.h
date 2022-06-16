@@ -52,13 +52,20 @@ typedef struct tagEDATA_V1
 	COLORREF		dwColor;		// text color
 	DWORD			dwAlignFlags;	// alignment flags
 	LOGFONT			logFont;		// text font
+
+	BYTE nOutLinePixel;
+	COLORREF dwOutLineColor;
+
+	bool bShadow;
+	BYTE nShadowOffsetX;
+	BYTE nShadowOffsetY;
 	
 	bool bRowSpace;
 	bool bColSpace;
 	size_t nRowSpace;
 	size_t nColSpace;
 	
-	wchar_t			pText;		// Text
+	wchar_t	pText;		// Text
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -98,12 +105,19 @@ typedef struct tagRDATA
 	DWORD			dwAlignFlags;	// alignment flags
 	HFONT			hFont;			// text font
 
+	BYTE nOutLinePixel;
+	COLORREF dwOutLineColor;
+
 	bool bRowSpace;
 	bool bColSpace;
 	size_t nRowSpace;
 	size_t nColSpace;
 
+	bool bStrChanged;
 	std::wstring* pStr;
+
+	bool bFontChanged;
+	NeoStr* pNeoStr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

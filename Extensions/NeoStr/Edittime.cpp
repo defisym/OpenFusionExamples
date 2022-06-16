@@ -32,6 +32,9 @@ enum {
 
 	PROPID_ALLIGN_ROWSPACE,
 	PROPID_ALLIGN_COLSPACE,
+
+	PROPID_OUTLINE_PIXEL,
+	PROPID_OUTLINE_COLOR,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -69,6 +72,9 @@ PropData FontPorperties[] = {
 	//PropData_EditNumber_Check(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
+
+	PropData_EditNumber(PROPID_OUTLINE_PIXEL,		IDS_PROP_OUTLINE_PIXEL,			IDS_PROP_OUTLINE_PIXEL_INFO),
+	PropData_Color(PROPID_OUTLINE_COLOR,		IDS_PROP_OUTLINE_COLOR,			IDS_PROP_OUTLINE_COLOR_INFO),
 	
 	// End of table (required)
 	PropData_End()
@@ -355,6 +361,9 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		// Default text color
 		edPtr->dwColor = RGB(0, 0, 0);
 
+		edPtr->nOutLinePixel = 0;
+		edPtr->dwOutLineColor = RGB(0, 0, 0);
+
 		edPtr->bRowSpace = false;
 		edPtr->bColSpace = false;
 		edPtr->nRowSpace = 0;
@@ -535,7 +544,6 @@ void WINAPI DLLExport EditorDisplay(mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr
 	//	// blend (semi-transparent, the 6th param is amount of transparency)
 	//	// You can 'anti-alias' with the 7th param (default=0 or off)
 	//}
-	
 	Display(mV, oiPtr, loPtr, edPtr, rc);
 
 #endif // !defined(RUN_ONLY)
@@ -742,6 +750,11 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->nRowSpace);
 	case PROPID_ALLIGN_COLSPACE:
 		return new CPropDWordValue(edPtr->nColSpace);
+
+	case PROPID_OUTLINE_PIXEL:
+		return new CPropDWordValue(edPtr->nOutLinePixel);
+	case PROPID_OUTLINE_COLOR:
+		return new CPropDWordValue(edPtr->dwOutLineColor);
 	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
@@ -832,6 +845,13 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 	case PROPID_ALLIGN_COLSPACE:
 		edPtr->nColSpace = ((CPropDWordValue*)pValue)->m_dwValue;
+		break;
+
+	case PROPID_OUTLINE_PIXEL:
+		edPtr->nOutLinePixel = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		break;
+	case PROPID_OUTLINE_COLOR:
+		edPtr->dwOutLineColor = ((CPropDWordValue*)pValue)->m_dwValue;
 		break;
 	}
 

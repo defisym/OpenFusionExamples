@@ -66,7 +66,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 
-#ifdef _DEBUG
+#ifdef _CONSOLE
 	AllocConsole();
 	
 	freopen("conin$", "r", stdin);
@@ -88,12 +88,19 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->dwAlignFlags = edPtr->dwAlignFlags;
 	rdPtr->hFont = CreateFontIndirect(&edPtr->logFont);
 
+	rdPtr->nOutLinePixel = edPtr->nOutLinePixel;
+	rdPtr->dwOutLineColor = edPtr->dwOutLineColor;
+
 	rdPtr->bRowSpace = edPtr->bRowSpace;
 	rdPtr->bColSpace = edPtr->bColSpace;
 	rdPtr->nRowSpace = edPtr->nRowSpace;
 	rdPtr->nColSpace = edPtr->nColSpace;
 
+	rdPtr->bStrChanged = true;
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
+	
+	rdPtr->bFontChanged = false;
+	rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
 	
 	// No errors
 	return 0;
@@ -111,7 +118,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-#ifdef _DEBUG
+#ifdef _CONSOLE
 	FreeConsole();
 #endif
 	
@@ -120,6 +127,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	}
 	
 	delete rdPtr->pStr;
+	delete rdPtr->pNeoStr;
 
 	// No errors
 	return 0;
@@ -412,6 +420,8 @@ void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
 		if (rdPtr->hFont!=0)
 			DeleteObject(rdPtr->hFont);
 		rdPtr->hFont = hFont;
+		rdPtr->bFontChanged = true;
+		
 		SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
 		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
@@ -436,6 +446,7 @@ COLORREF WINAPI GetRunObjectTextColor(LPRDATA rdPtr)
 void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 {
 	rdPtr->dwColor = rgb;
+	rdPtr->bFontChanged = true;
 	InvalidateRect(rdPtr->hWnd, NULL, TRUE);
 	callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }

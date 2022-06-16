@@ -251,6 +251,10 @@ BEGIN
     IDS_PROP_ALLIGN_ROWSPACE_INFO   "Row space"
     IDS_PROP_ALLIGN_COLSPACE        "Col space"
     IDS_PROP_ALLIGN_COLSPACE_INFO   "Col space"
+    IDS_PROP_OUTLINE_PIXEL		    "Outline Pixel"
+    IDS_PROP_OUTLINE_PIXEL_INFO	    "Outline Pixel"
+    IDS_PROP_OUTLINE_COLOR		    "Outline Color"
+    IDS_PROP_OUTLINE_COLOR_INFO	    "Outline Color"
 END
 
 STRINGTABLE DISCARDABLE 

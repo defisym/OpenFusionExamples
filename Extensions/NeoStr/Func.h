@@ -3,25 +3,10 @@
 #include <functional>
 #include <string_view>
 
-//constexpr auto a = L"a";
-//constexpr auto b = L"b";
-//constexpr auto c = L"c";
-//constexpr auto pStr = L"abc";
-//constexpr auto pStr0 = L"入目的也";
-//constexpr auto pStr1 = L"入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么";
-//constexpr auto pStr2 = L"入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么入目的也仅仅只有那一片惨白罢了，偶有灰色的什么掠过视野也很快湮没在了白之中。那一刻的她到底在想什么";
-
-//auto sz1 = neoStr.GetStrSize(a);
-//auto sz2 = neoStr.GetStrSize(b);
-//auto sz3 = neoStr.GetStrSize(c);
-//auto sz4 = neoStr.GetStrSize(pStr);
-//auto sz5 = neoStr.GetStrSize(pStr0);
-//auto sz6 = neoStr.GetStrSize(pStr1);
-//auto sz7 = neoStr.GetStrSize(pStr2);
-
 inline void ReDisplay(LPRDATA rdPtr) {		
 		rdPtr->rc.rcChanged = true;
-
+		rdPtr->bStrChanged = true;
+		
 		rdPtr->rHo.hoImgXSpot = 0;
 		rdPtr->rHo.hoImgYSpot = 0;
 
@@ -32,14 +17,22 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline void Display(LPRDATA rdPtr) {
+	//if (!rdPtr->bStrChanged) {
+	//	return;
+	//}
+
 	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 	LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
 	
 	if (ps != nullptr && rdPtr->pStr != nullptr) {
+		// On-screen coords
+		int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
+		int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
+		
 		RECT rc;
 
-		rc.left = rdPtr->rHo.hoX;
-		rc.top = rdPtr->rHo.hoY;
+		rc.left = screenX;
+		rc.top = screenY;
 		rc.right = rc.left + rdPtr->rHo.hoImgWidth;
 		rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
 
@@ -50,12 +43,20 @@ inline void Display(LPRDATA rdPtr) {
 		int boParam = rdPtr->rs.rsEffectParam;
 
 		// Draw text
-		NeoStr neoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
-		//neoStr.Display(ps, rdPtr->pStr->c_str(), &rc
-		//	, bm, bo, boParam, bAntiA);
-		neoStr.DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
+		if (rdPtr->bFontChanged) {
+			rdPtr->bFontChanged = false;
+
+			delete rdPtr->pNeoStr;
+			rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+		}
+
+		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
+		rdPtr->pNeoStr->SetClip(true);
+		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
+
+		rdPtr->bStrChanged = false;
 	}
 }
 
@@ -73,10 +74,12 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
 		LPARAM boParam = oiPtr->oiHdr.oiInkEffectParam;
 
+		//MSGBOX(L"L: "+_itos(rc->left)+ L"T: " + _itos(rc->top), L"RECT");
+
 		// Draw text
 		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
-		//neoStr.Display(ps, &edPtr->pText, rc
-		//	, bm, bo, boParam, bAntiA);
+		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
+		neoStr.SetClip(false);
 		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
@@ -95,7 +98,15 @@ inline auto UpdateLastCharPos(LPRDATA rdPtr) {
 	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
 	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
 
-	NeoStr neoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
-	return neoStr.DisplayPerChar(nullptr, rdPtr->pStr->c_str(), &rc
+	if (rdPtr->bFontChanged) {
+		rdPtr->bFontChanged = false;
+		
+		delete rdPtr->pNeoStr;
+		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+	}
+
+	rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
+	rdPtr->pNeoStr->SetClip(false);
+	return rdPtr->pNeoStr->DisplayPerChar(nullptr, rdPtr->pStr->c_str(), &rc
 		, rdPtr->nRowSpace, rdPtr->nColSpace);
 }

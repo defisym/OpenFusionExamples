@@ -900,41 +900,107 @@ inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double 
 //dec2rgb
 #define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
 
-inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,int,BYTE*,BYTE*)> process) {
+struct SfCoef {
+	BYTE* pData = nullptr;
+	int pitch = 0;
+	int byte = 0;
+	int sz = 0;
+
+	BYTE* pAlphaData = nullptr;
+	int alphaPitch = 0;
+	int alphaByte = 0;
+	int alphaSz = 0;
+};
+
+inline SfCoef GetSfCoef(LPSURFACE pSf) {
+	SfCoef pSfCoef;
+	
+	if (pSf == nullptr) {
+		return pSfCoef;
+	}
+
+	int width = pSf->GetWidth();
+	int height = pSf->GetHeight();
+
+	// normal
+	pSfCoef.pData = (BYTE*)pSf->LockBuffer();
+
+	if (!pSfCoef.pData) { return pSfCoef; }
+
+	pSfCoef.pitch = pSf->GetPitch();
+	if (pSfCoef.pitch < 0) {
+		pSfCoef.pitch *= -1;
+		pSfCoef.pData -= pSfCoef.pitch * (height - 1);
+	}
+	pSfCoef.sz = pSfCoef.pitch * height;
+	pSfCoef.byte = pSf->GetDepth() >> 3;
+
+	// alpha
+	if (pSf->HasAlpha()) {
+		pSfCoef.pAlphaData = pSf->LockAlpha();
+		
+		if (!pSfCoef.pAlphaData) { return pSfCoef; }
+		
+		pSfCoef.alphaPitch = pSf->GetAlphaPitch();
+		if (pSfCoef.alphaPitch < 0) {
+			pSfCoef.alphaPitch *= -1;
+			pSfCoef.pAlphaData -= pSfCoef.alphaPitch * (height - 1);
+		}
+		pSfCoef.alphaSz = pSfCoef.alphaPitch * height;
+		pSfCoef.alphaByte = 1;
+	}
+
+	return pSfCoef;
+}
+
+inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
+	pSf->UnlockBuffer(coef.pData);
+
+	// alpha
+	if (pSf->HasAlpha()) {
+		pSf->UnlockAlpha();
+	}
+}
+
+inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,BYTE*,BYTE*)> process) {
 	//Dimensions
 	int width = pSf->GetWidth();
 	int height = pSf->GetHeight();
 
+	auto sfCoef = GetSfCoef(pSf);
+	
 	//Lock buffer, get pitch etc.
-	BYTE* buff;
-	buff = pSf->LockBuffer();
-	if (!buff) { return; }
+	BYTE* pData= sfCoef.pData;
+	int pitch = sfCoef.pitch;
+	int size = sfCoef.sz;
+	int byte = sfCoef.byte;
 
-	int pitch = pSf->GetPitch();
-	if (pitch < 0) {
-		pitch *= -1;
-		buff -= pitch * (height - 1);
-	}
-	int size = pitch * height;
-	int byte = pSf->GetDepth() >> 3;
+	//Alpha
+	BYTE* pAlphaData = sfCoef.pAlphaData;
+	int alphaPitch = sfCoef.alphaPitch;
+	int alphaSz = sfCoef.alphaSz;
+	int alphaByte = sfCoef.alphaByte;
 
-	//Backup buffer
-	BYTE* temp = new BYTE[size];
-	memcpy(temp, buff, size);
+	////Backup buffer
+	//BYTE* temp = new BYTE[size];
+	//memcpy(temp, pData, size);
 
 	//Loop through all pixels
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			auto offset = y * pitch + x * byte;
-			BYTE* srcPixel = buff + offset;
-			BYTE* tempPixel = temp + offset;
+			BYTE* srcPixel = pData + offset;
+			//BYTE* tempPixel = temp + offset;
 
-			process(x, y, offset
-				, srcPixel, tempPixel);
+			auto alphaOffset = y * alphaPitch + x * alphaByte;
+			BYTE* alphaPixel = pAlphaData + alphaOffset;
+
+			process(x, y, sfCoef
+				, srcPixel, alphaPixel);
 		}
 	}
 
-	pSf->UnlockBuffer(buff);
+	ReleaseSfCoef(pSf, sfCoef);
 
-	delete[] temp;
+	//delete[] temp;
 }

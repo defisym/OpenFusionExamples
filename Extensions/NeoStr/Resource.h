@@ -26,6 +26,10 @@
 #define	IDS_PROP_ALLIGN_ROWSPACE_INFO			204
 #define	IDS_PROP_ALLIGN_COLSPACE			    205
 #define	IDS_PROP_ALLIGN_COLSPACE_INFO			206
+#define	IDS_PROP_OUTLINE_PIXEL			        207
+#define	IDS_PROP_OUTLINE_PIXEL_INFO			    208
+#define	IDS_PROP_OUTLINE_COLOR			        209
+#define	IDS_PROP_OUTLINE_COLOR_INFO			    210
 
 // 	Debug tree
 //-------------------

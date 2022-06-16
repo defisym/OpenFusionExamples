@@ -178,6 +178,7 @@
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <Profile>true</Profile>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
