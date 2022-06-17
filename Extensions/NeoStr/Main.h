@@ -119,6 +119,8 @@ typedef struct tagRDATA
 	bool bFontChanged;
 	NeoStr* pNeoStr;
 
+	CharPos charPos;
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

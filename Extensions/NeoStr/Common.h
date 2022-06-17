@@ -32,6 +32,11 @@
 
 class NeoStr;
 
+struct CharPos {
+	long x;
+	long y;
+};
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"

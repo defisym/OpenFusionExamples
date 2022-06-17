@@ -16,6 +16,62 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
 
+inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
+	if (rdPtr->bFontChanged) {
+		rdPtr->bFontChanged = false;
+
+		delete rdPtr->pNeoStr;
+		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+	}
+	
+	if (rdPtr->bStrChanged) {
+		rdPtr->bStrChanged = false;
+		
+		auto cPos=rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc
+			, rdPtr->nRowSpace, rdPtr->nColSpace);
+		
+		rdPtr->charPos = { cPos.x,cPos.y };
+	}
+}
+
+inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
+	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
+
+	if (ps != NULL) {	// Do the following if this surface exists
+		// Create font
+		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
+
+		// Ink effects
+		BOOL bTransp = ((oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) != 0);
+		BlitMode bm = (bTransp) ? BMODE_TRANSP : BMODE_OPAQUE;
+		BOOL bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
+		BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
+		LPARAM boParam = oiPtr->oiHdr.oiInkEffectParam;
+
+		//MSGBOX(L"L: "+_itos(rc->left)+ L"T: " + _itos(rc->top), L"RECT");
+
+		// Draw text
+		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
+
+#ifdef _PATH
+		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
+#endif
+		neoStr.CalculateRange(&edPtr->pText, rc
+			, edPtr->nRowSpace, edPtr->nColSpace);
+
+		neoStr.SetClip(false);
+		
+		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
+			, edPtr->nRowSpace, edPtr->nColSpace
+			, bm, bo, boParam, bAntiA);
+
+		// Delete font
+		if (hFont != NULL)
+			DeleteObject(hFont);
+	}
+}
+
+
 inline void Display(LPRDATA rdPtr) {
 	//if (!rdPtr->bStrChanged) {
 	//	return;
@@ -43,15 +99,14 @@ inline void Display(LPRDATA rdPtr) {
 		int boParam = rdPtr->rs.rsEffectParam;
 
 		// Draw text
-		if (rdPtr->bFontChanged) {
-			rdPtr->bFontChanged = false;
+		HandleUpate(rdPtr, rc);
 
-			delete rdPtr->pNeoStr;
-			rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
-		}
-
+#ifdef _PATH
 		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
+#endif
+
 		rdPtr->pNeoStr->SetClip(true);
+		
 		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
@@ -60,37 +115,7 @@ inline void Display(LPRDATA rdPtr) {
 	}
 }
 
-inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
-	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
-	
-	if (ps != NULL) {	// Do the following if this surface exists
-		// Create font
-		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
-
-		// Ink effects
-		BOOL bTransp = ((oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) != 0);
-		BlitMode bm = (bTransp) ? BMODE_TRANSP : BMODE_OPAQUE;
-		BOOL bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
-		BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
-		LPARAM boParam = oiPtr->oiHdr.oiInkEffectParam;
-
-		//MSGBOX(L"L: "+_itos(rc->left)+ L"T: " + _itos(rc->top), L"RECT");
-
-		// Draw text
-		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
-		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
-		neoStr.SetClip(false);
-		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
-			, edPtr->nRowSpace, edPtr->nColSpace
-			, bm, bo, boParam, bAntiA);
-
-		// Delete font
-		if (hFont != NULL)
-			DeleteObject(hFont);
-	}
-}
-
-inline auto UpdateLastCharPos(LPRDATA rdPtr) {
+inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	RECT rc;
 
 	rc.left = rdPtr->rHo.hoX;
@@ -98,15 +123,7 @@ inline auto UpdateLastCharPos(LPRDATA rdPtr) {
 	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
 	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
 
-	if (rdPtr->bFontChanged) {
-		rdPtr->bFontChanged = false;
-		
-		delete rdPtr->pNeoStr;
-		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
-	}
+	HandleUpate(rdPtr, rc);
 
-	rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
-	rdPtr->pNeoStr->SetClip(false);
-	return rdPtr->pNeoStr->DisplayPerChar(nullptr, rdPtr->pStr->c_str(), &rc
-		, rdPtr->nRowSpace, rdPtr->nColSpace);
+	return rdPtr->charPos;
 }

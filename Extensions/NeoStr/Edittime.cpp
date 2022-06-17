@@ -73,8 +73,11 @@ PropData FontPorperties[] = {
 	PropData_EditNumber(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
 
+
+#ifdef _PATH
 	PropData_EditNumber(PROPID_OUTLINE_PIXEL,		IDS_PROP_OUTLINE_PIXEL,			IDS_PROP_OUTLINE_PIXEL_INFO),
 	PropData_Color(PROPID_OUTLINE_COLOR,		IDS_PROP_OUTLINE_COLOR,			IDS_PROP_OUTLINE_COLOR_INFO),
+#endif
 	
 	// End of table (required)
 	PropData_End()
@@ -751,10 +754,13 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_ALLIGN_COLSPACE:
 		return new CPropDWordValue(edPtr->nColSpace);
 
+#ifdef _PATH
 	case PROPID_OUTLINE_PIXEL:
 		return new CPropDWordValue(edPtr->nOutLinePixel);
 	case PROPID_OUTLINE_COLOR:
 		return new CPropDWordValue(edPtr->dwOutLineColor);
+#endif
+
 	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
@@ -847,12 +853,15 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		edPtr->nColSpace = ((CPropDWordValue*)pValue)->m_dwValue;
 		break;
 
+#ifdef _PATH
 	case PROPID_OUTLINE_PIXEL:
 		edPtr->nOutLinePixel = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
 		break;
 	case PROPID_OUTLINE_COLOR:
 		edPtr->dwOutLineColor = ((CPropDWordValue*)pValue)->m_dwValue;
 		break;
+#endif
+
 	}
 
 	// You may want to have your object redrawn in the frame editor after the modifications,

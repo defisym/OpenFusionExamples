@@ -8,7 +8,9 @@
 #include <assert.h>
 #endif
 
-#define _GDIPLUS
+#define _GDIPLUS	// display with GDI plus
+
+//#define _PATH		// draw outline, slow in GDI
 
 #ifdef _GDIPLUS	
 // compatible with MMF
@@ -84,6 +86,14 @@ private:
 		long height;
 	};
 
+	StrSize* pStrSizeArr = nullptr;
+
+	long rcWidth = 0;
+	long rcHeight = 0;
+
+	long totalWidth = 0;
+	long totalHeight = 0;
+	
 	inline COLORREF BlackEscape(COLORREF input) {
 		return input == BLACK ? RGB(8, 0, 0) : input;
 	}
@@ -165,6 +175,9 @@ public:
 	}
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
+		
+		delete[] this->pStrSizeArr;
+		this->pStrSizeArr = nullptr;
 
 #ifdef _GDIPLUS	
 		Gdiplus::GdiplusShutdown(gdiplusToken);
@@ -202,36 +215,24 @@ public:
 		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
-	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
-		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
-
-		auto height = pDst->DrawText(pText, wcslen(pText), pRc
-			, this->dwDTFlags, this->dwTextColor, this->hFont
-			, bm, bo, boParam, bAntiA);
-
-		return;
-	}
-
-	inline CharPos DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
-		, size_t nRowSpace = 0, size_t nColSpace = 0
-		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
-
+	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc, size_t nRowSpace = 0, size_t nColSpace = 0) {
 		this->strPos.clear();
 
 		size_t pTextLen = wcslen(pText);
 
-		auto pStrSizeArr = new StrSize [pTextLen + 1];
+		delete[] this->pStrSizeArr;
+		this->pStrSizeArr = nullptr;
+		
+		pStrSizeArr = new StrSize[pTextLen + 1];
 		memset(pStrSizeArr, 0, sizeof(StrSize) * (pTextLen + 1));
 
-		long rcWidth = pRc->right - pRc->left;
-		long rcHeight = pRc->bottom - pRc->top;
+		this->rcWidth = pRc->right - pRc->left;
+		this->rcHeight = pRc->bottom - pRc->top;
 
+		this->totalWidth = 0;
+		this->totalHeight = 0;
+		
 		size_t pCharStart = 0;
-
-		long totalWidth = 0;
-		long totalHeight = 0;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool newLine = false;
@@ -246,8 +247,8 @@ public:
 				&& pChar <= pTextLen) {
 				auto pCurChar = pText + pChar;
 
-				auto curChar = pCurChar [0];
-				auto nextChar = pCurChar [1];
+				auto curChar = pCurChar[0];
+				auto nextChar = pCurChar[1];
 
 				if (curChar == L'\r' && nextChar == L'\n') {
 					newLine = true;
@@ -257,8 +258,8 @@ public:
 					break;
 				}
 
-				pStrSizeArr [pChar] = GetCharSize(curChar);
-				auto charSz = &pStrSizeArr [pChar];
+				pStrSizeArr[pChar] = GetCharSize(curChar);
+				auto charSz = &pStrSizeArr[pChar];
 
 				totalWidth = curWidth;
 
@@ -275,7 +276,7 @@ public:
 			if (!skipLine) {
 				auto end = min(pChar, pTextLen) - 2 * newLine;
 
-				this->strPos.emplace_back(StrPos {
+				this->strPos.emplace_back(StrPos{
 					pCharStart,
 					end,
 					end - pCharStart,
@@ -290,17 +291,39 @@ public:
 		}
 
 		const auto& lastStrPos = strPos.back();
-		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
+		const auto lastCharSize = &pStrSizeArr[lastStrPos.start + lastStrPos.length - 1];
 
-		int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
-
-		auto lastCharPos = CharPos {
+		auto lastCharPos = CharPos{
 			GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
-			,y + lastStrPos.y + (lastCharSize->height >> 1) };
+			,GetStartPosY(totalHeight - nRowSpace, rcHeight) + lastStrPos.y + (lastCharSize->height >> 1) };
+
+		return lastCharPos;
+	}
+
+	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
+		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
+		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
+
+		auto height = pDst->DrawText(pText, wcslen(pText), pRc
+			, this->dwDTFlags, this->dwTextColor, this->hFont
+			, bm, bo, boParam, bAntiA);
+
+		return;
+	}
+
+	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
+		, size_t nRowSpace = 0, size_t nColSpace = 0
+		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
+		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
+
+		//CalculateRange(pText, pRc, nRowSpace, nColSpace);
+
+		long rcWidth = pRc->right - pRc->left;
+		long rcHeight = pRc->bottom - pRc->top;
 
 		if (pDst != nullptr) {
-			LOGFONT drawLogFont;
-			GetObject(this->hFont, sizeof(LOGFONT), &drawLogFont);
+			//LOGFONT drawLogFont;
+			//GetObject(this->hFont, sizeof(LOGFONT), &drawLogFont);
 			//drawLogFont.lfQuality = ANTIALIASED_QUALITY;
 			//drawLogFont.lfQuality = NONANTIALIASED_QUALITY;
 			//this->hFont = CreateFontIndirect(&drawLogFont);
@@ -349,8 +372,6 @@ public:
 			SetBkMode(hMemDc, TRANSPARENT);
 #endif
 
-#define _PATH
-
 #ifdef  _PATH
 #ifdef _GDIPLUS	
 			GraphicsPath txtPath(FillMode::FillModeWinding);
@@ -368,6 +389,7 @@ public:
 #endif
 
 			RECT displayRc = { 0,0,(LONG)width, (LONG)height, };
+			int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
 			auto clip = [this, pRc, displayRc] (int startX, int startY, const StrSize* charSz)->bool {
 				if (this->bClip == false) {
@@ -416,8 +438,6 @@ public:
 					x += (charSz->width + nColSpace);
 				}
 			}
-
-			delete[] pStrSizeArr;
 
 #ifdef  _PATH
 #ifdef _GDIPLUS	
@@ -526,8 +546,6 @@ public:
 
 			delete pMemSf;
 		}
-
-		return lastCharPos;
 	}
 };
 
