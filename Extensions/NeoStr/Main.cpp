@@ -35,6 +35,9 @@ short actionsInfos[]=
 
 		IDMN_ACTION_CHA, M_ACTION_CHA, ACT_ACTION_CHA,	0, 1, PARAM_EXPRESSION, M_HA,
 		IDMN_ACTION_CVA, M_ACTION_CVA, ACT_ACTION_CVA,	0, 1, PARAM_EXPRESSION, M_VA,
+
+		IDMN_ACTION_ASTR, M_ACTION_ASTR, ACT_ACTION_ASTR,	0, 1, PARAM_EXPSTRING, M_STR,
+		IDMN_ACTION_ASTRNL, M_ACTION_ASTRNL, ACT_ACTION_ASTRNL,	0, 1, PARAM_EXPSTRING, M_STR,
 		};
 
 // Definitions of parameters for each expression
@@ -46,6 +49,7 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GLCX, M_EXPRESSION_GLCX, EXP_EXPRESSION_GLCX, 0, 0,
 		IDMN_EXPRESSION_GLCY, M_EXPRESSION_GLCY, EXP_EXPRESSION_GLCY, 0, 0,
+		IDMN_EXPRESSION_GMW, M_EXPRESSION_GMW, EXP_EXPRESSION_GMW, 0, 0,
 		};
 
 
@@ -102,6 +106,27 @@ short WINAPI DLLExport Action_ChangeString(LPRDATA rdPtr, long param1, long para
 	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	*rdPtr->pStr = pStr;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_AppendString(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pStr->append(pStr);
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_AppendStringNewLine(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pStr->append(L"\r\n");
+	rdPtr->pStr->append(pStr);
 
 	ReDisplay(rdPtr);
 
@@ -178,6 +203,10 @@ long WINAPI DLLExport Expression_GetLastCharY(LPRDATA rdPtr, long param1) {
 	return UpdateLastCharPos(rdPtr).y;
 }
 
+long WINAPI DLLExport Expression_GetMaxWidth(LPRDATA rdPtr, long param1) {
+	return UpdateLastCharPos(rdPtr).maxWidth;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -203,6 +232,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_ChangeHorizontalAlign,
 			Action_ChangeVerticalAlign,
 			
+			Action_AppendString,
+			Action_AppendStringNewLine,
 			0
 			};
 
@@ -214,6 +245,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			
 			Expression_GetLastCharX,
 			Expression_GetLastCharY,
+			Expression_GetMaxWidth,
 			
 			0
 			};

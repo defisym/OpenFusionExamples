@@ -3,34 +3,47 @@
 #include <functional>
 #include <string_view>
 
-inline void ReDisplay(LPRDATA rdPtr) {		
-		rdPtr->rc.rcChanged = true;
-		rdPtr->bStrChanged = true;
-		
-		rdPtr->rHo.hoImgXSpot = 0;
-		rdPtr->rHo.hoImgYSpot = 0;
+inline void ReDisplay(LPRDATA rdPtr) {
+	rdPtr->rc.rcChanged = true;
+	rdPtr->bStrChanged = true;
 
-		rdPtr->rHo.hoImgWidth = rdPtr->swidth;
-		rdPtr->rHo.hoImgHeight = rdPtr->sheight;
+	rdPtr->rHo.hoImgXSpot = 0;
+	rdPtr->rHo.hoImgYSpot = 0;
 
-		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+	rdPtr->rHo.hoImgWidth = rdPtr->swidth;
+	rdPtr->rHo.hoImgHeight = rdPtr->sheight;
+
+	callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
 
 inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
+	bool reRender = false;
+
 	if (rdPtr->bFontChanged) {
 		rdPtr->bFontChanged = false;
 
 		delete rdPtr->pNeoStr;
 		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+
+		reRender = true;
 	}
-	
+
 	if (rdPtr->bStrChanged) {
 		rdPtr->bStrChanged = false;
-		
-		auto cPos=rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc
+
+		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace);
-		
-		rdPtr->charPos = { cPos.x,cPos.y };
+
+		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth };
+
+		reRender = true;
+	}
+
+	if (reRender) {
+		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc
+			, rdPtr->nRowSpace, rdPtr->nColSpace);
+
+		reRender = false;
 	}
 }
 
@@ -60,7 +73,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, edPtr->nRowSpace, edPtr->nColSpace);
 
 		neoStr.SetClip(false);
-		
+
+		neoStr.RenderPerChar(&edPtr->pText, rc
+			, edPtr->nRowSpace, edPtr->nColSpace);
+
 		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
@@ -79,12 +95,12 @@ inline void Display(LPRDATA rdPtr) {
 
 	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 	LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
-	
+
 	if (ps != nullptr && rdPtr->pStr != nullptr) {
 		// On-screen coords
 		int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
-		
+
 		RECT rc;
 
 		rc.left = screenX;
@@ -106,7 +122,7 @@ inline void Display(LPRDATA rdPtr) {
 #endif
 
 		rdPtr->pNeoStr->SetClip(true);
-		
+
 		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace
 			, bm, bo, boParam, bAntiA);

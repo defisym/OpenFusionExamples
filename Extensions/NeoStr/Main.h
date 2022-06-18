@@ -21,7 +21,10 @@
 #define	ACT_ACTION_CHA					4
 #define	ACT_ACTION_CVA					5
 
-#define	ACT_LAST						6
+#define	ACT_ACTION_ASTR			    	6
+#define	ACT_ACTION_ASTRNL		    	7
+
+#define	ACT_LAST						8
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -32,8 +35,9 @@
 
 #define EXP_EXPRESSION_GLCX					3
 #define EXP_EXPRESSION_GLCY					4
+#define EXP_EXPRESSION_GMW					5
 
-#define	EXP_LAST                    		5
+#define	EXP_LAST                    		6
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

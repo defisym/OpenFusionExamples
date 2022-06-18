@@ -35,6 +35,7 @@ class NeoStr;
 struct CharPos {
 	long x;
 	long y;
+	long maxWidth;
 };
 
 // Specific to this cox

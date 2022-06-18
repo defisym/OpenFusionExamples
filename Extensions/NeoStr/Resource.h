@@ -50,6 +50,9 @@
 #define	IDMN_ACTION_CHA				25004
 #define	IDMN_ACTION_CVA				25005
 
+#define	IDMN_ACTION_ASTR			25006
+#define	IDMN_ACTION_ASTRNL			25007
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -58,6 +61,9 @@
 
 #define	M_ACTION_CHA				5004
 #define	M_ACTION_CVA				5005
+
+#define	M_ACTION_ASTR			    5006
+#define	M_ACTION_ASTRNL			    5007
 
 // Titles of action parameters
 #define M_WIDTH				        5501
@@ -100,6 +106,7 @@
 
 #define IDMN_EXPRESSION_GLCX				27003
 #define IDMN_EXPRESSION_GLCY				27004
+#define IDMN_EXPRESSION_GMW 				27005
 
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
@@ -108,6 +115,7 @@
 
 #define M_EXPRESSION_GLCX				    7003
 #define M_EXPRESSION_GLCY				    7004
+#define M_EXPRESSION_GMW				    7006
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

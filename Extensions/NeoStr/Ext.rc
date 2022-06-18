@@ -134,7 +134,10 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Change Size", IDMN_ACTION_CS
         MENUITEM SEPARATOR
-        MENUITEM "Change Display String", IDMN_ACTION_CS
+        MENUITEM "Change Display String", IDMN_ACTION_CSTR
+        MENUITEM "Append Display String", IDMN_ACTION_ASTR
+        MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
+        MENUITEM SEPARATOR        
         MENUITEM "Change Row Space", IDMN_ACTION_CRS
         MENUITEM "Change Col Space", IDMN_ACTION_CCS
         MENUITEM SEPARATOR
@@ -162,6 +165,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Last Char X", IDMN_EXPRESSION_GLCX
         MENUITEM "Get Last Char Y", IDMN_EXPRESSION_GLCY
+        MENUITEM "Get Max Width", IDMN_EXPRESSION_GMW
         MENUITEM SEPARATOR
     END
 END
@@ -270,10 +274,13 @@ BEGIN
     M_HEIGHT                    "Height"
 
     M_ACTION_CSTR               "Change Display String to %0"
+    M_ACTION_ASTR               "Append %0 to Display String"
+    M_ACTION_ASTRNL               "Append %0 to Display String at NewLine"
+    
     M_ACTION_CRS                "Change Row Space to %0"
     M_ACTION_CCS                "Change Col Space to %0"
 
-    M_STR                       "Display String"
+    M_STR                       "String"
     M_ROWSPACE                  "Row Space"
     M_COLSPACE                  "Col Space"
 
@@ -301,6 +308,7 @@ BEGIN
 
     M_EXPRESSION_GLCX		"LastCharX("
     M_EXPRESSION_GLCY		"LastCharY("
+    M_EXPRESSION_GMW		"MaxWidth("
 END
 
 #endif    // English (U.S.) resources
