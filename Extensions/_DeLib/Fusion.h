@@ -992,7 +992,7 @@ inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,B
 			BYTE* srcPixel = pData + offset;
 			//BYTE* tempPixel = temp + offset;
 
-			auto alphaOffset = y * alphaPitch + x * alphaByte;
+			auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
 			BYTE* alphaPixel = pAlphaData + alphaOffset;
 
 			process(x, y, sfCoef
