@@ -268,6 +268,16 @@ inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int heigh
 	return hwa;
 }
 
+inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, int driver) {
+	LPSURFACE proto = nullptr;
+	GetSurfacePrototype(&proto, depth, type, driver);
+
+	cSurface* hwa = new cSurface;
+	hwa->Create(width, height, proto);
+
+	return hwa;
+}
+
 inline LPSURFACE CreateSurface(int depth, int width, int height) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
