@@ -48,8 +48,9 @@ using namespace AOE;
 // My header
 #include	"ObjectCreation.h"
 #include	"ObjectSelection.h"
-#include	"Func.h"
+#include	"Fusion.h"
 #include	"FusionUtilities.h"
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

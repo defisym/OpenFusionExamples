@@ -34,8 +34,8 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 
 	bool blited = false;
 
-	if (pSf->GetDepth() != 24) {
-		// blit active to 24 bit depth
+	if (pSf->GetDepth() != 24	// blit active to 24 bit depth
+		|| IsHWA(pSf)) {		// blit HWA texture
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 		cSurface* sf = new cSurface;
