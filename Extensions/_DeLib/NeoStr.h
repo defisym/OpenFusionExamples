@@ -14,6 +14,8 @@
 //#define _PATH		// draw outline, slow in GDI
 //#define _DRAWTODC	// draw to DC, display incorrectly sometimes
 
+#define _USE_HWA	// use hardware acceleration
+
 #ifdef _GDIPLUS	
 // compatible with MMF
 #undef Font
@@ -57,6 +59,8 @@ private:
 	DWORD dwDTFlags;
 
 	bool bClip = true;
+	int renderWidth = 0;
+	int renderHeight = 0;
 
 	bool bOutLine = false;
 	BYTE nOutLinePixel = 1;
@@ -97,6 +101,12 @@ private:
 	long totalHeight = 0;
 
 	LPSURFACE pMemSf = nullptr;
+
+#ifdef _USE_HWA
+	int hwaType = 0;
+	int hwaDriver = 0;
+	LPSURFACE pHwaSf = nullptr;
+#endif
 
 	std::map<wchar_t, StrSize> charSzCache;
 
@@ -201,13 +211,31 @@ public:
 		delete this->pMemSf;
 		this->pMemSf = nullptr;
 
+#ifdef _USE_HWA
+		delete this->pHwaSf;
+		this->pHwaSf = nullptr;
+#endif
+
 #ifdef _GDIPLUS	
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 #endif	
 	}
 
-	inline void SetClip(bool clip) {
+#ifdef _USE_HWA
+	inline void SetHWA(int type, int driver) {
+		this->hwaType = type;
+		this->hwaDriver = driver;
+	}
+#endif
+
+	inline void SetAlign(DWORD dwAlign) {
+		this->dwDTFlags = dwAlign | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
+	}
+
+	inline void SetClip(bool clip, int renderWidth, int renderHeight) {
 		this->bClip = clip;
+		this->renderWidth = renderWidth;
+		this->renderHeight = renderHeight;
 	}
 
 	inline void SetOutLine(BYTE outLinePixel, DWORD color) {
@@ -335,7 +363,7 @@ public:
 		const auto& lastStrPos = strPos.back();
 		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
 
-		auto lastCharPos = CharPos{
+		auto lastCharPos = CharPos {
 			GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
 			,GetStartPosY(totalHeight - nRowSpace, rcHeight) + lastStrPos.y + (lastCharSize->height >> 1)
 			,maxWidth };
@@ -360,14 +388,23 @@ public:
 			this->pMemSf = nullptr;
 
 #ifdef _DRAWTODC
-			pMemSf = CreateSurface(32, rcWidth * scale, (totalHeight - nRowSpace) * scale);
+			pMemSf = CreateSurface(32, width, height);
 #else
-			pMemSf = CreateSurface(32, width, height * scale);
+			//#ifdef _USE_HWA
+			//			pMemSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
+			//#else
+			//			pMemSf = CreateSurface(32, width, height);
+			//#endif
+			pMemSf = CreateSurface(32, width, height);
 #endif
 		}
 
 		pMemSf->Fill(BLACK);
 		pMemSf->CreateAlpha();
+
+#ifdef _DEBUG
+		auto type = pMemSf->GetType();
+#endif
 
 		//LOGFONT drawLogFont;
 		//GetObject(this->hFont, sizeof(LOGFONT), &drawLogFont);
@@ -420,7 +457,7 @@ public:
 #endif
 #endif
 
-		RECT displayRc = { 0,0,(LONG)width, (LONG)height, };
+		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight, };
 		int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
 		auto clip = [this, pRc, displayRc] (int startX, int startY, const StrSize* charSz)->bool {
@@ -460,7 +497,9 @@ public:
 						&fontFamily, fontstyle, font.GetSize()
 						, Gdiplus::PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
 #else
-					g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)((y + curStrPos.y) * scale)), &solidBrush);
+					//auto pos = y + curStrPos.y;
+					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
+					g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(curStrPos.y)), &solidBrush);
 #endif
 #else
 					TextOut(hMemDc, x * scale, (y + curStrPos.y) * scale, pCurChar, 1);
@@ -526,6 +565,13 @@ public:
 		unsigned int* pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 #endif
 #endif		
+
+		//#ifdef _USE_HWA
+		//		auto pHWASf = pMemSf->GetRenderTargetSurface();
+		//		auto sfCoef = GetSfCoef(pHWASf);
+		//#else
+		//		auto sfCoef = GetSfCoef(pMemSf);
+		//#endif
 		auto sfCoef = GetSfCoef(pMemSf);
 
 		auto lineSz = sfCoef.pitch;
@@ -543,7 +589,22 @@ public:
 			}
 		}
 
+		//#ifdef _USE_HWA
+		//		ReleaseSfCoef(pHWASf, sfCoef);
+		//		pMemSf->ReleaseRenderTargetSurface(pHWASf);
+		//#else
+		//		ReleaseSfCoef(pMemSf, sfCoef);
+		//#endif
+
 		ReleaseSfCoef(pMemSf, sfCoef);
+
+#ifdef _USE_HWA
+		delete pHwaSf;
+		pHwaSf = nullptr;
+
+		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
+		pMemSf->Blit(*pHwaSf);
+#endif
 
 		//#define _CONSOLE
 		//			IteratePixel(pMemSf, [&] (int x, int y, const SfCoef sfCoef, BYTE* pData, BYTE* pAlphaData) {
@@ -572,7 +633,7 @@ public:
 		//				printf("%d %d %d %d\n", A, R, G, B);
 		//#endif // _CONSOLE
 		//				});
-		}
+	}
 
 	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
@@ -594,11 +655,37 @@ public:
 		//RenderPerChar(pText, pRc, nRowSpace, nColSpace);
 
 		if (pDst != nullptr
-			&& pMemSf != nullptr) {
-			pMemSf->Blit(*pDst, pRc->left, pRc->top, bm, bo, boParam, bAntiA);
+
+#ifdef _USE_HWA
+			&& pHwaSf != nullptr
+#else
+			&& pMemSf != nullptr
+#endif
+			) {
+
+#ifdef _USE_HWA
+			auto pSf = pHwaSf;
+#else
+			auto pSf = pMemSf;
+#endif
+
+			int xPos = pRc->left;
+			//int yPos = pRc->top;
+			int yPos = pRc->top + GetStartPosY(pSf->GetHeight(), pRc->bottom - pRc->top);
+
+#ifdef _USE_HWA
+			POINT hotSpot = { 0,0 };
+
+			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, 1.0, 1.0
+				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)0
+				, bm, bo, boParam, bAntiA);
+#else
+			pSf->Blit(*pDst, xPos, yPos, bm, bo, boParam, bAntiA);
+#endif
+
 		}
 	}
-	};
+};
 
 #ifdef _GDIPLUS	
 // compatible with MMF

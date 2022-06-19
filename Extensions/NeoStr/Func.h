@@ -13,7 +13,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	rdPtr->rHo.hoImgWidth = rdPtr->swidth;
 	rdPtr->rHo.hoImgHeight = rdPtr->sheight;
 
-	callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
 
 inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
@@ -25,11 +25,20 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		delete rdPtr->pNeoStr;
 		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
 
+#ifdef _USE_HWA
+		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+		int sfDrv = wSurf->GetDriver();
+		
+		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv);
+#endif
+
 		reRender = true;
 	}
 
 	if (rdPtr->bStrChanged) {
 		rdPtr->bStrChanged = false;
+		
+		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags);
 
 		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace);
@@ -40,6 +49,24 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 	}
 
 	if (reRender) {
+		////App Size
+		//rhPtr->rhApp->m_hdr.gaCxWin;
+		//rhPtr->rhApp->m_hdr.gaCyWin;
+
+		////Frame Size
+		//rhPtr->rhFrame->m_hdr.leWidth;
+		//rhPtr->rhFrame->m_hdr.leHeight;
+
+		LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+		rdPtr->pNeoStr->SetClip(true
+			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
+			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
+
+		//rdPtr->pNeoStr->SetClip(false
+		//	, 65535
+		//	, 65535);
+		
 		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace);
 
@@ -66,13 +93,19 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		// Draw text
 		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
 
+#ifdef _USE_HWA
+		int sfDrv = ps->GetDriver();
+
+		neoStr.SetHWA(ST_HWA_ROMTEXTURE, sfDrv);
+#endif
+
 #ifdef _PATH
 		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
 #endif
 		neoStr.CalculateRange(&edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace);
 
-		neoStr.SetClip(false);
+		neoStr.SetClip(false, 65535, 65535);
 
 		neoStr.RenderPerChar(&edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace);
@@ -120,8 +153,6 @@ inline void Display(LPRDATA rdPtr) {
 #ifdef _PATH
 		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
 #endif
-
-		rdPtr->pNeoStr->SetClip(true);
 
 		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace

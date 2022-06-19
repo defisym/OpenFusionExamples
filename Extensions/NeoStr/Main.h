@@ -125,6 +125,10 @@ typedef struct tagRDATA
 
 	CharPos charPos;
 
+	BYTE textRenderingHint;
+	BYTE smoothingMode;
+	BYTE pixelOffsetMode;
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

@@ -99,8 +99,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bStrChanged = true;
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
 	
-	rdPtr->bFontChanged = false;
-	rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+	rdPtr->bFontChanged = true;
 	
 	// No errors
 	return 0;
