@@ -62,6 +62,10 @@ private:
 	int renderWidth = 0;
 	int renderHeight = 0;
 
+	Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias;
+	Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality;
+	Gdiplus::PixelOffsetMode pixelOffsetMode = Gdiplus::PixelOffsetMode::PixelOffsetModeHalf;
+
 	bool bOutLine = false;
 	BYTE nOutLinePixel = 1;
 	COLORREF dwOutLineColor = RGB(255, 255, 0);
@@ -110,9 +114,13 @@ private:
 
 	std::map<wchar_t, StrSize> charSzCache;
 
+#ifdef _GDIPLUS
+	
+#else
 	inline COLORREF BlackEscape(COLORREF input) {
 		return input == BLACK ? RGB(8, 0, 0) : input;
 	}
+#endif
 
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
@@ -165,8 +173,8 @@ private:
 		GetImageEncoders(num, size, pImageCodecInfo);
 
 		for (UINT j = 0; j < num; ++j) {
-			if (wcscmp(pImageCodecInfo [j].MimeType, format) == 0) {
-				*pClsid = pImageCodecInfo [j].Clsid;
+			if (wcscmp(pImageCodecInfo[j].MimeType, format) == 0) {
+				*pClsid = pImageCodecInfo[j].Clsid;
 				free(pImageCodecInfo);
 
 				return j;  // Success
@@ -191,7 +199,12 @@ public:
 		this->hdc = GetDC(NULL);
 		SelectObject(this->hdc, hFont);
 
+#ifdef _GDIPLUS
+		this->dwTextColor = color;
+#else
 		this->dwTextColor = BlackEscape(color);
+#endif
+		
 		this->hFont = hFont;
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
@@ -228,6 +241,15 @@ public:
 	}
 #endif
 
+	inline void SetSmooth(
+		Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias
+		, Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality
+		, Gdiplus::PixelOffsetMode pixelOffsetMode = Gdiplus::PixelOffsetMode::PixelOffsetModeHalf) {
+		this->textRenderingHint = textRenderingHint;
+		this->smoothingMode = smoothingMode;
+		this->pixelOffsetMode = pixelOffsetMode;
+	}
+
 	inline void SetAlign(DWORD dwAlign) {
 		this->dwDTFlags = dwAlign | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 	}
@@ -241,7 +263,12 @@ public:
 	inline void SetOutLine(BYTE outLinePixel, DWORD color) {
 		this->bOutLine = outLinePixel;
 		this->nOutLinePixel = outLinePixel;
-		this->dwOutLineColor = BlackEscape(color);;
+		
+#ifdef _GDIPLUS
+		this->dwOutLineColor = color;
+#else
+		this->dwOutLineColor = BlackEscape(color);
+#endif
 	}
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
@@ -431,9 +458,9 @@ public:
 		SolidBrush solidBrush(fontColor);
 		Font font(GetDC(NULL), this->hFont);
 
-		g.SetTextRenderingHint(Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias);
-		g.SetSmoothingMode(Gdiplus::SmoothingMode::SmoothingModeHighQuality);
-		g.SetPixelOffsetMode(Gdiplus::PixelOffsetMode::PixelOffsetModeHalf);
+		g.SetTextRenderingHint(this->textRenderingHint);
+		g.SetSmoothingMode(this->smoothingMode);
+		g.SetPixelOffsetMode(this->pixelOffsetMode);
 
 #else	
 		SelectObject(hMemDc, this->hFont);
