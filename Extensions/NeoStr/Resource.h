@@ -31,6 +31,34 @@
 #define	IDS_PROP_OUTLINE_COLOR			        209
 #define	IDS_PROP_OUTLINE_COLOR_INFO			    210
 
+#define	IDS_PROP_RENDER_TITLE                       211
+#define	IDS_PROP_RENDER_CLIP                        212
+#define	IDS_PROP_RENDER_CLIP_INFO                   213
+#define	IDS_PROP_RENDER_TextRenderingHint           214
+#define	IDS_PROP_RENDER_TextRenderingHint_INFO      215
+#define	COMBO_TextRenderingHintSystemDefault              216
+#define	COMBO_TextRenderingHintSingleBitPerPixelGridFit   217
+#define	COMBO_TextRenderingHintSingleBitPerPixel          218
+#define	COMBO_TextRenderingHintAntiAliasGridFit           219
+#define	COMBO_TextRenderingHintAntiAlias                  220
+#define	IDS_PROP_RENDER_SmoothingMode               221
+#define	IDS_PROP_RENDER_SmoothingMode_INFO          222
+#define	COMBO_SmoothingModeInvalid                        223
+#define	COMBO_SmoothingModeDefault                        224
+#define	COMBO_SmoothingModeHighSpeed                      225
+#define	COMBO_SmoothingModeHighQuality                    226
+#define	COMBO_SmoothingModeNone                           227
+#define	COMBO_SmoothingModeAntiAlias                      228
+#define	IDS_PROP_RENDER_PixelOffsetMode             229
+#define	IDS_PROP_RENDER_PixelOffsetMode_INFO        230
+#define	COMBO_PixelOffsetModeInvalid                      231
+#define	COMBO_PixelOffsetModeDefault                      232
+#define	COMBO_PixelOffsetModeHighSpeed                    233
+#define	COMBO_PixelOffsetModeHighQuality                  234
+#define	COMBO_PixelOffsetModeNone                         235
+#define	COMBO_PixelOffsetModeHalf                         236
+
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300

@@ -96,6 +96,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->nRowSpace = edPtr->nRowSpace;
 	rdPtr->nColSpace = edPtr->nColSpace;
 
+	rdPtr->textRenderingHint = edPtr->textRenderingHint;
+	rdPtr->smoothingMode = edPtr->smoothingMode;
+	rdPtr->pixelOffsetMode = edPtr->pixelOffsetMode;
+
+	rdPtr->bClip = edPtr->bClip;
+
 	rdPtr->bStrChanged = true;
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
 	

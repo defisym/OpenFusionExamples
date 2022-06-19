@@ -196,6 +196,51 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // 
 HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
 {
+	//HGLOBAL hgNew = NULL;
+	//
+	//if ((hgNew = GlobalAlloc(GPTR, sizeof(tagEDATA_V1))) != NULL) {
+	//	tagEDATA_V1* newEdPtr = (tagEDATA_V1*)GlobalLock(hgNew);
+
+	//	if (newEdPtr != nullptr) {
+	//		memcpy(&newEdPtr->eHeader, &((tagEDATA_V1*)OldEdPtr)->eHeader, sizeof(extHeader));
+	//		newEdPtr->eHeader.extSize = sizeof(tagEDATA_V1);				// Update the EDITDATA structure size
+
+	//		newEdPtr->swidth = ((tagEDATA_V1*)OldEdPtr)->swidth;
+	//		newEdPtr->sheight = ((tagEDATA_V1*)OldEdPtr)->sheight;
+
+	//		newEdPtr->dwColor = ((tagEDATA_V1*)OldEdPtr)->dwColor;
+	//		newEdPtr->dwAlignFlags = ((tagEDATA_V1*)OldEdPtr)->dwAlignFlags;
+	//		newEdPtr->logFont = ((tagEDATA_V1*)OldEdPtr)->logFont;
+
+	//		newEdPtr->nOutLinePixel = ((tagEDATA_V1*)OldEdPtr)->nOutLinePixel;
+	//		newEdPtr->dwOutLineColor = ((tagEDATA_V1*)OldEdPtr)->dwOutLineColor;
+
+	//		newEdPtr->bShadow = ((tagEDATA_V1*)OldEdPtr)->bShadow;
+	//		newEdPtr->nShadowOffsetX = ((tagEDATA_V1*)OldEdPtr)->nShadowOffsetX;
+	//		newEdPtr->nShadowOffsetY = ((tagEDATA_V1*)OldEdPtr)->nShadowOffsetY;
+
+	//		newEdPtr->bRowSpace = ((tagEDATA_V1*)OldEdPtr)->bRowSpace;
+	//		newEdPtr->bColSpace = ((tagEDATA_V1*)OldEdPtr)->bColSpace;
+	//		newEdPtr->nRowSpace = ((tagEDATA_V1*)OldEdPtr)->nRowSpace;
+	//		newEdPtr->nColSpace = ((tagEDATA_V1*)OldEdPtr)->nColSpace;
+
+	//		newEdPtr->textRenderingHint = 0;
+	//		newEdPtr->smoothingMode = 0;
+	//		newEdPtr->pixelOffsetMode = 0;
+
+	//		newEdPtr->bClip = true;
+
+	//		memset(&newEdPtr->buffer, 0, 24 * sizeof(int));
+
+	//		newEdPtr->pText = L'\0';
+
+	//	}
+
+	//	GlobalUnlock(hgNew);
+	//}
+	//
+	//return hgNew;
+
 	// We do nothing here
 	return 0;
 }

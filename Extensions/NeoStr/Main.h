@@ -68,6 +68,14 @@ typedef struct tagEDATA_V1
 	bool bColSpace;
 	size_t nRowSpace;
 	size_t nColSpace;
+
+	BYTE textRenderingHint;
+	BYTE smoothingMode;
+	BYTE pixelOffsetMode;
+
+	bool bClip;
+	
+	int buffer[24];
 	
 	wchar_t	pText;		// Text
 
@@ -117,6 +125,14 @@ typedef struct tagRDATA
 	size_t nRowSpace;
 	size_t nColSpace;
 
+	BYTE textRenderingHint;
+	BYTE smoothingMode;
+	BYTE pixelOffsetMode;
+
+	bool bClip;
+	int oldX;
+	int oldY;
+
 	bool bStrChanged;
 	std::wstring* pStr;
 
@@ -124,10 +140,6 @@ typedef struct tagRDATA
 	NeoStr* pNeoStr;
 
 	CharPos charPos;
-
-	BYTE textRenderingHint;
-	BYTE smoothingMode;
-	BYTE pixelOffsetMode;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

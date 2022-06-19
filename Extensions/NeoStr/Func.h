@@ -47,6 +47,15 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 		reRender = true;
 	}
+	
+	if (rdPtr->bClip		// only clip mode needs to redraw
+		&& (rdPtr->oldX != rc.left
+			|| rdPtr->oldY != rc.top)) {
+		rdPtr->oldX = rc.left;
+		rdPtr->oldY = rc.top;
+
+		reRender = true;
+	}
 
 	if (reRender) {
 		////App Size
@@ -59,13 +68,18 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 		LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 
-		rdPtr->pNeoStr->SetClip(true
+		rdPtr->pNeoStr->SetClip(rdPtr->bClip
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
 
 		//rdPtr->pNeoStr->SetClip(false
 		//	, 65535
 		//	, 65535);
+		
+		rdPtr->pNeoStr->SetSmooth(
+			Gdiplus::TextRenderingHint(rdPtr->textRenderingHint)
+			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
+			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 		
 		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc
 			, rdPtr->nRowSpace, rdPtr->nColSpace);
@@ -107,6 +121,11 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 		neoStr.SetClip(false, 65535, 65535);
 
+		neoStr.SetSmooth(
+			Gdiplus::TextRenderingHint(edPtr->textRenderingHint)
+			, Gdiplus::SmoothingMode(edPtr->smoothingMode - 1)
+			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
+
 		neoStr.RenderPerChar(&edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace);
 
@@ -122,10 +141,6 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 
 inline void Display(LPRDATA rdPtr) {
-	//if (!rdPtr->bStrChanged) {
-	//	return;
-	//}
-
 	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 	LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
 
@@ -163,10 +178,16 @@ inline void Display(LPRDATA rdPtr) {
 }
 
 inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
+	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;	
+	
+	// On-screen coords
+	int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
+	int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
+
 	RECT rc;
 
-	rc.left = rdPtr->rHo.hoX;
-	rc.top = rdPtr->rHo.hoY;
+	rc.left = screenX;
+	rc.top = screenY;
 	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
 	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
 

@@ -35,6 +35,12 @@ enum {
 
 	PROPID_OUTLINE_PIXEL,
 	PROPID_OUTLINE_COLOR,
+	
+	PROPID_RENDER_TITLE,
+	PROPID_RENDER_CLIP,
+	PROPID_RENDER_TextRenderingHint,
+	PROPID_RENDER_SmoothingMode,
+	PROPID_RENDER_PixelOffsetMode,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -45,6 +51,44 @@ enum {
 //	MAKEINTRESOURCE(IDS_THIRDOPTION),	
 //	NULL
 //};
+
+LPCWSTR TextRenderingHint_ComboList[] = {
+	0,	// reserved
+	
+	MAKEINTRESOURCE(COMBO_TextRenderingHintSystemDefault),
+	MAKEINTRESOURCE(COMBO_TextRenderingHintSingleBitPerPixelGridFit),
+	MAKEINTRESOURCE(COMBO_TextRenderingHintSingleBitPerPixel),
+	MAKEINTRESOURCE(COMBO_TextRenderingHintAntiAliasGridFit),
+	MAKEINTRESOURCE(COMBO_TextRenderingHintAntiAlias),
+	
+	NULL
+};
+
+LPCWSTR SmoothingMode_ComboList[] = {
+	0,	// reserved
+	
+	MAKEINTRESOURCE(COMBO_SmoothingModeInvalid),
+	MAKEINTRESOURCE(COMBO_SmoothingModeDefault),
+	MAKEINTRESOURCE(COMBO_SmoothingModeHighSpeed),
+	MAKEINTRESOURCE(COMBO_SmoothingModeHighQuality),
+	MAKEINTRESOURCE(COMBO_SmoothingModeNone),
+	MAKEINTRESOURCE(COMBO_SmoothingModeAntiAlias),
+	
+	NULL
+};
+
+LPCWSTR PixelOffsetMode_ComboList[] = {
+	0,	// reserved
+
+	MAKEINTRESOURCE(COMBO_PixelOffsetModeInvalid),
+	MAKEINTRESOURCE(COMBO_PixelOffsetModeDefault),
+	MAKEINTRESOURCE(COMBO_PixelOffsetModeHighSpeed),
+	MAKEINTRESOURCE(COMBO_PixelOffsetModeHighQuality),
+	MAKEINTRESOURCE(COMBO_PixelOffsetModeNone),
+	MAKEINTRESOURCE(COMBO_PixelOffsetModeHalf),
+	
+	NULL
+};
 
 // Property definitions
 //
@@ -78,7 +122,15 @@ PropData FontPorperties[] = {
 	PropData_EditNumber(PROPID_OUTLINE_PIXEL,		IDS_PROP_OUTLINE_PIXEL,			IDS_PROP_OUTLINE_PIXEL_INFO),
 	PropData_Color(PROPID_OUTLINE_COLOR,		IDS_PROP_OUTLINE_COLOR,			IDS_PROP_OUTLINE_COLOR_INFO),
 #endif
+
+	PropData_Group(PROPID_RENDER_TITLE,	IDS_PROP_RENDER_TITLE,		IDS_PROP_RENDER_TITLE),
 	
+	PropData_CheckBox(PROPID_RENDER_CLIP,	IDS_PROP_RENDER_CLIP,		IDS_PROP_RENDER_CLIP_INFO),
+	PropData_ComboBox(PROPID_RENDER_TextRenderingHint,	IDS_PROP_RENDER_TextRenderingHint,		IDS_PROP_RENDER_TextRenderingHint_INFO, TextRenderingHint_ComboList),
+	PropData_ComboBox(PROPID_RENDER_SmoothingMode,	IDS_PROP_RENDER_SmoothingMode,		IDS_PROP_RENDER_SmoothingMode_INFO, SmoothingMode_ComboList),
+	PropData_ComboBox(PROPID_RENDER_PixelOffsetMode,	IDS_PROP_RENDER_PixelOffsetMode,		IDS_PROP_RENDER_PixelOffsetMode_INFO, PixelOffsetMode_ComboList),
+	
+
 	// End of table (required)
 	PropData_End()
 };
@@ -371,6 +423,15 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->bColSpace = false;
 		edPtr->nRowSpace = 0;
 		edPtr->nColSpace = 0;
+
+		// Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias
+		edPtr->textRenderingHint = 4;
+		// Gdiplus::SmoothingMode::SmoothingModeHighQuality
+		edPtr->smoothingMode = 3;
+		// Gdiplus::PixelOffsetMode::PixelOffsetModeHalf
+		edPtr->pixelOffsetMode = 5;
+
+		edPtr->bClip = true;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL)
@@ -761,6 +822,13 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->dwOutLineColor);
 #endif
 
+	case PROPID_RENDER_TextRenderingHint:
+		return new CPropDWordValue(edPtr->textRenderingHint);
+	case PROPID_RENDER_SmoothingMode:
+		return new CPropDWordValue(edPtr->smoothingMode);
+	case PROPID_RENDER_PixelOffsetMode:
+		return new CPropDWordValue(edPtr->pixelOffsetMode);
+
 	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
@@ -783,6 +851,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bRowSpace;
 	case PROPID_ALLIGN_COLSPACE:
 		return edPtr->bColSpace;
+	case PROPID_RENDER_CLIP:
+		return edPtr->bClip;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -861,7 +931,16 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		edPtr->dwOutLineColor = ((CPropDWordValue*)pValue)->m_dwValue;
 		break;
 #endif
-
+		
+	case PROPID_RENDER_TextRenderingHint:
+		edPtr->textRenderingHint = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		break;
+	case PROPID_RENDER_SmoothingMode:
+		edPtr->smoothingMode = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		break;
+	case PROPID_RENDER_PixelOffsetMode:
+		edPtr->pixelOffsetMode = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		break;
 	}
 
 	// You may want to have your object redrawn in the frame editor after the modifications,
@@ -891,7 +970,12 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	case PROPID_ALLIGN_COLSPACE:
 		edPtr->bColSpace = nCheck;
 		mvInvalidateObject(mV, edPtr);
-		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_ROWSPACE, TRUE);
+		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_COLSPACE, TRUE);
+		break;
+	case PROPID_RENDER_CLIP:
+		edPtr->bClip = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_RENDER_CLIP, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)
