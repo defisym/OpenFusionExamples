@@ -115,7 +115,7 @@ private:
 	std::map<wchar_t, StrSize> charSzCache;
 
 #ifdef _GDIPLUS
-	
+
 #else
 	inline COLORREF BlackEscape(COLORREF input) {
 		return input == BLACK ? RGB(8, 0, 0) : input;
@@ -173,8 +173,8 @@ private:
 		GetImageEncoders(num, size, pImageCodecInfo);
 
 		for (UINT j = 0; j < num; ++j) {
-			if (wcscmp(pImageCodecInfo[j].MimeType, format) == 0) {
-				*pClsid = pImageCodecInfo[j].Clsid;
+			if (wcscmp(pImageCodecInfo [j].MimeType, format) == 0) {
+				*pClsid = pImageCodecInfo [j].Clsid;
 				free(pImageCodecInfo);
 
 				return j;  // Success
@@ -204,11 +204,14 @@ public:
 #else
 		this->dwTextColor = BlackEscape(color);
 #endif
-		
+
 		this->hFont = hFont;
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
 		this->strPos.reserve(20);
+
+		// add a default char to return default value when input text is empty
+		this->GetCharSizeWithCache(L'¶');
 
 #ifdef _GDIPLUS		
 		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -263,7 +266,7 @@ public:
 	inline void SetOutLine(BYTE outLinePixel, DWORD color) {
 		this->bOutLine = outLinePixel;
 		this->nOutLinePixel = outLinePixel;
-		
+
 #ifdef _GDIPLUS
 		this->dwOutLineColor = color;
 #else
@@ -312,6 +315,13 @@ public:
 		this->strPos.clear();
 
 		size_t pTextLen = wcslen(pText);
+
+		if (pTextLen == 0) {
+			auto it = charSzCache.cend();
+			it--;
+
+			return { it->second.width / 2,it->second.height / 2,0 };
+		}
 
 		delete[] this->pStrSizeArr;
 		this->pStrSizeArr = nullptr;
@@ -400,6 +410,12 @@ public:
 
 	inline void RenderPerChar(LPCWSTR pText, LPRECT pRc
 		, size_t nRowSpace = 0, size_t nColSpace = 0) {
+
+		size_t pTextLen = wcslen(pText);
+
+		if (pTextLen == 0) {
+			return;
+		}
 
 		long rcWidth = pRc->right - pRc->left;
 		long rcHeight = pRc->bottom - pRc->top;
@@ -677,6 +693,12 @@ public:
 		, size_t nRowSpace = 0, size_t nColSpace = 0
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
+
+		size_t pTextLen = wcslen(pText);
+
+		if (pTextLen == 0) {
+			return;
+		}
 
 		//CalculateRange(pText, pRc, nRowSpace, nColSpace);
 		//RenderPerChar(pText, pRc, nRowSpace, nColSpace);

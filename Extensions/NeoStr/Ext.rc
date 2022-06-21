@@ -294,7 +294,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_CS                 "Change Size to [ %0 x %1]"
+    M_ACTION_CS                 "Change Size to [ %0 x %1 ]"
 
     M_WIDTH                     "Width"
     M_HEIGHT                    "Height"
