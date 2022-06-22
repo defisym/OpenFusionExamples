@@ -338,6 +338,9 @@ public:
 		size_t pCharStart = 0;
 		long maxWidth = 0;
 
+		bool bNegColSpace = nColSpace < 0;
+		bool bNegRowSpace = nRowSpace < 0;
+
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool newLine = false;
 			bool skipLine = false;
@@ -347,20 +350,22 @@ public:
 
 			pCharStart = pChar;
 
-			while (curWidth < rcWidth
-				&& pChar <= pTextLen) {
+			while (true) {
+				//while (curWidth < rcWidth
+					//&& pChar <= pTextLen) {				
 				auto pCurChar = pText + pChar;
 
 				auto curChar = pCurChar [0];
 				auto nextChar = pCurChar [1];
 
-				if (curChar == L'\r' && nextChar == L'\n') {
-					newLine = true;
-					skipLine = (curWidth == 0);
-					pChar += 2;
+				//if (curChar == L'\r' && nextChar == L'\n') {
+				//	newLine = true;
+				//	//skipLine = (curWidth == 0);
+				//	skipLine = (pChar == pCharStart);
+				//	pChar += 2;
 
-					break;
-				}
+				//	break;
+				//}
 
 				pStrSizeArr [pChar] = GetCharSize(curChar);
 				auto charSz = &pStrSizeArr [pChar];
@@ -372,11 +377,32 @@ public:
 				curHeight = max(curHeight, charSz->height);
 
 				if (curWidth > rcWidth) {
-					continue;
+					break;
+				}
+
+				pChar++;
+
+				if (pChar > pTextLen) {
+					break;
+				}
+
+				if (curChar == L'\r' && nextChar == L'\n') {
+					newLine = true;
+					//skipLine = (curWidth == 0);
+					skipLine = (pChar == pCharStart);
+					pChar += 2;
+
+					break;
 				}
 
 				curWidth += nColSpace;
-				pChar++;
+
+				//if (curWidth > rcWidth) {
+				//	continue;
+				//}
+
+				//curWidth += nColSpace;
+				//pChar++;
 			}
 
 			if (!skipLine) {
@@ -387,22 +413,30 @@ public:
 					end,
 					end - pCharStart,
 					totalWidth,
+					//curWidth,
 					curHeight,
 					0,
 					totalHeight,
 					});
 
 				totalHeight += (curHeight + nRowSpace);
-				maxWidth = max((ulong)maxWidth, curWidth - nColSpace);
+				maxWidth = curWidth != 0
+					? max((ulong)maxWidth, curWidth - nColSpace)
+					: maxWidth;
+				//maxWidth = max(maxWidth, curWidth);
+				//maxWidth = max(maxWidth, totalWidth);
 			}
 		}
 
 		const auto& lastStrPos = strPos.back();
 		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
 
-		auto lastCharPos = CharPos {
-			GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
-			,GetStartPosY(totalHeight - nRowSpace, rcHeight) + lastStrPos.y + (lastCharSize->height >> 1)
+		auto lastCharPos = CharPos{
+			//GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
+			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
+			+ lastStrPos.width + (lastCharSize->width >> 1)
+			,GetStartPosY(totalHeight - nRowSpace, rcHeight)
+			+ lastStrPos.y + (lastCharSize->height >> 1)
 			,maxWidth };
 
 		return lastCharPos;
@@ -417,12 +451,13 @@ public:
 			return;
 		}
 
-		long rcWidth = pRc->right - pRc->left;
-		long rcHeight = pRc->bottom - pRc->top;
+		rcWidth = pRc->right - pRc->left;
+		rcHeight = pRc->bottom - pRc->top;
 
 		char scale = 1;
 		auto width = abs(rcWidth * scale);
-		auto height = abs(long((totalHeight - nRowSpace) * scale));
+		//auto height = abs(long((totalHeight - nRowSpace) * scale));
+		auto height = abs(totalHeight * scale);
 
 		if (this->pMemSf == nullptr
 			|| this->pMemSf->GetWidth() != rcWidth
@@ -526,7 +561,9 @@ public:
 #endif // _DEBUG
 
 			StrSize* charSz = nullptr;
-			int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
+			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
+			int x = GetStartPosX(curStrPos.width, rcWidth);
+			x -= pStrSizeArr[curStrPos.start].width / 4;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto offset = curStrPos.start + curChar;
