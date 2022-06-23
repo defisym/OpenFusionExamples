@@ -59,6 +59,10 @@ private:
 	DWORD dwDTFlags;
 
 	bool bClip = true;
+
+	size_t borderOffsetX = 0;
+	size_t borderOffsetY = 0;
+
 	int renderWidth = 0;
 	int renderHeight = 0;
 
@@ -244,6 +248,11 @@ public:
 	}
 #endif
 
+	inline void SetBorderOffset(size_t borderOffsetX, size_t borderOffsetY) {
+		this->borderOffsetX = borderOffsetX;
+		this->borderOffsetY = borderOffsetX;
+	}
+
 	inline void SetSmooth(
 		Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias
 		, Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality
@@ -311,7 +320,7 @@ public:
 		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
-	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc, size_t nRowSpace = 0, size_t nColSpace = 0) {
+	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc, int nRowSpace = 0, int nColSpace = 0) {
 		this->strPos.clear();
 
 		size_t pTextLen = wcslen(pText);
@@ -380,18 +389,18 @@ public:
 					break;
 				}
 
-				pChar++;
-
-				if (pChar > pTextLen) {
-					break;
-				}
-
 				if (curChar == L'\r' && nextChar == L'\n') {
 					newLine = true;
 					//skipLine = (curWidth == 0);
 					skipLine = (pChar == pCharStart);
 					pChar += 2;
 
+					break;
+				}
+
+				pChar++;
+
+				if (pChar > pTextLen) {
 					break;
 				}
 
@@ -421,7 +430,7 @@ public:
 
 				totalHeight += (curHeight + nRowSpace);
 				maxWidth = curWidth != 0
-					? max((ulong)maxWidth, curWidth - nColSpace)
+					? max(maxWidth, curWidth - nColSpace)
 					: maxWidth;
 				//maxWidth = max(maxWidth, curWidth);
 				//maxWidth = max(maxWidth, totalWidth);
@@ -431,7 +440,7 @@ public:
 		const auto& lastStrPos = strPos.back();
 		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
 
-		auto lastCharPos = CharPos{
+		auto lastCharPos = CharPos {
 			//GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width >> 1)
@@ -443,16 +452,15 @@ public:
 	}
 
 	inline void RenderPerChar(LPCWSTR pText, LPRECT pRc
-		, size_t nRowSpace = 0, size_t nColSpace = 0) {
+		, int nRowSpace = 0, int nColSpace = 0) {
 
 		size_t pTextLen = wcslen(pText);
 
 		if (pTextLen == 0) {
 			return;
 		}
-
-		rcWidth = pRc->right - pRc->left;
-		rcHeight = pRc->bottom - pRc->top;
+		rcWidth = pRc->right - pRc->left + this->borderOffsetX * 2;
+		rcHeight = pRc->bottom - pRc->top + this->borderOffsetY * 2;
 
 		char scale = 1;
 		auto width = abs(rcWidth * scale);
@@ -563,7 +571,7 @@ public:
 			StrSize* charSz = nullptr;
 			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
 			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr[curStrPos.start].width / 4;
+			x -= pStrSizeArr [curStrPos.start].width / 4;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto offset = curStrPos.start + curChar;
@@ -579,7 +587,11 @@ public:
 #else
 					//auto pos = y + curStrPos.y;
 					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
-					g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(curStrPos.y)), &solidBrush);
+					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(curStrPos.y)), &solidBrush);
+					auto status = g.DrawString(pCurChar, 1, &font
+						, Gdiplus::PointF((float)(x)+(float)(this->borderOffsetY)
+							, (float)(curStrPos.y) + (float)(this->borderOffsetY))
+						, &solidBrush);
 #endif
 #else
 					TextOut(hMemDc, x * scale, (y + curStrPos.y) * scale, pCurChar, 1);
@@ -683,6 +695,7 @@ public:
 		pHwaSf = nullptr;
 
 		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
+
 		pMemSf->Blit(*pHwaSf);
 #endif
 
@@ -727,7 +740,7 @@ public:
 	}
 
 	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
-		, size_t nRowSpace = 0, size_t nColSpace = 0
+		, int nRowSpace = 0, int nColSpace = 0
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
 
@@ -755,9 +768,10 @@ public:
 			auto pSf = pMemSf;
 #endif
 
-			int xPos = pRc->left;
+			int xPos = pRc->left - this->borderOffsetX;
 			//int yPos = pRc->top;
-			int yPos = pRc->top + GetStartPosY(pSf->GetHeight(), pRc->bottom - pRc->top);
+			int yPos = pRc->top - this->borderOffsetY
+				+ GetStartPosY(pSf->GetHeight(), pRc->bottom - pRc->top);
 
 #ifdef _USE_HWA
 			POINT hotSpot = { 0,0 };

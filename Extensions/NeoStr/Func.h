@@ -71,6 +71,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetClip(rdPtr->bClip
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
+		rdPtr->pNeoStr->SetBorderOffset(5, 5);
 
 		//rdPtr->pNeoStr->SetClip(false
 		//	, 65535
@@ -122,6 +123,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, edPtr->nRowSpace, edPtr->nColSpace);
 
 		neoStr.SetClip(false, 65535, 65535);
+		neoStr.SetBorderOffset(5, 5);
 
 		neoStr.SetSmooth(
 			Gdiplus::TextRenderingHint(edPtr->textRenderingHint)

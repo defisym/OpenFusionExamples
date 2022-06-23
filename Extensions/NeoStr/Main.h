@@ -66,8 +66,8 @@ typedef struct tagEDATA_V1
 	
 	bool bRowSpace;
 	bool bColSpace;
-	size_t nRowSpace;
-	size_t nColSpace;
+	int nRowSpace;
+	int nColSpace;
 
 	BYTE textRenderingHint;
 	BYTE smoothingMode;
@@ -75,7 +75,10 @@ typedef struct tagEDATA_V1
 
 	bool bClip;
 	
-	int buffer[24];
+	size_t borderOffsetX;
+	size_t borderOffsetY;
+
+	int buffer[22];
 	
 	wchar_t	pText;		// Text
 
@@ -122,8 +125,8 @@ typedef struct tagRDATA
 
 	bool bRowSpace;
 	bool bColSpace;
-	size_t nRowSpace;
-	size_t nColSpace;
+	int nRowSpace;
+	int nColSpace;
 
 	BYTE textRenderingHint;
 	BYTE smoothingMode;
@@ -132,6 +135,9 @@ typedef struct tagRDATA
 	bool bClip;
 	int oldX;
 	int oldY;
+
+	size_t borderOffsetX;
+	size_t borderOffsetY;
 
 	bool bStrChanged;
 	std::wstring* pStr;

@@ -433,6 +433,9 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bClip = true;
 
+		edPtr->borderOffsetX = 5;
+		edPtr->borderOffsetY = 5;
+
 		// Default font
 		if (mV->mvGetDefaultFont != NULL)
 			mV->mvGetDefaultFont(&edPtr->logFont, NULL, 0);		// Get default font from frame editor preferences
