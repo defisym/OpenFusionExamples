@@ -89,8 +89,8 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 }
 
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
-	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
 	//MSGBOX(L"Editor Display");
+	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
 
 	if (ps != NULL) {	// Do the following if this surface exists
 		// Create font
