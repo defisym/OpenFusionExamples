@@ -244,3 +244,30 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 	//This returns a pointer to the string for MMF.
 	return (long)pStr;
 }
+
+//inline void UpdateEditString(LPMV mV, LPEDATA edPtr, LPCWSTR pStr, LPWSTR pBuf) {
+//	// If the length is different
+//	if (wcslen(pStr) != wcslen(pBuf))
+//	{
+//		//MSGBOX(L"Text buffer");
+//
+//		// Asks MMF to reallocate the structure with the new size
+//		auto bfSz = (wcslen(pStr) + 1);
+//		DWORD dwNewSize = sizeof(EDITDATA) + bfSz * sizeof(wchar_t);
+//		LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, dwNewSize);
+//		//MSGBOX(L"Text copy");
+//
+//		// If reallocation worked
+//		if (pNewPtr != NULL)
+//		{
+//			// Copy the string
+//			edPtr = pNewPtr;
+//			wcscpy_s(pBuf, bfSz, pStr);
+//		}
+//	}
+//	else
+//	{
+//		// Same size : simply copy
+//		wcscpy_s(pBuf, wcslen(pStr) + 1, pStr);
+//	}
+//}
