@@ -90,6 +90,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
 	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
+	//MSGBOX(L"Editor Display");
 
 	if (ps != NULL) {	// Do the following if this surface exists
 		// Create font
@@ -116,6 +117,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 #ifdef _PATH
 		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
 #endif
+		//MSGBOX(L"Editor Calc");
 		neoStr.CalculateRange(&edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace);
 
@@ -125,10 +127,12 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			Gdiplus::TextRenderingHint(edPtr->textRenderingHint)
 			, Gdiplus::SmoothingMode(edPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
-
+		
+		//MSGBOX(L"Editor Render");
 		neoStr.RenderPerChar(&edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace);
-
+		
+		//MSGBOX(L"Editor Display PerChar");
 		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
 			, edPtr->nRowSpace, edPtr->nColSpace
 			, bm, bo, boParam, bAntiA);

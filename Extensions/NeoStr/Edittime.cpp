@@ -886,6 +886,7 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 
 	case PROPID_TEXT:
 	{
+		//MSGBOX(L"Text change");
 		// Gets the string
 		LPWSTR pStr = (LPWSTR)((CPropStringValue*)pValue)->GetString();
 
@@ -895,11 +896,14 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		// If the length is different
 		if (wcslen(pStr) != wcslen(&edPtr->pText))
 		{
+			//MSGBOX(L"Text buffer allocate");
+
 			// Asks MMF to reallocate the structure with the new size
 			auto bfSz = (wcslen(pStr) + 1);
 			DWORD dwNewSize = sizeof(EDITDATA) + bfSz * sizeof(wchar_t);
-			LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, dwNewSize);			
-
+			LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, dwNewSize);
+			
+			//MSGBOX(L"Text copy");
 			// If reallocation worked
 			if (pNewPtr != NULL)
 			{
@@ -910,8 +914,9 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		}
 		else
 		{
+			//MSGBOX(L"Text copy directly");
 			// Same size : simply copy
-			wcscpy_s(&edPtr->pText, wcslen(pStr), pStr);
+			wcscpy_s(&edPtr->pText, wcslen(pStr) + 1, pStr);
 		}
 	}
 	break;
