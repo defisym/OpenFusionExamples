@@ -60,8 +60,8 @@ private:
 
 	bool bClip = true;
 
-	size_t borderOffsetX = 0;
-	size_t borderOffsetY = 0;
+	unsigned short borderOffsetX = 0;
+	unsigned short borderOffsetY = 0;
 
 	int renderWidth = 0;
 	int renderHeight = 0;
@@ -248,7 +248,7 @@ public:
 	}
 #endif
 
-	inline void SetBorderOffset(size_t borderOffsetX, size_t borderOffsetY) {
+	inline void SetBorderOffset(unsigned short borderOffsetX, unsigned short borderOffsetY) {
 		this->borderOffsetX = borderOffsetX;
 		this->borderOffsetY = borderOffsetX;
 	}
@@ -459,13 +459,13 @@ public:
 		if (pTextLen == 0) {
 			return;
 		}
-		rcWidth = pRc->right - pRc->left + this->borderOffsetX * 2;
-		rcHeight = pRc->bottom - pRc->top + this->borderOffsetY * 2;
+
+		rcWidth = pRc->right - pRc->left;
+		rcHeight = pRc->bottom - pRc->top;
 
 		char scale = 1;
-		auto width = abs(rcWidth * scale);
-		//auto height = abs(long((totalHeight - nRowSpace) * scale));
-		auto height = abs(totalHeight * scale);
+		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
+		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
 		if (this->pMemSf == nullptr
 			|| this->pMemSf->GetWidth() != rcWidth
@@ -571,7 +571,7 @@ public:
 			StrSize* charSz = nullptr;
 			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
 			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr [curStrPos.start].width / 4;
+			x -= pStrSizeArr [curStrPos.start].width / 8;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto offset = curStrPos.start + curChar;
@@ -585,6 +585,8 @@ public:
 						&fontFamily, fontstyle, font.GetSize()
 						, Gdiplus::PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
 #else
+					auto WX = (float)(x)+(float)(this->borderOffsetY);
+					auto WY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
 					//auto pos = y + curStrPos.y;
 					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
 					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(curStrPos.y)), &solidBrush);

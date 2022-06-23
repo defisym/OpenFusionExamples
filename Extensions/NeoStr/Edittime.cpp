@@ -433,6 +433,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bClip = true;
 
+		// TODO
 		edPtr->borderOffsetX = 5;
 		edPtr->borderOffsetY = 5;
 

@@ -75,10 +75,10 @@ typedef struct tagEDATA_V1
 
 	bool bClip;
 	
-	size_t borderOffsetX;
-	size_t borderOffsetY;
+	unsigned short borderOffsetX;
+	unsigned short borderOffsetY;
 
-	int buffer[22];
+	int buffer[23];
 	
 	wchar_t	pText;		// Text
 
@@ -136,8 +136,8 @@ typedef struct tagRDATA
 	int oldX;
 	int oldY;
 
-	size_t borderOffsetX;
-	size_t borderOffsetY;
+	unsigned short borderOffsetX;
+	unsigned short borderOffsetY;
 
 	bool bStrChanged;
 	std::wstring* pStr;
