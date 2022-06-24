@@ -428,7 +428,12 @@ public:
 					totalHeight,
 					});
 
+#ifdef _DEBUG
+				std::wstring str(pText + pCharStart, end - pCharStart);
+#endif // _DEBUG
+
 				totalHeight += (curHeight + nRowSpace);
+
 				maxWidth = curWidth != 0
 					? max(maxWidth, curWidth - nColSpace)
 					: maxWidth;
@@ -585,8 +590,12 @@ public:
 						&fontFamily, fontstyle, font.GetSize()
 						, Gdiplus::PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
 #else
+
+#ifdef _DEBUG
 					auto WX = (float)(x)+(float)(this->borderOffsetY);
 					auto WY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
+#endif
+
 					//auto pos = y + curStrPos.y;
 					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
 					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(curStrPos.y)), &solidBrush);
@@ -773,7 +782,7 @@ public:
 			int xPos = pRc->left - this->borderOffsetX;
 			//int yPos = pRc->top;
 			int yPos = pRc->top - this->borderOffsetY
-				+ GetStartPosY(pSf->GetHeight(), pRc->bottom - pRc->top);
+				+ GetStartPosY(pSf->GetHeight() - 2 * this->borderOffsetY, pRc->bottom - pRc->top);
 
 #ifdef _USE_HWA
 			POINT hotSpot = { 0,0 };
