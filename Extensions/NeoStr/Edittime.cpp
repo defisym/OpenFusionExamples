@@ -956,6 +956,8 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	// in this case, just call this function
 	// mvInvalidateObject(mV, edPtr);
 
+	mvInvalidateObject(mV, edPtr);
+
 #endif // !defined(RUN_ONLY)
 }
 

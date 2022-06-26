@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <map>
 #include <vector>
@@ -36,6 +36,8 @@ using Gdiplus::Pen;
 using Gdiplus::LineJoin;
 using Gdiplus::SolidBrush;
 using Gdiplus::Rect;
+using Gdiplus::RectF;
+using Gdiplus::Region;
 using Gdiplus::Bitmap;
 using Gdiplus::BitmapData;
 using Gdiplus::ImageLockMode;
@@ -113,6 +115,8 @@ private:
 #ifdef _USE_HWA
 	int hwaType = 0;
 	int hwaDriver = 0;
+	bool preMulAlpha = false;
+
 	LPSURFACE pHwaSf = nullptr;
 #endif
 
@@ -214,12 +218,11 @@ public:
 
 		this->strPos.reserve(20);
 
-		// add a default char to return default value when input text is empty
-		this->GetCharSizeWithCache(L'¶');
-
 #ifdef _GDIPLUS		
 		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 #endif
+		// add a default char to return default value when input text is empty
+		this->GetCharSizeWithCache(L'露');
 	}
 
 	~NeoStr() {
@@ -242,9 +245,10 @@ public:
 	}
 
 #ifdef _USE_HWA
-	inline void SetHWA(int type, int driver) {
+	inline void SetHWA(int type, int driver,bool preMulAlpha) {
 		this->hwaType = type;
 		this->hwaDriver = driver;
+		this->preMulAlpha = preMulAlpha;
 	}
 #endif
 
@@ -284,8 +288,21 @@ public:
 	}
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
+		//Graphics g(hdc);
+		//Font font(GetDC(NULL), this->hFont);
+		//StringFormat stringFormat;
+		//RectF layoutRect(0,0,65535,65535);
+		//RectF boundRect;
+		//Region region;
+		//g.MeasureCharacterRanges(&wChar, 1, &font, layoutRect, &stringFormat, 1, &region);
+		//g.MeasureString(&wChar, 1, &font, layoutRect, &stringFormat, &boundRect);
+
 		SIZE sz;
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+
+		//GetCharABCWidths()
+		//TEXTMETRIC textMetric;
+		//GetTextMetrics(hdc, &textMetric);
 
 		return *(StrSize*)&sz;
 	}
@@ -418,14 +435,14 @@ public:
 				auto end = min(pChar, pTextLen) - 2 * newLine;
 
 				this->strPos.emplace_back(StrPos {
-					pCharStart,
-					end,
-					end - pCharStart,
-					totalWidth,
-					//curWidth,
-					curHeight,
-					0,
-					totalHeight,
+					pCharStart,			// start
+					end,				// end
+					end - pCharStart,	// length
+					totalWidth,			// width
+					//curWidth,			// width
+					curHeight,			// height;
+					0,					// x
+					totalHeight,		// y
 					});
 
 #ifdef _DEBUG
@@ -650,8 +667,6 @@ public:
 #endif
 
 #ifdef _DEBUG
-		//_SavetoClipBoard(pMemSf, false);
-
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
 		//bitmap.Save(L"F:\\Mosaic2.png", &pngClsid, NULL);
@@ -701,13 +716,25 @@ public:
 
 		ReleaseSfCoef(pMemSf, sfCoef);
 
+#ifdef _DEBUG
+		//_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
+
 #ifdef _USE_HWA
 		delete pHwaSf;
 		pHwaSf = nullptr;
 
 		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
-
+		
+		//pMemSf->DemultiplyAlpha();
+		if (this->preMulAlpha) {
+			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+		}
+		
 		pMemSf->Blit(*pHwaSf);
+
+		//pHwaSf->DemultiplyAlpha();
+		//pHwaSf->PremultiplyAlpha();
 #endif
 
 		//#define _CONSOLE

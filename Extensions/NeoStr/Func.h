@@ -29,7 +29,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
 		
-		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv);
+		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv, PreMulAlpha(rdPtr));
 #endif
 
 		reRender = true;
@@ -112,7 +112,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 #ifdef _USE_HWA
 		int sfDrv = ps->GetDriver();
 
-		neoStr.SetHWA(ST_HWA_ROMTEXTURE, sfDrv);
+		neoStr.SetHWA(ST_HWA_ROMTEXTURE, sfDrv, false);
 #endif
 
 #ifdef _PATH
