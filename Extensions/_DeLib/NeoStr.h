@@ -159,16 +159,15 @@ private:
 		//	//return 0;
 		//	return this->tm.tmInternalLeading;
 		//}
-		if (this->dwDTFlags & DT_VCENTER) {
-			return ((rcHeight - totalHeight) >> 1);
+		if (this->dwDTFlags & DT_VCENTER) {						
+			//return ((rcHeight - totalHeight) >> 1);
+			return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
 		}
 		if (this->dwDTFlags & DT_BOTTOM) {
-			//return rcHeight - totalHeight;
-			return rcHeight - totalHeight  - (this->tm.tmDescent - this->tm.tmExternalLeading);
+			return rcHeight - totalHeight;
 		}
 
-		//return 0;
-		return this->tm.tmDescent - this->tm.tmExternalLeading;
+		return 0;
 	}
 
 #ifdef _GDIPLUS
@@ -227,7 +226,7 @@ public:
 		this->hFont = hFont;
 
 		GetTextMetrics(hdc, &this->tm);
-		this->SetSpace();
+		//this->SetSpace();
 
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
@@ -273,7 +272,7 @@ public:
 	}
 
 	inline void SetSpace(int nRowSpace = 0, int nColSpace = 0) {
-		this->nRowSpace = nRowSpace + this->tm.tmInternalLeading + this->tm.tmExternalLeading;
+		this->nRowSpace = nRowSpace /*+ this->tm.tmInternalLeading + this->tm.tmExternalLeading*/;
 		this->nColSpace = nColSpace;
 	}
 
@@ -334,7 +333,7 @@ public:
 		//TEXTMETRIC textMetric;
 		//GetTextMetrics(hdc, &textMetric);
 
-		sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
+		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 
 		return *(StrSize*)&sz;
 	}
