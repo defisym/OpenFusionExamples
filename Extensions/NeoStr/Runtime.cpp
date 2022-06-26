@@ -104,6 +104,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->borderOffsetX = edPtr->borderOffsetX;
 	rdPtr->borderOffsetY = edPtr->borderOffsetY;
 
+	rdPtr->bVerticalAlignOffset = edPtr->bVerticalAlignOffset;
+
 	rdPtr->bStrChanged = true;
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
 	

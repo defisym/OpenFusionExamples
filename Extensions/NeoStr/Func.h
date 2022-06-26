@@ -28,7 +28,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 #ifdef _USE_HWA
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
-		
+
 		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv, PreMulAlpha(rdPtr));
 #endif
 
@@ -37,8 +37,8 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 	if (rdPtr->bStrChanged) {
 		rdPtr->bStrChanged = false;
-		
-		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags);
+
+		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
 		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc);
@@ -47,7 +47,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 		reRender = true;
 	}
-	
+
 	if (rdPtr->bClip		// only clip mode needs to redraw
 		&& (rdPtr->oldX != rc.left
 			|| rdPtr->oldY != rc.top)) {
@@ -76,12 +76,12 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		//rdPtr->pNeoStr->SetClip(false
 		//	, 65535
 		//	, 65535);
-		
+
 		rdPtr->pNeoStr->SetSmooth(
 			Gdiplus::TextRenderingHint(rdPtr->textRenderingHint)
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
-		
+
 		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc);
 
 		reRender = false;
@@ -118,7 +118,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
 #endif
 		//MSGBOX(L"Editor Calc");
-		neoStr.SetAlign(edPtr->dwAlignFlags);
+		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
 
 		neoStr.CalculateRange(&edPtr->pText, rc);
@@ -130,10 +130,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			Gdiplus::TextRenderingHint(edPtr->textRenderingHint)
 			, Gdiplus::SmoothingMode(edPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
-		
+
 		//MSGBOX(L"Editor Render");
 		neoStr.RenderPerChar(&edPtr->pText, rc);
-		
+
 		//MSGBOX(L"Editor Display PerChar");
 		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
 			, bm, bo, boParam, bAntiA);
@@ -182,8 +182,8 @@ inline void Display(LPRDATA rdPtr) {
 }
 
 inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
-	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;	
-	
+	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+
 	// On-screen coords
 	int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 	int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;

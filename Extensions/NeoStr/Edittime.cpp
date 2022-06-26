@@ -30,6 +30,7 @@ enum {
 	PROPID_TEXT_TITLE,
 	PROPID_TEXT,
 
+	PROPID_ALLIGN_VERTICALOFFSET,
 	PROPID_ALLIGN_ROWSPACE,
 	PROPID_ALLIGN_COLSPACE,
 
@@ -37,7 +38,7 @@ enum {
 	PROPID_OUTLINE_COLOR,
 	
 	PROPID_RENDER_TITLE,
-	PROPID_RENDER_CLIP,
+	PROPID_RENDER_CLIP,	
 	PROPID_RENDER_TextRenderingHint,
 	PROPID_RENDER_SmoothingMode,
 	PROPID_RENDER_PixelOffsetMode,
@@ -112,6 +113,7 @@ PropData Properties[] = {
 };
 
 PropData FontPorperties[] = {
+	PropData_CheckBox(PROPID_ALLIGN_VERTICALOFFSET,	IDS_PROP_ALLIGN_VERTICALOFFSET,		IDS_PROP_ALLIGN_VERTICALOFFSET_INFO),
 	//PropData_EditNumber_Check(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
 	//PropData_EditNumber_Check(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
@@ -436,6 +438,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		// TODO
 		edPtr->borderOffsetX = 5;
 		edPtr->borderOffsetY = 5;
+
+		edPtr->bVerticalAlignOffset = false;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL)
@@ -851,6 +855,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	switch (nPropID) {
 
 	// Return 0 (unchecked) or 1 (checked)
+	case PROPID_ALLIGN_VERTICALOFFSET:
+		return edPtr->bVerticalAlignOffset;
 	case PROPID_ALLIGN_ROWSPACE:
 		return edPtr->bRowSpace;
 	case PROPID_ALLIGN_COLSPACE:
@@ -923,40 +929,46 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 			wcscpy_s(&edPtr->pText, wcslen(pStr) + 1, pStr);
 		}
 	}
+	mvInvalidateObject(mV, edPtr);
 	break;
 
 	case PROPID_ALLIGN_ROWSPACE:
 		edPtr->nRowSpace = ((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_ALLIGN_COLSPACE:
 		edPtr->nColSpace = ((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 
 #ifdef _PATH
 	case PROPID_OUTLINE_PIXEL:
 		edPtr->nOutLinePixel = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_OUTLINE_COLOR:
 		edPtr->dwOutLineColor = ((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 #endif
 		
 	case PROPID_RENDER_TextRenderingHint:
 		edPtr->textRenderingHint = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_RENDER_SmoothingMode:
 		edPtr->smoothingMode = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_RENDER_PixelOffsetMode:
 		edPtr->pixelOffsetMode = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	}
 
 	// You may want to have your object redrawn in the frame editor after the modifications,
 	// in this case, just call this function
 	// mvInvalidateObject(mV, edPtr);
-
-	mvInvalidateObject(mV, edPtr);
 
 #endif // !defined(RUN_ONLY)
 }
@@ -973,6 +985,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	// -------
 	switch (nPropID)
 	{
+	case PROPID_ALLIGN_VERTICALOFFSET:
+		edPtr->bVerticalAlignOffset = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_VERTICALOFFSET, TRUE);
+		break;
 	case PROPID_ALLIGN_ROWSPACE:
 		edPtr->bRowSpace = nCheck;
 		mvInvalidateObject(mV, edPtr);

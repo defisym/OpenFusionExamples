@@ -78,7 +78,12 @@ typedef struct tagEDATA_V1
 	unsigned short borderOffsetX;
 	unsigned short borderOffsetY;
 
-	int buffer[23];
+	bool bVerticalAlignOffset;
+
+	bool unused_1;
+	short unused_2;
+
+	int buffer[22];
 	
 	wchar_t	pText;		// Text
 
@@ -138,6 +143,8 @@ typedef struct tagRDATA
 
 	unsigned short borderOffsetX;
 	unsigned short borderOffsetY;
+
+	bool bVerticalAlignOffset;
 
 	bool bStrChanged;
 	std::wstring* pStr;

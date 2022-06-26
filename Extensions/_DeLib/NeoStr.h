@@ -71,6 +71,8 @@ private:
 	unsigned short borderOffsetX = 0;
 	unsigned short borderOffsetY = 0;
 
+	bool bVerticalAlignOffset;
+
 	int renderWidth = 0;
 	int renderHeight = 0;
 
@@ -164,7 +166,13 @@ private:
 
 			//remove offset to make exactly at the center
 			//https://docs.microsoft.com/en-us/windows/win32/gdi/string-widths-and-heights
-			return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
+
+			auto verticalAlignOffset = bVerticalAlignOffset
+				? this->tm.tmInternalLeading + this->tm.tmExternalLeading
+				: 0;
+
+			//return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
+			return ((rcHeight - (totalHeight - verticalAlignOffset)) >> 1);
 		}
 		if (this->dwDTFlags & DT_BOTTOM) {
 			return rcHeight - totalHeight;
@@ -288,8 +296,9 @@ public:
 		this->pixelOffsetMode = pixelOffsetMode;
 	}
 
-	inline void SetAlign(DWORD dwAlign) {
+	inline void SetAlign(DWORD dwAlign, bool bVerticalAlignOffset) {
 		this->dwDTFlags = dwAlign | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
+		this->bVerticalAlignOffset = bVerticalAlignOffset;
 	}
 
 	inline void SetClip(bool clip, int renderWidth, int renderHeight) {

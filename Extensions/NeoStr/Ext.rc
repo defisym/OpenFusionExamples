@@ -285,6 +285,8 @@ BEGIN
     COMBO_PixelOffsetModeHighQuality                "PixelOffsetModeHighQuality"
     COMBO_PixelOffsetModeNone                       "PixelOffsetModeNone"
     COMBO_PixelOffsetModeHalf                       "PixelOffsetModeHalf"
+    IDS_PROP_ALLIGN_VERTICALOFFSET                  "Vertical Offset"
+    IDS_PROP_ALLIGN_VERTICALOFFSET_INFO             "Ignore tmInternalLeading & tmExternalLeading when align to vertical center"
 END
 
 STRINGTABLE DISCARDABLE 

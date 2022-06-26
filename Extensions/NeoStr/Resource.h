@@ -57,6 +57,8 @@
 #define	COMBO_PixelOffsetModeHighQuality                  234
 #define	COMBO_PixelOffsetModeNone                         235
 #define	COMBO_PixelOffsetModeHalf                         236
+#define	IDS_PROP_ALLIGN_VERTICALOFFSET                    237
+#define	IDS_PROP_ALLIGN_VERTICALOFFSET_INFO               238
 
 
 // 	Debug tree
