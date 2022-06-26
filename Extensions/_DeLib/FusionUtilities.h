@@ -279,3 +279,14 @@ inline bool GetAppOptions(LPRDATA rdPtr, DWORD options) {
 inline bool PreMulAlpha(LPRDATA rdPtr) {
 	return GetAppOptions(rdPtr, AH2OPT_PREMULTIPLIEDALPHA);
 }
+
+inline bool D3D11(int driver) {
+	return driver == SD_D3D11;
+}
+
+inline bool D3D11(LPRDATA rdPtr) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	int sfDrv = wSurf->GetDriver();
+
+	return D3D11(sfDrv);
+}
