@@ -39,9 +39,9 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = false;
 		
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags);
+		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
-		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc
-			, rdPtr->nRowSpace, rdPtr->nColSpace);
+		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth };
 
@@ -82,8 +82,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 		
-		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc
-			, rdPtr->nRowSpace, rdPtr->nColSpace);
+		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc);
 
 		reRender = false;
 	}
@@ -119,8 +118,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
 #endif
 		//MSGBOX(L"Editor Calc");
-		neoStr.CalculateRange(&edPtr->pText, rc
-			, edPtr->nRowSpace, edPtr->nColSpace);
+		neoStr.SetAlign(edPtr->dwAlignFlags);
+		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
+
+		neoStr.CalculateRange(&edPtr->pText, rc);
 
 		neoStr.SetClip(false, 65535, 65535);
 		neoStr.SetBorderOffset(5, 5);
@@ -131,12 +132,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
 		
 		//MSGBOX(L"Editor Render");
-		neoStr.RenderPerChar(&edPtr->pText, rc
-			, edPtr->nRowSpace, edPtr->nColSpace);
+		neoStr.RenderPerChar(&edPtr->pText, rc);
 		
 		//MSGBOX(L"Editor Display PerChar");
 		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
-			, edPtr->nRowSpace, edPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
 
 		// Delete font
@@ -176,7 +175,6 @@ inline void Display(LPRDATA rdPtr) {
 #endif
 
 		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
-			, rdPtr->nRowSpace, rdPtr->nColSpace
 			, bm, bo, boParam, bAntiA);
 
 		rdPtr->bStrChanged = false;

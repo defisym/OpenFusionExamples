@@ -37,6 +37,7 @@ using Gdiplus::LineJoin;
 using Gdiplus::SolidBrush;
 using Gdiplus::Rect;
 using Gdiplus::RectF;
+using Gdiplus::PointF;
 using Gdiplus::Region;
 using Gdiplus::Bitmap;
 using Gdiplus::BitmapData;
@@ -56,7 +57,12 @@ class NeoStr {
 private:
 	HDC hdc;
 	COLORREF dwTextColor;
+	
 	HFONT hFont;
+
+	TEXTMETRIC tm;
+	int nRowSpace = 0;
+	int nColSpace = 0;
 
 	DWORD dwDTFlags;
 
@@ -110,6 +116,8 @@ private:
 	long totalWidth = 0;
 	long totalHeight = 0;
 
+	long startY = 0;
+
 	LPSURFACE pMemSf = nullptr;
 
 #ifdef _USE_HWA
@@ -132,9 +140,9 @@ private:
 
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
-		if (this->dwDTFlags & DT_LEFT) {
-			return 0;
-		}
+		//if (this->dwDTFlags & DT_LEFT) {
+		//	return 0;
+		//}
 		if (this->dwDTFlags & DT_CENTER) {
 			return ((rcWidth - totalWidth) >> 1);
 		}
@@ -147,17 +155,20 @@ private:
 
 	inline int GetStartPosY(long totalHeight, long rcHeight) const {
 		//	DT_TOP | DT_VCENTER | DT_BOTTOM
-		if (this->dwDTFlags & DT_TOP) {
-			return 0;
-		}
+		//if (this->dwDTFlags & DT_TOP) {
+		//	//return 0;
+		//	return this->tm.tmInternalLeading;
+		//}
 		if (this->dwDTFlags & DT_VCENTER) {
 			return ((rcHeight - totalHeight) >> 1);
 		}
 		if (this->dwDTFlags & DT_BOTTOM) {
-			return rcHeight - totalHeight;
+			//return rcHeight - totalHeight;
+			return rcHeight - totalHeight  - (this->tm.tmDescent - this->tm.tmExternalLeading);
 		}
 
-		return 0;
+		//return 0;
+		return this->tm.tmDescent - this->tm.tmExternalLeading;
 	}
 
 #ifdef _GDIPLUS
@@ -214,6 +225,10 @@ public:
 #endif
 
 		this->hFont = hFont;
+
+		GetTextMetrics(hdc, &this->tm);
+		this->SetSpace();
+
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
 		this->strPos.reserve(20);
@@ -257,6 +272,11 @@ public:
 		this->borderOffsetY = borderOffsetX;
 	}
 
+	inline void SetSpace(int nRowSpace = 0, int nColSpace = 0) {
+		this->nRowSpace = nRowSpace + this->tm.tmInternalLeading + this->tm.tmExternalLeading;
+		this->nColSpace = nColSpace;
+	}
+
 	inline void SetSmooth(
 		Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias
 		, Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality
@@ -290,6 +310,10 @@ public:
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
 		//Graphics g(hdc);
 		//Font font(GetDC(NULL), this->hFont);
+		//PointF origin(0, 0);
+		//RectF boundRect;
+		//g.MeasureString(&wChar, 1, &font, origin, &boundRect);
+
 		//StringFormat stringFormat;
 		//RectF layoutRect(0,0,65535,65535);
 		//RectF boundRect;
@@ -300,9 +324,17 @@ public:
 		SIZE sz;
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
+		//TEXTMETRIC tm;
+		//GetTextMetrics(hdc, &tm);
+
+		//ABC abc;
+		//GetCharABCWidths(hdc, wChar, wChar, &abc);
+
 		//GetCharABCWidths()
 		//TEXTMETRIC textMetric;
 		//GetTextMetrics(hdc, &textMetric);
+
+		sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 
 		return *(StrSize*)&sz;
 	}
@@ -315,7 +347,7 @@ public:
 		}
 		else {
 			auto sz = GetCharSizeRaw(wChar);
-			charSzCache [wChar] = sz;
+			charSzCache[wChar] = sz;
 
 			return sz;
 		}
@@ -334,10 +366,10 @@ public:
 			, this->dwDTFlags | DT_CALCRECT
 		);
 
-		return StrSize { change.right - change.left,change.bottom - change.top };
+		return StrSize{ change.right - change.left,change.bottom - change.top };
 	}
 
-	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc, int nRowSpace = 0, int nColSpace = 0) {
+	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc) {
 		this->strPos.clear();
 
 		size_t pTextLen = wcslen(pText);
@@ -360,6 +392,7 @@ public:
 
 		this->totalWidth = 0;
 		this->totalHeight = 0;
+		//this->totalHeight = this->tm.tmInternalLeading;
 
 		size_t pCharStart = 0;
 		long maxWidth = 0;
@@ -462,20 +495,19 @@ public:
 		const auto& lastStrPos = strPos.back();
 		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
 
+		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
+
 		auto lastCharPos = CharPos {
 			//GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width >> 1)
-			,GetStartPosY(totalHeight - nRowSpace, rcHeight)
-			+ lastStrPos.y + (lastCharSize->height >> 1)
+			,startY + lastStrPos.y + (lastCharSize->height >> 1)
 			,maxWidth };
 
 		return lastCharPos;
 	}
 
-	inline void RenderPerChar(LPCWSTR pText, LPRECT pRc
-		, int nRowSpace = 0, int nColSpace = 0) {
-
+	inline void RenderPerChar(LPCWSTR pText, LPRECT pRc) {
 		size_t pTextLen = wcslen(pText);
 
 		if (pTextLen == 0) {
@@ -566,7 +598,6 @@ public:
 #endif
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight, };
-		int y = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
 		auto clip = [this, pRc, displayRc] (int startX, int startY, const StrSize* charSz)->bool {
 			if (this->bClip == false) {
@@ -600,12 +631,12 @@ public:
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr [offset];
 
-				if (!clip(x, (y + curStrPos.y), charSz)) {
+				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
 #ifdef _GDIPLUS	
 #ifdef  _PATH
 					txtPath.AddString(pCurChar, 1,
 						&fontFamily, fontstyle, font.GetSize()
-						, Gdiplus::PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
+						, PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
 #else
 
 #ifdef _DEBUG
@@ -614,10 +645,10 @@ public:
 #endif
 
 					//auto pos = y + curStrPos.y;
-					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
-					//g.DrawString(pCurChar, 1, &font, Gdiplus::PointF((float)x, (float)(curStrPos.y)), &solidBrush);
+					//g.DrawString(pCurChar, 1, &font, PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
+					//g.DrawString(pCurChar, 1, &font, PointF((float)x, (float)(curStrPos.y)), &solidBrush);
 					auto status = g.DrawString(pCurChar, 1, &font
-						, Gdiplus::PointF((float)(x)+(float)(this->borderOffsetY)
+						, PointF((float)(x)+(float)(this->borderOffsetY)
 							, (float)(curStrPos.y) + (float)(this->borderOffsetY))
 						, &solidBrush);
 #endif
@@ -669,8 +700,7 @@ public:
 #ifdef _DEBUG
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
-		//bitmap.Save(L"F:\\Mosaic2.png", &pngClsid, NULL);
-
+		//bitmap.Save(L"F:\\NeoStr.png", &pngClsid, NULL);
 #endif // _DEBUG
 
 #ifdef _DRAWTODC
@@ -777,8 +807,7 @@ public:
 		return;
 	}
 
-	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
-		, int nRowSpace = 0, int nColSpace = 0
+	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc		
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
 
@@ -808,8 +837,7 @@ public:
 
 			int xPos = pRc->left - this->borderOffsetX;
 			//int yPos = pRc->top;
-			int yPos = pRc->top - this->borderOffsetY
-				+ GetStartPosY(pSf->GetHeight() - 2 * this->borderOffsetY, pRc->bottom - pRc->top);
+			int yPos = pRc->top - this->borderOffsetY + this->startY;
 
 #ifdef _USE_HWA
 			POINT hotSpot = { 0,0 };
