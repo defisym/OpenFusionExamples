@@ -271,3 +271,11 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 //		wcscpy_s(pBuf, wcslen(pStr) + 1, pStr);
 //	}
 //}
+
+inline bool GetAppOptions(LPRDATA rdPtr, DWORD options) {
+	return rdPtr->rHo.hoAdRunHeader->rhApp->m_pHdr2->dwOptions & options;
+}
+
+inline bool PreMulAlpha(LPRDATA rdPtr) {
+	return GetAppOptions(rdPtr, AH2OPT_PREMULTIPLIEDALPHA);
+}
