@@ -57,7 +57,7 @@ class NeoStr {
 private:
 	HDC hdc;
 	COLORREF dwTextColor;
-	
+
 	HFONT hFont;
 
 	TEXTMETRIC tm;
@@ -159,8 +159,11 @@ private:
 		//	//return 0;
 		//	return this->tm.tmInternalLeading;
 		//}
-		if (this->dwDTFlags & DT_VCENTER) {						
+		if (this->dwDTFlags & DT_VCENTER) {
 			//return ((rcHeight - totalHeight) >> 1);
+
+			//remove offset to make exactly at the center
+			//https://docs.microsoft.com/en-us/windows/win32/gdi/string-widths-and-heights
 			return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
 		}
 		if (this->dwDTFlags & DT_BOTTOM) {
@@ -259,7 +262,7 @@ public:
 	}
 
 #ifdef _USE_HWA
-	inline void SetHWA(int type, int driver,bool preMulAlpha) {
+	inline void SetHWA(int type, int driver, bool preMulAlpha) {
 		this->hwaType = type;
 		this->hwaDriver = driver;
 		this->preMulAlpha = preMulAlpha;
@@ -346,7 +349,7 @@ public:
 		}
 		else {
 			auto sz = GetCharSizeRaw(wChar);
-			charSzCache[wChar] = sz;
+			charSzCache [wChar] = sz;
 
 			return sz;
 		}
@@ -365,7 +368,7 @@ public:
 			, this->dwDTFlags | DT_CALCRECT
 		);
 
-		return StrSize{ change.right - change.left,change.bottom - change.top };
+		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
 	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc) {
@@ -754,12 +757,12 @@ public:
 		pHwaSf = nullptr;
 
 		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
-		
+
 		//pMemSf->DemultiplyAlpha();
 		if (this->preMulAlpha) {
 			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
 		}
-		
+
 		pMemSf->Blit(*pHwaSf);
 
 		//pHwaSf->DemultiplyAlpha();
@@ -806,7 +809,7 @@ public:
 		return;
 	}
 
-	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc		
+	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
 
