@@ -297,6 +297,7 @@ long WINAPI DLLExport IsCommandLineHasParam(LPRDATA rdPtr, long param1, long par
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
+		e.get_name();
 		//return app.exit(e);
 	}
 
@@ -611,6 +612,10 @@ short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) 
 		rdPtr->img->Create(rdPtr->swidth, rdPtr->sheight, proto);
 
 		BltToSurface(hdcWindow, FrameWidth, FrameHeight, rdPtr->img);
+
+#ifdef _DEBUG
+		_SavetoClipBoard(rdPtr->img, false);
+#endif
 
 		// Redraw object
 		ReDisplay(rdPtr);
@@ -1527,6 +1532,7 @@ long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
+		e.get_name();
 		//return app.exit(e);
 	}
 
