@@ -253,6 +253,7 @@ BEGIN
         POPUP "Misc."
         BEGIN
             MENUITEM "Save Base64 to Image",      IDMN_ACTION_SB642I         
+            MENUITEM "Embed Font",      IDMN_ACTION_EF       
         END
         MENUITEM SEPARATOR
     END
@@ -543,6 +544,9 @@ BEGIN
     PARAM_B64 "Base64 String"
 
     M_ACTION_SWS "Set Window Size to [ %0 x %1 ]"
+    
+    M_ACTION_EF "Embed Font %0"
+    PARA_ACTION_EF "Font File Path"
 END
 
 //Expression

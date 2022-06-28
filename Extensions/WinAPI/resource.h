@@ -60,6 +60,7 @@
 #define M_ACTION_GFL					5098
 #define M_ACTION_SB642I		    	    5099
 #define M_ACTION_SWS		    	    5100
+#define M_ACTION_EF 		    	    5101
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -85,6 +86,7 @@
 #define PARA_ACTION_SDFN				5579
 #define PARA_ACTION_GFL					5580
 #define PARAM_B64   					5581
+#define PARA_ACTION_EF 					5582
 #define M_CONDITION_INAP                6000
 #define M_CONDITION_IML                 6010
 #define M_CONDITION_RKS                 6020
@@ -189,6 +191,7 @@
 #define IDMN_ACTION_GFL					25428
 #define IDMN_ACTION_SB642I		    	25429
 #define IDMN_ACTION_SWS 		    	25430
+#define IDMN_ACTION_EF   		    	25431
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020

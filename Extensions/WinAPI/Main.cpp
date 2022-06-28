@@ -89,6 +89,9 @@ short actionsInfos[] =
 	IDMN_ACTION_SB642I,M_ACTION_SB642I,ACT_ACTION_SB642I,0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_B64,PARA_ACTION_WINDOW_BFA_FILEPATH,
 
 	IDMN_ACTION_SWS,M_ACTION_SWS,ACT_ACTION_SWS,0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_ACTION_WINDOW_BFA_WIDTH,PARA_ACTION_WINDOW_BFA_HEIGHT,
+
+	IDMN_ACTION_EF,M_ACTION_EF,ACT_ACTION_EF,0, 1,PARAM_EXPSTRING,PARA_ACTION_EF,
+
 };
 
 // Definitions of parameters for each expression
@@ -1165,6 +1168,16 @@ short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
+// https://docs.microsoft.com/zh-cn/windows/win32/gdi/font-installation-and-deletion
+// https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-addfontresourceexa
+short WINAPI DLLExport EmbedFont(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FilePath = GetFullPathNameStr((LPCTSTR)CNC_GetStringParameter(rdPtr));
+	
+	AddFontResourceEx(FilePath.c_str(), FR_PRIVATE, 0);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1625,6 +1638,8 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	SaveBase64ImgToFile,
 
 	SetSize,
+
+	EmbedFont,
 
 	//结尾必定是零
 	0

@@ -72,7 +72,9 @@
 
 #define ACT_ACTION_SWS				36
 
-#define	ACT_LAST					37
+#define ACT_ACTION_EF				37
+
+#define	ACT_LAST					38
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
