@@ -456,10 +456,12 @@ COLORREF WINAPI GetRunObjectTextColor(LPRDATA rdPtr)
 // 
 void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 {
-	rdPtr->dwColor = rgb;
-	rdPtr->reRender = true;
-	InvalidateRect(rdPtr->hWnd, NULL, TRUE);
-	callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+	if (rdPtr->dwColor != rgb) {
+		rdPtr->dwColor = rgb;
+		rdPtr->reRender = true;
+		InvalidateRect(rdPtr->hWnd, NULL, TRUE);
+		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+	}
 }
 
 
