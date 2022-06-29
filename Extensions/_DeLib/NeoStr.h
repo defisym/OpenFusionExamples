@@ -228,11 +228,7 @@ public:
 		this->hdc = GetDC(NULL);
 		SelectObject(this->hdc, hFont);
 
-#ifdef _GDIPLUS
-		this->dwTextColor = color;
-#else
-		this->dwTextColor = BlackEscape(color);
-#endif
+		this->SetColor(color);
 
 		this->hFont = hFont;
 
@@ -276,6 +272,14 @@ public:
 		this->preMulAlpha = preMulAlpha;
 	}
 #endif
+
+	inline void SetColor(DWORD color) {
+#ifdef _GDIPLUS
+		this->dwTextColor = color;
+#else
+		this->dwTextColor = BlackEscape(color);
+#endif
+	}
 
 	inline void SetBorderOffset(unsigned short borderOffsetX, unsigned short borderOffsetY) {
 		this->borderOffsetX = borderOffsetX;

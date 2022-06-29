@@ -17,10 +17,9 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
-	bool reRender = false;
-
 	if (rdPtr->bFontChanged) {
 		rdPtr->bFontChanged = false;
+		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
 		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
@@ -32,7 +31,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv, PreMulAlpha(rdPtr));
 #endif
 
-		reRender = true;
+		rdPtr->reRender = true;
 	}
 
 	if (rdPtr->bStrChanged) {
@@ -45,7 +44,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth };
 
-		reRender = true;
+		rdPtr->reRender = true;
 	}
 
 	if (rdPtr->bClip		// only clip mode needs to redraw
@@ -54,10 +53,10 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->oldX = rc.left;
 		rdPtr->oldY = rc.top;
 
-		reRender = true;
+		rdPtr->reRender = true;
 	}
 
-	if (reRender) {
+	if (rdPtr->reRender) {
 		////App Size
 		//rhPtr->rhApp->m_hdr.gaCxWin;
 		//rhPtr->rhApp->m_hdr.gaCyWin;
@@ -67,6 +66,8 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 		//rhPtr->rhFrame->m_hdr.leHeight;
 
 		LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+		rdPtr->pNeoStr->SetColor(rdPtr->dwColor);
 
 		rdPtr->pNeoStr->SetClip(rdPtr->bClip
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
@@ -84,7 +85,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc);
 
-		reRender = false;
+		rdPtr->reRender = false;
 	}
 }
 
@@ -122,6 +123,8 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
 
 		neoStr.CalculateRange(&edPtr->pText, rc);
+
+		neoStr.SetColor(edPtr->dwColor);
 
 		neoStr.SetClip(false, 65535, 65535);
 		neoStr.SetBorderOffset(5, 5);

@@ -146,6 +146,7 @@ typedef struct tagRDATA
 
 	bool bVerticalAlignOffset;
 
+	bool reRender;
 	bool bStrChanged;
 	std::wstring* pStr;
 

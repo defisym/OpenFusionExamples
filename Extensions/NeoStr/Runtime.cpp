@@ -106,6 +106,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->bVerticalAlignOffset = edPtr->bVerticalAlignOffset;
 
+	rdPtr->reRender = true;
+
 	rdPtr->bStrChanged = true;
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
 	
@@ -455,7 +457,7 @@ COLORREF WINAPI GetRunObjectTextColor(LPRDATA rdPtr)
 void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 {
 	rdPtr->dwColor = rgb;
-	rdPtr->bFontChanged = true;
+	rdPtr->reRender = true;
 	InvalidateRect(rdPtr->hWnd, NULL, TRUE);
 	callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
