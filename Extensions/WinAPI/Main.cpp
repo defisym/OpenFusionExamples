@@ -152,6 +152,8 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_L2W, M_EXPRESSION_L2W, EXP_EXPRESSION_L2W, EXPFLAG_STRING, 1, EXPPARAM_LONG, PARA_EXPRESSION_L2W,
 
 	IDMN_EXPRESSION_GCLI, M_EXPRESSION_GCLI, EXP_EXPRESSION_GCLI, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
+
+	IDMN_EXPRESSION_C2B, M_EXPRESSION_C2B, EXP_EXPRESSION_C2B, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_C2B,
 };
 
 // ============================================================================
@@ -1552,6 +1554,10 @@ long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
 	return ReturnString(rdPtr, ConvertStrToWStr(coef));
 }
 
+long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
+	return bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1695,6 +1701,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	LongToWChar,
 
 	GetCommandLineByCLI,
+
+	CastToBool,
 
 0
 };

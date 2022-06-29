@@ -135,6 +135,7 @@
 #define	M_EXPRESSION_W2L			    7110
 #define	M_EXPRESSION_L2W			    7111
 #define	M_EXPRESSION_GCLI			    7112
+#define	M_EXPRESSION_C2B			    7113
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -148,6 +149,7 @@
 #define PARA_EXPRESSION_L2W             7518
 #define PARA_EXPRESSION_CLI             7519
 #define PARA_EXPRESSION_PARAM           7520
+#define PARA_EXPRESSION_C2B				7521
 #define MN_ACTIONS                      20000
 #define MN_CONDITIONS                   20001
 #define MN_EXPRESSIONS                  20002
@@ -232,6 +234,7 @@
 #define	IDMN_EXPRESSION_W2L			    27100
 #define	IDMN_EXPRESSION_L2W			    27101
 #define	IDMN_EXPRESSION_GCLI			27102
+#define	IDMN_EXPRESSION_C2B				27103
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

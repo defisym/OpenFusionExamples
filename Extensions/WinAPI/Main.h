@@ -128,7 +128,9 @@
 
 #define	EXP_EXPRESSION_GCLI			29
 
-#define	EXP_LAST                    30
+#define	EXP_EXPRESSION_C2B			30
+
+#define	EXP_LAST                    31
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

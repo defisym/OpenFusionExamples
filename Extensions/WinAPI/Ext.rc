@@ -350,6 +350,8 @@ BEGIN
             MENUITEM SEPARATOR            
             MENUITEM "WChar To Long",      IDMN_EXPRESSION_W2L          
             MENUITEM "Long To WChar",      IDMN_EXPRESSION_L2W          
+            MENUITEM SEPARATOR
+            MENUITEM "Cast To Bool", IDMN_EXPRESSION_C2B
             MENUITEM SEPARATOR            
             MENUITEM "Get Command Line Param",      IDMN_EXPRESSION_GCLI
         END
@@ -650,6 +652,13 @@ BEGIN
     M_EXPRESSION_GCLI "GCLI$ ("
     PARA_EXPRESSION_CLI "CLI"
     PARA_EXPRESSION_PARAM "Param"
+END
+
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_C2B "bool ("
+    PARA_EXPRESSION_C2B "Value"
 END
 
 //Conditions
