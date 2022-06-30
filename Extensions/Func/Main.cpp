@@ -216,7 +216,6 @@ short WINAPI DLLExport SetTempParamStr(LPRDATA rdPtr, long param1, long param2) 
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	
 	TempParam(FuncName, ParamName) = Data_Str(Param);
 
 	return 0;

@@ -503,4 +503,22 @@ public:
 			}
 		}
 	}
+
+	//Save scope
+	inline auto SaveScope() {
+		auto rhEvCount = rhPtr->rh2.rh2EventCount;
+
+		auto pOiL = rhPtr->rhOiList;
+		auto oiLSz = rhPtr->rhNumberOi;
+
+		for (int i = 0; i < oiLSz; i++) {
+			auto pCurOi = GetLPOIL(i);
+
+			if (pCurOi == nullptr) {
+				continue;
+			}
+
+			auto evCount = pCurOi->oilEventCount;
+		}
+	}
 };

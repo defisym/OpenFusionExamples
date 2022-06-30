@@ -66,8 +66,9 @@ typedef STRING* LPSTRING;
 
 #define GetParam(Pos) rdPtr->FuncParamStack->back().at(Pos)
 
-#define HasTempParam(FuncName, ParamName) (((*rdPtr->FuncTempParamStack).count(FuncName) != 0)&&((*rdPtr->FuncTempParamStack)[FuncName].count(ParamName) != 0))
-#define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParamStack)[FuncName][ParamName]
+#define HasTempParam(FuncName, ParamName) (((*rdPtr->FuncTempParamStack).count(GetFuncNameWithRecursiveID(FuncName)) != 0)	\
+								&&((*rdPtr->FuncTempParamStack)[GetFuncNameWithRecursiveID(FuncName)].count(ParamName) != 0))
+#define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParamStack)[GetFuncNameWithRecursiveID(FuncName)][ParamName]
 
 #define Return(Pos) rdPtr->FuncReturn->at(Pos)
 

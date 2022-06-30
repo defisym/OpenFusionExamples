@@ -50,7 +50,7 @@ Fusion only maintain one scope list, that is to say, if you jump out an event, t
 - Temp Param
   - *Please use this inside a func event to avoid unexpected behaviour*
   - *You can set several temp params, and retrieve then for calculation, etc*
-  - *Temp params are saved in a map, so recursive funcs share the same temp param. That is to say, temp params of a func is not separated as `C/C++` if you call it recursively, use normal param to pass temp values in this case*
+  - ~~*Temp params are saved in a map, so recursive funcs share the same temp param. That is to say, temp params of a func is not separated as `C/C++` if you call it recursively, use normal param to pass temp values in this case*~~
   - *all temp params of current func will be erased after func return (`On Func` event finish) if it's recursive index is 1*
 
   - Set Func's Temp Param (value)

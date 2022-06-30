@@ -86,10 +86,22 @@ inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 
 #define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
 
+inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, std::wstring& funcName) {
+	auto& it = rdPtr->RecursiveIndex->find(funcName);
+
+	std::wstring suffix = it == rdPtr->RecursiveIndex->end() ? _itos(0) : _itos(it->second);
+
+	return std::wstring(L"_") + suffix;
+}
+
+#define GetFuncNameWithRecursiveID(funcName) GetFuncNameWithRecursiveID(rdPtr, funcName)
+
 inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Param) {
 	rdPtr->FuncNameStack->emplace_back(FuncName);
+
 	rdPtr->FuncParamStack->emplace_back();
 	UpdateParam(rdPtr, Param);
+
 	rdPtr->FuncReturn->clear();
 
 	(*rdPtr->RecursiveIndex)[FuncName] += 1;
@@ -113,8 +125,9 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 
 	if ((*rdPtr->RecursiveIndex)[FuncName] == 0) {
 		rdPtr->RecursiveIndex->erase(FuncName);
-		rdPtr->FuncTempParamStack->erase(FuncName);
 	}
+
+	rdPtr->FuncTempParamStack->erase(GetFuncNameWithRecursiveID(FuncName));
 }
 
 #define CallFuncCore(FuncName, Param) CallFuncCore(rdPtr, FuncName, Param)
