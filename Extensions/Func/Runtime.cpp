@@ -94,7 +94,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pOnItObjName = new std::wstring;
 	rdPtr->pObject = nullptr;
 
+#ifdef _DEBUG
 	rdPtr->pSelect->SaveScope();
+#endif
 
 	// No errors
 	return 0;
