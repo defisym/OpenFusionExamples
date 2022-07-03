@@ -416,8 +416,8 @@ public:
 		bool bNegRowSpace = nRowSpace < 0;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
-			bool newLine = false;
-			bool skipLine = false;
+			bool newLine = false;		// newline
+			bool skipLine = false;		// current line only has /r/n
 
 			long curWidth = 0;
 			long curHeight = 0;
@@ -497,14 +497,15 @@ public:
 				std::wstring str(pText + pCharStart, end - pCharStart);
 #endif // _DEBUG
 
-				totalHeight += (curHeight + nRowSpace);
-
 				maxWidth = curWidth != 0
 					? max(maxWidth, curWidth - nColSpace)
 					: maxWidth;
 				//maxWidth = max(maxWidth, curWidth);
 				//maxWidth = max(maxWidth, totalWidth);
 			}
+
+			// empty line (skipLine == true) also need to add height
+			totalHeight += (curHeight + nRowSpace);
 		}
 
 		const auto& lastStrPos = strPos.back();
