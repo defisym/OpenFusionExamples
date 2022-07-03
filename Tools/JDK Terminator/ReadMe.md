@@ -6,14 +6,14 @@ Fusion will use JDK to build Android applications, but unfortunately, sometimes 
 
 ## How
 
-Set `$JDKPath` in `JDK_Terminator.ps1` to JDK path, exactly the same as you set in fusion. (Tools->Preference->General->Exporters->Pathname of the JDK directory)
+~~Set `$JDKPath` in `JDK_Terminator.ps1` to JDK path, exactly the same as you set in fusion. (Tools->Preference->General->Exporters->Pathname of the JDK directory)~~
 
-e.g., JDK path is `C:\AndroidStudio\jre`, then you should set `$JDKPath` in the first line of script to it.
+~~e.g., JDK path is `C:\AndroidStudio\jre`, then you should set `$JDKPath` in the first line of script to it.~~
 
-```PowerShell
-# Set JDK path
-$JDKPath = "C:\AndroidStudio\jre"
+Nothing, just run the exe, it will readFfusion config to find the JDK path.
 
-# Process
-...
-```
+Put it into Fusion's tools bar is recommended.
+
+![Tools](media/Tools.png)
+
+Compiled by [PS2EXE](https://github.com/MScholtes/PS2EXE)
