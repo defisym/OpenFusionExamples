@@ -138,6 +138,9 @@
 #define IDMN_EXPRESSION_GLCY				27004
 #define IDMN_EXPRESSION_GMW 				27005
 
+#define IDMN_EXPRESSION_GHA 				27006
+#define IDMN_EXPRESSION_GVA 				27007
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -145,7 +148,10 @@
 
 #define M_EXPRESSION_GLCX				    7003
 #define M_EXPRESSION_GLCY				    7004
-#define M_EXPRESSION_GMW				    7006
+#define M_EXPRESSION_GMW				    7005
+
+#define M_EXPRESSION_GHA				    7006
+#define M_EXPRESSION_GVA				    7007
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

@@ -163,8 +163,12 @@ BEGIN
         MENUITEM "Get Row Space", IDMN_EXPRESSION_GRS
         MENUITEM "Get Col Space", IDMN_EXPRESSION_GCS
         MENUITEM SEPARATOR
+        MENUITEM "Get Horizontal Align", IDMN_EXPRESSION_GHA
+        MENUITEM "Get Vertical Align", IDMN_EXPRESSION_GVA
+        MENUITEM SEPARATOR
         MENUITEM "Get Last Char X", IDMN_EXPRESSION_GLCX
         MENUITEM "Get Last Char Y", IDMN_EXPRESSION_GLCY
+        MENUITEM SEPARATOR
         MENUITEM "Get Max Width", IDMN_EXPRESSION_GMW
         MENUITEM SEPARATOR
     END
@@ -333,6 +337,9 @@ BEGIN
     M_EXPRESSION_GSTR		"DisplayStr$("
     M_EXPRESSION_GRS		"RowSpace("
     M_EXPRESSION_GCS		"ColSpace("
+
+    M_EXPRESSION_GHA		"HorizontalAlign("
+    M_EXPRESSION_GVA		"VerticalAlign("
 
     M_EXPRESSION_GLCX		"LastCharX("
     M_EXPRESSION_GLCY		"LastCharY("

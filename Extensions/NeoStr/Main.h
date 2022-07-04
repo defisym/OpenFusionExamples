@@ -37,7 +37,10 @@
 #define EXP_EXPRESSION_GLCY					4
 #define EXP_EXPRESSION_GMW					5
 
-#define	EXP_LAST                    		6
+#define EXP_EXPRESSION_GHA					6
+#define EXP_EXPRESSION_GVA					7
+
+#define	EXP_LAST                    		8
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

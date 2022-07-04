@@ -50,6 +50,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GLCX, M_EXPRESSION_GLCX, EXP_EXPRESSION_GLCX, 0, 0,
 		IDMN_EXPRESSION_GLCY, M_EXPRESSION_GLCY, EXP_EXPRESSION_GLCY, 0, 0,
 		IDMN_EXPRESSION_GMW, M_EXPRESSION_GMW, EXP_EXPRESSION_GMW, 0, 0,
+
+		IDMN_EXPRESSION_GHA, M_EXPRESSION_GHA, EXP_EXPRESSION_GHA, 0, 0,
+		IDMN_EXPRESSION_GVA, M_EXPRESSION_GVA, EXP_EXPRESSION_GVA, 0, 0,
 		};
 
 
@@ -207,6 +210,28 @@ long WINAPI DLLExport Expression_GetMaxWidth(LPRDATA rdPtr, long param1) {
 	return UpdateLastCharPos(rdPtr).maxWidth;
 }
 
+long WINAPI DLLExport Expression_GetHorizontalAlign(LPRDATA rdPtr, long param1) {
+	if (rdPtr->dwAlignFlags & DT_CENTER) {
+		return DT_CENTER;
+	}
+	if (rdPtr->dwAlignFlags & DT_RIGHT) {
+		return DT_RIGHT;
+	}
+
+	return DT_LEFT;
+}
+
+long WINAPI DLLExport Expression_GetVerticalAlign(LPRDATA rdPtr, long param1) {
+	if (rdPtr->dwAlignFlags & DT_VCENTER) {
+		return DT_VCENTER;
+	}
+	if (rdPtr->dwAlignFlags & DT_BOTTOM) {
+		return DT_BOTTOM;
+	}
+
+	return DT_TOP;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -246,6 +271,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetLastCharX,
 			Expression_GetLastCharY,
 			Expression_GetMaxWidth,
+
+			Expression_GetHorizontalAlign,
+			Expression_GetVerticalAlign,
 			
 			0
 			};
