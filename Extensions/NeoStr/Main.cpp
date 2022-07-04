@@ -53,6 +53,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GHA, M_EXPRESSION_GHA, EXP_EXPRESSION_GHA, 0, 0,
 		IDMN_EXPRESSION_GVA, M_EXPRESSION_GVA, EXP_EXPRESSION_GVA, 0, 0,
+
+		IDMN_EXPRESSION_GTH, M_EXPRESSION_GTH, EXP_EXPRESSION_GTH, 0, 0,
+
 		};
 
 
@@ -210,6 +213,10 @@ long WINAPI DLLExport Expression_GetMaxWidth(LPRDATA rdPtr, long param1) {
 	return UpdateLastCharPos(rdPtr).maxWidth;
 }
 
+long WINAPI DLLExport Expression_GetTotalHeight(LPRDATA rdPtr, long param1) {
+	return UpdateLastCharPos(rdPtr).totalHeight;
+}
+
 long WINAPI DLLExport Expression_GetHorizontalAlign(LPRDATA rdPtr, long param1) {
 	if (rdPtr->dwAlignFlags & DT_CENTER) {
 		return DT_CENTER;
@@ -274,6 +281,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetHorizontalAlign,
 			Expression_GetVerticalAlign,
+
+			Expression_GetTotalHeight,
 			
 			0
 			};

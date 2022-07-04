@@ -42,7 +42,7 @@ inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
 
 		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc);
 
-		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth };
+		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
 
 		rdPtr->reRender = true;
 	}

@@ -36,6 +36,7 @@ struct CharPos {
 	long x;
 	long y;
 	long maxWidth;
+	long totalHeight;
 };
 
 // Specific to this cox

@@ -222,6 +222,7 @@ public:
 		long x;
 		long y;
 		long maxWidth;
+		long totalHeight;
 	};
 
 	NeoStr(DWORD dwAlignFlags, COLORREF color, HFONT hFont) {
@@ -518,7 +519,8 @@ public:
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width >> 1)
 			,startY + lastStrPos.y + (lastCharSize->height >> 1)
-			,maxWidth };
+			,maxWidth 
+			,totalHeight - nRowSpace };
 
 		return lastCharPos;
 	}
