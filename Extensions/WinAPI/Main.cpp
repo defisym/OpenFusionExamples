@@ -92,6 +92,8 @@ short actionsInfos[] =
 
 	IDMN_ACTION_EF,M_ACTION_EF,ACT_ACTION_EF,0, 1,PARAM_EXPSTRING,PARA_ACTION_EF,
 
+	IDMN_ACTION_SAOT,M_ACTION_SAOT,ACT_ACTION_SAOT,0, 1,PARAM_EXPRESSION, PARA_ACTION_WINDOW_ENABLE,
+
 };
 
 // Definitions of parameters for each expression
@@ -561,8 +563,26 @@ short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
 	auto newX = oldX + int(clientWidth - wWidth) / 2;
 	auto newY = oldY + int(clientHeight - wHeight) / 2;
 
-	SetWindowPos(rdPtr->MainWindowHandle, NULL, newX, newY, wWidth + cwOffsetW, wHeight + cwOffsetH, SWP_SHOWWINDOW);
-	
+	SetWindowPos(rdPtr->MainWindowHandle
+		, NULL
+		, newX, newY
+		, wWidth + cwOffsetW
+		, wHeight + cwOffsetH
+		, SWP_SHOWWINDOW| SWP_NOZORDER);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetAlwaysOnTop(LPRDATA rdPtr, long param1, long param2) {
+	bool enable = (bool)CNC_GetIntParameter(rdPtr);
+
+	SetWindowPos(rdPtr->MainWindowHandle
+		, enable ? HWND_TOPMOST : HWND_NOTOPMOST
+		, 0, 0
+		, 0
+		, 0
+		, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+
 	return 0;
 }
 
@@ -1646,6 +1666,8 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	SetSize,
 
 	EmbedFont,
+
+	SetAlwaysOnTop,
 
 	//结尾必定是零
 	0

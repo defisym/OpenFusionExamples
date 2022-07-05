@@ -204,6 +204,8 @@ BEGIN
             MENUITEM "Go Windowed", IDMN_ACTION_WINDOW_GW            
             MENUITEM SEPARATOR
             MENUITEM "Set Window Size", IDMN_ACTION_SWS            
+            MENUITEM SEPARATOR            
+            MENUITEM "Set Always On Top", IDMN_ACTION_SAOT            
         END
         MENUITEM SEPARATOR
         MENUITEM "Get FileList", IDMN_ACTION_GFL
@@ -546,6 +548,9 @@ BEGIN
     PARAM_B64 "Base64 String"
 
     M_ACTION_SWS "Set Window Size to [ %0 x %1 ]"
+    
+    M_ACTION_SAOT "Set Always On Top to %0"
+    PARA_ACTION_WINDOW_ENABLE "0 = Disable, 1 = Enable"
     
     M_ACTION_EF "Embed Font %0"
     PARA_ACTION_EF "Font File Path"

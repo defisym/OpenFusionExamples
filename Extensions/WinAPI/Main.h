@@ -74,7 +74,9 @@
 
 #define ACT_ACTION_EF				37
 
-#define	ACT_LAST					38
+#define ACT_ACTION_SAOT				38
+
+#define	ACT_LAST					39
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
