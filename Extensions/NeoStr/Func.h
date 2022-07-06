@@ -16,7 +16,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
 
-inline void HandleUpate(LPRDATA rdPtr, RECT rc) {
+inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 	if (rdPtr->bFontChanged) {
 		rdPtr->bFontChanged = false;
 		rdPtr->bStrChanged = true;
@@ -171,7 +171,7 @@ inline void Display(LPRDATA rdPtr) {
 		int boParam = rdPtr->rs.rsEffectParam;
 
 		// Draw text
-		HandleUpate(rdPtr, rc);
+		HandleUpdate(rdPtr, rc);
 
 #ifdef _PATH
 		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
@@ -198,7 +198,7 @@ inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
 	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
 
-	HandleUpate(rdPtr, rc);
+	HandleUpdate(rdPtr, rc);
 
 	return rdPtr->charPos;
 }
