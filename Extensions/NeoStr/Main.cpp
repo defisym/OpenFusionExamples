@@ -97,8 +97,8 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // ============================================================================
 
 short WINAPI DLLExport Action_ChangeSize(LPRDATA rdPtr, long param1, long param2) {
-	short width = (short)CNC_GetIntParameter(rdPtr);
-	short height = (short)CNC_GetIntParameter(rdPtr);
+	short width = (short)CNC_GetIntParameter(rdPtr) & 0x7FFF;
+	short height = (short)CNC_GetIntParameter(rdPtr) & 0x7FFF;
 
 	rdPtr->swidth = width;
 	rdPtr->sheight = height;
