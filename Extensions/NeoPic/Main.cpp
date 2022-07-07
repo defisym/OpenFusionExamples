@@ -68,6 +68,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SKL, M_ACTION_SKL, ACT_ACTION_SKL,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_KEEPLIST, M_ACTION_BASEPATH,
 
 		IDMN_ACTION_ITRC, M_ACTION_ITRC, ACT_ACTION_ITRC,	0, 1, PARAM_EXPRESSION, M_ACTION_ITSIZE,
+
+		IDMN_ACTION_LFP, M_ACTION_LFP, ACT_ACTION_LFP,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_ACTION_PSF, M_ACTION_FILENAME,
+
 		};
 
 // Definitions of parameters for each expression
@@ -164,6 +167,15 @@ short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) 
 	bool UpdateCoef = (bool)CNC_GetIntParameter(rdPtr);
 
 	LoadFromDisplay(rdPtr, object, UpdateCoef);
+
+	return 0;
+}
+
+short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
+	LPSURFACE pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
+	LPCWSTR pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
+
+	LoadFromPointer(rdPtr, pFileName, pSf);
 
 	return 0;
 }
@@ -681,6 +693,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetKeepList,
 
 			IterateRefCount,
+
+			LoadFromPointer,
 
 			0
 			};

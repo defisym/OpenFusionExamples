@@ -51,7 +51,9 @@
 
 #define	ACT_ACTION_ITRC				22
 
-#define	ACT_LAST					23
+#define	ACT_ACTION_LFP				23
+
+#define	ACT_LAST					24
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

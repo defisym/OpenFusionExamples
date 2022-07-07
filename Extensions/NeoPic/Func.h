@@ -600,6 +600,47 @@ inline void LoadFromDisplay(LPRDATA rdPtr, int Fixed, bool CopyCoef = false) {
 	return LoadFromDisplay(rdPtr, LproFromFixed(rdPtr, Fixed), CopyCoef);
 }
 
+inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
+	if (pSf == nullptr) {
+		return;
+	}
+
+	LPSURFACE pSave = new cSurface;
+
+	pSave->Clone(*pSf);
+
+	auto fullPath = GetFullPathNameStr(pFileName);
+
+	if (rdPtr->isLib) {
+		(*rdPtr->lib)[fullPath] = SurfaceLibKey{ pSave ,fullPath };
+	}
+	else {
+		if (rdPtr->fromLib) {
+			rdPtr->fromLib = false;
+			rdPtr->src = nullptr;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+		}
+		else {
+			delete rdPtr->src;
+			rdPtr->src = nullptr;
+		}
+
+		rdPtr->src = pSave;
+
+		if (rdPtr->src->IsValid()) {
+			NewPic(rdPtr);
+
+			*rdPtr->FilePath = fullPath + L"\\" + L"LoadFromPointer";
+			*rdPtr->Key = L"";
+
+			GetFileName(rdPtr);
+		}
+	}
+}
+
+
 inline void ResetLib(SurfaceLib* pData) {
 	if (pData != NULL) {
 		for (auto& it : *pData) {
