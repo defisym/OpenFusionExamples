@@ -1,31 +1,27 @@
 // Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 
+#pragma warning(disable : 4819)
 #pragma warning(disable : 4996)
 
 #pragma comment(lib,"avcodec.lib")
 #pragma comment(lib,"avformat.lib")
 #pragma comment(lib,"avutil.lib")
+#pragma comment(lib,"swscale.lib")
+
+#include <string>
+#include <functional>
+
+// pData, width, height
+using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 
 extern "C" {
-	#include "libavcodec/avcodec.h"
-	#include "libavformat/avformat.h"
+	#include <libavcodec/avcodec.h>
+	#include <libavformat/avformat.h>
+	#include <libavutil/imgutils.h>
+	#include <libswscale/swscale.h>
 }
 
-static void save_gray_frame(unsigned char* buf, int wrap, int xsize, int ysize, char* filename) {
-	FILE* f;
-	int i;
-	f = fopen(filename, "w");
-	// writing the minimal required header for a pgm file format
-	// portable graymap format -> https://en.wikipedia.org/wiki/Netpbm_format#PGM_example
-	fprintf(f, "P5\n%d %d\n%d\n", xsize, ysize, 255);
-
-	// writing line by line
-	for (i = 0; i < ysize; i++)
-		fwrite(buf + i * wrap, 1, xsize, f);
-	fclose(f);
-}
-
-static int decode_packet(AVPacket* pPacket, AVCodecContext* pCodecContext, AVFrame* pFrame) {
+static int decode_packet(AVPacket* pPacket, AVCodecContext* pCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
 	// Supply raw packet data as input to a decoder
 	// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
 	int response = avcodec_send_packet(pCodecContext, pPacket);
@@ -38,6 +34,7 @@ static int decode_packet(AVPacket* pPacket, AVCodecContext* pCodecContext, AVFra
 		// Return decoded output data (into a frame) from a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		response = avcodec_receive_frame(pCodecContext, pFrame);
+
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			break;
 		}
@@ -46,22 +43,46 @@ static int decode_packet(AVPacket* pPacket, AVCodecContext* pCodecContext, AVFra
 		}
 
 		if (response >= 0) {
-			char frame_filename[1024];
-			snprintf(frame_filename, sizeof(frame_filename), "%s-%d.pgm", "frame", pCodecContext->frame_number);
+			uint8_t* pData = pFrame->data[0];
+			bool release = false;
+
 			// Check if the frame is a planar YUV 4:2:0, 12bpp
 			// That is the format of the provided .mp4 file
-			// RGB formats will definitely not give a gray image
-			// Other YUV image may do so, but untested, so give a warning
-			if (pFrame->format != AV_PIX_FMT_YUV420P) {
+			if (pFrame->format != AV_PIX_FMT_BGR24) {	
+				release = true;
+
+				SwsContext* swsContext = sws_getContext(pFrame->width, pFrame->height, AVPixelFormat(pFrame->format),
+					pFrame->width, pFrame->height, AV_PIX_FMT_BGR24
+					,NULL, NULL, NULL, NULL);
+
+				int linesize[8] = { pFrame->linesize[0] * 3 };
+				int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height, 1);
+
+				//auto p_global_bgr_buffer = (uint8_t*)malloc(num_bytes * sizeof(uint8_t));
+				auto p_global_bgr_buffer = new uint8_t[num_bytes];
+				uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+
+				sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
+				
+				//bgr_buffer[0] is the BGR raw data
+				pData = bgr_buffer[0];		
+
+				sws_freeContext(swsContext);
 			}
-			// save a grayscale frame into a .pgm file
-			save_gray_frame(pFrame->data[0], pFrame->linesize[0], pFrame->width, pFrame->height, frame_filename);
+
+			// call callback
+			callBack(pData, pFrame->width, pFrame->height);
+
+			if (release) {
+				delete[] pData;
+			}		
 		}
 	}
+
 	return 0;
 }
 
-inline int GetFirstFrame(std::wstring filePath) {
+inline int get_firstFrame(std::wstring filePath, rawDataCallBack callBack) {
 	AVFormatContext* pFormatContext = avformat_alloc_context();
 	if (!pFormatContext) {
 		return -1;
@@ -131,8 +152,10 @@ inline int GetFirstFrame(std::wstring filePath) {
 	while (av_read_frame(pFormatContext, pPacket) >= 0)	{
 		// if it's the video stream
 		if (pPacket->stream_index == video_stream_index) {
-			response = decode_packet(pPacket, pCodecContext, pFrame);
+			response = decode_packet(pPacket, pCodecContext, pFrame, callBack);
+
 			if (response < 0) { break; }
+
 			// stop it, otherwise we'll be saving hundreds of frames
 			if (--how_many_packets_to_process <= 0) { break; }
 		}
