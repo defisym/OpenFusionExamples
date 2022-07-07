@@ -255,7 +255,10 @@ BEGIN
         POPUP "Misc."
         BEGIN
             MENUITEM "Save Base64 to Image",      IDMN_ACTION_SB642I         
+            MENUITEM SEPARATOR
             MENUITEM "Embed Font",      IDMN_ACTION_EF       
+            MENUITEM SEPARATOR
+            MENUITEM "Get First Frame",      IDMN_ACTION_GFF       
         END
         MENUITEM SEPARATOR
     END
@@ -356,6 +359,8 @@ BEGIN
             MENUITEM "Cast To Bool", IDMN_EXPRESSION_C2B
             MENUITEM SEPARATOR            
             MENUITEM "Get Command Line Param",      IDMN_EXPRESSION_GCLI
+            MENUITEM SEPARATOR            
+            MENUITEM "Get First Frame Pointer",      IDMN_EXPRESSION_GFFP       
         END
         MENUITEM SEPARATOR
     END
@@ -554,6 +559,9 @@ BEGIN
     
     M_ACTION_EF "Embed Font %0"
     PARA_ACTION_EF "Font File Path"
+
+    M_ACTION_GFF "Get First Frame of Video %0"
+
 END
 
 //Expression
@@ -665,6 +673,12 @@ BEGIN
     M_EXPRESSION_C2B "bool ("
     PARA_EXPRESSION_C2B "Value"
 END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GFFP "GFFP ("
+END
+
 
 //Conditions
 STRINGTABLE

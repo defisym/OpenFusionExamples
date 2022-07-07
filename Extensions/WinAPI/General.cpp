@@ -161,9 +161,23 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 //	NULL
 //};
 
+LPCTSTR szDep[] = {
+		L"swscale-6.dll",
+		L"avcodec-59.dll",
+		L"avdevice-59.dll",
+		L"avfilter-8.dll",
+		L"avformat-59.dll",
+		L"avutil-57.dll",
+		L"swresample-4.dll",
+
+		NULL
+};
+
 LPCTSTR* WINAPI DLLExport GetDependencies()
 {
-	return NULL;	// szDep;
+	//return NULL;	// szDep;
+
+	return szDep;
 }
 
 // -----------------

@@ -93,6 +93,8 @@ short actionsInfos[] =
 	IDMN_ACTION_EF,M_ACTION_EF,ACT_ACTION_EF,0, 1,PARAM_EXPSTRING,PARA_ACTION_EF,
 
 	IDMN_ACTION_SAOT,M_ACTION_SAOT,ACT_ACTION_SAOT,0, 1,PARAM_EXPRESSION, PARA_ACTION_WINDOW_ENABLE,
+	
+	IDMN_ACTION_GFF,M_ACTION_GFF,ACT_ACTION_GFF,0, 1,PARAM_EXPSTRING, PARA_ACTION_WINDOW_BFA_FILEPATH,
 
 };
 
@@ -156,6 +158,8 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GCLI, M_EXPRESSION_GCLI, EXP_EXPRESSION_GCLI, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
 
 	IDMN_EXPRESSION_C2B, M_EXPRESSION_C2B, EXP_EXPRESSION_C2B, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_C2B,
+
+	IDMN_EXPRESSION_GFFP, M_EXPRESSION_GFFP, EXP_EXPRESSION_GFFP, 0, 0,
 };
 
 // ============================================================================
@@ -1200,6 +1204,58 @@ short WINAPI DLLExport EmbedFont(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport GetFirstFrame(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FilePath = GetFullPathNameStr((LPCTSTR)CNC_GetStringParameter(rdPtr));
+
+	get_firstFrame(FilePath, [rdPtr](const unsigned char* pData, const int width, const int height) {
+		auto pMemSf = CreateSurface(24, width, height);
+
+		auto sfCoef = GetSfCoef(pMemSf);
+
+		auto lineSz = sfCoef.pitch;
+		auto alphaSz = sfCoef.sz / sfCoef.byte;
+
+		for (int y = 0; y < height; y++) {
+			auto pMemData = sfCoef.pData + y * sfCoef.pitch;
+			auto pVideo = pData + (height - 1 - y) * sfCoef.pitch;
+
+			memcpy(pMemData, pVideo, lineSz);
+		}
+
+		ReleaseSfCoef(pMemSf, sfCoef);
+
+#ifdef _DEBUG
+		_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
+
+		auto pAlpha = new BYTE[alphaSz];
+		memset(pAlpha, 255, alphaSz);
+
+		pMemSf->SetAlpha(pAlpha, pMemSf->GetWidth());
+
+		delete[] pAlpha;
+		pAlpha = nullptr;
+
+		delete rdPtr->pHwaSf_Video;
+		rdPtr->pHwaSf_Video = nullptr;
+
+		rdPtr->pHwaSf_Video = CreateHWASurface(rdPtr,32, width, height, ST_HWA_ROMTEXTURE);
+
+		//pMemSf->DemultiplyAlpha();
+		if (PreMulAlpha(rdPtr)) {
+			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+		}
+
+		pMemSf->Blit(*rdPtr->pHwaSf_Video);
+
+		delete pMemSf;
+
+		return;
+		});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1578,6 +1634,11 @@ long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
 	return bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
 }
 
+long WINAPI DLLExport GetFirstFramePointer(LPRDATA rdPtr, long param1) {	
+	return ConvertToLong(rdPtr->pHwaSf_Video);
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1669,6 +1730,8 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	SetAlwaysOnTop,
 
+	GetFirstFrame,
+
 	//结尾必定是零
 	0
 };
@@ -1725,6 +1788,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	GetCommandLineByCLI,
 
 	CastToBool,
+
+	GetFirstFramePointer,
 
 0
 };

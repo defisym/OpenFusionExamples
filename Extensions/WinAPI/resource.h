@@ -62,6 +62,7 @@
 #define M_ACTION_SWS		    	    5100
 #define M_ACTION_EF 		    	    5101
 #define M_ACTION_SAOT 		    	    5102
+#define M_ACTION_GFF 		    	    5103
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -138,6 +139,7 @@
 #define	M_EXPRESSION_L2W			    7111
 #define	M_EXPRESSION_GCLI			    7112
 #define	M_EXPRESSION_C2B			    7113
+#define	M_EXPRESSION_GFFP			    7114
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -197,6 +199,7 @@
 #define IDMN_ACTION_SWS 		    	25430
 #define IDMN_ACTION_EF   		    	25431
 #define IDMN_ACTION_SAOT   		    	25432
+#define IDMN_ACTION_GFF   		    	25433
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020
@@ -238,6 +241,7 @@
 #define	IDMN_EXPRESSION_L2W			    27101
 #define	IDMN_EXPRESSION_GCLI			27102
 #define	IDMN_EXPRESSION_C2B				27103
+#define	IDMN_EXPRESSION_GFFP			27104
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

@@ -141,6 +141,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
 
+	rdPtr->pHwaSf_Video = nullptr;
+
 	// No errors
 	return 0;
 }
@@ -183,6 +185,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete[] rdPtr->ValWithSignOutput;
 
 	delete rdPtr->pSelect;
+
+	delete rdPtr->pHwaSf_Video;
+	rdPtr->pHwaSf_Video = nullptr;
 
 	// No errors
 	return 0;

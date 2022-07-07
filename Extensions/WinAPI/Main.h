@@ -76,7 +76,9 @@
 
 #define ACT_ACTION_SAOT				38
 
-#define	ACT_LAST					39
+#define ACT_ACTION_GFF				39
+
+#define	ACT_LAST					40
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -132,7 +134,9 @@
 
 #define	EXP_EXPRESSION_C2B			30
 
-#define	EXP_LAST                    31
+#define	EXP_EXPRESSION_GFFP			31
+
+#define	EXP_LAST                    32
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -269,6 +273,8 @@ typedef struct tagRDATA
 
 	int argc;
 	char** argv;
+	
+	LPSURFACE pHwaSf_Video;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
