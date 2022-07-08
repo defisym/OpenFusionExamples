@@ -1,3 +1,5 @@
+#pragma once
+
 // Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 
 #pragma warning(disable : 4819)
@@ -10,6 +12,8 @@
 
 #include <string>
 #include <functional>
+
+#include "WindowsCommon.h"
 
 // pData, width, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
@@ -82,7 +86,7 @@ static int decode_packet(AVPacket* pPacket, AVCodecContext* pCodecContext, AVFra
 	return 0;
 }
 
-inline int get_firstFrame(std::wstring filePath, rawDataCallBack callBack) {
+inline int get_videoFrame(std::wstring filePath, size_t ms, rawDataCallBack callBack) {
 	AVFormatContext* pFormatContext = avformat_alloc_context();
 	if (!pFormatContext) {
 		return -1;
@@ -148,6 +152,39 @@ inline int get_firstFrame(std::wstring filePath, rawDataCallBack callBack) {
 
 	int response = 0;
 	int how_many_packets_to_process = 0;
+
+	//while (av_read_frame(pFormatContext, pPacket) >= 0) {
+	//	// if it's the video stream
+	//	if (pPacket->stream_index == video_stream_index) {
+	//		response = decode_packet(pPacket, pCodecContext, pFrame, callBack);
+
+	//		if (response < 0) { break; }
+
+	//		// stop it, otherwise we'll be saving hundreds of frames
+	//		if (--how_many_packets_to_process <= 0) { break; }
+	//	}
+
+	//	av_packet_unref(pPacket);
+	//}
+	
+	auto pViedoStream=pFormatContext->streams[video_stream_index];
+	
+	auto rational = pViedoStream->time_base;
+	auto decimalRational = (double)rational.num / rational.den;
+
+	auto totalFrame = pViedoStream->duration;
+	auto totalTime = totalFrame * decimalRational;
+	auto totalTimeInMs = totalTime * 1000;
+
+	auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
+	auto protectedTime = protectedTimeInMs / 1000;
+	auto protectedFrame = protectedTime / decimalRational;
+
+	if (!(av_seek_frame(pFormatContext, video_stream_index
+		, (int64_t)(protectedFrame)
+		, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME) >= 0)) {
+		return -1;
+	}
 
 	while (av_read_frame(pFormatContext, pPacket) >= 0)	{
 		// if it's the video stream

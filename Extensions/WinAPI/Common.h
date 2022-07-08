@@ -73,7 +73,10 @@ class ObjectSelection;
 #include	"WindowsCommon.h"
 #include	"ObjectSelection.h"
 #include	"Base64.h"
-#include	"GetFirstFrame.h"
+
+#ifdef _FFMPEG
+#include	"GetVideoFrame.h"
+#endif
 
 //Global Func
 #include	"GlobalFunc.h"

@@ -76,7 +76,7 @@
 
 #define ACT_ACTION_SAOT				38
 
-#define ACT_ACTION_GFF				39
+#define ACT_ACTION_GVF				39
 
 #define	ACT_LAST					40
 
@@ -134,7 +134,7 @@
 
 #define	EXP_EXPRESSION_C2B			30
 
-#define	EXP_EXPRESSION_GFFP			31
+#define	EXP_EXPRESSION_GVFP			31
 
 #define	EXP_LAST                    32
 

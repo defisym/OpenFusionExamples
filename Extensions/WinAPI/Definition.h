@@ -1,6 +1,8 @@
 #ifndef _DEFINITION_
 #define _DEFINITION_
 
+#define _FFMPEG
+
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 

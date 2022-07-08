@@ -161,6 +161,7 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 //	NULL
 //};
 
+#ifdef _FFMPEG
 LPCTSTR szDep[] = {
 		L"swscale-6.dll",
 		L"avcodec-59.dll",
@@ -172,12 +173,14 @@ LPCTSTR szDep[] = {
 
 		NULL
 };
+#endif
 
-LPCTSTR* WINAPI DLLExport GetDependencies()
-{
-	//return NULL;	// szDep;
-
+LPCTSTR* WINAPI DLLExport GetDependencies() {
+#ifdef _FFMPEG
 	return szDep;
+#else
+	return NULL;	// szDep;
+#endif
 }
 
 // -----------------

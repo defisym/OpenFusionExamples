@@ -94,7 +94,7 @@ short actionsInfos[] =
 
 	IDMN_ACTION_SAOT,M_ACTION_SAOT,ACT_ACTION_SAOT,0, 1,PARAM_EXPRESSION, PARA_ACTION_WINDOW_ENABLE,
 	
-	IDMN_ACTION_GFF,M_ACTION_GFF,ACT_ACTION_GFF,0, 1,PARAM_EXPSTRING, PARA_ACTION_WINDOW_BFA_FILEPATH,
+	IDMN_ACTION_GVF,M_ACTION_GVF,ACT_ACTION_GVF,0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION,PARA_ACTION_FILEPATH,PARA_ACTION_MS,
 
 };
 
@@ -159,7 +159,7 @@ short expressionsInfos[] =
 
 	IDMN_EXPRESSION_C2B, M_EXPRESSION_C2B, EXP_EXPRESSION_C2B, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_C2B,
 
-	IDMN_EXPRESSION_GFFP, M_EXPRESSION_GFFP, EXP_EXPRESSION_GFFP, 0, 0,
+	IDMN_EXPRESSION_GVFP, M_EXPRESSION_GVFP, EXP_EXPRESSION_GVFP, 0, 0,
 };
 
 // ============================================================================
@@ -1204,10 +1204,12 @@ short WINAPI DLLExport EmbedFont(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport GetFirstFrame(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport GetVideoFrame(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FilePath = GetFullPathNameStr((LPCTSTR)CNC_GetStringParameter(rdPtr));
+	size_t ms= (size_t)CNC_GetIntParameter(rdPtr);
 
-	get_firstFrame(FilePath, [rdPtr](const unsigned char* pData, const int width, const int height) {
+#ifdef _FFMPEG
+	get_videoFrame(FilePath, ms, [rdPtr](const unsigned char* pData, const int width, const int height) {
 		auto pMemSf = CreateSurface(24, width, height);
 
 		auto sfCoef = GetSfCoef(pMemSf);
@@ -1224,10 +1226,6 @@ short WINAPI DLLExport GetFirstFrame(LPRDATA rdPtr, long param1, long param2) {
 
 		ReleaseSfCoef(pMemSf, sfCoef);
 
-#ifdef _DEBUG
-		_SavetoClipBoard(pMemSf, false);
-#endif // _DEBUG
-
 		auto pAlpha = new BYTE[alphaSz];
 		memset(pAlpha, 255, alphaSz);
 
@@ -1235,6 +1233,10 @@ short WINAPI DLLExport GetFirstFrame(LPRDATA rdPtr, long param1, long param2) {
 
 		delete[] pAlpha;
 		pAlpha = nullptr;
+
+#ifdef _DEBUG
+		_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
 
 		delete rdPtr->pHwaSf_Video;
 		rdPtr->pHwaSf_Video = nullptr;
@@ -1252,6 +1254,7 @@ short WINAPI DLLExport GetFirstFrame(LPRDATA rdPtr, long param1, long param2) {
 
 		return;
 		});
+#endif
 
 	return 0;
 }
@@ -1634,8 +1637,12 @@ long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
 	return bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
 }
 
-long WINAPI DLLExport GetFirstFramePointer(LPRDATA rdPtr, long param1) {	
+long WINAPI DLLExport GetVideoFramePointer(LPRDATA rdPtr, long param1) {
+#ifdef _FFMPEG
 	return ConvertToLong(rdPtr->pHwaSf_Video);
+#else
+	return  ConvertToLong(nullptr);
+#endif
 }
 
 
@@ -1730,7 +1737,7 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	SetAlwaysOnTop,
 
-	GetFirstFrame,
+	GetVideoFrame,
 
 	//结尾必定是零
 	0
@@ -1789,7 +1796,7 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	CastToBool,
 
-	GetFirstFramePointer,
+	GetVideoFramePointer,
 
 0
 };

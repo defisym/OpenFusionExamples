@@ -12,6 +12,8 @@
 #include "windows.h"
 #undef APSTUDIO_HIDDEN_SYMBOLS
 
+#include "Definition.h"
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -257,8 +259,10 @@ BEGIN
             MENUITEM "Save Base64 to Image",      IDMN_ACTION_SB642I         
             MENUITEM SEPARATOR
             MENUITEM "Embed Font",      IDMN_ACTION_EF       
+#ifdef _FFMPEG
             MENUITEM SEPARATOR
-            MENUITEM "Get First Frame",      IDMN_ACTION_GFF       
+            MENUITEM "Get Video Frame",      IDMN_ACTION_GVF       
+#endif
         END
         MENUITEM SEPARATOR
     END
@@ -359,8 +363,10 @@ BEGIN
             MENUITEM "Cast To Bool", IDMN_EXPRESSION_C2B
             MENUITEM SEPARATOR            
             MENUITEM "Get Command Line Param",      IDMN_EXPRESSION_GCLI
+#ifdef _FFMPEG
             MENUITEM SEPARATOR            
-            MENUITEM "Get First Frame Pointer",      IDMN_EXPRESSION_GFFP       
+            MENUITEM "Get First Frame Pointer",      IDMN_EXPRESSION_GVFP       
+#endif
         END
         MENUITEM SEPARATOR
     END
@@ -560,8 +566,9 @@ BEGIN
     M_ACTION_EF "Embed Font %0"
     PARA_ACTION_EF "Font File Path"
 
-    M_ACTION_GFF "Get First Frame of Video %0"
-
+    M_ACTION_GVF "Get Video %0 Frame at %1 ms "
+    PARA_ACTION_FILEPATH "FilePath"
+    PARA_ACTION_MS "Millisecond"
 END
 
 //Expression
@@ -676,7 +683,7 @@ END
 
 STRINGTABLE
 BEGIN
-    M_EXPRESSION_GFFP "GFFP ("
+    M_EXPRESSION_GVFP "GFFP ("
 END
 
 
