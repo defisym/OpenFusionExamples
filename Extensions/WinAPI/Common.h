@@ -79,7 +79,7 @@ class ObjectSelection;
 #endif
 
 //Global Func
-#include	"GlobalFunc.h"
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

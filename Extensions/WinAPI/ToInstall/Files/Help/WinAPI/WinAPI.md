@@ -4,6 +4,8 @@
 
 WinAPI, a bunch of small functions that uses Win32 API
 
+**NOTE:** some features of this object requires FFMpeg, if you don't need them, you can disable `_FFMPEG` macro in `Definition.h` then re-compile it. Or you need to download `ffmpeg-n5.0-latest-win32-lgpl-shared-5.0.zip` from <https://github.com/sudo-nautilus/FFmpeg-Builds-Win32/releases>, then put dlls into Fusion root & `Runtime/Unicode`
+
 ## Properties
 
 - Lock Mouse Properties

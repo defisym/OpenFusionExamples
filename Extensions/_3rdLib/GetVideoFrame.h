@@ -180,9 +180,12 @@ inline int get_videoFrame(std::wstring filePath, size_t ms, rawDataCallBack call
 	auto protectedTime = protectedTimeInMs / 1000;
 	auto protectedFrame = protectedTime / decimalRational;
 
+	//auto flags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
+	auto flags =  AVSEEK_FLAG_FRAME;
+
 	if (!(av_seek_frame(pFormatContext, video_stream_index
 		, (int64_t)(protectedFrame)
-		, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME) >= 0)) {
+		, flags) >= 0)) {
 		return -1;
 	}
 

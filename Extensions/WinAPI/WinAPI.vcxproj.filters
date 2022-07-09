@@ -133,7 +133,7 @@
     <ClInclude Include="..\..\Inc\WinMacro.h">
       <Filter>MMF Headers</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalFunc.h">
+    <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Definition.h">
