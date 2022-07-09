@@ -998,19 +998,30 @@ inline int GetAngle(LPRDATA rdPtr) {
 	return CanDisplay(rdPtr) ? rdPtr->angle : -1;
 }
 
-inline void GetFileName(LPRDATA rdPtr) {	
-	auto pos = rdPtr->FilePath->find_last_of(L"\\") + 1;
-	*rdPtr->FileName = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
-}
-
-inline auto GetFileName(std::wstring& FilePath) {
+inline std::wstring GetFileName(std::wstring& FilePath) {
 	auto pos = FilePath.find_last_of(L"\\") + 1;
-	return FilePath.substr(pos, FilePath.size() - pos);
+
+	try {
+		return FilePath.substr(pos, FilePath.size() - pos);
+	}
+	catch (...) {
+		return L"Invalid";
+	}
 }
 
-inline auto GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {
+inline void GetFileName(LPRDATA rdPtr) {
+	*rdPtr->FileName = GetFileName(*rdPtr->FilePath);
+}
+
+inline std::wstring GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {
 	auto pos = BasePath.size() + 1;
-	return FilePath.substr(pos, FilePath.size() - pos);
+
+	try {
+		return FilePath.substr(pos, FilePath.size() - pos);
+	}
+	catch (...) {
+		return L"Invalid";
+	}
 }
 
 // for display
