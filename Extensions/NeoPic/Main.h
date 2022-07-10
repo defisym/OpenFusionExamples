@@ -11,7 +11,9 @@
 
 #define	CND_CONDITION_CD			2
 
-#define	CND_LAST					3
+#define	CND_CONDITION_CDT			3
+
+#define	CND_LAST					4
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -176,6 +178,7 @@ typedef struct tagRDATA
 
 	//Source
 	bool fromLib = false;
+	SurfaceLibValue* pLibValue = nullptr;
 	size_t* pRefCount = nullptr;
 
 	std::wstring* FileName = nullptr;
@@ -235,6 +238,9 @@ typedef struct tagRDATA
 	Count* itCountVecCount = nullptr;
 
 	FileListMap* pFileListMap = nullptr;
+
+	bool bCurrentDisplayTransparent = false;
+	LPSURFACE pOldSf = nullptr;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

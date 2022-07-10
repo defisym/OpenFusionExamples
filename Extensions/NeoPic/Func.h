@@ -420,7 +420,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 
 		if (pImg->IsValid()) {
 			// need not to get decrypted file hash, as it must different if file is different, even encrypted
-			(*rdPtr->lib)[fullPath] = SurfaceLibKey{ pImg ,GetFileHash(fullPath) };
+			(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pImg ,GetFileHash(fullPath),-1 };
 		}
 		else {
 			delete pImg;
@@ -522,7 +522,9 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		UpdateRef(rdPtr, false);
 
 		rdPtr->fromLib = true;
-		rdPtr->src = it->second.pSf;		
+
+		rdPtr->src = it->second.pSf;
+		rdPtr->pLibValue= &(it->second);
 		rdPtr->pRefCount = &(countit->second.curRef);
 
 		UpdateRef(rdPtr, true);
@@ -612,7 +614,7 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 	auto fullPath = GetFullPathNameStr(pFileName);
 
 	if (rdPtr->isLib) {
-		(*rdPtr->lib)[fullPath] = SurfaceLibKey{ pSave ,fullPath };
+		(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pSave ,fullPath ,-1 };
 	}
 	else {
 		if (rdPtr->fromLib) {
@@ -772,7 +774,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 		_LoadFromFile(pBitmap, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (pBitmap->IsValid()) {
-			(*tempLib)[it] = SurfaceLibKey{ pBitmap ,GetFileHash(it) };
+			(*tempLib)[it] = SurfaceLibValue{ pBitmap ,GetFileHash(it),-1 };
 		}
 		else {
 			delete pBitmap;

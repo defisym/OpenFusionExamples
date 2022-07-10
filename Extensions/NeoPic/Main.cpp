@@ -26,6 +26,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OITRC, M_CONDITION_OITRC, CND_CONDITION_OITRC, 0, 0,
 
 		IDMN_CONDITION_CD, M_CONDITION_CD, CND_CONDITION_CD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		
+		IDMN_CONDITION_CDT, M_CONDITION_CDT, CND_CONDITION_CDT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -133,6 +135,30 @@ long WINAPI DLLExport OnIterateRefCount(LPRDATA rdPtr, long param1, long param2)
 
 long WINAPI DLLExport CanDisplay(LPRDATA rdPtr, long param1, long param2) {
 	return CanDisplay(rdPtr);
+}
+
+long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long param2) {
+	if (!CanDisplay(rdPtr)) {
+		rdPtr->bCurrentDisplayTransparent = true;
+	}
+	else {
+		if (rdPtr->src != rdPtr->pOldSf) {
+			rdPtr->pOldSf = rdPtr->src;
+
+			if (rdPtr->fromLib) {
+				if (rdPtr->pLibValue->isTransparent == -1) {	// not updated yet
+					rdPtr->pLibValue->isTransparent = IsTransparent(rdPtr->src);
+				}
+
+				rdPtr->bCurrentDisplayTransparent = rdPtr->pLibValue->isTransparent;
+			}
+			else {
+				rdPtr->bCurrentDisplayTransparent = IsTransparent(rdPtr->src);
+			}
+		}
+	}
+
+	return rdPtr->bCurrentDisplayTransparent;
 }
 
 
@@ -658,6 +684,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			OnIterateRefCount,
 
 			CanDisplay,
+
+			CurrentDisplayTransparent,
 
 			0
 			};

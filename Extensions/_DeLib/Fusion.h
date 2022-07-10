@@ -301,6 +301,26 @@ inline bool IsHWA(LPSURFACE Src) {
 	return Src->GetType() >= ST_HWA_SCREEN;
 }
 
+inline bool IsTransparent(LPSURFACE pSf) {
+	bool result = false;
+
+	if (!IsHWA(pSf)) {
+		result = pSf->IsTransparent();
+	}
+	else {
+		auto pTempMemSf = CreateSurface(pSf->GetDepth()
+			, pSf->GetWidth(), pSf->GetHeight());
+
+		pSf->Blit(*pTempMemSf);
+
+		result = pTempMemSf->IsTransparent();
+
+		delete pTempMemSf;
+	}
+
+	return result;
+}
+
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
 	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
 }
