@@ -420,7 +420,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 
 		if (pImg->IsValid()) {
 			// need not to get decrypted file hash, as it must different if file is different, even encrypted
-			(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pImg ,GetFileHash(fullPath),-1 };
+			(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pImg ,GetFileHash(fullPath),GetTransparent(pImg) };
 		}
 		else {
 			delete pImg;
@@ -614,7 +614,7 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 	auto fullPath = GetFullPathNameStr(pFileName);
 
 	if (rdPtr->isLib) {
-		(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pSave ,fullPath ,-1 };
+		(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pSave ,fullPath ,GetTransparent(pSave) };
 	}
 	else {
 		if (rdPtr->fromLib) {
@@ -774,7 +774,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 		_LoadFromFile(pBitmap, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (pBitmap->IsValid()) {
-			(*tempLib)[it] = SurfaceLibValue{ pBitmap ,GetFileHash(it),-1 };
+			(*tempLib)[it] = SurfaceLibValue{ pBitmap ,GetFileHash(it),GetTransparent(pBitmap) };
 		}
 		else {
 			delete pBitmap;
@@ -1007,7 +1007,8 @@ inline std::wstring GetFileName(std::wstring& FilePath) {
 		return FilePath.substr(pos, FilePath.size() - pos);
 	}
 	catch (...) {
-		return L"Invalid";
+		//return L"Invalid";
+		return FilePath;
 	}
 }
 
@@ -1022,7 +1023,8 @@ inline std::wstring GetRelativeFilePath(std::wstring& FilePath, std::wstring& Ba
 		return FilePath.substr(pos, FilePath.size() - pos);
 	}
 	catch (...) {
-		return L"Invalid";
+		//return L"Invalid";
+		return FilePath;
 	}
 }
 

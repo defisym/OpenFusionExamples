@@ -28,6 +28,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_CD, M_CONDITION_CD, CND_CONDITION_CD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		
 		IDMN_CONDITION_CDT, M_CONDITION_CDT, CND_CONDITION_CDT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_LHI, M_CONDITION_LHI, CND_CONDITION_LHI, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_ACTION_FILENAME,
 		};
 
 // Definitions of parameters for each action
@@ -146,7 +147,7 @@ long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long
 			rdPtr->pOldSf = rdPtr->src;
 
 			if (rdPtr->fromLib) {
-				if (rdPtr->pLibValue->isTransparent == -1) {	// not updated yet
+				if (rdPtr->pLibValue->isTransparent == transpTBD) {	// not updated yet
 					rdPtr->pLibValue->isTransparent = IsTransparent(rdPtr->src);
 				}
 
@@ -161,6 +162,12 @@ long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long
 	return rdPtr->bCurrentDisplayTransparent;
 }
 
+long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto fullPath = GetFullPathNameStr(pFileName);
+
+	return rdPtr->isLib && rdPtr->lib->find(fullPath) != rdPtr->lib->end() ? true : false;
+}
 
 // ============================================================================
 //
@@ -559,7 +566,8 @@ long WINAPI DLLExport GetRelativeFilePath(LPRDATA rdPtr, long param1) {
 		*rdPtr->RelativeFilePath = rdPtr->FilePath->substr(pos, rdPtr->FilePath->size() - pos);
 	}
 	catch(...) {
-		*rdPtr->RelativeFilePath = L"Invalid";
+		//*rdPtr->RelativeFilePath = L"Invalid";
+		*rdPtr->RelativeFilePath = *rdPtr->FilePath;
 	}
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -686,6 +694,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CanDisplay,
 
 			CurrentDisplayTransparent,
+			LibHasItem,
 
 			0
 			};

@@ -194,6 +194,7 @@
 #define IDMN_CONDITION_CD                   26002
 
 #define IDMN_CONDITION_CDT                  26003
+#define IDMN_CONDITION_LHI                  26004
 
 // Condition strings
 #define M_CONDITION_OPLC                     6000
@@ -202,6 +203,7 @@
 #define M_CONDITION_CD                       6002
 
 #define M_CONDITION_CDT                      6003
+#define M_CONDITION_LHI                      6004
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

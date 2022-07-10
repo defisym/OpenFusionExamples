@@ -120,6 +120,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Current Display Transparent", IDMN_CONDITION_CDT
         MENUITEM SEPARATOR
+        MENUITEM "Lib Has Item", IDMN_CONDITION_LHI
+        MENUITEM SEPARATOR
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
         MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
         MENUITEM SEPARATOR
@@ -413,6 +415,7 @@ BEGIN
     M_CONDITION_CD        "%o Can Display"
     
     M_CONDITION_CDT       "%o Current Display Transparent"
+    M_CONDITION_LHI       "%o Lib Has Item %0"
 
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"

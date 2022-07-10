@@ -86,6 +86,9 @@ struct Count {
 	}
 };
 
+// not updated yet
+constexpr BOOL transpTBD = -1;
+
 struct SurfaceLibValue {
 	LPSURFACE pSf;
 	std::wstring Hash;

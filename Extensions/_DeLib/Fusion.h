@@ -321,6 +321,10 @@ inline bool IsTransparent(LPSURFACE pSf) {
 	return result;
 }
 
+inline BOOL GetTransparent(LPSURFACE pSf) {
+	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
+}
+
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
 	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
 }
