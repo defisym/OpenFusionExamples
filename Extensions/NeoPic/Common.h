@@ -37,6 +37,9 @@
 #include	"GeneralDefinition.h"
 #include	"Definition.h"
 
+enum class HotSpotPos;
+struct ZoomScale;
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"

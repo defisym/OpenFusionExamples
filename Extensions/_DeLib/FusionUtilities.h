@@ -290,3 +290,92 @@ inline bool D3D11(LPRDATA rdPtr) {
 
 	return D3D11(sfDrv);
 }
+
+//X : L M R
+//Y : T M B
+enum class HotSpotPos {
+	LT,
+	LM,
+	LB,
+	MT,
+	MM,
+	MB,
+	RT,
+	RM,
+	RB,
+	CUSTOM
+};
+
+// Update X/Y according to width/height
+inline void UpdateHotSpot(HotSpotPos Type, size_t width, size_t height, int& X, int& Y) {
+	switch (Type) {
+	case HotSpotPos::LT:
+		X = 0;
+		Y = 0;
+		break;
+	case HotSpotPos::LM:
+		X = 0;
+		Y = height / 2;
+		break;
+	case HotSpotPos::LB:
+		X = 0;
+		Y = height;
+		break;
+	case HotSpotPos::MT:
+		X = width / 2;
+		Y = 0;
+		break;
+	case HotSpotPos::MM:
+		X = width / 2;
+		Y = height / 2;
+		break;
+	case HotSpotPos::MB:
+		X = width / 2;
+		Y = height;
+		break;
+	case HotSpotPos::RT:
+		X = width;
+		Y = 0;
+		break;
+	case HotSpotPos::RM:
+		X = width;
+		Y = height / 2;
+		break;
+	case HotSpotPos::RB:
+		X = width;
+		Y = height;
+		break;
+	case HotSpotPos::CUSTOM:
+		X = X;
+		Y = Y;
+		break;
+	}
+}
+
+inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
+	//Rotate hotspot
+	float hx = (float)*hotX;
+	float hy = (float)*hotY;
+
+	float si = (float)sin(angle);
+	float co = (float)cos(angle);
+
+	int trX = (int)(sw * co);
+	int trY = (int)(-sw * si);
+	int blX = (int)(sh * si);
+	int blY = (int)(sh * co);
+	int brX = (int)(sw * co + sh * si);
+	int brY = (int)(sh * co - sw * si);
+
+	//Update topleft coordinate
+	int dx = min(0, min(trX, min(blX, brX)));
+	int dy = min(0, min(trY, min(blY, brY)));
+
+	//Update hotspot
+	*hotX = (int)(round(hx * co + hy * si) - dx);
+	*hotY = (int)(round(hy * co - hx * si) - dy);
+}
+
+inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
+	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
+}

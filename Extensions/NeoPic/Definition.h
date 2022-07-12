@@ -1,20 +1,5 @@
 #pragma once
 
-//X : L M R
-//Y : T M B
-enum class HotSpotPos {
-	LT,
-	LM,
-	LB,
-	MT,
-	MM,
-	MB,
-	RT,
-	RM,
-	RB,
-	CUSTOM
-};
-
 struct Size {
 	int width;
 	int height;
@@ -85,9 +70,6 @@ struct Count {
 		return this->count * countWeight + this->priority;
 	}
 };
-
-// not updated yet
-constexpr BOOL transpTBD = -1;
 
 struct SurfaceLibValue {
 	LPSURFACE pSf;

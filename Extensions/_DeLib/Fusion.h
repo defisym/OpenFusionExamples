@@ -321,6 +321,9 @@ inline bool IsTransparent(LPSURFACE pSf) {
 	return result;
 }
 
+// not updated yet
+constexpr BOOL transpTBD = -1;
+
 inline BOOL GetTransparent(LPSURFACE pSf) {
 	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
 }
