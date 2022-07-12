@@ -60,6 +60,24 @@
 #define	IDS_PROP_ALLIGN_VERTICALOFFSET                    237
 #define	IDS_PROP_ALLIGN_VERTICALOFFSET_INFO               238
 
+#define COMBO_HOTSPOT_LT					239
+#define COMBO_HOTSPOT_LM					240
+#define COMBO_HOTSPOT_LB					241
+#define COMBO_HOTSPOT_MT					242
+#define COMBO_HOTSPOT_MM					243
+#define COMBO_HOTSPOT_MB					244
+#define COMBO_HOTSPOT_RT					245
+#define COMBO_HOTSPOT_RM					246
+#define COMBO_HOTSPOT_RB					247
+
+#define IDS_HOTSPOT_TEXTTITLE				248
+#define IDS_PROP_HOTSPOT_DEFAULT					249
+#define IDS_PROP_HOTSPOT_DEFAULT_INFO				250
+#define IDS_PROP_HOTSPOT_X					251
+#define IDS_PROP_HOTSPOT_X_INFO				252
+#define IDS_PROP_HOTSPOT_Y					253
+#define IDS_PROP_HOTSPOT_Y_INFO				254
+
 
 // 	Debug tree
 //-------------------

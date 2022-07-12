@@ -292,6 +292,25 @@ BEGIN
     COMBO_PixelOffsetModeHalf                       "PixelOffsetModeHalf"
     IDS_PROP_ALLIGN_VERTICALOFFSET                  "Vertical Offset"
     IDS_PROP_ALLIGN_VERTICALOFFSET_INFO             "Ignore tmInternalLeading & tmExternalLeading when align to vertical center"
+
+    COMBO_HOTSPOT_LT			                    "Left Top"	
+    COMBO_HOTSPOT_LM			                    "Left Middle"	
+    COMBO_HOTSPOT_LB			                    "Left Bottom"	
+    COMBO_HOTSPOT_MT			                    "Middle Top"	
+    COMBO_HOTSPOT_MM			                    "Middle Middle"	
+    COMBO_HOTSPOT_MB			                    "Middle Bottom"	
+    COMBO_HOTSPOT_RT			                    "Right Top"	
+    COMBO_HOTSPOT_RM			                    "Right Middle"	
+    COMBO_HOTSPOT_RB			                    "Right Bottom"	
+
+    IDS_HOTSPOT_TEXTTITLE		                    "Hot Spot"	
+    IDS_PROP_HOTSPOT_DEFAULT		                "Default Hot Spot"
+    IDS_PROP_HOTSPOT_DEFAULT_INFO	                "Default Hot Spot"
+    IDS_PROP_HOTSPOT_X				                "Hot Spot X"
+    IDS_PROP_HOTSPOT_X_INFO			                "Hot Spot X"
+    IDS_PROP_HOTSPOT_Y				                "Hot Spot Y"
+    IDS_PROP_HOTSPOT_Y_INFO			                "Hot Spot Y"
+
 END
 
 STRINGTABLE DISCARDABLE 

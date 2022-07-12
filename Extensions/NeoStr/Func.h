@@ -137,6 +137,11 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		//MSGBOX(L"Editor Render");
 		neoStr.RenderPerChar(&edPtr->pText, rc);
 
+		//neoStr.SetHotSpot(edPtr->hotSpotPos, edPtr->hotSpotX, edPtr->hotSpotY);
+		neoStr.SetHotSpot(HotSpotPos::LT, 0, 0);
+		neoStr.SetScale(1.0, 1.0);
+		neoStr.SetAngle(0);
+
 		//MSGBOX(L"Editor Display PerChar");
 		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
 			, bm, bo, boParam, bAntiA);
@@ -146,7 +151,6 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			DeleteObject(hFont);
 	}
 }
-
 
 inline void Display(LPRDATA rdPtr) {
 	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
@@ -176,6 +180,10 @@ inline void Display(LPRDATA rdPtr) {
 #ifdef _PATH
 		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
 #endif
+
+		rdPtr->pNeoStr->SetHotSpot(rdPtr->hotSpotPos, rdPtr->hotSpotX, rdPtr->hotSpotY);
+		rdPtr->pNeoStr->SetScale(rdPtr->xScale, rdPtr->yScale);
+		rdPtr->pNeoStr->SetAngle(rdPtr->angle);
 
 		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
 			, bm, bo, boParam, bAntiA);

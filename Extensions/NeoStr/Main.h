@@ -85,10 +85,15 @@ typedef struct tagEDATA_V1
 
 	bool bVerticalAlignOffset;
 
+	HotSpotPos hotSpotPos;
+
+	int hotSpotX = 0;
+	int hotSpotY = 0;
+
 	bool unused_1;
 	short unused_2;
 
-	int buffer[22];
+	int buffer[18];
 	
 	wchar_t	pText;		// Text
 
@@ -150,6 +155,16 @@ typedef struct tagRDATA
 	unsigned short borderOffsetY;
 
 	bool bVerticalAlignOffset;
+
+	HotSpotPos hotSpotPos;
+
+	int hotSpotX = 0;
+	int hotSpotY = 0;
+
+	float xScale = 1.0;
+	float yScale = 1.0;
+
+	int angle = 0;
 
 	bool reRender;
 	bool bStrChanged;

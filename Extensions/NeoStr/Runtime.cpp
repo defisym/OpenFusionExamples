@@ -106,6 +106,16 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->bVerticalAlignOffset = edPtr->bVerticalAlignOffset;
 
+	rdPtr->hotSpotPos= edPtr->hotSpotPos;
+
+	rdPtr->hotSpotX = edPtr->hotSpotX;
+	rdPtr->hotSpotY = edPtr->hotSpotY;
+
+	rdPtr->xScale = 1.0;
+	rdPtr->yScale = 1.0;
+
+	rdPtr->angle = 0;
+
 	rdPtr->reRender = true;
 
 	rdPtr->bStrChanged = true;

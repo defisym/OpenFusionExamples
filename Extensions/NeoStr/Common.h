@@ -39,12 +39,16 @@ struct CharPos {
 	long totalHeight;
 };
 
+enum class HotSpotPos;
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"
 #include	"TigsExt.hpp"
 
 // My header
+#include	"GeneralDefinition.h"
+
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
 #include	"NeoStr.h"

@@ -5,6 +5,8 @@
 #include <functional>
 #include <string_view>
 
+#include <FusionUtilities.h>
+
 #ifdef _DEBUG		
 #include <assert.h>
 #endif
@@ -121,6 +123,16 @@ private:
 	long startY = 0;
 
 	LPSURFACE pMemSf = nullptr;
+
+	HotSpotPos hotSpotPos = HotSpotPos::LT;
+	
+	int hotSpotX = 0;
+	int hotSpotY = 0;
+
+	float xScale = 1.0;
+	float yScale = 1.0;
+
+	int angle = 0;
 
 #ifdef _USE_HWA
 	int hwaType = 0;
@@ -321,6 +333,22 @@ public:
 #else
 		this->dwOutLineColor = BlackEscape(color);
 #endif
+	}
+
+	inline void SetHotSpot(HotSpotPos hotSpotPos = HotSpotPos::LT, int x = 0, int y = 0) {
+		this->hotSpotPos = hotSpotPos;
+
+		this->hotSpotX = x;
+		this->hotSpotY = y;
+	}
+
+	inline void SetScale(float xScale = 1.0, float yScale = 1.0) {
+		this->xScale = xScale;
+		this->yScale = yScale;
+	}
+
+	inline void SetAngle(int angle = 0) {
+		this->angle = angle;
 	}
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
@@ -853,15 +881,27 @@ public:
 			auto pSf = pMemSf;
 #endif
 
+#ifdef _USE_HWA
+			int hotSpotX = this->hotSpotX;
+			int hotSpotY = this->hotSpotY;
+
+			UpdateHotSpot(hotSpotX == 0 && hotSpotY == 0 
+				? this->hotSpotPos 
+				: HotSpotPos::CUSTOM
+				, pSf->GetWidth(), pSf->GetHeight()
+				, hotSpotX, hotSpotY);
+			
+			POINT hotSpot = { hotSpotX,hotSpotY };
+
 			int xPos = pRc->left - this->borderOffsetX;
 			//int yPos = pRc->top;
 			int yPos = pRc->top - this->borderOffsetY + this->startY;
 
-#ifdef _USE_HWA
-			POINT hotSpot = { 0,0 };
+			xPos -= hotSpotX;
+			yPos -= hotSpotY;
 
-			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, 1.0, 1.0
-				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)0
+			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
+				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
 				, bm, bo, boParam, bAntiA);
 #else
 			pSf->Blit(*pDst, xPos, yPos, bm, bo, boParam, bAntiA);

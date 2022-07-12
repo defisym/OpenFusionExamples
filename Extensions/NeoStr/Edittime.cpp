@@ -42,6 +42,11 @@ enum {
 	PROPID_RENDER_TextRenderingHint,
 	PROPID_RENDER_SmoothingMode,
 	PROPID_RENDER_PixelOffsetMode,
+
+	PROPID_HOTSPOT_TEXTTITLE,
+	PROPID_HOTSPOT_DEFAULT,
+	PROPID_HOTSPOT_X,
+	PROPID_HOTSPOT_Y,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -91,6 +96,20 @@ LPCWSTR PixelOffsetMode_ComboList[] = {
 	NULL
 };
 
+LPCWSTR HotSpotComboList[] = {
+	0,	// reserved
+	MAKEINTRESOURCE(COMBO_HOTSPOT_LT),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_LM),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_LB),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_MT),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_MM),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_MB),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_RT),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_RM),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_RB),
+	NULL
+};
+
 // Property definitions
 //
 // Type, ID, Text, Text of Info box [, Options, Init Param]
@@ -108,6 +127,16 @@ PropData Properties[] = {
 	PropData_Group		(PROPID_TEXT_TITLE,	IDS_PROP_TEXTTITLE,		IDS_PROP_TEXTTITLE),
 	PropData_EditMultiLine(PROPID_TEXT,		IDS_PROP_TEXT,			IDS_PROP_TEXT_INFO),
 	
+	// End of table (required)
+	PropData_End()
+};
+
+PropData DisplayProperties[] = {
+	PropData_Group(PROPID_HOTSPOT_TEXTTITLE,	IDS_HOTSPOT_TEXTTITLE,		IDS_HOTSPOT_TEXTTITLE),
+	PropData_ComboBox(PROPID_HOTSPOT_DEFAULT,		IDS_PROP_HOTSPOT_DEFAULT,			IDS_PROP_HOTSPOT_DEFAULT_INFO,			HotSpotComboList),
+	PropData_EditNumber(PROPID_HOTSPOT_X,		IDS_PROP_HOTSPOT_X,			IDS_PROP_HOTSPOT_X_INFO),
+	PropData_EditNumber(PROPID_HOTSPOT_Y,		IDS_PROP_HOTSPOT_Y,			IDS_PROP_HOTSPOT_Y_INFO),
+
 	// End of table (required)
 	PropData_End()
 };
@@ -441,6 +470,11 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bVerticalAlignOffset = false;
 
+		edPtr->hotSpotPos = HotSpotPos::LT;
+
+		edPtr->hotSpotX = 0;
+		edPtr->hotSpotY = 0;
+
 		// Default font
 		if (mV->mvGetDefaultFont != NULL)
 			mV->mvGetDefaultFont(&edPtr->logFont, NULL, 0);		// Get default font from frame editor preferences
@@ -572,6 +606,21 @@ void WINAPI DLLExport DuplicateObject(mv __far *mV, fpObjInfo oiPtr, LPEDATA edP
 void WINAPI DLLExport GetObjectRect(mv _far *mV, RECT FAR *rc, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
+	//rc->right = rc->left + edPtr->swidth;
+	//rc->bottom = rc->top + edPtr->sheight;
+
+	int hotSpotX = edPtr->hotSpotX;
+	int hotSpotY = edPtr->hotSpotY;
+
+	UpdateHotSpot(hotSpotX == 0 && hotSpotY == 0
+		? edPtr->hotSpotPos
+		: HotSpotPos::CUSTOM
+		, (size_t)edPtr->swidth, (size_t)edPtr->sheight
+		, hotSpotX, hotSpotY);
+
+	rc->left -= hotSpotX;
+	rc->top -= hotSpotY;
+
 	rc->right = rc->left + edPtr->swidth;
 	rc->bottom = rc->top + edPtr->sheight;
 #endif // !defined(RUN_ONLY)
@@ -733,6 +782,7 @@ BOOL WINAPI DLLExport GetProperties(LPMV mV, LPEDATA edPtr, BOOL bMasterItem)
 {
 #ifndef RUN_ONLY
 	mvInsertProps(mV, edPtr, Properties, PROPID_TAB_GENERAL, TRUE);
+	mvInsertProps(mV, edPtr, DisplayProperties, PROPID_TAB_DISPLAY, TRUE);
 	mvInsertProps(mV, edPtr, FontPorperties, PROPID_TAB_TEXTOPT, TRUE);
 #endif // !defined(RUN_ONLY)
 
@@ -836,6 +886,13 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->smoothingMode);
 	case PROPID_RENDER_PixelOffsetMode:
 		return new CPropDWordValue(edPtr->pixelOffsetMode);
+
+	case PROPID_HOTSPOT_DEFAULT:
+		return new CPropDWordValue((size_t)edPtr->hotSpotPos);
+	case PROPID_HOTSPOT_X:
+		return new CPropDWordValue(edPtr->hotSpotX);
+	case PROPID_HOTSPOT_Y:
+		return new CPropDWordValue(edPtr->hotSpotY);
 
 	}
 #endif // !defined(RUN_ONLY)
@@ -962,6 +1019,19 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 	case PROPID_RENDER_PixelOffsetMode:
 		edPtr->pixelOffsetMode = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+
+	case PROPID_HOTSPOT_DEFAULT:
+		edPtr->hotSpotPos = (HotSpotPos)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_HOTSPOT_X:
+		edPtr->hotSpotX = ((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_HOTSPOT_Y:
+		edPtr->hotSpotY = ((CPropDWordValue*)pValue)->m_dwValue;
 		mvInvalidateObject(mV, edPtr);
 		break;
 	}
