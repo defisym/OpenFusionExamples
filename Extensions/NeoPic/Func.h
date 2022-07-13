@@ -57,8 +57,11 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
 		rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
 
-		rdPtr->rHo.hoImgWidth = rdPtr->src->GetWidth();
-		rdPtr->rHo.hoImgHeight = rdPtr->src->GetHeight();
+		//rdPtr->rHo.hoImgWidth = rdPtr->src->GetWidth();
+		//rdPtr->rHo.hoImgHeight = rdPtr->src->GetHeight();
+
+		rdPtr->rHo.hoImgWidth = int(rdPtr->src->GetWidth() * rdPtr->zoomScale.XScale);
+		rdPtr->rHo.hoImgHeight = int(rdPtr->src->GetHeight() * rdPtr->zoomScale.YScale);
 
 		rdPtr->changed = true;
 
