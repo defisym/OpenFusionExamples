@@ -196,6 +196,49 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // 
 HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
 {
+	//if (LPEDATA(OldEdPtr)->hotSpotPos<HotSpotPos::LT || LPEDATA(OldEdPtr)->hotSpotPos > HotSpotPos::CUSTOM) {
+	//	LPEDATA(OldEdPtr)->hotSpotPos = HotSpotPos::LT;
+	//	LPEDATA(OldEdPtr)->hotSpotX = 0;
+	//	LPEDATA(OldEdPtr)->hotSpotY = 0;
+	//}
+
+	MSGBOX(L"Check Update", L"UPDATE");
+
+	auto oldPtr = LPEDATA(OldEdPtr);
+
+	if (oldPtr->hotSpotPos < HotSpotPos::LT || oldPtr->hotSpotPos > HotSpotPos::CUSTOM) {
+		MSGBOX(L"Need Update", L"UPDATE");
+
+		HGLOBAL hgNew = NULL;
+
+		auto bfSz = wcslen(&oldPtr->pText) + 1;
+		DWORD dwNewSize = sizeof(EDITDATA) + bfSz * sizeof(wchar_t);
+
+		MSGBOX(L"SZ: "+_itos(dwNewSize), L"UPDATE");
+
+		if ((hgNew = GlobalAlloc(GPTR, dwNewSize)) != NULL) {
+			tagEDATA_V1* newEdPtr = (tagEDATA_V1*)GlobalLock(hgNew);
+
+			if (newEdPtr != nullptr) {
+				MSGBOX(L"Copy", L"UPDATE");
+
+				memcpy(newEdPtr, oldPtr, dwNewSize);
+
+				newEdPtr->hotSpotPos = HotSpotPos::LT;
+				newEdPtr->hotSpotX = 0;
+				newEdPtr->hotSpotY = 0;
+			}
+
+			GlobalUnlock(hgNew);
+		}
+
+		MSGBOX(L"Done", L"UPDATE");
+
+		return hgNew;
+	}
+
+	return 0;
+
 	//HGLOBAL hgNew = NULL;
 	//
 	//if ((hgNew = GlobalAlloc(GPTR, sizeof(tagEDATA_V1))) != NULL) {

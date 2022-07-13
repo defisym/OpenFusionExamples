@@ -38,6 +38,12 @@ short actionsInfos[]=
 
 		IDMN_ACTION_ASTR, M_ACTION_ASTR, ACT_ACTION_ASTR,	0, 1, PARAM_EXPSTRING, M_STR,
 		IDMN_ACTION_ASTRNL, M_ACTION_ASTRNL, ACT_ACTION_ASTRNL,	0, 1, PARAM_EXPSTRING, M_STR,
+		
+		IDMN_ACTION_SH, M_ACTION_SH, ACT_ACTION_SH,	0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, IDS_PROP_HOTSPOT_DEFAULT_INFO, IDS_PROP_HOTSPOT_X, IDS_PROP_HOTSPOT_Y,
+		IDMN_ACTION_Z, M_ACTION_Z, ACT_ACTION_Z,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_XSCALE, M_YSCALE,
+		IDMN_ACTION_S, M_ACTION_S, ACT_ACTION_S,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
+		IDMN_ACTION_R, M_ACTION_R, ACT_ACTION_R,	0, 1, PARAM_EXPRESSION, M_ANGLE,
+
 		};
 
 // Definitions of parameters for each expression
@@ -55,6 +61,14 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GVA, M_EXPRESSION_GVA, EXP_EXPRESSION_GVA, 0, 0,
 
 		IDMN_EXPRESSION_GTH, M_EXPRESSION_GTH, EXP_EXPRESSION_GTH, 0, 0,
+		
+		IDMN_EXPRESSION_GRW, M_EXPRESSION_GRW, EXP_EXPRESSION_GRW, 0, 0,
+		IDMN_EXPRESSION_GRH, M_EXPRESSION_GRH, EXP_EXPRESSION_GRH, 0, 0,
+		IDMN_EXPRESSION_GHX, M_EXPRESSION_GHX, EXP_EXPRESSION_GHX, 0, 0,
+		IDMN_EXPRESSION_GHY, M_EXPRESSION_GHY, EXP_EXPRESSION_GHY, 0, 0,
+		IDMN_EXPRESSION_GXS, M_EXPRESSION_GXS, EXP_EXPRESSION_GXS, 0, 0,
+		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, 0, 0,
+		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
 
 		};
 
@@ -96,9 +110,9 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-short WINAPI DLLExport Action_ChangeSize(LPRDATA rdPtr, long param1, long param2) {
-	short width = (short)CNC_GetIntParameter(rdPtr) & 0x7FFF;
-	short height = (short)CNC_GetIntParameter(rdPtr) & 0x7FFF;
+short WINAPI DLLExport Action_ChangeRenderSize(LPRDATA rdPtr, long param1, long param2) {
+	short width = TURNCATE_SHORT(CNC_GetIntParameter(rdPtr));
+	short height = TURNCATE_SHORT(CNC_GetIntParameter(rdPtr));
 
 	rdPtr->swidth = width;
 	rdPtr->sheight = height;
@@ -179,6 +193,60 @@ short WINAPI DLLExport Action_ChangeVerticalAlign(LPRDATA rdPtr, long param1, lo
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
+	HotSpotPos pos = (HotSpotPos)CNC_GetIntParameter(rdPtr);
+
+	int x = (int)CNC_GetIntParameter(rdPtr);
+	int y = (int)CNC_GetIntParameter(rdPtr);
+
+	UpdateHotSpot(pos, rdPtr->swidth, rdPtr->sheight, x, y);
+
+	rdPtr->hotSpotX = x;
+	rdPtr->hotSpotY = y;
+
+	ChangeScale(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Zoom(LPRDATA rdPtr, long param1, long param2) {
+	float xScale = GetFloatParam(rdPtr);
+	float yScale = GetFloatParam(rdPtr);
+
+	rdPtr->xScale = xScale;
+	rdPtr->yScale = yScale;
+
+	ChangeScale(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+
+	float xScale = (1.0f * width / rdPtr->swidth);
+	float yScale = (1.0f * height / rdPtr->sheight);
+
+	rdPtr->xScale = xScale;
+	rdPtr->yScale = yScale;
+
+	ChangeScale(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
+	int angle = (int)CNC_GetIntParameter(rdPtr);
+	angle = angle % 360;
+
+	rdPtr->angle = angle;
+
+	ChangeScale(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -239,6 +307,45 @@ long WINAPI DLLExport Expression_GetVerticalAlign(LPRDATA rdPtr, long param1) {
 	return DT_TOP;
 }
 
+long WINAPI DLLExport Expression_GetRenderWidth(LPRDATA rdPtr, long param1) {
+	return rdPtr->swidth;
+}
+long WINAPI DLLExport Expression_GetRenderHeight(LPRDATA rdPtr, long param1) {
+	return rdPtr->sheight;
+}
+
+long WINAPI DLLExport Expression_GetHotSpotX(LPRDATA rdPtr, long param1) {
+	int hotSpotX = rdPtr->hotSpotX;
+	int hotSpotY = rdPtr->hotSpotY;
+
+	UpdateHotSpot(rdPtr->hotSpotPos
+		, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
+		, hotSpotX, hotSpotY);
+
+	return hotSpotX;
+}
+long WINAPI DLLExport Expression_GetHotSpotY(LPRDATA rdPtr, long param1) {
+	int hotSpotX = rdPtr->hotSpotX;
+	int hotSpotY = rdPtr->hotSpotY;
+
+	UpdateHotSpot(rdPtr->hotSpotPos
+		, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
+		, hotSpotX, hotSpotY);
+
+	return hotSpotY;
+}
+
+long WINAPI DLLExport Expression_GetXScale(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->xScale);
+}
+long WINAPI DLLExport Expression_GetYScale(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->yScale);
+}
+
+long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
+	return rdPtr->angle;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -256,7 +363,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action_ChangeSize,
+			Action_ChangeRenderSize,
 			Action_ChangeString,
 			Action_ChangeRowSpace,
 			Action_ChangeColSpace,
@@ -266,6 +373,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			
 			Action_AppendString,
 			Action_AppendStringNewLine,
+
+			Action_SetHotSpot,
+			Action_Zoom,
+			Action_Stretch,
+			Action_Rotate,
+
 			0
 			};
 
@@ -283,6 +396,14 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetVerticalAlign,
 
 			Expression_GetTotalHeight,
+			
+			Expression_GetRenderWidth,
+			Expression_GetRenderHeight,
+			Expression_GetHotSpotX,
+			Expression_GetHotSpotY,
+			Expression_GetXScale,
+			Expression_GetYScale,
+			Expression_GetAngle,
 			
 			0
 			};

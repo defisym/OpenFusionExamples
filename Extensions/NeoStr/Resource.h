@@ -60,6 +60,24 @@
 #define	IDS_PROP_ALLIGN_VERTICALOFFSET                    237
 #define	IDS_PROP_ALLIGN_VERTICALOFFSET_INFO               238
 
+#define COMBO_HOTSPOT_LT					239
+#define COMBO_HOTSPOT_LM					240
+#define COMBO_HOTSPOT_LB					241
+#define COMBO_HOTSPOT_MT					242
+#define COMBO_HOTSPOT_MM					243
+#define COMBO_HOTSPOT_MB					244
+#define COMBO_HOTSPOT_RT					245
+#define COMBO_HOTSPOT_RM					246
+#define COMBO_HOTSPOT_RB					247
+#define COMBO_HOTSPOT_CUSTOM				248
+
+#define IDS_HOTSPOT_TEXTTITLE				249
+#define IDS_PROP_HOTSPOT_DEFAULT			250
+#define IDS_PROP_HOTSPOT_DEFAULT_INFO		251
+#define IDS_PROP_HOTSPOT_X					252
+#define IDS_PROP_HOTSPOT_X_INFO				253
+#define IDS_PROP_HOTSPOT_Y					254
+#define IDS_PROP_HOTSPOT_Y_INFO				255
 
 // 	Debug tree
 //-------------------
@@ -83,6 +101,11 @@
 #define	IDMN_ACTION_ASTR			25006
 #define	IDMN_ACTION_ASTRNL			25007
 
+#define	IDMN_ACTION_SH		    	25008
+#define	IDMN_ACTION_Z			    25009
+#define	IDMN_ACTION_S			    25010
+#define	IDMN_ACTION_R			    25011
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -95,6 +118,11 @@
 #define	M_ACTION_ASTR			    5006
 #define	M_ACTION_ASTRNL			    5007
 
+#define	M_ACTION_SH		    	    5008
+#define	M_ACTION_Z			        5009
+#define	M_ACTION_S			        5010
+#define	M_ACTION_R			        5011
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -104,6 +132,10 @@
 
 #define M_HA				        5506
 #define M_VA				        5507
+
+#define M_XSCALE				    5508
+#define M_YSCALE				    5509
+#define M_ANGLE				        5510
 
 
 //	Conditions
@@ -143,6 +175,14 @@
 
 #define IDMN_EXPRESSION_GTH 				27008
 
+#define IDMN_EXPRESSION_GRW				    27009
+#define IDMN_EXPRESSION_GRH					27010
+#define IDMN_EXPRESSION_GHX					27011
+#define IDMN_EXPRESSION_GHY					27012
+#define IDMN_EXPRESSION_GXS					27013
+#define IDMN_EXPRESSION_GYS					27014
+#define IDMN_EXPRESSION_GA					27015
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -156,6 +196,14 @@
 #define M_EXPRESSION_GVA				    7007
 
 #define M_EXPRESSION_GTH				    7008
+
+#define M_EXPRESSION_GRW				    7009
+#define M_EXPRESSION_GRH					7010
+#define M_EXPRESSION_GHX					7011
+#define M_EXPRESSION_GHY					7012
+#define M_EXPRESSION_GXS					7013
+#define M_EXPRESSION_GYS					7014
+#define M_EXPRESSION_GA					    7015
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

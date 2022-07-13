@@ -352,6 +352,25 @@ inline void UpdateHotSpot(HotSpotPos Type, size_t width, size_t height, int& X, 
 	}
 }
 
+inline void UpdateRectByHotSpot(HotSpotPos Type, size_t width, size_t height, int X, int Y, LPRECT pRc) {
+	int hotSpotX = X;
+	int hotSpotY = Y;
+
+	//UpdateHotSpot(hotSpotX == 0 && hotSpotY == 0
+	//	? Type
+	//	: HotSpotPos::CUSTOM
+
+	UpdateHotSpot(Type
+		, width, height
+		, hotSpotX, hotSpotY);
+
+	pRc->left -= hotSpotX;
+	pRc->top -= hotSpotY;
+
+	pRc->right = pRc->left + width;
+	pRc->bottom = pRc->top + height;
+}
+
 inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 	//Rotate hotspot
 	float hx = (float)*hotX;

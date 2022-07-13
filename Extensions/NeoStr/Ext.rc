@@ -132,7 +132,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Change Size", IDMN_ACTION_CS
+        MENUITEM "Change Render Size", IDMN_ACTION_CS
         MENUITEM SEPARATOR
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
@@ -143,6 +143,13 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
         MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
+        MENUITEM SEPARATOR
+        MENUITEM "Change HotSpot", IDMN_ACTION_SH
+        MENUITEM SEPARATOR
+        MENUITEM "Zoom", IDMN_ACTION_Z
+        MENUITEM "Stretch", IDMN_ACTION_S
+        MENUITEM SEPARATOR
+        MENUITEM "Rotate", IDMN_ACTION_R
         MENUITEM SEPARATOR
     END
 END
@@ -171,6 +178,17 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Max Width", IDMN_EXPRESSION_GMW
         MENUITEM "Get Total Height", IDMN_EXPRESSION_GTH
+        MENUITEM SEPARATOR
+        MENUITEM "Get Render Width", IDMN_EXPRESSION_GRW
+        MENUITEM "Get Render Height", IDMN_EXPRESSION_GRH
+        MENUITEM SEPARATOR
+        MENUITEM "Get HotSpot X", IDMN_EXPRESSION_GHX
+        MENUITEM "Get HotSpot Y", IDMN_EXPRESSION_GHY
+        MENUITEM SEPARATOR
+        MENUITEM "Get X Scale", IDMN_EXPRESSION_GXS
+        MENUITEM "Get Y Scale", IDMN_EXPRESSION_GYS
+        MENUITEM SEPARATOR
+        MENUITEM "Get Angle", IDMN_EXPRESSION_GA
         MENUITEM SEPARATOR
     END
 END
@@ -292,6 +310,26 @@ BEGIN
     COMBO_PixelOffsetModeHalf                       "PixelOffsetModeHalf"
     IDS_PROP_ALLIGN_VERTICALOFFSET                  "Vertical Offset"
     IDS_PROP_ALLIGN_VERTICALOFFSET_INFO             "Ignore tmInternalLeading & tmExternalLeading when align to vertical center"
+
+    COMBO_HOTSPOT_LT			                    "Left Top"	
+    COMBO_HOTSPOT_LM			                    "Left Middle"	
+    COMBO_HOTSPOT_LB			                    "Left Bottom"	
+    COMBO_HOTSPOT_MT			                    "Middle Top"	
+    COMBO_HOTSPOT_MM			                    "Middle Middle"	
+    COMBO_HOTSPOT_MB			                    "Middle Bottom"	
+    COMBO_HOTSPOT_RT			                    "Right Top"	
+    COMBO_HOTSPOT_RM			                    "Right Middle"	
+    COMBO_HOTSPOT_RB			                    "Right Bottom"	
+    COMBO_HOTSPOT_CUSTOM		                    "CUSTOM"	
+
+    IDS_HOTSPOT_TEXTTITLE		                    "Hot Spot"	
+    IDS_PROP_HOTSPOT_DEFAULT		                "Default Hot Spot"
+    IDS_PROP_HOTSPOT_DEFAULT_INFO	                "HotSpot Type, 0 = LT = Left Top, etc. 9 = Custom, Uses X/Y Defined Later"
+    IDS_PROP_HOTSPOT_X				                "Hot Spot X"
+    IDS_PROP_HOTSPOT_X_INFO			                "Hot Spot X"
+    IDS_PROP_HOTSPOT_Y				                "Hot Spot Y"
+    IDS_PROP_HOTSPOT_Y_INFO			                "Hot Spot Y"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -301,7 +339,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_CS                 "Change Size to [ %0 x %1 ]"
+    M_ACTION_CS                 "Change Render Size to [ %0 x %1 ]"
 
     M_WIDTH                     "Width"
     M_HEIGHT                    "Height"
@@ -323,6 +361,17 @@ BEGIN
     M_HA                        "Horizontal Align, DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2"
     M_VA                        "Vertical Align, DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8"
 
+    M_ACTION_SH             "Set HotSpot to %0, Custom X = %1, Y = %2"
+
+    M_ACTION_Z             "Zoom, X Scale = %0, Y Scale = %1"
+    M_ACTION_S             "Stretch, Width = %0, Height = %1"
+
+    M_XSCALE             "X Scale"
+    M_YSCALE             "Y Scale"
+
+    M_ACTION_R             "Rotate, Angle = %0"
+
+    M_ANGLE             "Angle"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -347,6 +396,14 @@ BEGIN
 
     M_EXPRESSION_GMW		"MaxWidth("
     M_EXPRESSION_GTH		"TotalHeight("
+
+    M_EXPRESSION_GRW        "RenderWidth("
+    M_EXPRESSION_GRH        "RenderHeight("
+    M_EXPRESSION_GHX        "HotSpotX("
+    M_EXPRESSION_GHY        "HotSpotY("
+    M_EXPRESSION_GXS        "XScale("
+    M_EXPRESSION_GYS        "YScale("
+    M_EXPRESSION_GA	        "Angle("
 END
 
 #endif    // English (U.S.) resources

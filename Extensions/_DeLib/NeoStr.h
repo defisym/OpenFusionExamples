@@ -5,6 +5,8 @@
 #include <functional>
 #include <string_view>
 
+#include <FusionUtilities.h>
+
 #ifdef _DEBUG		
 #include <assert.h>
 #endif
@@ -121,6 +123,14 @@ private:
 	long startY = 0;
 
 	LPSURFACE pMemSf = nullptr;
+
+	int hotSpotX = 0;
+	int hotSpotY = 0;
+
+	float xScale = 1.0;
+	float yScale = 1.0;
+
+	int angle = 0;
 
 #ifdef _USE_HWA
 	int hwaType = 0;
@@ -321,6 +331,20 @@ public:
 #else
 		this->dwOutLineColor = BlackEscape(color);
 #endif
+	}
+
+	inline void SetHotSpot(int hotSpotX = 0, int hotSpotY = 0) {
+		this->hotSpotX = hotSpotX;
+		this->hotSpotY = hotSpotY;
+	}
+
+	inline void SetScale(float xScale = 1.0, float yScale = 1.0) {
+		this->xScale = xScale;
+		this->yScale = yScale;
+	}
+
+	inline void SetAngle(int angle = 0) {
+		this->angle = angle;
 	}
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
@@ -540,8 +564,8 @@ public:
 		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
 		if (this->pMemSf == nullptr
-			|| this->pMemSf->GetWidth() != rcWidth
-			|| this->pMemSf->GetHeight() != rcHeight) {
+			|| this->pMemSf->GetWidth() != width
+			|| this->pMemSf->GetHeight() != height) {
 			delete this->pMemSf;
 			this->pMemSf = nullptr;
 
@@ -738,6 +762,7 @@ public:
 		//#else
 		//		auto sfCoef = GetSfCoef(pMemSf);
 		//#endif
+
 		auto sfCoef = GetSfCoef(pMemSf);
 
 		auto lineSz = sfCoef.pitch;
@@ -853,15 +878,21 @@ public:
 			auto pSf = pMemSf;
 #endif
 
-			int xPos = pRc->left - this->borderOffsetX;
-			//int yPos = pRc->top;
-			int yPos = pRc->top - this->borderOffsetY + this->startY;
-
 #ifdef _USE_HWA
-			POINT hotSpot = { 0,0 };
 
-			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, 1.0, 1.0
-				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)0
+			int xOffset = -this->borderOffsetX;
+			int yOffset = -this->borderOffsetY + this->startY;
+
+			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
+
+			//int xPos = pRc->left + xOffset;
+			//int yPos = pRc->top + yOffset;
+
+			int xPos = pRc->left + this->hotSpotX;
+			int yPos = pRc->top + this->hotSpotY;
+
+			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
+				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
 				, bm, bo, boParam, bAntiA);
 #else
 			pSf->Blit(*pDst, xPos, yPos, bm, bo, boParam, bAntiA);

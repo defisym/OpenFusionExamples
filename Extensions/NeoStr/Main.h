@@ -24,7 +24,12 @@
 #define	ACT_ACTION_ASTR			    	6
 #define	ACT_ACTION_ASTRNL		    	7
 
-#define	ACT_LAST						8
+#define	ACT_ACTION_SH		    		8
+#define	ACT_ACTION_Z			    	9
+#define	ACT_ACTION_S			    	10
+#define	ACT_ACTION_R			    	11
+
+#define	ACT_LAST						12
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -42,7 +47,15 @@
 
 #define EXP_EXPRESSION_GTH					8
 
-#define	EXP_LAST                    		9
+#define EXP_EXPRESSION_GRW					9
+#define EXP_EXPRESSION_GRH					10
+#define EXP_EXPRESSION_GHX					11
+#define EXP_EXPRESSION_GHY					12
+#define EXP_EXPRESSION_GXS					13
+#define EXP_EXPRESSION_GYS					14
+#define EXP_EXPRESSION_GA					15
+
+#define	EXP_LAST                    		16
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -85,10 +98,15 @@ typedef struct tagEDATA_V1
 
 	bool bVerticalAlignOffset;
 
+	HotSpotPos hotSpotPos;
+
+	int hotSpotX = 0;
+	int hotSpotY = 0;
+
 	bool unused_1;
 	short unused_2;
 
-	int buffer[22];
+	int buffer[18];
 	
 	wchar_t	pText;		// Text
 
@@ -150,6 +168,16 @@ typedef struct tagRDATA
 	unsigned short borderOffsetY;
 
 	bool bVerticalAlignOffset;
+
+	HotSpotPos hotSpotPos;
+
+	int hotSpotX = 0;
+	int hotSpotY = 0;
+
+	float xScale = 1.0;
+	float yScale = 1.0;
+
+	int angle = 0;
 
 	bool reRender;
 	bool bStrChanged;
