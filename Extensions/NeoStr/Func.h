@@ -3,15 +3,36 @@
 #include <functional>
 #include <string_view>
 
+inline void NoClip(LPRDATA rdPtr) {
+	if (rdPtr->hotSpotPos != HotSpotPos::LT && rdPtr->hotSpotPos != HotSpotPos::CUSTOM
+		|| rdPtr->hotSpotPos == HotSpotPos::CUSTOM && (rdPtr->hotSpotX != 0 || rdPtr->hotSpotY != 0)
+		|| rdPtr->xScale != 1.0 && rdPtr->yScale != 1.0
+		|| rdPtr->angle != 0) {
+		rdPtr->bClip = false;
+	}
+}
+
+inline void ChangeScale(LPRDATA rdPtr) {
+	//rdPtr->rHo.hoImgXSpot = 0;
+	//rdPtr->rHo.hoImgYSpot = 0;
+
+	//rdPtr->rHo.hoImgWidth = rdPtr->swidth;
+	//rdPtr->rHo.hoImgHeight = rdPtr->sheight;
+
+	rdPtr->rHo.hoImgXSpot = rdPtr->hotSpotX;
+	rdPtr->rHo.hoImgYSpot = rdPtr->hotSpotY;
+
+	rdPtr->rHo.hoImgWidth = int(rdPtr->swidth * rdPtr->xScale);
+	rdPtr->rHo.hoImgHeight = int(rdPtr->sheight * rdPtr->yScale);
+
+	NoClip(rdPtr);
+}
+
 inline void ReDisplay(LPRDATA rdPtr) {
 	rdPtr->rc.rcChanged = true;
 	rdPtr->bStrChanged = true;
 
-	rdPtr->rHo.hoImgXSpot = 0;
-	rdPtr->rHo.hoImgYSpot = 0;
-
-	rdPtr->rHo.hoImgWidth = rdPtr->swidth;
-	rdPtr->rHo.hoImgHeight = rdPtr->sheight;
+	ChangeScale(rdPtr);
 
 	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
@@ -138,7 +159,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.RenderPerChar(&edPtr->pText, rc);
 
 		//neoStr.SetHotSpot(edPtr->hotSpotPos, edPtr->hotSpotX, edPtr->hotSpotY);
-		neoStr.SetHotSpot(HotSpotPos::LT, 0, 0);
+		neoStr.SetHotSpot(0, 0);
 		neoStr.SetScale(1.0, 1.0);
 		neoStr.SetAngle(0);
 
@@ -165,8 +186,20 @@ inline void Display(LPRDATA rdPtr) {
 
 		rc.left = screenX;
 		rc.top = screenY;
-		rc.right = rc.left + rdPtr->rHo.hoImgWidth;
-		rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+		//rc.right = rc.left + rdPtr->rHo.hoImgWidth;
+		//rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+
+		rc.right = rc.left + rdPtr->swidth;
+		rc.bottom = rc.top + rdPtr->sheight;
+
+		UpdateRectByHotSpot(rdPtr->hotSpotPos
+			//, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
+			, rdPtr->swidth, rdPtr->sheight
+			, rdPtr->hotSpotX, rdPtr->hotSpotY
+			, &rc);
+
+		int hotSpotX = screenX - rc.left;
+		int hotSpotY = screenY - rc.top;
 
 		// Ink effects
 		BlitMode bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
@@ -181,7 +214,7 @@ inline void Display(LPRDATA rdPtr) {
 		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
 #endif
 
-		rdPtr->pNeoStr->SetHotSpot(rdPtr->hotSpotPos, rdPtr->hotSpotX, rdPtr->hotSpotY);
+		rdPtr->pNeoStr->SetHotSpot(hotSpotX, hotSpotY);
 		rdPtr->pNeoStr->SetScale(rdPtr->xScale, rdPtr->yScale);
 		rdPtr->pNeoStr->SetAngle(rdPtr->angle);
 

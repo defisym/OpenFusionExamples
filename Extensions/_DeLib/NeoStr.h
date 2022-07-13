@@ -124,8 +124,6 @@ private:
 
 	LPSURFACE pMemSf = nullptr;
 
-	HotSpotPos hotSpotPos = HotSpotPos::LT;
-	
 	int hotSpotX = 0;
 	int hotSpotY = 0;
 
@@ -335,11 +333,9 @@ public:
 #endif
 	}
 
-	inline void SetHotSpot(HotSpotPos hotSpotPos = HotSpotPos::LT, int x = 0, int y = 0) {
-		this->hotSpotPos = hotSpotPos;
-
-		this->hotSpotX = x;
-		this->hotSpotY = y;
+	inline void SetHotSpot(int hotSpotX = 0, int hotSpotY = 0) {
+		this->hotSpotX = hotSpotX;
+		this->hotSpotY = hotSpotY;
 	}
 
 	inline void SetScale(float xScale = 1.0, float yScale = 1.0) {
@@ -568,8 +564,8 @@ public:
 		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
 		if (this->pMemSf == nullptr
-			|| this->pMemSf->GetWidth() != rcWidth
-			|| this->pMemSf->GetHeight() != rcHeight) {
+			|| this->pMemSf->GetWidth() != width
+			|| this->pMemSf->GetHeight() != height) {
 			delete this->pMemSf;
 			this->pMemSf = nullptr;
 
@@ -766,6 +762,7 @@ public:
 		//#else
 		//		auto sfCoef = GetSfCoef(pMemSf);
 		//#endif
+
 		auto sfCoef = GetSfCoef(pMemSf);
 
 		auto lineSz = sfCoef.pitch;
@@ -882,23 +879,17 @@ public:
 #endif
 
 #ifdef _USE_HWA
-			int hotSpotX = this->hotSpotX;
-			int hotSpotY = this->hotSpotY;
 
-			UpdateHotSpot(hotSpotX == 0 && hotSpotY == 0 
-				? this->hotSpotPos 
-				: HotSpotPos::CUSTOM
-				, pSf->GetWidth(), pSf->GetHeight()
-				, hotSpotX, hotSpotY);
-			
-			POINT hotSpot = { hotSpotX,hotSpotY };
+			int xOffset = -this->borderOffsetX;
+			int yOffset = -this->borderOffsetY + this->startY;
 
-			int xPos = pRc->left - this->borderOffsetX;
-			//int yPos = pRc->top;
-			int yPos = pRc->top - this->borderOffsetY + this->startY;
+			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
 
-			xPos -= hotSpotX;
-			yPos -= hotSpotY;
+			//int xPos = pRc->left + xOffset;
+			//int yPos = pRc->top + yOffset;
+
+			int xPos = pRc->left + this->hotSpotX;
+			int yPos = pRc->top + this->hotSpotY;
 
 			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
 				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle

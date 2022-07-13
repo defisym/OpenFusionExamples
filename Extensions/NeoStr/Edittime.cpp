@@ -107,6 +107,7 @@ LPCWSTR HotSpotComboList[] = {
 	MAKEINTRESOURCE(COMBO_HOTSPOT_RT),
 	MAKEINTRESOURCE(COMBO_HOTSPOT_RM),
 	MAKEINTRESOURCE(COMBO_HOTSPOT_RB),
+	MAKEINTRESOURCE(COMBO_HOTSPOT_CUSTOM),
 	NULL
 };
 
@@ -609,20 +610,11 @@ void WINAPI DLLExport GetObjectRect(mv _far *mV, RECT FAR *rc, fpLevObj loPtr, L
 	//rc->right = rc->left + edPtr->swidth;
 	//rc->bottom = rc->top + edPtr->sheight;
 
-	int hotSpotX = edPtr->hotSpotX;
-	int hotSpotY = edPtr->hotSpotY;
+	UpdateRectByHotSpot(edPtr->hotSpotPos
+		, edPtr->swidth, edPtr->sheight
+		, edPtr->hotSpotX, edPtr->hotSpotY
+		, rc);
 
-	UpdateHotSpot(hotSpotX == 0 && hotSpotY == 0
-		? edPtr->hotSpotPos
-		: HotSpotPos::CUSTOM
-		, (size_t)edPtr->swidth, (size_t)edPtr->sheight
-		, hotSpotX, hotSpotY);
-
-	rc->left -= hotSpotX;
-	rc->top -= hotSpotY;
-
-	rc->right = rc->left + edPtr->swidth;
-	rc->bottom = rc->top + edPtr->sheight;
 #endif // !defined(RUN_ONLY)
 	return;
 }
@@ -1025,6 +1017,8 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	case PROPID_HOTSPOT_DEFAULT:
 		edPtr->hotSpotPos = (HotSpotPos)((CPropDWordValue*)pValue)->m_dwValue;
 		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_HOTSPOT_X, false);
+		mvRefreshProp(mV, edPtr, PROPID_HOTSPOT_Y, false);
 		break;
 	case PROPID_HOTSPOT_X:
 		edPtr->hotSpotX = ((CPropDWordValue*)pValue)->m_dwValue;
@@ -1119,6 +1113,13 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return (edPtr->nComboIndex != 0);
 	}
 */
+	switch (nPropID) {
+	case PROPID_HOTSPOT_X:
+		return (edPtr->hotSpotPos == HotSpotPos::CUSTOM);
+	case PROPID_HOTSPOT_Y:
+		return (edPtr->hotSpotPos == HotSpotPos::CUSTOM);
+	}
+
 #endif // !defined(RUN_ONLY)
 	return TRUE;
 }

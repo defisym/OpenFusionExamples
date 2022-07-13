@@ -108,6 +108,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hotSpotPos= edPtr->hotSpotPos;
 
+	rdPtr->rHo.hoImgXSpot = edPtr->hotSpotX;
+	rdPtr->rHo.hoImgYSpot = edPtr->hotSpotY;
+
 	rdPtr->hotSpotX = edPtr->hotSpotX;
 	rdPtr->hotSpotY = edPtr->hotSpotY;
 
