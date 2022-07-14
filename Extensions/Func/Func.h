@@ -121,7 +121,7 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 	rdPtr->FuncNameStack->pop_back();
 	rdPtr->FuncParamStack->pop_back();	
 
-	rdPtr->FuncTempParamStack->erase(GetFuncNameWithRecursiveID(FuncName));
+	rdPtr->FuncTempParam->erase(GetFuncNameWithRecursiveID(FuncName));
 
 	(*rdPtr->RecursiveIndex)[FuncName] -= 1;
 

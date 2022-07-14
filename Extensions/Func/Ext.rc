@@ -185,6 +185,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Temp Param"
         BEGIN
+            MENUITEM "Set Global Temp Param (value)", IDMN_ACTION_SVGP
+            MENUITEM "Set Global Temp Param (string)", IDMN_ACTION_SSGP
+            MENUITEM SEPARATOR
             MENUITEM "Set Func's Temp Param (value)", IDMN_ACTION_STVV
             MENUITEM "Set Func's Temp Param (string)", IDMN_ACTION_STV
             MENUITEM SEPARATOR
@@ -241,6 +244,9 @@ BEGIN
         END        
         POPUP "Get Temp Param"
         BEGIN
+            MENUITEM "Get Global Temp Param (return value)", IDMN_EXPRESSION_GVGP
+            MENUITEM "Get Global Temp Param (return string)", IDMN_EXPRESSION_GSGP
+            MENUITEM SEPARATOR
             MENUITEM "Get Func's Temp Param (return value)", IDMN_EXPRESSION_GVTP
             MENUITEM "Get Func's Temp Param (return string)", IDMN_EXPRESSION_GSTP
             MENUITEM SEPARATOR
@@ -368,7 +374,10 @@ BEGIN
 
     M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
     
-    M_ACTION_ITO              "Iterate Object %0, Iterate Name %1"
+    M_ACTION_ITO            "Iterate Object %0, Iterate Name %1"
+
+    M_ACTION_SSGP           "Set Global Temp Param %0 = %1"
+    M_ACTION_SVGP           "Set Global Temp Param %0 = %1"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -414,6 +423,9 @@ BEGIN
     
     M_EXPRESSION_GVP            "GetParam("
     M_EXPRESSION_GSP            "GetParam$("
+
+    M_EXPRESSION_GVGP           "GetGlobalTempParam("
+    M_EXPRESSION_GSGP           "GetGlobalTempParam$("
 
     M_EXPRESSION_GVTP           "GetTempParam("
     M_EXPRESSION_GSTP           "GetTempParam$("

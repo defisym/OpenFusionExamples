@@ -20,7 +20,7 @@ typedef struct Data {
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
 
-typedef std::unordered_map<std::wstring, size_t> LIDX;
+typedef std::unordered_map<std::wstring, size_t> LIDX;	//loop index
 typedef LIDX* LPLIDX;
 
 typedef std::vector<Data> PARAMVEC;
@@ -29,7 +29,10 @@ typedef PARAMVEC* LPPARAMVEC;
 typedef std::vector<PARAMVEC> PARAMSTACK;
 typedef PARAMSTACK* LPPARAMSTACK;
 
-typedef std::unordered_map<std::wstring, std::unordered_map<std::wstring, Data>> TPARAM;
+typedef std::unordered_map<std::wstring, Data> PARAMMAP;
+typedef PARAMMAP* LPPARAMMAP;
+
+typedef std::unordered_map<std::wstring, PARAMMAP> TPARAM;
 typedef TPARAM* LPTPARAM;
 
 typedef std::wstring STRING;
@@ -66,9 +69,9 @@ typedef STRING* LPSTRING;
 
 #define GetParam(Pos) rdPtr->FuncParamStack->back().at(Pos)
 
-#define HasTempParam(FuncName, ParamName) (((*rdPtr->FuncTempParamStack).count(GetFuncNameWithRecursiveID(FuncName)) != 0)	\
-								&&((*rdPtr->FuncTempParamStack)[GetFuncNameWithRecursiveID(FuncName)].count(ParamName) != 0))
-#define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParamStack)[GetFuncNameWithRecursiveID(FuncName)][ParamName]
+#define HasTempParam(FuncName, ParamName) (((*rdPtr->FuncTempParam).count(GetFuncNameWithRecursiveID(FuncName)) != 0)	\
+								&&((*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)].count(ParamName) != 0))
+#define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)][ParamName]
 
 #define Return(Pos) rdPtr->FuncReturn->at(Pos)
 

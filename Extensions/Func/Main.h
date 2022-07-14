@@ -54,7 +54,10 @@
 
 #define	ACT_ACTION_ITO				15
 
-#define	ACT_LAST					16
+#define	ACT_ACTION_SSGP				16
+#define	ACT_ACTION_SVGP				17
+
+#define	ACT_LAST					18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -86,7 +89,10 @@
 
 #define EXP_EXPRESSION_GLI			16
 
-#define	EXP_LAST                    17
+#define EXP_EXPRESSION_GVGP			17
+#define EXP_EXPRESSION_GSGP			18
+
+#define	EXP_LAST                    19
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -138,7 +144,9 @@ typedef struct tagRDATA
 	LPVEC FuncNameStack;
 
 	LPPARAMSTACK FuncParamStack;
-	LPTPARAM FuncTempParamStack;
+	LPTPARAM FuncTempParam;
+
+	LPPARAMMAP GlobalTempParam;
 
 	LPPARAMVEC FuncReturn;
 

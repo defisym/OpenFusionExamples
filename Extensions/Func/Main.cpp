@@ -70,6 +70,9 @@ short actionsInfos[]=
 
 		IDMN_ACTION_ITO, M_ACTION_ITO, ACT_ACTION_ITO, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
 
+		IDMN_ACTION_SSGP, M_ACTION_SSGP, ACT_ACTION_SSGP, 0, 2,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_PARAMNAME, M_ACT_PARAM,
+		IDMN_ACTION_SVGP, M_ACTION_SVGP, ACT_ACTION_SVGP, 0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACT_PARAMNAME, M_ACT_PARAM,
+
 		};
 
 // Definitions of parameters for each expression
@@ -112,9 +115,11 @@ short expressionsInfos[]=
 		//GetLoopIndex
 		IDMN_EXPRESSION_GLI, M_EXPRESSION_GLI, EXP_EXPRESSION_GLI, 0, 1,EXPPARAM_STRING,M_CND_FUNCNAME,
 
+		//Get Global Param
+		IDMN_EXPRESSION_GVGP, M_EXPRESSION_GVGP, EXP_EXPRESSION_GVGP, 0, 1, EXPPARAM_STRING, M_ACT_PARAMNAME,
+		IDMN_EXPRESSION_GSGP, M_EXPRESSION_GSGP, EXP_EXPRESSION_GSGP, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_ACT_PARAMNAME,
+
 		};
-
-
 
 // ============================================================================
 //
@@ -210,6 +215,23 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 // ACTIONS ROUTINES
 // 
 // ============================================================================
+
+short WINAPI DLLExport SetGlobalParamStr(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	(*rdPtr->GlobalTempParam)[ParamName] = Data_Str(Param);
+
+	return 0;
+}
+short WINAPI DLLExport SetGlobalParamVal(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	float Param = GetFloatParam(rdPtr);
+	
+	(*rdPtr->GlobalTempParam)[ParamName] = Data_Val(Param);
+
+	return 0;
+}
 
 short WINAPI DLLExport SetTempParamStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -442,6 +464,38 @@ long WINAPI DLLExport GetParamRS(LPRDATA rdPtr, long param1) {
 	}	
 }
 
+long WINAPI DLLExport GetGlobalParamRV(LPRDATA rdPtr, long param1) {
+	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	auto it = rdPtr->GlobalTempParam->find(ParamName);
+
+	if (it != rdPtr->GlobalTempParam->end()) {
+		Data_StoV(it->second);
+		return ReturnFloat(it->second.Val);
+	}
+	else {
+		return 0;
+	}
+}
+
+long WINAPI DLLExport GetGlobalParamRS(LPRDATA rdPtr, long param1) {
+	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	auto it = rdPtr->GlobalTempParam->find(ParamName);
+
+	if (it != rdPtr->GlobalTempParam->end()) {
+		Data_VtoS(it->second);
+		return (long)it->second.Str.c_str();
+	}
+	else {
+		return (long)Default_Str;
+	}
+}
+
 long WINAPI DLLExport GetTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
@@ -651,6 +705,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			IterateObject,
 
+			SetGlobalParamStr,
+			SetGlobalParamVal,
+
 			0
 			};
 
@@ -682,6 +739,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetCurrentTempParamRS,
 
 			GetLoopIndex,
+
+			GetGlobalParamRV,
+			GetGlobalParamRS,
 
 			0
 			};

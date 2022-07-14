@@ -57,6 +57,9 @@
 
 #define IDMN_ACTION_ITO   	    25015
 
+#define	IDMN_ACTION_SSGP		25016
+#define	IDMN_ACTION_SVGP		25017
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -83,6 +86,9 @@
 #define M_ACTION_PRV            5014
 
 #define M_ACTION_ITO            5015
+
+#define	M_ACTION_SSGP			5016
+#define	M_ACTION_SVGP			5017
 
 // Titles of action parameters
 #define M_ACT_RET				 5501
@@ -178,6 +184,9 @@
 
 #define IDMN_EXPRESSION_GLI 	27016
 
+#define IDMN_EXPRESSION_GVGP	27017
+#define IDMN_EXPRESSION_GSGP	27018
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -205,6 +214,9 @@
 #define M_EXPRESSION_GSCTP	     7015
 
 #define M_EXPRESSION_GLI	     7016
+
+#define M_EXPRESSION_GVGP	     7017
+#define M_EXPRESSION_GSGP	     7018
 
 // Names of expression parameters
 #define M_EXP_PARAM				 7500
