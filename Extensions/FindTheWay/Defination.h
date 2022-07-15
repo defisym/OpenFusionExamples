@@ -28,6 +28,6 @@
 #define StrEmpty(X) StrEqu(X,Empty_Str)
 
 //You need "\\+" to escape +
-#define RegStr_IsNum _T("\\+[0-9]+(.[0-9]+)?|-[0-9]+(.[0-9]+)?|[0-9]+(.[0-9]+)?")
+#define RegStr_IsNum _T("(\\+|\\-)?[0-9]+(\\.[0-9]+)?")
 
 #endif // !_DEFINATION_
