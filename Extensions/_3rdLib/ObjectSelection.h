@@ -133,6 +133,20 @@ private:
 		}
 	}
 
+	inline void IterateOiL(std::function<void(LPOIL)> callBack) {
+		auto oiLSz = rhPtr->rhNumberOi;
+
+		for (int i = 0; i < oiLSz; i++) {
+			auto pCurOi = GetLPOIL(i);
+
+			if (pCurOi == nullptr) {
+				continue;
+			}
+
+			callBack(pCurOi);
+		}
+	}
+
 public:
 	ObjectSelection(LPRH rhPtr) {
 		this->rhPtr = rhPtr;
@@ -502,6 +516,27 @@ public:
 				}
 			}
 		}
+	}
+
+	//Iterate given identifier
+	inline void IterateObjectWithIdentifier(LPRDATA rdPtr, const int identifier, std::function<void(LPRO)> callBack) {
+		IterateOiL([=](LPOIL pOil) {
+			if (pOil->oilObject < 0) {
+				return;
+			}
+
+			LPRO pObject = (LPRO)ObjectList[pOil->oilObject].oblOffset;
+
+			if (pObject == nullptr) {
+				return;
+			}
+
+			auto objIdentifier = pObject->roHo.hoIdentifier;
+
+			if (objIdentifier == identifier) {
+				callBack(pObject);
+			}
+			});
 	}
 
 	//Save scope
