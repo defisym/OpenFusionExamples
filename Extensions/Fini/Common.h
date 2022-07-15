@@ -29,6 +29,7 @@
 
 // My headers
 #include	"SimpleIni.h"
+#include	"GeneralDefinition.h"
 #include	"Defination.h"
 #include	"Encryption.h"
 #include	"StrNum.h"
@@ -44,6 +45,7 @@
 #include	"TigsExt.hpp"
 
 // My headers
+#include	"Fusion.h"
 #include	"FusionUtilities.h"
 #include	"Func.h"
 
