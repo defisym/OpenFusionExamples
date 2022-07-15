@@ -37,6 +37,7 @@
 class ObjectSelection;
 
 // My headers
+#include	"GeneralDefinition.h"
 #include	"Defination.h"
 #include	"StrNum.h"
 
@@ -46,6 +47,7 @@ class ObjectSelection;
 #include	"TigsExt.hpp"
 
 // My headers
+#include	"Fusion.h"
 #include	"ObjectSelection.h"
 #include	"Func.h"
 
