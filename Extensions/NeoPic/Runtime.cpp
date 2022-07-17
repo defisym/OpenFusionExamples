@@ -141,7 +141,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//Load Lib
 	if(rdPtr->isLib){
 		if (GetExtUserData() == nullptr) {
-			rdPtr->pData=new GlobalData;
+			rdPtr->pData = new GlobalData;
 			
 			rdPtr->lib = new SurfaceLib;
 			rdPtr->pCount = new RefCount;

@@ -142,6 +142,15 @@
     <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\_DeLib\WindowsCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\ObjectSelection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\GetFontName.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

@@ -3,6 +3,8 @@
 #include <functional>
 #include <string_view>
 
+void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc);
+
 inline void NoClip(LPRDATA rdPtr) {
 	if (rdPtr->hotSpotPos != HotSpotPos::LT && rdPtr->hotSpotPos != HotSpotPos::CUSTOM
 		|| rdPtr->hotSpotPos == HotSpotPos::CUSTOM && (rdPtr->hotSpotX != 0 || rdPtr->hotSpotY != 0)
@@ -43,7 +45,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
-		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont);
+		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont, rdPtr->pData->pFontCollection);
 
 #ifdef _USE_HWA
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);

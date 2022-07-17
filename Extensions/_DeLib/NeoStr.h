@@ -5,7 +5,7 @@
 #include <functional>
 #include <string_view>
 
-#include <FusionUtilities.h>
+//#include <FusionUtilities.h>
 
 #ifdef _DEBUG		
 #include <assert.h>
@@ -26,6 +26,8 @@
 #include <gdiplus.h>
 #pragma comment(lib,"Gdiplus")
 
+#include <gdiplusheaders.h>
+
 using Gdiplus::GdiplusStartupInput;
 using Gdiplus::Graphics;
 using Gdiplus::GraphicsPath;
@@ -45,6 +47,9 @@ using Gdiplus::Bitmap;
 using Gdiplus::BitmapData;
 using Gdiplus::ImageLockMode;
 using Gdiplus::ImageCodecInfo;
+using Gdiplus::PrivateFontCollection;
+using Gdiplus::InstalledFontCollection;
+using Gdiplus::FontFamily;
 using Gdiplus::GetImageEncodersSize;
 #endif
 
@@ -61,6 +66,7 @@ private:
 	COLORREF dwTextColor;
 
 	HFONT hFont;
+	LOGFONT logFont;
 
 	TEXTMETRIC tm;
 	int nRowSpace = 0;
@@ -93,6 +99,8 @@ private:
 #ifdef _GDIPLUS		
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
+
+	PrivateFontCollection* pFontCollection = nullptr;
 #endif
 
 	struct StrPos {
@@ -235,13 +243,18 @@ public:
 		long totalHeight;
 	};
 
-	NeoStr(DWORD dwAlignFlags, COLORREF color, HFONT hFont) {
+	NeoStr(DWORD dwAlignFlags, COLORREF color
+		, HFONT hFont
+		, PrivateFontCollection* pFontCollection = nullptr) {
 		this->hdc = GetDC(NULL);
+		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
+
 		SelectObject(this->hdc, hFont);
 
 		this->SetColor(color);
 
 		this->hFont = hFont;
+		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 
 		GetTextMetrics(hdc, &this->tm);
 		//this->SetSpace();
@@ -251,7 +264,8 @@ public:
 		this->strPos.reserve(20);
 
 #ifdef _GDIPLUS		
-		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+		Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+		this->pFontCollection = pFontCollection;
 #endif
 		// add a default char to return default value when input text is empty
 		this->GetCharSizeWithCache(L'露');
@@ -275,6 +289,72 @@ public:
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 #endif	
 	}
+
+#ifdef _GDIPLUS	
+	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
+	//https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
+	inline void EmbedFont(LPCWSTR pFontFile) {
+		this->pFontCollection->AddFontFile(pFontFile);
+		auto count = this->pFontCollection->GetFamilyCount();
+		
+		return;
+	}
+
+	inline static void EmbedFont(LPCWSTR pFontFile,PrivateFontCollection& fontCollection){
+		fontCollection.AddFontFile(pFontFile);
+
+		return;
+	}
+
+	inline static bool FontCollectionHasFont(LPCWSTR pFaceName
+		, Gdiplus::FontCollection* pFontCollection) {
+		if (pFontCollection == nullptr) {
+			return false;
+		}
+
+		int n = pFontCollection->GetFamilyCount();
+		
+		if (n == 0) {
+			return false;
+		}
+
+		FontFamily* ffs = new FontFamily[n];
+
+		int found;
+		pFontCollection->GetFamilies(n, ffs, &found);
+		
+		if (found == 0) {
+			return false;
+		}
+
+		wchar_t name[LF_FACESIZE]{ 0 };
+
+		LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+
+		bool has = false;
+
+		for (int i = 0; i < n; i++) {
+			has = false;
+
+			auto hasName = [&](LANGID language = (LANGID)0U) {
+				memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
+				ffs[i].GetFamilyName(name, language);
+				has = (wcscmp(name, pFaceName) == 0);
+			};
+
+			hasName();
+			hasName(language);
+
+			if (has) {
+				break;
+			}
+		}
+
+		delete[] ffs;
+
+		return has;
+	}
+#endif	
 
 #ifdef _USE_HWA
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
@@ -611,7 +691,65 @@ public:
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 
 		SolidBrush solidBrush(fontColor);
-		Font font(GetDC(NULL), this->hFont);
+		
+		FontFamily* pFontFamily = nullptr;
+		FontFamily FontFamily;
+
+		//Font font(GetDC(NULL), this->hFont);
+		//Font font2Plus(this->hdc, &this->logFont);
+
+		//if (FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)) {
+		//	int nNumFound = 0;
+		//	this->pFontCollection->GetFamilies(1, &FontFamily, &nNumFound);
+
+		//	if (nNumFound > 0) {
+		//		pFontFamily = &FontFamily;
+		//	}
+		//}
+		//else {
+		//	InstalledFontCollection ifc;
+
+		//	int nNumFound = 0;
+		//	ifc.GetFamilies(1, &FontFamily, &nNumFound);
+
+		//	if (nNumFound > 0) {
+		//		pFontFamily = &FontFamily;
+		//	}
+		//}
+
+		////Font font(&pFontFamily[0], font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit());
+
+		//Font font(&FontFamily[0], font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit());
+
+		//Font font(this->logFont.lfFaceName, font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit(),
+		//	FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)
+		//	? this->pFontCollection
+		//	: nullptr);
+
+		//font2Plus.GetUnit();
+
+		int fontStyle = Gdiplus::FontStyleRegular;
+
+		if (this->logFont.lfWeight >= 600) {
+			fontStyle = fontStyle | Gdiplus::FontStyleBold;
+		}
+		if (this->logFont.lfItalic) {
+			fontStyle = fontStyle | Gdiplus::FontStyleRegular;
+		}
+		if (this->logFont.lfUnderline) {
+			fontStyle = fontStyle | Gdiplus::FontStyleUnderline;
+		}
+		if (this->logFont.lfStrikeOut) {
+			fontStyle = fontStyle | Gdiplus::FontStyleStrikeout;
+		}
+
+		//Font font2Plus(this->hdc, &this->logFont);
+		//auto sz = font2Plus.GetSize();
+
+		Font font(this->logFont.lfFaceName, (float)abs(logFont.lfHeight), fontStyle, Gdiplus::UnitWorld,
+			FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)
+			? this->pFontCollection
+			: nullptr);
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
@@ -677,7 +815,7 @@ public:
 #ifdef _GDIPLUS	
 #ifdef  _PATH
 					txtPath.AddString(pCurChar, 1,
-						&fontFamily, fontstyle, font.GetSize()
+						&pFontFamily, fontstyle, font.GetSize()
 						, PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
 #else
 

@@ -86,6 +86,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->dwColor = edPtr->dwColor = edPtr->dwColor = edPtr->dwColor;
 	rdPtr->dwAlignFlags = edPtr->dwAlignFlags;
+	rdPtr->logFont = edPtr->logFont;
 	rdPtr->hFont = CreateFontIndirect(&edPtr->logFont);
 
 	rdPtr->nOutLinePixel = edPtr->nOutLinePixel;
@@ -125,7 +126,20 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
 	
 	rdPtr->bFontChanged = true;
-	
+
+	if (GetExtUserData() == nullptr) {
+		rdPtr->pData = new GlobalData;
+		auto state = Gdiplus::GdiplusStartup(&rdPtr->pData->gdiplusToken
+			, &rdPtr->pData->gdiplusStartupInput
+			, NULL);
+		rdPtr->pData->gdiInitialized = true;
+		rdPtr->pData->pFontCollection = new PrivateFontCollection;
+
+		//rdPtr->pData->pFontCollection->AddFontFile(L"F:\\DEV\\OpenFusionExamples\\Extensions\\NeoStr\\ToInstall\\Files\\Examples\\NeoStr\\font.ttf");
+	}else{
+		rdPtr->pData = (GlobalData*)GetExtUserData();
+	}
+
 	// No errors
 	return 0;
 }
@@ -152,6 +166,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
+
+	SetExtUserData(rdPtr->pData);
 
 	// No errors
 	return 0;
@@ -366,12 +382,14 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if ( pData != NULL ) {
+		delete pData->pFontCollection;
+		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
+
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------
@@ -384,12 +402,14 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if ( pData != NULL ) {
+		delete pData->pFontCollection;
+		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
+
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------
@@ -439,10 +459,18 @@ void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf)
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
 {
 	HFONT hFont = CreateFontIndirect(pLf);
+
+#ifdef _DEBUG
+	LOGFONT Lf;
+	GetObject(hFont, sizeof(LOGFONT), &Lf);
+#endif // _DEBUG
+
+
 	if ( hFont != NULL )
 	{
 		if (rdPtr->hFont!=0)
 			DeleteObject(rdPtr->hFont);
+		rdPtr->logFont = *pLf;
 		rdPtr->hFont = hFont;
 		rdPtr->bFontChanged = true;
 		

@@ -40,6 +40,7 @@ struct CharPos {
 };
 
 enum class HotSpotPos;
+struct GlobalData;
 
 // Specific to this cox
 #include	"resource.h"
@@ -48,10 +49,21 @@ enum class HotSpotPos;
 
 // My header
 #include	"GeneralDefinition.h"
+#include	"GetFontName.h"
+#include	"WindowsCommon.h"
+#include	"ObjectSelection.h"
 
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
 #include	"NeoStr.h"
+
+struct GlobalData {
+	bool gdiInitialized = false;
+	GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR           gdiplusToken;
+	
+	PrivateFontCollection* pFontCollection;
+};
 
 #include	"Func.h"
 
