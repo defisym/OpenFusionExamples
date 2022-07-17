@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GeneralDefinition.h"
 #include "StrNum.h"
 
 // Object identifier

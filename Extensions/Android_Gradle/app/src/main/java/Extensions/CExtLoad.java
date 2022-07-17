@@ -88,6 +88,14 @@ public class CExtLoad
 			{
 				object=new CRunFindTheWay();
 			}
+			if (name.compareToIgnoreCase("AndroidUtilities")==0)
+			{
+				object=new CRunAndroidUtilities();
+			}
+			if (name.compareToIgnoreCase("Func")==0)
+			{
+				object=new CRunFunc();
+			}
 			if (name.compareToIgnoreCase("Layer")==0)
 			{
 				object=new CRunLayer();

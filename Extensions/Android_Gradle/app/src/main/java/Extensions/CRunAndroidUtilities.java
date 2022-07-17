@@ -12,7 +12,7 @@ import static _DeLib.FusionUtilities.*;
 public class CRunAndroidUtilities extends CRunExtension {
     // Define ACE ID here
     // Condition
-    final int CND = 0;
+    final int CND_ISEMBED = 0;
 
     final int CND_LAST = 1;
 
@@ -69,10 +69,8 @@ public class CRunAndroidUtilities extends CRunExtension {
     @Override
     public boolean condition(int num, CCndExtension cnd) {
         switch (num) {
-            case CND: {
-                // cnd.getParamExpString(rh, 0);
-
-                return true;
+            case CND_ISEMBED: {
+                return IsEmbed(ho, cnd.getParamExpString(rh, 0));
             }
         }
 
