@@ -44,3 +44,23 @@ inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
 inline void NewStr(LPTSTR & Tar, const std::wstring & Str) {
 	NewStr(Tar, Str.c_str());
 }
+
+// convert string to wstring
+inline std::wstring to_wide_string(const std::string& input, UINT codePage = CP_UTF8) {
+	const auto size_needed = MultiByteToWideChar(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0);
+
+	std::wstring result(size_needed, 0);
+	MultiByteToWideChar(codePage, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed);
+
+	return result;
+}
+
+// convert wstring to string 
+inline std::string to_byte_string(const std::wstring& input, UINT codePage = CP_UTF8) {
+	const auto size_needed = WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0, nullptr, nullptr);
+
+	std::string result(size_needed, 0);
+	WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed, nullptr, nullptr);
+
+	return result;
+}
