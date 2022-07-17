@@ -5,7 +5,7 @@
 #include <functional>
 #include <string_view>
 
-#include <FusionUtilities.h>
+//#include <FusionUtilities.h>
 
 #ifdef _DEBUG		
 #include <assert.h>
@@ -26,6 +26,8 @@
 #include <gdiplus.h>
 #pragma comment(lib,"Gdiplus")
 
+#include <gdiplusheaders.h>
+
 using Gdiplus::GdiplusStartupInput;
 using Gdiplus::Graphics;
 using Gdiplus::GraphicsPath;
@@ -45,6 +47,9 @@ using Gdiplus::Bitmap;
 using Gdiplus::BitmapData;
 using Gdiplus::ImageLockMode;
 using Gdiplus::ImageCodecInfo;
+using Gdiplus::PrivateFontCollection;
+using Gdiplus::InstalledFontCollection;
+using Gdiplus::FontFamily;
 using Gdiplus::GetImageEncodersSize;
 #endif
 
@@ -61,6 +66,7 @@ private:
 	COLORREF dwTextColor;
 
 	HFONT hFont;
+	LOGFONT logFont;
 
 	TEXTMETRIC tm;
 	int nRowSpace = 0;
@@ -93,6 +99,7 @@ private:
 #ifdef _GDIPLUS		
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
+	PrivateFontCollection* pFontCollection = nullptr;
 #endif
 
 	struct StrPos {
@@ -242,6 +249,7 @@ public:
 		this->SetColor(color);
 
 		this->hFont = hFont;
+		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 
 		GetTextMetrics(hdc, &this->tm);
 		//this->SetSpace();
@@ -252,6 +260,7 @@ public:
 
 #ifdef _GDIPLUS		
 		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+		this->pFontCollection = new PrivateFontCollection;
 #endif
 		// add a default char to return default value when input text is empty
 		this->GetCharSizeWithCache(L'露');
@@ -272,9 +281,21 @@ public:
 #endif
 
 #ifdef _GDIPLUS	
+		delete this->pFontCollection;
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 #endif	
 	}
+
+#ifdef _GDIPLUS	
+	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
+	//https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
+	inline void EmbedFont(LPCWSTR pFontFile) {
+		this->pFontCollection->AddFontFile(pFontFile);
+		auto count = this->pFontCollection->GetFamilyCount();
+		
+		return;
+	}
+#endif	
 
 #ifdef _USE_HWA
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
@@ -611,7 +632,25 @@ public:
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 
 		SolidBrush solidBrush(fontColor);
-		Font font(GetDC(NULL), this->hFont);
+		
+		//Font font(GetDC(NULL), this->hFont);
+		Font font2Plus(GetDC(NULL), this->hFont);
+		
+		auto pFontFamily = new FontFamily[max(5, this->pFontCollection->GetFamilyCount())];
+
+		int nNumFound = 0;
+		this->pFontCollection->GetFamilies(1, pFontFamily, &nNumFound);
+
+		if (nNumFound == 0) {
+			InstalledFontCollection ifc;
+			ifc.GetFamilies(1, pFontFamily, &nNumFound);
+		}
+
+		//Font font(&pFontFamily[0], font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit());
+
+		Font font(&pFontFamily[0], font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit());
+
+		delete[] pFontFamily;
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
@@ -677,7 +716,7 @@ public:
 #ifdef _GDIPLUS	
 #ifdef  _PATH
 					txtPath.AddString(pCurChar, 1,
-						&fontFamily, fontstyle, font.GetSize()
+						&pFontFamily, fontstyle, font.GetSize()
 						, PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
 #else
 

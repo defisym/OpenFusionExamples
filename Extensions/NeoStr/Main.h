@@ -29,7 +29,9 @@
 #define	ACT_ACTION_S			    	10
 #define	ACT_ACTION_R			    	11
 
-#define	ACT_LAST						12
+#define	ACT_ACTION_EF			    	12
+
+#define	ACT_LAST						13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -146,6 +148,7 @@ typedef struct tagRDATA
 	
 	COLORREF		dwColor;		// text color
 	DWORD			dwAlignFlags;	// alignment flags
+	LOGFONT			logFont;		// text font
 	HFONT			hFont;			// text font
 
 	BYTE nOutLinePixel;

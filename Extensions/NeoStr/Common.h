@@ -48,6 +48,9 @@ enum class HotSpotPos;
 
 // My header
 #include	"GeneralDefinition.h"
+#include	"GetFontName.h"
+#include	"WindowsCommon.h"
+#include	"ObjectSelection.h"
 
 #include	"Fusion.h"
 #include	"FusionUtilities.h"

@@ -44,6 +44,8 @@ short actionsInfos[]=
 		IDMN_ACTION_S, M_ACTION_S, ACT_ACTION_S,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		IDMN_ACTION_R, M_ACTION_R, ACT_ACTION_R,	0, 1, PARAM_EXPRESSION, M_ANGLE,
 
+		IDMN_ACTION_EF, M_ACTION_EF, ACT_ACTION_EF,	0, 1, PARAM_EXPSTRING, M_FONTNAME,
+
 		};
 
 // Definitions of parameters for each expression
@@ -247,6 +249,44 @@ short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+// https://docs.microsoft.com/zh-cn/windows/win32/gdi/font-installation-and-deletion
+// https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-addfontresourceexa
+short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring FilePath = GetFullPathNameStr((LPCTSTR)CNC_GetStringParameter(rdPtr));
+
+	int ret = 0;
+
+	auto flags = FR_PRIVATE;
+
+	//ret = RemoveFontResourceEx(FilePath.c_str(), flags, 0);
+	ret = AddFontResourceEx(FilePath.c_str(), flags, 0);
+
+	if (ret == 0) {
+		return 0;
+	}
+
+	auto fontNames = GetFontNameFromFile(FilePath.c_str());
+
+	//refresh objects
+	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
+	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [&](LPRO pObject) {
+		LPRDATA pObj = (LPRDATA)pObject;
+
+		for (auto& name : fontNames) {
+			if (StrEqu(pObj->logFont.lfFaceName,name.c_str())) {
+				pObj->bFontChanged = true;
+				pObj->pNeoStr->EmbedFont(FilePath.c_str());
+				SetRunObjectFont(rdPtr, &pObj->logFont, nullptr);
+				
+				return;
+			}
+		}
+
+		});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -378,6 +418,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Zoom,
 			Action_Stretch,
 			Action_Rotate,
+
+			Action_EmbedFont,
 
 			0
 			};

@@ -106,6 +106,8 @@
 #define	IDMN_ACTION_S			    25010
 #define	IDMN_ACTION_R			    25011
 
+#define	IDMN_ACTION_EF			    25012
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -123,6 +125,8 @@
 #define	M_ACTION_S			        5010
 #define	M_ACTION_R			        5011
 
+#define	M_ACTION_EF			        5012
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -136,6 +140,8 @@
 #define M_XSCALE				    5508
 #define M_YSCALE				    5509
 #define M_ANGLE				        5510
+
+#define M_FONTNAME			        5511
 
 
 //	Conditions

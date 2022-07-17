@@ -86,6 +86,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->dwColor = edPtr->dwColor = edPtr->dwColor = edPtr->dwColor;
 	rdPtr->dwAlignFlags = edPtr->dwAlignFlags;
+	rdPtr->logFont = edPtr->logFont;
 	rdPtr->hFont = CreateFontIndirect(&edPtr->logFont);
 
 	rdPtr->nOutLinePixel = edPtr->nOutLinePixel;
@@ -125,7 +126,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pStr = new std::wstring(&edPtr->pText);
 	
 	rdPtr->bFontChanged = true;
-	
+
 	// No errors
 	return 0;
 }
@@ -439,10 +440,18 @@ void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf)
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
 {
 	HFONT hFont = CreateFontIndirect(pLf);
+
+#ifdef _DEBUG
+	LOGFONT Lf;
+	GetObject(hFont, sizeof(LOGFONT), &Lf);
+#endif // _DEBUG
+
+
 	if ( hFont != NULL )
 	{
 		if (rdPtr->hFont!=0)
 			DeleteObject(rdPtr->hFont);
+		rdPtr->logFont = *pLf;
 		rdPtr->hFont = hFont;
 		rdPtr->bFontChanged = true;
 		

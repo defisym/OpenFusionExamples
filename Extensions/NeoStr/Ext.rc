@@ -132,6 +132,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Embed Font", IDMN_ACTION_EF 
+        MENUITEM SEPARATOR
         MENUITEM "Change Render Size", IDMN_ACTION_CS
         MENUITEM SEPARATOR
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
@@ -339,39 +341,42 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_CS                 "Change Render Size to [ %0 x %1 ]"
+    M_ACTION_CS             "Change Render Size to [ %0 x %1 ]"
 
-    M_WIDTH                     "Width"
-    M_HEIGHT                    "Height"
+    M_WIDTH                 "Width"
+    M_HEIGHT                "Height"
 
-    M_ACTION_CSTR               "Change Display String to %0"
-    M_ACTION_ASTR               "Append %0 to Display String"
-    M_ACTION_ASTRNL               "Append %0 to Display String at NewLine"
+    M_ACTION_CSTR           "Change Display String to %0"
+    M_ACTION_ASTR           "Append %0 to Display String"
+    M_ACTION_ASTRNL         "Append %0 to Display String at NewLine"
     
-    M_ACTION_CRS                "Change Row Space to %0"
-    M_ACTION_CCS                "Change Col Space to %0"
+    M_ACTION_CRS            "Change Row Space to %0"
+    M_ACTION_CCS            "Change Col Space to %0"
 
-    M_STR                       "String"
-    M_ROWSPACE                  "Row Space"
-    M_COLSPACE                  "Col Space"
+    M_STR                   "String"
+    M_ROWSPACE              "Row Space"
+    M_COLSPACE              "Col Space"
 
-    M_ACTION_CHA                "Change Horizontal Align to %0"
-    M_ACTION_CVA                "Change Vertical Align to %0"
+    M_ACTION_CHA            "Change Horizontal Align to %0"
+    M_ACTION_CVA            "Change Vertical Align to %0"
     
-    M_HA                        "Horizontal Align, DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2"
-    M_VA                        "Vertical Align, DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8"
+    M_HA                    "Horizontal Align, DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2"
+    M_VA                    "Vertical Align, DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8"
 
     M_ACTION_SH             "Set HotSpot to %0, Custom X = %1, Y = %2"
 
-    M_ACTION_Z             "Zoom, X Scale = %0, Y Scale = %1"
-    M_ACTION_S             "Stretch, Width = %0, Height = %1"
+    M_ACTION_Z              "Zoom, X Scale = %0, Y Scale = %1"
+    M_ACTION_S              "Stretch, Width = %0, Height = %1"
 
-    M_XSCALE             "X Scale"
-    M_YSCALE             "Y Scale"
+    M_XSCALE                "X Scale"
+    M_YSCALE                "Y Scale"
 
-    M_ACTION_R             "Rotate, Angle = %0"
+    M_ACTION_R              "Rotate, Angle = %0"
 
-    M_ANGLE             "Angle"
+    M_ANGLE                 "Angle"
+    
+    M_ACTION_EF             "Embed Font %0"
+    M_FONTNAME              "Font File Path"
 END
 
 STRINGTABLE DISCARDABLE 
