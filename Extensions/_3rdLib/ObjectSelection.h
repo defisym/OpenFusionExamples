@@ -4,6 +4,8 @@
 
 // Add functional to support lambda
 // Add For-Each support
+// Add several handy funtions
+
 #include <functional>
 #include <vector>
 
@@ -21,34 +23,15 @@ private:
 	int oiListItemSize;
 
 	inline bool FilterQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
-		LPOIL pObjectInfo = GetLPOIL(oiList);
-
-		if (pObjectInfo == nullptr) {
-			return false;
-		}
-
 		bool hasSelected = false;
-		
-		this->QualToOiList = rhPtr->rhQualToOiList;
-		LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
-		LPQOI CurrentQualToOi = CurrentQualToOiStart;
 
-		if (CurrentQualToOi == nullptr) {
-			return false;
-		}
-
-		while (CurrentQualToOi->qoiOiList >= 0) {
-			hasSelected |= FilterNonQualifierObjects(rdPtr, CurrentQualToOi->qoiOiList, negate, filterFunction);
-			CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
-			
-			if (CurrentQualToOi == nullptr) {
-				break;
-			}
-		}
+		IterateQualifier(oiList, [&] (objInfoList* pOil, short qoiOiList) {
+			hasSelected |= FilterNonQualifierObjects(rdPtr, qoiOiList, negate, filterFunction);
+			});
 
 		return hasSelected;
 	}
-	
+
 	inline bool FilterNonQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
 
@@ -67,31 +50,31 @@ private:
 
 		bool hasSelected = false;
 
-		int firstSelected = -1;
 		int count = 0;
-		int current = pObjectInfo->oilListSelected;
+		int firstSelected = -1;
+
 		LPHO previous = nullptr;
 
-		while (current >= 0) {
-			LPHO pObject = ObjectList[current].oblOffset;
+		IterateObject(pObjectInfo, [&] (LPRO pObject, short oblOffset) {
 			bool useObject = filterFunction(rdPtr, (LPRO)pObject) ^ negate;
 
 			hasSelected |= useObject;
 
 			if (useObject) {
 				if (firstSelected == -1) {
-					firstSelected = current;
+					firstSelected = oblOffset;
 				}
 
 				if (previous != nullptr) {
-					previous->hoNextSelected = current;
+					previous->hoNextSelected = oblOffset;
 				}
 
-				previous = pObject;
+				previous = (LPHO)pObject;
 				count++;
 			}
-			current = pObject->hoNextSelected;
-		}
+
+			}, true, true);
+
 		if (previous != nullptr) {
 			previous->hoNextSelected = -1;
 		}
@@ -102,7 +85,7 @@ private:
 		return hasSelected;
 	}
 
-	inline void IterateQualifier(short oiList, std::function<void(objInfoList*)> f) {
+	inline void IterateQualifier(short oiList, std::function<void(objInfoList*, short)> f) {
 		if (!ObjectIsQualifier(oiList)) {
 			return;
 		}
@@ -124,12 +107,34 @@ private:
 		}
 
 		while (CurrentQualToOi->qoiOiList >= 0) {
-			f(OiList + CurrentQualToOi->qoiOiList);
+			f(OiList + CurrentQualToOi->qoiOiList, CurrentQualToOi->qoiOiList);
 			CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
 
 			if (CurrentQualToOi == nullptr) {
 				break;
 			}
+		}
+	}
+
+	inline void IterateObject(objInfoList* list
+		, std::function<void(LPRO, short)> f
+		, bool selected = true
+		, bool selectDestroyed = false) {
+		short oblOffset = selected ? list->oilListSelected : list->oilObject;
+
+		while (oblOffset >= 0) {
+			RunObject* pObj = reinterpret_cast<RunObject*>(rhPtr->rhObjectList [oblOffset].oblOffset);
+
+			if (pObj == nullptr) {
+				continue;
+			}
+
+			if (selectDestroyed
+				|| pObj && !(static_cast<ushort>(pObj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED))) {
+				f(pObj, oblOffset);
+			}
+
+			oblOffset = selected ? pObj->roHo.hoNextSelected : pObj->roHo.hoNumNext;
 		}
 	}
 
@@ -145,6 +150,17 @@ private:
 
 			callBack(pCurOi);
 		}
+	}
+
+	inline LPRO GetFirstObject(objInfoList* pOil, bool selected = false) {
+		if (pOil->oilObject < 0) {
+			return nullptr;
+		}
+
+		return (LPRO)ObjectList [selected
+			? pOil->oilListSelected
+			: pOil->oilObject
+		].oblOffset;
 	}
 
 public:
@@ -165,7 +181,7 @@ public:
 		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
 			oiListItemSize += sizeof(LPVOID);
 #endif
-	}	
+	}
 
 	//Get oil
 	inline static short GetOil(LPRDATA rdPtr, LPRO* pObj = nullptr) {
@@ -185,7 +201,7 @@ public:
 		return oil;
 	}
 
-	#define OIL_GetParameter(rdPtr) ObjectSelection::GetOil(rdPtr)
+#define OIL_GetParameter(rdPtr) ObjectSelection::GetOil(rdPtr)
 
 	// Get LPOIL
 	inline LPOIL GetLPOIL(short oiList) {
@@ -219,7 +235,7 @@ public:
 		return isNegated;
 	}
 
-	#define IsNegated(rdPtr) ObjectSelection::IsNegated(rdPtr)
+#define IsNegated(rdPtr) ObjectSelection::IsNegated(rdPtr)
 
 	//Selects *all* objects of the given object-type
 	inline void SelectAll(short oiList) {
@@ -235,12 +251,12 @@ public:
 
 		int i = pObjectInfo->oilObject;
 		while (i >= 0) {
-			LPHO pObject = ObjectList[i].oblOffset;
+			LPHO pObject = ObjectList [i].oblOffset;
 			pObject->hoNextSelected = pObject->hoNumNext;
 			i = pObject->hoNumNext;
 		}
 	}
-	
+
 	//Resets all objects of the given object-type
 	inline void SelectNone(short oiList) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
@@ -253,7 +269,7 @@ public:
 		pObjectInfo->oilListSelected = -1;
 		pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount;
 	}
-	
+
 	//Resets the SOL and inserts only one given object
 	inline void SelectOneObject(LPRO object) {
 		// LPOIL pObjectInfo = object->roHo.hoOiList;
@@ -266,9 +282,9 @@ public:
 		pObjectInfo->oilNumOfSelected = 1;
 		pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount;
 		pObjectInfo->oilListSelected = object->roHo.hoNumber;
-		ObjectList[object->roHo.hoNumber].oblOffset->hoNextSelected = -1;
+		ObjectList [object->roHo.hoNumber].oblOffset->hoNextSelected = -1;
 	}
-	
+
 	//Resets the SOL and inserts the given list of objects
 	inline void SelectObjects(short oiList, const LPRO* objects, size_t count) {
 		if (count == 0) {
@@ -284,24 +300,24 @@ public:
 		pObjectInfo->oilNumOfSelected = count;
 		pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount;
 
-		short prevNumber = objects[0]->roHo.hoNumber;
+		short prevNumber = objects [0]->roHo.hoNumber;
 		pObjectInfo->oilListSelected = prevNumber;
 
 		for (size_t i = 1; i < count; i++) {
-			short currentNumber = objects[i]->roHo.hoNumber;
-			ObjectList[prevNumber].oblOffset->hoNextSelected = currentNumber;
+			short currentNumber = objects [i]->roHo.hoNumber;
+			ObjectList [prevNumber].oblOffset->hoNextSelected = currentNumber;
 			prevNumber = currentNumber;
 		}
-		ObjectList[prevNumber].oblOffset->hoNextSelected = -1;
+		ObjectList [prevNumber].oblOffset->hoNextSelected = -1;
 	}
 	inline void SelectObjects(short oiList, const std::vector<LPRO> objects) {
 		if (objects.empty()) {
 			return;
 		}
 
-		SelectObjects(oiList, &objects[0], objects.size());
+		SelectObjects(oiList, &objects [0], objects.size());
 	}
-	
+
 	//Run a custom filter on the SOL (via function callback)
 	inline bool FilterObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
@@ -317,7 +333,7 @@ public:
 			return FilterNonQualifierObjects(rdPtr, oiList, negate, filterFunction) ^ negate;
 		}
 	}
-	
+
 	//Return the number of selected objects for the given object-type
 	inline int GetNumberOfSelected(short oiList) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
@@ -404,11 +420,11 @@ public:
 			}
 
 			short Oi = pObjectInfo->oilOi;
-			
+
 			return (object->roHo.hoOi == Oi);
 		}
 	}
-	
+
 	//Check if object is qualifier
 	inline bool ObjectIsQualifier(short oiList) {
 		return (oiList & 0x8000);
@@ -419,18 +435,18 @@ public:
 		if (list == nullptr) {
 			return false;
 		}
-		
+
 		return list->oilEventCount == rhPtr->rh2.rh2EventCount;
 	}
-	
+
 	inline bool ObjectIsSelected(short oiList) {
 		if (!ObjectIsQualifier(oiList)) {
 			return ObjectIsSelected(OiList + oiList);
 		}
 		else {
 			bool selected = false;
-			
-			IterateQualifier(oiList, [&](objInfoList* list) {
+
+			IterateQualifier(oiList, [&] (objInfoList* list, short qoiOiList) {
 				selected |= ObjectIsSelected(list);
 				});
 
@@ -445,37 +461,26 @@ public:
 		bool forceAll = flag & 0b00000001;			// force iterate all
 		bool selectedOnly = flag & 0b00000010;		// only iterate selected
 
-		auto iterate = [&](objInfoList* list, bool selected = true) {
-			short num = selected ? list->oilListSelected : list->oilObject;
-
-			while (num >= 0) {
-				RunObject* obj = reinterpret_cast<RunObject*>(rhPtr->rhObjectList[num].oblOffset);
-				
-				if (obj == nullptr) {
-					continue;
-				}
-
-				if (obj && !(static_cast<ushort>(obj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED))) {
-					f(obj);
-				}
-
-				num = selected ? obj->roHo.hoNextSelected : obj->roHo.hoNumNext;
-			}
-		};
-
-		auto iterateCall = [&](objInfoList* list) {
+		auto iterateCall = [&] (objInfoList* list) {
 			if (forceAll) {
-				iterate(list, false);
+				IterateObject(list, [f] (LPRO pObject, short oblOffset) {
+					f(pObject);
+					}, false);
+
 				return;
 			}
 
-			if(list->oilEventCount == rhPtr->rh2.rh2EventCount){
+			if (list->oilEventCount == rhPtr->rh2.rh2EventCount) {
 				// Object type already filtered, loop through selected list
-				iterate(list, true);
+				IterateObject(list, [f] (LPRO pObject, short oblOffset) {
+					f(pObject);
+					}, true);
 			}
 			else if (!selectedOnly) {
 				// Object type not filtered yet, loop through all objects instead
-				iterate(list, false);
+				IterateObject(list, [f] (LPRO pObject, short oblOffset) {
+					f(pObject);
+					}, false);
 			}
 		};
 
@@ -491,41 +496,17 @@ public:
 		}
 		// Qualifier object type
 		else if (oiList != -1) {
-			oiList = oiList & 0x7FFF;
-
-			LPOIL pObjectInfo = GetLPOIL(oiList);
-
-			if (pObjectInfo == nullptr) {
-				return;
-			}
-
-			this->QualToOiList = rhPtr->rhQualToOiList;
-			LPQOI CurrentQualToOiStart = (LPQOI)((char*)QualToOiList + oiList);
-			LPQOI CurrentQualToOi = CurrentQualToOiStart;
-
-			if (CurrentQualToOi == nullptr) {
-				return;
-			}
-
-			while (CurrentQualToOi->qoiOiList >= 0) {
-				iterateCall(OiList + CurrentQualToOi->qoiOiList);
-				CurrentQualToOi = (LPQOI)((char*)CurrentQualToOi + 4);
-
-				if (CurrentQualToOi == nullptr) {
-					break;
-				}
-			}
+			IterateQualifier(oiList, [iterateCall] (objInfoList* pOil, short qoiOiList) {
+				iterateCall(pOil);
+				});
 		}
 	}
 
 	//Iterate given identifier
-	inline void IterateObjectWithIdentifier(LPRDATA rdPtr, const int identifier, std::function<void(LPRO)> callBack) {
-		IterateOiL([=](LPOIL pOil) {
-			if (pOil->oilObject < 0) {
-				return;
-			}
+	inline void IterateObjectWithIdentifier(LPRDATA rdPtr, const int identifier, ForEachCallBack callBack, bool selected = false) {
 
-			LPRO pObject = (LPRO)ObjectList[pOil->oilObject].oblOffset;
+		IterateOiL([&] (LPOIL pOil) {
+			LPRO pObject = GetFirstObject(pOil, selected);
 
 			if (pObject == nullptr) {
 				return;
@@ -534,7 +515,9 @@ public:
 			auto objIdentifier = pObject->roHo.hoIdentifier;
 
 			if (objIdentifier == identifier) {
-				callBack(pObject);
+				IterateObject(pOil, [callBack] (LPRO pObject, short oblOffset) {
+					callBack(pObject);
+					}, selected);
 			}
 			});
 	}
