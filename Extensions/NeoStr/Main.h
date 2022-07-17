@@ -191,6 +191,8 @@ typedef struct tagRDATA
 
 	CharPos charPos;
 
+	GlobalData* pData;
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

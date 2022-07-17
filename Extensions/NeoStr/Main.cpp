@@ -265,6 +265,10 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 		return 0;
 	}
 
+	rdPtr->pData->pFontCollection->AddFontFile(FilePath.c_str());
+
+	auto font = rdPtr->pData->pFontCollection->GetFamilyCount();
+
 	auto fontNames = GetFontNameFromFile(FilePath.c_str());
 
 	//refresh objects
@@ -275,7 +279,6 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 		for (auto& name : fontNames) {
 			if (StrEqu(pObj->logFont.lfFaceName,name.c_str())) {
 				pObj->bFontChanged = true;
-				pObj->pNeoStr->EmbedFont(FilePath.c_str());
 				SetRunObjectFont(rdPtr, &pObj->logFont, nullptr);
 				
 				return;

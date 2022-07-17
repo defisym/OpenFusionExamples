@@ -127,6 +127,19 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->bFontChanged = true;
 
+	if (GetExtUserData() == nullptr) {
+		rdPtr->pData = new GlobalData;
+		auto state = Gdiplus::GdiplusStartup(&rdPtr->pData->gdiplusToken
+			, &rdPtr->pData->gdiplusStartupInput
+			, NULL);
+		rdPtr->pData->gdiInitialized = true;
+		rdPtr->pData->pFontCollection = new PrivateFontCollection;
+
+		//rdPtr->pData->pFontCollection->AddFontFile(L"F:\\DEV\\OpenFusionExamples\\Extensions\\NeoStr\\ToInstall\\Files\\Examples\\NeoStr\\font.ttf");
+	}else{
+		rdPtr->pData = (GlobalData*)GetExtUserData();
+	}
+
 	// No errors
 	return 0;
 }
@@ -153,6 +166,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
+
+	SetExtUserData(rdPtr->pData);
 
 	// No errors
 	return 0;
@@ -367,12 +382,14 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if ( pData != NULL ) {
+		delete pData->pFontCollection;
+		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
+
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------
@@ -385,12 +402,14 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if ( pData != NULL ) {
+		delete pData->pFontCollection;
+		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
+
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------
