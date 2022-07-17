@@ -293,6 +293,8 @@ public:
 #ifdef _GDIPLUS	
 	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
 	//https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
+	//https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
+	//https://blog.csdn.net/analogous_love/article/details/45845971
 	inline void EmbedFont(LPCWSTR pFontFile) {
 		this->pFontCollection->AddFontFile(pFontFile);
 		auto count = this->pFontCollection->GetFamilyCount();
