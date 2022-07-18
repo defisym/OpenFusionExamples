@@ -96,7 +96,10 @@ private:
 	BYTE nShadowOffsetX = 0;
 	BYTE nShadowOffsetY = 0;
 
-#ifdef _GDIPLUS		
+#ifdef _GDIPLUS
+	// Set to false if app have a shared GDI plus environment
+	bool needGDIPStartUp = true;
+
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 
@@ -232,7 +235,6 @@ private:
 
 		return -1;  // Failure
 	}
-
 #endif // _GDIPLUS
 
 public:
@@ -245,6 +247,7 @@ public:
 
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
+		, bool needGDIPStartUp = true
 		, PrivateFontCollection* pFontCollection = nullptr) {
 		this->hdc = GetDC(NULL);
 		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
@@ -263,9 +266,14 @@ public:
 
 		this->strPos.reserve(20);
 
-#ifdef _GDIPLUS		
-		Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+#ifdef _GDIPLUS
 		this->pFontCollection = pFontCollection;
+
+		this->needGDIPStartUp = needGDIPStartUp;
+
+		if (this->needGDIPStartUp) {
+			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);			
+		}
 #endif
 		// add a default char to return default value when input text is empty
 		this->GetCharSizeWithCache(L'露');
@@ -285,8 +293,10 @@ public:
 		this->pHwaSf = nullptr;
 #endif
 
-#ifdef _GDIPLUS	
-		Gdiplus::GdiplusShutdown(gdiplusToken);
+#ifdef _GDIPLUS
+		if (this->needGDIPStartUp) {
+			Gdiplus::GdiplusShutdown(gdiplusToken);
+		}
 #endif	
 	}
 
@@ -356,7 +366,26 @@ public:
 
 		return has;
 	}
-#endif	
+
+	inline static int GetFontStyle(LOGFONT& logFont) {
+		int fontStyle = Gdiplus::FontStyleRegular;
+
+		if (logFont.lfWeight >= 600) {
+			fontStyle = fontStyle | Gdiplus::FontStyleBold;
+		}
+		if (logFont.lfItalic) {
+			fontStyle = fontStyle | Gdiplus::FontStyleRegular;
+		}
+		if (logFont.lfUnderline) {
+			fontStyle = fontStyle | Gdiplus::FontStyleUnderline;
+		}
+		if (logFont.lfStrikeOut) {
+			fontStyle = fontStyle | Gdiplus::FontStyleStrikeout;
+		}
+
+		return fontStyle;
+	}
+#endif
 
 #ifdef _USE_HWA
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
@@ -670,12 +699,6 @@ public:
 		auto type = pMemSf->GetType();
 #endif
 
-		//LOGFONT drawLogFont;
-		//GetObject(this->hFont, sizeof(LOGFONT), &drawLogFont);
-		//drawLogFont.lfQuality = ANTIALIASED_QUALITY;
-		//drawLogFont.lfQuality = NONANTIALIASED_QUALITY;
-		//this->hFont = CreateFontIndirect(&drawLogFont);
-
 #ifdef _DRAWTODC
 		auto hMemDc = pMemSf->GetDC();
 		Graphics g(hMemDc);
@@ -693,62 +716,11 @@ public:
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 
 		SolidBrush solidBrush(fontColor);
-		
-		FontFamily* pFontFamily = nullptr;
-		FontFamily FontFamily;
 
-		//Font font(GetDC(NULL), this->hFont);
-		//Font font2Plus(this->hdc, &this->logFont);
-
-		//if (FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)) {
-		//	int nNumFound = 0;
-		//	this->pFontCollection->GetFamilies(1, &FontFamily, &nNumFound);
-
-		//	if (nNumFound > 0) {
-		//		pFontFamily = &FontFamily;
-		//	}
-		//}
-		//else {
-		//	InstalledFontCollection ifc;
-
-		//	int nNumFound = 0;
-		//	ifc.GetFamilies(1, &FontFamily, &nNumFound);
-
-		//	if (nNumFound > 0) {
-		//		pFontFamily = &FontFamily;
-		//	}
-		//}
-
-		////Font font(&pFontFamily[0], font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit());
-
-		//Font font(&FontFamily[0], font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit());
-
-		//Font font(this->logFont.lfFaceName, font2Plus.GetSize(), font2Plus.GetStyle(), font2Plus.GetUnit(),
-		//	FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)
-		//	? this->pFontCollection
-		//	: nullptr);
-
-		//font2Plus.GetUnit();
-
-		int fontStyle = Gdiplus::FontStyleRegular;
-
-		if (this->logFont.lfWeight >= 600) {
-			fontStyle = fontStyle | Gdiplus::FontStyleBold;
-		}
-		if (this->logFont.lfItalic) {
-			fontStyle = fontStyle | Gdiplus::FontStyleRegular;
-		}
-		if (this->logFont.lfUnderline) {
-			fontStyle = fontStyle | Gdiplus::FontStyleUnderline;
-		}
-		if (this->logFont.lfStrikeOut) {
-			fontStyle = fontStyle | Gdiplus::FontStyleStrikeout;
-		}
-
-		//Font font2Plus(this->hdc, &this->logFont);
-		//auto sz = font2Plus.GetSize();
-
-		Font font(this->logFont.lfFaceName, (float)abs(logFont.lfHeight), fontStyle, Gdiplus::UnitWorld,
+		Font font(this->logFont.lfFaceName
+			, (float)abs(logFont.lfHeight)
+			, GetFontStyle(this->logFont)
+			, Gdiplus::UnitWorld,
 			FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)
 			? this->pFontCollection
 			: nullptr);
