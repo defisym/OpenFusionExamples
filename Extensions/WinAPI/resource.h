@@ -101,6 +101,8 @@
 #define M_CONDITION_IAIR                6033
 #define M_CONDITION_IWF                 6034
 #define M_CONDITION_ICLIHP              6035
+#define M_CONDITION_OD                  6036
+#define PARA_CONDITION_OBJECT           6037
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define PARA_CONDITION_OBJ              6511
@@ -211,6 +213,8 @@
 #define IDMN_CONDITION_IAIR             26033
 #define IDMN_CONDITION_IWF              26034
 #define IDMN_CONDITION_ICLIHP           26035
+#define IDMN_CONDITION_OD               26036
+#define IDMN_CONDITION_IDHA_S           26037
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020

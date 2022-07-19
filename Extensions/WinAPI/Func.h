@@ -1,19 +1,6 @@
 #ifndef _GLOBALFUNC_
 #define _GLOBALFUNC_
 
-//don't use this func if Str = nullptr, return Default_Str directly
-inline void NewStr(LPTSTR& Tar, LPCTSTR Str) {
-	release_arr(Tar);
-	rsize_t total_length = wcslen(Str) + 1;
-
-	Tar = new WCHAR[total_length];
-	wcscpy_s(Tar, total_length, Str);
-}
-
-inline void NewStr(LPTSTR& Tar, const std::wstring& Str) {
-	NewStr(Tar, Str.c_str());
-}
-
 //È«¾Ö´°¿Ú¾ä±ú
 extern HWND CurrentWindowHandle;
 

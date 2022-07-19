@@ -75,7 +75,7 @@ inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 #define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
 
 //Check if a dir has animation
-inline bool DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
+inline bool _DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
 	Dir = max(0, min(DIRID_MAX - 1, Dir));
 
 	if (object == NULL) {
@@ -85,11 +85,11 @@ inline bool DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
 	return (object->roa.raAnimOffset->anOffsetToDir[Dir] > 0) ? true : false;
 }
 
-inline bool DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
-	return DirHasAnimation(rdPtr, LproFromFixed(rdPtr, Fixed), Dir);
+inline bool _DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
+	return _DirHasAnimation(rdPtr, LproFromFixed(rdPtr, Fixed), Dir);
 }
 
-#define DirHasAnimation(X, Dir) DirHasAnimation(rdPtr, X, Dir)
+#define DirHasAnimation(X, Dir) _DirHasAnimation(rdPtr, X, Dir)
 
 //Get object's display animation direction
 inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {

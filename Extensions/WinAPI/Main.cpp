@@ -32,6 +32,9 @@ short conditionsInfos[] =
 	IDMN_CONDITION_IAIR, M_CONDITION_IAIR, CND_CONDITION_IAIR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_CONDITION_IAIR,PARA_CONDITION_CMP,
 	IDMN_CONDITION_IWF, M_CONDITION_IWF, CND_CONDITION_IWF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 	IDMN_CONDITION_ICLIHP, M_CONDITION_ICLIHP, CND_CONDITION_ICLIHP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
+	IDMN_CONDITION_OD, M_CONDITION_OD, CND_CONDITION_OD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
+	IDMN_CONDITION_IDHA_S, M_CONDITION_IDHA, CND_CONDITION_IDHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_DIR,
+
 };
 
 // Definitions of parameters for each action
@@ -205,6 +208,17 @@ long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1
 	return DirHasAnimation(Fixed, Dir);
 }
 
+long WINAPI DLLExport IsObjectHasAnimationInDirection_Scope(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [Dir](LPRDATA rdPtr, LPRO object)->bool {
+		return _DirHasAnimation(rdPtr, object, Dir);
+		});
+}
+
 long WINAPI DLLExport IsAnotherInstanceRunning(LPRDATA rdPtr, long param1, long param2) {
 	bool byFullPath = (bool)CNC_GetIntParameter(rdPtr);
 	int CMP = (int)CNC_GetIntParameter(rdPtr);
@@ -313,6 +327,16 @@ long WINAPI DLLExport IsCommandLineHasParam(LPRDATA rdPtr, long param1, long par
 	}
 
 	return result ? TRUE : FALSE;
+}
+
+long WINAPI DLLExport IsObjectDestroyed(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [](LPRDATA rdPtr, LPRO object)->bool {
+		return IsDestroyed(object);
+		});
 }
 
 // ============================================================================
@@ -1668,6 +1692,10 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsWindowForcused,
 
 	IsCommandLineHasParam,
+
+	IsObjectDestroyed,
+
+	IsObjectHasAnimationInDirection_Scope,
 
 	0
 };

@@ -132,6 +132,9 @@ BEGIN
             POPUP "Object"
             BEGIN
                 MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
+                MENUITEM "Object has Animation in Direction (Scope)",IDMN_CONDITION_IDHA_S              
+                MENUITEM SEPARATOR
+                MENUITEM "Object Destroyed",IDMN_CONDITION_OD
             END            
         END
         MENUITEM SEPARATOR
@@ -737,6 +740,12 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_ICLIHP    "%o CommandLine %0 Has Param %1"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_OD    "%o Is Object %0 Destroyed"
+    PARA_CONDITION_OBJECT   "Object"
 END
 
 //Porperties
