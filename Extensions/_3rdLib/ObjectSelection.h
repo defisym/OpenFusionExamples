@@ -22,17 +22,23 @@ private:
 	LPQOI QualToOiList;		// need update every time before using
 	int oiListItemSize;
 
-	inline bool FilterQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
+	inline bool FilterQualifierObjects(LPRDATA rdPtr, short oiList, bool negate
+		, Filter filterFunction
+		, bool selectDestroyed = true) {
 		bool hasSelected = false;
 
 		IterateQualifier(oiList, [&] (objInfoList* pOil, short qoiOiList) {
-			hasSelected |= FilterNonQualifierObjects(rdPtr, qoiOiList, negate, filterFunction);
+			hasSelected |= FilterNonQualifierObjects(rdPtr, qoiOiList, negate
+				, filterFunction
+				, selectDestroyed);
 			});
 
 		return hasSelected;
 	}
 
-	inline bool FilterNonQualifierObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
+	inline bool FilterNonQualifierObjects(LPRDATA rdPtr, short oiList, bool negate
+		, Filter filterFunction
+		, bool selectDestroyed = true) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
@@ -73,7 +79,7 @@ private:
 				count++;
 			}
 
-			}, true, true);
+			}, true, selectDestroyed);
 
 		if (previous != nullptr) {
 			previous->hoNextSelected = -1;
@@ -130,7 +136,7 @@ private:
 			}
 
 			if (selectDestroyed
-				|| pObj && !(static_cast<ushort>(pObj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED))) {
+				|| (pObj && !IsDestroyed(pObj))) {
 				f(pObj, oblOffset);
 			}
 
@@ -237,6 +243,12 @@ public:
 
 #define IsNegated(rdPtr) ObjectSelection::IsNegated(rdPtr)
 
+	inline static bool IsDestroyed(LPRO pObj) {
+		return (static_cast<ushort>(pObj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED));
+	}
+
+#define IsDestroyed(pObj) ObjectSelection::IsDestroyed(pObj)
+
 	//Selects *all* objects of the given object-type
 	inline void SelectAll(short oiList) {
 		const LPOIL pObjectInfo = GetLPOIL(oiList);
@@ -319,7 +331,9 @@ public:
 	}
 
 	//Run a custom filter on the SOL (via function callback)
-	inline bool FilterObjects(LPRDATA rdPtr, short oiList, bool negate, Filter filterFunction) {
+	inline bool FilterObjects(LPRDATA rdPtr, short oiList, bool negate
+		, Filter filterFunction
+		, bool selectDestroyed = true) {
 		LPOIL pObjectInfo = GetLPOIL(oiList);
 
 		if (pObjectInfo == nullptr) {
@@ -327,10 +341,14 @@ public:
 		}
 
 		if (oiList & 0x8000) {
-			return FilterQualifierObjects(rdPtr, oiList & 0x7FFF, negate, filterFunction) ^ negate;
+			return FilterQualifierObjects(rdPtr, oiList & 0x7FFF, negate
+				, filterFunction
+				, selectDestroyed) ^ negate;
 		}
 		else {
-			return FilterNonQualifierObjects(rdPtr, oiList, negate, filterFunction) ^ negate;
+			return FilterNonQualifierObjects(rdPtr, oiList, negate
+				, filterFunction
+				, selectDestroyed) ^ negate;
 		}
 	}
 
