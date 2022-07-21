@@ -269,6 +269,18 @@ BEGIN
             MENUITEM "Get Func's Recursive Index", IDMN_EXPRESSION_GRI
         END
         MENUITEM SEPARATOR
+        POPUP "Equal"
+        BEGIN
+            MENUITEM "Equal (Value)",IDMN_EXPRESSION_EV
+            MENUITEM "Equal (String)",IDMN_EXPRESSION_ES
+        END
+        MENUITEM SEPARATOR
+        POPUP "Bool"
+        BEGIN
+            MENUITEM "Cast to Bool",IDMN_EXPRESSION_CTB
+            MENUITEM "Negate",IDMN_EXPRESSION_NEG
+        END
+        MENUITEM SEPARATOR
         MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN        
         MENUITEM SEPARATOR
     END
@@ -456,6 +468,16 @@ BEGIN
     M_EXP_RETB                  "Return Value B"
 
     M_EXP_TEMPPARAM             "Temp Param Name"
+
+    M_EXPRESSION_ES			    "StrEqu ("
+    M_EXPRESSION_EV			    "ValEqu ("
+    M_EXPRESSION_CTB		    "Bool ("
+    M_EXPRESSION_NEG		    "Neg ("
+
+    M_EXP_A			            "A"
+    M_EXP_B			            "B"
+    M_EXP_CTB			        "Value"
+    M_EXP_NEG			        "Value"
 END
 
 STRINGTABLE

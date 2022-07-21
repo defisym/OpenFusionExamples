@@ -92,7 +92,12 @@
 #define EXP_EXPRESSION_GVGP			17
 #define EXP_EXPRESSION_GSGP			18
 
-#define	EXP_LAST                    19
+#define EXP_EXPRESSION_ES			19
+#define EXP_EXPRESSION_EV			20
+#define EXP_EXPRESSION_CTB			21
+#define EXP_EXPRESSION_NEG			22
+
+#define	EXP_LAST                    23
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

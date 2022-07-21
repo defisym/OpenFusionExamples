@@ -83,15 +83,15 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_RS, M_EXPRESSION_RS, EXP_EXPRESSION_RS, EXPFLAG_STRING,2,EXPPARAM_STRING, EXPPARAM_STRING,M_CND_FUNCNAME, M_EXP_PARAM,
 
 		//Get Param
-		IDMN_EXPRESSION_GVP, M_EXPRESSION_GVP, EXP_EXPRESSION_GVP, 0, 1, EXPPARAM_LONG,M_EXP_GP,
-		IDMN_EXPRESSION_GSP, M_EXPRESSION_GSP, EXP_EXPRESSION_GSP, EXPFLAG_STRING, 1, EXPPARAM_LONG,M_EXP_GP,
+		IDMN_EXPRESSION_GVP, M_EXPRESSION_GVP, EXP_EXPRESSION_GVP, 0, 1, EXPPARAM_LONG, M_EXP_GP,
+		IDMN_EXPRESSION_GSP, M_EXPRESSION_GSP, EXP_EXPRESSION_GSP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_EXP_GP,
 
 		//Get Ret
-		IDMN_EXPRESSION_GVR, M_EXPRESSION_GVR, EXP_EXPRESSION_GVR, 0, 1, EXPPARAM_LONG,M_EXP_GP,
-		IDMN_EXPRESSION_GSR, M_EXPRESSION_GSR, EXP_EXPRESSION_GSR, EXPFLAG_STRING, 1, EXPPARAM_LONG,M_EXP_GP,
+		IDMN_EXPRESSION_GVR, M_EXPRESSION_GVR, EXP_EXPRESSION_GVR, 0, 1, EXPPARAM_LONG, M_EXP_GP,
+		IDMN_EXPRESSION_GSR, M_EXPRESSION_GSR, EXP_EXPRESSION_GSR, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_EXP_GP,
 
 		//GetRecursiveIndex
-		IDMN_EXPRESSION_GRI, M_EXPRESSION_GRI, EXP_EXPRESSION_GRI, 0, 1,EXPPARAM_STRING,M_CND_FUNCNAME,
+		IDMN_EXPRESSION_GRI, M_EXPRESSION_GRI, EXP_EXPRESSION_GRI, 0, 1, EXPPARAM_STRING, M_CND_FUNCNAME,
 
 		//GetSize
 		IDMN_EXPRESSION_GPS, M_EXPRESSION_GPS, EXP_EXPRESSION_GPS, 0, 0,
@@ -118,6 +118,14 @@ short expressionsInfos[]=
 		//Get Global Param
 		IDMN_EXPRESSION_GVGP, M_EXPRESSION_GVGP, EXP_EXPRESSION_GVGP, 0, 1, EXPPARAM_STRING, M_ACT_PARAMNAME,
 		IDMN_EXPRESSION_GSGP, M_EXPRESSION_GSGP, EXP_EXPRESSION_GSGP, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_ACT_PARAMNAME,
+
+		//Equ
+		IDMN_EXPRESSION_ES, M_EXPRESSION_ES, EXP_EXPRESSION_ES, 0, 2, EXPPARAM_STRING, EXPPARAM_STRING, M_EXP_A, M_EXP_B,
+		IDMN_EXPRESSION_EV, M_EXPRESSION_EV, EXP_EXPRESSION_EV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		
+		//Bool
+		IDMN_EXPRESSION_CTB, M_EXPRESSION_CTB, EXP_EXPRESSION_CTB, 0, 1, EXPPARAM_LONG, M_EXP_CTB,
+		IDMN_EXPRESSION_NEG, M_EXPRESSION_NEG, EXP_EXPRESSION_NEG, 0, 1, EXPPARAM_LONG, M_EXP_NEG,
 
 		};
 
@@ -647,6 +655,35 @@ long WINAPI DLLExport GetLoopIndex(LPRDATA rdPtr, long param1) {
 	}
 }
 
+long WINAPI DLLExport EquStr(LPRDATA rdPtr, long param1) {
+	std::wstring a = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring b = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	return a == b;
+}
+
+long WINAPI DLLExport EquVal(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float a = *(float*)&p1;
+
+	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float b = *(float*)&p2;
+
+	return abs(a - b) <= 1e-6;
+}
+
+long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
+	auto bRet = (bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG)));
+
+	return bRet;
+}
+
+long WINAPI DLLExport Negate(LPRDATA rdPtr, long param1) {
+	auto bRet= !(bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG)));
+
+	return bRet;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -742,6 +779,12 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetGlobalParamRV,
 			GetGlobalParamRS,
+
+			EquStr,
+			EquVal,
+
+			CastToBool,
+			Negate,
 
 			0
 			};

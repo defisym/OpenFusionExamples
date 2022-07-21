@@ -187,6 +187,11 @@
 #define IDMN_EXPRESSION_GVGP	27017
 #define IDMN_EXPRESSION_GSGP	27018
 
+#define IDMN_EXPRESSION_ES		27019
+#define IDMN_EXPRESSION_EV		27020
+#define IDMN_EXPRESSION_CTB		27021
+#define IDMN_EXPRESSION_NEG		27022
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -218,6 +223,11 @@
 #define M_EXPRESSION_GVGP	     7017
 #define M_EXPRESSION_GSGP	     7018
 
+#define M_EXPRESSION_ES			 7019
+#define M_EXPRESSION_EV			 7020
+#define M_EXPRESSION_CTB		 7021
+#define M_EXPRESSION_NEG		 7022
+
 // Names of expression parameters
 #define M_EXP_PARAM				 7500
 #define M_EXP_GP				 7501
@@ -227,6 +237,11 @@
 #define M_EXP_RETB				 7504
 
 #define M_EXP_TEMPPARAM			 7505
+
+#define M_EXP_A			         7506
+#define M_EXP_B			         7507
+#define M_EXP_CTB			     7508
+#define M_EXP_NEG			     7509
 
 // Next default values for new objects
 // 
