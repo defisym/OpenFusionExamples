@@ -209,6 +209,8 @@ BEGIN
             MENUITEM "Pass Prevous Func's Return (string)", IDMN_ACTION_PASSRETV            
         END
         MENUITEM SEPARATOR
+        MENUITEM "Assert", IDMN_ACTION_ASSERT           
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -390,6 +392,8 @@ BEGIN
 
     M_ACTION_SSGP           "Set Global Temp Param %0 = %1"
     M_ACTION_SVGP           "Set Global Temp Param %0 = %1"
+    
+    M_ACTION_ASSERT         "Assert %0, Message = %1"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -402,6 +406,8 @@ BEGIN
     
     M_OBJECT                "Select Object"
     M_ITNAME                "Iterate Name"
+    
+    M_ACT_FAILEDMSG         "The message to be displayed"
 END
 
 STRINGTABLE DISCARDABLE 

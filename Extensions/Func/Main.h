@@ -57,7 +57,9 @@
 #define	ACT_ACTION_SSGP				16
 #define	ACT_ACTION_SVGP				17
 
-#define	ACT_LAST					18
+#define	ACT_ACTION_ASSERT			18
+
+#define	ACT_LAST					19
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
