@@ -15,7 +15,7 @@ import Services.CRect;
 import android.graphics.Bitmap;
 
 import android.graphics.Color;
-import org.jetbrains.annotations.NotNull;
+//import org.jetbrains.annotations.NotNull;
 
 import java.util.Vector;
 import java.util.Objects;
@@ -200,7 +200,7 @@ public class CRunFindTheWay extends CRunExtension {
     }
 
     @Override
-    public boolean createRunObject(@NotNull final CBinaryFile file, final CCreateObjectInfo cob, final int version) {
+    public boolean createRunObject(/*@NotNull*/ final CBinaryFile file, final CCreateObjectInfo cob, final int version) {
         // Read Properties
         // file.readByte();
         // file.readInt();

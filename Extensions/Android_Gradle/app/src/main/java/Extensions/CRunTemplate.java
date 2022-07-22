@@ -7,7 +7,7 @@ import Expressions.CValue;
 import RunLoop.CCreateObjectInfo;
 import Services.CBinaryFile;
 
-import org.jetbrains.annotations.NotNull;
+//import org.jetbrains.annotations.NotNull;
 
 public class CRunTemplate extends CRunExtension {
     // Define ACE ID here
@@ -37,7 +37,7 @@ public class CRunTemplate extends CRunExtension {
     }
 
     @Override
-    public boolean createRunObject(@NotNull final CBinaryFile file, final CCreateObjectInfo cob, final int version) {
+    public boolean createRunObject(/*@NotNull*/ final CBinaryFile file, final CCreateObjectInfo cob, final int version) {
         // Read Properties
         // file.readByte();
         // file.readInt();
