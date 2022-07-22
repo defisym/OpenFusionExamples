@@ -115,10 +115,12 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-    POPUP "Binary Files"
+        MENUITEM SEPARATOR
+        POPUP "Binary Files"
         BEGIN
             MENUITEM "Binary File Embed",              IDMN_CONDITION_ISEMBED
         END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -132,12 +134,14 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-    POPUP "Binary Files"
+        MENUITEM SEPARATOR
+        POPUP "Binary Files"
         BEGIN
             MENUITEM "Extract Binary Files",              IDMN_ACTION_EXTRACTBINARYFILE
             MENUITEM SEPARATOR
             MENUITEM "Binary Files Extract Settings",              IDMN_ACTION_BINARYFILEEXTRACT_SETTINGS
         END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -151,10 +155,12 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         POPUP "Binary Files"
         BEGIN
             MENUITEM "Get Binary File Extract Path",              IDMN_EXPRESSION_GETBINARYFILEPATH
         END
+        MENUITEM SEPARATOR
     END
 END
 #endif
