@@ -45,6 +45,10 @@ inline void NewStr(LPTSTR & Tar, const std::wstring & Str) {
 	NewStr(Tar, Str.c_str());
 }
 
+inline void NewStr(std::wstring& Tar, const std::wstring& Str) {
+	Tar = Str;
+}
+
 // convert string to wstring
 inline std::wstring to_wide_string(const std::string& input, UINT codePage = CP_UTF8) {
 	const auto size_needed = MultiByteToWideChar(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0);

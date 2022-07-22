@@ -192,6 +192,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Angle", IDMN_EXPRESSION_GA
         MENUITEM SEPARATOR
+        MENUITEM "Get Font Family Name", IDMN_EXPRESSION_GFN
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -409,6 +411,9 @@ BEGIN
     M_EXPRESSION_GXS        "XScale("
     M_EXPRESSION_GYS        "YScale("
     M_EXPRESSION_GA	        "Angle("
+    
+    M_EXPRESSION_GFN	    "FontFamilyName$("
+    M_POS	                "Position"
 END
 
 #endif    // English (U.S.) resources

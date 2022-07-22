@@ -127,6 +127,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->bFontChanged = true;
 
+	rdPtr->pExpRet = new std::wstring;
+
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		auto state = Gdiplus::GdiplusStartup(&rdPtr->pData->gdiplusToken
@@ -166,6 +168,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
+	delete rdPtr->pExpRet;
 
 	SetExtUserData(rdPtr->pData);
 

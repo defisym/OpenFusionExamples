@@ -72,6 +72,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, 0, 0,
 		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
 
+		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_POS,
+
 		};
 
 
@@ -389,6 +391,26 @@ long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
 	return rdPtr->angle;
 }
 
+long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
+	std::wstring filePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t pos = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	auto fontNames = GetFontNameFromFile(filePath.c_str());
+
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	try{
+		auto& name = fontNames.at(pos);
+		NewStr(*rdPtr->pExpRet, name);
+
+		return (long)rdPtr->pExpRet->c_str();
+
+	}catch(...) {
+		return (long)Empty_Str;
+	}
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -449,6 +471,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetXScale,
 			Expression_GetYScale,
 			Expression_GetAngle,
+
+			Expression_GetFontFamilyName,
 			
 			0
 			};

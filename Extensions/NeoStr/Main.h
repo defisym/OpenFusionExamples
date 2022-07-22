@@ -57,7 +57,9 @@
 #define EXP_EXPRESSION_GYS					14
 #define EXP_EXPRESSION_GA					15
 
-#define	EXP_LAST                    		16
+#define EXP_EXPRESSION_GFN					16
+
+#define	EXP_LAST                    		17
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -192,6 +194,8 @@ typedef struct tagRDATA
 	CharPos charPos;
 
 	GlobalData* pData;
+
+	std::wstring* pExpRet;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

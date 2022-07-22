@@ -189,6 +189,8 @@
 #define IDMN_EXPRESSION_GYS					27014
 #define IDMN_EXPRESSION_GA					27015
 
+#define IDMN_EXPRESSION_GFN					27016
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -211,9 +213,10 @@
 #define M_EXPRESSION_GYS					7014
 #define M_EXPRESSION_GA					    7015
 
+#define M_EXPRESSION_GFN					7016
+
 // Names of expression parameters
-#define M_EXP_P1				 7500
-#define	M_EXP_P2				 7501
+#define M_POS				                7500
 
 // Next default values for new objects
 // 
