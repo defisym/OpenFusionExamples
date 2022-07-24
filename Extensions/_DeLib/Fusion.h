@@ -74,6 +74,23 @@ inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 
 #define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
 
+inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
+	auto sz = (str.size() + 1) * sizeof(wchar_t);
+	//auto pStr = (wchar_t*)_mvCalloc(sz * sizeof(wchar_t));
+	auto pStr = (wchar_t*)callRunTimeFunction(rdPtr, RFUNCTION_GETSTRINGSPACE_EX, 0, sz);
+	
+	memset(pStr, 0, sz);
+	memcpy(pStr, str.c_str(), sz);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)pStr;
+}
+
+#define ReturnString(Str) ReturnString(rdPtr, Str)
+
 //Check if a dir has animation
 inline bool _DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
 	Dir = max(0, min(DIRID_MAX - 1, Dir));
