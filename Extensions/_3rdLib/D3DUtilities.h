@@ -13,6 +13,7 @@ private:
     UINT64 m_LocalBudgetOverride = 0;
 
     UINT AdapterOrdinal = 0;
+    DXGI_ADAPTER_DESC Desc;
 
     DXGI_QUERY_VIDEO_MEMORY_INFO m_LocalVideoMemoryInfo = { 0,0,0,0 };
     DXGI_QUERY_VIDEO_MEMORY_INFO m_NonLocalVideoMemoryInfo = { 0,0,0,0 };
@@ -38,13 +39,17 @@ public:
         }
     }
 
+    inline const DXGI_ADAPTER_DESC& GetDesc() {
+        return this->Desc;
+    }
+
     inline const DXGI_QUERY_VIDEO_MEMORY_INFO& GetLocalVideoMemoryInfo() {
         return this->m_LocalVideoMemoryInfo;
     }
 
-    inline const DXGI_QUERY_VIDEO_MEMORY_INFO& GetNonLocalVideoMemoryInfo() {
-        return this->m_NonLocalVideoMemoryInfo;
-    }
+    //inline const DXGI_QUERY_VIDEO_MEMORY_INFO& GetNonLocalVideoMemoryInfo() {
+    //    return this->m_NonLocalVideoMemoryInfo;
+    //}
 
     inline const UINT64 GetLocalBudgetMB() {
         return (GetLocalVideoMemoryInfo().Budget >> 20);
@@ -69,11 +74,6 @@ public:
         IDXGIAdapter* pTempAdapter;
 
         while (m_pDXGIFactory->EnumAdapters(AdapterOrdinal, &pTempAdapter) != DXGI_ERROR_NOT_FOUND) {
-#ifdef _DEBUG
-            DXGI_ADAPTER_DESC Desc;
-            pTempAdapter->GetDesc(&Desc);
-#endif // _DEBUG
-
             hr = pTempAdapter->QueryInterface(&m_pDXGIAdapter);
             pTempAdapter->Release();
 
@@ -100,6 +100,8 @@ public:
             //}
 
             if (usageLocal != 0) {
+                m_pDXGIAdapter->GetDesc(&Desc);
+
                 return AdapterOrdinal;
             }
 
@@ -117,21 +119,21 @@ public:
         this->m_LocalVideoMemoryInfo = { 0,0,0,0 };
         //this->m_NonLocalVideoMemoryInfo = { 0,0,0,0 };
 
-        IDXGIAdapter* pTempAdapter;
+        //IDXGIAdapter* pTempAdapter;
 
-        hr = m_pDXGIFactory->EnumAdapters(AdapterOrdinal, &pTempAdapter);
-        if (hr == DXGI_ERROR_NOT_FOUND) {
-            //LOG_WARNING("Invalid adapter ordinal");
-            goto CleanUp;
-        }
+        //hr = m_pDXGIFactory->EnumAdapters(AdapterOrdinal, &pTempAdapter);
+        //if (hr == DXGI_ERROR_NOT_FOUND) {
+        //    //LOG_WARNING("Invalid adapter ordinal");
+        //    goto CleanUp;
+        //}
 
-        hr = pTempAdapter->QueryInterface(&m_pDXGIAdapter);
-        pTempAdapter->Release();
+        //hr = pTempAdapter->QueryInterface(&m_pDXGIAdapter);
+        //pTempAdapter->Release();
 
-        if (FAILED(hr)) {
-            //LOG_ERROR("Failed to query IDXGIAdapter3 interface from selected adapter.");
-            goto CleanUp;
-        }
+        //if (FAILED(hr)) {
+        //    //LOG_ERROR("Failed to query IDXGIAdapter3 interface from selected adapter.");
+        //    goto CleanUp;
+        //}
 
         //
         // QueryVideoMemoryInfo obtains up to date budgeting information from the graphics
