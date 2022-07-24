@@ -34,7 +34,7 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GlobalFunc.cpp">
+    <ClCompile Include="Func.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\_DeLib\Encryption.cpp">
