@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../../Inc/",
-                "${workspaceFolder}/../_DeLib/"
+                "${workspaceFolder}/../_DeLib/",
+                "F:\\DEV\\FFMpeg\\include"
             ],
             "defines": [
                 "_DEBUG",
