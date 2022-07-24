@@ -233,19 +233,6 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 
 #define _mvCalloc(size) mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, size)
 
-inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
-	auto sz = str.size() + 1;
-	auto pStr = (wchar_t*)_mvCalloc(sz * sizeof(wchar_t));
-	memset(pStr, 0, sz * sizeof(wchar_t));
-	memcpy(pStr, str.c_str(), sz * sizeof(wchar_t));
-
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-
-	//This returns a pointer to the string for MMF.
-	return (long)pStr;
-}
-
 //inline void UpdateEditString(LPMV mV, LPEDATA edPtr, LPCWSTR pStr, LPWSTR pBuf) {
 //	// If the length is different
 //	if (wcslen(pStr) != wcslen(pBuf))
