@@ -1617,7 +1617,11 @@ long WINAPI DLLExport LongToWChar(LPRDATA rdPtr, long param1) {
 	short low = num & 0b00000000000000001111111111111111;
 	short high = (num - low) >> 16;
 
-	auto pStr = (wchar_t*)_mvCalloc((2 + 1) * sizeof(wchar_t));
+	auto sz = (2 + 1) * sizeof(wchar_t);
+
+	//auto pStr = (wchar_t*)_mvCalloc((2 + 1) * sizeof(wchar_t));
+	auto pStr = (wchar_t*)callRunTimeFunction(rdPtr, RFUNCTION_GETSTRINGSPACE_EX, 0, sz);
+	memset(pStr, 0, sz);
 
 	pStr [0] = ConvertToType<short, wchar_t>(high);
 	pStr [1] = ConvertToType<short, wchar_t>(low);
@@ -1654,7 +1658,7 @@ long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
 		//return app.exit(e);
 	}
 
-	return ReturnString(rdPtr, ConvertStrToWStr(coef));
+	return ReturnString(ConvertStrToWStr(coef));
 }
 
 long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
