@@ -110,6 +110,15 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GFFN, M_EXPRESSION_GFFN, EXP_EXPRESSION_GFFN, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_ACTION_FILENAME,
 		IDMN_EXPRESSION_GFRFP, M_EXPRESSION_GFRFP, EXP_EXPRESSION_GFRFP, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, M_ACTION_FILENAME, M_EXPRESSION_BASEPATH,
+		
+		IDMN_EXPRESSION_GRUMB, M_EXPRESSION_GRUMB, EXP_EXPRESSION_GRUMB, 0, 0,
+		
+		IDMN_EXPRESSION_GGPUN, M_EXPRESSION_GGPUN, EXP_EXPRESSION_GGPUN, EXPFLAG_STRING, 0,
+		
+		IDMN_EXPRESSION_GVRUMB, M_EXPRESSION_GVRUMB, EXP_EXPRESSION_GVRUMB, 0, 0,
+		IDMN_EXPRESSION_GVRBMB, M_EXPRESSION_GVRBMB, EXP_EXPRESSION_GVRBMB, 0, 0,
+		IDMN_EXPRESSION_GVRAMB, M_EXPRESSION_GVRAMB, EXP_EXPRESSION_GVRAMB, 0, 0,
+		
 		};
 
 
@@ -662,6 +671,36 @@ long WINAPI DLLExport GetIterateRefCountValuePriority(LPRDATA rdPtr, long param1
 	return rdPtr->itCountVecCount->priority;
 }
 
+long WINAPI DLLExport GetRAMUsageMB(LPRDATA rdPtr, long param1) {
+	return long(GetProcessMemoryUsageMB());
+}
+
+long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pD3DU->GetDesc().Description;
+}
+
+long WINAPI DLLExport GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
+	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+
+	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
+}
+
+long WINAPI DLLExport GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
+	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+	
+	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().Budget >> 20);
+}
+
+long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
+	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+
+	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().AvailableForReservation >> 20);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -759,6 +798,14 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetFileFileName,
 			GetFileRelativeFilePath,
+
+			GetRAMUsageMB,
+
+			GetGPUName,
+
+			GetVRAMUsageMB,
+			GetVRAMBudgetMB,
+			GetVRAMAvailableMB,
 
 			0
 			};

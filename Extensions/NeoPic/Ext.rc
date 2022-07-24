@@ -253,6 +253,17 @@ BEGIN
             MENUITEM "Get AVG Coord Y", IDMN_EXPRESSION_GAVGCY
         END
         MENUITEM SEPARATOR
+        POPUP "System Info"
+        BEGIN
+            MENUITEM "Get RAM Usage MB", IDMN_EXPRESSION_GRUMB
+            MENUITEM SEPARATOR
+            MENUITEM "Get GPU Name", IDMN_EXPRESSION_GGPUN
+            MENUITEM SEPARATOR
+            MENUITEM "Get VRAM Usage MB", IDMN_EXPRESSION_GVRUMB
+            MENUITEM "Get VRAM Budget MB", IDMN_EXPRESSION_GVRBMB
+            //MENUITEM "Get VRAM Available MB", IDMN_EXPRESSION_GVRAMB
+        END
+        MENUITEM SEPARATOR        
     END
 END
 #endif
@@ -457,6 +468,14 @@ BEGIN
     M_EXPRESSION_GITRCK	           "GetITRCK$("
     M_EXPRESSION_GITRCVC           "GetITRCVC("
     M_EXPRESSION_GITRCVP           "GetITRCVP("
+
+    M_EXPRESSION_GRUMB             "GetRAMUsageMB("
+
+    M_EXPRESSION_GGPUN             "GetGPUName$("
+    
+    M_EXPRESSION_GVRUMB            "GetVRAMUsageMB("
+    M_EXPRESSION_GVRBMB            "GetVRAMBudgetMB("
+    M_EXPRESSION_GVRAMB            "GetVRAMAvailableMB("
 
 END
 

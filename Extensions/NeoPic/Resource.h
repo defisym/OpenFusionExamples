@@ -249,6 +249,15 @@
 #define IDMN_EXPRESSION_GFFN		27019
 #define IDMN_EXPRESSION_GFRFP		27020
 
+#define IDMN_EXPRESSION_GRUMB       27021
+
+#define IDMN_EXPRESSION_GGPUN       27022
+
+#define IDMN_EXPRESSION_GVRUMB      27023
+#define IDMN_EXPRESSION_GVRBMB      27024
+#define IDMN_EXPRESSION_GVRAMB      27025
+
+
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
 #define M_EXPRESSION_GHSY			 7001
@@ -281,6 +290,14 @@
 
 #define M_EXPRESSION_GFFN			 7019
 #define M_EXPRESSION_GFRFP			 7020
+
+#define M_EXPRESSION_GRUMB           7021
+
+#define M_EXPRESSION_GGPUN           7022
+
+#define M_EXPRESSION_GVRUMB          7023
+#define M_EXPRESSION_GVRBMB          7024
+#define M_EXPRESSION_GVRAMB          7025
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500

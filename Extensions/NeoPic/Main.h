@@ -93,7 +93,15 @@
 #define EXP_EXPRESSION_GFFN				19
 #define EXP_EXPRESSION_GFRFP			20
 
-#define	EXP_LAST                    	21
+#define EXP_EXPRESSION_GRUMB           	21
+
+#define EXP_EXPRESSION_GGPUN           	22
+
+#define EXP_EXPRESSION_GVRUMB          	23
+#define EXP_EXPRESSION_GVRBMB          	24
+#define EXP_EXPRESSION_GVRAMB          	25
+
+#define	EXP_LAST                    	26
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
