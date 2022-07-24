@@ -111,8 +111,9 @@ public:
         return S_OK;
     }
 
+    //https://blog.csdn.net/caoshangpa/article/details/78623044
     //https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/TechniqueDemos/D3D12MemoryManagement/src/Framework.h
-    //https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/TechniqueDemos/D3D12MemoryManagement/src/D3D12MemoryManagement.cpp
+    //https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/TechniqueDemos/D3D12MemoryManagement/src/Framework.cpp
     inline HRESULT UpdateVideoMemoryInfo() {
         HRESULT hr;
 
