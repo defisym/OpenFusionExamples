@@ -40,6 +40,8 @@
 enum class HotSpotPos;
 struct ZoomScale;
 
+class D3DUtilities;
+
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"
@@ -47,6 +49,7 @@ struct ZoomScale;
 
 #include	"Encryption.h"
 
+#include	"D3DUtilities.h"
 #include	"WindowsCommon.h"
 #include	"FusionUtilities.h"
 #include	"Fusion.h"

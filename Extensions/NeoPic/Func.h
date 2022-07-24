@@ -13,7 +13,7 @@ inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,
 
 inline void GetFileName(LPRDATA rdPtr);
 
-inline bool ExceedDefaultMemLimit(size_t memLimit);
+inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit);
 
 //-----------------------------
 
@@ -694,7 +694,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 
 	for (auto& it : PreloadList) {
 		// Stop loading when exceed limit		
-		if (ExceedDefaultMemLimit(rdPtr->memoryLimit)) {
+		if (ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit)) {
 			break;
 		}
 
@@ -859,8 +859,14 @@ inline void ClearCurRef(LPRDATA rdPtr) {
 	}
 }
 
-inline bool ExceedDefaultMemLimit(size_t memLimit) {
-	return min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= GetProcessMemoryUsageMB();
+inline SIZE_T GetMemoryUsageMB(LPRDATA rdPtr) {
+	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+
+	return max(GetProcessMemoryUsageMB(), (SIZE_T)rdPtr->pD3DU->GetLocalCurrentUsageMB());
+}
+
+inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit) {
+	return min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= GetMemoryUsageMB(rdPtr);
 }
 
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit = -1) {
@@ -869,7 +875,7 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 		if (forceClean
 			|| (rdPtr->autoClean
 				&& rdPtr->lib->size() > CLEAR_NUMTHRESHOLD
-				&& ExceedDefaultMemLimit(rdPtr->memoryLimit))) {
+				&& ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit))) {
 			auto tarMemLimit = forceClean && (memLimit != -1)
 				? memLimit
 				: rdPtr->memoryLimit / 2;
@@ -877,7 +883,7 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 			UpdateCleanVec(rdPtr);
 
 			while (!rdPtr->pCountVec->empty()
-				&& tarMemLimit <= GetProcessMemoryUsageMB()) {
+				&& tarMemLimit <= GetMemoryUsageMB(rdPtr)) {
 
 				auto& fileName = rdPtr->pCountVec->back().first;
 

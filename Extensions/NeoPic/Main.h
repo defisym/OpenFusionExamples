@@ -243,6 +243,8 @@ typedef struct tagRDATA
 	bool bCurrentDisplayTransparent = false;
 	LPSURFACE pOldSf = nullptr;
 
+	D3DUtilities* pD3DU = nullptr;
+
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

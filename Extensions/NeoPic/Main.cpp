@@ -537,16 +537,8 @@ long WINAPI DLLExport GetFileFileName(LPRDATA rdPtr, long param1) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	
 	auto FileName = GetFileName(FilePath);	
-	auto strLen = FileName.size() + 1;
-	
-	LPWSTR ret = (LPWSTR)mvCalloc(MV, sizeof(wchar_t) * strLen);	
-	wcscpy_s(ret, strLen, FileName.c_str());
 
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-
-	//This returns a pointer to the string for MMF.
-	return (long)ret;
+	return ReturnString(FileName);
 }
 
 long WINAPI DLLExport GetFilePath(LPRDATA rdPtr, long param1) {
@@ -582,16 +574,8 @@ long WINAPI DLLExport GetFileRelativeFilePath(LPRDATA rdPtr, long param1) {
 	std::wstring BasePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);	
 
 	auto FileName = GetRelativeFilePath(FilePath, BasePath);
-	auto strLen = FileName.size() + 1;
 
-	LPWSTR ret = (LPWSTR)mvCalloc(MV, sizeof(wchar_t) * strLen);
-	wcscpy_s(ret, strLen, FileName.c_str());
-
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-
-	//This returns a pointer to the string for MMF.
-	return (long)ret;
+	return ReturnString(FileName);
 }
 
 long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {

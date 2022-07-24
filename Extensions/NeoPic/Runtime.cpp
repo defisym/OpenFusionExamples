@@ -164,6 +164,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
 
+	rdPtr->pD3DU = new D3DUtilities;
+
 	// No errors
 	return 0;
 }
@@ -234,6 +236,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->itCountVecStr;
 	delete rdPtr->itCountVecCount;
+
+	delete rdPtr->pD3DU;
 
 	// No errors
 	return 0;
