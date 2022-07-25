@@ -866,7 +866,9 @@ inline SIZE_T GetMemoryUsageMB(LPRDATA rdPtr) {
 }
 
 inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit) {
-	return min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= GetMemoryUsageMB(rdPtr);
+	auto totalVRAM = rdPtr->pD3DU->GetLocalBudgetMB();
+
+	return min(totalVRAM, min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT)) <= GetMemoryUsageMB(rdPtr);
 }
 
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit = -1) {
