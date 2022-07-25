@@ -1,0 +1,37 @@
+<effect>
+<name>Pattern Fade In</name>
+<author>Defisym</author>
+<description>Pattern Fade In</description>
+<parameter>
+		<name>Progress</name>
+		<code>progress</code>
+		<description>Progress of Pattern Fade</description>
+		<type>float</type>
+		<property>edit</property>
+		<value>0.3</value>
+</parameter>
+<parameter>
+		<name>mode</name>
+		<code>mode</code>
+		<description>Mode 0 fade to TexColor,Mode 1 fade to Current Picture</description>
+		<type>INT</type>
+		<property>CHECKBOX</property>
+		<value>0</value>
+</parameter>
+<parameter>
+	<name>pattern picture</name>
+	<code>patternpic</code>
+	<description>pattern picture</description>
+	<type>IMAGE</type>
+	<property>image</property>
+</parameter>
+<parameter>
+		<name>TexColor</name>
+		<code>texcolor</code>
+		<description></description>
+		<type>int_float4</type>
+		<property>COLOR</property>
+		<value>0</value>
+</parameter>
+</effect>
+

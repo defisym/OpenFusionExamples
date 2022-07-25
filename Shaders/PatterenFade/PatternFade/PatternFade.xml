@@ -1,0 +1,57 @@
+<effect>
+<name>PatternFade</name>
+<author>Defisym</author>
+<description>Pattern Fade</description>
+<parameter>
+		<name>Progress</name>
+		<code>progress</code>
+		<description>Progress of Pattern Fade</description>
+		<type>float</type>
+		<property>spin</property>
+		<min>0.0</min>
+		<max>1.0</max>
+		<value>0.5</value>
+</parameter>
+<parameter>
+		<name>Fade out</name>
+		<code>dir</code>
+		<description>Fade in: Black -> White, Check to revert the process</description>
+		<type>INT</type>
+		<property>CHECKBOX</property>
+		<value>0</value>
+</parameter>
+<parameter>
+		<name>Transition Range</name>
+		<code>transitionRange</code>
+		<description>Range of transition from opaque to transparent</description>
+		<type>float</type>
+		<property>spin</property>
+		<min>0.0</min>
+		<max>25.0</max>
+		<value>0.2</value>
+</parameter>
+<parameter>
+		<name>Fade By Pattern Picture</name>
+		<code>mode</code>
+		<description>Default is fade by texture, display TexColor, check to fade by Pattern Picture, display texture</description>
+		<type>INT</type>
+		<property>CHECKBOX</property>
+		<value>0</value>
+</parameter>
+<parameter>
+		<name>TexColor</name>
+		<code>texcolor</code>
+		<description>Texture Color</description>
+		<type>int_float4</type>
+		<property>COLOR</property>
+		<value>0</value>
+</parameter>
+<parameter>
+	<name>Pattern Picture</name>
+	<code>patternpic</code>
+	<description>Pattern Picture</description>
+	<type>IMAGE</type>
+	<property>image</property>
+</parameter>
+</effect>
+
