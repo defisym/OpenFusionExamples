@@ -34,13 +34,13 @@
 #include	<string>
 #include	<thread>
 
-#include	"GeneralDefinition.h"
-#include	"Definition.h"
-
 enum class HotSpotPos;
 struct ZoomScale;
 
-class D3DUtilities;
+#include	"D3DUtilities.h"
+
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"
@@ -49,7 +49,6 @@ class D3DUtilities;
 
 #include	"Encryption.h"
 
-#include	"D3DUtilities.h"
 #include	"WindowsCommon.h"
 #include	"FusionUtilities.h"
 #include	"Fusion.h"

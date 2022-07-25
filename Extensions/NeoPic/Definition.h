@@ -98,16 +98,18 @@ template<typename T>
 constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
 
 struct GlobalData {
-	SurfaceLib* pLib;
-	RefCount* pCount;
-	KeepList* pKeepList;
-	FileListMap* pFileListMap;
+	SurfaceLib* pLib = nullptr;
+	RefCount* pCount = nullptr;
+	KeepList* pKeepList = nullptr;
+	FileListMap* pFileListMap = nullptr;
+	D3DUtilities* pD3DU = nullptr;
 };
 
 inline void DeleteLib(SurfaceLib* pData);
 
 inline void DeleteGlobalData(GlobalData* pData) {
 	DeleteLib(pData->pLib);
+
 	delete pData->pCount;
 	delete pData->pKeepList;
 	
@@ -115,6 +117,8 @@ inline void DeleteGlobalData(GlobalData* pData) {
 		delete it.second;
 	}
 	delete pData->pFileListMap;
+
+	delete pData->pD3DU;
 
 	delete pData;
 }

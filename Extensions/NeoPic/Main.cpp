@@ -175,7 +175,7 @@ long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	auto fullPath = GetFullPathNameStr(pFileName);
 
-	return rdPtr->isLib && rdPtr->lib->find(fullPath) != rdPtr->lib->end() ? true : false;
+	return rdPtr->isLib && rdPtr->pLib->find(fullPath) != rdPtr->pLib->end() ? true : false;
 }
 
 // ============================================================================
@@ -325,7 +325,7 @@ short WINAPI DLLExport IterateRefCount(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 	if(rdPtr->isLib){
-		ResetLib(rdPtr->lib);
+		ResetLib(rdPtr->pLib);
 	}
 
 	return 0;
@@ -335,7 +335,7 @@ short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	if (rdPtr->isLib) {
-		EraseLib(rdPtr->lib, FilePath);		
+		EraseLib(rdPtr->pLib, FilePath);		
 	}
 
 	return 0;
@@ -346,8 +346,8 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	if (rdPtr->isLib) {
-		if (NeedUpdateLib(rdPtr->lib, FilePath)) {
-			EraseLib(rdPtr->lib, FilePath);
+		if (NeedUpdateLib(rdPtr->pLib, FilePath)) {
+			EraseLib(rdPtr->pLib, FilePath);
 			LoadFromFile(rdPtr, FilePath, Key);
 		}
 	}
@@ -612,7 +612,7 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	else {
 		auto it = _LoadLib(rdPtr, rdPtr, FilePath.c_str(), Key.c_str());
 
-		if (it == rdPtr->lib->end()) {
+		if (it == rdPtr->pLib->end()) {
 			ret = nullptr;
 		}
 		else {

@@ -138,39 +138,51 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->AT = { 1,0,0,1 };
 	rdPtr->imgAT = { 1,0,0,1 };
 
-	//Load Lib
-	if(rdPtr->isLib){
-		if (GetExtUserData() == nullptr) {
-			rdPtr->pData = new GlobalData;
-			
-			rdPtr->lib = new SurfaceLib;
-			rdPtr->pCount = new RefCount;
-			rdPtr->pKeepList = new KeepList;
-			rdPtr->pFileListMap = new FileListMap;
-		}
-		else {
-			rdPtr->pData = (GlobalData*)GetExtUserData();
+	//Init global data
+	if (GetExtUserData() == nullptr) {
+		//init global
+		auto pData = new GlobalData;
 
-			rdPtr->lib = rdPtr->pData->pLib;
-			rdPtr->pCount = rdPtr->pData->pCount;
-			rdPtr->pKeepList = rdPtr->pData->pKeepList;
-			rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
-		}
+		//init general
+		pData->pD3DU = new D3DUtilities;
+
+		//auto& Desc = rdPtr->pD3DU->GetDesc();
+		//MSGBOX(Desc.Description);
+
+		//rdPtr->pD3DU->UpdateVideoMemoryInfo();
+		//auto& info = rdPtr->pD3DU->GetLocalVideoMemoryInfo();
+
+		//init specific
+		pData->pLib = new SurfaceLib;
+		pData->pCount = new RefCount;
+		pData->pKeepList = new KeepList;
+		pData->pFileListMap = new FileListMap;
+
+		//Update pointer
+		SetExtUserData(pData);
 	}
 
+	//Get global data
+	//Get pointers here and never delete them.
+	rdPtr->pData = (GlobalData*)GetExtUserData();
+
+	//Get general
+	rdPtr->pD3DU = rdPtr->pData->pD3DU;
+
+	//Get specific
+	if (rdPtr->isLib) {
+		//Load Lib
+		rdPtr->pLib = rdPtr->pData->pLib;
+		rdPtr->pCount = rdPtr->pData->pCount;
+		rdPtr->pKeepList = rdPtr->pData->pKeepList;
+		rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
+	}
+	
 	rdPtr->pCountVec = new RefCountVec;
 	rdPtr->pPreloadList = nullptr;
 
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
-
-	rdPtr->pD3DU = new D3DUtilities;
-
-	//auto& Desc = rdPtr->pD3DU->GetDesc();
-	//MSGBOX(Desc.Description);
-
-	//rdPtr->pD3DU->UpdateVideoMemoryInfo();
-	//auto& info = rdPtr->pD3DU->GetLocalVideoMemoryInfo();
 
 	// No errors
 	return 0;
@@ -227,14 +239,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		
 		// Clear ref
 		ClearCurRef(rdPtr);
-
-		// Save Lib
-		rdPtr->pData->pLib = rdPtr->lib;
-		rdPtr->pData->pCount = rdPtr->pCount;
-		rdPtr->pData->pKeepList = rdPtr->pKeepList;
-		rdPtr->pData->pFileListMap = rdPtr->pFileListMap;
-
-		SetExtUserData(rdPtr->pData);
 	}
 
 	delete rdPtr->pCountVec;
@@ -242,8 +246,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->itCountVecStr;
 	delete rdPtr->itCountVecCount;
-
-	delete rdPtr->pD3DU;
 
 	// No errors
 	return 0;
@@ -761,7 +763,7 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		break;
 	case DB_LIBSIZE:
 		libFilter(L"Lib Size: %d", L"Lib Size: %s", libNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->lib->size());
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->pLib->size());
 			});
 		break;
 	case DB_LIBMEMUSE:

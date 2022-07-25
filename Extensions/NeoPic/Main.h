@@ -170,7 +170,7 @@ typedef struct tagRDATA
 
 	//Lib
 	bool isLib = false;
-	SurfaceLib* lib = nullptr;							// kept over frames
+	SurfaceLib* pLib = nullptr;							// kept over frames
 
 	//Collision
 	bool collision = false;

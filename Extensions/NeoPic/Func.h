@@ -340,7 +340,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 	auto fullPath = GetFullPathNameStr(FileName);
 
 	if (rdPtr->isLib) {
-		if (rdPtr->lib->find(fullPath) != rdPtr->lib->end()) {
+		if (rdPtr->pLib->find(fullPath) != rdPtr->pLib->end()) {
 			return;
 		}
 
@@ -349,7 +349,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 
 		if (pImg->IsValid()) {
 			// need not to get decrypted file hash, as it must different if file is different, even encrypted
-			(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pImg ,GetFileHash(fullPath),GetTransparent(pImg) };
+			(*rdPtr->pLib)[fullPath] = SurfaceLibValue{ pImg ,GetFileHash(fullPath),GetTransparent(pImg) };
 		}
 		else {
 			delete pImg;
@@ -392,20 +392,20 @@ inline bool ObjIsLib(LPRDATA obj) {
 // lib load core
 inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCTSTR Key = _T("")) {
 	if (!ObjIsLib(obj)) {
-		return obj->lib->end();
+		return obj->pLib->end();
 	}
 
 	auto fullPath = GetFullPathNameStr(FileName);
 
-	auto it = obj->lib->find(fullPath);
+	auto it = obj->pLib->find(fullPath);
 
-	if (it == obj->lib->end()) {
+	if (it == obj->pLib->end()) {
 		LoadFromFile(obj, FileName, Key);
 	}
 
-	it = obj->lib->find(fullPath);
-	if (it == obj->lib->end()) {
-		return obj->lib->end();
+	it = obj->pLib->find(fullPath);
+	if (it == obj->pLib->end()) {
+		return obj->pLib->end();
 	}
 
 	// convert to HWA if needed
@@ -427,7 +427,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 
 	// load
 	auto it = _LoadLib(rdPtr, obj, FileName, Key);
-	if (it == obj->lib->end()) {
+	if (it == obj->pLib->end()) {
 		return;
 	}
 
@@ -437,7 +437,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		countit->second.count++;
 	}
 	else {
-		(*obj->pCount)[fullPath] = Count{ 1, obj->lib->size(),0 };
+		(*obj->pCount)[fullPath] = Count{ 1, obj->pLib->size(),0 };
 		countit = obj->pCount->find(fullPath);
 	}
 
@@ -461,9 +461,9 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 		NewPic(rdPtr);
 	}
 	else {
-		auto thisit = rdPtr->lib->find(fullPath);
-		if (thisit == rdPtr->lib->end()) {
-			(*rdPtr->lib)[it->first]=it->second;
+		auto thisit = rdPtr->pLib->find(fullPath);
+		if (thisit == rdPtr->pLib->end()) {
+			(*rdPtr->pLib)[it->first]=it->second;
 		}
 	}
 
@@ -543,7 +543,7 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 	auto fullPath = GetFullPathNameStr(pFileName);
 
 	if (rdPtr->isLib) {
-		(*rdPtr->lib)[fullPath] = SurfaceLibValue{ pSave ,fullPath ,GetTransparent(pSave) };
+		(*rdPtr->pLib)[fullPath] = SurfaceLibValue{ pSave ,fullPath ,GetTransparent(pSave) };
 	}
 	else {
 		if (rdPtr->fromLib) {
@@ -754,22 +754,22 @@ inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, 
 	for (auto& it : *list) {
 		fullPathStr = GetFullPathNameStr(it);
 		
-		if (std::find_if(rdPtr->lib->begin(), rdPtr->lib->end(), [fullPathStr](auto& p) {
+		if (std::find_if(rdPtr->pLib->begin(), rdPtr->pLib->end(), [fullPathStr](auto& p) {
 				return p.first == fullPathStr;
-				}) == rdPtr->lib->end()) {
+				}) == rdPtr->pLib->end()) {
 			rdPtr->pPreloadList->emplace_back(fullPathStr);
 		}
 	}
 
 	rdPtr->preloading = true;
 	std::thread pl(PreloadLibFromVec, rdPtr, *rdPtr->pPreloadList, BasePath, Key
-		, [rdPtr](SurfaceLib* lib) {
+		, [rdPtr](SurfaceLib* pLib) {
 			rdPtr->forceExit = false;
 			rdPtr->threadID = 0;
 			
 			rdPtr->preloading = false;
 			rdPtr->preloadMerge = true;
-			rdPtr->preloadLib = lib;
+			rdPtr->preloadLib = pLib;
 		});
 
 	HANDLE handle;
@@ -785,8 +785,8 @@ inline void MergeLib(LPRDATA rdPtr) {
 		&& rdPtr->preloadLib != nullptr) {
 		for (auto& it : *rdPtr->preloadLib) {
 			auto& [name, key] = it;
-			if (rdPtr->lib->find(name) == rdPtr->lib->end()) {
-				(*rdPtr->lib)[name] = key;
+			if (rdPtr->pLib->find(name) == rdPtr->pLib->end()) {
+				(*rdPtr->pLib)[name] = key;
 			}
 		}
 
@@ -806,12 +806,12 @@ inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring ba
 }
 
 inline void UpdateCleanVec(LPRDATA rdPtr) {
-	auto mapSz = rdPtr->lib->size();
+	auto mapSz = rdPtr->pLib->size();
 
 	rdPtr->pCountVec->clear();
 	rdPtr->pCountVec->reserve(mapSz);
 
-	for (auto& it : *rdPtr->lib) {
+	for (auto& it : *rdPtr->pLib) {
 		auto pCountIt = rdPtr->pCount->find(it.first);
 		auto pCountContain = pCountIt != rdPtr->pCount->end();
 		
@@ -874,7 +874,7 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 		&& rdPtr->isLib) {
 		if (forceClean
 			|| (rdPtr->autoClean
-				&& rdPtr->lib->size() > CLEAR_NUMTHRESHOLD
+				&& rdPtr->pLib->size() > CLEAR_NUMTHRESHOLD
 				&& ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit))) {
 			auto tarMemLimit = forceClean && (memLimit != -1)
 				? memLimit
@@ -887,9 +887,9 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 
 				auto& fileName = rdPtr->pCountVec->back().first;
 
-				delete (*rdPtr->lib)[fileName].pSf;
+				delete (*rdPtr->pLib)[fileName].pSf;
 
-				rdPtr->lib->erase(fileName);
+				rdPtr->pLib->erase(fileName);
 				rdPtr->pCount->erase(fileName);
 
 				rdPtr->pCountVec->pop_back();
