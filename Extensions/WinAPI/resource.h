@@ -103,6 +103,7 @@
 #define M_CONDITION_ICLIHP              6035
 #define M_CONDITION_OD                  6036
 #define M_CONDITION_IRIE                6037
+#define M_CONDITION_IAAT                6038
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define PARA_CONDITION_OBJ              6511
@@ -217,6 +218,7 @@
 #define IDMN_CONDITION_OD               26036
 #define IDMN_CONDITION_IDHA_S           26037
 #define IDMN_CONDITION_IRIE             26038
+#define IDMN_CONDITION_IAAT             26039
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020

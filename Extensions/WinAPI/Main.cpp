@@ -36,6 +36,7 @@ short conditionsInfos[] =
 	IDMN_CONDITION_IDHA_S, M_CONDITION_IDHA, CND_CONDITION_IDHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_DIR,
 	
 	IDMN_CONDITION_IRIE, M_CONDITION_IRIE, CND_CONDITION_IRIE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_IAAT, M_CONDITION_IAAT, CND_CONDITION_IAAT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
 
 };
 
@@ -347,6 +348,37 @@ long WINAPI DLLExport IsRunningInEditor(LPRDATA rdPtr, long param1, long param2)
 #else
 	return true;
 #endif // RUN_ONLY	
+}
+
+long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	auto selected = rdPtr->pSelect->Selected(oil);
+	auto pObj = rdPtr->pSelect->GetFirstObject(oil, selected);
+
+	if (pObj != nullptr && LPROValid(pObj, IDENTIFIER_ACTIVE)) {
+		LPRO pResult = nullptr;
+		int zOrder = MININT;
+
+		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO pObject) {
+			if (pObject->ros.rsZOrder >= zOrder) {
+				pResult = pObject;
+				zOrder = pObject->ros.rsZOrder;
+			}
+			}, selected ? ForEachFlag_SelectedOnly : ForEachFlag_ForceAll);
+
+		if (pResult != nullptr) {
+			rdPtr->pSelect->SelectOneObject(pResult);
+
+			return true;
+		}
+	}
+
+	rdPtr->pSelect->SelectNone(oil);
+
+	return false;
 }
 
 // ============================================================================
@@ -1712,6 +1744,8 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsObjectHasAnimationInDirection_Scope,
 
 	IsRunningInEditor,
+
+	IsActiveAtTop,
 
 	0
 };

@@ -136,6 +136,8 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Object"
             BEGIN
+                MENUITEM "Active At Top",IDMN_CONDITION_IAAT
+                MENUITEM SEPARATOR
                 MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
                 MENUITEM "Object has Animation in Direction (Scope)",IDMN_CONDITION_IDHA_S              
                 MENUITEM SEPARATOR
@@ -756,6 +758,11 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_IRIE    "%o Running in Editor"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IAAT    "%o Active %0 At Top"
 END
 
 //Porperties
