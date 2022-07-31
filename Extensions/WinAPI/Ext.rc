@@ -363,6 +363,7 @@ BEGIN
         MENUITEM SEPARATOR 
         POPUP "Misc."
         BEGIN
+            MENUITEM "Normalize Val",      IDMN_EXPRESSION_GD         
             MENUITEM "Get Val With Sign",      IDMN_EXPRESSION_GVWS         
             MENUITEM SEPARATOR            
             MENUITEM "Hex 2 RGB",      IDMN_EXPRESSION_HEX2RGB           
@@ -696,6 +697,10 @@ BEGIN
     M_EXPRESSION_GVFP "GVFP ("
 END
 
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GD "Normalize ("
+END
 
 //Conditions
 STRINGTABLE

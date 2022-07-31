@@ -140,7 +140,9 @@
 
 #define	EXP_EXPRESSION_GVFP			31
 
-#define	EXP_LAST                    32
+#define	EXP_EXPRESSION_GD			32
+
+#define	EXP_LAST                    33
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

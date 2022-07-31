@@ -166,6 +166,9 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_C2B, M_EXPRESSION_C2B, EXP_EXPRESSION_C2B, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_C2B,
 
 	IDMN_EXPRESSION_GVFP, M_EXPRESSION_GVFP, EXP_EXPRESSION_GVFP, 0, 0,
+
+	IDMN_EXPRESSION_GD, M_EXPRESSION_GD, EXP_EXPRESSION_GD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
+
 };
 
 // ============================================================================
@@ -1715,6 +1718,12 @@ long WINAPI DLLExport GetVideoFramePointer(LPRDATA rdPtr, long param1) {
 #endif
 }
 
+long WINAPI DLLExport GetDirection(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float Val = *(float*)&p1;
+
+	return Val >= 0 ? 1 : -1;
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -1875,6 +1884,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	CastToBool,
 
 	GetVideoFramePointer,
+
+	GetDirection,
 
 0
 };
