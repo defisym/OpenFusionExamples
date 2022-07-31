@@ -34,6 +34,8 @@ short conditionsInfos[] =
 	IDMN_CONDITION_ICLIHP, M_CONDITION_ICLIHP, CND_CONDITION_ICLIHP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
 	IDMN_CONDITION_OD, M_CONDITION_OD, CND_CONDITION_OD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
 	IDMN_CONDITION_IDHA_S, M_CONDITION_IDHA, CND_CONDITION_IDHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_DIR,
+	
+	IDMN_CONDITION_IRIE, M_CONDITION_IRIE, CND_CONDITION_IRIE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
 };
 
@@ -337,6 +339,14 @@ long WINAPI DLLExport IsObjectDestroyed(LPRDATA rdPtr, long param1, long param2)
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [](LPRDATA rdPtr, LPRO object)->bool {
 		return IsDestroyed(object);
 		});
+}
+
+long WINAPI DLLExport IsRunningInEditor(LPRDATA rdPtr, long param1, long param2) {
+#ifdef RUN_ONLY
+	return false;
+#else
+	return true;
+#endif // RUN_ONLY	
 }
 
 // ============================================================================
@@ -1700,6 +1710,8 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsObjectDestroyed,
 
 	IsObjectHasAnimationInDirection_Scope,
+
+	IsRunningInEditor,
 
 	0
 };

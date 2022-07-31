@@ -129,6 +129,11 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Fusion"
         BEGIN
+            POPUP "Runtime"
+            BEGIN
+                MENUITEM " Running in Editor",IDMN_CONDITION_IRIE
+            END            
+            MENUITEM SEPARATOR
             POPUP "Object"
             BEGIN
                 MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
@@ -746,6 +751,11 @@ STRINGTABLE
 BEGIN
     M_CONDITION_OD    "%o Is Object %0 Destroyed"
     PARA_CONDITION_OBJECT   "Object"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IRIE    "%o Running in Editor"
 END
 
 //Porperties

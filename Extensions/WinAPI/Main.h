@@ -18,8 +18,9 @@
 #define	CND_CONDITION_ICLIHP		8
 #define	CND_CONDITION_OD			9
 #define	CND_CONDITION_IDHA_S		10
+#define	CND_CONDITION_IRIE			11
 
-#define	CND_LAST					11
+#define	CND_LAST					12
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
