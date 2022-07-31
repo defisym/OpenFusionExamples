@@ -11,6 +11,9 @@
 
 #include "ccxhdr.h"
 
+constexpr auto ForEachFlag_ForceAll = 0b00000001;
+constexpr auto ForEachFlag_SelectedOnly = 0b00000010;
+
 class ObjectSelection {
 private:
 	using Filter = std::function<bool(LPRDATA, LPRO)>;
@@ -158,17 +161,6 @@ private:
 		}
 	}
 
-	inline LPRO GetFirstObject(objInfoList* pOil, bool selected = false) {
-		if (pOil->oilObject < 0) {
-			return nullptr;
-		}
-
-		return (LPRO)ObjectList [selected
-			? pOil->oilListSelected
-			: pOil->oilObject
-		].oblOffset;
-	}
-
 public:
 	ObjectSelection(LPRH rhPtr) {
 		this->rhPtr = rhPtr;
@@ -248,6 +240,40 @@ public:
 	}
 
 #define IsDestroyed(pObj) ObjectSelection::IsDestroyed(pObj)
+
+	//Get first obj
+	inline LPRO GetFirstObject(objInfoList* pOil, bool selected = false) {
+		if (pOil->oilObject < 0) {
+			return nullptr;
+		}
+
+		auto offset = selected
+			? pOil->oilListSelected
+			: pOil->oilObject;
+
+		return offset < 0
+			? nullptr
+			: (LPRO)ObjectList[offset].oblOffset;
+
+		//return (LPRO)ObjectList[selected
+		//	? pOil->oilListSelected
+		//	: pOil->oilObject
+		//].oblOffset;
+	}
+
+	inline LPRO GetFirstObject(short oiList, bool selected = false) {
+		return GetFirstObject(this->GetLPOIL(oiList), selected);
+	}
+
+	inline bool Selected(objInfoList* pObjectInfo) {
+		return (pObjectInfo != nullptr)
+			&& (pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount)
+			&& (pObjectInfo->oilListSelected>0);
+	}
+
+	inline bool Selected(short oiList) {
+		return Selected(this->GetLPOIL(oiList));
+	}
 
 	//Selects *all* objects of the given object-type
 	inline void SelectAll(short oiList) {
@@ -476,8 +502,8 @@ public:
 
 	//For Each, used in action
 	inline void ForEach(LPRDATA rdPtr, short oiList, ForEachCallBack f, char flag = 0x00) {
-		bool forceAll = flag & 0b00000001;			// force iterate all
-		bool selectedOnly = flag & 0b00000010;		// only iterate selected
+		bool forceAll = flag & ForEachFlag_ForceAll;			// force iterate all
+		bool selectedOnly = flag & ForEachFlag_SelectedOnly;		// only iterate selected
 
 		auto iterateCall = [&] (objInfoList* list) {
 			if (forceAll) {
