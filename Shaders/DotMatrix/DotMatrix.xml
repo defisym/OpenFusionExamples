@@ -1,6 +1,7 @@
 <effect>
 <name>Dot Matrix</name>
-<description>Draws N px border around an object</description>
+<description>Dot Matrix</description>
+<author>Defisym</author>
 <parameter>
 		<name>Dot Color</name>
 		<code>dotColor</code>
