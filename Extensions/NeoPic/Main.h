@@ -251,7 +251,9 @@ typedef struct tagRDATA
 	bool bCurrentDisplayTransparent = false;
 	LPSURFACE pOldSf = nullptr;
 
+#ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
+#endif
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

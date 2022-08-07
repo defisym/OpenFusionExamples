@@ -156,15 +156,22 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // Data\Runtime folder).
 // 
 
-//LPCTSTR szDep[] = {
-//	_T("MyDll.dll"),
-//	NULL
-//};
+#if defined(_USE_DXGI) && defined(_DYNAMIC_LINK) 
+LPCTSTR szDep[] = {
+	_T("dxgi.dll"),
+	NULL
+};
 
+LPCTSTR* WINAPI DLLExport GetDependencies()
+{
+	return szDep;
+}
+#else
 LPCTSTR* WINAPI DLLExport GetDependencies()
 {
 	return NULL;	// szDep;
 }
+#endif
 
 // -----------------
 // LoadObject

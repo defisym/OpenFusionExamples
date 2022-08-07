@@ -680,25 +680,41 @@ long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
+#ifdef _USE_DXGI
 	return (long)rdPtr->pD3DU->GetDesc().Description;
+#else
+	return (long)L"No DXGI Enabled";
+#endif
 }
 
 long WINAPI DLLExport GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
+#ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
+#else
+	return -1;
+#endif	
 }
 
 long WINAPI DLLExport GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
+#ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
-	
+
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().Budget >> 20);
+#else
+	return -1;
+#endif	
 }
 
 long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
+#ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().AvailableForReservation >> 20);
+#else
+	return -1;
+#endif
 }
 
 // ----------------------------------------------------------
