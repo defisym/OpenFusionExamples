@@ -331,6 +331,7 @@ short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param
 
 		//DO replace
 		if (rdPtr->CurrentReplaceString != nullptr) {
+			//replace current match
 			Replace.assign(MatchedStr[0].str());
 			Result = regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
 		}
@@ -370,6 +371,7 @@ short WINAPI DLLExport IterateReplaceEachAll(LPRDATA rdPtr, long param1, long pa
 
 			//DO replace
 			if (rdPtr->CurrentReplaceString != nullptr) {
+				//replace current match
 				Replace.assign(MatchedStr[0].str());
 				Result = regex_replace(Result, Replace, rdPtr->CurrentReplaceString);
 			}
