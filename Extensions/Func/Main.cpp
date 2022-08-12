@@ -128,6 +128,15 @@ short expressionsInfos[]=
 		//Bool
 		IDMN_EXPRESSION_CTB, M_EXPRESSION_CTB, EXP_EXPRESSION_CTB, 0, 1, EXPPARAM_LONG, M_EXP_CTB,
 		IDMN_EXPRESSION_NEG, M_EXPRESSION_NEG, EXP_EXPRESSION_NEG, 0, 1, EXPPARAM_LONG, M_EXP_NEG,
+		IDMN_EXPRESSION_AND, M_EXPRESSION_AND, EXP_EXPRESSION_AND, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		IDMN_EXPRESSION_OR, M_EXPRESSION_OR, EXP_EXPRESSION_OR, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		IDMN_EXPRESSION_XOR, M_EXPRESSION_XOR, EXP_EXPRESSION_XOR, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+
+		//Equ_2
+		IDMN_EXPRESSION_GV, M_EXPRESSION_GV, EXP_EXPRESSION_GV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		IDMN_EXPRESSION_GOEV, M_EXPRESSION_GOEV, EXP_EXPRESSION_GOEV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		IDMN_EXPRESSION_LV, M_EXPRESSION_LV, EXP_EXPRESSION_LV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		IDMN_EXPRESSION_LOEV, M_EXPRESSION_LOEV, EXP_EXPRESSION_LOEV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
 
 		};
 
@@ -422,7 +431,11 @@ short WINAPI DLLExport Assert(LPRDATA rdPtr, long param1, long param2) {
 
 #ifndef RUN_ONLY
 	if (!value) {
-		auto ret = MessageBox(NULL, msg.c_str(), L"Assert Failed", MB_ABORTRETRYIGNORE);
+		auto ret = MessageBox(NULL, StrEqu(msg.c_str(), Empty_Str)
+										? L"Assert Failed"
+										: msg.c_str()
+									, L"Assert Failed"
+									, MB_ABORTRETRYIGNORE);
 
 		if (ret == IDABORT) {
 			exit(0);
@@ -692,6 +705,46 @@ long WINAPI DLLExport EquVal(LPRDATA rdPtr, long param1) {
 	return abs(a - b) <= 1e-6;
 }
 
+long WINAPI DLLExport GreaterVal(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float a = *(float*)&p1;
+
+	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float b = *(float*)&p2;
+
+	return a > b;
+}
+
+long WINAPI DLLExport GreaterOrEqualVal(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float a = *(float*)&p1;
+
+	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float b = *(float*)&p2;
+
+	return a >= b;
+}
+
+long WINAPI DLLExport LowerVal(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float a = *(float*)&p1;
+
+	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float b = *(float*)&p2;
+
+	return a < b;
+}
+
+long WINAPI DLLExport LowerOrEqualVal(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float a = *(float*)&p1;
+
+	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float b = *(float*)&p2;
+
+	return a <= b;
+}
+
 long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
 	auto bRet = (bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG)));
 
@@ -700,6 +753,33 @@ long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport Negate(LPRDATA rdPtr, long param1) {
 	auto bRet= !(bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG)));
+
+	return bRet;
+}
+
+long WINAPI DLLExport And(LPRDATA rdPtr, long param1) {
+	auto a = bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
+	auto b = bool(CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG));
+
+	auto bRet = a && b;
+
+	return bRet;
+}
+
+long WINAPI DLLExport Or(LPRDATA rdPtr, long param1) {
+	auto a = bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
+	auto b = bool(CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG));
+
+	auto bRet = a || b;
+
+	return bRet;
+}
+
+long WINAPI DLLExport Xor(LPRDATA rdPtr, long param1) {
+	auto a = bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
+	auto b = bool(CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG));
+
+	auto bRet = a ^ b;
 
 	return bRet;
 }
@@ -807,6 +887,14 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			CastToBool,
 			Negate,
+			And,
+			Or,
+			Xor,
+
+			GreaterVal,
+			GreaterOrEqualVal,
+			LowerVal,
+			LowerOrEqualVal,
 
 			0
 			};

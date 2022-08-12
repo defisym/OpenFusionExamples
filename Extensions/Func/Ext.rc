@@ -275,12 +275,22 @@ BEGIN
         BEGIN
             MENUITEM "Equal (Value)",IDMN_EXPRESSION_EV
             MENUITEM "Equal (String)",IDMN_EXPRESSION_ES
+            MENUITEM SEPARATOR
+            MENUITEM "Greater (Value)",IDMN_EXPRESSION_GV
+            MENUITEM "Greater Or Equal (Value)",IDMN_EXPRESSION_GOEV
+            MENUITEM SEPARATOR
+            MENUITEM "Lower (Value)",IDMN_EXPRESSION_LV
+            MENUITEM "Lower Or Equal (Value)",IDMN_EXPRESSION_LOEV
         END
         MENUITEM SEPARATOR
         POPUP "Bool"
         BEGIN
             MENUITEM "Cast to Bool",IDMN_EXPRESSION_CTB
+            MENUITEM SEPARATOR
             MENUITEM "Negate",IDMN_EXPRESSION_NEG
+            MENUITEM "And",IDMN_EXPRESSION_AND
+            MENUITEM "Or",IDMN_EXPRESSION_OR
+            MENUITEM "Xor",IDMN_EXPRESSION_XOR
         END
         MENUITEM SEPARATOR
         MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN        
@@ -478,7 +488,15 @@ BEGIN
     M_EXPRESSION_ES			    "StrEqu ("
     M_EXPRESSION_EV			    "ValEqu ("
     M_EXPRESSION_CTB		    "Bool ("
-    M_EXPRESSION_NEG		    "Neg ("
+    M_EXPRESSION_NEG		    "bNeg ("
+    M_EXPRESSION_AND            "bAnd ("
+    M_EXPRESSION_OR	            "bOr ("
+    M_EXPRESSION_XOR            "bXor ("
+
+    M_EXPRESSION_GV	            "ValGreater ("
+    M_EXPRESSION_GOEV           "ValGreaterOrEqual ("
+    M_EXPRESSION_LV	            "ValLower ("
+    M_EXPRESSION_LOEV           "ValLowerOrEqual ("
 
     M_EXP_A			            "A"
     M_EXP_B			            "B"
