@@ -56,7 +56,9 @@
 
 #define	ACT_ACTION_LFP				23
 
-#define	ACT_LAST					24
+#define	ACT_ACTION_SB				24
+
+#define	ACT_LAST					25
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

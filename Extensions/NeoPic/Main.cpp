@@ -74,6 +74,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LFP, M_ACTION_LFP, ACT_ACTION_LFP,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_ACTION_PSF, M_ACTION_FILENAME,
 
+		IDMN_ACTION_SB, M_ACTION_SB, ACT_ACTION_SB, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_RADIUS, M_ACTION_SCALE, M_ACTION_DIVIDE,
+
 		};
 
 // Definitions of parameters for each expression
@@ -496,6 +498,76 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
+	int radius = CNC_GetIntParameter(rdPtr);
+	float scale = GetFloatParam(rdPtr);
+	int divide = CNC_GetIntParameter(rdPtr);
+
+	if (CanDisplay(rdPtr)) {
+		bool bReleaseOld = false;
+		LPSURFACE pOldSf = nullptr;
+
+		if (rdPtr->fromLib) {
+			pOldSf = rdPtr->src;
+			rdPtr->src = nullptr;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+
+			bReleaseOld = false;
+		}
+		else {
+			pOldSf = rdPtr->src;
+			rdPtr->src = nullptr;
+
+			bReleaseOld = true;
+		}
+
+		LPSURFACE pMemSf = nullptr;
+		auto bHwa = IsHWA(pOldSf);
+
+		// convert to bitmap
+		if (rdPtr->fromLib) {	// copy & convert, no matter HWA or not
+			pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
+			pOldSf->Blit(*pMemSf);
+
+			bReleaseOld = false;
+		}
+		else {
+			if (bHwa) {			// convert
+				pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
+				pOldSf->Blit(*pMemSf);
+				
+				bReleaseOld = true;
+			}
+			else {
+				pMemSf = pOldSf;
+
+				bReleaseOld = false;
+			}
+		}		
+
+		if (bReleaseOld) {
+			delete pOldSf;
+		}	
+
+		rdPtr->fromLib = false;
+
+		StackBlur(pMemSf, radius, scale, divide);
+
+		rdPtr->src = pMemSf;
+		
+		if (bHwa) {
+			ConvertToHWATexture(rdPtr, rdPtr->src);
+		}
+
+		NewImg(rdPtr);
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -777,6 +849,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IterateRefCount,
 
 			LoadFromPointer,
+
+			StackBlur,
 
 			0
 			};

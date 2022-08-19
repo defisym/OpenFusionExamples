@@ -105,7 +105,7 @@ struct GlobalData {
 
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
-#ifdef _USE_DXGI
+#ifdef _DYNAMIC_LINK
 	HINSTANCE DXGI = nullptr;
 #endif
 #endif
