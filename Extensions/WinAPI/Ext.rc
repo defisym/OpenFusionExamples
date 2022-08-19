@@ -555,7 +555,7 @@ BEGIN
 
     M_ACTION_WINDOW_RGB "Recursice Gauss Blur, Sigma = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_RGB_SIGMA "Sigma of Blur, 0 <= Sigma <= 1.615"
-    PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale, Scale >= 1.0. E.g. PicA = 100*100 , Scale = 2.0 , ProcessResoution = 50*50"
+    PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale, Scale >= 1.0. E.g. PicA = 100*100 , Scale = 2.0 , ProcessResolution = 50*50"
 
     M_ACTION_WINDOW_MTGB "MultiThread Gauss Blur, Radius = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_MTGB_RADIUS "Radius of Blur"
