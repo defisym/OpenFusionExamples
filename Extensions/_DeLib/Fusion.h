@@ -345,6 +345,22 @@ inline BOOL GetTransparent(LPSURFACE pSf) {
 	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
 }
 
+inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
+	if (!IsHWA(pOldSf)) {
+		return pOldSf;
+	}
+
+	LPSURFACE pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
+
+	if (pOldSf->HasAlpha()) {
+		pMemSf->CreateAlpha();
+	}
+
+	pOldSf->Blit(*pMemSf);
+
+	return pMemSf;
+}
+
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
 	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
 }
@@ -355,6 +371,11 @@ inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
 	}
 
 	cSurface* hwa = CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_ROMTEXTURE);
+
+	if (Src->HasAlpha()) {
+		hwa->CreateAlpha();
+	}
+
 	Src->Blit(*hwa);
 
 	return hwa;

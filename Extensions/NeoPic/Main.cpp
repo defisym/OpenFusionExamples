@@ -528,16 +528,14 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 
 		// convert to bitmap
 		if (rdPtr->fromLib) {	// copy & convert, no matter HWA or not
-			pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
-			pOldSf->Blit(*pMemSf);
+			pMemSf = ConvertBitmap(rdPtr, pOldSf);
 
 			bReleaseOld = false;
 		}
 		else {
-			if (bHwa) {			// convert
-				pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
-				pOldSf->Blit(*pMemSf);
-				
+			if (bHwa) {
+				pMemSf = ConvertBitmap(rdPtr, pOldSf);
+								
 				bReleaseOld = true;
 			}
 			else {
