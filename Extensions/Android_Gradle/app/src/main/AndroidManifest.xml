@@ -5,34 +5,48 @@
       android:versionCode="1"
       android:versionName="1.0.0"
       android:installLocation="auto">
-
-    <uses-feature android:glEsVersion="0x00020000" android:required="false" />
+	  
     <uses-feature android:name="android.software.leanback" android:required="false" />
-	<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+
 	<!-- Permissions -->
-
-	<application android:icon="@drawable/ic_launcher" android:largeHeap="true" android:allowBackup="false"
-		android:hardwareAccelerated="true"
-		android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-		android:label="@string/app_name" android:allowTaskReparenting="true">
-
-        <activity android:launchMode="singleTask"  android:name=".Main"
-				  android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-				  android:label="@string/app_name"
-				  android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
-                  android:screenOrientation="sensor">
-
+    
+	<application android:icon="@mipmap/ic_launcher" android:largeHeap="true" android:allowBackup="false"
+				 android:networkSecurityConfig="@xml/network_security_config"
+				 android:hardwareAccelerated="true"
+				 android:requestLegacyExternalStorage="true"
+				 android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
+				 android:label="@string/app_name" android:allowTaskReparenting="true">
+        <activity
+			android:name=".Main"
+			android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
+			android:label="@string/app_name"
+			android:exported="true"
+			android:launchMode="singleTask"
+			android:screenOrientation="sensor"
+			android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"> 
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER"/>
-				<!-- Laucher_Intent -->
+				<!-- Launcher_Intent -->
 				<category android:name="tv.ouya.intent.category.GAME"/>
-     				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+     			<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
 				<!-- M_Intent -->
 			</intent-filter>
 		<!-- Main -->
 		</activity>
 		<!-- Activities -->
 		<meta-data android:name="FUSION_ID" android:value="34526289112" />
+		<provider
+			android:name="androidx.core.content.FileProvider"
+			android:authorities="${applicationId}.provider"
+			android:exported="false"
+			android:grantUriPermissions="true">
+			<meta-data
+				android:name="android.support.FILE_PROVIDER_PATHS"
+				android:resource="@xml/provider_paths"/>
+		</provider>
+		<!-- Provider -->
+
 	</application>
-</manifest>
+</manifest> 
+<!-- IsAndroidX -->
