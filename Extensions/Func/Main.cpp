@@ -73,7 +73,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SSGP, M_ACTION_SSGP, ACT_ACTION_SSGP, 0, 2,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACT_PARAMNAME, M_ACT_PARAM,
 		IDMN_ACTION_SVGP, M_ACTION_SVGP, ACT_ACTION_SVGP, 0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACT_PARAMNAME, M_ACT_PARAM,
 		
-		IDMN_ACTION_ASSERT, M_ACTION_ASSERT, ACT_ACTION_ASSERT, 0, 2,PARAM_EXPRESSION, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_FAILEDMSG,
+		IDMN_ACTION_ASSERT, M_ACTION_ASSERT, ACT_ACTION_ASSERT, 0, 2,PARAM_EXPRESSION, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_MSG,
+		IDMN_ACTION_MSGBOX, M_ACTION_MSGBOX, ACT_ACTION_MSGBOX, 0, 2,PARAM_EXPRESSION, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_MSG,
 
 		};
 
@@ -442,6 +443,21 @@ short WINAPI DLLExport Assert(LPRDATA rdPtr, long param1, long param2) {
 		}
 	}
 #endif // !RUN_ONLY
+
+	return 0;
+}
+
+short WINAPI DLLExport MsgBox(LPRDATA rdPtr, long param1, long param2) {
+	auto value = CNC_GetParameter(rdPtr);
+	std::wstring msg = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (value) {
+		auto ret = MessageBox(NULL, StrEqu(msg.c_str(), Empty_Str)
+			? L"Message"
+			: msg.c_str()
+			, L"Alert"
+			, MB_OK);
+	}
 
 	return 0;
 }
@@ -846,6 +862,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetGlobalParamVal,
 
 			Assert,
+			MsgBox,
 
 			0
 			};

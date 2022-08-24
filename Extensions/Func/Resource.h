@@ -61,6 +61,7 @@
 #define	IDMN_ACTION_SVGP		25017
 
 #define	IDMN_ACTION_ASSERT		25018
+#define	IDMN_ACTION_MSGBOX		25019
 
 // Action strings
 #define M_ACTION_SR             5000
@@ -93,6 +94,7 @@
 #define	M_ACTION_SVGP			5017
 
 #define	M_ACTION_ASSERT			5018
+#define	M_ACTION_MSGBOX			5019
 
 // Titles of action parameters
 #define M_ACT_RET				 5501
@@ -108,7 +110,7 @@
 #define M_OBJECT			     5507
 #define M_ITNAME			     5508
 
-#define M_ACT_FAILEDMSG		     5509
+#define M_ACT_MSG		         5509
 
 
 //	Conditions

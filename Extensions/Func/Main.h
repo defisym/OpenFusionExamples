@@ -58,8 +58,9 @@
 #define	ACT_ACTION_SVGP				17
 
 #define	ACT_ACTION_ASSERT			18
+#define	ACT_ACTION_MSGBOX			19
 
-#define	ACT_LAST					19
+#define	ACT_LAST					20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
