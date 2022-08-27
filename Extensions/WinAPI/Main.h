@@ -20,8 +20,9 @@
 #define	CND_CONDITION_IDHA_S		10
 #define	CND_CONDITION_IRIE			11
 #define	CND_CONDITION_IAAT			12
+#define	CND_CONDITION_OMC			13
 
-#define	CND_LAST					13
+#define	CND_LAST					14
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -142,7 +143,10 @@
 
 #define	EXP_EXPRESSION_GD			32
 
-#define	EXP_LAST                    33
+#define	EXP_EXPRESSION_GCMW			33
+#define	EXP_EXPRESSION_GCMH			34
+
+#define	EXP_LAST                    35
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -281,6 +285,13 @@ typedef struct tagRDATA
 	char** argv;
 	
 	LPSURFACE pHwaSf_Video;
+
+	bool bSecondFrame;
+
+	HMONITOR curMonitorHandle;
+
+	LONG curMonitorWidth;
+	LONG curMonitorHeight;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

@@ -143,6 +143,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pHwaSf_Video = nullptr;
 
+	rdPtr->bSecondFrame = false;
+	rdPtr->curMonitorHandle = NULL;
+	rdPtr->curMonitorWidth = 0;
+	rdPtr->curMonitorHeight = 0;
+
 	// No errors
 	return 0;
 }
@@ -292,6 +297,29 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	if (rdPtr->KeepIMEState&&(IMEState != (bool)ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle)))) {
 		IMEStateControl(rdPtr->MainWindowHandle,IMEState);
 	}
+
+	// Ë¢ÐÂÏÔÊ¾Æ÷×´Ì¬
+	if (rdPtr->bSecondFrame) {
+		auto newMonitorHandle = MonitorFromWindow(rdPtr->MainWindowHandle, MONITOR_DEFAULTTONEAREST);
+
+		if (newMonitorHandle != NULL
+			&& rdPtr->curMonitorHandle != newMonitorHandle) {
+			rdPtr->curMonitorHandle = newMonitorHandle;
+
+			MONITORINFO info = { 0 };
+			info.cbSize = sizeof(MONITORINFO);
+			auto ret = GetMonitorInfo(rdPtr->curMonitorHandle, &info);
+
+			if (ret != 0) {
+				rdPtr->curMonitorWidth = info.rcMonitor.right - info.rcMonitor.left;
+				rdPtr->curMonitorHeight = info.rcMonitor.bottom - info.rcMonitor.top;
+
+				CallEvent(ONMONITORCHANGE);
+			}
+		}
+	}
+
+	rdPtr->bSecondFrame = true;
 
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;

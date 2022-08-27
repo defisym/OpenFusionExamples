@@ -37,6 +37,8 @@ short conditionsInfos[] =
 	
 	IDMN_CONDITION_IRIE, M_CONDITION_IRIE, CND_CONDITION_IRIE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 	IDMN_CONDITION_IAAT, M_CONDITION_IAAT, CND_CONDITION_IAAT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
+	
+	IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
 
 };
 
@@ -168,6 +170,9 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GVFP, M_EXPRESSION_GVFP, EXP_EXPRESSION_GVFP, 0, 0,
 
 	IDMN_EXPRESSION_GD, M_EXPRESSION_GD, EXP_EXPRESSION_GD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
+
+	IDMN_EXPRESSION_GCMW, M_EXPRESSION_GCMW, EXP_EXPRESSION_GCMW, 0, 0,
+	IDMN_EXPRESSION_GCMH, M_EXPRESSION_GCMH, EXP_EXPRESSION_GCMH, 0, 0,
 
 };
 
@@ -382,6 +387,10 @@ long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pSelect->SelectNone(oil);
 
 	return false;
+}
+
+long WINAPI DLLExport OnMonitorChange(LPRDATA rdPtr, long param1, long param2) {
+	return true;
 }
 
 // ============================================================================
@@ -1725,6 +1734,14 @@ long WINAPI DLLExport GetDirection(LPRDATA rdPtr, long param1) {
 	return Val >= 0 ? 1 : -1;
 }
 
+long WINAPI DLLExport GetCurMonitorWidth(LPRDATA rdPtr, long param1) {
+	return rdPtr->curMonitorWidth;
+}
+
+long WINAPI DLLExport GetCurMonitorHeight(LPRDATA rdPtr, long param1) {
+	return rdPtr->curMonitorHeight;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1755,6 +1772,8 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsRunningInEditor,
 
 	IsActiveAtTop,
+
+	OnMonitorChange,
 
 	0
 };
@@ -1887,5 +1906,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	GetDirection,
 
-0
+	GetCurMonitorWidth,
+	GetCurMonitorHeight,
+	
+	0
 };
