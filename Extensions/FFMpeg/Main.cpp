@@ -82,57 +82,20 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 	try {
 		rdPtr->pFFMpeg = new FFMpeg(filePath);
+
+		rdPtr->bOpen = true;
+		rdPtr->bPlay = true;
+
+		BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
+			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
+			rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
+			});
+
+		ReDisplay(rdPtr);
 	}
 	catch (...) {
 
 	}
-
-	rdPtr->bOpen = true;
-
-	BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
-		delete rdPtr->pSf;
-		rdPtr->pSf = nullptr;
-
-		//rdPtr->scaleX = ((double)rdPtr->swidth) / pMemSf->GetWidth();
-		//rdPtr->scaleY = ((double)rdPtr->sheight) / pMemSf->GetHeight();
-
-		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
-		rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
-
-		//if (rdPtr->bHwa) {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, rdPtr->swidth, rdPtr->sheight, ST_HWA_ROMTEXTURE);
-		//		rdPtr->pSf->CreateAlpha();
-		//	}
-
-		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
-		//}
-		//else {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateSurface(32, rdPtr->swidth, rdPtr->sheight);
-		//	}
-
-		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
-		//}
-
-		//if (rdPtr->bHwa) {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
-		//		rdPtr->pSf->CreateAlpha();
-		//	}
-
-		//	pMemSf->Blit(*rdPtr->pSf);
-		//}
-		//else {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
-		//	}
-
-		//	pMemSf->Blit(*rdPtr->pSf);
-		//}
-		});
-
-	ReDisplay(rdPtr);	
 
 	return 0;
 }
@@ -145,37 +108,8 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 	}
 
 	BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
-		//if (rdPtr->bHwa) {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, rdPtr->swidth, rdPtr->sheight, ST_HWA_ROMTEXTURE);
-		//		rdPtr->pSf->CreateAlpha();
-		//	}
-
-		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
-		//}
-		//else {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateSurface(32, rdPtr->swidth, rdPtr->sheight);
-		//	}
-
-		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
-		//}
-
-		//if (rdPtr->bHwa) {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
-		//		rdPtr->pSf->CreateAlpha();
-		//	}
-
-		//	pMemSf->Blit(*rdPtr->pSf);
-		//}
-		//else {
-		//	if (rdPtr->pSf == nullptr) {
-		//		rdPtr->pSf = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
-		//	}
-
-		//	pMemSf->Blit(*rdPtr->pSf);
-		//}
+		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
+		rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
 		});
 
 	ReDisplay(rdPtr);
@@ -192,28 +126,32 @@ long WINAPI DLLExport Expression_GetGrabVideoFramePointer(LPRDATA rdPtr,long par
 	size_t ms = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	bool bHwa = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
+	if (!rdPtr->bOpen) {
+		return 0;
+	}
+
 	BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
-		delete rdPtr->pFrame;
-		rdPtr->pFrame = nullptr;
+		delete rdPtr->pGrabbedFrame;
+		rdPtr->pGrabbedFrame = nullptr;
 
 		if (bHwa) {
-			if (rdPtr->pFrame == nullptr) {
-				rdPtr->pFrame = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
-				rdPtr->pFrame->CreateAlpha();
+			if (rdPtr->pGrabbedFrame == nullptr) {
+				rdPtr->pGrabbedFrame = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
+				rdPtr->pGrabbedFrame->CreateAlpha();
 			}
 
-			pMemSf->Blit(*rdPtr->pFrame);
+			pMemSf->Blit(*rdPtr->pGrabbedFrame);
 		}
 		else {
-			if (rdPtr->pFrame == nullptr) {
-				rdPtr->pFrame = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
+			if (rdPtr->pGrabbedFrame == nullptr) {
+				rdPtr->pGrabbedFrame = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
 			}
 		
-			pMemSf->Blit(*rdPtr->pFrame);
+			pMemSf->Blit(*rdPtr->pGrabbedFrame);
 		}
 		});
 	
-	return ConvertToLong(rdPtr->pFrame);
+	return ConvertToLong(rdPtr->pGrabbedFrame);
 }
 
 // ----------------------------------------------------------

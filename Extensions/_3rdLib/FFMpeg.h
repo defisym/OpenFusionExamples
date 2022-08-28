@@ -30,6 +30,8 @@ using rawDataCallBack = std::function<void(const unsigned char*, const int, cons
 
 class FFMpeg {
 private:
+	bool bLoop = true;
+
 	AVFormatContext* pFormatContext = nullptr;
 
 	const AVCodec* pCodec = NULL;
@@ -60,6 +62,7 @@ private:
 			return response;
 		}
 
+
 		while (response >= 0) {
 			// Return decoded output data (into a frame) from a decoder
 			// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
@@ -69,18 +72,16 @@ private:
 				break;
 			}
 			else if (response < 0) {
+				av_frame_unref(pFrame);
+
 				return response;
 			}
 
 			if (response >= 0) {
-				uint8_t* pData = pFrame->data[0];
-				bool release = false;
-
 				// Check if the frame is a planar YUV 4:2:0, 12bpp
 				// That is the format of the provided .mp4 file
+				// https://zhuanlan.zhihu.com/p/53305541
 				if (pFrame->format != AV_PIX_FMT_BGR24) {
-					release = true;
-
 					SwsContext* swsContext = sws_getContext(pFrame->width, pFrame->height, AVPixelFormat(pFrame->format),
 						pFrame->width, pFrame->height, AV_PIX_FMT_BGR24
 						, NULL, NULL, NULL, NULL);
@@ -95,17 +96,18 @@ private:
 					sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
 					//bgr_buffer[0] is the BGR raw data
-					pData = bgr_buffer[0];
+					callBack(bgr_buffer[0], pFrame->width, pFrame->height);
 
 					sws_freeContext(swsContext);
+
+					delete[] p_global_bgr_buffer;
+				}
+				else {
+					// call callback
+					callBack(pFrame->data[0], pFrame->width, pFrame->height);
 				}
 
-				// call callback
-				callBack(pData, pFrame->width, pFrame->height);
-
-				if (release) {
-					delete[] pData;
-				}
+				av_frame_unref(pFrame);
 			}
 		}
 
@@ -191,13 +193,11 @@ public:
 		avformat_close_input(&pFormatContext);
 		av_packet_free(&pPacket);
 		av_frame_free(&pFrame);
+		avcodec_close(pCodecContext);
 		avcodec_free_context(&pCodecContext);
 	}
 
-	inline int get_videoFrame(size_t ms, rawDataCallBack callBack) {
-		int response = 0;
-		int how_many_packets_to_process = 0;
-
+	inline int set_videoPosition(size_t ms = 0) {
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
 		auto protectedTime = protectedTimeInMs / 1000;
 		auto protectedFrame = protectedTime / decimalRational;
@@ -211,20 +211,54 @@ public:
 			return -1;
 		}
 
+		return 0;
+	}
+
+	inline int read_frame(rawDataCallBack callBack){
+		int response = 0;
+
 		while (av_read_frame(pFormatContext, pPacket) >= 0) {
 			// if it's the video stream
 			if (pPacket->stream_index == video_stream_index) {
 				response = decode_packet(pPacket, pCodecContext, pFrame, callBack);
+				
+				if (response < 0) { 
+					av_packet_unref(pPacket);
+					return response; 
+				}
 
-				if (response < 0) { break; }
-
-				// stop it, otherwise we'll be saving hundreds of frames
-				if (--how_many_packets_to_process <= 0) { break; }
-			}
-
-			av_packet_unref(pPacket);
+				av_packet_unref(pPacket);
+				break;
+			}			
 		}
 
 		return 0;
+	}
+
+	inline int get_videoFrame(size_t ms, rawDataCallBack callBack) {
+		int response = 0;
+		int how_many_packets_to_process = 0;
+
+		response = set_videoPosition(ms);
+		response = read_frame(callBack);
+
+		return response;
+	}
+
+	inline int get_nextFrame(rawDataCallBack callBack) {
+		int response = 0;
+		int how_many_packets_to_process = 0;
+
+		response = read_frame(callBack);
+
+		if (bLoop && (int64_t)(pCodecContext->frame_number + 1) == totalFrame) {
+			response = set_videoPosition();
+
+			if (response < 0) { return response; }
+
+			pCodecContext->frame_number = 0;
+		}
+
+		return response;
 	}
 };

@@ -71,15 +71,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rdPtr->pSf = new cSurface;
 	//rdPtr->pFrame = new cSurface;
 		
-	rdPtr->pSf = nullptr;
-	rdPtr->pFrame = nullptr;
-
 	rdPtr->pMemSf = nullptr;
+	rdPtr->pGrabbedFrame = nullptr;	
 	
 	rdPtr->bHwa = true;
-
-	//rdPtr->pDisplay = rdPtr->pSf;
-	rdPtr->pDisplay = rdPtr->pMemSf;
 
 	rdPtr->pFilePath = new std::wstring;
 
@@ -110,10 +105,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-	delete rdPtr->pSf;
-	delete rdPtr->pFrame;
-
 	delete rdPtr->pMemSf;
+	delete rdPtr->pGrabbedFrame;	
 
 	delete rdPtr->pFilePath;
 	
@@ -162,8 +155,32 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
-	if (rdPtr->pDisplay != nullptr
-		&& rdPtr->pDisplay->IsValid()
+	if (rdPtr->bOpen && rdPtr->bPlay) {
+		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
+			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+			
+			//auto sfCoef = GetSfCoef(rdPtr->pMemSf);
+
+			//auto lineSz = sfCoef.pitch;
+			//auto alphaSz = sfCoef.sz / sfCoef.byte;
+
+			//for (int y = 0; y < height; y++) {
+			//	auto pMemData = sfCoef.pData + y * sfCoef.pitch;
+			//	auto pVideo = pData + (height - 1 - y) * sfCoef.pitch;
+
+			//	memcpy(pMemData, pVideo, lineSz);
+			//}
+
+			//ReleaseSfCoef(rdPtr->pMemSf, sfCoef);
+
+			//if (rdPtr->bPm) {
+			//	rdPtr->pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+			//}
+			});
+	}
+
+	if (rdPtr->pMemSf != nullptr
+		&& rdPtr->pMemSf->IsValid()
 		&& rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
@@ -183,7 +200,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
 
-	if (rdPtr->pDisplay->IsValid()) {
+	if (rdPtr->pMemSf->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
@@ -197,9 +214,9 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		POINT point = { 0, 0 };
 
 		//rdPtr->pSf->Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
-		rdPtr->pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,
+		rdPtr->pMemSf->BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-			rdPtr->pDisplay->GetWidth(), rdPtr->pDisplay->GetHeight(), &point, rdPtr->rc.rcAngle,
+			rdPtr->pMemSf->GetWidth(), rdPtr->pMemSf->GetHeight(), &point, rdPtr->rc.rcAngle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, BLTF_ANTIA);

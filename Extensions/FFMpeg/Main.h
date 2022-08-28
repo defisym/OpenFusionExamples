@@ -77,14 +77,10 @@ typedef struct tagRDATA
 	short			swidth;
 	short			sheight;
 
-	LPSURFACE pSf;
-	LPSURFACE pFrame;
-
 	LPSURFACE pMemSf;
+	LPSURFACE pGrabbedFrame;
 
 	bool bHwa;
-
-	LPSURFACE pDisplay;
 
 	std::wstring* pFilePath;
 
