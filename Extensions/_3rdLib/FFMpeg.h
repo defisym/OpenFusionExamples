@@ -34,11 +34,22 @@ private:
 
 	const AVCodec* pCodec = NULL;
 	AVCodecParameters* pCodecParameters = NULL;
+	
 	int video_stream_index = -1;
+	int audio_stream_index = -1;
 
 	AVCodecContext* pCodecContext = nullptr;
 	AVFrame* pFrame = nullptr;
 	AVPacket* pPacket = nullptr;
+
+	AVStream* pViedoStream = nullptr;
+
+	AVRational rational = { 0 };
+	double decimalRational = 0;
+
+	int64_t totalFrame = 0;
+	double totalTime = 0;
+	double totalTimeInMs = 0;
 
 	static int decode_packet(AVPacket* pPacket, AVCodecContext* pCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
 		// Supply raw packet data as input to a decoder
@@ -133,6 +144,14 @@ public:
 					pCodecParameters = pLocalCodecParameters;
 				}
 			}
+
+			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
+				if (audio_stream_index == -1) {
+					audio_stream_index = i;
+					//pCodec = pLocalCodec;
+					//pCodecParameters = pLocalCodecParameters;
+				}
+			}
 		}
 
 		pCodecContext = avcodec_alloc_context3(pCodec);
@@ -157,6 +176,15 @@ public:
 		if (!pPacket) {
 			throw FFMpegException_InitFailed;
 		}
+
+		pViedoStream = pFormatContext->streams[video_stream_index];
+
+		rational = pViedoStream->time_base;
+		decimalRational = (double)rational.num / rational.den;
+
+		totalFrame = pViedoStream->duration;
+		totalTime = totalFrame * decimalRational;
+		totalTimeInMs = totalTime * 1000;
 	}
 
 	~FFMpeg() {
@@ -169,15 +197,6 @@ public:
 	inline int get_videoFrame(size_t ms, rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
-
-		auto pViedoStream = pFormatContext->streams[video_stream_index];
-
-		auto rational = pViedoStream->time_base;
-		auto decimalRational = (double)rational.num / rational.den;
-
-		auto totalFrame = pViedoStream->duration;
-		auto totalTime = totalFrame * decimalRational;
-		auto totalTimeInMs = totalTime * 1000;
 
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
 		auto protectedTime = protectedTimeInMs / 1000;
