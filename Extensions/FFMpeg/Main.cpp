@@ -28,7 +28,8 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 0,
+		IDMN_ACTION_OV, M_ACTION_OV, ACT_ACTION_OV,	0, 1, PARAM_EXPSTRING, M_FILEPATH,
+		IDMN_ACTION_SP, M_ACTION_SP, ACT_ACTION_SP,	0, 1, PARAM_EXPRESSION, M_POSITION,
 		};
 
 // Definitions of parameters for each expression
@@ -86,14 +87,101 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 	}
 
-	BlitVideoFrame(rdPtr);
-
 	rdPtr->bOpen = true;
+
+	BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
+		delete rdPtr->pSf;
+		rdPtr->pSf = nullptr;
+
+		//rdPtr->scaleX = ((double)rdPtr->swidth) / pMemSf->GetWidth();
+		//rdPtr->scaleY = ((double)rdPtr->sheight) / pMemSf->GetHeight();
+
+		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
+		rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
+
+		//if (rdPtr->bHwa) {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, rdPtr->swidth, rdPtr->sheight, ST_HWA_ROMTEXTURE);
+		//		rdPtr->pSf->CreateAlpha();
+		//	}
+
+		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
+		//}
+		//else {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateSurface(32, rdPtr->swidth, rdPtr->sheight);
+		//	}
+
+		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
+		//}
+
+		//if (rdPtr->bHwa) {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
+		//		rdPtr->pSf->CreateAlpha();
+		//	}
+
+		//	pMemSf->Blit(*rdPtr->pSf);
+		//}
+		//else {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
+		//	}
+
+		//	pMemSf->Blit(*rdPtr->pSf);
+		//}
+		});
+
+	ReDisplay(rdPtr);	
 
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param2) {
+	size_t ms = (size_t)CNC_GetIntParameter(rdPtr);
 
+	if (!rdPtr->bOpen) {
+		return 0;
+	}
+
+	BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
+		//if (rdPtr->bHwa) {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, rdPtr->swidth, rdPtr->sheight, ST_HWA_ROMTEXTURE);
+		//		rdPtr->pSf->CreateAlpha();
+		//	}
+
+		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
+		//}
+		//else {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateSurface(32, rdPtr->swidth, rdPtr->sheight);
+		//	}
+
+		//	auto ret = pMemSf->Stretch(*rdPtr->pSf, STRF_COPYALPHA);
+		//}
+
+		//if (rdPtr->bHwa) {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
+		//		rdPtr->pSf->CreateAlpha();
+		//	}
+
+		//	pMemSf->Blit(*rdPtr->pSf);
+		//}
+		//else {
+		//	if (rdPtr->pSf == nullptr) {
+		//		rdPtr->pSf = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
+		//	}
+
+		//	pMemSf->Blit(*rdPtr->pSf);
+		//}
+		});
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -102,9 +190,29 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 long WINAPI DLLExport Expression_GetGrabVideoFramePointer(LPRDATA rdPtr,long param1) {
 	size_t ms = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool bHwa = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	BlitVideoFrame(rdPtr, ms);
+	BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
+		delete rdPtr->pFrame;
+		rdPtr->pFrame = nullptr;
 
+		if (bHwa) {
+			if (rdPtr->pFrame == nullptr) {
+				rdPtr->pFrame = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
+				rdPtr->pFrame->CreateAlpha();
+			}
+
+			pMemSf->Blit(*rdPtr->pFrame);
+		}
+		else {
+			if (rdPtr->pFrame == nullptr) {
+				rdPtr->pFrame = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
+			}
+		
+			pMemSf->Blit(*rdPtr->pFrame);
+		}
+		});
+	
 	return ConvertToLong(rdPtr->pFrame);
 }
 
@@ -126,6 +234,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
 			Action_OpenVideo,
+			Action_SetPosition,
 
 			0
 			};

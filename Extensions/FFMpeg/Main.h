@@ -7,13 +7,16 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION				0
+
 #define	CND_LAST					1
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
-#define	ACT_LAST					1
+#define	ACT_ACTION_OV					0
+#define	ACT_ACTION_SP					1
+
+#define	ACT_LAST						2
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -21,6 +24,7 @@
 #define	EXP_EXPRESSION				0
 #define EXP_EXPRESSION2				1
 #define EXP_EXPRESSION3				2
+
 #define	EXP_LAST                    3
 
 // ---------------------
@@ -36,6 +40,8 @@ typedef struct tagEDATA_V1
 	// Object's data
 	short			swidth;
 	short			sheight;
+
+	bool bHwa;
 
 	int buffer[52];
 
@@ -68,8 +74,17 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	short			swidth;
+	short			sheight;
+
 	LPSURFACE pSf;
 	LPSURFACE pFrame;
+
+	LPSURFACE pMemSf;
+
+	bool bHwa;
+
+	LPSURFACE pDisplay;
 
 	std::wstring* pFilePath;
 
@@ -79,6 +94,12 @@ typedef struct tagRDATA
 
 	FFMpeg* pFFMpeg;
 	
+	bool bPm;
+	bool bChanged;
+
+	double scaleX;
+	double scaleY;
+
 	std::wstring* pRetStr;
 
 } RUNDATA;
@@ -90,8 +111,8 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			0
-#define	OEPREFS      			0
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_SPRITES|OEFLAG_QUICKDISPLAY|OEFLAG_BACKSAVE|OEFLAG_MOVEMENTS)
+#define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS)
 
 
 // If to handle message, specify the priority of the handling procedure

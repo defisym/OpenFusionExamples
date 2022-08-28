@@ -1,14 +1,44 @@
 #pragma once
 
-inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms = 0) {
+#include <functional>
+
+inline void ReDisplay(LPRDATA rdPtr) {
+	if (rdPtr->pDisplay != nullptr && rdPtr->pDisplay->IsValid()) {
+		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		rdPtr->rc.rcChanged = true;
+
+		//rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
+		//rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
+
+		rdPtr->rHo.hoImgXSpot = 0;
+		rdPtr->rHo.hoImgYSpot = 0;
+
+		rdPtr->rHo.hoImgWidth = rdPtr->pDisplay->GetWidth();
+		rdPtr->rHo.hoImgHeight = rdPtr->pDisplay->GetHeight();
+
+		rdPtr->bChanged = true;
+	}
+}
+
+// pMemSf
+using blitCallBack = std::function<void(LPSURFACE&)>;
+
+inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, blitCallBack callBack) {
 	if (rdPtr->pFFMpeg == nullptr) {
 		return;
 	}
 
-	rdPtr->pFFMpeg->get_videoFrame(ms, [rdPtr](const unsigned char* pData, const int width, const int height) {
-		auto pMemSf = CreateSurface(24, width, height);
+	rdPtr->pFFMpeg->get_videoFrame(ms, [&](const unsigned char* pData, const int width, const int height) {
+		bool bUpdateAlpha = false;
 
-		auto sfCoef = GetSfCoef(pMemSf);
+		if (rdPtr->pMemSf == nullptr) {
+			rdPtr->pMemSf = CreateSurface(24, width, height);
+			rdPtr->pDisplay = rdPtr->pMemSf;
+
+			bUpdateAlpha = true;
+		}
+
+		auto sfCoef = GetSfCoef(rdPtr->pMemSf);
 
 		auto lineSz = sfCoef.pitch;
 		auto alphaSz = sfCoef.sz / sfCoef.byte;
@@ -20,33 +50,27 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms = 0) {
 			memcpy(pMemData, pVideo, lineSz);
 		}
 
-		ReleaseSfCoef(pMemSf, sfCoef);
+		if (bUpdateAlpha) {
+			auto pAlpha = new BYTE[alphaSz];
+			memset(pAlpha, 255, alphaSz);
 
-		auto pAlpha = new BYTE[alphaSz];
-		memset(pAlpha, 255, alphaSz);
+			rdPtr->pMemSf->SetAlpha(pAlpha, rdPtr->pMemSf->GetWidth());
 
-		pMemSf->SetAlpha(pAlpha, pMemSf->GetWidth());
-
-		delete[] pAlpha;
-		pAlpha = nullptr;
-
-#ifdef _DEBUG
-		_SavetoClipBoard(pMemSf, false);
-#endif // _DEBUG
-
-		delete rdPtr->pFrame;
-		rdPtr->pFrame = nullptr;
-
-		rdPtr->pFrame = CreateHWASurface(rdPtr, 32, width, height, ST_HWA_ROMTEXTURE);
-
-		//pMemSf->DemultiplyAlpha();
-		if (PreMulAlpha(rdPtr)) {
-			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+			delete[] pAlpha;
+			pAlpha = nullptr;
 		}
 
-		pMemSf->Blit(*rdPtr->pFrame);
+		ReleaseSfCoef(rdPtr->pMemSf, sfCoef);
 
-		delete pMemSf;
+//#ifdef _DEBUG
+//		_SavetoClipBoard(rdPtr->pMemSf, false);
+//#endif // _DEBUG
+
+		if (rdPtr->bPm) {
+			rdPtr->pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+		}
+
+		callBack(rdPtr->pMemSf);
 
 		return;
 		});

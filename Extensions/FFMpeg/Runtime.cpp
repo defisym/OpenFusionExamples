@@ -65,8 +65,21 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
-	rdPtr->pSf = new cSurface;
-	rdPtr->pFrame = new cSurface;
+	rdPtr->swidth = edPtr->swidth;
+	rdPtr->sheight = edPtr->sheight;
+	
+	//rdPtr->pSf = new cSurface;
+	//rdPtr->pFrame = new cSurface;
+		
+	rdPtr->pSf = nullptr;
+	rdPtr->pFrame = nullptr;
+
+	rdPtr->pMemSf = nullptr;
+	
+	rdPtr->bHwa = true;
+
+	//rdPtr->pDisplay = rdPtr->pSf;
+	rdPtr->pDisplay = rdPtr->pMemSf;
 
 	rdPtr->pFilePath = new std::wstring;
 
@@ -75,6 +88,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bOpen = false;
 
 	rdPtr->pFFMpeg = nullptr;
+
+	rdPtr->bChanged = true;
+	rdPtr->bPm = PreMulAlpha(rdPtr);
 
 	rdPtr->pRetStr = new std::wstring;
 
@@ -96,6 +112,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 */
 	delete rdPtr->pSf;
 	delete rdPtr->pFrame;
+
+	delete rdPtr->pMemSf;
 
 	delete rdPtr->pFilePath;
 	
@@ -143,8 +161,15 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
-	// Will not be called next loop	
-	return REFLAG_ONESHOT;
+
+	if (rdPtr->pDisplay != nullptr
+		&& rdPtr->pDisplay->IsValid()
+		&& rdPtr->rc.rcChanged) {
+		return REFLAG_DISPLAY;
+	}
+	else {
+		return 0;
+	}
 }
 
 // ----------------
@@ -157,6 +182,29 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
+
+	if (rdPtr->pDisplay->IsValid()) {
+		// Begin render process...
+		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+		//int nDrv = ps->GetDriver();
+		//bool HWA = nDrv >= SD_3DFX;
+
+		// On-screen coords
+		int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
+		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
+
+		// Hot spot (transform center)
+		POINT point = { 0, 0 };
+
+		//rdPtr->pSf->Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+		rdPtr->pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,
+			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
+			rdPtr->pDisplay->GetWidth(), rdPtr->pDisplay->GetHeight(), &point, rdPtr->rc.rcAngle,
+			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
+			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
+			rdPtr->rs.rsEffectParam, BLTF_ANTIA);
+	}
+
 	// Ok
 	return 0;
 }

@@ -11,7 +11,7 @@ EXPORTS
 	GetHelpFileName			@16
 	EditObject				@18
 	GetObjectRect			@19
-;	EditorDisplay			@20
+	EditorDisplay			@20
 	IsTransparent			@21
 	PrepareToWriteObject	@22
 	UpdateFileNames			@23
@@ -87,7 +87,7 @@ EXPORTS
 ;	GetRunObjectTextColor	@94
 ;	SetRunObjectTextColor	@95
 
-; 	SetEditSize				@99
+ 	SetEditSize				@99
 	GetProperties			@100
 	ReleaseProperties		@101
 	GetPropValue			@102

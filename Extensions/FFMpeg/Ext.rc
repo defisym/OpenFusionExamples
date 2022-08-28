@@ -115,7 +115,9 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -129,7 +131,10 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM SEPARATOR
+        MENUITEM "Open Video",              IDMN_ACTION_OV
+        MENUITEM "Set Video Position",              IDMN_ACTION_SP
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -143,9 +148,11 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
         MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
         MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -213,15 +220,15 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     KPX_MARK                "MF2"
-    KPX_NAME                "My New Extension"
+    KPX_NAME                "FFMpeg"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDST_OBJNAME            "My New Extension"
+    IDST_OBJNAME            "FFMpeg"
     IDST_AUTHOR             "Defisym"
     IDST_COPYRIGHT          "Copyright 2022 Defisym"
-    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
+    IDST_COMMENT            "FFMpeg"
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
@@ -237,12 +244,17 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_OV                "Open Video %0"
+    M_ACTION_SP                "Set Video Position to %0"
+    
+    M_FILEPATH                 "FilePath"
+    M_POSITION                 "Position"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION             "Condition example: %0 + %1 = %2"
+    
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"
     M_CND_P3                "Enter Value to Match"
@@ -251,10 +263,6 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_EXPRESSION            "Function("
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     M_EXPRESSION2           "Reverse$("
     M_EXPRESSION3           "DivFloatByTwo("
 END
