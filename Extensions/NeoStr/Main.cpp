@@ -267,19 +267,38 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 		return 0;
 	}
 
-	rdPtr->pData->pFontCollection->AddFontFile(FilePath.c_str());
+	auto gdipRet = rdPtr->pData->pFontCollection->AddFontFile(FilePath.c_str());
+
+//#ifdef _FONTEMBEDDEBUG
+//	MSGBOX((std::wstring)L"Embed " + FilePath +
+//		(std::wstring)(gdipRet != Gdiplus::Status::Ok
+//			? L" Not OK"
+//			: L" OK"));
+//#endif // _FONTEMBEDDEBUG
 
 	auto font = rdPtr->pData->pFontCollection->GetFamilyCount();
 
 	auto fontNames = GetFontNameFromFile(FilePath.c_str());
+
+//#ifdef _FONTEMBEDDEBUG
+//	for (auto& i : fontNames) {
+//		wprintf(L"%s\n", i.c_str());
+//		//std::wcout << i << std::endl;
+//	}
+//#endif // _FONTEMBEDDEBUG
 
 	//refresh objects
 	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
 	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [&](LPRO pObject) {
 		LPRDATA pObj = (LPRDATA)pObject;
 
+		std::wstring withRegular = (std::wstring)pObj->logFont.lfFaceName + (std::wstring)L" Regular";
+		//std::wstring withNormal = (std::wstring)pObj->logFont.lfFaceName + (std::wstring)L" Normal";
+
 		for (auto& name : fontNames) {
-			if (StrEqu(pObj->logFont.lfFaceName,name.c_str())) {
+			if (StrIEqu(pObj->logFont.lfFaceName, name.c_str())
+				|| StrIEqu(withRegular.c_str(), name.c_str())
+				/*|| StrIEqu(withNormal.c_str(), name.c_str())*/) {
 				pObj->bFontChanged = true;
 				SetRunObjectFont(rdPtr, &pObj->logFont, nullptr);
 				

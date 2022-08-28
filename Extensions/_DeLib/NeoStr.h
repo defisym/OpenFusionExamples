@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#define _FONTEMBEDDEBUG
+//#define _CONSOLE
+
 #include <map>
 #include <vector>
 #include <functional>
@@ -318,7 +321,7 @@ public:
 		return;
 	}
 
-	inline static bool FontCollectionHasFont(LPCWSTR pFaceName
+	inline static bool FontCollectionHasFont(LPWSTR pFaceName
 		, Gdiplus::FontCollection* pFontCollection) {
 		if (pFontCollection == nullptr) {
 			return false;
@@ -344,27 +347,54 @@ public:
 		LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
 
 		bool has = false;
+		bool hasSuffixRegular = false;
+		//bool hasSuffixNormal = false;
+
+		std::wstring withRegular = (std::wstring)pFaceName + (std::wstring)L" Regular";
+		//std::wstring withNormal = (std::wstring)pFaceName + (std::wstring)L" Normal";
 
 		for (int i = 0; i < n; i++) {
 			has = false;
+			hasSuffixRegular = false;
+			//hasSuffixNormal = false;
 
 			auto hasName = [&](LANGID language = (LANGID)0U) {
 				memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
 				ffs[i].GetFamilyName(name, language);
-				has = (wcscmp(name, pFaceName) == 0);
+				
+				has |= (_wcsicmp(name, pFaceName) == 0);
+
+				if (has) {
+					return;
+				}
+
+				hasSuffixRegular |= (_wcsicmp(name, withRegular.c_str()) == 0);
+
+				if (hasSuffixRegular) {
+					return;
+				}
+
+				//hasSuffixNormal |= (_wcsicmp(name, withNormal.c_str()) == 0);
 			};
 
 			hasName();
 			hasName(language);
 
-			if (has) {
+			if (has || hasSuffixRegular/* || hasSuffixNormal*/) {
+				if (hasSuffixRegular) {
+					wcscpy_s(pFaceName, LF_FACESIZE, withRegular.c_str());
+				}
+				//if (hasSuffixNormal) {
+				//	wcscpy_s(pFaceName, LF_FACESIZE, withNormal.c_str());
+				//}
+
 				break;
 			}
 		}
 
 		delete[] ffs;
 
-		return has;
+		return has || hasSuffixRegular/* || hasSuffixNormal*/;
 	}
 
 	inline static int GetFontStyle(LOGFONT& logFont) {
@@ -717,13 +747,37 @@ public:
 
 		SolidBrush solidBrush(fontColor);
 
+		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
+
+		auto bFound = FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection);
+
+//#ifdef _FONTEMBEDDEBUG
+//		if (!bFound) {
+//			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
+//		}
+//#endif // _FONTEMBEDDEBUG
+		
+		PrivateFontCollection local;
+
 		Font font(this->logFont.lfFaceName
 			, (float)abs(logFont.lfHeight)
 			, GetFontStyle(this->logFont)
-			, Gdiplus::UnitWorld,
-			FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)
-			? this->pFontCollection
-			: nullptr);
+			, Gdiplus::UnitWorld
+			, bFound ? this->pFontCollection
+				   : nullptr);
+			//, nullptr);
+			//, this->pFontCollection);
+			//, &local);
+
+		//FontFamily fontFamily;
+		//auto bRet = font.IsAvailable();
+		//font.GetFamily(&fontFamily);
+		//
+		//auto pName = new WCHAR[256];
+		//memset(pName, 0, 256 * sizeof(WCHAR));
+		//fontFamily.GetFamilyName(pName);
+
+		//delete[] pName;
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
