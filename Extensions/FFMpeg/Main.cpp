@@ -86,6 +86,9 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		rdPtr->bOpen = true;
 		rdPtr->bPlay = true;
 
+		// TODO在开始播放时刷新
+		*rdPtr->pPreviousTimer = std::chrono::steady_clock::now();
+
 		BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
 			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
 			rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();

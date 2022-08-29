@@ -157,6 +157,7 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // 
 
 LPCTSTR szDep[] = {
+		//FFMpeg
 		L"swscale-6.dll",
 		L"avcodec-59.dll",
 		L"avdevice-59.dll",
@@ -164,6 +165,9 @@ LPCTSTR szDep[] = {
 		L"avformat-59.dll",
 		L"avutil-57.dll",
 		L"swresample-4.dll",
+
+		//SDL
+		L"SDL2.dll",
 
 		NULL
 };

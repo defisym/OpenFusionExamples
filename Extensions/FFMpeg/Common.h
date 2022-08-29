@@ -26,9 +26,16 @@
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
+
 #include	<string>
+#include	<chrono>
+
+using namespace std::literals;
+using Timer = std::chrono::time_point<std::chrono::steady_clock>;
 
 // My lib
+//#include	"Definition.h"
+
 #include	"FFMpeg.h"
 
 // Specific to this cox

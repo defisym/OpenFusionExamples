@@ -83,11 +83,20 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bOpen = false;
 
 	rdPtr->pFFMpeg = nullptr;
+	rdPtr->pPreviousTimer = new Timer;
 
 	rdPtr->bChanged = true;
 	rdPtr->bPm = PreMulAlpha(rdPtr);
 
 	rdPtr->pRetStr = new std::wstring;
+
+	//initialize the video audio & timer subsystem 
+	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+		auto error = SDL_GetError();
+
+		MSGBOX(L"Could not initialize SDL");
+		exit(1);
+	}
 
 	// No errors
 	return 0;
@@ -111,8 +120,11 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pFilePath;
 	
 	delete rdPtr->pFFMpeg;
+	delete rdPtr->pPreviousTimer;
 
 	delete rdPtr->pRetStr;
+
+	SDL_Quit();
 
 	// No errors
 	return 0;
@@ -156,27 +168,15 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
-		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
-			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
-			
-			//auto sfCoef = GetSfCoef(rdPtr->pMemSf);
+		auto now = std::chrono::steady_clock::now();
+		auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
-			//auto lineSz = sfCoef.pitch;
-			//auto alphaSz = sfCoef.sz / sfCoef.byte;
-
-			//for (int y = 0; y < height; y++) {
-			//	auto pMemData = sfCoef.pData + y * sfCoef.pitch;
-			//	auto pVideo = pData + (height - 1 - y) * sfCoef.pitch;
-
-			//	memcpy(pMemData, pVideo, lineSz);
-			//}
-
-			//ReleaseSfCoef(rdPtr->pMemSf, sfCoef);
-
-			//if (rdPtr->bPm) {
-			//	rdPtr->pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
-			//}
-			});
+		if (duration >= rdPtr->pFFMpeg->get_timePerFrame()) {
+			*rdPtr->pPreviousTimer = now;
+			rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
+				CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+				});
+		}
 	}
 
 	if (rdPtr->pMemSf != nullptr

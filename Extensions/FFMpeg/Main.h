@@ -89,6 +89,9 @@ typedef struct tagRDATA
 	bool bOpen;
 
 	FFMpeg* pFFMpeg;
+	Timer* pPreviousTimer;
+
+	SDL_AudioSpec wanted_spec, spec;
 	
 	bool bPm;
 	bool bChanged;
