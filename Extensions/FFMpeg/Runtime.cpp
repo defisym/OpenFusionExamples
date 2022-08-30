@@ -168,15 +168,15 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
-		auto now = std::chrono::steady_clock::now();
-		auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
+		//auto now = std::chrono::steady_clock::now();
+		//auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
-		if (duration >= rdPtr->pFFMpeg->get_timePerFrame()) {
-			*rdPtr->pPreviousTimer = now;
+		//if (duration >= rdPtr->pFFMpeg->get_timePerFrame()) {
+		//	*rdPtr->pPreviousTimer = now;
 			rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
 				CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
 				});
-		}
+		//}
 	}
 
 	if (rdPtr->pMemSf != nullptr
