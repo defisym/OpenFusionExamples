@@ -48,15 +48,16 @@ typedef struct PacketQueue {
 //队列初始化函数
 inline void packet_queue_init(PacketQueue* q) {
 	memset(q, 0, sizeof(PacketQueue));//全零初始化队列结构体对象
-	q->qlock = SDL_CreateMutex();//创建互斥量对象
-	q->qready = SDL_CreateCond();//创建条件变量对象
+	//q->qlock = SDL_CreateMutex();//创建互斥量对象
+	//q->qready = SDL_CreateCond();//创建条件变量对象
 }
 
 //清除队列缓存，释放队列中所有动态分配的内存
 inline void packet_queue_flush(PacketQueue* q) {
-	AVPacketList* pkt, * pkttmp;//队列当前节点，临时节点
+	AVPacketList* pkt = nullptr;//队列当前节点
+	AVPacketList* pkttmp = nullptr;//临时节点
 
-	SDL_LockMutex(q->qlock);//锁定互斥量
+	//SDL_LockMutex(q->qlock);//锁定互斥量
 	for (pkt = q->first_pkt; pkt != NULL; pkt = pkttmp) {//遍历队列所有节点
 		pkttmp = pkt->next;//队列头节点后移
 		av_packet_unref(&pkt->pkt);//当前节点引用计数-1
@@ -66,7 +67,7 @@ inline void packet_queue_flush(PacketQueue* q) {
 	q->first_pkt = NULL;//队列头节点指针置零
 	q->nb_packets = 0;//队列长度置零
 	q->size = 0;//队列编码数据的缓存长度置零
-	SDL_UnlockMutex(q->qlock);//互斥量解锁
+	//SDL_UnlockMutex(q->qlock);//互斥量解锁
 }
 
 //向队列中插入数据包
@@ -84,7 +85,7 @@ inline int packet_queue_put(PacketQueue* q, AVPacket* pkt) {
 	//		return -1;
 	//	}
 	/*---------将新建节点插入队列-------*/
-	SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
+	//SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
 
 	if (!q->last_pkt) {//检查队列尾节点是否存在(检查队列是否为空)
 		q->first_pkt = pktlist;//若不存在(队列尾空)，则将当前节点作队列为首节点
@@ -96,50 +97,50 @@ inline int packet_queue_put(PacketQueue* q, AVPacket* pkt) {
 	q->nb_packets++;//队列长度+1
 	q->size += pktlist->pkt.size;//更新队列编码数据的缓存长度
 
-	SDL_CondSignal(q->qready);//给等待线程发出消息，通知队列已就绪
+	//SDL_CondSignal(q->qready);//给等待线程发出消息，通知队列已就绪
 
-	SDL_UnlockMutex(q->qlock);//释放互斥量
+	//SDL_UnlockMutex(q->qlock);//释放互斥量
 	return 0;
 }
 
 //从队列中提取数据包，并将提取的数据包出队列
 inline int packet_queue_get(PacketQueue* q, AVPacket* pkt, int block) {
 	AVPacketList* pktlist;//临时链表节点对象指针
-	int ret;//操作结果
+	int ret = 0;//操作结果
 
-	SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
+	//SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
 
-	for (;;) {
-		pktlist = q->first_pkt;//传递将队列首个数据包指针
-		if (pktlist) {//检查数据包是否为空(队列是否有数据)
-			q->first_pkt = pktlist->next;//队列首节点指针后移
-			if (!q->first_pkt) {//检查首节点的后继节点是否存在
-				q->last_pkt = NULL;//若不存在，则将尾节点指针置空
-			}
-			q->nb_packets--;//队列长度-1
-			q->size -= pktlist->pkt.size;//更新队列编码数据的缓存长度
-			*pkt = pktlist->pkt;//将队列首节点数据返回
-			av_free(pktlist);//清空临时节点数据(清空首节点数据，首节点出队列)
-			ret = 1;//操作成功
-			break;
+	//for (;;) {
+	pktlist = q->first_pkt;//传递将队列首个数据包指针
+	if (pktlist) {//检查数据包是否为空(队列是否有数据)
+		q->first_pkt = pktlist->next;//队列首节点指针后移
+		if (!q->first_pkt) {//检查首节点的后继节点是否存在
+			q->last_pkt = NULL;//若不存在，则将尾节点指针置空
 		}
-		else if (!block) {
-			ret = 0;
-			break;
-		}
-		else {
-			//队列处于未就绪状态，此时通过SDL_CondWait函数等待qready就绪信号，并暂时对互斥量解锁
-			/*---------------------
-			 * 等待队列就绪信号qready，并对互斥量暂时解锁
-			 * 此时线程处于阻塞状态，并置于等待条件就绪的线程列表上
-			 * 使得该线程只在临界区资源就绪后才被唤醒，而不至于线程被频繁切换
-			 * 该函数返回时，互斥量再次被锁住，并执行后续操作
-			 --------------------*/
-			SDL_CondWait(q->qready, q->qlock);//暂时解锁互斥量并将自己阻塞，等待临界区资源就绪(等待SDL_CondSignal发出临界区资源就绪的信号)
-		}
-	}//end for for-loop
+		q->nb_packets--;//队列长度-1
+		q->size -= pktlist->pkt.size;//更新队列编码数据的缓存长度
+		*pkt = pktlist->pkt;//将队列首节点数据返回
+		av_free(pktlist);//清空临时节点数据(清空首节点数据，首节点出队列)
+		ret = 1;//操作成功
+		//break;
+	}
+	else if (!block) {
+		ret = 0;
+		//break;
+	}
+	//	else {
+	//		//队列处于未就绪状态，此时通过SDL_CondWait函数等待qready就绪信号，并暂时对互斥量解锁
+	//		/*---------------------
+	//		 * 等待队列就绪信号qready，并对互斥量暂时解锁
+	//		 * 此时线程处于阻塞状态，并置于等待条件就绪的线程列表上
+	//		 * 使得该线程只在临界区资源就绪后才被唤醒，而不至于线程被频繁切换
+	//		 * 该函数返回时，互斥量再次被锁住，并执行后续操作
+	//		 --------------------*/
+	//		SDL_CondWait(q->qready, q->qlock);//暂时解锁互斥量并将自己阻塞，等待临界区资源就绪(等待SDL_CondSignal发出临界区资源就绪的信号)
+	//	}
+	//}//end for for-loop
 
-	SDL_UnlockMutex(q->qlock);//释放互斥量
+	//SDL_UnlockMutex(q->qlock);//释放互斥量
 
 	return ret;
 }
@@ -244,8 +245,121 @@ private:
 	double totalTime = 0;
 	double totalTimeInMs = 0;
 
-	double globalPts = 0;
+	int64_t globalPts = 0;
 	double videoClock = 0;
+
+	inline void init_general() {
+		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
+			AVCodecParameters* pLocalCodecParameters = NULL;
+			pLocalCodecParameters = pFormatContext->streams [i]->codecpar;
+
+			const AVCodec* pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
+
+			if (pLocalCodec == NULL) {
+				continue;
+			}
+
+			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_VIDEO) {
+				if (video_stream_index == -1) {
+					video_stream_index = i;
+					pVCodec = pLocalCodec;
+					pVCodecParameters = pLocalCodecParameters;
+				}
+			}
+
+			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
+				if (audio_stream_index == -1) {
+					audio_stream_index = i;
+					pACodec = pLocalCodec;
+					pACodecParameters = pLocalCodecParameters;
+				}
+			}
+		}
+
+		pVCodecContext = avcodec_alloc_context3(pVCodec);
+		if (!pVCodecContext) {
+			throw FFMpegException_InitFailed;
+		}
+
+		if (avcodec_parameters_to_context(pVCodecContext, pVCodecParameters) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		if (avcodec_open2(pVCodecContext, pVCodec, NULL) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		packet_queue_init(&videoQueue);
+
+		swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height, pVCodecContext->pix_fmt,
+			pVCodecContext->width, pVCodecContext->height, AV_PIX_FMT_BGR24
+			, NULL, NULL, NULL, NULL);
+
+		pACodecContext = avcodec_alloc_context3(pACodec);
+		if (!pACodecContext) {
+			throw FFMpegException_InitFailed;
+		}
+
+		if (avcodec_parameters_to_context(pACodecContext, pACodecParameters) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		if (avcodec_open2(pACodecContext, pACodec, NULL) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		packet_queue_init(&audioQueue);
+
+		pFrame = av_frame_alloc();
+		if (!pFrame) {
+			throw FFMpegException_InitFailed;
+		}
+
+		pPacket = av_packet_alloc();
+		if (!pPacket) {
+			throw FFMpegException_InitFailed;
+		}
+
+		pFlushPacket = av_packet_alloc();
+		if (!pFlushPacket) {
+			throw FFMpegException_InitFailed;
+		}
+
+		pFlushPacket->data = (unsigned char*)"FLUSH";
+
+		pViedoStream = pFormatContext->streams [video_stream_index];
+		pAudioStream = pFormatContext->streams [audio_stream_index];
+
+		rational = pViedoStream->time_base;
+		decimalRational = (double)rational.num / rational.den;
+
+		totalFrame = pViedoStream->duration;
+		timePerFrameInMs = decimalRational * 1000;
+
+		totalTime = totalFrame * decimalRational;
+		totalTimeInMs = totalTime * 1000;
+
+		wanted_spec.freq = pACodecContext->sample_rate;//采样频率 DSP frequency -- samples per second
+		wanted_spec.format = AUDIO_S16SYS;//采样格式 Audio data format
+		wanted_spec.channels = pACodecContext->channels;//声道数 Number of channels: 1 mono, 2 stereo
+		wanted_spec.silence = 0;//无输出时是否静音
+		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024 specifies a unit of audio data refers to the size of the audio buffer in sample frames
+
+		wanted_spec.callback = audio_callback;//设置取音频数据的回调接口函数 the function to call when the audio device needs more data
+		wanted_spec.userdata = (void*)pACodecContext;//传递用户数据
+
+		if (SDL_OpenAudio(&wanted_spec, &spec) < 0) {
+			auto error = SDL_GetError();
+
+			throw SDL_EXCEPTION_AUDIO;
+		}
+
+		SDL_PauseAudio(0);
+	}
 
 	inline int read_frame() {
 		int response = 0;
@@ -257,6 +371,9 @@ private:
 			if (pPacket->stream_index == video_stream_index) {
 				packet_queue_put(&videoQueue, pPacket);
 				bValid = true;
+				
+				//TODO
+				break;
 			}
 
 			//if it's the audio stream
@@ -291,6 +408,8 @@ private:
 		response = decode_vpacket(pPacket, pVCodecContext, pFrame, callBack);
 
 		av_packet_unref(pPacket);
+
+		return response;
 	}
 
 	int decode_vpacket(AVPacket* pPacket, AVCodecContext* pVCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
@@ -432,6 +551,7 @@ private:
 		return pts;//此时返回的值即为下一帧将要开始显示的时间戳
 	}
 public:
+	//Load from file
 	FFMpeg(const std::wstring& filePath) {
 		pFormatContext = avformat_alloc_context();
 		if (!pFormatContext) {
@@ -442,114 +562,34 @@ public:
 			throw FFMpegException_InitFailed;
 		}
 
-		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
+		init_general();
+	}
+
+	//Load from memory
+	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
+	FFMpeg(unsigned char* pBuffer, size_t bfSz) {
+		pFormatContext = avformat_alloc_context();
+		if (!pFormatContext) {
 			throw FFMpegException_InitFailed;
 		}
 
-		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
-			AVCodecParameters* pLocalCodecParameters = NULL;
-			pLocalCodecParameters = pFormatContext->streams [i]->codecpar;
-
-			const AVCodec* pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
-
-			if (pLocalCodec == NULL) {
-				continue;
+		auto pAvio = avio_alloc_context(pBuffer, bfSz, 0, NULL
+			, [] (void* opaque, uint8_t* buf, int bufsize)->int {
+				return bufsize;
 			}
+		, NULL, NULL);
 
-			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_VIDEO) {
-				if (video_stream_index == -1) {
-					video_stream_index = i;
-					pVCodec = pLocalCodec;
-					pVCodecParameters = pLocalCodecParameters;
-				}
-			}
-
-			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
-				if (audio_stream_index == -1) {
-					audio_stream_index = i;
-					pACodec = pLocalCodec;
-					pACodecParameters = pLocalCodecParameters;
-				}
-			}
-		}
-
-		pVCodecContext = avcodec_alloc_context3(pVCodec);
-		if (!pVCodecContext) {
+		if (!pAvio) {
 			throw FFMpegException_InitFailed;
 		}
 
-		if (avcodec_parameters_to_context(pVCodecContext, pVCodecParameters) < 0) {
+		pFormatContext->pb = pAvio;
+
+		if (avformat_open_input(&pFormatContext, NULL, NULL, NULL) != 0) {
 			throw FFMpegException_InitFailed;
 		}
 
-		if (avcodec_open2(pVCodecContext, pVCodec, NULL) < 0) {
-			throw FFMpegException_InitFailed;
-		}
-
-		swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height, pVCodecContext->pix_fmt,
-			pVCodecContext->width, pVCodecContext->height, AV_PIX_FMT_BGR24
-			, NULL, NULL, NULL, NULL);
-
-		pACodecContext = avcodec_alloc_context3(pACodec);
-		if (!pACodecContext) {
-			throw FFMpegException_InitFailed;
-		}
-
-		if (avcodec_parameters_to_context(pACodecContext, pACodecParameters) < 0) {
-			throw FFMpegException_InitFailed;
-		}
-
-		if (avcodec_open2(pACodecContext, pACodec, NULL) < 0) {
-			throw FFMpegException_InitFailed;
-		}
-
-		packet_queue_init(&audioQueue);
-
-		pFrame = av_frame_alloc();
-		if (!pFrame) {
-			throw FFMpegException_InitFailed;
-		}
-
-		pPacket = av_packet_alloc();
-		if (!pPacket) {
-			throw FFMpegException_InitFailed;
-		}
-
-		pFlushPacket = av_packet_alloc();
-		if (!pFlushPacket) {
-			throw FFMpegException_InitFailed;
-		}
-
-		pFlushPacket->data = (unsigned char*)"FLUSH";
-
-		pViedoStream = pFormatContext->streams [video_stream_index];
-		pAudioStream = pFormatContext->streams [audio_stream_index];
-
-		rational = pViedoStream->time_base;
-		decimalRational = (double)rational.num / rational.den;
-
-		totalFrame = pViedoStream->duration;
-		timePerFrameInMs = decimalRational * 1000;
-
-		totalTime = totalFrame * decimalRational;
-		totalTimeInMs = totalTime * 1000;
-
-		wanted_spec.freq = pACodecContext->sample_rate;//采样频率 DSP frequency -- samples per second
-		wanted_spec.format = AUDIO_S16SYS;//采样格式 Audio data format
-		wanted_spec.channels = pACodecContext->channels;//声道数 Number of channels: 1 mono, 2 stereo
-		wanted_spec.silence = 0;//无输出时是否静音
-		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024 specifies a unit of audio data refers to the size of the audio buffer in sample frames
-
-		wanted_spec.callback = audio_callback;//设置取音频数据的回调接口函数 the function to call when the audio device needs more data
-		wanted_spec.userdata = (void*)pACodecContext;//传递用户数据
-
-		if (SDL_OpenAudio(&wanted_spec, &spec) < 0) {
-			auto error = SDL_GetError();
-
-			throw SDL_EXCEPTION_AUDIO;
-		}
-
-		SDL_PauseAudio(0);
+		init_general();
 	}
 
 	~FFMpeg() {
@@ -569,7 +609,8 @@ public:
 		return (int64_t)(timePerFrameInMs);
 	}
 
-	inline int set_videoPosition(size_t ms = 0) {
+	//inline int set_videoPosition(size_t ms = 0, bool bInit = false) {
+	inline int set_videoPosition(size_t ms = 0, bool bInit = true) {
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
 		auto protectedTime = protectedTimeInMs / 1000;
 		auto protectedFrame = protectedTime / decimalRational;
@@ -584,12 +625,16 @@ public:
 		}
 		else {
 			if (video_stream_index != -1) {
-				packet_queue_flush(&videoQueue);
-				packet_queue_put(&videoQueue, pFlushPacket);
+				if (!bInit) {
+					packet_queue_flush(&videoQueue);
+					packet_queue_put(&videoQueue, pFlushPacket);
+				}
 			}
 			if (audio_stream_index != -1) {
-				packet_queue_flush(&audioQueue);
-				packet_queue_put(&audioQueue, pFlushPacket);
+				if (!bInit) {
+					packet_queue_flush(&audioQueue);
+					packet_queue_put(&audioQueue, pFlushPacket);
+				}
 			}
 		}
 
@@ -601,6 +646,7 @@ public:
 		int how_many_packets_to_process = 0;
 
 		response = set_videoPosition(ms);
+
 		response = read_frame();
 		response = decode_frame(callBack);
 
@@ -611,10 +657,10 @@ public:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		if (audioQueue.size > MAX_AUDIOQ_SIZE
-			|| videoQueue.size > MAX_VIDEOQ_SIZE) {
-			return 0;
-		}
+		//if (audioQueue.size > MAX_AUDIOQ_SIZE
+		//	|| videoQueue.size > MAX_VIDEOQ_SIZE) {
+		//	return 0;
+		//}
 
 		response = read_frame();
 		response = decode_frame(callBack);
