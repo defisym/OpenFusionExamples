@@ -78,6 +78,9 @@ void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release);
 //iterate file
 void GetFileList(LPRDATA rdPtr, std::wstring& Src);
 
+//Refresh Monitor State
+void RefreshMonitorState(LPRDATA rdPtr);
+
 //所有创建线程的句柄
 extern std::deque <LPTSTR> RunApplicationName;
 

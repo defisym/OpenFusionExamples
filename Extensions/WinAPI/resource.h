@@ -63,6 +63,7 @@
 #define M_ACTION_EF 		    	    5101
 #define M_ACTION_SAOT 		    	    5102
 #define M_ACTION_GVF 		    	    5103
+#define M_ACTION_RMS 		    	    5104
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -210,6 +211,7 @@
 #define IDMN_ACTION_EF   		    	25431
 #define IDMN_ACTION_SAOT   		    	25432
 #define IDMN_ACTION_GVF   		    	25433
+#define IDMN_ACTION_RMS   		    	25434
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020

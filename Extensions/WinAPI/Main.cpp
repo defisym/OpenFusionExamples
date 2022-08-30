@@ -103,6 +103,8 @@ short actionsInfos[] =
 	IDMN_ACTION_SAOT,M_ACTION_SAOT,ACT_ACTION_SAOT,0, 1,PARAM_EXPRESSION, PARA_ACTION_WINDOW_ENABLE,
 	
 	IDMN_ACTION_GVF,M_ACTION_GVF,ACT_ACTION_GVF,0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION,PARA_ACTION_FILEPATH,PARA_ACTION_MS,
+	
+	IDMN_ACTION_RMS,M_ACTION_RMS,ACT_ACTION_RMS,0, 0,
 
 };
 
@@ -1337,6 +1339,12 @@ short WINAPI DLLExport GetVideoFrame(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport RefreshMonitorState(LPRDATA rdPtr, long param1, long param2) {
+	RefreshMonitorState(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1844,6 +1852,8 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	SetAlwaysOnTop,
 
 	GetVideoFrame,
+
+	RefreshMonitorState,
 
 	//结尾必定是零
 	0

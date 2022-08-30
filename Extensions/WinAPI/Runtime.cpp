@@ -300,23 +300,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	// Ë¢ÐÂÏÔÊ¾Æ÷×´Ì¬
 	if (rdPtr->bSecondFrame) {
-		auto newMonitorHandle = MonitorFromWindow(rdPtr->MainWindowHandle, MONITOR_DEFAULTTONEAREST);
-
-		if (newMonitorHandle != NULL
-			&& rdPtr->curMonitorHandle != newMonitorHandle) {
-			rdPtr->curMonitorHandle = newMonitorHandle;
-
-			MONITORINFO info = { 0 };
-			info.cbSize = sizeof(MONITORINFO);
-			auto ret = GetMonitorInfo(rdPtr->curMonitorHandle, &info);
-
-			if (ret != 0) {
-				rdPtr->curMonitorWidth = info.rcMonitor.right - info.rcMonitor.left;
-				rdPtr->curMonitorHeight = info.rcMonitor.bottom - info.rcMonitor.top;
-
-				CallEvent(ONMONITORCHANGE);
-			}
-		}
+		RefreshMonitorState(rdPtr);
 	}
 
 	rdPtr->bSecondFrame = true;

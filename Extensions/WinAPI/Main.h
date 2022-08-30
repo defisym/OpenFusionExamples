@@ -83,7 +83,9 @@
 
 #define ACT_ACTION_GVF				39
 
-#define	ACT_LAST					40
+#define ACT_ACTION_RMS				40
+
+#define	ACT_LAST					41
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

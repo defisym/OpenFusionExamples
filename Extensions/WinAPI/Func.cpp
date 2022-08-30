@@ -536,6 +536,27 @@ void GetFileList(LPRDATA rdPtr, std::wstring& Src) {
 	return;
 }
 
+//Refresh Monitor State
+void RefreshMonitorState(LPRDATA rdPtr) {
+	auto newMonitorHandle = MonitorFromWindow(rdPtr->MainWindowHandle, MONITOR_DEFAULTTONEAREST);
+
+	if (newMonitorHandle != NULL
+		&& rdPtr->curMonitorHandle != newMonitorHandle) {
+		rdPtr->curMonitorHandle = newMonitorHandle;
+
+		MONITORINFO info = { 0 };
+		info.cbSize = sizeof(MONITORINFO);
+		auto ret = GetMonitorInfo(rdPtr->curMonitorHandle, &info);
+
+		if (ret != 0) {
+			rdPtr->curMonitorWidth = info.rcMonitor.right - info.rcMonitor.left;
+			rdPtr->curMonitorHeight = info.rcMonitor.bottom - info.rcMonitor.top;
+
+			CallEvent(ONMONITORCHANGE);
+		}
+	}
+}
+
 //所有创建线程的进程名
 std::deque <LPTSTR> RunApplicationName;
 

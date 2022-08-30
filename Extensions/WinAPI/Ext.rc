@@ -198,7 +198,7 @@ BEGIN
                     MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON
                     MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF
                 END
-                POPUP "Rect Offest"
+                POPUP "Rect Offset"
                 BEGIN
                     MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON
                     MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF
@@ -211,6 +211,8 @@ BEGIN
             MENUITEM "Disable IME",                 IDMN_ACTION_IME_DISABLE
             MENUITEM "Enable IME",                  IDMN_ACTION_IME_ENABLE
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Refresh Monitor State", IDMN_ACTION_RMS
         MENUITEM SEPARATOR
         POPUP "Window"
         BEGIN
@@ -582,9 +584,11 @@ BEGIN
     M_ACTION_EF "Embed Font %0"
     PARA_ACTION_EF "Font File Path"
 
-    M_ACTION_GVF "Get Video %0 Frame at %1 ms "
+    M_ACTION_GVF "Get Video %0 Frame at %1 ms"
     PARA_ACTION_FILEPATH "FilePath"
     PARA_ACTION_MS "Millisecond"
+
+    M_ACTION_RMS "Refresh Monitor State"
 END
 
 //Expression
