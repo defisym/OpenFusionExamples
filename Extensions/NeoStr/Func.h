@@ -95,7 +95,8 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetClip(rdPtr->bClip
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
-		rdPtr->pNeoStr->SetBorderOffset(5, 5);
+		//rdPtr->pNeoStr->SetBorderOffset(5, 5);
+		rdPtr->pNeoStr->SetBorderOffset(DEFAULEBORDEROFFSET, DEFAULEBORDEROFFSET);
 
 		//rdPtr->pNeoStr->SetClip(false
 		//	, 65535
@@ -150,7 +151,8 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetColor(edPtr->dwColor);
 
 		neoStr.SetClip(false, 65535, 65535);
-		neoStr.SetBorderOffset(5, 5);
+		//neoStr.SetBorderOffset(5, 5);
+		neoStr.SetBorderOffset(DEFAULEBORDEROFFSET, DEFAULEBORDEROFFSET);
 
 		neoStr.SetSmooth(
 			Gdiplus::TextRenderingHint(edPtr->textRenderingHint)

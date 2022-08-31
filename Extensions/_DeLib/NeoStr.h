@@ -63,6 +63,8 @@ inline RECT operator+(RECT rA, RECT rB) {
 				,rA.bottom + rB.bottom };
 }
 
+constexpr auto DEFAULEBORDEROFFSET = 20;
+
 class NeoStr {
 private:
 	HDC hdc;
@@ -607,6 +609,9 @@ public:
 		bool bNegColSpace = nColSpace < 0;
 		bool bNegRowSpace = nRowSpace < 0;
 
+		bool bPunctationNewLine = false;
+		bool bPunctationSkip = false;
+
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
@@ -644,6 +649,8 @@ public:
 
 				if (curWidth > rcWidth) {
 					if (NotAtStart(curChar)) {
+						bPunctationNewLine = true;
+
 						if (NotAtStart(nextChar)) {
 							if (pChar != pCharStart) {
 								pChar--;
@@ -689,6 +696,10 @@ public:
 					skipLine = (pChar == pCharStart);
 					pChar += 2;
 
+					if (bPunctationNewLine) {
+						bPunctationSkip = true;
+					}
+
 					break;
 				}
 
@@ -733,8 +744,15 @@ public:
 				//maxWidth = max(maxWidth, totalWidth);
 			}
 
-			// empty line (skipLine == true) also need to add height
-			totalHeight += (curHeight + nRowSpace);
+			if (!bPunctationSkip) {
+				// empty line (skipLine == true) also need to add height
+				// ...unless it's following a 'not at start' punctuation
+				totalHeight += (curHeight + nRowSpace);
+			}
+			else {
+				bPunctationNewLine = false;
+				bPunctationSkip = false;
+			}
 		}
 
 		const auto& lastStrPos = strPos.back();
