@@ -91,7 +91,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pRetStr = new std::wstring;
 
 	//initialize the video audio & timer subsystem 
-	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
 		auto error = SDL_GetError();
 
 		MSGBOX(L"Could not initialize SDL");

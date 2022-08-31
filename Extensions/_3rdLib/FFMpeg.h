@@ -20,6 +20,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
 }
 
 class FFMpeg;
@@ -36,6 +37,8 @@ constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
 constexpr auto SDL_EXCEPTION_AUDIO = 0;
 
+static int quit = 0;
+
 //数据包队列(链表)结构体
 typedef struct PacketQueue {
 	AVPacketList* first_pkt, * last_pkt;	//队列首尾节点指针
@@ -45,11 +48,15 @@ typedef struct PacketQueue {
 	SDL_cond* qready;						//队列就绪条件变量
 } PacketQueue;
 
+static PacketQueue videoQueue;
+static PacketQueue audioQueue;
+
 //队列初始化函数
 inline void packet_queue_init(PacketQueue* q) {
 	memset(q, 0, sizeof(PacketQueue));//全零初始化队列结构体对象
-	//q->qlock = SDL_CreateMutex();//创建互斥量对象
-	//q->qready = SDL_CreateCond();//创建条件变量对象
+
+	q->qlock = SDL_CreateMutex();//创建互斥量对象
+	q->qready = SDL_CreateCond();//创建条件变量对象
 }
 
 //清除队列缓存，释放队列中所有动态分配的内存
@@ -57,17 +64,20 @@ inline void packet_queue_flush(PacketQueue* q) {
 	AVPacketList* pkt = nullptr;//队列当前节点
 	AVPacketList* pkttmp = nullptr;//临时节点
 
-	//SDL_LockMutex(q->qlock);//锁定互斥量
+	SDL_LockMutex(q->qlock);//锁定互斥量
+
 	for (pkt = q->first_pkt; pkt != NULL; pkt = pkttmp) {//遍历队列所有节点
 		pkttmp = pkt->next;//队列头节点后移
 		av_packet_unref(&pkt->pkt);//当前节点引用计数-1
 		av_freep(&pkt);//释放当前节点缓存
 	}
+
 	q->last_pkt = NULL;//队列尾节点指针置零
 	q->first_pkt = NULL;//队列头节点指针置零
 	q->nb_packets = 0;//队列长度置零
 	q->size = 0;//队列编码数据的缓存长度置零
-	//SDL_UnlockMutex(q->qlock);//互斥量解锁
+
+	SDL_UnlockMutex(q->qlock);//互斥量解锁
 }
 
 //向队列中插入数据包
@@ -79,13 +89,14 @@ inline int packet_queue_put(PacketQueue* q, AVPacket* pkt) {
 	if (!pktlist) {//检查链表节点对象是否创建成功
 		return -1;
 	}
+
 	pktlist->pkt = *pkt;//将输入数据包赋值给新建链表节点对象中的数据包对象
 	pktlist->next = NULL;//链表后继指针为空
 	//	if (av_packet_ref(pkt, pkt)<0) {//增加pkt编码数据的引用计数(输入参数中的pkt与新建链表节点中的pkt共享同一缓存空间)
 	//		return -1;
 	//	}
 	/*---------将新建节点插入队列-------*/
-	//SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
+	SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
 
 	if (!q->last_pkt) {//检查队列尾节点是否存在(检查队列是否为空)
 		q->first_pkt = pktlist;//若不存在(队列尾空)，则将当前节点作队列为首节点
@@ -97,9 +108,9 @@ inline int packet_queue_put(PacketQueue* q, AVPacket* pkt) {
 	q->nb_packets++;//队列长度+1
 	q->size += pktlist->pkt.size;//更新队列编码数据的缓存长度
 
-	//SDL_CondSignal(q->qready);//给等待线程发出消息，通知队列已就绪
+	SDL_CondSignal(q->qready);//给等待线程发出消息，通知队列已就绪
+	SDL_UnlockMutex(q->qlock);//释放互斥量
 
-	//SDL_UnlockMutex(q->qlock);//释放互斥量
 	return 0;
 }
 
@@ -108,39 +119,52 @@ inline int packet_queue_get(PacketQueue* q, AVPacket* pkt, int block) {
 	AVPacketList* pktlist;//临时链表节点对象指针
 	int ret = 0;//操作结果
 
-	//SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
+	SDL_LockMutex(q->qlock);//队列互斥量加锁，保护队列数据
 
-	//for (;;) {
-	pktlist = q->first_pkt;//传递将队列首个数据包指针
-	if (pktlist) {//检查数据包是否为空(队列是否有数据)
-		q->first_pkt = pktlist->next;//队列首节点指针后移
-		if (!q->first_pkt) {//检查首节点的后继节点是否存在
-			q->last_pkt = NULL;//若不存在，则将尾节点指针置空
+	for (;;) {
+		if (quit) {
+			ret = -1;
+
+			break;
 		}
-		q->nb_packets--;//队列长度-1
-		q->size -= pktlist->pkt.size;//更新队列编码数据的缓存长度
-		*pkt = pktlist->pkt;//将队列首节点数据返回
-		av_free(pktlist);//清空临时节点数据(清空首节点数据，首节点出队列)
-		ret = 1;//操作成功
-		//break;
-	}
-	else if (!block) {
-		ret = 0;
-		//break;
-	}
-	//	else {
-	//		//队列处于未就绪状态，此时通过SDL_CondWait函数等待qready就绪信号，并暂时对互斥量解锁
-	//		/*---------------------
-	//		 * 等待队列就绪信号qready，并对互斥量暂时解锁
-	//		 * 此时线程处于阻塞状态，并置于等待条件就绪的线程列表上
-	//		 * 使得该线程只在临界区资源就绪后才被唤醒，而不至于线程被频繁切换
-	//		 * 该函数返回时，互斥量再次被锁住，并执行后续操作
-	//		 --------------------*/
-	//		SDL_CondWait(q->qready, q->qlock);//暂时解锁互斥量并将自己阻塞，等待临界区资源就绪(等待SDL_CondSignal发出临界区资源就绪的信号)
-	//	}
-	//}//end for for-loop
 
-	//SDL_UnlockMutex(q->qlock);//释放互斥量
+		pktlist = q->first_pkt;//传递将队列首个数据包指针
+
+		if (pktlist) {//检查数据包是否为空(队列是否有数据)
+			q->first_pkt = pktlist->next;//队列首节点指针后移
+
+			if (!q->first_pkt) {//检查首节点的后继节点是否存在
+				q->last_pkt = NULL;//若不存在，则将尾节点指针置空
+			}
+
+			q->nb_packets--;//队列长度-1
+			q->size -= pktlist->pkt.size;//更新队列编码数据的缓存长度
+			*pkt = pktlist->pkt;//将队列首节点数据返回
+
+			av_free(pktlist);//清空临时节点数据(清空首节点数据，首节点出队列)
+
+			ret = 1;//操作成功
+
+			break;
+		}
+		else if (!block) {
+			ret = 0;
+
+			break;
+		}
+		else {
+			//队列处于未就绪状态，此时通过SDL_CondWait函数等待qready就绪信号，并暂时对互斥量解锁
+			/*---------------------
+			 * 等待队列就绪信号qready，并对互斥量暂时解锁
+			 * 此时线程处于阻塞状态，并置于等待条件就绪的线程列表上
+			 * 使得该线程只在临界区资源就绪后才被唤醒，而不至于线程被频繁切换
+			 * 该函数返回时，互斥量再次被锁住，并执行后续操作
+			 --------------------*/
+			SDL_CondWait(q->qready, q->qlock);//暂时解锁互斥量并将自己阻塞，等待临界区资源就绪(等待SDL_CondSignal发出临界区资源就绪的信号)
+		}
+	}
+
+	SDL_UnlockMutex(q->qlock);//释放互斥量
 
 	return ret;
 }
@@ -155,10 +179,7 @@ inline int packet_queue_get(PacketQueue* q, AVPacket* pkt, int block) {
  * stream: A pointer to the audio buffer to be filled，输出音频数据到声卡缓存
  * len: The length (in bytes) of the audio buffer,缓存长度wanted_spec.samples=SDL_AUDIO_BUFFER_SIZE(1024)
  --------------------------*/
-inline void audio_callback(void* userdata, Uint8* stream, int len) {
-	FFMpeg* pFFMpeg = (FFMpeg*)userdata;
-	pFFMpeg->decode_audioFrame(stream, len);
-}
+inline void audio_callback(void* userdata, Uint8* stream, int len);
 
 // Exceptions
 constexpr auto FFMpegException_InitFailed = -1;
@@ -187,20 +208,18 @@ private:
 	AVCodecContext* pACodecContext = nullptr;
 
 	AVFrame* pFrame = nullptr;
-	
+
 	AVPacket* pVPacket = nullptr;
 	AVPacket* pAPacket = nullptr;
 	AVPacket* pFlushPacket = nullptr;
 
-	PacketQueue videoQueue;
-	PacketQueue audioQueue;
+	uint8_t* audio_buf = nullptr;
+	//unsigned int audio_buf_size;
+	//unsigned int audio_buf_index;
 
-	uint8_t audio_buf[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
-	unsigned int audio_buf_size;
-	unsigned int audio_buf_index;
-	uint8_t* audio_pkt_data;
-	int audio_pkt_size;
-	int audio_hw_buf_size;
+	//uint8_t* audio_pkt_data;
+	//int audio_pkt_size;
+	//int audio_hw_buf_size;
 
 	SDL_AudioSpec spec;
 	SDL_AudioSpec wanted_spec;
@@ -300,7 +319,7 @@ private:
 		if (!pVPacket) {
 			throw FFMpegException_InitFailed;
 		}
-				
+
 		pAPacket = av_packet_alloc();
 		if (!pAPacket) {
 			throw FFMpegException_InitFailed;
@@ -325,6 +344,8 @@ private:
 		totalTime = totalFrame * decimalRational;
 		totalTimeInMs = totalTime * 1000;
 
+		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
+
 		wanted_spec.freq = pACodecContext->sample_rate;//采样频率 DSP frequency -- samples per second
 		wanted_spec.format = AUDIO_S16SYS;//采样格式 Audio data format
 		wanted_spec.channels = pACodecContext->channels;//声道数 Number of channels: 1 mono, 2 stereo
@@ -347,21 +368,28 @@ private:
 	inline int read_frame() {
 		int response = 0;
 
-		if (audioQueue.size > MAX_AUDIOQ_SIZE
-			|| videoQueue.size > MAX_VIDEOQ_SIZE) {
-			return 0;
-		}
+		while (true) {
+			if (audioQueue.size > MAX_AUDIOQ_SIZE
+				|| videoQueue.size > MAX_VIDEOQ_SIZE) {
+				SDL_Delay(10);
 
-		while (av_read_frame(pFormatContext, pVPacket) >= 0) {
+				return 0;
+			}
+
+			auto readResult = av_read_frame(pFormatContext, pVPacket);
+
+			if (readResult < 0) {
+				SDL_Delay(100);
+
+				return 0;
+			}
+
 			bool bValid = false;
 
 			// if it's the video stream
 			if (pVPacket->stream_index == video_stream_index) {
 				packet_queue_put(&videoQueue, pVPacket);
 				bValid = true;
-				
-				//TODO
-				break;
 			}
 
 			//if it's the audio stream
@@ -435,65 +463,61 @@ private:
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
 	int decode_apacket() {
-		int coded_consumed_size = 0;
+		AVFrame* pFrame = av_frame_alloc();
 		int data_size = 0;
-		int pcm_bytes = 0;
-		
-		int response = avcodec_send_packet(pACodecContext, pAPacket);
+		AVPacket pkt = { 0 };
 
-		if (response < 0) {
-			return response;
+		SwrContext* swr_ctx = nullptr;
+
+		if (!packet_queue_get(&audioQueue, &pkt, true)) {
+			return -1;
 		}
 
-		while (response >= 0) {
-			// Return decoded output data (into a frame) from a decoder
-			// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
-			response = avcodec_receive_frame(pACodecContext, pFrame);
-
-			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-				break;
-			}
-			else if (response < 0) {
-				av_frame_unref(pFrame);
-
-				return response;
-			}
-
-			if (response >= 0) {
-				while (audio_pkt_size > 0) {
-					//int got_frame = 0;
-					//auto len1 = avcodec_decode_audio4(aCodecCtx, &frame, &got_frame, &pkt);
-					//if (len1 < 0) {
-					//	/* if error, skip frame */
-					//	audio_pkt_size = 0;
-					//	break;
-					//}
-					//audio_pkt_data += len1;
-					//audio_pkt_size -= len1;
-					//data_size = 0;
-					//if (got_frame) {
-					//	data_size = av_samples_get_buffer_size(NULL,
-					//		aCodecCtx->channels,
-					//		frame.nb_samples,
-					//		aCodecCtx->sample_fmt,
-					//		1);
-					//	//assert(data_size <= buf_size);
-					//	memcpy(audio_buf, frame.data[0], data_size);
-					//}
-					//if (data_size <= 0) {
-					//	/* No data yet, get more frames */
-					//	continue;
-					//}
-					///* We have data, return it and come back for more later */
-					//return data_size;
-				}
-
-				av_frame_unref(pFrame);
-			}
-
+		if (quit) {
+			return -1;
 		}
 
-		return 0;
+		int response = avcodec_send_packet(pACodecContext, &pkt);
+		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+			return -1;
+		}
+
+		response = avcodec_receive_frame(pACodecContext, pFrame);
+		if (response < 0 && response != AVERROR_EOF) {
+			//av_frame_unref(pFrame);
+
+			return -1;
+		}
+
+		// 设置通道数或channel_layout
+		if (pFrame->channels > 0 && pFrame->channel_layout == 0) {
+			pFrame->channel_layout = av_get_default_channel_layout(pFrame->channels);
+		}
+		else if (pFrame->channels == 0 && pFrame->channel_layout > 0) {
+			pFrame->channels = av_get_channel_layout_nb_channels(pFrame->channel_layout);
+		}
+
+		AVSampleFormat dst_format = AV_SAMPLE_FMT_S16;//av_get_packed_sample_fmt((AVSampleFormat)frame->format);
+		Uint64 dst_layout = av_get_default_channel_layout(pFrame->channels);
+
+		// 设置转换参数
+		swr_ctx = swr_alloc_set_opts(nullptr, dst_layout, dst_format, pFrame->sample_rate,
+			pFrame->channel_layout, (AVSampleFormat)pFrame->format, pFrame->sample_rate, 0, nullptr);
+
+		if (!swr_ctx || swr_init(swr_ctx) < 0) {
+			return -1;
+		}
+
+		// 计算转换后的sample个数 a * b / c
+		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swr_ctx, pFrame->sample_rate) + pFrame->nb_samples, pFrame->sample_rate, pFrame->sample_rate, AVRounding(1));
+		// 转换，返回值为转换后的sample个数
+		int nb = swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t**)pFrame->data, pFrame->nb_samples);
+		data_size = pFrame->channels * nb * av_get_bytes_per_sample(dst_format);
+
+		av_frame_free(&pFrame);
+		swr_free(&swr_ctx);
+
+		return data_size;
 	}
 
 	/*---------------------------
@@ -567,7 +591,7 @@ public:
 	~FFMpeg() {
 		avformat_close_input(&pFormatContext);
 		av_packet_free(&pVPacket);
-		av_packet_free(&pAPacket);		
+		av_packet_free(&pAPacket);
 		av_packet_free(&pFlushPacket);
 		av_frame_free(&pFrame);
 		avcodec_close(pVCodecContext);
@@ -576,6 +600,13 @@ public:
 		avcodec_free_context(&pACodecContext);
 
 		sws_freeContext(swsContext);
+
+		delete[] audio_buf;
+
+		quit = 1;
+
+		SDL_CondSignal(audioQueue.qready);
+		SDL_CondSignal(videoQueue.qready);
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
@@ -601,42 +632,57 @@ public:
 	}
 
 	inline int decode_audioFrame(Uint8* stream, int len) {
-		int wt_stream_len, audio_size;//每次写入stream的数据长度，解码后的数据长度
+		//每次写入stream的数据长度
+		int wt_stream_len = 0;
+		//每解码后的数据长度
+		int audio_size = 0;
 
-		static uint8_t audio_buf[(MAX_AUDIO_FRAME_SIZE * 3) / 2];//保存解码一个packet后的多帧原始音频数据
+		//static uint8_t audio_buf[(MAX_AUDIO_FRAME_SIZE * 3) / 2];//保存解码一个packet后的多帧原始音频数据
 		static unsigned int audio_buf_size = 0;//解码后的多帧音频数据长度
 		static unsigned int audio_buf_index = 0;//累计写入stream的长度
 
-		while (len > 0) {//检查音频缓存的剩余长度
-			if (audio_buf_index >= audio_buf_size) {//检查是否需要执行解码操作
-				// We have already sent all our data; get more，从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+		SDL_memset(stream, 0, len);
 
+		//检查音频缓存的剩余长度
+		while (len > 0) {
+			//检查是否需要执行解码操作
+			if (audio_buf_index >= audio_buf_size) {
+				// We have already sent all our data; get more
+				// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
 				audio_size = decode_apacket();
-				
+
+				if (quit) {
+					return -1;
+				}
+
 				if (audio_size < 0) {//检查解码操作是否成功
 					// If error, output silence.
 					audio_buf_size = 1024; // arbitrary?
 					memset(audio_buf, 0, audio_buf_size);//全零重置缓冲区
 				}
 				else {
+					//TODO
 					audio_buf_size = audio_size;//返回packet中包含的原始音频数据长度(多帧)
 				}
 				audio_buf_index = 0;//初始化累计写入缓存长度
-			}//end for if
+			}
 
 			wt_stream_len = audio_buf_size - audio_buf_index;//计算解码缓存剩余长度
-			
+
 			if (wt_stream_len > len) {//检查每次写入缓存的数据长度是否超过指定长度(1024)
 				wt_stream_len = len;//指定长度从解码的缓存中取数据
 			}
 			//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
 			memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
+			//SDL_MixAudio(stream, audio_buf + audio_buf_index, len, SDL_MIX_MAXVOLUME);
+
 			len -= wt_stream_len;//更新解码音频缓存的剩余长度
 			stream += wt_stream_len;//更新缓存写入位置
 			audio_buf_index += wt_stream_len;//更新累计写入缓存数据长度
-		}//end for while
-	}
+		}
 
+		return 0;
+	}
 
 	inline int64_t get_timePerFrame() {
 		return (int64_t)(timePerFrameInMs);
@@ -692,6 +738,9 @@ public:
 
 		response = read_frame();
 		response = decode_videoFrame(callBack);
+		//response = decode_audioFrame();
+
+		globalPts;
 
 		if (bLoop && (int64_t)(pVCodecContext->frame_number + 1) == totalFrame) {
 			response = set_videoPosition();
@@ -705,3 +754,8 @@ public:
 		return response;
 	}
 };
+
+inline void audio_callback(void* userdata, Uint8* stream, int len) {
+	FFMpeg* pFFMpeg = (FFMpeg*)userdata;
+	pFFMpeg->decode_audioFrame(stream, len);
+}
