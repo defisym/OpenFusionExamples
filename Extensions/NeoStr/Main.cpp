@@ -74,6 +74,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_POS,
 
+		IDMN_EXPRESSION_GCX, M_EXPRESSION_GCX, EXP_EXPRESSION_GCX, 0, 1, EXPPARAM_LONG, M_POS,
+		IDMN_EXPRESSION_GCY, M_EXPRESSION_GCY, EXP_EXPRESSION_GCY, 0, 1, EXPPARAM_LONG, M_POS,
+
 		};
 
 
@@ -429,6 +432,21 @@ long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
 	}
 }
 
+long WINAPI DLLExport Expression_GetCharX(LPRDATA rdPtr, long param1) {
+	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	UpdateLastCharPos(rdPtr);
+	
+	return rdPtr->pNeoStr->GetCharPos(rdPtr->pStr->c_str(), pos).x;
+}
+
+long WINAPI DLLExport Expression_GetCharY(LPRDATA rdPtr, long param1) {
+	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	UpdateLastCharPos(rdPtr);
+
+	return rdPtr->pNeoStr->GetCharPos(rdPtr->pStr->c_str(), pos).y;
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -492,6 +510,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetAngle,
 
 			Expression_GetFontFamilyName,
+
+			Expression_GetCharX,
+			Expression_GetCharY,
 			
 			0
 			};

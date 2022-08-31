@@ -175,6 +175,9 @@ BEGIN
         MENUITEM "Get Horizontal Align", IDMN_EXPRESSION_GHA
         MENUITEM "Get Vertical Align", IDMN_EXPRESSION_GVA
         MENUITEM SEPARATOR
+        MENUITEM "Get Char X", IDMN_EXPRESSION_GCX
+        MENUITEM "Get Char Y", IDMN_EXPRESSION_GCY
+        MENUITEM SEPARATOR
         MENUITEM "Get Last Char X", IDMN_EXPRESSION_GLCX
         MENUITEM "Get Last Char Y", IDMN_EXPRESSION_GLCY
         MENUITEM SEPARATOR
@@ -414,6 +417,9 @@ BEGIN
     
     M_EXPRESSION_GFN	    "FontFamilyName$("
     M_POS	                "Position"
+
+    M_EXPRESSION_GCX		"CharX("
+    M_EXPRESSION_GCY		"CharY("
 END
 
 #endif    // English (U.S.) resources

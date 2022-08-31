@@ -128,6 +128,15 @@ private:
 
 	StrSize* pStrSizeArr = nullptr;
 
+	struct CharPos {
+		long x;
+		long y;
+		long maxWidth;
+		long totalHeight;
+	};
+
+	CharPos* pCharPosArr = nullptr;
+
 	long rcWidth = 0;
 	long rcHeight = 0;
 
@@ -154,6 +163,9 @@ private:
 	LPSURFACE pHwaSf = nullptr;
 #endif
 
+	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
+	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
+
 	std::map<wchar_t, StrSize> charSzCache;
 
 #ifdef _GDIPLUS
@@ -163,6 +175,24 @@ private:
 		return input == BLACK ? RGB(8, 0, 0) : input;
 	}
 #endif
+
+	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
+		for (auto& wChartoCheck : data) {
+			if (wChartoCheck == wChar) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	inline bool NotAtStart(wchar_t wChar) {
+		return CheckMatch(wChar, notAtStart);
+	}
+
+	inline bool NotAtEnd(wchar_t wChar) {
+		return CheckMatch(wChar, notAtEnd);
+	}
 
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
@@ -241,13 +271,6 @@ private:
 #endif // _GDIPLUS
 
 public:
-	struct CharPos {
-		long x;
-		long y;
-		long maxWidth;
-		long totalHeight;
-	};
-
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
 		, bool needGDIPStartUp = true
@@ -287,6 +310,9 @@ public:
 
 		delete[] this->pStrSizeArr;
 		this->pStrSizeArr = nullptr;
+
+		delete[] this->pCharPosArr;
+		this->pCharPosArr = nullptr;
 
 		delete this->pMemSf;
 		this->pMemSf = nullptr;
@@ -617,7 +643,44 @@ public:
 				curHeight = max(curHeight, charSz->height);
 
 				if (curWidth > rcWidth) {
-					break;
+					if (NotAtStart(curChar)) {
+						if (NotAtStart(nextChar)) {
+							if (pChar != pCharStart) {
+								pChar--;
+
+								auto pPreviousChar = pText + pChar;
+								auto PreviousChar = pPreviousChar[0];
+
+								auto previousCharSz = &pStrSizeArr[pChar];
+
+								curWidth -= charSz->width;
+
+								curWidth -= previousCharSz->width;
+								curWidth -= nColSpace;
+							}
+
+							break;
+						}
+					}
+					else {
+						if (pChar != pCharStart) {
+							auto pPreviousChar = pText + pChar - 1;
+							auto PreviousChar = pPreviousChar[0];
+
+							auto previousCharSz = &pStrSizeArr[pChar - 1];
+
+							if (NotAtEnd(PreviousChar)) {
+								pChar--;
+
+								curWidth -= charSz->width;
+
+								curWidth -= previousCharSz->width;
+								curWidth -= nColSpace;
+							}
+						}
+
+						break;
+					}					
 				}
 
 				if (curChar == L'\r' && nextChar == L'\n') {
@@ -696,6 +759,12 @@ public:
 		if (pTextLen == 0) {
 			return;
 		}
+
+		delete[] this->pCharPosArr;
+		this->pCharPosArr = nullptr;
+
+		pCharPosArr = new CharPos[pTextLen + 1];
+		memset(pCharPosArr, 0, sizeof(CharPos) * (pTextLen + 1));
 
 		rcWidth = pRc->right - pRc->left;
 		rcHeight = pRc->bottom - pRc->top;
@@ -832,12 +901,15 @@ public:
 			StrSize* charSz = nullptr;
 			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
 			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr [curStrPos.start].width / 8;
+			x -= pStrSizeArr[curStrPos.start].width / 8;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr [offset];
+				charSz = &pStrSizeArr[offset];
+
+				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+											,this->startY + curStrPos.y,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
 #ifdef _GDIPLUS	
@@ -1003,6 +1075,26 @@ public:
 		//				printf("%d %d %d %d\n", A, R, G, B);
 		//#endif // _CONSOLE
 		//				});
+	}
+
+	inline CharPos GetCharPos(LPCWSTR pText, size_t pos) {
+		auto invalid = CharPos{ -1, -1, -1, -1 };
+
+		if (pCharPosArr == nullptr) {
+			return invalid;
+		}
+
+		size_t pTextLen = wcslen(pText);
+
+		if (pTextLen == 0) {
+			return invalid;
+		}
+
+		if (pTextLen <= pos) {
+			return invalid;
+		}
+
+		return pCharPosArr[pos];
 	}
 
 	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
