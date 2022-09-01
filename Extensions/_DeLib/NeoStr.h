@@ -625,6 +625,7 @@ public:
 		bool bNegColSpace = nColSpace < 0;
 		bool bNegRowSpace = nRowSpace < 0;
 
+		size_t notAtStartCharPos = -1;
 		bool bPunctationNewLine = false;
 		bool bPunctationSkip = false;
 
@@ -666,6 +667,7 @@ public:
 				if (curWidth > rcWidth) {
 					if (NotAtStart(curChar)) {
 						bPunctationNewLine = true;
+						notAtStartCharPos = pChar;
 
 						if (NotAtStart(nextChar)) {
 							if (pChar != pCharStart) {
@@ -710,11 +712,14 @@ public:
 					newLine = true;
 					//skipLine = (curWidth == 0);
 					skipLine = (pChar == pCharStart);
-					pChar += 2;
-
-					if (bPunctationNewLine) {
+					
+					if (bPunctationNewLine
+						// just follow
+						&& (notAtStartCharPos + 1) == pChar) {
 						bPunctationSkip = true;
 					}
+
+					pChar += 2;					
 
 					break;
 				}
