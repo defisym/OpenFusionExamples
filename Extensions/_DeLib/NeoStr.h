@@ -26,10 +26,20 @@
 #undef Font
 #undef fpFont
 
+//#define _BLUR
+
+#ifdef _BLUR
+#define GDIPVER 0x0110
+#endif
+
 #include <gdiplus.h>
 #pragma comment(lib,"Gdiplus")
 
 #include <gdiplusheaders.h>
+
+#ifdef _BLUR
+#include <gdipluseffects.h>
+#endif
 
 using Gdiplus::GdiplusStartupInput;
 using Gdiplus::Graphics;
@@ -54,6 +64,11 @@ using Gdiplus::PrivateFontCollection;
 using Gdiplus::InstalledFontCollection;
 using Gdiplus::FontFamily;
 using Gdiplus::GetImageEncodersSize;
+
+#ifdef _BLUR
+using Gdiplus::Blur;
+using Gdiplus::BlurParams;
+#endif
 #endif
 
 inline RECT operator+(RECT rA, RECT rB) {
@@ -108,6 +123,7 @@ private:
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 
+	Bitmap* pBitmap=nullptr;
 	PrivateFontCollection* pFontCollection = nullptr;
 #endif
 
@@ -806,6 +822,11 @@ public:
 			//			pMemSf = CreateSurface(32, width, height);
 			//#endif
 			pMemSf = CreateSurface(32, width, height);
+
+			delete this->pBitmap;
+			this->pBitmap = nullptr;
+
+			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
 #endif
 		}
 
@@ -821,8 +842,10 @@ public:
 		Graphics g(hMemDc);
 #else
 #ifdef _GDIPLUS		
-		Bitmap bitmap(width, height, PixelFormat32bppARGB);
-		Graphics g(&bitmap);
+		//Bitmap bitmap(width, height, PixelFormat32bppARGB);
+		//Graphics g(&bitmap);
+
+		Graphics g(pBitmap);
 #endif
 #endif
 
@@ -959,6 +982,19 @@ public:
 			}
 		}
 
+#ifdef _BLUR
+		Blur blur;
+		BlurParams bp = { 0 };
+		RECT rc = { 0,0,pBitmap->GetWidth(),pBitmap->GetHeight() };
+
+		bp.expandEdge = false;
+		bp.radius = 5;
+
+		blur.SetParameters(&bp);
+
+		pBitmap->ApplyEffect(&blur, &rc);
+#endif
+
 #ifdef  _PATH
 #ifdef _GDIPLUS	
 		if (this->bOutLine) {
@@ -1007,7 +1043,8 @@ public:
 #ifdef _GDIPLUS		
 		BitmapData bitmapData;
 		auto bitmapRect = Rect(0, 0, width, height);
-		bitmap.LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		//bitmap.LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
 		unsigned int* pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 #endif
 #endif		
@@ -1044,6 +1081,8 @@ public:
 		//#endif
 
 		ReleaseSfCoef(pMemSf, sfCoef);
+
+		pBitmap->UnlockBits(&bitmapData);
 
 #ifdef _DEBUG
 		//_SavetoClipBoard(pMemSf, false);
