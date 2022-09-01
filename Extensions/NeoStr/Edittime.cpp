@@ -39,6 +39,8 @@ enum {
 	
 	PROPID_RENDER_TITLE,
 	PROPID_RENDER_CLIP,	
+	PROPID_RENDER_BorderOffsetX,	
+	PROPID_RENDER_BorderOffsetY,	
 	PROPID_RENDER_TextRenderingHint,
 	PROPID_RENDER_SmoothingMode,
 	PROPID_RENDER_PixelOffsetMode,
@@ -158,6 +160,10 @@ PropData FontPorperties[] = {
 	PropData_Group(PROPID_RENDER_TITLE,	IDS_PROP_RENDER_TITLE,		IDS_PROP_RENDER_TITLE),
 	
 	PropData_CheckBox(PROPID_RENDER_CLIP,	IDS_PROP_RENDER_CLIP,		IDS_PROP_RENDER_CLIP_INFO),
+	
+	PropData_EditNumber(PROPID_RENDER_BorderOffsetX,	IDS_PROP_RENDER_BorderOffsetX,		IDS_PROP_RENDER_BorderOffsetX_INFO),
+	PropData_EditNumber(PROPID_RENDER_BorderOffsetY,	IDS_PROP_RENDER_BorderOffsetY,		IDS_PROP_RENDER_BorderOffsetY_INFO),
+	
 	PropData_ComboBox(PROPID_RENDER_TextRenderingHint,	IDS_PROP_RENDER_TextRenderingHint,		IDS_PROP_RENDER_TextRenderingHint_INFO, TextRenderingHint_ComboList),
 	PropData_ComboBox(PROPID_RENDER_SmoothingMode,	IDS_PROP_RENDER_SmoothingMode,		IDS_PROP_RENDER_SmoothingMode_INFO, SmoothingMode_ComboList),
 	PropData_ComboBox(PROPID_RENDER_PixelOffsetMode,	IDS_PROP_RENDER_PixelOffsetMode,		IDS_PROP_RENDER_PixelOffsetMode_INFO, PixelOffsetMode_ComboList),
@@ -465,9 +471,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bClip = true;
 
-		// TODO
-		edPtr->borderOffsetX = 5;
-		edPtr->borderOffsetY = 5;
+		edPtr->borderOffsetX = DEFAULEBORDEROFFSET;
+		edPtr->borderOffsetY = DEFAULEBORDEROFFSET;
 
 		edPtr->bVerticalAlignOffset = false;
 
@@ -872,6 +877,11 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->dwOutLineColor);
 #endif
 
+	case PROPID_RENDER_BorderOffsetX:
+		return new CPropDWordValue(edPtr->borderOffsetX);
+	case PROPID_RENDER_BorderOffsetY:
+		return new CPropDWordValue(edPtr->borderOffsetY);
+
 	case PROPID_RENDER_TextRenderingHint:
 		return new CPropDWordValue(edPtr->textRenderingHint);
 	case PROPID_RENDER_SmoothingMode:
@@ -1001,6 +1011,15 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 #endif
 		
+	case PROPID_RENDER_BorderOffsetX:
+		edPtr->borderOffsetX = (unsigned short)max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_RENDER_BorderOffsetY:
+		edPtr->borderOffsetY = (unsigned short)max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+		mvInvalidateObject(mV, edPtr);
+		break;
+
 	case PROPID_RENDER_TextRenderingHint:
 		edPtr->textRenderingHint = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
 		mvInvalidateObject(mV, edPtr);

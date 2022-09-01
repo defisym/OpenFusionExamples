@@ -337,6 +337,11 @@ BEGIN
     IDS_PROP_HOTSPOT_Y				                "Hot Spot Y"
     IDS_PROP_HOTSPOT_Y_INFO			                "Hot Spot Y"
 
+    IDS_PROP_RENDER_BorderOffsetX                   "Border Offset X"
+    IDS_PROP_RENDER_BorderOffsetX_INFO              "Expand render area, to give enough space for shaders"
+    IDS_PROP_RENDER_BorderOffsetY                   "Border Offset Y"
+    IDS_PROP_RENDER_BorderOffsetY_INFO              "Expand render area, to give enough space for shaders"
+
 END
 
 STRINGTABLE DISCARDABLE 

@@ -96,7 +96,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
 		//rdPtr->pNeoStr->SetBorderOffset(5, 5);
-		rdPtr->pNeoStr->SetBorderOffset(DEFAULEBORDEROFFSET, DEFAULEBORDEROFFSET);
+		rdPtr->pNeoStr->SetBorderOffset(rdPtr->borderOffsetX, rdPtr->borderOffsetY);
 
 		//rdPtr->pNeoStr->SetClip(false
 		//	, 65535
@@ -116,6 +116,12 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
 	//MSGBOX(L"Editor Display");
 	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
+
+	//if (edPtr->borderOffsetX != DEFAULEBORDEROFFSET || edPtr->borderOffsetY != DEFAULEBORDEROFFSET) {
+	//	MSGBOX(L"Update");
+	//	edPtr->borderOffsetX = DEFAULEBORDEROFFSET;
+	//	edPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+	//}
 
 	if (ps != NULL) {	// Do the following if this surface exists
 		// Create font
@@ -152,7 +158,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 		neoStr.SetClip(false, 65535, 65535);
 		//neoStr.SetBorderOffset(5, 5);
-		neoStr.SetBorderOffset(DEFAULEBORDEROFFSET, DEFAULEBORDEROFFSET);
+		neoStr.SetBorderOffset(edPtr->borderOffsetX, edPtr->borderOffsetY);
 
 		neoStr.SetSmooth(
 			Gdiplus::TextRenderingHint(edPtr->textRenderingHint)

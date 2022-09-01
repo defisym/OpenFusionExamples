@@ -79,6 +79,12 @@
 #define IDS_PROP_HOTSPOT_Y					254
 #define IDS_PROP_HOTSPOT_Y_INFO				255
 
+#define	IDS_PROP_RENDER_BorderOffsetX       256
+#define	IDS_PROP_RENDER_BorderOffsetX_INFO  257
+#define	IDS_PROP_RENDER_BorderOffsetY       258
+#define	IDS_PROP_RENDER_BorderOffsetY_INFO  259
+
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
