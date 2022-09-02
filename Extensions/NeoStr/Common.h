@@ -67,6 +67,10 @@ struct GlobalData {
 
 #include	"Func.h"
 
+#ifdef _CONSOLE
+#include <iostream>
+#endif
+
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
 extern short conditionsInfos[];

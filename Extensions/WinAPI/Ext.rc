@@ -120,6 +120,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Return Key State",            IDMN_CONDITION_RKS
         MENUITEM SEPARATOR
+        MENUITEM "On Monitor Change",    IDMN_CONDITION_OMC
+        MENUITEM SEPARATOR
         MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
         MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
         MENUITEM SEPARATOR
@@ -129,8 +131,15 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Fusion"
         BEGIN
+            POPUP "Runtime"
+            BEGIN
+                MENUITEM " Running in Editor",IDMN_CONDITION_IRIE
+            END            
+            MENUITEM SEPARATOR
             POPUP "Object"
             BEGIN
+                MENUITEM "Active At Top",IDMN_CONDITION_IAAT
+                MENUITEM SEPARATOR
                 MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
                 MENUITEM "Object has Animation in Direction (Scope)",IDMN_CONDITION_IDHA_S              
                 MENUITEM SEPARATOR
@@ -189,7 +198,7 @@ BEGIN
                     MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_ON
                     MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_UPDATELOCK_OFF
                 END
-                POPUP "Rect Offest"
+                POPUP "Rect Offset"
                 BEGIN
                     MENUITEM "Set On",                      IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_ON
                     MENUITEM "Set Off",                     IDMN_ACTION_LOCKMOUSESETTINGS_RECTOFFSET_OFF
@@ -202,6 +211,8 @@ BEGIN
             MENUITEM "Disable IME",                 IDMN_ACTION_IME_DISABLE
             MENUITEM "Enable IME",                  IDMN_ACTION_IME_ENABLE
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Refresh Monitor State", IDMN_ACTION_RMS
         MENUITEM SEPARATOR
         POPUP "Window"
         BEGIN
@@ -321,6 +332,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get DPI Scaling",             IDMN_EXPRESSION_DPISCALING
         MENUITEM SEPARATOR
+        MENUITEM "Get Current Monitor Width",             IDMN_EXPRESSION_GCMW
+        MENUITEM "Get Current Monitor Height",             IDMN_EXPRESSION_GCMH
+        MENUITEM SEPARATOR
         MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
         MENUITEM SEPARATOR
         POPUP "Time"
@@ -356,6 +370,7 @@ BEGIN
         MENUITEM SEPARATOR 
         POPUP "Misc."
         BEGIN
+            MENUITEM "Normalize Val",      IDMN_EXPRESSION_GD         
             MENUITEM "Get Val With Sign",      IDMN_EXPRESSION_GVWS         
             MENUITEM SEPARATOR            
             MENUITEM "Hex 2 RGB",      IDMN_EXPRESSION_HEX2RGB           
@@ -547,7 +562,7 @@ BEGIN
 
     M_ACTION_WINDOW_RGB "Recursice Gauss Blur, Sigma = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_RGB_SIGMA "Sigma of Blur, 0 <= Sigma <= 1.615"
-    PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale, Scale >= 1.0. E.g. PicA = 100*100 , Scale = 2.0 , ProcessResoution = 50*50"
+    PARA_ACTION_WINDOW_RGB_SCALE "Down Sampling Scale, Scale >= 1.0. E.g. PicA = 100*100 , Scale = 2.0 , ProcessResolution = 50*50"
 
     M_ACTION_WINDOW_MTGB "MultiThread Gauss Blur, Radius = %0 , Scale = %1 , Divide = %2"
     PARA_ACTION_WINDOW_MTGB_RADIUS "Radius of Blur"
@@ -569,9 +584,11 @@ BEGIN
     M_ACTION_EF "Embed Font %0"
     PARA_ACTION_EF "Font File Path"
 
-    M_ACTION_GVF "Get Video %0 Frame at %1 ms "
+    M_ACTION_GVF "Get Video %0 Frame at %1 ms"
     PARA_ACTION_FILEPATH "FilePath"
     PARA_ACTION_MS "Millisecond"
+
+    M_ACTION_RMS "Refresh Monitor State"
 END
 
 //Expression
@@ -689,6 +706,16 @@ BEGIN
     M_EXPRESSION_GVFP "GVFP ("
 END
 
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GD "Normalize ("
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GCMW "CMW ("
+    M_EXPRESSION_GCMH "CMH ("
+END
 
 //Conditions
 STRINGTABLE
@@ -746,6 +773,21 @@ STRINGTABLE
 BEGIN
     M_CONDITION_OD    "%o Is Object %0 Destroyed"
     PARA_CONDITION_OBJECT   "Object"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IRIE    "%o Running in Editor"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_IAAT    "%o Active %0 At Top"
+END
+
+STRINGTABLE
+BEGIN
+    M_CONDITION_OMC    "%o On Monitor Change"
 END
 
 //Porperties

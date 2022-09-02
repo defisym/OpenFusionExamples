@@ -1,0 +1,41 @@
+<effect>
+<name>Dot Matrix</name>
+<description>Dot Matrix</description>
+<author>Defisym</author>
+<parameter>
+		<name>Dot Color</name>
+		<code>dotColor</code>
+		<type>int_float4</type>
+		<property>COLOR</property>
+		<!-- <value>0</value> -->
+		<value>37632</value>
+</parameter>
+<parameter>
+		<name>Row Space</name>
+		<code>rowSpace</code>
+		<type>int</type>
+		<property>edit</property>
+		<value>3</value>
+</parameter>
+<parameter>
+		<name>Col Space</name>
+		<code>colSpace</code>
+		<type>int</type>
+		<property>edit</property>
+		<value>3</value>
+</parameter>
+<parameter>
+		<name>Radius</name>
+		<code>radius</code>
+		<type>int</type>
+		<property>edit</property>
+		<value>1</value>
+</parameter>
+<parameter>
+		<name>Threshold</name>
+		<code>threshold</code>
+		<type>float</type>
+		<property>edit</property>
+		<value>0.8</value>
+</parameter>
+</effect>

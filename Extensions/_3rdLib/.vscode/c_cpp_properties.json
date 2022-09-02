@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../../Inc/",
                 "${workspaceFolder}/../_DeLib/",
-                "F:\\DEV\\FFMpeg\\include"
+                "F:\\DEV\\FFMpeg\\include",
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",

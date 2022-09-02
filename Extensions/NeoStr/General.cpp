@@ -202,42 +202,72 @@ HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr
 	//	LPEDATA(OldEdPtr)->hotSpotY = 0;
 	//}
 
-	MSGBOX(L"Check Update", L"UPDATE");
+	//MSGBOX(L"Check Update", L"UPDATE");
 
-	auto oldPtr = LPEDATA(OldEdPtr);
+	//auto oldPtr = LPEDATA(OldEdPtr);
 
-	if (oldPtr->hotSpotPos < HotSpotPos::LT || oldPtr->hotSpotPos > HotSpotPos::CUSTOM) {
-		MSGBOX(L"Need Update", L"UPDATE");
+	//HGLOBAL hgNew = NULL;
 
-		HGLOBAL hgNew = NULL;
+	//auto bfSz = wcslen(&oldPtr->pText) + 1;
+	//DWORD dwNewSize = sizeof(EDITDATA) + bfSz * sizeof(wchar_t);
 
-		auto bfSz = wcslen(&oldPtr->pText) + 1;
-		DWORD dwNewSize = sizeof(EDITDATA) + bfSz * sizeof(wchar_t);
+	////MSGBOX(L"SZ: " + _itos(dwNewSize), L"UPDATE");
 
-		MSGBOX(L"SZ: "+_itos(dwNewSize), L"UPDATE");
+	//if ((hgNew = GlobalAlloc(GPTR, dwNewSize)) != NULL) {
+	//	tagEDATA_V1* newEdPtr = (tagEDATA_V1*)GlobalLock(hgNew);
 
-		if ((hgNew = GlobalAlloc(GPTR, dwNewSize)) != NULL) {
-			tagEDATA_V1* newEdPtr = (tagEDATA_V1*)GlobalLock(hgNew);
+	//	if (newEdPtr != nullptr) {
+	//		MSGBOX(L"Copy", L"UPDATE");
 
-			if (newEdPtr != nullptr) {
-				MSGBOX(L"Copy", L"UPDATE");
+	//		memcpy(newEdPtr, oldPtr, dwNewSize);
 
-				memcpy(newEdPtr, oldPtr, dwNewSize);
+	//		newEdPtr->borderOffsetX = DEFAULEBORDEROFFSET;
+	//		newEdPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+	//	}
 
-				newEdPtr->hotSpotPos = HotSpotPos::LT;
-				newEdPtr->hotSpotX = 0;
-				newEdPtr->hotSpotY = 0;
-			}
+	//	GlobalUnlock(hgNew);
+	//}
 
-			GlobalUnlock(hgNew);
-		}
+	////MSGBOX(L"Done", L"UPDATE");
 
-		MSGBOX(L"Done", L"UPDATE");
+	//return hgNew;
 
-		return hgNew;
-	}
+	//MSGBOX(L"Check Update", L"UPDATE");
 
-	return 0;
+	//auto oldPtr = LPEDATA(OldEdPtr);
+
+	//if (oldPtr->hotSpotPos < HotSpotPos::LT || oldPtr->hotSpotPos > HotSpotPos::CUSTOM) {
+	//	MSGBOX(L"Need Update", L"UPDATE");
+
+	//	HGLOBAL hgNew = NULL;
+
+	//	auto bfSz = wcslen(&oldPtr->pText) + 1;
+	//	DWORD dwNewSize = sizeof(EDITDATA) + bfSz * sizeof(wchar_t);
+
+	//	MSGBOX(L"SZ: "+_itos(dwNewSize), L"UPDATE");
+
+	//	if ((hgNew = GlobalAlloc(GPTR, dwNewSize)) != NULL) {
+	//		tagEDATA_V1* newEdPtr = (tagEDATA_V1*)GlobalLock(hgNew);
+
+	//		if (newEdPtr != nullptr) {
+	//			MSGBOX(L"Copy", L"UPDATE");
+
+	//			memcpy(newEdPtr, oldPtr, dwNewSize);
+
+	//			newEdPtr->hotSpotPos = HotSpotPos::LT;
+	//			newEdPtr->hotSpotX = 0;
+	//			newEdPtr->hotSpotY = 0;
+	//		}
+
+	//		GlobalUnlock(hgNew);
+	//	}
+
+	//	MSGBOX(L"Done", L"UPDATE");
+
+	//	return hgNew;
+	//}
+
+	//return 0;
 
 	//HGLOBAL hgNew = NULL;
 	//

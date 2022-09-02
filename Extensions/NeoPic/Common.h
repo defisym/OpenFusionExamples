@@ -37,7 +37,15 @@
 enum class HotSpotPos;
 struct ZoomScale;
 
+// if you need to compatible with windows 7 (which doesn't support DX12)
+// you need to comment both macro below, which will disable VRam check
+
+// #define _USE_DXGI
+// #define _DYNAMIC_LINK
+
+#ifdef _USE_DXGI
 #include	"D3DUtilities.h"
+#endif
 
 #include	"GeneralDefinition.h"
 #include	"Definition.h"

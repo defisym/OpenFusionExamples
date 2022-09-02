@@ -144,7 +144,22 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		auto pData = new GlobalData;
 
 		//init general
+#ifdef _USE_DXGI
+#ifdef _DYNAMIC_LINK
+		wchar_t rootDir[MAX_PATH] = {};
+		GetCurrentDirectory(MAX_PATH - 1, rootDir);
+
+		wchar_t dllPath[2 * MAX_PATH] = {};
+		wsprintf(dllPath, L"%s\\%s", rootDir, L"Modules\\DXGI.DLL");
+
+		pData->DXGI = LoadLibrary(dllPath);
+
+		if (pData->DXGI == nullptr) {
+			MSGBOX(L"Load Failed");
+		}
+#endif
 		pData->pD3DU = new D3DUtilities;
+#endif
 
 		//auto& Desc = rdPtr->pD3DU->GetDesc();
 		//MSGBOX(Desc.Description);
@@ -167,7 +182,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pData = (GlobalData*)GetExtUserData();
 
 	//Get general
+#ifdef _USE_DXGI
 	rdPtr->pD3DU = rdPtr->pData->pD3DU;
+#endif
 
 	//Get specific
 	if (rdPtr->isLib) {

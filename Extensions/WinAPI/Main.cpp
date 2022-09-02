@@ -34,6 +34,11 @@ short conditionsInfos[] =
 	IDMN_CONDITION_ICLIHP, M_CONDITION_ICLIHP, CND_CONDITION_ICLIHP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, PARA_EXPRESSION_CLI, PARA_EXPRESSION_PARAM,
 	IDMN_CONDITION_OD, M_CONDITION_OD, CND_CONDITION_OD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
 	IDMN_CONDITION_IDHA_S, M_CONDITION_IDHA, CND_CONDITION_IDHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_DIR,
+	
+	IDMN_CONDITION_IRIE, M_CONDITION_IRIE, CND_CONDITION_IRIE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_IAAT, M_CONDITION_IAAT, CND_CONDITION_IAAT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
+	
+	IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
 
 };
 
@@ -98,6 +103,8 @@ short actionsInfos[] =
 	IDMN_ACTION_SAOT,M_ACTION_SAOT,ACT_ACTION_SAOT,0, 1,PARAM_EXPRESSION, PARA_ACTION_WINDOW_ENABLE,
 	
 	IDMN_ACTION_GVF,M_ACTION_GVF,ACT_ACTION_GVF,0, 2,PARAM_EXPSTRING, PARAM_EXPRESSION,PARA_ACTION_FILEPATH,PARA_ACTION_MS,
+	
+	IDMN_ACTION_RMS,M_ACTION_RMS,ACT_ACTION_RMS,0, 0,
 
 };
 
@@ -163,6 +170,12 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_C2B, M_EXPRESSION_C2B, EXP_EXPRESSION_C2B, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_C2B,
 
 	IDMN_EXPRESSION_GVFP, M_EXPRESSION_GVFP, EXP_EXPRESSION_GVFP, 0, 0,
+
+	IDMN_EXPRESSION_GD, M_EXPRESSION_GD, EXP_EXPRESSION_GD, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_GVWS,
+
+	IDMN_EXPRESSION_GCMW, M_EXPRESSION_GCMW, EXP_EXPRESSION_GCMW, 0, 0,
+	IDMN_EXPRESSION_GCMH, M_EXPRESSION_GCMH, EXP_EXPRESSION_GCMH, 0, 0,
+
 };
 
 // ============================================================================
@@ -337,6 +350,49 @@ long WINAPI DLLExport IsObjectDestroyed(LPRDATA rdPtr, long param1, long param2)
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [](LPRDATA rdPtr, LPRO object)->bool {
 		return IsDestroyed(object);
 		});
+}
+
+long WINAPI DLLExport IsRunningInEditor(LPRDATA rdPtr, long param1, long param2) {
+#ifdef RUN_ONLY
+	return false;
+#else
+	return true;
+#endif // RUN_ONLY	
+}
+
+long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
+	bool negated = IsNegated(rdPtr);
+
+	short oil = (short)OIL_GetParameter(rdPtr);
+
+	auto selected = rdPtr->pSelect->Selected(oil);
+	auto pObj = rdPtr->pSelect->GetFirstObject(oil, selected);
+
+	if (pObj != nullptr && LPROValid(pObj, IDENTIFIER_ACTIVE)) {
+		LPRO pResult = nullptr;
+		int zOrder = MININT;
+
+		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO pObject) {
+			if (pObject->ros.rsZOrder >= zOrder) {
+				pResult = pObject;
+				zOrder = pObject->ros.rsZOrder;
+			}
+			}, selected ? ForEachFlag_SelectedOnly : ForEachFlag_ForceAll);
+
+		if (pResult != nullptr) {
+			rdPtr->pSelect->SelectOneObject(pResult);
+
+			return true;
+		}
+	}
+
+	rdPtr->pSelect->SelectNone(oil);
+
+	return false;
+}
+
+long WINAPI DLLExport OnMonitorChange(LPRDATA rdPtr, long param1, long param2) {
+	return true;
 }
 
 // ============================================================================
@@ -1283,6 +1339,12 @@ short WINAPI DLLExport GetVideoFrame(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport RefreshMonitorState(LPRDATA rdPtr, long param1, long param2) {
+	RefreshMonitorState(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1673,6 +1735,20 @@ long WINAPI DLLExport GetVideoFramePointer(LPRDATA rdPtr, long param1) {
 #endif
 }
 
+long WINAPI DLLExport GetDirection(LPRDATA rdPtr, long param1) {
+	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+	float Val = *(float*)&p1;
+
+	return Val >= 0 ? 1 : -1;
+}
+
+long WINAPI DLLExport GetCurMonitorWidth(LPRDATA rdPtr, long param1) {
+	return rdPtr->curMonitorWidth;
+}
+
+long WINAPI DLLExport GetCurMonitorHeight(LPRDATA rdPtr, long param1) {
+	return rdPtr->curMonitorHeight;
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -1700,6 +1776,12 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsObjectDestroyed,
 
 	IsObjectHasAnimationInDirection_Scope,
+
+	IsRunningInEditor,
+
+	IsActiveAtTop,
+
+	OnMonitorChange,
 
 	0
 };
@@ -1771,6 +1853,8 @@ short (WINAPI* ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	GetVideoFrame,
 
+	RefreshMonitorState,
+
 	//结尾必定是零
 	0
 };
@@ -1830,5 +1914,10 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	GetVideoFramePointer,
 
-0
+	GetDirection,
+
+	GetCurMonitorWidth,
+	GetCurMonitorHeight,
+	
+	0
 };

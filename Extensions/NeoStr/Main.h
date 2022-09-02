@@ -59,7 +59,10 @@
 
 #define EXP_EXPRESSION_GFN					16
 
-#define	EXP_LAST                    		17
+#define EXP_EXPRESSION_GCX					17
+#define EXP_EXPRESSION_GCY					18
+
+#define	EXP_LAST                    		19
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

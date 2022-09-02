@@ -58,8 +58,9 @@
 #define	ACT_ACTION_SVGP				17
 
 #define	ACT_ACTION_ASSERT			18
+#define	ACT_ACTION_MSGBOX			19
 
-#define	ACT_LAST					19
+#define	ACT_LAST					20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -96,10 +97,19 @@
 
 #define EXP_EXPRESSION_ES			19
 #define EXP_EXPRESSION_EV			20
+
 #define EXP_EXPRESSION_CTB			21
 #define EXP_EXPRESSION_NEG			22
+#define EXP_EXPRESSION_AND			23
+#define EXP_EXPRESSION_OR			24
+#define EXP_EXPRESSION_XOR			25
 
-#define	EXP_LAST                    23
+#define EXP_EXPRESSION_GV			26
+#define EXP_EXPRESSION_GOEV			27
+#define EXP_EXPRESSION_LV			28
+#define EXP_EXPRESSION_LOEV			29
+
+#define	EXP_LAST                    30
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

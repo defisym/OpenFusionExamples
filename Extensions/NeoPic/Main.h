@@ -56,7 +56,9 @@
 
 #define	ACT_ACTION_LFP				23
 
-#define	ACT_LAST					24
+#define	ACT_ACTION_SB				24
+
+#define	ACT_LAST					25
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -251,7 +253,9 @@ typedef struct tagRDATA
 	bool bCurrentDisplayTransparent = false;
 	LPSURFACE pOldSf = nullptr;
 
+#ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
+#endif
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

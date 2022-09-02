@@ -79,6 +79,12 @@
 #define IDS_PROP_HOTSPOT_Y					254
 #define IDS_PROP_HOTSPOT_Y_INFO				255
 
+#define	IDS_PROP_RENDER_BorderOffsetX       256
+#define	IDS_PROP_RENDER_BorderOffsetX_INFO  257
+#define	IDS_PROP_RENDER_BorderOffsetY       258
+#define	IDS_PROP_RENDER_BorderOffsetY_INFO  259
+
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -191,6 +197,9 @@
 
 #define IDMN_EXPRESSION_GFN					27016
 
+#define IDMN_EXPRESSION_GCX					27017
+#define IDMN_EXPRESSION_GCY					27018
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -214,6 +223,9 @@
 #define M_EXPRESSION_GA					    7015
 
 #define M_EXPRESSION_GFN					7016
+
+#define M_EXPRESSION_GCX					7017
+#define M_EXPRESSION_GCY					7018
 
 // Names of expression parameters
 #define M_POS				                7500

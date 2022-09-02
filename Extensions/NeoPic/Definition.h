@@ -102,7 +102,13 @@ struct GlobalData {
 	RefCount* pCount = nullptr;
 	KeepList* pKeepList = nullptr;
 	FileListMap* pFileListMap = nullptr;
+
+#ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
+#ifdef _DYNAMIC_LINK
+	HINSTANCE DXGI = nullptr;
+#endif
+#endif
 };
 
 inline void DeleteLib(SurfaceLib* pData);
@@ -118,7 +124,17 @@ inline void DeleteGlobalData(GlobalData* pData) {
 	}
 	delete pData->pFileListMap;
 
+#ifdef _USE_DXGI
 	delete pData->pD3DU;
+
+#ifdef _DYNAMIC_LINK
+	if (pData->DXGI != nullptr) {
+		FreeLibrary(pData->DXGI);
+		pData->DXGI = nullptr;
+	}
+#endif
+
+#endif
 
 	delete pData;
 }

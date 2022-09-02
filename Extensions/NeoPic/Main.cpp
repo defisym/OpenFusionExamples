@@ -74,6 +74,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LFP, M_ACTION_LFP, ACT_ACTION_LFP,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_ACTION_PSF, M_ACTION_FILENAME,
 
+		IDMN_ACTION_SB, M_ACTION_SB, ACT_ACTION_SB, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_RADIUS, M_ACTION_SCALE, M_ACTION_DIVIDE,
+
 		};
 
 // Definitions of parameters for each expression
@@ -496,6 +498,74 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
+	int radius = CNC_GetIntParameter(rdPtr);
+	float scale = GetFloatParam(rdPtr);
+	int divide = CNC_GetIntParameter(rdPtr);
+
+	if (CanDisplay(rdPtr)) {
+		bool bReleaseOld = false;
+		LPSURFACE pOldSf = nullptr;
+
+		if (rdPtr->fromLib) {
+			pOldSf = rdPtr->src;
+			rdPtr->src = nullptr;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+
+			bReleaseOld = false;
+		}
+		else {
+			pOldSf = rdPtr->src;
+			rdPtr->src = nullptr;
+
+			bReleaseOld = true;
+		}
+
+		LPSURFACE pMemSf = nullptr;
+		auto bHwa = IsHWA(pOldSf);
+
+		// convert to bitmap
+		if (rdPtr->fromLib) {	// copy & convert, no matter HWA or not
+			pMemSf = ConvertBitmap(rdPtr, pOldSf);
+
+			bReleaseOld = false;
+		}
+		else {
+			if (bHwa) {
+				pMemSf = ConvertBitmap(rdPtr, pOldSf);
+								
+				bReleaseOld = true;
+			}
+			else {
+				pMemSf = pOldSf;
+
+				bReleaseOld = false;
+			}
+		}		
+
+		if (bReleaseOld) {
+			delete pOldSf;
+		}	
+
+		rdPtr->fromLib = false;
+
+		StackBlur(pMemSf, radius, scale, divide);
+
+		rdPtr->src = pMemSf;
+		
+		if (bHwa) {
+			ConvertToHWATexture(rdPtr, rdPtr->src);
+		}
+
+		NewImg(rdPtr);
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -680,25 +750,41 @@ long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
+#ifdef _USE_DXGI
 	return (long)rdPtr->pD3DU->GetDesc().Description;
+#else
+	return (long)L"No DXGI Enabled";
+#endif
 }
 
 long WINAPI DLLExport GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
+#ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
+#else
+	return -1;
+#endif	
 }
 
 long WINAPI DLLExport GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
+#ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
-	
+
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().Budget >> 20);
+#else
+	return -1;
+#endif	
 }
 
 long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
+#ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().AvailableForReservation >> 20);
+#else
+	return -1;
+#endif
 }
 
 // ----------------------------------------------------------
@@ -761,6 +847,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IterateRefCount,
 
 			LoadFromPointer,
+
+			StackBlur,
 
 			0
 			};

@@ -335,6 +335,8 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 	GetFullPathName(fileName.c_str(), MAX_PATH, pFullPathName, nullptr);
 	std::wstring ret = pFullPathName;
 
+	delete[] pFullPathName;
+
 	return ret;
 }
 

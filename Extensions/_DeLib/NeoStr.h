@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#define _FONTEMBEDDEBUG
+//#define _CONSOLE
+
 #include <map>
 #include <vector>
 #include <functional>
@@ -23,10 +26,20 @@
 #undef Font
 #undef fpFont
 
+//#define _BLUR
+
+#ifdef _BLUR
+#define GDIPVER 0x0110
+#endif
+
 #include <gdiplus.h>
 #pragma comment(lib,"Gdiplus")
 
 #include <gdiplusheaders.h>
+
+#ifdef _BLUR
+#include <gdipluseffects.h>
+#endif
 
 using Gdiplus::GdiplusStartupInput;
 using Gdiplus::Graphics;
@@ -51,6 +64,11 @@ using Gdiplus::PrivateFontCollection;
 using Gdiplus::InstalledFontCollection;
 using Gdiplus::FontFamily;
 using Gdiplus::GetImageEncodersSize;
+
+#ifdef _BLUR
+using Gdiplus::Blur;
+using Gdiplus::BlurParams;
+#endif
 #endif
 
 inline RECT operator+(RECT rA, RECT rB) {
@@ -59,6 +77,8 @@ inline RECT operator+(RECT rA, RECT rB) {
 				,rA.right + rB.right
 				,rA.bottom + rB.bottom };
 }
+
+constexpr auto DEFAULEBORDEROFFSET = 20;
 
 class NeoStr {
 private:
@@ -103,6 +123,7 @@ private:
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 
+	Bitmap* pBitmap=nullptr;
 	PrivateFontCollection* pFontCollection = nullptr;
 #endif
 
@@ -124,6 +145,15 @@ private:
 	};
 
 	StrSize* pStrSizeArr = nullptr;
+
+	struct CharPos {
+		long x;
+		long y;
+		long maxWidth;
+		long totalHeight;
+	};
+
+	CharPos* pCharPosArr = nullptr;
 
 	long rcWidth = 0;
 	long rcHeight = 0;
@@ -151,6 +181,9 @@ private:
 	LPSURFACE pHwaSf = nullptr;
 #endif
 
+	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
+	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
+
 	std::map<wchar_t, StrSize> charSzCache;
 
 #ifdef _GDIPLUS
@@ -160,6 +193,24 @@ private:
 		return input == BLACK ? RGB(8, 0, 0) : input;
 	}
 #endif
+
+	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
+		for (auto& wChartoCheck : data) {
+			if (wChartoCheck == wChar) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	inline bool NotAtStart(wchar_t wChar) {
+		return CheckMatch(wChar, notAtStart);
+	}
+
+	inline bool NotAtEnd(wchar_t wChar) {
+		return CheckMatch(wChar, notAtEnd);
+	}
 
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
@@ -238,13 +289,6 @@ private:
 #endif // _GDIPLUS
 
 public:
-	struct CharPos {
-		long x;
-		long y;
-		long maxWidth;
-		long totalHeight;
-	};
-
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
 		, bool needGDIPStartUp = true
@@ -285,6 +329,9 @@ public:
 		delete[] this->pStrSizeArr;
 		this->pStrSizeArr = nullptr;
 
+		delete[] this->pCharPosArr;
+		this->pCharPosArr = nullptr;
+
 		delete this->pMemSf;
 		this->pMemSf = nullptr;
 
@@ -318,7 +365,7 @@ public:
 		return;
 	}
 
-	inline static bool FontCollectionHasFont(LPCWSTR pFaceName
+	inline static bool FontCollectionHasFont(LPWSTR pFaceName
 		, Gdiplus::FontCollection* pFontCollection) {
 		if (pFontCollection == nullptr) {
 			return false;
@@ -344,27 +391,54 @@ public:
 		LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
 
 		bool has = false;
+		bool hasSuffixRegular = false;
+		//bool hasSuffixNormal = false;
+
+		std::wstring withRegular = (std::wstring)pFaceName + (std::wstring)L" Regular";
+		//std::wstring withNormal = (std::wstring)pFaceName + (std::wstring)L" Normal";
 
 		for (int i = 0; i < n; i++) {
 			has = false;
+			hasSuffixRegular = false;
+			//hasSuffixNormal = false;
 
 			auto hasName = [&](LANGID language = (LANGID)0U) {
 				memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
 				ffs[i].GetFamilyName(name, language);
-				has = (wcscmp(name, pFaceName) == 0);
+				
+				has |= (_wcsicmp(name, pFaceName) == 0);
+
+				if (has) {
+					return;
+				}
+
+				hasSuffixRegular |= (_wcsicmp(name, withRegular.c_str()) == 0);
+
+				if (hasSuffixRegular) {
+					return;
+				}
+
+				//hasSuffixNormal |= (_wcsicmp(name, withNormal.c_str()) == 0);
 			};
 
 			hasName();
 			hasName(language);
 
-			if (has) {
+			if (has || hasSuffixRegular/* || hasSuffixNormal*/) {
+				if (hasSuffixRegular) {
+					wcscpy_s(pFaceName, LF_FACESIZE, withRegular.c_str());
+				}
+				//if (hasSuffixNormal) {
+				//	wcscpy_s(pFaceName, LF_FACESIZE, withNormal.c_str());
+				//}
+
 				break;
 			}
 		}
 
 		delete[] ffs;
 
-		return has;
+		return has || hasSuffixRegular/* || hasSuffixNormal*/;
 	}
 
 	inline static int GetFontStyle(LOGFONT& logFont) {
@@ -551,6 +625,10 @@ public:
 		bool bNegColSpace = nColSpace < 0;
 		bool bNegRowSpace = nRowSpace < 0;
 
+		size_t notAtStartCharPos = -1;
+		bool bPunctationNewLine = false;
+		bool bPunctationSkip = false;
+
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
@@ -587,14 +665,61 @@ public:
 				curHeight = max(curHeight, charSz->height);
 
 				if (curWidth > rcWidth) {
-					break;
+					if (NotAtStart(curChar)) {
+						bPunctationNewLine = true;
+						notAtStartCharPos = pChar;
+
+						if (NotAtStart(nextChar)) {
+							if (pChar != pCharStart) {
+								pChar--;
+
+								auto pPreviousChar = pText + pChar;
+								auto PreviousChar = pPreviousChar[0];
+
+								auto previousCharSz = &pStrSizeArr[pChar];
+
+								curWidth -= charSz->width;
+
+								curWidth -= previousCharSz->width;
+								curWidth -= nColSpace;
+							}
+
+							break;
+						}
+					}
+					else {
+						if (pChar != pCharStart) {
+							auto pPreviousChar = pText + pChar - 1;
+							auto PreviousChar = pPreviousChar[0];
+
+							auto previousCharSz = &pStrSizeArr[pChar - 1];
+
+							if (NotAtEnd(PreviousChar)) {
+								pChar--;
+
+								curWidth -= charSz->width;
+
+								curWidth -= previousCharSz->width;
+								curWidth -= nColSpace;
+							}
+						}
+
+						break;
+					}					
 				}
 
 				if (curChar == L'\r' && nextChar == L'\n') {
 					newLine = true;
 					//skipLine = (curWidth == 0);
 					skipLine = (pChar == pCharStart);
-					pChar += 2;
+					
+					if (bPunctationNewLine
+						// just follow
+						&& (notAtStartCharPos + 1) == pChar) {
+						bPunctationSkip = true;
+					}
+
+					pChar += 2;					
 
 					break;
 				}
@@ -640,8 +765,15 @@ public:
 				//maxWidth = max(maxWidth, totalWidth);
 			}
 
-			// empty line (skipLine == true) also need to add height
-			totalHeight += (curHeight + nRowSpace);
+			if (!bPunctationSkip) {
+				// empty line (skipLine == true) also need to add height
+				// ...unless it's following a 'not at start' punctuation
+				totalHeight += (curHeight + nRowSpace);
+			}
+			else {
+				bPunctationNewLine = false;
+				bPunctationSkip = false;
+			}
 		}
 
 		const auto& lastStrPos = strPos.back();
@@ -667,6 +799,12 @@ public:
 			return;
 		}
 
+		delete[] this->pCharPosArr;
+		this->pCharPosArr = nullptr;
+
+		pCharPosArr = new CharPos[pTextLen + 1];
+		memset(pCharPosArr, 0, sizeof(CharPos) * (pTextLen + 1));
+
 		rcWidth = pRc->right - pRc->left;
 		rcHeight = pRc->bottom - pRc->top;
 
@@ -689,6 +827,11 @@ public:
 			//			pMemSf = CreateSurface(32, width, height);
 			//#endif
 			pMemSf = CreateSurface(32, width, height);
+
+			delete this->pBitmap;
+			this->pBitmap = nullptr;
+
+			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
 #endif
 		}
 
@@ -704,8 +847,10 @@ public:
 		Graphics g(hMemDc);
 #else
 #ifdef _GDIPLUS		
-		Bitmap bitmap(width, height, PixelFormat32bppARGB);
-		Graphics g(&bitmap);
+		//Bitmap bitmap(width, height, PixelFormat32bppARGB);
+		//Graphics g(&bitmap);
+
+		Graphics g(pBitmap);
 #endif
 #endif
 
@@ -717,13 +862,37 @@ public:
 
 		SolidBrush solidBrush(fontColor);
 
+		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
+
+		auto bFound = FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection);
+
+//#ifdef _FONTEMBEDDEBUG
+//		if (!bFound) {
+//			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
+//		}
+//#endif // _FONTEMBEDDEBUG
+		
+		PrivateFontCollection local;
+
 		Font font(this->logFont.lfFaceName
 			, (float)abs(logFont.lfHeight)
 			, GetFontStyle(this->logFont)
-			, Gdiplus::UnitWorld,
-			FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection)
-			? this->pFontCollection
-			: nullptr);
+			, Gdiplus::UnitWorld
+			, bFound ? this->pFontCollection
+				   : nullptr);
+			//, nullptr);
+			//, this->pFontCollection);
+			//, &local);
+
+		//FontFamily fontFamily;
+		//auto bRet = font.IsAvailable();
+		//font.GetFamily(&fontFamily);
+		//
+		//auto pName = new WCHAR[256];
+		//memset(pName, 0, 256 * sizeof(WCHAR));
+		//fontFamily.GetFamilyName(pName);
+
+		//delete[] pName;
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
@@ -778,12 +947,15 @@ public:
 			StrSize* charSz = nullptr;
 			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
 			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr [curStrPos.start].width / 8;
+			x -= pStrSizeArr[curStrPos.start].width / 8;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr [offset];
+				charSz = &pStrSizeArr[offset];
+
+				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+											,this->startY + curStrPos.y,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
 #ifdef _GDIPLUS	
@@ -814,6 +986,19 @@ public:
 				x += (charSz->width + nColSpace);
 			}
 		}
+
+#ifdef _BLUR
+		Blur blur;
+		BlurParams bp = { 0 };
+		RECT rc = { 0,0,pBitmap->GetWidth(),pBitmap->GetHeight() };
+
+		bp.expandEdge = false;
+		bp.radius = 5;
+
+		blur.SetParameters(&bp);
+
+		pBitmap->ApplyEffect(&blur, &rc);
+#endif
 
 #ifdef  _PATH
 #ifdef _GDIPLUS	
@@ -863,7 +1048,8 @@ public:
 #ifdef _GDIPLUS		
 		BitmapData bitmapData;
 		auto bitmapRect = Rect(0, 0, width, height);
-		bitmap.LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		//bitmap.LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
 		unsigned int* pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 #endif
 #endif		
@@ -900,6 +1086,8 @@ public:
 		//#endif
 
 		ReleaseSfCoef(pMemSf, sfCoef);
+
+		pBitmap->UnlockBits(&bitmapData);
 
 #ifdef _DEBUG
 		//_SavetoClipBoard(pMemSf, false);
@@ -949,6 +1137,26 @@ public:
 		//				printf("%d %d %d %d\n", A, R, G, B);
 		//#endif // _CONSOLE
 		//				});
+	}
+
+	inline CharPos GetCharPos(LPCWSTR pText, size_t pos) {
+		auto invalid = CharPos{ -1, -1, -1, -1 };
+
+		if (pCharPosArr == nullptr) {
+			return invalid;
+		}
+
+		size_t pTextLen = wcslen(pText);
+
+		if (pTextLen == 0) {
+			return invalid;
+		}
+
+		if (pTextLen <= pos) {
+			return invalid;
+		}
+
+		return pCharPosArr[pos];
 	}
 
 	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc

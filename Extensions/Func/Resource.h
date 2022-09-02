@@ -61,6 +61,7 @@
 #define	IDMN_ACTION_SVGP		25017
 
 #define	IDMN_ACTION_ASSERT		25018
+#define	IDMN_ACTION_MSGBOX		25019
 
 // Action strings
 #define M_ACTION_SR             5000
@@ -93,6 +94,7 @@
 #define	M_ACTION_SVGP			5017
 
 #define	M_ACTION_ASSERT			5018
+#define	M_ACTION_MSGBOX			5019
 
 // Titles of action parameters
 #define M_ACT_RET				 5501
@@ -108,7 +110,7 @@
 #define M_OBJECT			     5507
 #define M_ITNAME			     5508
 
-#define M_ACT_FAILEDMSG		     5509
+#define M_ACT_MSG		         5509
 
 
 //	Conditions
@@ -197,6 +199,14 @@
 #define IDMN_EXPRESSION_EV		27020
 #define IDMN_EXPRESSION_CTB		27021
 #define IDMN_EXPRESSION_NEG		27022
+#define IDMN_EXPRESSION_AND		27023
+#define IDMN_EXPRESSION_OR		27024
+#define IDMN_EXPRESSION_XOR		27025
+
+#define IDMN_EXPRESSION_GV		27026
+#define IDMN_EXPRESSION_GOEV	27027
+#define IDMN_EXPRESSION_LV		27028
+#define IDMN_EXPRESSION_LOEV	27029
 
 // Expression strings
 #define M_EXPRESSION_RV			 7000
@@ -233,6 +243,14 @@
 #define M_EXPRESSION_EV			 7020
 #define M_EXPRESSION_CTB		 7021
 #define M_EXPRESSION_NEG		 7022
+#define M_EXPRESSION_AND		 7023
+#define M_EXPRESSION_OR			 7024
+#define M_EXPRESSION_XOR		 7025
+
+#define M_EXPRESSION_GV			 7026
+#define M_EXPRESSION_GOEV		 7027
+#define M_EXPRESSION_LV			 7028
+#define M_EXPRESSION_LOEV		 7029
 
 // Names of expression parameters
 #define M_EXP_PARAM				 7500

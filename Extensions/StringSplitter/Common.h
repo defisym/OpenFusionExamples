@@ -29,6 +29,7 @@
 
 // My headers
 #include	"Split.h"
+#include	"GeneralDefinition.h"
 #include	"Defination.h"
 
 // Specific to this cox

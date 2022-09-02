@@ -6,6 +6,7 @@
 #define Default_Str	_T("")
 
 #define StrEqu(X,Y) (wcscmp(X,Y) == 0)
+#define StrIEqu(X,Y) (_wcsicmp(X,Y) == 0)
 #define StrEmpty(X) StrEqu(X,Empty_Str)
 
 //You need "\\+" to escape +

@@ -3,6 +3,8 @@
 
 #define _FFMPEG
 
+#define ONMONITORCHANGE 13
+
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 

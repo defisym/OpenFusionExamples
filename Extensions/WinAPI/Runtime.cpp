@@ -143,6 +143,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pHwaSf_Video = nullptr;
 
+	rdPtr->bSecondFrame = false;
+	rdPtr->curMonitorHandle = NULL;
+	rdPtr->curMonitorWidth = 0;
+	rdPtr->curMonitorHeight = 0;
+
 	// No errors
 	return 0;
 }
@@ -292,6 +297,13 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	if (rdPtr->KeepIMEState&&(IMEState != (bool)ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle)))) {
 		IMEStateControl(rdPtr->MainWindowHandle,IMEState);
 	}
+
+	// Ë¢ÐÂÏÔÊ¾Æ÷×´Ì¬
+	if (rdPtr->bSecondFrame) {
+		RefreshMonitorState(rdPtr);
+	}
+
+	rdPtr->bSecondFrame = true;
 
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;

@@ -63,6 +63,7 @@
 #define M_ACTION_EF 		    	    5101
 #define M_ACTION_SAOT 		    	    5102
 #define M_ACTION_GVF 		    	    5103
+#define M_ACTION_RMS 		    	    5104
 #define PARA_ACTION_RUN_1               5511
 #define PARA_ACTION_RUN_2               5512
 #define PARA_ACTION_STOPBYNAME          5520
@@ -102,13 +103,16 @@
 #define M_CONDITION_IWF                 6034
 #define M_CONDITION_ICLIHP              6035
 #define M_CONDITION_OD                  6036
-#define PARA_CONDITION_OBJECT           6037
+#define M_CONDITION_IRIE                6037
+#define M_CONDITION_IAAT                6038
+#define M_CONDITION_OMC                 6039
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define PARA_CONDITION_OBJ              6511
 #define PARA_CONDITION_DIR              6512
 #define PARA_CONDITION_IAIR             6513
 #define PARA_CONDITION_CMP              6514
+#define PARA_CONDITION_OBJECT           6515
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
 #define M_EXPRESSION_GCLR_L             7020
@@ -144,6 +148,9 @@
 #define	M_EXPRESSION_GCLI			    7112
 #define	M_EXPRESSION_C2B			    7113
 #define	M_EXPRESSION_GVFP			    7114
+#define	M_EXPRESSION_GD 			    7115
+#define	M_EXPRESSION_GCMW 			    7116
+#define	M_EXPRESSION_GCMH 			    7117
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -204,6 +211,7 @@
 #define IDMN_ACTION_EF   		    	25431
 #define IDMN_ACTION_SAOT   		    	25432
 #define IDMN_ACTION_GVF   		    	25433
+#define IDMN_ACTION_RMS   		    	25434
 #define IDMN_CONDITION_INAP             26000
 #define IDMN_CONDITION_IML              26010
 #define IDMN_CONDITION_RKS              26020
@@ -215,6 +223,9 @@
 #define IDMN_CONDITION_ICLIHP           26035
 #define IDMN_CONDITION_OD               26036
 #define IDMN_CONDITION_IDHA_S           26037
+#define IDMN_CONDITION_IRIE             26038
+#define IDMN_CONDITION_IAAT             26039
+#define IDMN_CONDITION_OMC              26040
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020
@@ -248,6 +259,9 @@
 #define	IDMN_EXPRESSION_GCLI			27102
 #define	IDMN_EXPRESSION_C2B				27103
 #define	IDMN_EXPRESSION_GVFP			27104
+#define	IDMN_EXPRESSION_GD  			27105
+#define	IDMN_EXPRESSION_GCMW  			27106
+#define	IDMN_EXPRESSION_GCMH  			27107
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

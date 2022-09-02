@@ -345,6 +345,22 @@ inline BOOL GetTransparent(LPSURFACE pSf) {
 	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
 }
 
+inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
+	if (!IsHWA(pOldSf)) {
+		return pOldSf;
+	}
+
+	LPSURFACE pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
+
+	if (pOldSf->HasAlpha()) {
+		pMemSf->CreateAlpha();
+	}
+
+	pOldSf->Blit(*pMemSf);
+
+	return pMemSf;
+}
+
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
 	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
 }
@@ -355,6 +371,11 @@ inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
 	}
 
 	cSurface* hwa = CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_ROMTEXTURE);
+
+	if (Src->HasAlpha()) {
+		hwa->CreateAlpha();
+	}
+
 	Src->Blit(*hwa);
 
 	return hwa;
@@ -713,7 +734,7 @@ inline void GetMaxmiumDivide(int* divide) {
 }
 
 //Stack Blur
-inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
+inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	//获取参数
 	constexpr auto SB_MIN_RADIUS = 0;
 	constexpr auto SB_MAX_RADIUS = 254;
@@ -724,20 +745,17 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 	GetMaxmiumDivide(&divide);
 
 	//Dimensions
-	int owidth = img->GetWidth(), oheight = img->GetHeight();
+	int owidth = pSrc->GetWidth(), oheight = pSrc->GetHeight();
+	int depth = pSrc->GetDepth();
 	int width = (int)(owidth / scale);
 	int height = (int)(oheight / scale);
 
 	// 降采样
-	cSurface ResizedImg;
+	LPSURFACE img = pSrc;
 
 	if (!(scale == 1.0)) {
-		ResizedImg.Clone(*img);
-
-		delete img;
 		img = CreateSurface(24, width, height);
-
-		Stretch(&ResizedImg, img, Fast);
+		img->Clone(*pSrc, width, height);
 	}
 
 	//Lock buffer, get pitch etc.
@@ -925,12 +943,8 @@ inline void StackBlur(LPSURFACE img, int radius, float scale, int divide) {
 
 	//还原大小
 	if (!(scale == 1.0)) {
-		ResizedImg.Clone(*img);
-
+		pSrc->Clone(*img, owidth, oheight);
 		delete img;
-		img = CreateSurface(24, owidth, oheight);
-
-		Stretch(&ResizedImg, img, Fast);
 	}
 
 	return;
