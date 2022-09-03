@@ -76,11 +76,26 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->rHo.hoX = cobPtr->cobX;
 	rdPtr->rHo.hoY = cobPtr->cobY;
-	rdPtr->rHo.hoImgWidth = edPtr->swidth;
-	rdPtr->rHo.hoImgHeight = edPtr->sheight;
 
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
+
+	rdPtr->angle = 0;
+
+	rdPtr->xScale = 1.0;
+	rdPtr->yScale = 1.0;
+
+	rdPtr->hotSpotPos = edPtr->hotSpotPos;
+
+	int x = edPtr->hotSpotX;
+	int y = edPtr->hotSpotY;
+
+	UpdateHotSpot(rdPtr->hotSpotPos, rdPtr->swidth, rdPtr->sheight, x, y);
+
+	rdPtr->hotSpotX = x;
+	rdPtr->hotSpotY = y;
+
+	ChangeScale(rdPtr);
 
 	rdPtr->hWnd = rdPtr->rHo.hoAdRunHeader->rhHMainWin;
 	
@@ -107,19 +122,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->bVerticalAlignOffset = edPtr->bVerticalAlignOffset;
 
-	rdPtr->hotSpotPos= edPtr->hotSpotPos;
-
-	rdPtr->rHo.hoImgXSpot = edPtr->hotSpotX;
-	rdPtr->rHo.hoImgYSpot = edPtr->hotSpotY;
-
-	rdPtr->hotSpotX = edPtr->hotSpotX;
-	rdPtr->hotSpotY = edPtr->hotSpotY;
-
-	rdPtr->xScale = 1.0;
-	rdPtr->yScale = 1.0;
-
-	rdPtr->angle = 0;
-
 	rdPtr->reRender = true;
 
 	rdPtr->bStrChanged = true;
@@ -136,8 +138,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			, NULL);
 		rdPtr->pData->gdiInitialized = true;
 		rdPtr->pData->pFontCollection = new PrivateFontCollection;
-
-		//rdPtr->pData->pFontCollection->AddFontFile(L"F:\\DEV\\OpenFusionExamples\\Extensions\\NeoStr\\ToInstall\\Files\\Examples\\NeoStr\\font.ttf");
 	}else{
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}

@@ -123,7 +123,7 @@ private:
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 
-	Bitmap* pBitmap=nullptr;
+	Bitmap* pBitmap = nullptr;
 	PrivateFontCollection* pFontCollection = nullptr;
 #endif
 
@@ -316,7 +316,7 @@ public:
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);			
+			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 		}
 #endif
 		// add a default char to return default value when input text is empty
@@ -334,6 +334,9 @@ public:
 
 		delete this->pMemSf;
 		this->pMemSf = nullptr;
+
+		delete this->pBitmap;
+		this->pBitmap = nullptr;
 
 #ifdef _USE_HWA
 		delete this->pHwaSf;
@@ -355,11 +358,11 @@ public:
 	inline void EmbedFont(LPCWSTR pFontFile) {
 		this->pFontCollection->AddFontFile(pFontFile);
 		auto count = this->pFontCollection->GetFamilyCount();
-		
+
 		return;
 	}
 
-	inline static void EmbedFont(LPCWSTR pFontFile,PrivateFontCollection& fontCollection){
+	inline static void EmbedFont(LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {
 		fontCollection.AddFontFile(pFontFile);
 
 		return;
@@ -372,21 +375,21 @@ public:
 		}
 
 		int n = pFontCollection->GetFamilyCount();
-		
+
 		if (n == 0) {
 			return false;
 		}
 
-		FontFamily* ffs = new FontFamily[n];
+		FontFamily* ffs = new FontFamily [n];
 
 		int found;
 		pFontCollection->GetFamilies(n, ffs, &found);
-		
+
 		if (found == 0) {
 			return false;
 		}
 
-		wchar_t name[LF_FACESIZE]{ 0 };
+		wchar_t name [LF_FACESIZE] { 0 };
 
 		LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
 
@@ -402,10 +405,10 @@ public:
 			hasSuffixRegular = false;
 			//hasSuffixNormal = false;
 
-			auto hasName = [&](LANGID language = (LANGID)0U) {
+			auto hasName = [&] (LANGID language = (LANGID)0U) {
 				memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
-				ffs[i].GetFamilyName(name, language);
-				
+				ffs [i].GetFamilyName(name, language);
+
 				has |= (_wcsicmp(name, pFaceName) == 0);
 
 				if (has) {
@@ -626,7 +629,6 @@ public:
 		bool bNegRowSpace = nRowSpace < 0;
 
 		size_t notAtStartCharPos = -1;
-		bool bPunctationNewLine = false;
 		bool bPunctationSkip = false;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
@@ -666,7 +668,6 @@ public:
 
 				if (curWidth > rcWidth) {
 					if (NotAtStart(curChar)) {
-						bPunctationNewLine = true;
 						notAtStartCharPos = pChar;
 
 						if (NotAtStart(nextChar)) {
@@ -674,9 +675,9 @@ public:
 								pChar--;
 
 								auto pPreviousChar = pText + pChar;
-								auto PreviousChar = pPreviousChar[0];
+								auto PreviousChar = pPreviousChar [0];
 
-								auto previousCharSz = &pStrSizeArr[pChar];
+								auto previousCharSz = &pStrSizeArr [pChar];
 
 								curWidth -= charSz->width;
 
@@ -690,9 +691,9 @@ public:
 					else {
 						if (pChar != pCharStart) {
 							auto pPreviousChar = pText + pChar - 1;
-							auto PreviousChar = pPreviousChar[0];
+							auto PreviousChar = pPreviousChar [0];
 
-							auto previousCharSz = &pStrSizeArr[pChar - 1];
+							auto previousCharSz = &pStrSizeArr [pChar - 1];
 
 							if (NotAtEnd(PreviousChar)) {
 								pChar--;
@@ -705,21 +706,19 @@ public:
 						}
 
 						break;
-					}					
+					}
 				}
 
 				if (curChar == L'\r' && nextChar == L'\n') {
 					newLine = true;
 					//skipLine = (curWidth == 0);
 					skipLine = (pChar == pCharStart);
-					
-					if (bPunctationNewLine
-						// just follow
-						&& (notAtStartCharPos + 1) == pChar) {
+
+					if ((notAtStartCharPos + 1) == pChar) {
 						bPunctationSkip = true;
 					}
 
-					pChar += 2;					
+					pChar += 2;
 
 					break;
 				}
@@ -771,7 +770,6 @@ public:
 				totalHeight += (curHeight + nRowSpace);
 			}
 			else {
-				bPunctationNewLine = false;
 				bPunctationSkip = false;
 			}
 		}
@@ -786,7 +784,7 @@ public:
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width >> 1)
 			,startY + lastStrPos.y + (lastCharSize->height >> 1)
-			,maxWidth 
+			,maxWidth
 			,totalHeight - nRowSpace };
 
 		return lastCharPos;
@@ -802,7 +800,7 @@ public:
 		delete[] this->pCharPosArr;
 		this->pCharPosArr = nullptr;
 
-		pCharPosArr = new CharPos[pTextLen + 1];
+		pCharPosArr = new CharPos [pTextLen + 1];
 		memset(pCharPosArr, 0, sizeof(CharPos) * (pTextLen + 1));
 
 		rcWidth = pRc->right - pRc->left;
@@ -866,12 +864,12 @@ public:
 
 		auto bFound = FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection);
 
-//#ifdef _FONTEMBEDDEBUG
-//		if (!bFound) {
-//			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
-//		}
-//#endif // _FONTEMBEDDEBUG
-		
+		//#ifdef _FONTEMBEDDEBUG
+		//		if (!bFound) {
+		//			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
+		//		}
+		//#endif // _FONTEMBEDDEBUG
+
 		PrivateFontCollection local;
 
 		Font font(this->logFont.lfFaceName
@@ -879,20 +877,20 @@ public:
 			, GetFontStyle(this->logFont)
 			, Gdiplus::UnitWorld
 			, bFound ? this->pFontCollection
-				   : nullptr);
-			//, nullptr);
-			//, this->pFontCollection);
-			//, &local);
+			: nullptr);
+		//, nullptr);
+		//, this->pFontCollection);
+		//, &local);
 
-		//FontFamily fontFamily;
-		//auto bRet = font.IsAvailable();
-		//font.GetFamily(&fontFamily);
-		//
-		//auto pName = new WCHAR[256];
-		//memset(pName, 0, 256 * sizeof(WCHAR));
-		//fontFamily.GetFamilyName(pName);
+	//FontFamily fontFamily;
+	//auto bRet = font.IsAvailable();
+	//font.GetFamily(&fontFamily);
+	//
+	//auto pName = new WCHAR[256];
+	//memset(pName, 0, 256 * sizeof(WCHAR));
+	//fontFamily.GetFamilyName(pName);
 
-		//delete[] pName;
+	//delete[] pName;
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
@@ -947,14 +945,14 @@ public:
 			StrSize* charSz = nullptr;
 			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
 			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr[curStrPos.start].width / 8;
+			x -= pStrSizeArr [curStrPos.start].width / 8;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr[offset];
+				charSz = &pStrSizeArr [offset];
 
-				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+				pCharPosArr [offset] = CharPos { x + pStrSizeArr [curStrPos.start].width / 8
 											,this->startY + curStrPos.y,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
@@ -1140,7 +1138,7 @@ public:
 	}
 
 	inline CharPos GetCharPos(LPCWSTR pText, size_t pos) {
-		auto invalid = CharPos{ -1, -1, -1, -1 };
+		auto invalid = CharPos { -1, -1, -1, -1 };
 
 		if (pCharPosArr == nullptr) {
 			return invalid;
@@ -1156,7 +1154,7 @@ public:
 			return invalid;
 		}
 
-		return pCharPosArr[pos];
+		return pCharPosArr [pos];
 	}
 
 	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
