@@ -206,7 +206,9 @@ short WINAPI DLLExport Action_SetHotSpot(LPRDATA rdPtr, long param1, long param2
 	int x = (int)CNC_GetIntParameter(rdPtr);
 	int y = (int)CNC_GetIntParameter(rdPtr);
 
-	UpdateHotSpot(pos, rdPtr->swidth, rdPtr->sheight, x, y);
+	rdPtr->hotSpotPos = pos;
+
+	UpdateHotSpot(rdPtr->hotSpotPos, rdPtr->swidth, rdPtr->sheight, x, y);
 
 	rdPtr->hotSpotX = x;
 	rdPtr->hotSpotY = y;
