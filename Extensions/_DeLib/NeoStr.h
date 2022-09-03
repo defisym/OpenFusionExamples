@@ -161,6 +161,9 @@ private:
 	long totalWidth = 0;
 	long totalHeight = 0;
 
+	long realWidth = 0;
+	long realHeight = 0;
+
 	long startY = 0;
 
 	LPSURFACE pMemSf = nullptr;
@@ -239,9 +242,11 @@ private:
 			//remove offset to make exactly at the center
 			//https://docs.microsoft.com/en-us/windows/win32/gdi/string-widths-and-heights
 
-			auto verticalAlignOffset = bVerticalAlignOffset
-				? this->tm.tmInternalLeading + this->tm.tmExternalLeading
-				: 0;
+			//auto verticalAlignOffset = bVerticalAlignOffset
+			//	? this->tm.tmInternalLeading + this->tm.tmExternalLeading
+			//	: 0;
+
+			auto verticalAlignOffset = 0;
 
 			//return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
 			return ((rcHeight - (totalHeight - verticalAlignOffset)) >> 1);
@@ -810,6 +815,9 @@ public:
 		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
 		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
+		realWidth = width;
+		realHeight = height;
+
 		if (this->pMemSf == nullptr
 			|| this->pMemSf->GetWidth() != width
 			|| this->pMemSf->GetHeight() != height) {
@@ -945,6 +953,8 @@ public:
 			StrSize* charSz = nullptr;
 			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
 			int x = GetStartPosX(curStrPos.width, rcWidth);
+
+			//TODO
 			x -= pStrSizeArr [curStrPos.start].width / 8;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
@@ -952,8 +962,10 @@ public:
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr [offset];
 
-				pCharPosArr [offset] = CharPos { x + pStrSizeArr [curStrPos.start].width / 8
-											,this->startY + curStrPos.y,0,0 };
+				//TODO
+				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+											,this->startY + curStrPos.y
+											,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
 #ifdef _GDIPLUS	
@@ -1063,6 +1075,11 @@ public:
 
 		auto lineSz = sfCoef.pitch;
 
+		long firstX = 65535;
+		long lastX = 0;
+		long firstY = 65535;
+		long lastY = 0;
+
 		for (int y = 0; y < height; y++) {
 			auto pData = sfCoef.pData + y * sfCoef.pitch;
 			auto pBmp = pRawBitmap + (height - 1 - y) * bitmapData.Stride / 4;
@@ -1073,8 +1090,19 @@ public:
 				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
 				auto curAlpha = pRawBitmap + (height - 1 - y) * bitmapData.Stride / 4 + x;
 				pAlphaData [0] = (*curAlpha & 0xff000000) >> 24;
+
+				if (pAlphaData[0] == 255) {
+					firstX = min(firstX, x);
+					lastX = max(lastX, x);
+
+					firstY = min(firstY, y);
+					lastY = max(lastY, y);
+				}
 			}
 		}
+
+		realWidth = lastX - firstX;
+		realHeight = lastY - firstY;
 
 		//#ifdef _USE_HWA
 		//		ReleaseSfCoef(pHWASf, sfCoef);
@@ -1197,6 +1225,8 @@ public:
 #endif
 
 #ifdef _USE_HWA
+
+			this->startY = GetStartPosY(realHeight, rcHeight);
 
 			int xOffset = -this->borderOffsetX;
 			int yOffset = -this->borderOffsetY + this->startY;
