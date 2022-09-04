@@ -72,7 +72,14 @@ long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param
 
 short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
-	
+
+	Stat_Quit = 1;
+	while (true) {
+		if (Stat_QuitComplete) {
+			break;
+		}
+	}
+
 	delete rdPtr->pFFMpeg;
 	rdPtr->pFFMpeg = nullptr;
 
@@ -88,6 +95,9 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 		// TODO在开始播放时刷新
 		*rdPtr->pPreviousTimer = std::chrono::steady_clock::now();
+
+		//auto cur = rdPtr->pFFMpeg->get_volume();
+		//rdPtr->pFFMpeg->set_volume(0);
 
 		BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
 			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();

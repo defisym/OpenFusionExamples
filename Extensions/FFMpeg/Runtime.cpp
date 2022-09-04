@@ -175,6 +175,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		//if (duration >= rdPtr->pFFMpeg->get_timePerFrame()) {
 		//	*rdPtr->pPreviousTimer = now;
 			rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
+				InitSurface(rdPtr, width, height);
 				CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
 				});
 		//}

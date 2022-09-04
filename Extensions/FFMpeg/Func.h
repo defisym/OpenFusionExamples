@@ -20,6 +20,22 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	}
 }
 
+inline void InitSurface(LPRDATA rdPtr,const int width, const int height) {
+	if (rdPtr->pMemSf == nullptr) {
+		rdPtr->pMemSf = CreateSurface(24, width, height);
+
+		auto alphaSz = width * height;
+
+		auto pAlpha = new BYTE[alphaSz];
+		memset(pAlpha, 255, alphaSz);
+
+		rdPtr->pMemSf->SetAlpha(pAlpha, rdPtr->pMemSf->GetWidth());
+
+		delete[] pAlpha;
+		pAlpha = nullptr;
+	}
+}
+
 inline void CopyData(const unsigned char* pData, LPSURFACE pMemSf, bool bPm) {
 	auto sfCoef = GetSfCoef(pMemSf);
 
@@ -54,20 +70,7 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, blitCallBack callBack) {
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, [&] (const unsigned char* pData, const int width, const int height) {
-		if (rdPtr->pMemSf == nullptr) {
-			rdPtr->pMemSf = CreateSurface(24, width, height);
-
-			auto alphaSz = width * height;
-
-			auto pAlpha = new BYTE [alphaSz];
-			memset(pAlpha, 255, alphaSz);
-
-			rdPtr->pMemSf->SetAlpha(pAlpha, rdPtr->pMemSf->GetWidth());
-
-			delete[] pAlpha;
-			pAlpha = nullptr;
-		}
-
+		InitSurface(rdPtr, width, height);
 		CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
 
 		callBack(rdPtr->pMemSf);
