@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 // Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 
@@ -25,8 +25,10 @@ extern "C" {
 
 class FFMpeg;
 
+extern "C" {
 #include <SDL.h>
 #include <SDL_thread.h>
+}
 
 // SDL
 constexpr auto SDL_AUDIO_BUFFER_SIZE = 1024;
@@ -39,87 +41,87 @@ constexpr auto SDL_EXCEPTION_AUDIO = 0;
 
 static int quit = 0;
 
-//Êı¾İ°ü¶ÓÁĞ(Á´±í)½á¹¹Ìå
+//æ•°æ®åŒ…é˜Ÿåˆ—(é“¾è¡¨)ç»“æ„ä½“
 typedef struct PacketQueue {
-	AVPacketList* first_pkt, * last_pkt;	//¶ÓÁĞÊ×Î²½ÚµãÖ¸Õë
-	int nb_packets;							//¶ÓÁĞ³¤¶È
-	int size;								//±£´æ±àÂëÊı¾İµÄ»º´æ³¤¶È£¬size=packet->size
-	SDL_mutex* qlock;						//¶ÓÁĞ»¥³âÁ¿£¬±£»¤¶ÓÁĞÊı¾İ
-	SDL_cond* qready;						//¶ÓÁĞ¾ÍĞ÷Ìõ¼ş±äÁ¿
+	AVPacketList* first_pkt, * last_pkt;	//é˜Ÿåˆ—é¦–å°¾èŠ‚ç‚¹æŒ‡é’ˆ
+	int nb_packets;							//é˜Ÿåˆ—é•¿åº¦
+	int size;								//ä¿å­˜ç¼–ç æ•°æ®çš„ç¼“å­˜é•¿åº¦ï¼Œsize=packet->size
+	SDL_mutex* qlock;						//é˜Ÿåˆ—äº’æ–¥é‡ï¼Œä¿æŠ¤é˜Ÿåˆ—æ•°æ®
+	SDL_cond* qready;						//é˜Ÿåˆ—å°±ç»ªæ¡ä»¶å˜é‡
 } PacketQueue;
 
 static PacketQueue videoQueue;
 static PacketQueue audioQueue;
 
-//¶ÓÁĞ³õÊ¼»¯º¯Êı
+//é˜Ÿåˆ—åˆå§‹åŒ–å‡½æ•°
 inline void packet_queue_init(PacketQueue* q) {
-	memset(q, 0, sizeof(PacketQueue));//È«Áã³õÊ¼»¯¶ÓÁĞ½á¹¹Ìå¶ÔÏó
+	memset(q, 0, sizeof(PacketQueue));//å…¨é›¶åˆå§‹åŒ–é˜Ÿåˆ—ç»“æ„ä½“å¯¹è±¡
 
-	q->qlock = SDL_CreateMutex();//´´½¨»¥³âÁ¿¶ÔÏó
-	q->qready = SDL_CreateCond();//´´½¨Ìõ¼ş±äÁ¿¶ÔÏó
+	q->qlock = SDL_CreateMutex();//åˆ›å»ºäº’æ–¥é‡å¯¹è±¡
+	q->qready = SDL_CreateCond();//åˆ›å»ºæ¡ä»¶å˜é‡å¯¹è±¡
 }
 
-//Çå³ı¶ÓÁĞ»º´æ£¬ÊÍ·Å¶ÓÁĞÖĞËùÓĞ¶¯Ì¬·ÖÅäµÄÄÚ´æ
+//æ¸…é™¤é˜Ÿåˆ—ç¼“å­˜ï¼Œé‡Šæ”¾é˜Ÿåˆ—ä¸­æ‰€æœ‰åŠ¨æ€åˆ†é…çš„å†…å­˜
 inline void packet_queue_flush(PacketQueue* q) {
-	AVPacketList* pkt = nullptr;//¶ÓÁĞµ±Ç°½Úµã
-	AVPacketList* pkttmp = nullptr;//ÁÙÊ±½Úµã
+	AVPacketList* pkt = nullptr;//é˜Ÿåˆ—å½“å‰èŠ‚ç‚¹
+	AVPacketList* pkttmp = nullptr;//ä¸´æ—¶èŠ‚ç‚¹
 
-	SDL_LockMutex(q->qlock);//Ëø¶¨»¥³âÁ¿
+	SDL_LockMutex(q->qlock);//é”å®šäº’æ–¥é‡
 
-	for (pkt = q->first_pkt; pkt != NULL; pkt = pkttmp) {//±éÀú¶ÓÁĞËùÓĞ½Úµã
-		pkttmp = pkt->next;//¶ÓÁĞÍ·½ÚµãºóÒÆ
-		av_packet_unref(&pkt->pkt);//µ±Ç°½ÚµãÒıÓÃ¼ÆÊı-1
-		av_freep(&pkt);//ÊÍ·Åµ±Ç°½Úµã»º´æ
+	for (pkt = q->first_pkt; pkt != NULL; pkt = pkttmp) {//éå†é˜Ÿåˆ—æ‰€æœ‰èŠ‚ç‚¹
+		pkttmp = pkt->next;//é˜Ÿåˆ—å¤´èŠ‚ç‚¹åç§»
+		av_packet_unref(&pkt->pkt);//å½“å‰èŠ‚ç‚¹å¼•ç”¨è®¡æ•°-1
+		av_freep(&pkt);//é‡Šæ”¾å½“å‰èŠ‚ç‚¹ç¼“å­˜
 	}
 
-	q->last_pkt = NULL;//¶ÓÁĞÎ²½ÚµãÖ¸ÕëÖÃÁã
-	q->first_pkt = NULL;//¶ÓÁĞÍ·½ÚµãÖ¸ÕëÖÃÁã
-	q->nb_packets = 0;//¶ÓÁĞ³¤¶ÈÖÃÁã
-	q->size = 0;//¶ÓÁĞ±àÂëÊı¾İµÄ»º´æ³¤¶ÈÖÃÁã
+	q->last_pkt = NULL;//é˜Ÿåˆ—å°¾èŠ‚ç‚¹æŒ‡é’ˆç½®é›¶
+	q->first_pkt = NULL;//é˜Ÿåˆ—å¤´èŠ‚ç‚¹æŒ‡é’ˆç½®é›¶
+	q->nb_packets = 0;//é˜Ÿåˆ—é•¿åº¦ç½®é›¶
+	q->size = 0;//é˜Ÿåˆ—ç¼–ç æ•°æ®çš„ç¼“å­˜é•¿åº¦ç½®é›¶
 
-	SDL_UnlockMutex(q->qlock);//»¥³âÁ¿½âËø
+	SDL_UnlockMutex(q->qlock);//äº’æ–¥é‡è§£é”
 }
 
-//Ïò¶ÓÁĞÖĞ²åÈëÊı¾İ°ü
+//å‘é˜Ÿåˆ—ä¸­æ’å…¥æ•°æ®åŒ…
 inline int packet_queue_put(PacketQueue* q, AVPacket* pkt) {
-	/*-------×¼±¸¶ÓÁĞ(Á´±í)½Úµã¶ÔÏó------*/
-	AVPacketList* pktlist;//´´½¨Á´±í½Úµã¶ÔÏóÖ¸Õë
-	pktlist = (AVPacketList*)av_malloc(sizeof(AVPacketList));//ÔÚ¶ÑÉÏ´´½¨Á´±í½Úµã¶ÔÏó
+	/*-------å‡†å¤‡é˜Ÿåˆ—(é“¾è¡¨)èŠ‚ç‚¹å¯¹è±¡------*/
+	AVPacketList* pktlist;//åˆ›å»ºé“¾è¡¨èŠ‚ç‚¹å¯¹è±¡æŒ‡é’ˆ
+	pktlist = (AVPacketList*)av_malloc(sizeof(AVPacketList));//åœ¨å †ä¸Šåˆ›å»ºé“¾è¡¨èŠ‚ç‚¹å¯¹è±¡
 
-	if (!pktlist) {//¼ì²éÁ´±í½Úµã¶ÔÏóÊÇ·ñ´´½¨³É¹¦
+	if (!pktlist) {//æ£€æŸ¥é“¾è¡¨èŠ‚ç‚¹å¯¹è±¡æ˜¯å¦åˆ›å»ºæˆåŠŸ
 		return -1;
 	}
 
-	pktlist->pkt = *pkt;//½«ÊäÈëÊı¾İ°ü¸³Öµ¸øĞÂ½¨Á´±í½Úµã¶ÔÏóÖĞµÄÊı¾İ°ü¶ÔÏó
-	pktlist->next = NULL;//Á´±íºó¼ÌÖ¸ÕëÎª¿Õ
-	//	if (av_packet_ref(pkt, pkt)<0) {//Ôö¼Ópkt±àÂëÊı¾İµÄÒıÓÃ¼ÆÊı(ÊäÈë²ÎÊıÖĞµÄpktÓëĞÂ½¨Á´±í½ÚµãÖĞµÄpkt¹²ÏíÍ¬Ò»»º´æ¿Õ¼ä)
+	pktlist->pkt = *pkt;//å°†è¾“å…¥æ•°æ®åŒ…èµ‹å€¼ç»™æ–°å»ºé“¾è¡¨èŠ‚ç‚¹å¯¹è±¡ä¸­çš„æ•°æ®åŒ…å¯¹è±¡
+	pktlist->next = NULL;//é“¾è¡¨åç»§æŒ‡é’ˆä¸ºç©º
+	//	if (av_packet_ref(pkt, pkt)<0) {//å¢åŠ pktç¼–ç æ•°æ®çš„å¼•ç”¨è®¡æ•°(è¾“å…¥å‚æ•°ä¸­çš„pktä¸æ–°å»ºé“¾è¡¨èŠ‚ç‚¹ä¸­çš„pktå…±äº«åŒä¸€ç¼“å­˜ç©ºé—´)
 	//		return -1;
 	//	}
-	/*---------½«ĞÂ½¨½Úµã²åÈë¶ÓÁĞ-------*/
-	SDL_LockMutex(q->qlock);//¶ÓÁĞ»¥³âÁ¿¼ÓËø£¬±£»¤¶ÓÁĞÊı¾İ
+	/*---------å°†æ–°å»ºèŠ‚ç‚¹æ’å…¥é˜Ÿåˆ—-------*/
+	SDL_LockMutex(q->qlock);//é˜Ÿåˆ—äº’æ–¥é‡åŠ é”ï¼Œä¿æŠ¤é˜Ÿåˆ—æ•°æ®
 
-	if (!q->last_pkt) {//¼ì²é¶ÓÁĞÎ²½ÚµãÊÇ·ñ´æÔÚ(¼ì²é¶ÓÁĞÊÇ·ñÎª¿Õ)
-		q->first_pkt = pktlist;//Èô²»´æÔÚ(¶ÓÁĞÎ²¿Õ)£¬Ôò½«µ±Ç°½Úµã×÷¶ÓÁĞÎªÊ×½Úµã
+	if (!q->last_pkt) {//æ£€æŸ¥é˜Ÿåˆ—å°¾èŠ‚ç‚¹æ˜¯å¦å­˜åœ¨(æ£€æŸ¥é˜Ÿåˆ—æ˜¯å¦ä¸ºç©º)
+		q->first_pkt = pktlist;//è‹¥ä¸å­˜åœ¨(é˜Ÿåˆ—å°¾ç©º)ï¼Œåˆ™å°†å½“å‰èŠ‚ç‚¹ä½œé˜Ÿåˆ—ä¸ºé¦–èŠ‚ç‚¹
 	}
 	else {
-		q->last_pkt->next = pktlist;//ÈôÒÑ´æÔÚÎ²½Úµã£¬Ôò½«µ±Ç°½Úµã¹Òµ½Î²½ÚµãµÄºó¼ÌÖ¸ÕëÉÏ£¬²¢×÷ÎªĞÂµÄÎ²½Úµã
+		q->last_pkt->next = pktlist;//è‹¥å·²å­˜åœ¨å°¾èŠ‚ç‚¹ï¼Œåˆ™å°†å½“å‰èŠ‚ç‚¹æŒ‚åˆ°å°¾èŠ‚ç‚¹çš„åç»§æŒ‡é’ˆä¸Šï¼Œå¹¶ä½œä¸ºæ–°çš„å°¾èŠ‚ç‚¹
 	}
-	q->last_pkt = pktlist;//½«µ±Ç°½Úµã×÷ÎªĞÂµÄÎ²½Úµã
-	q->nb_packets++;//¶ÓÁĞ³¤¶È+1
-	q->size += pktlist->pkt.size;//¸üĞÂ¶ÓÁĞ±àÂëÊı¾İµÄ»º´æ³¤¶È
+	q->last_pkt = pktlist;//å°†å½“å‰èŠ‚ç‚¹ä½œä¸ºæ–°çš„å°¾èŠ‚ç‚¹
+	q->nb_packets++;//é˜Ÿåˆ—é•¿åº¦+1
+	q->size += pktlist->pkt.size;//æ›´æ–°é˜Ÿåˆ—ç¼–ç æ•°æ®çš„ç¼“å­˜é•¿åº¦
 
-	SDL_CondSignal(q->qready);//¸øµÈ´ıÏß³Ì·¢³öÏûÏ¢£¬Í¨Öª¶ÓÁĞÒÑ¾ÍĞ÷
-	SDL_UnlockMutex(q->qlock);//ÊÍ·Å»¥³âÁ¿
+	SDL_CondSignal(q->qready);//ç»™ç­‰å¾…çº¿ç¨‹å‘å‡ºæ¶ˆæ¯ï¼Œé€šçŸ¥é˜Ÿåˆ—å·²å°±ç»ª
+	SDL_UnlockMutex(q->qlock);//é‡Šæ”¾äº’æ–¥é‡
 
 	return 0;
 }
 
-//´Ó¶ÓÁĞÖĞÌáÈ¡Êı¾İ°ü£¬²¢½«ÌáÈ¡µÄÊı¾İ°ü³ö¶ÓÁĞ
+//ä»é˜Ÿåˆ—ä¸­æå–æ•°æ®åŒ…ï¼Œå¹¶å°†æå–çš„æ•°æ®åŒ…å‡ºé˜Ÿåˆ—
 inline int packet_queue_get(PacketQueue* q, AVPacket* pkt, int block) {
-	AVPacketList* pktlist;//ÁÙÊ±Á´±í½Úµã¶ÔÏóÖ¸Õë
-	int ret = 0;//²Ù×÷½á¹û
+	AVPacketList* pktlist;//ä¸´æ—¶é“¾è¡¨èŠ‚ç‚¹å¯¹è±¡æŒ‡é’ˆ
+	int ret = 0;//æ“ä½œç»“æœ
 
-	SDL_LockMutex(q->qlock);//¶ÓÁĞ»¥³âÁ¿¼ÓËø£¬±£»¤¶ÓÁĞÊı¾İ
+	SDL_LockMutex(q->qlock);//é˜Ÿåˆ—äº’æ–¥é‡åŠ é”ï¼Œä¿æŠ¤é˜Ÿåˆ—æ•°æ®
 
 	for (;;) {
 		if (quit) {
@@ -128,22 +130,22 @@ inline int packet_queue_get(PacketQueue* q, AVPacket* pkt, int block) {
 			break;
 		}
 
-		pktlist = q->first_pkt;//´«µİ½«¶ÓÁĞÊ×¸öÊı¾İ°üÖ¸Õë
+		pktlist = q->first_pkt;//ä¼ é€’å°†é˜Ÿåˆ—é¦–ä¸ªæ•°æ®åŒ…æŒ‡é’ˆ
 
-		if (pktlist) {//¼ì²éÊı¾İ°üÊÇ·ñÎª¿Õ(¶ÓÁĞÊÇ·ñÓĞÊı¾İ)
-			q->first_pkt = pktlist->next;//¶ÓÁĞÊ×½ÚµãÖ¸ÕëºóÒÆ
+		if (pktlist) {//æ£€æŸ¥æ•°æ®åŒ…æ˜¯å¦ä¸ºç©º(é˜Ÿåˆ—æ˜¯å¦æœ‰æ•°æ®)
+			q->first_pkt = pktlist->next;//é˜Ÿåˆ—é¦–èŠ‚ç‚¹æŒ‡é’ˆåç§»
 
-			if (!q->first_pkt) {//¼ì²éÊ×½ÚµãµÄºó¼Ì½ÚµãÊÇ·ñ´æÔÚ
-				q->last_pkt = NULL;//Èô²»´æÔÚ£¬Ôò½«Î²½ÚµãÖ¸ÕëÖÃ¿Õ
+			if (!q->first_pkt) {//æ£€æŸ¥é¦–èŠ‚ç‚¹çš„åç»§èŠ‚ç‚¹æ˜¯å¦å­˜åœ¨
+				q->last_pkt = NULL;//è‹¥ä¸å­˜åœ¨ï¼Œåˆ™å°†å°¾èŠ‚ç‚¹æŒ‡é’ˆç½®ç©º
 			}
 
-			q->nb_packets--;//¶ÓÁĞ³¤¶È-1
-			q->size -= pktlist->pkt.size;//¸üĞÂ¶ÓÁĞ±àÂëÊı¾İµÄ»º´æ³¤¶È
-			*pkt = pktlist->pkt;//½«¶ÓÁĞÊ×½ÚµãÊı¾İ·µ»Ø
+			q->nb_packets--;//é˜Ÿåˆ—é•¿åº¦-1
+			q->size -= pktlist->pkt.size;//æ›´æ–°é˜Ÿåˆ—ç¼–ç æ•°æ®çš„ç¼“å­˜é•¿åº¦
+			*pkt = pktlist->pkt;//å°†é˜Ÿåˆ—é¦–èŠ‚ç‚¹æ•°æ®è¿”å›
 
-			av_free(pktlist);//Çå¿ÕÁÙÊ±½ÚµãÊı¾İ(Çå¿ÕÊ×½ÚµãÊı¾İ£¬Ê×½Úµã³ö¶ÓÁĞ)
+			av_free(pktlist);//æ¸…ç©ºä¸´æ—¶èŠ‚ç‚¹æ•°æ®(æ¸…ç©ºé¦–èŠ‚ç‚¹æ•°æ®ï¼Œé¦–èŠ‚ç‚¹å‡ºé˜Ÿåˆ—)
 
-			ret = 1;//²Ù×÷³É¹¦
+			ret = 1;//æ“ä½œæˆåŠŸ
 
 			break;
 		}
@@ -153,31 +155,31 @@ inline int packet_queue_get(PacketQueue* q, AVPacket* pkt, int block) {
 			break;
 		}
 		else {
-			//¶ÓÁĞ´¦ÓÚÎ´¾ÍĞ÷×´Ì¬£¬´ËÊ±Í¨¹ıSDL_CondWaitº¯ÊıµÈ´ıqready¾ÍĞ÷ĞÅºÅ£¬²¢ÔİÊ±¶Ô»¥³âÁ¿½âËø
+			//é˜Ÿåˆ—å¤„äºæœªå°±ç»ªçŠ¶æ€ï¼Œæ­¤æ—¶é€šè¿‡SDL_CondWaitå‡½æ•°ç­‰å¾…qreadyå°±ç»ªä¿¡å·ï¼Œå¹¶æš‚æ—¶å¯¹äº’æ–¥é‡è§£é”
 			/*---------------------
-			 * µÈ´ı¶ÓÁĞ¾ÍĞ÷ĞÅºÅqready£¬²¢¶Ô»¥³âÁ¿ÔİÊ±½âËø
-			 * ´ËÊ±Ïß³Ì´¦ÓÚ×èÈû×´Ì¬£¬²¢ÖÃÓÚµÈ´ıÌõ¼ş¾ÍĞ÷µÄÏß³ÌÁĞ±íÉÏ
-			 * Ê¹µÃ¸ÃÏß³ÌÖ»ÔÚÁÙ½çÇø×ÊÔ´¾ÍĞ÷ºó²Å±»»½ĞÑ£¬¶ø²»ÖÁÓÚÏß³Ì±»Æµ·±ÇĞ»»
-			 * ¸Ãº¯Êı·µ»ØÊ±£¬»¥³âÁ¿ÔÙ´Î±»Ëø×¡£¬²¢Ö´ĞĞºóĞø²Ù×÷
+			 * ç­‰å¾…é˜Ÿåˆ—å°±ç»ªä¿¡å·qreadyï¼Œå¹¶å¯¹äº’æ–¥é‡æš‚æ—¶è§£é”
+			 * æ­¤æ—¶çº¿ç¨‹å¤„äºé˜»å¡çŠ¶æ€ï¼Œå¹¶ç½®äºç­‰å¾…æ¡ä»¶å°±ç»ªçš„çº¿ç¨‹åˆ—è¡¨ä¸Š
+			 * ä½¿å¾—è¯¥çº¿ç¨‹åªåœ¨ä¸´ç•ŒåŒºèµ„æºå°±ç»ªåæ‰è¢«å”¤é†’ï¼Œè€Œä¸è‡³äºçº¿ç¨‹è¢«é¢‘ç¹åˆ‡æ¢
+			 * è¯¥å‡½æ•°è¿”å›æ—¶ï¼Œäº’æ–¥é‡å†æ¬¡è¢«é”ä½ï¼Œå¹¶æ‰§è¡Œåç»­æ“ä½œ
 			 --------------------*/
-			SDL_CondWait(q->qready, q->qlock);//ÔİÊ±½âËø»¥³âÁ¿²¢½«×Ô¼º×èÈû£¬µÈ´ıÁÙ½çÇø×ÊÔ´¾ÍĞ÷(µÈ´ıSDL_CondSignal·¢³öÁÙ½çÇø×ÊÔ´¾ÍĞ÷µÄĞÅºÅ)
+			SDL_CondWait(q->qready, q->qlock);//æš‚æ—¶è§£é”äº’æ–¥é‡å¹¶å°†è‡ªå·±é˜»å¡ï¼Œç­‰å¾…ä¸´ç•ŒåŒºèµ„æºå°±ç»ª(ç­‰å¾…SDL_CondSignalå‘å‡ºä¸´ç•ŒåŒºèµ„æºå°±ç»ªçš„ä¿¡å·)
 		}
 	}
 
-	SDL_UnlockMutex(q->qlock);//ÊÍ·Å»¥³âÁ¿
+	SDL_UnlockMutex(q->qlock);//é‡Šæ”¾äº’æ–¥é‡
 
 	return ret;
 }
 
 /*------Audio Callback-------
- * ÒôÆµÊä³ö»Øµ÷º¯Êı£¬sdlÍ¨¹ı¸Ã»Øµ÷º¯Êı½«½âÂëºóµÄpcmÊı¾İËÍÈëÉù¿¨²¥·Å,
- * sdlÍ¨³£Ò»´Î»á×¼±¸Ò»×é»º´æpcmÊı¾İ£¬Í¨¹ı¸Ã»Øµ÷ËÍÈëÉù¿¨£¬Éù¿¨¸ù¾İÒôÆµptsÒÀ´Î²¥·ÅpcmÊı¾İ
- * ´ıËÍÈë»º´æµÄpcmÊı¾İÍê³É²¥·Åºó£¬ÔÙÔØÈëÒ»×éĞÂµÄpcm»º´æÊı¾İ(Ã¿´ÎÒôÆµÊä³ö»º´æÎª¿ÕÊ±£¬sdl¾Íµ÷ÓÃ´Ëº¯ÊıÌî³äÒôÆµÊä³ö»º´æ£¬²¢ËÍÈëÉù¿¨²¥·Å)
+ * éŸ³é¢‘è¾“å‡ºå›è°ƒå‡½æ•°ï¼Œsdlé€šè¿‡è¯¥å›è°ƒå‡½æ•°å°†è§£ç åçš„pcmæ•°æ®é€å…¥å£°å¡æ’­æ”¾,
+ * sdlé€šå¸¸ä¸€æ¬¡ä¼šå‡†å¤‡ä¸€ç»„ç¼“å­˜pcmæ•°æ®ï¼Œé€šè¿‡è¯¥å›è°ƒé€å…¥å£°å¡ï¼Œå£°å¡æ ¹æ®éŸ³é¢‘ptsä¾æ¬¡æ’­æ”¾pcmæ•°æ®
+ * å¾…é€å…¥ç¼“å­˜çš„pcmæ•°æ®å®Œæˆæ’­æ”¾åï¼Œå†è½½å…¥ä¸€ç»„æ–°çš„pcmç¼“å­˜æ•°æ®(æ¯æ¬¡éŸ³é¢‘è¾“å‡ºç¼“å­˜ä¸ºç©ºæ—¶ï¼Œsdlå°±è°ƒç”¨æ­¤å‡½æ•°å¡«å……éŸ³é¢‘è¾“å‡ºç¼“å­˜ï¼Œå¹¶é€å…¥å£°å¡æ’­æ”¾)
  * When we begin playing audio, SDL will continually call this callback function
  * and ask it to fill the audio buffer with a certain number of bytes
  * The audio function callback takes the following parameters:
- * stream: A pointer to the audio buffer to be filled£¬Êä³öÒôÆµÊı¾İµ½Éù¿¨»º´æ
- * len: The length (in bytes) of the audio buffer,»º´æ³¤¶Èwanted_spec.samples=SDL_AUDIO_BUFFER_SIZE(1024)
+ * stream: A pointer to the audio buffer to be filledï¼Œè¾“å‡ºéŸ³é¢‘æ•°æ®åˆ°å£°å¡ç¼“å­˜
+ * len: The length (in bytes) of the audio buffer,ç¼“å­˜é•¿åº¦wanted_spec.samples=SDL_AUDIO_BUFFER_SIZE(1024)
  --------------------------*/
 inline void audio_callback(void* userdata, Uint8* stream, int len);
 
@@ -188,6 +190,8 @@ constexpr auto FFMpegException_InitFailed = -1;
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 
 using Uint8 = unsigned char;
+
+#define _GET_AUDIO_BYLOOP
 
 class FFMpeg {
 private:
@@ -221,8 +225,8 @@ private:
 	//int audio_pkt_size;
 	//int audio_hw_buf_size;
 
-	SDL_AudioSpec spec;
-	SDL_AudioSpec wanted_spec;
+	SDL_AudioSpec spec = { 0 };
+	SDL_AudioSpec wanted_spec = { 0 };
 
 	SwsContext* swsContext = nullptr;
 
@@ -267,6 +271,7 @@ private:
 				}
 			}
 
+#ifdef _GET_AUDIO_BYLOOP
 			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
 				if (audio_stream_index == -1) {
 					audio_stream_index = i;
@@ -274,6 +279,7 @@ private:
 					pACodecParameters = pLocalCodecParameters;
 				}
 			}
+#endif
 		}
 
 		pVCodecContext = avcodec_alloc_context3(pVCodec);
@@ -294,6 +300,17 @@ private:
 		swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height, pVCodecContext->pix_fmt,
 			pVCodecContext->width, pVCodecContext->height, AV_PIX_FMT_BGR24
 			, NULL, NULL, NULL, NULL);
+
+#ifndef _GET_AUDIO_BYLOOP
+		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
+
+		if (audio_stream_index < 0){
+			throw FFMpegException_InitFailed;
+
+		}
+
+		pACodecParameters = pFormatContext->streams[audio_stream_index]->codecpar;
+#endif
 
 		pACodecContext = avcodec_alloc_context3(pACodec);
 		if (!pACodecContext) {
@@ -345,18 +362,19 @@ private:
 		totalTimeInMs = totalTime * 1000;
 
 		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
+		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
-		wanted_spec.freq = pACodecContext->sample_rate;//²ÉÑùÆµÂÊ DSP frequency -- samples per second
-		wanted_spec.format = AUDIO_S16SYS;//²ÉÑù¸ñÊ½ Audio data format
-		wanted_spec.channels = pACodecContext->channels;//ÉùµÀÊı Number of channels: 1 mono, 2 stereo
-		wanted_spec.silence = 0;//ÎŞÊä³öÊ±ÊÇ·ñ¾²Òô
-		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;//Ä¬ÈÏÃ¿´Î¶ÁÒôÆµ»º´æµÄ´óĞ¡£¬ÍÆ¼öÖµÎª 512~8192£¬ffplayÊ¹ÓÃµÄÊÇ1024 specifies a unit of audio data refers to the size of the audio buffer in sample frames
+		wanted_spec.freq = pACodecContext->sample_rate;//é‡‡æ ·é¢‘ç‡ DSP frequency -- samples per second
+		wanted_spec.format = AUDIO_S16SYS;//é‡‡æ ·æ ¼å¼ Audio data format
+		wanted_spec.channels = pACodecContext->channels;//å£°é“æ•° Number of channels: 1 mono, 2 stereo
+		wanted_spec.silence = 0;//æ— è¾“å‡ºæ—¶æ˜¯å¦é™éŸ³
+		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;//é»˜è®¤æ¯æ¬¡è¯»éŸ³é¢‘ç¼“å­˜çš„å¤§å°ï¼Œæ¨èå€¼ä¸º 512~8192ï¼Œffplayä½¿ç”¨çš„æ˜¯1024 specifies a unit of audio data refers to the size of the audio buffer in sample frames
+		//wanted_spec.samples = pACodecContext->frame_size;
 
-		wanted_spec.callback = audio_callback;//ÉèÖÃÈ¡ÒôÆµÊı¾İµÄ»Øµ÷½Ó¿Úº¯Êı the function to call when the audio device needs more data
-		//wanted_spec.userdata = (void*)pACodecContext;//´«µİÓÃ»§Êı¾İ
-		wanted_spec.userdata = (void*)this;//´«µİÓÃ»§Êı¾İ
+		wanted_spec.callback = audio_callback;//è®¾ç½®å–éŸ³é¢‘æ•°æ®çš„å›è°ƒæ¥å£å‡½æ•° the function to call when the audio device needs more data
+		wanted_spec.userdata = (void*)this;//ä¼ é€’ç”¨æˆ·æ•°æ®
 
-		if (SDL_OpenAudio(&wanted_spec, &spec) < 0) {
+		if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
 			auto error = SDL_GetError();
 
 			throw SDL_EXCEPTION_AUDIO;
@@ -489,7 +507,9 @@ private:
 			return -1;
 		}
 
-		// ÉèÖÃÍ¨µÀÊı»òchannel_layout
+		int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
+
+		// è®¾ç½®é€šé“æ•°æˆ–channel_layout
 		if (pFrame->channels > 0 && pFrame->channel_layout == 0) {
 			pFrame->channel_layout = av_get_default_channel_layout(pFrame->channels);
 		}
@@ -500,7 +520,7 @@ private:
 		AVSampleFormat dst_format = AV_SAMPLE_FMT_S16;//av_get_packed_sample_fmt((AVSampleFormat)frame->format);
 		Uint64 dst_layout = av_get_default_channel_layout(pFrame->channels);
 
-		// ÉèÖÃ×ª»»²ÎÊı
+		// è®¾ç½®è½¬æ¢å‚æ•°
 		swr_ctx = swr_alloc_set_opts(nullptr, dst_layout, dst_format, pFrame->sample_rate,
 			pFrame->channel_layout, (AVSampleFormat)pFrame->format, pFrame->sample_rate, 0, nullptr);
 
@@ -508,9 +528,10 @@ private:
 			return -1;
 		}
 
-		// ¼ÆËã×ª»»ºóµÄsample¸öÊı a * b / c
+		// è®¡ç®—è½¬æ¢åçš„sampleä¸ªæ•° a * b / c
 		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swr_ctx, pFrame->sample_rate) + pFrame->nb_samples, pFrame->sample_rate, pFrame->sample_rate, AVRounding(1));
-		// ×ª»»£¬·µ»ØÖµÎª×ª»»ºóµÄsample¸öÊı
+
+		// è½¬æ¢ï¼Œè¿”å›å€¼ä¸ºè½¬æ¢åçš„sampleä¸ªæ•°
 		int nb = swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t**)pFrame->data, pFrame->nb_samples);
 		data_size = pFrame->channels * nb * av_get_bytes_per_sample(dst_format);
 
@@ -521,29 +542,29 @@ private:
 	}
 
 	/*---------------------------
-	 * ¸üĞÂÄÚ²¿ÊÓÆµ²¥·Å¼ÆÊ±Æ÷(¼ÇÂ¼ÊÓÆµÒÑ¾­²¥Ê±¼ä(video_clock)£©
-	 * @is£ºÈ«¾Ö×´Ì¬²ÎÊı¼¯
-	 * @src_frame£ºµ±Ç°(ÊäÈëµÄ)(´ı¸üĞÂµÄ)Í¼ÏñÖ¡¶ÔÏó
-	 * @pts£ºµ±Ç°Í¼ÏñÖ¡µÄÏÔÊ¾Ê±¼ä´Á
+	 * æ›´æ–°å†…éƒ¨è§†é¢‘æ’­æ”¾è®¡æ—¶å™¨(è®°å½•è§†é¢‘å·²ç»æ’­æ—¶é—´(video_clock)ï¼‰
+	 * @isï¼šå…¨å±€çŠ¶æ€å‚æ•°é›†
+	 * @src_frameï¼šå½“å‰(è¾“å…¥çš„)(å¾…æ›´æ–°çš„)å›¾åƒå¸§å¯¹è±¡
+	 * @ptsï¼šå½“å‰å›¾åƒå¸§çš„æ˜¾ç¤ºæ—¶é—´æˆ³
 	 ---------------------------*/
 	inline double synchronize_video(AVFrame* src_frame, double pts) {
-		/*----------¼ì²éÏÔÊ¾Ê±¼ä´Á----------*/
-		if (pts != 0) {//¼ì²éÏÔÊ¾Ê±¼ä´ÁÊÇ·ñÓĞĞ§
+		/*----------æ£€æŸ¥æ˜¾ç¤ºæ—¶é—´æˆ³----------*/
+		if (pts != 0) {//æ£€æŸ¥æ˜¾ç¤ºæ—¶é—´æˆ³æ˜¯å¦æœ‰æ•ˆ
 			// If we have pts, set video clock to it.
-			videoClock = pts;//ÓÃÏÔÊ¾Ê±¼ä´Á¸üĞÂÒÑ²¥·ÅÊ±¼ä
+			videoClock = pts;//ç”¨æ˜¾ç¤ºæ—¶é—´æˆ³æ›´æ–°å·²æ’­æ”¾æ—¶é—´
 		}
-		else {//Èô»ñÈ¡²»µ½ÏÔÊ¾Ê±¼ä´Á
+		else {//è‹¥è·å–ä¸åˆ°æ˜¾ç¤ºæ—¶é—´æˆ³
 			// If we aren't given a pts, set it to the clock.
-			pts = videoClock;//ÓÃÒÑ²¥·ÅÊ±¼ä¸üĞÂÏÔÊ¾Ê±¼ä´Á
+			pts = videoClock;//ç”¨å·²æ’­æ”¾æ—¶é—´æ›´æ–°æ˜¾ç¤ºæ—¶é—´æˆ³
 		}
-		/*--------¸üĞÂÊÓÆµÒÑ¾­²¥Ê±¼ä--------*/
-			// Update the video clock£¬Èô¸ÃÖ¡ÒªÖØ¸´ÏÔÊ¾(È¡¾öÓÚrepeat_pict)£¬ÔòÈ«¾ÖÊÓÆµ²¥·ÅÊ±Ğòvideo_clockÓ¦¼ÓÉÏÖØ¸´ÏÔÊ¾µÄÊıÁ¿*Ö¡ÂÊ
-		double frame_delay = av_q2d(pVCodecContext->time_base);//¸ÃÖ¡ÏÔÊ¾Íê½«Òª»¨·ÑµÄÊ±¼ä
-		// If we are repeating a frame, adjust clock accordingly,Èô´æÔÚÖØ¸´Ö¡£¬ÔòÔÚÕı³£²¥·ÅµÄÇ°ºóÁ½Ö¡Í¼Ïñ¼ä°²ÅÅäÖÈ¾ÖØ¸´Ö¡
-		frame_delay += src_frame->repeat_pict * (frame_delay * 0.5);//¼ÆËãäÖÈ¾ÖØ¸´Ö¡µÄÊ±Öµ(ÀàËÆÓÚÒô·ûÊ±Öµ)
-		videoClock += frame_delay;//¸üĞÂÊÓÆµ²¥·ÅÊ±Ğò
+		/*--------æ›´æ–°è§†é¢‘å·²ç»æ’­æ—¶é—´--------*/
+			// Update the video clockï¼Œè‹¥è¯¥å¸§è¦é‡å¤æ˜¾ç¤º(å–å†³äºrepeat_pict)ï¼Œåˆ™å…¨å±€è§†é¢‘æ’­æ”¾æ—¶åºvideo_clockåº”åŠ ä¸Šé‡å¤æ˜¾ç¤ºçš„æ•°é‡*å¸§ç‡
+		double frame_delay = av_q2d(pVCodecContext->time_base);//è¯¥å¸§æ˜¾ç¤ºå®Œå°†è¦èŠ±è´¹çš„æ—¶é—´
+		// If we are repeating a frame, adjust clock accordingly,è‹¥å­˜åœ¨é‡å¤å¸§ï¼Œåˆ™åœ¨æ­£å¸¸æ’­æ”¾çš„å‰åä¸¤å¸§å›¾åƒé—´å®‰æ’æ¸²æŸ“é‡å¤å¸§
+		frame_delay += src_frame->repeat_pict * (frame_delay * 0.5);//è®¡ç®—æ¸²æŸ“é‡å¤å¸§çš„æ—¶å€¼(ç±»ä¼¼äºéŸ³ç¬¦æ—¶å€¼)
+		videoClock += frame_delay;//æ›´æ–°è§†é¢‘æ’­æ”¾æ—¶åº
 
-		return pts;//´ËÊ±·µ»ØµÄÖµ¼´ÎªÏÂÒ»Ö¡½«Òª¿ªÊ¼ÏÔÊ¾µÄÊ±¼ä´Á
+		return pts;//æ­¤æ—¶è¿”å›çš„å€¼å³ä¸ºä¸‹ä¸€å¸§å°†è¦å¼€å§‹æ˜¾ç¤ºçš„æ—¶é—´æˆ³
 	}
 
 public:
@@ -632,53 +653,55 @@ public:
 	}
 
 	inline int decode_audioFrame(Uint8* stream, int len) {
-		//Ã¿´ÎĞ´ÈëstreamµÄÊı¾İ³¤¶È
+		//æ¯æ¬¡å†™å…¥streamçš„æ•°æ®é•¿åº¦
 		int wt_stream_len = 0;
-		//Ã¿½âÂëºóµÄÊı¾İ³¤¶È
+		//æ¯è§£ç åçš„æ•°æ®é•¿åº¦
 		int audio_size = 0;
 
-		//static uint8_t audio_buf[(MAX_AUDIO_FRAME_SIZE * 3) / 2];//±£´æ½âÂëÒ»¸öpacketºóµÄ¶àÖ¡Ô­Ê¼ÒôÆµÊı¾İ
-		static unsigned int audio_buf_size = 0;//½âÂëºóµÄ¶àÖ¡ÒôÆµÊı¾İ³¤¶È
-		static unsigned int audio_buf_index = 0;//ÀÛ¼ÆĞ´ÈëstreamµÄ³¤¶È
+		//static uint8_t audio_buf[(MAX_AUDIO_FRAME_SIZE * 3) / 2];//ä¿å­˜è§£ç ä¸€ä¸ªpacketåçš„å¤šå¸§åŸå§‹éŸ³é¢‘æ•°æ®
+		static unsigned int audio_buf_size = 0;//è§£ç åçš„å¤šå¸§éŸ³é¢‘æ•°æ®é•¿åº¦
+		static unsigned int audio_buf_index = 0;//ç´¯è®¡å†™å…¥streamçš„é•¿åº¦
 
 		SDL_memset(stream, 0, len);
 
-		//¼ì²éÒôÆµ»º´æµÄÊ£Óà³¤¶È
+		//æ£€æŸ¥éŸ³é¢‘ç¼“å­˜çš„å‰©ä½™é•¿åº¦
 		while (len > 0) {
-			//¼ì²éÊÇ·ñĞèÒªÖ´ĞĞ½âÂë²Ù×÷
+			//æ£€æŸ¥æ˜¯å¦éœ€è¦æ‰§è¡Œè§£ç æ“ä½œ
 			if (audio_buf_index >= audio_buf_size) {
 				// We have already sent all our data; get more
-				// ´Ó»º´æ¶ÓÁĞÖĞÌáÈ¡Êı¾İ°ü¡¢½âÂë£¬²¢·µ»Ø½âÂëºóµÄÊı¾İ³¤¶È£¬audio_buf»º´æÖĞ¿ÉÄÜ°üº¬¶àÖ¡½âÂëºóµÄÒôÆµÊı¾İ
+				// ä»ç¼“å­˜é˜Ÿåˆ—ä¸­æå–æ•°æ®åŒ…ã€è§£ç ï¼Œå¹¶è¿”å›è§£ç åçš„æ•°æ®é•¿åº¦ï¼Œaudio_bufç¼“å­˜ä¸­å¯èƒ½åŒ…å«å¤šå¸§è§£ç åçš„éŸ³é¢‘æ•°æ®
 				audio_size = decode_apacket();
 
 				if (quit) {
 					return -1;
 				}
 
-				if (audio_size < 0) {//¼ì²é½âÂë²Ù×÷ÊÇ·ñ³É¹¦
+				//æ£€æŸ¥è§£ç æ“ä½œæ˜¯å¦æˆåŠŸ
+				if (audio_size < 0) {
 					// If error, output silence.
-					audio_buf_size = 1024; // arbitrary?
-					memset(audio_buf, 0, audio_buf_size);//È«ÁãÖØÖÃ»º³åÇø
+					audio_buf_size = SDL_AUDIO_BUFFER_SIZE; // arbitrary?
+					memset(audio_buf, 0, audio_buf_size);//å…¨é›¶é‡ç½®ç¼“å†²åŒº
 				}
 				else {
-					//TODO
-					audio_buf_size = audio_size;//·µ»ØpacketÖĞ°üº¬µÄÔ­Ê¼ÒôÆµÊı¾İ³¤¶È(¶àÖ¡)
+					//è¿”å›packetä¸­åŒ…å«çš„åŸå§‹éŸ³é¢‘æ•°æ®é•¿åº¦(å¤šå¸§)
+					audio_buf_size = audio_size;
 				}
-				audio_buf_index = 0;//³õÊ¼»¯ÀÛ¼ÆĞ´Èë»º´æ³¤¶È
+
+				audio_buf_index = 0;//åˆå§‹åŒ–ç´¯è®¡å†™å…¥ç¼“å­˜é•¿åº¦
 			}
 
-			wt_stream_len = audio_buf_size - audio_buf_index;//¼ÆËã½âÂë»º´æÊ£Óà³¤¶È
+			wt_stream_len = audio_buf_size - audio_buf_index;//è®¡ç®—è§£ç ç¼“å­˜å‰©ä½™é•¿åº¦
 
-			if (wt_stream_len > len) {//¼ì²éÃ¿´ÎĞ´Èë»º´æµÄÊı¾İ³¤¶ÈÊÇ·ñ³¬¹ıÖ¸¶¨³¤¶È(1024)
-				wt_stream_len = len;//Ö¸¶¨³¤¶È´Ó½âÂëµÄ»º´æÖĞÈ¡Êı¾İ
+			if (wt_stream_len > len) {//æ£€æŸ¥æ¯æ¬¡å†™å…¥ç¼“å­˜çš„æ•°æ®é•¿åº¦æ˜¯å¦è¶…è¿‡æŒ‡å®šé•¿åº¦(1024)
+				wt_stream_len = len;//æŒ‡å®šé•¿åº¦ä»è§£ç çš„ç¼“å­˜ä¸­å–æ•°æ®
 			}
-			//Ã¿´Î´Ó½âÂëµÄ»º´æÊı¾İÖĞÒÔÖ¸¶¨³¤¶È³éÈ¡Êı¾İ²¢Ğ´Èëstream´«µİ¸øÉù¿¨
-			memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
-			//SDL_MixAudio(stream, audio_buf + audio_buf_index, len, SDL_MIX_MAXVOLUME);
+			//æ¯æ¬¡ä»è§£ç çš„ç¼“å­˜æ•°æ®ä¸­ä»¥æŒ‡å®šé•¿åº¦æŠ½å–æ•°æ®å¹¶å†™å…¥streamä¼ é€’ç»™å£°å¡
+			//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
+			SDL_MixAudio(stream, audio_buf + audio_buf_index, len, SDL_MIX_MAXVOLUME);
 
-			len -= wt_stream_len;//¸üĞÂ½âÂëÒôÆµ»º´æµÄÊ£Óà³¤¶È
-			stream += wt_stream_len;//¸üĞÂ»º´æĞ´ÈëÎ»ÖÃ
-			audio_buf_index += wt_stream_len;//¸üĞÂÀÛ¼ÆĞ´Èë»º´æÊı¾İ³¤¶È
+			len -= wt_stream_len;//æ›´æ–°è§£ç éŸ³é¢‘ç¼“å­˜çš„å‰©ä½™é•¿åº¦
+			stream += wt_stream_len;//æ›´æ–°ç¼“å­˜å†™å…¥ä½ç½®
+			audio_buf_index += wt_stream_len;//æ›´æ–°ç´¯è®¡å†™å…¥ç¼“å­˜æ•°æ®é•¿åº¦
 		}
 
 		return 0;
