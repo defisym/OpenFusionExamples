@@ -211,7 +211,8 @@ private:
 	AVCodecContext* pVCodecContext = nullptr;
 	AVCodecContext* pACodecContext = nullptr;
 
-	AVFrame* pFrame = nullptr;
+	AVFrame* pVFrame = nullptr;
+	AVFrame* pAFrame = nullptr;
 
 	AVPacket* pVPacket = nullptr;
 	AVPacket* pAPacket = nullptr;
@@ -229,6 +230,7 @@ private:
 	SDL_AudioSpec wanted_spec = { 0 };
 
 	SwsContext* swsContext = nullptr;
+	SwrContext* swrContext = nullptr;
 
 	AVStream* pViedoStream = nullptr;
 	AVStream* pAudioStream = nullptr;
@@ -249,6 +251,7 @@ private:
 	double videoClock = 0;
 
 	inline void init_general() {
+		// find stream
 		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
 			throw FFMpegException_InitFailed;
 		}
@@ -282,6 +285,7 @@ private:
 #endif
 		}
 
+		// init video codec
 		pVCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pVCodecContext) {
 			throw FFMpegException_InitFailed;
@@ -301,6 +305,7 @@ private:
 			pVCodecContext->width, pVCodecContext->height, AV_PIX_FMT_BGR24
 			, NULL, NULL, NULL, NULL);
 
+		// init audio codec
 #ifndef _GET_AUDIO_BYLOOP
 		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
 
@@ -327,8 +332,37 @@ private:
 
 		packet_queue_init(&audioQueue);
 
-		pFrame = av_frame_alloc();
-		if (!pFrame) {
+		//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
+
+		int channels = pACodecParameters->channels;
+		uint64_t channel_layout = pACodecParameters->channel_layout;
+
+		if (channels > 0 && channel_layout == 0) {
+			channel_layout = av_get_default_channel_layout(channels);
+		}
+		else if (channels == 0 && channel_layout > 0) {
+			channels = av_get_channel_layout_nb_channels(channel_layout);
+		}
+
+		swrContext = swr_alloc_set_opts(nullptr
+			, av_get_default_channel_layout(channels)
+			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
+			, channel_layout
+			, (AVSampleFormat)pACodecParameters->format, pACodecParameters->sample_rate
+			, 0, nullptr);
+
+		if (!swrContext || swr_init(swrContext) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		// init others
+		pVFrame = av_frame_alloc();
+		if (!pVFrame) {
+			throw FFMpegException_InitFailed;
+		}
+
+		pAFrame = av_frame_alloc();
+		if (!pAFrame) {
 			throw FFMpegException_InitFailed;
 		}
 
@@ -361,6 +395,7 @@ private:
 		totalTime = totalFrame * decimalRational;
 		totalTimeInMs = totalTime * 1000;
 
+		// init SDL audio
 		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
@@ -383,7 +418,7 @@ private:
 		SDL_PauseAudio(0);
 	}
 
-	inline int read_frame() {
+	inline int read_frame(bool bVideoOnly = false) {
 		int response = 0;
 
 		while (true) {
@@ -410,10 +445,12 @@ private:
 				bValid = true;
 			}
 
-			//if it's the audio stream
-			if (pVPacket->stream_index == audio_stream_index) {
-				packet_queue_put(&audioQueue, pVPacket);
-				bValid = true;
+			if (!bVideoOnly) {
+				//if it's the audio stream
+				if (pVPacket->stream_index == audio_stream_index) {
+					packet_queue_put(&audioQueue, pVPacket);
+					bValid = true;
+				}
 			}
 
 			if (!bValid) {
@@ -481,13 +518,7 @@ private:
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
 	int decode_apacket() {
-		AVFrame* pFrame = av_frame_alloc();
-		int data_size = 0;
-		AVPacket pkt = { 0 };
-
-		SwrContext* swr_ctx = nullptr;
-
-		if (!packet_queue_get(&audioQueue, &pkt, true)) {
+		if (!packet_queue_get(&audioQueue, pAPacket, true)) {
 			return -1;
 		}
 
@@ -495,50 +526,25 @@ private:
 			return -1;
 		}
 
-		int response = avcodec_send_packet(pACodecContext, &pkt);
+		int response = avcodec_send_packet(pACodecContext, pAPacket);
 		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
 			return -1;
 		}
 
-		response = avcodec_receive_frame(pACodecContext, pFrame);
+		response = avcodec_receive_frame(pACodecContext, pAFrame);
 		if (response < 0 && response != AVERROR_EOF) {
-			//av_frame_unref(pFrame);
+			av_frame_unref(pAFrame);
 
-			return -1;
-		}
-
-		int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
-
-		// 设置通道数或channel_layout
-		if (pFrame->channels > 0 && pFrame->channel_layout == 0) {
-			pFrame->channel_layout = av_get_default_channel_layout(pFrame->channels);
-		}
-		else if (pFrame->channels == 0 && pFrame->channel_layout > 0) {
-			pFrame->channels = av_get_channel_layout_nb_channels(pFrame->channel_layout);
-		}
-
-		AVSampleFormat dst_format = AV_SAMPLE_FMT_S16;//av_get_packed_sample_fmt((AVSampleFormat)frame->format);
-		Uint64 dst_layout = av_get_default_channel_layout(pFrame->channels);
-
-		// 设置转换参数
-		swr_ctx = swr_alloc_set_opts(nullptr, dst_layout, dst_format, pFrame->sample_rate,
-			pFrame->channel_layout, (AVSampleFormat)pFrame->format, pFrame->sample_rate, 0, nullptr);
-
-		if (!swr_ctx || swr_init(swr_ctx) < 0) {
 			return -1;
 		}
 
 		// 计算转换后的sample个数 a * b / c
-		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swr_ctx, pFrame->sample_rate) + pFrame->nb_samples, pFrame->sample_rate, pFrame->sample_rate, AVRounding(1));
+		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
 
 		// 转换，返回值为转换后的sample个数
-		int nb = swr_convert(swr_ctx, &audio_buf, dst_nb_samples, (const uint8_t**)pFrame->data, pFrame->nb_samples);
-		data_size = pFrame->channels * nb * av_get_bytes_per_sample(dst_format);
+		int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
 
-		av_frame_free(&pFrame);
-		swr_free(&swr_ctx);
-
-		return data_size;
+		return pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
 	}
 
 	/*---------------------------
@@ -611,16 +617,21 @@ public:
 
 	~FFMpeg() {
 		avformat_close_input(&pFormatContext);
+		
 		av_packet_free(&pVPacket);
 		av_packet_free(&pAPacket);
 		av_packet_free(&pFlushPacket);
-		av_frame_free(&pFrame);
+
+		av_frame_free(&pVFrame);
+		av_frame_free(&pAFrame);
+
 		avcodec_close(pVCodecContext);
 		avcodec_free_context(&pVCodecContext);
 		avcodec_close(pACodecContext);
 		avcodec_free_context(&pACodecContext);
 
 		sws_freeContext(swsContext);
+		swr_free(&swrContext);
 
 		delete[] audio_buf;
 
@@ -645,7 +656,7 @@ public:
 
 		globalPts = pVPacket->pts;
 
-		response = decode_vpacket(pVPacket, pVCodecContext, pFrame, callBack);
+		response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
 
 		av_packet_unref(pVPacket);
 
@@ -749,7 +760,7 @@ public:
 
 		response = set_videoPosition(ms);
 
-		response = read_frame();
+		response = read_frame(true);
 		response = decode_videoFrame(callBack);
 
 		return response;
@@ -759,9 +770,8 @@ public:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		response = read_frame();
+		response = read_frame(false);
 		response = decode_videoFrame(callBack);
-		//response = decode_audioFrame();
 
 		globalPts;
 
