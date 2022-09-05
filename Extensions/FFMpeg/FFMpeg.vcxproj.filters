@@ -145,6 +145,9 @@
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\_3rdLib\PacketQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

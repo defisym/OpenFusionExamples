@@ -292,6 +292,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="..\_3rdLib\FFMpeg.h" />
+    <ClInclude Include="..\_3rdLib\PacketQueue.h" />
     <ClInclude Include="..\_DeLib\Fusion.h" />
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />

@@ -10,10 +10,10 @@
 //#pragma comment(lib,"avutil.lib")
 //#pragma comment(lib,"swscale.lib")
 
-#include <queue>
 #include <string>
 #include <functional>
 
+#include "PacketQueue.h"
 #include "WindowsCommon.h"
 
 extern "C" {
@@ -23,8 +23,6 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 }
-
-class FFMpeg;
 
 extern "C" {
 #include <SDL.h>
@@ -54,48 +52,6 @@ constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 
 using Uint8 = unsigned char;
-
-class packetQueue {
-private:
-	std::queue<AVPacket> queue;
-
-public:	
-	int dataSize = 0;
-
-public:
-	inline size_t size() {
-		return queue.size();
-	}
-
-	inline bool put(const AVPacket* pPacket) {
-		AVPacket pkt;
-
-		if (av_packet_ref(&pkt, pPacket) < 0) {
-			return false;
-		}
-
-		queue.push(pkt);
-		dataSize += pkt.size;
-
-		return true;
-	}
-
-	inline bool get(AVPacket* pPacket) {
-		if (this->queue.empty()) {
-			return false;
-		}
-
-		if (av_packet_ref(pPacket, &queue.front()) < 0) {
-			return false;
-		}
-
-		queue.pop();
-		dataSize -= pPacket->size;
-
-		return true;
-	}
-
-};
 
 #define _GET_AUDIO_BYLOOP
 
@@ -391,7 +347,7 @@ private:
 		int how_many_packets_to_process = 0;
 
 		while (true) {
-			if (videoQueue.dataSize > MAX_VIDEOQ_SIZE || audioQueue.dataSize > MAX_AUDIOQ_SIZE) {
+			if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
 				break;
 			}
 
