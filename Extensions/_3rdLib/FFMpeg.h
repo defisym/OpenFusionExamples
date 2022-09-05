@@ -53,10 +53,11 @@ using rawDataCallBack = std::function<void(const unsigned char*, const int, cons
 
 using Uint8 = unsigned char;
 
-#define _GET_AUDIO_BYLOOP
+inline void audio_callback(void* userdata, Uint8* stream, int len);
 
 class FFMpeg {
 private:
+#pragma region value
 	bool bLoop = true;
 
 	AVFormatContext* pFormatContext = nullptr;
@@ -124,8 +125,7 @@ private:
 	double frameTimer = 0;
 	double frameLastPts = 0;
 	double frameLastDelay = 0;
-
-	SDL_AudioDeviceID deviceID;
+#pragma endregion
 
 	inline void init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
 		*pFormatContext = avformat_alloc_context();
@@ -162,10 +162,13 @@ private:
 	}
 
 	inline void init_general() {
+#pragma region FFMpeg init
 		// find stream
 		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
 			throw FFMpegException_InitFailed;
 		}
+
+//#define _GET_AUDIO_BYLOOP
 
 		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
 			AVCodecParameters* pLocalCodecParameters = NULL;
@@ -306,7 +309,9 @@ private:
 
 		totalTime = totalFrame * decimalRational;
 		totalTimeInMs = totalTime * 1000;
+#pragma endregion
 
+#pragma region SDL init
 		// init SDL audio
 		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
@@ -318,20 +323,20 @@ private:
 		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024 specifies a unit of audio data refers to the size of the audio buffer in sample frames
 		//wanted_spec.samples = pACodecContext->frame_size;
 
-		wanted_spec.callback = nullptr;//设置取音频数据的回调接口函数 the function to call when the audio device needs more data
+		wanted_spec.callback = audio_callback;//设置取音频数据的回调接口函数 the function to call when the audio device needs more data
 		wanted_spec.userdata = (void*)this;//传递用户数据
 
 		Stat_Quit = 0;
 		Stat_QuitComplete = 0;
 
-		deviceID = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, nullptr, SDL_AUDIO_ALLOW_ANY_CHANGE);
-		if (deviceID <= 0) {
+		if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
 			auto error = SDL_GetError();
 
 			throw SDL_EXCEPTION_AUDIO;
 		}
 
-		SDL_PauseAudioDevice(deviceID, 0);
+		SDL_PauseAudio(0);
+#pragma endregion
 	}
 
 	inline int64_t get_protectedFrame(size_t ms) {
@@ -366,20 +371,14 @@ private:
 			}
 		}
 
-		if (videoQueue.get(pVPacket)) {
-			response = decode_videoFrame(callBack);
+		response = decode_videoFrame(callBack);
 
-			if (response < 0) { return response; }
-		}
+		if (response < 0) { return response; }
 
-		if (audioQueue.get(pAPacket)) {
-			auto oldSz = SDL_GetQueuedAudioSize(deviceID);
-			response = decode_audioFrame();
-			auto newSz = SDL_GetQueuedAudioSize(deviceID);
+		//response = decode_audioFrame();
 
-			if (response < 0) { return response; }
-		}		
-		
+		//if (response < 0) { return response; }
+
 		return 0;
 	}
 
@@ -388,12 +387,7 @@ private:
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
 		int response = avcodec_send_packet(pVCodecContext, pVPacket);
 
-		if (response < 0) {
-			auto e1 = AVERROR(EAGAIN);
-			auto e2 = AVERROR_EOF;
-			auto e3 = AVERROR(EINVAL);
-			auto e4 = AVERROR(ENOMEM);
-
+		if (response < 0) {		
 			return response;
 		}
 
@@ -509,7 +503,7 @@ public:
 		Stat_Quit = 1;
 		Stat_QuitComplete = 0;
 
-		SDL_CloseAudioDevice(deviceID);
+		SDL_CloseAudio();
 	}
 
 	inline int get_volume() {
@@ -521,20 +515,25 @@ public:
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
+		if (!videoQueue.get(pVPacket)) {
+			return -1;
+		}
+
+		if (pVPacket->data == pFlushPacket->data) {
+			avcodec_flush_buffers(pVCodecContext);
+
+			return 0;
+		}
+
 		return decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
 	}
 
-	inline int decode_audioFrame() {
-		auto audio_size = decode_apacket();
-
-		//检查解码操作是否成功
-		if (audio_size < 0) {
-			// If error, output silence.
-			audio_size = SDL_AUDIO_BUFFER_SIZE;
-			memset(audio_buf, 0, SDL_AUDIO_BUFFER_SIZE);//全零重置缓冲区
+	inline int decode_audioFrame() {		
+		if (!audioQueue.get(pAPacket)) {
+			return -1;
 		}
-		
-		return SDL_QueueAudio(deviceID, audio_buf, audio_size);
+
+		return decode_apacket();	
 	}
 
 	inline int64_t get_timePerFrame() {
@@ -612,9 +611,9 @@ public:
 
 		response = decode_frame(callBack);
 
-		if (bLoop && (int64_t)(pVCodecContext->frame_number + 1) == totalFrame) {
-			auto pause = 1;
-		}
+		//if (bLoop && (int64_t)(pVCodecContext->frame_number + 1) == totalFrame) {
+		//	auto pause = 1;
+		//}
 
 		//globalPts;
 
@@ -629,4 +628,59 @@ public:
 
 		return response;
 	}
+
+	inline int audio_fillData(Uint8* stream, int len) {
+		//每次写入stream的数据长度
+		int wt_stream_len = 0;
+		//每解码后的数据长度
+		int audio_size = 0;
+
+		SDL_memset(stream, 0, len);
+
+		//检查音频缓存的剩余长度
+		while (len > 0) {
+			//检查是否需要执行解码操作
+			if (audio_buf_index >= audio_buf_size) {
+				// We have already sent all our data; get more
+				// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+				audio_size = decode_audioFrame();
+
+				//检查解码操作是否成功
+				if (audio_size < 0) {
+					// If error, output silence.
+					audio_buf_size = SDL_AUDIO_BUFFER_SIZE; // arbitrary?
+					memset(audio_buf, 0, audio_buf_size);//全零重置缓冲区
+				}
+				else {
+					//返回packet中包含的原始音频数据长度(多帧)
+					//TODO Sync
+					audio_buf_size = audio_size;
+				}
+
+				audio_buf_index = 0;//初始化累计写入缓存长度
+			}
+
+			wt_stream_len = audio_buf_size - audio_buf_index;//计算解码缓存剩余长度
+
+			if (wt_stream_len > len) {//检查每次写入缓存的数据长度是否超过指定长度(1024)
+				wt_stream_len = len;//指定长度从解码的缓存中取数据
+			}
+
+			//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
+			//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
+			SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
+
+			len -= wt_stream_len;//更新解码音频缓存的剩余长度
+			stream += wt_stream_len;//更新缓存写入位置
+			audio_buf_index += wt_stream_len;//更新累计写入缓存数据长度
+		}
+
+		return 0;
+	}
 };
+
+
+inline void audio_callback(void* userdata, Uint8* stream, int len){
+	FFMpeg* pFFMpeg = (FFMpeg*)userdata;
+	pFFMpeg->audio_fillData(stream, len);
+}
