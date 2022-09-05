@@ -5,11 +5,12 @@
 #pragma warning(disable : 4819)
 #pragma warning(disable : 4996)
 
-#pragma comment(lib,"avcodec.lib")
-#pragma comment(lib,"avformat.lib")
-#pragma comment(lib,"avutil.lib")
-#pragma comment(lib,"swscale.lib")
+//#pragma comment(lib,"avcodec.lib")
+//#pragma comment(lib,"avformat.lib")
+//#pragma comment(lib,"avutil.lib")
+//#pragma comment(lib,"swscale.lib")
 
+#include <queue>
 #include <string>
 #include <functional>
 
@@ -54,6 +55,50 @@ using rawDataCallBack = std::function<void(const unsigned char*, const int, cons
 
 using Uint8 = unsigned char;
 
+class packetQueue {
+private:
+	std::queue<AVPacket> queue;
+
+public:	
+	int dataSize = 0;
+
+public:
+	inline size_t size() {
+		return queue.size();
+	}
+
+	inline bool put(const AVPacket* pPacket) {
+		AVPacket pkt;
+
+		if (av_packet_ref(&pkt, pPacket) < 0) {
+			return false;
+		}
+
+		queue.push(pkt);
+		dataSize += pkt.size;
+
+		return true;
+	}
+
+	inline bool get(AVPacket* pPacket) {
+		AVPacket pkt;
+
+		if (this->queue.empty()) {
+			return false;
+		}
+
+		if (av_packet_ref(&pkt, &queue.front()) < 0) {
+			return false;
+		}
+
+		queue.pop();
+		dataSize -= pPacket->size;
+
+		return true;
+	}
+
+};
+
 #define _GET_AUDIO_BYLOOP
 
 class FFMpeg {
@@ -78,9 +123,14 @@ private:
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
 
-	AVPacket* pVPacket = nullptr;
-	AVPacket* pAPacket = nullptr;
+	AVPacket* pPacket = nullptr;
 	AVPacket* pFlushPacket = nullptr;
+
+	packetQueue audioQueue;
+	packetQueue videoQueue;
+
+	AVPacket* pVPacket = nullptr;
+	AVPacket* pAPacket = nullptr;	
 
 	//保存解码一个packet后的多帧原始音频数据
 	uint8_t* audio_buf = nullptr;
@@ -158,7 +208,6 @@ private:
 	}
 
 	inline void init_general() {
-		//pSeekFormatContext
 		// find stream
 		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
 			throw FFMpegException_InitFailed;
@@ -270,13 +319,8 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pVPacket = av_packet_alloc();
-		if (!pVPacket) {
-			throw FFMpegException_InitFailed;
-		}
-
-		pAPacket = av_packet_alloc();
-		if (!pAPacket) {
+		pPacket = av_packet_alloc();
+		if (!pPacket) {
 			throw FFMpegException_InitFailed;
 		}
 
@@ -334,28 +378,26 @@ private:
 		return (int64_t)(protectedFrame);
 	}
 
-	inline int decode_frame(bool bVideoOnly, rawDataCallBack callBack) {
+	inline int decode_frame(rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		while (av_read_frame(pFormatContext, pVPacket) >= 0) {
+		while (av_read_frame(pFormatContext, pPacket) >= 0) {
 			// if it's the video stream
-			if (pVPacket->stream_index == video_stream_index) {
+			if (pPacket->stream_index == video_stream_index) {
 				response = decode_videoFrame(callBack);
 
 				if (response < 0) { break; }
-				if (--how_many_packets_to_process <= 0) { break; }
 			}
 
-			if (pVPacket->stream_index == audio_stream_index) {
-				if (!bVideoOnly) {
-					response = decode_audioFrame();
-				}
+			// if it's the audio stream
+			if (pPacket->stream_index == audio_stream_index) {
+				response = decode_audioFrame();
 
 				if (response < 0) { break; }
 			}
 
-			av_packet_unref(pVPacket);
+			//av_packet_unref(pPacket);
 		}
 		
 		return 0;
@@ -524,7 +566,7 @@ public:
 	}
 
 	//inline int set_videoPosition(size_t ms = 0, bool bInit = false) {
-	inline int set_videoPosition(size_t ms = 0, bool bInit = true) {
+	inline int set_videoPosition(size_t ms = 0) {
 		if (!(av_seek_frame(pFormatContext, video_stream_index
 			, get_protectedFrame(ms)
 			, seekFlags) >= 0)) {
@@ -534,18 +576,10 @@ public:
 		return 0;
 	}
 
-	//TODO 不影响主Context
 	inline int get_videoFrame(size_t ms, rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-//#define _SEPARATE_SEEK
-
-#ifndef _SEPARATE_SEEK
-		response = set_videoPosition(ms);
-
-		response = decode_frame(true, callBack);
-#else
 		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pCodecContext) {
 			return -1;
@@ -592,7 +626,6 @@ public:
 		avcodec_free_context(&pCodecContext);
 		av_packet_free(&pPacket);
 		av_frame_free(&pFrame);
-#endif
 
 		return response;
 	}
@@ -601,7 +634,7 @@ public:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		response = decode_frame(false, callBack);
+		response = decode_frame(callBack);
 
 		if (bLoop && (int64_t)(pVCodecContext->frame_number + 1) == totalFrame) {
 			auto pause = 1;
