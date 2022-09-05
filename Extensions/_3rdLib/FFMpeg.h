@@ -81,13 +81,11 @@ public:
 	}
 
 	inline bool get(AVPacket* pPacket) {
-		AVPacket pkt;
-
 		if (this->queue.empty()) {
 			return false;
 		}
 
-		if (av_packet_ref(&pkt, &queue.front()) < 0) {
+		if (av_packet_ref(pPacket, &queue.front()) < 0) {
 			return false;
 		}
 
@@ -329,6 +327,16 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
+		pVPacket = av_packet_alloc();
+		if (!pVPacket) {
+			throw FFMpegException_InitFailed;
+		}
+
+		pAPacket = av_packet_alloc();
+		if (!pAPacket) {
+			throw FFMpegException_InitFailed;
+		}
+
 		pFlushPacket->data = (unsigned char*)"FLUSH";
 
 		pViedoStream = pFormatContext->streams [video_stream_index];
@@ -382,23 +390,39 @@ private:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		while (av_read_frame(pFormatContext, pPacket) >= 0) {
+		while (true) {
+			if (videoQueue.dataSize > MAX_VIDEOQ_SIZE || audioQueue.dataSize > MAX_AUDIOQ_SIZE) {
+				break;
+			}
+
+			if (av_read_frame(pFormatContext, pPacket) < 0) {
+				break;
+			}
+
 			// if it's the video stream
 			if (pPacket->stream_index == video_stream_index) {
-				response = decode_videoFrame(callBack);
-
-				if (response < 0) { break; }
+				videoQueue.put(pPacket);
 			}
 
 			// if it's the audio stream
 			if (pPacket->stream_index == audio_stream_index) {
-				response = decode_audioFrame();
-
-				if (response < 0) { break; }
+				audioQueue.put(pPacket);
 			}
-
-			//av_packet_unref(pPacket);
 		}
+
+		if (videoQueue.get(pVPacket)) {
+			response = decode_videoFrame(callBack);
+
+			if (response < 0) { return response; }
+		}
+
+		if (audioQueue.get(pAPacket)) {
+			auto oldSz = SDL_GetQueuedAudioSize(deviceID);
+			response = decode_audioFrame();
+			auto newSz = SDL_GetQueuedAudioSize(deviceID);
+
+			if (response < 0) { return response; }
+		}		
 		
 		return 0;
 	}
@@ -465,7 +489,7 @@ private:
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
 	inline int decode_apacket() {
-		int response = avcodec_send_packet(pACodecContext, pVPacket);
+		int response = avcodec_send_packet(pACodecContext, pAPacket);
 		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
 			return -1;
 		}
@@ -507,10 +531,12 @@ public:
 	~FFMpeg() {
 		avformat_close_input(&pFormatContext);
 		
-		av_packet_free(&pVPacket);
-		av_packet_free(&pAPacket);
+		av_packet_free(&pPacket);
 		av_packet_free(&pFlushPacket);
 
+		av_packet_free(&pVPacket);
+		av_packet_free(&pAPacket);
+		
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
 
@@ -539,11 +565,7 @@ public:
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
-		int response = 0;
-
-		response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
-
-		return response;
+		return decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
 	}
 
 	inline int decode_audioFrame() {
@@ -556,9 +578,7 @@ public:
 			memset(audio_buf, 0, SDL_AUDIO_BUFFER_SIZE);//全零重置缓冲区
 		}
 		
-		SDL_QueueAudio(deviceID, audio_buf, audio_size);
-
-		return 0;		
+		return SDL_QueueAudio(deviceID, audio_buf, audio_size);
 	}
 
 	inline int64_t get_timePerFrame() {
