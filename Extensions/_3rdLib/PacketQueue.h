@@ -128,15 +128,43 @@ private:
 	SDL_mutex* mutex;
 	SDL_cond* cond;
 
+	SDL_mutex* mutexExit;
+	SDL_cond* condExit;
+
+	bool bExit = false;
 public:
 	packetQueue() {
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
+
+		mutexExit = SDL_CreateMutex();
+		condExit = SDL_CreateCond();
 	}
 
 	~packetQueue() {
-		SDL_DestroyMutex(mutex);
+		exit();
 		SDL_CondSignal(cond);
+
+		SDL_CondWait(condExit, mutexExit);
+
+		while (!queue.empty()) {
+			auto pPacket = &queue.front();
+
+			av_packet_unref(pPacket);
+			av_packet_free(&pPacket);
+
+			queue.pop();
+		}
+
+		SDL_DestroyMutex(mutex);
+		SDL_DestroyCond(cond);
+
+		SDL_DestroyMutex(mutexExit);
+		SDL_DestroyCond(condExit);
+	}
+
+	inline void exit() {
+		bExit = true;
 	}
 
 	inline size_t size() {
@@ -166,18 +194,18 @@ public:
 		return true;
 	}
 
+	//block: 阻塞线程并等待
 	inline bool get(AVPacket* pPacket, bool block = true) {
 		bool ret = false;
 
 		SDL_LockMutex(mutex);
 
 		while (true) {
-			//if (quit) {
-			//	SDL_UnlockMutex(mutex);
-			//	ret = false;
+			if (bExit) {
+				ret = false;
 
-			//	break;
-			//}
+				break;
+			}
 
 			if (!queue.empty()) {
 				if (av_packet_ref(pPacket, &queue.front()) < 0) {
@@ -204,6 +232,7 @@ public:
 			}
 		}
 
+		SDL_CondSignal(condExit);
 		SDL_UnlockMutex(mutex);
 
 		return ret;

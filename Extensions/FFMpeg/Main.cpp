@@ -73,12 +73,12 @@ long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param
 short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
-	Stat_Quit = 1;
-	while (true) {
-		if (Stat_QuitComplete) {
-			break;
-		}
-	}
+	//Stat_Quit = 1;
+	//while (true) {
+	//	if (Stat_QuitComplete) {
+	//		break;
+	//	}
+	//}
 
 	delete rdPtr->pFFMpeg;
 	rdPtr->pFFMpeg = nullptr;

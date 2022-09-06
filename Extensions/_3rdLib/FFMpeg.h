@@ -59,6 +59,8 @@ class FFMpeg {
 private:
 #pragma region value
 	bool bLoop = true;
+	bool bFinish = false;
+	bool bExit = false;
 
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = new AVFormatContext;
@@ -125,6 +127,9 @@ private:
 	double frameTimer = 0;
 	double frameLastPts = 0;
 	double frameLastDelay = 0;
+
+	SDL_mutex* mutex;
+	SDL_cond* cond;
 #pragma endregion
 
 	inline void init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
@@ -326,8 +331,8 @@ private:
 		wanted_spec.callback = audio_callback;//设置取音频数据的回调接口函数 the function to call when the audio device needs more data
 		wanted_spec.userdata = (void*)this;//传递用户数据
 
-		Stat_Quit = 0;
-		Stat_QuitComplete = 0;
+		mutex = SDL_CreateMutex();
+		cond = SDL_CreateCond();
 
 		if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
 			auto error = SDL_GetError();
@@ -479,6 +484,12 @@ public:
 	}
 
 	~FFMpeg() {
+		bExit = true;
+
+		SDL_LockMutex(mutex);
+
+		SDL_CondWait(cond, mutex);
+
 		avformat_close_input(&pFormatContext);
 		
 		av_packet_free(&pPacket);
@@ -500,10 +511,12 @@ public:
 
 		delete[] audio_buf;
 
-		Stat_Quit = 1;
-		Stat_QuitComplete = 0;
-
 		SDL_CloseAudio();
+
+		SDL_UnlockMutex(mutex);
+
+		SDL_DestroyMutex(mutex);
+		SDL_DestroyCond(cond);
 	}
 
 	inline int get_volume() {
@@ -515,7 +528,7 @@ public:
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
-		if (!videoQueue.get(pVPacket)) {
+		if (!videoQueue.get(pVPacket, false)) {
 			return -1;
 		}
 
@@ -630,50 +643,58 @@ public:
 	}
 
 	inline int audio_fillData(Uint8* stream, int len) {
-		//每次写入stream的数据长度
-		int wt_stream_len = 0;
-		//每解码后的数据长度
-		int audio_size = 0;
+		SDL_LockMutex(mutex);
+		
+		if (!bExit) {
+			//每次写入stream的数据长度
+			int wt_stream_len = 0;
+			//每解码后的数据长度
+			int audio_size = 0;
 
-		SDL_memset(stream, 0, len);
+			SDL_memset(stream, 0, len);
 
-		//检查音频缓存的剩余长度
-		while (len > 0) {
-			//检查是否需要执行解码操作
-			if (audio_buf_index >= audio_buf_size) {
-				// We have already sent all our data; get more
-				// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
-				audio_size = decode_audioFrame();
+			//检查音频缓存的剩余长度
+			while (len > 0) {
+				//检查是否需要执行解码操作
+				if (audio_buf_index >= audio_buf_size) {
+					// We have already sent all our data; get more
+					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+					audio_size = decode_audioFrame();
 
-				//检查解码操作是否成功
-				if (audio_size < 0) {
-					// If error, output silence.
-					audio_buf_size = SDL_AUDIO_BUFFER_SIZE; // arbitrary?
-					memset(audio_buf, 0, audio_buf_size);//全零重置缓冲区
+					//检查解码操作是否成功
+					if (audio_size < 0) {
+						// If error, output silence.
+						audio_buf_size = SDL_AUDIO_BUFFER_SIZE; // arbitrary?
+						memset(audio_buf, 0, audio_buf_size);//全零重置缓冲区
+					}
+					else {
+						//返回packet中包含的原始音频数据长度(多帧)
+						//TODO Sync
+						audio_buf_size = audio_size;
+					}
+
+					audio_buf_index = 0;//初始化累计写入缓存长度
 				}
-				else {
-					//返回packet中包含的原始音频数据长度(多帧)
-					//TODO Sync
-					audio_buf_size = audio_size;
+
+				wt_stream_len = audio_buf_size - audio_buf_index;//计算解码缓存剩余长度
+
+				if (wt_stream_len > len) {//检查每次写入缓存的数据长度是否超过指定长度(1024)
+					wt_stream_len = len;//指定长度从解码的缓存中取数据
 				}
 
-				audio_buf_index = 0;//初始化累计写入缓存长度
+				//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
+				//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
+				SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
+
+				len -= wt_stream_len;//更新解码音频缓存的剩余长度
+				stream += wt_stream_len;//更新缓存写入位置
+				audio_buf_index += wt_stream_len;//更新累计写入缓存数据长度
 			}
-
-			wt_stream_len = audio_buf_size - audio_buf_index;//计算解码缓存剩余长度
-
-			if (wt_stream_len > len) {//检查每次写入缓存的数据长度是否超过指定长度(1024)
-				wt_stream_len = len;//指定长度从解码的缓存中取数据
-			}
-
-			//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
-			//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
-			SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
-
-			len -= wt_stream_len;//更新解码音频缓存的剩余长度
-			stream += wt_stream_len;//更新缓存写入位置
-			audio_buf_index += wt_stream_len;//更新累计写入缓存数据长度
 		}
+
+		SDL_CondSignal(cond);
+
+		SDL_UnlockMutex(mutex);
 
 		return 0;
 	}
