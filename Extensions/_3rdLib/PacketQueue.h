@@ -143,15 +143,16 @@ public:
 
 	~packetQueue() {
 		exit();
-		SDL_CondSignal(cond);
 
 		SDL_CondWait(condExit, mutexExit);
 
 		while (!queue.empty()) {
 			auto pPacket = &queue.front();
 
-			av_packet_unref(pPacket);
-			av_packet_free(&pPacket);
+			if (pPacket != nullptr) {
+				av_packet_unref(pPacket);
+				av_packet_free(&pPacket);
+			}
 
 			queue.pop();
 		}
@@ -164,7 +165,12 @@ public:
 	}
 
 	inline void exit() {
+		if (bExit) {
+			return;
+		}
+
 		bExit = true;
+		SDL_CondSignal(cond);
 	}
 
 	inline size_t size() {

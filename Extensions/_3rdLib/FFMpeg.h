@@ -340,7 +340,7 @@ private:
 			throw SDL_EXCEPTION_AUDIO;
 		}
 
-		SDL_PauseAudio(0);
+		SDL_PauseAudio(false);
 #pragma endregion
 	}
 
@@ -486,7 +486,13 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
-		SDL_LockMutex(mutex);
+		audioQueue.exit();
+		videoQueue.exit();
+
+		SDL_PauseAudio(true);
+		SDL_CloseAudio();
+
+		//SDL_LockMutex(mutex);
 
 		SDL_CondWait(cond, mutex);
 
@@ -511,9 +517,7 @@ public:
 
 		delete[] audio_buf;
 
-		SDL_CloseAudio();
-
-		SDL_UnlockMutex(mutex);
+		//SDL_UnlockMutex(mutex);
 
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
