@@ -81,6 +81,12 @@ private:
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
 
+	//AVFrame vFrame = { 0 };
+	//AVFrame aFrame = { 0 };
+
+	//AVFrame* pVFrame = &vFrame;
+	//AVFrame* pAFrame = &aFrame;
+
 	AVPacket* pPacket = nullptr;
 	//AVPacket* pFlushPacket = nullptr;
 	AVPacket flushPacket;
@@ -88,11 +94,14 @@ private:
 	packetQueue audioQueue;
 	packetQueue videoQueue;
 
-	//AVPacket* pVPacket = nullptr;
-	//AVPacket* pAPacket = nullptr;	
+	AVPacket* pVPacket = nullptr;
+	AVPacket* pAPacket = nullptr;
 
-	AVPacket vPacket;
-	AVPacket aPacket;
+	//AVPacket vPacket = { 0 };
+	//AVPacket aPacket = { 0 };
+
+	//AVPacket* pVPacket = &vPacket;
+	//AVPacket* pAPacket = &aPacket;
 
 	//保存解码一个packet后的多帧原始音频数据
 	uint8_t* audio_buf = nullptr;
@@ -149,26 +158,26 @@ private:
 	}
 
 	inline void init_formatContext(AVFormatContext** pFormatContext, unsigned char* pBuffer, size_t bfSz) {
-			*pFormatContext = avformat_alloc_context();
-			if (!*pFormatContext) {
-				throw FFMpegException_InitFailed;
+		*pFormatContext = avformat_alloc_context();
+		if (!*pFormatContext) {
+			throw FFMpegException_InitFailed;
+		}
+
+		auto pAvio = avio_alloc_context(pBuffer, bfSz, 0, NULL
+			, [](void* opaque, uint8_t* buf, int bufsize)->int {
+				return bufsize;
 			}
+		, NULL, NULL);
 
-			auto pAvio = avio_alloc_context(pBuffer, bfSz, 0, NULL
-				, [](void* opaque, uint8_t* buf, int bufsize)->int {
-					return bufsize;
-				}
-			, NULL, NULL);
+		if (!pAvio) {
+			throw FFMpegException_InitFailed;
+		}
 
-			if (!pAvio) {
-				throw FFMpegException_InitFailed;
-			}
+		(*pFormatContext)->pb = pAvio;
 
-			(*pFormatContext)->pb = pAvio;
-
-			if (avformat_open_input(pFormatContext, NULL, NULL, NULL) != 0) {
-				throw FFMpegException_InitFailed;
-			}
+		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) != 0) {
+			throw FFMpegException_InitFailed;
+		}
 	}
 
 	inline void init_general() {
@@ -178,11 +187,11 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-//#define _GET_AUDIO_BYLOOP
+		//#define _GET_AUDIO_BYLOOP
 
 		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
 			AVCodecParameters* pLocalCodecParameters = NULL;
-			pLocalCodecParameters = pFormatContext->streams [i]->codecpar;
+			pLocalCodecParameters = pFormatContext->streams[i]->codecpar;
 
 			const AVCodec* pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
 
@@ -231,7 +240,7 @@ private:
 #ifndef _GET_AUDIO_BYLOOP
 		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
 
-		if (audio_stream_index < 0){
+		if (audio_stream_index < 0) {
 			throw FFMpegException_InitFailed;
 
 		}
@@ -301,18 +310,18 @@ private:
 		av_init_packet(&flushPacket);
 		flushPacket.data = (unsigned char*)"FLUSH";
 
-		//pVPacket = av_packet_alloc();
-		//if (!pVPacket) {
-		//	throw FFMpegException_InitFailed;
-		//}
+		pVPacket = av_packet_alloc();
+		if (!pVPacket) {
+			throw FFMpegException_InitFailed;
+		}
 
-		//pAPacket = av_packet_alloc();
-		//if (!pAPacket) {
-		//	throw FFMpegException_InitFailed;
-		//}
+		pAPacket = av_packet_alloc();
+		if (!pAPacket) {
+			throw FFMpegException_InitFailed;
+		}
 
-		pViedoStream = pFormatContext->streams [video_stream_index];
-		pAudioStream = pFormatContext->streams [audio_stream_index];
+		pViedoStream = pFormatContext->streams[video_stream_index];
+		pAudioStream = pFormatContext->streams[audio_stream_index];
 
 		rational = pViedoStream->time_base;
 		decimalRational = (double)rational.num / rational.den;
@@ -326,7 +335,7 @@ private:
 
 #pragma region SDL init
 		// init SDL audio
-		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
+		audio_buf = new uint8_t[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
 		wanted_spec.freq = pACodecContext->sample_rate;//采样频率 DSP frequency -- samples per second
@@ -408,7 +417,7 @@ private:
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
 		int response = avcodec_send_packet(pVCodecContext, pVPacket);
 
-		if (response < 0) {		
+		if (response < 0) {
 			return response;
 		}
 
@@ -432,23 +441,23 @@ private:
 				// That is the format of the provided .mp4 file
 				// https://zhuanlan.zhihu.com/p/53305541
 				if (pFrame->format != AV_PIX_FMT_BGR24) {
-					int linesize [8] = { pFrame->linesize [0] * 3 };
+					int linesize[8] = { pFrame->linesize[0] * 3 };
 					int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height, 1);
 
 					//auto p_global_bgr_buffer = (uint8_t*)malloc(num_bytes * sizeof(uint8_t));
-					auto p_global_bgr_buffer = new uint8_t [num_bytes];
-					uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
+					auto p_global_bgr_buffer = new uint8_t[num_bytes];
+					uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
 
 					sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
 					//bgr_buffer[0] is the BGR raw data
-					callBack(bgr_buffer [0], pFrame->width, pFrame->height);
+					callBack(bgr_buffer[0], pFrame->width, pFrame->height);
 
 					delete[] p_global_bgr_buffer;
 				}
 				else {
 					// call callback
-					callBack(pFrame->data [0], pFrame->width, pFrame->height);
+					callBack(pFrame->data[0], pFrame->width, pFrame->height);
 				}
 
 				av_frame_unref(pFrame);
@@ -508,37 +517,37 @@ public:
 		SDL_PauseAudio(true);
 		SDL_CloseAudio();
 
-		//SDL_LockMutex(mutex);
-
 		//Wait for callback finish
 		SDL_CondWait(cond, mutex);
+
+		SDL_LockMutex(mutex);
 
 		audioQueue.flush();
 		videoQueue.flush();
 
-		avformat_close_input(&pFormatContext);
-		avformat_close_input(&pSeekFormatContext);
+		delete[] audio_buf;
+
+		av_packet_free(&pPacket);
+		//av_packet_free(&pFlushPacket);
+
+		av_packet_free(&pVPacket);
+		av_packet_free(&pAPacket);
+
+		av_frame_free(&pVFrame);
+		av_frame_free(&pAFrame);
+
+		sws_freeContext(swsContext);		
+		swr_free(&swrContext);
 
 		avcodec_close(pVCodecContext);
 		avcodec_free_context(&pVCodecContext);
 		avcodec_close(pACodecContext);
 		avcodec_free_context(&pACodecContext);
-		
-		av_packet_free(&pPacket);
-		//av_packet_free(&pFlushPacket);
 
-		//av_packet_free(&pVPacket);
-		//av_packet_free(&pAPacket);
-		
-		av_frame_free(&pVFrame);
-		av_frame_free(&pAFrame);
+		avformat_close_input(&pFormatContext);
+		avformat_close_input(&pSeekFormatContext);
 
-		sws_freeContext(swsContext);
-		swr_free(&swrContext);
-
-		delete[] audio_buf;
-
-		//SDL_UnlockMutex(mutex);
+		SDL_UnlockMutex(mutex);
 
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
@@ -553,60 +562,34 @@ public:
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
-		//if (!videoQueue.get(pVPacket, false)) {
-		//	return -1;
-		//}
-
-		if (!videoQueue.get(&vPacket, false)) {
+		if (!videoQueue.get(pVPacket, false)) {
 			return -1;
 		}
 
-		//if (pVPacket->data == flushPacket.data) {
-		//	avcodec_flush_buffers(pVCodecContext);
-
-		//	return 0;
-		//}
-
-		if (vPacket.data == flushPacket.data) {
+		if (pVPacket->data == flushPacket.data) {
 			avcodec_flush_buffers(pVCodecContext);
 
 			return 0;
 		}
 
-		//auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
+		auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
 
-		//if (pVPacket->data) {
-		//	av_packet_unref(pVPacket);
-		//}
-
-		auto response = decode_vpacket(&vPacket, pVCodecContext, pVFrame, callBack);
-
-		if (vPacket.data) {
-			av_packet_unref(&vPacket);
+		if (pVPacket->data) {
+			av_packet_unref(pVPacket);
 		}
 
 		return response;
 	}
 
-	inline int decode_audioFrame() {		
-		//if (!audioQueue.get(pAPacket)) {
-		//	return -1;
-		//}
-
-		//auto response = decode_apacket();
-
-		if (!audioQueue.get(&aPacket)) {
+	inline int decode_audioFrame() {
+		if (!audioQueue.get(pAPacket)) {
 			return -1;
 		}
 
-		auto response = decode_apacket(&aPacket, pACodecContext, pAFrame);
+		auto response = decode_apacket(pAPacket, pACodecContext, pAFrame);
 
-		//if (pAPacket->data) {
-		//	av_packet_unref(pAPacket);
-		//}
-
-		if (aPacket.data) {
-			av_packet_unref(&aPacket);
+		if (pAPacket->data) {
+			av_packet_unref(pAPacket);
 		}
 
 		return response;
@@ -674,9 +657,9 @@ public:
 			av_packet_unref(pPacket);
 		}
 
-		avcodec_free_context(&pCodecContext);
-		av_packet_free(&pPacket);
 		av_frame_free(&pFrame);
+		av_packet_free(&pPacket);
+		avcodec_free_context(&pCodecContext);
 
 		return response;
 	}
@@ -707,7 +690,7 @@ public:
 
 	inline int audio_fillData(Uint8* stream, int len) {
 		SDL_LockMutex(mutex);
-		
+
 		if (!bExit) {
 			//每次写入stream的数据长度
 			int wt_stream_len = 0;
@@ -763,10 +746,10 @@ public:
 	}
 };
 
-inline void audio_callback(void* userdata, Uint8* stream, int len){
+inline void audio_callback(void* userdata, Uint8* stream, int len) {
 	FFMpeg* pFFMpeg = (FFMpeg*)userdata;
 
-//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
+	//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
 
 #ifndef _TESTDATA
 	pFFMpeg->audio_fillData(stream, len);
