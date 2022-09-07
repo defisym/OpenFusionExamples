@@ -131,7 +131,26 @@ private:
 	SDL_mutex* mutexExit;
 	SDL_cond* condExit;
 
+	//AVPacket pkt = { 0 };
+
 	bool bExit = false;
+
+	inline void erase() {
+		while (!queue.empty()) {
+			auto& packet = queue.front();
+
+			if (packet.data) {
+				av_packet_unref(&packet);
+				//should not free it here as it's POD
+				//av_packet_free(&pPacket);
+			}
+
+			queue.pop();
+		}
+
+		dataSize = 0;
+	}
+
 public:
 	packetQueue() {
 		mutex = SDL_CreateMutex();
@@ -146,16 +165,8 @@ public:
 
 		SDL_CondWait(condExit, mutexExit);
 
-		while (!queue.empty()) {
-			auto pPacket = &queue.front();
-
-			if (pPacket != nullptr) {
-				av_packet_unref(pPacket);
-				av_packet_free(&pPacket);
-			}
-
-			queue.pop();
-		}
+		//erase();
+		//flush();
 
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
@@ -181,12 +192,22 @@ public:
 		return dataSize;
 	}
 
-	inline bool put(const AVPacket* pPacket) {
-		AVPacket pkt;
+	inline void flush() {
+		SDL_LockMutex(mutex);
 
-		if (av_packet_ref(&pkt, pPacket) < 0) {
-			return false;
-		}
+		erase();
+
+		SDL_UnlockMutex(mutex);
+	}
+
+	inline bool put(const AVPacket* pPacket) {
+		//AVPacket pkt;
+
+		//if (av_packet_ref(&pkt, pPacket) < 0) {
+		//	return false;
+		//}
+
+		AVPacket pkt = *pPacket;
 
 		SDL_LockMutex(mutex);
 		queue.push(pkt);
@@ -214,11 +235,13 @@ public:
 			}
 
 			if (!queue.empty()) {
-				if (av_packet_ref(pPacket, &queue.front()) < 0) {
-					ret = false;
+				//if (av_packet_ref(pPacket, &queue.front()) < 0) {
+				//	ret = false;
 
-					break;
-				}
+				//	break;
+				//}
+
+				*pPacket = queue.front();
 
 				queue.pop();
 				//nb_packets--;
