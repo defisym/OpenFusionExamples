@@ -73,13 +73,6 @@ long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param
 short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
-	//Stat_Quit = 1;
-	//while (true) {
-	//	if (Stat_QuitComplete) {
-	//		break;
-	//	}
-	//}
-
 	delete rdPtr->pFFMpeg;
 	rdPtr->pFFMpeg = nullptr;
 
@@ -96,8 +89,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		*rdPtr->pPreviousTimer = std::chrono::steady_clock::now();
 
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
-		//rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
-		rdPtr->pFFMpeg->set_loop(true);
+		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
 
 		BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
 			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
@@ -120,10 +112,7 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 		return 0;
 	}
 
-	BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
-		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
-		rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
-		});
+	rdPtr->pFFMpeg->set_videoPosition(ms);
 
 	ReDisplay(rdPtr);
 

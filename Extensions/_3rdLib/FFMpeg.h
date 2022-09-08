@@ -1,4 +1,5 @@
-﻿// Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
+﻿// Ref: http://dranger.com/ffmpeg/ffmpeg.html
+// Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 // SafeSEH:NO
 
 #pragma once
@@ -21,6 +22,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/time.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 }
@@ -72,14 +74,17 @@ private:
 
 	int volume = SDL_MIX_MAXVOLUME;
 
+	double videoPts = 0;
+	double audioPts = 0;
+
 	int64_t globalPts = 0;
 
 	double audioClock = 0;
 	double videoClock = 0;
 
-	double frameTimer = 0;
+	double frameTimer = (double)av_gettime() / 1000000.0;;
 	double frameLastPts = 0;
-	double frameLastDelay = 0;
+	double frameLastDelay = 40e-3;
 
 #pragma endregion
 
@@ -127,7 +132,7 @@ private:
 	SwsContext* swsContext = nullptr;
 	SwrContext* swrContext = nullptr;
 
-	AVStream* pViedoStream = nullptr;
+	AVStream* pVideoStream = nullptr;
 	AVStream* pAudioStream = nullptr;
 
 	AVDictionary* pVOptionsDict = nullptr;
@@ -336,13 +341,13 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pViedoStream = pFormatContext->streams[video_stream_index];
+		pVideoStream = pFormatContext->streams[video_stream_index];
 		pAudioStream = pFormatContext->streams[audio_stream_index];
 
-		rational = pViedoStream->time_base;
+		rational = pVideoStream->time_base;
 		decimalRational = (double)rational.num / rational.den;
 
-		totalFrame = pViedoStream->duration;
+		totalFrame = pVideoStream->duration;
 		timePerFrameInMs = decimalRational * 1000;
 
 		totalTime = totalFrame * decimalRational;
@@ -396,6 +401,9 @@ private:
 			, get_protectedFrame(ms)
 			, seekFlags);
 
+		//https://stackoverflow.com/questions/45526098/repeating-ffmpeg-stream-libavcodec-libavformat
+		//avio_seek(pFormatContext->pb, 0, SEEK_SET);
+
 		if (response < 0) {
 			return response;
 		}
@@ -445,6 +453,11 @@ private:
 			}
 		}
 
+		auto audioClock = get_audioClock();
+
+		auto diff = videoPts - audioClock;
+		auto diff2 = videoClock - audioClock;
+
 		response = decode_videoFrame(callBack);
 
 		if (response < 0) { return response; }
@@ -479,7 +492,6 @@ private:
 	}
 
 	inline int decode_audioFrame() {
-		//TODO Blocked
 		//bAudioFinish = !audioQueue.get(pAPacket);
 		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
 
@@ -493,6 +505,7 @@ private:
 			return 0;
 		}
 
+		// return data size here
 		auto response = decode_apacket(pAPacket, pACodecContext, pAFrame);
 
 		if (pAPacket->data) {
@@ -511,7 +524,7 @@ private:
 			return response;
 		}
 
-
+		//TODO Why loop
 		while (response >= 0) {
 			// Return decoded output data (into a frame) from a decoder
 			// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
@@ -527,6 +540,16 @@ private:
 			}
 
 			if (response >= 0) {
+				//TODO
+				videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+					? pFrame->best_effort_timestamp
+					: 0);
+
+				videoPts *= av_q2d(pVideoStream->time_base);
+				videoPts = synchronize_video(pFrame, videoPts);
+
+				videoClock = pVPacket->dts * av_q2d(pVideoStream->time_base);
+
 				// Check if the frame is a planar YUV 4:2:0, 12bpp
 				// That is the format of the provided .mp4 file
 				// https://zhuanlan.zhihu.com/p/53305541
@@ -554,7 +577,7 @@ private:
 			}
 		}
 
-		return 0;
+		return response;
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
@@ -571,13 +594,61 @@ private:
 			return -1;
 		}
 
+		if (pAPacket->pts != AV_NOPTS_VALUE) {
+			audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
+		}
+
 		// 计算转换后的sample个数 a * b / c
 		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
 
 		// 转换，返回值为转换后的sample个数
 		int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
 
-		return pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+		auto audioSize= pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+
+		audioPts = audioClock;
+
+		auto pcm_bytes = 2 * pAFrame->channels;
+		audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
+
+		return audioSize;
+	}
+
+	//synchronize
+	inline double synchronize_video(AVFrame* pVFrame,double videoPts) {
+		double frameDelay = 0;
+
+		if (videoPts != 0) {
+			videoClock = videoPts;
+		}
+		else {
+			videoPts = videoClock;
+		}
+
+		frameDelay = av_q2d(pVideoStream->time_base);
+		frameDelay += pVFrame->repeat_pict * (frameDelay * 0.5);
+
+		videoClock += frameDelay;
+
+		return videoPts;
+	}
+
+	inline double get_audioClock() {
+		double pts = audioClock; /* maintained in the audio thread */
+		
+		int hw_buf_size = audio_buf_size - audio_buf_index;
+		int  bytes_per_sec = 0;
+		int n = pACodecContext->channels * 2;
+
+		if (pAudioStream) {
+			bytes_per_sec = pACodecContext->sample_rate * n;
+		}
+
+		if (bytes_per_sec) {
+			pts -= (double)hw_buf_size / bytes_per_sec;
+		}
+
+		return pts;
 	}
 
 public:
@@ -735,7 +806,14 @@ public:
 		while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
 			// if it's the video stream
 			if (pPacket->stream_index == video_stream_index) {
+				// keep current pts & clock
+				auto oldClock = videoClock;
+				auto oldPts = videoPts;
+
 				response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
+
+				videoClock = oldClock;
+				videoPts = oldPts;
 
 				if (response < 0) { break; }
 

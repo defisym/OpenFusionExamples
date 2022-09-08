@@ -167,12 +167,12 @@ inline int get_videoFrame(std::wstring filePath, size_t ms, rawDataCallBack call
 	//	av_packet_unref(pPacket);
 	//}
 	
-	auto pViedoStream=pFormatContext->streams[video_stream_index];
+	auto pVideoStream=pFormatContext->streams[video_stream_index];
 	
-	auto rational = pViedoStream->time_base;
+	auto rational = pVideoStream->time_base;
 	auto decimalRational = (double)rational.num / rational.den;
 
-	auto totalFrame = pViedoStream->duration;
+	auto totalFrame = pVideoStream->duration;
 	auto totalTime = totalFrame * decimalRational;
 	auto totalTimeInMs = totalTime * 1000;
 
