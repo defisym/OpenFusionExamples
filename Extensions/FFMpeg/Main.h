@@ -88,6 +88,8 @@ typedef struct tagRDATA
 	bool bPlay;
 	bool bOpen;
 
+	int volume;
+
 	FFMpeg* pFFMpeg;
 	Timer* pPreviousTimer;
 

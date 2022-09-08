@@ -49,9 +49,9 @@ inline void CopyData(const unsigned char* pData, LPSURFACE pMemSf, bool bPm) {
 		memcpy(pMemData, pVideo, lineSz);
 	}
 
-	//#ifdef _DEBUG
-	//		_SavetoClipBoard(rdPtr->pMemSf, false);
-	//#endif // _DEBUG
+//#ifdef _DEBUG
+//	_SavetoClipBoard(pMemSf, false);
+//#endif // _DEBUG
 
 	ReleaseSfCoef(pMemSf, sfCoef);
 

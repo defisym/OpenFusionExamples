@@ -266,5 +266,9 @@ public:
 
 		return ret;
 	}
+
+	inline void stopBlock() {
+		SDL_CondSignal(cond);
+	}
 };
 #endif

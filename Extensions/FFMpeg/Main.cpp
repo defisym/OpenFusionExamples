@@ -57,7 +57,7 @@ long WINAPI DLLExport Condition_VideoOpen(LPRDATA rdPtr, long param1, long param
 }
 
 long WINAPI DLLExport Condition_VideoPlay(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->bPlay;
+	return rdPtr->bPlay && rdPtr->pFFMpeg->get_finishState();
 }
 
 long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param2) {
@@ -84,7 +84,6 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 	rdPtr->pFFMpeg = nullptr;
 
 	rdPtr->bOpen = false;
-	rdPtr->bLoop = false;
 	rdPtr->bPlay = false;
 
 	try {
@@ -96,8 +95,9 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		// TODO在开始播放时刷新
 		*rdPtr->pPreviousTimer = std::chrono::steady_clock::now();
 
-		//auto cur = rdPtr->pFFMpeg->get_volume();
-		//rdPtr->pFFMpeg->set_volume(0);
+		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
+		//rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
+		rdPtr->pFFMpeg->set_loop(true);
 
 		BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
 			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();

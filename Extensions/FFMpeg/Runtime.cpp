@@ -78,9 +78,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pFilePath = new std::wstring;
 
-	rdPtr->bLoop = false;
+	//TODO
+	//rdPtr->bLoop = false;
+	rdPtr->bLoop = true;
 	rdPtr->bPlay = false;
 	rdPtr->bOpen = false;
+
+	rdPtr->volume = 100;
 
 	rdPtr->pFFMpeg = nullptr;
 	rdPtr->pPreviousTimer = new Timer;
@@ -172,13 +176,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		//auto now = std::chrono::steady_clock::now();
 		//auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
-		//if (duration >= rdPtr->pFFMpeg->get_timePerFrame()) {
-		//	*rdPtr->pPreviousTimer = now;
-			rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
-				InitSurface(rdPtr, width, height);
-				CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
-				});
-		//}
+		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
+			InitSurface(rdPtr, width, height);
+			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+			//ReDisplay(rdPtr);
+			});
 	}
 
 	if (rdPtr->pMemSf != nullptr

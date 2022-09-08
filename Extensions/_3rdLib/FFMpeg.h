@@ -59,10 +59,31 @@ inline void audio_callback(void* userdata, Uint8* stream, int len);
 class FFMpeg {
 private:
 #pragma region value
-	bool bLoop = true;
-	bool bFinish = false;
+#pragma region control
 	bool bExit = false;
 
+	bool bLoop = false;
+
+	bool bReadFinish = false;
+	bool bVideoFinish = false;
+	bool bAudioFinish = false;
+
+	bool bFinish = false;	
+
+	int volume = SDL_MIX_MAXVOLUME;
+
+	int64_t globalPts = 0;
+
+	double audioClock = 0;
+	double videoClock = 0;
+
+	double frameTimer = 0;
+	double frameLastPts = 0;
+	double frameLastDelay = 0;
+
+#pragma endregion
+
+#pragma region FFMpeg
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = nullptr;
 
@@ -103,16 +124,6 @@ private:
 	//AVPacket* pVPacket = &vPacket;
 	//AVPacket* pAPacket = &aPacket;
 
-	//保存解码一个packet后的多帧原始音频数据
-	uint8_t* audio_buf = nullptr;
-	//解码后的多帧音频数据长度
-	unsigned int audio_buf_size = 0;
-	//累计写入stream的长度
-	unsigned int audio_buf_index = 0;
-
-	SDL_AudioSpec spec = { 0 };
-	SDL_AudioSpec wanted_spec = { 0 };
-
 	SwsContext* swsContext = nullptr;
 	SwrContext* swrContext = nullptr;
 
@@ -131,19 +142,24 @@ private:
 	double totalTime = 0;
 	double totalTimeInMs = 0;
 
-	int volume = SDL_MIX_MAXVOLUME;
+#pragma endregion
 
-	int64_t globalPts = 0;
+#pragma region SDL
 
-	double audioClock = 0;
-	double videoClock = 0;
+	//保存解码一个packet后的多帧原始音频数据
+	uint8_t* audio_buf = nullptr;
+	//解码后的多帧音频数据长度
+	unsigned int audio_buf_size = 0;
+	//累计写入stream的长度
+	unsigned int audio_buf_index = 0;
 
-	double frameTimer = 0;
-	double frameLastPts = 0;
-	double frameLastDelay = 0;
+	SDL_AudioSpec spec = { 0 };
+	SDL_AudioSpec wanted_spec = { 0 };
 
 	SDL_mutex* mutex;
 	SDL_cond* cond;
+#pragma endregion
+
 #pragma endregion
 
 	inline void init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
@@ -181,7 +197,7 @@ private:
 	}
 
 	inline void init_general() {
-#pragma region FFMpeg init
+#pragma region FFMpegInit
 		// find stream
 		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
 			throw FFMpegException_InitFailed;
@@ -333,20 +349,24 @@ private:
 		totalTimeInMs = totalTime * 1000;
 #pragma endregion
 
-#pragma region SDL init
+#pragma region SDLInit
 		// init SDL audio
 		audio_buf = new uint8_t[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
-		wanted_spec.freq = pACodecContext->sample_rate;//采样频率 DSP frequency -- samples per second
-		wanted_spec.format = AUDIO_S16SYS;//采样格式 Audio data format
-		wanted_spec.channels = pACodecContext->channels;//声道数 Number of channels: 1 mono, 2 stereo
-		wanted_spec.silence = 0;//无输出时是否静音
-		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024 specifies a unit of audio data refers to the size of the audio buffer in sample frames
+		//DSP frequency -- samples per second
+		wanted_spec.freq = pACodecContext->sample_rate;
+		wanted_spec.format = AUDIO_S16SYS;
+		wanted_spec.channels = pACodecContext->channels;
+		//无输出时是否静音
+		wanted_spec.silence = 0;
+		//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024
+		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
+		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 		//wanted_spec.samples = pACodecContext->frame_size;
 
-		wanted_spec.callback = audio_callback;//设置取音频数据的回调接口函数 the function to call when the audio device needs more data
-		wanted_spec.userdata = (void*)this;//传递用户数据
+		wanted_spec.callback = audio_callback;
+		wanted_spec.userdata = (void*)this;
 
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
@@ -369,6 +389,21 @@ private:
 		return (int64_t)(protectedFrame);
 	}
 
+	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, size_t ms = 0) {
+		int response = 0;
+
+		response = av_seek_frame(pFormatContext, stream_index
+			, get_protectedFrame(ms)
+			, seekFlags);
+
+		if (response < 0) {
+			return response;
+		}
+
+		return response;
+	}
+
+	//Decode
 	inline int decode_frame(rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
@@ -378,7 +413,16 @@ private:
 				break;
 			}
 
-			if (av_read_frame(pFormatContext, pPacket) < 0) {
+			response = av_read_frame(pFormatContext, pPacket);
+
+			bReadFinish = (response == AVERROR_EOF);
+
+			if (bReadFinish) {
+				videoQueue.stopBlock();
+				audioQueue.stopBlock();
+			}
+
+			if (response < 0) {
 				break;
 			}
 
@@ -410,6 +454,52 @@ private:
 		//if (response < 0) { return response; }
 
 		return 0;
+	}
+
+	inline int decode_videoFrame(rawDataCallBack callBack) {
+		bVideoFinish = !videoQueue.get(pVPacket, false);
+
+		if (bVideoFinish) {
+			return -1;
+		}
+
+		if (pVPacket->data == flushPacket.data) {
+			avcodec_flush_buffers(pVCodecContext);
+
+			return 0;
+		}
+
+		auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
+
+		if (pVPacket->data) {
+			av_packet_unref(pVPacket);
+		}
+
+		return response;
+	}
+
+	inline int decode_audioFrame() {
+		//TODO Blocked
+		//bAudioFinish = !audioQueue.get(pAPacket);
+		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
+
+		if (bAudioFinish) {
+			return -1;
+		}
+
+		if (pAPacket->data == flushPacket.data) {
+			avcodec_flush_buffers(pACodecContext);
+
+			return 0;
+		}
+
+		auto response = decode_apacket(pAPacket, pACodecContext, pAFrame);
+
+		if (pAPacket->data) {
+			av_packet_unref(pAPacket);
+		}
+
+		return response;
 	}
 
 	inline int decode_vpacket(AVPacket* pVPacket, AVCodecContext* pVCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
@@ -553,63 +643,66 @@ public:
 		SDL_DestroyCond(cond);
 	}
 
-	inline int get_volume() {
-		return int((volume / 128.0) * 100);
-	}
-
-	inline void set_volume(int volume) {
-		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
-	}
-
-	inline int decode_videoFrame(rawDataCallBack callBack) {
-		if (!videoQueue.get(pVPacket, false)) {
-			return -1;
-		}
-
-		if (pVPacket->data == flushPacket.data) {
-			avcodec_flush_buffers(pVCodecContext);
-
-			return 0;
-		}
-
-		auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
-
-		if (pVPacket->data) {
-			av_packet_unref(pVPacket);
-		}
-
-		return response;
-	}
-
-	inline int decode_audioFrame() {
-		if (!audioQueue.get(pAPacket)) {
-			return -1;
-		}
-
-		auto response = decode_apacket(pAPacket, pACodecContext, pAFrame);
-
-		if (pAPacket->data) {
-			av_packet_unref(pAPacket);
-		}
-
-		return response;
-	}
-
+	//Get
 	inline int64_t get_timePerFrame() {
 		return (int64_t)(timePerFrameInMs);
 	}
 
-	//inline int set_videoPosition(size_t ms = 0, bool bInit = false) {
-	inline int set_videoPosition(size_t ms = 0) {
-		if (!(av_seek_frame(pFormatContext, video_stream_index
-			, get_protectedFrame(ms)
-			, seekFlags) >= 0)) {
-			return -1;
-		}
-
-		return 0;
+	inline bool get_finishState() {
+		return bFinish;
 	}
 
+	inline int get_volume() {
+		return int((volume / 128.0) * 100);
+	}
+
+	inline int get_videoPosition() {
+		//TODO
+		return -1;
+	}
+
+	inline bool get_loopState() {
+		return bLoop;
+	}
+
+	//Set
+	inline void set_volume(int volume) {
+		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
+	}
+	
+	inline int set_videoPosition(size_t ms = 0) {
+		int response = 0;
+
+		if (video_stream_index >= 0) {
+			response = seekFrame(pFormatContext, video_stream_index, ms);
+
+			if (response < 0) {
+				return response;
+			}
+
+			videoQueue.flush();
+			videoQueue.put(&flushPacket);
+		}
+
+		if (audio_stream_index >= 0) {
+			response = seekFrame(pFormatContext, audio_stream_index, ms);
+
+			if (response < 0) {
+				return response;
+			}
+
+			audioQueue.flush();
+			audioQueue.put(&flushPacket);
+		}
+
+		return response;
+	}
+
+	inline void set_loop(bool bLoop) {
+		this->bLoop = bLoop;
+	}
+
+	//Play core
 	inline int get_videoFrame(size_t ms, rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
@@ -637,11 +730,7 @@ public:
 			return -1;
 		}
 
-		if (!(av_seek_frame(pSeekFormatContext, video_stream_index
-			, get_protectedFrame(ms)
-			, seekFlags) >= 0)) {
-			return -1;
-		}
+		response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
 		while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
 			// if it's the video stream
@@ -670,20 +759,15 @@ public:
 
 		response = decode_frame(callBack);
 
-		//if (bLoop && (int64_t)(pVCodecContext->frame_number + 1) == totalFrame) {
-		//	auto pause = 1;
-		//}
+		bFinish = bReadFinish && bVideoFinish && bAudioFinish;
 
-		//globalPts;
+		if (bLoop && bFinish) {
+			response = set_videoPosition();
 
-		//if (bLoop && (int64_t)(pVCodecContext->frame_number + 1) == totalFrame) {
-		//	response = set_videoPosition();
-
-		//	if (response < 0) { return response; }
-
-		//	pVCodecContext->frame_number = 0;
-		//	pACodecContext->frame_number = 0;
-		//}
+			bReadFinish = false;
+			bAudioFinish = false;
+			bVideoFinish = false;
+		}
 
 		return response;
 	}
@@ -707,11 +791,10 @@ public:
 					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
 					audio_size = decode_audioFrame();
 
-					//检查解码操作是否成功
-					if (audio_size < 0) {
-						// If error, output silence.
-						audio_buf_size = SDL_AUDIO_BUFFER_SIZE; // arbitrary?
-						memset(audio_buf, 0, audio_buf_size);//全零重置缓冲区
+					// If error, output silence.
+					if (audio_size < 0) {						
+						audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
+						memset(audio_buf, 0, audio_buf_size);
 					}
 					else {
 						//返回packet中包含的原始音频数据长度(多帧)
@@ -719,22 +802,29 @@ public:
 						audio_buf_size = audio_size;
 					}
 
-					audio_buf_index = 0;//初始化累计写入缓存长度
+					//初始化累计写入缓存长度
+					audio_buf_index = 0;
 				}
 
-				wt_stream_len = audio_buf_size - audio_buf_index;//计算解码缓存剩余长度
+				//计算解码缓存剩余长度
+				wt_stream_len = audio_buf_size - audio_buf_index;
 
-				if (wt_stream_len > len) {//检查每次写入缓存的数据长度是否超过指定长度(1024)
-					wt_stream_len = len;//指定长度从解码的缓存中取数据
+				//检查每次写入缓存的数据长度是否超过指定长度(1024)
+				if (wt_stream_len > len) {
+					//指定长度从解码的缓存中取数据
+					wt_stream_len = len;
 				}
 
 				//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
 				//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
 				SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
 
-				len -= wt_stream_len;//更新解码音频缓存的剩余长度
-				stream += wt_stream_len;//更新缓存写入位置
-				audio_buf_index += wt_stream_len;//更新累计写入缓存数据长度
+				//更新解码音频缓存的剩余长度
+				len -= wt_stream_len;
+				//更新缓存写入位置
+				stream += wt_stream_len;
+				//更新累计写入缓存数据长度
+				audio_buf_index += wt_stream_len;
 			}
 		}
 
