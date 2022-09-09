@@ -89,6 +89,12 @@ private:
 	double frameLastPts = 0;
 	double frameLastDelay = 40e-3;
 
+	enum class SyncState {
+		SYNC_VIDEOFASTER,
+		SYNC_AUDIOFASTER,
+		SYNC_SYNC,
+	};
+
 #pragma endregion
 
 #pragma region FFMpeg
@@ -419,78 +425,81 @@ private:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		while (true) {
-			if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
+		SyncState syncState = SyncState::SYNC_SYNC;
+
+		do {		
+			// fill buffer
+			while (true) {
+				if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
+					break;
+				}
+
+				response = av_read_frame(pFormatContext, pPacket);
+
+				bReadFinish = (response == AVERROR_EOF);
+
+				if (bReadFinish) {
+					videoQueue.stopBlock();
+					audioQueue.stopBlock();
+				}
+
+				if (response < 0) {
+					break;
+				}
+
+				bool bValid = false;
+
+				// if it's the video stream
+				if (pPacket->stream_index == video_stream_index) {
+					videoQueue.put(pPacket);
+					bValid = true;
+				}
+
+				// if it's the audio stream
+				if (pPacket->stream_index == audio_stream_index) {
+					audioQueue.put(pPacket);
+					bValid = true;
+				}
+
+				if (!bValid) {
+					av_packet_unref(pPacket);
+				}
+			}
+
+			// calc delay
+			syncState = get_delayState();
+
+			// decode
+			switch (syncState) {
+			// video is faster, wait
+			case FFMpeg::SyncState::SYNC_VIDEOFASTER:
+				return 0;
+
+				break;
+			// decode new video frame
+			case FFMpeg::SyncState::SYNC_AUDIOFASTER:
+				//response = decode_videoFrame(callBack);
+
+				//if (response < 0) { return response; }
+
+				//break;
+			case FFMpeg::SyncState::SYNC_SYNC:
+				response = decode_videoFrame(callBack);
+
+				if (response < 0) { return response; }
+
 				break;
 			}
 
-			response = av_read_frame(pFormatContext, pPacket);
+		} while (syncState != SyncState::SYNC_SYNC);
 
-			bReadFinish = (response == AVERROR_EOF);
-
-			if (bReadFinish) {
-				videoQueue.stopBlock();
-				audioQueue.stopBlock();
-			}
-
-			if (response < 0) {
-				break;
-			}
-
-			bool bValid = false;
-
-			// if it's the video stream
-			if (pPacket->stream_index == video_stream_index) {
-				videoQueue.put(pPacket);
-				bValid = true;
-			}
-
-			// if it's the audio stream
-			if (pPacket->stream_index == audio_stream_index) {
-				audioQueue.put(pPacket);
-				bValid = true;
-			}
-
-			if (!bValid) {
-				av_packet_unref(pPacket);
-			}
-		}
-
-		auto delay = videoPts - frameLastPts;
-		
-		if (delay <= 0 || delay >= 1) {
-			delay = frameLastDelay;
-		}
-
-		frameLastPts = videoPts;
-		frameLastDelay = delay;		
-
-		auto audioClock = get_audioClock();
-		auto diff = videoPts - audioClock;
-
-		auto syncThreshold = delay > AV_SYNC_THRESHOLD
-							? delay
-							: AV_SYNC_THRESHOLD;
-
-		if (fabs(diff) < AV_NOSYNC_THRESHOLD) {
-			if (diff <= -syncThreshold) {
-				delay = 0;
-			}
-
-			if (diff >= syncThreshold) {
-				delay = 2 * delay;
-			}
-		}
-
-		frameTimer += delay;
-
-		response = decode_videoFrame(callBack);
-
-		if (response < 0) { return response; }
-
-		//response = decode_audioFrame();
+		//response = decode_videoFrame(callBack);
 
 		//if (response < 0) { return response; }
+
+		////response = decode_audioFrame();
+
+		////if (response < 0) { return response; }
 
 		return 0;
 	}
@@ -687,6 +696,60 @@ private:
 		return pts;
 	}
 
+	inline SyncState get_delayState() {
+		auto delay = videoPts - frameLastPts;
+
+		if (delay <= 0 || delay >= 1) {
+			delay = frameLastDelay;
+		}
+
+		frameLastPts = videoPts;
+		frameLastDelay = delay;
+
+		auto audioClock = get_audioClock();
+		auto diff = videoPts - audioClock;
+
+		auto syncThreshold = delay > AV_SYNC_THRESHOLD
+			? delay
+			: AV_SYNC_THRESHOLD;
+
+		if (fabs(diff) < AV_NOSYNC_THRESHOLD) {
+			// audio is faster
+			if (diff <= -syncThreshold) {
+				return SyncState::SYNC_AUDIOFASTER;
+			}
+			// video is faster
+			else if (diff >= syncThreshold) {
+				return SyncState::SYNC_VIDEOFASTER;
+			}
+			else {
+				return SyncState::SYNC_SYNC;
+			}
+		}
+
+		return SyncState::SYNC_SYNC;
+	}
+
+	inline void reset_sync() {
+		videoPts = 0;
+		audioPts = 0;
+
+		globalPts = 0;
+
+		audioClock = 0;
+		videoClock = 0;
+
+		frameTimer = (double)av_gettime() / 1000000.0;;
+		frameLastPts = 0;
+		frameLastDelay = 40e-3;
+	}
+
+	inline void reset_finishState() {
+		bReadFinish = false;
+		bAudioFinish = false;
+		bVideoFinish = false;
+	}
+
 	inline double get_ptsMS(AVPacket* pPacket, AVStream* pStream) {
 		return pPacket->pts * av_q2d(pStream->time_base) * 1000;
 	}
@@ -809,6 +872,9 @@ public:
 			audioQueue.put(&flushPacket);
 		}
 
+		reset_sync();
+		reset_finishState();
+
 		return response;
 	}
 
@@ -883,11 +949,7 @@ public:
 		bFinish = bReadFinish && bVideoFinish && bAudioFinish;
 
 		if (bLoop && bFinish) {
-			response = set_videoPosition();
-
-			bReadFinish = false;
-			bAudioFinish = false;
-			bVideoFinish = false;
+			response = set_videoPosition();			
 		}
 
 		return response;
