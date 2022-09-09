@@ -39,6 +39,9 @@ constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto MAX_AUDIOQ_SIZE = (5 * 16 * 1024);
 constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
+constexpr auto AV_SYNC_THRESHOLD = 0.01;
+constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
+
 constexpr auto SDL_EXCEPTION_AUDIO = 0;
 
 static volatile int Stat_Quit = 0;
@@ -453,10 +456,33 @@ private:
 			}
 		}
 
-		auto audioClock = get_audioClock();
+		auto delay = videoPts - frameLastPts;
+		
+		if (delay <= 0 || delay >= 1) {
+			delay = frameLastDelay;
+		}
 
+		frameLastPts = videoPts;
+		frameLastDelay = delay;		
+
+		auto audioClock = get_audioClock();
 		auto diff = videoPts - audioClock;
-		auto diff2 = videoClock - audioClock;
+
+		auto syncThreshold = delay > AV_SYNC_THRESHOLD
+							? delay
+							: AV_SYNC_THRESHOLD;
+
+		if (fabs(diff) < AV_NOSYNC_THRESHOLD) {
+			if (diff <= -syncThreshold) {
+				delay = 0;
+			}
+
+			if (diff >= syncThreshold) {
+				delay = 2 * delay;
+			}
+		}
+
+		frameTimer += delay;
 
 		response = decode_videoFrame(callBack);
 
@@ -541,14 +567,25 @@ private:
 
 			if (response >= 0) {
 				//TODO
-				videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
-					? pFrame->best_effort_timestamp
-					: 0);
+				//videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+				//	? pFrame->best_effort_timestamp
+				//	: 0);
+
+				videoPts = 0;
+
+				if (pVPacket->dts == AV_NOPTS_VALUE
+					&& pFrame->opaque
+					&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
+					videoPts = double(*(uint64_t*)pFrame->opaque);
+				}
+				else {
+					videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+						? pFrame->best_effort_timestamp
+						: 0);
+				}
 
 				videoPts *= av_q2d(pVideoStream->time_base);
 				videoPts = synchronize_video(pFrame, videoPts);
-
-				videoClock = pVPacket->dts * av_q2d(pVideoStream->time_base);
 
 				// Check if the frame is a planar YUV 4:2:0, 12bpp
 				// That is the format of the provided .mp4 file
@@ -638,10 +675,9 @@ private:
 		
 		int hw_buf_size = audio_buf_size - audio_buf_index;
 		int  bytes_per_sec = 0;
-		int n = pACodecContext->channels * 2;
 
 		if (pAudioStream) {
-			bytes_per_sec = pACodecContext->sample_rate * n;
+			bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
 		}
 
 		if (bytes_per_sec) {
@@ -651,6 +687,13 @@ private:
 		return pts;
 	}
 
+	inline double get_ptsMS(AVPacket* pPacket, AVStream* pStream) {
+		return pPacket->pts * av_q2d(pStream->time_base) * 1000;
+	}
+
+	inline double get_dtsMS(AVPacket* pPacket, AVStream* pStream) {
+		return pPacket->dts * av_q2d(pStream->time_base) * 1000;
+	}
 public:
 	//Load from file
 	FFMpeg(const std::wstring& filePath) {
