@@ -833,9 +833,12 @@ public:
 		return int((volume / 128.0) * 100);
 	}
 
-	inline int get_videoPosition() {
-		//TODO
-		return -1;
+	inline int64_t get_videoPosition() {
+		return int64_t(videoPts * 1000);
+	}
+
+	inline int64_t get_videoDuration() {
+		return int64_t(double(pVideoStream->duration) * av_q2d(pVideoStream->time_base) * 1000);
 	}
 
 	inline bool get_loopState() {
@@ -944,13 +947,21 @@ public:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
+		//response = decode_frame(callBack);
+
+		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
+
+		//if (bLoop && bFinish) {
+		//	response = set_videoPosition();			
+		//}
+
+		if (bLoop && bFinish) {
+			response = set_videoPosition();
+		}
+
 		response = decode_frame(callBack);
 
 		bFinish = bReadFinish && bVideoFinish && bAudioFinish;
-
-		if (bLoop && bFinish) {
-			response = set_videoPosition();			
-		}
 
 		return response;
 	}
