@@ -93,3 +93,14 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, blitCallBack callBack) {
 //		pData->userdata = (void*)pAudiopCodecContext;//传递用户数据
 //		});
 //}
+
+inline void CloseGeneral(LPRDATA rdPtr) {
+	delete rdPtr->pEncrytpt;
+	rdPtr->pEncrytpt = nullptr;
+
+	delete rdPtr->pFFMpeg;
+	rdPtr->pFFMpeg = nullptr;
+
+	rdPtr->bOpen = false;
+	rdPtr->bPlay = false;
+}

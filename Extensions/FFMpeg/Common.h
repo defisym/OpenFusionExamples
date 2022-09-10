@@ -23,6 +23,11 @@
 #define	MINBUILD	243
 #endif
 
+#ifdef _DEBUG
+#include	<assert.h>
+#endif
+
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
@@ -34,8 +39,10 @@ using namespace std::literals;
 using Timer = std::chrono::time_point<std::chrono::steady_clock>;
 
 // My lib
-//#include	"Definition.h"
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
+#include	"Encryption.h"
 #include	"FFMpeg.h"
 
 // Specific to this cox

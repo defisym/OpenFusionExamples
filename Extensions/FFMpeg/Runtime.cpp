@@ -89,6 +89,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pFFMpeg = nullptr;
 	rdPtr->pPreviousTimer = new Timer;
 
+	rdPtr->pEncrytpt = nullptr;
+
 	rdPtr->bChanged = true;
 	rdPtr->bPm = PreMulAlpha(rdPtr);
 
@@ -126,6 +128,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	delete rdPtr->pFFMpeg;
 	delete rdPtr->pPreviousTimer;
+
+	delete rdPtr->pEncrytpt;
 
 	delete rdPtr->pRetStr;
 
@@ -181,7 +185,23 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
 			//ReDisplay(rdPtr);
 			});
+
+		if (rdPtr->pFFMpeg->get_finishState()) {
+			CallEvent(ON_FINISH);
+		}
 	}
+
+#ifdef _DEBUG
+	if (rdPtr->pFFMpeg != nullptr) {
+		auto bFinish = rdPtr->pFFMpeg->get_finishState();
+
+		auto totalTime = rdPtr->pFFMpeg->get_videoDuration();
+		auto curTime = rdPtr->pFFMpeg->get_videoPosition();
+
+
+		//assert(totalTime >= curTime);
+	}
+#endif // _DEBUG
 
 	if (rdPtr->pMemSf != nullptr
 		&& rdPtr->pMemSf->IsValid()

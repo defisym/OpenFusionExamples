@@ -54,6 +54,8 @@ constexpr auto FFMpegException_InitFailed = -1;
 //constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 
+constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
+
 // pData, width, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 
@@ -73,7 +75,7 @@ private:
 	bool bVideoFinish = false;
 	bool bAudioFinish = false;
 
-	bool bFinish = false;	
+	bool bFinish = false;
 
 	int volume = SDL_MIX_MAXVOLUME;
 
@@ -194,7 +196,7 @@ private:
 		}
 
 		auto pAvio = avio_alloc_context(pBuffer, bfSz, 0, NULL
-			, [](void* opaque, uint8_t* buf, int bufsize)->int {
+			, [] (void* opaque, uint8_t* buf, int bufsize)->int {
 				return bufsize;
 			}
 		, NULL, NULL);
@@ -221,7 +223,7 @@ private:
 
 		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
 			AVCodecParameters* pLocalCodecParameters = NULL;
-			pLocalCodecParameters = pFormatContext->streams[i]->codecpar;
+			pLocalCodecParameters = pFormatContext->streams [i]->codecpar;
 
 			const AVCodec* pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
 
@@ -275,7 +277,7 @@ private:
 
 		}
 
-		pACodecParameters = pFormatContext->streams[audio_stream_index]->codecpar;
+		pACodecParameters = pFormatContext->streams [audio_stream_index]->codecpar;
 #endif
 
 		pACodecContext = avcodec_alloc_context3(pACodec);
@@ -350,8 +352,8 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pVideoStream = pFormatContext->streams[video_stream_index];
-		pAudioStream = pFormatContext->streams[audio_stream_index];
+		pVideoStream = pFormatContext->streams [video_stream_index];
+		pAudioStream = pFormatContext->streams [audio_stream_index];
 
 		rational = pVideoStream->time_base;
 		decimalRational = (double)rational.num / rational.den;
@@ -365,7 +367,7 @@ private:
 
 #pragma region SDLInit
 		// init SDL audio
-		audio_buf = new uint8_t[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
+		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
 		//DSP frequency -- samples per second
@@ -406,16 +408,17 @@ private:
 	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, size_t ms = 0) {
 		int response = 0;
 
+		//auto frame = (ms / 1000.0) / av_q2d(pFormatContext->streams[stream_index]->time_base);
+		//auto frame2 = get_protectedFrame(ms);
+		
+		auto seek_target = av_rescale_q(ms, time_base_q, pFormatContext->streams[stream_index]->time_base);
+
 		response = av_seek_frame(pFormatContext, stream_index
-			, get_protectedFrame(ms)
+			, seek_target
 			, seekFlags);
 
 		//https://stackoverflow.com/questions/45526098/repeating-ffmpeg-stream-libavcodec-libavformat
 		//avio_seek(pFormatContext->pb, 0, SEEK_SET);
-
-		if (response < 0) {
-			return response;
-		}
 
 		return response;
 	}
@@ -427,7 +430,7 @@ private:
 
 		SyncState syncState = SyncState::SYNC_SYNC;
 
-		do {		
+		do {
 			// fill buffer
 			while (true) {
 				if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
@@ -471,12 +474,12 @@ private:
 
 			// decode
 			switch (syncState) {
-			// video is faster, wait
+				// video is faster, wait
 			case FFMpeg::SyncState::SYNC_VIDEOFASTER:
 				return 0;
 
 				break;
-			// decode new video frame
+				// decode new video frame
 			case FFMpeg::SyncState::SYNC_AUDIOFASTER:
 				//response = decode_videoFrame(callBack);
 
@@ -559,14 +562,21 @@ private:
 			return response;
 		}
 
+#define _NOLOOP
+
+#ifndef _NOLOOP
 		//TODO Why loop
 		while (response >= 0) {
+#endif // !_NOLOOP
 			// Return decoded output data (into a frame) from a decoder
 			// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 			response = avcodec_receive_frame(pVCodecContext, pFrame);
 
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+				return response;
+#ifndef _NOLOOP
 				break;
+#endif // !_NOLOOP
 			}
 			else if (response < 0) {
 				av_frame_unref(pFrame);
@@ -600,28 +610,31 @@ private:
 				// That is the format of the provided .mp4 file
 				// https://zhuanlan.zhihu.com/p/53305541
 				if (pFrame->format != AV_PIX_FMT_BGR24) {
-					int linesize[8] = { pFrame->linesize[0] * 3 };
+					int linesize [8] = { pFrame->linesize [0] * 3 };
 					int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height, 1);
 
 					//auto p_global_bgr_buffer = (uint8_t*)malloc(num_bytes * sizeof(uint8_t));
-					auto p_global_bgr_buffer = new uint8_t[num_bytes];
-					uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+					auto p_global_bgr_buffer = new uint8_t [num_bytes];
+					uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
 
 					sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
 					//bgr_buffer[0] is the BGR raw data
-					callBack(bgr_buffer[0], pFrame->width, pFrame->height);
+					callBack(bgr_buffer [0], pFrame->width, pFrame->height);
 
 					delete[] p_global_bgr_buffer;
 				}
 				else {
 					// call callback
-					callBack(pFrame->data[0], pFrame->width, pFrame->height);
+					callBack(pFrame->data [0], pFrame->width, pFrame->height);
 				}
 
 				av_frame_unref(pFrame);
 			}
+#ifndef _NOLOOP
 		}
+#endif // !_NOLOOP
+
 
 		return response;
 	}
@@ -650,7 +663,7 @@ private:
 		// 转换，返回值为转换后的sample个数
 		int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
 
-		auto audioSize= pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+		auto audioSize = pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
 
 		audioPts = audioClock;
 
@@ -661,7 +674,7 @@ private:
 	}
 
 	//synchronize
-	inline double synchronize_video(AVFrame* pVFrame,double videoPts) {
+	inline double synchronize_video(AVFrame* pVFrame, double videoPts) {
 		double frameDelay = 0;
 
 		if (videoPts != 0) {
@@ -681,7 +694,7 @@ private:
 
 	inline double get_audioClock() {
 		double pts = audioClock; /* maintained in the audio thread */
-		
+
 		int hw_buf_size = audio_buf_size - audio_buf_index;
 		int  bytes_per_sec = 0;
 
@@ -730,17 +743,24 @@ private:
 		return SyncState::SYNC_SYNC;
 	}
 
-	inline void reset_sync() {
+	inline void reset_sync(double newTime = 0) {
 		videoPts = 0;
 		audioPts = 0;
+
+		// videoPts = newTime;
+		// audioPts = newTime;
 
 		globalPts = 0;
 
 		audioClock = 0;
 		videoClock = 0;
 
+		// audioClock = newTime;
+		// videoClock = newTime;
+
 		frameTimer = (double)av_gettime() / 1000000.0;;
 		frameLastPts = 0;
+		// frameLastPts = newTime;
 		frameLastDelay = 40e-3;
 	}
 
@@ -803,7 +823,7 @@ public:
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
 
-		sws_freeContext(swsContext);		
+		sws_freeContext(swsContext);
 		swr_free(&swrContext);
 
 		avcodec_close(pVCodecContext);
@@ -849,7 +869,7 @@ public:
 	inline void set_volume(int volume) {
 		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
 	}
-	
+
 	inline int set_videoPosition(size_t ms = 0) {
 		int response = 0;
 
@@ -875,7 +895,7 @@ public:
 			audioQueue.put(&flushPacket);
 		}
 
-		reset_sync();
+		reset_sync(ms / 1000.0);
 		reset_finishState();
 
 		return response;
@@ -927,6 +947,11 @@ public:
 				videoClock = oldClock;
 				videoPts = oldPts;
 
+				//wait until receive enough frames
+				if (response == AVERROR(EAGAIN)) {
+					continue;
+				}
+
 				if (response < 0) { break; }
 
 				// stop it, otherwise we'll be saving hundreds of frames
@@ -961,7 +986,10 @@ public:
 
 		response = decode_frame(callBack);
 
-		bFinish = bReadFinish && bVideoFinish && bAudioFinish;
+		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
+
+		//do not wait audio finish to get fluent loop
+		bFinish = bReadFinish && bVideoFinish;
 
 		return response;
 	}
@@ -986,7 +1014,7 @@ public:
 					audio_size = decode_audioFrame();
 
 					// If error, output silence.
-					if (audio_size < 0) {						
+					if (audio_size < 0) {
 						audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
 						memset(audio_buf, 0, audio_buf_size);
 					}

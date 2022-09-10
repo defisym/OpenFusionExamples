@@ -6,26 +6,42 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
+#define CND_CONDITION_VO				0
+#define CND_CONDITION_VP				1
+#define CND_CONDITION_VL				2
+#define CND_CONDITION_VF				3
 
-#define	CND_LAST					1
+#define CND_CONDITION_OVF				4
+
+#define	CND_LAST						5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_OV					0
-#define	ACT_ACTION_SP					1
+#define	ACT_ACTION_CV					1
+#define	ACT_ACTION_PLAYV				2
+#define	ACT_ACTION_PAUSEV				3
 
-#define	ACT_LAST						2
+#define	ACT_ACTION_SV					4
+#define	ACT_ACTION_SL					5
+#define	ACT_ACTION_SP					6
+
+#define	ACT_LAST						7
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
+#define	EXP_EXPRESSION_GVN				0
+#define EXP_EXPRESSION_GVP				1
+#define EXP_EXPRESSION_GVD				2
 
-#define	EXP_LAST                    3
+#define EXP_EXPRESSION_GV				3
+
+#define EXP_EXPRESSION_GCVFP			4
+#define EXP_EXPRESSION_GGVFP			5
+
+#define	EXP_LAST                    	6
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -78,6 +94,7 @@ typedef struct tagRDATA
 	short			sheight;
 
 	LPSURFACE pMemSf;
+	LPSURFACE pHwaSf;
 	LPSURFACE pGrabbedFrame;
 
 	bool bHwa;
@@ -93,7 +110,7 @@ typedef struct tagRDATA
 	FFMpeg* pFFMpeg;
 	Timer* pPreviousTimer;
 
-	SDL_AudioSpec wanted_spec, spec;
+	Encryption* pEncrytpt;
 	
 	bool bPm;
 	bool bChanged;
@@ -112,7 +129,7 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_SPRITES|OEFLAG_QUICKDISPLAY|OEFLAG_BACKSAVE|OEFLAG_MOVEMENTS)
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SPRITES|OEFLAG_MOVEMENTS|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_BACKSAVE)
 #define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS)
 
 
