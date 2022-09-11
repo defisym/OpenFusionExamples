@@ -131,7 +131,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		ReDisplay(rdPtr);
 	}
 	catch (...) {
-
+		CloseGeneral(rdPtr);
 	}
 
 	return 0;

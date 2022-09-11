@@ -849,6 +849,9 @@ public:
 		audioQueue.exit();
 		videoQueue.exit();
 
+		audioQueue.flush();
+		videoQueue.flush();
+
 		SDL_PauseAudio(true);
 		SDL_CloseAudio();
 
@@ -857,12 +860,11 @@ public:
 
 		SDL_LockMutex(mutex);
 
-		audioQueue.flush();
-		videoQueue.flush();
+		//audioQueue.flush();
+		//videoQueue.flush();
 
 		delete[] audio_buf;
 
-		av_packet_unref(pPacket);
 		av_packet_free(&pPacket);
 		//av_packet_free(&pFlushPacket);
 
