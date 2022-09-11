@@ -55,6 +55,7 @@ constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
+constexpr auto END_OF_QUEUE = -1;
 
 // pData, width, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
@@ -62,6 +63,11 @@ using rawDataCallBack = std::function<void(const unsigned char*, const int, cons
 using Uint8 = unsigned char;
 
 inline void audio_callback(void* userdata, Uint8* stream, int len);
+inline int interrupt_callback(void* pUserData) {
+	AVFormatContext* pFormatContext = (AVFormatContext*)pUserData;
+
+	return 1;
+}
 
 class FFMpeg {
 private:
@@ -87,7 +93,7 @@ private:
 	double videoPts = 0;
 	double audioPts = 0;
 
-	int64_t globalPts = 0;
+	//int64_t globalPts = 0;
 
 	double audioClock = 0;
 	double videoClock = 0;
@@ -192,6 +198,9 @@ private:
 		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath).c_str(), NULL, NULL) != 0) {
 			throw FFMpegException_InitFailed;
 		}
+
+		//(*pFormatContext)->interrupt_callback.callback = interrupt_callback;
+		//(*pFormatContext)->interrupt_callback.opaque = nullptr;
 	}
 
 	inline void init_formatContext(AVFormatContext** pFormatContext, unsigned char* pBuffer, size_t bfSz) {
@@ -215,6 +224,9 @@ private:
 		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) != 0) {
 			throw FFMpegException_InitFailed;
 		}
+
+		//(*pFormatContext)->interrupt_callback.callback = interrupt_callback;
+		//(*pFormatContext)->interrupt_callback.opaque = nullptr;
 	}
 
 	inline void init_general() {
@@ -402,7 +414,7 @@ private:
 #pragma endregion
 	}
 
-	inline int64_t get_protectedFrame(size_t ms) {
+	inline int64_t get_protectedFrame(int64_t ms) {
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
 		auto protectedTime = protectedTimeInMs / 1000;
 		auto protectedFrame = protectedTime / decimalRational;
@@ -410,7 +422,7 @@ private:
 		return (int64_t)(protectedFrame);
 	}
 
-	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, size_t ms = 0) {
+	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, int64_t ms = 0) {
 		int response = 0;
 
 		// input second
@@ -428,6 +440,49 @@ private:
 	}
 
 	//Decode
+	inline int fill_queue() {
+		int response = 0;
+
+		while (true) {
+			if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
+				break;
+			}
+
+			response = av_read_frame(pFormatContext, pPacket);
+
+			bReadFinish = (response == AVERROR_EOF);
+
+			if (bReadFinish) {
+				videoQueue.stopBlock();
+				audioQueue.stopBlock();
+			}
+
+			if (response < 0) {
+				break;
+			}
+
+			bool bValid = false;
+
+			// if it's the video stream
+			if (pPacket->stream_index == video_stream_index) {
+				videoQueue.put(pPacket);
+				bValid = true;
+			}
+
+			// if it's the audio stream
+			if (pPacket->stream_index == audio_stream_index) {
+				audioQueue.put(pPacket);
+				bValid = true;
+			}
+
+			if (!bValid) {
+				av_packet_unref(pPacket);
+			}
+		}
+
+		return response;
+	}
+
 	inline int decode_frame(rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
@@ -436,42 +491,7 @@ private:
 
 		do {
 			// fill buffer
-			while (true) {
-				if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
-					break;
-				}
-
-				response = av_read_frame(pFormatContext, pPacket);
-
-				bReadFinish = (response == AVERROR_EOF);
-
-				if (bReadFinish) {
-					videoQueue.stopBlock();
-					audioQueue.stopBlock();
-				}
-
-				if (response < 0) {
-					break;
-				}
-
-				bool bValid = false;
-
-				// if it's the video stream
-				if (pPacket->stream_index == video_stream_index) {
-					videoQueue.put(pPacket);
-					bValid = true;
-				}
-
-				// if it's the audio stream
-				if (pPacket->stream_index == audio_stream_index) {
-					audioQueue.put(pPacket);
-					bValid = true;
-				}
-
-				if (!bValid) {
-					av_packet_unref(pPacket);
-				}
-			}
+			response = fill_queue();
 
 			// calc delay
 			syncState = get_delayState();
@@ -488,7 +508,17 @@ private:
 			case FFMpeg::SyncState::SYNC_SYNC:
 				response = decode_videoFrame(callBack);
 
-				if (response < 0) { return response; }
+				if (response == AVERROR(EAGAIN)) {
+					continue;
+				}
+
+				if (response < 0) { 
+					//auto e1 = AVERROR_EOF;
+					//auto e2 = AVERROR(EINVAL);
+					//auto e3 = AVERROR(ENOMEM);
+
+					return response; 
+				}
 
 				break;
 			}
@@ -502,14 +532,14 @@ private:
 		bVideoFinish = !videoQueue.get(pVPacket, false);
 
 		if (bVideoFinish) {
-			return -1;
+			return END_OF_QUEUE;
 		}
 
-		if (pVPacket->data == flushPacket.data) {
-			avcodec_flush_buffers(pVCodecContext);
+		//if (pVPacket->data == flushPacket.data) {
+		//	avcodec_flush_buffers(pVCodecContext);
 
-			return 0;
-		}
+		//	return 0;
+		//}
 
 		auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
 
@@ -522,17 +552,18 @@ private:
 
 	inline int decode_audioFrame() {
 		//bAudioFinish = !audioQueue.get(pAPacket);
-		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
+		//bAudioFinish = !audioQueue.get(pAPacket, false);
+		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);		
 
 		if (bAudioFinish) {
-			return -1;
+			return END_OF_QUEUE;
 		}
 
-		if (pAPacket->data == flushPacket.data) {
-			avcodec_flush_buffers(pACodecContext);
+		//if (pAPacket->data == flushPacket.data) {
+		//	avcodec_flush_buffers(pACodecContext);
 
-			return 0;
-		}
+		//	return 0;
+		//}
 
 		// return data size here
 		auto response = decode_apacket(pAPacket, pACodecContext, pAFrame);
@@ -564,7 +595,9 @@ private:
 			response = avcodec_receive_frame(pVCodecContext, pFrame);
 
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+#ifdef _NOLOOP
 				return response;
+#endif
 #ifndef _NOLOOP
 				break;
 #endif // !_NOLOOP
@@ -717,6 +750,10 @@ private:
 	}
 
 	inline SyncState get_delayState() {
+		//if (bFinish) {
+		//	return SyncState::SYNC_SYNC;
+		//}
+
 		auto delay = videoPts - frameLastPts;
 
 		if (delay <= 0 || delay >= 1) {
@@ -754,10 +791,10 @@ private:
 		videoPts = 0;
 		audioPts = 0;
 
-		globalPts = 0;
+		//globalPts = 0;
 
-		audioClock = 0;
 		videoClock = 0;
+		audioClock = 0;
 
 		frameTimer = (double)av_gettime() / 1000000.0;;
 		frameLastPts = 0;
@@ -776,6 +813,16 @@ private:
 
 	inline double get_dtsMS(AVPacket* pPacket, AVStream* pStream) {
 		return pPacket->dts * av_q2d(pStream->time_base) * 1000;
+	}
+
+	inline int handleLoop() {
+		int response = 0;
+
+		if (bLoop && bFinish) {
+			response = set_videoPosition();
+		}
+
+		return response;
 	}
 public:
 	//Load from file
@@ -878,7 +925,7 @@ public:
 		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
 	}
 
-	inline int set_videoPosition(size_t ms = 0) {
+	inline int set_videoPosition(int64_t ms = 0) {
 		int response = 0;
 
 		int steam_index = -1;
@@ -886,6 +933,8 @@ public:
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
 		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
 
+		// protection
+		ms = min(max(ms, 0), get_videoDuration());
 		response = seekFrame(pFormatContext, steam_index, ms);
 
 		if (response < 0) {
@@ -894,12 +943,15 @@ public:
 
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
-			videoQueue.put(&flushPacket);
+			//videoQueue.put(&flushPacket);
+			avcodec_flush_buffers(pVCodecContext);
+
 		}
 
 		if (audio_stream_index >= 0) {
 			audioQueue.flush();
-			audioQueue.put(&flushPacket);
+			//audioQueue.put(&flushPacket);
+			avcodec_flush_buffers(pACodecContext);
 		}
 
 #ifdef _CONSOLE
@@ -988,9 +1040,7 @@ public:
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
-		if (bLoop && bFinish) {
-			response = set_videoPosition();
-		}
+		response = handleLoop();
 
 		response = decode_frame(callBack);
 
