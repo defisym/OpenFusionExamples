@@ -51,8 +51,8 @@ static volatile int Stat_QuitComplete = 1;
 constexpr auto FFMpegException_InitFailed = -1;
 
 // Define
-//constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
-constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
+constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
+//constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
@@ -70,12 +70,17 @@ private:
 	bool bExit = false;
 
 	bool bLoop = false;
+	bool bPause = false;
 
 	bool bReadFinish = false;
 	bool bVideoFinish = false;
 	bool bAudioFinish = false;
 
 	bool bFinish = false;
+
+#ifdef _CONSOLE
+	bool bJumped = false;
+#endif
 
 	int volume = SDL_MIX_MAXVOLUME;
 
@@ -408,10 +413,9 @@ private:
 	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, size_t ms = 0) {
 		int response = 0;
 
-		//auto frame = (ms / 1000.0) / av_q2d(pFormatContext->streams[stream_index]->time_base);
-		//auto frame2 = get_protectedFrame(ms);
-		
-		auto seek_target = av_rescale_q(ms, time_base_q, pFormatContext->streams[stream_index]->time_base);
+		// input second
+		//auto seek_target = av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
+		auto seek_target = get_protectedFrame(ms);
 
 		response = av_seek_frame(pFormatContext, stream_index
 			, seek_target
@@ -604,7 +608,18 @@ private:
 				}
 
 				videoPts *= av_q2d(pVideoStream->time_base);
+#ifdef _CONSOLE
+				if (bJumped) {
+					printf("Cur video pts: %f\n", videoPts);
+				}
+#endif
 				videoPts = synchronize_video(pFrame, videoPts);
+
+#ifdef _CONSOLE
+				if (bJumped) {
+					printf("Cur synced video pts: %f\n", videoPts);
+				}
+#endif
 
 				// Check if the frame is a planar YUV 4:2:0, 12bpp
 				// That is the format of the provided .mp4 file
@@ -655,6 +670,11 @@ private:
 
 		if (pAPacket->pts != AV_NOPTS_VALUE) {
 			audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
+#ifdef _CONSOLE
+			if (bJumped) {
+				printf("Cur audio clock: %f\n", audioClock);
+			}
+#endif
 		}
 
 		// 计算转换后的sample个数 a * b / c
@@ -743,24 +763,17 @@ private:
 		return SyncState::SYNC_SYNC;
 	}
 
-	inline void reset_sync(double newTime = 0) {
+	inline void reset_sync() {
 		videoPts = 0;
 		audioPts = 0;
-
-		// videoPts = newTime;
-		// audioPts = newTime;
 
 		globalPts = 0;
 
 		audioClock = 0;
 		videoClock = 0;
 
-		// audioClock = newTime;
-		// videoClock = newTime;
-
 		frameTimer = (double)av_gettime() / 1000000.0;;
 		frameLastPts = 0;
-		// frameLastPts = newTime;
 		frameLastDelay = 40e-3;
 	}
 
@@ -849,6 +862,10 @@ public:
 		return bFinish;
 	}
 
+	inline bool get_pause() {
+		return this->bPause;
+	}
+
 	inline int get_volume() {
 		return int((volume / 128.0) * 100);
 	}
@@ -866,6 +883,10 @@ public:
 	}
 
 	//Set
+	inline void set_pause(bool bPause) {
+		this->bPause = bPause;
+	}
+
 	inline void set_volume(int volume) {
 		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
 	}
@@ -873,30 +894,60 @@ public:
 	inline int set_videoPosition(size_t ms = 0) {
 		int response = 0;
 
+		//if (video_stream_index >= 0) {
+		//	response = seekFrame(pFormatContext, video_stream_index, ms);
+
+		//	if (response < 0) {
+		//		return response;
+		//	}
+
+		//	videoQueue.flush();
+		//	videoQueue.put(&flushPacket);
+		//}
+
+		//if (audio_stream_index >= 0) {
+		//	response = seekFrame(pFormatContext, audio_stream_index, ms);
+
+		//	if (response < 0) {
+		//		return response;
+		//	}
+
+		//	audioQueue.flush();
+		//	audioQueue.put(&flushPacket);
+		//}
+
+		int steam_index = -1;
+
+		if (video_stream_index >= 0) { steam_index = video_stream_index; }
+		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
+
+		response = seekFrame(pFormatContext, steam_index, ms);
+
+		if (response < 0) {
+			return response;
+		}
+
 		if (video_stream_index >= 0) {
-			response = seekFrame(pFormatContext, video_stream_index, ms);
-
-			if (response < 0) {
-				return response;
-			}
-
 			videoQueue.flush();
 			videoQueue.put(&flushPacket);
 		}
 
 		if (audio_stream_index >= 0) {
-			response = seekFrame(pFormatContext, audio_stream_index, ms);
-
-			if (response < 0) {
-				return response;
-			}
-
 			audioQueue.flush();
 			audioQueue.put(&flushPacket);
 		}
 
-		reset_sync(ms / 1000.0);
-		reset_finishState();
+#ifdef _CONSOLE
+		bJumped = true;
+		auto oldPos = get_videoPosition();
+		
+		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
+#endif
+
+		if (ms == 0) {
+			reset_sync();
+			reset_finishState();
+		}
 
 		return response;
 	}
@@ -991,13 +1042,17 @@ public:
 		//do not wait audio finish to get fluent loop
 		bFinish = bReadFinish && bVideoFinish;
 
+#ifdef _CONSOLE
+		bJumped = false;
+#endif
+
 		return response;
 	}
 
 	inline int audio_fillData(Uint8* stream, int len) {
 		SDL_LockMutex(mutex);
 
-		if (!bExit) {
+		if (!bExit && !bPause) {
 			//每次写入stream的数据长度
 			int wt_stream_len = 0;
 			//每解码后的数据长度
@@ -1019,8 +1074,7 @@ public:
 						memset(audio_buf, 0, audio_buf_size);
 					}
 					else {
-						//返回packet中包含的原始音频数据长度(多帧)
-						//TODO Sync
+						//返回packet中包含的原始音频数据长度(多帧)						
 						audio_buf_size = audio_size;
 					}
 
@@ -1048,6 +1102,9 @@ public:
 				//更新累计写入缓存数据长度
 				audio_buf_index += wt_stream_len;
 			}
+		}
+		else {
+			SDL_memset(stream, 0, len);
 		}
 
 		SDL_CondSignal(cond);
