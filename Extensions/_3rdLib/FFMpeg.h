@@ -198,7 +198,7 @@ private:
 		}
 	}
 
-	inline volatile void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, unsigned char* pBuffer, size_t bfSz) {
+	inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, unsigned char* pBuffer, size_t bfSz) {
 		*pFormatContext = avformat_alloc_context();
 		if (!*pFormatContext) {
 			throw FFMpegException_InitFailed;
