@@ -33,15 +33,30 @@
 
 // Commands of action menu
 #define IDMN_ACTION_OV	       		25000
-#define IDMN_ACTION_SP	       		25001
+#define	IDMN_ACTION_CV				25001
+#define	IDMN_ACTION_PLAYV			25002
+#define	IDMN_ACTION_PAUSEV			25003
+
+#define	IDMN_ACTION_SV				25004
+#define	IDMN_ACTION_SL				25005
+#define	IDMN_ACTION_SP				25006
 
 // Action strings
-#define M_ACTION_OV                 5000
-#define M_ACTION_SP                 5001
+#define M_ACTION_OV	       		    5000
+#define	M_ACTION_CV				    5001
+#define	M_ACTION_PLAYV			    5002
+#define	M_ACTION_PAUSEV			    5003
+
+#define	M_ACTION_SV				    5004
+#define	M_ACTION_SL				    5005
+#define	M_ACTION_SP				    5006
 
 // Titles of action parameters
 #define M_FILEPATH				 5501
-#define M_POSITION				 5502
+#define M_KEY   				 5502
+#define M_VOLUME				 5503
+#define M_LOOP  				 5504
+#define M_POSITION				 5505
 
 
 //	Conditions
@@ -51,10 +66,20 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_VO				26000
+#define IDMN_CONDITION_VP				26001
+#define IDMN_CONDITION_VL				26002
+#define IDMN_CONDITION_VF				26003
+
+#define IDMN_CONDITION_OVF				26004
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_VO				    6000
+#define M_CONDITION_VP				    6001
+#define M_CONDITION_VL				    6002
+#define M_CONDITION_VF				    6003
+
+#define M_CONDITION_OVF				    6004
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -68,17 +93,27 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION			27000
-#define IDMN_EXPRESSION2		27001
-#define IDMN_EXPRESSION3		27002
+#define	IDMN_EXPRESSION_GVN			    27000
+#define IDMN_EXPRESSION_GVP			    27001
+#define IDMN_EXPRESSION_GVD			    27002
+
+#define IDMN_EXPRESSION_GV			    27003
+
+#define IDMN_EXPRESSION_GCVFP		    27004
+#define IDMN_EXPRESSION_GGVFP		    27005
 
 // Expression strings
-#define M_EXPRESSION			 7000
-#define M_EXPRESSION2			 7001
-#define M_EXPRESSION3			 7002
+#define	M_EXPRESSION_GVN			    7000
+#define M_EXPRESSION_GVP			    7001
+#define M_EXPRESSION_GVD			    7002
+
+#define M_EXPRESSION_GV			        7003
+
+#define M_EXPRESSION_GCVFP		        7004
+#define M_EXPRESSION_GGVFP		        7005
 
 // Names of expression parameters
-#define M_EXP_P1				 7500
+#define M_HWA   				 7500
 #define	M_EXP_P2				 7501
 
 // Next default values for new objects

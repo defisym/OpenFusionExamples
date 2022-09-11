@@ -65,6 +65,14 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+#ifdef _CONSOLE
+	AllocConsole();
+
+	freopen("conin$", "r", stdin);
+	freopen("conout$", "w", stdout);
+	freopen("conout$", "w", stderr);
+#endif
+
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 	
@@ -78,12 +86,18 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pFilePath = new std::wstring;
 
-	rdPtr->bLoop = false;
+	//TODO
+	//rdPtr->bLoop = false;
+	rdPtr->bLoop = true;
 	rdPtr->bPlay = false;
 	rdPtr->bOpen = false;
 
+	rdPtr->volume = 100;
+
 	rdPtr->pFFMpeg = nullptr;
 	rdPtr->pPreviousTimer = new Timer;
+
+	rdPtr->pEncrytpt = nullptr;
 
 	rdPtr->bChanged = true;
 	rdPtr->bPm = PreMulAlpha(rdPtr);
@@ -91,6 +105,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pRetStr = new std::wstring;
 
 	//initialize the video audio & timer subsystem 
+	//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
 	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
 		auto error = SDL_GetError();
 
@@ -114,6 +129,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+#ifdef _CONSOLE
+	FreeConsole();
+#endif
+
 	delete rdPtr->pMemSf;
 	delete rdPtr->pGrabbedFrame;	
 
@@ -121,6 +140,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	delete rdPtr->pFFMpeg;
 	delete rdPtr->pPreviousTimer;
+
+	delete rdPtr->pEncrytpt;
 
 	delete rdPtr->pRetStr;
 
@@ -166,18 +187,60 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
+#ifdef _LOOPBENCH
+	auto now = std::chrono::steady_clock::now();
+	auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
+
+	*rdPtr->pPreviousTimer = now;
+
+	std::wstring outPut = L"Duration: ";
+	outPut += _itos((int)duration);
+
+	OutputDebugString(outPut.c_str());
+	OutputDebugString(L"\n");
+#endif
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
-		auto now = std::chrono::steady_clock::now();
-		auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
+#ifdef _LOOPBENCH
+		//auto now = std::chrono::steady_clock::now();
+		//auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
-		if (duration >= rdPtr->pFFMpeg->get_timePerFrame()) {
-			*rdPtr->pPreviousTimer = now;
-			rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
-				CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
-				});
+		auto beforeDecode = std::chrono::steady_clock::now();
+#endif
+
+		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
+			InitSurface(rdPtr, width, height);
+			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+			//ReDisplay(rdPtr);
+			});
+
+#ifdef _LOOPBENCH
+		auto decodeDuration = (std::chrono::steady_clock::now() - beforeDecode) / 1ms;
+		
+		std::wstring outPut2 = L"Decode Duration: ";
+		outPut2 += _itos((int)decodeDuration);
+
+		OutputDebugString(outPut2.c_str());
+		OutputDebugString(L"\n");
+
+		if (rdPtr->pFFMpeg->get_finishState()) {
+			CallEvent(ON_FINISH);
+			OutputDebugString(L"======FINISH======\n");
 		}
+#endif
 	}
+
+#ifdef _DEBUG
+	if (rdPtr->pFFMpeg != nullptr) {
+		auto bFinish = rdPtr->pFFMpeg->get_finishState();
+
+		auto totalTime = rdPtr->pFFMpeg->get_videoDuration();
+		auto curTime = rdPtr->pFFMpeg->get_videoPosition();
+
+
+		//assert(totalTime >= curTime);
+	}
+#endif // _DEBUG
 
 	if (rdPtr->pMemSf != nullptr
 		&& rdPtr->pMemSf->IsValid()

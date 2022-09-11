@@ -116,7 +116,12 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM "Video Open",      IDMN_CONDITION_VO
+        MENUITEM "Video Play",      IDMN_CONDITION_VP
+        MENUITEM "Video Loop",      IDMN_CONDITION_VL
+        MENUITEM "Video Finish",    IDMN_CONDITION_VF
+        MENUITEM SEPARATOR
+        MENUITEM "On Video Finish", IDMN_CONDITION_OVF
         MENUITEM SEPARATOR
     END
 END
@@ -133,7 +138,14 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Open Video",              IDMN_ACTION_OV
-        MENUITEM "Set Video Position",              IDMN_ACTION_SP
+        MENUITEM "Close Video",             IDMN_ACTION_CV
+        MENUITEM SEPARATOR
+        MENUITEM "Play Video",              IDMN_ACTION_PLAYV
+        MENUITEM "Pause Video",             IDMN_ACTION_PAUSEV
+        MENUITEM SEPARATOR
+        MENUITEM "Set Volume",              IDMN_ACTION_SV
+        MENUITEM "Set Loop",                IDMN_ACTION_SL
+        MENUITEM "Set Video Position",      IDMN_ACTION_SP
         MENUITEM SEPARATOR
     END
 END
@@ -149,9 +161,14 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM "Get Video Name",      IDMN_EXPRESSION_GVN	
+        MENUITEM "Get Video Position",  IDMN_EXPRESSION_GVP	
+        MENUITEM "Get Video Duration",  IDMN_EXPRESSION_GVD	
+        MENUITEM SEPARATOR        
+        MENUITEM "Get Volume",          IDMN_EXPRESSION_GV	
+        MENUITEM SEPARATOR
+        MENUITEM "Get Current Video Frame Pointer", IDMN_EXPRESSION_GCVFP
+        MENUITEM "Get Grabbed Video Frame Pointer", IDMN_EXPRESSION_GGVFP        
         MENUITEM SEPARATOR
     END
 END
@@ -244,27 +261,43 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION_OV                "Open Video %0"
-    M_ACTION_SP                "Set Video Position to %0"
+    M_ACTION_OV	       	       "Open Video %0, Decrypt Key %1"
+    M_ACTION_CV			       "Close Video"
+    M_ACTION_PLAYV		       "Play Video"
+    M_ACTION_PAUSEV		       "Pause Video"
+
+    M_ACTION_SV			       "Set Volume to %0"
+    M_ACTION_SL			       "Set Loop to %0"
     
+    M_ACTION_SP			       "Set Video Position to %0"
+
     M_FILEPATH                 "FilePath"
+    M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
+    M_VOLUME	               "Volume, 0 = Min, 100 = Max"
+    M_LOOP  	               "Loop"
     M_POSITION                 "Position"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+   M_CONDITION_VO	           "%o Video Open"
+   M_CONDITION_VP	           "%o Video Play"
+   M_CONDITION_VL	           "%o Video Loop"
+   M_CONDITION_VF	           "%o Video Finish"
+
+   M_CONDITION_OVF	           "%o On Video %0 Finish"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_GVN        "VideoName$ ("
+    M_EXPRESSION_GVP        "VideoPosition ("
+    M_EXPRESSION_GVD        "VideoDuration ("
+
+    M_EXPRESSION_GV	        "Volume ("
+
+    M_EXPRESSION_GCVFP      "CVFP ("
+    M_EXPRESSION_GGVFP      "GVFP ("
 END
 
 #endif    // English (U.S.) resources
