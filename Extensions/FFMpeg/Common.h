@@ -27,6 +27,11 @@
 #include	<assert.h>
 #endif
 
+//#define _CONSOLE
+
+#ifdef _CONSOLE
+#include <iostream>
+#endif
 
 // General includes
 #include	"ccxhdr.h"

@@ -65,6 +65,14 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+#ifdef _CONSOLE
+	AllocConsole();
+
+	freopen("conin$", "r", stdin);
+	freopen("conout$", "w", stdout);
+	freopen("conout$", "w", stderr);
+#endif
+
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 	
@@ -121,6 +129,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+#ifdef _CONSOLE
+	FreeConsole();
+#endif
+
 	delete rdPtr->pMemSf;
 	delete rdPtr->pGrabbedFrame;	
 

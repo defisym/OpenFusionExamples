@@ -22,10 +22,10 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION_VO, M_CONDITION_VO, CND_CONDITION_VO, EVFLAGS_ALWAYS, 0,
-		IDMN_CONDITION_VP, M_CONDITION_VP, CND_CONDITION_VP, EVFLAGS_ALWAYS, 0,
-		IDMN_CONDITION_VL, M_CONDITION_VL, CND_CONDITION_VL, EVFLAGS_ALWAYS, 0,
-		IDMN_CONDITION_VF, M_CONDITION_VF, CND_CONDITION_VF, EVFLAGS_ALWAYS, 0,
+		IDMN_CONDITION_VO, M_CONDITION_VO, CND_CONDITION_VO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_VP, M_CONDITION_VP, CND_CONDITION_VP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_VL, M_CONDITION_VL, CND_CONDITION_VL, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_VF, M_CONDITION_VF, CND_CONDITION_VF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		
 		IDMN_CONDITION_OVF, M_CONDITION_OVF, CND_CONDITION_OVF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
 		};
@@ -70,7 +70,7 @@ long WINAPI DLLExport Condition_VideoOpen(LPRDATA rdPtr, long param1, long param
 }
 
 long WINAPI DLLExport Condition_VideoPlay(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->bPlay && !rdPtr->pFFMpeg->get_finishState();
+	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr && !rdPtr->pFFMpeg->get_finishState();
 }
 
 long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param2) {
@@ -146,11 +146,19 @@ short WINAPI DLLExport Action_CloseVideo(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_PlayVideo(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->bPlay = true;
 
+	if (rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_pause(false);
+	}
+
 	return 0;
 }
 
 short WINAPI DLLExport Action_PauseVideo(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->bPlay = false;
+
+	if (rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_pause(true);
+	}
 
 	return 0;
 }
