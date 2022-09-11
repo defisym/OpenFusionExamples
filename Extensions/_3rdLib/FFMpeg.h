@@ -485,11 +485,6 @@ private:
 				break;
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_AUDIOFASTER:
-				//response = decode_videoFrame(callBack);
-
-				//if (response < 0) { return response; }
-
-				//break;
 			case FFMpeg::SyncState::SYNC_SYNC:
 				response = decode_videoFrame(callBack);
 
@@ -499,14 +494,6 @@ private:
 			}
 
 		} while (syncState != SyncState::SYNC_SYNC);
-
-		//response = decode_videoFrame(callBack);
-
-		//if (response < 0) { return response; }
-
-		////response = decode_audioFrame();
-
-		////if (response < 0) { return response; }
 
 		return 0;
 	}
@@ -894,28 +881,6 @@ public:
 	inline int set_videoPosition(size_t ms = 0) {
 		int response = 0;
 
-		//if (video_stream_index >= 0) {
-		//	response = seekFrame(pFormatContext, video_stream_index, ms);
-
-		//	if (response < 0) {
-		//		return response;
-		//	}
-
-		//	videoQueue.flush();
-		//	videoQueue.put(&flushPacket);
-		//}
-
-		//if (audio_stream_index >= 0) {
-		//	response = seekFrame(pFormatContext, audio_stream_index, ms);
-
-		//	if (response < 0) {
-		//		return response;
-		//	}
-
-		//	audioQueue.flush();
-		//	audioQueue.put(&flushPacket);
-		//}
-
 		int steam_index = -1;
 
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
@@ -1022,14 +987,6 @@ public:
 	inline int get_nextFrame(rawDataCallBack callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
-
-		//response = decode_frame(callBack);
-
-		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
-
-		//if (bLoop && bFinish) {
-		//	response = set_videoPosition();			
-		//}
 
 		if (bLoop && bFinish) {
 			response = set_videoPosition();
