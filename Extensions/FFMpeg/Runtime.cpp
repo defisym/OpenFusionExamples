@@ -187,6 +187,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
+#ifdef _LOOPBENCH
 	auto now = std::chrono::steady_clock::now();
 	auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
@@ -197,19 +198,23 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	OutputDebugString(outPut.c_str());
 	OutputDebugString(L"\n");
+#endif
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
+#ifdef _LOOPBENCH
 		//auto now = std::chrono::steady_clock::now();
 		//auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
 		auto beforeDecode = std::chrono::steady_clock::now();
+#endif
 
 		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
 			InitSurface(rdPtr, width, height);
 			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
 			//ReDisplay(rdPtr);
 			});
-		
+
+#ifdef _LOOPBENCH
 		auto decodeDuration = (std::chrono::steady_clock::now() - beforeDecode) / 1ms;
 		
 		std::wstring outPut2 = L"Decode Duration: ";
@@ -222,6 +227,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 			CallEvent(ON_FINISH);
 			OutputDebugString(L"======FINISH======\n");
 		}
+#endif
 	}
 
 #ifdef _DEBUG

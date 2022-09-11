@@ -47,27 +47,20 @@ constexpr auto SDL_EXCEPTION_AUDIO = 0;
 static volatile int Stat_Quit = 0;
 static volatile int Stat_QuitComplete = 1;
 
-// Exceptions
+// Exceptions & error code
 constexpr auto FFMpegException_InitFailed = -1;
+constexpr auto END_OF_QUEUE = -1;
 
-// Define
+// Defines
 constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
-constexpr auto END_OF_QUEUE = -1;
 
 // pData, width, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 
 using Uint8 = unsigned char;
-
-inline void audio_callback(void* userdata, Uint8* stream, int len);
-inline int interrupt_callback(void* pUserData) {
-	AVFormatContext* pFormatContext = (AVFormatContext*)pUserData;
-
-	return 1;
-}
 
 class FFMpeg {
 private:
@@ -111,6 +104,11 @@ private:
 #pragma endregion
 
 #pragma region FFMpeg
+	bool bFromMem = false;
+
+	AVIOContext* pAvioContext = nullptr;
+	AVIOContext* pSeekAvioContext = nullptr;
+
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = nullptr;
 
@@ -198,35 +196,25 @@ private:
 		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath).c_str(), NULL, NULL) != 0) {
 			throw FFMpegException_InitFailed;
 		}
-
-		//(*pFormatContext)->interrupt_callback.callback = interrupt_callback;
-		//(*pFormatContext)->interrupt_callback.opaque = nullptr;
 	}
 
-	inline void init_formatContext(AVFormatContext** pFormatContext, unsigned char* pBuffer, size_t bfSz) {
+	inline volatile void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, unsigned char* pBuffer, size_t bfSz) {
 		*pFormatContext = avformat_alloc_context();
 		if (!*pFormatContext) {
 			throw FFMpegException_InitFailed;
 		}
 
-		auto pAvio = avio_alloc_context(pBuffer, bfSz, 0, NULL
-			, [] (void* opaque, uint8_t* buf, int bufsize)->int {
-				return bufsize;
-			}
-		, NULL, NULL);
+		*pAvioContext = avio_alloc_context(pBuffer, bfSz, 0, NULL, NULL, NULL, NULL);
 
-		if (!pAvio) {
+		if (!*pAvioContext) {
 			throw FFMpegException_InitFailed;
 		}
 
-		(*pFormatContext)->pb = pAvio;
+		(*pFormatContext)->pb = *pAvioContext;
 
-		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) != 0) {
+		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) < 0) {
 			throw FFMpegException_InitFailed;
 		}
-
-		//(*pFormatContext)->interrupt_callback.callback = interrupt_callback;
-		//(*pFormatContext)->interrupt_callback.opaque = nullptr;
 	}
 
 	inline void init_general() {
@@ -398,8 +386,17 @@ private:
 		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 		//wanted_spec.samples = pACodecContext->frame_size;
 
-		wanted_spec.callback = audio_callback;
 		wanted_spec.userdata = (void*)this;
+		wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
+			FFMpeg* pFFMpeg = (FFMpeg*)userdata;
+
+			//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
+#ifndef _TESTDATA
+			pFFMpeg->audio_fillData(stream, len);
+#else
+			SDL_memset(stream, 0, len);
+#endif
+		};		
 
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
@@ -827,6 +824,8 @@ private:
 public:
 	//Load from file
 	FFMpeg(const std::wstring& filePath) {
+		bFromMem = false;
+
 		init_formatContext(&pFormatContext, filePath);
 		init_formatContext(&pSeekFormatContext, filePath);
 
@@ -836,8 +835,10 @@ public:
 	//Load from memory
 	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
 	FFMpeg(unsigned char* pBuffer, size_t bfSz) {
-		init_formatContext(&pFormatContext, pBuffer, bfSz);
-		init_formatContext(&pSeekFormatContext, pBuffer, bfSz);
+		bFromMem = true;
+
+		init_formatContext(&pFormatContext, &pAvioContext, pBuffer, bfSz);
+		init_formatContext(&pSeekFormatContext, &pSeekAvioContext, pBuffer, bfSz);
 
 		init_general();
 	}
@@ -861,6 +862,7 @@ public:
 
 		delete[] audio_buf;
 
+		av_packet_unref(pPacket);
 		av_packet_free(&pPacket);
 		//av_packet_free(&pFlushPacket);
 
@@ -880,6 +882,12 @@ public:
 
 		avformat_close_input(&pFormatContext);
 		avformat_close_input(&pSeekFormatContext);
+
+		//TODO
+		if (bFromMem) {
+			av_freep(&pAvioContext);
+			av_freep(&pSeekAvioContext);
+		}
 
 		SDL_UnlockMutex(mutex);
 
@@ -1120,16 +1128,8 @@ public:
 
 		return 0;
 	}
+
+	inline int memFile_callback(Uint8* pBuf, int bufSz) {
+		return -1;
+	}
 };
-
-inline void audio_callback(void* userdata, Uint8* stream, int len) {
-	FFMpeg* pFFMpeg = (FFMpeg*)userdata;
-
-	//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
-
-#ifndef _TESTDATA
-	pFFMpeg->audio_fillData(stream, len);
-#else
-	SDL_memset(stream, 0, len);
-#endif
-}
