@@ -198,7 +198,7 @@ private:
 		}
 	}
 
-	inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, unsigned char* pBuffer, size_t bfSz) {
+	inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, unsigned char* pBuffer, size_t bfSz) {		
 		*pFormatContext = avformat_alloc_context();
 		if (!*pFormatContext) {
 			throw FFMpegException_InitFailed;
@@ -584,7 +584,6 @@ private:
 #define _NOLOOP
 
 #ifndef _NOLOOP
-		//TODO Why loop
 		while (response >= 0) {
 #endif // !_NOLOOP
 			// Return decoded output data (into a frame) from a decoder
@@ -606,11 +605,6 @@ private:
 			}
 
 			if (response >= 0) {
-				//TODO
-				//videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
-				//	? pFrame->best_effort_timestamp
-				//	: 0);
-
 				videoPts = 0;
 
 				if (pVPacket->dts == AV_NOPTS_VALUE
@@ -885,7 +879,6 @@ public:
 		avformat_close_input(&pFormatContext);
 		avformat_close_input(&pSeekFormatContext);
 
-		//TODO
 		if (bFromMem) {
 			av_freep(&pAvioContext);
 			av_freep(&pSeekAvioContext);
