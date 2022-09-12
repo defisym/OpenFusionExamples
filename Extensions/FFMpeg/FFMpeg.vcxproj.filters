@@ -157,6 +157,9 @@
     <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\_3rdLib\MemBuf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

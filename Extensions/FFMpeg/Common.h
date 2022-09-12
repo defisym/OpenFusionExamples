@@ -33,6 +33,14 @@
 #include <iostream>
 #endif
 
+#define _USE_CRTDBG
+
+#ifdef _USE_CRTDBG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"

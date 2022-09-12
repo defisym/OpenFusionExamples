@@ -147,6 +147,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	SDL_Quit();
 
+#ifdef _USE_CRTDBG
+	_CrtDumpMemoryLeaks();
+#endif
+
 	// No errors
 	return 0;
 }

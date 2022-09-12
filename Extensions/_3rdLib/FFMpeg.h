@@ -15,6 +15,7 @@
 #include <string>
 #include <functional>
 
+#include "MemBuf.h"
 #include "PacketQueue.h"
 #include "WindowsCommon.h"
 
@@ -109,6 +110,9 @@ private:
 	AVIOContext* pAvioContext = nullptr;
 	AVIOContext* pSeekAvioContext = nullptr;
 
+	MemBuf* pMemBuf = nullptr;
+	MemBuf* pSeekMemBuf = nullptr;
+
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = nullptr;
 
@@ -198,19 +202,41 @@ private:
 		}
 	}
 
-	inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, unsigned char* pBuffer, size_t bfSz) {		
-		*pFormatContext = avformat_alloc_context();
-		if (!*pFormatContext) {
-			throw FFMpegException_InitFailed;
-		}
+	inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, MemBuf** pBuf, unsigned char* pBuffer, size_t bfSz) {
+		(*pBuf) = new MemBuf(pBuffer, bfSz);
 
-		*pAvioContext = avio_alloc_context(pBuffer, bfSz, 0, NULL, NULL, NULL, NULL);
+		*pAvioContext = avio_alloc_context((*pBuf)->get(), (*pBuf)->getSize(), 0, (*pBuf)
+			, [](void* opaque, uint8_t* buf, int buf_size) {
+				auto pMemBuf = (MemBuf*)opaque;
+				return pMemBuf->read(buf, buf_size);
+			}
+			, NULL
+			, [](void* opaque, int64_t offset, int whence) {
+				auto pMemBuf = (MemBuf*)opaque;
+				return pMemBuf->seek(offset, whence);
+			});
 
 		if (!*pAvioContext) {
 			throw FFMpegException_InitFailed;
 		}
 
+		*pFormatContext = avformat_alloc_context();
+		if (!*pFormatContext) {
+			throw FFMpegException_InitFailed;
+		}
+
 		(*pFormatContext)->pb = *pAvioContext;
+
+		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
+		//might crash in avformat_open_input due to access violation if not set
+		AVProbeData probeData = { 0 };
+		probeData.buf = pBuffer;
+		probeData.buf_size = bfSz;
+		probeData.filename = "";
+
+		// Determine the input-format:
+		(*pFormatContext)->iformat = av_probe_input_format(&probeData, 1);
+		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
 
 		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) < 0) {
 			throw FFMpegException_InitFailed;
@@ -831,8 +857,8 @@ public:
 	FFMpeg(unsigned char* pBuffer, size_t bfSz) {
 		bFromMem = true;
 
-		init_formatContext(&pFormatContext, &pAvioContext, pBuffer, bfSz);
-		init_formatContext(&pSeekFormatContext, &pSeekAvioContext, pBuffer, bfSz);
+		init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz);
+		init_formatContext(&pSeekFormatContext, &pSeekAvioContext, &pSeekMemBuf, pBuffer, bfSz);
 
 		init_general();
 	}
@@ -880,6 +906,11 @@ public:
 		avformat_close_input(&pSeekFormatContext);
 
 		if (bFromMem) {
+			delete pMemBuf;
+			pMemBuf=nullptr;
+			delete pSeekMemBuf;
+			pSeekMemBuf=nullptr;
+
 			av_freep(&pAvioContext);
 			av_freep(&pSeekAvioContext);
 		}
