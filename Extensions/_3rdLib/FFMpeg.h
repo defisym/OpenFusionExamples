@@ -199,7 +199,8 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath).c_str(), NULL, NULL) != 0) {
+		// convert to UTF-8 to avoid crash in some versions
+		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), NULL, NULL) != 0) {
 			throw FFMpegException_InitFailed;
 		}
 	}
