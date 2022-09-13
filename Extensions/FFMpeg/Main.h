@@ -59,7 +59,14 @@ typedef struct tagEDATA_V1
 
 	bool bHwa;
 
-	int buffer[52];
+	bool bStretch;
+	bool bPlayAfterLoad;
+
+	bool bLoop;
+
+	bool unused;
+
+	int buffer[51];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -93,20 +100,24 @@ typedef struct tagRDATA
 	short			swidth;
 	short			sheight;
 
-	LPSURFACE pMemSf;
-	LPSURFACE pHwaSf;
+	// MemSf
+	LPSURFACE pMemSf;	
 	LPSURFACE pGrabbedFrame;
 
+	// HwaSf
+	LPSURFACE pHwaSf;
+
 	bool bHwa;
+
+	bool bStretch;
+	bool bPlayAfterLoad;
 
 	std::wstring* pFilePath;
 
 	bool bLoop;
 
 	bool bOpen;
-	bool bPlay;
-
-	bool bPlayAtStart;	
+	bool bPlay;	
 
 	int volume;
 

@@ -114,23 +114,20 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		}
 				
 		rdPtr->bOpen = true;
-		// TODO auto play
-		rdPtr->bPlay = rdPtr->bPlayAtStart;
-
-		// TODO在开始播放时刷新
-		*rdPtr->pPreviousTimer = std::chrono::steady_clock::now();
+		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
 
 		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-		InitSurface(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+
+		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());		
 
 		if (rdPtr->bPlay) {
 			NextVideoFrame(rdPtr);
 		}
 		else {
-			BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {});
+			BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
 		}
 
 		ReDisplay(rdPtr);
@@ -190,7 +187,7 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 	rdPtr->pFFMpeg->set_videoPosition(ms);
 
 	if (!rdPtr->bPlay) {
-		BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {});
+		BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
 	}
 
 	ReDisplay(rdPtr);
@@ -227,21 +224,11 @@ long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport Expression_GetCurrentVideoFramePointer(LPRDATA rdPtr, long param1) {
 	bool bHwa = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	if (rdPtr->pMemSf == nullptr) {
+	if (!rdPtr->bOpen) {
 		return 0;
 	}
 
-	if (!bHwa) {
-		return ConvertToLong(rdPtr->pMemSf);
-	}
-	else {
-		delete rdPtr->pHwaSf;
-		rdPtr->pHwaSf = nullptr;
-
-		rdPtr->pHwaSf = ConvertHWATexture(rdPtr, rdPtr->pMemSf);
-
-		return ConvertToLong(rdPtr->pHwaSf);
-	}
+	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pMemSf, rdPtr->pHwaSf);
 }
 
 long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long param1) {
@@ -252,28 +239,11 @@ long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long 
 		return 0;
 	}
 
-	BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
-		delete rdPtr->pGrabbedFrame;
-		rdPtr->pGrabbedFrame = nullptr;
+	InitSurface(rdPtr->pGrabbedFrame, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 
-		if (bHwa) {
-			if (rdPtr->pGrabbedFrame == nullptr) {
-				rdPtr->pGrabbedFrame = CreateHWASurface(rdPtr, 32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE);
-				rdPtr->pGrabbedFrame->CreateAlpha();
-			}
+	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);	
 
-			pMemSf->Blit(*rdPtr->pGrabbedFrame);
-		}
-		else {
-			if (rdPtr->pGrabbedFrame == nullptr) {
-				rdPtr->pGrabbedFrame = CreateSurface(32, pMemSf->GetWidth(), pMemSf->GetHeight());
-			}
-		
-			pMemSf->Blit(*rdPtr->pGrabbedFrame);
-		}
-		});
-	
-	return ConvertToLong(rdPtr->pGrabbedFrame);
+	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
 }
 
 // ----------------------------------------------------------

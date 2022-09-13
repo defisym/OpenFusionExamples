@@ -251,7 +251,13 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROP_TEXTTITLE        "Settings"
+IDS_PROP_OPTIONS_TEXTTITLE              "Options"
+IDS_PROP_STRETCH_CHECK                  "Stretch"
+IDS_PROP_STRETCH_CHECK_INFO             "Stretch to fit object size"
+IDS_PROP_PLAYAFTERLOAD_CHECK            "Play after load"
+IDS_PROP_PLAYAFTERLOAD_CHECK_INFO       "Auto start play when a file is loaded"
+IDS_PROP_LOOP_CHECK                     "Loop"
+IDS_PROP_LOOP_CHECK_INFO    		    "Loop video"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -298,6 +304,8 @@ BEGIN
 
     M_EXPRESSION_GCVFP      "CVFP ("
     M_EXPRESSION_GGVFP      "GVFP ("
+
+    M_HWA                   "Return HWA"
 END
 
 #endif    // English (U.S.) resources

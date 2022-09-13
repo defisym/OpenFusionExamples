@@ -82,19 +82,17 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pMemSf = nullptr;
 	rdPtr->pGrabbedFrame = nullptr;	
 	
-	rdPtr->bHwa = true;
+	rdPtr->bHwa = edPtr->bHwa;
+
+	rdPtr->bStretch = edPtr->bStretch;
+	rdPtr->bPlayAfterLoad = edPtr->bPlayAfterLoad;
 
 	rdPtr->pFilePath = new std::wstring;
 
-	//TODO
-	//rdPtr->bLoop = false;
-	rdPtr->bLoop = true;
+	rdPtr->bLoop = edPtr->bLoop;
 	
 	rdPtr->bOpen = false;
 	rdPtr->bPlay = false;
-
-	rdPtr->bPlayAtStart = true;
-	//rdPtr->bPlayAtStart = false;
 
 	rdPtr->volume = 100;
 

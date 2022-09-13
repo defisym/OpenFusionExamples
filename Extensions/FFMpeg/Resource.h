@@ -19,7 +19,15 @@
 
 // 	Properties
 //-------------------
-#define	IDS_PROP_TEXTTITLE				200
+#define	IDS_PROP_OPTIONS_TEXTTITLE				    200
+
+#define	IDS_PROP_STRETCH_CHECK				        201
+#define	IDS_PROP_STRETCH_CHECK_INFO				    202
+#define	IDS_PROP_PLAYAFTERLOAD_CHECK				203
+#define	IDS_PROP_PLAYAFTERLOAD_CHECK_INFO			204
+
+#define	IDS_PROP_LOOP_CHECK			            	205
+#define	IDS_PROP_LOOP_CHECK_INFO    				206
 
 // 	Debug tree
 //-------------------

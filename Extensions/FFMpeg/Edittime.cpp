@@ -26,6 +26,14 @@ enum {
 //	PROPID_CHECK,
 //	PROPID_COMBO,
 //	PROPID_COLOR,
+
+	PROPID_OPTIONS_TEXTTITLE,
+
+	PROPID_STRETCH_CHECK,
+	PROPID_PLAYAFTERLOAD_CHECK,
+	
+	PROPID_LOOP_CHECK,
+
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -50,6 +58,14 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group		(PROPID_OPTIONS_TEXTTITLE, IDS_PROP_OPTIONS_TEXTTITLE, IDS_PROP_OPTIONS_TEXTTITLE),
+
+	PropData_CheckBox	(PROPID_STRETCH_CHECK, IDS_PROP_STRETCH_CHECK, IDS_PROP_STRETCH_CHECK_INFO),
+	PropData_CheckBox	(PROPID_PLAYAFTERLOAD_CHECK, IDS_PROP_PLAYAFTERLOAD_CHECK, IDS_PROP_PLAYAFTERLOAD_CHECK_INFO),
+
+	PropData_CheckBox	(PROPID_LOOP_CHECK, IDS_PROP_LOOP_CHECK, IDS_PROP_LOOP_CHECK_INFO),
+
 
 	// End of table (required)
 	PropData_End()
@@ -328,6 +344,13 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		// Set default object settings
 		edPtr->swidth = 512;
 		edPtr->sheight = 288;
+
+		edPtr->bHwa = true;
+
+		edPtr->bStretch = true;
+		edPtr->bPlayAfterLoad = true;
+
+		edPtr->bLoop = true;
 
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -716,14 +739,14 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
+	switch (nPropID) {
+	case PROPID_STRETCH_CHECK:
+		return edPtr->bStretch;
+	case PROPID_PLAYAFTERLOAD_CHECK:
+		return edPtr->bPlayAfterLoad;
+	case PROPID_LOOP_CHECK:
+		return edPtr->bLoop;
+	}
 
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
@@ -800,16 +823,23 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
+	switch (nPropID) {
+	case PROPID_STRETCH_CHECK:
+		edPtr->bStretch = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_STRETCH_CHECK, TRUE);
+		break;
+	case PROPID_PLAYAFTERLOAD_CHECK:
+		edPtr->bPlayAfterLoad = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_PLAYAFTERLOAD_CHECK, TRUE);
+		break;
+	case PROPID_LOOP_CHECK:
+		edPtr->bLoop = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_LOOP_CHECK, TRUE);
+		break;
+	}
 #endif // !defined(RUN_ONLY)
 }
 
