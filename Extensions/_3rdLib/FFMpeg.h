@@ -171,6 +171,8 @@ private:
 	double totalTime = 0;
 	double totalTimeInMs = 0;
 
+	uint8_t* p_global_bgr_buffer = nullptr;
+
 #pragma endregion
 
 #pragma region SDL
@@ -394,6 +396,9 @@ private:
 
 		totalTime = totalFrame * decimalRational;
 		totalTimeInMs = totalTime * 1000;
+		
+		int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, this->get_width(), this->get_width(), 1);
+		p_global_bgr_buffer = new uint8_t[num_bytes];
 #pragma endregion
 
 #pragma region SDLInit
@@ -455,6 +460,10 @@ private:
 		response = av_seek_frame(pFormatContext, stream_index
 			, seek_target
 			, seekFlags);
+
+		//response = avformat_seek_file(pFormatContext, stream_index
+		//	, seek_target, seek_target, seek_target
+		//	, seekFlags);
 
 		//https://stackoverflow.com/questions/45526098/repeating-ffmpeg-stream-libavcodec-libavformat
 		//avio_seek(pFormatContext->pb, 0, SEEK_SET);
@@ -532,6 +541,8 @@ private:
 				response = decode_videoFrame(callBack);
 
 				if (response == AVERROR(EAGAIN)) {
+					syncState = SyncState::SYNC_AUDIOFASTER;
+
 					continue;
 				}
 
@@ -547,6 +558,8 @@ private:
 			}
 
 		} while (syncState != SyncState::SYNC_SYNC);
+
+		//callBack(p_global_bgr_buffer, this->get_width(), this->get_height());
 
 		return 0;
 	}
@@ -596,6 +609,24 @@ private:
 		}
 
 		return response;
+	}
+
+	inline void covertData(AVFrame* pFrame, rawDataCallBack callBack) {
+		if (pFrame->format != AV_PIX_FMT_BGR24) {
+			int linesize[8] = { pFrame->linesize[0] * 3 };
+			uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+
+			sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
+
+			//bgr_buffer[0] is the BGR raw data
+			callBack(bgr_buffer[0], pFrame->width, pFrame->height);
+
+			//delete[] p_global_bgr_buffer;
+		}
+		else {
+			// call callback
+			callBack(pFrame->data[0], pFrame->width, pFrame->height);
+		}
 	}
 
 	inline int decode_vpacket(AVPacket* pVPacket, AVCodecContext* pVCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
@@ -661,25 +692,27 @@ private:
 				// Check if the frame is a planar YUV 4:2:0, 12bpp
 				// That is the format of the provided .mp4 file
 				// https://zhuanlan.zhihu.com/p/53305541
-				if (pFrame->format != AV_PIX_FMT_BGR24) {
-					int linesize [8] = { pFrame->linesize [0] * 3 };
-					int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height, 1);
+				//if (pFrame->format != AV_PIX_FMT_BGR24) {
+				//	int linesize [8] = { pFrame->linesize [0] * 3 };
+				//	int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height, 1);
 
-					//auto p_global_bgr_buffer = (uint8_t*)malloc(num_bytes * sizeof(uint8_t));
-					auto p_global_bgr_buffer = new uint8_t [num_bytes];
-					uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
+				//	//auto p_global_bgr_buffer = (uint8_t*)malloc(num_bytes * sizeof(uint8_t));
+				//	//auto p_global_bgr_buffer = new uint8_t [num_bytes];
+				//	uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
 
-					sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
+				//	sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
-					//bgr_buffer[0] is the BGR raw data
-					callBack(bgr_buffer [0], pFrame->width, pFrame->height);
+				//	//bgr_buffer[0] is the BGR raw data
+				//	callBack(bgr_buffer [0], pFrame->width, pFrame->height);
 
-					delete[] p_global_bgr_buffer;
-				}
-				else {
-					// call callback
-					callBack(pFrame->data [0], pFrame->width, pFrame->height);
-				}
+				//	//delete[] p_global_bgr_buffer;
+				//}
+				//else {
+				//	// call callback
+				//	callBack(pFrame->data [0], pFrame->width, pFrame->height);
+				//}
+
+				covertData(pFrame, callBack);
 
 				av_frame_unref(pFrame);
 			}
@@ -915,6 +948,8 @@ public:
 			av_freep(&pSeekAvioContext);
 		}
 
+		delete[] p_global_bgr_buffer;
+
 		SDL_UnlockMutex(mutex);
 
 		SDL_DestroyMutex(mutex);
@@ -948,6 +983,13 @@ public:
 
 	inline bool get_loopState() {
 		return bLoop;
+	}
+
+	inline int get_width() {
+		return pVideoStream->codecpar->width;
+	}
+	inline int get_height() {
+		return pVideoStream->codecpar->height;
 	}
 
 	//Set

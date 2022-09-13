@@ -115,7 +115,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 				
 		rdPtr->bOpen = true;
 		// TODO auto play
-		rdPtr->bPlay = true;
+		rdPtr->bPlay = rdPtr->bPlayAtStart;
 
 		// TODO在开始播放时刷新
 		*rdPtr->pPreviousTimer = std::chrono::steady_clock::now();
@@ -123,10 +123,15 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
 
-		BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {
-			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
-			rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
-			});
+		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+		InitSurface(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+
+		if (rdPtr->bPlay) {
+			NextVideoFrame(rdPtr);
+		}
+		else {
+			BlitVideoFrame(rdPtr, 0, [&](LPSURFACE& pMemSf) {});
+		}
 
 		ReDisplay(rdPtr);
 	}
@@ -185,10 +190,7 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 	rdPtr->pFFMpeg->set_videoPosition(ms);
 
 	if (!rdPtr->bPlay) {
-		BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {
-			rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / pMemSf->GetWidth();
-			rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / pMemSf->GetHeight();
-			});
+		BlitVideoFrame(rdPtr, ms, [&](LPSURFACE& pMemSf) {});
 	}
 
 	ReDisplay(rdPtr);

@@ -102,8 +102,11 @@ typedef struct tagRDATA
 	std::wstring* pFilePath;
 
 	bool bLoop;
-	bool bPlay;
+
 	bool bOpen;
+	bool bPlay;
+
+	bool bPlayAtStart;	
 
 	int volume;
 
@@ -117,6 +120,8 @@ typedef struct tagRDATA
 
 	double scaleX;
 	double scaleY;
+
+	GlobalData* pData;
 
 	std::wstring* pRetStr;
 

@@ -89,8 +89,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//TODO
 	//rdPtr->bLoop = false;
 	rdPtr->bLoop = true;
-	rdPtr->bPlay = false;
+	
 	rdPtr->bOpen = false;
+	rdPtr->bPlay = false;
+
+	rdPtr->bPlayAtStart = true;
+	//rdPtr->bPlayAtStart = false;
 
 	rdPtr->volume = 100;
 
@@ -104,14 +108,23 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pRetStr = new std::wstring;
 
-	//initialize the video audio & timer subsystem 
-	//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-		auto error = SDL_GetError();
+	if (GetExtUserData() == nullptr) {
+		rdPtr->pData = new GlobalData;
 
-		MSGBOX(L"Could not initialize SDL");
-		exit(1);
+		//initialize the video audio & timer subsystem 
+		//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+			auto error = SDL_GetError();
+
+			MSGBOX(L"Could not initialize SDL");
+			exit(1);
+		}
+
+		rdPtr->pData->bSDLInit = true;
 	}
+	else {
+		rdPtr->pData = (GlobalData*)GetExtUserData();
+	}	
 
 	// No errors
 	return 0;
@@ -145,7 +158,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pRetStr;
 
-	SDL_Quit();
+	SetExtUserData(rdPtr->pData);
+
+	//SDL_Quit();
 
 #ifdef _USE_CRTDBG
 	_CrtDumpMemoryLeaks();
@@ -213,9 +228,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 #endif
 
 		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
-			InitSurface(rdPtr, width, height);
 			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
-			//ReDisplay(rdPtr);
+			ReDisplay(rdPtr);
 			});
 
 #ifdef _LOOPBENCH
@@ -440,12 +454,14 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != NULL) {
+		pData->bSDLInit = false;
+		SDL_Quit();
+
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------
@@ -458,12 +474,14 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != NULL) {
+		pData->bSDLInit = false;
+		SDL_Quit();
+
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------

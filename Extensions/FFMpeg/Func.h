@@ -2,6 +2,11 @@
 
 #include <functional>
 
+inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
+	rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / width;
+	rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / height;
+}
+
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
@@ -70,10 +75,21 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, blitCallBack callBack) {
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, [&] (const unsigned char* pData, const int width, const int height) {
-		InitSurface(rdPtr, width, height);
 		CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+		ReDisplay(rdPtr);
 
 		callBack(rdPtr->pMemSf);
+		});
+}
+
+inline void NextVideoFrame(LPRDATA rdPtr) {
+	if (rdPtr->pFFMpeg == nullptr) {
+		return;
+	}
+
+	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
+		CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+		ReDisplay(rdPtr);
 		});
 }
 
