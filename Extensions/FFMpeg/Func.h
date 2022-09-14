@@ -32,7 +32,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
-	if (pSf == nullptr) {
+	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
 		pSf = CreateSurface(24, width, height);
 
 		auto alphaSz = width * height;

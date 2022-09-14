@@ -166,7 +166,13 @@ short WINAPI DLLExport Action_PauseVideo(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->volume = min(100, max(0, CNC_GetIntParameter(rdPtr)));
+	int newVolume = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->volume = min(100, max(0, newVolume));
+
+	if (rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
+	}
 
 	return 0;
 }
@@ -178,11 +184,16 @@ short WINAPI DLLExport Action_SetLoop(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param2) {
-	size_t ms = (size_t)CNC_GetIntParameter(rdPtr);
+	int msRaw = (int)CNC_GetIntParameter(rdPtr);
 
 	if (!rdPtr->bOpen) {
 		return 0;
 	}
+
+	// add protection for minus position
+	msRaw = msRaw < 0 ? 0 : msRaw;
+
+	size_t ms = (size_t)msRaw;
 
 	rdPtr->pFFMpeg->set_videoPosition(ms);
 

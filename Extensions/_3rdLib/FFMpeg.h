@@ -70,7 +70,7 @@ private:
 	bool bExit = false;
 
 	bool bLoop = false;
-	bool bPause = false;
+	bool bPause = false;	// used to sclient autio
 
 	bool bReadFinish = false;
 	bool bVideoFinish = false;
