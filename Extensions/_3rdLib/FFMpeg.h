@@ -58,7 +58,7 @@ constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
-// pData, width, height
+// pData, stride, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 
 using Uint8 = unsigned char;
@@ -172,6 +172,8 @@ private:
 	double totalTimeInMs = 0;
 
 	uint8_t* p_global_bgr_buffer = nullptr;
+
+	//double firstKeyFrame = -1;
 
 #pragma endregion
 
@@ -612,21 +614,28 @@ private:
 		return response;
 	}
 
+	// Convert data to Fusion data
+	// https://zhuanlan.zhihu.com/p/53305541
 	inline void covertData(AVFrame* pFrame, rawDataCallBack callBack) {
-		if (pFrame->format != AV_PIX_FMT_BGR24) {
-			int linesize[8] = { pFrame->linesize[0] * 3 };
+		// make sure the sws_scale output is point to start.
+		int linesize[8] = { abs(pFrame->linesize[0] * 3) };
+		
+		if (pFrame->format != AV_PIX_FMT_BGR24) {			
 			uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
 
 			sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
 			//bgr_buffer[0] is the BGR raw data
-			callBack(bgr_buffer[0], pFrame->width, pFrame->height);
-
-			//delete[] p_global_bgr_buffer;
+			callBack(bgr_buffer[0], linesize[0], pFrame->height);
 		}
 		else {
+			// take reverse into account
+			auto pActualData = pFrame->linesize[0] > 0
+				? pFrame->data[0]
+				: pFrame->data[0] - pFrame->linesize[0] * 3 * (pFrame->height - 1);
+
 			// call callback
-			callBack(pFrame->data[0], pFrame->width, pFrame->height);
+			callBack(pActualData, linesize[0], pFrame->height);
 		}
 	}
 
@@ -677,6 +686,11 @@ private:
 				}
 
 				videoPts *= av_q2d(pVideoStream->time_base);
+
+				//if (pFrame->key_frame == 1) {
+				//	firstKeyFrame = min(videoPts, firstKeyFrame);
+				//}
+
 #ifdef _CONSOLE
 				if (bJumped) {
 					printf("Cur video pts: %f\n", videoPts);
@@ -689,29 +703,6 @@ private:
 					printf("Cur synced video pts: %f\n", videoPts);
 				}
 #endif
-
-				// Check if the frame is a planar YUV 4:2:0, 12bpp
-				// That is the format of the provided .mp4 file
-				// https://zhuanlan.zhihu.com/p/53305541
-				//if (pFrame->format != AV_PIX_FMT_BGR24) {
-				//	int linesize [8] = { pFrame->linesize [0] * 3 };
-				//	int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, pFrame->width, pFrame->height, 1);
-
-				//	//auto p_global_bgr_buffer = (uint8_t*)malloc(num_bytes * sizeof(uint8_t));
-				//	//auto p_global_bgr_buffer = new uint8_t [num_bytes];
-				//	uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
-
-				//	sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-				//	//bgr_buffer[0] is the BGR raw data
-				//	callBack(bgr_buffer [0], pFrame->width, pFrame->height);
-
-				//	//delete[] p_global_bgr_buffer;
-				//}
-				//else {
-				//	// call callback
-				//	callBack(pFrame->data [0], pFrame->width, pFrame->height);
-				//}
 
 				covertData(pFrame, callBack);
 
@@ -1038,10 +1029,13 @@ public:
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
 
-		if (ms == 0) {
-			reset_sync();
-			reset_finishState();
-		}
+		//if (ms == 0) {
+			//reset_sync();
+			//reset_finishState();
+		//}
+
+		reset_sync();
+		reset_finishState();
 
 		return response;
 	}

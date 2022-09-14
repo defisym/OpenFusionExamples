@@ -47,15 +47,15 @@ inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 	}
 }
 
-inline void CopyData(const unsigned char* pData, LPSURFACE pMemSf, bool bPm) {
+inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf, bool bPm) {
 	auto sfCoef = GetSfCoef(pMemSf);
 
-	auto lineSz = sfCoef.pitch;
+	auto lineSz = sfCoef.pitch;	
 	auto alphaSz = sfCoef.sz / sfCoef.byte;
 
 	for (int y = 0; y < pMemSf->GetHeight(); y++) {
-		auto pMemData = sfCoef.pData + y * sfCoef.pitch;
-		auto pVideo = pData + (pMemSf->GetHeight() - 1 - y) * sfCoef.pitch;
+		auto pMemData = sfCoef.pData + y * lineSz;
+		auto pVideo = pData + (pMemSf->GetHeight() - 1 - y) * srcLineSz;
 
 		memcpy(pMemData, pVideo, lineSz);
 	}
@@ -76,8 +76,8 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, LPSURFACE& pSf) {
 		return;
 	}
 
-	rdPtr->pFFMpeg->get_videoFrame(ms, [&] (const unsigned char* pData, const int width, const int height) {
-		CopyData(pData, pSf, rdPtr->bPm);
+	rdPtr->pFFMpeg->get_videoFrame(ms, [&] (const unsigned char* pData, const int stride, const int height) {
+		CopyData(pData, stride, pSf, rdPtr->bPm);
 		ReDisplay(rdPtr);
 		});
 }
@@ -87,8 +87,8 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 		return;
 	}
 
-	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
-		CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
+		CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 		ReDisplay(rdPtr);
 		});
 }

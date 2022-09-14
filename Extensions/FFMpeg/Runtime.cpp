@@ -225,8 +225,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		auto beforeDecode = std::chrono::steady_clock::now();
 #endif
 
-		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int width, const int height) {
-			CopyData(pData, rdPtr->pMemSf, rdPtr->bPm);
+		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
+			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 			ReDisplay(rdPtr);
 			});
 

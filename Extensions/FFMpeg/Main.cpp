@@ -123,12 +123,14 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());		
 
-		if (rdPtr->bPlay) {
-			NextVideoFrame(rdPtr);
-		}
-		else {
-			BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
-		}
+		//if (rdPtr->bPlay) {
+		//	NextVideoFrame(rdPtr);
+		//}
+		//else {
+		//	BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
+		//}
+
+		BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
 
 		ReDisplay(rdPtr);
 	}
