@@ -26,8 +26,11 @@
 #define	ACT_ACTION_SV					4
 #define	ACT_ACTION_SL					5
 #define	ACT_ACTION_SP					6
+#define	ACT_ACTION_SPWF					7
 
-#define	ACT_LAST						7
+#define	ACT_ACTION_SQS					8
+
+#define	ACT_LAST						9
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -64,9 +67,12 @@ typedef struct tagEDATA_V1
 
 	bool bLoop;
 
+	int audioQSize;
+	int videoQSize;
+
 	bool unused;
 
-	int buffer[51];
+	int buffer[49];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -115,6 +121,9 @@ typedef struct tagRDATA
 	std::wstring* pFilePath;
 
 	bool bLoop;
+
+	int audioQSize;
+	int videoQSize;
 
 	bool bOpen;
 	bool bPlay;	

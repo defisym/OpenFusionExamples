@@ -146,6 +146,9 @@ BEGIN
         MENUITEM "Set Volume",              IDMN_ACTION_SV
         MENUITEM "Set Loop",                IDMN_ACTION_SL
         MENUITEM "Set Video Position",      IDMN_ACTION_SP
+        MENUITEM "Set Video Position With Flag",      IDMN_ACTION_SPWF
+        MENUITEM SEPARATOR
+        MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM SEPARATOR
     END
 END
@@ -258,6 +261,11 @@ IDS_PROP_PLAYAFTERLOAD_CHECK            "Play after load"
 IDS_PROP_PLAYAFTERLOAD_CHECK_INFO       "Auto start play when a file is loaded"
 IDS_PROP_LOOP_CHECK                     "Loop"
 IDS_PROP_LOOP_CHECK_INFO    		    "Loop video"
+IDS_PROP_QUEUE_TEXTTITLE    			"Queue"
+IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER    	"Audio queue size"
+IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER_INFO "Data size cached in audio queue, if you encounter playback issues, try set this larger"
+IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER    	"Video queue size"
+IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO "Data size cached in video queue, if you encounter playback issues, try set this larger"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -276,12 +284,18 @@ BEGIN
     M_ACTION_SL			       "Set Loop to %0"
     
     M_ACTION_SP			       "Set Video Position to %0"
+    M_ACTION_SPWF		       "Set Video Position to %0 With Flag %1"
+    
+    M_ACTION_SQS		       "Set Audio Queue Size to %0, Video Queue Size to %1"
 
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
     M_VOLUME	               "Volume, 0 = Min, 100 = Max"
     M_LOOP  	               "Loop"
     M_POSITION                 "Position"
+    M_FLAGS                    "Seek Flag"
+    M_AUDIOQUEUESIZE           "Audio Queue Size"
+    M_VIDEOQUEUESIZE                "Video Queue Size"
 END
 
 STRINGTABLE DISCARDABLE 

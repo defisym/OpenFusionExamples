@@ -40,6 +40,9 @@ constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto MAX_AUDIOQ_SIZE = (5 * 16 * 1024);
 constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
+//constexpr auto MAX_AUDIOQ_SIZE = 64 * (5 * 16 * 1024);
+//constexpr auto MAX_VIDEOQ_SIZE = 64 * (5 * 256 * 1024);
+
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
 
@@ -55,6 +58,18 @@ constexpr auto END_OF_QUEUE = -1;
 // Defines
 constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
+
+#define _VIDEO_ALPHA
+
+#ifdef _VIDEO_ALPHA
+// Has alpha
+constexpr auto PIXEL_FORMAT = AV_PIX_FMT_BGRA;
+constexpr auto PIXEL_BYTE = 4;
+#else
+// No alpha
+constexpr auto PIXEL_FORMAT = AV_PIX_FMT_BGR24;
+constexpr auto PIXEL_BYTE = 3;
+#endif
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
@@ -98,7 +113,7 @@ private:
 
 	enum class SyncState {
 		SYNC_VIDEOFASTER,
-		SYNC_AUDIOFASTER,
+		SYNC_CLOCKFASTER,
 		SYNC_SYNC,
 	};
 
@@ -106,6 +121,7 @@ private:
 
 #pragma region FFMpeg
 	bool bFromMem = false;
+	bool bNoAudio = false;
 
 	AVIOContext* pAvioContext = nullptr;
 	AVIOContext* pSeekAvioContext = nullptr;
@@ -143,6 +159,9 @@ private:
 
 	packetQueue audioQueue;
 	packetQueue videoQueue;
+
+	int audioQSize = MAX_AUDIOQ_SIZE;
+	int videoQSize = MAX_VIDEOQ_SIZE;
 
 	AVPacket* pVPacket = nullptr;
 	AVPacket* pAPacket = nullptr;
@@ -301,55 +320,58 @@ private:
 		}
 
 		swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height, pVCodecContext->pix_fmt,
-			pVCodecContext->width, pVCodecContext->height, AV_PIX_FMT_BGR24
+			pVCodecContext->width, pVCodecContext->height, PIXEL_FORMAT
 			, NULL, NULL, NULL, NULL);
 
 		// init audio codec
 #ifndef _GET_AUDIO_BYLOOP
 		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
-
-		if (audio_stream_index < 0) {
-			throw FFMpegException_InitFailed;
-
-		}
-
-		pACodecParameters = pFormatContext->streams [audio_stream_index]->codecpar;
 #endif
 
-		pACodecContext = avcodec_alloc_context3(pACodec);
-		if (!pACodecContext) {
-			throw FFMpegException_InitFailed;
+		if (audio_stream_index < 0) {
+			//throw FFMpegException_InitFailed;
+			bNoAudio = true;			
 		}
 
-		if (avcodec_parameters_to_context(pACodecContext, pACodecParameters) < 0) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!bNoAudio) {
+			pAudioStream = pFormatContext->streams[audio_stream_index];
+			pACodecParameters = pFormatContext->streams[audio_stream_index]->codecpar;
 
-		if (avcodec_open2(pACodecContext, pACodec, NULL) < 0) {
-			throw FFMpegException_InitFailed;
-		}
+			pACodecContext = avcodec_alloc_context3(pACodec);
+			if (!pACodecContext) {
+				throw FFMpegException_InitFailed;
+			}
 
-		//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
+			if (avcodec_parameters_to_context(pACodecContext, pACodecParameters) < 0) {
+				throw FFMpegException_InitFailed;
+			}
 
-		int channels = pACodecParameters->channels;
-		uint64_t channel_layout = pACodecParameters->channel_layout;
+			if (avcodec_open2(pACodecContext, pACodec, NULL) < 0) {
+				throw FFMpegException_InitFailed;
+			}
 
-		if (channels > 0 && channel_layout == 0) {
-			channel_layout = av_get_default_channel_layout(channels);
-		}
-		else if (channels == 0 && channel_layout > 0) {
-			channels = av_get_channel_layout_nb_channels(channel_layout);
-		}
+			//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
 
-		swrContext = swr_alloc_set_opts(nullptr
-			, av_get_default_channel_layout(channels)
-			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
-			, channel_layout
-			, (AVSampleFormat)pACodecParameters->format, pACodecParameters->sample_rate
-			, 0, nullptr);
+			int channels = pACodecParameters->channels;
+			uint64_t channel_layout = pACodecParameters->channel_layout;
 
-		if (!swrContext || swr_init(swrContext) < 0) {
-			throw FFMpegException_InitFailed;
+			if (channels > 0 && channel_layout == 0) {
+				channel_layout = av_get_default_channel_layout(channels);
+			}
+			else if (channels == 0 && channel_layout > 0) {
+				channels = av_get_channel_layout_nb_channels(channel_layout);
+			}
+
+			swrContext = swr_alloc_set_opts(nullptr
+				, av_get_default_channel_layout(channels)
+				, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
+				, channel_layout
+				, (AVSampleFormat)pACodecParameters->format, pACodecParameters->sample_rate
+				, 0, nullptr);
+
+			if (!swrContext || swr_init(swrContext) < 0) {
+				throw FFMpegException_InitFailed;
+			}
 		}
 
 		// init others
@@ -388,8 +410,7 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pVideoStream = pFormatContext->streams [video_stream_index];
-		pAudioStream = pFormatContext->streams [audio_stream_index];
+		pVideoStream = pFormatContext->streams [video_stream_index];		
 
 		rational = pVideoStream->time_base;
 		decimalRational = (double)rational.num / rational.den;
@@ -400,48 +421,50 @@ private:
 		totalTime = totalFrame * decimalRational;
 		totalTimeInMs = totalTime * 1000;
 		
-		int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, this->get_width(), this->get_width(), 1);
-		p_global_bgr_buffer = new uint8_t[num_bytes];
+		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
+		//p_global_bgr_buffer = new uint8_t[num_bytes];
 #pragma endregion
 
 #pragma region SDLInit
-		// init SDL audio
-		audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
-		memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
-
-		//DSP frequency -- samples per second
-		wanted_spec.freq = pACodecContext->sample_rate;
-		wanted_spec.format = AUDIO_S16SYS;
-		wanted_spec.channels = pACodecContext->channels;
-		//无输出时是否静音
-		wanted_spec.silence = 0;
-		//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024
-		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
-		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
-		//wanted_spec.samples = pACodecContext->frame_size;
-
-		wanted_spec.userdata = (void*)this;
-		wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
-			FFMpeg* pFFMpeg = (FFMpeg*)userdata;
-
-			//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
-#ifndef _TESTDATA
-			pFFMpeg->audio_fillData(stream, len);
-#else
-			SDL_memset(stream, 0, len);
-#endif
-		};		
-
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
 
-		if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
-			auto error = SDL_GetError();
+		if (!bNoAudio) {
+			// init SDL audio
+			audio_buf = new uint8_t[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
+			memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
-			throw SDL_EXCEPTION_AUDIO;
+			//DSP frequency -- samples per second
+			wanted_spec.freq = pACodecContext->sample_rate;
+			wanted_spec.format = AUDIO_S16SYS;
+			wanted_spec.channels = pACodecContext->channels;
+			//无输出时是否静音
+			wanted_spec.silence = 0;
+			//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024
+			//specifies a unit of audio data refers to the size of the audio buffer in sample frames
+			wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
+			//wanted_spec.samples = pACodecContext->frame_size;
+
+			wanted_spec.userdata = (void*)this;
+			wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
+				FFMpeg* pFFMpeg = (FFMpeg*)userdata;
+
+				//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
+#ifndef _TESTDATA
+				pFFMpeg->audio_fillData(stream, len);
+#else
+				SDL_memset(stream, 0, len);
+#endif
+			};
+
+			if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
+				auto error = SDL_GetError();
+
+				throw SDL_EXCEPTION_AUDIO;
+			}
+
+			SDL_PauseAudio(false);
 		}
-
-		SDL_PauseAudio(false);
 #pragma endregion
 	}
 
@@ -453,16 +476,20 @@ private:
 		return (int64_t)(protectedFrame);
 	}
 
-	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, int64_t ms = 0) {
+	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, int64_t ms = 0, int flags = seekFlags) {
 		int response = 0;
 
 		// input second
 		//auto seek_target = av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
 		auto seek_target = get_protectedFrame(ms);
 
-		response = av_seek_frame(pFormatContext, stream_index
-			, seek_target
-			, seekFlags);
+		response = seekFlags > 0
+			? av_seek_frame(pFormatContext, stream_index
+				, seek_target
+				, seekFlags)
+			: avformat_seek_file(pFormatContext, stream_index
+				, seek_target, seek_target, seek_target
+				, -1 * seekFlags);
 
 		//response = avformat_seek_file(pFormatContext, stream_index
 		//	, seek_target, seek_target, seek_target
@@ -479,7 +506,7 @@ private:
 		int response = 0;
 
 		while (true) {
-			if (videoQueue.getDataSize() > MAX_VIDEOQ_SIZE || audioQueue.getDataSize() > MAX_AUDIOQ_SIZE) {
+			if (videoQueue.getDataSize() > videoQSize || audioQueue.getDataSize() > audioQSize) {
 				break;
 			}
 
@@ -539,12 +566,12 @@ private:
 
 				break;
 				// decode new video frame
-			case FFMpeg::SyncState::SYNC_AUDIOFASTER:
+			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
 				response = decode_videoFrame(callBack);
 
 				if (response == AVERROR(EAGAIN)) {
-					syncState = SyncState::SYNC_AUDIOFASTER;
+					syncState = SyncState::SYNC_CLOCKFASTER;
 
 					continue;
 				}
@@ -618,9 +645,14 @@ private:
 	// https://zhuanlan.zhihu.com/p/53305541
 	inline void covertData(AVFrame* pFrame, rawDataCallBack callBack) {
 		// make sure the sws_scale output is point to start.
-		int linesize[8] = { abs(pFrame->linesize[0] * 3) };
+		int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
 		
-		if (pFrame->format != AV_PIX_FMT_BGR24) {			
+		if (pFrame->format != PIXEL_FORMAT) {
+			if (p_global_bgr_buffer == nullptr) {
+				int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
+				p_global_bgr_buffer = new uint8_t[num_bytes];
+			}
+
 			uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
 
 			sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
@@ -632,7 +664,7 @@ private:
 			// take reverse into account
 			auto pActualData = pFrame->linesize[0] > 0
 				? pFrame->data[0]
-				: pFrame->data[0] - pFrame->linesize[0] * 3 * (pFrame->height - 1);
+				: pFrame->data[0] - pFrame->linesize[0] * PIXEL_BYTE * (pFrame->height - 1);
 
 			// call callback
 			callBack(pActualData, linesize[0], pFrame->height);
@@ -805,8 +837,10 @@ private:
 		frameLastPts = videoPts;
 		frameLastDelay = delay;
 
-		auto audioClock = get_audioClock();
-		auto diff = videoPts - audioClock;
+		//auto time = av_gettime() / 1000000.0;
+
+		auto syncClock = !bNoAudio ? get_audioClock() : av_gettime() / 1000000.0 - frameTimer;
+		auto diff = videoPts - syncClock;
 
 		auto syncThreshold = delay > AV_SYNC_THRESHOLD
 			? delay
@@ -815,7 +849,7 @@ private:
 		if (fabs(diff) < AV_NOSYNC_THRESHOLD) {
 			// audio is faster
 			if (diff <= -syncThreshold) {
-				return SyncState::SYNC_AUDIOFASTER;
+				return SyncState::SYNC_CLOCKFASTER;
 			}
 			// video is faster
 			else if (diff >= syncThreshold) {
@@ -985,6 +1019,11 @@ public:
 	}
 
 	//Set
+	inline void set_queueSize(int audioQSize = MAX_AUDIOQ_SIZE, int videoQSize = MAX_VIDEOQ_SIZE) {
+		this->audioQSize = audioQSize;
+		this->videoQSize = videoQSize;
+	}
+
 	inline void set_pause(bool bPause) {
 		this->bPause = bPause;
 	}
@@ -993,7 +1032,7 @@ public:
 		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
 	}
 
-	inline int set_videoPosition(int64_t ms = 0) {
+	inline int set_videoPosition(int64_t ms = 0, int flags = seekFlags) {
 		int response = 0;
 
 		int steam_index = -1;
@@ -1190,9 +1229,5 @@ public:
 		SDL_UnlockMutex(mutex);
 
 		return 0;
-	}
-
-	inline int memFile_callback(Uint8* pBuf, int bufSz) {
-		return -1;
 	}
 };

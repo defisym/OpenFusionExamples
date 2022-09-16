@@ -29,6 +29,13 @@
 #define	IDS_PROP_LOOP_CHECK			            	205
 #define	IDS_PROP_LOOP_CHECK_INFO    				206
 
+#define	IDS_PROP_QUEUE_TEXTTITLE    				207
+
+#define	IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER    				208
+#define	IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER_INFO    			209
+#define	IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER    				210
+#define	IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO    			211
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -48,6 +55,9 @@
 #define	IDMN_ACTION_SV				25004
 #define	IDMN_ACTION_SL				25005
 #define	IDMN_ACTION_SP				25006
+#define	IDMN_ACTION_SPWF			25007
+
+#define	IDMN_ACTION_SQS 			25008
 
 // Action strings
 #define M_ACTION_OV	       		    5000
@@ -58,6 +68,9 @@
 #define	M_ACTION_SV				    5004
 #define	M_ACTION_SL				    5005
 #define	M_ACTION_SP				    5006
+#define	M_ACTION_SPWF				5007
+
+#define	M_ACTION_SQS				5008
 
 // Titles of action parameters
 #define M_FILEPATH				 5501
@@ -65,6 +78,9 @@
 #define M_VOLUME				 5503
 #define M_LOOP  				 5504
 #define M_POSITION				 5505
+#define M_FLAGS				     5506
+#define M_AUDIOQUEUESIZE		 5507
+#define M_VIDEOQUEUESIZE	     5508
 
 
 //	Conditions

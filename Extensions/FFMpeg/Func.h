@@ -33,7 +33,12 @@ inline void ReDisplay(LPRDATA rdPtr) {
 
 inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
+
+#ifdef _VIDEO_ALPHA
+		pSf = CreateSurface(32, width, height);
+#else
 		pSf = CreateSurface(24, width, height);
+#endif
 
 		auto alphaSz = width * height;
 
@@ -53,11 +58,23 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	auto lineSz = sfCoef.pitch;	
 	auto alphaSz = sfCoef.sz / sfCoef.byte;
 
-	for (int y = 0; y < pMemSf->GetHeight(); y++) {
+	auto width = pMemSf->GetWidth();
+	auto height = pMemSf->GetHeight();
+
+	for (int y = 0; y < height; y++) {
 		auto pMemData = sfCoef.pData + y * lineSz;
-		auto pVideo = pData + (pMemSf->GetHeight() - 1 - y) * srcLineSz;
+		auto pVideo = pData + (height - 1 - y) * srcLineSz;
 
 		memcpy(pMemData, pVideo, lineSz);
+
+#ifdef _VIDEO_ALPHA
+		// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
+		for (int x = 0; x < width; x++) {
+			auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
+			auto curAlpha = pVideo + (PIXEL_BYTE - 1) + x * PIXEL_BYTE;
+			pAlphaData[0] = *curAlpha;
+		}
+#endif
 	}
 
 //#ifdef _DEBUG
@@ -117,4 +134,23 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 
 	rdPtr->bOpen = false;
 	rdPtr->bPlay = false;
+}
+
+inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flag = seekFlags) {
+	if (!rdPtr->bOpen) {
+		return;
+	}
+
+	// add protection for minus position
+	msRaw = msRaw < 0 ? 0 : msRaw;
+
+	size_t ms = (size_t)msRaw;
+
+	rdPtr->pFFMpeg->set_videoPosition(ms, flag);
+
+	if (!rdPtr->bPlay) {
+		BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
+	}
+
+	ReDisplay(rdPtr);
 }

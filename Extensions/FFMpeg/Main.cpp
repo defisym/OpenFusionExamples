@@ -42,6 +42,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SL, M_ACTION_SL, ACT_ACTION_SL,	0, 1, PARAM_EXPRESSION, M_LOOP,
 
 		IDMN_ACTION_SP, M_ACTION_SP, ACT_ACTION_SP,	0, 1, PARAM_EXPRESSION, M_POSITION,
+		IDMN_ACTION_SPWF, M_ACTION_SPWF, ACT_ACTION_SPWF,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_POSITION, M_FLAGS,
+
+		IDMN_ACTION_SQS, M_ACTION_SQS, ACT_ACTION_SQS,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_AUDIOQUEUESIZE, M_VIDEOQUEUESIZE,
 		};
 
 // Definitions of parameters for each expression
@@ -112,7 +115,9 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrytpt->GetOutputData(), rdPtr->pEncrytpt->GetOutputDataLength());
 		}
-				
+		
+		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
+
 		rdPtr->bOpen = true;
 		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 
@@ -188,22 +193,32 @@ short WINAPI DLLExport Action_SetLoop(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param2) {
 	int msRaw = (int)CNC_GetIntParameter(rdPtr);
 
+	SetPositionGeneral(rdPtr, msRaw);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetPositionWithFlag(LPRDATA rdPtr, long param1, long param2) {
+	int msRaw = (int)CNC_GetIntParameter(rdPtr);
+	int flag = (int)CNC_GetIntParameter(rdPtr);
+
+	SetPositionGeneral(rdPtr, msRaw, flag);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long param2) {
+	int audioQSize = (int)CNC_GetIntParameter(rdPtr);
+	int videoQSize = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->audioQSize = audioQSize;
+	rdPtr->videoQSize = videoQSize;
+
 	if (!rdPtr->bOpen) {
 		return 0;
 	}
 
-	// add protection for minus position
-	msRaw = msRaw < 0 ? 0 : msRaw;
-
-	size_t ms = (size_t)msRaw;
-
-	rdPtr->pFFMpeg->set_videoPosition(ms);
-
-	if (!rdPtr->bPlay) {
-		BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
-	}
-
-	ReDisplay(rdPtr);
+	rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
 
 	return 0;
 }
@@ -290,6 +305,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetLoop,
 			
 			Action_SetPosition,
+			Action_SetPositionWithFlag,
+
+			Action_SetQueueSize,
 
 			0
 			};

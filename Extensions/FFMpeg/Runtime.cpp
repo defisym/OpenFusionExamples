@@ -90,6 +90,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pFilePath = new std::wstring;
 
 	rdPtr->bLoop = edPtr->bLoop;
+
+	rdPtr->audioQSize = edPtr->audioQSize;
+	rdPtr->videoQSize = edPtr->videoQSize;
 	
 	rdPtr->bOpen = false;
 	rdPtr->bPlay = false;
