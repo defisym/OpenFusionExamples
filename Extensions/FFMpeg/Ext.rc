@@ -292,10 +292,11 @@ BEGIN
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
     M_VOLUME	               "Volume, 0 = Min, 100 = Max"
     M_LOOP  	               "Loop"
-    M_POSITION                 "Position"
+    M_POSITION                 "Position (ms)"
+    M_POSITION_WF              "Position, Depend on flag"
     M_FLAGS                    "Seek Flag"
     M_AUDIOQUEUESIZE           "Audio Queue Size"
-    M_VIDEOQUEUESIZE                "Video Queue Size"
+    M_VIDEOQUEUESIZE           "Video Queue Size"
 END
 
 STRINGTABLE DISCARDABLE 

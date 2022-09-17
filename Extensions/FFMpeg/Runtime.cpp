@@ -107,6 +107,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bChanged = true;
 	rdPtr->bPm = PreMulAlpha(rdPtr);
 
+	rdPtr->bJumped = false;
+	rdPtr->jumpedPts = 0;
+
 	rdPtr->pRetStr = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
@@ -229,6 +232,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 #endif
 
 		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
+			rdPtr->bJumped = false;
+
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 			ReDisplay(rdPtr);
 			});

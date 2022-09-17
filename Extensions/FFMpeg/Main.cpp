@@ -42,7 +42,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SL, M_ACTION_SL, ACT_ACTION_SL,	0, 1, PARAM_EXPRESSION, M_LOOP,
 
 		IDMN_ACTION_SP, M_ACTION_SP, ACT_ACTION_SP,	0, 1, PARAM_EXPRESSION, M_POSITION,
-		IDMN_ACTION_SPWF, M_ACTION_SPWF, ACT_ACTION_SPWF,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_POSITION, M_FLAGS,
+		IDMN_ACTION_SPWF, M_ACTION_SPWF, ACT_ACTION_SPWF,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_POSITION_WF, M_FLAGS,
 
 		IDMN_ACTION_SQS, M_ACTION_SQS, ACT_ACTION_SQS,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_AUDIOQUEUESIZE, M_VIDEOQUEUESIZE,
 		};
@@ -238,7 +238,11 @@ long WINAPI DLLExport Expression_GetVideoName(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetVideoPosition(LPRDATA rdPtr, long param1) {
-	return rdPtr->pFFMpeg != nullptr ? (long)rdPtr->pFFMpeg->get_videoPosition() : -1;
+	return rdPtr->pFFMpeg == nullptr
+		? -1
+		: rdPtr->bJumped
+			? long(rdPtr->jumpedPts * 1000)
+			: long(rdPtr->pFFMpeg->get_videoPosition());
 }
 
 long WINAPI DLLExport Expression_GetVideoDuration(LPRDATA rdPtr, long param1) {

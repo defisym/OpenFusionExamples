@@ -141,6 +141,9 @@ typedef struct tagRDATA
 	double scaleX;
 	double scaleY;
 
+	bool bJumped;
+	int64_t jumpedPts;
+
 	GlobalData* pData;
 
 	std::wstring* pRetStr;

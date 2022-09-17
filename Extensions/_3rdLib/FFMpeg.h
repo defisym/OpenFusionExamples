@@ -57,6 +57,8 @@ constexpr auto END_OF_QUEUE = -1;
 
 // Defines
 constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
+//constexpr auto seekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
+//constexpr auto seekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 
 #define _VIDEO_ALPHA
@@ -184,8 +186,8 @@ private:
 	AVRational rational = { 0 };
 	double decimalRational = 0;
 
-	int64_t totalFrame = 0;
-	double timePerFrameInMs = 0;
+	int64_t totalDuration = 0;
+	//double timePerFrameInMs = 0;
 
 	double totalTime = 0;
 	double totalTimeInMs = 0;
@@ -330,12 +332,12 @@ private:
 
 		if (audio_stream_index < 0) {
 			//throw FFMpegException_InitFailed;
-			bNoAudio = true;			
+			bNoAudio = true;
 		}
 
 		if (!bNoAudio) {
-			pAudioStream = pFormatContext->streams[audio_stream_index];
-			pACodecParameters = pFormatContext->streams[audio_stream_index]->codecpar;
+			pAudioStream = pFormatContext->streams [audio_stream_index];
+			pACodecParameters = pFormatContext->streams [audio_stream_index]->codecpar;
 
 			pACodecContext = avcodec_alloc_context3(pACodec);
 			if (!pACodecContext) {
@@ -410,17 +412,29 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pVideoStream = pFormatContext->streams [video_stream_index];		
+		pVideoStream = pFormatContext->streams [video_stream_index];
 
-		rational = pVideoStream->time_base;
+		// https://www.appsloveworld.com/cplus/100/107/finding-duration-number-of-frames-of-webm-using-ffmpeg-libavformat
+		if (pVideoStream->duration != AV_NOPTS_VALUE) {
+			totalDuration = pVideoStream->duration;
+
+			rational = pVideoStream->time_base;
+		}
+		else {
+			totalDuration = pFormatContext->duration;
+
+			rational = time_base_q;
+		}
+
 		decimalRational = (double)rational.num / rational.den;
 
-		totalFrame = pVideoStream->duration;
-		timePerFrameInMs = decimalRational * 1000;
+		//timePerFrameInMs = decimalRational * 1000;
 
-		totalTime = totalFrame * decimalRational;
+		totalTime = totalDuration * decimalRational;
+
+		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
 		totalTimeInMs = totalTime * 1000;
-		
+
 		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
 		//p_global_bgr_buffer = new uint8_t[num_bytes];
 #pragma endregion
@@ -431,7 +445,7 @@ private:
 
 		if (!bNoAudio) {
 			// init SDL audio
-			audio_buf = new uint8_t[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
+			audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 			memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
 			//DSP frequency -- samples per second
@@ -446,7 +460,7 @@ private:
 			//wanted_spec.samples = pACodecContext->frame_size;
 
 			wanted_spec.userdata = (void*)this;
-			wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
+			wanted_spec.callback = [] (void* userdata, Uint8* stream, int len) {
 				FFMpeg* pFFMpeg = (FFMpeg*)userdata;
 
 				//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
@@ -468,28 +482,35 @@ private:
 #pragma endregion
 	}
 
-	inline int64_t get_protectedFrame(int64_t ms) {
+	inline double get_protectedTimeInSecond(int64_t ms) {
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
-		auto protectedTime = protectedTimeInMs / 1000;
-		auto protectedFrame = protectedTime / decimalRational;
+		auto protectedTimeInSecond = protectedTimeInMs / 1000;
 
-		return (int64_t)(protectedFrame);
+		return protectedTimeInSecond;
+	}
+
+	inline int64_t get_protectedTimeStamp(int64_t ms) {
+		//av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
+		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
+
+		return (int64_t)(protectedTimeStamp);
 	}
 
 	inline int seekFrame(AVFormatContext* pFormatContext, int stream_index, int64_t ms = 0, int flags = seekFlags) {
 		int response = 0;
 
 		// input second
-		//auto seek_target = av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		auto seek_target = get_protectedFrame(ms);
+		auto seek_target = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
+			? get_protectedTimeStamp(ms)
+			: ms;
 
-		response = seekFlags > 0
+		response = flags >= 0
 			? av_seek_frame(pFormatContext, stream_index
 				, seek_target
-				, seekFlags)
+				, flags)
 			: avformat_seek_file(pFormatContext, stream_index
 				, seek_target, seek_target, seek_target
-				, -1 * seekFlags);
+				, -1 * flags);
 
 		//response = avformat_seek_file(pFormatContext, stream_index
 		//	, seek_target, seek_target, seek_target
@@ -576,12 +597,12 @@ private:
 					continue;
 				}
 
-				if (response < 0) { 
+				if (response < 0) {
 					//auto e1 = AVERROR_EOF;
 					//auto e2 = AVERROR(EINVAL);
 					//auto e3 = AVERROR(ENOMEM);
 
-					return response; 
+					return response;
 				}
 
 				break;
@@ -619,7 +640,7 @@ private:
 	inline int decode_audioFrame() {
 		//bAudioFinish = !audioQueue.get(pAPacket);
 		//bAudioFinish = !audioQueue.get(pAPacket, false);
-		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);		
+		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
 
 		if (bAudioFinish) {
 			return END_OF_QUEUE;
@@ -645,29 +666,29 @@ private:
 	// https://zhuanlan.zhihu.com/p/53305541
 	inline void covertData(AVFrame* pFrame, rawDataCallBack callBack) {
 		// make sure the sws_scale output is point to start.
-		int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
-		
+		int linesize [8] = { abs(pFrame->linesize [0] * PIXEL_BYTE) };
+
 		if (pFrame->format != PIXEL_FORMAT) {
 			if (p_global_bgr_buffer == nullptr) {
-				int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
-				p_global_bgr_buffer = new uint8_t[num_bytes];
+				int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize [0], pFrame->height, 1);
+				p_global_bgr_buffer = new uint8_t [num_bytes];
 			}
 
-			uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+			uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
 
 			sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
 			//bgr_buffer[0] is the BGR raw data
-			callBack(bgr_buffer[0], linesize[0], pFrame->height);
+			callBack(bgr_buffer [0], linesize [0], pFrame->height);
 		}
 		else {
 			// take reverse into account
-			auto pActualData = pFrame->linesize[0] > 0
-				? pFrame->data[0]
-				: pFrame->data[0] - pFrame->linesize[0] * PIXEL_BYTE * (pFrame->height - 1);
+			auto pActualData = pFrame->linesize [0] > 0
+				? pFrame->data [0]
+				: pFrame->data [0] - pFrame->linesize [0] * PIXEL_BYTE * (pFrame->height - 1);
 
 			// call callback
-			callBack(pActualData, linesize[0], pFrame->height);
+			callBack(pActualData, linesize [0], pFrame->height);
 		}
 	}
 
@@ -966,9 +987,9 @@ public:
 
 		if (bFromMem) {
 			delete pMemBuf;
-			pMemBuf=nullptr;
+			pMemBuf = nullptr;
 			delete pSeekMemBuf;
-			pSeekMemBuf=nullptr;
+			pSeekMemBuf = nullptr;
 
 			av_freep(&pAvioContext);
 			av_freep(&pSeekAvioContext);
@@ -983,9 +1004,9 @@ public:
 	}
 
 	//Get
-	inline int64_t get_timePerFrame() {
-		return (int64_t)(timePerFrameInMs);
-	}
+	//inline int64_t get_timePerFrame() {
+	//	return (int64_t)(timePerFrameInMs);
+	//}
 
 	inline bool get_finishState() {
 		return bFinish;
@@ -1004,7 +1025,7 @@ public:
 	}
 
 	inline int64_t get_videoDuration() {
-		return int64_t(double(pVideoStream->duration) * av_q2d(pVideoStream->time_base) * 1000);
+		return int64_t(totalTimeInMs);
 	}
 
 	inline bool get_loopState() {
@@ -1014,6 +1035,7 @@ public:
 	inline int get_width() {
 		return pVideoStream->codecpar->width;
 	}
+
 	inline int get_height() {
 		return pVideoStream->codecpar->height;
 	}
@@ -1041,8 +1063,10 @@ public:
 		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
 
 		// protection
-		ms = min(max(ms, 0), get_videoDuration());
-		response = seekFrame(pFormatContext, steam_index, ms);
+		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
+			? min(max(ms, 0), get_videoDuration())
+			: ms;
+		response = seekFrame(pFormatContext, steam_index, ms, flags);
 
 		if (response < 0) {
 			return response;
@@ -1064,7 +1088,7 @@ public:
 #ifdef _CONSOLE
 		bJumped = true;
 		auto oldPos = get_videoPosition();
-		
+
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
 

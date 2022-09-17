@@ -136,7 +136,7 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	rdPtr->bPlay = false;
 }
 
-inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flag = seekFlags) {
+inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) {
 	if (!rdPtr->bOpen) {
 		return;
 	}
@@ -146,7 +146,12 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flag = seekFlags) {
 
 	size_t ms = (size_t)msRaw;
 
-	rdPtr->pFFMpeg->set_videoPosition(ms, flag);
+	if ((flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE) {
+		rdPtr->bJumped = true;
+		rdPtr->jumpedPts = int64_t(ms / 1000.0);
+	}
+
+	rdPtr->pFFMpeg->set_videoPosition(ms, flags);
 
 	if (!rdPtr->bPlay) {
 		BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);

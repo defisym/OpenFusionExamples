@@ -78,9 +78,10 @@
 #define M_VOLUME				 5503
 #define M_LOOP  				 5504
 #define M_POSITION				 5505
-#define M_FLAGS				     5506
-#define M_AUDIOQUEUESIZE		 5507
-#define M_VIDEOQUEUESIZE	     5508
+#define M_POSITION_WF			 5506
+#define M_FLAGS				     5507
+#define M_AUDIOQUEUESIZE		 5508
+#define M_VIDEOQUEUESIZE	     5509
 
 
 //	Conditions
