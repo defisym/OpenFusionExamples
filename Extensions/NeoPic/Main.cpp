@@ -650,7 +650,7 @@ long WINAPI DLLExport GetRelativeFilePath(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport GetFileRelativeFilePath(LPRDATA rdPtr, long param1) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-	std::wstring BasePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);	
+	std::wstring BasePath = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);	
 
 	auto FileName = GetRelativeFilePath(FilePath, BasePath);
 
