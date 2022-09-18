@@ -36,6 +36,9 @@
 #define	IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER    				210
 #define	IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO    			211
 
+#define	IDS_PROP_ACCURATESEEK_CHECK			            	212
+#define	IDS_PROP_ACCURATESEEK_CHECK_INFO    				213
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -59,6 +62,8 @@
 
 #define	IDMN_ACTION_SQS 			25008
 
+#define	IDMN_ACTION_SAS 			25009
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -72,6 +77,8 @@
 
 #define	M_ACTION_SQS				5008
 
+#define	M_ACTION_SAS				5009
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -82,6 +89,7 @@
 #define M_FLAGS				     5507
 #define M_AUDIOQUEUESIZE		 5508
 #define M_VIDEOQUEUESIZE	     5509
+#define M_ACCURATESEEK		     5510
 
 
 //	Conditions

@@ -145,6 +145,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Volume",              IDMN_ACTION_SV
         MENUITEM "Set Loop",                IDMN_ACTION_SL
+        MENUITEM "Set Accurate Seek",       IDMN_ACTION_SAS
         MENUITEM "Set Video Position",      IDMN_ACTION_SP
         MENUITEM "Set Video Position With Flag",      IDMN_ACTION_SPWF
         MENUITEM SEPARATOR
@@ -266,6 +267,9 @@ IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER    	"Audio queue size"
 IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER_INFO "Data size cached in audio queue, if you encounter playback issues, try set this larger"
 IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER    	"Video queue size"
 IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO "Data size cached in video queue, if you encounter playback issues, try set this larger"
+
+IDS_PROP_ACCURATESEEK_CHECK             "Accurate Seek"
+IDS_PROP_ACCURATESEEK_CHECK_INFO        "Seek to exactly the frame you want, slower"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -287,6 +291,8 @@ BEGIN
     M_ACTION_SPWF		       "Set Video Position to %0 With Flag %1"
     
     M_ACTION_SQS		       "Set Audio Queue Size to %0, Video Queue Size to %1"
+    
+    M_ACTION_SAS		       "Set Accurate Seek to %0"
 
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
@@ -297,6 +303,7 @@ BEGIN
     M_FLAGS                    "Seek Flag"
     M_AUDIOQUEUESIZE           "Audio Queue Size"
     M_VIDEOQUEUESIZE           "Video Queue Size"
+    M_ACCURATESEEK             "Accurate Seek"
 END
 
 STRINGTABLE DISCARDABLE 

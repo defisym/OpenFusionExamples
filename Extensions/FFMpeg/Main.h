@@ -30,7 +30,9 @@
 
 #define	ACT_ACTION_SQS					8
 
-#define	ACT_LAST						9
+#define	ACT_ACTION_SAS					9
+
+#define	ACT_LAST						10
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -70,7 +72,7 @@ typedef struct tagEDATA_V1
 	int audioQSize;
 	int videoQSize;
 
-	bool unused;
+	bool bAccurateSeek;
 
 	int buffer[49];
 
@@ -125,6 +127,8 @@ typedef struct tagRDATA
 	int audioQSize;
 	int videoQSize;
 
+	bool bAccurateSeek;
+
 	bool bOpen;
 	bool bPlay;	
 
@@ -140,9 +144,6 @@ typedef struct tagRDATA
 
 	double scaleX;
 	double scaleY;
-
-	bool bJumped;
-	int64_t jumpedPts;
 
 	GlobalData* pData;
 

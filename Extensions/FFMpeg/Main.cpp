@@ -45,6 +45,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SPWF, M_ACTION_SPWF, ACT_ACTION_SPWF,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_POSITION_WF, M_FLAGS,
 
 		IDMN_ACTION_SQS, M_ACTION_SQS, ACT_ACTION_SQS,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_AUDIOQUEUESIZE, M_VIDEOQUEUESIZE,
+
+		IDMN_ACTION_SAS, M_ACTION_SAS, ACT_ACTION_SAS, 0, 1, PARAM_EXPRESSION, M_ACCURATESEEK,
 		};
 
 // Definitions of parameters for each expression
@@ -223,6 +225,12 @@ short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetAccurateSeek(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->bAccurateSeek = (bool)CNC_GetIntParameter(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -240,9 +248,7 @@ long WINAPI DLLExport Expression_GetVideoName(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport Expression_GetVideoPosition(LPRDATA rdPtr, long param1) {
 	return rdPtr->pFFMpeg == nullptr
 		? -1
-		: rdPtr->bJumped
-			? long(rdPtr->jumpedPts * 1000)
-			: long(rdPtr->pFFMpeg->get_videoPosition());
+		: long(rdPtr->pFFMpeg->get_videoPosition());
 }
 
 long WINAPI DLLExport Expression_GetVideoDuration(LPRDATA rdPtr, long param1) {
@@ -312,6 +318,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetPositionWithFlag,
 
 			Action_SetQueueSize,
+
+			Action_SetAccurateSeek,
 
 			0
 			};

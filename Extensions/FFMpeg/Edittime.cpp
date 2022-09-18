@@ -34,6 +34,8 @@ enum {
 	
 	PROPID_LOOP_CHECK,
 
+	PROPID_ACCURATESEEK_CHECK,
+
 	PROPID_QUEUE_TEXTTITLE,
 
 	PROPID_AUDIOQUEUESIZE_EDITNUMBER,
@@ -70,6 +72,8 @@ PropData Properties[] = {
 	PropData_CheckBox	(PROPID_PLAYAFTERLOAD_CHECK, IDS_PROP_PLAYAFTERLOAD_CHECK, IDS_PROP_PLAYAFTERLOAD_CHECK_INFO),
 
 	PropData_CheckBox	(PROPID_LOOP_CHECK, IDS_PROP_LOOP_CHECK, IDS_PROP_LOOP_CHECK_INFO),
+
+	PropData_CheckBox(PROPID_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK_INFO),
 
 	PropData_Group(PROPID_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE),
 
@@ -365,6 +369,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->audioQSize = MAX_AUDIOQ_SIZE;
 		edPtr->videoQSize = MAX_VIDEOQ_SIZE;
+
+		edPtr->bAccurateSeek = true;
 
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -768,6 +774,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bPlayAfterLoad;
 	case PROPID_LOOP_CHECK:
 		return edPtr->bLoop;
+	case PROPID_ACCURATESEEK_CHECK:
+		return edPtr->bAccurateSeek;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -869,6 +877,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bLoop = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_LOOP_CHECK, TRUE);
+		break;
+	case PROPID_ACCURATESEEK_CHECK:
+		edPtr->bAccurateSeek = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_ACCURATESEEK_CHECK, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

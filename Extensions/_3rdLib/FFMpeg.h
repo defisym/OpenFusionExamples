@@ -193,6 +193,7 @@ private:
 	double totalTimeInMs = 0;
 
 	uint8_t* p_global_bgr_buffer = nullptr;
+	int num_bytes = 0;
 
 	//double firstKeyFrame = -1;
 
@@ -229,6 +230,10 @@ private:
 	}
 
 	inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, MemBuf** pBuf, unsigned char* pBuffer, size_t bfSz) {
+		if (pBuffer == nullptr) {
+			throw FFMpegException_InitFailed;
+		}
+
 		(*pBuf) = new MemBuf(pBuffer, bfSz);
 
 		*pAvioContext = avio_alloc_context((*pBuf)->get(), (*pBuf)->getSize(), 0, (*pBuf)
@@ -522,6 +527,56 @@ private:
 		return response;
 	}
 
+	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext
+		, double targetPts, rawDataCallBack callBack) {
+		int response = 0;
+
+		AVPacket* pPacket = av_packet_alloc();
+		if (!pPacket) {
+			return -1;
+		}
+
+		AVFrame* pFrame = av_frame_alloc();
+		if (!pFrame) {
+			return -1;
+		}
+
+		int loaclStride = 0;
+		int loaclHeight = 0;
+
+		while (av_read_frame(pFormatContext, pPacket) >= 0) {
+			// if it's the video stream
+			if (pPacket->stream_index == video_stream_index) {
+				// decode
+				//response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
+				response = decode_vpacket(pPacket, pCodecContext, pFrame
+					, [&](const unsigned char* pData, const int stride, const int height) {
+						loaclStride = stride;
+						loaclHeight = height;					
+					});
+
+				// wait until receive enough frames
+				if (response == AVERROR(EAGAIN)) {
+					continue;
+				}
+
+				if (response < 0) { break; }
+
+				// goto target
+				if (videoClock >= targetPts) { break; }
+			}
+
+			av_packet_unref(pPacket);
+		}
+
+		av_frame_free(&pFrame);
+		av_packet_free(&pPacket);
+
+		callBack(p_global_bgr_buffer, loaclStride, loaclHeight);
+
+		return response;
+	}
+
 	//Decode
 	inline int fill_queue() {
 		int response = 0;
@@ -572,6 +627,9 @@ private:
 
 		SyncState syncState = SyncState::SYNC_SYNC;
 
+		int loaclStride = 0;
+		int loaclHeight = 0;
+
 		do {
 			// fill buffer
 			response = fill_queue();
@@ -589,7 +647,11 @@ private:
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				response = decode_videoFrame(callBack);
+				//response = decode_videoFrame(callBack);
+				response = decode_videoFrame([&](const unsigned char* pData, const int stride, const int height) {
+					loaclStride = stride;
+					loaclHeight = height;
+					});
 
 				if (response == AVERROR(EAGAIN)) {
 					syncState = SyncState::SYNC_CLOCKFASTER;
@@ -611,6 +673,7 @@ private:
 		} while (syncState != SyncState::SYNC_SYNC);
 
 		//callBack(p_global_bgr_buffer, this->get_width(), this->get_height());
+		callBack(p_global_bgr_buffer, loaclStride, loaclHeight);
 
 		return 0;
 	}
@@ -670,7 +733,7 @@ private:
 
 		if (pFrame->format != PIXEL_FORMAT) {
 			if (p_global_bgr_buffer == nullptr) {
-				int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize [0], pFrame->height, 1);
+				num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize [0], pFrame->height, 1);
 				p_global_bgr_buffer = new uint8_t [num_bytes];
 			}
 
@@ -1108,9 +1171,12 @@ public:
 	}
 
 	//Play core
-	inline int get_videoFrame(size_t ms, rawDataCallBack callBack) {
+	inline int goto_videoPosition(size_t ms, rawDataCallBack callBack) {
+		return forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0, callBack);
+	}
+
+	inline int get_videoFrame(size_t ms, bool bAccurateSeek, rawDataCallBack callBack) {
 		int response = 0;
-		int how_many_packets_to_process = 0;
 
 		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pCodecContext) {
@@ -1137,31 +1203,41 @@ public:
 
 		response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
-		while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
-			// if it's the video stream
-			if (pPacket->stream_index == video_stream_index) {
-				// keep current pts & clock
-				auto oldClock = videoClock;
-				auto oldPts = videoPts;
+		// keep current pts & clock
+		auto oldClock = videoClock;
+		auto oldPts = videoPts;
 
-				response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
+		videoClock = 0;
+		videoPts = 0;
 
-				videoClock = oldClock;
-				videoPts = oldPts;
+		if (bAccurateSeek) {
+			response = forwardFrame(pSeekFormatContext, pCodecContext, ms / 1000.0, callBack);
+		}
+		else {
+			int how_many_packets_to_process = 0;
 
-				//wait until receive enough frames
-				if (response == AVERROR(EAGAIN)) {
-					continue;
+			while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
+				// if it's the video stream
+				if (pPacket->stream_index == video_stream_index) {
+					response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
+
+					//wait until receive enough frames
+					if (response == AVERROR(EAGAIN)) {
+						continue;
+					}
+
+					if (response < 0) { break; }
+
+					// stop it, otherwise we'll be saving hundreds of frames
+					if (--how_many_packets_to_process <= 0) { break; }
 				}
 
-				if (response < 0) { break; }
-
-				// stop it, otherwise we'll be saving hundreds of frames
-				if (--how_many_packets_to_process <= 0) { break; }
+				av_packet_unref(pPacket);
 			}
-
-			av_packet_unref(pPacket);
 		}
+
+		videoClock = oldClock;
+		videoPts = oldPts;
 
 		av_frame_free(&pFrame);
 		av_packet_free(&pPacket);

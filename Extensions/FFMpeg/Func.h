@@ -77,9 +77,9 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 #endif
 	}
 
-//#ifdef _DEBUG
-//	_SavetoClipBoard(pMemSf, false);
-//#endif // _DEBUG
+#ifdef _DEBUG
+	//_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
 
 	ReleaseSfCoef(pMemSf, sfCoef);
 
@@ -93,7 +93,7 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, LPSURFACE& pSf) {
 		return;
 	}
 
-	rdPtr->pFFMpeg->get_videoFrame(ms, [&] (const unsigned char* pData, const int stride, const int height) {
+	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
 		CopyData(pData, stride, pSf, rdPtr->bPm);
 		ReDisplay(rdPtr);
 		});
@@ -146,15 +146,13 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) 
 
 	size_t ms = (size_t)msRaw;
 
-	if ((flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE) {
-		rdPtr->bJumped = true;
-		rdPtr->jumpedPts = int64_t(ms / 1000.0);
-	}
-
 	rdPtr->pFFMpeg->set_videoPosition(ms, flags);
 
-	if (!rdPtr->bPlay) {
-		BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
+	if (rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE) {
+		rdPtr->pFFMpeg->goto_videoPosition(ms, [&](const unsigned char* pData, const int stride, const int height) {
+			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
+			ReDisplay(rdPtr);
+			});
 	}
 
 	ReDisplay(rdPtr);
