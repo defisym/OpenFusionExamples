@@ -46,7 +46,12 @@
 #define EXP_EXPRESSION_GCVFP			4
 #define EXP_EXPRESSION_GGVFP			5
 
-#define	EXP_LAST                    	6
+#define EXP_EXPRESSION_GVO				6
+#define EXP_EXPRESSION_GVPLAY			7
+#define EXP_EXPRESSION_GVL				8
+#define EXP_EXPRESSION_GVF				9
+
+#define	EXP_LAST                    	10
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

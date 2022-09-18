@@ -840,10 +840,10 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 
 	switch (nPropID) {
 	case PROPID_AUDIOQUEUESIZE_EDITNUMBER:
-		edPtr->audioQSize = ((CPropDWordValue*)pValue)->m_dwValue;
+		edPtr->audioQSize = max(0, ((CPropDWordValue*)pValue)->m_dwValue);
 		break;
 	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
-		edPtr->videoQSize = ((CPropDWordValue*)pValue)->m_dwValue;
+		edPtr->videoQSize = max(0, ((CPropDWordValue*)pValue)->m_dwValue);
 		break;
 	}
 

@@ -171,6 +171,11 @@ BEGIN
         MENUITEM SEPARATOR        
         MENUITEM "Get Volume",          IDMN_EXPRESSION_GV	
         MENUITEM SEPARATOR
+        MENUITEM "Get Video Open State",          IDMN_EXPRESSION_GVO		
+        MENUITEM "Get Video Play State",          IDMN_EXPRESSION_GVPLAY	
+        MENUITEM "Get Video Loop State",          IDMN_EXPRESSION_GVL		
+        MENUITEM "Get Video Finish State",          IDMN_EXPRESSION_GVF		
+        MENUITEM SEPARATOR
         MENUITEM "Get Current Video Frame Pointer", IDMN_EXPRESSION_GCVFP
         MENUITEM "Get Grabbed Video Frame Pointer", IDMN_EXPRESSION_GGVFP        
         MENUITEM SEPARATOR
@@ -326,6 +331,11 @@ BEGIN
 
     M_EXPRESSION_GCVFP      "CVFP ("
     M_EXPRESSION_GGVFP      "GVFP ("
+
+    M_EXPRESSION_GVO		"GVOS ("
+    M_EXPRESSION_GVPLAY		"GVPS ("
+    M_EXPRESSION_GVL		"GVLS ("
+    M_EXPRESSION_GVF		"GVFL ("
 
     M_HWA                   "Return HWA"
 END

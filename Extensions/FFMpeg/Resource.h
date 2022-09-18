@@ -135,6 +135,11 @@
 #define IDMN_EXPRESSION_GCVFP		    27004
 #define IDMN_EXPRESSION_GGVFP		    27005
 
+#define IDMN_EXPRESSION_GVO				27006
+#define IDMN_EXPRESSION_GVPLAY			27007
+#define IDMN_EXPRESSION_GVL				27008
+#define IDMN_EXPRESSION_GVF				27009
+
 // Expression strings
 #define	M_EXPRESSION_GVN			    7000
 #define M_EXPRESSION_GVP			    7001
@@ -144,6 +149,11 @@
 
 #define M_EXPRESSION_GCVFP		        7004
 #define M_EXPRESSION_GGVFP		        7005
+
+#define M_EXPRESSION_GVO				7006
+#define M_EXPRESSION_GVPLAY			    7007
+#define M_EXPRESSION_GVL				7008
+#define M_EXPRESSION_GVF				7009
 
 // Names of expression parameters
 #define M_HWA   				 7500

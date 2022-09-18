@@ -60,6 +60,11 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GCVFP, M_EXPRESSION_GCVFP, EXP_EXPRESSION_GCVFP, 0, 1, EXPPARAM_LONG, M_HWA,
 		IDMN_EXPRESSION_GGVFP, M_EXPRESSION_GGVFP, EXP_EXPRESSION_GGVFP, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_POSITION, M_HWA,
+
+		IDMN_EXPRESSION_GVO, M_EXPRESSION_GVO, EXP_EXPRESSION_GVO, 0, 0,
+		IDMN_EXPRESSION_GVPLAY, M_EXPRESSION_GVPLAY, EXP_EXPRESSION_GVPLAY, 0, 0,
+		IDMN_EXPRESSION_GVL, M_EXPRESSION_GVL, EXP_EXPRESSION_GVL, 0, 0,
+		IDMN_EXPRESSION_GVF, M_EXPRESSION_GVF, EXP_EXPRESSION_GVF, 0, 0,
 		};
 
 
@@ -122,6 +127,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 
 		rdPtr->bOpen = true;
 		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
+		*rdPtr->pFilePath = filePath;
 
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
@@ -188,6 +194,10 @@ short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_SetLoop(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->bLoop = (bool)CNC_GetIntParameter(rdPtr);
+	
+	if (rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
+	}
 
 	return 0;
 }
@@ -213,14 +223,12 @@ short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long para
 	int audioQSize = (int)CNC_GetIntParameter(rdPtr);
 	int videoQSize = (int)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->audioQSize = audioQSize;
-	rdPtr->videoQSize = videoQSize;
+	rdPtr->audioQSize = audioQSize == -1 ? MAX_AUDIOQ_SIZE : audioQSize;
+	rdPtr->videoQSize = videoQSize == -1 ? MAX_VIDEOQ_SIZE : videoQSize;
 
-	if (!rdPtr->bOpen) {
-		return 0;
-	}
-
-	rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
+	if (rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
+	}	
 
 	return 0;
 }
@@ -260,7 +268,7 @@ long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetCurrentVideoFramePointer(LPRDATA rdPtr, long param1) {
-	bool bHwa = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool bHwa = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	if (!rdPtr->bOpen) {
 		return 0;
@@ -282,6 +290,22 @@ long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long 
 	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);	
 
 	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
+}
+
+long WINAPI DLLExport Expression_GetVideoOpen(LPRDATA rdPtr, long param1) {
+	return rdPtr->bOpen;
+}
+
+long WINAPI DLLExport Expression_GetVideoPlay(LPRDATA rdPtr, long param1) {
+	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr && !rdPtr->pFFMpeg->get_finishState();
+}
+
+long WINAPI DLLExport Expression_GetVideoLoop(LPRDATA rdPtr, long param1) {
+	return rdPtr->bLoop;
+}
+
+long WINAPI DLLExport Expression_GetVideoFinish(LPRDATA rdPtr, long param1) {
+	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
 }
 
 // ----------------------------------------------------------
@@ -334,6 +358,11 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetCurrentVideoFramePointer,
 			Expression_GetGrabbedVideoFramePointer,
+
+			Expression_GetVideoOpen,
+			Expression_GetVideoPlay,
+			Expression_GetVideoLoop,
+			Expression_GetVideoFinish,
 
 			0
 			};
