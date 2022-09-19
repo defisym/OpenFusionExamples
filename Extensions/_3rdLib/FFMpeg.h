@@ -109,7 +109,7 @@ private:
 	double audioClock = 0;
 	double videoClock = 0;
 
-	double frameTimer = (double)av_gettime() / 1000000.0;;
+	double frameTimer = -1;
 	double frameLastPts = 0;
 	double frameLastDelay = 40e-3;
 
@@ -921,9 +921,14 @@ private:
 		frameLastPts = videoPts;
 		frameLastDelay = delay;
 
-		//auto time = av_gettime() / 1000000.0;
+		auto curTime = av_gettime() / 1000000.0;
 
-		auto syncClock = !bNoAudio ? get_audioClock() : av_gettime() / 1000000.0 - frameTimer;
+		// reset frameTimer with a extimate time
+		if (frameTimer == -1) {
+			frameTimer = curTime - videoPts;
+		}
+
+		auto syncClock = !bNoAudio ? get_audioClock() : curTime - frameTimer;
 		auto diff = videoPts - syncClock;
 
 		auto syncThreshold = delay > AV_SYNC_THRESHOLD
@@ -956,7 +961,7 @@ private:
 		videoClock = 0;
 		audioClock = 0;
 
-		frameTimer = (double)av_gettime() / 1000000.0;;
+		frameTimer = -1;
 		frameLastPts = 0;
 		frameLastDelay = 40e-3;
 	}
