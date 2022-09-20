@@ -80,7 +80,7 @@ long WINAPI DLLExport Condition_VideoOpen(LPRDATA rdPtr, long param1, long param
 }
 
 long WINAPI DLLExport Condition_VideoPlay(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr && !rdPtr->pFFMpeg->get_finishState();
+	return GetVideoPlayState(rdPtr);
 }
 
 long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param2) {
@@ -88,7 +88,7 @@ long WINAPI DLLExport Condition_VideoLoop(LPRDATA rdPtr, long param1, long param
 }
 
 long WINAPI DLLExport Condition_VideoFinish(LPRDATA rdPtr, long param1, long param2) {
-	return  rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
+	return GetVideoFinishState(rdPtr);
 }
 
 long WINAPI DLLExport Condition_OnVideoFinish(LPRDATA rdPtr, long param1, long param2) {
@@ -297,7 +297,7 @@ long WINAPI DLLExport Expression_GetVideoOpen(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetVideoPlay(LPRDATA rdPtr, long param1) {
-	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr && !rdPtr->pFFMpeg->get_finishState();
+	return GetVideoPlayState(rdPtr);
 }
 
 long WINAPI DLLExport Expression_GetVideoLoop(LPRDATA rdPtr, long param1) {
@@ -305,7 +305,7 @@ long WINAPI DLLExport Expression_GetVideoLoop(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetVideoFinish(LPRDATA rdPtr, long param1) {
-	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
+	return GetVideoFinishState(rdPtr);
 }
 
 // ----------------------------------------------------------

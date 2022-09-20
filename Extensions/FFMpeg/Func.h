@@ -157,3 +157,15 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) 
 
 	ReDisplay(rdPtr);
 }
+
+inline bool GetVideoPlayState(LPRDATA rdPtr) {
+	//return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr && !rdPtr->pFFMpeg->get_finishState();
+	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr
+		&& rdPtr->bLoop
+		? true
+		: !rdPtr->pFFMpeg->get_finishState();
+}
+
+inline bool GetVideoFinishState(LPRDATA rdPtr) {
+	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
+}

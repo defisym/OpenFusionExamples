@@ -235,6 +235,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 			ReDisplay(rdPtr);
 			});
 
+		if (rdPtr->pFFMpeg->get_finishState()) {
+			CallEvent(ON_FINISH);
+		}
+
 #ifdef _LOOPBENCH
 		auto decodeDuration = (std::chrono::steady_clock::now() - beforeDecode) / 1ms;
 		
@@ -245,7 +249,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		OutputDebugString(L"\n");
 
 		if (rdPtr->pFFMpeg->get_finishState()) {
-			CallEvent(ON_FINISH);
 			OutputDebugString(L"======FINISH======\n");
 		}
 #endif
