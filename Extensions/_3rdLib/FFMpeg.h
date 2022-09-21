@@ -262,11 +262,25 @@ private:
 		//might crash in avformat_open_input due to access violation if not set
 		AVProbeData probeData = { 0 };
 		probeData.buf = pBuffer;
-		probeData.buf_size = bfSz;
+		//probeData.buf_size = bfSz;
+		probeData.buf_size = min(MEM_BUFFER_SIZE, bfSz);
 		probeData.filename = "";
 
 		// Determine the input-format:
-		(*pFormatContext)->iformat = av_probe_input_format(&probeData, 1);
+		while(true){
+			(*pFormatContext)->iformat = av_probe_input_format(&probeData, 1);
+
+			if ((*pFormatContext)->iformat != nullptr) {
+				break;
+			}
+
+			if (size_t(probeData.buf_size + 1) > bfSz) {
+				throw FFMpegException_InitFailed;
+			}
+
+			probeData.buf_size = min(size_t(2 * probeData.buf_size), bfSz);
+		}
+
 		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
 
 		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) < 0) {
