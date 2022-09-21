@@ -32,7 +32,10 @@
 
 #define	ACT_ACTION_SAS					9
 
-#define	ACT_LAST						10
+#define	ACT_ACTION_CACHEV				10
+#define	ACT_ACTION_ERASEV				11
+
+#define	ACT_LAST						12
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -79,7 +82,10 @@ typedef struct tagEDATA_V1
 
 	bool bAccurateSeek;
 
-	int buffer[49];
+	bool bCache;
+
+	bool bBuffer[3];
+	int buffer[48];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -150,6 +156,7 @@ typedef struct tagRDATA
 	double scaleX;
 	double scaleY;
 
+	bool bCache;
 	GlobalData* pData;
 
 	std::wstring* pRetStr;

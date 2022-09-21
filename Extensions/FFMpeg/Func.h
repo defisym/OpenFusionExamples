@@ -126,14 +126,19 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, LPSURFACE& pMemSf, LPSURF
 }
 
 inline void CloseGeneral(LPRDATA rdPtr) {
-	delete rdPtr->pEncrytpt;
-	rdPtr->pEncrytpt = nullptr;
-
 	delete rdPtr->pFFMpeg;
 	rdPtr->pFFMpeg = nullptr;
 
+	if (!rdPtr->bCache) {
+		delete rdPtr->pEncrytpt;		
+	}
+
+	rdPtr->pEncrytpt = nullptr;
+
 	rdPtr->bOpen = false;
 	rdPtr->bPlay = false;
+
+	*rdPtr->pFilePath = L"";
 }
 
 inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) {
@@ -168,4 +173,28 @@ inline bool GetVideoPlayState(LPRDATA rdPtr) {
 
 inline bool GetVideoFinishState(LPRDATA rdPtr) {
 	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
+}
+
+inline void LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key) {
+	if (rdPtr->bCache) {
+		auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
+
+		auto it = pMemVideoLib->GetItem(filePath);
+
+		if (pMemVideoLib->ItemExist(it)) {
+			rdPtr->pEncrytpt = it->second;
+		}
+	}
+
+	if (rdPtr->pEncrytpt == nullptr) {
+		rdPtr->pEncrytpt = new Encryption;
+		rdPtr->pEncrytpt->GenerateKey(key.c_str());
+
+		rdPtr->pEncrytpt->OpenFile(filePath.c_str());
+		rdPtr->pEncrytpt->Decrypt();
+	}
+
+	if (rdPtr->bCache) {
+		rdPtr->pData->pMemVideoLib->PutItem(filePath, rdPtr->pEncrytpt);
+	}
 }

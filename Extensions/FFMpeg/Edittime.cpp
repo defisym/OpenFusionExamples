@@ -35,6 +35,8 @@ enum {
 	PROPID_LOOP_CHECK,
 
 	PROPID_ACCURATESEEK_CHECK,
+	
+	PROPID_CACHE_CHECK,
 
 	PROPID_QUEUE_TEXTTITLE,
 
@@ -74,6 +76,8 @@ PropData Properties[] = {
 	PropData_CheckBox	(PROPID_LOOP_CHECK, IDS_PROP_LOOP_CHECK, IDS_PROP_LOOP_CHECK_INFO),
 
 	PropData_CheckBox(PROPID_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK_INFO),
+
+	PropData_CheckBox(PROPID_CACHE_CHECK, IDS_PROP_CACHE_CHECK, IDS_PROP_CACHE_CHECK_INFO),
 
 	PropData_Group(PROPID_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE),
 
@@ -371,6 +375,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->videoQSize = MAX_VIDEOQ_SIZE;
 
 		edPtr->bAccurateSeek = true;
+
+		edPtr->bCache = false;
 
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -776,6 +782,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bLoop;
 	case PROPID_ACCURATESEEK_CHECK:
 		return edPtr->bAccurateSeek;
+	case PROPID_CACHE_CHECK:
+		return edPtr->bCache;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -882,6 +890,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bAccurateSeek = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_ACCURATESEEK_CHECK, TRUE);
+		break;
+	case PROPID_CACHE_CHECK:
+		edPtr->bCache = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_CACHE_CHECK, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

@@ -39,6 +39,9 @@
 #define	IDS_PROP_ACCURATESEEK_CHECK			            	212
 #define	IDS_PROP_ACCURATESEEK_CHECK_INFO    				213
 
+#define	IDS_PROP_CACHE_CHECK			            214
+#define	IDS_PROP_CACHE_CHECK_INFO    				215
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -64,6 +67,9 @@
 
 #define	IDMN_ACTION_SAS 			25009
 
+#define	IDMN_ACTION_CACHEV 			25010
+#define	IDMN_ACTION_ERASEV 			25011
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -78,6 +84,9 @@
 #define	M_ACTION_SQS				5008
 
 #define	M_ACTION_SAS				5009
+
+#define	M_ACTION_CACHEV				5010
+#define	M_ACTION_ERASEV				5011
 
 // Titles of action parameters
 #define M_FILEPATH				 5501

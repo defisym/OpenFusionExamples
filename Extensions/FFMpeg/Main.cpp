@@ -47,6 +47,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SQS, M_ACTION_SQS, ACT_ACTION_SQS,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_AUDIOQUEUESIZE, M_VIDEOQUEUESIZE,
 
 		IDMN_ACTION_SAS, M_ACTION_SAS, ACT_ACTION_SAS, 0, 1, PARAM_EXPRESSION, M_ACCURATESEEK,
+
+		IDMN_ACTION_CACHEV, M_ACTION_CACHEV, ACT_ACTION_CACHEV,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FILEPATH, M_KEY,
+		IDMN_ACTION_ERASEV, M_ACTION_ERASEV, ACT_ACTION_ERASEV,	0, 1, PARAM_EXPSTRING, M_FILEPATH,
 		};
 
 // Definitions of parameters for each expression
@@ -113,13 +116,8 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		if (StrEmpty(key.c_str())) {
 			rdPtr->pFFMpeg = new FFMpeg(filePath);
 		}
-		else {
-			rdPtr->pEncrytpt = new Encryption;
-			rdPtr->pEncrytpt->GenerateKey(key.c_str());
-
-			rdPtr->pEncrytpt->OpenFile(filePath.c_str());
-			rdPtr->pEncrytpt->Decrypt();
-
+		else {			
+			LoadMemVideo(rdPtr, filePath, key);
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrytpt->GetOutputData(), rdPtr->pEncrytpt->GetOutputDataLength());
 		}
 		
@@ -135,13 +133,6 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 
 		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());		
-
-		//if (rdPtr->bPlay) {
-		//	NextVideoFrame(rdPtr);
-		//}
-		//else {
-		//	BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
-		//}
 
 		BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
 
@@ -235,6 +226,39 @@ short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long para
 
 short WINAPI DLLExport Action_SetAccurateSeek(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->bAccurateSeek = (bool)CNC_GetIntParameter(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_CacheVideo(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (!rdPtr->bCache) {
+		return 0;
+	}
+
+	auto pOld = rdPtr->pEncrytpt;
+
+	if (!StrEmpty(key.c_str())) {
+		LoadMemVideo(rdPtr, filePath, key);
+	}
+
+	rdPtr->pEncrytpt = pOld;
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	if (!rdPtr->bCache) {
+		return 0;
+	}
+
+	if (*rdPtr->pFilePath != filePath) {
+		rdPtr->pData->pMemVideoLib->EraseItem(filePath);
+	}
 
 	return 0;
 }
@@ -344,6 +368,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetQueueSize,
 
 			Action_SetAccurateSeek,
+
+			Action_CacheVideo,
+			Action_EraseVideo,
 
 			0
 			};

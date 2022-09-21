@@ -151,6 +151,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM SEPARATOR
+        MENUITEM "Cache Video",          IDMN_ACTION_CACHEV
+        MENUITEM "Erase Cached Video",          IDMN_ACTION_ERASEV
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -275,6 +278,10 @@ IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO "Data size cached in video queue, if you
 
 IDS_PROP_ACCURATESEEK_CHECK             "Accurate Seek"
 IDS_PROP_ACCURATESEEK_CHECK_INFO        "Seek to exactly the frame you want, slower"
+
+IDS_PROP_CACHE_CHECK                    "Cache"
+IDS_PROP_CACHE_CHECK_INFO               "Cache decrypted data over frames"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -298,6 +305,9 @@ BEGIN
     M_ACTION_SQS		       "Set Audio Queue Size to %0, Video Queue Size to %1"
     
     M_ACTION_SAS		       "Set Accurate Seek to %0"
+    
+    M_ACTION_CACHEV		       "Cache Video %0, Decrypt Key %1"
+    M_ACTION_ERASEV		       "Erase Cached Video %0"
 
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"

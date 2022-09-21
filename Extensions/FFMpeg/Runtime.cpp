@@ -111,6 +111,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pRetStr = new std::wstring;
 
+	rdPtr->bCache = edPtr->bCache;
+
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 
@@ -154,10 +156,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pFilePath;
 	
-	delete rdPtr->pFFMpeg;
 	delete rdPtr->pPreviousTimer;
 
-	delete rdPtr->pEncrytpt;
+	CloseGeneral(rdPtr);
 
 	delete rdPtr->pRetStr;
 

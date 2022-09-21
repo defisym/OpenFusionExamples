@@ -45,18 +45,16 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include	<map>
 #include	<string>
 #include	<chrono>
 
-using namespace std::literals;
-using Timer = std::chrono::time_point<std::chrono::steady_clock>;
-
 // My lib
-#include	"GeneralDefinition.h"
-#include	"Definition.h"
-
 #include	"Encryption.h"
 #include	"FFMpeg.h"
+
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"
