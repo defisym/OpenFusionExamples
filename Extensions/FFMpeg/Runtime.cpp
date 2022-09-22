@@ -115,55 +115,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
-
-		//initialize the video audio & timer subsystem 
-		//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-			auto error = SDL_GetError();
-
-			MSGBOX(L"Could not initialize SDL");
-			exit(1);
-		}
-
-		rdPtr->pData->bSDLInit = true;
+		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
+		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
 	}	
-
-#ifdef _EXTERNAL_SDL_AUDIO_INIT
-	SDL_AudioSpec wanted_spec = { 0 };
-
-	//DSP frequency -- samples per second
-	wanted_spec.freq = TARGET_SAMPLE_RATE;
-	wanted_spec.format = AUDIO_S16SYS;
-	wanted_spec.channels = 2;
-	//sclient if no output
-	wanted_spec.silence = 0;
-	//specifies a unit of audio data refers to the size of the audio buffer in sample frames
-	//recommand: 512~8192, ffplay: 1024
-	wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
-
-	wanted_spec.userdata = (void*)rdPtr;
-	wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
-		LPRDATA rdPtr = (LPRDATA)userdata;
-
-		FFMpeg* pFFMpeg = rdPtr->pFFMpeg;
-
-		if (pFFMpeg != nullptr) {
-			pFFMpeg->audio_fillData(stream, len);
-		}
-		else {
-			SDL_memset(stream, 0, len);
-		}
-	};
-
-	if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
-		auto error = SDL_GetError();
-
-		throw SDL_EXCEPTION_AUDIO;
-	}
-#endif // _EXTERNAL_SDL_AUDIO_INIT	
 
 	// No errors
 	return 0;
@@ -197,13 +154,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pRetStr;
 
 	SetExtUserData(rdPtr->pData);
-
-#ifdef _EXTERNAL_SDL_AUDIO_INIT
-	SDL_CloseAudio();
-#endif // _EXTERNAL_SDL_AUDIO_INIT		
-
-
-	//SDL_Quit();
 
 #ifdef _USE_CRTDBG
 	_CrtDumpMemoryLeaks();
@@ -502,9 +452,6 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		pData->bSDLInit = false;
-		SDL_Quit();
-
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
@@ -522,9 +469,6 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		pData->bSDLInit = false;
-		SDL_Quit();
-
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}

@@ -63,7 +63,8 @@ constexpr auto TARGET_SAMPLE_RATE = 48000;
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
 
-constexpr auto SDL_EXCEPTION_AUDIO = 0;
+constexpr auto SDL_EXCEPTION_INIT = 0;
+constexpr auto SDL_EXCEPTION_AUDIO = 1;
 
 static volatile int Stat_Quit = 0;
 static volatile int Stat_QuitComplete = 1;
@@ -893,6 +894,7 @@ private:
 		}
 
 		// 计算转换后的sample个数 a * b / c
+		// https://blog.csdn.net/u013346305/article/details/48682935
 		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples
 #ifndef _EXTERNAL_SDL_AUDIO_INIT
 			, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));

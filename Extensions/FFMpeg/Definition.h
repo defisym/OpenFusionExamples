@@ -49,14 +49,69 @@ struct MemVideoLib {
 
 struct GlobalData {
 	bool bSDLInit = false;
+	FFMpeg** ppFFMpeg = nullptr;
 
 	MemVideoLib* pMemVideoLib = nullptr;
 
 	GlobalData() {
 		pMemVideoLib = new MemVideoLib;
+
+		//initialize the video audio & timer subsystem 
+		//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+			auto error = SDL_GetError();
+
+			throw SDL_EXCEPTION_INIT;
+		}
+
+#ifdef _EXTERNAL_SDL_AUDIO_INIT
+		SDL_AudioSpec wanted_spec = { 0 };
+
+		//DSP frequency -- samples per second
+		wanted_spec.freq = TARGET_SAMPLE_RATE;
+		wanted_spec.format = AUDIO_S16SYS;
+		wanted_spec.channels = 2;
+		//sclient if no output
+		wanted_spec.silence = 0;
+		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
+		//recommand: 512~8192, ffplay: 1024
+		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
+
+		wanted_spec.userdata = (void*)this;
+		wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
+			// No mutex needed here as audio is paused when deleting pFFMpeg
+			GlobalData* pData = (GlobalData*)userdata;
+
+			FFMpeg* pFFMpeg = *pData->ppFFMpeg;
+
+			if (pFFMpeg == nullptr) {
+				SDL_memset(stream, 0, len);
+
+				return;
+			}
+
+			pFFMpeg->audio_fillData(stream, len);
+		};
+
+		if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
+			auto error = SDL_GetError();
+
+			throw SDL_EXCEPTION_AUDIO;
+		}
+#endif // _EXTERNAL_SDL_AUDIO_INIT	
+
+		bSDLInit = true;
 	}
 
 	~GlobalData() {
 		delete pMemVideoLib;
+				
+#ifdef _EXTERNAL_SDL_AUDIO_INIT
+		SDL_CloseAudio();
+#endif // _EXTERNAL_SDL_AUDIO_INIT	
+
+		SDL_Quit();
+
+		bSDLInit = false;
 	}
 };
