@@ -118,7 +118,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		}
 		else {			
 			LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrytpt->GetOutputData(), rdPtr->pEncrytpt->GetOutputDataLength());
+			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength());
 		}
 		
 		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
@@ -238,13 +238,13 @@ short WINAPI DLLExport Action_CacheVideo(LPRDATA rdPtr, long param1, long param2
 		return 0;
 	}
 
-	auto pOld = rdPtr->pEncrytpt;
+	auto pOld = rdPtr->pEncrypt;
 
 	if (!StrEmpty(key.c_str())) {
 		LoadMemVideo(rdPtr, filePath, key);
 	}
 
-	rdPtr->pEncrytpt = pOld;
+	rdPtr->pEncrypt = pOld;
 
 	return 0;
 }

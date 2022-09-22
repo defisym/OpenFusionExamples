@@ -130,10 +130,10 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	rdPtr->pFFMpeg = nullptr;
 
 	if (!rdPtr->bCache) {
-		delete rdPtr->pEncrytpt;		
+		delete rdPtr->pEncrypt;		
 	}
 
-	rdPtr->pEncrytpt = nullptr;
+	rdPtr->pEncrypt = nullptr;
 
 	rdPtr->bOpen = false;
 	rdPtr->bPlay = false;
@@ -182,19 +182,19 @@ inline void LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstring& ke
 		auto it = pMemVideoLib->GetItem(filePath);
 
 		if (pMemVideoLib->ItemExist(it)) {
-			rdPtr->pEncrytpt = it->second;
+			rdPtr->pEncrypt = it->second;
 		}
 	}
 
-	if (rdPtr->pEncrytpt == nullptr) {
-		rdPtr->pEncrytpt = new Encryption;
-		rdPtr->pEncrytpt->GenerateKey(key.c_str());
+	if (rdPtr->pEncrypt == nullptr) {
+		rdPtr->pEncrypt = new Encryption;
+		rdPtr->pEncrypt->GenerateKey(key.c_str());
 
-		rdPtr->pEncrytpt->OpenFile(filePath.c_str());
-		rdPtr->pEncrytpt->Decrypt();
+		rdPtr->pEncrypt->OpenFile(filePath.c_str());
+		rdPtr->pEncrypt->Decrypt();
 	}
 
 	if (rdPtr->bCache) {
-		rdPtr->pData->pMemVideoLib->PutItem(filePath, rdPtr->pEncrytpt);
+		rdPtr->pData->pMemVideoLib->PutItem(filePath, rdPtr->pEncrypt);
 	}
 }

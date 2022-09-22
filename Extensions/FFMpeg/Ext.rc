@@ -151,8 +151,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM SEPARATOR
-        MENUITEM "Cache Video",          IDMN_ACTION_CACHEV
-        MENUITEM "Erase Cached Video",          IDMN_ACTION_ERASEV
+        MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
+        MENUITEM "Erase Cached Video",      IDMN_ACTION_ERASEV
         MENUITEM SEPARATOR
     END
 END

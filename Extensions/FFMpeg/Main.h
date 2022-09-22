@@ -148,7 +148,7 @@ typedef struct tagRDATA
 	FFMpeg* pFFMpeg;
 	Timer* pPreviousTimer;
 
-	Encryption* pEncrytpt;
+	Encryption* pEncrypt;
 	
 	bool bPm;
 	bool bChanged;

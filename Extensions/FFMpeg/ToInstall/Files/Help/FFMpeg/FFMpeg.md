@@ -51,6 +51,9 @@ Here follows all dlls needed by this object:
   - Accurate seek
     - *To avoid display issues usually we should seek to a keyframe, but it may not that accurate. If enable this option, after seeking extension will decode frames until reaches the given time stamp, and will be time-consuming*
     - *To make this work, make sure you use seek with flag `AVSEEK_FLAG_BACKWARD`. Seek action will use this flag as default so it's transparent to users, but I still note it here as we have an action which allows you to set seek flags...*
+  - Cache
+    - Cache decrypted data over frames
+    - Currently reading decrypt file didn't use a stream (it's provided by another class and FFMpeg only has a memory reader), so it may cost some time to decrypt. With this on extension will cache these file in memory over frames instead of reloading
 
 - Queue
   - *Data is split into packet in FFMpeg, and usually it needs several packets to decode one frame. For audio, it's played in another thread and use a callback to ask for more data, so the decoded packets are cached in a queue, and won't add new ones if cached data exceeds this limit. However, some formats with higher resolution may need more data to decode, which may exceed the limit (e.g., aida_alpha.mov), then the application will keep waiting forever. In this case, extend this limit will solve it.*
@@ -84,6 +87,13 @@ Here follows all dlls needed by this object:
     #define AVSEEK_FLAG_ANY      4 ///< seek to any frame, even non-keyframes
     #define AVSEEK_FLAG_FRAME    8 ///< seeking based on frame number
   ```
+
+- Cache Video
+  - *decrypt given file then cache it in memory*
+- Erase Cached Video
+  - *erase cached given file*
+  - *the file is using now won't be erased*
+  - *input an empty file name will erase all cached file*
 
 - Set Queue Size
   - see Properties->Queue

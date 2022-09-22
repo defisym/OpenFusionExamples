@@ -104,7 +104,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pFFMpeg = nullptr;
 	rdPtr->pPreviousTimer = new Timer;
 
-	rdPtr->pEncrytpt = nullptr;
+	rdPtr->pEncrypt = nullptr;
 
 	rdPtr->bChanged = true;
 	rdPtr->bPm = PreMulAlpha(rdPtr);
