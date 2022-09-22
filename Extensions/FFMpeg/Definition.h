@@ -16,9 +16,7 @@ struct MemVideoLib {
 	}
 
 	~MemVideoLib() {
-		for (auto& it : data) {
-			delete it.second;
-		}
+		EraseAll();
 	}
 
 	inline void PutItem(std::wstring& key, Encryption* pData) {
@@ -31,6 +29,12 @@ struct MemVideoLib {
 		if (it != data.end()) {
 			delete it->second;
 			data.erase(it);
+		}
+	}
+
+	inline void EraseAll() {
+		for (auto& it : data) {
+			delete it.second;
 		}
 	}
 

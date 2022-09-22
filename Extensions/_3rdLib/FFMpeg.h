@@ -40,6 +40,23 @@ constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto MAX_AUDIOQ_SIZE = (5 * 16 * 1024);
 constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
+// if defined, then this class won't call SDL_OpenAudio, and convert data by the following spec
+// for the sake of performance (SDL_OpenAudio need about 20ms on my PC)
+// 
+// Spec:
+//		wanted_spec.freq = TARGET_SAMPLE_RATE;
+//		wanted_spec.format = AUDIO_S16SYS;
+//		wanted_spec.channels = 2;
+//		//sclient if no output
+//		wanted_spec.silence = 0;
+//		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
+//		//recommand: 512~8192, ffplay: 1024
+//		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
+
+#define _EXTERNAL_SDL_AUDIO_INIT
+
+constexpr auto TARGET_SAMPLE_RATE = 48000;
+
 //constexpr auto MAX_AUDIOQ_SIZE = 64 * (5 * 16 * 1024);
 //constexpr auto MAX_VIDEOQ_SIZE = 64 * (5 * 256 * 1024);
 
@@ -385,7 +402,11 @@ private:
 
 			swrContext = swr_alloc_set_opts(nullptr
 				, av_get_default_channel_layout(channels)
+#ifndef _EXTERNAL_SDL_AUDIO_INIT
 				, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
+#else
+				, AV_SAMPLE_FMT_S16, TARGET_SAMPLE_RATE
+#endif
 				, channel_layout
 				, (AVSampleFormat)pACodecParameters->format, pACodecParameters->sample_rate
 				, 0, nullptr);
@@ -467,14 +488,15 @@ private:
 			audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 			memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
 
+#ifndef _EXTERNAL_SDL_AUDIO_INIT
 			//DSP frequency -- samples per second
 			wanted_spec.freq = pACodecContext->sample_rate;
 			wanted_spec.format = AUDIO_S16SYS;
 			wanted_spec.channels = pACodecContext->channels;
-			//无输出时是否静音
+			//sclient if no output
 			wanted_spec.silence = 0;
-			//默认每次读音频缓存的大小，推荐值为 512~8192，ffplay使用的是1024
 			//specifies a unit of audio data refers to the size of the audio buffer in sample frames
+			//recommand: 512~8192，ffplay: 1024
 			wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 			//wanted_spec.samples = pACodecContext->frame_size;
 
@@ -482,7 +504,7 @@ private:
 			wanted_spec.callback = [] (void* userdata, Uint8* stream, int len) {
 				FFMpeg* pFFMpeg = (FFMpeg*)userdata;
 
-				//#define _TESTDATA	// Enable this macro to desable callback, return mute directly
+				//#define _TESTDATA	// Enable this macro to disable callback, return mute directly
 #ifndef _TESTDATA
 				pFFMpeg->audio_fillData(stream, len);
 #else
@@ -495,6 +517,7 @@ private:
 
 				throw SDL_EXCEPTION_AUDIO;
 			}
+#endif // _EXTERNAL_SDL_AUDIO_INIT	
 
 			SDL_PauseAudio(false);
 		}
@@ -870,7 +893,12 @@ private:
 		}
 
 		// 计算转换后的sample个数 a * b / c
-		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
+		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples
+#ifndef _EXTERNAL_SDL_AUDIO_INIT
+			, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
+#else
+			, TARGET_SAMPLE_RATE, pAFrame->sample_rate, AVRounding(1));
+#endif
 
 		// 转换，返回值为转换后的sample个数
 		int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
@@ -1035,7 +1063,10 @@ public:
 		videoQueue.flush();
 
 		SDL_PauseAudio(true);
+
+#ifndef _EXTERNAL_SDL_AUDIO_INIT
 		SDL_CloseAudio();
+#endif // _EXTERNAL_SDL_AUDIO_INIT		
 
 		//Wait for callback finish
 		SDL_CondWait(cond, mutex);

@@ -260,6 +260,10 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 		rdPtr->pData->pMemVideoLib->EraseItem(filePath);
 	}
 
+	if (L"" == filePath) {
+		rdPtr->pData->pMemVideoLib->EraseAll();
+	}
+
 	return 0;
 }
 
