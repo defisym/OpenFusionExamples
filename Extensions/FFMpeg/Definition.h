@@ -36,10 +36,16 @@ struct MemVideoLib {
 		for (auto& it : data) {
 			delete it.second;
 		}
+
+		data.clear();
 	}
 
 	inline It GetItem(std::wstring& key) {
 		return data.find(key);
+	}
+
+	inline bool ItemExist(std::wstring& key) {
+		return GetItem(key) != data.end();
 	}
 
 	inline bool ItemExist(It& it) {

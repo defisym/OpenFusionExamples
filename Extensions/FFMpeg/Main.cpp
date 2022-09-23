@@ -117,7 +117,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 			rdPtr->pFFMpeg = new FFMpeg(filePath);
 		}
 		else {			
-			LoadMemVideo(rdPtr, filePath, key);
+			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength());
 		}
 		
@@ -238,13 +238,9 @@ short WINAPI DLLExport Action_CacheVideo(LPRDATA rdPtr, long param1, long param2
 		return 0;
 	}
 
-	auto pOld = rdPtr->pEncrypt;
-
 	if (!StrEmpty(key.c_str())) {
 		LoadMemVideo(rdPtr, filePath, key);
 	}
-
-	rdPtr->pEncrypt = pOld;
 
 	return 0;
 }
@@ -256,13 +252,33 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 		return 0;
 	}
 
-	if (*rdPtr->pFilePath != filePath) {
-		rdPtr->pData->pMemVideoLib->EraseItem(filePath);
+	// erase all
+	if (L"" == filePath) {
+		Encryption* pCurEncrypt = nullptr;
+
+		for (auto& it : rdPtr->pData->pMemVideoLib->data) {
+			if (it.first == *rdPtr->pFilePath) {
+				pCurEncrypt = it.second;
+
+				continue;
+			}
+
+			delete it.second;
+		}
+
+		rdPtr->pData->pMemVideoLib->data.clear();
+
+		// protect current using
+		if (pCurEncrypt != nullptr) {
+			rdPtr->pData->pMemVideoLib->PutItem(*rdPtr->pFilePath, pCurEncrypt);
+		}
+
+		return 0;
 	}
 
-	if (L"" == filePath) {
-		rdPtr->pData->pMemVideoLib->EraseAll();
-	}
+	if (*rdPtr->pFilePath != filePath) {
+		rdPtr->pData->pMemVideoLib->EraseItem(filePath);
+	}	
 
 	return 0;
 }

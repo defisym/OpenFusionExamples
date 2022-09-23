@@ -175,26 +175,26 @@ inline bool GetVideoFinishState(LPRDATA rdPtr) {
 	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
 }
 
-inline void LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key) {
-	if (rdPtr->bCache) {
-		auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
+inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key) {
+	auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
 
+	if (rdPtr->bCache) {
 		auto it = pMemVideoLib->GetItem(filePath);
 
 		if (pMemVideoLib->ItemExist(it)) {
-			rdPtr->pEncrypt = it->second;
+			return it->second;
 		}
 	}
 
-	if (rdPtr->pEncrypt == nullptr) {
-		rdPtr->pEncrypt = new Encryption;
-		rdPtr->pEncrypt->GenerateKey(key.c_str());
+	auto pEncrypt = new Encryption;
+	pEncrypt->GenerateKey(key.c_str());
 
-		rdPtr->pEncrypt->OpenFile(filePath.c_str());
-		rdPtr->pEncrypt->Decrypt();
-	}
+	pEncrypt->OpenFile(filePath.c_str());
+	pEncrypt->Decrypt();
 
 	if (rdPtr->bCache) {
-		rdPtr->pData->pMemVideoLib->PutItem(filePath, rdPtr->pEncrypt);
+		pMemVideoLib->PutItem(filePath, pEncrypt);
 	}
+
+	return pEncrypt;
 }
