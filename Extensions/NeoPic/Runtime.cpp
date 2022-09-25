@@ -305,6 +305,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
+	GetEffect(rdPtr);
+
 	CleanCache(rdPtr, false);
 	MergeLib(rdPtr);
 

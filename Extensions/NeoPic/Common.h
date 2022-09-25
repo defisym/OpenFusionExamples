@@ -58,6 +58,7 @@ struct ZoomScale;
 #include	"Encryption.h"
 
 #include	"WindowsCommon.h"
+#include	"EffectUtilities.h"
 #include	"FusionUtilities.h"
 #include	"Fusion.h"
 
