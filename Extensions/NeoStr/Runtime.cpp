@@ -133,11 +133,15 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
+		
 		auto state = Gdiplus::GdiplusStartup(&rdPtr->pData->gdiplusToken
 			, &rdPtr->pData->gdiplusStartupInput
 			, NULL);
 		rdPtr->pData->gdiInitialized = true;
 		rdPtr->pData->pFontCollection = new PrivateFontCollection;
+
+		//Update pointer
+		SetExtUserData(rdPtr->pData);
 	}else{
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}

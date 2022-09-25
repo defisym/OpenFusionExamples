@@ -116,6 +116,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
+
+		SetExtUserData(rdPtr->pData);
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
