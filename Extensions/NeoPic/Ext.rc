@@ -179,18 +179,20 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Transform"
             BEGIN         
-                MENUITEM "Zoom",              IDMN_ACTION_Z
-                MENUITEM "Stretch",              IDMN_ACTION_S
+                MENUITEM "Zoom",                    IDMN_ACTION_Z
+                MENUITEM "Stretch",                 IDMN_ACTION_S
                 MENUITEM SEPARATOR                
-                MENUITEM "Rotate",              IDMN_ACTION_R                
-                MENUITEM "Offset",              IDMN_ACTION_O
+                MENUITEM "Rotate",                  IDMN_ACTION_R                
+                MENUITEM "Offset",                  IDMN_ACTION_O
                 MENUITEM SEPARATOR
-                //MENUITEM "Affine",              IDMN_ACTION_AT
+                //MENUITEM "Affine",                IDMN_ACTION_AT
                 MENUITEM "Stack Blur",              IDMN_ACTION_SB
+                MENUITEM SEPARATOR
+                MENUITEM "Set Effect Param",        IDMN_ACTION_SESP
             END
             MENUITEM SEPARATOR
-            MENUITEM "Add Backdrop",              IDMN_ACTION_AB
-            //MENUITEM "Update Collision",              IDMN_ACTION_UC
+            MENUITEM "Add Backdrop",                IDMN_ACTION_AB
+            //MENUITEM "Update Collision",          IDMN_ACTION_UC
         END
         MENUITEM SEPARATOR
     END
@@ -423,6 +425,9 @@ BEGIN
     M_ACTION_RADIUS         "Radius of Blur"
     M_ACTION_SCALE          "Down Sampling Scale, Scale >= 1.0. E.g. PicA = 100*100 , Scale = 2.0 , Process Resolution = 50*50"
     M_ACTION_DIVIDE         "Divide of threads, -1 = Max"
+
+    M_ACTION_SESP           "Set Effect Param %4 From Lib %0, File %1, Decrypt Key %2"
+    M_ACTION_EFFECTNAME     "Effect Name"
 END
 
 STRINGTABLE DISCARDABLE 
