@@ -76,6 +76,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SB, M_ACTION_SB, ACT_ACTION_SB, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_RADIUS, M_ACTION_SCALE, M_ACTION_DIVIDE,
 
+		IDMN_ACTION_SESP, M_ACTION_SESP,	ACT_ACTION_SESP, 0, 4,PARAM_OBJECT,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_ACTION_OBJECT,M_ACTION_FILENAME,M_ACTION_KEY,M_ACTION_EFFECTNAME,
+
 		};
 
 // Definitions of parameters for each expression
@@ -566,6 +568,38 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long param2) {
+	LPRDATA object = (LPRDATA)CNC_GetParameter(rdPtr);
+
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPCTSTR pParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	// must be hwa
+	auto pLibHWAType = object->HWA;
+	object->HWA = true;
+
+	auto it = _LoadLib(rdPtr, object, pFilePath, pKey);
+
+	if (it != object->pLib->end()) {
+		auto pSf = it->second.pSf;
+
+		auto pCurEffect = GetEffect(rdPtr);
+		auto paramIndex = pCurEffect->GetParamIndex(ConvertWStrToStr(pParamName).c_str());		
+		auto paramType = pCurEffect->GetParamType(paramIndex);
+
+		if (paramType == EFFECTPARAM_SURFACE) {
+			auto pImpl = GetSurfaceImplementation(*pSf);
+			pCurEffect->SetParamSurfaceValue(paramIndex, pImpl);
+		}		
+	}
+
+	object->HWA = pLibHWAType;
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -849,6 +883,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			LoadFromPointer,
 
 			StackBlur,
+
+			SetEffectSurfaceParam,
 
 			0
 			};
