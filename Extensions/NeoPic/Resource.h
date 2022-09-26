@@ -107,6 +107,8 @@
 
 #define IDMN_ACTION_SB       		25024
 
+#define IDMN_ACTION_SESP       		25025
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -146,6 +148,8 @@
 #define M_ACTION_LFP         	     5023
 
 #define M_ACTION_SB         	     5024
+
+#define M_ACTION_SESP         	     5025
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -188,6 +192,8 @@
 #define M_ACTION_RADIUS              5526
 #define M_ACTION_SCALE               5527
 #define M_ACTION_DIVIDE              5528
+
+#define M_ACTION_EFFECTNAME          5529
 
 //	Conditions
 //--------------------

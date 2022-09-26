@@ -6,26 +6,55 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
+#define CND_CONDITION_VO				0
+#define CND_CONDITION_VP				1
+#define CND_CONDITION_VL				2
+#define CND_CONDITION_VF				3
 
-#define	CND_LAST					1
+#define CND_CONDITION_OVF				4
+
+#define	CND_LAST						5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_OV					0
-#define	ACT_ACTION_SP					1
+#define	ACT_ACTION_CV					1
+#define	ACT_ACTION_PLAYV				2
+#define	ACT_ACTION_PAUSEV				3
 
-#define	ACT_LAST						2
+#define	ACT_ACTION_SV					4
+#define	ACT_ACTION_SL					5
+#define	ACT_ACTION_SP					6
+#define	ACT_ACTION_SPWF					7
+
+#define	ACT_ACTION_SQS					8
+
+#define	ACT_ACTION_SAS					9
+
+#define	ACT_ACTION_CACHEV				10
+#define	ACT_ACTION_ERASEV				11
+
+#define	ACT_LAST						12
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
+#define	EXP_EXPRESSION_GVN				0
+#define EXP_EXPRESSION_GVP				1
+#define EXP_EXPRESSION_GVD				2
 
-#define	EXP_LAST                    3
+#define EXP_EXPRESSION_GV				3
+
+#define EXP_EXPRESSION_GCVFP			4
+#define EXP_EXPRESSION_GGVFP			5
+
+#define EXP_EXPRESSION_GVO				6
+#define EXP_EXPRESSION_GVPLAY			7
+#define EXP_EXPRESSION_GVL				8
+#define EXP_EXPRESSION_GVF				9
+
+#define	EXP_LAST                    	10
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -43,7 +72,20 @@ typedef struct tagEDATA_V1
 
 	bool bHwa;
 
-	int buffer[52];
+	bool bStretch;
+	bool bPlayAfterLoad;
+
+	bool bLoop;
+
+	int audioQSize;
+	int videoQSize;
+
+	bool bAccurateSeek;
+
+	bool bCache;
+
+	bool bBuffer[3];
+	int buffer[48];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -77,27 +119,45 @@ typedef struct tagRDATA
 	short			swidth;
 	short			sheight;
 
-	LPSURFACE pMemSf;
+	// MemSf
+	LPSURFACE pMemSf;	
 	LPSURFACE pGrabbedFrame;
 
+	// HwaSf
+	LPSURFACE pHwaSf;
+
 	bool bHwa;
+
+	bool bStretch;
+	bool bPlayAfterLoad;
 
 	std::wstring* pFilePath;
 
 	bool bLoop;
-	bool bPlay;
+
+	int audioQSize;
+	int videoQSize;
+
+	bool bAccurateSeek;
+
 	bool bOpen;
+	bool bPlay;	
+
+	int volume;
 
 	FFMpeg* pFFMpeg;
 	Timer* pPreviousTimer;
 
-	SDL_AudioSpec wanted_spec, spec;
+	Encryption* pEncrypt;
 	
 	bool bPm;
 	bool bChanged;
 
 	double scaleX;
 	double scaleY;
+
+	bool bCache;
+	GlobalData* pData;
 
 	std::wstring* pRetStr;
 
@@ -110,7 +170,7 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_SPRITES|OEFLAG_QUICKDISPLAY|OEFLAG_BACKSAVE|OEFLAG_MOVEMENTS)
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SPRITES|OEFLAG_MOVEMENTS|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_BACKSAVE)
 #define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS)
 
 

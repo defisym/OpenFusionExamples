@@ -59,15 +59,19 @@ PS_OUTPUT ps_maIn( in PS_InPUT In ){
 		float deNormalizedProgress = DeNormalization(progress, 1.0 + transitionRange);
 
 		if(grey >= deNormalizedProgress) {
-				Out.Color.a = 0;
+			Out.Color.a = 0;
 		} else if(grey + transitionRange >= deNormalizedProgress) {
 			float transitionAlpha = max(0, min(1.0, (deNormalizedProgress - grey) * (1.0 / transitionRange)));
-			Out.Color.a = Out.Color.a * transitionAlpha;
+			Out.Color.a = 1.0 * transitionAlpha;
+		}else{
+			Out.Color.a = 1.0;
 		}
 
 		if(dir) {
 			Out.Color.a = 1.0 - Out.Color.a;
 		}
+
+		Out.Color.a = Out.Color.a * Tex.Color.a;
 	}
 
 	return Out;

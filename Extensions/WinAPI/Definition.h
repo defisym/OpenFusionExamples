@@ -1,7 +1,7 @@
 #ifndef _DEFINITION_
 #define _DEFINITION_
 
-#define _FFMPEG
+//#define _FFMPEG
 
 #define ONMONITORCHANGE 13
 

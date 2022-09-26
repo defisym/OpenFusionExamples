@@ -1197,14 +1197,10 @@ public:
 #endif
 
 #ifdef _USE_HWA
-
 			int xOffset = -this->borderOffsetX;
 			int yOffset = -this->borderOffsetY + this->startY;
 
 			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
-
-			//int xPos = pRc->left + xOffset;
-			//int yPos = pRc->top + yOffset;
 
 			int xPos = pRc->left + this->hotSpotX;
 			int yPos = pRc->top + this->hotSpotY;
@@ -1213,6 +1209,9 @@ public:
 				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
 				, bm, bo, boParam, bAntiA);
 #else
+			int xPos = pRc->left + this->hotSpotX;
+			int yPos = pRc->top + this->hotSpotY;
+
 			pSf->Blit(*pDst, xPos, yPos, bm, bo, boParam, bAntiA);
 #endif
 

@@ -23,20 +23,38 @@
 #define	MINBUILD	243
 #endif
 
+#ifdef _DEBUG
+#include	<assert.h>
+#endif
+
+//#define _CONSOLE
+
+#ifdef _CONSOLE
+#include <iostream>
+#endif
+
+//#define _USE_CRTDBG
+
+#ifdef _USE_CRTDBG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include	<map>
 #include	<string>
 #include	<chrono>
 
-using namespace std::literals;
-using Timer = std::chrono::time_point<std::chrono::steady_clock>;
-
 // My lib
-//#include	"Definition.h"
-
+#include	"Encryption.h"
 #include	"FFMpeg.h"
+
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"

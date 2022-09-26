@@ -42,7 +42,6 @@
     <None Include="Ext.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Ext.rc">
@@ -150,6 +149,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\WindowsCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\EffectUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

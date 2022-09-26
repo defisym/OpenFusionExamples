@@ -26,6 +26,23 @@ enum {
 //	PROPID_CHECK,
 //	PROPID_COMBO,
 //	PROPID_COLOR,
+
+	PROPID_OPTIONS_TEXTTITLE,
+
+	PROPID_STRETCH_CHECK,
+	PROPID_PLAYAFTERLOAD_CHECK,
+	
+	PROPID_LOOP_CHECK,
+
+	PROPID_ACCURATESEEK_CHECK,
+	
+	PROPID_CACHE_CHECK,
+
+	PROPID_QUEUE_TEXTTITLE,
+
+	PROPID_AUDIOQUEUESIZE_EDITNUMBER,
+	PROPID_VIDEOQUEUESIZE_EDITNUMBER,
+
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -50,6 +67,24 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group		(PROPID_OPTIONS_TEXTTITLE, IDS_PROP_OPTIONS_TEXTTITLE, IDS_PROP_OPTIONS_TEXTTITLE),
+
+	PropData_CheckBox	(PROPID_STRETCH_CHECK, IDS_PROP_STRETCH_CHECK, IDS_PROP_STRETCH_CHECK_INFO),
+	PropData_CheckBox	(PROPID_PLAYAFTERLOAD_CHECK, IDS_PROP_PLAYAFTERLOAD_CHECK, IDS_PROP_PLAYAFTERLOAD_CHECK_INFO),
+
+	PropData_CheckBox	(PROPID_LOOP_CHECK, IDS_PROP_LOOP_CHECK, IDS_PROP_LOOP_CHECK_INFO),
+
+	PropData_CheckBox(PROPID_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK_INFO),
+
+	PropData_CheckBox(PROPID_CACHE_CHECK, IDS_PROP_CACHE_CHECK, IDS_PROP_CACHE_CHECK_INFO),
+
+	PropData_Group(PROPID_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE),
+
+	PropData_EditNumber(PROPID_AUDIOQUEUESIZE_EDITNUMBER, IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER, IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER_INFO),
+	PropData_EditNumber(PROPID_VIDEOQUEUESIZE_EDITNUMBER, IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER, IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO),
+
+
 
 	// End of table (required)
 	PropData_End()
@@ -328,6 +363,20 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		// Set default object settings
 		edPtr->swidth = 512;
 		edPtr->sheight = 288;
+
+		edPtr->bHwa = true;
+
+		edPtr->bStretch = true;
+		edPtr->bPlayAfterLoad = true;
+
+		edPtr->bLoop = true;
+
+		edPtr->audioQSize = MAX_AUDIOQ_SIZE;
+		edPtr->videoQSize = MAX_VIDEOQ_SIZE;
+
+		edPtr->bAccurateSeek = true;
+
+		edPtr->bCache = false;
 
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -704,6 +753,14 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_COMBO:
 //		return new CPropDWordValue(edPtr->nComboIndex);
 //	}
+
+	switch (nPropID) {
+	case PROPID_AUDIOQUEUESIZE_EDITNUMBER:
+		 return new CPropDWordValue(edPtr->audioQSize);
+	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
+		return new CPropDWordValue(edPtr->videoQSize);
+	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -716,14 +773,18 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
+	switch (nPropID) {
+	case PROPID_STRETCH_CHECK:
+		return edPtr->bStretch;
+	case PROPID_PLAYAFTERLOAD_CHECK:
+		return edPtr->bPlayAfterLoad;
+	case PROPID_LOOP_CHECK:
+		return edPtr->bLoop;
+	case PROPID_ACCURATESEEK_CHECK:
+		return edPtr->bAccurateSeek;
+	case PROPID_CACHE_CHECK:
+		return edPtr->bCache;
+	}
 
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
@@ -785,9 +846,18 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 //		break;
 //	}
 
+	switch (nPropID) {
+	case PROPID_AUDIOQUEUESIZE_EDITNUMBER:
+		edPtr->audioQSize = max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+		break;
+	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
+		edPtr->videoQSize = max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+		break;
+	}
+
 	// You may want to have your object redrawn in the frame editor after the modifications,
 	// in this case, just call this function
-	// mvInvalidateObject(mV, edPtr);
+	 mvInvalidateObject(mV, edPtr);
 
 #endif // !defined(RUN_ONLY)
 }
@@ -800,16 +870,33 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
+	switch (nPropID) {
+	case PROPID_STRETCH_CHECK:
+		edPtr->bStretch = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_STRETCH_CHECK, TRUE);
+		break;
+	case PROPID_PLAYAFTERLOAD_CHECK:
+		edPtr->bPlayAfterLoad = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_PLAYAFTERLOAD_CHECK, TRUE);
+		break;
+	case PROPID_LOOP_CHECK:
+		edPtr->bLoop = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_LOOP_CHECK, TRUE);
+		break;
+	case PROPID_ACCURATESEEK_CHECK:
+		edPtr->bAccurateSeek = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_ACCURATESEEK_CHECK, TRUE);
+		break;
+	case PROPID_CACHE_CHECK:
+		edPtr->bCache = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_CACHE_CHECK, TRUE);
+		break;
+	}
 #endif // !defined(RUN_ONLY)
 }
 
