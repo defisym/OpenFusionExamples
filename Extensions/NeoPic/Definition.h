@@ -75,6 +75,7 @@ struct SurfaceLibValue {
 	LPSURFACE pSf;
 	std::wstring Hash;
 	BOOL isTransparent;
+	bool bUsedInShader = false;
 };
 
 using SurfaceLib = std::map<std::wstring, SurfaceLibValue>;

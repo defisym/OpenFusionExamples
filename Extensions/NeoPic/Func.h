@@ -573,13 +573,34 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 }
 
 
-inline void ResetLib(SurfaceLib* pData) {
+inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
+	SurfaceLib* kept = new SurfaceLib;
+
 	if (pData != NULL) {
 		for (auto& it : *pData) {
+			auto itCount = rdPtr->pCount->find(it.first);
+
+			if (itCount->second.curRef != 0 || it.second.bUsedInShader) {
+				kept->emplace(it);
+
+				continue;
+			}
+
 			delete it.second.pSf;
 		}
 
-		pData->clear();
+		//pData->clear();
+
+		delete pData;
+		pData = kept;
+	}
+}
+
+inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
+	auto it = pData->find(GetFullPathNameStr(Item));
+	if (it != pData->end() && !it->second.bUsedInShader) {
+		delete it->second.pSf;
+		pData->erase(it);
 	}
 }
 
@@ -590,14 +611,6 @@ inline void DeleteLib(SurfaceLib* pData) {
 		}
 
 		delete pData;
-	}
-}
-
-inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
-	auto it = pData->find(GetFullPathNameStr(Item));
-	if (it != pData->end()) {
-		delete it->second.pSf;
-		pData->erase(it);
 	}
 }
 
