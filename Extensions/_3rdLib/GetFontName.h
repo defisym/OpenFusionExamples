@@ -6,6 +6,10 @@
 
 #include <vector>
 
+#define _FUSION_EMBED
+
+#include "CfcFile.h"
+
 //https://www.i4k.xyz/article/weixin_45513192/115480892
 
 typedef struct _tagTT_OFFSET_TABLE {
@@ -44,15 +48,41 @@ typedef struct _tagTT_NAME_RECORD {
 
 using FontNames = std::vector<std::wstring>;
 
+#ifdef _FUSION_EMBED
+#else
+#endif
+
+#ifdef _FUSION_EMBED
+// if memBufSz == 0 then read from disk, or lpszFilePath is a pointer to memory buffer
+inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath, size_t memBufSz = 0) {
+#else
 inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
-	FILE* fp = nullptr;
+#endif
 	FontNames fontNames;
 
-	_wfopen_s(&fp, lpszFilePath, L"rb");
+#ifdef _FUSION_EMBED
+	CInputFile* fp = nullptr;
 
-	if (fp!=nullptr) {
+	if (memBufSz!=0) {
+		fp = new CInputMemFile;
+		((CInputMemFile*)fp)->Create((BYTE*)lpszFilePath, memBufSz);
+	}
+	else {
+		fp = new CInputBufFile;
+		((CInputBufFile*)fp)->Create(lpszFilePath);
+	}
+#else
+	FILE* fp = nullptr;
+	_wfopen_s(&fp, lpszFilePath, L"rb");
+#endif
+	
+	if (fp != nullptr) {
 		TT_OFFSET_TABLE ttOffsetTable;
-		fread(&ttOffsetTable, sizeof(TT_OFFSET_TABLE),1,fp);
+#ifdef _FUSION_EMBED
+		fp->Read((BYTE*)(&ttOffsetTable), sizeof(TT_OFFSET_TABLE));
+#else
+		fread(&ttOffsetTable, sizeof(TT_OFFSET_TABLE), 1, fp);
+#endif		
 
 		ttOffsetTable.uNumOfTables = SWAPWORD(ttOffsetTable.uNumOfTables);
 		ttOffsetTable.uMajorVersion = SWAPWORD(ttOffsetTable.uMajorVersion);
@@ -69,7 +99,11 @@ inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
 		std::string szTag;
 
 		for (int i = 0; i < ttOffsetTable.uNumOfTables; i++) {
+#ifdef _FUSION_EMBED
+			fp->Read((BYTE*)(&tblDir), sizeof(TT_TABLE_DIRECTORY));
+#else
 			fread(&tblDir, sizeof(TT_TABLE_DIRECTORY), 1, fp);
+#endif			
 
 			if (_stricmp(std::string(tblDir.szTag, 4).c_str(), "name") == 0) {
 				bFound = TRUE;
@@ -80,10 +114,19 @@ inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
 		}
 
 		if (bFound) {
+#ifdef _FUSION_EMBED
+			fp->Seek(tblDir.uOffset, SEEK_SET);
+#else
 			fseek(fp, tblDir.uOffset, SEEK_SET);
+#endif			
 
-			TT_NAME_TABLE_HEADER ttNTHeader;			
+			TT_NAME_TABLE_HEADER ttNTHeader;
+#ifdef _FUSION_EMBED
+			fp->Read((BYTE*)(&ttNTHeader), sizeof(TT_NAME_TABLE_HEADER));
+#else
 			fread(&ttNTHeader, sizeof(TT_NAME_TABLE_HEADER), 1, fp);
+#endif
+		
 
 			ttNTHeader.uNRCount = SWAPWORD(ttNTHeader.uNRCount);
 			ttNTHeader.uStorageOffset = SWAPWORD(ttNTHeader.uStorageOffset);
@@ -92,7 +135,11 @@ inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
 			bFound = FALSE;
 
 			for (int i = 0; i < ttNTHeader.uNRCount; i++) {
+#ifdef _FUSION_EMBED
+				fp->Read((BYTE*)(&ttRecord), sizeof(TT_NAME_RECORD));
+#else
 				fread(&ttRecord, sizeof(TT_NAME_RECORD), 1, fp);
+#endif				
 
 				ttRecord.uNameID = SWAPWORD(ttRecord.uNameID);
 				if (ttRecord.uNameID == 1) {
@@ -102,15 +149,24 @@ inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
 					ttRecord.uStringLength = SWAPWORD(ttRecord.uStringLength);
 					ttRecord.uStringOffset = SWAPWORD(ttRecord.uStringOffset);
 					
+#ifdef _FUSION_EMBED
+					int nPos = fp->GetPosition();
+					fp->Seek(tblDir.uOffset + ttRecord.uStringOffset + ttNTHeader.uStorageOffset, SEEK_SET);
+#else
 					int nPos = ftell(fp);
 					fseek(fp, tblDir.uOffset + ttRecord.uStringOffset + ttNTHeader.uStorageOffset, SEEK_SET);
+#endif					
 
 					//bug fix: see the post by SimonSays to read more about it
 					auto sz = ttRecord.uStringLength + 1;
 					auto lpszNameBuf = new char[2 * sz];
 					memset(lpszNameBuf, 0, 2 * sz);
 
+#ifdef _FUSION_EMBED
+					fp->Read((BYTE*)lpszNameBuf, ttRecord.uStringLength);
+#else
 					fread(lpszNameBuf, ttRecord.uStringLength, 1, fp);
+#endif					
 					
 					//https://gist.github.com/honood/3851840
 					// 用 uint16_t 是因为 Linux 的 wchar_t 为4字节
@@ -142,12 +198,21 @@ inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
 
 					delete[] lpszNameBuf;
 
-					fseek(fp, nPos,SEEK_SET);
+#ifdef _FUSION_EMBED
+					fp->Seek(nPos, SEEK_SET);
+#else
+					fseek(fp, nPos, SEEK_SET);
+#endif
+					
 				}
 			}
 		}
 
+#ifdef _FUSION_EMBED
+		delete fp;
+#else
 		fclose(fp);
+#endif		
 	}
 
 	return fontNames;
