@@ -73,9 +73,9 @@ struct Count {
 };
 
 struct SurfaceLibValue {
-	LPSURFACE pSf;
+	LPSURFACE pSf = nullptr;
 	std::wstring Hash;
-	BOOL isTransparent;
+	BOOL isTransparent = -1;		// constexpr BOOL transpTBD = -1;
 	bool bUsedInShader = false;
 };
 

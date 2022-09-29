@@ -613,18 +613,9 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 		// add to keep list
 		it->second.bUsedInShader = true;
 
-		bool bAdd = true;
 		auto fullPath = GetFullPathNameStr(pFilePath);
 
-		for (auto& keepIt : *object->pKeepList) {
-			if (keepIt == fullPath) {
-				bAdd = false;
-
-				break;
-			}
-		}
-
-		if (bAdd) {
+		if (std::find(object->pKeepList->begin(), object->pKeepList->end(), fullPath) == object->pKeepList->end()) {
 			object->pKeepList->emplace_back(fullPath);
 		}
 	}

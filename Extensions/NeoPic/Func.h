@@ -717,7 +717,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 		_LoadFromFile(pBitmap, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (pBitmap->IsValid()) {
-			(*tempLib)[it] = SurfaceLibValue{ pBitmap ,GetFileHash(it),GetTransparent(pBitmap) };
+			(*tempLib)[it] = SurfaceLibValue{ pBitmap,GetFileHash(it),GetTransparent(pBitmap) };
 		}
 		else {
 			delete pBitmap;
@@ -815,8 +815,19 @@ inline void MergeLib(LPRDATA rdPtr) {
 }
 
 inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring basePath) {
-	rdPtr->pKeepList->clear();
-	GetFullPathFromName(rdPtr, *rdPtr->pKeepList, keepList, basePath);
+	//rdPtr->pKeepList->clear();
+	//GetFullPathFromName(rdPtr, *rdPtr->pKeepList, keepList, basePath);
+
+	auto pAppendKeepList = new FileList;	
+	GetFullPathFromName(rdPtr, *pAppendKeepList, keepList, basePath);
+
+	for (auto& it : *pAppendKeepList) {
+		if (std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it) == rdPtr->pKeepList->end()) {
+			rdPtr->pKeepList->emplace_back(it);
+		}
+	}
+
+	delete pAppendKeepList;
 }
 
 inline void UpdateCleanVec(LPRDATA rdPtr) {
@@ -834,10 +845,9 @@ inline void UpdateCleanVec(LPRDATA rdPtr) {
 			: Count{ 0,0,0 };			// lowest weight
 
 		if ((!pCountContain
-			|| pCountIt->second.curRef == 0) // only release assets that currently is not used
+			|| pCountIt->second.curRef == 0
+			|| !it.second.bUsedInShader) // only release assets that currently is not used
 			&& std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
-			auto pSf = it.second;
-			
 			rdPtr->pCountVec->emplace_back(RefCountPair{ it.first,count });
 		}
 	}
