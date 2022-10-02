@@ -208,7 +208,7 @@ private:
 	//double timePerFrameInMs = 0;
 
 	double totalTime = 0;
-	double totalTimeInMs = 0;
+	int64_t totalTimeInMs = 0;
 
 	uint8_t* p_global_bgr_buffer = nullptr;
 	int num_bytes = 0;
@@ -461,20 +461,26 @@ private:
 
 			rational = pVideoStream->time_base;
 		}
-		else {
+		else if (pFormatContext->duration != AV_NOPTS_VALUE) {
 			totalDuration = pFormatContext->duration;
 
 			rational = time_base_q;
+		}
+		else {
+			totalDuration = INT64_MAX;
+
+			rational = { 1,1000 };
 		}
 
 		decimalRational = (double)rational.num / rational.den;
 
 		//timePerFrameInMs = decimalRational * 1000;
-
 		totalTime = totalDuration * decimalRational;
 
 		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
-		totalTimeInMs = totalTime * 1000;
+		totalTimeInMs = totalDuration == INT64_MAX
+						? totalDuration
+						:(int64_t)totalTime * 1000;
 
 		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
 		//p_global_bgr_buffer = new uint8_t[num_bytes];
@@ -525,7 +531,7 @@ private:
 #pragma endregion
 	}
 
-	inline double get_protectedTimeInSecond(int64_t ms) {
+	inline int64_t get_protectedTimeInSecond(int64_t ms) {
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
 		auto protectedTimeInSecond = protectedTimeInMs / 1000;
 
@@ -766,31 +772,21 @@ private:
 	// Convert data to Fusion data
 	// https://zhuanlan.zhihu.com/p/53305541
 	inline void covertData(AVFrame* pFrame, rawDataCallBack callBack) {
+		// allocate buffer
+		if (p_global_bgr_buffer == nullptr) {
+			num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
+			p_global_bgr_buffer = new uint8_t[num_bytes];
+		}
+
 		// make sure the sws_scale output is point to start.
 		int linesize [8] = { abs(pFrame->linesize [0] * PIXEL_BYTE) };
 
-		if (pFrame->format != PIXEL_FORMAT) {
-			if (p_global_bgr_buffer == nullptr) {
-				num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize [0], pFrame->height, 1);
-				p_global_bgr_buffer = new uint8_t [num_bytes];
-			}
+		uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
 
-			uint8_t* bgr_buffer [8] = { p_global_bgr_buffer };
+		sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
-			sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-			//bgr_buffer[0] is the BGR raw data
-			callBack(bgr_buffer [0], linesize [0], pFrame->height);
-		}
-		else {
-			// take reverse into account
-			auto pActualData = pFrame->linesize [0] > 0
-				? pFrame->data [0]
-				: pFrame->data [0] - pFrame->linesize [0] * PIXEL_BYTE * (pFrame->height - 1);
-
-			// call callback
-			callBack(pActualData, linesize [0], pFrame->height);
-		}
+		//bgr_buffer[0] is the BGR raw data
+		callBack(bgr_buffer[0], linesize[0], pFrame->height);
 	}
 
 	inline int decode_vpacket(AVPacket* pVPacket, AVCodecContext* pVCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
