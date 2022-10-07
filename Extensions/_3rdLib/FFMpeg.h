@@ -57,9 +57,6 @@ constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
 constexpr auto TARGET_SAMPLE_RATE = 48000;
 
-//constexpr auto MAX_AUDIOQ_SIZE = 64 * (5 * 16 * 1024);
-//constexpr auto MAX_VIDEOQ_SIZE = 64 * (5 * 256 * 1024);
-
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
 
@@ -313,8 +310,9 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		//#define _GET_AUDIO_BYLOOP
+//#define _GET_STREAM_BYLOOP
 
+#ifdef _GET_STREAM_BYLOOP
 		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
 			AVCodecParameters* pLocalCodecParameters = NULL;
 			pLocalCodecParameters = pFormatContext->streams [i]->codecpar;
@@ -333,7 +331,6 @@ private:
 				}
 			}
 
-#ifdef _GET_AUDIO_BYLOOP
 			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
 				if (audio_stream_index == -1) {
 					audio_stream_index = i;
@@ -341,10 +338,21 @@ private:
 					pACodecParameters = pLocalCodecParameters;
 				}
 			}
+		}
 #endif
+
+#ifndef _GET_STREAM_BYLOOP
+		// init video codec
+		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVCodec, 0);
+#endif
+		
+		if (video_stream_index < 0) {
+			throw FFMpegException_InitFailed;
 		}
 
-		// init video codec
+		pVideoStream = pFormatContext->streams[video_stream_index];
+		pVCodecParameters = pFormatContext->streams[video_stream_index]->codecpar;
+
 		pVCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pVCodecContext) {
 			throw FFMpegException_InitFailed;
@@ -358,12 +366,17 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
+		if (pVCodecContext->pix_fmt == AV_PIX_FMT_NONE) {
+			throw FFMpegException_InitFailed;
+		}
+
 		swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height, pVCodecContext->pix_fmt,
 			pVCodecContext->width, pVCodecContext->height, PIXEL_FORMAT
 			, NULL, NULL, NULL, NULL);
 
+		
+#ifndef _GET_STREAM_BYLOOP
 		// init audio codec
-#ifndef _GET_AUDIO_BYLOOP
 		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
 #endif
 
@@ -453,7 +466,7 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pVideoStream = pFormatContext->streams [video_stream_index];
+		//pVideoStream = pFormatContext->streams [video_stream_index];
 
 		// https://www.appsloveworld.com/cplus/100/107/finding-duration-number-of-frames-of-webm-using-ffmpeg-libavformat
 		if (pVideoStream->duration != AV_NOPTS_VALUE) {
@@ -723,11 +736,7 @@ private:
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
-		bVideoFinish = !videoQueue.get(pVPacket, false);
-
-		if (bVideoFinish) {
-			return END_OF_QUEUE;
-		}
+		auto bNoPacket = !videoQueue.get(pVPacket, false);
 
 		//if (pVPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pVCodecContext);
@@ -735,9 +744,16 @@ private:
 		//	return 0;
 		//}
 
-		auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
+		//auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
+		auto response = decode_vpacket(!bNoPacket ? pVPacket : nullptr, pVCodecContext, pVFrame, callBack);		
 
-		if (pVPacket->data) {
+		bVideoFinish = (response == AVERROR_EOF);
+
+		if (bVideoFinish) {
+			return END_OF_QUEUE;
+		}
+
+		if (pVPacket && pVPacket->data) {
 			av_packet_unref(pVPacket);
 		}
 
@@ -824,15 +840,17 @@ private:
 			if (response >= 0) {
 				videoPts = 0;
 
-				if (pVPacket->dts == AV_NOPTS_VALUE
-					&& pFrame->opaque
-					&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
-					videoPts = double(*(uint64_t*)pFrame->opaque);
-				}
-				else {
-					videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
-						? pFrame->best_effort_timestamp
-						: 0);
+				if (pVPacket != nullptr) {
+					if (pVPacket->dts == AV_NOPTS_VALUE
+						&& pFrame->opaque
+						&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
+						videoPts = double(*(uint64_t*)pFrame->opaque);
+					}
+					else {
+						videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+							? pFrame->best_effort_timestamp
+							: 0);
+					}
 				}
 
 				videoPts *= av_q2d(pVideoStream->time_base);
@@ -1251,6 +1269,10 @@ public:
 
 		response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
+		if (response < 0) {
+			return -1;
+		}
+
 		// keep current pts & clock
 		auto oldClock = videoClock;
 		auto oldPts = videoPts;
@@ -1260,6 +1282,10 @@ public:
 
 		if (bAccurateSeek) {
 			response = forwardFrame(pSeekFormatContext, pCodecContext, ms / 1000.0, callBack);
+
+			if (response < 0) {
+				return -1;
+			}
 		}
 		else {
 			int how_many_packets_to_process = 0;
