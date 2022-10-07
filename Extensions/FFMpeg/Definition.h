@@ -2,6 +2,7 @@
 
 //Condition_OnVideoFinish
 constexpr auto ON_FINISH = 4;
+constexpr auto ON_OPENFAILED = 5;
 
 using namespace std::literals;
 using Timer = std::chrono::time_point<std::chrono::steady_clock>;

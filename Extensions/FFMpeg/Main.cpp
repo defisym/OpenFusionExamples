@@ -28,6 +28,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_VF, M_CONDITION_VF, CND_CONDITION_VF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		
 		IDMN_CONDITION_OVF, M_CONDITION_OVF, CND_CONDITION_OVF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
+		IDMN_CONDITION_OVOF, M_CONDITION_OVOF, CND_CONDITION_OVOF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
 		};
 
 // Definitions of parameters for each action
@@ -100,6 +101,12 @@ long WINAPI DLLExport Condition_OnVideoFinish(LPRDATA rdPtr, long param1, long p
 	return *rdPtr->pFilePath == filePath;
 }
 
+long WINAPI DLLExport Condition_OnVideoOpenFailed(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	return *rdPtr->pFilePath == filePath;
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -139,7 +146,12 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 		ReDisplay(rdPtr);
 	}
 	catch (...) {
-		CloseGeneral(rdPtr);
+		// update path for condition to check
+		*rdPtr->pFilePath = filePath;
+		
+		CallEvent(ON_OPENFAILED);
+
+		CloseGeneral(rdPtr);		
 	}
 
 	return 0;
@@ -368,6 +380,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_VideoFinish,
 
 			Condition_OnVideoFinish,
+			Condition_OnVideoOpenFailed,
 
 			0
 			};

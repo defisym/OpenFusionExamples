@@ -122,6 +122,7 @@ BEGIN
         MENUITEM "Video Finish",    IDMN_CONDITION_VF
         MENUITEM SEPARATOR
         MENUITEM "On Video Finish", IDMN_CONDITION_OVF
+        MENUITEM "On Video Open Failed", IDMN_CONDITION_OVOF
         MENUITEM SEPARATOR
     END
 END
@@ -329,6 +330,7 @@ BEGIN
    M_CONDITION_VF	           "%o Video Finish"
 
    M_CONDITION_OVF	           "%o On Video %0 Finish"
+   M_CONDITION_OVOF	           "%o On Video %0 Open Failed"
 END
 
 STRINGTABLE DISCARDABLE 

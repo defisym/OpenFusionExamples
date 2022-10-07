@@ -114,6 +114,7 @@
 #define IDMN_CONDITION_VF				26003
 
 #define IDMN_CONDITION_OVF				26004
+#define IDMN_CONDITION_OVOF				26005
 
 // Condition strings
 #define M_CONDITION_VO				    6000
@@ -122,6 +123,7 @@
 #define M_CONDITION_VF				    6003
 
 #define M_CONDITION_OVF				    6004
+#define M_CONDITION_OVOF				6005
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

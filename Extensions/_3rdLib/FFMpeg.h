@@ -749,12 +749,12 @@ private:
 
 		bVideoFinish = (response == AVERROR_EOF);
 
-		if (bVideoFinish) {
-			return END_OF_QUEUE;
-		}
-
 		if (pVPacket && pVPacket->data) {
 			av_packet_unref(pVPacket);
+		}
+
+		if (bVideoFinish) {
+			return END_OF_QUEUE;
 		}
 
 		return response;
@@ -763,12 +763,9 @@ private:
 	inline int decode_audioFrame() {
 		//bAudioFinish = !audioQueue.get(pAPacket);
 		//bAudioFinish = !audioQueue.get(pAPacket, false);
-		bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
-
-		if (bAudioFinish) {
-			return END_OF_QUEUE;
-		}
-
+		//bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
+		auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish);
+			
 		//if (pAPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pACodecContext);
 
@@ -776,10 +773,16 @@ private:
 		//}
 
 		// return data size here
-		auto response = decode_apacket(pAPacket, pACodecContext, pAFrame);
+		auto response = decode_apacket(!bNoPacket ? pAPacket : nullptr, pACodecContext, pAFrame);
 
-		if (pAPacket->data) {
+		bAudioFinish = (response == AVERROR_EOF);
+
+		if (pAPacket && pAPacket->data) {
 			av_packet_unref(pAPacket);
+		}
+
+		if (bAudioFinish) {
+			return END_OF_QUEUE;
 		}
 
 		return response;
@@ -898,13 +901,15 @@ private:
 			return -1;
 		}
 
-		if (pAPacket->pts != AV_NOPTS_VALUE) {
-			audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
+		if (pAPacket != nullptr) {
+			if (pAPacket->pts != AV_NOPTS_VALUE) {
+				audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
 #ifdef _CONSOLE
-			if (bJumped) {
-				printf("Cur audio clock: %f\n", audioClock);
-			}
+				if (bJumped) {
+					printf("Cur audio clock: %f\n", audioClock);
+				}
 #endif
+			}
 		}
 
 		// 计算转换后的sample个数 a * b / c

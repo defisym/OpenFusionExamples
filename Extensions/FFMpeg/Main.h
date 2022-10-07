@@ -12,8 +12,9 @@
 #define CND_CONDITION_VF				3
 
 #define CND_CONDITION_OVF				4
+#define CND_CONDITION_OVOF				5
 
-#define	CND_LAST						5
+#define	CND_LAST						6
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
