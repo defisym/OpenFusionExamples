@@ -573,7 +573,7 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LPCTSTR pParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring paramName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!object->isLib) {
 		return 0;
@@ -587,28 +587,8 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 
 	if (it != object->pLib->end()) {
 		// set param
-		auto pCurEffect = GetEffect(rdPtr);
-
-		if (pCurEffect == nullptr) {
-			return 0;
-		}
-
-		auto paramIndex = pCurEffect->GetParamIndex(ConvertWStrToStr(pParamName).c_str());		
-
-		if (paramIndex == -1) {
-			return 0;
-		}
-
-		auto paramType = pCurEffect->GetParamType(paramIndex);
-
-		if (paramType != EFFECTPARAM_SURFACE) {
-			return 0;
-		}
-
-		auto pSf = it->second.pSf;		
-		auto pImpl = GetSurfaceImplementation(*pSf);
-
-		pCurEffect->SetParamSurfaceValue(paramIndex, pImpl);
+		EffectUtilities::SetParam(EffectUtilities::GetEffect(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam)
+			, paramName, EFFECTPARAM_SURFACE, it->second.pSf);
 
 		// add to keep list
 		it->second.bUsedInShader = true;

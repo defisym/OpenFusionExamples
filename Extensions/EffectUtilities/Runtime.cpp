@@ -21,27 +21,6 @@ enum
 //	DB_CURRENTVALUE,
 //	DB_CURRENTCHECK,
 //	DB_CURRENTCOMBO
-
-	DB_SAPARATOR_START,
-	DB_OBJECTTYPE,
-	DB_SAPARATOR_1,
-	DB_LIBSIZE,
-	DB_LIBMEMUSE,
-	DB_SAPARATOR_2,
-	DB_FROMLIB,
-	DB_FILENAME,
-	DB_FILEPATH,
-	DB_KEY,
-	DB_SAPARATOR_3,
-	DB_COLLISION,
-	DB_AUTOUPDATECOLLISION,
-	DB_SAPARATOR_4,
-	DB_STRETCHQUALITY,
-	DB_HOTSPOT,
-	DB_ZOOMSCALE,
-	DB_ORIGINSIZE,
-	DB_CURRENTSIZE,
-	DB_SAPARATOR_END,
 };
 
 // Items displayed in the debugger
@@ -55,27 +34,6 @@ WORD DebugTree[]=
 //	DB_CURRENTCOMBO,
 
 	// End of table (required)
-	DB_SAPARATOR_START,
-	DB_OBJECTTYPE,
-	DB_SAPARATOR_1,
-	DB_LIBSIZE,
-	DB_LIBMEMUSE,
-	DB_SAPARATOR_2,
-	DB_FROMLIB,
-	DB_FILENAME,
-	DB_FILEPATH,
-	DB_KEY,
-	DB_SAPARATOR_3,
-	//DB_COLLISION,
-	//DB_AUTOUPDATECOLLISION,
-	//DB_SAPARATOR_4,
-	DB_STRETCHQUALITY,
-	DB_HOTSPOT,
-	DB_ZOOMSCALE,
-	DB_ORIGINSIZE,
-	DB_CURRENTSIZE,
-	DB_SAPARATOR_END,
-	
 	DB_END
 };
 
@@ -107,105 +65,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
-
-	//Settings
-	rdPtr->isLib = edPtr->isLib;
-	rdPtr->memoryLimit = edPtr->memoryLimit;
-	rdPtr->autoClean = edPtr->autoClean;
-	rdPtr->defaultHotSpot = (HotSpotPos)edPtr->hotSpotComboID;
-	
-	rdPtr->HWA = edPtr->HWA;
-
-	rdPtr->stretchQuality = edPtr->stretchQuality;
-
-	//rdPtr->collision = edPtr->collision;
-	//rdPtr->autoUpdateCollision = edPtr->autoUpdateCollision;
-
-	//Display
-	rdPtr->FileName = new std::wstring;
-	rdPtr->FilePath = new std::wstring;
-	rdPtr->RelativeFilePath = new std::wstring;
-	rdPtr->Key = new std::wstring;
-
-	rdPtr->img = nullptr;
-	rdPtr->src = nullptr;
-
-	rdPtr->fromLib = true;
-
-	rdPtr->zoomScale = { 1.0,1.0 };
-	rdPtr->imgZoomScale = { 1.0,1.0 };
-
-	rdPtr->AT = { 1,0,0,1 };
-	rdPtr->imgAT = { 1,0,0,1 };
-
-	//Init global data
-	if (GetExtUserData() == nullptr) {
-		//init global
-		auto pData = new GlobalData;
-
-		//init general
-#ifdef _USE_DXGI
-#ifdef _DYNAMIC_LINK
-		wchar_t rootDir[MAX_PATH] = {};
-		GetCurrentDirectory(MAX_PATH - 1, rootDir);
-
-		wchar_t dllPath[2 * MAX_PATH] = {};
-		wsprintf(dllPath, L"%s\\%s", rootDir, L"Modules\\DXGI.DLL");
-
-		pData->DXGI = LoadLibrary(dllPath);
-
-		if (pData->DXGI == nullptr) {
-			MSGBOX(L"Load Failed");
-		}
-#endif
-		pData->pD3DU = new D3DUtilities;
-#endif
-
-		//auto& Desc = rdPtr->pD3DU->GetDesc();
-		//MSGBOX(Desc.Description);
-
-		//rdPtr->pD3DU->UpdateVideoMemoryInfo();
-		//auto& info = rdPtr->pD3DU->GetLocalVideoMemoryInfo();
-
-		//init specific
-		pData->pLib = new SurfaceLib;
-		pData->pCount = new RefCount;
-		pData->pKeepList = new KeepList;
-		pData->pFileListMap = new FileListMap;
-
-		//Update pointer
-		SetExtUserData(pData);
-	}
-
-	//Get global data
-	//Get pointers here and never delete them.
-	rdPtr->pData = (GlobalData*)GetExtUserData();
-
-	//Get general
-#ifdef _USE_DXGI
-	rdPtr->pD3DU = rdPtr->pData->pD3DU;
-#endif
-
-	//Get specific
-	if (rdPtr->isLib) {
-		//Load Lib
-		rdPtr->pLib = rdPtr->pData->pLib;
-		rdPtr->pCount = rdPtr->pData->pCount;
-		rdPtr->pKeepList = rdPtr->pData->pKeepList;
-		rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
-	}
-	
-	rdPtr->pCountVec = new RefCountVec;
-	rdPtr->pPreloadList = nullptr;
-
-	rdPtr->itCountVecStr = new std::wstring;
-	rdPtr->itCountVecCount = new Count;
-
-	auto pEffect = new EffectUtilities(rdPtr);
-	
-	std::wstring name = L"MonoExample.fx";
-	pEffect->SetEffect(rdPtr->rs, name);
-
 	// No errors
 	return 0;
 }
@@ -222,53 +81,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-	//Display
-	delete rdPtr->FileName;
-	delete rdPtr->FilePath;
-	delete rdPtr->RelativeFilePath;
-	delete rdPtr->Key;
-
-	if (!rdPtr->isLib) {
-		if (rdPtr->src != rdPtr->img) {
-			delete rdPtr->img;
-		}
-
-		if (!rdPtr->fromLib) {
-			delete rdPtr->src;
-		}
-
-		delete rdPtr->trans;
-
-		if (!rdPtr->isLib) {
-			FreeColMask(rdPtr->pColMask);
-		}
-
-		UpdateRef(rdPtr, false);
-		rdPtr->pRefCount = nullptr;
-	}
-
-	if (rdPtr->isLib) {
-		if (rdPtr->threadID) {
-			rdPtr->forceExit = true;
-
-			DWORD ret;
-			while (GetExitCodeThread(rdPtr->threadID, &ret)) {
-				if (ret == 0) {
-					break;
-				}
-			}
-		}
-		
-		// Clear ref
-		ClearCurRef(rdPtr);
-	}
-
-	delete rdPtr->pCountVec;
-	delete rdPtr->pPreloadList;
-
-	delete rdPtr->itCountVecStr;
-	delete rdPtr->itCountVecCount;
-
 	// No errors
 	return 0;
 }
@@ -309,16 +121,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
-
-	CleanCache(rdPtr, false);
-	MergeLib(rdPtr);
-
-	if (!rdPtr->isLib && rdPtr->rc.rcChanged) {
-		return REFLAG_DISPLAY;
-	}
-	else {
-		return 0;
-	}
+	// Will not be called next loop	
+	return REFLAG_ONESHOT;
 }
 
 // ----------------
@@ -331,40 +135,6 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
-	if (!rdPtr->isLib
-		&& rdPtr->src != nullptr
-		&& rdPtr->src->IsValid()) {
-		// Begin render process...
-		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-
-		// On-screen coords
-		int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
-		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
-
-		LPSURFACE pDisplay = rdPtr->src;
-		
-		std::unique_ptr<cSurface> pOffset = nullptr;
-		
-		if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
-			pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
-			OffsetHWA(rdPtr->src, pOffset.get(), rdPtr->offset);
-
-			pDisplay = pOffset.get();
-		}
-
-		DWORD flags = 0;
-
-		if (rdPtr->stretchQuality) {
-			flags |= BLTF_ANTIA;
-		}
-
-		pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,
-			abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0,
-			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle,
-			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
-			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
-			rdPtr->rs.rsEffectParam, flags);
-	}
 	// Ok
 	return 0;
 }
@@ -397,49 +167,42 @@ cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
 // Note: do not forget to enable the function in the .def file 
 // if you remove the comments below.
 //
-
+/*
 LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 {
 	// Typical example for active objects
 	// ----------------------------------
-	if (!rdPtr->isLib) {
-		// Opaque? collide with box	
-		// Note: only if your object has the OEPREFS_INKEFFECTS option
-		if ((rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) == 0) {
-			return NULL;
-		}
+	// Opaque? collide with box
+	if ( (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) == 0 )	// Note: only if your object has the OEPREFS_INKEFFECTS option
+		return NULL;
 
-		// Transparent? Create mask
-		LPSMASK pMask = rdPtr->pColMask;
-		if (pMask == nullptr) {
-			if (rdPtr->src != nullptr){
-				GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
-					//_SavetoClipBoard(pCollideBitmap, false);
-					DWORD dwMaskSize = pCollideBitmap->CreateMask(NULL, lParam);
-
-					if (dwMaskSize != 0) {
-						pMask = (LPSMASK)calloc(dwMaskSize, 1);
-
-						if (pMask != nullptr) {
-							pCollideBitmap->CreateMask(pMask, lParam);
-							rdPtr->pColMask = pMask;
-						}
-					}
-					});
+	// Transparent? Create mask
+	LPSMASK pMask = rdPtr->m_pColMask;
+	if ( pMask == NULL )
+	{
+		if ( rdPtr->m_pSurface != NULL )
+		{
+			DWORD dwMaskSize = rdPtr->m_pSurface->CreateMask(NULL, lParam);
+			if ( dwMaskSize != 0 )
+			{
+				pMask = (LPSMASK)calloc(dwMaskSize, 1);
+				if ( pMask != NULL )
+				{
+					rdPtr->m_pSurface->CreateMask(pMask, lParam);
+					rdPtr->m_pColMask = pMask;
+				}
 			}
 		}
-
-		// Note: for active objects, lParam is always the same.
-		// For background objects (OEFLAG_BACKGROUND), lParam maybe be different if the user uses your object
-		// as obstacle and as platform. In this case, you should store 2 collision masks
-		// in your data: one if lParam is 0 and another one if lParam is different from 0.
-
-		return pMask;
 	}
-	else {
-		return NULL;
-	}
+
+	// Note: for active objects, lParam is always the same.
+	// For background objects (OEFLAG_BACKGROUND), lParam maybe be different if the user uses your object
+	// as obstacle and as platform. In this case, you should store 2 collision masks
+	// in your data: one if lParam is 0 and another one if lParam is different from 0.
+
+	return pMask;
 }
+*/
 
 // ----------------
 // PauseRunObject
@@ -523,11 +286,12 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data (if restarts application)
-	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
-	if (pData != NULL) {
-		DeleteGlobalData(pData);
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-	}
+//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
+//	if ( pData != NULL )
+//	{
+//		delete pData;
+//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+//	}
 }
 
 // -------------------
@@ -539,12 +303,13 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 {
 	// Example
 	// -------
-	// Delete global data	
-	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
-	if (pData != NULL) {
-		DeleteGlobalData(pData);
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-	}
+	// Delete global data
+//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
+//	if ( pData != NULL )
+//	{
+//		delete pData;
+//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+//	}
 }
 
 // -------------------
@@ -746,109 +511,6 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		break;
 	}
 */
-
-	//wchar_t temp[DB_BUFFERSIZE];
-
-	auto libFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, std::function<void(LPCWSTR)> f) {
-		if (rdPtr->isLib) {
-			f(pattern);
-		}
-		else {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, negativePattern, negative);
-		}
-	};
-
-	auto displayFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, std::function<void(LPCWSTR)> f) {
-		if (!rdPtr->isLib) {
-			f(pattern);
-		}
-		else {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, negativePattern, negative);
-		}
-	};
-
-	auto libNegative = L"Not Lib";
-	auto displayNegative = L"Not Display";
-
-	switch (id)
-	{
-	case DB_SAPARATOR_START:
-	case DB_SAPARATOR_1:
-	case DB_SAPARATOR_2:
-	case DB_SAPARATOR_3:
-	case DB_SAPARATOR_4:
-	case DB_SAPARATOR_END:
-		swprintf_s(pBuffer, DB_BUFFERSIZE, L"=====================");
-		break;
-	case DB_OBJECTTYPE:
-		swprintf_s(pBuffer, DB_BUFFERSIZE, L"Object Type: %s", rdPtr->isLib ? L"Lib" : L"Display");
-		break;
-	case DB_LIBSIZE:
-		libFilter(L"Lib Size: %d", L"Lib Size: %s", libNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->pLib->size());
-			});
-		break;
-	case DB_LIBMEMUSE:
-		libFilter(L"Auto Clean Cache: %s", L"Auto Clean Cache: %s", libNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoClean ? L"True" : L"False");
-			});
-		break;
-	case DB_FROMLIB:
-		displayFilter(L"From Lib: %s", L"From Lib: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->fromLib ? L"True" : L"False");
-			});
-		break;
-	case DB_FILENAME:
-		displayFilter(L"FileName: %s", L"FileName: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FileName->c_str());
-			});
-		break;
-	case DB_FILEPATH:
-		displayFilter(L"FilePath: %s", L"FilePath: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FilePath->c_str());
-			});
-		break;
-	case DB_KEY:
-		displayFilter(L"Key: %s", L"Key: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, (*rdPtr->Key)==L""? L"Not Encrypted" : rdPtr->Key->c_str());
-			});
-		break;
-	//case DB_COLLISION:
-	//	displayFilter(L"Has Collision: %s", L"Has Collision: %s", displayNegative, [&](LPCWSTR pattern) {
-	//		swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->collision ? L"True" : L"False");
-	//		});
-	//	break;
-	//case DB_AUTOUPDATECOLLISION:
-	//	displayFilter(L"Auto Update Collision: %s", L"Auto Update Collision: %s", displayNegative, [&](LPCWSTR pattern) {
-	//		swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoUpdateCollision ? L"True" : L"False");
-	//		});
-	//	break;
-	case DB_STRETCHQUALITY:
-		displayFilter(L"Stretch Quality: %s", L"Stretch Quality: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->stretchQuality ? L"Resample" : L"Fast");
-			});
-		break;
-	case DB_HOTSPOT:
-		displayFilter(L"HotSpot: [ %d, %d ]", L"HotSpot: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetHotSpotX(rdPtr), GetHotSpotY(rdPtr));
-			});
-		break;
-	case DB_ZOOMSCALE:
-		displayFilter(L"Zoom Scale: [ %f, %f ]", L"Zoom Scale: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetXZoomScale(rdPtr), GetYZoomScale(rdPtr));
-			});
-		break;
-	case DB_ORIGINSIZE:
-		displayFilter(L"Origin Size: [ %d ¡Á %d ]", L"Origin Size: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetOriginalWidth(rdPtr), GetOriginalHeight(rdPtr));
-			});
-		break;
-	case DB_CURRENTSIZE:
-		displayFilter(L"Current Size: [ %d ¡Á %d ]", L"Current Size: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetCurrentWidth(rdPtr), GetCurrentHeight(rdPtr));
-			});
-		break;
-	}
 
 #endif // !defined(RUN_ONLY)
 }
