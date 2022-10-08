@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 #include "EffectEx.h"
 #include "WindowsCommon.h"
@@ -14,7 +15,9 @@ private:
 
 		// data need to release
 		BYTE type = 0;
-		std::wstring effectParamName;		
+		
+		std::wstring effectParamName;
+		EFFECTPARAM effectDefaultParam;
 	};
 
 	struct EffectData {
@@ -27,11 +30,22 @@ private:
 		LPBYTE pParamName = nullptr;
 
 		// data need to release
-		std::wstring effectName;
+		bool bDefaultParam = false;
+
+		std::wstring effectName;		
 		std::vector<EffectParamData> effectParam;
 	};
 
 	std::vector<EffectData> effectData;
+
+	using EffectIt = decltype(effectData.begin());
+
+	inline EffectIt GetEffectData(const std::wstring& effectName) {
+		return std::find_if(effectData.begin(), effectData.end()
+			, [effectName](EffectUtilities::EffectData& item) -> bool {
+				return item.effectName == effectName;
+			});
+	}
 
 public:
 	EffectUtilities(LPRDATA rdPtr) {
@@ -61,7 +75,8 @@ public:
 			auto pName = (LPCSTR)((LPBYTE)pEH + pEH->dwEffectNameOffset);
 			auto pData = ((LPBYTE)pEH + pEH->dwEffectDataOffset);
 
-			this->effectData.emplace_back(EffectData{ pEH, pName, pData, nullptr, nullptr
+			this->effectData.emplace_back(EffectData{ pEH, pName, pData
+				, nullptr, nullptr, false
 				, std::move(ConvertStrToWStr(pName))});
 
 			if (pEH->dwEffectParamsOffset == 0) {
@@ -87,7 +102,7 @@ public:
 				pParamName += strlen(paramName) + 1;
 
 				this->effectData.back().effectParam.emplace_back(EffectParamData{ paramName, paramType
-					, std::move(ConvertStrToWStr(paramName)) });
+					, std::move(ConvertStrToWStr(paramName))});
 			}
 		}
 
@@ -109,7 +124,7 @@ public:
 		return pEP;
 	}
 
-	inline bool SetEffect(LPRO pObject, std::wstring& effectName) {
+	inline bool SetEffect(LPRO pObject, const std::wstring& effectName) {
 		auto flags = pObject->roHo.hoOEFlags;
 
 		if (!(flags & OEFLAG_SPRITES)) {
@@ -119,21 +134,20 @@ public:
 		return SetEffect(pObject->ros, effectName);
 	}
 
-	inline bool SetEffect(rSpr& ros, std::wstring& effectName) {
+	inline bool SetEffect(rSpr& ros, const std::wstring& effectName) {
 		return SetEffect(ros.rsEffect, ros.rsEffectParam, effectName);
 	}
 	
-	inline bool SetEffect(DWORD& effect, LPARAM& effectParam, std::wstring& effectName) {
-		if ((effect & EFFECT_MASK) == BOP_EFFECTEX) {
+	inline bool SetEffect(DWORD& effect, LPARAM& effectParam, const std::wstring& effectName) {
+		if (EffectShader(effect)) {
 			// reset to BOP_COPY == 0
 			effect = ((effect >> 16) << 16);
+
 			DeleteEffect((CEffectEx*)effectParam);
+			effectParam = 0;			
 		}
 		
-		auto it = std::find_if(effectData.begin(), effectData.end()
-			, [effectName](EffectUtilities::EffectData& item) -> bool {
-				return item.effectName == effectName;
-			});
+		auto it = GetEffectData(effectName);
 
 		if (it == effectData.end()) {
 			return false;
@@ -147,13 +161,45 @@ public:
 			, (LPCSTR)it->pParamName
 			, it->pParamType);
 
+		SetDefaultParam(pEffect, it);
+		
 		effect = effect | BOP_EFFECTEX;
-		effectParam = (LPARAM)pEffect;
+		effectParam = (LPARAM)pEffect;		
 
 		return true;
 	}
 
-	inline static bool SetParam(CEffectEx* pEffect, std::wstring& paramName, int paramType, void* pParam) {
+	inline static void SetParamCore(CEffectEx* pEffect, int paramIndex, int paramType, void* pParam) {
+		switch (paramType)
+		{
+		case EFFECTPARAM_INT: {
+			pEffect->SetParamIntValue(paramIndex, *(int*)pParam);
+
+			break;
+		}
+		case EFFECTPARAM_FLOAT: {
+			pEffect->SetParamFloatValue(paramIndex, *(float*)pParam);
+
+			break;
+		}
+		case EFFECTPARAM_INTFLOAT4: {
+			pEffect->SetParamIntValue(paramIndex, *(int*)pParam);
+
+			break;
+		}
+		case EFFECTPARAM_SURFACE: {
+			auto pImpl = GetSurfaceImplementation(*(LPSURFACE)pParam);
+			pEffect->SetParamSurfaceValue(paramIndex, pImpl);
+
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+	}
+
+	inline static bool SetParam(CEffectEx* pEffect, const std::wstring& paramName, int paramType, void* pParam) {
 		if (pEffect == nullptr) {
 			return false;
 		}
@@ -168,34 +214,83 @@ public:
 			return false;
 		}
 
-		switch (paramType)
-		{
-		case EFFECTPARAM_INT: {
-			pEffect->SetParamIntValue(paramIndex, *(int*)pParam);
-
-			break;
-		}
-		case EFFECTPARAM_FLOAT: {
-			pEffect->SetParamFloatValue(paramIndex, *(float*)pParam);
-
-			break;
-		}
-		case EFFECTPARAM_INTFLOAT4: {
-			//auto value = *(int*)pParam;
-
-			break;
-		}
-		case EFFECTPARAM_SURFACE: {
-			auto pImpl = GetSurfaceImplementation(*(LPSURFACE)pParam);
-			pEffect->SetParamSurfaceValue(paramIndex, pImpl);
-
-			break;
-		}
-		default: {
-			break;
-		}
-		}
-
+		SetParamCore(pEffect, paramIndex, paramType, pParam);
+	
 		return true;
 	}
+
+	using ParamCallBack = std::function<void*(const std::wstring&, EFFECTPARAM&)>;	
+
+	// update here
+	//void* pParam = nullptr;
+
+	//SetDefaultParam(L"ShaderName", [pParam](const std::wstring& paramName, EFFECTPARAM& param)->void* {
+	//	return pParam;	
+	//	});
+
+	inline void UpdateDefaultParam(const std::wstring& effectName, ParamCallBack callBack) {
+		auto it = GetEffectData(effectName);
+
+		if (it == effectData.end()) {
+			return;
+		}
+
+		if (it->effectParam.empty()) {
+			return;
+		}
+
+		it->bDefaultParam = true;
+
+		for (auto& itParam : it->effectParam) {
+			itParam.effectDefaultParam.nValueType = (int)itParam.type;
+			auto pParam = callBack(itParam.effectParamName, itParam.effectDefaultParam);
+
+			switch (itParam.effectDefaultParam.nValueType)
+			{
+			case EFFECTPARAM_INT: {
+				itParam.effectDefaultParam.nValue = *(int*)pParam;
+
+				break;
+			}
+			case EFFECTPARAM_FLOAT: {
+				itParam.effectDefaultParam.fValue = *(float*)pParam;
+
+				break;
+			}
+			case EFFECTPARAM_INTFLOAT4: {
+				itParam.effectDefaultParam.nValue = *(int*)pParam;
+
+				break;
+			}
+			case EFFECTPARAM_SURFACE: {
+				auto pImpl = GetSurfaceImplementation(*(LPSURFACE)pParam);
+				itParam.effectDefaultParam.pTextureSurface = pImpl;
+
+				break;
+			}
+			default: {
+				break;
+			}
+			}
+		}
+	}
+
+	inline void SetDefaultParam(CEffectEx* pEffect, EffectIt it) {
+		if (it == effectData.end()) {
+			return;
+		}
+
+		if (!it->bDefaultParam) {
+			return;
+		}
+
+		for (size_t i = 0; i < it->effectParam.size(); i++) {
+			auto& curParam = it->effectParam[i];
+			auto pCurParam = &curParam.effectDefaultParam;
+
+			void* pParam = (BYTE*)pCurParam + sizeof(pCurParam->nValueType);
+
+			SetParamCore(pEffect, i, curParam.type, pParam);
+		}
+	}	
 };
