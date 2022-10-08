@@ -28,7 +28,7 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 0,
+		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 1, PARAM_EFFECT, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -57,8 +57,7 @@ short expressionsInfos[]=
 // Returns TRUE when the two values are equal!
 // 
 
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
+long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2) {
 
 //  **** Still use this method for 1 or 2 parameters ****	
 //	if (param1==param2)	
@@ -81,22 +80,8 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample Action
-// -----------------
-// Does nothing!
-// 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
-{
-	// Actions work just like Conditions
-
-	// Use directly param1 and/or param2 if this action has 1 or 2 parameters
-
-	// Use this if this action has 3 parameters or more
-//	long p1 = CNC_GetParameter(rdPtr);
-//	long p2 = CNC_GetParameter(rdPtr);
-//	long p3 = CNC_GetParameter(rdPtr);
-//	etc.
+short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pName = (LPCWSTR)CNC_GetParameter(rdPtr);
 
 	return 0;
 }
@@ -113,8 +98,7 @@ short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
 // -----------------
 // Add three values
 // 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
+long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1) {
 
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -126,8 +110,7 @@ long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
 
 
 //Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
+long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1) {
 	char *temp;
 
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
@@ -146,8 +129,7 @@ long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
 }
 
 //Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
+long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 
 	//Floats are tricky.  If you want to pass in a float, you must do the

@@ -237,7 +237,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION                "Action example %0"
 END
 
 STRINGTABLE DISCARDABLE 

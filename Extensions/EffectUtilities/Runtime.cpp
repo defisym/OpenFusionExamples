@@ -65,6 +65,21 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+//Init global data
+	if (GetExtUserData() == nullptr) {
+		auto pData = new GlobalData;
+
+		pData->pEffectUtilities= new EffectUtilities(rdPtr);
+
+		//Update pointer
+		SetExtUserData(pData);
+	}
+
+	//Get global data
+	//Get pointers here and never delete them.
+	rdPtr->pData = (GlobalData*)GetExtUserData();
+	rdPtr->pEffectUtilities = rdPtr->pData->pEffectUtilities;
+
 	// No errors
 	return 0;
 }
@@ -286,12 +301,13 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != NULL) {
+		delete pData->pEffectUtilities;
+		delete pData;
+
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------
@@ -304,12 +320,13 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Example
 	// -------
 	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != NULL) {
+		delete pData->pEffectUtilities;
+		delete pData;
+
+		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	}
 }
 
 // -------------------

@@ -28,7 +28,8 @@
 #include	"Surface.h"
 
 // My lib
-
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"
