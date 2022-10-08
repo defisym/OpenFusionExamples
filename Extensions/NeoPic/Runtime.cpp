@@ -200,12 +200,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
-
-	auto pEffect = new EffectUtilities(rdPtr);
 	
-	std::wstring name = L"MonoExample.fx";
-	pEffect->SetEffect(rdPtr->rs, name);
-
 	// No errors
 	return 0;
 }
