@@ -735,6 +735,12 @@ private:
 		return 0;
 	}
 
+	// Drain
+	// https://ffmpeg.org/doxygen/5.0/group__lavc__encdec.html
+	// End of stream situations. These require "flushing" (aka draining) the codec, as the codec might buffer multiple frames or packets internally for performance or out of necessity (consider B-frames). This is handled as follows:
+	// - Instead of valid input, send NULL to the avcodec_send_packet() (decoding) or avcodec_send_frame() (encoding) functions. This will enter draining mode.
+	// - Call avcodec_receive_frame() (decoding) or avcodec_receive_packet() (encoding) in a loop until AVERROR_EOF is returned. The functions will not return AVERROR(EAGAIN), unless you forgot to enter draining mode.
+	// - Before decoding can be resumed again, the codec has to be reset with avcodec_flush_buffers().
 	inline int decode_videoFrame(rawDataCallBack callBack) {
 		auto bNoPacket = !videoQueue.get(pVPacket, false);
 
