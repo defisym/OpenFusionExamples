@@ -131,6 +131,9 @@ BEGIN
     BEGIN
         MENUITEM "Set Effect", IDMN_ACTION_SE
         MENUITEM "Set Effect Param", IDMN_ACTION_SEP
+#ifdef _ENABLE_TEST_FEATURE
+        MENUITEM "Set BackDrop Effect Param", IDMN_ACTION_SBE
+#endif
     END
 END
 #endif
@@ -240,6 +243,8 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_ACTION_SE                "Set %0 Effect to %1"
     M_ACTION_SEP               "Set %0 Effect Param %1 to %2"
+
+    M_ACTION_SBE               "Set BackDrop %0 Effect to %1"
 END
 
 STRINGTABLE DISCARDABLE 

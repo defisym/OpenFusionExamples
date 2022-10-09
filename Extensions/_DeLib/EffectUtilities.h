@@ -178,13 +178,13 @@ public:
 					backdropPtr++;
 				}
 
-				LPBKD2 backdrop2Ptr = layerPtr->m_pBkd2;
+				//LPBKD2 backdrop2Ptr = layerPtr->m_pBkd2;
 
-				for (int j = 0; j < (int)layerPtr->m_nBkd2Count; ++j) {
-					pBackdropVec.emplace_back(BKD{ nullptr,backdrop2Ptr });
+				//for (int j = 0; j < (int)layerPtr->m_nBkd2Count; ++j) {
+				//	pBackdropVec.emplace_back(BKD{ nullptr,backdrop2Ptr });
 
-					backdrop2Ptr++;
-				}
+				//	backdrop2Ptr++;
+				//}
 
 				layerPtr = (RunFrameLayer*)(((char*)layerPtr++) + additionalLayerSize);
 			}
@@ -207,6 +207,21 @@ public:
 				}
 
 				SetEffect(pSpr->sprEffect, pSpr->sprEffectParam, effectName);
+				pSpr->sprFlags |= SF_REAF;
+
+				RECT rc = { pSpr->sprX1 , pSpr->sprY1, pSpr->sprX2 , pSpr->sprY2 };
+				WinAddZone(rhPtr->rhIdEditWin, &rc);
+
+				//DWORD effect = pSpr->sprEffect;
+				//LPARAM effectParam = pSpr->sprEffectParam;
+
+				//SetEffect(effect, effectParam, effectName);
+
+				//auto win = rhPtr->mvIdEditWin;
+				//ModifSpriteEffect(win, pSpr, effect, effectParam);
+				//pSpr->sprFlags |= SF_REAF;
+
+				//SpriteDraw(win);
 			}
 
 			if (it.pBKD != nullptr) {
@@ -215,6 +230,7 @@ public:
 
 				SetEffect(pBKD->inkEffect, (LPARAM&)pBKD->inkEffectParam, effectName);
 				SetEffect(pSpr->sprEffect, pSpr->sprEffectParam, effectName);
+				pSpr->sprFlags |= SF_REAF;
 			}
 		}
 

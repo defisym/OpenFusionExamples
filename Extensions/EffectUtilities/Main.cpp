@@ -30,6 +30,8 @@ short actionsInfos[]=
 		{
 		IDMN_ACTION_SE, M_ACTION_SE, ACT_ACTION_SE,	0, 2, PARAM_OBJECT, PARAM_EFFECT, 0, 0,
 		IDMN_ACTION_SEP, M_ACTION_SEP, ACT_ACTION_SEP, 0, 3, PARAM_OBJECT, PARAM_EXPSTRING, PARAM_EXPRESSION, 0, 0, 0,
+
+		IDMN_ACTION_SBE, M_ACTION_SBE, ACT_ACTION_SBE,	0, 2, PARAM_EXPSTRING, PARAM_EFFECT, 0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -116,6 +118,16 @@ short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long pa
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetBackDropEffect(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	LPCWSTR pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
+
+#ifdef _ENABLE_TEST_FEATURE
+	rdPtr->pEffectUtilities->SetEffect(pBackDropName, pEffectName);
+#endif
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -198,6 +210,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
 			Action_SetEffect,
 			Action_SetEffectParam,
+
+			Action_SetBackDropEffect,
 
 			0
 			};

@@ -35,9 +35,13 @@
 #define IDMN_ACTION_SE	       		25000
 #define IDMN_ACTION_SEP	       		25001
 
+#define IDMN_ACTION_SBE	       		25002
+
 // Action strings
 #define M_ACTION_SE                  5000
 #define M_ACTION_SEP                 5001
+
+#define M_ACTION_SBE	       		 5002
 
 // Titles of action parameters
 #define M_ACT_P1				 5501

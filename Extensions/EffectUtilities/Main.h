@@ -13,10 +13,12 @@
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION_SE					0
-#define	ACT_ACTION_SEP					1
+#define	ACT_ACTION_SE				0
+#define	ACT_ACTION_SEP				1
 
-#define	ACT_LAST					2
+#define	ACT_ACTION_SBE				2
+
+#define	ACT_LAST					3
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
