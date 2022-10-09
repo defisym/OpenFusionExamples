@@ -8,7 +8,9 @@
 
 #define _FUSION_EMBED
 
+#ifdef _FUSION_EMBED
 #include "CfcFile.h"
+#endif
 
 //https://www.i4k.xyz/article/weixin_45513192/115480892
 
@@ -47,10 +49,6 @@ typedef struct _tagTT_NAME_RECORD {
 #define SWAPLONG(x)		MAKELONG(SWAPWORD(HIWORD(x)), SWAPWORD(LOWORD(x)))
 
 using FontNames = std::vector<std::wstring>;
-
-#ifdef _FUSION_EMBED
-#else
-#endif
 
 #ifdef _FUSION_EMBED
 // if memBufSz == 0 then read from disk, or lpszFilePath is a pointer to memory buffer
