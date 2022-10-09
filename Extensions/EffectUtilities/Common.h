@@ -38,6 +38,7 @@
 
 // My header
 #include	"EffectUtilities.h"
+#include	"FusionUtilities.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

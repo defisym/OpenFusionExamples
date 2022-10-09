@@ -129,7 +129,8 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM "Set Effect", IDMN_ACTION_SE
+        MENUITEM "Set Effect Param", IDMN_ACTION_SEP
     END
 END
 #endif
@@ -237,7 +238,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "Action example %0"
+    M_ACTION_SE                "Set %0 Effect to %1"
+    M_ACTION_SEP               "Set %0 Effect Param %1 to %2"
 END
 
 STRINGTABLE DISCARDABLE 

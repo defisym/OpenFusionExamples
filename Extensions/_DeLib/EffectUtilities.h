@@ -5,7 +5,18 @@
 #include <functional>
 
 #include "EffectEx.h"
+
+#include "Fusion.h"
 #include "WindowsCommon.h"
+
+#ifdef HWABETA
+constexpr auto additionalLayerSize = 8;
+#endif
+#ifndef HWABETA
+constexpr auto additionalLayerSize = 0;
+#endif
+
+//#define _ENABLE_TEST_FEATURE
 
 class EffectUtilities {
 private:
@@ -36,7 +47,12 @@ private:
 		std::vector<EffectParamData> effectParam;
 	};
 
+	LPRDATA rdPtr = nullptr;
+	LPRH rhPtr = nullptr;
+
 	std::vector<EffectData> effectData;
+	
+	std::vector<LPSURFACE> effectImageParamData;
 
 	using EffectIt = decltype(effectData.begin());
 
@@ -49,6 +65,9 @@ private:
 
 public:
 	EffectUtilities(LPRDATA rdPtr) {
+		this->rdPtr = rdPtr;
+		this->rhPtr = rdPtr->rHo.hoAdRunHeader;
+
 		auto pData = rdPtr->rHo.hoAdRunHeader->rhApp->m_pEffects;
 
 		if (pData == nullptr) {
@@ -109,6 +128,12 @@ public:
 		delete[] effectsOffset;
 	}
 
+	~EffectUtilities() {
+		for (auto& it : effectImageParamData) {
+			delete it;
+		}
+	}
+
 	inline static bool EffectShader(DWORD effect) {
 		// if so, EffectParam is now the pointer to CEffectEx
 		return (effect & EFFECT_MASK) == BOP_EFFECTEX;
@@ -124,6 +149,79 @@ public:
 		return pEP;
 	}
 
+#ifdef _ENABLE_TEST_FEATURE
+	inline bool SetEffect(const std::wstring& backDropName, const std::wstring& effectName) {
+		auto framePtr = rhPtr->rhFrame;
+
+		struct BKD {
+			LPLO pLO = nullptr;
+			LPBKD2 pBKD = nullptr;
+		};
+
+		using BackdropVec = std::vector<BKD>;
+
+		auto GetBackdropLO = [=](const std::wstring& backDropName)->BackdropVec {
+			BackdropVec pBackdropVec;
+
+			auto layerPtr = framePtr->m_pLayers;
+
+			for (int i = 0; i < framePtr->m_nLayers; ++i) {
+				LPLO backdropPtr = (LPLO)(framePtr->m_los + layerPtr->nFirstLOIndex);
+
+				for (int j = 0; j < (int)layerPtr->nBkdLOs; ++j) {
+					LPOI objOI = rhPtr->rhApp->m_ois[rhPtr->rhApp->m_oi_handle_to_index[backdropPtr->loOiHandle]];
+
+					if (wcscmp(objOI->oiName, backDropName.c_str()) == 0) {
+						pBackdropVec.emplace_back(BKD{ backdropPtr,nullptr });
+					}
+
+					backdropPtr++;
+				}
+
+				LPBKD2 backdrop2Ptr = layerPtr->m_pBkd2;
+
+				for (int j = 0; j < (int)layerPtr->m_nBkd2Count; ++j) {
+					pBackdropVec.emplace_back(BKD{ nullptr,backdrop2Ptr });
+
+					backdrop2Ptr++;
+				}
+
+				layerPtr = (RunFrameLayer*)(((char*)layerPtr++) + additionalLayerSize);
+			}
+
+			return pBackdropVec;
+		};
+
+		auto pLO = GetBackdropLO(backDropName);
+
+		if (pLO.empty()) {
+			return false;
+		}
+
+		for (auto& it : pLO) {
+			if (it.pLO != nullptr) {
+				auto pSpr = it.pLO->loSpr[0];
+
+				if (pSpr == nullptr) {
+					continue;
+				}
+
+				SetEffect(pSpr->sprEffect, pSpr->sprEffectParam, effectName);
+			}
+
+			if (it.pBKD != nullptr) {
+				auto pBKD = it.pBKD;
+				auto pSpr = pBKD->pSpr[0];
+
+				SetEffect(pBKD->inkEffect, (LPARAM&)pBKD->inkEffectParam, effectName);
+				SetEffect(pSpr->sprEffect, pSpr->sprEffectParam, effectName);
+			}
+		}
+
+		return true;
+	}
+#endif // _ENABLE_TEST_FEATURE
+	
 	inline bool SetEffect(LPRO pObject, const std::wstring& effectName) {
 		auto flags = pObject->roHo.hoOEFlags;
 
@@ -167,6 +265,20 @@ public:
 		effectParam = (LPARAM)pEffect;		
 
 		return true;
+	}
+
+	inline static int GetParamType(CEffectEx* pEffect, const std::wstring& paramName) {
+		if (pEffect == nullptr) {
+			return -1;
+		}
+
+		auto paramIndex = pEffect->GetParamIndex(ConvertWStrToStr(paramName).c_str());
+
+		if (paramIndex == -1) {
+			return -1;
+		}
+
+		return pEffect->GetParamType(paramIndex);
 	}
 
 	inline static void SetParamCore(CEffectEx* pEffect, int paramIndex, int paramType, void* pParam) {
@@ -217,6 +329,28 @@ public:
 		SetParamCore(pEffect, paramIndex, paramType, pParam);
 	
 		return true;
+	}
+
+	// handle surface by this object, or you need to manage it by yourself
+	inline bool SetParamEx(CEffectEx* pEffect, const std::wstring& paramName, int paramType, void* pParam) {
+		if (paramType == EFFECTPARAM_SURFACE) {
+			auto pInputSf = (LPSURFACE)pParam;
+			LPSURFACE pLocalSf = nullptr;
+
+			if (IsHWA(pInputSf)) {
+				pLocalSf = CreateCloneSurface(pInputSf);
+			}
+			else {
+				pLocalSf = ConvertHWATexture(rdPtr, pInputSf);
+			}
+
+			effectImageParamData.emplace_back(pLocalSf);
+
+			return SetParam(pEffect, paramName, paramType, pLocalSf);
+		}
+		else {
+			return SetParam(pEffect, paramName, paramType, pParam);
+		}
 	}
 
 	using ParamCallBack = std::function<void*(const std::wstring&, EFFECTPARAM&)>;	

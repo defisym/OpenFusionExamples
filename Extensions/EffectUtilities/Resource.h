@@ -32,10 +32,12 @@
 #define MN_ACTIONS				20000
 
 // Commands of action menu
-#define IDMN_ACTION	       		25000
+#define IDMN_ACTION_SE	       		25000
+#define IDMN_ACTION_SEP	       		25001
 
 // Action strings
-#define M_ACTION                 5000
+#define M_ACTION_SE                  5000
+#define M_ACTION_SEP                 5001
 
 // Titles of action parameters
 #define M_ACT_P1				 5501

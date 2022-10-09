@@ -28,7 +28,8 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 1, PARAM_EFFECT, 0,
+		IDMN_ACTION_SE, M_ACTION_SE, ACT_ACTION_SE,	0, 2, PARAM_OBJECT, PARAM_EFFECT, 0, 0,
+		IDMN_ACTION_SEP, M_ACTION_SEP, ACT_ACTION_SEP, 0, 3, PARAM_OBJECT, PARAM_EXPSTRING, PARAM_EXPRESSION, 0, 0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -80,8 +81,37 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2) {
 // 
 // ============================================================================
 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
-	LPCWSTR pName = (LPCWSTR)CNC_GetParameter(rdPtr);
+short WINAPI DLLExport Action_SetEffect(LPRDATA rdPtr, long param1, long param2) {
+	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
+	LPCWSTR pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
+
+	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
+		return 0;
+	}
+
+	rdPtr->pEffectUtilities->SetEffect(pObject, pEffectName);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long param2) {
+	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
+	LPCWSTR pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	long param = (long)CNC_GetParameter(rdPtr);
+
+	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
+		return 0;
+	}
+
+	auto pEffect = (CEffectEx*)pObject->ros.rsEffectParam;
+	auto paramType = rdPtr->pEffectUtilities->GetParamType(pEffect, pParamName);
+	if (paramType != EFFECTPARAM_SURFACE) {
+		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, &param);
+	}
+	else {
+		auto pSf = ConvertToType<long, LPSURFACE>(param);
+		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, pSf);
+	}
 
 	return 0;
 }
@@ -160,12 +190,15 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1) {
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			Condition,
+
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action,
+			Action_SetEffect,
+			Action_SetEffectParam,
+
 			0
 			};
 
@@ -174,5 +207,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression,
 			Expression2,
 			Expression3,
+
 			0
 			};

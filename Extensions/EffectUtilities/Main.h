@@ -7,13 +7,16 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION				0
+
 #define	CND_LAST					1
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
-#define	ACT_LAST					1
+#define	ACT_ACTION_SE					0
+#define	ACT_ACTION_SEP					1
+
+#define	ACT_LAST					2
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -21,6 +24,7 @@
 #define	EXP_EXPRESSION				0
 #define EXP_EXPRESSION2				1
 #define EXP_EXPRESSION3				2
+
 #define	EXP_LAST                    3
 
 // ---------------------
