@@ -313,6 +313,13 @@ inline void CreateBlankSurface(LPSURFACE Src) {
 	Src->CreateAlpha();
 }
 
+inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
+	cSurface* sur = new cSurface;
+	sur->Clone(*Src);
+
+	return sur;
+}
+
 //Convert to HWA
 inline bool IsHWA(LPSURFACE Src) {
 	return Src->GetType() >= ST_HWA_SCREEN;
