@@ -82,8 +82,10 @@ typedef struct tagEDATA_V1
 	DWORD			dwAlignFlags;	// alignment flags
 	LOGFONT			logFont;		// text font
 
+	//Unused
 	BYTE nOutLinePixel;
 	COLORREF dwOutLineColor;
+	//Unused_End
 
 	bool bShadow;
 	BYTE nShadowOffsetX;
@@ -156,8 +158,10 @@ typedef struct tagRDATA
 	LOGFONT			logFont;		// text font
 	HFONT			hFont;			// text font
 
+	//Unused
 	BYTE nOutLinePixel;
 	COLORREF dwOutLineColor;
+	//Unused_End
 
 	bool bRowSpace;
 	bool bColSpace;

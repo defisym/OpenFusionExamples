@@ -301,19 +301,19 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 
 	delete E;
 
-//#ifdef _FONTEMBEDDEBUG
-//	MSGBOX((std::wstring)L"Embed " + FilePath +
-//		(std::wstring)(gdipRet != Gdiplus::Status::Ok
-//			? L" Not OK"
-//			: L" OK"));
-// 
-//	auto font = rdPtr->pData->pFontCollection->GetFamilyCount();
-// 
-//	for (auto& i : fontNames) {
-//		wprintf(L"%s\n", i.c_str());
-//		//std::wcout << i << std::endl;
-//	}
-//#endif // _FONTEMBEDDEBUG
+#ifdef _FONTEMBEDDEBUG
+	MSGBOX((std::wstring)L"Embed " + FilePath +
+		(std::wstring)(gdipRet != Gdiplus::Status::Ok
+			? L" Not OK"
+			: L" OK"));
+ 
+	auto font = rdPtr->pData->pFontCollection->GetFamilyCount();
+ 
+	for (auto& i : fontNames) {
+		wprintf(L"%s\n", i.c_str());
+		//std::wcout << i << std::endl;
+	}
+#endif // _FONTEMBEDDEBUG
 
 	//refresh objects
 	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);

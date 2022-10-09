@@ -47,12 +47,10 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		delete rdPtr->pNeoStr;
 		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont, false, rdPtr->pData->pFontCollection);
 
-#ifdef _USE_HWA
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
 
 		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv, PreMulAlpha(rdPtr));
-#endif
 
 		rdPtr->reRender = true;
 	}
@@ -139,15 +137,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		// Draw text
 		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
 
-#ifdef _USE_HWA
 		int sfDrv = ps->GetDriver();
 
 		neoStr.SetHWA(ST_HWA_ROMTEXTURE, sfDrv, false);
-#endif
 
-#ifdef _PATH
-		neoStr.SetOutLine(edPtr->nOutLinePixel, edPtr->dwOutLineColor);
-#endif
 		//MSGBOX(L"Editor Calc");
 		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
@@ -219,10 +212,6 @@ inline void Display(LPRDATA rdPtr) {
 
 		// Draw text
 		HandleUpdate(rdPtr, rc);
-
-#ifdef _PATH
-		rdPtr->pNeoStr->SetOutLine(rdPtr->nOutLinePixel, rdPtr->dwOutLineColor);
-#endif
 
 		rdPtr->pNeoStr->SetHotSpot(hotSpotX, hotSpotY);
 		rdPtr->pNeoStr->SetScale(rdPtr->xScale, rdPtr->yScale);
