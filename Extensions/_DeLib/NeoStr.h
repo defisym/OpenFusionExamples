@@ -270,6 +270,33 @@ private:
 		return -1;  // Failure
 	}
 
+	inline size_t LogFontHasher(LOGFONT logFont) {
+		constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
+		constexpr auto HASHER_MOVE = [](size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); };
+
+		size_t seed = 65535;
+
+		seed ^= logFont.lfHeight + HASHER_MOVE(seed);
+		seed ^= logFont.lfWidth + HASHER_MOVE(seed);
+		seed ^= logFont.lfEscapement + HASHER_MOVE(seed);
+		seed ^= logFont.lfOrientation + HASHER_MOVE(seed);
+		seed ^= logFont.lfWeight + HASHER_MOVE(seed);
+		seed ^= logFont.lfItalic + HASHER_MOVE(seed);
+		seed ^= logFont.lfUnderline + HASHER_MOVE(seed);
+		seed ^= logFont.lfStrikeOut + HASHER_MOVE(seed);
+		seed ^= logFont.lfCharSet + HASHER_MOVE(seed);
+		seed ^= logFont.lfOutPrecision + HASHER_MOVE(seed);
+		seed ^= logFont.lfClipPrecision + HASHER_MOVE(seed);
+		seed ^= logFont.lfQuality + HASHER_MOVE(seed);
+		seed ^= logFont.lfPitchAndFamily + HASHER_MOVE(seed);
+
+		for (auto i = 0; i < LF_FACESIZE; i++) {
+			seed ^= logFont.lfFaceName[i] + HASHER_MOVE(seed);
+		}
+
+		return seed;
+	}
+
 public:
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
@@ -438,6 +465,24 @@ public:
 		return fontStyle;
 	}
 
+	inline Font GetFont(LOGFONT logFont) {
+		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
+		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+
+#ifdef _FONTEMBEDDEBUG
+		if (!bFound) {
+			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
+		}
+#endif // _FONTEMBEDDEBUG
+
+		return Font(logFont.lfFaceName
+			, (float)abs(logFont.lfHeight)
+			, GetFontStyle(logFont)
+			, Gdiplus::UnitWorld
+			, bFound ? this->pFontCollection
+			: nullptr);
+	}
+
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
 		this->hwaType = type;
 		this->hwaDriver = driver;
@@ -453,6 +498,7 @@ public:
 		this->borderOffsetY = borderOffsetX;
 	}
 
+	// set row/col space
 	inline void SetSpace(int nRowSpace = 0, int nColSpace = 0) {
 		this->nRowSpace = nRowSpace /*+ this->tm.tmInternalLeading + this->tm.tmExternalLeading*/;
 		this->nColSpace = nColSpace;
@@ -501,31 +547,27 @@ public:
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
 		//Graphics g(hdc);
-		//Font font(GetDC(NULL), this->hFont);
+		//auto font = GetFont(this->logFont);
+		//
 		//PointF origin(0, 0);
+		//
 		//RectF boundRect;
-		//g.MeasureString(&wChar, 1, &font, origin, &boundRect);
-
-		//StringFormat stringFormat;
-		//RectF layoutRect(0,0,65535,65535);
-		//RectF boundRect;
-		//Region region;
-		//g.MeasureCharacterRanges(&wChar, 1, &font, layoutRect, &stringFormat, 1, &region);
-		//g.MeasureString(&wChar, 1, &font, layoutRect, &stringFormat, &boundRect);
+		//auto pStringFormat = StringFormat::GenericDefault();
+		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat, &boundRect);
+		//
+		//RectF boundRect_2;
+		//auto pStringFormat_2 = StringFormat::GenericTypographic();
+		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat_2, &boundRect_2);
 
 		SIZE sz;
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
-		//TEXTMETRIC tm;
-		//GetTextMetrics(hdc, &tm);
-
 		//ABC abc;
 		//GetCharABCWidths(hdc, wChar, wChar, &abc);
-
-		//GetCharABCWidths()
-		//TEXTMETRIC textMetric;
-		//GetTextMetrics(hdc, &textMetric);
-
+		//
+		//TEXTMETRIC tm;
+		//GetTextMetrics(hdc, &tm);
+		//
 		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 
 		return *(StrSize*)&sz;
@@ -775,39 +817,18 @@ public:
 #endif
 
 		Graphics g(pBitmap);
-
+		
 		g.Clear(Color(0, 0, 0, 0));
-
-		//Color fontColor(255, 50, 150, 250);
-		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
-
-		SolidBrush solidBrush(fontColor);
-
-		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
-
-		auto bFound = FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection);
-
-		#ifdef _FONTEMBEDDEBUG
-				if (!bFound) {
-					MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
-				}
-		#endif // _FONTEMBEDDEBUG
-
-		PrivateFontCollection local;
-
-		Font font(this->logFont.lfFaceName
-			, (float)abs(logFont.lfHeight)
-			, GetFontStyle(this->logFont)
-			, Gdiplus::UnitWorld
-			, bFound ? this->pFontCollection
-			: nullptr);
-		//, nullptr);
-		//, this->pFontCollection);
-		//, &local);
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
 		g.SetPixelOffsetMode(this->pixelOffsetMode);
+		
+		auto font = GetFont(this->logFont);
+
+		//Color fontColor(255, 50, 150, 250);
+		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
+		SolidBrush solidBrush(fontColor);
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight, };
 
@@ -828,12 +849,12 @@ public:
 		};
 
 		for (auto& curStrPos : this->strPos) {
-
 #ifdef _DEBUG
 			std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 
 			StrSize* charSz = nullptr;
+
 			int x = GetStartPosX(curStrPos.width, rcWidth);
 			x -= pStrSizeArr [curStrPos.start].width / 8;
 
@@ -842,18 +863,16 @@ public:
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr [offset];
 
-				pCharPosArr [offset] = CharPos { x + pStrSizeArr [curStrPos.start].width / 8
-											,this->startY + curStrPos.y,0,0 };
+				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+											,this->startY + curStrPos.y
+											,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-#ifdef _DEBUG
-					auto WX = (float)(x)+(float)(this->borderOffsetY);
-					auto WY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
-#endif
+					auto positionX = (float)(x)+(float)(this->borderOffsetY);
+					auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
+		
 					auto status = g.DrawString(pCurChar, 1, &font
-						, PointF((float)(x)+(float)(this->borderOffsetY)
-							, (float)(curStrPos.y) + (float)(this->borderOffsetY))
-						, &solidBrush);
+						, PointF(positionX, positionY), &solidBrush);
 				}
 
 				x += (charSz->width + nColSpace);
@@ -939,17 +958,6 @@ public:
 		}
 
 		return pCharPosArr [pos];
-	}
-
-	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
-		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
-
-		auto height = pDst->DrawText(pText, wcslen(pText), pRc
-			, this->dwDTFlags, this->dwTextColor, this->hFont
-			, bm, bo, boParam, bAntiA);
-
-		return;
 	}
 
 	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
