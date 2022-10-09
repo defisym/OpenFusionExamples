@@ -125,7 +125,6 @@ public:
 		//Call the routine
 		CallTables* tables = (CallTables*)callRunTimeFunction(rdPtr, RFUNCTION_GETCALLTABLES, 0, 0);
 		createObject = tables->pActions[2];
-		
 	}
 
 	~ObjectCreation(){
