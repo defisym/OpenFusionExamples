@@ -857,7 +857,7 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 		GetValidScale(&scale);
 
 		int divide = CNC_GetIntParameter(rdPtr);
-		GetMaxmiumDivide(&divide);
+		GetMaximumDivide(&divide);
 
 		auto GetCoef = [] (double sigma) -> GCoef {
 			double q1, q2, q3;
@@ -1051,7 +1051,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		GetValidScale(&scale);
 
 		int divide = CNC_GetIntParameter(rdPtr);
-		GetMaxmiumDivide(&divide);
+		GetMaximumDivide(&divide);
 
 		//计算参数
 		float a = (float)(1 / (sigma * sqrt(2 * 3.1415926)));
