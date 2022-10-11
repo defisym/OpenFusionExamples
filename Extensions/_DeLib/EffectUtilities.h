@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tuple>
 #include <string>
 #include <vector>
 #include <functional>
@@ -283,18 +284,39 @@ public:
 		return true;
 	}
 
+	inline static int GetParamIndex(CEffectEx* pEffect, const std::wstring& paramName) {
+		if (pEffect == nullptr) {
+			return -1;
+		}
+
+		return pEffect->GetParamIndex(ConvertWStrToStr(paramName).c_str());
+	}
+	
 	inline static int GetParamType(CEffectEx* pEffect, const std::wstring& paramName) {
 		if (pEffect == nullptr) {
 			return -1;
 		}
 
-		auto paramIndex = pEffect->GetParamIndex(ConvertWStrToStr(paramName).c_str());
+		auto paramIndex = GetParamIndex(pEffect, paramName);
 
 		if (paramIndex == -1) {
 			return -1;
 		}
 
 		return pEffect->GetParamType(paramIndex);
+	}
+
+	using ParamIndexType = std::tuple<int, int>;
+
+	inline static ParamIndexType GetParamIndexType(CEffectEx* pEffect, const std::wstring& paramName) {
+		if (pEffect == nullptr) {
+			return std::make_tuple(-1,-1);
+		}
+
+		auto paramIndex = pEffect->GetParamIndex(ConvertWStrToStr(paramName).c_str());
+		auto paramType = pEffect->GetParamType(paramIndex);
+
+		return std::make_tuple(paramIndex, paramType);
 	}
 
 	inline static void SetParamCore(CEffectEx* pEffect, int paramIndex, int paramType, void* pParam) {
@@ -326,23 +348,35 @@ public:
 		}
 		}
 	}
+	
+	inline static bool SetParam(CEffectEx* pEffect, const std::wstring& paramName, void* pParam) {
+		if (pEffect == nullptr) {
+			return false;
+		}
 
+		auto [effectParamIndex, effectParamType] = GetParamIndexType(pEffect, paramName);
+
+		SetParamCore(pEffect, effectParamIndex, effectParamType, pParam);
+		
+		return true;
+	}
+	
 	inline static bool SetParam(CEffectEx* pEffect, const std::wstring& paramName, int paramType, void* pParam) {
 		if (pEffect == nullptr) {
 			return false;
 		}
 
-		auto paramIndex = pEffect->GetParamIndex(ConvertWStrToStr(paramName).c_str());
+		auto[effectParamIndex, effectParamType] = GetParamIndexType(pEffect, paramName);
 
-		if (paramIndex == -1) {
+		if (effectParamIndex == -1|| effectParamType == -1) {
 			return false;
 		}
 
-		if (paramType != pEffect->GetParamType(paramIndex)) {
+		if (effectParamType != paramType) {
 			return false;
 		}
 
-		SetParamCore(pEffect, paramIndex, paramType, pParam);
+		SetParamCore(pEffect, effectParamIndex, effectParamType, pParam);
 	
 		return true;
 	}
