@@ -139,6 +139,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Open Video",              IDMN_ACTION_OV
+        MENUITEM "Open Video To",           IDMN_ACTION_OVT
         MENUITEM "Close Video",             IDMN_ACTION_CV
         MENUITEM SEPARATOR
         MENUITEM "Play Video",              IDMN_ACTION_PLAYV
@@ -293,6 +294,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_ACTION_OV	       	       "Open Video %0, Decrypt Key %1"
+    M_ACTION_OVT       	       "Open Video %0 to %2, Decrypt Key %1"
     M_ACTION_CV			       "Close Video"
     M_ACTION_PLAYV		       "Play Video"
     M_ACTION_PAUSEV		       "Pause Video"

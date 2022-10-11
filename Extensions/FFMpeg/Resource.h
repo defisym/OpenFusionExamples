@@ -70,6 +70,8 @@
 #define	IDMN_ACTION_CACHEV 			25010
 #define	IDMN_ACTION_ERASEV 			25011
 
+#define IDMN_ACTION_OVT       		25012
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -87,6 +89,8 @@
 
 #define	M_ACTION_CACHEV				5010
 #define	M_ACTION_ERASEV				5011
+
+#define M_ACTION_OVT       		    5012
 
 // Titles of action parameters
 #define M_FILEPATH				 5501

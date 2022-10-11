@@ -51,6 +51,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_CACHEV, M_ACTION_CACHEV, ACT_ACTION_CACHEV,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FILEPATH, M_KEY,
 		IDMN_ACTION_ERASEV, M_ACTION_ERASEV, ACT_ACTION_ERASEV,	0, 1, PARAM_EXPSTRING, M_FILEPATH,
+
+		IDMN_ACTION_OVT, M_ACTION_OVT, ACT_ACTION_OVT,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_FILEPATH, M_KEY, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -117,42 +119,17 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	CloseGeneral(rdPtr);
+	OpenGeneral(rdPtr, filePath, key);
 
-	try {
-		if (StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath);
-		}
-		else {			
-			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength());
-		}
-		
-		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
+	return 0;
+}
 
-		rdPtr->bOpen = true;
-		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
-		*rdPtr->pFilePath = filePath;
+short WINAPI DLLExport Action_OpenVideoTo(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	size_t msRaw = (size_t)CNC_GetIntParameter(rdPtr);
 
-		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
-		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
-
-		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());		
-
-		BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
-
-		ReDisplay(rdPtr);
-	}
-	catch (...) {
-		// update path for condition to check
-		*rdPtr->pFilePath = filePath;
-		
-		CallEvent(ON_OPENFAILED);
-
-		CloseGeneral(rdPtr);		
-	}
+	OpenGeneral(rdPtr, filePath, key, msRaw);
 
 	return 0;
 }
@@ -404,6 +381,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_CacheVideo,
 			Action_EraseVideo,
+
+			Action_OpenVideoTo,
 
 			0
 			};

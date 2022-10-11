@@ -40,6 +40,8 @@ constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto MAX_AUDIOQ_SIZE = (5 * 16 * 1024);
 constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
+constexpr auto PROBE_SIZE = (32 * 4096);
+
 // if defined, then this class won't call SDL_OpenAudio, and convert data by the following spec
 // for the sake of performance (SDL_OpenAudio need about 20ms on my PC)
 // 
@@ -133,6 +135,9 @@ private:
 		SYNC_CLOCKFASTER,
 		SYNC_SYNC,
 	};
+
+	bool bSeeking = false;
+	double seekingTargetPts = 0.0;
 
 #pragma endregion
 
@@ -232,11 +237,50 @@ private:
 
 #pragma endregion
 
+	inline std::wstring GetErrorStr(int errnum) {
+		auto buf = new char[AV_ERROR_MAX_STRING_SIZE];
+
+		av_make_error_string(buf, AV_ERROR_MAX_STRING_SIZE, errnum);
+
+		auto result = ConvertStrToWStr(buf);
+
+		delete[] buf;
+
+		return result;
+	}
+
+	inline const AVInputFormat* init_Probe(BYTE* pBuffer, size_t bfSz, LPCSTR pFileName) {		
+		AVProbeData probeData = { 0 };
+		probeData.buf = pBuffer;
+		//probeData.buf_size = bfSz;
+		probeData.buf_size = min(MEM_BUFFER_SIZE, bfSz);
+		probeData.filename = pFileName;
+
+		// Determine the input-format:
+		while (true) {
+			auto iformat = av_probe_input_format(&probeData, 1);
+
+			if (iformat != nullptr) {
+				return iformat;
+			}
+
+			if (size_t(probeData.buf_size + 1) > bfSz) {
+				throw FFMpegException_InitFailed;
+			}
+
+			probeData.buf_size = min(size_t(2 * probeData.buf_size), bfSz);
+		}
+
+		return nullptr;
+	}
+
 	inline void init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
 		*pFormatContext = avformat_alloc_context();
 		if (!*pFormatContext) {
 			throw FFMpegException_InitFailed;
 		}
+		
+		//auto iformat = init_Probe(nullptr, 0, ConvertWStrToStr(filePath, CP_UTF8).c_str());
 
 		// convert to UTF-8 to avoid crash in some versions
 		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), NULL, NULL) != 0) {
@@ -306,6 +350,8 @@ private:
 	inline void init_general() {
 #pragma region FFMpegInit
 		// find stream
+		pFormatContext->probesize = PROBE_SIZE;
+
 		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
 			throw FFMpegException_InitFailed;
 		}
@@ -361,6 +407,9 @@ private:
 		if (avcodec_parameters_to_context(pVCodecContext, pVCodecParameters) < 0) {
 			throw FFMpegException_InitFailed;
 		}
+
+		pVCodecContext->thread_count = std::thread::hardware_concurrency();
+		pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 
 		if (avcodec_open2(pVCodecContext, pVCodec, NULL) < 0) {
 			throw FFMpegException_InitFailed;
@@ -601,18 +650,22 @@ private:
 		int loaclStride = 0;
 		int loaclHeight = 0;
 
+		this->bSeeking = true;
+		this->seekingTargetPts = targetPts;
+
+		//int count = 0;
+
 		while (av_read_frame(pFormatContext, pPacket) >= 0) {
 			// if it's the video stream
 			if (pPacket->stream_index == video_stream_index) {
 				// decode
-				//response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
 				response = decode_vpacket(pPacket, pCodecContext, pFrame
 					, [&](const unsigned char* pData, const int stride, const int height) {
 						loaclStride = stride;
-						loaclHeight = height;					
+						loaclHeight = height;
 					});
 
-				// wait until receive enough frames
+				// wait until receive enough packets
 				if (response == AVERROR(EAGAIN)) {
 					continue;
 				}
@@ -621,10 +674,14 @@ private:
 
 				// goto target
 				if (videoClock >= targetPts) { break; }
+
+				//count++;
 			}
 
 			av_packet_unref(pPacket);
 		}
+
+		this->bSeeking = false;
 
 		av_frame_free(&pFrame);
 		av_packet_free(&pPacket);
@@ -881,7 +938,10 @@ private:
 				}
 #endif
 
-				covertData(pFrame, callBack);
+				if (!bSeeking
+					|| (bSeeking && (videoClock >= seekingTargetPts))) {
+					covertData(pFrame, callBack);
+				}				
 
 				av_frame_unref(pFrame);
 			}
@@ -1263,6 +1323,9 @@ public:
 		if (avcodec_parameters_to_context(pCodecContext, pVCodecParameters) < 0) {
 			return -1;
 		}
+
+		pCodecContext->thread_count = std::thread::hardware_concurrency();
+		pCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 
 		if (avcodec_open2(pCodecContext, pVCodec, NULL) < 0) {
 			return -1;

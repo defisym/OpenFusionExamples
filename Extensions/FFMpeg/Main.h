@@ -36,7 +36,9 @@
 #define	ACT_ACTION_CACHEV				10
 #define	ACT_ACTION_ERASEV				11
 
-#define	ACT_LAST						12
+#define	ACT_ACTION_OVT					12
+
+#define	ACT_LAST						13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
