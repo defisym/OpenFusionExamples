@@ -97,7 +97,7 @@ constexpr auto PIXEL_BYTE = 3;
 //#define _HW_DECODE
 
 #ifdef _HW_DECODE
-static enum AVPixelFormat hw_pix_fmt_global;
+static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
@@ -169,8 +169,13 @@ private:
 	bool bHWFallback = false;
 
 	AVBufferRef* hw_device_ctx = nullptr;
-	AVHWDeviceType hw_type;
-	AVPixelFormat hw_pix_fmt;
+	//AVHWDeviceType hw_type= AV_HWDEVICE_TYPE_CUDA;
+	//AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_DXVA2;
+	//AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_QSV;
+	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
+	//AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_OPENCL;
+	//AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_VULKAN;
+	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
 #endif //  _HW_DECODE
 
 	const AVCodec* pVCodec = NULL;
@@ -261,25 +266,31 @@ private:
 #pragma endregion
 
 #ifdef _HW_DECODE
-	inline AVHWDeviceType HW_GetDevideType() {
+	inline std::vector<AVHWDeviceType> HW_GetDevideType() {
 		auto type = AV_HWDEVICE_TYPE_NONE;
+
+		std::vector<AVHWDeviceType> types;
 
 		while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE) {
 			auto pName = av_hwdevice_get_type_name(type);
 
-			// return first valid
-			return type;
+			// valid
+			types.emplace_back(type);
 		}
 
-		return type;
+		if (types.empty()) {
+			types.emplace_back(AV_HWDEVICE_TYPE_NONE);
+		}
+
+		return types;
 	}
 
-	inline AVPixelFormat HW_GetPiexlFormat(const AVCodec* pCodec, AVHWDeviceType type) {
+	inline AVPixelFormat HW_GetPixelFormat(const AVCodec* pCodec, AVHWDeviceType type) {
 		for (int i = 0;; i++) {
 			const AVCodecHWConfig* config = avcodec_get_hw_config(pCodec, i);
 			if (!config) {
 				// Decoder does not support device type
-				throw FFMpegException_HWInitFailed;
+				return AV_PIX_FMT_NONE;
 			}
 
 			if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
@@ -466,10 +477,26 @@ private:
 		pVideoStream = pFormatContext->streams[video_stream_index];
 		pVCodecParameters = pFormatContext->streams[video_stream_index]->codecpar;
 
-
 #ifdef _HW_DECODE
-		hw_type = HW_GetDevideType();
-		hw_pix_fmt = HW_GetPiexlFormat(pVCodec, hw_type);
+		hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
+
+		if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+			auto hw_types = HW_GetDevideType();
+
+			for (auto& type : hw_types) {
+				hw_type = type;
+				hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
+
+				if (hw_pix_fmt != AV_PIX_FMT_NONE) {
+					break;
+				}
+			}
+
+			if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+				throw FFMpegException_HWInitFailed;
+			}
+		}
+
 		hw_pix_fmt_global = hw_pix_fmt;
 #endif
 
@@ -486,6 +513,7 @@ private:
 		pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 
 #ifdef _HW_DECODE
+		//pVCodecContext->extra_hw_frames = 4;
 		pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
 			const enum AVPixelFormat* p;
 
