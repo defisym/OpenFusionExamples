@@ -107,6 +107,7 @@ short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long pa
 
 	auto pEffect = (CEffectEx*)pObject->ros.rsEffectParam;
 	auto paramType = rdPtr->pEffectUtilities->GetParamType(pEffect, pParamName);
+
 	if (paramType != EFFECTPARAM_SURFACE) {
 		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, &param);
 	}

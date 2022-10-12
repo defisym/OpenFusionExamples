@@ -135,6 +135,17 @@ public:
 		}
 	}
 
+	inline static bool CEffectExValid(CEffectEx* pEffect) {
+		__try {
+			auto flags = pEffect->GetFlags();
+
+			return true;
+		}
+		__except (1) {
+			return false;
+		}
+	}
+
 	inline static bool EffectShader(DWORD effect) {
 		// if so, EffectParam is now the pointer to CEffectEx
 		return (effect & EFFECT_MASK) == BOP_EFFECTEX;
@@ -476,5 +487,5 @@ public:
 
 			SetParamCore(pEffect, i, curParam.type, pParam);
 		}
-	}	
+	}		
 };
