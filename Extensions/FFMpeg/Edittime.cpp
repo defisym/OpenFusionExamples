@@ -43,6 +43,9 @@ enum {
 	PROPID_AUDIOQUEUESIZE_EDITNUMBER,
 	PROPID_VIDEOQUEUESIZE_EDITNUMBER,
 
+	PROPID_HWDECODE_TEXTTITLE,
+
+	PROPID_HWDECODE_DEVICE_COMBO,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -53,6 +56,25 @@ enum {
 //	MAKEINTRESOURCE(IDS_THIRDOPTION),	
 //	NULL
 //};
+
+LPCWSTR HWDecode_ComboList[] = {
+	0,	// reserved
+	
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_NONE           ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_VDPAU          ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_CUDA           ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_VAAPI          ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_DXVA2          ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_QSV            ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_VIDEOTOOLBOX   ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_D3D11VA        ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_DRM            ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_OPENCL         ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_MEDIACODEC     ),
+	MAKEINTRESOURCE(COMBO_AV_HWDEVICE_TYPE_VULKAN         ),
+	
+	NULL
+};
 
 // Property definitions
 //
@@ -84,7 +106,9 @@ PropData Properties[] = {
 	PropData_EditNumber(PROPID_AUDIOQUEUESIZE_EDITNUMBER, IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER, IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER_INFO),
 	PropData_EditNumber(PROPID_VIDEOQUEUESIZE_EDITNUMBER, IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER, IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO),
 
+	PropData_Group(PROPID_HWDECODE_TEXTTITLE, IDS_PROP_HWDECODE_TEXTTITLE, IDS_PROP_HWDECODE_TEXTTITLE),
 
+	PropData_ComboBox(PROPID_HWDECODE_DEVICE_COMBO,	IDS_PROP_HWDECODE_DEVICE_COMBO,	IDS_PROP_HWDECODE_DEVICE_COMBO_INFO, HWDecode_ComboList),
 
 	// End of table (required)
 	PropData_End()
@@ -377,6 +401,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->bAccurateSeek = true;
 
 		edPtr->bCache = false;
+
+		edPtr->hwDeviceType= (AVHWDeviceType)AV_HWDEVICE_TYPE_NONE;
 
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -759,6 +785,9 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		 return new CPropDWordValue(edPtr->audioQSize);
 	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
 		return new CPropDWordValue(edPtr->videoQSize);
+
+	case PROPID_HWDECODE_DEVICE_COMBO:
+		return new CPropDWordValue(edPtr->hwDeviceType);
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -852,6 +881,11 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
 		edPtr->videoQSize = max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+		break;
+
+	case PROPID_HWDECODE_DEVICE_COMBO:
+		edPtr->hwDeviceType = (AVHWDeviceType)((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	}
 

@@ -239,16 +239,16 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	*rdPtr->pFilePath = L"";
 }
 
-inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, size_t ms = 0) {
+inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, DWORD flag = FFMpegFlag_Default, size_t ms = 0) {
 	CloseGeneral(rdPtr);
 
 	try {
 		if (StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath);
+			rdPtr->pFFMpeg = new FFMpeg(filePath, flag);
 		}
 		else {
 			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength());
+			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), flag);
 		}
 
 		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);

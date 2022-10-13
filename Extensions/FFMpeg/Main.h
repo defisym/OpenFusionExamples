@@ -87,8 +87,10 @@ typedef struct tagEDATA_V1
 
 	bool bCache;
 
+	AVHWDeviceType hwDeviceType;
+
 	bool bBuffer[3];
-	int buffer[48];
+	int buffer[47];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -161,6 +163,8 @@ typedef struct tagRDATA
 
 	bool bCache;
 	GlobalData* pData;
+
+	AVHWDeviceType hwDeviceType;
 
 	std::wstring* pRetStr;
 

@@ -52,7 +52,7 @@ short actionsInfos[]=
 		IDMN_ACTION_CACHEV, M_ACTION_CACHEV, ACT_ACTION_CACHEV,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FILEPATH, M_KEY,
 		IDMN_ACTION_ERASEV, M_ACTION_ERASEV, ACT_ACTION_ERASEV,	0, 1, PARAM_EXPSTRING, M_FILEPATH,
 
-		IDMN_ACTION_OVT, M_ACTION_OVT, ACT_ACTION_OVT,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_FILEPATH, M_KEY, 0,
+		IDMN_ACTION_OVT, M_ACTION_OVT, ACT_ACTION_OVT,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_FILEPATH, M_KEY, M_POSITION,
 		};
 
 // Definitions of parameters for each expression
@@ -119,7 +119,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	OpenGeneral(rdPtr, filePath, key);
+	OpenGeneral(rdPtr, filePath, key, rdPtr->hwDeviceType);
 
 	return 0;
 }
@@ -129,7 +129,7 @@ short WINAPI DLLExport Action_OpenVideoTo(LPRDATA rdPtr, long param1, long param
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	size_t msRaw = (size_t)CNC_GetIntParameter(rdPtr);
 
-	OpenGeneral(rdPtr, filePath, key, msRaw);
+	OpenGeneral(rdPtr, filePath, key, rdPtr->hwDeviceType, msRaw);
 
 	return 0;
 }

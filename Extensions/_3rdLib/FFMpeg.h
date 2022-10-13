@@ -94,11 +94,16 @@ constexpr auto PIXEL_FORMAT = AV_PIX_FMT_BGR24;
 constexpr auto PIXEL_BYTE = 3;
 #endif
 
-//#define _HW_DECODE
+#define _HW_DECODE
 
 #ifdef _HW_DECODE
 static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
+
+constexpr auto FFMpegFlag_Default = 0;
+
+constexpr auto FFMpegFlag_HWDeviceMask = 0xFFFF;
+constexpr auto FFMpegFlag_Flag2_Fast = (0x0001) << 16;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
@@ -152,6 +157,8 @@ private:
 #pragma endregion
 
 #pragma region FFMpeg
+	DWORD flag = FFMpegFlag_Default;
+
 	bool bFromMem = false;
 	bool bNoAudio = false;
 
@@ -194,6 +201,8 @@ private:
 	AVFrame* pAFrame = nullptr;
 
 #ifdef _HW_DECODE
+	bool bHWDecode = false;
+
 	AVFrame* pSWFrame = nullptr;
 #endif // _HW_DECODE
 
@@ -266,7 +275,7 @@ private:
 #pragma endregion
 
 #ifdef _HW_DECODE
-	inline std::vector<AVHWDeviceType> HW_GetDevideType() {
+	inline std::vector<AVHWDeviceType> HW_GetDeviceType() {
 		auto type = AV_HWDEVICE_TYPE_NONE;
 
 		std::vector<AVHWDeviceType> types;
@@ -478,26 +487,33 @@ private:
 		pVCodecParameters = pFormatContext->streams[video_stream_index]->codecpar;
 
 #ifdef _HW_DECODE
-		hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
+		bHWDecode = (flag & FFMpegFlag_HWDeviceMask) != AV_HWDEVICE_TYPE_NONE;
 
-		if (hw_pix_fmt == AV_PIX_FMT_NONE) {
-			auto hw_types = HW_GetDevideType();
-
-			for (auto& type : hw_types) {
-				hw_type = type;
-				hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
-
-				if (hw_pix_fmt != AV_PIX_FMT_NONE) {
-					break;
-				}
-			}
+		if (bHWDecode) {
+			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
 
 			if (hw_pix_fmt == AV_PIX_FMT_NONE) {
-				throw FFMpegException_HWInitFailed;
-			}
+				auto hw_types = HW_GetDeviceType();
+
+				for (auto& type : hw_types) {
+					hw_type = type;
+					hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
+
+					if (hw_pix_fmt != AV_PIX_FMT_NONE) {
+						break;
+					}
+				}
+
+				if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+					//throw FFMpegException_HWInitFailed;
+					bHWDecode = false;
+				}
+			}			
 		}
 
-		hw_pix_fmt_global = hw_pix_fmt;
+		if (bHWDecode) {
+			hw_pix_fmt_global = hw_pix_fmt;
+		}
 #endif
 
 		pVCodecContext = avcodec_alloc_context3(pVCodec);
@@ -513,23 +529,25 @@ private:
 		pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 
 #ifdef _HW_DECODE
-		//pVCodecContext->extra_hw_frames = 4;
-		pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
-			const enum AVPixelFormat* p;
+		if (bHWDecode) {
+			//pVCodecContext->extra_hw_frames = 4;
+			pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
+				const enum AVPixelFormat* p;
 
-			for (p = pix_fmts; *p != -1; p++) {
-				if (*p == hw_pix_fmt_global) {
-					return *p;
+				for (p = pix_fmts; *p != -1; p++) {
+					if (*p == hw_pix_fmt_global) {
+						return *p;
+					}
 				}
+
+				//fprintf(stderr, "Failed to get HW surface format.\n");
+
+				return AV_PIX_FMT_NONE;
+			};
+
+			if (HW_InitDecoder(pVCodecContext, hw_type) < 0) {
+				throw FFMpegException_HWInitFailed;
 			}
-
-			//fprintf(stderr, "Failed to get HW surface format.\n");
-
-			return AV_PIX_FMT_NONE;
-		};
-
-		if (HW_InitDecoder(pVCodecContext, hw_type) < 0) {
-			throw FFMpegException_HWInitFailed;
 		}
 #endif
 
@@ -614,9 +632,11 @@ private:
 		}
 
 #ifdef _HW_DECODE
-		pSWFrame = av_frame_alloc();
-		if (!pSWFrame) {
-			throw FFMpegException_InitFailed;
+		if (bHWDecode) {
+			pSWFrame = av_frame_alloc();
+			if (!pSWFrame) {
+				throw FFMpegException_InitFailed;
+			}
 		}
 #endif // _HW_DECODE
 
@@ -1041,7 +1061,9 @@ private:
 			else if (response < 0) {
 				av_frame_unref(pFrame);
 #ifdef _HW_DECODE
-				av_frame_unref(pSWFrame);
+				if (bHWDecode) {
+					av_frame_unref(pSWFrame);
+				}
 #endif // _HW_DECODE
 
 				return response;
@@ -1087,14 +1109,16 @@ private:
 					auto pFrameToConvert = pFrame;
 
 #ifdef _HW_DECODE
-					if (pFrame->format == hw_pix_fmt) {
-						/* retrieve data from GPU to CPU */
-						if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
-							//fprintf(stderr, "Error transferring the data to system memory\n");
-							throw FFMpegException_HWDecodeFailed;
-						}
+					if (bHWDecode) {
+						if (pFrame->format == hw_pix_fmt) {
+							/* retrieve data from GPU to CPU */
+							if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
+								//fprintf(stderr, "Error transferring the data to system memory\n");
+								throw FFMpegException_HWDecodeFailed;
+							}
 
-						pFrameToConvert = pSWFrame;
+							pFrameToConvert = pSWFrame;
+						}
 					}
 #endif
 
@@ -1278,8 +1302,9 @@ private:
 	}
 public:
 	//Load from file
-	FFMpeg(const std::wstring& filePath) {
+	FFMpeg(const std::wstring& filePath, DWORD flag = FFMpegFlag_Default) {
 		bFromMem = false;
+		this->flag = flag;
 
 		init_formatContext(&pFormatContext, filePath);
 		init_formatContext(&pSeekFormatContext, filePath);
@@ -1289,8 +1314,9 @@ public:
 
 	//Load from memory
 	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
-	FFMpeg(unsigned char* pBuffer, size_t bfSz) {
+	FFMpeg(unsigned char* pBuffer, size_t bfSz, DWORD flag = FFMpegFlag_Default) {
 		bFromMem = true;
+		this->flag = flag;
 
 		init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz);
 		init_formatContext(&pSeekFormatContext, &pSeekAvioContext, &pSeekMemBuf, pBuffer, bfSz);
@@ -1333,7 +1359,9 @@ public:
 		av_frame_free(&pAFrame);
 
 #ifdef _HW_DECODE
-		av_frame_free(&pSWFrame);
+		if (bHWDecode) {
+			av_frame_free(&pSWFrame);
+		}
 #endif // _HW_DECODE		
 
 		sws_freeContext(swsContext);
@@ -1348,7 +1376,9 @@ public:
 		avformat_close_input(&pSeekFormatContext);
 
 #ifdef _HW_DECODE
-		av_buffer_unref(&hw_device_ctx);
+		if (bHWDecode) {
+			av_buffer_unref(&hw_device_ctx);
+		}
 #endif // _HW_DECODE		
 
 		if (bFromMem) {
@@ -1508,13 +1538,18 @@ public:
 		}
 
 #ifdef _HW_DECODE
-		AVFrame* pLocalSWFrame = av_frame_alloc();
-		if (!pLocalSWFrame) {
-			return -1;
-		}
+		AVFrame* pLocalSWFrame = nullptr;
+		AVFrame* pOldSWFrame = nullptr;
 
-		auto pOldSWFrame = pSWFrame;
-		pSWFrame = pLocalSWFrame;
+		if (bHWDecode) {
+			AVFrame* pLocalSWFrame = av_frame_alloc();
+			if (!pLocalSWFrame) {
+				return -1;
+			}
+
+			auto pOldSWFrame = pSWFrame;
+			pSWFrame = pLocalSWFrame;
+		}
 #endif // _HW_DECODE
 
 		response = seekFrame(pSeekFormatContext, video_stream_index, ms);
@@ -1564,8 +1599,10 @@ public:
 		videoPts = oldPts;
 
 #ifdef _HW_DECODE
-		pSWFrame = pOldSWFrame;
-		av_frame_free(&pLocalSWFrame);
+		if (bHWDecode) {
+			pSWFrame = pOldSWFrame;
+			av_frame_free(&pLocalSWFrame);
+		}
 #endif // _HW_DECODE
 
 		av_frame_free(&pFrame);

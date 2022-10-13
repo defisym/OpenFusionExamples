@@ -42,6 +42,25 @@
 #define	IDS_PROP_CACHE_CHECK			            214
 #define	IDS_PROP_CACHE_CHECK_INFO    				215
 
+#define	IDS_PROP_HWDECODE_TEXTTITLE    				216
+
+#define	IDS_PROP_HWDECODE_DEVICE_COMBO 				217
+#define	IDS_PROP_HWDECODE_DEVICE_COMBO_INFO			218
+
+#define COMBO_AV_HWDEVICE_TYPE_NONE                       219
+#define COMBO_AV_HWDEVICE_TYPE_VDPAU                      220
+#define COMBO_AV_HWDEVICE_TYPE_CUDA                       221
+#define COMBO_AV_HWDEVICE_TYPE_VAAPI                      222
+#define COMBO_AV_HWDEVICE_TYPE_DXVA2                      223
+#define COMBO_AV_HWDEVICE_TYPE_QSV                        224
+#define COMBO_AV_HWDEVICE_TYPE_VIDEOTOOLBOX               225
+#define COMBO_AV_HWDEVICE_TYPE_D3D11VA                    226
+#define COMBO_AV_HWDEVICE_TYPE_DRM                        227
+#define COMBO_AV_HWDEVICE_TYPE_OPENCL                     228
+#define COMBO_AV_HWDEVICE_TYPE_MEDIACODEC                 229
+#define COMBO_AV_HWDEVICE_TYPE_VULKAN                     230
+
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
