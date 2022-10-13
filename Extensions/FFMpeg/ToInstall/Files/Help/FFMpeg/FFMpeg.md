@@ -6,7 +6,7 @@ FFMpeg object for fusion.
 
 Talking about the ADS...Tired about the uncontrollable gap before playing? Don't want the micro-stuttering when VSync is on? Want to play other formats like mp4? Need to protect your precious cut scenes? Then try this object!
 
-Special thanks to @SelfReflection31, who help a lot to polishing this extension.
+Special thanks to @SelfReflection31 (From Github) and @Ruthoranium (From Discord), who help a lot to polishing this extension.
 
 This object is based on cross platform lib, FFMpeg & SDL, in theory there is not too difficult to bring it to other platforms like Android.
 

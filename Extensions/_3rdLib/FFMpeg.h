@@ -487,9 +487,12 @@ private:
 		pVCodecParameters = pFormatContext->streams[video_stream_index]->codecpar;
 
 #ifdef _HW_DECODE
-		bHWDecode = (flag & FFMpegFlag_HWDeviceMask) != AV_HWDEVICE_TYPE_NONE;
+		auto hw_deviceType = (AVHWDeviceType)(flag & FFMpegFlag_HWDeviceMask);
+
+		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
 
 		if (bHWDecode) {
+			hw_type = hw_deviceType;
 			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
 
 			if (hw_pix_fmt == AV_PIX_FMT_NONE) {
@@ -526,7 +529,10 @@ private:
 		}
 
 		pVCodecContext->thread_count = std::thread::hardware_concurrency();
-		pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
+
+		if (flag & FFMpegFlag_Flag2_Fast) {
+			pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
+		}
 
 #ifdef _HW_DECODE
 		if (bHWDecode) {
@@ -546,7 +552,8 @@ private:
 			};
 
 			if (HW_InitDecoder(pVCodecContext, hw_type) < 0) {
-				throw FFMpegException_HWInitFailed;
+				//throw FFMpegException_HWInitFailed;
+				bHWDecode = false;
 			}
 		}
 #endif
