@@ -24,8 +24,11 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->rHo.hoImgXSpot = 0;
 		rdPtr->rHo.hoImgYSpot = 0;
 
-		rdPtr->rHo.hoImgWidth = rdPtr->pMemSf->GetWidth();
-		rdPtr->rHo.hoImgHeight = rdPtr->pMemSf->GetHeight();
+		//rdPtr->rHo.hoImgWidth = rdPtr->pMemSf->GetWidth();
+		//rdPtr->rHo.hoImgHeight = rdPtr->pMemSf->GetHeight();
+
+		rdPtr->rHo.hoImgWidth = rdPtr->swidth;
+		rdPtr->rHo.hoImgHeight = rdPtr->sheight;
 
 		rdPtr->bChanged = true;
 	}

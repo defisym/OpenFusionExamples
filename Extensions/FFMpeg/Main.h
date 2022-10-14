@@ -43,7 +43,9 @@
 
 #define	ACT_ACTION_SHDE					13
 
-#define	ACT_LAST						14
+#define	ACT_ACTION_STRETCH				14
+
+#define	ACT_LAST						15
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

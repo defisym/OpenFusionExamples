@@ -60,6 +60,8 @@ short actionsInfos[]=
 		IDMN_ACTION_OVT, M_ACTION_OVT, ACT_ACTION_OVT,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_FILEPATH, M_KEY, M_POSITION,
 		
 		IDMN_ACTION_SHDE, M_ACTION_SHDE, ACT_ACTION_SHDE, 0, 1, PARAM_EXPSTRING, M_HWDECODEDEVICE,
+		
+		IDMN_ACTION_STRETCH, M_ACTION_STRETCH, ACT_ACTION_STRETCH, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		};
 
 // Definitions of parameters for each expression
@@ -299,6 +301,25 @@ short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
+
+short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+	
+	rdPtr->swidth = max(0, width);
+	rdPtr->sheight = max(0, height);
+	
+	rdPtr->bStretch = true;
+
+	if (rdPtr->pFFMpeg != nullptr) {
+		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+	}
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -433,6 +454,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_OpenVideoTo,
 
 			Action_SetHWDevice,
+
+			Action_Stretch,
 
 			0
 			};

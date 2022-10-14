@@ -93,6 +93,8 @@
 
 #define IDMN_ACTION_SHDE       		25013
 
+#define IDMN_ACTION_STRETCH    		25014
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -115,6 +117,8 @@
 
 #define M_ACTION_SHDE      		    5013
 
+#define M_ACTION_STRETCH  		    5014
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -127,6 +131,8 @@
 #define M_VIDEOQUEUESIZE	     5509
 #define M_ACCURATESEEK		     5510
 #define M_HWDECODEDEVICE		 5511
+#define M_WIDTH		             5512
+#define M_HEIGHT		         5513
 
 
 //	Conditions
