@@ -14,7 +14,10 @@
 #define CND_CONDITION_OVF				4
 #define CND_CONDITION_OVOF				5
 
-#define	CND_LAST						6
+#define CND_CONDITION_VHD				6
+#define CND_CONDITION_VWHD				7
+
+#define	CND_LAST						8
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -38,7 +41,9 @@
 
 #define	ACT_ACTION_OVT					12
 
-#define	ACT_LAST						13
+#define	ACT_ACTION_SHDE					13
+
+#define	ACT_LAST						14
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -57,7 +62,11 @@
 #define EXP_EXPRESSION_GVL				8
 #define EXP_EXPRESSION_GVF				9
 
-#define	EXP_LAST                    	10
+#define EXP_EXPRESSION_GHDS 			10
+#define EXP_EXPRESSION_GAHDE 			11
+#define EXP_EXPRESSION_GWHDE 			12
+
+#define	EXP_LAST                    	13
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

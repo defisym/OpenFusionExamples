@@ -18,6 +18,7 @@
 #include "MemBuf.h"
 #include "PacketQueue.h"
 #include "WindowsCommon.h"
+#include "GeneralDefinition.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -1441,6 +1442,87 @@ public:
 
 	inline int get_height() {
 		return pVideoStream->codecpar->height;
+	}
+
+	inline bool get_hwDecodeState() {
+		return bHWDecode;
+	}
+
+	inline const wchar_t* get_hwDeviceName() {
+		return get_hwDeviceNameByType(bHWDecode ? hw_type : AV_HWDEVICE_TYPE_NONE);
+	}
+
+	inline static const wchar_t* get_hwDeviceNameByType(AVHWDeviceType type) {
+		switch (type)
+		{
+		case AV_HWDEVICE_TYPE_NONE:
+			return L"NONE";
+		case AV_HWDEVICE_TYPE_VDPAU:
+			return L"VDPAU";
+		case AV_HWDEVICE_TYPE_CUDA:
+			return L"CUDA";
+		case AV_HWDEVICE_TYPE_VAAPI:
+			return L"VAAPI";
+		case AV_HWDEVICE_TYPE_DXVA2:
+			return L"DXVA2";
+		case AV_HWDEVICE_TYPE_QSV:
+			return L"QSV";
+		case AV_HWDEVICE_TYPE_VIDEOTOOLBOX:
+			return L"VIDEOTOOLBOX";
+		case AV_HWDEVICE_TYPE_D3D11VA:
+			return L"D3D11VA";
+		case AV_HWDEVICE_TYPE_DRM:
+			return L"DRM";
+		case AV_HWDEVICE_TYPE_OPENCL:
+			return L"OPENCL";
+		case AV_HWDEVICE_TYPE_MEDIACODEC:
+			return L"MEDIACODEC";
+		case AV_HWDEVICE_TYPE_VULKAN:
+			return L"VULKAN";
+		default:
+			return L"NONE";
+		}
+	}
+
+	inline static const AVHWDeviceType get_hwDeviceTypeByName(std::wstring& deviceName) {
+		if (StrIEqu(deviceName.c_str(), L"NONE")) {
+			return AV_HWDEVICE_TYPE_NONE;
+		}
+		if (StrIEqu(deviceName.c_str(), L"VDPAU")) {
+			return AV_HWDEVICE_TYPE_VDPAU;
+		}
+		if (StrIEqu(deviceName.c_str(), L"CUDA")) {
+			return AV_HWDEVICE_TYPE_CUDA;
+		}
+		if (StrIEqu(deviceName.c_str(), L"VAAPI")) {
+			return AV_HWDEVICE_TYPE_VAAPI;
+		}
+		if (StrIEqu(deviceName.c_str(), L"DXVA2")) {
+			return AV_HWDEVICE_TYPE_DXVA2;
+		}
+		if (StrIEqu(deviceName.c_str(), L"QSV")) {
+			return AV_HWDEVICE_TYPE_QSV;
+		}
+		if (StrIEqu(deviceName.c_str(), L"VIDEOTOOLBOX")) {
+			return AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
+		}
+		if (StrIEqu(deviceName.c_str(), L"D3D11VA")) {
+			return AV_HWDEVICE_TYPE_D3D11VA;
+		}
+		if (StrIEqu(deviceName.c_str(), L"DRM")) {
+			return AV_HWDEVICE_TYPE_DRM;
+		}
+		if (StrIEqu(deviceName.c_str(), L"OPENCL")) {
+			return AV_HWDEVICE_TYPE_OPENCL;
+		}
+		if (StrIEqu(deviceName.c_str(), L"MEDIACODEC")) {
+			return AV_HWDEVICE_TYPE_MEDIACODEC;
+		}
+		if (StrIEqu(deviceName.c_str(), L"VULKAN")) {
+			return AV_HWDEVICE_TYPE_VULKAN;
+		}
+
+		return AV_HWDEVICE_TYPE_NONE;
 	}
 
 	//Set

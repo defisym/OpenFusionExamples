@@ -29,6 +29,11 @@ short conditionsInfos[]=
 		
 		IDMN_CONDITION_OVF, M_CONDITION_OVF, CND_CONDITION_OVF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
 		IDMN_CONDITION_OVOF, M_CONDITION_OVOF, CND_CONDITION_OVOF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
+
+		// object
+		IDMN_CONDITION_VHD, M_CONDITION_VHD, CND_CONDITION_VHD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_VWHD, M_CONDITION_VWHD, CND_CONDITION_VWHD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -53,6 +58,8 @@ short actionsInfos[]=
 		IDMN_ACTION_ERASEV, M_ACTION_ERASEV, ACT_ACTION_ERASEV,	0, 1, PARAM_EXPSTRING, M_FILEPATH,
 
 		IDMN_ACTION_OVT, M_ACTION_OVT, ACT_ACTION_OVT,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_FILEPATH, M_KEY, M_POSITION,
+		
+		IDMN_ACTION_SHDE, M_ACTION_SHDE, ACT_ACTION_SHDE, 0, 1, PARAM_EXPSTRING, M_HWDECODEDEVICE,
 		};
 
 // Definitions of parameters for each expression
@@ -71,6 +78,10 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GVPLAY, M_EXPRESSION_GVPLAY, EXP_EXPRESSION_GVPLAY, 0, 0,
 		IDMN_EXPRESSION_GVL, M_EXPRESSION_GVL, EXP_EXPRESSION_GVL, 0, 0,
 		IDMN_EXPRESSION_GVF, M_EXPRESSION_GVF, EXP_EXPRESSION_GVF, 0, 0,
+
+		IDMN_EXPRESSION_GHDS, M_EXPRESSION_GHDS, EXP_EXPRESSION_GHDS, 0, 0,
+		IDMN_EXPRESSION_GAHDE, M_EXPRESSION_GAHDE, EXP_EXPRESSION_GAHDE, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GWHDE, M_EXPRESSION_GWHDE, EXP_EXPRESSION_GWHDE, EXPFLAG_STRING, 0,
 		};
 
 
@@ -107,6 +118,14 @@ long WINAPI DLLExport Condition_OnVideoOpenFailed(LPRDATA rdPtr, long param1, lo
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
 	return *rdPtr->pFilePath == filePath;
+}
+
+long WINAPI DLLExport Condition_VideoHardwareDecode(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_hwDecodeState();
+}
+
+long WINAPI DLLExport Condition_VideoWantedHardwareDecode(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->hwDeviceType != AV_HWDEVICE_TYPE_NONE;
 }
 
 // ============================================================================
@@ -272,6 +291,14 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring deviceName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->hwDeviceType = FFMpeg::get_hwDeviceTypeByName(deviceName);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -341,6 +368,24 @@ long WINAPI DLLExport Expression_GetVideoFinish(LPRDATA rdPtr, long param1) {
 	return GetVideoFinishState(rdPtr);
 }
 
+long WINAPI DLLExport Expression_GetHardwareDecodeState(LPRDATA rdPtr, long param1) {
+	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_hwDecodeState();
+}
+
+long WINAPI DLLExport Expression_GetActualHardwareDevice(LPRDATA rdPtr, long param1) {
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	return (long)(rdPtr->pFFMpeg == nullptr
+		? L"NOOBJECT"
+		: rdPtr->pFFMpeg->get_hwDeviceName());
+}
+
+long WINAPI DLLExport Expression_GetWantedHardwareDevice(LPRDATA rdPtr, long param1) {
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	return (long)FFMpeg::get_hwDeviceNameByType(rdPtr->hwDeviceType);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -358,6 +403,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Condition_OnVideoFinish,
 			Condition_OnVideoOpenFailed,
+
+			Condition_VideoHardwareDecode,
+			Condition_VideoWantedHardwareDecode,
 
 			0
 			};
@@ -384,6 +432,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_OpenVideoTo,
 
+			Action_SetHWDevice,
+
 			0
 			};
 
@@ -402,6 +452,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetVideoPlay,
 			Expression_GetVideoLoop,
 			Expression_GetVideoFinish,
+
+			Expression_GetHardwareDecodeState,
+			Expression_GetActualHardwareDevice,
+			Expression_GetWantedHardwareDevice,
 
 			0
 			};

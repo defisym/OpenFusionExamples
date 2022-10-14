@@ -121,6 +121,9 @@ BEGIN
         MENUITEM "Video Loop",      IDMN_CONDITION_VL
         MENUITEM "Video Finish",    IDMN_CONDITION_VF
         MENUITEM SEPARATOR
+        MENUITEM "Video Hardware Decode", IDMN_CONDITION_VHD	
+        MENUITEM "Wanted Hardware Decode", IDMN_CONDITION_VWHD
+        MENUITEM SEPARATOR
         MENUITEM "On Video Finish", IDMN_CONDITION_OVF
         MENUITEM "On Video Open Failed", IDMN_CONDITION_OVOF
         MENUITEM SEPARATOR
@@ -149,9 +152,10 @@ BEGIN
         MENUITEM "Set Loop",                IDMN_ACTION_SL
         MENUITEM "Set Accurate Seek",       IDMN_ACTION_SAS
         MENUITEM "Set Video Position",      IDMN_ACTION_SP
-        MENUITEM "Set Video Position With Flag",      IDMN_ACTION_SPWF
+        MENUITEM "Set Video Position With Flag", IDMN_ACTION_SPWF
         MENUITEM SEPARATOR
         MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
+        MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
         MENUITEM SEPARATOR
         MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
         MENUITEM "Erase Cached Video",      IDMN_ACTION_ERASEV
@@ -183,6 +187,10 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Current Video Frame Pointer", IDMN_EXPRESSION_GCVFP
         MENUITEM "Get Grabbed Video Frame Pointer", IDMN_EXPRESSION_GGVFP        
+        MENUITEM SEPARATOR
+        MENUITEM "Get Hardware Decode State", IDMN_EXPRESSION_GHDS         
+        MENUITEM "Get Actual Hardware Device", IDMN_EXPRESSION_GAHDE         
+        MENUITEM "Get Wanted Hardware Device", IDMN_EXPRESSION_GWHDE         
         MENUITEM SEPARATOR
     END
 END
@@ -329,6 +337,8 @@ BEGIN
     
     M_ACTION_CACHEV		       "Cache Video %0, Decrypt Key %1"
     M_ACTION_ERASEV		       "Erase Cached Video %0"
+    
+    M_ACTION_SHDE		       "Set Hardware Decode Device to %0"
 
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
@@ -340,17 +350,21 @@ BEGIN
     M_AUDIOQUEUESIZE           "Audio Queue Size"
     M_VIDEOQUEUESIZE           "Video Queue Size"
     M_ACCURATESEEK             "Accurate Seek"
+    M_HWDECODEDEVICE           "Hardware Decode Device"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-   M_CONDITION_VO	           "%o Video Open"
-   M_CONDITION_VP	           "%o Video Play"
-   M_CONDITION_VL	           "%o Video Loop"
-   M_CONDITION_VF	           "%o Video Finish"
+    M_CONDITION_VO	           "%o Video Open"
+    M_CONDITION_VP	           "%o Video Play"
+    M_CONDITION_VL	           "%o Video Loop"
+    M_CONDITION_VF	           "%o Video Finish"
 
-   M_CONDITION_OVF	           "%o On Video %0 Finish"
-   M_CONDITION_OVOF	           "%o On Video %0 Open Failed"
+    M_CONDITION_OVF	           "%o On Video %0 Finish"
+    M_CONDITION_OVOF	       "%o On Video %0 Open Failed"
+    
+    M_CONDITION_VHD	           "%o Video Hardware Decode"
+    M_CONDITION_VWHD           "%o Wanted Hardware Decode"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -368,6 +382,10 @@ BEGIN
     M_EXPRESSION_GVPLAY		"GVPS ("
     M_EXPRESSION_GVL		"GVLS ("
     M_EXPRESSION_GVF		"GVFL ("
+
+    M_EXPRESSION_GHDS 	    "GHDS ("
+    M_EXPRESSION_GAHDE 	    "GAHDE$ ("
+    M_EXPRESSION_GWHDE 	    "GWHDE$ ("
 
     M_HWA                   "Return HWA"
 END
