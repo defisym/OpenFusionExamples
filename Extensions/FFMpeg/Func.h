@@ -185,10 +185,11 @@ inline bool GetVideoPlayState(LPRDATA rdPtr) {
 		return false;
 	}
 
-	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr
-		&& rdPtr->bLoop
-		? true
-		: !rdPtr->pFFMpeg->get_finishState();
+	return rdPtr->bPlay
+		? rdPtr->bLoop
+			? true
+			: !rdPtr->pFFMpeg->get_finishState()
+		: false;
 }
 
 inline bool GetVideoFinishState(LPRDATA rdPtr) {
