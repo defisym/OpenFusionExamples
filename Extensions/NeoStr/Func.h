@@ -61,7 +61,8 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
-		auto cPos = rdPtr->pNeoStr->CalculateRange(rdPtr->pStr->c_str(), &rc);
+		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str());
+		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
 
@@ -105,7 +106,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
-		rdPtr->pNeoStr->RenderPerChar(rdPtr->pStr->c_str(), &rc);
+		rdPtr->pNeoStr->RenderPerChar(&rc);
 
 		rdPtr->reRender = false;
 	}
@@ -145,7 +146,9 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
 
-		neoStr.CalculateRange(&edPtr->pText, rc);
+		//MSGBOX(L"Editor Calc");
+		neoStr.GetFormat(&edPtr->pText);
+		neoStr.CalculateRange(rc);
 
 		neoStr.SetColor(edPtr->dwColor);
 
@@ -159,7 +162,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
 
 		//MSGBOX(L"Editor Render");
-		neoStr.RenderPerChar(&edPtr->pText, rc);
+		neoStr.RenderPerChar(rc);
 
 		//neoStr.SetHotSpot(edPtr->hotSpotPos, edPtr->hotSpotX, edPtr->hotSpotY);
 		neoStr.SetHotSpot(0, 0);
@@ -167,7 +170,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetAngle(0);
 
 		//MSGBOX(L"Editor Display PerChar");
-		neoStr.DisplayPerChar(ps, &edPtr->pText, rc
+		neoStr.DisplayPerChar(ps, rc
 			, bm, bo, boParam, bAntiA);
 
 		// Delete font
@@ -217,7 +220,7 @@ inline void Display(LPRDATA rdPtr) {
 		rdPtr->pNeoStr->SetScale(rdPtr->xScale, rdPtr->yScale);
 		rdPtr->pNeoStr->SetAngle(rdPtr->angle);
 
-		rdPtr->pNeoStr->DisplayPerChar(ps, rdPtr->pStr->c_str(), &rc
+		rdPtr->pNeoStr->DisplayPerChar(ps, &rc
 			, bm, bo, boParam, bAntiA);
 
 		rdPtr->bStrChanged = false;

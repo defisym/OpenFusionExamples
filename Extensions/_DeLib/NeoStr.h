@@ -112,6 +112,11 @@ private:
 	BYTE nShadowOffsetX = 0;
 	BYTE nShadowOffsetY = 0;
 
+	//bool bTextValid = false;
+
+	LPWSTR pRawText = nullptr;
+	LPWSTR pText = nullptr;
+
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
 
@@ -332,6 +337,12 @@ public:
 
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
+
+		delete[] this->pRawText;
+		this->pRawText = nullptr;
+
+		delete[] this->pText;
+		this->pText = nullptr;
 
 		delete[] this->pStrSizeArr;
 		this->pStrSizeArr = nullptr;
@@ -603,7 +614,36 @@ public:
 		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
-	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc) {
+	inline void GetFormat(LPCWSTR pStr) {
+		if (pStr == nullptr) {
+			return;
+		}
+
+		size_t pTextLen = wcslen(pStr);
+
+		if (pTextLen == 0) {
+			return;
+		}
+
+		delete[] this->pRawText;
+		this->pRawText = nullptr;
+
+		delete[] this->pText;
+		this->pText = nullptr;
+
+		this->pRawText = new wchar_t[pTextLen + 1];
+		memset(pRawText, 0, sizeof(wchar_t) * (pTextLen + 1));
+
+		this->pText = new wchar_t[pTextLen + 1];
+		memset(pText, 0, sizeof(wchar_t) * (pTextLen + 1));
+
+		memcpy(pRawText, pStr, sizeof(wchar_t) * (pTextLen + 1));
+		
+		//TODO
+		memcpy(pText, pStr, sizeof(wchar_t) * (pTextLen + 1));
+	}
+
+	inline CharPos CalculateRange(LPRECT pRc) {
 		this->strPos.clear();
 
 		size_t pTextLen = wcslen(pText);
@@ -775,7 +815,7 @@ public:
 		return lastCharPos;
 	}
 
-	inline void RenderPerChar(LPCWSTR pText, LPRECT pRc) {
+	inline void RenderPerChar(LPRECT pRc) {
 		size_t pTextLen = wcslen(pText);
 
 		if (pTextLen == 0) {
@@ -940,7 +980,7 @@ public:
 		pMemSf->Blit(*pHwaSf);
 	}
 
-	inline CharPos GetCharPos(LPCWSTR pText, size_t pos) {
+	inline CharPos GetCharPos(size_t pos) {
 		auto invalid = CharPos { -1, -1, -1, -1 };
 
 		if (pCharPosArr == nullptr) {
@@ -960,7 +1000,7 @@ public:
 		return pCharPosArr [pos];
 	}
 
-	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
+	inline void DisplayPerChar(LPSURFACE pDst, LPRECT pRc
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
 

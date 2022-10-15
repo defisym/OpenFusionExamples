@@ -478,7 +478,7 @@ long WINAPI DLLExport Expression_GetCharX(LPRDATA rdPtr, long param1) {
 
 	UpdateLastCharPos(rdPtr);
 	
-	return rdPtr->pNeoStr->GetCharPos(rdPtr->pStr->c_str(), pos).x;
+	return rdPtr->pNeoStr->GetCharPos(pos).x;
 }
 
 long WINAPI DLLExport Expression_GetCharY(LPRDATA rdPtr, long param1) {
@@ -486,7 +486,7 @@ long WINAPI DLLExport Expression_GetCharY(LPRDATA rdPtr, long param1) {
 
 	UpdateLastCharPos(rdPtr);
 
-	return rdPtr->pNeoStr->GetCharPos(rdPtr->pStr->c_str(), pos).y;
+	return rdPtr->pNeoStr->GetCharPos(pos).y;
 }
 
 // ----------------------------------------------------------
