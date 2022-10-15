@@ -135,13 +135,21 @@ public:
 		}
 	}
 
-	inline static bool CEffectExValid(CEffectEx* pEffect) {
+	// https://www.cnblogs.com/chechen/p/10259592.html
+	inline static bool CEffectExValid(CEffectEx* pEffect) {		
 		__try {
 			auto flags = pEffect->GetFlags();
 
 			return true;
-		}
-		__except (1) {
+		}		
+		__except ([]()->int {
+			auto exceptionCode = GetExceptionCode();
+			if (exceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+				return EXCEPTION_EXECUTE_HANDLER;
+			}
+
+			return EXCEPTION_CONTINUE_SEARCH;
+			}()) {
 			return false;
 		}
 	}
