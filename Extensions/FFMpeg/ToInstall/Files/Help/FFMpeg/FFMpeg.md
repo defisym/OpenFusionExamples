@@ -6,7 +6,7 @@ FFMpeg object for fusion.
 
 Talking about the ADS...Tired about the uncontrollable gap before playing? Don't want the micro-stuttering when VSync is on? Want to play other formats like mp4? Need to protect your precious cut scenes? Then try this object!
 
-Special thanks to @SelfReflection31, who help a lot to polishing this extension.
+Special thanks to @SelfReflection31 (From Github) and @Ruthoranium (From Discord), who help a lot to polishing this extension.
 
 This object is based on cross platform lib, FFMpeg & SDL, in theory there is not too difficult to bring it to other platforms like Android.
 
@@ -38,6 +38,8 @@ Here follows all dlls needed by this object:
 - SDL
   - SDL2.dll
 
+**NOTE:** this object requires `Microsoft Visual C++ Redistributable 2015+` / `MSVCP14x.dll` & `VCRUNTIME14x.dll`
+
 ## Properties
 
 - Options
@@ -65,10 +67,11 @@ Here follows all dlls needed by this object:
   - *If open failed, extension will keep previous frame*
   - *If key is not empty, extension will treat it as an encrypted file. Decode a normal file in encrypted way usually will crash. You can encrypt files by another extension.*
   - *Encrypt & decrypt are based on AES so without your key no one can get your file, unless they dump it from memory.*
-
 - Close Video
+
 - Play Video
 - Pause Video
+
 - Set Volume
   - *volume is kept when opening another video*
 - Set Loop
@@ -88,6 +91,9 @@ Here follows all dlls needed by this object:
     #define AVSEEK_FLAG_FRAME    8 ///< seeking based on frame number
   ```
 
+- Set Queue Size
+  - see Properties->Queue
+
 - Cache Video
   - *decrypt given file then cache it in memory*
 - Erase Cached Video
@@ -95,28 +101,31 @@ Here follows all dlls needed by this object:
   - *the file is using now won't be erased*
   - *input an empty file name will erase all cached file*
 
-- Set Queue Size
-  - see Properties->Queue
-
 ## Condition
 
 - Video Open
 - Video Play
 - Video Loop
 - Video Finish
+
 - On Video Finish
   - immediate event, triggered when video finish playing.
+- On Video Open Failed
+  - immediate event, triggered when video failed to open.
 
 ## Expression
 
 - Get Video Name
 - Get Video Position
 - Get Video Duration
+
 - Get Volume
+
 - Get Video Open State
 - Get Video Play State
 - Get Video Loop State
 - Get Video Finish State
+
 - Get Current Video Frame Pointer
 - Get Grabbed Video Frame Pointer
   - *You can get the cSurface pointer of current frame / frame with given time stamp. Pass it to another extension then do anything you like.*

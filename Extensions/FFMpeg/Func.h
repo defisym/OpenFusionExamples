@@ -24,8 +24,11 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->rHo.hoImgXSpot = 0;
 		rdPtr->rHo.hoImgYSpot = 0;
 
-		rdPtr->rHo.hoImgWidth = rdPtr->pMemSf->GetWidth();
-		rdPtr->rHo.hoImgHeight = rdPtr->pMemSf->GetHeight();
+		//rdPtr->rHo.hoImgWidth = rdPtr->pMemSf->GetWidth();
+		//rdPtr->rHo.hoImgHeight = rdPtr->pMemSf->GetHeight();
+
+		rdPtr->rHo.hoImgWidth = rdPtr->swidth;
+		rdPtr->rHo.hoImgHeight = rdPtr->sheight;
 
 		rdPtr->bChanged = true;
 	}
@@ -61,12 +64,14 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	auto width = pMemSf->GetWidth();
 	auto height = pMemSf->GetHeight();
 
+//#define _MANUAL_PM
+
 	for (int y = 0; y < height; y++) {
 		auto pMemData = sfCoef.pData + y * lineSz;
 		auto pVideo = pData + (height - 1 - y) * srcLineSz;
 
+#ifndef _MANUAL_PM
 		memcpy(pMemData, pVideo, lineSz);
-
 #ifdef _VIDEO_ALPHA
 		// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
 		for (int x = 0; x < width; x++) {
@@ -74,6 +79,31 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 			auto curAlpha = pVideo + (PIXEL_BYTE - 1) + x * PIXEL_BYTE;
 			pAlphaData[0] = *curAlpha;
 		}
+#endif
+#else
+		for (int x = 0; x < width; x++) {
+			auto pVideoData = pVideo + x * PIXEL_BYTE;
+
+			auto pRGBData = pMemData + x * sfCoef.byte;
+			if (!bPm) {
+				pRGBData[0] = pVideoData[0];
+				pRGBData[1] = pVideoData[1];
+				pRGBData[2] = pVideoData[2];
+			}
+			else {
+				auto alphaCoef = pVideoData[3] / 255.0;
+
+				pRGBData[0] = (BYTE)(pVideoData[0] * alphaCoef);
+				pRGBData[1] = (BYTE)(pVideoData[1] * alphaCoef);
+				pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
+			}
+
+#ifdef _VIDEO_ALPHA
+			auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;		
+			pAlphaData[0] = pVideoData[3];
+#endif
+		}
+
 #endif
 	}
 
@@ -83,9 +113,13 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 	ReleaseSfCoef(pMemSf, sfCoef);
 
+#ifndef _MANUAL_PM
 	if (bPm) {
 		pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
 	}
+#endif
+
+	return;
 }
 
 inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, LPSURFACE& pSf) {
@@ -125,22 +159,6 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, LPSURFACE& pMemSf, LPSURF
 	}
 }
 
-inline void CloseGeneral(LPRDATA rdPtr) {
-	delete rdPtr->pFFMpeg;
-	rdPtr->pFFMpeg = nullptr;
-
-	if (!rdPtr->bCache) {
-		delete rdPtr->pEncrypt;		
-	}
-
-	rdPtr->pEncrypt = nullptr;
-
-	rdPtr->bOpen = false;
-	rdPtr->bPlay = false;
-
-	*rdPtr->pFilePath = L"";
-}
-
 inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) {
 	if (!rdPtr->bOpen) {
 		return;
@@ -150,6 +168,8 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) 
 	msRaw = msRaw < 0 ? 0 : msRaw;
 
 	size_t ms = (size_t)msRaw;
+
+	//auto pos = rdPtr->pFFMpeg->get_videoPosition();
 
 	rdPtr->pFFMpeg->set_videoPosition(ms, flags);
 
@@ -164,14 +184,22 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) 
 }
 
 inline bool GetVideoPlayState(LPRDATA rdPtr) {
-	//return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr && !rdPtr->pFFMpeg->get_finishState();
-	return rdPtr->bPlay && rdPtr->pFFMpeg != nullptr
-		&& rdPtr->bLoop
-		? true
-		: !rdPtr->pFFMpeg->get_finishState();
+	if (rdPtr->pFFMpeg == nullptr) {
+		return false;
+	}
+
+	return rdPtr->bPlay
+		? rdPtr->bLoop
+			? true
+			: !rdPtr->pFFMpeg->get_finishState()
+		: false;
 }
 
 inline bool GetVideoFinishState(LPRDATA rdPtr) {
+	if (rdPtr->pFFMpeg == nullptr) {
+		return false;
+	}
+
 	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
 }
 
@@ -197,4 +225,61 @@ inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstr
 	}
 
 	return pEncrypt;
+}
+
+inline void CloseGeneral(LPRDATA rdPtr) {
+	delete rdPtr->pFFMpeg;
+	rdPtr->pFFMpeg = nullptr;
+
+	if (!rdPtr->bCache) {
+		delete rdPtr->pEncrypt;
+	}
+
+	rdPtr->pEncrypt = nullptr;
+
+	rdPtr->bOpen = false;
+	rdPtr->bPlay = false;
+
+	*rdPtr->pFilePath = L"";
+}
+
+inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, DWORD flag = FFMpegFlag_Default, size_t ms = 0) {
+	CloseGeneral(rdPtr);
+
+	try {
+		if (StrEmpty(key.c_str())) {
+			rdPtr->pFFMpeg = new FFMpeg(filePath, flag);
+		}
+		else {
+			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
+			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), flag);
+		}
+
+		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
+
+		rdPtr->bOpen = true;
+		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
+		*rdPtr->pFilePath = filePath;
+
+		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
+		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
+
+		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+
+		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+
+		SetPositionGeneral(rdPtr, ms);
+
+		//BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
+
+		ReDisplay(rdPtr);
+	}
+	catch (...) {
+		// update path for condition to check
+		*rdPtr->pFilePath = filePath;
+
+		CallEvent(ON_OPENFAILED);
+
+		CloseGeneral(rdPtr);
+	}
 }

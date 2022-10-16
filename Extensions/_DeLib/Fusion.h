@@ -313,6 +313,13 @@ inline void CreateBlankSurface(LPSURFACE Src) {
 	Src->CreateAlpha();
 }
 
+inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
+	cSurface* sur = new cSurface;
+	sur->Clone(*Src);
+
+	return sur;
+}
+
 //Convert to HWA
 inline bool IsHWA(LPSURFACE Src) {
 	return Src->GetType() >= ST_HWA_SCREEN;
@@ -721,7 +728,7 @@ inline void GetValidScale(float* scale) {
 }
 
 //Get Max supported thread of current CPU
-inline void GetMaxmiumDivide(int* divide) {
+inline void GetMaximumDivide(int* divide) {
 	int Max = std::thread::hardware_concurrency();
 
 	if (*divide == -1) {
@@ -742,7 +749,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	radius = min(SB_MAX_RADIUS, max(SB_MIN_RADIUS, radius));
 
 	GetValidScale(&scale);
-	GetMaxmiumDivide(&divide);
+	GetMaximumDivide(&divide);
 
 	//Dimensions
 	int owidth = pSrc->GetWidth(), oheight = pSrc->GetHeight();
@@ -956,7 +963,7 @@ inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double 
 		return;
 	}
 
-	GetMaxmiumDivide(&divide);
+	GetMaximumDivide(&divide);
 
 	auto Interpolation = [=]()->RGBA {
 

@@ -200,7 +200,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
-
+	
 	// No errors
 	return 0;
 }

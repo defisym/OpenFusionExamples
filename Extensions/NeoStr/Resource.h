@@ -148,6 +148,7 @@
 #define M_ANGLE				        5510
 
 #define M_FONTNAME			        5511
+#define M_KEY				        5512
 
 
 //	Conditions

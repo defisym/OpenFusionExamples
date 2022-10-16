@@ -44,7 +44,7 @@ short actionsInfos[]=
 		IDMN_ACTION_S, M_ACTION_S, ACT_ACTION_S,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		IDMN_ACTION_R, M_ACTION_R, ACT_ACTION_R,	0, 1, PARAM_EXPRESSION, M_ANGLE,
 
-		IDMN_ACTION_EF, M_ACTION_EF, ACT_ACTION_EF,	0, 1, PARAM_EXPSTRING, M_FONTNAME,
+		IDMN_ACTION_EF, M_ACTION_EF, ACT_ACTION_EF,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FONTNAME, M_KEY,
 
 		};
 
@@ -72,7 +72,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, 0, 0,
 		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
 
-		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_POS,
+		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_KEY, M_POS,
 
 		IDMN_EXPRESSION_GCX, M_EXPRESSION_GCX, EXP_EXPRESSION_GCX, 0, 1, EXPPARAM_LONG, M_POS,
 		IDMN_EXPRESSION_GCY, M_EXPRESSION_GCY, EXP_EXPRESSION_GCY, 0, 1, EXPPARAM_LONG, M_POS,
@@ -260,41 +260,64 @@ short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
 // https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-addfontresourceexa
 short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FilePath = GetFullPathNameStr((LPCTSTR)CNC_GetStringParameter(rdPtr));
+	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	bool bFromMem = !StrEmpty(Key);
+	Encryption* E = nullptr;
+
+	if (bFromMem) {
+		E = new Encryption;
+		E->GenerateKey(Key);
+
+		E->OpenFile(FilePath.c_str());
+		E->Decrypt();
+	}
 
 	int ret = 0;
+	DWORD fontNum = 0;
 
 	auto flags = FR_PRIVATE;
 
 	//ret = RemoveFontResourceEx(FilePath.c_str(), flags, 0);
-	ret = AddFontResourceEx(FilePath.c_str(), flags, 0);
+	ret = bFromMem
+		? (int)AddFontMemResourceEx(E->GetOutputData(), E->GetOutputDataLength(), 0, &fontNum)
+		: AddFontResourceEx(FilePath.c_str(), flags, 0);
 
 	if (ret == 0) {
 		return 0;
 	}
 
-	auto gdipRet = rdPtr->pData->pFontCollection->AddFontFile(FilePath.c_str());
+	auto gdipRet = bFromMem
+		? rdPtr->pData->pFontCollection->AddMemoryFont(E->GetOutputData(), E->GetOutputDataLength())
+		: rdPtr->pData->pFontCollection->AddFontFile(FilePath.c_str());
 
-//#ifdef _FONTEMBEDDEBUG
-//	MSGBOX((std::wstring)L"Embed " + FilePath +
-//		(std::wstring)(gdipRet != Gdiplus::Status::Ok
-//			? L" Not OK"
-//			: L" OK"));
-//#endif // _FONTEMBEDDEBUG
+	if (gdipRet != Gdiplus::Status::Ok) {
+		return 0;
+	}
 
+	auto fontNames = bFromMem
+		? GetFontNameFromFile((LPCWSTR)E->GetOutputData(), E->GetOutputDataLength())
+		: GetFontNameFromFile(FilePath.c_str());
+
+	delete E;
+
+#ifdef _FONTEMBEDDEBUG
+	MSGBOX((std::wstring)L"Embed " + FilePath +
+		(std::wstring)(gdipRet != Gdiplus::Status::Ok
+			? L" Not OK"
+			: L" OK"));
+ 
 	auto font = rdPtr->pData->pFontCollection->GetFamilyCount();
-
-	auto fontNames = GetFontNameFromFile(FilePath.c_str());
-
-//#ifdef _FONTEMBEDDEBUG
-//	for (auto& i : fontNames) {
-//		wprintf(L"%s\n", i.c_str());
-//		//std::wcout << i << std::endl;
-//	}
-//#endif // _FONTEMBEDDEBUG
+ 
+	for (auto& i : fontNames) {
+		wprintf(L"%s\n", i.c_str());
+		//std::wcout << i << std::endl;
+	}
+#endif // _FONTEMBEDDEBUG
 
 	//refresh objects
 	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
-	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [&](LPRO pObject) {
+	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [fontNames](LPRO pObject) {
 		LPRDATA pObj = (LPRDATA)pObject;
 
 		std::wstring withRegular = (std::wstring)pObj->logFont.lfFaceName + (std::wstring)L" Regular";
@@ -304,8 +327,7 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 			if (StrIEqu(pObj->logFont.lfFaceName, name.c_str())
 				|| StrIEqu(withRegular.c_str(), name.c_str())
 				/*|| StrIEqu(withNormal.c_str(), name.c_str())*/) {
-				pObj->bFontChanged = true;
-				SetRunObjectFont(rdPtr, &pObj->logFont, nullptr);
+				SetRunObjectFont(pObj, &pObj->logFont, nullptr);
 				
 				return;
 			}
@@ -417,9 +439,26 @@ long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
 	std::wstring filePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	LPCTSTR Key = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
 	size_t pos = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	auto fontNames = GetFontNameFromFile(filePath.c_str());
+	bool bFromMem = !StrEmpty(Key);
+	Encryption* E = nullptr;
+
+	if (bFromMem) {
+		E = new Encryption;
+		E->GenerateKey(Key);
+
+		E->OpenFile(filePath.c_str());
+		E->Decrypt();
+	}
+
+	auto fontNames = bFromMem
+		? GetFontNameFromFile((LPCWSTR)E->GetOutputData(), E->GetOutputDataLength())
+		: GetFontNameFromFile(filePath.c_str());
+
+	delete E;
 
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 

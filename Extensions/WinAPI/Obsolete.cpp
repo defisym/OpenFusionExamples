@@ -136,7 +136,7 @@
 //		GetValidScale(&scale);
 //
 //		int divide = CNC_GetIntParameter(rdPtr);
-//		GetMaxmiumDivide(&divide);
+//		GetMaximumDivide(&divide);
 //
 //		//Dimensions
 //		int owidth = rdPtr->img.GetWidth(), oheight = rdPtr->img.GetHeight();

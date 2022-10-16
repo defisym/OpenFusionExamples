@@ -28,6 +28,12 @@ short conditionsInfos[]=
 		IDMN_CONDITION_VF, M_CONDITION_VF, CND_CONDITION_VF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		
 		IDMN_CONDITION_OVF, M_CONDITION_OVF, CND_CONDITION_OVF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
+		IDMN_CONDITION_OVOF, M_CONDITION_OVOF, CND_CONDITION_OVOF, 0, 1, PARAM_EXPSTRING, M_FILEPATH,
+
+		// object
+		IDMN_CONDITION_VHD, M_CONDITION_VHD, CND_CONDITION_VHD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_VWHD, M_CONDITION_VWHD, CND_CONDITION_VWHD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -50,6 +56,12 @@ short actionsInfos[]=
 
 		IDMN_ACTION_CACHEV, M_ACTION_CACHEV, ACT_ACTION_CACHEV,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FILEPATH, M_KEY,
 		IDMN_ACTION_ERASEV, M_ACTION_ERASEV, ACT_ACTION_ERASEV,	0, 1, PARAM_EXPSTRING, M_FILEPATH,
+
+		IDMN_ACTION_OVT, M_ACTION_OVT, ACT_ACTION_OVT,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_FILEPATH, M_KEY, M_POSITION,
+		
+		IDMN_ACTION_SHDE, M_ACTION_SHDE, ACT_ACTION_SHDE, 0, 1, PARAM_EXPSTRING, M_HWDECODEDEVICE,
+		
+		IDMN_ACTION_STRETCH, M_ACTION_STRETCH, ACT_ACTION_STRETCH, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 		};
 
 // Definitions of parameters for each expression
@@ -68,6 +80,10 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GVPLAY, M_EXPRESSION_GVPLAY, EXP_EXPRESSION_GVPLAY, 0, 0,
 		IDMN_EXPRESSION_GVL, M_EXPRESSION_GVL, EXP_EXPRESSION_GVL, 0, 0,
 		IDMN_EXPRESSION_GVF, M_EXPRESSION_GVF, EXP_EXPRESSION_GVF, 0, 0,
+
+		IDMN_EXPRESSION_GHDS, M_EXPRESSION_GHDS, EXP_EXPRESSION_GHDS, 0, 0,
+		IDMN_EXPRESSION_GAHDE, M_EXPRESSION_GAHDE, EXP_EXPRESSION_GAHDE, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GWHDE, M_EXPRESSION_GWHDE, EXP_EXPRESSION_GWHDE, EXPFLAG_STRING, 0,
 		};
 
 
@@ -100,6 +116,20 @@ long WINAPI DLLExport Condition_OnVideoFinish(LPRDATA rdPtr, long param1, long p
 	return *rdPtr->pFilePath == filePath;
 }
 
+long WINAPI DLLExport Condition_OnVideoOpenFailed(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	return *rdPtr->pFilePath == filePath;
+}
+
+long WINAPI DLLExport Condition_VideoHardwareDecode(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_hwDecodeState();
+}
+
+long WINAPI DLLExport Condition_VideoWantedHardwareDecode(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->hwDeviceType != AV_HWDEVICE_TYPE_NONE;
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -110,37 +140,17 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	CloseGeneral(rdPtr);
+	OpenGeneral(rdPtr, filePath, key, rdPtr->hwDeviceType);
 
-	try {
-		if (StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath);
-		}
-		else {			
-			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength());
-		}
-		
-		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
+	return 0;
+}
 
-		rdPtr->bOpen = true;
-		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
-		*rdPtr->pFilePath = filePath;
+short WINAPI DLLExport Action_OpenVideoTo(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	size_t msRaw = (size_t)CNC_GetIntParameter(rdPtr);
 
-		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
-		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
-
-		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());		
-
-		BlitVideoFrame(rdPtr, 0, rdPtr->pMemSf);
-
-		ReDisplay(rdPtr);
-	}
-	catch (...) {
-		CloseGeneral(rdPtr);
-	}
+	OpenGeneral(rdPtr, filePath, key, rdPtr->hwDeviceType, msRaw);
 
 	return 0;
 }
@@ -283,6 +293,33 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring deviceName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->hwDeviceType = FFMpeg::get_hwDeviceTypeByName(deviceName);
+
+	return 0;
+}
+
+
+short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+	
+	rdPtr->swidth = max(0, width);
+	rdPtr->sheight = max(0, height);
+	
+	rdPtr->bStretch = true;
+
+	if (rdPtr->pFFMpeg != nullptr) {
+		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+	}
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -352,6 +389,24 @@ long WINAPI DLLExport Expression_GetVideoFinish(LPRDATA rdPtr, long param1) {
 	return GetVideoFinishState(rdPtr);
 }
 
+long WINAPI DLLExport Expression_GetHardwareDecodeState(LPRDATA rdPtr, long param1) {
+	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_hwDecodeState();
+}
+
+long WINAPI DLLExport Expression_GetActualHardwareDevice(LPRDATA rdPtr, long param1) {
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	return (long)(rdPtr->pFFMpeg == nullptr
+		? L"NOOBJECT"
+		: rdPtr->pFFMpeg->get_hwDeviceName());
+}
+
+long WINAPI DLLExport Expression_GetWantedHardwareDevice(LPRDATA rdPtr, long param1) {
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	return (long)FFMpeg::get_hwDeviceNameByType(rdPtr->hwDeviceType);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -368,6 +423,10 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_VideoFinish,
 
 			Condition_OnVideoFinish,
+			Condition_OnVideoOpenFailed,
+
+			Condition_VideoHardwareDecode,
+			Condition_VideoWantedHardwareDecode,
 
 			0
 			};
@@ -392,6 +451,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_CacheVideo,
 			Action_EraseVideo,
 
+			Action_OpenVideoTo,
+
+			Action_SetHWDevice,
+
+			Action_Stretch,
+
 			0
 			};
 
@@ -410,6 +475,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetVideoPlay,
 			Expression_GetVideoLoop,
 			Expression_GetVideoFinish,
+
+			Expression_GetHardwareDecodeState,
+			Expression_GetActualHardwareDevice,
+			Expression_GetWantedHardwareDevice,
 
 			0
 			};

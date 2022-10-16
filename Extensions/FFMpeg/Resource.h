@@ -42,6 +42,25 @@
 #define	IDS_PROP_CACHE_CHECK			            214
 #define	IDS_PROP_CACHE_CHECK_INFO    				215
 
+#define	IDS_PROP_HWDECODE_TEXTTITLE    				216
+
+#define	IDS_PROP_HWDECODE_DEVICE_COMBO 				217
+#define	IDS_PROP_HWDECODE_DEVICE_COMBO_INFO			218
+
+#define COMBO_AV_HWDEVICE_TYPE_NONE                       219
+#define COMBO_AV_HWDEVICE_TYPE_VDPAU                      220
+#define COMBO_AV_HWDEVICE_TYPE_CUDA                       221
+#define COMBO_AV_HWDEVICE_TYPE_VAAPI                      222
+#define COMBO_AV_HWDEVICE_TYPE_DXVA2                      223
+#define COMBO_AV_HWDEVICE_TYPE_QSV                        224
+#define COMBO_AV_HWDEVICE_TYPE_VIDEOTOOLBOX               225
+#define COMBO_AV_HWDEVICE_TYPE_D3D11VA                    226
+#define COMBO_AV_HWDEVICE_TYPE_DRM                        227
+#define COMBO_AV_HWDEVICE_TYPE_OPENCL                     228
+#define COMBO_AV_HWDEVICE_TYPE_MEDIACODEC                 229
+#define COMBO_AV_HWDEVICE_TYPE_VULKAN                     230
+
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -70,6 +89,12 @@
 #define	IDMN_ACTION_CACHEV 			25010
 #define	IDMN_ACTION_ERASEV 			25011
 
+#define IDMN_ACTION_OVT       		25012
+
+#define IDMN_ACTION_SHDE       		25013
+
+#define IDMN_ACTION_STRETCH    		25014
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -88,6 +113,12 @@
 #define	M_ACTION_CACHEV				5010
 #define	M_ACTION_ERASEV				5011
 
+#define M_ACTION_OVT       		    5012
+
+#define M_ACTION_SHDE      		    5013
+
+#define M_ACTION_STRETCH  		    5014
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -99,6 +130,9 @@
 #define M_AUDIOQUEUESIZE		 5508
 #define M_VIDEOQUEUESIZE	     5509
 #define M_ACCURATESEEK		     5510
+#define M_HWDECODEDEVICE		 5511
+#define M_WIDTH		             5512
+#define M_HEIGHT		         5513
 
 
 //	Conditions
@@ -114,6 +148,10 @@
 #define IDMN_CONDITION_VF				26003
 
 #define IDMN_CONDITION_OVF				26004
+#define IDMN_CONDITION_OVOF				26005
+
+#define IDMN_CONDITION_VHD				26006
+#define IDMN_CONDITION_VWHD				26007
 
 // Condition strings
 #define M_CONDITION_VO				    6000
@@ -122,6 +160,10 @@
 #define M_CONDITION_VF				    6003
 
 #define M_CONDITION_OVF				    6004
+#define M_CONDITION_OVOF				6005
+
+#define M_CONDITION_VHD				    6006
+#define M_CONDITION_VWHD				6007
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -149,6 +191,10 @@
 #define IDMN_EXPRESSION_GVL				27008
 #define IDMN_EXPRESSION_GVF				27009
 
+#define IDMN_EXPRESSION_GHDS 			27010
+#define IDMN_EXPRESSION_GAHDE 			27011
+#define IDMN_EXPRESSION_GWHDE 			27012
+
 // Expression strings
 #define	M_EXPRESSION_GVN			    7000
 #define M_EXPRESSION_GVP			    7001
@@ -163,6 +209,10 @@
 #define M_EXPRESSION_GVPLAY			    7007
 #define M_EXPRESSION_GVL				7008
 #define M_EXPRESSION_GVF				7009
+
+#define M_EXPRESSION_GHDS 			    7010
+#define M_EXPRESSION_GAHDE 			    7011
+#define M_EXPRESSION_GWHDE 			    7012
 
 // Names of expression parameters
 #define M_HWA   				 7500

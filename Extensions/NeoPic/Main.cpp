@@ -277,7 +277,6 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-
 short WINAPI DLLExport CleanCache(LPRDATA rdPtr, long param1, long param2) {
 	size_t memLimit = (size_t)CNC_GetIntParameter(rdPtr);
 	
@@ -329,7 +328,7 @@ short WINAPI DLLExport IterateRefCount(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 	if(rdPtr->isLib){
-		ResetLib(rdPtr->pLib);
+		ResetLib(rdPtr, rdPtr->pLib);
 	}
 
 	return 0;
@@ -574,25 +573,31 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LPCTSTR pParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring paramName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	// must be hwa
+	if (!object->isLib) {
+		return 0;
+	}
+
+	// surface used in surface param must be hwa type
 	auto pLibHWAType = object->HWA;
 	object->HWA = true;
 
 	auto it = _LoadLib(rdPtr, object, pFilePath, pKey);
 
 	if (it != object->pLib->end()) {
-		auto pSf = it->second.pSf;
+		// set param
+		EffectUtilities::SetParam(EffectUtilities::GetEffect(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam)
+			, paramName, EFFECTPARAM_SURFACE, it->second.pSf);
 
-		auto pCurEffect = GetEffect(rdPtr);
-		auto paramIndex = pCurEffect->GetParamIndex(ConvertWStrToStr(pParamName).c_str());		
-		auto paramType = pCurEffect->GetParamType(paramIndex);
+		// add to keep list
+		it->second.bUsedInShader = true;
 
-		if (paramType == EFFECTPARAM_SURFACE) {
-			auto pImpl = GetSurfaceImplementation(*pSf);
-			pCurEffect->SetParamSurfaceValue(paramIndex, pImpl);
-		}		
+		auto fullPath = GetFullPathNameStr(pFilePath);
+
+		if (std::find(object->pKeepList->begin(), object->pKeepList->end(), fullPath) == object->pKeepList->end()) {
+			object->pKeepList->emplace_back(fullPath);
+		}
 	}
 
 	object->HWA = pLibHWAType;

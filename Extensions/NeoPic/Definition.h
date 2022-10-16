@@ -62,9 +62,10 @@ using pPreLoadList = List*;
 using PreLoadList = List;
 
 struct Count {
-	size_t count;			// total ref times
-	size_t priority;		// lib size when first time ref
-	size_t curRef;			// current ref times
+	size_t count;			// total ref times, count objects have used this
+	size_t priority;		// lib size when first object ref this
+	size_t curRef;			// current ref times, currently curRef objects are using this
+							// erase safely if curRef == 0
 
 	inline size_t GetWeight(size_t countWeight) {
 		return this->count * countWeight + this->priority;
@@ -72,9 +73,10 @@ struct Count {
 };
 
 struct SurfaceLibValue {
-	LPSURFACE pSf;
+	LPSURFACE pSf = nullptr;
 	std::wstring Hash;
-	BOOL isTransparent;
+	BOOL isTransparent = -1;		// constexpr BOOL transpTBD = -1;
+	bool bUsedInShader = false;
 };
 
 using SurfaceLib = std::map<std::wstring, SurfaceLibValue>;

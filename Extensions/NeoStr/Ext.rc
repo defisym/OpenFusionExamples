@@ -385,8 +385,10 @@ BEGIN
 
     M_ANGLE                 "Angle"
     
-    M_ACTION_EF             "Embed Font %0"
+    M_ACTION_EF             "Embed Font %0, Decrypt Key %1"
+
     M_FONTNAME              "Font File Path"
+    M_KEY                   "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
 END
 
 STRINGTABLE DISCARDABLE 

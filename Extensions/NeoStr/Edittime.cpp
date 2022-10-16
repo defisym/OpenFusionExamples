@@ -151,11 +151,8 @@ PropData FontPorperties[] = {
 	PropData_EditNumber(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
 
-
-#ifdef _PATH
-	PropData_EditNumber(PROPID_OUTLINE_PIXEL,		IDS_PROP_OUTLINE_PIXEL,			IDS_PROP_OUTLINE_PIXEL_INFO),
-	PropData_Color(PROPID_OUTLINE_COLOR,		IDS_PROP_OUTLINE_COLOR,			IDS_PROP_OUTLINE_COLOR_INFO),
-#endif
+	//PropData_EditNumber(PROPID_OUTLINE_PIXEL,		IDS_PROP_OUTLINE_PIXEL,			IDS_PROP_OUTLINE_PIXEL_INFO),
+	//PropData_Color(PROPID_OUTLINE_COLOR,		IDS_PROP_OUTLINE_COLOR,			IDS_PROP_OUTLINE_COLOR_INFO),
 
 	PropData_Group(PROPID_RENDER_TITLE,	IDS_PROP_RENDER_TITLE,		IDS_PROP_RENDER_TITLE),
 	
@@ -870,12 +867,10 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_ALLIGN_COLSPACE:
 		return new CPropDWordValue(edPtr->nColSpace);
 
-#ifdef _PATH
-	case PROPID_OUTLINE_PIXEL:
-		return new CPropDWordValue(edPtr->nOutLinePixel);
-	case PROPID_OUTLINE_COLOR:
-		return new CPropDWordValue(edPtr->dwOutLineColor);
-#endif
+	//case PROPID_OUTLINE_PIXEL:
+	//	return new CPropDWordValue(edPtr->nOutLinePixel);
+	//case PROPID_OUTLINE_COLOR:
+	//	return new CPropDWordValue(edPtr->dwOutLineColor);
 
 	case PROPID_RENDER_BorderOffsetX:
 		return new CPropDWordValue(edPtr->borderOffsetX);
@@ -1000,16 +995,14 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		mvInvalidateObject(mV, edPtr);
 		break;
 
-#ifdef _PATH
-	case PROPID_OUTLINE_PIXEL:
-		edPtr->nOutLinePixel = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
-		mvInvalidateObject(mV, edPtr);
-		break;
-	case PROPID_OUTLINE_COLOR:
-		edPtr->dwOutLineColor = ((CPropDWordValue*)pValue)->m_dwValue;
-		mvInvalidateObject(mV, edPtr);
-		break;
-#endif
+	//case PROPID_OUTLINE_PIXEL:
+	//	edPtr->nOutLinePixel = (BYTE)((CPropDWordValue*)pValue)->m_dwValue;
+	//	mvInvalidateObject(mV, edPtr);
+	//	break;
+	//case PROPID_OUTLINE_COLOR:
+	//	edPtr->dwOutLineColor = ((CPropDWordValue*)pValue)->m_dwValue;
+	//	mvInvalidateObject(mV, edPtr);
+	//	break;
 		
 	case PROPID_RENDER_BorderOffsetX:
 		edPtr->borderOffsetX = (unsigned short)max(0, ((CPropDWordValue*)pValue)->m_dwValue);

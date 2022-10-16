@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#define _FONTEMBEDDEBUG
+//#define _FONTEMBEDDEBUG
 //#define _CONSOLE
 
 #include <map>
@@ -14,17 +14,12 @@
 #include <assert.h>
 #endif
 
-#define _GDIPLUS	// display with GDI plus
-
-//#define _PATH		// draw outline, slow in GDI
-//#define _DRAWTODC	// draw to DC, display incorrectly sometimes
-
-#define _USE_HWA	// use hardware acceleration
-
-#ifdef _GDIPLUS	
 // compatible with MMF
 #undef Font
 #undef fpFont
+
+#pragma region _GDIPLUS_INIT
+
 
 //#define _BLUR
 
@@ -69,7 +64,8 @@ using Gdiplus::GetImageEncodersSize;
 using Gdiplus::Blur;
 using Gdiplus::BlurParams;
 #endif
-#endif
+
+#pragma endregion
 
 inline RECT operator+(RECT rA, RECT rB) {
 	return RECT { rA.left + rB.left
@@ -116,7 +112,6 @@ private:
 	BYTE nShadowOffsetX = 0;
 	BYTE nShadowOffsetY = 0;
 
-#ifdef _GDIPLUS
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
 
@@ -125,7 +120,6 @@ private:
 
 	Bitmap* pBitmap = nullptr;
 	PrivateFontCollection* pFontCollection = nullptr;
-#endif
 
 	struct StrPos {
 		size_t start;
@@ -173,26 +167,16 @@ private:
 
 	int angle = 0;
 
-#ifdef _USE_HWA
 	int hwaType = 0;
 	int hwaDriver = 0;
 	bool preMulAlpha = false;
 
 	LPSURFACE pHwaSf = nullptr;
-#endif
 
 	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
 	std::map<wchar_t, StrSize> charSzCache;
-
-#ifdef _GDIPLUS
-
-#else
-	inline COLORREF BlackEscape(COLORREF input) {
-		return input == BLACK ? RGB(8, 0, 0) : input;
-	}
-#endif
 
 	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
 		for (auto& wChartoCheck : data) {
@@ -253,7 +237,6 @@ private:
 		return 0;
 	}
 
-#ifdef _GDIPLUS
 	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) {
 		UINT  num = 0;          // number of image encoders
 		UINT  size = 0;         // size of the image encoder array in bytes
@@ -286,7 +269,33 @@ private:
 
 		return -1;  // Failure
 	}
-#endif // _GDIPLUS
+
+	inline size_t LogFontHasher(LOGFONT logFont) {
+		constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
+		constexpr auto HASHER_MOVE = [](size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); };
+
+		size_t seed = 65535;
+
+		seed ^= logFont.lfHeight + HASHER_MOVE(seed);
+		seed ^= logFont.lfWidth + HASHER_MOVE(seed);
+		seed ^= logFont.lfEscapement + HASHER_MOVE(seed);
+		seed ^= logFont.lfOrientation + HASHER_MOVE(seed);
+		seed ^= logFont.lfWeight + HASHER_MOVE(seed);
+		seed ^= logFont.lfItalic + HASHER_MOVE(seed);
+		seed ^= logFont.lfUnderline + HASHER_MOVE(seed);
+		seed ^= logFont.lfStrikeOut + HASHER_MOVE(seed);
+		seed ^= logFont.lfCharSet + HASHER_MOVE(seed);
+		seed ^= logFont.lfOutPrecision + HASHER_MOVE(seed);
+		seed ^= logFont.lfClipPrecision + HASHER_MOVE(seed);
+		seed ^= logFont.lfQuality + HASHER_MOVE(seed);
+		seed ^= logFont.lfPitchAndFamily + HASHER_MOVE(seed);
+
+		for (auto i = 0; i < LF_FACESIZE; i++) {
+			seed ^= logFont.lfFaceName[i] + HASHER_MOVE(seed);
+		}
+
+		return seed;
+	}
 
 public:
 	NeoStr(DWORD dwAlignFlags, COLORREF color
@@ -301,16 +310,14 @@ public:
 		this->SetColor(color);
 
 		this->hFont = hFont;
-		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 
+		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
-		//this->SetSpace();
 
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
 		this->strPos.reserve(20);
 
-#ifdef _GDIPLUS
 		this->pFontCollection = pFontCollection;
 
 		this->needGDIPStartUp = needGDIPStartUp;
@@ -318,7 +325,7 @@ public:
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 		}
-#endif
+		
 		// add a default char to return default value when input text is empty
 		this->GetCharSizeWithCache(L'露');
 	}
@@ -338,19 +345,14 @@ public:
 		delete this->pBitmap;
 		this->pBitmap = nullptr;
 
-#ifdef _USE_HWA
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
-#endif
 
-#ifdef _GDIPLUS
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 		}
-#endif	
 	}
 
-#ifdef _GDIPLUS	
 	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
 	//https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
 	//https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
@@ -462,22 +464,33 @@ public:
 
 		return fontStyle;
 	}
-#endif
 
-#ifdef _USE_HWA
+	inline Font GetFont(LOGFONT logFont) {
+		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
+		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+
+#ifdef _FONTEMBEDDEBUG
+		if (!bFound) {
+			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
+		}
+#endif // _FONTEMBEDDEBUG
+
+		return Font(logFont.lfFaceName
+			, (float)abs(logFont.lfHeight)
+			, GetFontStyle(logFont)
+			, Gdiplus::UnitWorld
+			, bFound ? this->pFontCollection
+			: nullptr);
+	}
+
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
 		this->hwaType = type;
 		this->hwaDriver = driver;
 		this->preMulAlpha = preMulAlpha;
 	}
-#endif
 
 	inline void SetColor(DWORD color) {
-#ifdef _GDIPLUS
 		this->dwTextColor = color;
-#else
-		this->dwTextColor = BlackEscape(color);
-#endif
 	}
 
 	inline void SetBorderOffset(unsigned short borderOffsetX, unsigned short borderOffsetY) {
@@ -485,6 +498,7 @@ public:
 		this->borderOffsetY = borderOffsetX;
 	}
 
+	// set row/col space
 	inline void SetSpace(int nRowSpace = 0, int nColSpace = 0) {
 		this->nRowSpace = nRowSpace /*+ this->tm.tmInternalLeading + this->tm.tmExternalLeading*/;
 		this->nColSpace = nColSpace;
@@ -510,16 +524,12 @@ public:
 		this->renderHeight = renderHeight;
 	}
 
-	inline void SetOutLine(BYTE outLinePixel, DWORD color) {
-		this->bOutLine = outLinePixel;
-		this->nOutLinePixel = outLinePixel;
+	//inline void SetOutLine(BYTE outLinePixel, DWORD color) {
+	//	this->bOutLine = outLinePixel;
+	//	this->nOutLinePixel = outLinePixel;
 
-#ifdef _GDIPLUS
-		this->dwOutLineColor = color;
-#else
-		this->dwOutLineColor = BlackEscape(color);
-#endif
-	}
+	//	this->dwOutLineColor = color;
+	//}
 
 	inline void SetHotSpot(int hotSpotX = 0, int hotSpotY = 0) {
 		this->hotSpotX = hotSpotX;
@@ -537,31 +547,27 @@ public:
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
 		//Graphics g(hdc);
-		//Font font(GetDC(NULL), this->hFont);
+		//auto font = GetFont(this->logFont);
+		//
 		//PointF origin(0, 0);
+		//
 		//RectF boundRect;
-		//g.MeasureString(&wChar, 1, &font, origin, &boundRect);
-
-		//StringFormat stringFormat;
-		//RectF layoutRect(0,0,65535,65535);
-		//RectF boundRect;
-		//Region region;
-		//g.MeasureCharacterRanges(&wChar, 1, &font, layoutRect, &stringFormat, 1, &region);
-		//g.MeasureString(&wChar, 1, &font, layoutRect, &stringFormat, &boundRect);
+		//auto pStringFormat = StringFormat::GenericDefault();
+		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat, &boundRect);
+		//
+		//RectF boundRect_2;
+		//auto pStringFormat_2 = StringFormat::GenericTypographic();
+		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat_2, &boundRect_2);
 
 		SIZE sz;
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
-		//TEXTMETRIC tm;
-		//GetTextMetrics(hdc, &tm);
-
 		//ABC abc;
 		//GetCharABCWidths(hdc, wChar, wChar, &abc);
-
-		//GetCharABCWidths()
-		//TEXTMETRIC textMetric;
-		//GetTextMetrics(hdc, &textMetric);
-
+		//
+		//TEXTMETRIC tm;
+		//GetTextMetrics(hdc, &tm);
+		//
 		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 
 		return *(StrSize*)&sz;
@@ -641,28 +647,16 @@ public:
 			pCharStart = pChar;
 
 			while (true) {
-				//while (curWidth < rcWidth
-					//&& pChar <= pTextLen) {				
 				auto pCurChar = pText + pChar;
 
 				auto curChar = pCurChar [0];
 				auto nextChar = pCurChar [1];
-
-				//if (curChar == L'\r' && nextChar == L'\n') {
-				//	newLine = true;
-				//	//skipLine = (curWidth == 0);
-				//	skipLine = (pChar == pCharStart);
-				//	pChar += 2;
-
-				//	break;
-				//}
 
 				pStrSizeArr [pChar] = GetCharSize(curChar);
 				auto charSz = &pStrSizeArr [pChar];
 
 				totalWidth = curWidth;
 
-				//curWidth += (charSz->width + nColSpace);
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
 
@@ -711,7 +705,6 @@ public:
 
 				if (curChar == L'\r' && nextChar == L'\n') {
 					newLine = true;
-					//skipLine = (curWidth == 0);
 					skipLine = (pChar == pCharStart);
 
 					if ((notAtStartCharPos + 1) == pChar) {
@@ -730,13 +723,6 @@ public:
 				}
 
 				curWidth += nColSpace;
-
-				//if (curWidth > rcWidth) {
-				//	continue;
-				//}
-
-				//curWidth += nColSpace;
-				//pChar++;
 			}
 
 			if (!skipLine) {
@@ -780,7 +766,6 @@ public:
 		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
 		auto lastCharPos = CharPos {
-			//GetStartPosX(lastStrPos.width - nColSpace, rcWidth) + lastStrPos.width + (lastCharSize->width >> 1)
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width >> 1)
 			,startY + lastStrPos.y + (lastCharSize->height >> 1)
@@ -816,21 +801,12 @@ public:
 			delete this->pMemSf;
 			this->pMemSf = nullptr;
 
-#ifdef _DRAWTODC
-			pMemSf = CreateSurface(32, width, height);
-#else
-			//#ifdef _USE_HWA
-			//			pMemSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
-			//#else
-			//			pMemSf = CreateSurface(32, width, height);
-			//#endif
 			pMemSf = CreateSurface(32, width, height);
 
 			delete this->pBitmap;
 			this->pBitmap = nullptr;
 
 			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
-#endif
 		}
 
 		pMemSf->Fill(BLACK);
@@ -840,83 +816,19 @@ public:
 		auto type = pMemSf->GetType();
 #endif
 
-#ifdef _DRAWTODC
-		auto hMemDc = pMemSf->GetDC();
-		Graphics g(hMemDc);
-#else
-#ifdef _GDIPLUS		
-		//Bitmap bitmap(width, height, PixelFormat32bppARGB);
-		//Graphics g(&bitmap);
-
 		Graphics g(pBitmap);
-#endif
-#endif
-
-#ifdef _GDIPLUS			
+		
 		g.Clear(Color(0, 0, 0, 0));
-
-		//Color fontColor(255, 50, 150, 250);
-		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
-
-		SolidBrush solidBrush(fontColor);
-
-		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
-
-		auto bFound = FontCollectionHasFont(this->logFont.lfFaceName, this->pFontCollection);
-
-		//#ifdef _FONTEMBEDDEBUG
-		//		if (!bFound) {
-		//			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
-		//		}
-		//#endif // _FONTEMBEDDEBUG
-
-		PrivateFontCollection local;
-
-		Font font(this->logFont.lfFaceName
-			, (float)abs(logFont.lfHeight)
-			, GetFontStyle(this->logFont)
-			, Gdiplus::UnitWorld
-			, bFound ? this->pFontCollection
-			: nullptr);
-		//, nullptr);
-		//, this->pFontCollection);
-		//, &local);
-
-	//FontFamily fontFamily;
-	//auto bRet = font.IsAvailable();
-	//font.GetFamily(&fontFamily);
-	//
-	//auto pName = new WCHAR[256];
-	//memset(pName, 0, 256 * sizeof(WCHAR));
-	//fontFamily.GetFamilyName(pName);
-
-	//delete[] pName;
 
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
 		g.SetPixelOffsetMode(this->pixelOffsetMode);
+		
+		auto font = GetFont(this->logFont);
 
-#else	
-		SelectObject(hMemDc, this->hFont);
-		SetTextColor(hMemDc, this->dwTextColor);
-		SetBkMode(hMemDc, TRANSPARENT);
-#endif
-
-#ifdef  _PATH
-#ifdef _GDIPLUS	
-		GraphicsPath txtPath(FillMode::FillModeWinding);
-
-		Gdiplus::FontFamily fontFamily;
-		font.GetFamily(&fontFamily);
-
-		Gdiplus::FontStyle fontstyle = (Gdiplus::FontStyle)font.GetStyle();
-
-		StringFormat  cStringFormat;
-		cStringFormat.SetAlignment(StringAlignment::StringAlignmentNear);
-#else
-		BeginPath(hMemDc);
-#endif
-#endif
+		//Color fontColor(255, 50, 150, 250);
+		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
+		SolidBrush solidBrush(fontColor);
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight, };
 
@@ -937,13 +849,12 @@ public:
 		};
 
 		for (auto& curStrPos : this->strPos) {
-
 #ifdef _DEBUG
 			std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 
 			StrSize* charSz = nullptr;
-			//int x = GetStartPosX(curStrPos.width - nColSpace, rcWidth);
+
 			int x = GetStartPosX(curStrPos.width, rcWidth);
 			x -= pStrSizeArr [curStrPos.start].width / 8;
 
@@ -952,33 +863,16 @@ public:
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr [offset];
 
-				pCharPosArr [offset] = CharPos { x + pStrSizeArr [curStrPos.start].width / 8
-											,this->startY + curStrPos.y,0,0 };
+				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+											,this->startY + curStrPos.y
+											,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-#ifdef _GDIPLUS	
-#ifdef  _PATH
-					txtPath.AddString(pCurChar, 1,
-						&pFontFamily, fontstyle, font.GetSize()
-						, PointF((float)x, (float)((y + curStrPos.y) * scale)), &cStringFormat);
-#else
-
-#ifdef _DEBUG
-					auto WX = (float)(x)+(float)(this->borderOffsetY);
-					auto WY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
-#endif
-
-					//auto pos = y + curStrPos.y;
-					//g.DrawString(pCurChar, 1, &font, PointF((float)x, (float)(y + curStrPos.y)), &solidBrush);
-					//g.DrawString(pCurChar, 1, &font, PointF((float)x, (float)(curStrPos.y)), &solidBrush);
+					auto positionX = (float)(x)+(float)(this->borderOffsetY);
+					auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
+		
 					auto status = g.DrawString(pCurChar, 1, &font
-						, PointF((float)(x)+(float)(this->borderOffsetY)
-							, (float)(curStrPos.y) + (float)(this->borderOffsetY))
-						, &solidBrush);
-#endif
-#else
-					TextOut(hMemDc, x * scale, (y + curStrPos.y) * scale, pCurChar, 1);
-#endif
+						, PointF(positionX, positionY), &solidBrush);
 				}
 
 				x += (charSz->width + nColSpace);
@@ -998,66 +892,16 @@ public:
 		pBitmap->ApplyEffect(&blur, &rc);
 #endif
 
-#ifdef  _PATH
-#ifdef _GDIPLUS	
-		if (this->bOutLine) {
-			Pen borderPen(Color(255
-				, GetRValue(this->dwOutLineColor), GetRValue(this->dwOutLineColor), GetRValue(this->dwOutLineColor))
-				, this->nOutLinePixel);
-			borderPen.SetLineJoin(LineJoin::LineJoinRound);
-
-			g.DrawPath(&borderPen, &txtPath);
-		}
-
-		g.FillPath(&solidBrush, &txtPath);
-#else
-		EndPath(hMemDc);
-
-		auto hFillBrush = CreateSolidBrush(this->dwTextColor);
-		SelectObject(hMemDc, hFillBrush);
-
-		if (this->bOutLine) {
-			auto hStrokePen = CreatePen(PS_SOLID, this->nOutLinePixel, this->dwOutLineColor);
-			//auto hStrokePen = ExtCreatePen(PS_GEOMETRIC| PS_SOLID| PS_JOIN_ROUND, , this->nOutLinePixel, this->dwOutLineColor);
-			SelectObject(hMemDc, hStrokePen);
-			//StrokePath(hMemDc);
-
-			StrokeAndFillPath(hMemDc);
-
-			DeleteObject(hStrokePen);
-		}
-		else {
-			FillPath(hMemDc);
-		}
-
-		DeleteObject(hFillBrush);
-#endif
-#endif
-
 #ifdef _DEBUG
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
 		//bitmap.Save(L"F:\\NeoStr.png", &pngClsid, NULL);
 #endif // _DEBUG
 
-#ifdef _DRAWTODC
-		pMemSf->ReleaseDC(hMemDc);
-#else
-#ifdef _GDIPLUS		
 		BitmapData bitmapData;
 		auto bitmapRect = Rect(0, 0, width, height);
-		//bitmap.LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
 		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
 		unsigned int* pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
-#endif
-#endif		
-
-		//#ifdef _USE_HWA
-		//		auto pHWASf = pMemSf->GetRenderTargetSurface();
-		//		auto sfCoef = GetSfCoef(pHWASf);
-		//#else
-		//		auto sfCoef = GetSfCoef(pMemSf);
-		//#endif
 
 		auto sfCoef = GetSfCoef(pMemSf);
 
@@ -1076,13 +920,6 @@ public:
 			}
 		}
 
-		//#ifdef _USE_HWA
-		//		ReleaseSfCoef(pHWASf, sfCoef);
-		//		pMemSf->ReleaseRenderTargetSurface(pHWASf);
-		//#else
-		//		ReleaseSfCoef(pMemSf, sfCoef);
-		//#endif
-
 		ReleaseSfCoef(pMemSf, sfCoef);
 
 		pBitmap->UnlockBits(&bitmapData);
@@ -1091,50 +928,16 @@ public:
 		//_SavetoClipBoard(pMemSf, false);
 #endif // _DEBUG
 
-#ifdef _USE_HWA
 		delete pHwaSf;
 		pHwaSf = nullptr;
 
 		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
 
-		//pMemSf->DemultiplyAlpha();
 		if (this->preMulAlpha) {
 			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
 		}
 
 		pMemSf->Blit(*pHwaSf);
-
-		//pHwaSf->DemultiplyAlpha();
-		//pHwaSf->PremultiplyAlpha();
-#endif
-
-		//#define _CONSOLE
-		//			IteratePixel(pMemSf, [&] (int x, int y, const SfCoef sfCoef, BYTE* pData, BYTE* pAlphaData) {
-		//#ifdef _DRAWTODC
-		//				auto alphaPixel = sfCoef.pData + (height - 1 - y) * sfCoef.pitch + x * sfCoef.byte;
-		//				pData [0] = GetRValue(this->dwTextColor);
-		//				pData [1] = GetGValue(this->dwTextColor);
-		//				pData [2] = GetBValue(this->dwTextColor);
-		//				pAlphaData [0] = alphaPixel [3];
-		//#else
-		//				//unsigned int curColor = pRawBitmap [(height - 1 - y) * bitmapData.Stride / 4 + x];
-		//
-		//				////int b = curColor & 0xff;
-		//				////int g = (curColor & 0xff00) >> 8;
-		//				////int r = (curColor & 0xff0000) >> 16;
-		//				////int a = (curColor & 0xff000000) >> 24;
-		//
-		//				//pData [0] = curColor & 0xff;
-		//				//pData [1] = (curColor & 0xff00) >> 8;
-		//				//pData [2] = (curColor & 0xff0000) >> 16;
-		//
-		//				//pAlphaData [0] = (curColor & 0xff000000) >> 24;
-		//#endif
-		//
-		//#ifdef _CONSOLE
-		//				printf("%d %d %d %d\n", A, R, G, B);
-		//#endif // _CONSOLE
-		//				});
 	}
 
 	inline CharPos GetCharPos(LPCWSTR pText, size_t pos) {
@@ -1157,17 +960,6 @@ public:
 		return pCharPosArr [pos];
 	}
 
-	inline void Display(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
-		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
-
-		auto height = pDst->DrawText(pText, wcslen(pText), pRc
-			, this->dwDTFlags, this->dwTextColor, this->hFont
-			, bm, bo, boParam, bAntiA);
-
-		return;
-	}
-
 	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
@@ -1178,25 +970,9 @@ public:
 			return;
 		}
 
-		//CalculateRange(pText, pRc, nRowSpace, nColSpace);
-		//RenderPerChar(pText, pRc, nRowSpace, nColSpace);
-
-		if (pDst != nullptr
-
-#ifdef _USE_HWA
-			&& pHwaSf != nullptr
-#else
-			&& pMemSf != nullptr
-#endif
-			) {
-
-#ifdef _USE_HWA
+		if (pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr) {
 			auto pSf = pHwaSf;
-#else
-			auto pSf = pMemSf;
-#endif
 
-#ifdef _USE_HWA
 			int xOffset = -this->borderOffsetX;
 			int yOffset = -this->borderOffsetY + this->startY;
 
@@ -1208,20 +984,11 @@ public:
 			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
 				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
 				, bm, bo, boParam, bAntiA);
-#else
-			int xPos = pRc->left + this->hotSpotX;
-			int yPos = pRc->top + this->hotSpotY;
-
-			pSf->Blit(*pDst, xPos, yPos, bm, bo, boParam, bAntiA);
-#endif
 
 		}
 	}
 };
 
-#ifdef _GDIPLUS	
 // compatible with MMF
 #define Font FontW
 #define fpFont fpFontW
-#endif
-

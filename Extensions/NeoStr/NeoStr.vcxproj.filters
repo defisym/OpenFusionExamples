@@ -34,6 +34,9 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\_DeLib\Encryption.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -149,6 +152,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_3rdLib\GetFontName.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\Encryption.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

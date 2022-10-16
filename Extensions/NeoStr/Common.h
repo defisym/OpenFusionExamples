@@ -55,6 +55,7 @@ struct GlobalData;
 
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
+#include	"Encryption.h"
 #include	"NeoStr.h"
 
 struct GlobalData {

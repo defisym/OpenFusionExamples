@@ -12,8 +12,12 @@
 #define CND_CONDITION_VF				3
 
 #define CND_CONDITION_OVF				4
+#define CND_CONDITION_OVOF				5
 
-#define	CND_LAST						5
+#define CND_CONDITION_VHD				6
+#define CND_CONDITION_VWHD				7
+
+#define	CND_LAST						8
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -35,7 +39,13 @@
 #define	ACT_ACTION_CACHEV				10
 #define	ACT_ACTION_ERASEV				11
 
-#define	ACT_LAST						12
+#define	ACT_ACTION_OVT					12
+
+#define	ACT_ACTION_SHDE					13
+
+#define	ACT_ACTION_STRETCH				14
+
+#define	ACT_LAST						15
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -54,7 +64,11 @@
 #define EXP_EXPRESSION_GVL				8
 #define EXP_EXPRESSION_GVF				9
 
-#define	EXP_LAST                    	10
+#define EXP_EXPRESSION_GHDS 			10
+#define EXP_EXPRESSION_GAHDE 			11
+#define EXP_EXPRESSION_GWHDE 			12
+
+#define	EXP_LAST                    	13
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -84,8 +98,10 @@ typedef struct tagEDATA_V1
 
 	bool bCache;
 
+	AVHWDeviceType hwDeviceType;
+
 	bool bBuffer[3];
-	int buffer[48];
+	int buffer[47];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -158,6 +174,8 @@ typedef struct tagRDATA
 
 	bool bCache;
 	GlobalData* pData;
+
+	AVHWDeviceType hwDeviceType;
 
 	std::wstring* pRetStr;
 

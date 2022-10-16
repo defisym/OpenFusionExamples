@@ -468,15 +468,16 @@ void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
 	HFONT hFont = CreateFontIndirect(pLf);
 
 #ifdef _DEBUG
-	LOGFONT Lf;
+	LOGFONT Lf = { 0 };
 	GetObject(hFont, sizeof(LOGFONT), &Lf);
 #endif // _DEBUG
 
 
-	if ( hFont != NULL )
-	{
-		if (rdPtr->hFont!=0)
+	if ( hFont != NULL ) {
+		if (rdPtr->hFont != 0) {
 			DeleteObject(rdPtr->hFont);
+		}
+
 		rdPtr->logFont = *pLf;
 		rdPtr->hFont = hFont;
 		rdPtr->bFontChanged = true;
@@ -484,7 +485,6 @@ void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
 		SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
 		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
-
 }
 
 // ---------------------
