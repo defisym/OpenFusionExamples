@@ -468,8 +468,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bClip = true;
 
-		edPtr->borderOffsetX = DEFAULEBORDEROFFSET;
-		edPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+		edPtr->borderOffsetX = DEFAULT_EBORDER_OFFSET;
+		edPtr->borderOffsetY = DEFAULT_EBORDER_OFFSET;
 
 		edPtr->bVerticalAlignOffset = false;
 

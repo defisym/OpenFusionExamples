@@ -114,6 +114,8 @@
 
 #define	IDMN_ACTION_EF			    25012
 
+#define	IDMN_ACTION_LA			    25013
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -132,6 +134,8 @@
 #define	M_ACTION_R			        5011
 
 #define	M_ACTION_EF			        5012
+
+#define	M_ACTION_LA			        5013
 
 // Titles of action parameters
 #define M_WIDTH				        5501

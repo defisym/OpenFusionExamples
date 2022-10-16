@@ -153,6 +153,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Rotate", IDMN_ACTION_R
         MENUITEM SEPARATOR
+        MENUITEM "Link Active", IDMN_ACTION_LA
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -389,6 +391,8 @@ BEGIN
 
     M_FONTNAME              "Font File Path"
     M_KEY                   "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
+
+    M_ACTION_LA             "Link Active %0"
 END
 
 STRINGTABLE DISCARDABLE 

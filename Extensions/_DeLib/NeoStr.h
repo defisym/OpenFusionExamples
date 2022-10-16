@@ -20,7 +20,6 @@
 
 #pragma region _GDIPLUS_INIT
 
-
 //#define _BLUR
 
 #ifdef _BLUR
@@ -74,7 +73,8 @@ inline RECT operator+(RECT rA, RECT rB) {
 				,rA.bottom + rB.bottom };
 }
 
-constexpr auto DEFAULEBORDEROFFSET = 20;
+constexpr auto DEFAULT_EBORDER_OFFSET = 20;
+constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 class NeoStr {
 private:
@@ -182,6 +182,36 @@ private:
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
 	std::map<wchar_t, StrSize> charSzCache;
+
+	struct FormatColor {
+		size_t start;
+		//size_t end;
+		Color color;
+	};
+
+	std::vector<FormatColor> colorFormat;
+	std::vector<Color> colorStack;
+
+	struct FormatICon {
+		size_t start;
+		//size_t end;
+
+		int animation;
+		int direction;
+		int frame;
+
+		DWORD hImage;
+
+		size_t x;
+		size_t y;
+	};
+
+	std::vector<FormatICon> iConFormat;
+	std::map<DWORD, LPSURFACE> iConLib;
+	
+	npAppli appli = nullptr;
+	LPRO pIConActive = nullptr;
+	LPSURFACE pDefaultICon = nullptr;
 
 	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
 		for (auto& wChartoCheck : data) {
@@ -331,6 +361,10 @@ public:
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 		}
 		
+		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
+		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
 		// add a default char to return default value when input text is empty
 		this->GetCharSizeWithCache(L'露');
 	}
@@ -358,6 +392,13 @@ public:
 
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
+
+		delete this->pDefaultICon;
+		this->pDefaultICon = nullptr;
+
+		for (auto& it : this->iConLib) {
+			delete it.second;
+		}
 
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
@@ -492,6 +533,30 @@ public:
 			, Gdiplus::UnitWorld
 			, bFound ? this->pFontCollection
 			: nullptr);
+	}
+
+	inline Color GetColor(std::wstring_view hex) {
+		auto dec = _h2d(hex.data(), hex.size());
+
+		auto R = (BYTE)((dec) & 0xFF);
+		auto G = (BYTE)((dec >> 8) & 0xFF);
+		auto B = (BYTE)((dec >> 16) & 0xFF);
+		auto A = (BYTE)((dec >> 24) & 0xFF);
+
+
+		return Color(A, R, G, B);
+	}
+
+	inline Color GetColor(DWORD color) {
+		return 	Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+	}
+
+	inline void LinkActive(LPRO pObject) {
+		this->pIConActive = pObject;
+	}
+
+	inline void SetAppli(npAppli appli) {
+		this->appli = appli;
 	}
 
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
@@ -638,9 +703,228 @@ public:
 		memset(pText, 0, sizeof(wchar_t) * (pTextLen + 1));
 
 		memcpy(pRawText, pStr, sizeof(wchar_t) * (pTextLen + 1));
-		
-		//TODO
-		memcpy(pText, pStr, sizeof(wchar_t) * (pTextLen + 1));
+		//memcpy(pText, pStr, sizeof(wchar_t) * (pTextLen + 1));
+
+		// Format
+		// [ICon = ID]
+		// [Color = #FFFFFFFF][/Color]
+
+		auto pCurChar = pRawText;
+		auto pSavedChar = pText;
+
+		this->colorStack.clear();
+		this->colorStack.emplace_back(GetColor(this->dwTextColor));
+
+		this->colorFormat.clear();
+		this->colorFormat.emplace_back(FormatColor{ 0,colorStack.back() });
+
+		this->iConFormat.clear();
+
+		size_t newLineCount = 0;
+
+		while (true) {
+			// End
+			if ((pCurChar - pRawText) == pTextLen) {
+				break;
+			}
+
+			auto curChar = pCurChar[0];
+			auto nextChar = pCurChar[1];
+
+			// new line
+			if (curChar == L'\r' && nextChar == L'\n') {
+				newLineCount++;
+			}
+
+			// Escape
+			if (curChar == L'\\' && nextChar == L'[') {
+				pSavedChar[0] = L'[';
+
+				pCurChar += 2;
+				pSavedChar++;
+
+				continue;
+			}
+
+			// Parse Format
+			if (curChar == L'[') {
+				size_t end = 0;
+
+				bool bEndOfText = false;
+
+				while ((pCurChar + end)[0] != L']') {
+					if ((pCurChar - pRawText) + end == pTextLen) {
+						bEndOfText = true;
+
+						break;
+					}
+
+					end++;
+				}
+
+				// get format
+				//std::wstring_view controlStrDebug(pCurChar + 1, end - 1);
+				if (!bEndOfText) {
+					auto bEndOfRegion = (pCurChar + 1)[0] == L'/';
+
+					// handle format
+					do {
+						size_t equal = 0;
+
+						while ((pCurChar + equal)[0] != L'=') {
+							if (equal == end) {
+								break;
+							}
+							equal++;
+						}
+
+						auto GetTrimmedStr = [](LPWSTR pStart, size_t length) {
+							while (pStart[0] == L' ') {
+								pStart++;
+								length--;
+							}
+
+							while ((pStart + length - 1)[0] == L' ') {
+								length--;
+							}
+
+							return std::wstring_view(pStart, length);
+						};
+						auto StringViewIEqu = [](std::wstring_view& str, LPCWSTR pStr) {
+							auto length = wcslen(pStr);
+
+							if (length != str.size()) {
+								return false;
+							}
+
+							for (size_t i = 0; i < length; i++) {
+								if (ChrCmpIW(str[i], pStr[i]) != 0) {
+									return false;
+								}
+							}
+
+							return true;
+						};
+
+						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, equal - bEndOfRegion - 1);
+						std::wstring_view controlParam = !bEndOfRegion
+							? GetTrimmedStr(pCurChar + equal + 1, end - equal - 1)
+							: controlStr;
+
+						do {
+							size_t savedLength = pSavedChar - pText - newLineCount * 2;
+
+							if (StringViewIEqu(controlStr, L"Color")) {
+								size_t savedLengthLocal = savedLength;
+
+								if (!bEndOfRegion) {
+									colorStack.emplace_back(GetColor(controlParam));
+								}
+								else {
+									colorStack.pop_back();
+								}
+																
+								this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"ICon")) {		
+								size_t savedLengthLocal = savedLength;
+
+								int frame = 0;
+								int direction = 0;
+								int animation = 0;
+
+								auto paramParser = controlParam;
+
+								do {
+									auto ParseParam = [GetTrimmedStr, &paramParser](int& data) {
+										auto start = paramParser.find_last_of(L',');
+										
+										if (start == std::wstring::npos) {
+											data = _stoi(GetTrimmedStr(const_cast<wchar_t*>(paramParser.data()), paramParser.size()).data());
+
+											return false;
+										}
+										else {
+											auto paramStr = paramParser.substr(start + 1);
+											paramParser = paramParser.substr(0, start);
+
+											data = _stoi(GetTrimmedStr(const_cast<wchar_t*>(paramStr.data()), paramStr.size()).data());
+
+											return true;
+										}
+									};									
+
+									if (!ParseParam(frame)) {
+										break;
+									}
+
+									if (!ParseParam(direction)) {
+										break;
+									}
+
+									if (!ParseParam(animation)) {
+										break;
+									}
+								} while (0);
+
+								DWORD hImage = -1;
+
+								do {
+									if (this->pIConActive == nullptr || this->appli == nullptr) {
+										break;
+									}
+
+									if (animation < 0 || direction < 0 || frame < 0) {
+										break;
+									}
+
+									auto pRoa = &this->pIConActive->roa;
+
+									if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
+										break;
+									}
+
+									auto pDir = &pRoa->raAnimDirOffset[direction];
+
+									if (frame >= pDir->adNumberOfFrame) {
+										break;
+									}
+
+									hImage = pDir->adFrame[frame];
+								} while (0);
+
+								this->iConFormat.emplace_back(FormatICon{ savedLength
+																			, animation
+																			, direction
+																			, frame
+																			, hImage });
+
+								// space for icon
+								pSavedChar[0] = L'　'; 
+								pSavedChar++;
+
+								break;
+							}
+						} while (0);
+					} while (0);
+
+					// include ']'
+					pCurChar += end + 1;
+
+					continue;
+				}
+			}
+
+			pSavedChar[0] = pCurChar[0];
+			
+			pCurChar++;
+			pSavedChar++;
+		}
+
+		return;
 	}
 
 	inline CharPos CalculateRange(LPRECT pRc) {
@@ -888,6 +1172,12 @@ public:
 				&& charRc.bottom > displayRc.top);
 		};
 
+		size_t totalChar = 0;
+		auto iConSize = charSzCache.begin();
+
+		auto colorIt = this->colorFormat.begin();
+		auto iConIt = this->iConFormat.begin();
+
 		for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
 			std::wstring str(pText + curStrPos.start, curStrPos.length);
@@ -898,7 +1188,7 @@ public:
 			int x = GetStartPosX(curStrPos.width, rcWidth);
 			x -= pStrSizeArr [curStrPos.start].width / 8;
 
-			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
+			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr [offset];
@@ -908,15 +1198,33 @@ public:
 											,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-					auto positionX = (float)(x)+(float)(this->borderOffsetY);
+					auto positionX = (float)(x) + (float)(this->borderOffsetY);
 					auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
 		
+					if (colorIt!= this->colorFormat.end()
+						&& totalChar >= colorIt->start) {
+						solidBrush.SetColor(colorIt->color);
+						
+						colorIt++;
+					}
+
+					if (iConIt != this->iConFormat.end()
+						&& totalChar >= iConIt->start) {
+						iConIt->x = (size_t)positionX + iConSize->second.width /2;
+						iConIt->y = (size_t)positionY;
+
+						iConIt++;
+					}
+
 					auto status = g.DrawString(pCurChar, 1, &font
 						, PointF(positionX, positionY), &solidBrush);
 				}
 
 				x += (charSz->width + nColSpace);
 			}
+			
+			// add pos of \r\n
+			//totalChar += 2;
 		}
 
 #ifdef _BLUR
@@ -963,10 +1271,77 @@ public:
 		ReleaseSfCoef(pMemSf, sfCoef);
 
 		pBitmap->UnlockBits(&bitmapData);
+				
+		for (auto& it : this->iConFormat) {			
+			LPSURFACE pSf = nullptr;			
+			auto bFound = it.hImage != -1;			
+
+			if (bFound) {
+				auto IConLibIt = this->iConLib.find(it.hImage);
+
+				if (IConLibIt == this->iConLib.end()) {
+					cSurface imageSurface;
+					LockImageSurface(this->appli, it.hImage, imageSurface);
+
+					auto pIConSf = CreateSurface(32, imageSurface.GetWidth(), imageSurface.GetHeight());
+					//pIConSf->SetTransparentColor(imageSurface.GetTransparentColor());
+					//_AddAlpha(pIConSf);
+
+					imageSurface.Blit(*pIConSf);
+					//imageSurface.Blit(*pIConSf, 0, 0, BMODE_OPAQUE, BOP_COPY, 0, BLTF_ANTIA | BLTF_COPYALPHA);
+
+					UnlockImageSurface(imageSurface);
+
+					this->iConLib[it.hImage] = pIConSf;
+
+					pSf = pIConSf;
+				}
+				else {
+					pSf = IConLibIt->second;
+				}
+			}
+			else {
+				if (this->pDefaultICon == nullptr) {
+					LPSURFACE proto = nullptr;
+					GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+					this->pDefaultICon = new cSurface;
+					this->pDefaultICon->Create(128, 128, proto);
+
+					_AddAlpha(this->pDefaultICon,175);
+
+					this->pDefaultICon->Fill(RGB(200, 200, 200));
+
+					this->pDefaultICon->Line(0, 0, 127, 0);
+					this->pDefaultICon->Line(0, 0, 0, 127);
+					this->pDefaultICon->Line(127, 127, 127, 0);
+					this->pDefaultICon->Line(127, 127, 0, 127);
+
+					this->pDefaultICon->Line(0, 0, 127, 127);
+					this->pDefaultICon->Line(127, 0, 0, 127);
 
 #ifdef _DEBUG
-		//_SavetoClipBoard(pMemSf, false);
+					//_SavetoClipBoard(this->pDefaultICon, false);
 #endif // _DEBUG
+				}
+
+				pSf = this->pDefaultICon;
+			}
+
+			//auto height = pSf->GetHeight() * (iConSize->second.height / iConSize->second.width);
+
+			auto ret = pSf->Stretch(*pMemSf
+				, it.x, it.y + (iConSize->second.height - iConSize->second.width) / 2 - iConSize->second.height / 16
+				, iConSize->second.width, iConSize->second.width
+				//, it.x, it.y
+				//, iConSize->second.width, iConSize->second.height
+				, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA);
+
+#ifdef _DEBUG
+			_SavetoClipBoard(pSf, false);
+			//_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG		
+		}
 
 		delete pHwaSf;
 		pHwaSf = nullptr;

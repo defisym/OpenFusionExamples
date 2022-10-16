@@ -31,7 +31,9 @@
 
 #define	ACT_ACTION_EF			    	12
 
-#define	ACT_LAST						13
+#define	ACT_ACTION_LA			    	13
+
+#define	ACT_LAST						14
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -199,6 +201,8 @@ typedef struct tagRDATA
 	NeoStr* pNeoStr;
 
 	CharPos charPos;
+
+	LPRO pIConActive;
 
 	GlobalData* pData;
 

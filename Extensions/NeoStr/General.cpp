@@ -221,8 +221,8 @@ HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr
 
 	//		memcpy(newEdPtr, oldPtr, dwNewSize);
 
-	//		newEdPtr->borderOffsetX = DEFAULEBORDEROFFSET;
-	//		newEdPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+	//		newEdPtr->borderOffsetX = DEFAULT_EBORDER_OFFSET;
+	//		newEdPtr->borderOffsetY = DEFAULT_EBORDER_OFFSET;
 	//	}
 
 	//	GlobalUnlock(hgNew);

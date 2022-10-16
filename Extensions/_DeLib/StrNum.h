@@ -307,18 +307,21 @@ inline int _hexSheet(const wchar_t p) {
 	}
 }
 
-inline int _h2d(const wchar_t* p) {
+inline DWORD _h2d(const wchar_t* p, size_t strLen = -1) {
+	auto len = strLen == -1 ? wcslen(p) : strLen;
+
 	if (*p == L'#') {
 		p += 1;
+		len -= 1;
 	}
 	if ((*p == L'0') && (*(p + 1) == L'x' || *(p + 1) == L'X')) {
 		p += 2;
-	}
+		len -= 2;
+	}	
+	
+	DWORD ret = 0;
 
-	auto len = wcslen(p);
-	int ret = 0;
-
-	for (int pow = 1; len != 0; pow = pow << 4, len--) {
+	for (DWORD pow = 1; len != 0; pow = pow << 4, len--) {
 		auto conv = _hexSheet(*(p + len - 1));
 
 		if (conv == -1) {

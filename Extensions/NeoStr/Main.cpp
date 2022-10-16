@@ -46,6 +46,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_EF, M_ACTION_EF, ACT_ACTION_EF,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FONTNAME, M_KEY,
 
+		IDMN_ACTION_LA, M_ACTION_LA, ACT_ACTION_LA,	0, 1, PARAM_OBJECT, 0,
+
 		};
 
 // Definitions of parameters for each expression
@@ -338,6 +340,18 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
+short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2) {
+	LPRO pObject = (LPRO)CNC_GetIntParameter(rdPtr);
+	
+	if (pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE)) {
+		rdPtr->pIConActive = pObject;
+
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -523,6 +537,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Rotate,
 
 			Action_EmbedFont,
+
+			Action_LinkActive,
 
 			0
 			};

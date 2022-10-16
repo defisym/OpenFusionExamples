@@ -61,6 +61,9 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
+		rdPtr->pNeoStr->LinkActive(rdPtr->pIConActive);
+		rdPtr->pNeoStr->SetAppli(rdPtr->rHo.hoAdRunHeader->rhIdAppli);
+
 		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str());
 		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
@@ -116,10 +119,10 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 	//MSGBOX(L"Editor Display");
 	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
 
-	//if (edPtr->borderOffsetX != DEFAULEBORDEROFFSET || edPtr->borderOffsetY != DEFAULEBORDEROFFSET) {
+	//if (edPtr->borderOffsetX != DEFAULT_EBORDER_OFFSET || edPtr->borderOffsetY != DEFAULT_EBORDER_OFFSET) {
 	//	MSGBOX(L"Update");
-	//	edPtr->borderOffsetX = DEFAULEBORDEROFFSET;
-	//	edPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+	//	edPtr->borderOffsetX = DEFAULT_EBORDER_OFFSET;
+	//	edPtr->borderOffsetY = DEFAULT_EBORDER_OFFSET;
 	//}
 
 	if (ps != NULL) {	// Do the following if this surface exists
@@ -147,6 +150,9 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
 
 		//MSGBOX(L"Editor Calc");
+		neoStr.LinkActive(nullptr);
+		neoStr.SetAppli(nullptr);
+
 		neoStr.GetFormat(&edPtr->pText);
 		neoStr.CalculateRange(rc);
 
