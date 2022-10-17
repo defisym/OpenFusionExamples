@@ -196,6 +196,10 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // 
 HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
 {
+	//LPEDATA(OldEdPtr)->iConOffsetX = 0;
+	//LPEDATA(OldEdPtr)->iConOffsetY = 0;
+	//LPEDATA(OldEdPtr)->iConScale = 1.0;
+
 	//if (LPEDATA(OldEdPtr)->hotSpotPos<HotSpotPos::LT || LPEDATA(OldEdPtr)->hotSpotPos > HotSpotPos::CUSTOM) {
 	//	LPEDATA(OldEdPtr)->hotSpotPos = HotSpotPos::LT;
 	//	LPEDATA(OldEdPtr)->hotSpotX = 0;

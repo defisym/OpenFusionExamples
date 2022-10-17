@@ -84,6 +84,16 @@
 #define	IDS_PROP_RENDER_BorderOffsetY       258
 #define	IDS_PROP_RENDER_BorderOffsetY_INFO  259
 
+#define	IDS_PROP_FORMAT_TITLE               260
+#define	IDS_PROP_FORMAT_ICONOFFSETX         261
+#define	IDS_PROP_FORMAT_ICONOFFSETX_INFO    262
+#define	IDS_PROP_FORMAT_ICONOFFSETY         263
+#define	IDS_PROP_FORMAT_ICONOFFSETY_INFO    264
+#define	IDS_PROP_FORMAT_ICONSCALE           265
+#define	IDS_PROP_FORMAT_ICONSCALE_INFO      266
+#define	IDS_PROP_FORMAT_ICONRESAMPLE        267
+#define	IDS_PROP_FORMAT_ICONRESAMPLE_INFO   268
+
 
 // 	Debug tree
 //-------------------
@@ -116,6 +126,10 @@
 
 #define	IDMN_ACTION_LA			    25013
 
+#define	IDMN_ACTION_SIO			    25014
+#define	IDMN_ACTION_SIS			    25015
+#define	IDMN_ACTION_SIR			    25016
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -137,6 +151,10 @@
 
 #define	M_ACTION_LA			        5013
 
+#define	M_ACTION_SIO		        5014
+#define	M_ACTION_SIS		        5015
+#define	M_ACTION_SIR		        5016
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -153,6 +171,12 @@
 
 #define M_FONTNAME			        5511
 #define M_KEY				        5512
+
+#define M_ACTIVE				    5513
+#define M_ICONXOFFSET				5514
+#define M_ICONYOFFSET				5515
+#define M_ICONSCALE				    5516
+#define M_ICONRESAMPLE				5517
 
 
 //	Conditions

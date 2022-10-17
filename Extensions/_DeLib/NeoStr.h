@@ -76,6 +76,8 @@ inline RECT operator+(RECT rA, RECT rB) {
 constexpr auto DEFAULT_EBORDER_OFFSET = 20;
 constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
+constexpr auto DEFAULT_CHARACTER = L'　';
+
 class NeoStr {
 private:
 	HDC hdc;
@@ -83,6 +85,8 @@ private:
 
 	HFONT hFont;
 	LOGFONT logFont;
+
+	Font* pFont = nullptr;
 
 	TEXTMETRIC tm;
 	int nRowSpace = 0;
@@ -182,6 +186,7 @@ private:
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
 	std::map<wchar_t, StrSize> charSzCache;
+	StrSize defaultCharSz;
 
 	struct FormatColor {
 		size_t start;
@@ -208,6 +213,13 @@ private:
 
 	std::vector<FormatICon> iConFormat;
 	std::map<DWORD, LPSURFACE> iConLib;
+
+	float iConOffsetX = 0;
+	float iConOffsetY = 0;
+
+	float iConScale = 1.0;
+
+	bool iConResample = false;
 	
 	npAppli appli = nullptr;
 	LPRO pIConActive = nullptr;
@@ -349,6 +361,8 @@ public:
 		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
+		//pFont = GetFontPonter(this->logFont);
+
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
 		this->strPos.reserve(20);
@@ -366,11 +380,15 @@ public:
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
 		// add a default char to return default value when input text is empty
-		this->GetCharSizeWithCache(L'露');
+		//this->GetCharSizeWithCache(L'露');
+		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER);
 	}
 
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
+
+		delete this->pFont;
+		this->pFont = nullptr;
 
 		delete[] this->pRawText;
 		this->pRawText = nullptr;
@@ -516,7 +534,7 @@ public:
 
 		return fontStyle;
 	}
-
+		
 	inline Font GetFont(LOGFONT logFont) {
 		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
 		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
@@ -535,20 +553,44 @@ public:
 			: nullptr);
 	}
 
+	inline Font* GetFontPonter(LOGFONT logFont) {
+		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+		
+		return new Font(logFont.lfFaceName
+			, (float)abs(logFont.lfHeight)
+			, GetFontStyle(logFont)
+			, Gdiplus::UnitWorld
+			, bFound ? this->pFontCollection
+			: nullptr);
+	}
+
+	// #AARRGGBB
 	inline Color GetColor(std::wstring_view hex) {
 		auto dec = _h2d(hex.data(), hex.size());
 
-		auto R = (BYTE)((dec) & 0xFF);
-		auto G = (BYTE)((dec >> 8) & 0xFF);
-		auto B = (BYTE)((dec >> 16) & 0xFF);
 		auto A = (BYTE)((dec >> 24) & 0xFF);
-
-
+		auto R = (BYTE)((dec >> 16) & 0xFF);
+		auto G = (BYTE)((dec >> 8) & 0xFF);
+		auto B = (BYTE)((dec) & 0xFF);		
+		
 		return Color(A, R, G, B);
 	}
 
 	inline Color GetColor(DWORD color) {
 		return 	Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+	}
+
+	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
+		this->iConOffsetX = iConOffsetX;
+		this->iConOffsetY = iConOffsetY;
+	}
+
+	inline void SetIConScale(float iConScale = 1.0) {
+		this->iConScale = iConScale;
+	}
+
+	inline void SetIConResample(bool iConResample=false){
+		this->iConResample=iConResample;
 	}
 
 	inline void LinkActive(LPRO pObject) {
@@ -622,6 +664,9 @@ public:
 	}
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
+//#define MEASURE_GDI_PLUS
+
+#ifdef MEASURE_GDI_PLUS
 		//Graphics g(hdc);
 		//auto font = GetFont(this->logFont);
 		//
@@ -635,15 +680,28 @@ public:
 		//auto pStringFormat_2 = StringFormat::GenericTypographic();
 		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat_2, &boundRect_2);
 
-		SIZE sz;
+		SIZE sz = {0};
+
+		Graphics g(hdc);
+		RectF boundRect;
+		PointF origin(0, 0);
+
+		//auto pStringFormat = StringFormat::GenericDefault();
+		auto pStringFormat = StringFormat::GenericTypographic();
+		g.MeasureString(&wChar, 1, pFont, origin, pStringFormat, &boundRect);
+
+		sz.cx = long(boundRect.GetRight() - boundRect.GetLeft());
+		sz.cy = long(boundRect.GetBottom() - boundRect.GetTop());
+#else
+		SIZE sz = { 0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+#endif
 
 		//ABC abc;
 		//GetCharABCWidths(hdc, wChar, wChar, &abc);
 		//
-		//TEXTMETRIC tm;
-		//GetTextMetrics(hdc, &tm);
-		//
+
+		//sz.cx -= this->tm
 		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 
 		return *(StrSize*)&sz;
@@ -903,7 +961,7 @@ public:
 																			, hImage });
 
 								// space for icon
-								pSavedChar[0] = L'　'; 
+								pSavedChar[0] = DEFAULT_CHARACTER;
 								pSavedChar++;
 
 								break;
@@ -985,6 +1043,7 @@ public:
 				curHeight = max(curHeight, charSz->height);
 
 				if (curWidth > rcWidth) {
+					// TODO two NAS char causes infinite loop
 					if (NotAtStart(curChar)) {
 						notAtStartCharPos = pChar;
 
@@ -1149,6 +1208,7 @@ public:
 		g.SetPixelOffsetMode(this->pixelOffsetMode);
 		
 		auto font = GetFont(this->logFont);
+		auto pFont = &font;
 
 		//Color fontColor(255, 50, 150, 250);
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
@@ -1173,7 +1233,6 @@ public:
 		};
 
 		size_t totalChar = 0;
-		auto iConSize = charSzCache.begin();
 
 		auto colorIt = this->colorFormat.begin();
 		auto iConIt = this->iConFormat.begin();
@@ -1210,13 +1269,13 @@ public:
 
 					if (iConIt != this->iConFormat.end()
 						&& totalChar >= iConIt->start) {
-						iConIt->x = (size_t)positionX + iConSize->second.width /2;
+						iConIt->x = (size_t)positionX;
 						iConIt->y = (size_t)positionY;
 
 						iConIt++;
 					}
 
-					auto status = g.DrawString(pCurChar, 1, &font
+					auto status = g.DrawString(pCurChar, 1, pFont
 						, PointF(positionX, positionY), &solidBrush);
 				}
 
@@ -1271,10 +1330,27 @@ public:
 		ReleaseSfCoef(pMemSf, sfCoef);
 
 		pBitmap->UnlockBits(&bitmapData);
-				
+			
+		auto iConSize = this->defaultCharSz;
+
+		iConSize.width = int(iConSize.width * this->iConScale);
+		iConSize.height = int(iConSize.height * this->iConScale);
+
+		auto iConXOffset = int(this->iConOffsetX * this->defaultCharSz.width
+			+ (this->defaultCharSz.width - iConSize.width) / 2
+			+ this->defaultCharSz.width / 6.0);
+		auto iConYOffset = int(this->iConOffsetY * this->defaultCharSz.width
+			+ (this->defaultCharSz.height - iConSize.height) / 2
+			+ (this->defaultCharSz.height - this->defaultCharSz.width)
+			- this->tm.tmDescent /*- this->tm.tmExternalLeading*/);
+
+		auto flags = this->iConResample
+			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA
+			: STRF_COPYALPHA;
+
 		for (auto& it : this->iConFormat) {			
 			LPSURFACE pSf = nullptr;			
-			auto bFound = it.hImage != -1;			
+			auto bFound = it.hImage != -1;
 
 			if (bFound) {
 				auto IConLibIt = this->iConLib.find(it.hImage);
@@ -1328,17 +1404,13 @@ public:
 				pSf = this->pDefaultICon;
 			}
 
-			//auto height = pSf->GetHeight() * (iConSize->second.height / iConSize->second.width);
-
 			auto ret = pSf->Stretch(*pMemSf
-				, it.x, it.y + (iConSize->second.height - iConSize->second.width) / 2 - iConSize->second.height / 16
-				, iConSize->second.width, iConSize->second.width
-				//, it.x, it.y
-				//, iConSize->second.width, iConSize->second.height
-				, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA);
+				, it.x + iConXOffset, it.y + iConYOffset
+				, iConSize.width, iConSize.width
+				, BMODE_OPAQUE, BOP_COPY, 0, flags);
 
 #ifdef _DEBUG
-			_SavetoClipBoard(pSf, false);
+			//_SavetoClipBoard(pSf, false);
 			//_SavetoClipBoard(pMemSf, false);
 #endif // _DEBUG		
 		}

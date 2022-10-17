@@ -46,7 +46,11 @@ short actionsInfos[]=
 
 		IDMN_ACTION_EF, M_ACTION_EF, ACT_ACTION_EF,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_FONTNAME, M_KEY,
 
-		IDMN_ACTION_LA, M_ACTION_LA, ACT_ACTION_LA,	0, 1, PARAM_OBJECT, 0,
+		IDMN_ACTION_LA, M_ACTION_LA, ACT_ACTION_LA,	0, 1, PARAM_OBJECT, M_ACTIVE,
+		
+		IDMN_ACTION_SIO, M_ACTION_SIO, ACT_ACTION_SIO,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ICONXOFFSET, M_ICONYOFFSET,
+		IDMN_ACTION_SIS, M_ACTION_SIS, ACT_ACTION_SIS,	0, 1, PARAM_EXPRESSION, M_ICONSCALE,
+		IDMN_ACTION_SIR, M_ACTION_SIR, ACT_ACTION_SIR,	0, 1, PARAM_EXPRESSION, M_ICONRESAMPLE,
 
 		};
 
@@ -352,6 +356,39 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetIConOffset(LPRDATA rdPtr, long param1, long param2) {
+	auto offsetX = GetFloatParam(rdPtr);
+	auto offsetY = GetFloatParam(rdPtr);
+
+	rdPtr->iConOffsetX = offsetX;
+	rdPtr->iConOffsetY = offsetY;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetIConScale(LPRDATA rdPtr, long param1, long param2) {
+	auto scale = GetFloatParam(rdPtr);
+
+	rdPtr->iConScale = scale;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetIConResample(LPRDATA rdPtr, long param1, long param2) {
+	bool bResample = (bool)CNC_GetParameter(rdPtr);
+
+	rdPtr->iConResample = bResample;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -539,6 +576,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_EmbedFont,
 
 			Action_LinkActive,
+
+			Action_SetIConOffset,
+			Action_SetIConScale,
+			Action_SetIConResample,
 
 			0
 			};

@@ -131,6 +131,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pIConActive = nullptr;
 
+	rdPtr->iConOffsetX = edPtr->iConOffsetX;
+	rdPtr->iConOffsetY = edPtr->iConOffsetY;
+	rdPtr->iConScale = edPtr->iConScale;
+	rdPtr->iConResample = edPtr->iConResample;
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {

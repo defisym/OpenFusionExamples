@@ -154,6 +154,9 @@ BEGIN
         MENUITEM "Rotate", IDMN_ACTION_R
         MENUITEM SEPARATOR
         MENUITEM "Link Active", IDMN_ACTION_LA
+        MENUITEM "Set ICon Offset", IDMN_ACTION_SIO
+        MENUITEM "Set ICon Scale", IDMN_ACTION_SIS
+        MENUITEM "Set ICon Resample", IDMN_ACTION_SIR
         MENUITEM SEPARATOR
     END
 END
@@ -344,6 +347,16 @@ BEGIN
     IDS_PROP_RENDER_BorderOffsetY                   "Border Offset Y"
     IDS_PROP_RENDER_BorderOffsetY_INFO              "Expand render area, to give enough space for shaders"
 
+    IDS_PROP_FORMAT_TITLE                           "Format"
+    IDS_PROP_FORMAT_ICONOFFSETX                     "ICon Offset X"
+    IDS_PROP_FORMAT_ICONOFFSETX_INFO                "ICon Offset X, Based on Char Size Percent"
+    IDS_PROP_FORMAT_ICONOFFSETY                     "ICon Offset Y"
+    IDS_PROP_FORMAT_ICONOFFSETY_INFO                "ICon Offset Y, Based on Char Size Percent"
+    IDS_PROP_FORMAT_ICONSCALE                       "ICon Scale"
+    IDS_PROP_FORMAT_ICONSCALE_INFO                  "ICon Scale"
+    IDS_PROP_FORMAT_ICONRESAMPLE                    "ICon Resample"
+    IDS_PROP_FORMAT_ICONRESAMPLE_INFO               "ICon Resample"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -393,6 +406,17 @@ BEGIN
     M_KEY                   "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
 
     M_ACTION_LA             "Link Active %0"
+    M_ACTIVE                "ICon Active"
+
+    M_ACTION_SIO            "Set ICon Offset X = %0, Y = %1"
+    M_ACTION_SIS            "Set ICon Scale = %0"
+    M_ACTION_SIR            "Set ICon Resample = %0"
+
+    M_ICONXOFFSET           "ICon Offset X, Based on Char Size Percent"
+    M_ICONYOFFSET           "ICon Offset Y, Based on Char Size Percent"
+    M_ICONSCALE	            "ICon Scale"
+    M_ICONRESAMPLE          "ICon Resample"
+
 END
 
 STRINGTABLE DISCARDABLE 

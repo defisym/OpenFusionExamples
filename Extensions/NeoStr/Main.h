@@ -33,7 +33,11 @@
 
 #define	ACT_ACTION_LA			    	13
 
-#define	ACT_LAST						14
+#define	ACT_ACTION_SIO			    	14
+#define	ACT_ACTION_SIS			    	15
+#define	ACT_ACTION_SIR			    	16
+
+#define	ACT_LAST						17
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -114,10 +118,16 @@ typedef struct tagEDATA_V1
 	int hotSpotX = 0;
 	int hotSpotY = 0;
 
-	bool unused_1;
+	float iConOffsetX;
+	float iConOffsetY;
+
+	float iConScale;
+
+	bool iConResample;
+
 	short unused_2;
 
-	int buffer[18];
+	int buffer[15];
 	
 	wchar_t	pText;		// Text
 
@@ -205,6 +215,13 @@ typedef struct tagRDATA
 	LPRO pIConActive;
 
 	GlobalData* pData;
+
+	float iConOffsetX;
+	float iConOffsetY;
+
+	float iConScale;
+
+	bool iConResample;
 
 	std::wstring* pExpRet;
 
