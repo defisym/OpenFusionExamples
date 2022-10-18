@@ -52,6 +52,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SIS, M_ACTION_SIS, ACT_ACTION_SIS,	0, 1, PARAM_EXPRESSION, M_ICONSCALE,
 		IDMN_ACTION_SIR, M_ACTION_SIR, ACT_ACTION_SIR,	0, 1, PARAM_EXPRESSION, M_ICONRESAMPLE,
 
+		IDMN_ACTION_SVO, M_ACTION_SVO, ACT_ACTION_SVO,	0, 1, PARAM_EXPRESSION, M_VERTICALOFFSET,
+
 		};
 
 // Definitions of parameters for each expression
@@ -74,14 +76,21 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GRH, M_EXPRESSION_GRH, EXP_EXPRESSION_GRH, 0, 0,
 		IDMN_EXPRESSION_GHX, M_EXPRESSION_GHX, EXP_EXPRESSION_GHX, 0, 0,
 		IDMN_EXPRESSION_GHY, M_EXPRESSION_GHY, EXP_EXPRESSION_GHY, 0, 0,
-		IDMN_EXPRESSION_GXS, M_EXPRESSION_GXS, EXP_EXPRESSION_GXS, 0, 0,
-		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, 0, 0,
+		IDMN_EXPRESSION_GXS, M_EXPRESSION_GXS, EXP_EXPRESSION_GXS, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, EXPFLAG_DOUBLE, 0,
 		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_KEY, M_POS,
 
 		IDMN_EXPRESSION_GCX, M_EXPRESSION_GCX, EXP_EXPRESSION_GCX, 0, 1, EXPPARAM_LONG, M_POS,
 		IDMN_EXPRESSION_GCY, M_EXPRESSION_GCY, EXP_EXPRESSION_GCY, 0, 1, EXPPARAM_LONG, M_POS,
+
+		IDMN_EXPRESSION_GIOX, M_EXPRESSION_GIOX, EXP_EXPRESSION_GIOX, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_GIOY, M_EXPRESSION_GIOY, EXP_EXPRESSION_GIOY, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_GIS, M_EXPRESSION_GIS, EXP_EXPRESSION_GIS, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_GIR, M_EXPRESSION_GIR, EXP_EXPRESSION_GIR, EXPFLAG_DOUBLE, 0,
+		
+		IDMN_EXPRESSION_GVO, M_EXPRESSION_GVO, EXP_EXPRESSION_GVO, 0, 0,
 
 		};
 
@@ -381,7 +390,17 @@ short WINAPI DLLExport Action_SetIConScale(LPRDATA rdPtr, long param1, long para
 short WINAPI DLLExport Action_SetIConResample(LPRDATA rdPtr, long param1, long param2) {
 	bool bResample = (bool)CNC_GetParameter(rdPtr);
 
-	rdPtr->iConResample = bResample;
+	rdPtr->bIConResample = bResample;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetVerticalOffset(LPRDATA rdPtr, long param1, long param2) {
+	bool bVerticalAlignOffset = (bool)CNC_GetParameter(rdPtr);
+
+	rdPtr->bVerticalAlignOffset = bVerticalAlignOffset;
 
 	ReDisplay(rdPtr);
 
@@ -540,6 +559,26 @@ long WINAPI DLLExport Expression_GetCharY(LPRDATA rdPtr, long param1) {
 	return rdPtr->pNeoStr->GetCharPos(pos).y;
 }
 
+long WINAPI DLLExport Expression_GetIConOffsetX(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->iConOffsetX);
+}
+
+long WINAPI DLLExport Expression_GetIConOffsetY(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->iConOffsetY);
+}
+
+long WINAPI DLLExport Expression_GetIConScale(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->iConScale);
+}
+
+long WINAPI DLLExport Expression_GetIConResample(LPRDATA rdPtr, long param1) {
+	return rdPtr->bIConResample;
+}
+
+long WINAPI DLLExport Expression_GetVerticalOffset(LPRDATA rdPtr, long param1) {
+	return rdPtr->bVerticalAlignOffset;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -581,6 +620,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetIConScale,
 			Action_SetIConResample,
 
+			Action_SetVerticalOffset,
+
 			0
 			};
 
@@ -611,6 +652,13 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetCharX,
 			Expression_GetCharY,
+			
+			Expression_GetIConOffsetX,
+			Expression_GetIConOffsetY,
+			Expression_GetIConScale,
+			Expression_GetIConResample,
+
+			Expression_GetVerticalOffset,
 			
 			0
 			};

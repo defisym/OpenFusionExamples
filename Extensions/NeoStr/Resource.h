@@ -130,6 +130,8 @@
 #define	IDMN_ACTION_SIS			    25015
 #define	IDMN_ACTION_SIR			    25016
 
+#define	IDMN_ACTION_SVO			    25017
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -155,6 +157,8 @@
 #define	M_ACTION_SIS		        5015
 #define	M_ACTION_SIR		        5016
 
+#define	M_ACTION_SVO		        5017
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -178,6 +182,7 @@
 #define M_ICONSCALE				    5516
 #define M_ICONRESAMPLE				5517
 
+#define M_VERTICALOFFSET			5518
 
 //	Conditions
 //--------------------
@@ -229,6 +234,13 @@
 #define IDMN_EXPRESSION_GCX					27017
 #define IDMN_EXPRESSION_GCY					27018
 
+#define IDMN_EXPRESSION_GIOX				27019
+#define IDMN_EXPRESSION_GIOY				27020
+#define IDMN_EXPRESSION_GIS					27021
+#define IDMN_EXPRESSION_GIR					27022
+
+#define IDMN_EXPRESSION_GVO					27023
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -255,6 +267,13 @@
 
 #define M_EXPRESSION_GCX					7017
 #define M_EXPRESSION_GCY					7018
+
+#define M_EXPRESSION_GIOX					7019
+#define M_EXPRESSION_GIOY					7020
+#define M_EXPRESSION_GIS					7021
+#define M_EXPRESSION_GIR					7022
+
+#define M_EXPRESSION_GVO					7023
 
 // Names of expression parameters
 #define M_POS				                7500

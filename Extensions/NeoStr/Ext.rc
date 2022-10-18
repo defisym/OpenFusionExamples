@@ -134,29 +134,41 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Embed Font", IDMN_ACTION_EF 
         MENUITEM SEPARATOR
-        MENUITEM "Change Render Size", IDMN_ACTION_CS
-        MENUITEM SEPARATOR
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
+        MENUITEM SEPARATOR    
+        POPUP "Alignment"
+        BEGIN    
+            MENUITEM "Change Row Space", IDMN_ACTION_CRS
+            MENUITEM "Change Col Space", IDMN_ACTION_CCS
+            MENUITEM SEPARATOR
+            MENUITEM "Change Vertical Offset", IDMN_ACTION_SVO
+            MENUITEM SEPARATOR
+            MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
+            MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Change Render Size", IDMN_ACTION_CS
         MENUITEM SEPARATOR        
-        MENUITEM "Change Row Space", IDMN_ACTION_CRS
-        MENUITEM "Change Col Space", IDMN_ACTION_CCS
+        POPUP "Zoom && Rotate"
+        BEGIN
+            MENUITEM "Change HotSpot", IDMN_ACTION_SH
+            MENUITEM SEPARATOR
+            MENUITEM "Zoom", IDMN_ACTION_Z
+            MENUITEM "Stretch", IDMN_ACTION_S
+            MENUITEM SEPARATOR
+            MENUITEM "Rotate", IDMN_ACTION_R
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
-        MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
-        MENUITEM SEPARATOR
-        MENUITEM "Change HotSpot", IDMN_ACTION_SH
-        MENUITEM SEPARATOR
-        MENUITEM "Zoom", IDMN_ACTION_Z
-        MENUITEM "Stretch", IDMN_ACTION_S
-        MENUITEM SEPARATOR
-        MENUITEM "Rotate", IDMN_ACTION_R
-        MENUITEM SEPARATOR
-        MENUITEM "Link Active", IDMN_ACTION_LA
-        MENUITEM "Set ICon Offset", IDMN_ACTION_SIO
-        MENUITEM "Set ICon Scale", IDMN_ACTION_SIS
-        MENUITEM "Set ICon Resample", IDMN_ACTION_SIR
+        POPUP "Format"
+        BEGIN
+            MENUITEM "Link Active", IDMN_ACTION_LA
+            MENUITEM SEPARATOR            
+            MENUITEM "Set ICon Offset", IDMN_ACTION_SIO
+            MENUITEM "Set ICon Scale", IDMN_ACTION_SIS
+            MENUITEM "Set ICon Resample", IDMN_ACTION_SIR
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -172,35 +184,57 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Get Font Family Name", IDMN_EXPRESSION_GFN
+        MENUITEM SEPARATOR
         MENUITEM "Get Display String", IDMN_EXPRESSION_GSTR
         MENUITEM SEPARATOR
-        MENUITEM "Get Row Space", IDMN_EXPRESSION_GRS
-        MENUITEM "Get Col Space", IDMN_EXPRESSION_GCS
+        POPUP "Alignment"
+        BEGIN
+            MENUITEM "Get Row Space", IDMN_EXPRESSION_GRS
+            MENUITEM "Get Col Space", IDMN_EXPRESSION_GCS
+            MENUITEM SEPARATOR
+            MENUITEM "Get Vertical Offset", IDMN_EXPRESSION_GVO
+            MENUITEM SEPARATOR
+            MENUITEM "Get Horizontal Align", IDMN_EXPRESSION_GHA
+            MENUITEM "Get Vertical Align", IDMN_EXPRESSION_GVA
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Get Horizontal Align", IDMN_EXPRESSION_GHA
-        MENUITEM "Get Vertical Align", IDMN_EXPRESSION_GVA
+        POPUP "Size"
+        BEGIN
+            MENUITEM "Get Max Width", IDMN_EXPRESSION_GMW
+            MENUITEM "Get Total Height", IDMN_EXPRESSION_GTH
+            MENUITEM SEPARATOR
+            MENUITEM "Get Render Width", IDMN_EXPRESSION_GRW
+            MENUITEM "Get Render Height", IDMN_EXPRESSION_GRH
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Get Char X", IDMN_EXPRESSION_GCX
-        MENUITEM "Get Char Y", IDMN_EXPRESSION_GCY
+        POPUP "Character Position"
+        BEGIN
+            MENUITEM "Get Char X", IDMN_EXPRESSION_GCX
+            MENUITEM "Get Char Y", IDMN_EXPRESSION_GCY
+            MENUITEM SEPARATOR
+            MENUITEM "Get Last Char X", IDMN_EXPRESSION_GLCX
+            MENUITEM "Get Last Char Y", IDMN_EXPRESSION_GLCY
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Get Last Char X", IDMN_EXPRESSION_GLCX
-        MENUITEM "Get Last Char Y", IDMN_EXPRESSION_GLCY
+        POPUP "Zoom && Rotate"
+        BEGIN
+            MENUITEM "Get HotSpot X", IDMN_EXPRESSION_GHX
+            MENUITEM "Get HotSpot Y", IDMN_EXPRESSION_GHY
+            MENUITEM SEPARATOR
+            MENUITEM "Get X Scale", IDMN_EXPRESSION_GXS
+            MENUITEM "Get Y Scale", IDMN_EXPRESSION_GYS
+            MENUITEM SEPARATOR
+            MENUITEM "Get Angle", IDMN_EXPRESSION_GA
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Get Max Width", IDMN_EXPRESSION_GMW
-        MENUITEM "Get Total Height", IDMN_EXPRESSION_GTH
-        MENUITEM SEPARATOR
-        MENUITEM "Get Render Width", IDMN_EXPRESSION_GRW
-        MENUITEM "Get Render Height", IDMN_EXPRESSION_GRH
-        MENUITEM SEPARATOR
-        MENUITEM "Get HotSpot X", IDMN_EXPRESSION_GHX
-        MENUITEM "Get HotSpot Y", IDMN_EXPRESSION_GHY
-        MENUITEM SEPARATOR
-        MENUITEM "Get X Scale", IDMN_EXPRESSION_GXS
-        MENUITEM "Get Y Scale", IDMN_EXPRESSION_GYS
-        MENUITEM SEPARATOR
-        MENUITEM "Get Angle", IDMN_EXPRESSION_GA
-        MENUITEM SEPARATOR
-        MENUITEM "Get Font Family Name", IDMN_EXPRESSION_GFN
+        POPUP "Format"
+        BEGIN
+            MENUITEM "Get ICon Offset X", IDMN_EXPRESSION_GIOX
+            MENUITEM "Get ICon Offset Y", IDMN_EXPRESSION_GIOY
+            MENUITEM "Get ICon Scale", IDMN_EXPRESSION_GIS	
+            MENUITEM "Get ICon Resample", IDMN_EXPRESSION_GIR
+        END	
         MENUITEM SEPARATOR
     END
 END
@@ -417,6 +451,8 @@ BEGIN
     M_ICONSCALE	            "ICon Scale"
     M_ICONRESAMPLE          "ICon Resample"
 
+    M_ACTION_SVO            "Change Vertical Offset to %0"
+    M_VERTICALOFFSET        "Vertical Offset"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -455,6 +491,13 @@ BEGIN
 
     M_EXPRESSION_GCX		"CharX("
     M_EXPRESSION_GCY		"CharY("
+
+    M_EXPRESSION_GIOX	    "GIOX("
+    M_EXPRESSION_GIOY	    "GIOY("
+    M_EXPRESSION_GIS	    "GIS("
+    M_EXPRESSION_GIR	    "GIR("
+
+    M_EXPRESSION_GVO	    "GVO("
 END
 
 #endif    // English (U.S.) resources

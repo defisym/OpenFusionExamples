@@ -37,7 +37,9 @@
 #define	ACT_ACTION_SIS			    	15
 #define	ACT_ACTION_SIR			    	16
 
-#define	ACT_LAST						17
+#define	ACT_ACTION_SVO			    	17
+
+#define	ACT_LAST						18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -68,7 +70,14 @@
 #define EXP_EXPRESSION_GCX					17
 #define EXP_EXPRESSION_GCY					18
 
-#define	EXP_LAST                    		19
+#define EXP_EXPRESSION_GIOX					19
+#define EXP_EXPRESSION_GIOY					20
+#define EXP_EXPRESSION_GIS					21
+#define EXP_EXPRESSION_GIR					22
+
+#define EXP_EXPRESSION_GVO					23
+
+#define	EXP_LAST                    		24
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -123,7 +132,7 @@ typedef struct tagEDATA_V1
 
 	float iConScale;
 
-	bool iConResample;
+	bool bIConResample;
 
 	short unused_2;
 
@@ -221,7 +230,7 @@ typedef struct tagRDATA
 
 	float iConScale;
 
-	bool iConResample;
+	bool bIConResample;
 
 	std::wstring* pExpRet;
 

@@ -65,7 +65,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetAppli(rdPtr->rHo.hoAdRunHeader->rhIdAppli);
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
 		rdPtr->pNeoStr->SetIConScale(rdPtr->iConScale);
-		rdPtr->pNeoStr->SetIConResample (rdPtr->iConResample);
+		rdPtr->pNeoStr->SetIConResample (rdPtr->bIConResample);
 
 		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str());
 		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
@@ -157,7 +157,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetAppli(nullptr);
 		neoStr.SetIConOffset(edPtr->iConOffsetX, edPtr->iConOffsetY);
 		neoStr.SetIConScale(edPtr->iConScale);
-		neoStr.SetIConResample(edPtr->iConResample);
+		neoStr.SetIConResample(edPtr->bIConResample);
 
 		neoStr.GetFormat(&edPtr->pText);
 		neoStr.CalculateRange(rc);

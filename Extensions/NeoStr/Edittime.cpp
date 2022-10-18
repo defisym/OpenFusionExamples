@@ -496,7 +496,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->iConOffsetX = 0;
 		edPtr->iConOffsetY = 0;
 		edPtr->iConScale = 1.0;
-		edPtr->iConResample = false;
+		edPtr->bIConResample = false;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL)
@@ -943,6 +943,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bColSpace;
 	case PROPID_RENDER_CLIP:
 		return edPtr->bClip;
+	case PROPID_FORMAT_ICONRESAMPLE:
+		return edPtr->bIConResample;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -1117,6 +1119,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bClip = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_RENDER_CLIP, TRUE);
+		break;
+	case PROPID_FORMAT_ICONRESAMPLE:
+		edPtr->bIConResample = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_FORMAT_ICONRESAMPLE, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

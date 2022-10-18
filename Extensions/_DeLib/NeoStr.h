@@ -116,7 +116,8 @@ private:
 	BYTE nShadowOffsetX = 0;
 	BYTE nShadowOffsetY = 0;
 
-	//bool bTextValid = false;
+	bool bTextValid = true;
+	size_t pTextLen = 0;
 
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
@@ -580,6 +581,10 @@ public:
 		return 	Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
 	}
 
+	inline StrSize GetDefaultCharSize() {
+		return this->defaultCharSz;
+	}
+
 	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
 		this->iConOffsetX = iConOffsetX;
 		this->iConOffsetY = iConOffsetY;
@@ -739,12 +744,16 @@ public:
 
 	inline void GetFormat(LPCWSTR pStr) {
 		if (pStr == nullptr) {
+			this->bTextValid = false;
+
 			return;
 		}
 
-		size_t pTextLen = wcslen(pStr);
+		size_t pInputLen = wcslen(pStr);
 
-		if (pTextLen == 0) {
+		if (pInputLen == 0) {
+			this->bTextValid = false;
+
 			return;
 		}
 
@@ -754,17 +763,16 @@ public:
 		delete[] this->pText;
 		this->pText = nullptr;
 
-		this->pRawText = new wchar_t[pTextLen + 1];
-		memset(pRawText, 0, sizeof(wchar_t) * (pTextLen + 1));
+		this->pRawText = new wchar_t[pInputLen + 1];
+		memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
 
-		this->pText = new wchar_t[pTextLen + 1];
-		memset(pText, 0, sizeof(wchar_t) * (pTextLen + 1));
+		this->pText = new wchar_t[pInputLen + 1];
+		memset(pText, 0, sizeof(wchar_t) * (pInputLen + 1));
 
-		memcpy(pRawText, pStr, sizeof(wchar_t) * (pTextLen + 1));
-		//memcpy(pText, pStr, sizeof(wchar_t) * (pTextLen + 1));
+		memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
 
 		// Format
-		// [ICon = ID]
+		// [ICon = Direction, Frame]
 		// [Color = #FFFFFFFF][/Color]
 
 		auto pCurChar = pRawText;
@@ -782,7 +790,7 @@ public:
 
 		while (true) {
 			// End
-			if ((pCurChar - pRawText) == pTextLen) {
+			if ((pCurChar - pRawText) == pInputLen) {
 				break;
 			}
 
@@ -811,7 +819,7 @@ public:
 				bool bEndOfText = false;
 
 				while ((pCurChar + end)[0] != L']') {
-					if ((pCurChar - pRawText) + end == pTextLen) {
+					if ((pCurChar - pRawText) + end == pInputLen) {
 						bEndOfText = true;
 
 						break;
@@ -982,15 +990,21 @@ public:
 			pSavedChar++;
 		}
 
+		pTextLen = wcslen(pText);
+
+		if (pTextLen == 0) {
+			this->bTextValid = false;
+
+			return;
+		}
+
 		return;
 	}
 
 	inline CharPos CalculateRange(LPRECT pRc) {
 		this->strPos.clear();
 
-		size_t pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+		if (!this->bTextValid) {
 			auto it = charSzCache.cend();
 			it--;
 
@@ -1042,24 +1056,57 @@ public:
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
 
+				auto HandleNewLine = [&]() {
+					newLine = true;
+					skipLine = (pChar == pCharStart);
+
+					if ((notAtStartCharPos + 1) == pChar) {
+						bPunctationSkip = true;
+					}
+				};
+
 				if (curWidth > rcWidth) {
-					// TODO two NAS char causes infinite loop
+					//bool bTooNarrow = this->defaultCharSz.width > rcWidth;
+					bool bTooNarrow = charSz->width > rcWidth;
+
+					if (bTooNarrow) {
+						if (curChar == L'\r' && nextChar == L'\n') {
+							HandleNewLine();
+							pChar += 2;
+
+							break;
+						}
+						else {
+							pChar += 1;
+
+							break;
+						}
+					}
+
+					auto pPreviousChar = pText + pChar - 1;
+					auto PreviousChar = pPreviousChar[0];
+
+					auto previousCharSz = &pStrSizeArr[pChar - 1];
+
+					auto Backward = [&]() {
+						if (curWidth - (previousCharSz->width + nColSpace + charSz->width) <= 0) {
+							return;
+						}
+
+						pChar--;
+
+						curWidth -= charSz->width;
+
+						curWidth -= previousCharSz->width;
+						curWidth -= nColSpace;
+					};
+
 					if (NotAtStart(curChar)) {
 						notAtStartCharPos = pChar;
 
 						if (NotAtStart(nextChar)) {
 							if (pChar != pCharStart) {
-								pChar--;
-
-								auto pPreviousChar = pText + pChar;
-								auto PreviousChar = pPreviousChar [0];
-
-								auto previousCharSz = &pStrSizeArr [pChar];
-
-								curWidth -= charSz->width;
-
-								curWidth -= previousCharSz->width;
-								curWidth -= nColSpace;
+								Backward();
 							}
 
 							break;
@@ -1067,18 +1114,8 @@ public:
 					}
 					else {
 						if (pChar != pCharStart) {
-							auto pPreviousChar = pText + pChar - 1;
-							auto PreviousChar = pPreviousChar [0];
-
-							auto previousCharSz = &pStrSizeArr [pChar - 1];
-
 							if (NotAtEnd(PreviousChar)) {
-								pChar--;
-
-								curWidth -= charSz->width;
-
-								curWidth -= previousCharSz->width;
-								curWidth -= nColSpace;
+								Backward();
 							}
 						}
 
@@ -1087,13 +1124,7 @@ public:
 				}
 
 				if (curChar == L'\r' && nextChar == L'\n') {
-					newLine = true;
-					skipLine = (pChar == pCharStart);
-
-					if ((notAtStartCharPos + 1) == pChar) {
-						bPunctationSkip = true;
-					}
-
+					HandleNewLine();
 					pChar += 2;
 
 					break;
@@ -1159,9 +1190,7 @@ public:
 	}
 
 	inline void RenderPerChar(LPRECT pRc) {
-		size_t pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+		if (!this->bTextValid) {
 			return;
 		}
 
@@ -1450,10 +1479,7 @@ public:
 	inline void DisplayPerChar(LPSURFACE pDst, LPRECT pRc
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
-
-		size_t pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+		if (!this->bTextValid) {
 			return;
 		}
 
