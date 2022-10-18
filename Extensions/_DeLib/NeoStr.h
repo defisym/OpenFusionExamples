@@ -350,6 +350,10 @@ public:
 		, HFONT hFont
 		, bool needGDIPStartUp = true
 		, PrivateFontCollection* pFontCollection = nullptr) {
+		if (this->needGDIPStartUp) {
+			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+		}
+
 		this->hdc = GetDC(NULL);
 		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
 
@@ -362,7 +366,7 @@ public:
 		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
-		//pFont = GetFontPonter(this->logFont);
+		pFont = GetFontPonter(this->logFont);
 
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
@@ -371,10 +375,6 @@ public:
 		this->pFontCollection = pFontCollection;
 
 		this->needGDIPStartUp = needGDIPStartUp;
-
-		if (this->needGDIPStartUp) {
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-		}
 		
 		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
 		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
@@ -672,19 +672,6 @@ public:
 //#define MEASURE_GDI_PLUS
 
 #ifdef MEASURE_GDI_PLUS
-		//Graphics g(hdc);
-		//auto font = GetFont(this->logFont);
-		//
-		//PointF origin(0, 0);
-		//
-		//RectF boundRect;
-		//auto pStringFormat = StringFormat::GenericDefault();
-		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat, &boundRect);
-		//
-		//RectF boundRect_2;
-		//auto pStringFormat_2 = StringFormat::GenericTypographic();
-		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat_2, &boundRect_2);
-
 		SIZE sz = {0};
 
 		Graphics g(hdc);
@@ -704,7 +691,6 @@ public:
 
 		//ABC abc;
 		//GetCharABCWidths(hdc, wChar, wChar, &abc);
-		//
 
 		//sz.cx -= this->tm
 		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
@@ -1160,8 +1146,6 @@ public:
 				maxWidth = curWidth != 0
 					? max(maxWidth, curWidth - nColSpace)
 					: maxWidth;
-				//maxWidth = max(maxWidth, curWidth);
-				//maxWidth = max(maxWidth, totalWidth);
 			}
 
 			if (!bPunctationSkip) {
@@ -1235,9 +1219,6 @@ public:
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
 		g.SetPixelOffsetMode(this->pixelOffsetMode);
-		
-		auto font = GetFont(this->logFont);
-		auto pFont = &font;
 
 		//Color fontColor(255, 50, 150, 250);
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
@@ -1310,9 +1291,6 @@ public:
 
 				x += (charSz->width + nColSpace);
 			}
-			
-			// add pos of \r\n
-			//totalChar += 2;
 		}
 
 #ifdef _BLUR
