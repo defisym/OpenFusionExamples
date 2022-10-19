@@ -49,6 +49,13 @@ enum {
 	PROPID_HOTSPOT_DEFAULT,
 	PROPID_HOTSPOT_X,
 	PROPID_HOTSPOT_Y,
+
+	PROPID_FORMAT_TEXTTITLE,
+	PROPID_FORMAT_ICONOFFSETX,
+	PROPID_FORMAT_ICONOFFSETY,
+	PROPID_FORMAT_ICONSCALE,
+	PROPID_FORMAT_ICONRESAMPLE,
+
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -165,6 +172,14 @@ PropData FontPorperties[] = {
 	PropData_ComboBox(PROPID_RENDER_SmoothingMode,	IDS_PROP_RENDER_SmoothingMode,		IDS_PROP_RENDER_SmoothingMode_INFO, SmoothingMode_ComboList),
 	PropData_ComboBox(PROPID_RENDER_PixelOffsetMode,	IDS_PROP_RENDER_PixelOffsetMode,		IDS_PROP_RENDER_PixelOffsetMode_INFO, PixelOffsetMode_ComboList),
 	
+	PropData_Group(PROPID_FORMAT_TEXTTITLE,	IDS_PROP_FORMAT_TITLE,		IDS_PROP_FORMAT_TITLE),
+
+	PropData_CheckBox(PROPID_FORMAT_ICONRESAMPLE,	IDS_PROP_FORMAT_ICONRESAMPLE,		IDS_PROP_FORMAT_ICONRESAMPLE_INFO),
+
+	PropData_EditFloat(PROPID_FORMAT_ICONOFFSETX,	IDS_PROP_FORMAT_ICONOFFSETX,		IDS_PROP_FORMAT_ICONOFFSETX_INFO),
+	PropData_EditFloat(PROPID_FORMAT_ICONOFFSETY,	IDS_PROP_FORMAT_ICONOFFSETY,		IDS_PROP_FORMAT_ICONOFFSETY_INFO),
+
+	PropData_EditFloat(PROPID_FORMAT_ICONSCALE,	IDS_PROP_FORMAT_ICONSCALE,		IDS_PROP_FORMAT_ICONSCALE_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -468,8 +483,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bClip = true;
 
-		edPtr->borderOffsetX = DEFAULEBORDEROFFSET;
-		edPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+		edPtr->borderOffsetX = DEFAULT_EBORDER_OFFSET;
+		edPtr->borderOffsetY = DEFAULT_EBORDER_OFFSET;
 
 		edPtr->bVerticalAlignOffset = false;
 
@@ -477,6 +492,11 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->hotSpotX = 0;
 		edPtr->hotSpotY = 0;
+
+		edPtr->iConOffsetX = 0;
+		edPtr->iConOffsetY = 0;
+		edPtr->iConScale = 1.0;
+		edPtr->bIConResample = false;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL)
@@ -890,6 +910,12 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->hotSpotX);
 	case PROPID_HOTSPOT_Y:
 		return new CPropDWordValue(edPtr->hotSpotY);
+	case PROPID_FORMAT_ICONOFFSETX:
+		return new CPropFloatValue(edPtr->iConOffsetX);
+	case PROPID_FORMAT_ICONOFFSETY:
+		return new CPropFloatValue(edPtr->iConOffsetY);
+	case PROPID_FORMAT_ICONSCALE:
+		return new CPropFloatValue(edPtr->iConScale);
 
 	}
 #endif // !defined(RUN_ONLY)
@@ -917,6 +943,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bColSpace;
 	case PROPID_RENDER_CLIP:
 		return edPtr->bClip;
+	case PROPID_FORMAT_ICONRESAMPLE:
+		return edPtr->bIConResample;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -1039,6 +1067,17 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	case PROPID_HOTSPOT_Y:
 		edPtr->hotSpotY = ((CPropDWordValue*)pValue)->m_dwValue;
 		mvInvalidateObject(mV, edPtr);
+	case PROPID_FORMAT_ICONOFFSETX:
+		edPtr->iConOffsetX = ((CPropFloatValue*)pValue)->m_fValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_FORMAT_ICONOFFSETY:
+		edPtr->iConOffsetY = ((CPropFloatValue*)pValue)->m_fValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_FORMAT_ICONSCALE:
+		edPtr->iConScale = ((CPropFloatValue*)pValue)->m_fValue;
+		mvInvalidateObject(mV, edPtr);
 		break;
 	}
 
@@ -1080,6 +1119,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bClip = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_RENDER_CLIP, TRUE);
+		break;
+	case PROPID_FORMAT_ICONRESAMPLE:
+		edPtr->bIConResample = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_FORMAT_ICONRESAMPLE, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

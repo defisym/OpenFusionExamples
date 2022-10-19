@@ -196,6 +196,10 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // 
 HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
 {
+	//LPEDATA(OldEdPtr)->iConOffsetX = 0;
+	//LPEDATA(OldEdPtr)->iConOffsetY = 0;
+	//LPEDATA(OldEdPtr)->iConScale = 1.0;
+
 	//if (LPEDATA(OldEdPtr)->hotSpotPos<HotSpotPos::LT || LPEDATA(OldEdPtr)->hotSpotPos > HotSpotPos::CUSTOM) {
 	//	LPEDATA(OldEdPtr)->hotSpotPos = HotSpotPos::LT;
 	//	LPEDATA(OldEdPtr)->hotSpotX = 0;
@@ -221,8 +225,8 @@ HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr
 
 	//		memcpy(newEdPtr, oldPtr, dwNewSize);
 
-	//		newEdPtr->borderOffsetX = DEFAULEBORDEROFFSET;
-	//		newEdPtr->borderOffsetY = DEFAULEBORDEROFFSET;
+	//		newEdPtr->borderOffsetX = DEFAULT_EBORDER_OFFSET;
+	//		newEdPtr->borderOffsetY = DEFAULT_EBORDER_OFFSET;
 	//	}
 
 	//	GlobalUnlock(hgNew);

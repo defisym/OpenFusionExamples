@@ -129,6 +129,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->bFontChanged = true;
 
+	rdPtr->pIConActive = nullptr;
+
+	rdPtr->iConOffsetX = edPtr->iConOffsetX;
+	rdPtr->iConOffsetY = edPtr->iConOffsetY;
+	rdPtr->iConScale = edPtr->iConScale;
+	rdPtr->bIConResample = edPtr->bIConResample;
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {

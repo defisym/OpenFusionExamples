@@ -658,13 +658,13 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 }
 
 //Load From File
-inline void _AddAlpha(LPSURFACE Src) {
+inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 	if (!Src->HasAlpha()) {
 		auto pitch = Src->GetWidth();
 		auto size = pitch * Src->GetHeight();
 
 		BYTE* pAlpha = new BYTE[size];
-		memset(pAlpha, 255, size);
+		memset(pAlpha, coef, size);
 
 		Src->SetAlpha(pAlpha, pitch);
 		
