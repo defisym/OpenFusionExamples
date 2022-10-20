@@ -875,8 +875,16 @@ public:
 								else {
 									colorStack.pop_back();
 								}
-																
-								this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });
+
+								auto& lastColorFormat = this->colorFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastColorFormat.start) {
+									lastColorFormat.color = colorStack.back();
+								}								
+								else {
+									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });									
+								}								
 
 								break;
 							}
