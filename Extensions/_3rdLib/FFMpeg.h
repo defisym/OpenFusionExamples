@@ -67,6 +67,7 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 #define _EXTERNAL_SDL_AUDIO_INIT
 
 constexpr auto TARGET_SAMPLE_RATE = 48000;
+constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
@@ -198,6 +199,9 @@ private:
 	AVFilterContext* buffersink_ctx = nullptr;
 
 	AVFrame* pFilterFrame = nullptr;
+
+	float atempo = 2.0;
+	bool bUpdateSwr = true;
 
 	const AVCodec* pVCodec = NULL;
 	AVCodecParameters* pVCodecParameters = NULL;
@@ -348,6 +352,26 @@ private:
 		delete[] buf;
 
 		return result;
+	}
+
+	inline void init_SwrContext(int64_t in_ch_layout, AVSampleFormat in_sample_fmt, int in_sample_rate) {
+		swrContext = swr_alloc_set_opts(swrContext
+#ifndef _EXTERNAL_SDL_AUDIO_INIT
+			, av_get_default_channel_layout(channels)
+			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
+#else
+			, TARGET_CHANNEL_LAYOUT
+			, AV_SAMPLE_FMT_S16, TARGET_SAMPLE_RATE
+#endif
+			, in_ch_layout
+			, in_sample_fmt, in_sample_rate
+			, 0, nullptr);
+
+		if (!swrContext || swr_init(swrContext) < 0) {
+			throw FFMpegException_InitFailed;
+		}
+
+		bUpdateSwr = false;
 	}
 
 	inline int init_filters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
@@ -502,6 +526,8 @@ private:
 			if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
 				throw FILTER_INIT_FAILED;
 			}
+
+			bUpdateSwr = true;
 
 			/* Print summary of the sink buffer
 			 * Note: args buffer is reused to store channel layout string */
@@ -801,20 +827,11 @@ private:
 				channels = av_get_channel_layout_nb_channels(channel_layout);
 			}
 
-			swrContext = swr_alloc_set_opts(nullptr
-				, av_get_default_channel_layout(channels)
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
-				, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
-#else
-				, AV_SAMPLE_FMT_S16, TARGET_SAMPLE_RATE
-#endif
-				, channel_layout
-				, (AVSampleFormat)pACodecParameters->format, pACodecParameters->sample_rate
-				, 0, nullptr);
+			auto layout = av_get_default_channel_layout(channels);
 
-			if (!swrContext || swr_init(swrContext) < 0) {
-				throw FFMpegException_InitFailed;
-			}
+			init_SwrContext(layout
+				, (AVSampleFormat)pACodecParameters->format
+				, pACodecParameters->sample_rate);
 		}
 
 		init_filters(pFormatContext, pACodecContext, filter_graph, "");
@@ -1358,53 +1375,57 @@ private:
 			return -1;
 		}
 
-		//response = av_buffersink_get_frame(buffersink_ctx, pAFrame);
-		//if (response < 0) {
-		//	return -1;
-		//}
-
 		while (1) {
 			response = av_buffersink_get_frame(buffersink_ctx, pAFrame);
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 				break;
 			}
-				
+
 			if (response < 0) {
 				av_frame_unref(pAFrame);
 			}
-		}
 
-		if (pAPacket != nullptr) {
-			if (pAPacket->pts != AV_NOPTS_VALUE) {
-				audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
+			if (pAPacket != nullptr) {
+				if (pAPacket->pts != AV_NOPTS_VALUE) {
+					audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
 #ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur audio clock: %f\n", audioClock);
-				}
+					if (bJumped) {
+						printf("Cur audio clock: %f\n", audioClock);
+					}
 #endif
+				}
 			}
+
+			// update context to avoid crash
+			if (bUpdateSwr) {
+				init_SwrContext(pAFrame->channel_layout
+					, (AVSampleFormat)pAFrame->format
+					, pAFrame->sample_rate);
+			}
+
+			// 计算转换后的sample个数 a * b / c
+			// https://blog.csdn.net/u013346305/article/details/48682935
+			int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples
+#ifndef _EXTERNAL_SDL_AUDIO_INIT
+				, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
+#else
+				, TARGET_SAMPLE_RATE, pAFrame->sample_rate, AVRounding(1));
+#endif
+
+			// 转换，返回值为转换后的sample个数
+			int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
+
+			auto audioSize = pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+
+			audioPts = audioClock;
+
+			auto pcm_bytes = 2 * pAFrame->channels;
+			audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
+
+			return audioSize;
 		}
 
-		// 计算转换后的sample个数 a * b / c
-		// https://blog.csdn.net/u013346305/article/details/48682935
-		int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
-			, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
-#else
-			, TARGET_SAMPLE_RATE, pAFrame->sample_rate, AVRounding(1));
-#endif
-
-		// 转换，返回值为转换后的sample个数
-		int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
-
-		auto audioSize = pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
-
-		audioPts = audioClock;
-
-		auto pcm_bytes = 2 * pAFrame->channels;
-		audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
-
-		return audioSize;
+		return -1;
 	}
 
 	//synchronize
