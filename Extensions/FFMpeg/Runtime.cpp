@@ -115,6 +115,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 
+	rdPtr->atempo = DEFAULT_ATEMPO;
+
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;

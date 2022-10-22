@@ -95,6 +95,8 @@
 
 #define IDMN_ACTION_STRETCH    		25014
 
+#define IDMN_ACTION_SAT     		25015
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -119,6 +121,8 @@
 
 #define M_ACTION_STRETCH  		    5014
 
+#define M_ACTION_SAT     		    5015
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -133,6 +137,7 @@
 #define M_HWDECODEDEVICE		 5511
 #define M_WIDTH		             5512
 #define M_HEIGHT		         5513
+#define M_ATEMPO		         5514
 
 
 //	Conditions
@@ -195,6 +200,8 @@
 #define IDMN_EXPRESSION_GAHDE 			27011
 #define IDMN_EXPRESSION_GWHDE 			27012
 
+#define IDMN_EXPRESSION_GAT     		27013
+
 // Expression strings
 #define	M_EXPRESSION_GVN			    7000
 #define M_EXPRESSION_GVP			    7001
@@ -213,6 +220,8 @@
 #define M_EXPRESSION_GHDS 			    7010
 #define M_EXPRESSION_GAHDE 			    7011
 #define M_EXPRESSION_GWHDE 			    7012
+
+#define M_EXPRESSION_GAT     			7013
 
 // Names of expression parameters
 #define M_HWA   				 7500

@@ -61,6 +61,10 @@ Here follows all dlls needed by this object:
   - *Data is split into packet in FFMpeg, and usually it needs several packets to decode one frame. For audio, it's played in another thread and use a callback to ask for more data, so the decoded packets are cached in a queue, and won't add new ones if cached data exceeds this limit. However, some formats with higher resolution may need more data to decode, which may exceed the limit (e.g., aida_alpha.mov), then the application will keep waiting forever. In this case, extend this limit will solve it.*
   - *Note that when decoding, extension will firstly try filling up the queue. Usually it's fast but if the queue size is too big it may be time-consuming, and causes lag when seeking.*
 
+- Hardware Decode
+  - Hardware Device
+    - *set the device you want object to use. object will try using the device you set, if not supported, it will try using other hardware devices. if all devices are not supported, it will fallback to software decode*
+
 ## Action
 
 - Open Video
@@ -76,6 +80,8 @@ Here follows all dlls needed by this object:
   - *volume is kept when opening another video*
 - Set Loop
   - *loop state is kept when opening another video*
+- Set Audio Tempo
+  - *tempo = 2.0 -> play video in 2X speed*
 - Set Accurate Seek
   - see Properties->Accurate Seek
 - Set Video Position
@@ -91,8 +97,28 @@ Here follows all dlls needed by this object:
     #define AVSEEK_FLAG_FRAME    8 ///< seeking based on frame number
   ```
 
+- Set Size
+  - *set object size*
+
 - Set Queue Size
-  - see Properties->Queue
+  - *see Properties->Queue*
+- Set Hardware Decode Device
+  - *see Properties->Hardware Decode Device and the table below*
+
+| Device Name  | AVHWDeviceType                |
+| ------------ | ----------------------------- |
+| NONE         | AV_HWDEVICE_TYPE_NONE         |
+| VDPAU        | AV_HWDEVICE_TYPE_VDPAU        |
+| CUDA         | AV_HWDEVICE_TYPE_CUDA         |
+| VAAPI        | AV_HWDEVICE_TYPE_VAAPI        |
+| DXVA2        | AV_HWDEVICE_TYPE_DXVA2        |
+| QSV          | AV_HWDEVICE_TYPE_QSV          |
+| VIDEOTOOLBOX | AV_HWDEVICE_TYPE_VIDEOTOOLBOX |
+| D3D11VA      | AV_HWDEVICE_TYPE_D3D11VA      |
+| DRM          | AV_HWDEVICE_TYPE_DRM          |
+| OPENCL       | AV_HWDEVICE_TYPE_OPENCL       |
+| MEDIACODEC   | AV_HWDEVICE_TYPE_MEDIACODEC   |
+| VULKAN       | AV_HWDEVICE_TYPE_VULKAN       |
 
 - Cache Video
   - *decrypt given file then cache it in memory*
@@ -108,10 +134,15 @@ Here follows all dlls needed by this object:
 - Video Loop
 - Video Finish
 
+- Video Hardware Decode
+  - *object is using hardware decode*
+- Wanted Hardware Decode
+  - *you set object to use hardware decode*
+
 - On Video Finish
-  - immediate event, triggered when video finish playing.
+  - *immediate event, triggered when video finish playing.*
 - On Video Open Failed
-  - immediate event, triggered when video failed to open.
+  - *immediate event, triggered when video failed to open.*
 
 ## Expression
 
@@ -120,6 +151,7 @@ Here follows all dlls needed by this object:
 - Get Video Duration
 
 - Get Volume
+- Get Audio Tempo
 
 - Get Video Open State
 - Get Video Play State
@@ -130,3 +162,9 @@ Here follows all dlls needed by this object:
 - Get Grabbed Video Frame Pointer
   - *You can get the cSurface pointer of current frame / frame with given time stamp. Pass it to another extension then do anything you like.*
   - *Note the target extension should build in /MD, aka use the same heap. Or it may crash due to access violation. See: <https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170>*
+
+- Get Hardware Decode State
+- Get Actual Hardware Device
+  - *get the device object is using*
+- Get Wanted Hardware Device
+  - *get the device you set*
