@@ -46,6 +46,8 @@ extern "C" {
 constexpr auto SDL_AUDIO_BUFFER_SIZE = 1024;
 constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 
+constexpr auto AUDIO_BUFFER_SIZE = (MAX_AUDIO_FRAME_SIZE * 3) / 2;
+
 constexpr auto MAX_AUDIOQ_SIZE = (5 * 16 * 1024);
 constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
@@ -66,8 +68,12 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 
 #define _EXTERNAL_SDL_AUDIO_INIT
 
-constexpr auto TARGET_SAMPLE_RATE = 48000;
+// Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
 constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
+constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
+constexpr auto TARGET_SAMPLE_RATE = 48000;
+
+constexpr auto DEFAULT_ATEMPO = 1.0f;
 
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
@@ -83,6 +89,8 @@ constexpr auto FFMpegException_InitFailed = -1;
 constexpr auto FFMpegException_HWInitFailed = -2;
 
 constexpr auto FFMpegException_HWDecodeFailed = -3;
+
+constexpr auto FFMpegException_FilterInitFailed = -4;
 
 constexpr auto END_OF_QUEUE = -1;
 
@@ -193,6 +201,7 @@ private:
 
 	// TODO release
 	AVFilterGraph* filter_graph = nullptr;
+	const char* filters_descr = "";
 
 	AVFilterContext* buffersrc_ctx = nullptr;
 	AVFilterContext* atempo_ctx = nullptr;
@@ -200,8 +209,7 @@ private:
 
 	AVFrame* pFilterFrame = nullptr;
 
-	float atempo = 2.0;
-	bool bUpdateSwr = true;
+	float atempo = DEFAULT_ATEMPO;	
 
 	const AVCodec* pVCodec = NULL;
 	AVCodecParameters* pVCodecParameters = NULL;
@@ -250,6 +258,8 @@ private:
 	//AVPacket* pAPacket = &aPacket;
 
 	SwsContext* swsContext = nullptr;
+
+	bool bUpdateSwr = true;
 	SwrContext* swrContext = nullptr;
 
 	AVStream* pVideoStream = nullptr;
@@ -275,7 +285,6 @@ private:
 #pragma endregion
 
 #pragma region SDL
-
 	//保存解码一个packet后的多帧原始音频数据
 	uint8_t* audio_buf = nullptr;
 	//解码后的多帧音频数据长度
@@ -354,6 +363,24 @@ private:
 		return result;
 	}
 
+	inline int64_t get_ChannelLayout() {
+		//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
+
+		int channels = pACodecParameters->channels;
+		uint64_t channel_layout = pACodecParameters->channel_layout;
+
+		if (channels > 0 && channel_layout == 0) {
+			channel_layout = av_get_default_channel_layout(channels);
+		}
+		else if (channels == 0 && channel_layout > 0) {
+			channels = av_get_channel_layout_nb_channels(channel_layout);
+		}
+
+		auto layout = av_get_default_channel_layout(channels);
+
+		return layout;
+	}
+
 	inline void init_SwrContext(int64_t in_ch_layout, AVSampleFormat in_sample_fmt, int in_sample_rate) {
 		swrContext = swr_alloc_set_opts(swrContext
 #ifndef _EXTERNAL_SDL_AUDIO_INIT
@@ -361,7 +388,7 @@ private:
 			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
 #else
 			, TARGET_CHANNEL_LAYOUT
-			, AV_SAMPLE_FMT_S16, TARGET_SAMPLE_RATE
+			, TARGET_SAMPLE_FORMAT, TARGET_SAMPLE_RATE
 #endif
 			, in_ch_layout
 			, in_sample_fmt, in_sample_rate
@@ -375,42 +402,35 @@ private:
 	}
 
 	inline int init_filters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
-		, AVFilterGraph* filter_graph, const char* filters_descr) {
-		constexpr auto FILTER_INIT_FAILED = -1;
+		, AVFilterGraph* filter_graph, const char* filters_descr) {		
+		SDL_CondWait(cond, mutex);
+
+		SDL_LockMutex(mutex);
 
 		int ret = 0;
-		
-		AVFilterInOut* inputs = avfilter_inout_alloc();
-		AVFilterInOut* process = avfilter_inout_alloc();
-		AVFilterInOut* outputs = avfilter_inout_alloc();
-
-		static const enum AVSampleFormat out_sample_fmts[] = { AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_NONE };
-		static const int out_sample_rates[] = { 8000, -1 };
 				
-		AVRational time_base = fmt_ctx->streams[audio_stream_index]->time_base;		
-
 		// release
 		avfilter_graph_free(&filter_graph);
 
 		// re-alloc
+		AVFilterInOut* inputs = avfilter_inout_alloc();
+		AVFilterInOut* outputs = avfilter_inout_alloc();
+
 		try {
 			filter_graph = avfilter_graph_alloc();
-			if (!outputs || !process || !inputs || !filter_graph) {
+			if (!outputs || !inputs || !filter_graph) {
 				//ret = AVERROR(ENOMEM);
-				throw FILTER_INIT_FAILED;
+				throw FFMpegException_FilterInitFailed;
 			}
 
 			/* buffer audio source: the decoded frames from the decoder will be inserted here. */
 			if (!dec_ctx->channel_layout) {
 				dec_ctx->channel_layout = av_get_default_channel_layout(dec_ctx->channels);
 			}
-
-			//snprintf(args, sizeof(args),
-			//	"time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%llx",
-			//	time_base.num, time_base.den, dec_ctx->sample_rate,
-			//	av_get_sample_fmt_name(dec_ctx->sample_fmt), dec_ctx->channel_layout);
 			
 			// match source
+			AVRational time_base = fmt_ctx->streams[audio_stream_index]->time_base;
+
 			auto filterArgs = std::format("time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout={:#x}"
 				, time_base.num, time_base.den, dec_ctx->sample_rate,
 				av_get_sample_fmt_name(dec_ctx->sample_fmt), dec_ctx->channel_layout);
@@ -423,17 +443,7 @@ private:
 				filterArgs.c_str(), NULL, filter_graph);
 			if (ret < 0) {
 				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer source\n");
-				throw FILTER_INIT_FAILED;
-			}
-
-			/* process. */
-			const AVFilter* atempo = avfilter_get_by_name("atempo");
-
-			ret = avfilter_graph_create_filter(&atempo_ctx, atempo, "atempo",
-				NULL, NULL, filter_graph);
-			if (ret < 0) {
-				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
-				throw FILTER_INIT_FAILED;
+				throw FFMpegException_FilterInitFailed;
 			}
 
 			/* buffer audio sink: to terminate the filter chain. */
@@ -443,39 +453,53 @@ private:
 				NULL, NULL, filter_graph);
 			if (ret < 0) {
 				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
-				throw FILTER_INIT_FAILED;
-			}
-			
-			// set params
-			ret = av_opt_set(atempo_ctx, "tempo", "2.0",
-				AV_OPT_SEARCH_CHILDREN);
-			//ret = av_opt_set_int(atempo_ctx, "tempo", 2,
-			//	AV_OPT_SEARCH_CHILDREN);
-			if (ret < 0) {
-				throw FILTER_INIT_FAILED;
+				throw FFMpegException_FilterInitFailed;
 			}
 
 			//ret = av_opt_set_int_list(buffersink_ctx, "sample_fmts", out_sample_fmts, -1,
 			//	AV_OPT_SEARCH_CHILDREN);
 			//if (ret < 0) {
 			//	//av_log(NULL, AV_LOG_ERROR, "Cannot set output sample format\n");
-			//	throw FILTER_INIT_FAILED;
+			//	throw FFMpegException_FilterInitFailed;
 			//}
 
 			//ret = av_opt_set(buffersink_ctx, "ch_layouts", "mono",
 			//	AV_OPT_SEARCH_CHILDREN);
 			//if (ret < 0) {
 			//	//av_log(NULL, AV_LOG_ERROR, "Cannot set output channel layout\n");
-			//	throw FILTER_INIT_FAILED;
+			//	throw FFMpegException_FilterInitFailed;
 			//}
 
 			//ret = av_opt_set_int_list(buffersink_ctx, "sample_rates", out_sample_rates, -1,
 			//	AV_OPT_SEARCH_CHILDREN);
 			//if (ret < 0) {
 			//	//av_log(NULL, AV_LOG_ERROR, "Cannot set output sample rate\n");
-			//	throw FILTER_INIT_FAILED;
+			//	throw FFMpegException_FilterInitFailed;
 			//}
+			
+#define _UPDATE_FILTER_BY_STR
 
+#ifndef _UPDATE_FILTER_BY_STR
+			/* process. */
+			const AVFilter* atempo = avfilter_get_by_name("atempo");
+
+			ret = avfilter_graph_create_filter(&atempo_ctx, atempo, "atempo",
+				NULL, NULL, filter_graph);
+			if (ret < 0) {
+				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
+				throw FFMpegException_FilterInitFailed;
+			}
+
+			// set params
+			ret = av_opt_set_double(atempo_ctx, "tempo", this->atempo,
+				AV_OPT_SEARCH_CHILDREN);
+			if (ret < 0) {
+				throw FFMpegException_FilterInitFailed;
+			}
+
+			ret = avfilter_link(buffersrc_ctx, 0, atempo_ctx, 0);
+			ret = avfilter_link(atempo_ctx, 0, buffersink_ctx, 0);
+#else
 			/*
 			 * Set the endpoints for the filter graph. The filter_graph will
 			 * be linked to the graph described by filters_descr.
@@ -487,46 +511,32 @@ private:
 			  * filter input label is not specified, it is set to "in" by
 			  * default.
 			  */
-			//outputs->name = av_strdup("in");
-			//outputs->filter_ctx = buffersrc_ctx;
-			//outputs->pad_idx = 0;
-			//outputs->next = process;
+			outputs->name = av_strdup("in");
+			outputs->filter_ctx = buffersrc_ctx;
+			outputs->pad_idx = 0;
+			outputs->next = NULL;
 
-			///* process */
-			//process->name = av_strdup("tempo");
-			//process->filter_ctx = atempo_ctx;
-			//process->pad_idx = 0;
-			//process->next = inputs;
+			/*
+			 * The buffer sink input must be connected to the output pad of
+			 * the last filter described by filters_descr; since the last
+			 * filter output label is not specified, it is set to "out" by
+			 * default.
+			 */
+			inputs->name = av_strdup("out");
+			inputs->filter_ctx = buffersink_ctx;
+			inputs->pad_idx = 0;
+			inputs->next = NULL;
 
-			///*
-			// * The buffer sink input must be connected to the output pad of
-			// * the last filter described by filters_descr; since the last
-			// * filter output label is not specified, it is set to "out" by
-			// * default.
-			// */
-			//inputs->name = av_strdup("out");
-			//inputs->filter_ctx = buffersink_ctx;
-			//inputs->pad_idx = 0;
-			//inputs->next = NULL;
-
-			////if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
-			////	&inputs, &outputs, NULL)) < 0) {
-			////	throw FILTER_INIT_FAILED;
-			////}
-
-			//if ((ret = avfilter_graph_parse_ptr(filter_graph, "atempo=2.0",
-			//	&inputs, &outputs, NULL)) < 0) {
-			//	auto err = GetErrorStr(ret);
-			//	throw FILTER_INIT_FAILED;
-			//}
-
-			ret = avfilter_link(buffersrc_ctx, 0, atempo_ctx, 0);
-			ret = avfilter_link(atempo_ctx, 0, buffersink_ctx, 0);
-
+			if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
+				&inputs, &outputs, NULL)) < 0) {
+				throw FFMpegException_FilterInitFailed;
+			}
+#endif		
 			if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-				throw FILTER_INIT_FAILED;
+				throw FFMpegException_FilterInitFailed;
 			}
 
+			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 			bUpdateSwr = true;
 
 			/* Print summary of the sink buffer
@@ -542,12 +552,13 @@ private:
 		}
 		catch (int) {
 			// init failed
-			ret = FILTER_INIT_FAILED;
+			ret = FFMpegException_FilterInitFailed;
 		}
 
 		avfilter_inout_free(&inputs);
-		avfilter_inout_free(&process);
 		avfilter_inout_free(&outputs);
+
+		SDL_UnlockMutex(mutex);
 
 		return ret;
 	}
@@ -814,27 +825,7 @@ private:
 			if (avcodec_open2(pACodecContext, pACodec, NULL) < 0) {
 				throw FFMpegException_InitFailed;
 			}
-
-			//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
-
-			int channels = pACodecParameters->channels;
-			uint64_t channel_layout = pACodecParameters->channel_layout;
-
-			if (channels > 0 && channel_layout == 0) {
-				channel_layout = av_get_default_channel_layout(channels);
-			}
-			else if (channels == 0 && channel_layout > 0) {
-				channels = av_get_channel_layout_nb_channels(channel_layout);
-			}
-
-			auto layout = av_get_default_channel_layout(channels);
-
-			init_SwrContext(layout
-				, (AVSampleFormat)pACodecParameters->format
-				, pACodecParameters->sample_rate);
-		}
-
-		init_filters(pFormatContext, pACodecContext, filter_graph, "");
+		}		
 
 		// init others
 		pVFrame = av_frame_alloc();
@@ -925,8 +916,8 @@ private:
 
 		if (!bNoAudio) {
 			// init SDL audio
-			audio_buf = new uint8_t [(MAX_AUDIO_FRAME_SIZE * 3) / 2];
-			memset(audio_buf, 0, (MAX_AUDIO_FRAME_SIZE * 3) / 2);
+			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
+			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
 #ifndef _EXTERNAL_SDL_AUDIO_INIT
 			//DSP frequency -- samples per second
@@ -962,7 +953,12 @@ private:
 			SDL_PauseAudio(false);
 		}
 #pragma endregion
-	}
+	
+		// must be here, as it requires mutex of SDL
+		if (!bNoAudio) {
+			set_audioTempo(DEFAULT_ATEMPO);
+		}
+}
 
 	inline int64_t get_protectedTimeInSecond(int64_t ms) {
 		auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
@@ -1415,7 +1411,7 @@ private:
 			// 转换，返回值为转换后的sample个数
 			int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
 
-			auto audioSize = pAFrame->channels * nb * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
+			auto audioSize = pAFrame->channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
 
 			audioPts = audioClock;
 
@@ -1764,6 +1760,10 @@ public:
 		return AV_HWDEVICE_TYPE_NONE;
 	}
 
+	inline float get_audioTempo() {
+		return this->atempo;
+	}
+
 	//Set
 	inline void set_queueSize(int audioQSize = MAX_AUDIOQ_SIZE, int videoQSize = MAX_VIDEOQ_SIZE) {
 		this->audioQSize = audioQSize;
@@ -1829,6 +1829,34 @@ public:
 
 	inline void set_loop(bool bLoop) {
 		this->bLoop = bLoop;
+	}
+
+	inline void set_audioTempo(float atempo) {
+		this->atempo = atempo > 0
+			? atempo
+			: DEFAULT_ATEMPO;
+
+		std::string fliters;
+		double tempo = this->atempo;
+
+		if (this->atempo > 2.0) {
+			do {
+				fliters += "atempo=2.0,";
+			} while ((tempo /= 2) > 2.0);
+		}
+		else if (this->atempo < 0.5) {
+			do {
+				fliters += "atempo=0.5,";
+			} while ((tempo *= 2) < 0.5);
+		}
+
+		fliters += std::format("atempo={:1.1f}", tempo);
+
+		if (strlen(filters_descr) != 0) {
+			fliters += std::format(",{}", filters_descr);
+		}
+
+		init_filters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
 	}
 
 	//Play core

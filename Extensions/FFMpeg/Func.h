@@ -264,6 +264,8 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
 
+		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
+
 		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 
 		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
