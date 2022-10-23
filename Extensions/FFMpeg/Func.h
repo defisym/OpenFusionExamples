@@ -66,47 +66,58 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 //#define _MANUAL_PM
 
-	for (int y = 0; y < height; y++) {
-		auto pMemData = sfCoef.pData + y * lineSz;
-		auto pVideo = pData + (height - 1 - y) * srcLineSz;
+#ifdef _USE_OPENMP
+	omp_set_num_threads(std::thread::hardware_concurrency());
+#pragma omp parallel
+#endif
+	{
+#ifdef _USE_OPENMP
+#pragma omp for
+#endif
+		for (int y = 0; y < height; y++) {
+			auto pMemData = sfCoef.pData + y * lineSz;
+			auto pVideo = pData + (height - 1 - y) * srcLineSz;
 
 #ifndef _MANUAL_PM
-		memcpy(pMemData, pVideo, lineSz);
+			memcpy(pMemData, pVideo, lineSz);
 #ifdef _VIDEO_ALPHA
-		// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
-		for (int x = 0; x < width; x++) {
-			auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
-			auto curAlpha = pVideo + (PIXEL_BYTE - 1) + x * PIXEL_BYTE;
-			pAlphaData[0] = *curAlpha;
-		}
+			// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
+#ifdef _USE_OPENMP
+//#pragma omp for
+#endif
+			for (int x = 0; x < width; x++) {
+				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
+				auto curAlpha = pVideo + (PIXEL_BYTE - 1) + x * PIXEL_BYTE;
+				pAlphaData[0] = *curAlpha;
+			}
 #endif
 #else
-		for (int x = 0; x < width; x++) {
-			auto pVideoData = pVideo + x * PIXEL_BYTE;
+			for (int x = 0; x < width; x++) {
+				auto pVideoData = pVideo + x * PIXEL_BYTE;
 
-			auto pRGBData = pMemData + x * sfCoef.byte;
-			if (!bPm) {
-				pRGBData[0] = pVideoData[0];
-				pRGBData[1] = pVideoData[1];
-				pRGBData[2] = pVideoData[2];
-			}
-			else {
-				auto alphaCoef = pVideoData[3] / 255.0;
+				auto pRGBData = pMemData + x * sfCoef.byte;
+				if (!bPm) {
+					pRGBData[0] = pVideoData[0];
+					pRGBData[1] = pVideoData[1];
+					pRGBData[2] = pVideoData[2];
+				}
+				else {
+					auto alphaCoef = pVideoData[3] / 255.0;
 
-				pRGBData[0] = (BYTE)(pVideoData[0] * alphaCoef);
-				pRGBData[1] = (BYTE)(pVideoData[1] * alphaCoef);
-				pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
-			}
+					pRGBData[0] = (BYTE)(pVideoData[0] * alphaCoef);
+					pRGBData[1] = (BYTE)(pVideoData[1] * alphaCoef);
+					pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
+				}
 
 #ifdef _VIDEO_ALPHA
-			auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;		
-			pAlphaData[0] = pVideoData[3];
+				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
+				pAlphaData[0] = pVideoData[3];
+#endif
+			}
+
 #endif
 		}
-
-#endif
 	}
-
 #ifdef _DEBUG
 	//_SavetoClipBoard(pMemSf, false);
 #endif // _DEBUG

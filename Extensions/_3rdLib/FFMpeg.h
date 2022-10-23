@@ -205,8 +205,7 @@ private:
 	AVFilterContext* buffersrc_ctx = nullptr;
 	AVFilterContext* buffersink_ctx = nullptr;
 
-	// not used
-	AVFrame* pFilterFrame = nullptr;
+	AVFrame* pAFilterFrame = nullptr;
 
 	float atempo = DEFAULT_ATEMPO;	
 
@@ -400,7 +399,7 @@ private:
 		bUpdateSwr = false;
 	}
 
-	inline int init_filters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
+	inline int init_audioFilters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
 		, AVFilterGraph* filter_graph, const char* filters_descr) {		
 		SDL_CondWait(cond, mutex);
 
@@ -812,8 +811,8 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pFilterFrame = av_frame_alloc();
-		if (!pFilterFrame) {
+		pAFilterFrame = av_frame_alloc();
+		if (!pAFilterFrame) {
 			throw FFMpegException_InitFailed;
 		}
 
@@ -1341,18 +1340,21 @@ private:
 		}
 
 		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
+		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, 0);
 		if (response < 0) {
 			return -1;
 		}
 
 		while (1) {
-			response = av_buffersink_get_frame(buffersink_ctx, pAFrame);
+			//response = av_buffersink_get_frame(buffersink_ctx, pAFrame);
+			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 				break;
 			}
 
 			if (response < 0) {
 				av_frame_unref(pAFrame);
+				av_frame_unref(pAFilterFrame);
 			}
 
 			if (pAPacket != nullptr) {
@@ -1366,34 +1368,41 @@ private:
 				}
 			}
 
+			//auto pBaseFrame = pAFrame;
+			auto pBaseFrame = pAFilterFrame;
+
 			// update context to avoid crash
 			if (bUpdateSwr) {
-				init_SwrContext(pAFrame->channel_layout
-					, (AVSampleFormat)pAFrame->format
-					, pAFrame->sample_rate);
+				init_SwrContext(pBaseFrame->channel_layout
+					, (AVSampleFormat)pBaseFrame->format
+					, pBaseFrame->sample_rate);
 			}
 
 			// 计算转换后的sample个数 a * b / c
 			// https://blog.csdn.net/u013346305/article/details/48682935
-			int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pAFrame->sample_rate) + pAFrame->nb_samples
+			int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
+								+ pBaseFrame->nb_samples
 #ifndef _EXTERNAL_SDL_AUDIO_INIT
-				, pAFrame->sample_rate, pAFrame->sample_rate, AVRounding(1));
+				, pBaseFrame->sample_rate, pBaseFrame->sample_rate, AVRounding(1));
 #else
-				, TARGET_SAMPLE_RATE, pAFrame->sample_rate, AVRounding(1));
+				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, AVRounding(1));
 #endif
 
 			// 转换，返回值为转换后的sample个数
-			int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples, (const uint8_t**)pAFrame->data, pAFrame->nb_samples);
+			int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples
+				, (const uint8_t**)pBaseFrame->data, pBaseFrame->nb_samples);
 
-			auto audioSize = pAFrame->channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
+			auto audioSize = pBaseFrame->channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
 
 			audioPts = audioClock;
 
-			auto pcm_bytes = 2 * pAFrame->channels;
+			auto pcm_bytes = 2 * pBaseFrame->channels;
 			audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
 
 			return audioSize;
 		}
+
+		av_frame_unref(pAFrame);
 
 		return -1;
 	}
@@ -1573,7 +1582,7 @@ public:
 
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
-		av_frame_free(&pFilterFrame);
+		av_frame_free(&pAFilterFrame);
 
 #ifdef _HW_DECODE
 		if (bHWDecode) {
@@ -1832,7 +1841,7 @@ public:
 			fliters += std::format(",{}", filters_descr);
 		}
 
-		init_filters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+		init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
 	}
 
 	//Play core
