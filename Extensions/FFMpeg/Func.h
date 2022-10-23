@@ -277,11 +277,13 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		ReDisplay(rdPtr);
 	}
 	catch (...) {
+		CloseGeneral(rdPtr);
+
 		// update path for condition to check
 		*rdPtr->pFilePath = filePath;
 
 		CallEvent(ON_OPENFAILED);
 
-		CloseGeneral(rdPtr);
+		*rdPtr->pFilePath = L"";
 	}
 }
