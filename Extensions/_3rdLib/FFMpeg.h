@@ -199,14 +199,13 @@ private:
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
 #endif //  _HW_DECODE
 
-	// TODO release
 	AVFilterGraph* filter_graph = nullptr;
 	const char* filters_descr = "";
 
 	AVFilterContext* buffersrc_ctx = nullptr;
-	AVFilterContext* atempo_ctx = nullptr;
 	AVFilterContext* buffersink_ctx = nullptr;
 
+	// not used
 	AVFrame* pFilterFrame = nullptr;
 
 	float atempo = DEFAULT_ATEMPO;	
@@ -435,7 +434,6 @@ private:
 				, time_base.num, time_base.den, dec_ctx->sample_rate,
 				av_get_sample_fmt_name(dec_ctx->sample_fmt), dec_ctx->channel_layout);
 
-
 			// create
 			const AVFilter* abuffersrc = avfilter_get_by_name("abuffer");
 
@@ -476,30 +474,7 @@ private:
 			//	//av_log(NULL, AV_LOG_ERROR, "Cannot set output sample rate\n");
 			//	throw FFMpegException_FilterInitFailed;
 			//}
-			
-#define _UPDATE_FILTER_BY_STR
 
-#ifndef _UPDATE_FILTER_BY_STR
-			/* process. */
-			const AVFilter* atempo = avfilter_get_by_name("atempo");
-
-			ret = avfilter_graph_create_filter(&atempo_ctx, atempo, "atempo",
-				NULL, NULL, filter_graph);
-			if (ret < 0) {
-				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
-				throw FFMpegException_FilterInitFailed;
-			}
-
-			// set params
-			ret = av_opt_set_double(atempo_ctx, "tempo", this->atempo,
-				AV_OPT_SEARCH_CHILDREN);
-			if (ret < 0) {
-				throw FFMpegException_FilterInitFailed;
-			}
-
-			ret = avfilter_link(buffersrc_ctx, 0, atempo_ctx, 0);
-			ret = avfilter_link(atempo_ctx, 0, buffersink_ctx, 0);
-#else
 			/*
 			 * Set the endpoints for the filter graph. The filter_graph will
 			 * be linked to the graph described by filters_descr.
@@ -531,7 +506,7 @@ private:
 				&inputs, &outputs, NULL)) < 0) {
 				throw FFMpegException_FilterInitFailed;
 			}
-#endif		
+			
 			if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
 				throw FFMpegException_FilterInitFailed;
 			}
@@ -541,9 +516,8 @@ private:
 
 			/* Print summary of the sink buffer
 			 * Note: args buffer is reused to store channel layout string */
-			const AVFilterLink* outlink;
-			outlink = buffersink_ctx->inputs[0];
 
+			//const AVFilterLink* outlink = buffersink_ctx->inputs[0];
 			//av_get_channel_layout_string(args, sizeof(args), -1, outlink->channel_layout);
 			//av_log(NULL, AV_LOG_INFO, "Output: srate:%dHz fmt:%s chlayout:%s\n",
 			//	(int)outlink->sample_rate,
@@ -1606,6 +1580,8 @@ public:
 			av_frame_free(&pSWFrame);
 		}
 #endif // _HW_DECODE		
+
+		avfilter_graph_free(&filter_graph);
 
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
