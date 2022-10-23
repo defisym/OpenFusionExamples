@@ -78,6 +78,8 @@ constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
 
+//#define MEASURE_GDI_PLUS
+
 class NeoStr {
 private:
 	HDC hdc;
@@ -130,6 +132,18 @@ private:
 
 	Bitmap* pBitmap = nullptr;
 	PrivateFontCollection* pFontCollection = nullptr;
+
+#ifdef MEASURE_GDI_PLUS
+	Graphics* pMeasure;
+	PointF origin = { 0, 0 };
+	
+	StringFormat stringFormat;
+
+	SIZE measureBaseSize = { 0 };
+	wchar_t measureBaseStr[2]= { L'.',L'.' };
+	
+	wchar_t measureStr[3] = { L'.',L'.',L'.' };
+#endif
 
 	struct StrPos {
 		size_t start;
@@ -380,6 +394,18 @@ public:
 		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
+#ifdef MEASURE_GDI_PLUS		
+		this->pMeasure = new Graphics(hdc);
+
+		//this->stringFormat.GenericDefault();
+		this->stringFormat.GenericTypographic();
+		
+		RectF boundRect;
+		this->pMeasure->MeasureString(L"..", 2, pFont, origin, &stringFormat, &boundRect);
+
+		this->measureBaseSize = { long(boundRect.GetRight() - boundRect.GetLeft()),long(boundRect.GetBottom() - boundRect.GetTop()) };
+#endif
+
 		// add a default char to return default value when input text is empty
 		//this->GetCharSizeWithCache(L'露');
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER);
@@ -387,6 +413,11 @@ public:
 
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
+
+#ifdef MEASURE_GDI_PLUS		
+		delete this->pMeasure;
+		this->pMeasure = nullptr;
+#endif
 
 		delete this->pFont;
 		this->pFont = nullptr;
@@ -669,21 +700,23 @@ public:
 	}
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
-//#define MEASURE_GDI_PLUS
+#ifdef MEASURE_GDI_PLUS		
+		SIZE sz = { 0 };
+		//GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
-#ifdef MEASURE_GDI_PLUS
-		SIZE sz = {0};
-
-		Graphics g(hdc);
 		RectF boundRect;
-		PointF origin(0, 0);
 
-		//auto pStringFormat = StringFormat::GenericDefault();
-		auto pStringFormat = StringFormat::GenericTypographic();
-		g.MeasureString(&wChar, 1, pFont, origin, pStringFormat, &boundRect);
+		this->measureStr[1] = wChar;
 
-		sz.cx = long(boundRect.GetRight() - boundRect.GetLeft());
-		sz.cy = long(boundRect.GetBottom() - boundRect.GetTop());
+		this->pMeasure->MeasureString(this->measureStr, 3, pFont, origin, &stringFormat, &boundRect);
+
+		auto curWidth = long(boundRect.GetRight() - boundRect.GetLeft());
+		auto curHeight = long(boundRect.GetBottom() - boundRect.GetTop());		
+
+		sz.cx = curWidth - measureBaseSize.cx;
+		sz.cy = curHeight;
+
+		sz.cy -= (this->tm.tmExternalLeading);
 #else
 		SIZE sz = { 0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
