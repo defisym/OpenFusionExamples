@@ -539,21 +539,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 BOOL WINAPI EditObject (mv _far *mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
-	// // Check compatibility
-	// if ( IS_COMPATIBLE(mV) )
-	// {
-	// 	// Remove this if your object does not need a setup
-	// 	setupParams		spa;
-	// 	spa.edpt = edPtr;
-	// 	spa.kv = mV;
-	// 	if ( DialogBoxParam(hInstLib, MAKEINTRESOURCE(DB_SETUP), mV->mvHEditWin, setupProc, (LPARAM)(LPBYTE)&spa) == IDOK )
-	// 	{
-	// 		return TRUE;
-	// 	}
-	// }
-
+	// Check compatibility
 	if (IS_COMPATIBLE(mV)) {
-		// Remove this if your object does not need a setup
 		//setupParams		spa;
 		//spa.edpt = edPtr;
 		//spa.kv = mV;
