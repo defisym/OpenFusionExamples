@@ -78,7 +78,7 @@ constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
 
-//#define MEASURE_GDI_PLUS
+#define MEASURE_GDI_PLUS
 
 class NeoStr {
 private:
@@ -364,31 +364,27 @@ public:
 		, HFONT hFont
 		, bool needGDIPStartUp = true
 		, PrivateFontCollection* pFontCollection = nullptr) {
+		this->needGDIPStartUp = needGDIPStartUp;
+
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 		}
 
-		this->hdc = GetDC(NULL);
 		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
-
-		SelectObject(this->hdc, hFont);
-
-		this->SetColor(color);
+		this->hdc = GetDC(NULL);
+		SelectObject(this->hdc, hFont);		
 
 		this->hFont = hFont;
-
 		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
-		pFont = GetFontPonter(this->logFont);
+		this->pFontCollection = pFontCollection;
+		this->pFont = GetFontPointer(this->logFont);
 
+		this->SetColor(color);
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
-		this->strPos.reserve(20);
-
-		this->pFontCollection = pFontCollection;
-
-		this->needGDIPStartUp = needGDIPStartUp;
+		this->strPos.reserve(20);		
 		
 		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
 		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
@@ -404,6 +400,7 @@ public:
 		this->pMeasure->MeasureString(L"..", 2, pFont, origin, &stringFormat, &boundRect);
 
 		this->measureBaseSize = { long(boundRect.GetRight() - boundRect.GetLeft()),long(boundRect.GetBottom() - boundRect.GetTop()) };
+		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
 
 		// add a default char to return default value when input text is empty
@@ -585,7 +582,7 @@ public:
 			: nullptr);
 	}
 
-	inline Font* GetFontPonter(LOGFONT logFont) {
+	inline Font* GetFontPointer(LOGFONT logFont) {
 		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
 		
 		return new Font(logFont.lfFaceName
@@ -702,7 +699,7 @@ public:
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
 #ifdef MEASURE_GDI_PLUS		
 		SIZE sz = { 0 };
-		//GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
 		RectF boundRect;
 
@@ -714,14 +711,14 @@ public:
 		auto curHeight = long(boundRect.GetBottom() - boundRect.GetTop());		
 
 		sz.cx = curWidth - measureBaseSize.cx;
-		sz.cy = curHeight;
+		//sz.cy = curHeight;
+		sz.cy = this->measureBaseSize.cy;
 
 		sz.cy -= (this->tm.tmExternalLeading);
 #else
 		SIZE sz = { 0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 #endif
-
 		//ABC abc;
 		//GetCharABCWidths(hdc, wChar, wChar, &abc);
 
@@ -1265,7 +1262,7 @@ public:
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 		SolidBrush solidBrush(fontColor);
 
-		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight, };
+		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
 
 		auto clip = [this, pRc, displayRc] (int startX, int startY, const StrSize* charSz)->bool {
 			if (this->bClip == false) {
