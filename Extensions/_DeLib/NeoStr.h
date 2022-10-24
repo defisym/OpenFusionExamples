@@ -78,7 +78,7 @@ constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
 
-#define MEASURE_GDI_PLUS
+//#define MEASURE_GDI_PLUS
 
 class NeoStr {
 private:
@@ -200,12 +200,24 @@ private:
 	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
-	std::map<wchar_t, StrSize> charSzCache;
+	using CharSizeCache = std::map<wchar_t, StrSize>;
+	CharSizeCache charSzCache;
+
+	struct CharSizeCacheSecond {
+		HDC hdc;
+		CharSizeCache cache;
+	};
+
+	using LogFontHash = size_t;
+	using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheSecond>;
+	CharSizeCacheWithFont charSzCacheWithFont;
+	
 	StrSize defaultCharSz;
 
 	struct FormatColor {
 		size_t start;
 		//size_t end;
+
 		Color color;
 	};
 
@@ -228,6 +240,20 @@ private:
 
 	std::vector<FormatICon> iConFormat;
 	std::map<DWORD, LPSURFACE> iConLib;
+
+	struct FormatFont {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+
+		LOGFONT logFont;
+	};
+
+	std::vector<FormatFont> FontFormat;
+	std::vector<LOGFONT> logFontStack;
+
+	std::map<LogFontHash, Font*> FontCache;
 
 	float iConOffsetX = 0;
 	float iConOffsetY = 0;
@@ -379,7 +405,7 @@ public:
 		GetTextMetrics(hdc, &this->tm);
 
 		this->pFontCollection = pFontCollection;
-		this->pFont = GetFontPointer(this->logFont);
+		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
@@ -411,13 +437,18 @@ public:
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
 
+		for (auto& it : charSzCacheWithFont) {
+			ReleaseDC(NULL, it.second.hdc);
+		}
+
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
 		this->pMeasure = nullptr;
 #endif
 
-		delete this->pFont;
-		this->pFont = nullptr;
+		for (auto& it : FontCache) {
+			delete it.second;
+		}
 
 		delete[] this->pRawText;
 		this->pRawText = nullptr;
@@ -593,6 +624,21 @@ public:
 			: nullptr);
 	}
 
+	inline Font* GetFontPointerWithCache(LOGFONT logFont) {
+		auto logFontHash = LogFontHasher(logFont);
+		auto it = FontCache.find(logFontHash);
+
+		if (it != FontCache.end()) {
+			return it->second;
+		}
+		else {
+			auto newFont = GetFontPointer(logFont);
+			FontCache[logFontHash] = newFont;
+
+			return newFont;
+		}
+	}
+
 	// #AARRGGBB
 	inline Color GetColor(std::wstring_view hex) {
 		auto dec = _h2d(hex.data(), hex.size());
@@ -740,9 +786,46 @@ public:
 
 			return sz;
 		}
-	}
+	}	
 
 #define GetCharSize(wChar) this->GetCharSizeWithCache(wChar)
+
+	inline StrSize GetCharSizeRaw(wchar_t wChar, HDC hdc) {
+		SIZE sz = { 0 };
+		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+
+		return *(StrSize*)&sz;
+	}
+
+	inline StrSize GetCharSizeWithCache(wchar_t wChar, LOGFONT logFont) {
+		auto logFontHash = LogFontHasher(logFont);
+		auto it = charSzCacheWithFont.find(logFontHash);
+
+		if (it != charSzCacheWithFont.end()) {
+			auto& cacheSecond = it->second;
+			auto& charCache = cacheSecond.cache;
+
+			auto charIt = charCache.find(wChar);
+			if (charIt != charCache.end()) {
+				return charIt->second;
+			}
+			else {
+				auto sz = GetCharSizeRaw(wChar, cacheSecond.hdc);
+				charCache[wChar] = sz;
+
+				return sz;
+			}
+		}
+		else {
+			auto hdc = GetDC(NULL);
+			auto hFont = CreateFontIndirect(&logFont);			
+			SelectObject(hdc, hFont);
+
+			charSzCacheWithFont[logFontHash] = { hdc };
+
+			return GetCharSizeWithCache(wChar,logFont);
+		}
+	}
 
 	inline StrSize GetStrSize(LPCWSTR pStr, size_t pStrLen = -1) {
 		RECT change = { 0,0,65535,1 };
@@ -801,6 +884,12 @@ public:
 		this->colorFormat.emplace_back(FormatColor{ 0,colorStack.back() });
 
 		this->iConFormat.clear();
+
+		this->logFontStack.clear();
+		this->logFontStack.emplace_back(this->logFont);
+
+		this->FontFormat.clear();
+		this->FontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
 
 		size_t newLineCount = 0;
 
@@ -895,6 +984,7 @@ public:
 
 						do {
 							size_t savedLength = pSavedChar - pText - newLineCount * 2;
+							size_t savedLengthWithNewLine = pSavedChar - pText;
 
 							if (StringViewIEqu(controlStr, L"Color")) {
 								size_t savedLengthLocal = savedLength;
@@ -915,6 +1005,97 @@ public:
 								else {
 									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });									
 								}								
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Font")) {
+								size_t savedLengthLocal = savedLength;
+								
+								if (!bEndOfRegion) {
+									LOGFONT newLogFont = logFontStack.back();
+
+									memset(newLogFont.lfFaceName, 0, LF_FACESIZE * sizeof(WCHAR));
+									memcpy(newLogFont.lfFaceName, controlParam.data(), min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
+
+									logFontStack.emplace_back(newLogFont);
+								}
+								else {
+									logFontStack.pop_back();
+								}
+
+								auto& lastFontFormat = this->FontFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastFontFormat.start) {
+									lastFontFormat.logFont = logFontStack.back();
+								}
+								else {
+									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
+										,savedLengthWithNewLine
+										,logFontStack.back() });
+								}
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Size")) {
+								size_t savedLengthLocal = savedLength;								
+
+								if (!bEndOfRegion) {
+									LOGFONT newLogFont = logFontStack.back();
+
+									auto size = _stoi(GetTrimmedStr(const_cast<wchar_t*>(controlParam.data()), controlParam.size()).data());
+									auto newSize = -1 * MulDiv(size, GetDeviceCaps(this->hdc, LOGPIXELSY), 72);
+
+									newLogFont.lfHeight = newSize;
+
+									logFontStack.emplace_back(newLogFont);
+								}
+								else {
+									logFontStack.pop_back();
+								}
+
+								auto& lastFontFormat = this->FontFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastFontFormat.start) {
+									lastFontFormat.logFont = logFontStack.back();
+								}
+								else {
+									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
+										,savedLengthWithNewLine
+										,logFontStack.back() });
+								}
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Bold")) {
+								size_t savedLengthLocal = savedLength;
+
+								if (!bEndOfRegion) {
+									LOGFONT newLogFont = logFontStack.back();
+
+									newLogFont.lfWeight = 800;
+
+									logFontStack.emplace_back(newLogFont);
+								}
+								else {
+									logFontStack.pop_back();
+								}
+
+								auto& lastFontFormat = this->FontFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastFontFormat.start) {
+									lastFontFormat.logFont = logFontStack.back();
+								}
+								else {
+									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
+										,savedLengthWithNewLine
+										,logFontStack.back() });
+								}
 
 								break;
 							}
@@ -1057,6 +1238,9 @@ public:
 		size_t notAtStartCharPos = -1;
 		bool bPunctationSkip = false;
 
+		auto fontIt = this->FontFormat.begin();
+		auto localLogFont = fontIt->logFont;
+
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
@@ -1072,7 +1256,15 @@ public:
 				auto curChar = pCurChar [0];
 				auto nextChar = pCurChar [1];
 
-				pStrSizeArr [pChar] = GetCharSize(curChar);
+				if (fontIt != this->FontFormat.end()
+					&& pChar >= fontIt->startWithNewLine) {
+					localLogFont = fontIt->logFont;
+
+					fontIt++;
+				}
+
+				//pStrSizeArr [pChar] = GetCharSize(curChar);
+				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
 				auto charSz = &pStrSizeArr [pChar];
 
 				totalWidth = curWidth;
@@ -1284,6 +1476,7 @@ public:
 
 		auto colorIt = this->colorFormat.begin();
 		auto iConIt = this->iConFormat.begin();
+		auto fontIt = this->FontFormat.begin();
 
 		for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
@@ -1321,6 +1514,13 @@ public:
 						iConIt->y = (size_t)positionY;
 
 						iConIt++;
+					}
+
+					if (fontIt != this->FontFormat.end()
+						&& totalChar >= fontIt->start) {
+						this->pFont = GetFontPointerWithCache(fontIt->logFont);
+
+						fontIt++;
 					}
 
 					auto status = g.DrawString(pCurChar, 1, pFont
