@@ -325,6 +325,7 @@ private:
 		return 0;
 	}
 
+#ifdef _DEBUG
 	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) {
 		UINT  num = 0;          // number of image encoders
 		UINT  size = 0;         // size of the image encoder array in bytes
@@ -357,6 +358,7 @@ private:
 
 		return -1;  // Failure
 	}
+#endif
 
 	inline size_t LogFontHasher(LOGFONT logFont) {
 		constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
@@ -583,7 +585,7 @@ public:
 			fontStyle = fontStyle | Gdiplus::FontStyleBold;
 		}
 		if (logFont.lfItalic) {
-			fontStyle = fontStyle | Gdiplus::FontStyleRegular;
+			fontStyle = fontStyle | Gdiplus::FontStyleItalic;
 		}
 		if (logFont.lfUnderline) {
 			fontStyle = fontStyle | Gdiplus::FontStyleUnderline;
@@ -742,6 +744,7 @@ public:
 		this->angle = angle;
 	}
 
+	// deprecated
 	inline StrSize GetCharSizeRaw(wchar_t wChar) {
 #ifdef MEASURE_GDI_PLUS		
 		SIZE sz = { 0 };
@@ -773,7 +776,8 @@ public:
 
 		return *(StrSize*)&sz;
 	}
-
+	
+	// deprecated
 	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
 		auto it = charSzCache.find(wChar);
 
@@ -787,8 +791,6 @@ public:
 			return sz;
 		}
 	}	
-
-#define GetCharSize(wChar) this->GetCharSizeWithCache(wChar)
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar, HDC hdc) {
 		SIZE sz = { 0 };
@@ -976,6 +978,9 @@ public:
 
 							return true;
 						};
+						auto StringViewToInt = [GetTrimmedStr](std::wstring_view& str) {
+							return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
+						};
 
 						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, equal - bEndOfRegion - 1);
 						std::wstring_view controlParam = !bEndOfRegion
@@ -986,7 +991,8 @@ public:
 							size_t savedLength = pSavedChar - pText - newLineCount * 2;
 							size_t savedLengthWithNewLine = pSavedChar - pText;
 
-							if (StringViewIEqu(controlStr, L"Color")) {
+							if (StringViewIEqu(controlStr, L"Color")
+								|| StringViewIEqu(controlStr, L"C")) {
 								size_t savedLengthLocal = savedLength;
 
 								if (!bEndOfRegion) {
@@ -1001,106 +1007,15 @@ public:
 								// if equal, replace last format
 								if (savedLengthLocal == lastColorFormat.start) {
 									lastColorFormat.color = colorStack.back();
-								}								
-								else {
-									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });									
-								}								
-
-								break;
-							}
-
-							if (StringViewIEqu(controlStr, L"Font")) {
-								size_t savedLengthLocal = savedLength;
-								
-								if (!bEndOfRegion) {
-									LOGFONT newLogFont = logFontStack.back();
-
-									memset(newLogFont.lfFaceName, 0, LF_FACESIZE * sizeof(WCHAR));
-									memcpy(newLogFont.lfFaceName, controlParam.data(), min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
-
-									logFontStack.emplace_back(newLogFont);
 								}
 								else {
-									logFontStack.pop_back();
-								}
-
-								auto& lastFontFormat = this->FontFormat.back();
-
-								// if equal, replace last format
-								if (savedLengthLocal == lastFontFormat.start) {
-									lastFontFormat.logFont = logFontStack.back();
-								}
-								else {
-									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
-										,savedLengthWithNewLine
-										,logFontStack.back() });
+									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });
 								}
 
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Size")) {
-								size_t savedLengthLocal = savedLength;								
-
-								if (!bEndOfRegion) {
-									LOGFONT newLogFont = logFontStack.back();
-
-									auto size = _stoi(GetTrimmedStr(const_cast<wchar_t*>(controlParam.data()), controlParam.size()).data());
-									auto newSize = -1 * MulDiv(size, GetDeviceCaps(this->hdc, LOGPIXELSY), 72);
-
-									newLogFont.lfHeight = newSize;
-
-									logFontStack.emplace_back(newLogFont);
-								}
-								else {
-									logFontStack.pop_back();
-								}
-
-								auto& lastFontFormat = this->FontFormat.back();
-
-								// if equal, replace last format
-								if (savedLengthLocal == lastFontFormat.start) {
-									lastFontFormat.logFont = logFontStack.back();
-								}
-								else {
-									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
-										,savedLengthWithNewLine
-										,logFontStack.back() });
-								}
-
-								break;
-							}
-
-							if (StringViewIEqu(controlStr, L"Bold")) {
-								size_t savedLengthLocal = savedLength;
-
-								if (!bEndOfRegion) {
-									LOGFONT newLogFont = logFontStack.back();
-
-									newLogFont.lfWeight = 800;
-
-									logFontStack.emplace_back(newLogFont);
-								}
-								else {
-									logFontStack.pop_back();
-								}
-
-								auto& lastFontFormat = this->FontFormat.back();
-
-								// if equal, replace last format
-								if (savedLengthLocal == lastFontFormat.start) {
-									lastFontFormat.logFont = logFontStack.back();
-								}
-								else {
-									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
-										,savedLengthWithNewLine
-										,logFontStack.back() });
-								}
-
-								break;
-							}
-
-							if (StringViewIEqu(controlStr, L"ICon")) {		
+							if (StringViewIEqu(controlStr, L"ICon")) {
 								size_t savedLengthLocal = savedLength;
 
 								int frame = 0;
@@ -1110,11 +1025,11 @@ public:
 								auto paramParser = controlParam;
 
 								do {
-									auto ParseParam = [GetTrimmedStr, &paramParser](int& data) {
+									auto ParseParam = [StringViewToInt, &paramParser](int& data) {
 										auto start = paramParser.find_last_of(L',');
-										
+
 										if (start == std::wstring::npos) {
-											data = _stoi(GetTrimmedStr(const_cast<wchar_t*>(paramParser.data()), paramParser.size()).data());
+											data = StringViewToInt(paramParser);
 
 											return false;
 										}
@@ -1122,11 +1037,11 @@ public:
 											auto paramStr = paramParser.substr(start + 1);
 											paramParser = paramParser.substr(0, start);
 
-											data = _stoi(GetTrimmedStr(const_cast<wchar_t*>(paramStr.data()), paramStr.size()).data());
+											data = StringViewToInt(paramParser);
 
 											return true;
 										}
-									};									
+									};
 
 									if (!ParseParam(frame)) {
 										break;
@@ -1176,6 +1091,97 @@ public:
 								// space for icon
 								pSavedChar[0] = DEFAULT_CHARACTER;
 								pSavedChar++;
+
+								break;
+							}
+
+							using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
+
+							auto FontFormatControl = [&](FontFormatControlCallback callBack) {
+								size_t savedLengthLocal = savedLength;
+
+								if (!bEndOfRegion) {
+									LOGFONT newLogFont = logFontStack.back();
+
+									callBack(newLogFont);
+
+									logFontStack.emplace_back(newLogFont);
+								}
+								else {
+									logFontStack.pop_back();
+								}
+
+								auto& lastFontFormat = this->FontFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastFontFormat.start) {
+									lastFontFormat.logFont = logFontStack.back();
+								}
+								else {
+									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
+										,savedLengthWithNewLine
+										,logFontStack.back() });
+								}
+							};
+
+							if (StringViewIEqu(controlStr, L"Font")
+								|| StringViewIEqu(controlStr, L"F")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									memset(newLogFont.lfFaceName, 0
+										, LF_FACESIZE * sizeof(WCHAR));
+									memcpy(newLogFont.lfFaceName, controlParam.data()
+										, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Size")
+								|| StringViewIEqu(controlStr, L"S")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									auto size = StringViewToInt(controlParam);;
+									auto newSize = -1 * MulDiv(size
+										, GetDeviceCaps(this->hdc, LOGPIXELSY)
+										, 72);
+
+									newLogFont.lfHeight = newSize;
+										});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Bold")
+								|| StringViewIEqu(controlStr, L"B")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfWeight = FW_EXTRABOLD;
+									});								
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Italic")
+								|| StringViewIEqu(controlStr, L"I")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfItalic = TRUE;
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Underline")
+								|| StringViewIEqu(controlStr, L"U")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfUnderline = TRUE;
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"StrikeOut")
+								|| StringViewIEqu(controlStr, L"S")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfStrikeOut = TRUE;
+									});
 
 								break;
 							}
@@ -1263,7 +1269,6 @@ public:
 					fontIt++;
 				}
 
-				//pStrSizeArr [pChar] = GetCharSize(curChar);
 				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
 				auto charSz = &pStrSizeArr [pChar];
 
@@ -1523,6 +1528,7 @@ public:
 						fontIt++;
 					}
 
+					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
 					auto status = g.DrawString(pCurChar, 1, pFont
 						, PointF(positionX, positionY), &solidBrush);
 				}
