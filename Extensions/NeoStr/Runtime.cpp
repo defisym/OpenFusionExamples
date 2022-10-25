@@ -145,6 +145,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			, &rdPtr->pData->gdiplusStartupInput
 			, NULL);
 		rdPtr->pData->gdiInitialized = true;
+
+		NeoStr::Alloc(rdPtr->pData->pFontCache);
+		NeoStr::Alloc(rdPtr->pData->pCharSzCacheWithFont);
+
 		rdPtr->pData->pFontCollection = new PrivateFontCollection;
 
 		//Update pointer
@@ -399,7 +403,11 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if ( pData != NULL ) {
 		delete pData->pFontCollection;
-		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
+
+		NeoStr::Release(pData->pFontCache);
+		NeoStr::Release(pData->pCharSzCacheWithFont);
+
+		Gdiplus::GdiplusShutdown(pData->gdiplusToken);
 
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
@@ -419,6 +427,10 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if ( pData != NULL ) {
 		delete pData->pFontCollection;
+
+		NeoStr::Release(pData->pFontCache);
+		NeoStr::Release(pData->pCharSzCacheWithFont);
+
 		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
 
 		delete pData;

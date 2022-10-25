@@ -45,7 +45,11 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
-		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont, false, rdPtr->pData->pFontCollection);
+		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor
+			, rdPtr->hFont
+			, &rdPtr->pData->pFontCache
+			, &rdPtr->pData->pCharSzCacheWithFont
+			, false, rdPtr->pData->pFontCollection);
 
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();

@@ -136,12 +136,12 @@ private:
 #ifdef MEASURE_GDI_PLUS
 	Graphics* pMeasure;
 	PointF origin = { 0, 0 };
-	
+
 	StringFormat stringFormat;
 
 	SIZE measureBaseSize = { 0 };
-	wchar_t measureBaseStr[2]= { L'.',L'.' };
-	
+	wchar_t measureBaseStr[2] = { L'.',L'.' };
+
 	wchar_t measureStr[3] = { L'.',L'.',L'.' };
 #endif
 
@@ -201,17 +201,27 @@ private:
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
 	using CharSizeCache = std::map<wchar_t, StrSize>;
-	CharSizeCache charSzCache;
+	//CharSizeCache charSzCache;
 
-	struct CharSizeCacheSecond {
+	struct CharSizeCacheItem {
 		HDC hdc;
+		HFONT hFont;
 		CharSizeCache cache;
 	};
 
+	bool bExternalCache = true;
+
 	using LogFontHash = size_t;
-	using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheSecond>;
-	CharSizeCacheWithFont charSzCacheWithFont;
-	
+public:
+	using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheItem>;
+private:
+	CharSizeCacheWithFont* pCharSzCacheWithFont;
+
+public:
+	using FontCache = std::map<LogFontHash, Font*>;
+private:
+	FontCache* pFontCache;
+
 	StrSize defaultCharSz;
 
 	struct FormatColor {
@@ -253,15 +263,13 @@ private:
 	std::vector<FormatFont> FontFormat;
 	std::vector<LOGFONT> logFontStack;
 
-	std::map<LogFontHash, Font*> FontCache;
-
 	float iConOffsetX = 0;
 	float iConOffsetY = 0;
 
 	float iConScale = 1.0;
 
 	bool iConResample = false;
-	
+
 	npAppli appli = nullptr;
 	LPRO pIConActive = nullptr;
 	LPSURFACE pDefaultICon = nullptr;
@@ -346,8 +354,8 @@ private:
 		GetImageEncoders(num, size, pImageCodecInfo);
 
 		for (UINT j = 0; j < num; ++j) {
-			if (wcscmp(pImageCodecInfo [j].MimeType, format) == 0) {
-				*pClsid = pImageCodecInfo [j].Clsid;
+			if (wcscmp(pImageCodecInfo[j].MimeType, format) == 0) {
+				*pClsid = pImageCodecInfo[j].Clsid;
 				free(pImageCodecInfo);
 
 				return j;  // Success
@@ -390,8 +398,11 @@ private:
 public:
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
+		, FontCache** ppFontCache = nullptr
+		, CharSizeCacheWithFont** ppCharSzCacheWithFont = nullptr
 		, bool needGDIPStartUp = true
-		, PrivateFontCollection* pFontCollection = nullptr) {
+		, PrivateFontCollection* pFontCollection = nullptr
+	) {
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
@@ -400,13 +411,25 @@ public:
 
 		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
 		this->hdc = GetDC(NULL);
-		SelectObject(this->hdc, hFont);		
+		SelectObject(this->hdc, hFont);
 
 		this->hFont = hFont;
 		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
 		this->pFontCollection = pFontCollection;
+
+		if (!ppFontCache || !ppCharSzCacheWithFont) {
+			this->bExternalCache = false;
+		}
+
+		if (this->bExternalCache) {
+			this->pFontCache = *ppFontCache;
+		}
+		else {
+			//this->pFontCache = new FontCache;
+			Alloc(this->pFontCache);
+		}
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
@@ -432,24 +455,28 @@ public:
 #endif
 
 		// add a default char to return default value when input text is empty
-		//this->GetCharSizeWithCache(L'露');
-		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER);
+		if (this->bExternalCache) {
+			this->pCharSzCacheWithFont = *ppCharSzCacheWithFont;
+		}
+		else {
+			//this->pCharSzCacheWithFont = new CharSizeCacheWithFont;
+			Alloc(this->pCharSzCacheWithFont);
+		}
+
+		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
 	}
 
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
-
-		for (auto& it : charSzCacheWithFont) {
-			ReleaseDC(NULL, it.second.hdc);
-		}
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
 		this->pMeasure = nullptr;
 #endif
 
-		for (auto& it : FontCache) {
-			delete it.second;
+		if (!this->bExternalCache) {
+			Release(this->pCharSzCacheWithFont);
+			Release(this->pFontCache);
 		}
 
 		delete[] this->pRawText;
@@ -483,6 +510,33 @@ public:
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 		}
+	}
+
+	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
+		pCharSzCacheWithFont = new CharSizeCacheWithFont;
+	}
+
+	inline static void Alloc(FontCache*& pFontCache) {
+		pFontCache = new FontCache;
+	}
+
+	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
+		for (auto& it : *pCharSzCacheWithFont) {
+			ReleaseDC(NULL, it.second.hdc);
+			DeleteObject(it.second.hFont);
+		}
+
+		delete pCharSzCacheWithFont;
+		pCharSzCacheWithFont = nullptr;
+	}
+
+	inline static void Release(FontCache*& pFontCache) {
+		for (auto& it : *pFontCache) {
+			delete it.second;
+		}
+
+		delete pFontCache;
+		pFontCache = nullptr;
 	}
 
 	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
@@ -628,14 +682,14 @@ public:
 
 	inline Font* GetFontPointerWithCache(LOGFONT logFont) {
 		auto logFontHash = LogFontHasher(logFont);
-		auto it = FontCache.find(logFontHash);
+		auto it = pFontCache->find(logFontHash);
 
-		if (it != FontCache.end()) {
+		if (it != pFontCache->end()) {
 			return it->second;
 		}
 		else {
 			auto newFont = GetFontPointer(logFont);
-			FontCache[logFontHash] = newFont;
+			(*pFontCache)[logFontHash] = newFont;
 
 			return newFont;
 		}
@@ -744,53 +798,53 @@ public:
 		this->angle = angle;
 	}
 
-	// deprecated
-	inline StrSize GetCharSizeRaw(wchar_t wChar) {
-#ifdef MEASURE_GDI_PLUS		
-		SIZE sz = { 0 };
-		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
-
-		RectF boundRect;
-
-		this->measureStr[1] = wChar;
-
-		this->pMeasure->MeasureString(this->measureStr, 3, pFont, origin, &stringFormat, &boundRect);
-
-		auto curWidth = long(boundRect.GetRight() - boundRect.GetLeft());
-		auto curHeight = long(boundRect.GetBottom() - boundRect.GetTop());		
-
-		sz.cx = curWidth - measureBaseSize.cx;
-		//sz.cy = curHeight;
-		sz.cy = this->measureBaseSize.cy;
-
-		sz.cy -= (this->tm.tmExternalLeading);
-#else
-		SIZE sz = { 0 };
-		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
-#endif
-		//ABC abc;
-		//GetCharABCWidths(hdc, wChar, wChar, &abc);
-
-		//sz.cx -= this->tm
-		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
-
-		return *(StrSize*)&sz;
-	}
-	
-	// deprecated
-	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
-		auto it = charSzCache.find(wChar);
-
-		if (it != charSzCache.end()) {
-			return it->second;
-		}
-		else {
-			auto sz = GetCharSizeRaw(wChar);
-			charSzCache [wChar] = sz;
-
-			return sz;
-		}
-	}	
+//	// deprecated
+//	inline StrSize GetCharSizeRaw(wchar_t wChar) {
+//#ifdef MEASURE_GDI_PLUS		
+//		SIZE sz = { 0 };
+//		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+//
+//		RectF boundRect;
+//
+//		this->measureStr[1] = wChar;
+//
+//		this->pMeasure->MeasureString(this->measureStr, 3, pFont, origin, &stringFormat, &boundRect);
+//
+//		auto curWidth = long(boundRect.GetRight() - boundRect.GetLeft());
+//		auto curHeight = long(boundRect.GetBottom() - boundRect.GetTop());		
+//
+//		sz.cx = curWidth - measureBaseSize.cx;
+//		//sz.cy = curHeight;
+//		sz.cy = this->measureBaseSize.cy;
+//
+//		sz.cy -= (this->tm.tmExternalLeading);
+//#else
+//		SIZE sz = { 0 };
+//		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+//#endif
+//		//ABC abc;
+//		//GetCharABCWidths(hdc, wChar, wChar, &abc);
+//
+//		//sz.cx -= this->tm
+//		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
+//
+//		return *(StrSize*)&sz;
+//	}
+//	
+//	// deprecated
+//	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
+//		auto it = charSzCache.find(wChar);
+//
+//		if (it != charSzCache.end()) {
+//			return it->second;
+//		}
+//		else {
+//			auto sz = GetCharSizeRaw(wChar);
+//			charSzCache [wChar] = sz;
+//
+//			return sz;
+//		}
+//	}	
 
 	inline StrSize GetCharSizeRaw(wchar_t wChar, HDC hdc) {
 		SIZE sz = { 0 };
@@ -801,9 +855,9 @@ public:
 
 	inline StrSize GetCharSizeWithCache(wchar_t wChar, LOGFONT logFont) {
 		auto logFontHash = LogFontHasher(logFont);
-		auto it = charSzCacheWithFont.find(logFontHash);
+		auto it = pCharSzCacheWithFont->find(logFontHash);
 
-		if (it != charSzCacheWithFont.end()) {
+		if (it != pCharSzCacheWithFont->end()) {
 			auto& cacheSecond = it->second;
 			auto& charCache = cacheSecond.cache;
 
@@ -823,7 +877,7 @@ public:
 			auto hFont = CreateFontIndirect(&logFont);			
 			SelectObject(hdc, hFont);
 
-			charSzCacheWithFont[logFontHash] = { hdc };
+			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont };
 
 			return GetCharSizeWithCache(wChar,logFont);
 		}
@@ -844,6 +898,8 @@ public:
 	}
 
 	inline void GetFormat(LPCWSTR pStr) {
+		this->bTextValid = true;
+
 		if (pStr == nullptr) {
 			this->bTextValid = false;
 
@@ -1216,10 +1272,7 @@ public:
 		this->strPos.clear();
 
 		if (!this->bTextValid) {
-			auto it = charSzCache.cend();
-			it--;
-
-			return { it->second.width / 2,it->second.height / 2,0 };
+			return { this->defaultCharSz.width / 2,this->defaultCharSz.height / 2 };
 		}
 
 		delete[] this->pStrSizeArr;
