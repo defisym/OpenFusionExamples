@@ -45,7 +45,9 @@
 
 #define	ACT_ACTION_STRETCH				14
 
-#define	ACT_LAST						15
+#define	ACT_ACTION_SAT					15
+
+#define	ACT_LAST						16
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -68,7 +70,9 @@
 #define EXP_EXPRESSION_GAHDE 			11
 #define EXP_EXPRESSION_GWHDE 			12
 
-#define	EXP_LAST                    	13
+#define EXP_EXPRESSION_GAT	 			13
+
+#define	EXP_LAST                    	14
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -171,6 +175,8 @@ typedef struct tagRDATA
 
 	double scaleX;
 	double scaleY;
+
+	float atempo;
 
 	bool bCache;
 	GlobalData* pData;

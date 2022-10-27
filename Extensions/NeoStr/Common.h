@@ -63,6 +63,9 @@ struct GlobalData {
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 	
+	NeoStr::FontCache* pFontCache;
+	NeoStr::CharSizeCacheWithFont* pCharSzCacheWithFont;
+
 	PrivateFontCollection* pFontCollection;
 };
 

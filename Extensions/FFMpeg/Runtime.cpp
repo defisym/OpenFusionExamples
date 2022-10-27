@@ -82,6 +82,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pMemSf = nullptr;
 	rdPtr->pGrabbedFrame = nullptr;	
 	
+	rdPtr->pHwaSf = nullptr;
+
 	rdPtr->bHwa = edPtr->bHwa;
 
 	rdPtr->bStretch = edPtr->bStretch;
@@ -115,6 +117,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 
+	rdPtr->atempo = DEFAULT_ATEMPO;
+
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
@@ -146,8 +150,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	FreeConsole();
 #endif
 
-	delete rdPtr->pMemSf;
-	delete rdPtr->pGrabbedFrame;	
+	delete rdPtr->pMemSf;	
+	delete rdPtr->pGrabbedFrame;
+
+	delete rdPtr->pHwaSf;
 		
 	delete rdPtr->pPreviousTimer;
 

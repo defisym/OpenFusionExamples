@@ -20,7 +20,6 @@
 
 #pragma region _GDIPLUS_INIT
 
-
 //#define _BLUR
 
 #ifdef _BLUR
@@ -74,7 +73,12 @@ inline RECT operator+(RECT rA, RECT rB) {
 				,rA.bottom + rB.bottom };
 }
 
-constexpr auto DEFAULEBORDEROFFSET = 20;
+constexpr auto DEFAULT_EBORDER_OFFSET = 20;
+constexpr auto DEFAULT_FORMAT_RESERVE = 10;
+
+constexpr auto DEFAULT_CHARACTER = L'　';
+
+//#define MEASURE_GDI_PLUS
 
 class NeoStr {
 private:
@@ -83,6 +87,8 @@ private:
 
 	HFONT hFont;
 	LOGFONT logFont;
+
+	Font* pFont = nullptr;
 
 	TEXTMETRIC tm;
 	int nRowSpace = 0;
@@ -112,6 +118,12 @@ private:
 	BYTE nShadowOffsetX = 0;
 	BYTE nShadowOffsetY = 0;
 
+	bool bTextValid = true;
+	size_t pTextLen = 0;
+
+	LPWSTR pRawText = nullptr;
+	LPWSTR pText = nullptr;
+
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
 
@@ -120,6 +132,18 @@ private:
 
 	Bitmap* pBitmap = nullptr;
 	PrivateFontCollection* pFontCollection = nullptr;
+
+#ifdef MEASURE_GDI_PLUS
+	Graphics* pMeasure;
+	PointF origin = { 0, 0 };
+
+	StringFormat stringFormat;
+
+	SIZE measureBaseSize = { 0 };
+	wchar_t measureBaseStr[2] = { L'.',L'.' };
+
+	wchar_t measureStr[3] = { L'.',L'.',L'.' };
+#endif
 
 	struct StrPos {
 		size_t start;
@@ -176,7 +200,79 @@ private:
 	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
-	std::map<wchar_t, StrSize> charSzCache;
+	using CharSizeCache = std::map<wchar_t, StrSize>;
+	//CharSizeCache charSzCache;
+
+	struct CharSizeCacheItem {
+		HDC hdc;
+		HFONT hFont;
+		CharSizeCache cache;
+	};
+
+	bool bExternalCache = true;
+
+	using LogFontHash = size_t;
+public:
+	using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheItem>;
+private:
+	CharSizeCacheWithFont* pCharSzCacheWithFont;
+
+public:
+	using FontCache = std::map<LogFontHash, Font*>;
+private:
+	FontCache* pFontCache;
+
+	StrSize defaultCharSz;
+
+	struct FormatColor {
+		size_t start;
+		//size_t end;
+
+		Color color;
+	};
+
+	std::vector<FormatColor> colorFormat;
+	std::vector<Color> colorStack;
+
+	struct FormatICon {
+		size_t start;
+		//size_t end;
+
+		int animation;
+		int direction;
+		int frame;
+
+		DWORD hImage;
+
+		size_t x;
+		size_t y;
+	};
+
+	std::vector<FormatICon> iConFormat;
+	std::map<DWORD, LPSURFACE> iConLib;
+
+	struct FormatFont {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+
+		LOGFONT logFont;
+	};
+
+	std::vector<FormatFont> FontFormat;
+	std::vector<LOGFONT> logFontStack;
+
+	float iConOffsetX = 0;
+	float iConOffsetY = 0;
+
+	float iConScale = 1.0;
+
+	bool iConResample = false;
+
+	npAppli appli = nullptr;
+	LPRO pIConActive = nullptr;
+	LPSURFACE pDefaultICon = nullptr;
 
 	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
 		for (auto& wChartoCheck : data) {
@@ -237,6 +333,7 @@ private:
 		return 0;
 	}
 
+#ifdef _DEBUG
 	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) {
 		UINT  num = 0;          // number of image encoders
 		UINT  size = 0;         // size of the image encoder array in bytes
@@ -257,8 +354,8 @@ private:
 		GetImageEncoders(num, size, pImageCodecInfo);
 
 		for (UINT j = 0; j < num; ++j) {
-			if (wcscmp(pImageCodecInfo [j].MimeType, format) == 0) {
-				*pClsid = pImageCodecInfo [j].Clsid;
+			if (wcscmp(pImageCodecInfo[j].MimeType, format) == 0) {
+				*pClsid = pImageCodecInfo[j].Clsid;
 				free(pImageCodecInfo);
 
 				return j;  // Success
@@ -269,6 +366,7 @@ private:
 
 		return -1;  // Failure
 	}
+#endif
 
 	inline size_t LogFontHasher(LOGFONT logFont) {
 		constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
@@ -300,38 +398,92 @@ private:
 public:
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
+		, FontCache** ppFontCache = nullptr
+		, CharSizeCacheWithFont** ppCharSzCacheWithFont = nullptr
 		, bool needGDIPStartUp = true
-		, PrivateFontCollection* pFontCollection = nullptr) {
-		this->hdc = GetDC(NULL);
-		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
-
-		SelectObject(this->hdc, hFont);
-
-		this->SetColor(color);
-
-		this->hFont = hFont;
-
-		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
-		GetTextMetrics(hdc, &this->tm);
-
-		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
-
-		this->strPos.reserve(20);
-
-		this->pFontCollection = pFontCollection;
-
+		, PrivateFontCollection* pFontCollection = nullptr
+	) {
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 		}
+
+		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
+		this->hdc = GetDC(NULL);
+		SelectObject(this->hdc, hFont);
+
+		this->hFont = hFont;
+		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
+		GetTextMetrics(hdc, &this->tm);
+
+		this->pFontCollection = pFontCollection;
+
+		if (!ppFontCache || !ppCharSzCacheWithFont) {
+			this->bExternalCache = false;
+		}
+
+		if (this->bExternalCache) {
+			this->pFontCache = *ppFontCache;
+		}
+		else {
+			//this->pFontCache = new FontCache;
+			Alloc(this->pFontCache);
+		}
+		this->pFont = GetFontPointerWithCache(this->logFont);
+
+		this->SetColor(color);
+		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
+
+		this->strPos.reserve(20);		
 		
+		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
+		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+#ifdef MEASURE_GDI_PLUS		
+		this->pMeasure = new Graphics(hdc);
+
+		//this->stringFormat.GenericDefault();
+		this->stringFormat.GenericTypographic();
+		
+		RectF boundRect;
+		this->pMeasure->MeasureString(L"..", 2, pFont, origin, &stringFormat, &boundRect);
+
+		this->measureBaseSize = { long(boundRect.GetRight() - boundRect.GetLeft()),long(boundRect.GetBottom() - boundRect.GetTop()) };
+		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
+#endif
+
 		// add a default char to return default value when input text is empty
-		this->GetCharSizeWithCache(L'露');
+		if (this->bExternalCache) {
+			this->pCharSzCacheWithFont = *ppCharSzCacheWithFont;
+		}
+		else {
+			//this->pCharSzCacheWithFont = new CharSizeCacheWithFont;
+			Alloc(this->pCharSzCacheWithFont);
+		}
+
+		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
 	}
 
 	~NeoStr() {
 		ReleaseDC(NULL, this->hdc);
+
+#ifdef MEASURE_GDI_PLUS		
+		delete this->pMeasure;
+		this->pMeasure = nullptr;
+#endif
+
+		if (!this->bExternalCache) {
+			Release(this->pCharSzCacheWithFont);
+			Release(this->pFontCache);
+		}
+
+		delete[] this->pRawText;
+		this->pRawText = nullptr;
+
+		delete[] this->pText;
+		this->pText = nullptr;
 
 		delete[] this->pStrSizeArr;
 		this->pStrSizeArr = nullptr;
@@ -348,9 +500,43 @@ public:
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
 
+		delete this->pDefaultICon;
+		this->pDefaultICon = nullptr;
+
+		for (auto& it : this->iConLib) {
+			delete it.second;
+		}
+
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 		}
+	}
+
+	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
+		pCharSzCacheWithFont = new CharSizeCacheWithFont;
+	}
+
+	inline static void Alloc(FontCache*& pFontCache) {
+		pFontCache = new FontCache;
+	}
+
+	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
+		for (auto& it : *pCharSzCacheWithFont) {
+			ReleaseDC(NULL, it.second.hdc);
+			DeleteObject(it.second.hFont);
+		}
+
+		delete pCharSzCacheWithFont;
+		pCharSzCacheWithFont = nullptr;
+	}
+
+	inline static void Release(FontCache*& pFontCache) {
+		for (auto& it : *pFontCache) {
+			delete it.second;
+		}
+
+		delete pFontCache;
+		pFontCache = nullptr;
 	}
 
 	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
@@ -453,7 +639,7 @@ public:
 			fontStyle = fontStyle | Gdiplus::FontStyleBold;
 		}
 		if (logFont.lfItalic) {
-			fontStyle = fontStyle | Gdiplus::FontStyleRegular;
+			fontStyle = fontStyle | Gdiplus::FontStyleItalic;
 		}
 		if (logFont.lfUnderline) {
 			fontStyle = fontStyle | Gdiplus::FontStyleUnderline;
@@ -464,7 +650,7 @@ public:
 
 		return fontStyle;
 	}
-
+		
 	inline Font GetFont(LOGFONT logFont) {
 		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
 		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
@@ -481,6 +667,73 @@ public:
 			, Gdiplus::UnitWorld
 			, bFound ? this->pFontCollection
 			: nullptr);
+	}
+
+	inline Font* GetFontPointer(LOGFONT logFont) {
+		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+		
+		return new Font(logFont.lfFaceName
+			, (float)abs(logFont.lfHeight)
+			, GetFontStyle(logFont)
+			, Gdiplus::UnitWorld
+			, bFound ? this->pFontCollection
+			: nullptr);
+	}
+
+	inline Font* GetFontPointerWithCache(LOGFONT logFont) {
+		auto logFontHash = LogFontHasher(logFont);
+		auto it = pFontCache->find(logFontHash);
+
+		if (it != pFontCache->end()) {
+			return it->second;
+		}
+		else {
+			auto newFont = GetFontPointer(logFont);
+			(*pFontCache)[logFontHash] = newFont;
+
+			return newFont;
+		}
+	}
+
+	// #AARRGGBB
+	inline Color GetColor(std::wstring_view hex) {
+		auto dec = _h2d(hex.data(), hex.size());
+
+		auto A = (BYTE)((dec >> 24) & 0xFF);
+		auto R = (BYTE)((dec >> 16) & 0xFF);
+		auto G = (BYTE)((dec >> 8) & 0xFF);
+		auto B = (BYTE)((dec) & 0xFF);		
+		
+		return Color(A, R, G, B);
+	}
+
+	inline Color GetColor(DWORD color) {
+		return 	Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+	}
+
+	inline StrSize GetDefaultCharSize() {
+		return this->defaultCharSz;
+	}
+
+	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
+		this->iConOffsetX = iConOffsetX;
+		this->iConOffsetY = iConOffsetY;
+	}
+
+	inline void SetIConScale(float iConScale = 1.0) {
+		this->iConScale = iConScale;
+	}
+
+	inline void SetIConResample(bool iConResample=false){
+		this->iConResample=iConResample;
+	}
+
+	inline void LinkActive(LPRO pObject) {
+		this->pIConActive = pObject;
+	}
+
+	inline void SetAppli(npAppli appli) {
+		this->appli = appli;
 	}
 
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
@@ -545,49 +798,90 @@ public:
 		this->angle = angle;
 	}
 
-	inline StrSize GetCharSizeRaw(wchar_t wChar) {
-		//Graphics g(hdc);
-		//auto font = GetFont(this->logFont);
-		//
-		//PointF origin(0, 0);
-		//
-		//RectF boundRect;
-		//auto pStringFormat = StringFormat::GenericDefault();
-		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat, &boundRect);
-		//
-		//RectF boundRect_2;
-		//auto pStringFormat_2 = StringFormat::GenericTypographic();
-		//g.MeasureString(&wChar, 1, &font, origin, pStringFormat_2, &boundRect_2);
+//	// deprecated
+//	inline StrSize GetCharSizeRaw(wchar_t wChar) {
+//#ifdef MEASURE_GDI_PLUS		
+//		SIZE sz = { 0 };
+//		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+//
+//		RectF boundRect;
+//
+//		this->measureStr[1] = wChar;
+//
+//		this->pMeasure->MeasureString(this->measureStr, 3, pFont, origin, &stringFormat, &boundRect);
+//
+//		auto curWidth = long(boundRect.GetRight() - boundRect.GetLeft());
+//		auto curHeight = long(boundRect.GetBottom() - boundRect.GetTop());		
+//
+//		sz.cx = curWidth - measureBaseSize.cx;
+//		//sz.cy = curHeight;
+//		sz.cy = this->measureBaseSize.cy;
+//
+//		sz.cy -= (this->tm.tmExternalLeading);
+//#else
+//		SIZE sz = { 0 };
+//		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+//#endif
+//		//ABC abc;
+//		//GetCharABCWidths(hdc, wChar, wChar, &abc);
+//
+//		//sz.cx -= this->tm
+//		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
+//
+//		return *(StrSize*)&sz;
+//	}
+//	
+//	// deprecated
+//	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
+//		auto it = charSzCache.find(wChar);
+//
+//		if (it != charSzCache.end()) {
+//			return it->second;
+//		}
+//		else {
+//			auto sz = GetCharSizeRaw(wChar);
+//			charSzCache [wChar] = sz;
+//
+//			return sz;
+//		}
+//	}	
 
-		SIZE sz;
+	inline StrSize GetCharSizeRaw(wchar_t wChar, HDC hdc) {
+		SIZE sz = { 0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
-
-		//ABC abc;
-		//GetCharABCWidths(hdc, wChar, wChar, &abc);
-		//
-		//TEXTMETRIC tm;
-		//GetTextMetrics(hdc, &tm);
-		//
-		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 
 		return *(StrSize*)&sz;
 	}
 
-	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
-		auto it = charSzCache.find(wChar);
+	inline StrSize GetCharSizeWithCache(wchar_t wChar, LOGFONT logFont) {
+		auto logFontHash = LogFontHasher(logFont);
+		auto it = pCharSzCacheWithFont->find(logFontHash);
 
-		if (it != charSzCache.end()) {
-			return it->second;
+		if (it != pCharSzCacheWithFont->end()) {
+			auto& cacheSecond = it->second;
+			auto& charCache = cacheSecond.cache;
+
+			auto charIt = charCache.find(wChar);
+			if (charIt != charCache.end()) {
+				return charIt->second;
+			}
+			else {
+				auto sz = GetCharSizeRaw(wChar, cacheSecond.hdc);
+				charCache[wChar] = sz;
+
+				return sz;
+			}
 		}
 		else {
-			auto sz = GetCharSizeRaw(wChar);
-			charSzCache [wChar] = sz;
+			auto hdc = GetDC(NULL);
+			auto hFont = CreateFontIndirect(&logFont);			
+			SelectObject(hdc, hFont);
 
-			return sz;
+			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont };
+
+			return GetCharSizeWithCache(wChar,logFont);
 		}
 	}
-
-#define GetCharSize(wChar) this->GetCharSizeWithCache(wChar)
 
 	inline StrSize GetStrSize(LPCWSTR pStr, size_t pStrLen = -1) {
 		RECT change = { 0,0,65535,1 };
@@ -603,16 +897,382 @@ public:
 		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
-	inline CharPos CalculateRange(LPCWSTR pText, LPRECT pRc) {
-		this->strPos.clear();
+	inline void GetFormat(LPCWSTR pStr) {
+		this->bTextValid = true;
 
-		size_t pTextLen = wcslen(pText);
+		if (pStr == nullptr) {
+			this->bTextValid = false;
+
+			return;
+		}
+
+		size_t pInputLen = wcslen(pStr);
+
+		if (pInputLen == 0) {
+			this->bTextValid = false;
+
+			return;
+		}
+
+		delete[] this->pRawText;
+		this->pRawText = nullptr;
+
+		delete[] this->pText;
+		this->pText = nullptr;
+
+		this->pRawText = new wchar_t[pInputLen + 1];
+		memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
+
+		this->pText = new wchar_t[pInputLen + 1];
+		memset(pText, 0, sizeof(wchar_t) * (pInputLen + 1));
+
+		memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
+
+		// Format
+		// [ICon = Direction, Frame]
+		// [Color = #FFFFFFFF][/Color]
+
+		auto pCurChar = pRawText;
+		auto pSavedChar = pText;
+
+		this->colorStack.clear();
+		this->colorStack.emplace_back(GetColor(this->dwTextColor));
+
+		this->colorFormat.clear();
+		this->colorFormat.emplace_back(FormatColor{ 0,colorStack.back() });
+
+		this->iConFormat.clear();
+
+		this->logFontStack.clear();
+		this->logFontStack.emplace_back(this->logFont);
+
+		this->FontFormat.clear();
+		this->FontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+
+		size_t newLineCount = 0;
+
+		while (true) {
+			// End
+			if ((pCurChar - pRawText) == pInputLen) {
+				break;
+			}
+
+			auto curChar = pCurChar[0];
+			auto nextChar = pCurChar[1];
+
+			// new line
+			if (curChar == L'\r' && nextChar == L'\n') {
+				newLineCount++;
+			}
+
+			// Escape
+			if (curChar == L'\\' && nextChar == L'[') {
+				pSavedChar[0] = L'[';
+
+				pCurChar += 2;
+				pSavedChar++;
+
+				continue;
+			}
+
+			// Parse Format
+			if (curChar == L'[') {
+				size_t end = 0;
+
+				bool bEndOfText = false;
+
+				while ((pCurChar + end)[0] != L']') {
+					if ((pCurChar - pRawText) + end == pInputLen) {
+						bEndOfText = true;
+
+						break;
+					}
+
+					end++;
+				}
+
+				// get format
+				//std::wstring_view controlStrDebug(pCurChar + 1, end - 1);
+				if (!bEndOfText) {
+					auto bEndOfRegion = (pCurChar + 1)[0] == L'/';
+
+					// handle format
+					do {
+						size_t equal = 0;
+
+						while ((pCurChar + equal)[0] != L'=') {
+							if (equal == end) {
+								break;
+							}
+							equal++;
+						}
+
+						auto GetTrimmedStr = [](LPWSTR pStart, size_t length) {
+							while (pStart[0] == L' ') {
+								pStart++;
+								length--;
+							}
+
+							while ((pStart + length - 1)[0] == L' ') {
+								length--;
+							}
+
+							return std::wstring_view(pStart, length);
+						};
+						auto StringViewIEqu = [](std::wstring_view& str, LPCWSTR pStr) {
+							auto length = wcslen(pStr);
+
+							if (length != str.size()) {
+								return false;
+							}
+
+							for (size_t i = 0; i < length; i++) {
+								if (ChrCmpIW(str[i], pStr[i]) != 0) {
+									return false;
+								}
+							}
+
+							return true;
+						};
+						auto StringViewToInt = [GetTrimmedStr](std::wstring_view& str) {
+							return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
+						};
+
+						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, equal - bEndOfRegion - 1);
+						std::wstring_view controlParam = !bEndOfRegion
+							? GetTrimmedStr(pCurChar + equal + 1, end - equal - 1)
+							: controlStr;
+
+						do {
+							size_t savedLength = pSavedChar - pText - newLineCount * 2;
+							size_t savedLengthWithNewLine = pSavedChar - pText;
+
+							if (StringViewIEqu(controlStr, L"Color")
+								|| StringViewIEqu(controlStr, L"C")) {
+								size_t savedLengthLocal = savedLength;
+
+								if (!bEndOfRegion) {
+									colorStack.emplace_back(GetColor(controlParam));
+								}
+								else {
+									colorStack.pop_back();
+								}
+
+								auto& lastColorFormat = this->colorFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastColorFormat.start) {
+									lastColorFormat.color = colorStack.back();
+								}
+								else {
+									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });
+								}
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"ICon")) {
+								size_t savedLengthLocal = savedLength;
+
+								int frame = 0;
+								int direction = 0;
+								int animation = 0;
+
+								auto paramParser = controlParam;
+
+								do {
+									auto ParseParam = [StringViewToInt, &paramParser](int& data) {
+										auto start = paramParser.find_last_of(L',');
+
+										if (start == std::wstring::npos) {
+											data = StringViewToInt(paramParser);
+
+											return false;
+										}
+										else {
+											auto paramStr = paramParser.substr(start + 1);
+											paramParser = paramParser.substr(0, start);
+
+											data = StringViewToInt(paramParser);
+
+											return true;
+										}
+									};
+
+									if (!ParseParam(frame)) {
+										break;
+									}
+
+									if (!ParseParam(direction)) {
+										break;
+									}
+
+									if (!ParseParam(animation)) {
+										break;
+									}
+								} while (0);
+
+								DWORD hImage = -1;
+
+								do {
+									if (this->pIConActive == nullptr || this->appli == nullptr) {
+										break;
+									}
+
+									if (animation < 0 || direction < 0 || frame < 0) {
+										break;
+									}
+
+									auto pRoa = &this->pIConActive->roa;
+
+									if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
+										break;
+									}
+
+									auto pDir = &pRoa->raAnimDirOffset[direction];
+
+									if (frame >= pDir->adNumberOfFrame) {
+										break;
+									}
+
+									hImage = pDir->adFrame[frame];
+								} while (0);
+
+								this->iConFormat.emplace_back(FormatICon{ savedLength
+																			, animation
+																			, direction
+																			, frame
+																			, hImage });
+
+								// space for icon
+								pSavedChar[0] = DEFAULT_CHARACTER;
+								pSavedChar++;
+
+								break;
+							}
+
+							using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
+
+							auto FontFormatControl = [&](FontFormatControlCallback callBack) {
+								size_t savedLengthLocal = savedLength;
+
+								if (!bEndOfRegion) {
+									LOGFONT newLogFont = logFontStack.back();
+
+									callBack(newLogFont);
+
+									logFontStack.emplace_back(newLogFont);
+								}
+								else {
+									logFontStack.pop_back();
+								}
+
+								auto& lastFontFormat = this->FontFormat.back();
+
+								// if equal, replace last format
+								if (savedLengthLocal == lastFontFormat.start) {
+									lastFontFormat.logFont = logFontStack.back();
+								}
+								else {
+									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
+										,savedLengthWithNewLine
+										,logFontStack.back() });
+								}
+							};
+
+							if (StringViewIEqu(controlStr, L"Font")
+								|| StringViewIEqu(controlStr, L"F")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									memset(newLogFont.lfFaceName, 0
+										, LF_FACESIZE * sizeof(WCHAR));
+									memcpy(newLogFont.lfFaceName, controlParam.data()
+										, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Size")
+								|| StringViewIEqu(controlStr, L"S")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									auto size = StringViewToInt(controlParam);;
+									auto newSize = -1 * MulDiv(size
+										, GetDeviceCaps(this->hdc, LOGPIXELSY)
+										, 72);
+
+									newLogFont.lfHeight = newSize;
+										});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Bold")
+								|| StringViewIEqu(controlStr, L"B")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfWeight = FW_EXTRABOLD;
+									});								
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Italic")
+								|| StringViewIEqu(controlStr, L"I")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfItalic = TRUE;
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Underline")
+								|| StringViewIEqu(controlStr, L"U")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfUnderline = TRUE;
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"StrikeOut")
+								|| StringViewIEqu(controlStr, L"S")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfStrikeOut = TRUE;
+									});
+
+								break;
+							}
+						} while (0);
+					} while (0);
+
+					// include ']'
+					pCurChar += end + 1;
+
+					continue;
+				}
+			}
+
+			pSavedChar[0] = pCurChar[0];
+			
+			pCurChar++;
+			pSavedChar++;
+		}
+
+		pTextLen = wcslen(pText);
 
 		if (pTextLen == 0) {
-			auto it = charSzCache.cend();
-			it--;
+			this->bTextValid = false;
 
-			return { it->second.width / 2,it->second.height / 2,0 };
+			return;
+		}
+
+		return;
+	}
+
+	inline CharPos CalculateRange(LPRECT pRc) {
+		this->strPos.clear();
+
+		if (!this->bTextValid) {
+			return { this->defaultCharSz.width / 2,this->defaultCharSz.height / 2 };
 		}
 
 		delete[] this->pStrSizeArr;
@@ -637,6 +1297,9 @@ public:
 		size_t notAtStartCharPos = -1;
 		bool bPunctationSkip = false;
 
+		auto fontIt = this->FontFormat.begin();
+		auto localLogFont = fontIt->logFont;
+
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
@@ -652,7 +1315,14 @@ public:
 				auto curChar = pCurChar [0];
 				auto nextChar = pCurChar [1];
 
-				pStrSizeArr [pChar] = GetCharSize(curChar);
+				if (fontIt != this->FontFormat.end()
+					&& pChar >= fontIt->startWithNewLine) {
+					localLogFont = fontIt->logFont;
+
+					fontIt++;
+				}
+
+				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
 				auto charSz = &pStrSizeArr [pChar];
 
 				totalWidth = curWidth;
@@ -660,23 +1330,57 @@ public:
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
 
+				auto HandleNewLine = [&]() {
+					newLine = true;
+					skipLine = (pChar == pCharStart);
+
+					if ((notAtStartCharPos + 1) == pChar) {
+						bPunctationSkip = true;
+					}
+				};
+
 				if (curWidth > rcWidth) {
+					//bool bTooNarrow = this->defaultCharSz.width > rcWidth;
+					bool bTooNarrow = charSz->width > rcWidth;
+
+					if (bTooNarrow) {
+						if (curChar == L'\r' && nextChar == L'\n') {
+							HandleNewLine();
+							pChar += 2;
+
+							break;
+						}
+						else {
+							pChar += 1;
+
+							break;
+						}
+					}
+
+					auto pPreviousChar = pText + pChar - 1;
+					auto PreviousChar = pPreviousChar[0];
+
+					auto previousCharSz = &pStrSizeArr[pChar - 1];
+
+					auto Backward = [&]() {
+						if (curWidth - (previousCharSz->width + nColSpace + charSz->width) <= 0) {
+							return;
+						}
+
+						pChar--;
+
+						curWidth -= charSz->width;
+
+						curWidth -= previousCharSz->width;
+						curWidth -= nColSpace;
+					};
+
 					if (NotAtStart(curChar)) {
 						notAtStartCharPos = pChar;
 
 						if (NotAtStart(nextChar)) {
 							if (pChar != pCharStart) {
-								pChar--;
-
-								auto pPreviousChar = pText + pChar;
-								auto PreviousChar = pPreviousChar [0];
-
-								auto previousCharSz = &pStrSizeArr [pChar];
-
-								curWidth -= charSz->width;
-
-								curWidth -= previousCharSz->width;
-								curWidth -= nColSpace;
+								Backward();
 							}
 
 							break;
@@ -684,18 +1388,8 @@ public:
 					}
 					else {
 						if (pChar != pCharStart) {
-							auto pPreviousChar = pText + pChar - 1;
-							auto PreviousChar = pPreviousChar [0];
-
-							auto previousCharSz = &pStrSizeArr [pChar - 1];
-
 							if (NotAtEnd(PreviousChar)) {
-								pChar--;
-
-								curWidth -= charSz->width;
-
-								curWidth -= previousCharSz->width;
-								curWidth -= nColSpace;
+								Backward();
 							}
 						}
 
@@ -704,13 +1398,7 @@ public:
 				}
 
 				if (curChar == L'\r' && nextChar == L'\n') {
-					newLine = true;
-					skipLine = (pChar == pCharStart);
-
-					if ((notAtStartCharPos + 1) == pChar) {
-						bPunctationSkip = true;
-					}
-
+					HandleNewLine();
 					pChar += 2;
 
 					break;
@@ -746,8 +1434,6 @@ public:
 				maxWidth = curWidth != 0
 					? max(maxWidth, curWidth - nColSpace)
 					: maxWidth;
-				//maxWidth = max(maxWidth, curWidth);
-				//maxWidth = max(maxWidth, totalWidth);
 			}
 
 			if (!bPunctationSkip) {
@@ -775,10 +1461,8 @@ public:
 		return lastCharPos;
 	}
 
-	inline void RenderPerChar(LPCWSTR pText, LPRECT pRc) {
-		size_t pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+	inline void RenderPerChar(LPRECT pRc) {
+		if (!this->bTextValid) {
 			return;
 		}
 
@@ -823,14 +1507,12 @@ public:
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
 		g.SetPixelOffsetMode(this->pixelOffsetMode);
-		
-		auto font = GetFont(this->logFont);
 
 		//Color fontColor(255, 50, 150, 250);
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 		SolidBrush solidBrush(fontColor);
 
-		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight, };
+		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
 
 		auto clip = [this, pRc, displayRc] (int startX, int startY, const StrSize* charSz)->bool {
 			if (this->bClip == false) {
@@ -848,6 +1530,12 @@ public:
 				&& charRc.bottom > displayRc.top);
 		};
 
+		size_t totalChar = 0;
+
+		auto colorIt = this->colorFormat.begin();
+		auto iConIt = this->iConFormat.begin();
+		auto fontIt = this->FontFormat.begin();
+
 		for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
 			std::wstring str(pText + curStrPos.start, curStrPos.length);
@@ -858,7 +1546,7 @@ public:
 			int x = GetStartPosX(curStrPos.width, rcWidth);
 			x -= pStrSizeArr [curStrPos.start].width / 8;
 
-			for (size_t curChar = 0; curChar < curStrPos.length; curChar++) {
+			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr [offset];
@@ -868,10 +1556,33 @@ public:
 											,0,0 };
 
 				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-					auto positionX = (float)(x)+(float)(this->borderOffsetY);
+					auto positionX = (float)(x) + (float)(this->borderOffsetY);
 					auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
 		
-					auto status = g.DrawString(pCurChar, 1, &font
+					if (colorIt!= this->colorFormat.end()
+						&& totalChar >= colorIt->start) {
+						solidBrush.SetColor(colorIt->color);
+						
+						colorIt++;
+					}
+
+					if (iConIt != this->iConFormat.end()
+						&& totalChar >= iConIt->start) {
+						iConIt->x = (size_t)positionX;
+						iConIt->y = (size_t)positionY;
+
+						iConIt++;
+					}
+
+					if (fontIt != this->FontFormat.end()
+						&& totalChar >= fontIt->start) {
+						this->pFont = GetFontPointerWithCache(fontIt->logFont);
+
+						fontIt++;
+					}
+
+					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
+					auto status = g.DrawString(pCurChar, 1, pFont
 						, PointF(positionX, positionY), &solidBrush);
 				}
 
@@ -923,10 +1634,90 @@ public:
 		ReleaseSfCoef(pMemSf, sfCoef);
 
 		pBitmap->UnlockBits(&bitmapData);
+			
+		auto iConSize = this->defaultCharSz;
+
+		iConSize.width = int(iConSize.width * this->iConScale);
+		iConSize.height = int(iConSize.height * this->iConScale);
+
+		auto iConXOffset = int(this->iConOffsetX * this->defaultCharSz.width
+			+ (this->defaultCharSz.width - iConSize.width) / 2
+			+ this->defaultCharSz.width / 6.0);
+		auto iConYOffset = int(this->iConOffsetY * this->defaultCharSz.width
+			+ (this->defaultCharSz.height - iConSize.height) / 2
+			+ (this->defaultCharSz.height - this->defaultCharSz.width)
+			- this->tm.tmDescent /*- this->tm.tmExternalLeading*/);
+
+		auto flags = this->iConResample
+			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA
+			: STRF_COPYALPHA;
+
+		for (auto& it : this->iConFormat) {			
+			LPSURFACE pSf = nullptr;			
+			auto bFound = it.hImage != -1;
+
+			if (bFound) {
+				auto IConLibIt = this->iConLib.find(it.hImage);
+
+				if (IConLibIt == this->iConLib.end()) {
+					cSurface imageSurface;
+					LockImageSurface(this->appli, it.hImage, imageSurface);
+
+					auto pIConSf = CreateSurface(32, imageSurface.GetWidth(), imageSurface.GetHeight());
+					//pIConSf->SetTransparentColor(imageSurface.GetTransparentColor());
+					//_AddAlpha(pIConSf);
+
+					imageSurface.Blit(*pIConSf);
+					//imageSurface.Blit(*pIConSf, 0, 0, BMODE_OPAQUE, BOP_COPY, 0, BLTF_ANTIA | BLTF_COPYALPHA);
+
+					UnlockImageSurface(imageSurface);
+
+					this->iConLib[it.hImage] = pIConSf;
+
+					pSf = pIConSf;
+				}
+				else {
+					pSf = IConLibIt->second;
+				}
+			}
+			else {
+				if (this->pDefaultICon == nullptr) {
+					LPSURFACE proto = nullptr;
+					GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+					this->pDefaultICon = new cSurface;
+					this->pDefaultICon->Create(128, 128, proto);
+
+					_AddAlpha(this->pDefaultICon,175);
+
+					this->pDefaultICon->Fill(RGB(200, 200, 200));
+
+					this->pDefaultICon->Line(0, 0, 127, 0);
+					this->pDefaultICon->Line(0, 0, 0, 127);
+					this->pDefaultICon->Line(127, 127, 127, 0);
+					this->pDefaultICon->Line(127, 127, 0, 127);
+
+					this->pDefaultICon->Line(0, 0, 127, 127);
+					this->pDefaultICon->Line(127, 0, 0, 127);
 
 #ifdef _DEBUG
-		//_SavetoClipBoard(pMemSf, false);
+					//_SavetoClipBoard(this->pDefaultICon, false);
 #endif // _DEBUG
+				}
+
+				pSf = this->pDefaultICon;
+			}
+
+			auto ret = pSf->Stretch(*pMemSf
+				, it.x + iConXOffset, it.y + iConYOffset
+				, iConSize.width, iConSize.width
+				, BMODE_OPAQUE, BOP_COPY, 0, flags);
+
+#ifdef _DEBUG
+			//_SavetoClipBoard(pSf, false);
+			//_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG		
+		}
 
 		delete pHwaSf;
 		pHwaSf = nullptr;
@@ -940,7 +1731,7 @@ public:
 		pMemSf->Blit(*pHwaSf);
 	}
 
-	inline CharPos GetCharPos(LPCWSTR pText, size_t pos) {
+	inline CharPos GetCharPos(size_t pos) {
 		auto invalid = CharPos { -1, -1, -1, -1 };
 
 		if (pCharPosArr == nullptr) {
@@ -960,13 +1751,10 @@ public:
 		return pCharPosArr [pos];
 	}
 
-	inline void DisplayPerChar(LPSURFACE pDst, LPCWSTR pText, LPRECT pRc
+	inline void DisplayPerChar(LPSURFACE pDst, LPRECT pRc
 		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
 		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
-
-		size_t pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+		if (!this->bTextValid) {
 			return;
 		}
 

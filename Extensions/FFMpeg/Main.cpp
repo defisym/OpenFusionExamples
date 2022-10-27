@@ -62,6 +62,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SHDE, M_ACTION_SHDE, ACT_ACTION_SHDE, 0, 1, PARAM_EXPSTRING, M_HWDECODEDEVICE,
 		
 		IDMN_ACTION_STRETCH, M_ACTION_STRETCH, ACT_ACTION_STRETCH, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
+
+		IDMN_ACTION_SAT, M_ACTION_SAT, ACT_ACTION_SAT, 0, 1, PARAM_EXPRESSION, M_ATEMPO,
 		};
 
 // Definitions of parameters for each expression
@@ -84,6 +86,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GHDS, M_EXPRESSION_GHDS, EXP_EXPRESSION_GHDS, 0, 0,
 		IDMN_EXPRESSION_GAHDE, M_EXPRESSION_GAHDE, EXP_EXPRESSION_GAHDE, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GWHDE, M_EXPRESSION_GWHDE, EXP_EXPRESSION_GWHDE, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GAT, M_EXPRESSION_GAT, EXP_EXPRESSION_GAT, EXPFLAG_DOUBLE, 0,
 		};
 
 
@@ -320,6 +324,17 @@ short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetAudioTempo(LPRDATA rdPtr, long param1, long param2) {
+	float atempo = GetFloatParam(rdPtr);
+	
+	rdPtr->atempo = atempo;
+
+	if (rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
+	}
+
+	return 0;
+}
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -407,6 +422,12 @@ long WINAPI DLLExport Expression_GetWantedHardwareDevice(LPRDATA rdPtr, long par
 	return (long)FFMpeg::get_hwDeviceNameByType(rdPtr->hwDeviceType);
 }
 
+long WINAPI DLLExport Expression_GetAudioTempo(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->pFFMpeg == nullptr
+		? 0
+		: rdPtr->pFFMpeg->get_audioTempo());
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -457,6 +478,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_Stretch,
 
+			Action_SetAudioTempo,
+
 			0
 			};
 
@@ -479,6 +502,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetHardwareDecodeState,
 			Expression_GetActualHardwareDevice,
 			Expression_GetWantedHardwareDevice,
+
+			Expression_GetAudioTempo,
 
 			0
 			};

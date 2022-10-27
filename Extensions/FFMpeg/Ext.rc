@@ -150,6 +150,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Volume",              IDMN_ACTION_SV
         MENUITEM "Set Loop",                IDMN_ACTION_SL
+        MENUITEM "Set Audio Tempo",         IDMN_ACTION_SAT
         MENUITEM "Set Accurate Seek",       IDMN_ACTION_SAS
         MENUITEM "Set Video Position",      IDMN_ACTION_SP
         MENUITEM "Set Video Position With Flag", IDMN_ACTION_SPWF
@@ -181,6 +182,7 @@ BEGIN
         MENUITEM "Get Video Duration",  IDMN_EXPRESSION_GVD	
         MENUITEM SEPARATOR        
         MENUITEM "Get Volume",          IDMN_EXPRESSION_GV	
+        MENUITEM "Get Audio Tempo",     IDMN_EXPRESSION_GAT
         MENUITEM SEPARATOR
         MENUITEM "Get Video Open State",          IDMN_EXPRESSION_GVO		
         MENUITEM "Get Video Play State",          IDMN_EXPRESSION_GVPLAY	
@@ -344,6 +346,8 @@ BEGIN
     
     M_ACTION_STRETCH	       "Set Size to Width = %0, Height = %1"
 
+    M_ACTION_SAT		       "Set Autio Tempo to %0"
+
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
     M_VOLUME	               "Volume, 0 = Min, 100 = Max"
@@ -357,6 +361,7 @@ BEGIN
     M_HWDECODEDEVICE           "Hardware Decode Device"    
     M_WIDTH                    "Width"
     M_HEIGHT                   "Height"
+    M_ATEMPO                   "Audio Tempo"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -392,6 +397,8 @@ BEGIN
     M_EXPRESSION_GHDS 	    "GHDS ("
     M_EXPRESSION_GAHDE 	    "GAHDE$ ("
     M_EXPRESSION_GWHDE 	    "GWHDE$ ("
+    
+    M_EXPRESSION_GAT 	    "GAT ("
 
     M_HWA                   "Return HWA"
 END
