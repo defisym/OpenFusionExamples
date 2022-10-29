@@ -9,6 +9,7 @@
 #include <string_view>
 
 //#include <FusionUtilities.h>
+#include <RandGenerator.h>
 
 #ifdef _DEBUG		
 #include <assert.h>
@@ -78,6 +79,8 @@ constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
 
+constexpr auto SHAKE_RANDOM_RANGE = 1000;
+
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
@@ -85,7 +88,7 @@ private:
 	HDC hdc;
 	COLORREF dwTextColor;
 
-	HFONT hFont;
+	//HFONT hFont;
 	LOGFONT logFont;
 
 	Font* pFont = nullptr;
@@ -164,11 +167,37 @@ private:
 
 	StrSize* pStrSizeArr = nullptr;
 
+	bool bShake = false;
+
+	unsigned short shakeTimer = 0;
+	RandGenerator<int>* pShakeRandGen = nullptr;
+
+	enum class ShakeType {
+		ShakeType_None = 0,
+		ShakeType_X,
+		ShakeType_Y,
+		ShakeType_Random,
+	};
+
+	struct ShakeControl {
+		ShakeType shakeType = ShakeType::ShakeType_None;
+
+		double amplitude = 1.0;
+		// higher, faster
+		double timerCoef = 1;
+		// offset between characters
+		// mul 360 = actual offset
+		double charOffset = 1 / 6.0;
+	};
+
 	struct CharPos {
 		long x;
 		long y;
 		long maxWidth;
 		long totalHeight;
+
+		// Shake
+		ShakeControl shakeControl;
 	};
 
 	CharPos* pCharPosArr = nullptr;
@@ -260,8 +289,20 @@ private:
 		LOGFONT logFont;
 	};
 
-	std::vector<FormatFont> FontFormat;
+	std::vector<FormatFont> fontFormat;
 	std::vector<LOGFONT> logFontStack;
+
+	struct FormatShake {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+
+		ShakeControl shakeControl;
+	};
+
+	std::vector<FormatShake> shakeFormat;
+	std::vector<ShakeControl> shakeStack;
 
 	float iConOffsetX = 0;
 	float iConOffsetY = 0;
@@ -413,8 +454,8 @@ public:
 		this->hdc = GetDC(NULL);
 		SelectObject(this->hdc, hFont);
 
-		this->hFont = hFont;
-		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
+		//this->hFont = hFont;
+		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
 		this->pFontCollection = pFontCollection;
@@ -440,6 +481,8 @@ public:
 		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
 		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->pShakeRandGen = new RandGenerator<int>(-1 * SHAKE_RANDOM_RANGE, SHAKE_RANDOM_RANGE);
 
 #ifdef MEASURE_GDI_PLUS		
 		this->pMeasure = new Graphics(hdc);
@@ -467,6 +510,7 @@ public:
 	}
 
 	~NeoStr() {
+		//SelectObject(this->hdc, (HFONT)NULL);
 		ReleaseDC(NULL, this->hdc);
 
 #ifdef MEASURE_GDI_PLUS		
@@ -478,6 +522,9 @@ public:
 			Release(this->pCharSzCacheWithFont);
 			Release(this->pFontCache);
 		}
+
+		delete this->pShakeRandGen;
+		this->pShakeRandGen = nullptr;
 
 		delete[] this->pRawText;
 		this->pRawText = nullptr;
@@ -522,6 +569,7 @@ public:
 
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
 		for (auto& it : *pCharSzCacheWithFont) {
+			//SelectObject(it.second.hdc, (HFONT)NULL);
 			ReleaseDC(NULL, it.second.hdc);
 			DeleteObject(it.second.hFont);
 		}
@@ -713,6 +761,48 @@ public:
 
 	inline StrSize GetDefaultCharSize() {
 		return this->defaultCharSz;
+	}
+
+	inline bool GetShakeUpdateState() {
+		shakeTimer++;
+
+		return this->bShake;
+	}
+
+	inline void GetShakePosition(const ShakeControl& shakeControl, double timer, float& x, float& y, const StrSize* charSz) {
+		//TODO
+		auto t = RAD(timer);
+
+		switch (shakeControl.shakeType)
+		{
+		case ShakeType::ShakeType_None: {
+			break;
+		}
+		case ShakeType::ShakeType_X: {
+			x = float(x + shakeControl.amplitude * charSz->width * sin(t));
+
+			break;
+		}
+		case ShakeType::ShakeType_Y: {
+			y = float(y + shakeControl.amplitude * charSz->height * sin(t));
+
+			break;
+		}
+		case ShakeType::ShakeType_Random: {
+			auto randomX = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+			auto randomY = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+
+			auto wa = shakeControl.amplitude * charSz->width;
+			auto ha = shakeControl.amplitude * charSz->height;
+
+			x = float(x + wa * randomX);
+			y = float(y + ha * randomY);
+
+			break;
+		}
+		default:
+			break;
+		}
 	}
 
 	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
@@ -914,6 +1004,10 @@ public:
 			return;
 		}
 
+		if (this->pRawText != nullptr && StrEqu(pStr, this->pRawText)) {
+			return;
+		}
+
 		delete[] this->pRawText;
 		this->pRawText = nullptr;
 
@@ -946,8 +1040,16 @@ public:
 		this->logFontStack.clear();
 		this->logFontStack.emplace_back(this->logFont);
 
-		this->FontFormat.clear();
-		this->FontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+		this->fontFormat.clear();
+		this->fontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+
+		this->bShake = false;
+
+		this->shakeStack.clear();
+		this->shakeStack.emplace_back(ShakeControl());
+
+		this->shakeFormat.clear();
+		this->shakeFormat.emplace_back(FormatShake{ 0,0,shakeStack.back() });
 
 		size_t newLineCount = 0;
 
@@ -1007,6 +1109,7 @@ public:
 							equal++;
 						}
 
+
 						auto GetTrimmedStr = [](LPWSTR pStart, size_t length) {
 							while (pStart[0] == L' ') {
 								pStart++;
@@ -1018,6 +1121,9 @@ public:
 							}
 
 							return std::wstring_view(pStart, length);
+						};
+						auto GetTrimmedStrView = [GetTrimmedStr](std::wstring_view& str) {
+							return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
 						};
 						auto StringViewIEqu = [](std::wstring_view& str, LPCWSTR pStr) {
 							auto length = wcslen(pStr);
@@ -1037,6 +1143,29 @@ public:
 						auto StringViewToInt = [GetTrimmedStr](std::wstring_view& str) {
 							return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
 						};
+						auto StringViewToDouble = [GetTrimmedStr](std::wstring_view& str) {
+							return _stod(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
+						};
+
+						using ParamParserCallback = std::function<void(std::wstring_view&)>;
+
+						auto ParseParamCore = [](std::wstring_view& paramParser, ParamParserCallback callBack) {
+							auto start = paramParser.find_last_of(L',');
+
+							if (start == std::wstring::npos) {
+								callBack(paramParser);
+
+								return false;
+							}
+							else {
+								auto paramStr = paramParser.substr(start + 1);
+								paramParser = paramParser.substr(0, start);
+
+								callBack(paramStr);
+
+								return true;
+							}
+						};
 
 						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, equal - bEndOfRegion - 1);
 						std::wstring_view controlParam = !bEndOfRegion
@@ -1046,34 +1175,8 @@ public:
 						do {
 							size_t savedLength = pSavedChar - pText - newLineCount * 2;
 							size_t savedLengthWithNewLine = pSavedChar - pText;
-
-							if (StringViewIEqu(controlStr, L"Color")
-								|| StringViewIEqu(controlStr, L"C")) {
-								size_t savedLengthLocal = savedLength;
-
-								if (!bEndOfRegion) {
-									colorStack.emplace_back(GetColor(controlParam));
-								}
-								else {
-									colorStack.pop_back();
-								}
-
-								auto& lastColorFormat = this->colorFormat.back();
-
-								// if equal, replace last format
-								if (savedLengthLocal == lastColorFormat.start) {
-									lastColorFormat.color = colorStack.back();
-								}
-								else {
-									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });
-								}
-
-								break;
-							}
-
+						
 							if (StringViewIEqu(controlStr, L"ICon")) {
-								size_t savedLengthLocal = savedLength;
-
 								int frame = 0;
 								int direction = 0;
 								int animation = 0;
@@ -1081,22 +1184,11 @@ public:
 								auto paramParser = controlParam;
 
 								do {
-									auto ParseParam = [StringViewToInt, &paramParser](int& data) {
-										auto start = paramParser.find_last_of(L',');
-
-										if (start == std::wstring::npos) {
-											data = StringViewToInt(paramParser);
-
-											return false;
-										}
-										else {
-											auto paramStr = paramParser.substr(start + 1);
-											paramParser = paramParser.substr(0, start);
-
-											data = StringViewToInt(paramParser);
-
-											return true;
-										}
+									auto ParseParam = [StringViewToInt, ParseParamCore, &paramParser](int& data) {
+										return ParseParamCore(paramParser
+											, [StringViewToInt, &data](std::wstring_view& param) {
+												data = StringViewToInt(param);
+											});
 									};
 
 									if (!ParseParam(frame)) {
@@ -1151,11 +1243,127 @@ public:
 								break;
 							}
 
+							if (StringViewIEqu(controlStr, L"Shake")) {
+								if (!bEndOfRegion) {
+									// Updater
+									auto shakeControl = ShakeControl();
+
+									auto paramParser = controlParam;
+									std::vector<std::wstring_view> params;
+
+									do {
+
+									} while (ParseParamCore(paramParser
+										, [GetTrimmedStrView, &params](std::wstring_view& param) {
+											params.emplace_back(GetTrimmedStrView(param));
+										}));
+
+									auto ShakeTypeParser = [StringViewIEqu](std::wstring_view& param) {
+										do {
+											if (StringViewIEqu(param, L"None")) {
+												return ShakeType::ShakeType_None;
+											}
+
+											if (StringViewIEqu(param, L"X")) {
+												return ShakeType::ShakeType_X;
+											}
+
+											if (StringViewIEqu(param, L"Y")) {
+												return ShakeType::ShakeType_Y;
+											}
+
+											if (StringViewIEqu(param, L"Random") || StringViewIEqu(param, L"R")) {
+												return ShakeType::ShakeType_Random;
+											}
+										} while (0);
+
+										return ShakeType::ShakeType_None;
+									};
+
+									do {
+										if (params.size() == 1) {
+											shakeControl.shakeType = ShakeTypeParser(params[0]);
+
+											break;
+										}
+
+										if (params.size() == 2) {
+											shakeControl.shakeType = ShakeTypeParser(params[1]);
+											shakeControl.amplitude = StringViewToDouble(params[0]);
+
+											break;
+										}
+
+										if (params.size() == 3) {
+											shakeControl.shakeType = ShakeTypeParser(params[2]);
+											shakeControl.amplitude = StringViewToDouble(params[1]);
+											shakeControl.timerCoef = StringViewToDouble(params[0]);
+
+											break;
+										}
+
+										if (params.size() == 3) {
+											shakeControl.shakeType = ShakeTypeParser(params[3]);
+											shakeControl.amplitude = StringViewToDouble(params[2]);
+											shakeControl.timerCoef = StringViewToDouble(params[1]);
+											shakeControl.charOffset = StringViewToDouble(params[0]);
+
+											break;
+										}
+									} while (0);
+
+									if (shakeControl.shakeType != ShakeType::ShakeType_None) {
+										this->bShake = true;
+									}
+
+									shakeControl.charOffset *= 360;
+									shakeStack.emplace_back(shakeControl);
+								}
+								else {
+									shakeStack.pop_back();
+								}
+
+								auto& lastFormat = this->shakeFormat.back();
+
+								// if equal, replace last format
+								if (savedLength == lastFormat.start) {
+									lastFormat.shakeControl = shakeStack.back();
+								}
+								else {
+									this->shakeFormat.emplace_back(FormatShake{ savedLength
+										,savedLengthWithNewLine
+										,shakeStack.back() });
+								}
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"Color")
+								|| StringViewIEqu(controlStr, L"C")) {
+								if (!bEndOfRegion) {
+									colorStack.emplace_back(GetColor(controlParam));
+								}
+								else {
+									colorStack.pop_back();
+								}
+
+								auto& lastColorFormat = this->colorFormat.back();
+
+								// if equal, replace last format
+								if (savedLength == lastColorFormat.start) {
+									lastColorFormat.color = colorStack.back();
+								}
+								else {
+									this->colorFormat.emplace_back(FormatColor{ savedLength,colorStack.back() });
+								}
+
+								break;
+							}
+
+#pragma region FontControl
 							using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
 
 							auto FontFormatControl = [&](FontFormatControlCallback callBack) {
-								size_t savedLengthLocal = savedLength;
-
 								if (!bEndOfRegion) {
 									LOGFONT newLogFont = logFontStack.back();
 
@@ -1167,14 +1375,14 @@ public:
 									logFontStack.pop_back();
 								}
 
-								auto& lastFontFormat = this->FontFormat.back();
+								auto& lastFontFormat = this->fontFormat.back();
 
 								// if equal, replace last format
-								if (savedLengthLocal == lastFontFormat.start) {
+								if (savedLength == lastFontFormat.start) {
 									lastFontFormat.logFont = logFontStack.back();
 								}
 								else {
-									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
+									this->fontFormat.emplace_back(FormatFont{ savedLength
 										,savedLengthWithNewLine
 										,logFontStack.back() });
 								}
@@ -1241,6 +1449,8 @@ public:
 
 								break;
 							}
+#pragma endregion
+
 						} while (0);
 					} while (0);
 
@@ -1297,7 +1507,7 @@ public:
 		size_t notAtStartCharPos = -1;
 		bool bPunctationSkip = false;
 
-		auto fontIt = this->FontFormat.begin();
+		auto fontIt = this->fontFormat.begin();
 		auto localLogFont = fontIt->logFont;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
@@ -1315,7 +1525,7 @@ public:
 				auto curChar = pCurChar [0];
 				auto nextChar = pCurChar [1];
 
-				if (fontIt != this->FontFormat.end()
+				if (fontIt != this->fontFormat.end()
 					&& pChar >= fontIt->startWithNewLine) {
 					localLogFont = fontIt->logFont;
 
@@ -1534,7 +1744,12 @@ public:
 
 		auto colorIt = this->colorFormat.begin();
 		auto iConIt = this->iConFormat.begin();
-		auto fontIt = this->FontFormat.begin();
+		auto fontIt = this->fontFormat.begin();
+
+		auto shakeIt = this->shakeFormat.begin();
+		auto localShakeFormat = this->bShake
+			? *shakeIt
+			: FormatShake();
 
 		for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
@@ -1549,7 +1764,7 @@ public:
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr [offset];
+				charSz = &pStrSizeArr[offset];
 
 				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
 											,this->startY + curStrPos.y
@@ -1574,12 +1789,26 @@ public:
 						iConIt++;
 					}
 
-					if (fontIt != this->FontFormat.end()
+					if (fontIt != this->fontFormat.end()
 						&& totalChar >= fontIt->start) {
 						this->pFont = GetFontPointerWithCache(fontIt->logFont);
 
 						fontIt++;
 					}
+
+					if (shakeIt != this->shakeFormat.end()
+						&& totalChar >= shakeIt->start) {
+						localShakeFormat = *shakeIt;
+
+						shakeIt++;
+					}
+
+					if (this->bShake) {
+						double offset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
+							+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
+
+						GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);						
+					}					
 
 					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
 					auto status = g.DrawString(pCurChar, 1, pFont

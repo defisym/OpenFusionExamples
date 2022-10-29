@@ -88,6 +88,10 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->reRender = true;
 	}
 
+	if (rdPtr->pNeoStr != nullptr && rdPtr->pNeoStr->GetShakeUpdateState()) {
+		rdPtr->reRender = true;
+	}
+
 	if (rdPtr->reRender) {
 		////App Size
 		//rhPtr->rhApp->m_hdr.gaCxWin;
