@@ -181,9 +181,9 @@ inline double _stod(const wchar_t* p) {
 		r += f / std::pow(10.0, n);
 	}
 
-	if (*p != L'\0') {
-		return 0.0;
-	}
+	//if (*p != L'\0') {
+	//	return 0.0;
+	//}
 
 	if (neg) {
 		r = -r;
