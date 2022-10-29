@@ -32,14 +32,21 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
+#define _DISPLAY_OBJECT
+
 typedef struct tagEDATA_V1
 {
 	// Header - required
 	extHeader		eHeader;
 
 	// Object's data
-//	short			swidth;
-//	short			sheight;
+#ifdef _DISPLAY_OBJECT
+	short			swidth;
+	short			sheight;
+#endif
+
+	// buffer
+	int buffer[52];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -64,12 +71,18 @@ typedef struct tagRDATA
 	headerObject	rHo;					// Header
 
 	// Optional headers - depend on the OEFLAGS value, see documentation and examples for more info
-//	rCom			rc;				// Common structure for movements & animations
-//	rMvt			rm;				// Movements
-//	rSpr			rs;				// Sprite (displayable objects)
-//	rVal			rv;				// Alterable values
+#ifdef _DISPLAY_OBJECT
+	rCom			rc;				// Common structure for movements & animations
+	rMvt			rm;				// Movements
+	rSpr			rs;				// Sprite (displayable objects)
+#endif
+	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	GlobalData* pData;
+
+	short			swidth;
+	short			sheight;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
@@ -80,9 +93,16 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			0
-#define	OEPREFS      			0
 
+// Display
+#ifdef _DISPLAY_OBJECT
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SPRITES|OEFLAG_MOVEMENTS|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_BACKSAVE)
+#define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS)
+#else
+// Non-Display
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP)
+#define	OEPREFS      			0
+#endif
 
 // If to handle message, specify the priority of the handling procedure
 // 0= low, 255= very high. You should use 100 as normal.                                                

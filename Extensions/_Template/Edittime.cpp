@@ -324,12 +324,12 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 {
 #ifndef RUN_ONLY
 	// Check compatibility
-	if ( IS_COMPATIBLE(mV) )
-	{
-//		// Set default object settings
-////		edPtr->swidth = 32;
-////		edPtr->sheight = 32;
-//
+	if ( IS_COMPATIBLE(mV) ) {
+		// Set default object settings
+#ifdef _DISPLAY_OBJECT
+		edPtr->swidth = 32;
+		edPtr->sheight = 32;
+#endif
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
 //		spa.edpt = edPtr;
@@ -338,6 +338,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 //		{
 //			return 0;	// No error
 //		}
+
 		return 0;	// No error
 	}
 #endif // !defined(RUN_ONLY)
