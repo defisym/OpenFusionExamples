@@ -1,6 +1,9 @@
 #pragma once
 
+#include <Shlwapi.h>
+
 #include <string>
+#include <string_view>
 
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
@@ -68,4 +71,53 @@ inline std::string to_byte_string(const std::wstring& input, UINT codePage = CP_
 	WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed, nullptr, nullptr);
 
 	return result;
+}
+
+inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
+	while (pStart[0] == L' ') {
+		pStart++;
+		length--;
+	}
+
+	while ((pStart + length - 1)[0] == L' ') {
+		length--;
+	}
+
+	return std::wstring_view(pStart, length);
+}
+
+inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
+	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
+}
+
+inline bool StringViewEqu(std::wstring_view& str, LPCWSTR pStr) {
+	auto length = wcslen(pStr);
+
+	if (length != str.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		if (str[i] != pStr[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+inline bool StringViewIEqu(std::wstring_view& str, LPCWSTR pStr) {
+	auto length = wcslen(pStr);
+
+	if (length != str.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		if (ChrCmpIW(str[i], pStr[i]) != 0) {
+			return false;
+		}
+	}
+
+	return true;
 }

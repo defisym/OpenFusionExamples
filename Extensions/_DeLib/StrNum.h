@@ -1,6 +1,7 @@
 #pragma once
 
 #include	<cmath>
+#include	<GeneralDefinition.h>
 
 enum class StrType
 {
@@ -196,8 +197,16 @@ inline double _stod(const std::wstring& p) {
 	return _stod(p.c_str());
 }
 
+inline double _stod(const std::wstring_view& str) {
+	return _stod(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
+}
+
 inline float _stof(const std::wstring& p) {
 	return (float)_stod(p.c_str());
+}
+
+inline float _stof(const  std::wstring_view& str) {
+	return (float)_stod(str);
 }
 
 inline int _stoi(const wchar_t* p) {
@@ -226,6 +235,10 @@ inline int _stoi(const wchar_t* p) {
 
 inline int _stoi(const std::wstring& p) {
 	return _stoi(p.c_str());
+}
+
+inline  int _stoi(const std::wstring_view& str) {
+	return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
 }
 
 //convert Hex to Dex
