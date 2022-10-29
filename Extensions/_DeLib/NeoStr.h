@@ -764,13 +764,10 @@ public:
 	}
 
 	inline bool GetShakeUpdateState() {
-		shakeTimer++;
-
 		return this->bShake;
 	}
 
 	inline void GetShakePosition(const ShakeControl& shakeControl, double timer, float& x, float& y, const StrSize* charSz) {
-		//TODO
 		auto t = RAD(timer);
 
 		switch (shakeControl.shakeType)
@@ -1750,6 +1747,10 @@ public:
 		auto localShakeFormat = this->bShake
 			? *shakeIt
 			: FormatShake();
+		
+		if (this->bShake) {
+			shakeTimer++;
+		}
 
 		for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
