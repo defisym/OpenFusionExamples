@@ -38,7 +38,7 @@ class ObjectSelection;
 
 // My headers
 #include	"GeneralDefinition.h"
-#include	"Defination.h"
+#include	"Definition.h"
 #include	"StrNum.h"
 
 // Specific to this cox

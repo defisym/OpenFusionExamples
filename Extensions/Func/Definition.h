@@ -1,5 +1,4 @@
-#ifndef _DEFINATION_
-#define _DEFINATION_
+#pragma once
 
 enum class DataType { VALUE, STRING };
 
@@ -54,5 +53,3 @@ typedef STRING* LPSTRING;
 #define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)][ParamName]
 
 #define Return(Pos) rdPtr->FuncReturn->at(Pos)
-
-#endif // !_DEFINATION_
