@@ -184,10 +184,10 @@ private:
 
 		double amplitude = 1.0;
 		// higher, faster
-		double timerCoef = 1;
+		double timerCoef = 1.0;
 		// offset between characters
 		// mul 360 = actual offset
-		double charOffset = 1 / 6.0;
+		double charOffset = 1.0 / 6.0;
 	};
 
 	struct CharPos {
@@ -767,6 +767,28 @@ public:
 		return this->bShake;
 	}
 
+	inline ShakeType GetShakeTypeByName(std::wstring_view& param) {
+		do {
+			if (StringViewIEqu(param, L"None")) {
+				return ShakeType::ShakeType_None;
+			}
+
+			if (StringViewIEqu(param, L"X")) {
+				return ShakeType::ShakeType_X;
+			}
+
+			if (StringViewIEqu(param, L"Y")) {
+				return ShakeType::ShakeType_Y;
+			}
+
+			if (StringViewIEqu(param, L"Random") || StringViewIEqu(param, L"R")) {
+				return ShakeType::ShakeType_Random;
+			}
+		} while (0);
+
+		return ShakeType::ShakeType_None;
+	}
+
 	inline void GetShakePosition(const ShakeControl& shakeControl, double timer, float& x, float& y, const StrSize* charSz) {
 		auto t = RAD(timer);
 
@@ -1019,9 +1041,49 @@ public:
 
 		memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
 
-		// Format
+		// ---------------
+		// Format Control
+		// ---------------
+		// 
 		// [ICon = Direction, Frame]
+		//	insert icon based on linked active.
+		//	if param is less than two, will be referred from left.
+		//	e.g., one param will be treated as frame.
+		// 
+		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
+		//	control shake.
+		//	if param is less than four, will be referred from right.
+		//	e.g., one param -> Type, two params -> Type & Amplitude, etc.
+		// 
+		//	type: shake type, default is None, can be X/Y/Random. X/Y is based on cosine.
+		//	amplitude: default is 1.0, relative to character size. size = 30, amplitude = 0.5,
+		//			   will shake in range of [ -15 ~ 15 ]
+		//  timer coef: default is 1.0, shake faster when higher.
+		//	char offset: default is 1.0 / 6.0, relative to 360 degree. charOffset = 0.2, actual offset is 72 degree
+		//				 determines the movement interval of adjacent characters.
+		//				 only works in X/Y mode ( cosine )
+		// 
 		// [Color = #FFFFFFFF][/Color]
+		// [C = #FFFFFFFF][/C]
+		//	color, hex AARRGGBB
+		// 
+		// [Font = FontName][/Font]
+		// [F = FontName][/F]
+		// 
+		// [Size = FontSize][/Size]
+		// [S = FontSize][/S]
+		// 
+		// [Bold][/Bold]
+		// [B][/B]
+		// 
+		// [Italic][/Italic]
+		// [I][/I]
+		// 
+		// [Underline][/Underline]
+		// [U][/U]
+		// 
+		// [StrikeOut][/StrikeOut]
+		// [S][/S]
 
 		auto pCurChar = pRawText;
 		auto pSavedChar = pText;
@@ -1041,6 +1103,9 @@ public:
 		this->fontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
 
 		this->bShake = false;
+
+		std::vector<std::wstring_view> shakeControlParams;
+		shakeControlParams.reserve(4);
 
 		this->shakeStack.clear();
 		this->shakeStack.emplace_back(ShakeControl());
@@ -1106,44 +1171,6 @@ public:
 							equal++;
 						}
 
-
-						auto GetTrimmedStr = [](LPWSTR pStart, size_t length) {
-							while (pStart[0] == L' ') {
-								pStart++;
-								length--;
-							}
-
-							while ((pStart + length - 1)[0] == L' ') {
-								length--;
-							}
-
-							return std::wstring_view(pStart, length);
-						};
-						auto GetTrimmedStrView = [GetTrimmedStr](std::wstring_view& str) {
-							return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
-						};
-						auto StringViewIEqu = [](std::wstring_view& str, LPCWSTR pStr) {
-							auto length = wcslen(pStr);
-
-							if (length != str.size()) {
-								return false;
-							}
-
-							for (size_t i = 0; i < length; i++) {
-								if (ChrCmpIW(str[i], pStr[i]) != 0) {
-									return false;
-								}
-							}
-
-							return true;
-						};
-						auto StringViewToInt = [GetTrimmedStr](std::wstring_view& str) {
-							return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
-						};
-						auto StringViewToDouble = [GetTrimmedStr](std::wstring_view& str) {
-							return _stod(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
-						};
-
 						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
 						auto ParseParamCore = [](std::wstring_view& paramParser, ParamParserCallback callBack) {
@@ -1181,10 +1208,10 @@ public:
 								auto paramParser = controlParam;
 
 								do {
-									auto ParseParam = [StringViewToInt, ParseParamCore, &paramParser](int& data) {
+									auto ParseParam = [ParseParamCore, &paramParser](int& data) {
 										return ParseParamCore(paramParser
-											, [StringViewToInt, &data](std::wstring_view& param) {
-												data = StringViewToInt(param);
+											, [&data](std::wstring_view& param) {
+												data = _stoi(param);
 											});
 									};
 
@@ -1243,67 +1270,45 @@ public:
 							if (StringViewIEqu(controlStr, L"Shake")) {
 								if (!bEndOfRegion) {
 									// Updater
-									auto shakeControl = ShakeControl();
+									ShakeControl shakeControl = this->shakeStack.back();
 
-									auto paramParser = controlParam;
-									std::vector<std::wstring_view> params;
+									auto paramParser = controlParam;									
+									shakeControlParams.clear();
 
 									do {
 
 									} while (ParseParamCore(paramParser
-										, [GetTrimmedStrView, &params](std::wstring_view& param) {
-											params.emplace_back(GetTrimmedStrView(param));
+										, [&shakeControlParams](std::wstring_view& param) {
+											shakeControlParams.emplace_back(GetTrimmedStr(param));
 										}));
 
-									auto ShakeTypeParser = [StringViewIEqu](std::wstring_view& param) {
-										do {
-											if (StringViewIEqu(param, L"None")) {
-												return ShakeType::ShakeType_None;
-											}
-
-											if (StringViewIEqu(param, L"X")) {
-												return ShakeType::ShakeType_X;
-											}
-
-											if (StringViewIEqu(param, L"Y")) {
-												return ShakeType::ShakeType_Y;
-											}
-
-											if (StringViewIEqu(param, L"Random") || StringViewIEqu(param, L"R")) {
-												return ShakeType::ShakeType_Random;
-											}
-										} while (0);
-
-										return ShakeType::ShakeType_None;
-									};
-
 									do {
-										if (params.size() == 1) {
-											shakeControl.shakeType = ShakeTypeParser(params[0]);
+										if (shakeControlParams.size() == 1) {
+											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[0]);
 
 											break;
 										}
 
-										if (params.size() == 2) {
-											shakeControl.shakeType = ShakeTypeParser(params[1]);
-											shakeControl.amplitude = StringViewToDouble(params[0]);
+										if (shakeControlParams.size() == 2) {
+											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[1]);
+											shakeControl.amplitude = _stod(shakeControlParams[0]);
 
 											break;
 										}
 
-										if (params.size() == 3) {
-											shakeControl.shakeType = ShakeTypeParser(params[2]);
-											shakeControl.amplitude = StringViewToDouble(params[1]);
-											shakeControl.timerCoef = StringViewToDouble(params[0]);
+										if (shakeControlParams.size() == 3) {
+											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[2]);
+											shakeControl.amplitude = _stod(shakeControlParams[1]);
+											shakeControl.timerCoef = _stod(shakeControlParams[0]);
 
 											break;
 										}
 
-										if (params.size() == 3) {
-											shakeControl.shakeType = ShakeTypeParser(params[3]);
-											shakeControl.amplitude = StringViewToDouble(params[2]);
-											shakeControl.timerCoef = StringViewToDouble(params[1]);
-											shakeControl.charOffset = StringViewToDouble(params[0]);
+										if (shakeControlParams.size() == 3) {
+											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[3]);
+											shakeControl.amplitude = _stod(shakeControlParams[2]);
+											shakeControl.timerCoef = _stod(shakeControlParams[1]);
+											shakeControl.charOffset = _stod(shakeControlParams[0]);
 
 											break;
 										}
@@ -1400,7 +1405,7 @@ public:
 							if (StringViewIEqu(controlStr, L"Size")
 								|| StringViewIEqu(controlStr, L"S")) {
 								FontFormatControl([&](LOGFONT& newLogFont) {
-									auto size = StringViewToInt(controlParam);;
+									auto size = _stoi(controlParam);;
 									auto newSize = -1 * MulDiv(size
 										, GetDeviceCaps(this->hdc, LOGPIXELSY)
 										, 72);
