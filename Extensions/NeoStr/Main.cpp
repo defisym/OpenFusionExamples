@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 //
 // This file are where the Conditions/Actions/Expressions are defined.
 // You can manually enter these, or use CICK (recommended)
@@ -91,6 +91,11 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GIR, M_EXPRESSION_GIR, EXP_EXPRESSION_GIR, EXPFLAG_DOUBLE, 0,
 		
 		IDMN_EXPRESSION_GVO, M_EXPRESSION_GVO, EXP_EXPRESSION_GVO, 0, 0,
+		
+		IDMN_EXPRESSION_GFS, M_EXPRESSION_GFS, EXP_EXPRESSION_GFS, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_STRING, M_FILTERFLAGS,
+		IDMN_EXPRESSION_GPS, M_EXPRESSION_GPS, EXP_EXPRESSION_GPS, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_STRING,
+
+		IDMN_EXPRESSION_GNCO, M_EXPRESSION_GNCO, EXP_EXPRESSION_GNCO, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_STRING, M_STRINGSTART,
 
 		};
 
@@ -579,6 +584,134 @@ long WINAPI DLLExport Expression_GetVerticalOffset(LPRDATA rdPtr, long param1) {
 	return rdPtr->bVerticalAlignOffset;
 }
 
+long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+
+	NeoStr pFilter(0, 0, NULL);
+	pFilter.GetFormat(pStr
+		, flags == -1
+		? FORMAT_IGNORE_DEFAULTFLAG
+		: flags);
+
+	*rdPtr->pExpRet = pFilter.GetText();
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->pExpRet->c_str());
+}
+
+long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	auto len = wcslen(pStr);
+
+	if (len == 0) {
+		//Setting the HOF_STRING flag lets MMF know that you are a string.
+		rdPtr->rHo.hoFlags |= HOF_STRING;
+
+		//This returns a pointer to the string for MMF.
+		return (long)(Empty_Str);
+	}
+
+	*rdPtr->pExpRet = pStr;
+	auto pStart = &(*rdPtr->pExpRet)[0];
+	
+	bool bInCommand = false;	
+	//https://zh.wikipedia.org/wiki/%E8%99%9A%E7%BC%BA%E5%8F%B7
+	//const auto replaceChar = L'�';
+	const auto replaceChar = L'□';
+
+	for (size_t i = 0; i < len; i++) {
+		auto pCur = pStart + i;
+
+		auto curChar = pCur[0];
+		auto nextChar = pCur[1];
+
+		// Escape
+		if (curChar == L'\\' && nextChar == L'[') {
+			i++;
+
+			continue;
+		}
+
+		// Parse Format
+		if (curChar == L'[') {
+			bInCommand = true;
+		}
+
+		if (bInCommand) {
+			pCur[0] = replaceChar;
+		}
+
+		if (bInCommand && curChar == L']') {
+			bInCommand = false;
+		}
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->pExpRet->c_str());
+}
+
+long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStrSrc = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t start = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+
+	auto GetNonCommandOffset = [](LPCWSTR pStrSrc, size_t start)->size_t {
+		auto pStr = pStrSrc + start;
+		auto len = wcslen(pStr);
+
+		if (len == 0) {
+			return 0;
+		}
+
+		auto curChar = pStr[0];
+		auto nextChar = pStr[1];
+
+		if (curChar == L'\\' && nextChar == L'[') {
+			return 1;
+		}
+
+		if (curChar == L'[') {
+			size_t end = 0;
+
+			while ((pStr + end)[0] != L']') {
+				if (end == len) {
+					return len;
+				}
+
+				end++;
+			}
+
+			return end + 1;
+		}
+
+		// normal
+		return 0;
+	};
+
+	size_t totalOffset = 0;
+
+	for (;;) {
+		auto curOffset = GetNonCommandOffset(pStrSrc, start);
+		totalOffset += curOffset;
+
+		if (curOffset != 0) {
+			start += curOffset;
+		}
+		else {
+			break;
+		}
+	}
+	
+	return totalOffset;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -659,6 +792,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetIConResample,
 
 			Expression_GetVerticalOffset,
+
+			Expression_GetFilteredString,
+			Expression_GetPaddingString,
+			Expression_GetNonCommandOffset,
 			
 			0
 			};

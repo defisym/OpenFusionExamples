@@ -81,6 +81,12 @@ constexpr auto DEFAULT_CHARACTER = L'　';
 
 constexpr auto SHAKE_RANDOM_RANGE = 1000;
 
+constexpr auto FORMAT_IGNORE_UNKNOWN = 0b00000001;
+constexpr auto FORMAT_IGNORE_INCOMPLETE = 0b00000010;
+
+constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
+//constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_INCOMPLETE;
+
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
@@ -1006,7 +1012,15 @@ public:
 		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
-	inline void GetFormat(LPCWSTR pStr) {
+	inline const LPWSTR GetRawText() {
+		return this->pRawText;
+	}
+
+	inline const LPWSTR GetText() {
+		return this->pText;
+	}
+
+	inline void GetFormat(LPCWSTR pStr, size_t flags = FORMAT_IGNORE_DEFAULTFLAG) {
 		this->bTextValid = true;
 
 		if (pStr == nullptr) {
@@ -1044,6 +1058,12 @@ public:
 		// ---------------
 		// Format Control
 		// ---------------
+		// 
+		// /[ -> [
+		//	escaped
+		// 
+		// [Command] if not match follows, will be displayed as untouched
+		//	depend on your flag settings
 		// 
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
@@ -1115,6 +1135,9 @@ public:
 
 		size_t newLineCount = 0;
 
+		bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
+		bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
+
 		while (true) {
 			// End
 			if ((pCurChar - pRawText) == pInputLen) {
@@ -1157,10 +1180,16 @@ public:
 
 				// get format
 				//std::wstring_view controlStrDebug(pCurChar + 1, end - 1);
+				if (bIgnoreIncomplete && bEndOfText) {					
+					break;
+				}
+
 				if (!bEndOfText) {
 					auto bEndOfRegion = (pCurChar + 1)[0] == L'/';
 
 					// handle format
+					bool bValidCommand = true;
+
 					do {
 						size_t equal = 0;
 
@@ -1168,6 +1197,7 @@ public:
 							if (equal == end) {
 								break;
 							}
+
 							equal++;
 						}
 
@@ -1453,12 +1483,20 @@ public:
 							}
 #pragma endregion
 
+						bValidCommand = false;
+
 						} while (0);
 					} while (0);
 
+					// copy invalid command
+					if (!bIgnoreUnknown && !bValidCommand) {
+						memcpy(pSavedChar, pCurChar, sizeof(wchar_t)* (end + 1));
+						pSavedChar += end + 1;
+					}
+
 					// include ']'
 					pCurChar += end + 1;
-
+					
 					continue;
 				}
 			}

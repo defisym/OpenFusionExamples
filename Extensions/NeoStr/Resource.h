@@ -241,6 +241,11 @@
 
 #define IDMN_EXPRESSION_GVO					27023
 
+#define IDMN_EXPRESSION_GFS					27024
+#define IDMN_EXPRESSION_GPS					27025
+
+#define IDMN_EXPRESSION_GNCO				27026
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -275,8 +280,16 @@
 
 #define M_EXPRESSION_GVO					7023
 
+#define M_EXPRESSION_GFS					7024
+#define M_EXPRESSION_GPS					7025
+
+#define M_EXPRESSION_GNCO					7026
+
 // Names of expression parameters
 #define M_POS				                7500
+#define M_STRING				            7501
+#define M_FILTERFLAGS			            7502
+#define M_STRINGSTART			            7503
 
 // Next default values for new objects
 // 

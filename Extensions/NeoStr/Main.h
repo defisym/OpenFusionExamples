@@ -77,7 +77,12 @@
 
 #define EXP_EXPRESSION_GVO					23
 
-#define	EXP_LAST                    		24
+#define	EXP_EXPRESSION_GFS			    	24
+#define	EXP_EXPRESSION_GPS			    	25
+
+#define	EXP_EXPRESSION_GNCO			    	26
+
+#define	EXP_LAST                    		27
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

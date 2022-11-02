@@ -187,6 +187,9 @@ BEGIN
         MENUITEM "Get Font Family Name", IDMN_EXPRESSION_GFN
         MENUITEM SEPARATOR
         MENUITEM "Get Display String", IDMN_EXPRESSION_GSTR
+        MENUITEM "Get Filtered String", IDMN_EXPRESSION_GFS
+        MENUITEM "Get Padding String", IDMN_EXPRESSION_GPS
+        MENUITEM "Get Non Command Offset", IDMN_EXPRESSION_GNCO
         MENUITEM SEPARATOR
         POPUP "Alignment"
         BEGIN
@@ -498,6 +501,15 @@ BEGIN
     M_EXPRESSION_GIR	    "GIR("
 
     M_EXPRESSION_GVO	    "GVO("
+
+    M_EXPRESSION_GFS        "GetFilteredString$("
+    M_EXPRESSION_GPS        "GetPaddingString$("
+        
+    M_STRING                "String to Process"
+    M_FILTERFLAGS           "Filter Flag, -1 = Default"
+
+    M_EXPRESSION_GNCO       "GetNonCommandOffset("
+    M_STRINGSTART           "Start Position"
 END
 
 #endif    // English (U.S.) resources
