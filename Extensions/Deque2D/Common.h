@@ -29,7 +29,8 @@
 
 // My headers
 #include	"Deque2D.h"
-#include	"Defination.h"
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"

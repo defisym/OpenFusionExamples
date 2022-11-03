@@ -33,7 +33,9 @@
 class ObjectCreation;
 class ObjectSelection;
 
-#include	"Defination.h"
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
+
 #include	"FindTheWay.h"
 using namespace FindTheWay;
 

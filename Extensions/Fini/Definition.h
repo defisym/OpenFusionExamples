@@ -1,5 +1,4 @@
-#ifndef _DEFINATION_
-#define _DEFINATION_
+#pragma once
 
 typedef CSimpleIni INI;
 typedef CSimpleIni* LPINI;
@@ -59,5 +58,3 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 //	BYTE	rvFree2[VALUES_NUMBEROF_ALTERABLE];
 //	LPTSTR	rvStrings[STRINGS_NUMBEROF_ALTERABLE];
 //} tagRV20U;
-
-#endif // !_DEFINATION_

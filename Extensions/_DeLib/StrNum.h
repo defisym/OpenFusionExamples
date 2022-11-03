@@ -205,7 +205,7 @@ inline float _stof(const std::wstring& p) {
 	return (float)_stod(p.c_str());
 }
 
-inline float _stof(const  std::wstring_view& str) {
+inline float _stof(const std::wstring_view& str) {
 	return (float)_stod(str);
 }
 

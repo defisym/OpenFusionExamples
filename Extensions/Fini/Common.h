@@ -30,7 +30,7 @@
 // My headers
 #include	"SimpleIni.h"
 #include	"GeneralDefinition.h"
-#include	"Defination.h"
+#include	"Definition.h"
 #include	"Encryption.h"
 #include	"StrNum.h"
 #include	"Base64.h"

@@ -1,5 +1,4 @@
-#ifndef _DEFINATION_
-#define _DEFINATION_
+#pragma once
 
 #define Spliter rdPtr->S
 
@@ -10,5 +9,3 @@
 
 //Need not to release currents cause they are pointers pointed to Split class's variable value
 #define release_str() release_arr(rdPtr->SplitStrVecLoopName);release_arr(rdPtr->KeyWordPairVecLoopName);release_arr(rdPtr->SubStringVecLoopName);release_arr(rdPtr->CurrentReplaceString);release_arr(rdPtr->ReplacEachResult);release_arr(rdPtr->ReplaceEachLoopName);
-
-#endif // !_DEFINATION_
