@@ -751,18 +751,30 @@ public:
 
 	// #AARRGGBB
 	inline Color GetColor(std::wstring_view hex) {
-		auto dec = _h2d(hex.data(), hex.size());
-
-		auto A = (BYTE)((dec >> 24) & 0xFF);
-		auto R = (BYTE)((dec >> 16) & 0xFF);
-		auto G = (BYTE)((dec >> 8) & 0xFF);
-		auto B = (BYTE)((dec) & 0xFF);		
-		
-		return Color(A, R, G, B);
+		return GetColor(_h2d(hex.data(), hex.size()), true);
 	}
 
-	inline Color GetColor(DWORD color) {
-		return 	Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+	inline Color GetColor(DWORD color, bool bAlpha = false) {
+		if (bAlpha) {
+			auto A = (BYTE)((color >> 24) & 0xFF);
+			auto R = (BYTE)((color >> 16) & 0xFF);
+			auto G = (BYTE)((color >> 8) & 0xFF);
+			auto B = (BYTE)((color) & 0xFF);
+
+			return Color(A, R, G, B);
+		}
+		else {
+			return Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+		}
+	}
+
+	inline DWORD GetDWORD(Color color) {
+		auto A = color.GetAlpha();
+		auto R = color.GetRed();
+		auto G = color.GetGreen();
+		auto B = color.GetBlue();
+
+		return (A << 24) | (R << 16) | (G << 8) | (B);
 	}
 
 	inline StrSize GetDefaultCharSize() {
@@ -1086,12 +1098,16 @@ public:
 		// [Color = #FFFFFFFF][/Color]
 		// [C = #FFFFFFFF][/C]
 		//	color, hex AARRGGBB
+		//	! = reset to default
+		//	+/- = add/minus to current
 		// 
 		// [Font = FontName][/Font]
 		// [F = FontName][/F]
 		// 
 		// [Size = FontSize][/Size]
 		// [S = FontSize][/S]
+		//	! = reset to default
+		//	+/- = add/minus to current
 		// 
 		// [Bold][/Bold]
 		// [B][/B]
@@ -1373,7 +1389,35 @@ public:
 							if (StringViewIEqu(controlStr, L"Color")
 								|| StringViewIEqu(controlStr, L"C")) {
 								if (!bEndOfRegion) {
-									colorStack.emplace_back(GetColor(controlParam));
+									do {
+										// Reset
+										if (StringViewIEqu(controlParam, L"!")) {
+											colorStack.emplace_back(colorStack.front());
+
+											break;
+										}
+
+										bool bAdd = false;
+										bool bMinus = false;
+
+										if (controlParam.front() == L'+') {
+											controlParam = controlParam.substr(1);
+											bAdd = true;
+										}
+
+										if (controlParam.front() == L'-') {
+											controlParam = controlParam.substr(1);
+											bAdd = true;
+											bMinus = true;
+										}
+
+										auto dec = _h2d(controlParam.data(), controlParam.size());
+
+										//colorStack.emplace_back(GetColor(controlParam));
+										colorStack.emplace_back(!bAdd
+											? GetColor(dec, true)
+											: GetColor((bMinus ? -1 : +1) * dec + GetDWORD(colorStack.back()), true));
+									} while (0);
 								}
 								else {
 									colorStack.pop_back();
@@ -1434,13 +1478,36 @@ public:
 
 							if (StringViewIEqu(controlStr, L"Size")
 								|| StringViewIEqu(controlStr, L"S")) {
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									auto size = _stoi(controlParam);;
+								FontFormatControl([&](LOGFONT& newLogFont) {									
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+
+										return;
+									}
+
+									bool bAdd = false;
+									bool bMinus = false;
+									
+									if (controlParam.front() == L'+') {
+										controlParam = controlParam.substr(1);
+										bAdd = true;
+									}
+
+									if (controlParam.front() == L'-') {
+										controlParam = controlParam.substr(1);
+										bAdd = true;
+										bMinus = true;
+									}
+
+									auto size = _stoi(controlParam);
 									auto newSize = -1 * MulDiv(size
 										, GetDeviceCaps(this->hdc, LOGPIXELSY)
 										, 72);
 
-									newLogFont.lfHeight = newSize;
+									newLogFont.lfHeight = !bAdd
+										? newSize
+										: (bMinus ? -1 : +1) * newSize + newLogFont.lfHeight;
 										});
 
 								break;
