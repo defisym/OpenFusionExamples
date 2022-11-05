@@ -689,7 +689,7 @@ public:
 	inline static int GetFontStyle(LOGFONT& logFont) {
 		int fontStyle = Gdiplus::FontStyleRegular;
 
-		if (logFont.lfWeight >= 600) {
+		if (logFont.lfWeight >= FW_SEMIBOLD) {
 			fontStyle = fontStyle | Gdiplus::FontStyleBold;
 		}
 		if (logFont.lfItalic) {
@@ -1112,14 +1112,30 @@ public:
 		// [Bold][/Bold]
 		// [B][/B]
 		// 
+		// [!Bold][/!Bold]
+		// [!B][/!B]
+		//	set to non-bold
+		// 
 		// [Italic][/Italic]
 		// [I][/I]
+		// 
+		// [!Italic][/!Italic]
+		// [!I][/!I]
+		//	set to non-italic
 		// 
 		// [Underline][/Underline]
 		// [U][/U]
 		// 
+		// [!Underline][/!Underline]
+		// [!U][/!U]
+		//	set to non-underline
+		// 
 		// [StrikeOut][/StrikeOut]
 		// [S][/S]
+		// 
+		// [!StrikeOut][/!StrikeOut]
+		// [!S][/!S]
+		//	set to non-strike out
 
 		auto pCurChar = pRawText;
 		auto pSavedChar = pText;
@@ -1368,7 +1384,10 @@ public:
 									shakeStack.emplace_back(shakeControl);
 								}
 								else {
-									shakeStack.pop_back();
+									// protect for default one
+									if (shakeStack.size() > 1) {
+										shakeStack.pop_back();
+									}
 								}
 
 								auto& lastFormat = this->shakeFormat.back();
@@ -1413,14 +1432,16 @@ public:
 
 										auto dec = _h2d(controlParam.data(), controlParam.size());
 
-										//colorStack.emplace_back(GetColor(controlParam));
 										colorStack.emplace_back(!bAdd
 											? GetColor(dec, true)
 											: GetColor((bMinus ? -1 : +1) * dec + GetDWORD(colorStack.back()), true));
 									} while (0);
 								}
 								else {
-									colorStack.pop_back();
+									// protect for default one
+									if (colorStack.size() > 1) {
+										colorStack.pop_back();
+									}
 								}
 
 								auto& lastColorFormat = this->colorFormat.back();
@@ -1448,7 +1469,10 @@ public:
 									logFontStack.emplace_back(newLogFont);
 								}
 								else {
-									logFontStack.pop_back();
+									// protect for default one
+									if (logFontStack.size() > 1) {
+										logFontStack.pop_back();
+									}
 								}
 
 								auto& lastFontFormat = this->fontFormat.back();
@@ -1516,8 +1540,17 @@ public:
 							if (StringViewIEqu(controlStr, L"Bold")
 								|| StringViewIEqu(controlStr, L"B")) {
 								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfWeight = FW_EXTRABOLD;
+									newLogFont.lfWeight = FW_BOLD;
 									});								
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"!Bold")
+								|| StringViewIEqu(controlStr, L"!B")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfWeight = FW_NORMAL;
+									});
 
 								break;
 							}
@@ -1526,6 +1559,15 @@ public:
 								|| StringViewIEqu(controlStr, L"I")) {
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfItalic = TRUE;
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"!Italic")
+								|| StringViewIEqu(controlStr, L"!I")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfItalic = FALSE;
 									});
 
 								break;
@@ -1540,10 +1582,28 @@ public:
 								break;
 							}
 
+							if (StringViewIEqu(controlStr, L"!Underline")
+								|| StringViewIEqu(controlStr, L"!U")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfUnderline = FALSE;
+									});
+
+								break;
+							}
+
 							if (StringViewIEqu(controlStr, L"StrikeOut")
 								|| StringViewIEqu(controlStr, L"S")) {
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfStrikeOut = TRUE;
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"!StrikeOut")
+								|| StringViewIEqu(controlStr, L"!S")) {
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfStrikeOut = FALSE;
 									});
 
 								break;
