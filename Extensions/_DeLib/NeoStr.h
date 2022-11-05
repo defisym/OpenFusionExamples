@@ -259,9 +259,18 @@ private:
 
 	StrSize defaultCharSz;
 
+	struct FormatBasic {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+	};
+
 	struct FormatColor {
 		size_t start;
 		//size_t end;
+
+		size_t startWithNewLine;
 
 		Color color;
 	};
@@ -1082,6 +1091,9 @@ public:
 		//	if param is less than two, will be referred from left.
 		//	e.g., one param will be treated as frame.
 		// 
+		// [!]
+		//	reset all format
+		// 
 		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
 		//	control shake.
 		//	if param is less than four, will be referred from right.
@@ -1103,6 +1115,7 @@ public:
 		// 
 		// [Font = FontName][/Font]
 		// [F = FontName][/F]
+		//	! = reset to default
 		// 
 		// [Size = FontSize][/Size]
 		// [S = FontSize][/S]
@@ -1144,7 +1157,7 @@ public:
 		this->colorStack.emplace_back(GetColor(this->dwTextColor));
 
 		this->colorFormat.clear();
-		this->colorFormat.emplace_back(FormatColor{ 0,colorStack.back() });
+		this->colorFormat.emplace_back(FormatColor{ 0,0,colorStack.back() });
 
 		this->iConFormat.clear();
 
@@ -1329,6 +1342,37 @@ public:
 								break;
 							}
 
+							// reset all
+							if (StringViewIEqu(controlStr, L"!")) {
+								auto Reset = [&](auto& stack, auto& format) {
+									decltype(stack[0]) first = stack.front();
+									stack.clear();
+
+									stack.emplace_back(first);
+
+									auto lastFormat = (FormatBasic*)(&format.back());
+
+									// if equal, replace last format
+									if (savedLength == lastFormat->start) {
+										void* pData = lastFormat + 1;
+										memcpy(pData, &first, sizeof(first));
+									}
+									else {
+										format.emplace_back(format.front());
+										auto newFormat = (FormatBasic*)(&format.back());
+
+										newFormat->start = savedLength;
+										newFormat->startWithNewLine = savedLengthWithNewLine;
+									}
+								};
+
+								Reset(shakeStack, shakeFormat);
+								Reset(colorStack, colorFormat);
+								Reset(logFontStack, fontFormat);
+
+								break;
+							}
+
 							if (StringViewIEqu(controlStr, L"Shake")) {
 								if (!bEndOfRegion) {
 									// Updater
@@ -1451,7 +1495,9 @@ public:
 									lastColorFormat.color = colorStack.back();
 								}
 								else {
-									this->colorFormat.emplace_back(FormatColor{ savedLength,colorStack.back() });
+									this->colorFormat.emplace_back(FormatColor{ savedLength
+										,savedLengthWithNewLine
+										,colorStack.back() });
 								}
 
 								break;
@@ -1491,6 +1537,13 @@ public:
 							if (StringViewIEqu(controlStr, L"Font")
 								|| StringViewIEqu(controlStr, L"F")) {
 								FontFormatControl([&](LOGFONT& newLogFont) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+
+										return;
+									}
+
 									memset(newLogFont.lfFaceName, 0
 										, LF_FACESIZE * sizeof(WCHAR));
 									memcpy(newLogFont.lfFaceName, controlParam.data()
