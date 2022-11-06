@@ -137,6 +137,8 @@
 #define IDMN_CONDITION_OITO 	26009
 #define IDMN_CONDITION_SA    	26010
 
+#define IDMN_CONDITION_IE    	26011
+
 // Condition strings
 #define M_CONDITION_OF			 6000
 
@@ -154,6 +156,8 @@
 
 #define M_CONDITION_OITO		 6009
 #define M_CONDITION_SA  		 6010
+
+#define M_CONDITION_IE  		 6011
 
 // Titles of condition parameters
 #define M_CND_FUNCNAME  		 6501

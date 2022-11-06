@@ -38,6 +38,8 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_OITO, M_CONDITION_OITO, CND_CONDITION_OITO, 0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ITNAME,
 		IDMN_CONDITION_SA, M_CONDITION_SA, CND_CONDITION_SA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
+
+		IDMN_CONDITION_IE, M_CONDITION_IE, CND_CONDITION_IE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		
 		};
 
@@ -228,6 +230,14 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pSelect->SelectAll(oil);
 
 	return TRUE;
+}
+
+long WINAPI DLLExport InEditor(LPRDATA rdPtr, long param1, long param2) {	
+#ifndef RUN_ONLY
+	return TRUE;
+#else
+	return FALSE;	
+#endif // !RUN_ONLY
 }
 
 // ============================================================================
@@ -826,6 +836,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			OnIterateObject,
 			SelectAll,
+
+			InEditor,
 
 			0
 			};

@@ -116,6 +116,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "In Editor", IDMN_CONDITION_IE
+        MENUITEM SEPARATOR
         MENUITEM "On Func", IDMN_CONDITION_OF
         MENUITEM SEPARATOR                
         MENUITEM "On Iterate Object", IDMN_CONDITION_OITO
@@ -424,6 +426,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_CONDITION_IE          "%o In Editor"
+
     M_CONDITION_OF          "%o On Func %0"
     
     M_CONDITION_OITO        "%o On Iterate Object %0, Iterate Name %1"
