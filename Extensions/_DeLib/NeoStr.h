@@ -1342,28 +1342,41 @@ public:
 								break;
 							}
 
+#pragma region StackedFormat
+							auto UpdateFormat = [&](auto& format, auto& content) {
+								auto CopyFormat = [](FormatBasic* pFormat, auto& content) {
+									auto pData = (std::remove_reference_t<decltype(content)>*)(pFormat + 1);
+									memcpy(pData, &content, sizeof(content));
+								};
+								
+								auto pLastFormat = (FormatBasic*)(&format.back());
+
+								// if equal, replace last format
+								if (savedLength == pLastFormat->start) {
+									CopyFormat(pLastFormat, content);
+								}
+								else {
+									std::remove_reference_t<decltype(format[0])> newFormat = format.front();
+									auto pNewFormat = (FormatBasic*)(&newFormat);
+
+									pNewFormat->start = savedLength;
+									pNewFormat->startWithNewLine = savedLengthWithNewLine;		
+
+									CopyFormat(pNewFormat, content);
+
+									format.emplace_back(newFormat);
+								}
+							};
+
 							// reset all
 							if (StringViewIEqu(controlStr, L"!")) {
 								auto Reset = [&](auto& stack, auto& format) {
-									decltype(stack[0]) first = stack.front();
+									std::remove_reference_t<decltype(stack[0])> first = stack.front();
+									
 									stack.clear();
-
 									stack.emplace_back(first);
 
-									auto lastFormat = (FormatBasic*)(&format.back());
-
-									// if equal, replace last format
-									if (savedLength == lastFormat->start) {
-										void* pData = lastFormat + 1;
-										memcpy(pData, &first, sizeof(first));
-									}
-									else {
-										format.emplace_back(format.front());
-										auto newFormat = (FormatBasic*)(&format.back());
-
-										newFormat->start = savedLength;
-										newFormat->startWithNewLine = savedLengthWithNewLine;
-									}
+									UpdateFormat(format, first);
 								};
 
 								Reset(shakeStack, shakeFormat);
@@ -1373,12 +1386,50 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Shake")) {
+							auto StackManager = [&](auto& stack, auto& format, auto callBack) {
 								if (!bEndOfRegion) {
-									// Updater
-									ShakeControl shakeControl = this->shakeStack.back();
+									std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
 
-									auto paramParser = controlParam;									
+									callBack(newFormat);
+
+									stack.emplace_back(newFormat);
+								}
+								else {
+									// protect for default one
+									if (stack.size() > 1) {
+										stack.pop_back();
+									}
+								}
+
+								UpdateFormat(format, stack.back());
+							};
+
+							// callbakc should calculate the diff size
+							auto DiffManager = [&](auto oldValue, auto callBack) {
+								bool bAdd = false;
+								bool bMinus = false;
+
+								if (controlParam.front() == L'+') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+								}
+
+								if (controlParam.front() == L'-') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+									bMinus = true;
+								}
+
+								auto sizeDiff = callBack(controlParam);
+
+								return !bAdd
+									? sizeDiff
+									: (bMinus ? -1 : +1) * sizeDiff + oldValue;
+							};
+
+							if (StringViewIEqu(controlStr, L"Shake")) {
+								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
+									auto& paramParser = controlParam;
 									shakeControlParams.clear();
 
 									do {
@@ -1389,34 +1440,24 @@ public:
 										}));
 
 									do {
-										if (shakeControlParams.size() == 1) {
-											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[0]);
-
-											break;
+										if (!shakeControlParams.empty()) {
+											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams.back());
+											shakeControlParams.pop_back();
 										}
 
-										if (shakeControlParams.size() == 2) {
-											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[1]);
-											shakeControl.amplitude = _stod(shakeControlParams[0]);
-
-											break;
+										if (!shakeControlParams.empty()) {
+											shakeControl.amplitude = _stod(shakeControlParams.back());
+											shakeControlParams.pop_back();
 										}
 
-										if (shakeControlParams.size() == 3) {
-											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[2]);
-											shakeControl.amplitude = _stod(shakeControlParams[1]);
-											shakeControl.timerCoef = _stod(shakeControlParams[0]);
-
-											break;
+										if (!shakeControlParams.empty()) {
+											shakeControl.timerCoef = _stod(shakeControlParams.back());
+											shakeControlParams.pop_back();
 										}
 
-										if (shakeControlParams.size() == 3) {
-											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams[3]);
-											shakeControl.amplitude = _stod(shakeControlParams[2]);
-											shakeControl.timerCoef = _stod(shakeControlParams[1]);
-											shakeControl.charOffset = _stod(shakeControlParams[0]);
-
-											break;
+										if (!shakeControlParams.empty()) {
+											shakeControl.charOffset = _stod(shakeControlParams.back());
+											shakeControlParams.pop_back();
 										}
 									} while (0);
 
@@ -1425,80 +1466,27 @@ public:
 									}
 
 									shakeControl.charOffset *= 360;
-									shakeStack.emplace_back(shakeControl);
-								}
-								else {
-									// protect for default one
-									if (shakeStack.size() > 1) {
-										shakeStack.pop_back();
-									}
-								}
-
-								auto& lastFormat = this->shakeFormat.back();
-
-								// if equal, replace last format
-								if (savedLength == lastFormat.start) {
-									lastFormat.shakeControl = shakeStack.back();
-								}
-								else {
-									this->shakeFormat.emplace_back(FormatShake{ savedLength
-										,savedLengthWithNewLine
-										,shakeStack.back() });
-								}
+									});
 
 								break;
 							}
 
 							if (StringViewIEqu(controlStr, L"Color")
 								|| StringViewIEqu(controlStr, L"C")) {
-								if (!bEndOfRegion) {
-									do {
-										// Reset
-										if (StringViewIEqu(controlParam, L"!")) {
-											colorStack.emplace_back(colorStack.front());
+								StackManager(colorStack, colorFormat, [&](Color& color) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										color = colorStack.front();
 
-											break;
-										}
-
-										bool bAdd = false;
-										bool bMinus = false;
-
-										if (controlParam.front() == L'+') {
-											controlParam = controlParam.substr(1);
-											bAdd = true;
-										}
-
-										if (controlParam.front() == L'-') {
-											controlParam = controlParam.substr(1);
-											bAdd = true;
-											bMinus = true;
-										}
-
-										auto dec = _h2d(controlParam.data(), controlParam.size());
-
-										colorStack.emplace_back(!bAdd
-											? GetColor(dec, true)
-											: GetColor((bMinus ? -1 : +1) * dec + GetDWORD(colorStack.back()), true));
-									} while (0);
-								}
-								else {
-									// protect for default one
-									if (colorStack.size() > 1) {
-										colorStack.pop_back();
+										return;
 									}
-								}
 
-								auto& lastColorFormat = this->colorFormat.back();
+									auto result = DiffManager(GetDWORD(colorStack.back()), [](std::wstring_view& controlParam) {
+										return _h2d(controlParam.data(), controlParam.size());
+										});
 
-								// if equal, replace last format
-								if (savedLength == lastColorFormat.start) {
-									lastColorFormat.color = colorStack.back();
-								}
-								else {
-									this->colorFormat.emplace_back(FormatColor{ savedLength
-										,savedLengthWithNewLine
-										,colorStack.back() });
-								}
+									color = GetColor(result, true);
+									});
 
 								break;
 							}
@@ -1507,31 +1495,7 @@ public:
 							using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
 
 							auto FontFormatControl = [&](FontFormatControlCallback callBack) {
-								if (!bEndOfRegion) {
-									LOGFONT newLogFont = logFontStack.back();
-
-									callBack(newLogFont);
-
-									logFontStack.emplace_back(newLogFont);
-								}
-								else {
-									// protect for default one
-									if (logFontStack.size() > 1) {
-										logFontStack.pop_back();
-									}
-								}
-
-								auto& lastFontFormat = this->fontFormat.back();
-
-								// if equal, replace last format
-								if (savedLength == lastFontFormat.start) {
-									lastFontFormat.logFont = logFontStack.back();
-								}
-								else {
-									this->fontFormat.emplace_back(FormatFont{ savedLength
-										,savedLengthWithNewLine
-										,logFontStack.back() });
-								}
+								StackManager(logFontStack, fontFormat, callBack);
 							};
 
 							if (StringViewIEqu(controlStr, L"Font")
@@ -1563,28 +1527,14 @@ public:
 										return;
 									}
 
-									bool bAdd = false;
-									bool bMinus = false;
-									
-									if (controlParam.front() == L'+') {
-										controlParam = controlParam.substr(1);
-										bAdd = true;
-									}
+									newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&](std::wstring_view& controlParam) {
+										auto size = _stoi(controlParam);
+										auto newSize = -1 * MulDiv(size
+											, GetDeviceCaps(this->hdc, LOGPIXELSY)
+											, 72);
 
-									if (controlParam.front() == L'-') {
-										controlParam = controlParam.substr(1);
-										bAdd = true;
-										bMinus = true;
-									}
-
-									auto size = _stoi(controlParam);
-									auto newSize = -1 * MulDiv(size
-										, GetDeviceCaps(this->hdc, LOGPIXELSY)
-										, 72);
-
-									newLogFont.lfHeight = !bAdd
-										? newSize
-										: (bMinus ? -1 : +1) * newSize + newLogFont.lfHeight;
+										return newSize;
+										});
 										});
 
 								break;
@@ -1661,6 +1611,7 @@ public:
 
 								break;
 							}
+#pragma endregion
 #pragma endregion
 
 						bValidCommand = false;
