@@ -12,7 +12,7 @@
 #include	<thread>
 #include	<functional>
 
-inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL);
+inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 
 //-----------------------------
 

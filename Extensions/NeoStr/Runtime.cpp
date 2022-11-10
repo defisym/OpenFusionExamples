@@ -129,12 +129,18 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->bFontChanged = true;
 
-	rdPtr->pIConActive = nullptr;
+	rdPtr->pIConObject = nullptr;
+	rdPtr->pIConParamParser = new NeoStr::IConParamParser;
+
+	rdPtr->pIConItName = new std::wstring;
+	rdPtr->pIConParams = nullptr;
+	rdPtr->pIConLibValue = nullptr;
 
 	rdPtr->iConOffsetX = edPtr->iConOffsetX;
 	rdPtr->iConOffsetY = edPtr->iConOffsetY;
 	rdPtr->iConScale = edPtr->iConScale;
 	rdPtr->bIConResample = edPtr->bIConResample;
+	rdPtr->filterFlags = edPtr->filterFlags;
 
 	rdPtr->pExpRet = new std::wstring;
 
@@ -184,6 +190,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
 	delete rdPtr->pExpRet;
+	delete rdPtr->pIConParamParser;
+	delete rdPtr->pIConItName;
 
 	SetExtUserData(rdPtr->pData);
 

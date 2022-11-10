@@ -3,6 +3,9 @@
 #include <functional>
 #include <string_view>
 
+#define GIPP(p) (*(NeoStr::IConParamParser*)p)
+#define ONITOIC 0
+
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc);
 
 inline void NoClip(LPRDATA rdPtr) {
@@ -65,13 +68,15 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
-		rdPtr->pNeoStr->LinkActive(rdPtr->pIConActive);
+		rdPtr->pNeoStr->LinkObject(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
+#ifdef _NOCALLBACK
 		rdPtr->pNeoStr->SetAppli(rdPtr->rHo.hoAdRunHeader->rhIdAppli);
+#endif
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
 		rdPtr->pNeoStr->SetIConScale(rdPtr->iConScale);
 		rdPtr->pNeoStr->SetIConResample (rdPtr->bIConResample);
 
-		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str());
+		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags);
 		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
@@ -161,13 +166,15 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
 
 		//MSGBOX(L"Editor Calc");
-		neoStr.LinkActive(nullptr);
+		neoStr.LinkObject(nullptr, nullptr);
+#ifdef _NOCALLBACK
 		neoStr.SetAppli(nullptr);
+#endif
 		neoStr.SetIConOffset(edPtr->iConOffsetX, edPtr->iConOffsetY);
 		neoStr.SetIConScale(edPtr->iConScale);
 		neoStr.SetIConResample(edPtr->bIConResample);
 
-		neoStr.GetFormat(&edPtr->pText);
+		neoStr.GetFormat(&edPtr->pText, edPtr->filterFlags);
 		neoStr.CalculateRange(rc);
 
 		neoStr.SetColor(edPtr->dwColor);

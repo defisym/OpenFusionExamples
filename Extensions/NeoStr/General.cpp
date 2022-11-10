@@ -194,8 +194,9 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // For you to update your object structure to newer versions
 // Called at both edit time and run time
 // 
-HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
-{
+HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr) {
+	//LPEDATA(OldEdPtr)->filterFlags = FORMAT_IGNORE_DEFAULTFLAG;
+
 	//LPEDATA(OldEdPtr)->iConOffsetX = 0;
 	//LPEDATA(OldEdPtr)->iConOffsetY = 0;
 	//LPEDATA(OldEdPtr)->iConScale = 1.0;

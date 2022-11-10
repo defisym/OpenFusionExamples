@@ -129,6 +129,7 @@ private:
 
 	bool bTextValid = true;
 	size_t pTextLen = 0;
+	size_t previousFlag = -1;
 
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
@@ -282,9 +283,7 @@ private:
 		size_t start;
 		//size_t end;
 
-		int animation;
-		int direction;
-		int frame;
+		size_t startWithNewLine;
 
 		DWORD hImage;
 
@@ -292,8 +291,19 @@ private:
 		size_t y;
 	};
 
+public:
+	using IConLib = std::map<DWORD, LPSURFACE>;
+private:
 	std::vector<FormatICon> iConFormat;
-	std::map<DWORD, LPSURFACE> iConLib;
+	IConLib iConLib;
+
+	inline void ReleaseIConLib() {
+		for (auto& it : this->iConLib) {
+			delete it.second;
+		}
+
+		this->iConLib.clear();
+	}
 
 	struct FormatFont {
 		size_t start;
@@ -326,9 +336,43 @@ private:
 
 	bool iConResample = false;
 
+#ifdef _NOCALLBACK
 	npAppli appli = nullptr;
-	LPRO pIConActive = nullptr;
+#endif
+	LPRO pIConObject = nullptr;
 	LPSURFACE pDefaultICon = nullptr;
+	
+public:
+	using ControlParams = std::vector<std::wstring_view>;
+	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
+private:
+	IConParamParser iconParamParser = nullptr;
+
+	inline void GetDefaultIcon() {
+		if (this->pDefaultICon == nullptr) {
+			LPSURFACE proto = nullptr;
+			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+			this->pDefaultICon = new cSurface;
+			this->pDefaultICon->Create(128, 128, proto);
+
+			_AddAlpha(this->pDefaultICon, 175);
+
+			this->pDefaultICon->Fill(RGB(200, 200, 200));
+
+			this->pDefaultICon->Line(0, 0, 127, 0);
+			this->pDefaultICon->Line(0, 0, 0, 127);
+			this->pDefaultICon->Line(127, 127, 127, 0);
+			this->pDefaultICon->Line(127, 127, 0, 127);
+
+			this->pDefaultICon->Line(0, 0, 127, 127);
+			this->pDefaultICon->Line(127, 0, 0, 127);
+
+#ifdef _DEBUG
+			//_SavetoClipBoard(this->pDefaultICon, false);
+#endif // _DEBUG
+		}
+	}
 
 	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
 		for (auto& wChartoCheck : data) {
@@ -565,9 +609,7 @@ public:
 		delete this->pDefaultICon;
 		this->pDefaultICon = nullptr;
 
-		for (auto& it : this->iConLib) {
-			delete it.second;
-		}
+		ReleaseIConLib();
 
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
@@ -864,13 +906,20 @@ public:
 		this->iConResample=iConResample;
 	}
 
-	inline void LinkActive(LPRO pObject) {
-		this->pIConActive = pObject;
+	inline void LinkObject(LPRO pObject, IConParamParser parser) {
+		if (this->pIConObject != pObject) {
+			ReleaseIConLib();
+		}
+
+		this->pIConObject = pObject;
+		this->iconParamParser = parser;
 	}
 
+#ifdef _NOCALLBACK
 	inline void SetAppli(npAppli appli) {
 		this->appli = appli;
 	}
+#endif
 
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
 		this->hwaType = type;
@@ -1058,9 +1107,11 @@ public:
 			return;
 		}
 
-		if (this->pRawText != nullptr && StrEqu(pStr, this->pRawText)) {
+		if (this->pRawText != nullptr && StrEqu(pStr, this->pRawText) && flags == previousFlag) {
 			return;
 		}
+
+		previousFlag = flags;
 
 		delete[] this->pRawText;
 		this->pRawText = nullptr;
@@ -1169,8 +1220,8 @@ public:
 
 		this->bShake = false;
 
-		std::vector<std::wstring_view> shakeControlParams;
-		shakeControlParams.reserve(4);
+		ControlParams controlParams;
+		controlParams.reserve(4);
 
 		this->shakeStack.clear();
 		this->shakeStack.emplace_back(ShakeControl());
@@ -1248,6 +1299,7 @@ public:
 
 						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
+						// parse by ',', from right
 						auto ParseParamCore = [](std::wstring_view& paramParser, ParamParserCallback callBack) {
 							auto start = paramParser.find_last_of(L',');
 
@@ -1276,6 +1328,27 @@ public:
 							size_t savedLengthWithNewLine = pSavedChar - pText;
 						
 							if (StringViewIEqu(controlStr, L"ICon")) {
+#ifndef _NOCALLBACK
+								DWORD hImage = -1;
+
+								do {
+									if (this->pIConObject == nullptr || this->iconParamParser == nullptr) {
+										break;
+									}
+
+									auto& paramParser = controlParam;
+									controlParams.clear();
+
+									do {
+
+									} while (ParseParamCore(paramParser
+										, [&controlParams](std::wstring_view& param) {
+											controlParams.emplace_back(GetTrimmedStr(param));
+										}));
+
+									hImage = iconParamParser(controlParams, this->iConLib);
+								} while (0);
+#else								
 								int frame = 0;
 								int direction = 0;
 								int animation = 0;
@@ -1306,7 +1379,7 @@ public:
 								DWORD hImage = -1;
 
 								do {
-									if (this->pIConActive == nullptr || this->appli == nullptr) {
+									if (this->pIConObject == nullptr || this->appli == nullptr) {
 										break;
 									}
 
@@ -1314,7 +1387,7 @@ public:
 										break;
 									}
 
-									auto pRoa = &this->pIConActive->roa;
+									auto pRoa = &this->pIConObject->roa;
 
 									if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
 										break;
@@ -1328,11 +1401,10 @@ public:
 
 									hImage = pDir->adFrame[frame];
 								} while (0);
+#endif // _NOCALLBACK
 
 								this->iConFormat.emplace_back(FormatICon{ savedLength
-																			, animation
-																			, direction
-																			, frame
+																			, savedLengthWithNewLine
 																			, hImage });
 
 								// space for icon
@@ -1430,34 +1502,34 @@ public:
 							if (StringViewIEqu(controlStr, L"Shake")) {
 								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
 									auto& paramParser = controlParam;
-									shakeControlParams.clear();
+									controlParams.clear();
 
 									do {
 
 									} while (ParseParamCore(paramParser
-										, [&shakeControlParams](std::wstring_view& param) {
-											shakeControlParams.emplace_back(GetTrimmedStr(param));
+										, [&controlParams](std::wstring_view& param) {
+											controlParams.emplace_back(GetTrimmedStr(param));
 										}));
 
 									do {
-										if (!shakeControlParams.empty()) {
-											shakeControl.shakeType = GetShakeTypeByName(shakeControlParams.back());
-											shakeControlParams.pop_back();
+										if (!controlParams.empty()) {
+											shakeControl.shakeType = GetShakeTypeByName(controlParams.back());
+											controlParams.pop_back();
 										}
 
-										if (!shakeControlParams.empty()) {
-											shakeControl.amplitude = _stod(shakeControlParams.back());
-											shakeControlParams.pop_back();
+										if (!controlParams.empty()) {
+											shakeControl.amplitude = _stod(controlParams.back());
+											controlParams.pop_back();
 										}
 
-										if (!shakeControlParams.empty()) {
-											shakeControl.timerCoef = _stod(shakeControlParams.back());
-											shakeControlParams.pop_back();
+										if (!controlParams.empty()) {
+											shakeControl.timerCoef = _stod(controlParams.back());
+											controlParams.pop_back();
 										}
 
-										if (!shakeControlParams.empty()) {
-											shakeControl.charOffset = _stod(shakeControlParams.back());
-											shakeControlParams.pop_back();
+										if (!controlParams.empty()) {
+											shakeControl.charOffset = _stod(controlParams.back());
+											controlParams.pop_back();
 										}
 									} while (0);
 
@@ -1481,8 +1553,60 @@ public:
 										return;
 									}
 
-									auto result = DiffManager(GetDWORD(colorStack.back()), [](std::wstring_view& controlParam) {
-										return _h2d(controlParam.data(), controlParam.size());
+									auto result = DiffManager(GetDWORD(colorStack.back()), [&](std::wstring_view& controlParam) {
+										// hex
+										if ((controlParam[0] == L'#') 
+											|| (controlParam[0] == L'0' 
+												&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
+											return _h2d(controlParam.data(), controlParam.size());
+										}
+										// dec
+										else {
+											auto& paramParser = controlParam;
+											controlParams.clear();
+
+											do {
+
+											} while (ParseParamCore(paramParser
+												, [&controlParams](std::wstring_view& param) {
+													controlParams.emplace_back(GetTrimmedStr(param));
+												}));
+
+											DWORD result = 0;
+											std::reverse(controlParams.begin(), controlParams.end());
+											
+											auto size = controlParams.size();
+											auto alpha = 0xFF;
+
+											if (size == 4) {
+												alpha = _stoi(controlParams.back());
+												controlParams.pop_back();
+											}
+											
+											// R
+											// R G
+											// R G B
+											// A R G B
+											for (auto i = 0; i < 3; i++) {
+												result = result << 8;
+												
+												if (!controlParams.empty()) {
+													result |= _stoi(controlParams.back());
+
+													controlParams.pop_back();
+												}
+											}											
+
+											// default A = 255
+											if (size <= 3) {
+												result |= (0xFF << 24);
+											}
+											else {
+												result |= (_stoi(controlParams.back()) << 24);
+											}
+
+											return result;
+										}										
 										});
 
 									color = GetColor(result, true);
@@ -2063,6 +2187,9 @@ public:
 			if (bFound) {
 				auto IConLibIt = this->iConLib.find(it.hImage);
 
+#ifndef _NOCALLBACK
+				pSf = IConLibIt->second;
+#else
 				if (IConLibIt == this->iConLib.end()) {
 					cSurface imageSurface;
 					LockImageSurface(this->appli, it.hImage, imageSurface);
@@ -2083,32 +2210,10 @@ public:
 				else {
 					pSf = IConLibIt->second;
 				}
+#endif
 			}
 			else {
-				if (this->pDefaultICon == nullptr) {
-					LPSURFACE proto = nullptr;
-					GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
-					this->pDefaultICon = new cSurface;
-					this->pDefaultICon->Create(128, 128, proto);
-
-					_AddAlpha(this->pDefaultICon,175);
-
-					this->pDefaultICon->Fill(RGB(200, 200, 200));
-
-					this->pDefaultICon->Line(0, 0, 127, 0);
-					this->pDefaultICon->Line(0, 0, 0, 127);
-					this->pDefaultICon->Line(127, 127, 127, 0);
-					this->pDefaultICon->Line(127, 127, 0, 127);
-
-					this->pDefaultICon->Line(0, 0, 127, 127);
-					this->pDefaultICon->Line(127, 0, 0, 127);
-
-#ifdef _DEBUG
-					//_SavetoClipBoard(this->pDefaultICon, false);
-#endif // _DEBUG
-				}
-
+				GetDefaultIcon();
 				pSf = this->pDefaultICon;
 			}
 
