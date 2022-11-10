@@ -169,6 +169,16 @@ inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVer
 	}
 }
 
+template<typename T>
+inline void UpdateEditFlag(T& flags, const T& flag, bool bCheck) {
+	if (bCheck) {
+		flags |= flag;
+	}
+	else {
+		flags &= ~flag;
+	}
+}
+
 // Cast anytype to fusion's expression return
 
 template<typename T>
