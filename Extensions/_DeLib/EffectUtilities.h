@@ -19,6 +19,9 @@ constexpr auto additionalLayerSize = 0;
 
 //#define _ENABLE_TEST_FEATURE
 
+// get Tint
+// ((CEffectEx*)effectParam)->GetRGBA();
+
 class EffectUtilities {
 private:
 	struct EffectParamData {
@@ -278,7 +281,7 @@ public:
 			effect = ((effect >> 16) << 16);
 
 			DeleteEffect((CEffectEx*)effectParam);
-			effectParam = 0;			
+			effectParam = 0;
 		}
 		
 		auto it = GetEffectData(effectName);
