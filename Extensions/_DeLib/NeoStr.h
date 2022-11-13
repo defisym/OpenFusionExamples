@@ -291,19 +291,7 @@ private:
 		size_t y;
 	};
 
-public:
-	using IConLib = std::map<DWORD, LPSURFACE>;
-private:
 	std::vector<FormatICon> iConFormat;
-	IConLib iConLib;
-
-	inline void ReleaseIConLib() {
-		for (auto& it : this->iConLib) {
-			delete it.second;
-		}
-
-		this->iConLib.clear();
-	}
 
 	struct FormatFont {
 		size_t start;
@@ -336,43 +324,95 @@ private:
 
 	bool iConResample = false;
 
-#ifdef _NOCALLBACK
-	npAppli appli = nullptr;
-#endif
-	LPRO pIConObject = nullptr;
-	LPSURFACE pDefaultICon = nullptr;
-	
 public:
+	using IConLib = std::map<DWORD, LPSURFACE>;
 	using ControlParams = std::vector<std::wstring_view>;
 	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
-private:
-	IConParamParser iconParamParser = nullptr;
 
-	inline void GetDefaultIcon() {
-		if (this->pDefaultICon == nullptr) {
-			LPSURFACE proto = nullptr;
-			GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+	struct IConData {
+		//pIConObject == nullptr -> No ICon
 
-			this->pDefaultICon = new cSurface;
-			this->pDefaultICon->Create(128, 128, proto);
+		IConLib* pIConLib = nullptr;
+		LPRO pIConObject = nullptr;
+		LPSURFACE pDefaultICon = nullptr;
+		IConParamParser iconParamParser = nullptr;
+		
+		IConData() {
+			pIConLib = new IConLib;
+		}
 
-			_AddAlpha(this->pDefaultICon, 175);
+		~IConData() {
+			ReleaseIConLib();
 
-			this->pDefaultICon->Fill(RGB(200, 200, 200));
+			delete pIConLib;
+			pIConLib = nullptr;
 
-			this->pDefaultICon->Line(0, 0, 127, 0);
-			this->pDefaultICon->Line(0, 0, 0, 127);
-			this->pDefaultICon->Line(127, 127, 127, 0);
-			this->pDefaultICon->Line(127, 127, 0, 127);
+			delete pDefaultICon;
+			pDefaultICon = nullptr;
+		}
 
-			this->pDefaultICon->Line(0, 0, 127, 127);
-			this->pDefaultICon->Line(127, 0, 0, 127);
+		inline bool NeedUpdateICon(LPRO pObject) {
+			return pIConObject != pObject;
+		}
+
+		inline void UpdateICon(LPRO pObject, IConParamParser parser) {
+			if (!NeedUpdateICon(pObject)) {
+				return;
+			}
+
+			ReleaseIConLib();
+
+			pIConObject = pObject;
+			iconParamParser = parser;
+		}
+
+		inline void ReleaseIConLib() {
+			for (auto& it : *this->pIConLib) {
+				delete it.second;
+			}
+
+			this->pIConLib->clear();
+		}
+
+		inline void GetDefaultICon() {
+			if (this->pDefaultICon == nullptr) {
+				LPSURFACE proto = nullptr;
+				GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+				this->pDefaultICon = new cSurface;
+				this->pDefaultICon->Create(128, 128, proto);
+
+				_AddAlpha(this->pDefaultICon, 175);
+
+				this->pDefaultICon->Fill(RGB(200, 200, 200));
+
+				this->pDefaultICon->Line(0, 0, 127, 0);
+				this->pDefaultICon->Line(0, 0, 0, 127);
+				this->pDefaultICon->Line(127, 127, 127, 0);
+				this->pDefaultICon->Line(127, 127, 0, 127);
+
+				this->pDefaultICon->Line(0, 0, 127, 127);
+				this->pDefaultICon->Line(127, 0, 0, 127);
 
 #ifdef _DEBUG
-			//_SavetoClipBoard(this->pDefaultICon, false);
+				//_SavetoClipBoard(this->pDefaultICon, false);
 #endif // _DEBUG
+			}
 		}
+	};
+
+private:
+	bool bExternalIConData = false;
+	IConData* pIConData = nullptr;
+
+	inline const auto GetIConData() {
+		return pIConData;
 	}
+
+	//IConLib* pIConLib = nullptr;
+	//LPRO pIConObject = nullptr;
+	//LPSURFACE pDefaultICon = nullptr;
+	//IConParamParser iconParamParser = nullptr;
 
 	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
 		for (auto& wChartoCheck : data) {
@@ -498,10 +538,12 @@ private:
 public:
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
-		, FontCache** ppFontCache = nullptr
-		, CharSizeCacheWithFont** ppCharSzCacheWithFont = nullptr
-		, bool needGDIPStartUp = true
+		// read only
+		, FontCache* pFontCache = nullptr
+		, CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr		
+		, IConData* pIConData = nullptr
 		, PrivateFontCollection* pFontCollection = nullptr
+		, bool needGDIPStartUp = true
 	) {
 		this->needGDIPStartUp = needGDIPStartUp;
 
@@ -519,17 +561,17 @@ public:
 
 		this->pFontCollection = pFontCollection;
 
-		if (!ppFontCache || !ppCharSzCacheWithFont) {
+		if (!pFontCache || !pCharSzCacheWithFont) {
 			this->bExternalCache = false;
 		}
 
 		if (this->bExternalCache) {
-			this->pFontCache = *ppFontCache;
+			this->pFontCache = pFontCache;
 		}
 		else {
-			//this->pFontCache = new FontCache;
 			Alloc(this->pFontCache);
 		}
+
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
@@ -555,17 +597,23 @@ public:
 		this->measureBaseSize = { long(boundRect.GetRight() - boundRect.GetLeft()),long(boundRect.GetBottom() - boundRect.GetTop()) };
 		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
-
 		// add a default char to return default value when input text is empty
 		if (this->bExternalCache) {
-			this->pCharSzCacheWithFont = *ppCharSzCacheWithFont;
+			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
 		}
 		else {
-			//this->pCharSzCacheWithFont = new CharSizeCacheWithFont;
 			Alloc(this->pCharSzCacheWithFont);
 		}
 
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
+
+		if (pIConData != nullptr) {
+			bExternalIConData = true;
+			this->pIConData = pIConData;
+		}
+		else {
+			this->pIConData = new IConData;
+		}
 	}
 
 	~NeoStr() {
@@ -580,6 +628,11 @@ public:
 		if (!this->bExternalCache) {
 			Release(this->pCharSzCacheWithFont);
 			Release(this->pFontCache);
+		}
+
+		if (!bExternalIConData) {
+			delete this->pIConData;
+			this->pIConData = nullptr;
 		}
 
 		delete this->pShakeRandGen;
@@ -605,11 +658,6 @@ public:
 
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
-
-		delete this->pDefaultICon;
-		this->pDefaultICon = nullptr;
-
-		ReleaseIConLib();
 
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
@@ -903,23 +951,14 @@ public:
 	}
 
 	inline void SetIConResample(bool iConResample=false){
-		this->iConResample=iConResample;
+		this->iConResample = iConResample;
 	}
 
 	inline void LinkObject(LPRO pObject, IConParamParser parser) {
-		if (this->pIConObject != pObject) {
-			ReleaseIConLib();
+		if (!this->bExternalIConData) {
+			this->pIConData->UpdateICon(pObject, parser);
 		}
-
-		this->pIConObject = pObject;
-		this->iconParamParser = parser;
 	}
-
-#ifdef _NOCALLBACK
-	inline void SetAppli(npAppli appli) {
-		this->appli = appli;
-	}
-#endif
 
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
 		this->hwaType = type;
@@ -1090,7 +1129,7 @@ public:
 		return this->pText;
 	}
 
-	inline void GetFormat(LPCWSTR pStr, size_t flags = FORMAT_IGNORE_DEFAULTFLAG) {
+	inline void GetFormat(LPCWSTR pStr, size_t flags = FORMAT_IGNORE_DEFAULTFLAG, bool bForced = false) {
 		this->bTextValid = true;
 
 		if (pStr == nullptr) {
@@ -1107,7 +1146,9 @@ public:
 			return;
 		}
 
-		if (this->pRawText != nullptr && StrEqu(pStr, this->pRawText) && flags == previousFlag) {
+		if (!bForced 
+			&& this->pRawText != nullptr && StrEqu(pStr, this->pRawText)
+			&& flags == previousFlag) {
 			return;
 		}
 
@@ -1328,11 +1369,10 @@ public:
 							size_t savedLengthWithNewLine = pSavedChar - pText;
 						
 							if (StringViewIEqu(controlStr, L"ICon")) {
-#ifndef _NOCALLBACK
 								DWORD hImage = -1;
 
 								do {
-									if (this->pIConObject == nullptr || this->iconParamParser == nullptr) {
+									if (this->pIConData->pIConObject == nullptr || this->pIConData->iconParamParser == nullptr) {
 										break;
 									}
 
@@ -1346,62 +1386,8 @@ public:
 											controlParams.emplace_back(GetTrimmedStr(param));
 										}));
 
-									hImage = iconParamParser(controlParams, this->iConLib);
+									hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
 								} while (0);
-#else								
-								int frame = 0;
-								int direction = 0;
-								int animation = 0;
-
-								auto paramParser = controlParam;
-
-								do {
-									auto ParseParam = [ParseParamCore, &paramParser](int& data) {
-										return ParseParamCore(paramParser
-											, [&data](std::wstring_view& param) {
-												data = _stoi(param);
-											});
-									};
-
-									if (!ParseParam(frame)) {
-										break;
-									}
-
-									if (!ParseParam(direction)) {
-										break;
-									}
-
-									if (!ParseParam(animation)) {
-										break;
-									}
-								} while (0);
-
-								DWORD hImage = -1;
-
-								do {
-									if (this->pIConObject == nullptr || this->appli == nullptr) {
-										break;
-									}
-
-									if (animation < 0 || direction < 0 || frame < 0) {
-										break;
-									}
-
-									auto pRoa = &this->pIConObject->roa;
-
-									if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
-										break;
-									}
-
-									auto pDir = &pRoa->raAnimDirOffset[direction];
-
-									if (frame >= pDir->adNumberOfFrame) {
-										break;
-									}
-
-									hImage = pDir->adFrame[frame];
-								} while (0);
-#endif // _NOCALLBACK
 
 								this->iConFormat.emplace_back(FormatICon{ savedLength
 																			, savedLengthWithNewLine
@@ -2185,36 +2171,12 @@ public:
 			auto bFound = it.hImage != -1;
 
 			if (bFound) {
-				auto IConLibIt = this->iConLib.find(it.hImage);
-
-#ifndef _NOCALLBACK
+				auto IConLibIt = this->pIConData->pIConLib->find(it.hImage);
 				pSf = IConLibIt->second;
-#else
-				if (IConLibIt == this->iConLib.end()) {
-					cSurface imageSurface;
-					LockImageSurface(this->appli, it.hImage, imageSurface);
-
-					auto pIConSf = CreateSurface(32, imageSurface.GetWidth(), imageSurface.GetHeight());
-					//pIConSf->SetTransparentColor(imageSurface.GetTransparentColor());
-					//_AddAlpha(pIConSf);
-
-					imageSurface.Blit(*pIConSf);
-					//imageSurface.Blit(*pIConSf, 0, 0, BMODE_OPAQUE, BOP_COPY, 0, BLTF_ANTIA | BLTF_COPYALPHA);
-
-					UnlockImageSurface(imageSurface);
-
-					this->iConLib[it.hImage] = pIConSf;
-
-					pSf = pIConSf;
-				}
-				else {
-					pSf = IConLibIt->second;
-				}
-#endif
 			}
 			else {
-				GetDefaultIcon();
-				pSf = this->pDefaultICon;
+				this->pIConData->GetDefaultICon();
+				pSf = this->pIConData->pDefaultICon;
 			}
 
 			auto ret = pSf->Stretch(*pMemSf

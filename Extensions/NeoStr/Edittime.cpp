@@ -55,6 +55,8 @@ enum {
 	PROPID_FORMAT_FILTER_UNKNOWN,
 	PROPID_FORMAT_FILTER_INCOMPLETE,
 
+	PROPID_FORMAT_ICONGLOBAL,
+	PROPID_FORMAT_ICONGLOBALFORCEUPDATE,
 	PROPID_FORMAT_ICONOFFSETX,
 	PROPID_FORMAT_ICONOFFSETY,
 	PROPID_FORMAT_ICONSCALE,
@@ -180,6 +182,9 @@ PropData FontPorperties[] = {
 
 	PropData_CheckBox(PROPID_FORMAT_FILTER_UNKNOWN,	IDS_PROP_FORMAT_FILTER_UNKNOWN,		IDS_PROP_FORMAT_FILTER_UNKNOWN_INFO),
 	PropData_CheckBox(PROPID_FORMAT_FILTER_INCOMPLETE,	IDS_PROP_FORMAT_FILTER_INCOMPLETE,		IDS_PROP_FORMAT_FILTER_INCOMPLETE_INFO),
+
+	PropData_CheckBox(PROPID_FORMAT_ICONGLOBAL,	IDS_PROP_FORMAT_ICONGLOBAL,		IDS_PROP_FORMAT_ICONGLOBAL_INFO),
+	PropData_CheckBox(PROPID_FORMAT_ICONGLOBALFORCEUPDATE,	IDS_PROP_FORMAT_ICONGLOBALFR,		IDS_PROP_FORMAT_ICONGLOBALFR_INFO),
 
 	PropData_CheckBox(PROPID_FORMAT_ICONRESAMPLE,	IDS_PROP_FORMAT_ICONRESAMPLE,		IDS_PROP_FORMAT_ICONRESAMPLE_INFO),
 
@@ -505,12 +510,14 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->iConScale = 1.0;
 		edPtr->bIConResample = false;
 		edPtr->filterFlags = FORMAT_IGNORE_DEFAULTFLAG;
+		edPtr->bIConGlobal = false;
+		edPtr->bIConForceUpdate = false;
 
 		// Default font
-		if (mV->mvGetDefaultFont != NULL)
+		if (mV->mvGetDefaultFont != NULL) {
 			mV->mvGetDefaultFont(&edPtr->logFont, NULL, 0);		// Get default font from frame editor preferences
-		else
-		{
+		}
+		else {
 			edPtr->logFont.lfWidth = 0;
 			edPtr->logFont.lfHeight = 8;
 			wcscpy_s(edPtr->logFont.lfFaceName, L"Arial");
@@ -937,7 +944,11 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_ALLIGN_COLSPACE:
 		return edPtr->bColSpace;
 	case PROPID_RENDER_CLIP:
-		return edPtr->bClip;
+		return edPtr->bClip;		
+	case PROPID_FORMAT_ICONGLOBAL:
+		return edPtr->bIConGlobal;
+	case PROPID_FORMAT_ICONGLOBALFORCEUPDATE:
+		return edPtr->bIConForceUpdate;
 	case PROPID_FORMAT_ICONRESAMPLE:
 		return edPtr->bIConResample;
 	case PROPID_FORMAT_FILTER_UNKNOWN:
@@ -1119,6 +1130,17 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_RENDER_CLIP, TRUE);
 		break;
+	case PROPID_FORMAT_ICONGLOBAL:
+		edPtr->bIConGlobal = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_FORMAT_ICONGLOBAL, TRUE);
+		mvRefreshProp(mV, edPtr, PROPID_FORMAT_ICONGLOBALFORCEUPDATE, TRUE);
+		break;
+	case PROPID_FORMAT_ICONGLOBALFORCEUPDATE:
+		edPtr->bIConForceUpdate = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_FORMAT_ICONGLOBALFORCEUPDATE, TRUE);
+		break;
 	case PROPID_FORMAT_ICONRESAMPLE:
 		edPtr->bIConResample = nCheck;
 		mvInvalidateObject(mV, edPtr);
@@ -1179,6 +1201,8 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	}
 */
 	switch (nPropID) {
+	case PROPID_FORMAT_ICONGLOBALFORCEUPDATE:
+		return edPtr->bIConGlobal;
 	case PROPID_HOTSPOT_X:
 		return (edPtr->hotSpotPos == HotSpotPos::CUSTOM);
 	case PROPID_HOTSPOT_Y:

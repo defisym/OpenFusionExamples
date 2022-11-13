@@ -396,6 +396,11 @@ BEGIN
     IDS_PROP_RENDER_BorderOffsetY_INFO              "Expand render area, to give enough space for shaders"
 
     IDS_PROP_FORMAT_TITLE                           "Format"
+
+    IDS_PROP_FORMAT_ICONGLOBAL                      "ICon Global"
+	IDS_PROP_FORMAT_ICONGLOBAL_INFO                 "All Objects Shares the Same Source"
+    IDS_PROP_FORMAT_ICONGLOBALFR                    "ICon Global Force Update"
+    IDS_PROP_FORMAT_ICONGLOBALFR_INFO               "Update When Global ICon Data Changed"
     IDS_PROP_FORMAT_ICONOFFSETX                     "ICon Offset X"
     IDS_PROP_FORMAT_ICONOFFSETX_INFO                "ICon Offset X, Based on Char Size Percent"
     IDS_PROP_FORMAT_ICONOFFSETY                     "ICon Offset Y"
@@ -474,11 +479,13 @@ BEGIN
     M_VERTICALOFFSET        "Vertical Offset"
 
     M_ACTION_LO             "Link Object %0, Callback Name %1"
-    M_ACTION_SOKV           "Set ICon Key = %0, Value = %1"
+    M_ACTION_SOKV           "Set ICon Key = %0, Value = %1, OverWrite = %2"
     M_OBJECT                "ICon Object"
+    M_IDENTIFIER            "Non-Zero Identifier"
     M_ICONITNAME            "Callback Name"
     M_HASH                  "Key Hash"
     M_PSF                   "cSurface*"
+    M_OVERWRITE             "1 = OverWrite Current Key, 0 = Do Nothing if Already Have"
 
     M_ACTION_SFF            "Set Filter Flag to %0"
     M_FILTERFLAG            "Filter Flag"

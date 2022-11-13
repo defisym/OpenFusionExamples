@@ -50,9 +50,11 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		delete rdPtr->pNeoStr;
 		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor
 			, rdPtr->hFont
-			, &rdPtr->pData->pFontCache
-			, &rdPtr->pData->pCharSzCacheWithFont
-			, false, rdPtr->pData->pFontCollection);
+			, rdPtr->pData->pFontCache
+			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pIConData
+			, rdPtr->pData->pFontCollection
+			, false);
 
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
@@ -69,18 +71,16 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
 		rdPtr->pNeoStr->LinkObject(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
-#ifdef _NOCALLBACK
-		rdPtr->pNeoStr->SetAppli(rdPtr->rHo.hoAdRunHeader->rhIdAppli);
-#endif
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
 		rdPtr->pNeoStr->SetIConScale(rdPtr->iConScale);
 		rdPtr->pNeoStr->SetIConResample (rdPtr->bIConResample);
 
-		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags);
+		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags, rdPtr->bIConNeedUpdate);
 		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
 
+		rdPtr->bIConNeedUpdate = false;
 		rdPtr->reRender = true;
 	}
 
@@ -167,9 +167,6 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 		//MSGBOX(L"Editor Calc");
 		neoStr.LinkObject(nullptr, nullptr);
-#ifdef _NOCALLBACK
-		neoStr.SetAppli(nullptr);
-#endif
 		neoStr.SetIConOffset(edPtr->iConOffsetX, edPtr->iConOffsetY);
 		neoStr.SetIConScale(edPtr->iConScale);
 		neoStr.SetIConResample(edPtr->bIConResample);
@@ -271,4 +268,21 @@ inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	HandleUpdate(rdPtr, rc);
 
 	return rdPtr->charPos;
+}
+
+inline void GlobalIConUpdater(LPRDATA rdPtr) {
+	if (rdPtr->bIConGlobal) {
+		if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
+			ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
+			Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [](LPRO pObject) {
+				LPRDATA pObj = (LPRDATA)pObject;
+
+				if (pObj->bIConGlobal && pObj->bIConForceUpdate) {
+					pObj->bStrChanged = true;
+					pObj->bIConNeedUpdate = true;
+				}
+				});
+		}
+		rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
+	}
 }

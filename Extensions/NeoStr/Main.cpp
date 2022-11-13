@@ -55,7 +55,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SVO, M_ACTION_SVO, ACT_ACTION_SVO,	0, 1, PARAM_EXPRESSION, M_VERTICALOFFSET,
 		
 		IDMN_ACTION_LO, M_ACTION_LO, ACT_ACTION_LO,	0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ICONITNAME,
-		IDMN_ACTION_SOKV, M_ACTION_SOKV, ACT_ACTION_SOKV, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_HASH, M_PSF,
+		IDMN_ACTION_SOKV, M_ACTION_SOKV, ACT_ACTION_SOKV, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_HASH, M_PSF, M_OVERWRITE,
 		
 		IDMN_ACTION_SFF, M_ACTION_SFF, ACT_ACTION_SFF, 0, 1, PARAM_EXPRESSION, M_FILTERFLAG,
 
@@ -357,8 +357,6 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 	
 	if (pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE)) {
 		rdPtr->pIConObject = pObject;
-
-#ifndef _NOCALLBACK
 		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
 			// parse param
 			int frame = 0;
@@ -437,8 +435,8 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 
 			return hImage;
 		};
-#endif
 
+		GlobalIConUpdater(rdPtr);
 		ReDisplay(rdPtr);
 	}
 
@@ -450,10 +448,15 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (pObject != nullptr) {
-		rdPtr->pIConObject = pObject;
+		// pObject is not used, it just for human readibility, actual identifier is hash of pLoopName
+		// for the case when switching frame, fixed/LPRO changes but using the same global data
+		// to reduce unnecessary refresh
 
-#ifndef _NOCALLBACK
+		//rdPtr->pIConObject = pObject;
+		rdPtr->pIConObject = (LPRO)std::hash<std::wstring>{}(pLoopName);		
+
 		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+			rdPtr->bOverWrite = false;
 			rdPtr->iconLibKey = -1;
 			rdPtr->pIConLibValue = nullptr;
 
@@ -473,26 +476,36 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 			}
 
 			// blit to lib
-			auto IConLibIt = iConLib.find(rdPtr->iconLibKey);
-
-			if (IConLibIt == iConLib.end()) {
+			auto BlitToLib=[=](NeoStr::IConLib& iConLib){
 				auto pIConSf = CreateSurface(32, rdPtr->pIConLibValue->GetWidth(), rdPtr->pIConLibValue->GetHeight());
 				pIConSf->CreateAlpha();
 
 				auto ret = rdPtr->pIConLibValue->Blit(*pIConSf);
 
 				iConLib[rdPtr->iconLibKey] = pIConSf;
+
 #ifdef _DEBUG
 				//_SavetoClipBoard(rdPtr->pIConLibValue);
 				//_SavetoClipBoard(pIConSf);
 #endif // _DEBUG
+			};
 
+			auto IConLibIt = iConLib.find(rdPtr->iconLibKey);
+
+			if (IConLibIt == iConLib.end()) {
+				BlitToLib(iConLib);
+			}
+			else if (rdPtr->bOverWrite) {
+				delete IConLibIt->second;
+				IConLibIt->second = nullptr;
+
+				BlitToLib(iConLib);
 			}
 
 			return rdPtr->iconLibKey;
 		};
-#endif
 
+		GlobalIConUpdater(rdPtr);
 		ReDisplay(rdPtr);
 	}
 
@@ -502,9 +515,11 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_SetObjectKeyValue(LPRDATA rdPtr, long param1, long param2) {
 	size_t hash = (size_t)CNC_GetParameter(rdPtr);
 	LPSURFACE pSf = (LPSURFACE)CNC_GetParameter(rdPtr);
+	bool bOverWrite = (bool)CNC_GetParameter(rdPtr);
 
 	rdPtr->iconLibKey = hash;
 	rdPtr->pIConLibValue = pSf;
+	rdPtr->bOverWrite = bOverWrite;
 
 	return 0;
 }

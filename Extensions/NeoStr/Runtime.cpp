@@ -141,23 +141,25 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->iConScale = edPtr->iConScale;
 	rdPtr->bIConResample = edPtr->bIConResample;
 	rdPtr->filterFlags = edPtr->filterFlags;
+	rdPtr->bIConGlobal = edPtr->bIConGlobal;
+	rdPtr->bIConForceUpdate = edPtr->bIConForceUpdate;
+
+	rdPtr->bIConNeedUpdate = false;
 
 	rdPtr->pExpRet = new std::wstring;
 
+	int i = 0;
+	auto OiList = rdPtr->rHo.hoAdRunHeader->rhOiList;
+	auto size = sizeof(decltype(*OiList)) + 4;
+
+	while (i < rdPtr->rHo.hoAdRunHeader->rhNumberOi) {
+		auto pCurOi = (LPOIL)((char*)OiList + size * i);
+		i++;
+	}
+
 	if (GetExtUserData() == nullptr) {
-		rdPtr->pData = new GlobalData;
-		
-		auto state = Gdiplus::GdiplusStartup(&rdPtr->pData->gdiplusToken
-			, &rdPtr->pData->gdiplusStartupInput
-			, NULL);
-		rdPtr->pData->gdiInitialized = true;
-
-		NeoStr::Alloc(rdPtr->pData->pFontCache);
-		NeoStr::Alloc(rdPtr->pData->pCharSzCacheWithFont);
-
-		rdPtr->pData->pFontCollection = new PrivateFontCollection;
-
 		//Update pointer
+		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
 	}else{
 		rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -410,13 +412,6 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if ( pData != NULL ) {
-		delete pData->pFontCollection;
-
-		NeoStr::Release(pData->pFontCache);
-		NeoStr::Release(pData->pCharSzCacheWithFont);
-
-		Gdiplus::GdiplusShutdown(pData->gdiplusToken);
-
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
@@ -434,13 +429,6 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if ( pData != NULL ) {
-		delete pData->pFontCollection;
-
-		NeoStr::Release(pData->pFontCache);
-		NeoStr::Release(pData->pCharSzCacheWithFont);
-
-		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
-
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}

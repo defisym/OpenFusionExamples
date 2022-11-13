@@ -67,6 +67,30 @@ struct GlobalData {
 	NeoStr::CharSizeCacheWithFont* pCharSzCacheWithFont;
 
 	PrivateFontCollection* pFontCollection;
+	NeoStr::IConData* pIConData;
+
+	GlobalData(){
+		auto state = Gdiplus::GdiplusStartup(&gdiplusToken
+			, &gdiplusStartupInput
+			, NULL);
+		gdiInitialized = true;
+
+		NeoStr::Alloc(pFontCache);
+		NeoStr::Alloc(pCharSzCacheWithFont);
+
+		pFontCollection = new PrivateFontCollection;
+		pIConData = new NeoStr::IConData;
+	}
+
+	~GlobalData() {
+		delete pIConData;
+		delete pFontCollection;
+
+		NeoStr::Release(pFontCache);
+		NeoStr::Release(pCharSzCacheWithFont);
+
+		Gdiplus::GdiplusShutdown(gdiplusToken);
+	}
 };
 
 #include	"Func.h"

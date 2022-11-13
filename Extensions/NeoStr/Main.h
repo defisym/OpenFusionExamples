@@ -152,7 +152,8 @@ typedef struct tagEDATA_V1
 
 	size_t filterFlags;
 
-	short unused_2;
+	bool bIConGlobal;
+	bool bIConForceUpdate;
 
 	int buffer[13];
 	
@@ -245,6 +246,7 @@ typedef struct tagRDATA
 	std::wstring* pIConItName;
 	void* pIConParams;
 
+	bool bOverWrite;
 	size_t iconLibKey;
 	LPSURFACE pIConLibValue;
 
@@ -258,6 +260,11 @@ typedef struct tagRDATA
 	bool bIConResample;
 
 	size_t filterFlags;
+	
+	bool bIConGlobal;
+	bool bIConForceUpdate;
+
+	bool bIConNeedUpdate;
 
 	std::wstring* pExpRet;
 

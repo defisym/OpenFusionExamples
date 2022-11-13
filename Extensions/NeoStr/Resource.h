@@ -97,6 +97,10 @@
 #define	IDS_PROP_FORMAT_FILTER_UNKNOWN_INFO      270
 #define	IDS_PROP_FORMAT_FILTER_INCOMPLETE        271
 #define	IDS_PROP_FORMAT_FILTER_INCOMPLETE_INFO   272
+#define	IDS_PROP_FORMAT_ICONGLOBAL        273
+#define	IDS_PROP_FORMAT_ICONGLOBAL_INFO   274
+#define	IDS_PROP_FORMAT_ICONGLOBALFR        275
+#define	IDS_PROP_FORMAT_ICONGLOBALFR_INFO   276
 
 
 // 	Debug tree
@@ -202,7 +206,9 @@
 #define M_ICONITNAME			    5520
 #define M_HASH			            5521
 #define M_PSF			            5522
-#define M_FILTERFLAG	            5523
+#define M_OVERWRITE 	            5523
+#define M_FILTERFLAG	            5524
+#define M_IDENTIFIER	            5525
 
 //	Conditions
 //--------------------
