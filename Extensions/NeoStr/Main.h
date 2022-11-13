@@ -44,7 +44,10 @@
 
 #define	ACT_ACTION_SFF			    	20
 
-#define	ACT_LAST						21
+#define	ACT_ACTION_FRD			    	21
+#define	ACT_ACTION_FRDGI		    	22
+
+#define	ACT_LAST						23
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

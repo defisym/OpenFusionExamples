@@ -137,6 +137,9 @@ BEGIN
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
+        MENUITEM SEPARATOR  
+        MENUITEM "Force Redraw", IDMN_ACTION_FRD
+        MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
         MENUITEM SEPARATOR    
         POPUP "Alignment"
         BEGIN    
@@ -489,6 +492,9 @@ BEGIN
 
     M_ACTION_SFF            "Set Filter Flag to %0"
     M_FILTERFLAG            "Filter Flag"
+
+    M_ACTION_FRD            "Force Redraw"
+    M_ACTION_FRDGI          "Force Redraw Global ICon"
 END
 
 STRINGTABLE DISCARDABLE 

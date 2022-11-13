@@ -145,6 +145,9 @@
 
 #define	IDMN_ACTION_SFF			    25020
 
+#define	IDMN_ACTION_FRD			    25021
+#define	IDMN_ACTION_FRDGI		    25022
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -176,6 +179,9 @@
 #define	M_ACTION_SOKV			    5019
 
 #define	M_ACTION_SFF			    5020
+
+#define	M_ACTION_FRD			    5021
+#define	M_ACTION_FRDGI			    5022
 
 // Titles of action parameters
 #define M_WIDTH				        5501

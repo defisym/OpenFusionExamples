@@ -148,15 +148,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pExpRet = new std::wstring;
 
-	int i = 0;
-	auto OiList = rdPtr->rHo.hoAdRunHeader->rhOiList;
-	auto size = sizeof(decltype(*OiList)) + 4;
-
-	while (i < rdPtr->rHo.hoAdRunHeader->rhNumberOi) {
-		auto pCurOi = (LPOIL)((char*)OiList + size * i);
-		i++;
-	}
-
 	if (GetExtUserData() == nullptr) {
 		//Update pointer
 		rdPtr->pData = new GlobalData;

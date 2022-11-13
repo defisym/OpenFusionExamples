@@ -59,6 +59,9 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_SFF, M_ACTION_SFF, ACT_ACTION_SFF, 0, 1, PARAM_EXPRESSION, M_FILTERFLAG,
 
+		IDMN_ACTION_FRD, M_ACTION_FRD, ACT_ACTION_FRD, 0, 0,
+		IDMN_ACTION_FRDGI, M_ACTION_FRDGI, ACT_ACTION_FRDGI, 0, 0,
+
 		};
 
 // Definitions of parameters for each expression
@@ -467,6 +470,11 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 
 			rdPtr->pIConParams = nullptr;
 
+			//// if overwrite, then all global icon objects will trigger update
+			//if (rdPtr->bOverWrite) {
+			//	SetIConUpdate(rdPtr);
+			//}
+
 			if (rdPtr->iconLibKey == -1) {
 				return rdPtr->iconLibKey;
 			}
@@ -491,8 +499,9 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 			};
 
 			auto IConLibIt = iConLib.find(rdPtr->iconLibKey);
+			auto bExist = IConLibIt != iConLib.end();
 
-			if (IConLibIt == iConLib.end()) {
+			if (!bExist) {
 				BlitToLib(iConLib);
 			}
 			else if (rdPtr->bOverWrite) {
@@ -572,6 +581,19 @@ short WINAPI DLLExport Action_SetFilterFlag(LPRDATA rdPtr, long param1, long par
 	rdPtr->filterFlags = newFlag;
 
 	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ForceRedraw(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->bIConNeedUpdate = true;
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ForceRedrawGlobalICon(LPRDATA rdPtr, long param1, long param2) {
+	SetIConUpdate(rdPtr);
 
 	return 0;
 }
@@ -965,6 +987,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetObjectKeyValue,
 
 			Action_SetFilterFlag,
+
+			Action_ForceRedraw,
+			Action_ForceRedrawGlobalICon,
 
 			0
 			};

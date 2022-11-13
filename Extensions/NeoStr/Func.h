@@ -73,7 +73,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->LinkObject(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
 		rdPtr->pNeoStr->SetIConScale(rdPtr->iConScale);
-		rdPtr->pNeoStr->SetIConResample (rdPtr->bIConResample);
+		rdPtr->pNeoStr->SetIConResample(rdPtr->bIConResample);
 
 		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags, rdPtr->bIConNeedUpdate);
 		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
@@ -270,18 +270,22 @@ inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	return rdPtr->charPos;
 }
 
+inline void SetIConUpdate(LPRDATA rdPtr) {
+	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
+	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [](LPRO pObject) {
+		LPRDATA pObj = (LPRDATA)pObject;
+
+		if (pObj->bIConGlobal && pObj->bIConForceUpdate) {
+			pObj->bStrChanged = true;
+			pObj->bIConNeedUpdate = true;
+		}
+		});
+}
+
 inline void GlobalIConUpdater(LPRDATA rdPtr) {
 	if (rdPtr->bIConGlobal) {
 		if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
-			ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
-			Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [](LPRO pObject) {
-				LPRDATA pObj = (LPRDATA)pObject;
-
-				if (pObj->bIConGlobal && pObj->bIConForceUpdate) {
-					pObj->bStrChanged = true;
-					pObj->bIConNeedUpdate = true;
-				}
-				});
+			SetIConUpdate(rdPtr);
 		}
 		rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 	}
