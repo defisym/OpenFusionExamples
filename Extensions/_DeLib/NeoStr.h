@@ -242,6 +242,8 @@ private:
 	struct CharSizeCacheItem {
 		HDC hdc;
 		HFONT hFont;
+		TEXTMETRIC tm;
+
 		CharSizeCache cache;
 	};
 
@@ -1077,6 +1079,13 @@ public:
 		return *(StrSize*)&sz;
 	}
 
+	inline auto GetCharSizeCacheIt(LOGFONT logFont) {
+		auto logFontHash = LogFontHasher(logFont);
+		auto it = pCharSzCacheWithFont->find(logFontHash);
+
+		return it;
+	}
+
 	inline StrSize GetCharSizeWithCache(wchar_t wChar, LOGFONT logFont) {
 		auto logFontHash = LogFontHasher(logFont);
 		auto it = pCharSzCacheWithFont->find(logFontHash);
@@ -1101,7 +1110,10 @@ public:
 			auto hFont = CreateFontIndirect(&logFont);			
 			SelectObject(hdc, hFont);
 
-			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont };
+			TEXTMETRIC tm;
+			GetTextMetrics(hdc, &tm);
+
+			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont,tm };
 
 			return GetCharSizeWithCache(wChar,logFont);
 		}
@@ -2148,25 +2160,40 @@ public:
 		ReleaseSfCoef(pMemSf, sfCoef);
 
 		pBitmap->UnlockBits(&bitmapData);
-			
-		auto iConSize = this->defaultCharSz;
-
-		iConSize.width = int(iConSize.width * this->iConScale);
-		iConSize.height = int(iConSize.height * this->iConScale);
-
-		auto iConXOffset = int(this->iConOffsetX * this->defaultCharSz.width
-			+ (this->defaultCharSz.width - iConSize.width) / 2
-			+ this->defaultCharSz.width / 6.0);
-		auto iConYOffset = int(this->iConOffsetY * this->defaultCharSz.width
-			+ (this->defaultCharSz.height - iConSize.height) / 2
-			+ (this->defaultCharSz.height - this->defaultCharSz.width)
-			- this->tm.tmDescent /*- this->tm.tmExternalLeading*/);
 
 		auto flags = this->iConResample
 			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA
 			: STRF_COPYALPHA;
 
-		for (auto& it : this->iConFormat) {			
+		fontIt = this->fontFormat.begin();
+
+		for (auto& it : this->iConFormat) {
+			while (fontIt != this->fontFormat.end()
+				&& fontIt->start < it.start) {
+				fontIt++;
+			}
+
+			fontIt--;
+			bool bEnd = fontIt == this->fontFormat.end();
+
+			auto iConSize = !bEnd
+				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontIt->logFont)
+				: this->defaultCharSz;
+			auto& tm = !bEnd
+				? GetCharSizeCacheIt(fontIt->logFont)->second.tm
+				: this->tm;
+
+			iConSize.width = int(iConSize.width * this->iConScale);
+			iConSize.height = int(iConSize.height * this->iConScale);
+
+			auto iConXOffset = int(this->iConOffsetX * iConSize.width
+				+ (iConSize.width - iConSize.width) / 2
+				+ iConSize.width / 6.0);
+			auto iConYOffset = int(this->iConOffsetY * iConSize.width
+				+ (iConSize.height - iConSize.height) / 2
+				+ (iConSize.height - iConSize.width)
+				- tm.tmDescent /*- tm.tmExternalLeading*/);
+
 			LPSURFACE pSf = nullptr;			
 			auto bFound = it.hImage != -1;
 
