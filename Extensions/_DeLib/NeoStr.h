@@ -2176,22 +2176,24 @@ public:
 			fontIt--;
 			bool bEnd = fontIt == this->fontFormat.end();
 
-			auto iConSize = !bEnd
+			const auto& charSize = !bEnd
 				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontIt->logFont)
 				: this->defaultCharSz;
-			auto& tm = !bEnd
+			const auto& tm = !bEnd
 				? GetCharSizeCacheIt(fontIt->logFont)->second.tm
 				: this->tm;
+
+			StrSize iConSize = charSize;
 
 			iConSize.width = int(iConSize.width * this->iConScale);
 			iConSize.height = int(iConSize.height * this->iConScale);
 
-			auto iConXOffset = int(this->iConOffsetX * iConSize.width
-				+ (iConSize.width - iConSize.width) / 2
-				+ iConSize.width / 6.0);
-			auto iConYOffset = int(this->iConOffsetY * iConSize.width
-				+ (iConSize.height - iConSize.height) / 2
-				+ (iConSize.height - iConSize.width)
+			auto iConXOffset = int(this->iConOffsetX * charSize.width
+				+ (static_cast<double>(charSize.width) - iConSize.width) / 2
+				+ charSize.width / 6.0);
+			auto iConYOffset = int(this->iConOffsetY * charSize.width
+				+ (static_cast<double>(charSize.height) - iConSize.height) / 2
+				+ (charSize.height - charSize.width)
 				- tm.tmDescent /*- tm.tmExternalLeading*/);
 
 			LPSURFACE pSf = nullptr;			
