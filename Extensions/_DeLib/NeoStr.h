@@ -2078,14 +2078,6 @@ public:
 						colorIt++;
 					}
 
-					if (iConIt != this->iConFormat.end()
-						&& totalChar >= iConIt->start) {
-						iConIt->x = (size_t)positionX;
-						iConIt->y = (size_t)positionY;
-
-						iConIt++;
-					}
-
 					if (fontIt != this->fontFormat.end()
 						&& totalChar >= fontIt->start) {
 						this->pFont = GetFontPointerWithCache(fontIt->logFont);
@@ -2106,6 +2098,15 @@ public:
 
 						GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);						
 					}					
+
+					// use updated position
+					if (iConIt != this->iConFormat.end()
+						&& totalChar >= iConIt->start) {
+						iConIt->x = (size_t)positionX;
+						iConIt->y = (size_t)positionY;
+
+						iConIt++;
+					}
 
 					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
 					auto status = g.DrawString(pCurChar, 1, pFont
