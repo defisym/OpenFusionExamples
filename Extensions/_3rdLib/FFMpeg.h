@@ -401,6 +401,10 @@ private:
 
 	inline int init_audioFilters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
 		, AVFilterGraph* filter_graph, const char* filters_descr) {		
+		if (this->bNoAudio) {
+			return -1;
+		}
+
 		SDL_CondWait(cond, mutex);
 
 		SDL_LockMutex(mutex);
@@ -1817,6 +1821,10 @@ public:
 	}
 
 	inline void set_audioTempo(float atempo) {
+		if (this->bNoAudio) {
+			return;
+		}
+
 		this->atempo = atempo > 0
 			? atempo
 			: DEFAULT_ATEMPO;
