@@ -1821,13 +1821,14 @@ public:
 	}
 
 	inline void set_audioTempo(float atempo) {
-		if (this->bNoAudio) {
-			return;
-		}
-
 		this->atempo = atempo > 0
 			? atempo
 			: DEFAULT_ATEMPO;
+
+		// make sure member value is updated
+		if (this->bNoAudio) {
+			return;
+		}
 
 		std::string fliters;
 		double tempo = this->atempo;

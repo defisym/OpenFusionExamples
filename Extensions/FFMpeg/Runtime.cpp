@@ -287,7 +287,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
 
-	if (rdPtr->pMemSf->IsValid()) {
+	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
