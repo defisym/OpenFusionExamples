@@ -1468,7 +1468,9 @@ private:
 			frameTimer = curTime - videoPts;
 		}
 
-		auto syncClock = !bNoAudio ? get_audioClock() : curTime - frameTimer;
+		auto syncClock = !bNoAudio 
+			? get_audioClock() 
+			: (curTime - frameTimer) * this->atempo;
 		auto diff = videoPts - syncClock;
 
 		auto syncThreshold = delay > AV_SYNC_THRESHOLD
@@ -1827,6 +1829,9 @@ public:
 
 		// make sure member value is updated
 		if (this->bNoAudio) {
+			// reset timer
+			frameTimer = -1;
+
 			return;
 		}
 
