@@ -73,6 +73,8 @@ constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 constexpr auto TARGET_SAMPLE_RATE = 48000;
 
+//#define _AUDIO_TEMPO
+
 constexpr auto DEFAULT_ATEMPO = 1.0f;
 
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
@@ -199,6 +201,7 @@ private:
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
 #endif //  _HW_DECODE
 
+#ifdef _AUDIO_TEMPO
 	AVFilterGraph* filter_graph = nullptr;
 	const char* filters_descr = "";
 
@@ -206,6 +209,7 @@ private:
 	AVFilterContext* buffersink_ctx = nullptr;
 
 	AVFrame* pAFilterFrame = nullptr;
+#endif //  _AUDIO_TEMPO
 
 	//float atempo = DEFAULT_ATEMPO;
 	float atempo = -1;
@@ -298,7 +302,7 @@ private:
 	SDL_cond* cond_audioCallbackFinish;
 
 	bool bAudioCallbackPause = false;
-	SDL_cond* cond_audioCallbackPause;
+	//SDL_cond* cond_audioCallbackPause;
 #pragma endregion
 
 #pragma endregion
@@ -403,6 +407,7 @@ private:
 		bUpdateSwr = false;
 	}
 
+#ifdef _AUDIO_TEMPO
 	inline int init_audioFilters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
 		, AVFilterGraph* filter_graph, const char* filters_descr) {		
 		if (this->bNoAudio) {
@@ -542,13 +547,14 @@ private:
 		avfilter_inout_free(&outputs);
 
 		SDL_UnlockMutex(mutex_audio);
-		SDL_CondSignal(cond_audioCallbackPause);
+		//SDL_CondSignal(cond_audioCallbackPause);
 
 		this->audioQueue.restore();
 		this->bAudioCallbackPause = false;
 
 		return ret;
 	}
+#endif //  _AUDIO_TEMPO
 
 	inline const AVInputFormat* init_Probe(BYTE* pBuffer, size_t bfSz, LPCSTR pFileName) {		
 		AVProbeData probeData = { 0 };
@@ -825,10 +831,12 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
+#ifdef _AUDIO_TEMPO
 		pAFilterFrame = av_frame_alloc();
 		if (!pAFilterFrame) {
 			throw FFMpegException_InitFailed;
 		}
+#endif //  _AUDIO_TEMPO
 
 #ifdef _HW_DECODE
 		if (bHWDecode) {
@@ -900,7 +908,7 @@ private:
 #pragma region SDLInit
 		mutex_audio = SDL_CreateMutex();
 		cond_audioCallbackFinish = SDL_CreateCond();
-		cond_audioCallbackPause = SDL_CreateCond();
+		//cond_audioCallbackPause = SDL_CreateCond();
 
 		if (!bNoAudio) {
 			// init SDL audio
@@ -1349,6 +1357,7 @@ private:
 			return -1;
 		}
 
+#ifdef _AUDIO_TEMPO
 		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
 		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, 0);
 		if (response < 0) {
@@ -1366,6 +1375,7 @@ private:
 				av_frame_unref(pAFrame);
 				av_frame_unref(pAFilterFrame);
 			}
+#endif //  _AUDIO_TEMPO
 
 			if (pAPacket != nullptr) {
 				if (pAPacket->pts != AV_NOPTS_VALUE) {
@@ -1378,8 +1388,11 @@ private:
 				}
 			}
 
-			//auto pBaseFrame = pAFrame;
+#ifdef _AUDIO_TEMPO
 			auto pBaseFrame = pAFilterFrame;
+#else
+			auto pBaseFrame = pAFrame;			
+#endif //  _AUDIO_TEMPO
 
 			// update context to avoid crash
 			if (bUpdateSwr) {
@@ -1410,11 +1423,14 @@ private:
 			audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
 
 			return audioSize;
+
+#ifdef _AUDIO_TEMPO
 		}
 
 		av_frame_unref(pAFrame);
 
 		return -1;
+#endif //  _AUDIO_TEMPO
 	}
 
 	//synchronize
@@ -1564,11 +1580,11 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
-		audioQueue.exit();
-		videoQueue.exit();
+		//audioQueue.exit();
+		//videoQueue.exit();
 
-		audioQueue.flush();
-		videoQueue.flush();
+		//audioQueue.flush();
+		//videoQueue.flush();
 
 		SDL_PauseAudio(true);
 
@@ -1594,7 +1610,10 @@ public:
 
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
+
+#ifdef _AUDIO_TEMPO
 		av_frame_free(&pAFilterFrame);
+#endif //  _AUDIO_TEMPO
 
 #ifdef _HW_DECODE
 		if (bHWDecode) {
@@ -1602,7 +1621,9 @@ public:
 		}
 #endif // _HW_DECODE		
 
+#ifdef _AUDIO_TEMPO
 		avfilter_graph_free(&filter_graph);
+#endif //  _AUDIO_TEMPO
 
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
@@ -1637,7 +1658,7 @@ public:
 
 		SDL_DestroyMutex(mutex_audio);
 		SDL_DestroyCond(cond_audioCallbackFinish);
-		SDL_DestroyCond(cond_audioCallbackPause);
+		//SDL_DestroyCond(cond_audioCallbackPause);
 	}
 
 	//Get
@@ -1841,6 +1862,7 @@ public:
 
 		this->atempo = newTempo;
 
+#ifdef _AUDIO_TEMPO
 		// make sure member value is updated
 		if (this->bNoAudio) {
 			// reset timer
@@ -1870,6 +1892,7 @@ public:
 		}
 
 		init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+#endif //  _AUDIO_TEMPO
 	}
 
 	//Play core
