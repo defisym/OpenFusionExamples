@@ -120,6 +120,8 @@ public:
 #include <SDL.h>
 #include <SDL_thread.h>
 
+constexpr auto QUEUE_WAITING = -1;
+
 class packetQueue {
 private:
 	std::queue<AVPacket> queue;
@@ -161,18 +163,27 @@ public:
 	}
 
 	~packetQueue() {
-		exit();
+		//exit();
+		pause();
 
 		SDL_CondWait(condExit, mutexExit);
 
-		//erase();
-		//flush();
+		flush();
+		pause();
 
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
 
 		SDL_DestroyMutex(mutexExit);
 		SDL_DestroyCond(condExit);
+	}
+
+	inline size_t size() {
+		return queue.size();
+	}
+
+	inline int getDataSize() {
+		return dataSize;
 	}
 
 	inline void exit() {
@@ -184,20 +195,36 @@ public:
 		SDL_CondSignal(cond);
 	}
 
-	inline size_t size() {
-		return queue.size();
+	inline void stopBlock() {
+		// don't use exit() as parent will get -1 as wait and sent nullptr
+		SDL_CondSignal(cond);
 	}
 
-	inline int getDataSize() {
-		return dataSize;
+	inline void pause() {
+		exit();
+
+		SDL_LockMutex(mutex);
+		SDL_UnlockMutex(mutex);
 	}
 
+	inline void restore() {
+		SDL_LockMutex(mutex);
+		
+		this->bExit = false;
+		
+		SDL_UnlockMutex(mutex);
+	}
+		
 	inline void flush() {
+		pause();
+
 		SDL_LockMutex(mutex);
 
 		erase();
 
 		SDL_UnlockMutex(mutex);
+
+		restore();
 	}
 
 	inline bool put(const AVPacket* pPacket) {
@@ -222,14 +249,14 @@ public:
 	}
 
 	//block: 阻塞线程并等待
-	inline bool get(AVPacket* pPacket, bool block = true) {
-		bool ret = false;
+	inline BOOL get(AVPacket* pPacket, bool block = true) {
+		BOOL ret = false;
 
 		SDL_LockMutex(mutex);
 
 		while (true) {
 			if (bExit) {
-				ret = false;
+				ret = QUEUE_WAITING;
 
 				break;
 			}
@@ -265,10 +292,6 @@ public:
 		SDL_UnlockMutex(mutex);
 
 		return ret;
-	}
-
-	inline void stopBlock() {
-		SDL_CondSignal(cond);
 	}
 };
 #endif

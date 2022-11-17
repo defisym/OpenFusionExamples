@@ -409,7 +409,8 @@ private:
 			return -1;
 		}
 
-		this->bAudioCallbackPause = true;		
+		this->bAudioCallbackPause = true;
+		this->audioQueue.pause();
 
 		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);		
 		SDL_LockMutex(mutex_audio);
@@ -543,6 +544,7 @@ private:
 		SDL_UnlockMutex(mutex_audio);
 		SDL_CondSignal(cond_audioCallbackPause);
 
+		this->audioQueue.restore();
 		this->bAudioCallbackPause = false;
 
 		return ret;
@@ -1152,7 +1154,15 @@ private:
 	// - Call avcodec_receive_frame() (decoding) or avcodec_receive_packet() (encoding) in a loop until AVERROR_EOF is returned. The functions will not return AVERROR(EAGAIN), unless you forgot to enter draining mode.
 	// - Before decoding can be resumed again, the codec has to be reset with avcodec_flush_buffers().
 	inline int decode_videoFrame(rawDataCallBack callBack) {
-		auto bNoPacket = !videoQueue.get(pVPacket, false);
+		//auto bNoPacket = !videoQueue.get(pVPacket, false);
+
+		auto bRespond = videoQueue.get(pVPacket, false);
+
+		if (bRespond == QUEUE_WAITING) {
+			return -1;
+		}
+
+		auto bNoPacket = bRespond == false;
 
 		//if (pVPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pVCodecContext);
@@ -1180,8 +1190,16 @@ private:
 		//bAudioFinish = !audioQueue.get(pAPacket);
 		//bAudioFinish = !audioQueue.get(pAPacket, false);
 		//bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
-		auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish);
+		//auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish);
 		//auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish && !bAudioCallbackPause);
+
+		auto bRespond = audioQueue.get(pAPacket, !bReadFinish);
+
+		if (bRespond == QUEUE_WAITING) {
+			return -1;
+		}
+
+		auto bNoPacket = bRespond == false;
 			
 		//if (pAPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pACodecContext);
@@ -1190,7 +1208,7 @@ private:
 		//}
 
 		// return data size here
-		auto response = decode_apacket(!bNoPacket ? pAPacket : nullptr, pACodecContext, pAFrame);
+		auto response = decode_apacket(!bNoPacket ? pAPacket : nullptr, pACodecContext, pAFrame, nullptr);
 
 		bAudioFinish = (response == AVERROR_EOF);
 
@@ -1340,7 +1358,7 @@ private:
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
-	inline int decode_apacket(AVPacket* pAPacket, AVCodecContext* pACodecContext, AVFrame* pArame) {
+	inline int decode_apacket(AVPacket* pAPacket, AVCodecContext* pACodecContext, AVFrame* pArame, rawDataCallBack callBack) {
 		int response = avcodec_send_packet(pACodecContext, pAPacket);
 		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
 			return -1;
@@ -1838,10 +1856,10 @@ public:
 			? atempo
 			: DEFAULT_ATEMPO;
 
-		// TODO
-		//if (this->atempo == newTempo) {
-		//	return;
-		//}
+		// won't update if param is the same
+		if (this->atempo == newTempo) {
+			return;
+		}
 
 		this->atempo = newTempo;
 
