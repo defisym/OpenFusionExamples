@@ -207,7 +207,8 @@ private:
 
 	AVFrame* pAFilterFrame = nullptr;
 
-	float atempo = DEFAULT_ATEMPO;	
+	//float atempo = DEFAULT_ATEMPO;
+	float atempo = -1;
 
 	const AVCodec* pVCodec = NULL;
 	AVCodecParameters* pVCodecParameters = NULL;
@@ -293,8 +294,11 @@ private:
 	SDL_AudioSpec spec = { 0 };
 	SDL_AudioSpec wanted_spec = { 0 };
 
-	SDL_mutex* mutex;
-	SDL_cond* cond;
+	SDL_mutex* mutex_audio;
+	SDL_cond* cond_audioCallbackFinish;
+
+	bool bAudioCallbackPause = false;
+	SDL_cond* cond_audioCallbackPause;
 #pragma endregion
 
 #pragma endregion
@@ -405,9 +409,10 @@ private:
 			return -1;
 		}
 
-		SDL_CondWait(cond, mutex);
+		this->bAudioCallbackPause = true;		
 
-		SDL_LockMutex(mutex);
+		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);		
+		SDL_LockMutex(mutex_audio);
 
 		int ret = 0;
 				
@@ -535,7 +540,10 @@ private:
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);
 
-		SDL_UnlockMutex(mutex);
+		SDL_UnlockMutex(mutex_audio);
+		SDL_CondSignal(cond_audioCallbackPause);
+
+		this->bAudioCallbackPause = false;
 
 		return ret;
 	}
@@ -888,8 +896,9 @@ private:
 #pragma endregion
 
 #pragma region SDLInit
-		mutex = SDL_CreateMutex();
-		cond = SDL_CreateCond();
+		mutex_audio = SDL_CreateMutex();
+		cond_audioCallbackFinish = SDL_CreateCond();
+		cond_audioCallbackPause = SDL_CreateCond();
 
 		if (!bNoAudio) {
 			// init SDL audio
@@ -931,7 +940,7 @@ private:
 		}
 #pragma endregion
 	
-		// must be here, as it requires mutex of SDL
+		// must be here, as it requires mutex_audio of SDL
 		if (!bNoAudio) {
 			set_audioTempo(DEFAULT_ATEMPO);
 		}
@@ -1172,6 +1181,7 @@ private:
 		//bAudioFinish = !audioQueue.get(pAPacket, false);
 		//bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
 		auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish);
+		//auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish && !bAudioCallbackPause);
 			
 		//if (pAPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pACodecContext);
@@ -1571,9 +1581,9 @@ public:
 #endif // _EXTERNAL_SDL_AUDIO_INIT		
 
 		//Wait for callback finish
-		SDL_CondWait(cond, mutex);
+		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);
 
-		SDL_LockMutex(mutex);
+		SDL_LockMutex(mutex_audio);
 
 		//audioQueue.flush();
 		//videoQueue.flush();
@@ -1627,10 +1637,11 @@ public:
 
 		delete[] p_global_bgr_buffer;
 
-		SDL_UnlockMutex(mutex);
+		SDL_UnlockMutex(mutex_audio);
 
-		SDL_DestroyMutex(mutex);
-		SDL_DestroyCond(cond);
+		SDL_DestroyMutex(mutex_audio);
+		SDL_DestroyCond(cond_audioCallbackFinish);
+		SDL_DestroyCond(cond_audioCallbackPause);
 	}
 
 	//Get
@@ -1823,9 +1834,16 @@ public:
 	}
 
 	inline void set_audioTempo(float atempo) {
-		this->atempo = atempo > 0
+		auto newTempo = atempo > 0
 			? atempo
 			: DEFAULT_ATEMPO;
+
+		// TODO
+		//if (this->atempo == newTempo) {
+		//	return;
+		//}
+
+		this->atempo = newTempo;
 
 		// make sure member value is updated
 		if (this->bNoAudio) {
@@ -1988,7 +2006,7 @@ public:
 	}
 
 	inline int audio_fillData(Uint8* stream, int len) {
-		SDL_LockMutex(mutex);
+		SDL_LockMutex(mutex_audio);
 
 		if (!bExit && !bPause) {
 			//每次写入stream的数据长度
@@ -2000,6 +2018,11 @@ public:
 
 			//检查音频缓存的剩余长度
 			while (len > 0) {
+				if (this->bAudioCallbackPause) {
+					//SDL_CondWait(cond_audioCallbackPause, mutex_audio);
+					break;
+				}
+
 				//检查是否需要执行解码操作
 				if (audio_buf_index >= audio_buf_size) {
 					// We have already sent all our data; get more
@@ -2045,9 +2068,9 @@ public:
 			SDL_memset(stream, 0, len);
 		}
 
-		SDL_CondSignal(cond);
+		SDL_CondSignal(cond_audioCallbackFinish);
 
-		SDL_UnlockMutex(mutex);
+		SDL_UnlockMutex(mutex_audio);
 
 		return 0;
 	}

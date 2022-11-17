@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <queue>
 
@@ -29,7 +29,7 @@ private:
 	std::condition_variable _empty;
 
 	// Exit
-	// Ô­×Ó²Ù×÷
+	// åŸå­æ“ä½œ
 	std::atomic_bool _quit; //{ false };
 	std::atomic_bool _finished; // { false };
 
@@ -221,7 +221,7 @@ public:
 		return true;
 	}
 
-	//block: ×èÈûÏß³Ì²¢µÈ´ı
+	//block: é˜»å¡çº¿ç¨‹å¹¶ç­‰å¾…
 	inline bool get(AVPacket* pPacket, bool block = true) {
 		bool ret = false;
 
