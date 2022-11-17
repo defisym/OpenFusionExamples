@@ -130,11 +130,6 @@ private:
 	SDL_mutex* mutex;
 	SDL_cond* cond;
 
-	SDL_mutex* mutexExit;
-	SDL_cond* condExit;
-
-	//AVPacket pkt = { 0 };
-
 	bool bExit = false;
 
 	inline void erase() {
@@ -157,25 +152,14 @@ public:
 	packetQueue() {
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
-
-		mutexExit = SDL_CreateMutex();
-		condExit = SDL_CreateCond();
 	}
 
 	~packetQueue() {
-		//exit();
-		pause();
-
-		SDL_CondWait(condExit, mutexExit);
-
 		flush();
 		pause();
 
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
-
-		SDL_DestroyMutex(mutexExit);
-		SDL_DestroyCond(condExit);
 	}
 
 	inline size_t size() {
@@ -196,8 +180,8 @@ public:
 	}
 
 	inline void stopBlock() {
-		// don't use exit() as parent will get -1 as wait and sent nullptr
-		SDL_CondSignal(cond);
+		pause();
+		restore();
 	}
 
 	inline void pause() {
@@ -288,7 +272,6 @@ public:
 			}
 		}
 
-		SDL_CondSignal(condExit);
 		SDL_UnlockMutex(mutex);
 
 		return ret;
