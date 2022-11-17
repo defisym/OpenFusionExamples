@@ -1111,8 +1111,6 @@ private:
 				// video is faster, wait
 			case FFMpeg::SyncState::SYNC_VIDEOFASTER:
 				return 0;
-
-				break;
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
@@ -1153,10 +1151,12 @@ private:
 	// - Instead of valid input, send NULL to the avcodec_send_packet() (decoding) or avcodec_send_frame() (encoding) functions. This will enter draining mode.
 	// - Call avcodec_receive_frame() (decoding) or avcodec_receive_packet() (encoding) in a loop until AVERROR_EOF is returned. The functions will not return AVERROR(EAGAIN), unless you forgot to enter draining mode.
 	// - Before decoding can be resumed again, the codec has to be reset with avcodec_flush_buffers().
-	inline int decode_videoFrame(rawDataCallBack callBack) {
-		//auto bNoPacket = !videoQueue.get(pVPacket, false);
-
-		auto bRespond = videoQueue.get(pVPacket, false);
+	inline int decode_frameCore(bool& bFinishState, const bool& bBlockState
+		, packetQueue& queue
+		, AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame
+		, auto decoder
+		, rawDataCallBack callBack) {
+		auto bRespond = queue.get(pPacket, bBlockState);
 
 		if (bRespond == QUEUE_WAITING) {
 			return -1;
@@ -1164,63 +1164,41 @@ private:
 
 		auto bNoPacket = bRespond == false;
 
-		//if (pVPacket->data == flushPacket.data) {
-		//	avcodec_flush_buffers(pVCodecContext);
+		//if (pPacket->data == flushPacket.data) {
+		//	avcodec_flush_buffers(pCodecContext);
 
 		//	return 0;
 		//}
 
-		//auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
-		auto response = decode_vpacket(!bNoPacket ? pVPacket : nullptr, pVCodecContext, pVFrame, callBack);		
+		auto response = (this->*decoder)(!bNoPacket ? pPacket : nullptr, pCodecContext, pFrame, callBack);
 
-		bVideoFinish = (response == AVERROR_EOF);
+		bFinishState = (response == AVERROR_EOF);
 
-		if (pVPacket && pVPacket->data) {
-			av_packet_unref(pVPacket);
+		if (pPacket && pPacket->data) {
+			av_packet_unref(pPacket);
 		}
 
-		if (bVideoFinish) {
+		if (bFinishState) {
 			return END_OF_QUEUE;
 		}
 
 		return response;
 	}
 
+	inline int decode_videoFrame(rawDataCallBack callBack) {
+		return decode_frameCore(bVideoFinish, false
+			, videoQueue
+			, pVCodecContext, pVPacket, pVFrame
+			, &FFMpeg::decode_vpacket
+			, callBack);
+	}
+
 	inline int decode_audioFrame() {
-		//bAudioFinish = !audioQueue.get(pAPacket);
-		//bAudioFinish = !audioQueue.get(pAPacket, false);
-		//bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
-		//auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish);
-		//auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish && !bAudioCallbackPause);
-
-		auto bRespond = audioQueue.get(pAPacket, !bReadFinish);
-
-		if (bRespond == QUEUE_WAITING) {
-			return -1;
-		}
-
-		auto bNoPacket = bRespond == false;
-			
-		//if (pAPacket->data == flushPacket.data) {
-		//	avcodec_flush_buffers(pACodecContext);
-
-		//	return 0;
-		//}
-
-		// return data size here
-		auto response = decode_apacket(!bNoPacket ? pAPacket : nullptr, pACodecContext, pAFrame, nullptr);
-
-		bAudioFinish = (response == AVERROR_EOF);
-
-		if (pAPacket && pAPacket->data) {
-			av_packet_unref(pAPacket);
-		}
-
-		if (bAudioFinish) {
-			return END_OF_QUEUE;
-		}
-
-		return response;
+		return decode_frameCore(bAudioFinish, !bReadFinish && !bAudioCallbackPause
+			, audioQueue
+			, pACodecContext, pAPacket, pAFrame
+			, &FFMpeg::decode_apacket
+			, nullptr);
 	}
 
 	// Convert data to Fusion data
@@ -2009,11 +1987,13 @@ public:
 
 		response = handleLoop();
 
-		response = decode_frame(callBack);
-
-		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
+		if (!bFinish) {
+			response = decode_frame(callBack);
+		}
 
 		//do not wait audio finish to get fluent loop
+
+		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
 		bFinish = bReadFinish && bVideoFinish;
 
 #ifdef _CONSOLE
