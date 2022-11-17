@@ -56,6 +56,10 @@ inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 }
 
 inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf, bool bPm) {
+	if (pMemSf == nullptr) {
+		return;
+	}
+
 	auto sfCoef = GetSfCoef(pMemSf);
 
 	auto lineSz = sfCoef.pitch;	

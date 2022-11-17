@@ -73,7 +73,7 @@ constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 constexpr auto TARGET_SAMPLE_RATE = 48000;
 
-//#define _AUDIO_TEMPO
+#define _AUDIO_TEMPO
 
 constexpr auto DEFAULT_ATEMPO = 1.0f;
 
@@ -965,7 +965,7 @@ private:
 
 	inline int64_t get_protectedTimeStamp(int64_t ms) {
 		//av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
+		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(rational);
 
 		return (int64_t)(protectedTimeStamp);
 	}
@@ -1178,7 +1178,13 @@ private:
 		//	return 0;
 		//}
 
+#define _DRAIN
+
+#ifdef _DRAIN
 		auto response = (this->*decoder)(!bNoPacket ? pPacket : nullptr, pCodecContext, pFrame, callBack);
+#else
+		auto response = (this->*decoder)(pPacket, pCodecContext, pFrame, callBack);
+#endif // _DRAIN	
 
 		bFinishState = (response == AVERROR_EOF);
 
@@ -1278,7 +1284,8 @@ private:
 			}
 
 			if (response >= 0) {
-				videoPts = 0;
+				//videoPts = 0;
+				videoPts = double(pFrame->best_effort_timestamp);
 
 				if (pVPacket != nullptr) {
 					if (pVPacket->dts == AV_NOPTS_VALUE
@@ -1293,7 +1300,7 @@ private:
 					}
 				}
 
-				videoPts *= av_q2d(pVideoStream->time_base);
+				videoPts *= av_q2d(rational);
 
 				//if (pFrame->key_frame == 1) {
 				//	firstKeyFrame = min(videoPts, firstKeyFrame);
@@ -1344,35 +1351,40 @@ private:
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
-	inline int decode_apacket(AVPacket* pAPacket, AVCodecContext* pACodecContext, AVFrame* pArame, rawDataCallBack callBack) {
+	inline int decode_apacket(AVPacket* pAPacket, AVCodecContext* pACodecContext, AVFrame* pFrame, rawDataCallBack callBack) {		
 		int response = avcodec_send_packet(pACodecContext, pAPacket);
-		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
-			return -1;
+
+		if (response < 0) {
+			return response;
 		}
 
-		response = avcodec_receive_frame(pACodecContext, pAFrame);
-		if (response < 0 && response != AVERROR_EOF) {
-			av_frame_unref(pAFrame);
+		response = avcodec_receive_frame(pACodecContext, pFrame);
 
-			return -1;
+		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+			return response;
+		}
+		else if (response < 0) {
+			av_frame_unref(pFrame);
+
+			return response;
 		}
 
 #ifdef _AUDIO_TEMPO
-		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
-		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, 0);
+		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
+		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, 0);
 		if (response < 0) {
 			return -1;
 		}
 
 		while (1) {
-			//response = av_buffersink_get_frame(buffersink_ctx, pAFrame);
+			//response = av_buffersink_get_frame(buffersink_ctx, pFrame);
 			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 				break;
 			}
 
 			if (response < 0) {
-				av_frame_unref(pAFrame);
+				av_frame_unref(pFrame);
 				av_frame_unref(pAFilterFrame);
 			}
 #endif //  _AUDIO_TEMPO
@@ -1391,7 +1403,7 @@ private:
 #ifdef _AUDIO_TEMPO
 			auto pBaseFrame = pAFilterFrame;
 #else
-			auto pBaseFrame = pAFrame;			
+			auto pBaseFrame = pFrame;
 #endif //  _AUDIO_TEMPO
 
 			// update context to avoid crash
@@ -1444,7 +1456,7 @@ private:
 			videoPts = videoClock;
 		}
 
-		frameDelay = av_q2d(pVideoStream->time_base);
+		frameDelay = av_q2d(rational);
 		frameDelay += pVFrame->repeat_pict * (frameDelay * 0.5);
 
 		videoClock += frameDelay;
@@ -1580,11 +1592,8 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
-		//audioQueue.exit();
-		//videoQueue.exit();
-
-		//audioQueue.flush();
-		//videoQueue.flush();
+		audioQueue.pause();
+		videoQueue.pause();
 
 		SDL_PauseAudio(true);
 
@@ -1593,12 +1602,10 @@ public:
 #endif // _EXTERNAL_SDL_AUDIO_INIT		
 
 		//Wait for callback finish
+		this->bAudioCallbackPause = true;
 		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);
 
 		SDL_LockMutex(mutex_audio);
-
-		//audioQueue.flush();
-		//videoQueue.flush();
 
 		delete[] audio_buf;
 
@@ -1851,6 +1858,9 @@ public:
 	}
 
 	inline void set_audioTempo(float atempo) {
+#ifndef _AUDIO_TEMPO
+		this->atempo = DEFAULT_ATEMPO;
+#else
 		auto newTempo = atempo > 0
 			? atempo
 			: DEFAULT_ATEMPO;
@@ -1862,7 +1872,6 @@ public:
 
 		this->atempo = newTempo;
 
-#ifdef _AUDIO_TEMPO
 		// make sure member value is updated
 		if (this->bNoAudio) {
 			// reset timer
