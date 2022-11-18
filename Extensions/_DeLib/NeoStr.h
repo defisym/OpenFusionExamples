@@ -2067,47 +2067,50 @@ public:
 											,this->startY + curStrPos.y
 											,0,0 };
 
-				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-					auto positionX = (float)(x) + (float)(this->borderOffsetY);
-					auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
-		
-					if (colorIt!= this->colorFormat.end()
-						&& totalChar >= colorIt->start) {
-						solidBrush.SetColor(colorIt->color);
-						
-						colorIt++;
-					}
+#pragma region FORMAT_IT				
+				auto positionX = (float)(x) + (float)(this->borderOffsetY);
+				auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
 
-					if (fontIt != this->fontFormat.end()
-						&& totalChar >= fontIt->start) {
-						this->pFont = GetFontPointerWithCache(fontIt->logFont);
+				if (colorIt != this->colorFormat.end()
+					&& totalChar >= colorIt->start) {
+					solidBrush.SetColor(colorIt->color);
 
-						fontIt++;
-					}
+					colorIt++;
+				}
 
-					if (shakeIt != this->shakeFormat.end()
-						&& totalChar >= shakeIt->start) {
-						localShakeFormat = *shakeIt;
+				if (fontIt != this->fontFormat.end()
+					&& totalChar >= fontIt->start) {
+					this->pFont = GetFontPointerWithCache(fontIt->logFont);
 
-						shakeIt++;
-					}
+					fontIt++;
+				}
 
-					if (this->bShake) {
-						double offset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
-							+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
+				if (shakeIt != this->shakeFormat.end()
+					&& totalChar >= shakeIt->start) {
+					localShakeFormat = *shakeIt;
 
-						GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);						
-					}					
+					shakeIt++;
+				}
 
-					// use updated position
-					if (iConIt != this->iConFormat.end()
-						&& totalChar >= iConIt->start) {
-						iConIt->x = (size_t)positionX;
-						iConIt->y = (size_t)positionY;
+				if (this->bShake) {
+					double offset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
+						+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
 
-						iConIt++;
-					}
+					GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);
+				}
 
+				// use updated position
+				if (iConIt != this->iConFormat.end()
+					&& totalChar >= iConIt->start) {
+					iConIt->x = (size_t)positionX;
+					iConIt->y = (size_t)positionY;
+
+					iConIt++;
+				}
+#pragma endregion
+
+				//if (!clip(x, (this->startY + curStrPos.y), charSz)) {
+				if (!clip((int)positionX - this->borderOffsetX, (this->startY + (int)positionY - this->borderOffsetY), charSz)) {
 					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
 					auto status = g.DrawString(pCurChar, 1, pFont
 						, PointF(positionX, positionY), &solidBrush);
