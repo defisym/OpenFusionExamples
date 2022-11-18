@@ -145,6 +145,9 @@ private:
 	bool bVideoFinish = false;
 	bool bAudioFinish = false;
 
+	bool bVideoSendEAgain = false;
+	bool bAudioSendEAgain = false;
+
 	bool bFinish = false;
 
 #ifdef _CONSOLE
@@ -899,7 +902,7 @@ private:
 		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
 		totalTimeInMs = totalDuration == INT64_MAX
 						? totalDuration
-						:(int64_t)totalTime * 1000;
+						:(int64_t)round(totalTime * 1000);
 
 		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
 		//p_global_bgr_buffer = new uint8_t[num_bytes];
@@ -1016,13 +1019,20 @@ private:
 		this->bSeeking = true;
 		this->seekingTargetPts = targetPts;
 
+		//how many packet processed
 		//int count = 0;
 
 		while (av_read_frame(pFormatContext, pPacket) >= 0) {
 			// if it's the video stream
 			if (pPacket->stream_index == video_stream_index) {
 				// decode
-				response = decode_vpacket(pPacket, pCodecContext, pFrame
+				response = avcodec_send_packet(pCodecContext, pPacket);
+
+				if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+					break;
+				}
+
+				response = decode_vpacket(pCodecContext, pPacket, pFrame
 					, [&](const unsigned char* pData, const int stride, const int height) {
 						loaclStride = stride;
 						loaclHeight = height;
@@ -1042,6 +1052,11 @@ private:
 			}
 
 			av_packet_unref(pPacket);
+		}
+
+		// revert to start
+		if (targetPts == 0.0) {
+			set_videoPosition(0);
 		}
 
 		this->bSeeking = false;
@@ -1112,7 +1127,7 @@ private:
 			response = fill_queue();
 
 			// calc delay
-			syncState = get_delayState();
+			syncState = get_syncState();
 
 			// decode
 			switch (syncState) {
@@ -1159,18 +1174,21 @@ private:
 	// - Instead of valid input, send NULL to the avcodec_send_packet() (decoding) or avcodec_send_frame() (encoding) functions. This will enter draining mode.
 	// - Call avcodec_receive_frame() (decoding) or avcodec_receive_packet() (encoding) in a loop until AVERROR_EOF is returned. The functions will not return AVERROR(EAGAIN), unless you forgot to enter draining mode.
 	// - Before decoding can be resumed again, the codec has to be reset with avcodec_flush_buffers().
-	inline int decode_frameCore(bool& bFinishState, const bool& bBlockState
+	inline int decode_frameCore(bool& bFinishState, bool& bSendEAgain
+		, const bool& bBlockState
 		, packetQueue& queue
 		, AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame
 		, auto decoder
 		, rawDataCallBack callBack) {
-		auto bRespond = queue.get(pPacket, bBlockState);
+		BOOL bRespond = true;
+		
+		if (!bSendEAgain) {
+			bRespond = queue.get(pPacket, bBlockState);
 
-		if (bRespond == QUEUE_WAITING) {
-			return -1;
+			if (bRespond == QUEUE_WAITING) {
+				return -1;
+			}
 		}
-
-		auto bNoPacket = bRespond == false;
 
 		//if (pPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pCodecContext);
@@ -1178,18 +1196,27 @@ private:
 		//	return 0;
 		//}
 
-#define _DRAIN
+		auto bNoPacket = bRespond == false;
+		auto pInputPacket = !bNoPacket ? pPacket : nullptr;
 
-#ifdef _DRAIN
-		auto response = (this->*decoder)(!bNoPacket ? pPacket : nullptr, pCodecContext, pFrame, callBack);
-#else
-		auto response = (this->*decoder)(pPacket, pCodecContext, pFrame, callBack);
-#endif // _DRAIN	
+		// Supply raw packet data as input to a decoder
+		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
+		int response = avcodec_send_packet(pCodecContext, pPacket);
+		bSendEAgain = (response == AVERROR(EAGAIN));
+
+		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+			return response;
+		}
+
+		response = (this->*decoder)(pCodecContext, pInputPacket, pFrame, callBack);
 
 		bFinishState = (response == AVERROR_EOF);
 
-		if (pPacket && pPacket->data) {
-			av_packet_unref(pPacket);
+		// won't release if current packed didn't used
+		if (!bSendEAgain) {
+			if (pPacket && pPacket->data) {
+				av_packet_unref(pPacket);
+			}
 		}
 
 		if (bFinishState) {
@@ -1200,7 +1227,8 @@ private:
 	}
 
 	inline int decode_videoFrame(rawDataCallBack callBack) {
-		return decode_frameCore(bVideoFinish, false
+		return decode_frameCore(bVideoFinish, bVideoSendEAgain
+			, false
 			, videoQueue
 			, pVCodecContext, pVPacket, pVFrame
 			, &FFMpeg::decode_vpacket
@@ -1208,7 +1236,8 @@ private:
 	}
 
 	inline int decode_audioFrame() {
-		return decode_frameCore(bAudioFinish, !bReadFinish && !bAudioCallbackPause
+		return decode_frameCore(bAudioFinish, bAudioSendEAgain
+			, !bReadFinish && !bAudioCallbackPause
 			, audioQueue
 			, pACodecContext, pAPacket, pAFrame
 			, &FFMpeg::decode_apacket
@@ -1246,119 +1275,92 @@ private:
 		callBack(bgr_buffer[0], linesize[0], pFrame->height);
 	}
 
-	inline int decode_vpacket(AVPacket* pVPacket, AVCodecContext* pVCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
-		// Supply raw packet data as input to a decoder
-		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
-		int response = avcodec_send_packet(pVCodecContext, pVPacket);
+	inline int decode_vpacket(AVCodecContext* pVCodecContext, AVPacket* pVPacket, AVFrame* pFrame, rawDataCallBack callBack) {
+		// Return decoded output data (into a frame) from a decoder
+		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
+		int response = avcodec_receive_frame(pVCodecContext, pFrame);
 
-		if (response < 0) {
+		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+			return response;
+		}
+		else if (response < 0) {
+			av_frame_unref(pFrame);
+
+#ifdef _HW_DECODE
+			if (bHWDecode) {
+				av_frame_unref(pSWFrame);
+			}
+#endif // _HW_DECODE
+
 			return response;
 		}
 
-#define _NOLOOP
+		if (response >= 0) {
+			//videoPts = 0;
+			videoPts = double(pFrame->best_effort_timestamp);
 
-#ifndef _NOLOOP
-		while (response >= 0) {
-#endif // !_NOLOOP
-			// Return decoded output data (into a frame) from a decoder
-			// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
-			response = avcodec_receive_frame(pVCodecContext, pFrame);
-
-			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-#ifdef _NOLOOP
-				return response;
-#endif
-#ifndef _NOLOOP
-				break;
-#endif // !_NOLOOP
+			if (pVPacket != nullptr) {
+				if (pVPacket->dts == AV_NOPTS_VALUE
+					&& pFrame->opaque
+					&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
+					videoPts = double(*(uint64_t*)pFrame->opaque);
+				}
+				else {
+					videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+						? pFrame->best_effort_timestamp
+						: 0);
+				}
 			}
-			else if (response < 0) {
-				av_frame_unref(pFrame);
+
+			videoPts *= av_q2d(rational);
+
+			//if (pFrame->key_frame == 1) {
+			//	firstKeyFrame = min(videoPts, firstKeyFrame);
+			//}
+
+#ifdef _CONSOLE
+			if (bJumped) {
+				printf("Cur video pts: %f\n", videoPts);
+			}
+#endif
+			videoPts = synchronize_video(pFrame, videoPts);
+
+#ifdef _CONSOLE
+			if (bJumped) {
+				printf("Cur synced video pts: %f\n", videoPts);
+			}
+#endif
+
+			if (!bSeeking
+				|| (bSeeking && (videoClock >= seekingTargetPts))) {
+				auto pFrameToConvert = pFrame;
+
 #ifdef _HW_DECODE
 				if (bHWDecode) {
-					av_frame_unref(pSWFrame);
-				}
-#endif // _HW_DECODE
-
-				return response;
-			}
-
-			if (response >= 0) {
-				//videoPts = 0;
-				videoPts = double(pFrame->best_effort_timestamp);
-
-				if (pVPacket != nullptr) {
-					if (pVPacket->dts == AV_NOPTS_VALUE
-						&& pFrame->opaque
-						&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
-						videoPts = double(*(uint64_t*)pFrame->opaque);
-					}
-					else {
-						videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
-							? pFrame->best_effort_timestamp
-							: 0);
-					}
-				}
-
-				videoPts *= av_q2d(rational);
-
-				//if (pFrame->key_frame == 1) {
-				//	firstKeyFrame = min(videoPts, firstKeyFrame);
-				//}
-
-#ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur video pts: %f\n", videoPts);
-				}
-#endif
-				videoPts = synchronize_video(pFrame, videoPts);
-
-#ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur synced video pts: %f\n", videoPts);
-				}
-#endif
-
-				if (!bSeeking
-					|| (bSeeking && (videoClock >= seekingTargetPts))) {
-					auto pFrameToConvert = pFrame;
-
-#ifdef _HW_DECODE
-					if (bHWDecode) {
-						if (pFrame->format == hw_pix_fmt) {
-							/* retrieve data from GPU to CPU */
-							if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
-								//fprintf(stderr, "Error transferring the data to system memory\n");
-								throw FFMpegException_HWDecodeFailed;
-							}
-
-							pFrameToConvert = pSWFrame;
+					if (pFrame->format == hw_pix_fmt) {
+						/* retrieve data from GPU to CPU */
+						if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
+							//fprintf(stderr, "Error transferring the data to system memory\n");
+							throw FFMpegException_HWDecodeFailed;
 						}
+
+						pFrameToConvert = pSWFrame;
 					}
+				}
 #endif
 
-					convertData(pFrameToConvert, callBack);
-				}				
-
-				av_frame_unref(pFrame);
+				convertData(pFrameToConvert, callBack);
 			}
-#ifndef _NOLOOP
-		}
-#endif // !_NOLOOP
 
+			av_frame_unref(pFrame);
+		}
 
 		return response;
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
-	inline int decode_apacket(AVPacket* pAPacket, AVCodecContext* pACodecContext, AVFrame* pFrame, rawDataCallBack callBack) {		
-		int response = avcodec_send_packet(pACodecContext, pAPacket);
-
-		if (response < 0) {
-			return response;
-		}
-
-		response = avcodec_receive_frame(pACodecContext, pFrame);
+	inline int decode_apacket(AVCodecContext* pACodecContext, AVPacket* pAPacket, AVFrame* pFrame, rawDataCallBack callBack) {
+		int response = avcodec_receive_frame(pACodecContext, pFrame);
 
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			return response;
@@ -1481,7 +1483,7 @@ private:
 		return pts;
 	}
 
-	inline SyncState get_delayState() {
+	inline SyncState get_syncState() {
 		//if (bFinish) {
 		//	return SyncState::SYNC_SYNC;
 		//}
@@ -1979,7 +1981,13 @@ public:
 			while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
 				// if it's the video stream
 				if (pPacket->stream_index == video_stream_index) {
-					response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
+					response = avcodec_send_packet(pCodecContext, pPacket);
+
+					if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+						break;
+					}
+
+					response = decode_vpacket(pCodecContext, pPacket, pFrame, callBack);
 
 					//wait until receive enough frames
 					if (response == AVERROR(EAGAIN)) {

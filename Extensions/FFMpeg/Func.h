@@ -56,7 +56,7 @@ inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 }
 
 inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf, bool bPm) {
-	if (pMemSf == nullptr) {
+	if (pData == nullptr || pMemSf == nullptr) {
 		return;
 	}
 
