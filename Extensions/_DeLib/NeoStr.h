@@ -1571,8 +1571,7 @@ public:
 												}));
 
 											DWORD result = 0;
-											std::reverse(controlParams.begin(), controlParams.end());
-											
+																					
 											auto size = controlParams.size();
 											auto alpha = 0xFF;
 
@@ -1593,15 +1592,9 @@ public:
 
 													controlParams.pop_back();
 												}
-											}											
+											}	
 
-											// default A = 255
-											if (size <= 3) {
-												result |= (0xFF << 24);
-											}
-											else {
-												result |= (_stoi(controlParams.back()) << 24);
-											}
+											result |= alpha << 24;
 
 											return result;
 										}										
