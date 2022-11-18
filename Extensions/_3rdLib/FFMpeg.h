@@ -975,7 +975,7 @@ private:
 
 	inline int64_t get_protectedTimeStamp(int64_t ms) {
 		//av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(rational);
+		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
 
 		return (int64_t)(protectedTimeStamp);
 	}
@@ -1135,6 +1135,8 @@ private:
 
 			// calc delay
 			syncState = get_syncState();
+
+			//syncState = SyncState::SYNC_SYNC;
 
 			// decode
 			switch (syncState) {
@@ -1321,7 +1323,7 @@ private:
 				}
 			}
 
-			videoPts *= av_q2d(rational);
+			videoPts *= av_q2d(pVideoStream->time_base);
 
 			//if (pFrame->key_frame == 1) {
 			//	firstKeyFrame = min(videoPts, firstKeyFrame);
@@ -1467,7 +1469,7 @@ private:
 			videoPts = videoClock;
 		}
 
-		frameDelay = av_q2d(rational);
+		frameDelay = av_q2d(pVideoStream->time_base);
 		frameDelay += pVFrame->repeat_pict * (frameDelay * 0.5);
 
 		videoClock += frameDelay;
