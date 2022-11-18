@@ -94,9 +94,16 @@ constexpr auto FFMpegException_HWDecodeFailed = -3;
 
 constexpr auto FFMpegException_FilterInitFailed = -4;
 
-constexpr auto END_OF_QUEUE = -1;
+constexpr auto END_OF_QUEUE = -5;
 
-// Defines
+#ifdef _DEBUG
+constexpr auto FFMpegError_EOF = AVERROR_EOF;
+constexpr auto FFMpegError_EAGAIN = AVERROR(EAGAIN);
+constexpr auto FFMpegError_EINVAL = AVERROR(EINVAL);
+constexpr auto FFMpegError_ENOMEM = AVERROR(ENOMEM);
+#endif
+
+// Defines				   
 constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
@@ -968,7 +975,7 @@ private:
 
 	inline int64_t get_protectedTimeStamp(int64_t ms) {
 		//av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(rational);
+		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
 
 		return (int64_t)(protectedTimeStamp);
 	}
@@ -1129,6 +1136,8 @@ private:
 			// calc delay
 			syncState = get_syncState();
 
+			//syncState = SyncState::SYNC_SYNC;
+
 			// decode
 			switch (syncState) {
 				// video is faster, wait
@@ -1137,7 +1146,6 @@ private:
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				//response = decode_videoFrame(callBack);
 				response = decode_videoFrame([&](const unsigned char* pData, const int stride, const int height) {
 					loaclStride = stride;
 					loaclHeight = height;
@@ -1161,8 +1169,7 @@ private:
 			}
 
 		} while (syncState != SyncState::SYNC_SYNC);
-
-		//callBack(p_global_bgr_buffer, this->get_width(), this->get_height());
+				
 		callBack(p_global_bgr_buffer, loaclStride, loaclHeight);
 
 		return 0;
@@ -1186,7 +1193,7 @@ private:
 			bRespond = queue.get(pPacket, bBlockState);
 
 			if (bRespond == QUEUE_WAITING) {
-				return -1;
+				return QUEUE_WAITING;
 			}
 		}
 
@@ -1280,6 +1287,10 @@ private:
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		int response = avcodec_receive_frame(pVCodecContext, pFrame);
 
+#ifdef _DEBUG
+		auto err = GetErrorStr(response);
+#endif
+
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			return response;
 		}
@@ -1312,7 +1323,7 @@ private:
 				}
 			}
 
-			videoPts *= av_q2d(rational);
+			videoPts *= av_q2d(pVideoStream->time_base);
 
 			//if (pFrame->key_frame == 1) {
 			//	firstKeyFrame = min(videoPts, firstKeyFrame);
@@ -1458,7 +1469,7 @@ private:
 			videoPts = videoClock;
 		}
 
-		frameDelay = av_q2d(rational);
+		frameDelay = av_q2d(pVideoStream->time_base);
 		frameDelay += pVFrame->repeat_pict * (frameDelay * 0.5);
 
 		videoClock += frameDelay;
