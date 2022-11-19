@@ -1036,6 +1036,10 @@ private:
 				response = avcodec_send_packet(pCodecContext, pPacket);
 
 				if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+#ifdef _DEBUG
+					auto err = GetErrorStr(response);
+#endif // _DEBUG
+
 					break;
 				}
 
