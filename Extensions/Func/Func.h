@@ -1,6 +1,46 @@
 #ifndef _FUNC_
 #define _FUNC_
 
+inline void Assert(long value, const std::wstring& msg) {
+#ifndef RUN_ONLY
+	if (!value) {
+		auto ret = MessageBox(NULL, StrEqu(msg.c_str(), Empty_Str)
+			? L"Assert Failed"
+			: msg.c_str()
+			, L"Assert Failed"
+			, MB_ABORTRETRYIGNORE);
+
+		if (ret == IDABORT) {
+			exit(0);
+		}
+	}
+#endif // !RUN_ONLY
+}
+
+inline Data& GetReturn(LPRDATA rdPtr, size_t Pos) {
+#ifndef RUN_ONLY
+	try {
+#endif // !RUN_ONLY
+		return rdPtr->FuncReturn->at(Pos);
+#ifndef RUN_ONLY
+	}
+	catch (std::out_of_range) {
+		std::wstring msg = *rdPtr->pPreviousFuncName;
+
+		if (rdPtr->FuncReturn->empty()) {
+			msg += L" Func Has No Return";
+		}
+		else {
+			msg += L" Func Has No Return At " + _itos(Pos);
+		}
+
+		Assert(false, msg);
+
+		return Data{};
+	}
+#endif // !RUN_ONLY
+}
+
 //convert data
 inline void Data_StoV(Data& Data) {
 	if (Data.Type == DataType::STRING && !Data.Converted) {
@@ -79,6 +119,8 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 	(*rdPtr->RecursiveIndex)[FuncName] += 1;
 
 	//Call Func;
+	*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
+
 	if (rdPtr->CompatibleMode) {
 		//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
 		LPRH pRh = rdPtr->rHo.hoAdRunHeader;

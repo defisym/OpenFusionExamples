@@ -447,19 +447,7 @@ short WINAPI DLLExport Assert(LPRDATA rdPtr, long param1, long param2) {
 	auto value = CNC_GetParameter(rdPtr);
 	std::wstring msg = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-#ifndef RUN_ONLY
-	if (!value) {
-		auto ret = MessageBox(NULL, StrEqu(msg.c_str(), Empty_Str)
-										? L"Assert Failed"
-										: msg.c_str()
-									, L"Assert Failed"
-									, MB_ABORTRETRYIGNORE);
-
-		if (ret == IDABORT) {
-			exit(0);
-		}
-	}
-#endif // !RUN_ONLY
+	Assert(value, msg);
 
 	return 0;
 }
@@ -492,8 +480,10 @@ long WINAPI DLLExport CallFuncRV(LPRDATA rdPtr,long param1) {
 	
 	CallFuncCore(FuncName, Param);	
 
-	Data_StoV(Return(0));
-	return ReturnFloat(Return(0).Val);
+	auto& ret = Return(0);
+
+	Data_StoV(ret);
+	return ReturnFloat(ret.Val);
 }
 
 long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
@@ -506,8 +496,10 @@ long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	
 	//This returns a pointer to the string for MMF.
-	Data_VtoS(Return(0));
-	return (long)Return(0).Str.c_str();	
+	auto& ret = Return(0);
+
+	Data_VtoS(ret);
+	return (long)ret.Str.c_str();
 }
 
 long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
@@ -632,8 +624,10 @@ long WINAPI DLLExport GetRetRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	
 	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
-		Data_StoV(Return(Pos));
-		return ReturnFloat(Return(Pos).Val);
+		auto& ret = Return(Pos);
+
+		Data_StoV(ret);
+		return ReturnFloat(ret.Val);
 	}
 	else {
 		return 0;
@@ -648,8 +642,10 @@ long WINAPI DLLExport GetRetRS(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
-		Data_VtoS(Return(Pos));
-		return (long)Return(Pos).Str.c_str();
+		auto& ret = Return(Pos);
+
+		Data_VtoS(ret);
+		return (long)ret.Str.c_str();
 	}
 	else {
 		return (long)Default_Str;

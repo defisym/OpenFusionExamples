@@ -33,6 +33,10 @@
 #include	<vector>
 #include	<string>
 
+#if !defined(RUN_ONLY)
+#include	<stdexcept>
+#endif
+
 // My lib
 class ObjectSelection;
 

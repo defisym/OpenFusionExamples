@@ -52,4 +52,5 @@ typedef STRING* LPSTRING;
 								&&((*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)].count(ParamName) != 0))
 #define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)][ParamName]
 
-#define Return(Pos) rdPtr->FuncReturn->at(Pos)
+//#define Return(Pos) rdPtr->FuncReturn->at(Pos)
+#define Return(Pos) GetReturn(rdPtr, Pos)
