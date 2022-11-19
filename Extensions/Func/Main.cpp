@@ -40,6 +40,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_SA, M_CONDITION_SA, CND_CONDITION_SA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, M_OBJECT,
 
 		IDMN_CONDITION_IE, M_CONDITION_IE, CND_CONDITION_IE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_IS, M_CONDITION_IS, CND_CONDITION_IS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		
 		};
 
@@ -238,6 +239,12 @@ long WINAPI DLLExport InEditor(LPRDATA rdPtr, long param1, long param2) {
 #else
 	return FALSE;	
 #endif // !RUN_ONLY
+}
+
+long WINAPI DLLExport InSubApp(LPRDATA rdPtr, long param1, long param2) {
+	auto bSub = rdPtr->rHo.hoAdRunHeader->rhApp->m_pParentApp != nullptr;
+
+	return bSub;
 }
 
 // ============================================================================
@@ -838,6 +845,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SelectAll,
 
 			InEditor,
+			InSubApp,
 
 			0
 			};

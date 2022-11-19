@@ -24,8 +24,9 @@
 #define	CND_CONDITION_SA			10
 
 #define	CND_CONDITION_IE			11
+#define	CND_CONDITION_IS			12
 
-#define	CND_LAST					12
+#define	CND_LAST					13
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

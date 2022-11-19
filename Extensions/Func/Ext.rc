@@ -117,6 +117,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "In Editor", IDMN_CONDITION_IE
+        MENUITEM "In Sub App", IDMN_CONDITION_IS
         MENUITEM SEPARATOR
         MENUITEM "On Func", IDMN_CONDITION_OF
         MENUITEM SEPARATOR                
@@ -427,6 +428,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_IE          "%o In Editor"
+    M_CONDITION_IS          "%o In Sub App"
 
     M_CONDITION_OF          "%o On Func %0"
     
