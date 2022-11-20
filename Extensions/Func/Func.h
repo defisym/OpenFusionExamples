@@ -20,9 +20,7 @@ inline void Assert(long value, const std::wstring& msg) {
 inline Data& GetReturn(LPRDATA rdPtr, size_t Pos) {
 #ifndef RUN_ONLY
 	try {
-#endif // !RUN_ONLY
 		return rdPtr->FuncReturn->at(Pos);
-#ifndef RUN_ONLY
 	}
 	catch (std::out_of_range) {
 		std::wstring msg = *rdPtr->pPreviousFuncName;
@@ -36,9 +34,28 @@ inline Data& GetReturn(LPRDATA rdPtr, size_t Pos) {
 
 		Assert(false, msg);
 
-		return Data{};
+		return rdPtr->defaultData;
+	}
+#else
+	if (Pos >= rdPtr->FuncReturn->size()) {
+		return rdPtr->defaultData;
+	}
+	else {
+		return rdPtr->FuncReturn->at(Pos);
 	}
 #endif // !RUN_ONLY
+}
+
+template<typename Type>
+inline long NotInFuncError() {
+	Assert(false, L"Not In Func");
+
+	if (std::is_same<Type, std::wstring()>::value) {
+		return (long)Default_Str;
+	}
+	else {
+		return -1;
+	}
 }
 
 //convert data
@@ -99,7 +116,7 @@ inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
 }
 
 inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, std::wstring& funcName) {
-	auto& it = rdPtr->RecursiveIndex->find(funcName);
+	auto it = rdPtr->RecursiveIndex->find(funcName);
 
 	std::wstring suffix = it == rdPtr->RecursiveIndex->end() ? _itos(0) : _itos(it->second);
 

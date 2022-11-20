@@ -94,6 +94,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->OutPut = nullptr;
 
 	rdPtr->pPreviousFuncName = new std::wstring;
+	rdPtr->defaultData = Data_Default;
 
 	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
 	rdPtr->pOnItObjName = new std::wstring;

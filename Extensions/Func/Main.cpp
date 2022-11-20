@@ -504,8 +504,10 @@ long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
 
 long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	
-	if (!rdPtr->FuncParamStack->back().empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {		
+
+	if (!rdPtr->FuncParamStack->empty()
+		&& !rdPtr->FuncParamStack->back().empty()
+		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {
 		Data_StoV(GetParam(Pos));
 		return ReturnFloat(GetParam(Pos).Val);
 	}
@@ -521,7 +523,9 @@ long WINAPI DLLExport GetParamRS(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	if (!rdPtr->FuncParamStack->back().empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {
+	if (!rdPtr->FuncParamStack->empty()
+		&& !rdPtr->FuncParamStack->back().empty()
+		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {
 		Data_VtoS(GetParam(Pos));
 		return (long)GetParam(Pos).Str.c_str();
 	}
@@ -566,6 +570,12 @@ long WINAPI DLLExport GetTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 		
+#ifndef RUN_ONLY
+	if ((*rdPtr->FuncTempParam).count(GetFuncNameWithRecursiveID(FuncName)) == 0) {
+		NotInFuncError<long>();
+	}
+#endif
+
 	if (HasTempParam(FuncName, ParamName)) {
 		Data_StoV(TempParam(FuncName, ParamName));
 		return ReturnFloat(TempParam(FuncName, ParamName).Val);
@@ -578,6 +588,12 @@ long WINAPI DLLExport GetTempParamRV(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetTempParamRS(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+#ifndef RUN_ONLY
+	if ((*rdPtr->FuncTempParam).count(GetFuncNameWithRecursiveID(FuncName)) == 0) {
+		NotInFuncError<long>();
+	}
+#endif
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -655,7 +671,7 @@ long WINAPI DLLExport GetRetRS(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetRecursiveIndex(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if(rdPtr->RecursiveIndex->count(FuncName)!=0){
+	if (rdPtr->RecursiveIndex->count(FuncName) != 0) {
 		return (*rdPtr->RecursiveIndex)[FuncName];
 	}
 	else {
@@ -664,7 +680,9 @@ long WINAPI DLLExport GetRecursiveIndex(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetParamSize(LPRDATA rdPtr, long param1) {	
-	return rdPtr->FuncParamStack->back().size();
+	return !rdPtr->FuncParamStack->empty()
+		? rdPtr->FuncParamStack->back().size()
+		: NotInFuncError<long>();
 }
 
 long WINAPI DLLExport GetRetSize(LPRDATA rdPtr, long param1) {
@@ -703,7 +721,9 @@ long WINAPI DLLExport GetCurrentFuncName(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)rdPtr->FuncNameStack->back().c_str();
+	return	!rdPtr->FuncNameStack->empty()
+		? (long)rdPtr->FuncNameStack->back().c_str()
+		: NotInFuncError<std::wstring>();
 }
 
 long WINAPI DLLExport GetLoopIndex(LPRDATA rdPtr, long param1) {

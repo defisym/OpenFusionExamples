@@ -179,6 +179,7 @@ typedef struct tagRDATA
 	LPTSTR OutPut = nullptr;
 
 	std::wstring* pPreviousFuncName = nullptr;
+	Data defaultData;
 
 	ObjectSelection* pSelect;
 	std::wstring* pOnItObjName;
