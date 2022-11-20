@@ -12,9 +12,9 @@ typedef struct Data {
 	bool IsNumberChecked = false;
 }Data;
 
-//#define Data_Val(Val) Data{ Val, std::wstring(DoubleStrSize, L'\0'), DataType::VALUE, false, true, true}
-#define Data_Val(Val) Data{ Val, std::wstring(), DataType::VALUE, false, true, true}
-#define Data_Str(Str) Data{ 0, Str, DataType::STRING, false, false, false}
+#define Data_Val(Val) Data{ Val, std::wstring(), DataType::VALUE, false, true, true }
+#define Data_Str(Str) Data{ 0, Str, DataType::STRING, false, false, false }
+#define Data_Default  Data{ 0.0, L"", DataType::VALUE, true, true, true }
 
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
