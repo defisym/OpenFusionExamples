@@ -145,14 +145,11 @@ public:
 
 			return true;
 		}		
-		__except ([]()->int {
-			auto exceptionCode = GetExceptionCode();
-			if (exceptionCode == EXCEPTION_ACCESS_VIOLATION) {
-				return EXCEPTION_EXECUTE_HANDLER;
-			}
-
-			return EXCEPTION_CONTINUE_SEARCH;
-			}()) {
+		__except (
+			GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION
+			? EXCEPTION_EXECUTE_HANDLER
+			: EXCEPTION_CONTINUE_SEARCH
+			) {
 			return false;
 		}
 	}
