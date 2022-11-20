@@ -1092,7 +1092,7 @@ private:
 			av_packet_unref(pPacket);
 		}
 
-#define _REVERT_TO_TARGET
+//#define _REVERT_TO_TARGET
 
 #ifdef _REVERT_TO_TARGET
 		// revert to target
