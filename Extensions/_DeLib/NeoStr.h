@@ -198,10 +198,10 @@ private:
 	};
 
 	struct CharPos {
-		long x;
-		long y;
-		long maxWidth;
-		long totalHeight;
+		long x = 0;
+		long y = 0;
+		long maxWidth = 0;
+		long totalHeight = 0;
 
 		// Shake
 		ShakeControl shakeControl;
@@ -240,9 +240,9 @@ private:
 	//CharSizeCache charSzCache;
 
 	struct CharSizeCacheItem {
-		HDC hdc;
-		HFONT hFont;
-		TEXTMETRIC tm;
+		HDC hdc = NULL;
+		HFONT hFont = NULL;
+		TEXTMETRIC tm = {0};
 
 		CharSizeCache cache;
 	};
@@ -295,6 +295,29 @@ private:
 
 	std::vector<FormatICon> iConFormat;
 
+	struct IConDisplay {
+		float iConOffsetX = 0;
+		float iConOffsetY = 0;
+
+		float iConScale = 1.0;
+
+		bool iConResample = false;
+	};
+
+	IConDisplay iConDisplay = { 0,0,1.0,false };
+
+	struct FormatIConDisplay {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+
+		IConDisplay iConDisplay;
+	};
+
+	std::vector<FormatIConDisplay> iConDisplayFormat;
+	std::vector<IConDisplay> iConDisplayStack;
+
 	struct FormatFont {
 		size_t start;
 		//size_t end;
@@ -308,23 +331,16 @@ private:
 	std::vector<LOGFONT> logFontStack;
 
 	struct FormatShake {
-		size_t start;
+		size_t start = 0;
 		//size_t end;
 
-		size_t startWithNewLine;
+		size_t startWithNewLine = 0;
 
 		ShakeControl shakeControl;
 	};
 
 	std::vector<FormatShake> shakeFormat;
 	std::vector<ShakeControl> shakeStack;
-
-	float iConOffsetX = 0;
-	float iConOffsetY = 0;
-
-	float iConScale = 1.0;
-
-	bool iConResample = false;
 
 public:
 	using IConLib = std::map<DWORD, LPSURFACE>;
@@ -581,9 +597,19 @@ public:
 
 		this->strPos.reserve(20);		
 		
-		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
-		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		
+		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
+		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
+		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);		
+
+		this->fontFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->logFontStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->shakeFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->shakeStack.reserve(DEFAULT_FORMAT_RESERVE);
 
 		this->pShakeRandGen = new RandGenerator<int>(-1 * SHAKE_RANDOM_RANGE, SHAKE_RANDOM_RANGE);
 
@@ -944,16 +970,16 @@ public:
 	}
 
 	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
-		this->iConOffsetX = iConOffsetX;
-		this->iConOffsetY = iConOffsetY;
+		this->iConDisplay.iConOffsetX = iConOffsetX;
+		this->iConDisplay.iConOffsetY = iConOffsetY;
 	}
 
 	inline void SetIConScale(float iConScale = 1.0) {
-		this->iConScale = iConScale;
+		this->iConDisplay.iConScale = iConScale;
 	}
 
 	inline void SetIConResample(bool iConResample=false){
-		this->iConResample = iConResample;
+		this->iConDisplay.iConResample = iConResample;
 	}
 
 	inline void LinkObject(LPRO pObject, IConParamParser parser) {
@@ -1195,6 +1221,26 @@ public:
 		//	if param is less than two, will be referred from left.
 		//	e.g., one param will be treated as frame.
 		// 
+		// [IConOffsetX = 0.0][/IConOffsetX]
+		//	ICon Offset X
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [IConOffsetY = 0.0][/IConOffsetY]
+		//	ICon Offset Y
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [IConScale = 1.0][/IConScale]
+		//	ICon Scale
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [IConResample = 0.0][/IConResample]
+		//	ICon Resample
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
 		// [!]
 		//	reset all format
 		// 
@@ -1257,13 +1303,22 @@ public:
 		auto pCurChar = pRawText;
 		auto pSavedChar = pText;
 
+		ControlParams controlParams;
+		controlParams.reserve(4);
+
+		this->iConFormat.clear();
+
+		this->iConDisplayStack.clear();
+		this->iConDisplayStack.emplace_back(this->iConDisplay);
+
+		this->iConDisplayFormat.clear();
+		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ 0,0,iConDisplayStack.back() });
+		
 		this->colorStack.clear();
 		this->colorStack.emplace_back(GetColor(this->dwTextColor));
 
 		this->colorFormat.clear();
-		this->colorFormat.emplace_back(FormatColor{ 0,0,colorStack.back() });
-
-		this->iConFormat.clear();
+		this->colorFormat.emplace_back(FormatColor{ 0,0,colorStack.back() });		
 
 		this->logFontStack.clear();
 		this->logFontStack.emplace_back(this->logFont);
@@ -1272,9 +1327,6 @@ public:
 		this->fontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
 
 		this->bShake = false;
-
-		ControlParams controlParams;
-		controlParams.reserve(4);
 
 		this->shakeStack.clear();
 		this->shakeStack.emplace_back(ShakeControl());
@@ -1496,6 +1548,75 @@ public:
 									? sizeDiff
 									: (bMinus ? -1 : +1) * sizeDiff + oldValue;
 							};
+
+							if (StringViewIEqu(controlStr, L"IConOffsetX")) {
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConOffsetX = this->iConDisplayStack.front().iConOffsetX;
+
+										return;
+									}
+
+									iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX, [&](std::wstring_view& controlParam) {
+										auto size = _stof(controlParam);
+										return size;
+										});
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"IConOffsetY")) {
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConOffsetY = this->iConDisplayStack.front().iConOffsetY;
+
+										return;
+									}
+
+									iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY, [&](std::wstring_view& controlParam) {
+										auto size = _stof(controlParam);
+										return size;
+										});
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"IConScale")) {
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConScale = this->iConDisplayStack.front().iConScale;
+
+										return;
+									}
+
+									iConDisplay.iConScale = DiffManager(iConDisplay.iConScale, [&](std::wstring_view& controlParam) {
+										auto size = _stof(controlParam);
+										return size;
+										});
+									});
+
+								break;
+							}
+
+							if (StringViewIEqu(controlStr, L"IConResample")) {
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConResample = this->iConDisplayStack.front().iConResample;
+
+										return;
+									}
+
+									iConDisplay.iConResample = _stoi(controlParam);
+									});
+
+								break;
+							}
 
 							if (StringViewIEqu(controlStr, L"Shake")) {
 								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
@@ -2158,19 +2279,32 @@ public:
 
 		pBitmap->UnlockBits(&bitmapData);
 
-		auto flags = this->iConResample
+		auto flags = this->iConDisplay.iConResample
 			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA
 			: STRF_COPYALPHA;
 
 		fontIt = this->fontFormat.begin();
+		auto iConDisplayIt = this->iConDisplayFormat.begin();
 
-		for (auto& it : this->iConFormat) {
-			while (fontIt != this->fontFormat.end()
-				&& fontIt->start < it.start) {
-				fontIt++;
+		auto UpdateIt = [](auto& it,auto itEnd, size_t start) {
+			while (it != itEnd && it->start <= start) {
+				it++;
 			}
 
-			fontIt--;
+			it--;
+		};
+
+		for (auto& it : this->iConFormat) {
+			//while (fontIt != this->fontFormat.end()
+			//	&& fontIt->start < it.start) {
+			//	fontIt++;
+			//}
+
+			//fontIt--;
+			
+			UpdateIt(fontIt, this->fontFormat.end(), it.start);
+			UpdateIt(iConDisplayIt, this->iConDisplayFormat.end(), it.start);
+
 			bool bEnd = fontIt == this->fontFormat.end();
 
 			const auto& charSize = !bEnd
@@ -2180,15 +2314,19 @@ public:
 				? GetCharSizeCacheIt(fontIt->logFont)->second.tm
 				: this->tm;
 
+			const auto& iConDisplay = iConDisplayIt != this->iConDisplayFormat.end()
+				? iConDisplayIt->iConDisplay
+				: this->iConDisplay;
+
 			StrSize iConSize = charSize;
 
-			iConSize.width = int(iConSize.width * this->iConScale);
-			iConSize.height = int(iConSize.height * this->iConScale);
+			iConSize.width = int(iConSize.width * iConDisplay.iConScale);
+			iConSize.height = int(iConSize.height * iConDisplay.iConScale);
 
-			auto iConXOffset = int(this->iConOffsetX * charSize.width
+			auto iConXOffset = int(iConDisplay.iConOffsetX * charSize.width
 				+ (static_cast<double>(charSize.width) - iConSize.width) / 2
 				+ charSize.width / 6.0);
-			auto iConYOffset = int(this->iConOffsetY * charSize.width
+			auto iConYOffset = int(iConDisplay.iConOffsetY * charSize.width
 				+ (static_cast<double>(charSize.height) - iConSize.height) / 2
 				+ (charSize.height - charSize.width)
 				- tm.tmDescent /*- tm.tmExternalLeading*/);
