@@ -707,6 +707,10 @@ private:
 		}
 #endif
 
+		//---------------------
+		// Video
+		//---------------------
+
 #ifndef _GET_STREAM_BYLOOP
 		// init video codec
 		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVCodec, 0);
@@ -799,24 +803,23 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		//swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height
-		//	, pVCodecContext->pix_fmt,
-		//	pVCodecContext->width, pVCodecContext->height
-		//	, PIXEL_FORMAT
-		//	, NULL, NULL, NULL, NULL);
-		
+		//---------------------
+		// Audio
+		//---------------------
+
+		if (flag & FFMpegFlag_ForceNoAudio) {
+			bForceNoAudio = true;
+		}
+
 #ifndef _GET_STREAM_BYLOOP
 		// init audio codec
-		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
+		if (!bForceNoAudio) {
+			audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
+		}
 #endif
 
 		if (audio_stream_index < 0) {
 			//throw FFMpegException_InitFailed;
-			bNoAudio = true;
-		}
-
-		if (flag & FFMpegFlag_ForceNoAudio) {
-			bForceNoAudio = true;
 			bNoAudio = true;
 		}
 
@@ -1091,6 +1094,7 @@ private:
 
 		// revert to start
 		if (targetPts == 0.0) {
+			//set_videoPosition((int64_t)(targetPts * 1000));
 			set_videoPosition(0);
 		}
 

@@ -57,8 +57,9 @@ struct MemVideoLib {
 struct GlobalData {
 	bool bSDLInit = false;
 	FFMpeg** ppFFMpeg = nullptr;
+	std::vector<FFMpeg**> ppFFMpegs;
 
-	MemVideoLib* pMemVideoLib = nullptr;
+	MemVideoLib* pMemVideoLib = nullptr;	
 
 	GlobalData() {
 		pMemVideoLib = new MemVideoLib;
@@ -126,5 +127,28 @@ struct GlobalData {
 		SDL_Quit();
 
 		bSDLInit = false;
+	}
+
+	inline void Create(bool bForceNoAudio, FFMpeg** ppFFMpeg) {
+		// Update global data
+		if (!bForceNoAudio) {
+			this->ppFFMpeg = ppFFMpeg;
+			this->ppFFMpegs.emplace_back(ppFFMpeg);
+		}
+
+	}
+
+	inline void Destroy(FFMpeg** ppFFMpeg) {
+		auto it = std::find(ppFFMpegs.begin(), ppFFMpegs.end(), ppFFMpeg);
+		if (it != ppFFMpegs.end()) {
+			ppFFMpegs.erase(it);
+		}
+
+		if (!ppFFMpegs.empty()) {
+			this->ppFFMpeg = ppFFMpegs.back();
+		}
+		else {
+			this->ppFFMpeg = nullptr;
+		}
 	}
 };

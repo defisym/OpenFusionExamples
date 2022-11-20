@@ -129,10 +129,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}	
 
-	// Update global data
-	if (!rdPtr->bForceNoAudio) {
-		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
-	}
+	rdPtr->pData->Create(rdPtr->bForceNoAudio, &rdPtr->pFFMpeg);
 
 	// No errors
 	return 0;
@@ -166,6 +163,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pFilePath;
 
 	delete rdPtr->pRetStr;
+
+	rdPtr->pData->Destroy(&rdPtr->pFFMpeg);
 
 	SetExtUserData(rdPtr->pData);
 
