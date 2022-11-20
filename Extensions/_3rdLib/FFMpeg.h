@@ -1092,11 +1092,18 @@ private:
 			av_packet_unref(pPacket);
 		}
 
+#define _REVERT_TO_TARGET
+
+#ifdef _REVERT_TO_TARGET
+		// revert to target
+		set_videoPosition((int64_t)(targetPts * 1000));
+		videoClock = targetPts * 1000;
+#else
 		// revert to start
-		if (targetPts == 0.0) {
-			//set_videoPosition((int64_t)(targetPts * 1000));
+		if (targetPts == 0.0) {			
 			set_videoPosition(0);
 		}
+#endif // _REVERT_TO_TARGET
 
 		this->bSeeking = false;
 
