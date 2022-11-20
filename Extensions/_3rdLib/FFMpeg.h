@@ -981,8 +981,26 @@ private:
 		return protectedTimeInSecond;
 	}
 
-	inline int64_t get_protectedTimeStamp(int64_t ms) {
-		//av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
+	inline int64_t get_protectedTimeStamp(int64_t ms, int flags = seekFlags) {
+		// seek by byte, do nothing
+		// If flags contain AVSEEK_FLAG_BYTE, then all timestamps are in bytes and are the file position
+		// (this may not be supported by all demuxers).
+		if ((flags & AVSEEK_FLAG_BYTE) == AVSEEK_FLAG_BYTE) {
+			return ms;
+		}
+
+		// seek by frame, do conversion
+		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
+		// (this may not be supported by all demuxers).
+		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME){
+			auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
+
+			return (int64_t)(protectedTimeStamp);
+		}
+
+		// default
+		// all timestamps are in units of the stream selected by stream_index or if stream_index is -1, in AV_TIME_BASE units
+		// av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
 		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
 
 		return (int64_t)(protectedTimeStamp);
@@ -992,9 +1010,7 @@ private:
 		int response = 0;
 
 		// input second
-		auto seek_target = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
-			? get_protectedTimeStamp(ms)
-			: ms;
+		auto seek_target = get_protectedTimeStamp(ms, flags);
 
 		response = flags >= 0
 			? av_seek_frame(pFormatContext, stream_index

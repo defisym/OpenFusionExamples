@@ -130,7 +130,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	}	
 
 	// Update global data
-	if (rdPtr->bForceNoAudio) {
+	if (!rdPtr->bForceNoAudio) {
 		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
 	}
 

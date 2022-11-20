@@ -89,6 +89,12 @@ struct GlobalData {
 			// No mutex needed here as audio is paused when deleting pFFMpeg
 			GlobalData* pData = (GlobalData*)userdata;
 
+			if (pData->ppFFMpeg == nullptr) {
+				SDL_memset(stream, 0, len);
+
+				return;
+			}
+
 			FFMpeg* pFFMpeg = *pData->ppFFMpeg;
 
 			if (pFFMpeg == nullptr) {
