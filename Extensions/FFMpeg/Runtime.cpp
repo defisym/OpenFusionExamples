@@ -117,18 +117,22 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 
+	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
+
 	rdPtr->atempo = DEFAULT_ATEMPO;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
-		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
-
 		SetExtUserData(rdPtr->pData);
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
-		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
 	}	
+
+	// Update global data
+	if (rdPtr->bForceNoAudio) {
+		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
+	}
 
 	// No errors
 	return 0;

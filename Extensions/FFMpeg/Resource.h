@@ -60,6 +60,9 @@
 #define COMBO_AV_HWDEVICE_TYPE_MEDIACODEC                 229
 #define COMBO_AV_HWDEVICE_TYPE_VULKAN                     230
 
+#define	IDS_PROP_FORCENOAUDIO_CHECK						231
+#define	IDS_PROP_FORCENOAUDIO_CHECK_INFO    			232
+
 
 // 	Debug tree
 //-------------------
@@ -97,6 +100,8 @@
 
 #define IDMN_ACTION_SAT     		25015
 
+#define IDMN_ACTION_SFNA     		25016
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -123,6 +128,8 @@
 
 #define M_ACTION_SAT     		    5015
 
+#define M_ACTION_SFNA     		    5016
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -138,6 +145,7 @@
 #define M_WIDTH		             5512
 #define M_HEIGHT		         5513
 #define M_ATEMPO		         5514
+#define M_FORCENOAUDIO	         5515
 
 
 //	Conditions

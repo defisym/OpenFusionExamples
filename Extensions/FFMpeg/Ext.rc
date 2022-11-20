@@ -150,7 +150,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Volume",              IDMN_ACTION_SV
         MENUITEM "Set Loop",                IDMN_ACTION_SL
-        MENUITEM "Set Audio Tempo (Playback Rate)",         IDMN_ACTION_SAT
+        MENUITEM "Set Force No Audio",         IDMN_ACTION_SFNA
+        MENUITEM "Set Audio Tempo (Playback Rate)",         IDMN_ACTION_SAT        
         MENUITEM "Set Accurate Seek",       IDMN_ACTION_SAS
         MENUITEM "Set Video Position",      IDMN_ACTION_SP
         MENUITEM "Set Video Position With Flag", IDMN_ACTION_SPWF
@@ -314,6 +315,9 @@ COMBO_AV_HWDEVICE_TYPE_OPENCL                 "OPENCL"
 COMBO_AV_HWDEVICE_TYPE_MEDIACODEC             "MEDIACODEC"
 COMBO_AV_HWDEVICE_TYPE_VULKAN                 "VULKAN"
 
+IDS_PROP_FORCENOAUDIO_CHECK            "Force No Audio"
+IDS_PROP_FORCENOAUDIO_CHECK_INFO       "Don't play audio and sync with external clock"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -347,6 +351,8 @@ BEGIN
     M_ACTION_STRETCH	       "Set Size to Width = %0, Height = %1"
 
     M_ACTION_SAT		       "Set Audio Tempo to %0"
+    
+    M_ACTION_SFNA		       "Set Force No Audio to %0"
 
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
@@ -362,6 +368,7 @@ BEGIN
     M_WIDTH                    "Width"
     M_HEIGHT                   "Height"
     M_ATEMPO                   "Audio Tempo"
+    M_FORCENOAUDIO             "Force No Audio, 0 = Disable"
 END
 
 STRINGTABLE DISCARDABLE 

@@ -64,6 +64,8 @@ short actionsInfos[]=
 		IDMN_ACTION_STRETCH, M_ACTION_STRETCH, ACT_ACTION_STRETCH, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_WIDTH, M_HEIGHT,
 
 		IDMN_ACTION_SAT, M_ACTION_SAT, ACT_ACTION_SAT, 0, 1, PARAM_EXPRESSION, M_ATEMPO,
+
+		IDMN_ACTION_SFNA, M_ACTION_SFNA, ACT_ACTION_SFNA, 0, 1, PARAM_EXPRESSION, M_FORCENOAUDIO,
 		};
 
 // Definitions of parameters for each expression
@@ -144,7 +146,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	OpenGeneral(rdPtr, filePath, key, rdPtr->hwDeviceType);
+	OpenGeneral(rdPtr, filePath, key, GetFlag(rdPtr));
 
 	return 0;
 }
@@ -154,7 +156,7 @@ short WINAPI DLLExport Action_OpenVideoTo(LPRDATA rdPtr, long param1, long param
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	size_t msRaw = (size_t)CNC_GetIntParameter(rdPtr);
 
-	OpenGeneral(rdPtr, filePath, key, rdPtr->hwDeviceType, msRaw);
+	OpenGeneral(rdPtr, filePath, key, GetFlag(rdPtr), msRaw);
 
 	return 0;
 }
@@ -305,7 +307,6 @@ short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
-
 short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 	int width = (int)CNC_GetIntParameter(rdPtr);
 	int height = (int)CNC_GetIntParameter(rdPtr);
@@ -335,6 +336,16 @@ short WINAPI DLLExport Action_SetAudioTempo(LPRDATA rdPtr, long param1, long par
 
 	return 0;
 }
+
+short WINAPI DLLExport Action_SetForceNoAudio(LPRDATA rdPtr, long param1, long param2) {
+	bool bForceNoAudio = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->bForceNoAudio = bForceNoAudio;
+
+	return 0;
+}
+
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -479,6 +490,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Stretch,
 
 			Action_SetAudioTempo,
+
+			Action_SetForceNoAudio,
 
 			0
 			};

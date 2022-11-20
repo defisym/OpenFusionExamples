@@ -258,6 +258,10 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	*rdPtr->pFilePath = L"";
 }
 
+inline int GetFlag(LPRDATA rdPtr) {
+	return rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
+}
+
 inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, DWORD flag = FFMpegFlag_Default, size_t ms = 0) {
 	CloseGeneral(rdPtr);
 

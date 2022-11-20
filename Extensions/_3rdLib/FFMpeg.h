@@ -130,7 +130,9 @@ static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 constexpr auto FFMpegFlag_Default = 0;
 
 constexpr auto FFMpegFlag_HWDeviceMask = 0xFFFF;
-constexpr auto FFMpegFlag_Flag2_Fast = (0x0001) << 16;
+
+constexpr auto FFMpegFlag_Fast = (0b0000000000000001) << 16;
+constexpr auto FFMpegFlag_ForceNoAudio = (0b0000000000000010) << 16;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
@@ -191,6 +193,7 @@ private:
 
 	bool bFromMem = false;
 	bool bNoAudio = false;
+	bool bForceNoAudio = false;
 
 	AVIOContext* pAvioContext = nullptr;
 	AVIOContext* pSeekAvioContext = nullptr;
@@ -760,7 +763,7 @@ private:
 
 		pVCodecContext->thread_count = std::thread::hardware_concurrency();
 
-		if (flag & FFMpegFlag_Flag2_Fast) {
+		if (flag & FFMpegFlag_Fast) {
 			pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 		}
 
@@ -809,6 +812,11 @@ private:
 
 		if (audio_stream_index < 0) {
 			//throw FFMpegException_InitFailed;
+			bNoAudio = true;
+		}
+
+		if (flag & FFMpegFlag_ForceNoAudio) {
+			bForceNoAudio = true;
 			bNoAudio = true;
 		}
 
@@ -1449,7 +1457,7 @@ private:
 			audioPts = audioClock;
 
 			auto pcm_bytes = 2 * pBaseFrame->channels;
-			audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
+			audioClock += (double)audioSize / ((double)pcm_bytes * (double)pACodecContext->sample_rate);
 
 			return audioSize;
 
@@ -1611,6 +1619,10 @@ public:
 
 		audioQueue.pause();
 		videoQueue.pause();
+
+		// must be flushed before free the context
+		audioQueue.flush();
+		videoQueue.flush();
 
 		SDL_PauseAudio(true);
 
