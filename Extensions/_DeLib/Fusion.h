@@ -988,7 +988,7 @@ struct SfCoef {
 };
 
 inline SfCoef GetSfCoef(LPSURFACE pSf) {
-	SfCoef pSfCoef;
+	SfCoef pSfCoef = { 0 };
 	
 	if (pSf == nullptr) {
 		return pSfCoef;
@@ -1078,4 +1078,103 @@ inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,B
 	ReleaseSfCoef(pSf, sfCoef);
 
 	//delete[] temp;
+}
+
+// dst transparent -> src alpha
+inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHeight
+	, LPSURFACE pDst, int destX, int destY) {
+	if(!pSrc->HasAlpha()){
+		return false;
+	}
+
+	if (!pDst->HasAlpha()) {
+		pDst->CreateAlpha();
+	}
+
+	auto srcCoef = GetSfCoef(pSrc);
+	auto dstCoef = GetSfCoef(pDst);
+
+	int widthS = pSrc->GetWidth();
+	int heightS = pSrc->GetHeight();
+
+	BYTE* pAlphaDataS = srcCoef.pAlphaData;
+	int alphaPitchS = srcCoef.alphaPitch;
+	int alphaSzS = srcCoef.alphaSz;
+	int alphaByteS = srcCoef.alphaByte;
+
+	int widthD = pDst->GetWidth();
+	int heightD = pDst->GetHeight();
+
+	BYTE* pAlphaDataD = dstCoef.pAlphaData;
+	int alphaPitchD = dstCoef.alphaPitch;
+	int alphaSzD = dstCoef.alphaSz;
+	int alphaByteD = dstCoef.alphaByte;
+
+#define _PRE_PROTECT
+
+#ifdef _PRE_PROTECT
+	auto Range = [](int inputV, int minV, int maxV) {
+		return min(maxV, max(minV, inputV));
+	};
+		
+	auto actualWidth = Range(srcX + srcWidth, 0, widthS);
+	auto actualHeight = Range(srcY + srcHeight, 0, heightS);
+
+	auto acutalSrcX= Range(srcX, 0, widthS);
+	auto acutalSrcY = Range(srcY, 0, heightS);
+
+	for (int y = acutalSrcY; y < actualHeight; y++) {
+		for (int x = acutalSrcX; x < actualWidth; x++) {
+#else
+	for (int y = srcY; y < srcY + srcHeight; y++) {
+		for (int x = srcX; x < srcX + srcWidth; x++) {
+#endif
+			auto Protection = [](LPSURFACE pSf, int x, int y) {
+				if (x < 0 || x >= pSf->GetWidth()) {
+					return false;
+				}
+
+				if (y < 0 || y >= pSf->GetHeight()) {
+					return false;
+				}
+
+				return true;
+			};
+
+			auto dstX = (x + destX);
+			auto dstY = (y + destY);
+
+			//protection
+#ifdef _PRE_PROTECT
+			if (!Protection(pDst, dstX, dstY)) {
+#else
+			if (!Protection(pSrc, x, y) || !Protection(pDst, dstX, dstY)) {
+#endif
+				continue;
+			}
+
+			auto alphaOffsetS = (y)*alphaPitchS + x * alphaByteS;
+			auto alphaOffsetD = (dstY)*alphaPitchD + dstX * alphaByteD;
+
+			BYTE* alphaPixelS = pAlphaDataS + alphaOffsetS;
+			BYTE* alphaPixelD = pAlphaDataD + alphaOffsetD;
+
+			auto src = 1.0 - alphaPixelS[0] / 255.0;
+			auto dst = 1.0 - alphaPixelD[0] / 255.0;
+
+			auto result = (1.0 - src * dst) * 255;
+
+			*alphaPixelD = (BYTE)result;
+		}
+	}
+
+	ReleaseSfCoef(pDst, dstCoef);
+	ReleaseSfCoef(pSrc, srcCoef);
+
+	return true;
+}
+
+inline bool MixAlpha(LPSURFACE pSrc, LPSURFACE pDst, int destX, int destY) {
+	return MixAlpha(pSrc, 0, 0, pSrc->GetWidth(), pSrc->GetHeight()
+		, pDst, destX, destY);
 }

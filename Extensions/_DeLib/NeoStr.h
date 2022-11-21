@@ -354,7 +354,21 @@ public:
 		LPRO pIConObject = nullptr;
 		LPSURFACE pDefaultICon = nullptr;
 		IConParamParser iconParamParser = nullptr;
-		
+
+		using ResizeCacheKeyHash = size_t;
+
+		struct ResizeCacheKey {
+			LPSURFACE pSrc = nullptr;
+			int width = 0;
+			int height = 0;
+
+			inline ResizeCacheKeyHash GetHash() {
+				return  std::hash<void*>()(pSrc) ^std::hash<int>()(width) ^ std::hash<int>()(height);
+			}
+		};		
+
+		std::map<ResizeCacheKeyHash, LPSURFACE> resizeCache;
+				
 		IConData() {
 			pIConLib = new IConLib;
 		}
@@ -390,6 +404,12 @@ public:
 			}
 
 			this->pIConLib->clear();
+
+			for (auto& it : this->resizeCache) {
+				delete it.second;
+			}
+
+			this->resizeCache.clear();
 		}
 
 		inline void GetDefaultICon() {
@@ -2280,8 +2300,10 @@ public:
 		pBitmap->UnlockBits(&bitmapData);
 
 		auto flags = this->iConDisplay.iConResample
-			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA
-			: STRF_COPYALPHA;
+			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
+			: 0;
+
+		flags |= STRF_COPYALPHA;
 
 		fontIt = this->fontFormat.begin();
 		auto iConDisplayIt = this->iConDisplayFormat.begin();
@@ -2294,14 +2316,7 @@ public:
 			it--;
 		};
 
-		for (auto& it : this->iConFormat) {
-			//while (fontIt != this->fontFormat.end()
-			//	&& fontIt->start < it.start) {
-			//	fontIt++;
-			//}
-
-			//fontIt--;
-			
+		for (auto& it : this->iConFormat) {			
 			UpdateIt(fontIt, this->fontFormat.end(), it.start);
 			UpdateIt(iConDisplayIt, this->iConDisplayFormat.end(), it.start);
 
@@ -2343,10 +2358,37 @@ public:
 				pSf = this->pIConData->pDefaultICon;
 			}
 
-			auto ret = pSf->Stretch(*pMemSf
+			LPSURFACE pStrecthSf = nullptr;
+
+			auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
+			auto resizeCacheIt = this->pIConData->resizeCache.find(key);
+
+			if (resizeCacheIt == this->pIConData->resizeCache.end()) {
+				pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
+				pStrecthSf->CreateAlpha();
+
+				auto ret = pSf->Stretch(*pStrecthSf, flags);
+
+				this->pIConData->resizeCache[key] = pStrecthSf;
+			}
+			else {
+				pStrecthSf = resizeCacheIt->second;
+			}
+			
+			auto flags2 = this->iConDisplay.iConResample
+				? BLTF_ANTIA
+				: 0;
+
+			pStrecthSf->Blit(*pMemSf
 				, it.x + iConXOffset, it.y + iConYOffset
-				, iConSize.width, iConSize.width
-				, BMODE_OPAQUE, BOP_COPY, 0, flags);
+				, BMODE_TRANSP, BOP_COPY, 0, flags2);
+
+			MixAlpha(pStrecthSf, pMemSf, it.x + iConXOffset, it.y + iConYOffset);
+
+			//auto ret = pSf->Stretch(*pMemSf
+			//	, it.x + iConXOffset, it.y + iConYOffset
+			//	, iConSize.width, iConSize.width
+			//	, BMODE_OPAQUE, BOP_COPY, 0, flags);
 
 #ifdef _DEBUG
 			//_SavetoClipBoard(pSf, false);
