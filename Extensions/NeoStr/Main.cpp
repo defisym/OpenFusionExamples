@@ -357,10 +357,20 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2) {
 	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
+
+	auto bDestroyCaller = IsDestroyed((LPRO)rdPtr);
+	auto bDestroyObject = IsDestroyed(pObject);
 	
-	if (pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE)) {
+	if (!bDestroyCaller
+		&& pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE) && !bDestroyObject) {
 		rdPtr->pIConObject = pObject;
+
 		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+			// check caller validity
+			if (IsDestroyed((LPRO)rdPtr)) {
+				return FORMAT_INVALID_ICON;
+			}
+
 			// parse param
 			int frame = 0;
 			int direction = 0;
@@ -386,7 +396,7 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 			} while (0);
 			
 			// find image
-			DWORD hImage = -1;
+			DWORD hImage = FORMAT_INVALID_ICON;
 			auto appli = rdPtr->rHo.hoAdRunHeader->rhIdAppli;
 
 			do {
@@ -413,7 +423,7 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 				hImage = pDir->adFrame[frame];
 			} while (0);
 
-			if (hImage == -1) {
+			if (hImage == FORMAT_INVALID_ICON) {
 				return hImage;
 			}
 
@@ -450,7 +460,11 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
 	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	if (pObject != nullptr) {
+	auto bDestroyCaller = IsDestroyed((LPRO)rdPtr);
+	auto bDestroyObject = IsDestroyed(pObject);
+
+	if (!bDestroyCaller
+		&& pObject != nullptr && !bDestroyObject) {
 		// pObject is not used, it just for human readibility, actual identifier is hash of pLoopName
 		// for the case when switching frame, fixed/LPRO changes but using the same global data
 		// to reduce unnecessary refresh
@@ -461,9 +475,14 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 		GIPP(rdPtr->pIConParamParser) = 
 			[=, loopName = std::wstring(pLoopName)]
 			(NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+			// check caller validity
+			if (IsDestroyed((LPRO)rdPtr)) {
+				return FORMAT_INVALID_ICON;
+			}
 			
+			// call callback
 			rdPtr->bOverWrite = false;
-			rdPtr->iconLibKey = -1;
+			rdPtr->iconLibKey = FORMAT_INVALID_ICON;
 			rdPtr->pIConLibValue = nullptr;
 
 			*rdPtr->pIConItName = loopName;
@@ -478,7 +497,7 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 			//	SetIConUpdate(rdPtr);
 			//}
 
-			if (rdPtr->iconLibKey == -1) {
+			if (rdPtr->iconLibKey == FORMAT_INVALID_ICON) {
 				return rdPtr->iconLibKey;
 			}
 

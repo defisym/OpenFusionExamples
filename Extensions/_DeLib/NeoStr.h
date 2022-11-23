@@ -87,6 +87,8 @@ constexpr auto FORMAT_IGNORE_INCOMPLETE = 0b00000010;
 constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
 //constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_INCOMPLETE;
 
+constexpr auto FORMAT_INVALID_ICON = (DWORD)-1;
+
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
@@ -347,8 +349,9 @@ public:
 	using ControlParams = std::vector<std::wstring_view>;
 	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
 
-	struct IConData {		
+	struct IConData {
 		IConLib* pIConLib = nullptr;
+		LPRO pCaller = nullptr;
 		LPRO pIConObject = nullptr;
 		LPSURFACE pDefaultICon = nullptr;
 		IConParamParser iconParamParser = nullptr;
@@ -379,6 +382,19 @@ public:
 
 			delete pDefaultICon;
 			pDefaultICon = nullptr;
+		}
+
+		inline bool CheckCallerValidity() {
+			if (this->pCaller == nullptr || IsDestroyed((LPRO)this->pCaller)) {
+				this->pCaller = nullptr;
+
+				this->pIConObject = nullptr;
+				this->iconParamParser = nullptr;
+
+				return false;
+			}
+
+			return true;
 		}
 
 		// linked object changed, need to reset lib
@@ -1454,7 +1470,7 @@ public:
 							size_t savedLengthWithNewLine = pSavedChar - pText;
 						
 							if (StringViewIEqu(controlStr, L"ICon")) {
-								DWORD hImage = -1;
+								DWORD hImage = FORMAT_INVALID_ICON;
 
 								do {
 									if (this->pIConData->pIConObject == nullptr || this->pIConData->iconParamParser == nullptr) {
@@ -2348,7 +2364,7 @@ public:
 				- tm.tmDescent /*- tm.tmExternalLeading*/);
 
 			LPSURFACE pSf = nullptr;			
-			auto bFound = it.hImage != -1;
+			auto bFound = it.hImage != FORMAT_INVALID_ICON;
 
 			if (bFound) {
 				auto IConLibIt = this->pIConData->pIConLib->find(it.hImage);

@@ -250,7 +250,7 @@ typedef struct tagRDATA
 	void* pIConParams;
 
 	bool bOverWrite;
-	size_t iconLibKey;
+	DWORD iconLibKey;
 	LPSURFACE pIConLibValue;
 
 	GlobalData* pData;

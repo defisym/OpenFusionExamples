@@ -231,6 +231,9 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;
 
+	// update caller state
+	rdPtr->pData->pIConData->CheckCallerValidity();
+
 	if (rdPtr->rc.rcChanged)
 		return REFLAG_DISPLAY;
 	else
