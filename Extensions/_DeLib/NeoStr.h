@@ -347,9 +347,7 @@ public:
 	using ControlParams = std::vector<std::wstring_view>;
 	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
 
-	struct IConData {
-		//pIConObject == nullptr -> No ICon
-
+	struct IConData {		
 		IConLib* pIConLib = nullptr;
 		LPRO pIConObject = nullptr;
 		LPSURFACE pDefaultICon = nullptr;
@@ -383,19 +381,22 @@ public:
 			pDefaultICon = nullptr;
 		}
 
+		// linked object changed, need to reset lib
 		inline bool NeedUpdateICon(LPRO pObject) {
 			return pIConObject != pObject;
 		}
 
+		// link to active -> pObject == LPRO
+		// link to other object -> pObject == Callback Identifier
+		// pIConObject == nullptr -> No ICon
 		inline void UpdateICon(LPRO pObject, IConParamParser parser) {
-			if (!NeedUpdateICon(pObject)) {
-				return;
-			}
+			if (NeedUpdateICon(pObject)) {
+				ReleaseIConLib();
+			}			
 
-			ReleaseIConLib();
-
-			pIConObject = pObject;
-			iconParamParser = parser;
+			// always update callback, make sure the caller is valid
+			this->pIConObject = pObject;
+			this->iconParamParser = parser;
 		}
 
 		inline void ReleaseIConLib() {

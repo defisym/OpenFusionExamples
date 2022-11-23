@@ -458,12 +458,15 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 		//rdPtr->pIConObject = pObject;
 		rdPtr->pIConObject = (LPRO)std::hash<std::wstring>{}(pLoopName);		
 
-		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+		GIPP(rdPtr->pIConParamParser) = 
+			[=, loopName = std::wstring(pLoopName)]
+			(NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+			
 			rdPtr->bOverWrite = false;
 			rdPtr->iconLibKey = -1;
 			rdPtr->pIConLibValue = nullptr;
 
-			*rdPtr->pIConItName = pLoopName;
+			*rdPtr->pIConItName = loopName;
 			rdPtr->pIConParams = &controlParams;
 
 			CallEvent(ONITOIC);

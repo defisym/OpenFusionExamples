@@ -287,6 +287,7 @@ inline void GlobalIConUpdater(LPRDATA rdPtr) {
 		if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
 			SetIConUpdate(rdPtr);
 		}
+
 		rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 	}
 }
