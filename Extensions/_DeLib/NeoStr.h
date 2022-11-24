@@ -384,12 +384,16 @@ public:
 			pDefaultICon = nullptr;
 		}
 
+		inline void ResetCaller() {
+			this->pCaller = nullptr;
+
+			this->pIConObject = nullptr;
+			this->iconParamParser = nullptr;
+		}
+
 		inline bool CheckCallerValidity() {
 			if (this->pCaller == nullptr || IsDestroyed((LPRO)this->pCaller)) {
-				this->pCaller = nullptr;
-
-				this->pIConObject = nullptr;
-				this->iconParamParser = nullptr;
+				this->ResetCaller();
 
 				return false;
 			}

@@ -186,6 +186,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pIConParamParser;
 	delete rdPtr->pIConItName;
 
+	if (rdPtr->pData->pIConData->pCaller == (LPRO)rdPtr) {
+		rdPtr->pData->pIConData->ResetCaller();
+	}
+
 	SetExtUserData(rdPtr->pData);
 
 	// No errors
