@@ -1253,6 +1253,15 @@ public:
 		// [Command] if not match follows, will be displayed as untouched
 		//	depend on your flag settings
 		// 
+		// [^]
+		//	ignore all formats after this
+		// 
+		// [!^]
+		//	stop ignore all formats
+		// 
+		// [!]
+		//	reset all format
+		// 
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
 		//	if param is less than two, will be referred from left.
@@ -1277,9 +1286,6 @@ public:
 		//	ICon Resample
 		//	! = reset to default
 		//	+/- = add/minus to current
-		// 
-		// [!]
-		//	reset all format
 		// 
 		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
 		//	control shake.
@@ -1376,6 +1382,8 @@ public:
 		bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
 		bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
 
+		bool bIgnoreFormat = false;
+
 		while (true) {
 			// End
 			if ((pCurChar - pRawText) == pInputLen) {
@@ -1465,11 +1473,22 @@ public:
 							? GetTrimmedStr(pCurChar + equal + 1, end - equal - 1)
 							: controlStr;
 
-						do {
-							size_t savedLength = pSavedChar - pText - newLineCount * 2;
-							size_t savedLengthWithNewLine = pSavedChar - pText;
+						size_t savedLength = pSavedChar - pText - newLineCount * 2;
+						size_t savedLengthWithNewLine = pSavedChar - pText;
+
+						if (StringViewIEqu(controlStr, L"^")) {
+							bIgnoreFormat = true;
+						}
+
+						if (StringViewIEqu(controlStr, L"!^")) {
+							bIgnoreFormat = false;
+						}
 						
-							if (StringViewIEqu(controlStr, L"ICon")) {
+						if (StringViewIEqu(controlStr, L"ICon")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								DWORD hImage = FORMAT_INVALID_ICON;
 
 								do {
@@ -1502,7 +1521,7 @@ public:
 							}
 
 #pragma region StackedFormat
-							auto UpdateFormat = [&](auto& format, auto& content) {
+						auto UpdateFormat = [&](auto& format, auto& content) {
 								auto CopyFormat = [](FormatBasic* pFormat, auto& content) {
 									auto pData = (std::remove_reference_t<decltype(content)>*)(pFormat + 1);
 									memcpy(pData, &content, sizeof(content));
@@ -1527,8 +1546,12 @@ public:
 								}
 							};
 
-							// reset all
-							if (StringViewIEqu(controlStr, L"!")) {
+						// reset all
+						if (StringViewIEqu(controlStr, L"!")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								auto Reset = [&](auto& stack, auto& format) {
 									std::remove_reference_t<decltype(stack[0])> first = stack.front();
 									
@@ -1545,7 +1568,7 @@ public:
 								break;
 							}
 
-							auto StackManager = [&](auto& stack, auto& format, auto callBack) {
+						auto StackManager = [&](auto& stack, auto& format, auto callBack) {
 								if (!bEndOfRegion) {
 									std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
 
@@ -1563,8 +1586,8 @@ public:
 								UpdateFormat(format, stack.back());
 							};
 
-							// callbakc should calculate the diff size
-							auto DiffManager = [&](auto oldValue, auto callBack) {
+						// callbakc should calculate the diff size
+						auto DiffManager = [&](auto oldValue, auto callBack) {
 								bool bAdd = false;
 								bool bMinus = false;
 
@@ -1586,7 +1609,11 @@ public:
 									: (bMinus ? -1 : +1) * sizeDiff + oldValue;
 							};
 
-							if (StringViewIEqu(controlStr, L"IConOffsetX")) {
+						if (StringViewIEqu(controlStr, L"IConOffsetX")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1604,7 +1631,11 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"IConOffsetY")) {
+						if (StringViewIEqu(controlStr, L"IConOffsetY")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1622,7 +1653,11 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"IConScale")) {
+						if (StringViewIEqu(controlStr, L"IConScale")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1640,7 +1675,11 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"IConResample")) {
+						if (StringViewIEqu(controlStr, L"IConResample")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1655,7 +1694,11 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Shake")) {
+						if (StringViewIEqu(controlStr, L"Shake")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
 									auto& paramParser = controlParam;
 									controlParams.clear();
@@ -1699,8 +1742,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Color")
-								|| StringViewIEqu(controlStr, L"C")) {
+						if (StringViewIEqu(controlStr, L"Color")
+							|| StringViewIEqu(controlStr, L"C")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								StackManager(colorStack, colorFormat, [&](Color& color) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1765,14 +1812,18 @@ public:
 							}
 
 #pragma region FontControl
-							using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
+						using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
 
-							auto FontFormatControl = [&](FontFormatControlCallback callBack) {
-								StackManager(logFontStack, fontFormat, callBack);
-							};
+						auto FontFormatControl = [&](FontFormatControlCallback callBack) {
+							StackManager(logFontStack, fontFormat, callBack);
+						};
 
-							if (StringViewIEqu(controlStr, L"Font")
-								|| StringViewIEqu(controlStr, L"F")) {
+						if (StringViewIEqu(controlStr, L"Font")
+							|| StringViewIEqu(controlStr, L"F")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1790,8 +1841,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Size")
-								|| StringViewIEqu(controlStr, L"S")) {
+						if (StringViewIEqu(controlStr, L"Size")
+							|| StringViewIEqu(controlStr, L"S")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {									
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
@@ -1813,8 +1868,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Bold")
-								|| StringViewIEqu(controlStr, L"B")) {
+						if (StringViewIEqu(controlStr, L"Bold")
+							|| StringViewIEqu(controlStr, L"B")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfWeight = FW_BOLD;
 									});								
@@ -1822,8 +1881,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"!Bold")
-								|| StringViewIEqu(controlStr, L"!B")) {
+						if (StringViewIEqu(controlStr, L"!Bold")
+							|| StringViewIEqu(controlStr, L"!B")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfWeight = FW_NORMAL;
 									});
@@ -1831,8 +1894,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Italic")
-								|| StringViewIEqu(controlStr, L"I")) {
+						if (StringViewIEqu(controlStr, L"Italic")
+							|| StringViewIEqu(controlStr, L"I")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfItalic = TRUE;
 									});
@@ -1840,8 +1907,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"!Italic")
-								|| StringViewIEqu(controlStr, L"!I")) {
+						if (StringViewIEqu(controlStr, L"!Italic")
+							|| StringViewIEqu(controlStr, L"!I")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfItalic = FALSE;
 									});
@@ -1849,8 +1920,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Underline")
-								|| StringViewIEqu(controlStr, L"U")) {
+						if (StringViewIEqu(controlStr, L"Underline")
+							|| StringViewIEqu(controlStr, L"U")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfUnderline = TRUE;
 									});
@@ -1858,8 +1933,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"!Underline")
-								|| StringViewIEqu(controlStr, L"!U")) {
+						if (StringViewIEqu(controlStr, L"!Underline")
+							|| StringViewIEqu(controlStr, L"!U")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfUnderline = FALSE;
 									});
@@ -1867,8 +1946,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"StrikeOut")
-								|| StringViewIEqu(controlStr, L"S")) {
+						if (StringViewIEqu(controlStr, L"StrikeOut")
+							|| StringViewIEqu(controlStr, L"S")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfStrikeOut = TRUE;
 									});
@@ -1876,8 +1959,12 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"!StrikeOut")
-								|| StringViewIEqu(controlStr, L"!S")) {
+						if (StringViewIEqu(controlStr, L"!StrikeOut")
+							|| StringViewIEqu(controlStr, L"!S")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfStrikeOut = FALSE;
 									});
@@ -1888,8 +1975,6 @@ public:
 #pragma endregion
 
 						bValidCommand = false;
-
-						} while (0);
 					} while (0);
 
 					// copy invalid command
