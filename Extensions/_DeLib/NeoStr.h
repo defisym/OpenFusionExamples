@@ -78,6 +78,7 @@ constexpr auto DEFAULT_EBORDER_OFFSET = 20;
 constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
+constexpr auto DEFAULT_PARAM = L" ";
 
 constexpr auto SHAKE_RANDOM_RANGE = 1000;
 
@@ -86,6 +87,8 @@ constexpr auto FORMAT_IGNORE_INCOMPLETE = 0b00000010;
 
 constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
 //constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_INCOMPLETE;
+
+constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
 constexpr auto FORMAT_INVALID_ICON = (DWORD)-1;
 
@@ -1208,7 +1211,11 @@ public:
 		return this->pText;
 	}
 
-	inline void GetFormat(LPCWSTR pStr, size_t flags = FORMAT_IGNORE_DEFAULTFLAG, bool bForced = false) {
+	inline void GetFormat(LPCWSTR pStr
+		, size_t flags = FORMAT_IGNORE_DEFAULTFLAG
+		, bool bForced = false		// force refresh
+		, size_t operation = 0
+		, size_t operationParam = 0) {
 		this->bTextValid = true;
 
 		if (pStr == nullptr) {
@@ -1223,6 +1230,10 @@ public:
 			this->bTextValid = false;
 
 			return;
+		}
+
+		if (operation != 0) {
+			bForced = true;
 		}
 
 		if (!bForced 
@@ -1259,6 +1270,10 @@ public:
 		// 
 		// [^]
 		//	ignore all formats after this
+		// 
+		// [^-]
+		//	ignore all formats except [ICon] after this
+		//	icon controls like [IConOffsetX] are also ignored
 		// 
 		// [!^]
 		//	stop ignore all formats
@@ -1381,12 +1396,30 @@ public:
 		this->shakeFormat.clear();
 		this->shakeFormat.emplace_back(FormatShake{ 0,0,shakeStack.back() });
 
+
+		auto GetRawStringByFilteredStringLength = [&]() {
+			auto offset = size_t(pSavedChar - pText);
+
+			if ((operation & FORMAT_OPERATION_GetRawStringByFilteredStringLength)
+				&& offset + 1 > operationParam) {
+				pCurChar[0] = L'\0';
+				
+#ifdef _DEBUG
+				pSavedChar[0] = L'@';
+				pSavedChar[1] = L'\0';
+#endif
+
+				throw FORMAT_OPERATION_GetRawStringByFilteredStringLength;
+			}
+		};
+
 		size_t newLineCount = 0;
 
 		bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
 		bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
 
 		bool bIgnoreFormat = false;
+		bool bIgnoreFormatExceptICon = false;
 
 		while (true) {
 			// End
@@ -1472,10 +1505,14 @@ public:
 							}
 						};
 
-						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, equal - bEndOfRegion - 1);
+						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, max(0, (long long)equal - bEndOfRegion - 1));
 						std::wstring_view controlParam = !bEndOfRegion
-							? GetTrimmedStr(pCurChar + equal + 1, end - equal - 1)
+							? GetTrimmedStr(pCurChar + equal + 1, max(0, (long long)end - (long long)equal - 1))
 							: controlStr;
+
+						if (controlParam.size() == 0) {
+							controlParam = DEFAULT_PARAM;
+						}
 
 						size_t savedLength = pSavedChar - pText - newLineCount * 2;
 						size_t savedLengthWithNewLine = pSavedChar - pText;
@@ -1484,45 +1521,50 @@ public:
 							bIgnoreFormat = true;
 						}
 
+						if (StringViewIEqu(controlStr, L"^-")) {
+							bIgnoreFormatExceptICon = true;
+						}
+
 						if (StringViewIEqu(controlStr, L"!^")) {
 							bIgnoreFormat = false;
+							bIgnoreFormatExceptICon = false;
 						}
 						
 						if (StringViewIEqu(controlStr, L"ICon")) {
-								if (bIgnoreFormat) {
+							if (bIgnoreFormat && !bIgnoreFormatExceptICon) {
+								break;
+							}
+
+							DWORD hImage = FORMAT_INVALID_ICON;
+
+							do {
+								if (this->pIConData->pIConObject == nullptr || this->pIConData->iconParamParser == nullptr) {
 									break;
 								}
 
-								DWORD hImage = FORMAT_INVALID_ICON;
+								auto& paramParser = controlParam;
+								controlParams.clear();
 
 								do {
-									if (this->pIConData->pIConObject == nullptr || this->pIConData->iconParamParser == nullptr) {
-										break;
-									}
 
-									auto& paramParser = controlParam;
-									controlParams.clear();
+								} while (ParseParamCore(paramParser
+									, [&controlParams](std::wstring_view& param) {
+										controlParams.emplace_back(GetTrimmedStr(param));
+									}));
 
-									do {
+								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
+							} while (0);
 
-									} while (ParseParamCore(paramParser
-										, [&controlParams](std::wstring_view& param) {
-											controlParams.emplace_back(GetTrimmedStr(param));
-										}));
+							this->iConFormat.emplace_back(FormatICon{ savedLength
+																		, savedLengthWithNewLine
+																		, hImage });
 
-									hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
-								} while (0);
+							// space for icon
+							pSavedChar[0] = DEFAULT_CHARACTER;
+							pSavedChar++;
 
-								this->iConFormat.emplace_back(FormatICon{ savedLength
-																			, savedLengthWithNewLine
-																			, hImage });
-
-								// space for icon
-								pSavedChar[0] = DEFAULT_CHARACTER;
-								pSavedChar++;
-
-								break;
-							}
+							break;
+						}
 
 #pragma region StackedFormat
 						auto UpdateFormat = [&](auto& format, auto& content) {
@@ -1590,7 +1632,7 @@ public:
 								UpdateFormat(format, stack.back());
 							};
 
-						// callbakc should calculate the diff size
+						// callback should calculate the diff size
 						auto DiffManager = [&](auto oldValue, auto callBack) {
 								bool bAdd = false;
 								bool bMinus = false;
@@ -1989,6 +2031,8 @@ public:
 
 					// include ']'
 					pCurChar += end + 1;
+
+					GetRawStringByFilteredStringLength();
 					
 					continue;
 				}
@@ -1998,6 +2042,8 @@ public:
 			
 			pCurChar++;
 			pSavedChar++;
+	  
+			GetRawStringByFilteredStringLength();
 		}
 
 		pTextLen = wcslen(pText);
@@ -2038,7 +2084,7 @@ public:
 		bool bNegRowSpace = nRowSpace < 0;
 
 		size_t notAtStartCharPos = -1;
-		bool bPunctationSkip = false;
+		bool bPunctuationSkip = false;
 
 		auto fontIt = this->fontFormat.begin();
 		auto localLogFont = fontIt->logFont;
@@ -2078,7 +2124,7 @@ public:
 					skipLine = (pChar == pCharStart);
 
 					if ((notAtStartCharPos + 1) == pChar) {
-						bPunctationSkip = true;
+						bPunctuationSkip = true;
 					}
 				};
 
@@ -2179,13 +2225,13 @@ public:
 					: maxWidth;
 			}
 
-			if (!bPunctationSkip) {
+			if (!bPunctuationSkip) {
 				// empty line (skipLine == true) also need to add height
 				// ...unless it's following a 'not at start' punctuation
 				totalHeight += (curHeight + nRowSpace);
 			}
 			else {
-				bPunctationSkip = false;
+				bPunctuationSkip = false;
 			}
 		}
 

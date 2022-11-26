@@ -110,6 +110,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GIPS, M_EXPRESSION_GIPS, EXP_EXPRESSION_GIPS, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_POS,
 		
 		IDMN_EXPRESSION_GFF, M_EXPRESSION_GFF, EXP_EXPRESSION_GFF, 0, 0,
+		
+		IDMN_EXPRESSION_GRSBFSL, M_EXPRESSION_GRSBFSL, EXP_EXPRESSION_GRSBFSL, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_STRING, M_POS, M_FILTERFLAGS,
 
 		};
 
@@ -801,7 +803,7 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 		? rdPtr->filterFlags
 		: flags);
 
-	*rdPtr->pExpRet = pFilter.GetText();
+	*rdPtr->pExpRet = pFilter.GetText() != nullptr ? pFilter.GetText() : Default_Str;
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -962,6 +964,31 @@ long WINAPI DLLExport Expression_GetFilterFlag(LPRDATA rdPtr, long param1) {
 	return (long)(rdPtr->filterFlags);
 }
 
+long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t filteredLength = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+
+	NeoStr pFilter(0, 0, NULL);
+
+	try {		
+		pFilter.GetFormat(pStr
+			, flags == -1 ? rdPtr->filterFlags : flags
+			, true
+			, FORMAT_OPERATION_GetRawStringByFilteredStringLength
+			, filteredLength);		
+	}
+	catch (int) {
+		*rdPtr->pExpRet = pFilter.GetRawText() != nullptr ? pFilter.GetRawText() : Default_Str;
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->pExpRet->c_str());
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1060,6 +1087,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetParamString,
 			
 			Expression_GetFilterFlag,
+
+			Expression_GetRawStringByFilteredStringLength,			
 
 			0
 			};

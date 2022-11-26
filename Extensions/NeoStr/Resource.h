@@ -282,6 +282,8 @@
 
 #define	IDMN_EXPRESSION_GFF 			    27030
 
+#define	IDMN_EXPRESSION_GRSBFSL			    27031
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -326,6 +328,8 @@
 #define	M_EXPRESSION_GIPS			        7029
 
 #define	M_EXPRESSION_GFF			        7030
+
+#define	M_EXPRESSION_GRSBFSL		        7031
 
 // Names of expression parameters
 #define M_POS				                7500

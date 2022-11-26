@@ -197,6 +197,7 @@ BEGIN
         MENUITEM "Get Display String", IDMN_EXPRESSION_GSTR
         MENUITEM "Get Filtered String", IDMN_EXPRESSION_GFS
         MENUITEM "Get Padding String", IDMN_EXPRESSION_GPS
+        MENUITEM "Get Raw String By Filtered String Length", IDMN_EXPRESSION_GRSBFSL
         MENUITEM "Get Non Command Offset", IDMN_EXPRESSION_GNCO
         MENUITEM SEPARATOR
         POPUP "Alignment"
@@ -551,7 +552,8 @@ BEGIN
     M_EXPRESSION_GIPN       "GetIConParamNum("
     M_EXPRESSION_GIPS       "GetIConParamString$("
     
-    M_EXPRESSION_GFF       "GetFilterFlag("
+    M_EXPRESSION_GFF        "GetFilterFlag("
+    M_EXPRESSION_GRSBFSL    "GetRawStringByFilteredStringLength$("
 END
 
 #endif    // English (U.S.) resources

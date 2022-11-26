@@ -96,7 +96,9 @@
 
 #define	EXP_EXPRESSION_GFF			    	30
 
-#define	EXP_LAST                    		31
+#define	EXP_EXPRESSION_GRSBFSL		    	31
+
+#define	EXP_LAST                    		32
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
