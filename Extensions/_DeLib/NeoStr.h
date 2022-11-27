@@ -1522,6 +1522,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"^-")) {
+							bIgnoreFormat = true;
 							bIgnoreFormatExceptICon = true;
 						}
 
