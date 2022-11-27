@@ -348,6 +348,7 @@ BEGIN
             MENUITEM "Get FileList Size",      IDMN_EXPRESSION_GFLS  
             MENUITEM "Get FileList At",      IDMN_EXPRESSION_GFLA  
         END
+        MENUITEM "Get Full FileName", IDMN_EXPRESSION_GFFN
         MENUITEM SEPARATOR
         POPUP "Hash"        
         BEGIN
@@ -659,6 +660,8 @@ BEGIN
     M_EXPRESSION_GFLS "GetFileListSize ("
     M_EXPRESSION_GFLA "GetFileListAt$ ("
     PARA_EXPRESSION_GFLA "Position"
+
+    M_EXPRESSION_GFFN "GetFullFileName$ ("        
 END
 
 STRINGTABLE

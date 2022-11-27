@@ -176,6 +176,8 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GCMW, M_EXPRESSION_GCMW, EXP_EXPRESSION_GCMW, 0, 0,
 	IDMN_EXPRESSION_GCMH, M_EXPRESSION_GCMH, EXP_EXPRESSION_GCMH, 0, 0,
 
+	IDMN_EXPRESSION_GFFN, M_EXPRESSION_GFFN, EXP_EXPRESSION_GFFN, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_ACTION_GFL
+
 };
 
 // ============================================================================
@@ -1750,6 +1752,82 @@ long WINAPI DLLExport GetCurMonitorHeight(LPRDATA rdPtr, long param1) {
 	return rdPtr->curMonitorHeight;
 }
 
+long WINAPI DLLExport GetFullFileName(LPRDATA rdPtr, long param1) {
+	LPCWSTR pFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	WIN32_FIND_DATA wfd;
+	HANDLE hFind = FindFirstFile(pFilePath, &wfd);
+
+	auto GetPathName = [](LPCWSTR pFilePath) {
+		auto fullFileName = GetFullPathNameStr(pFilePath);
+		auto slashPos = fullFileName.find_last_of(L'\\');
+		auto dotPos = fullFileName.find_last_of(L'.');
+
+		auto path = fullFileName.substr(0, slashPos);
+
+		if (slashPos == std::wstring::npos) {
+			return std::make_tuple(path, std::wstring(L""), std::wstring(L""));
+		}
+
+		auto fileName = fullFileName.substr(slashPos + 1, dotPos - slashPos - 1);
+
+		if (dotPos == std::wstring::npos) {
+			return std::make_tuple(path, fileName, std::wstring(L""));
+		}
+
+		auto ext = fullFileName.substr(dotPos + 1);
+
+		return std::make_tuple(path, fileName, ext);
+	};
+
+	do {
+		if (INVALID_HANDLE_VALUE != hFind) {
+			NewStr(rdPtr->FileListOutPut, pFilePath);
+		}
+		else {
+			auto [path, fileName, ext] = std::move(GetPathName(pFilePath));
+
+			std::vector<std::wstring> fileList;
+			GetFileList(&fileList, path);
+
+			if (fileList.empty()) {
+				NewStr(rdPtr->FileListOutPut, Default_Str);
+
+				break;
+			}
+
+			auto it = std::find_if(fileList.begin(), fileList.end(), [&](const std::wstring& filePath) {
+				auto [localPath, localFileName, localExt] = GetPathName(filePath.c_str());
+			
+				if (StrIEqu(fileName.c_str(), localFileName.c_str())) {
+					return true;
+				}
+
+				return false;
+				});
+
+			if (it == fileList.end()) {
+				NewStr(rdPtr->FileListOutPut, L"INVALID");
+
+				break;
+			}
+
+			auto [localPath, localFileName, localExt] = std::move(GetPathName(it->c_str()));
+			auto acutalFileName = std::wstring(pFilePath) + std::wstring(L".") + localExt;
+
+			NewStr(rdPtr->FileListOutPut, acutalFileName);
+
+			break;
+		}
+	} while (0);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->FileListOutPut;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1918,6 +1996,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	GetCurMonitorWidth,
 	GetCurMonitorHeight,
+
+	GetFullFileName,
 	
 	0
 };
