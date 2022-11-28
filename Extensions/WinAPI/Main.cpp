@@ -1785,19 +1785,21 @@ long WINAPI DLLExport GetFullFileName(LPRDATA rdPtr, long param1) {
 			NewStr(rdPtr->FileListOutPut, pFilePath);
 		}
 		else {
+			const auto pInvalidRet = L"INVALID";
+
 			auto [path, fileName, ext] = std::move(GetPathName(pFilePath));
 
 			std::vector<std::wstring> fileList;
 			GetFileList(&fileList, path);
 
 			if (fileList.empty()) {
-				NewStr(rdPtr->FileListOutPut, Default_Str);
+				NewStr(rdPtr->FileListOutPut, pInvalidRet);
 
 				break;
 			}
 
 			auto it = std::find_if(fileList.begin(), fileList.end(), [&](const std::wstring& filePath) {
-				auto [localPath, localFileName, localExt] = GetPathName(filePath.c_str());
+				auto [localPath, localFileName, localExt] = std::move(GetPathName(filePath.c_str()));
 			
 				if (StrIEqu(fileName.c_str(), localFileName.c_str())) {
 					return true;
@@ -1807,7 +1809,7 @@ long WINAPI DLLExport GetFullFileName(LPRDATA rdPtr, long param1) {
 				});
 
 			if (it == fileList.end()) {
-				NewStr(rdPtr->FileListOutPut, L"INVALID");
+				NewStr(rdPtr->FileListOutPut, pInvalidRet);
 
 				break;
 			}
