@@ -8,6 +8,21 @@
 #include <functional>
 #include <string_view>
 
+#include <boost/regex.hpp>
+
+using boost::wregex;
+using boost::wsregex_token_iterator;
+using boost::wsmatch;
+
+using boost::regex_match;
+using boost::regex_search;
+using boost::regex_replace;
+
+using RegexFlag = boost::regex_constants::syntax_option_type;
+using boost::regex_constants::icase;
+using boost::regex_constants::ECMAScript;
+using boost::regex_constants::optimize;
+
 //#include <FusionUtilities.h>
 #include <RandGenerator.h>
 
@@ -78,6 +93,8 @@ constexpr auto DEFAULT_EBORDER_OFFSET = 20;
 constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
+constexpr auto EMPTY_CHAR = L' ';
+
 constexpr auto DEFAULT_PARAM = L" ";
 
 constexpr auto SHAKE_RANDOM_RANGE = 1000;
@@ -138,6 +155,10 @@ private:
 
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
+
+	wchar_t regstr[2] = { L'\0' };
+	wregex* pCJK = nullptr;
+	wregex* pEmpty = nullptr;
 
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
@@ -494,6 +515,20 @@ private:
 		return CheckMatch(wChar, notAtEnd);
 	}
 
+	inline bool RegexCore(wregex* pRegex, wchar_t wChar) {
+		regstr[0] = wChar;
+
+		return regex_match(regstr, *pRegex);
+	}
+
+	inline bool NotCJK(wchar_t wChar) {
+		return RegexCore(this->pCJK, wChar);
+	}
+
+	inline bool NotEmpty(wchar_t wChar) {
+		return !RegexCore(this->pEmpty, wChar);
+	}
+
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
 		//if (this->dwDTFlags & DT_LEFT) {
@@ -621,6 +656,12 @@ public:
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
+		// https://www.jianshu.com/p/fcbc5cd06f39
+		this->pCJK = new wregex(L"[\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+			, ECMAScript | optimize);
+		this->pEmpty = new wregex(L"[\\s]"
+			, ECMAScript | optimize);
+
 		this->pFontCollection = pFontCollection;
 
 		if (!pFontCache || !pCharSzCacheWithFont) {
@@ -691,6 +732,12 @@ public:
 	~NeoStr() {
 		//SelectObject(this->hdc, (HFONT)NULL);
 		ReleaseDC(NULL, this->hdc);
+
+		delete this->pCJK;
+		this->pCJK = nullptr;
+
+		delete this->pEmpty;
+		this->pEmpty = nullptr;
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
@@ -2084,6 +2131,10 @@ public:
 		bool bNegColSpace = nColSpace < 0;
 		bool bNegRowSpace = nRowSpace < 0;
 
+		bool bInWord = false;
+		size_t notCJKStart = -1;
+		size_t notCJKStartWidth = -1;
+
 		size_t notAtStartCharPos = -1;
 		bool bPunctuationSkip = false;
 
@@ -2091,6 +2142,8 @@ public:
 		auto localLogFont = fontIt->logFont;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
+			bool bNewLineBegin = true;
+
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
 
@@ -2098,6 +2151,17 @@ public:
 			long curHeight = 0;
 
 			pCharStart = pChar;
+
+			// ignore all empty contents followed in the end of line
+			auto EscapeEndOfLine = [&]() {
+#ifdef _DEBUG
+				auto curChar = (pText + pChar)[0];
+#endif // _DEBUG				
+
+				while (!NotEmpty((pText + pChar)[0])) {
+					pChar += 1;
+				}
+			};
 
 			while (true) {
 				auto pCurChar = pText + pChar;
@@ -2112,6 +2176,32 @@ public:
 					fontIt++;
 				}
 
+				// word break
+				auto bCurNotCJK = NotCJK(curChar);
+
+				auto InWord = [&]() {
+					bInWord = true;
+
+					notCJKStart = pChar;
+					notCJKStartWidth = curWidth;
+				};
+
+				auto OutWord = [&]() {
+					bInWord = false;
+
+					notCJKStart = -1;
+					notCJKStartWidth = -1;
+				};
+
+				if (bCurNotCJK && !bInWord) {
+					InWord();
+				}
+
+				if (!bCurNotCJK && bInWord) {
+					OutWord();
+				}
+
+				// size
 				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
 				auto charSz = &pStrSizeArr [pChar];
 
@@ -2147,6 +2237,37 @@ public:
 						}
 					}
 
+					// word break
+					if (bInWord) {
+						// merge
+						auto bMerge = false;
+
+						//if (nextChar != L'\0') {
+						//	auto nextNextChar = pCurChar[2];
+						//	bMerge = NotCJK(nextChar) && !NotCJK(nextNextChar);
+						//}
+
+						if (bMerge) {
+							pChar += 2;
+
+							break;
+						}
+						// next line
+						else if ((curWidth - notCJKStartWidth) < (size_t)rcWidth) {
+							pChar = notCJKStart;
+							curWidth = notCJKStartWidth;
+
+							OutWord();
+
+							break;
+						}
+						// too narrow, do nothing
+						else {
+
+						}
+					}
+
+					// punctuation
 					auto pPreviousChar = pText + pChar - 1;
 					auto PreviousChar = pPreviousChar[0];
 
@@ -2204,7 +2325,17 @@ public:
 			}
 
 			if (!skipLine) {
+#ifdef _DEBUG
+				std::wstring str(pText + pChar);
+#endif // _DEBUG
+
+				EscapeEndOfLine();
+
 				auto end = min(pChar, pTextLen) - 2 * newLine;
+				
+				if (end <= pCharStart) {
+					end = pCharStart;
+				}
 
 				this->strPos.emplace_back(StrPos {
 					pCharStart,			// start
@@ -2218,7 +2349,7 @@ public:
 					});
 
 #ifdef _DEBUG
-				std::wstring str(pText + pCharStart, end - pCharStart);
+				std::wstring strLine(pText + pCharStart, end - pCharStart);
 #endif // _DEBUG
 
 				maxWidth = curWidth != 0
