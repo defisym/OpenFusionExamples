@@ -2146,6 +2146,7 @@ public:
 
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
+			bool bNewLineHandled = false;
 
 			long curWidth = 0;
 			long curHeight = 0;
@@ -2153,12 +2154,25 @@ public:
 			pCharStart = pChar;
 
 			// ignore all empty contents followed in the end of line
-			auto EscapeEndOfLine = [&]() {
-#ifdef _DEBUG
-				auto curChar = (pText + pChar)[0];
-#endif // _DEBUG				
+			auto EscapeEmpty = [&]() {
+				while (true) {
+					auto curChar = (pText + pChar)[0];
+					auto nextChar = (pText + pChar)[1];
 
-				while (!NotEmpty((pText + pChar)[0])) {
+					if (curChar == L'\0') {
+						break;
+					}
+
+					if (NotEmpty(curChar)) {
+						break;
+					}
+
+					if (curChar == L'\r' && nextChar == L'\n') {
+						pChar += 2;
+
+						break;
+					}
+
 					pChar += 1;
 				}
 			};
@@ -2213,6 +2227,7 @@ public:
 				auto HandleNewLine = [&]() {
 					newLine = true;
 					skipLine = (pChar == pCharStart);
+					bNewLineHandled = true;
 
 					if ((notAtStartCharPos + 1) == pChar) {
 						bPunctuationSkip = true;
@@ -2329,7 +2344,15 @@ public:
 				std::wstring str(pText + pChar);
 #endif // _DEBUG
 
-				EscapeEndOfLine();
+				if (!bNewLineHandled) {
+					EscapeEmpty();
+				}
+
+				bNewLineHandled = false;
+
+#ifdef _DEBUG
+				std::wstring strEscaped(pText + pChar);
+#endif // _DEBUG
 
 				auto end = min(pChar, pTextLen) - 2 * newLine;
 				
