@@ -2154,6 +2154,9 @@ public:
 			pCharStart = pChar;
 
 			// ignore all empty contents followed in the end of line
+			auto IsNewLine = [](const wchar_t& cur, const wchar_t& next) {
+				return (cur == L'\r' && next == L'\n');
+			};
 			auto EscapeEmpty = [&]() {
 				while (true) {
 					auto curChar = (pText + pChar)[0];
@@ -2167,7 +2170,7 @@ public:
 						break;
 					}
 
-					if (curChar == L'\r' && nextChar == L'\n') {
+					if (IsNewLine(curChar, nextChar)) {
 						pChar += 2;
 
 						break;
@@ -2219,11 +2222,12 @@ public:
 				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
 				auto charSz = &pStrSizeArr [pChar];
 
-				totalWidth = curWidth;
-
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
 
+				bNewLineHandled = false;
+
+				// handle new line state and add pointer
 				auto HandleNewLine = [&]() {
 					newLine = true;
 					skipLine = (pChar == pCharStart);
@@ -2232,6 +2236,8 @@ public:
 					if ((notAtStartCharPos + 1) == pChar) {
 						bPunctuationSkip = true;
 					}
+
+					pChar += 2;
 				};
 
 				if (curWidth > rcWidth) {
@@ -2239,9 +2245,8 @@ public:
 					bool bTooNarrow = charSz->width > rcWidth;
 
 					if (bTooNarrow) {
-						if (curChar == L'\r' && nextChar == L'\n') {
+						if (IsNewLine(curChar, nextChar)) {
 							HandleNewLine();
-							pChar += 2;
 
 							break;
 						}
@@ -2323,9 +2328,8 @@ public:
 					}
 				}
 
-				if (curChar == L'\r' && nextChar == L'\n') {
+				if (IsNewLine(curChar, nextChar)) {
 					HandleNewLine();
-					pChar += 2;
 
 					break;
 				}
@@ -2348,8 +2352,6 @@ public:
 					EscapeEmpty();
 				}
 
-				bNewLineHandled = false;
-
 #ifdef _DEBUG
 				std::wstring strEscaped(pText + pChar);
 #endif // _DEBUG
@@ -2360,12 +2362,14 @@ public:
 					end = pCharStart;
 				}
 
+				// totalWidth not used
+				totalWidth = curWidth;
+
 				this->strPos.emplace_back(StrPos {
 					pCharStart,			// start
 					end,				// end
-					end - pCharStart,	// length
-					totalWidth,			// width
-					//curWidth,			// width
+					end - pCharStart,	// length				
+					curWidth,			// width
 					curHeight,			// height;
 					0,					// x
 					totalHeight,		// y
