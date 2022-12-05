@@ -1644,12 +1644,15 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
-		audioQueue.pause();
-		videoQueue.pause();
-
 		// must be flushed before free the context
 		audioQueue.flush();
 		videoQueue.flush();
+
+		// flush will restart queue and may cause dead lock
+		// so pause again here
+		// as call destructor directly is UB
+		audioQueue.pause();
+		videoQueue.pause();
 
 		SDL_PauseAudio(true);
 

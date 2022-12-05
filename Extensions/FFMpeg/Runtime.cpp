@@ -158,13 +158,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		
 	delete rdPtr->pPreviousTimer;
 
+	rdPtr->pData->Destroy(&rdPtr->pFFMpeg);
 	CloseGeneral(rdPtr);
 
 	delete rdPtr->pFilePath;
 
-	delete rdPtr->pRetStr;
-
-	rdPtr->pData->Destroy(&rdPtr->pFFMpeg);
+	delete rdPtr->pRetStr;	
 
 	SetExtUserData(rdPtr->pData);
 
