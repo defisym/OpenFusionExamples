@@ -3,6 +3,8 @@ gradle
 
 .idea
 
+build
+
 androidSdk.pdf
 build.gradle
 gradle.properties
