@@ -2206,8 +2206,16 @@ public:
 				auto OutWord = [&]() {
 					bInWord = false;
 
-					notCJKStart = -1;
-					notCJKStartWidth = -1;
+					//notCJKStart = -1;
+					//notCJKStartWidth = -1;
+				};
+
+				auto WB_AbleToNextLine = [&]() {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
+				auto WB_Backword = [&]() {
+					pChar = notCJKStart;
+					curWidth = notCJKStartWidth;
+
+					OutWord();
 				};
 
 				if (bCurNotCJK && !bInWord) {
@@ -2273,11 +2281,8 @@ public:
 							break;
 						}
 						// next line
-						else if ((curWidth - notCJKStartWidth) < (size_t)rcWidth) {
-							pChar = notCJKStart;
-							curWidth = notCJKStartWidth;
-
-							OutWord();
+						else if (WB_AbleToNextLine()) {
+							WB_Backword();
 
 							break;
 						}
@@ -2294,6 +2299,14 @@ public:
 					auto previousCharSz = &pStrSizeArr[pChar - 1];
 
 					auto Backward = [&]() {
+						if (NotCJK(PreviousChar)) {
+							if (WB_AbleToNextLine()) {
+								WB_Backword();
+							}
+
+							return;
+						}
+
 						if (curWidth - (previousCharSz->width + nColSpace + charSz->width) <= 0) {
 							return;
 						}
