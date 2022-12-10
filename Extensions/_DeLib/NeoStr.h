@@ -2298,7 +2298,7 @@ public:
 
 					auto previousCharSz = &pStrSizeArr[pChar - 1];
 
-					auto Backward = [&]() {
+					auto Punc_Backward = [&]() {
 						if (NotCJK(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
@@ -2324,7 +2324,7 @@ public:
 
 						if (NotAtStart(nextChar)) {
 							if (pChar != pCharStart) {
-								Backward();
+								Punc_Backward();
 							}
 
 							break;
@@ -2333,7 +2333,7 @@ public:
 					else {
 						if (pChar != pCharStart) {
 							if (NotAtEnd(PreviousChar)) {
-								Backward();
+								Punc_Backward();
 							}
 						}
 
