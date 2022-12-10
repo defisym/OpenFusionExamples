@@ -157,14 +157,13 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // 
 
 LPCTSTR szDep[] = {
-	////_T("Unicode\\Nsteam_api.dll"),
-	//_T("steam_api.dll"),
+	_T("neoSteam_api.dll"),
+
 	NULL
 };
 
 LPCTSTR* WINAPI DLLExport GetDependencies()
 {
-	//return NULL;	// szDep;
 	return szDep;	// szDep;
 }
 
