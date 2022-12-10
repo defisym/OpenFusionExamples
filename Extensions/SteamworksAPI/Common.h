@@ -46,7 +46,10 @@
 #include	"Surface.h"
 
 // My headers
-#include "steam/steam_api.h"
+#pragma warning( disable : 4996)
+#pragma warning( disable : 4819)
+
+#include	"steam/steam_api.h"
 
 #include	"GeneralDefinition.h"
 #include	"Definition.h"
