@@ -65,14 +65,25 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
-	//TCHAR rootdir[MAX_PATH];
-	//TCHAR DLLPath[2 * MAX_PATH];
-	//GetCurrentDirectory(MAX_PATH - 1, rootdir);
-	//swprintf(DLLPath, _T("%s\\%s"), rootdir, _T("steam_api.dll"));
-	//rdPtr->SteamAPI = LoadLibrary(DLLPath);
 
-	SteamAPI_Init();
+	auto bInit = SteamAPI_Init();
+	
+	if (!bInit) {
+		MSGBOX(L"Init Failed !");
+
+		exit(0);
+	}
+
 	int result = SteamApps()->GetAppBuildId();
+	MSGBOX(L"Build ID: "+_itos(result));
+
+	uint32 unSessionCount = SteamRemotePlay()->GetSessionCount();
+	if (unSessionCount == 0) {
+		MSGBOX(L"Play On PC");
+	}
+	else {
+		MSGBOX(L"Play On Remote");
+	}
 
 	// No errors
 	return 0;
@@ -90,7 +101,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-	//FreeLibrary(rdPtr->SteamAPI);
+	SteamAPI_Shutdown();
 
 	// No errors
 	return 0;

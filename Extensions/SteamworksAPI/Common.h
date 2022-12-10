@@ -22,21 +22,47 @@
 #define	MINBUILD	292
 #endif
 
+
+#ifdef _DEBUG
+#include	<assert.h>
+#endif
+
+//#define _CONSOLE
+
+#ifdef _CONSOLE
+#include <iostream>
+#endif
+
+//#define _USE_CRTDBG
+
+#ifdef _USE_CRTDBG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
+
+// My headers
+#include "steam/steam_api.h"
+
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"
 #include	"main.h"
 #include	"TigsExt.hpp"
 
-// My headers
-#include "steam/steam_api.h"
+// My header
+#include	"Fusion.h"
+#include	"FusionUtilities.h"
+
 
 //DLL
-#pragma comment(lib,"steam_api.lib")
-#pragma comment(lib,"sdkencryptedappticket.lib")
+#pragma comment(lib,"neoSteam_api.lib")
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

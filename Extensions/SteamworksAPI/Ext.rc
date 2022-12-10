@@ -51,7 +51,7 @@ BEGIN
             VALUE "FileDescription", "Steamworks API\0"
             VALUE "FileVersion", "0.0.0.1\0"
             VALUE "InternalName", "SteamworksAPI\0"
-            VALUE "LegalCopyright", "Copyright 2021 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2021 ~ 2023 Defisym\0"
             VALUE "OriginalFilename", "SteamworksAPI.mfx\0"        
             VALUE "ProductVersion", "0.0.0.1\0"          
             VALUE "SpecialBuild", "00000001\0"
@@ -217,7 +217,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Steamworks API"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2019~2021 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021~2023 Defisym"
     IDST_COMMENT            "Steamworks API not included in Steamworks Obj"
     IDST_HTTP               "https://twitter.com/defisym"
 END

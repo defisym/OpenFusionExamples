@@ -64,8 +64,8 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\DEV\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Release\</OutDir>
@@ -73,8 +73,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\DEV\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Run_Only\</OutDir>
@@ -82,8 +82,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Steam\steamapps\common\Clickteam Fusion 2.5\Fusion25SDK\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\DEV\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
     <Midl>
@@ -96,7 +96,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -110,6 +110,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -118,7 +120,7 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;steam_api.lib;sdkencryptedappticket.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;neoSteam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -127,6 +129,7 @@
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>.\redistributable_bin;.\public\steam\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -145,7 +148,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -158,6 +161,8 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -166,7 +171,7 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;steam_api.lib;sdkencryptedappticket.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;neoSteam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -174,6 +179,7 @@
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>.\redistributable_bin;.\public\steam\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -181,7 +187,8 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Copy file to installer directory</Message>
-      <Command>copy $(TargetPath) .\ToInstall\Files\Extensions\Unicode</Command>
+      <Command>copy $(TargetPath) ".\ToInstall\Files\Extensions\Unicode"
+copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Unicode"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -196,7 +203,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>.\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -209,6 +216,8 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;RUN_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -217,7 +226,7 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;steam_api.lib;sdkencryptedappticket.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;neoSteam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -225,6 +234,7 @@
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>.\redistributable_bin;.\public\steam\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -232,7 +242,8 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>Copy extension to installer directory</Message>
-      <Command>copy $(TargetPath) .\ToInstall\Files\Data\Runtime\Unicode</Command>
+      <Command>copy $(TargetPath) ".\ToInstall\Files\Data\Runtime\Unicode"
+copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\Unicode"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -277,7 +288,10 @@
     <ClInclude Include="..\..\Inc\Surface.h" />
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
+    <ClInclude Include="..\_DeLib\FusionUtilities.h" />
+    <ClInclude Include="..\_DeLib\WindowsCommon.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="Definition.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
   </ItemGroup>
