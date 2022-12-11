@@ -198,11 +198,6 @@ constexpr inline Output ConvertToType(Input l) {
 	return *((Output*)&l);
 }
 
-// MSBOX
-inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
-	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
-}
-
 // Build Types
 #include <initializer_list>
 
