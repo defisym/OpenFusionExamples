@@ -5,7 +5,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
 |Platform|Progress|
 |---|---|
 |Windows|Working on it|
-|Android|Not ported yet|
+|Android|Working on it|
 |iOS|Playing with hackintosh, Yeah!|
 |HTML5|Not ported yet|
 
