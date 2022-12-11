@@ -8,13 +8,15 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
-#define	CND_LAST					1
+#define	CND_CONDITION_RPO				0
+
+#define	CND_LAST						1
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION					0
+
 #define	ACT_LAST					1
 
 // -------------------------------
@@ -23,6 +25,7 @@
 #define	EXP_EXPRESSION				0
 #define EXP_EXPRESSION2				1
 #define EXP_EXPRESSION3				2
+
 #define	EXP_LAST                    3
 
 // ---------------------
@@ -36,8 +39,13 @@ typedef struct tagEDATA_V1
 	extHeader		eHeader;
 
 	// Object's data
-//	short			swidth;
-//	short			sheight;
+#ifdef _DISPLAY_OBJECT
+	short			swidth;
+	short			sheight;
+#endif
+
+	// buffer
+	int buffer[52];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -62,14 +70,22 @@ typedef struct tagRDATA
 	headerObject	rHo;					// Header
 
 	// Optional headers - depend on the OEFLAGS value, see documentation and examples for more info
-//	rCom			rc;				// Common structure for movements & animations
-//	rMvt			rm;				// Movements
-//	rSpr			rs;				// Sprite (displayable objects)
+#ifdef _DISPLAY_OBJECT
+	rCom			rc;				// Common structure for movements & animations
+	rMvt			rm;				// Movements
+	rSpr			rs;				// Sprite (displayable objects)
+#endif
 	rVal			rv;				// Alterable values
 
+#ifdef _DISPLAY_OBJECT
+	short			swidth;
+	short			sheight;
+#endif
+
 	// Object's runtime data
-	HINSTANCE SteamAPI;
-	HINSTANCE SKDEncry;
+	GlobalData* pData;
+
+	SteamUtilities* pSteamUtil;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
@@ -80,8 +96,16 @@ typedef	RUNDATA	*			LPRDATA;
 
 // Default flags - see documentation for more info
 // -------------
-#define	OEFLAGS      			OEFLAG_VALUES|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP 
-#define	OEPREFS      			OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_KILL|OEPREFS_SLEEP 
+// Display
+#ifdef _DISPLAY_OBJECT
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_SPRITES|OEFLAG_MOVEMENTS|OEFLAG_SCROLLINGINDEPENDANT|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP|OEFLAG_BACKSAVE)
+#define	OEPREFS      			(OEPREFS_SCROLLINGINDEPENDANT|OEPREFS_INKEFFECTS|OEPREFS_BACKSAVE|OEPREFS_BACKEFFECTS)
+#else
+// Non-Display
+#define	OEFLAGS      			(OEFLAG_VALUES|OEFLAG_NEVERKILL|OEFLAG_RUNBEFOREFADEIN|OEFLAG_MANUALSLEEP|OEFLAG_NEVERSLEEP)
+#define	OEPREFS      			0
+#endif
+
 
 
 // If to handle message, specify the priority of the handling procedure

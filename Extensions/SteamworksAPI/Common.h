@@ -50,8 +50,11 @@
 #pragma warning( disable : 4819)
 
 #include	"steam/steam_api.h"
+#pragma comment(lib,"neoSteam_api.lib")
 
 #include	"GeneralDefinition.h"
+#include	"SteamUtilities.h"
+
 #include	"Definition.h"
 
 // Specific to this cox
@@ -63,9 +66,7 @@
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
 
-
-//DLL
-#pragma comment(lib,"neoSteam_api.lib")
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

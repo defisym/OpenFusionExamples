@@ -22,7 +22,7 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+		IDMN_CONDITION_RPO, M_CONDITION_RPO, CND_CONDITION_RPO, EVFLAGS_ALWAYS, 1, PARAM_EXPSTRING, M_CND_RPO,
 		};
 
 // Definitions of parameters for each action
@@ -51,27 +51,33 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-// -----------------
-// Sample Condition
-// -----------------
-// Returns TRUE when the two values are equal!
-// 
+long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long param2) {
+	auto pPlatform = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto factorToSearch = rdPtr->pSteamUtil->DeviceNameToFactor(pPlatform);
 
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
+	bool bResult = false;
+	bool bLocal = true;
+	rdPtr->pSteamUtil->IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
+		// check current player
+		auto steamID = SteamRemotePlay()->GetSessionSteamID(unSessionID);
+		if (steamID != rdPtr->pData->playerID) {
+			return;
+		}
 
-//  **** Still use this method for 1 or 2 parameters ****	
-//	if (param1==param2)	
-//		return TRUE;
+		bLocal = false;
+		
+		ESteamDeviceFormFactor eFormFactor = SteamRemotePlay()->GetSessionClientFormFactor(unSessionID);
+		if (eFormFactor == factorToSearch) {
+			bResult = true;
+		}
+		});
 
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
+	// no session, playing local on PC
+	if (bLocal && StrIEqu(pPlatform, L"Local")) {
+		bResult = true;
+	}
 
-	if ((p1 + p2)==p3)
-		return TRUE;
-		 
-	return FALSE;
+	return bResult;
 }
 
 
@@ -177,13 +183,15 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			Condition,
+			Condition_RemotePlayOn,
+
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
 			Action,
+
 			0
 			};
 
@@ -192,5 +200,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression,
 			Expression2,
 			Expression3,
+
 			0
 			};

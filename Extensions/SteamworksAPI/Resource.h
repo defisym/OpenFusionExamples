@@ -42,15 +42,13 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_RPO				26000
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_RPO					6000
 
 // Titles of condition parameters
-#define M_CND_P1				 6501
-#define M_CND_P2				 6502
-#define M_CND_P3				 6503
+#define M_CND_RPO						6501
 
 //	EXPRESSIONS
 //---------------------
