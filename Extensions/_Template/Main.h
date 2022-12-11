@@ -81,8 +81,10 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 
+#ifdef _DISPLAY_OBJECT
 	short			swidth;
 	short			sheight;
+#endif
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
