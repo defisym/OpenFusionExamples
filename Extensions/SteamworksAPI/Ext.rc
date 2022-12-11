@@ -144,9 +144,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
         MENUITEM SEPARATOR
     END
 END
@@ -242,13 +240,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_GCGL            "GetCurrentGameLanguage$ ("
 END
 
 #endif    // English (U.S.) resources

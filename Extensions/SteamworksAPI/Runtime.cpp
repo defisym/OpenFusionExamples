@@ -70,6 +70,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->sheight = edPtr->sheight;
 #endif
 
+	rdPtr->pRet = new std::wstring;
+
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
@@ -96,6 +98,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+
+	delete rdPtr->pRet;
+	rdPtr->pRet = nullptr;
 
 	// No errors
 	return 0;

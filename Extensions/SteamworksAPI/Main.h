@@ -22,11 +22,9 @@
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
+#define	EXP_EXPRESSION_GCGL				0
 
-#define	EXP_LAST                    3
+#define	EXP_LAST						1
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -86,6 +84,8 @@ typedef struct tagRDATA
 	GlobalData* pData;
 
 	SteamUtilities* pSteamUtil;
+
+	std::wstring* pRet;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

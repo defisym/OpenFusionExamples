@@ -52,6 +52,7 @@
 #include	"steam/steam_api.h"
 #pragma comment(lib,"neoSteam_api.lib")
 
+#include	"WindowsCommon.h"
 #include	"GeneralDefinition.h"
 #include	"SteamUtilities.h"
 

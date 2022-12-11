@@ -57,14 +57,10 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION			27000
-#define IDMN_EXPRESSION2		27001
-#define IDMN_EXPRESSION3		27002
+#define IDMN_EXPRESSION_GCGL			27000
 
 // Expression strings
-#define M_EXPRESSION			 7000
-#define M_EXPRESSION2			 7001
-#define M_EXPRESSION3			 7002
+#define M_EXPRESSION_GCGL				7000
 
 // Names of expression parameters
 #define M_EXP_P1				 7500
