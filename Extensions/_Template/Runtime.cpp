@@ -56,8 +56,7 @@ ushort WINAPI DLLExport GetRunObjectDataSize(fprh rhPtr, LPEDATA edPtr)
 // ---------------
 // The routine where the object is actually created
 // 
-short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPtr)
-{
+short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPtr) {
 /*
    This routine runs when your object is created, as you might have guessed.
    It is here that you must transfer any data you need in rdPtr from edPtr,
@@ -70,6 +69,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 #endif
+
+	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
@@ -91,12 +92,15 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 // ----------------
 // Destroys the run-time object
 // 
-short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
-{
+short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 /*
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+
+	delete rdPtr->pRet;
+	rdPtr->pRet = nullptr;
+
 	// No errors
 	return 0;
 }
@@ -107,8 +111,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 // ----------------
 // Called (if you want) each loop, this routine makes the object live
 // 
-short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 /*
    If your extension will draw to the MMF window you should first 
    check if anything about its display has changed :
@@ -146,8 +149,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 // ----------------
 // Draw the object in the application screen.
 // 
-short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr) {
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */

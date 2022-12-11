@@ -86,7 +86,8 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 
-
+	std::wstring* pRet;
+	
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 
