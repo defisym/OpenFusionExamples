@@ -115,7 +115,9 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -129,7 +131,9 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -143,9 +147,11 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
         MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
         MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM SEPARATOR
     END
 END
 #endif

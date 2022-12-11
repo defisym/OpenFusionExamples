@@ -78,13 +78,14 @@ typedef struct tagRDATA
 #endif
 	rVal			rv;				// Alterable values
 
-	// Object's runtime data
-	GlobalData* pData;
-
 #ifdef _DISPLAY_OBJECT
 	short			swidth;
 	short			sheight;
 #endif
+
+	// Object's runtime data
+	GlobalData* pData;
+
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

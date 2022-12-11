@@ -66,22 +66,20 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 
+#ifdef _DISPLAY_OBJECT
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
+#endif
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
-
-		// retrieve data
-		
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
-
-		// retrieve data
-
 	}
+
+	// retrieve data
 
 	// No errors
 	return 0;
