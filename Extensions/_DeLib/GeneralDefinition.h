@@ -121,3 +121,10 @@ inline bool StringViewIEqu(std::wstring_view& str, LPCWSTR pStr) {
 
 	return true;
 }
+
+// MSBOX
+#include "StrNum.h"
+
+inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
+	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
+}
