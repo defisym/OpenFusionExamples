@@ -81,22 +81,31 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 // 
 // ============================================================================
 
-// -----------------
-// Sample Action
-// -----------------
-// Does nothing!
-// 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
-{
-	// Actions work just like Conditions
+short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
+	auto achiNum = SteamUserStats()->GetNumAchievements();
 
-	// Use directly param1 and/or param2 if this action has 1 or 2 parameters
+//#define _RESET
 
-	// Use this if this action has 3 parameters or more
-//	long p1 = CNC_GetParameter(rdPtr);
-//	long p2 = CNC_GetParameter(rdPtr);
-//	long p3 = CNC_GetParameter(rdPtr);
-//	etc.
+#ifdef _RESET
+	for (decltype(achiNum) i = 1; i < achiNum; i++) {
+		auto pName = SteamUserStats()->GetAchievementName(i);
+		SteamUserStats()->ClearAchievement(pName);
+	}
+#else
+	for (decltype(achiNum) i = 0; i < achiNum; i++) {
+		auto pName= SteamUserStats()->GetAchievementName(i);
+
+		bool bUnlock = false;
+		auto bState = SteamUserStats()->GetAchievement(pName, &bUnlock);
+
+		if (!bUnlock) {
+			SteamUserStats()->SetAchievement(pName);
+			rdPtr->pSteamUtil->ToRefresh_UpdateAchAndStat();
+			
+			break;
+		}
+	}
+#endif // _RESET
 
 	return 0;
 }

@@ -295,6 +295,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="Func.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SteamCallback.h" />
     <ClInclude Include="SteamUtilities.h" />
   </ItemGroup>
   <ItemGroup>
