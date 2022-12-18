@@ -13,6 +13,7 @@
 #include	<functional>
 
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
+inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
 
 //-----------------------------
 
@@ -272,19 +273,6 @@ inline RGBA operator >>(RGBA A, int B) {
 }
 
 //Create surface
-inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height, int type) {
-	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-	int sfDrv = wSurf->GetDriver();
-
-	LPSURFACE proto = nullptr;
-	GetSurfacePrototype(&proto, depth, type, sfDrv);
-
-	cSurface* hwa = new cSurface;
-	hwa->Create(width, height, proto);
-
-	return hwa;
-}
-
 inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, int driver) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
@@ -293,6 +281,27 @@ inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, in
 	hwa->Create(width, height, proto);
 
 	return hwa;
+}
+
+inline void CreateHWASurface(LPSURFACE pSf, int depth, int width, int height, int type, int driver) {
+	LPSURFACE proto = nullptr;
+	GetSurfacePrototype(&proto, depth, type, driver);
+
+	pSf->Create(width, height, proto);
+}
+
+inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height, int type) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	int sfDrv = wSurf->GetDriver();
+
+	return CreateHWASurface(depth, width, height, type, sfDrv);
+}
+
+inline void CreateHWASurface(LPRDATA rdPtr, LPSURFACE pSf, int depth, int width, int height, int type) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	int sfDrv = wSurf->GetDriver();
+
+	CreateHWASurface(pSf, depth, width, height, type, sfDrv);
 }
 
 inline LPSURFACE CreateSurface(int depth, int width, int height) {
@@ -305,11 +314,24 @@ inline LPSURFACE CreateSurface(int depth, int width, int height) {
 	return sur;
 }
 
-inline void CreateBlankSurface(LPSURFACE Src) {
-	// failed to load, display blank
+inline void CreateSurface(LPSURFACE pSf, int depth, int width, int height) {
 	LPSURFACE proto = nullptr;
-	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-	Src->Create(4, 4, proto);
+	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
+
+	pSf->Create(width, height, proto);
+}
+
+// failed to load, display blank
+inline LPSURFACE CreateBlankSurface() {
+	auto pSf = CreateSurface(24, 4, 4);
+	pSf->CreateAlpha();
+
+	return pSf;
+}
+
+// failed to load, display blank
+inline void CreateBlankSurface(LPSURFACE Src) {
+	CreateSurface(Src, 24, 4, 4);
 	Src->CreateAlpha();
 }
 
@@ -352,6 +374,28 @@ inline BOOL GetTransparent(LPSURFACE pSf) {
 	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
 }
 
+inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
+	return IsHWA(Src) 
+	? Src 
+	: CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
+}
+
+inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
+	if (IsHWA(Src)) {
+		return;
+	}
+
+	auto pBitmap = Src;
+	Src = ConvertHWATarget(rdPtr, Src);
+	delete pBitmap;
+}
+
+#define _NO_REF
+
+#ifdef _NO_REF
+#else
+#endif // _NO_REF
+
 inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
 	if (!IsHWA(pOldSf)) {
 		return pOldSf;
@@ -366,10 +410,6 @@ inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
 	pOldSf->Blit(*pMemSf);
 
 	return pMemSf;
-}
-
-inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
-	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
 }
 
 inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
@@ -388,16 +428,50 @@ inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
 	return hwa;
 }
 
-inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
-	auto pBitmap = Src;
-	Src = ConvertHWATarget(rdPtr, Src);
-	delete pBitmap;
+inline void ConvertToBitmap(LPRDATA rdPtr, LPSURFACE& pOldSf) {
+	if (!IsHWA(pOldSf)) {
+		return;
+	}
+
+	auto pHWA = pOldSf;
+	pOldSf = ConvertBitmap(rdPtr, pOldSf);	
+	delete pHWA;
 }
 
 inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src) {
+	if (IsHWA(Src)) {
+		return;
+	}
+
 	auto pBitmap = Src;
 	Src = ConvertHWATexture(rdPtr, Src);
 	delete pBitmap;
+}
+
+inline void ConvertToBitmap_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf) {
+	if (!IsHWA(pOldSf)) {
+		return;
+	}
+
+	auto pBitmap = ConvertBitmap(rdPtr, pOldSf);
+	CreateSurface(pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
+
+	pBitmap->Blit(*pOldSf);
+
+	delete pBitmap;
+}
+
+inline void ConvertToHWATexture_NRef(LPRDATA rdPtr,const LPSURFACE pOldSf) {
+	if (IsHWA(pOldSf)) {
+		return;
+	}
+
+	auto pHWA = ConvertHWATexture(rdPtr, pOldSf);
+	CreateHWASurface(rdPtr, pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight(), ST_HWA_ROMTEXTURE);
+
+	pHWA->Blit(*pOldSf);
+
+	delete pHWA;
 }
 
 inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
@@ -612,6 +686,10 @@ inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle) {
 	}
 }
 
+inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle, bool release) {
+	_SavetoClipBoard(Src, release, Handle);
+}
+
 //Save to File
 inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, LPCWSTR DefaultFilterName = nullptr) {
 	if (!Src->IsValid()) {
@@ -624,6 +702,10 @@ inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool rel
 	if (release) {
 		delete Src;
 	}
+}
+
+inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false) {
+	_SavetoFile(Src, FilePath, rdPtr, release, DefaultFilterName);
 }
 
 //Load From ClipBoard
@@ -673,7 +755,15 @@ inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 }
 
 // return false if created the blank surface
-inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool NoStretch, bool HighQuality,std::function<bool(CImageFilterMgr*,LPSURFACE&)> load) {
+#ifdef _NO_REF
+inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src
+	, int width, int height, bool NoStretch, bool HighQuality
+	, std::function<bool(CImageFilterMgr*, const LPSURFACE)> load) {
+#else
+inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src
+	, int width, int height, bool NoStretch, bool HighQuality
+	, std::function<bool(CImageFilterMgr*, LPSURFACE&)> load) {
+#endif // _NO_REF
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
@@ -690,9 +780,12 @@ inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool
 		LPSURFACE pImg = new cSurface;
 
 		if (load(pImgMgr, pImg)) {
+#ifdef _NO_REF
+			CreateSurface(Src, pImg->GetDepth(), width, height);
+#else
 			delete Src;
 			Src = CreateSurface(pImg->GetDepth(), width, height);
-
+#endif // _NO_REF
 			Stretch(pImg, Src, HighQuality);
 		}
 		else {
@@ -706,6 +799,22 @@ inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool
 	return ret;
 }
 
+#ifdef _NO_REF
+inline bool _LoadFromFile(const LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
+		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
+		});
+}
+
+inline bool _LoadFromMemFile(const LPSURFACE Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	CInputMemFile MemFile;
+	MemFile.Create(pData, dataSz);
+
+	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
+		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
+		});
+}
+#else
 inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
 		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
@@ -720,6 +829,7 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
 		});
 }
+#endif // _NO_REF
 
 //Get Valid Sacle
 inline void GetValidScale(float* scale) {
@@ -741,7 +851,11 @@ inline void GetMaximumDivide(int* divide) {
 }
 
 //Stack Blur
+#ifdef _NO_REF
+inline void StackBlur(const LPSURFACE pSrc, int radius, float scale, int divide) {
+#else
 inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
+#endif // _NO_REF
 	//获取参数
 	constexpr auto SB_MIN_RADIUS = 0;
 	constexpr auto SB_MAX_RADIUS = 254;
@@ -958,7 +1072,11 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 }
 
 //Affine transformation
+#ifdef _NO_REF
+inline void AffineTransformation(const LPSURFACE Src, double a11, double a12, double a21, double a22, int divide) {
+#else
 inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double a21, double a22, int divide) {
+#endif // _NO_REF
 	if (a11 == 1 && a12 == 0 && a21 == 0 && a22 == 1) {
 		return;
 	}
