@@ -1326,12 +1326,20 @@ public:
 		//	stop ignore all formats
 		// 
 		// [!]
-		//	reset all format
+		//	reset all format to what you set in properties and events
 		// 
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
 		//	if param is less than two, will be referred from left.
 		//	e.g., one param will be treated as frame.
+		//	
+		//	ICon will be resized to the font size it inserted at
+		//	
+		//	*if you are linking to object
+		//	*you need to retrieve each param
+		//	*then handle it by your self
+		//	*you need to set a key for it for retrieving
+		//	*and value as pointer to a surface
 		// 
 		// [IConOffsetX = 0.0][/IConOffsetX]
 		//	ICon Offset X
@@ -1348,10 +1356,9 @@ public:
 		//	! = reset to default
 		//	+/- = add/minus to current
 		// 
-		// [IConResample = 0.0][/IConResample]
-		//	ICon Resample
+		// [IConResample = 1][/IConResample]
+		//	ICon Resample, 1 = Enable, 0 = Disable
 		//	! = reset to default
-		//	+/- = add/minus to current
 		// 
 		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
 		//	control shake.
@@ -1368,7 +1375,12 @@ public:
 		// 
 		// [Color = #FFFFFFFF][/Color]
 		// [C = #FFFFFFFF][/C]
-		//	color, hex AARRGGBB
+		//	color, hex AARRGGBB, or A, R, G, B
+		//	if RGB param is less than four, then it's referred in the following order:
+		//		R
+		//		R G
+		//		R G B
+		//		A R G B
 		//	! = reset to default
 		//	+/- = add/minus to current
 		// 
