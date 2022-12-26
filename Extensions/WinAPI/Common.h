@@ -74,6 +74,8 @@ class ObjectSelection;
 #include	"ObjectSelection.h"
 #include	"Base64.h"
 
+#include	"NeoSurface.h"
+
 #ifdef _FFMPEG
 #include	"GetVideoFrame.h"
 #endif
