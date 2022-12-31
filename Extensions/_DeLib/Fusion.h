@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include	"ccxhdr.h"
 #include	"Surface.h"
@@ -188,7 +188,7 @@ struct RGBA {
 	double a;
 };
 
-//RGBAÊıÖµ¸üÕı
+//RGBAæ•°å€¼æ›´æ­£
 inline double Range(double A) {
 	return max(0.0, min(255.0, A));
 }
@@ -202,7 +202,7 @@ inline RGBA Range(RGBA A) {
 	return A;
 }
 
-//RGBAÔËËã·ûÖØÔØ +
+//RGBAè¿ç®—ç¬¦é‡è½½ +
 inline RGBA operator +(RGBA A, RGBA B) {
 	A.r += B.r;
 	A.g += B.g;
@@ -212,7 +212,7 @@ inline RGBA operator +(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBAÔËËã·ûÖØÔØ -
+//RGBAè¿ç®—ç¬¦é‡è½½ -
 inline RGBA operator -(RGBA A, RGBA B) {
 	A.r -= B.r;
 	A.g -= B.g;
@@ -222,17 +222,17 @@ inline RGBA operator -(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBAÔËËã·ûÖØÔØ +=
+//RGBAè¿ç®—ç¬¦é‡è½½ +=
 inline RGBA operator +=(RGBA A, RGBA B) {
 	return A + B;
 }
 
-//RGBAÔËËã·ûÖØÔØ -=
+//RGBAè¿ç®—ç¬¦é‡è½½ -=
 inline RGBA operator -=(RGBA A, RGBA B) {
 	return A - B;
 }
 
-//RGBAÔËËã·ûÖØÔØ *
+//RGBAè¿ç®—ç¬¦é‡è½½ *
 inline RGBA operator *(RGBA A, double B) {
 	A.r = A.r * B;
 	A.g = A.g * B;
@@ -242,7 +242,7 @@ inline RGBA operator *(RGBA A, double B) {
 	return A;
 }
 
-//RGBAÔËËã·ûÖØÔØ /
+//RGBAè¿ç®—ç¬¦é‡è½½ /
 inline RGBA operator /(RGBA A, double B) {
 	A.r = A.r / B;
 	A.g = A.g / B;
@@ -252,17 +252,17 @@ inline RGBA operator /(RGBA A, double B) {
 	return A;
 }
 
-//RGBAÔËËã·ûÖØÔØ *
+//RGBAè¿ç®—ç¬¦é‡è½½ *
 inline RGBA operator *(double B, RGBA A) {
 	return A * B;
 }
 
-//RGBAÔËËã·ûÖØÔØ /
+//RGBAè¿ç®—ç¬¦é‡è½½ /
 inline RGBA operator /(double B, RGBA A) {
 	return A / B;
 }
 
-//RGBAÔËËã·ûÖØÔØ >>
+//RGBAè¿ç®—ç¬¦é‡è½½ >>
 inline RGBA operator >>(RGBA A, int B) {
 	A.r = (double)((int)A.r >> B);
 	A.g = (double)((int)A.g >> B);
@@ -573,7 +573,7 @@ inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = tr
 
 //Get Ext's FilterName
 
-//Ö¸ÕëMapĞèÒªÊ¹ÓÃ×Ô¶¨Òå±È½Ï
+//æŒ‡é’ˆMapéœ€è¦ä½¿ç”¨è‡ªå®šä¹‰æ¯”è¾ƒ
 struct LPWSTR_Compare
 {
 	bool operator()(LPCWSTR l, LPCWSTR r)  const noexcept { return (wcscmp(l, r) < 0); };
@@ -590,7 +590,7 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 		return Str;
 	};
 
-	//³£Á¿»á±»·ÅÈëÈ«¾Ö±äÁ¿Çø
+	//å¸¸é‡ä¼šè¢«æ”¾å…¥å…¨å±€å˜é‡åŒº
 	const std::map<LPCWSTR, LPCWSTR, LPWSTR_Compare> ExtList{
 		{_T(".png"),_T("Portable Network Graphics")},
 		{_T(".tga"),_T("Targa Bitmap")},
@@ -856,7 +856,7 @@ inline void StackBlur(const LPSURFACE pSrc, int radius, float scale, int divide)
 #else
 inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 #endif // _NO_REF
-	//»ñÈ¡²ÎÊı
+	//è·å–å‚æ•°
 	constexpr auto SB_MIN_RADIUS = 0;
 	constexpr auto SB_MAX_RADIUS = 254;
 
@@ -871,7 +871,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	int width = (int)(owidth / scale);
 	int height = (int)(oheight / scale);
 
-	// ½µ²ÉÑù
+	// é™é‡‡æ ·
 	LPSURFACE img = pSrc;
 
 	if (!(scale == 1.0)) {
@@ -1062,7 +1062,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 	img->UnlockBuffer(buff);
 
-	//»¹Ô­´óĞ¡
+	//è¿˜åŸå¤§å°
 	if (!(scale == 1.0)) {
 		pSrc->Clone(*img, owidth, oheight);
 		delete img;
@@ -1295,4 +1295,14 @@ inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHe
 inline bool MixAlpha(LPSURFACE pSrc, LPSURFACE pDst, int destX, int destY) {
 	return MixAlpha(pSrc, 0, 0, pSrc->GetWidth(), pSrc->GetHeight()
 		, pDst, destX, destY);
+}
+
+inline uint64_t GetEstimateSize(LPSURFACE pSf) {
+	return static_cast<uint64_t>(pSf->GetWidth()) * pSf->GetHeight()
+		// depth -> byte
+		* (static_cast<uint64_t>(pSf->GetDepth()) >> 3);
+}
+
+inline uint64_t GetEstimateSizeMB(LPSURFACE pSf) {
+	return GetEstimateSize(pSf) >> 20;
 }
