@@ -883,13 +883,39 @@ inline void ClearCurRef(LPRDATA rdPtr) {
 	}
 }
 
+inline void GetEstimateMemUsage(GlobalData* pData) {
+	// optimize it by add/sub value when modifing lib instead of iterate if has performance issue (unlikely)
+	pData->estimateRAMSizeMB = 0;
+	pData->estimateVRAMSizeMB = 0;
+
+	auto pLib = pData->pLib;
+
+	for (auto& item : *pLib) {
+		auto pSf = item.second.pSf;
+
+		bool bHWA = IsHWA(pSf);
+
+		auto estimateSizeMB = GetEstimateSizeMB(pSf);
+
+		if (!bHWA) {
+			pData->estimateRAMSizeMB += estimateSizeMB;
+		}
+		else {
+			pData->estimateVRAMSizeMB += estimateSizeMB;
+		}
+	}
+}
+
 inline SIZE_T GetMemoryUsageMB(LPRDATA rdPtr) {
 #ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
 	return max(GetProcessMemoryUsageMB(), (SIZE_T)rdPtr->pD3DU->GetLocalCurrentUsageMB());
 #else
-	return GetProcessMemoryUsageMB();
+	GetEstimateMemUsage(rdPtr->pData);
+
+	return max(GetProcessMemoryUsageMB()
+		, (SIZE_T)max(rdPtr->pData->estimateRAMSizeMB, rdPtr->pData->estimateVRAMSizeMB));
 #endif
 }
 

@@ -105,6 +105,9 @@ struct GlobalData {
 	KeepList* pKeepList = nullptr;
 	FileListMap* pFileListMap = nullptr;
 
+	uint64_t estimateRAMSizeMB = 0;
+	uint64_t estimateVRAMSizeMB = 0;
+
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
 #ifdef _DYNAMIC_LINK

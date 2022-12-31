@@ -159,13 +159,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		}
 #endif
 		pData->pD3DU = new D3DUtilities;
-#endif
 
 		//auto& Desc = rdPtr->pD3DU->GetDesc();
 		//MSGBOX(Desc.Description);
 
 		//rdPtr->pD3DU->UpdateVideoMemoryInfo();
 		//auto& info = rdPtr->pD3DU->GetLocalVideoMemoryInfo();
+#endif
 
 		//init specific
 		pData->pLib = new SurfaceLib;

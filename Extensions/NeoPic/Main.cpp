@@ -792,7 +792,7 @@ long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
 #ifdef _USE_DXGI
 	return (long)rdPtr->pD3DU->GetDesc().Description;
 #else
-	return (long)L"No DXGI Enabled";
+	return (long)L"DXGI Not Enabled";
 #endif
 }
 
