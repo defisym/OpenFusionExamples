@@ -74,13 +74,12 @@ public:
 
     // in byte
     inline uint64_t nSf_GetEstimateSize() {
-        return static_cast<uint64_t>(this->GetWidth()) * this->GetHeight()
-            * (static_cast<uint64_t>(this->GetDepth()) << 3);
+        return ::GetEstimateSize(this);
     }
 
     // in MB
     inline uint64_t nSf_GetEstimateSizeMB() {
-        return nSf_GetEstimateSize() << 20;
+        return GetEstimateSizeMB(this);
     }
 
     //------------
