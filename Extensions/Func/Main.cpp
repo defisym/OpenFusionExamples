@@ -78,6 +78,8 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_ASSERT, M_ACTION_ASSERT, ACT_ACTION_ASSERT, 0, 2,PARAM_EXPRESSION, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_MSG,
 		IDMN_ACTION_MSGBOX, M_ACTION_MSGBOX, ACT_ACTION_MSGBOX, 0, 2,PARAM_EXPRESSION, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_MSG,
+		IDMN_ACTION_TOAST, M_ACTION_TOAST, ACT_ACTION_TOAST, 0, 3,PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_TITLE, M_ACT_MSG,
+		IDMN_ACTION_TOASTFLAG, M_ACTION_TOASTFLAG, ACT_ACTION_TOASTFLAG, 0, 1, PARAM_EXPRESSION, M_ACT_TOASTFLAG,
 
 		};
 
@@ -467,6 +469,25 @@ short WINAPI DLLExport MsgBox(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Toast(LPRDATA rdPtr, long param1, long param2) {
+	auto value = CNC_GetParameter(rdPtr);
+	std::wstring title = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring content = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (value) {
+		rdPtr->pToast->ShowToast(std::forward<std::wstring>(title), std::forward<std::wstring>(content));
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport ToastFlags(LPRDATA rdPtr, long param1, long param2) {
+	auto flags = CNC_GetParameter(rdPtr);
+
+	rdPtr->pToast->SetFlag(flags);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -911,6 +932,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Assert,
 			MsgBox,
+			Toast,
+			ToastFlags,
 
 			0
 			};

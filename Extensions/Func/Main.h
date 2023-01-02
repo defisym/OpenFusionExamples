@@ -62,8 +62,10 @@
 
 #define	ACT_ACTION_ASSERT			18
 #define	ACT_ACTION_MSGBOX			19
+#define	ACT_ACTION_TOAST			20
+#define	ACT_ACTION_TOASTFLAG		21
 
-#define	ACT_LAST					20
+#define	ACT_LAST					22
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -184,6 +186,11 @@ typedef struct tagRDATA
 	ObjectSelection* pSelect;
 	std::wstring* pOnItObjName;
 	LPRO pObject;
+
+	WinToastHelper* pToast;
+
+	int toast_ActionIndex;
+	int toast_DismissalReason;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

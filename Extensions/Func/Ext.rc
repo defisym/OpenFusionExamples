@@ -214,6 +214,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Assert", IDMN_ACTION_ASSERT           
         MENUITEM "MsgBox", IDMN_ACTION_MSGBOX
+        MENUITEM "Toast", IDMN_ACTION_TOAST
+        MENUITEM "Set Toast Flag", IDMN_ACTION_TOASTFLAG
         MENUITEM SEPARATOR
     END
 END
@@ -409,6 +411,8 @@ BEGIN
     
     M_ACTION_ASSERT         "Assert %0, Failed Message = %1"
     M_ACTION_MSGBOX         "if %0, Show Message = %1"
+    M_ACTION_TOAST          "if %0, Show Toast, Title = %1, Content = %2"
+    M_ACTION_TOASTFLAG      "Set Toast Flag to %0"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -422,7 +426,10 @@ BEGIN
     M_OBJECT                "Select Object"
     M_ITNAME                "Iterate Name"
     
+    M_ACT_TITLE             "Title"
     M_ACT_MSG               "The message to be displayed"
+    
+    M_ACT_TOASTFLAG         "Toast Flags"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -508,8 +515,8 @@ BEGIN
 
     M_EXP_A			            "A"
     M_EXP_B			            "B"
-    M_EXP_CTB			        "Value"
-    M_EXP_NEG			        "Value"
+    M_EXP_CTB			        "Value Cast to Bool"
+    M_EXP_NEG			        "Value to be Negated"
 END
 
 STRINGTABLE

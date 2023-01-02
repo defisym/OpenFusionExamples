@@ -62,6 +62,8 @@
 
 #define	IDMN_ACTION_ASSERT		25018
 #define	IDMN_ACTION_MSGBOX		25019
+#define	IDMN_ACTION_TOAST		25020
+#define	IDMN_ACTION_TOASTFLAG	25021
 
 // Action strings
 #define M_ACTION_SR             5000
@@ -95,6 +97,8 @@
 
 #define	M_ACTION_ASSERT			5018
 #define	M_ACTION_MSGBOX			5019
+#define	M_ACTION_TOAST			5020
+#define	M_ACTION_TOASTFLAG  	5021
 
 // Titles of action parameters
 #define M_ACT_RET				 5501
@@ -111,6 +115,8 @@
 #define M_ITNAME			     5508
 
 #define M_ACT_MSG		         5509
+#define M_ACT_TITLE		         5510
+#define M_ACT_TOASTFLAG		     5511
 
 
 //	Conditions

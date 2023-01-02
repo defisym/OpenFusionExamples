@@ -39,6 +39,7 @@
 
 // My lib
 class ObjectSelection;
+class WinToastHelper;
 
 // My headers
 #include	"GeneralDefinition.h"
@@ -54,6 +55,7 @@ class ObjectSelection;
 #include	"Fusion.h"
 #include	"ObjectSelection.h"
 #include	"Func.h"
+#include	"Toast.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
