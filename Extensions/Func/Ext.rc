@@ -119,6 +119,8 @@ BEGIN
         MENUITEM "In Editor", IDMN_CONDITION_IE
         MENUITEM "In Sub App", IDMN_CONDITION_IS
         MENUITEM SEPARATOR
+        MENUITEM "OIL Has Object", IDMN_CONDITION_OILHO
+        MENUITEM SEPARATOR
         MENUITEM "On Func", IDMN_CONDITION_OF
         MENUITEM SEPARATOR                
         MENUITEM "On Iterate Object", IDMN_CONDITION_OITO
@@ -212,10 +214,14 @@ BEGIN
             MENUITEM "Pass Prevous Func's Return (string)", IDMN_ACTION_PASSRETV            
         END
         MENUITEM SEPARATOR
-        MENUITEM "Assert", IDMN_ACTION_ASSERT           
-        MENUITEM "MsgBox", IDMN_ACTION_MSGBOX
-        MENUITEM "Toast", IDMN_ACTION_TOAST
-        MENUITEM "Set Toast Flag", IDMN_ACTION_TOASTFLAG
+        POPUP "Info"
+        BEGIN       
+            MENUITEM "Assert", IDMN_ACTION_ASSERT           
+            MENUITEM "MsgBox", IDMN_ACTION_MSGBOX
+            MENUITEM "Toast", IDMN_ACTION_TOAST
+            MENUITEM SEPARATOR
+            MENUITEM "Set Toast Flag", IDMN_ACTION_TOASTFLAG
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -436,6 +442,8 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_IE          "%o In Editor"
     M_CONDITION_IS          "%o In Sub App"
+    
+    M_CONDITION_OILHO       "%o OIL Has Object %0"
 
     M_CONDITION_OF          "%o On Func %0"
     
@@ -457,6 +465,7 @@ BEGIN
     M_CONDITION_FPAIN       "%o Curernt Func's Param At %0 is Number"
 
     M_CND_FUNCNAME          "Func Name"
+    M_CND_OBJNAME           "Object Name"
 END
 
 STRINGTABLE DISCARDABLE 

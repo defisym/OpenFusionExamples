@@ -146,6 +146,8 @@
 #define IDMN_CONDITION_IE    	26011
 #define IDMN_CONDITION_IS    	26012
 
+#define IDMN_CONDITION_OILHO   	26013
+
 // Condition strings
 #define M_CONDITION_OF			 6000
 
@@ -167,8 +169,11 @@
 #define M_CONDITION_IE  		 6011
 #define M_CONDITION_IS  		 6012
 
+#define M_CONDITION_OILHO  		 6013
+
 // Titles of condition parameters
 #define M_CND_FUNCNAME  		 6501
+#define M_CND_OBJNAME     		 6502
 
 //	EXPRESSIONS
 //---------------------

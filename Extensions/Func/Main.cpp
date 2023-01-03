@@ -41,6 +41,8 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_IE, M_CONDITION_IE, CND_CONDITION_IE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_IS, M_CONDITION_IS, CND_CONDITION_IS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
+		IDMN_CONDITION_OILHO, M_CONDITION_OILHO, CND_CONDITION_OILHO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_CND_OBJNAME,
 		
 		};
 
@@ -247,6 +249,12 @@ long WINAPI DLLExport InSubApp(LPRDATA rdPtr, long param1, long param2) {
 	auto bSub = rdPtr->rHo.hoAdRunHeader->rhApp->m_pParentApp != nullptr;
 
 	return bSub;
+}
+
+long WINAPI DLLExport OILHasObject(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pObjName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return rdPtr->pSelect->OILHasObject(pObjName);
 }
 
 // ============================================================================
@@ -895,6 +903,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			InEditor,
 			InSubApp,
+
+			OILHasObject,
 
 			0
 			};

@@ -561,6 +561,33 @@ public:
 			});
 	}
 
+	inline bool OILHasObject(const std::wstring& objName) {
+		return OILHasObject(objName.c_str());
+	}
+
+	inline bool OILHasObject(LPCWSTR pObjName) {
+		bool bHas = false;
+
+		IterateOiL([&](LPOIL pOil) {
+			// oilName start with empty char
+			auto pCurName = [&]() {
+				auto pOilName = pOil->oilName;
+
+				while (pOilName[0] == 65535) {
+					pOilName++;
+				}
+
+				return pOilName;
+			}();
+
+			if (StrEqu(pObjName, pCurName)) {
+				bHas = true;
+			}
+			});
+
+		return bHas;
+	}
+
 	//TODO Save scope
 	inline auto SaveScope() {
 		auto rhEvCount = rhPtr->rh2.rh2EventCount;

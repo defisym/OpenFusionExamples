@@ -26,7 +26,9 @@
 #define	CND_CONDITION_IE			11
 #define	CND_CONDITION_IS			12
 
-#define	CND_LAST					13
+#define	CND_CONDITION_OILHO			13
+
+#define	CND_LAST					14
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
