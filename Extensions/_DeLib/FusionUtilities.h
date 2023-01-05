@@ -468,6 +468,10 @@ inline void UpdateRectByHotSpot(HotSpotPos Type, size_t width, size_t height, in
 
 inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 	//Rotate hotspot
+	if (angle == 0) {
+		return;
+	}
+
 	float hx = (float)*hotX;
 	float hy = (float)*hotY;
 
@@ -492,4 +496,34 @@ inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 
 inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
+}
+
+inline void UpdateHoImgInfo(LPRDATA rdPtr) {
+	//Get scale (absolute since negative will mirror)
+	float scaleX = abs(rdPtr->zoomScale.XScale);
+	float scaleY = abs(rdPtr->zoomScale.YScale);
+
+	//Get scaled size
+	int width = int(rdPtr->src->GetWidth() * scaleX);
+	int height = int(rdPtr->src->GetHeight() * scaleY);
+
+	//Get scaled hotspot
+	int hotX = rdPtr->hotSpot.x;
+	int hotY = rdPtr->hotSpot.y;
+
+	UpdateHotSpot(rdPtr->hotSpotPos, width, height, hotX, hotY);
+
+	//Rotate hotspot
+	if (rdPtr->rc.rcAngle) {
+		RotatePoint(rdPtr->angle, &hotX, &hotY, width, height);
+		cSurface::GetSizeOfRotatedRect(&width, &height, rdPtr->rc.rcAngle);
+	}
+
+	//Update size and scale image
+	rdPtr->rHo.hoImgWidth = width; // leave room for rounding errors
+	rdPtr->rHo.hoImgHeight = height;
+
+	//Apply hotspot
+	rdPtr->rHo.hoImgXSpot = (short)hotX;
+	rdPtr->rHo.hoImgYSpot = (short)hotY;
 }
