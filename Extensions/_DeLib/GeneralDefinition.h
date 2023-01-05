@@ -128,3 +128,35 @@ inline bool StringViewIEqu(std::wstring_view& str, LPCWSTR pStr) {
 inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
 	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
 }
+
+// basic split
+#include <functional>
+
+inline void SplitStringCore(const std::wstring input, const wchar_t delimiter
+	, std::function<void(const std::wstring&)> callBack) {
+	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
+	size_t start = input.find_first_not_of(delimiter);
+	size_t end = start;
+
+	while (start != std::wstring::npos) {
+		end = input.find(delimiter, start);
+		callBack(input.substr(start, end - start));
+		start = input.find_first_not_of(delimiter, end);
+	}
+}
+
+template<typename T>
+inline std::vector<T> SplitString(const std::wstring input, const wchar_t delimiter
+	, std::function<T(const std::wstring&)> callBack) {
+	std::vector<T> resultList;
+
+	SplitStringCore(input, delimiter, [&](const std::wstring& item) {
+		resultList.emplace_back(callBack(item));
+		});
+
+	return resultList;
+}
+
+inline std::vector<std::wstring> SplitString(const std::wstring input, const wchar_t delimiter) {
+	return SplitString<std::wstring>(input, delimiter, [](const std::wstring& item) {return item; });
+}
