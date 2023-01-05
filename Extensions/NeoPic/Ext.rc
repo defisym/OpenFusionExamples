@@ -147,10 +147,12 @@ BEGIN
             MENUITEM "Load From Lib",              IDMN_ACTION_LFL
             MENUITEM "Load From Display",              IDMN_ACTION_LFD
             MENUITEM SEPARATOR
-            MENUITEM "Set Preload List",              IDMN_ACTION_SPL
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
+            MENUITEM "Set Preload List",              IDMN_ACTION_SPL            
+            MENUITEM "Set Preload List By Pointer",   IDMN_ACTION_SPLBP            
             MENUITEM SEPARATOR
             MENUITEM "Set Keep List",              IDMN_ACTION_SKL
+            MENUITEM "Set Keep List By Pointer",   IDMN_ACTION_SKLBP
             MENUITEM "Clear Cache",              IDMN_ACTION_CC
             MENUITEM SEPARATOR
             MENUITEM "Iterate Ref Count",              IDMN_ACTION_ITRC
@@ -356,9 +358,11 @@ BEGIN
     M_ACTION_LFD             "Load From Display %0, CopyCoef = %1"
     
     M_ACTION_SPL             "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
+    M_ACTION_SPLBP           "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
     M_ACTION_CC              "Clear Cache, Memory Limit %0"
     M_ACTION_SKL             "Set Keep List to %0, BasePath = %1"
+    M_ACTION_SKLBP           "Set Keep List to %0, BasePath = %1"
     M_ACTION_ITRC            "Iterate Most Referenced %0 Objects"
 
     M_ACTION_OBJECT             "Lib Object"

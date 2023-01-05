@@ -95,7 +95,7 @@
 
 #define IDMN_ACTION_LFD	       		25017
 
-#define IDMN_ACTION_SPL	       		25018
+#define IDMN_ACTION_SPLBP	        25018
 #define IDMN_ACTION_SPP	       		25019
 #define IDMN_ACTION_CC	       		25020
 
@@ -108,6 +108,9 @@
 #define IDMN_ACTION_SB       		25024
 
 #define IDMN_ACTION_SESP       		25025
+
+#define	IDMN_ACTION_SPL				25026
+#define	IDMN_ACTION_SKLBP			25027
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -137,7 +140,7 @@
 
 #define M_ACTION_LFD          	     5017
 
-#define M_ACTION_SPL          	     5018
+#define M_ACTION_SPLBP          	 5018
 #define M_ACTION_SPP          	     5019
 #define M_ACTION_CC          	     5020
 
@@ -150,6 +153,9 @@
 #define M_ACTION_SB         	     5024
 
 #define M_ACTION_SESP         	     5025
+
+#define	M_ACTION_SPL				 5026
+#define	M_ACTION_SKLBP			     5027
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501

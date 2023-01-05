@@ -52,20 +52,30 @@ inline bool CanDisplay(LPRDATA rdPtr) {
 
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (!rdPtr->isLib) {
-		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		rdPtr->changed = true;
 		rdPtr->rc.rcChanged = true;
 
+		rdPtr->rc.rcAngle = (float)rdPtr->angle;
+
+		rdPtr->rc.rcScaleX = abs(rdPtr->zoomScale.XScale);
+		rdPtr->rc.rcScaleY = abs(rdPtr->zoomScale.YScale);	
+
+#define _UPDAETINFO
+
+#ifndef _UPDAETINFO
+		int width = int(rdPtr->src->GetWidth() * rdPtr->rc.rcScaleX);
+		int height = int(rdPtr->src->GetHeight() * rdPtr->rc.rcScaleY);
+
+		rdPtr->rHo.hoImgWidth = width;
+		rdPtr->rHo.hoImgHeight = height;
+		
 		rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
 		rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
 
-		//rdPtr->rHo.hoImgWidth = rdPtr->src->GetWidth();
-		//rdPtr->rHo.hoImgHeight = rdPtr->src->GetHeight();
-
-		rdPtr->rHo.hoImgWidth = int(rdPtr->src->GetWidth() * rdPtr->zoomScale.XScale);
-		rdPtr->rHo.hoImgHeight = int(rdPtr->src->GetHeight() * rdPtr->zoomScale.YScale);
-
-		rdPtr->changed = true;
-
+		UpdateHotSpot(rdPtr->hotSpotPos, width, height, rdPtr->rHo.hoImgXSpot, rdPtr->rHo.hoImgYSpot);	
+#else
+		UpdateHoImgInfo(rdPtr);
+#endif
 		FreeColMask(rdPtr->pColMask);
 	}
 }
@@ -80,9 +90,7 @@ inline void NewImg(LPRDATA rdPtr) {
 
 //Set default values
 inline void NewPic(LPRDATA rdPtr){
-	rdPtr->hotSpot = { 0,0 };
-	UpdateHotSpot(rdPtr, rdPtr->defaultHotSpot);
-	
+	rdPtr->hotSpot = { 0,0 };	
 	rdPtr->zoomScale = { 1.0,1.0 };
 	rdPtr->angle = 0;
 
@@ -95,6 +103,8 @@ inline void NewPic(LPRDATA rdPtr){
 
 	rdPtr->imgOffset = rdPtr->offset;
 	rdPtr->imgAT = rdPtr->AT;
+
+	UpdateHotSpot(rdPtr, rdPtr->hotSpotPos);
 
 	NewImg(rdPtr);
 
@@ -125,9 +135,20 @@ inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
 	rdPtr->hotSpot.y = Y;
 }
 
-inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {
-	auto width = rdPtr->src->GetWidth();
-	auto height = rdPtr->src->GetHeight();
+inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {	
+	if (rdPtr->src == nullptr || !rdPtr->src->IsValid()) {
+		if (Type == HotSpotPos::CUSTOM) {
+			UpdateHotSpot(rdPtr, X, Y);
+		}
+
+		return;
+	}
+
+	//auto width = rdPtr->src->GetWidth();
+	//auto height = rdPtr->src->GetHeight();
+
+	auto width = int(rdPtr->src->GetWidth() * rdPtr->zoomScale.XScale);
+	auto height = int(rdPtr->src->GetHeight() * rdPtr->zoomScale.YScale);
 
 	UpdateHotSpot(Type, width, height, X, Y);
 	UpdateHotSpot(rdPtr, X, Y);

@@ -145,3 +145,4 @@ inline void DeleteGlobalData(GlobalData* pData) {
 }
 
 constexpr auto DEFAULT_FILELISTSIZE = 1000;
+constexpr auto Delimiter = L'|';

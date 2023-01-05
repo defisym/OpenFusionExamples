@@ -112,7 +112,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->isLib = edPtr->isLib;
 	rdPtr->memoryLimit = edPtr->memoryLimit;
 	rdPtr->autoClean = edPtr->autoClean;
-	rdPtr->defaultHotSpot = (HotSpotPos)edPtr->hotSpotComboID;
+	rdPtr->hotSpotPos = (HotSpotPos)edPtr->hotSpotComboID;
 	
 	rdPtr->HWA = edPtr->HWA;
 

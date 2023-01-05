@@ -46,7 +46,7 @@
 
 #define	ACT_ACTION_LFD				17
 
-#define	ACT_ACTION_SPL				18
+#define	ACT_ACTION_SPLBP			18
 #define	ACT_ACTION_SPP				19
 #define	ACT_ACTION_CC				20
 
@@ -60,7 +60,10 @@
 
 #define	ACT_ACTION_SESP				25
 
-#define	ACT_LAST					26
+#define	ACT_ACTION_SPL				26
+#define	ACT_ACTION_SKLBP			27
+
+#define	ACT_LAST					28
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -243,7 +246,7 @@ typedef struct tagRDATA
 	KeepList* pKeepList = nullptr;						// kept over frames
 	RefCountVec* pCountVec = nullptr;					// update when trigger clear
 
-	HotSpotPos defaultHotSpot;
+	HotSpotPos hotSpotPos;
 
 	GlobalData* pData;
 
