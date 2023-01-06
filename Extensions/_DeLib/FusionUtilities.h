@@ -498,18 +498,20 @@ inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
-inline void UpdateHoImgInfo(LPRDATA rdPtr) {
+inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
+	, float xScale, float yScale
+	, int hotSpotX, int hotSpotY) {
 	//Get scale (absolute since negative will mirror)
-	float scaleX = abs(rdPtr->zoomScale.XScale);
-	float scaleY = abs(rdPtr->zoomScale.YScale);
+	float scaleX = abs(xScale);
+	float scaleY = abs(yScale);
 
 	//Get scaled size
-	int width = int(rdPtr->src->GetWidth() * scaleX);
-	int height = int(rdPtr->src->GetHeight() * scaleY);
+	int width = int(pSrc->GetWidth() * scaleX);
+	int height = int(pSrc->GetHeight() * scaleY);
 
 	//Get scaled hotspot
-	int hotX = rdPtr->hotSpot.x;
-	int hotY = rdPtr->hotSpot.y;
+	int hotX = hotSpotX;
+	int hotY = hotSpotY;
 
 	UpdateHotSpot(rdPtr->hotSpotPos, width, height, hotX, hotY);
 

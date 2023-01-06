@@ -46,6 +46,12 @@ inline void ConvertHWA(LPRDATA rdPtr) {
 	}
 }
 
+inline void UpdateHoImgInfo(LPRDATA rdPtr) {
+	UpdateHoImgInfo(rdPtr, rdPtr->src
+		, rdPtr->zoomScale.XScale, rdPtr->zoomScale.YScale
+		, rdPtr->hotSpot.x, rdPtr->hotSpot.y);
+}
+
 inline bool CanDisplay(LPRDATA rdPtr) {
 	return !rdPtr->isLib && rdPtr->src != nullptr && rdPtr->src->IsValid();
 }
