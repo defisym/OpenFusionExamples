@@ -967,11 +967,13 @@ public:
 		}
 	}
 
+	// Color conversion
 	// #AARRGGBB
 	inline Color GetColor(std::wstring_view hex) {
 		return GetColor(_h2d(hex.data(), hex.size()), true);
 	}
-
+	
+	// Color conversion
 	inline Color GetColor(DWORD color, bool bAlpha = false) {
 		if (bAlpha) {
 			auto A = (BYTE)((color >> 24) & 0xFF);
@@ -986,6 +988,7 @@ public:
 		}
 	}
 
+	// Color conversion
 	inline DWORD GetDWORD(Color color) {
 		auto A = color.GetAlpha();
 		auto R = color.GetRed();
@@ -994,6 +997,11 @@ public:
 
 		return (A << 24) | (R << 16) | (G << 8) | (B);
 	}
+
+	// Get display color
+	//inline COLORREF GetColor() {
+	//	return this->dwTextColor;
+	//}
 
 	inline StrSize GetDefaultCharSize() {
 		return this->defaultCharSz;
@@ -1086,6 +1094,19 @@ public:
 	}
 
 	inline void SetColor(DWORD color) {
+		auto bColorChanged = this->dwTextColor != color;
+
+		if (bColorChanged && !this->colorFormat.empty()) {
+			// no color format, update default
+			if (this->colorFormat.size() == 1) {
+				this->colorFormat.at(0).color = GetColor(color);
+			}
+			// has color format, update format
+			else {
+				this->GetFormat(this->pRawText, this->previousFlag, true);
+			}
+		}
+
 		this->dwTextColor = color;
 	}
 
@@ -1291,19 +1312,22 @@ public:
 
 		previousFlag = flags;
 
-		delete[] this->pRawText;
-		this->pRawText = nullptr;
+		// won't copy if this->pRawText is input
+		if (this->pRawText != pStr) {
+			delete[] this->pRawText;
+			this->pRawText = nullptr;
+
+			this->pRawText = new wchar_t[pInputLen + 1];
+			memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
+
+			memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
+		}
 
 		delete[] this->pText;
 		this->pText = nullptr;
 
-		this->pRawText = new wchar_t[pInputLen + 1];
-		memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
-
 		this->pText = new wchar_t[pInputLen + 1];
-		memset(pText, 0, sizeof(wchar_t) * (pInputLen + 1));
-
-		memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
+		memset(pText, 0, sizeof(wchar_t) * (pInputLen + 1));	
 
 		// ---------------
 		// Format Control
@@ -2606,7 +2630,7 @@ public:
 #ifdef _DEBUG
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
-		//bitmap.Save(L"F:\\NeoStr.png", &pngClsid, NULL);
+		//pBitmap->Save(L"F:\\NeoStr.png", &pngClsid, NULL);
 #endif // _DEBUG
 
 		BitmapData bitmapData;
