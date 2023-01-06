@@ -1604,12 +1604,14 @@ long WINAPI DLLExport GetDurationTime(LPRDATA rdPtr, long param1) {
 	time += GetFormatedTime(timeInMinute);
 	time += GetFormatedTime(timeInSecond);
 
-	size_t length = time.length() - 1;
+	size_t length = !time.empty() ? time.length() - 1 : 0;
 
 	rdPtr->TotalPlayTime = new WCHAR[length + 1];
 	memset(rdPtr->TotalPlayTime, 0, (length + 1) * sizeof(WCHAR));
 
-	memcpy(rdPtr->TotalPlayTime, time.c_str(), length * sizeof(WCHAR));
+	if (!time.empty()) {
+		memcpy(rdPtr->TotalPlayTime, time.c_str(), length * sizeof(WCHAR));
+	}
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
