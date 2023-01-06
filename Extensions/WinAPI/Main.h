@@ -150,7 +150,9 @@
 
 #define	EXP_EXPRESSION_GFFN			35
 
-#define	EXP_LAST                    36
+#define	EXP_EXPRESSION_GDT			36
+
+#define	EXP_LAST                    37
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

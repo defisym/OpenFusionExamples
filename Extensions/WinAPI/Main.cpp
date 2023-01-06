@@ -176,7 +176,9 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GCMW, M_EXPRESSION_GCMW, EXP_EXPRESSION_GCMW, 0, 0,
 	IDMN_EXPRESSION_GCMH, M_EXPRESSION_GCMH, EXP_EXPRESSION_GCMH, 0, 0,
 
-	IDMN_EXPRESSION_GFFN, M_EXPRESSION_GFFN, EXP_EXPRESSION_GFFN, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_ACTION_GFL
+	IDMN_EXPRESSION_GFFN, M_EXPRESSION_GFFN, EXP_EXPRESSION_GFFN, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_ACTION_GFL,
+
+	IDMN_EXPRESSION_GDT, M_EXPRESSION_GDT, EXP_EXPRESSION_GDT, EXPFLAG_STRING, 1, EXPPARAM_LONG,PARA_EXPRESSION_GDT,
 
 };
 
@@ -1511,7 +1513,7 @@ long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 }
 
 //获取当前时间
-long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetCurTime(LPRDATA rdPtr, long param1) {
 	LPSYSTEMTIME lpSystemTime = new SYSTEMTIME;
 	GetLocalTime(lpSystemTime);
 
@@ -1563,9 +1565,51 @@ long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 	//格式最长14字符
 	size_t Length = 14;
 	rdPtr->TotalPlayTime = new WCHAR [Length + 1];
-	memset(rdPtr->TotalPlayTime, 0, Length + 1);
+	memset(rdPtr->TotalPlayTime, 0, (Length + 1) * sizeof(WCHAR));
 
 	swprintf(rdPtr->TotalPlayTime, Length + 1, _T("%.2d:%.2d:%.2d"), Hour, Minute, Second);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->TotalPlayTime;
+}
+
+long WINAPI DLLExport GetDurationTime(LPRDATA rdPtr, long param1) {
+	int timeInMs = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	auto timeInSecond = timeInMs / 1000;
+
+	int timeInHour = timeInSecond / 3600;
+	timeInSecond %= 3600;
+
+	int timeInMinute = timeInSecond / 60;
+	timeInSecond %= 60;
+	
+	//Release Old
+	if (rdPtr->TotalPlayTime != nullptr) {
+		delete[] rdPtr->TotalPlayTime;
+	}
+
+	std::wstring time = L"";
+
+	auto GetFormatedTime = [](int time) {
+		return time!=0
+			?std::format(L"{}:", time)
+			:L"";
+	};
+
+	time += GetFormatedTime(timeInHour);
+	time += GetFormatedTime(timeInMinute);
+	time += GetFormatedTime(timeInSecond);
+
+	size_t length = time.length() - 1;
+
+	rdPtr->TotalPlayTime = new WCHAR[length + 1];
+	memset(rdPtr->TotalPlayTime, 0, (length + 1) * sizeof(WCHAR));
+
+	memcpy(rdPtr->TotalPlayTime, time.c_str(), length * sizeof(WCHAR));
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1969,7 +2013,7 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	GetFrameName,
 
-	GetTime,
+	GetCurTime,
 	GetPlayTime,
 
 	GetFileListSize,
@@ -2000,6 +2044,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	GetCurMonitorHeight,
 
 	GetFullFileName,
-	
+
+	GetDurationTime,
+
 	0
 };

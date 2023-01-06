@@ -37,6 +37,8 @@
 #include	<thread>
 #include	<mutex>
 #include	<memory>
+#include	<format>
+#include	<chrono>
 
 //WinAPI
 
