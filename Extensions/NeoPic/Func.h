@@ -61,14 +61,14 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->changed = true;
 		rdPtr->rc.rcChanged = true;
 
-		rdPtr->rc.rcAngle = (float)rdPtr->angle;
-
-		rdPtr->rc.rcScaleX = abs(rdPtr->zoomScale.XScale);
-		rdPtr->rc.rcScaleY = abs(rdPtr->zoomScale.YScale);	
-
 #define _UPDAETINFO
 
 #ifndef _UPDAETINFO
+		rdPtr->rc.rcAngle = (float)rdPtr->angle;
+
+		rdPtr->rc.rcScaleX = abs(rdPtr->zoomScale.XScale);
+		rdPtr->rc.rcScaleY = abs(rdPtr->zoomScale.YScale);
+
 		int width = int(rdPtr->src->GetWidth() * rdPtr->rc.rcScaleX);
 		int height = int(rdPtr->src->GetHeight() * rdPtr->rc.rcScaleY);
 

@@ -498,7 +498,10 @@ inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
-inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
+// should be called when updating
+// note: hotspot used in BlitEx shouldn't be changed
+inline void UpdateHoImgInfo(LPRDATA rdPtr
+	, int srcWidth, int srcHeight
 	, float xScale, float yScale
 	, int hotSpotX, int hotSpotY) {
 	//Get scale (absolute since negative will mirror)
@@ -506,14 +509,19 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 	float scaleY = abs(yScale);
 
 	//Get scaled size
-	int width = int(pSrc->GetWidth() * scaleX);
-	int height = int(pSrc->GetHeight() * scaleY);
+	int width = int(srcWidth * scaleX);
+	int height = int(srcHeight * scaleY);
 
 	//Get scaled hotspot
 	int hotX = hotSpotX;
 	int hotY = hotSpotY;
 
 	UpdateHotSpot(rdPtr->hotSpotPos, width, height, hotX, hotY);
+
+	rdPtr->rc.rcAngle = (float)rdPtr->angle;
+
+	rdPtr->rc.rcScaleX = scaleX;
+	rdPtr->rc.rcScaleY = scaleY;
 
 	//Rotate hotspot
 	if (rdPtr->rc.rcAngle) {
@@ -528,4 +536,13 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 	//Apply hotspot
 	rdPtr->rHo.hoImgXSpot = (short)hotX;
 	rdPtr->rHo.hoImgYSpot = (short)hotY;
+}
+
+inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
+	, float xScale, float yScale
+	, int hotSpotX, int hotSpotY) {
+	UpdateHoImgInfo(rdPtr
+		, pSrc->GetWidth(), pSrc->GetHeight()
+		, xScale, yScale
+		, hotSpotX, hotSpotY);
 }
