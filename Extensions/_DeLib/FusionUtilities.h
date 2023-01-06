@@ -503,7 +503,9 @@ inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 inline void UpdateHoImgInfo(LPRDATA rdPtr
 	, int srcWidth, int srcHeight
 	, float xScale, float yScale
-	, int hotSpotX, int hotSpotY) {
+	, HotSpotPos hotSpotPos
+	, int hotSpotX, int hotSpotY
+	, int angle) {
 	//Get scale (absolute since negative will mirror)
 	float scaleX = abs(xScale);
 	float scaleY = abs(yScale);
@@ -516,16 +518,16 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr
 	int hotX = hotSpotX;
 	int hotY = hotSpotY;
 
-	UpdateHotSpot(rdPtr->hotSpotPos, width, height, hotX, hotY);
+	UpdateHotSpot(hotSpotPos, width, height, hotX, hotY);
 
-	rdPtr->rc.rcAngle = (float)rdPtr->angle;
+	rdPtr->rc.rcAngle = (float)angle;
 
 	rdPtr->rc.rcScaleX = scaleX;
 	rdPtr->rc.rcScaleY = scaleY;
 
 	//Rotate hotspot
 	if (rdPtr->rc.rcAngle) {
-		RotatePoint(rdPtr->angle, &hotX, &hotY, width, height);
+		RotatePoint(angle, &hotX, &hotY, width, height);
 		cSurface::GetSizeOfRotatedRect(&width, &height, rdPtr->rc.rcAngle);
 	}
 
@@ -540,9 +542,13 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr
 
 inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 	, float xScale, float yScale
-	, int hotSpotX, int hotSpotY) {
+	, HotSpotPos hotSpotPos
+	, int hotSpotX, int hotSpotY
+	, int angle) {
 	UpdateHoImgInfo(rdPtr
 		, pSrc->GetWidth(), pSrc->GetHeight()
 		, xScale, yScale
-		, hotSpotX, hotSpotY);
+		, hotSpotPos
+		, hotSpotX, hotSpotY
+		, angle);
 }
