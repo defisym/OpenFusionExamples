@@ -33,18 +33,16 @@ public:
 
 class WinToastHelper {
 private:
+    bool bInit = false;
     bool bAvailable = false;
     WinToastHandler* pToastHandler = nullptr;
 
     //std::vector<INT64> notifications;
     bool bImmediatePush = false;
+    LPRDATA rdPtr = nullptr;
 
-public:
-    WinToastHelper(LPRDATA rdPtr, DWORD flags = WinToastFlags_Default) {
-        if (!IsCompatible()) {
-            //throw WinToastError_InCompatible;
-            return;
-        }
+    inline void Init() {
+        this->bAvailable = false;
 
         auto rhPtr = rdPtr->rHo.hoAdRunHeader;
         auto rhApp = rhPtr->rhApp;
@@ -79,9 +77,22 @@ public:
             return;
         }
 
-        pToastHandler = new WinToastHandler;
+        this->bInit = true;
+        this->bAvailable = true;
+    }
 
-        bAvailable = true;
+public:
+    WinToastHelper(LPRDATA rdPtr, DWORD flags = WinToastFlags_Default) {
+        this->bAvailable = false;
+
+        if (!IsCompatible()) {
+            //throw WinToastError_InCompatible;
+            return;
+        }
+
+        this->rdPtr = rdPtr;     
+        this->pToastHandler = new WinToastHandler;
+        this->bAvailable = true;
     };
 
     ~WinToastHelper() {
@@ -106,6 +117,10 @@ public:
 
     // Toast
     inline bool ShowToast(std::wstring&& title, std::wstring&& content) {
+        if (!bInit) {
+            Init();
+        }
+
         if (!bAvailable) {
             return false;
         }
