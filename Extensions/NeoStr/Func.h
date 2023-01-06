@@ -24,11 +24,16 @@ inline void ChangeScale(LPRDATA rdPtr) {
 	//rdPtr->rHo.hoImgWidth = rdPtr->swidth;
 	//rdPtr->rHo.hoImgHeight = rdPtr->sheight;
 
-	rdPtr->rHo.hoImgXSpot = rdPtr->hotSpotX;
-	rdPtr->rHo.hoImgYSpot = rdPtr->hotSpotY;
+	//rdPtr->rHo.hoImgXSpot = rdPtr->hotSpotX;
+	//rdPtr->rHo.hoImgYSpot = rdPtr->hotSpotY;
 
-	rdPtr->rHo.hoImgWidth = int(rdPtr->swidth * rdPtr->xScale);
-	rdPtr->rHo.hoImgHeight = int(rdPtr->sheight * rdPtr->yScale);
+	//rdPtr->rHo.hoImgWidth = int(rdPtr->swidth * rdPtr->xScale);
+	//rdPtr->rHo.hoImgHeight = int(rdPtr->sheight * rdPtr->yScale);
+
+	UpdateHoImgInfo(rdPtr
+		, rdPtr->swidth, rdPtr->sheight
+		, rdPtr->xScale, rdPtr->yScale
+		, rdPtr->hotSpotX, rdPtr->hotSpotY);
 
 	NoClip(rdPtr);
 }
