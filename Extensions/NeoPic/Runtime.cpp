@@ -130,7 +130,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->img = nullptr;
 	rdPtr->src = nullptr;
 
-	rdPtr->fromLib = false;
+	// to create new surface, don't change
+	rdPtr->fromLib = true;
 
 	rdPtr->zoomScale = { 1.0,1.0 };
 	rdPtr->imgZoomScale = { 1.0,1.0 };
