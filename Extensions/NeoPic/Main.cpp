@@ -80,6 +80,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SPL, M_ACTION_SPL, ACT_ACTION_SPL,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_KEEPLIST, M_ACTION_BASEPATH, M_ACTION_KEY,
 		IDMN_ACTION_SKLBP, M_ACTION_SKLBP, ACT_ACTION_SKLBP,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_ACTION_PRELOAD, M_ACTION_BASEPATH,
+		
+		IDMN_ACTION_FM, M_ACTION_FM, ACT_ACTION_FM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
 		};
 
@@ -541,6 +543,8 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 			UpdateRef(rdPtr, false);
 			rdPtr->pRefCount = nullptr;
 
+			rdPtr->pLibValue = nullptr;
+
 			bReleaseOld = false;
 		}
 		else {
@@ -627,6 +631,67 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 	}
 
 	object->HWA = pLibHWAType;
+
+	return 0;
+}
+
+short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+
+	if (CanDisplay(rdPtr)) {
+		auto pBitmap = rdPtr->src;
+		auto pSf = CreateSurface(32, width, height);
+
+		if (rdPtr->src->HasAlpha()) {
+			//_AddAlpha(pSf);
+			pSf->CreateAlpha();
+		}
+
+		if (IsHWA(rdPtr->src)) {
+			pBitmap = ConvertBitmap(rdPtr, rdPtr->src);
+		}
+
+		// Fill -> alpha channel issue
+		// Fill -> not work under HWA (blank result)
+		//CFillMosaic mosaic(pBitmap);		
+		//auto bResult = pSf->Fill(&mosaic);
+
+		// if mod != 0 then need another blit
+		auto itx = width / pBitmap->GetWidth() + ((width % pBitmap->GetWidth()) != 0);
+		auto ity = height / pBitmap->GetHeight() + ((height % pBitmap->GetHeight()) != 0);
+
+		for (int y = 0; y < ity; y++) {
+			for (int x = 0; x < itx; x++) {
+				auto destX = x * pBitmap->GetWidth();
+				auto destY = y * pBitmap->GetHeight();
+
+				pBitmap->Blit(*pSf, destX, destY, BMODE_OPAQUE, BOP_COPY, 0, BLTF_COPYALPHA);
+			}
+		}
+
+		if (rdPtr->fromLib) {
+			rdPtr->fromLib = false;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+
+			rdPtr->pLibValue = nullptr;
+		}
+		else {
+			delete rdPtr->src;
+			rdPtr->src = nullptr;
+		}
+
+		if (rdPtr->HWA) {
+			ConvertToHWATexture(rdPtr, pSf);
+		}
+
+		rdPtr->src = pSf;
+
+		NewPic(rdPtr);
+		ReDisplay(rdPtr);
+	}
 
 	return 0;
 }
@@ -737,12 +802,16 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	cSurface* ret = nullptr;
 
 	if (!rdPtr->isLib) {
-		if (*rdPtr->FilePath != FilePath || *rdPtr->Key != Key) {
-			ret = nullptr;
-		}
-		else {
-			ret = rdPtr->src;
-		}
+		// why there is such a logic with non lib object?
+		// 
+		//if (*rdPtr->FilePath != FilePath || *rdPtr->Key != Key) {
+		//	ret = nullptr;
+		//}
+		//else {
+		//	ret = rdPtr->src;
+		//}
+
+		ret = rdPtr->src;
 	}
 	else {
 		auto it = _LoadLib(rdPtr, rdPtr, FilePath.c_str(), Key.c_str());
@@ -919,6 +988,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetPreloadList,
 			SetKeepListByPointer,
+
+			FillMosaic,
 
 			0
 			};

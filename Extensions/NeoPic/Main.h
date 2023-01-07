@@ -63,7 +63,9 @@
 #define	ACT_ACTION_SPL				26
 #define	ACT_ACTION_SKLBP			27
 
-#define	ACT_LAST					28
+#define	ACT_ACTION_FM				28
+
+#define	ACT_LAST					29
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -215,6 +217,12 @@ typedef struct tagRDATA
 
 	//src->display
 	LPSURFACE src = nullptr;
+
+	// flip cache
+	LPSURFACE pSf_Nor = nullptr;
+	LPSURFACE pSf_HF = nullptr;
+	LPSURFACE pSf_VF = nullptr;
+	LPSURFACE pSf_VHF = nullptr;
 	
 	POINT hotSpot = { 0,0 };	
 	ZoomScale zoomScale = { 1.0,1.0 };

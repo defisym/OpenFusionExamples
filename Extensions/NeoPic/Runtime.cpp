@@ -130,7 +130,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->img = nullptr;
 	rdPtr->src = nullptr;
 
-	rdPtr->fromLib = true;
+	rdPtr->fromLib = false;
 
 	rdPtr->zoomScale = { 1.0,1.0 };
 	rdPtr->imgZoomScale = { 1.0,1.0 };
@@ -229,7 +229,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		}
 
 		if (!rdPtr->fromLib) {
-			delete rdPtr->src;
+			ReleaseNonFromLib(rdPtr);
 		}
 
 		delete rdPtr->trans;
@@ -335,6 +335,8 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		// On-screen coords
 		int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
+
+		HandleFlip(rdPtr);
 
 		LPSURFACE pDisplay = rdPtr->src;
 		
