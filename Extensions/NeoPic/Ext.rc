@@ -191,6 +191,8 @@ BEGIN
                 MENUITEM "Stack Blur",              IDMN_ACTION_SB
                 MENUITEM SEPARATOR
                 MENUITEM "Set Effect Param",        IDMN_ACTION_SESP
+                MENUITEM SEPARATOR
+                MENUITEM "Fill Mosaic",             IDMN_ACTION_FM
             END
             MENUITEM SEPARATOR
             MENUITEM "Add Backdrop",                IDMN_ACTION_AB
@@ -432,6 +434,8 @@ BEGIN
 
     M_ACTION_SESP           "Set Effect Image Param %3 From Lib %0, File %1, Decrypt Key %2"
     M_ACTION_EFFECTNAME     "Effect Name"
+
+    M_ACTION_FM             "Fill Mosaic by Current Image, Width = %0, Height = %1"
 END
 
 STRINGTABLE DISCARDABLE 

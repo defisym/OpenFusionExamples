@@ -273,7 +273,8 @@ inline RGBA operator >>(RGBA A, int B) {
 }
 
 //Create surface
-inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, int driver) {
+inline LPSURFACE CreateHWASurface(int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
@@ -283,21 +284,24 @@ inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, in
 	return hwa;
 }
 
-inline void CreateHWASurface(LPSURFACE pSf, int depth, int width, int height, int type, int driver) {
+inline void CreateHWASurface(LPSURFACE pSf, int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
 	pSf->Create(width, height, proto);
 }
 
-inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height, int type) {
+inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE) {
 	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 	int sfDrv = wSurf->GetDriver();
 
 	return CreateHWASurface(depth, width, height, type, sfDrv);
 }
 
-inline void CreateHWASurface(LPRDATA rdPtr, LPSURFACE pSf, int depth, int width, int height, int type) {
+inline void CreateHWASurface(LPRDATA rdPtr, LPSURFACE pSf, int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE) {
 	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 	int sfDrv = wSurf->GetDriver();
 
@@ -1199,6 +1203,7 @@ inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,B
 }
 
 // dst transparent -> src alpha
+// TODO: BOP_BLEND_REPLACETRANSP ?
 inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHeight
 	, LPSURFACE pDst, int destX, int destY) {
 	if(!pSrc->HasAlpha()){
