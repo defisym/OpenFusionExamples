@@ -18,6 +18,28 @@ inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit);
 
 //-----------------------------
 
+inline void NewNonFromLib(LPRDATA rdPtr, LPSURFACE pSrc) {
+	rdPtr->src = pSrc;
+	rdPtr->pSf_Nor = pSrc;
+}
+inline void ResetNonFromLib(LPRDATA rdPtr) {
+	rdPtr->src = nullptr;
+
+	rdPtr->pSf_Nor = nullptr;
+	rdPtr->pSf_HF = nullptr;
+	rdPtr->pSf_VF = nullptr;
+	rdPtr->pSf_VHF = nullptr;
+}
+inline void ReleaseNonFromLib(LPRDATA rdPtr) {
+	// rdPtr->src must point to the following ones
+	delete rdPtr->pSf_Nor;
+	delete rdPtr->pSf_HF;
+	delete rdPtr->pSf_VF;
+	delete rdPtr->pSf_VHF;
+
+	ResetNonFromLib(rdPtr);
+}
+
 // Create new surface according to HWA
 inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
 	return HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
@@ -27,24 +49,24 @@ inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkE
 	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
 }
 
-inline void ConvertHWA(LPRDATA rdPtr) {
-	LPSURFACE srchwa = ConvertHWATexture(rdPtr, rdPtr->src);
-	LPSURFACE imghwa = ConvertHWATarget(rdPtr, rdPtr->img);
-
-	if (rdPtr->src != srchwa) {
-		if (!rdPtr->fromLib) {
-			delete rdPtr->src;
-		}
-		rdPtr->fromLib = false;
-
-		rdPtr->src = srchwa;
-	}
-
-	if (rdPtr->img != imghwa) {
-		delete rdPtr->img;
-		rdPtr->img = imghwa;
-	}
-}
+//inline void ConvertHWA(LPRDATA rdPtr) {
+//	LPSURFACE srchwa = ConvertHWATexture(rdPtr, rdPtr->src);
+//	LPSURFACE imghwa = ConvertHWATarget(rdPtr, rdPtr->img);
+//
+//	if (rdPtr->src != srchwa) {
+//		if (!rdPtr->fromLib) {
+//			ReleaseNonFromLib(rdPtr);
+//		}
+//		rdPtr->fromLib = false;
+//
+//		rdPtr->src = srchwa;
+//	}
+//
+//	if (rdPtr->img != imghwa) {
+//		delete rdPtr->img;
+//		rdPtr->img = imghwa;
+//	}
+//}
 
 inline void UpdateHoImgInfo(LPRDATA rdPtr) {
 	UpdateHoImgInfo(rdPtr, rdPtr->src
@@ -399,6 +421,8 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 		}	
 
 		_LoadFromFile(rdPtr->src, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
+		
+		NewNonFromLib(rdPtr, rdPtr->src);
 
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
@@ -478,7 +502,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	// update src
 	if(!rdPtr->isLib){
 		if (!rdPtr->fromLib) {
-			delete rdPtr->src;
+			ReleaseNonFromLib(rdPtr);
 		}
 
 		// Update ref
@@ -528,7 +552,7 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 
 	if (obj->fromLib) {
 		if (!rdPtr->fromLib) {
-			delete rdPtr->src;
+			ReleaseNonFromLib(rdPtr);
 		}
 
 		rdPtr->fromLib = true;
@@ -553,9 +577,12 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 
 		rdPtr->fromLib = false;
 		
-		delete rdPtr->src;
+		ReleaseNonFromLib(rdPtr);
+
 		rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);;
 		rdPtr->src->Clone(*obj->src);
+
+		NewNonFromLib(rdPtr, rdPtr->src);
 	}
 
 	*rdPtr->FileName = *obj->FileName;
@@ -600,11 +627,12 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 			rdPtr->pLibValue = nullptr;
 		}
 		else {
-			delete rdPtr->src;
-			rdPtr->src = nullptr;
+			ReleaseNonFromLib(rdPtr);
 		}
 
 		rdPtr->src = pSave;
+
+		NewNonFromLib(rdPtr, rdPtr->src);
 
 		if (rdPtr->src->IsValid()) {
 			NewPic(rdPtr);
@@ -1174,119 +1202,24 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 	delete pTransformBitmap;
 }
 
-//inline void HandleFlip(LPRDATA rdPtr) {
-//	auto pLibItem = rdPtr->pLibValue;
-//	auto pSrc = pLibItem->pSf;
-//
-//	bool bFlipH = rdPtr->zoomScale.XScale < 0;
-//	bool bFlipV = rdPtr->zoomScale.YScale < 0;
-//
-//	auto FlipCore = [=](LPSURFACE pBase, LPSURFACE& pResult, BOOL(cSurface::* pFlipFunc)()) {
-//		if (pResult != nullptr) {
-//			return pResult;
-//		}
-//
-//		LPSURFACE pFilp = new cSurface;
-//		pFilp->Clone(*pBase);
-//
-//		(pFilp->*pFlipFunc)();
-//
-//		pResult = pFilp;
-//
-//		return pResult;
-//	};
-//
-//	auto FlipX = [=]() {
-//		return FlipCore(pLibItem->pSf, pLibItem->pSf_HF, &cSurface::ReverseX);
-//	};
-//	auto FlipY = [=]() {
-//		return FlipCore(pLibItem->pSf, pLibItem->pSf_VF, &cSurface::ReverseX);
-//	};
-//	std::function<LPSURFACE()> FlipXY;
-//
-//	FlipXY = [=]() {
-//		if (pLibItem->pSf_VHF != nullptr) {
-//			return pLibItem->pSf_VHF;
-//		}
-//
-//		bool XFlipped = pLibItem->pSf_HF != nullptr;
-//		bool YFlipped = pLibItem->pSf_VF != nullptr;
-//
-//		if (XFlipped) {
-//			LPSURFACE pFilp = new cSurface;
-//			pFilp->Clone(*pLibItem->pSf_HF);
-//
-//			pFilp->ReverseY();
-//
-//			pLibItem->pSf_VHF = pFilp;
-//
-//			return pLibItem->pSf_VHF;
-//		}
-//
-//		if (YFlipped) {
-//			LPSURFACE pFilp = new cSurface;
-//			pFilp->Clone(*pLibItem->pSf_VF);
-//
-//			pFilp->ReverseX();
-//
-//			pLibItem->pSf_VHF = pFilp;
-//
-//			return pLibItem->pSf_VHF;
-//		}
-//
-//		// if not flipped, flip
-//		FlipX();
-//
-//		// call again
-//		return FlipXY();
-//	};
-//
-//	do {
-//		if (!bFlipH && !bFlipV) {
-//			rdPtr->src = pSrc;
-//
-//			break;
-//		}
-//
-//		if (bFlipH && bFlipV) {
-//			rdPtr->src = FlipXY();
-//
-//			break;
-//		}
-//
-//		if (bFlipH) {
-//			rdPtr->src = FlipX();
-//
-//			break;
-//		}
-//
-//		if (bFlipV) {
-//			rdPtr->src = FlipY();
-//
-//			break;
-//		}
-//	} while (0);
-//
-//	NewImg(rdPtr);
-//}
-
 inline void HandleFlip(LPRDATA rdPtr
 	,LPSURFACE& pDisplay
 	, LPSURFACE pBase, LPSURFACE& pHF, LPSURFACE& pVF, LPSURFACE& pVHF) {
 	bool bFlipH = rdPtr->zoomScale.XScale < 0;
 	bool bFlipV = rdPtr->zoomScale.YScale < 0;
 
-	auto FlipCore = [](LPSURFACE pBase, LPSURFACE& pResult, BOOL(cSurface::* pFlipFunc)()) {
+	auto FlipCore = [](LPSURFACE pBase, LPSURFACE& pResult
+		, BOOL(cSurface::* pFlipFunc)()) {
 		if (pResult != nullptr) {
 			return pResult;
 		}
 
-		LPSURFACE pFilp = new cSurface;
-		pFilp->Clone(*pBase);
+		LPSURFACE pFlip = new cSurface;
+		pFlip->Clone(*pBase);
 
-		(pFilp->*pFlipFunc)();
+		(pFlip->*pFlipFunc)();
 
-		pResult = pFilp;
+		pResult = pFlip;
 
 		return pResult;
 	};
@@ -1308,23 +1241,23 @@ inline void HandleFlip(LPRDATA rdPtr
 		bool YFlipped = pVF != nullptr;
 
 		if (XFlipped) {
-			LPSURFACE pFilp = new cSurface;
-			pFilp->Clone(*pHF);
+			LPSURFACE pFlip = new cSurface;
+			pFlip->Clone(*pHF);
 
-			pFilp->ReverseY();
+			pFlip->ReverseY();
 
-			pVHF = pFilp;
+			pVHF = pFlip;
 
 			return pVHF;
 		}
 
 		if (YFlipped) {
-			LPSURFACE pFilp = new cSurface;
-			pFilp->Clone(*pVF);
+			LPSURFACE pFlip = new cSurface;
+			pFlip->Clone(*pVF);
 
-			pFilp->ReverseX();
+			pFlip->ReverseX();
 
-			pVHF = pFilp;
+			pVHF = pFlip;
 
 			return pVHF;
 		}
@@ -1373,26 +1306,9 @@ inline void HandleFlip(LPRDATA rdPtr) {
 			, rdPtr->src
 			, pLibItem->pSf, pLibItem->pSf_HF, pLibItem->pSf_VF, pLibItem->pSf_VHF);
 	}
-}
-
-//TODO
-inline void NewNonFromLib(LPRDATA rdPtr,LPSURFACE pSrc) {
-	ReleaseNonFromLib(rdPtr);
-
-	rdPtr->src = pSrc;
-	rdPtr->pSf_Nor = pSrc;
-}
-inline void ReleaseNonFromLib(LPRDATA rdPtr) {
-	// rdPtr->src must point to the following ones
-	rdPtr->src = nullptr;
-
-	delete rdPtr->pSf_Nor;
-	delete rdPtr->pSf_HF;
-	delete rdPtr->pSf_VF;
-	delete rdPtr->pSf_VHF;
-
-	rdPtr->pSf_Nor = nullptr;
-	rdPtr->pSf_HF = nullptr;
-	rdPtr->pSf_VF = nullptr;
-	rdPtr->pSf_VHF = nullptr;
+	else {
+		HandleFlip(rdPtr
+			, rdPtr->src
+			, rdPtr->pSf_Nor, rdPtr->pSf_HF, rdPtr->pSf_VF, rdPtr->pSf_VHF);
+	}
 }
