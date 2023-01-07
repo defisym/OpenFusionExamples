@@ -577,7 +577,9 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		}		
 
 		if (bReleaseOld) {
-			delete pOldSf;
+			//delete pOldSf;
+			// pOldSf is one of the following
+			ReleaseNonFromLib(rdPtr);
 		}	
 
 		rdPtr->fromLib = false;
@@ -585,6 +587,8 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		StackBlur(pMemSf, radius, scale, divide);
 
 		rdPtr->src = pMemSf;
+
+		NewNonFromLib(rdPtr, rdPtr->src);
 		
 		if (bHwa) {
 			ConvertToHWATexture(rdPtr, rdPtr->src);
@@ -640,6 +644,7 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 	int height = (int)CNC_GetIntParameter(rdPtr);
 
 	if (CanDisplay(rdPtr)) {
+		bool bReleaseBitmap = false;
 		auto pBitmap = rdPtr->src;
 		auto pSf = CreateSurface(32, width, height);
 
@@ -650,6 +655,7 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 
 		if (IsHWA(rdPtr->src)) {
 			pBitmap = ConvertBitmap(rdPtr, rdPtr->src);
+			bReleaseBitmap = true;
 		}
 
 		// Fill -> alpha channel issue
@@ -670,6 +676,10 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 			}
 		}
 
+		if (bReleaseBitmap) {
+			delete pBitmap;
+		}
+
 		if (rdPtr->fromLib) {
 			rdPtr->fromLib = false;
 
@@ -679,8 +689,7 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 			rdPtr->pLibValue = nullptr;
 		}
 		else {
-			delete rdPtr->src;
-			rdPtr->src = nullptr;
+			ReleaseNonFromLib(rdPtr);
 		}
 
 		if (rdPtr->HWA) {
@@ -688,6 +697,8 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 		}
 
 		rdPtr->src = pSf;
+
+		NewNonFromLib(rdPtr, rdPtr->src);
 
 		NewPic(rdPtr);
 		ReDisplay(rdPtr);
