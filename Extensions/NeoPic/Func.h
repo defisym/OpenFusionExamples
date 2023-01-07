@@ -1208,17 +1208,18 @@ inline void HandleFlip(LPRDATA rdPtr
 	bool bFlipH = rdPtr->zoomScale.XScale < 0;
 	bool bFlipV = rdPtr->zoomScale.YScale < 0;
 
-	auto FlipCore = [](LPSURFACE pBase, LPSURFACE& pResult, BOOL(cSurface::* pFlipFunc)()) {
+	auto FlipCore = [](LPSURFACE pBase, LPSURFACE& pResult
+		, BOOL(cSurface::* pFlipFunc)()) {
 		if (pResult != nullptr) {
 			return pResult;
 		}
 
-		LPSURFACE pFilp = new cSurface;
-		pFilp->Clone(*pBase);
+		LPSURFACE pFlip = new cSurface;
+		pFlip->Clone(*pBase);
 
-		(pFilp->*pFlipFunc)();
+		(pFlip->*pFlipFunc)();
 
-		pResult = pFilp;
+		pResult = pFlip;
 
 		return pResult;
 	};
@@ -1240,23 +1241,23 @@ inline void HandleFlip(LPRDATA rdPtr
 		bool YFlipped = pVF != nullptr;
 
 		if (XFlipped) {
-			LPSURFACE pFilp = new cSurface;
-			pFilp->Clone(*pHF);
+			LPSURFACE pFlip = new cSurface;
+			pFlip->Clone(*pHF);
 
-			pFilp->ReverseY();
+			pFlip->ReverseY();
 
-			pVHF = pFilp;
+			pVHF = pFlip;
 
 			return pVHF;
 		}
 
 		if (YFlipped) {
-			LPSURFACE pFilp = new cSurface;
-			pFilp->Clone(*pVF);
+			LPSURFACE pFlip = new cSurface;
+			pFlip->Clone(*pVF);
 
-			pFilp->ReverseX();
+			pFlip->ReverseX();
 
-			pVHF = pFilp;
+			pVHF = pFlip;
 
 			return pVHF;
 		}
