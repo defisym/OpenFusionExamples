@@ -83,6 +83,12 @@ short actionsInfos[]=
 		IDMN_ACTION_TOAST, M_ACTION_TOAST, ACT_ACTION_TOAST, 0, 3,PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_EXP_CTB, M_ACT_TITLE, M_ACT_MSG,
 		IDMN_ACTION_TOASTFLAG, M_ACTION_TOASTFLAG, ACT_ACTION_TOASTFLAG, 0, 1, PARAM_EXPRESSION, M_ACT_TOASTFLAG,
 
+		IDMN_ACTION_SOA, M_ACTION_SOA, ACT_ACTION_SOA, 0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ACT_ALPHA,
+		IDMN_ACTION_SOABF, M_ACTION_SOABF, ACT_ACTION_SOABF, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_ACT_ALPHA,
+
+		IDMN_ACTION_SORC, M_ACTION_SORC, ACT_ACTION_SORC, 0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ACT_RGBCOEF,
+		IDMN_ACTION_SORCBF, M_ACTION_SORCBF, ACT_ACTION_SORCBF, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_ACT_RGBCOEF,
+
 		};
 
 // Definitions of parameters for each expression
@@ -145,6 +151,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GOEV, M_EXPRESSION_GOEV, EXP_EXPRESSION_GOEV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
 		IDMN_EXPRESSION_LV, M_EXPRESSION_LV, EXP_EXPRESSION_LV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
 		IDMN_EXPRESSION_LOEV, M_EXPRESSION_LOEV, EXP_EXPRESSION_LOEV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_EXP_A, M_EXP_B,
+		
+		IDMN_EXPRESSION_GOA, M_EXPRESSION_GOA, EXP_EXPRESSION_GOA, 0, 1, EXPPARAM_LONG, M_OBJECT,
 
 		};
 
@@ -493,6 +501,42 @@ short WINAPI DLLExport ToastFlags(LPRDATA rdPtr, long param1, long param2) {
 	auto flags = CNC_GetParameter(rdPtr);
 
 	rdPtr->pToast->SetFlag(flags);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetObjectAlpha(LPRDATA rdPtr, long param1, long param2) {
+	LPRO pObject = LPRO(CNC_GetParameter(rdPtr));
+	UCHAR alpha = UCHAR(CNC_GetIntParameter(rdPtr));
+
+	EffectUtilities::SetAlpha(pObject, alpha);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetObjectAlphaByFixed(LPRDATA rdPtr, long param1, long param2) {
+	long fixed = long(CNC_GetParameter(rdPtr));
+	UCHAR alpha = UCHAR(CNC_GetIntParameter(rdPtr));
+
+	EffectUtilities::SetAlpha(LproFromFixed(rdPtr, fixed), alpha);
+
+	return 0;
+}
+
+short WINAPI DLLExport SetObjectRGBCoef(LPRDATA rdPtr, long param1, long param2) {
+	LPRO pObject = LPRO(CNC_GetParameter(rdPtr));
+	DWORD dwRGBCoef = DWORD(CNC_GetIntParameter(rdPtr));
+
+	EffectUtilities::SetRGBCoef(pObject, EffectUtilities::BGRToRGB(dwRGBCoef));
+
+	return 0;
+}
+
+short WINAPI DLLExport SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long param2) {
+	long fixed = long(CNC_GetParameter(rdPtr));
+	DWORD dwRGBCoef = DWORD(CNC_GetIntParameter(rdPtr));
+
+	EffectUtilities::SetRGBCoef(LproFromFixed(rdPtr, fixed), EffectUtilities::BGRToRGB(dwRGBCoef));
 
 	return 0;
 }
@@ -874,6 +918,12 @@ long WINAPI DLLExport Xor(LPRDATA rdPtr, long param1) {
 	return bRet;
 }
 
+long WINAPI DLLExport GetObjectAlpha(LPRDATA rdPtr, long param1) {
+	long fixed = long(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
+
+	return EffectUtilities::GetAlpha(LproFromFixed(rdPtr, fixed));
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -945,6 +995,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Toast,
 			ToastFlags,
 
+			SetObjectAlpha,
+			SetObjectAlphaByFixed,
+
+			SetObjectRGBCoef,
+			SetObjectRGBCoefByFixed,
+
 			0
 			};
 
@@ -993,6 +1049,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GreaterOrEqualVal,
 			LowerVal,
 			LowerOrEqualVal,
+
+			GetObjectAlpha,
 
 			0
 			};

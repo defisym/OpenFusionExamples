@@ -223,6 +223,11 @@ BEGIN
             MENUITEM "Set Toast Flag", IDMN_ACTION_TOASTFLAG
         END
         MENUITEM SEPARATOR
+        MENUITEM "Set Object Alpha", IDMN_ACTION_SOA
+        MENUITEM "Set Object Alpha By Fixed", IDMN_ACTION_SOABF
+        MENUITEM "Set Object RGB Coef", IDMN_ACTION_SORC
+        MENUITEM "Set Object RGB Coef By Fixed", IDMN_ACTION_SORCBF
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -304,6 +309,8 @@ BEGIN
             MENUITEM "Or",IDMN_EXPRESSION_OR
             MENUITEM "Xor",IDMN_EXPRESSION_XOR
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Get Object Alpha", IDMN_EXPRESSION_GOA
         MENUITEM SEPARATOR
         MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN        
         MENUITEM SEPARATOR
@@ -419,6 +426,12 @@ BEGIN
     M_ACTION_MSGBOX         "if %0, Show Message = %1"
     M_ACTION_TOAST          "if %0, Show Toast, Title = %1, Content = %2"
     M_ACTION_TOASTFLAG      "Set Toast Flag to %0"
+    
+    M_ACTION_SOA            "Set Object %0 Alpha to %1"
+    M_ACTION_SOABF          "Set Object %0 Alpha to %1"
+
+    M_ACTION_SORC           "Set Object %0 RGB Coef to %1"
+    M_ACTION_SORCBF         "Set Object %0 RGB Coef to %1"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -436,6 +449,9 @@ BEGIN
     M_ACT_MSG               "The message to be displayed"
     
     M_ACT_TOASTFLAG         "Toast Flags"
+
+    M_ACT_ALPHA             "Alpha"
+    M_ACT_RGBCOEF           "RGB Coef"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -526,6 +542,8 @@ BEGIN
     M_EXP_B			            "B"
     M_EXP_CTB			        "Value Cast to Bool"
     M_EXP_NEG			        "Value to be Negated"
+
+    M_EXPRESSION_GOA             "ObjectAlpha ("
 END
 
 STRINGTABLE

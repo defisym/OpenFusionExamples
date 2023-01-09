@@ -67,7 +67,13 @@
 #define	ACT_ACTION_TOAST			20
 #define	ACT_ACTION_TOASTFLAG		21
 
-#define	ACT_LAST					22
+#define	ACT_ACTION_SOA				22
+#define	ACT_ACTION_SOABF			23
+
+#define	ACT_ACTION_SORC				24
+#define	ACT_ACTION_SORCBF			25
+
+#define	ACT_LAST					26
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -116,7 +122,9 @@
 #define EXP_EXPRESSION_LV			28
 #define EXP_EXPRESSION_LOEV			29
 
-#define	EXP_LAST                    30
+#define EXP_EXPRESSION_GOA			30
+
+#define	EXP_LAST                    31
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
