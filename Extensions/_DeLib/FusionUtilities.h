@@ -498,6 +498,7 @@ inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
+#ifndef _NODISPLAY
 // should be called when updating
 // note: hotspot used in BlitEx shouldn't be changed
 inline void UpdateHoImgInfo(LPRDATA rdPtr
@@ -552,3 +553,5 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 		, hotSpotX, hotSpotY
 		, angle);
 }
+
+#endif
