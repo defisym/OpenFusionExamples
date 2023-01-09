@@ -966,17 +966,25 @@ inline void GetEstimateMemUsage(GlobalData* pData) {
 	auto pLib = pData->pLib;
 
 	for (auto& item : *pLib) {
-		auto pSf = item.second.pSf;
+		LPSURFACE* pSfArrary = &item.second.pSf;
 
-		bool bHWA = IsHWA(pSf);
+		for (int i = 0; i < SurfaceLibSfNum; i++) {
+			auto pSf = *(pSfArrary + i);
 
-		auto estimateSizeMB = GetEstimateSizeMB(pSf);
+			if (pSf == nullptr) {
+				continue;
+			}
 
-		if (!bHWA) {
-			pData->estimateRAMSizeMB += estimateSizeMB;
-		}
-		else {
-			pData->estimateVRAMSizeMB += estimateSizeMB;
+			bool bHWA = IsHWA(pSf);
+
+			auto estimateSizeMB = GetEstimateSizeMB(pSf);
+
+			if (!bHWA) {
+				pData->estimateRAMSizeMB += estimateSizeMB;
+			}
+			else {
+				pData->estimateVRAMSizeMB += estimateSizeMB;
+			}
 		}
 	}
 }

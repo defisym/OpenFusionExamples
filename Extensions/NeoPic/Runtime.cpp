@@ -353,7 +353,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		DWORD flags = 0;
 
 		if (rdPtr->stretchQuality) {
-			flags |= BLTF_ANTIA;
+			flags |= STRF_RESAMPLE;
 		}
 
 		pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,

@@ -72,9 +72,12 @@ struct Count {
 	}
 };
 
+constexpr auto SurfaceLibSfNum = 4;
+
 struct SurfaceLibValue {
 	LPSURFACE pSf = nullptr;
 
+	// don't change position, refered in GetEstimateMemUsage
 	LPSURFACE pSf_VF = nullptr;
 	LPSURFACE pSf_HF = nullptr;
 	LPSURFACE pSf_VHF = nullptr;
