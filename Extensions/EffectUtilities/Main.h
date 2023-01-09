@@ -17,8 +17,9 @@
 #define	ACT_ACTION_SEP				1
 
 #define	ACT_ACTION_SBE				2
+#define	ACT_ACTION_SBEP				3
 
-#define	ACT_LAST					3
+#define	ACT_LAST					4
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
