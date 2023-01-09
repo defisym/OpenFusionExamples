@@ -762,6 +762,18 @@ public:
 		return false;
 	}
 
+	inline static DWORD RGBToBGR(DWORD dwRGB) {
+		return BGRToRGB(dwRGB);
+	}
+
+	inline static DWORD BGRToRGB(DWORD dwBGR) {
+		UCHAR R = UCHAR(dwBGR & 0xFF);
+		UCHAR G = UCHAR((dwBGR & 0xFF00) >> 8);
+		UCHAR B = UCHAR((dwBGR & 0xFF0000) >> 16);
+
+		return R << 16 | G << 8 | B;
+	}
+
 	inline static DWORD GetRGBCoef(LPRO pObject) {
 		if (!(pObject->roHo.hoOEFlags & OEFLAG_SPRITES)) {
 			return 0;
