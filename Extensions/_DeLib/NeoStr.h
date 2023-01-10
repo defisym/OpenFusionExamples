@@ -2809,7 +2809,6 @@ public:
 			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
 				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
 				, bm, bo, boParam, bAntiA);
-
 		}
 	}
 };

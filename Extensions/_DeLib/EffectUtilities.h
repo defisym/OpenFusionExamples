@@ -169,6 +169,7 @@ private:
 
 	// ref
 	// https://learn.microsoft.com/zh-cn/windows/win32/api/d3d11/nf-d3d11-id3d11device-createbuffer	
+	// https://blog.csdn.net/qq_35312463/article/details/109197547
 	inline auto CreateBuffer(ID3D11Buffer** ppBuffer
 		, UINT size = 4096, bool bDynamic = true) {
 		HRESULT result = S_OK;
@@ -178,7 +179,8 @@ private:
 
 		desc.ByteWidth = (size / 16) * 16;
 		desc.Usage = bDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_IMMUTABLE;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		//desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;		
 		desc.CPUAccessFlags = bDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 		desc.MiscFlags = 0;
 		desc.StructureByteStride = 0;
