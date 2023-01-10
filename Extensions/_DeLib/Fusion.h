@@ -7,6 +7,9 @@
 #include	"ImgFlt.h"
 #include	"CfcFile.h"
 
+#include	"d3d11surfinfo.h"
+#include	"D3dSurfInfo.h"
+
 #include	<map>
 #include	<vector>
 #include	<thread>
@@ -344,6 +347,28 @@ inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
 	sur->Clone(*Src);
 
 	return sur;
+}
+
+//Get info
+inline D3D11SURFINFO GetSurfaceInfo(LPSURFACE pSf) {
+	D3D11SURFINFO info = { 0 };
+	auto pInfo = &info;
+
+	info.m_lSize= sizeof(D3D11SURFINFO);
+	auto ret = pSf->GetDriverInfo(&info);
+
+	return info;
+}
+
+inline auto GetD3DInfo(LPRDATA rdPtr) {
+	auto pSf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	auto info = GetSurfaceInfo(pSf);
+
+	return info;
+}
+
+inline auto GetD3DDevice(LPRDATA rdPtr) {
+	return GetD3DInfo(rdPtr).m_pD3D11Device;
 }
 
 //Convert to HWA
