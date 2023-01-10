@@ -137,7 +137,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 	// Will not be called next loop	
-	rdPtr->pEffectUtilities->releaseEffectImageParam();
+	rdPtr->pEffectUtilities->ReleaseEffectImageParam();
 
 	return 0;
 }

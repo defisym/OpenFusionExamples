@@ -5,7 +5,10 @@
 #include <vector>
 #include <functional>
 
+#include <d3d11.h>
+
 #include "EffectEx.h"
+#include "CfcFile.h"
 
 #include "Fusion.h"
 #include "FusionUtilities.h"
@@ -19,7 +22,7 @@ constexpr auto additionalLayerSize = 8;
 constexpr auto additionalLayerSize = 0;
 #endif
 
-#define _ENABLE_TEST_FEATURE
+//#define _ENABLE_TEST_FEATURE
 
 // get Tint
 // ((CEffectEx*)effectParam)->GetRGBA();
@@ -59,6 +62,15 @@ private:
 	void* ptrWin = nullptr;
 	
 	bool bD3D11 = false;
+
+//#define _GLOBALBUFFER
+
+#ifdef _GLOBALBUFFER
+	ID3D11Buffer* pHWAParamBuffer = nullptr;
+	ID3D11Buffer* pHWAParamBufferPixelSize = nullptr;
+#endif
+
+	ID3D11Device* pDevice = nullptr;
 
 	struct EffectRecord {
 		CEffectEx* pEffect = nullptr;
@@ -114,6 +126,75 @@ private:
 			});
 	}
 
+#ifdef _ENABLE_TEST_FEATURE
+	inline void LoadEffect(CInputFile* pFile, std::wstring& shaderName, std::function<size_t()> paramCallback) {
+		auto fileLenth = pFile->GetLength();
+		auto fileBuf = pFile->GetBuffer(fileLenth);
+
+		EffectData data = { 0 };
+
+		data.pHdr = new EffectHdr;
+		
+		data.pHdr->dwEffectDataSize = fileLenth;
+		data.pHdr->dwOptions = 512;		//why?
+
+		data.effectName = shaderName;
+
+		auto shaderNameA = ConvertWStrToStr(shaderName);
+		auto len = shaderNameA.length();
+
+		auto nameBuf = new char[len+1];
+		memset(nameBuf, '\0', len+1);
+		memcpy(nameBuf, shaderNameA.c_str(), len);
+
+		data.pName = nameBuf;
+
+		auto dataBuf = new char[fileLenth];
+		memset(dataBuf, 0, fileLenth);
+		memcpy(dataBuf, fileBuf, fileLenth);
+
+		data.pData = (LPBYTE)dataBuf;
+
+		pFile->FreeBuffer(fileBuf);
+
+		this->effectData.emplace_back(data);
+	}
+#endif
+
+	inline ID3D11Device* GetD3D11Device() {
+		return this->bD3D11
+			? (ID3D11Device*)::GetD3DDevice(rdPtr)
+			: nullptr;
+	}
+
+	// ref
+	// https://learn.microsoft.com/zh-cn/windows/win32/api/d3d11/nf-d3d11-id3d11device-createbuffer	
+	inline auto CreateBuffer(ID3D11Buffer** ppBuffer
+		, UINT size = 4096, bool bDynamic = true) {
+		HRESULT result = S_OK;
+
+		D3D11_BUFFER_DESC desc = { 0 };
+		D3D11_SUBRESOURCE_DATA data = { 0 };
+
+		desc.ByteWidth = (size / 16) * 16;
+		desc.Usage = bDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_IMMUTABLE;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = bDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+		desc.MiscFlags = 0;
+		desc.StructureByteStride = 0;
+
+		if (*ppBuffer != nullptr) {
+			data.pSysMem = *ppBuffer;
+			data.SysMemPitch = 0;
+			data.SysMemSlicePitch = 0;
+		}
+
+		//result = this->pDevice->CreateBuffer(&desc, &data, ppBuffer);
+		result = this->pDevice->CreateBuffer(&desc, NULL, ppBuffer);
+
+		return result == S_OK;
+	}
+
 public:
 	EffectUtilities(LPRDATA rdPtr) {
 		this->rdPtr = rdPtr;
@@ -121,6 +202,22 @@ public:
 		this->ptrWin = rdPtr->rHo.hoAdRunHeader->rhIdEditWin;
 
 		this->bD3D11 = PreMulAlpha(rdPtr);
+
+		this->pDevice = GetD3D11Device();
+
+#ifdef _GLOBALBUFFER
+		bool ret = false;
+
+		ret = this->CreateBuffer((ID3D11Buffer**)&pHWAParamBuffer);
+		if (ret == FALSE) {
+			return;
+		}
+
+		ret = this->CreateBuffer((ID3D11Buffer**)&pHWAParamBufferPixelSize);
+		if (ret == FALSE) {
+			return;
+		}
+#endif
 
 		auto pEffectData = rdPtr->rHo.hoAdRunHeader->rhApp->m_pEffects;
 
@@ -267,7 +364,7 @@ public:
 		return false;
 	}
 
-	inline void releaseEffectImageParam() {
+	inline void ReleaseEffectImageParam() {
 		bool bClear = false;
 
 		for (auto& it : effectImageParamRecord) {
@@ -358,7 +455,6 @@ public:
 		return ret;
 	}
 
-#ifdef _ENABLE_TEST_FEATURE
 	inline bool SetEffect(const std::wstring& backDropName, const std::wstring& effectName) {
 		auto pLO = GetBackdropLO(backDropName);
 		for (auto& it : pLO) {
@@ -376,7 +472,6 @@ public:
 
 		return true;	
 	}
-#endif // _ENABLE_TEST_FEATURE
 	
 	// shader with param disappear -> need to initialize param buffer
 	// workaround: create an object attached a shader with param to let fusion init it
@@ -411,6 +506,19 @@ public:
 
 			auto pOldEffect = ((CEffectEx*)(effectParam));
 
+			// need not to release?
+			//https://stackoverflow.com/questions/33884711/release-memory-from-id3d11devicecreatebuffer
+
+			ULONG ret = 0;
+
+			if (pOldEffect->m_pHWAParamBuffer != nullptr) {
+				ret = ((ID3D11Buffer*)pOldEffect->m_pHWAParamBuffer)->Release();
+			}
+
+			if (pOldEffect->m_pHWAParamBufferPixelSize != nullptr) {
+				ret = ((ID3D11Buffer*)pOldEffect->m_pHWAParamBufferPixelSize)->Release();
+			}
+
 			DeleteEffect((CEffectEx*)effectParam);
 			effectParam = 0;
 		}
@@ -436,7 +544,7 @@ public:
 				, it->pHdr->dwOptions
 				, it->effectParam.size()
 				, (LPCSTR)it->pParamName
-				, it->pParamType);
+				, it->pParamType);		
 		}
 		else {
 			ret = pEffect->Initialize((LPCSTR)it->pData
@@ -451,6 +559,25 @@ public:
 			return false;
 		}
 
+		if (this->bD3D11) {
+			auto flags = pEffect->GetFlags();
+
+#ifdef _GLOBALBUFFER
+			pEffect->m_pHWAParamBuffer = pHWAParamBuffer;
+			pEffect->m_pHWAParamBufferPixelSize = pHWAParamBufferPixelSize;
+#else
+			ret = this->CreateBuffer((ID3D11Buffer**)&pEffect->m_pHWAParamBuffer);
+			if (ret == FALSE) {
+				return false;
+			}
+
+			ret = this->CreateBuffer((ID3D11Buffer**)&pEffect->m_pHWAParamBufferPixelSize);
+			if (ret == FALSE) {
+				return false;
+			}
+#endif
+		}
+
 		SetDefaultParam(pEffect, it);
 		
 		effect = effect | BOP_EFFECTEX;
@@ -458,6 +585,24 @@ public:
 
 		return true;
 	}
+
+#ifdef _ENABLE_TEST_FEATURE
+	inline void LoadEffect(std::wstring&& filePath
+		, std::wstring&& shaderName, std::function<size_t()> paramCallback) {
+		CInputBufFile file;
+		file.Create(filePath.c_str());
+
+		LoadEffect(&file, shaderName, paramCallback);
+	}
+
+	inline void LoadMemEffect(LPBYTE pMemBuf, size_t bufSz
+		, std::wstring&& shaderName, std::function<size_t()> paramCallback) {
+		CInputMemFile file;
+		file.Create(pMemBuf, bufSz);
+
+		LoadEffect(&file, shaderName, paramCallback);
+	}
+#endif
 
 	inline static int GetParamIndex(CEffectEx* pEffect, const std::wstring& paramName) {
 		if (pEffect == nullptr) {

@@ -88,9 +88,6 @@ short WINAPI DLLExport Action_SetEffect(LPRDATA rdPtr, long param1, long param2)
 	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
 	LPCWSTR pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
 
-	auto wc = &pObject->roc;
-	auto ws = &pObject->ros;
-
 	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
 		return 0;
 	}
