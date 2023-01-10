@@ -40,6 +40,11 @@ Here follows all dlls needed by this object:
 
 **NOTE:** this object requires `Microsoft Visual C++ Redistributable 2015+` / `MSVCP14x.dll` & `VCRUNTIME14x.dll`
 
+**NOTE:** if you enable multi instance feature, then this object also needs FMod, you need to download it from <https://www.fmod.com/> and obey license
+
+- FMod
+  - fmod.dll
+
 ## Properties
 
 - Options

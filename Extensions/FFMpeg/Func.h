@@ -16,21 +16,14 @@ inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		rdPtr->bChanged = true;
 		rdPtr->rc.rcChanged = true;
 
-		//rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
-		//rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
-
-		rdPtr->rHo.hoImgXSpot = 0;
-		rdPtr->rHo.hoImgYSpot = 0;
-
-		//rdPtr->rHo.hoImgWidth = rdPtr->pMemSf->GetWidth();
-		//rdPtr->rHo.hoImgHeight = rdPtr->pMemSf->GetHeight();
-
-		rdPtr->rHo.hoImgWidth = rdPtr->swidth;
-		rdPtr->rHo.hoImgHeight = rdPtr->sheight;
-
-		rdPtr->bChanged = true;
+		UpdateHoImgInfo(rdPtr
+			, rdPtr->swidth, rdPtr->sheight
+			, (float)rdPtr->scaleX, (float)rdPtr->scaleY
+			, HotSpotPos::LT, 0, 0
+			, 0);
 	}
 }
 

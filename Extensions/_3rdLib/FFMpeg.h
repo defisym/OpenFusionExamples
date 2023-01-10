@@ -66,7 +66,7 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 //		//recommand: 512~8192, ffplay: 1024
 //		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 
-#define _EXTERNAL_SDL_AUDIO_INIT
+#define _EXTERNAL_AUDIO_INIT
 
 // Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
 constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
@@ -402,7 +402,7 @@ private:
 
 	inline void init_SwrContext(int64_t in_ch_layout, AVSampleFormat in_sample_fmt, int in_sample_rate) {
 		swrContext = swr_alloc_set_opts(swrContext
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 			, av_get_default_channel_layout(channels)
 			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
 #else
@@ -936,7 +936,7 @@ private:
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 			//DSP frequency -- samples per second
 			wanted_spec.freq = pACodecContext->sample_rate;
 			wanted_spec.format = AUDIO_S16SYS;
@@ -965,7 +965,7 @@ private:
 
 				throw SDL_EXCEPTION_AUDIO;
 			}
-#endif // _EXTERNAL_SDL_AUDIO_INIT	
+#endif // _EXTERNAL_AUDIO_INIT	
 
 			SDL_PauseAudio(false);
 		}
@@ -1469,7 +1469,7 @@ private:
 			// https://blog.csdn.net/u013346305/article/details/48682935
 			int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
 								+ pBaseFrame->nb_samples
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 				, pBaseFrame->sample_rate, pBaseFrame->sample_rate, AVRounding(1));
 #else
 				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, AVRounding(1));
@@ -1656,9 +1656,9 @@ public:
 
 		SDL_PauseAudio(true);
 
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 		SDL_CloseAudio();
-#endif // _EXTERNAL_SDL_AUDIO_INIT		
+#endif // _EXTERNAL_AUDIO_INIT		
 
 		//Wait for callback finish
 		this->bAudioCallbackPause = true;
@@ -2109,7 +2109,11 @@ public:
 			//每解码后的数据长度
 			int audio_size = 0;
 
+#ifdef FMOD_AUDIO
+			memset(stream, 0, len);
+#else
 			SDL_memset(stream, 0, len);
+#endif		
 
 			//检查音频缓存的剩余长度
 			while (len > 0) {
@@ -2148,8 +2152,11 @@ public:
 				}
 
 				//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
-				//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
+#ifdef FMOD_AUDIO
+				memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
+#else
 				SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
+#endif
 
 				//更新解码音频缓存的剩余长度
 				len -= wt_stream_len;
