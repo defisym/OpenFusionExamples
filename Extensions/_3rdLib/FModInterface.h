@@ -1,10 +1,11 @@
 #pragma once
 
-//#define FMOD_AUDIO
+#define FMOD_AUDIO
 
 #ifdef FMOD_AUDIO
 
 #include "fmod.hpp"
+#include "WindowsCommon.h"
 
 #include <map>
 #include <string>
@@ -28,11 +29,29 @@ private:
 
     FMOD::System* system = nullptr;
     FMOD_RESULT result = FMOD_OK;
+    // https://qa.fmod.com/t/pcmreadcallback-not-being-called/13862
+    // When creating the sound, using FMOD_CREATESTREAM will stream the data in chunks as it plays which will need to continuously read the data to play the sand, also using far less memory.
+    // Without that flag, a sound will open as a static sound that is decompressed fully into memory after one read callback.
     FMOD_MODE mode = FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESTREAM;
     FMOD_CREATESOUNDEXINFO exinfo = { 0 };
     void* extradriverdata = 0;
 
     using IT = decltype(soundMap.begin());
+
+    inline void FMI_LoadSound(std::wstring&& soundName
+        , const char* name_or_data
+        , FMOD_MODE mode, FMOD_CREATESOUNDEXINFO* exinfo = 0, int loopcount = -1) {
+        FMOD::Sound* sound;
+
+        result = system->createSound(name_or_data, mode, exinfo, &sound);
+        sound->setLoopCount(loopcount);
+
+        this->soundMap.emplace(soundName, SoundMapItem{ sound });
+
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+            result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
+            });
+    }
 
     inline void FMI_SetSound(std::wstring&& soundName,std::function<void(IT)> updater) {
         auto it = std::find_if(this->soundMap.begin(), this->soundMap.end(), [&](auto& pair) {
@@ -113,6 +132,23 @@ public:
         FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
             result = it->second.channel->setVolume(volume);
             });
+    }
+        
+    inline void FMI_PlaySoundFile(std::wstring&& soundName, std::wstring&& fileName, int loopcount = -1) {
+        FMI_LoadSound(std::forward<std::wstring>(soundName)
+            ,ConvertWStrToStr(fileName, CP_UTF8).c_str()
+            , FMOD_DEFAULT | FMOD_CREATESTREAM, 0, loopcount);
+    }
+
+    inline void FMI_PlaySoundMemFile(std::wstring&& soundName, const char* pData, size_t sz, int loopcount = -1) {
+        memset(&exinfo, 0, sizeof(FMOD_CREATESOUNDEXINFO));
+        exinfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);       /* Required. */
+
+        exinfo.length = sz;
+
+        FMI_LoadSound(std::forward<std::wstring>(soundName)
+            , pData
+            , FMOD_DEFAULT | FMOD_CREATESAMPLE | FMOD_OPENMEMORY, &exinfo, loopcount);
     }
 
     inline void FMI_Update() {

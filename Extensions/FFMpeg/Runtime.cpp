@@ -307,7 +307,6 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		// Hot spot (transform center)
 		POINT point = { 0, 0 };
 
-		//rdPtr->pSf->Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
 		rdPtr->pMemSf->BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
 			rdPtr->pMemSf->GetWidth(), rdPtr->pMemSf->GetHeight(), &point, rdPtr->rc.rcAngle,

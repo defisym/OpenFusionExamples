@@ -21,7 +21,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 
 		UpdateHoImgInfo(rdPtr
 			, rdPtr->swidth, rdPtr->sheight
-			, (float)rdPtr->scaleX, (float)rdPtr->scaleY
+			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleX
 			, HotSpotPos::LT, 0, 0
 			, 0);
 	}
@@ -116,7 +116,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 		}
 	}
 #ifdef _DEBUG
-	//_SavetoClipBoard(pMemSf, false);
+	_SavetoClipBoard(pMemSf, false);
 #endif // _DEBUG
 
 	ReleaseSfCoef(pMemSf, sfCoef);

@@ -67,41 +67,37 @@ struct GlobalData {
 	
 	static void AudioCallback(void* userdata, Uint8* stream, int len) {
 		// No mutex needed here as audio is paused when deleting pFFMpeg
+		auto CallBackCore = [&](FFMpeg** ppFFMpeg, Setter setter, Mixer mixer) {
+			if (ppFFMpeg == nullptr) {
+				setter(stream, 0, len);
+
+				return;
+			}
+
+			auto pFFMpeg = *ppFFMpeg;
+
+			if (pFFMpeg == nullptr) {
+				setter(stream, 0, len);
+
+				return;
+			}
+
+			pFFMpeg->audio_fillData(stream, len, setter, mixer);
+
+			return;
+		};
+
 #ifdef FMOD_AUDIO
 		auto ppFFMpeg = (FFMpeg**)userdata;
-
-		if (ppFFMpeg == nullptr) {
-			memset(stream, 0, len);
-
-			return;
-		}
-
-		auto pFFMpeg = *ppFFMpeg;
-
-		if (pFFMpeg == nullptr) {
-			memset(stream, 0, len);
-
-			return;
-	}
+		CallBackCore(ppFFMpeg, memset, [](void* dst, const void* src, size_t len, int volume) {
+			memcpy(dst, src, len);
+			});
 #else
 		GlobalData* pData = (GlobalData*)userdata;
-
-		if (pData->ppFFMpeg == nullptr) {
-			SDL_memset(stream, 0, len);
-
-			return;
-		}
-
-		FFMpeg* pFFMpeg = *pData->ppFFMpeg;
-
-		if (pFFMpeg == nullptr) {
-			SDL_memset(stream, 0, len);
-
-			return;
-		}
-#endif	
-
-		pFFMpeg->audio_fillData(stream, len);
+		CallBackCore(pData->ppFFMpeg, SDL_memset, [](void* dst, const void* src, size_t len, int volume) {
+			SDL_MixAudio((Uint8*)dst, (const Uint8*)src, len, volume);
+			});
+#endif
 	};
 
 	GlobalData() {

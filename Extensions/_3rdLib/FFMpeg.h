@@ -7,9 +7,13 @@
 #pragma warning(disable : 4819)
 #pragma warning(disable : 4996)
 
+// discomment if you dong't want to set in properties
 //#pragma comment(lib,"avcodec.lib")
+//#pragma comment(lib,"avdevice.lib")
+//#pragma comment(lib,"avfilter.lib")
 //#pragma comment(lib,"avformat.lib")
 //#pragma comment(lib,"avutil.lib")
+//#pragma comment(lib,"swresample.lib")
 //#pragma comment(lib,"swscale.lib")
 
 #include <string>
@@ -138,6 +142,8 @@ constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
+using Setter = decltype(memset);
+using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 using Uint8 = unsigned char;
 
@@ -2100,7 +2106,7 @@ public:
 		return response;
 	}
 
-	inline int audio_fillData(Uint8* stream, int len) {
+	inline int audio_fillData(Uint8* stream, int len, Setter setter, Mixer mixer) {
 		SDL_LockMutex(mutex_audio);
 
 		if (!bExit && !bPause) {
@@ -2109,11 +2115,7 @@ public:
 			//每解码后的数据长度
 			int audio_size = 0;
 
-#ifdef FMOD_AUDIO
-			memset(stream, 0, len);
-#else
-			SDL_memset(stream, 0, len);
-#endif		
+			setter(stream, 0, len);
 
 			//检查音频缓存的剩余长度
 			while (len > 0) {
@@ -2152,11 +2154,7 @@ public:
 				}
 
 				//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
-#ifdef FMOD_AUDIO
-				memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
-#else
-				SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
-#endif
+				mixer(stream, audio_buf + audio_buf_index, len, volume);
 
 				//更新解码音频缓存的剩余长度
 				len -= wt_stream_len;
@@ -2167,7 +2165,7 @@ public:
 			}
 		}
 		else {
-			SDL_memset(stream, 0, len);
+			setter(stream, 0, len);
 		}
 
 		SDL_CondSignal(cond_audioCallbackFinish);
