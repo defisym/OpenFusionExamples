@@ -74,6 +74,7 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 
 // Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
 constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
+constexpr auto TARGET_CHANNEL_NUMBER = 2;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 constexpr auto TARGET_SAMPLE_RATE = 48000;
 
@@ -129,6 +130,10 @@ constexpr auto PIXEL_BYTE = 3;
 
 #ifdef _HW_DECODE
 static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
+#endif
+
+#ifdef FMOD_AUDIO
+#define _EXTERNAL_CLOCK_SYNC
 #endif
 
 constexpr auto FFMpegFlag_Default = 0;
@@ -313,6 +318,10 @@ private:
 	unsigned int audio_buf_size = 0;
 	//累计写入stream的长度
 	unsigned int audio_buf_index = 0;
+
+	// output
+	void* audio_stream = nullptr;
+	size_t audio_stream_len = 0;
 
 	SDL_AudioSpec spec = { 0 };
 	SDL_AudioSpec wanted_spec = { 0 };
@@ -973,7 +982,9 @@ private:
 			}
 #endif // _EXTERNAL_AUDIO_INIT	
 
+#ifndef FMOD_AUDIO
 			SDL_PauseAudio(false);
+#endif
 		}
 #pragma endregion
 	
@@ -1529,7 +1540,8 @@ private:
 		int  bytes_per_sec = 0;
 
 		if (pAudioStream) {
-			bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
+			//bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
+			bytes_per_sec = (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER) * 2;
 		}
 
 		if (bytes_per_sec) {
@@ -1560,9 +1572,14 @@ private:
 			frameTimer = curTime - videoPts;
 		}
 
-		auto syncClock = !bNoAudio 
-			? get_audioClock() 
+#ifdef _EXTERNAL_CLOCK_SYNC
+		auto syncClock = (curTime - frameTimer) * this->atempo;
+#else
+		auto syncClock = !bNoAudio
+			? get_audioClock()
 			: (curTime - frameTimer) * this->atempo;
+#endif
+
 		auto diff = videoPts - syncClock;
 
 		auto syncThreshold = delay > AV_SYNC_THRESHOLD
@@ -1660,7 +1677,9 @@ public:
 		audioQueue.pause();
 		videoQueue.pause();
 
-		SDL_PauseAudio(true);
+#ifndef FMOD_AUDIO
+		SDL_PauseAudio(false);
+#endif
 
 #ifndef _EXTERNAL_AUDIO_INIT
 		SDL_CloseAudio();
@@ -1906,6 +1925,13 @@ public:
 
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
+		//TODO
+		//if (!bForceNoAudio) {
+		//	audio_buf_index = 0;
+		//	audio_buf_size = 0;
+		//	memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
+		//	memset(audio_stream, 0, audio_stream_len);
+		//}
 
 		//if (ms == 0) {
 			//reset_sync();
@@ -2109,13 +2135,16 @@ public:
 	inline int audio_fillData(Uint8* stream, int len, Setter setter, Mixer mixer) {
 		SDL_LockMutex(mutex_audio);
 
+		this->audio_stream = stream;
+		this->audio_stream_len = len;
+
+		setter(stream, 0, len);
+
 		if (!bExit && !bPause) {
 			//每次写入stream的数据长度
 			int wt_stream_len = 0;
 			//每解码后的数据长度
 			int audio_size = 0;
-
-			setter(stream, 0, len);
 
 			//检查音频缓存的剩余长度
 			while (len > 0) {
@@ -2133,7 +2162,7 @@ public:
 					// If error, output silence.
 					if (audio_size < 0) {
 						audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
-						memset(audio_buf, 0, audio_buf_size);
+						memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 					}
 					else {
 						//返回packet中包含的原始音频数据长度(多帧)						
@@ -2164,12 +2193,8 @@ public:
 				audio_buf_index += wt_stream_len;
 			}
 		}
-		else {
-			setter(stream, 0, len);
-		}
 
 		SDL_CondSignal(cond_audioCallbackFinish);
-
 		SDL_UnlockMutex(mutex_audio);
 
 		return 0;

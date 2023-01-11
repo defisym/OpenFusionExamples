@@ -116,7 +116,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 		}
 	}
 #ifdef _DEBUG
-	_SavetoClipBoard(pMemSf, false);
+	//_SavetoClipBoard(pMemSf, false);
 #endif // _DEBUG
 
 	ReleaseSfCoef(pMemSf, sfCoef);

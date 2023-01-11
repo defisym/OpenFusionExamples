@@ -128,6 +128,32 @@ public:
             });
     }
 
+    inline void FMI_StopSound(std::wstring&& soundName) {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+            result = it->second.pSound->release();
+            this->soundMap.erase(it);
+            });
+    }
+
+    inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0) {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+#ifdef  _DEBUG
+            size_t position = 0;
+            result = it->second.channel->getPosition(&position, FMOD_TIMEUNIT_MS);
+#endif //  _DEBUG            
+            result = it->second.channel->setPosition(pos, FMOD_TIMEUNIT_MS);
+            });
+    }
+
+    inline void FMI_ReplaySound(std::wstring&& soundName) {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+            result = it->second.channel->stop();
+            result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
+
+            return;
+            });
+    }
+
     inline void FMI_SetVolume(std::wstring&& soundName, float volume) {
         FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
             result = it->second.channel->setVolume(volume);

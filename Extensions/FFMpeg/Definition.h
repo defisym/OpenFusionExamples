@@ -167,22 +167,27 @@ struct GlobalData {
 	inline void Create(bool bForceNoAudio, FFMpeg** ppFFMpeg) {
 		// Update global data
 		if (!bForceNoAudio) {
-			auto name = _itos((long)ppFFMpeg);
-
 			this->ppFFMpeg = ppFFMpeg;
 			this->ppFFMpegs.emplace_back(ppFFMpeg);
 #ifdef FMOD_AUDIO
-			this->cFMI.FMI_CreateSound(std::forward<std::wstring>(name), ppFFMpeg, [](FMOD_CREATESOUNDEXINFO& exinfo) {
+			this->cFMI.FMI_CreateSound(std::forward<std::wstring>(_itos((long)ppFFMpeg)), ppFFMpeg, [](FMOD_CREATESOUNDEXINFO& exinfo) {
 				/* Number of channels in the sound. */
-				exinfo.numchannels = 2;                               
+				exinfo.numchannels = TARGET_CHANNEL_NUMBER;
 				/* Default playback rate of sound. */
 				exinfo.defaultfrequency = TARGET_SAMPLE_RATE;
 				/* Chunk size of stream update in samples. This will be the amount of data passed to the user callback. */
-				// a bit higher to redeuce seek audio issue
-				exinfo.decodebuffersize = 4 * SDL_AUDIO_BUFFER_SIZE;                     
+				
+				// if size = SDL_AUDIO_BUFFER_SIZE, will micro shutter when seeking
+				// if size >> SDL_AUDIO_BUFFER_SIZE will cause lag due if sync with audio timer
+#ifdef _EXTERNAL_CLOCK_SYNC
+				exinfo.decodebuffersize = 8 * SDL_AUDIO_BUFFER_SIZE;
+#else
+				exinfo.decodebuffersize = SDL_AUDIO_BUFFER_SIZE;
+#endif
+		
 				/* Length of PCM data in bytes of whole song (for Sound::getLength) */
-				exinfo.length =                                       
-				exinfo.defaultfrequency * exinfo.numchannels * sizeof(signed short) * 5;
+				exinfo.length = SDL_AUDIO_BUFFER_SIZE;
+				//exinfo.length = exinfo.defaultfrequency * exinfo.numchannels * sizeof(signed short) * 5;
 				/* Data format of sound. */
 				exinfo.format = FMOD_SOUND_FORMAT_PCM16;              
 				/* User callback for reading. */
@@ -190,16 +195,29 @@ struct GlobalData {
 					[](FMOD_SOUND* sound, void* data, unsigned int datalen) {
 					auto pSound = (FMOD::Sound*)sound;
 
+					void* lockPtr_1 = nullptr;
+					void* lockPtr_2 = nullptr;
+
+					size_t prtLength_1 = 0;
+					size_t prtLength_2 = 0;
+
+					pSound->lock(0, datalen
+						, &lockPtr_1, &lockPtr_2
+						, &prtLength_1, &prtLength_2);
+
 					void* userdata = nullptr;
 					pSound->getUserData((void**)&userdata);
 
-					AudioCallback(userdata,(Uint8*)data,datalen);
+					AudioCallback(userdata, (Uint8*)data, datalen);
+
+					pSound->unlock(lockPtr_1, lockPtr_2
+						, prtLength_1, prtLength_2);
 
 					return FMOD_OK;
 				};
 				exinfo.pcmsetposcallback = nullptr;                   /* User callback for seeking. */
 				});
-			this->cFMI.FMI_PlaySound(std::forward<std::wstring>(name), false);
+			this->cFMI.FMI_PlaySound(std::forward<std::wstring>(_itos((long)ppFFMpeg)), false);
 #endif
 		}
 	}
@@ -216,6 +234,11 @@ struct GlobalData {
 		else {
 			this->ppFFMpeg = nullptr;
 		}
+
+#ifdef FMOD_AUDIO
+		auto name = _itos((long)ppFFMpeg);
+		this->cFMI.FMI_StopSound(std::forward<std::wstring>(name));
+#endif
 	}
 
 #ifdef FMOD_AUDIO
