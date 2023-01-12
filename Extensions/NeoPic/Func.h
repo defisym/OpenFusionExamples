@@ -579,7 +579,7 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 		
 		ReleaseNonFromLib(rdPtr);
 
-		rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);;
+		rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);
 		rdPtr->src->Clone(*obj->src);
 
 		NewNonFromLib(rdPtr, rdPtr->src);
@@ -608,7 +608,13 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 
 	LPSURFACE pSave = new cSurface;
 
-	pSave->Clone(*pSf);
+	ProcessBitmap(rdPtr, pSf, [&](const LPSURFACE pBitmap) {
+		pSave->Clone(*pBitmap);
+		
+		if (rdPtr->HWA) {
+			ConvertToHWATexture(rdPtr, pSave);
+		}
+		});
 
 	auto fullPath = GetFullPathNameStr(pFileName);
 
@@ -645,6 +651,34 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 	}
 }
 
+inline LPSURFACE _GetSurfacePointer(LPRDATA rdPtr, const std::wstring& FilePath, const std::wstring& Key) {
+	cSurface* ret = nullptr;
+
+	if (!rdPtr->isLib) {
+		// why there is such a logic with non lib object?
+		// 
+		//if (*rdPtr->FilePath != FilePath || *rdPtr->Key != Key) {
+		//	ret = nullptr;
+		//}
+		//else {
+		//	ret = rdPtr->src;
+		//}
+
+		ret = rdPtr->src;
+	}
+	else {
+		auto it = _LoadLib(rdPtr, rdPtr, FilePath.c_str(), Key.c_str());
+
+		if (it == rdPtr->pLib->end()) {
+			ret = nullptr;
+		}
+		else {
+			ret = it->second.pSf;
+		}
+	}
+
+	return ret;
+}
 
 inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
 	SurfaceLib* kept = new SurfaceLib;

@@ -157,6 +157,10 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Iterate Ref Count",              IDMN_ACTION_ITRC
         END
+        POPUP "Save"
+        BEGIN
+            MENUITEM "Save to File",              IDMN_ACTION_STF
+        END
         MENUITEM SEPARATOR
         POPUP "Lib"
         BEGIN
@@ -436,6 +440,9 @@ BEGIN
     M_ACTION_EFFECTNAME     "Effect Name"
 
     M_ACTION_FM             "Fill Mosaic by Current Image, Width = %0, Height = %1"
+    
+    M_ACTION_STF            "Save File %0, Key %1 to File %2"
+    M_ACTION_SAVEFILENAME   "Save FileName, Format is Set by Ext, e.g., File.JPG for JPG"
 END
 
 STRINGTABLE DISCARDABLE 

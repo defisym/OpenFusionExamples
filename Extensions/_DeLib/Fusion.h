@@ -17,6 +17,7 @@
 
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer);
 
 //-----------------------------
 
@@ -721,12 +722,14 @@ inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle, bool release) {
 
 //Save to File
 inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, LPCWSTR DefaultFilterName = nullptr) {
-	if (!Src->IsValid()) {
+	if (Src == nullptr || !Src->IsValid()) {
 		return;
 	}
-
-	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
+	
+	ProcessBitmap(rdPtr, Src, [&](const LPSURFACE pBitmap) {
+		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+		ExportImage(pImgMgr, FilePath, pBitmap, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
+		});	
 
 	if (release) {
 		delete Src;
@@ -859,6 +862,22 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 		});
 }
 #endif // _NO_REF
+
+// create a temp bitmap pSf if needed
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer) {
+	auto bHWA = IsHWA(pSf);
+	auto pBitmap = pSf;
+
+	if (bHWA) {
+		pBitmap = ConvertBitmap(rdPtr, pSf);
+	}
+
+	processer(pBitmap);
+
+	if (bHWA) {
+		delete pBitmap;
+	}
+}
 
 //Get Valid Sacle
 inline void GetValidScale(float* scale) {

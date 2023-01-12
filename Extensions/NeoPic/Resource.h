@@ -114,6 +114,8 @@
 
 #define	IDMN_ACTION_FM  			25028
 
+#define	IDMN_ACTION_STF  			25029
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -161,6 +163,8 @@
 
 #define	M_ACTION_FM 			     5028
 
+#define	M_ACTION_STF 			     5029
+
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
 #define M_ACTION_FILENAME		     5502
@@ -204,6 +208,8 @@
 #define M_ACTION_DIVIDE              5528
 
 #define M_ACTION_EFFECTNAME          5529
+
+#define M_ACTION_SAVEFILENAME        5530
 
 //	Conditions
 //--------------------

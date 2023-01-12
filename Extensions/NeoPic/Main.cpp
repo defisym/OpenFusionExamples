@@ -83,6 +83,8 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_FM, M_ACTION_FM, ACT_ACTION_FM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
+		IDMN_ACTION_STF, M_ACTION_STF,	ACT_ACTION_STF,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME,
+
 		};
 
 // Definitions of parameters for each expression
@@ -209,6 +211,9 @@ short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	LoadFromLib(rdPtr, object, FilePath, Key);
+
+	auto bAlpha = rdPtr->src->HasAlpha();
+	auto bType = IsHWA(rdPtr->src);
 
 	return 0;
 }
@@ -707,6 +712,18 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	auto pSf = _GetSurfacePointer(rdPtr, pFilePath, pKey);
+	__SavetoFile(rdPtr, pSf, pSaveFilePath);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -810,32 +827,9 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Key = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	cSurface* ret = nullptr;
-
-	if (!rdPtr->isLib) {
-		// why there is such a logic with non lib object?
-		// 
-		//if (*rdPtr->FilePath != FilePath || *rdPtr->Key != Key) {
-		//	ret = nullptr;
-		//}
-		//else {
-		//	ret = rdPtr->src;
-		//}
-
-		ret = rdPtr->src;
-	}
-	else {
-		auto it = _LoadLib(rdPtr, rdPtr, FilePath.c_str(), Key.c_str());
-
-		if (it == rdPtr->pLib->end()) {
-			ret = nullptr;
-		}
-		else {
-			ret = it->second.pSf;
-		}
-	}
+	auto pSf = _GetSurfacePointer(rdPtr, FilePath, Key);
 	
-	return ConvertToLong<cSurface*>(ret);
+	return ConvertToLong<cSurface*>(pSf);
 }
 
 long WINAPI DLLExport GetAVGCoordX(LPRDATA rdPtr, long param1) {
@@ -1001,6 +995,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetKeepListByPointer,
 
 			FillMosaic,
+
+			SaveToFile,
 
 			0
 			};

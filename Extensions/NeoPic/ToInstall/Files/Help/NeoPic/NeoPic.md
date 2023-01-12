@@ -20,9 +20,14 @@ Enable the power to load encrypted image files, to store them to a lib that keep
 - Load
   - Load From File
     - *keep key empty if file is not encrypted*
+  - Load From Pointer
+    - *clone target surface*
+
   - Load From Lib
     - *keep key empty if file is not encrypted*
     - *if target lib doesn't contain target file, lib will try loading that file first, if success, it will be added to lib*
+  - Load From Display
+    - *clone from another non-lib NeoPic object*
 
 ## Condition
 
