@@ -144,8 +144,8 @@ BEGIN
             MENUITEM "Load From File",              IDMN_ACTION_LFF
             MENUITEM "Load From Pointer",           IDMN_ACTION_LFP
             MENUITEM SEPARATOR            
-            MENUITEM "Load From Lib",              IDMN_ACTION_LFL
-            MENUITEM "Load From Display",              IDMN_ACTION_LFD
+            MENUITEM "Load From Lib",               IDMN_ACTION_LFL
+            MENUITEM "Load From Display",           IDMN_ACTION_LFD
             MENUITEM SEPARATOR
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
             MENUITEM "Set Preload List",              IDMN_ACTION_SPL            
@@ -153,54 +153,54 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Set Keep List",              IDMN_ACTION_SKL
             MENUITEM "Set Keep List By Pointer",   IDMN_ACTION_SKLBP
-            MENUITEM "Clear Cache",              IDMN_ACTION_CC
+            MENUITEM "Clear Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
-            MENUITEM "Iterate Ref Count",              IDMN_ACTION_ITRC
+            MENUITEM "Iterate Ref Count",          IDMN_ACTION_ITRC
         END
         POPUP "Save"
         BEGIN
-            MENUITEM "Save to File",              IDMN_ACTION_STF
+            MENUITEM "Save to File",               IDMN_ACTION_STF
         END
         MENUITEM SEPARATOR
         POPUP "Lib"
         BEGIN
-            MENUITEM "Reset Lib",              IDMN_ACTION_RL
+            MENUITEM "Reset Lib",                  IDMN_ACTION_RL
             MENUITEM SEPARATOR
-            MENUITEM "Erase Lib Item",              IDMN_ACTION_EL
-            MENUITEM "Update Lib Item",              IDMN_ACTION_UL
+            MENUITEM "Erase Lib Item",             IDMN_ACTION_EL
+            MENUITEM "Update Lib Item",            IDMN_ACTION_UL
         END
         MENUITEM SEPARATOR
         POPUP "Display"
         BEGIN
-            //MENUITEM "Update Src",              IDMN_ACTION_US
+            //MENUITEM "Update Src",               IDMN_ACTION_US
             //MENUITEM "Restore Cur",              IDMN_ACTION_RC
             //MENUITEM SEPARATOR
             POPUP "Settings"
             BEGIN            
-                MENUITEM "Set HotSpot",              IDMN_ACTION_SH
+                MENUITEM "Set HotSpot",            IDMN_ACTION_SH
                 MENUITEM SEPARATOR
-                MENUITEM "Set Collision",              IDMN_ACTION_SC
-                MENUITEM "Set Quality",              IDMN_ACTION_SQ
+                //MENUITEM "Set Collision",        IDMN_ACTION_SC
+                MENUITEM "Set Quality",            IDMN_ACTION_SQ
             END
             MENUITEM SEPARATOR
             POPUP "Transform"
             BEGIN         
-                MENUITEM "Zoom",                    IDMN_ACTION_Z
-                MENUITEM "Stretch",                 IDMN_ACTION_S
+                MENUITEM "Zoom",                   IDMN_ACTION_Z
+                MENUITEM "Stretch",                IDMN_ACTION_S
                 MENUITEM SEPARATOR                
-                MENUITEM "Rotate",                  IDMN_ACTION_R                
-                MENUITEM "Offset",                  IDMN_ACTION_O
+                MENUITEM "Rotate",                 IDMN_ACTION_R                
+                MENUITEM "Offset",                 IDMN_ACTION_O
                 MENUITEM SEPARATOR
-                //MENUITEM "Affine",                IDMN_ACTION_AT
-                MENUITEM "Stack Blur",              IDMN_ACTION_SB
+                //MENUITEM "Affine",               IDMN_ACTION_AT
+                MENUITEM "Stack Blur",             IDMN_ACTION_SB
                 MENUITEM SEPARATOR
-                MENUITEM "Set Effect Param",        IDMN_ACTION_SESP
+                MENUITEM "Set Effect Param",       IDMN_ACTION_SESP
                 MENUITEM SEPARATOR
-                MENUITEM "Fill Mosaic",             IDMN_ACTION_FM
+                MENUITEM "Fill Mosaic",            IDMN_ACTION_FM
             END
             MENUITEM SEPARATOR
-            MENUITEM "Add Backdrop",                IDMN_ACTION_AB
-            //MENUITEM "Update Collision",          IDMN_ACTION_UC
+            MENUITEM "Add Backdrop",               IDMN_ACTION_AB
+            //MENUITEM "Update Collision",         IDMN_ACTION_UC
         END
         MENUITEM SEPARATOR
     END
