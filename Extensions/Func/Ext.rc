@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "Func\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "Func\0"
-            VALUE "LegalCopyright", "Copyright 2021~2022 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2021~2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Func.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -390,7 +390,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Func"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021~2022 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021~2023 Defisym"
     IDST_COMMENT            "Func Object"
     IDST_HTTP               "https://twitter.com/defisym"
 END

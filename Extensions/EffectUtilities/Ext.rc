@@ -31,40 +31,40 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 1 VERSIONINFO
-FILEVERSION 1, 0, 0, 0
-PRODUCTVERSION 1, 0, 0, 0
-FILEFLAGSMASK 0x0L
+ FILEVERSION 1, 0, 0, 0
+ PRODUCTVERSION 1, 0, 0, 0
+ FILEFLAGSMASK 0x0L
 #ifdef _DEBUG
-FILEFLAGS 0x21L
+ FILEFLAGS 0x21L
 #else
-FILEFLAGS 0x20L
+ FILEFLAGS 0x20L
 #endif
-FILEOS 0x10001L
-FILETYPE 0x1L
-FILESUBTYPE 0x0L
+ FILEOS 0x10001L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
 BEGIN
-BLOCK "StringFileInfo"
-BEGIN
-BLOCK "040904e4"
-BEGIN
-VALUE "Comments", "\0"
-VALUE "CompanyName", "Defisym\0"
-VALUE "FileDescription", "EffectUtilities\0"
-VALUE "FileVersion", "0.00\0"
-VALUE "InternalName", "EffectUtilities\0"
-VALUE "LegalCopyright", "Copyright 2022 Defisym\0"
-VALUE "LegalTrademarks", "\0"
-VALUE "OriginalFilename", "EffectUtilities.mfx\0"
-VALUE "PrivateBuild", "\0"
-VALUE "ProductName", "\0"
-VALUE "ProductVersion", "1, 0, 0, 0\0"
-VALUE "SpecialBuild", "00000001\0"
-END
-END
-BLOCK "VarFileInfo"
-BEGIN
-VALUE "Translation", 0x409, 1252
-END
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Defisym\0"
+            VALUE "FileDescription", "EffectUtilities\0"
+            VALUE "FileVersion", "0.00\0"
+            VALUE "InternalName", "EffectUtilities\0"
+            VALUE "LegalCopyright", "Copyright 2022~2023 Defisym\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "EffectUtilities.mfx\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "\0"
+            VALUE "ProductVersion", "1, 0, 0, 0\0"
+            VALUE "SpecialBuild", "00000001\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
 END
 
 #endif    // !_MAC
@@ -77,7 +77,7 @@ END
 
 KPX_MAGICNUMBER RCDATA MOVEABLE PURE
 BEGIN
-0x2516, 0x5908
+    0x2516, 0x5908
 END
 
 
@@ -113,11 +113,11 @@ MN_CONDITIONS$(EDITOR) MENU DISCARDABLE
 MN_CONDITIONS MENU DISCARDABLE
 #endif
 BEGIN
-POPUP ""
-BEGIN
-MENUITEM SEPARATOR
-//MENUITEM "Condition example (three parameters)", IDMN_CONDITION
-END
+    POPUP ""
+    BEGIN
+        MENUITEM SEPARATOR
+        //MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+    END
 END
 #endif
 
@@ -128,17 +128,16 @@ MN_ACTIONS$(EDITOR) MENU DISCARDABLE
 MN_ACTIONS MENU DISCARDABLE
 #endif
 BEGIN
-POPUP ""
-BEGIN
-MENUITEM SEPARATOR
-MENUITEM "Set Effect", IDMN_ACTION_SE
-MENUITEM "Set Effect Param", IDMN_ACTION_SEP
-MENUITEM SEPARATOR
-MENUITEM "Set BackDrop Effect", IDMN_ACTION_SBE
-MENUITEM "Set BackDrop Effect Param", IDMN_ACTION_SBEP
-MENUITEM SEPARATOR
-
-END
+    POPUP ""
+    BEGIN
+        MENUITEM SEPARATOR
+        MENUITEM "Set Effect", IDMN_ACTION_SE
+        MENUITEM "Set Effect Param", IDMN_ACTION_SEP
+        MENUITEM SEPARATOR
+        MENUITEM "Set BackDrop Effect", IDMN_ACTION_SBE
+        MENUITEM "Set BackDrop Effect Param", IDMN_ACTION_SBEP
+        MENUITEM SEPARATOR
+    END
 END
 #endif
 
@@ -149,13 +148,13 @@ MN_EXPRESSIONS$(EDITOR) MENU DISCARDABLE
 MN_EXPRESSIONS MENU DISCARDABLE
 #endif
 BEGIN
-POPUP ""
-BEGIN
-MENUITEM SEPARATOR
-//MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-//MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-//MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
-END
+    POPUP ""
+    BEGIN
+        MENUITEM SEPARATOR
+        //MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
+        //MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
+        //MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+    END
 END
 #endif
 
@@ -175,12 +174,12 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
 CAPTION "Setup sample object"
 FONT 8, "Helv"
 BEGIN
-PUSHBUTTON      "Cancel", IDCANCEL, 75, 150, 50, 14
-DEFPUSHBUTTON   "OK", IDOK, 5, 150, 50, 14
-PUSHBUTTON      "Help", ID_HELP, 145, 150, 50, 14
-GROUPBOX        "", -1, 5, 6, 190, 135
-LTEXT           "Please define your own setup box here! \n \nIf you do not need any setup box, just delete it from the resource and remove the call from the CreateObject and SelectPopup routines in the C sourcecode.",
--1, 21, 50, 155, 60
+    PUSHBUTTON      "Cancel", IDCANCEL, 75, 150, 50, 14
+    DEFPUSHBUTTON   "OK", IDOK, 5, 150, 50, 14
+    PUSHBUTTON      "Help", ID_HELP, 145, 150, 50, 14
+    GROUPBOX        "", -1, 5, 6, 190, 135
+    LTEXT           "Please define your own setup box here! \n \nIf you do not need any setup box, just delete it from the resource and remove the call from the CreateObject and SelectPopup routines in the C sourcecode.",
+                    -1, 21, 50, 155, 60
 END
 #endif
 
@@ -193,22 +192,22 @@ END
 
 1 TEXTINCLUDE DISCARDABLE
 BEGIN
-"resource.h\0"
+    "resource.h\0"
 END
 
 2 TEXTINCLUDE DISCARDABLE
 BEGIN
-"#include ""ccx.h""\r\n"
-"#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
-"#include ""windows.h""\r\n"
-"#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
-"\0"
+    "#include ""ccx.h""\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
 END
 
 3 TEXTINCLUDE DISCARDABLE
 BEGIN
-"\r\n"
-"\0"
+    "\r\n"
+    "\0"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -221,61 +220,61 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-KPX_MARK                "MF2"
-KPX_NAME                "EffectUtilities"
+    KPX_MARK                "MF2"
+    KPX_NAME                "EffectUtilities"
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-IDST_OBJNAME            "EffectUtilities"
-IDST_AUTHOR             "Defisym"
-IDST_COPYRIGHT          "Copyright 2022 Defisym"
-IDST_COMMENT            "Enable the power of shader"
-IDST_HTTP               "https://twitter.com/defisym"
+    IDST_OBJNAME            "EffectUtilities"
+    IDST_AUTHOR             "Defisym"
+    IDST_COPYRIGHT          "Copyright 2022~2023 Defisym"
+    IDST_COMMENT            "Enable the power of shader"
+    IDST_HTTP               "https://twitter.com/defisym"
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-IDS_PROP_TEXTTITLE        "Settings"
+    IDS_PROP_TEXTTITLE        "Settings"
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-IDS_SEPARATOR                      "====================="
+    IDS_SEPARATOR                      "====================="
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-M_ACTION_SE                "Set %0 Effect to %1"
-M_ACTION_SEP               "Set %0 Effect Param %1 to %2"
+    M_ACTION_SE                "Set %0 Effect to %1"
+    M_ACTION_SEP               "Set %0 Effect Param %1 to %2"
 
-M_ACTION_SBE               "Set BackDrop %0 Effect to %1"
-M_ACTION_SBEP              "Set BackDrop %0 Effect Param %1 to %2"
+    M_ACTION_SBE               "Set BackDrop %0 Effect to %1"
+    M_ACTION_SBEP              "Set BackDrop %0 Effect Param %1 to %2"
 
-M_OBJECT		           "Object"
-M_EFFECT		           "Effect"
-M_PARAMNAME		           "Param Name"
-M_PARAM			           "Param"
-M_BACKDROP		           "Backdrop Name"
+    M_OBJECT		           "Object"
+    M_EFFECT		           "Effect"
+    M_PARAMNAME		           "Param Name"
+    M_PARAM			           "Param"
+    M_BACKDROP		           "Backdrop Name"
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-M_CONDITION             "Condition example: %0 + %1 = %2"
-M_CND_P1                "Enter First Value"
-M_CND_P2                "Enter Second Value"
-M_CND_P3                "Enter Value to Match"
+    M_CONDITION             "Condition example: %0 + %1 = %2"
+    M_CND_P1                "Enter First Value"
+    M_CND_P2                "Enter Second Value"
+    M_CND_P3                "Enter Value to Match"
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-M_EXPRESSION            "Function("
+    M_EXPRESSION            "Function("
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-M_EXPRESSION2           "Reverse$("
-M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION2           "Reverse$("
+    M_EXPRESSION3           "DivFloatByTwo("
 END
 
 #endif    // English (U.S.) resources

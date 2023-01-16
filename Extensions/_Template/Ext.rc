@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "Template\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "Template\0"
-            VALUE "LegalCopyright", "Copyright 2022 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Template.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -226,7 +226,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Template"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022 Defisym"
+    IDST_COPYRIGHT          "Copyright 2023 Defisym"
     IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
     IDST_HTTP               "https://twitter.com/defisym"
 END
