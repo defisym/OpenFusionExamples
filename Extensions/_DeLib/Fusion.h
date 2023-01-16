@@ -426,7 +426,7 @@ inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
 #else
 #endif // _NO_REF
 
-inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
+inline LPSURFACE ConvertBitmap(LPSURFACE pOldSf) {
 	if (!IsHWA(pOldSf)) {
 		return pOldSf;
 	}
@@ -440,6 +440,10 @@ inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
 	pOldSf->Blit(*pMemSf);
 
 	return pMemSf;
+}
+
+inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
+	return ConvertBitmap(pOldSf);
 }
 
 inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
@@ -864,22 +868,26 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 #endif // _NO_REF
 
 // create a temp bitmap pSf if needed
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer) {
+inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
 	auto bHWA = IsHWA(pSf);
 	auto pBitmap = pSf;
 
 	if (bHWA) {
-		pBitmap = ConvertBitmap(rdPtr, pSf);
+		pBitmap = ConvertBitmap(pSf);
 	}
 
-	processer(pBitmap);
+	processor(pBitmap);
 
 	if (bHWA) {
 		delete pBitmap;
 	}
 }
 
-//Get Valid Sacle
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+	ProcessBitmap(pSf, processor);
+}
+
+//Get Valid Scale
 inline void GetValidScale(float* scale) {
 	*scale = max(1, *scale);
 	return;
@@ -1201,6 +1209,18 @@ inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
 	if (pSf->HasAlpha()) {
 		pSf->UnlockAlpha();
 	}
+}
+
+inline void ProcessPixel(LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+	ProcessBitmap(pSf, [&](const LPSURFACE Bitmap) {
+		auto ceof = GetSfCoef(pSf);
+		processor(ceof);
+		ReleaseSfCoef(pSf, ceof);
+	});
+}
+
+inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+	ProcessPixel(pSf, processor);
 }
 
 inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,BYTE*,BYTE*)> process) {
