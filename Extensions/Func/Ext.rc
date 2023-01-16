@@ -218,9 +218,11 @@ BEGIN
         BEGIN       
             MENUITEM "Assert", IDMN_ACTION_ASSERT           
             MENUITEM "MsgBox", IDMN_ACTION_MSGBOX
+#ifdef _ENABLE_TOAST
             MENUITEM "Toast", IDMN_ACTION_TOAST
             MENUITEM SEPARATOR
             MENUITEM "Set Toast Flag", IDMN_ACTION_TOASTFLAG
+#endif
         END
         MENUITEM SEPARATOR
         MENUITEM "Set Object Alpha", IDMN_ACTION_SOA

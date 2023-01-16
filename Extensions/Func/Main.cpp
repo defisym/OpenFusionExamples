@@ -490,9 +490,11 @@ short WINAPI DLLExport Toast(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring title = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring content = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
+#ifdef _ENABLE_TOAST
 	if (value) {
 		rdPtr->pToast->ShowToast(std::forward<std::wstring>(title), std::forward<std::wstring>(content));
 	}
+#endif
 
 	return 0;
 }
@@ -500,7 +502,9 @@ short WINAPI DLLExport Toast(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport ToastFlags(LPRDATA rdPtr, long param1, long param2) {
 	auto flags = CNC_GetParameter(rdPtr);
 
+#ifdef _ENABLE_TOAST
 	rdPtr->pToast->SetFlag(flags);
+#endif
 
 	return 0;
 }

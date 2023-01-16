@@ -100,7 +100,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pOnItObjName = new std::wstring;
 	rdPtr->pObject = nullptr;
 
+#ifdef _ENABLE_TOAST
 	rdPtr->pToast = new WinToastHelper(rdPtr);
+#endif
 
 #ifdef _DEBUG
 	rdPtr->pSelect->SaveScope();
@@ -145,7 +147,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pSelect;
 	delete rdPtr->pOnItObjName;
 
+#ifdef _ENABLE_TOAST
 	delete rdPtr->pToast;
+#endif
 
 	// No errors
 	return 0;

@@ -197,10 +197,12 @@ typedef struct tagRDATA
 	std::wstring* pOnItObjName;
 	LPRO pObject;
 
+#ifdef _ENABLE_TOAST
 	WinToastHelper* pToast;
 
 	int toast_ActionIndex;
 	int toast_DismissalReason;
+#endif
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

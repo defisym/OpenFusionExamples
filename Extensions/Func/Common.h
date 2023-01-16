@@ -41,7 +41,16 @@
 
 // My lib
 class ObjectSelection;
+
+// disable for windows 7 compatibility
+//#define _ENABLE_TOAST
+
+#ifdef _ENABLE_TOAST
+#endif
+
+#ifdef _ENABLE_TOAST
 class WinToastHelper;
+#endif
 
 // My headers
 #include	"GeneralDefinition.h"
@@ -59,7 +68,10 @@ class WinToastHelper;
 #include	"EffectUtilities.h"
 
 #include	"Func.h"
+
+#ifdef _ENABLE_TOAST
 #include	"Toast.h"
+#endif
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
