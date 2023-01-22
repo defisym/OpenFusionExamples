@@ -529,6 +529,22 @@ private:
 		return !RegexCore(this->pEmpty, wChar);
 	}
 
+#ifdef  _DEBUG
+	// check a set of characters match regex
+	//wchar_t wChars[] = { L'a',L'b', L'c', L'd' };
+	//auto bMatch = CheckRegex(wChars, 4, &NeoStr::NotCJK);
+	inline bool CheckRegex(wchar_t* wChars, size_t sz
+		, bool (NeoStr::* regex)(wchar_t)) {
+		auto bRet = true;
+
+		for (size_t i = 0; i < sz; i++) {
+			bRet &= (this->*regex)(wChars[i]);
+		}
+
+		return bRet;
+	}
+#endif //  _DEBUG
+
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
 		//if (this->dwDTFlags & DT_LEFT) {
@@ -657,7 +673,8 @@ public:
 		GetTextMetrics(hdc, &this->tm);
 
 		// https://www.jianshu.com/p/fcbc5cd06f39
-		this->pCJK = new wregex(L"[\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+		// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
+		this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
 			, ECMAScript | optimize);
 		this->pEmpty = new wregex(L"[\\s]"
 			, ECMAScript | optimize);
