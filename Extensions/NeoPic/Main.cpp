@@ -582,7 +582,7 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		}		
 
 		if (bReleaseOld) {
-			//delete pOldSf;
+			// delete pOldSf;
 			// pOldSf is one of the following
 			ReleaseNonFromLib(rdPtr);
 		}	
@@ -592,12 +592,13 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		StackBlur(pMemSf, radius, scale, divide);
 
 		rdPtr->src = pMemSf;
-
-		NewNonFromLib(rdPtr, rdPtr->src);
 		
 		if (bHwa) {
 			ConvertToHWATexture(rdPtr, rdPtr->src);
 		}
+
+		// update latet (may do hwa conversion)
+		NewNonFromLib(rdPtr, rdPtr->src);
 
 		NewImg(rdPtr);
 		ReDisplay(rdPtr);

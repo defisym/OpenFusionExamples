@@ -574,10 +574,11 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 
 			rdPtr->pLibValue = nullptr;
 		}
+		else {
+			ReleaseNonFromLib(rdPtr);
+		}
 
-		rdPtr->fromLib = false;
-		
-		ReleaseNonFromLib(rdPtr);
+		rdPtr->fromLib = false;		
 
 		rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);
 		rdPtr->src->Clone(*obj->src);
