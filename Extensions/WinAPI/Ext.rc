@@ -546,7 +546,7 @@ BEGIN
     M_ACTION_SMS_ON "Set MultiThread Save On"
     M_ACTION_SMS_OFF "Set MultiThread Save Off"
 
-    M_ACTION_WINDOW_BFA     "Capture Frame Area, Stretch to Width = %0, Height = %1,  SaveToClipboard = %2, SaveToFile = %3, FilePath %4"
+    M_ACTION_WINDOW_BFA     "Capture Frame Area, Stretch to Width = %0, Height = %1, SaveToClipboard = %2, SaveToFile = %3, FilePath %4"
     PARA_ACTION_WINDOW_BFA_WIDTH "Width"
     PARA_ACTION_WINDOW_BFA_HEIGHT "Heigth"
     PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD "SaveToClipboard, 1 = Save, 0 = Don't Save"
