@@ -57,7 +57,14 @@ struct MemVideoLib {
 #define _FillBufferByUpdate
 
 #ifdef _FillBufferByUpdate
+constexpr auto LATENCY_MS = 50;
+constexpr auto DRIFT_MS = 1;
+constexpr auto DRIFT_CORRECTION_PERCENTAGE = 0.5f;
 
+constexpr auto mDriftThreshold = (uint)(TARGET_SAMPLE_RATE * DRIFT_MS) / 1000;
+constexpr auto mTargetLatency = (uint)(TARGET_SAMPLE_RATE * LATENCY_MS) / 1000;
+constexpr auto mAdjustedLatency = mTargetLatency;
+constexpr auto mActualLatency = (int)mTargetLatency;
 #endif
 
 struct GlobalData {
@@ -67,7 +74,8 @@ struct GlobalData {
 
 #ifdef _FillBufferByUpdate
 	struct FModControl {
-
+		FMOD_CREATESOUNDEXINFO info = { 0 };
+		size_t lastReadPosition = 0;
 	};
 	std::map<FFMpeg**, FModControl> ppFFMpegFModControl;
 #endif
@@ -182,8 +190,9 @@ struct GlobalData {
 		if (!bForceNoAudio) {
 			this->ppFFMpeg = ppFFMpeg;
 			this->ppFFMpegs.emplace_back(ppFFMpeg);
+
 #ifdef FMOD_AUDIO
-			this->cFMI.FMI_CreateSound(std::forward<std::wstring>(_itos((long)ppFFMpeg)), ppFFMpeg, [](FMOD_CREATESOUNDEXINFO& exinfo) {
+			this->cFMI.FMI_CreateSound(std::forward<std::wstring>(_itos((long)ppFFMpeg)), ppFFMpeg, [&](FMOD_CREATESOUNDEXINFO& exinfo) {
 				/* Number of channels in the sound. */
 				exinfo.numchannels = TARGET_CHANNEL_NUMBER;
 				/* Default playback rate of sound. */
@@ -200,7 +209,7 @@ struct GlobalData {
 		
 				/* Length of PCM data in bytes of whole song (for Sound::getLength) */
 #ifdef _FillBufferByUpdate
-				exinfo.length = FMOD_AUDIO_BUFFER_SIZE;
+				exinfo.length = mTargetLatency * TARGET_CHANNEL_NUMBER * 2 * sizeof(char);
 #else
 				exinfo.length = FMOD_AUDIO_BUFFER_SIZE;
 #endif
@@ -237,6 +246,9 @@ struct GlobalData {
 				};
 #endif
 				exinfo.pcmsetposcallback = nullptr;                   /* User callback for seeking. */
+#ifdef _FillBufferByUpdate
+				this->ppFFMpegFModControl[ppFFMpeg] = { exinfo };
+#endif
 				});
 			this->cFMI.FMI_PlaySound(std::forward<std::wstring>(_itos((long)ppFFMpeg)), false);
 #endif
@@ -247,6 +259,11 @@ struct GlobalData {
 		auto it = std::find(ppFFMpegs.begin(), ppFFMpegs.end(), ppFFMpeg);
 		if (it != ppFFMpegs.end()) {
 			ppFFMpegs.erase(it);
+		}
+
+		auto controlIt = this->ppFFMpegFModControl.find(ppFFMpeg);
+		if (controlIt != ppFFMpegFModControl.end()) {
+			ppFFMpegFModControl.erase(controlIt);
 		}
 
 		if (!ppFFMpegs.empty()) {
@@ -271,9 +288,20 @@ struct GlobalData {
 			auto name = _itos((long)ppFFMpeg);
 
 #ifdef _FillBufferByUpdate
-			this->cFMI.FMI_SetSound(std::forward<std::wstring>(name),[&](auto it)->void {
+			this->cFMI.FMI_SetSound(std::forward<std::wstring>(name),[&](FModInterface::SoundMapIt it)->void {
 				FMOD::Sound* pSound = it->second.pSound;
 				FMOD::Channel* channel = it->second.channel;
+
+				auto controlIt = this->ppFFMpegFModControl.find(ppFFMpeg);
+				auto fModControl = controlIt->second;
+				auto info = fModControl.info;
+
+				auto readPosition = this->cFMI.FMI_GetPos(std::forward<std::wstring>(name), FMOD_TIMEUNIT_PCMBYTES);
+				auto bytesRead = readPosition - fModControl.lastReadPosition;
+
+				if (readPosition < fModControl.lastReadPosition){
+					bytesRead += info.length;
+				}
 
 				void* lockPtr_1 = nullptr;
 				void* lockPtr_2 = nullptr;
@@ -281,26 +309,24 @@ struct GlobalData {
 				size_t prtLength_1 = 0;
 				size_t prtLength_2 = 0;
 
-				pSound->lock(0, datalen
+				auto ret = pSound->lock(fModControl.lastReadPosition, bytesRead
 					, &lockPtr_1, &lockPtr_2
 					, &prtLength_1, &prtLength_2);
 
 				void* userdata = nullptr;
 				pSound->getUserData((void**)&userdata);
 
-				AudioCallback(userdata, (Uint8*)data, datalen);
+				//AudioCallback(userdata, (Uint8*)data, datalen);
 
 				pSound->unlock(lockPtr_1, lockPtr_2
 					, prtLength_1, prtLength_2);
+
+				fModControl.lastReadPosition = readPosition;
 				});
 #endif
 
 			this->cFMI.FMI_SetVolume(std::forward<std::wstring>(name)
 				,(float)(pFFMpeg->get_volume() / 128.0));
-			
-			//auto pos = this->cFMI.FMI_GetPos(std::forward<std::wstring>(name), FMOD_TIMEUNIT_PCMBYTES);
-			//auto bytesRead = FMOD_AUDIO_BUFFER_SIZE - pos;
-			//pFFMpeg->update_audioClockOffset(bytesRead);
 		}
 	}
 #endif

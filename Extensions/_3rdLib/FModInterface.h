@@ -19,24 +19,31 @@
 #endif
 
 class FModInterface {
-private:
+public:
     struct SoundMapItem {
         FMOD::Sound* pSound;
         FMOD::Channel* channel = 0;
     };
 
+private:
     std::map<std::wstring, SoundMapItem> soundMap;
 
+public:
+    using SoundMapIt = decltype(soundMap.begin());
+
+private:
     FMOD::System* system = nullptr;
     FMOD_RESULT result = FMOD_OK;
     // https://qa.fmod.com/t/pcmreadcallback-not-being-called/13862
     // When creating the sound, using FMOD_CREATESTREAM will stream the data in chunks as it plays which will need to continuously read the data to play the sand, also using far less memory.
     // Without that flag, a sound will open as a static sound that is decompressed fully into memory after one read callback.
+#ifdef _FillBufferByUpdate
+    FMOD_MODE mode = FMOD_OPENUSER | FMOD_LOOP_NORMAL;
+#else
     FMOD_MODE mode = FMOD_OPENUSER | FMOD_LOOP_NORMAL | FMOD_CREATESTREAM;
+#endif
     FMOD_CREATESOUNDEXINFO exinfo = { 0 };
     void* extradriverdata = 0;
-
-    using IT = decltype(soundMap.begin());
 
     inline void FMI_LoadSound(std::wstring&& soundName
         , const char* name_or_data
@@ -48,7 +55,7 @@ private:
 
         this->soundMap.emplace(soundName, SoundMapItem{ sound });
 
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
             });
     }
@@ -110,7 +117,7 @@ public:
         }
     }
 
-    inline void FMI_SetSound(std::wstring&& soundName, std::function<void(IT)> updater) {
+    inline void FMI_SetSound(std::wstring&& soundName, std::function<void(SoundMapIt)> updater) {
         auto it = std::find_if(this->soundMap.begin(), this->soundMap.end(), [&](auto& pair) {
             return pair.first == soundName;
             });
@@ -123,13 +130,13 @@ public:
     }
 
     inline void FMI_PlaySound(std::wstring&& soundName, bool bPaused) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = system->playSound(it->second.pSound, 0, bPaused, &it->second.channel);
             });
     }
 
     inline void FMI_StopSound(std::wstring&& soundName) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.pSound->release();
             this->soundMap.erase(it);
             });
@@ -138,7 +145,7 @@ public:
     inline size_t FMI_GetPos(std::wstring&& soundName, FMOD_TIMEUNIT postype = FMOD_TIMEUNIT_MS) {
         size_t position = 0;
 
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.channel->getPosition(&position, postype);
             });
 
@@ -146,13 +153,13 @@ public:
     }
 
     inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0, FMOD_TIMEUNIT postype = FMOD_TIMEUNIT_MS) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.channel->setPosition(pos, postype);
             });
     }
 
     inline void FMI_ReplaySound(std::wstring&& soundName) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.channel->stop();
             result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
 
@@ -161,7 +168,7 @@ public:
     }
 
     inline void FMI_SetVolume(std::wstring&& soundName, float volume) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.channel->setVolume(volume);
             });
     }
