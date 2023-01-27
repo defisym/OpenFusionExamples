@@ -226,7 +226,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 #ifdef FMOD_AUDIO
 	rdPtr->pData->cFMI.FMI_Update();
-	rdPtr->pData->UpdateVolume(&rdPtr->pFFMpeg);
+	rdPtr->pData->Update(&rdPtr->pFFMpeg);
 #endif
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {

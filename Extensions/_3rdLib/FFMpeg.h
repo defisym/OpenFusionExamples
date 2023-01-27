@@ -133,7 +133,8 @@ static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
 #ifdef FMOD_AUDIO
-#define _EXTERNAL_CLOCK_SYNC
+//#define _EXTERNAL_CLOCK_SYNC
+constexpr auto FMOD_AUDIO_BUFFER_SIZE = 128 * SDL_AUDIO_BUFFER_SIZE;
 #endif
 
 constexpr auto FFMpegFlag_Default = 0;
@@ -312,6 +313,10 @@ private:
 #pragma endregion
 
 #pragma region SDL
+	//audio offset callback 
+	//std::function<size_t()> audioClockOffsetSetter = nullptr;
+	std::function<size_t()> audioClockOffsetSetter = [this]() { return audio_buf_size - audio_buf_index; };
+	size_t audioClockOffset = 0;
 	//保存解码一个packet后的多帧原始音频数据
 	uint8_t* audio_buf = nullptr;
 	//解码后的多帧音频数据长度
@@ -1533,15 +1538,26 @@ private:
 		return videoPts;
 	}
 
+public:
+	inline void update_audioClockOffset(size_t offset) {
+		this->audioClockOffsetSetter = nullptr;
+		this->audioClockOffset = offset;
+	}
+
+private:
 	inline double get_audioClock() {
 		double pts = audioClock; /* maintained in the audio thread */
 
-		int hw_buf_size = audio_buf_size - audio_buf_index;
-		int  bytes_per_sec = 0;
+		//int hw_buf_size = audio_buf_size - audio_buf_index;
+		size_t hw_buf_size =
+			audioClockOffsetSetter == nullptr
+			? audioClockOffset
+			: audioClockOffsetSetter();
+		size_t  bytes_per_sec = 0;
 
 		if (pAudioStream) {
 			//bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
-			bytes_per_sec = (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER) * 2;
+			bytes_per_sec = TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER * 2;
 		}
 
 		if (bytes_per_sec) {

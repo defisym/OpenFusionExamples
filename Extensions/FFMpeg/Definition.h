@@ -54,10 +54,23 @@ struct MemVideoLib {
 	}
 };
 
+#define _FillBufferByUpdate
+
+#ifdef _FillBufferByUpdate
+
+#endif
+
 struct GlobalData {
 	bool bSDLInit = false;
 	FFMpeg** ppFFMpeg = nullptr;
 	std::vector<FFMpeg**> ppFFMpegs;
+
+#ifdef _FillBufferByUpdate
+	struct FModControl {
+
+	};
+	std::map<FFMpeg**, FModControl> ppFFMpegFModControl;
+#endif
 
 	MemVideoLib* pMemVideoLib = nullptr;
 #ifdef FMOD_AUDIO
@@ -182,15 +195,22 @@ struct GlobalData {
 #ifdef _EXTERNAL_CLOCK_SYNC
 				exinfo.decodebuffersize = 8 * SDL_AUDIO_BUFFER_SIZE;
 #else
-				exinfo.decodebuffersize = SDL_AUDIO_BUFFER_SIZE;
+				exinfo.decodebuffersize = FMOD_AUDIO_BUFFER_SIZE;
 #endif
 		
 				/* Length of PCM data in bytes of whole song (for Sound::getLength) */
-				exinfo.length = SDL_AUDIO_BUFFER_SIZE;
+#ifdef _FillBufferByUpdate
+				exinfo.length = FMOD_AUDIO_BUFFER_SIZE;
+#else
+				exinfo.length = FMOD_AUDIO_BUFFER_SIZE;
+#endif
 				//exinfo.length = exinfo.defaultfrequency * exinfo.numchannels * sizeof(signed short) * 5;
 				/* Data format of sound. */
 				exinfo.format = FMOD_SOUND_FORMAT_PCM16;              
 				/* User callback for reading. */
+#ifdef _FillBufferByUpdate
+				exinfo.pcmreadcallback = nullptr;
+#else
 				exinfo.pcmreadcallback =                              
 					[](FMOD_SOUND* sound, void* data, unsigned int datalen) {
 					auto pSound = (FMOD::Sound*)sound;
@@ -215,6 +235,7 @@ struct GlobalData {
 
 					return FMOD_OK;
 				};
+#endif
 				exinfo.pcmsetposcallback = nullptr;                   /* User callback for seeking. */
 				});
 			this->cFMI.FMI_PlaySound(std::forward<std::wstring>(_itos((long)ppFFMpeg)), false);
@@ -242,13 +263,44 @@ struct GlobalData {
 	}
 
 #ifdef FMOD_AUDIO
-	inline void UpdateVolume(FFMpeg** ppFFMpeg) {
+	inline void Update(FFMpeg** ppFFMpeg) {
 		auto it = std::find(ppFFMpegs.begin(), ppFFMpegs.end(), ppFFMpeg);
-		if (it != ppFFMpegs.end() && (*ppFFMpeg) != nullptr) {
+		auto pFFMpeg = *ppFFMpeg;
+
+		if (it != ppFFMpegs.end() && pFFMpeg != nullptr) {
 			auto name = _itos((long)ppFFMpeg);
 
+#ifdef _FillBufferByUpdate
+			this->cFMI.FMI_SetSound(std::forward<std::wstring>(name),[&](auto it)->void {
+				FMOD::Sound* pSound = it->second.pSound;
+				FMOD::Channel* channel = it->second.channel;
+
+				void* lockPtr_1 = nullptr;
+				void* lockPtr_2 = nullptr;
+
+				size_t prtLength_1 = 0;
+				size_t prtLength_2 = 0;
+
+				pSound->lock(0, datalen
+					, &lockPtr_1, &lockPtr_2
+					, &prtLength_1, &prtLength_2);
+
+				void* userdata = nullptr;
+				pSound->getUserData((void**)&userdata);
+
+				AudioCallback(userdata, (Uint8*)data, datalen);
+
+				pSound->unlock(lockPtr_1, lockPtr_2
+					, prtLength_1, prtLength_2);
+				});
+#endif
+
 			this->cFMI.FMI_SetVolume(std::forward<std::wstring>(name)
-				,(float)((*ppFFMpeg)->get_volume() / 128.0));
+				,(float)(pFFMpeg->get_volume() / 128.0));
+			
+			//auto pos = this->cFMI.FMI_GetPos(std::forward<std::wstring>(name), FMOD_TIMEUNIT_PCMBYTES);
+			//auto bytesRead = FMOD_AUDIO_BUFFER_SIZE - pos;
+			//pFFMpeg->update_audioClockOffset(bytesRead);
 		}
 	}
 #endif

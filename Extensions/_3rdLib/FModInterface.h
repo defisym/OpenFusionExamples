@@ -1,6 +1,6 @@
 #pragma once
 
-//#define FMOD_AUDIO
+#define FMOD_AUDIO
 
 #ifdef FMOD_AUDIO
 
@@ -20,10 +20,10 @@
 
 class FModInterface {
 private:
-    struct SoundMapItem    {   
-       FMOD::Sound* pSound;
-        FMOD::Channel* channel = 0;       
-    };    
+    struct SoundMapItem {
+        FMOD::Sound* pSound;
+        FMOD::Channel* channel = 0;
+    };
 
     std::map<std::wstring, SoundMapItem> soundMap;
 
@@ -51,18 +51,6 @@ private:
         FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
             result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
             });
-    }
-
-    inline void FMI_SetSound(std::wstring&& soundName,std::function<void(IT)> updater) {
-        auto it = std::find_if(this->soundMap.begin(), this->soundMap.end(), [&](auto& pair) {
-            return pair.first == soundName;
-            });
-
-        if (it == this->soundMap.end()) {
-            return;
-        }
-
-        updater(it);
     }
 
 public:
@@ -122,6 +110,18 @@ public:
         }
     }
 
+    inline void FMI_SetSound(std::wstring&& soundName, std::function<void(IT)> updater) {
+        auto it = std::find_if(this->soundMap.begin(), this->soundMap.end(), [&](auto& pair) {
+            return pair.first == soundName;
+            });
+
+        if (it == this->soundMap.end()) {
+            return;
+        }
+
+        updater(it);
+    }
+
     inline void FMI_PlaySound(std::wstring&& soundName, bool bPaused) {
         FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
             result = system->playSound(it->second.pSound, 0, bPaused, &it->second.channel);
@@ -135,13 +135,19 @@ public:
             });
     }
 
-    inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0) {
+    inline size_t FMI_GetPos(std::wstring&& soundName, FMOD_TIMEUNIT postype = FMOD_TIMEUNIT_MS) {
+        size_t position = 0;
+
         FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
-#ifdef  _DEBUG
-            size_t position = 0;
-            result = it->second.channel->getPosition(&position, FMOD_TIMEUNIT_MS);
-#endif //  _DEBUG            
-            result = it->second.channel->setPosition(pos, FMOD_TIMEUNIT_MS);
+            result = it->second.channel->getPosition(&position, postype);
+            });
+
+        return position;
+    }
+
+    inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0, FMOD_TIMEUNIT postype = FMOD_TIMEUNIT_MS) {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+            result = it->second.channel->setPosition(pos, postype);
             });
     }
 
