@@ -135,13 +135,19 @@ public:
             });
     }
 
-    inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0) {
+    inline size_t FMI_GetPos(std::wstring&& soundName, FMOD_TIMEUNIT postype = FMOD_TIMEUNIT_MS) {
+        size_t position = 0;
+
         FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
-#ifdef  _DEBUG
-            size_t position = 0;
-            result = it->second.channel->getPosition(&position, FMOD_TIMEUNIT_MS);
-#endif //  _DEBUG            
-            result = it->second.channel->setPosition(pos, FMOD_TIMEUNIT_MS);
+            result = it->second.channel->getPosition(&position, postype);
+            });
+
+        return position;
+    }
+
+    inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0, FMOD_TIMEUNIT postype = FMOD_TIMEUNIT_MS) {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {      
+            result = it->second.channel->setPosition(pos, postype);
             });
     }
 
