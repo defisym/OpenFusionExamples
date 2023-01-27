@@ -1,6 +1,6 @@
 #pragma once
 
-//#define FMOD_AUDIO
+#define FMOD_AUDIO
 
 #ifdef FMOD_AUDIO
 
@@ -20,10 +20,10 @@
 
 class FModInterface {
 private:
-    struct SoundMapItem    {   
-       FMOD::Sound* pSound;
-        FMOD::Channel* channel = 0;       
-    };    
+    struct SoundMapItem {
+        FMOD::Sound* pSound;
+        FMOD::Channel* channel = 0;
+    };
 
     std::map<std::wstring, SoundMapItem> soundMap;
 
@@ -36,7 +36,7 @@ private:
     FMOD_CREATESOUNDEXINFO exinfo = { 0 };
     void* extradriverdata = 0;
 
-    using IT = decltype(soundMap.begin());
+    using SoundMapIt = decltype(soundMap.begin());
 
     inline void FMI_LoadSound(std::wstring&& soundName
         , const char* name_or_data
@@ -48,12 +48,12 @@ private:
 
         this->soundMap.emplace(soundName, SoundMapItem{ sound });
 
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
             });
     }
 
-    inline void FMI_SetSound(std::wstring&& soundName,std::function<void(IT)> updater) {
+    inline void FMI_SetSound(std::wstring&& soundName,std::function<void(SoundMapIt)> updater) {
         auto it = std::find_if(this->soundMap.begin(), this->soundMap.end(), [&](auto& pair) {
             return pair.first == soundName;
             });
@@ -123,20 +123,20 @@ public:
     }
 
     inline void FMI_PlaySound(std::wstring&& soundName, bool bPaused) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = system->playSound(it->second.pSound, 0, bPaused, &it->second.channel);
             });
     }
 
     inline void FMI_StopSound(std::wstring&& soundName) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.pSound->release();
             this->soundMap.erase(it);
             });
     }
 
     inline void FMI_SetPos(std::wstring&& soundName, size_t pos = 0) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
 #ifdef  _DEBUG
             size_t position = 0;
             result = it->second.channel->getPosition(&position, FMOD_TIMEUNIT_MS);
@@ -146,7 +146,7 @@ public:
     }
 
     inline void FMI_ReplaySound(std::wstring&& soundName) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.channel->stop();
             result = system->playSound(it->second.pSound, 0, false, &it->second.channel);
 
@@ -155,7 +155,7 @@ public:
     }
 
     inline void FMI_SetVolume(std::wstring&& soundName, float volume) {
-        FMI_SetSound(std::forward<std::wstring>(soundName), [&](IT it)->void {
+        FMI_SetSound(std::forward<std::wstring>(soundName), [&](SoundMapIt it)->void {
             result = it->second.channel->setVolume(volume);
             });
     }

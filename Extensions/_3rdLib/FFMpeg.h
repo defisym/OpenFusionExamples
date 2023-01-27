@@ -7,6 +7,10 @@
 #pragma warning(disable : 4819)
 #pragma warning(disable : 4996)
 
+#ifdef FMOD_AUDIO
+//#define _EXTERNAL_CLOCK_SYNC
+#endif
+
 // discomment if you dong't want to set in properties
 //#pragma comment(lib,"avcodec.lib")
 //#pragma comment(lib,"avdevice.lib")
@@ -130,10 +134,6 @@ constexpr auto PIXEL_BYTE = 3;
 
 #ifdef _HW_DECODE
 static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
-#endif
-
-#ifdef FMOD_AUDIO
-#define _EXTERNAL_CLOCK_SYNC
 #endif
 
 constexpr auto FFMpegFlag_Default = 0;

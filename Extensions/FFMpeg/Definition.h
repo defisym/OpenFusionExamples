@@ -186,8 +186,9 @@ struct GlobalData {
 #endif
 		
 				/* Length of PCM data in bytes of whole song (for Sound::getLength) */
-				exinfo.length = SDL_AUDIO_BUFFER_SIZE;
 				//exinfo.length = exinfo.defaultfrequency * exinfo.numchannels * sizeof(signed short) * 5;
+				//exinfo.length = SDL_AUDIO_BUFFER_SIZE;
+				exinfo.length = exinfo.defaultfrequency * exinfo.numchannels * sizeof(signed short);
 				/* Data format of sound. */
 				exinfo.format = FMOD_SOUND_FORMAT_PCM16;              
 				/* User callback for reading. */
