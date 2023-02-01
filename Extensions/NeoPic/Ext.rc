@@ -146,7 +146,11 @@ BEGIN
             MENUITEM SEPARATOR            
             MENUITEM "Load From Lib",               IDMN_ACTION_LFL
             MENUITEM "Load From Display",           IDMN_ACTION_LFD
-            MENUITEM SEPARATOR
+            MENUITEM SEPARATOR  
+            MENUITEM "Capture FrameArea",           IDMN_ACTION_CF
+        END
+        POPUP "Preload"
+        BEGIN
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
             MENUITEM "Set Preload List",              IDMN_ACTION_SPL            
             MENUITEM "Set Preload List By Pointer",   IDMN_ACTION_SPLBP            
@@ -160,6 +164,7 @@ BEGIN
         POPUP "Save"
         BEGIN
             MENUITEM "Save to File",               IDMN_ACTION_STF
+            MENUITEM "Save to File with Stretch",  IDMN_ACTION_STFWS
         END
         MENUITEM SEPARATOR
         POPUP "Lib"
@@ -443,6 +448,9 @@ BEGIN
     
     M_ACTION_STF            "Save File %0, Key %1 to File %2"
     M_ACTION_SAVEFILENAME   "Save FileName, Format is Set by Ext, e.g., File.JPG for JPG"
+
+    M_ACTION_CF             "Capture FrameArea"
+    M_ACTION_STFWS          "Save File %0, Key %1 to File %2, Stretch to Width %3, Height %4"
 END
 
 STRINGTABLE DISCARDABLE 

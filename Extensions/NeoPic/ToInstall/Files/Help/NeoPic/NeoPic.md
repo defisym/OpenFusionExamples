@@ -42,6 +42,10 @@ Enable the power to load encrypted image files, to store them to a lib that keep
   - Load From Display
     - *clone from another non-lib NeoPic object*
 
+  - Capture FrameArea
+    - *if capture by lib then it's saved by access name `_TempCapture` for later use*
+
+- Preload
   - Set Preload Path
     - *preload all files in given path in background, `On Preload Complete` is triggered when background loading completed*
     - *if the lib object triggered loading is destroyed, then the loading will be terminated*
@@ -57,6 +61,7 @@ Enable the power to load encrypted image files, to store them to a lib that keep
 
 - Save
   - Save to File
+  - Save to File With Stretch
     - *save is a wrapper of `get surface pointer`, so the behaviour is the same: fileName & key are ignored for display object and return it's display surface directly, and lib object will try to load it first if not exist*
     - *file format is set by save file name's extension, e.g., `FileName.png` will save as `png` but `FileName.jpg` is `jpg`. if no valid extension then it's saved as `jpg` by default*
 

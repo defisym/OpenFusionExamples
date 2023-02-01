@@ -83,7 +83,11 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_FM, M_ACTION_FM, ACT_ACTION_FM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
-		IDMN_ACTION_STF, M_ACTION_STF,	ACT_ACTION_STF,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME,
+		IDMN_ACTION_STF, M_ACTION_STF, ACT_ACTION_STF,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME,
+		
+		IDMN_ACTION_CF, M_ACTION_CF, ACT_ACTION_CF,	0, 0,
+
+		IDMN_ACTION_STFWS, M_ACTION_STFWS, ACT_ACTION_STFWS,	0, 5, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
 		};
 
@@ -720,7 +724,65 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	auto pSf = _GetSurfacePointer(rdPtr, pFilePath, pKey);
+
+	if (pSf == nullptr) {
+		return 0;
+	}
+
 	__SavetoFile(rdPtr, pSf, pSaveFilePath);
+
+	return 0;
+}
+
+short WINAPI DLLExport CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
+	auto hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
+	HDC hdcWindow = GetDC(hFrameWindowHandle);
+
+	RECT frameRect;
+	::GetWindowRect(hFrameWindowHandle, &frameRect);
+	int frameWidth = frameRect.right - frameRect.left;
+	int frameHeight = frameRect.bottom - frameRect.top;
+
+	auto pMemSf = CreateSurface(24, frameWidth, frameHeight);
+	_AddAlpha(pMemSf);
+
+	auto hdcSf = pMemSf->GetDC();
+	StretchBlt(hdcSf, 0, 0, frameWidth, frameHeight
+		, hdcWindow, 0, 0, frameWidth, frameHeight
+		, SRCCOPY);
+	pMemSf->ReleaseDC(hdcSf);
+
+	auto capturedName = L"_TempCapture";
+	LoadFromPointer(rdPtr, capturedName, pMemSf);
+
+	delete pMemSf;
+
+	return 0;
+}
+
+short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+
+	auto pSave = CreateSurface(32, width, height);
+	auto pSf = _GetSurfacePointer(rdPtr, pFilePath, pKey);	
+
+	if (pSf == nullptr) {
+		return 0;
+	}
+
+	ProcessBitmap(pSf,[&](const LPSURFACE pBitmap) {
+		Stretch(pBitmap, pSave, true);
+	});
+
+	__SavetoFile(rdPtr, pSave, pSaveFilePath);
+
+	delete pSave;
 
 	return 0;
 }
@@ -998,6 +1060,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			FillMosaic,
 
 			SaveToFile,
+
+			CaptureFrameArea,
+
+			SaveToFileWithStretch,
 
 			0
 			};

@@ -116,6 +116,10 @@
 
 #define	IDMN_ACTION_STF  			25029
 
+#define	IDMN_ACTION_CF  			25030
+
+#define	IDMN_ACTION_STFWS  			25031
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -164,6 +168,10 @@
 #define	M_ACTION_FM 			     5028
 
 #define	M_ACTION_STF 			     5029
+
+#define	M_ACTION_CF 			     5030
+
+#define	M_ACTION_STFWS 			     5031
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501

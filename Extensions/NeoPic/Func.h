@@ -602,7 +602,10 @@ inline void LoadFromDisplay(LPRDATA rdPtr, int Fixed, bool CopyCoef = false) {
 	return LoadFromDisplay(rdPtr, LproFromFixed(rdPtr, Fixed), CopyCoef);
 }
 
-inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
+constexpr auto LoadFromPointerFlags_NoFullPath = 0b0000'0000'0000'0000'0000'0000'0000'0001;
+
+inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf
+	, DWORD dwFlags = 0) {
 	if (pSf == nullptr) {
 		return;
 	}
@@ -617,7 +620,10 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf) {
 		}
 		});
 
-	auto fullPath = GetFullPathNameStr(pFileName);
+	auto bNoFullPath = dwFlags & LoadFromPointerFlags_NoFullPath;
+	auto fullPath = bNoFullPath
+		? std::wstring(pFileName)
+		: GetFullPathNameStr(pFileName);
 
 	if (rdPtr->isLib) {
 		(*rdPtr->pLib)[fullPath] = SurfaceLibValue{ pSave, nullptr, nullptr, nullptr

@@ -67,7 +67,11 @@
 
 #define	ACT_ACTION_STF				29
 
-#define	ACT_LAST					30
+#define	ACT_ACTION_CF				30
+
+#define	ACT_ACTION_STFWS			31
+
+#define	ACT_LAST					32
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
