@@ -523,7 +523,7 @@ inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
 
 //Stretch Surface
 inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {	
-	Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+	auto ret = Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
 
 	return;
 }
@@ -725,7 +725,7 @@ inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle, bool release) {
 }
 
 //Save to File
-inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, LPCWSTR DefaultFilterName = nullptr) {
+inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release = false, LPCWSTR DefaultFilterName = nullptr) {
 	if (Src == nullptr || !Src->IsValid()) {
 		return;
 	}
