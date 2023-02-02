@@ -8,20 +8,9 @@
 #include <functional>
 #include <string_view>
 
-#include <boost/regex.hpp>
-
-using boost::wregex;
-using boost::wsregex_token_iterator;
-using boost::wsmatch;
-
-using boost::regex_match;
-using boost::regex_search;
-using boost::regex_replace;
-
-using RegexFlag = boost::regex_constants::syntax_option_type;
-using boost::regex_constants::icase;
-using boost::regex_constants::ECMAScript;
-using boost::regex_constants::optimize;
+//Boost
+#define BOOST
+#include "RegexHelper.h"
 
 //#include <FusionUtilities.h>
 #include <RandGenerator.h>
