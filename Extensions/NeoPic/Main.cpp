@@ -235,6 +235,10 @@ short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) 
 	LPSURFACE pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
 	LPCWSTR pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
 
+#ifdef _DEBUG
+	//__SavetoClipBoard(pSf);
+#endif // _DEBUG
+
 	LoadFromPointer(rdPtr, pFileName, pSf);
 
 	return 0;
@@ -751,9 +755,14 @@ short WINAPI DLLExport CaptureFrameArea(LPRDATA rdPtr, long param1, long param2)
 		, hdcWindow, 0, 0, frameWidth, frameHeight
 		, SRCCOPY);
 	pMemSf->ReleaseDC(hdcSf);
+	_AddAlpha(pMemSf);
 
 	auto capturedName = L"_TempCapture";
 	LoadFromPointer(rdPtr, capturedName, pMemSf);
+
+#ifdef _DEBUG
+	//__SavetoClipBoard(pMemSf);
+#endif // _DEBUG
 
 	delete pMemSf;
 
@@ -778,6 +787,11 @@ short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long pa
 
 	ProcessBitmap(pSf,[&](const LPSURFACE pBitmap) {
 		Stretch(pBitmap, pSave, true);
+
+#ifdef _DEBUG
+		//__SavetoClipBoard(pBitmap);
+		//__SavetoClipBoard(pSave);
+#endif // _DEBUG
 	});
 
 	__SavetoFile(rdPtr, pSave, pSaveFilePath);

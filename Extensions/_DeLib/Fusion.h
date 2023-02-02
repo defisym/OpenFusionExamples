@@ -729,10 +729,12 @@ inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool rel
 	if (Src == nullptr || !Src->IsValid()) {
 		return;
 	}
+
+	BOOL result = FALSE;
 	
 	ProcessBitmap(rdPtr, Src, [&](const LPSURFACE pBitmap) {
 		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-		ExportImage(pImgMgr, FilePath, pBitmap, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
+		result = ExportImage(pImgMgr, FilePath, pBitmap, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
 		});	
 
 	if (release) {

@@ -5,6 +5,10 @@
 #include <vector>
 #include <thread>
 
+////Boost
+//#define BOOST
+//#include "RegexHelper.h"
+
 //Windows
 #include <windows.h>
 
@@ -329,13 +333,40 @@ inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src)
 }
 
 inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
-	LPWSTR pFullPathName = new wchar_t [MAX_PATH];
-	memset(pFullPathName, 0, MAX_PATH);
+	auto pFileName = fileName.c_str();
+	
+	// to fix work directory issue
+	// if input is not a full path (for access filename)
+	// then return it directly
+	// full path doesn't have work dir issue, as it's just calculate
+	
+	// regex
+	//auto pathRegex = wregex(L"^[a-zA-Z]:\\\\.*$", ECMAScript | optimize);
+	//auto bMatch = regex_match(pFileName, pathRegex);
 
-	GetFullPathName(fileName.c_str(), MAX_PATH, pFullPathName, nullptr);
-	std::wstring ret = pFullPathName;
+	// raw
+	auto disk = pFileName[0];
+	auto deli = pFileName[1];
+	auto slash = pFileName[2];
 
-	delete[] pFullPathName;
+	auto bMatch = (disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z')
+		&& deli == L':'
+		&& slash == L'\\';
+
+	if (!bMatch) {
+		return fileName;
+	}
+
+	std::wstring ret(MAX_PATH, 0);
+	auto err = GetFullPathName(pFileName, MAX_PATH, &ret.at(0), nullptr);
+	
+	//LPWSTR pFullPathName = new wchar_t [MAX_PATH];
+	//memset(pFullPathName, 0, MAX_PATH);
+
+	//auto err = GetFullPathName(pFileName, MAX_PATH, pFullPathName, nullptr);
+	//std::wstring ret = pFullPathName;
+
+	//delete[] pFullPathName;
 
 	return ret;
 }
