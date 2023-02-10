@@ -258,6 +258,8 @@ BEGIN
         MENUITEM SEPARATOR        
         POPUP "Get Param"
         BEGIN
+            MENUITEM "Get Current Func's Raw Param", IDMN_EXPRESSION_GRP
+            MENUITEM SEPARATOR
             MENUITEM "Get Current Func's Param (return value)", IDMN_EXPRESSION_GVP
             MENUITEM "Get Current Func's Param (return string)", IDMN_EXPRESSION_GSP
             MENUITEM SEPARATOR
@@ -493,6 +495,8 @@ BEGIN
     
     M_EXPRESSION_GVP            "GetParam("
     M_EXPRESSION_GSP            "GetParam$("
+    
+    M_EXPRESSION_GRP            "GetRawParam$("
 
     M_EXPRESSION_GVGP           "GetGlobalTempParam("
     M_EXPRESSION_GSGP           "GetGlobalTempParam$("

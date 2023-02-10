@@ -48,7 +48,9 @@ inline Data& GetReturn(LPRDATA rdPtr, size_t Pos) {
 
 template<typename Type>
 inline long NotInFuncError() {
+#ifndef RUN_ONLY
 	Assert(false, L"Not In Func");
+#endif
 
 	if (std::is_same<Type, std::wstring()>::value) {
 		return (long)Default_Str;
@@ -127,6 +129,7 @@ inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, std::wstring& func
 
 inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Param) {
 	rdPtr->FuncNameStack->emplace_back(FuncName);
+	rdPtr->FuncRawParamStack->emplace_back(Param);
 
 	rdPtr->FuncParamStack->emplace_back();
 	UpdateParam(rdPtr, Param);
@@ -150,6 +153,8 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 	}	
 
 	rdPtr->FuncNameStack->pop_back();
+	rdPtr->FuncRawParamStack->pop_back();
+	
 	rdPtr->FuncParamStack->pop_back();	
 
 	rdPtr->FuncTempParam->erase(GetFuncNameWithRecursiveID(FuncName));

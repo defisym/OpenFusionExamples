@@ -124,7 +124,9 @@
 
 #define EXP_EXPRESSION_GOA			30
 
-#define	EXP_LAST                    31
+#define EXP_EXPRESSION_GRP			31
+
+#define	EXP_LAST                    32
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -174,6 +176,7 @@ typedef struct tagRDATA
 	bool CompatibleMode;
 
 	LPVEC FuncNameStack;
+	LPVEC FuncRawParamStack;
 
 	LPPARAMSTACK FuncParamStack;
 	LPTPARAM FuncTempParam;

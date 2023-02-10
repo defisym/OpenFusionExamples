@@ -242,6 +242,8 @@
 
 #define IDMN_EXPRESSION_GOA  	27030
 
+#define IDMN_EXPRESSION_GRP  	27031
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -287,6 +289,8 @@
 #define M_EXPRESSION_LOEV		 7029
 
 #define M_EXPRESSION_GOA 		 7030
+
+#define M_EXPRESSION_GRP 		 7031
 
 // Names of expression parameters
 #define M_EXP_PARAM				 7500

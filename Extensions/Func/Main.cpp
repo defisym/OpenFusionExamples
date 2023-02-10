@@ -154,6 +154,8 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GOA, M_EXPRESSION_GOA, EXP_EXPRESSION_GOA, 0, 1, EXPPARAM_LONG, M_OBJECT,
 
+		IDMN_EXPRESSION_GRP, M_EXPRESSION_GRP, EXP_EXPRESSION_GRP, EXPFLAG_STRING, 0,
+
 		};
 
 // ============================================================================
@@ -623,6 +625,16 @@ long WINAPI DLLExport GetParamRS(LPRDATA rdPtr, long param1) {
 	}	
 }
 
+long WINAPI DLLExport GetRawParam(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return	!rdPtr->FuncRawParamStack->empty()
+		? (long)rdPtr->FuncRawParamStack->back().c_str()
+		: NotInFuncError<std::wstring>();
+}
+
 long WINAPI DLLExport GetGlobalParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
@@ -1055,6 +1067,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			LowerOrEqualVal,
 
 			GetObjectAlpha,
+			
+			GetRawParam,
 
 			0
 			};
