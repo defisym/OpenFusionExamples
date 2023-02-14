@@ -1,0 +1,22 @@
+<effect>
+    <name>Compression</name>
+    <author>Defisym</author>
+    <description>Compression</description>
+    <parameter>
+        <name>Level Num</name>
+        <code>levelNum</code>
+        <description>Number of level</description>
+        <type>INT</type>
+        <property>edit</property>
+        <value>5</value>
+    </parameter>
+    <parameter>
+        <name>Sampler Size</name>
+        <code>samplerSize</code>
+        <description>Size of sampler</description>
+        <type>INT</type>
+        <property>edit</property>
+        <value>5</value>
+    </parameter>
+</effect>
+

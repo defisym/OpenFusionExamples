@@ -98,6 +98,10 @@ If you have some good examples or something else and want to share, just simply 
   - *Created by Defisym.*
   - *make semi-mono effect*
 
+- Compression
+  - *Created by Defisym.*
+  - *Simulate Compression effect*
+
 - DotMatrix
   - *Created by Defisym.*
   - *Simple dot matrix effect*
