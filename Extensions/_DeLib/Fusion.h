@@ -925,7 +925,7 @@ inline void GetMaximumDivide(int* divide) {
 
 //Stack Blur
 
-#define STACK_BLUR_ALPHA
+//#define STACK_BLUR_ALPHA
 
 #ifdef _NO_REF
 inline void StackBlur(const LPSURFACE pSrc, int radius, float scale, int divide) {
@@ -1004,17 +1004,43 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 	int t_width = width / divide;
 	int t_height = height / divide;
-		
-	auto GetStride = [=](bool dir, int pitch, int byte) {
-		return dir ? pitch : byte;
+
+#ifdef STACK_BLUR_ALPHA
+	auto GetStride = [=](bool dir) {
+		return dir
+			? (alpha
+				? coef.alphaPitch
+				: coef.pitch)
+			: (alpha
+				? coef.alphaByte
+				: coef.byte);
+	};
+#else
+	auto GetStride = [=](bool dir) {
+		return dir ? coef.pitch : coef.byte;
+	};
+#endif // STACK_BLUR_ALPHA	
+
+	using PixelGetter = std::function<RGBA(BYTE* src, int src_offset)>;
+	using PixelSetter = std::function<void(RGBA src, BYTE* des, int des_offset)>;
+
+	PixelGetter normalGetter = [](BYTE* src, int src_offset) {
+		return RGBA{ (double)src[src_offset + 2], (double)src[src_offset + 1], (double)src[src_offset + 0], 0 };
+	};
+	PixelSetter normalSetter = [](RGBA src, BYTE* des, int des_offset) {
+		des[des_offset + 2] = (BYTE)src.r;
+		des[des_offset + 1] = (BYTE)src.g;
+		des[des_offset + 0] = (BYTE)src.b;
 	};
 
-	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des, int size, bool dir) {
+	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des
+		, int size, bool dir
+		, PixelGetter getter, PixelSetter setter) {
 		int div = radius * 2 + 1;
 		int sizem = size - 1;
 
-		int stride = GetStride(dir, coef.pitch, coef.byte);
-		int o_stride = GetStride(!dir, coef.pitch, coef.byte);
+		int stride = GetStride(dir);
+		int o_stride = GetStride(!dir);
 
 		int src_offset = 0;
 		int des_offset = 0;
@@ -1029,7 +1055,9 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 		for (int i = 0; i <= radius; i++) {
 			int stack_offset = i;
-			RGBA src_pixel = { (double)src[2],(double)src[1],(double)src[0],0 };
+			//RGBA src_pixel = { (double)src[2],(double)src[1],(double)src[0],0 };
+			RGBA src_pixel = getter(src, 0);
+
 			stack[stack_offset] = src_pixel;
 			Sum = Sum + src_pixel * (i + 1);
 			Sum_Out = Sum_Out + src_pixel;
@@ -1041,8 +1069,11 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 			if (i <= sizem) {
 				src_offset += stride;
 			}
+			
 			int stack_offset = i + radius;
-			RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			//RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			RGBA src_pixel = getter(src, src_offset);
+			
 			stack[stack_offset] = src_pixel;
 			Sum = Sum + src_pixel * (radius + 1 - i);
 			Sum_In = Sum_In + src_pixel;
@@ -1060,9 +1091,13 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 		for (int i = 0; i < size; i++) {
 			RGBA des_pixel = (Sum * mul_sum) >> shr_sum;
-			des[des_offset + 2] = (BYTE)des_pixel.r;
-			des[des_offset + 1] = (BYTE)des_pixel.g;
-			des[des_offset + 0] = (BYTE)des_pixel.b;
+
+			//des[des_offset + 2] = (BYTE)des_pixel.r;
+			//des[des_offset + 1] = (BYTE)des_pixel.g;
+			//des[des_offset + 0] = (BYTE)des_pixel.b;
+
+			setter(des_pixel, des, des_offset);
+
 			des_offset += stride;
 
 			Sum = Sum - Sum_Out;
@@ -1078,7 +1113,8 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 				xp++;
 			}
 
-			RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			//RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			RGBA src_pixel = getter(src, src_offset);
 			stack[stack_offset] = src_pixel;
 
 			Sum_In = Sum_In + src_pixel;
@@ -1100,18 +1136,21 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	};
 
 	auto Filter1D = [=](BYTE* src, int it_size, int filter_size, bool dir) {
-		int stride = GetStride(dir , coef.pitch , coef.byte);
-		int o_stride = GetStride(!dir, coef.pitch, coef.byte);
+		int stride = GetStride(dir);
+		int o_stride = GetStride(!dir);
 
 		for (int i = 0; i < it_size; i++) {
-			StackBlur1DFilter(src + i * o_stride, src + i * o_stride, filter_size, dir);
+			StackBlur1DFilter(src + i * o_stride, src + i * o_stride
+				, filter_size, dir
+				, normalGetter, normalSetter);
 		}
 	};
 
 	auto multithread = [=](BYTE* buff, bool dir) {
 		std::vector<std::thread> t_vec;
-		int stride = GetStride(dir, coef.pitch, coef.byte);
-		int o_stride = GetStride(!dir, coef.pitch, coef.byte);
+
+		int stride = GetStride(dir);
+		int o_stride = GetStride(!dir);
 
 		for (int i = 0; i < divide; i++) {
 			//Edge
@@ -1135,6 +1174,12 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	multithread(coef.pData, Dir_X);
 	multithread(coef.pData, Dir_Y);
 
+#ifdef STACK_BLUR_ALPHA
+	if (img->HasAlpha()) {
+
+	}
+#endif // STACK_BLUR_ALPHA
+	
 	ReleaseSfCoef(img, coef);
 
 	//还原大小
