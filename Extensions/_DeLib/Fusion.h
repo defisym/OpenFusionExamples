@@ -19,6 +19,21 @@ inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = 
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
 inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer);
 
+struct SfCoef {
+	BYTE* pData = nullptr;
+	int pitch = 0;
+	int byte = 0;
+	int sz = 0;
+
+	BYTE* pAlphaData = nullptr;
+	int alphaPitch = 0;
+	int alphaByte = 0;
+	int alphaSz = 0;
+};
+
+inline SfCoef GetSfCoef(LPSURFACE pSf);
+inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef);
+
 //-----------------------------
 
 //GetString
@@ -909,6 +924,9 @@ inline void GetMaximumDivide(int* divide) {
 }
 
 //Stack Blur
+
+#define STACK_BLUR_ALPHA
+
 #ifdef _NO_REF
 inline void StackBlur(const LPSURFACE pSrc, int radius, float scale, int divide) {
 #else
@@ -938,18 +956,11 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	}
 
 	//Lock buffer, get pitch etc.
-	BYTE* buff = img->LockBuffer();
-	if (!buff) {
+	auto coef = GetSfCoef(img);
+
+	if (!coef.pData) {
 		return;
 	}
-
-	int pitch = img->GetPitch();
-	if (pitch < 0) {
-		pitch *= -1;
-		buff -= pitch * (height - 1);
-	}
-	int size = pitch * height;
-	int byte = img->GetDepth() >> 3;
 
 	static unsigned short const stackblur_mul[255] =
 	{
@@ -993,11 +1004,17 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 	int t_width = width / divide;
 	int t_height = height / divide;
+		
+	auto GetStride = [=](bool dir, int pitch, int byte) {
+		return dir ? pitch : byte;
+	};
 
 	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des, int size, bool dir) {
 		int div = radius * 2 + 1;
 		int sizem = size - 1;
-		int stride = dir ? pitch : byte;
+
+		int stride = GetStride(dir, coef.pitch, coef.byte);
+		int o_stride = GetStride(!dir, coef.pitch, coef.byte);
 
 		int src_offset = 0;
 		int des_offset = 0;
@@ -1082,19 +1099,19 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 		free(stack);
 	};
 
-	auto Filter1D = [StackBlur1DFilter, byte, pitch](BYTE* src, int it_size, int filter_size, bool dir) {
-		int stride = dir ? pitch : byte;
-		int o_stride = (!dir) ? pitch : byte;
+	auto Filter1D = [=](BYTE* src, int it_size, int filter_size, bool dir) {
+		int stride = GetStride(dir , coef.pitch , coef.byte);
+		int o_stride = GetStride(!dir, coef.pitch, coef.byte);
 
 		for (int i = 0; i < it_size; i++) {
 			StackBlur1DFilter(src + i * o_stride, src + i * o_stride, filter_size, dir);
 		}
 	};
 
-	auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch](BYTE* buff, bool dir) {
+	auto multithread = [=](BYTE* buff, bool dir) {
 		std::vector<std::thread> t_vec;
-		int stride = dir ? pitch : byte;
-		int o_stride = (!dir) ? pitch : byte;
+		int stride = GetStride(dir, coef.pitch, coef.byte);
+		int o_stride = GetStride(!dir, coef.pitch, coef.byte);
 
 		for (int i = 0; i < divide; i++) {
 			//Edge
@@ -1115,10 +1132,10 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 		}
 	};
 
-	multithread(buff, Dir_X);
-	multithread(buff, Dir_Y);
+	multithread(coef.pData, Dir_X);
+	multithread(coef.pData, Dir_Y);
 
-	img->UnlockBuffer(buff);
+	ReleaseSfCoef(img, coef);
 
 	//还原大小
 	if (!(scale == 1.0)) {
@@ -1150,18 +1167,6 @@ inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double 
 
 //dec2rgb
 #define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
-
-struct SfCoef {
-	BYTE* pData = nullptr;
-	int pitch = 0;
-	int byte = 0;
-	int sz = 0;
-
-	BYTE* pAlphaData = nullptr;
-	int alphaPitch = 0;
-	int alphaByte = 0;
-	int alphaSz = 0;
-};
 
 inline SfCoef GetSfCoef(LPSURFACE pSf) {
 	SfCoef pSfCoef = { 0 };
