@@ -34,6 +34,9 @@ struct SfCoef {
 inline SfCoef GetSfCoef(LPSURFACE pSf);
 inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef);
 
+inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
+
 //-----------------------------
 
 //GetString
@@ -390,6 +393,26 @@ inline auto GetD3DDevice(LPRDATA rdPtr) {
 //Convert to HWA
 inline bool IsHWA(LPSURFACE Src) {
 	return Src->GetType() >= ST_HWA_SCREEN;
+}
+
+inline bool IsOpaque(LPSURFACE pSf) {
+	bool bRet = true;
+
+	ProcessBitmap(pSf, [&](const LPSURFACE pBitmap) {
+		auto coef = GetSfCoef(pSf);
+
+		for (int i = 0; i < coef.alphaSz; i++) {
+			if (coef.pAlphaData[i] != 255) {
+				bRet = false;
+
+				break;
+			}
+		}
+
+		ReleaseSfCoef(pSf, coef);
+		});
+
+	return bRet;
 }
 
 inline bool IsTransparent(LPSURFACE pSf) {
@@ -924,8 +947,7 @@ inline void GetMaximumDivide(int* divide) {
 }
 
 //Stack Blur
-
-//#define STACK_BLUR_ALPHA
+#define STACK_BLUR_ALPHA
 
 #ifdef _NO_REF
 inline void StackBlur(const LPSURFACE pSrc, int radius, float scale, int divide) {
@@ -1006,17 +1028,19 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	int t_height = height / divide;
 
 #ifdef STACK_BLUR_ALPHA
-	auto GetStride = [=](bool dir) {
+	bool bBlurAlpha = false;
+
+	auto GetStride = [&](bool dir) {
 		return dir
-			? (alpha
+			? (bBlurAlpha
 				? coef.alphaPitch
 				: coef.pitch)
-			: (alpha
+			: (bBlurAlpha
 				? coef.alphaByte
 				: coef.byte);
 	};
 #else
-	auto GetStride = [=](bool dir) {
+	auto GetStride = [&](bool dir) {
 		return dir ? coef.pitch : coef.byte;
 	};
 #endif // STACK_BLUR_ALPHA	
@@ -1032,6 +1056,15 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 		des[des_offset + 1] = (BYTE)src.g;
 		des[des_offset + 0] = (BYTE)src.b;
 	};
+
+#ifdef STACK_BLUR_ALPHA
+	PixelGetter alphaGetter = [](BYTE* src, int src_offset) {
+		return RGBA{ (double)src[src_offset + 0], 0, 0, 0 };
+	};
+	PixelSetter alphaSetter = [](RGBA src, BYTE* des, int des_offset) {
+		des[des_offset + 0] = (BYTE)src.r;
+	};
+#endif // STACK_BLUR_ALPHA	
 
 	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des
 		, int size, bool dir
@@ -1135,18 +1168,27 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 		free(stack);
 	};
 
-	auto Filter1D = [=](BYTE* src, int it_size, int filter_size, bool dir) {
+	auto Filter1D = [&](BYTE* src, int it_size, int filter_size, bool dir) {
 		int stride = GetStride(dir);
 		int o_stride = GetStride(!dir);
 
 		for (int i = 0; i < it_size; i++) {
 			StackBlur1DFilter(src + i * o_stride, src + i * o_stride
 				, filter_size, dir
+#ifdef STACK_BLUR_ALPHA
+				, (bBlurAlpha
+					? alphaGetter
+					: normalGetter)
+				, (bBlurAlpha
+					? alphaSetter
+					: normalSetter));
+#else
 				, normalGetter, normalSetter);
+#endif // STACK_BLUR_ALPHA		
 		}
 	};
 
-	auto multithread = [=](BYTE* buff, bool dir) {
+	auto multithread = [&](BYTE* buff, bool dir) {
 		std::vector<std::thread> t_vec;
 
 		int stride = GetStride(dir);
@@ -1175,10 +1217,13 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	multithread(coef.pData, Dir_Y);
 
 #ifdef STACK_BLUR_ALPHA
-	if (img->HasAlpha()) {
+	if (img->HasAlpha() && !IsOpaque(img)) {
+		bBlurAlpha = true;
 
+		multithread(coef.pAlphaData, Dir_X);
+		multithread(coef.pAlphaData, Dir_Y);
 	}
-#endif // STACK_BLUR_ALPHA
+#endif // STACK_BLUR_ALPHA	
 	
 	ReleaseSfCoef(img, coef);
 
