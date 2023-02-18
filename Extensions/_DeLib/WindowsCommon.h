@@ -247,6 +247,31 @@ inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageTy
 	return (GetProcessMemoryUsage(processID, type) >> 20);
 }
 
+inline SIZE_T GetProcessMemoryLimitMB() {
+	// 1 MB
+	auto sz = 1024 * 1024 * 1;
+	std::vector<char* > bufs;
+
+	do {
+		try {
+			auto ptr = new char[sz];
+			memset(ptr, 0, sz);
+			bufs.emplace_back(ptr);
+		}
+		catch (std::bad_alloc& e) {
+			auto info = e.what();
+			auto max = GetProcessMemoryUsageMB();
+			//MSGBOX(_itos(max));			
+
+			for (auto& it : bufs) {
+				delete[] it;
+			}
+
+			return max;
+		}
+	} while (true);
+}
+
 inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	// Get FileVersionInfo
 	auto size = GetFileVersionInfoSize(FileName, NULL);
@@ -374,11 +399,11 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = CP_ACP) {
 	std::string ret;
 	
-	int len = WideCharToMultiByte(CodePage, 0, input.c_str(), input.size(), NULL, 0, NULL, NULL);
+	int len = WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
 	char* pStr = new char[len + 1];
 	memset(pStr, 0, len + 1);
 	
-	WideCharToMultiByte(CodePage, 0, input.c_str(), input.size(), pStr, len, NULL, NULL);
+	WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), pStr, len, NULL, NULL);
 	
 	ret = pStr;
 	delete[] pStr;
@@ -389,11 +414,11 @@ inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = C
 inline std::wstring ConvertStrToWStr(const std::string& input, UINT CodePage = CP_ACP) {
 	std::wstring ret;
 	
-	int len = MultiByteToWideChar(CodePage, 0, input.c_str(), input.size(), NULL, 0);
+	int len = MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0);
 	wchar_t* pStr = new wchar_t[len + 1];
 	memset(pStr, 0, (len + 1) * sizeof(wchar_t));
 	
-	MultiByteToWideChar(CodePage, 0, input.c_str(), input.size(), pStr, len);
+	MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), pStr, len);
 	
 	ret = pStr;
 	delete[] pStr;
