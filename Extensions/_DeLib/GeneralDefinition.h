@@ -36,6 +36,13 @@
 
 #define TURNCATE_SHORT(v) ((short)(v) & 0x7FFF)
 
+constexpr auto CLEAR_MEMRANGE = 128;
+constexpr auto CLEAR_NUMTHRESHOLD = 50;
+
+// limit: 3.5 GB
+constexpr auto MAX_MEMORYLIMIT = 3 * 1024 + 256;
+constexpr auto DEFAULT_MEMORYLIMIT = 3 * 1024;
+
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
 	release_arr(Tar);
