@@ -322,19 +322,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 	}
 }
 
-inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
-	if (!rdPtr->bCache) {
-		return;
-	}
-
-	auto ExceedMemLimit = [](size_t memLimit = DEFAULT_MEMORYLIMIT) {
-		return memLimit <= GetProcessMemoryUsageMB();
-	};
-
-	if (!forceClean && !ExceedMemLimit()) {
-		return;
-	}
-
+inline auto GetRefList(LPRDATA rdPtr) {
 	std::vector<const uint8_t*> pBufs;
 	pBufs.reserve(rdPtr->pData->pMemVideoLib->data.size());
 
@@ -350,6 +338,10 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
 		pBufs.emplace_back(pBufSrc);
 	}
 
+	return pBufs;
+}
+
+inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs) {
 	std::vector<const std::wstring*> toRemove;
 	toRemove.reserve(rdPtr->pData->pMemVideoLib->data.size() - pBufs.size());
 
@@ -361,6 +353,25 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
 			toRemove.emplace_back(&pair.first);
 		}
 	}
+
+	return toRemove;
+}
+
+inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
+	if (!rdPtr->bCache) {
+		return;
+	}
+
+	auto ExceedMemLimit = [](size_t memLimit = DEFAULT_MEMORYLIMIT) {
+		return memLimit <= GetProcessMemoryUsageMB();
+	};
+
+	if (!forceClean && !ExceedMemLimit()) {
+		return;
+	}
+
+	auto pBufs = GetRefList(rdPtr);
+	auto  toRemove = GetToRemove(rdPtr, pBufs);
 
 	auto curLimit = GetProcessMemoryUsageMB();
 	auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;

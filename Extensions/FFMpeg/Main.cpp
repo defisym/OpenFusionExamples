@@ -270,31 +270,21 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 
 	// erase all
 	if (L"" == filePath) {
-		Encryption* pCurEncrypt = nullptr;
-
-		for (auto& it : rdPtr->pData->pMemVideoLib->data) {
-			if (it.first == *rdPtr->pFilePath) {
-				pCurEncrypt = it.second;
-
-				continue;
-			}
-
-			delete it.second;
-		}
-
-		rdPtr->pData->pMemVideoLib->data.clear();
-
-		// protect current using
-		if (pCurEncrypt != nullptr) {
-			rdPtr->pData->pMemVideoLib->PutItem(*rdPtr->pFilePath, pCurEncrypt);
-		}
-
-		return 0;
+		CleanCache(rdPtr, true);
 	}
+	else {
+		auto it = rdPtr->pData->pMemVideoLib->GetItem(filePath);
 
-	if (*rdPtr->pFilePath != filePath) {
-		rdPtr->pData->pMemVideoLib->EraseItem(filePath);
-	}	
+		if (it != rdPtr->pData->pMemVideoLib->data.end()) {
+			auto pBufs = GetRefList(rdPtr);
+			auto findIt = std::find(pBufs.begin(), pBufs.end()
+				, it->second->GetOutputData());
+
+			if (findIt == pBufs.end()) {
+				rdPtr->pData->pMemVideoLib->EraseItem(filePath);
+			}
+		}
+	}
 
 	return 0;
 }
