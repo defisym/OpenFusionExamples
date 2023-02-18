@@ -6,6 +6,8 @@
 #include <wincrypt.h>
 #include <string>
 
+#include <functional>
+
 //#include <ntstatus.h>
 
 #pragma comment(lib, "bcrypt.lib")
@@ -48,8 +50,35 @@ private:
 	DWORD HashLength = 0;
 	LPWSTR HashStr = nullptr;
 
-	void Release(void* Pointer);
+	template<typename T>
+	inline void Release(T* &Pointer) {
+		delete[] Pointer;
+		Pointer = nullptr;
+
+		return;
+	}
+
+	//void Release(void* Pointer);
 	bool Encrypt_Core(bool Encrypt, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM);
+
+	inline void OpenFileGeneral(const wchar_t* FileName, std::function<void(FILE*, long)> callBack) {
+		Release(this->InputData);
+
+		FILE* fp = nullptr;
+
+		_wfopen_s(&fp, FileName, L"rb");
+		if (fp == nullptr) {
+			return;
+		}
+
+		fseek(fp, 0, SEEK_END);
+		this->InputLength = ftell(fp);
+		rewind(fp);
+
+		callBack(fp, this->InputLength);
+		
+		fclose(fp);
+	}
 
 protected:
 
@@ -74,6 +103,9 @@ public:
 		return this->OutputLength;
 	}
 
+	template<typename T>
+	void SetEncryptData(const T* pBuf, DWORD sz);
+
 	void SetEncryptStr(std::string& Str);
 	void SetEncryptStr(const char* Str, DWORD StrLength);
 
@@ -82,8 +114,10 @@ public:
 
 	char* GetInputStr();
 	void ReleaseInputStr();
-
+	
 	DWORD GetInputStrLength();
+
+	void ReleaseInputData();
 
 	char* GetOutputStr();
 	void ReleaseOutputStr();
@@ -98,7 +132,21 @@ public:
 	inline bool Decrypt(LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		return Encrypt_Core(DECRY, Algorithm);
 	}
+	//inline bool DecryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+	//	bool bRet = false;
+
+	//	OpenFileGeneral(FileName, [&](FILE* fp, long sz) {
+	//		this->InputData = (PBYTE)fp;
+	//		bRet = Encrypt_Core(DECRY, Algorithm);
+
+	//		this->InputData = nullptr;
+	//		this->InputLength = 0;
+	//		});
+
+	//	return bRet;
+	//}
 
 	LPCWSTR GetHash(LPCWSTR Algorithm = BCRYPT_MD5_ALGORITHM);
+
 };
 

@@ -15,32 +15,18 @@ Encryption::~Encryption() {
     Release(this->HashStr);
 }
 
-inline void Encryption::Release(void* Pointer){    
-    delete[] Pointer;
-    Pointer = nullptr;
+//inline void Encryption::Release(void* Pointer){    
+//    delete[] Pointer;
+//    Pointer = nullptr;
+//
+//    return;
+//}
 
-    return;
-}
-
-void Encryption::OpenFile(const wchar_t* FileName) {    
-    Release(this->InputData);
-    
-    FILE* fp = nullptr;
-    
-    _wfopen_s(&fp, FileName, L"rb");
-    if (fp == nullptr) {
-        return;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    this->InputLength = ftell(fp);
-    rewind(fp);
-    
-    this->InputData = new BYTE[this->InputLength];
-    fread(this->InputData, this->InputLength, 1, fp);
-    fclose(fp);
-
-    return;
+void Encryption::OpenFile(const wchar_t* FileName) {
+    OpenFileGeneral(FileName, [this](FILE* fp, long sz) {
+        this->InputData = new BYTE[this->InputLength];
+        fread(this->InputData, this->InputLength, 1, fp);
+        });
 }
 
 void Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) {
@@ -64,32 +50,31 @@ void Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) {
     return;
 }
 
+template<typename T>
+void Encryption::SetEncryptData(const T* pBuf, DWORD sz) {
+    Release(this->InputData);
+
+    this->InputLength = sz * sizeof(T);
+    this->InputData = new BYTE[this->InputLength];
+    memcpy(this->InputData, pBuf, this->InputLength);
+
+    return;
+}
+
 void Encryption::SetEncryptStr(std::string& Str) {
-    SetEncryptStr(Str.c_str(), Str.length());
+    SetEncryptData(Str.c_str(), (DWORD)Str.length());
 }
 
 void Encryption::SetEncryptStr(const char* Str, DWORD StrLength) {
-    Release(this->InputData);
-
-    this->InputLength = StrLength;
-    this->InputData = new BYTE[this->InputLength];
-    memcpy(this->InputData, Str, this->InputLength);
-
-    return;
+    SetEncryptData(Str, StrLength);
 }
 
 void Encryption::SetEncryptStr(std::wstring& Str) {
-    SetEncryptStr(Str.c_str(), Str.length());
+    SetEncryptData(Str.c_str(), (DWORD)Str.length());
 }
 
 void Encryption::SetEncryptStr(const wchar_t* Str, DWORD StrLength) {
-    Release(this->InputData);
-
-    this->InputLength = StrLength * sizeof(wchar_t);
-    this->InputData = new BYTE[this->InputLength];
-    memcpy(this->InputData, Str, this->InputLength);
-
-    return;
+    SetEncryptData(Str, StrLength);
 }
 
 char* Encryption::GetInputStr() {
@@ -116,6 +101,11 @@ void Encryption::ReleaseInputStr() {
         delete[] this->InputStr;
     }
     this->InputStr = nullptr;
+}
+
+void Encryption::ReleaseInputData() {
+    Release(this->InputData);
+    this->InputLength = 0;
 }
 
 char* Encryption::GetOutputStr() {
