@@ -211,6 +211,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
+
 #ifdef _LOOPBENCH
 	auto now = std::chrono::steady_clock::now();
 	auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
@@ -272,6 +273,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		//assert(totalTime >= curTime);
 	}
 #endif // _DEBUG
+
+	CleanCache(rdPtr, false);
 
 	if (rdPtr->pMemSf != nullptr
 		&& rdPtr->pMemSf->IsValid()

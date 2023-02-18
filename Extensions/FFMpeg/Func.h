@@ -2,6 +2,10 @@
 
 #include <functional>
 
+inline void CleanCache(LPRDATA rdPtr, bool forceClean = false);
+
+//-----------------------------
+
 inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->bStretch) {
 		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / width;
@@ -222,12 +226,30 @@ inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstr
 		}
 	}
 
+	bool bRetry = false;
+
 	auto pEncrypt = new Encryption;
 	pEncrypt->GenerateKey(key.c_str());
 
-	pEncrypt->OpenFile(filePath.c_str());
-	pEncrypt->Decrypt();
+retry:
+	try {
+		pEncrypt->OpenFile(filePath.c_str());
+		pEncrypt->Decrypt();
+		pEncrypt->ReleaseInputData();
 
+		//pEncrypt->DecryptFileDirectly(filePath.c_str());
+	}
+	catch (std::bad_alloc& e) {
+		if (rdPtr->bCache && !bRetry) {
+			bRetry = true;
+			CleanCache(rdPtr, true);
+
+			goto retry;
+		}
+
+		throw e;
+	}
+	
 	if (rdPtr->bCache) {
 		pMemVideoLib->PutItem(filePath, pEncrypt);
 	}
@@ -298,4 +320,58 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		*rdPtr->pFilePath = L"";
 	}
+}
+
+inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
+	if (!rdPtr->bCache) {
+		return;
+	}
+
+	auto ExceedMemLimit = [](size_t memLimit = DEFAULT_MEMORYLIMIT) {
+		return memLimit <= GetProcessMemoryUsageMB();
+	};
+
+	if (!forceClean && !ExceedMemLimit()) {
+		return;
+	}
+
+	std::vector<const uint8_t*> pBufs;
+	pBufs.reserve(rdPtr->pData->pMemVideoLib->data.size());
+
+	for (auto& ppFFMpeg : rdPtr->pData->ppFFMpegs_record) {
+		auto pFFMpeg = *ppFFMpeg;
+
+		if (!pFFMpeg) {
+			continue;
+		}
+
+		auto pBufSrc = pFFMpeg->get_memBufSrc();
+
+		pBufs.emplace_back(pBufSrc);
+	}
+
+	std::vector<const std::wstring*> toRemove;
+	toRemove.reserve(rdPtr->pData->pMemVideoLib->data.size() - pBufs.size());
+
+	for (auto& pair : rdPtr->pData->pMemVideoLib->data) {
+		auto it = std::find(pBufs.begin(), pBufs.end(), pair.second->GetOutputData());
+
+		// not referred
+		if (it == pBufs.end()) {
+			toRemove.emplace_back(&pair.first);
+		}
+	}
+
+	auto curLimit = GetProcessMemoryUsageMB();
+	auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;
+
+	for (auto& pStr : toRemove) {
+		if (!ExceedMemLimit(limit)) {
+			break;
+		}
+
+		rdPtr->pData->pMemVideoLib->EraseItem(*pStr);
+	}
+
+	return;
 }

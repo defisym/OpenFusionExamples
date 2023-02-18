@@ -1757,6 +1757,20 @@ public:
 	//	return (int64_t)(timePerFrameInMs);
 	//}
 
+	inline const uint8_t* const get_memBufSrc() {
+		if (bFromMem == false) {
+			return nullptr;
+		}
+
+		if (pMemBuf == nullptr) {
+			return nullptr;
+		}
+
+		auto pSrc = pMemBuf->getSrc();
+
+		return pSrc;
+	}
+
 	inline bool get_finishState() {
 		return bFinish;
 	}

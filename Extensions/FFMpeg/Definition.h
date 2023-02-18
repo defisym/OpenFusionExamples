@@ -20,11 +20,11 @@ struct MemVideoLib {
 		EraseAll();
 	}
 
-	inline void PutItem(std::wstring& key, Encryption* pData) {
+	inline void PutItem(const std::wstring& key, Encryption* pData) {
 		data[key] = pData;
 	}
 
-	inline void EraseItem(std::wstring& key) {
+	inline void EraseItem(const std::wstring& key) {
 		auto it = GetItem(key);
 
 		if (it != data.end()) {
@@ -41,11 +41,11 @@ struct MemVideoLib {
 		data.clear();
 	}
 
-	inline It GetItem(std::wstring& key) {
+	inline It GetItem(const std::wstring& key) {
 		return data.find(key);
 	}
 
-	inline bool ItemExist(std::wstring& key) {
+	inline bool ItemExist(const std::wstring& key) {
 		return GetItem(key) != data.end();
 	}
 
@@ -58,6 +58,8 @@ struct GlobalData {
 	bool bSDLInit = false;
 	FFMpeg** ppFFMpeg = nullptr;
 	std::vector<FFMpeg**> ppFFMpegs;
+
+	std::vector<FFMpeg**> ppFFMpegs_record;
 
 	MemVideoLib* pMemVideoLib = nullptr;
 #ifdef FMOD_AUDIO
@@ -166,6 +168,8 @@ struct GlobalData {
 
 	inline void Create(bool bForceNoAudio, FFMpeg** ppFFMpeg) {
 		// Update global data
+		ppFFMpegs_record.emplace_back(ppFFMpeg);
+
 		if (!bForceNoAudio) {
 			this->ppFFMpeg = ppFFMpeg;
 			this->ppFFMpegs.emplace_back(ppFFMpeg);
@@ -224,6 +228,11 @@ struct GlobalData {
 	}
 
 	inline void Destroy(FFMpeg** ppFFMpeg) {
+		auto it_record = std::find(ppFFMpegs_record.begin(), ppFFMpegs_record.end(), ppFFMpeg);
+		if (it_record != ppFFMpegs_record.end()) {
+			ppFFMpegs_record.erase(it_record);
+		}
+
 		auto it = std::find(ppFFMpegs.begin(), ppFFMpegs.end(), ppFFMpeg);
 		if (it != ppFFMpegs.end()) {
 			ppFFMpegs.erase(it);
