@@ -10,15 +10,17 @@
 
 //#include <ntstatus.h>
 
-//#pragma comment(lib, "Crypt32.lib")
-
 #define _USER_MODE
 
 #ifdef _USER_MODE
 #pragma comment(lib, "bcrypt.lib")
 #else
+// requires cng.sys
 #pragma comment(lib, "Cng.lib")
 #endif
+
+// for hash
+#pragma comment(lib, "Crypt32.lib")
 
 constexpr auto ENCRY = true;
 constexpr auto DECRY = false;
