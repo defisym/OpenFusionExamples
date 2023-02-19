@@ -233,10 +233,7 @@ inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstr
 
 retry:
 	try {
-		pEncrypt->OpenFile(filePath.c_str());
-		pEncrypt->Decrypt();
-		pEncrypt->ReleaseInputData();
-
+		pEncrypt->DecryptFile(filePath.c_str());
 		//pEncrypt->DecryptFileDirectly(filePath.c_str());
 	}
 	catch (std::bad_alloc& e) {
