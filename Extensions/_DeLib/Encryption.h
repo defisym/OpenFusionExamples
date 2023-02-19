@@ -25,6 +25,8 @@
 constexpr auto ENCRY = true;
 constexpr auto DECRY = false;
 
+constexpr auto BUFFER_SIZE = 1024 * 256;
+
 constexpr static BYTE DefaultKey[16] = {
 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
@@ -59,6 +61,8 @@ private:
 
 	DWORD HashLength = 0;
 	LPWSTR HashStr = nullptr;
+
+	DWORD BufferSize = BUFFER_SIZE;
 
 	template<typename T>
 	inline T* GetStr(T*& pOutput, PBYTE pSrc, size_t sz) {
@@ -246,7 +250,7 @@ private:
 
 		// Use the key to encrypt the plaintext buffer.
 		// For block sized messages, block padding will add an extra block.
-		status = externalEcrypter!=nullptr
+		status = externalEcrypter != nullptr
 			? externalEcrypter(handler
 				, hKey
 				, pbIV, cbBlockLen)
@@ -354,7 +358,7 @@ public:
 #undef EncryptFile
 #undef DecryptFile
 
-	// load to memory, faster
+	// load to memory
 	inline bool EncryptFile(const wchar_t* pFileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		this->OpenFile(pFileName);
 		auto ret = this->Encrypt();
@@ -377,83 +381,89 @@ public:
 		return Encrypt_Core(BCryptDecrypt, Algorithm);
 	}
 
-#define DecryDirectly
+#define PROCESS_DIRECTLY
 
-#ifdef DecryDirectly
-	private:
-		inline bool ProcessFileDirectly(const wchar_t* FileName, HandlerType handler, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
-			bool bRet = false;
+#ifdef PROCESS_DIRECTLY
+private:
+	inline bool ProcessFileDirectly(const wchar_t* FileName, HandlerType handler, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+		bool bRet = false;
 
-			OpenFileGeneral(FileName, [&](FILE* fp, long fileSz) {
-				this->InputData = (PBYTE)fp;
+		OpenFileGeneral(FileName, [&] (FILE* fp, long fileSz) {
+			this->InputData = (PBYTE)fp;
 
-			bRet = Encrypt_Core(handler, Algorithm, [&](HandlerType handler
+			bRet = Encrypt_Core(handler, Algorithm, [&] (HandlerType handler
 				, BCRYPT_KEY_HANDLE hKey
 				, PBYTE pbIV, DWORD cbBlockLen) {
-					auto bufSz = cbBlockLen;
-			auto pBuf = new BYTE[bufSz];
+					auto bufSz = cbBlockLen * this->BufferSize;
+					auto pBuf = new BYTE[bufSz];
 
-			bool bFinish = false;
+					bool bFinish = false;
 
-			DWORD byteWrite = 0;
-			DWORD totalByteWrite = 0;
+					DWORD byteWrite = 0;
+					DWORD totalByteWrite = 0;
 
-			auto GetInputLeft = [&]() {
-				auto fPos = ftell(fp);
+					auto GetInputLeft = [&] () {
+						auto fPos = ftell(fp);
 
-				return this->InputLength - ftell(fp);
-			};
+						return this->InputLength - ftell(fp);
+					};
 
-			do {
-				auto sz = (std::min)(bufSz, GetInputLeft());
-				// Encrypt with padding, so the last block must be padded
-				auto bPadding = (GetInputLeft() <= cbBlockLen) /*|| (sz < bufSz)*/;
+					do {
+						auto sz = (std::min)(bufSz, GetInputLeft());
+						// Encrypt with padding, so the last block must be padded
+						auto bPadding = (GetInputLeft() <= bufSz) /*|| (sz < bufSz)*/;
 
-				memset(pBuf, 0, bufSz);
-				fread(pBuf, sz, 1, fp);
+						memset(pBuf, 0, bufSz);
+						fread(pBuf, sz, 1, fp);
 
-				auto ret = handler(
-					hKey,
-					pBuf, sz,
-					NULL,
-					pbIV, cbBlockLen,
-					this->OutputData + totalByteWrite, this->OutputLength - totalByteWrite,
-					&byteWrite,
-					bPadding ? BCRYPT_BLOCK_PADDING : 0);
+						auto ret = handler(
+							hKey,
+							pBuf, sz,
+							NULL,
+							pbIV, cbBlockLen,
+							this->OutputData + totalByteWrite, this->OutputLength - totalByteWrite,
+							&byteWrite,
+							bPadding ? BCRYPT_BLOCK_PADDING : 0);
 
-				if (!NT_SUCCESS(ret)) {
-					break;
-				}
+						if (!NT_SUCCESS(ret)) {
+							break;
+						}
 
-				totalByteWrite += byteWrite;
-				bFinish = (GetInputLeft() == 0);
+						totalByteWrite += byteWrite;
+						bFinish = (GetInputLeft() == 0);
 
-				if (bFinish) {
-					this->OutputLength = totalByteWrite;
+						if (bFinish) {
+							this->OutputLength = totalByteWrite;
 
-					break;
-				}
-			} while (true);
+							break;
+						}
+					} while (true);
 
-			delete[] pBuf;
+					delete[] pBuf;
 
-			return bFinish ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+					return bFinish ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 				});
 
 			this->InputData = nullptr;
 			this->InputLength = 0;
-				});
+			});
 
-			return bRet;
-		}
-	public:
-		// read from disk, slower
-		inline bool EncryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
-			return ProcessFileDirectly(FileName, BCryptEncrypt, Algorithm);
-		}
-		inline bool DecryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
-			return ProcessFileDirectly(FileName, BCryptDecrypt, Algorithm);
-		}
+		return bRet;
+	}
+
+public:
+	// actual buf size = cbBlockLen * sz
+	inline void SetBufferSize(DWORD sz = BUFFER_SIZE) {
+		this->BufferSize = (std::max)((DWORD)1, sz);
+	}
+
+	// read from disk
+	inline bool EncryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+		return ProcessFileDirectly(FileName, BCryptEncrypt, Algorithm);
+	}
+	inline bool DecryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+		return ProcessFileDirectly(FileName, BCryptDecrypt, Algorithm);
+	}
 #endif 
 
 #define ENCRYPTER_USE_CONVENIENCE_HASH
@@ -649,3 +659,59 @@ public:
 #endif ENCRYPTER_USE_CONVENIENCE_HASH
 };
 
+#ifdef PROCESS_DIRECTLY
+//#define BUFFER_BENCHMARK
+
+#ifdef BUFFER_BENCHMARK
+
+#include <chrono>
+#include <StrNum.h>
+
+/*
+Result:
+
+BufferSize Input : 1 KB, Time : 694 MS
+BufferSize Input : 2 KB, Time : 659 MS
+BufferSize Input : 4 KB, Time : 583 MS
+BufferSize Input : 8 KB, Time : 582 MS
+BufferSize Input : 16 KB, Time : 533 MS
+BufferSize Input : 32 KB, Time : 530 MS
+BufferSize Input : 64 KB, Time : 527 MS
+BufferSize Input : 128 KB, Time : 517 MS
+BufferSize Input : 256 KB, Time : 510 MS
+BufferSize Input : 512 KB, Time : 558 MS
+BufferSize Input : 1024 KB, Time : 589 MS
+BufferSize Input : 2048 KB, Time : 572 MS
+BufferSize Input : 4096 KB, Time : 609 MS
+
+BufferSize Input : 1024 * 256
+*/
+
+inline void BufferBenchMark(Encryption& Encrypt, std::wstring wFilePath, bool encrypt) {
+	constexpr auto KB = 1024;
+	using namespace  std::chrono_literals;
+
+	for (int i = 1; i <= 4096; i*=2) {
+		auto before = std::chrono::steady_clock::now();
+
+		Encrypt.SetBufferSize(KB * i);
+		encrypt
+			? Encrypt.EncryptFileDirectly(wFilePath.c_str())
+			: Encrypt.DecryptFileDirectly(wFilePath.c_str());
+
+		auto duration = (std::chrono::steady_clock::now() - before) / 1ms;
+		auto info = (std::wstring)L"BufferSize: ";
+		info += (std::wstring)_itos(i).c_str();
+		info += (std::wstring)L" KB";
+		info += (std::wstring)L", ";
+		info += (std::wstring)L"Time: ";
+		info += (std::wstring)_itos(duration).c_str();
+		info += (std::wstring)L" MS";
+
+		OutputDebugString(info.c_str());
+		OutputDebugString(L"\n");
+	}
+}
+#endif
+
+#endif
