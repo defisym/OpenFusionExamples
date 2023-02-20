@@ -148,6 +148,7 @@ private:
 	wchar_t regstr[2] = { L'\0' };
 	wregex* pCJK = nullptr;
 	wregex* pEmpty = nullptr;
+	wregex* pEmptyStr = nullptr;
 
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
@@ -518,6 +519,10 @@ private:
 		return !RegexCore(this->pEmpty, wChar);
 	}
 
+	inline bool NotEmpty(const wchar_t* pChar) {
+		return !regex_match(pChar, *this->pEmptyStr);
+	}
+
 #ifdef  _DEBUG
 	// check a set of characters match regex
 	//wchar_t wChars[] = { L'a',L'b', L'c', L'd' };
@@ -667,6 +672,8 @@ public:
 			, ECMAScript | optimize);
 		this->pEmpty = new wregex(L"[\\s]"
 			, ECMAScript | optimize);
+		this->pEmptyStr = new wregex(L"[\\s]*"
+			, ECMAScript | optimize);
 
 		this->pFontCollection = pFontCollection;
 
@@ -744,6 +751,9 @@ public:
 
 		delete this->pEmpty;
 		this->pEmpty = nullptr;
+
+		delete this->pEmptyStr;
+		this->pEmptyStr = nullptr;
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
@@ -1292,15 +1302,29 @@ public:
 		, size_t operationParam = 0) {
 		this->bTextValid = true;
 
-		if (pStr == nullptr) {
-			this->bTextValid = false;
+		auto TextValid = [&](const wchar_t* pStr, size_t* pLen) {
+			*pLen = 0;
 
-			return;
-		}
+			if (pStr == nullptr) {
+				return false;
+			}
 
-		size_t pInputLen = wcslen(pStr);
+			*pLen = wcslen(pStr);
 
-		if (pInputLen == 0) {
+			if (*pLen == 0) {
+				return false;
+			}
+
+			if (!NotEmpty(pStr)) {
+				return false;
+			}
+
+			return true;
+		};
+
+		size_t pInputLen = 0;
+
+		if (!TextValid(pStr, &pInputLen)) {
 			this->bTextValid = false;
 
 			return;
@@ -2136,9 +2160,7 @@ public:
 			GetRawStringByFilteredStringLength();
 		}
 
-		pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+		if (!TextValid(pText, &pTextLen)) {
 			this->bTextValid = false;
 
 			return;
@@ -2447,6 +2469,11 @@ public:
 			else {
 				bPunctuationSkip = false;
 			}
+		}
+
+		// fix empty (e.g., \r\n only) string crash
+		if (strPos.empty()) {
+			return CharPos{ 0 };
 		}
 
 		const auto& lastStrPos = strPos.back();
