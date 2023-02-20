@@ -466,7 +466,8 @@ public:
 	}
 #endif 
 
-#define ENCRYPTER_USE_CONVENIENCE_HASH
+// incompatible with windows 7
+//#define ENCRYPTER_USE_CONVENIENCE_HASH
 
 #ifndef ENCRYPTER_USE_CONVENIENCE_HASH
 	// BCRYPT_SHA256_ALGORITHM,
