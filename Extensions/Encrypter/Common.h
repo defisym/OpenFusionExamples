@@ -29,6 +29,7 @@
 
 // My headers
 #include	"Encryption.h"
+#include	"Func.h"
 
 // Specific to this cox
 #include	"resource.h"

@@ -53,29 +53,21 @@ short expressionsInfos[]=
 // ============================================================================
 
 short WINAPI DLLExport Encrypt(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR SrcFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR DesFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-
-	Encryption Encrypt;
-	Encrypt.GenerateKey(Key);
-	Encrypt.OpenFile(SrcFilePath);
-	Encrypt.Encrypt();
-	Encrypt.SaveFile(DesFilePath);
+	LPCTSTR pSrcFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pDesFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+    
+	EncryptCore(pSrcFilePath, pDesFilePath, pKey, ENCRY);
 
 	return 0;
 }
 
 short WINAPI DLLExport Decrypt(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR SrcFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR DesFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pSrcFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pDesFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	Encryption Decrypt;
-	Decrypt.GenerateKey(Key);
-	Decrypt.OpenFile(SrcFilePath);
-	Decrypt.Decrypt();
-	Decrypt.SaveFile(DesFilePath);
+	EncryptCore(pSrcFilePath, pDesFilePath, pKey, DECRY);
 
 	return 0;
 }
@@ -103,6 +95,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
 			Encrypt,
 			Decrypt,
+
 			0
 			};
 

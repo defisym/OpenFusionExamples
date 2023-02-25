@@ -106,23 +106,18 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
     Release(this->Key);
     Release(this->IV);
 
-    //invalid keystr
-    if ((sizeof(wchar_t) * wcslen(KeyStr)) < (this->KeyLength + this->IVLength)) {
-        this->Key = new BYTE[16];
-        this->IV = new BYTE[16];
-
-        memcpy(this->Key, DefaultKey, 16);
-        memcpy(this->IV, DefaultIV, 16);
-
-        return;
-    }
-
-    //Generate
     this->Key = new BYTE[16];
     this->IV = new BYTE[16];
 
-    memcpy(this->Key, KeyStr, 8 * sizeof(wchar_t));
-    memcpy(this->IV, KeyStr + 8, 8 * sizeof(wchar_t));
+    // invalid keystr
+    if ((sizeof(wchar_t) * wcslen(KeyStr)) < (this->KeyLength + this->IVLength)) {
+        memcpy(this->Key, DefaultKey, 16);
+        memcpy(this->IV, DefaultIV, 16);
+    } else {
+        // Generate
+        memcpy(this->Key, KeyStr, 8 * sizeof(wchar_t));
+        memcpy(this->IV, KeyStr + 8, 8 * sizeof(wchar_t));
+    }
 
     return;
 }
