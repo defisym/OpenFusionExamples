@@ -337,6 +337,12 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
         MENUITEM SEPARATOR
+        POPUP "Memory"
+        BEGIN
+            MENUITEM "Get Total Physical Memory",        IDMN_EXPRESSION_GTPM
+            MENUITEM "Get Free Physical Memory",        IDMN_EXPRESSION_GFPM
+        END
+        MENUITEM SEPARATOR
         POPUP "Time"
         BEGIN
             MENUITEM "Get Current Time",        IDMN_EXPRESSION_GT
@@ -647,6 +653,12 @@ BEGIN
     M_EXPRESSION_GAD "DisAniDir ("
     M_EXPRESSION_GSON "NSObject ("
     PARA_EXPRESSION_FIXED "Object's Fixed Value"
+END
+
+STRINGTABLE
+BEGIN
+    M_EXPRESSION_GTPM   "GetTotalPhysicalMemory ("
+    M_EXPRESSION_GFPM   "GetFreePhysicalMemory ("
 END
 
 STRINGTABLE

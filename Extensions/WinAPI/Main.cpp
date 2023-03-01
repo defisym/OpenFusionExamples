@@ -180,6 +180,9 @@ short expressionsInfos[] =
 
 	IDMN_EXPRESSION_GDT, M_EXPRESSION_GDT, EXP_EXPRESSION_GDT, EXPFLAG_STRING, 1, EXPPARAM_LONG,PARA_EXPRESSION_GDT,
 
+	IDMN_EXPRESSION_GTPM, M_EXPRESSION_GTPM, EXP_EXPRESSION_GTPM, 0, 0,
+	IDMN_EXPRESSION_GFPM, M_EXPRESSION_GFPM, EXP_EXPRESSION_GFPM, 0, 0,
+
 };
 
 // ============================================================================
@@ -339,7 +342,7 @@ long WINAPI DLLExport IsCommandLineHasParam(LPRDATA rdPtr, long param1, long par
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
-		e.get_name();
+		auto name = e.get_name();
 		//return app.exit(e);
 	}
 
@@ -1764,7 +1767,7 @@ long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
-		e.get_name();
+		auto name = e.get_name();
 		//return app.exit(e);
 	}
 
@@ -1874,6 +1877,14 @@ long WINAPI DLLExport GetFullFileName(LPRDATA rdPtr, long param1) {
 
 	//This returns a pointer to the string for MMF.
 	return (long)rdPtr->FileListOutPut;
+}
+
+long WINAPI DLLExport GetTotalPhysicalMemory(LPRDATA rdPtr, long param1) {
+	return (long)GetSystemMemoryInfoMB(MemoryInfoType::TotalPhysicalMemory);
+}
+
+long WINAPI DLLExport GetFreePhysicalMemory(LPRDATA rdPtr, long param1) {
+	return (long)GetSystemMemoryInfoMB(MemoryInfoType::FreePhysicalMemory);
 }
 
 // ----------------------------------------------------------
@@ -2048,6 +2059,9 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	GetFullFileName,
 
 	GetDurationTime,
+	
+	GetTotalPhysicalMemory,
+	GetFreePhysicalMemory,
 
 	0
 };

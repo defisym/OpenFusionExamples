@@ -152,7 +152,10 @@
 
 #define	EXP_EXPRESSION_GDT			36
 
-#define	EXP_LAST                    37
+#define	EXP_EXPRESSION_GTPM			37
+#define	EXP_EXPRESSION_GFPM			38
+
+#define	EXP_LAST                    39
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
