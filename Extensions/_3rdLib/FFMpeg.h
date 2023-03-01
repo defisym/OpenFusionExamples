@@ -1,4 +1,8 @@
-﻿// Ref: http://dranger.com/ffmpeg/ffmpeg.html
+﻿// API Changes
+// https://github.com/FFmpeg/FFmpeg/blob/master/doc/APIchanges
+
+
+// Ref: http://dranger.com/ffmpeg/ffmpeg.html
 // Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 // SafeSEH:NO
 
@@ -11,7 +15,7 @@
 //#define _EXTERNAL_CLOCK_SYNC
 #endif
 
-// discomment if you dong't want to set in properties
+// uncomment if you don't want to set in properties
 //#pragma comment(lib,"avcodec.lib")
 //#pragma comment(lib,"avdevice.lib")
 //#pragma comment(lib,"avfilter.lib")
@@ -68,10 +72,10 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 //		wanted_spec.freq = TARGET_SAMPLE_RATE;
 //		wanted_spec.format = AUDIO_S16SYS;
 //		wanted_spec.channels = 2;
-//		//sclient if no output
+//		//silent if no output
 //		wanted_spec.silence = 0;
 //		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
-//		//recommand: 512~8192, ffplay: 1024
+//		//recommend: 512~8192, ffplay: 1024
 //		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 
 #define _EXTERNAL_AUDIO_INIT
@@ -159,7 +163,7 @@ private:
 	bool bExit = false;
 
 	bool bLoop = false;
-	bool bPause = false;	// used to sclient autio
+	bool bPause = false;	// used to  audio
 
 	bool bReadFinish = false;
 	bool bVideoFinish = false;

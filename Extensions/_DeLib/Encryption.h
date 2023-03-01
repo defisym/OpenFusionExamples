@@ -657,7 +657,7 @@ public:
 
 		return result ? this->HashStr : nullptr;
 	}
-#endif ENCRYPTER_USE_CONVENIENCE_HASH
+#endif 
 };
 
 #ifdef PROCESS_DIRECTLY
