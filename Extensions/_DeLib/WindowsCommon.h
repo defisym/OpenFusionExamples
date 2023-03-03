@@ -1,6 +1,6 @@
 #pragma once
 
-//STL
+// STL
 #include <string>
 #include <vector>
 #include <thread>
@@ -9,21 +9,22 @@
 //#define BOOST
 //#include "RegexHelper.h"
 
-//Windows
+// Windows
 #include <windows.h>
 
-//Thread
+// Thread
 #include <tlhelp32.h>
 #pragma comment(lib,"version.lib")
 #pragma comment(lib,"Kernel32.lib")
 
-//FileList
+// FileList
 #include	<shlwapi.h>
 #pragma	comment(lib,"shlwapi.lib")
 
-//Memory
+// Memory
 #include <psapi.h>
 
+// Process
 inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	//返回参数
 	DWORD	ProcessID = 0;
@@ -50,6 +51,7 @@ inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	return ProcessID;
 }
 
+// FileVersion
 struct TRANSLATION {
 	WORD wLanguage;		// language ID
 	WORD wCodePage;		// character set (code page)
@@ -186,6 +188,67 @@ inline bool GetFileVersion_CMPDefaultFile(LPCWSTR FileNameA, LPCWSTR FileNameB, 
 	return ret;
 }
 
+inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
+	// Get FileVersionInfo
+	auto size = GetFileVersionInfoSize(FileName, NULL);
+	BYTE* pData = new BYTE[size * sizeof(BYTE)];
+	//unique_ptr<BYTE> pData(new BYTE[size * sizeof(BYTE)]);
+
+	GetFileVersionInfo(FileName, NULL, size, pData);
+
+	// Query
+	void* Buffer = nullptr;
+	UINT Len = 0;
+
+	// Get FixedFileInfo
+	VerQueryValue(pData, L"\\", &Buffer, &Len);
+
+	VS_FIXEDFILEINFO* pFixedFileInfo = new VS_FIXEDFILEINFO;
+	memcpy(pFixedFileInfo, Buffer, sizeof(VS_FIXEDFILEINFO));
+
+	// Get Translation
+	VerQueryValue(pData, L"\\VarFileInfo\\Translation", &Buffer, &Len);
+
+	TRANSLATION* pTranslation = new TRANSLATION;
+	memcpy(pTranslation, Buffer, sizeof(TRANSLATION));
+
+	// Get SubBlock based on translation
+	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
+	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
+	auto bufsz = sz + 1;
+
+	LPWSTR block = new wchar_t[bufsz];
+	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
+
+	// Get the real STR
+	LPWSTR info = nullptr;
+
+	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
+		auto isz = swprintf(nullptr, 0, L"%s", src);
+		auto ibufsz = isz + 1;
+
+		*des = new wchar_t[ibufsz];
+		swprintf(*des, ibufsz, L"%s", src);
+	};
+
+	if (VerQueryValue(pData, block, &Buffer, &Len)) {
+		newStr(&info, (wchar_t*)Buffer);
+	}
+	else {
+		newStr(&info, L"NULL");
+	}
+
+	// Clear
+	delete[] pData;
+	delete pFixedFileInfo;
+	delete pTranslation;
+
+	delete[] block;
+
+	return info;
+}
+
+// Process mem usage
 enum class MemoryUsageType {
 	PeakWorkingSetSize,
 	WorkingSetSize,
@@ -272,6 +335,7 @@ inline SIZE_T GetProcessMemoryLimitMB() {
 	} while (true);
 }
 
+// System mem usage
 enum class MemoryInfoType {
 	MemoryLoad,
 	TotalPhysicalMemory,
@@ -282,9 +346,8 @@ enum class MemoryInfoType {
 	FreeVirtualMemory,
 };
 
-inline DWORDLONG GetMemoryInfo(const MEMORYSTATUSEX& statex, MemoryInfoType type) {
-	switch (type)
-	{
+inline DWORDLONG GetMemoryInfo(const MEMORYSTATUSEX& statex, MemoryInfoType type = MemoryInfoType::FreePhysicalMemory) {
+	switch (type) {
 	case MemoryInfoType::MemoryLoad:
 		return statex.dwMemoryLoad;
 	case MemoryInfoType::TotalPhysicalMemory:
@@ -305,77 +368,24 @@ inline DWORDLONG GetMemoryInfo(const MEMORYSTATUSEX& statex, MemoryInfoType type
 
 }
 
-inline DWORDLONG GetSystemMemoryInfo(MemoryInfoType type) {
-	MEMORYSTATUSEX statex={0};
+inline DWORDLONG GetSystemMemoryInfo(MemoryInfoType type = MemoryInfoType::FreePhysicalMemory) {
+	MEMORYSTATUSEX statex = { 0 };
 	statex.dwLength = sizeof(statex);
 
 	GlobalMemoryStatusEx(&statex);
 
-	return GetMemoryInfo(statex,type);
+	return GetMemoryInfo(statex, type);
 }
 
-inline SIZE_T GetSystemMemoryInfoMB(MemoryInfoType type) {
+inline SIZE_T GetSystemMemoryInfoMB(MemoryInfoType type = MemoryInfoType::FreePhysicalMemory) {
 	return SIZE_T(GetSystemMemoryInfo(type) >> 20);
 }
 
-inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
-	// Get FileVersionInfo
-	auto size = GetFileVersionInfoSize(FileName, NULL);
-	BYTE* pData = new BYTE[size * sizeof(BYTE)];
-	//unique_ptr<BYTE> pData(new BYTE[size * sizeof(BYTE)]);
+// memory left
+constexpr auto MIN_MEMORYLEFT = 512;
 
-	GetFileVersionInfo(FileName, NULL, size, pData);
-
-	// Query
-	void* Buffer = nullptr;
-	UINT Len = 0;
-
-	// Get FixedFileInfo
-	VerQueryValue(pData, L"\\", &Buffer, &Len);
-
-	VS_FIXEDFILEINFO* pFixedFileInfo = new VS_FIXEDFILEINFO;
-	memcpy(pFixedFileInfo, Buffer, sizeof(VS_FIXEDFILEINFO));
-
-	// Get Translation
-	VerQueryValue(pData, L"\\VarFileInfo\\Translation", &Buffer, &Len);
-
-	TRANSLATION* pTranslation = new TRANSLATION;
-	memcpy(pTranslation, Buffer, sizeof(TRANSLATION));
-
-	// Get SubBlock based on translation
-	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
-	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
-	auto bufsz = sz + 1;
-
-	LPWSTR block = new wchar_t[bufsz];
-	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
-
-	// Get the real STR
-	LPWSTR info = nullptr;
-
-	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
-		auto isz = swprintf(nullptr, 0, L"%s", src);
-		auto ibufsz = isz + 1;
-
-		*des = new wchar_t[ibufsz];
-		swprintf(*des, ibufsz, L"%s", src);
-	};
-
-	if (VerQueryValue(pData, block, &Buffer, &Len)) {
-		newStr(&info, (wchar_t*)Buffer);
-	}
-	else {
-		newStr(&info, L"NULL");
-	}
-
-	// Clear
-	delete[] pData;
-	delete pFixedFileInfo;
-	delete pTranslation;
-
-	delete[] block;
-
-	return info;
+inline bool SystemMemoryNotEnough() {
+	return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
 }
 
 // must end without L'\\'
