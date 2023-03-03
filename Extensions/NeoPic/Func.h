@@ -412,15 +412,22 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 	else {
 		if (rdPtr->fromLib) {
 			rdPtr->fromLib = false;
-			rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);
-			
+			rdPtr->src = nullptr;
+
 			UpdateRef(rdPtr, false);
 			rdPtr->pRefCount = nullptr;
 
 			rdPtr->pLibValue = nullptr;
-		}	
+		}
+		else {
+			ReleaseNonFromLib(rdPtr);
+		}
 
-		_LoadFromFile(rdPtr->src, fullPath.c_str(), Key, rdPtr, -1, -1, true, rdPtr->stretchQuality);
+		rdPtr->src = CreateNewSurface(rdPtr, rdPtr->HWA);
+		_LoadFromFile(rdPtr->src,
+			fullPath.c_str(), Key,
+			rdPtr, -1, -1,
+			true, rdPtr->stretchQuality);
 		
 		NewNonFromLib(rdPtr, rdPtr->src);
 
