@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <bcrypt.h>
 #include <wincrypt.h>
-#include <string>
 
 #include <functional>
+#include <string>
+#include <tuple>
 
 //#include <ntstatus.h>
 
@@ -314,6 +315,11 @@ protected:
 public:
 	Encryption();
 	~Encryption();
+
+	const auto GetKeyInfo() {
+		return std::make_tuple(this->Key, this->KeyLength,
+			this->IV,this->IVLength);
+	}
 
 	void OpenFile(const wchar_t* FileName);
 	void SaveFile(const wchar_t* FileName, bool SaveSrc = false);
