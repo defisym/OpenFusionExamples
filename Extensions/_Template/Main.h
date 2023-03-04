@@ -34,6 +34,10 @@
 
 #define _DISPLAY_OBJECT
 
+#ifndef _DISPLAY_OBJECT
+#define _NODISPLAY // for UpdateHoImgInfo
+#endif
+
 typedef struct tagEDATA_V1
 {
 	// Header - required
