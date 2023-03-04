@@ -118,6 +118,8 @@ struct GlobalData {
 	uint64_t estimateRAMSizeMB = 0;
 	uint64_t estimateVRAMSizeMB = 0;
 
+	bool bDX11 = false;
+
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
 #ifdef _DYNAMIC_LINK

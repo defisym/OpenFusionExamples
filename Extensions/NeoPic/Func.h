@@ -1260,21 +1260,39 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 
 inline void HandleFlip(LPRDATA rdPtr
 	,LPSURFACE& pDisplay
-	, LPSURFACE pBase, LPSURFACE& pHF, LPSURFACE& pVF, LPSURFACE& pVHF) {
+	,const LPSURFACE pBase, LPSURFACE& pHF, LPSURFACE& pVF, LPSURFACE& pVHF) {
 	bool bFlipH = rdPtr->zoomScale.XScale < 0;
 	bool bFlipV = rdPtr->zoomScale.YScale < 0;
 
-	auto FlipCore = [](LPSURFACE pBase, LPSURFACE& pResult
+	auto FlipCore = [rdPtr](const LPSURFACE pBase, LPSURFACE& pResult
 		, BOOL(cSurface::* pFlipFunc)()) {
 		if (pResult != nullptr) {
 			return pResult;
 		}
 
 		LPSURFACE pFlip = new cSurface;
-		pFlip->Clone(*pBase);
 
-		(pFlip->*pFlipFunc)();
+		auto DoFlip = [&] (const LPSURFACE pSf) {
+			pFlip->Clone(*pSf);
+			(pFlip->*pFlipFunc)();
+		};
 
+		if (rdPtr->pData->bDX11) {
+			DoFlip(pBase);
+		}
+		// bug of DX9 runtime, the source was changed if use DoFlip directly
+		else {
+			auto bBaseHwa = IsHWA(pBase);
+
+			ProcessBitmap(pBase, [&] (const LPSURFACE pBitmap) {
+				DoFlip(pBitmap);
+				});
+
+			if (bBaseHwa) {
+				ConvertToHWATexture(rdPtr, pFlip);
+			}
+		}
+		
 		pResult = pFlip;
 
 		return pResult;
@@ -1293,29 +1311,15 @@ inline void HandleFlip(LPRDATA rdPtr
 			return pVHF;
 		}
 
-		bool XFlipped = pHF != nullptr;
-		bool YFlipped = pVF != nullptr;
+		bool bXFlipped = pHF != nullptr;
+		bool bYFlipped = pVF != nullptr;
 
-		if (XFlipped) {
-			LPSURFACE pFlip = new cSurface;
-			pFlip->Clone(*pHF);
-
-			pFlip->ReverseY();
-
-			pVHF = pFlip;
-
-			return pVHF;
+		if (bXFlipped) {
+			return FlipCore(pHF, pVHF, &cSurface::ReverseY);
 		}
 
-		if (YFlipped) {
-			LPSURFACE pFlip = new cSurface;
-			pFlip->Clone(*pVF);
-
-			pFlip->ReverseX();
-
-			pVHF = pFlip;
-
-			return pVHF;
+		if (bYFlipped) {
+			return FlipCore(pVF, pVHF, &cSurface::ReverseX);
 		}
 
 		// if not flipped, flip
@@ -1355,6 +1359,10 @@ inline void HandleFlip(LPRDATA rdPtr
 }
 
 inline void HandleFlip(LPRDATA rdPtr) {
+#ifdef _DEBUG
+	//__SavetoClipBoard(rdPtr->pSf_Nor);
+#endif
+
 	if (rdPtr->fromLib) {
 		auto pLibItem = rdPtr->pLibValue;
 
@@ -1367,4 +1375,8 @@ inline void HandleFlip(LPRDATA rdPtr) {
 			, rdPtr->src
 			, rdPtr->pSf_Nor, rdPtr->pSf_HF, rdPtr->pSf_VF, rdPtr->pSf_VHF);
 	}
+
+#ifdef _DEBUG
+	//__SavetoClipBoard(rdPtr->pSf_Nor);
+#endif
 }
