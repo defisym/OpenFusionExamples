@@ -28,6 +28,8 @@
 #include	"Surface.h"
 
 // My lib
+#include	"Encryption.h"
+
 #include	"WindowsCommon.h"
 #include	"GeneralDefinition.h"
 #include	"Definition.h"

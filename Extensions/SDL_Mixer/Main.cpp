@@ -28,7 +28,8 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 0,
+		IDMN_ACTION_CA, M_ACTION_CA, ACT_ACTION_CA, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
+		IDMN_ACTION_PA, M_ACTION_PA, ACT_ACTION_PA, 0, 3, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_LOOP, M_ACTION_FADEIN,
 		};
 
 // Definitions of parameters for each expression
@@ -86,17 +87,26 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // -----------------
 // Does nothing!
 // 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
-{
-	// Actions work just like Conditions
+short WINAPI DLLExport Action_CreateAudio(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	// Use directly param1 and/or param2 if this action has 1 or 2 parameters
+	if (StrEmpty(pKey)) {
+		rdPtr->pData->CreateAudio(pFilePath);
+	}
+	else {
+		rdPtr->pData->CreateAudio(pFilePath, pKey);
+	}
 
-	// Use this if this action has 3 parameters or more
-//	long p1 = CNC_GetParameter(rdPtr);
-//	long p2 = CNC_GetParameter(rdPtr);
-//	long p3 = CNC_GetParameter(rdPtr);
-//	etc.
+	return 0;
+}
+
+short WINAPI DLLExport Action_PlayAudio(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto loops = (int)CNC_GetStringParameter(rdPtr);
+	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->PlayAudio(pFilePath, loops - 1, fadeMs);
 
 	return 0;
 }
@@ -178,12 +188,15 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			Condition,
+
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action,
+			Action_CreateAudio,
+			Action_PlayAudio,
+
 			0
 			};
 
@@ -192,5 +205,6 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression,
 			Expression2,
 			Expression3,
+
 			0
 			};

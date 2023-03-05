@@ -156,14 +156,15 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // Data\Runtime folder).
 // 
 
-//LPCTSTR szDep[] = {
-//	_T("MyDll.dll"),
-//	NULL
-//};
+LPCTSTR szDep[] = {
+	_T("SDL2.dll"),
+	_T("SDL2_mixer_ext.dll"),
 
-LPCTSTR* WINAPI DLLExport GetDependencies()
-{
-	return NULL;	// szDep;
+	NULL
+};
+
+LPCTSTR* WINAPI DLLExport GetDependencies() {
+	return szDep;
 }
 
 // -----------------

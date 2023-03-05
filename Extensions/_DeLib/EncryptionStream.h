@@ -127,5 +127,7 @@ public:
             pOutBuf, outBufSz,
             &(byteWrite),
             bPadding ? BCRYPT_BLOCK_PADDING : 0);
+
+            return byteWrite;
     }
 };

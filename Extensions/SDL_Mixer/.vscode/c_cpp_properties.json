@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",
-                "${workspaceFolder}/../../Inc/"
+                "${workspaceFolder}/../../Inc/",
+                "F:\\DEV\\SDL\\include"
             ],
             "defines": [
                 "_DEBUG",

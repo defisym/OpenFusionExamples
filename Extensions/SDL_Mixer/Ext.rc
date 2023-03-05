@@ -132,7 +132,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM "Create Audio",        IDMN_ACTION_CA
+        MENUITEM "Play Audio",          IDMN_ACTION_PA
         MENUITEM SEPARATOR
     END
 END
@@ -243,7 +244,14 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_CA                 "Create Audio %0, Decrypt Key %1"
+    M_ACTION_PA                 "Play Audio %0, %1 times, Fade in %2 ms"
+
+    M_ACTION_FILENAME           "FileName"
+    M_ACTION_KEY                "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
+    
+    M_ACTION_LOOP               "Loop Count, 0 = Loop infinitely"
+    M_ACTION_FADEIN             "Fade in (ms)"
 END
 
 STRINGTABLE DISCARDABLE 
