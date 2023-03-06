@@ -32,18 +32,34 @@
 #define MN_ACTIONS				20000
 
 // Commands of action menu
-#define IDMN_ACTION_CA	       		25000
-#define IDMN_ACTION_PA	       		25001
+#define IDMN_ACTION_PE	       		25000
+#define IDMN_ACTION_PM	       		25001
+#define IDMN_ACTION_SV	       		25002
+#define IDMN_ACTION_SC	       		25003
+#define IDMN_ACTION_PC	       		25004
+#define IDMN_ACTION_RC	       		25005
+#define IDMN_ACTION_SP	       		25006
+#define IDMN_ACTION_SAC	       		25007
 
 // Action strings
-#define M_ACTION_CA                 5000
-#define M_ACTION_PA                 5001
+#define M_ACTION_PE                 5000
+#define M_ACTION_PM                 5001
+#define M_ACTION_SV                 5002
+#define M_ACTION_SC                 5003
+#define M_ACTION_PC                 5004
+#define M_ACTION_RC                 5005
+#define M_ACTION_SP                 5006
+#define M_ACTION_SAC                5007
 
 // Titles of action parameters
 #define M_ACTION_FILENAME		     5501
 #define M_ACTION_KEY    			 5502
-#define M_ACTION_LOOP    			 5503
-#define M_ACTION_FADEIN    			 5504
+#define M_ACTION_CHANNEL    	     5503
+#define M_ACTION_LOOP    			 5504
+#define M_ACTION_FADE    			 5505
+#define M_ACTION_VOLUME    			 5506
+#define M_ACTION_EXCLUSIVE    	     5507
+#define M_ACTION_POSITION    	     5508
 
 
 //	Conditions
@@ -53,10 +69,12 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_CP			26000
+#define IDMN_CONDITION_NCP			26001
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_CP				 6000
+#define M_CONDITION_NCP				 6002
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -70,14 +88,16 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION			27000
-#define IDMN_EXPRESSION2		27001
-#define IDMN_EXPRESSION3		27002
+#define IDMN_EXPRESSION_GV			27000
+#define IDMN_EXPRESSION_GCS			27001
+#define IDMN_EXPRESSION_GCP			27002
+#define IDMN_EXPRESSION_GCD			27003
 
 // Expression strings
-#define M_EXPRESSION			 7000
-#define M_EXPRESSION2			 7001
-#define M_EXPRESSION3			 7002
+#define M_EXPRESSION_GV			     7000
+#define M_EXPRESSION_GCS			 7001
+#define M_EXPRESSION_GCP			 7002
+#define M_EXPRESSION_GCD			 7003
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

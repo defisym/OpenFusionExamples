@@ -6,26 +6,34 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
+#define	CND_CONDITION_CP				0
+#define	CND_CONDITION_NCP				1
 
-#define	CND_LAST					1
+#define	CND_LAST    					2
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION_CA					0
-#define	ACT_ACTION_PA					1
+#define	ACT_ACTION_PE					0
+#define	ACT_ACTION_PM					1
+#define	ACT_ACTION_SV					2
+#define	ACT_ACTION_SC					3
+#define	ACT_ACTION_PC					4
+#define	ACT_ACTION_RC					5
+#define	ACT_ACTION_SP					6
+#define	ACT_ACTION_SAC					7
 
-#define	ACT_LAST						2
+#define	ACT_LAST						8
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
+#define	EXP_EXPRESSION_GV				0
+#define	EXP_EXPRESSION_GCS				1
+#define	EXP_EXPRESSION_GCP				2
+#define	EXP_EXPRESSION_GCD				3
 
-#define	EXP_LAST                    3
+#define	EXP_LAST                    	4
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

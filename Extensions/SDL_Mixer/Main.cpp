@@ -22,26 +22,33 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+		IDMN_CONDITION_CP, M_CONDITION_CP, CND_CONDITION_CP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_CONDITION_NCP, M_CONDITION_NCP, CND_CONDITION_NCP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION_CA, M_ACTION_CA, ACT_ACTION_CA, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
-		IDMN_ACTION_PA, M_ACTION_PA, ACT_ACTION_PA, 0, 3, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_LOOP, M_ACTION_FADEIN,
+		IDMN_ACTION_PE, M_ACTION_PE, ACT_ACTION_PE, 0, 5, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_CHANNEL, M_ACTION_LOOP, M_ACTION_FADE,
+		IDMN_ACTION_PM, M_ACTION_PM, ACT_ACTION_PM, 0, 5, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_CHANNEL, M_ACTION_LOOP, M_ACTION_FADE,
+		IDMN_ACTION_SV, M_ACTION_SV, ACT_ACTION_SV, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_VOLUME, M_ACTION_EXCLUSIVE,
+
+		IDMN_ACTION_SC, M_ACTION_SC, ACT_ACTION_SC, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_FADE, M_ACTION_EXCLUSIVE,
+		IDMN_ACTION_PC, M_ACTION_PC, ACT_ACTION_PC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_ACTION_RC, M_ACTION_RC, ACT_ACTION_RC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		
+		IDMN_ACTION_SP, M_ACTION_SP, ACT_ACTION_SP, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_POSITION,
+
+		IDMN_ACTION_SAC, M_ACTION_SAC, ACT_ACTION_SAC, 0, 1, PARAM_EXPRESSION, M_ACTION_FADE,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-		IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
-		
-		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
-		IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
-		
-		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
-		IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+		IDMN_EXPRESSION_GV, M_EXPRESSION_GV, EXP_EXPRESSION_GV, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_EXPRESSION_GCP, M_EXPRESSION_GCP, EXP_EXPRESSION_GCP, 0, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
+		IDMN_EXPRESSION_GCD, M_EXPRESSION_GCD, EXP_EXPRESSION_GCD, 0, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
 		};
 
 
@@ -52,29 +59,18 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-// -----------------
-// Sample Condition
-// -----------------
-// Returns TRUE when the two values are equal!
-// 
+long WINAPI DLLExport Condition_ChannelPlaying(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetParameter(rdPtr);
 
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
-
-//  **** Still use this method for 1 or 2 parameters ****	
-//	if (param1==param2)	
-//		return TRUE;
-
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
-
-	if ((p1 + p2)==p3)
-		return TRUE;
-		 
-	return FALSE;
+	return bExclusive
+		? rdPtr->pData->ExclusiveChannelPlaying(channel)
+		: rdPtr->pData->MixingChannelPlaying(channel);
 }
 
+long WINAPI DLLExport Condition_NoChannelPlaying(LPRDATA rdPtr, long param1, long param2) {
+	return !(rdPtr->pData->ExclusiveChannelPlaying() || rdPtr->pData->MixingChannelPlaying());
+}
 
 // ============================================================================
 //
@@ -82,35 +78,95 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample Action
-// -----------------
-// Does nothing!
-// 
-short WINAPI DLLExport Action_CreateAudio(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-
-	if (StrEmpty(pKey)) {
-		rdPtr->pData->CreateAudio(pFilePath);
-	}
-	else {
-		rdPtr->pData->CreateAudio(pFilePath, pKey);
-	}
-
-	return 0;
-}
-
-short WINAPI DLLExport Action_PlayAudio(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+short WINAPI DLLExport Action_PlayExclusive(LPRDATA rdPtr, long param1, long param2) {
+	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
 	auto loops = (int)CNC_GetStringParameter(rdPtr);
 	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
 
-	rdPtr->pData->PlayAudio(pFilePath, loops - 1, fadeMs);
+	rdPtr->pData->PlayExclusive(pFilePath, pKey,
+		channel, loops - 1, fadeMs);
 
 	return 0;
 }
 
+short WINAPI DLLExport Action_PlayMixing(LPRDATA rdPtr, long param1, long param2) {
+	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
+	auto loops = (int)CNC_GetStringParameter(rdPtr);
+	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->PlayMixing(pFilePath, pKey,
+		channel, loops - 1, fadeMs);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
+	auto volume = (int)CNC_GetStringParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->SetExclusiveVolume(channel, volume)
+		: rdPtr->pData->SetMixingVolume(channel, volume);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_StopChannel(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
+	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->StopExclusive(channel, fadeMs)
+		: rdPtr->pData->StopMixing(channel, fadeMs);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_PauseChannel(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->PauseExclusive(channel)
+		: rdPtr->pData->PauseMixing(channel);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ResumeChannel(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->ResumeExclusive(channel)
+		: rdPtr->pData->ResumeMixing(channel);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetStringParameter(rdPtr);
+	auto position = (double)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->SetExclusivePosition(channel, position);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_StopAllChannel(LPRDATA rdPtr, long param1, long param2) {
+	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->StopAllExclusive(fadeMs);
+	rdPtr->pData->StopAllMixing(fadeMs);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -118,64 +174,35 @@ short WINAPI DLLExport Action_PlayAudio(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample expression
-// -----------------
-// Add three values
-// 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
+long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr,long param1) {
+	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-
-	// Performs the wonderfull calculation
-	return p1+p2+p3;
+	return bExclusive
+		? rdPtr->pData->GetExclusiveVolume(channel)
+		: rdPtr->pData->GetMixingVolume(channel);
 }
 
+long WINAPI DLLExport Expression_GetChannelState(LPRDATA rdPtr, long param1) {
+	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-//Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
-	char *temp;
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
-
-	//Reversing the string.
-	_strrev(temp);
-	
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
-	//This returns a pointer to the string for MMF.
-	return (long)temp;
+	return bExclusive
+		? rdPtr->pData->ExclusiveChannelPlaying(channel)
+		: rdPtr->pData->MixingChannelPlaying(channel);
 }
 
-//Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
+long WINAPI DLLExport Expression_GetChannelPosition(LPRDATA rdPtr, long param1) {
+	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	//Floats are tricky.  If you want to pass in a float, you must do the
-	//following to convert the long to a true float, but only when you use
-	//TYPE_FLOAT.
-	float fp1 = *(float *)&p1;
-
-	//Just doing simple math now.
-	fp1 /=2;
-
-	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-	rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-	//Return the float without conversion
-	return *((int*)&fp1);
+	return ReturnFloat(rdPtr->pData->GetExclusivePosition(channel));
 }
 
+long WINAPI DLLExport Expression_GetChannelDuration(LPRDATA rdPtr, long param1) {
+	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
+	return ReturnFloat(rdPtr->pData->GetExclusiveDuration(channel));
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -187,24 +214,33 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			Condition,
+			Condition_ChannelPlaying,
+			Condition_NoChannelPlaying,
 
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action_CreateAudio,
-			Action_PlayAudio,
+			Action_PlayExclusive,
+			Action_PlayMixing,
+			Action_SetVolume,
+
+			Action_StopChannel,
+			Action_PauseChannel,
+			Action_ResumeChannel,
+
+			Action_SetPosition,
+			Action_StopAllChannel,
 
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			Expression,
-			Expression2,
-			Expression3,
+			Expression_GetVolume,
+			Expression_GetChannelState,
+			Expression_GetChannelPosition,Expression_GetChannelDuration,
 
 			0
 			};
