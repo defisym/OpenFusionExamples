@@ -95,6 +95,10 @@ inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	}
 }
 
+inline long ReturnFloat(LPRDATA rdPtr, double Val) {
+	return ReturnFloat(rdPtr, (float)Val);
+}
+
 #define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
 
 inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
