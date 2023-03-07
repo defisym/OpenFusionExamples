@@ -8,8 +8,9 @@
 // ------------------------------
 #define	CND_CONDITION_CP				0
 #define	CND_CONDITION_NCP				1
+#define	CND_CONDITION_CFC				2
 
-#define	CND_LAST    					2
+#define	CND_LAST    					3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -22,8 +23,9 @@
 #define	ACT_ACTION_RC					5
 #define	ACT_ACTION_SP					6
 #define	ACT_ACTION_SAC					7
+#define	ACT_ACTION_SABL					8
 
-#define	ACT_LAST						8
+#define	ACT_LAST						9
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

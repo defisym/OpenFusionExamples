@@ -24,6 +24,7 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_CP, M_CONDITION_CP, CND_CONDITION_CP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
 		IDMN_CONDITION_NCP, M_CONDITION_NCP, CND_CONDITION_NCP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_CFC, M_CONDITION_CFC, CND_CONDITION_CFC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION, M_ACTION_CHANNEL
 		};
 
 // Definitions of parameters for each action
@@ -38,8 +39,9 @@ short actionsInfos[]=
 		IDMN_ACTION_RC, M_ACTION_RC, ACT_ACTION_RC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
 		
 		IDMN_ACTION_SP, M_ACTION_SP, ACT_ACTION_SP, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_POSITION,
-
 		IDMN_ACTION_SAC, M_ACTION_SAC, ACT_ACTION_SAC, 0, 1, PARAM_EXPRESSION, M_ACTION_FADE,
+
+		IDMN_ACTION_SABL, M_ACTION_SABL, ACT_ACTION_SABL, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_START, M_ACTION_END,
 		};
 
 // Definitions of parameters for each expression
@@ -72,6 +74,12 @@ long WINAPI DLLExport Condition_NoChannelPlaying(LPRDATA rdPtr, long param1, lon
 	return !(rdPtr->pData->ExclusiveChannelPlaying() || rdPtr->pData->MixingChannelPlaying());
 }
 
+long WINAPI DLLExport Condition_ChannelFadingComplete(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetParameter(rdPtr);
+
+	return rdPtr->pData->ExclusiveChannelFadingState(channel) == MIX_NO_FADING;	
+}
+
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -81,9 +89,9 @@ long WINAPI DLLExport Condition_NoChannelPlaying(LPRDATA rdPtr, long param1, lon
 short WINAPI DLLExport Action_PlayExclusive(LPRDATA rdPtr, long param1, long param2) {
 	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto loops = (int)CNC_GetStringParameter(rdPtr);
-	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto loops = (int)CNC_GetIntParameter(rdPtr);
+	auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->PlayExclusive(pFilePath, pKey,
 		channel, loops - 1, fadeMs);
@@ -94,9 +102,9 @@ short WINAPI DLLExport Action_PlayExclusive(LPRDATA rdPtr, long param1, long par
 short WINAPI DLLExport Action_PlayMixing(LPRDATA rdPtr, long param1, long param2) {
 	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto loops = (int)CNC_GetStringParameter(rdPtr);
-	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto loops = (int)CNC_GetIntParameter(rdPtr);
+	auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->PlayMixing(pFilePath, pKey,
 		channel, loops - 1, fadeMs);
@@ -105,9 +113,9 @@ short WINAPI DLLExport Action_PlayMixing(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto volume = (int)CNC_GetStringParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto volume = (int)CNC_GetIntParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->SetExclusiveVolume(channel, volume)
@@ -129,8 +137,8 @@ short WINAPI DLLExport Action_StopChannel(LPRDATA rdPtr, long param1, long param
 }
 
 short WINAPI DLLExport Action_PauseChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->PauseExclusive(channel)
@@ -140,8 +148,8 @@ short WINAPI DLLExport Action_PauseChannel(LPRDATA rdPtr, long param1, long para
 }
 
 short WINAPI DLLExport Action_ResumeChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->ResumeExclusive(channel)
@@ -151,8 +159,8 @@ short WINAPI DLLExport Action_ResumeChannel(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto position = (double)CNC_GetStringParameter(rdPtr);
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto position = (double)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->SetExclusivePosition(channel, position);
 
@@ -160,10 +168,20 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 }
 
 short WINAPI DLLExport Action_StopAllChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
+	auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->StopAllExclusive(fadeMs);
 	rdPtr->pData->StopAllMixing(fadeMs);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetABLoop(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto start = (int)CNC_GetIntParameter(rdPtr);
+	auto end = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pData->SetExclusiveABLoop(channel, start, end);
 
 	return 0;
 }
@@ -216,6 +234,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{ 
 			Condition_ChannelPlaying,
 			Condition_NoChannelPlaying,
+			Condition_ChannelFadingComplete,
 
 			0
 			};
@@ -232,6 +251,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_SetPosition,
 			Action_StopAllChannel,
+
+			Action_SetABLoop,
 
 			0
 			};

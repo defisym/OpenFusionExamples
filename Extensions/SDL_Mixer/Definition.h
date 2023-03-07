@@ -125,6 +125,17 @@ struct GlobalData {
 	}
 
 	// ------------
+	// lib -> refresh
+	// ------------
+
+	// should be called periodically
+	// e.g., call it each frame in HandleRunObject
+	inline void AudioUpdate() {
+		ReleaseStoppedAudioData();
+		UpdateExclusiveABLoop();
+	}
+
+	// ------------
 	// lib -> get
 	// ------------
 
@@ -184,14 +195,14 @@ struct GlobalData {
 	// ------------
 
 	inline void ReleaseAudioData() {
-		for (auto& pData : pAudioDatas) {
+		for (auto& pAudioData : pAudioDatas) {
 			// Mix_CloseAudio will call close hook
 			// the data is released in hook, for mixing & exclusive channels
 			// so don't handle it here
-			if (!pData->bHook) {
-				delete pData;
+			if (!pAudioData->bHook) {
+				delete pAudioData;
 
-				pData = nullptr;
+				pAudioData = nullptr;
 			}
 		}
 
@@ -224,7 +235,6 @@ struct GlobalData {
 
 	// release stopped audio data.
 	// should be called periodically
-	// e.g., call it each frame in HandleRunObject
 	inline void ReleaseStoppedAudioData() {
 		SDL_AtomicLock(&gDataLock);
 		std::vector<Mix_Music*> local = toRelease;
@@ -367,11 +377,14 @@ struct GlobalData {
 	inline bool AudioPlaying(Mix_Music* pMusic) {
 		return Mix_PlayingMusicStream(pMusic);
 	}
-
-	inline bool AudioPlaying(AudioData* pData) {
-		return pData != nullptr
-			? AudioPlaying(pData->pMusic)
+	inline bool AudioPlaying(AudioData* pAudioData) {
+		return pAudioData != nullptr
+			? AudioPlaying(pAudioData->pMusic)
 			: false;
+	}
+
+	inline Mix_Fading AudioFadeState(Mix_Music* pMusic) {
+		return Mix_FadingMusicStream(pMusic);		
 	}
 
 	// ------------
@@ -457,6 +470,29 @@ struct GlobalData {
 
 	using ChannelVolume = std::vector<int>;
 
+	struct AudioSettings {
+		// ------------
+		// general
+		// ------------
+		bool bLoop = false;
+
+		// ------------
+		// exclusive only
+		// ------------
+
+		bool excl_bABLoop = false;
+		double excl_start = 0;
+		double excl_end = 0;
+
+		// ------------
+		// mixing only
+		// ------------
+
+		//bool mix_bAttenuation = false;
+	};
+
+	using ChannelSettings = std::vector<AudioSettings>;
+
 	template<typename T>
 	inline void ExtendVec(std::vector<T>& vec, size_t newSz, T val) {
 		if (vec.size() <= newSz) {
@@ -492,6 +528,7 @@ struct GlobalData {
 
 	AudioDataVec exclusiveChannel;
 	ChannelVolume exclusiveChannelVolume;
+	ChannelSettings exclusiveChannelSettings;
 
 	inline void EraseExclusive(Mix_Music* pMusic) {
 		EraseVec(exclusiveChannel, pMusic);
@@ -509,7 +546,10 @@ struct GlobalData {
 		SetAudioVolume(pAudioData->pMusic, GetExclusiveVolume(channel));
 
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		ExtendVec(exclusiveChannelSettings, channel, AudioSettings());
 
+		exclusiveChannelSettings[channel].bLoop = loops != 0;
+				
 		auto pOldData = exclusiveChannel[channel];
 		auto pOldMusic = pOldData != nullptr ? pOldData->pMusic : nullptr;
 
@@ -558,6 +598,18 @@ struct GlobalData {
 		}
 	}
 
+	inline bool ExclusiveChannelFadingState(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			return AudioFadeState(pAudioData->pMusic);
+		}
+		
+		return MIX_NO_FADING;
+	}
+
 	inline bool ExclusiveChannelPlaying() {
 		auto bRet = false;
 
@@ -583,20 +635,20 @@ struct GlobalData {
 	inline void SetExclusivePosition(int channel, double position) {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 
-		auto pData = exclusiveChannel[channel];
+		auto pAudioData = exclusiveChannel[channel];
 
-		if (pData != nullptr) {
-			SetAudioPosition(pData->pMusic, position);
+		if (pAudioData != nullptr) {
+			SetAudioPosition(pAudioData->pMusic, position);
 		}
 	}
 
 	inline double GetExclusivePosition(int channel) {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 
-		auto pData = exclusiveChannel[channel];
+		auto pAudioData = exclusiveChannel[channel];
 
-		if (pData != nullptr) {
-			return GetAudioPosition(pData->pMusic);
+		if (pAudioData != nullptr) {
+			return GetAudioPosition(pAudioData->pMusic);
 		}
 
 		return -1;
@@ -605,10 +657,10 @@ struct GlobalData {
 	inline double GetExclusiveDuration(int channel) {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 
-		auto pData = exclusiveChannel[channel];
+		auto pAudioData = exclusiveChannel[channel];
 
-		if (pData != nullptr) {
-			return GetAudioDuration(pData->pMusic);
+		if (pAudioData != nullptr) {
+			return GetAudioDuration(pAudioData->pMusic);
 		}
 
 		return -1;
@@ -625,10 +677,51 @@ struct GlobalData {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 		SetChannelVolume(exclusiveChannelVolume, channel, volume);
 
-		auto pData = exclusiveChannel[channel];
+		auto pAudioData = exclusiveChannel[channel];
 
-		if (pData != nullptr) {
-			SetAudioVolume(pData->pMusic, volume);
+		if (pAudioData != nullptr) {
+			SetAudioVolume(pAudioData->pMusic, volume);
+		}
+	}
+
+	// ------------
+	// AudioSettings
+	// ------------
+
+	inline void SetExclusiveABLoop(int channel, double start = 0, double end = 0) {
+		ExtendVec(exclusiveChannelSettings, channel, AudioSettings());
+
+		auto pSettings = &exclusiveChannelSettings[channel];
+
+		pSettings->excl_bABLoop = true;
+		pSettings->excl_start = start;
+		pSettings->excl_end = end;
+	}
+
+	// should be called periodically
+	inline void UpdateExclusiveABLoop() {
+		ExtendVec(exclusiveChannelSettings, exclusiveChannel.size(), AudioSettings());
+
+		for (size_t i = 0; i < exclusiveChannel.size(); i++) {
+			const auto pAudioData = exclusiveChannel[i];
+
+			if (pAudioData == nullptr) {
+				continue;
+			}
+
+			const auto& channelSettings = exclusiveChannelSettings[i];
+
+			if (channelSettings.excl_bABLoop) {
+				const auto currentPosition = GetAudioPosition(pAudioData->pMusic);
+				const auto endPos = channelSettings.excl_end == 0
+					? GetAudioDuration(pAudioData->pMusic)
+					: channelSettings.excl_end;
+
+				// TODO will this affect the loop times?
+				if (currentPosition >= endPos) {
+					SetAudioPosition(pAudioData->pMusic, channelSettings.excl_start);
+				}
+			}
 		}
 	}
 
@@ -665,6 +758,8 @@ struct GlobalData {
 
 		PlayAudio(pAudioData->pMusic, loops, fadeInMs);
 
+		//MixingChannelAttenuation(channel);
+
 		mixingChannel[channel].emplace_back(pAudioData);
 
 		return true;
@@ -681,9 +776,9 @@ struct GlobalData {
 
 		auto vec = mixingChannel[channel];
 
-		for (auto& pData : vec) {
-			if (pData != nullptr) {
-				StopAudio(pData->pMusic, fadeInMs);
+		for (auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				StopAudio(pAudioData->pMusic, fadeInMs);
 			}
 		}
 	}
@@ -693,9 +788,9 @@ struct GlobalData {
 
 		auto vec = mixingChannel[channel];
 
-		for (auto& pData : vec) {
-			if (pData != nullptr) {
-				PauseAudio(pData->pMusic);
+		for (auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				PauseAudio(pAudioData->pMusic);
 			}
 		}
 	}
@@ -705,9 +800,9 @@ struct GlobalData {
 
 		auto vec = mixingChannel[channel];
 
-		for (auto& pData : vec) {
-			if (pData != nullptr) {
-				ResumeAudio(pData->pMusic);
+		for (auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				ResumeAudio(pAudioData->pMusic);
 			}
 		}
 	}
@@ -729,9 +824,9 @@ struct GlobalData {
 
 		auto bRet = false;
 
-		for (auto& pData : vec) {
-			if (pData != nullptr) {
-				bRet |= AudioPlaying(pData);
+		for (auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				bRet |= AudioPlaying(pAudioData);
 			}
 		}
 
@@ -751,11 +846,25 @@ struct GlobalData {
 
 		auto& vec = mixingChannel[channel];
 
-		for (auto& pData : vec) {
-			if (pData != nullptr) {
-				SetAudioVolume(pData->pMusic, volume);
+		for (auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioVolume(pAudioData->pMusic, volume);
 			}
 		}
 	}
 
+	// ------------
+	// AudioSettings
+	// ------------
+
+	//// reduce current channel item's volume
+	//inline void MixingChannelAttenuation(int channel) {
+	//	ExtendVec(mixingChannel, channel, AudioDataVec());
+
+	//	for(auto& pAudioData: mixingChannel[channel]) {
+	//		if (pAudioData != nullptr) {
+	//			SetAudioVolume(pAudioData->pMusic, GetAudioVolume(pAudioData->pMusic) / 2);
+	//		}
+	//	}
+	//}
 };

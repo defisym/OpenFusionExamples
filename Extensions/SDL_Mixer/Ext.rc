@@ -116,8 +116,10 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Specific Channel Playing", IDMN_CONDITION_CP
+        MENUITEM "Channel Playing", IDMN_CONDITION_CP
         MENUITEM "No Channel Playing", IDMN_CONDITION_NCP
+        MENUITEM SEPARATOR
+        MENUITEM "Exclusive Channel Fading Complete", IDMN_CONDITION_CFC
         MENUITEM SEPARATOR
     END
 END
@@ -137,7 +139,8 @@ BEGIN
         MENUITEM "Play Mixing",          IDMN_ACTION_PM
         MENUITEM SEPARATOR
         MENUITEM "Set Volume",           IDMN_ACTION_SV
-        MENUITEM "Set Exclusive Position",         IDMN_ACTION_SP
+        MENUITEM "Set Exclusive Position",        IDMN_ACTION_SP
+        MENUITEM "Set Exclusive ABLoop",          IDMN_ACTION_SABL
         MENUITEM SEPARATOR
         MENUITEM "Stop Specific Channel",         IDMN_ACTION_SC
         MENUITEM "Stop All Channel",              IDMN_ACTION_SAC
@@ -158,10 +161,10 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Get Volume", IDMN_EXPRESSION_GV       
-        MENUITEM "Get Specific Channel State", IDMN_EXPRESSION_GCS
-        MENUITEM "Get Specific Exclusive Channel Position", IDMN_EXPRESSION_GCP
-        MENUITEM "Get Specific Exclusive Channel Duration", IDMN_EXPRESSION_GCD
+        MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV       
+        MENUITEM "Get Channel State", IDMN_EXPRESSION_GCS
+        MENUITEM "Get Exclusive Channel Position", IDMN_EXPRESSION_GCP
+        MENUITEM "Get Exclusive Channel Duration", IDMN_EXPRESSION_GCD
         MENUITEM SEPARATOR
     END
 END
@@ -268,19 +271,24 @@ BEGIN
     M_ACTION_VOLUME             "Volume (0 ~ 100)"
     M_ACTION_EXCLUSIVE          "Channel Type, 1 = Exclusive, 0 = Mixing"
 
-    M_ACTION_SP                 "Set Exclusive Channel %0 Position to %1"
+    M_ACTION_SP                 "Set Exclusive Channel %0 Position to %1"    
     M_ACTION_POSITION           "Position (seconds)"
 
     M_ACTION_SC                 "Stop Channel %0, Fade out %1 ms, Channel Type %2"
     M_ACTION_SAC                "Stop All Channel, Fade out %0 ms"
     M_ACTION_PC                 "Pause Channel %0, Channel Type %1"
     M_ACTION_RC                 "Resume Channel %0, Channel Type %1"
+
+    M_ACTION_SABL               "Set Exclusive Channel %0 AB Loop, Start %1, End %2"
+    M_ACTION_START              "Start (seconds)"
+    M_ACTION_END                "End (seconds)"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_CP              "%o Channel %0 Type %1 is Playing"
     M_CONDITION_NCP             "%o No Channel is Playing"
+    M_CONDITION_CFC             "%o Exclusive Channel %0 Fading Complete"
 END
 
 STRINGTABLE DISCARDABLE 

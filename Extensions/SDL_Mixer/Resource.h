@@ -40,6 +40,7 @@
 #define IDMN_ACTION_RC	       		25005
 #define IDMN_ACTION_SP	       		25006
 #define IDMN_ACTION_SAC	       		25007
+#define IDMN_ACTION_SABL       		25008
 
 // Action strings
 #define M_ACTION_PE                 5000
@@ -50,6 +51,7 @@
 #define M_ACTION_RC                 5005
 #define M_ACTION_SP                 5006
 #define M_ACTION_SAC                5007
+#define M_ACTION_SABL               5008
 
 // Titles of action parameters
 #define M_ACTION_FILENAME		     5501
@@ -60,6 +62,8 @@
 #define M_ACTION_VOLUME    			 5506
 #define M_ACTION_EXCLUSIVE    	     5507
 #define M_ACTION_POSITION    	     5508
+#define M_ACTION_START    	         5509
+#define M_ACTION_END    	         5510
 
 
 //	Conditions
@@ -71,10 +75,12 @@
 // Commands of condition menu
 #define IDMN_CONDITION_CP			26000
 #define IDMN_CONDITION_NCP			26001
+#define IDMN_CONDITION_CFC			26002
 
 // Condition strings
 #define M_CONDITION_CP				 6000
-#define M_CONDITION_NCP				 6002
+#define M_CONDITION_NCP				 6001
+#define M_CONDITION_CFC				 6002
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

@@ -140,7 +140,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 
    At the end of the loop this code will run
 */
-	rdPtr->pData->ReleaseStoppedAudioData();
+	rdPtr->pData->AudioUpdate();
 
 	return 0;
 }
