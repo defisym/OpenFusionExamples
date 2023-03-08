@@ -8,11 +8,22 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
 
+#include <SoundTouchDLL.h>
+
 #include <map>
 #include <vector>
 #include <string>
+#include <chrono>
 #include <algorithm>
 #include <functional>
+
+using namespace std::literals::chrono_literals;
+
+struct AudioEffect;
+struct AudioData;
+struct GlobalData;
+
+using EffectBuffer = unsigned char;
 
 enum class AudioType {
 	BGM,
@@ -21,19 +32,75 @@ enum class AudioType {
 	DUB,
 };
 
+constexpr auto GlobalEffectBufferSz = 65536;
+inline EffectBuffer pGlobalEffectBuffer[GlobalEffectBufferSz] = { 0 };
+
+struct AudioEffect {
+	GlobalData* pGlobalData = nullptr;
+
+	HANDLE hSoundTouch = nullptr;
+
+	EffectBuffer* pBuf = pGlobalEffectBuffer;
+	int bufSz = GlobalEffectBufferSz;
+
+	using AudioProcessor = std::function<void(HANDLE, float)>;
+	struct AudioProcessorPair {
+		AudioProcessor processor = nullptr;
+		float param = 0.0;
+	};
+
+	std::vector<AudioProcessorPair> effects;
+
+	AudioEffect(GlobalData* pGlobalData, HANDLE hSoundTouch,
+		const std::vector<AudioProcessorPair>& effects) {
+		this->pGlobalData = pGlobalData;
+
+		this->hSoundTouch = hSoundTouch;
+		
+		this->effects = effects;
+	}
+
+	inline bool ProcessAudio(void* stream, const int len) {
+		//TODO Loop to process all
+		bufSz = min(bufSz, len);
+
+		memset(pBuf, 0, GlobalEffectBufferSz);
+		memcpy(pBuf, stream, bufSz);
+
+		for (auto& effectPair : effects) {
+			soundtouch_clear(hSoundTouch);
+
+			effectPair.processor(hSoundTouch, effectPair.param);
+
+			const auto shortSize = bufSz / sizeof(const short);
+			soundtouch_putSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
+			const auto dataWrite = soundtouch_receiveSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
+
+			if (dataWrite == 0) {
+				return false;
+			}
+		}
+
+		memcpy(stream, pBuf, bufSz);
+
+		return true;
+	}
+};
+
 constexpr auto AudioDataException_DecryptFailed = -1;
 constexpr auto AudioDataException_CreateRWFailed = -2;
 constexpr auto AudioDataException_CreateMusicFailed = -3;
 
 struct AudioData {
-	bool bHook = false;
+	std::wstring fileName;
 
 	Encryption* pDecrypt = nullptr;
 
-	SDL_RWops* pRW = nullptr;
-	Mix_Music* pMusic = nullptr;
+	bool bHook = false;
 
-	std::wstring fileName;
+	SDL_RWops* pRW = nullptr;
+	Mix_Music* pMusic = nullptr;	
+	AudioEffect* pEffect = nullptr;
 
 	AudioData(const wchar_t* pFileName) {
 		fileName = pFileName;
@@ -72,6 +139,8 @@ struct AudioData {
 	}
 
 	~AudioData() {
+		delete pEffect;
+
 		Mix_FreeMusic(pMusic);
 		SDL_RWclose(pRW);
 
@@ -104,6 +173,8 @@ struct GlobalData {
 	SDL_SpinLock dataLock = 0;
 	std::vector<Mix_Music*> toRelease;
 
+	HANDLE hSoundTouch = nullptr;
+
 	GlobalData() {
 		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
 			auto error = SDL_GetError();
@@ -116,9 +187,15 @@ struct GlobalData {
 
 			throw GlobalDataException_MixOpenAudioFailed;
 		}
+
+		hSoundTouch = soundtouch_createInstance();
+		soundtouch_setChannels(hSoundTouch, MIX_DEFAULT_CHANNELS);
+		soundtouch_setSampleRate(hSoundTouch, MIX_DEFAULT_FREQUENCY);
 	}
 	~GlobalData() {
 		ReleaseAudioData();
+
+		soundtouch_destroyInstance(hSoundTouch);		
 
 		Mix_CloseAudio();
 		SDL_Quit();
@@ -133,6 +210,7 @@ struct GlobalData {
 	inline void AudioUpdate() {
 		ReleaseStoppedAudioData();
 		UpdateExclusiveABLoop();
+		ClearMixingPlayRecord();
 	}
 
 	// ------------
@@ -178,7 +256,7 @@ struct GlobalData {
 		});
 	}
 
-	inline const std::wstring* const GetAudioName(const Mix_Music* pMusic) {
+	inline const std::wstring* GetAudioName(const Mix_Music* pMusic) {
 		const auto ppAudioData = GetAudioData(pMusic);
 
 		if (ppAudioData == pAudioDatas.end()) {
@@ -740,6 +818,25 @@ struct GlobalData {
 	std::vector<AudioDataVec> mixingChannel;
 	ChannelVolume mixingChannelVolume;
 
+	struct playRecord {
+		decltype(std::chrono::steady_clock::now()) updateTime = std::chrono::steady_clock::now();
+		int size = 0;
+	};
+
+	int delayMs = 1000;
+	std::map < std::wstring, playRecord > sameNameSize;
+
+	inline void ClearMixingPlayRecord() {
+		const auto now = std::chrono::steady_clock::now();
+
+		for(auto& it: sameNameSize) {
+			const auto durMs = (now - it.second.updateTime) / 1ms;
+			if(durMs > delayMs) {
+				it.second.size = 0;
+			}
+		}
+	}
+
 	inline void EraseMixing(Mix_Music* pMusic) {
 		for (auto& it : mixingChannel) {
 			EraseVec(it, pMusic);
@@ -763,11 +860,50 @@ struct GlobalData {
 
 		ExtendVec(mixingChannel, channel, AudioDataVec());
 
-		PlayAudio(pAudioData->pMusic, loops, fadeInMs);
-
-		//Mix_RegisterMusicEffect()
-
+		//TODO use audio settings to enable
 		//MixingChannelAttenuation(channel);
+
+		//static float pitch[] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,11,10,9,8,7,6,5,4,3,2,1,0,
+		//-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1 };
+		static float pitch[] = { 0,-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1 };
+		//constexpr auto base = 4;
+		//constexpr static float pitch[] = { 1 - base,1 - base,5 - base,5 - base,6 - base,6 - base,5 - base,
+		//	4 - base,4 - base,3 - base,3 - base,2 - base,2 - base,1 - base,
+		//	5 - base,5 - base,4 - base,4 - base,3 - base,3 - base,2 - base,
+		//	5 - base,5 - base,4 - base,4 - base,3 - base,3 - base,2 - base };
+
+		constexpr auto arrSz = sizeof(pitch) / sizeof(decltype(pitch[0]));
+		constexpr auto arrDiv = 1;
+
+		const auto audioNum = GetMixingChannelSameAudioNum(channel, pAudioData->pMusic);
+		const auto audioPlayed = sameNameSize[std::wstring(pFileName)].size;
+
+		pAudioData->pEffect = new AudioEffect(this, hSoundTouch,
+			{
+				{
+					soundtouch_setPitchSemiTones,
+					pitch[(arrDiv * audioPlayed) % arrSz]
+				},
+				//{
+				//	soundtouch_setRate,
+				//	static_cast<float>(1.0 - 0.05 * audioNum)
+				//}
+			});
+
+		OutputDebugString(_ftos(pAudioData->pEffect->effects[0].param).c_str());
+		OutputDebugString(L"\n");
+		
+		Mix_RegisterMusicEffect(pAudioData->pMusic,
+			[] (Mix_Music* mus, void* stream, int len, void* udata) {
+				const auto pEffect = (AudioEffect*)udata;
+				pEffect->ProcessAudio(stream, len);
+			},
+			nullptr,
+			pAudioData->pEffect);
+
+		PlayAudio(pAudioData->pMusic, loops, fadeInMs);
+		sameNameSize[std::wstring(pFileName)].updateTime = std::chrono::steady_clock::now();
+		sameNameSize[std::wstring(pFileName)].size++;
 
 		mixingChannel[channel].emplace_back(pAudioData);
 
@@ -851,6 +987,20 @@ struct GlobalData {
 		});
 
 		return sz;
+	}
+
+	inline int GetMixingChannelSameAudioNum(int channel, const Mix_Music* pMusic) {
+		const auto pFileName = GetAudioName(pMusic);
+
+		int num = 0;
+
+		MixingIterateChannel(channel, [&] (const AudioData* pAudioData) {
+			if (pAudioData->fileName == *pFileName) {
+				num++;
+			}
+		});
+
+		return num;
 	}
 
 	// 0 ~ 100

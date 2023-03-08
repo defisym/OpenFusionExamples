@@ -160,6 +160,8 @@ LPCTSTR szDep[] = {
 	_T("SDL2.dll"),
 	_T("SDL2_mixer_ext.dll"),
 
+	_T("SoundTouchDLL.dll"),
+
 	NULL
 };
 
