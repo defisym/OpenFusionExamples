@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <functional>
 
+#include "MusicScore.h"
+
 using namespace std::literals::chrono_literals;
 
 struct AudioEffect;
@@ -572,6 +574,10 @@ struct GlobalData {
 		// mixing only
 		// ------------
 
+		bool bEffect = false;
+		MusicScore::Score score = MusicScore::Score::Loop;
+		float base = 0;
+
 		//bool mix_bAttenuation = false;
 	};
 
@@ -817,6 +823,7 @@ struct GlobalData {
 
 	std::vector<AudioDataVec> mixingChannel;
 	ChannelVolume mixingChannelVolume;
+	ChannelSettings mixingChannelSettings;
 
 	struct playRecord {
 		decltype(std::chrono::steady_clock::now()) updateTime = std::chrono::steady_clock::now();
@@ -859,47 +866,45 @@ struct GlobalData {
 		SetAudioVolume(pAudioData->pMusic, GetMixingVolume(channel));
 
 		ExtendVec(mixingChannel, channel, AudioDataVec());
+		ExtendVec(mixingChannelSettings, channel, AudioSettings());
 
 		//TODO use audio settings to enable
-		//MixingChannelAttenuation(channel);
-
-		//static float pitch[] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,11,10,9,8,7,6,5,4,3,2,1,0,
-		//-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1 };
-		static float pitch[] = { 0,-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1 };
-		//constexpr auto base = 4;
-		//constexpr static float pitch[] = { 1 - base,1 - base,5 - base,5 - base,6 - base,6 - base,5 - base,
-		//	4 - base,4 - base,3 - base,3 - base,2 - base,2 - base,1 - base,
-		//	5 - base,5 - base,4 - base,4 - base,3 - base,3 - base,2 - base,
-		//	5 - base,5 - base,4 - base,4 - base,3 - base,3 - base,2 - base };
-
-		constexpr auto arrSz = sizeof(pitch) / sizeof(decltype(pitch[0]));
-		constexpr auto arrDiv = 1;
-
-		const auto audioNum = GetMixingChannelSameAudioNum(channel, pAudioData->pMusic);
-		const auto audioPlayed = sameNameSize[std::wstring(pFileName)].size;
-
-		pAudioData->pEffect = new AudioEffect(this, hSoundTouch,
-			{
-				{
-					soundtouch_setPitchSemiTones,
-					pitch[(arrDiv * audioPlayed) % arrSz]
-				},
-				//{
-				//	soundtouch_setRate,
-				//	static_cast<float>(1.0 - 0.05 * audioNum)
-				//}
-			});
-
-		OutputDebugString(_ftos(pAudioData->pEffect->effects[0].param).c_str());
-		OutputDebugString(L"\n");
 		
-		Mix_RegisterMusicEffect(pAudioData->pMusic,
-			[] (Mix_Music* mus, void* stream, int len, void* udata) {
-				const auto pEffect = (AudioEffect*)udata;
-				pEffect->ProcessAudio(stream, len);
-			},
-			nullptr,
-			pAudioData->pEffect);
+		const auto& channelSettings = mixingChannelSettings[channel];
+
+		if (channelSettings.bEffect) {
+			constexpr auto arrDiv = 1;
+
+			const auto audioNum = GetMixingChannelSameAudioNum(channel, pAudioData->pMusic);
+			const auto audioPlayed = sameNameSize[std::wstring(pFileName)].size;
+
+			pAudioData->pEffect = new AudioEffect(this, hSoundTouch,
+				{
+					{
+						soundtouch_setPitchSemiTones,
+						//MusicScore::GetNote(arrDiv * audioPlayed)
+						//MusicScore::GetNote(arrDiv * audioPlayed, MusicScore::Score::CrystalPrelude,0)
+						MusicScore::GetNote(arrDiv * audioPlayed,channelSettings.score,channelSettings.base)
+					},
+					//{
+					//	soundtouch_setRate,
+					//	static_cast<float>(1.0 - 0.05 * audioNum)
+					//}
+				});
+
+#ifdef _DEBUG
+			OutputDebugString(_ftos(pAudioData->pEffect->effects[0].param).c_str());
+			OutputDebugString(L"\n");
+#endif
+
+			Mix_RegisterMusicEffect(pAudioData->pMusic,
+				[] (Mix_Music* mus, void* stream, int len, void* udata) {
+						const auto pEffect = (AudioEffect*)udata;
+						pEffect->ProcessAudio(stream, len);
+				},
+				nullptr,
+					pAudioData->pEffect);
+		}
 
 		PlayAudio(pAudioData->pMusic, loops, fadeInMs);
 		sameNameSize[std::wstring(pFileName)].updateTime = std::chrono::steady_clock::now();
@@ -1037,4 +1042,14 @@ struct GlobalData {
 	//		}
 	//	}
 	//}
+
+	inline void SetMixingChannelScore(int channel, bool bEnable,
+		MusicScore::Score score = MusicScore::Score::Loop, float base = 0) {
+		ExtendVec(mixingChannelSettings, channel, AudioSettings());
+
+		mixingChannelSettings[channel].bEffect = bEnable;
+
+		mixingChannelSettings[channel].score = score;
+		mixingChannelSettings[channel].base = base;
+	}
 };

@@ -141,6 +141,7 @@ BEGIN
         MENUITEM "Set Volume",           IDMN_ACTION_SV
         MENUITEM "Set Exclusive Position",        IDMN_ACTION_SP
         MENUITEM "Set Exclusive ABLoop",          IDMN_ACTION_SABL
+        MENUITEM "Set Mixing Channel Score",      IDMN_ACTION_SMCS
         MENUITEM SEPARATOR
         MENUITEM "Stop Specific Channel",         IDMN_ACTION_SC
         MENUITEM "Stop All Channel",              IDMN_ACTION_SAC
@@ -282,6 +283,12 @@ BEGIN
     M_ACTION_SABL               "Set Exclusive Channel %0 AB Loop, Start %1, End %2"
     M_ACTION_START              "Start (seconds)"
     M_ACTION_END                "End (seconds)"
+
+    M_ACTION_SMCS               "Set Mixing Channel %0 Score to %2, base %3, Enable = %1"
+    M_ACTION_ENABLE             "0 = Disable, 1 = Enable"
+    M_ACTION_SCORE              "Score to use"
+    M_ACTION_BASE               "Base"
+
 END
 
 STRINGTABLE DISCARDABLE 

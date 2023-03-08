@@ -24,8 +24,9 @@
 #define	ACT_ACTION_SP					6
 #define	ACT_ACTION_SAC					7
 #define	ACT_ACTION_SABL					8
+#define	ACT_ACTION_SMCS					9
 
-#define	ACT_LAST						9
+#define	ACT_LAST						10
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

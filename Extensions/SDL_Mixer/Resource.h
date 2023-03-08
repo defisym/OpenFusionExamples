@@ -41,6 +41,7 @@
 #define IDMN_ACTION_SP	       		25006
 #define IDMN_ACTION_SAC	       		25007
 #define IDMN_ACTION_SABL       		25008
+#define IDMN_ACTION_SMCS       		25009
 
 // Action strings
 #define M_ACTION_PE                 5000
@@ -52,6 +53,7 @@
 #define M_ACTION_SP                 5006
 #define M_ACTION_SAC                5007
 #define M_ACTION_SABL               5008
+#define M_ACTION_SMCS               5009
 
 // Titles of action parameters
 #define M_ACTION_FILENAME		     5501
@@ -64,6 +66,9 @@
 #define M_ACTION_POSITION    	     5508
 #define M_ACTION_START    	         5509
 #define M_ACTION_END    	         5510
+#define M_ACTION_ENABLE    	         5511
+#define M_ACTION_SCORE    	         5512
+#define M_ACTION_BASE    	         5513
 
 
 //	Conditions

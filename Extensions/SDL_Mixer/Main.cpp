@@ -42,6 +42,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SAC, M_ACTION_SAC, ACT_ACTION_SAC, 0, 1, PARAM_EXPRESSION, M_ACTION_FADE,
 
 		IDMN_ACTION_SABL, M_ACTION_SABL, ACT_ACTION_SABL, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_START, M_ACTION_END,
+		IDMN_ACTION_SMCS, M_ACTION_SMCS, ACT_ACTION_SMCS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_ENABLE, M_ACTION_SCORE, M_ACTION_BASE,
 		};
 
 // Definitions of parameters for each expression
@@ -186,6 +187,17 @@ short WINAPI DLLExport Action_SetABLoop(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetMixingChannelScore(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetIntParameter(rdPtr);
+	auto bEnable = (bool)CNC_GetIntParameter(rdPtr);
+	auto score = (MusicScore::Score)CNC_GetIntParameter(rdPtr);
+	auto base = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pData->SetMixingChannelScore(channel, bEnable, score, (float)base);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -253,6 +265,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_StopAllChannel,
 
 			Action_SetABLoop,
+			Action_SetMixingChannelScore,
 
 			0
 			};
