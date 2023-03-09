@@ -63,27 +63,31 @@ struct AudioEffect {
 	}
 
 	inline bool ProcessAudio(void* stream, const int len) {
-		//TODO Loop to process all
-		bufSz = min(bufSz, len);
-
+		// not rigorous but a big enough global buffer for default spec is ok
+		// len = chunk size * (16bit / 8bit) * channel
 		memset(pBuf, 0, GlobalEffectBufferSz);
-		memcpy(pBuf, stream, bufSz);
+
+		const auto protectedBufSz = min(bufSz, len);
+		memcpy(pBuf, stream, protectedBufSz);
 
 		for (auto& effectPair : effects) {
 			soundtouch_clear(hSoundTouch);
-
 			effectPair.processor(hSoundTouch, effectPair.param);
 
-			const auto shortSize = bufSz / sizeof(const short);
+			const auto shortSize = protectedBufSz / sizeof(const short);
+
 			soundtouch_putSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 			const auto dataWrite = soundtouch_receiveSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 
+			// sound touch uses a float convert[8192] as interbuffer
+			// and will not output until data is enough (usually more than 8192 bytes, 4096 shorts)
+			// so the buffer size should be okay here, we don't need a loop to flush
 			if (dataWrite == 0) {
 				return false;
 			}
 		}
 
-		memcpy(stream, pBuf, bufSz);
+		memcpy(stream, pBuf, protectedBufSz);
 
 		return true;
 	}
@@ -867,8 +871,6 @@ struct GlobalData {
 
 		ExtendVec(mixingChannel, channel, AudioDataVec());
 		ExtendVec(mixingChannelSettings, channel, AudioSettings());
-
-		//TODO use audio settings to enable
 		
 		const auto& channelSettings = mixingChannelSettings[channel];
 
