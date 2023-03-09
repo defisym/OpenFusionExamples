@@ -4,7 +4,22 @@
 
 Audio Extension based on [SDL_Mixer](https://github.com/libsdl-org/SDL_mixer) & [SDL_Mixer_X](https://github.com/WohlSoft/SDL-Mixer-X), with encryption support
 
+Audio Effect powered by [SoundTouch](http://www.surina.net/soundtouch/index.html)
+
 for more information, please check the [Help File](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/SDL_MIXER/ToInstall/Files/Help/SDL_MIXER/SDL_MIXER.md)
+
+## Reference
+
+### SDL Mixer X
+
+- [Music document](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/docs/5_5_functions_music.texi)
+- [Play music example](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/examples/playmus.c)
+
+### Sound Touch
+
+- [FAQ](https://www.surina.net/soundtouch/faq.html)
+- [Example](https://codeberg.org/soundtouch/soundtouch/src/branch/master/source/SoundTouchDLL/DllTest/DllTest.cpp)
+- [Theory behind](https://www.surina.net/article/time-and-pitch-scaling.html)
 
 ## How to build
 
@@ -34,6 +49,8 @@ cmake -G "Visual Studio 17 2022" -A Win32 -S .. -B "build32" -DCMAKE_BUILD_TYPE=
 to debug the object, you can generate the debug info from linker->debug, or use the `RelWithDebInfo` configuration.
 
 ## License
+
+### SDL Mixer X
 
 SDL Mixer X:  An extended audio mixer library, forked from SDL_mixer
 Copyright (C) 2014-2023 Vitaly Novichkov <admin@wohlnet.ru>
