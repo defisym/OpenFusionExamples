@@ -67,17 +67,22 @@ struct AudioEffect {
 		// len = chunk size * (16bit / 8bit) * channel
 		memset(pBuf, 0, GlobalEffectBufferSz);
 
+		unsigned int dataWrite = 0;
+
+		constexpr auto sountTouchSize = sizeof(const short);
+
 		const auto protectedBufSz = min(bufSz, len);
+		const auto shortSize = protectedBufSz / sountTouchSize;
+
 		memcpy(pBuf, stream, protectedBufSz);
 
 		for (auto& effectPair : effects) {
 			soundtouch_clear(hSoundTouch);
 			effectPair.processor(hSoundTouch, effectPair.param);
 
-			const auto shortSize = protectedBufSz / sizeof(const short);
 
 			soundtouch_putSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
-			const auto dataWrite = soundtouch_receiveSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
+			dataWrite = soundtouch_receiveSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 
 			// sound touch uses a float convert[8192] as interbuffer
 			// and will not output until data is enough (usually more than 8192 bytes, 4096 shorts)
@@ -87,7 +92,9 @@ struct AudioEffect {
 			}
 		}
 
+		//memset(stream, 0, len);
 		memcpy(stream, pBuf, protectedBufSz);
+		//memcpy(stream, pBuf, dataWrite* sountTouchSize);
 
 		return true;
 	}
@@ -873,12 +880,18 @@ struct GlobalData {
 		ExtendVec(mixingChannelSettings, channel, AudioSettings());
 		
 		const auto& channelSettings = mixingChannelSettings[channel];
-
-		if (channelSettings.bEffect) {
+		do {
+			if (!channelSettings.bEffect) {
+				break;
+			}
 			constexpr auto arrDiv = 1;
 
 			const auto audioNum = GetMixingChannelSameAudioNum(channel, pAudioData->pMusic);
 			const auto audioPlayed = sameNameSize[std::wstring(pFileName)].size;
+
+			if (audioPlayed == 0) {
+				break;
+			}
 
 			pAudioData->pEffect = new AudioEffect(this, hSoundTouch,
 				{
@@ -901,12 +914,12 @@ struct GlobalData {
 
 			Mix_RegisterMusicEffect(pAudioData->pMusic,
 				[] (Mix_Music* mus, void* stream, int len, void* udata) {
-						const auto pEffect = (AudioEffect*)udata;
-						pEffect->ProcessAudio(stream, len);
+					const auto pEffect = (AudioEffect*)udata;
+					pEffect->ProcessAudio(stream, len);
 				},
 				nullptr,
 					pAudioData->pEffect);
-		}
+		} while (false);
 
 		PlayAudio(pAudioData->pMusic, loops, fadeInMs);
 		sameNameSize[std::wstring(pFileName)].updateTime = std::chrono::steady_clock::now();
