@@ -43,6 +43,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_IS, M_CONDITION_IS, CND_CONDITION_IS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
 		IDMN_CONDITION_OILHO, M_CONDITION_OILHO, CND_CONDITION_OILHO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_CND_OBJNAME,
+
+		IDMN_CONDITION_GHTP, M_CONDITION_GHTP, CND_CONDITION_GHTP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_ACT_PARAMNAME,
 		
 		};
 
@@ -183,6 +185,11 @@ long WINAPI DLLExport FuncHasReturnAt(LPRDATA rdPtr, long param1, long param2) {
 		&& (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1))) ? TRUE : FALSE;
 }
 
+long WINAPI DLLExport GlobalHasTempParam(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return (*rdPtr->GlobalTempParam).contains(ParamName);
+}
 long WINAPI DLLExport FuncHasTempParam(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -971,6 +978,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			InSubApp,
 
 			OILHasObject,
+
+			GlobalHasTempParam,
 
 			0
 			};

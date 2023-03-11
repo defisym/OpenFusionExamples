@@ -163,6 +163,8 @@
 
 #define IDMN_CONDITION_OILHO   	26013
 
+#define IDMN_CONDITION_GHTP   	26014
+
 // Condition strings
 #define M_CONDITION_OF			 6000
 
@@ -185,6 +187,8 @@
 #define M_CONDITION_IS  		 6012
 
 #define M_CONDITION_OILHO  		 6013
+
+#define M_CONDITION_GHTP  		 6014
 
 // Titles of condition parameters
 #define M_CND_FUNCNAME  		 6501

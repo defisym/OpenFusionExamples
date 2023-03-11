@@ -140,6 +140,7 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Temp Param"
             BEGIN                
+                MENUITEM "Global Has Temp Param", IDMN_CONDITION_GHTP
                 MENUITEM "Func Has Temp Param", IDMN_CONDITION_FHTP
                 MENUITEM "Curernt Func Has Temp Param", IDMN_CONDITION_CFHTP                
             END
@@ -472,6 +473,7 @@ BEGIN
     
     M_CONDITION_FHRA        "%o Previous Func Has Return At %0"
         
+    M_CONDITION_GHTP        "%o Global Has Temp Param %0"
     M_CONDITION_FHTP        "%o Func %0 Has Temp Param %1"
     M_CONDITION_CFHTP       "%o Curernt Func Has Temp Param %0"
 

@@ -28,7 +28,9 @@
 
 #define	CND_CONDITION_OILHO			13
 
-#define	CND_LAST					14
+#define	CND_CONDITION_GHTP 			14
+
+#define	CND_LAST					15
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
