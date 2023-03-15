@@ -330,8 +330,14 @@ private:
 	SDL_AudioSpec spec = { 0 };
 	SDL_AudioSpec wanted_spec = { 0 };
 
+#define USE_SPINLOCK
+
+#ifdef USE_SPINLOCK
+	SDL_SpinLock audioLock = 0;
+#else
 	SDL_mutex* mutex_audio;
 	SDL_cond* cond_audioCallbackFinish;
+#endif
 
 	bool bAudioCallbackPause = false;
 	//SDL_cond* cond_audioCallbackPause;
@@ -449,9 +455,13 @@ private:
 		this->bAudioCallbackPause = true;
 		this->audioQueue.pause();
 
-		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);		
+#ifdef USE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex_audio);
-
+		SDL_CondWait(cond_audioCallbackFinish, mutex_audio); 
+#endif		
+		
 		int ret = 0;
 				
 		// release
@@ -578,9 +588,13 @@ private:
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);
 
+#ifdef USE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_UnlockMutex(mutex_audio);
 		//SDL_CondSignal(cond_audioCallbackPause);
-
+#endif
+		
 		this->audioQueue.restore();
 		this->bAudioCallbackPause = false;
 
@@ -946,10 +960,13 @@ private:
 #pragma endregion
 
 #pragma region SDLInit
+#ifdef USE_SPINLOCK
+#else
 		mutex_audio = SDL_CreateMutex();
 		cond_audioCallbackFinish = SDL_CreateCond();
 		//cond_audioCallbackPause = SDL_CreateCond();
-
+#endif
+	
 		if (!bNoAudio) {
 			// init SDL audio
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
@@ -1691,9 +1708,13 @@ public:
 
 		//Wait for callback finish
 		this->bAudioCallbackPause = true;
-		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);
 
+#ifdef USE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex_audio);
+		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);
+#endif
 
 		delete[] audio_buf;
 
@@ -1749,11 +1770,18 @@ public:
 
 		delete[] p_global_bgr_buffer;
 
+#ifdef USE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_UnlockMutex(mutex_audio);
+#endif
 
+#ifdef USE_SPINLOCK
+#else
 		SDL_DestroyMutex(mutex_audio);
 		SDL_DestroyCond(cond_audioCallbackFinish);
 		//SDL_DestroyCond(cond_audioCallbackPause);
+#endif
 	}
 
 	//Get
@@ -2151,7 +2179,11 @@ public:
 	}
 
 	inline int audio_fillData(Uint8* stream, int len, Setter setter, Mixer mixer) {
+#ifdef USE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex_audio);
+#endif
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
@@ -2212,8 +2244,12 @@ public:
 			}
 		}
 
+#ifdef USE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_CondSignal(cond_audioCallbackFinish);
 		SDL_UnlockMutex(mutex_audio);
+#endif
 
 		return 0;
 	}
