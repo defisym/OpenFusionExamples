@@ -640,6 +640,8 @@ struct GlobalData {
 		const auto pAudioData = CreateAudioAuto(pFileName, pKey);
 
 		if (pAudioData == nullptr) {
+			StopExclusive(channel, fadeInMs);
+
 			return false;
 		}
 
