@@ -253,9 +253,10 @@ struct GlobalData {
 
 	inline void GetAudioData(const wchar_t* pFileName,
 		const std::function<void(Mix_Music*)>& processor) {
-		const auto pMusic = GetAudioPointer(pFileName);
 
-		if (pMusic != nullptr) {
+		for (auto pMusic = GetAudioPointer(pFileName);
+			pMusic != nullptr;
+			pMusic = GetAudioPointer(pFileName)) {
 			processor(pMusic);
 		}
 	}
@@ -322,7 +323,9 @@ struct GlobalData {
 	}
 
 	inline void ReleaseAudioData(const wchar_t* pFileName) {
-		ReleaseAudioData(GetAudioPointer(pFileName));
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			ReleaseAudioData(pMusic);
+		});		
 	}
 
 	// add to toRelease list
@@ -405,6 +408,10 @@ struct GlobalData {
 		//Mix_SetFreeOnStop(pMusic, true);
 
 		if (fadeMs == -1) {
+			if (pOldMusic != nullptr) {
+				StopAudio(pOldMusic, fadeMs);
+			}
+
 			Mix_PlayMusicStream(pMusic, loops);
 		}
 		else {
