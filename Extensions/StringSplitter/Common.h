@@ -30,7 +30,7 @@
 // My headers
 #include	"Split.h"
 #include	"GeneralDefinition.h"
-#include	"Defination.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"

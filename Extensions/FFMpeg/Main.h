@@ -47,7 +47,9 @@
 
 #define	ACT_ACTION_SAT					15
 
-#define	ACT_LAST						16
+#define	ACT_ACTION_SFNA					16
+
+#define	ACT_LAST						17
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -104,7 +106,9 @@ typedef struct tagEDATA_V1
 
 	AVHWDeviceType hwDeviceType;
 
-	bool bBuffer[3];
+	bool bForceNoAudio;
+
+	bool bBuffer[2];
 	int buffer[47];
 
 } EDITDATA;
@@ -182,6 +186,8 @@ typedef struct tagRDATA
 	GlobalData* pData;
 
 	AVHWDeviceType hwDeviceType;
+
+	bool bForceNoAudio;
 
 	std::wstring* pRetStr;
 

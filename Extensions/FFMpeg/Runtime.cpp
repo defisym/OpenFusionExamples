@@ -117,18 +117,19 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 
+	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
+
 	rdPtr->atempo = DEFAULT_ATEMPO;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
-		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
-
 		SetExtUserData(rdPtr->pData);
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
-		rdPtr->pData->ppFFMpeg = &rdPtr->pFFMpeg;
 	}	
+
+	rdPtr->pData->Create(rdPtr->bForceNoAudio, &rdPtr->pFFMpeg);
 
 	// No errors
 	return 0;
@@ -157,11 +158,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		
 	delete rdPtr->pPreviousTimer;
 
+	rdPtr->pData->Destroy(&rdPtr->pFFMpeg);
 	CloseGeneral(rdPtr);
 
 	delete rdPtr->pFilePath;
 
-	delete rdPtr->pRetStr;
+	delete rdPtr->pRetStr;	
 
 	SetExtUserData(rdPtr->pData);
 
@@ -209,6 +211,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
+
 #ifdef _LOOPBENCH
 	auto now = std::chrono::steady_clock::now();
 	auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
@@ -220,6 +223,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	OutputDebugString(outPut.c_str());
 	OutputDebugString(L"\n");
+#endif
+
+#ifdef FMOD_AUDIO
+	rdPtr->pData->cFMI.FMI_Update();
+	rdPtr->pData->UpdateVolume(&rdPtr->pFFMpeg);
 #endif
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
@@ -266,6 +274,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	}
 #endif // _DEBUG
 
+	CleanCache(rdPtr, false);
+
 	if (rdPtr->pMemSf != nullptr
 		&& rdPtr->pMemSf->IsValid()
 		&& rdPtr->rc.rcChanged) {
@@ -287,7 +297,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
 
-	if (rdPtr->pMemSf->IsValid()) {
+	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
@@ -300,7 +310,6 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		// Hot spot (transform center)
 		POINT point = { 0, 0 };
 
-		//rdPtr->pSf->Blit(*ps, (float)screenX, (float)screenY, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK), rdPtr->rs.rsEffectParam, BLTF_ANTIA);
 		rdPtr->pMemSf->BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
 			rdPtr->pMemSf->GetWidth(), rdPtr->pMemSf->GetHeight(), &point, rdPtr->rc.rcAngle,

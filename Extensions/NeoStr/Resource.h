@@ -93,6 +93,14 @@
 #define	IDS_PROP_FORMAT_ICONSCALE_INFO      266
 #define	IDS_PROP_FORMAT_ICONRESAMPLE        267
 #define	IDS_PROP_FORMAT_ICONRESAMPLE_INFO   268
+#define	IDS_PROP_FORMAT_FILTER_UNKNOWN           269
+#define	IDS_PROP_FORMAT_FILTER_UNKNOWN_INFO      270
+#define	IDS_PROP_FORMAT_FILTER_INCOMPLETE        271
+#define	IDS_PROP_FORMAT_FILTER_INCOMPLETE_INFO   272
+#define	IDS_PROP_FORMAT_ICONGLOBAL        273
+#define	IDS_PROP_FORMAT_ICONGLOBAL_INFO   274
+#define	IDS_PROP_FORMAT_ICONGLOBALFR        275
+#define	IDS_PROP_FORMAT_ICONGLOBALFR_INFO   276
 
 
 // 	Debug tree
@@ -132,6 +140,14 @@
 
 #define	IDMN_ACTION_SVO			    25017
 
+#define	IDMN_ACTION_LO			    25018
+#define	IDMN_ACTION_SOKV			25019
+
+#define	IDMN_ACTION_SFF			    25020
+
+#define	IDMN_ACTION_FRD			    25021
+#define	IDMN_ACTION_FRDGI		    25022
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -159,6 +175,14 @@
 
 #define	M_ACTION_SVO		        5017
 
+#define	M_ACTION_LO			    	5018
+#define	M_ACTION_SOKV			    5019
+
+#define	M_ACTION_SFF			    5020
+
+#define	M_ACTION_FRD			    5021
+#define	M_ACTION_FRDGI			    5022
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -184,6 +208,14 @@
 
 #define M_VERTICALOFFSET			5518
 
+#define M_OBJECT			        5519
+#define M_ICONITNAME			    5520
+#define M_HASH			            5521
+#define M_PSF			            5522
+#define M_OVERWRITE 	            5523
+#define M_FILTERFLAG	            5524
+#define M_IDENTIFIER	            5525
+
 //	Conditions
 //--------------------
 
@@ -191,15 +223,13 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_OGOIC         26000
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_OGOIC       	 6000
 
 // Titles of condition parameters
-#define M_CND_P1				 6501
-#define M_CND_P2				 6502
-#define M_CND_P3				 6503
+#define M_CND_P1				     6501
 
 //	EXPRESSIONS
 //---------------------
@@ -241,6 +271,19 @@
 
 #define IDMN_EXPRESSION_GVO					27023
 
+#define IDMN_EXPRESSION_GFS					27024
+#define IDMN_EXPRESSION_GPS					27025
+
+#define IDMN_EXPRESSION_GNCO				27026
+
+#define	IDMN_EXPRESSION_GHS			    	27027
+#define	IDMN_EXPRESSION_GIPN			    27028
+#define	IDMN_EXPRESSION_GIPS			    27029
+
+#define	IDMN_EXPRESSION_GFF 			    27030
+
+#define	IDMN_EXPRESSION_GRSBFSL			    27031
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -275,8 +318,24 @@
 
 #define M_EXPRESSION_GVO					7023
 
+#define M_EXPRESSION_GFS					7024
+#define M_EXPRESSION_GPS					7025
+
+#define M_EXPRESSION_GNCO					7026
+
+#define	M_EXPRESSION_GHS			    	7027
+#define	M_EXPRESSION_GIPN			        7028
+#define	M_EXPRESSION_GIPS			        7029
+
+#define	M_EXPRESSION_GFF			        7030
+
+#define	M_EXPRESSION_GRSBFSL		        7031
+
 // Names of expression parameters
 #define M_POS				                7500
+#define M_STRING				            7501
+#define M_FILTERFLAGS			            7502
+#define M_STRINGSTART			            7503
 
 // Next default values for new objects
 // 

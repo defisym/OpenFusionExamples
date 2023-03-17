@@ -38,6 +38,8 @@ enum {
 	
 	PROPID_CACHE_CHECK,
 
+	PROPID_CACHE_FORCENOAUDIO,
+
 	PROPID_QUEUE_TEXTTITLE,
 
 	PROPID_AUDIOQUEUESIZE_EDITNUMBER,
@@ -100,6 +102,8 @@ PropData Properties[] = {
 	PropData_CheckBox(PROPID_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK, IDS_PROP_ACCURATESEEK_CHECK_INFO),
 
 	PropData_CheckBox(PROPID_CACHE_CHECK, IDS_PROP_CACHE_CHECK, IDS_PROP_CACHE_CHECK_INFO),
+	
+	PropData_CheckBox(PROPID_CACHE_FORCENOAUDIO, IDS_PROP_FORCENOAUDIO_CHECK, IDS_PROP_FORCENOAUDIO_CHECK_INFO),
 
 	PropData_Group(PROPID_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE),
 
@@ -403,6 +407,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->bCache = false;
 
 		edPtr->hwDeviceType= (AVHWDeviceType)AV_HWDEVICE_TYPE_NONE;
+
+		edPtr->bForceNoAudio = false;
 
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
@@ -813,6 +819,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bAccurateSeek;
 	case PROPID_CACHE_CHECK:
 		return edPtr->bCache;
+	case PROPID_CACHE_FORCENOAUDIO:
+		return edPtr->bForceNoAudio;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -929,6 +937,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bCache = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_CACHE_CHECK, TRUE);
+		break;
+	case PROPID_CACHE_FORCENOAUDIO:
+		edPtr->bForceNoAudio = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_CACHE_FORCENOAUDIO, TRUE);
 		break;
 	}
 #endif // !defined(RUN_ONLY)

@@ -531,7 +531,7 @@ long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
 		
 	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
 
-	return ReturnFloat(_stof(String));
+	return ReturnFloat(_stof(std::wstring(String)));
 }
 
 long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {

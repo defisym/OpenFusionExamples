@@ -1,4 +1,8 @@
-﻿// Ref: http://dranger.com/ffmpeg/ffmpeg.html
+﻿// API Changes
+// https://github.com/FFmpeg/FFmpeg/blob/master/doc/APIchanges
+
+
+// Ref: http://dranger.com/ffmpeg/ffmpeg.html
 // Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 // SafeSEH:NO
 
@@ -7,9 +11,17 @@
 #pragma warning(disable : 4819)
 #pragma warning(disable : 4996)
 
+#ifdef FMOD_AUDIO
+//#define _EXTERNAL_CLOCK_SYNC
+#endif
+
+// uncomment if you don't want to set in properties
 //#pragma comment(lib,"avcodec.lib")
+//#pragma comment(lib,"avdevice.lib")
+//#pragma comment(lib,"avfilter.lib")
 //#pragma comment(lib,"avformat.lib")
 //#pragma comment(lib,"avutil.lib")
+//#pragma comment(lib,"swresample.lib")
 //#pragma comment(lib,"swscale.lib")
 
 #include <string>
@@ -60,18 +72,21 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 //		wanted_spec.freq = TARGET_SAMPLE_RATE;
 //		wanted_spec.format = AUDIO_S16SYS;
 //		wanted_spec.channels = 2;
-//		//sclient if no output
+//		//silent if no output
 //		wanted_spec.silence = 0;
 //		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
-//		//recommand: 512~8192, ffplay: 1024
+//		//recommend: 512~8192, ffplay: 1024
 //		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 
-#define _EXTERNAL_SDL_AUDIO_INIT
+#define _EXTERNAL_AUDIO_INIT
 
 // Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
 constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
+constexpr auto TARGET_CHANNEL_NUMBER = 2;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 constexpr auto TARGET_SAMPLE_RATE = 48000;
+
+#define _AUDIO_TEMPO
 
 constexpr auto DEFAULT_ATEMPO = 1.0f;
 
@@ -92,9 +107,16 @@ constexpr auto FFMpegException_HWDecodeFailed = -3;
 
 constexpr auto FFMpegException_FilterInitFailed = -4;
 
-constexpr auto END_OF_QUEUE = -1;
+constexpr auto END_OF_QUEUE = -5;
 
-// Defines
+#ifdef _DEBUG
+constexpr auto FFMpegError_EOF = AVERROR_EOF;
+constexpr auto FFMpegError_EAGAIN = AVERROR(EAGAIN);
+constexpr auto FFMpegError_EINVAL = AVERROR(EINVAL);
+constexpr auto FFMpegError_ENOMEM = AVERROR(ENOMEM);
+#endif
+
+// Defines				   
 constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
@@ -121,12 +143,16 @@ static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 constexpr auto FFMpegFlag_Default = 0;
 
 constexpr auto FFMpegFlag_HWDeviceMask = 0xFFFF;
-constexpr auto FFMpegFlag_Flag2_Fast = (0x0001) << 16;
+
+constexpr auto FFMpegFlag_Fast = (0b0000000000000001) << 16;
+constexpr auto FFMpegFlag_ForceNoAudio = (0b0000000000000010) << 16;
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
+using Setter = decltype(memset);
+using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 using Uint8 = unsigned char;
 
@@ -137,11 +163,14 @@ private:
 	bool bExit = false;
 
 	bool bLoop = false;
-	bool bPause = false;	// used to sclient autio
+	bool bPause = false;	// used to  audio
 
 	bool bReadFinish = false;
 	bool bVideoFinish = false;
 	bool bAudioFinish = false;
+
+	bool bVideoSendEAgain = false;
+	bool bAudioSendEAgain = false;
 
 	bool bFinish = false;
 
@@ -179,6 +208,7 @@ private:
 
 	bool bFromMem = false;
 	bool bNoAudio = false;
+	bool bForceNoAudio = false;
 
 	AVIOContext* pAvioContext = nullptr;
 	AVIOContext* pSeekAvioContext = nullptr;
@@ -199,6 +229,7 @@ private:
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
 #endif //  _HW_DECODE
 
+#ifdef _AUDIO_TEMPO
 	AVFilterGraph* filter_graph = nullptr;
 	const char* filters_descr = "";
 
@@ -206,8 +237,10 @@ private:
 	AVFilterContext* buffersink_ctx = nullptr;
 
 	AVFrame* pAFilterFrame = nullptr;
+#endif //  _AUDIO_TEMPO
 
-	float atempo = DEFAULT_ATEMPO;	
+	//float atempo = DEFAULT_ATEMPO;
+	float atempo = -1;
 
 	const AVCodec* pVCodec = NULL;
 	AVCodecParameters* pVCodecParameters = NULL;
@@ -290,11 +323,24 @@ private:
 	//累计写入stream的长度
 	unsigned int audio_buf_index = 0;
 
+	// output
+	void* audio_stream = nullptr;
+	size_t audio_stream_len = 0;
+
 	SDL_AudioSpec spec = { 0 };
 	SDL_AudioSpec wanted_spec = { 0 };
 
-	SDL_mutex* mutex;
-	SDL_cond* cond;
+#define USE_SPINLOCK
+
+#ifdef USE_SPINLOCK
+	SDL_SpinLock audioLock = 0;
+#else
+	SDL_mutex* mutex_audio;
+	SDL_cond* cond_audioCallbackFinish;
+#endif
+
+	bool bAudioCallbackPause = false;
+	//SDL_cond* cond_audioCallbackPause;
 #pragma endregion
 
 #pragma endregion
@@ -381,7 +427,7 @@ private:
 
 	inline void init_SwrContext(int64_t in_ch_layout, AVSampleFormat in_sample_fmt, int in_sample_rate) {
 		swrContext = swr_alloc_set_opts(swrContext
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 			, av_get_default_channel_layout(channels)
 			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
 #else
@@ -399,12 +445,23 @@ private:
 		bUpdateSwr = false;
 	}
 
+#ifdef _AUDIO_TEMPO
 	inline int init_audioFilters(AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
 		, AVFilterGraph* filter_graph, const char* filters_descr) {		
-		SDL_CondWait(cond, mutex);
+		if (this->bNoAudio) {
+			return -1;
+		}
 
-		SDL_LockMutex(mutex);
+		this->bAudioCallbackPause = true;
+		this->audioQueue.pause();
 
+#ifdef USE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
+		SDL_LockMutex(mutex_audio);
+		SDL_CondWait(cond_audioCallbackFinish, mutex_audio); 
+#endif		
+		
 		int ret = 0;
 				
 		// release
@@ -531,10 +588,19 @@ private:
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);
 
-		SDL_UnlockMutex(mutex);
+#ifdef USE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
+		SDL_UnlockMutex(mutex_audio);
+		//SDL_CondSignal(cond_audioCallbackPause);
+#endif
+		
+		this->audioQueue.restore();
+		this->bAudioCallbackPause = false;
 
 		return ret;
 	}
+#endif //  _AUDIO_TEMPO
 
 	inline const AVInputFormat* init_Probe(BYTE* pBuffer, size_t bfSz, LPCSTR pFileName) {		
 		AVProbeData probeData = { 0 };
@@ -674,6 +740,10 @@ private:
 		}
 #endif
 
+		//---------------------
+		// Video
+		//---------------------
+
 #ifndef _GET_STREAM_BYLOOP
 		// init video codec
 		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVCodec, 0);
@@ -730,7 +800,7 @@ private:
 
 		pVCodecContext->thread_count = std::thread::hardware_concurrency();
 
-		if (flag & FFMpegFlag_Flag2_Fast) {
+		if (flag & FFMpegFlag_Fast) {
 			pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 		}
 
@@ -766,15 +836,19 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		//swsContext = sws_getContext(pVCodecContext->width, pVCodecContext->height
-		//	, pVCodecContext->pix_fmt,
-		//	pVCodecContext->width, pVCodecContext->height
-		//	, PIXEL_FORMAT
-		//	, NULL, NULL, NULL, NULL);
-		
+		//---------------------
+		// Audio
+		//---------------------
+
+		if (flag & FFMpegFlag_ForceNoAudio) {
+			bForceNoAudio = true;
+		}
+
 #ifndef _GET_STREAM_BYLOOP
 		// init audio codec
-		audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
+		if (!bForceNoAudio) {
+			audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
+		}
 #endif
 
 		if (audio_stream_index < 0) {
@@ -811,10 +885,12 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
+#ifdef _AUDIO_TEMPO
 		pAFilterFrame = av_frame_alloc();
 		if (!pAFilterFrame) {
 			throw FFMpegException_InitFailed;
 		}
+#endif //  _AUDIO_TEMPO
 
 #ifdef _HW_DECODE
 		if (bHWDecode) {
@@ -877,22 +953,26 @@ private:
 		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
 		totalTimeInMs = totalDuration == INT64_MAX
 						? totalDuration
-						:(int64_t)totalTime * 1000;
+						:(int64_t)round(totalTime * 1000);
 
 		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
 		//p_global_bgr_buffer = new uint8_t[num_bytes];
 #pragma endregion
 
 #pragma region SDLInit
-		mutex = SDL_CreateMutex();
-		cond = SDL_CreateCond();
-
+#ifdef USE_SPINLOCK
+#else
+		mutex_audio = SDL_CreateMutex();
+		cond_audioCallbackFinish = SDL_CreateCond();
+		//cond_audioCallbackPause = SDL_CreateCond();
+#endif
+	
 		if (!bNoAudio) {
 			// init SDL audio
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 			//DSP frequency -- samples per second
 			wanted_spec.freq = pACodecContext->sample_rate;
 			wanted_spec.format = AUDIO_S16SYS;
@@ -921,13 +1001,15 @@ private:
 
 				throw SDL_EXCEPTION_AUDIO;
 			}
-#endif // _EXTERNAL_SDL_AUDIO_INIT	
+#endif // _EXTERNAL_AUDIO_INIT	
 
+#ifndef FMOD_AUDIO
 			SDL_PauseAudio(false);
+#endif
 		}
 #pragma endregion
 	
-		// must be here, as it requires mutex of SDL
+		// must be here, as it requires mutex_audio of SDL
 		if (!bNoAudio) {
 			set_audioTempo(DEFAULT_ATEMPO);
 		}
@@ -940,8 +1022,26 @@ private:
 		return protectedTimeInSecond;
 	}
 
-	inline int64_t get_protectedTimeStamp(int64_t ms) {
-		//av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
+	inline int64_t get_protectedTimeStamp(int64_t ms, int flags = seekFlags) {
+		// seek by byte, do nothing
+		// If flags contain AVSEEK_FLAG_BYTE, then all timestamps are in bytes and are the file position
+		// (this may not be supported by all demuxers).
+		if ((flags & AVSEEK_FLAG_BYTE) == AVSEEK_FLAG_BYTE) {
+			return ms;
+		}
+
+		// seek by frame, do conversion
+		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
+		// (this may not be supported by all demuxers).
+		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME){
+			auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
+
+			return (int64_t)(protectedTimeStamp);
+		}
+
+		// default
+		// all timestamps are in units of the stream selected by stream_index or if stream_index is -1, in AV_TIME_BASE units
+		// av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
 		auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
 
 		return (int64_t)(protectedTimeStamp);
@@ -951,9 +1051,7 @@ private:
 		int response = 0;
 
 		// input second
-		auto seek_target = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
-			? get_protectedTimeStamp(ms)
-			: ms;
+		auto seek_target = get_protectedTimeStamp(ms, flags);
 
 		response = flags >= 0
 			? av_seek_frame(pFormatContext, stream_index
@@ -993,13 +1091,24 @@ private:
 		this->bSeeking = true;
 		this->seekingTargetPts = targetPts;
 
+		//how many packet processed
 		//int count = 0;
 
 		while (av_read_frame(pFormatContext, pPacket) >= 0) {
 			// if it's the video stream
 			if (pPacket->stream_index == video_stream_index) {
 				// decode
-				response = decode_vpacket(pPacket, pCodecContext, pFrame
+				response = avcodec_send_packet(pCodecContext, pPacket);
+
+				if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+#ifdef _DEBUG
+					auto err = GetErrorStr(response);
+#endif // _DEBUG
+
+					break;
+				}
+
+				response = decode_vpacket(pCodecContext, pPacket, pFrame
 					, [&](const unsigned char* pData, const int stride, const int height) {
 						loaclStride = stride;
 						loaclHeight = height;
@@ -1020,6 +1129,19 @@ private:
 
 			av_packet_unref(pPacket);
 		}
+
+//#define _REVERT_TO_TARGET
+
+#ifdef _REVERT_TO_TARGET
+		// revert to target
+		set_videoPosition((int64_t)(targetPts * 1000));
+		videoClock = targetPts * 1000;
+#else
+		// revert to start
+		if (targetPts == 0.0) {			
+			set_videoPosition(0);
+		}
+#endif // _REVERT_TO_TARGET
 
 		this->bSeeking = false;
 
@@ -1089,19 +1211,18 @@ private:
 			response = fill_queue();
 
 			// calc delay
-			syncState = get_delayState();
+			syncState = get_syncState();
+
+			//syncState = SyncState::SYNC_SYNC;
 
 			// decode
 			switch (syncState) {
 				// video is faster, wait
 			case FFMpeg::SyncState::SYNC_VIDEOFASTER:
 				return 0;
-
-				break;
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				//response = decode_videoFrame(callBack);
 				response = decode_videoFrame([&](const unsigned char* pData, const int stride, const int height) {
 					loaclStride = stride;
 					loaclHeight = height;
@@ -1125,8 +1246,7 @@ private:
 			}
 
 		} while (syncState != SyncState::SYNC_SYNC);
-
-		//callBack(p_global_bgr_buffer, this->get_width(), this->get_height());
+				
 		callBack(p_global_bgr_buffer, loaclStride, loaclHeight);
 
 		return 0;
@@ -1138,57 +1258,74 @@ private:
 	// - Instead of valid input, send NULL to the avcodec_send_packet() (decoding) or avcodec_send_frame() (encoding) functions. This will enter draining mode.
 	// - Call avcodec_receive_frame() (decoding) or avcodec_receive_packet() (encoding) in a loop until AVERROR_EOF is returned. The functions will not return AVERROR(EAGAIN), unless you forgot to enter draining mode.
 	// - Before decoding can be resumed again, the codec has to be reset with avcodec_flush_buffers().
-	inline int decode_videoFrame(rawDataCallBack callBack) {
-		auto bNoPacket = !videoQueue.get(pVPacket, false);
+	inline int decode_frameCore(bool& bFinishState, bool& bSendEAgain
+		, const bool& bBlockState
+		, packetQueue& queue
+		, AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame
+		, auto decoder
+		, rawDataCallBack callBack) {
+		BOOL bRespond = true;
+		
+		if (!bSendEAgain) {
+			bRespond = queue.get(pPacket, bBlockState);
 
-		//if (pVPacket->data == flushPacket.data) {
-		//	avcodec_flush_buffers(pVCodecContext);
+			if (bRespond == QUEUE_WAITING) {
+				return QUEUE_WAITING;
+			}
+		}
+
+		//if (pPacket->data == flushPacket.data) {
+		//	avcodec_flush_buffers(pCodecContext);
 
 		//	return 0;
 		//}
 
-		//auto response = decode_vpacket(pVPacket, pVCodecContext, pVFrame, callBack);
-		auto response = decode_vpacket(!bNoPacket ? pVPacket : nullptr, pVCodecContext, pVFrame, callBack);		
+		auto bNoPacket = bRespond == false;
+		auto pInputPacket = !bNoPacket ? pPacket : nullptr;
 
-		bVideoFinish = (response == AVERROR_EOF);
+		// Supply raw packet data as input to a decoder
+		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
+		int response = avcodec_send_packet(pCodecContext, pPacket);
+		bSendEAgain = (response == AVERROR(EAGAIN));
 
-		if (pVPacket && pVPacket->data) {
-			av_packet_unref(pVPacket);
+		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+			return response;
 		}
 
-		if (bVideoFinish) {
+		response = (this->*decoder)(pCodecContext, pInputPacket, pFrame, callBack);
+
+		bFinishState = (response == AVERROR_EOF);
+
+		// won't release if current packed didn't used
+		if (!bSendEAgain) {
+			if (pPacket && pPacket->data) {
+				av_packet_unref(pPacket);
+			}
+		}
+
+		if (bFinishState) {
 			return END_OF_QUEUE;
 		}
 
 		return response;
 	}
 
+	inline int decode_videoFrame(rawDataCallBack callBack) {
+		return decode_frameCore(bVideoFinish, bVideoSendEAgain
+			, false
+			, videoQueue
+			, pVCodecContext, pVPacket, pVFrame
+			, &FFMpeg::decode_vpacket
+			, callBack);
+	}
+
 	inline int decode_audioFrame() {
-		//bAudioFinish = !audioQueue.get(pAPacket);
-		//bAudioFinish = !audioQueue.get(pAPacket, false);
-		//bAudioFinish = !audioQueue.get(pAPacket, !bReadFinish);
-		auto bNoPacket = !audioQueue.get(pAPacket, !bReadFinish);
-			
-		//if (pAPacket->data == flushPacket.data) {
-		//	avcodec_flush_buffers(pACodecContext);
-
-		//	return 0;
-		//}
-
-		// return data size here
-		auto response = decode_apacket(!bNoPacket ? pAPacket : nullptr, pACodecContext, pAFrame);
-
-		bAudioFinish = (response == AVERROR_EOF);
-
-		if (pAPacket && pAPacket->data) {
-			av_packet_unref(pAPacket);
-		}
-
-		if (bAudioFinish) {
-			return END_OF_QUEUE;
-		}
-
-		return response;
+		return decode_frameCore(bAudioFinish, bAudioSendEAgain
+			, !bReadFinish && !bAudioCallbackPause
+			, audioQueue
+			, pACodecContext, pAPacket, pAFrame
+			, &FFMpeg::decode_apacket
+			, nullptr);
 	}
 
 	// Convert data to Fusion data
@@ -1222,140 +1359,125 @@ private:
 		callBack(bgr_buffer[0], linesize[0], pFrame->height);
 	}
 
-	inline int decode_vpacket(AVPacket* pVPacket, AVCodecContext* pVCodecContext, AVFrame* pFrame, rawDataCallBack callBack) {
-		// Supply raw packet data as input to a decoder
-		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
-		int response = avcodec_send_packet(pVCodecContext, pVPacket);
+	inline int decode_vpacket(AVCodecContext* pVCodecContext, AVPacket* pVPacket, AVFrame* pFrame, rawDataCallBack callBack) {
+		// Return decoded output data (into a frame) from a decoder
+		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
+		int response = avcodec_receive_frame(pVCodecContext, pFrame);
 
-		if (response < 0) {
+#ifdef _DEBUG
+		auto err = GetErrorStr(response);
+#endif
+
+		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+			return response;
+		}
+		else if (response < 0) {
+			av_frame_unref(pFrame);
+
+#ifdef _HW_DECODE
+			if (bHWDecode) {
+				av_frame_unref(pSWFrame);
+			}
+#endif // _HW_DECODE
+
 			return response;
 		}
 
-#define _NOLOOP
+		if (response >= 0) {
+			//videoPts = 0;
+			videoPts = double(pFrame->best_effort_timestamp);
 
-#ifndef _NOLOOP
-		while (response >= 0) {
-#endif // !_NOLOOP
-			// Return decoded output data (into a frame) from a decoder
-			// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
-			response = avcodec_receive_frame(pVCodecContext, pFrame);
-
-			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-#ifdef _NOLOOP
-				return response;
-#endif
-#ifndef _NOLOOP
-				break;
-#endif // !_NOLOOP
+			if (pVPacket != nullptr) {
+				if (pVPacket->dts == AV_NOPTS_VALUE
+					&& pFrame->opaque
+					&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
+					videoPts = double(*(uint64_t*)pFrame->opaque);
+				}
+				else {
+					videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+						? pFrame->best_effort_timestamp
+						: 0);
+				}
 			}
-			else if (response < 0) {
-				av_frame_unref(pFrame);
+
+			videoPts *= av_q2d(pVideoStream->time_base);
+
+			//if (pFrame->key_frame == 1) {
+			//	firstKeyFrame = min(videoPts, firstKeyFrame);
+			//}
+
+#ifdef _CONSOLE
+			if (bJumped) {
+				printf("Cur video pts: %f\n", videoPts);
+			}
+#endif
+			videoPts = synchronize_video(pFrame, videoPts);
+
+#ifdef _CONSOLE
+			if (bJumped) {
+				printf("Cur synced video pts: %f\n", videoPts);
+			}
+#endif
+
+			if (!bSeeking
+				|| (bSeeking && (videoClock >= seekingTargetPts))) {
+				auto pFrameToConvert = pFrame;
+
 #ifdef _HW_DECODE
 				if (bHWDecode) {
-					av_frame_unref(pSWFrame);
-				}
-#endif // _HW_DECODE
-
-				return response;
-			}
-
-			if (response >= 0) {
-				videoPts = 0;
-
-				if (pVPacket != nullptr) {
-					if (pVPacket->dts == AV_NOPTS_VALUE
-						&& pFrame->opaque
-						&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
-						videoPts = double(*(uint64_t*)pFrame->opaque);
-					}
-					else {
-						videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
-							? pFrame->best_effort_timestamp
-							: 0);
-					}
-				}
-
-				videoPts *= av_q2d(pVideoStream->time_base);
-
-				//if (pFrame->key_frame == 1) {
-				//	firstKeyFrame = min(videoPts, firstKeyFrame);
-				//}
-
-#ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur video pts: %f\n", videoPts);
-				}
-#endif
-				videoPts = synchronize_video(pFrame, videoPts);
-
-#ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur synced video pts: %f\n", videoPts);
-				}
-#endif
-
-				if (!bSeeking
-					|| (bSeeking && (videoClock >= seekingTargetPts))) {
-					auto pFrameToConvert = pFrame;
-
-#ifdef _HW_DECODE
-					if (bHWDecode) {
-						if (pFrame->format == hw_pix_fmt) {
-							/* retrieve data from GPU to CPU */
-							if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
-								//fprintf(stderr, "Error transferring the data to system memory\n");
-								throw FFMpegException_HWDecodeFailed;
-							}
-
-							pFrameToConvert = pSWFrame;
+					if (pFrame->format == hw_pix_fmt) {
+						/* retrieve data from GPU to CPU */
+						if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
+							//fprintf(stderr, "Error transferring the data to system memory\n");
+							throw FFMpegException_HWDecodeFailed;
 						}
+
+						pFrameToConvert = pSWFrame;
 					}
+				}
 #endif
 
-					convertData(pFrameToConvert, callBack);
-				}				
-
-				av_frame_unref(pFrame);
+				convertData(pFrameToConvert, callBack);
 			}
-#ifndef _NOLOOP
-		}
-#endif // !_NOLOOP
 
+			av_frame_unref(pFrame);
+		}
 
 		return response;
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
-	inline int decode_apacket(AVPacket* pAPacket, AVCodecContext* pACodecContext, AVFrame* pArame) {
-		int response = avcodec_send_packet(pACodecContext, pAPacket);
-		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
-			return -1;
+	inline int decode_apacket(AVCodecContext* pACodecContext, AVPacket* pAPacket, AVFrame* pFrame, rawDataCallBack callBack) {
+		int response = avcodec_receive_frame(pACodecContext, pFrame);
+
+		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+			return response;
+		}
+		else if (response < 0) {
+			av_frame_unref(pFrame);
+
+			return response;
 		}
 
-		response = avcodec_receive_frame(pACodecContext, pAFrame);
-		if (response < 0 && response != AVERROR_EOF) {
-			av_frame_unref(pAFrame);
-
-			return -1;
-		}
-
-		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
-		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pAFrame, 0);
+#ifdef _AUDIO_TEMPO
+		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
+		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, 0);
 		if (response < 0) {
 			return -1;
 		}
 
 		while (1) {
-			//response = av_buffersink_get_frame(buffersink_ctx, pAFrame);
+			//response = av_buffersink_get_frame(buffersink_ctx, pFrame);
 			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 				break;
 			}
 
 			if (response < 0) {
-				av_frame_unref(pAFrame);
+				av_frame_unref(pFrame);
 				av_frame_unref(pAFilterFrame);
 			}
+#endif //  _AUDIO_TEMPO
 
 			if (pAPacket != nullptr) {
 				if (pAPacket->pts != AV_NOPTS_VALUE) {
@@ -1368,8 +1490,11 @@ private:
 				}
 			}
 
-			//auto pBaseFrame = pAFrame;
+#ifdef _AUDIO_TEMPO
 			auto pBaseFrame = pAFilterFrame;
+#else
+			auto pBaseFrame = pFrame;
+#endif //  _AUDIO_TEMPO
 
 			// update context to avoid crash
 			if (bUpdateSwr) {
@@ -1382,7 +1507,7 @@ private:
 			// https://blog.csdn.net/u013346305/article/details/48682935
 			int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
 								+ pBaseFrame->nb_samples
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef _EXTERNAL_AUDIO_INIT
 				, pBaseFrame->sample_rate, pBaseFrame->sample_rate, AVRounding(1));
 #else
 				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, AVRounding(1));
@@ -1397,14 +1522,17 @@ private:
 			audioPts = audioClock;
 
 			auto pcm_bytes = 2 * pBaseFrame->channels;
-			audioClock += (double)audioSize / (double)(pcm_bytes * pACodecContext->sample_rate);
+			audioClock += (double)audioSize / ((double)pcm_bytes * (double)pACodecContext->sample_rate);
 
 			return audioSize;
+
+#ifdef _AUDIO_TEMPO
 		}
 
 		av_frame_unref(pAFrame);
 
 		return -1;
+#endif //  _AUDIO_TEMPO
 	}
 
 	//synchronize
@@ -1433,7 +1561,8 @@ private:
 		int  bytes_per_sec = 0;
 
 		if (pAudioStream) {
-			bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
+			//bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
+			bytes_per_sec = (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER) * 2;
 		}
 
 		if (bytes_per_sec) {
@@ -1443,7 +1572,7 @@ private:
 		return pts;
 	}
 
-	inline SyncState get_delayState() {
+	inline SyncState get_syncState() {
 		//if (bFinish) {
 		//	return SyncState::SYNC_SYNC;
 		//}
@@ -1464,7 +1593,14 @@ private:
 			frameTimer = curTime - videoPts;
 		}
 
-		auto syncClock = !bNoAudio ? get_audioClock() : curTime - frameTimer;
+#ifdef _EXTERNAL_CLOCK_SYNC
+		auto syncClock = (curTime - frameTimer) * this->atempo;
+#else
+		auto syncClock = !bNoAudio
+			? get_audioClock()
+			: (curTime - frameTimer) * this->atempo;
+#endif
+
 		auto diff = videoPts - syncClock;
 
 		auto syncThreshold = delay > AV_SYNC_THRESHOLD
@@ -1552,25 +1688,33 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
-		audioQueue.exit();
-		videoQueue.exit();
-
+		// must be flushed before free the context
 		audioQueue.flush();
 		videoQueue.flush();
 
-		SDL_PauseAudio(true);
+		// flush will restart queue and may cause dead lock
+		// so pause again here
+		// as call destructor directly is UB
+		audioQueue.pause();
+		videoQueue.pause();
 
-#ifndef _EXTERNAL_SDL_AUDIO_INIT
+#ifndef FMOD_AUDIO
+		SDL_PauseAudio(false);
+#endif
+
+#ifndef _EXTERNAL_AUDIO_INIT
 		SDL_CloseAudio();
-#endif // _EXTERNAL_SDL_AUDIO_INIT		
+#endif // _EXTERNAL_AUDIO_INIT		
 
 		//Wait for callback finish
-		SDL_CondWait(cond, mutex);
+		this->bAudioCallbackPause = true;
 
-		SDL_LockMutex(mutex);
-
-		//audioQueue.flush();
-		//videoQueue.flush();
+#ifdef USE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
+		SDL_LockMutex(mutex_audio);
+		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);
+#endif
 
 		delete[] audio_buf;
 
@@ -1582,7 +1726,10 @@ public:
 
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
+
+#ifdef _AUDIO_TEMPO
 		av_frame_free(&pAFilterFrame);
+#endif //  _AUDIO_TEMPO
 
 #ifdef _HW_DECODE
 		if (bHWDecode) {
@@ -1590,7 +1737,9 @@ public:
 		}
 #endif // _HW_DECODE		
 
+#ifdef _AUDIO_TEMPO
 		avfilter_graph_free(&filter_graph);
+#endif //  _AUDIO_TEMPO
 
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
@@ -1621,16 +1770,38 @@ public:
 
 		delete[] p_global_bgr_buffer;
 
-		SDL_UnlockMutex(mutex);
+#ifdef USE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
+		SDL_UnlockMutex(mutex_audio);
+#endif
 
-		SDL_DestroyMutex(mutex);
-		SDL_DestroyCond(cond);
+#ifdef USE_SPINLOCK
+#else
+		SDL_DestroyMutex(mutex_audio);
+		SDL_DestroyCond(cond_audioCallbackFinish);
+		//SDL_DestroyCond(cond_audioCallbackPause);
+#endif
 	}
 
 	//Get
 	//inline int64_t get_timePerFrame() {
 	//	return (int64_t)(timePerFrameInMs);
 	//}
+
+	inline const uint8_t* const get_memBufSrc() {
+		if (bFromMem == false) {
+			return nullptr;
+		}
+
+		if (pMemBuf == nullptr) {
+			return nullptr;
+		}
+
+		auto pSrc = pMemBuf->getSrc();
+
+		return pSrc;
+	}
 
 	inline bool get_finishState() {
 		return bFinish;
@@ -1800,6 +1971,13 @@ public:
 
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
+		//TODO
+		//if (!bForceNoAudio) {
+		//	audio_buf_index = 0;
+		//	audio_buf_size = 0;
+		//	memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
+		//	memset(audio_stream, 0, audio_stream_len);
+		//}
 
 		//if (ms == 0) {
 			//reset_sync();
@@ -1817,9 +1995,27 @@ public:
 	}
 
 	inline void set_audioTempo(float atempo) {
-		this->atempo = atempo > 0
+#ifndef _AUDIO_TEMPO
+		this->atempo = DEFAULT_ATEMPO;
+#else
+		auto newTempo = atempo > 0
 			? atempo
 			: DEFAULT_ATEMPO;
+
+		// won't update if param is the same
+		if (this->atempo == newTempo) {
+			return;
+		}
+
+		this->atempo = newTempo;
+
+		// make sure member value is updated
+		if (this->bNoAudio) {
+			// reset timer
+			frameTimer = -1;
+
+			return;
+		}
 
 		std::string fliters;
 		double tempo = this->atempo;
@@ -1842,6 +2038,7 @@ public:
 		}
 
 		init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+#endif //  _AUDIO_TEMPO
 	}
 
 	//Play core
@@ -1919,7 +2116,13 @@ public:
 			while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
 				// if it's the video stream
 				if (pPacket->stream_index == video_stream_index) {
-					response = decode_vpacket(pPacket, pCodecContext, pFrame, callBack);
+					response = avcodec_send_packet(pCodecContext, pPacket);
+
+					if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+						break;
+					}
+
+					response = decode_vpacket(pCodecContext, pPacket, pFrame, callBack);
 
 					//wait until receive enough frames
 					if (response == AVERROR(EAGAIN)) {
@@ -1959,11 +2162,13 @@ public:
 
 		response = handleLoop();
 
-		response = decode_frame(callBack);
-
-		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
+		if (!bFinish) {
+			response = decode_frame(callBack);
+		}
 
 		//do not wait audio finish to get fluent loop
+
+		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
 		bFinish = bReadFinish && bVideoFinish;
 
 #ifdef _CONSOLE
@@ -1973,8 +2178,17 @@ public:
 		return response;
 	}
 
-	inline int audio_fillData(Uint8* stream, int len) {
-		SDL_LockMutex(mutex);
+	inline int audio_fillData(Uint8* stream, int len, Setter setter, Mixer mixer) {
+#ifdef USE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
+		SDL_LockMutex(mutex_audio);
+#endif
+
+		this->audio_stream = stream;
+		this->audio_stream_len = len;
+
+		setter(stream, 0, len);
 
 		if (!bExit && !bPause) {
 			//每次写入stream的数据长度
@@ -1982,10 +2196,13 @@ public:
 			//每解码后的数据长度
 			int audio_size = 0;
 
-			SDL_memset(stream, 0, len);
-
 			//检查音频缓存的剩余长度
 			while (len > 0) {
+				if (this->bAudioCallbackPause) {
+					//SDL_CondWait(cond_audioCallbackPause, mutex_audio);
+					break;
+				}
+
 				//检查是否需要执行解码操作
 				if (audio_buf_index >= audio_buf_size) {
 					// We have already sent all our data; get more
@@ -1995,7 +2212,7 @@ public:
 					// If error, output silence.
 					if (audio_size < 0) {
 						audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
-						memset(audio_buf, 0, audio_buf_size);
+						memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 					}
 					else {
 						//返回packet中包含的原始音频数据长度(多帧)						
@@ -2016,8 +2233,7 @@ public:
 				}
 
 				//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
-				//memcpy(stream, (uint8_t*)audio_buf + audio_buf_index, wt_stream_len);
-				SDL_MixAudio(stream, audio_buf + audio_buf_index, len, volume);
+				mixer(stream, audio_buf + audio_buf_index, len, volume);
 
 				//更新解码音频缓存的剩余长度
 				len -= wt_stream_len;
@@ -2027,13 +2243,13 @@ public:
 				audio_buf_index += wt_stream_len;
 			}
 		}
-		else {
-			SDL_memset(stream, 0, len);
-		}
 
-		SDL_CondSignal(cond);
-
-		SDL_UnlockMutex(mutex);
+#ifdef USE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
+		SDL_CondSignal(cond_audioCallbackFinish);
+		SDL_UnlockMutex(mutex_audio);
+#endif
 
 		return 0;
 	}

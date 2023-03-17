@@ -8,24 +8,41 @@ This is a Repo of several open source stuff about [Clickteam Fusion](https://www
 
 If you have some good examples or something else and want to share, just simply fork this repo, then put files in a folder named by your works, place this folder by it's type, e.g. shaders in shaders folder, add a explanation to this file (ReadMe.md, alphabetically), and feel free to send a PR.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=defisym/OpenFusionExamples&type=Date)](https://star-history.com/#defisym/OpenFusionExamples&Date)
+
 ## Folders
 
 ### Extensions
+
+- AndroidUtilities
+  - *Created by Defisym.*
+  - *some features for android like extract binary files, etc*
 
 - Deque2D
   - *Created by Defisym.*
   - *Under dev*
   - *A modern version of MagicDeque based on std::variant*
 
+- EffectUtilities
+  - *Created by Defisym.*
+  - *Under dev*
+  - *let you control shaders more efficiency, like cache texture params*
+
 - Encrypter
   - *Created by Defisym.*
   - *En/decrypt file with WinAPI CNG.*
   - *You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSplitter*
 
+- FFMpeg
+  - *Created by Defisym.*
+  - *bring the legendary player to fusion, with several handy A/C/Es like blit current video frame, etc*
+
 - FindTheWay
   - *Created by Defisym.*
   - *Under dev*
-  - *A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible.*
+  - *A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible (currently available on windows & android).*
 
 - Fini
   - *Created by Defisym.*
@@ -37,12 +54,20 @@ If you have some good examples or something else and want to share, just simply 
 
 - NeoPic
   - *Created by Defisym.*
-  - *Under dev*
   - *Another active picture, but with encrypt support, all object shares a lib that over frame, significantly reduce load time*
+
+- NeoStr
+  - *Created by Defisym.*
+  - *Powerful string extension with format control support*
 
 - RandomTable
   - *Created by Defisym.*
   - *Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.*
+
+- SteamworksAPI
+  - *Created by Defisym.*
+  - *Under dev*
+  - *alternative steamworks API object with modern feature, compatible (possibly) with current steamworks object*
 
 - String Splitter
   - *Created by Defisym.*
@@ -51,6 +76,10 @@ If you have some good examples or something else and want to share, just simply 
 - WinAPI
   - *Created by Defisym.*
   - *a bunch of small functions.*
+
+- _3rdLib
+  - *Created by Defisym.*
+  - *something based on 3rd lib*
 
 - _DeLib
   - *Created by Defisym.*
@@ -61,16 +90,21 @@ If you have some good examples or something else and want to share, just simply 
   - *Publish multi-platform extensions by one click*
 
 - _Template
-  - *Ext template, but converted to VS 2022*
-
-- Help
-  - *Help File from MMF SDK*
+  - *Ext template, but converted to VS 2022 with some custom contents*
 
 ### Shaders
 
 - AlphaMono
   - *Created by Defisym.*
   - *make semi-mono effect*
+
+- Compression
+  - *Created by Defisym.*
+  - *Simulate Compression effect*
+
+- DotMatrix
+  - *Created by Defisym.*
+  - *Simple dot matrix effect*
 
 - Gauss Blur
   - *Created by Defisym.*
@@ -80,6 +114,10 @@ If you have some good examples or something else and want to share, just simply 
 - Heatwave
   - *Created by Defisym.*
   - *Create heatwave effect*
+
+- Pattern Fade
+  - *Created by Defisym.*
+  - *make gorgeous transition effects*
 
 - Ring Health Bar
   - *Created by Defisym.*
@@ -95,7 +133,7 @@ If you have some good examples or something else and want to share, just simply 
 
 ### Tools
 
-small tools
+Small tools
 
 - CallofAS Toolbar
   - *Created by CallofAS.*
@@ -109,11 +147,11 @@ small tools
   - *Created by Defisym.*
   - *Fusion will use JDK to build Android applications, but unfortunately, sometimes JDK process will not terminate correctly even you quit fusion. If you are using steam version, steam will think fusion is still running and refuse to restart fusion or steam itself, unless you terminate the process manually in task manager, which is annoying. This script can help you terminate it with a single click.*
 
-### Tutorials
-
-Some mfa files used for Fusion tutorials in [my blog](https://www.zhihu.com/column/FusionGamers).
-
 ### Examples
+
+- Blank Char
+  - *Created by Defisym.*
+  - *blank char used for align to git rid of DX11 string limit*
 
 - Bullet Time
   - *Created by Defisym.*
@@ -183,3 +221,7 @@ Some mfa files used for Fusion tutorials in [my blog](https://www.zhihu.com/colu
 - SubStretch
   - *Created by Defisym.*
   - *Stretch Sub-application properly with WinAPI*
+
+### Tutorials
+
+Some mfa files used for Fusion tutorials in [my blog](https://www.zhihu.com/column/FusionGamers).

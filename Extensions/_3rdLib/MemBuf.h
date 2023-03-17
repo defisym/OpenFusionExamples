@@ -32,6 +32,10 @@ public:
 		delete[] this->pBuf;
 	}
 
+	inline const uint8_t* const getSrc() {
+		return this->pSrcBuf;
+	}
+
 	inline uint8_t* get() {
 		return pBuf;
 	}

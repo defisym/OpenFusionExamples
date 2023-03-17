@@ -46,7 +46,7 @@
 
 #define	ACT_ACTION_LFD				17
 
-#define	ACT_ACTION_SPL				18
+#define	ACT_ACTION_SPLBP			18
 #define	ACT_ACTION_SPP				19
 #define	ACT_ACTION_CC				20
 
@@ -60,7 +60,18 @@
 
 #define	ACT_ACTION_SESP				25
 
-#define	ACT_LAST					26
+#define	ACT_ACTION_SPL				26
+#define	ACT_ACTION_SKLBP			27
+
+#define	ACT_ACTION_FM				28
+
+#define	ACT_ACTION_STF				29
+
+#define	ACT_ACTION_CF				30
+
+#define	ACT_ACTION_STFWS			31
+
+#define	ACT_LAST					32
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -212,6 +223,12 @@ typedef struct tagRDATA
 
 	//src->display
 	LPSURFACE src = nullptr;
+
+	// flip cache
+	LPSURFACE pSf_Nor = nullptr;
+	LPSURFACE pSf_HF = nullptr;
+	LPSURFACE pSf_VF = nullptr;
+	LPSURFACE pSf_VHF = nullptr;
 	
 	POINT hotSpot = { 0,0 };	
 	ZoomScale zoomScale = { 1.0,1.0 };
@@ -243,7 +260,7 @@ typedef struct tagRDATA
 	KeepList* pKeepList = nullptr;						// kept over frames
 	RefCountVec* pCountVec = nullptr;					// update when trigger clear
 
-	HotSpotPos defaultHotSpot;
+	HotSpotPos hotSpotPos;
 
 	GlobalData* pData;
 

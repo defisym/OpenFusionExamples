@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <queue>
 
@@ -29,7 +29,7 @@ private:
 	std::condition_variable _empty;
 
 	// Exit
-	// Ô­×Ó²Ù×÷
+	// åŸå­æ“ä½œ
 	std::atomic_bool _quit; //{ false };
 	std::atomic_bool _finished; // { false };
 
@@ -120,6 +120,8 @@ public:
 #include <SDL.h>
 #include <SDL_thread.h>
 
+constexpr auto QUEUE_WAITING = -1;
+
 class packetQueue {
 private:
 	std::queue<AVPacket> queue;
@@ -127,11 +129,6 @@ private:
 
 	SDL_mutex* mutex;
 	SDL_cond* cond;
-
-	SDL_mutex* mutexExit;
-	SDL_cond* condExit;
-
-	//AVPacket pkt = { 0 };
 
 	bool bExit = false;
 
@@ -155,24 +152,22 @@ public:
 	packetQueue() {
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
-
-		mutexExit = SDL_CreateMutex();
-		condExit = SDL_CreateCond();
 	}
 
 	~packetQueue() {
-		exit();
-
-		SDL_CondWait(condExit, mutexExit);
-
-		//erase();
-		//flush();
+		flush();
+		pause();
 
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
+	}
 
-		SDL_DestroyMutex(mutexExit);
-		SDL_DestroyCond(condExit);
+	inline size_t size() {
+		return queue.size();
+	}
+
+	inline int getDataSize() {
+		return dataSize;
 	}
 
 	inline void exit() {
@@ -184,20 +179,36 @@ public:
 		SDL_CondSignal(cond);
 	}
 
-	inline size_t size() {
-		return queue.size();
+	inline void stopBlock() {
+		pause();
+		restore();
 	}
 
-	inline int getDataSize() {
-		return dataSize;
+	inline void pause() {
+		exit();
+
+		SDL_LockMutex(mutex);
+		SDL_UnlockMutex(mutex);
 	}
 
+	inline void restore() {
+		SDL_LockMutex(mutex);
+		
+		this->bExit = false;
+		
+		SDL_UnlockMutex(mutex);
+	}
+		
 	inline void flush() {
+		pause();
+
 		SDL_LockMutex(mutex);
 
 		erase();
 
 		SDL_UnlockMutex(mutex);
+
+		restore();
 	}
 
 	inline bool put(const AVPacket* pPacket) {
@@ -221,15 +232,15 @@ public:
 		return true;
 	}
 
-	//block: ×èÈûÏß³Ì²¢µÈ´ı
-	inline bool get(AVPacket* pPacket, bool block = true) {
-		bool ret = false;
+	//block: é˜»å¡çº¿ç¨‹å¹¶ç­‰å¾…
+	inline BOOL get(AVPacket* pPacket, bool block = true) {
+		BOOL ret = false;
 
 		SDL_LockMutex(mutex);
 
 		while (true) {
 			if (bExit) {
-				ret = false;
+				ret = QUEUE_WAITING;
 
 				break;
 			}
@@ -261,14 +272,9 @@ public:
 			}
 		}
 
-		SDL_CondSignal(condExit);
 		SDL_UnlockMutex(mutex);
 
 		return ret;
-	}
-
-	inline void stopBlock() {
-		SDL_CondSignal(cond);
 	}
 };
 #endif

@@ -1,6 +1,9 @@
 #pragma once
 
+#include <Shlwapi.h>
+
 #include <string>
+#include <string_view>
 
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
@@ -32,6 +35,13 @@
 #define GetExtUserData() MV->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
 
 #define TURNCATE_SHORT(v) ((short)(v) & 0x7FFF)
+
+constexpr auto CLEAR_MEMRANGE = 128;
+constexpr auto CLEAR_NUMTHRESHOLD = 50;
+
+// limit: 3.5 GB
+constexpr auto MAX_MEMORYLIMIT = 3 * 1024 + 256;
+constexpr auto DEFAULT_MEMORYLIMIT = 3 * 1024;
 
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
@@ -68,4 +78,92 @@ inline std::string to_byte_string(const std::wstring& input, UINT codePage = CP_
 	WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed, nullptr, nullptr);
 
 	return result;
+}
+
+inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
+	while (pStart[0] == L' ') {
+		pStart++;
+		length--;
+	}
+
+	while ((pStart + length - 1)[0] == L' ') {
+		length--;
+	}
+
+	return std::wstring_view(pStart, length);
+}
+
+inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
+	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
+}
+
+inline bool StringViewEqu(std::wstring_view& str, LPCWSTR pStr) {
+	auto length = wcslen(pStr);
+
+	if (length != str.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		if (str[i] != pStr[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+inline bool StringViewIEqu(std::wstring_view& str, LPCWSTR pStr) {
+	auto length = wcslen(pStr);
+
+	if (length != str.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		if (ChrCmpIW(str[i], pStr[i]) != 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+// MSBOX
+#include "StrNum.h"
+
+inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
+	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
+}
+
+// basic split
+#include <functional>
+
+inline void SplitStringCore(const std::wstring input, const wchar_t delimiter
+	, std::function<void(const std::wstring&)> callBack) {
+	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
+	size_t start = input.find_first_not_of(delimiter);
+	size_t end = start;
+
+	while (start != std::wstring::npos) {
+		end = input.find(delimiter, start);
+		callBack(input.substr(start, end - start));
+		start = input.find_first_not_of(delimiter, end);
+	}
+}
+
+template<typename T>
+inline std::vector<T> SplitString(const std::wstring input, const wchar_t delimiter
+	, std::function<T(const std::wstring&)> callBack) {
+	std::vector<T> resultList;
+
+	SplitStringCore(input, delimiter, [&](const std::wstring& item) {
+		resultList.emplace_back(callBack(item));
+		});
+
+	return resultList;
+}
+
+inline std::vector<std::wstring> SplitString(const std::wstring input, const wchar_t delimiter) {
+	return SplitString<std::wstring>(input, delimiter, [](const std::wstring& item) {return item; });
 }

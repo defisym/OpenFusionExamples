@@ -337,10 +337,17 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get FullScreen State",        IDMN_EXPRESSION_IFS
         MENUITEM SEPARATOR
+        POPUP "Memory"
+        BEGIN
+            MENUITEM "Get Total Physical Memory",        IDMN_EXPRESSION_GTPM
+            MENUITEM "Get Free Physical Memory",        IDMN_EXPRESSION_GFPM
+        END
+        MENUITEM SEPARATOR
         POPUP "Time"
         BEGIN
             MENUITEM "Get Current Time",        IDMN_EXPRESSION_GT
             MENUITEM "Get Total Play Time",        IDMN_EXPRESSION_GTPT
+            MENUITEM "Get Duration Time",        IDMN_EXPRESSION_GDT
         END
         MENUITEM SEPARATOR 
         POPUP "FileList"
@@ -348,6 +355,7 @@ BEGIN
             MENUITEM "Get FileList Size",      IDMN_EXPRESSION_GFLS  
             MENUITEM "Get FileList At",      IDMN_EXPRESSION_GFLA  
         END
+        MENUITEM "Get Full FileName", IDMN_EXPRESSION_GFFN
         MENUITEM SEPARATOR
         POPUP "Hash"        
         BEGIN
@@ -544,7 +552,7 @@ BEGIN
     M_ACTION_SMS_ON "Set MultiThread Save On"
     M_ACTION_SMS_OFF "Set MultiThread Save Off"
 
-    M_ACTION_WINDOW_BFA     "Capture Frame Area, Stretch to Width = %0, Height = %1,  SaveToClipboard = %2, SaveToFile = %3, FilePath %4"
+    M_ACTION_WINDOW_BFA     "Capture Frame Area, Stretch to Width = %0, Height = %1, SaveToClipboard = %2, SaveToFile = %3, FilePath %4"
     PARA_ACTION_WINDOW_BFA_WIDTH "Width"
     PARA_ACTION_WINDOW_BFA_HEIGHT "Heigth"
     PARA_ACTION_WINDOW_BFA_SAVETOCLIPBOARD "SaveToClipboard, 1 = Save, 0 = Don't Save"
@@ -649,9 +657,19 @@ END
 
 STRINGTABLE
 BEGIN
+    M_EXPRESSION_GTPM   "GetTotalPhysicalMemory ("
+    M_EXPRESSION_GFPM   "GetFreePhysicalMemory ("
+END
+
+STRINGTABLE
+BEGIN
     M_EXPRESSION_GT "CurrentTime$ ("
-    M_EXPRESSION_GTPT "TotalPlayTime$ ("
+
+    M_EXPRESSION_GTPT "TotalPlayTime$ ("    
     PARA_EXPRESSION_GTPT "TotalPlayFrame"
+
+    M_EXPRESSION_GDT "DurationTime$ ("
+    PARA_EXPRESSION_GDT "Duration (ms)"
 END
 
 STRINGTABLE
@@ -659,6 +677,8 @@ BEGIN
     M_EXPRESSION_GFLS "GetFileListSize ("
     M_EXPRESSION_GFLA "GetFileListAt$ ("
     PARA_EXPRESSION_GFLA "Position"
+
+    M_EXPRESSION_GFFN "GetFullFileName$ ("        
 END
 
 STRINGTABLE

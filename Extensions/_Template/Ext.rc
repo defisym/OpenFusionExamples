@@ -49,12 +49,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Defisym\0"
-            VALUE "FileDescription", "V2Template32 Object\0"
+            VALUE "FileDescription", "Template\0"
             VALUE "FileVersion", "0.00\0"
-            VALUE "InternalName", "V2TEMPLATE32\0"
-            VALUE "LegalCopyright", "Copyright 2022 Defisym\0"
+            VALUE "InternalName", "Template\0"
+            VALUE "LegalCopyright", "Copyright 2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "V2TEMPLATE32.mfx\0"
+            VALUE "OriginalFilename", "Template.mfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "\0"
             VALUE "ProductVersion", "1, 0, 0, 0\0"
@@ -115,7 +115,9 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -129,7 +131,9 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -143,9 +147,11 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
         MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
         MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -213,14 +219,14 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     KPX_MARK                "MF2"
-    KPX_NAME                "My New Extension"
+    KPX_NAME                "Template"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDST_OBJNAME            "My New Extension"
+    IDST_OBJNAME            "Template"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022 Defisym"
+    IDST_COPYRIGHT          "Copyright 2023 Defisym"
     IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
     IDST_HTTP               "https://twitter.com/defisym"
 END

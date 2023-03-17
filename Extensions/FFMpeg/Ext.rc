@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "FFMpeg\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "FFMpeg\0"
-            VALUE "LegalCopyright", "Copyright 2022 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2022~2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "FFMpeg.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -150,7 +150,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Volume",              IDMN_ACTION_SV
         MENUITEM "Set Loop",                IDMN_ACTION_SL
-        MENUITEM "Set Audio Tempo",         IDMN_ACTION_SAT
+        MENUITEM "Set Force No Audio",         IDMN_ACTION_SFNA
+        MENUITEM "Set Audio Tempo (Playback Rate)",         IDMN_ACTION_SAT        
         MENUITEM "Set Accurate Seek",       IDMN_ACTION_SAS
         MENUITEM "Set Video Position",      IDMN_ACTION_SP
         MENUITEM "Set Video Position With Flag", IDMN_ACTION_SPWF
@@ -182,7 +183,7 @@ BEGIN
         MENUITEM "Get Video Duration",  IDMN_EXPRESSION_GVD	
         MENUITEM SEPARATOR        
         MENUITEM "Get Volume",          IDMN_EXPRESSION_GV	
-        MENUITEM "Get Audio Tempo",     IDMN_EXPRESSION_GAT
+        MENUITEM "Get Audio Tempo (Playback Rate)",     IDMN_EXPRESSION_GAT
         MENUITEM SEPARATOR
         MENUITEM "Get Video Open State",          IDMN_EXPRESSION_GVO		
         MENUITEM "Get Video Play State",          IDMN_EXPRESSION_GVPLAY	
@@ -270,7 +271,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "FFMpeg"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022 Defisym"
+    IDST_COPYRIGHT          "Copyright 2022~2023 Defisym"
     IDST_COMMENT            "FFMpeg"
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -314,6 +315,9 @@ COMBO_AV_HWDEVICE_TYPE_OPENCL                 "OPENCL"
 COMBO_AV_HWDEVICE_TYPE_MEDIACODEC             "MEDIACODEC"
 COMBO_AV_HWDEVICE_TYPE_VULKAN                 "VULKAN"
 
+IDS_PROP_FORCENOAUDIO_CHECK            "Force No Audio"
+IDS_PROP_FORCENOAUDIO_CHECK_INFO       "Don't play audio and sync with external clock"
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -346,7 +350,9 @@ BEGIN
     
     M_ACTION_STRETCH	       "Set Size to Width = %0, Height = %1"
 
-    M_ACTION_SAT		       "Set Autio Tempo to %0"
+    M_ACTION_SAT		       "Set Audio Tempo to %0"
+    
+    M_ACTION_SFNA		       "Set Force No Audio to %0"
 
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
@@ -354,7 +360,7 @@ BEGIN
     M_LOOP  	               "Loop"
     M_POSITION                 "Position (ms)"
     M_POSITION_WF              "Position, Depend on flag"
-    M_FLAGS                    "Seek Flag"
+    M_FLAGS                    "Seek Flag, 1 = Backward, 2 = Byte, 4 = Any, 8 = Frame"
     M_AUDIOQUEUESIZE           "Audio Queue Size"
     M_VIDEOQUEUESIZE           "Video Queue Size"
     M_ACCURATESEEK             "Accurate Seek"
@@ -362,6 +368,7 @@ BEGIN
     M_WIDTH                    "Width"
     M_HEIGHT                   "Height"
     M_ATEMPO                   "Audio Tempo"
+    M_FORCENOAUDIO             "Force No Audio, 0 = Disable"
 END
 
 STRINGTABLE DISCARDABLE 

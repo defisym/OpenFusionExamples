@@ -112,7 +112,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->isLib = edPtr->isLib;
 	rdPtr->memoryLimit = edPtr->memoryLimit;
 	rdPtr->autoClean = edPtr->autoClean;
-	rdPtr->defaultHotSpot = (HotSpotPos)edPtr->hotSpotComboID;
+	rdPtr->hotSpotPos = (HotSpotPos)edPtr->hotSpotComboID;
 	
 	rdPtr->HWA = edPtr->HWA;
 
@@ -130,6 +130,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->img = nullptr;
 	rdPtr->src = nullptr;
 
+	// to create new surface, don't change
 	rdPtr->fromLib = true;
 
 	rdPtr->zoomScale = { 1.0,1.0 };
@@ -159,19 +160,21 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		}
 #endif
 		pData->pD3DU = new D3DUtilities;
-#endif
 
 		//auto& Desc = rdPtr->pD3DU->GetDesc();
 		//MSGBOX(Desc.Description);
 
 		//rdPtr->pD3DU->UpdateVideoMemoryInfo();
 		//auto& info = rdPtr->pD3DU->GetLocalVideoMemoryInfo();
+#endif
 
 		//init specific
 		pData->pLib = new SurfaceLib;
 		pData->pCount = new RefCount;
 		pData->pKeepList = new KeepList;
 		pData->pFileListMap = new FileListMap;
+
+		pData->bDX11 = D3D11(rdPtr);
 
 		//Update pointer
 		SetExtUserData(pData);
@@ -229,7 +232,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		}
 
 		if (!rdPtr->fromLib) {
-			delete rdPtr->src;
+			ReleaseNonFromLib(rdPtr);
 		}
 
 		delete rdPtr->trans;
@@ -336,6 +339,8 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
 
+		HandleFlip(rdPtr);
+
 		LPSURFACE pDisplay = rdPtr->src;
 		
 		std::unique_ptr<cSurface> pOffset = nullptr;
@@ -350,7 +355,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		DWORD flags = 0;
 
 		if (rdPtr->stretchQuality) {
-			flags |= BLTF_ANTIA;
+			flags |= STRF_RESAMPLE;
 		}
 
 		pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,

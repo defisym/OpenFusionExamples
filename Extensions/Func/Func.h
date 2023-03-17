@@ -1,6 +1,65 @@
 #ifndef _FUNC_
 #define _FUNC_
 
+inline void Assert(long value, const std::wstring& msg) {
+#ifndef RUN_ONLY
+	if (!value) {
+		auto ret = MessageBox(NULL, StrEqu(msg.c_str(), Empty_Str)
+			? L"Assert Failed"
+			: msg.c_str()
+			, L"Assert Failed"
+			, MB_ABORTRETRYIGNORE);
+
+		if (ret == IDABORT) {
+			exit(0);
+		}
+	}
+#endif // !RUN_ONLY
+}
+
+inline Data& GetReturn(LPRDATA rdPtr, size_t Pos) {
+#ifndef RUN_ONLY
+	try {
+		return rdPtr->FuncReturn->at(Pos);
+	}
+	catch (std::out_of_range) {
+		std::wstring msg = *rdPtr->pPreviousFuncName;
+
+		if (rdPtr->FuncReturn->empty()) {
+			msg += L" Func Has No Return";
+		}
+		else {
+			msg += L" Func Has No Return At " + _itos(Pos);
+		}
+
+		Assert(false, msg);
+
+		return rdPtr->defaultData;
+	}
+#else
+	if (Pos >= rdPtr->FuncReturn->size()) {
+		return rdPtr->defaultData;
+	}
+	else {
+		return rdPtr->FuncReturn->at(Pos);
+	}
+#endif // !RUN_ONLY
+}
+
+template<typename Type>
+inline long NotInFuncError() {
+#ifndef RUN_ONLY
+	Assert(false, L"Not In Func");
+#endif
+
+	if (std::is_same<Type, std::wstring()>::value) {
+		return (long)Default_Str;
+	}
+	else {
+		return -1;
+	}
+}
+
 //convert data
 inline void Data_StoV(Data& Data) {
 	if (Data.Type == DataType::STRING && !Data.Converted) {
@@ -59,7 +118,7 @@ inline void UpdateReturn(LPRDATA rdPtr, std::wstring& Param) {
 }
 
 inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, std::wstring& funcName) {
-	auto& it = rdPtr->RecursiveIndex->find(funcName);
+	auto it = rdPtr->RecursiveIndex->find(funcName);
 
 	std::wstring suffix = it == rdPtr->RecursiveIndex->end() ? _itos(0) : _itos(it->second);
 
@@ -70,6 +129,7 @@ inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, std::wstring& func
 
 inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Param) {
 	rdPtr->FuncNameStack->emplace_back(FuncName);
+	rdPtr->FuncRawParamStack->emplace_back(Param);
 
 	rdPtr->FuncParamStack->emplace_back();
 	UpdateParam(rdPtr, Param);
@@ -79,6 +139,8 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 	(*rdPtr->RecursiveIndex)[FuncName] += 1;
 
 	//Call Func;
+	*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
+
 	if (rdPtr->CompatibleMode) {
 		//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
 		LPRH pRh = rdPtr->rHo.hoAdRunHeader;
@@ -91,6 +153,8 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 	}	
 
 	rdPtr->FuncNameStack->pop_back();
+	rdPtr->FuncRawParamStack->pop_back();
+	
 	rdPtr->FuncParamStack->pop_back();	
 
 	rdPtr->FuncTempParam->erase(GetFuncNameWithRecursiveID(FuncName));

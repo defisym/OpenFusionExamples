@@ -6,7 +6,7 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION					0
+#define	CND_CONDITION_OGOIC				0
 
 #define	CND_LAST						1
 
@@ -39,7 +39,15 @@
 
 #define	ACT_ACTION_SVO			    	17
 
-#define	ACT_LAST						18
+#define	ACT_ACTION_LO			    	18
+#define	ACT_ACTION_SOKV			    	19
+
+#define	ACT_ACTION_SFF			    	20
+
+#define	ACT_ACTION_FRD			    	21
+#define	ACT_ACTION_FRDGI		    	22
+
+#define	ACT_LAST						23
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -77,7 +85,20 @@
 
 #define EXP_EXPRESSION_GVO					23
 
-#define	EXP_LAST                    		24
+#define	EXP_EXPRESSION_GFS			    	24
+#define	EXP_EXPRESSION_GPS			    	25
+
+#define	EXP_EXPRESSION_GNCO			    	26
+
+#define	EXP_EXPRESSION_GHS			    	27
+#define	EXP_EXPRESSION_GIPN			    	28
+#define	EXP_EXPRESSION_GIPS			    	29
+
+#define	EXP_EXPRESSION_GFF			    	30
+
+#define	EXP_EXPRESSION_GRSBFSL		    	31
+
+#define	EXP_LAST                    		32
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -134,9 +155,12 @@ typedef struct tagEDATA_V1
 
 	bool bIConResample;
 
-	short unused_2;
+	size_t filterFlags;
 
-	int buffer[15];
+	bool bIConGlobal;
+	bool bIConForceUpdate;
+
+	int buffer[13];
 	
 	wchar_t	pText;		// Text
 
@@ -221,7 +245,15 @@ typedef struct tagRDATA
 
 	CharPos charPos;
 
-	LPRO pIConActive;
+	LPRO pIConObject;
+	void* pIConParamParser;
+	
+	std::wstring* pIConItName;
+	void* pIConParams;
+
+	bool bOverWrite;
+	DWORD iconLibKey;
+	LPSURFACE pIConLibValue;
 
 	GlobalData* pData;
 
@@ -231,6 +263,13 @@ typedef struct tagRDATA
 	float iConScale;
 
 	bool bIConResample;
+
+	size_t filterFlags;
+	
+	bool bIConGlobal;
+	bool bIConForceUpdate;
+
+	bool bIConNeedUpdate;
 
 	std::wstring* pExpRet;
 

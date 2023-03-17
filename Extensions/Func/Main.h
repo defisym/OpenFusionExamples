@@ -23,7 +23,14 @@
 #define	CND_CONDITION_OITO			9
 #define	CND_CONDITION_SA			10
 
-#define	CND_LAST					11
+#define	CND_CONDITION_IE			11
+#define	CND_CONDITION_IS			12
+
+#define	CND_CONDITION_OILHO			13
+
+#define	CND_CONDITION_GHTP 			14
+
+#define	CND_LAST					15
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -59,8 +66,16 @@
 
 #define	ACT_ACTION_ASSERT			18
 #define	ACT_ACTION_MSGBOX			19
+#define	ACT_ACTION_TOAST			20
+#define	ACT_ACTION_TOASTFLAG		21
 
-#define	ACT_LAST					20
+#define	ACT_ACTION_SOA				22
+#define	ACT_ACTION_SOABF			23
+
+#define	ACT_ACTION_SORC				24
+#define	ACT_ACTION_SORCBF			25
+
+#define	ACT_LAST					26
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -109,7 +124,11 @@
 #define EXP_EXPRESSION_LV			28
 #define EXP_EXPRESSION_LOEV			29
 
-#define	EXP_LAST                    30
+#define EXP_EXPRESSION_GOA			30
+
+#define EXP_EXPRESSION_GRP			31
+
+#define	EXP_LAST                    32
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -159,6 +178,7 @@ typedef struct tagRDATA
 	bool CompatibleMode;
 
 	LPVEC FuncNameStack;
+	LPVEC FuncRawParamStack;
 
 	LPPARAMSTACK FuncParamStack;
 	LPTPARAM FuncTempParam;
@@ -175,9 +195,19 @@ typedef struct tagRDATA
 	//LPSTRING OutPut;
 	LPTSTR OutPut = nullptr;
 
+	std::wstring* pPreviousFuncName = nullptr;
+	Data defaultData;
+
 	ObjectSelection* pSelect;
 	std::wstring* pOnItObjName;
 	LPRO pObject;
+
+#ifdef _ENABLE_TOAST
+	WinToastHelper* pToast;
+
+	int toast_ActionIndex;
+	int toast_DismissalReason;
+#endif
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

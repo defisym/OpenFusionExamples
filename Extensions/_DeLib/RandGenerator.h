@@ -2,18 +2,16 @@
 
 #include <random>
 
-using namespace std;
-
 template <class T>
 concept NUMBER = std::is_arithmetic_v<T>;
 
 template <NUMBER T>
 class RandGenerator {
 private:
-	random_device rd;
+	std::random_device rd;
 	
 	//default_random_engine eng(rd());
-	mt19937 eng{ rd() };
+	std::mt19937 eng{ rd() };
 
 	std::uniform_int_distribution<T>* uniform_dist;
 

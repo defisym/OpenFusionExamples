@@ -28,7 +28,8 @@
 #include	"Surface.h"
 
 // My lib
-#include	"FindTheWay.h"
+#include	"GeneralDefinition.h"
+#include	"Definition.h"
 
 // Specific to this cox
 #include	"resource.h"
@@ -36,7 +37,10 @@
 #include	"TigsExt.hpp"
 
 // My header
-//#include	"Func.h"
+#include	"Fusion.h"
+#include	"FusionUtilities.h"
+
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

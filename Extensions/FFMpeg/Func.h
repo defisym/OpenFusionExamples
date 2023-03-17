@@ -2,6 +2,10 @@
 
 #include <functional>
 
+inline void CleanCache(LPRDATA rdPtr, bool forceClean = false);
+
+//-----------------------------
+
 inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->bStretch) {
 		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / width;
@@ -16,21 +20,14 @@ inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		rdPtr->bChanged = true;
 		rdPtr->rc.rcChanged = true;
 
-		//rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
-		//rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
-
-		rdPtr->rHo.hoImgXSpot = 0;
-		rdPtr->rHo.hoImgYSpot = 0;
-
-		//rdPtr->rHo.hoImgWidth = rdPtr->pMemSf->GetWidth();
-		//rdPtr->rHo.hoImgHeight = rdPtr->pMemSf->GetHeight();
-
-		rdPtr->rHo.hoImgWidth = rdPtr->swidth;
-		rdPtr->rHo.hoImgHeight = rdPtr->sheight;
-
-		rdPtr->bChanged = true;
+		UpdateHoImgInfo(rdPtr
+			, rdPtr->swidth, rdPtr->sheight
+			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleX
+			, HotSpotPos::LT, 0, 0
+			, 0);
 	}
 }
 
@@ -56,6 +53,10 @@ inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 }
 
 inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf, bool bPm) {
+	if (pData == nullptr || pMemSf == nullptr) {
+		return;
+	}
+
 	auto sfCoef = GetSfCoef(pMemSf);
 
 	auto lineSz = sfCoef.pitch;	
@@ -225,12 +226,27 @@ inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstr
 		}
 	}
 
+	bool bRetry = false;
+
 	auto pEncrypt = new Encryption;
 	pEncrypt->GenerateKey(key.c_str());
 
-	pEncrypt->OpenFile(filePath.c_str());
-	pEncrypt->Decrypt();
+retry:
+	try {
+		//pEncrypt->DecryptFile(filePath.c_str());
+		pEncrypt->DecryptFileDirectly(filePath.c_str());
+	}
+	catch (std::bad_alloc& e) {
+		if (rdPtr->bCache && !bRetry) {
+			bRetry = true;
+			CleanCache(rdPtr, true);
 
+			goto retry;
+		}
+
+		throw e;
+	}
+	
 	if (rdPtr->bCache) {
 		pMemVideoLib->PutItem(filePath, pEncrypt);
 	}
@@ -252,6 +268,10 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	rdPtr->bPlay = false;
 
 	*rdPtr->pFilePath = L"";
+}
+
+inline int GetFlag(LPRDATA rdPtr) {
+	return rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
 }
 
 inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, DWORD flag = FFMpegFlag_Default, size_t ms = 0) {
@@ -297,4 +317,69 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		*rdPtr->pFilePath = L"";
 	}
+}
+
+inline auto GetRefList(LPRDATA rdPtr) {
+	std::vector<const uint8_t*> pBufs;
+	pBufs.reserve(rdPtr->pData->pMemVideoLib->data.size());
+
+	for (auto& ppFFMpeg : rdPtr->pData->ppFFMpegs_record) {
+		auto pFFMpeg = *ppFFMpeg;
+
+		if (!pFFMpeg) {
+			continue;
+		}
+
+		auto pBufSrc = pFFMpeg->get_memBufSrc();
+
+		pBufs.emplace_back(pBufSrc);
+	}
+
+	return pBufs;
+}
+
+inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs) {
+	std::vector<const std::wstring*> toRemove;
+	toRemove.reserve(rdPtr->pData->pMemVideoLib->data.size() - pBufs.size());
+
+	for (auto& pair : rdPtr->pData->pMemVideoLib->data) {
+		auto it = std::find(pBufs.begin(), pBufs.end(), pair.second->GetOutputData());
+
+		// not referred
+		if (it == pBufs.end()) {
+			toRemove.emplace_back(&pair.first);
+		}
+	}
+
+	return toRemove;
+}
+
+inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
+	if (!rdPtr->bCache) {
+		return;
+	}
+
+	auto ExceedMemLimit = [](size_t memLimit = DEFAULT_MEMORYLIMIT) {
+		return memLimit <= GetProcessMemoryUsageMB();
+	};
+
+	if (!forceClean && !ExceedMemLimit()) {
+		return;
+	}
+
+	auto pBufs = GetRefList(rdPtr);
+	auto  toRemove = GetToRemove(rdPtr, pBufs);
+
+	auto curLimit = GetProcessMemoryUsageMB();
+	auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;
+
+	for (auto& pStr : toRemove) {
+		if (!ExceedMemLimit(limit)) {
+			break;
+		}
+
+		rdPtr->pData->pMemVideoLib->EraseItem(*pStr);
+	}
+
+	return;
 }

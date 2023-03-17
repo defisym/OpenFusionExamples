@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "Func\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "Func\0"
-            VALUE "LegalCopyright", "Copyright 2021~2022 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2021~2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Func.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -116,6 +116,11 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "In Editor", IDMN_CONDITION_IE
+        MENUITEM "In Sub App", IDMN_CONDITION_IS
+        MENUITEM SEPARATOR
+        MENUITEM "OIL Has Object", IDMN_CONDITION_OILHO
+        MENUITEM SEPARATOR
         MENUITEM "On Func", IDMN_CONDITION_OF
         MENUITEM SEPARATOR                
         MENUITEM "On Iterate Object", IDMN_CONDITION_OITO
@@ -135,6 +140,7 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Temp Param"
             BEGIN                
+                MENUITEM "Global Has Temp Param", IDMN_CONDITION_GHTP
                 MENUITEM "Func Has Temp Param", IDMN_CONDITION_FHTP
                 MENUITEM "Curernt Func Has Temp Param", IDMN_CONDITION_CFHTP                
             END
@@ -209,8 +215,21 @@ BEGIN
             MENUITEM "Pass Prevous Func's Return (string)", IDMN_ACTION_PASSRETV            
         END
         MENUITEM SEPARATOR
-        MENUITEM "Assert", IDMN_ACTION_ASSERT           
-        MENUITEM "MsgBox", IDMN_ACTION_MSGBOX
+        POPUP "Info"
+        BEGIN       
+            MENUITEM "Assert", IDMN_ACTION_ASSERT           
+            MENUITEM "MsgBox", IDMN_ACTION_MSGBOX
+#ifdef _ENABLE_TOAST
+            MENUITEM "Toast", IDMN_ACTION_TOAST
+            MENUITEM SEPARATOR
+            MENUITEM "Set Toast Flag", IDMN_ACTION_TOASTFLAG
+#endif
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Set Object Alpha", IDMN_ACTION_SOA
+        MENUITEM "Set Object Alpha By Fixed", IDMN_ACTION_SOABF
+        MENUITEM "Set Object RGB Coef", IDMN_ACTION_SORC
+        MENUITEM "Set Object RGB Coef By Fixed", IDMN_ACTION_SORCBF
         MENUITEM SEPARATOR
     END
 END
@@ -240,6 +259,8 @@ BEGIN
         MENUITEM SEPARATOR        
         POPUP "Get Param"
         BEGIN
+            MENUITEM "Get Current Func's Raw Param", IDMN_EXPRESSION_GRP
+            MENUITEM SEPARATOR
             MENUITEM "Get Current Func's Param (return value)", IDMN_EXPRESSION_GVP
             MENUITEM "Get Current Func's Param (return string)", IDMN_EXPRESSION_GSP
             MENUITEM SEPARATOR
@@ -293,6 +314,8 @@ BEGIN
             MENUITEM "Or",IDMN_EXPRESSION_OR
             MENUITEM "Xor",IDMN_EXPRESSION_XOR
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Get Object Alpha", IDMN_EXPRESSION_GOA
         MENUITEM SEPARATOR
         MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN        
         MENUITEM SEPARATOR
@@ -370,7 +393,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Func"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021~2022 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021~2023 Defisym"
     IDST_COMMENT            "Func Object"
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -406,6 +429,14 @@ BEGIN
     
     M_ACTION_ASSERT         "Assert %0, Failed Message = %1"
     M_ACTION_MSGBOX         "if %0, Show Message = %1"
+    M_ACTION_TOAST          "if %0, Show Toast, Title = %1, Content = %2"
+    M_ACTION_TOASTFLAG      "Set Toast Flag to %0"
+    
+    M_ACTION_SOA            "Set Object %0 Alpha to %1"
+    M_ACTION_SOABF          "Set Object %0 Alpha to %1"
+
+    M_ACTION_SORC           "Set Object %0 RGB Coef to %1"
+    M_ACTION_SORCBF         "Set Object %0 RGB Coef to %1"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -419,11 +450,22 @@ BEGIN
     M_OBJECT                "Select Object"
     M_ITNAME                "Iterate Name"
     
+    M_ACT_TITLE             "Title"
     M_ACT_MSG               "The message to be displayed"
+    
+    M_ACT_TOASTFLAG         "Toast Flags"
+
+    M_ACT_ALPHA             "Alpha"
+    M_ACT_RGBCOEF           "RGB Coef"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_CONDITION_IE          "%o In Editor"
+    M_CONDITION_IS          "%o In Sub App"
+    
+    M_CONDITION_OILHO       "%o OIL Has Object %0"
+
     M_CONDITION_OF          "%o On Func %0"
     
     M_CONDITION_OITO        "%o On Iterate Object %0, Iterate Name %1"
@@ -431,6 +473,7 @@ BEGIN
     
     M_CONDITION_FHRA        "%o Previous Func Has Return At %0"
         
+    M_CONDITION_GHTP        "%o Global Has Temp Param %0"
     M_CONDITION_FHTP        "%o Func %0 Has Temp Param %1"
     M_CONDITION_CFHTP       "%o Curernt Func Has Temp Param %0"
 
@@ -444,6 +487,7 @@ BEGIN
     M_CONDITION_FPAIN       "%o Curernt Func's Param At %0 is Number"
 
     M_CND_FUNCNAME          "Func Name"
+    M_CND_OBJNAME           "Object Name"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -453,6 +497,8 @@ BEGIN
     
     M_EXPRESSION_GVP            "GetParam("
     M_EXPRESSION_GSP            "GetParam$("
+    
+    M_EXPRESSION_GRP            "GetRawParam$("
 
     M_EXPRESSION_GVGP           "GetGlobalTempParam("
     M_EXPRESSION_GSGP           "GetGlobalTempParam$("
@@ -502,8 +548,10 @@ BEGIN
 
     M_EXP_A			            "A"
     M_EXP_B			            "B"
-    M_EXP_CTB			        "Value"
-    M_EXP_NEG			        "Value"
+    M_EXP_CTB			        "Value Cast to Bool"
+    M_EXP_NEG			        "Value to be Negated"
+
+    M_EXPRESSION_GOA             "ObjectAlpha ("
 END
 
 STRINGTABLE

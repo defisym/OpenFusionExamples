@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 #include	"ccxhdr.h"
 #include	"Surface.h"
@@ -7,12 +7,35 @@
 #include	"ImgFlt.h"
 #include	"CfcFile.h"
 
+#include	"d3d11surfinfo.h"
+#include	"D3dSurfInfo.h"
+
 #include	<map>
 #include	<vector>
 #include	<thread>
 #include	<functional>
 
-inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle = NULL);
+inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
+inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer);
+
+struct SfCoef {
+	BYTE* pData = nullptr;
+	int pitch = 0;
+	int byte = 0;
+	int sz = 0;
+
+	BYTE* pAlphaData = nullptr;
+	int alphaPitch = 0;
+	int alphaByte = 0;
+	int alphaSz = 0;
+};
+
+inline SfCoef GetSfCoef(LPSURFACE pSf);
+inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef);
+
+inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
 
 //-----------------------------
 
@@ -70,6 +93,10 @@ inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 		//Return the float without conversion
 		return *((long*)&Val);
 	}
+}
+
+inline long ReturnFloat(LPRDATA rdPtr, double Val) {
+	return ReturnFloat(rdPtr, (float)Val);
 }
 
 #define ReturnFloat(Val) ReturnFloat(rdPtr, Val)
@@ -187,7 +214,7 @@ struct RGBA {
 	double a;
 };
 
-//RGBA ˝÷µ∏¸’˝
+//RGBAÊï∞ÂÄºÊõ¥Ê≠£
 inline double Range(double A) {
 	return max(0.0, min(255.0, A));
 }
@@ -201,7 +228,7 @@ inline RGBA Range(RGBA A) {
 	return A;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ +
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ +
 inline RGBA operator +(RGBA A, RGBA B) {
 	A.r += B.r;
 	A.g += B.g;
@@ -211,7 +238,7 @@ inline RGBA operator +(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ -
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ -
 inline RGBA operator -(RGBA A, RGBA B) {
 	A.r -= B.r;
 	A.g -= B.g;
@@ -221,17 +248,17 @@ inline RGBA operator -(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ +=
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ +=
 inline RGBA operator +=(RGBA A, RGBA B) {
 	return A + B;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ -=
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ -=
 inline RGBA operator -=(RGBA A, RGBA B) {
 	return A - B;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ *
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ *
 inline RGBA operator *(RGBA A, double B) {
 	A.r = A.r * B;
 	A.g = A.g * B;
@@ -241,7 +268,7 @@ inline RGBA operator *(RGBA A, double B) {
 	return A;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ /
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ /
 inline RGBA operator /(RGBA A, double B) {
 	A.r = A.r / B;
 	A.g = A.g / B;
@@ -251,17 +278,17 @@ inline RGBA operator /(RGBA A, double B) {
 	return A;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ *
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ *
 inline RGBA operator *(double B, RGBA A) {
 	return A * B;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ /
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ /
 inline RGBA operator /(double B, RGBA A) {
 	return A / B;
 }
 
-//RGBA‘ÀÀ„∑˚÷ÿ‘ÿ >>
+//RGBAËøêÁÆóÁ¨¶ÈáçËΩΩ >>
 inline RGBA operator >>(RGBA A, int B) {
 	A.r = (double)((int)A.r >> B);
 	A.g = (double)((int)A.g >> B);
@@ -272,20 +299,8 @@ inline RGBA operator >>(RGBA A, int B) {
 }
 
 //Create surface
-inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height, int type) {
-	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-	int sfDrv = wSurf->GetDriver();
-
-	LPSURFACE proto = nullptr;
-	GetSurfacePrototype(&proto, depth, type, sfDrv);
-
-	cSurface* hwa = new cSurface;
-	hwa->Create(width, height, proto);
-
-	return hwa;
-}
-
-inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, int driver) {
+inline LPSURFACE CreateHWASurface(int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
@@ -293,6 +308,30 @@ inline LPSURFACE CreateHWASurface(int depth, int width, int height, int type, in
 	hwa->Create(width, height, proto);
 
 	return hwa;
+}
+
+inline void CreateHWASurface(LPSURFACE pSf, int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
+	LPSURFACE proto = nullptr;
+	GetSurfacePrototype(&proto, depth, type, driver);
+
+	pSf->Create(width, height, proto);
+}
+
+inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	int sfDrv = wSurf->GetDriver();
+
+	return CreateHWASurface(depth, width, height, type, sfDrv);
+}
+
+inline void CreateHWASurface(LPRDATA rdPtr, LPSURFACE pSf, int depth, int width, int height
+	, int type = ST_HWA_ROMTEXTURE) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	int sfDrv = wSurf->GetDriver();
+
+	CreateHWASurface(pSf, depth, width, height, type, sfDrv);
 }
 
 inline LPSURFACE CreateSurface(int depth, int width, int height) {
@@ -305,11 +344,24 @@ inline LPSURFACE CreateSurface(int depth, int width, int height) {
 	return sur;
 }
 
-inline void CreateBlankSurface(LPSURFACE Src) {
-	// failed to load, display blank
+inline void CreateSurface(LPSURFACE pSf, int depth, int width, int height) {
 	LPSURFACE proto = nullptr;
-	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-	Src->Create(4, 4, proto);
+	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
+
+	pSf->Create(width, height, proto);
+}
+
+// failed to load, display blank
+inline LPSURFACE CreateBlankSurface() {
+	auto pSf = CreateSurface(24, 4, 4);
+	pSf->CreateAlpha();
+
+	return pSf;
+}
+
+// failed to load, display blank
+inline void CreateBlankSurface(LPSURFACE Src) {
+	CreateSurface(Src, 24, 4, 4);
 	Src->CreateAlpha();
 }
 
@@ -320,9 +372,51 @@ inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
 	return sur;
 }
 
+//Get info
+inline D3D11SURFINFO GetSurfaceInfo(LPSURFACE pSf) {
+	D3D11SURFINFO info = { 0 };
+	auto pInfo = &info;
+
+	info.m_lSize= sizeof(D3D11SURFINFO);
+	auto ret = pSf->GetDriverInfo(&info);
+
+	return info;
+}
+
+inline auto GetD3DInfo(LPRDATA rdPtr) {
+	auto pSf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+	auto info = GetSurfaceInfo(pSf);
+
+	return info;
+}
+
+inline auto GetD3DDevice(LPRDATA rdPtr) {
+	return GetD3DInfo(rdPtr).m_pD3D11Device;
+}
+
 //Convert to HWA
 inline bool IsHWA(LPSURFACE Src) {
 	return Src->GetType() >= ST_HWA_SCREEN;
+}
+
+inline bool IsOpaque(LPSURFACE pSf) {
+	bool bRet = true;
+
+	ProcessBitmap(pSf, [&](const LPSURFACE pBitmap) {
+		auto coef = GetSfCoef(pSf);
+
+		for (int i = 0; i < coef.alphaSz; i++) {
+			if (coef.pAlphaData[i] != 255) {
+				bRet = false;
+
+				break;
+			}
+		}
+
+		ReleaseSfCoef(pSf, coef);
+		});
+
+	return bRet;
 }
 
 inline bool IsTransparent(LPSURFACE pSf) {
@@ -352,7 +446,29 @@ inline BOOL GetTransparent(LPSURFACE pSf) {
 	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
 }
 
-inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
+inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
+	return IsHWA(Src) 
+	? Src 
+	: CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
+}
+
+inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
+	if (IsHWA(Src)) {
+		return;
+	}
+
+	auto pBitmap = Src;
+	Src = ConvertHWATarget(rdPtr, Src);
+	delete pBitmap;
+}
+
+#define _NO_REF
+
+#ifdef _NO_REF
+#else
+#endif // _NO_REF
+
+inline LPSURFACE ConvertBitmap(LPSURFACE pOldSf) {
 	if (!IsHWA(pOldSf)) {
 		return pOldSf;
 	}
@@ -368,8 +484,8 @@ inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
 	return pMemSf;
 }
 
-inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
-	return IsHWA(Src) ? Src : CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
+inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
+	return ConvertBitmap(pOldSf);
 }
 
 inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
@@ -388,16 +504,50 @@ inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
 	return hwa;
 }
 
-inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
-	auto pBitmap = Src;
-	Src = ConvertHWATarget(rdPtr, Src);
-	delete pBitmap;
+inline void ConvertToBitmap(LPRDATA rdPtr, LPSURFACE& pOldSf) {
+	if (!IsHWA(pOldSf)) {
+		return;
+	}
+
+	auto pHWA = pOldSf;
+	pOldSf = ConvertBitmap(rdPtr, pOldSf);	
+	delete pHWA;
 }
 
 inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src) {
+	if (IsHWA(Src)) {
+		return;
+	}
+
 	auto pBitmap = Src;
 	Src = ConvertHWATexture(rdPtr, Src);
 	delete pBitmap;
+}
+
+inline void ConvertToBitmap_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf) {
+	if (!IsHWA(pOldSf)) {
+		return;
+	}
+
+	auto pBitmap = ConvertBitmap(rdPtr, pOldSf);
+	CreateSurface(pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
+
+	pBitmap->Blit(*pOldSf);
+
+	delete pBitmap;
+}
+
+inline void ConvertToHWATexture_NRef(LPRDATA rdPtr,const LPSURFACE pOldSf) {
+	if (IsHWA(pOldSf)) {
+		return;
+	}
+
+	auto pHWA = ConvertHWATexture(rdPtr, pOldSf);
+	CreateHWASurface(rdPtr, pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight(), ST_HWA_ROMTEXTURE);
+
+	pHWA->Blit(*pOldSf);
+
+	delete pHWA;
 }
 
 inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
@@ -415,7 +565,7 @@ inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
 
 //Stretch Surface
 inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {	
-	Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+	auto ret = Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
 
 	return;
 }
@@ -499,7 +649,7 @@ inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = tr
 
 //Get Ext's FilterName
 
-//÷∏’ÎMap–Ë“™ π”√◊‘∂®“Â±»Ωœ
+//ÊåáÈíàMapÈúÄË¶Å‰ΩøÁî®Ëá™ÂÆö‰πâÊØîËæÉ
 struct LPWSTR_Compare
 {
 	bool operator()(LPCWSTR l, LPCWSTR r)  const noexcept { return (wcscmp(l, r) < 0); };
@@ -516,7 +666,7 @@ inline LPCWSTR GetFilterName(LPCWSTR Name, LPCWSTR DefaultFilterName = nullptr) 
 		return Str;
 	};
 
-	//≥£¡øª·±ª∑≈»Î»´æ÷±‰¡ø«¯
+	//Â∏∏Èáè‰ºöË¢´ÊîæÂÖ•ÂÖ®Â±ÄÂèòÈáèÂå∫
 	const std::map<LPCWSTR, LPCWSTR, LPWSTR_Compare> ExtList{
 		{_T(".png"),_T("Portable Network Graphics")},
 		{_T(".tga"),_T("Targa Bitmap")},
@@ -612,18 +762,30 @@ inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle) {
 	}
 }
 
+inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle, bool release) {
+	_SavetoClipBoard(Src, release, Handle);
+}
+
 //Save to File
-inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release, LPCWSTR DefaultFilterName = nullptr) {
-	if (!Src->IsValid()) {
+inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release = false, LPCWSTR DefaultFilterName = nullptr) {
+	if (Src == nullptr || !Src->IsValid()) {
 		return;
 	}
 
-	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-	ExportImage(pImgMgr, FilePath, Src, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
+	BOOL result = FALSE;
+	
+	ProcessBitmap(rdPtr, Src, [&](const LPSURFACE pBitmap) {
+		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+		result = ExportImage(pImgMgr, FilePath, pBitmap, GetFilterIDByFileName(rdPtr, FilePath, DefaultFilterName));
+		});	
 
 	if (release) {
 		delete Src;
 	}
+}
+
+inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false) {
+	_SavetoFile(Src, FilePath, rdPtr, release, DefaultFilterName);
 }
 
 //Load From ClipBoard
@@ -673,7 +835,15 @@ inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 }
 
 // return false if created the blank surface
-inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool NoStretch, bool HighQuality,std::function<bool(CImageFilterMgr*,LPSURFACE&)> load) {
+#ifdef _NO_REF
+inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src
+	, int width, int height, bool NoStretch, bool HighQuality
+	, std::function<bool(CImageFilterMgr*, const LPSURFACE)> load) {
+#else
+inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src
+	, int width, int height, bool NoStretch, bool HighQuality
+	, std::function<bool(CImageFilterMgr*, LPSURFACE&)> load) {
+#endif // _NO_REF
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
@@ -690,9 +860,12 @@ inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool
 		LPSURFACE pImg = new cSurface;
 
 		if (load(pImgMgr, pImg)) {
+#ifdef _NO_REF
+			CreateSurface(Src, pImg->GetDepth(), width, height);
+#else
 			delete Src;
 			Src = CreateSurface(pImg->GetDepth(), width, height);
-
+#endif // _NO_REF
 			Stretch(pImg, Src, HighQuality);
 		}
 		else {
@@ -706,6 +879,22 @@ inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src, int width, int height, bool
 	return ret;
 }
 
+#ifdef _NO_REF
+inline bool _LoadFromFile(const LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
+		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
+		});
+}
+
+inline bool _LoadFromMemFile(const LPSURFACE Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+	CInputMemFile MemFile;
+	MemFile.Create(pData, dataSz);
+
+	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
+		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
+		});
+}
+#else
 inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
 		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
@@ -720,8 +909,29 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
 		});
 }
+#endif // _NO_REF
 
-//Get Valid Sacle
+// create a temp bitmap pSf if needed
+inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+	auto bHWA = IsHWA(pSf);
+	auto pBitmap = pSf;
+
+	if (bHWA) {
+		pBitmap = ConvertBitmap(pSf);
+	}
+
+	processor(pBitmap);
+
+	if (bHWA) {
+		delete pBitmap;
+	}
+}
+
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+	ProcessBitmap(pSf, processor);
+}
+
+//Get Valid Scale
 inline void GetValidScale(float* scale) {
 	*scale = max(1, *scale);
 	return;
@@ -741,8 +951,14 @@ inline void GetMaximumDivide(int* divide) {
 }
 
 //Stack Blur
+#define STACK_BLUR_ALPHA
+
+#ifdef _NO_REF
+inline void StackBlur(const LPSURFACE pSrc, int radius, float scale, int divide) {
+#else
 inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
-	//ªÒ»°≤Œ ˝
+#endif // _NO_REF
+	//Ëé∑ÂèñÂèÇÊï∞
 	constexpr auto SB_MIN_RADIUS = 0;
 	constexpr auto SB_MAX_RADIUS = 254;
 
@@ -757,7 +973,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	int width = (int)(owidth / scale);
 	int height = (int)(oheight / scale);
 
-	// Ωµ≤…—˘
+	// ÈôçÈááÊ†∑
 	LPSURFACE img = pSrc;
 
 	if (!(scale == 1.0)) {
@@ -766,18 +982,11 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	}
 
 	//Lock buffer, get pitch etc.
-	BYTE* buff = img->LockBuffer();
-	if (!buff) {
+	auto coef = GetSfCoef(img);
+
+	if (!coef.pData) {
 		return;
 	}
-
-	int pitch = img->GetPitch();
-	if (pitch < 0) {
-		pitch *= -1;
-		buff -= pitch * (height - 1);
-	}
-	int size = pitch * height;
-	int byte = img->GetDepth() >> 3;
 
 	static unsigned short const stackblur_mul[255] =
 	{
@@ -822,10 +1031,53 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	int t_width = width / divide;
 	int t_height = height / divide;
 
-	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des, int size, bool dir) {
+#ifdef STACK_BLUR_ALPHA
+	bool bBlurAlpha = false;
+
+	auto GetStride = [&](bool dir) {
+		return dir
+			? (bBlurAlpha
+				? coef.alphaPitch
+				: coef.pitch)
+			: (bBlurAlpha
+				? coef.alphaByte
+				: coef.byte);
+	};
+#else
+	auto GetStride = [&](bool dir) {
+		return dir ? coef.pitch : coef.byte;
+	};
+#endif // STACK_BLUR_ALPHA	
+
+	using PixelGetter = std::function<RGBA(BYTE* src, int src_offset)>;
+	using PixelSetter = std::function<void(RGBA src, BYTE* des, int des_offset)>;
+
+	PixelGetter normalGetter = [](BYTE* src, int src_offset) {
+		return RGBA{ (double)src[src_offset + 2], (double)src[src_offset + 1], (double)src[src_offset + 0], 0 };
+	};
+	PixelSetter normalSetter = [](RGBA src, BYTE* des, int des_offset) {
+		des[des_offset + 2] = (BYTE)src.r;
+		des[des_offset + 1] = (BYTE)src.g;
+		des[des_offset + 0] = (BYTE)src.b;
+	};
+
+#ifdef STACK_BLUR_ALPHA
+	PixelGetter alphaGetter = [](BYTE* src, int src_offset) {
+		return RGBA{ (double)src[src_offset + 0], 0, 0, 0 };
+	};
+	PixelSetter alphaSetter = [](RGBA src, BYTE* des, int des_offset) {
+		des[des_offset + 0] = (BYTE)src.r;
+	};
+#endif // STACK_BLUR_ALPHA	
+
+	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des
+		, int size, bool dir
+		, PixelGetter getter, PixelSetter setter) {
 		int div = radius * 2 + 1;
 		int sizem = size - 1;
-		int stride = dir ? pitch : byte;
+
+		int stride = GetStride(dir);
+		int o_stride = GetStride(!dir);
 
 		int src_offset = 0;
 		int des_offset = 0;
@@ -840,7 +1092,9 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 		for (int i = 0; i <= radius; i++) {
 			int stack_offset = i;
-			RGBA src_pixel = { (double)src[2],(double)src[1],(double)src[0],0 };
+			//RGBA src_pixel = { (double)src[2],(double)src[1],(double)src[0],0 };
+			RGBA src_pixel = getter(src, 0);
+
 			stack[stack_offset] = src_pixel;
 			Sum = Sum + src_pixel * (i + 1);
 			Sum_Out = Sum_Out + src_pixel;
@@ -852,8 +1106,11 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 			if (i <= sizem) {
 				src_offset += stride;
 			}
+			
 			int stack_offset = i + radius;
-			RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			//RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			RGBA src_pixel = getter(src, src_offset);
+			
 			stack[stack_offset] = src_pixel;
 			Sum = Sum + src_pixel * (radius + 1 - i);
 			Sum_In = Sum_In + src_pixel;
@@ -871,9 +1128,13 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 		for (int i = 0; i < size; i++) {
 			RGBA des_pixel = (Sum * mul_sum) >> shr_sum;
-			des[des_offset + 2] = (BYTE)des_pixel.r;
-			des[des_offset + 1] = (BYTE)des_pixel.g;
-			des[des_offset + 0] = (BYTE)des_pixel.b;
+
+			//des[des_offset + 2] = (BYTE)des_pixel.r;
+			//des[des_offset + 1] = (BYTE)des_pixel.g;
+			//des[des_offset + 0] = (BYTE)des_pixel.b;
+
+			setter(des_pixel, des, des_offset);
+
 			des_offset += stride;
 
 			Sum = Sum - Sum_Out;
@@ -889,7 +1150,8 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 				xp++;
 			}
 
-			RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			//RGBA src_pixel = { (double)src[src_offset + 2],(double)src[src_offset + 1],(double)src[src_offset + 0],0 };
+			RGBA src_pixel = getter(src, src_offset);
 			stack[stack_offset] = src_pixel;
 
 			Sum_In = Sum_In + src_pixel;
@@ -910,19 +1172,31 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 		free(stack);
 	};
 
-	auto Filter1D = [StackBlur1DFilter, byte, pitch](BYTE* src, int it_size, int filter_size, bool dir) {
-		int stride = dir ? pitch : byte;
-		int o_stride = (!dir) ? pitch : byte;
+	auto Filter1D = [&](BYTE* src, int it_size, int filter_size, bool dir) {
+		int stride = GetStride(dir);
+		int o_stride = GetStride(!dir);
 
 		for (int i = 0; i < it_size; i++) {
-			StackBlur1DFilter(src + i * o_stride, src + i * o_stride, filter_size, dir);
+			StackBlur1DFilter(src + i * o_stride, src + i * o_stride
+				, filter_size, dir
+#ifdef STACK_BLUR_ALPHA
+				, (bBlurAlpha
+					? alphaGetter
+					: normalGetter)
+				, (bBlurAlpha
+					? alphaSetter
+					: normalSetter));
+#else
+				, normalGetter, normalSetter);
+#endif // STACK_BLUR_ALPHA		
 		}
 	};
 
-	auto multithread = [Filter1D, divide, t_width, t_height, width, height, byte, pitch](BYTE* buff, bool dir) {
+	auto multithread = [&](BYTE* buff, bool dir) {
 		std::vector<std::thread> t_vec;
-		int stride = dir ? pitch : byte;
-		int o_stride = (!dir) ? pitch : byte;
+
+		int stride = GetStride(dir);
+		int o_stride = GetStride(!dir);
 
 		for (int i = 0; i < divide; i++) {
 			//Edge
@@ -943,12 +1217,21 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 		}
 	};
 
-	multithread(buff, Dir_X);
-	multithread(buff, Dir_Y);
+	multithread(coef.pData, Dir_X);
+	multithread(coef.pData, Dir_Y);
 
-	img->UnlockBuffer(buff);
+#ifdef STACK_BLUR_ALPHA
+	if (img->HasAlpha() && !IsOpaque(img)) {
+		bBlurAlpha = true;
 
-	//ªπ‘≠¥Û–°
+		multithread(coef.pAlphaData, Dir_X);
+		multithread(coef.pAlphaData, Dir_Y);
+	}
+#endif // STACK_BLUR_ALPHA	
+	
+	ReleaseSfCoef(img, coef);
+
+	//ËøòÂéüÂ§ßÂ∞è
 	if (!(scale == 1.0)) {
 		pSrc->Clone(*img, owidth, oheight);
 		delete img;
@@ -958,7 +1241,11 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 }
 
 //Affine transformation
+#ifdef _NO_REF
+inline void AffineTransformation(const LPSURFACE Src, double a11, double a12, double a21, double a22, int divide) {
+#else
 inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double a21, double a22, int divide) {
+#endif // _NO_REF
 	if (a11 == 1 && a12 == 0 && a21 == 0 && a22 == 1) {
 		return;
 	}
@@ -975,20 +1262,8 @@ inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double 
 //dec2rgb
 #define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
 
-struct SfCoef {
-	BYTE* pData = nullptr;
-	int pitch = 0;
-	int byte = 0;
-	int sz = 0;
-
-	BYTE* pAlphaData = nullptr;
-	int alphaPitch = 0;
-	int alphaByte = 0;
-	int alphaSz = 0;
-};
-
 inline SfCoef GetSfCoef(LPSURFACE pSf) {
-	SfCoef pSfCoef;
+	SfCoef pSfCoef = { 0 };
 	
 	if (pSf == nullptr) {
 		return pSfCoef;
@@ -1037,6 +1312,18 @@ inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
 	}
 }
 
+inline void ProcessPixel(LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+	ProcessBitmap(pSf, [&](const LPSURFACE Bitmap) {
+		auto ceof = GetSfCoef(pSf);
+		processor(ceof);
+		ReleaseSfCoef(pSf, ceof);
+	});
+}
+
+inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+	ProcessPixel(pSf, processor);
+}
+
 inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,BYTE*,BYTE*)> process) {
 	//Dimensions
 	int width = pSf->GetWidth();
@@ -1078,4 +1365,114 @@ inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,B
 	ReleaseSfCoef(pSf, sfCoef);
 
 	//delete[] temp;
+}
+
+// dst transparent -> src alpha
+// TODO: BOP_BLEND_REPLACETRANSP ?
+inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHeight
+	, LPSURFACE pDst, int destX, int destY) {
+	if(!pSrc->HasAlpha()){
+		return false;
+	}
+
+	if (!pDst->HasAlpha()) {
+		pDst->CreateAlpha();
+	}
+
+	auto srcCoef = GetSfCoef(pSrc);
+	auto dstCoef = GetSfCoef(pDst);
+
+	int widthS = pSrc->GetWidth();
+	int heightS = pSrc->GetHeight();
+
+	BYTE* pAlphaDataS = srcCoef.pAlphaData;
+	int alphaPitchS = srcCoef.alphaPitch;
+	int alphaSzS = srcCoef.alphaSz;
+	int alphaByteS = srcCoef.alphaByte;
+
+	int widthD = pDst->GetWidth();
+	int heightD = pDst->GetHeight();
+
+	BYTE* pAlphaDataD = dstCoef.pAlphaData;
+	int alphaPitchD = dstCoef.alphaPitch;
+	int alphaSzD = dstCoef.alphaSz;
+	int alphaByteD = dstCoef.alphaByte;
+
+#define _PRE_PROTECT
+
+#ifdef _PRE_PROTECT
+	auto Range = [](int inputV, int minV, int maxV) {
+		return min(maxV, max(minV, inputV));
+	};
+		
+	auto actualWidth = Range(srcX + srcWidth, 0, widthS);
+	auto actualHeight = Range(srcY + srcHeight, 0, heightS);
+
+	auto acutalSrcX= Range(srcX, 0, widthS);
+	auto acutalSrcY = Range(srcY, 0, heightS);
+
+	for (int y = acutalSrcY; y < actualHeight; y++) {
+		for (int x = acutalSrcX; x < actualWidth; x++) {
+#else
+	for (int y = srcY; y < srcY + srcHeight; y++) {
+		for (int x = srcX; x < srcX + srcWidth; x++) {
+#endif
+			auto Protection = [](LPSURFACE pSf, int x, int y) {
+				if (x < 0 || x >= pSf->GetWidth()) {
+					return false;
+				}
+
+				if (y < 0 || y >= pSf->GetHeight()) {
+					return false;
+				}
+
+				return true;
+			};
+
+			auto dstX = (x + destX);
+			auto dstY = (y + destY);
+
+			//protection
+#ifdef _PRE_PROTECT
+			if (!Protection(pDst, dstX, dstY)) {
+#else
+			if (!Protection(pSrc, x, y) || !Protection(pDst, dstX, dstY)) {
+#endif
+				continue;
+			}
+
+			auto alphaOffsetS = (y)*alphaPitchS + x * alphaByteS;
+			auto alphaOffsetD = (dstY)*alphaPitchD + dstX * alphaByteD;
+
+			BYTE* alphaPixelS = pAlphaDataS + alphaOffsetS;
+			BYTE* alphaPixelD = pAlphaDataD + alphaOffsetD;
+
+			auto src = 1.0 - alphaPixelS[0] / 255.0;
+			auto dst = 1.0 - alphaPixelD[0] / 255.0;
+
+			auto result = (1.0 - src * dst) * 255;
+
+			*alphaPixelD = (BYTE)result;
+		}
+	}
+
+	ReleaseSfCoef(pDst, dstCoef);
+	ReleaseSfCoef(pSrc, srcCoef);
+
+	return true;
+}
+
+inline bool MixAlpha(LPSURFACE pSrc, LPSURFACE pDst, int destX, int destY) {
+	return MixAlpha(pSrc, 0, 0, pSrc->GetWidth(), pSrc->GetHeight()
+		, pDst, destX, destY);
+}
+
+inline uint64_t GetEstimateSize(LPSURFACE pSf) {
+	return static_cast<uint64_t>(pSf->GetWidth()) * pSf->GetHeight()
+		// depth -> byte
+		* (static_cast<uint64_t>(pSf->GetDepth()) >> 3);
+}
+
+inline uint64_t GetEstimateSizeMB(LPSURFACE pSf) {
+	return GetEstimateSize(pSf) >> 20;
 }

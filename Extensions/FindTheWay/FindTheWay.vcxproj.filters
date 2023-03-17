@@ -130,7 +130,7 @@
     <ClInclude Include="..\_DeLib\FindTheWay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Defination.h">
+    <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Func.h">
@@ -152,6 +152,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\Fusion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

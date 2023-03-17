@@ -40,6 +40,12 @@ Here follows all dlls needed by this object:
 
 **NOTE:** this object requires `Microsoft Visual C++ Redistributable 2015+` / `MSVCP14x.dll` & `VCRUNTIME14x.dll`
 
+**NOTE:** if you want to enable multi instance feature, you need to define `FMOD_AUDIO` then rebuild the project. In this mode this object also needs FMod, you need to download dlls from <https://www.fmod.com/> and obey [license](https://www.fmod.com/licensing)
+
+- FMod
+  - fmod.dll
+  - fmodL.dll (if you want to debug the extension)
+
 ## Properties
 
 - Options

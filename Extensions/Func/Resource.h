@@ -62,6 +62,14 @@
 
 #define	IDMN_ACTION_ASSERT		25018
 #define	IDMN_ACTION_MSGBOX		25019
+#define	IDMN_ACTION_TOAST		25020
+#define	IDMN_ACTION_TOASTFLAG	25021
+
+#define	IDMN_ACTION_SOA     	25022
+#define	IDMN_ACTION_SOABF     	25023
+
+#define	IDMN_ACTION_SORC     	25024
+#define	IDMN_ACTION_SORCBF     	25025
 
 // Action strings
 #define M_ACTION_SR             5000
@@ -95,6 +103,14 @@
 
 #define	M_ACTION_ASSERT			5018
 #define	M_ACTION_MSGBOX			5019
+#define	M_ACTION_TOAST			5020
+#define	M_ACTION_TOASTFLAG  	5021
+
+#define	M_ACTION_SOA          	5022
+#define	M_ACTION_SOABF          5023
+
+#define	M_ACTION_SORC          	5024
+#define	M_ACTION_SORCBF         5025
 
 // Titles of action parameters
 #define M_ACT_RET				 5501
@@ -111,6 +127,11 @@
 #define M_ITNAME			     5508
 
 #define M_ACT_MSG		         5509
+#define M_ACT_TITLE		         5510
+#define M_ACT_TOASTFLAG		     5511
+
+#define M_ACT_ALPHA		         5512
+#define M_ACT_RGBCOEF	         5513
 
 
 //	Conditions
@@ -137,6 +158,13 @@
 #define IDMN_CONDITION_OITO 	26009
 #define IDMN_CONDITION_SA    	26010
 
+#define IDMN_CONDITION_IE    	26011
+#define IDMN_CONDITION_IS    	26012
+
+#define IDMN_CONDITION_OILHO   	26013
+
+#define IDMN_CONDITION_GHTP   	26014
+
 // Condition strings
 #define M_CONDITION_OF			 6000
 
@@ -155,8 +183,16 @@
 #define M_CONDITION_OITO		 6009
 #define M_CONDITION_SA  		 6010
 
+#define M_CONDITION_IE  		 6011
+#define M_CONDITION_IS  		 6012
+
+#define M_CONDITION_OILHO  		 6013
+
+#define M_CONDITION_GHTP  		 6014
+
 // Titles of condition parameters
 #define M_CND_FUNCNAME  		 6501
+#define M_CND_OBJNAME     		 6502
 
 //	EXPRESSIONS
 //---------------------
@@ -208,6 +244,10 @@
 #define IDMN_EXPRESSION_LV		27028
 #define IDMN_EXPRESSION_LOEV	27029
 
+#define IDMN_EXPRESSION_GOA  	27030
+
+#define IDMN_EXPRESSION_GRP  	27031
+
 // Expression strings
 #define M_EXPRESSION_RV			 7000
 #define M_EXPRESSION_RS			 7001
@@ -251,6 +291,10 @@
 #define M_EXPRESSION_GOEV		 7027
 #define M_EXPRESSION_LV			 7028
 #define M_EXPRESSION_LOEV		 7029
+
+#define M_EXPRESSION_GOA 		 7030
+
+#define M_EXPRESSION_GRP 		 7031
 
 // Names of expression parameters
 #define M_EXP_PARAM				 7500

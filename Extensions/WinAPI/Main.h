@@ -148,7 +148,14 @@
 #define	EXP_EXPRESSION_GCMW			33
 #define	EXP_EXPRESSION_GCMH			34
 
-#define	EXP_LAST                    35
+#define	EXP_EXPRESSION_GFFN			35
+
+#define	EXP_EXPRESSION_GDT			36
+
+#define	EXP_EXPRESSION_GTPM			37
+#define	EXP_EXPRESSION_GFPM			38
+
+#define	EXP_LAST                    39
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

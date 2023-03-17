@@ -132,7 +132,7 @@ private:
 		short oblOffset = selected ? list->oilListSelected : list->oilObject;
 
 		while (oblOffset >= 0) {
-			RunObject* pObj = reinterpret_cast<RunObject*>(rhPtr->rhObjectList [oblOffset].oblOffset);
+			RunObject* pObj = reinterpret_cast<RunObject*>(rhPtr->rhObjectList[oblOffset].oblOffset);
 
 			if (pObj == nullptr) {
 				continue;
@@ -168,17 +168,18 @@ public:
 		this->OiList = rhPtr->rhOiList;				//get a pointer to the mmf object info list
 		this->QualToOiList = rhPtr->rhQualToOiList;	//get a pointer to the mmf qualifier to Oi list
 
-		oiListItemSize = sizeof(objInfoList);
+		//oiListItemSize = sizeof(objInfoList);
+		oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
 
-		//Only add the sizes to the runtime structures if they weren't compiled directly for those runtimes
-#ifndef UNICODE
-		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISUNICODE, 0, 0, 0))
-			oiListItemSize += 24;
-#endif
-#ifndef HWABETA
-		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
-			oiListItemSize += sizeof(LPVOID);
-#endif
+//		//Only add the sizes to the runtime structures if they weren't compiled directly for those runtimes
+//#ifndef UNICODE
+//		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISUNICODE, 0, 0, 0))
+//			oiListItemSize += 24;
+//#endif
+//#ifndef HWABETA
+//		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
+//			oiListItemSize += sizeof(LPVOID);
+//#endif
 	}
 
 	//Get oil
@@ -203,7 +204,7 @@ public:
 
 	// Get LPOIL
 	inline LPOIL GetLPOIL(short oiList) {
-		return (LPOIL)(((char*)OiList) + oiListItemSize * oiList);
+		return (LPOIL)((char*)OiList + oiListItemSize * oiList);
 	}
 
 	// Get Oi for creation
@@ -254,11 +255,6 @@ public:
 		return offset < 0
 			? nullptr
 			: (LPRO)ObjectList[offset].oblOffset;
-
-		//return (LPRO)ObjectList[selected
-		//	? pOil->oilListSelected
-		//	: pOil->oilObject
-		//].oblOffset;
 	}
 
 	inline LPRO GetFirstObject(short oiList, bool selected = false) {
@@ -268,7 +264,7 @@ public:
 	inline bool Selected(objInfoList* pObjectInfo) {
 		return (pObjectInfo != nullptr)
 			&& (pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount)
-			&& (pObjectInfo->oilListSelected>0);
+			&& (pObjectInfo->oilListSelected > 0);
 	}
 
 	inline bool Selected(short oiList) {
@@ -289,7 +285,7 @@ public:
 
 		int i = pObjectInfo->oilObject;
 		while (i >= 0) {
-			LPHO pObject = ObjectList [i].oblOffset;
+			LPHO pObject = ObjectList[i].oblOffset;
 			pObject->hoNextSelected = pObject->hoNumNext;
 			i = pObject->hoNumNext;
 		}
@@ -320,7 +316,7 @@ public:
 		pObjectInfo->oilNumOfSelected = 1;
 		pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount;
 		pObjectInfo->oilListSelected = object->roHo.hoNumber;
-		ObjectList [object->roHo.hoNumber].oblOffset->hoNextSelected = -1;
+		ObjectList[object->roHo.hoNumber].oblOffset->hoNextSelected = -1;
 	}
 
 	//Resets the SOL and inserts the given list of objects
@@ -338,22 +334,22 @@ public:
 		pObjectInfo->oilNumOfSelected = count;
 		pObjectInfo->oilEventCount = rhPtr->rh2.rh2EventCount;
 
-		short prevNumber = objects [0]->roHo.hoNumber;
+		short prevNumber = objects[0]->roHo.hoNumber;
 		pObjectInfo->oilListSelected = prevNumber;
 
 		for (size_t i = 1; i < count; i++) {
-			short currentNumber = objects [i]->roHo.hoNumber;
-			ObjectList [prevNumber].oblOffset->hoNextSelected = currentNumber;
+			short currentNumber = objects[i]->roHo.hoNumber;
+			ObjectList[prevNumber].oblOffset->hoNextSelected = currentNumber;
 			prevNumber = currentNumber;
 		}
-		ObjectList [prevNumber].oblOffset->hoNextSelected = -1;
+		ObjectList[prevNumber].oblOffset->hoNextSelected = -1;
 	}
 	inline void SelectObjects(short oiList, const std::vector<LPRO> objects) {
 		if (objects.empty()) {
 			return;
 		}
 
-		SelectObjects(oiList, &objects [0], objects.size());
+		SelectObjects(oiList, &objects[0], objects.size());
 	}
 
 	//Run a custom filter on the SOL (via function callback)
@@ -548,7 +544,6 @@ public:
 
 	//Iterate given identifier
 	inline void IterateObjectWithIdentifier(LPRDATA rdPtr, const int identifier, ForEachCallBack callBack, bool selected = false) {
-
 		IterateOiL([&] (LPOIL pOil) {
 			LPRO pObject = GetFirstObject(pOil, selected);
 
@@ -566,7 +561,34 @@ public:
 			});
 	}
 
-	//Save scope
+	inline bool OILHasObject(const std::wstring& objName) {
+		return OILHasObject(objName.c_str());
+	}
+
+	inline bool OILHasObject(LPCWSTR pObjName) {
+		bool bHas = false;
+
+		IterateOiL([&](LPOIL pOil) {
+			// oilName start with empty char
+			auto pCurName = [&]() {
+				auto pOilName = pOil->oilName;
+
+				while (pOilName[0] == 65535) {
+					pOilName++;
+				}
+
+				return pOilName;
+			}();
+
+			if (StrEqu(pObjName, pCurName)) {
+				bHas = true;
+			}
+			});
+
+		return bHas;
+	}
+
+	//TODO Save scope
 	inline auto SaveScope() {
 		auto rhEvCount = rhPtr->rh2.rh2EventCount;
 

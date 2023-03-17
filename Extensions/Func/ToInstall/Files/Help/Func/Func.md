@@ -82,6 +82,19 @@ Fusion only maintain one scope list, that is to say, if you jump out an event, t
   - Pass Previous Func's Return
     - *pass an expression's return value as parent's return value, to bypass a known issue to pass return values by `Set Current Func's Return`*
 
+- Assert
+  - *pop up a MsgBox if the given value is false*
+  - *has no effect in stand alone*
+- MsgBox
+  - *pop up a MsgBox if the given value is true*
+- Toast
+  - *pop up a Toast if the given value is true*
+  - *use edrt info in editor and application info in stand alone*
+  - *if you want to remove the item in notification, open regedit, navigate to `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\PushNotifications\Backup\Clicteam.Fusion.Edrt.294`&`HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Clicteam.Fusion.Edrt.294`, delete the folder of your application, e.g., `Clicteam.Fusion.Edrt.294`*
+- Set Toast Flag
+  - *0 = default*
+  - *1 = immediate push (clear cached)*
+
 ## Condition
 
 - On Func
@@ -185,6 +198,24 @@ Fusion only maintain one scope list, that is to say, if you jump out an event, t
     - *Get current call num of current function in function stack*
     - *check `Recursive` section in example mfa to get more information about usage*
     - *return -1 if no func match*
+
+- Equal
+  - Equal (Value)
+  - Equal (String)
+  
+  - Greater (Value)
+  - Greater Or Equal (Value)
+  
+  - Lower (Value)
+  - Lower Or Equal (Value)
+
+- Bool
+  - Cast to Bool
+  
+  - Negate
+  - And
+  - Or
+  - Xor
 
 - Get Current FuncName
   - *Please use this inside a func event to avoid unexpected behaviour*

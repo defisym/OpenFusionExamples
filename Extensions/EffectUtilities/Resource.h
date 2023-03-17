@@ -36,16 +36,21 @@
 #define IDMN_ACTION_SEP	       		25001
 
 #define IDMN_ACTION_SBE	       		25002
+#define IDMN_ACTION_SBEP	       	25003
 
 // Action strings
 #define M_ACTION_SE                  5000
 #define M_ACTION_SEP                 5001
 
 #define M_ACTION_SBE	       		 5002
+#define M_ACTION_SBEP	       		 5003
 
 // Titles of action parameters
-#define M_ACT_P1				 5501
-#define M_ACT_P2				 5502
+#define M_OBJECT				 5501
+#define M_EFFECT				 5502
+#define M_PARAMNAME				 5503
+#define M_PARAM				     5504
+#define M_BACKDROP				 5505
 
 
 //	Conditions

@@ -129,29 +129,28 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->bFontChanged = true;
 
-	rdPtr->pIConActive = nullptr;
+	rdPtr->pIConObject = nullptr;
+	rdPtr->pIConParamParser = new NeoStr::IConParamParser;
+
+	rdPtr->pIConItName = new std::wstring;
+	rdPtr->pIConParams = nullptr;
+	rdPtr->pIConLibValue = nullptr;
 
 	rdPtr->iConOffsetX = edPtr->iConOffsetX;
 	rdPtr->iConOffsetY = edPtr->iConOffsetY;
 	rdPtr->iConScale = edPtr->iConScale;
 	rdPtr->bIConResample = edPtr->bIConResample;
+	rdPtr->filterFlags = edPtr->filterFlags;
+	rdPtr->bIConGlobal = edPtr->bIConGlobal;
+	rdPtr->bIConForceUpdate = edPtr->bIConForceUpdate;
+
+	rdPtr->bIConNeedUpdate = false;
 
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
-		rdPtr->pData = new GlobalData;
-		
-		auto state = Gdiplus::GdiplusStartup(&rdPtr->pData->gdiplusToken
-			, &rdPtr->pData->gdiplusStartupInput
-			, NULL);
-		rdPtr->pData->gdiInitialized = true;
-
-		NeoStr::Alloc(rdPtr->pData->pFontCache);
-		NeoStr::Alloc(rdPtr->pData->pCharSzCacheWithFont);
-
-		rdPtr->pData->pFontCollection = new PrivateFontCollection;
-
 		//Update pointer
+		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
 	}else{
 		rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -184,6 +183,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
 	delete rdPtr->pExpRet;
+	delete rdPtr->pIConParamParser;
+	delete rdPtr->pIConItName;
+
+	if (rdPtr->pData->pIConData->pCaller == (LPRO)rdPtr) {
+		rdPtr->pData->pIConData->ResetCaller();
+	}
 
 	SetExtUserData(rdPtr->pData);
 
@@ -229,6 +234,9 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;
+
+	// update caller state
+	rdPtr->pData->pIConData->CheckCallerValidity();
 
 	if (rdPtr->rc.rcChanged)
 		return REFLAG_DISPLAY;
@@ -402,13 +410,6 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if ( pData != NULL ) {
-		delete pData->pFontCollection;
-
-		NeoStr::Release(pData->pFontCache);
-		NeoStr::Release(pData->pCharSzCacheWithFont);
-
-		Gdiplus::GdiplusShutdown(pData->gdiplusToken);
-
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
@@ -426,13 +427,6 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if ( pData != NULL ) {
-		delete pData->pFontCollection;
-
-		NeoStr::Release(pData->pFontCache);
-		NeoStr::Release(pData->pCharSzCacheWithFont);
-
-		Gdiplus::GdiplusShutdown(pData->gdiplusToken);		
-
 		delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}

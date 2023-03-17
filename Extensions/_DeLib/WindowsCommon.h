@@ -1,25 +1,30 @@
 #pragma once
 
-//STL
+// STL
 #include <string>
 #include <vector>
 #include <thread>
 
-//Windows
+////Boost
+//#define BOOST
+//#include "RegexHelper.h"
+
+// Windows
 #include <windows.h>
 
-//Thread
+// Thread
 #include <tlhelp32.h>
 #pragma comment(lib,"version.lib")
 #pragma comment(lib,"Kernel32.lib")
 
-//FileList
+// FileList
 #include	<shlwapi.h>
 #pragma	comment(lib,"shlwapi.lib")
 
-//Memory
+// Memory
 #include <psapi.h>
 
+// Process
 inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	//返回参数
 	DWORD	ProcessID = 0;
@@ -46,6 +51,7 @@ inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	return ProcessID;
 }
 
+// FileVersion
 struct TRANSLATION {
 	WORD wLanguage;		// language ID
 	WORD wCodePage;		// character set (code page)
@@ -72,7 +78,7 @@ inline BYTE* GetFileVersion_GetFileVersionInfo(LPCWSTR FileName) {
 		return nullptr;
 	}
 
-	BYTE* pData = new BYTE [size * sizeof(BYTE)];
+	BYTE* pData = new BYTE[size * sizeof(BYTE)];
 
 	GetFileVersionInfo(FileName, NULL, size, pData);
 
@@ -105,7 +111,7 @@ inline LPWSTR GetFileVersion_GetSubBlock(BYTE* pData, TRANSLATION* pTranslation,
 	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 	auto bufsz = sz + 1;
 
-	LPWSTR block = new wchar_t [bufsz];
+	LPWSTR block = new wchar_t[bufsz];
 	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 
 	// Get the real STR
@@ -115,7 +121,7 @@ inline LPWSTR GetFileVersion_GetSubBlock(BYTE* pData, TRANSLATION* pTranslation,
 		auto isz = swprintf(nullptr, 0, L"%s", src);
 		auto ibufsz = isz + 1;
 
-		*des = new wchar_t [ibufsz];
+		*des = new wchar_t[ibufsz];
 		swprintf(*des, ibufsz, L"%s", src);
 	};
 
@@ -148,8 +154,8 @@ inline bool GetFileVersion_CMPDefault(BYTE* pDataA, BYTE* pDataB, int CMP) {
 
 	for (int i = 0b000000000001, count = 0; i != 0b100000000000; i = i << 1, count++) {
 		if (i & CMP) {
-			LPCWSTR infoA = GetFileVersion_GetSubBlock(pDataA, pTranslationA, DefaultBlock [count]);
-			LPCWSTR infoB = GetFileVersion_GetSubBlock(pDataB, pTranslationB, DefaultBlock [count]);
+			LPCWSTR infoA = GetFileVersion_GetSubBlock(pDataA, pTranslationA, DefaultBlock[count]);
+			LPCWSTR infoB = GetFileVersion_GetSubBlock(pDataB, pTranslationB, DefaultBlock[count]);
 
 			bool unequal = (wcscmp(infoA, infoB) != 0);
 
@@ -182,6 +188,67 @@ inline bool GetFileVersion_CMPDefaultFile(LPCWSTR FileNameA, LPCWSTR FileNameB, 
 	return ret;
 }
 
+inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
+	// Get FileVersionInfo
+	auto size = GetFileVersionInfoSize(FileName, NULL);
+	BYTE* pData = new BYTE[size * sizeof(BYTE)];
+	//unique_ptr<BYTE> pData(new BYTE[size * sizeof(BYTE)]);
+
+	GetFileVersionInfo(FileName, NULL, size, pData);
+
+	// Query
+	void* Buffer = nullptr;
+	UINT Len = 0;
+
+	// Get FixedFileInfo
+	VerQueryValue(pData, L"\\", &Buffer, &Len);
+
+	VS_FIXEDFILEINFO* pFixedFileInfo = new VS_FIXEDFILEINFO;
+	memcpy(pFixedFileInfo, Buffer, sizeof(VS_FIXEDFILEINFO));
+
+	// Get Translation
+	VerQueryValue(pData, L"\\VarFileInfo\\Translation", &Buffer, &Len);
+
+	TRANSLATION* pTranslation = new TRANSLATION;
+	memcpy(pTranslation, Buffer, sizeof(TRANSLATION));
+
+	// Get SubBlock based on translation
+	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
+	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
+	auto bufsz = sz + 1;
+
+	LPWSTR block = new wchar_t[bufsz];
+	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
+
+	// Get the real STR
+	LPWSTR info = nullptr;
+
+	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
+		auto isz = swprintf(nullptr, 0, L"%s", src);
+		auto ibufsz = isz + 1;
+
+		*des = new wchar_t[ibufsz];
+		swprintf(*des, ibufsz, L"%s", src);
+	};
+
+	if (VerQueryValue(pData, block, &Buffer, &Len)) {
+		newStr(&info, (wchar_t*)Buffer);
+	}
+	else {
+		newStr(&info, L"NULL");
+	}
+
+	// Clear
+	delete[] pData;
+	delete pFixedFileInfo;
+	delete pTranslation;
+
+	delete[] block;
+
+	return info;
+}
+
+// Process mem usage
 enum class MemoryUsageType {
 	PeakWorkingSetSize,
 	WorkingSetSize,
@@ -243,64 +310,82 @@ inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageTy
 	return (GetProcessMemoryUsage(processID, type) >> 20);
 }
 
-inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
-	// Get FileVersionInfo
-	auto size = GetFileVersionInfoSize(FileName, NULL);
-	BYTE* pData = new BYTE [size * sizeof(BYTE)];
-	//unique_ptr<BYTE> pData(new BYTE[size * sizeof(BYTE)]);
+inline SIZE_T GetProcessMemoryLimitMB() {
+	// 1 MB
+	auto sz = 1024 * 1024 * 1;
+	std::vector<char* > bufs;
 
-	GetFileVersionInfo(FileName, NULL, size, pData);
+	do {
+		try {
+			auto ptr = new char[sz];
+			memset(ptr, 0, sz);
+			bufs.emplace_back(ptr);
+		}
+		catch (std::bad_alloc& e) {
+			auto info = e.what();
+			auto max = GetProcessMemoryUsageMB();
+			//MSGBOX(_itos(max));			
 
-	// Query
-	void* Buffer = nullptr;
-	UINT Len = 0;
+			for (auto& it : bufs) {
+				delete[] it;
+			}
 
-	// Get FixedFileInfo
-	VerQueryValue(pData, L"\\", &Buffer, &Len);
+			return max;
+		}
+	} while (true);
+}
 
-	VS_FIXEDFILEINFO* pFixedFileInfo = new VS_FIXEDFILEINFO;
-	memcpy(pFixedFileInfo, Buffer, sizeof(VS_FIXEDFILEINFO));
+// System mem usage
+enum class MemoryInfoType {
+	MemoryLoad,
+	TotalPhysicalMemory,
+	FreePhysicalMemory,
+	TotalPagingFile,
+	FreePagingFile,
+	TotalVirtualMemory,
+	FreeVirtualMemory,
+};
 
-	// Get Translation
-	VerQueryValue(pData, L"\\VarFileInfo\\Translation", &Buffer, &Len);
-
-	TRANSLATION* pTranslation = new TRANSLATION;
-	memcpy(pTranslation, Buffer, sizeof(TRANSLATION));
-
-	// Get SubBlock based on translation
-	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
-	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
-	auto bufsz = sz + 1;
-
-	LPWSTR block = new wchar_t [bufsz];
-	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
-
-	// Get the real STR
-	LPWSTR info = nullptr;
-
-	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
-		auto isz = swprintf(nullptr, 0, L"%s", src);
-		auto ibufsz = isz + 1;
-
-		*des = new wchar_t [ibufsz];
-		swprintf(*des, ibufsz, L"%s", src);
-	};
-
-	if (VerQueryValue(pData, block, &Buffer, &Len)) {
-		newStr(&info, (wchar_t*)Buffer);
+inline DWORDLONG GetMemoryInfo(const MEMORYSTATUSEX& statex, MemoryInfoType type = MemoryInfoType::FreePhysicalMemory) {
+	switch (type) {
+	case MemoryInfoType::MemoryLoad:
+		return statex.dwMemoryLoad;
+	case MemoryInfoType::TotalPhysicalMemory:
+		return statex.ullTotalPhys;
+	case MemoryInfoType::FreePhysicalMemory:
+		return statex.ullAvailPhys;
+	case MemoryInfoType::TotalPagingFile:
+		return statex.ullTotalPageFile;
+	case MemoryInfoType::FreePagingFile:
+		return statex.ullAvailPageFile;
+	case MemoryInfoType::TotalVirtualMemory:
+		return statex.ullTotalVirtual;
+	case MemoryInfoType::FreeVirtualMemory:
+		return statex.ullAvailVirtual;
+	default:
+		return 0;
 	}
-	else {
-		newStr(&info, L"NULL");
-	}
 
-	// Clear
-	delete[] pData;
-	delete pFixedFileInfo;
-	delete pTranslation;
+}
 
-	delete[] block;
+inline DWORDLONG GetSystemMemoryInfo(MemoryInfoType type = MemoryInfoType::FreePhysicalMemory) {
+	MEMORYSTATUSEX statex = { 0 };
+	statex.dwLength = sizeof(statex);
 
-	return info;
+	GlobalMemoryStatusEx(&statex);
+
+	return GetMemoryInfo(statex, type);
+}
+
+inline SIZE_T GetSystemMemoryInfoMB(MemoryInfoType type = MemoryInfoType::FreePhysicalMemory) {
+	return SIZE_T(GetSystemMemoryInfo(type) >> 20);
+}
+
+// memory left
+constexpr auto MIN_MEMORYLEFT = 512;
+
+inline bool SystemMemoryNotEnough() {
+	return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
 }
 
 // must end without L'\\'
@@ -329,43 +414,70 @@ inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src)
 }
 
 inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
-	LPWSTR pFullPathName = new wchar_t [MAX_PATH];
-	memset(pFullPathName, 0, MAX_PATH);
+	auto pFileName = fileName.c_str();
 
-	GetFullPathName(fileName.c_str(), MAX_PATH, pFullPathName, nullptr);
-	std::wstring ret = pFullPathName;
+	// to fix work directory issue
+	// if input is not a full path (for access filename)
+	// then return it directly
+	// full path doesn't have work dir issue, as it's just calculate
 
-	delete[] pFullPathName;
+	// regex
+	//auto pathRegex = wregex(L"^[a-zA-Z]:\\\\.*$", ECMAScript | optimize);
+	//auto bMatch = regex_match(pFileName, pathRegex);
+
+	// raw
+	auto disk = pFileName[0];
+	auto deli = pFileName[1];
+	auto slash = pFileName[2];
+
+	auto bMatch = (disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z')
+		&& deli == L':'
+		&& slash == L'\\';
+
+	if (!bMatch) {
+		return fileName;
+	}
+
+	std::wstring ret(MAX_PATH, 0);
+	auto err = GetFullPathName(pFileName, MAX_PATH, &ret.at(0), nullptr);
+
+	//LPWSTR pFullPathName = new wchar_t [MAX_PATH];
+	//memset(pFullPathName, 0, MAX_PATH);
+
+	//auto err = GetFullPathName(pFileName, MAX_PATH, pFullPathName, nullptr);
+	//std::wstring ret = pFullPathName;
+
+	//delete[] pFullPathName;
 
 	return ret;
 }
 
 inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = CP_ACP) {
 	std::string ret;
-	
-	int len = WideCharToMultiByte(CodePage, 0, input.c_str(), input.size(), NULL, 0, NULL, NULL);
+
+	int len = WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
 	char* pStr = new char[len + 1];
 	memset(pStr, 0, len + 1);
-	
-	WideCharToMultiByte(CodePage, 0, input.c_str(), input.size(), pStr, len, NULL, NULL);
-	
+
+	WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), pStr, len, NULL, NULL);
+
 	ret = pStr;
 	delete[] pStr;
-	
+
 	return ret;
 }
 
 inline std::wstring ConvertStrToWStr(const std::string& input, UINT CodePage = CP_ACP) {
 	std::wstring ret;
-	
-	int len = MultiByteToWideChar(CodePage, 0, input.c_str(), input.size(), NULL, 0);
+
+	int len = MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0);
 	wchar_t* pStr = new wchar_t[len + 1];
 	memset(pStr, 0, (len + 1) * sizeof(wchar_t));
-	
-	MultiByteToWideChar(CodePage, 0, input.c_str(), input.size(), pStr, len);
-	
+
+	MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), pStr, len);
+
 	ret = pStr;
 	delete[] pStr;
-	
+
 	return ret;
 }

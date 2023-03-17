@@ -1,0 +1,324 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "ccx.h"
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x0L
+#ifdef _DEBUG
+ FILEFLAGS 0x21L
+#else
+ FILEFLAGS 0x20L
+#endif
+ FILEOS 0x10001L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Defisym\0"
+            VALUE "FileDescription", "SDL_Mixer\0"
+            VALUE "FileVersion", "0.00\0"
+            VALUE "InternalName", "SDL_Mixer\0"
+            VALUE "LegalCopyright", "Copyright 2023 Defisym\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "SDL_Mixer.mfx\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "\0"
+            VALUE "ProductVersion", "1, 0, 0, 0\0"
+            VALUE "SpecialBuild", "00000001\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Data
+//
+
+KPX_MAGICNUMBER RCDATA MOVEABLE PURE 
+BEGIN
+    0x2516, 0x5908
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+EXO_ICON$(EDITOR)       BITMAP  MOVEABLE PURE   "RES\\EXTICON.BMP"
+#else
+EXO_ICON                BITMAP  MOVEABLE PURE   "RES\\EXTICON.BMP"
+#endif
+#endif
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+EXO_IMAGE$(EDITOR)      BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
+#else
+EXO_IMAGE               BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
+#endif
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+MN_CONDITIONS$(EDITOR) MENU DISCARDABLE 
+#else
+MN_CONDITIONS MENU DISCARDABLE 
+#endif
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM SEPARATOR
+        MENUITEM "Channel Playing", IDMN_CONDITION_CP
+        MENUITEM "No Channel Playing", IDMN_CONDITION_NCP
+        MENUITEM SEPARATOR
+        MENUITEM "Exclusive Channel Fading Complete", IDMN_CONDITION_CFC
+        MENUITEM SEPARATOR
+    END
+END
+#endif
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+MN_ACTIONS$(EDITOR) MENU DISCARDABLE 
+#else
+MN_ACTIONS MENU DISCARDABLE 
+#endif
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM SEPARATOR
+        MENUITEM "Play Exclusive",       IDMN_ACTION_PE
+        MENUITEM "Play Mixing",          IDMN_ACTION_PM
+        MENUITEM SEPARATOR
+        MENUITEM "Set Volume",           IDMN_ACTION_SV
+        MENUITEM "Set Exclusive Position",        IDMN_ACTION_SP
+        MENUITEM "Set Exclusive ABLoop",          IDMN_ACTION_SABL
+        MENUITEM "Set Mixing Channel Score",      IDMN_ACTION_SMCS
+        MENUITEM SEPARATOR
+        MENUITEM "Stop Specific Channel",         IDMN_ACTION_SC
+        MENUITEM "Stop All Channel",              IDMN_ACTION_SAC
+        MENUITEM "Pause Specific Channel",        IDMN_ACTION_PC
+        MENUITEM "Resume Specific Channel",       IDMN_ACTION_RC
+        MENUITEM SEPARATOR
+     END
+END
+#endif
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+MN_EXPRESSIONS$(EDITOR) MENU DISCARDABLE 
+#else
+MN_EXPRESSIONS MENU DISCARDABLE 
+#endif
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM SEPARATOR
+        MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV       
+        MENUITEM "Get Channel State", IDMN_EXPRESSION_GCS
+        MENUITEM "Get Exclusive Channel Position", IDMN_EXPRESSION_GCP
+        MENUITEM "Get Exclusive Channel Duration", IDMN_EXPRESSION_GCD
+        MENUITEM SEPARATOR
+    END
+END
+#endif
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+#if defined(APSTUDIO_INVOKED) || defined(EDITOR)
+#if defined(APSTUDIO_INVOKED)
+DB_SETUP$(EDITOR) DIALOG DISCARDABLE  0, 4, 200, 172
+#else
+DB_SETUP DIALOG DISCARDABLE  0, 4, 200, 172
+#endif
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Setup sample object"
+FONT 8, "Helv"
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,75,150,50,14
+    DEFPUSHBUTTON   "OK",IDOK,5,150,50,14
+    PUSHBUTTON      "Help",ID_HELP,145,150,50,14
+    GROUPBOX        "",-1,5,6,190,135
+    LTEXT           "Please define your own setup box here! \n \nIf you do not need any setup box, just delete it from the resource and remove the call from the CreateObject and SelectPopup routines in the C sourcecode.",
+                    -1,21,50,155,60
+END
+#endif
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""ccx.h""\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    KPX_MARK                "MF2"
+    KPX_NAME                "SDL_Mixer"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDST_OBJNAME            "SDL_Mixer"
+    IDST_AUTHOR             "Defisym"
+    IDST_COPYRIGHT          "Copyright 2023 Defisym"
+    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
+    IDST_HTTP               "https://twitter.com/defisym"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_PROP_TEXTTITLE        "Settings"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_SEPARATOR                      "====================="
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_ACTION_PE                 "Play Exclusive Audio %0, Decrypt Key %1, in Channel %2, %3 times, Fade in %4 ms"
+    M_ACTION_PM                 "Play Mixing Audio %0, Decrypt Key %1, in Channel %2, %3 times, Fade in %4 ms"
+
+    M_ACTION_FILENAME           "FileName"
+    M_ACTION_KEY                "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
+    M_ACTION_CHANNEL            "Channel ID"    
+    M_ACTION_LOOP               "Loop Count, 0 = Loop infinitely"
+    M_ACTION_FADE               "Fade (ms), -1 = No Fade"
+
+    M_ACTION_SV                 "Set Channel %0 Volume to %1, Channel Type %2"
+
+    M_ACTION_VOLUME             "Volume (0 ~ 100)"
+    M_ACTION_EXCLUSIVE          "Channel Type, 1 = Exclusive, 0 = Mixing"
+
+    M_ACTION_SP                 "Set Exclusive Channel %0 Position to %1"    
+    M_ACTION_POSITION           "Position (seconds)"
+
+    M_ACTION_SC                 "Stop Channel %0, Fade out %1 ms, Channel Type %2"
+    M_ACTION_SAC                "Stop All Channel, Fade out %0 ms"
+    M_ACTION_PC                 "Pause Channel %0, Channel Type %1"
+    M_ACTION_RC                 "Resume Channel %0, Channel Type %1"
+
+    M_ACTION_SABL               "Set Exclusive Channel %0 AB Loop, Start %1, End %2"
+    M_ACTION_START              "Start (seconds)"
+    M_ACTION_END                "End (seconds)"
+
+    M_ACTION_SMCS               "Set Mixing Channel %0 Score to %2, base %3, Enable = %1"
+    M_ACTION_ENABLE             "0 = Disable, 1 = Enable"
+    M_ACTION_SCORE              "Score to use"
+    M_ACTION_BASE               "Base"
+
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_CONDITION_CP              "%o Channel %0 Type %1 is Playing"
+    M_CONDITION_NCP             "%o No Channel is Playing"
+    M_CONDITION_CFC             "%o Exclusive Channel %0 Fading Complete"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    M_EXPRESSION_GV             "GetVolume ("
+    M_EXPRESSION_GCS            "GetChannelState ("
+    M_EXPRESSION_GCP            "GetChannelPos ("
+    M_EXPRESSION_GCD            "GetChannelDur ("
+END
+
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

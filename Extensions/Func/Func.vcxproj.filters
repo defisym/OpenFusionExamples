@@ -34,6 +34,9 @@
     <ClCompile Include="Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\_3rdLib\WinToast\wintoastlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -127,7 +130,7 @@
     <ClInclude Include="..\..\Inc\WinMacro.h">
       <Filter>MMF Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Defination.h">
+    <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Func.h">
@@ -143,6 +146,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\Fusion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\WinToast\wintoastlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\Toast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\EffectUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

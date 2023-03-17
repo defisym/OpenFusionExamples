@@ -4,10 +4,11 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/../../Inc/",
                 "${workspaceFolder}/../_DeLib/",
+                "${workspaceFolder}/../../Inc/",
+                "E:\\Windows Kits\\10\\Include\\10.0.22000.0",
                 "F:\\DEV\\FFMpeg\\include",
-                "${workspaceFolder}"
+                "C:\\Program Files (x86)\\FMOD SoundSystem\\FMOD Studio API Windows\\api\\core\\inc"
             ],
             "defines": [
                 "_DEBUG",
@@ -22,7 +23,7 @@
             "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/bin/Hostx64/x64/cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++20",
-            "intelliSenseMode": "windows-msvc-x64"
+            "intelliSenseMode": "windows-msvc-x86"
         }
     ],
     "version": 4

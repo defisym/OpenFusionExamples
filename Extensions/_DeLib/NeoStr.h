@@ -8,7 +8,12 @@
 #include <functional>
 #include <string_view>
 
+//Boost
+#define BOOST
+#include "RegexHelper.h"
+
 //#include <FusionUtilities.h>
+#include <RandGenerator.h>
 
 #ifdef _DEBUG		
 #include <assert.h>
@@ -77,6 +82,21 @@ constexpr auto DEFAULT_EBORDER_OFFSET = 20;
 constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
 constexpr auto DEFAULT_CHARACTER = L'　';
+constexpr auto EMPTY_CHAR = L' ';
+
+constexpr auto DEFAULT_PARAM = L" ";
+
+constexpr auto SHAKE_RANDOM_RANGE = 1000;
+
+constexpr auto FORMAT_IGNORE_UNKNOWN = 0b00000001;
+constexpr auto FORMAT_IGNORE_INCOMPLETE = 0b00000010;
+
+constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
+//constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_INCOMPLETE;
+
+constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
+
+constexpr auto FORMAT_INVALID_ICON = (DWORD)-1;
 
 //#define MEASURE_GDI_PLUS
 
@@ -85,7 +105,7 @@ private:
 	HDC hdc;
 	COLORREF dwTextColor;
 
-	HFONT hFont;
+	//HFONT hFont;
 	LOGFONT logFont;
 
 	Font* pFont = nullptr;
@@ -120,9 +140,15 @@ private:
 
 	bool bTextValid = true;
 	size_t pTextLen = 0;
+	size_t previousFlag = -1;
 
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
+
+	wchar_t regstr[2] = { L'\0' };
+	wregex* pCJK = nullptr;
+	wregex* pEmpty = nullptr;
+	wregex* pEmptyStr = nullptr;
 
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
@@ -164,11 +190,37 @@ private:
 
 	StrSize* pStrSizeArr = nullptr;
 
+	bool bShake = false;
+
+	unsigned short shakeTimer = 0;
+	RandGenerator<int>* pShakeRandGen = nullptr;
+
+	enum class ShakeType {
+		ShakeType_None = 0,
+		ShakeType_X,
+		ShakeType_Y,
+		ShakeType_Random,
+	};
+
+	struct ShakeControl {
+		ShakeType shakeType = ShakeType::ShakeType_None;
+
+		double amplitude = 1.0;
+		// higher, faster
+		double timerCoef = 1.0;
+		// offset between characters
+		// mul 360 = actual offset
+		double charOffset = 1.0 / 6.0;
+	};
+
 	struct CharPos {
-		long x;
-		long y;
-		long maxWidth;
-		long totalHeight;
+		long x = 0;
+		long y = 0;
+		long maxWidth = 0;
+		long totalHeight = 0;
+
+		// Shake
+		ShakeControl shakeControl;
 	};
 
 	CharPos* pCharPosArr = nullptr;
@@ -204,8 +256,10 @@ private:
 	//CharSizeCache charSzCache;
 
 	struct CharSizeCacheItem {
-		HDC hdc;
-		HFONT hFont;
+		HDC hdc = NULL;
+		HFONT hFont = NULL;
+		TEXTMETRIC tm = {0};
+
 		CharSizeCache cache;
 	};
 
@@ -224,9 +278,18 @@ private:
 
 	StrSize defaultCharSz;
 
+	struct FormatBasic {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+	};
+
 	struct FormatColor {
 		size_t start;
 		//size_t end;
+
+		size_t startWithNewLine;
 
 		Color color;
 	};
@@ -238,9 +301,7 @@ private:
 		size_t start;
 		//size_t end;
 
-		int animation;
-		int direction;
-		int frame;
+		size_t startWithNewLine;
 
 		DWORD hImage;
 
@@ -249,7 +310,29 @@ private:
 	};
 
 	std::vector<FormatICon> iConFormat;
-	std::map<DWORD, LPSURFACE> iConLib;
+
+	struct IConDisplay {
+		float iConOffsetX = 0;
+		float iConOffsetY = 0;
+
+		float iConScale = 1.0;
+
+		bool iConResample = false;
+	};
+
+	IConDisplay iConDisplay = { 0,0,1.0,false };
+
+	struct FormatIConDisplay {
+		size_t start;
+		//size_t end;
+
+		size_t startWithNewLine;
+
+		IConDisplay iConDisplay;
+	};
+
+	std::vector<FormatIConDisplay> iConDisplayFormat;
+	std::vector<IConDisplay> iConDisplayStack;
 
 	struct FormatFont {
 		size_t start;
@@ -260,19 +343,149 @@ private:
 		LOGFONT logFont;
 	};
 
-	std::vector<FormatFont> FontFormat;
+	std::vector<FormatFont> fontFormat;
 	std::vector<LOGFONT> logFontStack;
 
-	float iConOffsetX = 0;
-	float iConOffsetY = 0;
+	struct FormatShake {
+		size_t start = 0;
+		//size_t end;
 
-	float iConScale = 1.0;
+		size_t startWithNewLine = 0;
 
-	bool iConResample = false;
+		ShakeControl shakeControl;
+	};
 
-	npAppli appli = nullptr;
-	LPRO pIConActive = nullptr;
-	LPSURFACE pDefaultICon = nullptr;
+	std::vector<FormatShake> shakeFormat;
+	std::vector<ShakeControl> shakeStack;
+
+public:
+	using IConLib = std::map<DWORD, LPSURFACE>;
+	using ControlParams = std::vector<std::wstring_view>;
+	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
+
+	struct IConData {
+		IConLib* pIConLib = nullptr;
+		LPRO pCaller = nullptr;
+		LPRO pIConObject = nullptr;
+		LPSURFACE pDefaultICon = nullptr;
+		IConParamParser iconParamParser = nullptr;
+
+		using ResizeCacheKeyHash = size_t;
+
+		struct ResizeCacheKey {
+			LPSURFACE pSrc = nullptr;
+			int width = 0;
+			int height = 0;
+
+			inline ResizeCacheKeyHash GetHash() {
+				return  std::hash<void*>()(pSrc) ^std::hash<int>()(width) ^ std::hash<int>()(height);
+			}
+		};		
+
+		std::map<ResizeCacheKeyHash, LPSURFACE> resizeCache;
+				
+		IConData() {
+			pIConLib = new IConLib;
+		}
+
+		~IConData() {
+			ReleaseIConLib();
+
+			delete pIConLib;
+			pIConLib = nullptr;
+
+			delete pDefaultICon;
+			pDefaultICon = nullptr;
+		}
+
+		inline void ResetCaller() {
+			this->pCaller = nullptr;
+
+			this->pIConObject = nullptr;
+			this->iconParamParser = nullptr;
+		}
+
+		inline bool CheckCallerValidity() {
+			if (this->pCaller == nullptr || IsDestroyed((LPRO)this->pCaller)) {
+				this->ResetCaller();
+
+				return false;
+			}
+
+			return true;
+		}
+
+		// linked object changed, need to reset lib
+		inline bool NeedUpdateICon(LPRO pObject) {
+			return pIConObject != pObject;
+		}
+
+		// link to active -> pObject == LPRO
+		// link to other object -> pObject == Callback Identifier
+		// pIConObject == nullptr -> No ICon
+		inline void UpdateICon(LPRO pObject, IConParamParser parser) {
+			if (NeedUpdateICon(pObject)) {
+				ReleaseIConLib();
+			}			
+
+			// always update callback, make sure the caller is valid
+			this->pIConObject = pObject;
+			this->iconParamParser = parser;
+		}
+
+		inline void ReleaseIConLib() {
+			for (auto& it : *this->pIConLib) {
+				delete it.second;
+			}
+
+			this->pIConLib->clear();
+
+			for (auto& it : this->resizeCache) {
+				delete it.second;
+			}
+
+			this->resizeCache.clear();
+		}
+
+		inline void GetDefaultICon() {
+			if (this->pDefaultICon == nullptr) {
+				LPSURFACE proto = nullptr;
+				GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+
+				this->pDefaultICon = new cSurface;
+				this->pDefaultICon->Create(128, 128, proto);
+
+				_AddAlpha(this->pDefaultICon, 175);
+
+				this->pDefaultICon->Fill(RGB(200, 200, 200));
+
+				this->pDefaultICon->Line(0, 0, 127, 0);
+				this->pDefaultICon->Line(0, 0, 0, 127);
+				this->pDefaultICon->Line(127, 127, 127, 0);
+				this->pDefaultICon->Line(127, 127, 0, 127);
+
+				this->pDefaultICon->Line(0, 0, 127, 127);
+				this->pDefaultICon->Line(127, 0, 0, 127);
+
+#ifdef _DEBUG
+				//_SavetoClipBoard(this->pDefaultICon, false);
+#endif // _DEBUG
+			}
+		}
+	};
+
+private:
+	bool bExternalIConData = false;
+	IConData* pIConData = nullptr;
+
+	inline const auto GetIConData() {
+		return pIConData;
+	}
+
+	//IConLib* pIConLib = nullptr;
+	//LPRO pIConObject = nullptr;
+	//LPSURFACE pDefaultICon = nullptr;
+	//IConParamParser iconParamParser = nullptr;
 
 	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
 		for (auto& wChartoCheck : data) {
@@ -291,6 +504,40 @@ private:
 	inline bool NotAtEnd(wchar_t wChar) {
 		return CheckMatch(wChar, notAtEnd);
 	}
+
+	inline bool RegexCore(wregex* pRegex, wchar_t wChar) {
+		regstr[0] = wChar;
+
+		return regex_match(regstr, *pRegex);
+	}
+
+	inline bool NotCJK(wchar_t wChar) {
+		return RegexCore(this->pCJK, wChar);
+	}
+
+	inline bool NotEmpty(wchar_t wChar) {
+		return !RegexCore(this->pEmpty, wChar);
+	}
+
+	inline bool NotEmpty(const wchar_t* pChar) {
+		return !regex_match(pChar, *this->pEmptyStr);
+	}
+
+#ifdef  _DEBUG
+	// check a set of characters match regex
+	//wchar_t wChars[] = { L'a',L'b', L'c', L'd' };
+	//auto bMatch = CheckRegex(wChars, 4, &NeoStr::NotCJK);
+	inline bool CheckRegex(wchar_t* wChars, size_t sz
+		, bool (NeoStr::* regex)(wchar_t)) {
+		auto bRet = true;
+
+		for (size_t i = 0; i < sz; i++) {
+			bRet &= (this->*regex)(wChars[i]);
+		}
+
+		return bRet;
+	}
+#endif //  _DEBUG
 
 	inline int GetStartPosX(long totalWidth, long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
@@ -398,10 +645,12 @@ private:
 public:
 	NeoStr(DWORD dwAlignFlags, COLORREF color
 		, HFONT hFont
-		, FontCache** ppFontCache = nullptr
-		, CharSizeCacheWithFont** ppCharSzCacheWithFont = nullptr
-		, bool needGDIPStartUp = true
+		// read only
+		, FontCache* pFontCache = nullptr
+		, CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr		
+		, IConData* pIConData = nullptr
 		, PrivateFontCollection* pFontCollection = nullptr
+		, bool needGDIPStartUp = true
 	) {
 		this->needGDIPStartUp = needGDIPStartUp;
 
@@ -413,23 +662,32 @@ public:
 		this->hdc = GetDC(NULL);
 		SelectObject(this->hdc, hFont);
 
-		this->hFont = hFont;
-		GetObject(this->hFont, sizeof(LOGFONT), &this->logFont);
+		//this->hFont = hFont;
+		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
+
+		// https://www.jianshu.com/p/fcbc5cd06f39
+		// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
+		this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+			, ECMAScript | optimize);
+		this->pEmpty = new wregex(L"[\\s]"
+			, ECMAScript | optimize);
+		this->pEmptyStr = new wregex(L"[\\s]*"
+			, ECMAScript | optimize);
 
 		this->pFontCollection = pFontCollection;
 
-		if (!ppFontCache || !ppCharSzCacheWithFont) {
+		if (!pFontCache || !pCharSzCacheWithFont) {
 			this->bExternalCache = false;
 		}
 
 		if (this->bExternalCache) {
-			this->pFontCache = *ppFontCache;
+			this->pFontCache = pFontCache;
 		}
 		else {
-			//this->pFontCache = new FontCache;
 			Alloc(this->pFontCache);
 		}
+
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
@@ -437,9 +695,21 @@ public:
 
 		this->strPos.reserve(20);		
 		
-		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
-		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		
+		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
+		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
+		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);		
+
+		this->fontFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->logFontStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->shakeFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->shakeStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->pShakeRandGen = new RandGenerator<int>(-1 * SHAKE_RANDOM_RANGE, SHAKE_RANDOM_RANGE);
 
 #ifdef MEASURE_GDI_PLUS		
 		this->pMeasure = new Graphics(hdc);
@@ -453,21 +723,37 @@ public:
 		this->measureBaseSize = { long(boundRect.GetRight() - boundRect.GetLeft()),long(boundRect.GetBottom() - boundRect.GetTop()) };
 		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
-
 		// add a default char to return default value when input text is empty
 		if (this->bExternalCache) {
-			this->pCharSzCacheWithFont = *ppCharSzCacheWithFont;
+			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
 		}
 		else {
-			//this->pCharSzCacheWithFont = new CharSizeCacheWithFont;
 			Alloc(this->pCharSzCacheWithFont);
 		}
 
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
+
+		if (pIConData != nullptr) {
+			bExternalIConData = true;
+			this->pIConData = pIConData;
+		}
+		else {
+			this->pIConData = new IConData;
+		}
 	}
 
 	~NeoStr() {
+		//SelectObject(this->hdc, (HFONT)NULL);
 		ReleaseDC(NULL, this->hdc);
+
+		delete this->pCJK;
+		this->pCJK = nullptr;
+
+		delete this->pEmpty;
+		this->pEmpty = nullptr;
+
+		delete this->pEmptyStr;
+		this->pEmptyStr = nullptr;
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
@@ -478,6 +764,14 @@ public:
 			Release(this->pCharSzCacheWithFont);
 			Release(this->pFontCache);
 		}
+
+		if (!bExternalIConData) {
+			delete this->pIConData;
+			this->pIConData = nullptr;
+		}
+
+		delete this->pShakeRandGen;
+		this->pShakeRandGen = nullptr;
 
 		delete[] this->pRawText;
 		this->pRawText = nullptr;
@@ -500,13 +794,6 @@ public:
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
 
-		delete this->pDefaultICon;
-		this->pDefaultICon = nullptr;
-
-		for (auto& it : this->iConLib) {
-			delete it.second;
-		}
-
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 		}
@@ -522,6 +809,7 @@ public:
 
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
 		for (auto& it : *pCharSzCacheWithFont) {
+			//SelectObject(it.second.hdc, (HFONT)NULL);
 			ReleaseDC(NULL, it.second.hdc);
 			DeleteObject(it.second.hFont);
 		}
@@ -635,7 +923,7 @@ public:
 	inline static int GetFontStyle(LOGFONT& logFont) {
 		int fontStyle = Gdiplus::FontStyleRegular;
 
-		if (logFont.lfWeight >= 600) {
+		if (logFont.lfWeight >= FW_SEMIBOLD) {
 			fontStyle = fontStyle | Gdiplus::FontStyleBold;
 		}
 		if (logFont.lfItalic) {
@@ -695,45 +983,124 @@ public:
 		}
 	}
 
+	// Color conversion
 	// #AARRGGBB
 	inline Color GetColor(std::wstring_view hex) {
-		auto dec = _h2d(hex.data(), hex.size());
+		return GetColor(_h2d(hex.data(), hex.size()), true);
+	}
+	
+	// Color conversion
+	inline Color GetColor(DWORD color, bool bAlpha = false) {
+		if (bAlpha) {
+			auto A = (BYTE)((color >> 24) & 0xFF);
+			auto R = (BYTE)((color >> 16) & 0xFF);
+			auto G = (BYTE)((color >> 8) & 0xFF);
+			auto B = (BYTE)((color) & 0xFF);
 
-		auto A = (BYTE)((dec >> 24) & 0xFF);
-		auto R = (BYTE)((dec >> 16) & 0xFF);
-		auto G = (BYTE)((dec >> 8) & 0xFF);
-		auto B = (BYTE)((dec) & 0xFF);		
-		
-		return Color(A, R, G, B);
+			return Color(A, R, G, B);
+		}
+		else {
+			return Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+		}
 	}
 
-	inline Color GetColor(DWORD color) {
-		return 	Color(255, GetRValue(color), GetGValue(color), GetBValue(color));
+	// Color conversion
+	inline DWORD GetDWORD(Color color) {
+		auto A = color.GetAlpha();
+		auto R = color.GetRed();
+		auto G = color.GetGreen();
+		auto B = color.GetBlue();
+
+		return (A << 24) | (R << 16) | (G << 8) | (B);
 	}
+
+	// Get display color
+	//inline COLORREF GetColor() {
+	//	return this->dwTextColor;
+	//}
 
 	inline StrSize GetDefaultCharSize() {
 		return this->defaultCharSz;
 	}
 
+	inline bool GetShakeUpdateState() {
+		return this->bShake;
+	}
+
+	inline ShakeType GetShakeTypeByName(std::wstring_view& param) {
+		do {
+			if (StringViewIEqu(param, L"None")) {
+				return ShakeType::ShakeType_None;
+			}
+
+			if (StringViewIEqu(param, L"X")) {
+				return ShakeType::ShakeType_X;
+			}
+
+			if (StringViewIEqu(param, L"Y")) {
+				return ShakeType::ShakeType_Y;
+			}
+
+			if (StringViewIEqu(param, L"Random") || StringViewIEqu(param, L"R")) {
+				return ShakeType::ShakeType_Random;
+			}
+		} while (0);
+
+		return ShakeType::ShakeType_None;
+	}
+
+	inline void GetShakePosition(const ShakeControl& shakeControl, double timer, float& x, float& y, const StrSize* charSz) {
+		auto t = RAD(timer);
+
+		switch (shakeControl.shakeType)
+		{
+		case ShakeType::ShakeType_None: {
+			break;
+		}
+		case ShakeType::ShakeType_X: {
+			x = float(x + shakeControl.amplitude * charSz->width * sin(t));
+
+			break;
+		}
+		case ShakeType::ShakeType_Y: {
+			y = float(y + shakeControl.amplitude * charSz->height * sin(t));
+
+			break;
+		}
+		case ShakeType::ShakeType_Random: {
+			auto randomX = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+			auto randomY = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+
+			auto wa = shakeControl.amplitude * charSz->width;
+			auto ha = shakeControl.amplitude * charSz->height;
+
+			x = float(x + wa * randomX);
+			y = float(y + ha * randomY);
+
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
 	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
-		this->iConOffsetX = iConOffsetX;
-		this->iConOffsetY = iConOffsetY;
+		this->iConDisplay.iConOffsetX = iConOffsetX;
+		this->iConDisplay.iConOffsetY = iConOffsetY;
 	}
 
 	inline void SetIConScale(float iConScale = 1.0) {
-		this->iConScale = iConScale;
+		this->iConDisplay.iConScale = iConScale;
 	}
 
 	inline void SetIConResample(bool iConResample=false){
-		this->iConResample=iConResample;
+		this->iConDisplay.iConResample = iConResample;
 	}
 
-	inline void LinkActive(LPRO pObject) {
-		this->pIConActive = pObject;
-	}
-
-	inline void SetAppli(npAppli appli) {
-		this->appli = appli;
+	inline void LinkObject(LPRO pObject, IConParamParser parser) {
+		if (!this->bExternalIConData) {
+			this->pIConData->UpdateICon(pObject, parser);
+		}
 	}
 
 	inline void SetHWA(int type, int driver, bool preMulAlpha) {
@@ -743,6 +1110,19 @@ public:
 	}
 
 	inline void SetColor(DWORD color) {
+		auto bColorChanged = this->dwTextColor != color;
+
+		if (bColorChanged && !this->colorFormat.empty()) {
+			// no color format, update default
+			if (this->colorFormat.size() == 1) {
+				this->colorFormat.at(0).color = GetColor(color);
+			}
+			// has color format, update format
+			else {
+				this->GetFormat(this->pRawText, this->previousFlag, true);
+			}
+		}
+
 		this->dwTextColor = color;
 	}
 
@@ -853,6 +1233,13 @@ public:
 		return *(StrSize*)&sz;
 	}
 
+	inline auto GetCharSizeCacheIt(LOGFONT logFont) {
+		auto logFontHash = LogFontHasher(logFont);
+		auto it = pCharSzCacheWithFont->find(logFontHash);
+
+		return it;
+	}
+
 	inline StrSize GetCharSizeWithCache(wchar_t wChar, LOGFONT logFont) {
 		auto logFontHash = LogFontHasher(logFont);
 		auto it = pCharSzCacheWithFont->find(logFontHash);
@@ -877,7 +1264,10 @@ public:
 			auto hFont = CreateFontIndirect(&logFont);			
 			SelectObject(hdc, hFont);
 
-			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont };
+			TEXTMETRIC tm;
+			GetTextMetrics(hdc, &tm);
+
+			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont,tm };
 
 			return GetCharSizeWithCache(wChar,logFont);
 		}
@@ -897,59 +1287,252 @@ public:
 		return StrSize { change.right - change.left,change.bottom - change.top };
 	}
 
-	inline void GetFormat(LPCWSTR pStr) {
+	inline const LPWSTR GetRawText() {
+		return this->pRawText;
+	}
+
+	inline const LPWSTR GetText() {
+		return this->pText;
+	}
+
+	inline void GetFormat(LPCWSTR pStr
+		, size_t flags = FORMAT_IGNORE_DEFAULTFLAG
+		, bool bForced = false		// force refresh
+		, size_t operation = 0
+		, size_t operationParam = 0) {
 		this->bTextValid = true;
 
-		if (pStr == nullptr) {
+		auto TextValid = [&](const wchar_t* pStr, size_t* pLen) {
+			*pLen = 0;
+
+			if (pStr == nullptr) {
+				return false;
+			}
+
+			*pLen = wcslen(pStr);
+
+			if (*pLen == 0) {
+				return false;
+			}
+
+			if (!NotEmpty(pStr)) {
+				return false;
+			}
+
+			return true;
+		};
+
+		size_t pInputLen = 0;
+
+		if (!TextValid(pStr, &pInputLen)) {
 			this->bTextValid = false;
 
 			return;
 		}
 
-		size_t pInputLen = wcslen(pStr);
+		if (operation != 0) {
+			bForced = true;
+		}
 
-		if (pInputLen == 0) {
-			this->bTextValid = false;
-
+		if (!bForced 
+			&& this->pRawText != nullptr && StrEqu(pStr, this->pRawText)
+			&& flags == previousFlag) {
 			return;
 		}
 
-		delete[] this->pRawText;
-		this->pRawText = nullptr;
+		previousFlag = flags;
+
+		// won't copy if this->pRawText is input
+		if (this->pRawText != pStr) {
+			delete[] this->pRawText;
+			this->pRawText = nullptr;
+
+			this->pRawText = new wchar_t[pInputLen + 1];
+			memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
+
+			memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
+		}
 
 		delete[] this->pText;
 		this->pText = nullptr;
 
-		this->pRawText = new wchar_t[pInputLen + 1];
-		memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
-
 		this->pText = new wchar_t[pInputLen + 1];
-		memset(pText, 0, sizeof(wchar_t) * (pInputLen + 1));
+		memset(pText, 0, sizeof(wchar_t) * (pInputLen + 1));	
 
-		memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
-
-		// Format
+		// ---------------
+		// Format Control
+		// ---------------
+		// 
+		// /[ -> [
+		//	escaped
+		// 
+		// [Command] if not match follows, will be displayed as untouched
+		//	depend on your flag settings
+		// 
+		// [^]
+		//	ignore all formats after this
+		// 
+		// [^-]
+		//	ignore all formats except [ICon] after this
+		//	icon controls like [IConOffsetX] are also ignored
+		// 
+		// [!^]
+		//	stop ignore all formats
+		// 
+		// [!]
+		//	reset all format to what you set in properties and events
+		// 
 		// [ICon = Direction, Frame]
+		//	insert icon based on linked active.
+		//	if param is less than two, will be referred from left.
+		//	e.g., one param will be treated as frame.
+		//	
+		//	ICon will be resized to the font size it inserted at
+		//	
+		//	*if you are linking to object
+		//	*you need to retrieve each param
+		//	*then handle it by your self
+		//	*you need to set a key for it for retrieving
+		//	*and value as pointer to a surface
+		// 
+		// [IConOffsetX = 0.0][/IConOffsetX]
+		//	ICon Offset X
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [IConOffsetY = 0.0][/IConOffsetY]
+		//	ICon Offset Y
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [IConScale = 1.0][/IConScale]
+		//	ICon Scale
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [IConResample = 1][/IConResample]
+		//	ICon Resample, 1 = Enable, 0 = Disable
+		//	! = reset to default
+		// 
+		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
+		//	control shake.
+		//	if param is less than four, will be referred from right.
+		//	e.g., one param -> Type, two params -> Type & Amplitude, etc.
+		// 
+		//	type: shake type, default is None, can be X/Y/Random. X/Y is based on cosine.
+		//	amplitude: default is 1.0, relative to character size. size = 30, amplitude = 0.5,
+		//			   will shake in range of [ -15 ~ 15 ]
+		//  timer coef: default is 1.0, shake faster when higher.
+		//	char offset: default is 1.0 / 6.0, relative to 360 degree. charOffset = 0.2, actual offset is 72 degree
+		//				 determines the movement interval of adjacent characters.
+		//				 only works in X/Y mode ( cosine )
+		// 
 		// [Color = #FFFFFFFF][/Color]
+		// [C = #FFFFFFFF][/C]
+		//	color, hex AARRGGBB, or A, R, G, B
+		//	if RGB param is less than four, then it's referred in the following order:
+		//		R
+		//		R G
+		//		R G B
+		//		A R G B
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [Font = FontName][/Font]
+		// [F = FontName][/F]
+		//	! = reset to default
+		// 
+		// [Size = FontSize][/Size]
+		// [S = FontSize][/S]
+		//	! = reset to default
+		//	+/- = add/minus to current
+		// 
+		// [Bold][/Bold]
+		// [B][/B]
+		// 
+		// [!Bold][/!Bold]
+		// [!B][/!B]
+		//	set to non-bold
+		// 
+		// [Italic][/Italic]
+		// [I][/I]
+		// 
+		// [!Italic][/!Italic]
+		// [!I][/!I]
+		//	set to non-italic
+		// 
+		// [Underline][/Underline]
+		// [U][/U]
+		// 
+		// [!Underline][/!Underline]
+		// [!U][/!U]
+		//	set to non-underline
+		// 
+		// [StrikeOut][/StrikeOut]
+		// [S][/S]
+		// 
+		// [!StrikeOut][/!StrikeOut]
+		// [!S][/!S]
+		//	set to non-strike out
 
 		auto pCurChar = pRawText;
 		auto pSavedChar = pText;
 
+		ControlParams controlParams;
+		controlParams.reserve(4);
+
+		this->iConFormat.clear();
+
+		this->iConDisplayStack.clear();
+		this->iConDisplayStack.emplace_back(this->iConDisplay);
+
+		this->iConDisplayFormat.clear();
+		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ 0,0,iConDisplayStack.back() });
+		
 		this->colorStack.clear();
 		this->colorStack.emplace_back(GetColor(this->dwTextColor));
 
 		this->colorFormat.clear();
-		this->colorFormat.emplace_back(FormatColor{ 0,colorStack.back() });
-
-		this->iConFormat.clear();
+		this->colorFormat.emplace_back(FormatColor{ 0,0,colorStack.back() });		
 
 		this->logFontStack.clear();
 		this->logFontStack.emplace_back(this->logFont);
 
-		this->FontFormat.clear();
-		this->FontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+		this->fontFormat.clear();
+		this->fontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+
+		this->bShake = false;
+
+		this->shakeStack.clear();
+		this->shakeStack.emplace_back(ShakeControl());
+
+		this->shakeFormat.clear();
+		this->shakeFormat.emplace_back(FormatShake{ 0,0,shakeStack.back() });
+
+
+		auto GetRawStringByFilteredStringLength = [&]() {
+			auto offset = size_t(pSavedChar - pText);
+
+			if ((operation & FORMAT_OPERATION_GetRawStringByFilteredStringLength)
+				&& offset + 1 > operationParam) {
+				pCurChar[0] = L'\0';
+				
+#ifdef _DEBUG
+				pSavedChar[0] = L'@';
+				pSavedChar[1] = L'\0';
+#endif
+
+				throw FORMAT_OPERATION_GetRawStringByFilteredStringLength;
+			}
+		};
 
 		size_t newLineCount = 0;
+
+		bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
+		bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
+
+		bool bIgnoreFormat = false;
+		bool bIgnoreFormatExceptICon = false;
 
 		while (true) {
 			// End
@@ -993,10 +1576,16 @@ public:
 
 				// get format
 				//std::wstring_view controlStrDebug(pCurChar + 1, end - 1);
+				if (bIgnoreIncomplete && bEndOfText) {					
+					break;
+				}
+
 				if (!bEndOfText) {
 					auto bEndOfRegion = (pCurChar + 1)[0] == L'/';
 
 					// handle format
+					bool bValidCommand = true;
+
 					do {
 						size_t equal = 0;
 
@@ -1004,185 +1593,405 @@ public:
 							if (equal == end) {
 								break;
 							}
+
 							equal++;
 						}
 
-						auto GetTrimmedStr = [](LPWSTR pStart, size_t length) {
-							while (pStart[0] == L' ') {
-								pStart++;
-								length--;
-							}
+						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
-							while ((pStart + length - 1)[0] == L' ') {
-								length--;
-							}
+						// parse by ',', from right
+						auto ParseParamCore = [](std::wstring_view& paramParser, ParamParserCallback callBack) {
+							auto start = paramParser.find_last_of(L',');
 
-							return std::wstring_view(pStart, length);
-						};
-						auto StringViewIEqu = [](std::wstring_view& str, LPCWSTR pStr) {
-							auto length = wcslen(pStr);
+							if (start == std::wstring::npos) {
+								callBack(paramParser);
 
-							if (length != str.size()) {
 								return false;
 							}
+							else {
+								auto paramStr = paramParser.substr(start + 1);
+								paramParser = paramParser.substr(0, start);
 
-							for (size_t i = 0; i < length; i++) {
-								if (ChrCmpIW(str[i], pStr[i]) != 0) {
-									return false;
-								}
+								callBack(paramStr);
+
+								return true;
 							}
-
-							return true;
-						};
-						auto StringViewToInt = [GetTrimmedStr](std::wstring_view& str) {
-							return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
 						};
 
-						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, equal - bEndOfRegion - 1);
+						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, max(0, (long long)equal - bEndOfRegion - 1));
 						std::wstring_view controlParam = !bEndOfRegion
-							? GetTrimmedStr(pCurChar + equal + 1, end - equal - 1)
+							? GetTrimmedStr(pCurChar + equal + 1, max(0, (long long)end - (long long)equal - 1))
 							: controlStr;
 
-						do {
-							size_t savedLength = pSavedChar - pText - newLineCount * 2;
-							size_t savedLengthWithNewLine = pSavedChar - pText;
+						if (controlParam.size() == 0) {
+							controlParam = DEFAULT_PARAM;
+						}
 
-							if (StringViewIEqu(controlStr, L"Color")
-								|| StringViewIEqu(controlStr, L"C")) {
-								size_t savedLengthLocal = savedLength;
+						size_t savedLength = pSavedChar - pText - newLineCount * 2;
+						size_t savedLengthWithNewLine = pSavedChar - pText;
 
-								if (!bEndOfRegion) {
-									colorStack.emplace_back(GetColor(controlParam));
-								}
-								else {
-									colorStack.pop_back();
-								}
+						if (StringViewIEqu(controlStr, L"^")) {
+							bIgnoreFormat = true;
+						}
 
-								auto& lastColorFormat = this->colorFormat.back();
+						if (StringViewIEqu(controlStr, L"^-")) {
+							bIgnoreFormat = true;
+							bIgnoreFormatExceptICon = true;
+						}
 
-								// if equal, replace last format
-								if (savedLengthLocal == lastColorFormat.start) {
-									lastColorFormat.color = colorStack.back();
-								}
-								else {
-									this->colorFormat.emplace_back(FormatColor{ savedLengthLocal,colorStack.back() });
-								}
-
+						if (StringViewIEqu(controlStr, L"!^")) {
+							bIgnoreFormat = false;
+							bIgnoreFormatExceptICon = false;
+						}
+						
+						if (StringViewIEqu(controlStr, L"ICon")) {
+							if (bIgnoreFormat && !bIgnoreFormatExceptICon) {
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"ICon")) {
-								size_t savedLengthLocal = savedLength;
+							DWORD hImage = FORMAT_INVALID_ICON;
 
-								int frame = 0;
-								int direction = 0;
-								int animation = 0;
-
-								auto paramParser = controlParam;
-
-								do {
-									auto ParseParam = [StringViewToInt, &paramParser](int& data) {
-										auto start = paramParser.find_last_of(L',');
-
-										if (start == std::wstring::npos) {
-											data = StringViewToInt(paramParser);
-
-											return false;
-										}
-										else {
-											auto paramStr = paramParser.substr(start + 1);
-											paramParser = paramParser.substr(0, start);
-
-											data = StringViewToInt(paramParser);
-
-											return true;
-										}
-									};
-
-									if (!ParseParam(frame)) {
-										break;
-									}
-
-									if (!ParseParam(direction)) {
-										break;
-									}
-
-									if (!ParseParam(animation)) {
-										break;
-									}
-								} while (0);
-
-								DWORD hImage = -1;
-
-								do {
-									if (this->pIConActive == nullptr || this->appli == nullptr) {
-										break;
-									}
-
-									if (animation < 0 || direction < 0 || frame < 0) {
-										break;
-									}
-
-									auto pRoa = &this->pIConActive->roa;
-
-									if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
-										break;
-									}
-
-									auto pDir = &pRoa->raAnimDirOffset[direction];
-
-									if (frame >= pDir->adNumberOfFrame) {
-										break;
-									}
-
-									hImage = pDir->adFrame[frame];
-								} while (0);
-
-								this->iConFormat.emplace_back(FormatICon{ savedLength
-																			, animation
-																			, direction
-																			, frame
-																			, hImage });
-
-								// space for icon
-								pSavedChar[0] = DEFAULT_CHARACTER;
-								pSavedChar++;
-
-								break;
-							}
-
-							using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
-
-							auto FontFormatControl = [&](FontFormatControlCallback callBack) {
-								size_t savedLengthLocal = savedLength;
-
-								if (!bEndOfRegion) {
-									LOGFONT newLogFont = logFontStack.back();
-
-									callBack(newLogFont);
-
-									logFontStack.emplace_back(newLogFont);
-								}
-								else {
-									logFontStack.pop_back();
+							do {
+								if (this->pIConData->pIConObject == nullptr || this->pIConData->iconParamParser == nullptr) {
+									break;
 								}
 
-								auto& lastFontFormat = this->FontFormat.back();
+								auto& paramParser = controlParam;
+								controlParams.clear();
+
+								do {
+
+								} while (ParseParamCore(paramParser
+									, [&controlParams](std::wstring_view& param) {
+										controlParams.emplace_back(GetTrimmedStr(param));
+									}));
+
+								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
+							} while (0);
+
+							this->iConFormat.emplace_back(FormatICon{ savedLength
+																		, savedLengthWithNewLine
+																		, hImage });
+
+							// space for icon
+							pSavedChar[0] = DEFAULT_CHARACTER;
+							pSavedChar++;
+
+							break;
+						}
+
+#pragma region StackedFormat
+						auto UpdateFormat = [&](auto& format, auto& content) {
+								auto CopyFormat = [](FormatBasic* pFormat, auto& content) {
+									auto pData = (std::remove_reference_t<decltype(content)>*)(pFormat + 1);
+									memcpy(pData, &content, sizeof(content));
+								};
+								
+								auto pLastFormat = (FormatBasic*)(&format.back());
 
 								// if equal, replace last format
-								if (savedLengthLocal == lastFontFormat.start) {
-									lastFontFormat.logFont = logFontStack.back();
+								if (savedLength == pLastFormat->start) {
+									CopyFormat(pLastFormat, content);
 								}
 								else {
-									this->FontFormat.emplace_back(FormatFont{ savedLengthLocal
-										,savedLengthWithNewLine
-										,logFontStack.back() });
+									std::remove_reference_t<decltype(format[0])> newFormat = format.front();
+									auto pNewFormat = (FormatBasic*)(&newFormat);
+
+									pNewFormat->start = savedLength;
+									pNewFormat->startWithNewLine = savedLengthWithNewLine;		
+
+									CopyFormat(pNewFormat, content);
+
+									format.emplace_back(newFormat);
 								}
 							};
 
-							if (StringViewIEqu(controlStr, L"Font")
-								|| StringViewIEqu(controlStr, L"F")) {
+						// reset all
+						if (StringViewIEqu(controlStr, L"!")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								auto Reset = [&](auto& stack, auto& format) {
+									std::remove_reference_t<decltype(stack[0])> first = stack.front();
+									
+									stack.clear();
+									stack.emplace_back(first);
+
+									UpdateFormat(format, first);
+								};
+
+								Reset(shakeStack, shakeFormat);
+								Reset(colorStack, colorFormat);
+								Reset(logFontStack, fontFormat);
+
+								break;
+							}
+
+						auto StackManager = [&](auto& stack, auto& format, auto callBack) {
+								if (!bEndOfRegion) {
+									std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
+
+									callBack(newFormat);
+
+									stack.emplace_back(newFormat);
+								}
+								else {
+									// protect for default one
+									if (stack.size() > 1) {
+										stack.pop_back();
+									}
+								}
+
+								UpdateFormat(format, stack.back());
+							};
+
+						// callback should calculate the diff size
+						auto DiffManager = [&](auto oldValue, auto callBack) {
+								bool bAdd = false;
+								bool bMinus = false;
+
+								if (controlParam.front() == L'+') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+								}
+
+								if (controlParam.front() == L'-') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+									bMinus = true;
+								}
+
+								auto sizeDiff = callBack(controlParam);
+
+								return !bAdd
+									? sizeDiff
+									: (bMinus ? -1 : +1) * sizeDiff + oldValue;
+							};
+
+						if (StringViewIEqu(controlStr, L"IConOffsetX")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConOffsetX = this->iConDisplayStack.front().iConOffsetX;
+
+										return;
+									}
+
+									iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX, [&](std::wstring_view& controlParam) {
+										auto size = _stof(controlParam);
+										return size;
+										});
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"IConOffsetY")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConOffsetY = this->iConDisplayStack.front().iConOffsetY;
+
+										return;
+									}
+
+									iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY, [&](std::wstring_view& controlParam) {
+										auto size = _stof(controlParam);
+										return size;
+										});
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"IConScale")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConScale = this->iConDisplayStack.front().iConScale;
+
+										return;
+									}
+
+									iConDisplay.iConScale = DiffManager(iConDisplay.iConScale, [&](std::wstring_view& controlParam) {
+										auto size = _stof(controlParam);
+										return size;
+										});
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"IConResample")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										iConDisplay.iConResample = this->iConDisplayStack.front().iConResample;
+
+										return;
+									}
+
+									iConDisplay.iConResample = _stoi(controlParam);
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"Shake")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
+									auto& paramParser = controlParam;
+									controlParams.clear();
+
+									do {
+
+									} while (ParseParamCore(paramParser
+										, [&controlParams](std::wstring_view& param) {
+											controlParams.emplace_back(GetTrimmedStr(param));
+										}));
+
+									do {
+										if (!controlParams.empty()) {
+											shakeControl.shakeType = GetShakeTypeByName(controlParams.back());
+											controlParams.pop_back();
+										}
+
+										if (!controlParams.empty()) {
+											shakeControl.amplitude = _stod(controlParams.back());
+											controlParams.pop_back();
+										}
+
+										if (!controlParams.empty()) {
+											shakeControl.timerCoef = _stod(controlParams.back());
+											controlParams.pop_back();
+										}
+
+										if (!controlParams.empty()) {
+											shakeControl.charOffset = _stod(controlParams.back());
+											controlParams.pop_back();
+										}
+									} while (0);
+
+									if (shakeControl.shakeType != ShakeType::ShakeType_None) {
+										this->bShake = true;
+									}
+
+									shakeControl.charOffset *= 360;
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"Color")
+							|| StringViewIEqu(controlStr, L"C")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								StackManager(colorStack, colorFormat, [&](Color& color) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										color = colorStack.front();
+
+										return;
+									}
+
+									auto result = DiffManager(GetDWORD(colorStack.back()), [&](std::wstring_view& controlParam) {
+										// hex
+										if ((controlParam[0] == L'#') 
+											|| (controlParam[0] == L'0' 
+												&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
+											return _h2d(controlParam.data(), controlParam.size());
+										}
+										// dec
+										else {
+											auto& paramParser = controlParam;
+											controlParams.clear();
+
+											do {
+
+											} while (ParseParamCore(paramParser
+												, [&controlParams](std::wstring_view& param) {
+													controlParams.emplace_back(GetTrimmedStr(param));
+												}));
+
+											DWORD result = 0;
+																					
+											auto size = controlParams.size();
+											auto alpha = 0xFF;
+
+											if (size == 4) {
+												alpha = _stoi(controlParams.back());
+												controlParams.pop_back();
+											}
+											
+											// R
+											// R G
+											// R G B
+											// A R G B
+											for (auto i = 0; i < 3; i++) {
+												result = result << 8;
+												
+												if (!controlParams.empty()) {
+													result |= _stoi(controlParams.back());
+
+													controlParams.pop_back();
+												}
+											}	
+
+											result |= alpha << 24;
+
+											return result;
+										}										
+										});
+
+									color = GetColor(result, true);
+									});
+
+								break;
+							}
+
+#pragma region FontControl
+						using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
+
+						auto FontFormatControl = [&](FontFormatControlCallback callBack) {
+							StackManager(logFontStack, fontFormat, callBack);
+						};
+
+						if (StringViewIEqu(controlStr, L"Font")
+							|| StringViewIEqu(controlStr, L"F")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+
+										return;
+									}
+
 									memset(newLogFont.lfFaceName, 0
 										, LF_FACESIZE * sizeof(WCHAR));
 									memcpy(newLogFont.lfFaceName, controlParam.data()
@@ -1192,31 +2001,65 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Size")
-								|| StringViewIEqu(controlStr, L"S")) {
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									auto size = StringViewToInt(controlParam);;
-									auto newSize = -1 * MulDiv(size
-										, GetDeviceCaps(this->hdc, LOGPIXELSY)
-										, 72);
+						if (StringViewIEqu(controlStr, L"Size")
+							|| StringViewIEqu(controlStr, L"S")) {
+								if (bIgnoreFormat) {
+									break;
+								}
 
-									newLogFont.lfHeight = newSize;
+								FontFormatControl([&](LOGFONT& newLogFont) {									
+									// Reset
+									if (StringViewIEqu(controlParam, L"!")) {
+										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+
+										return;
+									}
+
+									newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&](std::wstring_view& controlParam) {
+										auto size = _stoi(controlParam);
+										auto newSize = -1 * MulDiv(size
+											, GetDeviceCaps(this->hdc, LOGPIXELSY)
+											, 72);
+
+										return newSize;
+										});
 										});
 
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Bold")
-								|| StringViewIEqu(controlStr, L"B")) {
+						if (StringViewIEqu(controlStr, L"Bold")
+							|| StringViewIEqu(controlStr, L"B")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfWeight = FW_EXTRABOLD;
+									newLogFont.lfWeight = FW_BOLD;
 									});								
 
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Italic")
-								|| StringViewIEqu(controlStr, L"I")) {
+						if (StringViewIEqu(controlStr, L"!Bold")
+							|| StringViewIEqu(controlStr, L"!B")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfWeight = FW_NORMAL;
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"Italic")
+							|| StringViewIEqu(controlStr, L"I")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfItalic = TRUE;
 									});
@@ -1224,8 +2067,25 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"Underline")
-								|| StringViewIEqu(controlStr, L"U")) {
+						if (StringViewIEqu(controlStr, L"!Italic")
+							|| StringViewIEqu(controlStr, L"!I")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfItalic = FALSE;
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"Underline")
+							|| StringViewIEqu(controlStr, L"U")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfUnderline = TRUE;
 									});
@@ -1233,20 +2093,61 @@ public:
 								break;
 							}
 
-							if (StringViewIEqu(controlStr, L"StrikeOut")
-								|| StringViewIEqu(controlStr, L"S")) {
+						if (StringViewIEqu(controlStr, L"!Underline")
+							|| StringViewIEqu(controlStr, L"!U")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfUnderline = FALSE;
+									});
+
+								break;
+							}
+
+						if (StringViewIEqu(controlStr, L"StrikeOut")
+							|| StringViewIEqu(controlStr, L"S")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									newLogFont.lfStrikeOut = TRUE;
 									});
 
 								break;
 							}
-						} while (0);
+
+						if (StringViewIEqu(controlStr, L"!StrikeOut")
+							|| StringViewIEqu(controlStr, L"!S")) {
+								if (bIgnoreFormat) {
+									break;
+								}
+
+								FontFormatControl([&](LOGFONT& newLogFont) {
+									newLogFont.lfStrikeOut = FALSE;
+									});
+
+								break;
+							}
+#pragma endregion
+#pragma endregion
+
+						bValidCommand = false;
 					} while (0);
+
+					// copy invalid command
+					if (!bIgnoreUnknown && !bValidCommand) {
+						memcpy(pSavedChar, pCurChar, sizeof(wchar_t)* (end + 1));
+						pSavedChar += end + 1;
+					}
 
 					// include ']'
 					pCurChar += end + 1;
 
+					GetRawStringByFilteredStringLength();
+					
 					continue;
 				}
 			}
@@ -1255,11 +2156,11 @@ public:
 			
 			pCurChar++;
 			pSavedChar++;
+	  
+			GetRawStringByFilteredStringLength();
 		}
 
-		pTextLen = wcslen(pText);
-
-		if (pTextLen == 0) {
+		if (!TextValid(pText, &pTextLen)) {
 			this->bTextValid = false;
 
 			return;
@@ -1294,20 +2195,54 @@ public:
 		bool bNegColSpace = nColSpace < 0;
 		bool bNegRowSpace = nRowSpace < 0;
 
-		size_t notAtStartCharPos = -1;
-		bool bPunctationSkip = false;
+		bool bInWord = false;
+		size_t notCJKStart = -1;
+		size_t notCJKStartWidth = -1;
 
-		auto fontIt = this->FontFormat.begin();
+		size_t notAtStartCharPos = -1;
+		bool bPunctuationSkip = false;
+
+		auto fontIt = this->fontFormat.begin();
 		auto localLogFont = fontIt->logFont;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
+			bool bNewLineBegin = true;
+
 			bool newLine = false;		// newline
 			bool skipLine = false;		// current line only has /r/n
+			bool bNewLineHandled = false;
 
 			long curWidth = 0;
 			long curHeight = 0;
 
 			pCharStart = pChar;
+
+			// ignore all empty contents followed in the end of line
+			auto IsNewLine = [](const wchar_t& cur, const wchar_t& next) {
+				return (cur == L'\r' && next == L'\n');
+			};
+			auto EscapeEmpty = [&]() {
+				while (true) {
+					auto curChar = (pText + pChar)[0];
+					auto nextChar = (pText + pChar)[1];
+
+					if (curChar == L'\0') {
+						break;
+					}
+
+					if (NotEmpty(curChar)) {
+						break;
+					}
+
+					if (IsNewLine(curChar, nextChar)) {
+						pChar += 2;
+
+						break;
+					}
+
+					pChar += 1;
+				}
+			};
 
 			while (true) {
 				auto pCurChar = pText + pChar;
@@ -1315,28 +2250,66 @@ public:
 				auto curChar = pCurChar [0];
 				auto nextChar = pCurChar [1];
 
-				if (fontIt != this->FontFormat.end()
+				if (fontIt != this->fontFormat.end()
 					&& pChar >= fontIt->startWithNewLine) {
 					localLogFont = fontIt->logFont;
 
 					fontIt++;
 				}
 
+				// word break
+				auto bCurNotCJK = NotCJK(curChar);
+
+				auto InWord = [&]() {
+					bInWord = true;
+
+					notCJKStart = pChar;
+					notCJKStartWidth = curWidth;
+				};
+
+				auto OutWord = [&]() {
+					bInWord = false;
+
+					//notCJKStart = -1;
+					//notCJKStartWidth = -1;
+				};
+
+				auto WB_AbleToNextLine = [&]() {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
+				auto WB_Backword = [&]() {
+					pChar = notCJKStart;
+					curWidth = notCJKStartWidth;
+
+					OutWord();
+				};
+
+				if (bCurNotCJK && !bInWord) {
+					InWord();
+				}
+
+				if (!bCurNotCJK && bInWord) {
+					OutWord();
+				}
+
+				// size
 				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
 				auto charSz = &pStrSizeArr [pChar];
-
-				totalWidth = curWidth;
 
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
 
+				bNewLineHandled = false;
+
+				// handle new line state and add pointer
 				auto HandleNewLine = [&]() {
 					newLine = true;
 					skipLine = (pChar == pCharStart);
+					bNewLineHandled = true;
 
 					if ((notAtStartCharPos + 1) == pChar) {
-						bPunctationSkip = true;
+						bPunctuationSkip = true;
 					}
+
+					pChar += 2;
 				};
 
 				if (curWidth > rcWidth) {
@@ -1344,9 +2317,8 @@ public:
 					bool bTooNarrow = charSz->width > rcWidth;
 
 					if (bTooNarrow) {
-						if (curChar == L'\r' && nextChar == L'\n') {
+						if (IsNewLine(curChar, nextChar)) {
 							HandleNewLine();
-							pChar += 2;
 
 							break;
 						}
@@ -1357,12 +2329,48 @@ public:
 						}
 					}
 
+					// word break
+					if (bInWord) {
+						// merge
+						auto bMerge = false;
+
+						//if (nextChar != L'\0') {
+						//	auto nextNextChar = pCurChar[2];
+						//	bMerge = NotCJK(nextChar) && !NotCJK(nextNextChar);
+						//}
+
+						if (bMerge) {
+							pChar += 2;
+
+							break;
+						}
+						// next line
+						else if (WB_AbleToNextLine()) {
+							WB_Backword();
+
+							break;
+						}
+						// too narrow, do nothing
+						else {
+
+						}
+					}
+
+					// punctuation
 					auto pPreviousChar = pText + pChar - 1;
 					auto PreviousChar = pPreviousChar[0];
 
 					auto previousCharSz = &pStrSizeArr[pChar - 1];
 
-					auto Backward = [&]() {
+					auto Punc_Backward = [&]() {
+						if (NotCJK(PreviousChar)) {
+							if (WB_AbleToNextLine()) {
+								WB_Backword();
+							}
+
+							return;
+						}
+
 						if (curWidth - (previousCharSz->width + nColSpace + charSz->width) <= 0) {
 							return;
 						}
@@ -1380,7 +2388,7 @@ public:
 
 						if (NotAtStart(nextChar)) {
 							if (pChar != pCharStart) {
-								Backward();
+								Punc_Backward();
 							}
 
 							break;
@@ -1389,7 +2397,7 @@ public:
 					else {
 						if (pChar != pCharStart) {
 							if (NotAtEnd(PreviousChar)) {
-								Backward();
+								Punc_Backward();
 							}
 						}
 
@@ -1397,9 +2405,8 @@ public:
 					}
 				}
 
-				if (curChar == L'\r' && nextChar == L'\n') {
+				if (IsNewLine(curChar, nextChar)) {
 					HandleNewLine();
-					pChar += 2;
 
 					break;
 				}
@@ -1414,21 +2421,39 @@ public:
 			}
 
 			if (!skipLine) {
+#ifdef _DEBUG
+				std::wstring str(pText + pChar);
+#endif // _DEBUG
+
+				if (!bNewLineHandled) {
+					EscapeEmpty();
+				}
+
+#ifdef _DEBUG
+				std::wstring strEscaped(pText + pChar);
+#endif // _DEBUG
+
 				auto end = min(pChar, pTextLen) - 2 * newLine;
+				
+				if (end <= pCharStart) {
+					end = pCharStart;
+				}
+
+				// totalWidth not used
+				totalWidth = curWidth;
 
 				this->strPos.emplace_back(StrPos {
 					pCharStart,			// start
 					end,				// end
-					end - pCharStart,	// length
-					totalWidth,			// width
-					//curWidth,			// width
+					end - pCharStart,	// length				
+					curWidth,			// width
 					curHeight,			// height;
 					0,					// x
 					totalHeight,		// y
 					});
 
 #ifdef _DEBUG
-				std::wstring str(pText + pCharStart, end - pCharStart);
+				std::wstring strLine(pText + pCharStart, end - pCharStart);
 #endif // _DEBUG
 
 				maxWidth = curWidth != 0
@@ -1436,14 +2461,19 @@ public:
 					: maxWidth;
 			}
 
-			if (!bPunctationSkip) {
+			if (!bPunctuationSkip) {
 				// empty line (skipLine == true) also need to add height
 				// ...unless it's following a 'not at start' punctuation
 				totalHeight += (curHeight + nRowSpace);
 			}
 			else {
-				bPunctationSkip = false;
+				bPunctuationSkip = false;
 			}
+		}
+
+		// fix empty (e.g., \r\n only) string crash
+		if (strPos.empty()) {
+			return CharPos{ 0 };
 		}
 
 		const auto& lastStrPos = strPos.back();
@@ -1534,7 +2564,16 @@ public:
 
 		auto colorIt = this->colorFormat.begin();
 		auto iConIt = this->iConFormat.begin();
-		auto fontIt = this->FontFormat.begin();
+		auto fontIt = this->fontFormat.begin();
+
+		auto shakeIt = this->shakeFormat.begin();
+		auto localShakeFormat = this->bShake
+			? *shakeIt
+			: FormatShake();
+		
+		if (this->bShake) {
+			shakeTimer++;
+		}
 
 		for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
@@ -1549,38 +2588,56 @@ public:
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr [offset];
+				charSz = &pStrSizeArr[offset];
 
 				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
 											,this->startY + curStrPos.y
 											,0,0 };
 
-				if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-					auto positionX = (float)(x) + (float)(this->borderOffsetY);
-					auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
-		
-					if (colorIt!= this->colorFormat.end()
-						&& totalChar >= colorIt->start) {
-						solidBrush.SetColor(colorIt->color);
-						
-						colorIt++;
-					}
+#pragma region FORMAT_IT				
+				auto positionX = (float)(x) + (float)(this->borderOffsetY);
+				auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
 
-					if (iConIt != this->iConFormat.end()
-						&& totalChar >= iConIt->start) {
-						iConIt->x = (size_t)positionX;
-						iConIt->y = (size_t)positionY;
+				if (colorIt != this->colorFormat.end()
+					&& totalChar >= colorIt->start) {
+					solidBrush.SetColor(colorIt->color);
 
-						iConIt++;
-					}
+					colorIt++;
+				}
 
-					if (fontIt != this->FontFormat.end()
-						&& totalChar >= fontIt->start) {
-						this->pFont = GetFontPointerWithCache(fontIt->logFont);
+				if (fontIt != this->fontFormat.end()
+					&& totalChar >= fontIt->start) {
+					this->pFont = GetFontPointerWithCache(fontIt->logFont);
 
-						fontIt++;
-					}
+					fontIt++;
+				}
 
+				if (shakeIt != this->shakeFormat.end()
+					&& totalChar >= shakeIt->start) {
+					localShakeFormat = *shakeIt;
+
+					shakeIt++;
+				}
+
+				if (this->bShake) {
+					double offset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
+						+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
+
+					GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);
+				}
+
+				// use updated position
+				if (iConIt != this->iConFormat.end()
+					&& totalChar >= iConIt->start) {
+					iConIt->x = (size_t)positionX;
+					iConIt->y = (size_t)positionY;
+
+					iConIt++;
+				}
+#pragma endregion
+
+				//if (!clip(x, (this->startY + curStrPos.y), charSz)) {
+				if (!clip((int)positionX - this->borderOffsetX, (this->startY + (int)positionY - this->borderOffsetY), charSz)) {
 					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
 					auto status = g.DrawString(pCurChar, 1, pFont
 						, PointF(positionX, positionY), &solidBrush);
@@ -1606,7 +2663,7 @@ public:
 #ifdef _DEBUG
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
-		//bitmap.Save(L"F:\\NeoStr.png", &pngClsid, NULL);
+		//pBitmap->Save(L"F:\\NeoStr.png", &pngClsid, NULL);
 #endif // _DEBUG
 
 		BitmapData bitmapData;
@@ -1634,84 +2691,97 @@ public:
 		ReleaseSfCoef(pMemSf, sfCoef);
 
 		pBitmap->UnlockBits(&bitmapData);
-			
-		auto iConSize = this->defaultCharSz;
 
-		iConSize.width = int(iConSize.width * this->iConScale);
-		iConSize.height = int(iConSize.height * this->iConScale);
+		auto flags = this->iConDisplay.iConResample
+			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
+			: 0;
 
-		auto iConXOffset = int(this->iConOffsetX * this->defaultCharSz.width
-			+ (this->defaultCharSz.width - iConSize.width) / 2
-			+ this->defaultCharSz.width / 6.0);
-		auto iConYOffset = int(this->iConOffsetY * this->defaultCharSz.width
-			+ (this->defaultCharSz.height - iConSize.height) / 2
-			+ (this->defaultCharSz.height - this->defaultCharSz.width)
-			- this->tm.tmDescent /*- this->tm.tmExternalLeading*/);
+		flags |= STRF_COPYALPHA;
 
-		auto flags = this->iConResample
-			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP | STRF_COPYALPHA
-			: STRF_COPYALPHA;
+		fontIt = this->fontFormat.begin();
+		auto iConDisplayIt = this->iConDisplayFormat.begin();
+
+		auto UpdateIt = [](auto& it,auto itEnd, size_t start) {
+			while (it != itEnd && it->start <= start) {
+				it++;
+			}
+
+			it--;
+		};
 
 		for (auto& it : this->iConFormat) {			
+			UpdateIt(fontIt, this->fontFormat.end(), it.start);
+			UpdateIt(iConDisplayIt, this->iConDisplayFormat.end(), it.start);
+
+			bool bEnd = fontIt == this->fontFormat.end();
+
+			const auto& charSize = !bEnd
+				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontIt->logFont)
+				: this->defaultCharSz;
+			const auto& tm = !bEnd
+				? GetCharSizeCacheIt(fontIt->logFont)->second.tm
+				: this->tm;
+
+			const auto& iConDisplay = iConDisplayIt != this->iConDisplayFormat.end()
+				? iConDisplayIt->iConDisplay
+				: this->iConDisplay;
+
+			StrSize iConSize = charSize;
+
+			iConSize.width = int(iConSize.width * iConDisplay.iConScale);
+			iConSize.height = int(iConSize.height * iConDisplay.iConScale);
+
+			auto iConXOffset = int(iConDisplay.iConOffsetX * charSize.width
+				+ (static_cast<double>(charSize.width) - iConSize.width) / 2
+				+ charSize.width / 6.0);
+			auto iConYOffset = int(iConDisplay.iConOffsetY * charSize.width
+				+ (static_cast<double>(charSize.height) - iConSize.height) / 2
+				+ (charSize.height - charSize.width)
+				- tm.tmDescent /*- tm.tmExternalLeading*/);
+
 			LPSURFACE pSf = nullptr;			
-			auto bFound = it.hImage != -1;
+			auto bFound = it.hImage != FORMAT_INVALID_ICON;
 
 			if (bFound) {
-				auto IConLibIt = this->iConLib.find(it.hImage);
-
-				if (IConLibIt == this->iConLib.end()) {
-					cSurface imageSurface;
-					LockImageSurface(this->appli, it.hImage, imageSurface);
-
-					auto pIConSf = CreateSurface(32, imageSurface.GetWidth(), imageSurface.GetHeight());
-					//pIConSf->SetTransparentColor(imageSurface.GetTransparentColor());
-					//_AddAlpha(pIConSf);
-
-					imageSurface.Blit(*pIConSf);
-					//imageSurface.Blit(*pIConSf, 0, 0, BMODE_OPAQUE, BOP_COPY, 0, BLTF_ANTIA | BLTF_COPYALPHA);
-
-					UnlockImageSurface(imageSurface);
-
-					this->iConLib[it.hImage] = pIConSf;
-
-					pSf = pIConSf;
-				}
-				else {
-					pSf = IConLibIt->second;
-				}
+				auto IConLibIt = this->pIConData->pIConLib->find(it.hImage);
+				pSf = IConLibIt->second;
 			}
 			else {
-				if (this->pDefaultICon == nullptr) {
-					LPSURFACE proto = nullptr;
-					GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
-
-					this->pDefaultICon = new cSurface;
-					this->pDefaultICon->Create(128, 128, proto);
-
-					_AddAlpha(this->pDefaultICon,175);
-
-					this->pDefaultICon->Fill(RGB(200, 200, 200));
-
-					this->pDefaultICon->Line(0, 0, 127, 0);
-					this->pDefaultICon->Line(0, 0, 0, 127);
-					this->pDefaultICon->Line(127, 127, 127, 0);
-					this->pDefaultICon->Line(127, 127, 0, 127);
-
-					this->pDefaultICon->Line(0, 0, 127, 127);
-					this->pDefaultICon->Line(127, 0, 0, 127);
-
-#ifdef _DEBUG
-					//_SavetoClipBoard(this->pDefaultICon, false);
-#endif // _DEBUG
-				}
-
-				pSf = this->pDefaultICon;
+				this->pIConData->GetDefaultICon();
+				pSf = this->pIConData->pDefaultICon;
 			}
 
-			auto ret = pSf->Stretch(*pMemSf
+			LPSURFACE pStrecthSf = nullptr;
+
+			auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
+			auto resizeCacheIt = this->pIConData->resizeCache.find(key);
+
+			if (resizeCacheIt == this->pIConData->resizeCache.end()) {
+				pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
+				pStrecthSf->CreateAlpha();
+
+				auto ret = pSf->Stretch(*pStrecthSf, flags);
+
+				this->pIConData->resizeCache[key] = pStrecthSf;
+			}
+			else {
+				pStrecthSf = resizeCacheIt->second;
+			}
+			
+			auto flags2 = this->iConDisplay.iConResample
+				? BLTF_ANTIA
+				: 0;
+
+			pStrecthSf->Blit(*pMemSf
 				, it.x + iConXOffset, it.y + iConYOffset
-				, iConSize.width, iConSize.width
-				, BMODE_OPAQUE, BOP_COPY, 0, flags);
+				, BMODE_TRANSP, BOP_COPY, 0, flags2);
+
+			MixAlpha(pStrecthSf, pMemSf, it.x + iConXOffset, it.y + iConYOffset);
+
+			//auto ret = pSf->Stretch(*pMemSf
+			//	, it.x + iConXOffset, it.y + iConYOffset
+			//	, iConSize.width, iConSize.width
+			//	, BMODE_OPAQUE, BOP_COPY, 0, flags);
 
 #ifdef _DEBUG
 			//_SavetoClipBoard(pSf, false);
@@ -1772,7 +2842,6 @@ public:
 			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
 				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
 				, bm, bo, boParam, bAntiA);
-
 		}
 	}
 };

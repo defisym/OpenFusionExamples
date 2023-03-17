@@ -3,6 +3,9 @@
 #include <functional>
 #include <string_view>
 
+#define GIPP(p) (*(NeoStr::IConParamParser*)p)
+#define ONITOIC 0
+
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc);
 
 inline void NoClip(LPRDATA rdPtr) {
@@ -15,17 +18,12 @@ inline void NoClip(LPRDATA rdPtr) {
 }
 
 inline void ChangeScale(LPRDATA rdPtr) {
-	//rdPtr->rHo.hoImgXSpot = 0;
-	//rdPtr->rHo.hoImgYSpot = 0;
-
-	//rdPtr->rHo.hoImgWidth = rdPtr->swidth;
-	//rdPtr->rHo.hoImgHeight = rdPtr->sheight;
-
-	rdPtr->rHo.hoImgXSpot = rdPtr->hotSpotX;
-	rdPtr->rHo.hoImgYSpot = rdPtr->hotSpotY;
-
-	rdPtr->rHo.hoImgWidth = int(rdPtr->swidth * rdPtr->xScale);
-	rdPtr->rHo.hoImgHeight = int(rdPtr->sheight * rdPtr->yScale);
+	UpdateHoImgInfo(rdPtr
+		, rdPtr->swidth, rdPtr->sheight
+		, rdPtr->xScale, rdPtr->yScale
+		, rdPtr->hotSpotPos
+		, rdPtr->hotSpotX, rdPtr->hotSpotY
+		, rdPtr->angle);
 
 	NoClip(rdPtr);
 }
@@ -47,9 +45,11 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		delete rdPtr->pNeoStr;
 		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor
 			, rdPtr->hFont
-			, &rdPtr->pData->pFontCache
-			, &rdPtr->pData->pCharSzCacheWithFont
-			, false, rdPtr->pData->pFontCollection);
+			, rdPtr->pData->pFontCache
+			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pIConData
+			, rdPtr->pData->pFontCollection
+			, false);
 
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
@@ -65,17 +65,17 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
 
-		rdPtr->pNeoStr->LinkActive(rdPtr->pIConActive);
-		rdPtr->pNeoStr->SetAppli(rdPtr->rHo.hoAdRunHeader->rhIdAppli);
+		rdPtr->pNeoStr->LinkObject(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
 		rdPtr->pNeoStr->SetIConScale(rdPtr->iConScale);
-		rdPtr->pNeoStr->SetIConResample (rdPtr->bIConResample);
+		rdPtr->pNeoStr->SetIConResample(rdPtr->bIConResample);
 
-		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str());
+		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags, rdPtr->bIConNeedUpdate);
 		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
 
+		rdPtr->bIConNeedUpdate = false;
 		rdPtr->reRender = true;
 	}
 
@@ -85,6 +85,10 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->oldX = rc.left;
 		rdPtr->oldY = rc.top;
 
+		rdPtr->reRender = true;
+	}
+
+	if (rdPtr->pNeoStr != nullptr && rdPtr->pNeoStr->GetShakeUpdateState()) {
 		rdPtr->reRender = true;
 	}
 
@@ -157,13 +161,12 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
 
 		//MSGBOX(L"Editor Calc");
-		neoStr.LinkActive(nullptr);
-		neoStr.SetAppli(nullptr);
+		neoStr.LinkObject(nullptr, nullptr);
 		neoStr.SetIConOffset(edPtr->iConOffsetX, edPtr->iConOffsetY);
 		neoStr.SetIConScale(edPtr->iConScale);
 		neoStr.SetIConResample(edPtr->bIConResample);
 
-		neoStr.GetFormat(&edPtr->pText);
+		neoStr.GetFormat(&edPtr->pText, edPtr->filterFlags);
 		neoStr.CalculateRange(rc);
 
 		neoStr.SetColor(edPtr->dwColor);
@@ -260,4 +263,27 @@ inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	HandleUpdate(rdPtr, rc);
 
 	return rdPtr->charPos;
+}
+
+inline void SetIConUpdate(LPRDATA rdPtr) {
+	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
+	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [](LPRO pObject) {
+		LPRDATA pObj = (LPRDATA)pObject;
+
+		if (pObj->bIConGlobal && pObj->bIConForceUpdate) {
+			pObj->bStrChanged = true;
+			pObj->bIConNeedUpdate = true;
+		}
+		});
+}
+
+inline void GlobalIConUpdater(LPRDATA rdPtr) {
+	if (rdPtr->bIConGlobal) {
+		if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
+			SetIConUpdate(rdPtr);
+		}
+
+		rdPtr->pData->pIConData->pCaller = (LPRO)rdPtr;
+		rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
+	}
 }

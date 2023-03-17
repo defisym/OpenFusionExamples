@@ -56,6 +56,7 @@
 #include	<chrono>
 
 // My lib
+#include	"FModInterface.h"
 #include	"Encryption.h"
 #include	"FFMpeg.h"
 

@@ -169,6 +169,16 @@ inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVer
 	}
 }
 
+template<typename T>
+inline void UpdateEditFlag(T& flags, const T& flag, bool bCheck) {
+	if (bCheck) {
+		flags |= flag;
+	}
+	else {
+		flags &= ~flag;
+	}
+}
+
 // Cast anytype to fusion's expression return
 
 template<typename T>
@@ -186,11 +196,6 @@ constexpr inline T ConvertToType(long l) {
 template<typename Input, typename Output>
 constexpr inline Output ConvertToType(Input l) {
 	return *((Output*)&l);
-}
-
-// MSBOX
-inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
-	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
 }
 
 // Build Types
@@ -463,6 +468,10 @@ inline void UpdateRectByHotSpot(HotSpotPos Type, size_t width, size_t height, in
 
 inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 	//Rotate hotspot
+	if (angle == 0) {
+		return;
+	}
+
 	float hx = (float)*hotX;
 	float hy = (float)*hotY;
 
@@ -488,3 +497,61 @@ inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
 	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
+
+#ifndef _NODISPLAY
+// should be called when updating
+// note: hotspot used in BlitEx shouldn't be changed
+inline void UpdateHoImgInfo(LPRDATA rdPtr
+	, int srcWidth, int srcHeight
+	, float xScale, float yScale
+	, HotSpotPos hotSpotPos
+	, int hotSpotX, int hotSpotY
+	, int angle) {
+	//Get scale (absolute since negative will mirror)
+	float scaleX = abs(xScale);
+	float scaleY = abs(yScale);
+
+	//Get scaled size
+	int width = int(srcWidth * scaleX);
+	int height = int(srcHeight * scaleY);
+
+	//Get scaled hotspot
+	int hotX = hotSpotX;
+	int hotY = hotSpotY;
+
+	UpdateHotSpot(hotSpotPos, width, height, hotX, hotY);
+
+	rdPtr->rc.rcAngle = (float)angle;
+
+	rdPtr->rc.rcScaleX = scaleX;
+	rdPtr->rc.rcScaleY = scaleY;
+
+	//Rotate hotspot
+	if (rdPtr->rc.rcAngle) {
+		RotatePoint(angle, &hotX, &hotY, width, height);
+		cSurface::GetSizeOfRotatedRect(&width, &height, rdPtr->rc.rcAngle);
+	}
+
+	//Update size and scale image
+	rdPtr->rHo.hoImgWidth = width; // leave room for rounding errors
+	rdPtr->rHo.hoImgHeight = height;
+
+	//Apply hotspot
+	rdPtr->rHo.hoImgXSpot = (short)hotX;
+	rdPtr->rHo.hoImgYSpot = (short)hotY;
+}
+
+inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
+	, float xScale, float yScale
+	, HotSpotPos hotSpotPos
+	, int hotSpotX, int hotSpotY
+	, int angle) {
+	UpdateHoImgInfo(rdPtr
+		, pSrc->GetWidth(), pSrc->GetHeight()
+		, xScale, yScale
+		, hotSpotPos
+		, hotSpotX, hotSpotY
+		, angle);
+}
+
+#endif

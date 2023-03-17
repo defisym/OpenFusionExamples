@@ -133,7 +133,7 @@
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Defination.h">
+    <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ConvertUTF.h">

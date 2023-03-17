@@ -41,8 +41,9 @@ struct ZoomScale;
 // you need to comment both macro below, which will disable VRam check
 
 // #define _USE_DXGI
-// #define _DYNAMIC_LINK
+//// #define _DYNAMIC_LINK
 
+// disabled for windows 7 compatibilty
 #ifdef _USE_DXGI
 #include	"D3DUtilities.h"
 #endif

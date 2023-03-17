@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "V2NeoStr\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "V2NeoStr\0"
-            VALUE "LegalCopyright", "Copyright 2022 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2022~2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "V2NeoStr.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -115,8 +115,8 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        //MENUITEM SEPARATOR
-        //MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM SEPARATOR
+        MENUITEM "On Get Object ICon Callback", IDMN_CONDITION_OGOIC
         MENUITEM SEPARATOR
     END
 END
@@ -137,6 +137,9 @@ BEGIN
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
+        MENUITEM SEPARATOR  
+        MENUITEM "Force Redraw", IDMN_ACTION_FRD
+        MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
         MENUITEM SEPARATOR    
         POPUP "Alignment"
         BEGIN    
@@ -165,6 +168,11 @@ BEGIN
         BEGIN
             MENUITEM "Link Active", IDMN_ACTION_LA
             MENUITEM SEPARATOR            
+            MENUITEM "Link Object", IDMN_ACTION_LO
+            MENUITEM "Set ICon Key Value", IDMN_ACTION_SOKV
+            MENUITEM SEPARATOR  
+            MENUITEM "Set Filter Flag", IDMN_ACTION_SFF
+            MENUITEM SEPARATOR            
             MENUITEM "Set ICon Offset", IDMN_ACTION_SIO
             MENUITEM "Set ICon Scale", IDMN_ACTION_SIS
             MENUITEM "Set ICon Resample", IDMN_ACTION_SIR
@@ -187,6 +195,10 @@ BEGIN
         MENUITEM "Get Font Family Name", IDMN_EXPRESSION_GFN
         MENUITEM SEPARATOR
         MENUITEM "Get Display String", IDMN_EXPRESSION_GSTR
+        MENUITEM "Get Filtered String", IDMN_EXPRESSION_GFS
+        MENUITEM "Get Padding String", IDMN_EXPRESSION_GPS
+        MENUITEM "Get Raw String By Filtered String Length", IDMN_EXPRESSION_GRSBFSL
+        MENUITEM "Get Non Command Offset", IDMN_EXPRESSION_GNCO
         MENUITEM SEPARATOR
         POPUP "Alignment"
         BEGIN
@@ -230,6 +242,12 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Format"
         BEGIN
+            MENUITEM "Get Hashed String", IDMN_EXPRESSION_GHS
+            MENUITEM "Get ICon Param Num", IDMN_EXPRESSION_GIPN
+            MENUITEM "Get ICon Param String", IDMN_EXPRESSION_GIPS
+            MENUITEM SEPARATOR
+            MENUITEM "Get Filter Flag", IDMN_EXPRESSION_GFF
+            MENUITEM SEPARATOR
             MENUITEM "Get ICon Offset X", IDMN_EXPRESSION_GIOX
             MENUITEM "Get ICon Offset Y", IDMN_EXPRESSION_GIOY
             MENUITEM "Get ICon Scale", IDMN_EXPRESSION_GIS	
@@ -310,7 +328,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "NeoStr"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022 Defisym"
+    IDST_COPYRIGHT          "Copyright 2022~2023 Defisym"
     IDST_COMMENT            "NeoStr"
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -382,6 +400,11 @@ BEGIN
     IDS_PROP_RENDER_BorderOffsetY_INFO              "Expand render area, to give enough space for shaders"
 
     IDS_PROP_FORMAT_TITLE                           "Format"
+
+    IDS_PROP_FORMAT_ICONGLOBAL                      "ICon Global"
+	IDS_PROP_FORMAT_ICONGLOBAL_INFO                 "All Objects Shares the Same Source"
+    IDS_PROP_FORMAT_ICONGLOBALFR                    "ICon Global Force Update"
+    IDS_PROP_FORMAT_ICONGLOBALFR_INFO               "Update When Global ICon Data Changed"
     IDS_PROP_FORMAT_ICONOFFSETX                     "ICon Offset X"
     IDS_PROP_FORMAT_ICONOFFSETX_INFO                "ICon Offset X, Based on Char Size Percent"
     IDS_PROP_FORMAT_ICONOFFSETY                     "ICon Offset Y"
@@ -390,6 +413,11 @@ BEGIN
     IDS_PROP_FORMAT_ICONSCALE_INFO                  "ICon Scale"
     IDS_PROP_FORMAT_ICONRESAMPLE                    "ICon Resample"
     IDS_PROP_FORMAT_ICONRESAMPLE_INFO               "ICon Resample"
+
+    IDS_PROP_FORMAT_FILTER_UNKNOWN                  "Filter Unknown"
+    IDS_PROP_FORMAT_FILTER_UNKNOWN_INFO             "Filter unknown commands when display"
+    IDS_PROP_FORMAT_FILTER_INCOMPLETE               "Filter Incomplete"
+    IDS_PROP_FORMAT_FILTER_INCOMPLETE_INFO          "Filter incomplete commands when display"
 
 END
 
@@ -453,14 +481,26 @@ BEGIN
 
     M_ACTION_SVO            "Change Vertical Offset to %0"
     M_VERTICALOFFSET        "Vertical Offset"
+
+    M_ACTION_LO             "Link Object %0, Callback Name %1"
+    M_ACTION_SOKV           "Set ICon Key = %0, Value = %1, OverWrite = %2"
+    M_OBJECT                "ICon Object"
+    M_IDENTIFIER            "Non-Zero Identifier"
+    M_ICONITNAME            "Callback Name"
+    M_HASH                  "Key Hash"
+    M_PSF                   "cSurface*"
+    M_OVERWRITE             "1 = OverWrite Current Key, 0 = Do Nothing if Already Have"
+
+    M_ACTION_SFF            "Set Filter Flag to %0"
+    M_FILTERFLAG            "Filter Flag"
+
+    M_ACTION_FRD            "Force Redraw"
+    M_ACTION_FRDGI          "Force Redraw Global ICon"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+    M_CONDITION_OGOIC       "%o On Get Object ICon Callback %0"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -498,6 +538,22 @@ BEGIN
     M_EXPRESSION_GIR	    "GIR("
 
     M_EXPRESSION_GVO	    "GVO("
+
+    M_EXPRESSION_GFS        "GetFilteredString$("
+    M_EXPRESSION_GPS        "GetPaddingString$("
+        
+    M_STRING                "String to Process"
+    M_FILTERFLAGS           "Filter Flag, -1 = Default"
+
+    M_EXPRESSION_GNCO       "GetNonCommandOffset("
+    M_STRINGSTART           "Start Position"
+
+    M_EXPRESSION_GHS        "GetHashedString("
+    M_EXPRESSION_GIPN       "GetIConParamNum("
+    M_EXPRESSION_GIPS       "GetIConParamString$("
+    
+    M_EXPRESSION_GFF        "GetFilterFlag("
+    M_EXPRESSION_GRSBFSL    "GetRawStringByFilteredStringLength$("
 END
 
 #endif    // English (U.S.) resources

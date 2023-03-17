@@ -23,6 +23,8 @@
 #define	MINBUILD	243
 #endif
 
+#define _NODISPLAY
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
@@ -33,12 +35,26 @@
 #include	<vector>
 #include	<string>
 
+#if !defined(RUN_ONLY)
+#include	<stdexcept>
+#endif
+
 // My lib
 class ObjectSelection;
 
+// disable for windows 7 compatibility
+//#define _ENABLE_TOAST
+
+#ifdef _ENABLE_TOAST
+#endif
+
+#ifdef _ENABLE_TOAST
+class WinToastHelper;
+#endif
+
 // My headers
 #include	"GeneralDefinition.h"
-#include	"Defination.h"
+#include	"Definition.h"
 #include	"StrNum.h"
 
 // Specific to this cox
@@ -49,7 +65,13 @@ class ObjectSelection;
 // My headers
 #include	"Fusion.h"
 #include	"ObjectSelection.h"
+#include	"EffectUtilities.h"
+
 #include	"Func.h"
+
+#ifdef _ENABLE_TOAST
+#include	"Toast.h"
+#endif
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

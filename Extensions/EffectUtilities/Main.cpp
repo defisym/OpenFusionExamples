@@ -28,10 +28,11 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION_SE, M_ACTION_SE, ACT_ACTION_SE,	0, 2, PARAM_OBJECT, PARAM_EFFECT, 0, 0,
-		IDMN_ACTION_SEP, M_ACTION_SEP, ACT_ACTION_SEP, 0, 3, PARAM_OBJECT, PARAM_EXPSTRING, PARAM_EXPRESSION, 0, 0, 0,
+IDMN_ACTION_SE, M_ACTION_SE, ACT_ACTION_SE,	0, 2, PARAM_OBJECT, PARAM_EFFECT, M_OBJECT, M_EFFECT,
+		IDMN_ACTION_SEP, M_ACTION_SEP, ACT_ACTION_SEP, 0, 3, PARAM_OBJECT, PARAM_EXPSTRING, PARAM_EXPRESSION, M_OBJECT, M_PARAMNAME, M_PARAM,
 
-		IDMN_ACTION_SBE, M_ACTION_SBE, ACT_ACTION_SBE,	0, 2, PARAM_EXPSTRING, PARAM_EFFECT, 0, 0,
+		IDMN_ACTION_SBE, M_ACTION_SBE, ACT_ACTION_SBE,	0, 2, PARAM_EXPSTRING, PARAM_EFFECT, M_BACKDROP, M_EFFECT,
+		IDMN_ACTION_SBEP, M_ACTION_SBEP, ACT_ACTION_SBEP, 0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPRESSION, M_BACKDROP, M_PARAMNAME, M_PARAM,
 		};
 
 // Definitions of parameters for each expression
@@ -116,6 +117,8 @@ short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long pa
 		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, pSf);
 	}
 
+	rdPtr->pEffectUtilities->ModifSpriteEffect(pObject);
+
 	return 0;
 }
 
@@ -126,6 +129,31 @@ short WINAPI DLLExport Action_SetBackDropEffect(LPRDATA rdPtr, long param1, long
 #ifdef _ENABLE_TEST_FEATURE
 	rdPtr->pEffectUtilities->SetEffect(pBackDropName, pEffectName);
 #endif
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetBackDropEffectParam(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	LPCWSTR pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	long param = (long)CNC_GetParameter(rdPtr);
+
+	auto pEffectVec = rdPtr->pEffectUtilities->GetEffect(pBackDropName);
+
+	for (auto& it : pEffectVec) {
+		auto pEffect = it.pEffect;
+		auto paramType = rdPtr->pEffectUtilities->GetParamType(pEffect, pParamName);
+
+		if (paramType != EFFECTPARAM_SURFACE) {
+			rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, &param);
+		}
+		else {
+			auto pSf = ConvertToType<long, LPSURFACE>(param);
+			rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, pSf);
+		}
+
+		rdPtr->pEffectUtilities->ModifSpriteEffect(it.pSpr);
+	}
 
 	return 0;
 }
@@ -213,6 +241,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetEffectParam,
 
 			Action_SetBackDropEffect,
+			Action_SetBackDropEffectParam,
 
 			0
 			};

@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 //
 // This file are where the Conditions/Actions/Expressions are defined.
 // You can manually enter these, or use CICK (recommended)
@@ -22,7 +22,7 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+		IDMN_CONDITION_OGOIC, M_CONDITION_OGOIC, CND_CONDITION_OGOIC, 0, 1, PARAM_EXPSTRING, M_ICONITNAME,
 		};
 
 // Definitions of parameters for each action
@@ -53,6 +53,14 @@ short actionsInfos[]=
 		IDMN_ACTION_SIR, M_ACTION_SIR, ACT_ACTION_SIR,	0, 1, PARAM_EXPRESSION, M_ICONRESAMPLE,
 
 		IDMN_ACTION_SVO, M_ACTION_SVO, ACT_ACTION_SVO,	0, 1, PARAM_EXPRESSION, M_VERTICALOFFSET,
+		
+		IDMN_ACTION_LO, M_ACTION_LO, ACT_ACTION_LO,	0, 2, PARAM_OBJECT, PARAM_EXPSTRING, M_OBJECT, M_ICONITNAME,
+		IDMN_ACTION_SOKV, M_ACTION_SOKV, ACT_ACTION_SOKV, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_HASH, M_PSF, M_OVERWRITE,
+		
+		IDMN_ACTION_SFF, M_ACTION_SFF, ACT_ACTION_SFF, 0, 1, PARAM_EXPRESSION, M_FILTERFLAG,
+
+		IDMN_ACTION_FRD, M_ACTION_FRD, ACT_ACTION_FRD, 0, 0,
+		IDMN_ACTION_FRDGI, M_ACTION_FRDGI, ACT_ACTION_FRDGI, 0, 0,
 
 		};
 
@@ -91,6 +99,19 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GIR, M_EXPRESSION_GIR, EXP_EXPRESSION_GIR, EXPFLAG_DOUBLE, 0,
 		
 		IDMN_EXPRESSION_GVO, M_EXPRESSION_GVO, EXP_EXPRESSION_GVO, 0, 0,
+		
+		IDMN_EXPRESSION_GFS, M_EXPRESSION_GFS, EXP_EXPRESSION_GFS, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_STRING, M_FILTERFLAGS,
+		IDMN_EXPRESSION_GPS, M_EXPRESSION_GPS, EXP_EXPRESSION_GPS, EXPFLAG_STRING, 1, EXPPARAM_STRING, M_STRING,
+
+		IDMN_EXPRESSION_GNCO, M_EXPRESSION_GNCO, EXP_EXPRESSION_GNCO, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_STRING, M_STRINGSTART,
+		
+		IDMN_EXPRESSION_GHS, M_EXPRESSION_GHS, EXP_EXPRESSION_GHS, 0, 1, EXPPARAM_STRING, M_STRING,
+		IDMN_EXPRESSION_GIPN, M_EXPRESSION_GIPN, EXP_EXPRESSION_GIPN, 0, 0,
+		IDMN_EXPRESSION_GIPS, M_EXPRESSION_GIPS, EXP_EXPRESSION_GIPS, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_POS,
+		
+		IDMN_EXPRESSION_GFF, M_EXPRESSION_GFF, EXP_EXPRESSION_GFF, 0, 0,
+		
+		IDMN_EXPRESSION_GRSBFSL, M_EXPRESSION_GRSBFSL, EXP_EXPRESSION_GRSBFSL, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_STRING, M_POS, M_FILTERFLAGS,
 
 		};
 
@@ -102,27 +123,10 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-// -----------------
-// Sample Condition
-// -----------------
-// Returns TRUE when the two values are equal!
-// 
+long WINAPI DLLExport Condition_OnGetObjectICon(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
-
-//  **** Still use this method for 1 or 2 parameters ****	
-//	if (param1==param2)	
-//		return TRUE;
-
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
-
-	if ((p1 + p2)==p3)
-		return TRUE;
-		 
-	return FALSE;
+	return StrEqu(pLoopName, rdPtr->pIConItName->c_str());
 }
 
 
@@ -354,13 +358,201 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2) {
-	LPRO pObject = (LPRO)CNC_GetIntParameter(rdPtr);
-	
-	if (pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE)) {
-		rdPtr->pIConActive = pObject;
+	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
 
+	auto bDestroyCaller = IsDestroyed((LPRO)rdPtr);
+	auto bDestroyObject = IsDestroyed(pObject);
+	
+	if (!bDestroyCaller
+		&& pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE) && !bDestroyObject) {
+		rdPtr->pIConObject = pObject;
+
+		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+			// check caller validity
+			if (IsDestroyed((LPRO)rdPtr)) {
+				return FORMAT_INVALID_ICON;
+			}
+
+			// parse param
+			int frame = 0;
+			int direction = 0;
+			int animation = 0;
+
+			do {
+				std::reverse(controlParams.begin(), controlParams.end());
+
+				if (!controlParams.empty()) {
+					frame = _stoi(controlParams.back());
+					controlParams.pop_back();
+				}
+
+				if (!controlParams.empty()) {
+					direction = _stoi(controlParams.back());
+					controlParams.pop_back();
+				}
+
+				if (!controlParams.empty()) {
+					animation = _stoi(controlParams.back());
+					controlParams.pop_back();
+				}
+			} while (0);
+			
+			// find image
+			DWORD hImage = FORMAT_INVALID_ICON;
+			auto appli = rdPtr->rHo.hoAdRunHeader->rhIdAppli;
+
+			do {
+				if (pObject == nullptr || appli == nullptr) {
+					break;
+				}
+
+				if (animation < 0 || direction < 0 || frame < 0) {
+					break;
+				}
+
+				auto pRoa = &pObject->roa;
+
+				if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
+					break;
+				}
+
+				auto pDir = &pRoa->raAnimDirOffset[direction];
+
+				if (frame >= pDir->adNumberOfFrame) {
+					break;
+				}
+
+				hImage = pDir->adFrame[frame];
+			} while (0);
+
+			if (hImage == FORMAT_INVALID_ICON) {
+				return hImage;
+			}
+
+			// blit to lib
+			auto IConLibIt = iConLib.find(hImage);
+
+			if (IConLibIt == iConLib.end()) {
+				cSurface imageSurface;
+				LockImageSurface(appli, hImage, imageSurface);
+
+				auto pIConSf = CreateSurface(32, imageSurface.GetWidth(), imageSurface.GetHeight());
+				//pIConSf->SetTransparentColor(imageSurface.GetTransparentColor());
+				//_AddAlpha(pIConSf);
+
+				imageSurface.Blit(*pIConSf);
+				//imageSurface.Blit(*pIConSf, 0, 0, BMODE_OPAQUE, BOP_COPY, 0, BLTF_ANTIA | BLTF_COPYALPHA);
+
+				UnlockImageSurface(imageSurface);
+
+				iConLib[hImage] = pIConSf;
+			}
+
+			return hImage;
+		};
+
+		GlobalIConUpdater(rdPtr);
 		ReDisplay(rdPtr);
 	}
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2) {
+	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
+	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	auto bDestroyCaller = IsDestroyed((LPRO)rdPtr);
+	auto bDestroyObject = IsDestroyed(pObject);
+
+	if (!bDestroyCaller
+		&& pObject != nullptr && !bDestroyObject) {
+		// pObject is not used, it just for human readibility, actual identifier is hash of pLoopName
+		// for the case when switching frame, fixed/LPRO changes but using the same global data
+		// to reduce unnecessary refresh
+
+		//rdPtr->pIConObject = pObject;
+		rdPtr->pIConObject = (LPRO)std::hash<std::wstring>{}(pLoopName);		
+
+		GIPP(rdPtr->pIConParamParser) = 
+			[=, loopName = std::wstring(pLoopName)]
+			(NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+			// check caller validity
+			if (IsDestroyed((LPRO)rdPtr)) {
+				return FORMAT_INVALID_ICON;
+			}
+			
+			// call callback
+			rdPtr->bOverWrite = false;
+			rdPtr->iconLibKey = FORMAT_INVALID_ICON;
+			rdPtr->pIConLibValue = nullptr;
+
+			*rdPtr->pIConItName = loopName;
+			rdPtr->pIConParams = &controlParams;
+
+			CallEvent(ONITOIC);
+
+			rdPtr->pIConParams = nullptr;
+
+			//// if overwrite, then all global icon objects will trigger update
+			//if (rdPtr->bOverWrite) {
+			//	SetIConUpdate(rdPtr);
+			//}
+
+			if (rdPtr->iconLibKey == FORMAT_INVALID_ICON) {
+				return rdPtr->iconLibKey;
+			}
+
+			if (rdPtr->pIConLibValue == nullptr || !rdPtr->pIConLibValue->IsValid()) {
+				return rdPtr->iconLibKey;
+			}
+
+			// blit to lib
+			auto BlitToLib=[=](NeoStr::IConLib& iConLib){
+				auto pIConSf = CreateSurface(32, rdPtr->pIConLibValue->GetWidth(), rdPtr->pIConLibValue->GetHeight());
+				pIConSf->CreateAlpha();
+
+				auto ret = rdPtr->pIConLibValue->Blit(*pIConSf);
+
+				iConLib[rdPtr->iconLibKey] = pIConSf;
+
+#ifdef _DEBUG
+				//_SavetoClipBoard(rdPtr->pIConLibValue);
+				//_SavetoClipBoard(pIConSf);
+#endif // _DEBUG
+			};
+
+			auto IConLibIt = iConLib.find(rdPtr->iconLibKey);
+			auto bExist = IConLibIt != iConLib.end();
+
+			if (!bExist) {
+				BlitToLib(iConLib);
+			}
+			else if (rdPtr->bOverWrite) {
+				delete IConLibIt->second;
+				IConLibIt->second = nullptr;
+
+				BlitToLib(iConLib);
+			}
+
+			return rdPtr->iconLibKey;
+		};
+
+		GlobalIConUpdater(rdPtr);
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetObjectKeyValue(LPRDATA rdPtr, long param1, long param2) {
+	size_t hash = (size_t)CNC_GetParameter(rdPtr);
+	LPSURFACE pSf = (LPSURFACE)CNC_GetParameter(rdPtr);
+	bool bOverWrite = (bool)CNC_GetParameter(rdPtr);
+
+	rdPtr->iconLibKey = hash;
+	rdPtr->pIConLibValue = pSf;
+	rdPtr->bOverWrite = bOverWrite;
 
 	return 0;
 }
@@ -407,6 +599,28 @@ short WINAPI DLLExport Action_SetVerticalOffset(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetFilterFlag(LPRDATA rdPtr, long param1, long param2) {
+	size_t newFlag = (size_t)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->filterFlags = newFlag;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ForceRedraw(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->bIConNeedUpdate = true;
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ForceRedrawGlobalICon(LPRDATA rdPtr, long param1, long param2) {
+	SetIConUpdate(rdPtr);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -579,6 +793,202 @@ long WINAPI DLLExport Expression_GetVerticalOffset(LPRDATA rdPtr, long param1) {
 	return rdPtr->bVerticalAlignOffset;
 }
 
+long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+
+	NeoStr pFilter(0, 0, NULL);
+	pFilter.GetFormat(pStr
+		, flags == -1
+		? rdPtr->filterFlags
+		: flags);
+
+	*rdPtr->pExpRet = pFilter.GetText() != nullptr ? pFilter.GetText() : Default_Str;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->pExpRet->c_str());
+}
+
+long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	auto len = wcslen(pStr);
+
+	if (len == 0) {
+		//Setting the HOF_STRING flag lets MMF know that you are a string.
+		rdPtr->rHo.hoFlags |= HOF_STRING;
+
+		//This returns a pointer to the string for MMF.
+		return (long)(Empty_Str);
+	}
+
+	*rdPtr->pExpRet = pStr;
+	auto pStart = &(*rdPtr->pExpRet)[0];
+	
+	bool bInCommand = false;	
+	//https://zh.wikipedia.org/wiki/%E8%99%9A%E7%BC%BA%E5%8F%B7
+	//const auto replaceChar = L'�';
+	const auto replaceChar = L'□';
+
+	for (size_t i = 0; i < len; i++) {
+		auto pCur = pStart + i;
+
+		auto curChar = pCur[0];
+		auto nextChar = pCur[1];
+
+		// Escape
+		if (curChar == L'\\' && nextChar == L'[') {
+			i++;
+
+			continue;
+		}
+
+		// Parse Format
+		if (curChar == L'[') {
+			bInCommand = true;
+		}
+
+		if (bInCommand) {
+			pCur[0] = replaceChar;
+		}
+
+		if (bInCommand && curChar == L']') {
+			bInCommand = false;
+		}
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->pExpRet->c_str());
+}
+
+long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStrSrc = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t start = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+
+	auto GetNonCommandOffset = [](LPCWSTR pStrSrc, size_t start)->size_t {
+		auto pStr = pStrSrc + start;
+		auto len = wcslen(pStr);
+
+		if (len == 0) {
+			return 0;
+		}
+
+		auto curChar = pStr[0];
+		auto nextChar = pStr[1];
+
+		if (curChar == L'\\' && nextChar == L'[') {
+			return 1;
+		}
+
+		if (curChar == L'[') {
+			size_t end = 0;
+
+			while ((pStr + end)[0] != L']') {
+				if (end == len) {
+					return len;
+				}
+
+				end++;
+			}
+
+			return end + 1;
+		}
+
+		// normal
+		return 0;
+	};
+
+	size_t totalOffset = 0;
+
+	for (;;) {
+		auto curOffset = GetNonCommandOffset(pStrSrc, start);
+		totalOffset += curOffset;
+
+		if (curOffset != 0) {
+			start += curOffset;
+		}
+		else {
+			break;
+		}
+	}
+	
+	return totalOffset;
+}
+
+long WINAPI DLLExport Expression_GetHashedString(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	auto hash = std::hash<std::wstring>{}(pStr);
+
+	return (long)(hash);
+}
+
+long WINAPI DLLExport Expression_GetParamNum(LPRDATA rdPtr, long param1) {
+	auto pParams = (NeoStr::ControlParams*)(rdPtr->pIConParams);
+
+	if (pParams == nullptr) {
+		return -1;
+	}
+
+	return (long)(pParams->size());
+}
+
+long WINAPI DLLExport Expression_GetParamString(LPRDATA rdPtr, long param1) {
+	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	auto pParams = (NeoStr::ControlParams*)(rdPtr->pIConParams);
+
+	if (pParams == nullptr) {
+		return -1;
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(pParams != nullptr && pParams->size() > pos
+		? [&]() {
+			*rdPtr->pExpRet = (*pParams)[pos];
+			return rdPtr->pExpRet->c_str();
+		}()
+		: Empty_Str);
+}
+
+long WINAPI DLLExport Expression_GetFilterFlag(LPRDATA rdPtr, long param1) {
+	return (long)(rdPtr->filterFlags);
+}
+
+long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPtr, long param1) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	size_t filteredLength = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
+
+	NeoStr pFilter(0, 0, NULL);
+
+	try {		
+		pFilter.GetFormat(pStr
+			, flags == -1 ? rdPtr->filterFlags : flags
+			, true
+			, FORMAT_OPERATION_GetRawStringByFilteredStringLength
+			, filteredLength);		
+	}
+	catch (int) {
+		*rdPtr->pExpRet = pFilter.GetRawText() != nullptr ? pFilter.GetRawText() : Default_Str;
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->pExpRet->c_str());
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -589,7 +999,7 @@ long WINAPI DLLExport Expression_GetVerticalOffset(LPRDATA rdPtr, long param1) {
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			Condition,
+			Condition_OnGetObjectICon,
 			
 			0
 			};
@@ -621,6 +1031,14 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetIConResample,
 
 			Action_SetVerticalOffset,
+
+			Action_LinkObject,
+			Action_SetObjectKeyValue,
+
+			Action_SetFilterFlag,
+
+			Action_ForceRedraw,
+			Action_ForceRedrawGlobalICon,
 
 			0
 			};
@@ -659,6 +1077,18 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetIConResample,
 
 			Expression_GetVerticalOffset,
+
+			Expression_GetFilteredString,
+			Expression_GetPaddingString,
+			Expression_GetNonCommandOffset,
+
+			Expression_GetHashedString,
+			Expression_GetParamNum,
+			Expression_GetParamString,
 			
+			Expression_GetFilterFlag,
+
+			Expression_GetRawStringByFilteredStringLength,			
+
 			0
 			};

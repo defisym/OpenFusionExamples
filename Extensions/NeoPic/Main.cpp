@@ -64,12 +64,12 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LFD, M_ACTION_LFD,	ACT_ACTION_LFD,	0, 2,PARAM_OBJECT,PARAM_EXPRESSION,M_ACTION_OBJECT,M_ACTION_COPYCOEF,
 		
-		IDMN_ACTION_SPL, M_ACTION_SPL, ACT_ACTION_SPL,	0, 3, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_PRELOAD, M_ACTION_BASEPATH, M_ACTION_KEY,
+		IDMN_ACTION_SPLBP, M_ACTION_SPLBP, ACT_ACTION_SPLBP,	0, 3, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_PRELOAD, M_ACTION_BASEPATH, M_ACTION_KEY,
 		IDMN_ACTION_SPP, M_ACTION_SPP, ACT_ACTION_SPP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_BASEPATH, M_ACTION_KEY,
 		IDMN_ACTION_CC, M_ACTION_CC, ACT_ACTION_CC,	0, 1, PARAM_EXPRESSION, M_ACTION_MEMLIMIT,
 
 		IDMN_ACTION_SKL, M_ACTION_SKL, ACT_ACTION_SKL,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_KEEPLIST, M_ACTION_BASEPATH,
-
+		
 		IDMN_ACTION_ITRC, M_ACTION_ITRC, ACT_ACTION_ITRC,	0, 1, PARAM_EXPRESSION, M_ACTION_ITSIZE,
 
 		IDMN_ACTION_LFP, M_ACTION_LFP, ACT_ACTION_LFP,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_ACTION_PSF, M_ACTION_FILENAME,
@@ -77,6 +77,17 @@ short actionsInfos[]=
 		IDMN_ACTION_SB, M_ACTION_SB, ACT_ACTION_SB, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_RADIUS, M_ACTION_SCALE, M_ACTION_DIVIDE,
 
 		IDMN_ACTION_SESP, M_ACTION_SESP,	ACT_ACTION_SESP, 0, 4,PARAM_OBJECT,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_ACTION_OBJECT,M_ACTION_FILENAME,M_ACTION_KEY,M_ACTION_EFFECTNAME,
+
+		IDMN_ACTION_SPL, M_ACTION_SPL, ACT_ACTION_SPL,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_KEEPLIST, M_ACTION_BASEPATH, M_ACTION_KEY,
+		IDMN_ACTION_SKLBP, M_ACTION_SKLBP, ACT_ACTION_SKLBP,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_ACTION_PRELOAD, M_ACTION_BASEPATH,
+		
+		IDMN_ACTION_FM, M_ACTION_FM, ACT_ACTION_FM,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
+
+		IDMN_ACTION_STF, M_ACTION_STF, ACT_ACTION_STF,	0, 3, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME,
+		
+		IDMN_ACTION_CF, M_ACTION_CF, ACT_ACTION_CF,	0, 0,
+
+		IDMN_ACTION_STFWS, M_ACTION_STFWS, ACT_ACTION_STFWS,	0, 5, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
 		};
 
@@ -205,6 +216,9 @@ short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 
 	LoadFromLib(rdPtr, object, FilePath, Key);
 
+	auto bAlpha = rdPtr->src->HasAlpha();
+	auto bType = IsHWA(rdPtr->src);
+
 	return 0;
 }
 
@@ -221,12 +235,32 @@ short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) 
 	LPSURFACE pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
 	LPCWSTR pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
 
+#ifdef _DEBUG
+	//__SavetoClipBoard(pSf);
+#endif // _DEBUG
+
 	LoadFromPointer(rdPtr, pFileName, pSf);
 
 	return 0;
 }
 
 short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring listSrc = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring basePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (!rdPtr->preloading
+		&& rdPtr->isLib) {		
+		List list = std::move(SplitString(listSrc, Delimiter));		
+
+		CreatePreloadProcess(rdPtr, &list, false, basePath, Key);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport SetPreloadListByPointer(LPRDATA rdPtr, long param1, long param2) {
 	long list = (long)CNC_GetIntParameter(rdPtr);
 
 	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -234,31 +268,21 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
-#ifndef _DEBUG		// only works in runtime due to /MD & /MDd
+#ifndef _DEBUG		
+		// only works in runtime due to /MD & /MDd
 		auto pList = ConvertToType<pPreLoadList>(list);
 
 		if (pList != nullptr) {
 			CreatePreloadProcess(rdPtr, pList, false, BasePath, Key);
 		}
-#else				// load base path instead for test
-		//std::vector<std::wstring> fileList = { L"dialog1.png",
-		//										L"dialog2.png",
-		//										L"dialog3.png",
-		//										L"dianull.png",
-		//										L"nameback1.png",
-		//										L"nameback2.png",
-		//										L"nameback3.png",
-		//										L"nameback4.png",
-		//										L"namenull.png" };
-		//CreatePreloadProcess(rdPtr, &fileList, false, BasePath, Key);
-		
-		//std::vector<std::wstring> fileList;
-		//GetFileList(&fileList, BasePath);
+#else				
+		//load base path instead for test		
+		List fileList;
+		GetFileList(&fileList, BasePath);
 
-		//CreatePreloadProcess(rdPtr, &fileList, true, BasePath, Key);
+		CreatePreloadProcess(rdPtr, &fileList, true, BasePath, Key);
 #endif // !_DEBUG	
 	}
-
 
 	return 0;
 }
@@ -290,17 +314,32 @@ short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring basePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	if (rdPtr->isLib) {
-		KeepList keepList;
-		size_t start = keepListSrc.find_first_not_of(L'|');
-		size_t end = start;
-
-		while (start != std::wstring::npos) {
-			end = keepListSrc.find(L'|', start);
-			keepList.emplace_back(std::wstring_view(keepListSrc.c_str() + start, end - start));
-			start = keepListSrc.find_first_not_of(L'|', end);
-		}
+		KeepList keepList = std::move(SplitString(keepListSrc, Delimiter));
 
 		GetKeepList(rdPtr, keepList, basePath);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport SetKeepListByPointer(LPRDATA rdPtr, long param1, long param2) {
+	long list = (long)CNC_GetIntParameter(rdPtr);
+
+	LPCWSTR basePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->isLib) {
+#ifndef _DEBUG		
+		// only works in runtime due to /MD & /MDd
+		auto pKeepList = ConvertToType<pPreLoadList>(list);
+
+		GetKeepList(rdPtr, *pKeepList, basePath);
+#else				
+		//load base path instead for test		
+		List keepList;
+		GetFileList(&keepList, basePath);
+
+		GetKeepList(rdPtr, keepList, basePath);
+#endif // !_DEBUG	
 	}
 
 	return 0;
@@ -387,6 +426,8 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	int Y = (int)CNC_GetIntParameter(rdPtr);
 	
 	UpdateHotSpot(rdPtr, Pos, X, Y);
+
+	rdPtr->hotSpotPos = Pos;
 	rdPtr->imgHotSpot = rdPtr->hotSpot;
 	
 	return 0;
@@ -515,6 +556,8 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 			UpdateRef(rdPtr, false);
 			rdPtr->pRefCount = nullptr;
 
+			rdPtr->pLibValue = nullptr;
+
 			bReleaseOld = false;
 		}
 		else {
@@ -547,7 +590,9 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		}		
 
 		if (bReleaseOld) {
-			delete pOldSf;
+			// delete pOldSf;
+			// pOldSf is one of the following
+			ReleaseNonFromLib(rdPtr);
 		}	
 
 		rdPtr->fromLib = false;
@@ -559,6 +604,9 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		if (bHwa) {
 			ConvertToHWATexture(rdPtr, rdPtr->src);
 		}
+
+		// update latet (may do hwa conversion)
+		NewNonFromLib(rdPtr, rdPtr->src);
 
 		NewImg(rdPtr);
 		ReDisplay(rdPtr);
@@ -601,6 +649,154 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 	}
 
 	object->HWA = pLibHWAType;
+
+	return 0;
+}
+
+short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+
+	if (CanDisplay(rdPtr)) {
+		bool bReleaseBitmap = false;
+		auto pBitmap = rdPtr->src;
+		auto pSf = CreateSurface(32, width, height);
+
+		if (rdPtr->src->HasAlpha()) {
+			//_AddAlpha(pSf);
+			pSf->CreateAlpha();
+		}
+
+		if (IsHWA(rdPtr->src)) {
+			pBitmap = ConvertBitmap(rdPtr, rdPtr->src);
+			bReleaseBitmap = true;
+		}
+
+		// Fill -> alpha channel issue
+		// Fill -> not work under HWA (blank result)
+		//CFillMosaic mosaic(pBitmap);		
+		//auto bResult = pSf->Fill(&mosaic);
+
+		// if mod != 0 then need another blit
+		auto itx = width / pBitmap->GetWidth() + ((width % pBitmap->GetWidth()) != 0);
+		auto ity = height / pBitmap->GetHeight() + ((height % pBitmap->GetHeight()) != 0);
+
+		for (int y = 0; y < ity; y++) {
+			for (int x = 0; x < itx; x++) {
+				auto destX = x * pBitmap->GetWidth();
+				auto destY = y * pBitmap->GetHeight();
+
+				pBitmap->Blit(*pSf, destX, destY, BMODE_OPAQUE, BOP_COPY, 0, BLTF_COPYALPHA);
+			}
+		}
+
+		if (bReleaseBitmap) {
+			delete pBitmap;
+		}
+
+		if (rdPtr->fromLib) {
+			rdPtr->fromLib = false;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+
+			rdPtr->pLibValue = nullptr;
+		}
+		else {
+			ReleaseNonFromLib(rdPtr);
+		}
+
+		if (rdPtr->HWA) {
+			ConvertToHWATexture(rdPtr, pSf);
+		}
+
+		rdPtr->src = pSf;
+
+		NewNonFromLib(rdPtr, rdPtr->src);
+
+		NewPic(rdPtr);
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	auto pSf = _GetSurfacePointer(rdPtr, pFilePath, pKey);
+
+	if (pSf == nullptr) {
+		return 0;
+	}
+
+	__SavetoFile(rdPtr, pSf, pSaveFilePath);
+
+	return 0;
+}
+
+short WINAPI DLLExport CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
+	auto hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
+	HDC hdcWindow = GetDC(hFrameWindowHandle);
+
+	RECT frameRect;
+	::GetWindowRect(hFrameWindowHandle, &frameRect);
+	int frameWidth = frameRect.right - frameRect.left;
+	int frameHeight = frameRect.bottom - frameRect.top;
+
+	auto pMemSf = CreateSurface(24, frameWidth, frameHeight);
+	_AddAlpha(pMemSf);
+
+	auto hdcSf = pMemSf->GetDC();
+	StretchBlt(hdcSf, 0, 0, frameWidth, frameHeight
+		, hdcWindow, 0, 0, frameWidth, frameHeight
+		, SRCCOPY);
+	pMemSf->ReleaseDC(hdcSf);
+	_AddAlpha(pMemSf);
+
+	auto capturedName = L"_TempCapture";
+	LoadFromPointer(rdPtr, capturedName, pMemSf);
+
+#ifdef _DEBUG
+	//__SavetoClipBoard(pMemSf);
+#endif // _DEBUG
+
+	delete pMemSf;
+
+	return 0;
+}
+
+short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	int width = (int)CNC_GetIntParameter(rdPtr);
+	int height = (int)CNC_GetIntParameter(rdPtr);
+
+	auto pSave = CreateSurface(32, width, height);
+	auto pSf = _GetSurfacePointer(rdPtr, pFilePath, pKey);	
+
+	if (pSf == nullptr) {
+		return 0;
+	}
+
+	ProcessBitmap(pSf,[&](const LPSURFACE pBitmap) {
+		Stretch(pBitmap, pSave, true);
+
+#ifdef _DEBUG
+		//__SavetoClipBoard(pBitmap);
+		//__SavetoClipBoard(pSave);
+#endif // _DEBUG
+	});
+
+	__SavetoFile(rdPtr, pSave, pSaveFilePath);
+
+	delete pSave;
 
 	return 0;
 }
@@ -708,28 +904,9 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Key = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	cSurface* ret = nullptr;
-
-	if (!rdPtr->isLib) {
-		if (*rdPtr->FilePath != FilePath || *rdPtr->Key != Key) {
-			ret = nullptr;
-		}
-		else {
-			ret = rdPtr->src;
-		}
-	}
-	else {
-		auto it = _LoadLib(rdPtr, rdPtr, FilePath.c_str(), Key.c_str());
-
-		if (it == rdPtr->pLib->end()) {
-			ret = nullptr;
-		}
-		else {
-			ret = it->second.pSf;
-		}
-	}
+	auto pSf = _GetSurfacePointer(rdPtr, FilePath, Key);
 	
-	return ConvertToLong<cSurface*>(ret);
+	return ConvertToLong<cSurface*>(pSf);
 }
 
 long WINAPI DLLExport GetAVGCoordX(LPRDATA rdPtr, long param1) {
@@ -792,7 +969,7 @@ long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
 #ifdef _USE_DXGI
 	return (long)rdPtr->pD3DU->GetDesc().Description;
 #else
-	return (long)L"No DXGI Enabled";
+	return (long)L"DXGI Not Enabled";
 #endif
 }
 
@@ -877,7 +1054,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			LoadFromDisplay,
 
-			SetPreloadList,
+			SetPreloadListByPointer,
 			SetPreloadPath,
 			CleanCache,
 
@@ -890,6 +1067,17 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			StackBlur,
 
 			SetEffectSurfaceParam,
+
+			SetPreloadList,
+			SetKeepListByPointer,
+
+			FillMosaic,
+
+			SaveToFile,
+
+			CaptureFrameArea,
+
+			SaveToFileWithStretch,
 
 			0
 			};

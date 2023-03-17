@@ -72,11 +72,27 @@ struct Count {
 	}
 };
 
+constexpr auto SurfaceLibSfNum = 4;
+
 struct SurfaceLibValue {
 	LPSURFACE pSf = nullptr;
+
+	// don't change position, refered in GetEstimateMemUsage
+	LPSURFACE pSf_VF = nullptr;
+	LPSURFACE pSf_HF = nullptr;
+	LPSURFACE pSf_VHF = nullptr;
+
 	std::wstring Hash;
 	BOOL isTransparent = -1;		// constexpr BOOL transpTBD = -1;
 	bool bUsedInShader = false;
+
+	inline void Release() {
+		delete pSf;
+
+		delete pSf_VF;
+		delete pSf_HF;
+		delete pSf_VHF;
+	}
 };
 
 using SurfaceLib = std::map<std::wstring, SurfaceLibValue>;
@@ -90,12 +106,6 @@ using FileListMap = std::map<std::wstring, FileList*>;
 constexpr auto ONPRELOADCOMPLETE = 0;
 constexpr auto ONITREFCOUNT = 1;
 
-constexpr auto CLEAR_MEMRANGE = 100;
-constexpr auto CLEAR_NUMTHRESHOLD = 50;
-
-constexpr auto MAX_MEMORYLIMIT = 2048;
-constexpr auto DEFAULT_MEMORYLIMIT = 1800;
-
 template<typename T>
 constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
 
@@ -104,6 +114,11 @@ struct GlobalData {
 	RefCount* pCount = nullptr;
 	KeepList* pKeepList = nullptr;
 	FileListMap* pFileListMap = nullptr;
+
+	uint64_t estimateRAMSizeMB = 0;
+	uint64_t estimateVRAMSizeMB = 0;
+
+	bool bDX11 = false;
 
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
@@ -142,3 +157,4 @@ inline void DeleteGlobalData(GlobalData* pData) {
 }
 
 constexpr auto DEFAULT_FILELISTSIZE = 1000;
+constexpr auto Delimiter = L'|';

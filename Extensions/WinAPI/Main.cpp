@@ -176,6 +176,13 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GCMW, M_EXPRESSION_GCMW, EXP_EXPRESSION_GCMW, 0, 0,
 	IDMN_EXPRESSION_GCMH, M_EXPRESSION_GCMH, EXP_EXPRESSION_GCMH, 0, 0,
 
+	IDMN_EXPRESSION_GFFN, M_EXPRESSION_GFFN, EXP_EXPRESSION_GFFN, EXPFLAG_STRING, 1, EXPPARAM_STRING, PARA_ACTION_GFL,
+
+	IDMN_EXPRESSION_GDT, M_EXPRESSION_GDT, EXP_EXPRESSION_GDT, EXPFLAG_STRING, 1, EXPPARAM_LONG,PARA_EXPRESSION_GDT,
+
+	IDMN_EXPRESSION_GTPM, M_EXPRESSION_GTPM, EXP_EXPRESSION_GTPM, 0, 0,
+	IDMN_EXPRESSION_GFPM, M_EXPRESSION_GFPM, EXP_EXPRESSION_GFPM, 0, 0,
+
 };
 
 // ============================================================================
@@ -335,7 +342,7 @@ long WINAPI DLLExport IsCommandLineHasParam(LPRDATA rdPtr, long param1, long par
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
-		e.get_name();
+		auto name = e.get_name();
 		//return app.exit(e);
 	}
 
@@ -1509,7 +1516,7 @@ long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 }
 
 //获取当前时间
-long WINAPI DLLExport GetTime(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport GetCurTime(LPRDATA rdPtr, long param1) {
 	LPSYSTEMTIME lpSystemTime = new SYSTEMTIME;
 	GetLocalTime(lpSystemTime);
 
@@ -1561,9 +1568,53 @@ long WINAPI DLLExport GetPlayTime(LPRDATA rdPtr, long param1) {
 	//格式最长14字符
 	size_t Length = 14;
 	rdPtr->TotalPlayTime = new WCHAR [Length + 1];
-	memset(rdPtr->TotalPlayTime, 0, Length + 1);
+	memset(rdPtr->TotalPlayTime, 0, (Length + 1) * sizeof(WCHAR));
 
 	swprintf(rdPtr->TotalPlayTime, Length + 1, _T("%.2d:%.2d:%.2d"), Hour, Minute, Second);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->TotalPlayTime;
+}
+
+long WINAPI DLLExport GetDurationTime(LPRDATA rdPtr, long param1) {
+	int timeInMs = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	auto timeInSecond = timeInMs / 1000;
+
+	int timeInHour = timeInSecond / 3600;
+	timeInSecond %= 3600;
+
+	int timeInMinute = timeInSecond / 60;
+	timeInSecond %= 60;
+	
+	//Release Old
+	if (rdPtr->TotalPlayTime != nullptr) {
+		delete[] rdPtr->TotalPlayTime;
+	}
+
+	std::wstring time = L"";
+
+	auto GetFormatedTime = [](int time) {
+		return time!=0
+			?std::format(L"{}:", time)
+			:L"";
+	};
+
+	time += GetFormatedTime(timeInHour);
+	time += GetFormatedTime(timeInMinute);
+	time += GetFormatedTime(timeInSecond);
+
+	size_t length = !time.empty() ? time.length() - 1 : 0;
+
+	rdPtr->TotalPlayTime = new WCHAR[length + 1];
+	memset(rdPtr->TotalPlayTime, 0, (length + 1) * sizeof(WCHAR));
+
+	if (!time.empty()) {
+		memcpy(rdPtr->TotalPlayTime, time.c_str(), length * sizeof(WCHAR));
+	}
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1716,7 +1767,7 @@ long WINAPI DLLExport GetCommandLineByCLI(LPRDATA rdPtr, long param1) {
 		app.parse(commandLine, true);
 	}
 	catch (const CLI::ParseError& e) {
-		e.get_name();
+		auto name = e.get_name();
 		//return app.exit(e);
 	}
 
@@ -1748,6 +1799,92 @@ long WINAPI DLLExport GetCurMonitorWidth(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport GetCurMonitorHeight(LPRDATA rdPtr, long param1) {
 	return rdPtr->curMonitorHeight;
+}
+
+long WINAPI DLLExport GetFullFileName(LPRDATA rdPtr, long param1) {
+	LPCWSTR pFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	WIN32_FIND_DATA wfd;
+	HANDLE hFind = FindFirstFile(pFilePath, &wfd);
+
+	auto GetPathName = [](LPCWSTR pFilePath) {
+		auto fullFileName = GetFullPathNameStr(pFilePath);
+		auto slashPos = fullFileName.find_last_of(L'\\');
+		auto dotPos = fullFileName.find_last_of(L'.');
+
+		auto path = fullFileName.substr(0, slashPos);
+
+		if (slashPos == std::wstring::npos) {
+			return std::make_tuple(path, std::wstring(L""), std::wstring(L""));
+		}
+
+		auto fileName = fullFileName.substr(slashPos + 1, dotPos - slashPos - 1);
+
+		if (dotPos == std::wstring::npos) {
+			return std::make_tuple(path, fileName, std::wstring(L""));
+		}
+
+		auto ext = fullFileName.substr(dotPos + 1);
+
+		return std::make_tuple(path, fileName, ext);
+	};
+
+	do {
+		if (INVALID_HANDLE_VALUE != hFind) {
+			NewStr(rdPtr->FileListOutPut, pFilePath);
+		}
+		else {
+			const auto pInvalidRet = L"INVALID";
+
+			auto [path, fileName, ext] = std::move(GetPathName(pFilePath));
+
+			std::vector<std::wstring> fileList;
+			GetFileList(&fileList, path);
+
+			if (fileList.empty()) {
+				NewStr(rdPtr->FileListOutPut, pInvalidRet);
+
+				break;
+			}
+
+			auto it = std::find_if(fileList.begin(), fileList.end(), [&](const std::wstring& filePath) {
+				auto [localPath, localFileName, localExt] = std::move(GetPathName(filePath.c_str()));
+			
+				if (StrIEqu(fileName.c_str(), localFileName.c_str())) {
+					return true;
+				}
+
+				return false;
+				});
+
+			if (it == fileList.end()) {
+				NewStr(rdPtr->FileListOutPut, pInvalidRet);
+
+				break;
+			}
+
+			auto [localPath, localFileName, localExt] = std::move(GetPathName(it->c_str()));
+			auto acutalFileName = std::wstring(pFilePath) + std::wstring(L".") + localExt;
+
+			NewStr(rdPtr->FileListOutPut, acutalFileName);
+
+			break;
+		}
+	} while (0);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->FileListOutPut;
+}
+
+long WINAPI DLLExport GetTotalPhysicalMemory(LPRDATA rdPtr, long param1) {
+	return (long)GetSystemMemoryInfoMB(MemoryInfoType::TotalPhysicalMemory);
+}
+
+long WINAPI DLLExport GetFreePhysicalMemory(LPRDATA rdPtr, long param1) {
+	return (long)GetSystemMemoryInfoMB(MemoryInfoType::FreePhysicalMemory);
 }
 
 // ----------------------------------------------------------
@@ -1889,7 +2026,7 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	GetFrameName,
 
-	GetTime,
+	GetCurTime,
 	GetPlayTime,
 
 	GetFileListSize,
@@ -1918,6 +2055,13 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 	GetCurMonitorWidth,
 	GetCurMonitorHeight,
+
+	GetFullFileName,
+
+	GetDurationTime,
 	
+	GetTotalPhysicalMemory,
+	GetFreePhysicalMemory,
+
 	0
 };

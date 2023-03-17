@@ -70,6 +70,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->FuncNameStack = new VEC;
 	rdPtr->FuncNameStack->reserve(DefaultVecSize);
 
+	rdPtr->FuncRawParamStack = new VEC;
+	rdPtr->FuncRawParamStack->reserve(DefaultVecSize);	
+
 	rdPtr->FuncParamStack = new PARAMSTACK;
 	rdPtr->FuncParamStack->reserve(DefaultVecSize);
 
@@ -93,9 +96,16 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rdPtr->OutPut = new STRING;
 	rdPtr->OutPut = nullptr;
 
+	rdPtr->pPreviousFuncName = new std::wstring;
+	rdPtr->defaultData = Data_Default;
+
 	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
 	rdPtr->pOnItObjName = new std::wstring;
 	rdPtr->pObject = nullptr;
+
+#ifdef _ENABLE_TOAST
+	rdPtr->pToast = new WinToastHelper(rdPtr);
+#endif
 
 #ifdef _DEBUG
 	rdPtr->pSelect->SaveScope();
@@ -118,6 +128,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	delete rdPtr->FuncNameStack;
+	delete rdPtr->FuncRawParamStack;
 
 	delete rdPtr->FuncParamStack;
 	delete rdPtr->FuncTempParam;
@@ -135,8 +146,14 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	release_arr(rdPtr->OutPut);
 
+	delete rdPtr->pPreviousFuncName;
+
 	delete rdPtr->pSelect;
 	delete rdPtr->pOnItObjName;
+
+#ifdef _ENABLE_TOAST
+	delete rdPtr->pToast;
+#endif
 
 	// No errors
 	return 0;
