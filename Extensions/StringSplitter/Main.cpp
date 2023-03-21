@@ -179,9 +179,9 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	bool Enable = (bool)CNC_GetIntParameter(rdPtr);
 
-	Spliter->LoadFile(FilePath, Key, Enable);	
+	const auto bRet = Spliter->LoadFile(FilePath, Key, Enable);
 
-	if (rdPtr->AutoSplit) {
+	if (bRet && rdPtr->AutoSplit) {
 		Spliter->SplitData();
 	}
 
