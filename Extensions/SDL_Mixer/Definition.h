@@ -34,6 +34,8 @@ enum class AudioType {
 	DUB,
 };
 
+inline SDL_SpinLock effectLock = 0;
+
 constexpr auto GlobalEffectBufferSz = 65536;
 inline EffectBuffer pGlobalEffectBuffer[GlobalEffectBufferSz] = { 0 };
 
@@ -44,7 +46,7 @@ struct AudioEffect {
 
 	EffectBuffer* pBuf = pGlobalEffectBuffer;
 	int bufSz = GlobalEffectBufferSz;
-
+	
 	using AudioProcessor = std::function<void(HANDLE, float)>;
 	struct AudioProcessorPair {
 		AudioProcessor processor = nullptr;
@@ -53,6 +55,7 @@ struct AudioEffect {
 
 	std::vector<AudioProcessorPair> effects;
 
+	// constructor only copies the address so the destructor is trivial
 	AudioEffect(GlobalData* pGlobalData, HANDLE hSoundTouch,
 		const std::vector<AudioProcessorPair>& effects) {
 		this->pGlobalData = pGlobalData;
@@ -63,6 +66,15 @@ struct AudioEffect {
 	}
 
 	inline bool ProcessAudio(void* stream, const int len) {
+		SDL_AtomicLock(&effectLock);
+		const auto bRet = ProcessAudioImpl(stream, len);
+		SDL_AtomicUnlock(&effectLock);
+
+		return bRet;
+	}
+
+private:
+	inline bool ProcessAudioImpl(void* stream, const int len) {
 		// not rigorous but a big enough global buffer for default spec is ok
 		// len = chunk size * (16bit / 8bit) * channel
 		memset(pBuf, 0, GlobalEffectBufferSz);
@@ -907,7 +919,7 @@ struct GlobalData {
 					{
 						soundtouch_setPitchSemiTones,
 						//MusicScore::GetNote(arrDiv * audioPlayed)
-						//MusicScore::GetNote(arrDiv * audioPlayed, MusicScore::Score::CrystalPrelude,0)
+						//MusicScore::GetNote(arrDiv * audioPlayed, MusicScore::Score::CrystalPrelude, 0)
 						MusicScore::GetNote(arrDiv * audioPlayed,channelSettings.score,channelSettings.base)
 					},
 					//{
