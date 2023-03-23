@@ -35,9 +35,13 @@ void Split::ResetSplit() {
     this->Flag = this->DefaultFlag;
 }
 
-void Split::LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode) {
+bool Split::LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode) {
     this->SetUnicode(Unicode);
-    this->OpenFile(FilePath);
+    const auto bRet = this->OpenFile(FilePath);
+
+    if(!bRet) {
+        return false;
+    }
 
     if (wcscmp(Key, L"") != 0) {
         this->GenerateKey(Key);
@@ -47,9 +51,11 @@ void Split::LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode) 
     else {
         this->LoadData(this->GetInputStr());
     }
+
+    return true;
 }
-void Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode) {
-    LoadFile(FilePath.c_str(), Key.c_str());
+bool Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode) {
+    return LoadFile(FilePath.c_str(), Key.c_str());
 }
 
 void Split::LoadData() {

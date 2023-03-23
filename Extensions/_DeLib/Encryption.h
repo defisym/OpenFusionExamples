@@ -291,14 +291,18 @@ private:
 		return result;
 	}
 
-	inline void OpenFileGeneral(const wchar_t* FileName, std::function<void(FILE*, long)> callBack) {
+	inline bool OpenFileGeneral(const wchar_t* FileName, std::function<void(FILE*, long)> callBack) {
 		Release(this->InputData);
 
 		FILE* fp = nullptr;
 
 		_wfopen_s(&fp, FileName, L"rb");
 		if (fp == nullptr) {
-			return;
+#ifdef _DEBUG
+			OutputDebugStringW(L"Load File Error");
+#endif
+
+			return false;
 		}
 
 		fseek(fp, 0, SEEK_END);
@@ -308,6 +312,8 @@ private:
 		callBack(fp, this->InputLength);
 
 		fclose(fp);
+
+		return true;
 	}
 
 protected:
@@ -321,8 +327,8 @@ public:
 			this->IV,this->IVLength);
 	}
 
-	void OpenFile(const wchar_t* FileName);
-	void SaveFile(const wchar_t* FileName, bool SaveSrc = false);
+	bool OpenFile(const wchar_t* FileName);
+	bool SaveFile(const wchar_t* FileName, bool SaveSrc = false);
 
 	inline PBYTE GetInputData() {
 		return this->InputData;

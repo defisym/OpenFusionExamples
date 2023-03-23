@@ -15,32 +15,32 @@ Encryption::~Encryption() {
     Release(this->HashStr);
 }
 
-void Encryption::OpenFile(const wchar_t* FileName) {
-    OpenFileGeneral(FileName, [this] (FILE* fp, long sz) {
+bool Encryption::OpenFile(const wchar_t* FileName) {
+    return OpenFileGeneral(FileName, [this] (FILE* fp, long sz) {
         this->InputData = new BYTE[this->InputLength];
         fread(this->InputData, this->InputLength, 1, fp);
         });
 }
 
-void Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) {
+bool Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) {
     PBYTE Output = SaveSrc ? this->InputData : this->OutputData;
     DWORD Length = SaveSrc ? this->InputLength : this->OutputLength;
 
     if (Output == nullptr) {
-        return;
+        return false;
     }
 
     FILE* fp = nullptr;
 
     _wfopen_s(&fp, FileName, L"wb");
     if (fp == nullptr) {
-        return;
+        return false;
     }
 
     fwrite(Output, Length, 1, fp);
     fclose(fp);
 
-    return;
+    return true;
 }
 
 template<typename T>

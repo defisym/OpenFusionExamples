@@ -113,8 +113,8 @@ public:
     }
 
     //load file and decrypt it
-    void LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode = true);
-    void LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode = true);
+    bool LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode = true);
+    bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode = true);
 
     //load data loaded by parent class
     void LoadData();
