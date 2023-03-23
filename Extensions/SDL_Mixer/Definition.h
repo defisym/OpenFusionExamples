@@ -34,7 +34,11 @@ enum class AudioType {
 	DUB,
 };
 
+#define AUDIOEFFECT_SPINLOCK
+
+#ifdef AUDIOEFFECT_SPINLOCK
 inline SDL_SpinLock effectLock = 0;
+#endif
 
 constexpr auto GlobalEffectBufferSz = 65536;
 inline EffectBuffer pGlobalEffectBuffer[GlobalEffectBufferSz] = { 0 };
@@ -65,16 +69,22 @@ struct AudioEffect {
 		this->effects = effects;
 	}
 
-	inline bool ProcessAudio(void* stream, const int len) {
+	inline bool ProcessAudio(void* stream, const int len) const {
+#ifdef AUDIOEFFECT_SPINLOCK
 		SDL_AtomicLock(&effectLock);
+
+#endif
 		const auto bRet = ProcessAudioImpl(stream, len);
+
+#ifdef AUDIOEFFECT_SPINLOCK
 		SDL_AtomicUnlock(&effectLock);
+#endif
 
 		return bRet;
 	}
 
 private:
-	inline bool ProcessAudioImpl(void* stream, const int len) {
+	inline bool ProcessAudioImpl(void* stream, const int len) const {
 		// not rigorous but a big enough global buffer for default spec is ok
 		// len = chunk size * (16bit / 8bit) * channel
 		memset(pBuf, 0, GlobalEffectBufferSz);
@@ -905,6 +915,7 @@ struct GlobalData {
 			if (!channelSettings.bEffect) {
 				break;
 			}
+
 			constexpr auto arrDiv = 1;
 
 			const auto audioNum = GetMixingChannelSameAudioNum(channel, pAudioData->pMusic);
