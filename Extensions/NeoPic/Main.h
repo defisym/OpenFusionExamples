@@ -71,7 +71,9 @@
 
 #define	ACT_ACTION_STFWS			31
 
-#define	ACT_LAST					32
+#define	ACT_ACTION_CTBC				32
+
+#define	ACT_LAST					33
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

@@ -89,6 +89,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_STFWS, M_ACTION_STFWS, ACT_ACTION_STFWS,	0, 5, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
+		IDMN_ACTION_CTBC, M_ACTION_CTBC, ACT_ACTION_CTBC, 0, 1, PARAM_EXPRESSION, M_ACTION_COLOR,
+
 		};
 
 // Definitions of parameters for each expression
@@ -801,6 +803,65 @@ short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long pa
 	return 0;
 }
 
+short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long param2) {
+	int color = static_cast<int>(CNC_GetIntParameter(rdPtr));
+
+	if (CanDisplay(rdPtr)) {
+		auto pSf = ConvertBitmap(rdPtr->src);
+
+		// reset to 255
+		_ForceAddAlpha(pSf);
+
+		ProcessBitmap(rdPtr, pSf, [&] (const LPSURFACE pBitmap) {
+			IteratePixel(pSf,[&](const int x,const int y, const SfCoef sfCoef,
+			const BYTE* pSrcPixel, BYTE* pAlphaPixel) {
+				const auto r = pSrcPixel[2];
+				const auto g = pSrcPixel[1];
+				const auto b = pSrcPixel[0];
+
+				const auto curColor = RGB(r, g, b);
+
+				if (color == -1) {
+					color = static_cast<int>(curColor);
+				}
+
+				if (color == static_cast<int>(curColor)) {
+					pAlphaPixel[0] = 0;
+				}
+			});
+		});
+		
+		if (rdPtr->fromLib) {
+			rdPtr->fromLib = false;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+
+			rdPtr->pLibValue = nullptr;
+		}
+		else {
+			ReleaseNonFromLib(rdPtr);
+		}
+
+		if (rdPtr->pData->bDX11) {
+			pSf->PremultiplyAlpha();
+		}
+
+		if (rdPtr->HWA) {
+			ConvertToHWATexture(rdPtr, pSf);
+		}
+
+		rdPtr->src = pSf;
+
+		NewNonFromLib(rdPtr, rdPtr->src);
+
+		NewPic(rdPtr);
+		ReDisplay(rdPtr);
+	}
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1078,6 +1139,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CaptureFrameArea,
 
 			SaveToFileWithStretch,
+
+			ChangeTransparentByColor,
 
 			0
 			};

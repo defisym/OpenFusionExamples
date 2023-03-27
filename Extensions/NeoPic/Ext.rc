@@ -186,6 +186,7 @@ BEGIN
                 MENUITEM SEPARATOR
                 //MENUITEM "Set Collision",        IDMN_ACTION_SC
                 MENUITEM "Set Quality",            IDMN_ACTION_SQ
+                MENUITEM "Change Transparent Color",            IDMN_ACTION_CTBC
             END
             MENUITEM SEPARATOR
             POPUP "Transform"
@@ -450,7 +451,12 @@ BEGIN
     M_ACTION_SAVEFILENAME   "Save FileName, Format is Set by Ext, e.g., File.JPG for JPG"
 
     M_ACTION_CF             "Capture FrameArea"
+    
     M_ACTION_STFWS          "Save File %0, Key %1 to File %2, Stretch to Width %3, Height %4"
+    
+    M_ACTION_CTBC          "Change Transparent By Color %0"
+    M_ACTION_COLOR          "Color, -1 = First Pixel"
+
 END
 
 STRINGTABLE DISCARDABLE 
