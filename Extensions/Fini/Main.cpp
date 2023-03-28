@@ -52,6 +52,10 @@ short actionsInfos[]=
 		IDMN_ACTION_LP, M_ACTION_LP,ACT_ACTION_LP, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 
 		IDMN_ACTION_LB64, M_ACTION_LB64, ACT_ACTION_LB64, 0, 1,PARAM_EXPSTRING, M_BASE64,
+
+		IDMN_ACTION_LL, M_ACTION_LL, ACT_ACTION_LL,	0, 2, PARAM_FILENAME2, PARAM_EXPSTRING, ACT_ACTION_F,ACT_ACTION_K,
+		IDMN_ACTION_SLC, M_ACTION_SLC, ACT_ACTION_SLC,	0, 1, PARAM_EXPSTRING, ACT_ACTION_LC,
+
 		};
 
 // Definitions of parameters for each expression
@@ -220,6 +224,49 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	else {
 		Fini->LoadFile(FilePath);
 	}
+
+	return 0;
+}
+
+short WINAPI DLLExport LoadLocalization(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR FilePath = (LPCTSTR)param1;
+	LPCTSTR Key = (LPCTSTR)param2;
+
+	delete rdPtr->pLocalization;
+	rdPtr->pLocalization = nullptr;
+
+	rdPtr->pLocalization = new INI;
+	rdPtr->pLocalization->SetUnicode();
+
+	auto ret = SI_OK;
+
+	//Key has value, try to Decry
+	if (!StrEmpty(Key)) {
+		Encryption Decrypt;
+		Decrypt.GenerateKey(Key);
+
+		Decrypt.OpenFile(FilePath);
+		Decrypt.Decrypt();
+
+		ret = rdPtr->pLocalization->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
+		Decrypt.ReleaseOutputStr();
+	}
+	else {
+		ret = rdPtr->pLocalization->LoadFile(FilePath);
+	}
+
+	if (ret != SI_OK) {
+		delete rdPtr->pLocalization;
+		rdPtr->pLocalization = nullptr;
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport SetLanguageCode(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pLanguageCode = (LPCTSTR)param1;
+
+	*rdPtr->pLanguageCode = pLanguageCode;
 
 	return 0;
 }
@@ -541,7 +588,20 @@ long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
 	invalid((long)Default_Str);	
 	InvalidSecItem((long)Default_Str);
 
-	NewStr(OStr, Fini->GetValue(Section, Item, Default_Str));
+	//NewStr(OStr, Fini->GetValue(Section, Item, Default_Str));
+
+	auto pResult = Fini->GetValue(Section, Item, Default_Str);
+
+	if (rdPtr->pLocalization != nullptr && !StrEmpty(rdPtr->pLanguageCode->c_str())) {
+		const auto pLocalzation = rdPtr->pLocalization->GetValue(rdPtr->pLanguageCode->c_str(),
+			pResult, Default_Str);
+
+		if (!StrEmpty(pLocalzation)) {
+			pResult = pLocalzation;
+		}
+	}
+
+	NewStr(OStr, pResult);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -812,6 +872,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			LoadAlterValue,
 			LoadPosition,
 			LoadFromBase64,
+			LoadLocalization,
+			SetLanguageCode,
 			0
 			};
 

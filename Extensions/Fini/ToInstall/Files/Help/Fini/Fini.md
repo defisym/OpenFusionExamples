@@ -43,11 +43,23 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 - Load From File
   - *if you load from file, extension will auto initialize itself.*
   - *if the file is not encrypted, keep the key section empty.*
-- Load From String
-  - *load from string, e.g.`[Sec]/r/nItem=Value`*
-
 - Save to File
   - *if you don't want to encrypt the file, keep the key section empty.*
+
+- Load From String
+  - *load from string, e.g.`[Sec]/r/nItem=Value`*
+- Load From Base64
+  - *load from base64 string saved by this object (compressed)*
+
+- Load Localization
+  - *Load localization file, another ini with following structure, set path to empty to reset*
+
+```ini
+[LanguageCode]
+TextToReplace = LocalText
+```
+- Set LanguageCode
+  - *Set LanguageCode, set to empty to reset*
 
 - Set Value (Section - Item)
   - *extension will auto initialize itself.*
@@ -95,6 +107,7 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 - Get String (Section - Item)
   - *return "" if there is no item match.*
   - *Note: you can only read values in a section, doesn't support item-only file like MMF.*
+  - *if localization is set, then ext will return localization string if exists*
 
 - Get Current Section
   - *get the section name while iterating.*
@@ -103,6 +116,8 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 
 - Save to String
   - *save the entire file to string.*
+- Save to Base64 String
+  - *save the entire file to base64 string (compressed).*
 
 - Save Alterable Value
   - *Save alterable value/string/flag to base64*

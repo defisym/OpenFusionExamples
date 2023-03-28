@@ -153,6 +153,9 @@ BEGIN
         MENUITEM "Load From String", IDMN_ACTION_LS
         MENUITEM "Load From Base64 String", IDMN_ACTION_LB64
         MENUITEM SEPARATOR
+        MENUITEM "Load Localization", IDMN_ACTION_LL
+        MENUITEM "Set LanguageCode", IDMN_ACTION_SLC
+        MENUITEM SEPARATOR
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
         MENUITEM SEPARATOR
@@ -268,7 +271,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Fini"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021 ~ 2023 Defisym"
     IDST_COMMENT            "Ini that only write disk once."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -328,6 +331,9 @@ BEGIN
     M_ACTION_LAV        "Load Alterable Value %1 to Object %0"
     M_ACTION_LP         "Load Position %1 to Object %0"
 
+    M_ACTION_LL         "Load Localization From File %0, Decrypt Key %1"
+    M_ACTION_SLC        "Set LanguageCode to %0"
+    ACT_ACTION_LC       "LanguageCode"
 END
 
 STRINGTABLE DISCARDABLE 

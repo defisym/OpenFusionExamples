@@ -32,8 +32,10 @@
 #define	ACT_ACTION_LAV				13
 #define	ACT_ACTION_LP				14
 #define	ACT_ACTION_LB64				15
+#define	ACT_ACTION_LL				16
+#define	ACT_ACTION_SLC				17
 
-#define	ACT_LAST					16
+#define	ACT_LAST					18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -53,6 +55,8 @@
 // OBJECT DATA STRUCTURE 
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
+
+#define _NODISPLAY
 
 typedef struct tagEDATA_V1
 {
@@ -121,6 +125,9 @@ typedef struct tagRDATA
 	
 	//ini
 	LPINI ini = nullptr;
+
+	LPINI pLocalization = nullptr;
+	std::wstring* pLanguageCode = nullptr;
 
 	LPTSTR SecLoopName = nullptr;
 	LPTSTR ItemLoopName = nullptr;

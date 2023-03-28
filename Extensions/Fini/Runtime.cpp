@@ -77,6 +77,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pB64 = new Base64<std::wstring>;
 	rdPtr->b64Str = new std::wstring;
 
+	rdPtr->pLanguageCode = new std::wstring;
+
 	rdPtr->cf25p = edPtr->cf25p;
 	rdPtr->allowRVforCS = edPtr->allowRVforCS;
 
@@ -126,6 +128,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pB64;
 	delete rdPtr->b64Str;
+	delete rdPtr->pLocalization;
+	delete rdPtr->pLanguageCode;
 
 	// No errors
 	return 0;
