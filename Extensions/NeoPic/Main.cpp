@@ -89,7 +89,7 @@ short actionsInfos[]=
 
 		IDMN_ACTION_STFWS, M_ACTION_STFWS, ACT_ACTION_STFWS,	0, 5, PARAM_EXPSTRING, PARAM_EXPSTRING ,PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_FILENAME, M_ACTION_KEY, M_ACTION_SAVEFILENAME, M_ACTION_S_WIDTH, M_ACTION_S_HEIGHT,
 
-		IDMN_ACTION_CTBC, M_ACTION_CTBC, ACT_ACTION_CTBC, 0, 1, PARAM_EXPRESSION, M_ACTION_COLOR,
+		IDMN_ACTION_STC, M_ACTION_STC, ACT_ACTION_STC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_COLOR, M_ACTION_ALPHA,
 
 		};
 
@@ -804,20 +804,27 @@ short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long param2) {
+	// -1 for first pixel
 	int color = static_cast<int>(CNC_GetIntParameter(rdPtr));
+	// -1 for keep alpha
+	const int alpha = static_cast<int>(CNC_GetIntParameter(rdPtr));
 
 	if (CanDisplay(rdPtr)) {
 		auto pSf = ConvertBitmap(rdPtr->src);
 
 		// reset to 255
-		_ForceAddAlpha(pSf);
+		//_ForceAddAlpha(pSf);
 
 		ProcessBitmap(rdPtr, pSf, [&] (const LPSURFACE pBitmap) {
 			IteratePixel(pSf,[&](const int x,const int y, const SfCoef sfCoef,
 			const BYTE* pSrcPixel, BYTE* pAlphaPixel) {
-				const auto r = pSrcPixel[2];
-				const auto g = pSrcPixel[1];
-				const auto b = pSrcPixel[0];
+				const auto mul = rdPtr->pData->bPreMulAlpha
+					? pAlphaPixel[0] / 255.0
+					: 1;
+
+				const auto r = static_cast<BYTE>(pSrcPixel[2] / mul);
+				const auto g = static_cast<BYTE>(pSrcPixel[1] / mul);
+				const auto b = static_cast<BYTE>(pSrcPixel[0] / mul);
 
 				const auto curColor = RGB(r, g, b);
 
@@ -827,6 +834,9 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 
 				if (color == static_cast<int>(curColor)) {
 					pAlphaPixel[0] = 0;
+				}
+				else if (alpha != -1) {
+					pAlphaPixel[0] = static_cast<BYTE>(alpha);
 				}
 			});
 		});
@@ -843,7 +853,7 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 			ReleaseNonFromLib(rdPtr);
 		}
 
-		if (rdPtr->pData->bDX11) {
+		if (rdPtr->pData->bPreMulAlpha) {
 			pSf->PremultiplyAlpha();
 		}
 

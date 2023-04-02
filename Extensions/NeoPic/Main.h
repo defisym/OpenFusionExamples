@@ -71,7 +71,7 @@
 
 #define	ACT_ACTION_STFWS			31
 
-#define	ACT_ACTION_CTBC				32
+#define	ACT_ACTION_STC				32
 
 #define	ACT_LAST					33
 

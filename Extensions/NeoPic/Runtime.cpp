@@ -175,6 +175,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		pData->pFileListMap = new FileListMap;
 
 		pData->bDX11 = D3D11(rdPtr);
+		pData->bPreMulAlpha = PreMulAlpha(rdPtr);
 
 		//Update pointer
 		SetExtUserData(pData);

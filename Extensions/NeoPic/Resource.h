@@ -120,7 +120,7 @@
 
 #define	IDMN_ACTION_STFWS  			25031
 
-#define	IDMN_ACTION_CTBC 			25032
+#define	IDMN_ACTION_STC 			25032
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -175,7 +175,7 @@
 
 #define	M_ACTION_STFWS 			     5031
 
-#define	M_ACTION_CTBC 			     5032
+#define	M_ACTION_STC 			     5032
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -224,6 +224,7 @@
 #define M_ACTION_SAVEFILENAME        5530
 
 #define M_ACTION_COLOR               5531
+#define M_ACTION_ALPHA               5532
 
 //	Conditions
 //--------------------
