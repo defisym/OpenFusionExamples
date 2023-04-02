@@ -51,6 +51,9 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 - Load From Base64
   - *load from base64 string saved by this object (compressed)*
 
+- Link Localization
+  - *Link localization object, destroy to reset*
+
 - Load Localization
   - *Load localization file, another ini with following structure, set path to empty to reset*
 

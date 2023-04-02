@@ -77,7 +77,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pB64 = new Base64<std::wstring>;
 	rdPtr->b64Str = new std::wstring;
 
-	rdPtr->pLanguageCode = new std::wstring;
+	rdPtr->pLocalization = new Localization;
 
 	rdPtr->cf25p = edPtr->cf25p;
 	rdPtr->allowRVforCS = edPtr->allowRVforCS;
@@ -104,32 +104,14 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	//Auto Save
 	AutoSave(rdPtr);
 
-	//if (rdPtr->Modified && rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
-	//	if (!StrEmpty(rdPtr->AutoSaveKey)) {
-	//		std::string Output;
-	//		Fini->Save(Output);
-
-	//		Encryption Encrypt;
-	//		Encrypt.GenerateKey(rdPtr->AutoSaveKey);
-
-	//		Encrypt.SetEncryptStr(Output);
-	//		Encrypt.Encrypt();
-
-	//		Encrypt.SaveFile(rdPtr->AutoSaveFilePath);
-	//	}
-	//	else {
-	//		Fini->SaveFile(rdPtr->AutoSaveFilePath, false);
-	//	}
-	//}
-
 	release_ini();
 
 	release_arr(OStr);
 
 	delete rdPtr->pB64;
 	delete rdPtr->b64Str;
+
 	delete rdPtr->pLocalization;
-	delete rdPtr->pLanguageCode;
 
 	// No errors
 	return 0;
@@ -172,7 +154,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 	// Will not be called next loop	
-	return REFLAG_ONESHOT;
+	//return REFLAG_ONESHOT;
+
+	rdPtr->pLocalization->UpdateLink();
+
+	return 0;
 }
 
 // ----------------

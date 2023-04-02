@@ -34,8 +34,9 @@
 #define	ACT_ACTION_LB64				15
 #define	ACT_ACTION_LL				16
 #define	ACT_ACTION_SLC				17
+#define	ACT_ACTION_LLO				18
 
-#define	ACT_LAST					18
+#define	ACT_LAST					19
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -57,6 +58,8 @@
 // Used at edit time and saved in the MFA/CCN/EXE files
 
 #define _NODISPLAY
+
+struct Localization;
 
 typedef struct tagEDATA_V1
 {
@@ -126,14 +129,13 @@ typedef struct tagRDATA
 	//ini
 	LPINI ini = nullptr;
 
-	LPINI pLocalization = nullptr;
-	std::wstring* pLanguageCode = nullptr;
-
 	LPTSTR SecLoopName = nullptr;
 	LPTSTR ItemLoopName = nullptr;
 
 	LPTSTR CurrentSec = nullptr;
 	LPTSTR CurrentItem = nullptr;
+	
+	Localization* pLocalization = nullptr;
 
 	Base64<std::wstring>* pB64 = nullptr;
 	std::wstring* b64Str = nullptr;

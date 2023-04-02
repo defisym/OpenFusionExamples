@@ -55,6 +55,7 @@
 #define IDMN_ACTION_LB64	       	25015
 #define IDMN_ACTION_LL	       	    25016
 #define IDMN_ACTION_SLC	       	    25017
+#define IDMN_ACTION_LLO	       	    25018
 
 // Action strings
 #define M_ACTION_NF                 5000
@@ -75,6 +76,7 @@
 #define M_ACTION_LB64			    5015
 #define M_ACTION_LL			        5016
 #define M_ACTION_SLC			    5017
+#define M_ACTION_LLO			    5018
 
 // Titles of action parameters
 #define ACT_ACTION_F				 5501
@@ -90,6 +92,7 @@
 #define ACT_ACTION_CS_DES			 5511
 #define ACT_ACTION_CS_DEL			 5512
 #define ACT_ACTION_LC   			 5513
+#define ACT_ACTION_OBJ   			 5514
 
 //	Conditions
 //--------------------

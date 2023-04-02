@@ -49,6 +49,8 @@
 #include	"FusionUtilities.h"
 #include	"Func.h"
 
+#include	"Localization.h"
+
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
 extern short conditionsInfos[];

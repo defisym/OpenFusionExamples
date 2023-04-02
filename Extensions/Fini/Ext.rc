@@ -153,8 +153,13 @@ BEGIN
         MENUITEM "Load From String", IDMN_ACTION_LS
         MENUITEM "Load From Base64 String", IDMN_ACTION_LB64
         MENUITEM SEPARATOR
-        MENUITEM "Load Localization", IDMN_ACTION_LL
-        MENUITEM "Set LanguageCode", IDMN_ACTION_SLC
+        POPUP "Localization"
+        BEGIN
+            MENUITEM "Link Localization", IDMN_ACTION_LLO
+            MENUITEM "Load Localization", IDMN_ACTION_LL
+            MENUITEM SEPARATOR        
+            MENUITEM "Set LanguageCode", IDMN_ACTION_SLC
+        END
         MENUITEM SEPARATOR
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
@@ -332,8 +337,10 @@ BEGIN
     M_ACTION_LP         "Load Position %1 to Object %0"
 
     M_ACTION_LL         "Load Localization From File %0, Decrypt Key %1"
+    M_ACTION_LLO        "Link Localization Object %0"
     M_ACTION_SLC        "Set LanguageCode to %0"
     ACT_ACTION_LC       "LanguageCode"
+    ACT_ACTION_OBJ      "Localization Object Fixed"
 END
 
 STRINGTABLE DISCARDABLE 

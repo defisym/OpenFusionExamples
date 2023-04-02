@@ -40,7 +40,6 @@ short actionsInfos[]=
 		IDMN_ACTION_DSI, M_ACTION_DSI,	ACT_ACTION_DSI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
 		IDMN_ACTION_ITS, M_ACTION_ITS,	ACT_ACTION_ITS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_IT,
 		IDMN_ACTION_ITI, M_ACTION_ITI,	ACT_ACTION_ITI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_ITSN,ACT_ACTION_IT,
-		//IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_S,ACT_ACTION_K,
 		IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_S,
 
 		IDMN_ACTION_SAON, M_ACTION_SAON, ACT_ACTION_SAON,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
@@ -55,6 +54,7 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LL, M_ACTION_LL, ACT_ACTION_LL,	0, 2, PARAM_FILENAME2, PARAM_EXPSTRING, ACT_ACTION_F,ACT_ACTION_K,
 		IDMN_ACTION_SLC, M_ACTION_SLC, ACT_ACTION_SLC,	0, 1, PARAM_EXPSTRING, ACT_ACTION_LC,
+		IDMN_ACTION_LLO, M_ACTION_LLO, ACT_ACTION_LLO,	0, 1, PARAM_EXPRESSION, ACT_ACTION_OBJ,
 
 		};
 
@@ -101,7 +101,6 @@ long WINAPI DLLExport SecItemHasValue(LPRDATA rdPtr, long param1, long param2) {
 	return !StrEqu(Default_Str, Fini->GetValue(Section, Item, Default_Str));
 }
 
-
 // ============================================================================
 //
 // ACTIONS ROUTINES
@@ -137,28 +136,7 @@ short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
-	//LPCTSTR String = (LPCTSTR)param1;
-	//LPCTSTR Key = (LPCTSTR)param2;
-
-	//init_ini();
-
-	////Key has value, try to Decry
-	//if (!StrEmpty(Key)) {
-	//	Encryption Decrypt;
-	//	Decrypt.GenerateKey(Key);
-
-	//	Decrypt.SetEncryptStr(String, wcslen(String));
-	//	//Decrypt.SetEncryptStr(to_byte_string(String));
-	//	Decrypt.Decrypt();
-
-	//	Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetDecryptStrLength());
-	//	Decrypt.ReleaseOutputStr();
-	//}
-	//else {		
-	//	Fini->LoadData(to_byte_string(String));
-	//}
-
+short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR String = (LPCTSTR)param1;
 
 	AutoSave(rdPtr);
@@ -210,20 +188,15 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 		NewStr(rdPtr->AutoSaveKey, Key);
 	}	
 
-	//Key has value, try to Decry
-	if (!StrEmpty(Key)) {
-		Encryption Decrypt;
-		Decrypt.GenerateKey(Key);
+	LoadFile(Fini, FilePath, Key);
 
-		Decrypt.OpenFile(FilePath);
-		Decrypt.Decrypt();
+	return 0;
+}
 
-		Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
-		Decrypt.ReleaseOutputStr();
-	}
-	else {
-		Fini->LoadFile(FilePath);
-	}
+short WINAPI DLLExport LinkLocalization(LPRDATA rdPtr, long param1, long param2) {
+	const auto pObject = (LPRDATA)LproFromFixed(rdPtr, param1);
+
+	rdPtr->pLocalization->LinkObject(pObject);
 
 	return 0;
 }
@@ -232,33 +205,7 @@ short WINAPI DLLExport LoadLocalization(LPRDATA rdPtr, long param1, long param2)
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
 
-	delete rdPtr->pLocalization;
-	rdPtr->pLocalization = nullptr;
-
-	rdPtr->pLocalization = new INI;
-	rdPtr->pLocalization->SetUnicode();
-
-	auto ret = SI_OK;
-
-	//Key has value, try to Decry
-	if (!StrEmpty(Key)) {
-		Encryption Decrypt;
-		Decrypt.GenerateKey(Key);
-
-		Decrypt.OpenFile(FilePath);
-		Decrypt.Decrypt();
-
-		ret = rdPtr->pLocalization->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
-		Decrypt.ReleaseOutputStr();
-	}
-	else {
-		ret = rdPtr->pLocalization->LoadFile(FilePath);
-	}
-
-	if (ret != SI_OK) {
-		delete rdPtr->pLocalization;
-		rdPtr->pLocalization = nullptr;
-	}
+	rdPtr->pLocalization->LoadFile(FilePath, Key);	
 
 	return 0;
 }
@@ -266,48 +213,31 @@ short WINAPI DLLExport LoadLocalization(LPRDATA rdPtr, long param1, long param2)
 short WINAPI DLLExport SetLanguageCode(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR pLanguageCode = (LPCTSTR)param1;
 
-	*rdPtr->pLanguageCode = pLanguageCode;
+	rdPtr->pLocalization->SetLanguageCode(pLanguageCode);
 
 	return 0;
 }
 
-short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-	
+short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
+
+	invalid(0);
 	
 	SaveFile(Fini, FilePath, Key);
 
-	////Key has value, try to Encry
-	//if (!StrEmpty(Key)) {
-	//	std::string Output;
-	//	Fini->Save(Output);
-
-	//	Encryption Encrypt;
-	//	Encrypt.GenerateKey(Key);
-	//	
-	//	Encrypt.SetEncryptStr(Output);
-	//	Encrypt.Encrypt();
-
-	//	Encrypt.SaveFile(FilePath);
-	//}
-	//else {
-	//	Fini->SaveFile(FilePath, false);
-	//}	
-
 	return 0;
 }
 
-short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {	
+	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	//invalid(0);
 	if (!valid(Fini)) {
 		init_ini();
 	}
-	
-	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	
+
 	InvalidSecItem(0);
 
 	long p = CNC_GetFloatParameter(rdPtr);
@@ -331,14 +261,14 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
-short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {	
+	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	//invalid(0);
 	if (!valid(Fini)) {
 		init_ini();
 	}
-	
-	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	InvalidSecItem(0);
 
@@ -350,12 +280,12 @@ short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport CopySection(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
 	LPCTSTR Src = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Des = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	bool DeleteSrc = (bool)CNC_GetIntParameter(rdPtr);
+
+	invalid(0);
 
 	if (StrEmpty(Src) || StrEmpty(Des)) {
 		return 0;
@@ -380,11 +310,10 @@ short WINAPI DLLExport CopySection(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	invalid(0);
 	InvalidSec(0);
 
 	if (StrEqu(Item, Empty_Str)) {
@@ -397,9 +326,10 @@ short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Iterate_Section(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	invalid(0);
 
-	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->SecLoopName, LoopName);
 
 	INILIST Temp;
@@ -415,10 +345,10 @@ short WINAPI DLLExport Iterate_Section(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport Iterate_Item(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
 	LPCTSTR SectionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
+	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	invalid(0);
 	
 	NewStr(rdPtr->ItemLoopName, LoopName);	
 
@@ -591,15 +521,7 @@ long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
 	//NewStr(OStr, Fini->GetValue(Section, Item, Default_Str));
 
 	auto pResult = Fini->GetValue(Section, Item, Default_Str);
-
-	if (rdPtr->pLocalization != nullptr && !StrEmpty(rdPtr->pLanguageCode->c_str())) {
-		const auto pLocalzation = rdPtr->pLocalization->GetValue(rdPtr->pLanguageCode->c_str(),
-			pResult, Default_Str);
-
-		if (!StrEmpty(pLocalzation)) {
-			pResult = pLocalzation;
-		}
-	}
+	pResult = rdPtr->pLocalization->GetLocalization(pResult);
 
 	NewStr(OStr, pResult);
 
@@ -874,6 +796,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			LoadFromBase64,
 			LoadLocalization,
 			SetLanguageCode,
+			LinkLocalization,
 			0
 			};
 

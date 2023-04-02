@@ -5,23 +5,48 @@ inline bool Modified(SI_Error Input) {
 	return Input == SI_UPDATED || Input == SI_INSERTED;
 }
 
-inline void SaveFile(LPINI Ini,const wchar_t* FilePath, const wchar_t* Key) {
+inline bool LoadFile(LPINI pIni,LPCTSTR pFilePath,LPCTSTR pKey) {
+	auto ret = SI_OK;
+
+	//Key has value, try to Decry
+	if (!StrEmpty(pKey)) {
+		Encryption Decrypt;
+		Decrypt.GenerateKey(pKey);
+
+		Decrypt.OpenFile(pFilePath);
+		Decrypt.Decrypt();
+
+		ret = pIni->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
+		Decrypt.ReleaseOutputStr();
+	}
+	else {
+		ret = pIni->LoadFile(pFilePath);
+	}
+
+	return ret == SI_OK;
+}
+
+inline bool SaveFile(LPINI pIni,const wchar_t* pFilePath, const wchar_t* pKey) {
+	auto ret = true;
+
 	//Key has value, try to Encry
-	if (!StrEmpty(Key)) {
+	if (!StrEmpty(pKey)) {
 		std::string Output;
-		Ini->Save(Output);
+		pIni->Save(Output);
 
 		Encryption Encrypt;
-		Encrypt.GenerateKey(Key);
+		Encrypt.GenerateKey(pKey);
 
 		Encrypt.SetEncryptStr(Output);
 		Encrypt.Encrypt();
 
-		Encrypt.SaveFile(FilePath);
+		ret = Encrypt.SaveFile(pFilePath);
 	}
 	else {
-		Ini->SaveFile(FilePath, false);
+		ret = pIni->SaveFile(pFilePath, false) == SI_OK;
 	}
+
+	return ret;
 }
 
 inline void AutoSave(LPRDATA rdPtr) {
