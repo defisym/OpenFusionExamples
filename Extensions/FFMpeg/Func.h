@@ -355,23 +355,25 @@ inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs)
 }
 
 inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
+	auto ExceedMemLimit = [] (size_t memLimit = DEFAULT_MEMORYLIMIT) {
+		return memLimit <= GetProcessMemoryUsageMB();
+	};
+
 	if (!rdPtr->bCache) {
 		return;
 	}
 
-	auto ExceedMemLimit = [](size_t memLimit = DEFAULT_MEMORYLIMIT) {
-		return memLimit <= GetProcessMemoryUsageMB();
-	};
+	forceClean |= SystemMemoryNotEnough();
 
 	if (!forceClean && !ExceedMemLimit()) {
 		return;
 	}
 
-	auto pBufs = GetRefList(rdPtr);
-	auto  toRemove = GetToRemove(rdPtr, pBufs);
+	const auto pBufs = GetRefList(rdPtr);
+	const auto toRemove = GetToRemove(rdPtr, pBufs);
 
-	auto curLimit = GetProcessMemoryUsageMB();
-	auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;
+	const auto curLimit = GetProcessMemoryUsageMB();
+	const auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;
 
 	for (auto& pStr : toRemove) {
 		if (!ExceedMemLimit(limit)) {

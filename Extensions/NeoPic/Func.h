@@ -1121,41 +1121,41 @@ inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit) {
 }
 
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit = -1) {
-	do {
-		if(!rdPtr->isLib) {
-			break;
+	if (!rdPtr->isLib) {
+		return;
+	}
+
+	UpdateShaderUsage(rdPtr->pLib);
+
+	if (rdPtr->preloading) {
+		return;
+	}
+
+	forceClean |= SystemMemoryNotEnough();
+
+	if (forceClean
+		|| (rdPtr->autoClean
+		&& rdPtr->pLib->size() > CLEAR_NUMTHRESHOLD
+		&& ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit))) {
+		const auto tarMemLimit = forceClean && (memLimit != static_cast<size_t>(-1))
+			? memLimit
+			: rdPtr->memoryLimit / 2;
+
+		UpdateCleanVec(rdPtr);
+
+		while (!rdPtr->pCountVec->empty()
+			&& tarMemLimit <= GetMemoryUsageMB(rdPtr)) {
+
+			auto& fileName = rdPtr->pCountVec->back().first;
+
+			(*rdPtr->pLib)[fileName].Release();
+
+			rdPtr->pLib->erase(fileName);
+			rdPtr->pCount->erase(fileName);
+
+			rdPtr->pCountVec->pop_back();
 		}
-
-		UpdateShaderUsage(rdPtr->pLib);
-
-		if(rdPtr->preloading) {
-			break;
-		}
-
-		if (forceClean
-			|| (rdPtr->autoClean
-			&& rdPtr->pLib->size() > CLEAR_NUMTHRESHOLD
-			&& ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit))) {
-			const auto tarMemLimit = forceClean && (memLimit != static_cast<size_t>(-1))
-				? memLimit
-				: rdPtr->memoryLimit / 2;
-
-			UpdateCleanVec(rdPtr);
-
-			while (!rdPtr->pCountVec->empty()
-				&& tarMemLimit <= GetMemoryUsageMB(rdPtr)) {
-
-				auto& fileName = rdPtr->pCountVec->back().first;
-
-				(*rdPtr->pLib)[fileName].Release();
-
-				rdPtr->pLib->erase(fileName);
-				rdPtr->pCount->erase(fileName);
-
-				rdPtr->pCountVec->pop_back();
-			}
-		}
-	} while (0);		
+	}
 }
 
 // Get information

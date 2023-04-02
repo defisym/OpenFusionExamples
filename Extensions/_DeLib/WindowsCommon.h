@@ -382,10 +382,14 @@ inline SIZE_T GetSystemMemoryInfoMB(MemoryInfoType type = MemoryInfoType::FreePh
 }
 
 // memory left
-constexpr auto MIN_MEMORYLEFT = 512;
+constexpr auto MIN_MEMORYLEFT = 256;
 
+// true if physics & memory both not enough
 inline bool SystemMemoryNotEnough() {
-	return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
+	// return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
+
+	return (GetSystemMemoryInfoMB(MemoryInfoType::FreePhysicalMemory) < MIN_MEMORYLEFT)
+		&& (GetSystemMemoryInfoMB(MemoryInfoType::FreeVirtualMemory) < MIN_MEMORYLEFT);
 }
 
 // must end without L'\\'
