@@ -1,4 +1,5 @@
 #pragma once
+#include <EffectEx.h>
 
 struct Size {
 	int width;
@@ -67,11 +68,29 @@ struct Count {
 	size_t curRef;			// current ref times, currently curRef objects are using this
 							// erase safely if curRef == 0
 
-	inline size_t GetWeight(size_t countWeight) {
+	inline size_t GetWeight(size_t countWeight) const {
 		return this->count * countWeight + this->priority;
 	}
 };
 
+struct ShaderRef {
+	LPRO pObject = nullptr;
+
+	CEffectEx* pEffect = nullptr;
+	LPCSTR m_pFxBuf = nullptr;
+
+	std::wstring paramName;
+
+	ShaderRef(LPRO pObject, CEffectEx* pEffect, const std::wstring& paramName) {
+		this->pObject = pObject;
+		this->pEffect = pEffect;
+		this->paramName = paramName;
+
+		this->m_pFxBuf = pEffect->m_pFxBuf;
+	}
+};
+
+// for flipping
 constexpr auto SurfaceLibSfNum = 4;
 
 struct SurfaceLibValue {
@@ -85,13 +104,42 @@ struct SurfaceLibValue {
 	std::wstring Hash;
 	BOOL isTransparent = -1;		// constexpr BOOL transpTBD = -1;
 	bool bUsedInShader = false;
+	std::vector<ShaderRef>* pShaderList = nullptr;
+
+	SurfaceLibValue() = default;
+	SurfaceLibValue(const LPSURFACE pSf, const std::wstring& hash, const BOOL bTransp) {
+		this->pSf = pSf;
+		this->Hash = hash;
+
+		this->isTransparent = bTransp;
+	}
+
+	inline void RefShader(const ShaderRef& info) {
+		bUsedInShader = true;
+
+		if (pShaderList == nullptr) {
+			pShaderList = new std::remove_pointer_t<decltype(pShaderList)>;
+		}
+
+		pShaderList->emplace_back(info);
+	}
+
+	template<typename T>
+	static inline void ReleasePointer(T*& p) {
+		delete p;
+		p = nullptr;
+	}
 
 	inline void Release() {
-		delete pSf;
+		ReleasePointer(pSf);
 
-		delete pSf_VF;
-		delete pSf_HF;
-		delete pSf_VHF;
+		ReleasePointer(pSf_VF);
+		ReleasePointer(pSf_HF);
+		ReleasePointer(pSf_VHF);
+
+		if (pShaderList != nullptr) {
+			ReleasePointer(pShaderList);
+		}
 	}
 };
 
@@ -136,8 +184,8 @@ inline void DeleteGlobalData(GlobalData* pData) {
 
 	delete pData->pCount;
 	delete pData->pKeepList;
-	
-	for(auto& it : *pData->pFileListMap) {
+
+	for (auto& it : *pData->pFileListMap) {
 		delete it.second;
 	}
 	delete pData->pFileListMap;

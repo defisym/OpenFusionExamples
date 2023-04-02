@@ -18,6 +18,69 @@ inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit);
 
 //-----------------------------
 
+inline bool UpdateShaderUsage(SurfaceLibValue* pData) {
+	do {
+		if (!pData->bUsedInShader) {
+			break;
+		}
+
+		const auto removeIt = std::ranges::remove_if(*pData->pShaderList,
+			[&] (const ShaderRef& info) {
+				if (IsDestroyed(info.pObject)) {
+					return true;
+				}
+
+				const auto rdPtr = reinterpret_cast<LPRDATA>(info.pObject);
+
+				const auto pEffect = EffectUtilities::GetEffect(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam);
+
+				if (pEffect == nullptr) {
+					return true;
+				}
+
+				if (pEffect != info.pEffect) {
+					return true;
+				}
+
+				if (pEffect->m_pFxBuf != info.m_pFxBuf) {
+					return true;
+				}
+
+				const auto paramIndex = EffectUtilities::GetParamIndex(pEffect, info.paramName);
+
+				if (paramIndex == -1) {
+					return true;
+				}
+
+				const auto paramType = pEffect->GetParamType(paramIndex);
+
+				if (paramType != EFFECTPARAM_SURFACE) {
+					return true;
+				}
+
+				const auto pSfImpl = pEffect->GetParamSurfaceValue(paramIndex);
+
+				if (pSfImpl != GetSurfaceImplementation(*pData->pSf)) {
+					return true;
+				}
+
+				return false;
+		});
+
+		pData->pShaderList->erase(removeIt.begin(), removeIt.end());
+
+		pData->bUsedInShader = !pData->pShaderList->empty();
+	} while (0);
+
+	return pData->bUsedInShader;
+}
+
+inline void UpdateShaderUsage(SurfaceLib* pLib) {
+	for (auto& it : *pLib) {
+		UpdateShaderUsage(&it.second);
+	}
+}
+
 inline void NewNonFromLib(LPRDATA rdPtr, LPSURFACE pSrc) {
 	rdPtr->src = pSrc;
 	rdPtr->pSf_Nor = pSrc;
@@ -402,8 +465,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) 
 
 		if (pImg->IsValid()) {
 			// need not to get decrypted file hash, as it must different if file is different, even encrypted
-			(*rdPtr->pLib)[fullPath] = SurfaceLibValue{ pImg, nullptr, nullptr, nullptr
-				, GetFileHash(fullPath), GetTransparent(pImg) };
+			(*rdPtr->pLib)[fullPath] = SurfaceLibValue(pImg, GetFileHash(fullPath), GetTransparent(pImg));
 		}
 		else {
 			delete pImg;
@@ -633,8 +695,7 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf
 		: GetFullPathNameStr(pFileName);
 
 	if (rdPtr->isLib) {
-		(*rdPtr->pLib)[fullPath] = SurfaceLibValue{ pSave, nullptr, nullptr, nullptr
-			, fullPath, GetTransparent(pSave) };
+		(*rdPtr->pLib)[fullPath] = SurfaceLibValue(pSave, fullPath, GetTransparent(pSave));
 	}
 	else {
 		if (rdPtr->fromLib) {
@@ -701,7 +762,7 @@ inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
 		for (auto& it : *pData) {
 			auto itCount = rdPtr->pCount->find(it.first);
 
-			if (itCount->second.curRef != 0 || it.second.bUsedInShader) {
+			if (itCount->second.curRef != 0 || UpdateShaderUsage(&it.second)) {
 				kept->emplace(it);
 
 				continue;
@@ -718,8 +779,8 @@ inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
 }
 
 inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
-	auto it = pData->find(GetFullPathNameStr(Item));
-	if (it != pData->end() && !it->second.bUsedInShader) {
+	const auto it = pData->find(GetFullPathNameStr(Item));
+	if (it != pData->end() && !UpdateShaderUsage(&it->second)) {
 		it->second.Release();
 
 		pData->erase(it);
@@ -839,8 +900,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 		_LoadFromFile(pBitmap, it.c_str(), Key.c_str(), rdPtr, -1, -1, true, rdPtr->stretchQuality);
 
 		if (pBitmap->IsValid()) {
-			(*tempLib)[it] = SurfaceLibValue{ pBitmap, nullptr, nullptr, nullptr
-				,GetFileHash(it), GetTransparent(pBitmap) };
+			(*tempLib)[it] = SurfaceLibValue(pBitmap, GetFileHash(it), GetTransparent(pBitmap));
 		}
 		else {
 			delete pBitmap;
@@ -962,21 +1022,21 @@ inline void UpdateCleanVec(LPRDATA rdPtr) {
 	for (auto& it : *rdPtr->pLib) {
 		auto pCountIt = rdPtr->pCount->find(it.first);
 		auto pCountContain = pCountIt != rdPtr->pCount->end();
-		
-		Count count = pCountContain 
-			? pCountIt->second 
+
+		Count count = pCountContain
+			? pCountIt->second
 			: Count{ 0,0,0 };			// lowest weight
 
 		if ((!pCountContain
 			|| pCountIt->second.curRef == 0
-			|| !it.second.bUsedInShader) // only release assets that currently is not used
+			|| !UpdateShaderUsage(&it.second)) // only release assets that currently is not used
 			&& std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
 			rdPtr->pCountVec->emplace_back(RefCountPair{ it.first,count });
 		}
 	}
 
 	auto countWeight = mapSz;		// weight of ref count
-	std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [&](RefCountPair& l, RefCountPair& r) {
+	std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [&] (RefCountPair& l, RefCountPair& r) {
 		return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
 		});
 }
@@ -1061,13 +1121,22 @@ inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit) {
 }
 
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit = -1) {
-	if (!rdPtr->preloading
-		&& rdPtr->isLib) {
+	do {
+		if(!rdPtr->isLib) {
+			break;
+		}
+
+		UpdateShaderUsage(rdPtr->pLib);
+
+		if(rdPtr->preloading) {
+			break;
+		}
+
 		if (forceClean
 			|| (rdPtr->autoClean
-				&& rdPtr->pLib->size() > CLEAR_NUMTHRESHOLD
-				&& ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit))) {
-			auto tarMemLimit = forceClean && (memLimit != -1)
+			&& rdPtr->pLib->size() > CLEAR_NUMTHRESHOLD
+			&& ExceedDefaultMemLimit(rdPtr, rdPtr->memoryLimit))) {
+			const auto tarMemLimit = forceClean && (memLimit != static_cast<size_t>(-1))
 				? memLimit
 				: rdPtr->memoryLimit / 2;
 
@@ -1086,7 +1155,7 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 				rdPtr->pCountVec->pop_back();
 			}
 		}
-	}
+	} while (0);		
 }
 
 // Get information

@@ -397,7 +397,9 @@ public:
 		}
 	}
 
-	// https://www.cnblogs.com/chechen/p/10259592.html
+	//https://learn.microsoft.com/en-us/cpp/cpp/structured-exception-handling-c-cpp?view=msvc-160
+	// enable / EHa option in the project settings.
+	// See Project Properties->C / C++->Code Generation->Modify the Enable C++ Exceptions to "Yes With SEH Exceptions"
 	inline static bool CEffectExValid(CEffectEx* pEffect) {		
 		__try {
 			auto flags = pEffect->GetFlags();
