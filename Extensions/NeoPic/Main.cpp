@@ -633,22 +633,29 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 	auto pLibHWAType = object->HWA;
 	object->HWA = true;
 
-	auto it = _LoadLib(rdPtr, object, pFilePath, pKey);
+	do {
+		const auto it = _LoadLib(rdPtr, object, pFilePath, pKey);
 
-	if (it != object->pLib->end()) {
+		if (it == object->pLib->end()) {
+			break;
+		}
+		const auto pEffect = EffectUtilities::GetEffect(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam);
+
+		if (pEffect == nullptr) {
+			break;
+		}
+
 		// set param
-		EffectUtilities::SetParam(EffectUtilities::GetEffect(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam)
-			, paramName, EFFECTPARAM_SURFACE, it->second.pSf);
+		EffectUtilities::SetParam(pEffect, paramName, EFFECTPARAM_SURFACE, it->second.pSf);
+		it->second.RefShader(ShaderRef((LPRO)rdPtr, pEffect, paramName));
 
 		// add to keep list
-		it->second.bUsedInShader = true;
+		//auto fullPath = GetFullPathNameStr(pFilePath);
 
-		auto fullPath = GetFullPathNameStr(pFilePath);
-
-		if (std::find(object->pKeepList->begin(), object->pKeepList->end(), fullPath) == object->pKeepList->end()) {
-			object->pKeepList->emplace_back(fullPath);
-		}
-	}
+		//if (std::find(object->pKeepList->begin(), object->pKeepList->end(), fullPath) == object->pKeepList->end()) {
+		//	object->pKeepList->emplace_back(fullPath);
+		//}
+	} while (0);
 
 	object->HWA = pLibHWAType;
 
