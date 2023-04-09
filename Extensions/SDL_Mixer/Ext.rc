@@ -119,6 +119,11 @@ BEGIN
         MENUITEM "Channel Playing", IDMN_CONDITION_CP
         MENUITEM "No Channel Playing", IDMN_CONDITION_NCP
         MENUITEM SEPARATOR
+        MENUITEM "Channel Paused", IDMN_CONDITION_CPAUSED
+        MENUITEM "All Channel Paused", IDMN_CONDITION_ACPAUSED
+        MENUITEM SEPARATOR
+        MENUITEM "Channel Has No Output",  IDMN_CONDITION_CHNO
+        MENUITEM SEPARATOR
         MENUITEM "Exclusive Channel Fading Complete", IDMN_CONDITION_CFC
         MENUITEM SEPARATOR
     END
@@ -295,6 +300,9 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_CP              "%o Channel %0 Type %1 is Playing"
     M_CONDITION_NCP             "%o No Channel is Playing"
+    M_CONDITION_CPAUSED         "%o Channel %0 Type %1 is Paused"
+    M_CONDITION_ACPAUSED        "%o All Channel is Paused"
+    M_CONDITION_CHNO            "%o Channel %0 Type %1 Has No Output"
     M_CONDITION_CFC             "%o Exclusive Channel %0 Fading Complete"
 END
 

@@ -9,8 +9,11 @@
 #define	CND_CONDITION_CP				0
 #define	CND_CONDITION_NCP				1
 #define	CND_CONDITION_CFC				2
+#define	CND_CONDITION_CPAUSED			3
+#define	CND_CONDITION_ACPAUSED			4
+#define	CND_CONDITION_CHNO				5
 
-#define	CND_LAST    					3
+#define	CND_LAST    					6
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

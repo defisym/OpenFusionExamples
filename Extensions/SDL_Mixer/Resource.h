@@ -81,11 +81,17 @@
 #define IDMN_CONDITION_CP			26000
 #define IDMN_CONDITION_NCP			26001
 #define IDMN_CONDITION_CFC			26002
+#define IDMN_CONDITION_CPAUSED		26003
+#define IDMN_CONDITION_ACPAUSED		26004
+#define IDMN_CONDITION_CHNO 		26005
 
 // Condition strings
 #define M_CONDITION_CP				 6000
 #define M_CONDITION_NCP				 6001
 #define M_CONDITION_CFC				 6002
+#define M_CONDITION_CPAUSED			 6003
+#define M_CONDITION_ACPAUSED	     6004
+#define M_CONDITION_CHNO    	     6005
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

@@ -24,7 +24,11 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_CP, M_CONDITION_CP, CND_CONDITION_CP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
 		IDMN_CONDITION_NCP, M_CONDITION_NCP, CND_CONDITION_NCP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		IDMN_CONDITION_CFC, M_CONDITION_CFC, CND_CONDITION_CFC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION, M_ACTION_CHANNEL
+		IDMN_CONDITION_CFC, M_CONDITION_CFC, CND_CONDITION_CFC, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPRESSION, M_ACTION_CHANNEL,
+		IDMN_CONDITION_CPAUSED, M_CONDITION_CPAUSED, CND_CONDITION_CPAUSED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_CONDITION_ACPAUSED, M_CONDITION_ACPAUSED, CND_CONDITION_ACPAUSED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_CHNO, M_CONDITION_CHNO, CND_CONDITION_CHNO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+
 		};
 
 // Definitions of parameters for each action
@@ -75,10 +79,39 @@ long WINAPI DLLExport Condition_NoChannelPlaying(LPRDATA rdPtr, long param1, lon
 	return !(rdPtr->pData->ExclusiveChannelPlaying() || rdPtr->pData->MixingChannelPlaying());
 }
 
+long WINAPI DLLExport Condition_ChannelPaused(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+
+	return bExclusive
+		? rdPtr->pData->ExclusiveChannelPaused(channel)
+		: rdPtr->pData->MixingChannelPaused(channel);
+}
+
+long WINAPI DLLExport Condition_AllChannelPaused(LPRDATA rdPtr, long param1, long param2) {
+	return !(rdPtr->pData->ExclusiveChannelPaused() || rdPtr->pData->MixingChannelPaused());
+}
+
 long WINAPI DLLExport Condition_ChannelFadingComplete(LPRDATA rdPtr, long param1, long param2) {
 	auto channel = (int)CNC_GetParameter(rdPtr);
 
 	return rdPtr->pData->ExclusiveChannelFadingState(channel) == MIX_NO_FADING;	
+}
+
+long WINAPI DLLExport Condition_ChannelHasNoOutput(LPRDATA rdPtr, long param1, long param2) {
+	auto channel = (int)CNC_GetParameter(rdPtr);
+	auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+
+	// no output -> not playing or paused
+	const auto bPlaying = bExclusive
+		? rdPtr->pData->ExclusiveChannelPlaying(channel)
+		: rdPtr->pData->MixingChannelPaused(channel);
+
+	const auto bPaused = bExclusive
+		? rdPtr->pData->ExclusiveChannelPaused(channel)
+		: rdPtr->pData->MixingChannelPaused(channel);
+
+	return !bPlaying || bPaused;
 }
 
 // ============================================================================
@@ -247,6 +280,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_ChannelPlaying,
 			Condition_NoChannelPlaying,
 			Condition_ChannelFadingComplete,
+			Condition_ChannelPaused,
+			Condition_AllChannelPaused,
+			Condition_ChannelHasNoOutput,
 
 			0
 			};

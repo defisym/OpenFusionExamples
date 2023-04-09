@@ -5,6 +5,9 @@
 
 // SDL mixer can work with SDL Audio together
 // AKA compatible with FFMpeg
+
+// Documents for Mixer X
+// https://github.com/WohlSoft/SDL-Mixer-X/tree/master/docs
 #include <SDL.h>
 #include <SDL_mixer.h>
 
@@ -19,7 +22,7 @@
 
 #include "MusicScore.h"
 
-using namespace std::literals::chrono_literals;
+using std::literals::chrono_literals::operator ""ms;
 
 struct AudioEffect;
 struct AudioData;
@@ -502,11 +505,21 @@ struct GlobalData {
 	static inline bool AudioPlaying(Mix_Music* pMusic) {
 		return Mix_PlayingMusicStream(pMusic);
 	}
-	inline bool AudioPlaying(AudioData* pAudioData) {
+	inline bool AudioPlaying(const AudioData* pAudioData) const {
 		return pAudioData != nullptr
 			? AudioPlaying(pAudioData->pMusic)
 			: false;
 	}
+
+	static inline bool AudioPaused(Mix_Music* pMusic) {
+		return Mix_PausedMusicStream(pMusic);
+	}
+	inline bool AudioPaused(const AudioData* pAudioData) const {
+		return pAudioData != nullptr
+			? AudioPaused(pAudioData->pMusic)
+			: false;
+	}
+
 
 	static inline Mix_Fading AudioFadeState(Mix_Music* pMusic) {
 		return Mix_FadingMusicStream(pMusic);		
@@ -628,6 +641,12 @@ struct GlobalData {
 		if (vec.size() <= newSz) {
 			vec.resize(newSz + 1, val);
 		}
+	}
+
+	template<typename T>
+	static inline void GetExtendVecElement(std::vector<T>& vec, size_t pos, T val) {
+		ExtendVec(vec, pos, val);
+		return vec[pos];
 	}
 
 	static inline void EraseVec(AudioDataVec& vec, const Mix_Music* pMusic) {
@@ -759,6 +778,28 @@ struct GlobalData {
 
 		if (pAudioData != nullptr) {
 			return AudioPlaying(pAudioData);
+		}
+
+		return false;
+	}
+	
+	inline bool ExclusiveChannelPaused() {
+		auto bRet = false;
+
+		for (size_t channel = 0; channel < exclusiveChannel.size(); channel++) {
+			bRet |= ExclusiveChannelPaused(channel);
+		}
+
+		return bRet;
+	}
+
+	inline bool ExclusiveChannelPaused(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			return AudioPaused(pAudioData);
 		}
 
 		return false;
@@ -1026,6 +1067,26 @@ struct GlobalData {
 
 		MixingIterateChannel(channel, [&] (AudioData* pAudioData) {
 			bRet |= AudioPlaying(pAudioData);
+		});
+
+		return bRet;
+	}
+
+	inline bool MixingChannelPaused() {
+		auto bRet = false;
+
+		for (size_t channel = 0; channel < mixingChannel.size(); channel++) {
+			bRet |= MixingChannelPaused(static_cast<int>(channel));
+		}
+
+		return bRet;
+	}
+
+	inline bool MixingChannelPaused(int channel) {
+		auto bRet = false;
+
+		MixingIterateChannel(channel, [&] (AudioData* pAudioData) {
+			bRet |= AudioPaused(pAudioData);
 		});
 
 		return bRet;
