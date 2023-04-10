@@ -60,6 +60,9 @@
 #include	"Encryption.h"
 #include	"FFMpeg.h"
 
+#include	"SDL_Interface.h"
+#include	"SDL_Mixer_Interface.h"
+
 #include	"GeneralDefinition.h"
 #include	"Definition.h"
 

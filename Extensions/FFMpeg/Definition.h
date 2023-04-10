@@ -103,7 +103,7 @@ struct GlobalData {
 	};
 
 	GlobalData() {
-		pMemVideoLib = new MemVideoLib;
+		pMemVideoLib = new MemVideoLib();
 				
 #ifdef FMOD_AUDIO		
 #else

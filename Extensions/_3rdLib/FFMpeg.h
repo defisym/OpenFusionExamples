@@ -84,7 +84,8 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 constexpr auto TARGET_CHANNEL_NUMBER = 2;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
-constexpr auto TARGET_SAMPLE_RATE = 48000;
+//constexpr auto TARGET_SAMPLE_RATE = 48000;
+constexpr auto TARGET_SAMPLE_RATE = 44100;
 
 #define _AUDIO_TEMPO
 
