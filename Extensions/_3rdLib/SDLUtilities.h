@@ -3,6 +3,8 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
 
+constexpr auto SDLGeneral_BufferSize = 1024;
+
 constexpr auto SDLGeneralException_SDLInitFailed = -1;
 constexpr auto SDLGeneralException_MixOpenAudioFailed = -2;
 
@@ -19,7 +21,7 @@ inline void SDL_GeneralInit() {
     }
 
     if (!Mix_AudioOpened()) {
-        if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) == -1) {
+        if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, SDLGeneral_BufferSize) == -1) {
             auto error = SDL_GetError();
 
             throw SDLGeneralException_MixOpenAudioFailed;

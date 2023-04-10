@@ -1813,6 +1813,10 @@ public:
 		return this->bPause;
 	}
 
+	inline int get_sdl_volume() {
+		return volume;
+	}
+
 	inline int get_volume() {
 		return int((volume / 128.0) * 100);
 	}
@@ -2180,7 +2184,7 @@ public:
 		return response;
 	}
 
-	inline int audio_fillData(Uint8* stream, int len, Setter setter, Mixer mixer) {
+	inline int audio_fillData(Uint8* stream, int len, const Setter setter, const Mixer& mixer) {
 #ifdef USE_SPINLOCK
 		SDL_AtomicLock(&audioLock);
 #else

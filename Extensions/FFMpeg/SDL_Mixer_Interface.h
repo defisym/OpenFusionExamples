@@ -10,20 +10,19 @@
 #include <vector>
 #include <functional>
 
-constexpr auto SMIException_SDLInitFailed = -1;
-constexpr auto SMIException_MixOpenAudioFailed = -2;
-
-constexpr auto AudioDataException_CreateRWFailed = -1;
-constexpr auto AudioDataException_CreateMusicFailed = -2;
+constexpr auto AudioDataException_CreateChunkFailed = -1;
 
 class SMI:public AudioInterface {
 private:
     struct AudioData {
         BYTE* pData = nullptr;
-        int len = 8192;
+        int len = 4 * SDLGeneral_BufferSize;
 
         Mix_Chunk* pChunk = nullptr;
         FFMpeg** ppFFMpeg = nullptr;
+        int channel = -1;
+
+        bool bExit = false;
 
         AudioData(FFMpeg** ppFFMpeg) {
             pData = new BYTE[len];
@@ -32,7 +31,9 @@ private:
         	pChunk = Mix_QuickLoad_RAW(pData, len);
 
             if (!pChunk) {
-                throw -1;
+                auto error = SDL_GetError();
+
+                throw AudioDataException_CreateChunkFailed;
             }
 
             this->ppFFMpeg = ppFFMpeg;
@@ -48,6 +49,7 @@ private:
 
         AudioChannel() {
             channels.insert(channels.end(), MIX_CHANNELS, nullptr);
+            Mix_AllocateChannels(MIX_CHANNELS);
         }
 
         //inline void IterateChannel(const std::function<void(const int index, const AudioData* pAudioData)>& callBack) {
@@ -98,29 +100,8 @@ private:
     }
 
 public:
-    SMI() {
-        if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-            auto error = SDL_GetError();
-
-            throw SMIException_SDLInitFailed;
-        }
-
-        //const auto dn = SDL_GetNumAudioDrivers();
-        //std::vector<const char*> a;
-
-        //for (int i = 0; i < dn; i++) {
-        //    a.emplace_back(SDL_GetAudioDriver(i));
-        //}
-
-        //SDL_AudioInit("directsound");
-
-        if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) == -1) {
-            auto error = SDL_GetError();
-
-            throw SMIException_MixOpenAudioFailed;
-        }
-
-        Mix_Pause(-1);
+    SMI() {        
+        SDL_GeneralInit();
     }
     ~SMI() override {
         ReleaseAudioData();
@@ -134,10 +115,20 @@ public:
 
     	audioChannel.AddInstance(pAudioData);
         const auto channelID = audioChannel.GetChannelID(pAudioData);
+        pAudioData->channel = channelID;
 
+//#define _ChannelFinish
+
+#ifndef _ChannelFinish
         Mix_PlayChannel(channelID, pAudioData->pChunk, -1);
         Mix_RegisterEffect(channelID,
            [] (int chan, void* stream, int len, void* udata) {
+               const auto setter = SDL_memset;
+               const auto mixer = [] (void* dst, const void* src, size_t len, int volume) {
+                   //SDL_MixAudio((Uint8*)dst, (const Uint8*)src, len, volume);
+                   SDL_memcpy((Uint8*)dst, (const Uint8*)src, len);
+               };
+
                const auto pAudioData = static_cast<AudioData*>(udata);
                const auto pFFMpeg = *pAudioData->ppFFMpeg;
 
@@ -147,31 +138,63 @@ public:
                    return;
                }
 
-               pFFMpeg->audio_fillData(static_cast<Uint8*>(stream), len,
-                   SDL_memset,
-                   [] (void* dst, const void* src, size_t len, int volume) {
-                                 SDL_MixAudio(static_cast<Uint8*>(dst), 
-                                 static_cast<const Uint8*>(src), 
-                                 len, volume);
-               });
+               pFFMpeg->audio_fillData(static_cast<Uint8*>(stream), len, setter, mixer);
+               
+               const auto volume = pFFMpeg->get_sdl_volume();
+               Mix_Volume(pAudioData->channel, volume);
            },
            [] (int chan, void* udata) {
-
+               //OutputDebugString(L"Finish");
            },
            pAudioData);
+#else
+        Mix_PlayChannel(channelID, pAudioData->pChunk, 0);
+        Mix_ChannelFinishedArg(channelID, pAudioData, [](int chan, void* udata) {
+            const auto setter = SDL_memset;
+            const auto mixer = [] (void* dst, const void* src, size_t len, int volume) {
+                //SDL_MixAudio((Uint8*)dst, (const Uint8*)src, len, volume);
+                //memcpy((Uint8*)dst, (const Uint8*)src, len);
+                //TODO update volume here
+                SDL_memcpy((Uint8*)dst, (const Uint8*)src, len);
+            };
+
+            const auto pAudioData = static_cast<AudioData*>(udata);
+            const auto pFFMpeg = *pAudioData->ppFFMpeg;
+
+            const auto stream = pAudioData->pChunk->abuf;
+            const auto len = pAudioData->pChunk->alen;
+
+            do {
+                if (pFFMpeg == nullptr) {
+                    memset(stream, 0, len);
+
+                    break;
+                }
+
+                pFFMpeg->audio_fillData(static_cast<Uint8*>(stream), len, setter, mixer);
+            } while (0);
+
+            if (!pAudioData->bExit) {
+                Mix_RewindChannel(chan);
+                //Mix_PlayChannel(chan, pAudioData->pChunk, 0);
+            }
+        });
+#endif
 
         pAudioDatas.emplace_back(pAudioData);
     }
     inline void RemoveInstance(FFMpeg** ppFFMpeg, void* pData) override {
-        auto removeIt = std::ranges::remove_if(pAudioDatas, [&](const AudioData* pAudioData) {
-            return pAudioData->ppFFMpeg == ppFFMpeg;
+        auto removeIt = std::ranges::remove_if(pAudioDatas, [&](AudioData* pAudioData) {
+            if(pAudioData->ppFFMpeg == ppFFMpeg) {
+                audioChannel.RemoveInstance(pAudioData);
+                delete pAudioData;
+
+                return true;
+            }
+
+            return false;
         });
-
-        for(const auto& it: removeIt) {
-            audioChannel.RemoveInstance(it);
-            delete it;
-        }
-
+        
         pAudioDatas.erase(removeIt.begin(), removeIt.end());
     }
 };
