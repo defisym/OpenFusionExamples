@@ -129,7 +129,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}	
 
-	rdPtr->pData->Create(rdPtr->bForceNoAudio, &rdPtr->pFFMpeg);
+	rdPtr->pData->Create(&rdPtr->pFFMpeg, rdPtr->bForceNoAudio);
 
 	// No errors
 	return 0;
@@ -223,11 +223,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	OutputDebugString(outPut.c_str());
 	OutputDebugString(L"\n");
-#endif
-
-#ifdef FMOD_AUDIO
-	rdPtr->pData->cFMI.FMI_Update();
-	rdPtr->pData->UpdateVolume(&rdPtr->pFFMpeg);
 #endif
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {

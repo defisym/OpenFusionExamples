@@ -23,8 +23,10 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->bChanged = true;
 		rdPtr->rc.rcChanged = true;
 
+		// use video resolution to fix collision, as scale works differently here
 		UpdateHoImgInfo(rdPtr
-			, rdPtr->swidth, rdPtr->sheight
+			//, rdPtr->swidth, rdPtr->sheight
+			, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height()
 			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleX
 			, HotSpotPos::LT, 0, 0
 			, 0);

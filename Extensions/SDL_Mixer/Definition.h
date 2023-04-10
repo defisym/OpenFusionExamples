@@ -214,17 +214,7 @@ struct GlobalData {
 	HANDLE hSoundTouch = nullptr;
 
 	GlobalData() {
-		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-			auto error = SDL_GetError();
-
-			throw GlobalDataException_SDLInitFailed;
-		}
-
-		if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) == -1) {
-			auto error = SDL_GetError();
-
-			throw GlobalDataException_MixOpenAudioFailed;
-		}
+		SDL_GeneralInit();
 
 		hSoundTouch = soundtouch_createInstance();
 		soundtouch_setChannels(hSoundTouch, MIX_DEFAULT_CHANNELS);

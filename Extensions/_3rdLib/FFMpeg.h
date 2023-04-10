@@ -11,10 +11,6 @@
 #pragma warning(disable : 4819)
 #pragma warning(disable : 4996)
 
-#ifdef FMOD_AUDIO
-//#define _EXTERNAL_CLOCK_SYNC
-#endif
-
 // uncomment if you don't want to set in properties
 //#pragma comment(lib,"avcodec.lib")
 //#pragma comment(lib,"avdevice.lib")
@@ -55,7 +51,7 @@ extern "C" {
 }
 
 // SDL
-constexpr auto SDL_AUDIO_BUFFER_SIZE = 1024;
+constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
 constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 
 constexpr auto AUDIO_BUFFER_SIZE = (MAX_AUDIO_FRAME_SIZE * 3) / 2;
@@ -65,26 +61,12 @@ constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 
 constexpr auto PROBE_SIZE = (32 * 4096);
 
-// if defined, then this class won't call SDL_OpenAudio, and convert data by the following spec
-// for the sake of performance (SDL_OpenAudio need about 20ms on my PC)
-// 
-// Spec:
-//		wanted_spec.freq = TARGET_SAMPLE_RATE;
-//		wanted_spec.format = AUDIO_S16SYS;
-//		wanted_spec.channels = 2;
-//		//silent if no output
-//		wanted_spec.silence = 0;
-//		//specifies a unit of audio data refers to the size of the audio buffer in sample frames
-//		//recommend: 512~8192, ffplay: 1024
-//		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
-
-#define _EXTERNAL_AUDIO_INIT
-
+// This object will convert data to the following format for playing
 // Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
 constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 constexpr auto TARGET_CHANNEL_NUMBER = 2;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
-constexpr auto TARGET_SAMPLE_RATE = 48000;
+constexpr auto TARGET_SAMPLE_RATE = 44100;
 
 #define _AUDIO_TEMPO
 
@@ -151,7 +133,7 @@ constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
-using Setter = decltype(memset);
+using Setter = std::function<void*(void* dst, int val, size_t size)>;
 using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 using Uint8 = unsigned char;
@@ -315,7 +297,7 @@ private:
 
 #pragma endregion
 
-#pragma region SDL
+#pragma region Audio
 	//保存解码一个packet后的多帧原始音频数据
 	uint8_t* audio_buf = nullptr;
 	//解码后的多帧音频数据长度
@@ -326,21 +308,9 @@ private:
 	// output
 	void* audio_stream = nullptr;
 	size_t audio_stream_len = 0;
-
-	SDL_AudioSpec spec = { 0 };
-	SDL_AudioSpec wanted_spec = { 0 };
-
-#define USE_SPINLOCK
-
-#ifdef USE_SPINLOCK
+	
 	SDL_SpinLock audioLock = 0;
-#else
-	SDL_mutex* mutex_audio;
-	SDL_cond* cond_audioCallbackFinish;
-#endif
-
 	bool bAudioCallbackPause = false;
-	//SDL_cond* cond_audioCallbackPause;
 #pragma endregion
 
 #pragma endregion
@@ -427,13 +397,8 @@ private:
 
 	inline void init_SwrContext(int64_t in_ch_layout, AVSampleFormat in_sample_fmt, int in_sample_rate) {
 		swrContext = swr_alloc_set_opts(swrContext
-#ifndef _EXTERNAL_AUDIO_INIT
-			, av_get_default_channel_layout(channels)
-			, AV_SAMPLE_FMT_S16, pACodecParameters->sample_rate
-#else
 			, TARGET_CHANNEL_LAYOUT
 			, TARGET_SAMPLE_FORMAT, TARGET_SAMPLE_RATE
-#endif
 			, in_ch_layout
 			, in_sample_fmt, in_sample_rate
 			, 0, nullptr);
@@ -455,12 +420,7 @@ private:
 		this->bAudioCallbackPause = true;
 		this->audioQueue.pause();
 
-#ifdef USE_SPINLOCK
 		SDL_AtomicLock(&audioLock);
-#else
-		SDL_LockMutex(mutex_audio);
-		SDL_CondWait(cond_audioCallbackFinish, mutex_audio); 
-#endif		
 		
 		int ret = 0;
 				
@@ -588,12 +548,7 @@ private:
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);
 
-#ifdef USE_SPINLOCK
 		SDL_AtomicUnlock(&audioLock);
-#else
-		SDL_UnlockMutex(mutex_audio);
-		//SDL_CondSignal(cond_audioCallbackPause);
-#endif
 		
 		this->audioQueue.restore();
 		this->bAudioCallbackPause = false;
@@ -709,45 +664,12 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-//#define _GET_STREAM_BYLOOP
-
-#ifdef _GET_STREAM_BYLOOP
-		for (unsigned int i = 0; i < pFormatContext->nb_streams; i++) {
-			AVCodecParameters* pLocalCodecParameters = NULL;
-			pLocalCodecParameters = pFormatContext->streams [i]->codecpar;
-
-			const AVCodec* pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
-
-			if (pLocalCodec == NULL) {
-				continue;
-			}
-
-			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_VIDEO) {
-				if (video_stream_index == -1) {
-					video_stream_index = i;
-					pVCodec = pLocalCodec;
-					pVCodecParameters = pLocalCodecParameters;
-				}
-			}
-
-			if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
-				if (audio_stream_index == -1) {
-					audio_stream_index = i;
-					pACodec = pLocalCodec;
-					pACodecParameters = pLocalCodecParameters;
-				}
-			}
-		}
-#endif
-
 		//---------------------
 		// Video
 		//---------------------
 
-#ifndef _GET_STREAM_BYLOOP
 		// init video codec
 		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVCodec, 0);
-#endif
 		
 		if (video_stream_index < 0) {
 			throw FFMpegException_InitFailed;
@@ -844,12 +766,10 @@ private:
 			bForceNoAudio = true;
 		}
 
-#ifndef _GET_STREAM_BYLOOP
 		// init audio codec
 		if (!bForceNoAudio) {
 			audio_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
 		}
-#endif
 
 		if (audio_stream_index < 0) {
 			//throw FFMpegException_InitFailed;
@@ -959,60 +879,15 @@ private:
 		//p_global_bgr_buffer = new uint8_t[num_bytes];
 #pragma endregion
 
-#pragma region SDLInit
-#ifdef USE_SPINLOCK
-#else
-		mutex_audio = SDL_CreateMutex();
-		cond_audioCallbackFinish = SDL_CreateCond();
-		//cond_audioCallbackPause = SDL_CreateCond();
-#endif
-	
+#pragma region AudioInit	
 		if (!bNoAudio) {
 			// init SDL audio
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
-#ifndef _EXTERNAL_AUDIO_INIT
-			//DSP frequency -- samples per second
-			wanted_spec.freq = pACodecContext->sample_rate;
-			wanted_spec.format = AUDIO_S16SYS;
-			wanted_spec.channels = pACodecContext->channels;
-			//sclient if no output
-			wanted_spec.silence = 0;
-			//specifies a unit of audio data refers to the size of the audio buffer in sample frames
-			//recommand: 512~8192，ffplay: 1024
-			wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
-			//wanted_spec.samples = pACodecContext->frame_size;
-
-			wanted_spec.userdata = (void*)this;
-			wanted_spec.callback = [] (void* userdata, Uint8* stream, int len) {
-				FFMpeg* pFFMpeg = (FFMpeg*)userdata;
-
-				//#define _TESTDATA	// Enable this macro to disable callback, return mute directly
-#ifndef _TESTDATA
-				pFFMpeg->audio_fillData(stream, len);
-#else
-				SDL_memset(stream, 0, len);
-#endif
-			};
-
-			if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
-				auto error = SDL_GetError();
-
-				throw SDL_EXCEPTION_AUDIO;
-			}
-#endif // _EXTERNAL_AUDIO_INIT	
-
-#ifndef FMOD_AUDIO
-			SDL_PauseAudio(false);
-#endif
-		}
-#pragma endregion
-	
-		// must be here, as it requires mutex_audio of SDL
-		if (!bNoAudio) {
 			set_audioTempo(DEFAULT_ATEMPO);
 		}
+#pragma endregion
 }
 
 	inline int64_t get_protectedTimeInSecond(int64_t ms) {
@@ -1072,7 +947,7 @@ private:
 	}
 
 	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext
-		, double targetPts, rawDataCallBack callBack) {
+		, double targetPts, const rawDataCallBack& callBack) {
 		int response = 0;
 
 		AVPacket* pPacket = av_packet_alloc();
@@ -1197,7 +1072,7 @@ private:
 		return response;
 	}
 
-	inline int decode_frame(rawDataCallBack callBack) {
+	inline int decode_frame(const rawDataCallBack& callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
@@ -1310,7 +1185,7 @@ private:
 		return response;
 	}
 
-	inline int decode_videoFrame(rawDataCallBack callBack) {
+	inline int decode_videoFrame(const rawDataCallBack& callBack) {
 		return decode_frameCore(bVideoFinish, bVideoSendEAgain
 			, false
 			, videoQueue
@@ -1330,7 +1205,7 @@ private:
 
 	// Convert data to Fusion data
 	// https://zhuanlan.zhihu.com/p/53305541
-	inline void convertData(AVFrame* pFrame, rawDataCallBack callBack) {
+	inline void convertData(AVFrame* pFrame, const rawDataCallBack& callBack) {
 		// allocate buffer
 		if (p_global_bgr_buffer == nullptr) {
 			num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
@@ -1359,7 +1234,7 @@ private:
 		callBack(bgr_buffer[0], linesize[0], pFrame->height);
 	}
 
-	inline int decode_vpacket(AVCodecContext* pVCodecContext, AVPacket* pVPacket, AVFrame* pFrame, rawDataCallBack callBack) {
+	inline int decode_vpacket(AVCodecContext* pVCodecContext, AVPacket* pVPacket, AVFrame* pFrame, const rawDataCallBack& callBack) {
 		// Return decoded output data (into a frame) from a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		int response = avcodec_receive_frame(pVCodecContext, pFrame);
@@ -1507,11 +1382,7 @@ private:
 			// https://blog.csdn.net/u013346305/article/details/48682935
 			int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
 								+ pBaseFrame->nb_samples
-#ifndef _EXTERNAL_AUDIO_INIT
-				, pBaseFrame->sample_rate, pBaseFrame->sample_rate, AVRounding(1));
-#else
 				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, AVRounding(1));
-#endif
 
 			// 转换，返回值为转换后的sample个数
 			int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples
@@ -1698,23 +1569,10 @@ public:
 		audioQueue.pause();
 		videoQueue.pause();
 
-#ifndef FMOD_AUDIO
-		SDL_PauseAudio(false);
-#endif
-
-#ifndef _EXTERNAL_AUDIO_INIT
-		SDL_CloseAudio();
-#endif // _EXTERNAL_AUDIO_INIT		
-
 		//Wait for callback finish
 		this->bAudioCallbackPause = true;
 
-#ifdef USE_SPINLOCK
 		SDL_AtomicLock(&audioLock);
-#else
-		SDL_LockMutex(mutex_audio);
-		SDL_CondWait(cond_audioCallbackFinish, mutex_audio);
-#endif
 
 		delete[] audio_buf;
 
@@ -1770,18 +1628,7 @@ public:
 
 		delete[] p_global_bgr_buffer;
 
-#ifdef USE_SPINLOCK
 		SDL_AtomicUnlock(&audioLock);
-#else
-		SDL_UnlockMutex(mutex_audio);
-#endif
-
-#ifdef USE_SPINLOCK
-#else
-		SDL_DestroyMutex(mutex_audio);
-		SDL_DestroyCond(cond_audioCallbackFinish);
-		//SDL_DestroyCond(cond_audioCallbackPause);
-#endif
 	}
 
 	//Get
@@ -1809,6 +1656,10 @@ public:
 
 	inline bool get_pause() {
 		return this->bPause;
+	}
+
+	inline int get_sdl_volume() {
+		return volume;
 	}
 
 	inline int get_volume() {
@@ -1930,6 +1781,10 @@ public:
 		this->bPause = bPause;
 	}
 
+	inline void set_sdl_volume(int volume) {
+		this->volume = max(0, min(128, volume));
+	}
+
 	inline void set_volume(int volume) {
 		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
 	}
@@ -2042,11 +1897,11 @@ public:
 	}
 
 	//Play core
-	inline int goto_videoPosition(size_t ms, rawDataCallBack callBack) {
+	inline int goto_videoPosition(size_t ms, const rawDataCallBack& callBack) {
 		return forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0, callBack);
 	}
 
-	inline int get_videoFrame(size_t ms, bool bAccurateSeek, rawDataCallBack callBack) {
+	inline int get_videoFrame(size_t ms, bool bAccurateSeek, const rawDataCallBack& callBack) {
 		int response = 0;
 
 		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
@@ -2156,7 +2011,7 @@ public:
 		return response;
 	}
 
-	inline int get_nextFrame(rawDataCallBack callBack) {
+	inline int get_nextFrame(const rawDataCallBack& callBack) {
 		int response = 0;
 		int how_many_packets_to_process = 0;
 
@@ -2178,12 +2033,8 @@ public:
 		return response;
 	}
 
-	inline int audio_fillData(Uint8* stream, int len, Setter setter, Mixer mixer) {
-#ifdef USE_SPINLOCK
+	inline int audio_fillData(Uint8* stream, int len, const Setter& setter, const Mixer& mixer) {
 		SDL_AtomicLock(&audioLock);
-#else
-		SDL_LockMutex(mutex_audio);
-#endif
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
@@ -2244,12 +2095,7 @@ public:
 			}
 		}
 
-#ifdef USE_SPINLOCK
 		SDL_AtomicUnlock(&audioLock);
-#else
-		SDL_CondSignal(cond_audioCallbackFinish);
-		SDL_UnlockMutex(mutex_audio);
-#endif
 
 		return 0;
 	}

@@ -1,5 +1,7 @@
 # ReadMe
 
+Interfaces or utils to work with 3rdLibs
+
 All files here in the repo are modified by defisym
 
 Files listed in gitignore are also used but remain untouched, you need to clone it from origin repo to compile.

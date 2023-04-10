@@ -28,6 +28,7 @@
 #include	"Surface.h"
 
 // My lib
+#include	"SDLUtilities.h"
 #include	"Encryption.h"
 
 #include	"WindowsCommon.h"
