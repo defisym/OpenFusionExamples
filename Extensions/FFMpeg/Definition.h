@@ -64,7 +64,6 @@ struct GlobalData {
 	GlobalData() {
 		pMemVideoLib = new MemVideoLib();
 		pAI = new SMI();
-		//pAI = new SMI();
 	}
 
 	~GlobalData() {
