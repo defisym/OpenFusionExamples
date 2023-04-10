@@ -131,10 +131,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pData->Create(rdPtr->bForceNoAudio, &rdPtr->pFFMpeg);
 
-	AudioInterface* p = new SMI();
-	AudioInterface* p1 = new SI();
-
-
 	// No errors
 	return 0;
 }

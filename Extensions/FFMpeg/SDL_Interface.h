@@ -2,7 +2,7 @@
 
 #include "AudioInterface.h"
 
-class SI :AudioInterface {
+class SI :public AudioInterface {
 private:
 	using AudioCallback = void(*)(void* userdata, Uint8* stream, int len);
 
@@ -10,7 +10,7 @@ private:
 	std::vector<FFMpeg**> ppFFMpegs;
 
 public:
-	SI(AudioCallback callback) {
+	SI() {
 		//initialize the video audio & timer subsystem 
 		//if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
 		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
@@ -32,7 +32,31 @@ public:
 		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 
 		wanted_spec.userdata = (void*)this;
-		wanted_spec.callback = callback;
+		wanted_spec.callback = [](void* userdata, Uint8* stream, int len) {
+			const auto setter = SDL_memset;
+			const auto mixer = [] (void* dst, const void* src, size_t len, int volume) {
+				SDL_MixAudio((Uint8*)dst, (const Uint8*)src, len, volume);
+			};
+
+			const auto pSI = (SI*)userdata;
+			const auto ppFFMpeg = pSI->ppFFMpeg;
+
+			if (ppFFMpeg == nullptr) {
+				setter(stream, 0, len);
+
+				return;
+			}
+
+			const auto pFFMpeg = *ppFFMpeg;
+
+			if (pFFMpeg == nullptr) {
+				setter(stream, 0, len);
+
+				return;
+			}
+
+			pFFMpeg->audio_fillData(stream, len, setter, mixer);
+		};
 
 		if (SDL_OpenAudio(&wanted_spec, nullptr) < 0) {
 			auto error = SDL_GetError();

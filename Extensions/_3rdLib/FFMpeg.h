@@ -78,6 +78,7 @@ constexpr auto PROBE_SIZE = (32 * 4096);
 //		//recommend: 512~8192, ffplay: 1024
 //		wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;
 
+// TODO remove internal init
 #define _EXTERNAL_AUDIO_INIT
 
 // Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
