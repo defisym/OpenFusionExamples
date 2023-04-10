@@ -129,7 +129,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}	
 
-	rdPtr->pData->Create(rdPtr->bForceNoAudio, &rdPtr->pFFMpeg);
+	rdPtr->pData->Create(&rdPtr->pFFMpeg, rdPtr->bForceNoAudio);
 
 	// No errors
 	return 0;

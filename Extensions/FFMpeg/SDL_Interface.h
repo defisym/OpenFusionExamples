@@ -64,12 +64,12 @@ public:
 			throw SDL_EXCEPTION_AUDIO;
 		}
 	}
-	~SI() {
+	~SI() override {
 		SDL_CloseAudio();
 		SDL_Quit();
 	}
 
-	inline void AddInstance(FFMpeg** ppFFMpeg, void* pData) {
+	inline void AddInstance(FFMpeg** ppFFMpeg, void* pData) override {
 		const bool bForceNoAudio = *static_cast<bool*>(pData);
 
 		if (!bForceNoAudio) {
@@ -77,7 +77,7 @@ public:
 			this->ppFFMpegs.emplace_back(ppFFMpeg);
 		}
 	}
-	inline void RemoveInstance(FFMpeg** ppFFMpeg, void* pData) {
+	inline void RemoveInstance(FFMpeg** ppFFMpeg, void* pData) override {
 		const auto it = std::ranges::find(ppFFMpegs, ppFFMpeg);
 		if (it != ppFFMpegs.end()) {
 			ppFFMpegs.erase(it);

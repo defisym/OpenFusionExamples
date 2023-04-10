@@ -63,8 +63,8 @@ struct GlobalData {
 
 	GlobalData() {
 		pMemVideoLib = new MemVideoLib();
-		pAI = new SI();
-		//pAI = new SMI();
+		//pAI = new SI();
+		pAI = new SMI();
 	}
 
 	~GlobalData() {
@@ -72,7 +72,7 @@ struct GlobalData {
 		delete pAI;
 	}
 
-	inline void Create(bool bForceNoAudio, FFMpeg** ppFFMpeg) {
+	inline void Create(FFMpeg** ppFFMpeg, bool bForceNoAudio) {
 		// Update global data
 		ppFFMpegs_record.emplace_back(ppFFMpeg);
 
