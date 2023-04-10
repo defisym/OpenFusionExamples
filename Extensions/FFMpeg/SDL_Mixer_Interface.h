@@ -117,9 +117,6 @@ public:
         const auto channelID = audioChannel.GetChannelID(pAudioData);
         pAudioData->channel = channelID;
 
-//#define _ChannelFinish
-
-#ifndef _ChannelFinish
         Mix_PlayChannel(channelID, pAudioData->pChunk, -1);
         Mix_RegisterEffect(channelID,
            [] (int chan, void* stream, int len, void* udata) {
@@ -147,39 +144,7 @@ public:
                //OutputDebugString(L"Finish");
            },
            pAudioData);
-#else
-        Mix_PlayChannel(channelID, pAudioData->pChunk, 0);
-        Mix_ChannelFinishedArg(channelID, pAudioData, [](int chan, void* udata) {
-            const auto setter = SDL_memset;
-            const auto mixer = [] (void* dst, const void* src, size_t len, int volume) {
-                //SDL_MixAudio((Uint8*)dst, (const Uint8*)src, len, volume);
-                //memcpy((Uint8*)dst, (const Uint8*)src, len);
-                //TODO update volume here
-                SDL_memcpy((Uint8*)dst, (const Uint8*)src, len);
-            };
 
-            const auto pAudioData = static_cast<AudioData*>(udata);
-            const auto pFFMpeg = *pAudioData->ppFFMpeg;
-
-            const auto stream = pAudioData->pChunk->abuf;
-            const auto len = pAudioData->pChunk->alen;
-
-            do {
-                if (pFFMpeg == nullptr) {
-                    memset(stream, 0, len);
-
-                    break;
-                }
-
-                pFFMpeg->audio_fillData(static_cast<Uint8*>(stream), len, setter, mixer);
-            } while (0);
-
-            if (!pAudioData->bExit) {
-                Mix_RewindChannel(chan);
-                //Mix_PlayChannel(chan, pAudioData->pChunk, 0);
-            }
-        });
-#endif
 
         pAudioDatas.emplace_back(pAudioData);
     }

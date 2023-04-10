@@ -168,15 +168,7 @@ LPCTSTR szDep[] = {
 
 		//SDL
 		L"SDL2.dll",
-
-		#ifdef FMOD_AUDIO
-		//FMod
-		#ifdef _DEBUG
-		L"fmodL.dll",
-		#else
-		L"fmod.dll",
-		#endif
-		#endif
+		L"SDL2_mixer_ext.dll",
 
 		NULL
 };

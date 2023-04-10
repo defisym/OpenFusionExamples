@@ -225,11 +225,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	OutputDebugString(L"\n");
 #endif
 
-#ifdef FMOD_AUDIO
-	rdPtr->pData->cFMI.FMI_Update();
-	rdPtr->pData->UpdateVolume(&rdPtr->pFFMpeg);
-#endif
-
 	if (rdPtr->bOpen && rdPtr->bPlay) {
 #ifdef _LOOPBENCH
 		//auto now = std::chrono::steady_clock::now();
