@@ -24,6 +24,8 @@ FFMpeg: you need to download release (e.g., `ffmpeg-n5.0-latest-win32-lgpl-share
 
 SDL: you need to download `SDL2-2.24.0-win32-x86.zip` from <https://github.com/libsdl-org/SDL/releases>, then put X86 dlls into Fusion root & `Runtime/Unicode`
 
+SDL Mixer X: Upstream is https://github.com/WohlSoft/SDL-Mixer-X, this extension added a few custom functions to original lib, so please clone [this repo](https://github.com/defisym/SDL-Mixer-X) first, then follow the [guide](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/docs/index.md#general-build-on-unix-like-platform-and-install-into-the-system) to build it by yourself
+
 Here follows all dlls needed by this object:
 
 - FFMpeg
@@ -37,14 +39,9 @@ Here follows all dlls needed by this object:
 
 - SDL
   - SDL2.dll
+  - SDL2_mixer_ext.dll
 
 **NOTE:** this object requires `Microsoft Visual C++ Redistributable 2015+` / `MSVCP14x.dll` & `VCRUNTIME14x.dll`
-
-**NOTE:** if you want to enable multi instance feature, you need to define `FMOD_AUDIO` then rebuild the project. In this mode this object also needs FMod, you need to download dlls from <https://www.fmod.com/> and obey [license](https://www.fmod.com/licensing)
-
-- FMod
-  - fmod.dll
-  - fmodL.dll (if you want to debug the extension)
 
 ## Properties
 
@@ -71,12 +68,19 @@ Here follows all dlls needed by this object:
   - Hardware Device
     - *set the device you want object to use. object will try using the device you set, if not supported, it will try using other hardware devices. if all devices are not supported, it will fallback to software decode*
 
+- Force No Audio
+  - *Don't play audio and sync with external clock*
+  - *This is a legacy feature for single instance SDL backend, kept for compatibility*
+
 ## Action
 
 - Open Video
   - *If open failed, extension will keep previous frame*
   - *If key is not empty, extension will treat it as an encrypted file. Decode a normal file in encrypted way usually will crash. You can encrypt files by another extension.*
   - *Encrypt & decrypt are based on AES so without your key no one can get your file, unless they dump it from memory.*
+- Open Video To
+  - *Open video to a given timestamp*
+
 - Close Video
 
 - Play Video
@@ -86,6 +90,8 @@ Here follows all dlls needed by this object:
   - *volume is kept when opening another video*
 - Set Loop
   - *loop state is kept when opening another video*
+- Set Force No Audio
+  - *see props*
 - Set Audio Tempo
   - *tempo = 2.0 -> play video in 2X speed*
 - Set Accurate Seek
