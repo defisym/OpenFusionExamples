@@ -49,6 +49,8 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 - Load From String
   - *load from string, e.g.`[Sec]/r/nItem=Value`*
 - Load From Base64
+  - *load from base64 string*
+- Load From Compressed Base64
   - *load from base64 string saved by this object (compressed)*
 
 - Link Localization
@@ -120,6 +122,8 @@ TextToReplace = LocalText
 - Save to String
   - *save the entire file to string.*
 - Save to Base64 String
+  - *save the entire file to base64 string.*
+- Save to Compressed Base64 String
   - *save the entire file to base64 string (compressed).*
 
 - Save Alterable Value

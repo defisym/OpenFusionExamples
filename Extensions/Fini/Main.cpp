@@ -50,11 +50,13 @@ short actionsInfos[]=
 		IDMN_ACTION_LAV, M_ACTION_LAV,ACT_ACTION_LAV, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 		IDMN_ACTION_LP, M_ACTION_LP,ACT_ACTION_LP, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 
-		IDMN_ACTION_LB64, M_ACTION_LB64, ACT_ACTION_LB64, 0, 1,PARAM_EXPSTRING, M_BASE64,
+		IDMN_ACTION_LCB64, M_ACTION_LCB64, ACT_ACTION_LCB64, 0, 1, PARAM_EXPSTRING, M_BASE64,
 
 		IDMN_ACTION_LL, M_ACTION_LL, ACT_ACTION_LL,	0, 2, PARAM_FILENAME2, PARAM_EXPSTRING, ACT_ACTION_F,ACT_ACTION_K,
 		IDMN_ACTION_SLC, M_ACTION_SLC, ACT_ACTION_SLC,	0, 1, PARAM_EXPSTRING, ACT_ACTION_LC,
 		IDMN_ACTION_LLO, M_ACTION_LLO, ACT_ACTION_LLO,	0, 1, PARAM_EXPRESSION, ACT_ACTION_OBJ,
+
+		IDMN_ACTION_LB64, M_ACTION_LB64, ACT_ACTION_LB64, 0, 1, PARAM_EXPSTRING, M_BASE64,
 
 		};
 
@@ -69,6 +71,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SAV, M_EXPRESSION_SAV, EXP_EXPRESSION_SAV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		IDMN_EXPRESSION_SP, M_EXPRESSION_SP, EXP_EXPRESSION_SP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
+		IDMN_EXPRESSION_SCB64, M_EXPRESSION_SCB64, EXP_EXPRESSION_SCB64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SB64, M_EXPRESSION_SB64, EXP_EXPRESSION_SB64, EXPFLAG_STRING, 0,
 		};
 
@@ -155,22 +158,23 @@ short WINAPI DLLExport LoadFromBase64(LPRDATA rdPtr, long param1, long param2) {
 
 	init_ini();
 
-	try {
-		rdPtr->pB64->base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		Fini->LoadData((char*)buf, sz);
+		});
 
-	auto sz = rdPtr->pB64->base64_decode_size();
+	return 0;
+}
 
-	BYTE* buf = new BYTE[sz];
-	memset(buf, 0, sz);
+short WINAPI DLLExport LoadFromCompressedBase64(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR base64 = (LPCTSTR)param1;
 
-	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
+	AutoSave(rdPtr);
 
-	//Fini->LoadData((char*)buf,sz);
-	Fini->LoadData(rdPtr->DeCompressToString((char*)buf, sz));
+	init_ini();
+
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		Fini->LoadData(rdPtr->DeCompressToString((char*)buf, sz));
+		});
 
 	return 0;
 }
@@ -382,79 +386,65 @@ short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {
 		return 0;
 	}
 
-	try {
-		rdPtr->pB64->base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		auto buffer = buf;
 
-	auto sz = rdPtr->pB64->base64_decode_size();
+		if (rdPtr->cf25p) {
+			rVal* pRV = (rVal*)(((BYTE*)object) + offset);
 
-	BYTE* buf = new BYTE [sz];
-	memset(buf, 0, sz);
+			pRV->rvValueFlags = ((long*)buffer)[0];
+			buffer += sizeof(long);
 
-	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
-
-	BYTE* buffer = buf;
-
-	if (rdPtr->cf25p) {
-		rVal* pRV = (rVal*)(((BYTE*)object) + offset);
-
-		pRV->rvValueFlags = ((long*)buffer)[0];
-		buffer += sizeof(long);
-
-		for (int i = 0; i < pRV->rvNumberOfValues; i++) {
-			pRV->rvpValues[i] = ((CValue*)buffer)[0];
-			buffer += sizeof(CValue);
-		}
-
-		for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
-			if (((wchar_t*)buffer)[0] == L'\0') {
-				pRV->rvpStrings[i] = nullptr;
-
-				buffer += sizeof(wchar_t);
+			for (int i = 0; i < pRV->rvNumberOfValues; i++) {
+				pRV->rvpValues[i] = ((CValue*)buffer)[0];
+				buffer += sizeof(CValue);
 			}
-			else {
-				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
 
-				pRV->rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
-				wcscpy_s(pRV->rvpStrings[i], strlen, (wchar_t*)buffer);
+			for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
+				if (((wchar_t*)buffer)[0] == L'\0') {
+					pRV->rvpStrings[i] = nullptr;
 
-				buffer += sizeof(wchar_t) * strlen;
+					buffer += sizeof(wchar_t);
+				}
+				else {
+					size_t strlen = (wcslen((wchar_t*)buffer) + 1);
+
+					pRV->rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+					wcscpy_s(pRV->rvpStrings[i], strlen, (wchar_t*)buffer);
+
+					buffer += sizeof(wchar_t) * strlen;
+				}
 			}
 		}
-	}
-	else {
-		auto pRV = (tagRV20U*)(((BYTE*)object) + offset);
+		else {
+			auto pRV = (tagRV20U*)(((BYTE*)object) + offset);
 
-		pRV->rvValueFlags= ((long*)buffer)[0];
-		buffer += sizeof(long);
+			pRV->rvValueFlags = ((long*)buffer)[0];
+			buffer += sizeof(long);
 
-		for (int i = 0; i < VALUES_NUMBEROF_ALTERABLE; i++) {
-			pRV->rvpValues[i] = ((CValue*)buffer)[0];
-			buffer += sizeof(CValue);
-		}
-
-		for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
-			if (((wchar_t*)buffer)[0] == L'\0') {
-				pRV->rvStrings[i] = nullptr;
-
-				buffer += sizeof(wchar_t);
+			for (int i = 0; i < VALUES_NUMBEROF_ALTERABLE; i++) {
+				pRV->rvpValues[i] = ((CValue*)buffer)[0];
+				buffer += sizeof(CValue);
 			}
-			else {
-				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
 
-				pRV->rvStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
-				wcscpy_s(pRV->rvStrings[i], strlen, (wchar_t*)buffer);
+			for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
+				if (((wchar_t*)buffer)[0] == L'\0') {
+					pRV->rvStrings[i] = nullptr;
 
-				buffer += sizeof(wchar_t) * strlen;
+					buffer += sizeof(wchar_t);
+				}
+				else {
+					size_t strlen = (wcslen((wchar_t*)buffer) + 1);
+
+					pRV->rvStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+					wcscpy_s(pRV->rvStrings[i], strlen, (wchar_t*)buffer);
+
+					buffer += sizeof(wchar_t) * strlen;
+				}
 			}
+
 		}
-
-	}
-
-	delete[] buf;
+	});	
 
 	return 0;
 }
@@ -469,26 +459,12 @@ short WINAPI DLLExport LoadPosition(LPRDATA rdPtr, long param1, long param2) {
 		return 0;
 	}
 
-	try {
-		rdPtr->pB64->base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		const auto buffer = reinterpret_cast<const int*>(buf);
 
-	auto sz = rdPtr->pB64->base64_decode_size();
-
-	BYTE* buf = new BYTE[sz];
-	memset(buf, 0, sz);
-
-	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
-
-	int* buffer = (int*)buf;
-
-	object->roHo.hoX = buffer[0];
-	object->roHo.hoY = buffer[1];
-
-	delete[] buf;
+		object->roHo.hoX = buffer[0];
+		object->roHo.hoY = buffer[1];
+	});	
 
 	return 0;
 }
@@ -589,14 +565,26 @@ long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
 	return (long)OStr;
 }
 
-long WINAPI DLLExport SaveToBase64(LPRDATA rdPtr, long param1) {	
+long WINAPI DLLExport SaveToBase64(LPRDATA rdPtr, long param1) {
+	std::string Output;
+	Fini->Save(Output);
+
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(&Output[0]), Output.length());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
+long WINAPI DLLExport SaveToCompressedBase64(LPRDATA rdPtr, long param1) {	
 	std::string Output;
 	Fini->Save(Output);
 
 	char* buf = nullptr;
 	auto compressSz = rdPtr->CompressToBuffer(Output, buf);
 
-	//*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(&Output[0]), Output.length());
 	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -793,10 +781,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			CopySection,
 			LoadAlterValue,
 			LoadPosition,
-			LoadFromBase64,
+			LoadFromCompressedBase64,
 			LoadLocalization,
 			SetLanguageCode,
 			LinkLocalization,
+			LoadFromBase64,
+
 			0
 			};
 
@@ -809,6 +799,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			SaveToString,
 			SaveAlterValue,
 			SavePosition,
+			SaveToCompressedBase64,
 			SaveToBase64,
+
 			0
 			};

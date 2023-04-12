@@ -152,6 +152,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Load From String", IDMN_ACTION_LS
         MENUITEM "Load From Base64 String", IDMN_ACTION_LB64
+        MENUITEM "Load From Compressed Base64 String", IDMN_ACTION_LCB64
         MENUITEM SEPARATOR
         POPUP "Localization"
         BEGIN
@@ -198,6 +199,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Save to String", IDMN_EXPRESSION_SS
         MENUITEM "Save to Base64 String", IDMN_EXPRESSION_SB64
+        MENUITEM "Save to Compressed Base64 String", IDMN_EXPRESSION_SCB64
         MENUITEM SEPARATOR
         MENUITEM "Save Alterable Value", IDMN_EXPRESSION_SAV
         MENUITEM "Save Position", IDMN_EXPRESSION_SP
@@ -309,6 +311,7 @@ BEGIN
     //M_ACTION_LS     "Load From String %0, Decrypt Key %1"
     M_ACTION_LS     "Load From String %0"
     M_ACTION_LB64   "Load From Base64 String %0"
+    M_ACTION_LCB64   "Load From Compressed Base64 String %0"
 
     ACT_ACTION_S    "String"
     ACT_ACTION_F    "FileName"
@@ -363,6 +366,7 @@ BEGIN
 
     M_EXPRESSION_SS             "SaveToStr$("
     M_EXPRESSION_SB64           "SaveToB64Str$("
+    M_EXPRESSION_SCB64          "SaveToCB64Str$("
     
     M_EXPRESSION_SAV            "SaveAV$("
     M_EXPRESSION_SP             "SavePos$("
