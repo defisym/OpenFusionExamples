@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <functional>
 
 typedef unsigned char BYTE;
 constexpr auto RETURNSIZE = 50;
@@ -219,17 +220,31 @@ public:
         return deRet;
     }
 
-    inline size_t base64_decode_size() {
+    [[deprecated]] inline size_t base64_decode_size() {
         return deRet.size();
     }
-
-    inline void base64_decode_to_pointer(BYTE* buff, size_t size) {
+    [[deprecated]] inline void base64_decode_to_pointer(BYTE* buff, size_t size) {
         memcpy(buff, &deRet[0], min(size, deRet.size()));
     }
 
-    inline void base64_decode_to_pointer(const base64Str& encoded_string, BYTE* buff, size_t size) {
-        base64_decode(encoded_string);
-        base64_decode_to_pointer(buff, size);
+    inline bool base64_decode_to_pointer(const base64Str& encoded_string, BYTE* buff, size_t size) {
+        return base64_decode_callback(encoded_string, [&] (const BYTE* base64_buff, const size_t base64_size) {
+            memcpy(buff, base64_buff, min(size, base64_size));
+        });
+    }
+
+    // decode internally, use callback to process raw data
+    // don't need to make a temp buffer
+    inline bool base64_decode_callback(const base64Str& encoded_string, const std::function<void(const BYTE* buff, const size_t size)>& callback) {
+        try {
+            this->base64_decode(encoded_string);
+        } catch (decltype(BASE64_DECODEERROR)) {
+            return false;
+        }
+
+        callback(&deRet[0], deRet.size());
+
+        return true;
     }
 };
 
