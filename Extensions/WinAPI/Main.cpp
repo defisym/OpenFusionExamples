@@ -1246,37 +1246,26 @@ short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long para
 	// decode
 	Base64<std::wstring> base64Decoder;
 
-	try {
-		base64Decoder.base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	base64Decoder.base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		// Load to surface
+		CInputMemFile MemFile;		
+		MemFile.Create(const_cast<BYTE*>(buf), sz);
 
-	size_t bufsz = base64Decoder.base64_decode_size();
-	BYTE* buffer = new BYTE [bufsz];
+		//MGR
+		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+		CImageFilter    pFilter(pImgMgr);
 
-	base64Decoder.base64_decode_to_pointer(buffer, bufsz);
+		cSurface* pSf = new cSurface;
+		ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
 
-	// Load to surface
-	CInputMemFile MemFile;
-	MemFile.Create(buffer, bufsz);
+		if (!pSf->IsValid()) {
+			return;
+		}
 
-	//MGR
-	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-	CImageFilter    pFilter(pImgMgr);
+		_SavetoFile(pSf, filePath.c_str(), rdPtr, false, rdPtr->DefaultFilterName);
 
-	cSurface* pSf = new cSurface;
-	ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
-
-	if (!pSf->IsValid()) {
-		return 0;
-	}
-
-	_SavetoFile(pSf, filePath.c_str(), rdPtr, false, rdPtr->DefaultFilterName);
-
-	delete[] buffer;
-	delete pSf;
+		delete pSf;
+	});
 
 	return 0;
 }
