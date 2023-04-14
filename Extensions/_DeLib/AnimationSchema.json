@@ -1,0 +1,157 @@
+{
+    "title": "JSON schema for animation configuration files",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "description": "Animation",
+    "required": [
+        "info",
+        "frames"
+    ],
+    "properties": {
+        "info": {
+            "type": "object",
+            "description": "basic info of animation",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "name of the animation"
+                },
+                "reset": {
+                    "type": "boolean",
+                    "description": "reset to default if a property didn't set when goto next frame",
+                    "default": false
+                },
+                "speed": {
+                    "type": "number",
+                    "description": "speed of the animation",
+                    "default": 50
+                },
+                "loop": {
+                    "type": "boolean",
+                    "description": "force the animation to play forever",
+                    "default": true
+                },
+                "repeat": {
+                    "type": "number",
+                    "description": "Indicates how many times the animation should play",
+                    "default": 1
+                },
+                "backTo": {
+                    "type": "number",
+                    "description": "indicates the number of the frame at which the animation loops",
+                    "default": 1
+                }
+            }
+        },
+        "frames": {
+            "type": "array",
+            "description": "frames definition",
+            "items": {
+                "type": "object",
+                "description": "frame definition",
+                "required": [
+                    "file"
+                ],
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "description": "relative path to frame file"
+                    },
+                    "interpolation": {
+                        "type": "object",
+                        "description": "interpolation to next frame",
+                        "required": [
+                            "interval"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "description": "interpolation method to next frame",
+                                "default": "liner"
+                            },
+                            "interval": {
+                                "type": "number",
+                                "description": "frames to next frame",
+                                "default": 1
+                            }
+                        }
+                    },
+                    "angle": {
+                        "type": "number",
+                        "description": "angle of frame",
+                        "default":0                        
+                    },
+                    "alpha":{
+                        "type":"number",
+                        "description": "alpha of frame",
+                        "default":0
+                    },
+                    "rgbCoef":{
+                        "type":"object",
+                        "description": "rgbCoef of frame",
+                        "required": [
+                            "r",
+                            "g",
+                            "b"
+                        ],
+                        "properties": {
+                            "r":{
+                                "type":"number",
+                                "default":255
+                                
+                            },
+                            "g":{
+                                "type":"number",
+                                "default":255
+                            },
+                            "b":{
+                                "type":"number",
+                                "default":255
+                            }
+                        }
+                    },
+                    "scale": {
+                        "type": "object",
+                        "description": "scale of frame, default 1.0",
+                        "required": [
+                            "x",
+                            "y"
+                        ],
+                        "properties": {
+                            "x": {
+                                "type": "number",
+                                "default": 1.0
+                            },
+                            "y": {
+                                "type": "number",
+                                "default": 1.0
+                            }
+                        }
+                    },
+                    "hotSpot": {
+                        "type": "object",
+                        "description": "hotSpot of frame",
+                        "required": [],
+                        "properties": {
+                            "x": {
+                                "type": "number",
+                                "default": 0
+                            },
+                            "y": {
+                                "type": "number",
+                                "default": 0
+                            },
+                            "type": {
+                                "type": "string",
+                                "description": "types of hotSpot"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

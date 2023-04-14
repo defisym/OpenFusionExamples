@@ -1,0 +1,17 @@
+{
+    "info": {
+        "name": "test",
+        "loop": true,
+        "repeat": 0,
+        "backTo": 0,
+        "speed": 50       
+    },
+    "frames":[
+        {
+            "file": "Gundam",
+            "interpolation": {
+                "interval": 1
+            }
+        }
+    ]
+}

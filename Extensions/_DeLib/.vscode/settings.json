@@ -82,5 +82,13 @@
         "xlocmes": "cpp",
         "xlocmon": "cpp",
         "xloctime": "cpp"
-    }
+    },
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "/Animation.json"
+            ],
+            "url": "./AnimationSchema.json"
+        }
+    ],
 }
