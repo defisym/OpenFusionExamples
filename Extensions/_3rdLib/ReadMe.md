@@ -10,3 +10,5 @@ Files listed in gitignore are also used but remain untouched, you need to clone 
 - [ZLib](https://zlib.net/)
 - [ZPaq](https://github.com/zpaq/zpaq)
 - [CLI11](https://github.com/CLIUtils/CLI11)
+- [WinToast](https://github.com/mohabouje/WinToast)
+- [nlohmann](https://github.com/nlohmann/json)

@@ -4,4 +4,6 @@ zpaq/*
 WinToast/*
 _FFMpeg_Ref/*
 
+nlohmann/*
+
 CLI11.hpp
