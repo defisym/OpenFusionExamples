@@ -456,7 +456,7 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 	return ret;
 }
 
-inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = CP_ACP) {
+inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = CP_UTF8) {
 	std::string ret;
 
 	int len = WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
@@ -471,7 +471,7 @@ inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = C
 	return ret;
 }
 
-inline std::wstring ConvertStrToWStr(const std::string& input, UINT CodePage = CP_ACP) {
+inline std::wstring ConvertStrToWStr(const std::string& input, UINT CodePage = CP_UTF8) {
 	std::wstring ret;
 
 	int len = MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0);
