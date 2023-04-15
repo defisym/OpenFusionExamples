@@ -401,23 +401,17 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+// deprecated
 short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
 	if (CanDisplay(rdPtr)) {
-		//rdPtr->src->Delete();
-		//rdPtr->src->Clone(*rdPtr->img);
-
-		//rdPtr->hotSpot = rdPtr->imgHotSpot;
 		
 	}
 
 	return 0;
 }
+// deprecated
 short WINAPI DLLExport RestoreCur(LPRDATA rdPtr, long param1, long param2) {
 	if (CanDisplay(rdPtr)) {
-		//rdPtr->imgHotSpot = rdPtr->hotSpot;
-
-		//rdPtr->img->Delete();
-		//rdPtr->img->Clone(*rdPtr->src);
 	}
 
 	return 0;
@@ -432,7 +426,6 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	UpdateHotSpot(rdPtr, Pos, X, Y);
 
 	rdPtr->hotSpotPos = Pos;
-	rdPtr->imgHotSpot = rdPtr->hotSpot;
 	
 	return 0;
 }
@@ -502,12 +495,13 @@ short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	
 	return 0;
 }
-short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) {
-	UpdateImg(rdPtr);
 
+// deprecated
+short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+// deprecated
 short WINAPI DLLExport SetCollision(LPRDATA rdPtr, long param1, long param2) {
 	//bool collision = (bool)CNC_GetIntParameter(rdPtr);
 	//bool autoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
@@ -530,6 +524,7 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+// deprecated
 short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
 
@@ -612,7 +607,6 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 		// update latet (may do hwa conversion)
 		NewNonFromLib(rdPtr, rdPtr->src);
 
-		NewImg(rdPtr);
 		ReDisplay(rdPtr);
 	}
 

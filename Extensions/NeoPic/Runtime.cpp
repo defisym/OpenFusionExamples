@@ -127,17 +127,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->RelativeFilePath = new std::wstring;
 	rdPtr->Key = new std::wstring;
 
-	rdPtr->img = nullptr;
 	rdPtr->src = nullptr;
 
 	// to create new surface, don't change
 	rdPtr->fromLib = true;
 
 	rdPtr->zoomScale = { 1.0,1.0 };
-	rdPtr->imgZoomScale = { 1.0,1.0 };
-
 	rdPtr->AT = { 1,0,0,1 };
-	rdPtr->imgAT = { 1,0,0,1 };
 	
 	//Init global data
 	if (GetExtUserData() == nullptr) {
@@ -230,10 +226,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->Key;
 
 	if (!rdPtr->isLib) {
-		if (rdPtr->src != rdPtr->img) {
-			delete rdPtr->img;
-		}
-
 		if (!rdPtr->fromLib) {
 			ReleaseNonFromLib(rdPtr);
 		}

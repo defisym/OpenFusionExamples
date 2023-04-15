@@ -213,18 +213,7 @@ typedef struct tagRDATA
 	std::wstring* FilePath = nullptr;
 	std::wstring* RelativeFilePath = nullptr;
 	std::wstring* Key = nullptr;
-
-	//img->collision & add backdrop
-	LPSURFACE img = nullptr;
-	
-	POINT imgHotSpot = { 0,0 };
-	ZoomScale imgZoomScale = { 1.0,1.0 };
-
-	OffsetCoef imgOffset = { 0,0,false };
-	
-	int imgAngle = 0;
-	ATArray imgAT = {};
-
+		
 	//src->display
 	LPSURFACE src = nullptr;
 

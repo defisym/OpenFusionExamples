@@ -8,8 +8,6 @@
 
 inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X = 0, int Y = 0);
 
-inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality = false, bool ForceUpdate = false);
-
 inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,1.0 }, int Angle = 0, ATArray AT = { 1,0,0,1 });
 
 inline void GetFileName(LPRDATA rdPtr);
@@ -173,52 +171,28 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	}
 }
 
-// must be called after rdPtr->src changes
-inline void NewImg(LPRDATA rdPtr) {
-	//delete rdPtr->img;
-	//rdPtr->img = new cSurface;
-	//rdPtr->img->Clone(*rdPtr->src);
-	
-	rdPtr->img = rdPtr->src;
-}
-
 //Set default values
-inline void NewPic(LPRDATA rdPtr){
-	rdPtr->hotSpot = { 0,0 };	
-	rdPtr->zoomScale = { 1.0,1.0 };
-	rdPtr->angle = 0;
+inline void NewPic(LPRDATA rdPtr, LPRDATA Copy = nullptr) {
+	if (Copy == nullptr) {
+		rdPtr->hotSpot = { 0,0 };
+		rdPtr->zoomScale = { 1.0,1.0 };
+		rdPtr->angle = 0;
 
-	rdPtr->offset = { 0,0,false };	
-	rdPtr->AT = { 1,0,0,1 };
+		rdPtr->offset = { 0,0,false };
+		rdPtr->AT = { 1,0,0,1 };
 
-	rdPtr->imgHotSpot = rdPtr->hotSpot;
-	rdPtr->imgZoomScale = rdPtr->zoomScale;
-	rdPtr->imgAngle = rdPtr->angle;
+	}else {
+		rdPtr->hotSpot = Copy->hotSpot;
+		rdPtr->zoomScale = Copy->zoomScale;
+		rdPtr->angle = Copy->angle;
 
-	rdPtr->imgOffset = rdPtr->offset;
-	rdPtr->imgAT = rdPtr->AT;
+		rdPtr->offset = Copy->offset;
+		rdPtr->AT = Copy->AT;
+
+		rdPtr->hotSpotPos = Copy->hotSpotPos;
+	}
 
 	UpdateHotSpot(rdPtr, rdPtr->hotSpotPos);
-
-	NewImg(rdPtr);
-
-	ReDisplay(rdPtr);
-}
-
-inline void NewPic(LPRDATA rdPtr, LPRDATA Copy) {
-	rdPtr->hotSpot = Copy->hotSpot;
-	rdPtr->zoomScale = Copy->zoomScale;
-	rdPtr->angle = Copy->angle;
-
-	rdPtr->offset = Copy->offset;
-
-	rdPtr->imgHotSpot = rdPtr->hotSpot;
-	rdPtr->imgZoomScale = rdPtr->zoomScale;
-	rdPtr->imgAngle = rdPtr->angle;
-
-	rdPtr->imgOffset = rdPtr->offset;
-
-	NewImg(rdPtr);
 
 	ReDisplay(rdPtr);
 }
@@ -250,32 +224,6 @@ inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {
 	ReDisplay(rdPtr);
 }
 
-inline void DoZoom(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& Des, POINT& DesHotSpot, float XScale, float YScale) {
-	bool ReverseX = XScale < 0.0;
-	bool ReverseY = YScale < 0.0;
-
-	XScale = abs(XScale);
-	YScale = abs(YScale);
-
-	DesHotSpot.x = (int)(SrcHotSpot.x * XScale);
-	DesHotSpot.y = (int)(SrcHotSpot.y * YScale);
-
-	int width = (int)(Src->GetWidth() * XScale);
-	int height = (int)(Src->GetHeight() * YScale);
-
-	delete Des;
-	Des = CreateSurface(24, width, height);
-
-	Stretch(Src, Des, rdPtr->stretchQuality);
-
-	if (ReverseX) {
-		Des->ReverseX();
-	}
-	if (ReverseY) {
-		Des->ReverseY();
-	}
-}
-
 inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = false) {
 	if (rdPtr->zoomScale == ZoomScale{ XScale, YScale }) {
 		return;
@@ -284,17 +232,6 @@ inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = fal
 	rdPtr->zoomScale = { XScale ,YScale };
 
 	ReDisplay(rdPtr);
-}
-
-inline void DoRotate(LPRDATA rdPtr, LPSURFACE Src, POINT SrcHotSpot, LPSURFACE& Des, POINT& DesHotSpot, int Angle) {
-	DesHotSpot = SrcHotSpot;
-	RotatePoint(Angle, (int*)&DesHotSpot.x, (int*)&DesHotSpot.y, Src->GetWidth(), Src->GetHeight());
-
-	delete Des;
-	Des = CreateSurface(24, 4, 4);
-
-	Src->CreateRotatedSurface(*Des, Angle, rdPtr->stretchQuality);
-	//Src->CreateRotatedSurface(*rdPtr->img, Angle, rdPtr->stretchQuality, DARK_GREEN);
 }
 
 inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
@@ -330,58 +267,6 @@ inline void GetTransformedSize(int& width, int& height, ZoomScale Scale, int Ang
 
 inline void AffineTransformation(LPSURFACE& Src,ATArray A, int divide) {
 	AffineTransformation(Src, A.a11, A.a12, A.a21, A.a22, divide);
-}
-
-inline void UpdateImg(LPRDATA rdPtr, bool ForceLowQuality, bool ForceUpdate) {
-	if (ForceUpdate ||
-		rdPtr->offset != rdPtr->imgOffset||
-		rdPtr->AT != rdPtr->imgAT ||
-		rdPtr->zoomScale != rdPtr->imgZoomScale ||
-		rdPtr->angle != rdPtr->imgAngle) {
-		//Update Coef
-		rdPtr->imgOffset = rdPtr->offset;
-		rdPtr->imgAT = rdPtr->AT;
-		rdPtr->imgZoomScale = rdPtr->zoomScale;
-		rdPtr->imgAngle = rdPtr->angle;
-
-		//Fast
-		bool OldQuality;
-
-		if (ForceLowQuality) {
-			OldQuality = rdPtr->stretchQuality;
-			rdPtr->stretchQuality = false;
-		}
-
-		//Delete old if it's direct reference from source
-		if (rdPtr->img != rdPtr->src) {
-			delete rdPtr->img;
-		}		
-
-		//Temp
-		LPSURFACE Temp = nullptr;
-
-		//AffineTrans(rdPtr->AT)
-
-		//Offset
-		//create then return new surface
-		rdPtr->img = Offset(rdPtr->src, rdPtr->imgOffset);
-
-		//NewImg(rdPtr);
-
-		//Zoom
-		DoZoom(rdPtr, rdPtr->img, rdPtr->hotSpot, Temp, rdPtr->imgHotSpot, rdPtr->zoomScale.XScale, rdPtr->zoomScale.YScale);
-
-		//Rotate
-		DoRotate(rdPtr, Temp, rdPtr->imgHotSpot, rdPtr->img, rdPtr->imgHotSpot, rdPtr->angle);
-
-		//Delete temp
-		delete Temp;
-
-		//Fast
-		if (ForceLowQuality) {			 
-			rdPtr->stretchQuality = OldQuality;
-		}
-	}
 }
 
 // hash
@@ -659,12 +544,7 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 	*rdPtr->FilePath = *obj->FilePath;
 	*rdPtr->Key = *obj->Key;
 
-	if (CopyCoef) {
-		NewPic(rdPtr, obj);
-	}
-	else {
-		NewPic(rdPtr);
-	}	
+	NewPic(rdPtr, CopyCoef ? obj : nullptr);
 }
 
 inline void LoadFromDisplay(LPRDATA rdPtr, int Fixed, bool CopyCoef = false) {
@@ -1423,8 +1303,6 @@ inline void HandleFlip(LPRDATA rdPtr
 			break;
 		}
 	} while (0);
-
-	NewImg(rdPtr);
 }
 
 inline void HandleFlip(LPRDATA rdPtr) {
