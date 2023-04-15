@@ -5,16 +5,17 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../_3rdLib/",
-                "${workspaceFolder}/../../Inc/"
+                "${workspaceFolder}/../../Inc/",
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",
-                "WIN32"
-                ,"_WINDOWS",
-                "STRICT"
-                ,"UNICODE"
-                ,"_UNICODE"
-                ,"HWABETA"
+                "WIN32",
+                "_WINDOWS",
+                "STRICT",
+                "UNICODE",
+                "_UNICODE",
+                "HWABETA"
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/bin/Hostx64/x64/cl.exe",

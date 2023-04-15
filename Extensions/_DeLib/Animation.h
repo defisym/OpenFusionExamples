@@ -1,5 +1,7 @@
 #pragma once
 
+#include "functional"
+
 #include "JsonInterface.h"
 #include "Encryption.h"
 
@@ -115,8 +117,8 @@ struct FrameData : public JsonObject {
         }
 
     	inline void Interpolation(double step, const Scale* pPrevious, const Scale* pNext) {
-        	x = static_cast<int>(static_cast<double>(pPrevious->x) + step * (pNext->x- pPrevious->x));
-            y = static_cast<int>(static_cast<double>(pPrevious->y) + step * (pNext->y - pPrevious->y));            
+        	x = static_cast<double>(static_cast<double>(pPrevious->x) + step * (pNext->x- pPrevious->x));
+            y = static_cast<double>(static_cast<double>(pPrevious->y) + step * (pNext->y - pPrevious->y));
         }
     };
 
@@ -310,10 +312,9 @@ public:
             delete it;
         }
     }
-
+        
     inline void UpdateFrame() {
-        // update
-        if (curFrame > pCurFrameData->frameID + pCurFrameData->pInterpolation->interval) {
+        if (curFrame >= pCurFrameData->frameID + pCurFrameData->pInterpolation->interval) {
             if (pNext != nullptr) {
                 curIndex = static_cast<int>(static_cast<size_t>(curIndex + 1) % pFrameDatas.size());
                 *pCurFrameData = *pNext;
@@ -323,12 +324,17 @@ public:
         }
 
         if (pNext != nullptr) {
-            const auto step = static_cast<double>(curFrame - pCurFrameData->frameID)
+            const auto progress = curFrame >= maxFrame ? curFrame - maxFrame : curFrame;
+            const auto step = static_cast<double>(progress - pCurFrameData->frameID)
                 / (pCurFrameData->pInterpolation->interval);
 
             pCurFrameData->Interpolation(step, pPrevious, pNext);
 
             curFrame = (curFrame + 1) % (maxFrame + 1);
         }
+    }
+
+	inline const FrameData* GetCurrentFrame() const {
+        return pCurFrameData;
     }
 };

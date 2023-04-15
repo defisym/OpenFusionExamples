@@ -1,4 +1,5 @@
 {
+    "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
     "info": {
         "name": "test",
         "loop": true,
