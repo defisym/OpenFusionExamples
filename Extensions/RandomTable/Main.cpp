@@ -74,7 +74,7 @@ short WINAPI DLLExport GenerateFromBase64(LPRDATA rdPtr, long param1, long param
 	LPCWSTR Input = (LPCWSTR)CNC_GetParameter(rdPtr);
 
 	rdPtr->pBase64->base64_decode_to_pointer(Input, rdPtr->pBuffer, rdPtr->maxSize);
-	GeneralLoop<deque<BYTE>, BYTE>(*rdPtr->pRandomTable, rdPtr->maxSize, [&](size_t pos) { return rdPtr->pBuffer[pos]; });
+	GeneralLoop<std::deque<BYTE>, BYTE>(*rdPtr->pRandomTable, rdPtr->maxSize, [&](size_t pos) { return rdPtr->pBuffer[pos]; });
 
 	return 0;
 }
