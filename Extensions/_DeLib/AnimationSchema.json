@@ -37,12 +37,12 @@
                 "repeat": {
                     "type": "number",
                     "description": "Indicates how many times the animation should play",
-                    "default": 1
+                    "default": 0
                 },
                 "backTo": {
                     "type": "number",
                     "description": "indicates the number of the frame at which the animation loops",
-                    "default": 1
+                    "default": 0
                 }
             }
         },
@@ -52,9 +52,7 @@
             "items": {
                 "type": "object",
                 "description": "frame definition",
-                "required": [
-                    "file"
-                ],
+                "required": [],
                 "properties": {
                     "file": {
                         "type": "string",
@@ -82,15 +80,15 @@
                     "angle": {
                         "type": "number",
                         "description": "angle of frame",
-                        "default":0                        
+                        "default": 0
                     },
-                    "alpha":{
-                        "type":"number",
+                    "alpha": {
+                        "type": "number",
                         "description": "alpha of frame",
-                        "default":0
+                        "default": 0
                     },
-                    "rgbCoef":{
-                        "type":"object",
+                    "rgbCoef": {
+                        "type": "object",
                         "description": "rgbCoef of frame",
                         "required": [
                             "r",
@@ -98,18 +96,17 @@
                             "b"
                         ],
                         "properties": {
-                            "r":{
-                                "type":"number",
-                                "default":255
-                                
+                            "r": {
+                                "type": "number",
+                                "default": 255
                             },
-                            "g":{
-                                "type":"number",
-                                "default":255
+                            "g": {
+                                "type": "number",
+                                "default": 255
                             },
-                            "b":{
-                                "type":"number",
-                                "default":255
+                            "b": {
+                                "type": "number",
+                                "default": 255
                             }
                         }
                     },

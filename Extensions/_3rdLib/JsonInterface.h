@@ -4,10 +4,19 @@
 
 #include "nlohmann/json.hpp"
 
+using JsonData = nlohmann::basic_json<>;
+
+class JsonObject {
+public:
+    JsonObject() = default;
+    explicit JsonObject(const JsonData& data) {}
+    virtual ~JsonObject() = default;
+    virtual inline void Update(const JsonData& data) = 0;
+};
+
 class JsonInterface {
 private:
     using Json = nlohmann::json;
-    using JsonData = decltype(Json::parse(static_cast<FILE*>(nullptr)));
 
     JsonData data;
 
@@ -42,10 +51,10 @@ public:
         return data;
     }
 
-    static inline bool Contains(const JsonData& data, std::string key) {
+    static inline bool Contains(const JsonData& data, const std::string& key) {
         return data.contains(key);
     }
-	static inline bool Contains(const JsonData& data, std::wstring key) {
+	static inline bool Contains(const JsonData& data, const std::wstring& key) {
         return Contains(data, ConvertWStrToStr(key));
     }
 
@@ -61,13 +70,34 @@ public:
             using TClass = std::remove_pointer_t<T>;
 
             if (bContain) {
-                output = new TClass(data[key]);
+                if (output == nullptr) {
+                    if constexpr (std::is_constructible_v<TClass, decltype(data[key])>) {
+                        output = new TClass(data[key]);
 
-                return true;
+                        return true;
+                    }
+                }else {                    
+	                if constexpr (std::is_base_of_v<JsonObject, TClass>) {
+                        output->Update(data[key]);
+
+                        return true;
+                    }
+                    else {
+                        if constexpr (std::is_copy_constructible_v<TClass>) {
+                            *output = TClass(data[key]);
+
+                            return true;
+                        }
+
+                        return false;
+                    }
+                }
             }
 
             if constexpr (std::is_default_constructible_v<TClass>) {
-                output = new TClass();
+                if (output == nullptr) {
+                    output = new TClass();
+                }
             }
 
             return false;
