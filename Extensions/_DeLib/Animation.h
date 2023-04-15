@@ -229,23 +229,36 @@ private:
     FrameData* pCurFrameData = nullptr;
     std::vector<FrameData*> pFrameDatas;
 
+    int repeatCount = 0;
+    int maxFrame = 0;
+
     int curFrame = 0;
     int curIndex = 0;
 
     FrameData* pPrevious = nullptr;
     FrameData* pNext = nullptr;
 
-    inline FrameData* GetNext() const {
-        return static_cast<size_t>(curIndex + 1) >= pFrameDatas.size()
-            ? pAnimationInfo->loop
-            ? pFrameDatas[0]
-            : nullptr
-            : pFrameDatas[curIndex + 1];
+    inline FrameData* GetNext() {
+        if (static_cast<size_t>(curIndex + 1) >= pFrameDatas.size()) {
+            if (pAnimationInfo->loop || repeatCount > 0) {
+                repeatCount = max(0, repeatCount - 1);
+
+                return pFrameDatas[pAnimationInfo->backTo];
+            }
+            else {
+                return nullptr;
+            }
+        }
+        else {
+            return pFrameDatas[curIndex + 1];
+        }
     }
 
 public:
     explicit Animation(const JsonData& data) {
         JsonInterface::GetData(data, "info", pAnimationInfo);
+
+        repeatCount = pAnimationInfo->repeat;
 
         if(!JsonInterface::Contains(data,"frames")) {
             throw Animation_JsonParseError;
@@ -285,6 +298,9 @@ public:
 
         pPrevious = pFrameDatas[0];
         pNext = GetNext();
+
+        const auto pLastFrame = pFrameDatas.back();
+        maxFrame = pLastFrame->frameID + pLastFrame->pInterpolation->interval;
     }
     ~Animation() {
         delete pAnimationInfo;
@@ -297,27 +313,13 @@ public:
 
     inline void UpdateFrame() {
         // update
-        //TODO curIndex -> mod
         if (curFrame > pCurFrameData->frameID + pCurFrameData->pInterpolation->interval) {
-
-
-
-            do {
-                if (static_cast<size_t>(curIndex) >= pFrameDatas.size()) {
-                    if (pAnimationInfo->loop) {
-                        curIndex = 0;
-                    }
-
-                	break;
-                }
-
-                curIndex++;
-            } while (false);
-
-            *pCurFrameData = *pFrameDatas[curIndex];
-
-        	pPrevious = pFrameDatas[curIndex];
-            pNext = GetNext();
+            if (pNext != nullptr) {
+                curIndex = static_cast<int>(static_cast<size_t>(curIndex + 1) % pFrameDatas.size());
+                *pCurFrameData = *pNext;
+                pPrevious = pNext;
+                pNext = GetNext();
+            }
         }
 
         if (pNext != nullptr) {
@@ -325,7 +327,8 @@ public:
                 / (pCurFrameData->pInterpolation->interval);
 
             pCurFrameData->Interpolation(step, pPrevious, pNext);
-            curFrame++;
+
+            curFrame = (curFrame + 1) % (maxFrame + 1);
         }
     }
 };
