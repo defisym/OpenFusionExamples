@@ -36,6 +36,8 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
+#define _NODISPLAY // for UpdateHoImgInfo
+
 typedef struct tagEDATA_V1
 {
 	// Header - required
@@ -79,7 +81,7 @@ typedef struct tagRDATA
 	size_t maxSize;
 	
 	BYTE* pBuffer;
-	deque<BYTE>* pRandomTable;
+	std::deque<BYTE>* pRandomTable;
 
 	Base64<std::wstring>* pBase64;
 	RandGenerator<int>* pRand;

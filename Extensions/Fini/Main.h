@@ -59,7 +59,7 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
-#define _NODISPLAY
+#define _NODISPLAY // for UpdateHoImgInfo
 
 struct Localization;
 

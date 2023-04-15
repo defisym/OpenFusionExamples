@@ -23,8 +23,6 @@
 #define	MINBUILD	243
 #endif
 
-#define _NODISPLAY
-
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"

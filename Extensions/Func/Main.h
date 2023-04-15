@@ -135,6 +135,8 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
+#define _NODISPLAY // for UpdateHoImgInfo
+
 typedef struct tagEDATA_V1
 {
 	// Header - required

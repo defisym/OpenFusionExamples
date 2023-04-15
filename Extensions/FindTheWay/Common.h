@@ -30,8 +30,6 @@
 #include	"ImgFlt.h"
 
 // My lib
-#define _NODISPLAY
-
 class ObjectCreation;
 class ObjectSelection;
 
