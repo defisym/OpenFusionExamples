@@ -175,6 +175,11 @@ BEGIN
             MENUITEM "Update Lib Item",            IDMN_ACTION_UL
         END
         MENUITEM SEPARATOR
+        POPUP "Animation"
+        BEGIN
+            MENUITEM "Set Animation Source",       IDMN_ACTION_SAS
+        END
+        MENUITEM SEPARATOR
         POPUP "Display"
         BEGIN
             //MENUITEM "Update Src",               IDMN_ACTION_US
@@ -457,6 +462,8 @@ BEGIN
     M_ACTION_STC            "Set Transparent Color to %0, Non Transparent Alpha %1"
     M_ACTION_COLOR          "Color, -1 = First Pixel"
     M_ACTION_ALPHA          "Non Transparent Alpha, -1 = Keep Alpha"
+
+    M_ACTION_SAS            "Set Animation Source to Lib %0, BasePath %1, Decrypt Key %2"
 
 END
 

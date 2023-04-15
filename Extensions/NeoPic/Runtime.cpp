@@ -138,7 +138,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->AT = { 1,0,0,1 };
 	rdPtr->imgAT = { 1,0,0,1 };
-
+	
 	//Init global data
 	if (GetExtUserData() == nullptr) {
 		//init global
@@ -204,6 +204,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
+
+	rdPtr->pAI = new AnimationInterface(rdPtr);
 	
 	// No errors
 	return 0;
@@ -268,6 +270,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->itCountVecStr;
 	delete rdPtr->itCountVecCount;
 
+	delete rdPtr->pAI;
+
 	// No errors
 	return 0;
 }
@@ -309,6 +313,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
+	rdPtr->pAI->UpdateAnimation();
 	CleanCache(rdPtr, false);
 	MergeLib(rdPtr);
 

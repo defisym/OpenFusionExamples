@@ -73,7 +73,9 @@
 
 #define	ACT_ACTION_STC				32
 
-#define	ACT_LAST					33
+#define	ACT_ACTION_SAS				33
+
+#define	ACT_LAST					34
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -273,6 +275,8 @@ typedef struct tagRDATA
 
 	bool bCurrentDisplayTransparent = false;
 	LPSURFACE pOldSf = nullptr;
+
+	AnimationInterface* pAI = nullptr;
 
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;

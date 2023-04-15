@@ -91,6 +91,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_STC, M_ACTION_STC, ACT_ACTION_STC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_COLOR, M_ACTION_ALPHA,
 
+		IDMN_ACTION_SAS, M_ACTION_SAS,	ACT_ACTION_SAS,	0, 3, PARAM_OBJECT,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_OBJECT, M_ACTION_BASEPATH, M_ACTION_KEY,
+
 		};
 
 // Definitions of parameters for each expression
@@ -218,8 +220,8 @@ short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 
 	LoadFromLib(rdPtr, object, FilePath, Key);
 
-	auto bAlpha = rdPtr->src->HasAlpha();
-	auto bType = IsHWA(rdPtr->src);
+	//auto bAlpha = rdPtr->src->HasAlpha();
+	//auto bType = IsHWA(rdPtr->src);
 
 	return 0;
 }
@@ -879,6 +881,20 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
+short WINAPI DLLExport SetAnimationSource(LPRDATA rdPtr, long param1, long param2) {
+	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	//TODO protect for different type
+	rdPtr->pAI->SetAnimationSource((LPRDATA)object,FilePath,Key);
+
+	//TODO debug
+	rdPtr->pAI->LoadAnimation(L"F:\\DEV\\OpenFusionExamples\\Extensions\\NeoPic\\ToInstall\\Files\\Examples\\NeoPic\\A.json");
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1158,6 +1174,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SaveToFileWithStretch,
 
 			ChangeTransparentByColor,
+
+			SetAnimationSource,
 
 			0
 			};

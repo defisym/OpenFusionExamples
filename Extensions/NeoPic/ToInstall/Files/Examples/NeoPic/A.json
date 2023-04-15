@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
+    "info": {
+        "name": "test",
+        "reset":false,
+        "loop": false,
+        "repeat": 0,
+        "backTo": 0,
+        "speed": 500
+    },
+    "frames": [
+        {
+            "file": "A\\A1-惊讶.png",
+            "interpolation": {
+                "interval": 120
+            },
+            "hotSpot":{
+                "x":50,
+                "y":125
+            }
+        },
+        {
+            "interpolation": {
+                "interval": 120
+            },
+            "scale":{
+                "x":5.0,
+                "y":5.0
+            }
+        }
+    ]
+}

@@ -290,12 +290,14 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="..\_3rdLib\RegexHelper.h" />
+    <ClInclude Include="..\_DeLib\Animation.h" />
     <ClInclude Include="..\_DeLib\EffectUtilities.h" />
     <ClInclude Include="..\_DeLib\Encryption.h" />
     <ClInclude Include="..\_DeLib\Fusion.h" />
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
+    <ClInclude Include="AnimationInterface.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />

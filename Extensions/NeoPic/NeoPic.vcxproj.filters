@@ -157,6 +157,12 @@
     <ClInclude Include="..\_3rdLib\RegexHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AnimationInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\Animation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

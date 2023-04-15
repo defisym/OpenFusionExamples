@@ -411,7 +411,7 @@ inline std::wstring GetFileHash(std::wstring& filePath) {
 }
 
 // Load file then convert to Src type
-inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPCTSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+inline bool _LoadFromFile(LPSURFACE& Src, LPCWSTR FilePath, LPCWSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	// HWA?
 	auto srcHWA = IsHWA(Src);
 	bool ret = true;
@@ -452,7 +452,7 @@ inline auto UpdateRef(LPRDATA rdPtr, bool add) {
 	return (size_t)-1;
 }
 
-inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 	auto fullPath = GetFullPathNameStr(FileName);
 
 	if (rdPtr->isLib) {
@@ -517,7 +517,7 @@ inline bool ObjIsLib(LPRDATA obj) {
 }
 
 // lib load core
-inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCWSTR Key = L"") {
 	if (!ObjIsLib(obj)) {
 		return obj->pLib->end();
 	}
@@ -543,7 +543,7 @@ inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCTS
 	return it;
 }
 
-inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCWSTR Key = L"") {
 	LPRDATA obj = (LPRDATA)object;
 
 	if (!ObjIsLib(obj)) {
@@ -600,7 +600,7 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCTSTR Ke
 	GetFileName(rdPtr);
 }
 
-inline void LoadFromLib(LPRDATA rdPtr, int Fixed, LPCWSTR FileName, LPCTSTR Key = _T("")) {
+inline void LoadFromLib(LPRDATA rdPtr, int Fixed, LPCWSTR FileName, LPCWSTR Key = L"") {
 	return LoadFromLib(rdPtr, LproFromFixed(rdPtr, Fixed), FileName, Key);
 }
 
@@ -778,7 +778,7 @@ inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
 	}
 }
 
-inline void EraseLib(SurfaceLib* pData, LPCTSTR Item) {
+inline void EraseLib(SurfaceLib* pData, LPCWSTR Item) {
 	const auto it = pData->find(GetFullPathNameStr(Item));
 	if (it != pData->end() && !UpdateShaderUsage(&it->second)) {
 		it->second.Release();
@@ -797,7 +797,7 @@ inline void DeleteLib(SurfaceLib* pData) {
 	}
 }
 
-inline bool NeedUpdateLib(SurfaceLib* pData, LPCTSTR Item) {
+inline bool NeedUpdateLib(SurfaceLib* pData, LPCWSTR Item) {
 	auto fullPath = GetFullPathNameStr(Item);
 	auto it = pData->find(fullPath);
 	if (it != pData->end()
