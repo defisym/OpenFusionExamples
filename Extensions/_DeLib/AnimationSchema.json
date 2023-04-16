@@ -65,15 +65,72 @@
                             "interval"
                         ],
                         "properties": {
-                            "type": {
-                                "type": "string",
-                                "description": "interpolation method to next frame",
-                                "default": "liner"
-                            },
                             "interval": {
                                 "type": "number",
                                 "description": "frames to next frame",
                                 "default": 1
+                            },
+                            "type": {
+                                "type": "string",
+                                "description": "interpolation method to next frame",
+                                "default": "easeIn",
+                                "enum": [
+                                    "easeIn",
+                                    "easeOut",
+                                    "easeInOut",
+                                    "easeOutIn"
+                                ]
+                            },
+                            "func_a": {
+                                "type": "string",
+                                "description": "easing func a",
+                                "default": "linear",
+                                "enum": [
+                                    "linear",
+                                    "quad",
+                                    "cubic",
+                                    "quart",
+                                    "quint",
+                                    "sine",
+                                    "expo",
+                                    "circ",
+                                    "back",
+                                    "elastic",
+                                    "bounce"
+                                ]
+                            },
+                            "func_b": {
+                                "type": "string",
+                                "description": "easing func b",
+                                "default": "linear",
+                                "enum": [
+                                    "linear",
+                                    "quad",
+                                    "cubic",
+                                    "quart",
+                                    "quint",
+                                    "sine",
+                                    "expo",
+                                    "circ",
+                                    "back",
+                                    "elastic",
+                                    "bounce"
+                                ]
+                            },
+                            "overshoot": {
+                                "type": "number",
+                                "description": "overshoot",
+                                "default": 1.5
+                            },
+                            "amplitude": {
+                                "type": "number",
+                                "description": "amplitude",
+                                "default": 1.0
+                            },
+                            "period": {
+                                "type": "number",
+                                "description": "period",
+                                "default": 0.4
                             }
                         }
                     },
@@ -143,7 +200,20 @@
                             },
                             "type": {
                                 "type": "string",
-                                "description": "types of hotSpot"
+                                "description": "types of hotSpot",
+                                "default": "CUSTOM",
+                                "enum": [
+                                    "LT",
+                                    "LM",
+                                    "LB",
+                                    "MT",
+                                    "MM",
+                                    "MB",
+                                    "RT",
+                                    "RM",
+                                    "RB",
+                                    "CUSTOM"
+                                ]
                             }
                         }
                     }
