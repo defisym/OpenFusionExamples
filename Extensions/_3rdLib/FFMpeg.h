@@ -305,6 +305,9 @@ private:
 	//累计写入stream的长度
 	unsigned int audio_buf_index = 0;
 
+	double audioCallbackStartPts = 0;
+	double audioCallbackStartTimer = 0;
+
 	// output
 	void* audio_stream = nullptr;
 	size_t audio_stream_len = 0;
@@ -1138,7 +1141,7 @@ private:
 		, packetQueue& queue
 		, AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame
 		, auto decoder
-		, rawDataCallBack callBack) {
+		, const rawDataCallBack& callBack) {
 		BOOL bRespond = true;
 		
 		if (!bSendEAgain) {
@@ -1322,7 +1325,7 @@ private:
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
-	inline int decode_apacket(AVCodecContext* pACodecContext, AVPacket* pAPacket, AVFrame* pFrame, rawDataCallBack callBack) {
+	inline int decode_apacket(AVCodecContext* pACodecContext, AVPacket* pAPacket, AVFrame* pFrame, const rawDataCallBack& callBack) {
 		int response = avcodec_receive_frame(pACodecContext, pFrame);
 
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
@@ -1432,12 +1435,24 @@ private:
 		int  bytes_per_sec = 0;
 
 		if (pAudioStream) {
-			//bytes_per_sec = pACodecContext->sample_rate * pACodecContext->channels * 2;
 			bytes_per_sec = (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER) * 2;
 		}
 
 		if (bytes_per_sec) {
-			pts -= (double)hw_buf_size / bytes_per_sec;
+#define TIMER_OFFSET
+
+#ifdef TIMER_OFFSET
+			const auto maxPtsOffset = static_cast<double>(this->audio_stream_len) / bytes_per_sec;
+
+			const auto curTime = get_curTime();
+			const auto timePlayed = curTime - audioCallbackStartTimer;
+
+			const auto protectedTimePlayed = min(maxPtsOffset, max(0, timePlayed));
+
+			pts = audioCallbackStartPts + timePlayed;
+#else
+			pts -= static_cast<double>(hw_buf_size) / bytes_per_sec;
+#endif
 		}
 
 		return pts;
@@ -1457,7 +1472,7 @@ private:
 		frameLastPts = videoPts;
 		frameLastDelay = delay;
 
-		auto curTime = av_gettime() / 1000000.0;
+		auto curTime = get_curTime();
 
 		// reset frameTimer with a extimate time
 		if (frameTimer == -1) {
@@ -1513,6 +1528,10 @@ private:
 		bReadFinish = false;
 		bAudioFinish = false;
 		bVideoFinish = false;
+	}
+
+	inline double get_curTime() {
+		return static_cast<double>(av_gettime()) / 1000000.0;
 	}
 
 	inline double get_ptsMS(AVPacket* pPacket, AVStream* pStream) {
@@ -2038,6 +2057,8 @@ public:
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
+		this->audioCallbackStartPts = audioClock;
+		this->audioCallbackStartTimer = get_curTime();
 
 		setter(stream, 0, len);
 
