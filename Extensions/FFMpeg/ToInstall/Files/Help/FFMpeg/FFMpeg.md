@@ -14,9 +14,11 @@ This object is based on cross platform lib, FFMpeg & SDL, in theory there is not
 
 **NOTE:** this object uses a bitmap surface, as fusion didn't provide methods to write a HWA texture directly, and convert it will cost more than 3ms.
 
-**NOTE:** this object didn't designed to be multi-instance, you'll encounter audio issues if use in that way. Also because of the HWA issue mentioned above, too many objects will take a long time to blit.
+**NOTE:** this object uses SDL_Mixer for multi-instance. Also because of the HWA issue mentioned above, too many objects will take a long time to blit.
 
 **NOTE:** this object runs synchronously, it will try decode video frame in `HandleRunObject` routine called once per frame. If your game is heavy then it will skip more frames. Audio decode is in another thread, but the packet queue is filled in `HandleRunObject`.
+
+**NOTE:** you need to check `Run when minimized` & `Run while resizing`, or audio will be paused due to main thread is paused
 
 **NOTE:** this object requires FFMpeg & SDL
 

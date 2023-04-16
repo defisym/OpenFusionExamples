@@ -14,6 +14,8 @@ Mixing channels won't provide some manage features like set position of exclusiv
 
 Actually the channel is virtual, this object only uses the music stream of SDL_Mixer_X, managed internally and provide channels for fusion A/C/Es
 
+**NOTE:** you need to check `Run when minimized` & `Run while resizing`, or audio will be paused due to main thread is paused
+
 ## Properties
 
 This object has no properties

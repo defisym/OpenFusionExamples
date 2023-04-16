@@ -179,6 +179,21 @@ inline void UpdateEditFlag(T& flags, const T& flag, bool bCheck) {
 	}
 }
 
+// Update App props for SDL
+inline void SDL_UpdateAppProp(mv _far* mV, LPEDATA edPtr) {
+	const auto bRWM = mvGetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHENMINIMIZED);
+	const auto bRWR = mvGetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHILERESIZING);
+
+	if (bRWM && bRWR) {
+		return;
+	}
+	
+	MSGBOX(L"This object needs to enable \"Run when minimized\" & \"Run while resizing\".\nClick \"OK\" to set props automatically");
+
+	mvSetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHENMINIMIZED, TRUE);
+	mvSetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHILERESIZING, TRUE);
+}
+
 // Cast anytype to fusion's expression return
 
 template<typename T>

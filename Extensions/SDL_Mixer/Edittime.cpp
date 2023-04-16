@@ -330,6 +330,9 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
 #endif
+
+		SDL_UpdateAppProp(mV, edPtr);
+
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
 //		spa.edpt = edPtr;
