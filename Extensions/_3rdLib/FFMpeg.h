@@ -145,7 +145,10 @@ private:
 	bool bExit = false;
 
 	bool bLoop = false;
-	bool bPause = false;	// used to  audio
+	bool bPause = false;	// used in audio
+
+	double pausePts = 0;
+	double unPausePts = 0;
 
 	bool bReadFinish = false;
 	bool bVideoFinish = false;
@@ -1445,11 +1448,12 @@ private:
 			const auto maxPtsOffset = static_cast<double>(this->audio_stream_len) / bytes_per_sec;
 
 			const auto curTime = get_curTime();
-			const auto timePlayed = curTime - audioCallbackStartTimer;
+			const auto pausedTime = get_pausedTime();
 
+			const auto timePlayed = curTime - pausedTime - audioCallbackStartTimer;
 			const auto protectedTimePlayed = min(maxPtsOffset, max(0, timePlayed));
 
-			pts = audioCallbackStartPts + timePlayed;
+			pts = audioCallbackStartPts + protectedTimePlayed;
 #else
 			pts -= static_cast<double>(hw_buf_size) / bytes_per_sec;
 #endif
@@ -1522,6 +1526,9 @@ private:
 		frameTimer = -1;
 		frameLastPts = 0;
 		frameLastDelay = 40e-3;
+
+		reset_pausePts();
+		audioCallbackStartPts = 0;
 	}
 
 	inline void reset_finishState() {
@@ -1798,6 +1805,25 @@ public:
 
 	inline void set_pause(bool bPause) {
 		this->bPause = bPause;
+
+		if (bPause) {
+			pausePts = get_curTime();
+		}
+		else {
+			unPausePts = get_curTime();
+		}
+	}
+
+	inline void reset_pausePts() {
+		pausePts = 0;
+		unPausePts = 0;
+	}
+
+	inline double get_pausedTime(bool bReset = true) {
+		const auto pausedTime = unPausePts - pausePts;
+		reset_pausePts();
+
+		return pausedTime;
 	}
 
 	inline void set_sdl_volume(int volume) {
@@ -2057,8 +2083,8 @@ public:
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
-		this->audioCallbackStartPts = audioClock;
-		this->audioCallbackStartTimer = get_curTime();
+		//this->audioCallbackStartPts = audioClock;
+		//this->audioCallbackStartTimer = get_curTime();
 
 		setter(stream, 0, len);
 
@@ -2067,6 +2093,9 @@ public:
 			int wt_stream_len = 0;
 			//每解码后的数据长度
 			int audio_size = 0;
+
+			this->audioCallbackStartPts = audioClock;
+			this->audioCallbackStartTimer = get_curTime();
 
 			//检查音频缓存的剩余长度
 			while (len > 0) {
