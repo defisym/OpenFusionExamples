@@ -17,7 +17,7 @@
 
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processer);
 
 struct SfCoef {
 	BYTE* pData = nullptr;
@@ -32,10 +32,10 @@ struct SfCoef {
 };
 
 inline SfCoef GetSfCoef(LPSURFACE pSf);
-inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef);
+inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef);
 
-inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
+inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
 
 //-----------------------------
 
@@ -229,7 +229,7 @@ inline RGBA Range(RGBA A) {
 }
 
 //RGBA运算符重载 +
-inline RGBA operator +(RGBA A, RGBA B) {
+inline RGBA operator +(RGBA A, const RGBA& B) {
 	A.r += B.r;
 	A.g += B.g;
 	A.b += B.b;
@@ -239,7 +239,7 @@ inline RGBA operator +(RGBA A, RGBA B) {
 }
 
 //RGBA运算符重载 -
-inline RGBA operator -(RGBA A, RGBA B) {
+inline RGBA operator -(RGBA A, const RGBA& B) {
 	A.r -= B.r;
 	A.g -= B.g;
 	A.b -= B.b;
@@ -249,12 +249,12 @@ inline RGBA operator -(RGBA A, RGBA B) {
 }
 
 //RGBA运算符重载 +=
-inline RGBA operator +=(RGBA A, RGBA B) {
+inline RGBA operator +=(const RGBA& A, const RGBA& B) {
 	return A + B;
 }
 
 //RGBA运算符重载 -=
-inline RGBA operator -=(RGBA A, RGBA B) {
+inline RGBA operator -=(const RGBA& A, const RGBA& B) {
 	return A - B;
 }
 
@@ -268,6 +268,18 @@ inline RGBA operator *(RGBA A, double B) {
 	return A;
 }
 
+inline RGBA operator *(double B, const RGBA& A) {
+	return A * B;
+}
+
+inline RGBA operator *(const RGBA& A, int B) {
+	return A * static_cast<double>(B);
+}
+
+inline RGBA operator *(int B, const RGBA& A) {
+	return A * B;
+}
+
 //RGBA运算符重载 /
 inline RGBA operator /(RGBA A, double B) {
 	A.r = A.r / B;
@@ -278,13 +290,16 @@ inline RGBA operator /(RGBA A, double B) {
 	return A;
 }
 
-//RGBA运算符重载 *
-inline RGBA operator *(double B, RGBA A) {
-	return A * B;
+//RGBA运算符重载 /
+inline RGBA operator /(double B, const RGBA& A) {
+	return A / B;
 }
 
-//RGBA运算符重载 /
-inline RGBA operator /(double B, RGBA A) {
+inline RGBA operator /(const RGBA& A, int B) {
+	return A / static_cast<double>(B);
+}
+
+inline RGBA operator /(int B, const RGBA& A) {
 	return A / B;
 }
 
@@ -916,7 +931,7 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 #endif // _NO_REF
 
 // create a temp bitmap pSf if needed
-inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
 	auto bHWA = IsHWA(pSf);
 	auto pBitmap = pSf;
 
@@ -931,7 +946,7 @@ inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBit
 	}
 }
 
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
 	ProcessBitmap(pSf, processor);
 }
 
@@ -1059,7 +1074,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	PixelGetter normalGetter = [](BYTE* src, int src_offset) {
 		return RGBA{ (double)src[src_offset + 2], (double)src[src_offset + 1], (double)src[src_offset + 0], 0 };
 	};
-	PixelSetter normalSetter = [](RGBA src, BYTE* des, int des_offset) {
+	PixelSetter normalSetter = [](const RGBA& src, BYTE* des, int des_offset) {
 		des[des_offset + 2] = (BYTE)src.r;
 		des[des_offset + 1] = (BYTE)src.g;
 		des[des_offset + 0] = (BYTE)src.b;
@@ -1069,7 +1084,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	PixelGetter alphaGetter = [](BYTE* src, int src_offset) {
 		return RGBA{ (double)src[src_offset + 0], 0, 0, 0 };
 	};
-	PixelSetter alphaSetter = [](RGBA src, BYTE* des, int des_offset) {
+	PixelSetter alphaSetter = [](const RGBA& src, BYTE* des, int des_offset) {
 		des[des_offset + 0] = (BYTE)src.r;
 	};
 #endif // STACK_BLUR_ALPHA	
@@ -1307,7 +1322,7 @@ inline SfCoef GetSfCoef(LPSURFACE pSf) {
 	return pSfCoef;
 }
 
-inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
+inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef) {
 	pSf->UnlockBuffer(coef.pData);
 
 	// alpha
@@ -1316,7 +1331,7 @@ inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
 	}
 }
 
-inline void ProcessPixel(LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor) {
 	ProcessBitmap(pSf, [&](const LPSURFACE Bitmap) {
 		auto ceof = GetSfCoef(pSf);
 		processor(ceof);
@@ -1324,11 +1339,11 @@ inline void ProcessPixel(LPSURFACE pSf, std::function<void(const SfCoef& coef)> 
 	});
 }
 
-inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor) {
 	ProcessPixel(pSf, processor);
 }
 
-inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,BYTE*,BYTE*)> process) {
+inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const SfCoef&,BYTE*,BYTE*)>& process) {
 	//Dimensions
 	int width = pSf->GetWidth();
 	int height = pSf->GetHeight();
