@@ -27,7 +27,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		UpdateHoImgInfo(rdPtr
 			//, rdPtr->swidth, rdPtr->sheight
 			, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height()
-			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleX
+			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleY
 			, HotSpotPos::LT, 0, 0
 			, 0);
 	}
