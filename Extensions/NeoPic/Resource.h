@@ -123,6 +123,8 @@
 #define	IDMN_ACTION_STC 			25032
 
 #define	IDMN_ACTION_SAS 			25033
+#define	IDMN_ACTION_LA 			    25034
+#define	IDMN_ACTION_SA 			    25035
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -180,6 +182,8 @@
 #define	M_ACTION_STC 			     5032
 
 #define	M_ACTION_SAS 			     5033
+#define	M_ACTION_LA 			     5034
+#define	M_ACTION_SA 			     5035
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501

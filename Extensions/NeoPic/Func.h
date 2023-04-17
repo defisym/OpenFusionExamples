@@ -146,27 +146,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->changed = true;
 		rdPtr->rc.rcChanged = true;
 
-#define _UPDAETINFO
-
-#ifndef _UPDAETINFO
-		rdPtr->rc.rcAngle = (float)rdPtr->angle;
-
-		rdPtr->rc.rcScaleX = abs(rdPtr->zoomScale.XScale);
-		rdPtr->rc.rcScaleY = abs(rdPtr->zoomScale.YScale);
-
-		int width = int(rdPtr->src->GetWidth() * rdPtr->rc.rcScaleX);
-		int height = int(rdPtr->src->GetHeight() * rdPtr->rc.rcScaleY);
-
-		rdPtr->rHo.hoImgWidth = width;
-		rdPtr->rHo.hoImgHeight = height;
-		
-		rdPtr->rHo.hoImgXSpot = rdPtr->hotSpot.x;
-		rdPtr->rHo.hoImgYSpot = rdPtr->hotSpot.y;
-
-		UpdateHotSpot(rdPtr->hotSpotPos, width, height, rdPtr->rHo.hoImgXSpot, rdPtr->rHo.hoImgYSpot);	
-#else
 		UpdateHoImgInfo(rdPtr);
-#endif
 		FreeColMask(rdPtr->pColMask);
 	}
 }
@@ -204,6 +184,8 @@ inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
 }
 
 inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {	
+	rdPtr->hotSpotPos = Type;
+
 	if (rdPtr->src == nullptr || !rdPtr->src->IsValid()) {
 		if (Type == HotSpotPos::CUSTOM) {
 			UpdateHotSpot(rdPtr, X, Y);

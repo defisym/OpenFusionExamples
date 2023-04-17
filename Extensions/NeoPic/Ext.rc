@@ -178,6 +178,9 @@ BEGIN
         POPUP "Animation"
         BEGIN
             MENUITEM "Set Animation Source",       IDMN_ACTION_SAS
+            MENUITEM SEPARATOR
+            MENUITEM "Load Animation",       IDMN_ACTION_LA
+            MENUITEM "Stop Animation",       IDMN_ACTION_SA
         END
         MENUITEM SEPARATOR
         POPUP "Display"
@@ -464,7 +467,8 @@ BEGIN
     M_ACTION_ALPHA          "Non Transparent Alpha, -1 = Keep Alpha"
 
     M_ACTION_SAS            "Set Animation Source to Lib %0, BasePath %1, Decrypt Key %2"
-
+    M_ACTION_LA             "Load Animation %0, Decrypt Key %1"
+    M_ACTION_SA             "Stop Animation"
 END
 
 STRINGTABLE DISCARDABLE 

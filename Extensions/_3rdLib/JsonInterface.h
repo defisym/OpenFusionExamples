@@ -19,6 +19,7 @@ private:
     using Json = nlohmann::json;
 
     JsonData data;
+    bool bComment = false;
 
     template<typename T>
     inline bool LoadCore(T* in) {
@@ -27,7 +28,8 @@ private:
         }
 
         try {
-            data = Json::parse(in);
+            //data = Json::parse(in);
+            data = Json::parse(in, nullptr, true, this->bComment);
         } catch (...) {
             return false;
         }
@@ -45,6 +47,10 @@ public:
 
     inline bool Load(const char* pBuf) {
         return LoadCore(pBuf);
+    }
+
+    inline void SetComment(bool bComment = true){
+        this->bComment = bComment;
     }
 
     inline const JsonData& Get() {

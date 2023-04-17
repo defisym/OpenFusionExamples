@@ -321,7 +321,7 @@ public:
 		// should be called to update param
 		if (bModify) {
 			auto ret = ::ModifSpriteEffect(ptrWin, pSpr
-				, effect, effectParam);
+				, effect, effectParam);			
 		}
 
 		return bModify;
@@ -854,7 +854,7 @@ public:
 
 	inline static bool SetAlpha(LPRO pObject, UCHAR alpha) {
 		return ModifSpriteEffect(pObject, [&](DWORD& effect, LPARAM& effectParam) {
-			return SetAlpha(effect, effectParam, alpha);;
+			return SetAlpha(effect, effectParam, alpha);
 			});
 	}
 
@@ -918,9 +918,9 @@ public:
 	inline static DWORD BGRToRGB(DWORD dwBGR) {
 		UCHAR R = UCHAR(dwBGR & 0xFF);
 		UCHAR G = UCHAR((dwBGR & 0xFF00) >> 8);
-		UCHAR B = UCHAR((dwBGR & 0xFF0000) >> 16);
+		UCHAR B = UCHAR((dwBGR & 0xFF0000) >> 16);		
 
-		return R << 16 | G << 8 | B;
+		return GetRGBCoef(R, G, B);
 	}
 
 	inline static DWORD GetRGBCoef(LPRO pObject) {
@@ -956,9 +956,13 @@ public:
 		return 0;
 	}
 
+	inline static DWORD GetRGBCoef(UCHAR r, UCHAR g, UCHAR b) {
+		return r << 16 | g << 8 | b;
+	}
+
 	inline static bool SetRGBCoef(LPRO pObject, DWORD coef) {
 		return ModifSpriteEffect(pObject, [&](DWORD& effect, LPARAM& effectParam) {
-			return SetRGBCoef(effect, effectParam, coef);;
+			return SetRGBCoef(effect, effectParam, coef);
 			});
 	}
 

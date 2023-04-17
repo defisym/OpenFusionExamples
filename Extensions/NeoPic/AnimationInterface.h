@@ -11,6 +11,11 @@ struct AnimationInterface {
 	std::wstring basePath;
 	std::wstring key;
 
+	bool bPaused = false;
+	int speed = 100;
+
+	double speedAccumulate = 0.0;
+
 	AnimationInterface(const LPRDATA rdPtr) {
 		this->rdPtr = rdPtr;
 	}
@@ -30,6 +35,8 @@ struct AnimationInterface {
 
 	inline bool LoadAnimation(const LPCWSTR FileName, const LPCTSTR Key = L"") {
 		JsonInterface JI;
+		JI.SetComment(true);
+
 		auto ret = true;		
 
 		if (StrEmpty(Key)) {
@@ -43,24 +50,54 @@ struct AnimationInterface {
 			ret = JI.Load(E.GetOutputStr());
 		}
 
-		if(ret) {
-			StopAnimation();
+		if (!ret) {
+#if !defined(RUN_ONLY)
+			MSGBOX(L"Json file load error");
+#endif
 
+			return ret;
+		}
+
+
+		StopAnimation();
+
+		try {
 			pA = new Animation(JI.Get());
+		} catch (...) {
+			ret = false;
+
+#if !defined(RUN_ONLY)
+			MSGBOX(L"Json file parse error");
+#endif
 		}
 
 		return ret;
 	}
 
 	inline void StopAnimation() {
+		speedAccumulate = 0;
+
 		delete pA;
 		pA = nullptr;
 	}
 
-	inline void UpdateAnimation() const {
+	inline void UpdateAnimation() {
 		if (pA == nullptr) {
 			return;
 		}
+
+		if(bPaused) {
+			return;
+		}
+
+		const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed) / (100.0 * 100.0);
+		speedAccumulate += correctedSpeed;
+
+		if(speedAccumulate<1.0) {
+			return;
+		}
+
+		speedAccumulate -= 1.0;
 
 		pA->UpdateFrame();
 		const auto pCurFrame = pA->GetCurrentFrame();
@@ -70,7 +107,33 @@ struct AnimationInterface {
 			LoadFromLib(rdPtr, reinterpret_cast<LPRO>(pLib), curFile.c_str(), key.c_str());
 		}
 
-		Zoom(rdPtr, static_cast<float>(pCurFrame->pScale->x), static_cast<float>(pCurFrame->pScale->y));
+		//TODO hotspot, RGB
 		Rotate(rdPtr, pCurFrame->angle);
+		EffectUtilities::SetAlpha(reinterpret_cast<LPRO>(rdPtr), static_cast<UCHAR>(pCurFrame->alpha));
+
+		//EffectUtilities::SetRGBCoef(reinterpret_cast<LPRO>(rdPtr), pCurFrame->pRGBCoef->rgbCoef);
+		Zoom(rdPtr, static_cast<float>(pCurFrame->pScale->x), static_cast<float>(pCurFrame->pScale->y));
+		//TODO type doesn't work
+		//UpdateHotSpot(rdPtr, pCurFrame->pHotSpot->typeID, pCurFrame->pHotSpot->x, pCurFrame->pHotSpot->y);
+	}
+
+	inline bool GetPauseState() const {
+		return bPaused;
+	}
+
+	inline void PauseAnimation() {
+		bPaused = true;
+	}
+
+	inline void ResumeAnimation() {
+		bPaused = false;
+	}
+
+	inline int GetSpeed() const {
+		return speed;
+	}
+
+	inline void SetSpeed(const int speed) {
+		this->speed = speed;
 	}
 };

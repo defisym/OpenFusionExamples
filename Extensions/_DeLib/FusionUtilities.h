@@ -416,6 +416,48 @@ enum class HotSpotPos {
 	CUSTOM
 };
 
+inline HotSpotPos StrToHotSpotPos(const wchar_t* pStr) {
+	do {
+		if(StrIEqu(pStr,L"LT")) {
+			return  HotSpotPos::LT;
+		}
+
+		if (StrIEqu(pStr, L"LM")) {
+			return  HotSpotPos::LM;
+		}
+
+		if (StrIEqu(pStr, L"LB")) {
+			return  HotSpotPos::LB;
+		}
+
+		if (StrIEqu(pStr, L"MT")) {
+			return  HotSpotPos::MT;
+		}
+
+		if (StrIEqu(pStr, L"MM")) {
+			return  HotSpotPos::MM;
+		}
+
+		if (StrIEqu(pStr, L"MB")) {
+			return  HotSpotPos::MB;
+		}
+
+		if (StrIEqu(pStr, L"RT")) {
+			return  HotSpotPos::RT;
+		}
+
+		if (StrIEqu(pStr, L"RM")) {
+			return  HotSpotPos::RM;
+		}
+
+		if (StrIEqu(pStr, L"RB")) {
+			return  HotSpotPos::RB;
+		}		
+
+		return HotSpotPos::CUSTOM;
+	} while (false);
+}
+
 // Update X/Y according to width/height
 inline void UpdateHotSpot(HotSpotPos Type, size_t width, size_t height, int& X, int& Y) {
 	switch (Type) {

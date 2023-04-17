@@ -44,7 +44,7 @@ constexpr auto MAX_MEMORYLIMIT = 3 * 1024 + 256;
 constexpr auto DEFAULT_MEMORYLIMIT = 3 * 1024;
 
 //don't use this func if Str = nullptr, return Default_Str directly
-inline void NewStr(LPTSTR & Tar, LPCTSTR Str) {
+inline void NewStr(LPTSTR & Tar, const LPCTSTR Str) {
 	release_arr(Tar);
 	rsize_t total_length = wcslen(Str) + 1;
 
@@ -61,7 +61,7 @@ inline void NewStr(std::wstring& Tar, const std::wstring& Str) {
 }
 
 // convert string to wstring
-inline std::wstring to_wide_string(const std::string& input, UINT codePage = CP_UTF8) {
+inline std::wstring to_wide_string(const std::string& input, const UINT codePage = CP_UTF8) {
 	const auto size_needed = MultiByteToWideChar(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0);
 
 	std::wstring result(size_needed, 0);
@@ -71,7 +71,7 @@ inline std::wstring to_wide_string(const std::string& input, UINT codePage = CP_
 }
 
 // convert wstring to string 
-inline std::string to_byte_string(const std::wstring& input, UINT codePage = CP_UTF8) {
+inline std::string to_byte_string(const std::wstring& input, const UINT codePage = CP_UTF8) {
 	const auto size_needed = WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0, nullptr, nullptr);
 
 	std::string result(size_needed, 0);
@@ -97,7 +97,7 @@ inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
 	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
 }
 
-inline bool StringViewEqu(std::wstring_view& str, LPCWSTR pStr) {
+inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	auto length = wcslen(pStr);
 
 	if (length != str.size()) {
@@ -113,7 +113,7 @@ inline bool StringViewEqu(std::wstring_view& str, LPCWSTR pStr) {
 	return true;
 }
 
-inline bool StringViewIEqu(std::wstring_view& str, LPCWSTR pStr) {
+inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	auto length = wcslen(pStr);
 
 	if (length != str.size()) {
@@ -132,15 +132,15 @@ inline bool StringViewIEqu(std::wstring_view& str, LPCWSTR pStr) {
 // MSBOX
 #include "StrNum.h"
 
-inline void MSGBOX(const std::wstring& Content, const std::wstring& title = L"ALERT") {
-	MessageBox(NULL, Content.c_str(), title.c_str(), MB_OK);
+inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"ALERT") {
+	MessageBox(NULL, content.c_str(), title.c_str(), MB_OK);
 }
 
 // basic split
 #include <functional>
 
-inline void SplitStringCore(const std::wstring input, const wchar_t delimiter
-	, std::function<void(const std::wstring&)> callBack) {
+inline void SplitStringCore(const std::wstring& input, const wchar_t delimiter
+	, const std::function<void(const std::wstring&)>& callBack) {
 	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
 	size_t start = input.find_first_not_of(delimiter);
 	size_t end = start;
@@ -153,7 +153,7 @@ inline void SplitStringCore(const std::wstring input, const wchar_t delimiter
 }
 
 template<typename T>
-inline std::vector<T> SplitString(const std::wstring input, const wchar_t delimiter
+inline std::vector<T> SplitString(const std::wstring& input, const wchar_t delimiter
 	, std::function<T(const std::wstring&)> callBack) {
 	std::vector<T> resultList;
 
@@ -164,6 +164,11 @@ inline std::vector<T> SplitString(const std::wstring input, const wchar_t delimi
 	return resultList;
 }
 
-inline std::vector<std::wstring> SplitString(const std::wstring input, const wchar_t delimiter) {
+inline std::vector<std::wstring> SplitString(const std::wstring& input, const wchar_t delimiter) {
 	return SplitString<std::wstring>(input, delimiter, [](const std::wstring& item) {return item; });
+}
+
+template<typename T>
+inline T Range(T v, T minv, T maxv) {
+	return max(minv, min(maxv, v));
 }

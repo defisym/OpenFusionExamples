@@ -92,6 +92,8 @@ short actionsInfos[]=
 		IDMN_ACTION_STC, M_ACTION_STC, ACT_ACTION_STC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_COLOR, M_ACTION_ALPHA,
 
 		IDMN_ACTION_SAS, M_ACTION_SAS,	ACT_ACTION_SAS,	0, 3, PARAM_OBJECT,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_OBJECT, M_ACTION_BASEPATH, M_ACTION_KEY,
+		IDMN_ACTION_LA, M_ACTION_LA, ACT_ACTION_LA,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
+		IDMN_ACTION_SA, M_ACTION_SA, ACT_ACTION_SA,	0, 0,
 
 		};
 
@@ -191,7 +193,7 @@ long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long
 }
 
 long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	auto fullPath = GetFullPathNameStr(pFileName);
 
 	return rdPtr->isLib && rdPtr->pLib->find(fullPath) != rdPtr->pLib->end() ? true : false;
@@ -204,45 +206,46 @@ long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
 // ============================================================================
 
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	rdPtr->pAI->StopAnimation();
 	LoadFromFile(rdPtr, FilePath, Key);
 
 	return 0;
 }
 
 short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	auto object = (LPRO)CNC_GetParameter(rdPtr);
 
-	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	rdPtr->pAI->StopAnimation();
 	LoadFromLib(rdPtr, object, FilePath, Key);
-
-	//auto bAlpha = rdPtr->src->HasAlpha();
-	//auto bType = IsHWA(rdPtr->src);
 
 	return 0;
 }
 
 short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	auto object = (LPRO)CNC_GetParameter(rdPtr);
 	bool UpdateCoef = (bool)CNC_GetIntParameter(rdPtr);
 
+	rdPtr->pAI->StopAnimation();
 	LoadFromDisplay(rdPtr, object, UpdateCoef);
 
 	return 0;
 }
 
 short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
-	LPSURFACE pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
-	LPCWSTR pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
+	auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
+	auto pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
 
 #ifdef _DEBUG
 	//__SavetoClipBoard(pSf);
 #endif // _DEBUG
 
+	rdPtr->pAI->StopAnimation();
 	LoadFromPointer(rdPtr, pFileName, pSf);
 
 	return 0;
@@ -252,7 +255,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring listSrc = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring basePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {		
@@ -267,8 +270,8 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport SetPreloadListByPointer(LPRDATA rdPtr, long param1, long param2) {
 	long list = (long)CNC_GetIntParameter(rdPtr);
 
-	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!rdPtr->preloading
 		&& rdPtr->isLib) {
@@ -292,8 +295,8 @@ short WINAPI DLLExport SetPreloadListByPointer(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
-	LPCWSTR BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	LPCWSTR Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!rdPtr->preloading
 		&&rdPtr->isLib) {
@@ -329,7 +332,7 @@ short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport SetKeepListByPointer(LPRDATA rdPtr, long param1, long param2) {
 	long list = (long)CNC_GetIntParameter(rdPtr);
 
-	LPCWSTR basePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto basePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (rdPtr->isLib) {
 #ifndef _DEBUG		
@@ -378,7 +381,7 @@ short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	if (rdPtr->isLib) {
 		EraseLib(rdPtr->pLib, FilePath);		
@@ -388,8 +391,8 @@ short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	if (rdPtr->isLib) {
 		if (NeedUpdateLib(rdPtr->pLib, FilePath)) {
@@ -412,20 +415,20 @@ short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
 // deprecated
 short WINAPI DLLExport RestoreCur(LPRDATA rdPtr, long param1, long param2) {
 	if (CanDisplay(rdPtr)) {
+
 	}
 
 	return 0;
 }
 
 short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
-	HotSpotPos Pos = (HotSpotPos)CNC_GetIntParameter(rdPtr);
+	auto Pos = (HotSpotPos)CNC_GetIntParameter(rdPtr);
 
 	int X = (int)CNC_GetIntParameter(rdPtr);
 	int Y = (int)CNC_GetIntParameter(rdPtr);
 	
+	rdPtr->pAI->StopAnimation();
 	UpdateHotSpot(rdPtr, Pos, X, Y);
-
-	rdPtr->hotSpotPos = Pos;
 	
 	return 0;
 }
@@ -433,6 +436,8 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	float XScale = GetFloatParam(rdPtr);
 	float YScale = GetFloatParam(rdPtr);
+	
+	rdPtr->pAI->StopAnimation();
 	
 	if (CanDisplay(rdPtr)) {
 		Zoom(rdPtr, XScale, YScale);
@@ -444,6 +449,8 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 	int Width = (int)CNC_GetIntParameter(rdPtr);
 	int Height = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
 		float XScale = (1.0f * Width / rdPtr->src->GetWidth());
@@ -459,6 +466,8 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	int Angle = (int)CNC_GetIntParameter(rdPtr);
 	Angle = Angle % 360;
 	
+	rdPtr->pAI->StopAnimation();
+
 	if (CanDisplay(rdPtr)) {
 		Rotate(rdPtr, Angle);
 	}
@@ -472,9 +481,10 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 
 	bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
 
-	if (CanDisplay(rdPtr)) {
-		rdPtr->offset = { XOffset ,YOffset, Wrap };
+	rdPtr->pAI->StopAnimation();
 
+	if (CanDisplay(rdPtr)) {
+		rdPtr->offset = { XOffset ,YOffset, Wrap };	
 		ReDisplay(rdPtr);
 	}
 
@@ -530,9 +540,10 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 
 	ATArray A = {};
 
-	if (CanDisplay(rdPtr)) {
-		rdPtr->AT = A;
+	rdPtr->pAI->StopAnimation();
 
+	if (CanDisplay(rdPtr)) {
+		rdPtr->AT = A;		
 		ReDisplay(rdPtr);
 	}
 
@@ -543,6 +554,8 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 	int radius = CNC_GetIntParameter(rdPtr);
 	float scale = GetFloatParam(rdPtr);
 	int divide = CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
 		bool bReleaseOld = false;
@@ -614,10 +627,10 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long param2) {
-	LPRDATA object = (LPRDATA)CNC_GetParameter(rdPtr);
+	auto object = (LPRDATA)CNC_GetParameter(rdPtr);
 
-	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	std::wstring paramName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -661,6 +674,8 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 	int width = (int)CNC_GetIntParameter(rdPtr);
 	int height = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
 		bool bReleaseBitmap = false;
@@ -727,10 +742,10 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	auto pSf = _GetSurfacePointer(rdPtr, pFilePath, pKey);
 
@@ -775,10 +790,10 @@ short WINAPI DLLExport CaptureFrameArea(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long param2) {
-	LPCTSTR pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	LPCTSTR pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto pSaveFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	int width = (int)CNC_GetIntParameter(rdPtr);
 	int height = (int)CNC_GetIntParameter(rdPtr);
@@ -811,6 +826,8 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 	int color = static_cast<int>(CNC_GetIntParameter(rdPtr));
 	// -1 for keep alpha
 	const int alpha = static_cast<int>(CNC_GetIntParameter(rdPtr));
+
+	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
 		auto pSf = ConvertBitmap(rdPtr->src);
@@ -876,15 +893,26 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 }
 
 short WINAPI DLLExport SetAnimationSource(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-
-	//TODO protect for different type
+	auto object = (LPRO)CNC_GetParameter(rdPtr);
+	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+		
 	rdPtr->pAI->SetAnimationSource((LPRDATA)object,FilePath,Key);
 
-	//TODO debug
-	rdPtr->pAI->LoadAnimation(L"F:\\DEV\\OpenFusionExamples\\Extensions\\NeoPic\\ToInstall\\Files\\Examples\\NeoPic\\A.json");
+	return 0;
+}
+
+short WINAPI DLLExport LoadAnimation(LPRDATA rdPtr, long param1, long param2) {
+	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pAI->LoadAnimation(FilePath, Key);
+
+	return 0;
+}
+
+short WINAPI DLLExport StopAnimation(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pAI->StopAnimation();
 
 	return 0;
 }
@@ -1170,6 +1198,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ChangeTransparentByColor,
 
 			SetAnimationSource,
+			LoadAnimation,
+			StopAnimation,
 
 			0
 			};

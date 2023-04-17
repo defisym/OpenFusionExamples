@@ -26,7 +26,9 @@
                 },
                 "speed": {
                     "type": "number",
-                    "description": "speed of the animation",
+                    "description": "speed of the animation, 100 = full frame rate",
+                    "minimum": 0,
+                    "maximum": 100,
                     "default": 50
                 },
                 "loop": {
@@ -37,11 +39,13 @@
                 "repeat": {
                     "type": "number",
                     "description": "Indicates how many times the animation should play",
+                    "minimum": 0,
                     "default": 0
                 },
                 "backTo": {
                     "type": "number",
                     "description": "indicates the number of the frame at which the animation loops",
+                    "minimum": 0,
                     "default": 0
                 }
             }
@@ -54,6 +58,14 @@
                 "description": "frame definition",
                 "required": [],
                 "properties": {
+                    "reset": {
+                        "type": "boolean",
+                        "description": "force reset to default"
+                    },
+                    "resetExceptFile": {
+                        "type": "boolean",
+                        "description": "force reset to default except file"
+                    },
                     "file": {
                         "type": "string",
                         "description": "relative path to frame file"
@@ -137,11 +149,15 @@
                     "angle": {
                         "type": "number",
                         "description": "angle of frame",
+                        "minimum": 0,
+                        "maximum": 360,
                         "default": 0
                     },
                     "alpha": {
                         "type": "number",
                         "description": "alpha of frame",
+                        "minimum": 0,
+                        "maximum": 255,
                         "default": 0
                     },
                     "rgbCoef": {
@@ -155,14 +171,20 @@
                         "properties": {
                             "r": {
                                 "type": "number",
+                                "minimum": 0,
+                                "maximum": 255,
                                 "default": 255
                             },
                             "g": {
                                 "type": "number",
+                                "minimum": 0,
+                                "maximum": 255,
                                 "default": 255
                             },
                             "b": {
                                 "type": "number",
+                                "minimum": 0,
+                                "maximum": 255,
                                 "default": 255
                             }
                         }
@@ -176,11 +198,11 @@
                         ],
                         "properties": {
                             "x": {
-                                "type": "number",
+                                "type": "number",                                                           
                                 "default": 1.0
                             },
                             "y": {
-                                "type": "number",
+                                "type": "number",                                
                                 "default": 1.0
                             }
                         }

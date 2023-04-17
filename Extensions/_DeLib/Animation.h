@@ -1,11 +1,24 @@
 #pragma once
 
-#include "functional"
+#include <functional>
 
+#include "EasingFunctions.h"
 #include "JsonInterface.h"
 #include "Encryption.h"
 
 constexpr auto Animation_JsonParseError = -1;
+
+constexpr auto Animation_MinSpeed = 0;
+constexpr auto Animation_MaxSpeed = 100;
+
+constexpr auto Animation_MinAngle = 0;
+constexpr auto Animation_MaxAngle = 360;
+
+constexpr auto Animation_MinAlpha = 0;
+constexpr auto Animation_MaxAlpha = 255;
+
+constexpr auto Animation_MinColor = 0;
+constexpr auto Animation_MaxColor = 255;
 
 struct AnimationInfo: public JsonObject {
     std::wstring name;
@@ -47,8 +60,19 @@ struct FrameData : public JsonObject {
     int alpha = 0;
 
     struct Interpolation : public JsonObject {
-        std::wstring type = L"liner";
         int interval = 1;
+
+    	std::wstring type = L"easeIn";
+    	std::wstring func_a = L"liner";
+    	std::wstring func_b = L"liner";
+
+        int type_ID = 0;
+        int func_a_ID = 0;
+        int func_b_ID =0;
+
+    	double overshoot = 1.5;
+    	double amplitude = 1.0;
+    	double period = 0.4;
 
         Interpolation() = default;
         explicit Interpolation(const JsonData& data) {
@@ -60,8 +84,19 @@ struct FrameData : public JsonObject {
                 throw Animation_JsonParseError;
             }
 
-            JsonInterface::GetData(data, "type", type);
             JsonInterface::GetData(data, "interval", interval);
+
+        	JsonInterface::GetData(data, "type", type);
+        	JsonInterface::GetData(data, "func_a", func_a);
+        	JsonInterface::GetData(data, "func_b", func_b);
+
+        	JsonInterface::GetData(data, "overshoot", overshoot);
+        	JsonInterface::GetData(data, "amplitude", amplitude);
+        	JsonInterface::GetData(data, "period", period);
+
+            type_ID = Easing::StrToEasingMode(type.c_str());
+            func_a_ID = Easing::StrToFunctionID(func_a.c_str());
+            func_b_ID = Easing::StrToFunctionID(func_b.c_str());
         }
     };
 
@@ -71,6 +106,8 @@ struct FrameData : public JsonObject {
         int r = 255;
         int g = 255;
         int b = 255;
+
+        DWORD rgbCoef = EffectUtilities::GetRGBCoef(255, 255, 255);
 
         RGBCoef() = default;
 
@@ -86,12 +123,24 @@ struct FrameData : public JsonObject {
             JsonInterface::GetData(data, "r", r);
             JsonInterface::GetData(data, "g", g);
             JsonInterface::GetData(data, "b", b);
+
+            r = Range(r, Animation_MinColor, Animation_MaxColor);
+            g = Range(g, Animation_MinColor, Animation_MaxColor);
+            b = Range(b, Animation_MinColor, Animation_MaxColor);
+
+            rgbCoef = EffectUtilities::GetRGBCoef(static_cast<UCHAR>(r),
+                static_cast<UCHAR>(g),
+                static_cast<UCHAR>(b));
         }
 
         inline void Interpolation(double step, const RGBCoef* pPrevious, const RGBCoef* pNext) {
             r = static_cast<int>(static_cast<double>(pPrevious->r) + step * (pNext->r - pPrevious->r));
             g = static_cast<int>(static_cast<double>(pPrevious->g) + step * (pNext->g - pPrevious->g));
             b = static_cast<int>(static_cast<double>(pPrevious->b) + step * (pNext->b - pPrevious->b));
+
+            rgbCoef = EffectUtilities::GetRGBCoef(static_cast<UCHAR>(r),
+               static_cast<UCHAR>(g),
+               static_cast<UCHAR>(b));
         }
     };
 
@@ -127,7 +176,8 @@ struct FrameData : public JsonObject {
     struct HotSpot : public JsonObject {
         int x = 0;
         int y = 0;
-        std::wstring type;
+        std::wstring type = L"CUSTOM";
+        HotSpotPos typeID = HotSpotPos::CUSTOM;
 
         HotSpot() = default;
 
@@ -143,6 +193,8 @@ struct FrameData : public JsonObject {
             JsonInterface::GetData(data, "x", x);
             JsonInterface::GetData(data, "y", y);
             JsonInterface::GetData(data, "type", type);
+
+            typeID = StrToHotSpotPos(type.c_str());
         }
 
         inline void Interpolation(double step, const HotSpot* pPrevious, const HotSpot* pNext) {
@@ -185,9 +237,29 @@ struct FrameData : public JsonObject {
         *this = data;
     }
     explicit FrameData(const JsonData& data, const FrameData* pPrevious) {
-        if (pPrevious != nullptr) {
+        auto reset = false;
+        JsonInterface::GetData(data, "reset", reset);
+
+        auto resetExceptFile = false;
+        JsonInterface::GetData(data, "resetExceptFile", resetExceptFile);
+
+        do {
+            if(pPrevious == nullptr) {
+	            break;
+            }
+
+            if(reset) {
+	            break;
+            }
+
+            if (resetExceptFile) {
+                this->file = pPrevious->file;
+
+                break;
+            }
+
             *this = *pPrevious;
-        }
+        } while (false);
 
         FrameData::Update(data);
     }
@@ -196,6 +268,10 @@ struct FrameData : public JsonObject {
         delete pRGBCoef;
         delete pScale;
         delete pHotSpot;
+    }
+
+    inline bool FrameValid() const {
+        return !file.empty();
     }
 
     inline void Update(const JsonData& data) override {
@@ -212,6 +288,9 @@ struct FrameData : public JsonObject {
         JsonInterface::GetData(data, "rgbCoef", pRGBCoef);
         JsonInterface::GetData(data, "scale", pScale);
         JsonInterface::GetData(data, "hotSpot", pHotSpot);
+
+        angle = Range(angle, Animation_MinAngle, Animation_MaxAngle);
+        alpha = Range(alpha, Animation_MinAlpha, Animation_MaxAlpha);
     }
 
     inline void Interpolation(double step, const FrameData* pPrevious, const FrameData* pNext) {
@@ -258,10 +337,12 @@ private:
 
 public:
     explicit Animation(const JsonData& data) {
+        // load info
         JsonInterface::GetData(data, "info", pAnimationInfo);
 
         repeatCount = pAnimationInfo->repeat;
 
+    	// load frames
         if(!JsonInterface::Contains(data,"frames")) {
             throw Animation_JsonParseError;
         }
@@ -282,12 +363,17 @@ public:
         	FrameData* pFrameData = nullptr;
             pFrameData = new FrameData(it, GetPrevious());
 
+            if (!pFrameData->FrameValid()) {
+                throw Animation_JsonParseError;
+            }
+
             pFrameData->frameID = frameID;
             frameID += pFrameData->pInterpolation->interval;
 
             pFrameDatas.emplace_back(pFrameData);
         }
 
+        // validate
         if(pFrameDatas.empty()) {
             throw Animation_JsonParseError;
         }
@@ -298,6 +384,11 @@ public:
             throw Animation_JsonParseError;
         }
 
+        pAnimationInfo->speed = Range(pAnimationInfo->speed, Animation_MinSpeed, Animation_MaxSpeed);
+        pAnimationInfo->backTo = Range(pAnimationInfo->backTo, 0, static_cast<int>(pFrameDatas.size() - 1));
+        pAnimationInfo->repeat = max(0, pAnimationInfo->repeat);
+
+        // init
         pPrevious = pFrameDatas[0];
         pNext = GetNext();
 
@@ -324,11 +415,19 @@ public:
         }
 
         if (pNext != nullptr) {
-            const auto progress = curFrame >= maxFrame ? curFrame - maxFrame : curFrame;
+            const auto pCurIP = pCurFrameData->pInterpolation;
+        	const auto progress = curFrame >= maxFrame ? curFrame - maxFrame : curFrame;
             const auto step = static_cast<double>(progress - pCurFrameData->frameID)
-                / (pCurFrameData->pInterpolation->interval);
+                / (pCurIP->interval);
 
-            pCurFrameData->Interpolation(step, pPrevious, pNext);
+            const auto easeStep = Easing::calculateEasingValue(pCurIP->type_ID,
+                pCurIP->func_a_ID, pCurIP->func_b_ID,
+                step,
+                Easing::EaseVars{ pCurIP->overshoot,
+                    pCurIP->amplitude,
+                    pCurIP->period });
+
+            pCurFrameData->Interpolation(easeStep, pPrevious, pNext);
 
             curFrame = (curFrame + 1) % (maxFrame + 1);
         }
@@ -336,5 +435,9 @@ public:
 
 	inline const FrameData* GetCurrentFrame() const {
         return pCurFrameData;
+    }
+
+    inline const AnimationInfo* GetAnimationInfo() const {
+        return pAnimationInfo;
     }
 };
