@@ -126,6 +126,10 @@
 #define	IDMN_ACTION_LA 			    25034
 #define	IDMN_ACTION_SA 			    25035
 
+#define	IDMN_ACTION_SASPEED 	    25036
+#define	IDMN_ACTION_PA 			    25037
+#define	IDMN_ACTION_RA 			    25038
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -185,6 +189,10 @@
 #define	M_ACTION_LA 			     5034
 #define	M_ACTION_SA 			     5035
 
+#define	M_ACTION_SASPEED 			 5036
+#define	M_ACTION_PA 			     5037
+#define	M_ACTION_RA 			     5038
+
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
 #define M_ACTION_FILENAME		     5502
@@ -234,6 +242,8 @@
 #define M_ACTION_COLOR               5531
 #define M_ACTION_ALPHA               5532
 
+#define M_ACTION_SPEED               5533
+
 //	Conditions
 //--------------------
 
@@ -249,6 +259,10 @@
 #define IDMN_CONDITION_CDT                  26003
 #define IDMN_CONDITION_LHI                  26004
 
+#define IDMN_CONDITION_OAF                  26005
+#define IDMN_CONDITION_IAP                  26006
+#define IDMN_CONDITION_IAPAUSED             26007
+
 // Condition strings
 #define M_CONDITION_OPLC                     6000
 #define M_CONDITION_OITRC                    6001
@@ -257,6 +271,10 @@
 
 #define M_CONDITION_CDT                      6003
 #define M_CONDITION_LHI                      6004
+
+#define M_CONDITION_OAF                      6005
+#define M_CONDITION_IAP                      6006
+#define M_CONDITION_IAPAUSED                 6007
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -310,6 +328,10 @@
 #define IDMN_EXPRESSION_GVRBMB      27024
 #define IDMN_EXPRESSION_GVRAMB      27025
 
+#define IDMN_EXPRESSION_GAN         27026
+#define IDMN_EXPRESSION_GAFID       27027
+#define IDMN_EXPRESSION_GAFINDEX    27028
+#define IDMN_EXPRESSION_GAS         27029
 
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
@@ -351,6 +373,11 @@
 #define M_EXPRESSION_GVRUMB          7023
 #define M_EXPRESSION_GVRBMB          7024
 #define M_EXPRESSION_GVRAMB          7025
+
+#define M_EXPRESSION_GAN             7026
+#define M_EXPRESSION_GAFID           7027
+#define M_EXPRESSION_GAFINDEX        7028
+#define M_EXPRESSION_GAS             7029
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500

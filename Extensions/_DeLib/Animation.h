@@ -194,8 +194,8 @@ struct FrameData : public JsonObject {
     struct HotSpot : public JsonObject {
         int x = 0;
         int y = 0;
-        std::wstring type = L"CUSTOM";
-        HotSpotPos typeID = HotSpotPos::CUSTOM;
+        std::wstring type = L"MM";
+        HotSpotPos typeID = HotSpotPos::MM;
 
         HotSpot() = default;
 
@@ -418,7 +418,7 @@ public:
         }
     }
         
-    inline void UpdateFrame() {
+    inline void UpdateFrame(const std::function<void()>& finishCallback = nullptr) {
         if (curFrame >= pCurFrameData->frameID + pCurFrameData->pInterpolation->interval) {
             if (pNext != nullptr) {
                 curIndex = static_cast<int>(static_cast<size_t>(curIndex + 1) % pFrameDatas.size());
@@ -444,7 +444,19 @@ public:
             pCurFrameData->Interpolation(easeStep, pPrevious, pNext);
 
             curFrame = (curFrame + 1) % (maxFrame + 1);
+        }else {
+            if (finishCallback != nullptr) {
+                finishCallback();
+            }
         }
+    }
+
+    inline int GetFrameID() const {
+        return curFrame;
+    }
+
+    inline int GetFrameIndex() const {
+        return curIndex;
     }
 
 	inline const FrameData* GetCurrentFrame() const {

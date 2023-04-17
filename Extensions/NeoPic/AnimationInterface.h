@@ -23,6 +23,10 @@ struct AnimationInterface {
 		StopAnimation();
 	}
 
+	inline bool AnimationValid() const {
+		return pA != nullptr;
+	}
+
 	inline void SetAnimationSource(const LPRDATA pLib, const std::wstring& basePath, const std::wstring& key) {
 		this->pLib = pLib;
 		this->basePath = basePath;
@@ -142,7 +146,9 @@ struct AnimationInterface {
 		updateHotSpot(pAI, pA->GetPreviousFrame());
 		updateHotSpot(pAI, pA->GetNextFrame());
 
-		pA->UpdateFrame();
+		pA->UpdateFrame([&]() {
+			CallEvent(On_AnimationFinished)
+		});
 		const auto pCurFrame = pA->GetCurrentFrame();
 
 		if (!pAI->updateCur) {

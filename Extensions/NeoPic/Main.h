@@ -14,7 +14,11 @@
 #define	CND_CONDITION_CDT			3
 #define	CND_CONDITION_LHI			4
 
-#define	CND_LAST					5
+#define	CND_CONDITION_OAF			5
+#define	CND_CONDITION_IAP			6
+#define	CND_CONDITION_IAPAUSED		7
+
+#define	CND_LAST					8
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -77,7 +81,11 @@
 #define	ACT_ACTION_LA				34
 #define	ACT_ACTION_SA				35
 
-#define	ACT_LAST					36
+#define	ACT_ACTION_SASPEED			36
+#define	ACT_ACTION_PA				37
+#define	ACT_ACTION_RA				38
+
+#define	ACT_LAST					39
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -122,7 +130,12 @@
 #define EXP_EXPRESSION_GVRBMB          	24
 #define EXP_EXPRESSION_GVRAMB          	25
 
-#define	EXP_LAST                    	26
+#define EXP_EXPRESSION_GAN          	26
+#define EXP_EXPRESSION_GAFID          	27
+#define EXP_EXPRESSION_GAFINDEX         28
+#define EXP_EXPRESSION_GAS              29
+
+#define	EXP_LAST                    	30
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -29,6 +29,11 @@ short conditionsInfos[]=
 		
 		IDMN_CONDITION_CDT, M_CONDITION_CDT, CND_CONDITION_CDT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_LHI, M_CONDITION_LHI, CND_CONDITION_LHI, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_ACTION_FILENAME,
+
+		IDMN_CONDITION_OAF, M_CONDITION_OAF, CND_CONDITION_OAF, 0, 0,
+		IDMN_CONDITION_IAP, M_CONDITION_IAP, CND_CONDITION_IAP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_IAPAUSED, M_CONDITION_IAPAUSED, CND_CONDITION_IAPAUSED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -94,6 +99,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SAS, M_ACTION_SAS,	ACT_ACTION_SAS,	0, 3, PARAM_OBJECT,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_OBJECT, M_ACTION_BASEPATH, M_ACTION_KEY,
 		IDMN_ACTION_LA, M_ACTION_LA, ACT_ACTION_LA,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
 		IDMN_ACTION_SA, M_ACTION_SA, ACT_ACTION_SA,	0, 0,
+		IDMN_ACTION_SASPEED, M_ACTION_SASPEED, ACT_ACTION_SASPEED,	0, 1, PARAM_EXPRESSION, M_ACTION_SPEED,
+		IDMN_ACTION_PA, M_ACTION_PA, ACT_ACTION_PA,	0, 0,
+		IDMN_ACTION_RA, M_ACTION_RA, ACT_ACTION_RA,	0, 0,
 
 		};
 
@@ -139,7 +147,12 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GVRUMB, M_EXPRESSION_GVRUMB, EXP_EXPRESSION_GVRUMB, 0, 0,
 		IDMN_EXPRESSION_GVRBMB, M_EXPRESSION_GVRBMB, EXP_EXPRESSION_GVRBMB, 0, 0,
 		IDMN_EXPRESSION_GVRAMB, M_EXPRESSION_GVRAMB, EXP_EXPRESSION_GVRAMB, 0, 0,
-		
+
+		IDMN_EXPRESSION_GAN, M_EXPRESSION_GAN, EXP_EXPRESSION_GAN, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GAFID, M_EXPRESSION_GAFID, EXP_EXPRESSION_GAFID, 0, 0,
+		IDMN_EXPRESSION_GAFINDEX, M_EXPRESSION_GAFINDEX, EXP_EXPRESSION_GAFINDEX, 0, 0,
+		IDMN_EXPRESSION_GAS, M_EXPRESSION_GAS, EXP_EXPRESSION_GAS, 0, 0,
+
 		};
 
 
@@ -197,6 +210,19 @@ long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
 	auto fullPath = GetFullPathNameStr(pFileName);
 
 	return rdPtr->isLib && rdPtr->pLib->find(fullPath) != rdPtr->pLib->end() ? true : false;
+}
+
+long WINAPI DLLExport OnAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
+}
+
+long WINAPI DLLExport IsAnimationPlaying(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pAI->pA != nullptr;
+}
+
+long WINAPI DLLExport IsAnimationPaused(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pAI->GetPauseState();
+
 }
 
 // ============================================================================
@@ -902,6 +928,14 @@ short WINAPI DLLExport SetAnimationSource(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
+short WINAPI DLLExport SetAnimationSpeed(LPRDATA rdPtr, long param1, long param2) {
+	auto speed = (int)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pAI->SetSpeed(speed);
+
+	return 0;
+}
+
 short WINAPI DLLExport LoadAnimation(LPRDATA rdPtr, long param1, long param2) {
 	auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -916,6 +950,19 @@ short WINAPI DLLExport StopAnimation(LPRDATA rdPtr, long param1, long param2) {
 
 	return 0;
 }
+
+short WINAPI DLLExport PauseAnimation(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pAI->PauseAnimation();
+
+	return 0;
+}
+
+short WINAPI DLLExport ResumeAnimation(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pAI->ResumeAnimation();
+
+	return 0;
+}
+
 
 // ============================================================================
 //
@@ -1095,7 +1142,9 @@ long WINAPI DLLExport GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
 #else
-	return -1;
+	GetEstimateMemUsage(rdPtr->pData);
+
+	return static_cast<long>(rdPtr->pData->estimateVRAMSizeMB);
 #endif	
 }
 
@@ -1119,6 +1168,32 @@ long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
 #endif
 }
 
+long WINAPI DLLExport GetAnimationName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pAI->AnimationValid()
+		? (long)rdPtr->pAI->pA->GetAnimationInfo()->name.c_str()
+		: (long)Empty_Str;
+}
+
+long WINAPI DLLExport GetAnimationFrameID(LPRDATA rdPtr, long param1) {
+	return rdPtr->pAI->AnimationValid()
+		? rdPtr->pAI->pA->GetFrameID()
+		: -1;
+}
+
+long WINAPI DLLExport GetAnimationFrameIndex(LPRDATA rdPtr, long param1) {
+	return rdPtr->pAI->AnimationValid()
+		? rdPtr->pAI->pA->GetFrameIndex()
+		: -1;
+}
+
+long WINAPI DLLExport GetAnimationSpeed(LPRDATA rdPtr, long param1) {
+	return rdPtr->pAI->GetSpeed();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1136,6 +1211,10 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			CurrentDisplayTransparent,
 			LibHasItem,
+			
+			OnAnimationFinished,
+			IsAnimationPlaying,
+			IsAnimationPaused,
 
 			0
 			};
@@ -1200,6 +1279,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetAnimationSource,
 			LoadAnimation,
 			StopAnimation,
+			SetAnimationSpeed,
+			PauseAnimation,
+			ResumeAnimation,
 
 			0
 			};
@@ -1245,6 +1327,11 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetVRAMUsageMB,
 			GetVRAMBudgetMB,
 			GetVRAMAvailableMB,
+
+			GetAnimationName,
+			GetAnimationFrameID,
+			GetAnimationFrameIndex,
+			GetAnimationSpeed,
 
 			0
 			};

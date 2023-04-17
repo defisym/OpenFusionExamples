@@ -1,8 +1,8 @@
 {
     "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
     "info": {
-        "name": "test",
-        "updateCur":true,
+        "name": "Ayumu",
+        // "updateCur":true,
         "reset": false,
         "loop": true,
         "repeat": 0,
@@ -11,41 +11,31 @@
     },
     "frames": [
         {
-            // "file": "A\\A1-惊讶.png",
+            "file": "Ayumu.png",
             "interpolation": {
                 "interval": 120,
                 "type": "easeOut",
                 "func_a": "bounce"
             },
             "hotSpot": {
-                "x": 50,
-                "y": 125,
                 "type": "LT"
             }
         },
         {
             "resetExceptFile": true,
-            // "file": "A\\A1-惊讶.png",
+            // "file": "Ayumu.png",
             "interpolation": {
                 "interval": 120
             },
             "hotSpot": {
-                "x": 443,
-                "y": 540,
-                "type":"RB"
-            }
-            // ,
-            // "rgbCoef": {
-            //     "r": 255,
-            //     "g": 0,
-            //     "b": 123
-            // }
-            // "alpha": 255
+                "type": "RB"
+            },
+            "alpha": 255,
             // "angle": 360,
-            // "scale":{
-            //     "x":5.0,
-            //     "y":5.0
-            // }
+            "scale": {
+                "x": 2.0,
+                "y": 2.0
+            }
         }
     ]
 }

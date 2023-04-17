@@ -228,7 +228,7 @@
                             "type": {
                                 "type": "string",
                                 "description": "types of hotSpot",
-                                "default": "CUSTOM",
+                                "default": "MM",
                                 "enum": [
                                     "LT",
                                     "LM",

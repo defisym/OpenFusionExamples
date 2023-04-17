@@ -1,5 +1,8 @@
 #pragma once
+
 #include <EffectEx.h>
+
+constexpr auto On_AnimationFinished = 5;
 
 struct Size {
 	int width;

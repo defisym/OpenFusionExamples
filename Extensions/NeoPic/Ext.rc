@@ -124,6 +124,13 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
         MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
+        MENUITEM SEPARATOR         
+        POPUP "Animation"
+        BEGIN
+            MENUITEM "On Animation Finished", IDMN_CONDITION_OAF
+            MENUITEM "Is Animation Playing", IDMN_CONDITION_IAP
+            MENUITEM "Is Animation Paused", IDMN_CONDITION_IAPAUSED
+        END
         MENUITEM SEPARATOR
     END    
 END
@@ -177,10 +184,14 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Animation"
         BEGIN
-            MENUITEM "Set Animation Source",       IDMN_ACTION_SAS
+            MENUITEM "Set Animation Source",        IDMN_ACTION_SAS
+            MENUITEM "Set Animation Speed",         IDMN_ACTION_SASPEED
             MENUITEM SEPARATOR
-            MENUITEM "Load Animation",       IDMN_ACTION_LA
-            MENUITEM "Stop Animation",       IDMN_ACTION_SA
+            MENUITEM "Load Animation",              IDMN_ACTION_LA
+            MENUITEM "Stop Animation",              IDMN_ACTION_SA
+            MENUITEM SEPARATOR
+            MENUITEM "Pause Animation",             IDMN_ACTION_PA
+            MENUITEM "Resume Animation",            IDMN_ACTION_RA            
         END
         MENUITEM SEPARATOR
         POPUP "Display"
@@ -270,7 +281,15 @@ BEGIN
         POPUP "Rotate"
         BEGIN
             MENUITEM "Get Angle", IDMN_EXPRESSION_GA
-        END       
+        END   
+        MENUITEM SEPARATOR         
+        POPUP "Animation"
+        BEGIN
+            MENUITEM "Get Animation Name",       IDMN_EXPRESSION_GAN
+            MENUITEM "Get Animation Frame ID",      IDMN_EXPRESSION_GAFID
+            MENUITEM "Get Animation Frame Index",      IDMN_EXPRESSION_GAFINDEX
+            MENUITEM "Get Animation Speed", IDMN_EXPRESSION_GAS
+        END    
         MENUITEM SEPARATOR        
         POPUP "Hibiscus AVG Engine"
         BEGIN 
@@ -469,6 +488,11 @@ BEGIN
     M_ACTION_SAS            "Set Animation Source to Lib %0, BasePath %1, Decrypt Key %2"
     M_ACTION_LA             "Load Animation %0, Decrypt Key %1"
     M_ACTION_SA             "Stop Animation"
+    M_ACTION_SASPEED 	    "Set Animation Speed to %0"
+    M_ACTION_PA 		    "Pause Animation"
+    M_ACTION_RA 		    "Resume Animation"
+
+    M_ACTION_SPEED 		    "Speed, 100 = full frame rate"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -480,6 +504,10 @@ BEGIN
     
     M_CONDITION_CDT       "%o Current Display Transparent"
     M_CONDITION_LHI       "%o Lib Has Item %0"
+
+    M_CONDITION_OAF       "%o On Animation Finished"
+    M_CONDITION_IAP       "%o Is Animation Playing"
+    M_CONDITION_IAPAUSED  "%o Is Animation Paused"
 
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"
@@ -529,6 +557,11 @@ BEGIN
     M_EXPRESSION_GVRUMB            "GetVRAMUsageMB("
     M_EXPRESSION_GVRBMB            "GetVRAMBudgetMB("
     M_EXPRESSION_GVRAMB            "GetVRAMAvailableMB("
+    
+    M_EXPRESSION_GAN               "GetAName$("
+    M_EXPRESSION_GAFID             "GetAFID("
+    M_EXPRESSION_GAFINDEX          "GetAFIndex("
+    M_EXPRESSION_GAS               "GetASpeed("
 
 END
 
