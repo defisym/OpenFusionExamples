@@ -23,7 +23,9 @@ constexpr auto Animation_DefaultCoef = 16777215;
 
 struct AnimationInfo: public JsonObject {
     std::wstring name;
-    bool reset = false;
+    bool updateCur = false;
+	bool reset = false;
+
     int speed = 50;
     bool loop = true;
     int repeat = 0;
@@ -39,6 +41,7 @@ struct AnimationInfo: public JsonObject {
         }
 
         // general
+        JsonInterface::GetData(data, "updateCur", updateCur);
         JsonInterface::GetData(data, "reset", reset);
         JsonInterface::GetData(data, "speed", speed);
         JsonInterface::GetData(data, "loop", loop);
@@ -378,7 +381,7 @@ public:
         	FrameData* pFrameData = nullptr;
             pFrameData = new FrameData(it, GetPrevious());
 
-            if (!pFrameData->FrameValid()) {
+            if (!pAnimationInfo->updateCur && !pFrameData->FrameValid()) {
                 throw Animation_JsonParseError;
             }
 
@@ -394,10 +397,6 @@ public:
         }
 
         pCurFrameData = new FrameData(*pFrameDatas.front());
-
-        if (pCurFrameData->file.empty()) {
-            throw Animation_JsonParseError;
-        }
 
         pAnimationInfo->speed = Range(pAnimationInfo->speed, Animation_MinSpeed, Animation_MaxSpeed);
         pAnimationInfo->backTo = Range(pAnimationInfo->backTo, 0, static_cast<int>(pFrameDatas.size() - 1));

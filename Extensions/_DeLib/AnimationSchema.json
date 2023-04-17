@@ -19,6 +19,11 @@
                     "type": "string",
                     "description": "name of the animation"
                 },
+                "updateCur":{
+                    "type": "boolean",
+                    "description": "update current image and doesn't load new ones, frame's file prop is ignored",
+                    "default": false
+                },
                 "reset": {
                     "type": "boolean",
                     "description": "reset to default if a property didn't set when goto next frame",

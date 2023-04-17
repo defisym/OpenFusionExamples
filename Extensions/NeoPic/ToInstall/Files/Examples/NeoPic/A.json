@@ -2,6 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
     "info": {
         "name": "test",
+        "updateCur":true,
         "reset": false,
         "loop": true,
         "repeat": 0,
@@ -10,7 +11,7 @@
     },
     "frames": [
         {
-            "file": "A\\A1-惊讶.png",
+            // "file": "A\\A1-惊讶.png",
             "interpolation": {
                 "interval": 120,
                 "type": "easeOut",

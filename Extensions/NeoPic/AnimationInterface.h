@@ -100,40 +100,56 @@ struct AnimationInterface {
 
 		speedAccumulate -= 1.0;
 		
-		auto updateHotSpot = [&] (const FrameData* pFrameData) {
-			if(pFrameData==nullptr) {
+		auto updateHotSpot = [&] (const AnimationInfo* pAnimationInfo, const FrameData* pFrameData) {
+			auto updateBySurface = [&] (const LPSURFACE pSf) {
+				if (pSf == nullptr) {
+					return;
+				}
+
+				::UpdateHotSpot(pFrameData->pHotSpot->typeID,
+					pSf->GetWidth(), pSf->GetHeight(),
+					pFrameData->pHotSpot->x, pFrameData->pHotSpot->y);
+
+				pFrameData->pHotSpot->typeID = HotSpotPos::CUSTOM;
+			};
+
+			if (pFrameData == nullptr) {
 				return;
 			}
 
-			if(pFrameData->pHotSpot->typeID == HotSpotPos::CUSTOM) {
+			if (pFrameData->pHotSpot->typeID == HotSpotPos::CUSTOM) {
 				return;
 			}
 
-			const auto it = _LoadLib(rdPtr, pLib,
-				(basePath + pFrameData->file).c_str(), key.c_str());
+			auto pSf = rdPtr->src;
 
-			if (it == pLib->pLib->end()) {
-				return;
+			if (!pAnimationInfo->updateCur) {
+				const auto it = _LoadLib(rdPtr, pLib,
+					(basePath + pFrameData->file).c_str(), key.c_str());
+
+				if (it == pLib->pLib->end()) {
+					return;
+				}
+
+				pSf = it->second.pSf;
 			}
 
-			const auto pSf = it->second.pSf;
-
-			::UpdateHotSpot(pFrameData->pHotSpot->typeID,
-				pSf->GetWidth(), pSf->GetHeight(),
-				pFrameData->pHotSpot->x, pFrameData->pHotSpot->y);
-
-			pFrameData->pHotSpot->typeID = HotSpotPos::CUSTOM;
+			updateBySurface(pSf);
 		};
 
-		updateHotSpot(pA->GetPreviousFrame());
-		updateHotSpot(pA->GetNextFrame());
+		const auto pAI = pA->GetAnimationInfo();
+
+		updateHotSpot(pAI, pA->GetPreviousFrame());
+		updateHotSpot(pAI, pA->GetNextFrame());
 
 		pA->UpdateFrame();
 		const auto pCurFrame = pA->GetCurrentFrame();
 
-		const auto curFile = basePath + pCurFrame->file;
-		if (*rdPtr->FilePath != curFile) {
-			LoadFromLib(rdPtr, reinterpret_cast<LPRO>(pLib), curFile.c_str(), key.c_str());
+		if (!pAI->updateCur) {
+			const auto curFile = basePath + pCurFrame->file;
+			if (*rdPtr->FilePath != curFile) {
+				LoadFromLib(rdPtr, reinterpret_cast<LPRO>(pLib), curFile.c_str(), key.c_str());
+			}
 		}
 
 		Rotate(rdPtr, pCurFrame->angle);
