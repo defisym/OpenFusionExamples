@@ -19,6 +19,7 @@ constexpr auto Animation_MaxAlpha = 255;
 
 constexpr auto Animation_MinColor = 0;
 constexpr auto Animation_MaxColor = 255;
+constexpr auto Animation_DefaultCoef = 16777215;
 
 struct AnimationInfo: public JsonObject {
     std::wstring name;
@@ -107,7 +108,7 @@ struct FrameData : public JsonObject {
         int g = 255;
         int b = 255;
 
-        DWORD rgbCoef = EffectUtilities::GetRGBCoef(255, 255, 255);
+        DWORD rgbCoef = Animation_DefaultCoef;
 
         RGBCoef() = default;
 
@@ -141,6 +142,20 @@ struct FrameData : public JsonObject {
             rgbCoef = EffectUtilities::GetRGBCoef(static_cast<UCHAR>(r),
                static_cast<UCHAR>(g),
                static_cast<UCHAR>(b));
+        }
+
+        inline DWORD MulRGBCoef(DWORD dwRGB) const {
+            UCHAR R = static_cast<UCHAR>((dwRGB & 0xFF0000) >> 16);
+            UCHAR G = static_cast<UCHAR>((dwRGB & 0xFF00) >> 8);
+            UCHAR B = static_cast<UCHAR>(dwRGB & 0xFF);
+
+            auto GetNew = [] (UCHAR o, UCHAR n) {
+                return static_cast<UCHAR>(o * (n / static_cast<double>(Animation_MaxColor)));
+            };
+
+            return EffectUtilities::GetRGBCoef(GetNew(static_cast<UCHAR>(r), R),
+                GetNew(static_cast<UCHAR>(g), G),
+                GetNew(static_cast<UCHAR>(b), B));
         }
     };
 
@@ -435,6 +450,14 @@ public:
 
 	inline const FrameData* GetCurrentFrame() const {
         return pCurFrameData;
+    }
+
+    inline const FrameData* GetPreviousFrame() const {
+        return pPrevious;
+    }
+
+    inline const FrameData* GetNextFrame() const {
+        return pNext;
     }
 
     inline const AnimationInfo* GetAnimationInfo() const {

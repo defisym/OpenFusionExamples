@@ -2,11 +2,11 @@
     "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
     "info": {
         "name": "test",
-        "reset":false,
+        "reset": false,
         "loop": true,
         "repeat": 0,
         "backTo": 0,
-        "speed": 50
+        "speed": 100
     },
     "frames": [
         {
@@ -16,24 +16,30 @@
                 "type": "easeOut",
                 "func_a": "bounce"
             },
-            "hotSpot":{
-                "x":50,
-                "y":125
-                // "type": "LT"
+            "hotSpot": {
+                "x": 50,
+                "y": 125,
+                "type": "LT"
             }
         },
         {
-            "resetExceptFile":true,
+            "resetExceptFile": true,
             // "file": "A\\A1-惊讶.png",
             "interpolation": {
                 "interval": 120
             },
-            "hotSpot":{
-                "x":443,
-                "y":540
-                // "type": "MM"
-            },
-            "alpha": 255
+            "hotSpot": {
+                "x": 443,
+                "y": 540,
+                "type":"RB"
+            }
+            // ,
+            // "rgbCoef": {
+            //     "r": 255,
+            //     "g": 0,
+            //     "b": 123
+            // }
+            // "alpha": 255
             // "angle": 360,
             // "scale":{
             //     "x":5.0,

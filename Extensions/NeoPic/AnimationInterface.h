@@ -90,14 +90,43 @@ struct AnimationInterface {
 			return;
 		}
 
-		const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed) / (100.0 * 100.0);
+		const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed)
+			/ static_cast<double>(Animation_MaxSpeed * Animation_MaxSpeed);
 		speedAccumulate += correctedSpeed;
 
-		if(speedAccumulate<1.0) {
+		if (speedAccumulate < 1.0) {
 			return;
 		}
 
 		speedAccumulate -= 1.0;
+		
+		auto updateHotSpot = [&] (const FrameData* pFrameData) {
+			if(pFrameData==nullptr) {
+				return;
+			}
+
+			if(pFrameData->pHotSpot->typeID == HotSpotPos::CUSTOM) {
+				return;
+			}
+
+			const auto it = _LoadLib(rdPtr, pLib,
+				(basePath + pFrameData->file).c_str(), key.c_str());
+
+			if (it == pLib->pLib->end()) {
+				return;
+			}
+
+			const auto pSf = it->second.pSf;
+
+			::UpdateHotSpot(pFrameData->pHotSpot->typeID,
+				pSf->GetWidth(), pSf->GetHeight(),
+				pFrameData->pHotSpot->x, pFrameData->pHotSpot->y);
+
+			pFrameData->pHotSpot->typeID = HotSpotPos::CUSTOM;
+		};
+
+		updateHotSpot(pA->GetPreviousFrame());
+		updateHotSpot(pA->GetNextFrame());
 
 		pA->UpdateFrame();
 		const auto pCurFrame = pA->GetCurrentFrame();
@@ -107,14 +136,17 @@ struct AnimationInterface {
 			LoadFromLib(rdPtr, reinterpret_cast<LPRO>(pLib), curFile.c_str(), key.c_str());
 		}
 
-		//TODO hotspot, RGB
 		Rotate(rdPtr, pCurFrame->angle);
-		EffectUtilities::SetAlpha(reinterpret_cast<LPRO>(rdPtr), static_cast<UCHAR>(pCurFrame->alpha));
+		EffectUtilities::SetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam,
+			static_cast<UCHAR>(pCurFrame->alpha));
 
-		//EffectUtilities::SetRGBCoef(reinterpret_cast<LPRO>(rdPtr), pCurFrame->pRGBCoef->rgbCoef);
-		Zoom(rdPtr, static_cast<float>(pCurFrame->pScale->x), static_cast<float>(pCurFrame->pScale->y));
-		//TODO type doesn't work
-		//UpdateHotSpot(rdPtr, pCurFrame->pHotSpot->typeID, pCurFrame->pHotSpot->x, pCurFrame->pHotSpot->y);
+		EffectUtilities::SetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam,
+			pCurFrame->pRGBCoef->rgbCoef);
+		Zoom(rdPtr, static_cast<float>(pCurFrame->pScale->x), static_cast<float>(pCurFrame->pScale->y));		
+		UpdateHotSpot(rdPtr, 
+			//pCurFrame->pHotSpot->typeID, 
+			HotSpotPos::CUSTOM,
+			pCurFrame->pHotSpot->x, pCurFrame->pHotSpot->y);
 	}
 
 	inline bool GetPauseState() const {
@@ -134,6 +166,6 @@ struct AnimationInterface {
 	}
 
 	inline void SetSpeed(const int speed) {
-		this->speed = speed;
+		this->speed = Range(speed, Animation_MinSpeed, Animation_MaxSpeed);
 	}
 };
