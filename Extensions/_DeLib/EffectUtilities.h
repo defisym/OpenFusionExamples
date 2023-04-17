@@ -298,8 +298,9 @@ public:
 		return true;
 	}
 
+	// for active object only, other objects need to call low level function
 	inline static bool ModifSpriteEffect(LPRO pObject
-		,std::function<bool(DWORD& effect, LPARAM& effectParam)> modifier) {
+		, const std::function<bool(DWORD& effect, LPARAM& effectParam)>& modifier) {
 		if (!(pObject->roHo.hoOEFlags & OEFLAG_SPRITES)) {
 			return false;
 		}
@@ -744,7 +745,7 @@ public:
 	//	return pParam;	
 	//	});
 
-	inline void UpdateDefaultParam(const std::wstring& effectName, ParamCallBack callBack) {
+	inline void UpdateDefaultParam(const std::wstring& effectName, const ParamCallBack& callBack) {
 		auto it = GetEffectData(effectName);
 
 		if (it == effectData.end()) {
@@ -791,7 +792,7 @@ public:
 		}
 	}
 
-	inline void SetDefaultParam(CEffectEx* pEffect, EffectIt it) {
+	inline void SetDefaultParam(CEffectEx* pEffect, const EffectIt& it) {
 		if (it == effectData.end()) {
 			return;
 		}
@@ -887,7 +888,7 @@ public:
 			break;
 		}
 		default: {
-			effect |= BOP_RGBAFILTER;
+			//effect |= BOP_RGBAFILTER;
 
 			if (effect & BOP_RGBAFILTER) {
 				// init
@@ -896,6 +897,7 @@ public:
 				}
 
 				auto dwRGB = (DWORD)effectParam & 0x00FFFFFF;
+				//auto oldAlpha = GetAlpha(effect, effectParam);
 
 				auto newDwRGBA = ((255 - alpha) << 24) | dwRGB;
 
@@ -939,14 +941,14 @@ public:
 			auto pEffect = GetEffect(effect, effectParam);
 
 			if (pEffect != nullptr) {
-				return pEffect->GetRGBA() | 0x00FFFFFF;
+				return pEffect->GetRGBA() & 0x00FFFFFF;
 			}
 
 			break;
 		}
 		default: {
 			if (effect & BOP_RGBAFILTER) {
-				return (DWORD)effectParam | 0x00FFFFFF;
+				return (DWORD)effectParam & 0x00FFFFFF;
 			}
 
 			break;
@@ -990,7 +992,7 @@ public:
 			break;
 		}
 		default: {
-			effect |= BOP_RGBAFILTER;
+			//effect |= BOP_RGBAFILTER;
 
 			if (effect & BOP_RGBAFILTER) {
 				// init
