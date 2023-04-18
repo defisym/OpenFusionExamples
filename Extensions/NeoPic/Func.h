@@ -8,8 +8,6 @@
 
 inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X = 0, int Y = 0);
 
-inline void GetTransformedSize(int& width, int& height, ZoomScale Scale = { 1.0,1.0 }, int Angle = 0, ATArray AT = { 1,0,0,1 });
-
 inline void GetFileName(LPRDATA rdPtr);
 
 inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit);
@@ -72,7 +70,6 @@ inline bool UpdateShaderUsage(SurfaceLibValue* pData) {
 
 	return pData->bUsedInShader;
 }
-
 inline void UpdateShaderUsage(SurfaceLib* pLib) {
 	for (auto& it : *pLib) {
 		UpdateShaderUsage(&it.second);
@@ -103,31 +100,10 @@ inline void ReleaseNonFromLib(LPRDATA rdPtr) {
 
 // Create new surface according to HWA
 inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
-	return HWA ? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE) : CreateSurface(32, 4, 4);
+	return HWA
+		? CreateHWASurface(rdPtr, 32, 4, 4, ST_HWA_ROMTEXTURE)
+		: CreateSurface(32, 4, 4);
 }
-
-inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
-	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
-}
-
-//inline void ConvertHWA(LPRDATA rdPtr) {
-//	LPSURFACE srchwa = ConvertHWATexture(rdPtr, rdPtr->src);
-//	LPSURFACE imghwa = ConvertHWATarget(rdPtr, rdPtr->img);
-//
-//	if (rdPtr->src != srchwa) {
-//		if (!rdPtr->fromLib) {
-//			ReleaseNonFromLib(rdPtr);
-//		}
-//		rdPtr->fromLib = false;
-//
-//		rdPtr->src = srchwa;
-//	}
-//
-//	if (rdPtr->img != imghwa) {
-//		delete rdPtr->img;
-//		rdPtr->img = imghwa;
-//	}
-//}
 
 inline void UpdateHoImgInfo(LPRDATA rdPtr) {
 	UpdateHoImgInfo(rdPtr, rdPtr->src
@@ -182,7 +158,6 @@ inline void UpdateHotSpot(LPRDATA rdPtr, int X, int Y) {
 	rdPtr->hotSpot.x = X;
 	rdPtr->hotSpot.y = Y;
 }
-
 inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {	
 	rdPtr->hotSpotPos = Type;
 
@@ -215,7 +190,6 @@ inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = fal
 
 	ReDisplay(rdPtr);
 }
-
 inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 	if (rdPtr->angle == Angle) {
 		return;
@@ -225,25 +199,10 @@ inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 
 	ReDisplay(rdPtr);
 }
-
 inline auto Offset(LPSURFACE Src, LPSURFACE Des, const OffsetCoef& O) {	
 	return Offset(Src, Des, O.XOffset, O.YOffset, O.Wrap);
 }
-
-inline void GetTransformedSize(int& width, int& height, ZoomScale Scale, int Angle, ATArray AT) {
-	//Affine Transform
-
-
-	//Zoom
-	width *= (int)abs(Scale.XScale);
-	height *= (int)abs(Scale.YScale);
-
-	//Rotate
-	cSurface Rotate;
-	Rotate.GetSizeOfRotatedRect(&width, &height, (float)Angle);
-}
-
-inline void AffineTransformation(LPSURFACE& Src, const ATArray& A, int divide) {
+inline void AffineTransformation(LPSURFACE& Src, const ATArray& A, int divide = -1) {
 	AffineTransformation(Src, A.a11, A.a12, A.a21, A.a22, divide);
 }
 
@@ -269,7 +228,7 @@ inline std::wstring GetFileHash(LPCWSTR filePath) {
 
 	return std::wstring(ret == nullptr ? L"" : ret);
 }
-inline std::wstring GetFileHash(std::wstring& filePath) {
+inline std::wstring GetFileHash(const std::wstring& filePath) {
 	return GetFileHash(filePath.c_str());
 }
 
@@ -739,7 +698,7 @@ inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList
 // do not ref PreloadList as this function is for multithread
 using LoadLibCallBack = std::function<void(SurfaceLib*)>;
 
-inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::wstring BasePath, const std::wstring& Key, const LoadLibCallBack& callBack) {
+inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, const std::wstring& BasePath, const std::wstring& Key, const LoadLibCallBack& callBack) {
 	if (PreloadList.empty()) {
 		callBack(nullptr);
 		return 0;
@@ -784,7 +743,7 @@ inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::
 	return 0;
 }
 
-inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, std::wstring BasePath, std::wstring Key) {
+inline void CreatePreloadProcess(LPRDATA rdPtr, FileList* pList, bool fullPath, const std::wstring& BasePath, const std::wstring& Key) {
 	// filter duplicate items
 	GetSingleList(pList);
 

@@ -1256,6 +1256,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 }
 
 //Affine transformation
+[[deprecated(L"not implemented")]]
 #ifdef _NO_REF
 inline void AffineTransformation(const LPSURFACE Src, double a11, double a12, double a21, double a22, int divide) {
 #else

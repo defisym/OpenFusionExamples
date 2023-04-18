@@ -612,3 +612,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 }
 
 #endif
+
+inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
+	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
+}

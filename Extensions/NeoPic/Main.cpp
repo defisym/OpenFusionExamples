@@ -617,7 +617,9 @@ short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		rdPtr->AT = A;		
+		rdPtr->AT = A;
+
+		AffineTransformation(rdPtr->src, A);
 		ReDisplay(rdPtr);
 	}
 
