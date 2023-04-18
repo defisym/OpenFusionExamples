@@ -1090,99 +1090,63 @@ inline auto GetSurface(LPRDATA rdPtr, int width, int height) {
 		return CreateSurface(rdPtr->src->GetDepth(), width, height);
 	}
 }
-[[deprecated]]
-inline void GetTransfromedBitmap(LPRDATA rdPtr, const std::function<void(LPSURFACE)>& callback) {
-	// decl
-	LPSURFACE pDisplay = rdPtr->src;
 
-	std::unique_ptr<cSurface> pOffset = nullptr;
-	LPSURFACE pTransform = nullptr;
-	LPSURFACE pTransformBitmap = nullptr;
-
-	bool blitResult = false;
-
+inline void GetTransfromedBitmap(LPRDATA rdPtr, LPSURFACE pSrc, 
+	const std::function<void(LPSURFACE)>& callback) {
 	// get size
 	auto width = GetCurrentWidth(rdPtr);
 	auto height = GetCurrentHeight(rdPtr);
 
-	rdPtr->src->GetSizeOfRotatedRect(&width, &height, (float)GetAngle(rdPtr));
+	cSurface::GetSizeOfRotatedRect(&width, &height, static_cast<float>(GetAngle(rdPtr)));
 
-	if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
-		pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
-		Offset(rdPtr->src, pOffset.get(), rdPtr->offset);
-
-		pDisplay = pOffset.get();
-		
-#ifdef _DEBUG
-		_SavetoClipBoard(pOffset.get(), false);
-#endif
-	}
-
-	pTransform = GetSurface(rdPtr, width, height);
-
-	pTransformBitmap = CreateSurface(rdPtr->src->GetDepth(), max(width, rdPtr->src->GetWidth())
-		, max(height, rdPtr->src->GetHeight()));
-
-	DWORD flags = 0;
-
-	if (rdPtr->stretchQuality) {
-		flags |= BLTF_ANTIA;
-	}
-
-	POINT hotSpot = { 0,0 };
+	const auto pRTT = GetSurface(rdPtr, width, height);
+	pRTT->CreateAlpha();
 	
-	auto ds = pDisplay->GetRenderTargetSurface();
-	pTransform->BeginRendering(TRUE, 0);
+	ProcessHWA(rdPtr, pSrc, [&] (const LPSURFACE pHWA) {
+		pRTT->BeginRendering(TRUE, 0);
+		const auto ds = pHWA->GetRenderTargetSurface();
 
-	blitResult = ds->BlitEx(*pTransform
-		, rdPtr->hotSpot.x * abs(rdPtr->zoomScale.XScale), rdPtr->hotSpot.y * abs(rdPtr->zoomScale.YScale)
-		, abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0
-		, rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle
-		, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE
-		, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK)
-		, rdPtr->rs.rsEffectParam, flags);
-	
-	pTransform->EndRendering();
-	pDisplay->ReleaseRenderTargetSurface(ds);
+		// ignoreShader
+		//const auto bo = BOP_COPY;
+		//const auto param = 0;
+		// keepShader
+		const auto bo = static_cast<BlitOp>(rdPtr->rs.rsEffect & EFFECT_MASK);
+		const auto param = rdPtr->rs.rsEffectParam;
+		DWORD flags = 0;
 
-#ifdef _DEBUG	
-	if (pOffset.get() != nullptr) {
-		auto blitExTest = GetSurface(rdPtr, width, height);
-		blitResult = pDisplay->BlitEx(*blitExTest
-			, rdPtr->hotSpot.x * abs(rdPtr->zoomScale.XScale), rdPtr->hotSpot.y * abs(rdPtr->zoomScale.YScale)
-			, abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0
-			, rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle
-			, (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE
-			, BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK)
-			, rdPtr->rs.rsEffectParam, flags);
+		if (rdPtr->stretchQuality) {
+			flags |= STRF_RESAMPLE | STRF_COPYALPHA;
+		}
 
-		_SavetoClipBoard(pDisplay, false);
-		_SavetoClipBoard(blitExTest, false);		
+		const auto xScale = abs(rdPtr->zoomScale.XScale);
+		const auto yScale = abs(rdPtr->zoomScale.YScale);
 
-		delete blitExTest;
-	}
-#endif
+		auto x = static_cast<int>(static_cast<float>(rdPtr->hotSpot.x) * xScale);
+		auto y = static_cast<int>(static_cast<float>(rdPtr->hotSpot.y) * yScale);
 
-	int desX = int(rdPtr->hotSpot.x * (1 - abs(rdPtr->zoomScale.XScale)));
-	int desY = int(rdPtr->hotSpot.y * (1 - abs(rdPtr->zoomScale.YScale)));
-	
-	auto ps = pTransform->GetRenderTargetSurface();	
+		RotatePoint(rdPtr->angle, &x, &y,
+			static_cast<int>(static_cast<float>(pHWA->GetWidth()) * xScale),
+			static_cast<int>(static_cast<float>(pHWA->GetHeight()) * yScale));
 
-	blitResult = ps->Blit(*pTransformBitmap, desX, desY);
+		const auto blitResult = pHWA->BlitEx(*pRTT
+			, static_cast<float>(x), static_cast<float>(y)
+			, xScale, yScale
+			, 0, 0, pHWA->GetWidth(), pHWA->GetHeight()
+			, &rdPtr->hotSpot, static_cast<float>(rdPtr->angle)
+			, BMODE_TRANSP
+			, bo, param, flags);
 
-	pTransform->ReleaseRenderTargetSurface(ps);
-	
-	callback(pTransformBitmap);
+		pHWA->ReleaseRenderTargetSurface(ds);
+		pRTT->EndRendering();
 
-#ifdef _DEBUG	
-	_SavetoClipBoard(rdPtr->src, false);
-	_SavetoClipBoard(pTransform, false);
-	_SavetoClipBoard(pTransformBitmap, false);
-#endif
+		if(!blitResult) {
+			return;
+		}
 
-	// delete
-	delete pTransform;
-	delete pTransformBitmap;
+		ProcessBitmap(rdPtr, pRTT, callback);
+		});
+
+	delete pRTT;
 }
 
 inline void HandleFlip(LPRDATA rdPtr

@@ -519,8 +519,8 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 		const auto pRTT = GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
 		pRTT->CreateAlpha();
 
-		ProcessHWA(rdPtr, rdPtr->src, [&] (const LPSURFACE pBitmap) {
-			Offset(rdPtr->src, pRTT, rdPtr->offset);
+		ProcessHWA(rdPtr, rdPtr->src, [&] (const LPSURFACE pHWA) {
+			Offset(pHWA, pRTT, rdPtr->offset);
 			});
 
 		if (rdPtr->fromLib) {
@@ -538,9 +538,9 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 		// ConvertToHWATexture can't handle HWA conversions
 		rdPtr->src = ConvertBitmap(pRTT);
 
-		if(rdPtr->pData->bPreMulAlpha) {
-			rdPtr->src->PremultiplyAlpha();
-		}
+		//if(rdPtr->pData->bPreMulAlpha) {
+		//	rdPtr->src->PremultiplyAlpha();
+		//}
 
 		if (rdPtr->HWA) {
 			ConvertToHWATexture(rdPtr, rdPtr->src);
@@ -556,13 +556,23 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
-	int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
+	const int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
 	
 	if (CanDisplay(rdPtr)) {
-		GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
-			AddBackdrop(rdPtr, pCollideBitmap,
-				rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - rdPtr->hotSpot.x,
-				rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - rdPtr->hotSpot.y,
+		GetTransfromedBitmap(rdPtr,rdPtr->src, [&](LPSURFACE pBitmap) {
+			const auto xScale = abs(rdPtr->zoomScale.XScale);
+			const auto yScale = abs(rdPtr->zoomScale.YScale);
+
+			auto x = static_cast<int>(static_cast<float>(rdPtr->hotSpot.x) * xScale);
+			auto y = static_cast<int>(static_cast<float>(rdPtr->hotSpot.y) * yScale);
+
+			RotatePoint(rdPtr->angle, &x, &y,
+				static_cast<int>(static_cast<float>(rdPtr->src->GetWidth()) * xScale),
+				static_cast<int>(static_cast<float>(rdPtr->src->GetHeight()) * yScale));
+
+			AddBackdrop(rdPtr, pBitmap,
+				rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX - x,
+				rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY - y,
 				rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, nObstacleType, rdPtr->rs.rsLayer);
 			});
 	}

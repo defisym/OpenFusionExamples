@@ -612,7 +612,7 @@ inline bool Offset(LPSURFACE Src, LPSURFACE Des,
 		1.0, 1.0, 0, 0,
 		width, height, &hotSpot, (float)0,
 		BMODE_TRANSP,
-		BOP_COPY);
+		BOP_COPY,0, STRF_RESAMPLE | STRF_COPYALPHA);
 	};
 
 	std::function<void(int, int)> Blit = nullptr;
@@ -931,7 +931,7 @@ inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void
 }
 
 // create a temp HWA pSf if needed
-inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
+inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pHWA)>& processor) {
 	auto bHWA = IsHWA(pSf);
 	auto pHWA = pSf;
 
