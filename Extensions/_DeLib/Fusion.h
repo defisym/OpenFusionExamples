@@ -585,80 +585,60 @@ inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
 	return;
 }
 
-inline LPSURFACE Offset(LPSURFACE Src, int X, int Y, bool Wrap = true) {
-	LPSURFACE Des = CreateSurface(24, Src->GetWidth(), Src->GetHeight());
-	
-	if (X == 0 && Y == 0) {
-		Des->Clone(*Src);
-		return Des;
-	}
-
-	//Src->Blit(*Des, X, Y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-	Src->Blit(*Des, X, Y);
-
-	if (Wrap) {
-		int XWrap = X > 0 ? X - Src->GetWidth() : X + Src->GetWidth();
-		int YWrap = Y > 0 ? Y - Src->GetHeight() : Y + Src->GetHeight();
-
-		//Src->Blit(*Des, X, YWrap, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-		//Src->Blit(*Des, XWrap, Y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-		//Src->Blit(*Des, XWrap, YWrap, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-
-		Src->Blit(*Des, X, YWrap);
-		Src->Blit(*Des, XWrap, Y);
-		Src->Blit(*Des, XWrap, YWrap);
-	}
-
-	return Des;
-}
-
-inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = true) {
+inline bool Offset(LPSURFACE Src, LPSURFACE Des,
+	int X, int Y, bool Wrap = true) {
 	if (X == 0 && Y == 0) {
 		return false;
 	}
 
-	Des->BeginRendering(TRUE, 0);
+	const auto bHWA = IsHWA(Src);
+
+	if (bHWA) {
+		Des->BeginRendering(TRUE, 0);
+	}
 
 	POINT hotSpot = { 0,0 };
 	
-	auto width = Src->GetWidth();
-	auto height = Src->GetHeight();
-	
-	Src->BlitEx(*Des, (float)X, (float)Y,
+	const auto width = Src->GetWidth();
+	const auto height = Src->GetHeight();
+
+	auto BlitBitmap = [&] (int x, int y) {
+		//Src->Blit(*Des, x, y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+		Src->Blit(*Des, x, y, BMODE_TRANSP, BOP_COPY);
+	};
+
+	auto BlitHWA = [&] (int x, int y) {
+		Src->BlitEx(*Des, (float)x, (float)y,
 		1.0, 1.0, 0, 0,
 		width, height, &hotSpot, (float)0,
-		BMODE_OPAQUE,
+		BMODE_TRANSP,
 		BOP_COPY);
+	};
 
-	//Src->Blit(*Des, X, Y);
+	std::function<void(int, int)> Blit = nullptr;
 
-	if (Wrap) {
-		int XWrap = X > 0 ? X - width : X + width;
-		int YWrap = Y > 0 ? Y - height : Y + height;
-
-		Src->BlitEx(*Des, (float)X, (float)YWrap,
-			1.0, 1.0, 0, 0,
-			width, height, &hotSpot, (float)0,
-			BMODE_OPAQUE,
-			BOP_COPY);
-		Src->BlitEx(*Des, (float)XWrap, (float)Y,
-			1.0, 1.0, 0, 0,
-			width, height, &hotSpot, (float)0,
-			BMODE_OPAQUE,
-			BOP_COPY);
-		Src->BlitEx(*Des, (float)XWrap, (float)YWrap,
-			1.0, 1.0, 0, 0,
-			width, height, &hotSpot, (float)0,
-			BMODE_OPAQUE,
-			BOP_COPY);
-
-		//Src->Blit(*Des, X, YWrap);
-		//Src->Blit(*Des, XWrap, Y);
-		//Src->Blit(*Des, XWrap, YWrap);
+	if (bHWA) {
+		Blit = BlitHWA;
+	}
+	else {
+		Blit = BlitBitmap;
 	}
 
-	Des->EndRendering();
+	Blit(X, Y);
 
+	if (Wrap) {
+		const int XWrap = X > 0 ? X - width : X + width;
+		const int YWrap = Y > 0 ? Y - height : Y + height;
+
+		Blit(X, YWrap);
+		Blit(XWrap, Y);
+		Blit(XWrap, YWrap);
+	}
+
+	if (bHWA) {
+		Des->EndRendering();
+	}
+	
 	return true;
 }
 
@@ -948,6 +928,22 @@ inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFAC
 
 inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
 	ProcessBitmap(pSf, processor);
+}
+
+// create a temp HWA pSf if needed
+inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
+	auto bHWA = IsHWA(pSf);
+	auto pHWA = pSf;
+
+	if (!bHWA) {
+		pHWA = ConvertHWATexture(rdPtr, pSf);
+	}
+
+	processor(pHWA);
+
+	if (!bHWA) {
+		delete pHWA;
+	}
 }
 
 //Get Valid Scale

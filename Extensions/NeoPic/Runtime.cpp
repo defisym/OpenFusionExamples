@@ -327,42 +327,30 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
-	if (!rdPtr->isLib
-		&& rdPtr->src != nullptr
-		&& rdPtr->src->IsValid()) {
+	if (CanDisplay(rdPtr)) {
 		// Begin render process...
-		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+		const LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 
 		// On-screen coords
-		int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
-		int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
+		const int screenX = rdPtr->rHo.hoX - rdPtr->rHo.hoAdRunHeader->rhWindowX;
+		const int screenY = rdPtr->rHo.hoY - rdPtr->rHo.hoAdRunHeader->rhWindowY;
 
 		HandleFlip(rdPtr);
-
-		LPSURFACE pDisplay = rdPtr->src;
 		
-		std::unique_ptr<cSurface> pOffset = nullptr;
-		
-		if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
-			pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
-			OffsetHWA(rdPtr->src, pOffset.get(), rdPtr->offset);
-
-			pDisplay = pOffset.get();
-		}
-
 		DWORD flags = 0;
 
 		if (rdPtr->stretchQuality) {
 			flags |= STRF_RESAMPLE;
 		}
 
-		pDisplay->BlitEx(*ps, (float)screenX, (float)screenY,
+		rdPtr->src->BlitEx(*ps, (float)screenX, (float)screenY,
 			abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0,
 			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, flags);
 	}
+
 	// Ok
 	return 0;
 }
@@ -396,35 +384,31 @@ cSurface* WINAPI DLLExport GetRunObjectSurface(LPRDATA rdPtr)
 // if you remove the comments below.
 //
 
-LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
-{
-	// Typical example for active objects
-	// ----------------------------------
-	if (!rdPtr->isLib) {
+LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam) {
+	if (CanDisplay(rdPtr)) {
 		// Opaque? collide with box	
 		// Note: only if your object has the OEPREFS_INKEFFECTS option
 		if ((rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) == 0) {
-			return NULL;
+			return nullptr;
 		}
 
 		// Transparent? Create mask
 		LPSMASK pMask = rdPtr->pColMask;
+
 		if (pMask == nullptr) {
-			if (rdPtr->src != nullptr){
-				GetTransfromedBitmap(rdPtr, [&](LPSURFACE pCollideBitmap) {
-					//_SavetoClipBoard(pCollideBitmap, false);
-					DWORD dwMaskSize = pCollideBitmap->CreateMask(NULL, lParam);
+			ProcessBitmap(rdPtr, rdPtr->src, [&] (const LPSURFACE pBitmap) {
+				DWORD dwMaskSize = pBitmap->CreateMask(nullptr, lParam);
 
-					if (dwMaskSize != 0) {
-						pMask = (LPSMASK)calloc(dwMaskSize, 1);
+				if (dwMaskSize != 0) {
+					pMask = (LPSMASK)calloc(dwMaskSize, 1);
 
-						if (pMask != nullptr) {
-							pCollideBitmap->CreateMask(pMask, lParam);
-							rdPtr->pColMask = pMask;
-						}
+					if (pMask != nullptr) {
+						pBitmap->CreateMask(pMask, lParam);
+						pMask->mkXSpot = rdPtr->rHo.hoImgXSpot;
+						pMask->mkYSpot = rdPtr->rHo.hoImgYSpot;
+						rdPtr->pColMask = pMask;
 					}
-					});
-			}
+				}});
 		}
 
 		// Note: for active objects, lParam is always the same.
@@ -435,7 +419,7 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 		return pMask;
 	}
 	else {
-		return NULL;
+		return nullptr;
 	}
 }
 

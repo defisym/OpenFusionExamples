@@ -510,7 +510,45 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		rdPtr->offset = { XOffset ,YOffset, Wrap };	
+		rdPtr->offset = { XOffset ,YOffset, Wrap };
+
+		if (rdPtr->offset.XOffset == 0 && rdPtr->offset.YOffset == 0) {
+			return 0;
+		}
+
+		const auto pRTT = GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
+		pRTT->CreateAlpha();
+
+		ProcessHWA(rdPtr, rdPtr->src, [&] (const LPSURFACE pBitmap) {
+			Offset(rdPtr->src, pRTT, rdPtr->offset);
+			});
+
+		if (rdPtr->fromLib) {
+			rdPtr->fromLib = false;
+
+			UpdateRef(rdPtr, false);
+			rdPtr->pRefCount = nullptr;
+
+			rdPtr->pLibValue = nullptr;
+		}
+		else {
+			ReleaseNonFromLib(rdPtr);
+		}
+
+		// ConvertToHWATexture can't handle HWA conversions
+		rdPtr->src = ConvertBitmap(pRTT);
+
+		if(rdPtr->pData->bPreMulAlpha) {
+			rdPtr->src->PremultiplyAlpha();
+		}
+
+		if (rdPtr->HWA) {
+			ConvertToHWATexture(rdPtr, rdPtr->src);
+		}
+
+		delete pRTT;
+
+		NewNonFromLib(rdPtr, rdPtr->src);
 		ReDisplay(rdPtr);
 	}
 

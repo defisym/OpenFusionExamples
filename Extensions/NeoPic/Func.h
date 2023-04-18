@@ -226,12 +226,8 @@ inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 	ReDisplay(rdPtr);
 }
 
-inline LPSURFACE Offset(LPSURFACE Src, OffsetCoef O) {
-	return Offset(Src, O.XOffset, O.YOffset, O.Wrap);
-}
-
-inline auto OffsetHWA(LPSURFACE Src, LPSURFACE Des, OffsetCoef O) {
-	return OffsetHWA(Src, Des, O.XOffset, O.YOffset, O.Wrap);
+inline auto Offset(LPSURFACE Src, LPSURFACE Des, const OffsetCoef& O) {	
+	return Offset(Src, Des, O.XOffset, O.YOffset, O.Wrap);
 }
 
 inline void GetTransformedSize(int& width, int& height, ZoomScale Scale, int Angle, ATArray AT) {
@@ -247,7 +243,7 @@ inline void GetTransformedSize(int& width, int& height, ZoomScale Scale, int Ang
 	Rotate.GetSizeOfRotatedRect(&width, &height, (float)Angle);
 }
 
-inline void AffineTransformation(LPSURFACE& Src,ATArray A, int divide) {
+inline void AffineTransformation(LPSURFACE& Src, const ATArray& A, int divide) {
 	AffineTransformation(Src, A.a11, A.a12, A.a21, A.a22, divide);
 }
 
@@ -743,7 +739,7 @@ inline void GetFullPathFromName(LPRDATA rdPtr, FileList& outList, const FileList
 // do not ref PreloadList as this function is for multithread
 using LoadLibCallBack = std::function<void(SurfaceLib*)>;
 
-inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::wstring BasePath, std::wstring Key, LoadLibCallBack callBack) {
+inline int PreloadLibFromVec(volatile LPRDATA rdPtr, FileList PreloadList, std::wstring BasePath, const std::wstring& Key, const LoadLibCallBack& callBack) {
 	if (PreloadList.empty()) {
 		callBack(nullptr);
 		return 0;
@@ -859,7 +855,7 @@ inline void MergeLib(LPRDATA rdPtr) {
 	}
 }
 
-inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, std::wstring basePath) {
+inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, const std::wstring& basePath) {
 	//rdPtr->pKeepList->clear();
 	//GetFullPathFromName(rdPtr, *rdPtr->pKeepList, keepList, basePath);
 
@@ -1094,8 +1090,8 @@ inline auto GetSurface(LPRDATA rdPtr, int width, int height) {
 		return CreateSurface(rdPtr->src->GetDepth(), width, height);
 	}
 }
-
-inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> callback) {
+[[deprecated]]
+inline void GetTransfromedBitmap(LPRDATA rdPtr, const std::function<void(LPSURFACE)>& callback) {
 	// decl
 	LPSURFACE pDisplay = rdPtr->src;
 
@@ -1113,7 +1109,7 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, std::function<void(LPSURFACE)> c
 
 	if (rdPtr->offset.XOffset != 0 || rdPtr->offset.YOffset != 0) {
 		pOffset.reset(GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight()));
-		OffsetHWA(rdPtr->src, pOffset.get(), rdPtr->offset);
+		Offset(rdPtr->src, pOffset.get(), rdPtr->offset);
 
 		pDisplay = pOffset.get();
 		
