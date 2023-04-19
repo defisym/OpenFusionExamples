@@ -4,10 +4,11 @@
 
 Enable the power to load encrypted image files, to store them to a lib that keeps data over frames, or to do something like stack blur or affine transformation.
 
+Special thanks to @PiKeyAr (From Github) and @Senda (From Discord), who help a lot to polishing this extension.
+
 ## Known issue
 
 - doesn't support PNG-8
-- collision mask is not right when image is wrapped
 
 ## Properties
 
