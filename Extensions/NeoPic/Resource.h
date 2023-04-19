@@ -129,6 +129,8 @@
 #define	IDMN_ACTION_SASPEED 	    25036
 #define	IDMN_ACTION_PA 			    25037
 #define	IDMN_ACTION_RA 			    25038
+#define	IDMN_ACTION_SAFID		    25039
+#define	IDMN_ACTION_SAFINDEX	    25040
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -192,6 +194,8 @@
 #define	M_ACTION_SASPEED 			 5036
 #define	M_ACTION_PA 			     5037
 #define	M_ACTION_RA 			     5038
+#define	M_ACTION_SAFID	 			 5039
+#define	M_ACTION_SAFINDEX 			 5040
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -243,6 +247,8 @@
 #define M_ACTION_ALPHA               5532
 
 #define M_ACTION_SPEED               5533
+#define M_ACTION_FID	             5534
+#define M_ACTION_FINDEX              5535
 
 //	Conditions
 //--------------------

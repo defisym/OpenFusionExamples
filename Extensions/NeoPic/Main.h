@@ -84,8 +84,10 @@
 #define	ACT_ACTION_SASPEED			36
 #define	ACT_ACTION_PA				37
 #define	ACT_ACTION_RA				38
+#define	ACT_ACTION_SAFID			39
+#define	ACT_ACTION_SAFINDEX			40
 
-#define	ACT_LAST					39
+#define	ACT_LAST					41
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

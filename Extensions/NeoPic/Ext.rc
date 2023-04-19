@@ -185,6 +185,9 @@ BEGIN
         POPUP "Animation"
         BEGIN
             MENUITEM "Set Animation Source",        IDMN_ACTION_SAS
+            MENUITEM SEPARATOR
+            MENUITEM "Set Animation Frame ID",      IDMN_ACTION_SAFID
+            MENUITEM "Set Animation Frame Index",   IDMN_ACTION_SAFINDEX
             MENUITEM "Set Animation Speed",         IDMN_ACTION_SASPEED
             MENUITEM SEPARATOR
             MENUITEM "Load Animation",              IDMN_ACTION_LA
@@ -488,11 +491,15 @@ BEGIN
     M_ACTION_SAS            "Set Animation Source to Lib %0, BasePath %1, Decrypt Key %2"
     M_ACTION_LA             "Load Animation %0, Decrypt Key %1"
     M_ACTION_SA             "Stop Animation"
+    M_ACTION_SAFID  	    "Set Animation Frame ID to %0"
+    M_ACTION_SAFINDEX 	    "Set Animation Frame Index to %0"
     M_ACTION_SASPEED 	    "Set Animation Speed to %0"
     M_ACTION_PA 		    "Pause Animation"
     M_ACTION_RA 		    "Resume Animation"
 
     M_ACTION_SPEED 		    "Speed, 100 = full frame rate"
+    M_ACTION_FID 		    "Interpolated Frame ID"
+    M_ACTION_FINDEX		    "Defined Frame Index"
 END
 
 STRINGTABLE DISCARDABLE 

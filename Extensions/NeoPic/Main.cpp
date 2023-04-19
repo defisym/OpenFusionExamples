@@ -102,6 +102,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SASPEED, M_ACTION_SASPEED, ACT_ACTION_SASPEED,	0, 1, PARAM_EXPRESSION, M_ACTION_SPEED,
 		IDMN_ACTION_PA, M_ACTION_PA, ACT_ACTION_PA,	0, 0,
 		IDMN_ACTION_RA, M_ACTION_RA, ACT_ACTION_RA,	0, 0,
+		IDMN_ACTION_SAFID, M_ACTION_SAFID, ACT_ACTION_SAFID, 0, 1, PARAM_EXPRESSION, M_ACTION_FID,
+		IDMN_ACTION_SAFINDEX, M_ACTION_SAFINDEX, ACT_ACTION_SAFINDEX, 0, 1, PARAM_EXPRESSION, M_ACTION_FINDEX,
 
 		};
 
@@ -978,6 +980,26 @@ short WINAPI DLLExport SetAnimationSource(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
+short WINAPI DLLExport SetAnimationFrameID(LPRDATA rdPtr, long param1, long param2) {
+	const auto frameID = (int)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->pAI->AnimationValid()) {
+		rdPtr->pAI->pA->SetFrameID(frameID);
+	}
+	
+	return 0;
+}
+
+short WINAPI DLLExport SetAnimationFrameIndex(LPRDATA rdPtr, long param1, long param2) {
+	const auto frameIndex = (int)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->pAI->AnimationValid()) {
+		rdPtr->pAI->pA->SetFrameID(frameIndex);
+	}
+
+	return 0;
+}
+
 short WINAPI DLLExport SetAnimationSpeed(LPRDATA rdPtr, long param1, long param2) {
 	auto speed = (int)CNC_GetStringParameter(rdPtr);
 
@@ -1332,6 +1354,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetAnimationSpeed,
 			PauseAnimation,
 			ResumeAnimation,
+			SetAnimationFrameID,
+			SetAnimationFrameIndex,
 
 			0
 			};

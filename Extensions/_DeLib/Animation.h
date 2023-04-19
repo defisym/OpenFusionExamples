@@ -455,8 +455,16 @@ public:
         return curFrame;
     }
 
+    inline void SetFrameID(int id) {
+        curFrame = Range(id, 0, maxFrame);
+    }
+
     inline int GetFrameIndex() const {
         return curIndex;
+    }
+
+    inline void SetFrameIndex( int index) {
+        curIndex = Range(index, 0, static_cast<int>(pFrameDatas.size()) - 1);
     }
 
 	inline const FrameData* GetCurrentFrame() const {
