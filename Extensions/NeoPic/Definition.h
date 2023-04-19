@@ -2,7 +2,10 @@
 
 #include <EffectEx.h>
 
-constexpr auto On_AnimationFinished = 5;
+constexpr auto ONPRELOADCOMPLETE = 0;
+constexpr auto ONITREFCOUNT = 1;
+constexpr auto ONANIMATIONFINISHED = 5;
+constexpr auto ONLOADCALLBACK = 8;
 
 struct Size {
 	int width;
@@ -153,9 +156,6 @@ using RefCountPair = std::pair<std::wstring, Count>;
 using RefCountVec = std::vector<RefCountPair>;
 using FileList = std::vector<std::wstring>;
 using FileListMap = std::map<std::wstring, FileList*>;
-
-constexpr auto ONPRELOADCOMPLETE = 0;
-constexpr auto ONITREFCOUNT = 1;
 
 template<typename T>
 constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }

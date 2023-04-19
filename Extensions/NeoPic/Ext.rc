@@ -122,6 +122,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Lib Has Item", IDMN_CONDITION_LHI
         MENUITEM SEPARATOR
+        MENUITEM "On Load Callback", IDMN_CONDITION_OLC
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
         MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
         MENUITEM SEPARATOR         
@@ -206,7 +207,7 @@ BEGIN
             BEGIN            
                 MENUITEM "Set HotSpot",            IDMN_ACTION_SH
                 MENUITEM SEPARATOR
-                //MENUITEM "Set Collision",        IDMN_ACTION_SC
+                //MENUITEM "Set Load Callback",        IDMN_ACTION_SLC
                 MENUITEM "Set Quality",            IDMN_ACTION_SQ
             END
             MENUITEM SEPARATOR
@@ -449,7 +450,7 @@ BEGIN
     M_ACTION_AB             "Add Backdrop %0"
     M_ACTION_UC             "Update Collision"
 
-    M_ACTION_SC             "Set Collision to : Has Collision = %0, Auto Update Collision = %1"
+    M_ACTION_SLC             "Set Load Callback to %0"
 
     M_ACTION_HC             "0 = No Collision, 1 = Has Collision"
     M_ACTION_AUC            "0 = Don't Auto Update Collision, 1 = Auto Update Collision"
@@ -504,6 +505,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_CONDITION_OLC       "%o On Load Callback"
     M_CONDITION_OPLC      "%o On Preload Complete"
     M_CONDITION_OITRC     "%o On Iterate Ref Count"
     
@@ -593,10 +595,11 @@ BEGIN
     IDS_PROP_HWA_CHECK  "HWA"
     IDS_PROP_HWA_CHECK_INFO  "Use HWA When Stretching or Rotating"
 
-    IDS_PROP_HASCOLLISION_CHECK  "Has Collision"
-    IDS_PROP_HASCOLLISION_CHECK_INFO  "This Object Has Collision"
-    IDS_PROP_AUTOUPDATECOLLISION_CHECK  "Auto Update Collision"
-    IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO  "Auto Update Collision When Stretching or Rotating, May Slow Down App if Texture is Big"
+    IDS_PROP_LOADCALLBACK_CHECK  "Load Callback"
+    IDS_PROP_LOADCALLBACK_CHECK_INFO  "Trigger Callback if New File Loaded"
+
+    IDS_PROP_LOAD_TEXTTITLE  "Load Options"
+    IDS_PROP_LOAD_TEXTTITLE_INFO  "Load Options"
 
     IDS_PROP_QUALITY_TEXTTITLE   "Quality"
     IDS_PROP_QUALITY_CHECK       "Resample"

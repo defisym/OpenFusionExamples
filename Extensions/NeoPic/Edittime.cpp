@@ -42,8 +42,8 @@ enum {
 	PROPID_HOTSPOT_TEXTTITLE,
 	PROPID_HOTSPOT,
 
-	PROPID_HASCOLLISION_CHECK,
-	PROPID_AUTOUPDATECOLLISION_CHECK,
+	PROPID_LOAD_TEXTTITLE,
+	PROPID_LOADCALLBACK_CHECK,
 
 };
 
@@ -106,6 +106,9 @@ PropData PropertiesGerneral[] = {
 	PropData_EditNumber (PROPID_MEMORYLIMIT,	IDS_PROP_MEMORYLIMIT,		IDS_PROP_MEMORYLIMIT_INFO),
 	PropData_EditNumber (PROPID_SIZELIMIT,		IDS_PROP_SIZELIMIT,			IDS_PROP_SIZELIMIT_INFO),
 
+	PropData_Group(PROPID_LOAD_TEXTTITLE,	IDS_PROP_LOAD_TEXTTITLE,		IDS_PROP_LOAD_TEXTTITLE),
+	PropData_CheckBox(PROPID_LOADCALLBACK_CHECK,	IDS_PROP_LOADCALLBACK_CHECK, IDS_PROP_LOADCALLBACK_CHECK_INFO),
+
 	PropData_End()
 };
 
@@ -123,7 +126,6 @@ PropData PropertiesDisplay[] = {
 };
 
 PropData PropertiesRuntime[] = {
-	//PropData_CheckBox	(PROPID_HASCOLLISION_CHECK,	IDS_PROP_HASCOLLISION_CHECK,		IDS_PROP_HASCOLLISION_CHECK_INFO),
 	//PropData_CheckBox	(PROPID_AUTOUPDATECOLLISION_CHECK,	IDS_PROP_AUTOUPDATECOLLISION_CHECK,		IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO),
 	
 	PropData_End()
@@ -402,6 +404,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		// Set default object settings
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
+
+		edPtr->bLoadCallback = false;
 
 		edPtr->HWA = true;
 		edPtr->stretchQuality = true;
@@ -846,10 +850,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		case PROPID_QUALITY_CHECK:
 			return edPtr->stretchQuality;
 
-		case PROPID_HASCOLLISION_CHECK:
-			return edPtr->collision;
-		case PROPID_AUTOUPDATECOLLISION_CHECK:
-			return edPtr->autoUpdateCollision;
+		case PROPID_LOADCALLBACK_CHECK:
+			return edPtr->bLoadCallback;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -952,8 +954,6 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvRefreshProp(mV, edPtr, PROPID_SIZELIMIT, FALSE);
 		mvRefreshProp(mV, edPtr, PROPID_QUALITY_CHECK, FALSE);
 		mvRefreshProp(mV, edPtr, PROPID_HOTSPOT, FALSE);
-		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, FALSE);
-		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_AUTOCLEAN_CHECK:
@@ -976,15 +976,10 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvInvalidateObject(mV, edPtr);
 		break;
 
-	case PROPID_HASCOLLISION_CHECK:
-		edPtr->collision = nCheck;
-		mvRefreshProp(mV, edPtr, PROPID_HASCOLLISION_CHECK, FALSE);
+	case PROPID_LOADCALLBACK_CHECK:
+		edPtr->bLoadCallback = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_LOADCALLBACK_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr); 
-		break;
-	case PROPID_AUTOUPDATECOLLISION_CHECK:
-		edPtr->autoUpdateCollision = nCheck;		
-		mvRefreshProp(mV, edPtr, PROPID_AUTOUPDATECOLLISION_CHECK, FALSE);
-		mvInvalidateObject(mV, edPtr);
 		break;
 	}
 #endif // !defined(RUN_ONLY)
@@ -1035,8 +1030,6 @@ BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	//case PROPID_HWA_CHECK:
 	case PROPID_QUALITY_CHECK:
 	case PROPID_HOTSPOT:
-	case PROPID_HASCOLLISION_CHECK:
-	case PROPID_AUTOUPDATECOLLISION_CHECK:
 		return !edPtr->isLib;
 	case PROPID_AUTOCLEAN_CHECK:
 		return edPtr->isLib;

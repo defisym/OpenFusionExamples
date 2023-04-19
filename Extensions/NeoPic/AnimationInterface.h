@@ -147,7 +147,7 @@ struct AnimationInterface {
 		updateHotSpot(pAI, pA->GetNextFrame());
 
 		pA->UpdateFrame([&]() {
-			CallEvent(On_AnimationFinished)
+			CallEvent(ONANIMATIONFINISHED)
 		});
 		const auto pCurFrame = pA->GetCurrentFrame();
 

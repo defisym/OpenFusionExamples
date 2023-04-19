@@ -33,8 +33,7 @@ enum
 	DB_FILEPATH,
 	DB_KEY,
 	DB_SAPARATOR_3,
-	DB_COLLISION,
-	DB_AUTOUPDATECOLLISION,
+	DB_LOADCALLBACK,
 	DB_SAPARATOR_4,
 	DB_STRETCHQUALITY,
 	DB_HOTSPOT,
@@ -66,9 +65,8 @@ WORD DebugTree[]=
 	DB_FILEPATH,
 	DB_KEY,
 	DB_SAPARATOR_3,
-	//DB_COLLISION,
-	//DB_AUTOUPDATECOLLISION,
-	//DB_SAPARATOR_4,
+	DB_LOADCALLBACK,
+	DB_SAPARATOR_4,
 	DB_STRETCHQUALITY,
 	DB_HOTSPOT,
 	DB_ZOOMSCALE,
@@ -118,7 +116,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->stretchQuality = edPtr->stretchQuality;
 
-	//rdPtr->collision = edPtr->collision;
+	rdPtr->bLoadCallback = edPtr->bLoadCallback;
+	rdPtr->pCallbackFileName = new std::wstring;
 	//rdPtr->autoUpdateCollision = edPtr->autoUpdateCollision;
 
 	//Display
@@ -220,6 +219,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	//Display
+	delete rdPtr->pCallbackFileName;
+
 	delete rdPtr->FileName;
 	delete rdPtr->FilePath;
 	delete rdPtr->RelativeFilePath;
@@ -229,8 +230,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		if (!rdPtr->fromLib) {
 			ReleaseNonFromLib(rdPtr);
 		}
-
-		delete rdPtr->trans;
 
 		if (!rdPtr->isLib) {
 			FreeColMask(rdPtr->pColMask);
@@ -697,39 +696,7 @@ LPWORD WINAPI DLLExport GetDebugTree(LPRDATA rdPtr)
 void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 {
 #if !defined(RUN_ONLY)
-
-	// Example
-	// -------
-/*
-	char temp[DB_BUFFERSIZE];
-
-	switch (id)
-	{
-	case DB_CURRENTSTRING:
-		LoadString(hInstLib, IDS_CURRENTSTRING, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->text);
-		break;
-	case DB_CURRENTVALUE:
-		LoadString(hInstLib, IDS_CURRENTVALUE, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->value);
-		break;
-	case DB_CURRENTCHECK:
-		LoadString(hInstLib, IDS_CURRENTCHECK, temp, DB_BUFFERSIZE);
-		if (rdPtr->check)
-			wsprintf(pBuffer, temp, _T("TRUE"));
-		else
-			wsprintf(pBuffer, temp, _T("FALSE"));
-		break;
-	case DB_CURRENTCOMBO:
-		LoadString(hInstLib, IDS_CURRENTCOMBO, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->combo);
-		break;
-	}
-*/
-
-	//wchar_t temp[DB_BUFFERSIZE];
-
-	auto libFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, std::function<void(LPCWSTR)> f) {
+	auto libFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, const std::function<void(LPCWSTR)>& f) {
 		if (rdPtr->isLib) {
 			f(pattern);
 		}
@@ -738,7 +705,7 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		}
 	};
 
-	auto displayFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, std::function<void(LPCWSTR)> f) {
+	auto displayFilter = [&](LPCWSTR pattern, LPCWSTR negativePattern, LPCWSTR negative, const std::function<void(LPCWSTR)>& f) {
 		if (!rdPtr->isLib) {
 			f(pattern);
 		}
@@ -746,9 +713,9 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 			swprintf_s(pBuffer, DB_BUFFERSIZE, negativePattern, negative);
 		}
 	};
-
-	auto libNegative = L"Not Lib";
-	auto displayNegative = L"Not Display";
+	
+	const auto libNegative = L"Not Lib";
+	const auto displayNegative = L"Not Display";
 
 	switch (id)
 	{
@@ -764,67 +731,80 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		swprintf_s(pBuffer, DB_BUFFERSIZE, L"Object Type: %s", rdPtr->isLib ? L"Lib" : L"Display");
 		break;
 	case DB_LIBSIZE:
-		libFilter(L"Lib Size: %d", L"Lib Size: %s", libNegative, [&](LPCWSTR pattern) {
+		libFilter(L"Lib Size: %d", L"Lib Size: %s", libNegative, 
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->pLib->size());
 			});
 		break;
 	case DB_LIBMEMUSE:
-		libFilter(L"Auto Clean Cache: %s", L"Auto Clean Cache: %s", libNegative, [&](LPCWSTR pattern) {
+		libFilter(L"Auto Clean Cache: %s", L"Auto Clean Cache: %s", libNegative,
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoClean ? L"True" : L"False");
 			});
 		break;
 	case DB_FROMLIB:
-		displayFilter(L"From Lib: %s", L"From Lib: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"From Lib: %s", L"From Lib: %s", displayNegative,
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->fromLib ? L"True" : L"False");
 			});
 		break;
 	case DB_FILENAME:
-		displayFilter(L"FileName: %s", L"FileName: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"FileName: %s", L"FileName: %s", displayNegative,
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FileName->c_str());
 			});
 		break;
 	case DB_FILEPATH:
-		displayFilter(L"FilePath: %s", L"FilePath: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"FilePath: %s", L"FilePath: %s", displayNegative,
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->FilePath->c_str());
 			});
 		break;
 	case DB_KEY:
-		displayFilter(L"Key: %s", L"Key: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, (*rdPtr->Key)==L""? L"Not Encrypted" : rdPtr->Key->c_str());
+		displayFilter(L"Key: %s", L"Key: %s", displayNegative, 
+			[&] (LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, *rdPtr->Key == L""
+				? L"Not Encrypted"
+				: rdPtr->Key->c_str());
 			});
 		break;
-	//case DB_COLLISION:
-	//	displayFilter(L"Has Collision: %s", L"Has Collision: %s", displayNegative, [&](LPCWSTR pattern) {
-	//		swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->collision ? L"True" : L"False");
-	//		});
-	//	break;
-	//case DB_AUTOUPDATECOLLISION:
-	//	displayFilter(L"Auto Update Collision: %s", L"Auto Update Collision: %s", displayNegative, [&](LPCWSTR pattern) {
-	//		swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoUpdateCollision ? L"True" : L"False");
-	//		});
-	//	break;
+	case DB_LOADCALLBACK:
+		displayFilter(L"Load Callback: %s", L"Load Callback: %s", displayNegative,
+			[&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->bLoadCallback 
+				? L"True"
+				: L"False");
+			});
+		break;
 	case DB_STRETCHQUALITY:
-		displayFilter(L"Stretch Quality: %s", L"Stretch Quality: %s", displayNegative, [&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->stretchQuality ? L"Resample" : L"Fast");
+		displayFilter(L"Stretch Quality: %s", L"Stretch Quality: %s", displayNegative,
+			[&](LPCWSTR pattern) {
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->stretchQuality 
+				? L"Resample"
+				: L"Fast");
 			});
 		break;
 	case DB_HOTSPOT:
-		displayFilter(L"HotSpot: [ %d, %d ]", L"HotSpot: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"HotSpot: [ %d, %d ]", L"HotSpot: %s", displayNegative, 
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetHotSpotX(rdPtr), GetHotSpotY(rdPtr));
 			});
 		break;
 	case DB_ZOOMSCALE:
-		displayFilter(L"Zoom Scale: [ %f, %f ]", L"Zoom Scale: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"Zoom Scale: [ %f, %f ]", L"Zoom Scale: %s", displayNegative, 
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetXZoomScale(rdPtr), GetYZoomScale(rdPtr));
 			});
 		break;
 	case DB_ORIGINSIZE:
-		displayFilter(L"Origin Size: [ %d ¡Á %d ]", L"Origin Size: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"Origin Size: [ %d x %d ]", L"Origin Size: %s", displayNegative, 
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetOriginalWidth(rdPtr), GetOriginalHeight(rdPtr));
 			});
 		break;
 	case DB_CURRENTSIZE:
-		displayFilter(L"Current Size: [ %d ¡Á %d ]", L"Current Size: %s", displayNegative, [&](LPCWSTR pattern) {
+		displayFilter(L"Current Size: [ %d x %d ]", L"Current Size: %s", displayNegative, 
+			[&](LPCWSTR pattern) {
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, GetCurrentWidth(rdPtr), GetCurrentHeight(rdPtr));
 			});
 		break;

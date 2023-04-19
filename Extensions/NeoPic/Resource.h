@@ -22,11 +22,11 @@
 #define IDS_PROP_HWA_CHECK           204
 #define IDS_PROP_HWA_CHECK_INFO      205
 
-#define IDS_PROP_HASCOLLISION_CHECK      206
-#define IDS_PROP_HASCOLLISION_CHECK_INFO      207
+#define IDS_PROP_LOADCALLBACK_CHECK      206
+#define IDS_PROP_LOADCALLBACK_CHECK_INFO      207
 
-#define IDS_PROP_AUTOUPDATECOLLISION_CHECK      208
-#define IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO      209
+#define IDS_PROP_LOAD_TEXTTITLE      208
+#define IDS_PROP_LOAD_TEXTTITLE_INFO      209
 
 #define IDS_PROP_QUALITY_TEXTTITLE      210
 
@@ -88,7 +88,7 @@
 #define IDMN_ACTION_UC	       		25012
 
 #define IDMN_ACTION_SQ	       		25013
-#define IDMN_ACTION_SC	       		25014
+#define IDMN_ACTION_SLC	       		25014
 
 #define IDMN_ACTION_AT	       		25015
 #define IDMN_ACTION_O	       		25016
@@ -152,7 +152,7 @@
 #define M_ACTION_AB          	     5011
 #define M_ACTION_UC          	     5012
 
-#define M_ACTION_SC          	     5013
+#define M_ACTION_SLC          	     5013
 #define M_ACTION_SQ          	     5014
 
 #define M_ACTION_AT          	     5015
@@ -269,6 +269,8 @@
 #define IDMN_CONDITION_IAP                  26006
 #define IDMN_CONDITION_IAPAUSED             26007
 
+#define IDMN_CONDITION_OLC                  26008
+
 // Condition strings
 #define M_CONDITION_OPLC                     6000
 #define M_CONDITION_OITRC                    6001
@@ -281,6 +283,8 @@
 #define M_CONDITION_OAF                      6005
 #define M_CONDITION_IAP                      6006
 #define M_CONDITION_IAPAUSED                 6007
+
+#define M_CONDITION_OLC                      6008
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

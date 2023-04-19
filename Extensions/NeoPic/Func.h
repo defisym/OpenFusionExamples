@@ -275,7 +275,14 @@ inline auto UpdateRef(LPRDATA rdPtr, bool add) {
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
-	auto fullPath = GetFullPathNameStr(FileName);
+	const auto fullPath = GetFullPathNameStr(FileName);
+
+	auto loadCallback = [&] () {
+		if (rdPtr->bLoadCallback) {
+			*rdPtr->pCallbackFileName = fullPath;
+			CallEvent(ONLOADCALLBACK)
+		}
+	};
 
 	if (rdPtr->isLib) {
 		if (rdPtr->pLib->find(fullPath) != rdPtr->pLib->end()) {
@@ -288,6 +295,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 		if (pImg->IsValid()) {
 			// need not to get decrypted file hash, as it must different if file is different, even encrypted
 			(*rdPtr->pLib)[fullPath] = SurfaceLibValue(pImg, GetFileHash(fullPath), GetTransparent(pImg));
+			loadCallback();
 		}
 		else {
 			delete pImg;
@@ -322,6 +330,8 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 			*rdPtr->Key = Key;
 
 			GetFileName(rdPtr);
+
+			loadCallback();
 		}
 	}	
 }

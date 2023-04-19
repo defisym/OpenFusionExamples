@@ -18,7 +18,9 @@
 #define	CND_CONDITION_IAP			6
 #define	CND_CONDITION_IAPAUSED		7
 
-#define	CND_LAST					8
+#define	CND_CONDITION_OLC		    8
+
+#define	CND_LAST					9
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -42,7 +44,7 @@
 #define	ACT_ACTION_AB				11
 #define	ACT_ACTION_UC				12
 
-#define	ACT_ACTION_SC				13
+#define	ACT_ACTION_SLC				13
 #define	ACT_ACTION_SQ				14
 
 #define	ACT_ACTION_AT				15
@@ -156,8 +158,9 @@ typedef struct tagEDATA_V1
 	//Lib
 	bool isLib = false;
 
-	//Collision
-	bool collision = false;
+	bool bLoadCallback = false;
+
+	//deprecated
 	bool autoUpdateCollision = false;
 
 	//Display
@@ -207,9 +210,11 @@ typedef struct tagRDATA
 	//Lib
 	bool isLib = false;
 	SurfaceLib* pLib = nullptr;							// kept over frames
+	
+	bool bLoadCallback = false;
+	std::wstring* pCallbackFileName = nullptr;
 
-	//Collision
-	bool collision = false;
+	//deprecated
 	bool autoUpdateCollision = false;
 
 	LPSMASK pColMask = nullptr;
@@ -247,9 +252,6 @@ typedef struct tagRDATA
 
 	int angle = 0;
 	ATArray AT = {};
-
-	//trans->transform
-	LPSURFACE trans = nullptr;
 
 	bool changed = false;
 

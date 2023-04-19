@@ -34,6 +34,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_IAP, M_CONDITION_IAP, CND_CONDITION_IAP, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_IAPAUSED, M_CONDITION_IAPAUSED, CND_CONDITION_IAPAUSED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
+		IDMN_CONDITION_OLC, M_CONDITION_OLC, CND_CONDITION_OLC, 0, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -60,8 +62,8 @@ short actionsInfos[]=
 		IDMN_ACTION_AB, M_ACTION_AB,	ACT_ACTION_AB,	0, 1,PARAM_PASTE,0,
 		IDMN_ACTION_UC, M_ACTION_UC,	ACT_ACTION_UC,	0, 0,
 
-		IDMN_ACTION_SC, M_ACTION_SC,	ACT_ACTION_SC,	0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_HC,M_ACTION_AUC,
-		IDMN_ACTION_SQ, M_ACTION_SQ,	ACT_ACTION_SQ,	0, 1,PARAM_EXPRESSION,M_ACTION_RS,
+		IDMN_ACTION_SLC, M_ACTION_SLC,	ACT_ACTION_SLC,	0, 1, PARAM_EXPRESSION, M_ACTION_HC,
+		IDMN_ACTION_SQ, M_ACTION_SQ,	ACT_ACTION_SQ,	0, 1, PARAM_EXPRESSION, M_ACTION_RS,
 
 		IDMN_ACTION_AT, M_ACTION_AT,	ACT_ACTION_AT,	0, 0,
 		IDMN_ACTION_O, M_ACTION_O,	ACT_ACTION_O,	0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_XO,M_ACTION_YO,
@@ -165,12 +167,6 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-// -----------------
-// Sample Condition
-// -----------------
-// Returns TRUE when the two values are equal!
-// 
-
 long WINAPI DLLExport OnPreloadComplete(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
@@ -224,7 +220,10 @@ long WINAPI DLLExport IsAnimationPlaying(LPRDATA rdPtr, long param1, long param2
 
 long WINAPI DLLExport IsAnimationPaused(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->pAI->GetPauseState();
+}
 
+long WINAPI DLLExport OnLoadCallback(LPRDATA rdPtr, long param1, long param2) {
+	return TRUE;
 }
 
 // ============================================================================
@@ -268,10 +267,6 @@ short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) 
 short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
 	auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
 	auto pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
-
-#ifdef _DEBUG
-	//__SavetoClipBoard(pSf);
-#endif // _DEBUG
 
 	rdPtr->pAI->StopAnimation();
 	LoadFromPointer(rdPtr, pFileName, pSf);
@@ -587,15 +582,10 @@ short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) 
 	return 0;
 }
 
-// deprecated
-short WINAPI DLLExport SetCollision(LPRDATA rdPtr, long param1, long param2) {
-	//bool collision = (bool)CNC_GetIntParameter(rdPtr);
-	//bool autoUpdateCollision = (bool)CNC_GetIntParameter(rdPtr);
+short WINAPI DLLExport SetLoadCallback(LPRDATA rdPtr, long param1, long param2) {
+	bool bCallback = (bool)CNC_GetIntParameter(rdPtr);
 
-	//rdPtr->collision = collision;
-	//rdPtr->autoUpdateCollision = autoUpdateCollision;
-
-	//FreeColMask(rdPtr->pColMask);	
+	rdPtr->bLoadCallback = bCallback;
 
 	return 0;
 }
@@ -604,8 +594,6 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->stretchQuality = Quality;
-
-	//UpdateImg(rdPtr, false, true);
 
 	return 0;
 }
@@ -1288,6 +1276,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IsAnimationPlaying,
 			IsAnimationPaused,
 
+			OnLoadCallback,
+
 			0
 			};
 	
@@ -1313,7 +1303,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			AddBackdrop,
 			UpdateCollision,
 
-			SetCollision,
+			SetLoadCallback,
 			SetQuality,
 
 			AffineTrans,
