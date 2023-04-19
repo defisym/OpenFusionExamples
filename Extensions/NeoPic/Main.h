@@ -88,8 +88,9 @@
 #define	ACT_ACTION_RA				38
 #define	ACT_ACTION_SAFID			39
 #define	ACT_ACTION_SAFINDEX			40
+#define	ACT_ACTION_SASTEP			41
 
-#define	ACT_LAST					41
+#define	ACT_LAST					42
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -138,6 +139,7 @@
 #define EXP_EXPRESSION_GAFID          	27
 #define EXP_EXPRESSION_GAFINDEX         28
 #define EXP_EXPRESSION_GAS              29
+#define EXP_EXPRESSION_GASTEP           30
 
 #define	EXP_LAST                    	30
 

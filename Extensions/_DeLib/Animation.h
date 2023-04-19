@@ -353,6 +353,13 @@ private:
         }
     }
 
+    inline void UpdateToCurIndex() {
+        pPrevious = pFrameDatas[curIndex];
+        pNext = GetNext();
+
+        *pCurFrameData = *pPrevious;
+    }
+
 public:
     explicit Animation(const JsonData& data) {
         // load info
@@ -418,21 +425,24 @@ public:
         }
     }
         
-    inline void UpdateFrame(const std::function<void()>& finishCallback = nullptr) {
+    inline void UpdateFrame(const std::function<void()>& nextCallback = nullptr,
+        const std::function<void()>& finishCallback = nullptr) {
         if (curFrame >= pCurFrameData->frameID + pCurFrameData->pInterpolation->interval) {
             if (pNext != nullptr) {
                 curIndex = static_cast<int>(static_cast<size_t>(curIndex + 1) % pFrameDatas.size());
                 *pCurFrameData = *pNext;
                 pPrevious = pNext;
                 pNext = GetNext();
+
+                if (nextCallback != nullptr) {
+                    nextCallback();
+                }
             }
         }
 
         if (pNext != nullptr) {
             const auto pCurIP = pCurFrameData->pInterpolation;
-        	const auto progress = curFrame >= maxFrame ? curFrame - maxFrame : curFrame;
-            const auto step = static_cast<double>(progress - pCurFrameData->frameID)
-                / (pCurIP->interval);
+            const auto step = GetFrameStep();
 
             const auto easeStep = Easing::calculateEasingValue(pCurIP->type_ID,
                 pCurIP->func_a_ID, pCurIP->func_b_ID,
@@ -457,14 +467,46 @@ public:
 
     inline void SetFrameID(int id) {
         curFrame = Range(id, 0, maxFrame);
+
+        for(size_t index = 0;index< pFrameDatas.size();index++) {
+	        if(pFrameDatas[index]->frameID > curFrame) {
+                curIndex = static_cast<int>(Range(index - 1, 0u, pFrameDatas.size() - 1));
+                UpdateToCurIndex();
+                UpdateFrame();
+
+                break;
+	        }
+        }
     }
 
     inline int GetFrameIndex() const {
         return curIndex;
     }
 
-    inline void SetFrameIndex( int index) {
+    inline void SetFrameIndex(int index) {
         curIndex = Range(index, 0, static_cast<int>(pFrameDatas.size()) - 1);
+
+        UpdateToCurIndex();
+        curFrame = pCurFrameData->frameID;
+    }
+
+    inline double GetFrameStep() const {
+        // when into next loop, to be update by mod
+        const auto progress = curFrame >= maxFrame ? curFrame - maxFrame : curFrame;
+        const auto step = static_cast<double>(progress - pCurFrameData->frameID)
+            / (pCurFrameData->pInterpolation->interval);
+
+        return step;
+    }
+
+    inline void SetFrameStep(double step) {
+        step = Range(step, 0.0, 1.0);
+
+    	const auto pCurIP = pCurFrameData->pInterpolation;
+        curFrame = static_cast<int>(step * (pCurIP->interval) + pCurFrameData->frameID);         
+        curFrame = Range(curFrame, 0, maxFrame);
+
+        UpdateFrame();
     }
 
 	inline const FrameData* GetCurrentFrame() const {

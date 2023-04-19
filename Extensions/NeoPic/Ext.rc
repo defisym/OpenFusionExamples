@@ -156,6 +156,8 @@ BEGIN
             MENUITEM "Load From Display",           IDMN_ACTION_LFD
             MENUITEM SEPARATOR  
             MENUITEM "Capture FrameArea",           IDMN_ACTION_CF
+            MENUITEM "Set Load Callback",           IDMN_ACTION_SLC
+            MENUITEM SEPARATOR
         END
         POPUP "Preload"
         BEGIN
@@ -189,6 +191,7 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Set Animation Frame ID",      IDMN_ACTION_SAFID
             MENUITEM "Set Animation Frame Index",   IDMN_ACTION_SAFINDEX
+            MENUITEM "Set Animation Step",          IDMN_ACTION_SASTEP
             MENUITEM "Set Animation Speed",         IDMN_ACTION_SASPEED
             MENUITEM SEPARATOR
             MENUITEM "Load Animation",              IDMN_ACTION_LA
@@ -207,7 +210,6 @@ BEGIN
             BEGIN            
                 MENUITEM "Set HotSpot",            IDMN_ACTION_SH
                 MENUITEM SEPARATOR
-                //MENUITEM "Set Load Callback",        IDMN_ACTION_SLC
                 MENUITEM "Set Quality",            IDMN_ACTION_SQ
             END
             MENUITEM SEPARATOR
@@ -292,6 +294,7 @@ BEGIN
             MENUITEM "Get Animation Name",       IDMN_EXPRESSION_GAN
             MENUITEM "Get Animation Frame ID",      IDMN_EXPRESSION_GAFID
             MENUITEM "Get Animation Frame Index",      IDMN_EXPRESSION_GAFINDEX
+            MENUITEM "Get Animation Step", IDMN_EXPRESSION_GASTEP
             MENUITEM "Get Animation Speed", IDMN_EXPRESSION_GAS
         END    
         MENUITEM SEPARATOR        
@@ -494,6 +497,7 @@ BEGIN
     M_ACTION_SA             "Stop Animation"
     M_ACTION_SAFID  	    "Set Animation Frame ID to %0"
     M_ACTION_SAFINDEX 	    "Set Animation Frame Index to %0"
+    M_ACTION_SASTEP 	    "Set Animation Step to %0"
     M_ACTION_SASPEED 	    "Set Animation Speed to %0"
     M_ACTION_PA 		    "Pause Animation"
     M_ACTION_RA 		    "Resume Animation"
@@ -501,6 +505,7 @@ BEGIN
     M_ACTION_SPEED 		    "Speed, 100 = full frame rate"
     M_ACTION_FID 		    "Interpolated Frame ID"
     M_ACTION_FINDEX		    "Defined Frame Index"
+    M_ACTION_STEP		    "Animation Step, 0.0 ~1.0"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -570,6 +575,7 @@ BEGIN
     M_EXPRESSION_GAN               "GetAName$("
     M_EXPRESSION_GAFID             "GetAFID("
     M_EXPRESSION_GAFINDEX          "GetAFIndex("
+    M_EXPRESSION_GASTEP            "GetAStep("
     M_EXPRESSION_GAS               "GetASpeed("
 
 END

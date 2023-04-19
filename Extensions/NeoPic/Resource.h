@@ -131,6 +131,7 @@
 #define	IDMN_ACTION_RA 			    25038
 #define	IDMN_ACTION_SAFID		    25039
 #define	IDMN_ACTION_SAFINDEX	    25040
+#define	IDMN_ACTION_SASTEP	     	25041
 
 // Action strings
 #define M_ACTION_LFF                 5000
@@ -196,6 +197,7 @@
 #define	M_ACTION_RA 			     5038
 #define	M_ACTION_SAFID	 			 5039
 #define	M_ACTION_SAFINDEX 			 5040
+#define	M_ACTION_SASTEP 			 5041
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -249,6 +251,7 @@
 #define M_ACTION_SPEED               5533
 #define M_ACTION_FID	             5534
 #define M_ACTION_FINDEX              5535
+#define M_ACTION_STEP                5536
 
 //	Conditions
 //--------------------
@@ -342,6 +345,7 @@
 #define IDMN_EXPRESSION_GAFID       27027
 #define IDMN_EXPRESSION_GAFINDEX    27028
 #define IDMN_EXPRESSION_GAS         27029
+#define IDMN_EXPRESSION_GASTEP      27030
 
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
@@ -388,6 +392,7 @@
 #define M_EXPRESSION_GAFID           7027
 #define M_EXPRESSION_GAFINDEX        7028
 #define M_EXPRESSION_GAS             7029
+#define M_EXPRESSION_GASTEP          7030
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500

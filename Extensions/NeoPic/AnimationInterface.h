@@ -90,20 +90,8 @@ struct AnimationInterface {
 			return;
 		}
 
-		if(bPaused) {
-			return;
-		}
+		const auto pAI = pA->GetAnimationInfo();
 
-		const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed)
-			/ static_cast<double>(Animation_MaxSpeed * Animation_MaxSpeed);
-		speedAccumulate += correctedSpeed;
-
-		if (speedAccumulate < 1.0) {
-			return;
-		}
-
-		speedAccumulate -= 1.0;
-		
 		auto updateHotSpot = [&] (const AnimationInfo* pAnimationInfo, const FrameData* pFrameData) {
 			auto updateBySurface = [&] (const LPSURFACE pSf) {
 				if (pSf == nullptr) {
@@ -141,14 +129,33 @@ struct AnimationInterface {
 			updateBySurface(pSf);
 		};
 
-		const auto pAI = pA->GetAnimationInfo();
-
+		// update current hotspot
 		updateHotSpot(pAI, pA->GetPreviousFrame());
 		updateHotSpot(pAI, pA->GetNextFrame());
 
-		pA->UpdateFrame([&]() {
-			CallEvent(ONANIMATIONFINISHED)
-		});
+		// update display but won't update interpolation
+		if (!bPaused) {
+			const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed)
+				/ static_cast<double>(Animation_MaxSpeed * Animation_MaxSpeed);
+			speedAccumulate += correctedSpeed;
+
+			if (speedAccumulate < 1.0) {
+				return;
+			}
+
+			speedAccumulate -= 1.0;
+
+			pA->UpdateFrame(
+			[&] () {
+				// if read to next frame, update next hotspot
+				// cur is updated previously
+				updateHotSpot(pAI, pA->GetNextFrame());
+			},
+			[&] () {
+				CallEvent(ONANIMATIONFINISHED)
+			});
+		}
+		
 		const auto pCurFrame = pA->GetCurrentFrame();
 
 		if (!pAI->updateCur) {

@@ -39,10 +39,6 @@ inline bool operator !=(OffsetCoef A, OffsetCoef B) {
 	return (A.XOffset != B.XOffset) || (A.YOffset != B.YOffset) || (A.Wrap != B.Wrap);
 }
 
-inline bool DoOffset(OffsetCoef A) {
-	return (A.XOffset != 0) || (A.YOffset != 0);
-}
-
 //AT array
 struct ATArray {
 	double a11;
@@ -57,10 +53,6 @@ inline bool operator ==(ATArray A, ATArray B) {
 
 inline bool operator !=(ATArray A, ATArray B) {
 	return !(A == B);
-}
-
-inline bool DoAffineTrans(ATArray A) {
-	return A != ATArray{ 1,0,0,1 };
 }
 
 using List = std::vector<std::wstring>;

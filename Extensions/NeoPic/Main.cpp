@@ -106,6 +106,7 @@ short actionsInfos[]=
 		IDMN_ACTION_RA, M_ACTION_RA, ACT_ACTION_RA,	0, 0,
 		IDMN_ACTION_SAFID, M_ACTION_SAFID, ACT_ACTION_SAFID, 0, 1, PARAM_EXPRESSION, M_ACTION_FID,
 		IDMN_ACTION_SAFINDEX, M_ACTION_SAFINDEX, ACT_ACTION_SAFINDEX, 0, 1, PARAM_EXPRESSION, M_ACTION_FINDEX,
+		IDMN_ACTION_SASTEP, M_ACTION_SASTEP, ACT_ACTION_SASTEP, 0, 1, PARAM_EXPRESSION, M_ACTION_STEP,
 
 		};
 
@@ -156,6 +157,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GAFID, M_EXPRESSION_GAFID, EXP_EXPRESSION_GAFID, 0, 0,
 		IDMN_EXPRESSION_GAFINDEX, M_EXPRESSION_GAFINDEX, EXP_EXPRESSION_GAFINDEX, 0, 0,
 		IDMN_EXPRESSION_GAS, M_EXPRESSION_GAS, EXP_EXPRESSION_GAS, 0, 0,
+		IDMN_EXPRESSION_GASTEP, M_EXPRESSION_GASTEP, EXP_EXPRESSION_GASTEP, EXPFLAG_DOUBLE, 0,
 
 		};
 
@@ -982,7 +984,17 @@ short WINAPI DLLExport SetAnimationFrameIndex(LPRDATA rdPtr, long param1, long p
 	const auto frameIndex = (int)CNC_GetStringParameter(rdPtr);
 
 	if (rdPtr->pAI->AnimationValid()) {
-		rdPtr->pAI->pA->SetFrameID(frameIndex);
+		rdPtr->pAI->pA->SetFrameIndex(frameIndex);
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport SetAnimationStep(LPRDATA rdPtr, long param1, long param2) {	
+	const auto frameIndex = GetFloatParam(rdPtr);
+
+	if (rdPtr->pAI->AnimationValid()) {
+		rdPtr->pAI->pA->SetFrameStep(static_cast<double>(frameIndex));
 	}
 
 	return 0;
@@ -1250,6 +1262,18 @@ long WINAPI DLLExport GetAnimationFrameIndex(LPRDATA rdPtr, long param1) {
 		: -1;
 }
 
+long WINAPI DLLExport GetAnimationStep(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+
+	//Return the float without conversion
+	const auto ret = rdPtr->pAI->AnimationValid()
+		? static_cast<float>(rdPtr->pAI->pA->GetFrameStep())
+		: -1.0f;
+
+	return *((int*)&ret);
+}
+
 long WINAPI DLLExport GetAnimationSpeed(LPRDATA rdPtr, long param1) {
 	return rdPtr->pAI->GetSpeed();
 }
@@ -1346,6 +1370,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			ResumeAnimation,
 			SetAnimationFrameID,
 			SetAnimationFrameIndex,
+			SetAnimationStep,
 
 			0
 			};
@@ -1396,6 +1421,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetAnimationFrameID,
 			GetAnimationFrameIndex,
 			GetAnimationSpeed,
+			GetAnimationStep,
 
 			0
 			};
