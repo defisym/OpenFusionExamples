@@ -186,17 +186,15 @@ long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long
 		rdPtr->bCurrentDisplayTransparent = true;
 	}
 	else {
-		if (rdPtr->src != rdPtr->pOldSf) {
-			rdPtr->pOldSf = rdPtr->src;
-
-			if (rdPtr->fromLib) {
-				if (rdPtr->pLibValue->isTransparent == transpTBD) {	// not updated yet
-					rdPtr->pLibValue->isTransparent = IsTransparent(rdPtr->src);
-				}
-
-				rdPtr->bCurrentDisplayTransparent = rdPtr->pLibValue->isTransparent;
+		if (rdPtr->fromLib) {
+			if (rdPtr->pLibValue->isTransparent == transpTBD) {	// not updated yet
+				rdPtr->pLibValue->isTransparent = IsTransparent(rdPtr->src);
 			}
-			else {
+
+			rdPtr->bCurrentDisplayTransparent = rdPtr->pLibValue->isTransparent;
+		}
+		else {
+			if (rdPtr->isTransparent == transpTBD) {
 				rdPtr->bCurrentDisplayTransparent = IsTransparent(rdPtr->src);
 			}
 		}
@@ -509,17 +507,17 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		rdPtr->offset = { XOffset ,YOffset, Wrap };
-
-		if (rdPtr->offset.XOffset == 0 && rdPtr->offset.YOffset == 0) {
+		if (XOffset == 0 && YOffset == 0) {
 			return 0;
 		}
+
+		const OffsetCoef offset = { XOffset ,YOffset, Wrap };
 
 		const auto pRTT = GetSurface(rdPtr, rdPtr->src->GetWidth(), rdPtr->src->GetHeight());
 		pRTT->CreateAlpha();
 
 		ProcessHWA(rdPtr, rdPtr->src, [&] (const LPSURFACE pHWA) {
-			Offset(pHWA, pRTT, rdPtr->offset);
+			Offset(pHWA, pRTT, offset);
 			});
 
 		// ConvertToHWATexture can't handle HWA conversions

@@ -209,20 +209,53 @@ typedef struct tagRDATA
 	short			swidth;
 	short			sheight;
 
-	//Lib
+	//------------
+	// Global
+	//------------
+
+	GlobalData* pData;
+	FileListMap* pFileListMap = nullptr;
+
+#ifdef _USE_DXGI
+	D3DUtilities* pD3DU = nullptr;
+#endif
+
+	//------------
+	// Lib
+	//------------
 	bool isLib = false;
 	SurfaceLib* pLib = nullptr;							// kept over frames
 	
 	bool bLoadCallback = false;
 	std::wstring* pCallbackFileName = nullptr;
 
-	//deprecated
-	bool autoUpdateCollision = false;
+	size_t memoryLimit;
+	size_t sizeLimit;
+	bool autoClean;
 
-	LPSMASK pColMask = nullptr;
-	LPSURFACE pCollisionSf = nullptr;
+	RefCount* pCount = nullptr;							// kept over frames
+	KeepList* pKeepList = nullptr;						// kept over frames
+	RefCountVec* pCountVec = nullptr;					// update when trigger clear
 
-	//Display
+	// for iterate
+	std::wstring* itCountVecStr = nullptr;
+	Count* itCountVecCount = nullptr;
+
+	//------------
+	// Preload
+	//------------
+
+	std::vector<std::wstring>* pPreloadList = nullptr;
+	SurfaceLib* preloadLib = nullptr;
+
+	volatile HANDLE threadID;
+	volatile bool forceExit = false;
+	volatile bool preloading = false;
+	volatile bool preloadMerge = false;
+
+	//------------
+	// Display
+	//------------
 
 	//Settings
 	volatile bool HWA = false;
@@ -241,57 +274,24 @@ typedef struct tagRDATA
 	//src->display
 	LPSURFACE src = nullptr;
 
+	BOOL isTransparent = -1;
+	bool bCurrentDisplayTransparent = false;
+
 	// flip cache
 	LPSURFACE pSf_Nor = nullptr;
 	LPSURFACE pSf_HF = nullptr;
 	LPSURFACE pSf_VF = nullptr;
 	LPSURFACE pSf_VHF = nullptr;
 	
-	POINT hotSpot = { 0,0 };	
+	int angle = 0;
+	HotSpotPos hotSpotPos;
+	POINT hotSpot = { 0,0 };
 	ZoomScale zoomScale = { 1.0,1.0 };
 
-	OffsetCoef offset = { 0,0,false };
+	LPSMASK pColMask = nullptr;
 
-	int angle = 0;
-	ATArray AT = {};
-
-	bool changed = false;
-
-	//preload		
-	std::vector<std::wstring>* pPreloadList = nullptr;
-	SurfaceLib* preloadLib = nullptr;
-
-	volatile HANDLE threadID;
-	volatile bool forceExit = false;
-	volatile bool preloading = false;
-	volatile bool preloadMerge = false;
-
-	size_t memoryLimit;
-	size_t sizeLimit;
-	bool autoClean;
-
-	RefCount* pCount = nullptr;							// kept over frames
-	KeepList* pKeepList = nullptr;						// kept over frames
-	RefCountVec* pCountVec = nullptr;					// update when trigger clear
-
-	HotSpotPos hotSpotPos;
-
-	GlobalData* pData;
-
-	std::wstring* itCountVecStr = nullptr;
-	Count* itCountVecCount = nullptr;
-
-	FileListMap* pFileListMap = nullptr;
-
-	bool bCurrentDisplayTransparent = false;
-	LPSURFACE pOldSf = nullptr;
-
+	//animation
 	AnimationInterface* pAI = nullptr;
-
-#ifdef _USE_DXGI
-	D3DUtilities* pD3DU = nullptr;
-#endif
-
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

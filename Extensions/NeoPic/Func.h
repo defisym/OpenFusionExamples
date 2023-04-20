@@ -161,7 +161,6 @@ inline bool CanDisplay(LPRDATA rdPtr) {
 
 inline void ReDisplay(LPRDATA rdPtr) {
 	if (!rdPtr->isLib) {
-		rdPtr->changed = true;
 		rdPtr->rc.rcChanged = true;
 
 		UpdateHoImgInfo(rdPtr);
@@ -173,22 +172,17 @@ inline void ReDisplay(LPRDATA rdPtr) {
 //NewPic covers ReDisplay
 inline void NewPic(LPRDATA rdPtr, LPRDATA Copy = nullptr) {
 	if (Copy == nullptr) {
-		rdPtr->hotSpot = { 0,0 };
-		rdPtr->zoomScale = { 1.0,1.0 };
 		rdPtr->angle = 0;
 
-		rdPtr->offset = { 0,0,false };
-		rdPtr->AT = { 1,0,0,1 };
+		rdPtr->hotSpot = { 0,0 };
+		rdPtr->zoomScale = { 1.0,1.0 };
 
 	}else {
-		rdPtr->hotSpot = Copy->hotSpot;
-		rdPtr->zoomScale = Copy->zoomScale;
 		rdPtr->angle = Copy->angle;
 
-		rdPtr->offset = Copy->offset;
-		rdPtr->AT = Copy->AT;
-
 		rdPtr->hotSpotPos = Copy->hotSpotPos;
+		rdPtr->hotSpot = Copy->hotSpot;
+		rdPtr->zoomScale = Copy->zoomScale;
 	}
 
 	UpdateHotSpot(rdPtr, rdPtr->hotSpotPos);

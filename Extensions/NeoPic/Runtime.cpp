@@ -106,21 +106,35 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 
-	//Settings
-	rdPtr->isLib = edPtr->isLib;
-	rdPtr->memoryLimit = edPtr->memoryLimit;
-	rdPtr->autoClean = edPtr->autoClean;
-	rdPtr->hotSpotPos = (HotSpotPos)edPtr->hotSpotComboID;
-	
-	rdPtr->HWA = edPtr->HWA;
+	//------------
+	// Lib
+	//------------
 
-	rdPtr->stretchQuality = edPtr->stretchQuality;
+	rdPtr->isLib = edPtr->isLib;
 
 	rdPtr->bLoadCallback = edPtr->bLoadCallback;
 	rdPtr->pCallbackFileName = new std::wstring;
-	//rdPtr->autoUpdateCollision = edPtr->autoUpdateCollision;
 
-	//Display
+	rdPtr->memoryLimit = edPtr->memoryLimit;
+	rdPtr->sizeLimit = edPtr->sizeLimit;
+	rdPtr->autoClean = edPtr->autoClean;
+
+	rdPtr->pCountVec = new RefCountVec;
+	rdPtr->pPreloadList = nullptr;
+
+	rdPtr->itCountVecStr = new std::wstring;
+	rdPtr->itCountVecCount = new Count;
+
+	//------------
+	// Display
+	//------------
+
+	rdPtr->HWA = edPtr->HWA;
+	rdPtr->stretchQuality = edPtr->stretchQuality;
+	
+	// to create new surface, don't change
+	rdPtr->fromLib = true;
+
 	rdPtr->FileName = new std::wstring;
 	rdPtr->FilePath = new std::wstring;
 	rdPtr->RelativeFilePath = new std::wstring;
@@ -128,12 +142,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->src = nullptr;
 
-	// to create new surface, don't change
-	rdPtr->fromLib = true;
+	rdPtr->isTransparent = transpTBD;
 
+	rdPtr->hotSpotPos = (HotSpotPos)edPtr->hotSpotComboID;
 	rdPtr->zoomScale = { 1.0,1.0 };
-	rdPtr->AT = { 1,0,0,1 };
-	
+
+	rdPtr->pAI = new AnimationInterface(rdPtr);
+
 	//Init global data
 	if (GetExtUserData() == nullptr) {
 		//init global
@@ -193,15 +208,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pKeepList = rdPtr->pData->pKeepList;
 		rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
 	}
-	
-	rdPtr->pCountVec = new RefCountVec;
-	rdPtr->pPreloadList = nullptr;
-
-	rdPtr->itCountVecStr = new std::wstring;
-	rdPtr->itCountVecCount = new Count;
-
-	rdPtr->pAI = new AnimationInterface(rdPtr);
-	
+		
 	// No errors
 	return 0;
 }
