@@ -143,9 +143,13 @@ struct SurfaceLibValue {
 
 using SurfaceLib = std::map<std::wstring, SurfaceLibValue>;
 using SurfaceLibIt = SurfaceLib::iterator;
+
 using RefCount = std::map<std::wstring, Count>;
+using RefCountIt = RefCount::iterator;
+
 using RefCountPair = std::pair<std::wstring, Count>;
 using RefCountVec = std::vector<RefCountPair>;
+
 using FileList = std::vector<std::wstring>;
 using FileListMap = std::map<std::wstring, FileList*>;
 

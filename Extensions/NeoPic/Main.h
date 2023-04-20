@@ -47,7 +47,7 @@
 #define	ACT_ACTION_SLC				13
 #define	ACT_ACTION_SQ				14
 
-#define	ACT_ACTION_AT				15
+#define	ACT_ACTION_PT				15
 #define	ACT_ACTION_O				16
 
 #define	ACT_ACTION_LFD				17

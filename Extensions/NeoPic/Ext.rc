@@ -117,18 +117,19 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Can Display", IDMN_CONDITION_CD
-        MENUITEM SEPARATOR
         MENUITEM "Current Display Transparent", IDMN_CONDITION_CDT
         MENUITEM SEPARATOR
         MENUITEM "Lib Has Item", IDMN_CONDITION_LHI
         MENUITEM SEPARATOR
         MENUITEM "On Load Callback", IDMN_CONDITION_OLC
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
+        MENUITEM SEPARATOR
         MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
         MENUITEM SEPARATOR         
         POPUP "Animation"
         BEGIN
             MENUITEM "On Animation Finished", IDMN_CONDITION_OAF
+            MENUITEM SEPARATOR
             MENUITEM "Is Animation Playing", IDMN_CONDITION_IAP
             MENUITEM "Is Animation Paused", IDMN_CONDITION_IAPAUSED
         END
@@ -149,25 +150,25 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Load"
         BEGIN
+            MENUITEM "Set Load Callback",           IDMN_ACTION_SLC
+            MENUITEM SEPARATOR
             MENUITEM "Load From File",              IDMN_ACTION_LFF
             MENUITEM "Load From Pointer",           IDMN_ACTION_LFP
             MENUITEM SEPARATOR            
             MENUITEM "Load From Lib",               IDMN_ACTION_LFL
             MENUITEM "Load From Display",           IDMN_ACTION_LFD
             MENUITEM SEPARATOR  
-            MENUITEM "Capture FrameArea",           IDMN_ACTION_CF
-            MENUITEM "Set Load Callback",           IDMN_ACTION_SLC
-            MENUITEM SEPARATOR
+            MENUITEM "Capture FrameArea",           IDMN_ACTION_CF            
         END
         POPUP "Preload"
         BEGIN
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
+            MENUITEM SEPARATOR
             MENUITEM "Set Preload List",              IDMN_ACTION_SPL            
             MENUITEM "Set Preload List By Pointer",   IDMN_ACTION_SPLBP            
             MENUITEM SEPARATOR
             MENUITEM "Set Keep List",              IDMN_ACTION_SKL
             MENUITEM "Set Keep List By Pointer",   IDMN_ACTION_SKLBP
-            MENUITEM "Clear Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
             MENUITEM "Iterate Ref Count",          IDMN_ACTION_ITRC
         END
@@ -180,6 +181,7 @@ BEGIN
         POPUP "Lib"
         BEGIN
             MENUITEM "Reset Lib",                  IDMN_ACTION_RL
+            MENUITEM "Clear Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
             MENUITEM "Erase Lib Item",             IDMN_ACTION_EL
             MENUITEM "Update Lib Item",            IDMN_ACTION_UL
@@ -189,10 +191,11 @@ BEGIN
         BEGIN
             MENUITEM "Set Animation Source",        IDMN_ACTION_SAS
             MENUITEM SEPARATOR
+            MENUITEM "Set Animation Speed",         IDMN_ACTION_SASPEED
+            MENUITEM SEPARATOR
+            MENUITEM "Set Animation Step",          IDMN_ACTION_SASTEP
             MENUITEM "Set Animation Frame ID",      IDMN_ACTION_SAFID
             MENUITEM "Set Animation Frame Index",   IDMN_ACTION_SAFINDEX
-            MENUITEM "Set Animation Step",          IDMN_ACTION_SASTEP
-            MENUITEM "Set Animation Speed",         IDMN_ACTION_SASPEED
             MENUITEM SEPARATOR
             MENUITEM "Load Animation",              IDMN_ACTION_LA
             MENUITEM "Stop Animation",              IDMN_ACTION_SA
@@ -208,9 +211,8 @@ BEGIN
             //MENUITEM SEPARATOR
             POPUP "Settings"
             BEGIN            
-                MENUITEM "Set HotSpot",            IDMN_ACTION_SH
-                MENUITEM SEPARATOR
                 MENUITEM "Set Quality",            IDMN_ACTION_SQ
+                MENUITEM "Set HotSpot",            IDMN_ACTION_SH
             END
             MENUITEM SEPARATOR
             POPUP "Transform"
@@ -218,16 +220,15 @@ BEGIN
                 MENUITEM "Zoom",                   IDMN_ACTION_Z
                 MENUITEM "Stretch",                IDMN_ACTION_S
                 MENUITEM SEPARATOR                
-                MENUITEM "Rotate",                 IDMN_ACTION_R                
                 MENUITEM "Offset",                 IDMN_ACTION_O
+                MENUITEM "Rotate",                 IDMN_ACTION_R                
                 MENUITEM SEPARATOR
-                //MENUITEM "Affine",               IDMN_ACTION_AT
                 MENUITEM "Stack Blur",             IDMN_ACTION_SB
                 MENUITEM "Fill Mosaic",            IDMN_ACTION_FM
+                MENUITEM "Perspective",            IDMN_ACTION_PT
+                MENUITEM "Set Transparent Color",  IDMN_ACTION_STC
                 MENUITEM SEPARATOR
                 MENUITEM "Set Effect Param",       IDMN_ACTION_SESP
-                MENUITEM SEPARATOR
-                MENUITEM "Set Transparent Color",  IDMN_ACTION_STC
             END
             MENUITEM SEPARATOR
             MENUITEM "Add Backdrop",               IDMN_ACTION_AB
@@ -292,10 +293,12 @@ BEGIN
         POPUP "Animation"
         BEGIN
             MENUITEM "Get Animation Name",       IDMN_EXPRESSION_GAN
+            MENUITEM SEPARATOR
+            MENUITEM "Get Animation Speed", IDMN_EXPRESSION_GAS
+            MENUITEM SEPARATOR
+            MENUITEM "Get Animation Step", IDMN_EXPRESSION_GASTEP
             MENUITEM "Get Animation Frame ID",      IDMN_EXPRESSION_GAFID
             MENUITEM "Get Animation Frame Index",      IDMN_EXPRESSION_GAFINDEX
-            MENUITEM "Get Animation Step", IDMN_EXPRESSION_GASTEP
-            MENUITEM "Get Animation Speed", IDMN_EXPRESSION_GAS
         END    
         MENUITEM SEPARATOR        
         POPUP "Hibiscus AVG Engine"
@@ -462,7 +465,8 @@ BEGIN
 
     M_ACTION_RS             "0 = Fast, 1 = Resample"
 
-    M_ACTION_AT             "Affine Transformation"
+    M_ACTION_PT             "Perspective Transformation by Matrix %0"
+    M_ACTION_PTMAT          "Matrix"
 
     M_ACTION_O              "Offset, X = %0, Y = %1, Wrap = %2"
     

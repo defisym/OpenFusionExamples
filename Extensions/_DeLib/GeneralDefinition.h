@@ -170,5 +170,5 @@ inline std::vector<std::wstring> SplitString(const std::wstring& input, const wc
 
 template<typename T>
 inline T Range(T v, T minv, T maxv) {
-	return max(minv, min(maxv, v));
+	return (std::max)(minv, (std::min)(maxv, v));
 }

@@ -227,16 +227,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->Key;
 
 	if (!rdPtr->isLib) {
-		if (!rdPtr->fromLib) {
-			ReleaseNonFromLib(rdPtr);
-		}
-
-		if (!rdPtr->isLib) {
-			FreeColMask(rdPtr->pColMask);
-		}
-
-		UpdateRef(rdPtr, false);
-		rdPtr->pRefCount = nullptr;
+		DetachFromLib(rdPtr);
+		FreeColMask(rdPtr->pColMask);
 	}
 
 	if (rdPtr->isLib) {

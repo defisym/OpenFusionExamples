@@ -8,7 +8,7 @@ Special thanks to @PiKeyAr (From Github) and @Senda (From Discord), who help a l
 
 ## Known issue
 
-- doesn't support PNG-8
+- due to fusion's image filter limitation, doesn't support PNG-8
 
 ## Properties
 

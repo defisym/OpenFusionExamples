@@ -65,7 +65,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SLC, M_ACTION_SLC,	ACT_ACTION_SLC,	0, 1, PARAM_EXPRESSION, M_ACTION_HC,
 		IDMN_ACTION_SQ, M_ACTION_SQ,	ACT_ACTION_SQ,	0, 1, PARAM_EXPRESSION, M_ACTION_RS,
 
-		IDMN_ACTION_AT, M_ACTION_AT,	ACT_ACTION_AT,	0, 0,
+		IDMN_ACTION_PT, M_ACTION_PT,	ACT_ACTION_PT,	0, 1, PARAM_EXPSTRING ,M_ACTION_PTMAT,
 		IDMN_ACTION_O, M_ACTION_O,	ACT_ACTION_O,	0, 3,PARAM_EXPRESSION,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_XO,M_ACTION_YO,
 		M_ACTION_W,
 
@@ -522,33 +522,12 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 			Offset(pHWA, pRTT, rdPtr->offset);
 			});
 
-		if (rdPtr->fromLib) {
-			rdPtr->fromLib = false;
-
-			UpdateRef(rdPtr, false);
-			rdPtr->pRefCount = nullptr;
-
-			rdPtr->pLibValue = nullptr;
-		}
-		else {
-			ReleaseNonFromLib(rdPtr);
-		}
-
 		// ConvertToHWATexture can't handle HWA conversions
-		rdPtr->src = ConvertBitmap(pRTT);
-
-		//if(rdPtr->pData->bPreMulAlpha) {
-		//	rdPtr->src->PremultiplyAlpha();
-		//}
-
-		if (rdPtr->HWA) {
-			ConvertToHWATexture(rdPtr, rdPtr->src);
-		}
+		// so convert to bitmap first
+		DetachFromLib(rdPtr, ConvertBitmap(pRTT));		
+		ReDisplay(rdPtr);
 
 		delete pRTT;
-
-		NewNonFromLib(rdPtr, rdPtr->src);
-		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -600,18 +579,101 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-// deprecated
-short WINAPI DLLExport AffineTrans(LPRDATA rdPtr, long param1, long param2) {
-	bool Quality = (bool)CNC_GetIntParameter(rdPtr);
-
-	ATArray A = {};
-
+short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2) {
+	std::wstring arr = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		rdPtr->AT = A;
+		constexpr double doNothing[3][3] = { {1,0,0}, {0,1,0}, {0,0,1} };
+		constexpr double doScale[3][3] = { {2,0,0}, {0,2,0}, {0,0,1} };
+		constexpr double doRotate[3][3] = { {1.732 / 2,-0.5,0}, {0.5,1.732 / 2,0}, {0,0,1} };
+		constexpr double doShear[3][3] = { {1,0.5,0}, {0.5,1,0}, {0,0,1} };
 
-		AffineTransformation(rdPtr->src, A);
+		double matrix[3][3] = { 0.0 };
+		std::copy_n(&doNothing[0][0], 9, &matrix[0][0]);
+
+		try {
+			auto trim = [] (std::wstring& str,
+				const std::vector<wchar_t>& frontChars,
+				const std::vector<wchar_t>& backChars) {
+						constexpr auto front = true;
+						constexpr auto back = false;
+
+						auto needTrim = [&] (bool dir) {
+							const std::vector<wchar_t>& chars = dir ? frontChars : backChars;
+
+							for (const auto& it : chars) {
+								const auto c = dir ? str.front() : str.back();
+
+								if (c == it) {
+									return true;
+								}
+							}
+
+							return false;
+						};
+
+						while (needTrim(front)) {
+							str.erase(str.begin());
+						}
+						while (needTrim(back)) {
+							str.pop_back();
+						}
+			};
+
+			const std::vector<wchar_t> frontChars = { L' ',L'{',L',' };
+			const std::vector<wchar_t> backChars = { L' ',L'}',L',' };
+
+			trim(arr, frontChars, backChars);
+
+			const List rows = SplitString(arr, L'}');
+
+			if (rows.size() < 3) {
+				throw std::exception();
+			}
+
+			for (int y = 0; y < 3; y++) {
+				constexpr auto arrayDelimiter = L',';
+				auto row = rows[y];
+				trim(row, frontChars, backChars);
+
+				const List elements = SplitString(row, arrayDelimiter);
+
+				if (elements.size() < 3) {
+					throw std::exception();
+				}
+
+				for (int x = 0; x < 3; x++) {
+					auto element = elements[x];
+					trim(element, frontChars, backChars);
+
+					matrix[y][x] = _stod(element);
+				}
+			}
+		} catch (...) {
+#if !defined(RUN_ONLY)
+			MSGBOX(L"Invalid transform matrix");
+#endif
+			std::copy_n(&doNothing[0][0], 9, &matrix[0][0]);
+		}
+
+		const auto bEqual = memcmp(&doNothing[0][0], &matrix[0][0], 9 * sizeof(double)) == 0;
+
+		if (bEqual) {
+			return 0;
+		}
+
+		LPSURFACE pSf = nullptr;
+		ProcessBitmap(rdPtr->src, [&] (const LPSURFACE pBitmap) {
+			pSf = PerspectiveTransformation(pBitmap, matrix);
+
+			const auto newHotSpot = PerspectiveTransformationPoint(rdPtr->hotSpot.x, rdPtr->hotSpot.y, matrix);
+			rdPtr->hotSpot.x = static_cast<LONG>(std::get<0>(newHotSpot));
+			rdPtr->hotSpot.y = static_cast<LONG>(std::get<1>(newHotSpot));
+		});
+
+		DetachFromLib(rdPtr, pSf);
 		ReDisplay(rdPtr);
 	}
 
@@ -626,68 +688,13 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		bool bReleaseOld = false;
-		LPSURFACE pOldSf = nullptr;
+		LPSURFACE pSf = nullptr;
+		ProcessBitmap(rdPtr->src, [&] (const LPSURFACE pBitmap) {
+			pSf = CreateCloneSurface(pBitmap);
+			StackBlur(pSf, radius, scale, divide);
+		});
 
-		if (rdPtr->fromLib) {
-			pOldSf = rdPtr->src;
-			rdPtr->src = nullptr;
-
-			UpdateRef(rdPtr, false);
-			rdPtr->pRefCount = nullptr;
-
-			rdPtr->pLibValue = nullptr;
-
-			bReleaseOld = false;
-		}
-		else {
-			pOldSf = rdPtr->src;
-			rdPtr->src = nullptr;
-
-			bReleaseOld = true;
-		}
-
-		LPSURFACE pMemSf = nullptr;
-		auto bHwa = IsHWA(pOldSf);
-
-		// convert to bitmap
-		if (rdPtr->fromLib) {	// copy & convert, no matter HWA or not
-			pMemSf = ConvertBitmap(rdPtr, pOldSf);
-
-			bReleaseOld = false;
-		}
-		else {
-			if (bHwa) {
-				pMemSf = ConvertBitmap(rdPtr, pOldSf);
-								
-				bReleaseOld = true;
-			}
-			else {
-				pMemSf = pOldSf;
-
-				bReleaseOld = false;
-			}
-		}		
-
-		if (bReleaseOld) {
-			// delete pOldSf;
-			// pOldSf is one of the following
-			ReleaseNonFromLib(rdPtr);
-		}	
-
-		rdPtr->fromLib = false;
-
-		StackBlur(pMemSf, radius, scale, divide);
-
-		rdPtr->src = pMemSf;
-		
-		if (bHwa) {
-			ConvertToHWATexture(rdPtr, rdPtr->src);
-		}
-
-		// update latet (may do hwa conversion)
-		NewNonFromLib(rdPtr, rdPtr->src);
-
+		DetachFromLib(rdPtr, pSf);
 		ReDisplay(rdPtr);
 	}
 
@@ -746,64 +753,35 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		bool bReleaseBitmap = false;
-		auto pBitmap = rdPtr->src;
-		auto pSf = CreateSurface(32, width, height);
+		const auto pSf = CreateSurface(rdPtr->src->GetDepth(), width, height);
 
 		if (rdPtr->src->HasAlpha()) {
 			//_AddAlpha(pSf);
 			pSf->CreateAlpha();
 		}
 
-		if (IsHWA(rdPtr->src)) {
-			pBitmap = ConvertBitmap(rdPtr, rdPtr->src);
-			bReleaseBitmap = true;
-		}
+		ProcessBitmap(rdPtr, rdPtr->src, [&] (const LPSURFACE pBitmap) {
+			// Fill -> alpha channel issue
+			// Fill -> not work under HWA (blank result)
+			//CFillMosaic mosaic(pBitmap);		
+			//auto bResult = pSf->Fill(&mosaic);
+			
+			// if mod != 0 then need another blit
+			auto itx = width / pBitmap->GetWidth() + ((width % pBitmap->GetWidth()) != 0);
+			auto ity = height / pBitmap->GetHeight() + ((height % pBitmap->GetHeight()) != 0);
 
-		// Fill -> alpha channel issue
-		// Fill -> not work under HWA (blank result)
-		//CFillMosaic mosaic(pBitmap);		
-		//auto bResult = pSf->Fill(&mosaic);
+			for (int y = 0; y < ity; y++) {
+				for (int x = 0; x < itx; x++) {
+					auto destX = x * pBitmap->GetWidth();
+					auto destY = y * pBitmap->GetHeight();
 
-		// if mod != 0 then need another blit
-		auto itx = width / pBitmap->GetWidth() + ((width % pBitmap->GetWidth()) != 0);
-		auto ity = height / pBitmap->GetHeight() + ((height % pBitmap->GetHeight()) != 0);
-
-		for (int y = 0; y < ity; y++) {
-			for (int x = 0; x < itx; x++) {
-				auto destX = x * pBitmap->GetWidth();
-				auto destY = y * pBitmap->GetHeight();
-
-				pBitmap->Blit(*pSf, destX, destY, BMODE_OPAQUE, BOP_COPY, 0, BLTF_COPYALPHA);
+					pBitmap->Blit(*pSf, destX, destY, BMODE_OPAQUE, BOP_COPY, 0, BLTF_COPYALPHA);
+				}
 			}
-		}
-
-		if (bReleaseBitmap) {
-			delete pBitmap;
-		}
-
-		if (rdPtr->fromLib) {
-			rdPtr->fromLib = false;
-
-			UpdateRef(rdPtr, false);
-			rdPtr->pRefCount = nullptr;
-
-			rdPtr->pLibValue = nullptr;
-		}
-		else {
-			ReleaseNonFromLib(rdPtr);
-		}
-
-		if (rdPtr->HWA) {
-			ConvertToHWATexture(rdPtr, pSf);
-		}
-
-		rdPtr->src = pSf;
-
-		NewNonFromLib(rdPtr, rdPtr->src);
-
+		});
+	
+		DetachFromLib(rdPtr, pSf);
 		NewPic(rdPtr);
-		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -899,12 +877,11 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 
 	if (CanDisplay(rdPtr)) {
 		auto pSf = ConvertBitmap(rdPtr->src);
-
 		// reset to 255
 		//_ForceAddAlpha(pSf);
 
 		ProcessBitmap(rdPtr, pSf, [&] (const LPSURFACE pBitmap) {
-			IteratePixel(pSf,[&](const int x,const int y, const SfCoef sfCoef,
+			IteratePixel(pSf,[&](const int x,const int y, const SfCoef& sfCoef,
 			const BYTE* pSrcPixel, BYTE* pAlphaPixel) {
 				const auto mul = rdPtr->pData->bPreMulAlpha
 					? pAlphaPixel[0] / 255.0
@@ -928,33 +905,13 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 				}
 			});
 		});
-		
-		if (rdPtr->fromLib) {
-			rdPtr->fromLib = false;
-
-			UpdateRef(rdPtr, false);
-			rdPtr->pRefCount = nullptr;
-
-			rdPtr->pLibValue = nullptr;
-		}
-		else {
-			ReleaseNonFromLib(rdPtr);
-		}
 
 		if (rdPtr->pData->bPreMulAlpha) {
 			pSf->PremultiplyAlpha();
 		}
 
-		if (rdPtr->HWA) {
-			ConvertToHWATexture(rdPtr, pSf);
-		}
-
-		rdPtr->src = pSf;
-
-		NewNonFromLib(rdPtr, rdPtr->src);
-
+		DetachFromLib(rdPtr, pSf);
 		NewPic(rdPtr);
-		ReDisplay(rdPtr);
 	}
 
 	return 0;
@@ -1330,7 +1287,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			SetLoadCallback,
 			SetQuality,
 
-			AffineTrans,
+			PerspectiveTrans,
 			Offset,
 
 			LoadFromDisplay,

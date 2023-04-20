@@ -90,7 +90,7 @@
 #define IDMN_ACTION_SQ	       		25013
 #define IDMN_ACTION_SLC	       		25014
 
-#define IDMN_ACTION_AT	       		25015
+#define IDMN_ACTION_PT	       		25015
 #define IDMN_ACTION_O	       		25016
 
 #define IDMN_ACTION_LFD	       		25017
@@ -156,7 +156,7 @@
 #define M_ACTION_SLC          	     5013
 #define M_ACTION_SQ          	     5014
 
-#define M_ACTION_AT          	     5015
+#define M_ACTION_PT          	     5015
 #define M_ACTION_O          	     5016
 
 #define M_ACTION_LFD          	     5017
@@ -252,6 +252,7 @@
 #define M_ACTION_FID	             5534
 #define M_ACTION_FINDEX              5535
 #define M_ACTION_STEP                5536
+#define M_ACTION_PTMAT               5537
 
 //	Conditions
 //--------------------

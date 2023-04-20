@@ -33,9 +33,13 @@ struct SfCoef {
 
 inline SfCoef GetSfCoef(LPSURFACE pSf);
 inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef);
+inline BYTE* GetPixelAddress(int width, int height, int x, int y, const SfCoef& coef);
+inline BYTE* GetAlphaPixelAddress(int width, int height, int x, int y, const SfCoef& coef);
 
 inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
 inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
+inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor);
+inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const SfCoef&, BYTE*, BYTE*)>& process);
 
 //-----------------------------
 
@@ -991,7 +995,9 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	// 降采样
 	LPSURFACE img = pSrc;
 
-	if (!(scale == 1.0)) {
+	const auto bScale = scale != 1.0f;
+
+	if (bScale) {
 		img = CreateSurface(24, width, height);
 		img->Clone(*pSrc, width, height);
 	}
@@ -1000,6 +1006,10 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	auto coef = GetSfCoef(img);
 
 	if (!coef.pData) {
+		if (bScale) {
+			delete img;
+		}
+
 		return;
 	}
 
@@ -1247,12 +1257,109 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	ReleaseSfCoef(img, coef);
 
 	//还原大小
-	if (!(scale == 1.0)) {
+	if (bScale) {
 		pSrc->Clone(*img, owidth, oheight);
 		delete img;
 	}
 
 	return;
+}
+
+#pragma warning(disable : 4819)
+
+#include "Eigen/Dense"
+
+inline void GetReversePerspectiveTransformationPoint(double in[3][3]){
+	Eigen::Matrix<double, 3, 3, Eigen::RowMajor> arr(in[0]);
+	arr = arr.inverse().eval();
+
+	std::copy_n(arr.data(), 9, &in[0][0]);
+}
+
+inline constexpr auto PerspectiveTransformationPoint(const double x, const double y,
+	const double matrix[3][3]) {
+	const auto div = (matrix[2][0] * x + matrix[2][1] * y + matrix[2][2]);
+	const auto newX = (matrix[0][0] * x + matrix[0][1] * y + matrix[0][2]) / div;
+	const auto newY = (matrix[1][0] * x + matrix[1][1] * y + matrix[1][2]) / div;
+
+	return std::make_tuple(newX, newY);
+}
+
+inline constexpr auto GetPerspectiveTransformationSize(const double width, const double height,
+	const double matrix[3][3]) {
+	const auto [xLT, yLT] = PerspectiveTransformationPoint(0, 0, matrix);
+	const auto [xRT, yRT] = PerspectiveTransformationPoint(width, 0, matrix);
+	const auto [xLB, yLB] = PerspectiveTransformationPoint(0, height, matrix);
+	const auto [xRB, yRB] = PerspectiveTransformationPoint(width, height, matrix);
+
+	const auto xList = { xLT, xRT, xLB, xRB };
+	const auto yList = { yLT, yRT, yLB, yRB };
+
+	//auto getOffset = [] (const auto& list) {
+	//	auto min = (std::min)(list);
+	//	auto max = (std::max)(list);
+
+	//	return max - min;
+	//};
+
+	//const auto newWidth = getOffset(xList);
+	//const auto newHeight = getOffset(yList);
+
+	//return std::make_tuple(newWidth, newHeight);
+
+	auto minX = (std::min)(xList);
+	auto maxX = (std::max)(xList);
+	auto minY = (std::min)(yList);
+	auto maxY = (std::max)(yList);
+
+	return std::make_tuple(minX, minY, maxX, maxY);
+}
+
+inline auto PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[3][3]) {
+	const auto [minX, minY, maxX, maxY]
+		= GetPerspectiveTransformationSize(pSrc->GetWidth(), pSrc->GetHeight(), matrix);
+
+	const auto newWidth = static_cast<int>(maxX - minX);
+	const auto newHeight = static_cast<int>(maxY - minY);
+
+	const auto pBitmap = CreateSurface(pSrc->GetDepth(), newWidth, newHeight);
+	pBitmap->CreateAlpha();	
+
+	double rm[3][3] = { 0.0 };
+	std::copy_n(&matrix[0][0], 9, &rm[0][0]);
+	GetReversePerspectiveTransformationPoint(rm);
+
+	const auto pSrcCoef = GetSfCoef(pSrc);
+	const auto width = pSrc->GetWidth();
+	const auto height = pSrc->GetHeight();
+
+	IteratePixel(pBitmap, [&] (const int x, const int y,
+		const SfCoef& sfCoef,
+		BYTE* pPixel, BYTE* pAlphaPixel) {
+			//const auto r = static_cast<BYTE>(pPixel[2]);
+			//const auto g = static_cast<BYTE>(pPixel[1]);
+			//const auto b = static_cast<BYTE>(pPixel[0]);
+			//const auto a = static_cast<BYTE>(pAlphaPixel[0]);
+
+			const auto [nx, ny] = PerspectiveTransformationPoint(x + static_cast<int>(minX),
+				y + static_cast<int>(minY),
+				rm);
+			const auto nxi = Range(static_cast<int>(nx), 0, width - 1);
+			const auto nyi = Range(static_cast<int>(ny), 0, height - 1);
+
+			const auto pSrcPixel = GetPixelAddress(width, height, nxi, nyi, pSrcCoef);
+			const auto pSrcAlphaPixel = GetAlphaPixelAddress(width, height, nxi, nyi, pSrcCoef);
+
+			pPixel[2] = pSrcPixel[2];
+			pPixel[1] = pSrcPixel[1];
+			pPixel[0] = pSrcPixel[0];
+
+			pAlphaPixel[0] = pSrcAlphaPixel[0];
+	});
+
+	ReleaseSfCoef(pSrc, pSrcCoef);
+
+	return pBitmap;
 }
 
 //Affine transformation
@@ -1328,11 +1435,25 @@ inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef) {
 	}
 }
 
+inline BYTE* GetPixelAddress(int width, int height, int x, int y, const SfCoef& coef) {
+	const auto offset = y * coef.pitch + x * coef.byte;
+	BYTE* srcPixel = coef.pData + offset;
+	
+	return srcPixel;
+}
+
+inline BYTE* GetAlphaPixelAddress(int width, int height, int x, int y, const SfCoef& coef) {
+	const auto alphaOffset = (height - 1 - y) * coef.alphaPitch + x * coef.alphaByte;
+	BYTE* alphaPixel = coef.pAlphaData + alphaOffset;
+
+	return alphaPixel;
+}
+
 inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor) {
 	ProcessBitmap(pSf, [&](const LPSURFACE Bitmap) {
-		auto ceof = GetSfCoef(pSf);
-		processor(ceof);
-		ReleaseSfCoef(pSf, ceof);
+		const auto coef = GetSfCoef(pSf);
+		processor(coef);
+		ReleaseSfCoef(pSf, coef);
 	});
 }
 
@@ -1341,46 +1462,37 @@ inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(
 }
 
 inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const SfCoef&,BYTE*,BYTE*)>& process) {
-	//Dimensions
-	int width = pSf->GetWidth();
-	int height = pSf->GetHeight();
+	ProcessPixel(pSf, [&] (const SfCoef& coef) {
+		//Dimensions
+		int width = pSf->GetWidth();
+		int height = pSf->GetHeight();
 
-	auto sfCoef = GetSfCoef(pSf);
-	
-	//Lock buffer, get pitch etc.
-	BYTE* pData= sfCoef.pData;
-	int pitch = sfCoef.pitch;
-	int size = sfCoef.sz;
-	int byte = sfCoef.byte;
+		//Lock buffer, get pitch etc.
+		BYTE* pData = coef.pData;
+		int pitch = coef.pitch;
+		int size = coef.sz;
+		int byte = coef.byte;
 
-	//Alpha
-	BYTE* pAlphaData = sfCoef.pAlphaData;
-	int alphaPitch = sfCoef.alphaPitch;
-	int alphaSz = sfCoef.alphaSz;
-	int alphaByte = sfCoef.alphaByte;
+		//Alpha
+		BYTE* pAlphaData = coef.pAlphaData;
+		int alphaPitch = coef.alphaPitch;
+		int alphaSz = coef.alphaSz;
+		int alphaByte = coef.alphaByte;
 
-	////Backup buffer
-	//BYTE* temp = new BYTE[size];
-	//memcpy(temp, pData, size);
+		//Loop through all pixels
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				const auto offset = y * pitch + x * byte;
+				BYTE* srcPixel = pData + offset;
 
-	//Loop through all pixels
-	for (int y = 0; y < height; ++y) {
-		for (int x = 0; x < width; ++x) {
-			auto offset = y * pitch + x * byte;
-			BYTE* srcPixel = pData + offset;
-			//BYTE* tempPixel = temp + offset;
+				const auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
+				BYTE* alphaPixel = pAlphaData + alphaOffset;
 
-			auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
-			BYTE* alphaPixel = pAlphaData + alphaOffset;
-
-			process(x, y, sfCoef
-				, srcPixel, alphaPixel);
+				process(x, y, coef
+					, srcPixel, alphaPixel);
+			}
 		}
-	}
-
-	ReleaseSfCoef(pSf, sfCoef);
-
-	//delete[] temp;
+});
 }
 
 // dst transparent -> src alpha
