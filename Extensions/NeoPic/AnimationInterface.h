@@ -85,6 +85,15 @@ struct AnimationInterface {
 		pA = nullptr;
 	}
 
+private:
+	inline double GetCorrectedSpeed() const {
+		const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed)
+			/ static_cast<double>(Animation_MaxSpeed * Animation_MaxSpeed);
+
+		return correctedSpeed;
+	}
+
+public:
 	inline void UpdateAnimation() {
 		if (pA == nullptr) {
 			return;
@@ -134,15 +143,11 @@ struct AnimationInterface {
 		updateHotSpot(pAI, pA->GetNextFrame());
 
 		// update display but won't update interpolation
-		if (!bPaused) {
-			const auto correctedSpeed = (this->speed * pA->GetAnimationInfo()->speed)
-				/ static_cast<double>(Animation_MaxSpeed * Animation_MaxSpeed);
-			speedAccumulate += correctedSpeed;
+		do {
+			if (bPaused) { break; }
 
-			if (speedAccumulate < 1.0) {
-				return;
-			}
-
+			speedAccumulate += GetCorrectedSpeed();
+			if (speedAccumulate < 1.0) { break; }
 			speedAccumulate -= 1.0;
 
 			pA->UpdateFrame(
@@ -154,7 +159,7 @@ struct AnimationInterface {
 			[&] () {
 				CallEvent(ONANIMATIONFINISHED)
 			});
-		}
+		} while (false);
 		
 		const auto pCurFrame = pA->GetCurrentFrame();
 
@@ -173,7 +178,7 @@ struct AnimationInterface {
 			pCurFrame->pRGBCoef->rgbCoef);
 		Zoom(rdPtr, static_cast<float>(pCurFrame->pScale->x), static_cast<float>(pCurFrame->pScale->y));		
 		UpdateHotSpot(rdPtr, 
-			//pCurFrame->pHotSpot->typeID, 
+			// Update x & y by pos before calling this
 			HotSpotPos::CUSTOM,
 			pCurFrame->pHotSpot->x, pCurFrame->pHotSpot->y);
 	}
