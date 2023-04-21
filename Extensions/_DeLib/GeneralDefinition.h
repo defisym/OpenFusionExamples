@@ -172,3 +172,8 @@ template<typename T>
 inline T Range(T v, T minv, T maxv) {
 	return (std::max)(minv, (std::min)(maxv, v));
 }
+
+template<typename T>
+inline void UpdateRange(T& v, T minv, T maxv) {
+	v = (std::max)(minv, (std::min)(maxv, v));
+}

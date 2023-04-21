@@ -21,6 +21,7 @@
 #include <functional>
 
 #include "MusicScore.h"
+#include "GeneralDefinition.h"
 
 using std::literals::chrono_literals::operator ""ms;
 
@@ -125,9 +126,9 @@ private:
 	}
 };
 
-constexpr auto AudioDataException_DecryptFailed = -1;
-constexpr auto AudioDataException_CreateRWFailed = -2;
-constexpr auto AudioDataException_CreateMusicFailed = -3;
+constexpr auto AudioDataException_DecryptFailed = "DecryptFailed";
+constexpr auto AudioDataException_CreateRWFailed = "CreateRWFailed";
+constexpr auto AudioDataException_CreateMusicFailed = "CreateMusicFailed";
 
 struct AudioData {
 	std::wstring fileName;
@@ -140,17 +141,19 @@ struct AudioData {
 	Mix_Music* pMusic = nullptr;	
 	AudioEffect* pEffect = nullptr;
 
+	double duration = -1.0;
+
 	AudioData(const wchar_t* pFileName) {
 		fileName = pFileName;
 
 		pRW = SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
 
 		if (!pRW) {
-			throw AudioDataException_CreateRWFailed;
+			throw std::exception(AudioDataException_CreateRWFailed);
 		}
 
 		if (!CreateMusic()) {
-			throw AudioDataException_CreateMusicFailed;
+			throw std::exception(AudioDataException_CreateMusicFailed);
 		}
 	}
 	AudioData(const wchar_t* pFileName, const wchar_t* pKey) {
@@ -162,17 +165,17 @@ struct AudioData {
 		const auto bRet = pDecrypt->DecryptFileDirectly(pFileName);
 
 		if (!bRet) {
-			throw AudioDataException_DecryptFailed;
+			throw std::exception(AudioDataException_DecryptFailed);
 		}
 
-		pRW = SDL_RWFromConstMem(pDecrypt->GetOutputData(), pDecrypt->GetOutputDataLength());
+		pRW = SDL_RWFromConstMem(pDecrypt->GetOutputData(), (int)pDecrypt->GetOutputDataLength());
 
 		if (!pRW) {
-			throw AudioDataException_CreateRWFailed;
+			throw std::exception(AudioDataException_CreateRWFailed);
 		}
 
 		if (!CreateMusic()) {
-			throw AudioDataException_CreateMusicFailed;
+			throw std::exception(AudioDataException_CreateMusicFailed);
 		}
 	}
 
@@ -551,17 +554,17 @@ struct GlobalData {
 	}
 
 	// 0 ~ 100 -> 0 ~ 128
-	static inline int Range(int v, int l, int h) {
-		return max(min(v, h), l);
-	}
+	//static inline int Range(int v, int l, int h) {
+	//	return max(min(v, h), l);
+	//}
 
 	static inline int VolumeConverter(int volume) {
-		return (int)((Range(volume, Fusion_MinVolume, Fusion_MaxVolume) /
+		return (int)((::Range(volume, Fusion_MinVolume, Fusion_MaxVolume) /
 			static_cast<double>(Fusion_MaxVolume)) * static_cast<double>(Mix_MaxVolume));
 	}
 
 	static inline int VolumeReverseConverter(int volume) {
-		return (int)((Range(volume, Mix_MinVolume, Mix_MaxVolume) /
+		return (int)((::Range(volume, Mix_MinVolume, Mix_MaxVolume) /
 			static_cast<double>(Mix_MaxVolume)) * static_cast<double>(Fusion_MaxVolume));
 	}
 
@@ -650,13 +653,13 @@ struct GlobalData {
 	// 0 ~ 100
 	static inline int GetChannelVolume(ChannelVolume& vec, int channel) {
 		ExtendVec(vec, channel, Fusion_MaxVolume);
-		return Range(vec[channel], Fusion_MinVolume, Fusion_MaxVolume);
+		return ::Range(vec[channel], Fusion_MinVolume, Fusion_MaxVolume);
 	}
 
 	// 0 ~ 100
 	static inline void SetChannelVolume(ChannelVolume& vec, int channel, int volume) {
 		ExtendVec(vec, channel, Fusion_MaxVolume);
-		vec[channel] = Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
+		vec[channel] = ::Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
 	}
 
 	// ------------
@@ -822,11 +825,17 @@ struct GlobalData {
 
 		const auto pAudioData = exclusiveChannel[channel];
 
-		if (pAudioData != nullptr) {
-			return GetAudioDuration(pAudioData->pMusic);
+		if (pAudioData == nullptr) {
+			return -1;
 		}
 
-		return -1;
+		// if not updated, update it
+		if (pAudioData->duration < 0.0) {
+			pAudioData->duration = GetAudioDuration(pAudioData->pMusic);
+		}
+
+		return pAudioData->duration;
+
 	}
 
 	// 0 ~ 100
@@ -876,7 +885,7 @@ struct GlobalData {
 
 			if (channelSettings.excl_bABLoop) {
 				const auto currentPosition = GetAudioPosition(pAudioData->pMusic);
-				const auto endPos = channelSettings.excl_end == 0
+				const auto endPos = channelSettings.excl_end == 0.0
 					? GetAudioDuration(pAudioData->pMusic)
 					: channelSettings.excl_end;
 

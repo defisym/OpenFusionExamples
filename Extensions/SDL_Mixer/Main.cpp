@@ -212,8 +212,8 @@ short WINAPI DLLExport Action_StopAllChannel(LPRDATA rdPtr, long param1, long pa
 
 short WINAPI DLLExport Action_SetABLoop(LPRDATA rdPtr, long param1, long param2) {
 	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto start = (int)CNC_GetIntParameter(rdPtr);
-	auto end = (int)CNC_GetIntParameter(rdPtr);
+	auto start = (double)GetFloatParam(rdPtr);
+	auto end = (double)GetFloatParam(rdPtr);
 
 	rdPtr->pData->SetExclusiveABLoop(channel, start, end);
 
