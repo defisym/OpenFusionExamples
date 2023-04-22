@@ -59,8 +59,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_S, M_ACTION_S,	ACT_ACTION_S,	0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_S_WIDTH,M_ACTION_S_HEIGHT,
 
-		IDMN_ACTION_AB, M_ACTION_AB,	ACT_ACTION_AB,	0, 1,PARAM_PASTE,0,
-		IDMN_ACTION_UC, M_ACTION_UC,	ACT_ACTION_UC,	0, 0,
+		IDMN_ACTION_AB, M_ACTION_AB,	ACT_ACTION_AB,	0, 1,PARAM_PASTE, 0,
+		IDMN_ACTION_ULCSF, M_ACTION_ULCSF,	ACT_ACTION_ULCSF,	0, 1, PARAM_EXPRESSION, M_ACTION_PSF,
 
 		IDMN_ACTION_SLC, M_ACTION_SLC,	ACT_ACTION_SLC,	0, 1, PARAM_EXPRESSION, M_ACTION_HC,
 		IDMN_ACTION_SQ, M_ACTION_SQ,	ACT_ACTION_SQ,	0, 1, PARAM_EXPRESSION, M_ACTION_RS,
@@ -158,6 +158,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GAFINDEX, M_EXPRESSION_GAFINDEX, EXP_EXPRESSION_GAFINDEX, 0, 0,
 		IDMN_EXPRESSION_GAS, M_EXPRESSION_GAS, EXP_EXPRESSION_GAS, 0, 0,
 		IDMN_EXPRESSION_GASTEP, M_EXPRESSION_GASTEP, EXP_EXPRESSION_GASTEP, EXPFLAG_DOUBLE, 0,
+
+		IDMN_EXPRESSION_GLCFN, M_EXPRESSION_GLCFN, EXP_EXPRESSION_GLCFN, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GLCSF, M_EXPRESSION_GLCSF, EXP_EXPRESSION_GLCSF, 0, 0,
 
 		};
 
@@ -266,7 +269,7 @@ short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) 
 
 short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
 	auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
-	auto pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);	
+	auto pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
 	LoadFromPointer(rdPtr, pFileName, pSf);
@@ -556,13 +559,21 @@ short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-// deprecated
-short WINAPI DLLExport UpdateCollision(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport UpdateLoadCallbackSf(LPRDATA rdPtr, long param1, long param2) {
+	const auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));	
+
+	if (pSf->IsValid()) {
+		// files are loaded as bitmap
+		ProcessBitmap(rdPtr, pSf, [&] (const LPSURFACE pBitmap) {
+			(*rdPtr->pLoadCallbackInfo->ppSf)->Clone(*pBitmap);
+		});
+	}
+
 	return 0;
 }
 
 short WINAPI DLLExport SetLoadCallback(LPRDATA rdPtr, long param1, long param2) {
-	bool bCallback = (bool)CNC_GetIntParameter(rdPtr);
+	const auto bCallback = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->bLoadCallback = bCallback;
 
@@ -1233,6 +1244,18 @@ long WINAPI DLLExport GetAnimationSpeed(LPRDATA rdPtr, long param1) {
 	return rdPtr->pAI->GetSpeed();
 }
 
+long WINAPI DLLExport GetLoadCallbackFileName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pLoadCallbackInfo->callbackFileName.c_str();
+}
+
+long WINAPI DLLExport GetLoadCallbackSf(LPRDATA rdPtr, long param1) {
+	return ConvertToLong<cSurface*>(rdPtr->pLoadCallbackInfo->GetSurfacePointer());
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1280,7 +1303,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Stretch,
 
 			AddBackdrop,
-			UpdateCollision,
+			UpdateLoadCallbackSf,
 
 			SetLoadCallback,
 			SetQuality,
@@ -1377,6 +1400,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			GetAnimationFrameIndex,
 			GetAnimationSpeed,
 			GetAnimationStep,
+
+			GetLoadCallbackFileName,
+			GetLoadCallbackSf,
 
 			0
 			};

@@ -151,6 +151,7 @@ BEGIN
         POPUP "Load"
         BEGIN
             MENUITEM "Set Load Callback",           IDMN_ACTION_SLC
+            MENUITEM "Update Load Callback Surface",         IDMN_ACTION_ULCSF
             MENUITEM SEPARATOR
             MENUITEM "Load From File",              IDMN_ACTION_LFF
             MENUITEM "Load From Pointer",           IDMN_ACTION_LFP
@@ -232,7 +233,6 @@ BEGIN
             END
             MENUITEM SEPARATOR
             MENUITEM "Add Backdrop",               IDMN_ACTION_AB
-            //MENUITEM "Update Collision",         IDMN_ACTION_UC
         END
         MENUITEM SEPARATOR
     END
@@ -251,6 +251,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Load"
         BEGIN
+            MENUITEM "Get Load Callback FileName", IDMN_EXPRESSION_GLCFN            
+            MENUITEM "Get Load Callback Surface Pointer", IDMN_EXPRESSION_GLCSF            
+            MENUITEM SEPARATOR
             MENUITEM "Get Pic FileName", IDMN_EXPRESSION_GFN
             MENUITEM "Get File FileName", IDMN_EXPRESSION_GFFN
             MENUITEM SEPARATOR
@@ -454,9 +457,9 @@ BEGIN
     M_ACTION_S_HEIGHT           "Height"
 
     M_ACTION_AB             "Add Backdrop %0"
-    M_ACTION_UC             "Update Collision"
 
-    M_ACTION_SLC             "Set Load Callback to %0"
+    M_ACTION_ULCSF          "Update Load Callback Surface to %0"
+    M_ACTION_SLC            "Set Load Callback to %0"
 
     M_ACTION_HC             "0 = No Collision, 1 = Has Collision"
     M_ACTION_AUC            "0 = Don't Auto Update Collision, 1 = Auto Update Collision"
@@ -537,28 +540,28 @@ BEGIN
     M_EXPRESSION_GHSX            "GetXHotSpot("
     M_EXPRESSION_GHSY            "GetYHotSpot("
 
-    M_EXPRESSION_GOW            "GetOriginalWidth("
-    M_EXPRESSION_GOH            "GetOriginalHeight("
+    M_EXPRESSION_GOW             "GetOriginalWidth("
+    M_EXPRESSION_GOH             "GetOriginalHeight("
     
-    M_EXPRESSION_GCW            "GetCurrentWidth("
-    M_EXPRESSION_GCH            "GetCurrentHeight("
+    M_EXPRESSION_GCW             "GetCurrentWidth("
+    M_EXPRESSION_GCH             "GetCurrentHeight("
     
     M_EXPRESSION_GXZS            "GetXZoomScale("
     M_EXPRESSION_GYZS            "GetYZoomScale("
     
-    M_EXPRESSION_GA            "GetAngle("
+    M_EXPRESSION_GA              "GetAngle("
     
-    M_EXPRESSION_GFN            "GetFileName$("
+    M_EXPRESSION_GFN             "GetFileName$("
     M_EXPRESSION_GFFN            "GetFileFileName$("
-    M_EXPRESSION_GFP            "GetFilePath$("
+    M_EXPRESSION_GFP             "GetFilePath$("
     M_EXPRESSION_GRFP            "GetRelativeFilePath$("
-    M_EXPRESSION_GFRFP            "GetFileRelativeFilePath$("
-    M_EXPRESSION_GK            "GetKey$("
+    M_EXPRESSION_GFRFP           "GetFileRelativeFilePath$("
+    M_EXPRESSION_GK              "GetKey$("
     
-    M_EXPRESSION_GSP            "GetSurfacePointer("
+    M_EXPRESSION_GSP             "GetSurfacePointer("
     
-    M_EXPRESSION_GAVGCX            "GetAVGCoordX("
-    M_EXPRESSION_GAVGCY            "GetAVGCoordY("
+    M_EXPRESSION_GAVGCX           "GetAVGCoordX("
+    M_EXPRESSION_GAVGCY           "GetAVGCoordY("
     
     M_EXPRESSION_COORD                      "Coord"
     M_EXPRESSION_REALCOORDMODE              "Use Real Coord Mode"
@@ -581,6 +584,9 @@ BEGIN
     M_EXPRESSION_GAFINDEX          "GetAFIndex("
     M_EXPRESSION_GASTEP            "GetAStep("
     M_EXPRESSION_GAS               "GetASpeed("
+    
+    M_EXPRESSION_GLCFN             "GetLCFileName("
+    M_EXPRESSION_GLCSF             "GetLCSurfacePointer("
 
 END
 

@@ -915,6 +915,7 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 #endif // _NO_REF
 
 // create a temp bitmap pSf if needed
+// don't use the bitmap in callback out of this function
 inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
 	auto bHWA = IsHWA(pSf);
 	auto pBitmap = pSf;

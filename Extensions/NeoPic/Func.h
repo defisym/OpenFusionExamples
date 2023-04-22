@@ -311,22 +311,33 @@ inline size_t UpdateRef(LPRDATA rdPtr, bool add) {
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 	const auto fullPath = GetFullPathNameStr(FileName);
 
-	auto loadCallback = [&] () {
+	auto loadCallback = [&] (LPSURFACE* ppSf,
+		const std::function<void(LPSURFACE pSf)>& changed) {
 		if (rdPtr->bLoadCallback) {
-			*rdPtr->pCallbackFileName = fullPath;
+			rdPtr->pLoadCallbackInfo->callbackFileName = FileName;
+			rdPtr->pLoadCallbackInfo->ppSf = ppSf;
+
+			// process will do clone first
+			// so update back must change the address
+			const auto pOldSf = *ppSf;
+
 			CallEvent(ONLOADCALLBACK)
+
+			if (pOldSf != *ppSf) {
+				changed(*ppSf);
+			}
 		}
 	};
-	auto LoadCore = [&] (std::function<void(LPSURFACE pSf)> success) {
+
+	auto loadCore = [&] (const std::function<void(LPSURFACE pSf)>& success) {
 		auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
-		_LoadFromFile(pSf,
+		const auto bRet = _LoadFromFile(pSf,
 			fullPath.c_str(), Key,
 			rdPtr, -1, -1,
 			true, rdPtr->stretchQuality);
 
-		if (pSf->IsValid()) {
+		if (bRet && pSf->IsValid()) {
 			success(pSf);
-			loadCallback();
 		}
 		else {
 			delete pSf;
@@ -334,24 +345,35 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 	};
 
 	if (rdPtr->isLib) {
-		if (rdPtr->pLib->find(fullPath) != rdPtr->pLib->end()) {
+		if (rdPtr->pLib->contains(fullPath)) {
 			return;
 		}
 
-		LoadCore([&] (LPSURFACE pSf) {
+		loadCore([&] (LPSURFACE pSf) {
 			(*rdPtr->pLib)[fullPath] = SurfaceLibValue(pSf, GetFileHash(fullPath), GetTransparent(pSf));
+
+			loadCallback(&pSf, [&] (const LPSURFACE pCallbackSf) {
+				const auto it = rdPtr->pLib->find(fullPath);
+				it->second.pSf = pCallbackSf;
+				it->second.isTransparent = GetTransparent(pCallbackSf);
+			});
 		});
 	}
 	else {
-		LoadCore([&] (LPSURFACE pSf) {
+		loadCore([&] (LPSURFACE pSf) {
 			DetachFromLib(rdPtr, pSf);
+
+			loadCallback(&pSf, [&] (const LPSURFACE pCallbackSf) {
+				DetachFromLib(rdPtr, pCallbackSf);
+			});
+
 			NewPic(rdPtr);
 
 			*rdPtr->FilePath = FileName;
 			*rdPtr->Key = Key;
 
 			GetFileName(rdPtr);
-	});
+		});
 	}
 }
 
@@ -425,9 +447,8 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCWSTR Ke
 		NewPic(rdPtr);
 	}
 	else {
-		auto thisit = rdPtr->pLib->find(fullPath);
-		if (thisit == rdPtr->pLib->end()) {
-			(*rdPtr->pLib)[it->first]=it->second;
+		if (!rdPtr->pLib->contains(fullPath)) {
+			(*rdPtr->pLib)[it->first] = it->second;
 		}
 	}
 

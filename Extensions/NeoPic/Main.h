@@ -42,7 +42,7 @@
 #define	ACT_ACTION_S				10
 
 #define	ACT_ACTION_AB				11
-#define	ACT_ACTION_UC				12
+#define	ACT_ACTION_ULCSF				12
 
 #define	ACT_ACTION_SLC				13
 #define	ACT_ACTION_SQ				14
@@ -141,7 +141,10 @@
 #define EXP_EXPRESSION_GAS              29
 #define EXP_EXPRESSION_GASTEP           30
 
-#define	EXP_LAST                    	30
+#define EXP_EXPRESSION_GLCFN            31
+#define EXP_EXPRESSION_GLCSF            32
+
+#define	EXP_LAST                    	33
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -227,7 +230,7 @@ typedef struct tagRDATA
 	SurfaceLib* pLib = nullptr;							// kept over frames
 	
 	bool bLoadCallback = false;
-	std::wstring* pCallbackFileName = nullptr;
+	LoadCallbackInfo* pLoadCallbackInfo = nullptr;
 
 	size_t memoryLimit;
 	size_t sizeLimit;
@@ -274,15 +277,15 @@ typedef struct tagRDATA
 	//src->display
 	LPSURFACE src = nullptr;
 
-	BOOL isTransparent = -1;
-	bool bCurrentDisplayTransparent = false;
-
 	// flip cache
 	LPSURFACE pSf_Nor = nullptr;
 	LPSURFACE pSf_HF = nullptr;
 	LPSURFACE pSf_VF = nullptr;
 	LPSURFACE pSf_VHF = nullptr;
-	
+
+	BOOL isTransparent = -1;
+	bool bCurrentDisplayTransparent = false;
+
 	int angle = 0;
 	HotSpotPos hotSpotPos;
 	POINT hotSpot = { 0,0 };

@@ -7,53 +7,33 @@ constexpr auto ONITREFCOUNT = 1;
 constexpr auto ONANIMATIONFINISHED = 5;
 constexpr auto ONLOADCALLBACK = 8;
 
-struct Size {
-	int width;
-	int height;
-};
-
 struct ZoomScale {
 	float XScale;
 	float YScale;
+
+	inline bool operator ==(const ZoomScale& B) const {
+		return (this->XScale == B.XScale) && (this->YScale == B.YScale);
+	}
 };
-
-inline bool operator ==(ZoomScale A, ZoomScale B) {
-	return (A.XScale == B.XScale) && (A.YScale == B.YScale);
-}
-
-inline bool operator !=(ZoomScale A, ZoomScale B) {
-	return (A.XScale != B.XScale) || (A.YScale != B.YScale);
-}
 
 struct OffsetCoef {
 	int XOffset;
 	int YOffset;
 	bool Wrap;
+
+	inline bool operator ==(const OffsetCoef& B) const {
+		return (this->XOffset == B.XOffset) && (this->YOffset == B.YOffset) && (this->Wrap == B.Wrap);
+	}
 };
 
-inline bool operator ==(OffsetCoef A, OffsetCoef B) {
-	return (A.XOffset == B.XOffset) && (A.YOffset == B.YOffset) && (A.Wrap == B.Wrap);
-}
+struct LoadCallbackInfo {
+	std::wstring callbackFileName;
+	LPSURFACE* ppSf;
 
-inline bool operator !=(OffsetCoef A, OffsetCoef B) {
-	return (A.XOffset != B.XOffset) || (A.YOffset != B.YOffset) || (A.Wrap != B.Wrap);
-}
-
-//AT array
-struct ATArray {
-	double a11;
-	double a12;
-	double a21;
-	double a22;
+	inline LPSURFACE GetSurfacePointer() const {
+		return ppSf == nullptr ? nullptr : *ppSf;
+	}
 };
-
-inline bool operator ==(ATArray A, ATArray B) {
-	return (A.a11 == B.a11) && (A.a12 == B.a12) && (A.a21 == B.a21) && (A.a22 == B.a22);
-}
-
-inline bool operator !=(ATArray A, ATArray B) {
-	return !(A == B);
-}
 
 using List = std::vector<std::wstring>;
 using KeepList = List;

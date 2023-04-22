@@ -113,7 +113,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->isLib = edPtr->isLib;
 
 	rdPtr->bLoadCallback = edPtr->bLoadCallback;
-	rdPtr->pCallbackFileName = new std::wstring;
+	rdPtr->pLoadCallbackInfo = new LoadCallbackInfo();
 
 	rdPtr->memoryLimit = edPtr->memoryLimit;
 	rdPtr->sizeLimit = edPtr->sizeLimit;
@@ -226,7 +226,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	//Display
-	delete rdPtr->pCallbackFileName;
+	delete rdPtr->pLoadCallbackInfo;
 
 	delete rdPtr->FileName;
 	delete rdPtr->FilePath;

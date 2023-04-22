@@ -85,7 +85,7 @@
 #define IDMN_ACTION_S	       		25010
 
 #define IDMN_ACTION_AB	       		25011
-#define IDMN_ACTION_UC	       		25012
+#define IDMN_ACTION_ULCSF	       		25012
 
 #define IDMN_ACTION_SQ	       		25013
 #define IDMN_ACTION_SLC	       		25014
@@ -151,7 +151,7 @@
 #define M_ACTION_S                   5010
 
 #define M_ACTION_AB          	     5011
-#define M_ACTION_UC          	     5012
+#define M_ACTION_ULCSF          	     5012
 
 #define M_ACTION_SLC          	     5013
 #define M_ACTION_SQ          	     5014
@@ -348,6 +348,9 @@
 #define IDMN_EXPRESSION_GAS         27029
 #define IDMN_EXPRESSION_GASTEP      27030
 
+#define IDMN_EXPRESSION_GLCFN       27031
+#define IDMN_EXPRESSION_GLCSF       27032
+
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
 #define M_EXPRESSION_GHSY			 7001
@@ -394,6 +397,9 @@
 #define M_EXPRESSION_GAFINDEX        7028
 #define M_EXPRESSION_GAS             7029
 #define M_EXPRESSION_GASTEP          7030
+
+#define M_EXPRESSION_GLCFN           7031
+#define M_EXPRESSION_GLCSF           7032
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500
