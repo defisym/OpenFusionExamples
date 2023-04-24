@@ -86,9 +86,21 @@ short WINAPI DLLExport Action_Save(LPRDATA rdPtr, long param1, long param2) {
 	const auto filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto pFormatStr = (LPCWSTR)CNC_GetParameter(rdPtr);
 
-	FusionClipboard::FusionClipboard fc;	
+	FusionClipboard::FusionClipboard fc;
 
-	if (!fc.SaveToFile(filePath, fc.GetFormat(pFormatStr))) {
+	//if (!fc.SaveToFile(filePath, fc.GetFormat(pFormatStr))) {
+	//	MSGBOX(ConvertStrToWStr(fc.GetErrorInfo()));
+	//}
+
+	std::wstring format;
+	if (!fc.IsFusionFormatAvaliable(format)) {
+		MSGBOX(ConvertStrToWStr(fc.GetErrorInfo()));
+		return 0;
+	}
+
+	MSGBOX(std::format(L"Fusion clipboard format {} recognized", format));
+
+	if (!fc.SaveToFile(filePath)) {
 		MSGBOX(ConvertStrToWStr(fc.GetErrorInfo()));
 	}
 
@@ -101,7 +113,11 @@ short WINAPI DLLExport Action_Load(LPRDATA rdPtr, long param1, long param2) {
 
 	FusionClipboard::FusionClipboard fc;
 
-	if (!fc.LoadFromFile(filePath, fc.GetFormat(pFormatStr))) {
+	//if (!fc.LoadFromFile(filePath, fc.GetFormat(pFormatStr))) {
+	//	MSGBOX(ConvertStrToWStr(fc.GetErrorInfo()));
+	//}
+
+	if (!fc.LoadFromFile(filePath)) {
 		MSGBOX(ConvertStrToWStr(fc.GetErrorInfo()));
 	}
 

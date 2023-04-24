@@ -8,16 +8,34 @@
 #include <Windows.h>
 
 namespace FusionClipboard {
-	constexpr auto MMFFRMED = 49987;
-	constexpr auto MMFFRMLDDR = 50112;	    
-	constexpr auto MMF2IMAGELIST = 50021;
+	//constexpr auto MMFFRMED = 49987;
+	//constexpr auto MMFFRMLDDR = 50112;
+	//constexpr auto MMF2IMAGELIST = 50021;
+	//constexpr auto MMF2ANIM = 50085;
+	    
+	//constexpr auto CF_CNCV25_EVENTS = 50322;
+	//constexpr auto CF_CNCV25_CONDITIONS = 50323;
+	//constexpr auto CF_CNCV25_ACTIONS = 50324;
 
-	constexpr auto CF_CNCV25_EVENTS = 50322;	    
-	constexpr auto CF_CNCV25_CONDITIONS = 50323;
-	constexpr auto CF_CNCV25_ACTIONS = 50324;
+	constexpr auto MMFFRMED = L"MMFFRMED";
+	constexpr auto MMFFRMLDDR = L"MMFFRMLDDR";
+	constexpr auto MMF2IMAGELIST = L"MMF2IMAGELIST";
+	constexpr auto MMF2ANIM = L"MMF2ANIM";
 
-	constexpr auto CONDSZ = 16;	    
-	constexpr auto ACTSZ = 14;	    
+	constexpr auto CF_CNCV25_EVENTS = L"CF_CNCV25_EVENTS";
+	constexpr auto CF_CNCV25_CONDITIONS = L"CF_CNCV25_CONDITIONS";
+	constexpr auto CF_CNCV25_ACTIONS = L"CF_CNCV25_ACTIONS";
+
+	const static std::vector<const wchar_t*> FusionClipboardFormats = {
+		MMFFRMED,
+		MMFFRMLDDR,
+		MMF2IMAGELIST,
+		MMF2ANIM,
+
+		CF_CNCV25_EVENTS,
+		CF_CNCV25_CONDITIONS,
+		CF_CNCV25_ACTIONS,
+	};
 
 	class FusionClipboard {
 	private:
@@ -86,25 +104,12 @@ namespace FusionClipboard {
 				sz = 0;
 			}
 
-			//inline bool SaveToClipboard(COleDataSource* pData) const {
-			//	HGLOBAL cb = GlobalAlloc(GMEM_FIXED, sz);
-			//	const auto pCb = static_cast<BYTE*>(GlobalLock(cb));
-
-			//	memcpy(pCb, pBuf, sz);
-
-			//	GlobalUnlock(cb);
-
-			//	pData->CacheGlobalData(static_cast<CLIPFORMAT>(uFormat), cb);
-
-			//	return true;
-			//}
-
 			inline bool SaveToClipboard() const {
-				if (!OpenClipboard(nullptr)) {
-					return false;
-				}
+				//if (!OpenClipboard(nullptr)) {
+				//	return false;
+				//}
 
-				EmptyClipboard();
+				//EmptyClipboard();
 
 				const HGLOBAL cb = GlobalAlloc(GMEM_MOVEABLE, sz);
 				const auto pData = static_cast<BYTE*>(GlobalLock(cb));
@@ -114,7 +119,7 @@ namespace FusionClipboard {
 				SetClipboardData(uFormat, pData);
 
 				GlobalUnlock(cb);
-				CloseClipboard();
+				//CloseClipboard();
 
 				return true;
 			}
@@ -221,7 +226,19 @@ namespace FusionClipboard {
 			return required;
 		}
 
-		inline bool LoadFromFile(const std::wstring& fileName, UINT requiredFormat) {
+		inline bool IsFusionFormatAvaliable(std::wstring& format) {
+			for(const auto& it:FusionClipboardFormats) {
+				if(DataAvailable(GetFormat(it))) {
+					format = it;
+					return true;
+				}
+			}
+
+			err = "Required Format Not Available";
+			return false;
+		}
+
+		inline bool LoadFromFile(const std::wstring& fileName, UINT requiredFormat = 0) {
 			FILE* fp = nullptr;
 			_wfopen_s(&fp, fileName.c_str(), L"rb");
 
@@ -262,13 +279,19 @@ namespace FusionClipboard {
 					bRet = false;
 					break;
 				}
+		
+				if (!OpenClipboard(nullptr)) {
+					err = "Cannot Open Clipboard";
+					bRet = false;
+					break;
+				}
 
 				EmptyClipboard();
 
 				for (const auto& it : offsets) {
 					try {
 						const auto data = ClipboardData(fp);
-						if (data.uFormat == requiredFormat) {
+						if (requiredFormat == 0 || data.uFormat == requiredFormat) {
 							data.SaveToClipboard();
 						}
 					} catch (std::exception& e) {
@@ -277,9 +300,12 @@ namespace FusionClipboard {
 						return false;
 					}
 				}
+
 			} while (false);
 
 			fclose(fp);
+
+			CloseClipboard();
 
 			return bRet;
 		}

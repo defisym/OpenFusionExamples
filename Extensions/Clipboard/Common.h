@@ -27,6 +27,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include    <format>
+
 // My lib
 #include	"WindowsCommon.h"
 #include	"GeneralDefinition.h"
