@@ -15,6 +15,12 @@
 #include	<thread>
 #include	<functional>
 
+#define     USEOPENMP
+
+#ifdef USEOPENMP
+#include <omp.h>
+#endif
+
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
 inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processer);
@@ -1481,7 +1487,17 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 		int alphaByte = coef.alphaByte;
 
 		//Loop through all pixels
+#ifdef USEOPENMP
+		omp_set_num_threads(std::thread::hardware_concurrency());
+
+#pragma omp parallel for  
+#endif
 		for (int y = 0; y < height; ++y) {
+#ifdef USEOPENMP
+//#pragma omp parallel shared(y)
+			{
+//#pragma omp parallel for
+#endif
 			for (int x = 0; x < width; ++x) {
 				const auto offset = y * pitch + x * byte;
 				BYTE* srcPixel = pData + offset;
@@ -1492,6 +1508,9 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 				process(x, y, coef
 					, srcPixel, alphaPixel);
 			}
+#ifdef USEOPENMP
+		}
+#endif
 		}
 });
 }
