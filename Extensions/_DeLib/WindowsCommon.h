@@ -393,24 +393,23 @@ inline bool SystemMemoryNotEnough() {
 }
 
 // must end without L'\\'
-inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src) {
+inline void GetFileList(std::vector<std::wstring>* pList, const std::wstring& folder) {
+	HANDLE h = nullptr;
 	WIN32_FIND_DATA stFD;
-	HANDLE h;
-	std::wstring temp;
 
-	temp = Src + L"\\*";
+	std::wstring temp = folder + std::wstring(L"\\*");
 	h = FindFirstFile(temp.c_str(), &stFD);
 
 	while (FindNextFile(h, &stFD)) {
-		temp = Src + L"\\" + stFD.cFileName;
-		if (temp == Src + L"\\..") {
+		temp = folder + L"\\" + stFD.cFileName;
+		if (temp == folder + L"\\..") {
 			continue;
 		}
 		else if (PathIsDirectory(temp.c_str())) {
-			GetFileList(Des, temp);
+			GetFileList(pList, temp);
 		}
 		else {
-			Des->emplace_back(Src + L"\\" + stFD.cFileName);
+			pList->emplace_back(folder + L"\\" + stFD.cFileName);
 		}
 	}
 
@@ -442,16 +441,17 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 		return fileName;
 	}
 
-	std::wstring ret(MAX_PATH, 0);
-	auto err = GetFullPathName(pFileName, MAX_PATH, &ret.at(0), nullptr);
+	// tailing \0 -> later process issue
+	//std::wstring ret(MAX_PATH, 0);
+	//auto err = GetFullPathName(pFileName, MAX_PATH, &ret.at(0), nullptr);
 
-	//LPWSTR pFullPathName = new wchar_t [MAX_PATH];
-	//memset(pFullPathName, 0, MAX_PATH);
+	const LPWSTR pFullPathName = new wchar_t [MAX_PATH];
+	memset(pFullPathName, 0, MAX_PATH);
 
-	//auto err = GetFullPathName(pFileName, MAX_PATH, pFullPathName, nullptr);
-	//std::wstring ret = pFullPathName;
+	auto err = GetFullPathName(pFileName, MAX_PATH, pFullPathName, nullptr);
+	std::wstring ret = pFullPathName;
 
-	//delete[] pFullPathName;
+	delete[] pFullPathName;
 
 	return ret;
 }
