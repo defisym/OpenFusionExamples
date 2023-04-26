@@ -672,6 +672,32 @@ public:
 #endif 
 };
 
+// hash
+inline std::wstring GetFileHash(LPCWSTR filePath) {
+	// protection for null file
+	if (wcscmp(filePath, L"") == 0) {
+		return L"";
+	}
+
+	Encryption hash;
+	hash.OpenFile(filePath);
+
+	const auto ret = hash.GetHash();
+
+	return ret == nullptr ? L"" : ret;
+}
+inline std::wstring GetFileHash(const std::wstring& filePath) {
+	return GetFileHash(filePath.c_str());
+}
+inline std::wstring GetFileHash(LPBYTE pData, DWORD StrLength) {
+	Encryption hash;
+	hash.SetEncryptStr(reinterpret_cast<char*>(pData), StrLength);
+
+	const auto ret = hash.GetHash();
+
+	return ret == nullptr ? L"" : ret;
+}
+
 #ifdef PROCESS_DIRECTLY
 //#define BUFFER_BENCHMARK
 
