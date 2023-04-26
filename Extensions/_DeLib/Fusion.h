@@ -21,8 +21,13 @@
 #include <omp.h>
 #endif
 
+inline bool IsHWA(LPSURFACE Src);
+inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src);
+
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
+inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false);
+
 inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processer);
 
 struct SfCoef {
@@ -390,11 +395,30 @@ inline void CreateBlankSurface(LPSURFACE Src) {
 	Src->CreateAlpha();
 }
 
+[[deprecated ("Clone won't copy alpha of HWA surface")]]
 inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
-	cSurface* sur = new cSurface;
+	const auto sur = new cSurface;
 	sur->Clone(*Src);
 
 	return sur;
+}
+
+inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
+	// clone doesn't handle hwa alpha properly
+	if (IsHWA(pSrc) && pSrc->HasAlpha()) {
+		auto pSf = CreateSurface(pSrc->GetDepth(), pSrc->GetWidth(), pSrc->GetHeight());
+		pSf->CreateAlpha();
+		pSrc->Blit(*pSf);
+		ConvertToHWATexture(rdPtr, pSf);
+
+		return pSf;
+	}
+	else {
+		const auto pSf = new cSurface;
+		pSf->Clone(*pSrc);
+
+		return pSf;
+	}
 }
 
 //Get info
@@ -789,7 +813,7 @@ inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool rel
 	}
 }
 
-inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false) {
+inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName, bool release) {
 	_SavetoFile(Src, FilePath, rdPtr, release, DefaultFilterName);
 }
 

@@ -717,7 +717,7 @@ public:
 			LPSURFACE pLocalSf = nullptr;
 
 			if (IsHWA(pInputSf)) {
-				pLocalSf = CreateCloneSurface(pInputSf);
+				pLocalSf = CreateCloneSurface(rdPtr, pInputSf);
 			}
 			else {
 				pLocalSf = ConvertHWATexture(rdPtr, pInputSf);
