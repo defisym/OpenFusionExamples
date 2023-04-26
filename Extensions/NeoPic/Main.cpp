@@ -54,8 +54,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_R, M_ACTION_R,	ACT_ACTION_R,	0, 1,PARAM_EXPRESSION,M_ACTION_A,
 
-		IDMN_ACTION_US, M_ACTION_US,	ACT_ACTION_US,	0, 0,
-		IDMN_ACTION_RC, M_ACTION_RC,	ACT_ACTION_RC,	0, 0,
+		IDMN_ACTION_AOTL, M_ACTION_AOTL,	ACT_ACTION_AOTL,	0, 2,PARAM_OBJECT, PARAM_EXPSTRING,  M_ACTION_OBJECT, M_ACTION_FILENAME,
+		IDMN_ACTION_DOFL, M_ACTION_DOFL,	ACT_ACTION_DOFL,	0, 0,
 
 		IDMN_ACTION_S, M_ACTION_S,	ACT_ACTION_S,	0, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,M_ACTION_S_WIDTH,M_ACTION_S_HEIGHT,
 
@@ -379,22 +379,36 @@ short WINAPI DLLExport SetKeepListByPointer(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport IterateRefCount(LPRDATA rdPtr, long param1, long param2) {
-	size_t num = (size_t)CNC_GetIntParameter(rdPtr);
+	auto num = (int)CNC_GetIntParameter(rdPtr);
 
 	if (rdPtr->isLib) {
-		UpdateRefCountVec(rdPtr);
+		const auto mapSz = rdPtr->pLib->size();
 
-		auto itSz = min(num, rdPtr->pCountVec->size());
+		RefCountVec refVec;
+		refVec.reserve(mapSz);
 
-		for (size_t it = 0; it < itSz; it++) {
-			auto& refCount = (*rdPtr->pCountVec)[it];
-			*rdPtr->itCountVecStr = refCount.first;
-			*rdPtr->itCountVecCount = refCount.second;
+		for (auto& it : *rdPtr->pLib) {
+			refVec.emplace_back(RefCountPair(it.first, it.second.refCount));
+		}
+
+		const auto countWeight = mapSz;		// weight of ref count
+		std::ranges::sort(refVec, [&] (const RefCountPair& l, const RefCountPair& r) {
+			return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
+			});
+
+		for (const auto& it : refVec) {
+			*rdPtr->itCountVecStr = it.first;
+			*rdPtr->itCountVecCount = it.second;
 
 			CallEvent(ONITREFCOUNT);
+
+			num--;
+			if (num <= 0) {
+				break;
+			}
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -422,7 +436,6 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	
 	if (rdPtr->isLib) {
 		if (NeedUpdateLib(rdPtr->pLib, FilePath)) {
-			EraseLib(rdPtr->pLib, FilePath);
 			LoadFromFile(rdPtr, FilePath, Key);
 		}
 	}
@@ -430,18 +443,53 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-// deprecated
-short WINAPI DLLExport UpdateSrc(LPRDATA rdPtr, long param1, long param2) {
+
+short WINAPI DLLExport AttachObjectToLib(LPRDATA rdPtr, long param1, long param2) {
+	const auto object = (LPRDATA)CNC_GetParameter(rdPtr);
+	const auto pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
 	if (CanDisplay(rdPtr)) {
-		
+		if (rdPtr->fromLib) {
+			return 0;
+		}
+
+		if (!ObjIsLib(object)) {
+			return 0;
+		}
+
+		//__SavetoFile(rdPtr, CreateCloneSurface(rdPtr, rdPtr->pSf_Nor),L"F:\\Trans.png");
+
+		const auto fullPath = GetFullPathNameStr(pFileName);
+
+		*rdPtr->FilePath = fullPath;
+		object->pData->UpdateLib(fullPath, fullPath, rdPtr->pSf_Nor);
+
+		const auto pLibValue = &object->pLib->find(fullPath)->second;
+		pLibValue->pSf_VF = rdPtr->pSf_VF;
+		pLibValue->pSf_HF = rdPtr->pSf_HF;
+		pLibValue->pSf_VHF = rdPtr->pSf_VHF;
+
+		rdPtr->fromLib = true;
+		AttachToLib(rdPtr, pLibValue);
 	}
 
 	return 0;
 }
-// deprecated
-short WINAPI DLLExport RestoreCur(LPRDATA rdPtr, long param1, long param2) {
-	if (CanDisplay(rdPtr)) {
 
+short WINAPI DLLExport DetachObjectFromLib(LPRDATA rdPtr, long param1, long param2) {
+	if (CanDisplay(rdPtr)) {
+		if (!rdPtr->fromLib) {
+			return 0;
+		}
+
+		// protect old path & key
+		const auto oldPath = *rdPtr->FilePath;
+		const auto oldKey = *rdPtr->Key;
+
+		LoadFromPointer(rdPtr, rdPtr->FilePath->c_str(), rdPtr->src);
+
+		*rdPtr->FilePath = oldPath;
+		*rdPtr->Key = oldKey;
 	}
 
 	return 0;
@@ -690,16 +738,16 @@ short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
-	int radius = CNC_GetIntParameter(rdPtr);
-	float scale = GetFloatParam(rdPtr);
-	int divide = CNC_GetIntParameter(rdPtr);
+	const int radius = CNC_GetIntParameter(rdPtr);
+	const float scale = GetFloatParam(rdPtr);
+	const int divide = CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
 
 	if (CanDisplay(rdPtr)) {
-		LPSURFACE pSf = nullptr;
+		const auto pSf = new cSurface;
 		ProcessBitmap(rdPtr->src, [&] (const LPSURFACE pBitmap) {
-			pSf = CreateCloneSurface(pBitmap);
+			pSf->Clone(*pBitmap);
 			StackBlur(pSf, radius, scale, divide);
 		});
 
@@ -1151,7 +1199,7 @@ long WINAPI DLLExport GetIterateRefCountKey(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetIterateRefCountValueCount(LPRDATA rdPtr, long param1) {
-	return rdPtr->itCountVecCount->count;
+	return rdPtr->itCountVecCount->totalRef;
 }
 
 long WINAPI DLLExport GetIterateRefCountValuePriority(LPRDATA rdPtr, long param1) {
@@ -1297,8 +1345,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Zoom,
 			Rotate,
 
-			UpdateSrc,
-			RestoreCur,
+			AttachObjectToLib,
+			DetachObjectFromLib,
 
 			Stretch,
 

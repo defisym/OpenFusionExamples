@@ -119,7 +119,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->sizeLimit = edPtr->sizeLimit;
 	rdPtr->autoClean = edPtr->autoClean;
 
-	rdPtr->pCountVec = new RefCountVec;
+	rdPtr->pCleanVec = new RefCountVec;
 	rdPtr->pPreloadList = nullptr;
 
 	rdPtr->itCountVecStr = new std::wstring;
@@ -154,36 +154,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		//init global
 		auto pData = new GlobalData;
 
-		//init general
-#ifdef _USE_DXGI
-#ifdef _DYNAMIC_LINK
-		wchar_t rootDir[MAX_PATH] = {};
-		GetCurrentDirectory(MAX_PATH - 1, rootDir);
-
-		wchar_t dllPath[2 * MAX_PATH] = {};
-		wsprintf(dllPath, L"%s\\%s", rootDir, L"Modules\\DXGI.DLL");
-
-		pData->DXGI = LoadLibrary(dllPath);
-
-		if (pData->DXGI == nullptr) {
-			MSGBOX(L"Load Failed");
-		}
-#endif
-		pData->pD3DU = new D3DUtilities;
-
-		//auto& Desc = rdPtr->pD3DU->GetDesc();
-		//MSGBOX(Desc.Description);
-
-		//rdPtr->pD3DU->UpdateVideoMemoryInfo();
-		//auto& info = rdPtr->pD3DU->GetLocalVideoMemoryInfo();
-#endif
-
-		//init specific
-		pData->pLib = new SurfaceLib;
-		pData->pCount = new RefCount;
-		pData->pKeepList = new KeepList;
-		pData->pFileListMap = new FileListMap;
-
 		pData->bDX11 = D3D11(rdPtr);
 		pData->bPreMulAlpha = PreMulAlpha(rdPtr);
 
@@ -204,7 +174,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (rdPtr->isLib) {
 		//Load Lib
 		rdPtr->pLib = rdPtr->pData->pLib;
-		rdPtr->pCount = rdPtr->pData->pCount;
 		rdPtr->pKeepList = rdPtr->pData->pKeepList;
 		rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
 	}
@@ -249,12 +218,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 				}
 			}
 		}
-		
-		// Clear ref
-		ClearCurRef(rdPtr);
 	}
 
-	delete rdPtr->pCountVec;
+	delete rdPtr->pCleanVec;
 	delete rdPtr->pPreloadList;
 
 	delete rdPtr->itCountVecStr;
@@ -496,15 +462,11 @@ BOOL WINAPI LoadRunObject(LPRDATA rdPtr, HANDLE hf)
 // Called when the application starts or restarts.
 // Useful for storing global data
 // 
-void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data (if restarts application)
+void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp) {
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
-	if (pData != NULL) {
-		DeleteGlobalData(pData);
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
 	}
 }
 
@@ -513,15 +475,11 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 // -------------------
 // Called when the application ends.
 // 
-void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data	
+void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp) {
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
-	if (pData != NULL) {
-		DeleteGlobalData(pData);
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
 	}
 }
 

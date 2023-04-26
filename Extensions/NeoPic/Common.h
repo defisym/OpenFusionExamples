@@ -33,6 +33,7 @@
 #include	<vector>
 #include	<string>
 #include	<thread>
+#include    <format>
 
 enum class HotSpotPos;
 struct ZoomScale;

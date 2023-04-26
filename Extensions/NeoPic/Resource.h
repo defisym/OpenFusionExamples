@@ -79,8 +79,8 @@
 #define IDMN_ACTION_Z	       		25006
 #define IDMN_ACTION_R	       		25007
 
-#define IDMN_ACTION_US	       		25008
-#define IDMN_ACTION_RC	       		25009
+#define IDMN_ACTION_AOTL	       		25008
+#define IDMN_ACTION_DOFL	       		25009
 
 #define IDMN_ACTION_S	       		25010
 
@@ -145,8 +145,8 @@
 #define M_ACTION_Z                   5006
 #define M_ACTION_R                   5007
 
-#define M_ACTION_US                  5008
-#define M_ACTION_RC                  5009
+#define M_ACTION_AOTL                  5008
+#define M_ACTION_DOFL                  5009
 
 #define M_ACTION_S                   5010
 
