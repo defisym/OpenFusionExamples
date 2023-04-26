@@ -114,14 +114,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->bLoadCallback = edPtr->bLoadCallback;
 	rdPtr->pLoadCallbackInfo = new LoadCallbackInfo();
-
-	rdPtr->memoryLimit = edPtr->memoryLimit;
-	rdPtr->sizeLimit = edPtr->sizeLimit;
-	rdPtr->autoClean = edPtr->autoClean;
-
-	rdPtr->pCleanVec = new RefCountVec;
-	rdPtr->pPreloadList = nullptr;
-
+	
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
 
@@ -171,11 +164,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 #endif
 
 	//Get specific
-	if (rdPtr->isLib) {
-		//Load Lib
+	if (rdPtr->isLib) {		
 		rdPtr->pLib = rdPtr->pData->pLib;
-		rdPtr->pKeepList = rdPtr->pData->pKeepList;
-		rdPtr->pFileListMap = rdPtr->pData->pFileListMap;
+		rdPtr->pData->SetClean(edPtr->autoClean, edPtr->memoryLimit, edPtr->sizeLimit);
 	}
 		
 	// No errors
@@ -208,20 +199,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	}
 
 	if (rdPtr->isLib) {
-		if (rdPtr->threadID) {
-			rdPtr->forceExit = true;
-
-			DWORD ret;
-			while (GetExitCodeThread(rdPtr->threadID, &ret)) {
-				if (ret == 0) {
-					break;
-				}
-			}
-		}
+		rdPtr->pData->StopPreloadProcess();
 	}
-
-	delete rdPtr->pCleanVec;
-	delete rdPtr->pPreloadList;
 
 	delete rdPtr->itCountVecStr;
 	delete rdPtr->itCountVecCount;
@@ -270,8 +249,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 	rdPtr->pAI->UpdateAnimation();
-	CleanCache(rdPtr, false);
-	MergeLib(rdPtr);
+
+	if (rdPtr->isLib) {
+		rdPtr->pData->CleanCache(false);
+		rdPtr->pData->MergeLib(rdPtr);
+	}
 
 	if (!rdPtr->isLib && rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
@@ -696,7 +678,7 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	case DB_LIBMEMUSE:
 		libFilter(L"Auto Clean Cache: %s", L"Auto Clean Cache: %s", libNegative,
 			[&](LPCWSTR pattern) {
-			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->autoClean ? L"True" : L"False");
+			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->pData->autoClean ? L"True" : L"False");
 			});
 		break;
 	case DB_FROMLIB:

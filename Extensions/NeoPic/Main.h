@@ -217,7 +217,6 @@ typedef struct tagRDATA
 	//------------
 
 	GlobalData* pData;
-	FileListMap* pFileListMap = nullptr;
 
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
@@ -233,28 +232,9 @@ typedef struct tagRDATA
 	bool bLoadCallback = false;
 	LoadCallbackInfo* pLoadCallbackInfo = nullptr;
 
-	size_t memoryLimit;
-	size_t sizeLimit;
-	bool autoClean;
-
-	KeepList* pKeepList = nullptr;						// kept over frames
-	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
-
 	// for iterate
 	std::wstring* itCountVecStr = nullptr;
 	Count* itCountVecCount = nullptr;
-
-	//------------
-	// Preload
-	//------------
-
-	std::vector<std::wstring>* pPreloadList = nullptr;
-	SurfaceLib* preloadLib = nullptr;
-
-	volatile HANDLE threadID;
-	volatile bool forceExit = false;
-	volatile bool preloading = false;
-	volatile bool preloadMerge = false;
 
 	//------------
 	// Display

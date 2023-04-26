@@ -125,7 +125,7 @@ public:
 			auto pSf = rdPtr->src;
 
 			if (!pAnimationInfo->updateCur) {
-				const auto it = _LoadLib(rdPtr, pLib,
+				const auto it = LoadLib(rdPtr, pLib,
 					(basePath + pFrameData->file).c_str(), key.c_str());
 
 				if (it == pLib->pLib->end()) {
