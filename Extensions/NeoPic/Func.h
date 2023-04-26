@@ -14,6 +14,12 @@ inline bool ExceedDefaultMemLimit(LPRDATA rdPtr, size_t memLimit);
 
 //-----------------------------
 
+inline void UpdateRefObject(const SurfaceLibValue* pData) {
+	for(auto& it: pData->refCount.pRefObj) {
+		it->src = pData->pSf;
+	}
+}
+
 inline bool UpdateShaderUsage(SurfaceLibValue* pData) {
 	do {
 		if (!pData->bUsedInShader) {
@@ -100,12 +106,11 @@ inline void ReleaseNonFromLib(LPRDATA rdPtr) {
 
 inline void DetachFromLib(LPRDATA rdPtr) {
 	if (rdPtr->fromLib) {
-		rdPtr->fromLib = false;
-		rdPtr->src = nullptr;
-
 		UpdateRef(rdPtr, false);
-		rdPtr->pRefCount = nullptr;
 
+		rdPtr->fromLib = false;
+
+		rdPtr->src = nullptr;
 		rdPtr->pLibValue = nullptr;
 	}
 	else {
@@ -123,7 +128,7 @@ inline void DetachFromLib(LPRDATA rdPtr, LPSURFACE pNewSf) {
 	
 	NewNonFromLib(rdPtr, rdPtr->src);
 }
-inline void AttachToLib(LPRDATA rdPtr, SurfaceLibValue* pLibValue, size_t* pRefCount) {
+inline void AttachToLib(LPRDATA rdPtr, SurfaceLibValue* pLibValue) {
 	if (!rdPtr->fromLib) {
 		ReleaseNonFromLib(rdPtr);
 	}
@@ -135,7 +140,6 @@ inline void AttachToLib(LPRDATA rdPtr, SurfaceLibValue* pLibValue, size_t* pRefC
 
 	rdPtr->src = pLibValue->pSf;
 	rdPtr->pLibValue = pLibValue;
-	rdPtr->pRefCount = pRefCount;
 
 	UpdateRef(rdPtr, true);
 }
@@ -302,10 +306,19 @@ inline bool _LoadFromFile(LPSURFACE& Src, LPCWSTR FilePath, LPCWSTR Key, LPRDATA
 }
 
 inline size_t UpdateRef(LPRDATA rdPtr, bool add) {
-	if (rdPtr->pRefCount != nullptr) {
-		return add ? (*rdPtr->pRefCount)++ : (*rdPtr->pRefCount)--;
+	if (rdPtr->pLibValue == nullptr) {
+		return static_cast<size_t>(-1);
 	}
-	return (size_t)-1;
+
+	if (add) {
+		rdPtr->pLibValue->RefImage(rdPtr);
+	}
+	else {
+		rdPtr->pLibValue->UnrefImage(rdPtr);
+	}
+
+	return rdPtr->pLibValue->refCount.curRef;
+
 }
 
 inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
@@ -345,12 +358,17 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 	};
 
 	if (rdPtr->isLib) {
-		if (rdPtr->pLib->contains(fullPath)) {
-			return;
-		}
+		//if (rdPtr->pLib->contains(fullPath)) {
+		//	return;
+		//}
 
 		loadCore([&] (LPSURFACE pSf) {
-			(*rdPtr->pLib)[fullPath] = SurfaceLibValue(pSf, GetFileHash(fullPath), GetTransparent(pSf));
+			rdPtr->pData->UpdateLib(fullPath, GetFileHash(fullPath), pSf);
+
+			//auto newValue = SurfaceLibValue(pSf, GetFileHash(fullPath), GetTransparent(pSf));
+			//newValue.refCount.priority = rdPtr->pLib->size();
+
+			//(*rdPtr->pLib)[fullPath] = newValue;
 
 			loadCallback(&pSf, [&] (const LPSURFACE pCallbackSf) {
 				const auto it = rdPtr->pLib->find(fullPath);
@@ -395,7 +413,7 @@ inline SurfaceLibIt _LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCWS
 		return obj->pLib->end();
 	}
 
-	auto fullPath = GetFullPathNameStr(FileName);
+	const auto fullPath = GetFullPathNameStr(FileName);
 
 	auto it = obj->pLib->find(fullPath);
 
@@ -431,19 +449,9 @@ inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCWSTR Ke
 		return;
 	}
 
-	// update ref count
-	auto countit = obj->pCount->find(fullPath);
-	if (countit != obj->pCount->end()) {
-		countit->second.count++;
-	}
-	else {
-		(*obj->pCount)[fullPath] = Count{ 1, obj->pLib->size(),0 };
-		countit = obj->pCount->find(fullPath);
-	}
-
 	// update src
 	if(!rdPtr->isLib){		
-		AttachToLib(rdPtr, &(it->second), &(countit->second.curRef));
+		AttachToLib(rdPtr, &(it->second));
 		NewPic(rdPtr);
 	}
 	else {
@@ -478,11 +486,13 @@ inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
 	}
 
 	if (obj->fromLib) {
-		AttachToLib(rdPtr, obj->pLibValue, obj->pRefCount);		
+		AttachToLib(rdPtr, obj->pLibValue);
 	}
 	else {
-		const auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
-		pSf->Clone(*obj->src);
+		//const auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
+		//pSf->Clone(*obj->src);
+
+		const auto pSf = CreateCloneSurface(rdPtr, obj->src);
 
 		DetachFromLib(rdPtr, pSf);
 	}
@@ -506,15 +516,17 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf
 		return;
 	}
 
-	LPSURFACE pSave = new cSurface;
+	//auto pSave = new cSurface;
 
-	ProcessBitmap(rdPtr, pSf, [&] (const LPSURFACE pBitmap) {
-		pSave->Clone(*pBitmap);
+	//ProcessBitmap(rdPtr, pSf, [&] (const LPSURFACE pBitmap) {
+	//	pSave->Clone(*pBitmap);
 
-		if (rdPtr->HWA) {
-			ConvertToHWATexture(rdPtr, pSave);
-		}
-		});
+	//	if (rdPtr->HWA) {
+	//		ConvertToHWATexture(rdPtr, pSave);
+	//	}
+	//	});
+
+	const auto pSave = CreateCloneSurface(rdPtr, pSf);
 
 	if(!pSave->IsValid()) {
 		delete pSave;
@@ -522,18 +534,13 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf
 		return ;
 	}
 
-	auto bNoFullPath = dwFlags & LoadFromPointerFlags_NoFullPath;
-	auto fullPath = bNoFullPath
-		? std::wstring(pFileName)
-		: GetFullPathNameStr(pFileName);
+	const auto bNoFullPath = dwFlags & LoadFromPointerFlags_NoFullPath;
+	const auto fullPath = bNoFullPath
+		                      ? std::wstring(pFileName)
+		                      : GetFullPathNameStr(pFileName);
 
 	if (rdPtr->isLib) {
-		const auto it = rdPtr->pLib->find(fullPath);
-		if (it != rdPtr->pLib->end()) {
-			it->second.Release();
-		}
-
-		(*rdPtr->pLib)[fullPath] = SurfaceLibValue(pSave, fullPath, GetTransparent(pSave));
+		rdPtr->pData->UpdateLib(fullPath, fullPath, pSave);		
 	}
 	else {
 		DetachFromLib(rdPtr, pSave);
@@ -567,13 +574,11 @@ inline LPSURFACE _GetSurfacePointer(LPRDATA rdPtr, const std::wstring& FilePath,
 }
 
 inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
-	SurfaceLib* kept = new SurfaceLib;
+	const auto kept = new SurfaceLib;
 
-	if (pData != NULL) {
+	if (pData != nullptr) {
 		for (auto& it : *pData) {
-			auto itCount = rdPtr->pCount->find(it.first);
-
-			if (itCount->second.curRef != 0 || UpdateShaderUsage(&it.second)) {
+			if (!it.second.NotUsed()) {
 				kept->emplace(it);
 
 				continue;
@@ -581,30 +586,18 @@ inline void ResetLib(LPRDATA rdPtr, SurfaceLib*& pData) {
 
 			it.second.Release();
 		}
-
-		//pData->clear();
-
+		
 		delete pData;
 		pData = kept;
 	}
 }
 
 inline void EraseLib(SurfaceLib* pData, LPCWSTR Item) {
-	const auto it = pData->find(GetFullPathNameStr(Item));
-	if (it != pData->end() && !UpdateShaderUsage(&it->second)) {
+	const auto it = pData->find(GetFullPathNameStr(Item));	
+	if (it != pData->end() && it->second.NotUsed()) {
 		it->second.Release();
 
 		pData->erase(it);
-	}
-}
-
-inline void DeleteLib(SurfaceLib* pData) {
-	if (pData != NULL) {
-		for (auto& it : *pData) {
-			it.second.Release();
-		}
-
-		delete pData;
 	}
 }
 
@@ -825,56 +818,22 @@ inline void GetKeepList(LPRDATA rdPtr, const FileList& keepList, const std::wstr
 }
 
 inline void UpdateCleanVec(LPRDATA rdPtr) {
-	auto mapSz = rdPtr->pLib->size();
+	const auto mapSz = rdPtr->pLib->size();
 
-	rdPtr->pCountVec->clear();
-	rdPtr->pCountVec->reserve(mapSz);
+	rdPtr->pCleanVec->clear();
+	rdPtr->pCleanVec->reserve(mapSz);
 
 	for (auto& it : *rdPtr->pLib) {
-		auto pCountIt = rdPtr->pCount->find(it.first);
-		auto pCountContain = pCountIt != rdPtr->pCount->end();
-
-		Count count = pCountContain
-			? pCountIt->second
-			: Count{ 0,0,0 };			// lowest weight
-
-		if ((!pCountContain
-			|| pCountIt->second.curRef == 0
-			|| !UpdateShaderUsage(&it.second)) // only release assets that currently is not used
-			&& std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
-			rdPtr->pCountVec->emplace_back(RefCountPair{ it.first,count });
+		if (it.second.NotUsed() // only release assets that currently is not used
+			&& std::ranges::find(*rdPtr->pKeepList, it.first) == rdPtr->pKeepList->end()) {
+			rdPtr->pCleanVec->emplace_back(RefCountPair(it.first, it.second.refCount));
 		}
 	}
 
-	auto countWeight = mapSz;		// weight of ref count
-	std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [&] (RefCountPair& l, RefCountPair& r) {
+	const auto countWeight = mapSz;		// weight of ref count
+	std::ranges::sort(*rdPtr->pCleanVec, [&] (const RefCountPair& l, const RefCountPair& r) {
 		return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
 		});
-}
-
-inline void UpdateRefCountVec(LPRDATA rdPtr) {
-	auto mapSz = rdPtr->pCount->size();
-
-	rdPtr->pCountVec->clear();
-	rdPtr->pCountVec->reserve(mapSz);
-
-	for (auto& it : *rdPtr->pCount) {
-		if (it.second.curRef == 0
-			&& std::find(rdPtr->pKeepList->begin(), rdPtr->pKeepList->end(), it.first) == rdPtr->pKeepList->end()) {
-			rdPtr->pCountVec->emplace_back(it);
-		}
-	}
-
-	auto countWeight = mapSz;		// weight of ref count
-	std::sort(rdPtr->pCountVec->begin(), rdPtr->pCountVec->end(), [&](RefCountPair& l, RefCountPair& r) {
-		return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
-		});
-}
-
-inline void ClearCurRef(LPRDATA rdPtr) {
-	for (auto& it : *rdPtr->pCount) {
-		it.second.curRef = 0;
-	}
 }
 
 inline void GetEstimateMemUsage(GlobalData* pData) {
@@ -936,8 +895,6 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 		return;
 	}
 
-	UpdateShaderUsage(rdPtr->pLib);
-
 	if (rdPtr->preloading) {
 		return;
 	}
@@ -954,17 +911,15 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false, size_t memLimit =
 
 		UpdateCleanVec(rdPtr);
 
-		while (!rdPtr->pCountVec->empty()
+		while (!rdPtr->pCleanVec->empty()
 			&& tarMemLimit <= GetMemoryUsageMB(rdPtr)) {
 
-			auto& fileName = rdPtr->pCountVec->back().first;
+			auto& fileName = rdPtr->pCleanVec->back().first;
 
 			(*rdPtr->pLib)[fileName].Release();
-
 			rdPtr->pLib->erase(fileName);
-			rdPtr->pCount->erase(fileName);
 
-			rdPtr->pCountVec->pop_back();
+			rdPtr->pCleanVec->pop_back();
 		}
 	}
 }
@@ -1114,22 +1069,26 @@ inline void HandleFlip(LPRDATA rdPtr
 			return pResult;
 		}
 
-		LPSURFACE pFlip = new cSurface;
+		LPSURFACE pFlip = nullptr;
 
-		auto DoFlip = [&] (const LPSURFACE pSf) {
-			pFlip->Clone(*pSf);
-			(pFlip->*pFlipFunc)();
-		};
+		//auto DoFlip = [&] (const LPSURFACE pSf) {
+		//	pFlip->Clone(*pSf);
+		//	(pFlip->*pFlipFunc)();
+		//};
 
 		if (rdPtr->pData->bDX11) {
-			DoFlip(pBase);
+			pFlip = CreateCloneSurface(rdPtr, pBase);
+			(pFlip->*pFlipFunc)();
 		}
 		// bug of DX9 runtime, the source was changed if use DoFlip directly
 		else {
-			auto bBaseHwa = IsHWA(pBase);
+			const auto bBaseHwa = IsHWA(pBase);
+
+			pFlip = new cSurface;
 
 			ProcessBitmap(pBase, [&] (const LPSURFACE pBitmap) {
-				DoFlip(pBitmap);
+				pFlip->Clone(*pBitmap);
+				(pFlip->*pFlipFunc)();
 				});
 
 			if (bBaseHwa) {
@@ -1206,7 +1165,7 @@ inline void HandleFlip(LPRDATA rdPtr) {
 #endif
 
 	if (rdPtr->fromLib) {
-		auto pLibItem = rdPtr->pLibValue;
+		const auto pLibItem = rdPtr->pLibValue;
 
 		HandleFlip(rdPtr
 			, rdPtr->src

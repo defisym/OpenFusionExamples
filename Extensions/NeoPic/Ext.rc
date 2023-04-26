@@ -181,6 +181,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Lib"
         BEGIN
+            MENUITEM "Attach Object To Lib",               IDMN_ACTION_AOTL
+            MENUITEM "Detach Object From Lib",             IDMN_ACTION_DOFL
+            MENUITEM SEPARATOR
             MENUITEM "Reset Lib",                  IDMN_ACTION_RL
             MENUITEM "Clear Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
@@ -206,10 +209,7 @@ BEGIN
         END
         MENUITEM SEPARATOR
         POPUP "Display"
-        BEGIN
-            //MENUITEM "Update Src",               IDMN_ACTION_US
-            //MENUITEM "Restore Cur",              IDMN_ACTION_RC
-            //MENUITEM SEPARATOR
+        BEGIN            
             POPUP "Settings"
             BEGIN            
                 MENUITEM "Set Quality",            IDMN_ACTION_SQ
@@ -448,8 +448,8 @@ BEGIN
 
     M_ACTION_A             "Angle"
 
-    M_ACTION_US            "Update Src"
-    M_ACTION_RC            "Restore Cur"
+    M_ACTION_AOTL            "Attach Object To Lib %0, Access FileName %1"
+    M_ACTION_DOFL            "Detach Object From Lib"
 
     M_ACTION_S             "Stretch, Width = %0, Height = %1"
     

@@ -36,8 +36,8 @@
 #define	ACT_ACTION_Z				6
 #define	ACT_ACTION_R				7
 
-#define	ACT_ACTION_US				8
-#define	ACT_ACTION_RC				9
+#define	ACT_ACTION_AOTL				8
+#define	ACT_ACTION_DOFL				9
 
 #define	ACT_ACTION_S				10
 
@@ -226,6 +226,7 @@ typedef struct tagRDATA
 	//------------
 	// Lib
 	//------------
+
 	bool isLib = false;
 	SurfaceLib* pLib = nullptr;							// kept over frames
 	
@@ -236,9 +237,8 @@ typedef struct tagRDATA
 	size_t sizeLimit;
 	bool autoClean;
 
-	RefCount* pCount = nullptr;							// kept over frames
 	KeepList* pKeepList = nullptr;						// kept over frames
-	RefCountVec* pCountVec = nullptr;					// update when trigger clear
+	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
 
 	// for iterate
 	std::wstring* itCountVecStr = nullptr;
@@ -267,7 +267,6 @@ typedef struct tagRDATA
 	//Source
 	bool fromLib = false;
 	SurfaceLibValue* pLibValue = nullptr;
-	size_t* pRefCount = nullptr;
 
 	std::wstring* FileName = nullptr;
 	std::wstring* FilePath = nullptr;
