@@ -229,21 +229,15 @@ struct RGBA {
 	double a;
 };
 
-//RGBA数值更正
-inline double Range(double A) {
-	return max(0.0, min(255.0, A));
-}
-
 inline RGBA Range(RGBA A) {
-	A.r = Range(A.r);
-	A.g = Range(A.g);
-	A.b = Range(A.b);
-	A.a = Range(A.a);
+	A.r = Range(A.r, 0.0, 255.0);
+	A.g = Range(A.g, 0.0, 255.0);
+	A.b = Range(A.b, 0.0, 255.0);
+	A.a = Range(A.a, 0.0, 255.0);
 
 	return A;
 }
 
-//RGBA运算符重载 +
 inline RGBA operator +(RGBA A, const RGBA& B) {
 	A.r += B.r;
 	A.g += B.g;
@@ -253,7 +247,6 @@ inline RGBA operator +(RGBA A, const RGBA& B) {
 	return A;
 }
 
-//RGBA运算符重载 -
 inline RGBA operator -(RGBA A, const RGBA& B) {
 	A.r -= B.r;
 	A.g -= B.g;
@@ -263,17 +256,14 @@ inline RGBA operator -(RGBA A, const RGBA& B) {
 	return A;
 }
 
-//RGBA运算符重载 +=
 inline RGBA operator +=(const RGBA& A, const RGBA& B) {
 	return A + B;
 }
 
-//RGBA运算符重载 -=
 inline RGBA operator -=(const RGBA& A, const RGBA& B) {
 	return A - B;
 }
 
-//RGBA运算符重载 *
 inline RGBA operator *(RGBA A, double B) {
 	A.r = A.r * B;
 	A.g = A.g * B;
@@ -295,7 +285,6 @@ inline RGBA operator *(int B, const RGBA& A) {
 	return A * B;
 }
 
-//RGBA运算符重载 /
 inline RGBA operator /(RGBA A, double B) {
 	A.r = A.r / B;
 	A.g = A.g / B;
@@ -305,7 +294,6 @@ inline RGBA operator /(RGBA A, double B) {
 	return A;
 }
 
-//RGBA运算符重载 /
 inline RGBA operator /(double B, const RGBA& A) {
 	return A / B;
 }
@@ -318,12 +306,11 @@ inline RGBA operator /(int B, const RGBA& A) {
 	return A / B;
 }
 
-//RGBA运算符重载 >>
 inline RGBA operator >>(RGBA A, int B) {
-	A.r = (double)((int)A.r >> B);
-	A.g = (double)((int)A.g >> B);
-	A.b = (double)((int)A.b >> B);
-	A.a = (double)((int)A.a >> B);
+	A.r = static_cast<double>(static_cast<int>(A.r) >> B);
+	A.g = static_cast<double>(static_cast<int>(A.g) >> B);
+	A.b = static_cast<double>(static_cast<int>(A.b) >> B);
+	A.a = static_cast<double>(static_cast<int>(A.a) >> B);
 
 	return A;
 }
@@ -334,7 +321,7 @@ inline LPSURFACE CreateHWASurface(int depth, int width, int height
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
-	cSurface* hwa = new cSurface;
+	const auto hwa = new cSurface;
 	hwa->Create(width, height, proto);
 
 	return hwa;
@@ -368,7 +355,7 @@ inline LPSURFACE CreateSurface(int depth, int width, int height) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
 
-	cSurface* sur = new cSurface;
+	const auto sur = new cSurface;
 	sur->Create(width, height, proto);
 
 	return sur;
