@@ -150,6 +150,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		pData->bDX11 = D3D11(rdPtr);
 		pData->bPreMulAlpha = PreMulAlpha(rdPtr);
 
+		//Get specific
+		if (rdPtr->isLib) {
+			pData->SetClean(edPtr->autoClean, edPtr->memoryLimit, edPtr->sizeLimit);
+		}
+
 		//Update pointer
 		SetExtUserData(pData);
 	}
@@ -165,8 +170,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	//Get specific
 	if (rdPtr->isLib) {		
-		rdPtr->pLib = rdPtr->pData->pLib;
-		rdPtr->pData->SetClean(edPtr->autoClean, edPtr->memoryLimit, edPtr->sizeLimit);
+		rdPtr->pLib = rdPtr->pData->pLib;		
 	}
 		
 	// No errors

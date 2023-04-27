@@ -285,6 +285,7 @@ struct GlobalData {
 		for (auto& it : *pFileListMap) {
 			delete it.second;
 		}
+
 		delete pFileListMap;
 
 		delete pPreloadList;
