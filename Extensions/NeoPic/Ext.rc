@@ -129,6 +129,7 @@ BEGIN
         POPUP "Animation"
         BEGIN
             MENUITEM "On Animation Finished", IDMN_CONDITION_OAF
+            MENUITEM "Is Animation Finished", IDMN_CONDITION_IAF
             MENUITEM SEPARATOR
             MENUITEM "Is Animation Playing", IDMN_CONDITION_IAP
             MENUITEM "Is Animation Paused", IDMN_CONDITION_IAPAUSED
@@ -295,6 +296,7 @@ BEGIN
         MENUITEM SEPARATOR         
         POPUP "Animation"
         BEGIN
+            MENUITEM "Get Animation File Name",  IDMN_EXPRESSION_GAFN            
             MENUITEM "Get Animation Name",       IDMN_EXPRESSION_GAN
             MENUITEM SEPARATOR
             MENUITEM "Get Animation Speed", IDMN_EXPRESSION_GAS
@@ -527,6 +529,7 @@ BEGIN
     M_CONDITION_LHI       "%o Lib Has Item %0"
 
     M_CONDITION_OAF       "%o On Animation Finished"
+    M_CONDITION_IAF       "%o Is Animation Finished"
     M_CONDITION_IAP       "%o Is Animation Playing"
     M_CONDITION_IAPAUSED  "%o Is Animation Paused"
 
@@ -579,6 +582,7 @@ BEGIN
     M_EXPRESSION_GVRBMB            "GetVRAMBudgetMB("
     M_EXPRESSION_GVRAMB            "GetVRAMAvailableMB("
     
+    M_EXPRESSION_GAFN              "GetAFileName$("
     M_EXPRESSION_GAN               "GetAName$("
     M_EXPRESSION_GAFID             "GetAFID("
     M_EXPRESSION_GAFINDEX          "GetAFIndex("

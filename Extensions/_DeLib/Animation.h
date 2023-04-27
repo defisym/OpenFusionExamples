@@ -461,6 +461,10 @@ public:
         }
     }
 
+    inline bool AnimationFinished() const {
+        return pNext == nullptr;
+    }
+
     inline int GetFrameID() const {
         return curFrame;
     }

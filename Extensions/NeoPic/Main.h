@@ -20,7 +20,9 @@
 
 #define	CND_CONDITION_OLC		    8
 
-#define	CND_LAST					9
+#define	CND_CONDITION_IAF		    9
+
+#define	CND_LAST					10
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -144,7 +146,9 @@
 #define EXP_EXPRESSION_GLCFN            31
 #define EXP_EXPRESSION_GLCSF            32
 
-#define	EXP_LAST                    	33
+#define EXP_EXPRESSION_GAFN             33
+
+#define	EXP_LAST                    	34
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -36,6 +36,8 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_OLC, M_CONDITION_OLC, CND_CONDITION_OLC, 0, 0,
 
+		IDMN_CONDITION_IAF, M_CONDITION_IAF, CND_CONDITION_IAF, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -162,6 +164,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GLCFN, M_EXPRESSION_GLCFN, EXP_EXPRESSION_GLCFN, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GLCSF, M_EXPRESSION_GLCSF, EXP_EXPRESSION_GLCSF, 0, 0,
 
+		IDMN_EXPRESSION_GAFN, M_EXPRESSION_GAFN, EXP_EXPRESSION_GAFN, EXPFLAG_STRING, 0,
+
+
 		};
 
 
@@ -214,11 +219,17 @@ long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
-	return TRUE;
+	return true;
+}
+
+long WINAPI DLLExport IsAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
+	return 	rdPtr->pAI->AnimationValid()
+		? rdPtr->pAI->pA->AnimationFinished()
+		: true;
 }
 
 long WINAPI DLLExport IsAnimationPlaying(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->pAI->pA != nullptr;
+	return rdPtr->pAI->AnimationValid();
 }
 
 long WINAPI DLLExport IsAnimationPaused(LPRDATA rdPtr, long param1, long param2) {
@@ -1256,6 +1267,16 @@ long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
 #endif
 }
 
+long WINAPI DLLExport GetAnimationFileName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pAI->AnimationValid()
+		? (long)rdPtr->pAI->fileName.c_str()
+		: (long)Empty_Str;
+}
+
 long WINAPI DLLExport GetAnimationName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1329,6 +1350,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IsAnimationPaused,
 
 			OnLoadCallback,
+
+			IsAnimationFinished,
 
 			0
 			};
@@ -1453,6 +1476,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			GetLoadCallbackFileName,
 			GetLoadCallbackSf,
+
+			GetAnimationFileName,
 
 			0
 			};

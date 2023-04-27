@@ -275,6 +275,8 @@
 
 #define IDMN_CONDITION_OLC                  26008
 
+#define IDMN_CONDITION_IAF                  26009
+
 // Condition strings
 #define M_CONDITION_OPLC                     6000
 #define M_CONDITION_OITRC                    6001
@@ -289,6 +291,8 @@
 #define M_CONDITION_IAPAUSED                 6007
 
 #define M_CONDITION_OLC                      6008
+
+#define M_CONDITION_IAF                      6009
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -351,6 +355,8 @@
 #define IDMN_EXPRESSION_GLCFN       27031
 #define IDMN_EXPRESSION_GLCSF       27032
 
+#define IDMN_EXPRESSION_GAFN       27033
+
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
 #define M_EXPRESSION_GHSY			 7001
@@ -400,6 +406,8 @@
 
 #define M_EXPRESSION_GLCFN           7031
 #define M_EXPRESSION_GLCSF           7032
+
+#define M_EXPRESSION_GAFN            7033
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500

@@ -5,11 +5,13 @@
 
 struct AnimationInterface {
 	LPRDATA rdPtr = nullptr;
-	LPRDATA pLib = nullptr;
 
-	Animation* pA = nullptr;
+	LPRDATA pLib = nullptr;
 	std::wstring basePath;
 	std::wstring key;
+
+	Animation* pA = nullptr;
+	std::wstring fileName;
 
 	bool bPaused = false;
 	int speed = 100;
@@ -37,19 +39,19 @@ struct AnimationInterface {
 		}
 	}
 
-	inline bool LoadAnimation(const LPCWSTR FileName, const LPCTSTR Key = L"") {
+	inline bool LoadAnimation(const LPCWSTR pFileName, const LPCTSTR pKey = L"") {
 		JsonInterface JI;
 		JI.SetComment(true);
 
 		auto ret = true;		
 
-		if (StrEmpty(Key)) {
-			ret = JI.Load(FileName);
+		if (StrEmpty(pKey)) {
+			ret = JI.Load(pFileName);
 		}
 		else {
 			Encryption E;
-			E.GenerateKey(Key);
-			E.DecryptFile(FileName);
+			E.GenerateKey(pKey);
+			E.DecryptFile(pFileName);
 
 			ret = JI.Load(E.GetOutputStr());
 		}
@@ -61,12 +63,12 @@ struct AnimationInterface {
 
 			return ret;
 		}
-
-
+		
 		StopAnimation();
 
 		try {
 			pA = new Animation(JI.Get());
+			fileName = pFileName;
 		} catch (...) {
 			ret = false;
 
@@ -79,6 +81,7 @@ struct AnimationInterface {
 	}
 
 	inline void StopAnimation() {
+		fileName.clear();
 		speedAccumulate = 0;
 
 		delete pA;
