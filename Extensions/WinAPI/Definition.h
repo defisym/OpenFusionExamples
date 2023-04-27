@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 //#define _FFMPEG
 
@@ -17,7 +17,7 @@ typedef struct Gauss3_Coefs {
 	double b[4];
 } GCoef;
 
-//´°¿ÚËø¶¨Àà±ğ
+//çª—å£é”å®šç±»åˆ«
 typedef enum _LOCKTYPE {
 	LOCK_CURRENTWINDOW,
 	LOCK_CLIENTAREA,
@@ -25,7 +25,7 @@ typedef enum _LOCKTYPE {
 	LOCK_BYRECT,
 }LT;
 
-//¾ØĞÎËø¶¨Ê±µÄÏà¶ÔÎ»ÖÃ
+//çŸ©å½¢é”å®šæ—¶çš„ç›¸å¯¹ä½ç½®
 typedef enum _RELATIVETYPE {
 	RELATIVE_SCREEN,
 	RELATIVE_CURRENTWINDOW,
@@ -33,7 +33,7 @@ typedef enum _RELATIVETYPE {
 	RELATIVE_FRAMEAREA,
 }RT;
 
-//Ö¸¶¨Êó±ê×ø±êÀà±ğ
+//æŒ‡å®šé¼ æ ‡åæ ‡ç±»åˆ«
 typedef enum _SETMOUSETYPE {
 	SET_SCREEN,
 	SET_CURRENTWINDOW,
@@ -41,21 +41,21 @@ typedef enum _SETMOUSETYPE {
 	SET_FRAMEAREA,
 }ST;
 
-//»ñÈ¡Æ«²îÖµÀà±ğ
+//è·å–åå·®å€¼ç±»åˆ«
 typedef enum _GETOFFSETTYPE {
 	GET_CLIENTTOCURRENTWINDOW,
 	GET_FRAMETOCLIENTAREA,
 	GET_FRAMEAREATOCURRENTWINDOW,
 }GT;
 
-//»ñÈ¡¾ØĞÎÇøÓòÀà±ğ
+//è·å–çŸ©å½¢åŒºåŸŸç±»åˆ«
 typedef enum _GETRECT {
 	GET_CURRENTWINDOW,
 	GET_CLIENTAREA,
 	GET_FRAMEAREA,
 }GR;
 
-//RECTÔËËã·ûÖØÔØ +
+//RECTè¿ç®—ç¬¦é‡è½½ +
 inline RECT operator+(RECT A, RECT B) {
 	A.left += B.left;
 	A.right += B.right;
@@ -64,7 +64,7 @@ inline RECT operator+(RECT A, RECT B) {
 	return A;
 }
 
-//RECTÔËËã·ûÖØÔØ +=
+//RECTè¿ç®—ç¬¦é‡è½½ +=
 inline RECT operator +=(RECT A, RECT B) {
 	A.left += B.left;
 	A.right += B.right;
@@ -73,7 +73,7 @@ inline RECT operator +=(RECT A, RECT B) {
 	return A;
 }
 
-//RECTÔËËã·ûÖØÔØ -
+//RECTè¿ç®—ç¬¦é‡è½½ -
 inline RECT operator-(RECT A, RECT B) {
 	A.left -= B.left;
 	A.right -= B.right;
@@ -82,7 +82,7 @@ inline RECT operator-(RECT A, RECT B) {
 	return A;
 }
 
-//RECTÔËËã·ûÖØÔØ -=
+//RECTè¿ç®—ç¬¦é‡è½½ -=
 inline RECT operator -=(RECT A, RECT B) {
 	A.left -= B.left;
 	A.right -= B.right;
@@ -91,42 +91,42 @@ inline RECT operator -=(RECT A, RECT B) {
 	return A;
 }
 
-//POINTÔËËã·ûÖØÔØ +
+//POINTè¿ç®—ç¬¦é‡è½½ +
 inline POINT operator +(POINT A, POINT B) {
 	A.x += B.x;
 	A.y += B.y;
 	return A;
 }
 
-//POINTÔËËã·ûÖØÔØ +=
+//POINTè¿ç®—ç¬¦é‡è½½ +=
 inline POINT operator +=(POINT A, POINT B) {
 	A.x += B.x;
 	A.y += B.y;
 	return A;
 }
 
-//POINTÔËËã·ûÖØÔØ -
+//POINTè¿ç®—ç¬¦é‡è½½ -
 inline POINT operator -(POINT A, POINT B) {
 	A.x -= B.x;
 	A.y -= B.y;
 	return A;
 }
 
-//POINTÔËËã·ûÖØÔØ -=
+//POINTè¿ç®—ç¬¦é‡è½½ -=
 inline POINT operator -=(POINT A, POINT B) {
 	A.x -= B.x;
 	A.y -= B.y;
 	return A;
 }
 
-//POINTÔËËã·ûÖØÔØ *
+//POINTè¿ç®—ç¬¦é‡è½½ *
 inline POINT operator *(POINT A, LONG B) {
 	A.x *= B;
 	A.y *= B;
 	return A;
 }
 
-//POINTÔËËã·ûÖØÔØ /
+//POINTè¿ç®—ç¬¦é‡è½½ /
 inline POINT operator /(POINT A, LONG B) {
 	A.x /= B;
 	A.y /= B;

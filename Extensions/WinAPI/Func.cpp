@@ -1,26 +1,26 @@
-// Common Include
+ï»¿// Common Include
 #include	"common.h"
 
-//È«¾Ö´°¿Ú¾ä±ú
+//å…¨å±€çª—å£å¥æŸ„
 HWND CurrentWindowHandle = NULL;
 
-//Ã¶¾Ù´°Ìå»Øµ÷
+//æšä¸¾çª—ä½“å›è°ƒ
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 	HWND hwnd,      // handle to parent window
 	LPARAM lParam   // application-defined value
 ) {
 	DWORD PID;
 	GetWindowThreadProcessId(hwnd, &PID);
-	//Îª¸¸´°¿ÚÇÒÓëµ±Ç°½ø³ÌPIDÒ»ÖÂ
+	//ä¸ºçˆ¶çª—å£ä¸”ä¸å½“å‰è¿›ç¨‹PIDä¸€è‡´
 	if ((PID == GetCurrentProcessId()) && (GetParent(hwnd) == NULL)) {
-		//´«µİÓëÄ¿±êPIDÏà·ûµÄ¾ä±úÖÁÈ«¾Ö±äÁ¿CurrentWindowHandle
+		//ä¼ é€’ä¸ç›®æ ‡PIDç›¸ç¬¦çš„å¥æŸ„è‡³å…¨å±€å˜é‡CurrentWindowHandle
 		CurrentWindowHandle = hwnd;
 		return FALSE;
 	}
 	return TRUE;
 }
 
-//·µ»Øµ±Ç°´°¿Ú¾ä±ú
+//è¿”å›å½“å‰çª—å£å¥æŸ„
 HWND ReturnCurrentWindowHandle() {
 
 	CurrentWindowHandle = NULL;
@@ -33,19 +33,19 @@ HWND ReturnCurrentWindowHandle() {
 	return CurrentWindowHandle;
 }
 
-//³õÊ¼»¯¾ØĞÎÎªÕû¸öÏÔÊ¾Æ÷´óĞ¡
+//åˆå§‹åŒ–çŸ©å½¢ä¸ºæ•´ä¸ªæ˜¾ç¤ºå™¨å¤§å°
 RECT InitRect(){
 	return RECT{ 0,0, GetSystemMetrics(SM_CXSCREEN) , GetSystemMetrics(SM_CYSCREEN) };
 }
 
-//Ëø¶¨Êó±ê
-//»ùÓÚ´°¿Ú
+//é”å®šé¼ æ ‡
+//åŸºäºçª—å£
 void LockMouse(LPRDATA rdPtr, LT Type) {
-	//µ±Ç°´°¿Ú¾ØĞÎ
+	//å½“å‰çª—å£çŸ©å½¢
 	RECT CurrentWindowRect;
 	::GetWindowRect(rdPtr->MainWindowHandle, &CurrentWindowRect);
 
-	//»ñÈ¡Ëø¶¨¾ØĞÎ
+	//è·å–é”å®šçŸ©å½¢
 	RECT ClipRect = InitRect();
 
 	switch (Type) {
@@ -78,13 +78,13 @@ void LockMouse(LPRDATA rdPtr, LT Type) {
 
 	return;
 }
-//»ùÓÚ¾ØĞÎ
+//åŸºäºçŸ©å½¢
 void LockMouse(LPRDATA rdPtr, RECT Rect, RT Type) {
-	//µ±Ç°´°¿Ú¾ØĞÎ
+	//å½“å‰çª—å£çŸ©å½¢
 	RECT MainWindowRect;
 	::GetWindowRect(rdPtr->MainWindowHandle, &MainWindowRect);
 
-	//»ñÈ¡Ëø¶¨¾ØĞÎ
+	//è·å–é”å®šçŸ©å½¢
 	RECT ClipRect = InitRect();	
 
 	DPOINT Scale = GetFrameScale(rdPtr);
@@ -129,13 +129,13 @@ void LockMouse(LPRDATA rdPtr, RECT Rect, RT Type) {
 	return;
 }
 
-//ÊÍ·ÅÊó±ê
+//é‡Šæ”¾é¼ æ ‡
 void UnlockMouse(LPRDATA rdPtr) {
 	::ClipCursor(NULL);
 	rdPtr->Lock = false;
 }
 
-//»ñÈ¡µ±Ç°¿Í»§ÇøÓòÏà¶ÔÓÚÆÁÄ»µÄ¾ØĞÎÇøÓò
+//è·å–å½“å‰å®¢æˆ·åŒºåŸŸç›¸å¯¹äºå±å¹•çš„çŸ©å½¢åŒºåŸŸ
 BOOL GetCurrentClientRectToScreen(HWND hWnd, LPRECT lpRect)
 {
 	BOOL RetBool = 1;
@@ -150,7 +150,7 @@ BOOL GetCurrentClientRectToScreen(HWND hWnd, LPRECT lpRect)
 	return RetBool;
 }
 
-//»ñÈ¡µ±Ç°³¡¾°ÇøÓòÏà¶ÔÓÚÆÁÄ»µÄ¾ØĞÎÇøÓò
+//è·å–å½“å‰åœºæ™¯åŒºåŸŸç›¸å¯¹äºå±å¹•çš„çŸ©å½¢åŒºåŸŸ
 BOOL GetCurrentFrameRectToScreen(HWND hWnd, LPRECT lpRect,POINT WindowSize)
 {
 	BOOL RetBool = 1;
@@ -166,26 +166,26 @@ BOOL GetCurrentFrameRectToScreen(HWND hWnd, LPRECT lpRect,POINT WindowSize)
 	return RetBool;
 }
 
-//·µ»Ø³¡¾°´°¿ÚËõ·Å±ÈÀı
+//è¿”å›åœºæ™¯çª—å£ç¼©æ”¾æ¯”ä¾‹
 DPOINT GetFrameScale(LPRDATA rdPtr) {
-	//»ñÈ¡µ±Ç°³¡¾°ÏÔÊ¾ÇøÓò´óĞ¡
+	//è·å–å½“å‰åœºæ™¯æ˜¾ç¤ºåŒºåŸŸå¤§å°
 	RECT CurrentFrameRect;
 	::GetWindowRect(rdPtr->FrameWindowHandle, &CurrentFrameRect);
 	POINT Cur = { CurrentFrameRect.right - CurrentFrameRect.left,CurrentFrameRect.bottom - CurrentFrameRect.top };
 
-	//»ñÈ¡Ëõ·ÅÇ°ÏÔÊ¾µÄ×îĞ¡ÇøÓò´óĞ¡
+	//è·å–ç¼©æ”¾å‰æ˜¾ç¤ºçš„æœ€å°åŒºåŸŸå¤§å°
 	POINT Min = { min(rdPtr->AppW,rdPtr->FrameW),min(rdPtr->AppH,rdPtr->FrameH) };
 
 	return DPOINT{ Cur.x / (double)Min.x,Cur.y / (double)Min.y };
 }
 
-//Ö¸¶¨Êó±ê×ø±ê
+//æŒ‡å®šé¼ æ ‡åæ ‡
 void SetMousePosition(LPRDATA rdPtr, int x, int y, ST Type) {
 
-	//×îÖÕÖ¸¶¨µÄ×ø±ê
+	//æœ€ç»ˆæŒ‡å®šçš„åæ ‡
 	POINT Coordinate = {0,0};
 
-	//Èç¹ûÀàĞÍ²»ºÏ·¨£¬Ôò·µ»Øµ±Ç°×ø±ê
+	//å¦‚æœç±»å‹ä¸åˆæ³•ï¼Œåˆ™è¿”å›å½“å‰åæ ‡
 	::GetCursorPos(&Coordinate);
 
 	DPOINT Scale = GetFrameScale(rdPtr);
@@ -223,7 +223,7 @@ void SetMousePosition(LPRDATA rdPtr, int x, int y, ST Type) {
 	return;
 }
 
-//·µ»ØÆ«²îÖµ
+//è¿”å›åå·®å€¼
 POINT GetOffset(LPRDATA rdPtr, GT Type) {
 	
 	POINT Offset = { 0,0 };
@@ -256,10 +256,10 @@ POINT GetOffset(LPRDATA rdPtr, GT Type) {
 	return Offset;
 }
 
-//·µ»Ø¾ØĞÎÇøÓò
+//è¿”å›çŸ©å½¢åŒºåŸŸ
 RECT GetRect(LPRDATA rdPtr,GR Type) {
-	//WindowsÔÚ´¦ÀíDPIËõ·ÅÊ±£¬ÊÇ½«Õû¸öÏÔÊ¾Æ÷µÄ·Ö±æÂÊ½øĞĞËõ·ÅºóÔÙ´¦Àí
-	//¼´Ò»¸ö50*50µÄ´°¿ÚÎŞÂÛÊÇ·ñ½øĞĞËõ·Å£¬»ñÈ¡µ½µÄ´óĞ¡¾ùÊÇ50*50
+	//Windowsåœ¨å¤„ç†DPIç¼©æ”¾æ—¶ï¼Œæ˜¯å°†æ•´ä¸ªæ˜¾ç¤ºå™¨çš„åˆ†è¾¨ç‡è¿›è¡Œç¼©æ”¾åå†å¤„ç†
+	//å³ä¸€ä¸ª50*50çš„çª—å£æ— è®ºæ˜¯å¦è¿›è¡Œç¼©æ”¾ï¼Œè·å–åˆ°çš„å¤§å°å‡æ˜¯50*50
 	RECT CurrentRect = InitRect();
 
 	switch (Type) {
@@ -283,7 +283,7 @@ RECT GetRect(LPRDATA rdPtr,GR Type) {
 	return CurrentRect;
 }
 
-//·µ»ØDPIËõ·Å
+//è¿”å›DPIç¼©æ”¾
 int ReturnDPIScaling(bool AppScaled) {
 	// Get desktop dc
 	HDC desktopDc = GetDC(NULL);
@@ -307,7 +307,7 @@ int ReturnDPIScaling(bool AppScaled) {
 	}
 }
 
-//·µ»Ø×¢²á±í×Ö·û´®Öµ
+//è¿”å›æ³¨å†Œè¡¨å­—ç¬¦ä¸²å€¼
 char* ReturnRegValue(HKEY hkey,LPWSTR lpSubKey, LPWSTR lpValue) {
 	DWORD reg_type = REG_SZ;
 	char* reg_value = new char[MAX_PATH];
@@ -329,10 +329,10 @@ char* ReturnRegValue(HKEY hkey,LPWSTR lpSubKey, LPWSTR lpValue) {
 	return reg_value;
 }
 
-//ÊäÈë·¨×´Ì¬
+//è¾“å…¥æ³•çŠ¶æ€
 bool IMEState;
 
-//ÊäÈë·¨¿ØÖÆ
+//è¾“å…¥æ³•æ§åˆ¶
 BOOL IMEStateControl(HWND hWnd, bool State)
 {
 	IMEState = State;
@@ -399,7 +399,7 @@ void Stretch(bool YReverse, LPBYTE Src, uint SW, uint SH, uint SBW, LPBYTE Des, 
 	//	int t_dheight = DH / divide;
 
 	//	for (int i = 0; i < divide; i++) {
-	//		//±ßÔµ´¦Àí
+	//		//è¾¹ç¼˜å¤„ç†
 	//		int t_risize = t_dheight;
 
 	//		if (i == divide - 1) {
@@ -482,9 +482,6 @@ void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des) {
 	return;
 }
 
-//Mutex
-std::mutex mtx;
-
 //Save to Clipboard
 void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release) {
 	if (!rdPtr->MultiThreadSave) {
@@ -557,10 +554,10 @@ void RefreshMonitorState(LPRDATA rdPtr) {
 	}
 }
 
-//ËùÓĞ´´½¨Ïß³ÌµÄ½ø³ÌÃû
+//æ‰€æœ‰åˆ›å»ºçº¿ç¨‹çš„è¿›ç¨‹å
 std::deque <LPTSTR> RunApplicationName;
 
-//¿ª±ÙĞÂµÄÄÚ´æ¿Õ¼ä¸´ÖÆ£¬²¢±£´æÖ¸ÏòÕâÆ¬ÄÚ´æ¿Õ¼äµÄÖ¸Õë
+//å¼€è¾Ÿæ–°çš„å†…å­˜ç©ºé—´å¤åˆ¶ï¼Œå¹¶ä¿å­˜æŒ‡å‘è¿™ç‰‡å†…å­˜ç©ºé—´çš„æŒ‡é’ˆ
 void AddNewApplicationName(LPTSTR lpApplicationName) {
 	size_t total_length = _MAX_FNAME + _MAX_EXT;
 	LPTSTR ANCL = new WCHAR[total_length];
@@ -568,7 +565,7 @@ void AddNewApplicationName(LPTSTR lpApplicationName) {
 	RunApplicationName.push_back(ANCL);
 }
 
-//ÇåÀíÈ«²¿¿Õ¼ä
+//æ¸…ç†å…¨éƒ¨ç©ºé—´
 void DeleteAllApplicationName() {
 	for (auto t = RunApplicationName.begin(); t != RunApplicationName.end(); t++) {
 		delete[](*t);
@@ -576,7 +573,7 @@ void DeleteAllApplicationName() {
 	RunApplicationName.clear();
 }
 
-//Í¨¹ıÎ»ÖÃÇåÀíÇåÀí¿Õ¼ä
+//é€šè¿‡ä½ç½®æ¸…ç†æ¸…ç†ç©ºé—´
 void DeleteRunApplicationNameByPos(size_t pos) {
 	delete[] RunApplicationName[pos];
 
@@ -584,10 +581,10 @@ void DeleteRunApplicationNameByPos(size_t pos) {
 	RunApplicationName.erase(t);	
 }
 
-//Í¨¹ı½ø³ÌÃûÇåÀíÇåÀí¿Õ¼ä
+//é€šè¿‡è¿›ç¨‹åæ¸…ç†æ¸…ç†ç©ºé—´
 void DeleteRunApplicationName(LPCTSTR ApplicationName) {
 	for (auto t = RunApplicationName.begin(); t != RunApplicationName.end();) {
-		//ÒÀÕÕÊÇ·ñÉ¾³ıÔªËØ¸üĞÂµü´úÆ÷
+		//ä¾ç…§æ˜¯å¦åˆ é™¤å…ƒç´ æ›´æ–°è¿­ä»£å™¨
 		if (wcscmp(ApplicationName, *t) == 0) {
 			delete[](*t);
 			t = RunApplicationName.erase(t);
@@ -599,19 +596,19 @@ void DeleteRunApplicationName(LPCTSTR ApplicationName) {
 	return;
 }
 
-//Í¨¹ı¾ä±úÍ£Ö¹È«²¿´´½¨µÄÏß³Ì
+//é€šè¿‡å¥æŸ„åœæ­¢å…¨éƒ¨åˆ›å»ºçš„çº¿ç¨‹
 void StopAllApplication() {
 	
-	//Èç¹ûÃ»ÓĞÔËĞĞ³ÌĞòÔòÌø¹ıÕâÒ»½×¶Î
+	//å¦‚æœæ²¡æœ‰è¿è¡Œç¨‹åºåˆ™è·³è¿‡è¿™ä¸€é˜¶æ®µ
 	if (RunApplicationName.size() == 0) {
 		return;
 	}
 		
-	//»ñÈ¡¿ìÕÕ
+	//è·å–å¿«ç…§
 	HANDLE	snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-	//Ñ­»·±éÀú
+	//å¾ªç¯éå†
 	PROCESSENTRY32* info;
 	info = new PROCESSENTRY32;
 	info->dwSize = sizeof(PROCESSENTRY32);
@@ -619,9 +616,9 @@ void StopAllApplication() {
 	Process32First(snapshot, info);
 	while (Process32Next(snapshot, info) != FALSE) {
 		for (size_t i = 0; i < RunApplicationName.size(); i++) {
-			//½ø³ÌÃûÒ»ÖÂÔò½áÊø½ø³Ì		
+			//è¿›ç¨‹åä¸€è‡´åˆ™ç»“æŸè¿›ç¨‹		
 			if (wcscmp(RunApplicationName[i], info->szExeFile) == 0) {
-				//PROCESS_TERMINATE±íÊ¾Îª½áÊø²Ù×÷´ò¿ª,FALSE=¿É¼Ì³Ğ,info.th32ProcessID=½ø³ÌID    
+				//PROCESS_TERMINATEè¡¨ç¤ºä¸ºç»“æŸæ“ä½œæ‰“å¼€,FALSE=å¯ç»§æ‰¿,info.th32ProcessID=è¿›ç¨‹ID    
 				TerminateProcess(OpenProcess(PROCESS_TERMINATE, FALSE, info->th32ProcessID), 0);
 			}
 		}

@@ -1,4 +1,4 @@
-// ============================================================================
+ï»¿// ============================================================================
 //
 // This file contains routines that are handled during the Runtime.
 //
@@ -69,17 +69,17 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rhPtr
 	rdPtr->rhPtr = rdPtr->rHo.hoAdRunHeader;
 
-	//×ø±ê
+	//åæ ‡
 	rdPtr->rHo.hoX = cobPtr->cobX;
 	rdPtr->rHo.hoY = cobPtr->cobY;	
 	
 	//you must set the fields rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight, rdPtr->rHo.hoImgXSpotand rdPtr->rHo.hoImgYSpot of your object to obtain a correct display.
 
-	//ÈÈµã
+	//çƒ­ç‚¹
 	rdPtr->rHo.hoImgXSpot = 0;
 	rdPtr->rHo.hoImgYSpot = 0;
 	
-	//´óÐ¡
+	//å¤§å°
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 
@@ -94,13 +94,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		LPSURFACE proto = nullptr;
 		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 		
-		////SurfaceÖ¸ÕëÊ¹ÓÃÁ÷³Ì
+		////SurfaceæŒ‡é’ˆä½¿ç”¨æµç¨‹
 		//LPSURFACE DIS;
 		//DIS = NewSurface();
 		//DIS->Create(rdPtr->swidth, rdPtr->sheight, proto);
 		//DeleteSurface(DIS);
 		
-		//Surface³õÊ¼»¯
+		//Surfaceåˆå§‹åŒ–
 		rdPtr->img = new cSurface;
 		rdPtr->temp = new cSurface;
 
@@ -108,25 +108,25 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->img->Fill(BLACK);
 	}
 	
-	//Ö÷´°¿Ú¾ä±ú	
+	//ä¸»çª—å£å¥æŸ„	
 	rdPtr->MainWindowHandle = rdPtr->rhPtr->rhHMainWin;
-	//³¡¾°ÇøÓò´°¿Ú¾ä±ú
+	//åœºæ™¯åŒºåŸŸçª—å£å¥æŸ„
 	rdPtr->FrameWindowHandle = rdPtr->rhPtr->rhHEditWin;
 
-	//APP·Ö±æÂÊ
+	//APPåˆ†è¾¨çŽ‡
 	rdPtr->AppW = rdPtr->rhPtr->rhApp->m_hdr.gaCxWin;
 	rdPtr->AppH = rdPtr->rhPtr->rhApp->m_hdr.gaCyWin;	
 
-	//³¡¾°´óÐ¡
+	//åœºæ™¯å¤§å°
 	rdPtr->FrameW = rdPtr->rhPtr->rhFrame->m_hdr.leWidth;
 	rdPtr->FrameH = rdPtr->rhPtr->rhFrame->m_hdr.leHeight;
 	
-	//Ëø¶¨Ä£Ê½
+	//é”å®šæ¨¡å¼
 	rdPtr->KeepLock = edPtr->KeepLock;
 	rdPtr->UpdateLock = edPtr->UpdateLock;
 	rdPtr->RectOffset_State = edPtr->RectOffset_State;
 	
-	//Ëø¶¨ÇøÓò
+	//é”å®šåŒºåŸŸ
 	rdPtr->CurrentLockRect = InitRect();
 
 	IMEState = ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle));
@@ -134,7 +134,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->AppScaled = !IsProcessDPIAware();
 	
-	//³õÊ¼»¯FilterID
+	//åˆå§‹åŒ–FilterID
 	rdPtr->DefaultFilterName = nullptr;
 
 	rdPtr->FileList = new std::vector<std::wstring>;
@@ -164,17 +164,17 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-	//Í£Ö¹´´½¨µÄ½ø³Ì
+	//åœæ­¢åˆ›å»ºçš„è¿›ç¨‹
 	StopAllApplication();
 	
-	//ÊÍ·ÅÊó±ê
+	//é‡Šæ”¾é¼ æ ‡
 	UnlockMouse(rdPtr);
 
 	//Release Surface
 	delete rdPtr->img;
 	delete rdPtr->temp;
 
-	//ÊÍ·ÅÊ±¼ä×Ö·û´®
+	//é‡Šæ”¾æ—¶é—´å­—ç¬¦ä¸²
 	if (rdPtr->CurrentTime != nullptr) {
 		delete[] rdPtr->CurrentTime;
 	}
@@ -234,10 +234,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
-	// ÈôÉè¶¨ÁË±£³ÖËø¶¨£¬²¢ÒÑÆôÓÃËø¶¨£¬ÇÒµ±Ç°´°¿ÚÎª»î¶¯´°¿Ú£¬Ôò¼ÌÐøËø¶¨´°¿Ú
+	// è‹¥è®¾å®šäº†ä¿æŒé”å®šï¼Œå¹¶å·²å¯ç”¨é”å®šï¼Œä¸”å½“å‰çª—å£ä¸ºæ´»åŠ¨çª—å£ï¼Œåˆ™ç»§ç»­é”å®šçª—å£
 	//if (rdPtr->Lock && rdPtr->KeepLock && (GetForegroundWindow() == rdPtr->MainWindowHandle)) {
 	if (rdPtr->Lock && rdPtr->KeepLock && (GetActiveWindow() == rdPtr->MainWindowHandle)) {
-		// ÈôÉè¶¨ÁË¸üÐÂËø¶¨£¬Ôò¸üÐÂËø¶¨
+		// è‹¥è®¾å®šäº†æ›´æ–°é”å®šï¼Œåˆ™æ›´æ–°é”å®š
 		if (rdPtr->UpdateLock) {
 			switch (rdPtr->LockType) {
 				case LOCK_CURRENTWINDOW: {
@@ -253,8 +253,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 					break;
 				}
 				case LOCK_BYRECT: {
-					// ÈôÉè¶¨ÁËÏà¶ÔËø¶¨£¬ÇÒ´¦ÓÚÏà¶ÔÓÚÆÁÄ»Ëø¶¨Ä£Ê½£¬Ôò¸üÐÂËø¶¨
-					//Ïà¶ÔÓÚÆäËûÄ£Ê½ÔòÊÇÇ¿ÖÆ¿ªÆô
+					// è‹¥è®¾å®šäº†ç›¸å¯¹é”å®šï¼Œä¸”å¤„äºŽç›¸å¯¹äºŽå±å¹•é”å®šæ¨¡å¼ï¼Œåˆ™æ›´æ–°é”å®š
+					//ç›¸å¯¹äºŽå…¶ä»–æ¨¡å¼åˆ™æ˜¯å¼ºåˆ¶å¼€å¯
 					switch (rdPtr->RectOffset_Type) {
 						case RELATIVE_SCREEN:{
 							if (rdPtr->RectOffset_State) {
@@ -293,12 +293,12 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		}		
 	}
 
-	// ÈôÉè¶¨ÁË±£³ÖÊäÈë·¨×´Ì¬£¬ÇÒµ±Ç°×´Ì¬Óë±£³Ö×´Ì¬²»Ò»ÖÂ£¬Ôò¸üÐÂ×´Ì¬
+	// è‹¥è®¾å®šäº†ä¿æŒè¾“å…¥æ³•çŠ¶æ€ï¼Œä¸”å½“å‰çŠ¶æ€ä¸Žä¿æŒçŠ¶æ€ä¸ä¸€è‡´ï¼Œåˆ™æ›´æ–°çŠ¶æ€
 	if (rdPtr->KeepIMEState&&(IMEState != (bool)ImmGetOpenStatus(ImmGetContext(rdPtr->MainWindowHandle)))) {
 		IMEStateControl(rdPtr->MainWindowHandle,IMEState);
 	}
 
-	// Ë¢ÐÂÏÔÊ¾Æ÷×´Ì¬
+	// åˆ·æ–°æ˜¾ç¤ºå™¨çŠ¶æ€
 	if (rdPtr->bSecondFrame) {
 		RefreshMonitorState(rdPtr);
 	}
@@ -308,7 +308,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;
 
-	//¸üÐÂÏÔÊ¾
+	//æ›´æ–°æ˜¾ç¤º
 	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {
 		return REFLAG_DISPLAY;
 	}
@@ -327,7 +327,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 /*
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
-	//Ê¹ÓÃGetRunObjectSurface²»»áÕýÈ·´¦Àíµ±¶ÔÏó²¢·ÇÈ«²¿Î»ÓÚ³¡¾°ÄÚÊ±µÄShader
+	//ä½¿ç”¨GetRunObjectSurfaceä¸ä¼šæ­£ç¡®å¤„ç†å½“å¯¹è±¡å¹¶éžå…¨éƒ¨ä½äºŽåœºæ™¯å†…æ—¶çš„Shader
 
 	if ((rdPtr->Display) && (rdPtr->img->IsValid())) {
 		// Begin render process...

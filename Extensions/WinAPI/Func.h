@@ -1,58 +1,58 @@
-#ifndef _GLOBALFUNC_
+ï»¿#ifndef _GLOBALFUNC_
 #define _GLOBALFUNC_
 
-//È«¾Ö´°¿Ú¾ä±ú
+//å…¨å±€çª—å£å¥æŸ„
 extern HWND CurrentWindowHandle;
 
-//Ã¶¾Ù´°Ìå»Øµ÷
+//æšä¸¾çª—ä½“å›è°ƒ
 BOOL CALLBACK WINAPIEXT_EnumWindowsProc(
 	HWND hwnd,      // handle to parent window
 	LPARAM lParam   // application-defined value
 );
 
-//·µ»Øµ±Ç°´°¿Ú¾ä±ú
+//è¿”å›å½“å‰çª—å£å¥æŸ„
 HWND ReturnCurrentWindowHandle();
 
-//³õÊ¼»¯¾ØĞÎÎªÕû¸öÏÔÊ¾Æ÷´óĞ¡
+//åˆå§‹åŒ–çŸ©å½¢ä¸ºæ•´ä¸ªæ˜¾ç¤ºå™¨å¤§å°
 RECT InitRect();
 
-//Ëø¶¨Êó±ê
-//»ùÓÚ´°¿Ú
+//é”å®šé¼ æ ‡
+//åŸºäºçª—å£
 void LockMouse(LPRDATA rdPtr, LT Type);
-//»ùÓÚ¾ØĞÎ
+//åŸºäºçŸ©å½¢
 void LockMouse(LPRDATA rdPtr, RECT Rect, RT Type);
 
-//ÊÍ·ÅÊó±ê
+//é‡Šæ”¾é¼ æ ‡
 void UnlockMouse(LPRDATA rdPtr);
 
-//»ñÈ¡µ±Ç°¿Í»§ÇøÓòÏà¶ÔÓÚÆÁÄ»µÄ¾ØĞÎÇøÓò
+//è·å–å½“å‰å®¢æˆ·åŒºåŸŸç›¸å¯¹äºå±å¹•çš„çŸ©å½¢åŒºåŸŸ
 BOOL GetCurrentClientRectToScreen(HWND hWnd,LPRECT lprect);
 
-//»ñÈ¡µ±Ç°³¡¾°ÇøÓòÏà¶ÔÓÚÆÁÄ»µÄ¾ØĞÎÇøÓò
+//è·å–å½“å‰åœºæ™¯åŒºåŸŸç›¸å¯¹äºå±å¹•çš„çŸ©å½¢åŒºåŸŸ
 BOOL GetCurrentFrameRectToScreen(HWND hWnd, LPRECT lpRect, POINT offset);
 
-//·µ»Ø³¡¾°´°¿ÚËõ·Å±ÈÀı
+//è¿”å›åœºæ™¯çª—å£ç¼©æ”¾æ¯”ä¾‹
 DPOINT GetFrameScale(LPRDATA rdPtr);
 
-//Ö¸¶¨Êó±ê×ø±ê
+//æŒ‡å®šé¼ æ ‡åæ ‡
 void SetMousePosition(LPRDATA rdPtr, int x, int y, ST Type);
 
-//·µ»ØÆ«²îÖµ
+//è¿”å›åå·®å€¼
 POINT GetOffset(LPRDATA rdPtr, GT Type);
 
-//·µ»Ø¾ØĞÎÇøÓò
+//è¿”å›çŸ©å½¢åŒºåŸŸ
 RECT GetRect(LPRDATA rdPtr, GR Type);
 
-//·µ»ØDPIËõ·Å
+//è¿”å›DPIç¼©æ”¾
 int ReturnDPIScaling(bool AppScaled);
 
-//·µ»Ø×¢²á±í×Ö·û´®Öµ
+//è¿”å›æ³¨å†Œè¡¨å­—ç¬¦ä¸²å€¼
 char* ReturnRegValue(HKEY hkey, LPWSTR lpSubKey, LPWSTR lpValue);
 
-//ÊäÈë·¨×´Ì¬
+//è¾“å…¥æ³•çŠ¶æ€
 extern bool IMEState;
 
-//ÊäÈë·¨¿ØÖÆ
+//è¾“å…¥æ³•æ§åˆ¶
 BOOL IMEStateControl(HWND hWnd, bool State);
 
 //Surface
@@ -67,9 +67,6 @@ BOOL Stretch(LPSURFACE Src, LPSURFACE Des);
 //Blt To Surface
 void BltToSurface(HDC Src, int SH, int SW, LPSURFACE Des);
 
-//Mutex
-extern std::mutex mtx;
-
 //Save to Clipboard
 void SavetoClipBoard(LPSURFACE Src, LPRDATA rdPtr, bool release);
 //Save to File
@@ -81,10 +78,10 @@ void GetFileList(LPRDATA rdPtr, std::wstring& Src);
 //Refresh Monitor State
 void RefreshMonitorState(LPRDATA rdPtr);
 
-//ËùÓĞ´´½¨Ïß³ÌµÄ¾ä±ú
+//æ‰€æœ‰åˆ›å»ºçº¿ç¨‹çš„å¥æŸ„
 extern std::deque <LPTSTR> RunApplicationName;
 
-//½ø³Ì¹ÜÀí
+//è¿›ç¨‹ç®¡ç†
 void StopAllApplication();
 void DeleteRunApplicationName(LPCTSTR ApplicationName);
 void DeleteRunApplicationNameByPos(size_t pos);

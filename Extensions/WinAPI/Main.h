@@ -1,4 +1,4 @@
-// Object identifier "DIO0"
+ï»¿// Object identifier "DIO0"
 
 #define IDENTIFIER	MAKEID(D,I,O,0)		// REQUIRED: you MUST replace the letters in the MAKEID macro by others
 										// and then remove the #pragma message above. If you do not do this, MMF2
@@ -173,14 +173,14 @@ typedef struct tagEDATA_V1
 
 	bool Display = false;
 	
-	//ÇĞ»»´°¿Úºó±£³ÖËø¶¨
+	//åˆ‡æ¢çª—å£åä¿æŒé”å®š
 	bool KeepLock;
-	//ÍÏ×§´°¿Úºó¸üĞÂËø¶¨
+	//æ‹–æ‹½çª—å£åæ›´æ–°é”å®š
 	bool UpdateLock;
-	//ÇøÓòËø¶¨Ïà¶Ô´°¿Ú×ø±ê
+	//åŒºåŸŸé”å®šç›¸å¯¹çª—å£åæ ‡
 	bool RectOffset_State;
 
-	//³ÖĞø±£³ÖÊäÈë·¨×´Ì¬
+	//æŒç»­ä¿æŒè¾“å…¥æ³•çŠ¶æ€
 	bool KeepIMEState;
 
 } EDITDATA;
@@ -217,70 +217,70 @@ typedef struct tagRDATA
 
 	bool Display = false;
 
-	//ÏÔÊ¾Surface
+	//æ˜¾ç¤ºSurface
 	LPSURFACE img;
-	//±¸·İSurface
+	//å¤‡ä»½Surface
 	LPSURFACE temp;
 
 	bool StretchQuality = false;
 	bool MultiThreadSave = true;
 
-	//ÓÃÓÚ±£´æµÄRunHeader
+	//ç”¨äºä¿å­˜çš„RunHeader
 	fprh rhPtr = NULL;
 
-	//Ö÷´°¿Ú¾ä±ú
+	//ä¸»çª—å£å¥æŸ„
 	HWND MainWindowHandle = NULL;
-	//³¡¾°ÇøÓò´°¿Ú¾ä±ú
+	//åœºæ™¯åŒºåŸŸçª—å£å¥æŸ„
 	HWND FrameWindowHandle = NULL;
 
-	//APP·Ö±æÂÊ
+	//APPåˆ†è¾¨ç‡
 	int AppW;
 	int AppH;
 
-	//³¡¾°´óĞ¡
+	//åœºæ™¯å¤§å°
 	int FrameW;
 	int FrameH;
 		
-	//´°¿ÚÊÇ·ñËø¶¨
+	//çª—å£æ˜¯å¦é”å®š
 	bool Lock = false;
-	//´°¿ÚËø¶¨Àà±ğ
+	//çª—å£é”å®šç±»åˆ«
 	int LockType;
-	//ÇĞ»»´°¿Úºó±£³ÖËø¶¨
+	//åˆ‡æ¢çª—å£åä¿æŒé”å®š
 	bool KeepLock;
-	//ÍÏ×§´°¿Úºó¸üĞÂËø¶¨
+	//æ‹–æ‹½çª—å£åæ›´æ–°é”å®š
 	bool UpdateLock;
-	//Ïà¶ÔÓÚ³¡¾°ÇøÓòÒÔ¾ØĞÎÇøÓòËø¶¨Ê±µÄËõ·Å±ÈÀı
+	//ç›¸å¯¹äºåœºæ™¯åŒºåŸŸä»¥çŸ©å½¢åŒºåŸŸé”å®šæ—¶çš„ç¼©æ”¾æ¯”ä¾‹
 	DPOINT FrameScale = { 1,1 };
 
-	//ÇøÓòËø¶¨ÀàĞÍ
+	//åŒºåŸŸé”å®šç±»å‹
 	int RectOffset_Type;
-	//ÇøÓòËø¶¨Ïà¶Ô´°¿Ú×ø±ê
+	//åŒºåŸŸé”å®šç›¸å¯¹çª—å£åæ ‡
 	bool RectOffset_State;
-	//µ±Ç°Êó±êËø¶¨µÄ¾ØĞÎÇøÓòÏà¶ÔÓÚ´°¿ÚµÄÆ«ÒÆ
+	//å½“å‰é¼ æ ‡é”å®šçš„çŸ©å½¢åŒºåŸŸç›¸å¯¹äºçª—å£çš„åç§»
 	RECT RectOffset = { 0,0,0,0 };
-	//Ö¸¶¨µÄ¾ØĞÎÇøÓò
+	//æŒ‡å®šçš„çŸ©å½¢åŒºåŸŸ
 	RECT UserSetRect = { 0,0,0,0 };
 
-	//µ±Ç°Êó±êËø¶¨µÄ¾ØĞÎÇøÓò
+	//å½“å‰é¼ æ ‡é”å®šçš„çŸ©å½¢åŒºåŸŸ
 	RECT CurrentLockRect;
 
-	//³ÖĞø±£³ÖÊäÈë·¨×´Ì¬
+	//æŒç»­ä¿æŒè¾“å…¥æ³•çŠ¶æ€
 	bool KeepIMEState;
 
-	//³ÌĞòÊÇ·ñÒÑ¾­Ëõ·Å
+	//ç¨‹åºæ˜¯å¦å·²ç»ç¼©æ”¾
 	bool AppScaled;
 
-	//Í¼ÏñµÄÄ¬ÈÏ´æ´¢¸ñÊ½
-	//Ö¸Ïò³£Á¿£¬Òò´ËÎŞĞèÊÍ·Å
+	//å›¾åƒçš„é»˜è®¤å­˜å‚¨æ ¼å¼
+	//æŒ‡å‘å¸¸é‡ï¼Œå› æ­¤æ— éœ€é‡Šæ”¾
 	LPCWSTR DefaultFilterName;
 
-	//µ±Ç°Ê±¼ä×Ö·û´®
+	//å½“å‰æ—¶é—´å­—ç¬¦ä¸²
 	LPWSTR CurrentTime;
 
-	//×ÜÓÎÍæÊ±¼ä×Ö·û´®
+	//æ€»æ¸¸ç©æ—¶é—´å­—ç¬¦ä¸²
 	LPWSTR TotalPlayTime;
 
-	//ÎÄ¼şÁĞ±í
+	//æ–‡ä»¶åˆ—è¡¨
 	std::vector<std::wstring>* FileList;
 	LPWSTR FileListOutPut;
 
