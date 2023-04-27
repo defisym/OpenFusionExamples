@@ -168,8 +168,12 @@ inline void GetFileName(LPRDATA rdPtr) {
 	*rdPtr->FileName = GetFileName(*rdPtr->FilePath);
 }
 
-inline std::wstring GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {
-	auto pos = BasePath.size() + 1;
+inline std::wstring GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {	
+	auto pos = BasePath.size();
+
+	if (!(BasePath.ends_with(L'\\') || BasePath.ends_with(L'/'))) {
+		pos += 1;
+	}
 
 	try {
 		return FilePath.substr(pos, FilePath.size() - pos);
