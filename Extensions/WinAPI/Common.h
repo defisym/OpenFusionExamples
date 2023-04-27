@@ -53,6 +53,7 @@
 #pragma comment(lib,"Imm32.lib")
 
 //Definitions
+#include	"GeneralDefinition.h"
 #include	"Definition.h"
 
 class ObjectSelection;

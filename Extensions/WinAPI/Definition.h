@@ -1,19 +1,8 @@
-#ifndef _DEFINITION_
-#define _DEFINITION_
+#pragma once
 
 //#define _FFMPEG
 
-#define ONMONITORCHANGE 13
-
-#define Empty_Str	_T("")
-#define Default_Str	_T("")
-
-#define valid(X) (X != nullptr)
-
-#define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
-
-#define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
-#define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
+constexpr auto ONMONITORCHANGE = 13;
 
 typedef struct DOUBLEPOINT
 {
@@ -143,6 +132,4 @@ inline POINT operator /(POINT A, LONG B) {
 	A.y /= B;
 	return A;
 }
-
-#endif // !_DEFINITION_
 

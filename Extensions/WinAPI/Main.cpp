@@ -934,26 +934,26 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			RGBA* W_Temp = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
 
 			//init			
-			RGBA Input = { (double)src [2],(double)src [1],(double)src [0],0 };
+			RGBA Input = { (double)src[2],(double)src[1],(double)src[0],0 };
 			RGBA Output = { 0,0,0,0 };
 
 			//forward
-			W [0] = W [1] = W [2] = Input;
+			W[0] = W[1] = W[2] = Input;
 			for (int n1 = 3; n1 < size + 3; n1++) {
 				int offset = (n1 - 3) * stride;
-				Input = { (double)src [offset + 2],(double)src [offset + 1],(double)src [offset + 0],0 };
-				W [n1] = (c.B * Input + (c.b [1] * W [n1 - 1] + c.b [2] * W [n1 - 2] + c.b [3] * W [n1 - 3]) / c.b [0]);
+				Input = { (double)src[offset + 2],(double)src[offset + 1],(double)src[offset + 0],0 };
+				W[n1] = (c.B * Input + (c.b[1] * W[n1 - 1] + c.b[2] * W[n1 - 2] + c.b[3] * W[n1 - 3]) / c.b[0]);
 			}
 
 			//backword
-			W_Temp [size] = W_Temp [size + 1] = W_Temp [size + 2] = W [size + 2];
+			W_Temp[size] = W_Temp[size + 1] = W_Temp[size + 2] = W[size + 2];
 			for (int n2 = size - 1; n2 >= 0; n2--) {
 				int offset = n2 * stride;
-				W_Temp [n2] = (c.B * W [n2] + (c.b [1] * W_Temp [n2 + 1] + c.b [2] * W_Temp [n2 + 2] + c.b [3] * W_Temp [n2 + 3]) / c.b [0]);
-				Output = Range(W_Temp [n2]);
-				des [offset + 2] = (BYTE)Output.r;
-				des [offset + 1] = (BYTE)Output.g;
-				des [offset + 0] = (BYTE)Output.b;
+				W_Temp[n2] = (c.B * W[n2] + (c.b[1] * W_Temp[n2 + 1] + c.b[2] * W_Temp[n2 + 2] + c.b[3] * W_Temp[n2 + 3]) / c.b[0]);
+				Output = Range(W_Temp[n2]);
+				des[offset + 2] = (BYTE)Output.r;
+				des[offset + 1] = (BYTE)Output.g;
+				des[offset + 0] = (BYTE)Output.b;
 			}
 
 			free(W);
