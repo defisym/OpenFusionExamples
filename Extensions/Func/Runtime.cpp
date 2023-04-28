@@ -65,6 +65,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+
 	rdPtr->CompatibleMode = edPtr->CompatibleMode;
 
 	rdPtr->FuncNameStack = new VEC;
@@ -97,7 +98,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->OutPut = nullptr;
 
 	rdPtr->pPreviousFuncName = new std::wstring;
-	rdPtr->defaultData = Data_Default;
+	rdPtr->defaultData = Data();
 
 	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
 	rdPtr->pOnItObjName = new std::wstring;

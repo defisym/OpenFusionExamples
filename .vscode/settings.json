@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "*.bsc": "ini",
+        "*.file": "plaintext",
+        "_GlobalProgress": "ini",
+        "*.vdf": "plaintext",
+        "*.asc": "AvgScript",
+        "*.dat": "ini",
+        "*.sav": "ini",
+        "chrono": "cpp",
+        "random": "cpp"
+    }
+}
