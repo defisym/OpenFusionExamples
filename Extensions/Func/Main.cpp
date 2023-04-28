@@ -314,6 +314,7 @@ short WINAPI DLLExport SetTempParamVal(LPRDATA rdPtr, long param1, long param2) 
 	float Param = *(float*)&p1;
 
 	TempParam(rdPtr, FuncName, ParamName) = Data(Param);
+
 	return 0;
 }
 
@@ -396,16 +397,19 @@ short WINAPI DLLExport CallFunc(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
 
-	(*rdPtr->FuncLoopIndex)[FuncName] = LoopIndex;
+	const auto name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
 
-	for ((*rdPtr->FuncCurLoopIndex)[FuncName] = 0; 
-		(*rdPtr->FuncCurLoopIndex)[FuncName] < LoopIndex; 
-		(*rdPtr->FuncCurLoopIndex)[FuncName]++) {
+	(*rdPtr->FuncLoopIndex)[name] = LoopIndex;
+
+	for ((*rdPtr->FuncCurLoopIndex)[name] = 0;
+		(*rdPtr->FuncCurLoopIndex)[name] < LoopIndex;
+		(*rdPtr->FuncCurLoopIndex)[name]++) {
+		// must use original name to call function
 		CallFuncCore(rdPtr, FuncName, Param);
 	}
 
-	rdPtr->FuncLoopIndex->erase(FuncName);
-	rdPtr->FuncCurLoopIndex->erase(FuncName);
+	rdPtr->FuncLoopIndex->erase(name);
+	rdPtr->FuncCurLoopIndex->erase(name);
 
 	return 0;
 }
@@ -414,8 +418,10 @@ short WINAPI DLLExport SetLoopIndex(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
 
-	if (rdPtr->FuncLoopIndex->contains(FuncName)) {
-		(*rdPtr->FuncCurLoopIndex)[FuncName] = LoopIndex;
+	const auto name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+
+	if (rdPtr->FuncLoopIndex->contains(name)) {
+		(*rdPtr->FuncCurLoopIndex)[name] = LoopIndex;
 	}
 
 	return 0;
@@ -424,8 +430,10 @@ short WINAPI DLLExport SetLoopIndex(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport StopLoop(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	if (rdPtr->FuncLoopIndex->contains(FuncName)) {
-		(*rdPtr->FuncCurLoopIndex)[FuncName] = (*rdPtr->FuncLoopIndex)[FuncName];
+	const auto name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+
+	if (rdPtr->FuncLoopIndex->contains(name)) {
+		(*rdPtr->FuncCurLoopIndex)[name] = (*rdPtr->FuncLoopIndex)[name];
 	}
 
 	return 0;
@@ -847,8 +855,10 @@ long WINAPI DLLExport GetCurrentFuncName(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetLoopIndex(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if (rdPtr->FuncLoopIndex->contains(FuncName)) {
-		return (long)(*rdPtr->FuncCurLoopIndex)[FuncName];
+	const auto name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+
+	if (rdPtr->FuncLoopIndex->contains(name)) {
+		return (long)(*rdPtr->FuncCurLoopIndex)[name];
 	}
 	else {
 		return -1;

@@ -178,24 +178,21 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	bool CompatibleMode;
+	
+	LPVEC FuncNameStack;			// original name	
+	LPLIDX RecursiveIndex;			// original name
+	
+	LPVEC FuncRawParamStack;		// name independent
+	LPPARAMSTACK FuncParamStack;	// name independent
+	LPPARAMVEC FuncReturn;			// name independent
 
-	LPVEC FuncNameStack;
-	LPVEC FuncRawParamStack;
+	LPTPARAM FuncTempParam;			// mangling name
+	LPLIDX FuncLoopIndex;			// mangling name
+	LPLIDX FuncCurLoopIndex;		// mangling name
 
-	LPPARAMSTACK FuncParamStack;
-	LPTPARAM FuncTempParam;
-
-	LPPARAMMAP GlobalTempParam;
-
-	LPPARAMVEC FuncReturn;
-
-	LPLIDX FuncLoopIndex;
-	LPLIDX FuncCurLoopIndex;
-
-	LPLIDX RecursiveIndex;	
-
-	//LPSTRING OutPut;
-	LPTSTR OutPut = nullptr;
+	LPPARAMMAP GlobalTempParam;		// name independent
+	
+	LPWSTR OutPut = nullptr;
 
 	std::wstring* pPreviousFuncName = nullptr;
 	Data defaultData;
