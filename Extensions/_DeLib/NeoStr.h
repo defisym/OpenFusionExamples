@@ -2247,8 +2247,8 @@ public:
 			while (true) {
 				auto pCurChar = pText + pChar;
 
-				auto curChar = pCurChar [0];
-				auto nextChar = pCurChar [1];
+				auto curChar = pCurChar[0];
+				auto nextChar = pCurChar[1];
 
 				if (fontIt != this->fontFormat.end()
 					&& pChar >= fontIt->startWithNewLine) {
@@ -2412,6 +2412,10 @@ public:
 				}
 
 				pChar++;
+
+				if ((pText + pChar)[0] == L'\0') {
+					break;
+				}
 
 				if (pChar > pTextLen) {
 					break;
