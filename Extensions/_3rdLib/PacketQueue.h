@@ -18,7 +18,7 @@ extern "C" {
 #include <memory>
 #include <mutex>
 
-class packetQueue {
+class PacketQueue {
 private:
 	std::queue<AVPacket> queue;
 	int dataSize = 0;
@@ -34,7 +34,7 @@ private:
 	std::atomic_bool _finished; // { false };
 
 public:
-	packetQueue() {
+	PacketQueue() {
 		_quit = ATOMIC_VAR_INIT(false);
 		_finished = ATOMIC_VAR_INIT(false);
 	}
@@ -122,16 +122,23 @@ public:
 
 constexpr auto QUEUE_WAITING = -1;
 
-class packetQueue {
+#define QUEUE_SPINLOCK
+
+class PacketQueue {
 private:
 	std::queue<AVPacket> queue;
 	int dataSize = 0;
 
-	SDL_mutex* mutex;
-	SDL_cond* cond;
-
 	bool bExit = false;
 
+#ifdef QUEUE_SPINLOCK
+	bool bReadFinish = false;
+	SDL_SpinLock audioLock = 0;
+#else
+	SDL_mutex* mutex;
+	SDL_cond* cond;
+#endif
+	
 	inline void erase() {
 		while (!queue.empty()) {
 			auto& packet = queue.front();
@@ -149,24 +156,30 @@ private:
 	}
 
 public:
-	packetQueue() {
+	PacketQueue() {
+#ifdef QUEUE_SPINLOCK
+#else
 		mutex = SDL_CreateMutex();
 		cond = SDL_CreateCond();
+#endif
 	}
 
-	~packetQueue() {
+	~PacketQueue() {
 		flush();
 		pause();
 
+#ifdef QUEUE_SPINLOCK
+#else
 		SDL_DestroyMutex(mutex);
 		SDL_DestroyCond(cond);
+#endif
 	}
 
-	inline size_t size() {
+	inline size_t size() const {
 		return queue.size();
 	}
 
-	inline int getDataSize() {
+	inline int getDataSize() const {
 		return dataSize;
 	}
 
@@ -176,10 +189,17 @@ public:
 		}
 
 		bExit = true;
+
+#ifdef QUEUE_SPINLOCK
+#else
 		SDL_CondSignal(cond);
+#endif
 	}
 
 	inline void stopBlock() {
+#ifdef QUEUE_SPINLOCK
+			bReadFinish = true;
+#endif
 		pause();
 		restore();
 	}
@@ -187,47 +207,79 @@ public:
 	inline void pause() {
 		exit();
 
+#ifdef QUEUE_SPINLOCK
+#else
 		SDL_LockMutex(mutex);
 		SDL_UnlockMutex(mutex);
+#endif
 	}
 
 	inline void restore() {
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex);
+#endif
 		
 		this->bExit = false;
-		
+
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_UnlockMutex(mutex);
+#endif
 	}
 		
 	inline void flush() {
 		pause();
 
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex);
+#endif
 
 		erase();
 
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_UnlockMutex(mutex);
+#endif
 
 		restore();
 	}
 
-	inline bool put(const AVPacket* pPacket) {
+	inline bool put(const AVPacket * pPacket) {
 		//AVPacket pkt;
 
 		//if (av_packet_ref(&pkt, pPacket) < 0) {
 		//	return false;
 		//}
 
-		AVPacket pkt = *pPacket;
+		const AVPacket pkt = *pPacket;
 
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex);
+#endif
+
 		queue.push(pkt);
 
 		dataSize += pkt.size;
 		//nb_packets++;
 
+#ifdef QUEUE_SPINLOCK
+#else
 		SDL_CondSignal(cond);
+#endif
+
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_UnlockMutex(mutex);
+#endif
 
 		return true;
 	}
@@ -236,7 +288,11 @@ public:
 	inline BOOL get(AVPacket* pPacket, bool block = true) {
 		BOOL ret = false;
 
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicLock(&audioLock);
+#else
 		SDL_LockMutex(mutex);
+#endif
 
 		while (true) {
 			if (bExit) {
@@ -262,6 +318,14 @@ public:
 
 				break;
 			}
+
+#ifdef QUEUE_SPINLOCK
+			ret = bReadFinish
+				? false
+				: QUEUE_WAITING;
+
+			break;
+#else
 			else if (!block) {
 				ret = false;
 
@@ -270,9 +334,15 @@ public:
 			else {
 				SDL_CondWait(cond, mutex);
 			}
+#endif
+
 		}
 
+#ifdef QUEUE_SPINLOCK
+		SDL_AtomicUnlock(&audioLock);
+#else
 		SDL_UnlockMutex(mutex);
+#endif
 
 		return ret;
 	}
