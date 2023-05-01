@@ -47,6 +47,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, rdPtr->hFont
 			, rdPtr->pData->pFontCache
 			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pRegexHandler
 			, rdPtr->pData->pIConData
 			, rdPtr->pData->pFontCollection
 			, false);
