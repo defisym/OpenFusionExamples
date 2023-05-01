@@ -15,9 +15,7 @@
 #include	<thread>
 #include	<functional>
 
-#define     USEOPENMP
-
-#ifdef USEOPENMP
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 
@@ -1498,13 +1496,13 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 		int alphaByte = coef.alphaByte;
 
 		//Loop through all pixels
-#ifdef USEOPENMP
+#ifdef _OPENMP 
 		omp_set_num_threads(std::thread::hardware_concurrency());
 
 #pragma omp parallel for  
 #endif
 		for (int y = 0; y < height; ++y) {
-#ifdef USEOPENMP
+#ifdef _OPENMP
 //#pragma omp parallel shared(y)
 			{
 //#pragma omp parallel for
@@ -1519,7 +1517,7 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 				process(x, y, coef
 					, srcPixel, alphaPixel);
 			}
-#ifdef USEOPENMP
+#ifdef _OPENMP
 		}
 #endif
 		}
