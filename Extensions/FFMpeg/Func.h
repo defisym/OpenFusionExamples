@@ -69,12 +69,12 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 //#define _MANUAL_PM
 
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 	omp_set_num_threads(std::thread::hardware_concurrency());
 #pragma omp parallel
 #endif
 	{
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 #pragma omp for
 #endif
 		for (int y = 0; y < height; y++) {
@@ -85,7 +85,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 			memcpy(pMemData, pVideo, lineSz);
 #ifdef _VIDEO_ALPHA
 			// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 //#pragma omp for
 #endif
 			for (int x = 0; x < width; x++) {
