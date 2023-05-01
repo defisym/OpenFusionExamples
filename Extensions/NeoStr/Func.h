@@ -3,8 +3,9 @@
 #include <functional>
 #include <string_view>
 
-#define GIPP(p) (*(NeoStr::IConParamParser*)p)
-#define ONITOIC 0
+constexpr auto ONITOIC = 0;
+
+#define GIPP(p) (*(NeoStr::IConParamParser*)(p))
 
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc);
 
