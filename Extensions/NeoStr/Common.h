@@ -65,6 +65,7 @@ struct GlobalData {
 	
 	NeoStr::FontCache* pFontCache;
 	NeoStr::CharSizeCacheWithFont* pCharSzCacheWithFont;
+	NeoStr::RegexHandler* pRegexHandler;
 
 	PrivateFontCollection* pFontCollection;
 	NeoStr::IConData* pIConData;
@@ -77,6 +78,7 @@ struct GlobalData {
 
 		NeoStr::Alloc(pFontCache);
 		NeoStr::Alloc(pCharSzCacheWithFont);
+		NeoStr::Alloc(pRegexHandler);
 
 		pFontCollection = new PrivateFontCollection;
 		pIConData = new NeoStr::IConData;
@@ -88,6 +90,7 @@ struct GlobalData {
 
 		NeoStr::Release(pFontCache);
 		NeoStr::Release(pCharSzCacheWithFont);
+		NeoStr::Release(pRegexHandler);
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 	}
