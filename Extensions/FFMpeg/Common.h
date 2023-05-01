@@ -45,11 +45,9 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
-//#define _USE_OPENMP
-
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 #include	<omp.h>
-#endif // _OPENMP
+#endif
 
 #include	<map>
 #include	<string>

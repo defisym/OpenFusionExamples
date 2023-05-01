@@ -145,11 +145,6 @@ private:
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
 
-	wchar_t regstr[2] = { L'\0' };
-	wregex* pCJK = nullptr;
-	wregex* pEmpty = nullptr;
-	wregex* pEmptyStr = nullptr;
-
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
 
@@ -505,23 +500,72 @@ private:
 		return CheckMatch(wChar, notAtEnd);
 	}
 
-	inline bool RegexCore(wregex* pRegex, wchar_t wChar) {
-		regstr[0] = wChar;
+public:
+		struct RegexHandler{
+			wchar_t regstr[2] = { L'\0' };
 
-		return regex_match(regstr, *pRegex);
-	}
+			wregex* pCJK = nullptr;
+			wregex* pEmpty = nullptr;
+			wregex* pEmptyStr = nullptr;
 
-	inline bool NotCJK(wchar_t wChar) {
-		return RegexCore(this->pCJK, wChar);
-	}
+			using RegexCache = std::map<wchar_t, bool>;
 
-	inline bool NotEmpty(wchar_t wChar) {
-		return !RegexCore(this->pEmpty, wChar);
-	}
+			RegexCache CJKCache;
+			RegexCache EmptyCache;
 
-	inline bool NotEmpty(const wchar_t* pChar) {
-		return !regex_match(pChar, *this->pEmptyStr);
-	}
+			RegexHandler() {
+				// https://www.jianshu.com/p/fcbc5cd06f39
+				// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
+				this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+					, ECMAScript | optimize);
+				this->pEmpty = new wregex(L"[\\s]"
+					, ECMAScript | optimize);
+				this->pEmptyStr = new wregex(L"[\\s]*"
+					, ECMAScript | optimize);
+			}
+			~RegexHandler() {
+				delete this->pCJK;
+				this->pCJK = nullptr;
+
+				delete this->pEmpty;
+				this->pEmpty = nullptr;
+
+				delete this->pEmptyStr;
+				this->pEmptyStr = nullptr;
+			}
+
+			inline bool RegexCore(const wregex* pRegex, RegexCache* pCache, wchar_t wChar) {
+				regstr[0] = wChar;
+
+				const auto it = pCache->find(wChar);
+
+				if (it == pCache->end()) {
+					const auto bRet = regex_match(regstr, *pRegex);
+					(*pCache)[wChar] = bRet;
+
+					return bRet;
+				}
+				else {
+					return it->second;
+				}
+
+				//return regex_match(regstr, *pRegex);
+			}
+
+			inline bool NotCJK(wchar_t wChar) {				
+				return RegexCore(this->pCJK, &this->CJKCache, wChar);
+			}
+
+			inline bool NotEmpty(wchar_t wChar) {
+				return !RegexCore(this->pEmpty, &this->EmptyCache, wChar);
+			}
+
+			inline bool NotEmpty(const wchar_t* pChar) {
+				return !regex_match(pChar, *this->pEmptyStr);
+			}
+		};
+private:
+	RegexHandler* pRegexCache;
 
 #ifdef  _DEBUG
 	// check a set of characters match regex
@@ -648,6 +692,7 @@ public:
 		// read only
 		, FontCache* pFontCache = nullptr
 		, CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr		
+		, RegexHandler* pRegexCache = nullptr
 		, IConData* pIConData = nullptr
 		, PrivateFontCollection* pFontCollection = nullptr
 		, bool needGDIPStartUp = true
@@ -666,28 +711,22 @@ public:
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
-		// https://www.jianshu.com/p/fcbc5cd06f39
-		// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
-		this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
-			, ECMAScript | optimize);
-		this->pEmpty = new wregex(L"[\\s]"
-			, ECMAScript | optimize);
-		this->pEmptyStr = new wregex(L"[\\s]*"
-			, ECMAScript | optimize);
-
 		this->pFontCollection = pFontCollection;
 
-		if (!pFontCache || !pCharSzCacheWithFont) {
-			this->bExternalCache = false;
-		}
+		if (pFontCache && pCharSzCacheWithFont && pRegexCache) {
+			this->bExternalCache = true;
 
-		if (this->bExternalCache) {
 			this->pFontCache = pFontCache;
-		}
-		else {
-			Alloc(this->pFontCache);
-		}
+			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
+			this->pRegexCache = pRegexCache;
+		}else {
+			this->bExternalCache = false;
 
+			Alloc(this->pFontCache);
+			Alloc(this->pCharSzCacheWithFont);
+			Alloc(this->pRegexCache);
+		}
+		
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
@@ -724,13 +763,6 @@ public:
 		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
 		// add a default char to return default value when input text is empty
-		if (this->bExternalCache) {
-			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
-		}
-		else {
-			Alloc(this->pCharSzCacheWithFont);
-		}
-
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
 
 		if (pIConData != nullptr) {
@@ -746,26 +778,18 @@ public:
 		//SelectObject(this->hdc, (HFONT)NULL);
 		ReleaseDC(NULL, this->hdc);
 
-		delete this->pCJK;
-		this->pCJK = nullptr;
-
-		delete this->pEmpty;
-		this->pEmpty = nullptr;
-
-		delete this->pEmptyStr;
-		this->pEmptyStr = nullptr;
-
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
 		this->pMeasure = nullptr;
 #endif
 
 		if (!this->bExternalCache) {
+			Release(this->pRegexCache);
 			Release(this->pCharSzCacheWithFont);
 			Release(this->pFontCache);
 		}
 
-		if (!bExternalIConData) {
+		if (!this->bExternalIConData) {
 			delete this->pIConData;
 			this->pIConData = nullptr;
 		}
@@ -803,10 +827,6 @@ public:
 		pCharSzCacheWithFont = new CharSizeCacheWithFont;
 	}
 
-	inline static void Alloc(FontCache*& pFontCache) {
-		pFontCache = new FontCache;
-	}
-
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
 		for (auto& it : *pCharSzCacheWithFont) {
 			//SelectObject(it.second.hdc, (HFONT)NULL);
@@ -825,6 +845,19 @@ public:
 
 		delete pFontCache;
 		pFontCache = nullptr;
+	}
+	
+	inline static void Alloc(FontCache*& pFontCache) {
+		pFontCache = new FontCache;
+	}
+
+	inline static void Release(RegexHandler*& pRegexHandler) {
+		delete pRegexHandler;
+		pRegexHandler = nullptr;
+	}
+
+	inline static void Alloc(RegexHandler*& pRegexHandler) {
+		pRegexHandler = new RegexHandler;
 	}
 
 	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
@@ -1315,7 +1348,7 @@ public:
 				return false;
 			}
 
-			if (!NotEmpty(pStr)) {
+			if (!pRegexCache->NotEmpty(pStr)) {
 				return false;
 			}
 
@@ -2230,7 +2263,7 @@ public:
 						break;
 					}
 
-					if (NotEmpty(curChar)) {
+					if (pRegexCache->NotEmpty(curChar)) {
 						break;
 					}
 
@@ -2258,7 +2291,7 @@ public:
 				}
 
 				// word break
-				auto bCurNotCJK = NotCJK(curChar);
+				auto bCurNotCJK = pRegexCache->NotCJK(curChar);
 
 				auto InWord = [&]() {
 					bInWord = true;
@@ -2363,7 +2396,7 @@ public:
 					auto previousCharSz = &pStrSizeArr[pChar - 1];
 
 					auto Punc_Backward = [&]() {
-						if (NotCJK(PreviousChar)) {
+						if (pRegexCache->NotCJK(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
 							}
@@ -2645,6 +2678,7 @@ public:
 					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
 					auto status = g.DrawString(pCurChar, 1, pFont
 						, PointF(positionX, positionY), &solidBrush);
+					//assert(status == Status::Ok);
 				}
 
 				x += (charSz->width + nColSpace);
