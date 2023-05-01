@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿// ReSharper disable CppClangTidyClangDiagnosticShadow
+// ReSharper disable CppTooWideScopeInitStatement
+
+#pragma once
 
 //#define _FONTEMBEDDEBUG
 //#define _CONSOLE
@@ -509,14 +512,16 @@ public:
 			RegexCache EmptyCache;
 
 			RegexHandler() {
+				constexpr auto defaultRegexFlag = static_cast<RegexFlag>(ECMAScript | optimize);
+
 				// https://www.jianshu.com/p/fcbc5cd06f39
 				// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
 				this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
-					, ECMAScript | optimize);
+					, defaultRegexFlag);
 				this->pEmpty = new wregex(L"[\\s]"
-					, ECMAScript | optimize);
+					, defaultRegexFlag);
 				this->pEmptyStr = new wregex(L"[\\s]*"
-					, ECMAScript | optimize);
+					, defaultRegexFlag);
 			}
 			~RegexHandler() {
 				delete this->pCJK;
@@ -584,7 +589,7 @@ private:
 		//	return 0;
 		//}
 		if (this->dwDTFlags & DT_CENTER) {
-			return ((rcWidth - totalWidth) >> 1);
+			return ((rcWidth - totalWidth) / 2);
 		}
 		if (this->dwDTFlags & DT_RIGHT) {
 			return rcWidth - totalWidth;
@@ -600,17 +605,16 @@ private:
 		//	return this->tm.tmInternalLeading;
 		//}
 		if (this->dwDTFlags & DT_VCENTER) {
-			//return ((rcHeight - totalHeight) >> 1);
-
 			//remove offset to make exactly at the center
 			//https://docs.microsoft.com/en-us/windows/win32/gdi/string-widths-and-heights
 
 			const auto verticalAlignOffset = bVerticalAlignOffset
-				                                 ? this->tm.tmInternalLeading + this->tm.tmExternalLeading
+				                                 //? this->tm.tmInternalLeading + this->tm.tmExternalLeading
+				                                 ? this->tm.tmDescent + this->tm.tmExternalLeading
 				                                 : 0;
 
-			//return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
-			return ((rcHeight - (totalHeight - verticalAlignOffset)) >> 1);
+			//return ((rcHeight - totalHeight)  / 2);
+			return ((rcHeight - (totalHeight - verticalAlignOffset)) / 2);
 		}
 		if (this->dwDTFlags & DT_BOTTOM) {
 			return rcHeight - totalHeight;
@@ -1255,8 +1259,15 @@ public:
 //	}	
 
 	static inline StrSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
-		SIZE sz = { 0 };
-		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+		SIZE sz = { 0,0 };
+
+		// special
+		if (wChar == L'\r' || wChar == L'\n' || wChar == L'\0') {
+		}
+		// general
+		else {
+			GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+		}
 
 		return *(StrSize*)&sz;
 	}
@@ -2282,7 +2293,7 @@ public:
 					&& pChar >= fontIt->startWithNewLine) {
 					localLogFont = fontIt->logFont;
 
-					fontIt++;
+					++fontIt;
 				}
 
 				// word break
@@ -2340,9 +2351,8 @@ public:
 					pChar += 2;
 				};
 
-				if (curWidth > rcWidth) {
-					//bool bTooNarrow = this->defaultCharSz.width > rcWidth;
-					bool bTooNarrow = charSz->width > rcWidth;
+				if (curWidth > rcWidth) {					
+					const bool bTooNarrow = charSz->width > rcWidth;
 
 					if (bTooNarrow) {
 						if (IsNewLine(curChar, nextChar)) {
@@ -2390,7 +2400,19 @@ public:
 
 					auto previousCharSz = &pStrSizeArr[pChar - 1];
 
+					auto CanRewindWidth = [&] () {
+						return curWidth - (previousCharSz->width + nColSpace + charSz->width) > 0;
+					};
+					auto RewindWidth = [&] () {
+						curWidth -= charSz->width;
+						curWidth -= nColSpace;
+					};
 					auto Punc_Backward = [&]() {
+						// unable to get back
+						if (pChar == pCharStart) {
+							return;
+						}
+
 						if (pRegexCache->NotCJK(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
@@ -2399,34 +2421,33 @@ public:
 							return;
 						}
 
-						if (curWidth - (previousCharSz->width + nColSpace + charSz->width) <= 0) {
+						if (!CanRewindWidth()) {
 							return;
 						}
 
 						pChar--;
 
-						curWidth -= charSz->width;
-
+						RewindWidth();
 						curWidth -= previousCharSz->width;
-						curWidth -= nColSpace;
 					};
 
+					// only one, merge to current line
 					if (NotAtStart(curChar)) {
 						notAtStartCharPos = pChar;
 
+						// more than one, both move to next line
 						if (NotAtStart(nextChar)) {
-							if (pChar != pCharStart) {
-								Punc_Backward();
-							}
+							Punc_Backward();
 
 							break;
 						}
 					}
 					else {
-						if (pChar != pCharStart) {
-							if (NotAtEnd(PreviousChar)) {
-								Punc_Backward();
-							}
+						if (NotAtEnd(PreviousChar)) {
+							Punc_Backward();
+						}
+						else {
+							RewindWidth();
 						}
 
 						break;
@@ -2454,7 +2475,7 @@ public:
 
 			if (!skipLine) {
 #ifdef _DEBUG
-				std::wstring str(pText + pChar);
+				std::wstring strLeft(pText + pChar);
 #endif // _DEBUG
 
 				if (!bNewLineHandled) {
@@ -2515,8 +2536,8 @@ public:
 
 		auto lastCharPos = CharPos {
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
-			+ lastStrPos.width + (lastCharSize->width >> 1)
-			,startY + lastStrPos.y + (lastCharSize->height >> 1)
+			+ lastStrPos.width + (lastCharSize->width / 2)
+			,startY + lastStrPos.y + (lastCharSize->height / 2)
 			,maxWidth
 			,totalHeight - nRowSpace };
 
@@ -2614,48 +2635,64 @@ public:
 
 			StrSize* charSz = nullptr;
 
+#define NoGDIPlusOffset
+
+			auto GetGDIPlusOffset = [&] () {
+#ifdef NoGDIPlusOffset
+				return 0;
+#else
+				// https://blog.csdn.net/stevenkoh/article/details/22777295
+				const auto firstChar = (pText + curStrPos.start)[0];
+				const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
+
+				return static_cast<int>(pStrSizeArr[curStrPos.start].width / coef);
+#endif
+			};
+			
+			const auto GDIPlusOffset = GetGDIPlusOffset();
+
 			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr [curStrPos.start].width / 8;
+			x -= GDIPlusOffset;
 
 			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 				auto offset = curStrPos.start + curChar;
 				auto pCurChar = pText + offset;
 				charSz = &pStrSizeArr[offset];
 
-				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
+				pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
 											,this->startY + curStrPos.y
 											,0,0 };
 
 #pragma region FORMAT_IT				
-				auto positionX = (float)(x) + (float)(this->borderOffsetY);
-				auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
+				auto positionX = (float)(x + this->borderOffsetY);
+				auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
 				if (colorIt != this->colorFormat.end()
 					&& totalChar >= colorIt->start) {
 					solidBrush.SetColor(colorIt->color);
 
-					colorIt++;
+					++colorIt;
 				}
 
 				if (fontIt != this->fontFormat.end()
 					&& totalChar >= fontIt->start) {
 					this->pFont = GetFontPointerWithCache(fontIt->logFont);
 
-					fontIt++;
+					++fontIt;
 				}
 
 				if (shakeIt != this->shakeFormat.end()
 					&& totalChar >= shakeIt->start) {
 					localShakeFormat = *shakeIt;
 
-					shakeIt++;
+					++shakeIt;
 				}
 
 				if (this->bShake) {
-					double offset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
+					double shakeOffset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
 						+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
 
-					GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);
+					GetShakePosition(localShakeFormat.shakeControl, shakeOffset, positionX, positionY, charSz);
 				}
 
 				// use updated position
@@ -2664,15 +2701,18 @@ public:
 					iConIt->x = (size_t)positionX;
 					iConIt->y = (size_t)positionY;
 
-					iConIt++;
+					++iConIt;
 				}
 #pragma endregion
 
-				//if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-				if (!clip((int)positionX - this->borderOffsetX, (this->startY + (int)positionY - this->borderOffsetY), charSz)) {
+				if (!clip(x, this->startY + curStrPos.y, charSz)) {
 					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
-					auto status = g.DrawString(pCurChar, 1, pFont
-						, PointF(positionX, positionY), &solidBrush);
+					auto status = g.DrawString(pCurChar, 1, pFont,
+						PointF(positionX, positionY),
+#ifdef NoGDIPlusOffset
+						StringFormat::GenericTypographic(),
+#endif
+						&solidBrush);
 					//assert(status == Status::Ok);
 				}
 
@@ -2736,10 +2776,10 @@ public:
 
 		auto UpdateIt = [](auto& it,auto itEnd, size_t start) {
 			while (it != itEnd && it->start <= start) {
-				it++;
+				++it;
 			}
 
-			it--;
+			--it;
 		};
 
 		for (auto& it : this->iConFormat) {			
