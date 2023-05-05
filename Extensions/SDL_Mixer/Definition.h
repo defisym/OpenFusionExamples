@@ -89,6 +89,11 @@ struct AudioEffect {
 
 private:
 	inline bool ProcessAudioImpl(void* stream, const int len) const {
+		// check validity
+		if (!stream || !pBuf) {
+			return false;
+		}
+
 		// not rigorous but a big enough global buffer for default spec is ok
 		// len = chunk size * (16bit / 8bit) * channel
 		memset(pBuf, 0, GlobalEffectBufferSz);
@@ -106,7 +111,6 @@ private:
 			soundtouch_clear(hSoundTouch);
 			effectPair.processor(hSoundTouch, effectPair.param);
 
-
 			soundtouch_putSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 			dataWrite = soundtouch_receiveSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 
@@ -119,8 +123,8 @@ private:
 		}
 
 		//memset(stream, 0, len);
-		memcpy(stream, pBuf, protectedBufSz);
 		//memcpy(stream, pBuf, dataWrite* sountTouchSize);
+		memcpy(stream, pBuf, protectedBufSz);
 
 		return true;
 	}

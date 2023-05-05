@@ -21,7 +21,9 @@ inline void SDL_GeneralInit() {
     }
 
     if (!Mix_AudioOpened()) {
-        if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, SDLGeneral_BufferSize) == -1) {
+        //if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, SDLGeneral_BufferSize) == -1) {
+        if (Mix_OpenAudioDevice(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, SDLGeneral_BufferSize,
+            nullptr, 0) == -1) {
             auto error = SDL_GetError();
 
             throw SDLGeneralException_MixOpenAudioFailed;
