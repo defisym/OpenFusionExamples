@@ -144,10 +144,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pHwaSf_Video = nullptr;
 
 	rdPtr->bSecondFrame = false;
-	rdPtr->curMonitorHandle = NULL;
+	rdPtr->curMonitorHandle = nullptr;
 	rdPtr->curMonitorWidth = 0;
 	rdPtr->curMonitorHeight = 0;
-
+	
 	// No errors
 	return 0;
 }

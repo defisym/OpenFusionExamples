@@ -74,6 +74,7 @@ class ObjectSelection;
 #include	"Encryption.h"
 #include	"StrNum.h"
 #include	"WindowsCommon.h"
+#include	"WindowsException.h"
 #include	"ObjectSelection.h"
 #include	"Base64.h"
 
