@@ -20,6 +20,9 @@
       <UniqueIdentifier>{a3652386-c344-4770-9fc1-d396f796d84e}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
+    <Filter Include="Steamworks">
+      <UniqueIdentifier>{b14c86c1-d0bc-4766-b376-11cba2d74282}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -139,11 +142,26 @@
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SteamUtilities.h">
+    <ClInclude Include="..\_DeLib\WindowsException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SteamUtilities.h">
+      <Filter>Steamworks</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRefresh.h">
+      <Filter>Steamworks</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamAchAndStat.h">
+      <Filter>Steamworks</Filter>
+    </ClInclude>
     <ClInclude Include="SteamCallback.h">
-      <Filter>Header Files</Filter>
+      <Filter>Steamworks</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamConcepts.h">
+      <Filter>Steamworks</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamInclude.h">
+      <Filter>Steamworks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

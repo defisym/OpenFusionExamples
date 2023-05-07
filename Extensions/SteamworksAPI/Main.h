@@ -15,9 +15,10 @@
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
+#define	ACT_ACTION_UA					0
+#define	ACT_ACTION_AS					1
 
-#define	ACT_LAST					1
+#define	ACT_LAST						2
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -45,7 +46,13 @@ typedef struct tagEDATA_V1
 #endif
 
 	// buffer
-	int buffer[52];
+	bool bReportError = false;
+
+	bool unused_0;
+	bool unused_1;
+	bool unused_2;
+
+	int buffer[51];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;

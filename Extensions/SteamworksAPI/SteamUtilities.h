@@ -1,33 +1,58 @@
 #pragma once
 
+#include <any>
 #include <string>
 #include <functional>
 
-#include "SteamCallback.h"
+#include "SteamInclude.h"
+#include "SteamAchAndStat.h"
+
+#ifdef WIN32
+#include "WindowsException.h"
+#endif
 
 class SteamUtilities {
 private:
-	SteamCallback* pCallback = nullptr;
+	Refresh::RefreshTasks refreshTasks;
 
-	bool bReceived = false;;
-	bool bToRefresh_UpdateAchAndStat = false;
+	//std::vector<SteamCallbackClass*> pCallbackClasses;
+	SteamAchAndStat* pAchAndStat = nullptr;
 
 public:
 	SteamUtilities() {
-		bool bSuccess = SteamUserStats()->RequestCurrentStats();
-
-		//pCallback = GetCallBack<UserStatsReceived_t>([&](UserStatsReceived_t* pCallback) {
-		//	bReceived = true;
-		//	});
-
-		//SteamUtils()->SetOverlayNotificationPosition(k_EPositionTopLeft);
+		pAchAndStat = new SteamAchAndStat(&refreshTasks);
 	}
 	~SteamUtilities() {
-		delete pCallback;
-		pCallback = nullptr;
+		delete pAchAndStat;
 	}
 
-	std::wstring DeviceFactorToName(ESteamDeviceFormFactor factor) {
+	//------------
+	// Error
+	//------------
+
+	inline void SetErrorHandler() const {
+#ifdef WIN32
+		if(IsDebuggerPresent()) {
+			return;
+		}
+
+		WindowsException::SetVEHFilter([](EXCEPTION_POINTERS* pExceptionInfo)->LONG {
+			const auto code = pExceptionInfo->ExceptionRecord->ExceptionCode;
+			const auto msg = ConvertWStrToStr(WindowsException::GetExceptionMessage(code));
+
+			SteamAPI_SetMiniDumpComment(std::format("{:#x}\n{}", code, msg).c_str());
+			SteamAPI_WriteMiniDump(code, pExceptionInfo, SteamApps()->GetAppBuildId());
+
+			return EXCEPTION_CONTINUE_SEARCH;
+		});
+#endif
+	}
+
+	//------------
+	// Remote Play
+	//------------
+
+	static std::wstring DeviceFactorToName(const ESteamDeviceFormFactor factor) {
 		std::wstring name = L"Unknown";
 
 		switch (factor)	{
@@ -52,7 +77,7 @@ public:
 		return name;
 	}
 
-	ESteamDeviceFormFactor DeviceNameToFactor(LPCWSTR pPlatform) {
+	static ESteamDeviceFormFactor DeviceNameToFactor(const LPCWSTR pPlatform) {
 		ESteamDeviceFormFactor factorToSearch = k_ESteamDeviceFormFactorUnknown;
 
 		do {
@@ -84,10 +109,10 @@ public:
 		return factorToSearch;
 	}
 
-	inline void IterateRemoteSessions(std::function<void(RemotePlaySessionID_t)> callBack) {
-		uint32 unSessionCount = SteamRemotePlay()->GetSessionCount();
+	static inline void IterateRemoteSessions(const std::function<void(RemotePlaySessionID_t)>& callBack) {
+		const uint32 unSessionCount = SteamRemotePlay()->GetSessionCount();
 		for (uint32 iIndex = 0; iIndex < unSessionCount; iIndex++) {
-			RemotePlaySessionID_t unSessionID = SteamRemotePlay()->GetSessionID(iIndex);
+			const RemotePlaySessionID_t unSessionID = SteamRemotePlay()->GetSessionID(iIndex);
 			if (!unSessionID) {
 				continue;
 			}
@@ -96,60 +121,52 @@ public:
 		}
 	}
 
-	inline void IterateAchievements(std::function<void(uint32)> callback) {
-		auto achiNum = SteamUserStats()->GetNumAchievements();
-		for (decltype(achiNum) i = 0; i < achiNum; i++) {
-			callback(i);
-		}
+	//------------
+	// Achievements
+	//------------
+
+	inline void ResetAchievement(const LPCWSTR pAchName = nullptr) const {
+		pAchAndStat->ResetAchievement(pAchName);
 	}
 
-	inline void ResetAchievement(LPCWSTR pAchName = nullptr) {
-		ResetAchievement(pAchName != nullptr
-			? ConvertWStrToStr(pAchName).c_str()
-			: nullptr);
+	inline void UnlockAchievement(const LPCWSTR pAchName) const {
+		pAchAndStat->UnlockAchievement(pAchName);
 	}
 
-	inline void ResetAchievement(LPCSTR pAchName = nullptr) {
-		if (pAchName != nullptr) {
-			SteamUserStats()->ClearAchievement(pAchName);
-		}
+	//------------
+	// Stat
+	//------------
 
-		IterateAchievements([](uint32 id) {
-			auto pName = SteamUserStats()->GetAchievementName(id);
-			SteamUserStats()->ClearAchievement(pName);
-			});
+	template <STAT Stat>
+	inline void GetStat(const LPCWSTR pStatName, Stat* pData) {
+		pAchAndStat->GetStat(pStatName, pData);
 	}
 
-	inline void UnlockAchievement(LPCWSTR pAchName) {
-		UnlockAchievement(ConvertWStrToStr(pAchName).c_str());
+	template <STAT Stat>
+	inline void SetStat(const LPCWSTR pStatName, const Stat data) {
+		pAchAndStat->SetStat(pStatName, data);
 	}
 
-	inline void UnlockAchievement(LPCSTR pAchName) {
-		bool bUnlock = false;
-		auto bState = SteamUserStats()->GetAchievement(pAchName, &bUnlock);
-
-		if (!bUnlock) {
-			SteamUserStats()->SetAchievement(pAchName);
-			ToRefresh_UpdateAchAndStat();
-		}
+	template <STAT Stat>
+	inline void AddStat(const LPCWSTR pStatName, const Stat data) {
+		pAchAndStat->AddStat(pStatName, data);
 	}
+
+	//------------
+	// Refresh
+	//------------
 
 	// ToRefresh series: set flag then refresh it later
-	inline void ToRefresh_UpdateAchAndStat() {
-		this->bToRefresh_UpdateAchAndStat = true;
+	inline void AddToRefresh(Refresh::RefreshType task) {
+		Refresh::UniquePush(&refreshTasks, task);
 	}
 
-	inline void ToRefresh_Refresh() {
-		if (this->bToRefresh_UpdateAchAndStat) {
-			this->bToRefresh_UpdateAchAndStat = false;
-			SteamUserStats()->StoreStats();
-		}
-	}
-
-	// actual refresh
+	// do refresh
 	inline void Refresh() {
-		ToRefresh_Refresh();
+		// handle tasks
+		Refresh::Refresh(&refreshTasks);
 
+		// run callback
 		SteamAPI_RunCallbacks();		
 	}
 };

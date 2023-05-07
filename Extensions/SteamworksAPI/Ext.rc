@@ -128,7 +128,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM "Unlock Achievement",       IDMN_ACTION_UA
+        MENUITEM "Add to Stat",              IDMN_ACTION_AS
         MENUITEM SEPARATOR
     END
 END
@@ -228,7 +229,12 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_UA              "Unlock Achievement %0"
+    M_ACTION_AS              "Add %1 to Stat %0"
+
+    M_ACH_NAME	             "Achievement Name"
+    M_STAT_NAME	             "Stat Name"
+    M_STAT_DATA	             "Stat Data"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -241,6 +247,13 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_EXPRESSION_GCGL            "GetCurrentGameLanguage$ ("
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_TEXTTITLE_STEAM         "Steam"
+    IDS_PROP_CHECK_REPORTERROR       "Report Error"
+    IDS_PROP_CHECK_REPORTERROR_INFO  "Report Error When Crash"
 END
 
 #endif    // English (U.S.) resources

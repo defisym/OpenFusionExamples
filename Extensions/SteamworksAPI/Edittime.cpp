@@ -19,13 +19,8 @@
 enum {
 	PROPID_SETTINGS = PROPID_EXTITEM_CUSTOM_FIRST,
 
-// Example
-// -------
-//	PROPID_TEXTTITLE,	
-//	PROPID_TEXT,	
-//	PROPID_CHECK,
-//	PROPID_COMBO,
-//	PROPID_COLOR,
+	PROPID_TEXTTITLE_STEAM,
+	PROPID_CHECK_REPORTERROR,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -50,6 +45,11 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group		(PROPID_TEXTTITLE_STEAM,	IDS_PROP_TEXTTITLE_STEAM,		IDS_PROP_TEXTTITLE_STEAM),
+#ifdef WIN32
+	PropData_CheckBox(PROPID_CHECK_REPORTERROR,		IDS_PROP_CHECK_REPORTERROR,			IDS_PROP_CHECK_REPORTERROR_INFO),
+#endif
 
 	// End of table (required)
 	PropData_End()
@@ -673,6 +673,7 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	case PROPID_COMBO:
 //		return new CPropDWordValue(edPtr->nComboIndex);
 //	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -682,18 +683,12 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 // --------------------
 // Returns the checked state of properties that have a check box.
 //
-BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
-{
+BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID) {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
-
+	switch (nPropID) {
+	case PROPID_CHECK_REPORTERROR:
+		return edPtr->bReportError;
+	}
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
 }
@@ -766,19 +761,15 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 // --------------------
 // This routine is called by MMF when the user modifies a checkbox in the properties.
 //
-void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck)
-{
+void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck) {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
+	switch (nPropID) {
+	case PROPID_CHECK_REPORTERROR:
+		edPtr->bReportError = nCheck;
+		//mvInvalidateObject(mV, edPtr);
+		//mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
+		break;
+	}
 #endif // !defined(RUN_ONLY)
 }
 

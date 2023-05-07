@@ -11,6 +11,11 @@
 #define	IDST_COMMENT			131
 #define	IDST_HTTP				132
 
+// Obj properties
+#define IDS_PROP_TEXTTITLE_STEAM            200
+#define IDS_PROP_CHECK_REPORTERROR          201
+#define IDS_PROP_CHECK_REPORTERROR_INFO     202
+
 // Dialog Box ID
 #define DB_SETUP                20003
 
@@ -25,14 +30,17 @@
 #define MN_ACTIONS				20000
 
 // Commands of action menu
-#define IDMN_ACTION	       		25000
+#define IDMN_ACTION_UA	       		25000
+#define IDMN_ACTION_AS	       		25001
 
 // Action strings
-#define M_ACTION                 5000
+#define M_ACTION_UA                 5000
+#define M_ACTION_AS                 5001
 
 // Titles of action parameters
-#define M_ACT_P1				 5501
-#define M_ACT_P2				 5502
+#define M_ACH_NAME				 5501
+#define M_STAT_NAME				 5502
+#define M_STAT_DATA				 5503
 
 
 //	Conditions

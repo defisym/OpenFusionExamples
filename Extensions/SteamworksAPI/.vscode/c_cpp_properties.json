@@ -3,6 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
+                "F:\\DEV\\_Steamworks_SDK\\public",
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",

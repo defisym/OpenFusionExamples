@@ -75,6 +75,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
+
+		if (edPtr->bReportError) {
+			rdPtr->pData->pSteamUtil->SetErrorHandler();
+		}
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();

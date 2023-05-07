@@ -8,7 +8,7 @@
 // 
 // https://partner.steamgames.com/doc/sdk/api#callbacks
 // 
-//class SteamCallbackHandlera {
+//class SteamCallbackHandler {
 //public:
 //	STEAM_CALLBACK(SteamCallbackHandler, CallbackManager, GameOverlayActivated_t);
 //};
@@ -32,7 +32,7 @@
 // ------------
 class SteamCallback {
 public:
-	virtual ~SteamCallback() {};
+	virtual ~SteamCallback() = default;
 };
 
 // ------------
@@ -47,11 +47,11 @@ private:
 	STEAM_CALLBACK(SteamCallbackHandler, CallbackManager, CallBackType);
 
 public:
-	SteamCallbackHandler(Handler handler) {
+	explicit SteamCallbackHandler(Handler handler) {
 		this->handler = handler;
 	}
 
-	~SteamCallbackHandler() {};
+	~SteamCallbackHandler() override = default;
 };
 
 template<typename CallBackType>
@@ -64,5 +64,34 @@ inline void SteamCallbackHandler<CallBackType>::CallbackManager(CallBackType* pC
 // ------------
 template<typename CallBackType>
 inline auto GetCallBack(std::function<void(CallBackType*)> callback) {
-	return new SteamCallbackHandler<UserStatsReceived_t>(callback);
+	return new SteamCallbackHandler<CallBackType>(callback);
 }
+
+// ------------
+// base class
+// ------------
+class SteamCallbackClass {
+public:
+	SteamCallback* pCallback = nullptr;
+	bool bCallbackSuccess = false;
+
+	// copy only
+	Refresh::RefreshTasks* pTasks = nullptr;
+	Refresh::RefreshType type = Refresh::RefreshType::None;
+
+	// child classes init pCallback with GetCallBack
+	// then call then async operation
+	explicit SteamCallbackClass(Refresh::RefreshTasks* pTasks,
+		Refresh::RefreshType type = Refresh::RefreshType::None) {
+		this->pTasks = pTasks;
+		this->type = type;
+	}
+	virtual ~SteamCallbackClass() {
+		delete pCallback;
+		pCallback = nullptr;
+	}
+
+	inline void AddToRefresh() const {
+		Refresh::UniquePush(pTasks, type);
+	}
+};

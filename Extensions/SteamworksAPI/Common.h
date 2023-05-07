@@ -45,13 +45,6 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
-// My headers
-#pragma warning( disable : 4996)
-#pragma warning( disable : 4819)
-
-#include	"steam/steam_api.h"
-#pragma comment(lib,"neoSteam_api.lib")
-
 #include	"WindowsCommon.h"
 #include	"GeneralDefinition.h"
 #include	"SteamUtilities.h"

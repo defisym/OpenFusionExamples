@@ -28,7 +28,8 @@ short conditionsInfos[]=
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 0,
+		IDMN_ACTION_UA, M_ACTION_UA,	ACT_ACTION_UA,	0, 1, PARAM_EXPSTRING, M_ACH_NAME,
+		IDMN_ACTION_AS, M_ACTION_AS,	ACT_ACTION_AS,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_STAT_NAME, M_STAT_DATA,
 		};
 
 // Definitions of parameters for each expression
@@ -46,21 +47,22 @@ short expressionsInfos[]=
 // ============================================================================
 
 long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long param2) {
-	auto pPlatform = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	auto factorToSearch = rdPtr->pSteamUtil->DeviceNameToFactor(pPlatform);
+	const auto pPlatform = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto factorToSearch = SteamUtilities::DeviceNameToFactor(pPlatform);
 
 	bool bResult = false;
 	bool bLocal = true;
-	rdPtr->pSteamUtil->IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
+
+	SteamUtilities::IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
 		// check current player
-		auto steamID = SteamRemotePlay()->GetSessionSteamID(unSessionID);
+		const auto steamID = SteamRemotePlay()->GetSessionSteamID(unSessionID);
 		if (steamID != rdPtr->pData->playerID) {
 			return;
 		}
 
 		bLocal = false;
-		
-		ESteamDeviceFormFactor eFormFactor = SteamRemotePlay()->GetSessionClientFormFactor(unSessionID);
+
+		const ESteamDeviceFormFactor eFormFactor = SteamRemotePlay()->GetSessionClientFormFactor(unSessionID);
 		if (eFormFactor == factorToSearch) {
 			bResult = true;
 		}
@@ -81,35 +83,22 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 // 
 // ============================================================================
 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
-	auto achiNum = SteamUserStats()->GetNumAchievements();
+short WINAPI DLLExport Action_UnlockAchievement(LPRDATA rdPtr, long param1, long param2) {
+	const auto pAchievementName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-//#define _RESET
-
-#ifdef _RESET
-	for (decltype(achiNum) i = 1; i < achiNum; i++) {
-		auto pName = SteamUserStats()->GetAchievementName(i);
-		SteamUserStats()->ClearAchievement(pName);
-	}
-#else
-	for (decltype(achiNum) i = 0; i < achiNum; i++) {
-		auto pName= SteamUserStats()->GetAchievementName(i);
-
-		bool bUnlock = false;
-		auto bState = SteamUserStats()->GetAchievement(pName, &bUnlock);
-
-		if (!bUnlock) {
-			SteamUserStats()->SetAchievement(pName);
-			rdPtr->pSteamUtil->ToRefresh_UpdateAchAndStat();
-			
-			break;
-		}
-	}
-#endif // _RESET
+	rdPtr->pSteamUtil->UnlockAchievement(pAchievementName);
 
 	return 0;
 }
 
+short WINAPI DLLExport Action_AddToStat(LPRDATA rdPtr, long param1, long param2) {
+	const auto pStatName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto data = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pSteamUtil->AddStat(pStatName, data);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -118,7 +107,7 @@ short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2) {
 // ============================================================================
 
 long WINAPI DLLExport Expression_GetCurrentGameLanguage(LPRDATA rdPtr,long param1) {
-	auto pLanguage = SteamApps()->GetCurrentGameLanguage();
+	const auto pLanguage = SteamApps()->GetCurrentGameLanguage();
 
 #ifdef _DEBUG
 	auto pAvailableLanguage = SteamApps()->GetAvailableGameLanguages();
@@ -152,7 +141,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action,
+			Action_UnlockAchievement,
+			Action_AddToStat,
 
 			0
 			};
