@@ -133,7 +133,7 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 
 //Check if a dir has animation
 inline bool _DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
-	Dir = max(0, min(DIRID_MAX - 1, Dir));
+	Dir = (std::max)(size_t(0), (std::min)(size_t(DIRID_MAX - 1), Dir));
 
 	if (object == NULL) {
 		return false;
@@ -968,7 +968,7 @@ inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(co
 
 //Get Valid Scale
 inline void GetValidScale(float* scale) {
-	*scale = max(1, *scale);
+	*scale = (std::max)(1.0f, *scale);
 	return;
 }
 
@@ -980,7 +980,7 @@ inline void GetMaximumDivide(int* divide) {
 		*divide = Max;
 	}
 	else {
-		*divide = max(1, min(*divide, Max));
+		*divide = (std::max)(1, (std::min)(*divide, Max));
 	}
 	return;
 }
@@ -997,7 +997,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	constexpr auto SB_MIN_RADIUS = 0;
 	constexpr auto SB_MAX_RADIUS = 254;
 
-	radius = min(SB_MAX_RADIUS, max(SB_MIN_RADIUS, radius));
+	radius = (std::min)(SB_MAX_RADIUS, (std::max)(SB_MIN_RADIUS, radius));
 
 	GetValidScale(&scale);
 	GetMaximumDivide(&divide);
@@ -1559,7 +1559,7 @@ inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHe
 
 #ifdef _PRE_PROTECT
 	auto Range = [](int inputV, int minV, int maxV) {
-		return min(maxV, max(minV, inputV));
+		return (std::min)(maxV, (std::max)(minV, inputV));
 	};
 		
 	auto actualWidth = Range(srcX + srcWidth, 0, widthS);

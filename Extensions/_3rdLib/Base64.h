@@ -224,12 +224,12 @@ public:
         return deRet.size();
     }
     [[deprecated]] inline void base64_decode_to_pointer(BYTE* buff, size_t size) {
-        memcpy(buff, &deRet[0], min(size, deRet.size()));
+        memcpy(buff, &deRet[0], (std::min)(size, deRet.size()));
     }
 
     inline bool base64_decode_to_pointer(const base64Str& encoded_string, BYTE* buff, size_t size) {
         return base64_decode_callback(encoded_string, [&] (const BYTE* base64_buff, const size_t base64_size) {
-            memcpy(buff, base64_buff, min(size, base64_size));
+            memcpy(buff, base64_buff, (std::min)(size, base64_size));
         });
     }
 

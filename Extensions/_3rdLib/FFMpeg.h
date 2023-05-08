@@ -570,7 +570,7 @@ private:
 		AVProbeData probeData = { 0 };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
-		probeData.buf_size = min(MEM_BUFFER_SIZE, bfSz);
+		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
 		probeData.filename = pFileName;
 
 		// Determine the input-format:
@@ -585,7 +585,7 @@ private:
 				throw FFMpegException_InitFailed;
 			}
 
-			probeData.buf_size = min(size_t(2 * probeData.buf_size), bfSz);
+			probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(2 * probeData.buf_size), bfSz));
 		}
 
 		return nullptr;
@@ -639,7 +639,7 @@ private:
 		AVProbeData probeData = { 0 };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
-		probeData.buf_size = min(MEM_BUFFER_SIZE, bfSz);
+		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
 		probeData.filename = "";
 
 		// Determine the input-format:
@@ -653,8 +653,8 @@ private:
 			if (size_t(probeData.buf_size + 1) > bfSz) {
 				throw FFMpegException_InitFailed;
 			}
-
-			probeData.buf_size = min(size_t(2 * probeData.buf_size), bfSz);
+						
+			probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(2 * probeData.buf_size), bfSz));
 		}
 
 		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -899,8 +899,8 @@ private:
 #pragma endregion
 }
 
-	inline int64_t get_protectedTimeInSecond(const int64_t ms) const {
-		const auto protectedTimeInMs = min(totalTimeInMs, max(0, ms));
+	inline int64_t get_protectedTimeInSecond(const int64_t ms) const {		
+		const auto protectedTimeInMs = Range(ms, static_cast<int64_t>(0), totalTimeInMs);
 		const auto protectedTimeInSecond = protectedTimeInMs / 1000;
 
 		return protectedTimeInSecond;
@@ -1290,7 +1290,7 @@ private:
 			videoPts *= av_q2d(pVideoStream->time_base);
 
 			//if (pFrame->key_frame == 1) {
-			//	firstKeyFrame = min(videoPts, firstKeyFrame);
+			//	firstKeyFrame = (std::min)(videoPts, firstKeyFrame);
 			//}
 
 #ifdef _CONSOLE
@@ -1456,8 +1456,8 @@ private:
 			const auto curTime = get_curTime();
 			const auto pausedTime = get_pausedTime();
 
-			const auto timePlayed = curTime - pausedTime - audioCallbackStartTimer;
-			const auto protectedTimePlayed = min(maxPtsOffset, max(0, timePlayed));
+			const auto timePlayed = curTime - pausedTime - audioCallbackStartTimer;		
+			const auto protectedTimePlayed = Range(timePlayed, 0.0, maxPtsOffset);
 
 			pts = audioCallbackStartPts + protectedTimePlayed;
 #else
@@ -1833,11 +1833,11 @@ public:
 	}
 
 	inline void set_sdl_volume(const int volume) {
-		this->volume = max(0, min(128, volume));
+		this->volume = Range(volume, 0, 128);
 	}
 
-	inline void set_volume(const int volume) {
-		this->volume = int((max(0, min(100, volume)) / 100.0) * 128);
+	inline void set_volume(const int volume) {		
+		this->volume = static_cast<int>((Range(volume, 0, 100) / 100.0) * 128);
 	}
 
 	inline int set_videoPosition(int64_t ms = 0, const int flags = seekFlags) {
@@ -1848,9 +1848,9 @@ public:
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
 		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
 
-		// protection
+		// protection	
 		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
-			? min(max(ms, 0), get_videoDuration())
+			? Range(ms, static_cast<int64_t>(0), get_videoDuration())
 			: ms;
 		response = seekFrame(pFormatContext, steam_index, ms, flags);
 

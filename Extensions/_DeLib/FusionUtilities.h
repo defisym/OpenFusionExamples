@@ -543,8 +543,8 @@ inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
 	int brY = (int)(sh * co - sw * si);
 
 	//Update topleft coordinate
-	int dx = min(0, min(trX, min(blX, brX)));
-	int dy = min(0, min(trY, min(blY, brY)));
+	int dx = (std::min)(0, (std::min)(trX, (std::min)(blX, brX)));
+	int dy = (std::min)(0, (std::min)(trY, (std::min)(blY, brY)));
 
 	//Update hotspot
 	*hotX = (int)(round(hx * co + hy * si) - dx);
