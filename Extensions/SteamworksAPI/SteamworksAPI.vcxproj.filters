@@ -165,10 +165,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="EXTICON.BMP">
+    <Image Include="Res\EXTICON.BMP">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="EXTIMG.BMP">
+    <Image Include="Res\EXTIMG.BMP">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
