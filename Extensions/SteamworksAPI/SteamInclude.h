@@ -3,11 +3,12 @@
 #pragma warning( disable : 4996)
 #pragma warning( disable : 4819)
 
+// if disable this marco, then it's not compatible with legacy steamworks object
 #define CompatibleWithSteamworksObject
 
 #include "steam/steam_api.h"
 #ifdef CompatibleWithSteamworksObject
-#pragma comment(lib,"neoSteam_api.lib")
+#pragma comment(lib,"SteamworksAPI.lib")
 #else
 #pragma comment(lib,"steam_api.lib")
 #endif

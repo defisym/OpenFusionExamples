@@ -158,7 +158,7 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 
 LPCTSTR szDep[] = {
 #ifdef CompatibleWithSteamworksObject
-	_T("neoSteam_api.dll"),
+	_T("SteamworksAPI.dll"),
 #else
 	_T("steam_api.dll"),
 #endif
