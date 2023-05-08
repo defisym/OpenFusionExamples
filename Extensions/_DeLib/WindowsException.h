@@ -19,6 +19,12 @@
 //auto b = *a;
 
 namespace WindowsException {
+#ifdef _DEBUG
+    inline void RaiseException() {
+        ::RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, nullptr);
+    }
+#endif
+
     inline constexpr const wchar_t* GetExceptionMessage(DWORD exceptionCode) {
         switch (exceptionCode) {
         case EXCEPTION_ACCESS_VIOLATION:
