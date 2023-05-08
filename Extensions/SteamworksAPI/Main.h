@@ -91,7 +91,6 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	GlobalData* pData;
-
 	SteamUtilities* pSteamUtil;
 
 	std::wstring* pRet;

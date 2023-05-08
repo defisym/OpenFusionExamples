@@ -13,20 +13,22 @@ concept STAT = std::is_same_v<std::remove_cv_t<T>, int32 > || std::is_same_v<std
 // Class
 //------------
 
-class SteamUtilities;
-
 class SteamAchAndStat :public SteamCallbackClass {
 private:
-
+	inline void CallCallback() override {
+		bCallbackSuccess = false;
+		pCallback = GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
+			bCallbackSuccess = pCallback->m_eResult == k_EResultOK
+				&& pCallback->m_nGameID == appID;
+		});
+		bool bSuccess = SteamUserStats()->RequestCurrentStats();
+	}
 public:
 	SteamAchAndStat(Refresh::RefreshTasks* pTasks)
 		:SteamCallbackClass(pTasks, Refresh::RefreshType::AchievementAndStat) {
-		pCallback = GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
-			bCallbackSuccess = pCallback->m_eResult == k_EResultOK;
-			});
-		bool bSuccess = SteamUserStats()->RequestCurrentStats();
+		SteamAchAndStat::CallCallback();
 	}
-	~SteamAchAndStat() {
+	~SteamAchAndStat() override {
 
 	}
 	

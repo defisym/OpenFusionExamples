@@ -48,15 +48,15 @@ short expressionsInfos[]=
 
 long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long param2) {
 	const auto pPlatform = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	const auto factorToSearch = SteamUtilities::DeviceNameToFactor(pPlatform);
+	const auto factorToSearch = SteamRemote::DeviceNameToFactor(pPlatform);
 
 	bool bResult = false;
 	bool bLocal = true;
 
-	SteamUtilities::IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
+	SteamRemote::IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
 		// check current player
 		const auto steamID = SteamRemotePlay()->GetSessionSteamID(unSessionID);
-		if (steamID != rdPtr->pData->playerID) {
+		if (steamID != rdPtr->pData->pSteamUtil->playerID) {
 			return;
 		}
 
@@ -86,7 +86,7 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 short WINAPI DLLExport Action_UnlockAchievement(LPRDATA rdPtr, long param1, long param2) {
 	const auto pAchievementName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	rdPtr->pSteamUtil->UnlockAchievement(pAchievementName);
+	rdPtr->pSteamUtil->GetAchAndStat()->UnlockAchievement(pAchievementName);
 
 	return 0;
 }
@@ -95,7 +95,7 @@ short WINAPI DLLExport Action_AddToStat(LPRDATA rdPtr, long param1, long param2)
 	const auto pStatName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto data = (int)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->pSteamUtil->AddStat(pStatName, data);
+	rdPtr->pSteamUtil->GetAchAndStat()->AddStat(pStatName, data);
 
 	return 0;
 }

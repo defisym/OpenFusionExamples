@@ -27,6 +27,7 @@
 //delete pCallback;
 //pCallback = nullptr;
 
+class SteamCallbackClass;
 // ------------
 // Base class
 // ------------
@@ -68,21 +69,50 @@ inline auto GetCallBack(std::function<void(CallBackType*)> callback) {
 }
 
 // ------------
-// base class
+// Usage
+// ------------
+//class SteamFunction :public SteamCallbackClass {
+//private:
+//	inline void CallCallback() override {
+//		bCallbackSuccess = false;
+//		pCallback = GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
+//			bCallbackSuccess = pCallback->m_eResult == k_EResultOK
+//				&& pCallback->m_nGameID == appID;
+//		});
+//		bool bSuccess = SteamUserStats()->RequestCurrentStats();
+//	}
+//public:
+//	SteamFunction(Refresh::RefreshTasks* pTasks)
+//		:SteamCallbackClass(pTasks, Refresh::RefreshType::AchievementAndStat) {
+//		SteamFunction::CallCallback();
+//	}
+//	~SteamFunction() override {
+//
+//	}
+//};
+
+// ------------
+// Base class
 // ------------
 class SteamCallbackClass {
-public:
-	SteamCallback* pCallback = nullptr;
-	bool bCallbackSuccess = false;
-
-	// copy only
+private:
+	// copy only, do not release
 	Refresh::RefreshTasks* pTasks = nullptr;
 	Refresh::RefreshType type = Refresh::RefreshType::None;
 
+protected:
+	uint64 appID = 0;
+
+	SteamCallback* pCallback = nullptr;
+	bool bCallbackSuccess = false;
+
+public:
 	// child classes init pCallback with GetCallBack
 	// then call then async operation
 	explicit SteamCallbackClass(Refresh::RefreshTasks* pTasks,
 		Refresh::RefreshType type = Refresh::RefreshType::None) {
+		this->appID = SteamUtils()->GetAppID();
+
 		this->pTasks = pTasks;
 		this->type = type;
 	}
@@ -91,7 +121,14 @@ public:
 		pCallback = nullptr;
 	}
 
+	// Add task then refresh it in handle rountine
 	inline void AddToRefresh() const {
 		Refresh::UniquePush(pTasks, type);
 	}
+
+	inline bool GetCallbackStat() const {
+		return bCallbackSuccess;
+	}
+
+	virtual inline void CallCallback() = 0;
 };
