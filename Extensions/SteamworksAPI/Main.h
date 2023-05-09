@@ -18,14 +18,18 @@
 #define	ACT_ACTION_UA					0
 #define	ACT_ACTION_AS					1
 
-#define	ACT_LAST						2
+#define	ACT_ACTION_SRP					2
+#define	ACT_ACTION_CRP					3
+
+#define	ACT_LAST						4
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GCGL				0
+#define	EXP_EXPRESSION_GSCL				1
 
-#define	EXP_LAST						1
+#define	EXP_LAST						2
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

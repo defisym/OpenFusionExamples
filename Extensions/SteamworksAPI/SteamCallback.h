@@ -71,6 +71,11 @@ inline auto GetCallBack(std::function<void(CallBackType*)> callback) {
 // ------------
 // Usage
 // ------------
+//
+//#pragma once
+//
+//#include "SteamInclude.h"
+//
 //class SteamFunction :public SteamCallbackClass {
 //private:
 //	inline void CallCallback() override {
@@ -130,5 +135,5 @@ public:
 		return bCallbackSuccess;
 	}
 
-	virtual inline void CallCallback() = 0;
+	virtual inline void CallCallback(void* udata = nullptr) = 0;
 };

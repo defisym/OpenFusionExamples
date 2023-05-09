@@ -131,6 +131,12 @@ BEGIN
         MENUITEM "Unlock Achievement",       IDMN_ACTION_UA
         MENUITEM "Add to Stat",              IDMN_ACTION_AS
         MENUITEM SEPARATOR
+        POPUP "Rich Presence"
+        BEGIN
+            MENUITEM "Set Rich Presence",       IDMN_ACTION_SRP
+            MENUITEM "Clear Rich Presence",       IDMN_ACTION_CRP
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -146,6 +152,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
+        MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
         MENUITEM SEPARATOR
     END
 END
@@ -235,6 +242,12 @@ BEGIN
     M_ACH_NAME	             "Achievement Name"
     M_STAT_NAME	             "Stat Name"
     M_STAT_DATA	             "Stat Data"
+
+    M_ACTION_SRP	         "Set Rich Presence Key %0 to %1"
+    M_ACTION_CRP	         "Clear Rich Presence"
+
+    M_STAT_RPK	             "Key"
+    M_STAT_RPV	             "Value"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -247,6 +260,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_EXPRESSION_GCGL            "GetCurrentGameLanguage$ ("
+    M_EXPRESSION_GSCL            "GetSteamCommandLine$ ("
 END
 
 STRINGTABLE

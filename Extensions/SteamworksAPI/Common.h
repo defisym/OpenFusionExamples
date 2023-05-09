@@ -41,6 +41,15 @@
 #include <crtdbg.h>
 #endif
 
+#define NOIMPL_MICROTXN
+
+#ifndef NOIMPL_MICROTXN
+// Http lib
+// must be here to be compatible with other parts
+#define	    CPPHTTPLIB_OPENSSL_SUPPORT
+#include	"httplib.h"
+#endif
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"

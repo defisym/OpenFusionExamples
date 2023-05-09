@@ -1,7 +1,7 @@
 #pragma once
 
-#pragma warning( disable : 4996)
-#pragma warning( disable : 4819)
+#pragma warning(disable : 4996)
+#pragma warning(disable : 4819)
 
 // if disable this marco, then it's not compatible with legacy steamworks object
 #define CompatibleWithSteamworksObject

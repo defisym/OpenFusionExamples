@@ -30,12 +30,16 @@ short actionsInfos[]=
 		{
 		IDMN_ACTION_UA, M_ACTION_UA,	ACT_ACTION_UA,	0, 1, PARAM_EXPSTRING, M_ACH_NAME,
 		IDMN_ACTION_AS, M_ACTION_AS,	ACT_ACTION_AS,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_STAT_NAME, M_STAT_DATA,
+
+		IDMN_ACTION_SRP, M_ACTION_SRP,	ACT_ACTION_SRP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_STAT_RPK, M_STAT_RPV,
+		IDMN_ACTION_CRP, M_ACTION_CRP,	ACT_ACTION_CRP,	0, 0,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
 		IDMN_EXPRESSION_GCGL, M_EXPRESSION_GCGL, EXP_EXPRESSION_GCGL, EXPFLAG_STRING, 0,		
+		IDMN_EXPRESSION_GSCL, M_EXPRESSION_GSCL, EXP_EXPRESSION_GSCL, EXPFLAG_STRING, 0,
 		};
 
 
@@ -100,6 +104,21 @@ short WINAPI DLLExport Action_AddToStat(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetRichPresence(LPRDATA rdPtr, long param1, long param2) {
+	const auto pchKey = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto pchValue = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	const auto bRet = rdPtr->pSteamUtil->GetSteamRichPresence()->SetRichPresence(pchKey, pchValue);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ClearRichPresence(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pSteamUtil->GetSteamRichPresence()->ClearRichPresence();
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -123,6 +142,14 @@ long WINAPI DLLExport Expression_GetCurrentGameLanguage(LPRDATA rdPtr,long param
 	return (long)rdPtr->pRet->c_str();
 }
 
+long WINAPI DLLExport Expression_GetSteamCommandLine(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pSteamUtil->GetSteamCommandLine<LPWSTR>().c_str();
+}
+
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -144,12 +171,16 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_UnlockAchievement,
 			Action_AddToStat,
 
+			Action_SetRichPresence,
+			Action_ClearRichPresence,
+
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
 			Expression_GetCurrentGameLanguage,
+			Expression_GetSteamCommandLine,
 
 			0
 			};

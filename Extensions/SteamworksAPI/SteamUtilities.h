@@ -5,8 +5,14 @@
 #include <functional>
 
 #include "SteamInclude.h"
+
 #include "SteamAchAndStat.h"
+#ifndef NOIMPL_MICROTXN
+#include "SteamMicroTxn.h"
+#endif
+
 #include "SteamRemote.h"
+#include "SteamRichPresence.h"
 
 #ifdef WIN32
 #include "WindowsException.h"
@@ -14,9 +20,50 @@
 
 class SteamUtilities {
 private:
+	//------------
+	// Info
+	//------------
+
+	std::string cmdLine;
+
+	inline void InitSteamCommandLine() {
+		static char commandLine[512];
+		SteamApps()->GetLaunchCommandLine(commandLine, 512);
+		cmdLine = commandLine;
+	}
+
+public:
+	template <STR Name>
+	inline auto GetSteamCommandLine() {
+		if constexpr (WSTR<Name>) {
+			return ConvertStrToWStr(cmdLine);
+		}
+		else {
+			return cmdLine;
+		}
+	}
+
+private:
+	//------------
+	// Callback
+	//------------
+
 	//std::vector<SteamCallbackClass*> pCallbackClasses;
 	SteamAchAndStat* pAchAndStat = nullptr;
+	SteamRichPresence* pSteamRichPresence = nullptr;
+#ifndef NOIMPL_MICROTXN
+	SteamMicroTxn* pSteamMicroTxn = nullptr;
+#endif
+
+	//------------
+	// None Callback
+	//------------
+
 	SteamRemote* pSteamRemote = nullptr;
+
+	//------------
+	// Tasks
+	//------------
 
 	Refresh::RefreshTasks refreshTasks;
 
@@ -27,12 +74,24 @@ public:
 
 	SteamUtilities() :playerID(SteamUser()->GetSteamID()),
 		appID(SteamUtils()->GetAppID()),
-		buildID(SteamApps()->GetAppBuildId()) {
+		buildID(SteamApps()->GetAppBuildId()) {		
+		InitSteamCommandLine();
+
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
+		pSteamRichPresence = new SteamRichPresence(&refreshTasks);
+#ifndef NOIMPL_MICROTXN
+		pSteamMicroTxn = new SteamMicroTxn(&refreshTasks);
+#endif
+
 		pSteamRemote = new SteamRemote();
 	}
 	~SteamUtilities() {
 		delete pAchAndStat;
+		delete pSteamRichPresence;
+#ifndef NOIMPL_MICROTXN
+		delete pSteamMicroTxn;
+#endif
+		
 		delete pSteamRemote;
 	}
 
@@ -59,21 +118,13 @@ public:
 	}
 
 	//------------
-	// Remote Play
+	// Impl Class
 	//------------
 
-	inline SteamRemote* GetRemote() const {
-		return pSteamRemote;
-	}
-	
-	//------------
-	// Achievements & Stat
-	//------------
+	inline SteamAchAndStat* GetAchAndStat() const { return pAchAndStat; }
+	inline SteamRichPresence* GetSteamRichPresence() const { return pSteamRichPresence; }
 
-	inline SteamAchAndStat* GetAchAndStat() const {
-		return pAchAndStat;
-	}
-
+	inline SteamRemote* GetRemote() const { return pSteamRemote; }
 	//------------
 	// Refresh
 	//------------

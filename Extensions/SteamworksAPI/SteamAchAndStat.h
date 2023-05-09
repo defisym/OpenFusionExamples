@@ -15,7 +15,7 @@ concept STAT = std::is_same_v<std::remove_cv_t<T>, int32 > || std::is_same_v<std
 
 class SteamAchAndStat :public SteamCallbackClass {
 private:
-	inline void CallCallback() override {
+	inline void CallCallback(void* udata = nullptr) override {
 		bCallbackSuccess = false;
 		pCallback = GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
 			bCallbackSuccess = pCallback->m_eResult == k_EResultOK

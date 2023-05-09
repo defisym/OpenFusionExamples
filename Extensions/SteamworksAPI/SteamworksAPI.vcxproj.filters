@@ -21,7 +21,13 @@
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Steamworks">
+      <UniqueIdentifier>{5546c756-bf10-4ba1-b0c9-18dbef874ae9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamworksHeader">
       <UniqueIdentifier>{b14c86c1-d0bc-4766-b376-11cba2d74282}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamworksSource">
+      <UniqueIdentifier>{bae52159-a2c9-48cf-ab68-61f00052d432}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -146,22 +152,31 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SteamUtilities.h">
-      <Filter>Steamworks</Filter>
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="SteamRefresh.h">
-      <Filter>Steamworks</Filter>
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="SteamAchAndStat.h">
-      <Filter>Steamworks</Filter>
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="SteamCallback.h">
-      <Filter>Steamworks</Filter>
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="SteamConcepts.h">
-      <Filter>Steamworks</Filter>
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="SteamInclude.h">
-      <Filter>Steamworks</Filter>
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRemote.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamMicroTxn.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRichPresence.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

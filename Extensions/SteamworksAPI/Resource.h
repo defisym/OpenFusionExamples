@@ -33,14 +33,22 @@
 #define IDMN_ACTION_UA	       		25000
 #define IDMN_ACTION_AS	       		25001
 
+#define IDMN_ACTION_SRP	       		25002
+#define IDMN_ACTION_CRP	       		25003
+
 // Action strings
 #define M_ACTION_UA                 5000
 #define M_ACTION_AS                 5001
+
+#define M_ACTION_SRP                5002
+#define M_ACTION_CRP                5003
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
 #define M_STAT_NAME				 5502
 #define M_STAT_DATA				 5503
+#define M_STAT_RPK				 5504
+#define M_STAT_RPV				 5505
 
 
 //	Conditions
@@ -66,9 +74,11 @@
 
 // Commands of expressions menu
 #define IDMN_EXPRESSION_GCGL			27000
+#define IDMN_EXPRESSION_GSCL			27001
 
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
+#define M_EXPRESSION_GSCL				7001
 
 // Names of expression parameters
 #define M_EXP_P1				 7500
