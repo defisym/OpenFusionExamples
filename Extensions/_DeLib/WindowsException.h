@@ -25,6 +25,8 @@ namespace WindowsException {
     }
 #endif
 
+    constexpr auto UnknownException = L"Unknown Exception";
+
     inline constexpr const wchar_t* GetExceptionMessage(DWORD exceptionCode) {
         switch (exceptionCode) {
         case EXCEPTION_ACCESS_VIOLATION:
@@ -68,8 +70,12 @@ namespace WindowsException {
         case EXCEPTION_STACK_OVERFLOW:
             return L"线程已用到其堆栈";
         default:
-            return L"Unknown Exception";
+            return UnknownException;
         }
+    }
+    
+    inline bool ExceptionUnknown(DWORD exceptionCode) {
+        return wcscmp(GetExceptionMessage(exceptionCode), UnknownException) == 0;               
     }
 
     inline std::wstring GetErrorMessage(DWORD msgID) {

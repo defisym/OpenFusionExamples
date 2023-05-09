@@ -107,10 +107,16 @@ public:
 
 		WindowsException::SetVEHFilter([](EXCEPTION_POINTERS* pExceptionInfo)->LONG {
 			const auto code = pExceptionInfo->ExceptionRecord->ExceptionCode;
-			const auto msg = ConvertWStrToStr(WindowsException::GetExceptionMessage(code));
 
-			SteamAPI_SetMiniDumpComment(std::format("{:#x}\n{}", code, msg).c_str());
-			SteamAPI_WriteMiniDump(code, pExceptionInfo, SteamApps()->GetAppBuildId());
+			if (!WindowsException::ExceptionUnknown(code)) {
+				const auto msg = WindowsException::GetExceptionMessage(code);
+				const auto comment = std::format("{:#x}\n{}", code, ConvertWStrToStr(msg));
+
+				//MSGBOX(ConvertStrToWStr(comment));
+
+				SteamAPI_SetMiniDumpComment(comment.c_str());
+				SteamAPI_WriteMiniDump(code, pExceptionInfo, SteamApps()->GetAppBuildId());
+			}
 
 			return EXCEPTION_CONTINUE_SEARCH;
 		});
