@@ -38,8 +38,8 @@ private:
 		});
 	}
 public:
-	SteamMicroTxn(Refresh::RefreshTasks* pTasks)
-		:SteamCallbackClass(pTasks, Refresh::RefreshType::None) {
+	SteamMicroTxn()
+		:SteamCallbackClass() {
 		cli.set_connection_timeout(0, 300000); // 300 milliseconds
 		cli.set_read_timeout(5, 0); // 5 seconds
 		cli.set_write_timeout(5, 0); // 5 seconds

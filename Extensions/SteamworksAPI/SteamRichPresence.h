@@ -14,8 +14,8 @@ private:
 		SteamFriends()->RequestFriendRichPresence(*static_cast<CSteamID*>(udata));
 	}
 public:
-	SteamRichPresence(Refresh::RefreshTasks* pTasks)
-		:SteamCallbackClass(pTasks, Refresh::RefreshType::None) {
+	SteamRichPresence()
+		:SteamCallbackClass() {
 	}
 	~SteamRichPresence() override {
 

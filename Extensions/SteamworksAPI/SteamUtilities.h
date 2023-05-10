@@ -10,6 +10,7 @@
 #ifndef NOIMPL_MICROTXN
 #include "SteamMicroTxn.h"
 #endif
+#include "SteamHttp.h"
 
 #include "SteamRemote.h"
 #include "SteamRichPresence.h"
@@ -54,7 +55,7 @@ private:
 #ifndef NOIMPL_MICROTXN
 	SteamMicroTxn* pSteamMicroTxn = nullptr;
 #endif
-
+	
 	//------------
 	// None Callback
 	//------------
@@ -78,9 +79,9 @@ public:
 		InitSteamCommandLine();
 
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
-		pSteamRichPresence = new SteamRichPresence(&refreshTasks);
+		pSteamRichPresence = new SteamRichPresence();
 #ifndef NOIMPL_MICROTXN
-		pSteamMicroTxn = new SteamMicroTxn(&refreshTasks);
+		pSteamMicroTxn = new SteamMicroTxn();
 #endif
 
 		pSteamRemote = new SteamRemote();

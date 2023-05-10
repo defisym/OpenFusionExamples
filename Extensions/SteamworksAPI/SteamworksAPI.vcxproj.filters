@@ -178,6 +178,12 @@
     <ClInclude Include="SteamRichPresence.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
+    <ClInclude Include="SteamHttp.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\JsonInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP">

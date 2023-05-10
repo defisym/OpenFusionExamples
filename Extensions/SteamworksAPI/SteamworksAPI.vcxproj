@@ -289,6 +289,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\Surface.h" />
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
+    <ClInclude Include="..\_3rdLib\JsonInterface.h" />
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
     <ClInclude Include="..\_DeLib\WindowsException.h" />
@@ -300,6 +301,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="SteamAchAndStat.h" />
     <ClInclude Include="SteamCallback.h" />
     <ClInclude Include="SteamConcepts.h" />
+    <ClInclude Include="SteamHttp.h" />
     <ClInclude Include="SteamInclude.h" />
     <ClInclude Include="SteamMicroTxn.h" />
     <ClInclude Include="SteamRefresh.h" />
