@@ -7,13 +7,10 @@
 #include "SteamInclude.h"
 
 #include "SteamAchAndStat.h"
-#ifndef NOIMPL_MICROTXN
 #include "SteamMicroTxn.h"
-#endif
-#include "SteamHttp.h"
+#include "SteamRichPresence.h"
 
 #include "SteamRemote.h"
-#include "SteamRichPresence.h"
 
 #ifdef WIN32
 #include "WindowsException.h"
@@ -52,9 +49,7 @@ private:
 	//std::vector<SteamCallbackClass*> pCallbackClasses;
 	SteamAchAndStat* pAchAndStat = nullptr;
 	SteamRichPresence* pSteamRichPresence = nullptr;
-#ifndef NOIMPL_MICROTXN
 	SteamMicroTxn* pSteamMicroTxn = nullptr;
-#endif
 	
 	//------------
 	// None Callback
@@ -80,18 +75,14 @@ public:
 
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
 		pSteamRichPresence = new SteamRichPresence();
-#ifndef NOIMPL_MICROTXN
 		pSteamMicroTxn = new SteamMicroTxn();
-#endif
 
 		pSteamRemote = new SteamRemote();
 	}
 	~SteamUtilities() {
 		delete pAchAndStat;
 		delete pSteamRichPresence;
-#ifndef NOIMPL_MICROTXN
 		delete pSteamMicroTxn;
-#endif
 		
 		delete pSteamRemote;
 	}
@@ -129,7 +120,8 @@ public:
 	//------------
 
 	inline SteamAchAndStat* GetAchAndStat() const { return pAchAndStat; }
-	inline SteamRichPresence* GetSteamRichPresence() const { return pSteamRichPresence; }
+	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
+	inline SteamMicroTxn* GetMicroTxn() const { return pSteamMicroTxn; }
 
 	inline SteamRemote* GetRemote() const { return pSteamRemote; }
 	//------------

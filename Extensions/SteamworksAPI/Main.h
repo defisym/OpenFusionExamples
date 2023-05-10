@@ -10,7 +10,10 @@
 // ------------------------------
 #define	CND_CONDITION_RPO				0
 
-#define	CND_LAST						1
+#define	CND_CONDITION_OMTE				1
+#define	CND_CONDITION_OMTF				2
+
+#define	CND_LAST						3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -21,7 +24,12 @@
 #define	ACT_ACTION_SRP					2
 #define	ACT_ACTION_CRP					3
 
-#define	ACT_LAST						4
+#define	ACT_ACTION_MT_SI				4
+#define	ACT_ACTION_MT_GUI				5
+#define	ACT_ACTION_MT_SR				6
+#define	ACT_ACTION_MT_F 				7
+
+#define	ACT_LAST						8
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -29,7 +37,12 @@
 #define	EXP_EXPRESSION_GCGL				0
 #define	EXP_EXPRESSION_GSCL				1
 
-#define	EXP_LAST						2
+#define	EXP_EXPRESSION_MT_GS			2
+#define	EXP_EXPRESSION_MT_GHTMLEC		3
+#define	EXP_EXPRESSION_MT_GED			4
+#define	EXP_EXPRESSION_MT_GTID			5
+
+#define	EXP_LAST						6
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -95,7 +108,6 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	GlobalData* pData;
-	SteamUtilities* pSteamUtil;
 
 	std::wstring* pRet;
 

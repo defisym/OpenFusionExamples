@@ -169,9 +169,6 @@
     <ClInclude Include="SteamInclude.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
-    <ClInclude Include="SteamRemote.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SteamMicroTxn.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
@@ -182,6 +179,12 @@
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="..\_3rdLib\JsonInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRemote.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

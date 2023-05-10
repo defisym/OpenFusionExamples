@@ -23,6 +23,9 @@
 short conditionsInfos[]=
 		{
 		IDMN_CONDITION_RPO, M_CONDITION_RPO, CND_CONDITION_RPO, EVFLAGS_ALWAYS, 1, PARAM_EXPSTRING, M_CND_RPO,
+		
+		IDMN_CONDITION_OMTE, M_CONDITION_OMTE, CND_CONDITION_OMTE, 0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_MT_NAME, M_MT_STEP,
+		IDMN_CONDITION_OMTF, M_CONDITION_OMTF, CND_CONDITION_OMTF, 0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_MT_NAME, M_MT_STEP,
 		};
 
 // Definitions of parameters for each action
@@ -33,6 +36,11 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SRP, M_ACTION_SRP,	ACT_ACTION_SRP,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_STAT_RPK, M_STAT_RPV,
 		IDMN_ACTION_CRP, M_ACTION_CRP,	ACT_ACTION_CRP,	0, 0,
+
+		IDMN_ACTION_MT_SI, M_ACTION_MT_SI,	ACT_ACTION_MT_SI,	0, 4, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPSTRING, M_MT_NAME, M_MT_KEY, M_MT_ORDERID, M_MT_USERID,
+		IDMN_ACTION_MT_GUI, M_ACTION_MT_GUI,	ACT_ACTION_MT_GUI,	0, 0,
+		IDMN_ACTION_MT_SR, M_ACTION_MT_SR,	ACT_ACTION_MT_SR,	0, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPSTRING, M_MT_ITEMCOUNT, M_MT_ITEMID, M_MT_ITEMNUM, M_MT_AMOUNT, M_MT_DESC, M_MT_OTHERS,
+		IDMN_ACTION_MT_F, M_ACTION_MT_F,	ACT_ACTION_MT_F,	0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -40,6 +48,11 @@ short expressionsInfos[]=
 		{
 		IDMN_EXPRESSION_GCGL, M_EXPRESSION_GCGL, EXP_EXPRESSION_GCGL, EXPFLAG_STRING, 0,		
 		IDMN_EXPRESSION_GSCL, M_EXPRESSION_GSCL, EXP_EXPRESSION_GSCL, EXPFLAG_STRING, 0,
+		
+		IDMN_EXPRESSION_MT_GS, M_EXPRESSION_MT_GS, EXP_EXPRESSION_MT_GS, 0, 0,
+		IDMN_EXPRESSION_MT_GHTMLEC, M_EXPRESSION_MT_GHTMLEC, EXP_EXPRESSION_MT_GHTMLEC, 0, 0,
+		IDMN_EXPRESSION_MT_GED, M_EXPRESSION_MT_GED, EXP_EXPRESSION_MT_GED, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_MT_GTID, M_EXPRESSION_MT_GTID, EXP_EXPRESSION_MT_GTID, EXPFLAG_STRING, 0,
 		};
 
 
@@ -54,8 +67,12 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 	const auto pPlatform = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto factorToSearch = SteamRemote::DeviceNameToFactor(pPlatform);
 
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
 	bool bResult = false;
-	bool bLocal = true;
+	bool bLocal = true;	
 
 	SteamRemote::IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
 		// check current player
@@ -80,6 +97,29 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 	return bResult;
 }
 
+long WINAPI DLLExport Condition_OnMixroTxnError(LPRDATA rdPtr, long param1, long param2) {
+	const auto pName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto step = (SteamMicroTxn::Step)CNC_GetIntParameter(rdPtr);
+	
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+	
+	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
+		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
+}
+
+long WINAPI DLLExport Condition_OnMixroTxnFinish(LPRDATA rdPtr, long param1, long param2) {
+	const auto pName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto step = (SteamMicroTxn::Step)CNC_GetIntParameter(rdPtr);
+	
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
+	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
+		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
+}
 
 // ============================================================================
 //
@@ -90,7 +130,9 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 short WINAPI DLLExport Action_UnlockAchievement(LPRDATA rdPtr, long param1, long param2) {
 	const auto pAchievementName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	rdPtr->pSteamUtil->GetAchAndStat()->UnlockAchievement(pAchievementName);
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetAchAndStat()->UnlockAchievement(pAchievementName);
+	});
 
 	return 0;
 }
@@ -99,7 +141,9 @@ short WINAPI DLLExport Action_AddToStat(LPRDATA rdPtr, long param1, long param2)
 	const auto pStatName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto data = (int)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->pSteamUtil->GetAchAndStat()->AddStat(pStatName, data);
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetAchAndStat()->AddStat(pStatName, data);
+	});
 
 	return 0;
 }
@@ -108,16 +152,79 @@ short WINAPI DLLExport Action_SetRichPresence(LPRDATA rdPtr, long param1, long p
 	const auto pchKey = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto pchValue = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	const auto bRet = rdPtr->pSteamUtil->GetSteamRichPresence()->SetRichPresence(pchKey, pchValue);
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		const auto bRet = pSteamUtil->GetRichPresence()->SetRichPresence(pchKey, pchValue);
+	});
 
 	return 0;
 }
 
 short WINAPI DLLExport Action_ClearRichPresence(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->pSteamUtil->GetSteamRichPresence()->ClearRichPresence();
+	rdPtr->pData->GetSteamUtilities([] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetRichPresence()->ClearRichPresence();
+	});
 
 	return 0;
 }
+
+short WINAPI DLLExport Action_MixroTxn_SetInfo(LPRDATA rdPtr, long param1, long param2) {
+	const auto name = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto orderID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto userID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		if (StrEmpty(userID)) {
+			pSteamUtil->GetMicroTxn()->SetMicroTxnInfo(
+				ConvertWStrToStr(name),
+				ConvertWStrToStr(key),
+				std::stoull(orderID));
+		}else {
+			pSteamUtil->GetMicroTxn()->SetMicroTxnInfo(
+				ConvertWStrToStr(name),
+				ConvertWStrToStr(key),
+				std::stoull(orderID),
+				std::stoull(userID));
+		}
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_MixroTxn_GetUserInfo(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->GetSteamUtilities([] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetMicroTxn()->GetUserInfo();
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_MixroTxn_SendRequest(LPRDATA rdPtr, long param1, long param2) {
+	const auto itemcount = (uint32)CNC_GetParameter(rdPtr);
+	const auto itemid = (uint32)CNC_GetParameter(rdPtr);
+	const auto qty = (int16)CNC_GetParameter(rdPtr);
+	const auto amount = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto description = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto otherParams = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetMicroTxn()->SendRequest(itemcount, itemid, qty,
+		std::stoll(amount),
+		ConvertWStrToStr(description),
+		ConvertWStrToStr(otherParams));
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_MixroTxn_Finalize(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->GetSteamUtilities([] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetMicroTxn()->Finalize();
+	});
+
+	return 0;
+}
+
 
 // ============================================================================
 //
@@ -147,7 +254,41 @@ long WINAPI DLLExport Expression_GetSteamCommandLine(LPRDATA rdPtr, long param1)
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)rdPtr->pSteamUtil->GetSteamCommandLine<LPWSTR>().c_str();
+	return rdPtr->pData->SteamUtilitiesValid()
+		? (long)rdPtr->pData->pSteamUtil->GetSteamCommandLine<LPWSTR>().c_str()
+		: (long)Empty_Str;
+}
+
+long WINAPI DLLExport Expression_MixroTxn_GetStep(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->SteamUtilitiesValid()
+		? (long)rdPtr->pData->pSteamUtil->GetMicroTxn()->step
+		: (long)-1;
+}
+
+long WINAPI DLLExport Expression_MixroTxn_GetHTMLErrorCode(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->SteamUtilitiesValid()
+		? (long)rdPtr->pData->pSteamUtil->GetMicroTxn()->code
+		: (long)k_EHTTPStatusCodeInvalid;
+}
+
+long WINAPI DLLExport Expression_MixroTxn_GetErrorDesc(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->SteamUtilitiesValid()&& !rdPtr->pData->pSteamUtil->GetMicroTxn()->errordesc.empty()
+		? (long)ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->errordesc).c_str()
+		: (long)Empty_Str;
+}
+
+long WINAPI DLLExport Expression_MixroTxn_GetTransID(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->SteamUtilitiesValid() && !rdPtr->pData->pSteamUtil->GetMicroTxn()->transid.empty()
+		? (long)ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->transid).c_str()
+		: (long)Empty_Str;
 }
 
 
@@ -162,6 +303,9 @@ long WINAPI DLLExport Expression_GetSteamCommandLine(LPRDATA rdPtr, long param1)
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			Condition_RemotePlayOn,
+			
+			Condition_OnMixroTxnError,
+			Condition_OnMixroTxnFinish,
 
 			0
 			};
@@ -174,6 +318,11 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetRichPresence,
 			Action_ClearRichPresence,
 
+			Action_MixroTxn_SetInfo,
+			Action_MixroTxn_GetUserInfo,
+			Action_MixroTxn_SendRequest,
+			Action_MixroTxn_Finalize,
+
 			0
 			};
 
@@ -181,6 +330,11 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			{     
 			Expression_GetCurrentGameLanguage,
 			Expression_GetSteamCommandLine,
+			
+			Expression_MixroTxn_GetStep,
+			Expression_MixroTxn_GetHTMLErrorCode,
+			Expression_MixroTxn_GetErrorDesc,
+			Expression_MixroTxn_GetTransID,
 
 			0
 			};

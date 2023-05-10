@@ -7,6 +7,9 @@ private:
 	using FinishCallback = std::function<void(uint8*, uint32)>;
 	FinishCallback finishCallback = nullptr;
 
+	using ErrorCallback = std::function<void(EHTTPStatusCode)>;
+	ErrorCallback errorCallback = nullptr;
+
 	HTTPRequestHandle hRequest = 0;
 	uint8* pBodyDataBuffer = nullptr;
 	uint32 unBufferSize = 0;
@@ -21,12 +24,16 @@ private:
 				bCallbackSuccess = pCallback->m_eStatusCode == k_EHTTPStatusCode200OK;
 
 				if (!bCallbackSuccess) {
+					errorCallback(pCallback->m_eStatusCode);
+
 					return;
 				}
 
 				SteamHTTP()->GetHTTPResponseBodySize(hRequest, &unBufferSize);
 
-				pBodyDataBuffer = new uint8[unBufferSize];
+				pBodyDataBuffer = new uint8[unBufferSize + 1];
+				pBodyDataBuffer[unBufferSize] = '\0';
+
 				SteamHTTP()->GetHTTPResponseBodyData(hRequest, pBodyDataBuffer, unBufferSize);
 
 				finishCallback(pBodyDataBuffer, unBufferSize);
@@ -35,9 +42,11 @@ private:
 
 public:
 	SteamHttp(EHTTPMethod eHTTPRequestMethod, const char* pchAbsoluteURL,
-	const FinishCallback& finishCallback)
+		const ErrorCallback& errorCallback,
+		const FinishCallback& finishCallback)
 		:SteamCallbackClass() {
 		this->finishCallback = finishCallback;
+		this->errorCallback = errorCallback;
 		hRequest = SteamHTTP()->CreateHTTPRequest(eHTTPRequestMethod, pchAbsoluteURL);
 		SteamHttp::CallCallback();
 	}

@@ -36,6 +36,11 @@
 #define IDMN_ACTION_SRP	       		25002
 #define IDMN_ACTION_CRP	       		25003
 
+#define	IDMN_ACTION_MT_SI			25004
+#define	IDMN_ACTION_MT_GUI			25005
+#define	IDMN_ACTION_MT_SR			25006
+#define	IDMN_ACTION_MT_F 			25007
+
 // Action strings
 #define M_ACTION_UA                 5000
 #define M_ACTION_AS                 5001
@@ -43,12 +48,26 @@
 #define M_ACTION_SRP                5002
 #define M_ACTION_CRP                5003
 
+#define	M_ACTION_MT_SI				5004
+#define	M_ACTION_MT_GUI				5005
+#define	M_ACTION_MT_SR				5006
+#define	M_ACTION_MT_F 				5007
+
 // Titles of action parameters
 #define M_ACH_NAME				 5501
 #define M_STAT_NAME				 5502
 #define M_STAT_DATA				 5503
 #define M_STAT_RPK				 5504
 #define M_STAT_RPV				 5505
+#define M_MT_KEY				 5506
+#define M_MT_ORDERID		     5507
+#define M_MT_USERID				 5508
+#define M_MT_ITEMCOUNT			 5509
+#define M_MT_ITEMID				 5510
+#define M_MT_ITEMNUM			 5511
+#define M_MT_AMOUNT				 5512
+#define M_MT_DESC				 5513
+#define M_MT_OTHERS				 5514
 
 
 //	Conditions
@@ -60,11 +79,19 @@
 // Commands of condition menu
 #define IDMN_CONDITION_RPO				26000
 
+#define	IDMN_CONDITION_OMTE				26001
+#define	IDMN_CONDITION_OMTF				26002
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
+#define	M_CONDITION_OMTE				6001
+#define	M_CONDITION_OMTF				6002
+
 // Titles of condition parameters
 #define M_CND_RPO						6501
+#define M_MT_NAME						6502
+#define M_MT_STEP						6503
 
 //	EXPRESSIONS
 //---------------------
@@ -76,9 +103,19 @@
 #define IDMN_EXPRESSION_GCGL			27000
 #define IDMN_EXPRESSION_GSCL			27001
 
+#define	IDMN_EXPRESSION_MT_GS				27002
+#define	IDMN_EXPRESSION_MT_GHTMLEC			27003
+#define	IDMN_EXPRESSION_MT_GED				27004
+#define	IDMN_EXPRESSION_MT_GTID				27005
+
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
 #define M_EXPRESSION_GSCL				7001
+
+#define	M_EXPRESSION_MT_GS				7002
+#define	M_EXPRESSION_MT_GHTMLEC			7003
+#define	M_EXPRESSION_MT_GED				7004
+#define	M_EXPRESSION_MT_GTID			7005
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

@@ -73,19 +73,23 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
-		rdPtr->pData = new GlobalData;
+		rdPtr->pData = new GlobalData();
 		SetExtUserData(rdPtr->pData);
 
-		if (edPtr->bReportError) {
-			rdPtr->pData->pSteamUtil->SetErrorHandler();
-		}
+		rdPtr->pData->GetSteamUtilities([&] (SteamUtilities* pSteamUtil) {
+			if (edPtr->bReportError) {
+				rdPtr->pData->pSteamUtil->SetErrorHandler();
+			}
+		});
+		
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}
 
-	// retrieve data
-	rdPtr->pSteamUtil = rdPtr->pData->pSteamUtil;
+	// update when create to fix dangling pointer
+	rdPtr->pData->UpdateRdPtr(rdPtr);
+	rdPtr->pData->UpdateMicroTxnCallback();
 
 	// No errors
 	return 0;
@@ -116,8 +120,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // ----------------
 // Called (if you want) each loop, this routine makes the object live
 // 
-short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
-	rdPtr->pSteamUtil->Refresh();
+short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {	
+	rdPtr->pData->GetSteamUtilities([] (SteamUtilities* pSteamUtil) {
+		pSteamUtil->Refresh();
+	});
 
 	return 0;
 }

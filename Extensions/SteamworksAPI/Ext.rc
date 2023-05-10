@@ -114,6 +114,12 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
         MENUITEM SEPARATOR
+        POPUP "Micro Transaction"
+        BEGIN
+            MENUITEM "On MixroTxn Error", IDMN_CONDITION_OMTE
+            MENUITEM "On MixroTxn Finish", IDMN_CONDITION_OMTF
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -137,6 +143,14 @@ BEGIN
             MENUITEM "Clear Rich Presence",       IDMN_ACTION_CRP
         END
         MENUITEM SEPARATOR
+        POPUP "Micro Transaction"
+        BEGIN
+            MENUITEM "Micro Transaction: Set Info",       IDMN_ACTION_MT_SI	
+            MENUITEM "Micro Transaction: Get User Info",     IDMN_ACTION_MT_GUI	
+            MENUITEM "Micro Transaction: Send Request",     IDMN_ACTION_MT_SR	
+            MENUITEM "Micro Transaction: Finalize",     IDMN_ACTION_MT_F 	
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -153,6 +167,14 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
         MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
+        MENUITEM SEPARATOR
+        POPUP "Micro Transaction"
+        BEGIN
+            MENUITEM "Micro Transaction: Get Step", IDMN_EXPRESSION_MT_GS		
+            MENUITEM "Micro Transaction: Get HTML Error Code", IDMN_EXPRESSION_MT_GHTMLEC	
+            MENUITEM "Micro Transaction: Get Error Desc", IDMN_EXPRESSION_MT_GED		
+            MENUITEM "Micro Transaction: Get Trans ID", IDMN_EXPRESSION_MT_GTID		
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -248,6 +270,21 @@ BEGIN
 
     M_STAT_RPK	             "Key"
     M_STAT_RPV	             "Value"
+
+    M_ACTION_MT_SI	         "Micro Transaction: Set Info to %0, %1, %2, %3"
+    M_ACTION_MT_GUI	         "Micro Transaction: Get User Info"
+    M_ACTION_MT_SR	         "Micro Transaction: Send Request %0, %1, %2, %3, %4, %5, %6"
+    M_ACTION_MT_F 	         "Micro Transaction: Finalize"
+
+    M_MT_KEY		         "Web API Key"	
+    M_MT_ORDERID	         "Order ID"	
+    M_MT_USERID		         "64bit UserID, Empty = Current User"	
+    M_MT_ITEMCOUNT	         "Item Count"	
+    M_MT_ITEMID		         "Item ID"	
+    M_MT_ITEMNUM	         "Item Num"	
+    M_MT_AMOUNT		         "Price (in cent)"	
+    M_MT_DESC		         "Description"	
+    M_MT_OTHERS		         "Other Params"	
 END
 
 STRINGTABLE DISCARDABLE 
@@ -255,12 +292,23 @@ BEGIN
     M_CONDITION_RPO          "%o: Remote Play On Device %0"
     
     M_CND_RPO                "Device Type"
+
+    M_CONDITION_OMTE         "%o: On MixroTxn %0 at Step %1 Error"
+    M_CONDITION_OMTF         "%o: On MixroTxn %0 at Step %1 Finish"
+
+    M_MT_NAME                "Name"
+    M_MT_STEP                "Step"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_EXPRESSION_GCGL            "GetCurrentGameLanguage$ ("
     M_EXPRESSION_GSCL            "GetSteamCommandLine$ ("
+
+    M_EXPRESSION_MT_GS		     "MTGS ("
+    M_EXPRESSION_MT_GHTMLEC	     "MTGHEC ("
+    M_EXPRESSION_MT_GED		     "MTGED $("
+    M_EXPRESSION_MT_GTID	     "MTGTID $("
 END
 
 STRINGTABLE
