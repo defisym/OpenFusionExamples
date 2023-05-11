@@ -7,7 +7,8 @@ inline void GlobalData::UpdateMicroTxnCallback() const {
 			CallEvent(OnMixroTxnError);
 		},
 		[&] (SteamMicroTxn::Step step) {
-			CallEvent(OnMixroTxnFinish);
+			//CallEvent(OnMixroTxnFinish);
+			AddEvent(OnMixroTxnFinish);
 		});
 });
 }

@@ -16,6 +16,7 @@
 #define RegStr_IsNum _T("(\\+|\\-)?[0-9]+(\\.[0-9]+)?")
 
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
+#define AddEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_PUSHEVENT , X, 0);
 
 #define valid(X) (X != nullptr)
 

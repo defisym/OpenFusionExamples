@@ -16,15 +16,19 @@
 class SteamMicroTxn :public SteamCallbackClass {
 public:
 	enum class Step {
-		Finalize,
-		GetUsetInfo,
-		SendRequest,
-		Callback,
+		GetUsetInfo_Pending,
+		GetUsetInfo_Finish,
+		SendRequest_Pending,
+		SendRequest_Finish,
+		Callback_Pending,
+		Callback_Finish,
+		Finalize_Pending,
+		Finalize_Finish,
 	};
 
 	std::string name;
 	EHTTPStatusCode code = k_EHTTPStatusCodeInvalid;
-	Step step = Step::Finalize;
+	Step step = Step::Finalize_Finish;
 
 	using ErrorCallback = std::function<void(Step, EHTTPStatusCode)>;
 	ErrorCallback errorCallback = nullptr;
@@ -56,7 +60,6 @@ public:
 	std::string errorcode;
 	std::string errordesc;
 
-private:
 	inline void ResetCallbackResult() {
 		delete pGetUserInfo;
 		pGetUserInfo = nullptr;
@@ -66,10 +69,13 @@ private:
 		pFinalizeTxn = nullptr;
 	}
 
+private:
 	inline void CallCallback(void* udata = nullptr) override {
 		bCallbackSuccess = false;
 		pCallback = GetCallBack<MicroTxnAuthorizationResponse_t>([&] (const MicroTxnAuthorizationResponse_t* pCallback) {
 			bCallbackSuccess = true;
+
+			step = Step::Callback_Pending;
 
 			m_unAppID = pCallback->m_unAppID;
 			m_ulOrderID = pCallback->m_ulOrderID;
@@ -79,7 +85,7 @@ private:
 				finishCallback(step);
 			}
 
-			step = Step::Callback;
+			step = Step::Callback_Finish;
 		});
 	}
 
@@ -117,6 +123,32 @@ private:
 			return;
 		}
 	}
+
+	static inline std::string EncodeUrl(const std::string& in) {		
+		static std::vector<std::pair<const char, const char*>> escapeMap = {
+			{'%',"%25"}, // must be replaced first
+			{'+',"%2B"},
+			{' ',"%20"},
+			{'/',"%2F"},
+			{'?',"%3F"},
+			{'#',"%23"},
+			{'&',"%26"},
+			{'=',"%3D"}
+		};
+
+		auto ret = in;
+
+		for (const auto& [chr, rep] : escapeMap) {
+			auto pos = ret.find(chr);
+			while (pos != std::string::npos) {
+				ret = ret.replace(pos, 1, rep);
+				pos = ret.find(chr);
+			}
+		}
+
+		return ret;
+	}
+
 public:
 	SteamMicroTxn()
 		:SteamCallbackClass() {		
@@ -134,6 +166,8 @@ private:
 public:
 	inline void SetMicroTxnInfo(const std::string& name,
 		const std::string& key, uint64 orderid, CSteamID id = SteamUser()->GetSteamID()) {
+		step = Step::Finalize_Finish;
+
 		ResetCallbackResult();
 
 		this->name = name;
@@ -148,9 +182,11 @@ public:
 	}
 
 	inline void GetUserInfo() {
-		if(step != Step::Finalize) {
+		if(step != Step::Finalize_Finish) {
 			return;
 		}
+
+		step = Step::GetUsetInfo_Pending;
 
 		const auto param = std::format("?key={}&appid={}&steamid={}", webAPIKey, appID, purchaseID.ConvertToUint64());
 		const auto url = std::format("{}{}/GetUserInfo/v2/{}", baseUrl, intf, param);
@@ -169,17 +205,20 @@ public:
 					currency = JsonInterface::GetData(params, "currency");
 				});
 
-				step = Step::GetUsetInfo;
+				step = Step::GetUsetInfo_Finish;
 			});
 	}
 
-	inline void SendRequest(uint32 itemcount, uint32 itemid, int16 qty, int64 amount, std::string description,
+	inline void SendRequest(uint32 itemcount, uint32 itemid, int16 qty, int64 amount,
+		const std::string& description,
 		const std::string& otherParams = std::string()) {
-		if (step != Step::GetUsetInfo) {
+		if (step != Step::GetUsetInfo_Finish) {
 			return;
 		}
 
-		const auto param = std::format("?key={}&orderid={}&steamid={}&appid={}&itemcount={}&language={}&currency={}&itemid[0]={}&qty[0]={}&amount[0]={}&description[0]={}", webAPIKey, orderID, purchaseID.ConvertToUint64(), appID, itemcount, SteamApps()->GetCurrentGameLanguage(), currency, itemid, qty, amount, description);
+		step = Step::SendRequest_Pending;
+
+		const auto param = std::format("?key={}&orderid={}&steamid={}&appid={}&itemcount={}&language={}&currency={}&itemid[0]={}&qty[0]={}&amount[0]={}&description[0]={}", webAPIKey, orderID, purchaseID.ConvertToUint64(), appID, itemcount, SteamApps()->GetCurrentGameLanguage(), currency, itemid, qty, amount, EncodeUrl(description));
 		auto url = std::format("{}{}/InitTxn/v3/{}", baseUrl, intf, param);
 		if(!otherParams.empty()) {
 			url += "&" + otherParams;
@@ -198,14 +237,16 @@ public:
 					transid = JsonInterface::GetData(params, "transid");
 				});
 
-				step = Step::SendRequest;
+				step = Step::SendRequest_Finish;
 			});
 	}
 
 	inline void Finalize() {
-		if (step != Step::Callback) {
+		if (step != Step::Callback_Finish) {
 			return;
 		}
+
+		step = Step::Finalize_Pending;
 
 		const auto param = std::format("?key={}&appid={}&orderid={}", webAPIKey, appID, orderID);
 		const auto url = std::format("{}{}/FinalizeTxn/v2/{}", baseUrl, intf, param);
@@ -223,7 +264,7 @@ public:
 					transid = JsonInterface::GetData(params, "transid");
 				});
 
-				step = Step::SendRequest;
+				step = Step::Finalize_Finish;
 			});
 	}
 };

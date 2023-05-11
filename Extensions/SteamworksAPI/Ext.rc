@@ -273,7 +273,7 @@ BEGIN
 
     M_ACTION_MT_SI	         "Micro Transaction: Set Info to %0, %1, %2, %3"
     M_ACTION_MT_GUI	         "Micro Transaction: Get User Info"
-    M_ACTION_MT_SR	         "Micro Transaction: Send Request %0, %1, %2, %3, %4, %5, %6"
+    M_ACTION_MT_SR	         "Micro Transaction: Send Request %0, %1, %2, %3, %4, %5"
     M_ACTION_MT_F 	         "Micro Transaction: Finalize"
 
     M_MT_KEY		         "Web API Key"	

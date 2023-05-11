@@ -69,7 +69,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 #endif
-
+	
 	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
@@ -106,6 +106,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	// terminate all pending callbacks that will trigger events
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetMicroTxn()->ResetCallbackResult();
+	});
 
 	delete rdPtr->pRet;
 	rdPtr->pRet = nullptr;

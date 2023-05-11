@@ -104,7 +104,9 @@ long WINAPI DLLExport Condition_OnMixroTxnError(LPRDATA rdPtr, long param1, long
 	if (!rdPtr->pData->SteamUtilitiesValid()) {
 		return false;
 	}
-	
+
+	//MSGBOX(std::format(L"Error Step {}", (int)rdPtr->pData->pSteamUtil->GetMicroTxn()->step));
+
 	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
 		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
 }
@@ -116,6 +118,8 @@ long WINAPI DLLExport Condition_OnMixroTxnFinish(LPRDATA rdPtr, long param1, lon
 	if (!rdPtr->pData->SteamUtilitiesValid()) {
 		return false;
 	}
+
+	//MSGBOX(std::format(L"Finish Step {}", (int)rdPtr->pData->pSteamUtil->GetMicroTxn()->step));
 
 	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
 		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
