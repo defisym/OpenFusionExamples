@@ -37,12 +37,32 @@ struct GlobalData {
 	}
 
 	//rdPtr->pData->GetSteamUtilities([] (SteamUtilities* pSteamUtil) {});
-	inline void GetSteamUtilities(const std::function<void(SteamUtilities* pSteamUtil)>& callback) const {
-		if (!SteamUtilitiesValid()) {
+	inline void GetSteamUtilities(const std::function<void(SteamUtilities* pSteamUtil)>& callback,
+		const std::function<bool(SteamUtilities* pSteamUtil)>& extraCond = nullptr) const {
+		const bool bExtra = extraCond != nullptr
+			? extraCond(pSteamUtil)
+			: true;
+
+		if (!SteamUtilitiesValid() || !bExtra) {
 			return;
 		}
 
 		callback(pSteamUtil);
+	}
+
+	template<typename T>
+	inline T GetSteamUtilities(const T defaultValue,
+		const std::function<T(SteamUtilities* pSteamUtil)>& callback,
+		const std::function<bool(SteamUtilities* pSteamUtil)>& extraCond = nullptr) const {
+		const bool bExtra = extraCond != nullptr
+			? extraCond(pSteamUtil)
+			: true;
+
+		if (!SteamUtilitiesValid() || !bExtra) {
+			return defaultValue;
+		}
+
+		return callback(pSteamUtil);
 	}
 
 	inline void UpdateRdPtr(LPRDATA rdPtr) {

@@ -41,13 +41,26 @@ private:
 	}
 
 public:
-	SteamHttp(EHTTPMethod eHTTPRequestMethod, const char* pchAbsoluteURL,
+	// Get
+	SteamHttp(const char* pchFullURL,
 		const ErrorCallback& errorCallback,
 		const FinishCallback& finishCallback)
 		:SteamCallbackClass() {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
-		hRequest = SteamHTTP()->CreateHTTPRequest(eHTTPRequestMethod, pchAbsoluteURL);
+		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodGET, pchFullURL);
+		SteamHttp::CallCallback();
+	}
+	// Post
+	SteamHttp(const char* pchAbsoluteURL,
+		const char* pchContentType, const char* pubBody, const uint32 unBodyLen,
+		const ErrorCallback& errorCallback,
+		const FinishCallback& finishCallback)
+		:SteamCallbackClass() {
+		this->finishCallback = finishCallback;
+		this->errorCallback = errorCallback;
+		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodPOST, pchAbsoluteURL);
+		SteamHTTP()->SetHTTPRequestRawPostBody(hRequest, pchContentType, (uint8*)pubBody, unBodyLen);
 		SteamHttp::CallCallback();
 	}
 	~SteamHttp() override {

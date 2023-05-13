@@ -237,20 +237,23 @@ short WINAPI DLLExport Action_MixroTxn_Finalize(LPRDATA rdPtr, long param1, long
 // ============================================================================
 
 long WINAPI DLLExport Expression_GetCurrentGameLanguage(LPRDATA rdPtr,long param1) {
-	const auto pLanguage = SteamApps()->GetCurrentGameLanguage();
-
-#ifdef _DEBUG
-	auto pAvailableLanguage = SteamApps()->GetAvailableGameLanguages();
-	auto pUILanguage = SteamUtils()->GetSteamUILanguage();
-#endif // _DEBUG
-
-	*rdPtr->pRet = ConvertStrToWStr(pLanguage);
-
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)rdPtr->pRet->c_str();
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+		const auto pLanguage = SteamApps()->GetCurrentGameLanguage();
+
+#ifdef _DEBUG
+		auto pAvailableLanguage = SteamApps()->GetAvailableGameLanguages();
+		auto pUILanguage = SteamUtils()->GetSteamUILanguage();
+#endif // _DEBUG
+
+		*rdPtr->pRet = ConvertStrToWStr(pLanguage);
+
+		return (long)rdPtr->pRet->c_str();
+	});
 }
 
 long WINAPI DLLExport Expression_GetSteamCommandLine(LPRDATA rdPtr, long param1) {
@@ -258,9 +261,11 @@ long WINAPI DLLExport Expression_GetSteamCommandLine(LPRDATA rdPtr, long param1)
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return rdPtr->pData->SteamUtilitiesValid()
-		? (long)rdPtr->pData->pSteamUtil->GetSteamCommandLine<LPWSTR>().c_str()
-		: (long)Empty_Str;
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+		*rdPtr->pRet = pSteamUtil->GetSteamCommandLine<LPWSTR>();
+		return (long)rdPtr->pRet->c_str();
+	});
 }
 
 long WINAPI DLLExport Expression_MixroTxn_GetStep(LPRDATA rdPtr, long param1) {
@@ -280,9 +285,14 @@ long WINAPI DLLExport Expression_MixroTxn_GetErrorDesc(LPRDATA rdPtr, long param
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return rdPtr->pData->SteamUtilitiesValid()&& !rdPtr->pData->pSteamUtil->GetMicroTxn()->errordesc.empty()
-		? (long)ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->errordesc).c_str()
-		: (long)Empty_Str;
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+	[&] (SteamUtilities* pSteamUtil) {
+		*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetMicroTxn()->errordesc);
+		return (long)rdPtr->pRet->c_str();
+	},
+	[&] (SteamUtilities* pSteamUtil) {
+		return !pSteamUtil->GetMicroTxn()->errordesc.empty();
+	});
 }
 
 long WINAPI DLLExport Expression_MixroTxn_GetTransID(LPRDATA rdPtr, long param1) {
@@ -290,9 +300,14 @@ long WINAPI DLLExport Expression_MixroTxn_GetTransID(LPRDATA rdPtr, long param1)
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return rdPtr->pData->SteamUtilitiesValid() && !rdPtr->pData->pSteamUtil->GetMicroTxn()->transid.empty()
-		? (long)ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->transid).c_str()
-		: (long)Empty_Str;
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+			*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetMicroTxn()->transid);
+			return (long)rdPtr->pRet->c_str();
+	},
+		[&] (SteamUtilities* pSteamUtil) {
+			return !pSteamUtil->GetMicroTxn()->transid.empty();
+	});
 }
 
 

@@ -6,6 +6,7 @@
 
 #include "JsonInterface.h"
 #include "SteamHttp.h"
+#include "SteamWebAPI.h"
 
 //------------
 // Class
@@ -57,7 +58,8 @@ private:
 
 public:
 	std::string transid;
-	std::string errorcode;
+
+	unsigned long long errorcode = 0;
 	std::string errordesc;
 
 	inline void ResetCallbackResult() {
@@ -191,7 +193,7 @@ public:
 		const auto param = std::format("?key={}&appid={}&steamid={}", webAPIKey, appID, purchaseID.ConvertToUint64());
 		const auto url = std::format("{}{}/GetUserInfo/v2/{}", baseUrl, intf, param);
 
-		pGetUserInfo = new SteamHttp(k_EHTTPMethodGET, url.c_str(),
+		pGetUserInfo = new SteamHttp(url.c_str(),
 			[&](EHTTPStatusCode code) {
 				if (errorCallback != nullptr) {
 					this->code = code;
@@ -218,13 +220,21 @@ public:
 
 		step = Step::SendRequest_Pending;
 
-		const auto param = std::format("?key={}&orderid={}&steamid={}&appid={}&itemcount={}&language={}&currency={}&itemid[0]={}&qty[0]={}&amount[0]={}&description[0]={}", webAPIKey, orderID, purchaseID.ConvertToUint64(), appID, itemcount, SteamApps()->GetCurrentGameLanguage(), currency, itemid, qty, amount, EncodeUrl(description));
-		auto url = std::format("{}{}/InitTxn/v3/{}", baseUrl, intf, param);
-		if(!otherParams.empty()) {
-			url += "&" + otherParams;
+		auto param = std::format(
+			"key={}&orderid={}&steamid={}&appid={}&itemcount={}&language={}&currency={}&itemid[0]={}&qty[0]={}&amount[0]={}&description[0]={}",
+			webAPIKey, orderID, purchaseID.ConvertToUint64(), appID, itemcount,
+			SteamWebAPI::GetWebAPILanguage(SteamApps()->GetCurrentGameLanguage()),
+			currency, itemid, qty, amount, EncodeUrl(description));
+		if (!otherParams.empty()) {
+			param += "&" + otherParams;
 		}
 
-		pInitTxn = new SteamHttp(k_EHTTPMethodPOST, url.c_str(),
+		const auto url = std::format("{}{}/InitTxn/v3", baseUrl, intf);
+	
+		pInitTxn = new SteamHttp(url.c_str(),
+			"application/x-www-form-urlencoded",
+			param.c_str(),
+			param.length(),
 			[&] (EHTTPStatusCode code) {
 				if (errorCallback != nullptr) {
 					this->code = code;
@@ -251,7 +261,7 @@ public:
 		const auto param = std::format("?key={}&appid={}&orderid={}", webAPIKey, appID, orderID);
 		const auto url = std::format("{}{}/FinalizeTxn/v2/{}", baseUrl, intf, param);
 
-		pInitTxn = new SteamHttp(k_EHTTPMethodPOST, url.c_str(),
+		pFinalizeTxn = new SteamHttp(url.c_str(),
 			[&] (EHTTPStatusCode code) {
 				if (errorCallback != nullptr) {
 					this->code = code;

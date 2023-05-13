@@ -309,6 +309,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="SteamRemote.h" />
     <ClInclude Include="SteamRichPresence.h" />
     <ClInclude Include="SteamUtilities.h" />
+    <ClInclude Include="SteamWebAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP" />

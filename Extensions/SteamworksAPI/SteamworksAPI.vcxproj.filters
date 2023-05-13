@@ -187,6 +187,9 @@
     <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SteamWebAPI.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP">
