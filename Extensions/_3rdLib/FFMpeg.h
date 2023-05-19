@@ -2163,7 +2163,7 @@ public:
 
 		setter(stream, 0, len);
 
-		if (!bExit && !bPause) {
+		if (!bNoAudio && !bExit && !bPause) {
 			//每次写入stream的数据长度
 			int wt_stream_len = 0;
 			//每解码后的数据长度
