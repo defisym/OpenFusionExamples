@@ -71,9 +71,11 @@ constexpr auto TARGET_CHANNEL_NUMBER = 2;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 constexpr auto TARGET_SAMPLE_RATE = 44100;
 
-#define _AUDIO_TEMPO
+#define AUDIO_TEMPO
 
+#ifdef AUDIO_TEMPO
 constexpr auto DEFAULT_ATEMPO = 1.0f;
+#endif
 
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
@@ -107,9 +109,9 @@ constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
 //constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
 
-#define _VIDEO_ALPHA
+#define VIDEO_ALPHA
 
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 // Has alpha
 constexpr auto PIXEL_FORMAT = AV_PIX_FMT_BGRA;
 constexpr auto PIXEL_BYTE = 4;
@@ -119,9 +121,9 @@ constexpr auto PIXEL_FORMAT = AV_PIX_FMT_BGR24;
 constexpr auto PIXEL_BYTE = 3;
 #endif
 
-#define _HW_DECODE
+#define HW_DECODE
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
@@ -129,8 +131,62 @@ constexpr auto FFMpegFlag_Default = 0;
 
 constexpr auto FFMpegFlag_HWDeviceMask = 0xFFFF;
 
-constexpr auto FFMpegFlag_Fast = (0b0000000000000001) << 16;
-constexpr auto FFMpegFlag_ForceNoAudio = (0b0000000000000010) << 16;
+constexpr auto FFMpegFlag_MakeFlag(const auto flag) {
+	return flag << 16;
+}
+
+constexpr auto FFMpegFlag_Fast = FFMpegFlag_MakeFlag(0b0000000000000001);
+constexpr auto FFMpegFlag_ForceNoAudio = FFMpegFlag_MakeFlag(0b0000000000000010);
+
+class FFMpeg;
+
+class FFMpegOptions {
+private:
+	friend class FFMpeg;
+
+	const AVCodec* pVideoCodec = nullptr;
+	const AVCodec* pAudioCodec = nullptr;
+	
+	static inline bool CodecValid(const char* pCodecName, AVMediaType type, const AVCodec*& pCodec) {
+		const auto pOverriderCodec = avcodec_find_decoder_by_name(pCodecName);
+
+		if (pOverriderCodec == nullptr) {
+			return false;
+		}
+
+		const auto bValid = av_codec_is_decoder(pOverriderCodec) != 0
+			&& pOverriderCodec->type == type;
+
+		if(bValid) {
+			pCodec = pOverriderCodec;
+		}
+
+		return bValid;
+	}
+
+	inline bool VideoCodecValid() {
+		return CodecValid(videoCodecName.c_str(), AVMEDIA_TYPE_VIDEO, pVideoCodec);
+	}
+
+	inline bool AudioCodecValid() {	
+		return CodecValid(audioCodecName.c_str(), AVMEDIA_TYPE_AUDIO, pAudioCodec);
+	}
+public:
+	DWORD flag = FFMpegFlag_Default;
+	std::string videoCodecName;
+	std::string audioCodecName;
+
+	FFMpegOptions() = default;
+
+	inline void ResetOverride() {
+		videoCodecName.clear();
+		audioCodecName.clear();
+	}
+
+	inline bool NoOverride() const {
+		return videoCodecName.empty() && audioCodecName.empty();
+	}
+};
 
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
@@ -192,7 +248,8 @@ private:
 #pragma endregion
 
 #pragma region FFMpeg
-	DWORD flag = FFMpegFlag_Default;
+	FFMpegOptions options;
+	//DWORD flag = FFMpegFlag_Default;
 
 	bool bFromMem = false;
 	bool bNoAudio = false;
@@ -207,7 +264,7 @@ private:
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = nullptr;
 
-#ifdef  _HW_DECODE
+#ifdef  HW_DECODE
 	// fall back to CPU decode
 	bool bHWFallback = false;
 
@@ -215,9 +272,9 @@ private:
 	//AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_DXVA2;
 	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
-#endif //  _HW_DECODE
+#endif //  HW_DECODE
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 	AVFilterGraph* filter_graph = nullptr;
 	const char* filters_descr = "";
 
@@ -225,7 +282,7 @@ private:
 	AVFilterContext* buffersink_ctx = nullptr;
 
 	AVFrame* pAFilterFrame = nullptr;
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
 	//float atempo = DEFAULT_ATEMPO;
 	float atempo = -1;
@@ -245,11 +302,11 @@ private:
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 	bool bHWDecode = false;
 
 	AVFrame* pSWFrame = nullptr;
-#endif // _HW_DECODE
+#endif // HW_DECODE
 
 	//AVFrame vFrame = { 0 };
 	//AVFrame aFrame = { 0 };
@@ -324,7 +381,7 @@ private:
 
 #pragma endregion
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 	static inline std::vector<AVHWDeviceType> HW_GetDeviceType() {
 		auto type = AV_HWDEVICE_TYPE_NONE;
 
@@ -419,7 +476,7 @@ private:
 		bUpdateSwr = false;
 	}
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 	inline int init_audioFilters(const AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
 		, AVFilterGraph* filter_graph, const char* filters_descr) {		
 		if (this->bNoAudio) {
@@ -564,8 +621,9 @@ private:
 
 		return ret;
 	}
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
+	// TODO merge into init_formatContext
 	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName) {		
 		AVProbeData probeData = { 0 };
 		probeData.buf = pBuffer;
@@ -685,10 +743,14 @@ private:
 		}
 
 		pVideoStream = pFormatContext->streams[video_stream_index];
-		pVCodecParameters = pFormatContext->streams[video_stream_index]->codecpar;
+		pVCodecParameters = pVideoStream->codecpar;
+		
+		if(options.VideoCodecValid()) {
+			pVCodec = options.pVideoCodec;
+		}
 
-#ifdef _HW_DECODE
-		const auto hw_deviceType = (AVHWDeviceType)(flag & FFMpegFlag_HWDeviceMask);
+#ifdef HW_DECODE
+		const auto hw_deviceType = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
 
 		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
 
@@ -729,13 +791,13 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		pVCodecContext->thread_count = std::thread::hardware_concurrency();
-
-		if (flag & FFMpegFlag_Fast) {
+		pVCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
+		
+		if (options.flag & FFMpegFlag_Fast) {
 			pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 		}
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 		if (bHWDecode) {
 			//pVCodecContext->extra_hw_frames = 4;
 			pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
@@ -770,8 +832,8 @@ private:
 		//---------------------
 		// Audio
 		//---------------------
-
-		if (flag & FFMpegFlag_ForceNoAudio) {
+		
+		if (options.flag & FFMpegFlag_ForceNoAudio) {
 			bForceNoAudio = true;
 		}
 
@@ -786,8 +848,12 @@ private:
 		}
 
 		if (!bNoAudio) {
-			pAudioStream = pFormatContext->streams [audio_stream_index];
-			pACodecParameters = pFormatContext->streams [audio_stream_index]->codecpar;
+			pAudioStream = pFormatContext->streams[audio_stream_index];
+			pACodecParameters = pAudioStream->codecpar;
+
+			if (options.AudioCodecValid()) {
+				pACodec = options.pAudioCodec;
+			}
 
 			pACodecContext = avcodec_alloc_context3(pACodec);
 			if (!pACodecContext) {
@@ -814,21 +880,21 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 		pAFilterFrame = av_frame_alloc();
 		if (!pAFilterFrame) {
 			throw FFMpegException_InitFailed;
 		}
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 		if (bHWDecode) {
 			pSWFrame = av_frame_alloc();
 			if (!pSWFrame) {
 				throw FFMpegException_InitFailed;
 			}
 		}
-#endif // _HW_DECODE
+#endif // HW_DECODE
 
 		pPacket = av_packet_alloc();
 		if (!pPacket) {
@@ -1261,11 +1327,11 @@ private:
 		else if (response < 0) {
 			av_frame_unref(pFrame);
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 			if (bHWDecode) {
 				av_frame_unref(pSWFrame);
 			}
-#endif // _HW_DECODE
+#endif // HW_DECODE
 
 			return response;
 		}
@@ -1310,7 +1376,7 @@ private:
 				|| (bSeeking && (videoClock >= seekingTargetPts))) {
 				auto pFrameToConvert = pFrame;
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 				if (bHWDecode) {
 					if (pFrame->format == hw_pix_fmt) {
 						/* retrieve data from GPU to CPU */
@@ -1346,7 +1412,7 @@ private:
 			return response;
 		}
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
 		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, 0);
 		if (response < 0) {
@@ -1364,7 +1430,7 @@ private:
 				av_frame_unref(pFrame);
 				av_frame_unref(pAFilterFrame);
 			}
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
 			if (pAPacket != nullptr) {
 				if (pAPacket->pts != AV_NOPTS_VALUE) {
@@ -1377,11 +1443,11 @@ private:
 				}
 			}
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 			auto pBaseFrame = pAFilterFrame;
 #else
 			auto pBaseFrame = pFrame;
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
 			// update context to avoid crash
 			if (bUpdateSwr) {
@@ -1409,13 +1475,13 @@ private:
 
 			return audioSize;
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 		}
 
 		av_frame_unref(pAFrame);
 
 		return -1;
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 	}
 
 	//synchronize
@@ -1564,11 +1630,13 @@ private:
 
 		return response;
 	}
+
 public:
 	//Load from file
-	FFMpeg(const std::wstring& filePath, const DWORD flag = FFMpegFlag_Default) {
+	//FFMpeg(const std::wstring& filePath, const DWORD flag = FFMpegFlag_Default) {
+	FFMpeg(const std::wstring& filePath, const FFMpegOptions& opt = FFMpegOptions()) {
 		bFromMem = false;
-		this->flag = flag;
+		this->options = opt;
 
 		init_formatContext(&pFormatContext, filePath);
 		init_formatContext(&pSeekFormatContext, filePath);
@@ -1578,9 +1646,10 @@ public:
 
 	//Load from memory
 	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
-	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const DWORD flag = FFMpegFlag_Default) {
+	//FFMpeg(unsigned char* pBuffer, const size_t bfSz, const DWORD flag = FFMpegFlag_Default) {
+	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const FFMpegOptions& opt = FFMpegOptions()) {
 		bFromMem = true;
-		this->flag = flag;
+		this->options = opt;
 
 		init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz);
 		init_formatContext(&pSeekFormatContext, &pSeekAvioContext, &pSeekMemBuf, pBuffer, bfSz);
@@ -1617,19 +1686,19 @@ public:
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 		av_frame_free(&pAFilterFrame);
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_free(&pSWFrame);
 		}
-#endif // _HW_DECODE		
+#endif // HW_DECODE		
 
-#ifdef _AUDIO_TEMPO
+#ifdef AUDIO_TEMPO
 		avfilter_graph_free(&filter_graph);
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
@@ -1642,11 +1711,11 @@ public:
 		avformat_close_input(&pFormatContext);
 		avformat_close_input(&pSeekFormatContext);
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 		if (bHWDecode) {
 			av_buffer_unref(&hw_device_ctx);
 		}
-#endif // _HW_DECODE		
+#endif // HW_DECODE		
 
 		if (bFromMem) {
 			delete pMemBuf;
@@ -1901,7 +1970,7 @@ public:
 	}
 
 	inline void set_audioTempo(float atempo) {
-#ifndef _AUDIO_TEMPO
+#ifndef AUDIO_TEMPO
 		this->atempo = DEFAULT_ATEMPO;
 #else
 		const auto newTempo = atempo > 0
@@ -1944,7 +2013,7 @@ public:
 		}
 
 		init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
-#endif //  _AUDIO_TEMPO
+#endif //  AUDIO_TEMPO
 	}
 
 	//Play core
@@ -1981,7 +2050,7 @@ public:
 			return -1;
 		}
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 		AVFrame* pLocalSWFrame = nullptr;
 		AVFrame* pOldSWFrame = nullptr;
 
@@ -1994,7 +2063,7 @@ public:
 			auto pOldSWFrame = pSWFrame;
 			pSWFrame = pLocalSWFrame;
 		}
-#endif // _HW_DECODE
+#endif // HW_DECODE
 
 		response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
@@ -2048,12 +2117,12 @@ public:
 		videoClock = oldClock;
 		videoPts = oldPts;
 
-#ifdef _HW_DECODE
+#ifdef HW_DECODE
 		if (bHWDecode) {
 			pSWFrame = pOldSWFrame;
 			av_frame_free(&pLocalSWFrame);
 		}
-#endif // _HW_DECODE
+#endif // HW_DECODE
 
 		av_frame_free(&pFrame);
 		av_packet_free(&pPacket);

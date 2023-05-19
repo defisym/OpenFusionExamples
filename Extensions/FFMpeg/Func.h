@@ -36,7 +36,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
 
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 		pSf = CreateSurface(32, width, height);
 #else
 		pSf = CreateSurface(24, width, height);
@@ -83,7 +83,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 #ifndef _MANUAL_PM
 			memcpy(pMemData, pVideo, lineSz);
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 			// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
 #ifdef _OPENMP
 //#pragma omp for
@@ -112,7 +112,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 					pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
 				}
 
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
 				pAlphaData[0] = pVideoData[3];
 #endif
@@ -181,7 +181,7 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) 
 	// add protection for minus position
 	msRaw = msRaw < 0 ? 0 : msRaw;
 
-	size_t ms = (size_t)msRaw;
+	const auto ms = static_cast<size_t>(msRaw);
 
 	//auto pos = rdPtr->pFFMpeg->get_videoPosition();
 
@@ -272,20 +272,27 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	*rdPtr->pFilePath = L"";
 }
 
-inline int GetFlag(LPRDATA rdPtr) {
-	return rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
+inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
+	FFMpegOptions opt;
+
+	opt.flag = rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
+	opt.videoCodecName = *rdPtr->pOverrideVideoCodecName;
+	opt.audioCodecName = *rdPtr->pOverrideAudioCodecName;
+
+	return opt;
 }
 
-inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, DWORD flag = FFMpegFlag_Default, size_t ms = 0) {
+inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key,
+	const FFMpegOptions& opt = FFMpegOptions(), size_t ms = 0) {
 	CloseGeneral(rdPtr);
 
 	try {
 		if (StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath, flag);
+			rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
 		}
 		else {
 			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), flag);
+			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
 		}
 
 		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
@@ -312,12 +319,20 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 	catch (...) {
 		CloseGeneral(rdPtr);
 
-		// update path for condition to check
-		*rdPtr->pFilePath = filePath;
+		if (!opt.NoOverride()) {
+			auto newOpt = opt;
+			newOpt.ResetOverride();
 
-		CallEvent(ON_OPENFAILED);
+			OpenGeneral(rdPtr, filePath, key, newOpt, ms);
+		}
+		else {
+			// update path for condition to check
+			*rdPtr->pFilePath = filePath;
 
-		*rdPtr->pFilePath = L"";
+			CallEvent(ON_OPENFAILED);
+
+			*rdPtr->pFilePath = L"";
+		}
 	}
 }
 

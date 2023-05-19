@@ -102,6 +102,8 @@
 
 #define IDMN_ACTION_SFNA     		25016
 
+#define IDMN_ACTION_SOC     		25017
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -130,6 +132,8 @@
 
 #define M_ACTION_SFNA     		    5016
 
+#define M_ACTION_SOC     		    5017
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -146,6 +150,8 @@
 #define M_HEIGHT		         5513
 #define M_ATEMPO		         5514
 #define M_FORCENOAUDIO	         5515
+#define M_VCODEC				 5516
+#define M_ACODEC				 5517
 
 
 //	Conditions

@@ -116,8 +116,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bCache = edPtr->bCache;
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
-
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
+
+	rdPtr->pOverrideVideoCodecName = new std::string;
+	rdPtr->pOverrideAudioCodecName = new std::string;
 
 	rdPtr->atempo = DEFAULT_ATEMPO;
 
@@ -130,6 +132,32 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	}	
 
 	rdPtr->pData->Create(&rdPtr->pFFMpeg, rdPtr->bForceNoAudio);
+
+//#define LIST_DECODERS
+
+#ifdef LIST_DECODERS
+	auto ListDecoders = [] (AVMediaType type) {
+		void* iter = nullptr;
+		const AVCodec* codec = nullptr;
+
+		while (codec = av_codec_iterate(&iter)) {
+			if (av_codec_is_decoder(codec)) {
+				if (codec->type == type) {
+					OutputDebugStringA(codec->name);
+					OutputDebugStringA("\n");
+				}
+			}
+		}
+	};
+
+	OutputDebugStringA("Video\n\n");
+	ListDecoders(AVMEDIA_TYPE_VIDEO);
+	OutputDebugStringA("\n\n");
+
+	OutputDebugStringA("Audio\n\n");
+	ListDecoders(AVMEDIA_TYPE_AUDIO);
+	OutputDebugStringA("\n\n");
+#endif
 
 	// No errors
 	return 0;
@@ -162,6 +190,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	CloseGeneral(rdPtr);
 
 	delete rdPtr->pFilePath;
+
+	delete rdPtr->pOverrideVideoCodecName;
+	delete rdPtr->pOverrideAudioCodecName;
 
 	delete rdPtr->pRetStr;	
 

@@ -159,6 +159,7 @@ BEGIN
         MENUITEM "Set Size", IDMN_ACTION_STRETCH
         MENUITEM SEPARATOR
         MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
+        MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
         MENUITEM SEPARATOR
         MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
@@ -354,6 +355,8 @@ BEGIN
     
     M_ACTION_SFNA		       "Set Force No Audio to %0"
 
+    M_ACTION_SOC		       "Set Override Codec, Video = %0, Audio = %1"
+
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
     M_VOLUME	               "Volume, 0 = Min, 100 = Max"
@@ -369,9 +372,11 @@ BEGIN
     M_HEIGHT                   "Height"
     M_ATEMPO                   "Audio Tempo"
     M_FORCENOAUDIO             "Force No Audio, 0 = Disable"
+    M_VCODEC                   "Video Codec"
+    M_ACODEC                   "Audio Codec"
 END
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_VO	           "%o Video Open"
     M_CONDITION_VP	           "%o Video Play"

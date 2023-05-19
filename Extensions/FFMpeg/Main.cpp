@@ -66,6 +66,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SAT, M_ACTION_SAT, ACT_ACTION_SAT, 0, 1, PARAM_EXPRESSION, M_ATEMPO,
 
 		IDMN_ACTION_SFNA, M_ACTION_SFNA, ACT_ACTION_SFNA, 0, 1, PARAM_EXPRESSION, M_FORCENOAUDIO,
+
+		IDMN_ACTION_SOC, M_ACTION_SOC, ACT_ACTION_SOC, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_VCODEC, M_ACODEC,
+
 		};
 
 // Definitions of parameters for each expression
@@ -146,7 +149,7 @@ short WINAPI DLLExport Action_OpenVideo(LPRDATA rdPtr, long param1, long param2)
 	std::wstring filePath = GetFullPathNameStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	OpenGeneral(rdPtr, filePath, key, GetFlag(rdPtr));
+	OpenGeneral(rdPtr, filePath, key, GetOptions(rdPtr));
 
 	return 0;
 }
@@ -156,7 +159,7 @@ short WINAPI DLLExport Action_OpenVideoTo(LPRDATA rdPtr, long param1, long param
 	std::wstring key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	size_t msRaw = (size_t)CNC_GetIntParameter(rdPtr);
 
-	OpenGeneral(rdPtr, filePath, key, GetFlag(rdPtr), msRaw);
+	OpenGeneral(rdPtr, filePath, key, GetOptions(rdPtr), msRaw);
 
 	return 0;
 }
@@ -335,6 +338,15 @@ short WINAPI DLLExport Action_SetForceNoAudio(LPRDATA rdPtr, long param1, long p
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetOverrideCodec(LPRDATA rdPtr, long param1, long param2) {
+	const std::wstring videoCodec = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring audioCodec = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	*rdPtr->pOverrideVideoCodecName = ConvertWStrToStr(videoCodec);
+	*rdPtr->pOverrideAudioCodecName = ConvertWStrToStr(audioCodec);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -482,6 +494,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetAudioTempo,
 
 			Action_SetForceNoAudio,
+
+			Action_SetOverrideCodec,
 
 			0
 			};
