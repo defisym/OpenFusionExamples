@@ -913,14 +913,20 @@ public:
 		return false;
 	}
 
+	inline static auto GetRGB(DWORD dwRGB) {
+		auto R = static_cast<UCHAR>((dwRGB & 0xFF0000) >> 16);
+		auto G = static_cast<UCHAR>((dwRGB & 0xFF00) >> 8);
+		auto B = static_cast<UCHAR>(dwRGB & 0xFF);
+
+		return std::make_tuple(R, G, B);
+	}
+
 	inline static DWORD RGBToBGR(DWORD dwRGB) {
 		return BGRToRGB(dwRGB);
 	}
 
 	inline static DWORD BGRToRGB(DWORD dwBGR) {
-		UCHAR R = UCHAR(dwBGR & 0xFF);
-		UCHAR G = UCHAR((dwBGR & 0xFF00) >> 8);
-		UCHAR B = UCHAR((dwBGR & 0xFF0000) >> 16);		
+		const auto& [B, G, R] = GetRGB(dwBGR);
 
 		return GetRGBCoef(R, G, B);
 	}
