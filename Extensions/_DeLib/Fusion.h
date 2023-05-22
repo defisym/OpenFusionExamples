@@ -1281,6 +1281,8 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	return;
 }
 
+// use macro to speed up compiling
+#ifdef PERSPECTIVE_TRANSFORMATION
 #pragma warning(disable : 4819)
 
 #include "Eigen/Dense"
@@ -1377,26 +1379,7 @@ inline auto PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[
 
 	return pBitmap;
 }
-
-//Affine transformation
-[[deprecated(L"not implemented")]]
-#ifdef _NO_REF
-inline void AffineTransformation(const LPSURFACE Src, double a11, double a12, double a21, double a22, int divide) {
-#else
-inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double a21, double a22, int divide) {
-#endif // _NO_REF
-	if (a11 == 1 && a12 == 0 && a21 == 0 && a22 == 1) {
-		return;
-	}
-
-	GetMaximumDivide(&divide);
-
-	auto Interpolation = [=]()->RGBA {
-
-	};
-
-	LPSURFACE Trans = new cSurface;
-}
+#endif
 
 //dec2rgb
 #define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
