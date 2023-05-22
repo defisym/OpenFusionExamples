@@ -113,10 +113,33 @@ struct FrameData : public JsonObject {
 
         DWORD rgbCoef = Animation_DefaultCoef;
 
+        bool operator==(const RGBCoef& data) const {
+            return this->rgbCoef == data.rgbCoef
+                && this->r == data.r
+                && this->g == data.g
+                && this->b == data.b;
+        }
+
         RGBCoef() = default;
 
         explicit RGBCoef(const JsonData& data) {
 	        RGBCoef::Update(data);
+        }
+
+        explicit RGBCoef(DWORD rgbCoef) {
+            const auto& [r, g, b] = EffectUtilities::GetRGB(rgbCoef);
+
+            this->rgbCoef = rgbCoef;
+            this->r = r;
+            this->g = g;
+            this->b = b;
+        }
+
+        explicit RGBCoef(UCHAR r, UCHAR g, UCHAR b) {
+            this->rgbCoef = EffectUtilities::GetRGBCoef(r, g, b);
+            this->r = r;
+            this->g = g;
+            this->b = b;
         }
 
         inline void Update(const JsonData& data) override {
@@ -148,9 +171,7 @@ struct FrameData : public JsonObject {
         }
 
         inline DWORD MulRGBCoef(DWORD dwRGB) const {
-            UCHAR R = static_cast<UCHAR>((dwRGB & 0xFF0000) >> 16);
-            UCHAR G = static_cast<UCHAR>((dwRGB & 0xFF00) >> 8);
-            UCHAR B = static_cast<UCHAR>(dwRGB & 0xFF);
+            const auto&[R,G,B] = EffectUtilities::GetRGB(dwRGB);
 
             auto GetNew = [] (UCHAR o, UCHAR n) {
                 return static_cast<UCHAR>(o * (n / static_cast<double>(Animation_MaxColor)));
@@ -162,13 +183,25 @@ struct FrameData : public JsonObject {
         }
     };
 
-    RGBCoef* pRGBCoef=nullptr;
+    RGBCoef* pRGBCoef = nullptr;
 
     struct Scale : public JsonObject {
         double x = 1.0;
         double y = 1.0;
-        
+
+        bool operator==(const Scale& data) const {
+            constexpr double eps = 1e-6;
+
+            return fabs(this->x - data.x) < eps
+                && fabs(this->y - data.y) < eps;            
+        }
+
         Scale() = default;
+
+        Scale(double x, double y) {
+            this->x = x;
+            this->y = y;
+        }
 
         explicit Scale(const JsonData& data) {
 	        Scale::Update(data);

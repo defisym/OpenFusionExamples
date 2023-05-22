@@ -40,6 +40,8 @@ struct ZoomScale;
 
 struct AnimationInterface;
 
+#define PERSPECTIVE_TRANSFORMATION
+
 // if you need to compatible with windows 7 (which doesn't support DX12)
 // you need to comment both macro below, which will disable VRam check
 
