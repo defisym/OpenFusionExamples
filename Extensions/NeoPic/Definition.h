@@ -1,7 +1,11 @@
 #pragma once
 
+#include <mutex>
+#include <condition_variable>
+
 #include <chrono>
 #include <algorithm>
+#include <ranges>
 
 #include "EffectEx.h"
 #include "Encryption.h"
@@ -222,13 +226,9 @@ struct GlobalData {
 	// Preload
 	//------------
 
-	PreLoadList* pPreloadList = nullptr;
-	SurfaceLib* preloadLib = nullptr;
+	struct PreloadHandler;
 
-	std::atomic<HANDLE> threadID = nullptr;
-	std::atomic<bool> forceExit = false;
-	std::atomic<bool> preloading = false;
-	std::atomic<bool> preloadMerge = false;
+	PreloadHandler* pPreloadHandler = nullptr;
 
 	GlobalData() {
 		//init general
@@ -260,9 +260,7 @@ struct GlobalData {
 		pKeepList = new KeepList;
 		pCleanVec = new RefCountVec;
 		pFileListMap = new FileListMap;
-
-		pPreloadList = new PreLoadList;
-		preloadLib = new SurfaceLib;
+		pPreloadHandler = new PreloadHandler;
 	}
 
 	~GlobalData() {
@@ -282,14 +280,12 @@ struct GlobalData {
 		delete pKeepList;
 		delete pCleanVec;
 
-		for (auto& it : *pFileListMap) {
-			delete it.second;
+		for (const auto& pFileList : *pFileListMap | std::views::values) {
+			delete pFileList;
 		}
 
 		delete pFileListMap;
-
-		delete pPreloadList;
-		delete preloadLib;
+		delete pPreloadHandler;
 	}
 	
 	inline void UpdateLib(const std::wstring& fileName, const std::wstring& hash, const LPSURFACE pSf) const {
@@ -328,16 +324,16 @@ struct GlobalData {
 	}
 
 	inline void DeleteLib() const {
-		for (auto& it : *pLib) {
-			it.second.Release();
+		for (auto& libValue : *pLib | std::views::values) {
+			libValue.Release();
 		}
 
 		delete pLib;
 	}
 
 	inline void UpdateShaderUsage() const {
-		for (auto& it : *pLib) {
-			it.second.UpdateShaderUsage();
+		for (auto& libValue : *pLib | std::views::values) {
+			libValue.UpdateShaderUsage();
 		}
 	}
 
@@ -399,10 +395,10 @@ struct GlobalData {
 #ifdef _USE_DXGI
 		auto totalVRAM = pD3DU->GetLocalBudgetMB();
 
-		return min(totalVRAM, min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT)) <= GetMemoryUsageMB();
+		return (std::min)(totalVRAM, (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT))) <= GetMemoryUsageMB();
 #else
-		return min(memLimit + CLEAR_MEMRANGE, MAX_MEMORYLIMIT) <= GetMemoryUsageMB();
-#endif
+		return (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT)) <= GetMemoryUsageMB();
+#endif		
 	}
 
 	inline FileList* GetFileList(const std::wstring& basePath) const {
@@ -502,7 +498,7 @@ struct GlobalData {
 	}
 
 	inline void CleanCache(bool forceClean = false, size_t memLimit = -1) {
-		if (IsPreloading()) {
+		if (pPreloadHandler->IsPreloading()) {
 			return;
 		}
 
@@ -534,24 +530,128 @@ struct GlobalData {
 	// Preload
 	//------------
 
-	inline bool IsPreloading() {
-		return preloading;
-	}
+	struct PreloadHandler {
+		PreLoadList* pPreloadList = nullptr;
+		SurfaceLib* pPreloadLib = nullptr;
 
-	inline bool AbleToMerge() {
-		return !IsPreloading() && preloadMerge;
-	}
+		LPRDATA rdPtr = nullptr;
+		std::atomic<HANDLE> threadID = nullptr;
 
-	inline void MergeLib(LPRDATA rdPtr);
+		std::atomic<bool> bForceExit = false;
+		std::atomic<bool> bPreloading = false;
+		std::atomic<bool> bPreloadMerge = false;
 
-	inline void PreloadLib(LPRDATA rdPtr, const FileList& PreloadList,
-		const std::wstring& BasePath, const std::wstring& Key,
+		std::mutex mtx;
+		std::condition_variable cv;
+		std::atomic<bool> bPaused = false;
+
+		PreloadHandler() {
+			pPreloadList = new PreLoadList;
+			pPreloadLib = new SurfaceLib;
+		}
+		~PreloadHandler() {
+			StopPreload();
+
+			delete pPreloadList;
+			delete pPreloadLib;
+		}
+		
+		//------------
+		// Control
+		//------------
+
+		inline void UpdateRdPtr(LPRDATA rdPtr) {
+			std::unique_lock<std::mutex> lock(mtx);
+			this->rdPtr = rdPtr;
+		}
+
+		inline void StartPreload(LPRDATA rdPtr, HANDLE handle) {
+			this->rdPtr = rdPtr;
+			this->threadID = handle;
+
+			this->bForceExit = false;
+			this->bPreloading = true;
+			this->bPreloadMerge = false;
+
+			this->bPaused = false;
+
+			this->pPreloadLib->clear();
+		}
+
+		inline void FinishPreload() {
+			this->rdPtr = nullptr;
+			this->threadID = nullptr;
+
+			this->bForceExit = false;
+			this->bPreloading = false;
+			this->bPreloadMerge = true;
+
+			this->bPaused = false;
+		}
+
+		inline void PausePreload() {
+			if (!PreloadValid()) {
+				return;
+			}
+
+			UpdateRdPtr(nullptr);
+
+			while (true) {
+				if (this->bPaused) {
+					break;
+				}
+			}
+		}
+
+		inline void ResumePreload(LPRDATA rdPtr) {
+			if (PreloadValid()) {
+				return;
+			}
+
+			UpdateRdPtr(rdPtr);
+			cv.notify_all();
+		}
+		
+		inline void StopPreload() {
+			if (IsPreloading()) {
+				this->bForceExit = true;
+				ResumePreload(nullptr);
+
+				DWORD ret;
+				while (GetExitCodeThread(this->threadID, &ret)) {
+					if (ret == 0) {
+						break;
+					}
+				}
+			}
+		}
+		
+		//------------
+		// State
+		//------------
+
+		inline bool PreloadValid() const {
+			return IsPreloading() && this->rdPtr != nullptr;
+		}
+
+		inline bool IsPreloading() const {
+			return this->bPreloading;
+		}
+
+		inline bool AbleToMerge() const {
+			return !IsPreloading() && this->bPreloadMerge;
+		}
+	};	
+
+	inline void MergeLib(LPRDATA rdPtr) const;
+
+	inline void PreloadLib(PreloadHandler* pPreloadHandler, const std::wstring& Key,
 		const std::function<void()>& callback);
 
 	inline void StartPreloadProcess(LPRDATA rdPtr, FileList* pList,
 		bool fullPath, const std::wstring& BasePath,
 		const std::wstring& Key) {
-		if(IsPreloading()) {
+		if(pPreloadHandler->IsPreloading()) {
 			return;
 		}
 
@@ -572,8 +672,8 @@ struct GlobalData {
 		}
 
 		// filter exist items
-		pPreloadList->clear();
-		pPreloadList->reserve(pList->size());
+		pPreloadHandler->pPreloadList->clear();
+		pPreloadHandler->pPreloadList->reserve(pList->size());
 
 		for (auto& it : *list) {
 			std::wstring fullPathStr = GetFullPathNameStr(it);
@@ -581,44 +681,23 @@ struct GlobalData {
 			if (std::ranges::find_if(*pLib, [fullPathStr] (auto& p) {
 				return p.first == fullPathStr;
 				}) == pLib->end()) {
-				pPreloadList->emplace_back(fullPathStr);
+				pPreloadHandler->pPreloadList->emplace_back(fullPathStr);
 			}
 		}
 		
 		std::thread pl(&GlobalData::PreloadLib, this,
-			rdPtr, *pPreloadList,
-			BasePath, Key,
+			pPreloadHandler, Key,
 			[&] () {
-			forceExit = false;
-			threadID = nullptr;
-			preloading = false;
-			preloadMerge = true;
+				pPreloadHandler->FinishPreload();
 		});
 
 		HANDLE handle;
 		DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &handle, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
 
-		forceExit = false;
-		threadID = handle;
-		preloading = true;
-		preloadMerge = false;
-
-		preloadLib->clear();
+		pPreloadHandler->StartPreload(rdPtr, handle);
 
 		pl.detach();
 	}
 
-	inline void StopPreloadProcess() {
-		if (IsPreloading()) {
-			forceExit = true;
-
-			DWORD ret;
-			while (GetExitCodeThread(threadID, &ret)) {
-				if (ret == 0) {
-					break;
-				}
-			}
-		}
-	}
 };
 

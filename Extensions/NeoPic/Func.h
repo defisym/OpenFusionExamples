@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <ranges>
 #include <string_view>
 
 // ------------
@@ -841,11 +842,11 @@ inline void GlobalData::GetEstimateMemUsage() {
 	estimateRAMSizeMB = 0;
 	estimateVRAMSizeMB = 0;
 
-	for (auto& item : *pLib) {
-		const LPSURFACE* pSfArrary = &item.second.pSf;
+	for (auto& libValue : *pLib | std::views::values) {
+		const LPSURFACE* pSfArrary = &libValue.pSf;
 
 		for (int i = 0; i < SurfaceLibSfNum; i++) {
-			auto pSf = *(pSfArrary + i);
+			const auto pSf = *(pSfArrary + i);
 
 			if (pSf == nullptr) {
 				continue;
@@ -864,54 +865,62 @@ inline void GlobalData::GetEstimateMemUsage() {
 	}
 }
 
-inline void GlobalData::MergeLib(LPRDATA rdPtr) {
-	if (AbleToMerge()) {
-		for (auto& it : *preloadLib) {
+inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
+	if (pPreloadHandler->AbleToMerge()) {
+		for (auto& it : *pPreloadHandler->pPreloadLib) {
 			auto& [name, key] = it;
 			if (!pLib->contains(name)) {
 				(*pLib)[name] = key;
 			}
 		}
 				
-		preloadMerge = false;
+		pPreloadHandler->bPreloadMerge = false;
 
 		CallEvent(ONPRELOADCOMPLETE);
 	}
 }
 
-inline void GlobalData::PreloadLib(LPRDATA rdPtr, const FileList& PreloadList,
-	const std::wstring& BasePath, const std::wstring& Key,
+inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::wstring& Key,
 	const std::function<void()>& callback) {
-	if (PreloadList.empty()) {
+	if (pPreloadHandler->pPreloadList->empty()) {
 		callback();
 
 		return;
 	}
 
-	for (auto& it : PreloadList) {
+	for (auto& it : *pPreloadHandler->pPreloadList) {
 		// Stop loading when exceed limit
 		if (ExceedMemLimit(memoryLimit)) {
 			break;
 		}
 
-		// can only load bitmap in sub thread, cannot load HWA here
-		LPSURFACE pBitmap = CreateSurface(32, 4, 4);
-		LoadFromFile(pBitmap,
-			it.c_str(), Key.c_str(),
-			rdPtr, -1, -1,
-			true, rdPtr->stretchQuality);
-
-		if (pBitmap->IsValid()) {
-			(*preloadLib)[it] = SurfaceLibValue(pBitmap, GetFileHash(it), GetTransparent(pBitmap));
+		std::unique_lock<std::mutex> lock(pPreloadHandler->mtx);
+		if (pPreloadHandler->rdPtr == nullptr) {
+			pPreloadHandler->bPaused = true;
+			pPreloadHandler->cv.wait(lock);
 		}
 		else {
-			delete pBitmap;
+			pPreloadHandler->bPaused = false;
+
+			// can only load bitmap in sub thread, cannot load HWA here
+			LPSURFACE pBitmap = CreateSurface(32, 4, 4);
+			LoadFromFile(pBitmap,
+				it.c_str(), Key.c_str(),
+				pPreloadHandler->rdPtr, -1, -1,
+				true, pPreloadHandler->rdPtr->stretchQuality);
+
+			if (pBitmap->IsValid()) {
+				(*pPreloadHandler->pPreloadLib)[it] = SurfaceLibValue(pBitmap, GetFileHash(it), GetTransparent(pBitmap));
+			}
+			else {
+				delete pBitmap;
+			}
 		}
 
 		// Stop loading when main object is destroyed
-		if (forceExit) {
-			for (auto& preloadIt : *preloadLib) {
-				preloadIt.second.Release();
+		if (pPreloadHandler->bForceExit) {
+			for (auto& libValue : *pPreloadHandler->pPreloadLib | std::views::values) {
+				libValue.Release();
 			}
 
 			break;

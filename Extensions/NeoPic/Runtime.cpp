@@ -137,7 +137,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->isTransparent = transpTBD;
 
-	rdPtr->hotSpotPos = (HotSpotPos)edPtr->hotSpotComboID;
+	rdPtr->hotSpotPos = static_cast<HotSpotPos>(edPtr->hotSpotComboID);
 	rdPtr->zoomScale = { 1.0,1.0 };
 
 	rdPtr->pAI = new AnimationInterface(rdPtr);
@@ -161,7 +161,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	//Get global data
 	//Get pointers here and never delete them.
-	rdPtr->pData = (GlobalData*)GetExtUserData();
+	rdPtr->pData = static_cast<GlobalData*>(GetExtUserData());
 
 	//Get general
 #ifdef _USE_DXGI
@@ -170,9 +170,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	//Get specific
 	if (rdPtr->isLib) {		
-		rdPtr->pLib = rdPtr->pData->pLib;		
+		rdPtr->pLib = rdPtr->pData->pLib;
+		rdPtr->pData->pPreloadHandler->ResumePreload(rdPtr);
 	}
-		
+
 	// No errors
 	return 0;
 }
@@ -197,13 +198,13 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->RelativeFilePath;
 	delete rdPtr->Key;
 
+	if(rdPtr->isLib) {
+		rdPtr->pData->pPreloadHandler->PausePreload();
+	}
+
 	if (!rdPtr->isLib) {
 		DetachFromLib(rdPtr);
 		FreeColMask(rdPtr->pColMask);
-	}
-
-	if (rdPtr->isLib) {
-		rdPtr->pData->StopPreloadProcess();
 	}
 
 	delete rdPtr->itCountVecStr;
