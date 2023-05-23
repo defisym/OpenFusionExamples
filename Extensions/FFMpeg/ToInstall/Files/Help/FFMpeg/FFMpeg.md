@@ -26,7 +26,7 @@ FFMpeg: you need to download release (e.g., `ffmpeg-n5.0-latest-win32-lgpl-share
 
 SDL: you need to download `SDL2-2.24.0-win32-x86.zip` from <https://github.com/libsdl-org/SDL/releases>, then put X86 dlls into Fusion root & `Runtime/Unicode`
 
-SDL Mixer X: Upstream is https://github.com/WohlSoft/SDL-Mixer-X, this extension added a few custom functions to original lib, so please clone [this repo](https://github.com/defisym/SDL-Mixer-X) first, then follow the [guide](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/docs/index.md#general-build-on-unix-like-platform-and-install-into-the-system) to build it by yourself
+SDL Mixer X: Upstream is <https://github.com/WohlSoft/SDL-Mixer-X>, this extension added a few custom functions to original lib, so please clone [this repo](https://github.com/defisym/SDL-Mixer-X) first, then follow the [guide](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/docs/index.md#general-build-on-unix-like-platform-and-install-into-the-system) to build it by yourself
 
 Here follows all dlls needed by this object:
 
