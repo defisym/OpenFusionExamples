@@ -54,14 +54,13 @@ using pPreLoadList = List*;
 using PreLoadList = List;
 
 struct Count {
-	size_t totalRef;			// total ref times, count objects have used this
-	size_t priority;		// lib size when first object ref this
-	size_t curRef;			// current ref times, currently curRef objects are using this
-							// erase safely if curRef == 0
+	size_t totalRef = 0;		// total ref times, count objects have used this
+	size_t priority = 0;		// lib size when first object ref this
+	size_t curRef = 0;			// current ref times, currently curRef objects are using this
+								// erase safely if curRef == 0
 	std::vector<tagRDATA*> pRefObj;
 
 	Count() = default;
-	~Count() = default;
 
 	inline size_t GetWeight(size_t countWeight) const {
 		return this->totalRef * countWeight + this->priority;

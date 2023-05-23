@@ -106,6 +106,9 @@ public:
 		FrameData::RGBCoef* pRGBCoef = nullptr;
 		FrameData::Scale* pScale = nullptr;
 
+		UCHAR newAlpha = 0;
+		DWORD newRGBCoef = Animation_DefaultCoef;
+
 		ObjectCoef() {
 			pRGBCoef = new FrameData::RGBCoef();
 			pScale = new FrameData::Scale();
@@ -129,20 +132,12 @@ public:
 			return std::make_tuple(objectAlpha, objectRGBCoef, objectScale);
 		}
 
-		inline void Init(LPRDATA rdPtr) {			
-			const auto& [objectAlpha, objectRGBCoef, objectScale] = GetObjectCoef(rdPtr);
-
-			alpha = objectAlpha;
-			pRGBCoef->rgbCoef = objectRGBCoef;
-			(*pScale) = objectScale;
-		}
-
 		// update params that set by fusion built-in actions
-		inline bool Update(LPRDATA rdPtr, const FrameData* pPrevFrame) {
+		inline bool Update(LPRDATA rdPtr) {
 			const auto& [objectAlpha, objectRGBCoef, objectScale] = GetObjectCoef(rdPtr);
 
-			const bool bChanged = !(pPrevFrame->alpha == objectAlpha
-				&& pPrevFrame->pRGBCoef->rgbCoef == objectRGBCoef);
+			const bool bChanged = !(newAlpha == objectAlpha
+				&& newRGBCoef == objectRGBCoef);
 
 			if (bChanged) {
 				alpha = objectAlpha;
@@ -153,7 +148,7 @@ public:
 		}
 
 		// zoom is updated by object action so update it by calling this.
-		inline void UpdateScale(const ZoomScale& zoomScale) const {
+		inline void Update(const ZoomScale& zoomScale) const {
 			*pScale = FrameData::Scale((double)zoomScale.XScale, (double)zoomScale.YScale);
 		}
 	};
@@ -228,7 +223,6 @@ public:
 			});
 		} while (false);
 
-		const auto pPrevFrame = pA->GetPreviousFrame();
 		const auto pCurFrame = pA->GetCurrentFrame();
 
 		if (!pAI->updateCur) {
@@ -244,18 +238,14 @@ public:
 		// Coef
 		// ------------
 
-		if (pPrevFrame == pCurFrame) {
-			objectCoef.Init(rdPtr);
-		}
-
-		objectCoef.Update(rdPtr, pPrevFrame);
+		objectCoef.Update(rdPtr);
 
 		// object * frame
-		const auto newAlpha = static_cast<UCHAR>(objectCoef.alpha * (255 - pCurFrame->alpha) / 255.0);
-		const auto newRGBCoef = FrameData::RGBCoef(objectCoef.pRGBCoef->rgbCoef).MulRGBCoef(pCurFrame->pRGBCoef->rgbCoef);
+		objectCoef.newAlpha = static_cast<UCHAR>(objectCoef.alpha * (255 - pCurFrame->alpha) / 255.0);
+		objectCoef.newRGBCoef = FrameData::RGBCoef(objectCoef.pRGBCoef->rgbCoef).MulRGBCoef(pCurFrame->pRGBCoef->rgbCoef);
 
-		EffectUtilities::SetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, newAlpha);
-		EffectUtilities::SetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, newRGBCoef);
+		EffectUtilities::SetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, objectCoef.newAlpha);
+		EffectUtilities::SetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, objectCoef.newRGBCoef);
 		Zoom(rdPtr,
 			static_cast<float>(pCurFrame->pScale->x * objectCoef.pScale->x),
 			static_cast<float>(pCurFrame->pScale->y * objectCoef.pScale->y));

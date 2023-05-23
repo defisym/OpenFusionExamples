@@ -260,7 +260,7 @@ inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {
 	ReDisplay(rdPtr);
 }
 
-inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = false) {
+inline void Zoom(LPRDATA rdPtr, float XScale, float YScale) {
 	if (rdPtr->zoomScale == ZoomScale{ XScale, YScale }) {
 		return;
 	}
@@ -270,7 +270,7 @@ inline void Zoom(LPRDATA rdPtr, float XScale, float YScale, bool UpdateCur = fal
 	ReDisplay(rdPtr);
 }
 
-inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
+inline void Rotate(LPRDATA rdPtr, int Angle) {
 	if (rdPtr->angle == Angle) {
 		return;
 	}
@@ -280,8 +280,8 @@ inline void Rotate(LPRDATA rdPtr, int Angle, bool UpdateCur = false) {
 	ReDisplay(rdPtr);
 }
 
-inline auto Offset(LPSURFACE Src, LPSURFACE Des, const OffsetCoef& O) {
-	return Offset(Src, Des, O.XOffset, O.YOffset, O.Wrap);
+inline auto Offset(LPSURFACE Src, LPSURFACE Des, const OffsetCoef& offsetCoef) {
+	return Offset(Src, Des, offsetCoef.XOffset, offsetCoef.YOffset, offsetCoef.Wrap);
 }
 
 inline auto GetRenderTargetSurface(LPRDATA rdPtr, int width, int height) {

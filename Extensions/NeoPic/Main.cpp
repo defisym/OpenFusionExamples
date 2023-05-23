@@ -528,7 +528,7 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	
 	if (CanDisplay(rdPtr)) {
 		Zoom(rdPtr, XScale, YScale);
-		rdPtr->pAI->objectCoef.UpdateScale(rdPtr->zoomScale);
+		rdPtr->pAI->objectCoef.Update(rdPtr->zoomScale);
 	}	
 
 	return 0;
@@ -545,7 +545,7 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 		const float YScale = (1.0f * Height / rdPtr->src->GetHeight());
 
 		Zoom(rdPtr, XScale, YScale);
-		rdPtr->pAI->objectCoef.UpdateScale(rdPtr->zoomScale);
+		rdPtr->pAI->objectCoef.Update(rdPtr->zoomScale);
 	}
 
 	return 0;
