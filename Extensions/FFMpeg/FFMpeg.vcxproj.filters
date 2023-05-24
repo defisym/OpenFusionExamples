@@ -160,9 +160,6 @@
     <ClInclude Include="..\_3rdLib\MemBuf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_3rdLib\FModInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SDL_Mixer_Interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>

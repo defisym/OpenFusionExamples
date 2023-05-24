@@ -216,6 +216,9 @@
 
 #define IDMN_EXPRESSION_GAT     		27013
 
+#define IDMN_EXPRESSION_GVOCN     		27014
+#define IDMN_EXPRESSION_GAOCN     		27015
+
 // Expression strings
 #define	M_EXPRESSION_GVN			    7000
 #define M_EXPRESSION_GVP			    7001
@@ -236,6 +239,9 @@
 #define M_EXPRESSION_GWHDE 			    7012
 
 #define M_EXPRESSION_GAT     			7013
+
+#define M_EXPRESSION_GVOCN     			7014
+#define M_EXPRESSION_GAOCN     			7015
 
 // Names of expression parameters
 #define M_HWA   				 7500

@@ -118,8 +118,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
 
-	rdPtr->pOverrideVideoCodecName = new std::string;
-	rdPtr->pOverrideAudioCodecName = new std::string;
+	rdPtr->pVideoOverrideCodecName = new std::string;
+	rdPtr->pAudioOverrideCodecName = new std::string;
 
 	rdPtr->atempo = DEFAULT_ATEMPO;
 
@@ -191,8 +191,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pFilePath;
 
-	delete rdPtr->pOverrideVideoCodecName;
-	delete rdPtr->pOverrideAudioCodecName;
+	delete rdPtr->pVideoOverrideCodecName;
+	delete rdPtr->pAudioOverrideCodecName;
 
 	delete rdPtr->pRetStr;	
 

@@ -76,7 +76,10 @@
 
 #define EXP_EXPRESSION_GAT	 			13
 
-#define	EXP_LAST                    	14
+#define EXP_EXPRESSION_GVOCN	 		14
+#define EXP_EXPRESSION_GAOCN	 		15
+
+#define	EXP_LAST                    	16
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -190,8 +193,8 @@ typedef struct tagRDATA
 	AVHWDeviceType hwDeviceType;
 	bool bForceNoAudio;
 
-	std::string* pOverrideVideoCodecName = nullptr;
-	std::string* pOverrideAudioCodecName = nullptr;
+	std::string* pVideoOverrideCodecName = nullptr;
+	std::string* pAudioOverrideCodecName = nullptr;
 
 	std::wstring* pRetStr;
 

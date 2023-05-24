@@ -93,6 +93,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GWHDE, M_EXPRESSION_GWHDE, EXP_EXPRESSION_GWHDE, EXPFLAG_STRING, 0,
 
 		IDMN_EXPRESSION_GAT, M_EXPRESSION_GAT, EXP_EXPRESSION_GAT, EXPFLAG_DOUBLE, 0,
+		
+		IDMN_EXPRESSION_GVOCN, M_EXPRESSION_GVOCN, EXP_EXPRESSION_GVOCN, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GAOCN, M_EXPRESSION_GAOCN, EXP_EXPRESSION_GAOCN, EXPFLAG_STRING, 0,
 		};
 
 
@@ -342,8 +345,8 @@ short WINAPI DLLExport Action_SetOverrideCodec(LPRDATA rdPtr, long param1, long 
 	const std::wstring videoCodec = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const std::wstring audioCodec = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	*rdPtr->pOverrideVideoCodecName = ConvertWStrToStr(videoCodec);
-	*rdPtr->pOverrideAudioCodecName = ConvertWStrToStr(audioCodec);
+	*rdPtr->pVideoOverrideCodecName = ConvertWStrToStr(videoCodec);
+	*rdPtr->pAudioOverrideCodecName = ConvertWStrToStr(audioCodec);
 
 	return 0;
 }
@@ -441,6 +444,22 @@ long WINAPI DLLExport Expression_GetAudioTempo(LPRDATA rdPtr, long param1) {
 		: rdPtr->pFFMpeg->get_audioTempo());
 }
 
+long WINAPI DLLExport Expression_GetVideoOverrideCodecName(LPRDATA rdPtr, long param1) {
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	*rdPtr->pRetStr = ConvertStrToWStr(*rdPtr->pVideoOverrideCodecName);
+
+	return (long)rdPtr->pRetStr->c_str();
+}
+
+long WINAPI DLLExport Expression_GetAudioOverrideCodecName(LPRDATA rdPtr, long param1) {
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	*rdPtr->pRetStr = ConvertStrToWStr(*rdPtr->pAudioOverrideCodecName);
+
+	return (long)rdPtr->pRetStr->c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -521,6 +540,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetWantedHardwareDevice,
 
 			Expression_GetAudioTempo,
+
+			Expression_GetVideoOverrideCodecName,
+			Expression_GetAudioOverrideCodecName,
 
 			0
 			};

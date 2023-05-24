@@ -1,6 +1,8 @@
 FFMpeg.exe
 FFMpeg.dat
 
+benchmark.exe
+
 Modules/*.*
 
 _Test_Encrypt.mp4
