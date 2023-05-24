@@ -6,7 +6,10 @@
 #include "JsonInterface.h"
 #include "Encryption.h"
 
-constexpr auto Animation_JsonParseError = -1;
+constexpr auto Animation_JsonParseError = "Json Parse Error";
+constexpr auto MakeJsonParseErrorString(const char* pStr) {
+    return Animation_JsonParseError + std::string(": ") + std::string(pStr);
+}
 
 constexpr auto Animation_MinSpeed = 0;
 constexpr auto Animation_MaxSpeed = 100;
@@ -23,6 +26,7 @@ constexpr auto Animation_DefaultCoef = 16777215;
 
 struct AnimationInfo: public JsonObject {
     std::wstring name;
+    bool restore = true;
     bool updateCur = false;
 	bool reset = false;
 
@@ -37,10 +41,11 @@ struct AnimationInfo: public JsonObject {
 
     inline void Update(const JsonData& data) override {
         if (!data.is_object()) {
-            throw Animation_JsonParseError;
+            throw std::exception(MakeJsonParseErrorString("Invalid Animation Info").c_str());
         }
 
         // general
+        JsonInterface::GetData(data, "restore", restore);
         JsonInterface::GetData(data, "updateCur", updateCur);
         JsonInterface::GetData(data, "reset", reset);
         JsonInterface::GetData(data, "speed", speed);
@@ -50,7 +55,7 @@ struct AnimationInfo: public JsonObject {
 
         // required
         if (!JsonInterface::GetData(data, "name", name)) {
-            throw Animation_JsonParseError;
+            throw std::exception(MakeJsonParseErrorString("Invalid Animation Name").c_str());
         }
     }
 };
@@ -85,7 +90,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw Animation_JsonParseError;
+                throw std::exception(MakeJsonParseErrorString("Invalid Interpolation").c_str());
             }
 
             JsonInterface::GetData(data, "interval", interval);
@@ -144,7 +149,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw Animation_JsonParseError;
+                throw std::exception(MakeJsonParseErrorString("Invalid RGB Coef").c_str());
             }
 
             JsonInterface::GetData(data, "r", r);
@@ -209,7 +214,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw Animation_JsonParseError;
+                throw std::exception(MakeJsonParseErrorString("Invalid Scale").c_str());
             }
 
             JsonInterface::GetData(data, "x", x);
@@ -225,12 +230,18 @@ struct FrameData : public JsonObject {
     Scale* pScale = nullptr;
 
     struct HotSpot : public JsonObject {
-        int x = 0;
-        int y = 0;
+        double x = 0;
+        double y = 0;
         std::wstring type = L"MM";
         HotSpotPos typeID = HotSpotPos::MM;
 
         HotSpot() = default;
+
+        HotSpot(double x, double y, HotSpotPos typeID) {
+            this->x = x;
+            this->y = y;
+            this->typeID = typeID;
+        }
 
         explicit HotSpot(const JsonData& data) {
 	        HotSpot::Update(data);
@@ -238,7 +249,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw Animation_JsonParseError;
+                throw std::exception(MakeJsonParseErrorString("Invalid Hotspot").c_str());
             }
 
             JsonInterface::GetData(data, "x", x);
@@ -249,8 +260,8 @@ struct FrameData : public JsonObject {
         }
 
         inline void Interpolation(double step, const HotSpot* pPrevious, const HotSpot* pNext) {
-            x = static_cast<int>(static_cast<double>(pPrevious->x) + step * (pNext->x - pPrevious->x));
-            y = static_cast<int>(static_cast<double>(pPrevious->y) + step * (pNext->y - pPrevious->y));
+            x = pPrevious->x + step * (pNext->x - pPrevious->x);
+            y = pPrevious->y + step * (pNext->y - pPrevious->y);
         }
     };
 
@@ -327,7 +338,7 @@ struct FrameData : public JsonObject {
 
     inline void Update(const JsonData& data) override {
         if (!data.is_object()) {
-            throw Animation_JsonParseError;
+            throw std::exception(MakeJsonParseErrorString("Invalid Frame Data").c_str());
         }
 
         JsonInterface::GetData(data, "file", file);
@@ -402,7 +413,7 @@ public:
 
     	// load frames
         if(!JsonInterface::Contains(data,"frames")) {
-            throw Animation_JsonParseError;
+            throw std::exception(MakeJsonParseErrorString("Animation Doesn't Contain Frame Data").c_str());
         }
 
         int frameID = 0;
@@ -422,7 +433,7 @@ public:
             pFrameData = new FrameData(it, GetPrevious());
 
             if (!pAnimationInfo->updateCur && !pFrameData->FrameValid()) {
-                throw Animation_JsonParseError;
+                throw std::exception(MakeJsonParseErrorString(std::format("Invalid File at Frame {}", pFrameDatas.size() + 1).c_str()).c_str());
             }
 
             pFrameData->frameID = frameID;
@@ -433,12 +444,13 @@ public:
 
         // validate
         if(pFrameDatas.empty()) {
-            throw Animation_JsonParseError;
+            throw std::exception(MakeJsonParseErrorString("Animation Doesn't Contain Frame Data").c_str());
         }
 
         pCurFrameData = new FrameData(*pFrameDatas.front());
 
-        pAnimationInfo->speed = Range(pAnimationInfo->speed, Animation_MinSpeed, Animation_MaxSpeed);
+        //pAnimationInfo->speed = Range(pAnimationInfo->speed, Animation_MinSpeed, Animation_MaxSpeed);
+        pAnimationInfo->speed = (std::max)(pAnimationInfo->speed, Animation_MinSpeed);
         pAnimationInfo->backTo = Range(pAnimationInfo->backTo, 0, static_cast<int>(pFrameDatas.size() - 1));
         pAnimationInfo->repeat = max(0, pAnimationInfo->repeat);
 

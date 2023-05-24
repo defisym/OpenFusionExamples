@@ -19,6 +19,11 @@
                     "type": "string",
                     "description": "name of the animation"
                 },
+                "restore":{
+                    "type": "boolean",
+                    "description": "restore to given coef when animation is stopped",
+                    "default": true
+                },
                 "updateCur":{
                     "type": "boolean",
                     "description": "update current image and doesn't load new ones, frame's file prop is ignored",
@@ -33,7 +38,6 @@
                     "type": "number",
                     "description": "speed of the animation, 100 = full frame rate",
                     "minimum": 0,
-                    "maximum": 100,
                     "default": 50
                 },
                 "loop": {
@@ -219,10 +223,12 @@
                         "properties": {
                             "x": {
                                 "type": "number",
+                                "description": "if hotSpot type is not CUSTOM, then this value is used as x delta. if abs(x) < 1.0, then delta is x * width",
                                 "default": 0
                             },
                             "y": {
                                 "type": "number",
+                                "description": "if hotSpot type is not CUSTOM, then this value is used as y delta. if abs(y) < 1.0, then delta is y * height",
                                 "default": 0
                             },
                             "type": {

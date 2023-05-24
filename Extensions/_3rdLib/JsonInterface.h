@@ -29,8 +29,14 @@ private:
 
         try {
             //data = Json::parse(in);
-            data = Json::parse(in, nullptr, true, this->bComment);
-        } catch (...) {
+            data = Json::parse(in, nullptr, true, this->bComment);            
+        } catch (std::exception& e) {    //nlohmann::json_abi_v3_11_2::detail::parse_error
+            const auto pErr = e.what();
+
+#if !defined(RUN_ONLY)
+            MSGBOX(ConvertStrToWStr(pErr));
+#endif
+
             return false;
         }
 
