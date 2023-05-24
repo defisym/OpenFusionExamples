@@ -18,7 +18,7 @@ struct AnimationInterface {
 
 	double speedAccumulate = 0.0;
 
-	AnimationInterface(const LPRDATA rdPtr) {
+	AnimationInterface(const LPRDATA rdPtr) :objectCoef(rdPtr) {
 		this->rdPtr = rdPtr;
 	}
 	~AnimationInterface() {
@@ -67,20 +67,28 @@ struct AnimationInterface {
 		StopAnimation();
 
 		try {
-			pA = new Animation(JI.Get());
 			fileName = pFileName;
-		} catch (...) {
-			ret = false;
+			pA = new Animation(JI.Get());
+			UpdateHotSpot(pA->GetAnimationInfo(), pA->GetCurrentFrame());
+		} catch (std::exception& e) {
+			const auto pErr = e.what();
 
 #if !defined(RUN_ONLY)
-			MSGBOX(L"Json file parse error");
+			MSGBOX(ConvertStrToWStr(pErr));
 #endif
+
+			return false;
 		}
 
 		return ret;
 	}
 
 	inline void StopAnimation() {
+		// restore
+		if (pA != nullptr && pA->GetAnimationInfo()->restore) {
+			objectCoef.Restore();
+		}
+
 		fileName.clear();
 		speedAccumulate = 0;
 
@@ -102,20 +110,31 @@ public:
 
 #ifdef UPDATECOEF
 	struct ObjectCoef {
+		// Run header
+		LPRDATA rdPtr = nullptr;
+
+		// External: params updated by fusion built-in actions
 		int alpha = 0;
 		FrameData::RGBCoef* pRGBCoef = nullptr;
-		FrameData::Scale* pScale = nullptr;
 
 		UCHAR newAlpha = 0;
 		DWORD newRGBCoef = Animation_DefaultCoef;
 
-		ObjectCoef() {
-			pRGBCoef = new FrameData::RGBCoef();
-			pScale = new FrameData::Scale();
+		// Internal: params updated by object actions
+		int angle = 0;
+		FrameData::Scale* pScale = nullptr;
+		FrameData::HotSpot* pHotSpot = nullptr;		
+
+		ObjectCoef(LPRDATA rdPtr) {
+			this->rdPtr = rdPtr;
+			this->pRGBCoef = new FrameData::RGBCoef();
+			this->pScale = new FrameData::Scale();
+			this->pHotSpot = new FrameData::HotSpot();
 		}
 		~ObjectCoef() {
 			delete pRGBCoef;
 			delete pScale;
+			delete pHotSpot;
 		}
 
 		enum class CoefType {
@@ -124,17 +143,16 @@ public:
 			Scale,
 		};
 
-		inline auto GetObjectCoef(LPRDATA rdPtr) const {
+		inline auto GetObjectCoef() const {
 			const auto objectAlpha = EffectUtilities::GetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam);
 			const auto objectRGBCoef = EffectUtilities::GetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam);
-			const auto objectScale = FrameData::Scale((double)rdPtr->zoomScale.XScale, (double)rdPtr->zoomScale.YScale);
+			//const auto objectScale = FrameData::Scale((double)rdPtr->zoomScale.XScale, (double)rdPtr->zoomScale.YScale);
 
-			return std::make_tuple(objectAlpha, objectRGBCoef, objectScale);
+			return std::make_tuple(objectAlpha, objectRGBCoef);
 		}
 
-		// update params that set by fusion built-in actions
-		inline bool Update(LPRDATA rdPtr) {
-			const auto& [objectAlpha, objectRGBCoef, objectScale] = GetObjectCoef(rdPtr);
+		inline bool UpdateExternal() {
+			const auto& [objectAlpha, objectRGBCoef] = GetObjectCoef();
 
 			const bool bChanged = !(newAlpha == objectAlpha
 				&& newRGBCoef == objectRGBCoef);
@@ -147,80 +165,133 @@ public:
 			return bChanged;
 		}
 
-		// zoom is updated by object action so update it by calling this.
-		inline void Update(const ZoomScale& zoomScale) const {
+		inline void UpdateInternal(const int angle) {
+			this->angle = angle;
+		}
+
+		inline void UpdateInternal(const ZoomScale& zoomScale) const {
 			*pScale = FrameData::Scale((double)zoomScale.XScale, (double)zoomScale.YScale);
+		}
+
+		inline void UpdateInternal(const int x, const int y, const HotSpotPos& hotSpotPos) const {
+			*pHotSpot = FrameData::HotSpot(x, y, hotSpotPos);
+		}
+
+		inline void Restore() {
+			// External
+			UpdateExternal();
+
+			EffectUtilities::SetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, static_cast<UCHAR>(alpha));
+			EffectUtilities::SetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, pRGBCoef->rgbCoef);
+			Zoom(rdPtr,
+				static_cast<float>(pScale->x),
+				static_cast<float>(pScale->y));
+
+			// Internal
+			Rotate(rdPtr, angle);
+			::UpdateHotSpot(rdPtr,
+				pHotSpot->typeID,
+				static_cast<int>(pHotSpot->x), static_cast<int>(pHotSpot->y));
 		}
 	};
 
 	ObjectCoef objectCoef;
 #endif
 
+private:
+	inline void UpdateHotSpot(const AnimationInfo* pAnimationInfo, const FrameData* pFrameData) const {
+		auto updateBySurface = [&] (const LPSURFACE pSf) {
+			if (pSf == nullptr) {
+				return;
+			}
+#define HOTSPOT_DELTA
+
+#ifndef HOTSPOT_DELTA
+			::UpdateHotSpot(pFrameData->pHotSpot->typeID,
+				pSf->GetWidth(), pSf->GetHeight(),
+				pFrameData->pHotSpot->x, pFrameData->pHotSpot->y);
+#else
+			int hX = 0, hY = 0;
+
+			::UpdateHotSpot(pFrameData->pHotSpot->typeID,
+				pSf->GetWidth(), pSf->GetHeight(),
+				hX, hY);
+
+			if (pFrameData->pHotSpot->typeID != HotSpotPos::CUSTOM) {
+				//pFrameData->pHotSpot->x += hX;
+				//pFrameData->pHotSpot->y += hY;
+
+				auto updateDelta = [&] (const int size, const int hotSpot, double& delta) {
+					if (abs(delta) < 1.0) {
+						delta += size * delta;
+					}
+
+					delta += hotSpot;
+				};
+
+				updateDelta(pSf->GetWidth(), hX, pFrameData->pHotSpot->x);
+				updateDelta(pSf->GetHeight(), hY, pFrameData->pHotSpot->y);
+			}
+#endif
+
+			pFrameData->pHotSpot->typeID = HotSpotPos::CUSTOM;
+		};
+
+		if (pFrameData == nullptr) {
+			return;
+		}
+
+		if (pFrameData->pHotSpot->typeID == HotSpotPos::CUSTOM) {
+			return;
+		}
+
+		auto pSf = rdPtr->src;
+
+		if (!pAnimationInfo->updateCur) {
+			const auto it = LoadLib(rdPtr, pLib,
+				(basePath + pFrameData->file).c_str(), key.c_str());
+
+			if (it == pLib->pLib->end()) {
+				return;
+			}
+
+			pSf = it->second.pSf;
+		}
+
+		updateBySurface(pSf);
+	}
+
+public:
 	inline void UpdateAnimation() {
 		if (pA == nullptr) {
 			return;
 		}
 
 		const auto pAI = pA->GetAnimationInfo();
-
-		auto updateHotSpot = [&] (const AnimationInfo* pAnimationInfo, const FrameData* pFrameData) {
-			auto updateBySurface = [&] (const LPSURFACE pSf) {
-				if (pSf == nullptr) {
-					return;
-				}
-
-				::UpdateHotSpot(pFrameData->pHotSpot->typeID,
-					pSf->GetWidth(), pSf->GetHeight(),
-					pFrameData->pHotSpot->x, pFrameData->pHotSpot->y);
-
-				pFrameData->pHotSpot->typeID = HotSpotPos::CUSTOM;
-			};
-
-			if (pFrameData == nullptr) {
-				return;
-			}
-
-			if (pFrameData->pHotSpot->typeID == HotSpotPos::CUSTOM) {
-				return;
-			}
-
-			auto pSf = rdPtr->src;
-
-			if (!pAnimationInfo->updateCur) {
-				const auto it = LoadLib(rdPtr, pLib,
-					(basePath + pFrameData->file).c_str(), key.c_str());
-
-				if (it == pLib->pLib->end()) {
-					return;
-				}
-
-				pSf = it->second.pSf;
-			}
-
-			updateBySurface(pSf);
-		};
-
+		
 		// update current hotspot
-		updateHotSpot(pAI, pA->GetPreviousFrame());
-		updateHotSpot(pAI, pA->GetNextFrame());
+		UpdateHotSpot(pAI, pA->GetPreviousFrame());
+		UpdateHotSpot(pAI, pA->GetNextFrame());
 
 		// update display but won't update interpolation
 		do {
 			if (bPaused) { break; }
 
 			speedAccumulate += GetCorrectedSpeed();
-			if (speedAccumulate < 1.0) { break; }
-			speedAccumulate -= 1.0;
 
-			pA->UpdateFrame(
-			[&] () {
-				// if read to next frame, update next hotspot
-				// cur is updated previously
-				updateHotSpot(pAI, pA->GetNextFrame());
-			},
-			[&] () {
-				CallEvent(ONANIMATIONFINISHED)
-			});
+			while (speedAccumulate >= 1.0) {
+				speedAccumulate -= 1.0;
+
+				pA->UpdateFrame(
+				[&] () {
+						// if read to next frame, update next hotspot
+						// cur is updated previously
+						UpdateHotSpot(pAI, pA->GetNextFrame());
+				},
+				[&] () {
+						CallEvent(ONANIMATIONFINISHED)
+				});
+			}
 		} while (false);
 
 		const auto pCurFrame = pA->GetCurrentFrame();
@@ -238,7 +309,7 @@ public:
 		// Coef
 		// ------------
 
-		objectCoef.Update(rdPtr);
+		objectCoef.UpdateExternal();
 
 		// object * frame
 		objectCoef.newAlpha = static_cast<UCHAR>(objectCoef.alpha * (255 - pCurFrame->alpha) / 255.0);
@@ -255,10 +326,10 @@ public:
 		// ------------
 
 		Rotate(rdPtr, pCurFrame->angle);
-		UpdateHotSpot(rdPtr, 
-			// Update x & y by pos before calling this
+		// Update x & y by pos before calling this
+		::UpdateHotSpot(rdPtr, 
 			HotSpotPos::CUSTOM,
-			pCurFrame->pHotSpot->x, pCurFrame->pHotSpot->y);
+			static_cast<int>(pCurFrame->pHotSpot->x), static_cast<int>(pCurFrame->pHotSpot->y));
 
 #else
 		Rotate(rdPtr, pCurFrame->angle);
@@ -292,6 +363,7 @@ public:
 	}
 
 	inline void SetSpeed(const int speed) {
-		this->speed = Range(speed, Animation_MinSpeed, Animation_MaxSpeed);
+		//this->speed = Range(speed, Animation_MinSpeed, Animation_MaxSpeed);
+		this->speed = (std::max)(speed, Animation_MinSpeed);
 	}
 };

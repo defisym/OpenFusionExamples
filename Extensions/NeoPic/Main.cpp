@@ -516,6 +516,7 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	
 	rdPtr->pAI->StopAnimation();
 	UpdateHotSpot(rdPtr, Pos, X, Y);
+	rdPtr->pAI->objectCoef.UpdateInternal(X, Y, Pos);
 	
 	return 0;
 }
@@ -528,7 +529,7 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	
 	if (CanDisplay(rdPtr)) {
 		Zoom(rdPtr, XScale, YScale);
-		rdPtr->pAI->objectCoef.Update(rdPtr->zoomScale);
+		rdPtr->pAI->objectCoef.UpdateInternal(rdPtr->zoomScale);
 	}	
 
 	return 0;
@@ -545,7 +546,7 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 		const float YScale = (1.0f * Height / rdPtr->src->GetHeight());
 
 		Zoom(rdPtr, XScale, YScale);
-		rdPtr->pAI->objectCoef.Update(rdPtr->zoomScale);
+		rdPtr->pAI->objectCoef.UpdateInternal(rdPtr->zoomScale);
 	}
 
 	return 0;
@@ -559,6 +560,7 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 
 	if (CanDisplay(rdPtr)) {
 		Rotate(rdPtr, Angle);
+		rdPtr->pAI->objectCoef.UpdateInternal(Angle);
 	}
 
 	return 0;
