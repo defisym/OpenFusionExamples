@@ -1260,13 +1260,15 @@ public:
 
 	static inline StrSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
 		SIZE sz = { 0,0 };
+		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
-		// special
+		// special: shouldn't have width to fix non-left align offset		
 		if (wChar == L'\r' || wChar == L'\n' || wChar == L'\0') {
+			sz.cx = 0;
 		}
-		// general
+		// general: has both width & height
 		else {
-			GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+			
 		}
 
 		return *(StrSize*)&sz;
