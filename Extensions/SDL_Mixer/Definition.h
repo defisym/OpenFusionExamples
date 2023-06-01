@@ -625,7 +625,7 @@ struct GlobalData {
 		// ------------
 
 		bool bEffect = false;
-		MusicScore::Score score = MusicScore::Score::Loop;
+		MusicScore::MusicalNotes score = MusicScore::loop;
 		float base = 0;
 
 		//bool mix_bAttenuation = false;
@@ -973,9 +973,7 @@ struct GlobalData {
 				{
 					{
 						soundtouch_setPitchSemiTones,
-						//MusicScore::GetNote(arrDiv * audioPlayed)
-						//MusicScore::GetNote(arrDiv * audioPlayed, MusicScore::Score::CrystalPrelude, 0)
-						MusicScore::GetNote(arrDiv * audioPlayed,channelSettings.score,channelSettings.base)
+						MusicScore::GetNote(arrDiv * audioPlayed,&channelSettings.score,channelSettings.base)
 					},
 					//{
 					//	soundtouch_setRate,
@@ -1155,7 +1153,7 @@ struct GlobalData {
 	//}
 
 	inline void SetMixingChannelScore(int channel, bool bEnable,
-		MusicScore::Score score = MusicScore::Score::Loop, float base = 0) {
+		const MusicScore::MusicalNotes& score = MusicScore::loop, float base = 0) {
 		ExtendVec(mixingChannelSettings, channel, AudioSettings());
 
 		mixingChannelSettings[channel].bEffect = bEnable;
