@@ -174,6 +174,10 @@ short WINAPI DLLExport Action_CloseVideo(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_PlayVideo(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->bPlay) {
+		return 0;
+	}
+
 	rdPtr->bPlay = true;
 
 	if (rdPtr->pFFMpeg != nullptr) {
@@ -184,6 +188,10 @@ short WINAPI DLLExport Action_PlayVideo(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport Action_PauseVideo(LPRDATA rdPtr, long param1, long param2) {
+	if (!rdPtr->bPlay) {
+		return 0;
+	}
+
 	rdPtr->bPlay = false;
 
 	if (rdPtr->pFFMpeg != nullptr) {

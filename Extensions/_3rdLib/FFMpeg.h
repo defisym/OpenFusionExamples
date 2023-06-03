@@ -286,6 +286,7 @@ private:
 
 	//float atempo = DEFAULT_ATEMPO;
 	float atempo = -1;
+	double tempoTimer = 0.0;
 
 	const AVCodec* pVCodec = NULL;
 	AVCodecParameters* pVCodecParameters = NULL;
@@ -1503,11 +1504,26 @@ private:
 		return videoPts;
 	}
 
+	inline double get_externalClock() {
+		const auto curTime = get_curTime();
+		const auto pausedTime = get_pausedTime();
+		
+		// reset frameTimer with a extimate time
+		if (frameTimer == -1) {
+			frameTimer = curTime - videoPts;
+			tempoTimer = curTime;
+		}
+
+		const auto timeTempo = curTime - pausedTime - tempoTimer;
+
+		return  (tempoTimer - frameTimer) + timeTempo * static_cast<double>(this->atempo);
+	}
+
 	inline double get_audioClock() {
 		double pts = audioClock; /* maintained in the audio thread */
 
-		int hw_buf_size = audio_buf_size - audio_buf_index;
-		int  bytes_per_sec = 0;
+		auto hw_buf_size = audio_buf_size - audio_buf_index;
+		auto bytes_per_sec = 0;
 
 		if (pAudioStream) {
 			bytes_per_sec = (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER) * 2;
@@ -1548,19 +1564,12 @@ private:
 		frameLastPts = videoPts;
 		frameLastDelay = delay;
 
-		auto curTime = get_curTime();
-
-		// reset frameTimer with a extimate time
-		if (frameTimer == -1) {
-			frameTimer = curTime - videoPts;
-		}
-
 #ifdef _EXTERNAL_CLOCK_SYNC
-		auto syncClock = (curTime - frameTimer) * this->atempo;
+		auto syncClock = get_externalClock();
 #else
 		auto syncClock = !bNoAudio
 			? get_audioClock()
-			: (curTime - frameTimer) * this->atempo;
+			: get_externalClock();
 #endif
 
 		const auto diff = videoPts - syncClock;
@@ -1986,24 +1995,24 @@ public:
 
 		// make sure member value is updated
 		if (this->bNoAudio) {
-			// reset timer
+			// reset timer, also trigger tempoTimer update
 			frameTimer = -1;
 
 			return;
 		}
 
 		std::string fliters;
-		double tempo = this->atempo;
+		auto tempo = this->atempo;
 
-		if (this->atempo > 2.0) {
+		if (this->atempo > 2.0f) {
 			do {
 				fliters += "atempo=2.0,";
-			} while ((tempo /= 2) > 2.0);
+			} while ((tempo /= 2) > 2.0f);
 		}
-		else if (this->atempo < 0.5) {
+		else if (this->atempo < 0.5f) {
 			do {
 				fliters += "atempo=0.5,";
-			} while ((tempo *= 2) < 0.5);
+			} while ((tempo *= 2) < 0.5f);
 		}
 
 		fliters += std::format("atempo={:1.1f}", tempo);
