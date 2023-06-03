@@ -141,6 +141,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Reset Display",           IDMN_ACTION_RD
+        MENUITEM SEPARATOR
         MENUITEM "Open Video",              IDMN_ACTION_OV
         MENUITEM "Open Video To",           IDMN_ACTION_OVT
         MENUITEM "Close Video",             IDMN_ACTION_CV
@@ -331,6 +333,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_ACTION_RD	       	       "Reset Display"
+
     M_ACTION_OV	       	       "Open Video %0, Decrypt Key %1"
     M_ACTION_OVT       	       "Open Video %0 to %2, Decrypt Key %1"
     M_ACTION_CV			       "Close Video"

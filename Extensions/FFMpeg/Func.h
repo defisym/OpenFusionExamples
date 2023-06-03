@@ -159,7 +159,7 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 }
 
 // return pMemSf, if bHwa == true, cast it to HWA and save to pHwaSf;
-inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, LPSURFACE& pMemSf, LPSURFACE& pHwaSf) {
+inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, LPSURFACE& pHwaSf) {
 	if (!bHwa) {
 		return ConvertToLong(pMemSf);
 	}

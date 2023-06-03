@@ -51,7 +51,9 @@
 
 #define	ACT_ACTION_SOC					17
 
-#define	ACT_LAST						18
+#define	ACT_ACTION_RD					18
+
+#define	ACT_LAST						19
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

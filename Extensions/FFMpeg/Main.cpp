@@ -69,6 +69,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SOC, M_ACTION_SOC, ACT_ACTION_SOC, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_VCODEC, M_ACODEC,
 
+		IDMN_ACTION_RD, M_ACTION_RD, ACT_ACTION_RD,	0, 0,
+
 		};
 
 // Definitions of parameters for each expression
@@ -359,6 +361,18 @@ short WINAPI DLLExport Action_SetOverrideCodec(LPRDATA rdPtr, long param1, long 
 	return 0;
 }
 
+short WINAPI DLLExport Action_ResetDisplay(LPRDATA rdPtr, long param1, long param2) {
+	if (!GetVideoPlayState(rdPtr)) {
+		_ForceAddAlpha(rdPtr->pMemSf, 0);
+
+		if(rdPtr->bPm) {
+			rdPtr->pMemSf->PremultiplyAlpha();
+		}
+	}
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -523,6 +537,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetForceNoAudio,
 
 			Action_SetOverrideCodec,
+
+			Action_ResetDisplay,
 
 			0
 			};
