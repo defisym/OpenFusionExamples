@@ -42,7 +42,9 @@
 #define	EXP_EXPRESSION_MT_GED			4
 #define	EXP_EXPRESSION_MT_GTID			5
 
-#define	EXP_LAST						6
+#define	EXP_EXPRESSION_GCBP				6
+
+#define	EXP_LAST						7
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

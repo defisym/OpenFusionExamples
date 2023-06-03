@@ -53,6 +53,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_MT_GHTMLEC, M_EXPRESSION_MT_GHTMLEC, EXP_EXPRESSION_MT_GHTMLEC, 0, 0,
 		IDMN_EXPRESSION_MT_GED, M_EXPRESSION_MT_GED, EXP_EXPRESSION_MT_GED, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_MT_GTID, M_EXPRESSION_MT_GTID, EXP_EXPRESSION_MT_GTID, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GCBP, M_EXPRESSION_GCBP, EXP_EXPRESSION_GCBP, 0, 0,
 		};
 
 
@@ -310,6 +312,13 @@ long WINAPI DLLExport Expression_MixroTxn_GetTransID(LPRDATA rdPtr, long param1)
 	});
 }
 
+long WINAPI DLLExport Expression_GetCurrentBatteryPower(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->GetSteamUtilities<long>(255,
+		[&] (SteamUtilities* pSteamUtil) {
+			return SteamUtils()->GetCurrentBatteryPower();
+	});
+}
+
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -354,6 +363,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_MixroTxn_GetHTMLErrorCode,
 			Expression_MixroTxn_GetErrorDesc,
 			Expression_MixroTxn_GetTransID,
+
+			Expression_GetCurrentBatteryPower,
 
 			0
 			};

@@ -111,8 +111,11 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM SEPARATOR
-        MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
+        MENUITEM SEPARATOR        
+        POPUP "Remote Play"
+        BEGIN        
+            MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
+        END
         MENUITEM SEPARATOR
         POPUP "Micro Transaction"
         BEGIN
@@ -133,14 +136,20 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM SEPARATOR
-        MENUITEM "Unlock Achievement",       IDMN_ACTION_UA
-        MENUITEM "Add to Stat",              IDMN_ACTION_AS
-        MENUITEM SEPARATOR
-        POPUP "Rich Presence"
+        MENUITEM SEPARATOR        
+        POPUP "User Stats"
         BEGIN
-            MENUITEM "Set Rich Presence",       IDMN_ACTION_SRP
-            MENUITEM "Clear Rich Presence",       IDMN_ACTION_CRP
+            MENUITEM "Unlock Achievement",       IDMN_ACTION_UA
+            MENUITEM "Add to Stat",              IDMN_ACTION_AS
+        END
+        MENUITEM SEPARATOR
+        POPUP "Friends"
+        BEGIN
+            POPUP "Rich Presence"
+            BEGIN
+                MENUITEM "Set Rich Presence",       IDMN_ACTION_SRP
+                MENUITEM "Clear Rich Presence",       IDMN_ACTION_CRP
+            END
         END
         MENUITEM SEPARATOR
         POPUP "Micro Transaction"
@@ -165,8 +174,16 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
-        MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
+        POPUP "Apps"
+        BEGIN
+            MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
+            MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
+        END        
+        MENUITEM SEPARATOR
+        POPUP "Utilities"
+        BEGIN
+            MENUITEM "Get Current Battery Power", IDMN_EXPRESSION_GCBP		
+        END     
         MENUITEM SEPARATOR
         POPUP "Micro Transaction"
         BEGIN
@@ -174,7 +191,7 @@ BEGIN
             MENUITEM "Micro Transaction: Get HTML Error Code", IDMN_EXPRESSION_MT_GHTMLEC	
             MENUITEM "Micro Transaction: Get Error Desc", IDMN_EXPRESSION_MT_GED		
             MENUITEM "Micro Transaction: Get Trans ID", IDMN_EXPRESSION_MT_GTID		
-        END
+        END    
         MENUITEM SEPARATOR
     END
 END
@@ -309,6 +326,8 @@ BEGIN
     M_EXPRESSION_MT_GHTMLEC	     "MTGHEC ("
     M_EXPRESSION_MT_GED		     "MTGED $("
     M_EXPRESSION_MT_GTID	     "MTGTID $("
+
+    M_EXPRESSION_GCBP	     	 "GCBP("
 END
 
 STRINGTABLE
