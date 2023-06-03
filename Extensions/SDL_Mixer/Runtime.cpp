@@ -70,6 +70,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->sheight = edPtr->sheight;
 #endif
 
+	rdPtr->pExclusiveChannelPauseState = new std::vector<int>;
+	rdPtr->pMixingChannelPauseState = new std::vector<int>;
+
 	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
@@ -97,6 +100,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+
+	delete rdPtr->pExclusiveChannelPauseState;
+	rdPtr->pExclusiveChannelPauseState = nullptr;
+
+	delete rdPtr->pMixingChannelPauseState;
+	rdPtr->pMixingChannelPauseState = nullptr;
 
 	delete rdPtr->pRet;
 	rdPtr->pRet = nullptr;
@@ -228,8 +237,24 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 // ----------------
 // Enters the pause mode
 // 
-short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr) {
+	auto pauseChannel = [&] <typename T>(std::vector<int>* pState, std::vector<T>* pChannel,
+		bool(GlobalData::*pPlaying)(int), void(GlobalData::*pPause)(int)) {
+		pState->clear();
+
+		for (int channel = 0; channel < static_cast<int>(pChannel->size()); channel++) {			
+			if ((rdPtr->pData->*pPlaying)(channel)) {
+				(rdPtr->pData->*pPause)(channel);
+				pState->emplace_back(channel);
+			}
+		}
+	};
+
+	pauseChannel(rdPtr->pExclusiveChannelPauseState, &rdPtr->pData->exclusiveChannel,
+		 static_cast<bool(GlobalData::*)(int)>(&GlobalData::ExclusiveChannelPlaying), &GlobalData::PauseExclusive);
+	pauseChannel(rdPtr->pMixingChannelPauseState, &rdPtr->pData->mixingChannel,
+		static_cast<bool(GlobalData::*)(int)>(&GlobalData::MixingChannelPlaying), &GlobalData::PauseMixing);
+		
 	// Ok
 	return 0;
 }
@@ -240,8 +265,19 @@ short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr)
 // -----------------
 // Quits the pause mode
 //
-short WINAPI DLLExport ContinueRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport ContinueRunObject(LPRDATA rdPtr) {
+	auto resumeChannel = [&] <typename T>(std::vector<int>*pState, std::vector<T>*pChannel,
+	void(GlobalData::*pResume)(int)) {
+		for (const int channel : *pState) {
+			(rdPtr->pData->*pResume)(channel);
+		}
+	};
+
+	resumeChannel(rdPtr->pExclusiveChannelPauseState, &rdPtr->pData->exclusiveChannel,
+		 &GlobalData::ResumeExclusive);
+	resumeChannel(rdPtr->pMixingChannelPauseState, &rdPtr->pData->mixingChannel,
+		&GlobalData::ResumeMixing);
+
 	// Ok
 	return 0;
 }

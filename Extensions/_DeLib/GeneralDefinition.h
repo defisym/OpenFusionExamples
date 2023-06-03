@@ -98,6 +98,34 @@ inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
 	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
 }
 
+inline void TrimStr(std::wstring& str,
+	const std::vector<wchar_t>& frontChars = { L' ' },
+	const std::vector<wchar_t>& backChars = { L' ' }) {
+	constexpr auto front = true;
+	constexpr auto back = false;
+
+	auto needTrim = [&] (bool dir) {
+		const std::vector<wchar_t>& chars = dir ? frontChars : backChars;
+
+		for (const auto& it : chars) {
+			const auto c = dir ? str.front() : str.back();
+
+			if (c == it) {
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	while (needTrim(front)) {
+		str.erase(str.begin());
+	}
+	while (needTrim(back)) {
+		str.pop_back();
+	}
+};
+
 inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	auto length = wcslen(pStr);
 

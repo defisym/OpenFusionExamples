@@ -418,8 +418,11 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 // ----------------
 // Enters the pause mode
 // 
-short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr) {
+	if (rdPtr->bPlay && rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_pause(true);
+	}
+
 	// Ok
 	return 0;
 }
@@ -430,8 +433,11 @@ short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr)
 // -----------------
 // Quits the pause mode
 //
-short WINAPI DLLExport ContinueRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport ContinueRunObject(LPRDATA rdPtr) {
+	if (rdPtr->bPlay && rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_pause(false);
+	}
+
 	// Ok
 	return 0;
 }

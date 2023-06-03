@@ -104,6 +104,9 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 
+	std::vector<int>* pExclusiveChannelPauseState = nullptr;
+	std::vector<int>* pMixingChannelPauseState = nullptr;
+
 	std::wstring* pRet;
 	
 } RUNDATA;

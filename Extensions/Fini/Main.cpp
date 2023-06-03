@@ -603,7 +603,7 @@ long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 
 	if (offset == -1) {
 		rdPtr->rHo.hoFlags |= HOF_STRING;
-		return (long)nullptr;
+		return (long)Empty_Str;
 	}
 
 	if (rdPtr->cf25p) {

@@ -668,38 +668,10 @@ short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2)
 		std::copy_n(&doNothing[0][0], 9, &matrix[0][0]);
 
 		try {
-			auto trim = [] (std::wstring& str,
-				const std::vector<wchar_t>& frontChars,
-				const std::vector<wchar_t>& backChars) {
-						constexpr auto front = true;
-						constexpr auto back = false;
-
-						auto needTrim = [&] (bool dir) {
-							const std::vector<wchar_t>& chars = dir ? frontChars : backChars;
-
-							for (const auto& it : chars) {
-								const auto c = dir ? str.front() : str.back();
-
-								if (c == it) {
-									return true;
-								}
-							}
-
-							return false;
-						};
-
-						while (needTrim(front)) {
-							str.erase(str.begin());
-						}
-						while (needTrim(back)) {
-							str.pop_back();
-						}
-			};
-
 			const std::vector<wchar_t> frontChars = { L' ',L'{',L',' };
 			const std::vector<wchar_t> backChars = { L' ',L'}',L',' };
 
-			trim(arr, frontChars, backChars);
+			TrimStr(arr, frontChars, backChars);
 
 			const List rows = SplitString(arr, L'}');
 
@@ -710,7 +682,7 @@ short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2)
 			for (int y = 0; y < 3; y++) {
 				constexpr auto arrayDelimiter = L',';
 				auto row = rows[y];
-				trim(row, frontChars, backChars);
+				TrimStr(row, frontChars, backChars);
 
 				const List elements = SplitString(row, arrayDelimiter);
 
@@ -720,7 +692,7 @@ short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2)
 
 				for (int x = 0; x < 3; x++) {
 					auto element = elements[x];
-					trim(element, frontChars, backChars);
+					TrimStr(element, frontChars, backChars);
 
 					matrix[y][x] = _stod(element);
 				}

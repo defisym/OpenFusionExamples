@@ -80,8 +80,8 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	}
 
 	if (identifier == IDENTIFIER_ACTIVE) {
-		offset += sizeof(rCom) + sizeof(rMvt) + sizeof(rSpr);
-		return offset;
+		offset += sizeof(rCom) + sizeof(rMvt) + sizeof(rSpr)+ sizeof(rAni);
+ 		return offset;
 	}
 
 	// General extensions

@@ -46,7 +46,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SAC, M_ACTION_SAC, ACT_ACTION_SAC, 0, 1, PARAM_EXPRESSION, M_ACTION_FADE,
 
 		IDMN_ACTION_SABL, M_ACTION_SABL, ACT_ACTION_SABL, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_START, M_ACTION_END,
-		IDMN_ACTION_SMCS, M_ACTION_SMCS, ACT_ACTION_SMCS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_ENABLE, M_ACTION_SCORE, M_ACTION_BASE,
+		IDMN_ACTION_SMCS, M_ACTION_SMCS, ACT_ACTION_SMCS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_ENABLE, M_ACTION_SCORE, M_ACTION_BASE,
 		};
 
 // Definitions of parameters for each expression
@@ -67,8 +67,8 @@ short expressionsInfos[]=
 // ============================================================================
 
 long WINAPI DLLExport Condition_ChannelPlaying(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetParameter(rdPtr);
 
 	return bExclusive
 		? rdPtr->pData->ExclusiveChannelPlaying(channel)
@@ -80,8 +80,8 @@ long WINAPI DLLExport Condition_NoChannelPlaying(LPRDATA rdPtr, long param1, lon
 }
 
 long WINAPI DLLExport Condition_ChannelPaused(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetParameter(rdPtr);
 
 	return bExclusive
 		? rdPtr->pData->ExclusiveChannelPaused(channel)
@@ -93,14 +93,14 @@ long WINAPI DLLExport Condition_AllChannelPaused(LPRDATA rdPtr, long param1, lon
 }
 
 long WINAPI DLLExport Condition_ChannelFadingComplete(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetParameter(rdPtr);
 
 	return rdPtr->pData->ExclusiveChannelFadingState(channel) == MIX_NO_FADING;	
 }
 
 long WINAPI DLLExport Condition_ChannelHasNoOutput(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetParameter(rdPtr);
 
 	// no output -> not playing or paused
 	const auto bPlaying = bExclusive
@@ -121,11 +121,11 @@ long WINAPI DLLExport Condition_ChannelHasNoOutput(LPRDATA rdPtr, long param1, l
 // ============================================================================
 
 short WINAPI DLLExport Action_PlayExclusive(LPRDATA rdPtr, long param1, long param2) {
-	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto loops = (int)CNC_GetIntParameter(rdPtr);
-	auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
+	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto loops = (int)CNC_GetIntParameter(rdPtr);
+	const auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->PlayExclusive(pFilePath, pKey,
 		channel, loops - 1, fadeMs);
@@ -134,11 +134,11 @@ short WINAPI DLLExport Action_PlayExclusive(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport Action_PlayMixing(LPRDATA rdPtr, long param1, long param2) {
-	auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto loops = (int)CNC_GetIntParameter(rdPtr);
-	auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
+	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto loops = (int)CNC_GetIntParameter(rdPtr);
+	const auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->PlayMixing(pFilePath, pKey,
 		channel, loops - 1, fadeMs);
@@ -147,9 +147,9 @@ short WINAPI DLLExport Action_PlayMixing(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto volume = (int)CNC_GetIntParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto volume = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->SetExclusiveVolume(channel, volume)
@@ -159,9 +159,9 @@ short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport Action_StopChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetStringParameter(rdPtr);
-	auto fadeMs = (int)CNC_GetStringParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetStringParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->StopExclusive(channel, fadeMs)
@@ -171,8 +171,8 @@ short WINAPI DLLExport Action_StopChannel(LPRDATA rdPtr, long param1, long param
 }
 
 short WINAPI DLLExport Action_PauseChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->PauseExclusive(channel)
@@ -182,8 +182,8 @@ short WINAPI DLLExport Action_PauseChannel(LPRDATA rdPtr, long param1, long para
 }
 
 short WINAPI DLLExport Action_ResumeChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	bExclusive
 		? rdPtr->pData->ResumeExclusive(channel)
@@ -193,8 +193,8 @@ short WINAPI DLLExport Action_ResumeChannel(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto position = (double)GetFloatParam(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto position = (double)GetFloatParam(rdPtr);
 
 	rdPtr->pData->SetExclusivePosition(channel, position);
 
@@ -202,7 +202,7 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 }
 
 short WINAPI DLLExport Action_StopAllChannel(LPRDATA rdPtr, long param1, long param2) {
-	auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
+	const auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->StopAllExclusive(fadeMs);
 	rdPtr->pData->StopAllMixing(fadeMs);
@@ -211,9 +211,9 @@ short WINAPI DLLExport Action_StopAllChannel(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport Action_SetABLoop(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto start = (double)GetFloatParam(rdPtr);
-	auto end = (double)GetFloatParam(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto start = (double)GetFloatParam(rdPtr);
+	const auto end = (double)GetFloatParam(rdPtr);
 
 	rdPtr->pData->SetExclusiveABLoop(channel, start, end);
 
@@ -221,12 +221,13 @@ short WINAPI DLLExport Action_SetABLoop(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport Action_SetMixingChannelScore(LPRDATA rdPtr, long param1, long param2) {
-	auto channel = (int)CNC_GetIntParameter(rdPtr);
-	auto bEnable = (bool)CNC_GetIntParameter(rdPtr);
-	auto score = (MusicScore::Score)CNC_GetIntParameter(rdPtr);
-	auto base = (int)CNC_GetIntParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto bEnable = (bool)CNC_GetIntParameter(rdPtr);
+	const auto pScore = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto base = (int)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->pData->SetMixingChannelScore(channel, bEnable, score, (float)base);
+	std::wstring score = pScore;
+	rdPtr->pData->SetMixingChannelScore(channel, bEnable, MusicScore::GetNote(score), static_cast<float>(base));
 
 	return 0;
 }
@@ -238,8 +239,8 @@ short WINAPI DLLExport Action_SetMixingChannelScore(LPRDATA rdPtr, long param1, 
 // ============================================================================
 
 long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr,long param1) {
-	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	return bExclusive
 		? rdPtr->pData->GetExclusiveVolume(channel)
@@ -247,8 +248,8 @@ long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr,long param1) {
 }
 
 long WINAPI DLLExport Expression_GetChannelState(LPRDATA rdPtr, long param1) {
-	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	return bExclusive
 		? rdPtr->pData->ExclusiveChannelPlaying(channel)
@@ -256,13 +257,13 @@ long WINAPI DLLExport Expression_GetChannelState(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetChannelPosition(LPRDATA rdPtr, long param1) {
-	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	return ReturnFloat(rdPtr->pData->GetExclusivePosition(channel));
 }
 
 long WINAPI DLLExport Expression_GetChannelDuration(LPRDATA rdPtr, long param1) {
-	auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	return ReturnFloat(rdPtr->pData->GetExclusiveDuration(channel));
 }
