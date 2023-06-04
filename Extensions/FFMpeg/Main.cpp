@@ -285,15 +285,15 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 	}
 
 	// erase all
-	if (L"" == filePath) {
+	if (filePath.empty()) {
 		CleanCache(rdPtr, true);
 	}
 	else {
-		auto it = rdPtr->pData->pMemVideoLib->GetItem(filePath);
+		const auto it = rdPtr->pData->pMemVideoLib->GetItem(filePath);
 
 		if (it != rdPtr->pData->pMemVideoLib->data.end()) {
 			auto pBufs = GetRefList(rdPtr);
-			auto findIt = std::find(pBufs.begin(), pBufs.end()
+			const auto findIt = std::ranges::find(pBufs
 				, it->second->GetOutputData());
 
 			if (findIt == pBufs.end()) {

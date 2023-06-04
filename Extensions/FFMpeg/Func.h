@@ -338,10 +338,15 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 inline auto GetRefList(LPRDATA rdPtr) {
 	std::vector<const uint8_t*> pBufs;
+
+	if(rdPtr->pData->pMemVideoLib->data.empty()) {
+		return pBufs;
+	}
+
 	pBufs.reserve(rdPtr->pData->pMemVideoLib->data.size());
 
-	for (auto& ppFFMpeg : rdPtr->pData->ppFFMpegs_record) {
-		auto pFFMpeg = *ppFFMpeg;
+	for (const auto& ppFFMpeg : rdPtr->pData->ppFFMpegs_record) {
+		const auto pFFMpeg = *ppFFMpeg;
 
 		if (!pFFMpeg) {
 			continue;
@@ -357,7 +362,12 @@ inline auto GetRefList(LPRDATA rdPtr) {
 
 inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs) {
 	std::vector<const std::wstring*> toRemove;
-	toRemove.reserve(rdPtr->pData->pMemVideoLib->data.size() - pBufs.size());
+
+	if (rdPtr->pData->pMemVideoLib->data.empty()) {
+		return toRemove;
+	}
+
+	toRemove.reserve((std::max)(0u, rdPtr->pData->pMemVideoLib->data.size() - pBufs.size()));
 
 	for (auto& pair : rdPtr->pData->pMemVideoLib->data) {
 		auto it = std::find(pBufs.begin(), pBufs.end(), pair.second->GetOutputData());
@@ -377,6 +387,10 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
 	};
 
 	if (!rdPtr->bCache) {
+		return;
+	}
+
+	if (rdPtr->pData->pMemVideoLib->data.empty()) {
 		return;
 	}
 
