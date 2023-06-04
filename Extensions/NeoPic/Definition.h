@@ -391,6 +391,8 @@ struct GlobalData {
 	}
 
 	inline bool ExceedMemLimit(size_t memLimit) {
+		//OutputDebugStringW(std::format(L"memLimit: {}, Usage: {}, Exceed: {}\r\n", memLimit, GetMemoryUsageMB(), (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT)) <= GetMemoryUsageMB()).c_str());
+
 #ifdef _USE_DXGI
 		auto totalVRAM = pD3DU->GetLocalBudgetMB();
 
