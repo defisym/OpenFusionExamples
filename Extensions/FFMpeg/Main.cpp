@@ -362,7 +362,7 @@ short WINAPI DLLExport Action_SetOverrideCodec(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport Action_ResetDisplay(LPRDATA rdPtr, long param1, long param2) {
-	if (!GetVideoPlayState(rdPtr)) {
+	if (!GetVideoPlayState(rdPtr) && rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
 		_ForceAddAlpha(rdPtr->pMemSf, 0);
 
 		if(rdPtr->bPm) {
