@@ -89,6 +89,19 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->CurrentReplaceString = nullptr;
 
 	rdPtr->ReplacEachResult = nullptr;
+
+	//Init global data
+	if (GetExtUserData() == nullptr) {
+		//init global
+		auto pData = new GlobalData;
+
+		//Update pointer
+		SetExtUserData(pData);
+	}
+
+	//Get global data
+	//Get pointers here and never delete them.
+	rdPtr->pData = static_cast<GlobalData*>(GetExtUserData());
 	
 	// No errors
 	return 0;
@@ -309,17 +322,12 @@ BOOL WINAPI LoadRunObject(LPRDATA rdPtr, HANDLE hf)
 // Called when the application starts or restarts.
 // Useful for storing global data
 // 
-void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp) {
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
+	}
 }
 
 // -------------------
@@ -327,17 +335,12 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 // -------------------
 // Called when the application ends.
 // 
-void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp) {
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
+	}
 }
 
 // -------------------

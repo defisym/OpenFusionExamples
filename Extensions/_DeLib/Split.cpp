@@ -26,7 +26,7 @@ void Split::ResetSplit() {
     this->ReplacedStr.clear();
 
     //reset flag
-    this->Init = false;
+    this->bLineReg = false;
     this->RemoveEmptyLine = false;
     this->RemoveCommnet = false;
     this->RemoveIndent = false;
@@ -85,9 +85,9 @@ void Split::LoadData(const char* Src, size_t Len) {
         return;
     }
 
-    UINT CodePage = this->Unicode ? CP_UTF8 : CP_ACP;
+    const UINT CodePage = this->Unicode ? CP_UTF8 : CP_ACP;
 
-    size_t OutputLenth = this->GetSize(Src, Len, CodePage);
+    const size_t OutputLenth = this->GetSize(Src, Len, CodePage);
     if (OutputLenth == (size_t)(-1)) {
         return;
     }
@@ -115,7 +115,7 @@ void Split::LoadData(const wchar_t* Src, size_t Len) {
     memcpy(this->SplitSrcStr, Src, sizeof(wchar_t) * Len);
 }
 
-void Split::ReSetRegexFlag() {
+void Split::ResetRegexFlag() {
     this->Flag = this->DefaultFlag;
 }
 
@@ -129,26 +129,30 @@ void Split::SetCaseInsensitive(bool Enable) {
 void Split::InitSplit(const wchar_t* Split) {
     this->LineReg.assign(Split, this->Flag);
     this->LineRegStr = Split;
-    this->Init = true;
+    this->bLineReg = true;
 }
 
-void Split::InitEmptyLine(const wchar_t* EnptyLine) {
-    this->EmptyLineReg.assign(EnptyLine, this->Flag);
+void Split::InitEmptyLine(const wchar_t* EmptyLine) {
+    this->EmptyLineReg.assign(EmptyLine, this->Flag);
+    this->EmptyLineRegStr = EmptyLine;
     this->RemoveEmptyLine = true;
 }
 
 void Split::InitComment(const wchar_t* Comment) {
     this->CommentReg.assign(Comment, this->Flag);
+    this->CommentRegStr = Comment;
     this->RemoveCommnet = true;
 }
 
 void Split::InitIndent(const wchar_t* Indent) {
     this->IndentReg.assign(Indent, this->Flag);
+    this->IndentRegStr = Indent;
     this->RemoveIndent = true;
 }
 
 void Split::InitKeyWord(const wchar_t* KeyWord) {
     this->KeyWordReg.assign(KeyWord, this->Flag);
+    this->KeyWordRegStr = KeyWord;
     this->KeyWord = true;
 }
 
@@ -185,20 +189,19 @@ void Split::SplitData() {
     //this->SplitScrStrNoComment = regex_replace(this->SplitScrStrNoComment, Merge, this->LineRegStr);
 
     //iterate lines	
-    if (!this->Init) {
+    if (!this->bLineReg) {
         return;
     }
 
     wsregex_token_iterator pos(this->SplitDataStr.begin(), this->SplitDataStr.end(), this->LineReg, -1);
-    wsregex_token_iterator end;
+    const wsregex_token_iterator end;
 
     std::wstring result;
-    std::wstring Tmp;
-	
-    for (; pos != end; pos++) {
+
+    for (; pos != end; ++pos) {
         //current str
         //std::wstring Tmp = pos->str();
-        Tmp = pos->str();
+        std::wstring Tmp = pos->str();
 		
         //remove empty line
         if (this->RemoveEmptyLine && regex_match(Tmp, this->EmptyLineReg)) {
@@ -223,6 +226,47 @@ void Split::SplitData() {
     return;
 }
 
+size_t Split::GetHash() const {
+    size_t seed = 1 + 1 + 1 + 5;
+
+    const auto RegexFlag = static_cast<int>(Flag);
+    seed ^= RegexFlag + HASHER_MOVE(seed);
+
+    const auto SplitFlag = (this->Unicode >> 5)
+        | (this->bLineReg >> 4)
+        | (this->RemoveEmptyLine >> 3)
+        | (this->RemoveCommnet >> 2)
+        | (this->RemoveIndent >> 1)
+        | (this->KeyWord >> 0);
+    seed ^= SplitFlag + HASHER_MOVE(seed);
+
+    seed ^= std::hash<std::wstring>{}(this->SplitSrcStr) + HASHER_MOVE(seed);
+
+    seed ^= std::hash<std::wstring>{}(this->LineRegStr) + HASHER_MOVE(seed);
+    seed ^= std::hash<std::wstring>{}(this->EmptyLineRegStr) + HASHER_MOVE(seed);
+    seed ^= std::hash<std::wstring>{}(this->CommentRegStr) + HASHER_MOVE(seed);
+    seed ^= std::hash<std::wstring>{}(this->IndentRegStr) + HASHER_MOVE(seed);
+    seed ^= std::hash<std::wstring>{}(this->KeyWordRegStr) + HASHER_MOVE(seed);
+
+    return seed;
+}
+
+void Split::GetResult(SplitResult* pSplitResult) const {
+    if (pSplitResult != nullptr) {
+        pSplitResult->SplitDataStr = this->SplitDataStr;
+        pSplitResult->SplitStrVec = this->SplitStrVec;
+        pSplitResult->KeyWordPairVec = this->KeyWordPairVec;
+    }
+}
+
+void Split::SetResult(const SplitResult* pSplitResult) {
+    if (pSplitResult != nullptr) {
+        this->SplitDataStr = pSplitResult->SplitDataStr;
+        this->SplitStrVec = pSplitResult->SplitStrVec;
+        this->KeyWordPairVec = pSplitResult->KeyWordPairVec;
+    }
+}
+
 int Split::GetSubStringPos(const wchar_t* SubStr, size_t Sub) {
     return this->GetSubStringPos(this->GetSplitData(), SubStr, Sub);
 }
@@ -234,11 +278,11 @@ int Split::GetSubStringPos(const wchar_t* Src, const wchar_t* SubStr, size_t Sub
 int Split::GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_t Sub, bool SaveAll) {
     this->MatchedStr.clear();
 
-    wregex SubString(SubStr, this->Flag);
+    const wregex SubString(SubStr, this->Flag);
     wsmatch MatchedStr;
 
     std::wstring::const_iterator StrBegin = Src.begin();
-    std::wstring::const_iterator StrEnd = Src.end();
+    const std::wstring::const_iterator StrEnd = Src.end();
 
     size_t CurPos = 0;
     size_t PrePos = 0;
@@ -273,18 +317,18 @@ void Split::GetAllSubString(const std::wstring& Src, const wchar_t* SubStr) {
     this->GetSubStringPos(Src, SubStr, -1, true);;
 }
 
-const wchar_t* Split::GetNextKeyWord(size_t StartPos) {
+const wchar_t* Split::GetNextKeyWord(size_t StartPos) const {
     //match all in this case
     return this->GetNextKeyWord(StartPos, ALL);
 }
 
-const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) {
+const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) const {
     //valid current pos    
-    if (!((this->KeyWordPairVec.size() > 0) && (StartPos < this->KeyWordPairVec.back().first) && (StartPos >= 0))) {
+    if (!(!this->KeyWordPairVec.empty() && (StartPos < this->KeyWordPairVec.back().first))) {
         return nullptr;
     }
 
-    wregex KW(KeyWord, this->Flag);
+    const wregex KW(KeyWord, this->Flag);
 
     for (auto& it : this->KeyWordPairVec) {
         if ((it.first > StartPos) && regex_match(it.second.c_str(), KW))
@@ -294,18 +338,18 @@ const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) {
     return nullptr;
 }
 
-int Split::GetNextKeyWordPos(size_t StartPos) {
+int Split::GetNextKeyWordPos(size_t StartPos) const {
     //match all in this case
     return this->GetNextKeyWordPos(StartPos, ALL);
 }
 
-int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) {
+int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) const {
     //valid current pos
-    if (!((this->KeyWordPairVec.size() > 0) &&(StartPos < this->KeyWordPairVec.back().first) && (StartPos >= 0))) {
+    if (!(!this->KeyWordPairVec.empty() && (StartPos < this->KeyWordPairVec.back().first))) {
         return -1;
     }
 
-    wregex KW(KeyWord, this->Flag);
+    const wregex KW(KeyWord, this->Flag);
 
     for (auto& it : this->KeyWordPairVec) {
         if ((it.first > StartPos) && regex_match(it.second.c_str(), KW))

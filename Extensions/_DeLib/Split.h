@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Encryption.h"
+#include "GeneralDefinition.h"
 
 #include <vector>
 
@@ -21,6 +22,12 @@ constexpr auto RESERVE_DEFAULT = 50;
 constexpr auto RESERVE_MAGNUM = 16;
 
 constexpr auto DEFAULE_REGEXFLAG = ECMAScript | optimize;
+
+struct SplitResult {
+    std::wstring SplitDataStr;
+    std::vector<std::wstring> SplitStrVec;
+    std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
+};
 
 class Split :
     public Encryption
@@ -46,20 +53,22 @@ private:
 
     //Main regex, split lines
     wregex LineReg;
-    std::wstring LineRegStr;
-	
-    bool Init = false;
+    std::wstring LineRegStr;	
+    bool bLineReg = false;
 
     //EmptyLine regex, remove empty lines
     wregex EmptyLineReg;
+    std::wstring EmptyLineRegStr;
     bool RemoveEmptyLine = false;
 
     //Comment regex, remove comments
     wregex CommentReg;
+    std::wstring CommentRegStr;
     bool RemoveCommnet = false;
 
     //Indent regex, escape SPACE and TAB at the beginning and ending of string
     wregex IndentReg;
+    std::wstring IndentRegStr;
     bool RemoveIndent = false;
 
     //Result
@@ -67,6 +76,7 @@ private:
 
     //Keyword that you can quick get it's pos in vec
     wregex KeyWordReg;
+    std::wstring KeyWordRegStr;
     bool KeyWord = false;
 
     //Keyword list
@@ -80,12 +90,12 @@ private:
 
     //Convert
     inline size_t GetSize(const char* Src, size_t Len, UINT CodePage = CP_UTF8) {
-        int Size = MultiByteToWideChar(CodePage, 0, Src, (int)Len, 0, 0);
+	    const int Size = MultiByteToWideChar(CodePage, 0, Src, (int)Len, 0, 0);
 
         return (size_t)((Size > 0) ? Size : -1);
     }
     inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen, UINT CodePage = CP_UTF8) {
-        int Size = MultiByteToWideChar(CodePage, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
+	    const int Size = MultiByteToWideChar(CodePage, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
 
         return (Size > 0);
     }
@@ -131,19 +141,19 @@ public:
         this->DefaultFlag = DEFAULE_REGEXFLAG;
         this->Flag = DefaultFlag;
     }
-    void ReSetRegexFlag();
+    void ResetRegexFlag();
 
     //E.g. SetRegexFlag(ECMAScript | icase);
     void SetRegexFlag(RegexFlag Flag);
 
     void SetCaseInsensitive(bool Enable);
 
-    inline RegexFlag GetRegexFlag() {
+    inline RegexFlag GetRegexFlag() const {
         return this->Flag;
     }
 
     void InitSplit(const wchar_t* Split);
-    void InitEmptyLine(const wchar_t* EnptyLine);
+    void InitEmptyLine(const wchar_t* EmptyLine);
     void InitComment(const wchar_t* Comment);
     void InitIndent(const wchar_t* Indent);
     void InitKeyWord(const wchar_t* KeyWord);
@@ -152,7 +162,11 @@ public:
 
     void SplitData();
 
-    inline const wchar_t* GetSplitData() {
+    size_t GetHash() const;
+    void GetResult(SplitResult* pSplitResult) const;
+    void SetResult(const SplitResult* pSplitResult);
+
+    inline const wchar_t* GetSplitData() const {
         if (this->SplitDataStr.empty()) {
             return this->SplitSrcStr;
         }
@@ -169,7 +183,7 @@ public:
         return ReplaceStr(std::wstring(Src), SubStr, Replace);        
     }
     inline const wchar_t* ReplaceStr(const std::wstring& Src, const wchar_t* SubStr, const wchar_t* Replace) {
-        wregex SubString(SubStr, this->Flag);
+	    const wregex SubString(SubStr, this->Flag);
         this->ReplacedStr = regex_replace(Src, SubString, Replace);
         return this->ReplacedStr.c_str();
     }
@@ -187,27 +201,27 @@ public:
 
     //Type == true search
     //Type == false match
-    inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) {
+    inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) const {
         return this->StringMatchRegex(this->GetSplitData(), SubStr,Type);
     }
-    inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) {
+    inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) const {
         return this->StringMatchRegex(std::wstring(Src), SubStr, Type);
     }
-    inline bool StringMatchRegex(const std::wstring& Src, const wchar_t* SubStr, bool Type = false) {
+    inline bool StringMatchRegex(const std::wstring& Src, const wchar_t* SubStr, bool Type = false) const {
         return Type ? regex_search(Src, wregex(SubStr, this->Flag)) : regex_match(Src, wregex(SubStr, this->Flag));
     }
 
-    inline size_t GetSubStringSize() {
+    inline size_t GetSubStringSize() const {
         return this->SubStringVec.size();
     }
-    inline const std::vector<std::wstring>* GetSubStringVec() {
+    inline const std::vector<std::wstring>* GetSubStringVec() const {
         return &this->SubStringVec;
     }
-    inline const wchar_t* GetSubString(size_t Pos) {
+    inline const wchar_t* GetSubString(size_t Pos) const {
         return (Pos < this->SubStringVec.size()) && (Pos >= 0) ? this->SubStringVec[Pos].c_str() : nullptr;
     }
 
-    inline const wchar_t* GetMatchResult() {
+    inline const wchar_t* GetMatchResult() const {
         return this->MatchedStr.c_str();
     }
     inline const wchar_t* GetMatchResult(const wchar_t* SubStr, size_t Sub) {
@@ -223,19 +237,19 @@ public:
         return this->MatchedStr.c_str();
     }
 
-    const wchar_t* GetNextKeyWord(size_t StartPos);
-    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord);
+    const wchar_t* GetNextKeyWord(size_t StartPos) const;
+    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) const;
 
-    int GetNextKeyWordPos(size_t StartPos);
-    int GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord);
+    int GetNextKeyWordPos(size_t StartPos) const;
+    int GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) const;
 
-    inline size_t GetKeyWordPairVecSize() {
+    inline size_t GetKeyWordPairVecSize() const {
         return this->KeyWordPairVec.size();
     }
-    inline const wchar_t* GetKeyWord(size_t Pos) {
+    inline const wchar_t* GetKeyWord(size_t Pos) const {
         return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
     }
-    inline int GetKeyWordPos(size_t Pos) {
+    inline int GetKeyWordPos(size_t Pos) const {
         return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? (int)this->KeyWordPairVec[Pos].first : -1;
     }
 
@@ -243,24 +257,24 @@ public:
         this->SplitStrVec.reserve(Size);
     }
 
-    inline size_t GetSplitSize() {
+    inline size_t GetSplitSize() const {
         return this->SplitStrVec.size();
     }
-    inline const std::vector<std::wstring>* GetSplit() {
+    inline const std::vector<std::wstring>* GetSplit() const {
         return &this->SplitStrVec;
     }
-    inline const wchar_t* GetSplitVec(size_t Pos) {
+    inline const wchar_t* GetSplitVec(size_t Pos) const {
         return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
     // the same as GetSplit(size_t Pos)
-    inline const wchar_t* operator[](size_t Pos) {
+    inline const wchar_t* operator[](size_t Pos) const {
         return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
     };
 };
 
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
-inline const std::wstring NewLineEscape(const wchar_t* Src) {
-    wregex NewLineEscape(L"(\\\\r\\\\n)");
-    return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n").c_str();
+inline std::wstring NewLineEscape(const wchar_t* Src) {
+	const wregex NewLineEscape(L"(\\\\r\\\\n)");
+    return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n");
 
 }

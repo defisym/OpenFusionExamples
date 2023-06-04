@@ -172,6 +172,7 @@ BEGIN
         POPUP "Split"
             BEGIN
                 MENUITEM "Set Auto Split",  IDMN_ACTION_AS
+                MENUITEM "Set Cache Split Result",  IDMN_ACTION_CSR
                 MENUITEM SEPARATOR
                 MENUITEM "Split Data",  IDMN_ACTION_SD
                 MENUITEM SEPARATOR
@@ -354,6 +355,7 @@ BEGIN
     M_ACTION_SR_K           "Set Keyword Regex to %0"
 
     M_ACTION_AS             "Set Auto Split to %0"
+    M_ACTION_CSR            "Set Cache Split Result to %0"            
 
     M_ACTION_SD             "00Split Data"
 
@@ -384,6 +386,7 @@ BEGIN
     M_ACT_SR_K			    "Keyword Regex"
 
     M_ACT_AUTO			    "1 = Enable, 0 = Disable"
+    M_ACT_CACHE			    "1 = Enable, 0 = Disable"
 END
 
 STRINGTABLE DISCARDABLE 

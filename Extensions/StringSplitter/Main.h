@@ -50,7 +50,9 @@
 #define	ACT_ACTION_ITRE_SRS			19
 #define	ACT_ACTION_ITREA			20
 
-#define	ACT_LAST					21
+#define	ACT_ACTION_CSR				21
+
+#define	ACT_LAST					22
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -136,11 +138,14 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
+	GlobalData* pData;
+
 	//Split
 	Split* S;
 	
 	//Auto Split
 	bool AutoSplit = false;
+	bool bCache = false;
 
 	//LoopName
 	LPTSTR SplitStrVecLoopName = nullptr;

@@ -55,6 +55,8 @@
 #define IDMN_ACTION_ITRE_SRS	25019
 #define IDMN_ACTION_ITREA   	25020
 
+#define IDMN_ACTION_CSR   		25021
+
 // Action strings
 #define M_ACTION_RP             5000
 
@@ -86,6 +88,8 @@
 #define M_ACTION_ITRE_SRS       5019
 #define M_ACTION_ITREA          5020
 
+#define M_ACTION_CSR            5021
+
 // Titles of action parameters
 #define M_ACT_STR				 5501
 #define M_ACT_REGEX				 5502
@@ -104,6 +108,7 @@
 #define M_ACT_SR_K				 5512
 
 #define M_ACT_AUTO				 5513
+#define M_ACT_CACHE				 5514
 
 //	Conditions
 //--------------------

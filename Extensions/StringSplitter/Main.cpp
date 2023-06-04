@@ -64,6 +64,9 @@ short actionsInfos[]=
 		IDMN_ACTION_ITRE, M_ACTION_ITRE, ACT_ACTION_ITRE,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_ACT_STR,M_ACT_REGEX,M_CND_LOOPNAME,
 		IDMN_ACTION_ITRE_SRS, M_ACTION_ITRE_SRS, ACT_ACTION_ITRE_SRS,	0, 1,PARAM_EXPSTRING,M_ACT_STR,
 		IDMN_ACTION_ITREA, M_ACTION_ITREA, ACT_ACTION_ITREA,	0, 3,PARAM_EXPSTRING,PARAM_EXPSTRING,PARAM_EXPSTRING,M_ACT_STR,M_ACT_REGEX,M_CND_LOOPNAME,
+
+		IDMN_ACTION_CSR, M_ACTION_CSR, ACT_ACTION_CSR,	0, 1, PARAM_EXPRESSION, M_ACT_CACHE,
+
 		};
 
 // Definitions of parameters for each expression
@@ -174,6 +177,14 @@ short WINAPI DLLExport ResetSplit(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport CacheSplitResult(LPRDATA rdPtr, long param1, long param2) {
+	const bool bEnable = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->bCache = bEnable;
+
+	return 0;
+}
+
 short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	const LPCTSTR FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -182,7 +193,8 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	const auto bRet = Spliter->LoadFile(FilePath, Key, Enable);
 
 	if (bRet && rdPtr->AutoSplit) {
-		Spliter->SplitData();
+		//Spliter->SplitData();
+		SplitData(rdPtr);
 	}
 
 	return 0;
@@ -193,7 +205,8 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 	Spliter->LoadData(String);
 
 	if (rdPtr->AutoSplit) {
-		Spliter->SplitData();
+		//Spliter->SplitData();
+		SplitData(rdPtr);
 	}
 
 	return 0;
@@ -259,7 +272,9 @@ short WINAPI DLLExport SetAutoSplit(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SplitData(LPRDATA rdPtr, long param1, long param2) {
-	Spliter->SplitData();
+	//Spliter->SplitData();
+	SplitData(rdPtr);
+
 	return 0;
 }
 
@@ -667,6 +682,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			IterateReplaceEach,
 			IterateReplaceEachSetReplaceString,
 			IterateReplaceEachAll,
+
+			CacheSplitResult,
 
 			0
 			};
