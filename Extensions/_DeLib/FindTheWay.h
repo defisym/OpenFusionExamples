@@ -350,9 +350,6 @@ namespace FindTheWay {
 
 		StashArea stashArea;
 
-		static constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
-		static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); }
-
 		inline static size_t Hasher(const AreaRange& c) {
 			size_t seed = 5;
 
