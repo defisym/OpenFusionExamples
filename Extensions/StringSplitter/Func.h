@@ -16,11 +16,7 @@ inline void SplitData(LPRDATA rdPtr) {
 		Spliter->SetResult(&it->second);
 	}
 	else {
-		SplitResult result;
-
 		Spliter->SplitData();
-		Spliter->GetResult(&result);
-
-		rdPtr->pData->data[hash] = result;
+		Spliter->GetResult(&rdPtr->pData->data[hash]);
 	}
 }
