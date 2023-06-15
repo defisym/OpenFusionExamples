@@ -61,6 +61,8 @@ Here follows all dlls needed by this object:
   - Cache
     - Cache decrypted data over frames
     - Currently reading decrypt file didn't use a stream (it's provided by another class and FFMpeg only has a memory reader), so it may cost some time to decrypt. With this on extension will cache these file in memory over frames instead of reloading
+  - Force No Audio
+    - *Don't play audio and sync with external clock*
 
 - Queue
   - *Data is split into packet in FFMpeg, and usually it needs several packets to decode one frame. For audio, it's played in another thread and use a callback to ask for more data, so the decoded packets are cached in a queue, and won't add new ones if cached data exceeds this limit. However, some formats with higher resolution may need more data to decode, which may exceed the limit (e.g., aida_alpha.mov), then the application will keep waiting forever. In this case, extend this limit will solve it.*
@@ -70,11 +72,10 @@ Here follows all dlls needed by this object:
   - Hardware Device
     - *set the device you want object to use. object will try using the device you set, if not supported, it will try using other hardware devices. if all devices are not supported, it will fallback to software decode*
 
-- Force No Audio
-  - *Don't play audio and sync with external clock*
-  - *This is a legacy feature for single instance SDL backend, kept for compatibility*
-
 ## Action
+
+- Reset Display
+  - *reset display to transparent if video is not playing*
 
 - Open Video
   - *If open failed, extension will keep previous frame*
@@ -96,6 +97,7 @@ Here follows all dlls needed by this object:
   - *see props*
 - Set Audio Tempo
   - *tempo = 2.0 -> play video in 2X speed*
+  - *also works if sync with external clock (aka no audio)*
 - Set Accurate Seek
   - see Properties->Accurate Seek
 - Set Video Position
@@ -180,6 +182,9 @@ Here follows all dlls needed by this object:
 - Get Grabbed Video Frame Pointer
   - *You can get the cSurface pointer of current frame / frame with given time stamp. Pass it to another extension then do anything you like.*
   - *Note the target extension should build in /MD, aka use the same heap. Or it may crash due to access violation. See: <https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170>*
+
+- Get Video Override Codec Name
+- Get Audio Override Codec Name
 
 - Get Hardware Decode State
 - Get Actual Hardware Device
