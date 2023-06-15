@@ -175,7 +175,7 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	return true;
 }
 
-// MSBOX
+// MSGBOX
 #include "StrNum.h"
 
 inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"ALERT") {

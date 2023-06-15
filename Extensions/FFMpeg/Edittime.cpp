@@ -941,13 +941,6 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvRefreshProp(mV, edPtr, PROPID_CACHE_CHECK, TRUE);
 		break;
 	case PROPID_CACHE_FORCENOAUDIO:
-		if(nCheck) {
-			MSGBOX(L"\tThis options is a deprecated feature for single instance SDL backend, only kept for compatibility, and will be removed in future builds"
-				L"\n"
-				L"\tPlease uncheck it and use volume instead");
-		}
-
-		nCheck = false;
 		edPtr->bForceNoAudio = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_CACHE_FORCENOAUDIO, TRUE);

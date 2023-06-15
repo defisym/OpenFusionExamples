@@ -27,7 +27,7 @@ struct MemVideoLib {
 	}
 
 	inline void EraseItem(const std::wstring& key) {
-		auto it = GetItem(key);
+		const auto it = GetItem(key);
 
 		if (it != data.end()) {
 			delete it->second;
@@ -51,7 +51,7 @@ struct MemVideoLib {
 		return GetItem(key) != data.end();
 	}
 
-	inline bool ItemExist(It& it) {
+	inline bool ItemExist(const It& it) {
 		return it != data.end();
 	}
 };
@@ -71,11 +71,11 @@ struct GlobalData {
 		delete pAI;
 	}
 
-	inline void Create(FFMpeg** ppFFMpeg, bool bForceNoAudio) {
+	inline void Create(FFMpeg** ppFFMpeg, void* pUserData) {
 		// Update global data
 		ppFFMpegs_record.emplace_back(ppFFMpeg);
 
-		pAI->AddInstance(ppFFMpeg, &bForceNoAudio);
+		pAI->AddInstance(ppFFMpeg, pUserData);
 	}
 
 	inline void Destroy(FFMpeg** ppFFMpeg) {

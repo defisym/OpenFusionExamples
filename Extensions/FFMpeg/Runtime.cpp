@@ -131,7 +131,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}	
 
-	rdPtr->pData->Create(&rdPtr->pFFMpeg, rdPtr->bForceNoAudio);
+	rdPtr->pData->Create(&rdPtr->pFFMpeg, &rdPtr->bForceNoAudio);
 
 //#define LIST_DECODERS
 
