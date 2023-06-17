@@ -499,71 +499,72 @@ private:
 	}
 
 public:
-		struct RegexHandler{
-			wchar_t regstr[2] = { L'\0' };
+	struct RegexHandler {
+		wchar_t regstr[2] = { L'\0' };
 
-			wregex* pCJK = nullptr;
-			wregex* pEmpty = nullptr;
-			wregex* pEmptyStr = nullptr;
+		wregex* pCJK = nullptr;
+		wregex* pEmpty = nullptr;
+		wregex* pEmptyStr = nullptr;
 
-			using RegexCache = std::map<wchar_t, bool>;
+		using RegexCache = std::map<wchar_t, bool>;
 
-			RegexCache CJKCache;
-			RegexCache EmptyCache;
+		RegexCache CJKCache;
+		RegexCache EmptyCache;
 
-			RegexHandler() {
-				constexpr auto defaultRegexFlag = static_cast<RegexFlag>(ECMAScript | optimize);
+		RegexHandler() {
+			constexpr auto defaultRegexFlag = static_cast<RegexFlag>(ECMAScript | optimize);
 
-				// https://www.jianshu.com/p/fcbc5cd06f39
-				// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
-				this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
-					, defaultRegexFlag);
-				this->pEmpty = new wregex(L"[\\s]"
-					, defaultRegexFlag);
-				this->pEmptyStr = new wregex(L"[\\s]*"
-					, defaultRegexFlag);
+			// https://www.jianshu.com/p/fcbc5cd06f39
+			// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
+			this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+				, defaultRegexFlag);
+			this->pEmpty = new wregex(L"[\\s]"
+				, defaultRegexFlag);
+			this->pEmptyStr = new wregex(L"[\\s]*"
+				, defaultRegexFlag);
+		}
+		~RegexHandler() {
+			delete this->pCJK;
+			this->pCJK = nullptr;
+
+			delete this->pEmpty;
+			this->pEmpty = nullptr;
+
+			delete this->pEmptyStr;
+			this->pEmptyStr = nullptr;
+		}
+
+		inline bool RegexCore(const wregex* pRegex, RegexCache* pCache, const wchar_t wChar) {
+			regstr[0] = wChar;
+
+			const auto it = pCache->find(wChar);
+
+			if (it == pCache->end()) {
+				const auto bRet = regex_match(regstr, *pRegex);
+				(*pCache)[wChar] = bRet;
+
+				return bRet;
 			}
-			~RegexHandler() {
-				delete this->pCJK;
-				this->pCJK = nullptr;
-
-				delete this->pEmpty;
-				this->pEmpty = nullptr;
-
-				delete this->pEmptyStr;
-				this->pEmptyStr = nullptr;
-			}
-
-			inline bool RegexCore(const wregex* pRegex, RegexCache* pCache, const wchar_t wChar) {
-				regstr[0] = wChar;
-
-				const auto it = pCache->find(wChar);
-
-				if (it == pCache->end()) {
-					const auto bRet = regex_match(regstr, *pRegex);
-					(*pCache)[wChar] = bRet;
-
-					return bRet;
-				}
-				else {
-					return it->second;
-				}
-
-				//return regex_match(regstr, *pRegex);
+			else {
+				return it->second;
 			}
 
-			inline bool NotCJK(const wchar_t wChar) {				
-				return RegexCore(this->pCJK, &this->CJKCache, wChar);
-			}
+			//return regex_match(regstr, *pRegex);
+		}
 
-			inline bool NotEmpty(const wchar_t wChar) {
-				return !RegexCore(this->pEmpty, &this->EmptyCache, wChar);
-			}
+		inline bool NotCJK(const wchar_t wChar) {
+			return RegexCore(this->pCJK, &this->CJKCache, wChar);
+		}
 
-			inline bool NotEmpty(const wchar_t* pChar) const {
-				return !regex_match(pChar, *this->pEmptyStr);
-			}
-		};
+		inline bool NotEmpty(const wchar_t wChar) {
+			return !RegexCore(this->pEmpty, &this->EmptyCache, wChar);
+		}
+
+		inline bool NotEmpty(const wchar_t* pChar) const {
+			return !regex_match(pChar, *this->pEmptyStr);
+		}
+	};
+
 private:
 	RegexHandler* pRegexCache;
 
@@ -864,16 +865,12 @@ public:
 	//https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
 	//https://blog.csdn.net/analogous_love/article/details/45845971
 	inline void EmbedFont(const LPCWSTR pFontFile) const {
-		this->pFontCollection->AddFontFile(pFontFile);
+		EmbedFont(pFontFile, *this->pFontCollection);
 		auto count = this->pFontCollection->GetFamilyCount();
-
-		return;
 	}
 
 	inline static void EmbedFont(const LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {
 		fontCollection.AddFontFile(pFontFile);
-
-		return;
 	}
 
 	inline static bool FontCollectionHasFont(const LPWSTR pFaceName
