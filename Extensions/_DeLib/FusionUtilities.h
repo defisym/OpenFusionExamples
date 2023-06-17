@@ -616,3 +616,39 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
 	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
 }
+
+//IterateBank(rdPtr, BK_FONTS, [] (const void* pAddress) {
+//
+//});
+
+inline bool IterateBank(LPRDATA rdPtr, int type, const std::function<void(const void*)>& callback) {
+	if (type < BK_IMGS || type > BK_MAX) {
+		return false;
+	}
+
+	const auto pAppli = rdPtr->rHo.hoAdRunHeader->rhIdAppli;
+
+	auto ret = LockBank(pAppli, type) == 0;
+
+	if (!ret) {
+		return ret;
+	}
+
+	const auto sz = Bank_GetEltCount(pAppli, type);
+
+	if (sz == 0) {
+		return false;
+	}
+
+	for (int i = 1; i <= sz; i++) {
+		const auto pAddress = Bank_GetEltAddr(pAppli, type, i);
+
+		if (pAddress != nullptr) {
+			callback(pAddress);
+		}
+	}
+
+	ret |= UnlockBank(pAppli, type) == 0;
+
+	return ret;
+}
