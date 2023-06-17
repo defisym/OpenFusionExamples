@@ -5,6 +5,8 @@
 #include <string>
 #include <string_view>
 
+#include <vector>
+
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 
@@ -64,7 +66,7 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(LPTSTR & Tar, const LPCTSTR Str) {
 	release_arr(Tar);
-	rsize_t total_length = wcslen(Str) + 1;
+	const rsize_t total_length = wcslen(Str) + 1;
 
 	Tar = new WCHAR[total_length];
 	wcscpy_s(Tar, total_length, Str);
@@ -144,7 +146,7 @@ inline void TrimStr(std::wstring& str,
 };
 
 inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
-	auto length = wcslen(pStr);
+	const auto length = wcslen(pStr);
 
 	if (length != str.size()) {
 		return false;
@@ -160,7 +162,7 @@ inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 }
 
 inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
-	auto length = wcslen(pStr);
+	const auto length = wcslen(pStr);
 
 	if (length != str.size()) {
 		return false;
