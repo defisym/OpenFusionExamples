@@ -198,19 +198,18 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->RelativeFilePath;
 	delete rdPtr->Key;
 
-	if(rdPtr->isLib) {
-		rdPtr->pData->pPreloadHandler->PausePreload();
-	}
-
-	if (!rdPtr->isLib) {
-		DetachFromLib(rdPtr);
-		FreeColMask(rdPtr->pColMask);
-	}
-
 	delete rdPtr->itCountVecStr;
 	delete rdPtr->itCountVecCount;
 
 	delete rdPtr->pAI;
+
+	if (rdPtr->isLib) {
+		rdPtr->pData->pPreloadHandler->PausePreload();
+	}
+	else {
+		DetachFromLib(rdPtr);
+		FreeColMask(rdPtr->pColMask);
+	}
 
 	// No errors
 	return 0;
