@@ -7,6 +7,7 @@
         "*.asc": "AvgScript",
         "*.dat": "ini",
         "*.sav": "ini",
+        "*.wsb": "xml",
         "algorithm": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -81,14 +82,29 @@
         "xlocbuf": "cpp",
         "xlocmes": "cpp",
         "xlocmon": "cpp",
-        "xloctime": "cpp"
+        "xloctime": "cpp",
+        "any": "cpp",
+        "complex": "cpp",
+        "filesystem": "cpp",
+        "numeric": "cpp",
+        "queue": "cpp",
+        "ranges": "cpp",
+        "set": "cpp",
+        "span": "cpp",
+        "valarray": "cpp"
     },
-    "json.schemas": [
+    "json.schemas": [    
         {
             "fileMatch": [
                 "/Animation.json"
             ],
             "url": "./AnimationSchema.json"
+        },
+        {
+            "fileMatch": [
+                "/NineSlice.json"
+            ],
+            "url": "./NineSliceSchema.json"
         }
     ],
 }

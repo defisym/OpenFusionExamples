@@ -39,6 +39,7 @@ enum class HotSpotPos;
 struct ZoomScale;
 
 struct AnimationInterface;
+struct NineSliceInterface;
 
 #define PERSPECTIVE_TRANSFORMATION
 
@@ -71,6 +72,7 @@ struct AnimationInterface;
 #include	"Func.h"
 
 #include	"AnimationInterface.h"
+#include	"NineSliceInterface.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

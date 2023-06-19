@@ -92,7 +92,11 @@
 #define	ACT_ACTION_SAFINDEX			40
 #define	ACT_ACTION_SASTEP			41
 
-#define	ACT_LAST					42
+#define	ACT_ACTION_SNSS				42
+#define	ACT_ACTION_LNS				43
+#define	ACT_ACTION_RNS				44
+
+#define	ACT_LAST					45
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -278,6 +282,8 @@ typedef struct tagRDATA
 
 	//animation
 	AnimationInterface* pAI = nullptr;
+	//nine slice
+	NineSliceInterface* pNS = nullptr;
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

@@ -110,6 +110,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SAFINDEX, M_ACTION_SAFINDEX, ACT_ACTION_SAFINDEX, 0, 1, PARAM_EXPRESSION, M_ACTION_FINDEX,
 		IDMN_ACTION_SASTEP, M_ACTION_SASTEP, ACT_ACTION_SASTEP, 0, 1, PARAM_EXPRESSION, M_ACTION_STEP,
 
+		IDMN_ACTION_SNSS, M_ACTION_SNSS,	ACT_ACTION_SNSS,	0, 3, PARAM_OBJECT,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_OBJECT, M_ACTION_BASEPATH, M_ACTION_KEY,
+		IDMN_ACTION_LNS, M_ACTION_LNS, ACT_ACTION_LNS,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
+		IDMN_ACTION_RNS, M_ACTION_RNS, ACT_ACTION_RNS,	0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -177,19 +180,19 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-long WINAPI DLLExport OnPreloadComplete(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnPreloadComplete(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
-long WINAPI DLLExport OnIterateRefCount(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnIterateRefCount(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
-long WINAPI DLLExport CanDisplay(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_CanDisplay(LPRDATA rdPtr, long param1, long param2) {
 	return CanDisplay(rdPtr);
 }
 
-long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long param2) {
 	if (!CanDisplay(rdPtr)) {
 		rdPtr->bCurrentDisplayTransparent = true;
 	}
@@ -211,32 +214,32 @@ long WINAPI DLLExport CurrentDisplayTransparent(LPRDATA rdPtr, long param1, long
 	return rdPtr->bCurrentDisplayTransparent;
 }
 
-long WINAPI DLLExport LibHasItem(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_LibHasItem(LPRDATA rdPtr, long param1, long param2) {
 	const auto pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto fullPath = GetFullPathNameStr(pFileName);
 
 	return rdPtr->isLib && rdPtr->pLib->find(fullPath) != rdPtr->pLib->end() ? true : false;
 }
 
-long WINAPI DLLExport OnAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
 	return true;
 }
 
-long WINAPI DLLExport IsAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_IsAnimationFinished(LPRDATA rdPtr, long param1, long param2) {
 	return 	rdPtr->pAI->AnimationValid()
 		? rdPtr->pAI->pA->AnimationFinished()
 		: true;
 }
 
-long WINAPI DLLExport IsAnimationPlaying(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_IsAnimationPlaying(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->pAI->AnimationValid();
 }
 
-long WINAPI DLLExport IsAnimationPaused(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_IsAnimationPaused(LPRDATA rdPtr, long param1, long param2) {
 	return rdPtr->pAI->GetPauseState();
 }
 
-long WINAPI DLLExport OnLoadCallback(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnLoadCallback(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
@@ -246,49 +249,57 @@ long WINAPI DLLExport OnLoadCallback(LPRDATA rdPtr, long param1, long param2) {
 // 
 // ============================================================================
 
-short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
+
 	LoadFromFile(rdPtr, FilePath, Key);
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadFromLib(LPRDATA rdPtr, long param1, long param2) {
 	const auto object = (LPRO)CNC_GetParameter(rdPtr);
 
 	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
+
 	LoadFromLib(rdPtr, object, FilePath, Key);
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadFromDisplay(LPRDATA rdPtr, long param1, long param2) {
 	const auto object = (LPRO)CNC_GetParameter(rdPtr);
 	const bool UpdateCoef = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
+
 	LoadFromDisplay(rdPtr, object, UpdateCoef);
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
 	const auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
 	const auto pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
+
 	LoadFromPointer(rdPtr, pFileName, pSf);
 
 	return 0;
 }
 
-short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	const std::wstring listSrc = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const std::wstring basePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -302,7 +313,7 @@ short WINAPI DLLExport SetPreloadList(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetPreloadListByPointer(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetPreloadListByPointer(LPRDATA rdPtr, long param1, long param2) {
 	long list = (long)CNC_GetIntParameter(rdPtr);
 
 	auto BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -328,7 +339,7 @@ short WINAPI DLLExport SetPreloadListByPointer(LPRDATA rdPtr, long param1, long 
 	return 0;
 }
 
-short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	const auto BasePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -340,7 +351,7 @@ short WINAPI DLLExport SetPreloadPath(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport CleanCache(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_CleanCache(LPRDATA rdPtr, long param1, long param2) {
 	const size_t memLimit = (size_t)CNC_GetIntParameter(rdPtr);
 
 	if (rdPtr->isLib) {
@@ -350,7 +361,7 @@ short WINAPI DLLExport CleanCache(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetKeepList(LPRDATA rdPtr, long param1, long param2) {
 	const std::wstring keepListSrc = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const std::wstring basePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -367,7 +378,7 @@ short WINAPI DLLExport SetKeepList(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetKeepListByPointer(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetKeepListByPointer(LPRDATA rdPtr, long param1, long param2) {
 	long list = (long)CNC_GetIntParameter(rdPtr);
 	auto basePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -392,7 +403,7 @@ short WINAPI DLLExport SetKeepListByPointer(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
-short WINAPI DLLExport IterateRefCount(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_IterateRefCount(LPRDATA rdPtr, long param1, long param2) {
 	auto num = (int)CNC_GetIntParameter(rdPtr);
 
 	if (rdPtr->isLib) {
@@ -426,7 +437,7 @@ short WINAPI DLLExport IterateRefCount(LPRDATA rdPtr, long param1, long param2) 
 	return 0;
 }
 
-short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_ResetLib(LPRDATA rdPtr, long param1, long param2) {
 	if(rdPtr->isLib){
 		rdPtr->pData->ResetLib();
 	}
@@ -434,7 +445,7 @@ short WINAPI DLLExport ResetLib(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_EraseLib(LPRDATA rdPtr, long param1, long param2) {
 	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	if (rdPtr->isLib) {
@@ -444,7 +455,7 @@ short WINAPI DLLExport EraseLib(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
@@ -457,7 +468,7 @@ short WINAPI DLLExport UpdateLib(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport AttachObjectToLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_AttachObjectToLib(LPRDATA rdPtr, long param1, long param2) {
 	const auto object = (LPRDATA)CNC_GetParameter(rdPtr);
 	const auto pFileName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -489,7 +500,7 @@ short WINAPI DLLExport AttachObjectToLib(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
-short WINAPI DLLExport DetachObjectFromLib(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_DetachObjectFromLib(LPRDATA rdPtr, long param1, long param2) {
 	if (CanDisplay(rdPtr)) {
 		if (!rdPtr->fromLib) {
 			return 0;
@@ -508,7 +519,7 @@ short WINAPI DLLExport DetachObjectFromLib(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
-short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	const auto Pos = (HotSpotPos)CNC_GetIntParameter(rdPtr);
 
 	const int X = (int)CNC_GetIntParameter(rdPtr);
@@ -521,7 +532,7 @@ short WINAPI DLLExport SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Zoom(LPRDATA rdPtr, long param1, long param2) {
 	const float XScale = GetFloatParam(rdPtr);
 	const float YScale = GetFloatParam(rdPtr);
 	
@@ -535,7 +546,7 @@ short WINAPI DLLExport Zoom(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 	const int Width = (int)CNC_GetIntParameter(rdPtr);
 	const int Height = (int)CNC_GetIntParameter(rdPtr);
 
@@ -552,7 +563,7 @@ short WINAPI DLLExport Stretch(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
 	int Angle = (int)CNC_GetIntParameter(rdPtr);
 	Angle = Angle % 360;
 	
@@ -566,13 +577,14 @@ short WINAPI DLLExport Rotate(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Offset(LPRDATA rdPtr, long param1, long param2) {
 	const int XOffset = (int)CNC_GetIntParameter(rdPtr);
 	const int YOffset = (int)CNC_GetIntParameter(rdPtr);
 
 	const bool Wrap = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
 
 	if (CanDisplay(rdPtr)) {
 		if (XOffset == 0 && YOffset == 0) {
@@ -599,7 +611,7 @@ short WINAPI DLLExport Offset(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	const int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
 	
 	if (CanDisplay(rdPtr)) {
@@ -624,7 +636,7 @@ short WINAPI DLLExport AddBackdrop(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport UpdateLoadCallbackSf(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_UpdateLoadCallbackSf(LPRDATA rdPtr, long param1, long param2) {
 	const auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));	
 
 	if (pSf->IsValid()) {
@@ -637,7 +649,7 @@ short WINAPI DLLExport UpdateLoadCallbackSf(LPRDATA rdPtr, long param1, long par
 	return 0;
 }
 
-short WINAPI DLLExport SetLoadCallback(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetLoadCallback(LPRDATA rdPtr, long param1, long param2) {
 	const auto bCallback = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->bLoadCallback = bCallback;
@@ -645,7 +657,7 @@ short WINAPI DLLExport SetLoadCallback(LPRDATA rdPtr, long param1, long param2) 
 	return 0;
 }
 
-short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetQuality(LPRDATA rdPtr, long param1, long param2) {
 	const bool Quality = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->stretchQuality = Quality;
@@ -653,10 +665,11 @@ short WINAPI DLLExport SetQuality(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_PerspectiveTrans(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring arr = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
 
 	if (CanDisplay(rdPtr)) {
 		constexpr double doNothing[3][3] = { {1,0,0}, {0,1,0}, {0,0,1} };
@@ -726,12 +739,13 @@ short WINAPI DLLExport PerspectiveTrans(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
-short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_StackBlur(LPRDATA rdPtr, long param1, long param2) {
 	const int radius = CNC_GetIntParameter(rdPtr);
 	const float scale = GetFloatParam(rdPtr);
 	const int divide = CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
 
 	if (CanDisplay(rdPtr)) {
 		const auto pSf = new cSurface;
@@ -747,7 +761,7 @@ short WINAPI DLLExport StackBlur(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long param2) {
 	const auto object = (LPRDATA)CNC_GetParameter(rdPtr);
 
 	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -792,11 +806,12 @@ short WINAPI DLLExport SetEffectSurfaceParam(LPRDATA rdPtr, long param1, long pa
 	return 0;
 }
 
-short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 	const int width = (int)CNC_GetIntParameter(rdPtr);
 	const int height = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
 
 	if (CanDisplay(rdPtr)) {
 		const auto pSf = CreateSurface(rdPtr->src->GetDepth(), width, height);
@@ -833,7 +848,7 @@ short WINAPI DLLExport FillMosaic(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -850,7 +865,7 @@ short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
 	const auto hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
 	const HDC hdcWindow = GetDC(hFrameWindowHandle);
 
@@ -881,7 +896,7 @@ short WINAPI DLLExport CaptureFrameArea(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
-short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SaveToFileWithStretch(LPRDATA rdPtr, long param1, long param2) {
 	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -913,13 +928,14 @@ short WINAPI DLLExport SaveToFileWithStretch(LPRDATA rdPtr, long param1, long pa
 	return 0;
 }
 
-short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_ChangeTransparentByColor(LPRDATA rdPtr, long param1, long param2) {
 	// -1 for first pixel
 	int color = static_cast<int>(CNC_GetIntParameter(rdPtr));
 	// -1 for keep alpha
 	const int alpha = static_cast<int>(CNC_GetIntParameter(rdPtr));
 
 	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->ResetNineSlice();
 
 	if (CanDisplay(rdPtr)) {
 		const auto pSf = ConvertBitmap(rdPtr->src);
@@ -963,7 +979,7 @@ short WINAPI DLLExport ChangeTransparentByColor(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
-short WINAPI DLLExport SetAnimationSource(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetAnimationSource(LPRDATA rdPtr, long param1, long param2) {
 	const auto object = (LPRO)CNC_GetParameter(rdPtr);
 	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -973,7 +989,7 @@ short WINAPI DLLExport SetAnimationSource(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
-short WINAPI DLLExport SetAnimationFrameID(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetAnimationFrameID(LPRDATA rdPtr, long param1, long param2) {
 	const auto frameID = (int)CNC_GetStringParameter(rdPtr);
 
 	if (rdPtr->pAI->AnimationValid()) {
@@ -983,7 +999,7 @@ short WINAPI DLLExport SetAnimationFrameID(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
-short WINAPI DLLExport SetAnimationFrameIndex(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetAnimationFrameIndex(LPRDATA rdPtr, long param1, long param2) {
 	const auto frameIndex = (int)CNC_GetStringParameter(rdPtr);
 
 	if (rdPtr->pAI->AnimationValid()) {
@@ -993,7 +1009,7 @@ short WINAPI DLLExport SetAnimationFrameIndex(LPRDATA rdPtr, long param1, long p
 	return 0;
 }
 
-short WINAPI DLLExport SetAnimationStep(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport Action_SetAnimationStep(LPRDATA rdPtr, long param1, long param2) {	
 	const auto frameIndex = GetFloatParam(rdPtr);
 
 	if (rdPtr->pAI->AnimationValid()) {
@@ -1003,7 +1019,7 @@ short WINAPI DLLExport SetAnimationStep(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
-short WINAPI DLLExport SetAnimationSpeed(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetAnimationSpeed(LPRDATA rdPtr, long param1, long param2) {
 	const auto speed = (int)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pAI->SetSpeed(speed);
@@ -1011,33 +1027,62 @@ short WINAPI DLLExport SetAnimationSpeed(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
-short WINAPI DLLExport LoadAnimation(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadAnimation(LPRDATA rdPtr, long param1, long param2) {
 	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	rdPtr->pNS->ResetNineSlice();
 	rdPtr->pAI->LoadAnimation(FilePath, Key);
 
 	return 0;
 }
 
-short WINAPI DLLExport StopAnimation(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_StopAnimation(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->StopAnimation();
 
 	return 0;
 }
 
-short WINAPI DLLExport PauseAnimation(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_PauseAnimation(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->PauseAnimation();
 
 	return 0;
 }
 
-short WINAPI DLLExport ResumeAnimation(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_ResumeAnimation(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pAI->ResumeAnimation();
 
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetNineSliceSource(LPRDATA rdPtr, long param1, long param2) {
+	const auto object = (LPRO)CNC_GetParameter(rdPtr);
+	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pNS->SetNineSliceSource((LPRDATA)object, FilePath, Key);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_LoadNineSlice(LPRDATA rdPtr, long param1, long param2) {
+	const auto FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+		
+	rdPtr->pAI->StopAnimation();
+	rdPtr->pNS->LoadNineSlice(FilePath, Key);
+
+	// create default surface
+	DetachFromLib(rdPtr, CreateHWASurface(32, 4, 4));
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ResetNineSlice(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pNS->ResetNineSlice();
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -1045,39 +1090,47 @@ short WINAPI DLLExport ResumeAnimation(LPRDATA rdPtr, long param1, long param2) 
 // 
 // ============================================================================
 
-long WINAPI DLLExport GetHotSpotX(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetHotSpotX(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return GetHotSpotX(rdPtr);
 }
-long WINAPI DLLExport GetHotSpotY(LPRDATA rdPtr, long param1) {
-	return  GetHotSpotY(rdPtr);
+long WINAPI DLLExport Expression_GetHotSpotY(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
+	return GetHotSpotY(rdPtr);
 }
 
-long WINAPI DLLExport GetOriginalWidth(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetOriginalWidth(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return GetOriginalWidth(rdPtr);
 }
-long WINAPI DLLExport GetOriginalHeight(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetOriginalHeight(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return GetOriginalHeight(rdPtr);
 }
 
-long WINAPI DLLExport GetCurrentWidth(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentWidth(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return GetCurrentWidth(rdPtr);
 }
-long WINAPI DLLExport GetCurrentHeight(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentHeight(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return GetCurrentHeight(rdPtr);
 }
 
-long WINAPI DLLExport GetXZoomScale(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetXZoomScale(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return ReturnFloat(GetXZoomScale(rdPtr));
 }
-long WINAPI DLLExport GetYZoomScale(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetYZoomScale(LPRDATA rdPtr, long param1) {
+	rdPtr->pNS->Render();
 	return ReturnFloat(GetYZoomScale(rdPtr));
 }
 
-long WINAPI DLLExport GetAngle(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
 	return GetAngle(rdPtr);
 }
 
-long WINAPI DLLExport GetFileName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetFileName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1085,7 +1138,7 @@ long WINAPI DLLExport GetFileName(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->FileName->c_str();
 }
 
-long WINAPI DLLExport GetFileFileName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetFileFileName(LPRDATA rdPtr, long param1) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	const auto FileName = GetFileName(FilePath);	
@@ -1093,7 +1146,7 @@ long WINAPI DLLExport GetFileFileName(LPRDATA rdPtr, long param1) {
 	return ReturnString(FileName);
 }
 
-long WINAPI DLLExport GetFilePath(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetFilePath(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1101,7 +1154,7 @@ long WINAPI DLLExport GetFilePath(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->FilePath->c_str();
 }
 
-long WINAPI DLLExport GetRelativeFilePath(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetRelativeFilePath(LPRDATA rdPtr, long param1) {
 	const std::wstring BasePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	const auto pos = BasePath.size() + 1;
@@ -1121,7 +1174,7 @@ long WINAPI DLLExport GetRelativeFilePath(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->RelativeFilePath->c_str();
 }
 
-long WINAPI DLLExport GetFileRelativeFilePath(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetFileRelativeFilePath(LPRDATA rdPtr, long param1) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring BasePath = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
@@ -1130,7 +1183,7 @@ long WINAPI DLLExport GetFileRelativeFilePath(LPRDATA rdPtr, long param1) {
 	return ReturnString(FileName);
 }
 
-long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetKey(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1138,7 +1191,7 @@ long WINAPI DLLExport GetKey(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->Key->c_str();
 }
 
-long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	const std::wstring FilePath = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	const std::wstring Key = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
@@ -1147,7 +1200,7 @@ long WINAPI DLLExport GetSurfacePointer(LPRDATA rdPtr, long param1) {
 	return ConvertToLong<cSurface*>(pSf);
 }
 
-long WINAPI DLLExport GetAVGCoordX(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAVGCoordX(LPRDATA rdPtr, long param1) {
 	//Get AVG Coord
 	const int coord=(int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	const bool realCoordMode = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -1163,7 +1216,7 @@ long WINAPI DLLExport GetAVGCoordX(LPRDATA rdPtr, long param1) {
 	}
 }
 
-long WINAPI DLLExport GetAVGCoordY(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAVGCoordY(LPRDATA rdPtr, long param1) {
 	//Get AVG Coord
 	const int coord = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	const bool realCoordMode = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -1179,7 +1232,7 @@ long WINAPI DLLExport GetAVGCoordY(LPRDATA rdPtr, long param1) {
 	}
 }
 
-long WINAPI DLLExport GetIterateRefCountKey(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetIterateRefCountKey(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1187,19 +1240,19 @@ long WINAPI DLLExport GetIterateRefCountKey(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->itCountVecStr->c_str();
 }
 
-long WINAPI DLLExport GetIterateRefCountValueCount(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetIterateRefCountValueCount(LPRDATA rdPtr, long param1) {
 	return rdPtr->itCountVecCount->totalRef;
 }
 
-long WINAPI DLLExport GetIterateRefCountValuePriority(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetIterateRefCountValuePriority(LPRDATA rdPtr, long param1) {
 	return rdPtr->itCountVecCount->priority;
 }
 
-long WINAPI DLLExport GetRAMUsageMB(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetRAMUsageMB(LPRDATA rdPtr, long param1) {
 	return long(GetProcessMemoryUsageMB());
 }
 
-long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetGPUName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1211,7 +1264,7 @@ long WINAPI DLLExport GetGPUName(LPRDATA rdPtr, long param1) {
 #endif
 }
 
-long WINAPI DLLExport GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
 #ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
@@ -1223,7 +1276,7 @@ long WINAPI DLLExport GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
 #endif	
 }
 
-long WINAPI DLLExport GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
 #ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
@@ -1233,7 +1286,7 @@ long WINAPI DLLExport GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
 #endif	
 }
 
-long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
 #ifdef _USE_DXGI
 	rdPtr->pD3DU->UpdateVideoMemoryInfo();
 
@@ -1243,7 +1296,7 @@ long WINAPI DLLExport GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
 #endif
 }
 
-long WINAPI DLLExport GetAnimationFileName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAnimationFileName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1253,7 +1306,7 @@ long WINAPI DLLExport GetAnimationFileName(LPRDATA rdPtr, long param1) {
 		: (long)Empty_Str;
 }
 
-long WINAPI DLLExport GetAnimationName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAnimationName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1263,19 +1316,19 @@ long WINAPI DLLExport GetAnimationName(LPRDATA rdPtr, long param1) {
 		: (long)Empty_Str;
 }
 
-long WINAPI DLLExport GetAnimationFrameID(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAnimationFrameID(LPRDATA rdPtr, long param1) {
 	return rdPtr->pAI->AnimationValid()
 		? rdPtr->pAI->pA->GetFrameID()
 		: -1;
 }
 
-long WINAPI DLLExport GetAnimationFrameIndex(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAnimationFrameIndex(LPRDATA rdPtr, long param1) {
 	return rdPtr->pAI->AnimationValid()
 		? rdPtr->pAI->pA->GetFrameIndex()
 		: -1;
 }
 
-long WINAPI DLLExport GetAnimationStep(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAnimationStep(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
 	rdPtr->rHo.hoFlags |= HOF_FLOAT;
 
@@ -1287,11 +1340,11 @@ long WINAPI DLLExport GetAnimationStep(LPRDATA rdPtr, long param1) {
 	return *((int*)&ret);
 }
 
-long WINAPI DLLExport GetAnimationSpeed(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetAnimationSpeed(LPRDATA rdPtr, long param1) {
 	return rdPtr->pAI->GetSpeed();
 }
 
-long WINAPI DLLExport GetLoadCallbackFileName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetLoadCallbackFileName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -1299,7 +1352,7 @@ long WINAPI DLLExport GetLoadCallbackFileName(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->pLoadCallbackInfo->callbackFileName.c_str();
 }
 
-long WINAPI DLLExport GetLoadCallbackSf(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetLoadCallbackSf(LPRDATA rdPtr, long param1) {
 	return ConvertToLong<cSurface*>(rdPtr->pLoadCallbackInfo->GetSurfacePointer());
 }
 
@@ -1313,147 +1366,151 @@ long WINAPI DLLExport GetLoadCallbackSf(LPRDATA rdPtr, long param1) {
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			OnPreloadComplete,
-			OnIterateRefCount,
+			Condition_OnPreloadComplete,
+			Condition_OnIterateRefCount,
 
-			CanDisplay,
+			Condition_CanDisplay,
 
-			CurrentDisplayTransparent,
-			LibHasItem,
+			Condition_CurrentDisplayTransparent,
+			Condition_LibHasItem,
 			
-			OnAnimationFinished,
-			IsAnimationPlaying,
-			IsAnimationPaused,
+			Condition_OnAnimationFinished,
+			Condition_IsAnimationPlaying,
+			Condition_IsAnimationPaused,
 
-			OnLoadCallback,
+			Condition_OnLoadCallback,
 
-			IsAnimationFinished,
+			Condition_IsAnimationFinished,
 
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			LoadFromFile,
-			LoadFromLib,
+			Action_LoadFromFile,
+			Action_LoadFromLib,
 
-			ResetLib,
-			EraseLib,
-			UpdateLib,
+			Action_ResetLib,
+			Action_EraseLib,
+			Action_UpdateLib,
 
-			SetHotSpot,
+			Action_SetHotSpot,
 			
-			Zoom,
-			Rotate,
+			Action_Zoom,
+			Action_Rotate,
 
-			AttachObjectToLib,
-			DetachObjectFromLib,
+			Action_AttachObjectToLib,
+			Action_DetachObjectFromLib,
 
-			Stretch,
+			Action_Stretch,
 
-			AddBackdrop,
-			UpdateLoadCallbackSf,
+			Action_AddBackdrop,
+			Action_UpdateLoadCallbackSf,
 
-			SetLoadCallback,
-			SetQuality,
+			Action_SetLoadCallback,
+			Action_SetQuality,
 
-			PerspectiveTrans,
-			Offset,
+			Action_PerspectiveTrans,
+			Action_Offset,
 
-			LoadFromDisplay,
+			Action_LoadFromDisplay,
 
-			SetPreloadListByPointer,
-			SetPreloadPath,
-			CleanCache,
+			Action_SetPreloadListByPointer,
+			Action_SetPreloadPath,
+			Action_CleanCache,
 
-			SetKeepList,
+			Action_SetKeepList,
 
-			IterateRefCount,
+			Action_IterateRefCount,
 
-			LoadFromPointer,
+			Action_LoadFromPointer,
 
-			StackBlur,
+			Action_StackBlur,
 
-			SetEffectSurfaceParam,
+			Action_SetEffectSurfaceParam,
 
-			SetPreloadList,
-			SetKeepListByPointer,
+			Action_SetPreloadList,
+			Action_SetKeepListByPointer,
 
-			FillMosaic,
+			Action_FillMosaic,
 
-			SaveToFile,
+			Action_SaveToFile,
 
-			CaptureFrameArea,
+			Action_CaptureFrameArea,
 
-			SaveToFileWithStretch,
+			Action_SaveToFileWithStretch,
 
-			ChangeTransparentByColor,
+			Action_ChangeTransparentByColor,
 
-			SetAnimationSource,
-			LoadAnimation,
-			StopAnimation,
-			SetAnimationSpeed,
-			PauseAnimation,
-			ResumeAnimation,
-			SetAnimationFrameID,
-			SetAnimationFrameIndex,
-			SetAnimationStep,
+			Action_SetAnimationSource,
+			Action_LoadAnimation,
+			Action_StopAnimation,
+			Action_SetAnimationSpeed,
+			Action_PauseAnimation,
+			Action_ResumeAnimation,
+			Action_SetAnimationFrameID,
+			Action_SetAnimationFrameIndex,
+			Action_SetAnimationStep,
+
+			Action_SetNineSliceSource,
+			Action_LoadNineSlice,
+			Action_ResetNineSlice,
 
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			GetHotSpotX,
-			GetHotSpotY,
+			Expression_GetHotSpotX,
+			Expression_GetHotSpotY,
 
-			GetOriginalWidth,
-			GetOriginalHeight,
+			Expression_GetOriginalWidth,
+			Expression_GetOriginalHeight,
 
-			GetCurrentWidth,
-			GetCurrentHeight,
+			Expression_GetCurrentWidth,
+			Expression_GetCurrentHeight,
 
-			GetXZoomScale,
-			GetYZoomScale,
+			Expression_GetXZoomScale,
+			Expression_GetYZoomScale,
 
-			GetAngle,
+			Expression_GetAngle,
 
-			GetFileName,
-			GetKey,
+			Expression_GetFileName,
+			Expression_GetKey,
 
-			GetSurfacePointer,
+			Expression_GetSurfacePointer,
 
-			GetAVGCoordX,
-			GetAVGCoordY,
+			Expression_GetAVGCoordX,
+			Expression_GetAVGCoordY,
 
-			GetFilePath,
-			GetRelativeFilePath,
+			Expression_GetFilePath,
+			Expression_GetRelativeFilePath,
 
-			GetIterateRefCountKey,
-			GetIterateRefCountValueCount,
-			GetIterateRefCountValuePriority,
+			Expression_GetIterateRefCountKey,
+			Expression_GetIterateRefCountValueCount,
+			Expression_GetIterateRefCountValuePriority,
 
-			GetFileFileName,
-			GetFileRelativeFilePath,
+			Expression_GetFileFileName,
+			Expression_GetFileRelativeFilePath,
 
-			GetRAMUsageMB,
+			Expression_GetRAMUsageMB,
 
-			GetGPUName,
+			Expression_GetGPUName,
 
-			GetVRAMUsageMB,
-			GetVRAMBudgetMB,
-			GetVRAMAvailableMB,
+			Expression_GetVRAMUsageMB,
+			Expression_GetVRAMBudgetMB,
+			Expression_GetVRAMAvailableMB,
 
-			GetAnimationName,
-			GetAnimationFrameID,
-			GetAnimationFrameIndex,
-			GetAnimationSpeed,
-			GetAnimationStep,
+			Expression_GetAnimationName,
+			Expression_GetAnimationFrameID,
+			Expression_GetAnimationFrameIndex,
+			Expression_GetAnimationSpeed,
+			Expression_GetAnimationStep,
 
-			GetLoadCallbackFileName,
-			GetLoadCallbackSf,
+			Expression_GetLoadCallbackFileName,
+			Expression_GetLoadCallbackSf,
 
-			GetAnimationFileName,
+			Expression_GetAnimationFileName,
 
 			0
 			};

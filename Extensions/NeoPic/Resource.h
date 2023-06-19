@@ -133,6 +133,10 @@
 #define	IDMN_ACTION_SAFINDEX	    25040
 #define	IDMN_ACTION_SASTEP	     	25041
 
+#define	IDMN_ACTION_SNSS 			25042
+#define	IDMN_ACTION_LNS 			25043
+#define	IDMN_ACTION_RNS 			25044
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -198,6 +202,10 @@
 #define	M_ACTION_SAFID	 			 5039
 #define	M_ACTION_SAFINDEX 			 5040
 #define	M_ACTION_SASTEP 			 5041
+
+#define	M_ACTION_SNSS 			     5042
+#define	M_ACTION_LNS 			     5043
+#define	M_ACTION_RNS 			     5044
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501

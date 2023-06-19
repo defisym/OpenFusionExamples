@@ -186,7 +186,7 @@ BEGIN
             MENUITEM "Detach Object From Lib",             IDMN_ACTION_DOFL
             MENUITEM SEPARATOR
             MENUITEM "Reset Lib",                  IDMN_ACTION_RL
-            MENUITEM "Clear Cache",                IDMN_ACTION_CC
+            MENUITEM "Clean Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
             MENUITEM "Erase Lib Item",             IDMN_ACTION_EL
             MENUITEM "Update Lib Item",            IDMN_ACTION_UL
@@ -207,6 +207,14 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Pause Animation",             IDMN_ACTION_PA
             MENUITEM "Resume Animation",            IDMN_ACTION_RA            
+        END
+        MENUITEM SEPARATOR
+        POPUP "Nine Slice"
+        BEGIN
+            MENUITEM "Set Nine Slice Source", IDMN_ACTION_SNSS
+            MENUITEM SEPARATOR
+            MENUITEM "Load Nine Slice", IDMN_ACTION_LNS
+            MENUITEM "Reset Nine Slice", IDMN_ACTION_RNS
         END
         MENUITEM SEPARATOR
         POPUP "Display"
@@ -414,7 +422,7 @@ BEGIN
     M_ACTION_SPL             "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPLBP           "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
-    M_ACTION_CC              "Clear Cache, Memory Limit %0"
+    M_ACTION_CC              "Clean Cache, Memory Limit %0"
     M_ACTION_SKL             "Set Keep List to %0, BasePath = %1"
     M_ACTION_SKLBP           "Set Keep List to %0, BasePath = %1"
     M_ACTION_ITRC            "Iterate Most Referenced %0 Objects"
@@ -515,6 +523,10 @@ BEGIN
     M_ACTION_FID 		    "Interpolated Frame ID"
     M_ACTION_FINDEX		    "Defined Frame Index"
     M_ACTION_STEP		    "Animation Step, 0.0 ~1.0"
+
+    M_ACTION_SNSS           "Set Nine Slice Source to Lib %0, BasePath %1, Decrypt Key %2"
+    M_ACTION_LNS            "Load Nine Slice %0, Decrypt Key %1"
+    M_ACTION_RNS            "Reset Nine Slice"
 END
 
 STRINGTABLE DISCARDABLE 

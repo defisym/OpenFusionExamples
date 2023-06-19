@@ -4,11 +4,10 @@
 
 #include "EasingFunctions.h"
 #include "JsonInterface.h"
-#include "Encryption.h"
 
 constexpr auto Animation_JsonParseError = "Json Parse Error";
-constexpr auto MakeJsonParseErrorString(const char* pStr) {
-    return Animation_JsonParseError + std::string(": ") + std::string(pStr);
+constexpr auto MakeAnimationJsonParseErrorString(const char* pStr) {
+    return MakeJsonParseErrorString(Animation_JsonParseError, pStr);
 }
 
 constexpr auto Animation_MinSpeed = 0;
@@ -41,7 +40,7 @@ struct AnimationInfo: public JsonObject {
 
     inline void Update(const JsonData& data) override {
         if (!data.is_object()) {
-            throw std::exception(MakeJsonParseErrorString("Invalid Animation Info").c_str());
+            throw std::exception(MakeAnimationJsonParseErrorString("Invalid Animation Info").c_str());
         }
 
         // general
@@ -55,12 +54,12 @@ struct AnimationInfo: public JsonObject {
 
         // required
         if (!JsonInterface::GetData(data, "name", name)) {
-            throw std::exception(MakeJsonParseErrorString("Invalid Animation Name").c_str());
+            throw std::exception(MakeAnimationJsonParseErrorString("Invalid Animation Name").c_str());
         }
     }
 };
 
-struct FrameData : public JsonObject {
+struct AnimationFrameData : public JsonObject {
     int frameID = 0;
 
     std::wstring file;
@@ -90,7 +89,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw std::exception(MakeJsonParseErrorString("Invalid Interpolation").c_str());
+                throw std::exception(MakeAnimationJsonParseErrorString("Invalid Interpolation").c_str());
             }
 
             JsonInterface::GetData(data, "interval", interval);
@@ -149,7 +148,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw std::exception(MakeJsonParseErrorString("Invalid RGB Coef").c_str());
+                throw std::exception(MakeAnimationJsonParseErrorString("Invalid RGB Coef").c_str());
             }
 
             JsonInterface::GetData(data, "r", r);
@@ -214,7 +213,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw std::exception(MakeJsonParseErrorString("Invalid Scale").c_str());
+                throw std::exception(MakeAnimationJsonParseErrorString("Invalid Scale").c_str());
             }
 
             JsonInterface::GetData(data, "x", x);
@@ -249,7 +248,7 @@ struct FrameData : public JsonObject {
 
         inline void Update(const JsonData& data) override {
             if (!data.is_object()) {
-                throw std::exception(MakeJsonParseErrorString("Invalid Hotspot").c_str());
+                throw std::exception(MakeAnimationJsonParseErrorString("Invalid Hotspot").c_str());
             }
 
             JsonInterface::GetData(data, "x", x);
@@ -278,7 +277,7 @@ struct FrameData : public JsonObject {
         }
     }
 
-    FrameData& operator=(const FrameData& data) {
+    AnimationFrameData& operator=(const AnimationFrameData& data) {
         if (this != &data) {
             this->frameID = data.frameID;
             this->file = data.file;
@@ -295,10 +294,10 @@ struct FrameData : public JsonObject {
         return *this;
     }
 
-    FrameData(const FrameData& data) {
+    AnimationFrameData(const AnimationFrameData& data) {
         *this = data;
     }
-    explicit FrameData(const JsonData& data, const FrameData* pPrevious) {
+    explicit AnimationFrameData(const JsonData& data, const AnimationFrameData* pPrevious) {
         auto reset = false;
         JsonInterface::GetData(data, "reset", reset);
 
@@ -323,9 +322,9 @@ struct FrameData : public JsonObject {
             *this = *pPrevious;
         } while (false);
 
-        FrameData::Update(data);
+        AnimationFrameData::Update(data);
     }
-    ~FrameData() override {
+    ~AnimationFrameData() override {
         delete pInterpolation;
         delete pRGBCoef;
         delete pScale;
@@ -338,7 +337,7 @@ struct FrameData : public JsonObject {
 
     inline void Update(const JsonData& data) override {
         if (!data.is_object()) {
-            throw std::exception(MakeJsonParseErrorString("Invalid Frame Data").c_str());
+            throw std::exception(MakeAnimationJsonParseErrorString("Invalid Frame Data").c_str());
         }
 
         JsonInterface::GetData(data, "file", file);
@@ -355,7 +354,7 @@ struct FrameData : public JsonObject {
         alpha = Range(alpha, Animation_MinAlpha, Animation_MaxAlpha);
     }
 
-    inline void Interpolation(double step, const FrameData* pPrevious, const FrameData* pNext) {
+    inline void Interpolation(double step, const AnimationFrameData* pPrevious, const AnimationFrameData* pNext) {
         angle = static_cast<int>(static_cast<double>(pPrevious->angle) + step * (pNext->angle - pPrevious->angle));
         alpha = static_cast<int>(static_cast<double>(pPrevious->alpha) + step * (pNext->alpha - pPrevious->alpha));
 
@@ -369,8 +368,8 @@ class Animation {
 private:
     AnimationInfo* pAnimationInfo = nullptr;
 
-    FrameData* pCurFrameData = nullptr;
-    std::vector<FrameData*> pFrameDatas;
+    AnimationFrameData* pCurFrameData = nullptr;
+    std::vector<AnimationFrameData*> pFrameDatas;
 
     int repeatCount = 0;
     int maxFrame = 0;
@@ -378,10 +377,10 @@ private:
     int curFrame = 0;
     int curIndex = 0;
 
-    FrameData* pPrevious = nullptr;
-    FrameData* pNext = nullptr;
+    AnimationFrameData* pPrevious = nullptr;
+    AnimationFrameData* pNext = nullptr;
 
-    inline FrameData* GetNext() {
+    inline AnimationFrameData* GetNext() {
         if (static_cast<size_t>(curIndex + 1) >= pFrameDatas.size()) {
             if (pAnimationInfo->loop || repeatCount > 0) {
                 repeatCount = max(0, repeatCount - 1);
@@ -413,7 +412,7 @@ public:
 
     	// load frames
         if(!JsonInterface::Contains(data,"frames")) {
-            throw std::exception(MakeJsonParseErrorString("Animation Doesn't Contain Frame Data").c_str());
+            throw std::exception(MakeAnimationJsonParseErrorString("Animation Doesn't Contain Frame Data").c_str());
         }
 
         int frameID = 0;
@@ -429,11 +428,11 @@ public:
                     : previous;
             };
 
-        	FrameData* pFrameData = nullptr;
-            pFrameData = new FrameData(it, GetPrevious());
+        	AnimationFrameData* pFrameData = nullptr;
+            pFrameData = new AnimationFrameData(it, GetPrevious());
 
             if (!pAnimationInfo->updateCur && !pFrameData->FrameValid()) {
-                throw std::exception(MakeJsonParseErrorString(std::format("Invalid File at Frame {}", pFrameDatas.size() + 1).c_str()).c_str());
+                throw std::exception(MakeAnimationJsonParseErrorString(std::format("Invalid File at Frame {}", pFrameDatas.size() + 1).c_str()).c_str());
             }
 
             pFrameData->frameID = frameID;
@@ -444,10 +443,10 @@ public:
 
         // validate
         if(pFrameDatas.empty()) {
-            throw std::exception(MakeJsonParseErrorString("Animation Doesn't Contain Frame Data").c_str());
+            throw std::exception(MakeAnimationJsonParseErrorString("Animation Doesn't Contain Frame Data").c_str());
         }
 
-        pCurFrameData = new FrameData(*pFrameDatas.front());
+        pCurFrameData = new AnimationFrameData(*pFrameDatas.front());
 
         //pAnimationInfo->speed = Range(pAnimationInfo->speed, Animation_MinSpeed, Animation_MaxSpeed);
         pAnimationInfo->speed = (std::max)(pAnimationInfo->speed, Animation_MinSpeed);
@@ -517,7 +516,7 @@ public:
     inline void SetFrameID(int id) {
         curFrame = Range(id, 0, maxFrame);
 
-        for(size_t index = 0;index< pFrameDatas.size();index++) {
+        for (size_t index = 0; index < pFrameDatas.size(); index++) {
 	        if(pFrameDatas[index]->frameID > curFrame) {
                 curIndex = static_cast<int>(Range(index - 1, 0u, pFrameDatas.size() - 1));
                 UpdateToCurIndex();
@@ -558,15 +557,15 @@ public:
         UpdateFrame();
     }
 
-	inline const FrameData* GetCurrentFrame() const {
+	inline const AnimationFrameData* GetCurrentFrame() const {
         return pCurFrameData;
     }
 
-    inline const FrameData* GetPreviousFrame() const {
+    inline const AnimationFrameData* GetPreviousFrame() const {
         return pPrevious;
     }
 
-    inline const FrameData* GetNextFrame() const {
+    inline const AnimationFrameData* GetNextFrame() const {
         return pNext;
     }
 

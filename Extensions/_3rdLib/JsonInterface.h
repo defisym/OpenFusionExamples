@@ -4,6 +4,10 @@
 
 #include "nlohmann/json.hpp"
 
+constexpr auto MakeJsonParseErrorString(const char* pBase, const char* pContent) {
+    return std::string(pBase) + std::string(": ") + std::string(pContent);
+}
+
 using JsonData = nlohmann::basic_json<>;
 
 class JsonObject {

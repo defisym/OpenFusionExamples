@@ -17,19 +17,30 @@
 
 namespace BenchMark {
     using BenchMarkCallback = std::function<bool(size_t)>;
+    constexpr auto ms = std::chrono_literals::operator ""ms(1ull);
+
+    inline long long BenchMark(const BenchMarkCallback& cb) {
+        auto t = std::chrono::steady_clock::now();
+
+        cb(0);
+        
+        auto dura = (std::chrono::steady_clock::now() - t) / ms;
+
+        return dura;
+    }
 
     inline std::wstring BenchMark(const size_t loop,
     const BenchMarkCallback& a, const BenchMarkCallback& b) {
-        const auto ms = std::chrono_literals::operator ""ms(1ull);
-
         auto loopFunction = [&] (const BenchMarkCallback& cb) {
-            auto t = std::chrono::steady_clock::now();
-            bool ret = false;
-            
-            for (size_t i = 0; i < loop; i++) {
-                ret = cb(i);
-            }
-            return (std::chrono::steady_clock::now() - t) / ms;
+            return BenchMark([&] (size_t idx) {
+                bool ret = true;
+
+                for (size_t i = 0; i < loop; i++) {
+                    ret &= cb(i);
+                }
+
+                return ret;
+            });
         };
 
         return std::format(L"A: {}, B: {}", loopFunction(a), loopFunction(b));

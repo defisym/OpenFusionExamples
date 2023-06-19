@@ -48,6 +48,15 @@ inline void ReleaseNonFromLib(LPRDATA rdPtr) {
 
 	ResetNonFromLib(rdPtr);
 }
+inline void ReleaseNonFromLibFlip(LPRDATA rdPtr) {
+	delete rdPtr->pSf_HF;
+	delete rdPtr->pSf_VF;
+	delete rdPtr->pSf_VHF;
+
+	rdPtr->pSf_HF = nullptr;
+	rdPtr->pSf_VF = nullptr;
+	rdPtr->pSf_VHF = nullptr;
+}
 
 inline size_t UpdateRef(LPRDATA rdPtr, bool add) {
 	if (rdPtr->pLibValue == nullptr) {

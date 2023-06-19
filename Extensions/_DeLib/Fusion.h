@@ -389,7 +389,8 @@ inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
 }
 
 inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
-	// clone doesn't handle hwa alpha properly
+	// clone doesn't handle hwa alpha & rtt flip properly
+	// so do it by hand
 	if (IsHWA(pSrc) && pSrc->HasAlpha()) {
 		auto pSf = CreateSurface(pSrc->GetDepth(), pSrc->GetWidth(), pSrc->GetHeight());
 		pSf->CreateAlpha();

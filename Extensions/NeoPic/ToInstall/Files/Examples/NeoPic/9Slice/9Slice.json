@@ -1,0 +1,35 @@
+{
+    "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/NineSliceSchema.json",
+    "settings": {
+        "stretch": true
+    },
+    "frames": [
+        {
+            "file": "9Slice_1.png"
+        },
+        {
+            "file": "9Slice_2.png"
+        },
+        {
+            "file": "9Slice_3.png"
+        },
+        {
+            "file": "9Slice_4.png"
+        },
+        {
+            "file": "9Slice_5.png"
+        },
+        {
+            "file": "9Slice_6.png"
+        },
+        {
+            "file": "9Slice_7.png"
+        },
+        {
+            "file": "9Slice_8.png"
+        },
+        {
+            "file": "9Slice_9.png"
+        }
+    ]
+}

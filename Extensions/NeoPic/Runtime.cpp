@@ -141,6 +141,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->zoomScale = { 1.0,1.0 };
 
 	rdPtr->pAI = new AnimationInterface(rdPtr);
+	rdPtr->pNS = new NineSliceInterface(rdPtr);
 
 	//Init global data
 	if (GetExtUserData() == nullptr) {
@@ -173,7 +174,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pLib = rdPtr->pData->pLib;
 		rdPtr->pData->pPreloadHandler->ResumePreload(rdPtr);
 	}
-
+	
 	// No errors
 	return 0;
 }
@@ -202,6 +203,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->itCountVecCount;
 
 	delete rdPtr->pAI;
+	delete rdPtr->pNS;
 
 	if (rdPtr->isLib) {
 		rdPtr->pData->pPreloadHandler->PausePreload();
@@ -253,6 +255,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 	rdPtr->pAI->UpdateAnimation();
+	rdPtr->pNS->Render();
 
 	if (rdPtr->isLib) {
 		rdPtr->pData->CleanCache(false);

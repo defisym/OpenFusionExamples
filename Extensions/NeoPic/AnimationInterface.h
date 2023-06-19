@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Animation.h"
+
 #include "JsonInterface.h"
+#include "JsonUtilities.h"
 
 struct AnimationInterface {
 	LPRDATA rdPtr = nullptr;
@@ -41,27 +43,13 @@ struct AnimationInterface {
 
 	inline bool LoadAnimation(const LPCWSTR pFileName, const LPCTSTR pKey = L"") {
 		JsonInterface JI;
-		JI.SetComment(true);
 
-		auto ret = true;		
-
-		if (StrEmpty(pKey)) {
-			ret = JI.Load(pFileName);
-		}
-		else {
-			Encryption E;
-			E.GenerateKey(pKey);
-			E.DecryptFile(pFileName);
-
-			ret = JI.Load(E.GetOutputStr());
-		}
-
-		if (!ret) {
+		if (!LoadJsonFile(JI, pFileName, pKey)) {
 #if !defined(RUN_ONLY)
 			MSGBOX(L"Json file load error");
 #endif
 
-			return ret;
+			return false;
 		}
 		
 		StopAnimation();
@@ -80,7 +68,7 @@ struct AnimationInterface {
 			return false;
 		}
 
-		return ret;
+		return true;
 	}
 
 	inline void StopAnimation() {
@@ -115,21 +103,21 @@ public:
 
 		// External: params updated by fusion built-in actions
 		int alpha = 0;
-		FrameData::RGBCoef* pRGBCoef = nullptr;
+		AnimationFrameData::RGBCoef* pRGBCoef = nullptr;
 
 		UCHAR newAlpha = 0;
 		DWORD newRGBCoef = Animation_DefaultCoef;
 
 		// Internal: params updated by object actions
 		int angle = 0;
-		FrameData::Scale* pScale = nullptr;
-		FrameData::HotSpot* pHotSpot = nullptr;		
+		AnimationFrameData::Scale* pScale = nullptr;
+		AnimationFrameData::HotSpot* pHotSpot = nullptr;		
 
 		ObjectCoef(LPRDATA rdPtr) {
 			this->rdPtr = rdPtr;
-			this->pRGBCoef = new FrameData::RGBCoef();
-			this->pScale = new FrameData::Scale();
-			this->pHotSpot = new FrameData::HotSpot();
+			this->pRGBCoef = new AnimationFrameData::RGBCoef();
+			this->pScale = new AnimationFrameData::Scale();
+			this->pHotSpot = new AnimationFrameData::HotSpot();
 		}
 		~ObjectCoef() {
 			delete pRGBCoef;
@@ -146,7 +134,7 @@ public:
 		inline auto GetObjectCoef() const {
 			const auto objectAlpha = EffectUtilities::GetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam);
 			const auto objectRGBCoef = EffectUtilities::GetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam);
-			//const auto objectScale = FrameData::Scale((double)rdPtr->zoomScale.XScale, (double)rdPtr->zoomScale.YScale);
+			//const auto objectScale = AnimationFrameData::Scale((double)rdPtr->zoomScale.XScale, (double)rdPtr->zoomScale.YScale);
 
 			return std::make_tuple(objectAlpha, objectRGBCoef);
 		}
@@ -170,11 +158,11 @@ public:
 		}
 
 		inline void UpdateInternal(const ZoomScale& zoomScale) const {
-			*pScale = FrameData::Scale((double)zoomScale.XScale, (double)zoomScale.YScale);
+			*pScale = AnimationFrameData::Scale((double)zoomScale.XScale, (double)zoomScale.YScale);
 		}
 
 		inline void UpdateInternal(const int x, const int y, const HotSpotPos& hotSpotPos) const {
-			*pHotSpot = FrameData::HotSpot(x, y, hotSpotPos);
+			*pHotSpot = AnimationFrameData::HotSpot(x, y, hotSpotPos);
 		}
 
 		inline void Restore() {
@@ -199,7 +187,7 @@ public:
 #endif
 
 private:
-	inline void UpdateHotSpot(const AnimationInfo* pAnimationInfo, const FrameData* pFrameData) const {
+	inline void UpdateHotSpot(const AnimationInfo* pAnimationInfo, const AnimationFrameData* pFrameData) const {
 		auto updateBySurface = [&] (const LPSURFACE pSf) {
 			if (pSf == nullptr) {
 				return;
@@ -263,7 +251,7 @@ private:
 
 public:
 	inline void UpdateAnimation() {
-		if (pA == nullptr) {
+		if (pA == nullptr || pLib == nullptr) {
 			return;
 		}
 
@@ -313,7 +301,7 @@ public:
 
 		// object * frame
 		objectCoef.newAlpha = static_cast<UCHAR>(objectCoef.alpha * (255 - pCurFrame->alpha) / 255.0);
-		objectCoef.newRGBCoef = FrameData::RGBCoef(objectCoef.pRGBCoef->rgbCoef).MulRGBCoef(pCurFrame->pRGBCoef->rgbCoef);
+		objectCoef.newRGBCoef = AnimationFrameData::RGBCoef(objectCoef.pRGBCoef->rgbCoef).MulRGBCoef(pCurFrame->pRGBCoef->rgbCoef);
 
 		EffectUtilities::SetAlpha(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, objectCoef.newAlpha);
 		EffectUtilities::SetRGBCoef(rdPtr->rs.rsEffect, rdPtr->rs.rsEffectParam, objectCoef.newRGBCoef);
