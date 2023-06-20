@@ -6,221 +6,98 @@ This is a Repo of several open source stuff about [Clickteam Fusion](https://www
 
 ## How to Contribute
 
-If you have some good examples or something else and want to share, just simply fork this repo, then put files in a folder named by your works, place this folder by it's type, e.g. shaders in shaders folder, add a explanation to this file (ReadMe.md, alphabetically), and feel free to send a PR.
+If you have something good and want to share, just simply fork this repo, then put files in a folder named by your works, place this folder by it's type, e.g. shaders in shaders folder, add a explanation to this file (ReadMe.md, alphabetically), and feel free to send a PR.
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=defisym/OpenFusionExamples&type=Date)](https://star-history.com/#defisym/OpenFusionExamples&Date)
 
-## Folders
+## Catalogue
 
 ### Extensions
 
-- AndroidUtilities
-  - *Created by Defisym.*
-  - *some features for android like extract binary files, etc*
+#### Extension
 
-- Deque2D
-  - *Created by Defisym.*
-  - *Under dev*
-  - *A modern version of MagicDeque based on std::variant*
+| Name             | Author  | Platform         | Released | CEM | Description                                                                                                                        |
+| ---------------- | ------- | ---------------- | -------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| AndroidUtilities | Defisym | Android          | Y        | N   | some features for android like extract binary files, etc                                                                           |
+| Clipboard        | Defisym | Windows          | N        | N   | small tool that can save / load fusion clipboard contents                                                                          |
+| Deque2D          | Defisym | Windows          | N        | N   | A modern version of MagicDeque based on std::variant                                                                               |
+| EffectUtilities  | Defisym | Windows          | N        | N   | let you control shaders more efficiency, like cache texture params                                                                 |
+| Encrypter        | Defisym | Windows          | Y        | N   | En/decrypt file with WinAPI CNG. You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSplitter |
+| FFMpeg           | Defisym | Windows          | Y        | Y   | bring the legendary player to fusion, with several handy A/C/Es like blit current video frame, etc                                 |
+| FindTheWay       | Defisym | Windows, Android | Y        | N   | A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible (currently available on windows & android). |
+| Fini             | Defisym | Windows          | Y        | Y   | based on brofield's brilliant work simpleini, is a faster ini ext for fusion.                                                      |
+| Func             | Defisym | Windows          | Y        | N   | Call Functions via Expression or Action                                                                                            |
+| NeoPic           | Defisym | Windows          | N        | N   | Another active picture, but with encrypt support, all object shares a lib that over frame, significantly reduce load time          |
+| NeoStr           | Defisym | Windows          | N        | N   | Powerful string extension with format control support                                                                              |
+| RandomTable      | Defisym | Windows          | Y        | N   | Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.                                         |
+| SDL_Mixer        | Defisym | Windows          | Y        | Y   | Audio player based on SDL Mixer X, with unlimited channel & encrypt support                                                        |
+| SteamworksAPI    | Defisym | Windows          | N        | N   | alternative steamworks API object with modern feature, compatible (possibly) with current steamworks object                        |
+| String Splitter  | Defisym | Windows          | N        | N   | This object is a string splitter base on C++ regex.                                                                                |
+| WinAPI           | Defisym | Windows          | Y        | N   | a bunch of small functions.                                                                                                        |
 
-- EffectUtilities
-  - *Created by Defisym.*
-  - *Under dev*
-  - *let you control shaders more efficiency, like cache texture params*
+#### Lib
 
-- Encrypter
-  - *Created by Defisym.*
-  - *En/decrypt file with WinAPI CNG.*
-  - *You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSplitter*
+| Name      | Author  | Description                                               |
+| --------- | ------- | --------------------------------------------------------- |
+| _3rdLib   | Defisym | something that used to work with or modified from 3rd lib |
+| _DeLib    | Defisym | several functions that my extensions share                |
+| _Template | Defisym | Ext template, but with something custom                   |
 
-- FFMpeg
-  - *Created by Defisym.*
-  - *bring the legendary player to fusion, with several handy A/C/Es like blit current video frame, etc*
+#### Utilities
 
-- FindTheWay
-  - *Created by Defisym.*
-  - *Under dev*
-  - *A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible (currently available on windows & android).*
-
-- Fini
-  - *Created by Defisym.*
-  - *based on brofield's brilliant work simpleini, is a faster ini ext for fusion.*
-
-- Func
-  - *Created by Defisym.*
-  - *Call Functions via Expression or Action*
-
-- NeoPic
-  - *Created by Defisym.*
-  - *Another active picture, but with encrypt support, all object shares a lib that over frame, significantly reduce load time*
-
-- NeoStr
-  - *Created by Defisym.*
-  - *Powerful string extension with format control support*
-
-- RandomTable
-  - *Created by Defisym.*
-  - *Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.*
-
-- SteamworksAPI
-  - *Created by Defisym.*
-  - *Under dev*
-  - *alternative steamworks API object with modern feature, compatible (possibly) with current steamworks object*
-
-- String Splitter
-  - *Created by Defisym.*
-  - *This object is a string splitter base on C++ regex.*
-
-- WinAPI
-  - *Created by Defisym.*
-  - *a bunch of small functions.*
-
-- _3rdLib
-  - *Created by Defisym.*
-  - *something based on 3rd lib*
-
-- _DeLib
-  - *Created by Defisym.*
-  - *several functions that my extensions share*
-
-- _Script
-  - *Created by Defisym.*
-  - *Publish multi-platform extensions by one click*
-
-- _Template
-  - *Ext template, but converted to VS 2022 with some custom contents*
+| Name      | Author  | Description                                    |
+| --------- | ------- | ---------------------------------------------- |
+| _BuildAll | Defisym | Python script to build all extensions          |
+| _Script   | Defisym | Publish multi-platform extensions by one click |
 
 ### Shaders
 
-- AlphaMono
-  - *Created by Defisym.*
-  - *make semi-mono effect*
-
-- Compression
-  - *Created by Defisym.*
-  - *Simulate Compression effect*
-
-- DotMatrix
-  - *Created by Defisym.*
-  - *Simple dot matrix effect*
-
-- Gauss Blur
-  - *Created by Defisym.*
-  - *Finally here comes the gauss blur shader for DX11*
-  - *GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur*
-
-- Heatwave
-  - *Created by Defisym.*
-  - *Create heatwave effect*
-
-- Pattern Fade
-  - *Created by Defisym.*
-  - *make gorgeous transition effects*
-
-- Ring Health Bar
-  - *Created by Defisym.*
-  - *simple health bar*
-
-- Round Health Bar
-  - *Created by Defisym.*
-  - *simple health bar again*
-
-- Round Rectangle
-  - *Created by Defisym.*
-  - *draw a round rectangle*
+| Name             | Author  | Description                                                                                                                         |
+| ---------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| AlphaMono        | Defisym | make semi-mono effect                                                                                                               |
+| Compression      | Defisym | Simulate Compression effect                                                                                                         |
+| DotMatrix        | Defisym | Simple dot matrix effect                                                                                                            |
+| Gauss Blur       | Defisym | Finally here comes the gauss blur shader for DX11, GaussBlur2D is very slow, use GaussBlur instead, or two GaussBlur1D for X/Y blur |
+| Heatwave         | Defisym | Create heatwave effect                                                                                                              |
+| Pattern Fade     | Defisym | make gorgeous transition effects                                                                                                    |
+| Ring Health Bar  | Defisym | simple health bar                                                                                                                   |
+| Round Health Bar | Defisym | simple health bar again                                                                                                             |
+| Round Rectangle  | Defisym | draw a round rectangle                                                                                                              |
 
 ### Tools
 
-Small tools
-
-- CallofAS Toolbar
-  - *Created by CallofAS.*
-  - *a handy tool bar set*
-
-- DX11 Shader Compile Tool
-  - *Created by Defisym.*
-  - *compile DX11 shaders by a simple drag*
-
-- JDK Terminator
-  - *Created by Defisym.*
-  - *Fusion will use JDK to build Android applications, but unfortunately, sometimes JDK process will not terminate correctly even you quit fusion. If you are using steam version, steam will think fusion is still running and refuse to restart fusion or steam itself, unless you terminate the process manually in task manager, which is annoying. This script can help you terminate it with a single click.*
+| Name                     | Author   | Description                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CallofAS Toolbar         | CallofAS | a handy tool bar set                                                                                                                                                                                                                                                                                                                                                                                           |
+| DX11 Shader Compile Tool | Defisym  | compile DX11 shaders by a simple drag                                                                                                                                                                                                                                                                                                                                                                          |
+| FusionClipboard          | Defisym  | small tool that can save / load fusion clipboard contents                                                                                                                                                                                                                                                                                                                                                      |
+| JDK Terminator           | Defisym  | Fusion will use JDK to build Android applications, but unfortunately, sometimes JDK process will not terminate correctly even you quit fusion. If you are using steam version, steam will think fusion is still running and refuse to restart fusion or steam itself, unless you terminate the process manually in task manager, which is annoying. This script can help you terminate it with a single click. |
 
 ### Examples
 
-- Blank Char
-  - *Created by Defisym.*
-  - *blank char used for align to git rid of DX11 string limit*
-
-- Bullet Time
-  - *Created by Defisym.*
-  - *A simple bullet time example*
-
-- DecimalVerdict
-  - *Created by Defisym.*
-  - *To check if a value has decimals*
-
-- DirNormalization
-  - *Created by Defisym.*
-  - *convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)*
-
-- EasyBezier_v2
-  - *Created by CallofAS.*
-  - *A WYSIWYG Bezier example. You can modify points and see the curve result directly, and move object with easing effect.*
-
-- EasyStack
-  - *Created by Defisym.*
-  - *Push/Pop value without extension*
-
-- Ellipse
-  - *Created by Defisym.*
-  - *move like a ellipse*
-
-- FastloopSave
-  - *Created by Defisym.*
-  - *Save by Fastloop, could be easily extended to fit any systems*
-
-- IniControlInit
-  - *Created by Defisym.*
-  - *How to init a ini file*
-
-- MouseState
-  - *Created by Defisym.*
-  - *to show if LMB/RMB is pushed down*
-
-- PauseWithTextBox
-  - *Created by Defisym.*
-  - *pause app with an explanation*
-
-- Regex_IsNum
-  - *Created by Defisym.*
-  - *check if a string is number by using string splitter*
-
-- Shotgun
-  - *Created by Defisym.*
-  - *Simple Shotgun*
-
-- StringScan
-  - *Created by Defisym.*
-  - *Search the string and excerpt text in ()*
-
-- Stupid Drag
-  - *Created by Defisym.*
-  - *Drag to move camera*
-
-- Stupid HeatWave
-  - *Created by Defisym.*
-  - *simple heatwave effect*
-
-- Stupid SRPG
-  - *Created by Defisym.*
-  - *a SRPG example like **Fire Emblem** I wrote in 2017.*
-  - *it's totally a mess of spaghetti code, but it's enough for a start.*
-
-- SubStretch
-  - *Created by Defisym.*
-  - *Stretch Sub-application properly with WinAPI*
+| Name             | Author   | Description                                                                                                              |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Blank Char       | Defisym  | blank char used for align to git rid of DX11 string limit                                                                |
+| Bullet Time      | Defisym  | A simple bullet time example                                                                                             |
+| DecimalVerdict   | Defisym  | To check if a value has decimals                                                                                         |
+| DirNormalization | Defisym  | convert fusion directions (0 ~ 31) to 4Dir (0 ~ 3)                                                                       |
+| EasyBezier_v2    | CallofAS | A WYSIWYG Bezier example. You can modify points and see the curve result directly, and move object with easing effect.   |
+| EasyStack        | Defisym  | Push/Pop value without extension                                                                                         |
+| Ellipse          | Defisym  | move like a ellipse                                                                                                      |
+| FastloopSave     | Defisym  | Save by Fastloop, could be easily extended to fit any systems                                                            |
+| Flow             | Defisym  | a common error of beginners about flow control, like esc open/close menu but only one side can be triggered              |
+| IniControlInit   | Defisym  | How to init a ini file                                                                                                   |
+| MouseState       | Defisym  | to show if LMB/RMB is pushed down                                                                                        |
+| PauseWithTextBox | Defisym  | pause app with an explanation                                                                                            |
+| Regex_IsNum      | Defisym  | check if a string is number by using string splitter                                                                     |
+| Shotgun          | Defisym  | Simple Shotgun                                                                                                           |
+| StringScan       | Defisym  | Search the string and excerpt text in ()                                                                                 |
+| Stupid Drag      | Defisym  | Drag to move camera                                                                                                      |
+| Stupid HeatWave  | Defisym  | simple heatwave effect                                                                                                   |
+| Stupid SRPG      | Defisym  | a SRPG example like **Fire Emblem** I wrote in 2017. it's totally a mess of spaghetti code, but it's enough for a start. |
+| SubStretch       | Defisym  | Stretch Sub-application properly with WinAPI                                                                             |  |
 
 ### Tutorials
 
