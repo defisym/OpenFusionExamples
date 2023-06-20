@@ -247,7 +247,7 @@ BEGIN
     IDST_OBJNAME            "SDL_Mixer"
     IDST_AUTHOR             "Defisym"
     IDST_COPYRIGHT          "Copyright 2023 Defisym"
-    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
+    IDST_COMMENT            "Audio player based on SDL Mixer X, with unlimited channel & encrypt support"
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
