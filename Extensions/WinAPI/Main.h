@@ -21,8 +21,10 @@
 #define	CND_CONDITION_IRIE			11
 #define	CND_CONDITION_IAAT			12
 #define	CND_CONDITION_OMC			13
+#define	CND_CONDITION_IOHA			14
+#define	CND_CONDITION_IOHA_S		15
 
-#define	CND_LAST					14
+#define	CND_LAST					16
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -155,7 +157,9 @@
 #define	EXP_EXPRESSION_GTPM			37
 #define	EXP_EXPRESSION_GFPM			38
 
-#define	EXP_LAST                    39
+#define	EXP_EXPRESSION_GAID			39
+
+#define	EXP_LAST                    40
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

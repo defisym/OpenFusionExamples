@@ -140,6 +140,8 @@ BEGIN
             BEGIN
                 MENUITEM "Active At Top",IDMN_CONDITION_IAAT
                 MENUITEM SEPARATOR
+                MENUITEM "Object has Animation ID",IDMN_CONDITION_IOHA              
+                MENUITEM "Object has Animation ID (Scope)",IDMN_CONDITION_IOHA_S              
                 MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
                 MENUITEM "Object has Animation in Direction (Scope)",IDMN_CONDITION_IDHA_S              
                 MENUITEM SEPARATOR
@@ -371,6 +373,7 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Object"
             BEGIN
+                MENUITEM "Get Object Display Animation ID",      IDMN_EXPRESSION_GAID             
                 MENUITEM "Get Object Display Animation Direction",      IDMN_EXPRESSION_GAD              
                 MENUITEM "Get Scoped Object Number",      IDMN_EXPRESSION_GSON    
             END            
@@ -651,6 +654,7 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
     M_EXPRESSION_GAD "DisAniDir ("
+    M_EXPRESSION_GAID "DisAniID ("
     M_EXPRESSION_GSON "NSObject ("
     PARA_EXPRESSION_FIXED "Object's Fixed Value"
 END
@@ -767,6 +771,9 @@ END
 
 STRINGTABLE
 BEGIN
+    M_CONDITION_IOHA    "%o Object %0 has Animation ID %1"
+    PARA_CONDITION_ID    "ID to Test"
+
     M_CONDITION_IDHA    "%o Object %0 has Animation in Direction %1"
     PARA_CONDITION_OBJ    "Object to Test"
     PARA_CONDITION_DIR    "Direction to Test"

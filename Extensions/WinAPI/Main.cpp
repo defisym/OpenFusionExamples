@@ -40,6 +40,9 @@ short conditionsInfos[] =
 	
 	IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
 
+	IDMN_CONDITION_IOHA, M_CONDITION_IOHA, CND_CONDITION_IOHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_ID,
+	IDMN_CONDITION_IOHA_S, M_CONDITION_IOHA, CND_CONDITION_IOHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_ID,
+
 };
 
 // Definitions of parameters for each action
@@ -183,6 +186,9 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GTPM, M_EXPRESSION_GTPM, EXP_EXPRESSION_GTPM, 0, 0,
 	IDMN_EXPRESSION_GFPM, M_EXPRESSION_GFPM, EXP_EXPRESSION_GFPM, 0, 0,
 
+	IDMN_EXPRESSION_GAID, M_EXPRESSION_GAID, EXP_EXPRESSION_GAID, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+
+
 };
 
 // ============================================================================
@@ -222,20 +228,40 @@ long WINAPI DLLExport IsClipBoardAvailable(LPRDATA rdPtr, long param1, long para
 
 //朝向动画
 long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1, long param2) {
-	int Fixed = (int)CNC_GetIntParameter(rdPtr);
-	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
+	const int Fixed = (int)CNC_GetIntParameter(rdPtr);
+	const size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
 
-	return DirHasAnimation(Fixed, Dir);
+	return DirHasAnimation(rdPtr, Fixed, Dir);
 }
 
 long WINAPI DLLExport IsObjectHasAnimationInDirection_Scope(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
+	const short oil = (short)OIL_GetParameter(rdPtr);
+	const size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [Dir](LPRDATA rdPtr, LPRO object)->bool {
-		return _DirHasAnimation(rdPtr, object, Dir);
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[Dir](LPRDATA rdPtr, LPRO object)->bool {
+		return DirHasAnimation(object, Dir);
+		});
+}
+
+long WINAPI DLLExport IsObjectHasAnimationID(LPRDATA rdPtr, long param1, long param2) {
+	const int fixed = (int)CNC_GetIntParameter(rdPtr);
+	const size_t id = (size_t)CNC_GetIntParameter(rdPtr);
+
+	return ObjectHasAnimationID(rdPtr, fixed, id);
+}
+
+long WINAPI DLLExport IsObjectHasAnimationID_Scope(LPRDATA rdPtr, long param1, long param2) {
+	const bool negated = IsNegated(rdPtr);
+
+	const short oil = (short)OIL_GetParameter(rdPtr);
+	const size_t id = (size_t)CNC_GetIntParameter(rdPtr);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[id] (LPRDATA rdPtr, LPRO object)->bool {
+			return ObjectHasAnimationID(object, id);
 		});
 }
 
@@ -1652,9 +1678,15 @@ long WINAPI DLLExport GetFileHash(LPRDATA rdPtr, long param1) {
 
 //获取对象当前显示动画朝向
 long WINAPI DLLExport GetObjectAnimationDirection(LPRDATA rdPtr, long param1) {
-	int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return DisplayAnimationDirection(Fixed);
+	return (long)DisplayAnimationDirection(rdPtr, Fixed);
+}
+
+long WINAPI DLLExport GetObjectAnimationID(LPRDATA rdPtr, long param1) {
+	const int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return (long)DisplayAnimationID(rdPtr, Fixed);
 }
 
 long WINAPI DLLExport GetValWithSign(LPRDATA rdPtr, long param1) {
@@ -1909,6 +1941,9 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	OnMonitorChange,
 
+	IsObjectHasAnimationID,
+	IsObjectHasAnimationID_Scope,
+
 	0
 };
 
@@ -2051,6 +2086,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	
 	GetTotalPhysicalMemory,
 	GetFreePhysicalMemory,
+
+	GetObjectAnimationID,
 
 	0
 };

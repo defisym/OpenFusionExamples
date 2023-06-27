@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+// ------------------------
+// include
+// ------------------------
+
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
@@ -18,6 +22,10 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
+// ------------------------
+// forward declaration
+// ------------------------
 
 inline bool IsHWA(LPSURFACE Src);
 inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src);
@@ -50,7 +58,13 @@ inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void
 inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor);
 inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const SfCoef&, BYTE*, BYTE*)>& process);
 
-//-----------------------------
+// ------------------------
+// definition
+// ------------------------
+
+// -------------
+// prop
+// -------------
 
 //GetString
 inline void GetPropString(CPropValue* pValue, LPTSTR Des) {
@@ -94,6 +108,10 @@ inline void FreeColMask(LPSMASK& pColMask) {
 	}
 }
 
+// -------------
+// return
+// -------------
+
 //Return float
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	if (Val == (int)Val) {
@@ -131,27 +149,106 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 
 #define ReturnString(Str) ReturnString(rdPtr, Str)
 
-//Check if a dir has animation
-inline bool _DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
-	Dir = (std::max)(size_t(0), (std::min)(size_t(DIRID_MAX - 1), Dir));
+// -------------
+// animation
+// -------------
 
-	if (object == NULL) {
+//Check if object has animation
+inline bool ObjectHasAnimation(LPRO object) {
+	if (object == nullptr) {
 		return false;
 	}
 
-	return (object->roa.raAnimOffset->anOffsetToDir[Dir] > 0) ? true : false;
+	return object->roHo.hoOEFlags & OEFLAG_ANIMATIONS;
 }
 
-inline bool _DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
-	return _DirHasAnimation(rdPtr, LproFromFixed(rdPtr, Fixed), Dir);
+inline bool ObjectHasAnimation(LPRDATA rdPtr, int Fixed) {
+	return ObjectHasAnimation(LproFromFixed(rdPtr, Fixed));
 }
 
-#define DirHasAnimation(X, Dir) _DirHasAnimation(rdPtr, X, Dir)
+//Check if object has animation ID
+inline const AnimHeader* GetObjectAnimationHeader(LPRO object) {
+	if (!ObjectHasAnimation(object)) {
+		return nullptr;
+	}
+
+	const auto pOC = object->roHo.hoCommon;
+	const auto offset = pOC->ocAnimations;
+	const auto pAH = reinterpret_cast<AnimHeader*>(reinterpret_cast<byte*>(pOC) + offset);
+
+	return pAH;
+}
+
+inline const AnimHeader* GetObjectAnimationHeader(LPRDATA rdPtr, int Fixed) {
+	return GetObjectAnimationHeader(LproFromFixed(rdPtr, Fixed));
+}
+
+inline bool ObjectHasAnimationID(LPRO object, size_t id) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	if (pAH == nullptr) {
+		return false;
+	}
+
+	if (id > pAH->ahAnimMax - 1u) {
+		return false;
+	}
+
+	return pAH->ahOffsetToAnim[id] > 0;
+}
+
+inline bool ObjectHasAnimationID(LPRDATA rdPtr, int Fixed, size_t id) {
+	return ObjectHasAnimationID(LproFromFixed(rdPtr, Fixed), id);
+}
+
+//Get object's display animation id
+inline size_t DisplayAnimationID(LPRO object) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	if (pAH == nullptr) {
+		return -1;
+	}
+
+	const auto pA = &object->roa;
+	const auto givenID = pA->raAnimOn;
+
+	if(ObjectHasAnimationID(object,givenID)) {
+		return givenID;
+	}
+
+	for (auto i = 0; i < pAH->ahAnimMax; i++) {
+		if(ObjectHasAnimationID(object, i)) {
+			return i;
+		}
+	}
+
+	// shouldn't run to here as fusion granteed that object should have animation
+	return -1;
+}
+
+inline size_t DisplayAnimationID(LPRDATA rdPtr, int Fixed) {
+	return DisplayAnimationID(LproFromFixed(rdPtr, Fixed));
+}
+
+//Check if a dir has animation
+inline bool DirHasAnimation(LPRO object, size_t Dir) {
+	if (!ObjectHasAnimation(object)) {
+		return false;
+	}
+
+	Dir = (std::max)(0u, (std::min)(DIRID_MAX - 1u, Dir));
+
+	return object->roa.raAnimOffset->anOffsetToDir[Dir] > 0;
+}
+
+inline bool DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
+	return DirHasAnimation(LproFromFixed(rdPtr, Fixed), Dir);
+}
 
 //Get object's display animation direction
-inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
-	if (object == NULL) {
-		return 0;
+inline size_t DisplayAnimationDirection(LPRO object) {
+	if (!ObjectHasAnimation(object)) {
+		return -1;
 	}
 
 	//Mechanism
@@ -162,8 +259,8 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 	size_t former = 0;
 	size_t later = 0;
 
-	size_t curdir = object->roa.raAnimDir;
-	size_t prevdir = object->roa.raAnimPreviousDir;
+	const size_t curdir = object->roa.raAnimDir;
+	const size_t prevdir = object->roa.raAnimPreviousDir;
 
 	bool clockwize;
 
@@ -204,10 +301,12 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 }
 
 inline size_t DisplayAnimationDirection(LPRDATA rdPtr, int Fixed) {
-	return DisplayAnimationDirection(rdPtr, LproFromFixed(rdPtr, Fixed));
+	return DisplayAnimationDirection(LproFromFixed(rdPtr, Fixed));
 }
 
-#define DisplayAnimationDirection(X) DisplayAnimationDirection(rdPtr, X)
+// -------------
+// surface
+// -------------
 
 //Surface
 constexpr auto Dir_X = false;
