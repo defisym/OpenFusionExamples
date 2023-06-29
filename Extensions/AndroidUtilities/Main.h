@@ -7,16 +7,19 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_ISEMBED				0
+#define	CND_CONDITION_DOWNLOADERROR				1
+#define	CND_CONDITION_DOWNLOADCOMPLETE				2
 
-#define	CND_LAST					1
+#define	CND_LAST					3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_BINARYFILEEXTRACT_SETTINGS			0
 #define	ACT_ACTION_EXTRACTBINARYFILE					1
+#define	ACT_ACTION_DOWNLOAD					2
 
-#define	ACT_LAST					2
+#define	ACT_LAST					3
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

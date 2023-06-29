@@ -5,7 +5,8 @@
       android:versionCode="1"
       android:versionName="1.0.0"
       android:installLocation="auto">
-	  
+
+	<uses-permission android:name="android.permission.INTERNET" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
 	<!-- Permissions -->

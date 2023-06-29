@@ -121,6 +121,12 @@ BEGIN
             MENUITEM "Binary File Embed",              IDMN_CONDITION_ISEMBED
         END
         MENUITEM SEPARATOR
+        POPUP "Download"
+        BEGIN
+            MENUITEM "Download Error", IDMN_CONDITION_DOWNLOADERROR
+            MENUITEM "Download Complete", IDMN_CONDITION_DOWNLOADCOMPLETE
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -140,6 +146,11 @@ BEGIN
             MENUITEM "Extract Binary Files",              IDMN_ACTION_EXTRACTBINARYFILE
             MENUITEM SEPARATOR
             MENUITEM "Binary Files Extract Settings",              IDMN_ACTION_BINARYFILEEXTRACT_SETTINGS
+        END
+        MENUITEM SEPARATOR
+        POPUP "Download"
+        BEGIN
+            MENUITEM "Download File",              IDMN_ACTION_DOWNLOAD
         END
         MENUITEM SEPARATOR
     END
@@ -258,11 +269,19 @@ BEGIN
 
     M_ACTION_EXTRACTBINARYFILE               "Extract Binary File %0"
     M_ACTION_EXTRACTBINARYFILE_SRC               "Src File"
+
+    M_ACTION_DOWNLOAD               "Download From URL %0, Save to Folder %1, FileName %2"
+    M_ACTION_DOWNLOAD_URL           "URL"
+    M_ACTION_DOWNLOAD_FOLDER           "Folder"
+    M_ACTION_DOWNLOAD_FILENAME           "FileName"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_ISEMBED             "%o Binary File %0 Embed"
+
+    M_CONDITION_DOWNLOADERROR             "%o Download From URL %0 Error"
+    M_CONDITION_DOWNLOADCOMPLETE             "%o Download From URL %0 Complete"
 END
 
 STRINGTABLE DISCARDABLE 

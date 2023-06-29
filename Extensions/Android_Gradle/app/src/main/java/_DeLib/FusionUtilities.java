@@ -26,6 +26,8 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Vector;
 
+import static _DeLib.AndroidCommon.SaveFile;
+
 public class FusionUtilities {
     public static final int IDENTIFIER_ACTIVE = 1230131283;
     public static final int IDENTIFIER_STRING = 1415071060;
@@ -125,7 +127,7 @@ public class FusionUtilities {
     }
 
     public static void addBackdrop(CExtension rhPtr, CImage cImage, int x, int y, int nLayer, int typeObst,
-            int dwEffect, int dwEffectParam) {
+                                   int dwEffect, int dwEffectParam) {
         // Duplique
         Bitmap bImage = GenerateBitmap(cImage);
 
@@ -214,54 +216,18 @@ public class FusionUtilities {
 
         CEmbeddedFile embed = rhPtr.hoAdRunHeader.rhApp.getEmbeddedFile(SrcPath);
 
+        // default output name
         if (Objects.equals(DirName, "")) {
             DirName = rhPtr.getControlsContext().getFilesDir().getAbsolutePath() + "/";
         }
 
-        try {
-            // 创建文件夹
-            File Dir = new File(DirName);
-            // 不存在创建
-            if (!Dir.exists()) {
-                if (!Dir.mkdir()) {
-                    throw (new Exception("Failed to create dir"));
-                }
-            }
-            // 下载后的文件名
-            if (Objects.equals(FileName, "")) {
-                String temp = SrcPath.trim();
-                FileName = temp.substring(temp.lastIndexOf("\\") + 1);
-            }
-
-            String fileName = DirName + FileName;
-            File file = new File(fileName);
-            if (file.exists()) {
-                if (!file.delete()) {
-                    throw (new Exception("Failed to delete file"));
-                }
-            }
-
-            InputStream is = embed.getInputStream();
-
-            // 创建字节流
-            byte[] bs = new byte[1024];
-            int len;
-            OutputStream os = Files.newOutputStream(Paths.get(fileName));
-            // 写数据
-            while ((len = is.read(bs)) != -1) {
-                os.write(bs, 0, len);
-            }
-            // 完成后关闭流
-            os.close();
-            is.close();
-
-            return true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            return false;
+        // use binary file name as default name
+        if (Objects.equals(FileName, "")) {
+            String temp = SrcPath.trim();
+            FileName = temp.substring(temp.lastIndexOf("\\") + 1);
         }
+
+        return SaveFile(embed.getInputStream(), DirName, FileName);
     }
 
     public enum ColorType {

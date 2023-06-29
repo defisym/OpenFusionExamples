@@ -1,5 +1,5 @@
 # ReadMe
 
-description here
+Small handy features for Android
 
-for more information, please check the [Help File](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/Fini/ToInstall/Files/Help/Fini/Fini.md)
+for more information, please check the [Help File](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/AndroidUtilities/ToInstall/Files/Help/AndroidUtilities/AndroidUtilities.md)
