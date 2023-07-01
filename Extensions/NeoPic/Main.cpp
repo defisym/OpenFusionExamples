@@ -113,6 +113,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SNSS, M_ACTION_SNSS,	ACT_ACTION_SNSS,	0, 3, PARAM_OBJECT,PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_OBJECT, M_ACTION_BASEPATH, M_ACTION_KEY,
 		IDMN_ACTION_LNS, M_ACTION_LNS, ACT_ACTION_LNS,	0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
 		IDMN_ACTION_RNS, M_ACTION_RNS, ACT_ACTION_RNS,	0, 0,
+		IDMN_ACTION_RENDERNS, M_ACTION_RENDERNS, ACT_ACTION_RENDERNS,	0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -1084,6 +1085,12 @@ short WINAPI DLLExport Action_ResetNineSlice(LPRDATA rdPtr, long param1, long pa
 	return 0;
 }
 
+short WINAPI DLLExport Action_RenderNineSlice(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pNS->Render();
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1455,6 +1462,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetNineSliceSource,
 			Action_LoadNineSlice,
 			Action_ResetNineSlice,
+			Action_RenderNineSlice,
 
 			0
 			};

@@ -95,8 +95,9 @@
 #define	ACT_ACTION_SNSS				42
 #define	ACT_ACTION_LNS				43
 #define	ACT_ACTION_RNS				44
+#define	ACT_ACTION_RENDERNS			45
 
-#define	ACT_LAST					45
+#define	ACT_LAST					46
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

@@ -215,6 +215,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Load Nine Slice", IDMN_ACTION_LNS
             MENUITEM "Reset Nine Slice", IDMN_ACTION_RNS
+            MENUITEM SEPARATOR
+            MENUITEM "Render Nine Slice", IDMN_ACTION_RENDERNS
         END
         MENUITEM SEPARATOR
         POPUP "Display"
@@ -527,6 +529,7 @@ BEGIN
     M_ACTION_SNSS           "Set Nine Slice Source to Lib %0, BasePath %1, Decrypt Key %2"
     M_ACTION_LNS            "Load Nine Slice %0, Decrypt Key %1"
     M_ACTION_RNS            "Reset Nine Slice"
+    M_ACTION_RENDERNS       "Render Nine Slice"
 END
 
 STRINGTABLE DISCARDABLE 
