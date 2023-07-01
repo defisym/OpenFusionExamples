@@ -138,6 +138,7 @@ BEGIN
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
         MENUITEM SEPARATOR  
+        MENUITEM "Render", IDMN_ACTION_RENDER
         MENUITEM "Force Redraw", IDMN_ACTION_FRD
         MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
         MENUITEM SEPARATOR    
@@ -496,6 +497,7 @@ BEGIN
 
     M_ACTION_FRD            "Force Redraw"
     M_ACTION_FRDGI          "Force Redraw Global ICon"
+    M_ACTION_RENDER         "Render"
 END
 
 STRINGTABLE DISCARDABLE 

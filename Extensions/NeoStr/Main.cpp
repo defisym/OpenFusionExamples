@@ -61,6 +61,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_FRD, M_ACTION_FRD, ACT_ACTION_FRD, 0, 0,
 		IDMN_ACTION_FRDGI, M_ACTION_FRDGI, ACT_ACTION_FRDGI, 0, 0,
+		
+		IDMN_ACTION_RENDER, M_ACTION_RENDER, ACT_ACTION_RENDER, 0, 0,
 
 		};
 
@@ -622,6 +624,12 @@ short WINAPI DLLExport Action_ForceRedrawGlobalICon(LPRDATA rdPtr, long param1, 
 	return 0;
 }
 
+short WINAPI DLLExport Action_Render(LPRDATA rdPtr, long param1, long param2) {
+	UpdateLastCharPos(rdPtr);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1039,6 +1047,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_ForceRedraw,
 			Action_ForceRedrawGlobalICon,
+			Action_Render,
 
 			0
 			};

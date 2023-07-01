@@ -46,8 +46,9 @@
 
 #define	ACT_ACTION_FRD			    	21
 #define	ACT_ACTION_FRDGI		    	22
+#define	ACT_ACTION_RENDER		    	23
 
-#define	ACT_LAST						23
+#define	ACT_LAST						24
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
