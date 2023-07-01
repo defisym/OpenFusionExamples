@@ -277,15 +277,25 @@ struct NineSliceInterface {
 			return;
 		}
 
-		const auto width = static_cast<int>(abs(rdPtr->src->GetWidth() * static_cast<double>(rdPtr->zoomScale.XScale)));
-		const auto height = static_cast<int>(abs(rdPtr->src->GetHeight() * static_cast<double>(rdPtr->zoomScale.YScale)));
+		// cast to float to avoid precision loss
+		const auto width = static_cast<int>(abs(static_cast<float>(rdPtr->src->GetWidth()) * rdPtr->zoomScale.XScale));
+		const auto height = static_cast<int>(abs(static_cast<float>(rdPtr->src->GetHeight()) * rdPtr->zoomScale.YScale));
 
 		if (Render(width, height)) {
 			ReleaseNonFromLib(rdPtr);
 			NewNonFromLib(rdPtr, CreateCloneSurface(rdPtr, pRTT));
 
-			rdPtr->zoomScale.XScale = rdPtr->zoomScale.XScale / abs(rdPtr->zoomScale.XScale);
-			rdPtr->zoomScale.YScale = rdPtr->zoomScale.YScale / abs(rdPtr->zoomScale.YScale);
+			// don't reset stretch if it's already the min size
+			auto resetScale = [] (const int wantedSz, const int renderedSz, const int minSz, float& scale) {
+				if (renderedSz != minSz) {		// sz>=minSz, granteed by Render
+					scale = scale / abs(scale);
+				}else {
+					scale = static_cast<float>(wantedSz) / static_cast<float>(minSz);
+				}
+			};
+
+			resetScale(width, pRTT->GetWidth(), minWidth, rdPtr->zoomScale.XScale);
+			resetScale(height,pRTT->GetHeight(), minHeight, rdPtr->zoomScale.YScale);
 
 			// update hotspot
 			ReDisplay(rdPtr);
