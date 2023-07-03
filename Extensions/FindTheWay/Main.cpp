@@ -151,8 +151,8 @@ long WINAPI DLLExport SetMapBySize(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	size_t width = (size_t)CNC_GetParameter(rdPtr);
-	size_t height = (size_t)CNC_GetParameter(rdPtr);
+	const auto width = (size_t)CNC_GetParameter(rdPtr);
+	const auto height = (size_t)CNC_GetParameter(rdPtr);
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
@@ -174,7 +174,7 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	wstring base64 = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring base64 = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(base64);
@@ -196,20 +196,20 @@ long WINAPI DLLExport SetMapByPicture(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	wstring filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridSize = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
-	auto pSf = new cSurface();
+	const auto pSf = new cSurface();
 
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
 	CImageFilter    pFilter(pImgMgr);
 
 	ImportImage(pImgMgr, filePath.c_str(), pSf, 0, 0);
 
-	auto ret = SetMapBySurface(rdPtr, pSf, gridSize, gridOffsetX, gridOffsetY);
+	const auto ret = SetMapBySurface(rdPtr, pSf, gridSize, gridOffsetX, gridOffsetY);
 
 	delete pSf;
 
@@ -228,32 +228,32 @@ long WINAPI DLLExport SetMapByActive(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	long fixed = (long)CNC_GetParameter(rdPtr);
+	const long fixed = (long)CNC_GetParameter(rdPtr);
 
-	size_t frame = (size_t)CNC_GetParameter(rdPtr);
+	const auto frame = (size_t)CNC_GetParameter(rdPtr);
 
-	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridSize = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
-	LPRO object = LproFromFixed(rdPtr, fixed);
+	const LPRO object = LproFromFixed(rdPtr, fixed);
 
 	if (!LPROValid(object, IDENTIFIER_ACTIVE)) {		// must be active object
 		return false;
 	}
 
 	cSurface imageSurface;
-	auto rhPtr = rdPtr->rHo.hoAdRunHeader;
-	short nFrame = object->roa.raAnimDirOffset->adNumberOfFrame;
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const short nFrame = object->roa.raAnimDirOffset->adNumberOfFrame;
 
 	if (frame >= (size_t)nFrame) {
 		return false;
 	}
 
-	DWORD hImage = object->roa.raAnimDirOffset->adFrame[frame];
+	const DWORD hImage = object->roa.raAnimDirOffset->adFrame[frame];
 	LockImageSurface(rhPtr->rhIdAppli, hImage, imageSurface);
 
-	auto ret = SetMapBySurface(rdPtr, &imageSurface, gridSize, gridOffsetX, gridOffsetY);
+	const auto ret = SetMapBySurface(rdPtr, &imageSurface, gridSize, gridOffsetX, gridOffsetY);
 
 	UnlockImageSurface(imageSurface);
 
@@ -272,14 +272,14 @@ long WINAPI DLLExport SetMapBySurface(LPRDATA rdPtr, long param1, long param2) {
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	long p1 = (long)CNC_GetParameter(rdPtr);
-	cSurface* imageSurface = ConvertToType<cSurface*>(p1);	
+	const long p1 = (long)CNC_GetParameter(rdPtr);
+	auto* imageSurface = ConvertToType<cSurface*>(p1);
 
-	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridSize = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
-	auto ret = SetMapBySurface(rdPtr, imageSurface, gridSize, gridOffsetX, gridOffsetY);
+	const auto ret = SetMapBySurface(rdPtr, imageSurface, gridSize, gridOffsetX, gridOffsetY);
 
 	if (ret) {
 		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
@@ -296,13 +296,13 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	delete rdPtr->pFTW;
 	rdPtr->pFTW = nullptr;
 
-	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridSize = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
-	bool eventIterate = (bool)CNC_GetParameter(rdPtr);
-	int baseLayer = (int)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
-	MapType type = (MapType)CNC_GetParameter(rdPtr);
+	const bool eventIterate = (bool)CNC_GetParameter(rdPtr);
+	const int baseLayer = (int)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
+	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
 	*rdPtr->pOnItCollisionName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -310,11 +310,11 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 
 	const auto& frameRect = rdPtr->rHo.hoAdRunHeader->rhFrame->m_leVirtualRect;
 
-	auto frameWidth = frameRect.right - frameRect.left;
-	auto frameHeight = frameRect.bottom - frameRect.top;
+	const auto frameWidth = frameRect.right - frameRect.left;
+	const auto frameHeight = frameRect.bottom - frameRect.top;
 
-	size_t width = FindTheWayClass::CalcMapWidth(frameWidth, gridSize, rdPtr->isometric);
-	size_t height = FindTheWayClass::CalcMapHeight(frameHeight, gridSize, rdPtr->isometric); 
+	const size_t width = FindTheWayClass::CalcMapWidth(frameWidth, gridSize, rdPtr->isometric);
+	const size_t height = FindTheWayClass::CalcMapHeight(frameHeight, gridSize, rdPtr->isometric); 
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
@@ -327,11 +327,11 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	
 	rdPtr->pFTW->SetGridSize(gridSize, gridOffsetX, gridOffsetY);
 
-	auto hoPtr = &(rdPtr->rHo);
+	const auto hoPtr = &(rdPtr->rHo);
 	npWin win = hoPtr->hoAdRunHeader->rh4.rh4Mv->mvIdEditWin;
 
-	int layerOffsetX = hoPtr->hoAdRunHeader->rh3.rh3DisplayX;
-	int layerOffsetY = hoPtr->hoAdRunHeader->rh3.rh3DisplayY;
+	const int layerOffsetX = hoPtr->hoAdRunHeader->rh3.rh3DisplayX;
+	const int layerOffsetY = hoPtr->hoAdRunHeader->rh3.rh3DisplayY;
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
@@ -358,27 +358,27 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 }
 
 long WINAPI DLLExport OnSetMapByCollision(LPRDATA rdPtr, long param1, long param2) {
-	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return (*rdPtr->pOnItCollisionName) == iterateName;
 }
 
 long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
-	size_t startX = (size_t)CNC_GetParameter(rdPtr);
-	size_t startY = (size_t)CNC_GetParameter(rdPtr);	
+	const auto startX = (size_t)CNC_GetParameter(rdPtr);
+	const auto startY = (size_t)CNC_GetParameter(rdPtr);
 
-	size_t destinationX = (size_t)CNC_GetParameter(rdPtr);
-	size_t destinationY = (size_t)CNC_GetParameter(rdPtr);
+	const auto destinationX = (size_t)CNC_GetParameter(rdPtr);
+	const auto destinationY = (size_t)CNC_GetParameter(rdPtr);
 
-	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool diagonal = (bool)CNC_GetParameter(rdPtr);
-	bool checkDiagonalCorner = (bool)CNC_GetParameter(rdPtr);
+	const bool diagonal = (bool)CNC_GetParameter(rdPtr);
+	const bool checkDiagonalCorner = (bool)CNC_GetParameter(rdPtr);
 
-	bool forceFind=(bool)CNC_GetParameter(rdPtr);
-	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
+	const bool forceFind=(bool)CNC_GetParameter(rdPtr);
+	const bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
 
-	wstring saveName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring saveName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -392,14 +392,14 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport PathAvailable(LPRDATA rdPtr, long param1, long param2) {
-	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	RetIfMapInvalid(FALSE);
 
 	return rdPtr->pFTW->GetPathValidity(&pathName);
 }
 
 long WINAPI DLLExport OnIteratePath(LPRDATA rdPtr, long param1, long param2) {
-	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return (*rdPtr->pOnItPathName) == iterateName;
 }
@@ -411,17 +411,17 @@ long WINAPI DLLExport MapAvailable(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param2) {
-	size_t x = (size_t)CNC_GetParameter(rdPtr);
-	size_t y = (size_t)CNC_GetParameter(rdPtr);
+	const auto x = (size_t)CNC_GetParameter(rdPtr);
+	const auto y = (size_t)CNC_GetParameter(rdPtr);
 
-	int cost = (int)CNC_GetParameter(rdPtr);
-	MapType type = (MapType)CNC_GetParameter(rdPtr);
+	const int cost = (int)CNC_GetParameter(rdPtr);
+	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
-	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
+	const bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
-	Coord gridCoord = Coord{ x, y };
+	auto gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
 		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
@@ -429,7 +429,7 @@ long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param
 
 	auto& [gridX, gridY] = gridCoord;
 
-	auto mapCost = rdPtr->pFTW->GetMap(gridX, gridY, type);
+	const auto mapCost = rdPtr->pFTW->GetMap(gridX, gridY, type);
 
 	if (cost ==-1 && mapCost != MAP_OBSTACLE) {					// Check for path
 		return TRUE;
@@ -446,11 +446,11 @@ long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param
 }
 
 long WINAPI DLLExport ObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	size_t x = (size_t)CNC_GetParameter(rdPtr);
-	size_t y = (size_t)CNC_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	const auto x = (size_t)CNC_GetParameter(rdPtr);
+	const auto y = (size_t)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -467,15 +467,15 @@ long WINAPI DLLExport ObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport NoObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	size_t x = (size_t)CNC_GetParameter(rdPtr);
-	size_t y = (size_t)CNC_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	const auto x = (size_t)CNC_GetParameter(rdPtr);
+	const auto y = (size_t)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
 	try {
 		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-			Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 			if (objectCoord == Coord{ x,y }) {
 				throw false;
 			}
@@ -489,10 +489,10 @@ long WINAPI DLLExport NoObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	MapType type = (MapType)CNC_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -509,11 +509,11 @@ long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) 
 }
 
 long WINAPI DLLExport ObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	int x = (int)CNC_GetParameter(rdPtr);
-	int y = (int)CNC_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	const int x = (int)CNC_GetParameter(rdPtr);
+	const int y = (int)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -525,9 +525,9 @@ long WINAPI DLLExport ObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport NoObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	int x = (int)CNC_GetParameter(rdPtr);
-	int y = (int)CNC_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	const int x = (int)CNC_GetParameter(rdPtr);
+	const int y = (int)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -547,21 +547,21 @@ long WINAPI DLLExport NoObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
-	bool lineMode = (bool)CNC_GetParameter(rdPtr);
-	bool attack = (bool)CNC_GetParameter(rdPtr);
+	const bool lineMode = (bool)CNC_GetParameter(rdPtr);
+	const bool attack = (bool)CNC_GetParameter(rdPtr);
 
-	size_t x = (size_t)CNC_GetParameter(rdPtr);
-	size_t y = (size_t)CNC_GetParameter(rdPtr);
+	const auto x = (size_t)CNC_GetParameter(rdPtr);
+	const auto y = (size_t)CNC_GetParameter(rdPtr);
 
-	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);	
+	const bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
 
-	size_t range = (size_t)CNC_GetParameter(rdPtr);
-	size_t startRange = (size_t)CNC_GetParameter(rdPtr);
+	const auto range = (size_t)CNC_GetParameter(rdPtr);
+	const auto startRange = (size_t)CNC_GetParameter(rdPtr);
 
-	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);	
+	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool allRange = (bool)CNC_GetParameter(rdPtr);
-	size_t allRangeAttackRange = (size_t)CNC_GetParameter(rdPtr);
+	const bool allRange = (bool)CNC_GetParameter(rdPtr);
+	const auto allRangeAttackRange = (size_t)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -571,7 +571,7 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->areaSize = 0;
 	rdPtr->extraRangeStartPos = DEFAULT_EXTRARANGESTARTPOS;
 
-	Coord gridCoord = Coord{ x, y };
+	auto gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
 		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
@@ -595,7 +595,7 @@ long WINAPI DLLExport CalcArea(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnItArea(LPRDATA rdPtr, long param1, long param2) {
-	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return iterateName == *rdPtr->pOnItAreaName;
 }
@@ -613,11 +613,11 @@ long WINAPI DLLExport OnMapUpdate(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	short oilZoc = (short)OIL_GetParameter(rdPtr);
-	wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	auto oilZoc = (short)OIL_GetParameter(rdPtr);
+	const std::wstring iterateName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -641,7 +641,7 @@ long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2)
 long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -651,7 +651,7 @@ long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 	objects.reserve(rdPtr->pSelect->GetNumberOfSelected(oil));
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		const auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 			// not overlap obstacle
 		if ((rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
 			// not overlap unit
@@ -666,13 +666,13 @@ long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);	
-	int mode = (int)CNC_GetParameter(rdPtr);
-	
-	bool atAttack = mode == 1;	// 0 = Move Area, 1 = Attack Area
-	bool all = mode == -1;
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	const int mode = (int)CNC_GetParameter(rdPtr);
+
+	const bool atAttack = mode == 1;	// 0 = Move Area, 1 = Attack Area
+	const bool all = mode == -1;
 
 	RetIfMapInvalid(FALSE);
 
@@ -680,12 +680,12 @@ long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
 		, [&](LPRDATA rdPtr, LPRO object)->bool {
-			auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+			const auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 			
 			for (size_t it = 0; it < area.size(); it++) {
-				auto isAttack = !(it < rdPtr->extraRangeStartPos);
+				const auto isAttack = !(it < rdPtr->extraRangeStartPos);
 				
-				if (std::find(area[it].begin(), area[it].end(), objectCoord) != area[it].end()) {
+				if (std::ranges::find(area[it], objectCoord) != area[it].end()) {
 					return all
 						|| (atAttack && isAttack)
 						|| (!atAttack && !isAttack);
@@ -699,7 +699,7 @@ long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
 
 	rdPtr->pSelect->SelectAll(oil);
 
@@ -707,10 +707,10 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oilObjA = (short)OIL_GetParameter(rdPtr);
-	short oilObjB = (short)OIL_GetParameter(rdPtr);
+	const auto oilObjA = (short)OIL_GetParameter(rdPtr);
+	const auto oilObjB = (short)OIL_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
@@ -731,25 +731,25 @@ long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
 
 	RetIfMapInvalid(FALSE);
 
-	vector<tuple<Coord, LPRO>> objects;
-	vector<tuple<Coord, LPRO>> selected;
-	vector<LPRO> toSelect;
+	std::vector<std::tuple<Coord, LPRO>> objects;
+	std::vector<std::tuple<Coord, LPRO>> selected;
+	std::vector<LPRO> toSelect;
 
 	//auto num = rdPtr->pSelect->GetNumberOfSelected(oil);
-	auto num = rdPtr->pSelect->GetNumberOfObject(oil);
+	const auto num = rdPtr->pSelect->GetNumberOfObject(oil);
 	
 	objects.reserve(num);
 	selected.reserve(num);
 	toSelect.reserve(num);
 
-	auto find = [](vector<tuple<Coord, LPRO>>& objects, Coord objectCoord) {
-		return std::find_if(objects.begin(), objects.end(), [&](tuple<Coord, LPRO>& it)->bool {
+	auto find = [](std::vector<std::tuple<Coord, LPRO>>& objects, Coord objectCoord) {
+		return std::ranges::find_if(objects, [&](std::tuple<Coord, LPRO>& it)->bool {
 			auto& [c, p] = it;
 			return c == objectCoord;
 			}) != objects.end();
@@ -757,15 +757,15 @@ long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long par
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		objects.emplace_back(
-			std::make_tuple(rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })
-				, object));
+			rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })
+				, object);
 		});
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 
 		if (!find(selected, objectCoord)) {
-			selected.emplace_back(std::make_tuple(objectCoord, object));
+			selected.emplace_back(objectCoord, object);
 		}
 		});
 
@@ -797,18 +797,18 @@ long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long par
 // ============================================================================
 
 short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
-	size_t x = (size_t)CNC_GetParameter(rdPtr);
-	size_t y = (size_t)CNC_GetParameter(rdPtr);
+	const auto x = (size_t)CNC_GetParameter(rdPtr);
+	const auto y = (size_t)CNC_GetParameter(rdPtr);
 
-	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
-	MapType type = (MapType)CNC_GetParameter(rdPtr);
+	const BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
+	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
-	bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
+	const bool useRealCoord = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
 
-	Coord gridCoord = Coord{ x, y };
+	auto gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
 		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
@@ -822,9 +822,9 @@ short WINAPI DLLExport SetMap(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
-	MapType type = (MapType)CNC_GetParameter(rdPtr);
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
+	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -840,8 +840,8 @@ short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport ClearMap(LPRDATA rdPtr, long param1, long param2) {
-	BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
-	MapType type = (MapType)CNC_GetParameter(rdPtr);
+	const BYTE cost = (BYTE)CNC_GetParameter(rdPtr);
+	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
@@ -856,21 +856,21 @@ short WINAPI DLLExport Continue(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
-	wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	bool useRealCoord = (bool)CNC_GetIntParameter(rdPtr);
+	std::wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const bool useRealCoord = (bool)CNC_GetIntParameter(rdPtr);
 
 	*rdPtr->pOnItPathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
-	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
 	if (!rdPtr->pFTW->GetPathValidity(pPathName)) {
 		return 0;
 	}
 
 	rdPtr->itIndex = 0;
-	size_t totalStep = rdPtr->pFTW->GetDistance(pPathName);
+	const size_t totalStep = rdPtr->pFTW->GetDistance(pPathName);
 
 	for (size_t step = 0; step < totalStep; step++) {
 		auto coord = Coord{ rdPtr->pFTW->GetCoordAtPath(step, CoordType::X, pPathName)
@@ -884,8 +884,8 @@ short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	bool center = (bool)CNC_GetParameter(rdPtr);
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const bool center = (bool)CNC_GetParameter(rdPtr);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -913,7 +913,7 @@ short WINAPI DLLExport ClearZoc(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 	*rdPtr->pOnItAreaName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	bool once = (bool)CNC_GetParameter(rdPtr);
+	const bool once = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -951,7 +951,7 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAreaOnce(LPRDATA rdPtr, long param1, long param2) {
-	auto param = OCP_GetParameter(rdPtr);
+	const auto param = OCP_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -978,8 +978,8 @@ short WINAPI DLLExport CreateAreaOnce(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAreaByNameOnce(LPRDATA rdPtr, long param1, long param2) {
-	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
+	std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
 	RetIfMapInvalid(0);
 
@@ -1009,8 +1009,8 @@ short WINAPI DLLExport CreateAreaByNameOnce(LPRDATA rdPtr, long param1, long par
 }
 
 short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	int type = (int)CNC_GetParameter(rdPtr);
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const int type = (int)CNC_GetParameter(rdPtr);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1043,7 +1043,7 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
-	int target = (int)CNC_GetParameter(rdPtr);
+	const int target = (int)CNC_GetParameter(rdPtr);
 
 	constexpr auto ALL = -1;
 	constexpr auto ALLY = 0;
@@ -1074,9 +1074,9 @@ short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {	
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	auto param = OCP_GetParameter(rdPtr);
+short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) {
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const auto param = OCP_GetParameter(rdPtr);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1084,7 +1084,7 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
 	for (auto& it : *rdPtr->pObjZoc) {
@@ -1102,7 +1102,7 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long param2) {
-	short oil = (short)OIL_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
 	*rdPtr->pOnItZocName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
@@ -1111,7 +1111,7 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 	// but when you call immediate events, this for-each will be terminated
 	// so here need a manual for-each to force it
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+		const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
 		rdPtr->pObject = object;
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
@@ -1129,8 +1129,8 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 }
 
 short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1138,9 +1138,9 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 
 	RetIfMapInvalid(0);
 
-	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
+	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
-	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 	rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
 	for (auto& it : *rdPtr->pObjZoc) {
@@ -1161,7 +1161,7 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport SetStash(LPRDATA rdPtr, long param1, long param2) {
-	bool enable = (bool)CNC_GetParameter(rdPtr);
+	const bool enable = (bool)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -1175,19 +1175,19 @@ short WINAPI DLLExport SetStash(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
-	auto param = OCP_GetParameter(rdPtr);
+	const auto param = OCP_GetParameter(rdPtr);
 
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	size_t dir = (size_t)CNC_GetParameter(rdPtr);
-	size_t type = (size_t)CNC_GetParameter(rdPtr);
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const auto dir = (size_t)CNC_GetParameter(rdPtr);
+	const auto type = (size_t)CNC_GetParameter(rdPtr);
 
-	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
-	bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
-	bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
-	bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
-	bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
+	bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
+	bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
+	bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
+	const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
+	const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1195,8 +1195,8 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
-	AOEClass::coord start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
+	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const auto start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
 
@@ -1204,7 +1204,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 		return std::find(c->begin(), c->end(), p) != c->end();
 	};
 
-	for (auto& it : *rdPtr->pAOECoord) {
+	for (const auto& it : *rdPtr->pAOECoord) {
 		auto gridCoord = Coord{ (size_t)it.x,(size_t)it.y };
 		auto realCoord = rdPtr->pFTW->GetRealCoord(gridCoord);
 
@@ -1231,19 +1231,19 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) {
-	wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	size_t dir = (size_t)CNC_GetParameter(rdPtr);
-	size_t type = (size_t)CNC_GetParameter(rdPtr);
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const auto dir = (size_t)CNC_GetParameter(rdPtr);
+	const auto type = (size_t)CNC_GetParameter(rdPtr);
 
-	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
-	bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
-	bool moveIgnoreEnemy = ignoreFlag & 0b00100;		// Move through enemy	
-	bool attackIgnoreAlly = ignoreFlag & 0b00010;		// Attack ally (e.g., heal)	
-	bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy	
+	bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
+	bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
+	bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
+	const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
+	const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
 
 
 	if (!LPROValid(object)) {
@@ -1252,10 +1252,10 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 
 	RetIfMapInvalid(0);
 
-	auto Oi = rdPtr->pOc->GetCreationOI(objectName);
+	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
-	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
-	AOEClass::coord start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
+	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const auto start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
 
@@ -1263,7 +1263,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 		return std::find(c->begin(), c->end(), p) != c->end();
 	};
 
-	for (auto& it : *rdPtr->pAOECoord) {
+	for (const auto& it : *rdPtr->pAOECoord) {
 		auto gridCoord = Coord{ (size_t)it.x,(size_t)it.y };
 		auto realCoord = rdPtr->pFTW->GetRealCoord(gridCoord);
 
@@ -1293,8 +1293,8 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 }
 
 short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
-	LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	int nLayer = (int)CNC_GetParameter(rdPtr) - 1;
+	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
+	const int nLayer = (int)CNC_GetParameter(rdPtr) - 1;
 
 	if (!LPROValid(object, IDENTIFIER_ACTIVE)) {		// must be active object
 		return 0;
@@ -1302,14 +1302,14 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 
 	// int nObstacleType = rdPtr->rHo.hoCurrentParam->evp.evpW.evpW0;
 	// CNC_GetParameter(rdPtr);
-	int nObstacleType = OBSTACLE_TRANSPARENT;		// no effect on collisions
+	const int nObstacleType = OBSTACLE_TRANSPARENT;		// no effect on collisions
 
-	auto rhPtr = rdPtr->rHo.hoAdRunHeader;
-	short nFrame = object->roa.raAnimDirOffset->adNumberOfFrame;
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const short nFrame = object->roa.raAnimDirOffset->adNumberOfFrame;
 
 	// get alterable value
-	long rOffset = ((CValue*)(object->rov.rvpValues))->m_long;
-	long bOffset = ((CValue*)(object->rov.rvpValues) + 1)->m_long;
+	const long rOffset = ((CValue*)(object->rov.rvpValues))->m_long;
+	const long bOffset = ((CValue*)(object->rov.rvpValues) + 1)->m_long;
 
 	auto lockSf=[&](cSurface& sf,short offset)->BOOL{
 		if (offset >= nFrame) {
@@ -1317,7 +1317,7 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 		}
 
 		// get animation
-		DWORD hImage = object->roa.raAnimDirOffset->adFrame[offset];
+		const DWORD hImage = object->roa.raAnimDirOffset->adFrame[offset];
 		return LockImageSurface(rhPtr->rhIdAppli, hImage, sf);
 	};
 
@@ -1329,16 +1329,16 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	lockSf(imageSurfaceR, 1);
 	lockSf(imageSurfaceB, 2);
 
-	auto hoX = object->roHo.hoImgXSpot;
-	auto hoY = object->roHo.hoImgYSpot;
+	const auto hoX = object->roHo.hoImgXSpot;
+	const auto hoY = object->roHo.hoImgYSpot;
 
-	auto effect = object->ros.rsEffect;
-	auto effectParam = object->ros.rsEffectParam;
+	const auto effect = object->ros.rsEffect;
+	const auto effectParam = object->ros.rsEffectParam;
 
 	RetIfMapInvalid(0);
 
-	auto width = rdPtr->pFTW->GetMapWidth();
-	auto height = rdPtr->pFTW->GetMapHeight();
+	const auto width = rdPtr->pFTW->GetMapWidth();
+	const auto height = rdPtr->pFTW->GetMapHeight();
 
 	auto addBKD = [&](cSurface* pSf, int x, int y) {
 		if (!pSf->IsValid()) {
@@ -1383,9 +1383,9 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 
 
 short WINAPI DLLExport SetGridSize(LPRDATA rdPtr, long param1, long param2) {
-	size_t gridSize = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
-	size_t gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridSize = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
+	const auto gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
@@ -1413,21 +1413,21 @@ long WINAPI DLLExport GetIterateIndex(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
-	size_t startX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t startY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto startX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto startY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	size_t destinationX = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t destinationY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto destinationX = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto destinationY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool diagonal = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool checkDiagonalCorner = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool diagonal = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool checkDiagonalCorner = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	bool forceFind = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool forceFind = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	wstring saveName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const std::wstring saveName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
@@ -1441,31 +1441,31 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetStepOfPath(LPRDATA rdPtr, long param1) {
-	wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
-	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
 	return rdPtr->pFTW->GetDistance(pPathName);
 }
 
 long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
-	wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-	size_t step = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	std::wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto step = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(COORD_INVALID);
 
-	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
 	return rdPtr->pFTW->GetCoordAtPath(step, type, pPathName);
 }
 
 long WINAPI DLLExport GetGridCoord(LPRDATA rdPtr, long param1) {
-	size_t coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(COORD_INVALID);
 
@@ -1475,9 +1475,9 @@ long WINAPI DLLExport GetGridCoord(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
-	size_t coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	CoordType type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto coordX = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto coordY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(REAL_INVALID);
 
@@ -1487,15 +1487,15 @@ long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {
-	size_t x = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t y = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto x = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto y = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	MapType type = (MapType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (MapType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(MAP_OBSTACLE);
 
-	Coord gridCoord = Coord{ x, y };
+	auto gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
 		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
@@ -1519,14 +1519,14 @@ long WINAPI DLLExport GetMapBase64(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
-	MapType type = (MapType)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool showPath = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (MapType)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool showPath = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	std::wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	// RetIfMapInvalid((long)Empty_Str);
 
-	wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
 
 	*rdPtr->pMapStr = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->OutPutMapStr(type, showPath, pPathName);
 
@@ -1538,21 +1538,21 @@ long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
-	size_t x = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t y = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto x = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto y = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool useRealCoord = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	size_t dir = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t range = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto dir = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto range = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	size_t ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool attack = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool attack = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(0);
 
-	Coord gridCoord = Coord{ x, y };
+	auto gridCoord = Coord{ x, y };
 
 	if (useRealCoord) {
 		gridCoord = rdPtr->pFTW->GetGridCoord(gridCoord);
@@ -1562,11 +1562,11 @@ long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
-	bool moveIgnoreZoc = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool moveIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool moveIgnoreEnemy = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool attackIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool attackIgnoreEnemy= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool moveIgnoreZoc = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool moveIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool moveIgnoreEnemy = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool attackIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const bool attackIgnoreEnemy= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	
 	return FindTheWayClass::GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
 }
@@ -1592,14 +1592,14 @@ long WINAPI DLLExport GetMapCostObstacle(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetMapCostValid(LPRDATA rdPtr, long param1) {
-	size_t cost = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto cost = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	return Range(cost);
 }
 
 long WINAPI DLLExport GetIsometricGridSize(LPRDATA rdPtr, long param1) {
-	size_t isoGridWidth = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t isoGridHeight = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto isoGridWidth = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto isoGridHeight = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	return FindTheWayClass::GetIsometricGridSize(isoGridWidth, isoGridHeight);
 }

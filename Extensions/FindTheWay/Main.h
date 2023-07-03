@@ -161,10 +161,10 @@ typedef struct tagRDATA
 	size_t itIndex;
 	Coord itCoord;
 
-	wstring* pOnItCollisionName;
-	wstring* pOnItPathName;
-	wstring* pMapBase64Str;
-	wstring* pMapStr;
+	std::wstring* pOnItCollisionName;
+	std::wstring* pOnItPathName;
+	std::wstring* pMapBase64Str;
+	std::wstring* pMapStr;
 
 	ObjectSelection* pSelect;
 
@@ -177,15 +177,15 @@ typedef struct tagRDATA
 	CoordSet* pEnemy;
 	CoordSet* pUnit;
 
-	wstring* pOnItAreaName;
+	std::wstring* pOnItAreaName;
 
 	LPRO pObject;
 	ObjectCreation* pOc;
 	CoordSet* pObjZoc;
-	wstring* pOnItZocName;
+	std::wstring* pOnItZocName;
 
 	AOEClass* pAOE;
-	vector<AOEClass::coord>* pAOECoord;
+	std::vector<AOEClass::coord>* pAOECoord;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

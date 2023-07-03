@@ -12,8 +12,6 @@
 
 // AOE
 namespace AOE{
-	using namespace std;
-
 	constexpr auto RESERVE = 50;
 
 	class AOEClass {
@@ -22,15 +20,15 @@ namespace AOE{
 			int x;
 			int y;
 
-			inline offset operator+(const offset& A) {
+			inline offset operator+(const offset& A) const {
 				return offset{ A.x + this->x ,A.y + this->y };
 			}
 
-			inline offset operator*(const int& A) {
+			inline offset operator*(const int& A) const {
 				return offset{ A * this->x ,A * this->y };
 			}
 
-			inline bool operator==(const offset& A) {
+			inline bool operator==(const offset& A) const {
 				return A.x == this->x && A.y == this->y;
 			}
 		};
@@ -38,21 +36,21 @@ namespace AOE{
 		using coord = offset;
 
 	private:
-		const vector<offset> dirOffset = { {1, 0}, { 0,-1 }, { -1,0 }, { 0,1 } };
+		const std::vector<offset> dirOffset = { {1, 0}, { 0,-1 }, { -1,0 }, { 0,1 } };
 
 		coord start = { 0,0 };
 		size_t dir = 0;
 
-		vector<coord> open_set;
-		vector<coord> close_set;
-		vector<coord> cur_set;
+		std::vector<coord> open_set;
+		std::vector<coord> close_set;
+		std::vector<coord> cur_set;
 
-		inline void GetAOE_1_X(size_t size, vector<coord>* output) {
+		inline void GetAOE_1_X(const size_t size, std::vector<coord>* output) const {
 			for (size_t i = 1; i <= size; i++) {
 				output->emplace_back(start + coord{ dirOffset[dir].x * (int)i,dirOffset[dir].y * (int)i });
 			}
 		}
-		inline void GetAOE_2_X(size_t type, vector<coord>* output) {
+		inline void GetAOE_2_X(const size_t type, std::vector<coord>* output) const {
 			int vSize = 0;
 			int hSize = 0;
 
@@ -116,7 +114,7 @@ namespace AOE{
 				}
 			}
 		}
-		inline void GetAOE_3_X(size_t size, vector<coord>* output) {
+		inline void GetAOE_3_X(const size_t size, std::vector<coord>* output) {
 			open_set.clear();			
 			close_set.clear();
 			cur_set.clear();
@@ -130,8 +128,8 @@ namespace AOE{
 					coord base = open_set.back();
 					open_set.pop_back();
 
-					auto find = [](vector<coord>& c, coord& p) {
-						return std::find(c.begin(), c.end(), p) != c.end();
+					auto find = [](std::vector<coord>& c, coord& p) {
+						return std::ranges::find(c, p) != c.end();
 					};
 
 					if (!find(close_set,base)) {
@@ -139,7 +137,7 @@ namespace AOE{
 					}
 
 					for (auto& it : dirOffset) {
-						coord cur = coord{ it.x + base.x,it.y + base.y };
+						auto cur = coord{ it.x + base.x,it.y + base.y };
 
 						if (!find(close_set, cur)) {
 							cur_set.emplace_back(cur);
@@ -154,7 +152,7 @@ namespace AOE{
 
 			return;
 		}
-		inline void GetAOE_4_X(size_t size, vector<coord>* output) {
+		inline void GetAOE_4_X(size_t size, std::vector<coord>* output) const {
 			output->emplace_back(start + offset{ 1,-1 });
 			output->emplace_back(start + offset{ -1,-1 });
 			output->emplace_back(start + offset{ -1,1 });
@@ -171,7 +169,7 @@ namespace AOE{
 
 		}
 
-		inline void GetAOE(coord start, size_t dir, size_t type, vector<coord>* output) {
+		inline void GetAOE(const coord start, const size_t dir, const size_t type, std::vector<coord>* output) {
 			output->clear();
 
 			this->start = start;
