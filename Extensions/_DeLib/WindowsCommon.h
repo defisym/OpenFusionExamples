@@ -392,7 +392,7 @@ inline bool SystemMemoryNotEnough() {
 		&& (GetSystemMemoryInfoMB(MemoryInfoType::FreeVirtualMemory) < MIN_MEMORYLEFT);
 }
 
-// must end without L'\\'
+// Must end without L'\\'
 inline void GetFileList(std::vector<std::wstring>* pList, const std::wstring& folder) {
 	HANDLE h = nullptr;
 	WIN32_FIND_DATA stFD;
@@ -412,6 +412,8 @@ inline void GetFileList(std::vector<std::wstring>* pList, const std::wstring& fo
 			pList->emplace_back(folder + L"\\" + stFD.cFileName);
 		}
 	}
+
+	FindClose(h);
 
 	return;
 }

@@ -926,7 +926,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 			}
 		}
 
-		// Stop loading when main object is destroyed
+		// Stop loading
 		if (pPreloadHandler->bForceExit) {
 			for (auto& libValue : *pPreloadHandler->pPreloadLib | std::views::values) {
 				libValue.Release();
