@@ -51,8 +51,10 @@
 #define	EXP_EXPRESSION_SP			6
 #define	EXP_EXPRESSION_SCB64		7
 #define	EXP_EXPRESSION_SB64			8
+#define	EXP_EXPRESSION_SSB64		9
+#define	EXP_EXPRESSION_LSB64		10
 
-#define	EXP_LAST                    9
+#define	EXP_LAST                    11
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

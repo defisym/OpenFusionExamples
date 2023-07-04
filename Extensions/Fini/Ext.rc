@@ -201,6 +201,9 @@ BEGIN
         MENUITEM "Save to Base64 String", IDMN_EXPRESSION_SB64
         MENUITEM "Save to Compressed Base64 String", IDMN_EXPRESSION_SCB64
         MENUITEM SEPARATOR
+        MENUITEM "Save String to Base64 String", IDMN_EXPRESSION_SSB64
+        MENUITEM "Load String From Base64 String", IDMN_EXPRESSION_LSB64
+        MENUITEM SEPARATOR
         MENUITEM "Save Alterable Value", IDMN_EXPRESSION_SAV
         MENUITEM "Save Position", IDMN_EXPRESSION_SP
         MENUITEM SEPARATOR
@@ -373,6 +376,11 @@ BEGIN
     
     M_FIXED                     "Fixed Value"
     M_BASE64                    "Base64 Str"
+    M_COMPRESSED                "Compressed"
+
+    M_EXPRESSION_SSB64          "SaveStringToB64Str$("
+    M_EXPRESSION_LSB64          "LoadStringFromB64Str$("
+
 END
 
 

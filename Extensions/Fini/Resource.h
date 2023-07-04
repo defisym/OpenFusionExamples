@@ -133,6 +133,8 @@
 #define IDMN_EXPRESSION_SP			27006
 #define IDMN_EXPRESSION_SCB64		27007
 #define IDMN_EXPRESSION_SB64		27008
+#define IDMN_EXPRESSION_SSB64		27009
+#define IDMN_EXPRESSION_LSB64		27010
 
 // Expression strings
 #define M_EXPRESSION_GSIV		 7000
@@ -144,11 +146,14 @@
 #define M_EXPRESSION_SP 	     7006
 #define M_EXPRESSION_SCB64 	     7007
 #define M_EXPRESSION_SB64 	     7008
+#define M_EXPRESSION_SSB64 	     7009
+#define M_EXPRESSION_LSB64 	     7010
 
 // Names of expression parameters
 #define M_FIXED				 7500
 #define M_CF25P				 7501
 #define M_BASE64			 7502
+#define M_COMPRESSED		 7503
 
 // Next default values for new objects
 // 

@@ -73,6 +73,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_SP, M_EXPRESSION_SP, EXP_EXPRESSION_SP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		IDMN_EXPRESSION_SCB64, M_EXPRESSION_SCB64, EXP_EXPRESSION_SCB64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SB64, M_EXPRESSION_SB64, EXP_EXPRESSION_SB64, EXPFLAG_STRING, 0,
+		
+		IDMN_EXPRESSION_SSB64, M_EXPRESSION_SSB64, EXP_EXPRESSION_SSB64, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, ACT_ACTION_SSI_STR, M_COMPRESSED,
+		IDMN_EXPRESSION_LSB64, M_EXPRESSION_LSB64, EXP_EXPRESSION_LSB64, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_BASE64, M_COMPRESSED,
 		};
 
 // ============================================================================
@@ -596,6 +599,51 @@ long WINAPI DLLExport SaveToCompressedBase64(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->b64Str->c_str();
 }
 
+long WINAPI DLLExport SaveStringToBase64(LPRDATA rdPtr, long param1) {
+	std::string str = to_byte_string((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
+	const auto bCompress = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto pData = reinterpret_cast<BYTE*>(str.data());
+	const auto dataSz = str.length();
+
+	if(!bCompress) {
+		*rdPtr->b64Str = rdPtr->pB64->base64_encode(pData, dataSz);
+	}else {
+		char* buf = nullptr;
+		const auto compressSz = rdPtr->CompressToBuffer(str, buf);
+
+		*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
+
+		delete[] buf;
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
+long WINAPI DLLExport LoadStringFromBase64(LPRDATA rdPtr, long param1) {
+	const std::wstring base64 = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto bCompress = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		if (!bCompress) {			
+			*rdPtr->b64Str = to_wide_string(std::string((char*)buf, sz));
+		}
+		else {
+			*rdPtr->b64Str = to_wide_string(rdPtr->DeCompressToString((char*)buf, sz));
+		}
+	});
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
 long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
@@ -803,6 +851,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			SavePosition,
 			SaveToCompressedBase64,
 			SaveToBase64,
+
+			SaveStringToBase64,
+			LoadStringFromBase64,
 
 			0
 			};

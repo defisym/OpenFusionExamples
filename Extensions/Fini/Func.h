@@ -1,5 +1,4 @@
-#ifndef _FUNC_
-#define _FUNC_
+#pragma once
 
 inline bool Modified(SI_Error Input) {
 	return Input == SI_UPDATED || Input == SI_INSERTED;
@@ -99,6 +98,3 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 
 	return offset;
 }
-
-#endif // !_FUNC_
-

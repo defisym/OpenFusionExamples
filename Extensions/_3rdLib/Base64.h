@@ -235,14 +235,15 @@ public:
 
     // decode internally, use callback to process raw data
     // don't need to make a temp buffer
-    inline bool base64_decode_callback(const base64Str& encoded_string, const std::function<void(const BYTE* buff, const size_t size)>& callback) {
+    inline bool base64_decode_callback(const base64Str& encoded_string,
+        const std::function<void(const BYTE* buff, const size_t size)>& callback) {
         try {
             this->base64_decode(encoded_string);
         } catch (decltype(BASE64_DECODEERROR)) {
             return false;
         }
 
-        callback(&deRet[0], deRet.size());
+        callback(deRet.data(), deRet.size());
 
         return true;
     }
