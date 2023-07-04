@@ -583,9 +583,11 @@ long WINAPI DLLExport SaveToCompressedBase64(LPRDATA rdPtr, long param1) {
 	Fini->Save(Output);
 
 	char* buf = nullptr;
-	auto compressSz = rdPtr->CompressToBuffer(Output, buf);
+	const auto compressSz = rdPtr->CompressToBuffer(Output, buf);
 
 	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
+
+	delete[] buf;
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
