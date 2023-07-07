@@ -153,6 +153,17 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 // animation
 // -------------
 
+// Iterator
+template<typename Child>
+inline void IterateValidItem(void* pParent, short* pArr,unsigned short sz, const std::function<void(Child*)>& cb) {
+	for (decltype(sz) i = 0; i < sz; i++) {
+		if (pArr[i] > 0) {
+			const auto pChild = reinterpret_cast<Child*>(static_cast<byte*>(pParent) + pArr[i]);
+			cb(pChild);
+		}
+	}
+}
+
 //Check if object has animation
 inline bool ObjectHasAnimation(LPRO object) {
 	if (object == nullptr) {
@@ -183,9 +194,20 @@ inline const AnimHeader* GetObjectAnimationHeader(LPRDATA rdPtr, int Fixed) {
 	return GetObjectAnimationHeader(LproFromFixed(rdPtr, Fixed));
 }
 
-inline bool ObjectHasAnimationID(LPRO object, size_t id) {
-	const auto pAH = GetObjectAnimationHeader(object);
+//IterateAnimation(const_cast<AnimHeader*>(pAH), [] (Anim* pA) {
+//});
+inline void IterateAnimation(AnimHeader* pAH, const std::function<void(Anim*)>& cb) {
+	//for (decltype(pAH->ahAnimMax) i = 0; i < pAH->ahAnimMax; i++) {
+	//	if (pAH->ahOffsetToAnim[i] > 0) {
+	//		const auto pA = reinterpret_cast<Anim*>(reinterpret_cast<byte*>(pAH) + pAH->ahOffsetToAnim[i]);
+	//		cb(pA);
+	//	}
+	//}
 
+	IterateValidItem(pAH, pAH->ahOffsetToAnim, pAH->ahAnimMax, cb);
+}
+
+inline bool ObjectHasAnimationID(const AnimHeader* pAH, size_t id) {
 	if (pAH == nullptr) {
 		return false;
 	}
@@ -195,6 +217,12 @@ inline bool ObjectHasAnimationID(LPRO object, size_t id) {
 	}
 
 	return pAH->ahOffsetToAnim[id] > 0;
+}
+
+inline bool ObjectHasAnimationID(LPRO object, size_t id) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	return ObjectHasAnimationID(pAH, id);
 }
 
 inline bool ObjectHasAnimationID(LPRDATA rdPtr, int Fixed, size_t id) {
@@ -212,7 +240,7 @@ inline size_t DisplayAnimationID(LPRO object) {
 	const auto pA = &object->roa;
 	const auto givenID = pA->raAnimOn;
 
-	if(ObjectHasAnimationID(object,givenID)) {
+	if (ObjectHasAnimationID(object, givenID)) {
 		return givenID;
 	}
 
@@ -230,8 +258,22 @@ inline size_t DisplayAnimationID(LPRDATA rdPtr, int Fixed) {
 	return DisplayAnimationID(LproFromFixed(rdPtr, Fixed));
 }
 
-//Check if a dir has animation
-inline bool DirHasAnimation(LPRO object, size_t Dir) {
+// -------------
+// direction
+// -------------
+
+inline void IterateDirection(Anim* pA, const std::function<void(AnimDirection*)>& cb) {
+	//for (int j = 0; j < DIRID_MAX; j++) {
+	//	if (pA->anOffsetToDir[j] > 0) {
+	//		const auto pD = reinterpret_cast<AnimDirection*>(reinterpret_cast<byte*>(pA) + pA->anOffsetToDir[j]);
+	//	}
+	//}
+
+	IterateValidItem(pA, pA->anOffsetToDir, DIRID_MAX, cb);
+}
+
+//Check if a dir has frame
+inline bool DirHasFrame(LPRO object, size_t Dir) {
 	if (!ObjectHasAnimation(object)) {
 		return false;
 	}
@@ -241,8 +283,8 @@ inline bool DirHasAnimation(LPRO object, size_t Dir) {
 	return object->roa.raAnimOffset->anOffsetToDir[Dir] > 0;
 }
 
-inline bool DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
-	return DirHasAnimation(LproFromFixed(rdPtr, Fixed), Dir);
+inline bool DirHasFrame(LPRDATA rdPtr, int Fixed, size_t Dir) {
+	return DirHasFrame(LproFromFixed(rdPtr, Fixed), Dir);
 }
 
 //Get object's display animation direction
@@ -278,7 +320,7 @@ inline size_t DisplayAnimationDirection(LPRO object) {
 
 	//former
 	for (size_t pos = curdir; pos != (size_t)(-1); pos--) {
-		if (DirHasAnimation(object, pos)) {
+		if (DirHasFrame(object, pos)) {
 			former = pos;
 			break;
 		}
@@ -286,7 +328,7 @@ inline size_t DisplayAnimationDirection(LPRO object) {
 
 	//later
 	for (size_t pos = curdir; pos <= DIRID_MAX; pos++) {
-		if (DirHasAnimation(object, pos % 32)) {
+		if (DirHasFrame(object, pos % 32)) {
 			later = pos;
 			break;
 		}
@@ -302,6 +344,48 @@ inline size_t DisplayAnimationDirection(LPRO object) {
 
 inline size_t DisplayAnimationDirection(LPRDATA rdPtr, int Fixed) {
 	return DisplayAnimationDirection(LproFromFixed(rdPtr, Fixed));
+}
+
+// -------------
+// frame
+// -------------
+
+inline int GetCurrentFrameCount(LPRO object) {
+	if(!ObjectHasAnimation(object)) {
+		return -1;
+	}
+
+	return object->roa.raAnimDirOffset->adNumberOfFrame;
+}
+
+inline int GetCurrentFrameCount(LPRDATA rdPtr, int Fixed) {
+	return GetCurrentFrameCount(LproFromFixed(rdPtr, Fixed));
+}
+
+inline int GetAnimDirFrameCount(LPRO object, size_t id, size_t Dir) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	if (!ObjectHasAnimationID(pAH, id)) {
+		return -1;
+	}
+
+	const auto pA = reinterpret_cast<const Anim*>(reinterpret_cast<const byte*>(pAH) + pAH->ahOffsetToAnim[id]);
+
+	if (Dir > DIRID_MAX) {
+		return -1;
+	}
+
+	if (pA->anOffsetToDir[Dir] < 0) {
+		return -1;
+	}
+
+	const auto pD = reinterpret_cast<const AnimDirection*>(reinterpret_cast<const byte*>(pA) + pA->anOffsetToDir[Dir]);
+
+	return pD->adNumberOfFrame;
+}
+
+inline int GetAnimDirFrameCount(LPRDATA rdPtr, int Fixed, size_t id, size_t Dir) {
+	return GetAnimDirFrameCount(LproFromFixed(rdPtr, Fixed), id, Dir);
 }
 
 // -------------

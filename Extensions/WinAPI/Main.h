@@ -159,7 +159,10 @@
 
 #define	EXP_EXPRESSION_GAID			39
 
-#define	EXP_LAST                    40
+#define	EXP_EXPRESSION_GCFC			40
+#define	EXP_EXPRESSION_GADFC		41
+
+#define	EXP_LAST                    42
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

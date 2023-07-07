@@ -187,6 +187,9 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GFPM, M_EXPRESSION_GFPM, EXP_EXPRESSION_GFPM, 0, 0,
 
 	IDMN_EXPRESSION_GAID, M_EXPRESSION_GAID, EXP_EXPRESSION_GAID, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+	
+	IDMN_EXPRESSION_GCFC, M_EXPRESSION_GCFC, EXP_EXPRESSION_GCFC, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+	IDMN_EXPRESSION_GADFC, M_EXPRESSION_GADFC, EXP_EXPRESSION_GADFC, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, PARA_EXPRESSION_FIXED, PARA_CONDITION_ID, PARA_CONDITION_DIR,
 
 
 };
@@ -231,7 +234,7 @@ long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1
 	const int Fixed = (int)CNC_GetIntParameter(rdPtr);
 	const size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
 
-	return DirHasAnimation(rdPtr, Fixed, Dir);
+	return DirHasFrame(rdPtr, Fixed, Dir);
 }
 
 long WINAPI DLLExport IsObjectHasAnimationInDirection_Scope(LPRDATA rdPtr, long param1, long param2) {
@@ -242,7 +245,7 @@ long WINAPI DLLExport IsObjectHasAnimationInDirection_Scope(LPRDATA rdPtr, long 
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
 		[Dir](LPRDATA rdPtr, LPRO object)->bool {
-		return DirHasAnimation(object, Dir);
+		return DirHasFrame(object, Dir);
 		});
 }
 
@@ -1689,6 +1692,20 @@ long WINAPI DLLExport GetObjectAnimationID(LPRDATA rdPtr, long param1) {
 	return (long)DisplayAnimationID(rdPtr, Fixed);
 }
 
+long WINAPI DLLExport GetObjectCurrentFrameCount(LPRDATA rdPtr, long param1) {
+	const int fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return (long)GetCurrentFrameCount(rdPtr, fixed);
+}
+
+long WINAPI DLLExport GetObjectAnimDirFrameCount(LPRDATA rdPtr, long param1) {
+	const int fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const int id = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const int dir = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return (long)GetAnimDirFrameCount(rdPtr, fixed, id, dir);
+}
+
 long WINAPI DLLExport GetValWithSign(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 	float Val = *(float*)&p1;
@@ -2088,6 +2105,9 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	GetFreePhysicalMemory,
 
 	GetObjectAnimationID,
+
+	GetObjectCurrentFrameCount,
+	GetObjectAnimDirFrameCount,
 
 	0
 };

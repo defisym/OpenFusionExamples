@@ -375,6 +375,10 @@ BEGIN
             BEGIN
                 MENUITEM "Get Object Display Animation ID",      IDMN_EXPRESSION_GAID             
                 MENUITEM "Get Object Display Animation Direction",      IDMN_EXPRESSION_GAD              
+                MENUITEM SEPARATOR
+                MENUITEM "Get Object Animation Frame Count",      IDMN_EXPRESSION_GADFC        
+                MENUITEM "Get Object Display Animation Frame Count",      IDMN_EXPRESSION_GCFC                  
+                MENUITEM SEPARATOR
                 MENUITEM "Get Scoped Object Number",      IDMN_EXPRESSION_GSON    
             END            
         END
@@ -655,7 +659,11 @@ BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
     M_EXPRESSION_GAD "DisAniDir ("
     M_EXPRESSION_GAID "DisAniID ("
+    M_EXPRESSION_GCFC "DisAniFC ("
+    M_EXPRESSION_GADFC "AniFC ("
+    
     M_EXPRESSION_GSON "NSObject ("
+
     PARA_EXPRESSION_FIXED "Object's Fixed Value"
 END
 

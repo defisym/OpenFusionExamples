@@ -158,6 +158,8 @@
 #define	M_EXPRESSION_GTPM 			    7120
 #define	M_EXPRESSION_GFPM 			    7121
 #define	M_EXPRESSION_GAID 			    7122
+#define	M_EXPRESSION_GCFC 			    7123
+#define	M_EXPRESSION_GADFC 			    7124
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -277,6 +279,8 @@
 #define	IDMN_EXPRESSION_GTPM  			27110
 #define	IDMN_EXPRESSION_GFPM  			27111
 #define	IDMN_EXPRESSION_GAID  			27112
+#define	IDMN_EXPRESSION_GCFC  			27113
+#define	IDMN_EXPRESSION_GADFC  			27114
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

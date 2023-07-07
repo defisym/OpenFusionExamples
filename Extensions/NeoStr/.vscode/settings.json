@@ -7,7 +7,9 @@
         "*.asc": "AvgScript",
         "*.dat": "ini",
         "*.sav": "ini",
+        "*.wsb": "xml",
         "vector": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "xstring": "cpp"
     }
 }
