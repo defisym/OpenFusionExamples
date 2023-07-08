@@ -108,10 +108,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pToast = new WinToastHelper(rdPtr);
 #endif
 
-#ifdef _DEBUG
-	rdPtr->pSelect->SaveScope();
-#endif
-
 	// No errors
 	return 0;
 }
