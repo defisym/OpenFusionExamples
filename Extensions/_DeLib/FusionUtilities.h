@@ -1,3 +1,7 @@
+// ------------------------
+// Edittime & Runtime General
+// ------------------------
+
 #pragma once
 
 #include "GeneralDefinition.h"
@@ -265,7 +269,33 @@ constexpr auto INCOMPATIBLE_BUILDTYPE_HTML5_FINAL = 14;
 using disableItem = std::remove_const_t<decltype(INCOMPATIBLE_BUILDTYPE_WINDOWS_STANDALONE)>;
 using disableArray = std::vector<std::vector<disableItem>>;
 
+// Declaration in Edittime.cpp
 HMENU GetPopupMenu(short mn);
+
+inline void IterateMenu (HMENU hMenu, std::function<void(HMENU, int)> f) {
+	constexpr auto SUBMENU = -1;
+	constexpr auto SEPARATOR = 0;
+
+	std::function<void(HMENU)> iterateMenu_Func;
+
+	iterateMenu_Func = [&] (HMENU hMenu) {
+		auto nCount = GetMenuItemCount(hMenu);
+
+		for (int item = 0; item < nCount; item++) {
+			auto id = GetMenuItemID(hMenu, item);
+
+			if (id == SUBMENU) {
+				auto subMenu = GetSubMenu(hMenu, item);
+				iterateMenu_Func(subMenu);
+			}
+			else if (id != SEPARATOR) {
+				f(hMenu, id);
+			}
+		}
+	};
+
+	iterateMenu_Func(hMenu);
+};
 
 #define DISABLEALL  -1
 #define disableMenus_Empty {}
@@ -315,36 +345,11 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 			return std::find(lst.begin(), lst.end(), buildType) != lst.end();
 		};
 
-		auto iterateMenu = [] (HMENU hMenu, std::function<void(HMENU, int)> f) {
-			constexpr auto SUBMENU = -1;
-			constexpr auto SEPARATOR = 0;
-
-			std::function<void(HMENU)> iterateMenu_Func;
-
-			iterateMenu_Func = [&] (HMENU hMenu) {
-				auto nCount = GetMenuItemCount(hMenu);
-
-				for (int item = 0; item < nCount; item++) {
-					auto id = GetMenuItemID(hMenu, item);
-
-					if (id == SUBMENU) {
-						auto subMenu = GetSubMenu(hMenu, item);
-						iterateMenu_Func(subMenu);
-					}
-					else if (id != SEPARATOR) {
-						f(hMenu, id);
-					}
-				}
-			};
-
-			iterateMenu_Func(hMenu);
-		};
-
 		for (size_t platform = 0; platform < ic_V.size(); platform++) {
 			if (buildForPlatform(ic_V [platform])) {
 				if (!dM_V [platform].empty()
 					&& dM_V [platform][0] == DISABLEALL) {
-					iterateMenu(hMenu, [&] (HMENU hMenu, int id) {
+					IterateMenu(hMenu, [&] (HMENU hMenu, int id) {
 						if (dM_V [platform].size() == 1
 							|| std::find(dM_V [platform].begin() + 1, dM_V [platform].end(), id) == dM_V [platform].end()) {
 							EnableMenuItem(hMenu, id, MF_DISABLED | MF_GRAYED);
@@ -368,6 +373,18 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 }
 
 #define GetPlatformPopupMenu(mn,disableMenus) GetPlatformPopupMenu(mV,oiPtr,edPtr,mn,disableMenus)
+
+inline HMENU GetFilteredPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short mn, const std::vector<disableItem>& disableItems) {
+	auto hMenu = GetPopupMenu(mn);
+
+	for (auto& it : disableItems) {
+		EnableMenuItem(hMenu, it, MF_DISABLED | MF_GRAYED);
+	}
+
+	return hMenu;
+}
+
+#define GetFilteredPopupMenu(mn,disableItems) GetFilteredPopupMenu(mV,oiPtr,edPtr,mn,disableItems)
 
 #define _mvCalloc(size) mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, size)
 
