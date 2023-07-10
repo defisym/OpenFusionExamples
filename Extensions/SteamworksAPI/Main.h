@@ -13,7 +13,9 @@
 #define	CND_CONDITION_OMTE				1
 #define	CND_CONDITION_OMTF				2
 
-#define	CND_LAST						3
+#define	CND_CONDITION_ROSD				3
+
+#define	CND_LAST						4
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

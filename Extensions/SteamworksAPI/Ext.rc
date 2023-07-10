@@ -112,6 +112,11 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR        
+        POPUP "Steam Deck"
+        BEGIN        
+            MENUITEM "Running On Steam Deck", IDMN_CONDITION_ROSD
+        END
+        MENUITEM SEPARATOR        
         POPUP "Remote Play"
         BEGIN        
             MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
@@ -315,6 +320,8 @@ BEGIN
 
     M_MT_NAME                "Name"
     M_MT_STEP                "Step"
+
+    M_CONDITION_ROSD          "%o: Running On Steam Deck"
 END
 
 STRINGTABLE DISCARDABLE 

@@ -22,10 +22,12 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION_RPO, M_CONDITION_RPO, CND_CONDITION_RPO, EVFLAGS_ALWAYS, 1, PARAM_EXPSTRING, M_CND_RPO,
+		IDMN_CONDITION_RPO, M_CONDITION_RPO, CND_CONDITION_RPO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_CND_RPO,
 		
 		IDMN_CONDITION_OMTE, M_CONDITION_OMTE, CND_CONDITION_OMTE, 0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_MT_NAME, M_MT_STEP,
 		IDMN_CONDITION_OMTF, M_CONDITION_OMTF, CND_CONDITION_OMTF, 0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_MT_NAME, M_MT_STEP,
+
+		IDMN_CONDITION_ROSD, M_CONDITION_ROSD, CND_CONDITION_ROSD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -125,6 +127,15 @@ long WINAPI DLLExport Condition_OnMixroTxnFinish(LPRDATA rdPtr, long param1, lon
 
 	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
 		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
+}
+
+long WINAPI DLLExport Condition_RunningOnSteamDeck(LPRDATA rdPtr, long param1, long param2) {
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
+	return SteamUtils()->IsSteamRunningOnSteamDeck();
+
 }
 
 // ============================================================================
@@ -334,6 +345,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			
 			Condition_OnMixroTxnError,
 			Condition_OnMixroTxnFinish,
+
+			Condition_RunningOnSteamDeck,
 
 			0
 			};

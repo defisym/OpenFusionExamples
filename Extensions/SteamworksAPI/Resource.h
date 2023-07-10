@@ -82,11 +82,15 @@
 #define	IDMN_CONDITION_OMTE				26001
 #define	IDMN_CONDITION_OMTF				26002
 
+#define	IDMN_CONDITION_ROSD				26003
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
 #define	M_CONDITION_OMTE				6001
 #define	M_CONDITION_OMTF				6002
+
+#define	M_CONDITION_ROSD				6003
 
 // Titles of condition parameters
 #define M_CND_RPO						6501
