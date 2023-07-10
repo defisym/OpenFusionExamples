@@ -30,6 +30,8 @@ public:
 		int		  	rh2ActionCount;
 		int		  	rh2ActionLoopCount;
 
+		LPEVG		rhEventGroup;
+
 		// Objects
 		std::map<LPOIL, SelObj> objects;
 
@@ -40,15 +42,22 @@ public:
 
 			rh2ActionCount = rhPtr->rh2.rh2ActionCount;
 			rh2ActionLoopCount = rhPtr->rh2.rh2ActionLoopCount;
+
+			rhEventGroup = rhPtr->rhEventGroup;
 		}
 
+		// ACT_STARTLOOP -> execute
 		inline void RestoreActionState(const LPRH rhPtr) const {
-			// only restore rh2ActionLoop is enough
+			// restore rh2ActionLoop will continue loop
+			// fastloop will restore rh2ActionLoop & rh2ActionLoopCount & rhEventGroup
+			// rh2ActionOn must be true as immediate event is called in action
 			rhPtr->rh2.rh2ActionLoop = rh2ActionLoop;
 			rhPtr->rh2.rh2ActionOn = rh2ActionOn;
 
 			rhPtr->rh2.rh2ActionCount = rh2ActionCount;
 			rhPtr->rh2.rh2ActionLoopCount = rh2ActionLoopCount;
+
+			rhPtr->rhEventGroup = rhEventGroup;
 		}
 
 		inline void AddSelObj(LPOIL pOil, const SelObj& selObj) {
