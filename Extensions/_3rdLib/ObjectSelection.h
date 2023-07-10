@@ -21,6 +21,7 @@ private:
 
 	using SelObj = std::vector<LPRO>;
 
+public:
 	struct Scope {
 		// State
 		BYTE		rh2ActionLoop;
@@ -59,6 +60,7 @@ private:
 		}
 	};	
 
+private:
 	LPRH rhPtr;
 	LPOBL ObjectList;
 	LPOIL OiList;
@@ -660,9 +662,7 @@ public:
 	}
 	
 	// Android -> Events -> CEventProgram -> evt_SaveSelectedObjects
-	inline auto SaveScope() const {
-		Scope scope(rhPtr);
-
+	inline auto SaveScope(Scope* pScope) const {
 		const auto rhEvCount = rhPtr->rh2.rh2EventCount;
 
 		IterateOiL([&] (const LPOIL pOil) {
@@ -670,9 +670,15 @@ public:
 				return;
 			}
 
-			scope.AddSelObj(pOil, SaveSelectedObject(pOil));
+			pScope->AddSelObj(pOil, SaveSelectedObject(pOil));
 		});
+	}
 
+	inline auto SaveScope() const {
+		Scope scope(rhPtr);
+
+		SaveScope(&scope);
+	
 		return scope;
 	}
 

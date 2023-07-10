@@ -28,6 +28,7 @@
 #include	"Surface.h"
 
 // STL
+#include    <map>
 #include	<unordered_map>
 
 #include	<vector>

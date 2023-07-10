@@ -28,6 +28,9 @@ enum {
 //	PROPID_COLOR,
 	PROPID_COMPATIBLEMODE_TEXTTITLE,
 	PROPID_COMPATIBLEMODE_CHECK,
+	PROPID_KEEPSCOPE_TEXTTITLE,
+	PROPID_KEEPSCOPE_ENABLE_CHECK,
+	PROPID_KEEPSCOPE_CHECK,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -55,6 +58,11 @@ PropData Properties[] = {
 
 	PropData_Group		(PROPID_COMPATIBLEMODE_TEXTTITLE,	IDS_PROP_COMPATIBLEMODE_TEXTTITLE,		IDS_PROP_COMPATIBLEMODE_TEXTTITLE),
 	PropData_CheckBox	(PROPID_COMPATIBLEMODE_CHECK,		IDS_PROP_COMPATIBLEMODE_CHECK,			IDS_PROP_COMPATIBLEMODE_CHECK_INFO),
+
+	PropData_Group(PROPID_KEEPSCOPE_TEXTTITLE,	IDS_PROP_KEEPSCOPE_TEXTTITLE,		IDS_PROP_KEEPSCOPE_TEXTTITLE),
+	PropData_CheckBox(PROPID_KEEPSCOPE_ENABLE_CHECK,		IDS_PROP_KEEPSCOPE_ENABLE_CHECK,			IDS_PROP_KEEPSCOPE_ENABLE_CHECK_INFO),
+
+	PropData_CheckBox(PROPID_KEEPSCOPE_CHECK,		IDS_PROP_KEEPSCOPE_CHECK,			IDS_PROP_KEEPSCOPE_CHECK_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -703,6 +711,10 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	switch (nPropID) {
 	case PROPID_COMPATIBLEMODE_CHECK:
 		return edPtr->CompatibleMode;
+	case PROPID_KEEPSCOPE_ENABLE_CHECK:
+		return edPtr->bScope;
+	case PROPID_KEEPSCOPE_CHECK:
+		return edPtr->bKeepScope;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -795,6 +807,13 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	case PROPID_COMPATIBLEMODE_CHECK:
 		edPtr->CompatibleMode = nCheck;
 		break;
+	case PROPID_KEEPSCOPE_ENABLE_CHECK:
+		edPtr->bScope = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_KEEPSCOPE_CHECK, false);
+		break;
+	case PROPID_KEEPSCOPE_CHECK:
+		edPtr->bKeepScope = nCheck;
+		break;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -831,15 +850,11 @@ BOOL WINAPI DLLExport EditProp(LPMV mV, LPEDATA edPtr, UINT nPropID)
 BOOL WINAPI IsPropEnabled(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-/*
 	switch (nPropID) {
-
-	case PROPID_CHECK:
-		return (edPtr->nComboIndex != 0);
+	case PROPID_KEEPSCOPE_CHECK:
+		return edPtr->bScope;
 	}
-*/
+
 #endif // !defined(RUN_ONLY)
 	return TRUE;
 }
@@ -1076,8 +1091,18 @@ HMENU WINAPI DLLExport GetActionMenu(mv _far *mV, fpObjInfo oiPtr, LPEDATA edPtr
 {
 #ifndef RUN_ONLY
 	// Check compatibility
-	if ( IS_COMPATIBLE(mV) )
-		return GetPopupMenu(MN_ACTIONS);
+	if (IS_COMPATIBLE(mV)) {
+		//return GetPopupMenu(MN_ACTIONS);
+
+		constexpr auto disableItems = { IDMN_ACTION_SS, IDMN_ACTION_RS };
+
+		if (!edPtr->bScope) {
+			return GetFilteredPopupMenu(MN_ACTIONS, disableItems);
+		}
+		else {
+			return GetPopupMenu(MN_ACTIONS);
+		}
+	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }

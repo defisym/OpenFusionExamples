@@ -91,6 +91,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SORC, M_ACTION_SORC, ACT_ACTION_SORC, 0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ACT_RGBCOEF,
 		IDMN_ACTION_SORCBF, M_ACTION_SORCBF, ACT_ACTION_SORCBF, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_ACT_RGBCOEF,
 
+		IDMN_ACTION_SS, M_ACTION_SS, ACT_ACTION_SS, 0, 1, PARAM_EXPSTRING, M_SCOPENAME,
+		IDMN_ACTION_RS, M_ACTION_RS, ACT_ACTION_RS, 0, 1, PARAM_EXPSTRING, M_SCOPENAME,
+
 		};
 
 // Definitions of parameters for each expression
@@ -559,6 +562,46 @@ short WINAPI DLLExport SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long 
 
 	EffectUtilities::SetRGBCoef(LproFromFixed(rdPtr, fixed), EffectUtilities::BGRToRGB(dwRGBCoef));
 
+	return 0;
+}
+
+short WINAPI DLLExport SaveScope(LPRDATA rdPtr, long param1, long param2) {
+	const auto pName = (LPCWSTR)CNC_GetIntParameter(rdPtr);
+
+	if(!rdPtr->bScope) {
+		return 0;
+	}
+
+	const auto pScope = new ObjectSelection::Scope(rdPtr->rHo.hoAdRunHeader);
+	rdPtr->pSelect->SaveScope(pScope);
+
+	(*rdPtr->pScope)[pName] = pScope;
+
+	return 0;
+}
+
+short WINAPI DLLExport RestoreScope(LPRDATA rdPtr, long param1, long param2) {
+	const auto pName = (LPCWSTR)CNC_GetIntParameter(rdPtr);
+
+	if (!rdPtr->bScope) {
+		return 0;
+	}
+
+	const auto it = rdPtr->pScope->find(pName);
+
+	if (it == rdPtr->pScope->end()) {
+		return 0;
+	}
+
+	const auto pScope = static_cast<ObjectSelection::Scope*>(it->second);
+
+	pScope->RestoreActionState(rdPtr->rHo.hoAdRunHeader);
+	rdPtr->pSelect->RestoreScope(*pScope);
+
+	delete pScope;
+
+	rdPtr->pScope->erase(it);
+	
 	return 0;
 }
 
@@ -1045,6 +1088,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			SetObjectRGBCoef,
 			SetObjectRGBCoefByFixed,
+
+			SaveScope,
+			RestoreScope,
 
 			0
 			};

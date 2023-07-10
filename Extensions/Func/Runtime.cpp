@@ -7,6 +7,8 @@
 // ============================================================================
 
 // Common Include
+#include <ranges>
+
 #include	"common.h"
 
 // DEBUGGER /////////////////////////////////////////////////////////////////
@@ -67,6 +69,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 */
 
 	rdPtr->CompatibleMode = edPtr->CompatibleMode;
+	rdPtr->bScope = edPtr->bScope;
+	rdPtr->bKeepScope = rdPtr->bScope && edPtr->bKeepScope;
+
+	rdPtr->pScope = new std::map<std::wstring, void*>;
 
 	rdPtr->FuncNameStack = new VEC;
 	rdPtr->FuncNameStack->reserve(DefaultVecSize);
@@ -124,6 +130,12 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	for (const auto& pScope : *rdPtr->pScope | std::views::values) {
+		delete static_cast<ObjectSelection::Scope*>(pScope);
+	}
+
+	delete rdPtr->pScope;
+
 	delete rdPtr->FuncNameStack;
 	delete rdPtr->FuncRawParamStack;
 

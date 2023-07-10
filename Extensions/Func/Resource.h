@@ -17,6 +17,14 @@
 #define IDS_PROP_COMPATIBLEMODE_CHECK           201
 #define IDS_PROP_COMPATIBLEMODE_CHECK_INFO      202
 
+#define IDS_PROP_KEEPSCOPE_TEXTTITLE            203
+
+#define IDS_PROP_KEEPSCOPE_CHECK                204
+#define IDS_PROP_KEEPSCOPE_CHECK_INFO           205
+
+#define IDS_PROP_KEEPSCOPE_ENABLE_CHECK         206
+#define IDS_PROP_KEEPSCOPE_ENABLE_CHECK_INFO    207
+
 // Dialog Box ID
 #define DB_SETUP                20003
 
@@ -71,6 +79,9 @@
 #define	IDMN_ACTION_SORC     	25024
 #define	IDMN_ACTION_SORCBF     	25025
 
+#define	IDMN_ACTION_SS     	    25026
+#define	IDMN_ACTION_RS     	    25027
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -112,6 +123,9 @@
 #define	M_ACTION_SORC          	5024
 #define	M_ACTION_SORCBF         5025
 
+#define	M_ACTION_SS             5026
+#define	M_ACTION_RS             5027
+
 // Titles of action parameters
 #define M_ACT_RET				 5501
 
@@ -132,6 +146,8 @@
 
 #define M_ACT_ALPHA		         5512
 #define M_ACT_RGBCOEF	         5513
+
+#define M_SCOPENAME	         	 5514
 
 
 //	Conditions

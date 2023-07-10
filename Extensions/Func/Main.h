@@ -75,7 +75,10 @@
 #define	ACT_ACTION_SORC				24
 #define	ACT_ACTION_SORCBF			25
 
-#define	ACT_LAST					26
+#define	ACT_ACTION_SS				26
+#define	ACT_ACTION_RS				27
+
+#define	ACT_LAST					28
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -147,6 +150,13 @@ typedef struct tagEDATA_V1
 //	short			sheight;
 
 	bool CompatibleMode;
+	bool bScope;
+	bool bKeepScope;
+
+	bool unused;
+
+	// buffer
+	int buffer[51];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -178,6 +188,10 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	bool CompatibleMode;
+	bool bScope;
+	bool bKeepScope;
+
+	std::map<std::wstring, void*>* pScope;
 	
 	LPVEC FuncNameStack;			// original name	
 	LPLIDX RecursiveIndex;			// original name
