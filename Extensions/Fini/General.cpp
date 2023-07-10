@@ -198,9 +198,12 @@ HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr
 {
 	HGLOBAL hgNew = NULL;
 
-	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(OldEdPtr, hgNew, KCX_VERSION_V2, [](tagEDATA_V2* newEdPtr) {
-		newEdPtr->cf25p = true;
-		newEdPtr->allowRVforCS = true;
+	UpdateEditData<tagEDATA_V1, tagEDATA_V2>((tagEDATA_V1*)OldEdPtr,
+		hgNew, 
+		KCX_VERSION_V2, 
+		[](tagEDATA_V1* pOld, tagEDATA_V2* pNew) {
+		pNew->cf25p = true;
+		pNew->allowRVforCS = true;
 		});
 
 	return hgNew;

@@ -139,7 +139,7 @@ inline size_t GetStructOffset(LPRDATA rdPtr, LPRO object, HeaderName headerName,
 // 		});
 
 // 	// V3->V3
-//     UpdateEditData<tagEDATA_V2, tagEDATA_V3>(OldEdPtr, hgNew, KCX_VERSION_V3, [](tagEDATA_V3* newEdPtr) {
+//  UpdateEditData<tagEDATA_V2, tagEDATA_V3>(OldEdPtr, hgNew, KCX_VERSION_V3, [](tagEDATA_V3* newEdPtr) {
 // 		newEdPtr->newData = newDataDefault;
 // 		});
 
@@ -150,22 +150,38 @@ inline size_t GetStructOffset(LPRDATA rdPtr, LPRO object, HeaderName headerName,
 
 #include <functional>
 
-template<typename Old, typename New>
-inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(New*)> updateFunc) {
-	if (((Old*)OldEdPtr)->eHeader.extVersion < targetVersion) {
-		if ((hgNew = GlobalAlloc(GPTR, sizeof(New))) != NULL) {
-			New* newEdPtr = (New*)GlobalLock(hgNew);
+// Update Core
+template<typename EDATA>
+inline void UpdateEditData(extHeader* pEHeader, HGLOBAL& hgNew, std::function<void(EDATA*)> updateFunc) {
+	if ((hgNew = GlobalAlloc(GPTR, sizeof(EDATA))) != NULL) {
+		auto newEdPtr = (EDATA*)GlobalLock(hgNew);
 
-			if (newEdPtr != nullptr) {
-				memcpy(&newEdPtr->eHeader, &((Old*)OldEdPtr)->eHeader, sizeof(extHeader));
-				newEdPtr->eHeader.extVersion = targetVersion;			// Update the version number
-				newEdPtr->eHeader.extSize = sizeof(New);				// Update the EDITDATA structure size
+		if (newEdPtr != nullptr) {
+			memcpy(&newEdPtr->eHeader, pEHeader, sizeof(extHeader));
+			newEdPtr->eHeader.extSize = sizeof(EDATA);				// Update the EDITDATA structure size			
 
-				updateFunc(newEdPtr);
-			}
-
-			GlobalUnlock(hgNew);
+			updateFunc(newEdPtr);
 		}
+
+		GlobalUnlock(hgNew);
+	}
+}
+
+// Update during development, doesn't check & update version
+template<typename EDATA>
+inline void UpdateEditData(EDATA* OldEdPtr, HGLOBAL& hgNew, std::function<void(EDATA*)> updateFunc) {
+	UpdateEditData<EDATA>(&OldEdPtr->eHeader, hgNew, updateFunc);
+}
+
+// General update, check & update version
+template<typename Old, typename New>
+inline void UpdateEditData(Old* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(Old*, New*)> updateFunc) {
+	if (OldEdPtr->eHeader.extVersion < targetVersion) {
+		UpdateEditData<New>(&OldEdPtr->eHeader, hgNew, [&] (New* pNew) {
+			pNew->eHeader.extVersion = targetVersion;			// Update the version number
+
+			updateFunc(OldEdPtr, pNew);
+			});
 	}
 }
 
