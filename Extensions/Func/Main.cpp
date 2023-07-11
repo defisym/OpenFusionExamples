@@ -398,7 +398,7 @@ short WINAPI DLLExport PushReturnValueVal(LPRDATA rdPtr, long param1, long param
 short WINAPI DLLExport CallFunc(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
+	const auto LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
 
 	const auto name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
 
@@ -457,11 +457,13 @@ short WINAPI DLLExport Ternary(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport IterateObject(LPRDATA rdPtr, long param1, long param2) {
-	short oil = (short)OIL_GetParameter(rdPtr);
+	const auto oil = (short)OIL_GetParameter(rdPtr);
 	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	
 	std::vector<LPRO> toIterate;
-	char flag = rdPtr->pSelect->ObjectIsSelected(oil) ? 0b00000010 : 0;
+	const auto flag = rdPtr->pSelect->ObjectIsSelected(oil)
+		? ForEachFlag_SelectedOnly
+		: ForEachFlag_Default;
 
 	// usually fusion will do a internal for-each for all selected objects
 	// but when you call immediate events, this for-each will be terminated
@@ -470,13 +472,15 @@ short WINAPI DLLExport IterateObject(LPRDATA rdPtr, long param1, long param2) {
 		toIterate.emplace_back(object);
 		}, flag);
 
-	for (auto& object : toIterate) {
-		rdPtr->pObject = object;
-		
-		CallEvent(ONITOBJ);
+	rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
+		for (const auto& object : toIterate) {
+			rdPtr->pObject = object;
 
-		rdPtr->pObject = nullptr;
-	}
+			CallEvent(ONITOBJ);
+
+			rdPtr->pObject = nullptr;
+		}
+	});
 
 	return 0;
 }
@@ -568,6 +572,8 @@ short WINAPI DLLExport SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long 
 short WINAPI DLLExport SaveScope(LPRDATA rdPtr, long param1, long param2) {
 	const auto pName = (LPCWSTR)CNC_GetIntParameter(rdPtr);
 
+	Assert(rdPtr->bScope, L"You must enable scope feature in properties, or this action will have not effect");
+
 	if(!rdPtr->bScope) {
 		return 0;
 	}
@@ -582,6 +588,8 @@ short WINAPI DLLExport SaveScope(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport RestoreScope(LPRDATA rdPtr, long param1, long param2) {
 	const auto pName = (LPCWSTR)CNC_GetIntParameter(rdPtr);
+
+	Assert(rdPtr->bScope, L"You must enable scope feature in properties, or this action will have not effect");
 
 	if (!rdPtr->bScope) {
 		return 0;

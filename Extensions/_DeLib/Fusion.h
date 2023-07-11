@@ -63,33 +63,6 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const
 // ------------------------
 
 // -------------
-// events
-// -------------
-
-#include <ObjectSelection.h>
-
-inline void CallEventFunc(LPRDATA rdPtr, WPARAM id, bool bKeepScope = false, ObjectSelection* pOS = nullptr) {
-	if (bKeepScope && pOS == nullptr) {
-		bKeepScope = false;
-	}
-
-	ObjectSelection::Scope* pScope = nullptr;
-
-	if (bKeepScope) {
-		pScope = new ObjectSelection::Scope(rdPtr);
-		pOS->SaveScope(pScope);
-	}
-
-	CallEvent(id);
-
-	if (bKeepScope) {
-		pScope->RestoreActionState(rdPtr);
-		pOS->RestoreScope(*pScope);
-		delete pScope;
-	}
-}
-
-// -------------
 // prop
 // -------------
 

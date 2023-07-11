@@ -11,6 +11,7 @@
 
 #include "ccxhdr.h"
 
+constexpr auto ForEachFlag_Default = 0b00000000;
 constexpr auto ForEachFlag_ForceAll = 0b00000001;
 constexpr auto ForEachFlag_SelectedOnly = 0b00000010;
 
@@ -554,7 +555,7 @@ public:
 	}
 
 	//For Each, used in action
-	inline void ForEach(LPRDATA rdPtr, const short oiList, const ForEachCallBack& f, const char flag = 0x00) {
+	inline void ForEach(LPRDATA rdPtr, const short oiList, const ForEachCallBack& f, const int flag = ForEachFlag_Default) {
 		const bool forceAll = flag & ForEachFlag_ForceAll;         // force iterate all
 		const bool selectedOnly = flag & ForEachFlag_SelectedOnly; // only iterate selected
 
@@ -686,4 +687,33 @@ public:
 			SelectObjects(pOil, selObj);
 		}
 	}
+
+	inline void KeepScopeCall(bool bKeepScope,
+		const std::function<void()>& callback) const {
+			Scope* pScope = nullptr;
+
+			if (bKeepScope) {
+				pScope = new Scope(rhPtr);
+				this->SaveScope(pScope);
+			}
+
+			callback();
+
+			if (bKeepScope) {
+				pScope->RestoreActionState(rhPtr);
+				this->RestoreScope(*pScope);
+				delete pScope;
+			}
+	}
 };
+
+inline void KeepScopeCall(const ObjectSelection* pOS, bool bKeepScope,
+	const std::function<void()>& callback) {
+	if (!bKeepScope || pOS == nullptr) {
+		callback();
+
+		return;
+	}
+
+	pOS->KeepScopeCall(bKeepScope, callback);
+}

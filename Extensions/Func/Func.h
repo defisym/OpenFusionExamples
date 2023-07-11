@@ -128,18 +128,21 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 
 	*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
 
-	if (rdPtr->CompatibleMode) {
-		//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
-		const LPRH pRh = rdPtr->rHo.hoAdRunHeader;
-		expression* saveExpToken = pRh->rh4.rh4ExpToken;
+	rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
+		if (rdPtr->CompatibleMode) {
+			//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
+			const LPRH pRh = rdPtr->rHo.hoAdRunHeader;
+			expression* saveExpToken = pRh->rh4.rh4ExpToken;
 
-		CallEventFunc(rdPtr, ONFUNC, rdPtr->bKeepScope, rdPtr->pSelect);
+			CallEvent(ONFUNC);
 
-		pRh->rh4.rh4ExpToken = saveExpToken;
-	}
-	else {
-		CallEventFunc(rdPtr, ONFUNC, rdPtr->bKeepScope, rdPtr->pSelect);
-	}
+			pRh->rh4.rh4ExpToken = saveExpToken;
+		}
+		else {
+			CallEvent(ONFUNC);
+		}
+	});
+	
 
 	// ------------
 	// Clean up
