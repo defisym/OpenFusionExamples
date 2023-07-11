@@ -36,6 +36,8 @@ public:
 		std::map<LPOIL, SelObj> objects;
 
 	public:
+		explicit Scope(const LPRDATA rdPtr)
+			:Scope(rdPtr->rHo.hoAdRunHeader) {}
 		explicit Scope(const LPRH rhPtr) {
 			rh2ActionLoop = rhPtr->rh2.rh2ActionLoop;
 			rh2ActionOn = rhPtr->rh2.rh2ActionOn;
@@ -47,6 +49,9 @@ public:
 		}
 
 		// ACT_STARTLOOP -> execute
+		inline void RestoreActionState(const LPRDATA rdPtr) const {
+			RestoreActionState(rdPtr->rHo.hoAdRunHeader);
+		}
 		inline void RestoreActionState(const LPRH rhPtr) const {
 			// restore rh2ActionLoop will continue loop
 			// fastloop will restore rh2ActionLoop & rh2ActionLoopCount & rhEventGroup
@@ -150,7 +155,7 @@ private:
 			return;
 		}
 
-		oiList = oiList & static_cast<short>(0x7FFF);
+		oiList = static_cast<short>(oiList & 0x7FFF);
 
 		const LPOIL pObjectInfo = GetLPOIL(oiList);
 
@@ -213,24 +218,15 @@ private:
 	}
 
 public:
+	explicit ObjectSelection(const LPRDATA rdPtr)
+	:ObjectSelection(rdPtr->rHo.hoAdRunHeader) {}
 	explicit ObjectSelection(const LPRH rhPtr) {
 		this->rhPtr = rhPtr;
 		this->ObjectList = rhPtr->rhObjectList;		//get a pointer to the mmf object list
 		this->OiList = rhPtr->rhOiList;				//get a pointer to the mmf object info list
 		this->QualToOiList = rhPtr->rhQualToOiList;	//get a pointer to the mmf qualifier to Oi list
 
-		//oiListItemSize = sizeof(objInfoList);
 		oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
-
-//		//Only add the sizes to the runtime structures if they weren't compiled directly for those runtimes
-//#ifndef UNICODE
-//		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISUNICODE, 0, 0, 0))
-//			oiListItemSize += 24;
-//#endif
-//#ifndef HWABETA
-//		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
-//			oiListItemSize += sizeof(LPVOID);
-//#endif
 	}
 
 	//Get oil
@@ -631,18 +627,7 @@ public:
 		bool bHas = false;
 
 		IterateOiL([&](const LPOIL pOil) {
-			// oilName start with empty char
-			const auto pCurName = [&]() {
-				auto pOilName = pOil->oilName;
-
-				while (pOilName[0] == 65535) {
-					pOilName++;
-				}
-
-				return pOilName;
-			}();
-
-			if (StrEqu(pObjName, pCurName)) {
+			if (StrEqu(pObjName, pOil->oilName)) {
 				bHas = true;
 			}
 			});
