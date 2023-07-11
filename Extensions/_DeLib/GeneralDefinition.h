@@ -29,8 +29,8 @@
 
 #define ResertPtr(X) X=nullptr;
 
-#define RAD(DEG) ((PI*DEG)/180)
-#define DEG(RAD) ((180*RAD)/PI)
+#define RAD(_DEG) ((PI*_DEG)/180)
+#define DEG(_RAD) ((180*_RAD)/PI)
 
 #define MV rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv
 
