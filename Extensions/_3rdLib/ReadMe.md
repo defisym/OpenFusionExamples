@@ -1,8 +1,11 @@
 # ReadMe
 
-Interfaces or utils to work with 3rdLibs
+This folder contains two types of files:
 
-All files here in the repo are modified by defisym
+- Interfaces or utils to work with 3rdLibs, like [FFMpeg](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/_3rdLib/FFMpeg.h), [SDLUtilities](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/_3rdLib/SDLUtilities.h)
+- Modified 3rdLibs, like [ObjectSelection](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/_3rdLib/ObjectSelection.h)
+
+------------------------
 
 Files listed in gitignore are also used but remain untouched, you need to clone it from origin repo to compile.
 
