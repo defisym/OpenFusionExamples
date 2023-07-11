@@ -423,15 +423,32 @@ inline bool PreMulAlpha(LPRDATA rdPtr) {
 	return GetAppOptions(rdPtr, AH2OPT_PREMULTIPLIEDALPHA);
 }
 
+inline auto WinGetSurface(LPRDATA rdPtr) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+
+	return wSurf;
+}
+
+inline auto WinGetSurfaceDriver(LPRDATA rdPtr) {
+	int sfDrv = WinGetSurface(rdPtr)->GetDriver();
+
+	return sfDrv;
+}
+
+inline bool D3D(int driver) {
+	return driver >= SD_D3D9;
+}
+
+inline bool D3D(LPRDATA rdPtr) {
+	return D3D(WinGetSurfaceDriver(rdPtr));
+}
+
 inline bool D3D11(int driver) {
 	return driver == SD_D3D11;
 }
 
-inline bool D3D11(LPRDATA rdPtr) {
-	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-	int sfDrv = wSurf->GetDriver();
-
-	return D3D11(sfDrv);
+inline bool D3D11(LPRDATA rdPtr) {	
+	return D3D11(WinGetSurfaceDriver(rdPtr));
 }
 
 //X : L M R
