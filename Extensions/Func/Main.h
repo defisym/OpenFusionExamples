@@ -78,7 +78,9 @@
 #define	ACT_ACTION_SS				26
 #define	ACT_ACTION_RS				27
 
-#define	ACT_LAST					28
+#define	ACT_ACTION_ITOF				28
+
+#define	ACT_LAST					29
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

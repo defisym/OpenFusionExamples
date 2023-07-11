@@ -82,6 +82,8 @@
 #define	IDMN_ACTION_SS     	    25026
 #define	IDMN_ACTION_RS     	    25027
 
+#define	IDMN_ACTION_ITOF   	    25028
+
 // Action strings
 #define M_ACTION_SR             5000
 #define M_ACTION_PR             5001
@@ -125,6 +127,8 @@
 
 #define	M_ACTION_SS             5026
 #define	M_ACTION_RS             5027
+
+#define	M_ACTION_ITOF             5028
 
 // Titles of action parameters
 #define M_ACT_RET				 5501

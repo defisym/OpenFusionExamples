@@ -115,7 +115,6 @@ public:
 	FuncInfoObject(LPRDATA rdPtr, std::wstring& funcName, std::wstring& param) {
 		this->rdPtr = rdPtr;
 		this->funcName = funcName;
-		this->manglingName = GetFuncNameWithRecursiveID(rdPtr, funcName);
 
 		rdPtr->FuncNameStack->emplace_back(funcName);
 		rdPtr->FuncRawParamStack->emplace_back(param);
@@ -126,6 +125,7 @@ public:
 		rdPtr->FuncReturn->clear();
 
 		(*rdPtr->RecursiveIndex)[funcName] += 1;
+		this->manglingName = GetFuncNameWithRecursiveID(rdPtr, funcName);
 
 		*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
 	}
@@ -189,6 +189,24 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& funcName, std::wstring& pa
 		}, loopIndex);
 
 	});
+}
+
+inline void IterateObjectCore(LPRDATA rdPtr, short oil,
+	const std::function<void(const std::vector<LPRO>&)>& callback) {
+	std::vector<LPRO> toIterate;
+	const auto flag = rdPtr->pSelect->ObjectIsSelected(oil)
+		? ForEachFlag_SelectedOnly
+		: ForEachFlag_Default;
+
+	rdPtr->pSelect->ForEach(rdPtr, oil, [&] (LPRO object) {
+		toIterate.emplace_back(object);
+		}, flag);
+
+	if(toIterate.empty()) {
+		return;
+	}
+
+	callback(toIterate);
 }
 
 inline bool HasParam(LPRDATA rdPtr, size_t Pos) {

@@ -94,6 +94,8 @@ short actionsInfos[]=
 		IDMN_ACTION_SS, M_ACTION_SS, ACT_ACTION_SS, 0, 1, PARAM_EXPSTRING, M_SCOPENAME,
 		IDMN_ACTION_RS, M_ACTION_RS, ACT_ACTION_RS, 0, 1, PARAM_EXPSTRING, M_SCOPENAME,
 
+		IDMN_ACTION_ITOF, M_ACTION_ITOF, ACT_ACTION_ITOF, 0, 3, PARAM_OBJECT, PARAM_EXPSTRING, PARAM_EXPSTRING, M_OBJECT, M_ITNAME, M_EXP_PARAM,
+
 		};
 
 // Definitions of parameters for each expression
@@ -449,24 +451,39 @@ short WINAPI DLLExport Action_Ternary(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport Action_IterateObject(LPRDATA rdPtr, long param1, long param2) {
 	const auto oil = (short)OIL_GetParameter(rdPtr);
 	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	
-	std::vector<LPRO> toIterate;
-	const auto flag = rdPtr->pSelect->ObjectIsSelected(oil)
-		? ForEachFlag_SelectedOnly
-		: ForEachFlag_Default;
 
-	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		toIterate.emplace_back(object);
-		}, flag);
+	IterateObjectCore(rdPtr, oil, [&] (const std::vector<LPRO>& toIterate) {
+		rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
+			for (const auto& object : toIterate) {
+				rdPtr->pObject = object;
 
-	rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
-		for (const auto& object : toIterate) {
-			rdPtr->pObject = object;
+				CallEvent(ONITOBJ);
 
-			CallEvent(ONITOBJ);
+				rdPtr->pObject = nullptr;
+			}
+		});
+	});
 
-			rdPtr->pObject = nullptr;
-		}
+	return 0;
+}
+
+short WINAPI DLLExport Action_IterateObjectFunc(LPRDATA rdPtr, long param1, long param2) {
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring Param = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	IterateObjectCore(rdPtr, oil, [&] (const std::vector<LPRO>& toIterate) {
+		const FuncInfoObject funcObj(rdPtr, *rdPtr->pOnItObjName, Param);
+
+		rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
+			for (const auto& object : toIterate) {
+				rdPtr->pObject = object;
+
+				CallEvent(ONITOBJ);
+
+				rdPtr->pObject = nullptr;
+			}
+		});
 	});
 
 	return 0;
@@ -1086,6 +1103,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_SaveScope,
 			Action_RestoreScope,
+
+			Action_IterateObjectFunc,
 
 			0
 			};

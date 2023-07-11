@@ -182,6 +182,7 @@ BEGIN
         MENUITEM "Call Func (ternary)", IDMN_ACTION_T
         MENUITEM SEPARATOR
         MENUITEM "Iterate Object", IDMN_ACTION_ITO
+        MENUITEM "Iterate Object Func", IDMN_ACTION_ITOF
         MENUITEM SEPARATOR
         POPUP "Loop"
         BEGIN
@@ -435,6 +436,7 @@ BEGIN
     M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
     
     M_ACTION_ITO            "Iterate Object %0, Iterate Name %1"
+    M_ACTION_ITOF           "Iterate Object %0, Iterate Name %1, Param = %2"
 
     M_ACTION_SSGP           "Set Global Temp Param %0 = %1"
     M_ACTION_SVGP           "Set Global Temp Param %0 = %1"
