@@ -63,52 +63,6 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const
 // ------------------------
 
 // -------------
-// prop
-// -------------
-
-//GetString
-inline void GetPropString(CPropValue* pValue, LPTSTR Des) {
-	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
-
-	_tcscpy_s(Des, _MAX_PATH, pStr);
-}
-inline void GetPropString(LPMV mV, LPEDATA edPtr, CPropValue* pValue, LPTSTR Des) {
-	// Gets the string
-	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
-
-	// You can simply poke the string if your EDITDATA structure has a fixed size,
-	// or have an adaptive size of structure like below
-
-	// If the length is different
-	if (Des == nullptr || _tcslen(pStr) != _tcslen(Des))
-	{
-		// Asks MMF to reallocate the structure with the new size
-		LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA) + _tcslen(pStr) * sizeof(TCHAR));
-
-		// If reallocation worked
-		if (pNewPtr != NULL)
-		{
-			// Copy the string
-			edPtr = pNewPtr;
-			_tcscpy_s(Des, _tcslen(pStr), pStr);
-		}
-	}
-	else
-	{
-		// Same size : simply copy
-		_tcscpy_s(Des, _tcslen(pStr), pStr);
-	}
-}
-
-//Free collision mask
-inline void FreeColMask(LPSMASK& pColMask) {
-	if (pColMask != nullptr) {
-		free(pColMask);
-		pColMask = nullptr;
-	}
-}
-
-// -------------
 // return
 // -------------
 
@@ -371,7 +325,7 @@ inline int GetAnimDirFrameCount(LPRO object, size_t id, size_t Dir) {
 
 	const auto pA = reinterpret_cast<const Anim*>(reinterpret_cast<const byte*>(pAH) + pAH->ahOffsetToAnim[id]);
 
-	if (Dir > DIRID_MAX) {
+	if (Dir >= DIRID_MAX) {
 		return -1;
 	}
 
@@ -494,6 +448,14 @@ inline RGBA operator >>(RGBA A, int B) {
 	A.a = static_cast<double>(static_cast<int>(A.a) >> B);
 
 	return A;
+}
+
+//Free collision mask
+inline void FreeColMask(LPSMASK& pColMask) {
+	if (pColMask != nullptr) {
+		free(pColMask);
+		pColMask = nullptr;
+	}
 }
 
 //Create surface
