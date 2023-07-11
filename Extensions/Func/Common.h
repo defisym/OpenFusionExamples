@@ -63,6 +63,7 @@ class WinToastHelper;
 
 // My headers
 #include	"Fusion.h"
+#include	"FusionUtilities.h"
 #include	"ObjectSelection.h"
 #include	"EffectUtilities.h"
 

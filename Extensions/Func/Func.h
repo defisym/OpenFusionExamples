@@ -108,6 +108,10 @@ inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, const std::wstring
 }
 
 inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Param) {
+	// ------------
+	// Prepare
+	// ------------
+
 	rdPtr->FuncNameStack->emplace_back(FuncName);
 	rdPtr->FuncRawParamStack->emplace_back(Param);
 
@@ -118,31 +122,28 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Pa
 
 	(*rdPtr->RecursiveIndex)[FuncName] += 1;
 
-	//Call Func;
+	// ------------
+	// Call Func;
+	// ------------
+
 	*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
-
-	ObjectSelection::Scope* pScope = nullptr;
-
-	if (rdPtr->bKeepScope) {
-		pScope = new ObjectSelection::Scope(rdPtr->rHo.hoAdRunHeader);
-		rdPtr->pSelect->SaveScope(pScope);
-	}
 
 	if (rdPtr->CompatibleMode) {
 		//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
 		const LPRH pRh = rdPtr->rHo.hoAdRunHeader;
 		expression* saveExpToken = pRh->rh4.rh4ExpToken;
-		CallEvent(ONFUNC);
+
+		CallEventFunc(rdPtr, ONFUNC, rdPtr->bKeepScope, rdPtr->pSelect);
+
 		pRh->rh4.rh4ExpToken = saveExpToken;
 	}
 	else {
-		CallEvent(ONFUNC);
-	}	
-
-	if (rdPtr->bKeepScope) {
-		pScope->RestoreActionState(rdPtr->rHo.hoAdRunHeader);
-		rdPtr->pSelect->RestoreScope(*pScope);
+		CallEventFunc(rdPtr, ONFUNC, rdPtr->bKeepScope, rdPtr->pSelect);
 	}
+
+	// ------------
+	// Clean up
+	// ------------
 
 	rdPtr->FuncNameStack->pop_back();
 	rdPtr->FuncRawParamStack->pop_back();

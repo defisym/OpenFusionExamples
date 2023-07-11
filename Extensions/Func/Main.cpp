@@ -572,7 +572,7 @@ short WINAPI DLLExport SaveScope(LPRDATA rdPtr, long param1, long param2) {
 		return 0;
 	}
 
-	const auto pScope = new ObjectSelection::Scope(rdPtr->rHo.hoAdRunHeader);
+	const auto pScope = new ObjectSelection::Scope(rdPtr);
 	rdPtr->pSelect->SaveScope(pScope);
 
 	(*rdPtr->pScope)[pName] = pScope;
@@ -595,7 +595,7 @@ short WINAPI DLLExport RestoreScope(LPRDATA rdPtr, long param1, long param2) {
 
 	const auto pScope = static_cast<ObjectSelection::Scope*>(it->second);
 
-	pScope->RestoreActionState(rdPtr->rHo.hoAdRunHeader);
+	pScope->RestoreActionState(rdPtr);
 	rdPtr->pSelect->RestoreScope(*pScope);
 
 	delete pScope;
