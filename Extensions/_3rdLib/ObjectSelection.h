@@ -555,6 +555,9 @@ public:
 	}
 
 	//For Each, used in action
+	// usually fusion will do a internal for-each for all selected objects
+	// but when you call immediate events, this for-each will be terminated
+	// so you need a manual for-each to force it
 	inline void ForEach(LPRDATA rdPtr, const short oiList, const ForEachCallBack& f, const int flag = ForEachFlag_Default) {
 		const bool forceAll = flag & ForEachFlag_ForceAll;         // force iterate all
 		const bool selectedOnly = flag & ForEachFlag_SelectedOnly; // only iterate selected

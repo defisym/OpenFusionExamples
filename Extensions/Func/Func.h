@@ -75,7 +75,7 @@ inline void UpdateReturn(LPRDATA rdPtr, const std::wstring& Param) {
 	UpdateCore(rdPtr, Param, rdPtr->FuncReturn);
 }
 
-inline const std::wstring GetRecursiveSuffix(size_t ID) {
+inline std::wstring GetRecursiveSuffix(size_t ID) {
 	switch (ID) {
 	case 1:
 		return L"_1";
@@ -107,59 +107,88 @@ inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, const std::wstring
 	return funcName + suffix;
 }
 
-inline void CallFuncCore(LPRDATA rdPtr, std::wstring& FuncName, std::wstring& Param) {
-	// ------------
-	// Prepare
-	// ------------
+class FuncInfoObject {
+	LPRDATA rdPtr = nullptr;
+	std::wstring funcName;
+	std::wstring manglingName;
+public:
+	FuncInfoObject(LPRDATA rdPtr, std::wstring& funcName, std::wstring& param) {
+		this->rdPtr = rdPtr;
+		this->funcName = funcName;
+		this->manglingName = GetFuncNameWithRecursiveID(rdPtr, funcName);
 
-	rdPtr->FuncNameStack->emplace_back(FuncName);
-	rdPtr->FuncRawParamStack->emplace_back(Param);
+		rdPtr->FuncNameStack->emplace_back(funcName);
+		rdPtr->FuncRawParamStack->emplace_back(param);
 
-	rdPtr->FuncParamStack->emplace_back();
-	UpdateParam(rdPtr, Param);
+		rdPtr->FuncParamStack->emplace_back();
+		UpdateParam(rdPtr, param);
 
-	rdPtr->FuncReturn->clear();
+		rdPtr->FuncReturn->clear();
 
-	(*rdPtr->RecursiveIndex)[FuncName] += 1;
+		(*rdPtr->RecursiveIndex)[funcName] += 1;
 
-	// ------------
-	// Call Func;
-	// ------------
+		*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
+	}
+	~FuncInfoObject() {
+		rdPtr->FuncNameStack->pop_back();
+		rdPtr->FuncRawParamStack->pop_back();
 
-	*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
+		rdPtr->FuncParamStack->pop_back();
+
+		rdPtr->FuncTempParam->erase(manglingName);
+
+		(*rdPtr->RecursiveIndex)[funcName] -= 1;
+
+		if ((*rdPtr->RecursiveIndex)[funcName] == 0) {
+			rdPtr->RecursiveIndex->erase(funcName);
+		}
+	}
+
+	inline const auto& GetManglingName() { return manglingName; }
+	
+	// handle loop
+	inline void CallFunc(const std::function<void()>& callback,
+		size_t loopIndex = 1) const {
+		if (loopIndex == 1) {
+			callback();
+
+			return;
+		}
+
+		(*rdPtr->FuncLoopIndex)[manglingName] = loopIndex;
+
+		for ((*rdPtr->FuncCurLoopIndex)[manglingName] = 0;
+			(*rdPtr->FuncCurLoopIndex)[manglingName] < loopIndex;
+			(*rdPtr->FuncCurLoopIndex)[manglingName]++) {
+			callback();
+		}
+
+		rdPtr->FuncLoopIndex->erase(manglingName);
+		rdPtr->FuncCurLoopIndex->erase(manglingName);
+	}
+};
+
+inline void CallFuncCore(LPRDATA rdPtr, std::wstring& funcName, std::wstring& param, size_t loopIndex = 1) {
+	// RAII
+	const FuncInfoObject funcObj(rdPtr, funcName, param);
 
 	rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
-		if (rdPtr->CompatibleMode) {
-			//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
-			const LPRH pRh = rdPtr->rHo.hoAdRunHeader;
-			expression* saveExpToken = pRh->rh4.rh4ExpToken;
+		funcObj.CallFunc([&] () {
+			if (rdPtr->CompatibleMode) {
+				//Note: if your MMF version is below R293.9, you need to enable compatible mode to avoid crash
+				const LPRH pRh = rdPtr->rHo.hoAdRunHeader;
+				expression* saveExpToken = pRh->rh4.rh4ExpToken;
 
-			CallEvent(ONFUNC);
+				CallEvent(ONFUNC);
 
-			pRh->rh4.rh4ExpToken = saveExpToken;
-		}
-		else {
-			CallEvent(ONFUNC);
-		}
+				pRh->rh4.rh4ExpToken = saveExpToken;
+			}
+			else {
+				CallEvent(ONFUNC);
+			}
+		}, loopIndex);
+
 	});
-	
-
-	// ------------
-	// Clean up
-	// ------------
-
-	rdPtr->FuncNameStack->pop_back();
-	rdPtr->FuncRawParamStack->pop_back();
-	
-	rdPtr->FuncParamStack->pop_back();	
-
-	rdPtr->FuncTempParam->erase(GetFuncNameWithRecursiveID(rdPtr, FuncName));
-
-	(*rdPtr->RecursiveIndex)[FuncName] -= 1;
-
-	if ((*rdPtr->RecursiveIndex)[FuncName] == 0) {
-		rdPtr->RecursiveIndex->erase(FuncName);
-	}
 }
 
 inline bool HasParam(LPRDATA rdPtr, size_t Pos) {
