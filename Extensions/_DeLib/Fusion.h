@@ -34,7 +34,7 @@ inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = 
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
 inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false);
 
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processer);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
 
 struct SfCoef {
 	BYTE* pData = nullptr;
@@ -61,6 +61,33 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const
 // ------------------------
 // definition
 // ------------------------
+
+// -------------
+// events
+// -------------
+
+#include <ObjectSelection.h>
+
+inline void CallEventFunc(LPRDATA rdPtr, WPARAM id, bool bKeepScope = false, ObjectSelection* pOS = nullptr) {
+	if (bKeepScope && pOS == nullptr) {
+		bKeepScope = false;
+	}
+
+	ObjectSelection::Scope* pScope = nullptr;
+
+	if (bKeepScope) {
+		pScope = new ObjectSelection::Scope(rdPtr);
+		pOS->SaveScope(pScope);
+	}
+
+	CallEvent(id);
+
+	if (bKeepScope) {
+		pScope->RestoreActionState(rdPtr);
+		pOS->RestoreScope(*pScope);
+		delete pScope;
+	}
+}
 
 // -------------
 // prop
