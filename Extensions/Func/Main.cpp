@@ -708,7 +708,7 @@ long WINAPI DLLExport Expression_GetRawParam(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport Expression_GetGlobalParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	auto it = rdPtr->GlobalTempParam->find(ParamName);
+	const auto it = rdPtr->GlobalTempParam->find(ParamName);
 
 	if (it != rdPtr->GlobalTempParam->end()) {
 		Data_StoV(it->second);
@@ -727,7 +727,7 @@ long WINAPI DLLExport Expression_GetGlobalParamRS(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	auto it = rdPtr->GlobalTempParam->find(ParamName);
+	const auto it = rdPtr->GlobalTempParam->find(ParamName);
 
 	if (it != rdPtr->GlobalTempParam->end()) {
 		Data_VtoS(it->second);
@@ -749,15 +749,15 @@ long WINAPI DLLExport Expression_GetTempParamRV(LPRDATA rdPtr, long param1) {
 	}
 #endif
 
-	if (HasTempParam(rdPtr, FuncName, ParamName)) {
-		auto& ret = TempParam(rdPtr, FuncName, ParamName);
-		Data_StoV(ret);
+	auto& ret = TempParam(rdPtr, FuncName, ParamName);
 
-		return ReturnFloat(ret.Val);
-	}
-	else {
+	if (ret.bDefault) {
 		return 0;
 	}
+
+	Data_StoV(ret);
+
+	return ReturnFloat(ret.Val);
 }
 
 long WINAPI DLLExport Expression_GetTempParamRS(LPRDATA rdPtr, long param1) {
@@ -773,30 +773,30 @@ long WINAPI DLLExport Expression_GetTempParamRS(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
-	//This returns a pointer to the string for MMF.
-	if (HasTempParam(rdPtr, FuncName, ParamName)) {
-		auto& ret = TempParam(rdPtr, FuncName, ParamName);
-		Data_VtoS(ret);
+	auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
 
-		return (long)ret.Str.c_str();
-	}
-	else {
+	//This returns a pointer to the string for MMF.
+	if (ret.bDefault) {
 		return (long)Default_Str;
 	}
+
+	Data_VtoS(ret);
+
+	return (long)ret.Str.c_str();
 }
 
 long WINAPI DLLExport Expression_GetCurrentTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if (HasTempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName)) {
-		auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
-		Data_StoV(ret);
+	auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
 
-		return ReturnFloat(ret.Val);
-	}
-	else {
+	if (ret.bDefault) {
 		return 0;
 	}
+
+	Data_StoV(ret);
+
+	return ReturnFloat(ret.Val);
 }
 
 long WINAPI DLLExport Expression_GetCurrentTempParamRS(LPRDATA rdPtr, long param1) {
@@ -805,16 +805,16 @@ long WINAPI DLLExport Expression_GetCurrentTempParamRS(LPRDATA rdPtr, long param
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
-	//This returns a pointer to the string for MMF.
-	if (HasTempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName)) {
-		auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
-		Data_VtoS(ret);
+	auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
 
-		return (long)ret.Str.c_str();
-	}
-	else {
+	//This returns a pointer to the string for MMF.
+	if (ret.bDefault) {
 		return (long)Default_Str;
 	}
+
+	Data_VtoS(ret);
+
+	return (long)ret.Str.c_str();	
 }
 
 long WINAPI DLLExport Expression_GetRetRV(LPRDATA rdPtr, long param1) {
