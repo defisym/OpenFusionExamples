@@ -16,22 +16,21 @@ constexpr auto ForEachFlag_ForceAll = 0b00000001;
 constexpr auto ForEachFlag_SelectedOnly = 0b00000010;
 
 class ObjectSelection {
-private:
+public:
 	using Filter = std::function<bool(LPRDATA, LPRO)>;
 	using ForEachCallBack = std::function<void(LPRO)>;
 
 	using SelObj = std::vector<LPRO>;
 
-public:
 	struct Scope {
 		// State
-		BYTE		rh2ActionLoop;
-		BYTE 		rh2ActionOn;
+		BYTE rh2ActionLoop;
+		BYTE rh2ActionOn;
 
-		int		  	rh2ActionCount;
-		int		  	rh2ActionLoopCount;
+		int rh2ActionCount;
+		int rh2ActionLoopCount;
 
-		LPEVG		rhEventGroup;
+		LPEVG rhEventGroup;
 
 		// Objects
 		std::map<LPOIL, SelObj> objects;
@@ -49,11 +48,15 @@ public:
 			rhEventGroup = rhPtr->rhEventGroup;
 		}
 
-		// ACT_STARTLOOP -> execute
+		// Use explice restore instead of RAII:
+		// for the case user saved scope but didn't restore it
+		// and runtime released it when Func object is destroyed
 		inline void RestoreActionState(const LPRDATA rdPtr) const {
 			RestoreActionState(rdPtr->rHo.hoAdRunHeader);
 		}
 		inline void RestoreActionState(const LPRH rhPtr) const {
+			// ACT_STARTLOOP -> execute
+
 			// restore rh2ActionLoop will continue loop
 			// fastloop will restore rh2ActionLoop & rh2ActionLoopCount & rhEventGroup
 			// rh2ActionOn must be true as immediate event is called in action
@@ -79,8 +82,10 @@ private:
 	LPRH rhPtr;
 	LPOBL ObjectList;
 	LPOIL OiList;
-	LPQOI QualToOiList;		// need update every time before using
-	int oiListItemSize;
+	LPQOI QualToOiList;		// need to be updated each time before using
+
+	// For 2.5 only:
+	int oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
 
 	inline bool FilterQualifierObjects(const LPRDATA rdPtr, const short oiList, const bool negate
 		, const Filter& filterFunction
@@ -220,14 +225,12 @@ private:
 
 public:
 	explicit ObjectSelection(const LPRDATA rdPtr)
-	:ObjectSelection(rdPtr->rHo.hoAdRunHeader) {}
+		:ObjectSelection(rdPtr->rHo.hoAdRunHeader) {}
 	explicit ObjectSelection(const LPRH rhPtr) {
 		this->rhPtr = rhPtr;
 		this->ObjectList = rhPtr->rhObjectList;		//get a pointer to the mmf object list
 		this->OiList = rhPtr->rhOiList;				//get a pointer to the mmf object info list
 		this->QualToOiList = rhPtr->rhQualToOiList;	//get a pointer to the mmf qualifier to Oi list
-
-		oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
 	}
 
 	//Get oil
@@ -399,7 +402,7 @@ public:
 		SelectObjects(GetLPOIL(oiList), objects, count);
 	}
 
-	inline void SelectObjects(const LPOIL pObjectInfo, const std::vector<LPRO>& objects) const {
+	inline void SelectObjects(const LPOIL pObjectInfo, const SelObj& objects) const {
 		if (objects.empty()) {
 			return;
 		}
@@ -407,7 +410,7 @@ public:
 		SelectObjects(pObjectInfo, objects.data(), objects.size());
 	}
 
-	inline void SelectObjects(const short oiList, const std::vector<LPRO>& objects) const {
+	inline void SelectObjects(const short oiList, const SelObj& objects) const {
 		SelectObjects(GetLPOIL(oiList), objects);
 	}
 

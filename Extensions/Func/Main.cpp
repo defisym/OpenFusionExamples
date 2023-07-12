@@ -452,7 +452,7 @@ short WINAPI DLLExport Action_IterateObject(LPRDATA rdPtr, long param1, long par
 	const auto oil = (short)OIL_GetParameter(rdPtr);
 	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	IterateObjectCore(rdPtr, oil, [&] (const std::vector<LPRO>& toIterate) {
+	IterateObjectCore(rdPtr, oil, [&] (const ObjectSelection::SelObj& toIterate) {
 		rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
 			for (const auto& object : toIterate) {
 				rdPtr->pObject = object;
@@ -472,7 +472,7 @@ short WINAPI DLLExport Action_IterateObjectFunc(LPRDATA rdPtr, long param1, long
 	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	IterateObjectCore(rdPtr, oil, [&] (const std::vector<LPRO>& toIterate) {
+	IterateObjectCore(rdPtr, oil, [&] (const ObjectSelection::SelObj& toIterate) {
 		const FuncInfoObject funcObj(rdPtr, *rdPtr->pOnItObjName, Param);
 
 		rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {

@@ -212,8 +212,8 @@ inline void CallFuncCore(LPRDATA rdPtr, std::wstring& funcName, std::wstring& pa
 }
 
 inline void IterateObjectCore(LPRDATA rdPtr, short oil,
-	const std::function<void(const std::vector<LPRO>&)>& callback) {
-	std::vector<LPRO> toIterate;
+	const std::function<void(const ObjectSelection::SelObj&)>& callback) {
+	ObjectSelection::SelObj toIterate;
 	const auto flag = rdPtr->pSelect->ObjectIsSelected(oil)
 		? ForEachFlag_SelectedOnly
 		: ForEachFlag_Default;
