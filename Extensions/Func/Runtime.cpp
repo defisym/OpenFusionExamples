@@ -83,6 +83,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->FuncParamStack = new PARAMSTACK;
 	rdPtr->FuncParamStack->reserve(DefaultVecSize);
 
+	rdPtr->FuncManglingName = new MANGLINGNAME;
+	rdPtr->FuncManglingName->reserve(DefaultVecSize);
+
 	rdPtr->FuncTempParam = new TPARAM;
 	rdPtr->FuncTempParam->reserve(DefaultVecSize);
 
@@ -135,6 +138,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	}
 
 	delete rdPtr->pScope;
+
+	delete rdPtr->FuncManglingName;	
 
 	delete rdPtr->FuncNameStack;
 	delete rdPtr->FuncRawParamStack;

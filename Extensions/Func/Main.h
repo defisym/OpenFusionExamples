@@ -202,6 +202,7 @@ typedef struct tagRDATA
 	LPPARAMSTACK FuncParamStack;	// name independent
 	LPPARAMVEC FuncReturn;			// name independent
 
+	LPMANGLINGNAME FuncManglingName;// mangling name
 	LPTPARAM FuncTempParam;			// mangling name
 	LPLIDX FuncLoopIndex;			// mangling name
 	LPLIDX FuncCurLoopIndex;		// mangling name
