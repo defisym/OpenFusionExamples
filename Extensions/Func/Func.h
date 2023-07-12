@@ -77,6 +77,8 @@ inline void UpdateReturn(LPRDATA rdPtr, const std::wstring& Param) {
 
 inline std::wstring GetRecursiveSuffix(size_t ID) {
 	switch (ID) {
+	case 0:
+		return L"_0";
 	case 1:
 		return L"_1";
 	case 2:
@@ -100,17 +102,31 @@ inline std::wstring GetRecursiveSuffix(size_t ID) {
 	}
 }
 
-inline std::wstring GetFuncNameWithRecursiveID(LPRDATA rdPtr, const std::wstring& funcName) {
-	const auto it = rdPtr->RecursiveIndex->find(funcName);
-	const std::wstring suffix = it == rdPtr->RecursiveIndex->end() ? L"_0" : GetRecursiveSuffix(it->second);
+inline const std::wstring& GetFuncNameWithRecursiveID(LPRDATA rdPtr, const std::wstring& funcName) {
+	const auto it = rdPtr->FuncManglingName->find(funcName);
 
-	return funcName + suffix;
+	if (it == rdPtr->FuncManglingName->end()) {
+		(*rdPtr->FuncManglingName)[funcName] = funcName + GetRecursiveSuffix(0);
+	}
+
+	return (*rdPtr->FuncManglingName)[funcName];
 }
 
 class FuncInfoObject {
 	LPRDATA rdPtr = nullptr;
 	std::wstring funcName;
 	std::wstring manglingName;
+	std::wstring oldManglingName;
+
+	inline std::wstring GetFuncNameWithRecursiveID() const {
+		const auto it = rdPtr->RecursiveIndex->find(funcName);
+		const std::wstring suffix = GetRecursiveSuffix(it != rdPtr->RecursiveIndex->end()
+			? it->second
+			: 0);
+
+		return funcName + suffix;
+	}
+
 public:
 	FuncInfoObject(LPRDATA rdPtr, std::wstring& funcName, std::wstring& param) {
 		this->rdPtr = rdPtr;
@@ -122,10 +138,12 @@ public:
 		rdPtr->FuncParamStack->emplace_back();
 		UpdateParam(rdPtr, param);
 
-		rdPtr->FuncReturn->clear();
+		rdPtr->FuncReturn->clear();			
 
 		(*rdPtr->RecursiveIndex)[funcName] += 1;
-		this->manglingName = GetFuncNameWithRecursiveID(rdPtr, funcName);
+
+		this->manglingName = GetFuncNameWithRecursiveID();
+		(*rdPtr->FuncManglingName)[funcName] = this->manglingName;
 
 		*rdPtr->pPreviousFuncName = rdPtr->FuncNameStack->back();
 	}
@@ -142,6 +160,8 @@ public:
 		if ((*rdPtr->RecursiveIndex)[funcName] == 0) {
 			rdPtr->RecursiveIndex->erase(funcName);
 		}
+
+		(*rdPtr->FuncManglingName)[funcName] = GetFuncNameWithRecursiveID();
 	}
 
 	inline const auto& GetManglingName() { return manglingName; }
@@ -257,7 +277,48 @@ inline Data& TempParam(LPRDATA rdPtr, const std::wstring& FuncName, const std::w
 }
 
 inline bool HasTempParam(LPRDATA rdPtr, const std::wstring& FuncName, const std::wstring& ParamName) {
-	const auto name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
 
 	return  (*rdPtr->FuncTempParam).contains(name) && (*rdPtr->FuncTempParam)[name].contains(ParamName);
 }
+
+inline bool HasTempParam(LPRDATA rdPtr, const std::wstring& FuncName, const std::wstring& ParamName,
+	const std::function<void(Data*)>& yes, const std::function<void()>& no) {
+	//	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+	//
+	//	const auto funcIt = rdPtr->FuncTempParam->find(name);
+	//
+	//	if(funcIt == rdPtr->FuncTempParam->end()) {
+	//		return nullptr;
+	//	}
+	//
+	//	auto& paramMap = funcIt->second;
+	//
+	//	const auto paramIt = paramMap.find(name);
+	//
+	//	if (paramIt == paramMap.end()) {
+	//		return nullptr;
+	//	}
+	//
+	//	return &paramIt->second;
+}
+
+//inline Data* GetTempParam(LPRDATA rdPtr, const std::wstring& FuncName, const std::wstring& ParamName) {
+//	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+//
+//	const auto funcIt = rdPtr->FuncTempParam->find(name);
+//
+//	if(funcIt == rdPtr->FuncTempParam->end()) {
+//		return nullptr;
+//	}
+//
+//	auto& paramMap = funcIt->second;
+//
+//	const auto paramIt = paramMap.find(name);
+//
+//	if (paramIt == paramMap.end()) {
+//		return nullptr;
+//	}
+//
+//	return &paramIt->second;
+//}

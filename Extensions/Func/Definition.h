@@ -39,6 +39,9 @@ typedef PARAMVEC* LPPARAMVEC;
 typedef std::vector<PARAMVEC> PARAMSTACK;
 typedef PARAMSTACK* LPPARAMSTACK;
 
+typedef std::unordered_map<std::wstring, std::wstring> MANGLINGNAME;
+typedef MANGLINGNAME* LPMANGLINGNAME;
+
 typedef std::unordered_map<std::wstring, Data> PARAMMAP;
 typedef PARAMMAP* LPPARAMMAP;
 
