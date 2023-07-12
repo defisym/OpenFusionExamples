@@ -11,7 +11,11 @@ struct Data {
 	bool IsNumber = true;
 	bool IsNumberChecked = true;
 
-	Data() = default;
+	bool bDefault = false;
+
+	Data() {
+		this->bDefault = true;
+	}
 
 	Data(float Val) {
 		this->Val = Val;
