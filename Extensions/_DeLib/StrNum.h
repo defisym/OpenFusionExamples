@@ -1,9 +1,10 @@
+// ReSharper disable CppInconsistentNaming
+// ReSharper disable CppClangTidyClangDiagnosticReservedIdentifier
+// ReSharper disable CppClangTidyBugproneReservedIdentifier
 #pragma once
 
-#include <format>
-
 #include <cmath>
-#include <GeneralDefinition.h>
+#include <format>
 
 enum class StrType {
 	NotNum,
@@ -132,11 +133,11 @@ inline void _dtos_signed(double Val, wchar_t** Str) {
 }
 
 inline void _ftos_signed(float Val, std::wstring& Str) {
-	_dtos_signed(Val, Str);
+	_dtos_signed((double)Val, Str);
 }
 
 inline void _ftos_signed(float Val, wchar_t** Str) {
-	_dtos_signed(Val, Str);
+	_dtos_signed((double)Val, Str);
 }
 
 inline std::wstring _dtos_signed_s(double Val, size_t SpaceNum = 1) {
@@ -152,7 +153,7 @@ inline std::wstring _dtos_signed_s(double Val, size_t SpaceNum = 1) {
 }
 
 inline std::wstring _ftos_signed_s(float Val, size_t SpaceNum = 1) {
-	_dtos_signed_s(Val, SpaceNum);
+	return _dtos_signed_s((double)Val, SpaceNum);
 }
 
 inline void _dtos_signed_s(double Val, wchar_t** Str, size_t SpaceNum = 1) {
@@ -160,7 +161,7 @@ inline void _dtos_signed_s(double Val, wchar_t** Str, size_t SpaceNum = 1) {
 }
 
 inline void _ftos_signed_s(float Val, wchar_t** Str, size_t SpaceNum = 1) {
-	_dtos_signed_s(Val, Str, SpaceNum);
+	_dtos_signed_s((double)Val, Str, SpaceNum);
 }
 
 constexpr double _get_fracture(int n) {
@@ -246,12 +247,16 @@ constexpr inline double _stod(const std::wstring_view& str) {
 	return _stod(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
 }
 
+constexpr inline float _stof(const wchar_t* p) {
+	return static_cast<float>(_stod(p));
+}
+
 constexpr inline float _stof(const std::wstring& p) {
 	return (float)_stod(p);
 }
 
 constexpr inline float _stof(const std::wstring_view& str) {
-	return (float)_stod(str);
+	return static_cast<float>(_stod(str));
 }
 
 constexpr inline int _stoi(const wchar_t* p) {
