@@ -104,6 +104,14 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 #define ReturnString(Str) ReturnString(rdPtr, Str)
 
 // -------------
+// object
+// -------------
+
+inline auto GetObjectName(LPRDATA rdPtr) {
+	return rdPtr->rHo.hoOiList->oilName;
+}
+
+// -------------
 // animation
 // -------------
 
