@@ -67,7 +67,6 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GSIS, M_EXPRESSION_GSIS, EXP_EXPRESSION_GSIS, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, ACT_ACTION_SSI_S, ACT_ACTION_SSI_I,
 		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GCI, M_EXPRESSION_GCI, EXP_EXPRESSION_GCI, EXPFLAG_STRING, 0,
-		//IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 1,EXPPARAM_STRING,ACT_ACTION_K,
 		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SAV, M_EXPRESSION_SAV, EXP_EXPRESSION_SAV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		IDMN_EXPRESSION_SP, M_EXPRESSION_SP, EXP_EXPRESSION_SP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
@@ -250,20 +249,9 @@ short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2)
 	long p = CNC_GetFloatParameter(rdPtr);
 	float Value = *(float*)&p;
 
-	LPTSTR String = new WCHAR[FLOAT_MAX];
-
-	//Save int
-	if (Value == (int)Value) {
-		swprintf(String, FLOAT_MAX, _T("%d"), (int)Value);
-	}
-	//Save float
-	else {
-		swprintf(String, FLOAT_MAX, _T("%f"), Value);
-	}
-
-	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String)) || rdPtr->Modified;
-
-	delete[] String;
+	rdPtr->Modified = Modified(Fini->SetValue(Section, Item,
+		std::format(L"{}", Value).c_str()))
+	|| rdPtr->Modified;
 
 	return 0;
 }
@@ -487,7 +475,7 @@ long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
 		
 	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
 
-	return ReturnFloat(_stof(std::wstring(String)));
+	return ReturnFloat(_stof(String));
 }
 
 long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
@@ -528,34 +516,6 @@ long WINAPI DLLExport GetCurrentItem(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
-	//LPCTSTR Key = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-	//std::string Output;
-	//
-	////Key has value, try to Encry
-	//if (!StrEmpty(Key)) {		
-	//	std::string Temp;
-	//	Fini->Save(Temp);
-
-	//	Encryption Encrypt;
-	//	Encrypt.GenerateKey(Key);
-
-	//	Encrypt.SetEncryptStr(Temp);
-	//	Encrypt.Encrypt();
-	//			
-	//	Output = Encrypt.GetOutputStr();
-
-	//	wchar_t* Result = new wchar_t[(int)ceil(Output.length() / 2)];
-	//	memcpy(Result, Output.c_str(), Output.length());
-
-	//	NewStr(OStr, Result);
-	//	
-	//	delete[] Result;
-	//}
-	//else {
-	//	Fini->Save(Output);
-	//	NewStr(OStr, to_wide_string(Output).c_str());
-	//}
-
 	std::string Output;
 	Fini->Save(Output);
 	
