@@ -1,4 +1,5 @@
 #pragma once
+#include <ranges>
 
 typedef CSimpleIni INI;
 typedef CSimpleIni* LPINI;
@@ -8,15 +9,13 @@ typedef CSimpleIni::TNamesDepend* LPINILIST;
 
 typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 
+constexpr auto ONIT_SEC = 0;
+constexpr auto ONIT_ITEM = 1;
+
 #define Fini rdPtr->ini
 #define OStr rdPtr->Str
 
-#define FLOAT_MAX 50+1
-
 #define Default_Val	_T("0")
-
-#define ONIT_SEC	0
-#define ONIT_ITEM	1
 
 #define invalid(X) if (!valid(Fini)) { return X; }
 
@@ -58,3 +57,21 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 //	BYTE	rvFree2[VALUES_NUMBEROF_ALTERABLE];
 //	LPTSTR	rvStrings[STRINGS_NUMBEROF_ALTERABLE];
 //} tagRV20U;
+
+struct tagRDATA;
+typedef tagRDATA RUNDATA;
+typedef RUNDATA* LPRDATA;
+
+struct GlobalData {
+	std::map<std::wstring, LPINI> pInis;
+
+	GlobalData() = default;
+	~GlobalData() {
+		for(const auto& pIni : pInis | std::views::values) {
+			delete pIni;
+		}
+	}
+
+	inline void StashData(LPRDATA rdPtr);
+	inline void RetrieveData(LPRDATA rdPtr);
+};

@@ -88,14 +88,34 @@ typedef struct tagEDATA_V2
 	bool cf25p;
 	bool allowRVforCS;
 
+} EDITDATA_V2;
+
+typedef struct tagEDATA_V3 {
+	// Header - required
+	extHeader		eHeader;
+
+	// Object's data
+//	short			swidth;
+//	short			sheight;
+
+	bool cf25p;
+	bool allowRVforCS;
+	bool bKeepOverFrame;
+
+	bool bUnused;
+
+	int buffer[51];
+
 } EDITDATA;
+typedef EDITDATA* LPEDATA;
 typedef EDITDATA *			LPEDATA;
 
 // Object versions
 #define	KCX_VERSION_V1				1
 #define	KCX_VERSION_V2				2
+#define	KCX_VERSION_V3				3
 
-#define	KCX_CURRENT_VERSION			2
+#define	KCX_CURRENT_VERSION			3
 
 // --------------------------------
 // RUNNING OBJECT DATA STRUCTURE
@@ -146,6 +166,9 @@ typedef struct tagRDATA
 
 	bool cf25p;
 	bool allowRVforCS;
+	bool bKeepOverFrame;
+
+	GlobalData* pData;
 
 	int (*CompressToBuffer)(const std::string& srcStr, char*& buf);
 	std::string(*DeCompressToString)(const char* srcBuf, const unsigned int bufSz);

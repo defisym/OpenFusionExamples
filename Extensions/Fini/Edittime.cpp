@@ -27,9 +27,10 @@ enum {
 //	PROPID_COMBO,
 //	PROPID_COLOR,
 
-	PROPID_CF25P_TEXTTITLE,	
+	PROPID_SETTINGS_TEXTTITLE,	
 	PROPID_CF25P_CHECK,
 	PROPID_ARVFCS_CHECK,
+	PROPID_KD_CHECK,
 
 };
 
@@ -56,9 +57,10 @@ PropData Properties[] = {
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
 
-	PropData_Group		(PROPID_CF25P_TEXTTITLE,	IDS_PROP_CF25P_TEXTTITLE,		IDS_PROP_CF25P_TEXTTITLE),
+	PropData_Group		(PROPID_SETTINGS_TEXTTITLE,	IDS_PROP_SETTINGS_TEXTTITLE,		IDS_PROP_SETTINGS_TEXTTITLE),
 	PropData_CheckBox	(PROPID_CF25P_CHECK,		IDS_PROP_CF25P_CHECK,			IDS_PROP_CF25P_CHECK_INFO),
 	PropData_CheckBox	(PROPID_ARVFCS_CHECK,		IDS_PROP_ARVFCS_CHECK,			IDS_PROP_ARVFCS_CHECK_INFO),
+	PropData_CheckBox	(PROPID_KD_CHECK,		IDS_PROP_KD_CHECK,			IDS_PROP_KD_CHECK_INFO),
 
 
 // End of table (required)
@@ -695,21 +697,14 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
-
 	switch (nPropID) {
 	// return 0 (unchecked) or 1 (checked)
 	case PROPID_CF25P_CHECK:
 		return edPtr->cf25p;
 	case PROPID_ARVFCS_CHECK:
 		return edPtr->allowRVforCS;
+	case PROPID_KD_CHECK:
+		return edPtr->bKeepOverFrame;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -787,17 +782,6 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
-
 	switch (nPropID) {
 	case PROPID_CF25P_CHECK:
 		edPtr->cf25p = nCheck;
@@ -813,6 +797,10 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->allowRVforCS = nCheck;		
 
 		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_KD_CHECK:
+		edPtr->bKeepOverFrame = nCheck;
+
 		break;
 	}
 

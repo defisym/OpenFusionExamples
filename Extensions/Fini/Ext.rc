@@ -288,17 +288,20 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROP_CF25P_TEXTTITLE        "Settings"
+    IDS_PROP_SETTINGS_TEXTTITLE        "Settings"
     IDS_PROP_CF25P_CHECK            "2.5 Plus"
     IDS_PROP_CF25P_CHECK_INFO       "Check this to support 2.5+ unlimited alterable values"
     IDS_PROP_ARVFCS_CHECK           "Allow alterable values for counters and strings"
     IDS_PROP_ARVFCS_CHECK_INFO      "to allow save for counters and strings"
+    IDS_PROP_KD_CHECK               "Keep data over frames"
+    IDS_PROP_KD_CHECK_INFO          "According to object name.\r\nFor multiple instance, only one's data will be saved & restores"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDS_CF25P            "2.5 Plus: %s"
     IDS_ARVFCS           "Allow AV: %s"
+    IDS_KD               "Keep Data: %s"
 END
 
 STRINGTABLE DISCARDABLE 

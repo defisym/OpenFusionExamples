@@ -25,7 +25,7 @@ inline bool LoadFile(LPINI pIni,LPCTSTR pFilePath,LPCTSTR pKey) {
 	return ret == SI_OK;
 }
 
-inline bool SaveFile(LPINI pIni,const wchar_t* pFilePath, const wchar_t* pKey) {
+inline bool SaveFile(LPINI pIni, const wchar_t* pFilePath, const wchar_t* pKey) {
 	auto ret = true;
 
 	//Key has value, try to Encry
@@ -97,4 +97,22 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	offset += (flags & OEFLAG_SPRITES) ? sizeof(rSpr) : 0;
 
 	return offset;
+}
+
+inline void GlobalData::StashData(LPRDATA rdPtr) {
+	const std::wstring objName = GetObjectName(rdPtr);
+
+	if(!pInis.contains(objName)) {
+		pInis[objName] = rdPtr->ini;
+	}
+}
+
+inline void GlobalData::RetrieveData(LPRDATA rdPtr) {
+	const std::wstring objName = GetObjectName(rdPtr);
+	const auto it = pInis.find(objName);
+
+	if (it != pInis.end()) {
+		rdPtr->ini = it->second;
+		pInis.erase(it);
+	}
 }

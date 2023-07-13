@@ -24,6 +24,7 @@ enum
 
 	DB_CF25P,
 	DB_ARVFCS,
+	DB_KD,
 };
 
 // Items displayed in the debugger
@@ -81,9 +82,29 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->cf25p = edPtr->cf25p;
 	rdPtr->allowRVforCS = edPtr->allowRVforCS;
+	rdPtr->bKeepOverFrame = edPtr->bKeepOverFrame;
 
 	rdPtr->CompressToBuffer = ZLIBI_CompressToBufferDefault;
 	rdPtr->DeCompressToString = ZLIBI_DeCompressToStringDefault;
+
+	//Init global data
+	if (GetExtUserData() == nullptr) {
+		//init global
+		auto pData = new GlobalData;
+
+		//Get specific
+
+		//Update pointer
+		SetExtUserData(pData);
+	}
+
+	//Get global data
+	//Get pointers here and never delete them.
+	rdPtr->pData = static_cast<GlobalData*>(GetExtUserData());
+
+	if (rdPtr->bKeepOverFrame) {
+		rdPtr->pData->RetrieveData(rdPtr);		
+	}
 
 	// No errors
 	return 0;
@@ -103,9 +124,16 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 */
 	//Auto Save
 	AutoSave(rdPtr);
+	rdPtr->Modified = false;
 
-	release_ini();
+	if (rdPtr->bKeepOverFrame) {
+		rdPtr->pData->StashData(rdPtr);
+	}
+	else {
+		release_ptr(Fini);
+	}
 
+	release_str();
 	release_arr(OStr);
 
 	delete rdPtr->pB64;
@@ -317,17 +345,12 @@ BOOL WINAPI LoadRunObject(LPRDATA rdPtr, HANDLE hf)
 // Called when the application starts or restarts.
 // Useful for storing global data
 // 
-void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp) {
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
+	}
 }
 
 // -------------------
@@ -335,17 +358,12 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 // -------------------
 // Called when the application ends.
 // 
-void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp) {
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
+	}
 }
 
 // -------------------
@@ -558,6 +576,10 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	case DB_ARVFCS:
 		LoadString(hInstLib, IDS_ARVFCS, temp, DB_BUFFERSIZE);
 		wsprintf(pBuffer, temp, rdPtr->allowRVforCS ? L"True" : L"False");
+		break;
+	case DB_KD:
+		LoadString(hInstLib, IDS_KD, temp, DB_BUFFERSIZE);
+		wsprintf(pBuffer, temp, rdPtr->bKeepOverFrame ? L"True" : L"False");
 		break;
 	}
 
