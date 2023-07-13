@@ -134,29 +134,49 @@ inline size_t GetStructOffset(LPRDATA rdPtr, LPRO object, HeaderName headerName,
 
 // Usage: in General.cpp
 
-// HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr) {
-// 	HGLOBAL hgNew = NULL;
-
-// 	// V1->V2
-// 	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(OldEdPtr, hgNew, KCX_VERSION_V2, [](tagEDATA_V2* newEdPtr) {
-// 		newEdPtr->newData = newDataDefault;
-// 		});
-
-// 	// V3->V3
-//  UpdateEditData<tagEDATA_V2, tagEDATA_V3>(OldEdPtr, hgNew, KCX_VERSION_V3, [](tagEDATA_V3* newEdPtr) {
-// 		newEdPtr->newData = newDataDefault;
-// 		});
-
-//     ......
-
-// 	return hgNew;
-// }
+//HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far* mV, void __far* OldEdPtr) {
+//	HGLOBAL hgNew = nullptr;
+//
+//	// V1->V2
+//	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(GetOldEdPtr((tagEDATA_V1*)OldEdPtr, hgNew),
+//		hgNew,
+//		KCX_VERSION_V2,
+//		[] (const tagEDATA_V1* pOld, tagEDATA_V2* pNew) {
+//			// Copy old
+// 			pNew->oldData = pOld->oldData;
+//
+//			// Update new
+// 			pNew->newData = newDataDefault;
+//		});
+//
+//	// V2->V3
+//	UpdateEditData<tagEDATA_V2, tagEDATA_V3>(GetOldEdPtr((tagEDATA_V2*)OldEdPtr, hgNew),
+//		hgNew,
+//		KCX_VERSION_V3,
+//		[] (const tagEDATA_V2* pOld, tagEDATA_V3* pNew) {
+//			// Copy old
+// 			pNew->oldData = pOld->oldData;
+//
+//			// Update new
+// 			pNew->newData = newDataDefault;
+//	});
+// 
+//  ......
+//
+//	return hgNew;
+//}
 
 #include <functional>
 
+template<typename EDATA>
+inline EDATA* GetOldEdPtr(EDATA* OldEdPtr, HGLOBAL& hgNew) {
+	return (EDATA*)(hgNew == nullptr ? OldEdPtr : hgNew);
+}
+
 // Update Core
 template<typename EDATA>
-inline void UpdateEditData(extHeader* pEHeader, HGLOBAL& hgNew, std::function<void(EDATA*)> updateFunc) {
+inline void UpdateEditData(const extHeader* pEHeader, HGLOBAL& hgNew,
+	std::function<void(EDATA*)> updateFunc) {
 	if ((hgNew = GlobalAlloc(GPTR, sizeof(EDATA))) != NULL) {
 		auto newEdPtr = (EDATA*)GlobalLock(hgNew);
 
@@ -173,20 +193,35 @@ inline void UpdateEditData(extHeader* pEHeader, HGLOBAL& hgNew, std::function<vo
 
 // Update during development, doesn't check & update version
 template<typename EDATA>
-inline void UpdateEditData(EDATA* OldEdPtr, HGLOBAL& hgNew, std::function<void(EDATA*)> updateFunc) {
+inline void UpdateEditData(const EDATA* OldEdPtr, HGLOBAL& hgNew,
+	std::function<void(EDATA*)> updateFunc) {
 	UpdateEditData<EDATA>(&OldEdPtr->eHeader, hgNew, updateFunc);
 }
 
 // General update, check & update version
 template<typename Old, typename New>
-inline void UpdateEditData(Old* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(Old*, New*)> updateFunc) {
-	if (OldEdPtr->eHeader.extVersion < targetVersion) {
-		UpdateEditData<New>(&OldEdPtr->eHeader, hgNew, [&] (New* pNew) {
-			pNew->eHeader.extVersion = targetVersion;			// Update the version number
-
-			updateFunc(OldEdPtr, pNew);
-			});
+inline bool UpdateEditData(const Old* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion,
+	std::function<void(const Old*, New*)> updateFunc) {
+	if (OldEdPtr->eHeader.extVersion >= targetVersion) {
+		return false;
 	}
+
+	// if OldEdPtr == hgNew, then it's a continual update
+	// free the OldEdPtr, as it's previous stage's  hgNew
+	const auto bFree = OldEdPtr == hgNew;
+
+	UpdateEditData<New>(&OldEdPtr->eHeader, hgNew, [&] (New* pNew) {
+		pNew->eHeader.extVersion = targetVersion;			// Update the version number
+
+		updateFunc(OldEdPtr, pNew);
+		});
+
+	// free
+	if (bFree) {
+		GlobalFree((HGLOBAL)OldEdPtr);
+	}
+
+	return true;
 }
 
 template<typename T>
