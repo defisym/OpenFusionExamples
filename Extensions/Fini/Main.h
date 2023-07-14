@@ -144,20 +144,20 @@ typedef struct tagRDATA
 	bool AutoSave = false;
 	bool Modified = false;
 
-	LPTSTR AutoSaveFilePath = nullptr;
-	LPTSTR AutoSaveKey = nullptr;
+	std::wstring* AutoSaveFilePath = nullptr;
+	std::wstring* AutoSaveKey = nullptr;
 	
 	//ReturnStr
-	LPTSTR Str = nullptr;
+	std::wstring* Str = nullptr;
 	
 	//ini
 	LPINI ini = nullptr;
 
-	LPTSTR SecLoopName = nullptr;
-	LPTSTR ItemLoopName = nullptr;
+	std::wstring* SecLoopName = nullptr;
+	std::wstring* ItemLoopName = nullptr;
 
-	LPTSTR CurrentSec = nullptr;
-	LPTSTR CurrentItem = nullptr;
+	std::wstring* CurrentSec = nullptr;
+	std::wstring* CurrentItem = nullptr;
 	
 	Localization* pLocalization = nullptr;
 

@@ -1,5 +1,37 @@
 #pragma once
 
+// ------------------------
+// forward declaration
+// ------------------------
+
+inline void InitIni(LPRDATA rdPtr);
+inline void ReleaseIni(LPRDATA rdPtr);
+
+// ------------------------
+// definition
+// ------------------------
+
+// Default Settings:
+//  m_bStoreIsUtf8: false -> override to true
+//  m_bAllowMultiKey: false
+//  m_bAllowMultiLine: false
+//  m_bSpaces: true
+//  m_bParseQuotes: false
+//  m_bAllowKeyOnly: false
+inline void InitIni(LPRDATA rdPtr) {
+	ReleaseIni(rdPtr);
+
+	rdPtr->ini = new INI;
+	rdPtr->ini->SetUnicode();
+}
+
+inline void ReleaseIni(LPRDATA rdPtr) {
+	rdPtr->Modified = false;
+
+	delete rdPtr->ini;
+	rdPtr->ini = nullptr;
+}
+
 inline bool Modified(SI_Error Input) {
 	return Input == SI_UPDATED || Input == SI_INSERTED;
 }
@@ -49,8 +81,8 @@ inline bool SaveFile(LPINI pIni, const wchar_t* pFilePath, const wchar_t* pKey) 
 }
 
 inline void AutoSave(LPRDATA rdPtr) {
-	if (rdPtr->Modified && rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
-		SaveFile(Fini, rdPtr->AutoSaveFilePath, rdPtr->AutoSaveKey);
+	if (rdPtr->ini != nullptr && rdPtr->AutoSave && rdPtr->Modified) {
+		SaveFile(rdPtr->ini, rdPtr->AutoSaveFilePath->c_str(), rdPtr->AutoSaveKey->c_str());
 	}
 }
 

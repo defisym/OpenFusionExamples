@@ -12,17 +12,9 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 constexpr auto ONIT_SEC = 0;
 constexpr auto ONIT_ITEM = 1;
 
-#define Fini rdPtr->ini
-#define OStr rdPtr->Str
+constexpr auto Default_Val = L"0";
 
-#define Default_Val	_T("0")
-
-#define invalid(X) if (!valid(Fini)) { return X; }
-
-#define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);release_arr(rdPtr->AutoSaveFilePath);release_arr(rdPtr->AutoSaveKey);
-
-#define release_ini() release_ptr(Fini);release_str();rdPtr->Modified = false;
-#define init_ini() release_ini();Fini = new INI;Fini->SetUnicode();
+#define InvalidIni(X) if (!valid(rdPtr->ini)) { return X; }
 
 #define InvalidSec(X) if (StrEmpty(Section)) { return X; }
 #define InvalidSecItem(X) if (StrEmpty(Section) || StrEmpty(Item)) { return X; }

@@ -75,6 +75,17 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->AutoSave = true;
 	rdPtr->Modified = false;
 
+	rdPtr->AutoSaveFilePath = new std::wstring;
+	rdPtr->AutoSaveKey = new std::wstring;
+
+	rdPtr->Str = new std::wstring;
+
+	rdPtr->SecLoopName = new std::wstring;
+	rdPtr->ItemLoopName = new std::wstring;
+
+	rdPtr->CurrentSec = new std::wstring;
+	rdPtr->CurrentItem = new std::wstring;
+
 	rdPtr->pB64 = new Base64<std::wstring>;
 	rdPtr->b64Str = new std::wstring;
 
@@ -130,11 +141,19 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 		rdPtr->pData->StashData(rdPtr);
 	}
 	else {
-		release_ptr(Fini);
+		ReleaseIni(rdPtr);
 	}
+	
+	delete rdPtr->AutoSaveFilePath;
+	delete rdPtr->AutoSaveKey;
 
-	release_str();
-	release_arr(OStr);
+	delete rdPtr->Str;
+
+	delete rdPtr->SecLoopName;
+	delete rdPtr->ItemLoopName;
+
+	delete rdPtr->CurrentSec;
+	delete rdPtr->CurrentItem;
 
 	delete rdPtr->pB64;
 	delete rdPtr->b64Str;
