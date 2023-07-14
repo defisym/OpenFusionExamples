@@ -20,17 +20,17 @@
 #define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
 #define AddEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_PUSHEVENT , X, 0);
 
-#define valid(X) (X != nullptr)
+#define valid(X) ((X) != nullptr)
 
 #define InvalidStr(STR,RET) if (!valid(STR)) { return RET; }
 
-#define release_ptr(X) if (valid(X)) {delete X; X = nullptr;}
-#define release_arr(X) if (valid(X)) {delete[] X; X = nullptr;}
+#define release_ptr(X) if (valid(X)) {delete (X); (X) = nullptr;}
+#define release_arr(X) if (valid(X)) {delete[] (X); (X) = nullptr;}
 
 #define ResertPtr(X) X=nullptr;
 
-#define RAD(_DEG) ((PI*_DEG)/180)
-#define DEG(_RAD) ((180*_RAD)/PI)
+#define RAD(_DEG) ((PI*(_DEG))/180)
+#define DEG(_RAD) ((180*(_RAD))/PI)
 
 #define MV rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv
 
