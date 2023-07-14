@@ -66,6 +66,58 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const
 // return
 // -------------
 
+inline auto GetCurrentParamPointer(LPRDATA rdPtr) {
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const auto pResults = rhPtr->rh4.rh4Results;
+	const auto pPos = rhPtr->rh4.rh4PosPile;
+
+	return pResults[pPos + 1];
+}
+
+template<typename T>
+concept FusionReturn = std::is_same_v<T, long>
+|| std::is_same_v<T, LPCWSTR>
+|| std::is_same_v<T, float>;
+
+// ReSharper disable once CppNotAllPathsReturnValue
+template<FusionReturn T>
+inline T GetCurrentParam(LPRDATA rdPtr) {
+	const auto pCValue = GetCurrentParamPointer(rdPtr);
+
+	if constexpr (std::is_same_v<T, long>) {
+		if (pCValue->m_type == TYPE_LONG) {
+			return pCValue->m_long;
+		}
+
+		if (pCValue->m_type == TYPE_FLOAT) {
+			return static_cast<long>(pCValue->m_double);
+		}
+
+		return 0;
+	}
+
+	if constexpr (std::is_same_v<T, float>) {
+		if (pCValue->m_type == TYPE_LONG) {
+			return static_cast<float>(pCValue->m_long);
+		}
+
+		if (pCValue->m_type == TYPE_FLOAT) {
+			return static_cast<float>(pCValue->m_double);
+		}
+
+		return 0;
+	}
+
+	if constexpr (std::is_same_v<T, LPCWSTR>) {
+		if(pCValue->m_type== TYPE_STRING) {
+			return pCValue->m_pString;
+		}
+
+		return Default_Str;
+	}
+}
+
+
 //Return float
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	if (Val == (int)Val) {
