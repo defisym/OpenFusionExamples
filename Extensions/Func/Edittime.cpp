@@ -1092,11 +1092,9 @@ HMENU WINAPI DLLExport GetActionMenu(mv _far *mV, fpObjInfo oiPtr, LPEDATA edPtr
 #ifndef RUN_ONLY
 	// Check compatibility
 	if (IS_COMPATIBLE(mV)) {
-		//return GetPopupMenu(MN_ACTIONS);
-
 		constexpr auto disableItems = { IDMN_ACTION_SS, IDMN_ACTION_RS };
 
-		if (!edPtr->bScope) {
+		if (edPtr && !edPtr->bScope) {
 			return GetFilteredPopupMenu(MN_ACTIONS, disableItems);
 		}
 		else {
