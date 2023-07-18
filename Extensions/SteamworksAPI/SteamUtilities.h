@@ -9,6 +9,7 @@
 #include "SteamAchAndStat.h"
 #include "SteamMicroTxn.h"
 #include "SteamRichPresence.h"
+#include "SteamScreenshot.h"
 
 #include "SteamRemote.h"
 
@@ -47,9 +48,11 @@ private:
 	//------------
 
 	//std::vector<SteamCallbackClass*> pCallbackClasses;
+
 	SteamAchAndStat* pAchAndStat = nullptr;
-	SteamRichPresence* pSteamRichPresence = nullptr;
 	SteamMicroTxn* pSteamMicroTxn = nullptr;
+	SteamRichPresence* pSteamRichPresence = nullptr;
+	SteamScreenshot* pSteamScreenshot = nullptr;
 	
 	//------------
 	// None Callback
@@ -74,8 +77,9 @@ public:
 		InitSteamCommandLine();
 
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
-		pSteamRichPresence = new SteamRichPresence();
 		pSteamMicroTxn = new SteamMicroTxn();
+		pSteamRichPresence = new SteamRichPresence();
+		pSteamScreenshot = new SteamScreenshot();
 
 		pSteamRemote = new SteamRemote();
 	}
@@ -120,10 +124,12 @@ public:
 	//------------
 
 	inline SteamAchAndStat* GetAchAndStat() const { return pAchAndStat; }
-	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
 	inline SteamMicroTxn* GetMicroTxn() const { return pSteamMicroTxn; }
+	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
+	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }
 
 	inline SteamRemote* GetRemote() const { return pSteamRemote; }
+
 	//------------
 	// Refresh
 	//------------

@@ -41,6 +41,11 @@
 #define	IDMN_ACTION_MT_SR			25006
 #define	IDMN_ACTION_MT_F 			25007
 
+#define	IDMN_ACTION_SSSL 			25008
+#define	IDMN_ACTION_TSSU 			25009
+#define	IDMN_ACTION_TSSPF 			25010
+#define	IDMN_ACTION_TSS 			25011
+
 // Action strings
 #define M_ACTION_UA                 5000
 #define M_ACTION_AS                 5001
@@ -52,6 +57,11 @@
 #define	M_ACTION_MT_GUI				5005
 #define	M_ACTION_MT_SR				5006
 #define	M_ACTION_MT_F 				5007
+
+#define	M_ACTION_SSSL 				5008
+#define	M_ACTION_TSSU 				5009
+#define	M_ACTION_TSSPF 				5010
+#define	M_ACTION_TSS 				5011
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
@@ -68,6 +78,8 @@
 #define M_MT_AMOUNT				 5512
 #define M_MT_DESC				 5513
 #define M_MT_OTHERS				 5514
+#define M_LOACTION			 	 5515
+#define M_PFID				 	 5516
 
 
 //	Conditions
@@ -84,6 +96,8 @@
 
 #define	IDMN_CONDITION_ROSD				26003
 
+#define	IDMN_CONDITION_OSS				26004
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
@@ -91,6 +105,8 @@
 #define	M_CONDITION_OMTF				6002
 
 #define	M_CONDITION_ROSD				6003
+
+#define	M_CONDITION_OSS					6004
 
 // Titles of condition parameters
 #define M_CND_RPO						6501

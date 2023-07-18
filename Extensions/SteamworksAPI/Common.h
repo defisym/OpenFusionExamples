@@ -49,6 +49,8 @@
 #include	"GeneralDefinition.h"
 
 #include	"SteamUtilities.h"
+#include	"SteamInit.h"
+
 #include	"Definition.h"
 
 // Specific to this cox

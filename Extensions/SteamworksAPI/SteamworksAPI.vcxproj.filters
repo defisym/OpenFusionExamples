@@ -29,6 +29,12 @@
     <Filter Include="Steamworks\SteamworksSource">
       <UniqueIdentifier>{bae52159-a2c9-48cf-ab68-61f00052d432}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Steamworks\SteamworksBasic">
+      <UniqueIdentifier>{6c79f370-b815-453e-93f0-9856d4794588}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamDefinition">
+      <UniqueIdentifier>{f7fcc068-7478-4cc4-b583-57654569799e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -151,22 +157,7 @@
     <ClInclude Include="..\_DeLib\WindowsException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SteamUtilities.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
-    </ClInclude>
-    <ClInclude Include="SteamRefresh.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
-    </ClInclude>
     <ClInclude Include="SteamAchAndStat.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
-    </ClInclude>
-    <ClInclude Include="SteamCallback.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
-    </ClInclude>
-    <ClInclude Include="SteamConcepts.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
-    </ClInclude>
-    <ClInclude Include="SteamInclude.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="SteamMicroTxn.h">
@@ -175,20 +166,41 @@
     <ClInclude Include="SteamRichPresence.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
-    <ClInclude Include="SteamHttp.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
-    </ClInclude>
     <ClInclude Include="..\_3rdLib\JsonInterface.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SteamRemote.h">
-      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SteamWebAPI.h">
+    <ClInclude Include="SteamCallback.h">
+      <Filter>Steamworks\SteamworksBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamUtilities.h">
+      <Filter>Steamworks\SteamworksBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamHttp.h">
+      <Filter>Steamworks\SteamworksBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamScreenshot.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamConcepts.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRefresh.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRemote.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamWebAPI.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamInclude.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamInit.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

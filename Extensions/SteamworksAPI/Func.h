@@ -12,3 +12,12 @@ inline void GlobalData::UpdateMicroTxnCallback() const {
 		});
 });
 }
+
+inline void GlobalData::UpdateScreenshotCallback() const {
+	GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamScreenshot()->SetCallback(
+		[&] () {
+			CallEvent(OnScreenshot);
+		});
+});
+}

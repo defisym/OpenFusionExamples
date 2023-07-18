@@ -88,8 +88,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	}
 
 	// update when create to fix dangling pointer
-	rdPtr->pData->UpdateRdPtr(rdPtr);
-	rdPtr->pData->UpdateMicroTxnCallback();
+	rdPtr->pData->Update(rdPtr);
 
 	// No errors
 	return 0;

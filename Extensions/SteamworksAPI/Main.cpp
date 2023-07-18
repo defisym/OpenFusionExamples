@@ -28,6 +28,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OMTF, M_CONDITION_OMTF, CND_CONDITION_OMTF, 0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_MT_NAME, M_MT_STEP,
 
 		IDMN_CONDITION_ROSD, M_CONDITION_ROSD, CND_CONDITION_ROSD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
+		IDMN_CONDITION_OSS, M_CONDITION_OSS, CND_CONDITION_OSS, 0, 0,
 		};
 
 // Definitions of parameters for each action
@@ -43,6 +45,11 @@ short actionsInfos[]=
 		IDMN_ACTION_MT_GUI, M_ACTION_MT_GUI,	ACT_ACTION_MT_GUI,	0, 0,
 		IDMN_ACTION_MT_SR, M_ACTION_MT_SR,	ACT_ACTION_MT_SR,	0, 6, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPSTRING, PARAM_EXPSTRING, M_MT_ITEMCOUNT, M_MT_ITEMID, M_MT_ITEMNUM, M_MT_AMOUNT, M_MT_DESC, M_MT_OTHERS,
 		IDMN_ACTION_MT_F, M_ACTION_MT_F,	ACT_ACTION_MT_F,	0, 0,
+
+		IDMN_ACTION_SSSL, M_ACTION_SSSL,	ACT_ACTION_SSSL,	0, 1, PARAM_EXPSTRING, M_LOACTION,
+		IDMN_ACTION_TSSU, M_ACTION_TSSU,	ACT_ACTION_TSSU,	0, 1, PARAM_EXPSTRING, M_MT_USERID,
+		IDMN_ACTION_TSSPF, M_ACTION_TSSPF,	ACT_ACTION_TSSPF,	0, 1, PARAM_EXPSTRING, M_PFID,
+		IDMN_ACTION_TSS, M_ACTION_TSS,	ACT_ACTION_TSS,	0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -136,6 +143,14 @@ long WINAPI DLLExport Condition_RunningOnSteamDeck(LPRDATA rdPtr, long param1, l
 
 	return SteamUtils()->IsSteamRunningOnSteamDeck();
 
+}
+
+long WINAPI DLLExport Condition_OnScreenshot(LPRDATA rdPtr, long param1, long param2) {
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
+	return true;
 }
 
 // ============================================================================
@@ -242,6 +257,42 @@ short WINAPI DLLExport Action_MixroTxn_Finalize(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
+short WINAPI DLLExport Action_Sceenshot_SetLocation(LPRDATA rdPtr, long param1, long param2) {
+	const auto pLocation = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamScreenshot()->SetLocation(pLocation);
+	});
+	return 0;
+}
+
+short WINAPI DLLExport Action_Sceenshot_TagPublishedFile(LPRDATA rdPtr, long param1, long param2) {
+	const auto publishedFileID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamScreenshot()->TagPublishedFile(std::stoull(publishedFileID));
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Sceenshot_TagUser(LPRDATA rdPtr, long param1, long param2) {
+	const auto steamID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamScreenshot()->TagUser(std::stoull(steamID));
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Sceenshot_Trigger(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamScreenshot()->Trigger();
+	});
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -348,6 +399,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Condition_RunningOnSteamDeck,
 
+			Condition_OnScreenshot,
+
 			0
 			};
 	
@@ -363,6 +416,11 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_MixroTxn_GetUserInfo,
 			Action_MixroTxn_SendRequest,
 			Action_MixroTxn_Finalize,
+
+			Action_Sceenshot_SetLocation,
+			Action_Sceenshot_TagPublishedFile,
+			Action_Sceenshot_TagUser,
+			Action_Sceenshot_Trigger,
 
 			0
 			};

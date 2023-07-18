@@ -3,6 +3,7 @@
 //immediate conditon ID
 constexpr auto OnMixroTxnError = 1;
 constexpr auto OnMixroTxnFinish = 2;
+constexpr auto OnScreenshot = 4;
 
 class SteamUtilities;
 
@@ -15,9 +16,10 @@ struct GlobalData {
 
 	bool bInit = false;
 	SteamUtilities* pSteamUtil = nullptr;
-		
+
 	GlobalData() {
-		bInit = SteamAPI_Init();
+		//bInit = SteamAPI_Init();
+		bInit = steamInit.bInit;
 
 		if (bInit) {
 			pSteamUtil = new SteamUtilities();
@@ -65,9 +67,18 @@ struct GlobalData {
 		return callback(pSteamUtil);
 	}
 
+private:
 	inline void UpdateRdPtr(LPRDATA rdPtr) {
 		this->rdPtr = rdPtr;
 	}
 
 	inline void UpdateMicroTxnCallback() const;
+	inline void UpdateScreenshotCallback() const;
+
+public:
+	inline void Update(LPRDATA rdPtr) {
+		UpdateRdPtr(rdPtr);
+		UpdateMicroTxnCallback();
+		UpdateScreenshotCallback();
+	}
 };

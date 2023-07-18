@@ -128,6 +128,11 @@ BEGIN
             MENUITEM "On MixroTxn Finish", IDMN_CONDITION_OMTF
         END
         MENUITEM SEPARATOR
+        POPUP "Screenshots"
+        BEGIN
+            MENUITEM "On Screenshots", IDMN_CONDITION_OSS        
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -163,6 +168,15 @@ BEGIN
             MENUITEM "Micro Transaction: Get User Info",     IDMN_ACTION_MT_GUI	
             MENUITEM "Micro Transaction: Send Request",     IDMN_ACTION_MT_SR	
             MENUITEM "Micro Transaction: Finalize",     IDMN_ACTION_MT_F 	
+        END
+        MENUITEM SEPARATOR
+        POPUP "Screenshots"
+        BEGIN
+            MENUITEM "Trigger Screenshot", IDMN_ACTION_TSS
+            MENUITEM SEPARATOR
+            MENUITEM "Set Location", IDMN_ACTION_SSSL        
+            MENUITEM "Tag Published File", IDMN_ACTION_TSSU        
+            MENUITEM "Tag User", IDMN_ACTION_TSSPF
         END
         MENUITEM SEPARATOR
     END
@@ -307,6 +321,14 @@ BEGIN
     M_MT_AMOUNT		         "Price (in cent)"	
     M_MT_DESC		         "Description"	
     M_MT_OTHERS		         "Other Params"	
+
+    M_ACTION_TSS	         "Trigger Screenshot"
+    M_ACTION_SSSL	         "Screenshots: Set Location to %0"
+    M_ACTION_TSSU	         "Screenshots: Tag Published File %0"
+    M_ACTION_TSSPF	         "Screenshots: Tag User %0"
+
+    M_LOACTION     	         "Screenshot Location"
+    M_PFID      	         "Published File ID"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -322,6 +344,7 @@ BEGIN
     M_MT_STEP                "Step"
 
     M_CONDITION_ROSD          "%o: Running On Steam Deck"
+    M_CONDITION_OSS           "%o: On Screenshots"
 END
 
 STRINGTABLE DISCARDABLE 

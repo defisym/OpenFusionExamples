@@ -15,7 +15,9 @@
 
 #define	CND_CONDITION_ROSD				3
 
-#define	CND_LAST						4
+#define	CND_CONDITION_OSS				4
+
+#define	CND_LAST						5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -31,7 +33,12 @@
 #define	ACT_ACTION_MT_SR				6
 #define	ACT_ACTION_MT_F 				7
 
-#define	ACT_LAST						8
+#define	ACT_ACTION_SSSL 				8
+#define	ACT_ACTION_TSSU 				9
+#define	ACT_ACTION_TSSPF 				10
+#define	ACT_ACTION_TSS 					11
+
+#define	ACT_LAST						12
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
