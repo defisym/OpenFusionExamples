@@ -5,13 +5,16 @@
 struct SteamInit {
 	bool bInit = false;
 
-	SteamInit() {
-		bInit = SteamAPI_Init();
+	inline void Init() {
+		if (!bInit) {
+			bInit = SteamAPI_Init();
+		}
 	}
 
-	~SteamInit() {
+	inline void Shutdown() {
 		if (bInit) {
 			SteamAPI_Shutdown();
+			bInit = false;
 		}
 	}
 };

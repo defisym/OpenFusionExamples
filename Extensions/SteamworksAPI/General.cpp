@@ -56,8 +56,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 // Where you want to do COLD-START initialization.
 // Called when the extension is loaded into memory.
 //
-extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet)
-{
+extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet) {
+	steamInit.Init();
+
 	// No error
 	return 0;
 }
@@ -68,8 +69,9 @@ extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet)
 // Where you want to kill and initialized data opened in the above routine
 // Called just before freeing the DLL.
 // 
-extern "C" int WINAPI DLLExport Free(mv _far *mV)
-{
+extern "C" int WINAPI DLLExport Free(mv _far *mV) {
+	steamInit.Shutdown();
+
 	// No error
 	return 0;
 }
