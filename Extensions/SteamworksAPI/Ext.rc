@@ -365,6 +365,15 @@ BEGIN
     IDS_PROP_TEXTTITLE_STEAM         "Steam"
     IDS_PROP_CHECK_REPORTERROR       "Report Error"
     IDS_PROP_CHECK_REPORTERROR_INFO  "Report Error When Crash"
+
+    IDS_PROP_COMBO_NOTIFICATIONPOSITION             "Overlay Position"
+    IDS_PROP_COMBO_NOTIFICATIONPOSITION_INFO        "Sets which corner the Steam overlay notification popup should display itself in"
+    IDS_COMBO_NOTIFICATIONPOSITION_DEFAULT          "Default"
+    IDS_COMBO_NOTIFICATIONPOSITION_LT               "Top Left"
+    IDS_COMBO_NOTIFICATIONPOSITION_RT               "Top Right"
+    IDS_COMBO_NOTIFICATIONPOSITION_LB               "Bottom Left"
+    IDS_COMBO_NOTIFICATIONPOSITION_RB               "Bottom Right"
+
 END
 
 #endif    // English (U.S.) resources

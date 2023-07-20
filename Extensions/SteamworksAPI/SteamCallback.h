@@ -36,7 +36,7 @@ public:
 };
 
 // ------------
-// Helper class, to use lambda
+// Callback helper class, to use lambda
 // ------------
 template<typename CallBackType>
 class SteamCallbackHandler :public SteamCallback {
@@ -68,7 +68,7 @@ inline auto GetCallBack(std::function<void(CallBackType*)> callback) {
 }
 
 // ------------
-// Helper class, to use lambda
+// Call result helper class, to use lambda
 // ------------
 template<typename CallBackType>
 class SteamCallResultHandler :public SteamCallback {

@@ -80,6 +80,16 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 			if (edPtr->bReportError) {
 				rdPtr->pData->pSteamUtil->SetErrorHandler();
 			}
+
+			switch (edPtr->NotificationPosition) {
+			case k_EPositionInvalid:
+				break;
+			case k_EPositionTopLeft:
+			case k_EPositionTopRight:
+			case k_EPositionBottomLeft:
+			case k_EPositionBottomRight:
+				SteamUtils()->SetOverlayNotificationPosition(edPtr->NotificationPosition);
+			}
 		});
 		
 	}

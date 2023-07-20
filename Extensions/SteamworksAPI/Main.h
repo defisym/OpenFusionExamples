@@ -76,11 +76,13 @@ typedef struct tagEDATA_V1
 	// buffer
 	bool bReportError = false;
 
+	ENotificationPosition NotificationPosition;
+
 	bool unused_0;
 	bool unused_1;
 	bool unused_2;
 
-	int buffer[51];
+	int buffer[50];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
