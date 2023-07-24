@@ -55,7 +55,7 @@ bool Split::LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode) 
     return true;
 }
 bool Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode) {
-    return LoadFile(FilePath.c_str(), Key.c_str());
+    return LoadFile(FilePath.c_str(), Key.c_str(), Unicode);
 }
 
 void Split::LoadData() {
@@ -343,17 +343,17 @@ int Split::GetNextKeyWordPos(size_t StartPos) const {
     return this->GetNextKeyWordPos(StartPos, ALL);
 }
 
-int Split::GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) const {
+int Split::GetNextKeyWordPos(size_t startPos, const wchar_t* pKeyWord) const {
     //valid current pos
-    if (!(!this->KeyWordPairVec.empty() && (StartPos < this->KeyWordPairVec.back().first))) {
+    if (!(!this->KeyWordPairVec.empty() && (startPos < this->KeyWordPairVec.back().first))) {
         return -1;
     }
 
-    const wregex KW(KeyWord, this->Flag);
+    const wregex keywordRegex(pKeyWord, this->Flag);
 
-    for (auto& it : this->KeyWordPairVec) {
-        if ((it.first > StartPos) && regex_match(it.second.c_str(), KW))
-            return it.first;
+    for (const auto& [pos, keyword] : this->KeyWordPairVec) {
+        if ((pos > startPos) && regex_match(keyword.c_str(), keywordRegex))
+            return static_cast<int>(pos);
     }
 
     return -1;

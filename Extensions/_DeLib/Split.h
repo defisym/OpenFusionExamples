@@ -241,7 +241,7 @@ public:
     const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) const;
 
     int GetNextKeyWordPos(size_t StartPos) const;
-    int GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord) const;
+    int GetNextKeyWordPos(size_t startPos, const wchar_t* pKeyWord) const;
 
     inline size_t GetKeyWordPairVecSize() const {
         return this->KeyWordPairVec.size();
@@ -264,12 +264,12 @@ public:
         return &this->SplitStrVec;
     }
     inline const wchar_t* GetSplitVec(size_t Pos) const {
-        return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
+        return (Pos < this->SplitStrVec.size()) ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
     // the same as GetSplit(size_t Pos)
     inline const wchar_t* operator[](size_t Pos) const {
-        return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
-    };
+        return (Pos < this->SplitStrVec.size()) ? this->SplitStrVec[Pos].c_str() : nullptr;
+    }
 };
 
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
