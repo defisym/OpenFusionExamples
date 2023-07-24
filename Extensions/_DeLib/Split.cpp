@@ -358,3 +358,14 @@ int Split::GetNextKeyWordPos(size_t startPos, const wchar_t* pKeyWord) const {
 
     return -1;
 }
+
+bool Split::InsertFile(const size_t pos, const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode) {
+    Split newFile;
+    if(!newFile.LoadFile(pFilePath, pKey, bUnicode)) {
+        return false;
+    }
+
+    if(pos)
+
+    return true;
+}

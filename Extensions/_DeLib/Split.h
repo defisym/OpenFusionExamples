@@ -270,6 +270,11 @@ public:
     inline const wchar_t* operator[](size_t Pos) const {
         return (Pos < this->SplitStrVec.size()) ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
+
+    bool InsertFile(const size_t pos, const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode);
+    bool InsertFile(const size_t pos, const std::wstring& filePath, const std::wstring& key, bool bUnicode) {
+        return InsertFile(pos, filePath.c_str(), key.c_str(), bUnicode);
+    }
 };
 
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
