@@ -36,10 +36,7 @@ private:
     //Unicode
     bool Unicode = true;
 
-    //Converted str
-    wchar_t* SplitSrcStr = nullptr;
-    size_t SplitSrcStrLength = 0;
-
+    std::wstring SplitSrcStr;
     std::wstring SplitDataStr;
 
     std::wstring MatchedStr;
@@ -86,30 +83,6 @@ private:
 		SplitStrVec.reserve(size);
         SubStringVec.reserve(size);
         KeyWordPairVec.reserve(size);
-    }
-
-    //Convert
-    inline size_t GetSize(const char* Src, size_t Len, UINT CodePage = CP_UTF8) {
-	    const int Size = MultiByteToWideChar(CodePage, 0, Src, (int)Len, 0, 0);
-
-        return (size_t)((Size > 0) ? Size : -1);
-    }
-    inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen, UINT CodePage = CP_UTF8) {
-	    const int Size = MultiByteToWideChar(CodePage, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
-
-        return (Size > 0);
-    }
-
-    inline void NewSplitSrc(size_t Len) {
-        this->SplitSrcStrLength = Len + 1;
-        this->SplitSrcStr = new wchar_t[this->SplitSrcStrLength];
-        memset(this->SplitSrcStr, 0, sizeof(wchar_t) * (this->SplitSrcStrLength));
-    }
-    inline void ReleaseSplitSrcStr() {
-        if (this->SplitSrcStr != nullptr) {
-            delete[] this->SplitSrcStr;
-            this->SplitSrcStr = nullptr;
-        }
     }
 
 public:
@@ -167,12 +140,9 @@ public:
     void SetResult(const SplitResult* pSplitResult);
 
     inline const wchar_t* GetSplitData() const {
-        if (this->SplitDataStr.empty()) {
-            return this->SplitSrcStr;
-        }
-        else{
-            return this->SplitDataStr.c_str();
-        }
+        return this->SplitDataStr.empty()
+            ? this->SplitSrcStr.c_str()
+            : this->SplitDataStr.c_str();
     }
 
     //Replace string
