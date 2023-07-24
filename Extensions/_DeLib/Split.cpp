@@ -1,19 +1,11 @@
 ﻿#include "Split.h"
 
-Split::Split() {
-    this->Reserve();
-}
-
-Split::~Split() {
-    this->ResetSplit();
-}
-
 void Split::ResetSplit() {
     //reset unicode
     this->Unicode = true;
 
     //release str
-    this->ReleaseSplitSrcStr();
+    this->SplitSrcStr.clear();
     this->SplitDataStr.clear();
 
     //release vec
@@ -35,46 +27,44 @@ void Split::ResetSplit() {
     this->Flag = this->DefaultFlag;
 }
 
-bool Split::LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode) {
-    this->SetUnicode(Unicode);
-    const auto bRet = this->OpenFile(FilePath);
+bool Split::LoadFile(const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode) {
+    this->SetUnicode(bUnicode);
 
-    if(!bRet) {
+    Encryption encrypt;
+
+    if(!encrypt.OpenFile(pFilePath)) {
         return false;
     }
 
-    if (wcscmp(Key, L"") != 0) {
-        this->GenerateKey(Key);
-        this->Decrypt();
-        this->LoadData(this->GetOutputStr());
+    const char* pData = nullptr;
+
+    if (wcscmp(pKey, L"") != 0) {
+        encrypt.GenerateKey(pKey);
+        encrypt.Decrypt();
+        pData = encrypt.GetOutputStr();
     }
     else {
-        this->LoadData(this->GetInputStr());
+        pData = encrypt.GetInputStr();
     }
 
-    return true;
+    return this->LoadData(pData);
 }
-bool Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode) {
-    return LoadFile(FilePath.c_str(), Key.c_str(), Unicode);
-}
-
-void Split::LoadData() {
-    this->LoadData(this->GetInputStr(), this->GetInputStrLength());
-    this->ReleaseInputStr();
+bool Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool bUnicode) {
+    return LoadFile(FilePath.c_str(), Key.c_str(), bUnicode);
 }
 
-void Split::LoadData(const char* Src) {
-    this->LoadData(Src, strlen(Src));
+bool Split::LoadData(const std::string& Src) {
+    return this->LoadData(Src.c_str(), Src.length());
 }
-
-void Split::LoadData(const char* Src, size_t Len) {
+bool Split::LoadData(const char* Src) {
+    return this->LoadData(Src, strlen(Src));
+}
+bool Split::LoadData(const char* Src, size_t Len) {
     if (Src == nullptr) {
-        return;
+        return false;
     }
 
-    this->ReleaseSplitSrcStr();
-
-    //BOM
+	//BOM
     if ((Len >= 3) && (memcmp(Src, UTF8_SIGNATURE, 3) == 0)) {
         Src += 3;
         Len -= 3;
@@ -82,44 +72,47 @@ void Split::LoadData(const char* Src, size_t Len) {
     }
 
     if (Len == 0) {
-        return;
+        return false;
     }
 
     const UINT CodePage = this->Unicode ? CP_UTF8 : CP_ACP;
+    const int OutputLenth = MultiByteToWideChar(CodePage, 0, 
+        Src, static_cast<int>(Len),
+        nullptr, 0);
 
-    const size_t OutputLenth = this->GetSize(Src, Len, CodePage);
-    if (OutputLenth == (size_t)(-1)) {
-        return;
+    if (OutputLenth == 0) {
+        return false;
     }
 
-    NewSplitSrc(OutputLenth);
-
-    if (!this->Convert(Src, Len, this->SplitSrcStr, OutputLenth, CodePage)) {
-        return;
+    this->SplitSrcStr = std::wstring(OutputLenth, 0);
+    if (!MultiByteToWideChar(CodePage, 0, 
+        Src, static_cast<int>(Len),
+        this->SplitSrcStr.data(), OutputLenth)) {
+        return false;
     }
 	
-    this->Reserve(this->SplitSrcStrLength / RESERVE_MAGNUM);
+    this->Reserve(this->SplitSrcStr.length() / RESERVE_MAGNUM);
+
+    return true;
 }
 
-void Split::LoadData(const std::wstring& Src) {
-    this->LoadData(Src.c_str(), Src.length());
+bool Split::LoadData(const std::wstring& Src) {
+    return this->LoadData(Src.c_str(), Src.length());
 }
-
-void Split::LoadData(const wchar_t* Src) {
-    this->LoadData(Src, wcslen(Src));
+bool Split::LoadData(const wchar_t* Src) {
+    return this->LoadData(Src, wcslen(Src));
 }
+bool Split::LoadData(const wchar_t* Src, size_t Len) {
+    this->SplitSrcStr = std::wstring(Src, Len);
 
-void Split::LoadData(const wchar_t* Src, size_t Len) {
-    this->ReleaseSplitSrcStr();
-    NewSplitSrc(Len);
-    memcpy(this->SplitSrcStr, Src, sizeof(wchar_t) * Len);
+    return true;
 }
 
 void Split::ResetRegexFlag() {
     this->Flag = this->DefaultFlag;
 }
 
-void Split::SetRegexFlag(RegexFlag Flag) {
+void Split::SetRegexFlag(const RegexFlag Flag) {
     this->Flag = Flag;
 }
 void Split::SetCaseInsensitive(bool Enable) {
@@ -150,13 +143,17 @@ void Split::InitIndent(const wchar_t* Indent) {
     this->RemoveIndent = true;
 }
 
-void Split::InitKeyWord(const wchar_t* KeyWord) {
-    this->KeyWordReg.assign(KeyWord, this->Flag);
-    this->KeyWordRegStr = KeyWord;
+void Split::InitKeyWord(const wchar_t* pKeyWord) {
+    this->KeyWordReg.assign(pKeyWord, this->Flag);
+    this->KeyWordRegStr = pKeyWord;
     this->KeyWord = true;
 }
 
-void Split::InitRegex(const wchar_t* Split, const wchar_t* EnptyLine, const wchar_t* Comment, const wchar_t* Indent, const wchar_t* KeyWord) {
+void Split::InitRegex(const wchar_t* Split,
+    const wchar_t* EnptyLine,
+    const wchar_t* Comment,
+    const wchar_t* Indent,
+    const wchar_t* pKeyWord) {
     if (wcslen(Split) != 0) {
         this->InitSplit(Split);
     }
@@ -169,8 +166,8 @@ void Split::InitRegex(const wchar_t* Split, const wchar_t* EnptyLine, const wcha
     if (wcslen(Indent) != 0) {
         this->InitIndent(Indent);
     }
-    if (wcslen(KeyWord) != 0) {
-        this->InitKeyWord(KeyWord);
+    if (wcslen(pKeyWord) != 0) {
+        this->InitKeyWord(pKeyWord);
     }
 }
 
@@ -181,12 +178,8 @@ void Split::SplitData() {
 
     //remove comment
     this->SplitDataStr = this->RemoveCommnet 
-        ? regex_replace(std::wstring(this->SplitSrcStr), this->CommentReg, L"") 
+        ? regex_replace(this->SplitSrcStr, this->CommentReg, L"") 
         : this->SplitSrcStr;
-    
-    //merge multiple
-    //wregex Merge(regex_replace(L"(REPLACE){2,}", wregex(L"REPLACE"), this->LineRegStr));
-    //this->SplitScrStrNoComment = regex_replace(this->SplitScrStrNoComment, Merge, this->LineRegStr);
 
     //iterate lines	
     if (!this->bLineReg) {
@@ -194,13 +187,9 @@ void Split::SplitData() {
     }
 
     wsregex_token_iterator pos(this->SplitDataStr.begin(), this->SplitDataStr.end(), this->LineReg, -1);
-    const wsregex_token_iterator end;
 
-    std::wstring result;
-
-    for (; pos != end; ++pos) {
+    for (const wsregex_token_iterator end; pos != end; ++pos) {
         //current str
-        //std::wstring Tmp = pos->str();
         std::wstring Tmp = pos->str();
 		
         //remove empty line
@@ -211,19 +200,11 @@ void Split::SplitData() {
         //remove indent
         this->SplitStrVec.emplace_back(this->RemoveIndent ? regex_replace(Tmp, this->IndentReg, L"") : Tmp);
 
-        //generate result
-        //result.append(this->SplitStrVec.back());
-        //result.append(this->LineRegStr);
-
-        //update keyword
+    	//update keyword
         if (this->KeyWord && regex_match(this->SplitStrVec.back(), this->KeyWordReg)) {
             this->KeyWordPairVec.emplace_back(this->SplitStrVec.size() - 1, this->SplitStrVec.back());
         }
-    }
-
-    //this->SplitDataStr = result.substr(0, result.length() - this->LineRegStr.length());
-
-    return;
+    }    
 }
 
 size_t Split::GetHash() const {
@@ -278,30 +259,39 @@ int Split::GetSubStringPos(const wchar_t* Src, const wchar_t* SubStr, size_t Sub
 int Split::GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_t Sub, bool SaveAll) {
     this->MatchedStr.clear();
 
+    const auto bSaveFirst = Sub == static_cast<size_t>(-1);
+
     const wregex SubString(SubStr, this->Flag);
-    wsmatch MatchedStr;
+    wsmatch matches;
 
     std::wstring::const_iterator StrBegin = Src.begin();
     const std::wstring::const_iterator StrEnd = Src.end();
 
     size_t CurPos = 0;
     size_t PrePos = 0;
-    for (size_t i = 0; regex_search(StrBegin, StrEnd, MatchedStr, SubString) && (i <= Sub); i++, PrePos = Src.length() - MatchedStr.suffix().length(), StrBegin = MatchedStr[0].second) {
-        CurPos = PrePos + MatchedStr.position((size_t)0);
+    for (size_t i = 0; 
+        regex_search(StrBegin, StrEnd, matches, SubString) && (i <= Sub);
+        i++, 
+        PrePos = Src.length() - matches.suffix().length(), 
+        StrBegin = matches[0].second) {
+        CurPos = PrePos + matches.position(0u);
 
         if (SaveAll) {
-            this->SubStringVec.emplace_back(MatchedStr[0]);
+            this->SubStringVec.emplace_back(matches[0]);
         }
-        if (Sub == -1) {
-            this->MatchedStr = MatchedStr[0];
+        if (bSaveFirst) {
+            this->MatchedStr = matches[0];
         }
         if (i == Sub) {
-            this->MatchedStr = MatchedStr[0];
-            return CurPos;
+            this->MatchedStr = matches[0];
+
+            return static_cast<int>(CurPos);
         }
     }
 
-    return Sub == -1 ? CurPos : -1;
+    return bSaveFirst
+        ? static_cast<int>(CurPos)
+        : -1;
 }
 
 void Split::GetAllSubString(const wchar_t* SubStr) {
@@ -322,13 +312,13 @@ const wchar_t* Split::GetNextKeyWord(size_t StartPos) const {
     return this->GetNextKeyWord(StartPos, ALL);
 }
 
-const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) const {
+const wchar_t* Split::GetNextKeyWord(size_t StartPos, const wchar_t* pKeyWord) const {
     //valid current pos    
     if (!(!this->KeyWordPairVec.empty() && (StartPos < this->KeyWordPairVec.back().first))) {
         return nullptr;
     }
 
-    const wregex KW(KeyWord, this->Flag);
+    const wregex KW(pKeyWord, this->Flag);
 
     for (auto& it : this->KeyWordPairVec) {
         if ((it.first > StartPos) && regex_match(it.second.c_str(), KW))

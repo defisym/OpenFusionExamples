@@ -29,17 +29,11 @@ struct SplitResult {
     std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
 };
 
-class Split :
-    public Encryption
-{
-private:
-    //Unicode
+class Split {
+	//Unicode
     bool Unicode = true;
 
-    //Converted str
-    wchar_t* SplitSrcStr = nullptr;
-    size_t SplitSrcStrLength = 0;
-
+    std::wstring SplitSrcStr;
     std::wstring SplitDataStr;
 
     std::wstring MatchedStr;
@@ -88,54 +82,30 @@ private:
         KeyWordPairVec.reserve(size);
     }
 
-    //Convert
-    inline size_t GetSize(const char* Src, size_t Len, UINT CodePage = CP_UTF8) {
-	    const int Size = MultiByteToWideChar(CodePage, 0, Src, (int)Len, 0, 0);
-
-        return (size_t)((Size > 0) ? Size : -1);
-    }
-    inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen, UINT CodePage = CP_UTF8) {
-	    const int Size = MultiByteToWideChar(CodePage, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
-
-        return (Size > 0);
-    }
-
-    inline void NewSplitSrc(size_t Len) {
-        this->SplitSrcStrLength = Len + 1;
-        this->SplitSrcStr = new wchar_t[this->SplitSrcStrLength];
-        memset(this->SplitSrcStr, 0, sizeof(wchar_t) * (this->SplitSrcStrLength));
-    }
-    inline void ReleaseSplitSrcStr() {
-        if (this->SplitSrcStr != nullptr) {
-            delete[] this->SplitSrcStr;
-            this->SplitSrcStr = nullptr;
-        }
-    }
-
 public:
-    Split();
-    ~Split();
-
+    Split() = default;
+    ~Split() = default;
+    Split(const Split& obj) = default;
+    Split& operator= (const Split& obj) = default;
+    
     void ResetSplit();
     
-    inline void SetUnicode(bool Unicode) {
-        this->Unicode = Unicode;
-    }
+    inline void SetUnicode(bool bUnicode) { this->Unicode = bUnicode; }
 
     //load file and decrypt it
-    bool LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode = true);
-    bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode = true);
+    bool LoadFile(const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode = true);
+    bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool bUnicode = true);
 
-    //load data loaded by parent class
-    void LoadData();
+    //load data from string
+    bool LoadData(const std::string& Src);
     //load data from byte str (convert to wchar)
-    void LoadData(const char* Src);
-    void LoadData(const char* Src, size_t Len);
+	bool LoadData(const char* Src);
+    bool LoadData(const char* Src, size_t Len);     //Actual loading function
     //load data from wstring
-    void LoadData(const std::wstring& Src);
+    bool LoadData(const std::wstring& Src);
     //load data from wchar
-    void LoadData(const wchar_t* Src);
-    void LoadData(const wchar_t* Src, size_t Len);
+    bool LoadData(const wchar_t* Src);
+    bool LoadData(const wchar_t* Src, size_t Len);  //Actual loading function
 
     inline void InitRegexFlag() {
         this->DefaultFlag = DEFAULE_REGEXFLAG;
@@ -148,31 +118,30 @@ public:
 
     void SetCaseInsensitive(bool Enable);
 
-    inline RegexFlag GetRegexFlag() const {
-        return this->Flag;
-    }
+    inline RegexFlag GetRegexFlag() const { return this->Flag; }
 
     void InitSplit(const wchar_t* Split);
     void InitEmptyLine(const wchar_t* EmptyLine);
     void InitComment(const wchar_t* Comment);
     void InitIndent(const wchar_t* Indent);
-    void InitKeyWord(const wchar_t* KeyWord);
+    void InitKeyWord(const wchar_t* pKeyWord);
 
-    void InitRegex(const wchar_t* Split, const wchar_t* EnptyLine, const wchar_t* Comment, const wchar_t* Indent, const wchar_t* KeyWord);
+    void InitRegex(const wchar_t* Split,
+        const wchar_t* EnptyLine,
+        const wchar_t* Comment, 
+        const wchar_t* Indent,
+        const wchar_t* pKeyWord);
 
     void SplitData();
 
-    size_t GetHash() const;
+    [[nodiscard]] size_t GetHash() const;
     void GetResult(SplitResult* pSplitResult) const;
     void SetResult(const SplitResult* pSplitResult);
 
     inline const wchar_t* GetSplitData() const {
-        if (this->SplitDataStr.empty()) {
-            return this->SplitSrcStr;
-        }
-        else{
-            return this->SplitDataStr.c_str();
-        }
+        return this->SplitDataStr.empty()
+            ? this->SplitSrcStr.c_str()
+            : this->SplitDataStr.c_str();
     }
 
     //Replace string
@@ -218,7 +187,7 @@ public:
         return &this->SubStringVec;
     }
     inline const wchar_t* GetSubString(size_t Pos) const {
-        return (Pos < this->SubStringVec.size()) && (Pos >= 0) ? this->SubStringVec[Pos].c_str() : nullptr;
+        return Pos < this->SubStringVec.size() ? this->SubStringVec[Pos].c_str() : nullptr;
     }
 
     inline const wchar_t* GetMatchResult() const {
@@ -237,20 +206,20 @@ public:
         return this->MatchedStr.c_str();
     }
 
-    const wchar_t* GetNextKeyWord(size_t StartPos) const;
-    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord) const;
+    [[nodiscard]] const wchar_t* GetNextKeyWord(size_t StartPos) const;
+    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* pKeyWord) const;
 
-    int GetNextKeyWordPos(size_t StartPos) const;
+    [[nodiscard]] int GetNextKeyWordPos(size_t StartPos) const;
     int GetNextKeyWordPos(size_t startPos, const wchar_t* pKeyWord) const;
 
     inline size_t GetKeyWordPairVecSize() const {
         return this->KeyWordPairVec.size();
     }
     inline const wchar_t* GetKeyWord(size_t Pos) const {
-        return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
+        return Pos < this->KeyWordPairVec.size() ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
     }
     inline int GetKeyWordPos(size_t Pos) const {
-        return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? (int)this->KeyWordPairVec[Pos].first : -1;
+        return Pos < this->KeyWordPairVec.size()? static_cast<int>(this->KeyWordPairVec[Pos].first) : -1;
     }
 
     inline void SetSplitReserve(size_t Size) {
@@ -264,11 +233,11 @@ public:
         return &this->SplitStrVec;
     }
     inline const wchar_t* GetSplitVec(size_t Pos) const {
-        return (Pos < this->SplitStrVec.size()) ? this->SplitStrVec[Pos].c_str() : nullptr;
+        return Pos < this->SplitStrVec.size() ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
     // the same as GetSplit(size_t Pos)
     inline const wchar_t* operator[](size_t Pos) const {
-        return (Pos < this->SplitStrVec.size()) ? this->SplitStrVec[Pos].c_str() : nullptr;
+        return Pos < this->SplitStrVec.size() ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
 
     bool InsertFile(const size_t pos, const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode);
