@@ -349,13 +349,58 @@ int Split::GetNextKeyWordPos(size_t startPos, const wchar_t* pKeyWord) const {
     return -1;
 }
 
-bool Split::InsertFile(const size_t pos, const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode) {
-    Split newFile;
-    if(!newFile.LoadFile(pFilePath, pKey, bUnicode)) {
-        return false;
+bool Split::InsertFile(const Split& newFile,
+    size_t pos, const bool bReplace) {
+    if (pos >= this->SplitStrVec.size()) {
+        pos = this->SplitStrVec.size() - 1;
     }
 
-    if(pos)
+    // ------------
+    // insert vec
+    // ------------
+
+    const auto newVec = newFile.GetSplitVec();
+    const auto where = this->SplitStrVec.begin() + static_cast<int>(pos);
+
+    this->SplitStrVec.insert(where + 1, newVec->begin(), newVec->end());
+
+    if (bReplace && where != this->SplitStrVec.end()) {
+        this->SplitStrVec.erase(where);
+    }
+
+    // ------------
+    // insert keyword
+    // ------------
+
+    // copy
+    auto newKeywordVec = *newFile.GetKeyWordVec();
+
+    // offset old
+    auto prevIt = KeyWordPairVec.begin();
+    bool bFirst = false;
+
+    for (auto it = KeyWordPairVec.begin(); it != KeyWordPairVec.end(); ++it) {
+        if (it->first > pos) {
+            it->first += newVec->size() - 1;
+
+            if (!bFirst && prevIt == KeyWordPairVec.begin()) {
+                if (it == KeyWordPairVec.begin()) {
+                    bFirst = true;
+
+                    continue;
+                }
+
+                prevIt = it - 1;
+            }
+        }
+    }
+
+    // insert new
+    for(auto& newKeywordPos : newKeywordVec | std::views::keys) {
+        newKeywordPos += pos;
+    }
+
+    KeyWordPairVec.insert(prevIt + !bFirst, newKeywordVec.begin(), newKeywordVec.end());
 
     return true;
 }

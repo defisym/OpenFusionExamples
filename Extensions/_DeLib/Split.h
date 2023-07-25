@@ -1,9 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <ranges>
+
 #include "Encryption.h"
 #include "GeneralDefinition.h"
-
-#include <vector>
 
 #define UTF8_SIGNATURE     "\xEF\xBB\xBF"
 
@@ -36,12 +37,9 @@ class Split {
     std::wstring SplitSrcStr;
     std::wstring SplitDataStr;
 
-    std::wstring MatchedStr;
     std::wstring ReplacedStr;
 
-    std::vector<std::wstring> SubStringVec;
-
-    //regex flags
+	//regex flags
     RegexFlag DefaultFlag = DEFAULE_REGEXFLAG;
     RegexFlag Flag = DefaultFlag;
 
@@ -74,7 +72,14 @@ class Split {
     bool KeyWord = false;
 
     //Keyword list
-    std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
+    using KeyWordPair = std::pair<size_t, std::wstring>;
+
+    std::vector<KeyWordPair> KeyWordPairVec;
+
+    //Match
+    std::wstring MatchedStr;
+
+    std::vector<std::wstring> SubStringVec;
 
     inline void Reserve(size_t size = RESERVE_DEFAULT) {
 		SplitStrVec.reserve(size);
@@ -215,11 +220,14 @@ public:
     inline size_t GetKeyWordPairVecSize() const {
         return this->KeyWordPairVec.size();
     }
+    inline const std::vector<KeyWordPair>* GetKeyWordVec() const {
+        return &this->KeyWordPairVec;
+    }
     inline const wchar_t* GetKeyWord(size_t Pos) const {
         return Pos < this->KeyWordPairVec.size() ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
     }
     inline int GetKeyWordPos(size_t Pos) const {
-        return Pos < this->KeyWordPairVec.size()? static_cast<int>(this->KeyWordPairVec[Pos].first) : -1;
+        return Pos < this->KeyWordPairVec.size() ? static_cast<int>(this->KeyWordPairVec[Pos].first) : -1;
     }
 
     inline void SetSplitReserve(size_t Size) {
@@ -229,20 +237,30 @@ public:
     inline size_t GetSplitSize() const {
         return this->SplitStrVec.size();
     }
-    inline const std::vector<std::wstring>* GetSplit() const {
+    inline const std::vector<std::wstring>* GetSplitVec() const {
         return &this->SplitStrVec;
     }
-    inline const wchar_t* GetSplitVec(size_t Pos) const {
+    inline const wchar_t* GetSplit(size_t Pos) const {
         return Pos < this->SplitStrVec.size() ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
-    // the same as GetSplit(size_t Pos)
     inline const wchar_t* operator[](size_t Pos) const {
-        return Pos < this->SplitStrVec.size() ? this->SplitStrVec[Pos].c_str() : nullptr;
+        return GetSplit(Pos);
     }
 
-    bool InsertFile(const size_t pos, const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode);
-    bool InsertFile(const size_t pos, const std::wstring& filePath, const std::wstring& key, bool bUnicode) {
-        return InsertFile(pos, filePath.c_str(), key.c_str(), bUnicode);
+    bool InsertFile(const Split& newFile,
+        size_t pos, bool bReplace);
+	bool InsertFile(const wchar_t* pFilePath, const wchar_t* pKey, const bool bUnicode,
+        const size_t pos, const bool bReplace) {
+        Split newFile = *this;
+        if (!newFile.LoadFile(pFilePath, pKey, bUnicode)) {
+            return false;
+        }
+
+        return InsertFile(newFile, pos, bReplace);
+	}
+    bool InsertFile(const std::wstring& filePath, const std::wstring& key, const bool bUnicode, 
+        const size_t pos, const bool bReplace) {
+        return InsertFile(filePath.c_str(), key.c_str(), bUnicode, pos, bReplace);
     }
 };
 
@@ -250,5 +268,4 @@ public:
 inline std::wstring NewLineEscape(const wchar_t* Src) {
 	const wregex NewLineEscape(L"(\\\\r\\\\n)");
     return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n");
-
 }
