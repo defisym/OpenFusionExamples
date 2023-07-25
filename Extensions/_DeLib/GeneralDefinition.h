@@ -64,7 +64,7 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 // }
 
 //don't use this func if Str = nullptr, return Default_Str directly
-inline void NewStr(LPTSTR & Tar, const LPCTSTR Str) {
+inline void NewStr(LPWSTR & Tar, const LPCWSTR Str) {
 	release_arr(Tar);
 	const rsize_t total_length = wcslen(Str) + 1;
 
@@ -72,7 +72,7 @@ inline void NewStr(LPTSTR & Tar, const LPCTSTR Str) {
 	wcscpy_s(Tar, total_length, Str);
 }
 
-inline void NewStr(LPTSTR & Tar, const std::wstring & Str) {
+inline void NewStr(LPWSTR & Tar, const std::wstring & Str) {
 	NewStr(Tar, Str.c_str());
 }
 
