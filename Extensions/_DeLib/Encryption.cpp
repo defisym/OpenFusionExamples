@@ -1,9 +1,5 @@
 #include "Encryption.h"
 
-Encryption::Encryption() {
-
-}
-
 Encryption::~Encryption() {
     Release(this->InputData);
     Release(this->OutputData);
@@ -22,7 +18,7 @@ bool Encryption::OpenFile(const wchar_t* FileName) {
         });
 }
 
-bool Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) {
+bool Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) const {
     PBYTE Output = SaveSrc ? this->InputData : this->OutputData;
     DWORD Length = SaveSrc ? this->InputLength : this->OutputLength;
 
@@ -54,7 +50,7 @@ void Encryption::SetEncryptData(const T* pBuf, DWORD sz) {
     return;
 }
 
-void Encryption::SetEncryptStr(std::string& Str) {
+void Encryption::SetEncryptStr(const std::string& Str) {
     SetEncryptData(Str.c_str(), (DWORD)Str.length());
 }
 
@@ -62,7 +58,7 @@ void Encryption::SetEncryptStr(const char* Str, DWORD StrLength) {
     SetEncryptData(Str, StrLength);
 }
 
-void Encryption::SetEncryptStr(std::wstring& Str) {
+void Encryption::SetEncryptStr(const std::wstring& Str) {
     SetEncryptData(Str.c_str(), (DWORD)Str.length());
 }
 
@@ -74,7 +70,7 @@ char* Encryption::GetInputStr() {
     return GetStr(this->InputStr, this->InputData, this->InputLength);
 }
 
-DWORD Encryption::GetInputStrLength() {
+DWORD Encryption::GetInputStrLength() const {
     return this->InputLength + 1;
 }
 
@@ -92,7 +88,7 @@ char* Encryption::GetOutputStr() {
     return GetStr(this->OutputStr, this->OutputData, this->OutputLength);
 }
 
-DWORD Encryption::GetOutputStrLength() {
+DWORD Encryption::GetOutputStrLength() const {
     return this->OutputLength + 1;
 }
 
