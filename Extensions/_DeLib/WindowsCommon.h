@@ -435,7 +435,7 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 	const auto deli = pFileName[1];
 	const auto slash = pFileName[2];
 
-	const auto bMatch = (disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z')
+	const auto bMatch = ((disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z'))
 		&& deli == L':'
 		&& slash == L'\\';
 
