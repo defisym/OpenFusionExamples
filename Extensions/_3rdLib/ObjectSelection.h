@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <vector>
+#include <map>
 
 #include "ccxhdr.h"
 

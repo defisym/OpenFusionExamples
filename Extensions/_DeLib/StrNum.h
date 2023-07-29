@@ -6,6 +6,8 @@
 #include <cmath>
 #include <format>
 
+#include "GeneralDefinition.h"
+
 enum class StrType {
 	NotNum,
 	IsNum,
