@@ -634,8 +634,19 @@ public:
 	inline bool OILHasObject(const LPCWSTR pObjName) const {
 		bool bHas = false;
 
-		IterateOiL([&](const LPOIL pOil) {
-			if (StrEqu(pObjName, pOil->oilName)) {
+		IterateOiL([&] (const LPOIL pOil) {
+			// oilName may start with empty char
+			const auto pCurName = [&] () {
+				auto pOilName = pOil->oilName;
+
+				while (pOilName[0] == 65535) {
+					pOilName++;
+				}
+
+				return pOilName;
+			}();
+
+			if (StrEqu(pObjName, pCurName)) {
 				bHas = true;
 			}
 			});
