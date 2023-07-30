@@ -15,23 +15,15 @@
 // Identifiers of items displayed in the debugger
 enum
 {
-// Example
-// -------
-//	DB_CURRENTSTRING,
-//	DB_CURRENTVALUE,
-//	DB_CURRENTCHECK,
-//	DB_CURRENTCOMBO
+	DB_DisplayString,
+	DB_FilteredString,
 };
 
 // Items displayed in the debugger
 WORD DebugTree[]=
 {
-// Example
-// -------
-//	DB_CURRENTSTRING|DB_EDITABLE,
-//	DB_CURRENTVALUE|DB_EDITABLE,
-//	DB_CURRENTCHECK,
-//	DB_CURRENTCOMBO,
+	DB_DisplayString,
+	DB_FilteredString,
 
 	// End of table (required)
 	DB_END
@@ -608,35 +600,26 @@ LPWORD WINAPI DLLExport GetDebugTree(LPRDATA rdPtr)
 void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 {
 #if !defined(RUN_ONLY)
+	auto getString = [] (LPCWSTR pStr) {
+		return pStr ? pStr : L"No String";
+	};
 
-	// Example
-	// -------
-/*
-	char temp[DB_BUFFERSIZE];
-
-	switch (id)
+	switch (id) {
+	case DB_DisplayString:
 	{
-	case DB_CURRENTSTRING:
-		LoadString(hInstLib, IDS_CURRENTSTRING, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->text);
-		break;
-	case DB_CURRENTVALUE:
-		LoadString(hInstLib, IDS_CURRENTVALUE, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->value);
-		break;
-	case DB_CURRENTCHECK:
-		LoadString(hInstLib, IDS_CURRENTCHECK, temp, DB_BUFFERSIZE);
-		if (rdPtr->check)
-			wsprintf(pBuffer, temp, _T("TRUE"));
-		else
-			wsprintf(pBuffer, temp, _T("FALSE"));
-		break;
-	case DB_CURRENTCOMBO:
-		LoadString(hInstLib, IDS_CURRENTCOMBO, temp, DB_BUFFERSIZE);
-		wsprintf(pBuffer, temp, rdPtr->combo);
+		const auto result = std::format(L"Display String: {}", getString(rdPtr->pNeoStr->GetRawText()));
+		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
+
 		break;
 	}
-*/
+	case DB_FilteredString:
+	{
+		const auto result = std::format(L"Filtered String: {}", getString(rdPtr->pNeoStr->GetText()));
+		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
+
+		break;
+	}
+	}
 
 #endif // !defined(RUN_ONLY)
 }
