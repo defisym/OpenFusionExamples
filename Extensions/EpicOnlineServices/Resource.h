@@ -19,11 +19,41 @@
 
 // 	Properties
 //-------------------
-#define	IDS_PROP_TEXTTITLE				200
+#define IDS_PROP_InitializeOptions_TEXTTITLE                    200
+#define IDS_PROP_InitializeOptions_AppName_TEXT                 201
+#define IDS_PROP_InitializeOptions_AppName_TEXT_INFO            202
+#define IDS_PROP_InitializeOptions_AppVersion_TEXT              203
+#define IDS_PROP_InitializeOptions_AppVersion_TEXT_INFO         204
+
+#define IDS_PROP_PlatformOptions_TEXTTITLE                      205
+#define IDS_PROP_PlatformOptions_ProductId_TEXT                 206
+#define IDS_PROP_PlatformOptions_ProductId_TEXT_INFO            207
+#define IDS_PROP_PlatformOptions_SandboxId_TEXT                 208
+#define IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            209
+#define IDS_PROP_PlatformOptions_DeploymentId_TEXT              210
+#define IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         211
+
+#define IDS_PROP_PlatformOptions_ClientId_TEXT                  212
+#define IDS_PROP_PlatformOptions_ClientId_TEXT_INFO             213
+#define IDS_PROP_PlatformOptions_ClientSecret_TEXT              214
+#define IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO         215
+
+#define IDS_PROP_RuntimeOptions_TEXTTITLE                       216
+#define IDS_PROP_RuntimeOptions_AuthType_COMBO                  217
+#define IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO             218
+
+#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           219
+#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      220
+#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          221
+#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     222
+
+#define IDS_AuthType_ExchangeCode                               300
+#define IDS_AuthType_PersistentAuth                             301
+#define IDS_AuthType_AccountPortal                              302
 
 // 	Debug tree
 //-------------------
-#define	IDS_SEPARATOR   				300
+#define	IDS_SEPARATOR   				400
 
 // 	Actions
 //-------------------
@@ -32,14 +62,13 @@
 #define MN_ACTIONS				20000
 
 // Commands of action menu
-#define IDMN_ACTION	       		25000
+#define IDMN_ACTION_ACH_UL	       		25000
 
 // Action strings
-#define M_ACTION                 5000
+#define M_ACTION_ACH_UL                 5000
 
 // Titles of action parameters
-#define M_ACT_P1				 5501
-#define M_ACT_P2				 5502
+#define M_ACH_NAME				 5501
 
 
 //	Conditions
@@ -49,10 +78,10 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION			26000
+#define IDMN_CONDITION_ONLOGIN			26000
 
 // Condition strings
-#define M_CONDITION				 6000
+#define M_CONDITION_ONLOGIN				 6000
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -66,12 +95,12 @@
 #define MN_EXPRESSIONS			20002
 
 // Commands of expressions menu
-#define IDMN_EXPRESSION			27000
+#define IDMN_EXPRESSION_LOGINSUCCESS			27000
 #define IDMN_EXPRESSION2		27001
 #define IDMN_EXPRESSION3		27002
 
 // Expression strings
-#define M_EXPRESSION			 7000
+#define M_EXPRESSION_LOGINSUCCESS			 7000
 #define M_EXPRESSION2			 7001
 #define M_EXPRESSION3			 7002
 

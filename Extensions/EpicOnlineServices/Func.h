@@ -5,10 +5,6 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	productName = ConvertWStrToStr(edPtr->pAppName);
 	productVersion = ConvertWStrToStr(edPtr->pAppVersion);
 
-	//TODO remove
-	productName = "EOS";
-	productVersion = "1.0";
-
 	EOS_InitializeOptions initOpt{};
 	initOpt.ApiVersion = EOS_INITIALIZE_API_LATEST;
 
@@ -23,14 +19,6 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	clientId = ConvertWStrToStr(edPtr->pClientId);
 	clientSecret = ConvertWStrToStr(edPtr->pClientSecret);
 
-	//TODO remove
-	productId = "c35399f648ae47a0b5bf42c0320ddb38";
-	sandboxId = "59058ad1e73841bf8958085905ed722a";
-	deploymentId = "2a67b9cd4bfe46a189e2ab7f727ad7c6";
-
-	clientId = "xyza7891XI9damdLcASUFRDAUrsYMCrg";
-	clientSecret = "Lf5I2BKkMLBGgC+iwDIwjd0gIbLRAOrx/2FSmc30ejQ";
-
 	EOS_Platform_Options platOpt{};
 	platOpt.ApiVersion = EOS_INITIALIZE_API_LATEST;
 
@@ -41,7 +29,13 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	platOpt.ClientCredentials.ClientId = clientId.c_str();
 	platOpt.ClientCredentials.ClientSecret = clientSecret.c_str();
 
-	pEOSUtilities = new EOSUtilities(initOpt, platOpt);
+	// runtime
+	EOSUtilities_RuntimeOptions runtimeOpt{};
+	runtimeOpt.authCredentialsType = AuthTypeComboListEnumToLoginCredentialType(edPtr->authType);
+	runtimeOpt.bRequireLauncher = edPtr->bRequireLauncher;
+	runtimeOpt.bRequireBootstrap = edPtr->bRequireBootstrap;
 
-	return pEOSUtilities->State();
+	pEOSUtilities = new EOSUtilities(runtimeOpt, initOpt, platOpt);
+
+	return pEOSUtilities->State() == EOSState::Init;
 }

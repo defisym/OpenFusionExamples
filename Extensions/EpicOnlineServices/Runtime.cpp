@@ -72,12 +72,15 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pRet = new std::wstring;
 
+	rdPtr->bLoginSuccess = false;
+
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		rdPtr->pData->EOSInit(edPtr);
-		//rdPtr->pData->pEOSUtilities->Auth();
-		//rdPtr->pData->pEOSUtilities->Connect();
-		//rdPtr->pData->pEOSUtilities->Achievement();
+		rdPtr->pData->EOSLogin([&] (bool bSuccess) {
+			rdPtr->bLoginSuccess = bSuccess;
+			CallEvent(ON_LoginComplete);
+		});
 
 		SetExtUserData(rdPtr->pData);
 	}
@@ -117,11 +120,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // Called (if you want) each loop, this routine makes the object live
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
-
-	rdPtr->pData->pEOSUtilities->Auth();
-	rdPtr->pData->pEOSUtilities->Connect();
-	//rdPtr->pData->pEOSUtilities->Achievement();
-
 	rdPtr->pData->pEOSUtilities->Update();
 
 	return 0;

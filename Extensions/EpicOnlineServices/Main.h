@@ -6,22 +6,23 @@
 // ------------------------------
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
-#define	CND_CONDITION				0
-#define	CND_LAST					1
+#define	CND_CONDITION_ONLOGIN				0
+
+#define	CND_LAST							1
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
-#define	ACT_LAST					1
+#define	ACT_ACTION_ACH_UL					0
+
+#define	ACT_LAST							1
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION				0
-#define EXP_EXPRESSION2				1
-#define EXP_EXPRESSION3				2
-#define	EXP_LAST                    3
+#define	EXP_EXPRESSION_LOGINSUCCESS			0
+
+#define	EXP_LAST                    		1
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -45,9 +46,11 @@ typedef struct tagEDATA_V1
 	short			sheight;
 #endif
 
-	wchar_t pAppName[EOS_IDSZ];
+	// InitializeOptions
+	wchar_t pAppName[2 * EOS_IDSZ];
 	wchar_t pAppVersion[EOS_IDSZ];
 
+	// PlatformOptions
 	wchar_t pProductId[EOS_IDSZ];
 	wchar_t pSandboxId[EOS_IDSZ];
 	wchar_t pDeploymentId[EOS_IDSZ];
@@ -55,8 +58,18 @@ typedef struct tagEDATA_V1
 	wchar_t pClientId[EOS_IDSZ];
 	wchar_t pClientSecret[2 * EOS_IDSZ];
 
+	// RuntimeOptions
+	AuthTypeComboListEnum authType;
+
+	bool bRequireLauncher;
+	bool bRequireBootstrap;
+
+	// aligning
+	bool bUnused_1;
+	bool bUnused_2;
+
 	// buffer
-	int buffer[52];
+	int buffer[50];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -97,6 +110,8 @@ typedef struct tagRDATA
 	GlobalData* pData;
 
 	std::wstring* pRet;
+
+	bool bLoginSuccess;
 	
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

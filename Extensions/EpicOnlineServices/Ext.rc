@@ -116,7 +116,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        MENUITEM "On Login", IDMN_CONDITION_ONLOGIN
         MENUITEM SEPARATOR
     END
 END
@@ -132,7 +132,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Action example",              IDMN_ACTION
+        MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
         MENUITEM SEPARATOR
     END
 END
@@ -148,9 +148,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        MENUITEM "Login Success", IDMN_EXPRESSION_LOGINSUCCESS
         MENUITEM SEPARATOR
     END
 END
@@ -233,7 +231,36 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROP_TEXTTITLE        "Settings"
+    IDS_PROP_InitializeOptions_TEXTTITLE                    "InitializeOptions"
+    IDS_PROP_InitializeOptions_AppName_TEXT                 "AppName"
+    IDS_PROP_InitializeOptions_AppName_TEXT_INFO            "The name of the product using the SDK. The name string must not be empty and supports a maximum of 64 characters in length."
+    IDS_PROP_InitializeOptions_AppVersion_TEXT              "AppVersion"
+    IDS_PROP_InitializeOptions_AppVersion_TEXT_INFO         "The product version of the application using the SDK"
+    
+    IDS_PROP_PlatformOptions_TEXTTITLE                      "PlatformOptions"
+    IDS_PROP_PlatformOptions_ProductId_TEXT                 "ProductId"
+    IDS_PROP_PlatformOptions_ProductId_TEXT_INFO            "The Product ID of the game, provided by Epic Games"
+    IDS_PROP_PlatformOptions_SandboxId_TEXT                 "SandboxId"
+    IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            "The Sandbox ID of the game, provided by Epic Games"
+    IDS_PROP_PlatformOptions_DeploymentId_TEXT              "DeploymentId"
+    IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         "The Deployment ID of the game, provided by Epic Games"
+    
+    IDS_PROP_PlatformOptions_ClientId_TEXT                  "ClientId"
+    IDS_PROP_PlatformOptions_ClientId_TEXT_INFO             "Client ID of the service permissions entry."
+    IDS_PROP_PlatformOptions_ClientSecret_TEXT              "ClientSecret"
+    IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO         "Client secret for accessing the set of permissions"
+    
+    IDS_PROP_RuntimeOptions_TEXTTITLE                       "RuntimeOptions"
+    IDS_PROP_RuntimeOptions_AuthType_COMBO                  "AuthType"
+    IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO             "The type of credential that this login attempt is using."
+    IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           "RequireLauncher"
+    IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      "Check whether the app was launched through the Launcher. If it wasn't, it will restart the app through the Launcher"
+    IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          "RequireBootstrap"
+    IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     "Continue even if app is not started through the EOS boot strapper application"
+    
+    IDS_AuthType_ExchangeCode                               "ExchangeCode"
+    IDS_AuthType_PersistentAuth                             "PersistentAuth"
+    IDS_AuthType_AccountPortal                              "AccountPortal "
 END
 
 STRINGTABLE DISCARDABLE 
@@ -243,26 +270,18 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_ACH_UL         "Unlock Achievement %0"
+    M_ACH_NAME              "Achievement Name"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+    M_CONDITION_ONLOGIN     "On Login"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_LOGINSUCCESS            "LoginSuccess ("
 END
 
 #endif    // English (U.S.) resources

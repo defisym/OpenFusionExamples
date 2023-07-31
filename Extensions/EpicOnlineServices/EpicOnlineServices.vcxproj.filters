@@ -142,6 +142,15 @@
     <ClInclude Include="EOSInclude.h">
       <Filter>EpicOnlineServices</Filter>
     </ClInclude>
+    <ClInclude Include="EOSCommandLine.h">
+      <Filter>EpicOnlineServices</Filter>
+    </ClInclude>
+    <ClInclude Include="EOSBase.h">
+      <Filter>EpicOnlineServices</Filter>
+    </ClInclude>
+    <ClInclude Include="EOSAchievement.h">
+      <Filter>EpicOnlineServices</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
