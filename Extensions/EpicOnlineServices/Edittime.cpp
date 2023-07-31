@@ -40,6 +40,7 @@ enum {
 LPCWSTR AuthTypeComboList[] = {
 	0,	// reserved
 
+	MAKEINTRESOURCE(IDS_AuthType_Developer),
 	MAKEINTRESOURCE(IDS_AuthType_ExchangeCode),	
 	MAKEINTRESOURCE(IDS_AuthType_PersistentAuth),	
 	MAKEINTRESOURCE(IDS_AuthType_AccountPortal),	

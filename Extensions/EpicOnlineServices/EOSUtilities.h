@@ -4,27 +4,25 @@
 
 #include "EOSCommandLine.h"
 
-// define this macro to debug with DevAuthTool
+// To debug with DevAuthTool
 // disable VPN to avoid 502 error
 // portal: 6547
 // name: EOS
-
-#define DEVLOGIN
 
 enum class EOSState {
 	Invalid = -1,
 
 	TryInit,
 	InitFailed,
-	Init,
+	InitSuccess,
 
 	TryAuth,
 	AuthFailed,
-	Auth,
+	AuthSuccess,
 
 	TryConnect,
 	ConnectFailed,
-	Connect,
+	ConnectSuccess,
 };
 
 struct EOSUtilities_RuntimeOptions {
@@ -110,7 +108,7 @@ public:
 			}
 		}
 
-		state = EOSState::Init;
+		state = EOSState::InitSuccess;
 
 #ifdef _DEBUG
 		const auto setLogCallbackResult = EOS_Logging_SetCallback([] (const EOS_LogMessage* Message) {
@@ -155,7 +153,7 @@ public:
 	inline auto State() const { return state; }
 	
 	inline void Auth(const CallbackType& cb = DefaultCb) {
-		if (state != EOSState::Init) {
+		if (state != EOSState::InitSuccess) {
 			return;
 		}
 
@@ -169,14 +167,17 @@ public:
 		EOS_Auth_Credentials authCredentials{};
 		authCredentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
 
-#ifdef DEVLOGIN
-		//EOS_LCT_Developer - ID is the host (e.g. localhost:6547), and Token is the credential name registered in the EOS Developer Authentication Tool.
-		authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_Developer;
-		authCredentials.Id = "localhost:6547";
-		authCredentials.Token = "EOS";
-#else
 		switch (runtimeOpt.authCredentialsType) {  // NOLINT(clang-diagnostic-switch-enum)
-			//EOS_LCT_ExchangeCode - Token is the exchange code.
+		//EOS_LCT_Developer - ID is the host (e.g. localhost:6547), and Token is the credential name registered in the EOS Developer Authentication Tool.
+		case EOS_ELoginCredentialType::EOS_LCT_Developer:
+		{
+			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_Developer;
+			authCredentials.Id = "localhost:6547";
+			authCredentials.Token = "EOS";
+
+			break;
+		}
+		//EOS_LCT_ExchangeCode - Token is the exchange code.
 		case EOS_ELoginCredentialType::EOS_LCT_ExchangeCode:
 		{
 			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
@@ -195,6 +196,7 @@ public:
 		case EOS_ELoginCredentialType::EOS_LCT_PersistentAuth:
 		{
 			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_PersistentAuth;
+
 			break;
 		}
 		//EOS_LCT_AccountPortal - SystemAuthCredentialsOptions may be required if targeting mobile platforms.Otherwise N / A.
@@ -233,7 +235,6 @@ public:
 
 			return;
 		}
-#endif
 
 		EOS_Auth_LoginOptions LoginOptions{};
 		LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
@@ -291,13 +292,13 @@ public:
 					return;
 				}
 
-				pEU->state = EOSState::Auth;
+				pEU->state = EOSState::AuthSuccess;
 				pEU->authCb(pEU);
 		});
 	}
 
 	inline void Connect(const CallbackType& cb = DefaultCb) {
-		if (state != EOSState::Auth) {
+		if (state != EOSState::AuthSuccess) {
 			return;
 		}
 
@@ -329,10 +330,12 @@ public:
 
 			if (EOSOK(Data->ResultCode)) {
 				pEU->productUserId = Data->LocalUserId;
-				pEU->state = EOSState::Connect;
+				pEU->state = EOSState::ConnectSuccess;
 				pEU->connectCb(pEU);
+
+				return;
 			}
-			else if (Data->ResultCode == EOS_EResult::EOS_InvalidUser) {
+			if (Data->ResultCode == EOS_EResult::EOS_InvalidUser) {
 				const auto connectHandle = EOS_Platform_GetConnectInterface(pEU->platformHandle);
 
 				EOS_Connect_CreateUserOptions createUserOptions = {};
@@ -355,18 +358,21 @@ public:
 						}
 
 						pEU->productUserId = Data->LocalUserId;
-						pEU->state = EOSState::Connect;
+						pEU->state = EOSState::ConnectSuccess;
 						pEU->connectCb(pEU);
 					});
+
+				return;
 			}
 
+			// failed
 			pEU->state = EOSState::ConnectFailed;
 			pEU->connectCb(pEU);
 		});
 	}
 
 	inline void QueryAchievementDefinitions(const CallbackType& cb = DefaultCb) {
-		if (state != EOSState::Connect) {
+		if (state != EOSState::ConnectSuccess) {
 			return;
 		}
 
@@ -420,7 +426,7 @@ public:
 	}
 
 	inline void UnlockAchievements(const std::vector<std::string>& toUnlock, const CallbackType& cb = DefaultCb) {
-		if (state != EOSState::Connect) {
+		if (state != EOSState::ConnectSuccess) {
 			return;
 		}
 

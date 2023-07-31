@@ -258,9 +258,10 @@ BEGIN
     IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          "RequireBootstrap"
     IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     "Continue even if app is not started through the EOS boot strapper application"
     
+    IDS_AuthType_Developer                                  "Developer"
     IDS_AuthType_ExchangeCode                               "ExchangeCode"
     IDS_AuthType_PersistentAuth                             "PersistentAuth"
-    IDS_AuthType_AccountPortal                              "AccountPortal "
+    IDS_AuthType_AccountPortal                              "AccountPortal"
 END
 
 STRINGTABLE DISCARDABLE 

@@ -37,5 +37,5 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 
 	pEOSUtilities = new EOSUtilities(runtimeOpt, initOpt, platOpt);
 
-	return pEOSUtilities->State() == EOSState::Init;
+	return pEOSUtilities->State() == EOSState::InitSuccess;
 }

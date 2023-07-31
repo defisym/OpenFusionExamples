@@ -47,9 +47,10 @@
 #define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          221
 #define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     222
 
-#define IDS_AuthType_ExchangeCode                               300
-#define IDS_AuthType_PersistentAuth                             301
-#define IDS_AuthType_AccountPortal                              302
+#define IDS_AuthType_Developer                                  300
+#define IDS_AuthType_ExchangeCode                               301
+#define IDS_AuthType_PersistentAuth                             302
+#define IDS_AuthType_AccountPortal                              303
 
 // 	Debug tree
 //-------------------

@@ -9,6 +9,7 @@ constexpr auto ON_LoginComplete = 0;
 constexpr auto EOS_IDSZ = 36;
 
 enum class AuthTypeComboListEnum {
+	Developer,
 	ExchangeCode,
 	PersistentAuth,
 	AccountPortal,
@@ -16,12 +17,14 @@ enum class AuthTypeComboListEnum {
 
 inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum combo) {
 	switch (combo) {
-		case AuthTypeComboListEnum::ExchangeCode:
-			return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
-		case AuthTypeComboListEnum::PersistentAuth:
-			return EOS_ELoginCredentialType::EOS_LCT_PersistentAuth;
-		case  AuthTypeComboListEnum::AccountPortal:
-			return EOS_ELoginCredentialType::EOS_LCT_AccountPortal;
+	case AuthTypeComboListEnum::Developer:
+		return EOS_ELoginCredentialType::EOS_LCT_Developer;
+	case AuthTypeComboListEnum::ExchangeCode:
+		return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
+	case AuthTypeComboListEnum::PersistentAuth:
+		return EOS_ELoginCredentialType::EOS_LCT_PersistentAuth;
+	case  AuthTypeComboListEnum::AccountPortal:
+		return EOS_ELoginCredentialType::EOS_LCT_AccountPortal;
 	}
 
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
@@ -64,7 +67,7 @@ struct GlobalData {
 	inline bool EOSInit(LPEDATA edPtr);
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {
-		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::Init) {
+		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::InitSuccess) {
 			callback(false);
 
 			return;
@@ -77,7 +80,7 @@ struct GlobalData {
 			if(state == EOSState::AuthFailed) {
 				callback(false);
 			}
-			if (state == EOSState::Auth) {
+			if (state == EOSState::AuthSuccess) {
 				// from different thread, must capture by value
 				pEU->Connect([callback] (const EOSUtilities* pEU) {
 					const auto state = pEU->State();
@@ -86,7 +89,7 @@ struct GlobalData {
 						callback(false);
 					}
 
-					if (state == EOSState::Connect) {
+					if (state == EOSState::ConnectSuccess) {
 						callback(true);
 					}
 				});
