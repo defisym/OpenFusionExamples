@@ -75,7 +75,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		rdPtr->pData->EOSInit(edPtr);
-		rdPtr->pData->pEOSUtilities->Test();
+		//rdPtr->pData->pEOSUtilities->Auth();
+		//rdPtr->pData->pEOSUtilities->Connect();
+		//rdPtr->pData->pEOSUtilities->Achievement();
 
 		SetExtUserData(rdPtr->pData);
 	}
@@ -115,6 +117,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // Called (if you want) each loop, this routine makes the object live
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
+
+	rdPtr->pData->pEOSUtilities->Auth();
+	rdPtr->pData->pEOSUtilities->Connect();
+	//rdPtr->pData->pEOSUtilities->Achievement();
 
 	rdPtr->pData->pEOSUtilities->Update();
 
