@@ -76,8 +76,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
+		rdPtr->pData->SetRundata(rdPtr);
+
 		rdPtr->pData->EOSInit(edPtr);
-		rdPtr->pData->EOSLogin([&] (bool bSuccess) {
+		// from different thread, must capture by value
+		rdPtr->pData->EOSLogin([=] (bool bSuccess) {
 			rdPtr->bLoginSuccess = bSuccess;
 			CallEvent(ON_LoginComplete);
 		});
@@ -86,6 +89,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
+		rdPtr->pData->SetRundata(rdPtr);
 	}
 
 	// retrieve data

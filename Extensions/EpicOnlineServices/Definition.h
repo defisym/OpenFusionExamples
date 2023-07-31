@@ -51,31 +51,35 @@ struct GlobalData {
 
 	std::string clientId;
 	std::string clientSecret;
-
+	
 	GlobalData() = default;
 	~GlobalData() {
 		delete pEOSUtilities;
 	}
 
+	inline void SetRundata(LPRDATA rdPtr) {
+		this->rdPtr = rdPtr;
+	}
+
 	inline bool EOSInit(LPEDATA edPtr);
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {
-		callback(false);
-
 		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::Init) {
 			callback(false);
 
 			return;
 		}
 
-		pEOSUtilities->Auth([&callback](EOSUtilities* pEU) {
+		// from different thread, must capture by value
+		pEOSUtilities->Auth([callback](EOSUtilities* pEU) {
 			const auto state = pEU->State();
 
 			if(state == EOSState::AuthFailed) {
 				callback(false);
 			}
 			if (state == EOSState::Auth) {
-				pEU->Connect([&callback] (EOSUtilities* pEU) {
+				// from different thread, must capture by value
+				pEU->Connect([callback] (const EOSUtilities* pEU) {
 					const auto state = pEU->State();
 
 					if (state == EOSState::ConnectFailed) {
