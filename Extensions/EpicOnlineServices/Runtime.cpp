@@ -72,19 +72,13 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pRet = new std::wstring;
 
+	rdPtr->bLoginCalled = false;
 	rdPtr->bLoginSuccess = false;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
-		rdPtr->pData->SetRundata(rdPtr);
-		
+		rdPtr->pData->SetRundata(rdPtr);		
 		rdPtr->pData->EOSInit(edPtr);
-		// from different thread, must capture by value
-		rdPtr->pData->EOSLogin([=] (bool bSuccess) {
-			rdPtr->bLoginSuccess = bSuccess;
-			//call RFUNCTION_GENERATEEVENT in CreateRunObject will crash
-			AddEvent(ON_LoginComplete);
-		});
 
 		SetExtUserData(rdPtr->pData);
 	}
@@ -126,6 +120,16 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 	rdPtr->pData->pEOSUtilities->Update();
+	
+	if (!rdPtr->bLoginCalled) {
+		rdPtr->bLoginCalled = true;
+		// must be here as AddEvent / CallEvent has no effect in CreateRunObject
+		// async callback from different thread, must capture by value
+		rdPtr->pData->EOSLogin([=] (bool bSuccess) {
+			rdPtr->bLoginSuccess = bSuccess;
+			AddEvent(ON_LoginComplete);
+		});
+	}
 
 	return 0;
 }

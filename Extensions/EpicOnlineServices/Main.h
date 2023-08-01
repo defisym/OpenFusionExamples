@@ -111,7 +111,8 @@ typedef struct tagRDATA
 
 	std::wstring* pRet;
 
-	bool bLoginSuccess;
+	bool bLoginCalled = false;
+	bool bLoginSuccess = false;
 	
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
