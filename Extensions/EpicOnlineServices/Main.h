@@ -25,8 +25,10 @@
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_STATVALUE			0
+#define	EXP_EXPRESSION_ACCOUNTID			1
+#define	EXP_EXPRESSION_PRODUCTUSERID		2
 
-#define	EXP_LAST                    		1
+#define	EXP_LAST                    		3
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

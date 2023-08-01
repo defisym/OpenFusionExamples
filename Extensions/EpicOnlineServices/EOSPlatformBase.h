@@ -16,7 +16,7 @@ public:
 	virtual inline void PlatformUpdate() = 0;
 
 	inline bool PlatformOK() const {
-		return pEU->state == EOSState::ConnectSuccess;
+		return pEU->PlatformOK();
 	}
 };
 

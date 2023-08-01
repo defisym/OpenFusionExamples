@@ -107,13 +107,13 @@
 
 // Commands of expressions menu
 #define IDMN_EXPRESSION_STATVALUE			27000
-#define IDMN_EXPRESSION2		27001
-#define IDMN_EXPRESSION3		27002
+#define IDMN_EXPRESSION_ACCOUNTID			27001
+#define IDMN_EXPRESSION_PRODUCTUSERID		27002
 
 // Expression strings
 #define M_EXPRESSION_STATVALUE			 7000
-#define M_EXPRESSION2			 7001
-#define M_EXPRESSION3			 7002
+#define M_EXPRESSION_ACCOUNTID			 7001
+#define M_EXPRESSION_PRODUCTUSERID		 7002
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

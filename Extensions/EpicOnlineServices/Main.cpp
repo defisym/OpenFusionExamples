@@ -39,6 +39,8 @@ short actionsInfos[]=
 short expressionsInfos[]=
 		{
 		IDMN_EXPRESSION_STATVALUE, M_EXPRESSION_STATVALUE, EXP_EXPRESSION_STATVALUE, 0, 1, EXPPARAM_STRING, M_STAT_NAME,
+		IDMN_EXPRESSION_ACCOUNTID, M_EXPRESSION_ACCOUNTID, EXP_EXPRESSION_ACCOUNTID, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_PRODUCTUSERID, M_EXPRESSION_PRODUCTUSERID, EXP_EXPRESSION_PRODUCTUSERID, EXPFLAG_STRING, 0,
 		};
 
 
@@ -115,6 +117,26 @@ long WINAPI DLLExport Expression_StatValue(LPRDATA rdPtr, long param1) {
 	return val;
 }
 
+long WINAPI DLLExport Expression_GetAccountID(LPRDATA rdPtr, long param1) {
+	*rdPtr->pRet = ConvertStrToWStr(rdPtr->pData->pEOSUtilities->GetAccountID());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
+long WINAPI DLLExport Expression_GetProductUserID(LPRDATA rdPtr, long param1) {
+	*rdPtr->pRet = ConvertStrToWStr(rdPtr->pData->pEOSUtilities->GetProductUserID());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -144,6 +166,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
 			Expression_StatValue,
+			Expression_GetAccountID,
+			Expression_GetProductUserID,
 
 			0
 			};

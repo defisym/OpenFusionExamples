@@ -1,11 +1,15 @@
 #pragma once
 
+#include <cassert>
+
 #include "EOSInclude.h"
 
 #include "EOSCommandLine.h"
 
 // Doc
 // https://dev.epicgames.com/docs/zh-Hans/epic-account-services/auth/auth-interface
+// https://dev.epicgames.com/docs/zh-Hans/game-services/eos-connect-interface
+
 // https://epicsupport.force.com/devportal/s/question/0D54z00008akVjUCAU/how-should-i-use-authentication-while-developing-and-testing-eos-achievements-and-leaderboards?language=en_US
 
 
@@ -63,6 +67,8 @@ private:
 
 	CallbackType authCb = nullptr;
 	CallbackType connectCb = nullptr;
+
+	constexpr static auto InvalidID = "InvalidID";
 
 public:
 	EOSUtilities(const EOSUtilities_RuntimeOptions& runtimeOpt,
@@ -250,6 +256,24 @@ public:
 				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
 
 				if (!EOSOK(Data->ResultCode)) {
+					// https://dev.epicgames.com/docs/en-US/epic-account-services/auth/auth-interface#persisting-user-login-to-epic-account-outside-epic-games-launcher
+					if(pEU->runtimeOpt.authCredentialsType == EOS_ELoginCredentialType::EOS_LCT_PersistentAuth) {
+						// Delete saved persistent auth token if token has expired or auth is invalid
+						// Don't delete for other errors (e.g. EOS_EResult::EOS_NoConnection), the auth token may still be valid in these cases
+						if (Data->ResultCode == EOS_EResult::EOS_Auth_Expired ||
+							Data->ResultCode == EOS_EResult::EOS_InvalidAuth) {
+							const auto authHandle = EOS_Platform_GetAuthInterface(pEU->platformHandle);
+
+							EOS_Auth_DeletePersistentAuthOptions deletePersistentAuthOptions = {};
+							deletePersistentAuthOptions.ApiVersion = EOS_AUTH_DELETEPERSISTENTAUTH_API_LATEST;
+
+							EOS_Auth_DeletePersistentAuth(authHandle, &deletePersistentAuthOptions, pEU, 
+								[](const EOS_Auth_DeletePersistentAuthCallbackInfo* Data) {
+									const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+								});
+						}
+					}
+
 					pEU->state = EOSState::AuthFailed;
 					pEU->authCb(pEU);
 
@@ -372,5 +396,37 @@ public:
 			pEU->state = EOSState::ConnectFailed;
 			pEU->connectCb(pEU);
 		});
+	}
+
+	inline bool PlatformOK() const {
+		return state == EOSState::ConnectSuccess;
+	}
+
+	inline std::string GetAccountID() const {
+		if (!PlatformOK()) {
+			return InvalidID;
+		}
+
+		int32_t size = EOS_EPICACCOUNTID_MAX_LENGTH + 1;
+		std::string accountIDStr(size, 0);
+		if (EOSOK(EOS_EpicAccountId_ToString(accountId, accountIDStr.data(), &size))) {
+			return accountIDStr;
+		}
+
+		return InvalidID;
+	}
+
+	inline std::string GetProductUserID() const {
+		if (!PlatformOK()) {
+			return InvalidID;
+		}
+
+		int32_t size = EOS_PRODUCTUSERID_MAX_LENGTH + 1;
+		std::string productUserIDStr(size, 0);
+		if (EOSOK(EOS_ProductUserId_ToString(productUserId, productUserIDStr.data(), &size))) {
+			return productUserIDStr;
+		}
+
+		return InvalidID;
 	}
 };
