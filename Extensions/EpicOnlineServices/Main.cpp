@@ -23,18 +23,22 @@
 short conditionsInfos[]=
 		{
 		IDMN_CONDITION_ONLOGIN, M_CONDITION_ONLOGIN, CND_CONDITION_ONLOGIN, 0, 0,
+		IDMN_CONDITION_LOGINSUCCESS, M_CONDITION_LOGINSUCCESS, CND_CONDITION_LOGINSUCCESS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
 		IDMN_ACTION_ACH_UL, M_ACTION_ACH_UL, ACT_ACTION_ACH_UL,	0, 1, PARAM_EXPSTRING, M_ACH_NAME,
+		IDMN_ACTION_STAT_I, M_ACTION_STAT_I, ACT_ACTION_STAT_I,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_STAT_NAME, M_STAT_VALUE,
+		IDMN_ACTION_QUERY, M_ACTION_QUERY, ACT_ACTION_QUERY,	0, 0,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-		IDMN_EXPRESSION_LOGINSUCCESS, M_EXPRESSION_LOGINSUCCESS, EXP_EXPRESSION_LOGINSUCCESS, 0, 0,
+		IDMN_EXPRESSION_STATVALUE, M_EXPRESSION_STATVALUE, EXP_EXPRESSION_STATVALUE, 0, 1, EXPPARAM_STRING, M_STAT_NAME,
 		};
 
 
@@ -47,6 +51,19 @@ short expressionsInfos[]=
 
 long WINAPI DLLExport Condition_OnLogin(LPRDATA rdPtr, long param1, long param2) {
 	return true;
+}
+
+long WINAPI DLLExport Condition_LoginSuccess(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->bLoginSuccess;
+}
+
+long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long param2) {
+	bool bComplete = true;
+
+	bComplete = bComplete && rdPtr->pData->pEOSAchievement->QueryComplete();
+	bComplete = bComplete && rdPtr->pData->pEOSStat->QueryComplete();
+
+	return bComplete;
 }
 
 
@@ -64,6 +81,21 @@ short WINAPI DLLExport Action_Achievement_Unlock(LPRDATA rdPtr, long param1, lon
 	return 0;
 }
 
+short WINAPI DLLExport Action_Stat_Ingest(LPRDATA rdPtr, long param1, long param2) {
+	const std::string statName = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	const auto value = (int32_t)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->pEOSStat->IngestStat({ {statName,value} }, [=] (EOSStat*) {});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Query(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->EOSUpdatePlatform();
+
+	return 0;
+}
+
 
 // ============================================================================
 //
@@ -71,8 +103,16 @@ short WINAPI DLLExport Action_Achievement_Unlock(LPRDATA rdPtr, long param1, lon
 // 
 // ============================================================================
 
-long WINAPI DLLExport Expression_LoginSuccess(LPRDATA rdPtr,long param1) {
-	return rdPtr->bLoginSuccess;
+long WINAPI DLLExport Expression_StatValue(LPRDATA rdPtr, long param1) {
+	const std::string statName = ConvertWStrToStr((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
+
+	int32_t val = 0;
+
+	rdPtr->pData->pEOSStat->GetStatByName(statName, [&] (EOS_Stats_Stat* pData) {
+		val = pData->Value;
+	});
+
+	return val;
 }
 
 // ----------------------------------------------------------
@@ -86,6 +126,8 @@ long WINAPI DLLExport Expression_LoginSuccess(LPRDATA rdPtr,long param1) {
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			Condition_OnLogin,
+			Condition_LoginSuccess,
+			Condition_QueryComplete,
 
 			0
 			};
@@ -93,13 +135,15 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
 			Action_Achievement_Unlock,
+			Action_Stat_Ingest,
+			Action_Query,
 
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			Expression_LoginSuccess,
+			Expression_StatValue,
 
 			0
 			};

@@ -4,6 +4,10 @@
 
 #include "EOSPlatformBase.h"
 
+// Doc
+// https://dev.epicgames.com/docs/zh-Hans/game-services/achievements
+// https://dev.epicgames.com/zh-CN/news/adding-achievements-to-your-game
+
 class EOSAchievement :private PlatformBase {
 private:
 	using CallbackType = std::function<void(EOSAchievement*)>;
@@ -16,6 +20,15 @@ private:
 public:
 	explicit EOSAchievement(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSAchievement() override = default;
+	inline void PlatformInit() override {
+		QueryAchievementDefinitions();
+	}
+	inline void PlatformUpdate() override {
+		bAchievementQuery = false;
+		QueryAchievementDefinitions();
+	}
+
+	inline bool QueryComplete() const { return bAchievementQuery; }
 
 	inline void QueryAchievementDefinitions(const CallbackType& cb = defaultCb) {
 		if (!PlatformOK()) { return; }
@@ -134,7 +147,7 @@ public:
 	}
 
 	inline void IterateAchievements(const std::function<void(EOS_Achievements_DefinitionV2*)>& cb) {
-		if (!bAchievementQuery) {
+		if (!QueryComplete()) {
 			QueryAchievementDefinitions([this, cb] (decltype(this)) {
 				IterateAchievements(cb);
 			});
@@ -144,7 +157,7 @@ public:
 
 		auto count = GetAchievementCount();
 
-		for (decltype(count) i = 0; i < count; i++) {
+		for (decltype(count) i = 0; i < count; i++) {			
 			GetAchievementByIndex(i, cb);
 		}
 	}

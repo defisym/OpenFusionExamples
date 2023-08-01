@@ -119,7 +119,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // Called (if you want) each loop, this routine makes the object live
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
-	rdPtr->pData->pEOSUtilities->Update();
+	rdPtr->pData->EOSUpdate();
 	
 	if (!rdPtr->bLoginCalled) {
 		rdPtr->bLoginCalled = true;

@@ -7,20 +7,24 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_ONLOGIN				0
+#define	CND_CONDITION_LOGINSUCCESS			1
+#define	CND_CONDITION_QUEARYCOMPLETE		2
 
-#define	CND_LAST							1
+#define	CND_LAST							3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
 #define	ACT_ACTION_ACH_UL					0
+#define	ACT_ACTION_STAT_I					1
+#define	ACT_ACTION_QUERY					2
 
-#define	ACT_LAST							1
+#define	ACT_LAST							3
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
-#define	EXP_EXPRESSION_LOGINSUCCESS			0
+#define	EXP_EXPRESSION_STATVALUE			0
 
 #define	EXP_LAST                    		1
 

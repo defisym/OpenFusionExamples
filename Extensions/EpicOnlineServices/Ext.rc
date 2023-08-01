@@ -117,6 +117,9 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Login", IDMN_CONDITION_ONLOGIN
+        MENUITEM "Login Success", IDMN_CONDITION_LOGINSUCCESS
+        MENUITEM SEPARATOR
+        MENUITEM "Query Complete", IDMN_CONDITION_QUEARYCOMPLETE
         MENUITEM SEPARATOR
     END
 END
@@ -132,7 +135,11 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Query", IDMN_ACTION_QUERY
+        MENUITEM SEPARATOR
         MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
+        MENUITEM SEPARATOR
+        MENUITEM "Ingest Stat", IDMN_ACTION_STAT_I
         MENUITEM SEPARATOR
     END
 END
@@ -148,7 +155,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Login Success", IDMN_EXPRESSION_LOGINSUCCESS
+        MENUITEM "Stat Value", IDMN_EXPRESSION_STATVALUE
         MENUITEM SEPARATOR
     END
 END
@@ -273,16 +280,24 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_ACTION_ACH_UL         "Unlock Achievement %0"
     M_ACH_NAME              "Achievement Name"
+
+    M_ACTION_STAT_I         "Ingest Stat %0, Value %1"
+    M_STAT_NAME             "Stat Name"
+    M_STAT_VALUE            "Stat Value"
+
+    M_ACTION_QUERY          "Query"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION_ONLOGIN     "On Login"
+    M_CONDITION_ONLOGIN     "%o On Login"
+    M_CONDITION_LOGINSUCCESS        "%o Login Success"
+    M_CONDITION_QUEARYCOMPLETE      "%o Query Complete"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION_LOGINSUCCESS            "LoginSuccess ("
+    M_EXPRESSION_STATVALUE   "StatValue ("
 END
 
 #endif    // English (U.S.) resources

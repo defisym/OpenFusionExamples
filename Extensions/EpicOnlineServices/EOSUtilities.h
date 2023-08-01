@@ -4,6 +4,11 @@
 
 #include "EOSCommandLine.h"
 
+// Doc
+// https://dev.epicgames.com/docs/zh-Hans/epic-account-services/auth/auth-interface
+// https://epicsupport.force.com/devportal/s/question/0D54z00008akVjUCAU/how-should-i-use-authentication-while-developing-and-testing-eos-achievements-and-leaderboards?language=en_US
+
+
 // To debug with DevAuthTool
 // disable VPN to avoid 502 error
 // portal: 6547

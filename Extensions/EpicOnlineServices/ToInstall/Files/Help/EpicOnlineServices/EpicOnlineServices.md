@@ -4,6 +4,10 @@
 
 EpicOnlineServices
 
+## Note
+
+Almost everything is **async**!
+
 ## Properties
 
 - Initialize Options
@@ -23,13 +27,25 @@ EpicOnlineServices
 
 ## Action
 
+- Query
+  - *Query new data from server, should be call periodically or on demand*
+
 - Unlock Achievement
+
+- Ingest Stat
+  - *behavior depends on the type of stat*
+  - *e.g., sum -> add value to the given stat*
 
 ## Condition
 
 - On Login
+- Login Success
+
+- Query Complete
+  - *Query achievement definition*
+  - *Query stat*
 
 ## Expression
 
-- Login Success
-  - *0 = failed, 1 = success, used in `On Login` condition*
+- Stat Value
+  - *Get stat value, need query complete*

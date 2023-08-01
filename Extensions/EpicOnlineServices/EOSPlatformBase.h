@@ -12,6 +12,9 @@ public:
 	}
 	virtual ~PlatformBase() = default;
 
+	virtual inline void PlatformInit() = 0;
+	virtual inline void PlatformUpdate() = 0;
+
 	inline bool PlatformOK() const {
 		return pEU->state == EOSState::ConnectSuccess;
 	}
@@ -33,4 +36,6 @@ public:
 //public:
 //	explicit EOSStat(EOSUtilities* pEU) : PlatformBase(pEU) {}
 //	~EOSStat() override = default;
+//	inline void PlatformInit() override {}
+//	inline void PlatformUpdate() override {}
 //};

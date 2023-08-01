@@ -65,6 +65,11 @@ struct GlobalData {
 		this->rdPtr = rdPtr;
 	}
 
+	inline void EOSUpdate() const {
+		//EOSUpdatePlatform();
+		pEOSUtilities->Update();
+	}
+
 	inline bool EOSInit(LPEDATA edPtr);
 
 	inline void EOSInitPlatform() {
@@ -76,6 +81,17 @@ struct GlobalData {
 		delete pEOSAchievement;
 		delete pEOSStat;
 	}
+	
+	inline void EOSUpdatePlatform() const {
+		pEOSAchievement->PlatformUpdate();
+		pEOSStat->PlatformUpdate();
+	}
+
+	// init platform here
+	inline void EOSLoginSuccess() const {
+		pEOSAchievement->PlatformInit();
+		pEOSStat->PlatformInit();
+	}
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {
 		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::InitSuccess) {
@@ -85,7 +101,7 @@ struct GlobalData {
 		}
 
 		// from different thread, must capture by value
-		pEOSUtilities->Auth([callback](EOSUtilities* pEU) {
+		pEOSUtilities->Auth([this, callback](EOSUtilities* pEU) {
 			const auto state = pEU->State();
 
 			if(state == EOSState::AuthFailed) {
@@ -93,7 +109,7 @@ struct GlobalData {
 			}
 			if (state == EOSState::AuthSuccess) {
 				// from different thread, must capture by value
-				pEU->Connect([callback] (const EOSUtilities* pEU) {
+				pEU->Connect([this, callback] (const EOSUtilities* pEU) {
 					const auto state = pEU->State();
 
 					if (state == EOSState::ConnectFailed) {
@@ -101,6 +117,7 @@ struct GlobalData {
 					}
 
 					if (state == EOSState::ConnectSuccess) {
+						EOSLoginSuccess();
 						callback(true);
 					}
 				});

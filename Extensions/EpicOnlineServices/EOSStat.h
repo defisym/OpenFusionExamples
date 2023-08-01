@@ -4,6 +4,10 @@
 
 #include "EOSPlatformBase.h"
 
+// Doc
+// https://dev.epicgames.com/docs/zh-Hans/game-services/eos-stats-interface
+// https://dev.epicgames.com/zh-CN/news/manage-player-statistics-with-epic-online-services
+
 class EOSStat :private PlatformBase {
 private:
 	using CallbackType = std::function<void(EOSStat*)>;
@@ -16,6 +20,15 @@ private:
 public:
 	explicit EOSStat(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSStat() override = default;
+	inline void PlatformInit() override {
+		QueryStat();
+	}
+	inline void PlatformUpdate() override {
+		bStatQuery = false;
+		QueryStat();
+	}
+
+	inline bool QueryComplete() const { return bStatQuery; }
 
 	inline void QueryStat(const CallbackType& cb = defaultCb) {
 		if (!PlatformOK()) { return; }
@@ -28,8 +41,11 @@ public:
 		queryStatOptions.ApiVersion = EOS_STATS_INGESTSTAT_API_LATEST;
 		queryStatOptions.LocalUserId = pEU->productUserId;
 		queryStatOptions.TargetUserId = pEU->productUserId;
+
 		queryStatOptions.StartTime = EOS_STATS_TIME_UNDEFINED;
 		queryStatOptions.EndTime = EOS_STATS_TIME_UNDEFINED;
+		queryStatOptions.StatNames = nullptr;
+		queryStatOptions.StatNamesCount = 0;
 
 		EOS_Stats_QueryStats(statHandle, &queryStatOptions, this, [] (const EOS_Stats_OnQueryStatsCompleteCallbackInfo* Data) {
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
@@ -141,7 +157,7 @@ public:
 	}
 
 	inline void IterateStats(const std::function<void(EOS_Stats_Stat*)>& cb) {
-		if (!bStatQuery) {
+		if (!QueryComplete()) {
 			QueryStat([this, cb] (decltype(this)) {
 				IterateStats(cb);
 			});
