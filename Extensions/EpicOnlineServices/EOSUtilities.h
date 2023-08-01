@@ -34,10 +34,12 @@ struct EOSUtilities_RuntimeOptions {
 
 class EOSUtilities {
 private:
+	friend class PlatformBase;
 	friend class EOSAchievement;
+	friend class EOSStat;
 
 	using CallbackType = std::function<void(EOSUtilities*)>;
-	#define DefaultCb [](EOSUtilities*) {}
+	inline const static CallbackType defaultCb = [] (EOSUtilities*) {};
 
 	bool bInit = false;
 	EOSState state = EOSState::Invalid;
@@ -56,10 +58,6 @@ private:
 
 	CallbackType authCb = nullptr;
 	CallbackType connectCb = nullptr;
-
-	bool bAchievementQuery = false;
-	CallbackType achievementQueryCb = nullptr;
-	CallbackType achievementUnlockCb = nullptr;
 
 public:
 	EOSUtilities(const EOSUtilities_RuntimeOptions& runtimeOpt,
@@ -152,7 +150,7 @@ public:
 
 	inline auto State() const { return state; }
 	
-	inline void Auth(const CallbackType& cb = DefaultCb) {
+	inline void Auth(const CallbackType& cb = defaultCb) {
 		if (state != EOSState::InitSuccess) {
 			return;
 		}
@@ -244,7 +242,7 @@ public:
 		const auto authHandle = EOS_Platform_GetAuthInterface(platformHandle);
 		EOS_Auth_Login(authHandle, &LoginOptions, this,
 			[] (const EOS_Auth_LoginCallbackInfo* Data) {
-				const auto pEU = static_cast<EOSUtilities*>(Data->ClientData);
+				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
 
 				if (!EOSOK(Data->ResultCode)) {
 					pEU->state = EOSState::AuthFailed;
@@ -297,7 +295,7 @@ public:
 		});
 	}
 
-	inline void Connect(const CallbackType& cb = DefaultCb) {
+	inline void Connect(const CallbackType& cb = defaultCb) {
 		if (state != EOSState::AuthSuccess) {
 			return;
 		}
@@ -326,7 +324,7 @@ public:
 
 		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
 		EOS_Connect_Login(connectHandle, &connectOptions, this, [] (const EOS_Connect_LoginCallbackInfo* Data) {
-			const auto pEU = static_cast<EOSUtilities*>(Data->ClientData);
+			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
 
 			if (EOSOK(Data->ResultCode)) {
 				pEU->productUserId = Data->LocalUserId;
@@ -348,7 +346,7 @@ public:
 				// NOTE: We're not deleting the received context because we're passing it down to another SDK call
 				EOS_Connect_CreateUser(connectHandle, &createUserOptions, pEU, 
 					[](const EOS_Connect_CreateUserCallbackInfo* Data) {
-						const auto pEU = static_cast<EOSUtilities*>(Data->ClientData);
+						const auto pEU = static_cast<decltype(this)>(Data->ClientData);
 
 						if (!EOSOK(Data->ResultCode)) {
 							pEU->state = EOSState::ConnectFailed;
@@ -369,93 +367,5 @@ public:
 			pEU->state = EOSState::ConnectFailed;
 			pEU->connectCb(pEU);
 		});
-	}
-
-	inline void QueryAchievementDefinitions(const CallbackType& cb = DefaultCb) {
-		if (state != EOSState::ConnectSuccess) {
-			return;
-		}
-
-		achievementQueryCb = cb;
-
-		const auto achHandle = EOS_Platform_GetAchievementsInterface(platformHandle);
-
-		EOS_Achievements_QueryDefinitionsOptions opt{};
-		opt.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
-		opt.LocalUserId = productUserId;
-
-		EOS_Achievements_QueryDefinitions(achHandle, &opt, this, [] (const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* Data) {
-			if (!EOSOK(Data->ResultCode)) {
-				return;
-			}
-
-			const auto pEU = static_cast<EOSUtilities*>(Data->ClientData);
-			pEU->bAchievementQuery = true;
-			pEU->achievementQueryCb(pEU);
-		});
-	}
-
-	//inline void QueryPlayerAchievement(const CallbackType& cb = DefaultCb) {
-	//	
-	//}
-
-	inline void IterateAchievements(const std::function<void(EOS_Achievements_DefinitionV2*)>& cb) const {
-		if (!bAchievementQuery) {
-			return;
-		}
-
-		const auto achHandle = EOS_Platform_GetAchievementsInterface(platformHandle);
-
-		EOS_Achievements_GetAchievementDefinitionCountOptions getOpt{};
-		getOpt.ApiVersion = EOS_ACHIEVEMENTS_GETACHIEVEMENTDEFINITIONCOUNT_API_LATEST;
-		auto count = EOS_Achievements_GetAchievementDefinitionCount(achHandle, &getOpt);
-
-		for (decltype(count) i = 0; i < count; i++) {
-			EOS_Achievements_CopyAchievementDefinitionV2ByIndexOptions copyOpt{};
-			copyOpt.ApiVersion = EOS_ACHIEVEMENTS_COPYDEFINITIONV2BYINDEX_API_LATEST;
-			copyOpt.AchievementIndex = i;
-
-			EOS_Achievements_DefinitionV2* pDefinition = nullptr;
-
-			if(EOSOK(EOS_Achievements_CopyAchievementDefinitionV2ByIndex(achHandle, &copyOpt, &pDefinition))) {
-				cb(pDefinition);
-
-				EOS_Achievements_DefinitionV2_Release(pDefinition);
-			}
-		}
-	}
-
-	inline void UnlockAchievements(const std::vector<std::string>& toUnlock, const CallbackType& cb = DefaultCb) {
-		if (state != EOSState::ConnectSuccess) {
-			return;
-		}
-
-		achievementUnlockCb = cb;
-
-		// generate array
-		const auto sz = toUnlock.size();
-		const auto pArray = new const char* [sz];
-
-		for (auto i = 0u; i < sz; i++) {
-			pArray[i] = toUnlock[i].c_str();
-		}
-
-		// unlock
-		const auto achHandle = EOS_Platform_GetAchievementsInterface(platformHandle);
-		EOS_Achievements_UnlockAchievementsOptions unlockAchievementsOptions{};
-		unlockAchievementsOptions.ApiVersion = EOS_ACHIEVEMENTS_UNLOCKACHIEVEMENTS_API_LATEST;
-		unlockAchievementsOptions.UserId = productUserId;
-		unlockAchievementsOptions.AchievementIds = pArray;
-		unlockAchievementsOptions.AchievementsCount = sz;
-
-		EOS_Achievements_UnlockAchievements(achHandle,&unlockAchievementsOptions,this,
-			[](const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* Data) {
-				if (!EOSOK(Data->ResultCode)) {
-					return;
-				}
-
-				const auto pEU = static_cast<EOSUtilities*>(Data->ClientData);
-				pEU->achievementUnlockCb(pEU);
-			});
 	}
 };

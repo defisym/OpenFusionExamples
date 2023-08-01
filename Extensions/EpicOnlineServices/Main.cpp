@@ -59,7 +59,7 @@ long WINAPI DLLExport Condition_OnLogin(LPRDATA rdPtr, long param1, long param2)
 short WINAPI DLLExport Action_Achievement_Unlock(LPRDATA rdPtr, long param1, long param2) {
 	const std::string achName = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
-	rdPtr->pData->pEOSUtilities->UnlockAchievements({ achName });
+	rdPtr->pData->pEOSAchievement->UnlockAchievements({ achName });
 
 	return 0;
 }

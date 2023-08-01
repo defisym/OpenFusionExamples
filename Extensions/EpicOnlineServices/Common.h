@@ -32,6 +32,7 @@
 #include	"WindowsCommon.h"
 
 #include	"EOSUtilities.h"
+#include	"EOSPlatformInclude.h"
 
 #include	"Definition.h"
 

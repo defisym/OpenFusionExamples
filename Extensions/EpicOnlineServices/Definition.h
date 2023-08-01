@@ -30,8 +30,6 @@ inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum com
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 }
 
-class EOSUtilities;
-
 struct tagEDATA_V1;
 typedef tagEDATA_V1 EDITDATA;
 typedef EDITDATA* LPEDATA;
@@ -44,6 +42,8 @@ struct GlobalData {
 	LPRDATA rdPtr = nullptr;
 
 	EOSUtilities* pEOSUtilities = nullptr;
+	EOSAchievement* pEOSAchievement = nullptr;
+	EOSStat* pEOSStat = nullptr;
 
 	std::string productName;
 	std::string productVersion;
@@ -57,6 +57,7 @@ struct GlobalData {
 	
 	GlobalData() = default;
 	~GlobalData() {
+		EOSReleasePlatform();
 		delete pEOSUtilities;
 	}
 
@@ -65,6 +66,16 @@ struct GlobalData {
 	}
 
 	inline bool EOSInit(LPEDATA edPtr);
+
+	inline void EOSInitPlatform() {
+		pEOSAchievement = new EOSAchievement(pEOSUtilities);
+		pEOSStat = new EOSStat(pEOSUtilities);
+	}
+
+	inline void EOSReleasePlatform() const {
+		delete pEOSAchievement;
+		delete pEOSStat;
+	}
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {
 		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::InitSuccess) {

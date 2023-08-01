@@ -23,6 +23,18 @@
     <Filter Include="EpicOnlineServices">
       <UniqueIdentifier>{044394fe-05e8-4195-801f-c1fabda11338}</UniqueIdentifier>
     </Filter>
+    <Filter Include="EpicOnlineServices\Login">
+      <UniqueIdentifier>{b0ae5cb2-2a50-4bec-a25a-5f498ff0f1a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EpicOnlineServices\Utilities">
+      <UniqueIdentifier>{b229cefc-af89-40dd-9883-07ec9bfd2ff2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EpicOnlineServices\Platform">
+      <UniqueIdentifier>{7bdc1240-f8fe-44db-b6fd-2a203cdc0d3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EpicOnlineServices\Include">
+      <UniqueIdentifier>{b2f9e083-954b-4c93-a37f-85bbf3e15eb2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -136,20 +148,26 @@
     <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EOSUtilities.h">
-      <Filter>EpicOnlineServices</Filter>
-    </ClInclude>
     <ClInclude Include="EOSInclude.h">
-      <Filter>EpicOnlineServices</Filter>
+      <Filter>EpicOnlineServices\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="EOSUtilities.h">
+      <Filter>EpicOnlineServices\Login</Filter>
     </ClInclude>
     <ClInclude Include="EOSCommandLine.h">
-      <Filter>EpicOnlineServices</Filter>
-    </ClInclude>
-    <ClInclude Include="EOSBase.h">
-      <Filter>EpicOnlineServices</Filter>
+      <Filter>EpicOnlineServices\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="EOSAchievement.h">
-      <Filter>EpicOnlineServices</Filter>
+      <Filter>EpicOnlineServices\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="EOSPlatformBase.h">
+      <Filter>EpicOnlineServices\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="EOSStat.h">
+      <Filter>EpicOnlineServices\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="EOSPlatformInclude.h">
+      <Filter>EpicOnlineServices\Platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

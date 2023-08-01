@@ -36,6 +36,7 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	runtimeOpt.bRequireBootstrap = edPtr->bRequireBootstrap;
 
 	pEOSUtilities = new EOSUtilities(runtimeOpt, initOpt, platOpt);
+	EOSInitPlatform();
 
 	return pEOSUtilities->State() == EOSState::InitSuccess;
 }
