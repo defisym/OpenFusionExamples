@@ -17,7 +17,10 @@
 
 #define	CND_CONDITION_OSS				4
 
-#define	CND_LAST						5
+#define	CND_CONDITION_OID				5
+#define	CND_CONDITION_SUBMITTED			6
+
+#define	CND_LAST						7
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -38,7 +41,9 @@
 #define	ACT_ACTION_TSSPF 				10
 #define	ACT_ACTION_TSS 					11
 
-#define	ACT_LAST						12
+#define	ACT_ACTION_SGTI					12
+
+#define	ACT_LAST						13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -53,7 +58,9 @@
 
 #define	EXP_EXPRESSION_GCBP				6
 
-#define	EXP_LAST						7
+#define	EXP_EXPRESSION_GGIT				7
+
+#define	EXP_LAST						8
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

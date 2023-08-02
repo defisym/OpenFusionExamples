@@ -202,6 +202,9 @@
     <ClInclude Include="SteamInit.h">
       <Filter>Steamworks\SteamDefinition</Filter>
     </ClInclude>
+    <ClInclude Include="SteamGamepadTextInput.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP">

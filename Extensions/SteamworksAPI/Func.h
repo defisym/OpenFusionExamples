@@ -21,3 +21,13 @@ inline void GlobalData::UpdateScreenshotCallback() const {
 		});
 });
 }
+
+inline void GlobalData::UpdateGamepadTextInputCallback() const {
+	GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamGamepadTextInput()->SetCallback(
+		[&] (bool bSubmitted, const std::string& text) {
+			CallEvent(OnInputDismiss);
+		});
+});
+}
+

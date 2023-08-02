@@ -53,6 +53,8 @@
 #define	IDMN_ACTION_TSSPF 			25010
 #define	IDMN_ACTION_TSS 			25011
 
+#define	IDMN_ACTION_SGTI 			25012
+
 // Action strings
 #define M_ACTION_UA                 5000
 #define M_ACTION_AS                 5001
@@ -69,6 +71,9 @@
 #define	M_ACTION_TSSU 				5009
 #define	M_ACTION_TSSPF 				5010
 #define	M_ACTION_TSS 				5011
+
+#define	M_ACTION_SGTI 				5012
+
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
@@ -87,6 +92,11 @@
 #define M_MT_OTHERS				 5514
 #define M_LOACTION			 	 5515
 #define M_PFID				 	 5516
+#define M_INPUTMODE				 5517
+#define M_LINEMODE				 5518
+#define M_DESCRIPTION			 5519
+#define M_MAXCHAR				 5520
+#define M_EXISTINGTEXT			 5521
 
 
 //	Conditions
@@ -105,6 +115,9 @@
 
 #define	IDMN_CONDITION_OSS				26004
 
+#define	IDMN_CONDITION_OID				26005
+#define	IDMN_CONDITION_SUBMITTED		26006
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
@@ -114,6 +127,9 @@
 #define	M_CONDITION_ROSD				6003
 
 #define	M_CONDITION_OSS					6004
+
+#define	M_CONDITION_OID					6005
+#define	M_CONDITION_SUBMITTED			6006
 
 // Titles of condition parameters
 #define M_CND_RPO						6501
@@ -137,6 +153,8 @@
 
 #define	IDMN_EXPRESSION_GCBP				27006
 
+#define	IDMN_EXPRESSION_GGIT 				27007
+
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
 #define M_EXPRESSION_GSCL				7001
@@ -147,6 +165,8 @@
 #define	M_EXPRESSION_MT_GTID			7005
 
 #define	M_EXPRESSION_GCBP				7006
+
+#define	M_EXPRESSION_GGIT				7007
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

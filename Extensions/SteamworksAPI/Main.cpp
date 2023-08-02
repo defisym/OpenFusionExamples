@@ -30,6 +30,9 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ROSD, M_CONDITION_ROSD, CND_CONDITION_ROSD, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
 		IDMN_CONDITION_OSS, M_CONDITION_OSS, CND_CONDITION_OSS, 0, 0,
+
+		IDMN_CONDITION_OID, M_CONDITION_OID, CND_CONDITION_OID, 0, 0,
+		IDMN_CONDITION_SUBMITTED, M_CONDITION_SUBMITTED, CND_CONDITION_SUBMITTED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -50,6 +53,8 @@ short actionsInfos[]=
 		IDMN_ACTION_TSSU, M_ACTION_TSSU,	ACT_ACTION_TSSU,	0, 1, PARAM_EXPSTRING, M_MT_USERID,
 		IDMN_ACTION_TSSPF, M_ACTION_TSSPF,	ACT_ACTION_TSSPF,	0, 1, PARAM_EXPSTRING, M_PFID,
 		IDMN_ACTION_TSS, M_ACTION_TSS,	ACT_ACTION_TSS,	0, 0,
+
+		IDMN_ACTION_SGTI, M_ACTION_SGTI,	ACT_ACTION_SGTI,	0, 5, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPSTRING, M_INPUTMODE, M_LINEMODE, M_DESCRIPTION, M_MAXCHAR, M_EXISTINGTEXT,
 		};
 
 // Definitions of parameters for each expression
@@ -64,6 +69,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_MT_GTID, M_EXPRESSION_MT_GTID, EXP_EXPRESSION_MT_GTID, EXPFLAG_STRING, 0,
 
 		IDMN_EXPRESSION_GCBP, M_EXPRESSION_GCBP, EXP_EXPRESSION_GCBP, 0, 0,
+
+		IDMN_EXPRESSION_GGIT, M_EXPRESSION_GGIT, EXP_EXPRESSION_GGIT, EXPFLAG_STRING, 0,
 		};
 
 
@@ -152,6 +159,23 @@ long WINAPI DLLExport Condition_OnScreenshot(LPRDATA rdPtr, long param1, long pa
 
 	return true;
 }
+
+long WINAPI DLLExport Condition_OnGamepadInputDismiss(LPRDATA rdPtr, long param1, long param2) {
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
+	return true;
+}
+
+long WINAPI DLLExport Condition_GamepadInputSubmitted(LPRDATA rdPtr, long param1, long param2) {
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
+	return rdPtr->pData->pSteamUtil->GetSteamGamepadTextInput()->GetSubmitted();
+}
+
 
 // ============================================================================
 //
@@ -294,6 +318,20 @@ short WINAPI DLLExport Action_Sceenshot_Trigger(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
+short WINAPI DLLExport Action_ShowGamepadTextInput(LPRDATA rdPtr, long param1, long param2) {
+	const auto inputMode = (EGamepadTextInputMode)CNC_GetIntParameter(rdPtr);
+	const auto lineMode = (EGamepadTextInputLineMode)CNC_GetIntParameter(rdPtr);
+	const auto description = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	const auto maxChar = (uint32)CNC_GetIntParameter(rdPtr);
+	const auto existingText = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamGamepadTextInput()->ShowGamepadTextInput(inputMode,lineMode,description.c_str(),maxChar,existingText.c_str());
+	});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -381,6 +419,17 @@ long WINAPI DLLExport Expression_GetCurrentBatteryPower(LPRDATA rdPtr, long para
 	});
 }
 
+long WINAPI DLLExport Expression_GetGamepadText(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+			*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetSteamGamepadTextInput()->GetText());
+			return (long)rdPtr->pRet->c_str();
+	});
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -400,6 +449,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_RunningOnSteamDeck,
 
 			Condition_OnScreenshot,
+
+			Condition_OnGamepadInputDismiss,
+			Condition_GamepadInputSubmitted,
 
 			0
 			};
@@ -422,6 +474,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Sceenshot_TagUser,
 			Action_Sceenshot_Trigger,
 
+			Action_ShowGamepadTextInput,
+
 			0
 			};
 
@@ -436,6 +490,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_MixroTxn_GetTransID,
 
 			Expression_GetCurrentBatteryPower,
+
+			Expression_GetGamepadText,
 
 			0
 			};
