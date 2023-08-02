@@ -64,6 +64,7 @@ long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long p
 
 	bComplete = bComplete && rdPtr->pData->pEOSAchievement->QueryComplete();
 	bComplete = bComplete && rdPtr->pData->pEOSStat->QueryComplete();
+	bComplete = bComplete && rdPtr->pData->pEOSPresence->QueryComplete();
 
 	return bComplete;
 }

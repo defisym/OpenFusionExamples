@@ -24,7 +24,11 @@ public:
 // template
 // ------------
 
-// Don't forget to add as friend class of EOSUtilities
+// Step:
+// 1. Copy template
+// 2. Add as friend class of EOSUtilities
+// 3. Create / Refresh in GlobalData
+// 4. Add include info in EOSPlatformInclude.h
 
 //#include "EOSPlatformBase.h"
 //

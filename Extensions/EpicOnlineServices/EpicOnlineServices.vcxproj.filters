@@ -169,6 +169,9 @@
     <ClInclude Include="EOSPlatformInclude.h">
       <Filter>EpicOnlineServices\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="EOSPresence.h">
+      <Filter>EpicOnlineServices\Platform</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

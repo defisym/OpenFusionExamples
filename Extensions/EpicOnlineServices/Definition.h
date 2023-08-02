@@ -97,6 +97,7 @@ struct GlobalData {
 	inline void EOSLoginSuccess() const {
 		pEOSAchievement->PlatformInit();
 		pEOSStat->PlatformInit();
+		pEOSPresence->PlatformInit();
 	}
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {

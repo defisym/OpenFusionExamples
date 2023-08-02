@@ -128,6 +128,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 		rdPtr->pData->EOSLogin([=] (bool bSuccess) {
 			rdPtr->bLoginSuccess = bSuccess;
 			AddEvent(ON_LoginComplete);
+
+#ifdef _DEBUG
+			if (bSuccess) { EOSLoginDebug(rdPtr); }
+#endif
 		});
 	}
 

@@ -24,7 +24,6 @@ public:
 		QueryAchievementDefinitions();
 	}
 	inline void PlatformUpdate() override {
-		bAchievementQuery = false;
 		QueryAchievementDefinitions();
 	}
 
@@ -33,6 +32,7 @@ public:
 	inline void QueryAchievementDefinitions(const CallbackType& cb = defaultCb) {
 		if (!PlatformOK()) { return; }
 
+		bAchievementQuery = false;
 		achievementQueryCb = cb;
 
 		const auto achHandle = EOS_Platform_GetAchievementsInterface(pEU->platformHandle);

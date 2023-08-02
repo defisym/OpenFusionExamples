@@ -7,6 +7,8 @@
 #include "EOSCommandLine.h"
 
 // Doc
+// https://dev.epicgames.com/zh-CN/news/introduction-to-epic-online-services-eos#series-reference
+// 
 // https://dev.epicgames.com/docs/zh-Hans/epic-account-services/auth/auth-interface
 // https://dev.epicgames.com/docs/zh-Hans/game-services/eos-connect-interface
 

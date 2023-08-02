@@ -24,7 +24,6 @@ public:
 		QueryStat();
 	}
 	inline void PlatformUpdate() override {
-		bStatQuery = false;
 		QueryStat();
 	}
 
@@ -33,6 +32,7 @@ public:
 	inline void QueryStat(const CallbackType& cb = defaultCb) {
 		if (!PlatformOK()) { return; }
 
+		bStatQuery = false;
 		statQueryCb = cb;
 
 		const auto statHandle = EOS_Platform_GetStatsInterface(pEU->platformHandle);
