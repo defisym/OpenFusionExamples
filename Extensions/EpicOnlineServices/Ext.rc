@@ -141,6 +141,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Ingest Stat", IDMN_ACTION_STAT_I
         MENUITEM SEPARATOR
+        MENUITEM "Set Rich Text", IDMN_ACTION_PRE_SRT
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -159,6 +161,8 @@ BEGIN
         MENUITEM "Product User ID", IDMN_EXPRESSION_PRODUCTUSERID	
         MENUITEM SEPARATOR
         MENUITEM "Stat Value", IDMN_EXPRESSION_STATVALUE
+        MENUITEM SEPARATOR
+        MENUITEM "Rich Text", IDMN_EXPRESSION_PRE_GRT
         MENUITEM SEPARATOR
     END
 END
@@ -305,14 +309,18 @@ BEGIN
     M_STAT_NAME             "Stat Name"
     M_STAT_VALUE            "Stat Value"
 
-    M_ACTION_QUERY          "Query"
+    M_ACTION_QUERY          "Query, Query Type %0"
+    M_QUERYTYPE             "Query Type"
+    
+    M_ACTION_PRE_SRT        "Set Rich Text to %0"
+    M_RICHTEXT              "Rich Text"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_ONLOGIN     "%o On Login"
     M_CONDITION_LOGINSUCCESS        "%o Login Success"
-    M_CONDITION_QUEARYCOMPLETE      "%o Query Complete"
+    M_CONDITION_QUEARYCOMPLETE      "%o Query Type %0 Complete"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -321,6 +329,7 @@ BEGIN
 
     M_EXPRESSION_ACCOUNTID		   "AccountID$ ("
     M_EXPRESSION_PRODUCTUSERID	   "ProductUserID$ ("
+    M_EXPRESSION_PRE_GRT    	   "RichText$ ("
 END
 
 #endif    // English (U.S.) resources

@@ -18,8 +18,9 @@
 #define	ACT_ACTION_ACH_UL					0
 #define	ACT_ACTION_STAT_I					1
 #define	ACT_ACTION_QUERY					2
+#define	ACT_ACTION_PRE_SRT					3
 
-#define	ACT_LAST							3
+#define	ACT_LAST							4
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -27,8 +28,9 @@
 #define	EXP_EXPRESSION_STATVALUE			0
 #define	EXP_EXPRESSION_ACCOUNTID			1
 #define	EXP_EXPRESSION_PRODUCTUSERID		2
+#define	EXP_EXPRESSION_PRE_GRT				3
 
-#define	EXP_LAST                    		3
+#define	EXP_LAST                    		4
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

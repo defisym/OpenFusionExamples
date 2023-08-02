@@ -82,16 +82,20 @@
 #define IDMN_ACTION_ACH_UL	       		25000
 #define IDMN_ACTION_STAT_I	       		25001
 #define IDMN_ACTION_QUERY	       		25002
+#define IDMN_ACTION_PRE_SRT	       		25003
 
 // Action strings
 #define M_ACTION_ACH_UL                 5000
 #define M_ACTION_STAT_I                 5001
 #define M_ACTION_QUERY                  5002
+#define M_ACTION_PRE_SRT                5003
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
 #define M_STAT_NAME				 5502
 #define M_STAT_VALUE		     5503
+#define M_QUERYTYPE		         5504
+#define M_RICHTEXT		         5505
 
 
 //	Conditions
@@ -101,12 +105,12 @@
 #define MN_CONDITIONS			20001
 
 // Commands of condition menu
-#define IDMN_CONDITION_ONLOGIN			26000
+#define IDMN_CONDITION_ONLOGIN			        26000
 #define IDMN_CONDITION_LOGINSUCCESS 			26001
 #define IDMN_CONDITION_QUEARYCOMPLETE			26002
 
 // Condition strings
-#define M_CONDITION_ONLOGIN				 6000
+#define M_CONDITION_ONLOGIN				     6000
 #define M_CONDITION_LOGINSUCCESS 			 6001
 #define M_CONDITION_QUEARYCOMPLETE			 6002
 
@@ -125,11 +129,13 @@
 #define IDMN_EXPRESSION_STATVALUE			27000
 #define IDMN_EXPRESSION_ACCOUNTID			27001
 #define IDMN_EXPRESSION_PRODUCTUSERID		27002
+#define IDMN_EXPRESSION_PRE_GRT		        27003
 
 // Expression strings
 #define M_EXPRESSION_STATVALUE			 7000
 #define M_EXPRESSION_ACCOUNTID			 7001
 #define M_EXPRESSION_PRODUCTUSERID		 7002
+#define M_EXPRESSION_PRE_GRT		     7003
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

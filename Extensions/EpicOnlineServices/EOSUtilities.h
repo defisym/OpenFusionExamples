@@ -36,6 +36,12 @@ enum class EOSState {
 	ConnectSuccess,
 };
 
+struct EOSQueryType {
+	inline static const wchar_t* Achievement = L"Achievement";
+	inline static const wchar_t* Stat = L"Stat";
+	inline static const wchar_t* Presence = L"Presence";
+};
+
 struct EOSUtilities_RuntimeOptions {
 	EOS_ELoginCredentialType authCredentialsType = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 	EOS_EAuthScopeFlags authPremissions = EOS_EAuthScopeFlags::EOS_AS_NoFlags;

@@ -24,7 +24,7 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_ONLOGIN, M_CONDITION_ONLOGIN, CND_CONDITION_ONLOGIN, 0, 0,
 		IDMN_CONDITION_LOGINSUCCESS, M_CONDITION_LOGINSUCCESS, CND_CONDITION_LOGINSUCCESS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
-		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_QUERYTYPE,
 		};
 
 // Definitions of parameters for each action
@@ -32,7 +32,8 @@ short actionsInfos[]=
 		{
 		IDMN_ACTION_ACH_UL, M_ACTION_ACH_UL, ACT_ACTION_ACH_UL,	0, 1, PARAM_EXPSTRING, M_ACH_NAME,
 		IDMN_ACTION_STAT_I, M_ACTION_STAT_I, ACT_ACTION_STAT_I,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_STAT_NAME, M_STAT_VALUE,
-		IDMN_ACTION_QUERY, M_ACTION_QUERY, ACT_ACTION_QUERY,	0, 0,
+		IDMN_ACTION_QUERY, M_ACTION_QUERY, ACT_ACTION_QUERY,	0, 1, PARAM_EXPSTRING, M_QUERYTYPE,
+		IDMN_ACTION_PRE_SRT, M_ACTION_PRE_SRT, ACT_ACTION_PRE_SRT,	0, 1, PARAM_EXPSTRING, M_RICHTEXT,
 		};
 
 // Definitions of parameters for each expression
@@ -41,6 +42,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_STATVALUE, M_EXPRESSION_STATVALUE, EXP_EXPRESSION_STATVALUE, 0, 1, EXPPARAM_STRING, M_STAT_NAME,
 		IDMN_EXPRESSION_ACCOUNTID, M_EXPRESSION_ACCOUNTID, EXP_EXPRESSION_ACCOUNTID, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_PRODUCTUSERID, M_EXPRESSION_PRODUCTUSERID, EXP_EXPRESSION_PRODUCTUSERID, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_PRE_GRT, M_EXPRESSION_PRE_GRT, EXP_EXPRESSION_PRE_GRT, EXPFLAG_STRING, 0,
 		};
 
 
@@ -60,13 +62,31 @@ long WINAPI DLLExport Condition_LoginSuccess(LPRDATA rdPtr, long param1, long pa
 }
 
 long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long param2) {
-	bool bComplete = true;
+	const auto pQueryType = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	bComplete = bComplete && rdPtr->pData->pEOSAchievement->QueryComplete();
-	bComplete = bComplete && rdPtr->pData->pEOSStat->QueryComplete();
-	bComplete = bComplete && rdPtr->pData->pEOSPresence->QueryComplete();
+	do {
+		if (StrEmpty(pQueryType)) {
+			bool bComplete = true;
 
-	return bComplete;
+			bComplete = bComplete && rdPtr->pData->pEOSAchievement->QueryComplete();
+			bComplete = bComplete && rdPtr->pData->pEOSStat->QueryComplete();
+			bComplete = bComplete && rdPtr->pData->pEOSPresence->QueryComplete();
+
+			return bComplete;
+		}
+
+		if (StrIEqu(pQueryType, EOSQueryType::Achievement)) {
+			return rdPtr->pData->pEOSAchievement->QueryComplete();
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Stat)) {
+			return rdPtr->pData->pEOSStat->QueryComplete();
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Presence)) {
+			return rdPtr->pData->pEOSPresence->QueryComplete();
+		}
+	} while (false);
+
+	return false;
 }
 
 
@@ -94,11 +114,38 @@ short WINAPI DLLExport Action_Stat_Ingest(LPRDATA rdPtr, long param1, long param
 }
 
 short WINAPI DLLExport Action_Query(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->pData->EOSUpdatePlatform();
+	const auto pQueryType = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	do {
+		if (StrEmpty(pQueryType)) {
+			rdPtr->pData->EOSUpdatePlatform();
+			break;
+		}
+
+		if(StrIEqu(pQueryType, EOSQueryType::Achievement)) {
+			rdPtr->pData->pEOSAchievement->PlatformUpdate();
+			break;
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Stat)) {
+			rdPtr->pData->pEOSStat->PlatformUpdate();
+			break;
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Presence)) {
+			rdPtr->pData->pEOSPresence->PlatformUpdate();
+			break;
+		}
+	} while (false);
 
 	return 0;
 }
 
+short WINAPI DLLExport Action_Presence_SetRichTest(LPRDATA rdPtr, long param1, long param2) {
+	const auto pQueryType = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	rdPtr->pData->pEOSPresence->SetPresenceSetRawRichText(pQueryType);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -106,7 +153,7 @@ short WINAPI DLLExport Action_Query(LPRDATA rdPtr, long param1, long param2) {
 // 
 // ============================================================================
 
-long WINAPI DLLExport Expression_StatValue(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetStatValue(LPRDATA rdPtr, long param1) {
 	const std::string statName = ConvertWStrToStr((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
 
 	int32_t val = 0;
@@ -138,6 +185,24 @@ long WINAPI DLLExport Expression_GetProductUserID(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->pRet->c_str();
 }
 
+long WINAPI DLLExport Expression_Presence_GetRichTest(LPRDATA rdPtr, long param1) {
+	const auto pEP = rdPtr->pData->pEOSPresence;
+
+	rdPtr->pRet->clear();
+
+	if(pEP->HasPresence()) {
+		pEP->CopyPresence([&] (const EOS_Presence_Info* pInfo) {
+			*rdPtr->pRet = ConvertStrToWStr(pInfo->RichText);
+		});
+	}
+	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -160,15 +225,17 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Achievement_Unlock,
 			Action_Stat_Ingest,
 			Action_Query,
+			Action_Presence_SetRichTest,
 
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			Expression_StatValue,
+			Expression_GetStatValue,
 			Expression_GetAccountID,
 			Expression_GetProductUserID,
+			Expression_Presence_GetRichTest,
 
 			0
 			};

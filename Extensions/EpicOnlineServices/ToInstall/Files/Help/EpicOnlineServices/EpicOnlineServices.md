@@ -7,6 +7,7 @@ EpicOnlineServices
 ## Note
 
 Almost everything is **async**!
+Wait operations complete before changing frame, or the game may crash!
 
 ## Properties
 
@@ -20,6 +21,8 @@ Almost everything is **async**!
   - AuthType
     - *see: [Preferred Login Types for Epic Account](https://dev.epicgames.com/docs/en-US/epic-account-services/auth/auth-interface#preferred-login-types-for-epic-account)*
     - *To debug with DevAuthTool, disable VPN to avoid 502 error. Set portal: 6547, name: EOS.*
+  - Auth Permissions
+    - *Permissions required when login, make sure you have enabled it in dev portal*
   - RequireLauncher
     - *see: [Restarting the App with the Launcher](https://dev.epicgames.com/docs/en-US/game-services/eos-platform-interface#restarting-the-app-with-the-launcher)*
   - RequireBootstrap
@@ -36,16 +39,26 @@ Almost everything is **async**!
   - *behavior depends on the type of stat*
   - *e.g., sum -> add value to the given stat*
 
+- Set Rich Text
+
 ## Condition
 
 - On Login
 - Login Success
 
 - Query Complete
-  - *Query achievement definition*
-  - *Query stat*
+  - *Query achievement definition -> `Achievement`*
+  - *Query stat -> `Stat`*
+  - *Query presence -> `Presence`*
 
 ## Expression
 
+- Account ID
+- Product User ID
+  - *usually you don't need it, but useful for testing*
+
 - Stat Value
   - *Get stat value, need query complete*
+
+- Rich Text
+  - *Get rich text, need query complete*
