@@ -32,7 +32,16 @@ enum {
 	PROPID_PlatformOptions_ClientSecret_TEXT,	
 
 	PROPID_RuntimeOptions_TEXTTITLE,	
-	PROPID_RuntimeOptions_AuthType_COMBO,	
+	PROPID_RuntimeOptions_AuthType_COMBO,
+
+	PROPID_RuntimeOptions_AuthPermissions_FOLDER,	
+	PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_Email_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_Country_CHECK,
+
 	PROPID_RuntimeOptions_RequireLauncher_CHECK,	
 	PROPID_RuntimeOptions_RequireBootstrap_CHECK,	
 };
@@ -76,6 +85,18 @@ PropData Properties[] = {
 
 	PropData_Group		(PROPID_RuntimeOptions_TEXTTITLE,	IDS_PROP_RuntimeOptions_TEXTTITLE,		IDS_PROP_RuntimeOptions_TEXTTITLE),
 	PropData_ComboBox	(PROPID_RuntimeOptions_AuthType_COMBO,		IDS_PROP_RuntimeOptions_AuthType_COMBO,			IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO,	AuthTypeComboList),
+
+	PropData_Folder		(PROPID_RuntimeOptions_AuthPermissions_FOLDER,		IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER,			IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER),
+
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK_INFO),
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK_INFO),
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK_INFO),
+	//PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK_INFO),
+	//PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_Email_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK_INFO),
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_Country_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK_INFO),
+
+	PropData_Folder_End(),
+
 	PropData_CheckBox	(PROPID_RuntimeOptions_RequireLauncher_CHECK,		IDS_PROP_RuntimeOptions_RequireLauncher_CHECK,			IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO),
 	PropData_CheckBox	(PROPID_RuntimeOptions_RequireBootstrap_CHECK,		IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK,			IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO),
 
@@ -722,7 +743,20 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
 	switch (nPropID) {
-	// Return 0 (unchecked) or 1 (checked)
+		// Return 0 (unchecked) or 1 (checked)
+	case PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK:
+		return edPtr->bAuthPremissions_BasicProfile;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK:
+		return edPtr->bAuthPremissions_FriendsList;
+	case PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK:
+		return edPtr->bAuthPremissions_Presence;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK:
+		return edPtr->bAuthPremissions_FriendsManagement;
+	case PROPID_RuntimeOptions_AuthPermissions_Email_CHECK:
+		return edPtr->bAuthPremissions_Email;
+	case PROPID_RuntimeOptions_AuthPermissions_Country_CHECK:
+		return edPtr->bAuthPremissions_Country;
+
 	case PROPID_RuntimeOptions_RequireLauncher_CHECK:
 		return edPtr->bRequireLauncher;
 	case PROPID_RuntimeOptions_RequireBootstrap_CHECK:
@@ -795,6 +829,26 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 	// -------
 	switch (nPropID)
 	{
+
+	case PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK:
+		edPtr->bAuthPremissions_BasicProfile = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK:
+		edPtr->bAuthPremissions_FriendsList = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK:
+		edPtr->bAuthPremissions_Presence = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK:
+		edPtr->bAuthPremissions_FriendsManagement = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_Email_CHECK:
+		edPtr->bAuthPremissions_Email = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_Country_CHECK:
+		edPtr->bAuthPremissions_Country = nCheck;
+		break;
+
 	case PROPID_RuntimeOptions_RequireLauncher_CHECK:
 		edPtr->bRequireLauncher = nCheck;
 		break;

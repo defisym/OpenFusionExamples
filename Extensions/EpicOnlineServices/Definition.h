@@ -8,6 +8,14 @@ constexpr auto ON_LoginComplete = 0;
 // size of edit data
 constexpr auto EOS_IDSZ = 36;
 
+struct tagEDATA_V1;
+typedef tagEDATA_V1 EDITDATA;
+typedef EDITDATA* LPEDATA;
+
+struct tagRDATA;
+typedef tagRDATA RUNDATA;
+typedef RUNDATA* LPRDATA;
+
 enum class AuthTypeComboListEnum {
 	Developer,
 	ExchangeCode,
@@ -30,13 +38,7 @@ inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum com
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 }
 
-struct tagEDATA_V1;
-typedef tagEDATA_V1 EDITDATA;
-typedef EDITDATA* LPEDATA;
-
-struct tagRDATA;
-typedef tagRDATA RUNDATA;
-typedef RUNDATA* LPRDATA;
+inline auto GetAuthPremissions(LPEDATA rdPtr);
 
 struct GlobalData {
 	LPRDATA rdPtr = nullptr;
@@ -44,6 +46,7 @@ struct GlobalData {
 	EOSUtilities* pEOSUtilities = nullptr;
 	EOSAchievement* pEOSAchievement = nullptr;
 	EOSStat* pEOSStat = nullptr;
+	EOSPresence* pEOSPresence = nullptr;
 
 	std::string productName;
 	std::string productVersion;
@@ -75,16 +78,19 @@ struct GlobalData {
 	inline void EOSInitPlatform() {
 		pEOSAchievement = new EOSAchievement(pEOSUtilities);
 		pEOSStat = new EOSStat(pEOSUtilities);
+		pEOSPresence = new EOSPresence(pEOSUtilities);
 	}
 
 	inline void EOSReleasePlatform() const {
 		delete pEOSAchievement;
 		delete pEOSStat;
+		delete pEOSPresence;
 	}
 	
 	inline void EOSUpdatePlatform() const {
 		pEOSAchievement->PlatformUpdate();
 		pEOSStat->PlatformUpdate();
+		pEOSPresence->PlatformUpdate();
 	}
 
 	// init platform here

@@ -70,12 +70,17 @@ typedef struct tagEDATA_V1
 	bool bRequireLauncher;
 	bool bRequireBootstrap;
 
+	bool bAuthPremissions_BasicProfile;
+	bool bAuthPremissions_FriendsList;
+	bool bAuthPremissions_Presence;
+	bool bAuthPremissions_FriendsManagement;
+	bool bAuthPremissions_Email;
+	bool bAuthPremissions_Country;
+
 	// aligning
-	bool bUnused_1;
-	bool bUnused_2;
 
 	// buffer
-	int buffer[50];
+	int buffer[49];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;

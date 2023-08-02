@@ -42,10 +42,26 @@
 #define IDS_PROP_RuntimeOptions_AuthType_COMBO                  217
 #define IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO             218
 
-#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           219
-#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      220
-#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          221
-#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     222
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER          219
+
+#define IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK              220
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK               221
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK                  222
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK         223
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK                     224
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK                   225
+
+#define IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK_INFO         226
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK_INFO          227
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK_INFO             228
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK_INFO    229
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK_INFO                230
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK_INFO              231
+
+#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           232
+#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      233
+#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          234
+#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     235
 
 #define IDS_AuthType_Developer                                  300
 #define IDS_AuthType_ExchangeCode                               301

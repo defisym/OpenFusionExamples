@@ -36,6 +36,7 @@ enum class EOSState {
 
 struct EOSUtilities_RuntimeOptions {
 	EOS_ELoginCredentialType authCredentialsType = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
+	EOS_EAuthScopeFlags authPremissions = EOS_EAuthScopeFlags::EOS_AS_NoFlags;
 
 	bool bRequireLauncher = true;
 	bool bRequireBootstrap = true;
@@ -46,6 +47,7 @@ private:
 	friend class PlatformBase;
 	friend class EOSAchievement;
 	friend class EOSStat;
+	friend class EOSPresence;
 
 	using CallbackType = std::function<void(EOSUtilities*)>;
 	inline const static CallbackType defaultCb = [] (EOSUtilities*) {};
@@ -247,7 +249,7 @@ public:
 
 		EOS_Auth_LoginOptions LoginOptions{};
 		LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-		LoginOptions.ScopeFlags = EOS_EAuthScopeFlags::EOS_AS_BasicProfile;
+		LoginOptions.ScopeFlags = runtimeOpt.authPremissions;
 		LoginOptions.Credentials = &authCredentials;
 
 		const auto authHandle = EOS_Platform_GetAuthInterface(platformHandle);
@@ -341,10 +343,6 @@ public:
 		connectCredentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
 		connectCredentials.Token = pAuthToken->AccessToken;
 		connectCredentials.Type = EOS_EExternalCredentialType::EOS_ECT_EPIC;
-
-		//EOS_Connect_UserLoginInfo userLoginInfo{};
-		//userLoginInfo.ApiVersion = EOS_CONNECT_USERLOGININFO_API_LATEST;
-		//userLoginInfo.DisplayName = pUserInfo->DisplayName;
 
 		EOS_Connect_LoginOptions connectOptions{};
 		connectOptions.ApiVersion = EOS_CONNECT_LOGIN_API_LATEST;
