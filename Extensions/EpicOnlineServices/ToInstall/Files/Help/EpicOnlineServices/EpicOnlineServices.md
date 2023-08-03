@@ -52,7 +52,9 @@ Wait operations complete before changing frame, or the game may crash!
   - *sometimes extension will ignore error and continue process, please read Epic documents*
 
 - On Login
-- Login Success
+- On Logout
+
+- User Login
 
 - Query Complete
   - *Query achievement definition -> `Achievement`*

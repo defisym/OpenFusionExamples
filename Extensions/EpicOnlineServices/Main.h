@@ -7,11 +7,12 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_ONLOGIN				0
-#define	CND_CONDITION_LOGINSUCCESS			1
+#define	CND_CONDITION_USERLOGIN			1
 #define	CND_CONDITION_QUEARYCOMPLETE		2
 #define	CND_CONDITION_ONERROR				3
+#define	CND_CONDITION_ONLOGOUT				4
 
-#define	CND_LAST							4
+#define	CND_LAST							5
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -129,7 +130,7 @@ typedef struct tagRDATA
 	std::wstring* pRet;
 
 	bool bLoginCalled = false;
-	bool bLoginSuccess = false;
+	bool bUserLogin = false;
 	
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

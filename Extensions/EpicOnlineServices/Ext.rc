@@ -116,13 +116,21 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "On Error", IDMN_CONDITION_ONERROR
+        POPUP "General"
+        BEGIN
+            MENUITEM "On Error", IDMN_CONDITION_ONERROR
+            MENUITEM SEPARATOR
+            MENUITEM "Query Complete", IDMN_CONDITION_QUEARYCOMPLETE
+        END
         MENUITEM SEPARATOR
-        MENUITEM "On Login", IDMN_CONDITION_ONLOGIN
-        MENUITEM "Login Success", IDMN_CONDITION_LOGINSUCCESS
-        MENUITEM SEPARATOR
-        MENUITEM "Query Complete", IDMN_CONDITION_QUEARYCOMPLETE
-        MENUITEM SEPARATOR
+        POPUP "Auth"
+        BEGIN
+            MENUITEM "On Login", IDMN_CONDITION_ONLOGIN
+            MENUITEM "On Logout", IDMN_CONDITION_ONLOGOUT
+            MENUITEM SEPARATOR
+            MENUITEM "User Login", IDMN_CONDITION_USERLOGIN
+        END
+        MENUITEM SEPARATOR        
     END
 END
 #endif
@@ -137,16 +145,28 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Login", IDMN_ACTION_LI
-        MENUITEM "Logout", IDMN_ACTION_LO        
+        POPUP "General"
+        BEGIN
+            MENUITEM "Query", IDMN_ACTION_QUERY
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Query", IDMN_ACTION_QUERY
+        POPUP "Auth"
+        BEGIN
+            MENUITEM "Login", IDMN_ACTION_LI
+            MENUITEM "Logout", IDMN_ACTION_LO        
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
+        POPUP "Achievement & Stat"
+        BEGIN
+            MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
+            MENUITEM SEPARATOR
+            MENUITEM "Ingest Stat", IDMN_ACTION_STAT_I
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Ingest Stat", IDMN_ACTION_STAT_I
-        MENUITEM SEPARATOR
-        MENUITEM "Set Rich Text", IDMN_ACTION_PRE_SRT
+        POPUP "Presence"
+        BEGIN
+            MENUITEM "Set Rich Text", IDMN_ACTION_PRE_SRT
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -161,15 +181,27 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM SEPARATOR        
-        MENUITEM "Last Error", IDMN_EXPRESSION_GLE		
-        MENUITEM SEPARATOR        
-        MENUITEM "Account ID", IDMN_EXPRESSION_ACCOUNTID		
-        MENUITEM "Product User ID", IDMN_EXPRESSION_PRODUCTUSERID	
+        MENUITEM SEPARATOR       
+        POPUP "General"
+        BEGIN 
+            MENUITEM "Last Error", IDMN_EXPRESSION_GLE		
+        END
+        MENUITEM SEPARATOR  
+        POPUP "Auth"
+        BEGIN      
+            MENUITEM "Account ID", IDMN_EXPRESSION_ACCOUNTID		
+            MENUITEM "Product User ID", IDMN_EXPRESSION_PRODUCTUSERID	
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Stat Value", IDMN_EXPRESSION_STATVALUE
+        POPUP "Achievement & Stat"
+        BEGIN
+            MENUITEM "Stat Value", IDMN_EXPRESSION_STATVALUE
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Rich Text", IDMN_EXPRESSION_PRE_GRT
+        POPUP "Presence"
+        BEGIN
+            MENUITEM "Rich Text", IDMN_EXPRESSION_PRE_GRT
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -329,9 +361,10 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_ONLOGIN     "%o On Login"
+    M_CONDITION_ONLOGOUT    "%o On Logout"
     M_CONDITION_ONERROR     "%o On Error"
 
-    M_CONDITION_LOGINSUCCESS        "%o Login Success"
+    M_CONDITION_USERLOGIN        "%o User Login"
     M_CONDITION_QUEARYCOMPLETE      "%o Query Type %0 Complete"
 END
 

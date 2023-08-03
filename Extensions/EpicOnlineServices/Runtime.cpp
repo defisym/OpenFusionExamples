@@ -73,7 +73,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pRet = new std::wstring;
 
 	rdPtr->bLoginCalled = false;
-	rdPtr->bLoginSuccess = false;
+	rdPtr->bUserLogin = false;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
@@ -127,7 +127,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 		// must be here as AddEvent / CallEvent has no effect in CreateRunObject
 		// async callback from different thread, must capture by value
 		rdPtr->pData->EOSLogin([=] (bool bSuccess) {
-			rdPtr->bLoginSuccess = bSuccess;
+			rdPtr->bUserLogin = bSuccess;
 			AddEvent(ON_LoginComplete);
 
 #ifdef _DEBUG

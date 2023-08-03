@@ -110,15 +110,17 @@
 
 // Commands of condition menu
 #define IDMN_CONDITION_ONLOGIN			        26000
-#define IDMN_CONDITION_LOGINSUCCESS 			26001
+#define IDMN_CONDITION_USERLOGIN 			26001
 #define IDMN_CONDITION_QUEARYCOMPLETE			26002
 #define IDMN_CONDITION_ONERROR			        26003
+#define IDMN_CONDITION_ONLOGOUT			        26004
 
 // Condition strings
 #define M_CONDITION_ONLOGIN				     6000
-#define M_CONDITION_LOGINSUCCESS 			 6001
+#define M_CONDITION_USERLOGIN 			 6001
 #define M_CONDITION_QUEARYCOMPLETE			 6002
 #define M_CONDITION_ONERROR     			 6003
+#define M_CONDITION_ONLOGOUT    			 6004
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

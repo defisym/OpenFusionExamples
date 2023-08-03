@@ -4,6 +4,8 @@
 
 //immediate conditon ID
 constexpr auto ON_LoginComplete = 0;
+constexpr auto ON_LogoutComplete = 4;
+
 constexpr auto ON_Error = 3;
 
 // size of edit data

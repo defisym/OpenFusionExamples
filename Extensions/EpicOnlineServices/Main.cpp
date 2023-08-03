@@ -23,9 +23,10 @@
 short conditionsInfos[]=
 		{
 		IDMN_CONDITION_ONLOGIN, M_CONDITION_ONLOGIN, CND_CONDITION_ONLOGIN, 0, 0,
-		IDMN_CONDITION_LOGINSUCCESS, M_CONDITION_LOGINSUCCESS, CND_CONDITION_LOGINSUCCESS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_USERLOGIN, M_CONDITION_USERLOGIN, CND_CONDITION_USERLOGIN, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_QUERYTYPE,
 		IDMN_CONDITION_ONERROR, M_CONDITION_ONERROR, CND_CONDITION_ONERROR, 0, 0,
+		IDMN_CONDITION_ONLOGOUT, M_CONDITION_ONLOGOUT, CND_CONDITION_ONLOGOUT, 0, 0,
 
 		};
 
@@ -62,8 +63,12 @@ long WINAPI DLLExport Condition_OnLogin(LPRDATA rdPtr, long param1, long param2)
 	return true;
 }
 
+long WINAPI DLLExport Condition_OnLogout(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
 long WINAPI DLLExport Condition_LoginSuccess(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->bLoginSuccess;
+	return rdPtr->bUserLogin;
 }
 
 long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long param2) {
@@ -106,7 +111,7 @@ long WINAPI DLLExport Condition_OnError(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->EOSLogin([=] (bool bSuccess) {
-		rdPtr->bLoginSuccess = bSuccess;
+		rdPtr->bUserLogin = bSuccess;
 		AddEvent(ON_LoginComplete);
 		});
 
@@ -115,8 +120,8 @@ short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport Action_Logout(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->EOSLogout([=] (bool bSuccess) {
-		rdPtr->bLoginSuccess = !bSuccess;
-		AddEvent(ON_LoginComplete);
+		rdPtr->bUserLogin = !bSuccess;
+		AddEvent(ON_LogoutComplete);
 		});
 
 	return 0;
@@ -253,6 +258,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_LoginSuccess,
 			Condition_QueryComplete,
 			Condition_OnError,
+			Condition_OnLogout,
 
 			0
 			};

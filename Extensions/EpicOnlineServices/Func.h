@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef _DEBUG
-// only called when login success, for debugging
+// only called when auto login success, for debugging
 inline void EOSLoginDebug(LPRDATA rdPtr) {
 	//const auto bSuccess = rdPtr->pData->pEOSPresence->SetPresenceSetRawRichText("Nijigasaki",
 	//[=] (EOSPresence* pEP) {
@@ -80,7 +80,6 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	pEOSUtilities = new EOSUtilities(runtimeOpt, initOpt, platOpt);
 	EOSInitPlatform();
 
-	// TODO error event
 	pEOSUtilities->SetErrorCallback([=] (const std::string& str) {
 #ifdef _DEBUG
 		OutputDebugStringA(str.c_str());
