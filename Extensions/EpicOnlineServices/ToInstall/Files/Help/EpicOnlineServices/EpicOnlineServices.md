@@ -30,8 +30,13 @@ Wait operations complete before changing frame, or the game may crash!
 
 ## Action
 
+- Login
+- Logout
+  - *if `AuthType` is `Developer`, then you don't need to input accounts again when login*
+
 - Query
   - *Query new data from server, should be call periodically or on demand*
+  - *use the same type of `Query Complete` action*
 
 - Unlock Achievement
 
@@ -43,6 +48,9 @@ Wait operations complete before changing frame, or the game may crash!
 
 ## Condition
 
+- On Error
+  - *sometimes extension will ignore error and continue process, please read Epic documents*
+
 - On Login
 - Login Success
 
@@ -52,6 +60,8 @@ Wait operations complete before changing frame, or the game may crash!
   - *Query presence -> `Presence`*
 
 ## Expression
+
+- Last Error
 
 - Account ID
 - Product User ID
