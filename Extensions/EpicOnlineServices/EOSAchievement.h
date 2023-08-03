@@ -42,11 +42,13 @@ public:
 		opt.LocalUserId = pEU->productUserId;
 
 		EOS_Achievements_QueryDefinitions(achHandle, &opt, this, [] (const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* Data) {
+			const auto pEA = static_cast<decltype(this)>(Data->ClientData);
+
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
+				pEA->pEU->SetLastError("Achievement", "Failed to query definition", Data->ResultCode);
 				return;
 			}
 
-			const auto pEA = static_cast<decltype(this)>(Data->ClientData);
 			pEA->bAchievementQuery = true;
 			pEA->achievementQueryCb(pEA);
 		});
@@ -75,11 +77,13 @@ public:
 
 		EOS_Achievements_UnlockAchievements(achHandle, &unlockAchievementsOptions, this,
 			[] (const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* Data) {
+				const auto pEA = static_cast<decltype(this)>(Data->ClientData);
+
 				if (!EOSUtilities::EOSOK(Data->ResultCode)) {
+					pEA->pEU->SetLastError("Achievement", "Failed to unlock achievement", Data->ResultCode);
 					return;
 				}
 
-				const auto pEA = static_cast<decltype(this)>(Data->ClientData);
 				pEA->achievementUnlockCb(pEA);
 			});
 
@@ -104,6 +108,7 @@ public:
 			return true;
 		}
 
+		pEU->SetLastError("Achievement", "Failed to get achievement " + name);
 		return false;
 	}
 
@@ -143,6 +148,7 @@ public:
 			return true;
 		}
 
+		pEU->SetLastError("Achievement", "Failed to get achievement");
 		return false;
 	}
 

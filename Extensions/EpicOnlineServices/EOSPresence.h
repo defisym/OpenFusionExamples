@@ -45,11 +45,13 @@ public:
 		queryPresenceOptions.TargetUserId = pEU->accountId;
 
 		EOS_Presence_QueryPresence(preHandle, &queryPresenceOptions, this, [] (const EOS_Presence_QueryPresenceCallbackInfo* Data) {
+			const auto pEP = static_cast<decltype(this)>(Data->ClientData);
+
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
+				pEP->pEU->SetLastError("Presence", "Failed to query presence", Data->ResultCode);
 				return;
 			}
 			
-			const auto pEP = static_cast<decltype(this)>(Data->ClientData);
 			pEP->bPresenceQuery = true;
 			pEP->presenceQueryCb(pEP);
 		});
@@ -87,6 +89,7 @@ public:
 			return true;
 		}
 
+		pEU->SetLastError("Presence", "Failed to copy presence");
 		return false;
 	}
 
@@ -115,20 +118,24 @@ private:
 				setPresenceOptions.PresenceModificationHandle = presenceModificationHandle;
 
 				EOS_Presence_SetPresence(preHandle, &setPresenceOptions, this, [] (const EOS_Presence_SetPresenceCallbackInfo* Data) {
+					const auto pEP = static_cast<decltype(this)>(Data->ClientData);
+
 					if (!EOSUtilities::EOSOK(Data->ResultCode)) {
+						pEP->pEU->SetLastError("Presence", "Failed to set presence", Data->ResultCode);
 						return;
 					}
 
-					const auto pEP = static_cast<decltype(this)>(Data->ClientData);
 					pEP->presenceSetCb(pEP);
 				});
 			}
 
 			EOS_PresenceModification_Release(presenceModificationHandle);
 
+			pEU->SetLastError("Presence", "Failed to set presence");
 			return bSuccess;
 		}
 
+		pEU->SetLastError("Presence", "Failed to create presence modification handle");
 		return false;
 	}
 

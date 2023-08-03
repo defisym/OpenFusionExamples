@@ -48,11 +48,13 @@ public:
 		queryStatOptions.StatNamesCount = 0;
 
 		EOS_Stats_QueryStats(statHandle, &queryStatOptions, this, [] (const EOS_Stats_OnQueryStatsCompleteCallbackInfo* Data) {
+			const auto pES = static_cast<decltype(this)>(Data->ClientData);
+
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
+				pES->pEU->SetLastError("Stat", "Failed to query stat", Data->ResultCode);
 				return;
 			}
 
-			const auto pES = static_cast<decltype(this)>(Data->ClientData);
 			pES->bStatQuery = true;
 			pES->statQueryCb(pES);
 		});
@@ -83,11 +85,13 @@ public:
 		ingestStatOptions.StatsCount = sz;
 
 		EOS_Stats_IngestStat(statHandle, &ingestStatOptions,this,[](const EOS_Stats_IngestStatCompleteCallbackInfo* Data) {
+			const auto pES = static_cast<decltype(this)>(Data->ClientData);
+
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
+				pES->pEU->SetLastError("Stat", "Failed to ingest stat", Data->ResultCode);
 				return;
 			}
 
-			const auto pES = static_cast<decltype(this)>(Data->ClientData);
 			pES->statIngestCb(pES);
 		});
 
@@ -112,6 +116,7 @@ public:
 			return true;
 		}
 
+		pEU->SetLastError("Stat", "Failed to get stat " + name);
 		return false;
 	}
 
@@ -153,6 +158,7 @@ public:
 			return true;
 		}
 
+		pEU->SetLastError("Stat", "Failed to get stat");
 		return false;
 	}
 
