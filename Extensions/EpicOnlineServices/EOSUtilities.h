@@ -63,8 +63,14 @@ private:
 	bool bInit = false;
 	EOSState state = EOSState::Invalid;
 
+	using ErrorCallbackType = std::function<void(const std::string&)>;
+	ErrorCallbackType errorCallback = nullptr;
+
+	std::string lastErrorType;
+	std::string lastErrorInfo;
+	
 	EOSUtilities_RuntimeOptions runtimeOpt;
-	const EOSCommandLine cmdLine;
+	EOSCommandLine cmdLine;
 
 	EOS_HPlatform platformHandle = nullptr;
 
@@ -75,7 +81,10 @@ private:
 	EOS_Auth_Token* pAuthToken = nullptr;
 	EOS_Auth_IdToken* pAuthIDToken = nullptr;
 
-	CallbackType authCb = nullptr;
+	CallbackType authLoginCb = nullptr;
+	CallbackType authLogoutCb = nullptr;
+	CallbackType deletePersistentAuthCb = nullptr;
+
 	CallbackType connectCb = nullptr;
 
 	constexpr static auto InvalidID = "InvalidID";
@@ -97,6 +106,7 @@ public:
 		bInit = EOSOK(result);
 
 		if (!bInit) {
+			SetLastError("Init", result);
 			state = EOSState::InitFailed;
 
 			return;
@@ -106,6 +116,7 @@ public:
 		platformHandle = EOS_Platform_Create(&platOpt);
 
 		if (platformHandle == nullptr) {
+			SetLastError("Create platform", result);
 			state = EOSState::InitFailed;
 
 			return;
@@ -170,8 +181,76 @@ public:
 	}
 
 	inline auto State() const { return state; }
-	
-	inline void Auth(const CallbackType& cb = defaultCb) {
+
+public:
+	inline void SetErrorCallback(const ErrorCallbackType& cb) {
+		errorCallback = cb;
+	}
+
+private:
+	inline void CallErrorCallback() {
+		if (errorCallback != nullptr) {
+			errorCallback(GetLastError());
+		}
+	}
+
+public:
+	inline void SetLastError(const std::string& errType, const std::string& errInfo) {
+		lastErrorType = errType;
+		lastErrorInfo = errInfo;
+
+		CallErrorCallback();
+	}
+
+	inline void SetLastError(const std::string& errType, EOS_EResult result) {
+		lastErrorType = errType;
+		lastErrorInfo = EOS_EResult_ToString(result);
+
+		CallErrorCallback();
+	}
+
+	inline void SetLastError(const std::string& errType, const std::string& errInfo, EOS_EResult result) {
+		lastErrorType = errType;
+		lastErrorInfo = std::format("{}: {}", errInfo, EOS_EResult_ToString(result));
+
+		CallErrorCallback();
+	}
+
+	inline std::string GetLastError() {
+		if (lastErrorType.empty() && lastErrorInfo.empty()) {
+			return "No error";
+		}
+
+		//if(!PlatformOK()) {
+		//	return "Platform not initialized";
+		//}
+
+		return std::format("Type: {}, Info: {}", lastErrorType, lastErrorInfo);
+	}
+
+private:
+	inline void DeletePersistentAuth(const CallbackType& cb = defaultCb) {
+		deletePersistentAuthCb = cb;
+
+		const auto authHandle = EOS_Platform_GetAuthInterface(platformHandle);
+
+		EOS_Auth_DeletePersistentAuthOptions deletePersistentAuthOptions = {};
+		deletePersistentAuthOptions.ApiVersion = EOS_AUTH_DELETEPERSISTENTAUTH_API_LATEST;
+
+		EOS_Auth_DeletePersistentAuth(authHandle, &deletePersistentAuthOptions, this,
+			[] (const EOS_Auth_DeletePersistentAuthCallbackInfo* Data) {
+				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+
+				if(!EOSOK(Data->ResultCode)) {
+					pEU->SetLastError("Auth", "Failed to delete persistent auth", Data->ResultCode);
+				}
+
+				pEU->deletePersistentAuthCb(pEU);
+			});
+	}
+
+public:
+	inline void AuthLogin(const CallbackType& cb = defaultCb) {
 		if (state != EOSState::InitSuccess) {
 			return;
 		}
@@ -181,7 +260,7 @@ public:
 		}
 
 		state = EOSState::TryAuth;
-		authCb = cb;
+		authLoginCb = cb;
 
 		EOS_Auth_Credentials authCredentials{};
 		authCredentials.ApiVersion = EOS_AUTH_CREDENTIALS_API_LATEST;
@@ -201,8 +280,9 @@ public:
 		{
 			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 			if (!cmdLine.bValid) {
+				SetLastError("Auth", "Invalid exchange code");
 				state = EOSState::AuthFailed;
-				authCb(this);
+				authLoginCb(this);
 
 				return;
 			}
@@ -227,8 +307,9 @@ public:
 
 			EOS_Platform_GetDesktopCrossplayStatusInfo desktopCrossplayStatusInfo{};
 			if (!EOSOK(EOS_Platform_GetDesktopCrossplayStatus(platformHandle, &desktopCrossplayStatusOptions, &desktopCrossplayStatusInfo))) {
+				SetLastError("Auth", "Crossplay not installed");
 				state = EOSState::AuthFailed;
-				authCb(this);
+				authLoginCb(this);
 
 				return;
 			}
@@ -239,8 +320,9 @@ public:
 					// continue
 				}
 				else {
+					SetLastError("Auth", "Application not bootstrapped");
 					state = EOSState::AuthFailed;
-					authCb(this);
+					authLoginCb(this);
 
 					return;
 				}
@@ -249,43 +331,64 @@ public:
 			break;
 		}
 		default:
+			SetLastError("Auth", "Invalid type");
 			state = EOSState::AuthFailed;
-			authCb(this);
+			authLoginCb(this);
 
 			return;
 		}
 
-		EOS_Auth_LoginOptions LoginOptions{};
-		LoginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
-		LoginOptions.ScopeFlags = runtimeOpt.authPremissions;
-		LoginOptions.Credentials = &authCredentials;
-
 		const auto authHandle = EOS_Platform_GetAuthInterface(platformHandle);
-		EOS_Auth_Login(authHandle, &LoginOptions, this,
+
+		EOS_Auth_LoginOptions loginOptions{};
+		loginOptions.ApiVersion = EOS_AUTH_LOGIN_API_LATEST;
+		loginOptions.ScopeFlags = runtimeOpt.authPremissions;
+		loginOptions.Credentials = &authCredentials;
+
+		EOS_Auth_Login(authHandle, &loginOptions, this,
 			[] (const EOS_Auth_LoginCallbackInfo* Data) {
 				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
 
 				if (!EOSOK(Data->ResultCode)) {
+					pEU->SetLastError("Auth", Data->ResultCode);
+
 					// https://dev.epicgames.com/docs/en-US/epic-account-services/auth/auth-interface#persisting-user-login-to-epic-account-outside-epic-games-launcher
 					if(pEU->runtimeOpt.authCredentialsType == EOS_ELoginCredentialType::EOS_LCT_PersistentAuth) {
+						// Applications are expected to attempt automatic login using the EOS_LCT_PersistentAuth login method
+						// and fall back to EOS_LCT_AccountPortal to prompt users for manual login.
+						auto persistentAuthFallback = [=]() {
+							// save
+							auto typeSave = pEU->runtimeOpt.authCredentialsType;
+							auto cbSave = pEU->authLoginCb;
+
+							// re-login
+							pEU->state = EOSState::InitSuccess;
+							pEU->runtimeOpt.authCredentialsType = EOS_ELoginCredentialType::EOS_LCT_AccountPortal;
+
+							pEU->AuthLogin([typeSave, cbSave] (EOSUtilities* pEU) {
+								pEU->runtimeOpt.authCredentialsType = typeSave;
+								cbSave(pEU);
+							});
+						};
+
 						// Delete saved persistent auth token if token has expired or auth is invalid
 						// Don't delete for other errors (e.g. EOS_EResult::EOS_NoConnection), the auth token may still be valid in these cases
 						if (Data->ResultCode == EOS_EResult::EOS_Auth_Expired ||
 							Data->ResultCode == EOS_EResult::EOS_InvalidAuth) {
-							const auto authHandle = EOS_Platform_GetAuthInterface(pEU->platformHandle);
+							pEU->SetLastError("Auth", "Persistent auth token has expired or auth is invalid");
+							pEU->DeletePersistentAuth([=](EOSUtilities*) {
+								persistentAuthFallback();
+							});
 
-							EOS_Auth_DeletePersistentAuthOptions deletePersistentAuthOptions = {};
-							deletePersistentAuthOptions.ApiVersion = EOS_AUTH_DELETEPERSISTENTAUTH_API_LATEST;
-
-							EOS_Auth_DeletePersistentAuth(authHandle, &deletePersistentAuthOptions, pEU, 
-								[](const EOS_Auth_DeletePersistentAuthCallbackInfo* Data) {
-									const auto pEU = static_cast<decltype(this)>(Data->ClientData);
-								});
+							return;
 						}
+
+						persistentAuthFallback();
+						return;
 					}
 
 					pEU->state = EOSState::AuthFailed;
-					pEU->authCb(pEU);
+					pEU->authLoginCb(pEU);
 
 					return;
 				}
@@ -300,8 +403,9 @@ public:
 				userInfoOpt.TargetUserId = pEU->accountId;
 
 				if (!EOSOK(EOS_UserInfo_CopyUserInfo(userHandle, &userInfoOpt, &pEU->pUserInfo))) {
+					pEU->SetLastError("Auth", "Failed to copy user info");
 					pEU->state = EOSState::AuthFailed;
-					pEU->authCb(pEU);
+					pEU->authLoginCb(pEU);
 
 					return;
 				};
@@ -312,8 +416,9 @@ public:
 				copyAuthTokenOptions.ApiVersion = EOS_AUTH_COPYUSERAUTHTOKEN_API_LATEST;
 
 				if (!EOSOK(EOS_Auth_CopyUserAuthToken(authHandle, &copyAuthTokenOptions, pEU->accountId, &pEU->pAuthToken))) {
+					pEU->SetLastError("Auth", "Failed to copy user auth token");
 					pEU->state = EOSState::AuthFailed;
-					pEU->authCb(pEU);
+					pEU->authLoginCb(pEU);
 
 					return;
 				}
@@ -323,14 +428,44 @@ public:
 				copyIDTokenOptions.AccountId = pEU->accountId;
 
 				if (!EOSOK(EOS_Auth_CopyIdToken(authHandle, &copyIDTokenOptions, &pEU->pAuthIDToken))) {
+					pEU->SetLastError("Auth", "Failed to copy ID token");
 					pEU->state = EOSState::AuthFailed;
-					pEU->authCb(pEU);
+					pEU->authLoginCb(pEU);
 
 					return;
 				}
 
 				pEU->state = EOSState::AuthSuccess;
-				pEU->authCb(pEU);
+				pEU->authLoginCb(pEU);
+		});
+	}
+
+	inline void AuthLogout(const CallbackType& cb = defaultCb) {
+		if (state < EOSState::AuthSuccess) {
+			return;
+		}
+
+		authLogoutCb = cb;
+
+		const auto authHandle = EOS_Platform_GetAuthInterface(platformHandle);
+
+		EOS_Auth_LogoutOptions logoutOptions{};
+		logoutOptions.ApiVersion = EOS_AUTH_LOGOUT_API_LATEST;
+		logoutOptions.LocalUserId = accountId;
+
+		EOS_Auth_Logout(authHandle,&logoutOptions,this,[](const EOS_Auth_LogoutCallbackInfo* Data) {
+			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+
+			if (!EOSOK(Data->ResultCode)) {
+				pEU->SetLastError("Auth", Data->ResultCode);
+			}
+
+			if(pEU->runtimeOpt.authCredentialsType == EOS_ELoginCredentialType::EOS_LCT_PersistentAuth) {
+				pEU->DeletePersistentAuth();
+			}
+
+			pEU->state = EOSState::InitSuccess;
+			pEU->authLogoutCb(pEU);
 		});
 	}
 
@@ -338,7 +473,6 @@ public:
 		if (state != EOSState::AuthSuccess) {
 			return;
 		}
-
 
 		if (state == EOSState::TryConnect || state == EOSState::ConnectFailed) {
 			return;
@@ -384,6 +518,7 @@ public:
 						const auto pEU = static_cast<decltype(this)>(Data->ClientData);
 
 						if (!EOSOK(Data->ResultCode)) {
+							pEU->SetLastError("Auth", "Failed to copy ID token", Data->ResultCode);
 							pEU->state = EOSState::ConnectFailed;
 							pEU->connectCb(pEU);
 
@@ -399,6 +534,7 @@ public:
 			}
 
 			// failed
+			pEU->SetLastError("Connect", Data->ResultCode);
 			pEU->state = EOSState::ConnectFailed;
 			pEU->connectCb(pEU);
 		});
@@ -408,7 +544,7 @@ public:
 		return state == EOSState::ConnectSuccess;
 	}
 
-	inline std::string GetAccountID() const {
+	inline std::string GetAccountID() {
 		if (!PlatformOK()) {
 			return InvalidID;
 		}
@@ -419,10 +555,11 @@ public:
 			return accountIDStr;
 		}
 
+		SetLastError("GetAccountID", "Failed to get account ID");
 		return InvalidID;
 	}
 
-	inline std::string GetProductUserID() const {
+	inline std::string GetProductUserID() {
 		if (!PlatformOK()) {
 			return InvalidID;
 		}
@@ -433,6 +570,7 @@ public:
 			return productUserIDStr;
 		}
 
+		SetLastError("GetAccountID", "Failed to get product user ID");
 		return InvalidID;
 	}
 };

@@ -4,6 +4,7 @@
 
 //immediate conditon ID
 constexpr auto ON_LoginComplete = 0;
+constexpr auto ON_Error = 3;
 
 // size of edit data
 constexpr auto EOS_IDSZ = 36;
@@ -140,8 +141,8 @@ struct GlobalData {
 		}
 
 		// from different thread, must capture by value
-		pEOSUtilities->AuthLogout([this, callback] (EOSUtilities* pEU) {
-			callback(true);
+		pEOSUtilities->AuthLogout([this, callback] (const EOSUtilities* pEU) {
+			callback(pEU->State() == EOSState::InitSuccess);
 		});
 	}
 };

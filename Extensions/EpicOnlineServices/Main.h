@@ -9,8 +9,9 @@
 #define	CND_CONDITION_ONLOGIN				0
 #define	CND_CONDITION_LOGINSUCCESS			1
 #define	CND_CONDITION_QUEARYCOMPLETE		2
+#define	CND_CONDITION_ONERROR				3
 
-#define	CND_LAST							3
+#define	CND_LAST							4
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

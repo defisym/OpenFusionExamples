@@ -81,11 +81,13 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	EOSInitPlatform();
 
 	// TODO error event
-	pEOSUtilities->SetErrorCallback([] (const std::string& str) {
+	pEOSUtilities->SetErrorCallback([=] (const std::string& str) {
 #ifdef _DEBUG
 		OutputDebugStringA(str.c_str());
 		OutputDebugStringA("\r\n");
 #endif
+
+		CallEvent(ON_Error);		
 	});
 
 	return pEOSUtilities->State() == EOSState::InitSuccess;

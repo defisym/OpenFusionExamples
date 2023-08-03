@@ -25,6 +25,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ONLOGIN, M_CONDITION_ONLOGIN, CND_CONDITION_ONLOGIN, 0, 0,
 		IDMN_CONDITION_LOGINSUCCESS, M_CONDITION_LOGINSUCCESS, CND_CONDITION_LOGINSUCCESS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_QUERYTYPE,
+		IDMN_CONDITION_ONERROR, M_CONDITION_ONERROR, CND_CONDITION_ONERROR, 0, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -92,6 +94,9 @@ long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long p
 	return false;
 }
 
+long WINAPI DLLExport Condition_OnError(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
 
 // ============================================================================
 //
@@ -247,6 +252,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_OnLogin,
 			Condition_LoginSuccess,
 			Condition_QueryComplete,
+			Condition_OnError,
 
 			0
 			};
