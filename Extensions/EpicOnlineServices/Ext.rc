@@ -156,7 +156,7 @@ BEGIN
             MENUITEM "Logout", IDMN_ACTION_LO        
         END
         MENUITEM SEPARATOR
-        POPUP "Achievement & Stat"
+        POPUP "Achievement && Stat"
         BEGIN
             MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
             MENUITEM SEPARATOR
@@ -193,7 +193,7 @@ BEGIN
             MENUITEM "Product User ID", IDMN_EXPRESSION_PRODUCTUSERID	
         END
         MENUITEM SEPARATOR
-        POPUP "Achievement & Stat"
+        POPUP "Achievement && Stat"
         BEGIN
             MENUITEM "Stat Value", IDMN_EXPRESSION_STATVALUE
         END
@@ -328,6 +328,11 @@ BEGIN
     IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          "RequireBootstrap"
     IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     "Continue even if app is not started through the EOS boot strapper application"
     
+    IDS_PROP_RuntimeOptions_AutoLogin_CHECK                 "Auto Login"
+    IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO            ""
+    IDS_PROP_RuntimeOptions_AutoLogout_CHECK                "Auto Logout"
+    IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO           ""
+
     IDS_AuthType_Developer                                  "Developer"
     IDS_AuthType_ExchangeCode                               "ExchangeCode"
     IDS_AuthType_PersistentAuth                             "PersistentAuth"

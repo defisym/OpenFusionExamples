@@ -30,47 +30,57 @@ Wait operations complete before changing frame, or the game may crash!
 
 ## Action
 
-- Login
-- Logout
-  - *if `AuthType` is `Developer`, then you don't need to input accounts again when login*
+- General
+  - Query
+    - *Query new data from server, should be call periodically or on demand*
+    - *use the same type of `Query Complete` action*
 
-- Query
-  - *Query new data from server, should be call periodically or on demand*
-  - *use the same type of `Query Complete` action*
+- Auth
+  - Login
+  - Logout
+    - *if `AuthType` is `Developer`, then you don't need to input accounts again when login*
 
-- Unlock Achievement
+- Achievement && Stat
+  - Unlock Achievement
 
-- Ingest Stat
-  - *behavior depends on the type of stat*
-  - *e.g., sum -> add value to the given stat*
+  - Ingest Stat
+    - *behavior depends on the type of stat*
+    - *e.g., sum -> add value to the given stat*
 
-- Set Rich Text
+- Presence
+  - Set Rich Text
 
 ## Condition
 
-- On Error
-  - *sometimes extension will ignore error and continue process, please read Epic documents*
+- General
+  - On Error
+    - *sometimes extension will ignore error and continue process, please read Epic documents*
 
-- On Login
-- On Logout
+  - Query Complete
+    - *Query achievement definition -> `Achievement`*
+    - *Query stat -> `Stat`*
+    - *Query presence -> `Presence`*
 
-- User Login
+- Auth
+  - On Login
+  - On Logout
 
-- Query Complete
-  - *Query achievement definition -> `Achievement`*
-  - *Query stat -> `Stat`*
-  - *Query presence -> `Presence`*
+  - User Login
 
 ## Expression
 
-- Last Error
+- General
+  - Last Error
 
-- Account ID
-- Product User ID
-  - *usually you don't need it, but useful for testing*
+- Auth
+  - Account ID
+  - Product User ID
+    - *usually you don't need it, but useful for testing, e.g., reset user achievement in dev portal*
 
-- Stat Value
-  - *Get stat value, need query complete*
+- Achievement && Stat
+  - Stat Value
+    - *Get stat value, need query complete*
 
-- Rich Text
-  - *Get rich text, need query complete*
+- Presence
+  - Rich Text
+    - *Get rich text, need query complete*

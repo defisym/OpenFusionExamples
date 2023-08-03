@@ -41,6 +41,22 @@ inline auto GetAuthPremissions(LPEDATA edPtr) {
 	return permission;
 }
 
+inline GlobalData::~GlobalData() {
+	auto release = [this] () {
+		EOSReleasePlatform();
+		delete pEOSUtilities;
+	};
+
+	if (rdPtr->bAutoLogout && rdPtr->bUserLogin) {
+		EOSLogout([release] (bool) {
+			release();
+		});
+	}
+	else {
+		release();
+	}
+}
+
 inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	// sdk
 	productName = ConvertWStrToStr(edPtr->pAppName);

@@ -62,10 +62,7 @@ struct GlobalData {
 	std::string clientSecret;
 	
 	GlobalData() = default;
-	~GlobalData() {
-		EOSReleasePlatform();
-		delete pEOSUtilities;
-	}
+	~GlobalData();
 
 	inline void SetRundata(LPRDATA rdPtr) {
 		this->rdPtr = rdPtr;

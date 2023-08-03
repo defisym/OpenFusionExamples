@@ -84,10 +84,15 @@ typedef struct tagEDATA_V1
 	bool bAuthPremissions_Email;
 	bool bAuthPremissions_Country;
 
+	bool bAutoLogin;
+	bool bAutoLogout;
+
 	// aligning
+	bool bUnused_0;
+	bool bUnused_1;
 
 	// buffer
-	int buffer[49];
+	int buffer[48];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -126,6 +131,9 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	GlobalData* pData;
+
+	bool bAutoLogin;
+	bool bAutoLogout;
 
 	std::wstring* pRet;
 

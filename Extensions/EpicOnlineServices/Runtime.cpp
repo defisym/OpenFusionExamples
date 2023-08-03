@@ -72,6 +72,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pRet = new std::wstring;
 
+	
+	rdPtr->bAutoLogin = edPtr->bAutoLogin;
+	rdPtr->bAutoLogout = edPtr->bAutoLogout;
+
 	rdPtr->bLoginCalled = false;
 	rdPtr->bUserLogin = false;
 
@@ -122,7 +126,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 	rdPtr->pData->EOSUpdate();
 	
-	if (!rdPtr->bLoginCalled) {
+	if (rdPtr->bAutoLogin && !rdPtr->bLoginCalled) {
 		rdPtr->bLoginCalled = true;
 		// must be here as AddEvent / CallEvent has no effect in CreateRunObject
 		// async callback from different thread, must capture by value
@@ -296,9 +300,6 @@ BOOL WINAPI LoadRunObject(LPRDATA rdPtr, HANDLE hf)
 // 
 void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 {
-	// Example
-	// -------
-	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
 		delete pData;
@@ -313,9 +314,6 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 // 
 void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 {
-	// Example
-	// -------
-	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
 		delete pData;

@@ -44,6 +44,8 @@ enum {
 
 	PROPID_RuntimeOptions_RequireLauncher_CHECK,	
 	PROPID_RuntimeOptions_RequireBootstrap_CHECK,	
+	PROPID_RuntimeOptions_AutoLogin_CHECK,	
+	PROPID_RuntimeOptions_AutoLogout_CHECK,	
 };
 
 LPCWSTR AuthTypeComboList[] = {
@@ -99,6 +101,9 @@ PropData Properties[] = {
 
 	PropData_CheckBox	(PROPID_RuntimeOptions_RequireLauncher_CHECK,		IDS_PROP_RuntimeOptions_RequireLauncher_CHECK,			IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO),
 	PropData_CheckBox	(PROPID_RuntimeOptions_RequireBootstrap_CHECK,		IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK,			IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO),
+	
+	PropData_CheckBox	(PROPID_RuntimeOptions_AutoLogin_CHECK,		IDS_PROP_RuntimeOptions_AutoLogin_CHECK,			IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO),
+	PropData_CheckBox	(PROPID_RuntimeOptions_AutoLogout_CHECK,		IDS_PROP_RuntimeOptions_AutoLogout_CHECK,			IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -380,6 +385,15 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->sheight = 32;
 #endif
 		edPtr->authType = AuthTypeComboListEnum::ExchangeCode;
+
+		edPtr->bAuthPremissions_BasicProfile = true;
+
+		edPtr->bRequireLauncher = true;
+		edPtr->bRequireBootstrap = true;
+
+		edPtr->bAutoLogin = true;
+		edPtr->bAutoLogout = false;
+
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
 //		spa.edpt = edPtr;
@@ -761,6 +775,11 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bRequireLauncher;
 	case PROPID_RuntimeOptions_RequireBootstrap_CHECK:
 		return edPtr->bRequireBootstrap;
+
+	case PROPID_RuntimeOptions_AutoLogin_CHECK:
+		return edPtr->bAutoLogin;
+	case PROPID_RuntimeOptions_AutoLogout_CHECK:
+		return edPtr->bAutoLogout;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -854,6 +873,13 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		break;
 	case PROPID_RuntimeOptions_RequireBootstrap_CHECK:
 		edPtr->bRequireBootstrap = nCheck;
+		break;
+
+	case PROPID_RuntimeOptions_AutoLogin_CHECK:
+		edPtr->bAutoLogin = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AutoLogout_CHECK:
+		edPtr->bAutoLogout = nCheck;
 		break;
 	}
 #endif // !defined(RUN_ONLY)

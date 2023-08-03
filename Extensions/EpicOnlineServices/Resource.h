@@ -62,6 +62,10 @@
 #define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      233
 #define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          234
 #define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     235
+#define IDS_PROP_RuntimeOptions_AutoLogin_CHECK                 236
+#define IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO            237
+#define IDS_PROP_RuntimeOptions_AutoLogout_CHECK                238
+#define IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO           239
 
 #define IDS_AuthType_Developer                                  300
 #define IDS_AuthType_ExchangeCode                               301
