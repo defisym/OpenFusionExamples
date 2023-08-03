@@ -384,8 +384,17 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
 #endif
-		edPtr->authType = AuthTypeComboListEnum::ExchangeCode;
+		//auto copyProp = [=] (LPWSTR pText, UINT nPropID) {
+		//	const auto pStr = dynamic_cast<CPropWStringValue*>(mvGetAppPropValue(mV, edPtr, nPropID))->GetString();
+		//	wcscpy_s(pText, EOS_IDSZ, pStr);
+		//	MSGBOX(pStr);
+		//};
+		//
+		//copyProp(edPtr->pAppName, PROPID_APP_PROJECTNAME);
+		//copyProp(edPtr->pAppVersion, PROPID_APP_FILEVERSION);
 
+		edPtr->authType = AuthTypeComboListEnum::ExchangeCode;		
+		
 		edPtr->bAuthPremissions_BasicProfile = true;
 
 		edPtr->bRequireLauncher = true;
