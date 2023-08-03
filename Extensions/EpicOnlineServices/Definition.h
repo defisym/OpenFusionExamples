@@ -108,7 +108,7 @@ struct GlobalData {
 		}
 
 		// from different thread, must capture by value
-		pEOSUtilities->Auth([this, callback](EOSUtilities* pEU) {
+		pEOSUtilities->AuthLogin([this, callback](EOSUtilities* pEU) {
 			const auto state = pEU->State();
 
 			if(state == EOSState::AuthFailed) {
@@ -130,5 +130,18 @@ struct GlobalData {
 				});
 			}
 		});		
+	}
+
+	inline void EOSLogout(const std::function<void(bool)>& callback) const {
+		if (!pEOSUtilities && pEOSUtilities->State() < EOSState::AuthSuccess) {
+			callback(false);
+
+			return;
+		}
+
+		// from different thread, must capture by value
+		pEOSUtilities->AuthLogout([this, callback] (EOSUtilities* pEU) {
+			callback(true);
+		});
 	}
 };

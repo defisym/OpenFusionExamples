@@ -135,6 +135,9 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Login", IDMN_ACTION_LI
+        MENUITEM "Logout", IDMN_ACTION_LO        
+        MENUITEM SEPARATOR
         MENUITEM "Query", IDMN_ACTION_QUERY
         MENUITEM SEPARATOR
         MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
@@ -156,6 +159,8 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR        
+        MENUITEM "Last Error", IDMN_EXPRESSION_GLE		
         MENUITEM SEPARATOR        
         MENUITEM "Account ID", IDMN_EXPRESSION_ACCOUNTID		
         MENUITEM "Product User ID", IDMN_EXPRESSION_PRODUCTUSERID	
@@ -314,6 +319,9 @@ BEGIN
     
     M_ACTION_PRE_SRT        "Set Rich Text to %0"
     M_RICHTEXT              "Rich Text"
+
+    M_ACTION_LI             "Login"
+    M_ACTION_LO             "Logout"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -325,6 +333,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_EXPRESSION_GLE   "LastError$ ("
     M_EXPRESSION_STATVALUE   "StatValue ("
 
     M_EXPRESSION_ACCOUNTID		   "AccountID$ ("

@@ -34,6 +34,8 @@ short actionsInfos[]=
 		IDMN_ACTION_STAT_I, M_ACTION_STAT_I, ACT_ACTION_STAT_I,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_STAT_NAME, M_STAT_VALUE,
 		IDMN_ACTION_QUERY, M_ACTION_QUERY, ACT_ACTION_QUERY,	0, 1, PARAM_EXPSTRING, M_QUERYTYPE,
 		IDMN_ACTION_PRE_SRT, M_ACTION_PRE_SRT, ACT_ACTION_PRE_SRT,	0, 1, PARAM_EXPSTRING, M_RICHTEXT,
+		IDMN_ACTION_LI, M_ACTION_LI, ACT_ACTION_LI,	0, 0,
+		IDMN_ACTION_LO, M_ACTION_LO, ACT_ACTION_LO,	0, 0,
 		};
 
 // Definitions of parameters for each expression
@@ -43,6 +45,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_ACCOUNTID, M_EXPRESSION_ACCOUNTID, EXP_EXPRESSION_ACCOUNTID, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_PRODUCTUSERID, M_EXPRESSION_PRODUCTUSERID, EXP_EXPRESSION_PRODUCTUSERID, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_PRE_GRT, M_EXPRESSION_PRE_GRT, EXP_EXPRESSION_PRE_GRT, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GLE, M_EXPRESSION_GLE, EXP_EXPRESSION_GLE, EXPFLAG_STRING, 0,
 		};
 
 
@@ -95,6 +98,24 @@ long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long p
 // ACTIONS ROUTINES
 // 
 // ============================================================================
+
+short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->EOSLogin([=] (bool bSuccess) {
+		rdPtr->bLoginSuccess = bSuccess;
+		AddEvent(ON_LoginComplete);
+		});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Logout(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->EOSLogout([=] (bool bSuccess) {
+		rdPtr->bLoginSuccess = !bSuccess;
+		AddEvent(ON_LoginComplete);
+		});
+
+	return 0;
+}
 
 short WINAPI DLLExport Action_Achievement_Unlock(LPRDATA rdPtr, long param1, long param2) {
 	const std::string achName = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
@@ -152,6 +173,16 @@ short WINAPI DLLExport Action_Presence_SetRichTest(LPRDATA rdPtr, long param1, l
 // EXPRESSIONS ROUTINES
 // 
 // ============================================================================
+
+long WINAPI DLLExport Expression_GetLastError(LPRDATA rdPtr, long param1) {
+	*rdPtr->pRet = ConvertStrToWStr(rdPtr->pData->pEOSUtilities->GetLastError());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
 
 long WINAPI DLLExport Expression_GetStatValue(LPRDATA rdPtr, long param1) {
 	const std::string statName = ConvertWStrToStr((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
@@ -226,6 +257,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Stat_Ingest,
 			Action_Query,
 			Action_Presence_SetRichTest,
+			Action_Login,
+			Action_Logout,
 
 			0
 			};
@@ -236,6 +269,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetAccountID,
 			Expression_GetProductUserID,
 			Expression_Presence_GetRichTest,
+			Expression_GetLastError,
 
 			0
 			};
