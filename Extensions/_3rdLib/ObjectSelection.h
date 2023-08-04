@@ -626,18 +626,17 @@ public:
 			});
 	}
 
-	// ReSharper disable once CppParameterMayBeConstPtrOrRef
-	inline bool OILHasObject(std::wstring& objName) const {
-		return OILHasObject(objName.c_str());
+	inline LPOIL GetOILByName(std::wstring& objName) const {
+		return GetOILByName(objName.c_str());
 	}
 
-	inline bool OILHasObject(const LPCWSTR pObjName) const {
-		bool bHas = false;
+	inline LPOIL GetOILByName(const LPCWSTR pObjName) const {
+		LPOIL pOil = nullptr;
 
-		IterateOiL([&] (const LPOIL pOil) {
+		IterateOiL([&] (const LPOIL _pOil) {
 			// oilName may start with empty char
 			const auto pCurName = [&] () {
-				auto pOilName = pOil->oilName;
+				auto pOilName = _pOil->oilName;
 
 				while (pOilName[0] == 65535) {
 					pOilName++;
@@ -647,11 +646,20 @@ public:
 			}();
 
 			if (StrEqu(pObjName, pCurName)) {
-				bHas = true;
+				pOil = _pOil;
 			}
 			});
 
-		return bHas;
+		return pOil;
+	}
+
+	// ReSharper disable once CppParameterMayBeConstPtrOrRef
+	inline bool OILHasObject(std::wstring& objName) const {
+		return OILHasObject(objName.c_str());
+	}
+
+	inline bool OILHasObject(const LPCWSTR pObjName) const {
+		return GetOILByName(pObjName) != nullptr;
 	}
 
 	inline bool OILHasObject(const LPOIL pOil) const {
