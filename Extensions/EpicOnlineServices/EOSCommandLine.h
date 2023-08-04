@@ -2,8 +2,12 @@
 
 #include "CLI11.hpp"
 
-//-AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal  -epicusername=<username> -epicuserid=<userid> -epiclocale=en-US -epicsandboxid=<sandboxid>
-//-AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal -epicusername=<username>-epicuserid<userid> -epiclocale=en-US
+// -AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal  -epicusername=<username> -epicuserid=<userid> -epiclocale=en-US -epicsandboxid=<sandboxid>
+// -AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal -epicusername=<username>-epicuserid<userid> -epiclocale=en-US
+
+// https://eoshelp.epicgames.com/s/case/5004z00001rezlvAAA/login-with-exchange-code?language=zh_CN
+// the Launcher will use the equals sign, so any custom parsing that you do should factor this in, for example:
+// FParse::Value(FCommandLine::Get(), TEXT("AUTH_PASSWORD=")
 
 class EOSCommandLine {
 	CLI::App app;
