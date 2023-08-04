@@ -71,7 +71,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 #endif
 
 	rdPtr->pRet = new std::wstring;
-
 	
 	rdPtr->bAutoLogin = edPtr->bAutoLogin;
 	rdPtr->bAutoLogout = edPtr->bAutoLogout;
