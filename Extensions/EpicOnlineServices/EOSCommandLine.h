@@ -26,6 +26,10 @@ namespace EOSCommandLineParam {
 	// Non-standard variations on syntax, like -long options. This is non-standard and should be avoided, so that is enforced by this library.
 	// So pre process it to make it compatible
 
+	constexpr const char EOSCommandLine_Equal = '=';
+	constexpr const char EOSCommandLine_Dash = '-';
+	constexpr const char EOSCommandLine_Space = ' ';
+
 	// add '-' before params, replace '=' after it to ' '
 	constexpr auto GetCompatibleEOSCommandLine(const char* pCommandLine, bool bNameIncluded) {
 		std::string commandLine;
@@ -40,14 +44,26 @@ namespace EOSCommandLineParam {
 
 		std::string compatibleCommandLine;
 
+		bool bInParam = false;
+		bool bEquReplaced = false;
+
 		for (const auto& chr : commandLine) {
-			if (chr == '=') {
-				compatibleCommandLine.push_back(' ');
-				continue;
+			if (!bInParam && chr == EOSCommandLine_Dash) {
+				compatibleCommandLine.push_back(chr);
+				bInParam = true;
+				bEquReplaced = false;
 			}
 
-			if (chr == '-') {
-				compatibleCommandLine.push_back(chr);
+			if (bInParam && chr == EOSCommandLine_Space) {
+				bInParam = false;
+				bEquReplaced = false;
+			}
+
+			// only replace the first '='
+			if (bInParam && !bEquReplaced && chr == EOSCommandLine_Equal) {
+				compatibleCommandLine.push_back(EOSCommandLine_Space);
+				bEquReplaced = true;
+				continue;
 			}
 
 			compatibleCommandLine.push_back(chr);
@@ -58,7 +74,7 @@ namespace EOSCommandLineParam {
 
 	// add '-' before params
 	inline auto GetCompatibleEOSCommandLineParam(const char* pParam) {
-		return std::format("-{}", pParam);
+		return std::format("{}{}", EOSCommandLine_Dash, pParam);
 	}
 }
 
