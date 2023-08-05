@@ -67,9 +67,9 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2) {
 //	if (param1==param2)	
 //		return TRUE;
 
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
+const long p1 = CNC_GetParameter(rdPtr);
+const long p2 = CNC_GetParameter(rdPtr);
+const long p3 = CNC_GetParameter(rdPtr);
 
 	if ((p1 + p2)==p3)
 		return TRUE;
@@ -85,8 +85,8 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2) {
 // ============================================================================
 
 short WINAPI DLLExport Action_SetEffect(LPRDATA rdPtr, long param1, long param2) {
-	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
-	LPCWSTR pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pObject = (LPRO)CNC_GetParameter(rdPtr);
+	const auto pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
 
 	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
 		return 0;
@@ -98,24 +98,21 @@ short WINAPI DLLExport Action_SetEffect(LPRDATA rdPtr, long param1, long param2)
 }
 
 short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long param2) {
-	LPRO pObject = (LPRO)CNC_GetParameter(rdPtr);
-	LPCWSTR pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pObject = (LPRO)CNC_GetParameter(rdPtr);
+	const auto pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
 	long param = (long)CNC_GetParameter(rdPtr);
 
 	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
 		return 0;
 	}
 
-	auto pEffect = (CEffectEx*)pObject->ros.rsEffectParam;
-	auto paramType = rdPtr->pEffectUtilities->GetParamType(pEffect, pParamName);
+	const auto pEffect = (CEffectEx*)pObject->ros.rsEffectParam;
+	const auto paramType = EffectUtilities::GetParamType(pEffect, pParamName);
 
-	if (paramType != EFFECTPARAM_SURFACE) {
-		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, &param);
-	}
-	else {
-		auto pSf = ConvertToType<long, LPSURFACE>(param);
-		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, pSf);
-	}
+	rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType,
+		paramType == EFFECTPARAM_SURFACE
+		? ConvertToType<long, LPSURFACE>(param)
+		: static_cast<void*>(&param));
 
 	rdPtr->pEffectUtilities->ModifSpriteEffect(pObject);
 
@@ -123,10 +120,10 @@ short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport Action_SetBackDropEffect(LPRDATA rdPtr, long param1, long param2) {
-	LPCWSTR pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
-	LPCWSTR pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	auto pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	auto pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
 
-#ifdef _ENABLE_TEST_FEATURE
+#ifdef ENABLE_TEST_FEATURE
 	rdPtr->pEffectUtilities->SetEffect(pBackDropName, pEffectName);
 #endif
 
@@ -134,23 +131,20 @@ short WINAPI DLLExport Action_SetBackDropEffect(LPRDATA rdPtr, long param1, long
 }
 
 short WINAPI DLLExport Action_SetBackDropEffectParam(LPRDATA rdPtr, long param1, long param2) {
-	LPCWSTR pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
-	LPCWSTR pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
 	long param = (long)CNC_GetParameter(rdPtr);
 
-	auto pEffectVec = rdPtr->pEffectUtilities->GetEffect(pBackDropName);
+	const auto pEffectVec = rdPtr->pEffectUtilities->GetEffect(pBackDropName);
 
-	for (auto& it : pEffectVec) {
-		auto pEffect = it.pEffect;
-		auto paramType = rdPtr->pEffectUtilities->GetParamType(pEffect, pParamName);
+	for (const auto& it : pEffectVec) {
+		const auto pEffect = it.pEffect;
+		const auto paramType = EffectUtilities::GetParamType(pEffect, pParamName);
 
-		if (paramType != EFFECTPARAM_SURFACE) {
-			rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, &param);
-		}
-		else {
-			auto pSf = ConvertToType<long, LPSURFACE>(param);
-			rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType, pSf);
-		}
+		rdPtr->pEffectUtilities->SetParamEx(pEffect, pParamName, paramType,
+			paramType == EFFECTPARAM_SURFACE
+			? ConvertToType<long, LPSURFACE>(param)
+			: static_cast<void*>(&param));
 
 		rdPtr->pEffectUtilities->ModifSpriteEffect(it.pSpr);
 	}
@@ -170,10 +164,9 @@ short WINAPI DLLExport Action_SetBackDropEffectParam(LPRDATA rdPtr, long param1,
 // Add three values
 // 
 long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1) {
-
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	// Performs the wonderfull calculation
 	return p1+p2+p3;
@@ -184,7 +177,7 @@ long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1) {
 long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1) {
 	char *temp;
 
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	//I'm storing the string pointer returned into a char *
 	temp = (LPSTR)p1;
@@ -217,8 +210,6 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1) {
 	//Return the float without conversion
 	return *((int*)&fp1);
 }
-
-
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
