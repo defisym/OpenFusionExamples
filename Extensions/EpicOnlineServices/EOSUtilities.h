@@ -458,6 +458,9 @@ public:
 
 			if (!EOSOK(Data->ResultCode)) {
 				pEU->SetLastError("Auth", Data->ResultCode);
+				pEU->authLogoutCb(pEU);
+
+				return;
 			}
 
 			if(pEU->runtimeOpt.authCredentialsType == EOS_ELoginCredentialType::EOS_LCT_PersistentAuth) {

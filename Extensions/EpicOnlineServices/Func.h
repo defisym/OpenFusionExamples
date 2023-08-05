@@ -48,9 +48,22 @@ inline GlobalData::~GlobalData() {
 	};
 
 	if (rdPtr->bAutoLogout && rdPtr->bUserLogin) {
-		EOSLogout([release] (bool) {
-			release();
+		std::atomic bLogoutFinish = false;
+
+		EOSLogout([&bLogoutFinish] (bool) {
+			bLogoutFinish = true;
 		});
+
+		while (true) {
+			if(bLogoutFinish) {
+				release();
+				break;
+			}
+
+			// need update here to trigger callback
+			// shouldn't be called after release
+			EOSUpdate();
+		}
 	}
 	else {
 		release();

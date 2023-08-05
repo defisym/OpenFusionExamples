@@ -23,6 +23,11 @@ Wait operations complete before changing frame, or the game may crash!
     - *To debug with DevAuthTool, disable VPN to avoid 502 error. Set portal: 6547, name: EOS.*
   - Auth Permissions
     - *Permissions required when login, make sure you have enabled it in dev portal*
+  - AutoLogin
+    - *auto login when first object is created*
+  - AutoLogout
+    - *auto logout when you exit & restart app*
+    - *app will freeze to wait for the logout callback*
   - RequireLauncher
     - *see: [Restarting the App with the Launcher](https://dev.epicgames.com/docs/en-US/game-services/eos-platform-interface#restarting-the-app-with-the-launcher)*
   - RequireBootstrap
