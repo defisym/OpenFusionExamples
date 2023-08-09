@@ -88,7 +88,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GHY, M_EXPRESSION_GHY, EXP_EXPRESSION_GHY, 0, 0,
 		IDMN_EXPRESSION_GXS, M_EXPRESSION_GXS, EXP_EXPRESSION_GXS, EXPFLAG_DOUBLE, 0,
 		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, EXPFLAG_DOUBLE, 0,
-		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
+		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, EXPFLAG_DOUBLE, 0,
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_KEY, M_POS,
 
@@ -267,9 +267,7 @@ short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
-	int angle = (int)CNC_GetIntParameter(rdPtr);
-	angle = angle % 360;
-
+	const float angle = fmod(GetFloatParam(rdPtr), 360.0f);
 	rdPtr->angle = angle;
 
 	ChangeScale(rdPtr);
@@ -726,7 +724,7 @@ long WINAPI DLLExport Expression_GetYScale(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
-	return rdPtr->angle;
+	return ReturnFloat(rdPtr->angle);
 }
 
 long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {

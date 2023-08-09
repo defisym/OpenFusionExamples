@@ -298,7 +298,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 
 		rdPtr->src->BlitEx(*ps, (float)screenX, (float)screenY,
 			abs(rdPtr->zoomScale.XScale), abs(rdPtr->zoomScale.YScale), 0, 0,
-			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, (float)rdPtr->angle,
+			rdPtr->src->GetWidth(), rdPtr->src->GetHeight(), &rdPtr->hotSpot, rdPtr->angle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, flags);

@@ -158,12 +158,12 @@ inline float GetYZoomScale(LPRDATA rdPtr) {
 	return CanDisplay(rdPtr) ? rdPtr->zoomScale.YScale : -1;
 }
 
-inline int GetAngle(LPRDATA rdPtr) {
+inline float GetAngle(LPRDATA rdPtr) {
 	return CanDisplay(rdPtr) ? rdPtr->angle : -1;
 }
 
 inline std::wstring GetFileName(std::wstring& FilePath) {
-	auto pos = FilePath.find_last_of(L"\\") + 1;
+	const auto pos = FilePath.find_last_of(L"\\") + 1;
 
 	try {
 		return FilePath.substr(pos, FilePath.size() - pos);
@@ -279,7 +279,7 @@ inline void Zoom(LPRDATA rdPtr, float XScale, float YScale) {
 	ReDisplay(rdPtr);
 }
 
-inline void Rotate(LPRDATA rdPtr, int Angle) {
+inline void Rotate(LPRDATA rdPtr, float Angle) {
 	if (rdPtr->angle == Angle) {
 		return;
 	}

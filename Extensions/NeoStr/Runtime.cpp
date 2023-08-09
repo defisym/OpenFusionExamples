@@ -72,7 +72,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 
-	rdPtr->angle = 0;
+	rdPtr->angle = 0.0;
 
 	rdPtr->xScale = 1.0;
 	rdPtr->yScale = 1.0;

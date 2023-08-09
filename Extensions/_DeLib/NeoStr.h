@@ -239,7 +239,7 @@ private:
 	float xScale = 1.0;
 	float yScale = 1.0;
 
-	int angle = 0;
+	float angle = 0;
 
 	int hwaType = 0;
 	int hwaDriver = 0;
@@ -1203,7 +1203,7 @@ public:
 		this->yScale = yScale;
 	}
 
-	inline void SetAngle(const int angle = 0) {
+	inline void SetAngle(const float angle = 0) {
 		this->angle = angle;
 	}
 
@@ -2912,7 +2912,7 @@ public:
 			const int yPos = pRc->top + this->hotSpotY;
 
 			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
-				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
+				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, this->angle
 				, bm, bo, boParam, bAntiA);
 		}
 	}

@@ -274,7 +274,7 @@ typedef struct tagRDATA
 	BOOL isTransparent = -1;
 	bool bCurrentDisplayTransparent = false;
 
-	int angle = 0;
+	float angle = 0;
 	HotSpotPos hotSpotPos;
 	POINT hotSpot = { 0,0 };
 	ZoomScale zoomScale = { 1.0,1.0 };
