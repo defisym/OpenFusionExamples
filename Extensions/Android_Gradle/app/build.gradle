@@ -1,26 +1,36 @@
-
 //AddPrePlugins
 apply plugin: 'com.android.application'
 
 //AddPostPlugins
 android {
-    //compileSdkVersion BUILD_API.toInteger()
-    compileSdkVersion 30.toInteger()
+    compileSdkVersion BUILD_API.toInteger()
 
     defaultConfig {
         //DefaultConfigs
+        // applicationId BUILD_APPID
+        // minSdkVersion BUILD_MIN.toInteger()
+        // targetSdkVersion BUILD_TARGET.toInteger()
+        // versionCode BUILD_VERS_CODE.toInteger()
+        // versionName BUILD_VERS_NAME
 
-        //applicationId BUILD_APPID
-        //minSdkVersion BUILD_MIN.toInteger()
-        //targetSdkVersion BUILD_TARGET.toInteger()
-        //versionCode BUILD_VERS_CODE.toInteger()
-        //versionName BUILD_VERS_NAME
-        
         applicationId "com.yourcompany.yourapplication"
         minSdkVersion 30.toInteger()
         targetSdkVersion 30.toInteger()
         versionCode 1.toInteger()
         versionName "1.0.0"
+
+        if (BUILD_API.toInteger() == 29
+                && BUILD_TARGET.toInteger() == 29
+                && BUILD_WITH_LEGACY.toBoolean()==true)
+        {
+            manifestPlaceholders = [MaxWrite: "29", Legacy: "true"]
+        }
+        else
+        {
+            manifestPlaceholders = [MaxWrite: "28", Legacy: "false"]
+        }
+
+
     }
     if(project.hasProperty("RELEASE_STORE_FILE")) {
         signingConfigs {
@@ -49,18 +59,27 @@ android {
         abortOnError false
     }
     repositories {
-    //add Repository
-        flatDir {
-            dirs 'libs'
-        }
-    }	
-    dexOptions {
-        preDexLibraries false
+        //add Repository
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+
+        //  if (BUILD_API.toInteger() > 29 && BUILD_USE_11.toBoolean())
+        //  {
+        //      sourceCompatibility JavaVersion.VERSION_11
+        //      targetCompatibility JavaVersion.VERSION_11
+        //  }
+        //  else
+        //  {
+        //     sourceCompatibility JavaVersion.VERSION_1_8
+        //     targetCompatibility JavaVersion.VERSION_1_8
+        //  }
     }
+    aaptOptions {
+        noCompress "ccn", "mp3", "wav", "mid", "ogg", "mp4", "m4v", "aac"
+    }
+
 }
 
 dependencies {
@@ -74,11 +93,9 @@ dependencies {
     implementation "org.apache.commons:commons-io:1.3.2"
 
     //Googlelibs
-    implementation fileTree(include: '*.jar', dir: 'libs')
-
     implementation 'org.jetbrains:annotations:23.0.0'
+    implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
 }
-
 
 
 //AddTasks
