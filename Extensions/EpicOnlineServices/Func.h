@@ -1,13 +1,79 @@
 #pragma once
 
+#ifdef _DEBUG
+// only called when auto login success, for debugging
+inline void EOSLoginDebug(LPRDATA rdPtr) {
+	//const auto bSuccess = rdPtr->pData->pEOSPresence->SetPresenceSetRawRichText("Nijigasaki",
+	//[=] (EOSPresence* pEP) {
+	//	rdPtr->pData->pEOSPresence->QueryPresence([=] (EOSPresence* pEP) {
+	//		if (pEP->HasPresence()) {
+	//			pEP->CopyPresence([=] (EOS_Presence_Info* pInfo) {
+	//				OutputDebugStringA(pInfo->RichText);
+	//			});
+	//		}
+	//	});
+	//});
+}
+#endif
+
+inline auto GetAuthPremissions(LPEDATA edPtr) {
+	auto permission = EOS_EAuthScopeFlags::EOS_AS_NoFlags;
+
+	if(edPtr->bAuthPremissions_BasicProfile) {
+		permission |= EOS_EAuthScopeFlags::EOS_AS_BasicProfile;
+	}
+	if (edPtr->bAuthPremissions_FriendsList) {
+		permission |= EOS_EAuthScopeFlags::EOS_AS_FriendsList;
+	}
+	if (edPtr->bAuthPremissions_Presence) {
+		permission |= EOS_EAuthScopeFlags::EOS_AS_Presence;
+	}
+	if (edPtr->bAuthPremissions_FriendsManagement) {
+		permission |= EOS_EAuthScopeFlags::EOS_AS_FriendsManagement;
+	}
+	if (edPtr->bAuthPremissions_Email) {
+		permission |= EOS_EAuthScopeFlags::EOS_AS_Email;
+	}
+	if (edPtr->bAuthPremissions_Country) {
+		permission |= EOS_EAuthScopeFlags::EOS_AS_Country;
+	}
+
+	return permission;
+}
+
+inline GlobalData::~GlobalData() {
+	auto release = [this] () {
+		EOSReleasePlatform();
+		delete pEOSUtilities;
+	};
+
+	if (rdPtr->bAutoLogout && rdPtr->bUserLogin) {
+		std::atomic bLogoutFinish = false;
+
+		EOSLogout([&bLogoutFinish] (bool) {
+			bLogoutFinish = true;
+		});
+
+		while (true) {
+			if(bLogoutFinish) {
+				release();
+				break;
+			}
+
+			// need update here to trigger callback
+			// shouldn't be called after release
+			EOSUpdate();
+		}
+	}
+	else {
+		release();
+	}
+}
+
 inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	// sdk
 	productName = ConvertWStrToStr(edPtr->pAppName);
 	productVersion = ConvertWStrToStr(edPtr->pAppVersion);
-
-	//TODO remove
-	productName = "EOS";
-	productVersion = "1.0";
 
 	EOS_InitializeOptions initOpt{};
 	initOpt.ApiVersion = EOS_INITIALIZE_API_LATEST;
@@ -23,14 +89,6 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	clientId = ConvertWStrToStr(edPtr->pClientId);
 	clientSecret = ConvertWStrToStr(edPtr->pClientSecret);
 
-	//TODO remove
-	productId = "c35399f648ae47a0b5bf42c0320ddb38";
-	sandboxId = "59058ad1e73841bf8958085905ed722a";
-	deploymentId = "2a67b9cd4bfe46a189e2ab7f727ad7c6";
-
-	clientId = "xyza7891XI9damdLcASUFRDAUrsYMCrg";
-	clientSecret = "Lf5I2BKkMLBGgC+iwDIwjd0gIbLRAOrx/2FSmc30ejQ";
-
 	EOS_Platform_Options platOpt{};
 	platOpt.ApiVersion = EOS_INITIALIZE_API_LATEST;
 
@@ -41,7 +99,24 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	platOpt.ClientCredentials.ClientId = clientId.c_str();
 	platOpt.ClientCredentials.ClientSecret = clientSecret.c_str();
 
-	pEOSUtilities = new EOSUtilities(initOpt, platOpt);
+	// runtime
+	EOSUtilities_RuntimeOptions runtimeOpt{};
+	runtimeOpt.authCredentialsType = AuthTypeComboListEnumToLoginCredentialType(edPtr->authType);
+	runtimeOpt.authPremissions = GetAuthPremissions(edPtr);
+	runtimeOpt.bRequireLauncher = edPtr->bRequireLauncher;
+	runtimeOpt.bRequireBootstrap = edPtr->bRequireBootstrap;
 
-	return pEOSUtilities->State();
+	pEOSUtilities = new EOSUtilities(runtimeOpt, initOpt, platOpt);
+	EOSInitPlatform();
+
+	pEOSUtilities->SetErrorCallback([=] (const std::string& str) {
+#ifdef _DEBUG
+		OutputDebugStringA(str.c_str());
+		OutputDebugStringA("\r\n");
+#endif
+
+		CallEvent(ON_Error);		
+	});
+
+	return pEOSUtilities->State() == EOSState::InitSuccess;
 }

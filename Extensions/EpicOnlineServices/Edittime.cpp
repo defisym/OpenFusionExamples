@@ -18,24 +18,46 @@
 // Property identifiers
 enum {
 	PROPID_SETTINGS = PROPID_EXTITEM_CUSTOM_FIRST,
+	
+	PROPID_InitializeOptions_TEXTTITLE,	
+	PROPID_InitializeOptions_AppName_TEXT,	
+	PROPID_InitializeOptions_AppVersion_TEXT,	
 
-// Example
-// -------
-//	PROPID_TEXTTITLE,	
-//	PROPID_TEXT,	
-//	PROPID_CHECK,
-//	PROPID_COMBO,
-//	PROPID_COLOR,
+	PROPID_PlatformOptions_TEXTTITLE,	
+	PROPID_PlatformOptions_ProductId_TEXT,	
+	PROPID_PlatformOptions_SandboxId_TEXT,	
+	PROPID_PlatformOptions_DeploymentId_TEXT,	
+
+	PROPID_PlatformOptions_ClientId_TEXT,	
+	PROPID_PlatformOptions_ClientSecret_TEXT,	
+
+	PROPID_RuntimeOptions_TEXTTITLE,	
+	PROPID_RuntimeOptions_AuthType_COMBO,
+
+	PROPID_RuntimeOptions_AuthPermissions_FOLDER,	
+	PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_Email_CHECK,
+	PROPID_RuntimeOptions_AuthPermissions_Country_CHECK,
+
+	PROPID_RuntimeOptions_RequireLauncher_CHECK,	
+	PROPID_RuntimeOptions_RequireBootstrap_CHECK,	
+	PROPID_RuntimeOptions_AutoLogin_CHECK,	
+	PROPID_RuntimeOptions_AutoLogout_CHECK,	
 };
 
-// Example of content of the PROPID_COMBO combo box
-//LPCSTR ComboList[] = {
-//	0,	// reserved
-//	MAKEINTRESOURCE(IDS_FIRSTOPTION),	
-//	MAKEINTRESOURCE(IDS_SECONDOPTION),	
-//	MAKEINTRESOURCE(IDS_THIRDOPTION),	
-//	NULL
-//};
+LPCWSTR AuthTypeComboList[] = {
+	0,	// reserved
+
+	MAKEINTRESOURCE(IDS_AuthType_Developer),
+	MAKEINTRESOURCE(IDS_AuthType_ExchangeCode),	
+	MAKEINTRESOURCE(IDS_AuthType_PersistentAuth),	
+	MAKEINTRESOURCE(IDS_AuthType_AccountPortal),	
+
+	NULL
+};
 
 // Property definitions
 //
@@ -50,6 +72,38 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group		(PROPID_InitializeOptions_TEXTTITLE,	IDS_PROP_InitializeOptions_TEXTTITLE,		IDS_PROP_InitializeOptions_TEXTTITLE),
+	PropData_EditString	(PROPID_InitializeOptions_AppName_TEXT,		IDS_PROP_InitializeOptions_AppName_TEXT,			IDS_PROP_InitializeOptions_AppName_TEXT_INFO),
+	PropData_EditString	(PROPID_InitializeOptions_AppVersion_TEXT,		IDS_PROP_InitializeOptions_AppVersion_TEXT,			IDS_PROP_InitializeOptions_AppVersion_TEXT_INFO),
+
+	PropData_Group		(PROPID_PlatformOptions_TEXTTITLE,	IDS_PROP_PlatformOptions_TEXTTITLE,		IDS_PROP_PlatformOptions_TEXTTITLE),
+	PropData_EditString	(PROPID_PlatformOptions_ProductId_TEXT,		IDS_PROP_PlatformOptions_ProductId_TEXT,			IDS_PROP_PlatformOptions_ProductId_TEXT_INFO),
+	PropData_EditString	(PROPID_PlatformOptions_SandboxId_TEXT,		IDS_PROP_PlatformOptions_SandboxId_TEXT,			IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO),
+	PropData_EditString	(PROPID_PlatformOptions_DeploymentId_TEXT,		IDS_PROP_PlatformOptions_DeploymentId_TEXT,			IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO),
+
+	PropData_EditString	(PROPID_PlatformOptions_ClientId_TEXT,		IDS_PROP_PlatformOptions_ClientId_TEXT,			IDS_PROP_PlatformOptions_ClientId_TEXT_INFO),
+	PropData_EditString	(PROPID_PlatformOptions_ClientSecret_TEXT,		IDS_PROP_PlatformOptions_ClientSecret_TEXT,			IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO),
+
+	PropData_Group		(PROPID_RuntimeOptions_TEXTTITLE,	IDS_PROP_RuntimeOptions_TEXTTITLE,		IDS_PROP_RuntimeOptions_TEXTTITLE),
+	PropData_ComboBox	(PROPID_RuntimeOptions_AuthType_COMBO,		IDS_PROP_RuntimeOptions_AuthType_COMBO,			IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO,	AuthTypeComboList),
+
+	PropData_Folder		(PROPID_RuntimeOptions_AuthPermissions_FOLDER,		IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER,			IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER),
+
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK_INFO),
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK_INFO),
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK_INFO),
+	//PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK_INFO),
+	//PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_Email_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK_INFO),
+	PropData_CheckBox(PROPID_RuntimeOptions_AuthPermissions_Country_CHECK,		IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK,			IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK_INFO),
+
+	PropData_Folder_End(),
+
+	PropData_CheckBox	(PROPID_RuntimeOptions_RequireLauncher_CHECK,		IDS_PROP_RuntimeOptions_RequireLauncher_CHECK,			IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO),
+	PropData_CheckBox	(PROPID_RuntimeOptions_RequireBootstrap_CHECK,		IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK,			IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO),
+	
+	PropData_CheckBox	(PROPID_RuntimeOptions_AutoLogin_CHECK,		IDS_PROP_RuntimeOptions_AutoLogin_CHECK,			IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO),
+	PropData_CheckBox	(PROPID_RuntimeOptions_AutoLogout_CHECK,		IDS_PROP_RuntimeOptions_AutoLogout_CHECK,			IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO),
 
 	// End of table (required)
 	PropData_End()
@@ -330,6 +384,25 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->swidth = 32;
 		edPtr->sheight = 32;
 #endif
+		//auto copyProp = [=] (LPWSTR pText, UINT nPropID) {
+		//	const auto pStr = dynamic_cast<CPropWStringValue*>(mvGetAppPropValue(mV, edPtr, nPropID))->GetString();
+		//	wcscpy_s(pText, EOS_IDSZ, pStr);
+		//	MSGBOX(pStr);
+		//};
+		//
+		//copyProp(edPtr->pAppName, PROPID_APP_PROJECTNAME);
+		//copyProp(edPtr->pAppVersion, PROPID_APP_FILEVERSION);
+
+		edPtr->authType = AuthTypeComboListEnum::ExchangeCode;		
+		
+		edPtr->bAuthPremissions_BasicProfile = true;
+
+		edPtr->bRequireLauncher = true;
+		edPtr->bRequireBootstrap = true;
+
+		edPtr->bAutoLogin = true;
+		edPtr->bAutoLogout = false;
+
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
 //		spa.edpt = edPtr;
@@ -658,22 +731,28 @@ void WINAPI DLLExport ReleasePropCreateParam(LPMV mV, LPEDATA edPtr, UINT nPropI
 LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Returns a color.
-//	case PROPID_COLOR:
-//		return new CPropDWordValue(edPtr->dwColor);
-//
-//	// Returns a string
-//	case PROPID_TEXT:
-//		return new CPropStringValue(&edPtr->szText[0]);
-//
-//	// Returns the value of the combo box
-//	case PROPID_COMBO:
-//		return new CPropDWordValue(edPtr->nComboIndex);
-//	}
+	switch (nPropID) {
+	case PROPID_InitializeOptions_AppName_TEXT:
+		return new CPropStringValue(edPtr->pAppName);
+	case PROPID_InitializeOptions_AppVersion_TEXT:
+		return new CPropStringValue(edPtr->pAppVersion);
+
+	case PROPID_PlatformOptions_ProductId_TEXT:
+		return new CPropStringValue(edPtr->pProductId);
+	case PROPID_PlatformOptions_SandboxId_TEXT:
+		return new CPropStringValue(edPtr->pSandboxId);
+	case PROPID_PlatformOptions_DeploymentId_TEXT:
+		return new CPropStringValue(edPtr->pDeploymentId);
+
+	case PROPID_PlatformOptions_ClientId_TEXT:
+		return new CPropStringValue(edPtr->pClientId);
+	case PROPID_PlatformOptions_ClientSecret_TEXT:
+		return new CPropStringValue(edPtr->pClientSecret);
+
+	case PROPID_RuntimeOptions_AuthType_COMBO:
+		return new CPropDWordValue(static_cast<int>(edPtr->authType));
+	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -686,14 +765,31 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
+	switch (nPropID) {
+		// Return 0 (unchecked) or 1 (checked)
+	case PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK:
+		return edPtr->bAuthPremissions_BasicProfile;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK:
+		return edPtr->bAuthPremissions_FriendsList;
+	case PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK:
+		return edPtr->bAuthPremissions_Presence;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK:
+		return edPtr->bAuthPremissions_FriendsManagement;
+	case PROPID_RuntimeOptions_AuthPermissions_Email_CHECK:
+		return edPtr->bAuthPremissions_Email;
+	case PROPID_RuntimeOptions_AuthPermissions_Country_CHECK:
+		return edPtr->bAuthPremissions_Country;
+
+	case PROPID_RuntimeOptions_RequireLauncher_CHECK:
+		return edPtr->bRequireLauncher;
+	case PROPID_RuntimeOptions_RequireBootstrap_CHECK:
+		return edPtr->bRequireBootstrap;
+
+	case PROPID_RuntimeOptions_AutoLogin_CHECK:
+		return edPtr->bAutoLogin;
+	case PROPID_RuntimeOptions_AutoLogout_CHECK:
+		return edPtr->bAutoLogout;
+	}
 
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
@@ -708,56 +804,43 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 {
 #ifndef RUN_ONLY
 	// Gets the pointer to the CPropValue structure
-	CPropValue* pValue = (CPropValue*)lParam;
+	const auto pValue = static_cast<CPropValue*>(lParam);
 
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	case PROPID_COMBO:
-//		// Simply grab the value
-//		edPtr->nComboIndex = ((CPropDWordValue*)pValue)->m_dwValue;
-//		break;
+	auto UpdateText = [&] (LPWSTR pText,size_t sz) {
+		const auto pStr = dynamic_cast<CPropWStringValue*>(pValue)->GetString();
+		wcscpy_s(pText, sz,pStr);
+	};
 
-//	case PROPID_COLOR:
-//		// Here too, gets the value
-//		edPtr->dwColor = ((CPropDWordValue*)pValue)->m_dwValue;
-//		break;
+	switch (nPropID) {
+	case PROPID_InitializeOptions_AppName_TEXT:
+		UpdateText(edPtr->pAppName, EOS_IDSZ);
+		break;
+	case PROPID_InitializeOptions_AppVersion_TEXT:
+		UpdateText(edPtr->pAppVersion, EOS_IDSZ);
+		break;
 
-//	case PROPID_TEXT:
-//		{
-//			// Gets the string
-//			LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
-//
-//			// You can simply poke the string if your EDITDATA structure has a fixed size,
-//			// or have an adaptive size of structure like below
-//
-//			// If the length is different
-//			if (_tcslen(pStr)!=_tcslen(edPtr->text))
-//			{
-//				// Asks MMF to reallocate the structure with the new size
-//				LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA)+_tcslen(pStr) * sizeof(TCHAR));
-//				
-//				// If reallocation worked
-//				if (pNewPtr!=NULL)
-//				{
-//					// Copy the string
-//					edPtr=pNewPtr;
-//					_tcscpy(edPtr->text, pStr);
-//				}
-//			}
-//			else
-//			{	
-//				// Same size : simply copy
-//				_tcscpy(edPtr->text, pStr);
-//			}
-//		}
-//		break;
-//	}
+	case PROPID_PlatformOptions_ProductId_TEXT:
+		UpdateText(edPtr->pProductId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_SandboxId_TEXT:
+		UpdateText(edPtr->pSandboxId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_DeploymentId_TEXT:
+		UpdateText(edPtr->pDeploymentId, EOS_IDSZ);
+		break;
 
-	// You may want to have your object redrawn in the frame editor after the modifications,
-	// in this case, just call this function
-	// mvInvalidateObject(mV, edPtr);
+	case PROPID_PlatformOptions_ClientId_TEXT:
+		UpdateText(edPtr->pClientId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_ClientSecret_TEXT:
+		UpdateText(edPtr->pClientSecret, 2 * EOS_IDSZ);
+		break;
+
+	case PROPID_RuntimeOptions_AuthType_COMBO:
+		// Simply grab the value
+		edPtr->authType = static_cast<AuthTypeComboListEnum>(dynamic_cast<CPropDWordValue*>(pValue)->m_dwValue);
+		break;
+	}
 
 #endif // !defined(RUN_ONLY)
 }
@@ -772,14 +855,42 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 #ifndef RUN_ONLY
 	// Example
 	// -------
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
+	switch (nPropID)
+	{
+
+	case PROPID_RuntimeOptions_AuthPermissions_BasicProfile_CHECK:
+		edPtr->bAuthPremissions_BasicProfile = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsList_CHECK:
+		edPtr->bAuthPremissions_FriendsList = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_Presence_CHECK:
+		edPtr->bAuthPremissions_Presence = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK:
+		edPtr->bAuthPremissions_FriendsManagement = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_Email_CHECK:
+		edPtr->bAuthPremissions_Email = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AuthPermissions_Country_CHECK:
+		edPtr->bAuthPremissions_Country = nCheck;
+		break;
+
+	case PROPID_RuntimeOptions_RequireLauncher_CHECK:
+		edPtr->bRequireLauncher = nCheck;
+		break;
+	case PROPID_RuntimeOptions_RequireBootstrap_CHECK:
+		edPtr->bRequireBootstrap = nCheck;
+		break;
+
+	case PROPID_RuntimeOptions_AutoLogin_CHECK:
+		edPtr->bAutoLogin = nCheck;
+		break;
+	case PROPID_RuntimeOptions_AutoLogout_CHECK:
+		edPtr->bAutoLogout = nCheck;
+		break;
+	}
 #endif // !defined(RUN_ONLY)
 }
 

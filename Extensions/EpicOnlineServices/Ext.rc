@@ -116,8 +116,21 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Condition example (three parameters)", IDMN_CONDITION
+        POPUP "General"
+        BEGIN
+            MENUITEM "On Error", IDMN_CONDITION_ONERROR
+            MENUITEM SEPARATOR
+            MENUITEM "Query Complete", IDMN_CONDITION_QUEARYCOMPLETE
+        END
         MENUITEM SEPARATOR
+        POPUP "Auth"
+        BEGIN
+            MENUITEM "On Login", IDMN_CONDITION_ONLOGIN
+            MENUITEM "On Logout", IDMN_CONDITION_ONLOGOUT
+            MENUITEM SEPARATOR
+            MENUITEM "User Login", IDMN_CONDITION_USERLOGIN
+        END
+        MENUITEM SEPARATOR        
     END
 END
 #endif
@@ -132,7 +145,28 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Action example",              IDMN_ACTION
+        POPUP "General"
+        BEGIN
+            MENUITEM "Query", IDMN_ACTION_QUERY
+        END
+        MENUITEM SEPARATOR
+        POPUP "Auth"
+        BEGIN
+            MENUITEM "Login", IDMN_ACTION_LI
+            MENUITEM "Logout", IDMN_ACTION_LO        
+        END
+        MENUITEM SEPARATOR
+        POPUP "Achievement && Stat"
+        BEGIN
+            MENUITEM "Unlock Achievement", IDMN_ACTION_ACH_UL
+            MENUITEM SEPARATOR
+            MENUITEM "Ingest Stat", IDMN_ACTION_STAT_I
+        END
+        MENUITEM SEPARATOR
+        POPUP "Presence"
+        BEGIN
+            MENUITEM "Set Rich Text", IDMN_ACTION_PRE_SRT
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -147,10 +181,27 @@ MN_EXPRESSIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR       
+        POPUP "General"
+        BEGIN 
+            MENUITEM "Last Error", IDMN_EXPRESSION_GLE		
+        END
+        MENUITEM SEPARATOR  
+        POPUP "Auth"
+        BEGIN      
+            MENUITEM "Account ID", IDMN_EXPRESSION_ACCOUNTID		
+            MENUITEM "Product User ID", IDMN_EXPRESSION_PRODUCTUSERID	
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Function example (three parameters)", IDMN_EXPRESSION
-        MENUITEM "Return String example (one parameter)", IDMN_EXPRESSION2
-        MENUITEM "Return Float example (one parameter)", IDMN_EXPRESSION3
+        POPUP "Achievement && Stat"
+        BEGIN
+            MENUITEM "Stat Value", IDMN_EXPRESSION_STATVALUE
+        END
+        MENUITEM SEPARATOR
+        POPUP "Presence"
+        BEGIN
+            MENUITEM "Rich Text", IDMN_EXPRESSION_PRE_GRT
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -233,7 +284,59 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROP_TEXTTITLE        "Settings"
+    IDS_PROP_InitializeOptions_TEXTTITLE                    "InitializeOptions"
+    IDS_PROP_InitializeOptions_AppName_TEXT                 "AppName"
+    IDS_PROP_InitializeOptions_AppName_TEXT_INFO            "The name of the product using the SDK. The name string must not be empty and supports a maximum of 64 characters in length."
+    IDS_PROP_InitializeOptions_AppVersion_TEXT              "AppVersion"
+    IDS_PROP_InitializeOptions_AppVersion_TEXT_INFO         "The product version of the application using the SDK"
+    
+    IDS_PROP_PlatformOptions_TEXTTITLE                      "PlatformOptions"
+    IDS_PROP_PlatformOptions_ProductId_TEXT                 "ProductId"
+    IDS_PROP_PlatformOptions_ProductId_TEXT_INFO            "The Product ID of the game, provided by Epic Games"
+    IDS_PROP_PlatformOptions_SandboxId_TEXT                 "SandboxId"
+    IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            "The Sandbox ID of the game, provided by Epic Games"
+    IDS_PROP_PlatformOptions_DeploymentId_TEXT              "DeploymentId"
+    IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         "The Deployment ID of the game, provided by Epic Games"
+    
+    IDS_PROP_PlatformOptions_ClientId_TEXT                  "ClientId"
+    IDS_PROP_PlatformOptions_ClientId_TEXT_INFO             "Client ID of the service permissions entry."
+    IDS_PROP_PlatformOptions_ClientSecret_TEXT              "ClientSecret"
+    IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO         "Client secret for accessing the set of permissions"
+    
+    IDS_PROP_RuntimeOptions_TEXTTITLE                       "RuntimeOptions"
+    IDS_PROP_RuntimeOptions_AuthType_COMBO                  "AuthType"
+    IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO             "The type of credential that this login attempt is using."
+    
+    IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER          "Auth Permissions"
+    
+    IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK              "Basic Profile"
+    IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK               "Friends List"
+    IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK                  "Presence"
+    IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK         "Friends Management"
+    IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK                     "Email"
+    IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK                   "Country"
+
+    IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK_INFO         "Permissions to see your account ID, display name, and language"
+    IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK_INFO          "Permissions to see a list of your friends who use this application"
+    IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK_INFO             "Permissions to set your online presence and see presence of your friends"
+    IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK_INFO    "Permissions to manage the Epic friends list. This scope is restricted to Epic first party products, and attempting to use it will result in authentication failures."
+    IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK_INFO                "Permissions to see email in the response when fetching information for a user. This scope is restricted to Epic first party products, and attempting to use it will result in authentication failures."
+    IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK_INFO              "Permissions to see your country"
+    
+    IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           "RequireLauncher"
+    IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      "Check whether the app was launched through the Launcher. If it wasn't, it will restart the app through the Launcher"
+    IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          "RequireBootstrap"
+    IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     "Continue even if app is not started through the EOS boot strapper application"
+    
+    IDS_PROP_RuntimeOptions_AutoLogin_CHECK                 "Auto Login"
+    IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO            ""
+    IDS_PROP_RuntimeOptions_AutoLogout_CHECK                "Auto Logout"
+    IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO           ""
+
+    IDS_AuthType_Developer                                  "Developer"
+    IDS_AuthType_ExchangeCode                               "ExchangeCode"
+    IDS_AuthType_PersistentAuth                             "PersistentAuth"
+    IDS_AuthType_AccountPortal                              "AccountPortal"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -243,26 +346,41 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_ACH_UL         "Unlock Achievement %0"
+    M_ACH_NAME              "Achievement Name"
+
+    M_ACTION_STAT_I         "Ingest Stat %0, Value %1"
+    M_STAT_NAME             "Stat Name"
+    M_STAT_VALUE            "Stat Value"
+
+    M_ACTION_QUERY          "Query, Query Type %0"
+    M_QUERYTYPE             "Query Type"
+    
+    M_ACTION_PRE_SRT        "Set Rich Text to %0"
+    M_RICHTEXT              "Rich Text"
+
+    M_ACTION_LI             "Login"
+    M_ACTION_LO             "Logout"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_CONDITION             "Condition example: %0 + %1 = %2"
-    M_CND_P1                "Enter First Value"
-    M_CND_P2                "Enter Second Value"
-    M_CND_P3                "Enter Value to Match"
+    M_CONDITION_ONLOGIN     "%o On Login"
+    M_CONDITION_ONLOGOUT    "%o On Logout"
+    M_CONDITION_ONERROR     "%o On Error"
+
+    M_CONDITION_USERLOGIN        "%o User Login"
+    M_CONDITION_QUEARYCOMPLETE      "%o Query Type %0 Complete"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION            "Function("
-END
+    M_EXPRESSION_GLE   "LastError$ ("
+    M_EXPRESSION_STATVALUE   "StatValue ("
 
-STRINGTABLE DISCARDABLE 
-BEGIN
-    M_EXPRESSION2           "Reverse$("
-    M_EXPRESSION3           "DivFloatByTwo("
+    M_EXPRESSION_ACCOUNTID		   "AccountID$ ("
+    M_EXPRESSION_PRODUCTUSERID	   "ProductUserID$ ("
+    M_EXPRESSION_PRE_GRT    	   "RichText$ ("
 END
 
 #endif    // English (U.S.) resources

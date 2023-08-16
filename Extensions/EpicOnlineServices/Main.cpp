@@ -22,25 +22,33 @@
 // Definitions of parameters for each condition
 short conditionsInfos[]=
 		{
-		IDMN_CONDITION, M_CONDITION, CND_CONDITION, EVFLAGS_ALWAYS, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_CND_P1, M_CND_P2, M_CND_P3,
+		IDMN_CONDITION_ONLOGIN, M_CONDITION_ONLOGIN, CND_CONDITION_ONLOGIN, 0, 0,
+		IDMN_CONDITION_USERLOGIN, M_CONDITION_USERLOGIN, CND_CONDITION_USERLOGIN, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_QUERYTYPE,
+		IDMN_CONDITION_ONERROR, M_CONDITION_ONERROR, CND_CONDITION_ONERROR, 0, 0,
+		IDMN_CONDITION_ONLOGOUT, M_CONDITION_ONLOGOUT, CND_CONDITION_ONLOGOUT, 0, 0,
+
 		};
 
 // Definitions of parameters for each action
 short actionsInfos[]=
 		{
-		IDMN_ACTION, M_ACTION,	ACT_ACTION,	0, 0,
+		IDMN_ACTION_ACH_UL, M_ACTION_ACH_UL, ACT_ACTION_ACH_UL,	0, 1, PARAM_EXPSTRING, M_ACH_NAME,
+		IDMN_ACTION_STAT_I, M_ACTION_STAT_I, ACT_ACTION_STAT_I,	0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_STAT_NAME, M_STAT_VALUE,
+		IDMN_ACTION_QUERY, M_ACTION_QUERY, ACT_ACTION_QUERY,	0, 1, PARAM_EXPSTRING, M_QUERYTYPE,
+		IDMN_ACTION_PRE_SRT, M_ACTION_PRE_SRT, ACT_ACTION_PRE_SRT,	0, 1, PARAM_EXPSTRING, M_RICHTEXT,
+		IDMN_ACTION_LI, M_ACTION_LI, ACT_ACTION_LI,	0, 0,
+		IDMN_ACTION_LO, M_ACTION_LO, ACT_ACTION_LO,	0, 0,
 		};
 
 // Definitions of parameters for each expression
 short expressionsInfos[]=
 		{
-		IDMN_EXPRESSION, M_EXPRESSION, EXP_EXPRESSION, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, 0, 0, 0,
-		
-		//Note in the following.  If you are returning a string, you set the EXPFLAG_STRING.	
-		IDMN_EXPRESSION2, M_EXPRESSION2, EXP_EXPRESSION2, EXPFLAG_STRING, 1, EXPPARAM_STRING, 0,
-		
-		//Note in the following.  If you are returning a float, you set the EXPFLAG_DOUBLE
-		IDMN_EXPRESSION3, M_EXPRESSION3, EXP_EXPRESSION3, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, 0,
+		IDMN_EXPRESSION_STATVALUE, M_EXPRESSION_STATVALUE, EXP_EXPRESSION_STATVALUE, 0, 1, EXPPARAM_STRING, M_STAT_NAME,
+		IDMN_EXPRESSION_ACCOUNTID, M_EXPRESSION_ACCOUNTID, EXP_EXPRESSION_ACCOUNTID, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_PRODUCTUSERID, M_EXPRESSION_PRODUCTUSERID, EXP_EXPRESSION_PRODUCTUSERID, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_PRE_GRT, M_EXPRESSION_PRE_GRT, EXP_EXPRESSION_PRE_GRT, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GLE, M_EXPRESSION_GLE, EXP_EXPRESSION_GLE, EXPFLAG_STRING, 0,
 		};
 
 
@@ -51,29 +59,49 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-// -----------------
-// Sample Condition
-// -----------------
-// Returns TRUE when the two values are equal!
-// 
-
-long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
-{
-
-//  **** Still use this method for 1 or 2 parameters ****	
-//	if (param1==param2)	
-//		return TRUE;
-
-	long p1 = CNC_GetParameter(rdPtr);
-	long p2 = CNC_GetParameter(rdPtr);
-	long p3 = CNC_GetParameter(rdPtr);
-
-	if ((p1 + p2)==p3)
-		return TRUE;
-		 
-	return FALSE;
+long WINAPI DLLExport Condition_OnLogin(LPRDATA rdPtr, long param1, long param2) {
+	return true;
 }
 
+long WINAPI DLLExport Condition_OnLogout(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
+long WINAPI DLLExport Condition_LoginSuccess(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->bUserLogin;
+}
+
+long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long param2) {
+	const auto pQueryType = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	do {
+		if (StrEmpty(pQueryType)) {
+			bool bComplete = true;
+
+			bComplete = bComplete && rdPtr->pData->pEOSAchievement->QueryComplete();
+			bComplete = bComplete && rdPtr->pData->pEOSStat->QueryComplete();
+			bComplete = bComplete && rdPtr->pData->pEOSPresence->QueryComplete();
+
+			return bComplete;
+		}
+
+		if (StrIEqu(pQueryType, EOSQueryType::Achievement)) {
+			return rdPtr->pData->pEOSAchievement->QueryComplete();
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Stat)) {
+			return rdPtr->pData->pEOSStat->QueryComplete();
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Presence)) {
+			return rdPtr->pData->pEOSPresence->QueryComplete();
+		}
+	} while (false);
+
+	return false;
+}
+
+long WINAPI DLLExport Condition_OnError(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
 
 // ============================================================================
 //
@@ -81,26 +109,74 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample Action
-// -----------------
-// Does nothing!
-// 
-short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
-{
-	// Actions work just like Conditions
-
-	// Use directly param1 and/or param2 if this action has 1 or 2 parameters
-
-	// Use this if this action has 3 parameters or more
-//	long p1 = CNC_GetParameter(rdPtr);
-//	long p2 = CNC_GetParameter(rdPtr);
-//	long p3 = CNC_GetParameter(rdPtr);
-//	etc.
+short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->EOSLogin([=] (bool bSuccess) {
+		rdPtr->bUserLogin = bSuccess;
+		AddEvent(ON_LoginComplete);
+		});
 
 	return 0;
 }
 
+short WINAPI DLLExport Action_Logout(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->EOSLogout([=] (bool bSuccess) {
+		rdPtr->bUserLogin = !bSuccess;
+		AddEvent(ON_LogoutComplete);
+		});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Achievement_Unlock(LPRDATA rdPtr, long param1, long param2) {
+	const std::string achName = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	rdPtr->pData->pEOSAchievement->UnlockAchievements({ achName });
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Stat_Ingest(LPRDATA rdPtr, long param1, long param2) {
+	const std::string statName = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+	const auto value = (int32_t)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->pEOSStat->IngestStat({ {statName,value} }, [=] (EOSStat*) {});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Query(LPRDATA rdPtr, long param1, long param2) {
+	const auto pQueryType = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	do {
+		if (StrEmpty(pQueryType)) {
+			rdPtr->pData->EOSUpdatePlatform();
+			break;
+		}
+
+		if(StrIEqu(pQueryType, EOSQueryType::Achievement)) {
+			rdPtr->pData->pEOSAchievement->PlatformUpdate();
+			break;
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Stat)) {
+			rdPtr->pData->pEOSStat->PlatformUpdate();
+			break;
+		}
+		if (StrIEqu(pQueryType, EOSQueryType::Presence)) {
+			rdPtr->pData->pEOSPresence->PlatformUpdate();
+			break;
+		}
+	} while (false);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Presence_SetRichTest(LPRDATA rdPtr, long param1, long param2) {
+	const auto pQueryType = ConvertWStrToStr((LPCWSTR)CNC_GetStringParameter(rdPtr));
+
+	rdPtr->pData->pEOSPresence->SetPresenceSetRawRichText(pQueryType);
+
+	return 0;
+}
 
 // ============================================================================
 //
@@ -108,64 +184,65 @@ short WINAPI DLLExport Action(LPRDATA rdPtr, long param1, long param2)
 // 
 // ============================================================================
 
-// -----------------
-// Sample expression
-// -----------------
-// Add three values
-// 
-long WINAPI DLLExport Expression(LPRDATA rdPtr,long param1)
-{
+long WINAPI DLLExport Expression_GetLastError(LPRDATA rdPtr, long param1) {
+	*rdPtr->pRet = ConvertStrToWStr(rdPtr->pData->pEOSUtilities->GetLastError());
 
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p2 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
-	long p3 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
 
-	// Performs the wonderfull calculation
-	return p1+p2+p3;
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
 }
 
+long WINAPI DLLExport Expression_GetStatValue(LPRDATA rdPtr, long param1) {
+	const std::string statName = ConvertWStrToStr((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
 
-//Reverse the string passed in.
-long WINAPI DLLExport Expression2(LPRDATA rdPtr,long param1)
-{
-	char *temp;
+	int32_t val = 0;
 
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	rdPtr->pData->pEOSStat->GetStatByName(statName, [&] (EOS_Stats_Stat* pData) {
+		val = pData->Value;
+	});
 
-	//I'm storing the string pointer returned into a char *
-	temp = (LPSTR)p1;
+	return val;
+}
 
-	//Reversing the string.
-	_strrev(temp);
+long WINAPI DLLExport Expression_GetAccountID(LPRDATA rdPtr, long param1) {
+	*rdPtr->pRet = ConvertStrToWStr(rdPtr->pData->pEOSUtilities->GetAccountID());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
+long WINAPI DLLExport Expression_GetProductUserID(LPRDATA rdPtr, long param1) {
+	*rdPtr->pRet = ConvertStrToWStr(rdPtr->pData->pEOSUtilities->GetProductUserID());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
+long WINAPI DLLExport Expression_Presence_GetRichTest(LPRDATA rdPtr, long param1) {
+	const auto pEP = rdPtr->pData->pEOSPresence;
+
+	rdPtr->pRet->clear();
+
+	if(pEP->HasPresence()) {
+		pEP->CopyPresence([&] (const EOS_Presence_Info* pInfo) {
+			*rdPtr->pRet = ConvertStrToWStr(pInfo->RichText);
+		});
+	}
 	
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
-	
+
 	//This returns a pointer to the string for MMF.
-	return (long)temp;
+	return (long)rdPtr->pRet->c_str();
 }
-
-//Divide the float by 2.
-long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
-{
-	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
-
-	//Floats are tricky.  If you want to pass in a float, you must do the
-	//following to convert the long to a true float, but only when you use
-	//TYPE_FLOAT.
-	float fp1 = *(float *)&p1;
-
-	//Just doing simple math now.
-	fp1 /=2;
-
-	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
-	rdPtr->rHo.hoFlags |= HOF_FLOAT;
-
-	//Return the float without conversion
-	return *((int*)&fp1);
-}
-
-
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -177,20 +254,34 @@ long WINAPI DLLExport Expression3(LPRDATA rdPtr,long param1)
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			Condition,
+			Condition_OnLogin,
+			Condition_LoginSuccess,
+			Condition_QueryComplete,
+			Condition_OnError,
+			Condition_OnLogout,
+
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			Action,
+			Action_Achievement_Unlock,
+			Action_Stat_Ingest,
+			Action_Query,
+			Action_Presence_SetRichTest,
+			Action_Login,
+			Action_Logout,
+
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			Expression,
-			Expression2,
-			Expression3,
+			Expression_GetStatValue,
+			Expression_GetAccountID,
+			Expression_GetProductUserID,
+			Expression_Presence_GetRichTest,
+			Expression_GetLastError,
+
 			0
 			};
