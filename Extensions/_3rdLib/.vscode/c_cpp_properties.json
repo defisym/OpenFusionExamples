@@ -7,9 +7,9 @@
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../../Inc/",
                 "E:\\Windows Kits\\10\\Include\\10.0.22000.0",
-                "F:\\DEV\\FFMpeg\\include",
+                "${workspaceFolder}\\..\\..\\..\\FFMpeg\\include",
                 "C:\\Program Files (x86)\\FMOD SoundSystem\\FMOD Studio API Windows\\api\\core\\inc",
-                "F:\\DEV\\SDL\\include"
+                "${workspaceFolder}\\..\\..\\..\\SDL\\include"
             ],
             "defines": [
                 "_DEBUG",

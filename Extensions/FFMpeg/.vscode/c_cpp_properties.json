@@ -7,8 +7,8 @@
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",
                 "${workspaceFolder}/../../Inc/",
-                "F:\\DEV\\FFMpeg\\include",
-                "F:\\DEV\\SDL\\include",
+                "${workspaceFolder}\\..\\..\\..\\FFMpeg\\include",
+                "${workspaceFolder}\\..\\..\\..\\SDL\\include",
                 "C:\\Program Files (x86)\\FMOD SoundSystem\\FMOD Studio API Windows\\api\\core\\inc"
             ],
             "defines": [

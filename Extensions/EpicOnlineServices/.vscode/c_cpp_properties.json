@@ -7,7 +7,7 @@
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",
                 "${workspaceFolder}/../../Inc/",
-                "F:\\DEV\\_EpicOnlineServices_SDK\\SDK\\Include;"
+                "${workspaceFolder}\\..\\..\\..\\_EpicOnlineServices_SDK\\SDK\\Include;"
             ],
             "defines": [
                 "_DEBUG",

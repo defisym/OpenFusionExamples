@@ -7,8 +7,8 @@
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",
                 "${workspaceFolder}/../../Inc/",
-                "F:\\DEV\\SDL\\include",
-                "F:\\DEV\\SoundTouch"
+                "${workspaceFolder}\\..\\..\\..\\SDL\\include",
+                "${workspaceFolder}\\..\\..\\..\\SoundTouch"
             ],
             "defines": [
                 "_DEBUG",
