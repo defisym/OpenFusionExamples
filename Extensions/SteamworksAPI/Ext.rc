@@ -122,6 +122,12 @@ BEGIN
             MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
         END
         MENUITEM SEPARATOR
+        POPUP "Utilities"
+        BEGIN
+            MENUITEM "On Gamepad Input Dismiss", IDMN_CONDITION_OID				
+            MENUITEM "Gamepad Input Submitted", IDMN_CONDITION_SUBMITTED		
+        END    
+        MENUITEM SEPARATOR        
         POPUP "Micro Transaction"
         BEGIN
             MENUITEM "On MixroTxn Error", IDMN_CONDITION_OMTE
@@ -162,6 +168,11 @@ BEGIN
             END
         END
         MENUITEM SEPARATOR
+        POPUP "Utilities"
+        BEGIN
+            MENUITEM "Show Gamepad Text Input", IDMN_ACTION_SGTI		
+        END    
+        MENUITEM SEPARATOR
         POPUP "Micro Transaction"
         BEGIN
             MENUITEM "Micro Transaction: Set Info",       IDMN_ACTION_MT_SI	
@@ -201,7 +212,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Utilities"
         BEGIN
-            MENUITEM "Get Current Battery Power", IDMN_EXPRESSION_GCBP		
+            MENUITEM "Get Current Battery Power", IDMN_EXPRESSION_GCBP	
+            MENUITEM "Get Gamepad Input Text", IDMN_EXPRESSION_GGIT
         END     
         MENUITEM SEPARATOR
         POPUP "Micro Transaction"
@@ -329,6 +341,14 @@ BEGIN
 
     M_LOACTION     	         "Screenshot Location"
     M_PFID      	         "Published File ID"
+
+    M_ACTION_SGTI      	     "Show Gamepad Text Input, InputMode = %0, LineMode = %1, Description = %2, CharMax = %3, ExistingText = %4"
+
+    M_INPUTMODE		           "1 = Password, 0 = Normal"
+    M_LINEMODE		           "1 = Multiple Line, 0 = Single Line"
+    M_DESCRIPTION	           "Description"
+    M_MAXCHAR		           "Max length"
+    M_EXISTINGTEXT	           "Existing Text"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -345,6 +365,9 @@ BEGIN
 
     M_CONDITION_ROSD          "%o: Running On Steam Deck"
     M_CONDITION_OSS           "%o: On Screenshots"
+
+    M_CONDITION_OID		      "%o: On Gamepad Input Dismiss"
+    M_CONDITION_SUBMITTED     "%o: Gamepad Input Submitted"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -354,10 +377,12 @@ BEGIN
 
     M_EXPRESSION_MT_GS		     "MTGS ("
     M_EXPRESSION_MT_GHTMLEC	     "MTGHEC ("
-    M_EXPRESSION_MT_GED		     "MTGED $("
-    M_EXPRESSION_MT_GTID	     "MTGTID $("
+    M_EXPRESSION_MT_GED		     "MTGED$("
+    M_EXPRESSION_MT_GTID	     "MTGTID$("
 
     M_EXPRESSION_GCBP	     	 "GCBP("
+
+    M_EXPRESSION_GGIT	     	 "GGIT$ ("
 END
 
 STRINGTABLE

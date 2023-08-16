@@ -608,36 +608,40 @@ inline void UpdateRectByHotSpot(HotSpotPos Type, size_t width, size_t height, in
 	pRc->bottom = pRc->top + height;
 }
 
-inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
-	//Rotate hotspot
-	if (angle == 0) {
-		return;
+namespace RotateFunction {
+	// angle -> rad, shouldn't be called directly
+	inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
+		//Rotate hotspot
+		if (angle == 0) {
+			return;
+		}
+
+		float hx = (float)*hotX;
+		float hy = (float)*hotY;
+
+		float si = (float)sin(angle);
+		float co = (float)cos(angle);
+
+		int trX = (int)(sw * co);
+		int trY = (int)(-sw * si);
+		int blX = (int)(sh * si);
+		int blY = (int)(sh * co);
+		int brX = (int)(sw * co + sh * si);
+		int brY = (int)(sh * co - sw * si);
+
+		//Update topleft coordinate
+		int dx = (std::min)(0, (std::min)(trX, (std::min)(blX, brX)));
+		int dy = (std::min)(0, (std::min)(trY, (std::min)(blY, brY)));
+
+		//Update hotspot
+		*hotX = (int)(round(hx * co + hy * si) - dx);
+		*hotY = (int)(round(hy * co - hx * si) - dy);
 	}
-
-	float hx = (float)*hotX;
-	float hy = (float)*hotY;
-
-	float si = (float)sin(angle);
-	float co = (float)cos(angle);
-
-	int trX = (int)(sw * co);
-	int trY = (int)(-sw * si);
-	int blX = (int)(sh * si);
-	int blY = (int)(sh * co);
-	int brX = (int)(sw * co + sh * si);
-	int brY = (int)(sh * co - sw * si);
-
-	//Update topleft coordinate
-	int dx = (std::min)(0, (std::min)(trX, (std::min)(blX, brX)));
-	int dy = (std::min)(0, (std::min)(trY, (std::min)(blY, brY)));
-
-	//Update hotspot
-	*hotX = (int)(round(hx * co + hy * si) - dx);
-	*hotY = (int)(round(hy * co - hx * si) - dy);
 }
 
-inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
-	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
+// angle -> deg
+inline void RotatePoint(float angle, int* hotX, int* hotY, int sw, int sh) {
+	return RotateFunction::RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
 #ifndef _NODISPLAY
@@ -648,7 +652,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr
 	, float xScale, float yScale
 	, HotSpotPos hotSpotPos
 	, int hotSpotX, int hotSpotY
-	, int angle) {
+	, float angle) {
 	//Get scale (absolute since negative will mirror)
 	float scaleX = abs(xScale);
 	float scaleY = abs(yScale);
@@ -663,7 +667,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr
 
 	UpdateHotSpot(hotSpotPos, width, height, hotX, hotY);
 
-	rdPtr->rc.rcAngle = (float)angle;
+	rdPtr->rc.rcAngle = angle;
 
 	rdPtr->rc.rcScaleX = scaleX;
 	rdPtr->rc.rcScaleY = scaleY;
@@ -687,7 +691,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 	, float xScale, float yScale
 	, HotSpotPos hotSpotPos
 	, int hotSpotX, int hotSpotY
-	, int angle) {
+	, float angle) {
 	UpdateHoImgInfo(rdPtr
 		, pSrc->GetWidth(), pSrc->GetHeight()
 		, xScale, yScale

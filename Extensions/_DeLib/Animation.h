@@ -64,7 +64,7 @@ struct AnimationFrameData : public JsonObject {
 
     std::wstring file;
 
-    int angle = 0;
+    float angle = 0;
     int alpha = 0;
 
     struct Interpolation : public JsonObject {
@@ -350,12 +350,12 @@ struct AnimationFrameData : public JsonObject {
         JsonInterface::GetData(data, "scale", pScale);
         JsonInterface::GetData(data, "hotSpot", pHotSpot);
 
-        angle = Range(angle, Animation_MinAngle, Animation_MaxAngle);
+        angle = Range(angle, 1.0f * Animation_MinAngle, 1.0f * Animation_MaxAngle);
         alpha = Range(alpha, Animation_MinAlpha, Animation_MaxAlpha);
     }
 
     inline void Interpolation(double step, const AnimationFrameData* pPrevious, const AnimationFrameData* pNext) {
-        angle = static_cast<int>(static_cast<double>(pPrevious->angle) + step * (pNext->angle - pPrevious->angle));
+        angle = static_cast<float>(static_cast<double>(pPrevious->angle) + step * (pNext->angle - pPrevious->angle));
         alpha = static_cast<int>(static_cast<double>(pPrevious->alpha) + step * (pNext->alpha - pPrevious->alpha));
 
         pRGBCoef->Interpolation(step, pPrevious->pRGBCoef, pNext->pRGBCoef);

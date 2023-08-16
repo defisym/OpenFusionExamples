@@ -109,7 +109,7 @@ public:
 		DWORD newRGBCoef = Animation_DefaultCoef;
 
 		// Internal: params updated by object actions
-		int angle = 0;
+		float angle = 0;
 		AnimationFrameData::Scale* pScale = nullptr;
 		AnimationFrameData::HotSpot* pHotSpot = nullptr;		
 
@@ -153,7 +153,7 @@ public:
 			return bChanged;
 		}
 
-		inline void UpdateInternal(const int angle) {
+		inline void UpdateInternal(const float angle) {
 			this->angle = angle;
 		}
 

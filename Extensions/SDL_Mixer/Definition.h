@@ -458,7 +458,7 @@ struct GlobalData {
 	}
 
 	static inline void StopAudio(Mix_Music* pMusic, int fadeMs = -1) {
-		if (fadeMs == -1) {
+		if (fadeMs == -1 || Mix_PausedMusicStream(pMusic)) {
 			Mix_HaltMusicStream(pMusic);
 		}
 		else {

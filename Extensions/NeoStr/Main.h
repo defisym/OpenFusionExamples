@@ -235,7 +235,7 @@ typedef struct tagRDATA
 	float xScale = 1.0;
 	float yScale = 1.0;
 
-	int angle = 0;
+	float angle = 0;
 
 	bool reRender;
 	bool bStrChanged;

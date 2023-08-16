@@ -200,17 +200,17 @@ namespace Deque2D {
 				return;
 			}
 
-			Split Spliter;
-			Spliter.SetEncryptStr(dbuff, strlen(dbuff));
+			Encryption Encrypt;
+			Encrypt.SetEncryptStr(dbuff, strlen(dbuff));
 			delete[] dbuff;
 
 			if (Key != L"") {
-				Spliter.GenerateKey(Key.c_str());
-				Spliter.Encrypt();
-				Spliter.SaveFile(FilePath.c_str());
+				Encrypt.GenerateKey(Key.c_str());
+				Encrypt.Encrypt();
+				Encrypt.SaveFile(FilePath.c_str());
 			}
 			else {
-				Spliter.SaveFile(FilePath.c_str(), true);
+				Encrypt.SaveFile(FilePath.c_str(), true);
 			}
 		}
 		//Save to string

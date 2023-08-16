@@ -10,6 +10,7 @@
 #include "SteamMicroTxn.h"
 #include "SteamRichPresence.h"
 #include "SteamScreenshot.h"
+#include "SteamGamepadTextInput.h"
 
 #include "SteamRemote.h"
 
@@ -53,6 +54,7 @@ private:
 	SteamMicroTxn* pSteamMicroTxn = nullptr;
 	SteamRichPresence* pSteamRichPresence = nullptr;
 	SteamScreenshot* pSteamScreenshot = nullptr;
+	SteamGamepadTextInput* pSteamGamepadTextInput = nullptr;
 	
 	//------------
 	// None Callback
@@ -80,13 +82,16 @@ public:
 		pSteamMicroTxn = new SteamMicroTxn();
 		pSteamRichPresence = new SteamRichPresence();
 		pSteamScreenshot = new SteamScreenshot();
+		pSteamGamepadTextInput = new SteamGamepadTextInput();
 
 		pSteamRemote = new SteamRemote();
 	}
 	~SteamUtilities() {
 		delete pAchAndStat;
-		delete pSteamRichPresence;
 		delete pSteamMicroTxn;
+		delete pSteamRichPresence;
+		delete pSteamScreenshot;
+		delete pSteamGamepadTextInput;
 		
 		delete pSteamRemote;
 	}
@@ -127,6 +132,7 @@ public:
 	inline SteamMicroTxn* GetMicroTxn() const { return pSteamMicroTxn; }
 	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
 	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }
+	inline SteamGamepadTextInput* GetSteamGamepadTextInput() const { return pSteamGamepadTextInput; }
 
 	inline SteamRemote* GetRemote() const { return pSteamRemote; }
 

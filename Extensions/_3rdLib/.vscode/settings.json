@@ -7,6 +7,7 @@
         "*.asc": "AvgScript",
         "*.dat": "ini",
         "*.sav": "ini",
+        "*.wsb": "xml",
         "memory": "cpp",
         "mutex": "cpp",
         "shared_mutex": "cpp",
@@ -86,6 +87,10 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "any": "cpp",
+        "codecvt": "cpp",
+        "complex": "cpp",
+        "valarray": "cpp"
     }
 }

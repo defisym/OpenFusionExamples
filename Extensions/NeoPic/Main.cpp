@@ -131,7 +131,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GXZS, M_EXPRESSION_GXZS, EXP_EXPRESSION_GXZS, EXPFLAG_DOUBLE, 0,
 		IDMN_EXPRESSION_GYZS, M_EXPRESSION_GYZS, EXP_EXPRESSION_GYZS, EXPFLAG_DOUBLE, 0,
 
-		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
+		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, EXPFLAG_DOUBLE, 0,
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GK, M_EXPRESSION_GK, EXP_EXPRESSION_GK, EXPFLAG_STRING, 0,
@@ -565,8 +565,7 @@ short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
-	int Angle = (int)CNC_GetIntParameter(rdPtr);
-	Angle = Angle % 360;
+	const float Angle = fmod(GetFloatParam(rdPtr), 360.0f);
 	
 	rdPtr->pAI->StopAnimation();
 
@@ -1134,7 +1133,7 @@ long WINAPI DLLExport Expression_GetYZoomScale(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
-	return GetAngle(rdPtr);
+	return ReturnFloat(GetAngle(rdPtr));
 }
 
 long WINAPI DLLExport Expression_GetFileName(LPRDATA rdPtr, long param1) {

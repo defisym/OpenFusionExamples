@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <vector>
+#include <map>
 
 #include "ccxhdr.h"
 
@@ -625,21 +626,40 @@ public:
 			});
 	}
 
+	inline LPOIL GetOILByName(std::wstring& objName) const {
+		return GetOILByName(objName.c_str());
+	}
+
+	inline LPOIL GetOILByName(const LPCWSTR pObjName) const {
+		LPOIL pOil = nullptr;
+
+		IterateOiL([&] (const LPOIL _pOil) {
+			// oilName may start with empty char
+			const auto pCurName = [&] () {
+				auto pOilName = _pOil->oilName;
+
+				while (pOilName[0] == 65535) {
+					pOilName++;
+				}
+
+				return pOilName;
+			}();
+
+			if (StrEqu(pObjName, pCurName)) {
+				pOil = _pOil;
+			}
+			});
+
+		return pOil;
+	}
+
 	// ReSharper disable once CppParameterMayBeConstPtrOrRef
 	inline bool OILHasObject(std::wstring& objName) const {
 		return OILHasObject(objName.c_str());
 	}
 
 	inline bool OILHasObject(const LPCWSTR pObjName) const {
-		bool bHas = false;
-
-		IterateOiL([&](const LPOIL pOil) {
-			if (StrEqu(pObjName, pOil->oilName)) {
-				bHas = true;
-			}
-			});
-
-		return bHas;
+		return GetOILByName(pObjName) != nullptr;
 	}
 
 	inline bool OILHasObject(const LPOIL pOil) const {

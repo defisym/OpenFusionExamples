@@ -13,7 +13,7 @@ inline void NoClip(LPRDATA rdPtr) {
 	if (rdPtr->hotSpotPos != HotSpotPos::LT && rdPtr->hotSpotPos != HotSpotPos::CUSTOM
 		|| rdPtr->hotSpotPos == HotSpotPos::CUSTOM && (rdPtr->hotSpotX != 0 || rdPtr->hotSpotY != 0)
 		|| rdPtr->xScale != 1.0 && rdPtr->yScale != 1.0
-		|| rdPtr->angle != 0) {
+		|| rdPtr->angle != 0.0) {
 		rdPtr->bClip = false;
 	}
 }

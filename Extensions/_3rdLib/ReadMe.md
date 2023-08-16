@@ -9,6 +9,7 @@ This folder contains two types of files:
 
 Files listed in gitignore are also used but remain untouched, you need to clone it from origin repo to compile.
 
+- [Eigen](https://eigen.tuxfamily.org/dox/)
 - [LZ4](https://github.com/lz4/lz4)
 - [ZLib](https://zlib.net/)
 - [ZPaq](https://github.com/zpaq/zpaq)
