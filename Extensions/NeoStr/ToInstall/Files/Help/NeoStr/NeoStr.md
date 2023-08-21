@@ -8,10 +8,9 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 ### Escape
 
-`/[` -> `[`
+`\[` -> `[`
 
-`[Command]` if not match follows, will be displayed as untouched
-	depend on your flag settings
+`[Command]` if not match follows, will be displayed as untouched depend on your flag settings
 
 ### Ignore
 
@@ -33,27 +32,30 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 #### Insert
 
-`[ICon = Direction, Frame]`	insert icon based on linked active.	if param is less than two, will be referred from left. e.g., one param will be treated as frame.
+`[ICon = Direction, Frame]` insert icon based on linked active. if param is less than two, will be referred from left. e.g., one param will be treated as frame.
 
-ICon will be resized to the font size it inserted at
-	
+ICon will be resized to the font size it inserted at.
 *if you are linking to object you need to retrieve each param then handle it by your self you need to set a key for it for retrieving and value as pointer to a surface*
 
 #### Format
 
-`[IConOffsetX = 0.0][/IConOffsetX]`	ICon Offset X
+`[IConOffsetX = 0.0][/IConOffsetX]` ICon Offset X
+
 - ! = reset to default
 - +/- = add/minus to current
 
-`[IConOffsetY = 0.0][/IConOffsetY]`	ICon Offset Y
+`[IConOffsetY = 0.0][/IConOffsetY]` ICon Offset Y
+
 - ! = reset to default
 - +/- = add/minus to current
 
-`[IConScale = 1.0][/IConScale]`	ICon Scale
+`[IConScale = 1.0][/IConScale]` ICon Scale
+
 - ! = reset to default
 - +/- = add/minus to current
 
 `[IConResample = 1][/IConResample]` ICon Resample, 1 = Enable, 0 = Disable
+
 - ! = reset to default
 
 ### Shake
@@ -87,11 +89,13 @@ if RGB param is less than four, then it's referred in the following order:
 #### Font
 
 `[Font = FontName][/Font]`&`[F = FontName][/F]`
+
 - ! = reset to default
 
 #### Size
 
 `[Size = FontSize][/Size]`&`[S = FontSize][/S]`
+
 - ! = reset to default
 - +/- = add/minus to current
 
@@ -134,9 +138,5 @@ This object has no properties
 ## Action
 
 ## Condition
-
-- Iterate
-  - On Iterate Sections
-  - On Iterate Items
 
 ## Expression

@@ -1401,7 +1401,7 @@ public:
 		// Format Control
 		// ---------------
 		// 
-		// /[ -> [
+		// \[ -> [
 		//	escaped
 		// 
 		// [Command] if not match follows, will be displayed as untouched
