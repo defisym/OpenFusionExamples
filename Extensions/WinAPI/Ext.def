@@ -72,7 +72,7 @@ EXPORTS
 ;	SaveBackground			@81
 ;	RestoreBackground		@82
 ;	KillBackground			@83
-; 	WindowProc				@84
+ 	WindowProc				@84
 	StartApp				@85
 	EndApp					@86
 	StartFrame				@87

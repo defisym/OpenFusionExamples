@@ -86,6 +86,10 @@ class ObjectSelection;
 #include	"Func.h"
 
 // Globals and Prototypes
+inline static bool bWindowResizing;
+inline static bool bTriggerCallback;
+inline static POINT CurrentFrameSize;
+
 extern HINSTANCE hInstLib;
 extern short conditionsInfos[];
 extern short actionsInfos[];

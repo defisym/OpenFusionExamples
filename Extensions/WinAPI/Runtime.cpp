@@ -147,7 +147,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->curMonitorHandle = nullptr;
 	rdPtr->curMonitorWidth = 0;
 	rdPtr->curMonitorHeight = 0;
-	
+
+	bWindowResizing = false;
+	bTriggerCallback = false;
+	CurrentFrameSize = {};
+
 	// No errors
 	return 0;
 }
@@ -175,12 +179,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->temp;
 
 	//释放时间字符串
-	if (rdPtr->CurrentTime != nullptr) {
-		delete[] rdPtr->CurrentTime;
-	}
-	if (rdPtr->TotalPlayTime != nullptr) {
-		delete[] rdPtr->TotalPlayTime;
-	}
+	delete[] rdPtr->CurrentTime;
+	delete[] rdPtr->TotalPlayTime;
 
 	delete rdPtr->FileList;
 	delete[] rdPtr->FileListOutPut;
@@ -305,8 +305,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	rdPtr->bSecondFrame = true;
 
-	// Will not be called next loop	
-	//return REFLAG_ONESHOT;
+	// Handle resizing
+	if(bTriggerCallback) {
+		bTriggerCallback = false;
+		CallEvent(ONRESIZINGCOMPLETE);
+	}
 
 	//更新显示
 	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {
@@ -629,52 +632,74 @@ void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 // Do not forget to enable the WindowProc function in the .def file if you implement it
 // 
 // ============================================================================
-/*
+
 // Get the pointer to the object's data from its window handle
 // Note: the object's window must have been subclassed with a
 // callRunTimeFunction(rdPtr, RFUNCTION_SUBCLASSWINDOW, 0, 0);
 // See the documentation and the Simple Control example for more info.
 //
-LPRDATA GetRdPtr(HWND hwnd, LPRH rhPtr)
-{
-	return (LPRDATA)GetProp(hwnd, (LPCSTR)rhPtr->rh4.rh4AtomRd);
+LPRDATA GetRdPtr(HWND hwnd, LPRH rhPtr) {
+	return (LPRDATA)GetPropA(hwnd, (LPCSTR)rhPtr->rh4.rh4AtomRd);
 }
 
 // Called from the window proc of hMainWin and hEditWin.
 // You can intercept the messages and/or tell the main proc to ignore them.
 //
-LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam)
-{
-	LPRDATA rdPtr = NULL;
+LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam) {
+	LPRDATA rdPtr = nullptr;
+
+	if (hWnd != rhPtr->rhHTopLevelWnd) {
+		return 0;
+	}
 
 	switch (nMsg) {
+	case WM_ENTERSIZEMOVE: {
+		if(!bWindowResizing) {
+#ifdef _DEBUG
+			OutputDebugStringA("Resizing\r\n");
+#endif
 
-	// Example
-	case WM_CTLCOLORSTATIC:
-		{
-			// Get the handle of the control
-			HWND hWndControl = (HWND)lParam;
+			bWindowResizing = true;
+			bTriggerCallback = false;
 
-			// Get a pointer to the RUNDATA structure (see GetRdptr function above for more info)
-			rdPtr = GetRdPtr(hWndControl, rhPtr);
+			RECT CurrentRect = InitRect();
+			::GetWindowRect(rhPtr->rhHMainWin, &CurrentRect);
 
-			// Check if the rdPtr pointer is valid and points to an object created with this extension
-			if ( rdPtr == NULL || rdPtr->rHo.hoIdentifier != IDENTIFIER )
-				break;
-
-			// OK, intercept the message
-			HDC hDC = (HDC)wParam;
-			SetBkColor(hDC, rdPtr->backColor);
-			SetTextColor(hDC, rdPtr->fontColor);
-			rhPtr->rh4.rh4KpxReturn = (long)rdPtr->hBackBrush;
-			return REFLAG_MSGRETURNVALUE;
+			CurrentFrameSize.x = CurrentRect.right - CurrentRect.left;
+			CurrentFrameSize.y = CurrentRect.bottom - CurrentRect.top;
 		}
+
 		break;
+	}
+	case WM_EXITSIZEMOVE: {
+		if (bWindowResizing) {
+#ifdef _DEBUG
+			OutputDebugStringA("Resize Complete\r\n");
+#endif
+
+			bWindowResizing = false;
+			bTriggerCallback = true;
+
+			RECT CurrentRect = InitRect();
+			::GetWindowRect(rhPtr->rhHMainWin, &CurrentRect);
+
+			POINT CurrentSize;
+
+			CurrentSize.x = CurrentRect.right - CurrentRect.left;
+			CurrentSize.y = CurrentRect.bottom - CurrentRect.top;
+
+			if(CurrentSize == CurrentFrameSize) {
+				bTriggerCallback = false;
+				OutputDebugStringA("Not Changed\r\n");
+			}
+		}
+
+		break;
+	}	
 	}
 
 	return 0;
 }
-*/
 
 // ============================================================================
 //

@@ -3,6 +3,7 @@
 //#define _FFMPEG
 
 constexpr auto ONMONITORCHANGE = 13;
+constexpr auto ONRESIZINGCOMPLETE = 16;
 
 typedef struct DOUBLEPOINT
 {
@@ -131,5 +132,12 @@ inline POINT operator /(POINT A, LONG B) {
 	A.x /= B;
 	A.y /= B;
 	return A;
+}
+
+
+//POINT运算符重载 ==
+inline bool operator==(POINT A, POINT B) {
+	return A.x == B.x
+		&& A.y == B.y;
 }
 

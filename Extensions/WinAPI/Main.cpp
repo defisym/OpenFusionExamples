@@ -43,6 +43,8 @@ short conditionsInfos[] =
 	IDMN_CONDITION_IOHA, M_CONDITION_IOHA, CND_CONDITION_IOHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_ID,
 	IDMN_CONDITION_IOHA_S, M_CONDITION_IOHA, CND_CONDITION_IOHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_ID,
 
+	IDMN_CONDITION_ORC, M_CONDITION_ORC, CND_CONDITION_ORC, 0, 0,
+
 };
 
 // Definitions of parameters for each action
@@ -428,6 +430,10 @@ long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnMonitorChange(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
+long WINAPI DLLExport OnResizingComplete(LPRDATA rdPtr, long param1, long param2) {
 	return true;
 }
 
@@ -1960,6 +1966,8 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	IsObjectHasAnimationID,
 	IsObjectHasAnimationID_Scope,
+
+	OnResizingComplete,
 
 	0
 };
