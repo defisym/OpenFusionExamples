@@ -24,8 +24,9 @@
 #define	CND_CONDITION_IOHA			14
 #define	CND_CONDITION_IOHA_S		15
 #define	CND_CONDITION_ORC			16
+#define	CND_CONDITION_RMCX			17
 
-#define	CND_LAST					17
+#define	CND_LAST					18
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

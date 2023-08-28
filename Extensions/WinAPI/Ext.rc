@@ -121,7 +121,9 @@ BEGIN
         MENUITEM "Return Key State",            IDMN_CONDITION_RKS
         MENUITEM SEPARATOR
         MENUITEM "On Monitor Change",    IDMN_CONDITION_OMC
+        MENUITEM SEPARATOR
         MENUITEM "On Resizing Complete",    IDMN_CONDITION_ORC
+        MENUITEM "Resizing Mainly Changed Width",    IDMN_CONDITION_RMCX
         MENUITEM SEPARATOR
         MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
         MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
@@ -825,6 +827,7 @@ STRINGTABLE
 BEGIN
     M_CONDITION_OMC    "%o On Monitor Change"
     M_CONDITION_ORC    "%o On Resizing Complete"
+    M_CONDITION_RMCX   "%o Resizing Mainly Changed Width"
 END
 
 //Porperties

@@ -148,10 +148,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->curMonitorWidth = 0;
 	rdPtr->curMonitorHeight = 0;
 
-	bWindowResizing = false;
-	bTriggerCallback = false;
-	CurrentFrameSize = {};
-
 	// No errors
 	return 0;
 }
@@ -306,10 +302,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	rdPtr->bSecondFrame = true;
 
 	// Handle resizing
-	if(bTriggerCallback) {
-		bTriggerCallback = false;
+	windowResizing.TriggerCallback([&] () {
 		CallEvent(ONRESIZINGCOMPLETE);
-	}
+	});
+
 
 	//更新显示
 	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {
@@ -637,14 +633,12 @@ void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 // Note: the object's window must have been subclassed with a
 // callRunTimeFunction(rdPtr, RFUNCTION_SUBCLASSWINDOW, 0, 0);
 // See the documentation and the Simple Control example for more info.
-//
 LPRDATA GetRdPtr(HWND hwnd, LPRH rhPtr) {
 	return (LPRDATA)GetPropA(hwnd, (LPCSTR)rhPtr->rh4.rh4AtomRd);
 }
 
 // Called from the window proc of hMainWin and hEditWin.
 // You can intercept the messages and/or tell the main proc to ignore them.
-//
 LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam) {
 	LPRDATA rdPtr = nullptr;
 
@@ -654,45 +648,12 @@ LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM w
 
 	switch (nMsg) {
 	case WM_ENTERSIZEMOVE: {
-		if(!bWindowResizing) {
-#ifdef _DEBUG
-			OutputDebugStringA("Resizing\r\n");
-#endif
-
-			bWindowResizing = true;
-			bTriggerCallback = false;
-
-			RECT CurrentRect = InitRect();
-			::GetWindowRect(rhPtr->rhHMainWin, &CurrentRect);
-
-			CurrentFrameSize.x = CurrentRect.right - CurrentRect.left;
-			CurrentFrameSize.y = CurrentRect.bottom - CurrentRect.top;
-		}
+		windowResizing.EnterResizing(rhPtr->rhHMainWin);
 
 		break;
 	}
 	case WM_EXITSIZEMOVE: {
-		if (bWindowResizing) {
-#ifdef _DEBUG
-			OutputDebugStringA("Resize Complete\r\n");
-#endif
-
-			bWindowResizing = false;
-			bTriggerCallback = true;
-
-			RECT CurrentRect = InitRect();
-			::GetWindowRect(rhPtr->rhHMainWin, &CurrentRect);
-
-			POINT CurrentSize;
-
-			CurrentSize.x = CurrentRect.right - CurrentRect.left;
-			CurrentSize.y = CurrentRect.bottom - CurrentRect.top;
-
-			if(CurrentSize == CurrentFrameSize) {
-				bTriggerCallback = false;
-				OutputDebugStringA("Not Changed\r\n");
-			}
-		}
+		windowResizing.ExitResizing(rhPtr->rhHMainWin);
 
 		break;
 	}	

@@ -44,6 +44,7 @@ short conditionsInfos[] =
 	IDMN_CONDITION_IOHA_S, M_CONDITION_IOHA, CND_CONDITION_IOHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_ID,
 
 	IDMN_CONDITION_ORC, M_CONDITION_ORC, CND_CONDITION_ORC, 0, 0,
+	IDMN_CONDITION_RMCX, M_CONDITION_RMCX, CND_CONDITION_RMCX, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
 };
 
@@ -435,6 +436,10 @@ long WINAPI DLLExport OnMonitorChange(LPRDATA rdPtr, long param1, long param2) {
 
 long WINAPI DLLExport OnResizingComplete(LPRDATA rdPtr, long param1, long param2) {
 	return true;
+}
+
+long WINAPI DLLExport ResizingMainlyChangedX(LPRDATA rdPtr, long param1, long param2) {
+	return windowResizing.bMainlyChangedX;
 }
 
 // ============================================================================
@@ -1989,6 +1994,7 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsObjectHasAnimationID_Scope,
 
 	OnResizingComplete,
+	ResizingMainlyChangedX,
 
 	0
 };
