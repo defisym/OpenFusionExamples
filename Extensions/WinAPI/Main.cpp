@@ -665,8 +665,8 @@ short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
-	size_t wWidth = (size_t)CNC_GetIntParameter(rdPtr);
-	size_t wHeight = (size_t)CNC_GetIntParameter(rdPtr);
+	const auto wWidth = (size_t)CNC_GetIntParameter(rdPtr);
+	const auto wHeight = (size_t)CNC_GetIntParameter(rdPtr);
 	
 	RECT wRect;
 	::GetWindowRect(rdPtr->MainWindowHandle, &wRect);
@@ -674,26 +674,47 @@ short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
 	RECT clientRect;
 	GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &clientRect);
 	
-	size_t clientWidth= clientRect.right - clientRect.left;
-	size_t clientHeight = clientRect.bottom - clientRect.top;
+	const auto clientWidth= clientRect.right - clientRect.left;
+	const auto clientHeight = clientRect.bottom - clientRect.top;
 
-	size_t owWidth = wRect.right - wRect.left;
-	size_t owHeight = wRect.bottom - wRect.top;
+	const auto owWidth = wRect.right - wRect.left;
+	const auto owHeight = wRect.bottom - wRect.top;
 
-	size_t cwOffsetW = owWidth - clientWidth;
-	size_t cwOffsetH = owHeight - clientHeight;
+	const auto cwOffsetW = owWidth - clientWidth;
+	const auto cwOffsetH = owHeight - clientHeight;
 
-	auto oldX = wRect.left;
-	auto oldY = wRect.top;
+	const auto oldX = wRect.left;
+	const auto oldY = wRect.top;
 
-	auto newX = oldX + int(clientWidth - wWidth) / 2;
-	auto newY = oldY + int(clientHeight - wHeight) / 2;
+	const auto newW = wWidth + cwOffsetW;
+	const auto newH = wHeight + cwOffsetH;
+
+	auto newX = oldX + static_cast<int>(clientWidth - wWidth) / 2;
+	auto newY = oldY + static_cast<int>(clientHeight - wHeight) / 2;
+
+	//Make sure sized window won't exceed the monitor rect
+	//https://www.cnblogs.com/163yun/p/9583512.html
+	//https://learn.microsoft.com/zh-cn/windows/win32/gdi/multiple-monitor-system-metrics
+	RECT monitor;
+	monitor.left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+	monitor.top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+	monitor.right = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	monitor.bottom = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+	// RB
+	newX = (std::min)(newX, static_cast<long>(monitor.right - newW));
+	newY = (std::min)(newY, static_cast<long>(monitor.bottom - newH));
+
+	// LT
+	// Title bar has higher priority
+	newX = (std::max)(newX, monitor.left);
+	newY = (std::max)(newY, monitor.top);
 
 	SetWindowPos(rdPtr->MainWindowHandle
-		, NULL
+		, nullptr
 		, newX, newY
-		, wWidth + cwOffsetW
-		, wHeight + cwOffsetH
+		, newW
+		, newH
 		, SWP_SHOWWINDOW| SWP_NOZORDER);
 
 	return 0;
