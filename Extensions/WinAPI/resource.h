@@ -109,6 +109,8 @@
 #define M_CONDITION_IOHA                6040
 #define M_CONDITION_ORC					6041
 #define M_CONDITION_RMCX				6042
+#define M_CONDITION_OCB					6043
+#define M_CONDITION_OCF					6044
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define PARA_CONDITION_OBJ              6511
@@ -242,6 +244,8 @@
 #define IDMN_CONDITION_IOHA_S           26042
 #define IDMN_CONDITION_ORC				26043
 #define IDMN_CONDITION_RMCX				26044
+#define IDMN_CONDITION_OCB				26045
+#define IDMN_CONDITION_OCF				26046
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020

@@ -50,7 +50,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright 2019~2021 Defisym"
+            VALUE "LegalCopyright", "Copyright 2019~2023 Defisym"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -113,20 +113,32 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
-        MENUITEM "Another Instance is Running",    IDMN_CONDITION_IAIR
+        POPUP "Application"
+        BEGIN 
+            MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
+            MENUITEM "Another Instance is Running",    IDMN_CONDITION_IAIR
+        END    
         MENUITEM SEPARATOR
-        MENUITEM "Mouse is Locked",             IDMN_CONDITION_IML
+        POPUP "Mouse"
+        BEGIN 
+            MENUITEM "Mouse is Locked", IDMN_CONDITION_IML
+            MENUITEM SEPARATOR
+            MENUITEM "On Click Backward", IDMN_CONDITION_OCB
+            MENUITEM "On Click Forward", IDMN_CONDITION_OCF
+        END
         MENUITEM SEPARATOR
+        POPUP "Window"
+        BEGIN 
+            MENUITEM "On Monitor Change",    IDMN_CONDITION_OMC
+            MENUITEM SEPARATOR
+            MENUITEM "On Resizing Complete",    IDMN_CONDITION_ORC
+            MENUITEM "Resizing Mainly Changed Width",    IDMN_CONDITION_RMCX
+            MENUITEM SEPARATOR
+            MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
+            MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
+        END
+        MENUITEM SEPARATOR       
         MENUITEM "Return Key State",            IDMN_CONDITION_RKS
-        MENUITEM SEPARATOR
-        MENUITEM "On Monitor Change",    IDMN_CONDITION_OMC
-        MENUITEM SEPARATOR
-        MENUITEM "On Resizing Complete",    IDMN_CONDITION_ORC
-        MENUITEM "Resizing Mainly Changed Width",    IDMN_CONDITION_RMCX
-        MENUITEM SEPARATOR
-        MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
-        MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
         MENUITEM SEPARATOR
         MENUITEM "CommandLine Has Param", IDMN_CONDITION_ICLIHP
         MENUITEM SEPARATOR
@@ -429,7 +441,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,5,151,50,14
     PUSHBUTTON      "Help",ID_HELP,145,151,50,14
     GROUPBOX        "",-1,5,6,190,135
-    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2021 Defisym",-1,21,31,155,60
+    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2023 Defisym",-1,21,31,155,60
 END
 #endif
 
@@ -495,7 +507,7 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2019~2021 Defisym"
+    IDST_COPYRIGHT          "Copyright 2019~2023 Defisym"
     IDST_COMMENT            "Functions that use WinAPI, For Personal Use."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -762,6 +774,9 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_IML         "%o Mouse is Locked"    
+    
+    M_CONDITION_OCB         "%o On Click Backward"    
+    M_CONDITION_OCF         "%o On Click Forward"    
 END
 
 STRINGTABLE

@@ -46,6 +46,8 @@ short conditionsInfos[] =
 	IDMN_CONDITION_ORC, M_CONDITION_ORC, CND_CONDITION_ORC, 0, 0,
 	IDMN_CONDITION_RMCX, M_CONDITION_RMCX, CND_CONDITION_RMCX, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
+	IDMN_CONDITION_OCB, M_CONDITION_OCB, CND_CONDITION_OCB, 0, 0,
+	IDMN_CONDITION_OCF, M_CONDITION_OCF, CND_CONDITION_OCF, 0, 0,
 };
 
 // Definitions of parameters for each action
@@ -442,7 +444,11 @@ long WINAPI DLLExport ResizingMainlyChangedX(LPRDATA rdPtr, long param1, long pa
 	return rdPtr->pWindowResizing->bMainlyChangedX;
 }
 
-long WINAPI DLLExport OnClickingXButton(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport OnClickBackword(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
+long WINAPI DLLExport OnClickForward(LPRDATA rdPtr, long param1, long param2) {
 	return true;
 }
 
@@ -1999,6 +2005,9 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	OnResizingComplete,
 	ResizingMainlyChangedX,
+
+	OnClickBackword,
+	OnClickForward,
 
 	0
 };

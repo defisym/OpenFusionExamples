@@ -673,6 +673,51 @@ LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM w
 
 		break;
 	}
+	case WM_APPCOMMAND: {
+		const auto cmd = GET_APPCOMMAND_LPARAM(lParam);
+		const auto uDevice = GET_DEVICE_LPARAM(lParam);
+		const auto dwKeys = GET_KEYSTATE_LPARAM(lParam);
+
+		if (FAPPCOMMAND_MOUSE != uDevice) {
+			break;
+		}
+
+		if (cmd == APPCOMMAND_BROWSER_BACKWARD) {
+			CallEvent(ONCLICKBACKWARD);
+
+			return REFLAG_MSGHANDLED;
+		}
+
+		if (cmd == APPCOMMAND_BROWSER_FORWARD) {
+			CallEvent(ONCLICKFORWARD);
+
+			return REFLAG_MSGHANDLED;
+		}
+
+		break;
+	}
+//	case WM_XBUTTONDOWN: {
+//		const auto curXButton = GET_XBUTTON_WPARAM(wParam);
+//#ifdef _DEBUG
+//		OutputDebugStringA(std::format("Down {}",
+//			curXButton == XBUTTON1
+//			? "XB1"
+//			: "XB2").c_str());
+//#endif
+//
+//		return REFLAG_MSGHANDLED;
+//	}
+//	case WM_XBUTTONUP: {
+//		const auto curXButton = GET_XBUTTON_WPARAM(wParam);
+//#ifdef _DEBUG
+//		OutputDebugStringA(std::format("Up {}",
+//			curXButton == XBUTTON1
+//			? "XB1"
+//			: "XB2").c_str());
+//#endif
+//
+//		return REFLAG_MSGHANDLED;
+//	}
 	}
 
 	return 0;

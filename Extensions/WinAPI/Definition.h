@@ -5,6 +5,9 @@
 constexpr auto ONMONITORCHANGE = 13;
 constexpr auto ONRESIZINGCOMPLETE = 16;
 
+constexpr auto ONCLICKBACKWARD = 18;
+constexpr auto ONCLICKFORWARD = 19;
+
 typedef struct DOUBLEPOINT
 {
 	DOUBLE  x;
