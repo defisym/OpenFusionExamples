@@ -209,6 +209,8 @@ typedef EDITDATA *			LPEDATA;
 // CreateRunObject function and their destructor in the DestroyRunObject
 // function. As the RUNDATA structure is a simple C structure and not a C++ object.
 
+constexpr auto MaxWindowNum = 1;
+
 typedef struct tagRDATA
 {
 	// Main header - required
@@ -311,7 +313,10 @@ typedef struct tagRDATA
 	LONG curMonitorWidth;
 	LONG curMonitorHeight;
 
-	bool bWindowResizing;
+	int rWindowNumber;
+	HWND hwnd[MaxWindowNum];
+
+	WindowResizing* pWindowResizing;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

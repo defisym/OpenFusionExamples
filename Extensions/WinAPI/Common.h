@@ -57,6 +57,7 @@
 #include	"Definition.h"
 
 class ObjectSelection;
+struct WindowResizing;
 
 // Specific to this cox
 #include	"resource.h"
@@ -88,7 +89,6 @@ class ObjectSelection;
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
-extern WindowResizing windowResizing;
 
 extern short conditionsInfos[];
 extern short actionsInfos[];

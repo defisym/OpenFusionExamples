@@ -439,7 +439,11 @@ long WINAPI DLLExport OnResizingComplete(LPRDATA rdPtr, long param1, long param2
 }
 
 long WINAPI DLLExport ResizingMainlyChangedX(LPRDATA rdPtr, long param1, long param2) {
-	return windowResizing.bMainlyChangedX;
+	return rdPtr->pWindowResizing->bMainlyChangedX;
+}
+
+long WINAPI DLLExport OnClickingXButton(LPRDATA rdPtr, long param1, long param2) {
+	return true;
 }
 
 // ============================================================================

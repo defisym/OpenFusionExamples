@@ -148,6 +148,14 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->curMonitorWidth = 0;
 	rdPtr->curMonitorHeight = 0;
 
+	// Use this method to get the rdPtr again
+	rdPtr->rWindowNumber = MaxWindowNum;
+	rdPtr->hwnd[0] = rdPtr->rhPtr->rhHTopLevelWnd;
+	rdPtr->rHo.hoOffsetToWindows = (int)((LPBYTE)&rdPtr->rWindowNumber - (LPBYTE)rdPtr);
+	callRunTimeFunction(rdPtr, RFUNCTION_SUBCLASSWINDOW, 0, 0);
+
+	rdPtr->pWindowResizing = new WindowResizing;
+
 	// No errors
 	return 0;
 }
@@ -189,6 +197,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pHwaSf_Video;
 	rdPtr->pHwaSf_Video = nullptr;
+
+	delete rdPtr->pWindowResizing;
 
 	// No errors
 	return 0;
@@ -300,12 +310,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	}
 
 	rdPtr->bSecondFrame = true;
-
-	// Handle resizing
-	windowResizing.TriggerCallback([&] () {
-		CallEvent(ONRESIZINGCOMPLETE);
-	});
-
 
 	//更新显示
 	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {
@@ -634,29 +638,41 @@ void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 // callRunTimeFunction(rdPtr, RFUNCTION_SUBCLASSWINDOW, 0, 0);
 // See the documentation and the Simple Control example for more info.
 LPRDATA GetRdPtr(HWND hwnd, LPRH rhPtr) {
-	return (LPRDATA)GetPropA(hwnd, (LPCSTR)rhPtr->rh4.rh4AtomRd);
+	return (LPRDATA)GetProp(hwnd, (LPCWSTR)rhPtr->rh4.rh4AtomRd);
 }
 
 // Called from the window proc of hMainWin and hEditWin.
 // You can intercept the messages and/or tell the main proc to ignore them.
 LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam) {
-	LPRDATA rdPtr = nullptr;
-
 	if (hWnd != rhPtr->rhHTopLevelWnd) {
+		return 0;
+	}
+
+	if (rhPtr->rh2.rh2PauseCompteur != 0) {
+		return 0;
+	}
+
+	// Get rdPtr if not need to create a window
+	const auto rdPtr = GetRdPtr(hWnd, rhPtr);
+
+	if (rdPtr == nullptr || rdPtr->rHo.hoIdentifier != IDENTIFIER) {
 		return 0;
 	}
 
 	switch (nMsg) {
 	case WM_ENTERSIZEMOVE: {
-		windowResizing.EnterResizing(rhPtr->rhHMainWin);
+		rdPtr->pWindowResizing->EnterResizing(rhPtr->rhHMainWin);
 
 		break;
 	}
 	case WM_EXITSIZEMOVE: {
-		windowResizing.ExitResizing(rhPtr->rhHMainWin);
+		rdPtr->pWindowResizing->ExitResizing(rhPtr->rhHMainWin);
+		rdPtr->pWindowResizing->TriggerCallback([&] () {
+			CallEvent(ONRESIZINGCOMPLETE);
+		});
 
 		break;
-	}	
+	}
 	}
 
 	return 0;
