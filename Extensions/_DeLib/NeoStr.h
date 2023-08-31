@@ -2543,7 +2543,52 @@ public:
 		return lastCharPos;
 	}
 
-	inline void RenderPerChar(LPRECT pRc) {
+	struct RenderOptions {
+		// displayed char / total char
+		// 1.0 -> display all
+		double visibleRatio = 1.0;
+
+		// if alpha is included, E.g., 10 char, display 5
+		// not included: 5 / 10 = 0.5, display 5 chars
+		// included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char
+		// last with 50% extra transparency
+		bool bIncludeAlpha = true;
+
+		// Characters that need to render
+		size_t textLen;
+		size_t renderCharCount;
+
+		constexpr static UCHAR MaxAlpha = 255;
+
+		inline size_t GetRenderCharCount(size_t textLen) {
+			this->textLen = textLen;
+			renderCharCount = static_cast<size_t>(std::ceil(visibleRatio * textLen));
+
+			return renderCharCount;
+		}
+
+		inline UCHAR GetRenderCharAlpha(size_t curChar) const {
+			if (!bIncludeAlpha) { return MaxAlpha; }
+
+			const auto opaqueRatio = static_cast<double>(curChar + 1) / textLen;
+
+			if (opaqueRatio < visibleRatio) { return MaxAlpha; }
+
+			const auto alpha = MaxAlpha * (1 - (opaqueRatio - visibleRatio) * textLen);
+
+			return static_cast<UCHAR>(alpha);
+
+			if (renderCharCount == textLen) { return MaxAlpha; }
+
+			// TODO
+			return static_cast<UCHAR>(static_cast<double>(MaxAlpha)
+				* (1.0
+				- (curChar+1)
+				* (static_cast<double>(renderCharCount) / textLen)));
+		}
+	};
+
+	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 		if (!this->bTextValid) {
 			return;
 		}
@@ -2556,6 +2601,8 @@ public:
 
 		rcWidth = pRc->right - pRc->left;
 		rcHeight = pRc->bottom - pRc->top;
+
+		opt.GetRenderCharCount(pTextLen);
 
 		char scale = 1;
 		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
@@ -2627,96 +2674,142 @@ public:
 			shakeTimer++;
 		}
 
-		for (auto& curStrPos : this->strPos) {
+		try {
+			for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
-			std::wstring str(pText + curStrPos.start, curStrPos.length);
+				std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 
-			StrSize* charSz = nullptr;
+				StrSize* charSz = nullptr;
 
 #define NoGDIPlusOffset
 
-			auto GetGDIPlusOffset = [&] () {
+				auto GetGDIPlusOffset = [&] () {
 #ifdef NoGDIPlusOffset
-				return 0;
+					return 0;
 #else
-				// https://blog.csdn.net/stevenkoh/article/details/22777295
-				const auto firstChar = (pText + curStrPos.start)[0];
-				const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
+					// https://blog.csdn.net/stevenkoh/article/details/22777295
+					const auto firstChar = (pText + curStrPos.start)[0];
+					const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
 
-				return static_cast<int>(pStrSizeArr[curStrPos.start].width / coef);
+					return static_cast<int>(pStrSizeArr[curStrPos.start].width / coef);
 #endif
-			};
-			
-			const auto GDIPlusOffset = GetGDIPlusOffset();
+					};
 
-			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= GDIPlusOffset;
+				const auto GDIPlusOffset = GetGDIPlusOffset();
 
-			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
-				auto offset = curStrPos.start + curChar;
-				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr[offset];
+				int x = GetStartPosX(curStrPos.width, rcWidth);
+				x -= GDIPlusOffset;
 
-				pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
-											,this->startY + curStrPos.y
-											,0,0 };
+				for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
+					auto offset = curStrPos.start + curChar;
+					if (offset >= opt.renderCharCount) {
+						throw std::exception("Exceed visable ratio");
+					}
+
+					auto pCurChar = pText + offset;
+					charSz = &pStrSizeArr[offset];
+
+					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
+												,this->startY + curStrPos.y
+												,0,0 };
 
 #pragma region FORMAT_IT				
-				auto positionX = (float)(x + this->borderOffsetY);
-				auto positionY = (float)(curStrPos.y + this->borderOffsetY);
+					auto positionX = (float)(x + this->borderOffsetY);
+					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
-				if (colorIt != this->colorFormat.end()
-					&& totalChar >= colorIt->start) {
-					solidBrush.SetColor(colorIt->color);
+					if (colorIt != this->colorFormat.end()
+						&& totalChar >= colorIt->start) {
+						solidBrush.SetColor(colorIt->color);
 
-					++colorIt;
-				}
+						++colorIt;
+					}
 
-				if (fontIt != this->fontFormat.end()
-					&& totalChar >= fontIt->start) {
-					this->pFont = GetFontPointerWithCache(fontIt->logFont);
+					if (fontIt != this->fontFormat.end()
+						&& totalChar >= fontIt->start) {
+						this->pFont = GetFontPointerWithCache(fontIt->logFont);
 
-					++fontIt;
-				}
+						++fontIt;
+					}
 
-				if (shakeIt != this->shakeFormat.end()
-					&& totalChar >= shakeIt->start) {
-					localShakeFormat = *shakeIt;
+					if (shakeIt != this->shakeFormat.end()
+						&& totalChar >= shakeIt->start) {
+						localShakeFormat = *shakeIt;
 
-					++shakeIt;
-				}
+						++shakeIt;
+					}
 
-				if (this->bShake) {
-					double shakeOffset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
-						+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
+					if (this->bShake) {
+						double shakeOffset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
+							+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
 
-					GetShakePosition(localShakeFormat.shakeControl, shakeOffset, positionX, positionY, charSz);
-				}
+						GetShakePosition(localShakeFormat.shakeControl, shakeOffset, positionX, positionY, charSz);
+					}
 
-				// use updated position
-				if (iConIt != this->iConFormat.end()
-					&& totalChar >= iConIt->start) {
-					iConIt->x = (size_t)positionX;
-					iConIt->y = (size_t)positionY;
+					// use updated position
+					if (iConIt != this->iConFormat.end()
+						&& totalChar >= iConIt->start) {
+						iConIt->x = (size_t)positionX;
+						iConIt->y = (size_t)positionY;
 
-					++iConIt;
-				}
+						++iConIt;
+					}
 #pragma endregion
 
-				if (!clip(x, this->startY + curStrPos.y, charSz)) {
-					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
-					auto status = g.DrawString(pCurChar, 1, pFont,
-						PointF(positionX, positionY),
-#ifdef NoGDIPlusOffset
-						StringFormat::GenericTypographic(),
-#endif
-						&solidBrush);
-					//assert(status == Status::Ok);
-				}
+					if (!clip(x, this->startY + curStrPos.y, charSz)) {
+						struct ColorUpdater {
+							SolidBrush* pBrush = nullptr;
+							SolidBrush oldBrush = SolidBrush(Color());
 
-				x += (charSz->width + nColSpace);
+							ColorUpdater(SolidBrush* pBrush, const UCHAR alpha) {
+								if (alpha == RenderOptions::MaxAlpha) {
+									return;
+								}
+
+								// Update alpha
+								Color c;
+								pBrush->GetColor(&c);
+								this->pBrush = pBrush;
+								this->oldBrush.SetColor(c);
+
+								const auto oldAlpha = c.GetAlpha();
+								const auto newAlpha = static_cast<UCHAR>(static_cast<double>(oldAlpha * alpha) / RenderOptions::MaxAlpha);
+
+								const auto oldColor = c.GetValue();
+								const auto newColor = (newAlpha << 24)
+									| (oldColor & 0x00FFFFFF);
+
+								c.SetValue(newColor);
+								pBrush->SetColor(c);
+							}
+							~ColorUpdater() {
+								if (pBrush == nullptr) { return; }
+
+								Color c;
+								oldBrush.GetColor(&c);
+								pBrush->SetColor(c);
+							}
+						};
+
+						// RAII
+						ColorUpdater colorUpdater(&solidBrush,
+							opt.GetRenderCharAlpha(offset));
+
+						//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
+						auto status = g.DrawString(pCurChar, 1, pFont,
+							PointF(positionX, positionY),
+#ifdef NoGDIPlusOffset
+							StringFormat::GenericTypographic(),
+#endif
+							& solidBrush);
+						//assert(status == Status::Ok);
+					}
+
+					x += (charSz->width + nColSpace);
+				}
 			}
+		} catch([[maybe_unused]] std::exception& e) {
+			
 		}
 
 #ifdef _BLUR

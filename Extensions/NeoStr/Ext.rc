@@ -139,6 +139,10 @@ BEGIN
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
         MENUITEM SEPARATOR  
         MENUITEM "Render", IDMN_ACTION_RENDER
+        MENUITEM SEPARATOR
+        MENUITEM "Change Render Size", IDMN_ACTION_CS
+        MENUITEM "Change Render Options", IDMN_ACTION_SRO
+        MENUITEM SEPARATOR
         MENUITEM "Force Redraw", IDMN_ACTION_FRD
         MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
         MENUITEM SEPARATOR    
@@ -152,8 +156,6 @@ BEGIN
             MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
             MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
         END
-        MENUITEM SEPARATOR
-        MENUITEM "Change Render Size", IDMN_ACTION_CS
         MENUITEM SEPARATOR        
         POPUP "Zoom && Rotate"
         BEGIN
@@ -200,6 +202,11 @@ BEGIN
         MENUITEM "Get Padding String", IDMN_EXPRESSION_GPS
         MENUITEM "Get Raw String By Filtered String Length", IDMN_EXPRESSION_GRSBFSL
         MENUITEM "Get Non Command Offset", IDMN_EXPRESSION_GNCO
+        MENUITEM SEPARATOR
+        POPUP "Render Options"
+        BEGIN
+            MENUITEM "Get Visible Ratio", IDMN_EXPRESSION_GRO_VR
+        END
         MENUITEM SEPARATOR
         POPUP "Alignment"
         BEGIN
@@ -498,6 +505,10 @@ BEGIN
     M_ACTION_FRD            "Force Redraw"
     M_ACTION_FRDGI          "Force Redraw Global ICon"
     M_ACTION_RENDER         "Render"
+
+    M_ACTION_SRO            "Change Render Option, Visible Ratio = %0, Include Alpha = %1"
+    M_VISIBLERATIO          "Use a 0 ~ 1 float to control characters to display"
+    M_INCLUDEALPHA          "Include Alpha"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -556,6 +567,8 @@ BEGIN
     
     M_EXPRESSION_GFF        "GetFilterFlag("
     M_EXPRESSION_GRSBFSL    "GetRawStringByFilteredStringLength$("
+    
+    M_EXPRESSION_GRO_VR    "GetVisableRatio$("
 END
 
 #endif    // English (U.S.) resources

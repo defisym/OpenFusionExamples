@@ -138,6 +138,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->bIConNeedUpdate = false;
 
+	rdPtr->pRenderOptions = new NeoStr::RenderOptions;
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
@@ -174,13 +176,17 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
-	delete rdPtr->pExpRet;
-	delete rdPtr->pIConParamParser;
+
+	delete static_cast<NeoStr::IConParamParser*>(rdPtr->pIConParamParser);
 	delete rdPtr->pIConItName;
 
 	if (rdPtr->pData->pIConData->pCaller == (LPRO)rdPtr) {
 		rdPtr->pData->pIConData->ResetCaller();
 	}
+
+	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	delete rdPtr->pExpRet;
 
 	SetExtUserData(rdPtr->pData);
 

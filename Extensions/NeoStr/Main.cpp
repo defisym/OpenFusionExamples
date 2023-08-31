@@ -64,6 +64,8 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_RENDER, M_ACTION_RENDER, ACT_ACTION_RENDER, 0, 0,
 
+		IDMN_ACTION_SRO, M_ACTION_SRO, ACT_ACTION_SRO, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_VISIBLERATIO, M_INCLUDEALPHA,
+
 		};
 
 // Definitions of parameters for each expression
@@ -114,6 +116,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GFF, M_EXPRESSION_GFF, EXP_EXPRESSION_GFF, 0, 0,
 		
 		IDMN_EXPRESSION_GRSBFSL, M_EXPRESSION_GRSBFSL, EXP_EXPRESSION_GRSBFSL, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_STRING, M_POS, M_FILTERFLAGS,
+
+
+		IDMN_EXPRESSION_GRO_VR, M_EXPRESSION_GRO_VR, EXP_EXPRESSION_GRO_VR, EXPFLAG_DOUBLE, 0,
 
 		};
 
@@ -628,6 +633,22 @@ short WINAPI DLLExport Action_Render(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long param2) {
+	const float visibleRatio = Range(GetFloatParam(rdPtr), 0.0f, 1.0f);
+	const bool bIncludeAlpha = (bool)CNC_GetParameter(rdPtr);
+
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	if(pOpt->visibleRatio != visibleRatio || pOpt->bIncludeAlpha != bIncludeAlpha) {
+		pOpt->visibleRatio = visibleRatio;
+		pOpt->bIncludeAlpha = bIncludeAlpha;
+
+		rdPtr->reRender = true;
+	}
+	
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -995,6 +1016,12 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	return (long)(rdPtr->pExpRet->c_str());
 }
 
+long WINAPI DLLExport Expression_GetRenderOption_VisableRatio(LPRDATA rdPtr, long param1) {
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	return ReturnFloat(pOpt->visibleRatio);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1047,6 +1074,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_ForceRedrawGlobalICon,
 			Action_Render,
 
+			Action_SetRenderOption,
+
 			0
 			};
 
@@ -1095,7 +1124,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			
 			Expression_GetFilterFlag,
 
-			Expression_GetRawStringByFilteredStringLength,			
+			Expression_GetRawStringByFilteredStringLength,
+
+			Expression_GetRenderOption_VisableRatio,
 
 			0
 			};

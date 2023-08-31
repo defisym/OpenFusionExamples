@@ -48,7 +48,9 @@
 #define	ACT_ACTION_FRDGI		    	22
 #define	ACT_ACTION_RENDER		    	23
 
-#define	ACT_LAST						24
+#define	ACT_ACTION_SRO		    	    24
+
+#define	ACT_LAST						25
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -99,7 +101,9 @@
 
 #define	EXP_EXPRESSION_GRSBFSL		    	31
 
-#define	EXP_LAST                    		32
+#define	EXP_EXPRESSION_GRO_VR		    	32
+
+#define	EXP_LAST                    		33
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -271,6 +275,8 @@ typedef struct tagRDATA
 	bool bIConForceUpdate;
 
 	bool bIConNeedUpdate;
+
+	void* pRenderOptions;
 
 	std::wstring* pExpRet;
 

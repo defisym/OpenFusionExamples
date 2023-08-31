@@ -103,7 +103,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		//rhPtr->rhFrame->m_hdr.leWidth;
 		//rhPtr->rhFrame->m_hdr.leHeight;
 
-		LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+		const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 
 		rdPtr->pNeoStr->SetColor(rdPtr->dwColor);
 
@@ -122,7 +122,8 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
-		rdPtr->pNeoStr->RenderPerChar(&rc);
+		rdPtr->pNeoStr->RenderPerChar(&rc,
+			*static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions));
 
 		rdPtr->reRender = false;
 	}

@@ -149,6 +149,8 @@
 #define	IDMN_ACTION_FRDGI		    25022
 #define	IDMN_ACTION_RENDER		    25023
 
+#define	IDMN_ACTION_SRO 		    25024
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -185,6 +187,8 @@
 #define	M_ACTION_FRDGI			    5022
 #define	M_ACTION_RENDER			    5023
 
+#define	M_ACTION_SRO			    5024
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -217,6 +221,9 @@
 #define M_OVERWRITE 	            5523
 #define M_FILTERFLAG	            5524
 #define M_IDENTIFIER	            5525
+
+#define M_VISIBLERATIO	            5526
+#define M_INCLUDEALPHA	            5527
 
 //	Conditions
 //--------------------
@@ -286,6 +293,8 @@
 
 #define	IDMN_EXPRESSION_GRSBFSL			    27031
 
+#define	IDMN_EXPRESSION_GRO_VR  		    27032
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -332,6 +341,8 @@
 #define	M_EXPRESSION_GFF			        7030
 
 #define	M_EXPRESSION_GRSBFSL		        7031
+
+#define	M_EXPRESSION_GRO_VR 		        7032
 
 // Names of expression parameters
 #define M_POS				                7500
