@@ -196,9 +196,17 @@ public:
 #endif
 	}
 
+#ifdef QUEUE_SPINLOCK
+	inline bool readFinish() const {
+		return bReadFinish;
+	}
+#endif
+
 	inline void stopBlock() {
 #ifdef QUEUE_SPINLOCK
-			bReadFinish = true;
+		if (bReadFinish) { return; }
+
+		bReadFinish = true;
 #endif
 		pause();
 		restore();
@@ -240,6 +248,7 @@ public:
 #endif
 
 		erase();
+		bReadFinish = false;
 
 #ifdef QUEUE_SPINLOCK
 		SDL_AtomicUnlock(&audioLock);

@@ -288,11 +288,11 @@ private:
 	float atempo = -1;
 	double tempoTimer = 0.0;
 
-	const AVCodec* pVCodec = NULL;
-	AVCodecParameters* pVCodecParameters = NULL;
+	const AVCodec* pVCodec = nullptr;
+	AVCodecParameters* pVCodecParameters = nullptr;
 
-	const AVCodec* pACodec = NULL;
-	AVCodecParameters* pACodecParameters = NULL;
+	const AVCodec* pACodec = nullptr;
+	AVCodecParameters* pACodecParameters = nullptr;
 
 	int video_stream_index = -1;
 	int audio_stream_index = -1;
@@ -421,7 +421,7 @@ private:
 		int err = 0;
 
 		if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
-			NULL, NULL, 0)) < 0) {
+			nullptr, nullptr, 0)) < 0) {
 			//fprintf(stderr, "Failed to create specified HW device.\n");
 			return err;
 		}
@@ -521,7 +521,7 @@ private:
 			const AVFilter* abuffersrc = avfilter_get_by_name("abuffer");
 
 			ret = avfilter_graph_create_filter(&buffersrc_ctx, abuffersrc, "in",
-				filterArgs.c_str(), NULL, filter_graph);
+				filterArgs.c_str(), nullptr, filter_graph);
 			if (ret < 0) {
 				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer source\n");
 				throw FFMpegException_FilterInitFailed;
@@ -531,7 +531,7 @@ private:
 			const AVFilter* abuffersink = avfilter_get_by_name("abuffersink");
 
 			ret = avfilter_graph_create_filter(&buffersink_ctx, abuffersink, "out",
-				NULL, NULL, filter_graph);
+				nullptr, nullptr, filter_graph);
 			if (ret < 0) {
 				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
 				throw FFMpegException_FilterInitFailed;
@@ -572,7 +572,7 @@ private:
 			outputs->name = av_strdup("in");
 			outputs->filter_ctx = buffersrc_ctx;
 			outputs->pad_idx = 0;
-			outputs->next = NULL;
+			outputs->next = nullptr;
 
 			/*
 			 * The buffer sink input must be connected to the output pad of
@@ -583,14 +583,14 @@ private:
 			inputs->name = av_strdup("out");
 			inputs->filter_ctx = buffersink_ctx;
 			inputs->pad_idx = 0;
-			inputs->next = NULL;
+			inputs->next = nullptr;
 
 			if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
-				&inputs, &outputs, NULL)) < 0) {
+				&inputs, &outputs, nullptr)) < 0) {
 				throw FFMpegException_FilterInitFailed;
 			}
 			
-			if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
+			if ((ret = avfilter_graph_config(filter_graph, nullptr)) < 0) {
 				throw FFMpegException_FilterInitFailed;
 			}
 
@@ -626,7 +626,7 @@ private:
 
 	// TODO merge into init_formatContext
 	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName) {		
-		AVProbeData probeData = { 0 };
+		AVProbeData probeData = { nullptr };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -640,7 +640,7 @@ private:
 				return iformat;
 			}
 
-			if (size_t(probeData.buf_size + 1) > bfSz) {
+			if (static_cast<size_t>(probeData.buf_size + 1) > bfSz) {
 				throw FFMpegException_InitFailed;
 			}
 
@@ -659,7 +659,7 @@ private:
 		//auto iformat = init_Probe(nullptr, 0, ConvertWStrToStr(filePath, CP_UTF8).c_str());
 
 		// convert to UTF-8 to avoid crash in some versions
-		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), NULL, NULL) != 0) {
+		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), nullptr, nullptr) != 0) {
 			throw FFMpegException_InitFailed;
 		}
 	}
@@ -673,12 +673,12 @@ private:
 
 		*pAvioContext = avio_alloc_context((*pBuf)->get(), (*pBuf)->getSize(), 0, (*pBuf)
 			, [](void* opaque, uint8_t* buf, const int buf_size) {
-				const auto pMemBuf = (MemBuf*)opaque;
+				const auto pMemBuf = static_cast<MemBuf*>(opaque);
 				return pMemBuf->read(buf, buf_size);
 			}
-			, NULL
+			, nullptr
 			, [](void* opaque, const int64_t offset, const int whence) {
-				const auto pMemBuf = (MemBuf*)opaque;
+				const auto pMemBuf = static_cast<MemBuf*>(opaque);
 				return pMemBuf->seek(offset, whence);
 			});
 
@@ -695,7 +695,7 @@ private:
 
 		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
 		//might crash in avformat_open_input due to access violation if not set
-		AVProbeData probeData = { 0 };
+		AVProbeData probeData = { nullptr };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -709,7 +709,7 @@ private:
 				break;
 			}
 
-			if (size_t(probeData.buf_size + 1) > bfSz) {
+			if (static_cast<size_t>(probeData.buf_size + 1) > bfSz) {
 				throw FFMpegException_InitFailed;
 			}
 						
@@ -718,7 +718,7 @@ private:
 
 		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
 
-		if (avformat_open_input(pFormatContext, NULL, NULL, NULL) < 0) {
+		if (avformat_open_input(pFormatContext, nullptr, nullptr, nullptr) < 0) {
 			throw FFMpegException_InitFailed;
 		}
 	}
@@ -728,7 +728,7 @@ private:
 		// find stream
 		pFormatContext->probesize = PROBE_SIZE;
 
-		if (avformat_find_stream_info(pFormatContext, NULL) < 0) {
+		if (avformat_find_stream_info(pFormatContext, nullptr) < 0) {
 			throw FFMpegException_InitFailed;
 		}
 
@@ -822,7 +822,7 @@ private:
 		}
 #endif
 
-		if (avcodec_open2(pVCodecContext, pVCodec, NULL) < 0) {
+		if (avcodec_open2(pVCodecContext, pVCodec, nullptr) < 0) {
 			throw FFMpegException_InitFailed;
 		}
 
@@ -865,7 +865,7 @@ private:
 				throw FFMpegException_InitFailed;
 			}
 
-			if (avcodec_open2(pACodecContext, pACodec, NULL) < 0) {
+			if (avcodec_open2(pACodecContext, pACodec, nullptr) < 0) {
 				throw FFMpegException_InitFailed;
 			}
 		}		
@@ -941,7 +941,7 @@ private:
 			rational = { 1,1000 };
 		}
 
-		decimalRational = (double)rational.num / rational.den;
+		decimalRational = static_cast<double>(rational.num) / rational.den;
 
 		//timePerFrameInMs = decimalRational * 1000;
 		totalTime = totalDuration * decimalRational;
@@ -949,7 +949,7 @@ private:
 		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
 		totalTimeInMs = totalDuration == INT64_MAX
 						? totalDuration
-						:(int64_t)round(totalTime * 1000);
+						:static_cast<int64_t>(round(totalTime * 1000));
 
 		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
 		//p_global_bgr_buffer = new uint8_t[num_bytes];
@@ -987,7 +987,7 @@ private:
 		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME){
 			const auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
 
-			return (int64_t)(protectedTimeStamp);
+			return static_cast<int64_t>(protectedTimeStamp);
 		}
 
 		// default
@@ -995,7 +995,7 @@ private:
 		// av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
 		const auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
 
-		return (int64_t)(protectedTimeStamp);
+		return static_cast<int64_t>(protectedTimeStamp);
 	}
 
 	inline int seekFrame(AVFormatContext* pFormatContext, const int stream_index, const int64_t ms = 0, const int flags = seekFlags) const {
@@ -1117,7 +1117,9 @@ private:
 
 			bReadFinish = (response == AVERROR_EOF);
 
-			if (bReadFinish) {
+			const bool bStop = videoQueue.readFinish() && audioQueue.readFinish();
+
+			if (bReadFinish && !bStop) {
 				videoQueue.stopBlock();
 				audioQueue.stopBlock();
 			}
@@ -1296,10 +1298,10 @@ private:
 			//auto pFormat = pFrame->format;
 
 			swsContext = sws_getContext(pFrame->width, pFrame->height
-				, (AVPixelFormat)pFrame->format,
+				, static_cast<AVPixelFormat>(pFrame->format),
 				pFrame->width, pFrame->height
 				, PIXEL_FORMAT
-				, NULL, NULL, NULL, NULL);
+				, NULL, nullptr, nullptr, nullptr);
 		}
 
 		// make sure the sws_scale output is point to start.
@@ -1339,16 +1341,16 @@ private:
 
 		if (response >= 0) {
 			//videoPts = 0;
-			videoPts = double(pFrame->best_effort_timestamp);
+			videoPts = static_cast<double>(pFrame->best_effort_timestamp);
 
 			if (pVPacket != nullptr) {
 				if (pVPacket->dts == AV_NOPTS_VALUE
 					&& pFrame->opaque
-					&& *(uint64_t*)pFrame->opaque != AV_NOPTS_VALUE) {
-					videoPts = double(*(uint64_t*)pFrame->opaque);
+					&& *static_cast<uint64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
+					videoPts = static_cast<double>(*(uint64_t*)pFrame->opaque);
 				}
 				else {
-					videoPts = double(pVPacket->dts != AV_NOPTS_VALUE
+					videoPts = static_cast<double>(pVPacket->dts != AV_NOPTS_VALUE
 						? pFrame->best_effort_timestamp
 						: 0);
 				}
@@ -1453,26 +1455,26 @@ private:
 			// update context to avoid crash
 			if (bUpdateSwr) {
 				init_SwrContext(pBaseFrame->channel_layout
-					, (AVSampleFormat)pBaseFrame->format
+					, static_cast<AVSampleFormat>(pBaseFrame->format)
 					, pBaseFrame->sample_rate);
 			}
 
 			// 计算转换后的sample个数 a * b / c
 			// https://blog.csdn.net/u013346305/article/details/48682935
-			const int dst_nb_samples = (int)av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
-								+ pBaseFrame->nb_samples
-				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, AVRounding(1));
+			const int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
+				+ pBaseFrame->nb_samples
+				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, static_cast<AVRounding>(1)));
 
 			// 转换，返回值为转换后的sample个数
 			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples
-				, (const uint8_t**)pBaseFrame->data, pBaseFrame->nb_samples);
+				, const_cast<const uint8_t**>(pBaseFrame->data), pBaseFrame->nb_samples);
 
 			const auto audioSize = pBaseFrame->channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
 
 			audioPts = audioClock;
 
 			const auto pcm_bytes = 2 * pBaseFrame->channels;
-			audioClock += (double)audioSize / ((double)pcm_bytes * (double)pACodecContext->sample_rate);
+			audioClock += static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
 
 			return audioSize;
 
@@ -1773,15 +1775,15 @@ public:
 	}
 
 	inline int get_volume() const {
-		return int((volume / 128.0) * 100);
+		return static_cast<int>((volume / 128.0) * 100);
 	}
 
 	inline int64_t get_videoPosition() const {
-		return int64_t(videoPts * 1000);
+		return static_cast<int64_t>(videoPts * 1000);
 	}
 
 	inline int64_t get_videoDuration() const {
-		return int64_t(totalTimeInMs);
+		return static_cast<int64_t>(totalTimeInMs);
 	}
 
 	inline bool get_loopState() const {
@@ -2042,10 +2044,10 @@ public:
 			return -1;
 		}
 
-		pCodecContext->thread_count = std::thread::hardware_concurrency();
+		pCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
 		pCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
 
-		if (avcodec_open2(pCodecContext, pVCodec, NULL) < 0) {
+		if (avcodec_open2(pCodecContext, pVCodec, nullptr) < 0) {
 			return -1;
 		}
 
@@ -2209,7 +2211,7 @@ public:
 				}
 
 				//计算解码缓存剩余长度
-				wt_stream_len = audio_buf_size - audio_buf_index;
+				wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
 
 				//检查每次写入缓存的数据长度是否超过指定长度(1024)
 				if (wt_stream_len > len) {
