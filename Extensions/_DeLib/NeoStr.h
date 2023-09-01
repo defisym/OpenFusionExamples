@@ -2577,14 +2577,6 @@ public:
 			const auto alpha = MaxAlpha * (1 - (opaqueRatio - visibleRatio) * textLen);
 
 			return static_cast<UCHAR>(alpha);
-
-			if (renderCharCount == textLen) { return MaxAlpha; }
-
-			// TODO
-			return static_cast<UCHAR>(static_cast<double>(MaxAlpha)
-				* (1.0
-				- (curChar+1)
-				* (static_cast<double>(renderCharCount) / textLen)));
 		}
 	};
 
