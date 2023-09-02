@@ -11,6 +11,8 @@
 #include	"common.h"
 
 HINSTANCE hInstLib;
+WindowResizing windowResizing;
+MouseHandler mouseHandler;
 
 // ============================================================================
 //

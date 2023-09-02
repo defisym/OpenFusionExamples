@@ -441,7 +441,7 @@ long WINAPI DLLExport OnResizingComplete(LPRDATA rdPtr, long param1, long param2
 }
 
 long WINAPI DLLExport ResizingMainlyChangedX(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->pWindowResizing->bMainlyChangedX;
+	return windowResizing.bMainlyChangedX;
 }
 
 long WINAPI DLLExport OnClickBackword(LPRDATA rdPtr, long param1, long param2) {

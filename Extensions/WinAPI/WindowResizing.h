@@ -1,10 +1,9 @@
 #pragma once
 
-#include <functional>
+#include "WindowsMessageBase.h"
 
-struct WindowResizing {
+struct WindowResizing:WindowsMessageBase {
 	bool bWindowResizing = false;
-	bool bTriggerCallback = false;
 	bool bMainlyChangedX = false;
 
 	POINT CurrentFrameSize = {};
@@ -18,13 +17,6 @@ struct WindowResizing {
 
 		return { CurrentRect.right - CurrentRect.left,
 			CurrentRect.bottom - CurrentRect.top };
-	}
-
-	inline void TriggerCallback(const std::function<void()>& cb) {
-		if (bTriggerCallback) {
-			bTriggerCallback = false;
-			cb();
-		}
 	}
 
 	inline void EnterResizing(HWND hwnd) {
