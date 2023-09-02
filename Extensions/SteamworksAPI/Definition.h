@@ -19,7 +19,6 @@ struct GlobalData {
 	SteamUtilities* pSteamUtil = nullptr;
 
 	GlobalData() {
-		//bInit = SteamAPI_Init();
 		bInit = steamInit.bInit;
 
 		if (bInit) {
@@ -29,10 +28,6 @@ struct GlobalData {
 	~GlobalData() {
 		delete pSteamUtil;
 		pSteamUtil = nullptr;
-
-		if (bInit) {
-			SteamAPI_Shutdown();
-		}
 	}
 
 	inline bool SteamUtilitiesValid() const {
