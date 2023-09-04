@@ -165,7 +165,13 @@ typedef struct tagEDATA_V1
 	bool bIConGlobal;
 	bool bIConForceUpdate;
 
-	int buffer[13];
+	unsigned char tabSize;
+	bool bTabEM;
+
+	bool bUnused_0;
+	bool bUnused_1;
+
+	int buffer[12];
 	
 	wchar_t	pText;		// Text
 
@@ -277,6 +283,9 @@ typedef struct tagRDATA
 	bool bIConNeedUpdate;
 
 	void* pRenderOptions;
+
+	unsigned char tabSize;
+	bool bTabEM;
 
 	std::wstring* pExpRet;
 

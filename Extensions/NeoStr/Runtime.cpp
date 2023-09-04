@@ -140,6 +140,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pRenderOptions = new NeoStr::RenderOptions;
 
+	rdPtr->tabSize = edPtr->tabSize;
+	rdPtr->bEM = edPtr->bEM;
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {

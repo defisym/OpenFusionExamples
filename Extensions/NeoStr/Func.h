@@ -66,6 +66,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
+		rdPtr->pNeoStr->SetTabProperties(rdPtr->tabSize, rdPtr->bEM);
 
 		rdPtr->pNeoStr->LinkObject(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
@@ -162,6 +163,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		//MSGBOX(L"Editor Calc");
 		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
+		neoStr.SetTabProperties(edPtr->tabSize, edPtr->bEM);
 
 		//MSGBOX(L"Editor Calc");
 		neoStr.LinkObject(nullptr, nullptr);

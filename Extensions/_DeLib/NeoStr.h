@@ -81,11 +81,15 @@ inline RECT operator+(const RECT& rA, const RECT& rB) {
 				,rA.bottom + rB.bottom };
 }
 
+constexpr auto CHAR_SPACE = L' ';
+constexpr auto CHAR_EMSPACE = L'　';
+constexpr auto CHAR_TAB = L'\t';
+
 constexpr auto DEFAULT_EBORDER_OFFSET = 20;
 constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
-constexpr auto DEFAULT_CHARACTER = L'　';
-constexpr auto EMPTY_CHAR = L' ';
+constexpr auto DEFAULT_CHARACTER = CHAR_EMSPACE;
+constexpr auto EMPTY_CHAR = CHAR_SPACE;
 
 constexpr auto DEFAULT_PARAM = L" ";
 
@@ -1255,6 +1259,58 @@ public:
 //		}
 //	}	
 
+private:
+    struct TabContext {
+        // settings
+        int tabSize = 4;
+		wchar_t spaceChar = CHAR_SPACE;
+
+        // context
+        int curWidth;
+        StrSize spaceCharSize;
+
+		inline void UpdateSpaceChar(wchar_t spaceChar) {
+			this->spaceChar = spaceChar;
+		}
+
+        inline void UpdateContext(int curWidth, StrSize spaceCharSize) {
+            this->curWidth = curWidth;
+            this->spaceCharSize = spaceCharSize;
+        }
+
+        // TODO handle case of end of line
+        inline StrSize GetTabCharSize() const {
+            // tab size depend on space size
+            const auto actualTabSize = tabSize * spaceCharSize.width;
+            StrSize tabCharSize = { actualTabSize, spaceCharSize.height };
+
+            const auto div = static_cast<double>(curWidth) / actualTabSize;
+            const auto floor =static_cast<int>(std::floor(div));
+            const auto ceil = static_cast<int>(std::ceil(div));
+
+            // if not enough, make it enough
+            if(floor != ceil) {
+                tabCharSize.width = ceil * actualTabSize - curWidth;
+            }
+            // if enough, return default size
+            else {
+
+            }
+
+			return tabCharSize;
+        }
+    };
+
+    TabContext tabContext;
+
+public:
+	inline void SetTabProperties(int tabSize = 4, bool bEM = false) {
+		tabContext.tabSize = tabSize;
+		tabContext.spaceChar = bEM
+			? CHAR_EMSPACE
+			: CHAR_SPACE;
+    }
+
 	static inline StrSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
 		SIZE sz = { 0,0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
@@ -1311,19 +1367,19 @@ public:
 		}
 	}
 
-	inline StrSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
-		RECT change = { 0,0,65535,1 };
+	//inline StrSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
+	//	RECT change = { 0,0,65535,1 };
 
-		DrawTextW(
-			hdc,
-			pStr,
-			pStrLen == -1 ? wcslen(pStr) : pStrLen,
-			&change
-			, this->dwDTFlags | DT_CALCRECT
-		);
+	//	DrawTextW(
+	//		hdc,
+	//		pStr,
+	//		pStrLen == -1 ? wcslen(pStr) : pStrLen,
+	//		&change
+	//		, this->dwDTFlags | DT_CALCRECT
+	//	);
 
-		return StrSize { change.right - change.left,change.bottom - change.top };
-	}
+	//	return StrSize { change.right - change.left,change.bottom - change.top };
+	//}
 
 	inline LPCWSTR GetRawText() const {
 		return this->pRawText;
@@ -2298,27 +2354,27 @@ public:
 				// word break
 				auto bCurNotCJK = pRegexCache->NotCJK(curChar);
 
-				auto InWord = [&]() {
+				auto InWord = [&] () {
 					bInWord = true;
 
 					notCJKStart = pChar;
 					notCJKStartWidth = curWidth;
-				};
+					};
 
-				auto OutWord = [&]() {
+				auto OutWord = [&] () {
 					bInWord = false;
 
 					//notCJKStart = -1;
 					//notCJKStartWidth = -1;
-				};
+					};
 
-				auto WB_AbleToNextLine = [&]() {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
-				auto WB_Backword = [&]() {
+				auto WB_AbleToNextLine = [&] () {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
+				auto WB_Backword = [&] () {
 					pChar = notCJKStart;
 					curWidth = notCJKStartWidth;
 
 					OutWord();
-				};
+					};
 
 				if (bCurNotCJK && !bInWord) {
 					InWord();
@@ -2329,8 +2385,20 @@ public:
 				}
 
 				// size
-				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
-				auto charSz = &pStrSizeArr [pChar];
+				auto getCharSize = [&] () {
+					if (curChar != CHAR_TAB) [[likely]] {
+						return GetCharSizeWithCache(curChar, localLogFont);
+					}
+					else {
+						// update context
+						tabContext.UpdateContext(curWidth,
+							GetCharSizeWithCache(tabContext.spaceChar, localLogFont));
+						return tabContext.GetTabCharSize();
+					}
+				};
+				
+				pStrSizeArr[pChar] = getCharSize();
+				auto charSz = &pStrSizeArr[pChar];
 
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);

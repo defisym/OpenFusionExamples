@@ -427,6 +427,12 @@ BEGIN
     IDS_PROP_FORMAT_FILTER_INCOMPLETE               "Filter Incomplete"
     IDS_PROP_FORMAT_FILTER_INCOMPLETE_INFO          "Filter incomplete commands when display"
 
+	IDS_PROP_ALLIGN_TABSIZE							"Tab Size"
+	IDS_PROP_ALLIGN_TABSIZE_INFO					"Tab Size"
+	IDS_PROP_ALLIGN_TABEMSPACE						"EM Space"
+	IDS_PROP_ALLIGN_TABEMSPACE_INFO					"Use EM space instead of space"
+
+
 END
 
 STRINGTABLE DISCARDABLE 
