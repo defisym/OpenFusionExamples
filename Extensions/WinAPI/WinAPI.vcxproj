@@ -388,8 +388,10 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="MouseHandler.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="WindowResizing.h" />
+    <ClInclude Include="WindowsMessageBase.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="RES\EXTICON.BMP" />

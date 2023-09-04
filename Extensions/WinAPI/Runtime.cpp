@@ -148,14 +148,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->curMonitorWidth = 0;
 	rdPtr->curMonitorHeight = 0;
 
-	// Use this method to get the rdPtr again
-	rdPtr->rWindowNumber = MaxWindowNum;
-	rdPtr->hwnd[0] = rdPtr->rhPtr->rhHTopLevelWnd;
-	rdPtr->rHo.hoOffsetToWindows = (int)((LPBYTE)&rdPtr->rWindowNumber - (LPBYTE)rdPtr);
-	callRunTimeFunction(rdPtr, RFUNCTION_SUBCLASSWINDOW, 0, 0);
-
-	rdPtr->pWindowResizing = new WindowResizing;
-
 	// No errors
 	return 0;
 }
@@ -197,8 +189,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pHwaSf_Video;
 	rdPtr->pHwaSf_Video = nullptr;
-
-	delete rdPtr->pWindowResizing;
 
 	// No errors
 	return 0;
@@ -310,6 +300,22 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	}
 
 	rdPtr->bSecondFrame = true;
+
+	// Handle resizing
+	windowResizing.TriggerCallback([&] () {
+		CallEvent(ONRESIZINGCOMPLETE);
+	});
+
+	// Handle mouse
+	mouseHandler.TriggerCallback([&] () {
+		if (mouseHandler.curCmd == APPCOMMAND_BROWSER_BACKWARD) {
+			CallEvent(ONCLICKBACKWARD);
+		}
+
+		if (mouseHandler.curCmd == APPCOMMAND_BROWSER_FORWARD) {
+			CallEvent(ONCLICKFORWARD);
+		}
+	});
 
 	//更新显示
 	if ((rdPtr->Display) && (rdPtr->rc.rcChanged)) {
@@ -644,32 +650,18 @@ LPRDATA GetRdPtr(HWND hwnd, LPRH rhPtr) {
 // Called from the window proc of hMainWin and hEditWin.
 // You can intercept the messages and/or tell the main proc to ignore them.
 LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam) {
-	if (hWnd != rhPtr->rhHTopLevelWnd) {
-		return 0;
-	}
-
 	if (rhPtr->rh2.rh2PauseCompteur != 0) {
-		return 0;
-	}
-
-	// Get rdPtr if not need to create a window
-	const auto rdPtr = GetRdPtr(hWnd, rhPtr);
-
-	if (rdPtr == nullptr || rdPtr->rHo.hoIdentifier != IDENTIFIER) {
 		return 0;
 	}
 
 	switch (nMsg) {
 	case WM_ENTERSIZEMOVE: {
-		rdPtr->pWindowResizing->EnterResizing(rhPtr->rhHMainWin);
+		windowResizing.EnterResizing(rhPtr->rhHMainWin);
 
 		break;
 	}
 	case WM_EXITSIZEMOVE: {
-		rdPtr->pWindowResizing->ExitResizing(rhPtr->rhHMainWin);
-		rdPtr->pWindowResizing->TriggerCallback([&] () {
-			CallEvent(ONRESIZINGCOMPLETE);
-		});
+		windowResizing.ExitResizing(rhPtr->rhHMainWin);
 
 		break;
 	}
@@ -683,19 +675,20 @@ LRESULT CALLBACK DLLExport WindowProc(LPRH rhPtr, HWND hWnd, UINT nMsg, WPARAM w
 		}
 
 		if (cmd == APPCOMMAND_BROWSER_BACKWARD) {
-			CallEvent(ONCLICKBACKWARD);
+			mouseHandler.ReceiveCommand(APPCOMMAND_BROWSER_BACKWARD);
 
 			return REFLAG_MSGHANDLED;
 		}
 
 		if (cmd == APPCOMMAND_BROWSER_FORWARD) {
-			CallEvent(ONCLICKFORWARD);
+			mouseHandler.ReceiveCommand(APPCOMMAND_BROWSER_FORWARD);
 
 			return REFLAG_MSGHANDLED;
 		}
 
 		break;
 	}
+
 //	case WM_XBUTTONDOWN: {
 //		const auto curXButton = GET_XBUTTON_WPARAM(wParam);
 //#ifdef _DEBUG
