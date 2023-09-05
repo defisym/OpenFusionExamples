@@ -50,7 +50,9 @@
 
 #define	ACT_ACTION_SRO		    	    24
 
-#define	ACT_LAST						25
+#define	ACT_ACTION_STS		    	    25
+
+#define	ACT_LAST						26
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -103,7 +105,10 @@
 
 #define	EXP_EXPRESSION_GRO_VR		    	32
 
-#define	EXP_LAST                    		33
+#define	EXP_EXPRESSION_GTS_TS		    	33
+#define	EXP_EXPRESSION_GTS_EM		    	34
+
+#define	EXP_LAST                    		35
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

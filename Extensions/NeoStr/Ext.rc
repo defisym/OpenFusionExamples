@@ -155,6 +155,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
             MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
+            MENUITEM SEPARATOR
+            MENUITEM "Change Tab Settings", IDMN_ACTION_STS
         END
         MENUITEM SEPARATOR        
         POPUP "Zoom && Rotate"
@@ -217,6 +219,9 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Get Horizontal Align", IDMN_EXPRESSION_GHA
             MENUITEM "Get Vertical Align", IDMN_EXPRESSION_GVA
+            MENUITEM SEPARATOR
+            MENUITEM "Get Tab Size", IDMN_EXPRESSION_GTS_TS
+            MENUITEM "Get Tab Use EM Space", IDMN_EXPRESSION_GTS_EM
         END
         MENUITEM SEPARATOR
         POPUP "Size"
@@ -515,6 +520,10 @@ BEGIN
     M_ACTION_SRO            "Change Render Option, Visible Ratio = %0, Include Alpha = %1"
     M_VISIBLERATIO          "Use a 0 ~ 1 float to control characters to display"
     M_INCLUDEALPHA          "Include Alpha"
+
+	M_ACTION_STS            "Change Tab Settings, Tab Size = %0, Use EM Space = %1"
+    M_TABSIZE          		"Tab Size = Number of Spaces"
+    M_TABEM          		"1 = Use EM Space, 0 = Use Normal Space"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -574,7 +583,10 @@ BEGIN
     M_EXPRESSION_GFF        "GetFilterFlag("
     M_EXPRESSION_GRSBFSL    "GetRawStringByFilteredStringLength$("
     
-    M_EXPRESSION_GRO_VR    "GetVisableRatio$("
+    M_EXPRESSION_GRO_VR    "GetVisableRatio("
+
+    M_EXPRESSION_GTS_TS    "GetTabSize("
+    M_EXPRESSION_GTS_EM    "GetTabEM("
 END
 
 #endif    // English (U.S.) resources

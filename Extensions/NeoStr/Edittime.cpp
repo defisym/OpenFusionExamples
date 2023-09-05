@@ -519,7 +519,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->bIConForceUpdate = false;
 
 		edPtr->tabSize = 4;
-		edPtr->bEM = false;
+		edPtr->bTabEM = false;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL) {
@@ -954,7 +954,7 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_ALLIGN_COLSPACE:
 		return edPtr->bColSpace;
 	case PROPID_ALLIGN_TABEMSPACE:
-		return edPtr->bEM;
+		return edPtr->bTabEM;
 	case PROPID_RENDER_CLIP:
 		return edPtr->bClip;		
 	case PROPID_FORMAT_ICONGLOBAL:
@@ -1142,7 +1142,7 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_COLSPACE, TRUE);
 		break;
 	case PROPID_ALLIGN_TABEMSPACE:
-		edPtr->bEM = nCheck;
+		edPtr->bTabEM = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_TABEMSPACE, TRUE);
 		break;

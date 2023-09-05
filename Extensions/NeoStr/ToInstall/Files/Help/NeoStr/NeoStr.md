@@ -4,6 +4,11 @@
 
 String that based on GDI Plus, with scaling, rotating & format control support
 
+## Tab
+
+DX9: tab size = 8, em space on
+DX11: tab size = 4, em space off
+
 ## Format Control
 
 ### Escape

@@ -195,6 +195,13 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // Called at both edit time and run time
 // 
 HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr) {
+	const auto edPtr = (tagEDATA_V1*)OldEdPtr;
+
+	//MSGBOX(L"UPDATE");
+
+	//edPtr->tabSize = 4;
+	//edPtr->bTabEM = false;
+
 	// We do nothing here
 	return 0;
 }

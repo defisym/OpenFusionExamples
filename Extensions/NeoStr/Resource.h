@@ -155,6 +155,8 @@
 
 #define	IDMN_ACTION_SRO 		    25024
 
+#define	IDMN_ACTION_STS 		    25025
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -193,6 +195,8 @@
 
 #define	M_ACTION_SRO			    5024
 
+#define	M_ACTION_STS			    5025
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -228,6 +232,9 @@
 
 #define M_VISIBLERATIO	            5526
 #define M_INCLUDEALPHA	            5527
+
+#define M_TABSIZE					5528
+#define M_TABEM						5529
 
 //	Conditions
 //--------------------
@@ -299,6 +306,9 @@
 
 #define	IDMN_EXPRESSION_GRO_VR  		    27032
 
+#define	IDMN_EXPRESSION_GTS_TS  		    27033
+#define	IDMN_EXPRESSION_GTS_EM  		    27034
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -347,6 +357,9 @@
 #define	M_EXPRESSION_GRSBFSL		        7031
 
 #define	M_EXPRESSION_GRO_VR 		        7032
+
+#define	M_EXPRESSION_GTS_TS 		        7033
+#define	M_EXPRESSION_GTS_EM 		        7034
 
 // Names of expression parameters
 #define M_POS				                7500

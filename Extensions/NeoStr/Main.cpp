@@ -66,6 +66,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SRO, M_ACTION_SRO, ACT_ACTION_SRO, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_VISIBLERATIO, M_INCLUDEALPHA,
 
+		IDMN_ACTION_STS, M_ACTION_STS, ACT_ACTION_STS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_TABSIZE, M_TABEM,
+
 		};
 
 // Definitions of parameters for each expression
@@ -119,6 +121,9 @@ short expressionsInfos[]=
 
 
 		IDMN_EXPRESSION_GRO_VR, M_EXPRESSION_GRO_VR, EXP_EXPRESSION_GRO_VR, EXPFLAG_DOUBLE, 0,
+
+		IDMN_EXPRESSION_GTS_TS, M_EXPRESSION_GTS_TS, EXP_EXPRESSION_GTS_TS, 0, 0,
+		IDMN_EXPRESSION_GTS_EM, M_EXPRESSION_GTS_EM, EXP_EXPRESSION_GTS_EM, 0, 0,
 
 		};
 
@@ -220,6 +225,18 @@ short WINAPI DLLExport Action_ChangeVerticalAlign(LPRDATA rdPtr, long param1, lo
 	short verticalFlag = (short)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->dwAlignFlags = (rdPtr->dwAlignFlags & ~(DT_TOP | DT_VCENTER | DT_BOTTOM)) | (verticalFlag);
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ChangeTabSettings(LPRDATA rdPtr, long param1, long param2) {
+	const auto tabSize = (unsigned char)CNC_GetIntParameter(rdPtr);
+	const auto bTabEM = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->tabSize = tabSize;
+	rdPtr->bTabEM = bTabEM;
 
 	ReDisplay(rdPtr);
 
@@ -1022,6 +1039,14 @@ long WINAPI DLLExport Expression_GetRenderOption_VisableRatio(LPRDATA rdPtr, lon
 	return ReturnFloat(pOpt->visibleRatio);
 }
 
+long WINAPI DLLExport Expression_GetTabSettings_TabSize(LPRDATA rdPtr, long param1) {
+	return (long)(rdPtr->tabSize);
+}
+
+long WINAPI DLLExport Expression_GetTabSettings_TabEM(LPRDATA rdPtr, long param1) {
+	return (long)(rdPtr->bTabEM);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1076,6 +1101,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_SetRenderOption,
 
+			Action_ChangeTabSettings,
+
 			0
 			};
 
@@ -1127,6 +1154,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetRawStringByFilteredStringLength,
 
 			Expression_GetRenderOption_VisableRatio,
+
+			Expression_GetTabSettings_TabSize,
+			Expression_GetTabSettings_TabEM,
 
 			0
 			};
