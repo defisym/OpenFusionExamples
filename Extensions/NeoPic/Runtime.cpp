@@ -35,6 +35,8 @@ enum
 	DB_SAPARATOR_3,
 	DB_LOADCALLBACK,
 	DB_SAPARATOR_4,
+	DB_ANGLE,
+	DB_SAPARATOR_5,
 	DB_STRETCHQUALITY,
 	DB_HOTSPOT,
 	DB_ZOOMSCALE,
@@ -67,6 +69,8 @@ WORD DebugTree[]=
 	DB_SAPARATOR_3,
 	DB_LOADCALLBACK,
 	DB_SAPARATOR_4,
+	DB_ANGLE,
+	DB_SAPARATOR_5,
 	DB_STRETCHQUALITY,
 	DB_HOTSPOT,
 	DB_ZOOMSCALE,
@@ -670,6 +674,7 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	case DB_SAPARATOR_2:
 	case DB_SAPARATOR_3:
 	case DB_SAPARATOR_4:
+	case DB_SAPARATOR_5:
 	case DB_SAPARATOR_END:
 		swprintf_s(pBuffer, DB_BUFFERSIZE, L"=====================");
 		break;
@@ -720,6 +725,12 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 			swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->bLoadCallback 
 				? L"True"
 				: L"False");
+			});
+		break;
+	case DB_ANGLE:
+		displayFilter(L"Angle: %f", L"Angle: %s", displayNegative,
+			[&] (LPCWSTR pattern) {
+				swprintf_s(pBuffer, DB_BUFFERSIZE, pattern, rdPtr->angle);
 			});
 		break;
 	case DB_STRETCHQUALITY:
