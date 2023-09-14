@@ -143,11 +143,15 @@ inline int GetOriginalHeight(LPRDATA rdPtr) {
 }
 
 inline int GetCurrentWidth(LPRDATA rdPtr) {
-	return CanDisplay(rdPtr) ? (int)(rdPtr->src->GetWidth() * abs(rdPtr->zoomScale.XScale)) : -1;
+	return CanDisplay(rdPtr)
+		? static_cast<int>(static_cast<float>(rdPtr->src->GetWidth()) * abs(rdPtr->zoomScale.XScale))
+		: -1;
 }
 
 inline int GetCurrentHeight(LPRDATA rdPtr) {
-	return CanDisplay(rdPtr) ? (int)(rdPtr->src->GetHeight() * abs(rdPtr->zoomScale.YScale)) : -1;
+	return CanDisplay(rdPtr)
+		? static_cast<int>(static_cast<float>(rdPtr->src->GetHeight()) * abs(rdPtr->zoomScale.YScale))
+		: -1;
 }
 
 inline float GetXZoomScale(LPRDATA rdPtr) {
@@ -163,7 +167,7 @@ inline float GetAngle(LPRDATA rdPtr) {
 }
 
 inline std::wstring GetFileName(std::wstring& FilePath) {
-	const auto pos = FilePath.find_last_of(L"\\") + 1;
+	const auto pos = FilePath.find_last_of(L'\\') + 1;
 
 	try {
 		return FilePath.substr(pos, FilePath.size() - pos);
@@ -178,7 +182,7 @@ inline void GetFileName(LPRDATA rdPtr) {
 	*rdPtr->FileName = GetFileName(*rdPtr->FilePath);
 }
 
-inline std::wstring GetRelativeFilePath(std::wstring& FilePath, std::wstring& BasePath) {	
+inline std::wstring GetRelativeFilePath(std::wstring& FilePath, const std::wstring& BasePath) {	
 	auto pos = BasePath.size();
 
 	if (!(BasePath.ends_with(L'\\') || BasePath.ends_with(L'/'))) {
@@ -218,18 +222,20 @@ inline void ReDisplay(LPRDATA rdPtr) {
 // reset default values, then call ReDisplay
 inline void NewPic(LPRDATA rdPtr, LPRDATA Copy = nullptr) {
 	if (Copy == nullptr) {
-		rdPtr->angle = 0;
-
-		rdPtr->hotSpot = { 0,0 };
+		if (!rdPtr->bLoadKeepAngle) {
+			rdPtr->angle = 0;
+		}
 		rdPtr->zoomScale = { 1.0,1.0 };
 
+		//rdPtr->hotSpotPos = HotSpotPos::MM;
+		rdPtr->hotSpot = { 0,0 };
 	}
 	else {
 		rdPtr->angle = Copy->angle;
+		rdPtr->zoomScale = Copy->zoomScale;
 
 		rdPtr->hotSpotPos = Copy->hotSpotPos;
 		rdPtr->hotSpot = Copy->hotSpot;
-		rdPtr->zoomScale = Copy->zoomScale;
 	}
 
 	UpdateHotSpot(rdPtr, rdPtr->hotSpotPos);
@@ -260,8 +266,8 @@ inline void UpdateHotSpot(LPRDATA rdPtr, HotSpotPos Type, int X, int Y) {
 	//auto width = rdPtr->src->GetWidth();
 	//auto height = rdPtr->src->GetHeight();
 
-	auto width = int(rdPtr->src->GetWidth() * rdPtr->zoomScale.XScale);
-	auto height = int(rdPtr->src->GetHeight() * rdPtr->zoomScale.YScale);
+	const auto width = static_cast<int>(static_cast<float>(rdPtr->src->GetWidth()) * rdPtr->zoomScale.XScale);
+	const auto height = static_cast<int>(static_cast<float>(rdPtr->src->GetHeight()) * rdPtr->zoomScale.YScale);
 
 	UpdateHotSpot(Type, width, height, X, Y);
 	UpdateHotSpot(rdPtr, X, Y);
@@ -363,8 +369,8 @@ inline void GetTransfromedBitmap(LPRDATA rdPtr, LPSURFACE pSrc,
 inline void HandleFlip(LPRDATA rdPtr
 	,LPSURFACE& pDisplay
 	,const LPSURFACE pBase, LPSURFACE& pHF, LPSURFACE& pVF, LPSURFACE& pVHF) {
-	bool bFlipH = rdPtr->zoomScale.XScale < 0;
-	bool bFlipV = rdPtr->zoomScale.YScale < 0;
+	const bool bFlipH = rdPtr->zoomScale.XScale < 0;
+	const bool bFlipV = rdPtr->zoomScale.YScale < 0;
 
 	auto FlipCore = [rdPtr](const LPSURFACE pBase, LPSURFACE& pResult
 		, BOOL(cSurface::* pFlipFunc)()) {
@@ -417,8 +423,8 @@ inline void HandleFlip(LPRDATA rdPtr
 			return pVHF;
 		}
 
-		bool bXFlipped = pHF != nullptr;
-		bool bYFlipped = pVF != nullptr;
+		const bool bXFlipped = pHF != nullptr;
+		const bool bYFlipped = pVF != nullptr;
 
 		if (bXFlipped) {
 			return FlipCore(pHF, pVHF, &cSurface::ReverseY);
@@ -499,11 +505,11 @@ inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
 // Load file then convert to Src type
 inline bool LoadFromFile(LPSURFACE& Src, LPCWSTR FilePath, LPCWSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool bHighQuality) {
 	// HWA?
-	auto srcHWA = IsHWA(Src);
+	const auto srcHWA = IsHWA(Src);
 	bool ret = true;
 
 	// Load by bitmap, as HWA texture cannot add alpha channel
-	LPSURFACE pBitmap = srcHWA ? CreateNewSurface(rdPtr, false) : Src;
+	const LPSURFACE pBitmap = srcHWA ? CreateNewSurface(rdPtr, false) : Src;
 
 	if (StrEmpty(Key)) {
 		ret = _LoadFromFile(pBitmap, FilePath, rdPtr, width, height, NoStretch, bHighQuality);
@@ -633,16 +639,16 @@ inline SurfaceLibIt LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCWST
 }
 
 inline void LoadFromLib(LPRDATA rdPtr, LPRO object, LPCWSTR FileName, LPCWSTR Key = L"") {
-	LPRDATA obj = (LPRDATA)object;
+	const LPRDATA obj = (LPRDATA)object;
 
 	if (!ObjIsLib(obj)) {
 		return;
 	}
 
-	auto fullPath = GetFullPathNameStr(FileName);
+	const auto fullPath = GetFullPathNameStr(FileName);
 
 	// load
-	auto it = LoadLib(rdPtr, obj, FileName, Key);
+	const auto it = LoadLib(rdPtr, obj, FileName, Key);
 	if (it == obj->pLib->end()) {
 		return;
 	}
@@ -669,7 +675,7 @@ inline void LoadFromLib(LPRDATA rdPtr, int Fixed, LPCWSTR FileName, LPCWSTR Key 
 }
 
 inline void LoadFromDisplay(LPRDATA rdPtr, LPRO object, bool CopyCoef = false) {
-	LPRDATA obj = (LPRDATA)object;
+	const LPRDATA obj = (LPRDATA)object;
 
 	if (!obj || obj->rHo.hoIdentifier != IDENTIFIER) {
 		return;

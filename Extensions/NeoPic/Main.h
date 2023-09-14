@@ -173,9 +173,7 @@ typedef struct tagEDATA_V1
 	bool isLib = false;
 
 	bool bLoadCallback = false;
-
-	//deprecated
-	bool autoUpdateCollision = false;
+	bool bLoadKeepAngle = false;
 
 	//Display
 
@@ -240,6 +238,8 @@ typedef struct tagRDATA
 	
 	bool bLoadCallback = false;
 	LoadCallbackInfo* pLoadCallbackInfo = nullptr;
+
+	bool bLoadKeepAngle = false;
 
 	// for iterate
 	std::wstring* itCountVecStr = nullptr;

@@ -630,11 +630,14 @@ BEGIN
     IDS_PROP_HWA_CHECK  "HWA"
     IDS_PROP_HWA_CHECK_INFO  "Use HWA When Stretching or Rotating"
 
+    IDS_PROP_LOAD_TEXTTITLE  "Load Options"
+    IDS_PROP_LOAD_TEXTTITLE_INFO  "Load Options"
+
     IDS_PROP_LOADCALLBACK_CHECK  "Load Callback"
     IDS_PROP_LOADCALLBACK_CHECK_INFO  "Trigger Callback if New File Loaded"
 
-    IDS_PROP_LOAD_TEXTTITLE  "Load Options"
-    IDS_PROP_LOAD_TEXTTITLE_INFO  "Load Options"
+    IDS_PROP_LOADKEEPANGLE_CHECK  "Load Keep Angle"
+    IDS_PROP_LOADKEEPANGLE_CHECK_INFO  "Keep Angle When Loading New Pic"
 
     IDS_PROP_QUALITY_TEXTTITLE   "Quality"
     IDS_PROP_QUALITY_CHECK       "Resample"

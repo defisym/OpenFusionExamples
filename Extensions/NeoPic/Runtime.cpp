@@ -118,7 +118,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->bLoadCallback = edPtr->bLoadCallback;
 	rdPtr->pLoadCallbackInfo = new LoadCallbackInfo();
-	
+
+	rdPtr->bLoadKeepAngle = edPtr->bLoadKeepAngle;
+
 	rdPtr->itCountVecStr = new std::wstring;
 	rdPtr->itCountVecCount = new Count;
 

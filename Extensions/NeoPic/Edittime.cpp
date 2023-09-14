@@ -44,6 +44,7 @@ enum {
 
 	PROPID_LOAD_TEXTTITLE,
 	PROPID_LOADCALLBACK_CHECK,
+	PROPID_LOADKEEPANGLE_CHECK,
 
 };
 
@@ -108,6 +109,8 @@ PropData PropertiesGerneral[] = {
 
 	PropData_Group(PROPID_LOAD_TEXTTITLE,	IDS_PROP_LOAD_TEXTTITLE,		IDS_PROP_LOAD_TEXTTITLE),
 	PropData_CheckBox(PROPID_LOADCALLBACK_CHECK,	IDS_PROP_LOADCALLBACK_CHECK, IDS_PROP_LOADCALLBACK_CHECK_INFO),
+	PropData_CheckBox(PROPID_LOADKEEPANGLE_CHECK,	 IDS_PROP_LOADKEEPANGLE_CHECK,		IDS_PROP_LOADKEEPANGLE_CHECK_INFO),
+
 
 	PropData_End()
 };
@@ -126,7 +129,6 @@ PropData PropertiesDisplay[] = {
 };
 
 PropData PropertiesRuntime[] = {
-	//PropData_CheckBox	(PROPID_AUTOUPDATECOLLISION_CHECK,	IDS_PROP_AUTOUPDATECOLLISION_CHECK,		IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO),
 	
 	PropData_End()
 };
@@ -852,6 +854,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 
 		case PROPID_LOADCALLBACK_CHECK:
 			return edPtr->bLoadCallback;
+		case PROPID_LOADKEEPANGLE_CHECK:
+			return edPtr->bLoadKeepAngle;
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -980,6 +984,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bLoadCallback = nCheck;
 		mvRefreshProp(mV, edPtr, PROPID_LOADCALLBACK_CHECK, FALSE);
 		mvInvalidateObject(mV, edPtr); 
+		break;
+	case PROPID_LOADKEEPANGLE_CHECK:
+		edPtr->bLoadKeepAngle = nCheck;
+		mvRefreshProp(mV, edPtr, PROPID_LOADKEEPANGLE_CHECK, FALSE);
+		mvInvalidateObject(mV, edPtr);
 		break;
 	}
 #endif // !defined(RUN_ONLY)
