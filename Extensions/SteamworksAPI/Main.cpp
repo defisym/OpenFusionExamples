@@ -94,15 +94,13 @@ long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long pa
 
 	SteamRemote::IterateRemoteSessions([&](RemotePlaySessionID_t unSessionID) {
 		// check current player
-		const auto steamID = SteamRemotePlay()->GetSessionSteamID(unSessionID);
-		if (steamID != rdPtr->pData->pSteamUtil->playerID) {
+		if (SteamRemote::GetSessionSteamID(unSessionID) != rdPtr->pData->pSteamUtil->playerID) {
 			return;
 		}
 
 		bLocal = false;
 
-		const ESteamDeviceFormFactor eFormFactor = SteamRemotePlay()->GetSessionClientFormFactor(unSessionID);
-		if (eFormFactor == factorToSearch) {
+		if (SteamRemote::GetSessionClientFormFactor(unSessionID) == factorToSearch) {
 			bResult = true;
 		}
 		});

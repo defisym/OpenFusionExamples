@@ -48,6 +48,14 @@ public:
 		return k_ESteamDeviceFormFactorUnknown;
 	}
 
+	static inline ESteamDeviceFormFactor GetSessionClientFormFactor(RemotePlaySessionID_t unSessionID) {
+		return SteamRemotePlay()->GetSessionClientFormFactor(unSessionID);
+	}
+
+	static inline CSteamID GetSessionSteamID(RemotePlaySessionID_t unSessionID) {
+		return SteamRemotePlay()->GetSessionSteamID(unSessionID);
+	}
+
 	static inline void IterateRemoteSessions(const std::function<void(RemotePlaySessionID_t)>& callBack) {
 		const uint32 unSessionCount = SteamRemotePlay()->GetSessionCount();
 		for (uint32 iIndex = 0; iIndex < unSessionCount; iIndex++) {
@@ -58,5 +66,9 @@ public:
 
 			callBack(unSessionID);
 		}
+	}
+
+	static inline bool StartRemotePlayTogether(bool bShowOverlay = true) {
+		return SteamRemotePlay()->BStartRemotePlayTogether(bShowOverlay);
 	}
 };

@@ -4,10 +4,14 @@
 
 struct SteamInit {
 	bool bInit = false;
+	SteamErrMsg errMsg;
 
 	inline void Init() {
 		if (!bInit) {
-			bInit = SteamAPI_Init();
+			//bInit = SteamAPI_Init();
+
+			const auto initResult = SteamAPI_InitEx(&errMsg);
+			bInit = initResult == k_ESteamAPIInitResult_OK;
 		}
 	}
 
@@ -16,6 +20,14 @@ struct SteamInit {
 			SteamAPI_Shutdown();
 			bInit = false;
 		}
+	}
+
+	inline const char* GetInitErrorInfo() const {
+		if(bInit) {
+			return "No Init Error";
+		}
+
+		return errMsg;
 	}
 };
 
