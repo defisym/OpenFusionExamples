@@ -137,10 +137,10 @@ long WINAPI DLLExport StringMatchRegex(LPRDATA rdPtr, long param1, long param2) 
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
 	if (!StrEmpty(Src)) {
-		return Spliter->StringMatchRegex(Src, Regex.c_str(), false);
+		return Splitter->StringMatchRegex(Src, Regex.c_str(), false);
 	}
 	else {
-		return Spliter->StringMatchRegex(Regex.c_str(), false);
+		return Splitter->StringMatchRegex(Regex.c_str(), false);
 	}
 }
 long WINAPI DLLExport StringHasRegex(LPRDATA rdPtr, long param1, long param2) {
@@ -148,10 +148,10 @@ long WINAPI DLLExport StringHasRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
 	if (!StrEmpty(Src)) {
-		return Spliter->StringMatchRegex(Src, Regex.c_str(), true);
+		return Splitter->StringMatchRegex(Src, Regex.c_str(), true);
 	}
 	else {
-		return Spliter->StringMatchRegex(Regex.c_str(), true);
+		return Splitter->StringMatchRegex(Regex.c_str(), true);
 	}
 }
 
@@ -168,7 +168,7 @@ long WINAPI DLLExport OnIterateReplaceEach(LPRDATA rdPtr, long param1, long para
 // ============================================================================
 
 short WINAPI DLLExport ResetSplit(LPRDATA rdPtr, long param1, long param2) {
-	Spliter->ResetSplit();
+	Splitter->ResetSplit();
 
 	ResertPtr(rdPtr->CurrentSplitStr);
 	ResertPtr(rdPtr->CurrentKeyWord);
@@ -190,10 +190,10 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	const auto Key = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const bool Enable = (bool)CNC_GetIntParameter(rdPtr);
 
-	const auto bRet = Spliter->LoadFile(FilePath, Key, Enable);
+	const auto bRet = Splitter->LoadFile(FilePath, Key, Enable);
 
 	if (bRet && rdPtr->AutoSplit) {
-		//Spliter->SplitData();
+		//Splitter->SplitData();
 		SplitData(rdPtr);
 	}
 
@@ -202,10 +202,10 @@ short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 	const auto String = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	Spliter->LoadData(String);
+	Splitter->LoadData(String);
 
 	if (rdPtr->AutoSplit) {
-		//Spliter->SplitData();
+		//Splitter->SplitData();
 		SplitData(rdPtr);
 	}
 
@@ -213,17 +213,17 @@ short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport ResetRegexFlag(LPRDATA rdPtr, long param1, long param2) {
-	Spliter->ResetRegexFlag();
+	Splitter->ResetRegexFlag();
 	return 0;
 }
 short WINAPI DLLExport SetRegexFlag(LPRDATA rdPtr, long param1, long param2) {
 	const auto Flag = (RegexFlag)CNC_GetIntParameter(rdPtr);
-	Spliter->SetRegexFlag(Flag);
+	Splitter->SetRegexFlag(Flag);
 	return 0;
 }
 short WINAPI DLLExport SetCaseInsensitive(LPRDATA rdPtr, long param1, long param2) {
 	const bool Enable = (bool)CNC_GetIntParameter(rdPtr);
-	Spliter->SetCaseInsensitive(Enable);
+	Splitter->SetCaseInsensitive(Enable);
 	return 0;
 }
 
@@ -234,33 +234,33 @@ short WINAPI DLLExport SetRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Indent = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
 	const auto Keyword = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
-	Spliter->InitRegex(Split.c_str(), EmptyLine.c_str(), Comment.c_str(), Indent.c_str(), Keyword.c_str());
+	Splitter->InitRegex(Split.c_str(), EmptyLine.c_str(), Comment.c_str(), Indent.c_str(), Keyword.c_str());
 
 	return 0;
 }
 
 short WINAPI DLLExport SetSplitRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
-	Spliter->InitSplit(Regex.c_str());
+	Splitter->InitSplit(Regex.c_str());
 	return 0;
 }
 short WINAPI DLLExport SetEmptyLineRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
-	Spliter->InitEmptyLine(Regex.c_str());
+	Splitter->InitEmptyLine(Regex.c_str());
 	return 0;
 }
 short WINAPI DLLExport SetCommentRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
-	Spliter->InitComment(Regex.c_str());
+	Splitter->InitComment(Regex.c_str());
 	return 0;
 }
 short WINAPI DLLExport SetIndentRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
-	Spliter->InitIndent(Regex.c_str());
+	Splitter->InitIndent(Regex.c_str());
 	return 0;
 }short WINAPI DLLExport SetKeyWordRegex(LPRDATA rdPtr, long param1, long param2) {
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
-	Spliter->InitKeyWord(Regex.c_str());
+	Splitter->InitKeyWord(Regex.c_str());
 	return 0;
 }
 
@@ -272,7 +272,7 @@ short WINAPI DLLExport SetAutoSplit(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport SplitData(LPRDATA rdPtr, long param1, long param2) {
-	//Spliter->SplitData();
+	//Splitter->SplitData();
 	SplitData(rdPtr);
 
 	return 0;
@@ -281,8 +281,8 @@ short WINAPI DLLExport SplitData(LPRDATA rdPtr, long param1, long param2) {
 short WINAPI DLLExport IterateSplitStrVec(LPRDATA rdPtr, long param1, long param2) {
 	const auto LoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->SplitStrVecLoopName, LoopName);
-	for (size_t i = 0; i < Spliter->GetSplitSize(); i++) {
-		rdPtr->CurrentSplitStr = (*Spliter)[i];
+	for (size_t i = 0; i < Splitter->GetSplitSize(); i++) {
+		rdPtr->CurrentSplitStr = (*Splitter)[i];
 		CallEvent(ONIT_SSV);
 	}
 	return 0;
@@ -290,9 +290,9 @@ short WINAPI DLLExport IterateSplitStrVec(LPRDATA rdPtr, long param1, long param
 short WINAPI DLLExport IterateKeyWordPairVec(LPRDATA rdPtr, long param1, long param2) {
 	const auto LoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->KeyWordPairVecLoopName, LoopName);
-	for (size_t i = 0; i < Spliter->GetKeyWordPairVecSize(); i++) {		
-		rdPtr->CurrentKeyWord = Spliter->GetKeyWord(i);
-		rdPtr->CurrentKeyWordPos = Spliter->GetKeyWordPos(i);
+	for (size_t i = 0; i < Splitter->GetKeyWordPairVecSize(); i++) {		
+		rdPtr->CurrentKeyWord = Splitter->GetKeyWord(i);
+		rdPtr->CurrentKeyWordPos = Splitter->GetKeyWordPos(i);
 		CallEvent(ONIT_KWPV);
 	}
 	return 0;
@@ -303,10 +303,10 @@ short WINAPI DLLExport GetAllSubStringInString(LPRDATA rdPtr, long param1, long 
 	const auto Regex = NewLineEscape((LPCWSTR)CNC_GetStringParameter(rdPtr));
 
 	if (!StrEmpty(Src)) {
-		Spliter->GetAllSubString(Src, Regex.c_str());
+		Splitter->GetAllSubString(Src, Regex.c_str());
 	}
 	else {
-		Spliter->GetAllSubString(Regex.c_str());
+		Splitter->GetAllSubString(Regex.c_str());
 	}
 
 	return 0;
@@ -314,8 +314,8 @@ short WINAPI DLLExport GetAllSubStringInString(LPRDATA rdPtr, long param1, long 
 short WINAPI DLLExport IterateMatchedSubString(LPRDATA rdPtr, long param1, long param2) {
 	const auto LoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->SubStringVecLoopName, LoopName);
-	for (size_t i = 0; i < Spliter->GetSubStringSize(); i++) {
-		rdPtr->CurrentSubString = Spliter->GetSubString(i);
+	for (size_t i = 0; i < Splitter->GetSubStringSize(); i++) {
+		rdPtr->CurrentSubString = Splitter->GetSubString(i);
 		CallEvent(ONIT_MSS);
 	}
 	return 0;
@@ -327,7 +327,7 @@ short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param
 	const auto LoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->ReplaceEachLoopName, LoopName);
 
-	const wregex SubString(Regex, Spliter->GetRegexFlag());
+	const wregex SubString(Regex, Splitter->GetRegexFlag());
 	wsmatch MatchedStr;
 
 	std::wstring::const_iterator StrBegin = Src.begin();
@@ -366,7 +366,7 @@ short WINAPI DLLExport IterateReplaceEachAll(LPRDATA rdPtr, long param1, long pa
 	const auto LoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	NewStr(rdPtr->ReplaceEachLoopName, LoopName);
 
-	const wregex SubString(Regex, Spliter->GetRegexFlag());
+	const wregex SubString(Regex, Splitter->GetRegexFlag());
 	wsmatch MatchedStr;
 
 	do {
@@ -435,10 +435,10 @@ long WINAPI DLLExport ReplaceString(LPRDATA rdPtr, long param1) {
 	LPCWSTR Result = nullptr;
 
 	if (!StrEmpty(Src)) {
-		Result = Spliter->ReplaceStr(Src, Regex.c_str(), Replace);
+		Result = Splitter->ReplaceStr(Src, Regex.c_str(), Replace);
 	}
 	else {
-		Result = Spliter->ReplaceStr(Regex.c_str(), Replace);
+		Result = Splitter->ReplaceStr(Regex.c_str(), Replace);
 	}
 
 	return (long)(Result != nullptr ? Result : Default_Str);
@@ -454,10 +454,10 @@ long WINAPI DLLExport GetSubStringPosInString(LPRDATA rdPtr, long param1) {
 	const int Pos = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	if (!StrEmpty(Src)) {
-		return Spliter->GetSubStringPos(Src, Regex.c_str(), Pos);
+		return Splitter->GetSubStringPos(Src, Regex.c_str(), Pos);
 	}
 	else {
-		return Spliter->GetSubStringPos(Regex.c_str(), Pos);
+		return Splitter->GetSubStringPos(Regex.c_str(), Pos);
 	}
 }
 
@@ -465,7 +465,7 @@ long WINAPI DLLExport GetLastMatchedSubString(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	//This returns a pointer to the string for MMF.
-	return (long)(Spliter->GetMatchResult() != nullptr ? Spliter->GetMatchResult() : Default_Str);
+	return (long)(Splitter->GetMatchResult() != nullptr ? Splitter->GetMatchResult() : Default_Str);
 }
 long WINAPI DLLExport GetMatchedSubStringInString(LPRDATA rdPtr, long param1) {
 	const long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
@@ -482,17 +482,17 @@ long WINAPI DLLExport GetMatchedSubStringInString(LPRDATA rdPtr, long param1) {
 	LPCWSTR Result = nullptr;
 
 	if (!StrEmpty(Src)) {
-		Result = Spliter->GetMatchResult(Src, Regex.c_str(), Pos);
+		Result = Splitter->GetMatchResult(Src, Regex.c_str(), Pos);
 	}
 	else {
-		Result = Spliter->GetMatchResult(Regex.c_str(), Pos);
+		Result = Splitter->GetMatchResult(Regex.c_str(), Pos);
 	}
 
 	return (long)(Result != nullptr ? Result : Default_Str);
 }
 
 long WINAPI DLLExport GetSubStringVecSize(LPRDATA rdPtr, long param1) {
-	return Spliter->GetSubStringSize();
+	return Splitter->GetSubStringSize();
 }
 long WINAPI DLLExport GetMatchedSubStringInSubStringVec(LPRDATA rdPtr, long param1) {
 	const auto Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -501,7 +501,7 @@ long WINAPI DLLExport GetMatchedSubStringInSubStringVec(LPRDATA rdPtr, long para
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)(Spliter->GetSubString(Pos) != nullptr ? Spliter->GetSubString(Pos) : Default_Str);
+	return (long)(Splitter->GetSubString(Pos) != nullptr ? Splitter->GetSubString(Pos) : Default_Str);
 }
 
 long WINAPI DLLExport GetCurrentSubString(LPRDATA rdPtr, long param1) {
@@ -513,7 +513,7 @@ long WINAPI DLLExport GetCurrentSubString(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetSplitStrVecSize(LPRDATA rdPtr, long param1) {
-	return Spliter->GetSplitSize();
+	return Splitter->GetSplitSize();
 }
 long WINAPI DLLExport GetSplitStrInSplitStrVec(LPRDATA rdPtr, long param1) {
 	const auto Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -522,7 +522,7 @@ long WINAPI DLLExport GetSplitStrInSplitStrVec(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)((*Spliter)[Pos] != nullptr ? (*Spliter)[Pos] : Default_Str);
+	return (long)((*Splitter)[Pos] != nullptr ? (*Splitter)[Pos] : Default_Str);
 }
 
 long WINAPI DLLExport GetCurrentSplitStr(LPRDATA rdPtr, long param1) {
@@ -545,10 +545,10 @@ long WINAPI DLLExport GetNextKeyWord(LPRDATA rdPtr, long param1) {
 	LPCWSTR Result = nullptr;
 
 	if (!StrEmpty(Regex.c_str())) {
-		Result = Spliter->GetNextKeyWord(StartPos, Regex.c_str());
+		Result = Splitter->GetNextKeyWord(StartPos, Regex.c_str());
 	}
 	else {
-		Result = Spliter->GetNextKeyWord(StartPos);
+		Result = Splitter->GetNextKeyWord(StartPos);
 	}
 	return (long)(Result != nullptr ? Result : Default_Str);
 }
@@ -558,15 +558,15 @@ long WINAPI DLLExport GetNextKeyWordPos(LPRDATA rdPtr, long param1) {
 	const auto Regex = NewLineEscape((LPCWSTR)p1);
 
 	if (!StrEmpty(Regex.c_str())) {
-		return Spliter->GetNextKeyWordPos(StartPos, Regex.c_str());
+		return Splitter->GetNextKeyWordPos(StartPos, Regex.c_str());
 	}
 	else {
-		return Spliter->GetNextKeyWordPos(StartPos);
+		return Splitter->GetNextKeyWordPos(StartPos);
 	}
 }
 
 long WINAPI DLLExport GetKeyWordPairVecSize(LPRDATA rdPtr, long param1) {
-	return Spliter->GetKeyWordPairVecSize();
+	return Splitter->GetKeyWordPairVecSize();
 }
 long WINAPI DLLExport GetKeyWordInKeyWordPairVec(LPRDATA rdPtr, long param1) {
 	const auto Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -575,11 +575,11 @@ long WINAPI DLLExport GetKeyWordInKeyWordPairVec(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)(Spliter->GetKeyWord(Pos) != nullptr ? Spliter->GetKeyWord(Pos) : Default_Str);
+	return (long)(Splitter->GetKeyWord(Pos) != nullptr ? Splitter->GetKeyWord(Pos) : Default_Str);
 }
 long WINAPI DLLExport GetKeyWordPosInKeyWordPairVec(LPRDATA rdPtr, long param1) {
 	const auto Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	return Spliter->GetKeyWordPos(Pos);
+	return Splitter->GetKeyWordPos(Pos);
 }
 
 long WINAPI DLLExport GetCurrentKeyWord(LPRDATA rdPtr, long param1) {
@@ -598,7 +598,7 @@ long WINAPI DLLExport GetSplitData(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)(Spliter->GetSplitData() != nullptr ? Spliter->GetSplitData() : Default_Str);
+	return (long)(Splitter->GetSplitData() != nullptr ? Splitter->GetSplitData() : Default_Str);
 }
 
 long WINAPI DLLExport GetReplaceEachCurrentMatch(LPRDATA rdPtr, long param1) {
@@ -618,7 +618,7 @@ long WINAPI DLLExport GetReplaceEachResult(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetSubStringVecPointer(LPRDATA rdPtr, long param1) {
-	const auto pSubVec = Spliter->GetSubStringVec();
+	const auto pSubVec = Splitter->GetSubStringVec();
 
 #ifndef _DEBUG		
 	// only works in runtime due to /MD & /MDd

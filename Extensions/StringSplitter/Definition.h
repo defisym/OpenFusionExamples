@@ -1,6 +1,6 @@
 #pragma once
 
-#define Spliter rdPtr->S
+#define Splitter rdPtr->S
 
 #define ONIT_SSV	0
 #define ONIT_KWPV	1

@@ -304,7 +304,7 @@ void Split::GetAllSubString(const wchar_t* Src, const wchar_t* SubStr) {
 
 void Split::GetAllSubString(const std::wstring& Src, const wchar_t* SubStr) {
     this->SubStringVec.clear();
-    this->GetSubStringPos(Src, SubStr, -1, true);;
+    this->GetSubStringPos(Src, SubStr, -1, true);
 }
 
 const wchar_t* Split::GetNextKeyWord(size_t StartPos) const {
