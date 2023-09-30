@@ -44,7 +44,7 @@ POINT GetOffset(LPRDATA rdPtr, GT Type);
 RECT GetRect(LPRDATA rdPtr, GR Type);
 
 //返回DPI缩放
-int ReturnDPIScaling(bool AppScaled);
+int ReturnDPIScaling(bool bAppScaled);
 
 //返回注册表字符串值
 char* ReturnRegValue(HKEY hkey, LPWSTR lpSubKey, LPWSTR lpValue);

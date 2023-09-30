@@ -284,27 +284,18 @@ RECT GetRect(LPRDATA rdPtr,GR Type) {
 }
 
 //返回DPI缩放
-int ReturnDPIScaling(bool AppScaled) {
-	// Get desktop dc
-	HDC desktopDc = GetDC(NULL);
-	if (AppScaled) {
-		return 100;
-	}
+int ReturnDPIScaling(bool bAppScaled) {
+	// No scaling
+	if (bAppScaled) { return 100; }
 
-	// Get native resolution	
-	switch (GetDeviceCaps(desktopDc, LOGPIXELSX))
-	{
-	case 96:
-		return 100;
-	case 120:
-		return 125;
-	case 144:
-		return 150;
-	case 192:
-		return 200;
-	default:
-		return 0;
-	}
+	// Get desktop dc
+	const HDC desktopDc = GetDC(nullptr);
+
+	// Get native resolution
+	const auto caps = GetDeviceCaps(desktopDc, LOGPIXELSX);
+	const auto scale = static_cast<int>(100 * (caps / 96.0));
+
+	return scale;
 }
 
 //返回注册表字符串值
