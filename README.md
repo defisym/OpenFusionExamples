@@ -18,24 +18,25 @@ If you have something good and want to share, just simply fork this repo, then p
 
 #### Extension
 
-| Name             | Author  | Platform         | Released | CEM | Description                                                                                                                        |
-| ---------------- | ------- | ---------------- | -------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| AndroidUtilities | Defisym | Android          | Y        | N   | some features for android like extract binary files, etc                                                                           |
-| Clipboard        | Defisym | Windows          | N        | N   | small tool that can save / load fusion clipboard contents                                                                          |
-| Deque2D          | Defisym | Windows          | N        | N   | A modern version of MagicDeque based on std::variant                                                                               |
-| EffectUtilities  | Defisym | Windows          | N        | N   | let you control shaders more efficiency, like cache texture params                                                                 |
-| Encrypter        | Defisym | Windows          | Y        | N   | En/decrypt file with WinAPI CNG. You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSplitter |
-| FFMpeg           | Defisym | Windows          | Y        | Y   | bring the legendary player to fusion, with several handy A/C/Es like blit current video frame, etc                                 |
-| FindTheWay       | Defisym | Windows, Android | Y        | N   | A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible (currently available on windows & android). |
-| Fini             | Defisym | Windows          | Y        | Y   | based on brofield's brilliant work simpleini, is a faster ini ext for fusion.                                                      |
-| Func             | Defisym | Windows          | Y        | N   | Call Functions via Expression or Action                                                                                            |
-| NeoPic           | Defisym | Windows          | N        | N   | Another active picture, but with encrypt support, all object shares a lib that over frame, significantly reduce load time          |
-| NeoStr           | Defisym | Windows          | N        | N   | Powerful string extension with format control support                                                                              |
-| RandomTable      | Defisym | Windows          | Y        | N   | Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.                                         |
-| SDL_Mixer        | Defisym | Windows          | Y        | Y   | Audio player based on SDL Mixer X, with unlimited channel & encrypt support                                                        |
-| SteamworksAPI    | Defisym | Windows          | N        | N   | alternative steamworks API object with modern feature, compatible (possibly) with current steamworks object                        |
-| String Splitter  | Defisym | Windows          | N        | N   | This object is a string splitter base on C++ regex.                                                                                |
-| WinAPI           | Defisym | Windows          | Y        | N   | a bunch of small functions.                                                                                                        |
+| Name               | Author  | Platform         | Released | CEM | Description                                                                                                                        |
+| ------------------ | ------- | ---------------- | -------- | --- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| AndroidUtilities   | Defisym | Android          | Y        | N   | some features for android like extract binary files, etc                                                                           |
+| Clipboard          | Defisym | Windows          | N        | N   | small tool that can save / load fusion clipboard contents                                                                          |
+| Deque2D            | Defisym | Windows          | N        | N   | A modern version of MagicDeque based on std::variant                                                                               |
+| EffectUtilities    | Defisym | Windows          | N        | N   | let you control shaders more efficiency, like cache texture params                                                                 |
+| Encrypter          | Defisym | Windows          | Y        | N   | En/decrypt file with WinAPI CNG. You can Encrypt file here and then read them by other extensions I made, e.g. Fini/StringSplitter |
+| EpicOnlineServices | Defisym | Windows          | N        | N   | Achievements and stats for Epic Game Store                                                                                         |
+| FFMpeg             | Defisym | Windows          | Y        | Y   | bring the legendary player to fusion, with several handy A/C/Es like blit current video frame, etc                                 |
+| FindTheWay         | Defisym | Windows, Android | Y        | N   | A\* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible (currently available on windows & android). |
+| Fini               | Defisym | Windows          | Y        | Y   | based on brofield's brilliant work simpleini, is a faster ini ext for fusion.                                                      |
+| Func               | Defisym | Windows          | Y        | N   | Call Functions via Expression or Action                                                                                            |
+| NeoPic             | Defisym | Windows          | N        | N   | Another active picture, but with encrypt support, all object shares a lib that over frame, significantly reduce load time          |
+| NeoStr             | Defisym | Windows          | N        | N   | Powerful string extension with format control support                                                                              |
+| RandomTable        | Defisym | Windows          | Y        | N   | Generate a random table like **Fire Emblem**, save/load by base64 string, for my own game.                                         |
+| SDL_Mixer          | Defisym | Windows          | Y        | Y   | Audio player based on SDL Mixer X, with unlimited channel & encrypt support                                                        |
+| SteamworksAPI      | Defisym | Windows          | N        | N   | alternative steamworks API object with modern feature, compatible (possibly) with current steamworks object                        |
+| String Splitter    | Defisym | Windows          | N        | N   | This object is a string splitter base on C++ regex.                                                                                |
+| WinAPI             | Defisym | Windows          | Y        | N   | a bunch of small functions.                                                                                                        |
 
 #### Lib
 
@@ -79,6 +80,7 @@ If you have something good and want to share, just simply fork this repo, then p
 
 | Name             | Author   | Description                                                                                                              |
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| BinaryExtract    | Defisym  | Extract binary file to any folder you want                                                                               |
 | Blank Char       | Defisym  | blank char used for align to git rid of DX11 string limit                                                                |
 | Bullet Time      | Defisym  | A simple bullet time example                                                                                             |
 | DecimalVerdict   | Defisym  | To check if a value has decimals                                                                                         |
