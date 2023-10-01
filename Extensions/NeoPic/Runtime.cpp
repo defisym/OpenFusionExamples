@@ -146,6 +146,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->hotSpotPos = static_cast<HotSpotPos>(edPtr->hotSpotComboID);
 	rdPtr->zoomScale = { 1.0,1.0 };
 
+	rdPtr->pFrameCapture = new FrameCapture(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
+
 	rdPtr->pAI = new AnimationInterface(rdPtr);
 	rdPtr->pNS = new NineSliceInterface(rdPtr);
 
@@ -207,6 +209,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->itCountVecStr;
 	delete rdPtr->itCountVecCount;
+
+	delete rdPtr->pFrameCapture;
 
 	delete rdPtr->pAI;
 	delete rdPtr->pNS;

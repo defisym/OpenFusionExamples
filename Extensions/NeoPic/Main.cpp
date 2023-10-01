@@ -866,32 +866,10 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
-	const auto hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
-	const HDC hdcWindow = GetDC(hFrameWindowHandle);
-
-	RECT frameRect;
-	::GetWindowRect(hFrameWindowHandle, &frameRect);
-	const int frameWidth = frameRect.right - frameRect.left;
-	const int frameHeight = frameRect.bottom - frameRect.top;
-
-	const auto pMemSf = CreateSurface(24, frameWidth, frameHeight);
-	_AddAlpha(pMemSf);
-
-	const auto hdcSf = pMemSf->GetDC();
-	StretchBlt(hdcSf, 0, 0, frameWidth, frameHeight
-		, hdcWindow, 0, 0, frameWidth, frameHeight
-		, SRCCOPY);
-	pMemSf->ReleaseDC(hdcSf);
-	_AddAlpha(pMemSf);
+	rdPtr->pFrameCapture->Capture();
 
 	const auto capturedName = L"_TempCapture";
-	LoadFromPointer(rdPtr, capturedName, pMemSf);
-
-#ifdef _DEBUG
-	//__SavetoClipBoard(pMemSf);
-#endif // _DEBUG
-
-	delete pMemSf;
+	LoadFromPointer(rdPtr, capturedName, rdPtr->pFrameCapture->pCaptureSf);
 
 	return 0;
 }

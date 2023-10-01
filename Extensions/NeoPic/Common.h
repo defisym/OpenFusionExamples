@@ -38,6 +38,7 @@
 enum class HotSpotPos;
 struct ZoomScale;
 
+struct FrameCapture;
 struct AnimationInterface;
 struct NineSliceInterface;
 
@@ -70,6 +71,7 @@ struct NineSliceInterface;
 #include	"Fusion.h"
 
 #include	"Func.h"
+#include	"FrameCapture.h"
 
 #include	"AnimationInterface.h"
 #include	"NineSliceInterface.h"

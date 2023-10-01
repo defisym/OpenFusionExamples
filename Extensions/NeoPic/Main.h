@@ -249,11 +249,11 @@ typedef struct tagRDATA
 	// Display
 	//------------
 
-	//Settings
+	// Settings
 	volatile bool HWA = false;
 	volatile bool stretchQuality = false;
 
-	//Source
+	// Source
 	bool fromLib = false;
 	SurfaceLibValue* pLibValue = nullptr;
 
@@ -262,7 +262,7 @@ typedef struct tagRDATA
 	std::wstring* RelativeFilePath = nullptr;
 	std::wstring* Key = nullptr;
 		
-	//src->display
+	// src->display
 	LPSURFACE src = nullptr;
 
 	// flip cache
@@ -281,9 +281,12 @@ typedef struct tagRDATA
 
 	LPSMASK pColMask = nullptr;
 
-	//animation
+	// capture
+	FrameCapture* pFrameCapture = nullptr;
+
+	// animation
 	AnimationInterface* pAI = nullptr;
-	//nine slice
+	// nine slice
 	NineSliceInterface* pNS = nullptr;
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

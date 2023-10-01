@@ -175,6 +175,9 @@
     <ClInclude Include="NineSliceInterface.h">
       <Filter>NineSlice</Filter>
     </ClInclude>
+    <ClInclude Include="FrameCapture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
