@@ -38,8 +38,11 @@
 #define	EXP_EXPRESSION_GCS				1
 #define	EXP_EXPRESSION_GCP				2
 #define	EXP_EXPRESSION_GCD				3
+#define	EXP_EXPRESSION_GCIDBN			4
+#define	EXP_EXPRESSION_GCNBID			5
+#define	EXP_EXPRESSION_GPFMN 			6
 
-#define	EXP_LAST                    	4
+#define	EXP_LAST                    	7
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

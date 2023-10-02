@@ -167,10 +167,15 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV       
+        MENUITEM "Get Channel ID By Name", IDMN_EXPRESSION_GCIDBN
+        MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV
         MENUITEM "Get Channel State", IDMN_EXPRESSION_GCS
+        MENUITEM SEPARATOR
         MENUITEM "Get Exclusive Channel Position", IDMN_EXPRESSION_GCP
         MENUITEM "Get Exclusive Channel Duration", IDMN_EXPRESSION_GCD
+        MENUITEM "Get Exclusive Channel Name By ID", IDMN_EXPRESSION_GCNBID
+        MENUITEM SEPARATOR
+        MENUITEM "Get Play From Memory Name", IDMN_EXPRESSION_GPFMN
         MENUITEM SEPARATOR
     END
 END
@@ -308,10 +313,16 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_EXPRESSION_GCIDBN         "GetID ("
     M_EXPRESSION_GV             "GetVolume ("
     M_EXPRESSION_GCS            "GetChannelState ("
     M_EXPRESSION_GCP            "GetChannelPos ("
     M_EXPRESSION_GCD            "GetChannelDur ("
+    M_EXPRESSION_GCNBID         "GetChannelName$ ("
+    M_EXPRESSION_GPFMN          "GetFromMemName$ ("
+
+    M_EXPRESSION_ADDRESS	    "Address"
+    M_EXPRESSION_SIZE		    "Size"
 END
 
 

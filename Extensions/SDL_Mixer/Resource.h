@@ -109,16 +109,22 @@
 #define IDMN_EXPRESSION_GCS			27001
 #define IDMN_EXPRESSION_GCP			27002
 #define IDMN_EXPRESSION_GCD			27003
+#define IDMN_EXPRESSION_GCIDBN		27004
+#define IDMN_EXPRESSION_GCNBID		27005
+#define IDMN_EXPRESSION_GPFMN 		27006
 
 // Expression strings
 #define M_EXPRESSION_GV			     7000
 #define M_EXPRESSION_GCS			 7001
 #define M_EXPRESSION_GCP			 7002
 #define M_EXPRESSION_GCD			 7003
+#define M_EXPRESSION_GCIDBN			 7004
+#define M_EXPRESSION_GCNBID			 7005
+#define M_EXPRESSION_GPFMN 			 7006
 
 // Names of expression parameters
-#define M_EXP_P1				 7500
-#define	M_EXP_P2				 7501
+#define M_EXPRESSION_ADDRESS		 7500
+#define	M_EXPRESSION_SIZE			 7501
 
 // Next default values for new objects
 // 

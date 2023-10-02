@@ -56,6 +56,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
 		IDMN_EXPRESSION_GCP, M_EXPRESSION_GCP, EXP_EXPRESSION_GCP, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
 		IDMN_EXPRESSION_GCD, M_EXPRESSION_GCD, EXP_EXPRESSION_GCD, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
+		IDMN_EXPRESSION_GCIDBN, M_EXPRESSION_GCIDBN, EXP_EXPRESSION_GCIDBN, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_ACTION_EXCLUSIVE,
+		IDMN_EXPRESSION_GCNBID, M_EXPRESSION_GCNBID, EXP_EXPRESSION_GCNBID, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
+		IDMN_EXPRESSION_GPFMN, M_EXPRESSION_GPFMN, EXP_EXPRESSION_GPFMN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_ADDRESS, M_EXPRESSION_SIZE,
 		};
 
 
@@ -268,6 +271,45 @@ long WINAPI DLLExport Expression_GetChannelDuration(LPRDATA rdPtr, long param1) 
 	return ReturnFloat(rdPtr->pData->GetExclusiveDuration(channel));
 }
 
+long WINAPI DLLExport Expression_GetChannelIDByName(LPRDATA rdPtr, long param1) {
+	const auto pFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return bExclusive
+		? rdPtr->pData->GetExclusiveChannelID(pFilePath)
+		: rdPtr->pData->GetMixingChannelID(pFilePath);
+}
+
+long WINAPI DLLExport Expression_GetChannelNameByID(LPRDATA rdPtr, long param1) {
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto pFileName = rdPtr->pData->GetExclusiveChannelName(channel);
+	const auto pRet = pFileName == nullptr
+		? Empty_Str
+		: pFileName;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)pRet;
+}
+
+long WINAPI DLLExport Expression_GetPlayFromMemoryName(LPRDATA rdPtr, long param1) {
+	const auto pFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto address = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto size = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	*rdPtr->pRet = std::format(L"FromMem_{}_{}_{}", pFilePath, address, size);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -311,7 +353,11 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			{     
 			Expression_GetVolume,
 			Expression_GetChannelState,
-			Expression_GetChannelPosition,Expression_GetChannelDuration,
+			Expression_GetChannelPosition,
+			Expression_GetChannelDuration,
+			Expression_GetChannelIDByName,
+			Expression_GetChannelNameByID,
+			Expression_GetPlayFromMemoryName,
 
 			0
 			};

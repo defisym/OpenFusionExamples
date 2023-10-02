@@ -150,7 +150,10 @@ struct AudioData {
 	AudioData(const wchar_t* pFileName) {
 		fileName = pFileName;
 
-		pRW = SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+		//pRW = SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+		pRW = AudioFromMemoryWrapper(pFileName, [&] () {
+			return SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+		});
 
 		if (!pRW) {
 			throw std::exception(AudioDataException_CreateRWFailed);
@@ -172,7 +175,10 @@ struct AudioData {
 			throw std::exception(AudioDataException_DecryptFailed);
 		}
 
-		pRW = SDL_RWFromConstMem(pDecrypt->GetOutputData(), (int)pDecrypt->GetOutputDataLength());
+		pRW = SDL_RWFromConstMem(pDecrypt->GetOutputData(), static_cast<int>(pDecrypt->GetOutputDataLength()));
+		//pRW = AudioFromMemoryWrapper(pFileName, [&] () {
+		//	return SDL_RWFromConstMem(pDecrypt->GetOutputData(), static_cast<int>(pDecrypt->GetOutputDataLength()));
+		//});
 
 		if (!pRW) {
 			throw std::exception(AudioDataException_CreateRWFailed);
@@ -182,7 +188,7 @@ struct AudioData {
 			throw std::exception(AudioDataException_CreateMusicFailed);
 		}
 	}
-
+	
 	~AudioData() {
 		delete pEffect;
 
@@ -196,6 +202,69 @@ struct AudioData {
 		pMusic = Mix_LoadMUS_RW(pRW, 0);
 
 		return pMusic != nullptr;
+	}
+
+	static inline bool AudioFromMemory(const wchar_t* pFileName) {
+		// FromMem_AccessFileName_Address_Size
+		constexpr const wchar_t* pFromMemPrefix = L"FromMem";
+		const size_t pFromMemPrefixLength = wcslen(pFromMemPrefix);
+
+		bool bFromMem = true;
+
+		for (size_t i = 0; i < pFromMemPrefixLength; i++) {
+			if (pFileName[i] != pFromMemPrefix[i]) {
+				bFromMem = false;
+
+				break;
+			}
+		}
+
+		return bFromMem;
+	}
+
+	static inline auto AudioFromMemoryParser(const wchar_t* pFileName) {
+		// FromMem_AccessFileName_Address_Size
+		constexpr auto delimiter = L'_';
+
+		size_t first = std::wstring::npos;
+		size_t last = std::wstring::npos;
+
+		// Remove Prefix
+		std::wstring rawText = pFileName;
+		first = rawText.find_first_of(delimiter);
+		rawText = rawText.substr(first + 1);
+
+		// Get Size
+		last = rawText.find_last_of(delimiter);
+		const std::wstring size = rawText.substr(last +1);
+		rawText = rawText.substr(0, last);
+		
+		// Get Address
+		last = rawText.find_last_of(delimiter);
+		const std::wstring address = rawText.substr(last + 1);
+		rawText = rawText.substr(0, last);
+
+		// Get AccessFileName
+		const std::wstring fileName = rawText;
+
+		// Return offset
+		const char* pData = reinterpret_cast<char*>(_stoi(address));
+		const size_t sz = _stoi(size);
+
+		return std::make_tuple(fileName, pData, sz);
+	}
+
+	inline SDL_RWops* AudioFromMemoryWrapper(const wchar_t* pFileName, const std::function<SDL_RWops*()>& cb) {
+		if (!AudioFromMemory(pFileName)) { return cb(); }
+
+		const auto [accessFileName,
+			pData,
+			sz] = AudioFromMemoryParser(pFileName);
+
+		fileName = accessFileName;
+		pRW = SDL_RWFromConstMem(pData, static_cast<int>(sz));
+
+		return pRW;
 	}
 };
 
@@ -758,6 +827,35 @@ struct GlobalData {
 		return MIX_NO_FADING;
 	}
 
+	inline const wchar_t* GetExclusiveChannelName(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			return pAudioData->fileName.c_str();
+		}
+
+		return nullptr;
+	}
+
+	inline int GetExclusiveChannelID(const wchar_t* pFileName) const {
+		int id = -1;
+
+		for (size_t channel = 0; channel < exclusiveChannel.size(); channel++) {
+			const auto pAudioData = exclusiveChannel[channel];
+
+			if (pAudioData != nullptr
+				&& StrEqu(pAudioData->fileName.c_str(), pFileName)) {
+				id = static_cast<int>(channel);
+			}
+
+			if (id != -1) { break; }
+		}
+
+		return id;
+	}
+
 	inline bool ExclusiveChannelPlaying() {
 		auto bRet = false;
 
@@ -1051,6 +1149,23 @@ struct GlobalData {
 				processor(pAudioData);
 			}
 		}
+	}
+
+	inline int GetMixingChannelID(const wchar_t* pFileName) {
+		int id = -1;
+
+		for (size_t channel = 0; channel < mixingChannel.size(); channel++) {
+			MixingIterateChannel(static_cast<int>(channel), [&] (AudioData* pAudioData) {
+				if (pAudioData != nullptr
+					&& StrEqu(pAudioData->fileName.c_str(), pFileName)) {
+					id = static_cast<int>(channel);
+				}
+			});
+
+			if (id != -1) { break; }
+		}
+
+		return id;
 	}
 
 	inline bool MixingChannelPlaying() {
