@@ -49,6 +49,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SMCS, M_ACTION_SMCS, ACT_ACTION_SMCS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_ENABLE, M_ACTION_SCORE, M_ACTION_BASE,
 
 		IDMN_ACTION_LB, M_ACTION_LB, ACT_ACTION_LB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
+		IDMN_ACTION_RB, M_ACTION_RB, ACT_ACTION_RB, 0, 2, PARAM_EXPSTRING, M_ACTION_FILENAME,
 		};
 
 // Definitions of parameters for each expression
@@ -60,7 +61,8 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCD, M_EXPRESSION_GCD, EXP_EXPRESSION_GCD, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
 		IDMN_EXPRESSION_GCIDBN, M_EXPRESSION_GCIDBN, EXP_EXPRESSION_GCIDBN, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_ACTION_EXCLUSIVE,
 		IDMN_EXPRESSION_GCNBID, M_EXPRESSION_GCNBID, EXP_EXPRESSION_GCNBID, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
-		IDMN_EXPRESSION_GPFMN, M_EXPRESSION_GPFMN, EXP_EXPRESSION_GPFMN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_ADDRESS, M_EXPRESSION_SIZE,
+		IDMN_EXPRESSION_GPFMN, M_EXPRESSION_GPFMN, EXP_EXPRESSION_GPFMN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_ACCESSFILENAME, M_EXPRESSION_ADDRESS, M_EXPRESSION_SIZE,
+		IDMN_EXPRESSION_GPFHMN, M_EXPRESSION_GPFHMN, EXP_EXPRESSION_GPFHMN, EXPFLAG_STRING, 4, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_ACCESSFILENAME, M_ACTION_FILENAME, M_EXPRESSION_OFFSET, M_EXPRESSION_SIZE,
 		IDMN_EXPRESSION_GBA, M_EXPRESSION_GBA, EXP_EXPRESSION_GBA, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_OFFSET,
 		};
 
@@ -247,6 +249,19 @@ short WINAPI DLLExport Action_LoadBinary(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+short WINAPI DLLExport Action_ReleaseBinary(LPRDATA rdPtr, long param1, long param2) {
+	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	if (!StrCmp(pFilePath, Empty_Str)) {
+		rdPtr->pData->binaryData.ReleaseData(pFilePath);
+	}
+	else {
+		rdPtr->pData->binaryData.ReleaseData();
+	}
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -308,11 +323,42 @@ long WINAPI DLLExport Expression_GetChannelNameByID(LPRDATA rdPtr, long param1) 
 }
 
 long WINAPI DLLExport Expression_GetPlayFromMemoryName(LPRDATA rdPtr, long param1) {
-	const auto pFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto pAccessFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	const auto address = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto size = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	*rdPtr->pRet = std::format(L"FromMem_{}_{}_{}", pFilePath, address, size);
+	BinaryDataInfo info;
+	info.accessFileName = pAccessFilePath;
+	info.pData = reinterpret_cast<char*>(address);
+	info.sz = size;
+
+	*rdPtr->pRet = std::format(L"FromMem_{}", info.Serialization());
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pRet->c_str();
+}
+
+long WINAPI DLLExport Expression_GetPlayFromHandledMemoryName(LPRDATA rdPtr, long param1) {
+	const auto pAccessFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto pDataFilePath = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto offset = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto size = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	BinaryDataInfo info;
+	info.dataFileName = pDataFilePath;
+	info.accessFileName = pAccessFilePath;
+
+	info.pBinaryData = &rdPtr->pData->binaryData;
+	const auto pBinaryData = info.pBinaryData->GetAddress(info.dataFileName);
+	info.pData = pBinaryData != nullptr
+		? (char*)(pBinaryData + offset)
+		: nullptr;
+	info.sz = size;
+
+	*rdPtr->pRet = std::format(L"FromMem_{}", info.Serialization());
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -369,6 +415,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetMixingChannelScore,
 
 			Action_LoadBinary,
+			Action_ReleaseBinary,
 
 			0
 			};
@@ -382,6 +429,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetChannelIDByName,
 			Expression_GetChannelNameByID,
 			Expression_GetPlayFromMemoryName,
+			Expression_GetPlayFromHandledMemoryName,
 			Expression_GetBinaryAddress,
 
 			0
