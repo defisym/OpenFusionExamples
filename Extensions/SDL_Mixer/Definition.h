@@ -95,11 +95,16 @@ struct BinaryData {
 	}
 
 	inline void ReleaseData() {
-		for(const auto& data : pDatas | std::views::values) {
-			delete data.pDecrypt;
-		}
+		for (auto it = pDatas.begin(); it != pDatas.end();) {
+			if(!it->second.audioRef.empty()) {
+				++it;
 
-		pDatas.clear();
+				continue;
+			}
+
+			delete it->second.pDecrypt;
+			it = pDatas.erase(it);
+		}
 	}
 
 	inline bool AddRef(const std::wstring& fileName, AudioData* pAudioData) {

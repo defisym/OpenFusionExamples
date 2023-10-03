@@ -252,7 +252,7 @@ short WINAPI DLLExport Action_LoadBinary(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_ReleaseBinary(LPRDATA rdPtr, long param1, long param2) {
 	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	if (!StrCmp(pFilePath, Empty_Str)) {
+	if (StrCmp(pFilePath, Empty_Str)) {
 		rdPtr->pData->binaryData.ReleaseData(pFilePath);
 	}
 	else {
