@@ -153,6 +153,8 @@ BEGIN
         MENUITEM "Pause Specific Channel",        IDMN_ACTION_PC
         MENUITEM "Resume Specific Channel",       IDMN_ACTION_RC
         MENUITEM SEPARATOR
+        MENUITEM "Load Binary",                   IDMN_ACTION_LB
+        MENUITEM SEPARATOR
      END
 END
 #endif
@@ -176,6 +178,7 @@ BEGIN
         MENUITEM "Get Exclusive Channel Name By ID", IDMN_EXPRESSION_GCNBID
         MENUITEM SEPARATOR
         MENUITEM "Get Play From Memory Name", IDMN_EXPRESSION_GPFMN
+        MENUITEM "Get Binary Address", IDMN_EXPRESSION_GBA
         MENUITEM SEPARATOR
     END
 END
@@ -299,6 +302,7 @@ BEGIN
     M_ACTION_SCORE              "Score to use"
     M_ACTION_BASE               "Base"
 
+    M_ACTION_LB                 "Load Binary %0, Decrypt Key %1"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -320,8 +324,10 @@ BEGIN
     M_EXPRESSION_GCD            "GetChannelDur ("
     M_EXPRESSION_GCNBID         "GetChannelName$ ("
     M_EXPRESSION_GPFMN          "GetFromMemName$ ("
+    M_EXPRESSION_GBA            "GetBinaryAddress ("
 
     M_EXPRESSION_ADDRESS	    "Address"
+    M_EXPRESSION_OFFSET 	    "Offset"
     M_EXPRESSION_SIZE		    "Size"
 END
 

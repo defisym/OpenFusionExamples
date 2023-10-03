@@ -330,6 +330,17 @@ public:
 	bool OpenFile(const wchar_t* FileName);
 	bool SaveFile(const wchar_t* FileName, bool SaveSrc = false) const;
 
+	inline PBYTE GetData() const {
+		return this->OutputData == nullptr
+			? this->InputData
+			: this->OutputData;
+	}
+	inline DWORD GetDataLength() const {
+		return this->OutputData == nullptr
+			? this->InputLength
+			: this->OutputLength;
+	}
+
 	inline PBYTE GetInputData() const {
 		return this->InputData;
 	}

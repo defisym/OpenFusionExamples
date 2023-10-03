@@ -42,6 +42,7 @@
 #define IDMN_ACTION_SAC	       		25007
 #define IDMN_ACTION_SABL       		25008
 #define IDMN_ACTION_SMCS       		25009
+#define IDMN_ACTION_LB       		25010
 
 // Action strings
 #define M_ACTION_PE                 5000
@@ -54,6 +55,7 @@
 #define M_ACTION_SAC                5007
 #define M_ACTION_SABL               5008
 #define M_ACTION_SMCS               5009
+#define M_ACTION_LB					5010
 
 // Titles of action parameters
 #define M_ACTION_FILENAME		     5501
@@ -112,6 +114,7 @@
 #define IDMN_EXPRESSION_GCIDBN		27004
 #define IDMN_EXPRESSION_GCNBID		27005
 #define IDMN_EXPRESSION_GPFMN 		27006
+#define IDMN_EXPRESSION_GBA 		27007
 
 // Expression strings
 #define M_EXPRESSION_GV			     7000
@@ -121,10 +124,12 @@
 #define M_EXPRESSION_GCIDBN			 7004
 #define M_EXPRESSION_GCNBID			 7005
 #define M_EXPRESSION_GPFMN 			 7006
+#define M_EXPRESSION_GBA 			 7007
 
 // Names of expression parameters
 #define M_EXPRESSION_ADDRESS		 7500
-#define	M_EXPRESSION_SIZE			 7501
+#define	M_EXPRESSION_OFFSET			 7501
+#define	M_EXPRESSION_SIZE			 7502
 
 // Next default values for new objects
 // 

@@ -19,15 +19,51 @@
 #include <chrono>
 #include <algorithm>
 #include <functional>
+#include <ranges>
 
 #include "MusicScore.h"
 #include "GeneralDefinition.h"
 
 using std::literals::chrono_literals::operator ""ms;
 
+struct BinaryData;
 struct AudioEffect;
 struct AudioData;
 struct GlobalData;
+
+using BinaryBuffer = const unsigned char;
+
+struct BinaryData {
+	std::map<std::wstring, Encryption*> pDatas;
+
+	BinaryData() = default;
+	~BinaryData() {
+		for (const auto& pData : pDatas | std::views::values) {
+			delete pData;
+		}
+	}
+
+	inline const BinaryBuffer* GetAddress(const std::wstring& fileName) const {
+		return pDatas.contains(fileName)
+			? pDatas.at(fileName)->GetData()
+			: nullptr;
+	}
+
+	inline void AddData(const std::wstring& fileName, const std::wstring& key) {
+		const auto bDecrypt = !(StrEmpty(key.c_str()));
+		const auto pDecrypt = new Encryption;
+
+		pDecrypt->GenerateKey(key.c_str());
+
+		if(!bDecrypt) {
+			pDecrypt->OpenFile(fileName.c_str());
+		}else {
+			pDecrypt->DecryptFileDirectly(fileName.c_str());
+		}
+
+		pDatas[fileName] = pDecrypt;
+	}
+};
 
 using EffectBuffer = unsigned char;
 
@@ -278,6 +314,9 @@ constexpr auto Fusion_MinVolume = 0;
 constexpr auto Fusion_MaxVolume = 100;
 
 struct GlobalData {
+	// destruct after all audio are closed
+	BinaryData binaryData;
+
 	using AudioDataVec = std::vector<AudioData*>;
 	AudioDataVec pAudioDatas;
 

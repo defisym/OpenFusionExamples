@@ -47,6 +47,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SABL, M_ACTION_SABL, ACT_ACTION_SABL, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_START, M_ACTION_END,
 		IDMN_ACTION_SMCS, M_ACTION_SMCS, ACT_ACTION_SMCS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_ENABLE, M_ACTION_SCORE, M_ACTION_BASE,
+
+		IDMN_ACTION_LB, M_ACTION_LB, ACT_ACTION_LB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
 		};
 
 // Definitions of parameters for each expression
@@ -59,6 +61,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCIDBN, M_EXPRESSION_GCIDBN, EXP_EXPRESSION_GCIDBN, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_ACTION_EXCLUSIVE,
 		IDMN_EXPRESSION_GCNBID, M_EXPRESSION_GCNBID, EXP_EXPRESSION_GCNBID, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_ACTION_CHANNEL,
 		IDMN_EXPRESSION_GPFMN, M_EXPRESSION_GPFMN, EXP_EXPRESSION_GPFMN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_ADDRESS, M_EXPRESSION_SIZE,
+		IDMN_EXPRESSION_GBA, M_EXPRESSION_GBA, EXP_EXPRESSION_GBA, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_OFFSET,
 		};
 
 
@@ -235,6 +238,15 @@ short WINAPI DLLExport Action_SetMixingChannelScore(LPRDATA rdPtr, long param1, 
 	return 0;
 }
 
+short WINAPI DLLExport Action_LoadBinary(LPRDATA rdPtr, long param1, long param2) {
+	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->binaryData.AddData(pFilePath, pKey);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -309,6 +321,16 @@ long WINAPI DLLExport Expression_GetPlayFromMemoryName(LPRDATA rdPtr, long param
 	return (long)rdPtr->pRet->c_str();
 }
 
+long WINAPI DLLExport Expression_GetBinaryAddress(LPRDATA rdPtr, long param1) {
+	const auto pFilePath = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto bOffset = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto pData = rdPtr->pData->binaryData.GetAddress(pFilePath);
+
+	return pData != nullptr
+		? reinterpret_cast<long>(pData) + bOffset
+		: reinterpret_cast<long>(nullptr);
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -346,6 +368,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetABLoop,
 			Action_SetMixingChannelScore,
 
+			Action_LoadBinary,
+
 			0
 			};
 
@@ -358,6 +382,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetChannelIDByName,
 			Expression_GetChannelNameByID,
 			Expression_GetPlayFromMemoryName,
+			Expression_GetBinaryAddress,
 
 			0
 			};
