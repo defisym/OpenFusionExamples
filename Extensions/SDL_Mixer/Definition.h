@@ -40,6 +40,7 @@ struct BinaryData {
 
 	struct Data {
 		Encryption* pDecrypt = nullptr;
+		std::wstring hash;
 		AudioRef audioRef;
 	};
 
@@ -60,7 +61,40 @@ struct BinaryData {
 			: nullptr;
 	}
 
+	inline bool DataNotReferenced(const std::wstring& fileName) {
+		const auto it = pDatas.find(fileName);
+
+		if (it == pDatas.end()) { return true; }
+
+		return it->second.audioRef.empty();
+	}
+
+	inline bool UpdateData(const std::wstring& fileName, const std::wstring& key) {
+		const auto it = pDatas.find(fileName);
+
+		// normal load
+		if (it == pDatas.end()) {
+			return AddData(fileName, key);
+		}
+
+		// don't need to update
+		if(it->second.hash == GetFileHash(fileName)) {
+			return false;
+		}
+
+		// cannot release old
+		if(!ReleaseData(fileName)) {
+			return false;
+		}
+
+		return AddData(fileName, key);
+	}
+
 	inline bool AddData(const std::wstring& fileName, const std::wstring& key) {
+		if(pDatas.contains(fileName)) {
+			return true;
+		}
+
 		const auto bDecrypt = !(StrEmpty(key.c_str()));
 		const auto pDecrypt = new Encryption;
 
@@ -76,7 +110,7 @@ struct BinaryData {
 
 		if (!bRet) { return false; }
 
-		pDatas[fileName] = { pDecrypt,AudioRef() };
+		pDatas[fileName] = { pDecrypt,  GetFileHash(fileName), AudioRef() };
 
 		return true;
 	}

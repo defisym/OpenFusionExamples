@@ -28,6 +28,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_CPAUSED, M_CONDITION_CPAUSED, CND_CONDITION_CPAUSED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
 		IDMN_CONDITION_ACPAUSED, M_CONDITION_ACPAUSED, CND_CONDITION_ACPAUSED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		IDMN_CONDITION_CHNO, M_CONDITION_CHNO, CND_CONDITION_CHNO, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_CONDITION_BHNR, M_CONDITION_BHNR, CND_CONDITION_BHNR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_ACTION_FILENAME,
 
 		};
 
@@ -50,6 +51,7 @@ short actionsInfos[]=
 
 		IDMN_ACTION_LB, M_ACTION_LB, ACT_ACTION_LB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
 		IDMN_ACTION_RB, M_ACTION_RB, ACT_ACTION_RB, 0, 2, PARAM_EXPSTRING, M_ACTION_FILENAME,
+		IDMN_ACTION_UB, M_ACTION_UB, ACT_ACTION_UB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
 		};
 
 // Definitions of parameters for each expression
@@ -120,6 +122,12 @@ long WINAPI DLLExport Condition_ChannelHasNoOutput(LPRDATA rdPtr, long param1, l
 		: rdPtr->pData->MixingChannelPaused(channel);
 
 	return !bPlaying || bPaused;
+}
+
+long WINAPI DLLExport Condition_BinaryHasNoReference(LPRDATA rdPtr, long param1, long param2) {
+	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	return rdPtr->pData->binaryData.DataNotReferenced(pFilePath);
 }
 
 // ============================================================================
@@ -252,12 +260,21 @@ short WINAPI DLLExport Action_LoadBinary(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_ReleaseBinary(LPRDATA rdPtr, long param1, long param2) {
 	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	if (StrCmp(pFilePath, Empty_Str)) {
+	if (!StrEqu(pFilePath, Empty_Str)) {
 		rdPtr->pData->binaryData.ReleaseData(pFilePath);
 	}
 	else {
 		rdPtr->pData->binaryData.ReleaseData();
 	}
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_UpdateBinary(LPRDATA rdPtr, long param1, long param2) {
+	const auto pFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	const auto pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	rdPtr->pData->binaryData.UpdateData(pFilePath, pKey);
 
 	return 0;
 }
@@ -394,6 +411,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_ChannelPaused,
 			Condition_AllChannelPaused,
 			Condition_ChannelHasNoOutput,
+			Condition_BinaryHasNoReference,
 
 			0
 			};
@@ -416,6 +434,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_LoadBinary,
 			Action_ReleaseBinary,
+			Action_UpdateBinary,
 
 			0
 			};

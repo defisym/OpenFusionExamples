@@ -24,6 +24,8 @@ This object has no properties
 
 - Play Exclusive
 - Play Mixing
+  - *you can use `Get Play From Memory Name` & `Get Play From Handled Memory Name` as filename here and keep key empty, to play from memory*
+  - *when playing from memory, you should not release the memory it referenced, as it's not copied for sake of performance, or app may crash*
 
 - Set Volume
 - Set Exclusive Position
@@ -35,6 +37,14 @@ This object has no properties
 - Stop All Channel
 - Pause Specific Channel
 - Resume Specific Channel
+
+- Load Binary
+  - *load file as binary*
+  - *you can check if load success by checking `Get Binary Address` equals to `nullptr`, aka `0`*
+- Release Binary
+  - *if binary is referenced, it won't be released*
+- Update Binary
+  - *if binary is referenced or hash is the same, it won't be updated*
 
 ## Condition
 
@@ -49,9 +59,29 @@ This object has no properties
 
 - Exclusive Channel Fading Complete
 
+- Binary Has No Reference
+  - *binary file currently is not referenced, and can safely be released or updated*
+
 ## Expression
 
+- Get Channel ID By Name
+  - *Get channel ID by audio name it's playing*
+  - *for mixing channel, will return channel that includes the name*
 - Get Channel Volume
 - Get Channel State
+
 - Get Exclusive Channel Position
 - Get Exclusive Channel Duration
+- Get Exclusive Channel Name By ID
+  - *Get audio name it's playing by channel ID*
+
+- Get Play From Memory Name
+  - *access file name is the one used for search internally*
+  - *return a serialized string to play from memory*
+  - *the validity of memory address won't be checked, as it's handled by you*
+- Get Play From Handled Memory Name
+  - *access file name is the one used for search internally*
+  - *return a serialized string to play from memory*
+  - *from memory that handled by this extension, you need to load & free by binary actions*
+- Get Binary Address
+  - *get address from handled memory*

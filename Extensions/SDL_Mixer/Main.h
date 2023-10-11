@@ -12,8 +12,9 @@
 #define	CND_CONDITION_CPAUSED			3
 #define	CND_CONDITION_ACPAUSED			4
 #define	CND_CONDITION_CHNO				5
+#define	CND_CONDITION_BHNR				6
 
-#define	CND_LAST    					6
+#define	CND_LAST    					7
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -30,8 +31,9 @@
 #define	ACT_ACTION_SMCS					9
 #define	ACT_ACTION_LB					10
 #define	ACT_ACTION_RB					11
+#define	ACT_ACTION_UB					12
 
-#define	ACT_LAST						12
+#define	ACT_LAST						13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

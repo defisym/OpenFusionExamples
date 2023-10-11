@@ -126,6 +126,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Exclusive Channel Fading Complete", IDMN_CONDITION_CFC
         MENUITEM SEPARATOR
+        MENUITEM "Binary Has No Reference", IDMN_CONDITION_BHNR
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -155,6 +157,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Load Binary",                   IDMN_ACTION_LB
         MENUITEM "Release Binary",                IDMN_ACTION_RB
+        MENUITEM "Update Binary",                 IDMN_ACTION_UB
         MENUITEM SEPARATOR
      END
 END
@@ -306,6 +309,7 @@ BEGIN
 
     M_ACTION_LB                 "Load Binary %0, Decrypt Key %1"
     M_ACTION_RB                 "Release Binary %0"
+    M_ACTION_UB                 "Update Binary %0, Decrypt Key %1"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -316,6 +320,7 @@ BEGIN
     M_CONDITION_ACPAUSED        "%o All Channel is Paused"
     M_CONDITION_CHNO            "%o Channel %0 Type %1 Has No Output"
     M_CONDITION_CFC             "%o Exclusive Channel %0 Fading Complete"
+    M_CONDITION_BHNR            "%o Binary %0 Has No Reference"
 END
 
 STRINGTABLE DISCARDABLE 

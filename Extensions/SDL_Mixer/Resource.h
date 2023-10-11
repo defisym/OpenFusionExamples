@@ -44,6 +44,7 @@
 #define IDMN_ACTION_SMCS       		25009
 #define IDMN_ACTION_LB       		25010
 #define IDMN_ACTION_RB       		25011
+#define IDMN_ACTION_UB       		25012
 
 // Action strings
 #define M_ACTION_PE                 5000
@@ -58,6 +59,7 @@
 #define M_ACTION_SMCS               5009
 #define M_ACTION_LB					5010
 #define M_ACTION_RB					5011
+#define M_ACTION_UB					5012
 
 // Titles of action parameters
 #define M_ACTION_FILENAME		     5501
@@ -88,6 +90,7 @@
 #define IDMN_CONDITION_CPAUSED		26003
 #define IDMN_CONDITION_ACPAUSED		26004
 #define IDMN_CONDITION_CHNO 		26005
+#define IDMN_CONDITION_BHNR 		26006
 
 // Condition strings
 #define M_CONDITION_CP				 6000
@@ -96,6 +99,7 @@
 #define M_CONDITION_CPAUSED			 6003
 #define M_CONDITION_ACPAUSED	     6004
 #define M_CONDITION_CHNO    	     6005
+#define M_CONDITION_BHNR    	     6006
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
