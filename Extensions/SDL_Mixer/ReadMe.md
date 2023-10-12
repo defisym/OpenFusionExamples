@@ -28,7 +28,7 @@ This extension added a few custom functions to original lib, so please clone [th
 if you got error about no yasm found, add yasm for libmpg123 at `SDL_Mixer_X\build\build32\external\AudioCodecs\src\AudioCodecs\libmpg123\ports\cmake\src\libmpg123\CMakeLists.txt`
 
 ```cmake
-set(YASM_ASSEMBLER "F:/DEV/_YASM/vsyasm.exe")
+set(YASM_ASSEMBLER "D:/DEV/_YASM/vsyasm.exe")
 ```
 
 build for 32bit
@@ -46,6 +46,8 @@ To disable GPL part, remove macros like `MUSIC_MP3_MAD`, `MUSIC_MID_ADLMIDI`, `M
 ```cmake
 cmake -G "Visual Studio 17 2022" -A Win32 -S .. -B "build32" -DCMAKE_BUILD_TYPE=Release -DDOWNLOAD_AUDIO_CODECS_DEPENDENCY=ON -DAUDIO_CODECS_BUILD_LOCAL_SDL2=ON -DMIXERX_ENABLE_LGPL=ON -DSDL_MIXER_X_SHARED=ON -DSDL_MIXER_X_STATIC=OFF
 ```
+
+You may encounter build error due to the invalid characters, like error from `SDL-Mixer-X\src\codecs\pxtone\pxtnEvelist.cpp` and `SDL-Mixer-X\src\codecs\pxtone\pxtnMaster.cpp`, saying `rrr` is not the member of `_x4x_EVENTSTRUCT` or `_x4x_MASTER, but actually it's defined. Save both file to UTF-8 with Bom can fix this build error. This may specific to code page 936 and visual studio, which seems only treat UTF-8 with Bom as actual Unicode file.
 
 to debug the object, you can generate the debug info from linker->debug, or use the `RelWithDebInfo` configuration.
 
