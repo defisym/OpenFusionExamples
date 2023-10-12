@@ -503,6 +503,9 @@ constexpr auto Mix_MaxVolume = 128;
 constexpr auto Fusion_MinVolume = 0;
 constexpr auto Fusion_MaxVolume = 100;
 
+constexpr Uint8 Mix_MinDistance = 0;
+constexpr Uint8 Mix_MaxDistance = 255;
+
 struct GlobalData {
 	// destruct after all audio are closed
 	BinaryData binaryData;
@@ -801,7 +804,8 @@ struct GlobalData {
 	static inline bool AudioPlaying(Mix_Music* pMusic) {
 		return Mix_PlayingMusicStream(pMusic);
 	}
-	inline bool AudioPlaying(const AudioData* pAudioData) const {
+
+	static inline bool AudioPlaying(const AudioData* pAudioData) {
 		return pAudioData != nullptr
 			? AudioPlaying(pAudioData->pMusic)
 			: false;
@@ -810,7 +814,8 @@ struct GlobalData {
 	static inline bool AudioPaused(Mix_Music* pMusic) {
 		return Mix_PausedMusicStream(pMusic);
 	}
-	inline bool AudioPaused(const AudioData* pAudioData) const {
+
+	static inline bool AudioPaused(const AudioData* pAudioData) {
 		return pAudioData != nullptr
 			? AudioPaused(pAudioData->pMusic)
 			: false;
@@ -855,6 +860,21 @@ struct GlobalData {
 	static inline double GetAudioDuration(Mix_Music* pMusic) {
 		return Mix_MusicDuration(pMusic);
 	}
+	// in seconds
+	inline double GetAudioDuration(const wchar_t* pFileName) {
+		double duration = -1;
+
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			duration = GetAudioDuration(pMusic);
+		});
+
+		return duration;
+	}
+
+
+	// ------------
+	// Volume
+	// ------------
 
 	// 0 ~ 100 -> 0 ~ 128
 	//static inline int Range(int v, int l, int h) {
@@ -926,6 +946,38 @@ struct GlobalData {
 		return volume;
 	}
 
+
+	// ------------
+	// Effects
+	// ------------
+
+	static inline void SetAudioEffectPanning(Mix_Music* pMusic, Uint8 left, Uint8 right) {
+		Mix_SetMusicEffectPanning(pMusic, left, right);
+	}
+	inline void SetAudioEffectPanning(const wchar_t* pFileName, Uint8 left, Uint8 right) {
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			SetAudioEffectPanning(pMusic, left, right);
+		});
+	}
+
+	static inline void SetAudioEffectPosition(Mix_Music* pMusic, Sint16 angle, Uint8 distance) {
+		Mix_SetMusicEffectPosition(pMusic, angle, distance);
+	}
+	inline void SetAudioEffectPosition(const wchar_t* pFileName, Sint16 angle, Uint8 distance) {
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			SetAudioEffectPosition(pMusic, angle, distance);
+		});
+	}
+
+	static inline void SetAudioEffectDistance(Mix_Music* pMusic, Uint8 distance) {
+		Mix_SetMusicEffectDistance(pMusic, distance);
+	}
+	inline void SetAudioEffectDistance(const wchar_t* pFileName, Uint8 distance) {
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			SetAudioEffectDistance(pMusic, distance);
+		});
+	}
+
 	// ------------
 	// virtual channel
 	//
@@ -939,6 +991,13 @@ struct GlobalData {
 		// general
 		// ------------
 		bool bLoop = false;
+
+		// panning
+		Uint8 left = 255;
+		Uint8 right = 255;
+
+		Sint16 angle = 0;
+		Uint8 distance = 0;
 
 		// ------------
 		// exclusive only
@@ -982,6 +1041,10 @@ struct GlobalData {
 		}
 	}
 
+	// ---------
+	// Volume
+	// ---------
+
 	// 0 ~ 100
 	static inline int GetChannelVolume(ChannelVolume& vec, int channel) {
 		ExtendVec(vec, channel, Fusion_MaxVolume);
@@ -992,6 +1055,48 @@ struct GlobalData {
 	static inline void SetChannelVolume(ChannelVolume& vec, int channel, int volume) {
 		ExtendVec(vec, channel, Fusion_MaxVolume);
 		vec[channel] = ::Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
+	}
+
+	// ---------
+	// Effects
+	// ---------
+
+	static inline auto GetChannelEffectPanning(ChannelSettings& vec, int channel) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		return std::make_tuple(::Range(vec[channel].left, Mix_MinDistance, Mix_MaxDistance), ::Range(vec[channel].right, Mix_MinDistance, Mix_MaxDistance));
+	}
+
+	static inline void SetChannelEffectPanning(ChannelSettings& vec, int channel, Uint8 left, Uint8 right) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		vec[channel].left = ::Range(left, Mix_MinDistance, Mix_MaxDistance);
+		vec[channel].right = ::Range(right, Mix_MinDistance, Mix_MaxDistance);
+	}
+
+	static inline auto GetChannelEffectPosition(ChannelSettings& vec, int channel) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		return std::make_tuple(vec[channel].angle, ::Range(vec[channel].distance, Mix_MinDistance, Mix_MaxDistance));
+	}
+
+	static inline void SetChannelEffectPosition(ChannelSettings& vec, int channel, Sint16 angle, Uint8 distance) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		vec[channel].angle = angle;
+		vec[channel].distance = ::Range(distance, Mix_MinDistance, Mix_MaxDistance);
+	}
+
+	static inline auto GetChannelEffectDistance(ChannelSettings& vec, int channel) {
+		ExtendVec(vec, channel, AudioSettings());
+		
+		return ::Range(vec[channel].distance, Mix_MinDistance, Mix_MaxDistance);
+	}
+
+	static inline void SetChannelEffectDistance(ChannelSettings& vec, int channel, Uint8 distance) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		vec[channel].distance = ::Range(distance, Mix_MinDistance, Mix_MaxDistance);
 	}
 
 	// ------------
