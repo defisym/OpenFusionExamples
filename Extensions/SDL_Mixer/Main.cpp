@@ -50,8 +50,10 @@ short actionsInfos[]=
 		IDMN_ACTION_SMCS, M_ACTION_SMCS, ACT_ACTION_SMCS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_ENABLE, M_ACTION_SCORE, M_ACTION_BASE,
 
 		IDMN_ACTION_LB, M_ACTION_LB, ACT_ACTION_LB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
-		IDMN_ACTION_RB, M_ACTION_RB, ACT_ACTION_RB, 0, 2, PARAM_EXPSTRING, M_ACTION_FILENAME,
+		IDMN_ACTION_RB, M_ACTION_RB, ACT_ACTION_RB, 0, 1, PARAM_EXPSTRING, M_ACTION_FILENAME,
 		IDMN_ACTION_UB, M_ACTION_UB, ACT_ACTION_UB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
+
+		IDMN_ACTION_SMV, M_ACTION_SMV, ACT_ACTION_SMV, 0, 1, PARAM_EXPRESSION, M_ACTION_VOLUME,
 		};
 
 // Definitions of parameters for each expression
@@ -66,6 +68,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GPFMN, M_EXPRESSION_GPFMN, EXP_EXPRESSION_GPFMN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_ACCESSFILENAME, M_EXPRESSION_ADDRESS, M_EXPRESSION_SIZE,
 		IDMN_EXPRESSION_GPFHMN, M_EXPRESSION_GPFHMN, EXP_EXPRESSION_GPFHMN, EXPFLAG_STRING, 4, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_ACCESSFILENAME, M_ACTION_FILENAME, M_EXPRESSION_OFFSET, M_EXPRESSION_SIZE,
 		IDMN_EXPRESSION_GBA, M_EXPRESSION_GBA, EXP_EXPRESSION_GBA, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_OFFSET,
+		IDMN_EXPRESSION_GMV, M_EXPRESSION_GMV, EXP_EXPRESSION_GMV, 0, 0,
 		};
 
 
@@ -170,6 +173,14 @@ short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2)
 	bExclusive
 		? rdPtr->pData->SetExclusiveVolume(channel, volume)
 		: rdPtr->pData->SetMixingVolume(channel, volume);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetMasterVolume(LPRDATA rdPtr, long param1, long param2) {
+	const auto masterVolume = (int)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->pData->SetMasterVolume(masterVolume);
 
 	return 0;
 }
@@ -292,6 +303,10 @@ long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr,long param1) {
 	return bExclusive
 		? rdPtr->pData->GetExclusiveVolume(channel)
 		: rdPtr->pData->GetMixingVolume(channel);
+}
+
+long WINAPI DLLExport Expression_GetMasterVolume(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->GetMasterVolume();
 }
 
 long WINAPI DLLExport Expression_GetChannelState(LPRDATA rdPtr, long param1) {
@@ -436,6 +451,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_ReleaseBinary,
 			Action_UpdateBinary,
 
+			Action_SetMasterVolume,
+
 			0
 			};
 
@@ -450,6 +467,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetPlayFromMemoryName,
 			Expression_GetPlayFromHandledMemoryName,
 			Expression_GetBinaryAddress,
+			Expression_GetMasterVolume,
 
 			0
 			};

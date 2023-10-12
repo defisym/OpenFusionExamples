@@ -145,7 +145,9 @@ BEGIN
         MENUITEM "Play Exclusive",       IDMN_ACTION_PE
         MENUITEM "Play Mixing",          IDMN_ACTION_PM
         MENUITEM SEPARATOR
-        MENUITEM "Set Volume",           IDMN_ACTION_SV
+        MENUITEM "Set Master Volume",    		 IDMN_ACTION_SMV
+        MENUITEM "Set Channel Volume",           IDMN_ACTION_SV
+        MENUITEM SEPARATOR
         MENUITEM "Set Exclusive Position",        IDMN_ACTION_SP
         MENUITEM "Set Exclusive ABLoop",          IDMN_ACTION_SABL
         MENUITEM "Set Mixing Channel Score",      IDMN_ACTION_SMCS
@@ -173,8 +175,10 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Get Channel ID By Name", IDMN_EXPRESSION_GCIDBN
+        MENUITEM "Get Master Volume", IDMN_EXPRESSION_GMV
         MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV
+        MENUITEM SEPARATOR
+        MENUITEM "Get Channel ID By Name", IDMN_EXPRESSION_GCIDBN
         MENUITEM "Get Channel State", IDMN_EXPRESSION_GCS
         MENUITEM SEPARATOR
         MENUITEM "Get Exclusive Channel Position", IDMN_EXPRESSION_GCP
@@ -286,6 +290,7 @@ BEGIN
     M_ACTION_FADE               "Fade (ms), -1 = No Fade"
 
     M_ACTION_SV                 "Set Channel %0 Volume to %1, Channel Type %2"
+    M_ACTION_SMV                "Set Master Volume to %0"
 
     M_ACTION_VOLUME             "Volume (0 ~ 100)"
     M_ACTION_EXCLUSIVE          "Channel Type, 1 = Exclusive, 0 = Mixing"
@@ -326,7 +331,8 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_EXPRESSION_GCIDBN         "GetID ("
-    M_EXPRESSION_GV             "GetVolume ("
+    M_EXPRESSION_GV             "GetChannelVolume ("
+    M_EXPRESSION_GMV            "GetMasterVolume ("
     M_EXPRESSION_GCS            "GetChannelState ("
     M_EXPRESSION_GCP            "GetChannelPos ("
     M_EXPRESSION_GCD            "GetChannelDur ("

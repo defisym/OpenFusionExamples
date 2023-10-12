@@ -38,6 +38,7 @@ cmake -G "Visual Studio 17 2022" -A Win32 -S .. -B "build32" -DCMAKE_BUILD_TYPE=
 
 cmake --build build32 --config Release -j 12
 ```
+
 you can then build it with cmake or visual studio.
 
 To disable GPL part, remove macros like `MUSIC_MP3_MAD`, `MUSIC_MID_ADLMIDI`, `MUSIC_MID_OPNMIDI` and `MUSIC_FLAC` in properties, then remove the counterpart input of linker, or using the following code to generate a clipped project:

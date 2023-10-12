@@ -517,6 +517,7 @@ struct GlobalData {
 	std::vector<Mix_Music*> toRelease;
 
 	HANDLE hSoundTouch = nullptr;
+	int masterVolume = 100;
 
 	GlobalData() {
 		SDL_GeneralInit();
@@ -871,6 +872,35 @@ struct GlobalData {
 	}
 
 	// 0 ~ 100
+	inline int GetNormalizedVolume(int chanVol) const {
+		const auto newVol = static_cast<int>((chanVol * masterVolume) / static_cast<double>(Fusion_MaxVolume));
+
+		return ::Range(newVol, Fusion_MinVolume, Fusion_MaxVolume);
+	}
+
+	// 0 ~ 100
+	inline void SetMasterVolume(int volume) {
+		masterVolume = 	::Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
+
+		auto updateVolume = [&] <typename T> (const std::vector<T>& channels,
+			int(GlobalData::*pGetter)(int),
+			void(GlobalData::*pSetter)(int, int)) {
+			for (size_t channel = 0; channel < channels.size(); channel++) {
+				const auto channelVolume = (this->*pGetter)(channel);
+				(this->*pSetter)(channel, channelVolume);
+			}
+		};
+
+		updateVolume(exclusiveChannel, &GlobalData::GetExclusiveVolume, &GlobalData::SetExclusiveVolume);
+		updateVolume(mixingChannel, &GlobalData::GetMixingVolume, &GlobalData::SetMixingVolume);
+	}
+
+	// 0 ~ 100
+	inline int GetMasterVolume() const {
+		return ::Range(masterVolume, Fusion_MinVolume, Fusion_MaxVolume);
+	}
+
+	// 0 ~ 100
 	static inline void SetAudioVolume(Mix_Music* pMusic, int volume) {
 		Mix_VolumeMusicStream(pMusic, VolumeConverter(volume));
 	}
@@ -1183,7 +1213,7 @@ struct GlobalData {
 		const auto pAudioData = exclusiveChannel[channel];
 
 		if (pAudioData != nullptr) {
-			SetAudioVolume(pAudioData->pMusic, volume);
+			SetAudioVolume(pAudioData->pMusic, GetNormalizedVolume(volume));
 		}
 	}
 
@@ -1476,7 +1506,7 @@ struct GlobalData {
 
 		for (const auto& pAudioData : vec) {
 			if (pAudioData != nullptr) {
-				SetAudioVolume(pAudioData->pMusic, volume);
+				SetAudioVolume(pAudioData->pMusic, GetNormalizedVolume(volume));
 			}
 		}
 	}

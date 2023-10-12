@@ -27,7 +27,9 @@ This object has no properties
   - *you can use `Get Play From Memory Name` & `Get Play From Handled Memory Name` as filename here and keep key empty, to play from memory*
   - *when playing from memory, you should not release the memory it referenced, as it's not copied for sake of performance, or app may crash*
 
-- Set Volume
+- Set Master Volume
+- Set Channel Volume
+
 - Set Exclusive Position
 - Set Exclusive ABLoop
 - Set Mixing Channel Score
@@ -64,10 +66,12 @@ This object has no properties
 
 ## Expression
 
+- Get Master Volume
+- Get Channel Volume
+
 - Get Channel ID By Name
   - *Get channel ID by audio name it's playing*
   - *for mixing channel, will return channel that includes the name*
-- Get Channel Volume
 - Get Channel State
 
 - Get Exclusive Channel Position
