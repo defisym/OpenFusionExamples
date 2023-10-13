@@ -40,13 +40,19 @@ This object has no properties
 - Pause Specific Channel
 - Resume Specific Channel
 
-- Load Binary
-  - *load file as binary*
-  - *you can check if load success by checking `Get Binary Address` equals to `nullptr`, aka `0`*
-- Release Binary
-  - *if binary is referenced, it won't be released*
-- Update Binary
-  - *if binary is referenced or hash is the same, it won't be updated*
+- Binary
+  - Load Binary
+    - *load file as binary*
+    - *you can check if load success by checking `Get Binary Address` equals to `nullptr`, aka `0`*
+  - Release Binary
+    - *if binary is referenced, it won't be released*
+  - Update Binary
+    - *if binary is referenced or hash is the same, it won't be updated*
+
+- Effect
+  - Set Effect Panning
+  - Set Effect Position
+  - Set Effect Distance
 
 ## Condition
 
@@ -79,13 +85,20 @@ This object has no properties
 - Get Exclusive Channel Name By ID
   - *Get audio name it's playing by channel ID*
 
-- Get Play From Memory Name
-  - *access file name is the one used for search internally*
-  - *return a serialized string to play from memory*
-  - *the validity of memory address won't be checked, as it's handled by you*
-- Get Play From Handled Memory Name
-  - *access file name is the one used for search internally*
-  - *return a serialized string to play from memory*
-  - *from memory that handled by this extension, you need to load & free by binary actions*
-- Get Binary Address
-  - *get address from handled memory*
+- Binary
+  - Get Play From Memory Name
+    - *access file name is the one used for search internally*
+    - *return a serialized string to play from memory*
+    - *the validity of memory address won't be checked, as it's handled by you*
+  - Get Play From Handled Memory Name
+    - *access file name is the one used for search internally*
+    - *return a serialized string to play from memory*
+    - *from memory that handled by this extension, you need to load & free by binary actions*
+  - Get Binary Address
+    - *get address from handled memory*
+
+- Effect
+  - Get Effect Panning Left
+  - Get Effect Panning Right
+  - Get Effect Angle
+  - Get Effect Distance

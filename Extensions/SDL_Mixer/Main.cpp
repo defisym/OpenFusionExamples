@@ -54,6 +54,10 @@ short actionsInfos[]=
 		IDMN_ACTION_UB, M_ACTION_UB, ACT_ACTION_UB, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ACTION_FILENAME, M_ACTION_KEY,
 
 		IDMN_ACTION_SMV, M_ACTION_SMV, ACT_ACTION_SMV, 0, 1, PARAM_EXPRESSION, M_ACTION_VOLUME,
+
+		IDMN_ACTION_SEPAN, M_ACTION_SEPAN, ACT_ACTION_SEPAN, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_PANNING_LEFT, M_ACTION_PANNING_RIGHT, M_ACTION_EXCLUSIVE,
+		IDMN_ACTION_SEPOS, M_ACTION_SEPOS, ACT_ACTION_SEPOS, 0, 4, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_POSITION_ANGLE, M_ACTION_POSITION_DISTANCE, M_ACTION_EXCLUSIVE,
+		IDMN_ACTION_SEDIS, M_ACTION_SEDIS, ACT_ACTION_SEDIS, 0, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACTION_CHANNEL, M_ACTION_POSITION_DISTANCE, M_ACTION_EXCLUSIVE,
 		};
 
 // Definitions of parameters for each expression
@@ -69,6 +73,12 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GPFHMN, M_EXPRESSION_GPFHMN, EXP_EXPRESSION_GPFHMN, EXPFLAG_STRING, 4, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_EXPRESSION_ACCESSFILENAME, M_ACTION_FILENAME, M_EXPRESSION_OFFSET, M_EXPRESSION_SIZE,
 		IDMN_EXPRESSION_GBA, M_EXPRESSION_GBA, EXP_EXPRESSION_GBA, 0, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_ACTION_FILENAME, M_EXPRESSION_OFFSET,
 		IDMN_EXPRESSION_GMV, M_EXPRESSION_GMV, EXP_EXPRESSION_GMV, 0, 0,
+
+		IDMN_EXPRESSION_GEPR, M_EXPRESSION_GEPR, EXP_EXPRESSION_GEPR, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_EXPRESSION_GEPL, M_EXPRESSION_GEPL, EXP_EXPRESSION_GEPL, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_EXPRESSION_GEA, M_EXPRESSION_GEA, EXP_EXPRESSION_GEA, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+		IDMN_EXPRESSION_GED, M_EXPRESSION_GED, EXP_EXPRESSION_GED, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_ACTION_CHANNEL, M_ACTION_EXCLUSIVE,
+
 		};
 
 
@@ -290,6 +300,44 @@ short WINAPI DLLExport Action_UpdateBinary(LPRDATA rdPtr, long param1, long para
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetEffectPanning(LPRDATA rdPtr, long param1, long param2) {
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto left = (Uint8)CNC_GetIntParameter(rdPtr);
+	const auto right = (Uint8)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->SetExclusiveEffectPanning(channel, left, right)
+		: rdPtr->pData->SetMixingEffectPanning(channel, left, right);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetEffectPosition(LPRDATA rdPtr, long param1, long param2) {
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto angle = (Sint16)CNC_GetIntParameter(rdPtr);
+	const auto distance = (Uint8)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->SetExclusiveEffectPosition(channel, angle, distance)
+		: rdPtr->pData->SetMixingEffectPosition(channel, angle, distance);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetEffectDistance(LPRDATA rdPtr, long param1, long param2) {
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto distance = (Uint8)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
+
+	bExclusive
+		? rdPtr->pData->SetExclusiveEffectDistance(channel, distance)
+		: rdPtr->pData->SetMixingEffectDistance(channel, distance);
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -410,6 +458,48 @@ long WINAPI DLLExport Expression_GetBinaryAddress(LPRDATA rdPtr, long param1) {
 		: reinterpret_cast<long>(nullptr);
 }
 
+long WINAPI DLLExport Expression_GetEffectPanningLeft(LPRDATA rdPtr, long param1) {
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto& [left, right] = bExclusive
+		? rdPtr->pData->GetExclusiveEffectPanning(channel)
+		: rdPtr->pData->GetMixingEffectPanning(channel);
+
+	 return left;
+}
+
+long WINAPI DLLExport Expression_GetEffectPanningRight(LPRDATA rdPtr, long param1) {
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto& [left, right] = bExclusive
+		? rdPtr->pData->GetExclusiveEffectPanning(channel)
+		: rdPtr->pData->GetMixingEffectPanning(channel);
+
+	return right;
+}
+
+long WINAPI DLLExport Expression_GetEffectAngle(LPRDATA rdPtr, long param1) {
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto& [angle, distance] = bExclusive
+		? rdPtr->pData->GetExclusiveEffectPosition(channel)
+		: rdPtr->pData->GetMixingEffectPosition(channel);
+
+	return angle;
+}
+
+long WINAPI DLLExport Expression_GetEffectDistance(LPRDATA rdPtr, long param1) {
+	const auto channel = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto bExclusive = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return bExclusive
+		? rdPtr->pData->GetExclusiveEffectDistance(channel)
+		: rdPtr->pData->GetMixingEffectDistance(channel);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -453,6 +543,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_SetMasterVolume,
 
+			Action_SetEffectPanning,
+			Action_SetEffectPosition,
+			Action_SetEffectDistance,
+
 			0
 			};
 
@@ -468,6 +562,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetPlayFromHandledMemoryName,
 			Expression_GetBinaryAddress,
 			Expression_GetMasterVolume,
+			Expression_GetEffectPanningLeft,
+			Expression_GetEffectPanningRight,
+			Expression_GetEffectAngle,
+			Expression_GetEffectDistance,
 
 			0
 			};

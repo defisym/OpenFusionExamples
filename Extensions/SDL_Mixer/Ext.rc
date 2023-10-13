@@ -157,9 +157,19 @@ BEGIN
         MENUITEM "Pause Specific Channel",        IDMN_ACTION_PC
         MENUITEM "Resume Specific Channel",       IDMN_ACTION_RC
         MENUITEM SEPARATOR
-        MENUITEM "Load Binary",                   IDMN_ACTION_LB
-        MENUITEM "Release Binary",                IDMN_ACTION_RB
-        MENUITEM "Update Binary",                 IDMN_ACTION_UB
+		POPUP "Binary"
+    	BEGIN
+        	MENUITEM "Load Binary",                   IDMN_ACTION_LB
+        	MENUITEM "Release Binary",                IDMN_ACTION_RB
+        	MENUITEM "Update Binary",                 IDMN_ACTION_UB
+        END
+		MENUITEM SEPARATOR
+        POPUP "Effect"
+    	BEGIN
+			MENUITEM "Set Effect Panning",            IDMN_ACTION_SEPAN
+        	MENUITEM "Set Effect Position",           IDMN_ACTION_SEPOS
+        	MENUITEM "Set Effect Distance",           IDMN_ACTION_SEDIS
+        END
         MENUITEM SEPARATOR
      END
 END
@@ -185,10 +195,21 @@ BEGIN
         MENUITEM "Get Exclusive Channel Duration", IDMN_EXPRESSION_GCD
         MENUITEM "Get Exclusive Channel Name By ID", IDMN_EXPRESSION_GCNBID
         MENUITEM SEPARATOR
-        MENUITEM "Get Play From Memory Name", IDMN_EXPRESSION_GPFMN
-        MENUITEM "Get Play From Handled Memory Name", IDMN_EXPRESSION_GPFHMN
-        MENUITEM "Get Binary Address", IDMN_EXPRESSION_GBA
-        MENUITEM SEPARATOR
+        POPUP "Binary"
+    	BEGIN
+			MENUITEM "Get Play From Memory Name", IDMN_EXPRESSION_GPFMN
+        	MENUITEM "Get Play From Handled Memory Name", IDMN_EXPRESSION_GPFHMN
+        	MENUITEM "Get Binary Address", IDMN_EXPRESSION_GBA
+        END
+		MENUITEM SEPARATOR
+		POPUP "Effect"
+    	BEGIN
+			MENUITEM "Get Effect Panning Left", IDMN_EXPRESSION_GEPR
+        	MENUITEM "Get Effect Panning Right", IDMN_EXPRESSION_GEPL
+        	MENUITEM "Get Effect Angle", IDMN_EXPRESSION_GEA
+        	MENUITEM "Get Effect Distance", IDMN_EXPRESSION_GED
+        END
+		MENUITEM SEPARATOR
     END
 END
 #endif
@@ -315,6 +336,15 @@ BEGIN
     M_ACTION_LB                 "Load Binary %0, Decrypt Key %1"
     M_ACTION_RB                 "Release Binary %0"
     M_ACTION_UB                 "Update Binary %0, Decrypt Key %1"
+    
+	M_ACTION_SEPAN              "Set Channel %0 Effect Panning, Left = %1, Right = %2, Channel Type %3"
+	M_ACTION_SEPOS              "Set Channel %0 Effect Position, Angle = %1, Distance = %2, Channel Type %3"
+	M_ACTION_SEDIS              "Set Channel %0 Effect Distance, Distance = %1, Channel Type %2"
+
+	M_ACTION_PANNING_LEFT		"Left, 0 ~ 255"
+	M_ACTION_PANNING_RIGHT		"Right, 0 ~ 255"
+	M_ACTION_POSITION_ANGLE		"Angle, 0 = due north, rotates clockwise as the value increases."
+	M_ACTION_POSITION_DISTANCE	"Distance, 0 = overlapping the listener, and 255 = as far away as possible"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -345,6 +375,11 @@ BEGIN
     M_EXPRESSION_OFFSET 	    "Offset"
     M_EXPRESSION_SIZE		    "Size"
     M_EXPRESSION_ACCESSFILENAME "Access FileName"
+
+    M_EXPRESSION_GEPR           "GetEffectPanLeft ("
+    M_EXPRESSION_GEPL           "GetEffectPanRight ("
+    M_EXPRESSION_GEA            "GetEffectAngle ("
+    M_EXPRESSION_GED            "GetEffectDistance ("
 END
 
 

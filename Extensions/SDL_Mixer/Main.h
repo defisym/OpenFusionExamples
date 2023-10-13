@@ -33,8 +33,11 @@
 #define	ACT_ACTION_RB					11
 #define	ACT_ACTION_UB					12
 #define	ACT_ACTION_SMV					13
+#define	ACT_ACTION_SEPAN				14
+#define	ACT_ACTION_SEPOS				15
+#define	ACT_ACTION_SEDIS				16
 
-#define	ACT_LAST						14
+#define	ACT_LAST						17
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -49,8 +52,12 @@
 #define	EXP_EXPRESSION_GPFHMN 			7
 #define	EXP_EXPRESSION_GBA	 			8
 #define	EXP_EXPRESSION_GMV	 			9
+#define	EXP_EXPRESSION_GEPR	 			10
+#define	EXP_EXPRESSION_GEPL	 			11
+#define	EXP_EXPRESSION_GEA	 			12
+#define	EXP_EXPRESSION_GED	 			13
 
-#define	EXP_LAST                    	10
+#define	EXP_LAST                    	14
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

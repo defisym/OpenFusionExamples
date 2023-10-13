@@ -1105,6 +1105,10 @@ struct GlobalData {
 	// only one audio can play in the same channel, switch will cross fade previous one
 	// ------------
 
+	// ---------
+	// basic
+	// ---------
+
 	AudioDataVec exclusiveChannel;
 	ChannelVolume exclusiveChannelVolume;
 	ChannelSettings exclusiveChannelSettings;
@@ -1178,6 +1182,10 @@ struct GlobalData {
 			ResumeAudio(pAudioData->pMusic);
 		}
 	}
+
+	// ---------
+	// info
+	// ---------
 
 	inline bool ExclusiveChannelFadingState(int channel) {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
@@ -1304,6 +1312,10 @@ struct GlobalData {
 
 	}
 
+	// ---------
+	// volume
+	// ---------
+
 	// 0 ~ 100
 	inline int GetExclusiveVolume(int channel) {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
@@ -1319,6 +1331,61 @@ struct GlobalData {
 
 		if (pAudioData != nullptr) {
 			SetAudioVolume(pAudioData->pMusic, GetNormalizedVolume(volume));
+		}
+	}
+
+	// ---------
+	// effect
+	// ---------
+
+	inline auto GetExclusiveEffectPanning(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		return GetChannelEffectPanning(exclusiveChannelSettings, channel);
+	}
+
+	inline void SetExclusiveEffectPanning(int channel, Uint8 left, Uint8 right) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		SetChannelEffectPanning(exclusiveChannelSettings, channel, left,right);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			SetAudioEffectPanning(pAudioData->pMusic, left, right);
+		}
+	}
+
+	inline auto GetExclusiveEffectPosition(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		return GetChannelEffectPosition(exclusiveChannelSettings, channel);
+	}
+
+	inline void SetExclusiveEffectPosition(int channel, Sint16 angle, Uint8 distance) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		SetChannelEffectPosition(exclusiveChannelSettings, channel, angle, distance);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			SetAudioEffectPosition(pAudioData->pMusic, angle, distance);
+		}
+	}
+
+	inline auto GetExclusiveEffectDistance(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		return GetChannelEffectDistance(exclusiveChannelSettings, channel);
+	}
+
+	inline void SetExclusiveEffectDistance(int channel, Uint8 distance) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		SetChannelEffectDistance(exclusiveChannelSettings, channel, distance);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			SetAudioEffectDistance(pAudioData->pMusic, distance);
 		}
 	}
 
@@ -1369,6 +1436,10 @@ struct GlobalData {
 	// not managed, one channel can play multiple musics
 	// ------------
 
+	// ---------
+	// basic
+	// ---------
+
 	std::vector<AudioDataVec> mixingChannel;
 	ChannelVolume mixingChannelVolume;
 	ChannelSettings mixingChannelSettings;
@@ -1379,14 +1450,14 @@ struct GlobalData {
 	};
 
 	int delayMs = 1000;
-	std::map < std::wstring, playRecord > sameNameSize;
+	std::map<std::wstring, playRecord> sameNameSize;
 
 	inline void ClearMixingPlayRecord() {
 		const auto now = std::chrono::steady_clock::now();
 
-		for(auto& it: sameNameSize) {
+		for (auto& it : sameNameSize) {
 			const auto durMs = (now - it.second.updateTime) / 1ms;
-			if(durMs > delayMs) {
+			if (durMs > delayMs) {
 				it.second.size = 0;
 			}
 		}
@@ -1502,6 +1573,10 @@ struct GlobalData {
 		}
 	}
 
+	// ---------
+	// info
+	// ---------
+
 	inline void MixingIterateChannel(int channel,
 		const std::function<void(AudioData*)>& processor) {
 		ExtendVec(mixingChannel, channel, AudioDataVec());
@@ -1596,6 +1671,10 @@ struct GlobalData {
 		return num;
 	}
 
+	// ---------
+	// volume
+	// ---------
+
 	// 0 ~ 100
 	inline int GetMixingVolume(int channel) {
 		ExtendVec(mixingChannel, channel, AudioDataVec());
@@ -1612,6 +1691,67 @@ struct GlobalData {
 		for (const auto& pAudioData : vec) {
 			if (pAudioData != nullptr) {
 				SetAudioVolume(pAudioData->pMusic, GetNormalizedVolume(volume));
+			}
+		}
+	}
+
+	// ---------
+	// effect
+	// ---------
+
+	inline auto GetMixingEffectPanning(int channel) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+
+		return GetChannelEffectPanning(mixingChannelSettings, channel);
+	}
+
+	inline void SetMixingEffectPanning(int channel, Uint8 left, Uint8 right) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+		SetChannelEffectPanning(mixingChannelSettings, channel, left, right);
+
+		const auto& vec = mixingChannel[channel];
+
+		for (const auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioEffectPanning(pAudioData->pMusic, left, right);
+			}
+		}
+	}
+
+	inline auto GetMixingEffectPosition(int channel) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+
+		return GetChannelEffectPosition(mixingChannelSettings, channel);
+	}
+
+	inline void SetMixingEffectPosition(int channel, Sint16 angle, Uint8 distance) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+		SetChannelEffectPosition(mixingChannelSettings, channel, angle, distance);
+
+		const auto& vec = mixingChannel[channel];
+
+		for (const auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioEffectPosition(pAudioData->pMusic, angle, distance);
+			}
+		}
+	}
+
+	inline auto GetMixingEffectDistance(int channel) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+
+		return GetChannelEffectDistance(mixingChannelSettings, channel);
+	}
+
+	inline void SetMixingEffectDistance(int channel, Uint8 distance) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+		SetChannelEffectDistance(mixingChannelSettings, channel, distance);
+
+		const auto& vec = mixingChannel[channel];
+
+		for (const auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioEffectDistance(pAudioData->pMusic, distance);
 			}
 		}
 	}

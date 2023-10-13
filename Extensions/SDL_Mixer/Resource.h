@@ -46,6 +46,9 @@
 #define IDMN_ACTION_RB       		25011
 #define IDMN_ACTION_UB       		25012
 #define IDMN_ACTION_SMV       		25013
+#define IDMN_ACTION_SEPAN      		25014
+#define IDMN_ACTION_SEPOS      		25015
+#define IDMN_ACTION_SEDIS      		25016
 
 // Action strings
 #define M_ACTION_PE                 5000
@@ -62,6 +65,9 @@
 #define M_ACTION_RB					5011
 #define M_ACTION_UB					5012
 #define M_ACTION_SMV				5013
+#define M_ACTION_SEPAN				5014
+#define M_ACTION_SEPOS				5015
+#define M_ACTION_SEDIS				5016
 
 // Titles of action parameters
 #define M_ACTION_FILENAME		     5501
@@ -77,6 +83,10 @@
 #define M_ACTION_ENABLE    	         5511
 #define M_ACTION_SCORE    	         5512
 #define M_ACTION_BASE    	         5513
+#define M_ACTION_PANNING_LEFT    	 5514
+#define M_ACTION_PANNING_RIGHT    	 5515
+#define M_ACTION_POSITION_ANGLE    	 5516
+#define M_ACTION_POSITION_DISTANCE   5517
 
 
 //	Conditions
@@ -125,6 +135,10 @@
 #define IDMN_EXPRESSION_GPFHMN 		27007
 #define IDMN_EXPRESSION_GBA 		27008
 #define IDMN_EXPRESSION_GMV 		27009
+#define IDMN_EXPRESSION_GEPR 		27010
+#define IDMN_EXPRESSION_GEPL 		27011
+#define IDMN_EXPRESSION_GEA 		27012
+#define IDMN_EXPRESSION_GED 		27013
 
 // Expression strings
 #define M_EXPRESSION_GV			     7000
@@ -137,6 +151,10 @@
 #define M_EXPRESSION_GPFHMN			 7007
 #define M_EXPRESSION_GBA 			 7008
 #define M_EXPRESSION_GMV 			 7009
+#define M_EXPRESSION_GEPR 			 7010
+#define M_EXPRESSION_GEPL 			 7011
+#define M_EXPRESSION_GEA 			 7012
+#define M_EXPRESSION_GED 			 7013
 
 // Names of expression parameters
 #define M_EXPRESSION_ADDRESS		 7500
