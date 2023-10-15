@@ -157,7 +157,7 @@ short WINAPI DLLExport Action_PlayExclusive(LPRDATA rdPtr, long param1, long par
 	const auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->PlayExclusive(pFilePath, pKey,
-		channel, loops - 1, fadeMs);
+		channel, loops, fadeMs);
 
 	return 0;
 }
@@ -170,7 +170,7 @@ short WINAPI DLLExport Action_PlayMixing(LPRDATA rdPtr, long param1, long param2
 	const auto fadeMs = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->PlayMixing(pFilePath, pKey,
-		channel, loops - 1, fadeMs);
+		channel, loops, fadeMs);
 
 	return 0;
 }

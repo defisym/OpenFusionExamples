@@ -722,6 +722,26 @@ struct GlobalData {
 	// play
 	// ------------
 
+	// Loop times:
+	//	 Mix loop:
+	//			 -1 -> infinite
+	//			  0 -> as 1
+	//			  1 -> as 1
+	//			  2 -> as 2
+	//			  etc...
+	//	 Fusion loop:
+	//			  0 -> infinite
+	//			  1 -> as 1
+	//			  2 -> as 2
+	//			  etc...
+	static inline int LoopConverter(int loops = 0) {
+		// loops infinitely
+		if (loops <= 0) { return -1; }
+
+		// normal loop count
+		return loops;
+	}
+
 	static inline bool PlayAudio(Mix_Music* pMusic,
 		int loops = 0, int fadeMs = -1,
 		Mix_Music* pOldMusic = nullptr) {
@@ -730,6 +750,9 @@ struct GlobalData {
 		}
 
 		//Mix_SetFreeOnStop(pMusic, true);
+
+		// Fusion loop -> Mix loop
+		loops = LoopConverter(loops);
 
 		if (fadeMs == -1) {
 			if (pOldMusic != nullptr) {
@@ -1133,7 +1156,7 @@ struct GlobalData {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 		ExtendVec(exclusiveChannelSettings, channel, AudioSettings());
 
-		exclusiveChannelSettings[channel].bLoop = loops != 0;
+		exclusiveChannelSettings[channel].bLoop = loops != 1;
 
 		const auto pOldData = exclusiveChannel[channel];
 		const auto pOldMusic = pOldData != nullptr ? pOldData->pMusic : nullptr;
