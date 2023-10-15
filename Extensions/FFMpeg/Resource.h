@@ -102,6 +102,10 @@
 
 #define IDMN_ACTION_SFNA     		25016
 
+#define IDMN_ACTION_SOC     		25017
+
+#define IDMN_ACTION_RD     			25018
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -130,6 +134,10 @@
 
 #define M_ACTION_SFNA     		    5016
 
+#define M_ACTION_SOC     		    5017
+
+#define M_ACTION_RD     		    5018
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -146,6 +154,8 @@
 #define M_HEIGHT		         5513
 #define M_ATEMPO		         5514
 #define M_FORCENOAUDIO	         5515
+#define M_VCODEC				 5516
+#define M_ACODEC				 5517
 
 
 //	Conditions
@@ -210,6 +220,9 @@
 
 #define IDMN_EXPRESSION_GAT     		27013
 
+#define IDMN_EXPRESSION_GVOCN     		27014
+#define IDMN_EXPRESSION_GAOCN     		27015
+
 // Expression strings
 #define	M_EXPRESSION_GVN			    7000
 #define M_EXPRESSION_GVP			    7001
@@ -230,6 +243,9 @@
 #define M_EXPRESSION_GWHDE 			    7012
 
 #define M_EXPRESSION_GAT     			7013
+
+#define M_EXPRESSION_GVOCN     			7014
+#define M_EXPRESSION_GAOCN     			7015
 
 // Names of expression parameters
 #define M_HWA   				 7500

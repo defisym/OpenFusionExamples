@@ -40,7 +40,6 @@ short actionsInfos[]=
 		IDMN_ACTION_DSI, M_ACTION_DSI,	ACT_ACTION_DSI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
 		IDMN_ACTION_ITS, M_ACTION_ITS,	ACT_ACTION_ITS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_IT,
 		IDMN_ACTION_ITI, M_ACTION_ITI,	ACT_ACTION_ITI,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_ITSN,ACT_ACTION_IT,
-		//IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_S,ACT_ACTION_K,
 		IDMN_ACTION_LS, M_ACTION_LS,	ACT_ACTION_LS,	0, 1,PARAM_EXPSTRING,ACT_ACTION_S,
 
 		IDMN_ACTION_SAON, M_ACTION_SAON, ACT_ACTION_SAON,	0, 2,PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_F,ACT_ACTION_K,
@@ -51,7 +50,14 @@ short actionsInfos[]=
 		IDMN_ACTION_LAV, M_ACTION_LAV,ACT_ACTION_LAV, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 		IDMN_ACTION_LP, M_ACTION_LP,ACT_ACTION_LP, 0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_FIXED, M_BASE64,
 
-		IDMN_ACTION_LB64, M_ACTION_LB64, ACT_ACTION_LB64, 0, 1,PARAM_EXPSTRING, M_BASE64,
+		IDMN_ACTION_LCB64, M_ACTION_LCB64, ACT_ACTION_LCB64, 0, 1, PARAM_EXPSTRING, M_BASE64,
+
+		IDMN_ACTION_LL, M_ACTION_LL, ACT_ACTION_LL,	0, 2, PARAM_FILENAME2, PARAM_EXPSTRING, ACT_ACTION_F,ACT_ACTION_K,
+		IDMN_ACTION_SLC, M_ACTION_SLC, ACT_ACTION_SLC,	0, 1, PARAM_EXPSTRING, ACT_ACTION_LC,
+		IDMN_ACTION_LLO, M_ACTION_LLO, ACT_ACTION_LLO,	0, 1, PARAM_EXPRESSION, ACT_ACTION_OBJ,
+
+		IDMN_ACTION_LB64, M_ACTION_LB64, ACT_ACTION_LB64, 0, 1, PARAM_EXPSTRING, M_BASE64,
+
 		};
 
 // Definitions of parameters for each expression
@@ -61,11 +67,14 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GSIS, M_EXPRESSION_GSIS, EXP_EXPRESSION_GSIS, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_STRING, ACT_ACTION_SSI_S, ACT_ACTION_SSI_I,
 		IDMN_EXPRESSION_GCS, M_EXPRESSION_GCS, EXP_EXPRESSION_GCS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GCI, M_EXPRESSION_GCI, EXP_EXPRESSION_GCI, EXPFLAG_STRING, 0,
-		//IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 1,EXPPARAM_STRING,ACT_ACTION_K,
 		IDMN_EXPRESSION_SS, M_EXPRESSION_SS, EXP_EXPRESSION_SS, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SAV, M_EXPRESSION_SAV, EXP_EXPRESSION_SAV, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
 		IDMN_EXPRESSION_SP, M_EXPRESSION_SP, EXP_EXPRESSION_SP, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FIXED,
+		IDMN_EXPRESSION_SCB64, M_EXPRESSION_SCB64, EXP_EXPRESSION_SCB64, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_SB64, M_EXPRESSION_SB64, EXP_EXPRESSION_SB64, EXPFLAG_STRING, 0,
+		
+		IDMN_EXPRESSION_SSB64, M_EXPRESSION_SSB64, EXP_EXPRESSION_SSB64, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, ACT_ACTION_SSI_STR, M_COMPRESSED,
+		IDMN_EXPRESSION_LSB64, M_EXPRESSION_LSB64, EXP_EXPRESSION_LSB64, EXPFLAG_STRING, 2, EXPPARAM_STRING, EXPPARAM_LONG, M_BASE64, M_COMPRESSED,
 		};
 
 // ============================================================================
@@ -74,29 +83,26 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-long WINAPI DLLExport OnIterate_Section(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnIterate_Section(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return StrEqu(LoopName, rdPtr->SecLoopName) ? TRUE : FALSE;
+	return StrEqu(LoopName, rdPtr->SecLoopName->c_str());
 }
 
-long WINAPI DLLExport OnIterate_Item(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnIterate_Item(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return StrEqu(LoopName, rdPtr->ItemLoopName) ? TRUE : FALSE;
+	return StrEqu(LoopName, rdPtr->ItemLoopName->c_str());
 }
 
-long WINAPI DLLExport SecItemHasValue(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_SecItemHasValue(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	InvalidSecItem(FALSE);
 
-	LPCTSTR DefaultStr = _T("");
-
-	return !StrEqu(Default_Str, Fini->GetValue(Section, Item, Default_Str));
+	return rdPtr->ini->SectionExists(Section) && rdPtr->ini->KeyExists(Section, Item);
 }
-
 
 // ============================================================================
 //
@@ -104,296 +110,251 @@ long WINAPI DLLExport SecItemHasValue(LPRDATA rdPtr, long param1, long param2) {
 // 
 // ============================================================================
 
-short WINAPI DLLExport SetAutoSaveOn(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport Action_SetAutoSaveOn(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
 
 	rdPtr->AutoSave = true;
 
-	NewStr(rdPtr->AutoSaveFilePath, FilePath);
-	NewStr(rdPtr->AutoSaveKey, Key);
+	*rdPtr->AutoSaveFilePath = FilePath;
+	*rdPtr->AutoSaveKey = Key;
 
 	return 0;
 }
-short WINAPI DLLExport SetAutoSaveOff(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetAutoSaveOff(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->AutoSave = false;
 
 	return 0;
 }
 
-short WINAPI DLLExport New(LPRDATA rdPtr, long param1, long param2) {
-	init_ini();
+short WINAPI DLLExport Action_New(LPRDATA rdPtr, long param1, long param2) {
+	InitIni(rdPtr);
 
 	return 0;
 }
 
-short WINAPI DLLExport Release(LPRDATA rdPtr, long param1, long param2) {
-	release_ini();
+short WINAPI DLLExport Action_Release(LPRDATA rdPtr, long param1, long param2) {
+	ReleaseIni(rdPtr);
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromString(LPRDATA rdPtr, long param1, long param2) {
-	//LPCTSTR String = (LPCTSTR)param1;
-	//LPCTSTR Key = (LPCTSTR)param2;
-
-	//init_ini();
-
-	////Key has value, try to Decry
-	//if (!StrEmpty(Key)) {
-	//	Encryption Decrypt;
-	//	Decrypt.GenerateKey(Key);
-
-	//	Decrypt.SetEncryptStr(String, wcslen(String));
-	//	//Decrypt.SetEncryptStr(to_byte_string(String));
-	//	Decrypt.Decrypt();
-
-	//	Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetDecryptStrLength());
-	//	Decrypt.ReleaseOutputStr();
-	//}
-	//else {		
-	//	Fini->LoadData(to_byte_string(String));
-	//}
-
+short WINAPI DLLExport Action_LoadFromString(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR String = (LPCTSTR)param1;
 
 	AutoSave(rdPtr);
-
-	init_ini();
+	InitIni(rdPtr);
 	
-	Fini->LoadData(to_byte_string(String));
+	rdPtr->ini->LoadData(to_byte_string(String));
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromBase64(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadFromBase64(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR base64 = (LPCTSTR)param1;
 
 	AutoSave(rdPtr);
+	InitIni(rdPtr);
 
-	init_ini();
-
-	try {
-		rdPtr->pB64->base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
-
-	auto sz = rdPtr->pB64->base64_decode_size();
-
-	BYTE* buf = new BYTE[sz];
-	memset(buf, 0, sz);
-
-	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
-
-	//Fini->LoadData((char*)buf,sz);
-	Fini->LoadData(rdPtr->DeCompressToString((char*)buf, sz));
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		rdPtr->ini->LoadData((const char*)buf, sz);
+		});
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadFromCompressedBase64(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR base64 = (LPCTSTR)param1;
+
+	AutoSave(rdPtr);
+	InitIni(rdPtr);
+
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		rdPtr->ini->LoadData(rdPtr->DeCompressToString((const char*)buf, sz));
+		});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_LoadFromFile(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
 
 	AutoSave(rdPtr);
-
-	init_ini();
+	InitIni(rdPtr);
 
 	if (rdPtr->AutoSave) {
-		NewStr(rdPtr->AutoSaveFilePath, FilePath);
-		NewStr(rdPtr->AutoSaveKey, Key);
+		*rdPtr->AutoSaveFilePath = FilePath;
+		*rdPtr->AutoSaveKey = Key;
 	}	
 
-	//Key has value, try to Decry
-	if (!StrEmpty(Key)) {
-		Encryption Decrypt;
-		Decrypt.GenerateKey(Key);
-
-		Decrypt.OpenFile(FilePath);
-		Decrypt.Decrypt();
-
-		Fini->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
-		Decrypt.ReleaseOutputStr();
-	}
-	else {
-		Fini->LoadFile(FilePath);
-	}
+	LoadFile(rdPtr->ini, FilePath, Key);
 
 	return 0;
 }
 
-short WINAPI DLLExport SaveToFile(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-	
+short WINAPI DLLExport Action_LinkLocalization(LPRDATA rdPtr, long param1, long param2) {
+	const auto pObject = (LPRDATA)LproFromFixed(rdPtr, param1);
+
+	rdPtr->pLocalization->LinkObject(pObject);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_LoadLocalization(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
-	
-	SaveFile(Fini, FilePath, Key);
 
-	////Key has value, try to Encry
-	//if (!StrEmpty(Key)) {
-	//	std::string Output;
-	//	Fini->Save(Output);
-
-	//	Encryption Encrypt;
-	//	Encrypt.GenerateKey(Key);
-	//	
-	//	Encrypt.SetEncryptStr(Output);
-	//	Encrypt.Encrypt();
-
-	//	Encrypt.SaveFile(FilePath);
-	//}
-	//else {
-	//	Fini->SaveFile(FilePath, false);
-	//}	
+	rdPtr->pLocalization->LoadFile(FilePath, Key);	
 
 	return 0;
 }
 
-short WINAPI DLLExport SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {
-	//invalid(0);
-	if (!valid(Fini)) {
-		init_ini();
-	}
+short WINAPI DLLExport Action_SetLanguageCode(LPRDATA rdPtr, long param1, long param2) {
+	LPCTSTR pLanguageCode = (LPCTSTR)param1;
+
+	rdPtr->pLocalization->SetLanguageCode(pLanguageCode);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2) {	
+	LPCTSTR FilePath = (LPCTSTR)param1;
+	LPCTSTR Key = (LPCTSTR)param2;
+
+	InvalidIni(0);
 	
+	SaveFile(rdPtr->ini, FilePath, Key);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetSecItem_Value(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	
+
+	if (rdPtr->ini == nullptr) {
+		InitIni(rdPtr);
+	}
+
 	InvalidSecItem(0);
 
 	long p = CNC_GetFloatParameter(rdPtr);
 	float Value = *(float*)&p;
 
-	LPTSTR String = new WCHAR[FLOAT_MAX];
-
-	//Save int
-	if (Value == (int)Value) {
-		swprintf(String, FLOAT_MAX, _T("%d"), (int)Value);
-	}
-	//Save float
-	else {
-		swprintf(String, FLOAT_MAX, _T("%f"), Value);
-	}
-
-	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String)) || rdPtr->Modified;
-
-	delete[] String;
+	rdPtr->Modified = Modified(rdPtr->ini->SetValue(Section, Item,
+		std::format(L"{}", Value).c_str()))
+		|| rdPtr->Modified;
 
 	return 0;
 }
 
-short WINAPI DLLExport SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {
-	//invalid(0);
-	if (!valid(Fini)) {
-		init_ini();
-	}
-	
+short WINAPI DLLExport Action_SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+	
+	if (rdPtr->ini == nullptr) {
+		InitIni(rdPtr);
+	}
 
 	InvalidSecItem(0);
 
 	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
 
-	rdPtr->Modified = Modified(Fini->SetValue(Section, Item, String)) || rdPtr->Modified;
+	rdPtr->Modified = Modified(rdPtr->ini->SetValue(Section, Item, String))
+		|| rdPtr->Modified;
 
 	return 0;
 }
 
-short WINAPI DLLExport CopySection(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
+short WINAPI DLLExport Action_CopySection(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Src = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Des = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	bool DeleteSrc = (bool)CNC_GetIntParameter(rdPtr);
 
+	InvalidIni(0);
+
 	if (StrEmpty(Src) || StrEmpty(Des)) {
 		return 0;
 	}
 
-	INILIST Temp;
-	Fini->GetAllKeys(Src, Temp);
-	
-	rdPtr->Modified = (Temp.size() != 0) || rdPtr->Modified;
+	INILIST items;
+	rdPtr->ini->GetAllKeys(Src, items);
 
-	INIIT it;
-	for (it = Temp.begin(); it != Temp.end(); ++it) {
+	rdPtr->Modified = !items.empty() || rdPtr->Modified;
+
+	for (const auto & it: items) {
 		//need not to check if the value is string or number to set default value, cause src is valid
-		Fini->SetValue(Des, it->pItem, Fini->GetValue(Src, it->pItem));
+		rdPtr->ini->SetValue(Des, it.pItem, rdPtr->ini->GetValue(Src, it.pItem));
 	}
 
 	if (DeleteSrc) {
-		Fini->Delete(Src, nullptr, true);
+		rdPtr->ini->Delete(Src, nullptr, true);
 	}
 
 	return 0;
 }
 
-short WINAPI DLLExport DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
+short WINAPI DLLExport Action_DeleteSecItem(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
+	InvalidIni(0);
 	InvalidSec(0);
 
 	if (StrEqu(Item, Empty_Str)) {
 		Item = nullptr;
 	}
 
-	rdPtr->Modified = Fini->Delete(Section, Item, true) || rdPtr->Modified;
+	rdPtr->Modified = rdPtr->ini->Delete(Section, Item, true)
+		|| rdPtr->Modified;
 
 	return 0;
 }
 
-short WINAPI DLLExport Iterate_Section(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
+short WINAPI DLLExport Action_Iterate_Section(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	NewStr(rdPtr->SecLoopName, LoopName);
 
-	INILIST Temp;
-	Fini->GetAllSections(Temp);
+	InvalidIni(0);
 
-	INIIT it;
-	for (it = Temp.begin(); it != Temp.end(); ++it) {
-		NewStr(rdPtr->CurrentSec, it->pItem);
+	*rdPtr->SecLoopName = LoopName;
+
+	INILIST sections;
+	rdPtr->ini->GetAllSections(sections);
+
+	for (const auto& it : sections) {
+		*rdPtr->CurrentSec = it.pItem;
 		CallEvent(ONIT_SEC);
 	}
 
 	return 0;
 }
 
-short WINAPI DLLExport Iterate_Item(LPRDATA rdPtr, long param1, long param2) {
-	invalid(0);
-
+short WINAPI DLLExport Action_Iterate_Item(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR SectionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
+	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+	InvalidIni(0);
 	
-	NewStr(rdPtr->ItemLoopName, LoopName);	
+	*rdPtr->ItemLoopName = LoopName;
 
 	if (!StrEqu(SectionName, Empty_Str)) {
-		if (!valid(rdPtr->CurrentSec) || !StrEqu(SectionName, rdPtr->CurrentSec)) {
-			NewStr(rdPtr->CurrentSec, SectionName);
-		}
+		*rdPtr->CurrentSec = SectionName;
 	}
 
-	INILIST Temp;
-	Fini->GetAllKeys(rdPtr->CurrentSec, Temp);
+	INILIST items;
+	rdPtr->ini->GetAllKeys(rdPtr->CurrentSec->c_str(), items);
 
-	INIIT it;
-	for (it = Temp.begin(); it != Temp.end(); ++it) {
-		NewStr(rdPtr->CurrentItem, it->pItem);
+	for (const auto& it: items) {
+		*rdPtr->CurrentItem = it.pItem;
 		CallEvent(ONIT_ITEM);
 	}
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {	
+short WINAPI DLLExport Action_LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {	
 	size_t fixed = (size_t)CNC_GetParameter(rdPtr);
 	LPCTSTR base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -401,88 +362,74 @@ short WINAPI DLLExport LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {
 
 	size_t offset = GetRVOffset(rdPtr, object);
 
-	if (offset == -1) {
+	if (offset == static_cast<size_t>(-1)) {
 		return 0;
 	}
 
-	try {
-		rdPtr->pB64->base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		auto buffer = buf;
 
-	auto sz = rdPtr->pB64->base64_decode_size();
+		if (rdPtr->cf25p) {
+			rVal* pRV = (rVal*)(((BYTE*)object) + offset);
 
-	BYTE* buf = new BYTE [sz];
-	memset(buf, 0, sz);
+			pRV->rvValueFlags = ((long*)buffer)[0];
+			buffer += sizeof(long);
 
-	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
-
-	BYTE* buffer = buf;
-
-	if (rdPtr->cf25p) {
-		rVal* pRV = (rVal*)(((BYTE*)object) + offset);
-
-		pRV->rvValueFlags = ((long*)buffer)[0];
-		buffer += sizeof(long);
-
-		for (int i = 0; i < pRV->rvNumberOfValues; i++) {
-			pRV->rvpValues[i] = ((CValue*)buffer)[0];
-			buffer += sizeof(CValue);
-		}
-
-		for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
-			if (((wchar_t*)buffer)[0] == L'\0') {
-				pRV->rvpStrings[i] = nullptr;
-
-				buffer += sizeof(wchar_t);
+			for (int i = 0; i < pRV->rvNumberOfValues; i++) {
+				pRV->rvpValues[i] = ((CValue*)buffer)[0];
+				buffer += sizeof(CValue);
 			}
-			else {
-				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
 
-				pRV->rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
-				wcscpy_s(pRV->rvpStrings[i], strlen, (wchar_t*)buffer);
+			for (int i = 0; i < pRV->rvNumberOfStrings; i++) {
+				if (((wchar_t*)buffer)[0] == L'\0') {
+					pRV->rvpStrings[i] = nullptr;
 
-				buffer += sizeof(wchar_t) * strlen;
+					buffer += sizeof(wchar_t);
+				}
+				else {
+					size_t strlen = (wcslen((wchar_t*)buffer) + 1);
+
+					pRV->rvpStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+					wcscpy_s(pRV->rvpStrings[i], strlen, (wchar_t*)buffer);
+
+					buffer += sizeof(wchar_t) * strlen;
+				}
 			}
 		}
-	}
-	else {
-		auto pRV = (tagRV20U*)(((BYTE*)object) + offset);
+		else {
+			auto pRV = (tagRV20U*)(((BYTE*)object) + offset);
 
-		pRV->rvValueFlags= ((long*)buffer)[0];
-		buffer += sizeof(long);
+			pRV->rvValueFlags = ((long*)buffer)[0];
+			buffer += sizeof(long);
 
-		for (int i = 0; i < VALUES_NUMBEROF_ALTERABLE; i++) {
-			pRV->rvpValues[i] = ((CValue*)buffer)[0];
-			buffer += sizeof(CValue);
-		}
-
-		for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
-			if (((wchar_t*)buffer)[0] == L'\0') {
-				pRV->rvStrings[i] = nullptr;
-
-				buffer += sizeof(wchar_t);
+			for (int i = 0; i < VALUES_NUMBEROF_ALTERABLE; i++) {
+				pRV->rvpValues[i] = ((CValue*)buffer)[0];
+				buffer += sizeof(CValue);
 			}
-			else {
-				size_t strlen = (wcslen((wchar_t*)buffer) + 1);
 
-				pRV->rvStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
-				wcscpy_s(pRV->rvStrings[i], strlen, (wchar_t*)buffer);
+			for (int i = 0; i < STRINGS_NUMBEROF_ALTERABLE; i++) {
+				if (((wchar_t*)buffer)[0] == L'\0') {
+					pRV->rvStrings[i] = nullptr;
 
-				buffer += sizeof(wchar_t) * strlen;
+					buffer += sizeof(wchar_t);
+				}
+				else {
+					size_t strlen = (wcslen((wchar_t*)buffer) + 1);
+
+					pRV->rvStrings[i] = (wchar_t*)mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, sizeof(wchar_t) * strlen);
+					wcscpy_s(pRV->rvStrings[i], strlen, (wchar_t*)buffer);
+
+					buffer += sizeof(wchar_t) * strlen;
+				}
 			}
+
 		}
-
-	}
-
-	delete[] buf;
+	});	
 
 	return 0;
 }
 
-short WINAPI DLLExport LoadPosition(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_LoadPosition(LPRDATA rdPtr, long param1, long param2) {
 	size_t fixed = (size_t)CNC_GetParameter(rdPtr);
 	LPCTSTR base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
@@ -492,26 +439,12 @@ short WINAPI DLLExport LoadPosition(LPRDATA rdPtr, long param1, long param2) {
 		return 0;
 	}
 
-	try {
-		rdPtr->pB64->base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		const auto buffer = reinterpret_cast<const int*>(buf);
 
-	auto sz = rdPtr->pB64->base64_decode_size();
-
-	BYTE* buf = new BYTE[sz];
-	memset(buf, 0, sz);
-
-	rdPtr->pB64->base64_decode_to_pointer(buf, sz);
-
-	int* buffer = (int*)buf;
-
-	object->roHo.hoX = buffer[0];
-	object->roHo.hoY = buffer[1];
-
-	delete[] buf;
+		object->roHo.hoX = buffer[0];
+		object->roHo.hoY = buffer[1];
+	});	
 
 	return 0;
 }
@@ -522,100 +455,69 @@ short WINAPI DLLExport LoadPosition(LPRDATA rdPtr, long param1, long param2) {
 // 
 // ============================================================================
 
-long WINAPI DLLExport GetSecItem_Value(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetSecItem_Value(LPRDATA rdPtr, long param1) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 	
-	invalid(0);
+	InvalidIni(0);
 	InvalidSecItem(0);
 		
-	LPCTSTR String = Fini->GetValue(Section, Item, Default_Val);
+	LPCTSTR String = rdPtr->ini->GetValue(Section, Item, Default_Val);
 
-	return ReturnFloat(_stof(std::wstring(String)));
+	return ReturnFloat(_stof(String));
 }
 
-long WINAPI DLLExport GetSecItem_String(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetSecItem_String(LPRDATA rdPtr, long param1) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	invalid((long)Default_Str);	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	InvalidIni((long)Default_Str);	
 	InvalidSecItem((long)Default_Str);
 
-	NewStr(OStr, Fini->GetValue(Section, Item, Default_Str));
-
-	//Setting the HOF_STRING flag lets MMF know that you are a string.
-	rdPtr->rHo.hoFlags |= HOF_STRING;
+	const auto pToFind = rdPtr->ini->GetValue(Section, Item, Default_Str);
+	*rdPtr->Str =  rdPtr->pLocalization->GetLocalization(pToFind);
 	
 	//This returns a pointer to the string for MMF.
-	return (long)OStr;
+	return (long)rdPtr->Str->c_str();
 }
 
-long WINAPI DLLExport GetCurrentSection(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentSection(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return valid(rdPtr->CurrentSec) ? (long)rdPtr->CurrentSec : (long)Empty_Str;
+	return (long)rdPtr->CurrentSec->c_str();
 }
 
-long WINAPI DLLExport GetCurrentItem(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentItem(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return valid(rdPtr->CurrentItem) ? (long)rdPtr->CurrentItem : (long)Empty_Str;
+	return (long)rdPtr->CurrentItem->c_str();
 }
 
-long WINAPI DLLExport SaveToString(LPRDATA rdPtr, long param1) {
-	//LPCTSTR Key = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
-	//std::string Output;
-	//
-	////Key has value, try to Encry
-	//if (!StrEmpty(Key)) {		
-	//	std::string Temp;
-	//	Fini->Save(Temp);
-
-	//	Encryption Encrypt;
-	//	Encrypt.GenerateKey(Key);
-
-	//	Encrypt.SetEncryptStr(Temp);
-	//	Encrypt.Encrypt();
-	//			
-	//	Output = Encrypt.GetOutputStr();
-
-	//	wchar_t* Result = new wchar_t[(int)ceil(Output.length() / 2)];
-	//	memcpy(Result, Output.c_str(), Output.length());
-
-	//	NewStr(OStr, Result);
-	//	
-	//	delete[] Result;
-	//}
-	//else {
-	//	Fini->Save(Output);
-	//	NewStr(OStr, to_wide_string(Output).c_str());
-	//}
-
+long WINAPI DLLExport Expression_SaveToString(LPRDATA rdPtr, long param1) {
 	std::string Output;
-	Fini->Save(Output);
-	
-	NewStr(OStr, to_wide_string(Output).c_str());
+	rdPtr->ini->Save(Output);
+
+	*rdPtr->Str = to_wide_string(Output);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)OStr;
+	return (long)rdPtr->Str->c_str();
 }
 
-long WINAPI DLLExport SaveToBase64(LPRDATA rdPtr, long param1) {	
+long WINAPI DLLExport Expression_SaveToBase64(LPRDATA rdPtr, long param1) {
 	std::string Output;
-	Fini->Save(Output);
+	rdPtr->ini->Save(Output);
 
-	char* buf = nullptr;
-	auto compressSz = rdPtr->CompressToBuffer(Output, buf);
-
-	//*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(&Output[0]), Output.length());
-	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)(Output.data()), Output.length());
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -624,16 +526,79 @@ long WINAPI DLLExport SaveToBase64(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->b64Str->c_str();
 }
 
-long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_SaveToCompressedBase64(LPRDATA rdPtr, long param1) {	
+	std::string Output;
+	rdPtr->ini->Save(Output);
+
+	char* buf = nullptr;
+	const auto compressSz = rdPtr->CompressToBuffer(Output, buf);
+
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
+
+	delete[] buf;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
+long WINAPI DLLExport Expression_SaveStringToBase64(LPRDATA rdPtr, long param1) {
+	std::string str = to_byte_string((LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING));
+	const auto bCompress = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto pData = reinterpret_cast<BYTE*>(str.data());
+	const auto dataSz = str.length();
+
+	if(!bCompress) {
+		*rdPtr->b64Str = rdPtr->pB64->base64_encode(pData, dataSz);
+	}else {
+		char* buf = nullptr;
+		const auto compressSz = rdPtr->CompressToBuffer(str, buf);
+
+		*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
+
+		delete[] buf;
+	}
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
+long WINAPI DLLExport Expression_LoadStringFromBase64(LPRDATA rdPtr, long param1) {
+	const std::wstring base64 = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto bCompress = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		if (!bCompress) {			
+			*rdPtr->b64Str = to_wide_string(std::string((char*)buf, sz));
+		}
+		else {
+			*rdPtr->b64Str = to_wide_string(rdPtr->DeCompressToString((char*)buf, sz));
+		}
+	});
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->b64Str->c_str();
+}
+
+long WINAPI DLLExport Expression_SaveAlterValue(LPRDATA rdPtr, long param1) {
 	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	LPRO object = LproFromFixed(rdPtr, fixed);
 
 	size_t offset = GetRVOffset(rdPtr, object);
 
-	if (offset == -1) {
+	if (offset == static_cast<size_t>(-1)) {
 		rdPtr->rHo.hoFlags |= HOF_STRING;
-		return (long)nullptr;
+		return (long)Empty_Str;
 	}
 
 	if (rdPtr->cf25p) {
@@ -748,7 +713,7 @@ long WINAPI DLLExport SaveAlterValue(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->b64Str->c_str();
 }
 
-long WINAPI DLLExport SavePosition(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_SavePosition(LPRDATA rdPtr, long param1) {
 	size_t fixed = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	LPRO object = LproFromFixed(rdPtr, fixed);
@@ -788,42 +753,52 @@ long WINAPI DLLExport SavePosition(LPRDATA rdPtr, long param1) {
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			OnIterate_Section,
-			OnIterate_Item,
+			Condition_OnIterate_Section,
+			Condition_OnIterate_Item,
 
-			SecItemHasValue,
+			Condition_SecItemHasValue,
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			New,
-			Release,
-			LoadFromFile,
-			SaveToFile,
-			SetSecItem_Value,
-			SetSecItem_String,
-			DeleteSecItem,
-			Iterate_Section,
-			Iterate_Item,
-			LoadFromString,
-			SetAutoSaveOn,
-			SetAutoSaveOff,
-			CopySection,
-			LoadAlterValue,
-			LoadPosition,
-			LoadFromBase64,
+			Action_New,
+			Action_Release,
+			Action_LoadFromFile,
+			Action_SaveToFile,
+			Action_SetSecItem_Value,
+			Action_SetSecItem_String,
+			Action_DeleteSecItem,
+			Action_Iterate_Section,
+			Action_Iterate_Item,
+			Action_LoadFromString,
+			Action_SetAutoSaveOn,
+			Action_SetAutoSaveOff,
+			Action_CopySection,
+			Action_LoadAlterValue,
+			Action_LoadPosition,
+			Action_LoadFromCompressedBase64,
+			Action_LoadLocalization,
+			Action_SetLanguageCode,
+			Action_LinkLocalization,
+			Action_LoadFromBase64,
+
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			GetSecItem_Value,
-			GetSecItem_String,
-			GetCurrentSection,
-			GetCurrentItem,
-			SaveToString,
-			SaveAlterValue,
-			SavePosition,
-			SaveToBase64,
+			Expression_GetSecItem_Value,
+			Expression_GetSecItem_String,
+			Expression_GetCurrentSection,
+			Expression_GetCurrentItem,
+			Expression_SaveToString,
+			Expression_SaveAlterValue,
+			Expression_SavePosition,
+			Expression_SaveToCompressedBase64,
+			Expression_SaveToBase64,
+
+			Expression_SaveStringToBase64,
+			Expression_LoadStringFromBase64,
+
 			0
 			};

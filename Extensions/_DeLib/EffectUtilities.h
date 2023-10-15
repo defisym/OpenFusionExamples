@@ -22,55 +22,33 @@ constexpr auto additionalLayerSize = 8;
 constexpr auto additionalLayerSize = 0;
 #endif
 
-//#define _ENABLE_TEST_FEATURE
-
-// get Tint
-// ((CEffectEx*)effectParam)->GetRGBA();
+#define MV_ROUTINE					//use mv routine to avoid manual buffer allocate
+//#define ENABLE_TEST_FEATURE
 
 class EffectUtilities {
 private:
-	struct EffectParamData {
-		// point to app data, need not to release
-		LPCSTR pName = nullptr;
-
-		// data need to release
-		BYTE type = 0;
-		
-		std::wstring effectParamName;
-		EFFECTPARAM effectDefaultParam;
-	};
-
-	struct EffectData {
-		// point to app data, need not to release
-		EffectHdr* pHdr = nullptr;
-		LPCSTR pName = nullptr;
-		LPBYTE pData = 0;
-
-		LPBYTE pParamType = nullptr;
-		LPBYTE pParamName = nullptr;
-
-		// data need to release
-		bool bDefaultParam = false;
-
-		std::wstring effectName;		
-		std::vector<EffectParamData> effectParam;
-	};
+	// ----------------
+	// Runtime data
+	// ----------------
 
 	LPRDATA rdPtr = nullptr;
 	LPRH rhPtr = nullptr;
-
 	void* ptrWin = nullptr;
-	
+
+#ifndef MV_ROUTINE
 	bool bD3D11 = false;
+	ID3D11Device* pDevice = nullptr;
 
-//#define _GLOBALBUFFER
-
-#ifdef _GLOBALBUFFER
-	ID3D11Buffer* pHWAParamBuffer = nullptr;
-	ID3D11Buffer* pHWAParamBufferPixelSize = nullptr;
+	inline ID3D11Device* GetD3D11Device() {
+		return this->bD3D11
+			? (ID3D11Device*)::GetD3DDevice(rdPtr)
+			: nullptr;
+	}
 #endif
 
-	ID3D11Device* pDevice = nullptr;
+	// ----------------
+	// Image param ref
+	// ----------------
 
 	struct EffectRecord {
 		CEffectEx* pEffect = nullptr;
@@ -78,6 +56,10 @@ private:
 	};
 
 	std::map<LPSURFACE, std::vector<EffectRecord>> effectImageParamRecord;
+
+	// ----------------
+	// Backdrop
+	// ----------------
 
 	using BackdropVec = std::vector<LPLO>;
 
@@ -113,6 +95,37 @@ private:
 
 	using BackdropEffectVec = std::vector<BackdropEffect>;
 
+	// ----------------
+	// Effect data
+	// ----------------
+
+	struct EffectParamData {
+		// point to app data, need not to release
+		LPCSTR pName = nullptr;
+
+		// data need to release
+		BYTE type = 0;
+
+		std::wstring effectParamName;
+		EFFECTPARAM effectDefaultParam;
+	};
+
+	struct EffectData {
+		// point to app data, need not to release
+		EffectHdr* pHdr = nullptr;
+		LPCSTR pName = nullptr;
+		LPBYTE pData = 0;
+
+		LPBYTE pParamType = nullptr;
+		LPBYTE pParamName = nullptr;
+
+		// data need to release
+		bool bDefaultParam = false;
+
+		std::wstring effectName;
+		std::vector<EffectParamData> effectParam;
+	};
+
 	std::vector<EffectData> effectData;
 	
 	std::vector<LPSURFACE> effectImageParamData;
@@ -126,46 +139,13 @@ private:
 			});
 	}
 
-#ifdef _ENABLE_TEST_FEATURE
-	inline void LoadEffect(CInputFile* pFile, std::wstring& shaderName, std::function<size_t()> paramCallback) {
-		auto fileLenth = pFile->GetLength();
-		auto fileBuf = pFile->GetBuffer(fileLenth);
+#ifndef MV_ROUTINE
+	//#define _GLOBALBUFFER
 
-		EffectData data = { 0 };
-
-		data.pHdr = new EffectHdr;
-		
-		data.pHdr->dwEffectDataSize = fileLenth;
-		data.pHdr->dwOptions = 512;		//why?
-
-		data.effectName = shaderName;
-
-		auto shaderNameA = ConvertWStrToStr(shaderName);
-		auto len = shaderNameA.length();
-
-		auto nameBuf = new char[len+1];
-		memset(nameBuf, '\0', len+1);
-		memcpy(nameBuf, shaderNameA.c_str(), len);
-
-		data.pName = nameBuf;
-
-		auto dataBuf = new char[fileLenth];
-		memset(dataBuf, 0, fileLenth);
-		memcpy(dataBuf, fileBuf, fileLenth);
-
-		data.pData = (LPBYTE)dataBuf;
-
-		pFile->FreeBuffer(fileBuf);
-
-		this->effectData.emplace_back(data);
-	}
+#ifdef _GLOBALBUFFER
+	ID3D11Buffer* pHWAParamBuffer = nullptr;
+	ID3D11Buffer* pHWAParamBufferPixelSize = nullptr;
 #endif
-
-	inline ID3D11Device* GetD3D11Device() {
-		return this->bD3D11
-			? (ID3D11Device*)::GetD3DDevice(rdPtr)
-			: nullptr;
-	}
 
 	// ref
 	// https://learn.microsoft.com/zh-cn/windows/win32/api/d3d11/nf-d3d11-id3d11device-createbuffer	
@@ -196,6 +176,42 @@ private:
 
 		return result == S_OK;
 	}
+#endif
+
+#ifdef ENABLE_TEST_FEATURE
+	inline void LoadEffect(CInputFile* pFile, std::wstring& shaderName, std::function<size_t()> paramCallback) {
+		auto fileLenth = pFile->GetLength();
+		auto fileBuf = pFile->GetBuffer(fileLenth);
+
+		EffectData data = { 0 };
+
+		data.pHdr = new EffectHdr;
+
+		data.pHdr->dwEffectDataSize = fileLenth;
+		data.pHdr->dwOptions = 512;		//why?
+
+		data.effectName = shaderName;
+
+		auto shaderNameA = ConvertWStrToStr(shaderName);
+		auto len = shaderNameA.length();
+
+		auto nameBuf = new char[len + 1];
+		memset(nameBuf, '\0', len + 1);
+		memcpy(nameBuf, shaderNameA.c_str(), len);
+
+		data.pName = nameBuf;
+
+		auto dataBuf = new char[fileLenth];
+		memset(dataBuf, 0, fileLenth);
+		memcpy(dataBuf, fileBuf, fileLenth);
+
+		data.pData = (LPBYTE)dataBuf;
+
+		pFile->FreeBuffer(fileBuf);
+
+		this->effectData.emplace_back(data);
+	}
+#endif
 
 public:
 	EffectUtilities(LPRDATA rdPtr) {
@@ -203,8 +219,8 @@ public:
 		this->rhPtr = rdPtr->rHo.hoAdRunHeader;
 		this->ptrWin = rdPtr->rHo.hoAdRunHeader->rhIdEditWin;
 
-		this->bD3D11 = PreMulAlpha(rdPtr);
-
+#ifndef MV_ROUTINE
+		this->bD3D11 = D3D11(rdPtr);
 		this->pDevice = GetD3D11Device();
 
 #ifdef _GLOBALBUFFER
@@ -219,6 +235,7 @@ public:
 		if (ret == FALSE) {
 			return;
 		}
+#endif
 #endif
 
 		auto pEffectData = rdPtr->rHo.hoAdRunHeader->rhApp->m_pEffects;
@@ -287,7 +304,11 @@ public:
 		}
 	}
 
-	// update by itself
+	// ----------------
+	// Modify
+	// ----------------
+
+	// update by object ModifSpriteEffect itself
 	inline bool ModifSpriteEffect(LPRO pObject) {
 		return ModifSpriteEffect(pObject->roc.rcSprite);
 	}
@@ -298,8 +319,9 @@ public:
 		return true;
 	}
 
+	// for active object only, other objects need to call low level function
 	inline static bool ModifSpriteEffect(LPRO pObject
-		,std::function<bool(DWORD& effect, LPARAM& effectParam)> modifier) {
+		, const std::function<bool(DWORD& effect, LPARAM& effectParam)>& modifier) {
 		if (!(pObject->roHo.hoOEFlags & OEFLAG_SPRITES)) {
 			return false;
 		}
@@ -321,11 +343,15 @@ public:
 		// should be called to update param
 		if (bModify) {
 			auto ret = ::ModifSpriteEffect(ptrWin, pSpr
-				, effect, effectParam);
+				, effect, effectParam);			
 		}
 
 		return bModify;
 	}
+
+	// ----------------
+	// Image param ref
+	// ----------------
 
 	inline void RecordEffectImageParam(LPSURFACE pSf, CEffectEx* pEffect, int index) {
 		if (index == -1) {
@@ -397,7 +423,17 @@ public:
 		}
 	}
 
-	// https://www.cnblogs.com/chechen/p/10259592.html
+	// ----------------
+	// Shader
+	// ----------------
+
+	// ------------
+	// Valid
+	// ------------
+
+	//https://learn.microsoft.com/en-us/cpp/cpp/structured-exception-handling-c-cpp?view=msvc-160
+	// enable / EHa option in the project settings.
+	// See Project Properties->C / C++->Code Generation->Modify the Enable C++ Exceptions to "Yes With SEH Exceptions"
 	inline static bool CEffectExValid(CEffectEx* pEffect) {		
 		__try {
 			auto flags = pEffect->GetFlags();
@@ -418,24 +454,11 @@ public:
 		return (effect & EFFECT_MASK) == BOP_EFFECTEX;
 	}
 
-	inline static CEffectEx* GetEffect(DWORD effect, LPARAM effectParam) {
-		if (!EffectShader(effect)) {
-			return nullptr;
-		}
+	// ------------
+	// Get
+	// ------------
 
-		auto pEP = (CEffectEx*)effectParam;
-
-		return pEP;
-	}
-
-	inline static CEffectEx* GetEffect(rSpr& ros) {
-		return GetEffect(ros.rsEffect, ros.rsEffectParam);
-	}
-
-	inline static CEffectEx* GetEffect(LPRO pObject) {
-		return GetEffect(pObject->ros);
-	}
-
+	// backdrop
 	inline BackdropEffectVec GetEffect(const std::wstring& backDropName) {
 		BackdropEffectVec ret;
 
@@ -457,6 +480,42 @@ public:
 		return ret;
 	}
 
+	// object
+	inline static CEffectEx* GetEffect(LPRO pObject) {
+		auto flags = pObject->roHo.hoOEFlags;
+
+		if (!(flags & OEFLAG_SPRITES)) {
+			return nullptr;
+		}
+
+		if(!(pObject->ros.rsFlags & RSFLAG_CREATEDEFFECT)) {
+			return nullptr;
+		};
+
+		return GetEffect(pObject->ros);
+	}
+
+	// overload
+	inline static CEffectEx* GetEffect(rSpr& ros) {
+		return GetEffect(ros.rsEffect, ros.rsEffectParam);
+	}
+
+	// core
+	inline static CEffectEx* GetEffect(DWORD effect, LPARAM effectParam) {
+		if (!EffectShader(effect)) {
+			return nullptr;
+		}
+
+		auto pEP = (CEffectEx*)effectParam;
+
+		return pEP;
+	}
+			
+	// ------------
+	// Set
+	// ------------
+
+	// backdrop
 	inline bool SetEffect(const std::wstring& backDropName, const std::wstring& effectName) {
 		auto pLO = GetBackdropLO(backDropName);
 		for (auto& it : pLO) {
@@ -474,9 +533,8 @@ public:
 
 		return true;	
 	}
-	
-	// shader with param disappear -> need to initialize param buffer
-	// workaround: create an object attached a shader with param to let fusion init it
+
+	// object
 	inline bool SetEffect(LPRO pObject, const std::wstring& effectName) {
 		auto flags = pObject->roHo.hoOEFlags;
 
@@ -497,16 +555,47 @@ public:
 		return ret;
 	}
 
+	// overload
 	inline bool SetEffect(rSpr& ros, const std::wstring& effectName) {
 		return SetEffect(ros.rsEffect, ros.rsEffectParam, effectName);
 	}
-	
+
+	// core
 	inline bool SetEffect(DWORD& effect, LPARAM& effectParam, const std::wstring& effectName) {
+#ifdef MV_ROUTINE	
+		if (EffectShader(effect)) {
+			const auto mV = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv;
+			mvDeleteEffect(mV, effect, effectParam);
+
+			// reset to BOP_COPY == 0
+			effect = ((effect >> 16) << 16);
+			effectParam = 0;
+		}
+
+		auto it = GetEffectData(effectName);
+
+		if (it == effectData.end()) {
+			return false;
+		}
+
+		// keep flags
+		const auto flags = effect & 0xFFFF0000;
+		const auto mV = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv;
+		const auto bCreate = mvCreateEffect(mV, effectName.c_str(), (LPINT)&effect, (LPARAM*)&effectParam);
+		SetDefaultParam((CEffectEx*)effectParam, it);
+
+		effect |= flags;
+
+		return true;
+#else
 		if (EffectShader(effect)) {
 			// reset to BOP_COPY == 0
 			effect = ((effect >> 16) << 16);
 
 			auto pOldEffect = ((CEffectEx*)(effectParam));
+
+			// shader with param disappear -> need to initialize param buffer
+			// workaround: create an object attached a shader with param to let fusion init it
 
 			// need not to release?
 			//https://stackoverflow.com/questions/33884711/release-memory-from-id3d11devicecreatebuffer
@@ -524,7 +613,7 @@ public:
 			DeleteEffect((CEffectEx*)effectParam);
 			effectParam = 0;
 		}
-		
+
 		//auto size = sizeof(EffectParamsHdr);
 
 		auto it = GetEffectData(effectName);
@@ -532,7 +621,7 @@ public:
 		if (it == effectData.end()) {
 			return false;
 		}
-				
+
 		auto pEffect = NewEffect();
 		BOOL ret = TRUE;
 
@@ -541,12 +630,12 @@ public:
 
 		if (this->bD3D11) {
 			ret = pEffect->ExInitialize((LPBYTE)it->pData
-				, it->pHdr->dwEffectDataSize				
+				, it->pHdr->dwEffectDataSize
 				, lUserParam
 				, it->pHdr->dwOptions
 				, it->effectParam.size()
 				, (LPCSTR)it->pParamName
-				, it->pParamType);		
+				, it->pParamType);
 		}
 		else {
 			ret = pEffect->Initialize((LPCSTR)it->pData
@@ -581,14 +670,15 @@ public:
 		}
 
 		SetDefaultParam(pEffect, it);
-		
+
 		effect = effect | BOP_EFFECTEX;
 		effectParam = (LPARAM)pEffect;
 
 		return true;
+#endif
 	}
 
-#ifdef _ENABLE_TEST_FEATURE
+#ifdef ENABLE_TEST_FEATURE
 	inline void LoadEffect(std::wstring&& filePath
 		, std::wstring&& shaderName, std::function<size_t()> paramCallback) {
 		CInputBufFile file;
@@ -605,6 +695,14 @@ public:
 		LoadEffect(&file, shaderName, paramCallback);
 	}
 #endif
+
+	// ----------------
+	// Param
+	// ----------------
+
+	// ------------
+	// Get
+	// ------------
 
 	inline static int GetParamIndex(CEffectEx* pEffect, const std::wstring& paramName) {
 		if (pEffect == nullptr) {
@@ -628,9 +726,7 @@ public:
 		return pEffect->GetParamType(paramIndex);
 	}
 
-	using ParamIndexType = std::tuple<int, int>;
-
-	inline static ParamIndexType GetParamIndexType(CEffectEx* pEffect, const std::wstring& paramName) {
+	inline static auto GetParamIndexType(CEffectEx* pEffect, const std::wstring& paramName) {
 		if (pEffect == nullptr) {
 			return std::make_tuple(-1,-1);
 		}
@@ -640,6 +736,10 @@ public:
 
 		return std::make_tuple(paramIndex, paramType);
 	}
+
+	// ------------
+	// Set
+	// ------------
 
 	inline static void SetParamCore(CEffectEx* pEffect, int paramIndex, int paramType, void* pParam) {
 		switch (paramType)
@@ -714,7 +814,7 @@ public:
 			LPSURFACE pLocalSf = nullptr;
 
 			if (IsHWA(pInputSf)) {
-				pLocalSf = CreateCloneSurface(pInputSf);
+				pLocalSf = CreateCloneSurface(rdPtr, pInputSf);
 			}
 			else {
 				pLocalSf = ConvertHWATexture(rdPtr, pInputSf);
@@ -733,7 +833,9 @@ public:
 		}
 	}
 
-	using ParamCallBack = std::function<void*(const std::wstring&, EFFECTPARAM&)>;	
+	// ------------
+	// Default
+	// ------------
 
 	// update here
 	//void* pParam = nullptr;
@@ -742,7 +844,9 @@ public:
 	//	return pParam;	
 	//	});
 
-	inline void UpdateDefaultParam(const std::wstring& effectName, ParamCallBack callBack) {
+	using ParamCallBack = std::function<void* (const std::wstring&, EFFECTPARAM&)>;
+
+	inline void UpdateDefaultParam(const std::wstring& effectName, const ParamCallBack& callBack) {
 		auto it = GetEffectData(effectName);
 
 		if (it == effectData.end()) {
@@ -789,7 +893,7 @@ public:
 		}
 	}
 
-	inline void SetDefaultParam(CEffectEx* pEffect, EffectIt it) {
+	inline void SetDefaultParam(CEffectEx* pEffect, const EffectIt& it) {
 		if (it == effectData.end()) {
 			return;
 		}
@@ -807,6 +911,14 @@ public:
 			SetParamCore(pEffect, i, curParam.type, pParam);
 		}
 	}		
+
+	// ----------------
+	// Coef
+	// ----------------
+
+	// ------------
+	// Alpha
+	// ------------
 
 	// https://community.clickteam.com/threads/110022-LPRO-Semi-Transparency-(for-HWA)?p=777502&viewfull=1#post777502
 	// BOP_RGBAFILTER -> alpha blending && RGB coef
@@ -852,7 +964,7 @@ public:
 
 	inline static bool SetAlpha(LPRO pObject, UCHAR alpha) {
 		return ModifSpriteEffect(pObject, [&](DWORD& effect, LPARAM& effectParam) {
-			return SetAlpha(effect, effectParam, alpha);;
+			return SetAlpha(effect, effectParam, alpha);
 			});
 	}
 
@@ -885,7 +997,7 @@ public:
 			break;
 		}
 		default: {
-			effect |= BOP_RGBAFILTER;
+			//effect |= BOP_RGBAFILTER;
 
 			if (effect & BOP_RGBAFILTER) {
 				// init
@@ -894,6 +1006,7 @@ public:
 				}
 
 				auto dwRGB = (DWORD)effectParam & 0x00FFFFFF;
+				//auto oldAlpha = GetAlpha(effect, effectParam);
 
 				auto newDwRGBA = ((255 - alpha) << 24) | dwRGB;
 
@@ -909,18 +1022,38 @@ public:
 		return false;
 	}
 
+	// ------------
+	// RGB Coef
+	// ------------
+
+	// --------
+	// Util
+	// --------
+
+	inline static auto GetRGB(DWORD dwRGB) {
+		auto R = static_cast<UCHAR>((dwRGB & 0xFF0000) >> 16);
+		auto G = static_cast<UCHAR>((dwRGB & 0xFF00) >> 8);
+		auto B = static_cast<UCHAR>(dwRGB & 0xFF);
+
+		return std::make_tuple(R, G, B);
+	}
+
 	inline static DWORD RGBToBGR(DWORD dwRGB) {
 		return BGRToRGB(dwRGB);
 	}
 
 	inline static DWORD BGRToRGB(DWORD dwBGR) {
-		UCHAR R = UCHAR(dwBGR & 0xFF);
-		UCHAR G = UCHAR((dwBGR & 0xFF00) >> 8);
-		UCHAR B = UCHAR((dwBGR & 0xFF0000) >> 16);
+		const auto& [B, G, R] = GetRGB(dwBGR);
 
-		return R << 16 | G << 8 | B;
+		return GetRGBCoef(R, G, B);
 	}
 
+	// --------
+	// Get
+	// --------
+
+	// Get Tint
+	// ((CEffectEx*)effectParam)->GetRGBA();
 	inline static DWORD GetRGBCoef(LPRO pObject) {
 		if (!(pObject->roHo.hoOEFlags & OEFLAG_SPRITES)) {
 			return 0;
@@ -937,14 +1070,14 @@ public:
 			auto pEffect = GetEffect(effect, effectParam);
 
 			if (pEffect != nullptr) {
-				return pEffect->GetRGBA() | 0x00FFFFFF;
+				return pEffect->GetRGBA() & 0x00FFFFFF;
 			}
 
 			break;
 		}
 		default: {
 			if (effect & BOP_RGBAFILTER) {
-				return (DWORD)effectParam | 0x00FFFFFF;
+				return (DWORD)effectParam & 0x00FFFFFF;
 			}
 
 			break;
@@ -954,9 +1087,17 @@ public:
 		return 0;
 	}
 
+	inline static DWORD GetRGBCoef(UCHAR r, UCHAR g, UCHAR b) {
+		return r << 16 | g << 8 | b;
+	}
+
+	// --------
+	// Set
+	// --------
+
 	inline static bool SetRGBCoef(LPRO pObject, DWORD coef) {
 		return ModifSpriteEffect(pObject, [&](DWORD& effect, LPARAM& effectParam) {
-			return SetRGBCoef(effect, effectParam, coef);;
+			return SetRGBCoef(effect, effectParam, coef);
 			});
 	}
 
@@ -984,7 +1125,7 @@ public:
 			break;
 		}
 		default: {
-			effect |= BOP_RGBAFILTER;
+			//effect |= BOP_RGBAFILTER;
 
 			if (effect & BOP_RGBAFILTER) {
 				// init

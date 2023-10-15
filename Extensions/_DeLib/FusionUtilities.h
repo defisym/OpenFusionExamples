@@ -1,3 +1,7 @@
+// ------------------------
+// Edittime & Runtime General
+// ------------------------
+
 #pragma once
 
 #include "GeneralDefinition.h"
@@ -130,43 +134,94 @@ inline size_t GetStructOffset(LPRDATA rdPtr, LPRO object, HeaderName headerName,
 
 // Usage: in General.cpp
 
-// HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr) {
-// 	HGLOBAL hgNew = NULL;
-
-// 	// V1->V2
-// 	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(OldEdPtr, hgNew, KCX_VERSION_V2, [](tagEDATA_V2* newEdPtr) {
-// 		newEdPtr->newData = newDataDefault;
-// 		});
-
-// 	// V3->V3
-//     UpdateEditData<tagEDATA_V2, tagEDATA_V3>(OldEdPtr, hgNew, KCX_VERSION_V3, [](tagEDATA_V3* newEdPtr) {
-// 		newEdPtr->newData = newDataDefault;
-// 		});
-
-//     ......
-
-// 	return hgNew;
-// }
+//HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far* mV, void __far* OldEdPtr) {
+//	HGLOBAL hgNew = nullptr;
+//
+//	// V1->V2
+//	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(GetOldEdPtr((tagEDATA_V1*)OldEdPtr, hgNew),
+//		hgNew,
+//		KCX_VERSION_V2,
+//		[] (const tagEDATA_V1* pOld, tagEDATA_V2* pNew) {
+//			// Copy old
+// 			pNew->oldData = pOld->oldData;
+//
+//			// Update new
+// 			pNew->newData = newDataDefault;
+//		});
+//
+//	// V2->V3
+//	UpdateEditData<tagEDATA_V2, tagEDATA_V3>(GetOldEdPtr((tagEDATA_V2*)OldEdPtr, hgNew),
+//		hgNew,
+//		KCX_VERSION_V3,
+//		[] (const tagEDATA_V2* pOld, tagEDATA_V3* pNew) {
+//			// Copy old
+// 			pNew->oldData = pOld->oldData;
+//
+//			// Update new
+// 			pNew->newData = newDataDefault;
+//	});
+// 
+//  ......
+//
+//	return hgNew;
+//}
 
 #include <functional>
 
-template<typename Old, typename New>
-inline void UpdateEditData(void __far* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion, std::function<void(New*)> updateFunc) {
-	if (((Old*)OldEdPtr)->eHeader.extVersion < targetVersion) {
-		if ((hgNew = GlobalAlloc(GPTR, sizeof(New))) != NULL) {
-			New* newEdPtr = (New*)GlobalLock(hgNew);
+template<typename EDATA>
+inline EDATA* GetOldEdPtr(EDATA* OldEdPtr, HGLOBAL& hgNew) {
+	return (EDATA*)(hgNew == nullptr ? OldEdPtr : hgNew);
+}
 
-			if (newEdPtr != nullptr) {
-				memcpy(&newEdPtr->eHeader, &((Old*)OldEdPtr)->eHeader, sizeof(extHeader));
-				newEdPtr->eHeader.extVersion = targetVersion;			// Update the version number
-				newEdPtr->eHeader.extSize = sizeof(New);				// Update the EDITDATA structure size
+// Update Core
+template<typename EDATA>
+inline void UpdateEditData(const extHeader* pEHeader, HGLOBAL& hgNew,
+	std::function<void(EDATA*)> updateFunc) {
+	if ((hgNew = GlobalAlloc(GPTR, sizeof(EDATA))) != NULL) {
+		auto newEdPtr = (EDATA*)GlobalLock(hgNew);
 
-				updateFunc(newEdPtr);
-			}
+		if (newEdPtr != nullptr) {
+			memcpy(&newEdPtr->eHeader, pEHeader, sizeof(extHeader));
+			newEdPtr->eHeader.extSize = sizeof(EDATA);				// Update the EDITDATA structure size			
 
-			GlobalUnlock(hgNew);
+			updateFunc(newEdPtr);
 		}
+
+		GlobalUnlock(hgNew);
 	}
+}
+
+// Update during development, doesn't check & update version
+template<typename EDATA>
+inline void UpdateEditData(const EDATA* OldEdPtr, HGLOBAL& hgNew,
+	std::function<void(EDATA*)> updateFunc) {
+	UpdateEditData<EDATA>(&OldEdPtr->eHeader, hgNew, updateFunc);
+}
+
+// General update, check & update version
+template<typename Old, typename New>
+inline bool UpdateEditData(const Old* OldEdPtr, HGLOBAL& hgNew, DWORD targetVersion,
+	std::function<void(const Old*, New*)> updateFunc) {
+	if (OldEdPtr->eHeader.extVersion >= targetVersion) {
+		return false;
+	}
+
+	// if OldEdPtr == hgNew, then it's a continual update
+	// free the OldEdPtr, as it's previous stage's  hgNew
+	const auto bFree = OldEdPtr == hgNew;
+
+	UpdateEditData<New>(&OldEdPtr->eHeader, hgNew, [&] (New* pNew) {
+		pNew->eHeader.extVersion = targetVersion;			// Update the version number
+
+		updateFunc(OldEdPtr, pNew);
+		});
+
+	// free
+	if (bFree) {
+		GlobalFree((HGLOBAL)OldEdPtr);
+	}
+
+	return true;
 }
 
 template<typename T>
@@ -177,6 +232,21 @@ inline void UpdateEditFlag(T& flags, const T& flag, bool bCheck) {
 	else {
 		flags &= ~flag;
 	}
+}
+
+// Update App props for SDL
+inline void SDL_UpdateAppProp(mv _far* mV, LPEDATA edPtr) {
+	const auto bRWM = mvGetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHENMINIMIZED);
+	const auto bRWR = mvGetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHILERESIZING);
+
+	if (bRWM && bRWR) {
+		return;
+	}
+	
+	MSGBOX(L"This object needs to enable \"Run when minimized\" & \"Run while resizing\".\nClick \"OK\" to set props automatically");
+
+	mvSetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHENMINIMIZED, TRUE);
+	mvSetAppPropCheck(mV, edPtr, PROPID_APP_RUNWHILERESIZING, TRUE);
 }
 
 // Cast anytype to fusion's expression return
@@ -234,7 +304,33 @@ constexpr auto INCOMPATIBLE_BUILDTYPE_HTML5_FINAL = 14;
 using disableItem = std::remove_const_t<decltype(INCOMPATIBLE_BUILDTYPE_WINDOWS_STANDALONE)>;
 using disableArray = std::vector<std::vector<disableItem>>;
 
+// Declaration in Edittime.cpp
 HMENU GetPopupMenu(short mn);
+
+inline void IterateMenu (HMENU hMenu, std::function<void(HMENU, int)> f) {
+	constexpr auto SUBMENU = -1;
+	constexpr auto SEPARATOR = 0;
+
+	std::function<void(HMENU)> iterateMenu_Func;
+
+	iterateMenu_Func = [&] (HMENU hMenu) {
+		auto nCount = GetMenuItemCount(hMenu);
+
+		for (int item = 0; item < nCount; item++) {
+			auto id = GetMenuItemID(hMenu, item);
+
+			if (id == SUBMENU) {
+				auto subMenu = GetSubMenu(hMenu, item);
+				iterateMenu_Func(subMenu);
+			}
+			else if (id != SEPARATOR) {
+				f(hMenu, id);
+			}
+		}
+	};
+
+	iterateMenu_Func(hMenu);
+};
 
 #define DISABLEALL  -1
 #define disableMenus_Empty {}
@@ -284,36 +380,11 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 			return std::find(lst.begin(), lst.end(), buildType) != lst.end();
 		};
 
-		auto iterateMenu = [] (HMENU hMenu, std::function<void(HMENU, int)> f) {
-			constexpr auto SUBMENU = -1;
-			constexpr auto SEPARATOR = 0;
-
-			std::function<void(HMENU)> iterateMenu_Func;
-
-			iterateMenu_Func = [&] (HMENU hMenu) {
-				auto nCount = GetMenuItemCount(hMenu);
-
-				for (int item = 0; item < nCount; item++) {
-					auto id = GetMenuItemID(hMenu, item);
-
-					if (id == SUBMENU) {
-						auto subMenu = GetSubMenu(hMenu, item);
-						iterateMenu_Func(subMenu);
-					}
-					else if (id != SEPARATOR) {
-						f(hMenu, id);
-					}
-				}
-			};
-
-			iterateMenu_Func(hMenu);
-		};
-
 		for (size_t platform = 0; platform < ic_V.size(); platform++) {
 			if (buildForPlatform(ic_V [platform])) {
 				if (!dM_V [platform].empty()
 					&& dM_V [platform][0] == DISABLEALL) {
-					iterateMenu(hMenu, [&] (HMENU hMenu, int id) {
+					IterateMenu(hMenu, [&] (HMENU hMenu, int id) {
 						if (dM_V [platform].size() == 1
 							|| std::find(dM_V [platform].begin() + 1, dM_V [platform].end(), id) == dM_V [platform].end()) {
 							EnableMenuItem(hMenu, id, MF_DISABLED | MF_GRAYED);
@@ -337,6 +408,18 @@ inline HMENU GetPlatformPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short 
 }
 
 #define GetPlatformPopupMenu(mn,disableMenus) GetPlatformPopupMenu(mV,oiPtr,edPtr,mn,disableMenus)
+
+inline HMENU GetFilteredPopupMenu(mv* mV, fpObjInfo oiPtr, LPEDATA edPtr, short mn, const std::vector<disableItem>& disableItems) {
+	auto hMenu = GetPopupMenu(mn);
+
+	for (auto& it : disableItems) {
+		EnableMenuItem(hMenu, it, MF_DISABLED | MF_GRAYED);
+	}
+
+	return hMenu;
+}
+
+#define GetFilteredPopupMenu(mn,disableItems) GetFilteredPopupMenu(mV,oiPtr,edPtr,mn,disableItems)
 
 #define _mvCalloc(size) mvCalloc(rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv, size)
 
@@ -375,15 +458,32 @@ inline bool PreMulAlpha(LPRDATA rdPtr) {
 	return GetAppOptions(rdPtr, AH2OPT_PREMULTIPLIEDALPHA);
 }
 
+inline auto WinGetSurface(LPRDATA rdPtr) {
+	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+
+	return wSurf;
+}
+
+inline auto WinGetSurfaceDriver(LPRDATA rdPtr) {
+	int sfDrv = WinGetSurface(rdPtr)->GetDriver();
+
+	return sfDrv;
+}
+
+inline bool D3D(int driver) {
+	return driver >= SD_D3D9;
+}
+
+inline bool D3D(LPRDATA rdPtr) {
+	return D3D(WinGetSurfaceDriver(rdPtr));
+}
+
 inline bool D3D11(int driver) {
 	return driver == SD_D3D11;
 }
 
-inline bool D3D11(LPRDATA rdPtr) {
-	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-	int sfDrv = wSurf->GetDriver();
-
-	return D3D11(sfDrv);
+inline bool D3D11(LPRDATA rdPtr) {	
+	return D3D11(WinGetSurfaceDriver(rdPtr));
 }
 
 //X : L M R
@@ -400,6 +500,48 @@ enum class HotSpotPos {
 	RB,
 	CUSTOM
 };
+
+inline HotSpotPos StrToHotSpotPos(const wchar_t* pStr) {
+	do {
+		if(StrIEqu(pStr,L"LT")) {
+			return  HotSpotPos::LT;
+		}
+
+		if (StrIEqu(pStr, L"LM")) {
+			return  HotSpotPos::LM;
+		}
+
+		if (StrIEqu(pStr, L"LB")) {
+			return  HotSpotPos::LB;
+		}
+
+		if (StrIEqu(pStr, L"MT")) {
+			return  HotSpotPos::MT;
+		}
+
+		if (StrIEqu(pStr, L"MM")) {
+			return  HotSpotPos::MM;
+		}
+
+		if (StrIEqu(pStr, L"MB")) {
+			return  HotSpotPos::MB;
+		}
+
+		if (StrIEqu(pStr, L"RT")) {
+			return  HotSpotPos::RT;
+		}
+
+		if (StrIEqu(pStr, L"RM")) {
+			return  HotSpotPos::RM;
+		}
+
+		if (StrIEqu(pStr, L"RB")) {
+			return  HotSpotPos::RB;
+		}		
+
+		return HotSpotPos::CUSTOM;
+	} while (false);
+}
 
 // Update X/Y according to width/height
 inline void UpdateHotSpot(HotSpotPos Type, size_t width, size_t height, int& X, int& Y) {
@@ -466,36 +608,40 @@ inline void UpdateRectByHotSpot(HotSpotPos Type, size_t width, size_t height, in
 	pRc->bottom = pRc->top + height;
 }
 
-inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
-	//Rotate hotspot
-	if (angle == 0) {
-		return;
+namespace RotateFunction {
+	// angle -> rad, shouldn't be called directly
+	inline void RotatePoint(double angle, int* hotX, int* hotY, int sw, int sh) {
+		//Rotate hotspot
+		if (angle == 0) {
+			return;
+		}
+
+		float hx = (float)*hotX;
+		float hy = (float)*hotY;
+
+		float si = (float)sin(angle);
+		float co = (float)cos(angle);
+
+		int trX = (int)(sw * co);
+		int trY = (int)(-sw * si);
+		int blX = (int)(sh * si);
+		int blY = (int)(sh * co);
+		int brX = (int)(sw * co + sh * si);
+		int brY = (int)(sh * co - sw * si);
+
+		//Update topleft coordinate
+		int dx = (std::min)(0, (std::min)(trX, (std::min)(blX, brX)));
+		int dy = (std::min)(0, (std::min)(trY, (std::min)(blY, brY)));
+
+		//Update hotspot
+		*hotX = (int)(round(hx * co + hy * si) - dx);
+		*hotY = (int)(round(hy * co - hx * si) - dy);
 	}
-
-	float hx = (float)*hotX;
-	float hy = (float)*hotY;
-
-	float si = (float)sin(angle);
-	float co = (float)cos(angle);
-
-	int trX = (int)(sw * co);
-	int trY = (int)(-sw * si);
-	int blX = (int)(sh * si);
-	int blY = (int)(sh * co);
-	int brX = (int)(sw * co + sh * si);
-	int brY = (int)(sh * co - sw * si);
-
-	//Update topleft coordinate
-	int dx = min(0, min(trX, min(blX, brX)));
-	int dy = min(0, min(trY, min(blY, brY)));
-
-	//Update hotspot
-	*hotX = (int)(round(hx * co + hy * si) - dx);
-	*hotY = (int)(round(hy * co - hx * si) - dy);
 }
 
-inline void RotatePoint(int angle, int* hotX, int* hotY, int sw, int sh) {
-	return RotatePoint(RAD(angle), hotX, hotY, sw, sh);
+// angle -> deg
+inline void RotatePoint(float angle, int* hotX, int* hotY, int sw, int sh) {
+	return RotateFunction::RotatePoint(RAD(angle), hotX, hotY, sw, sh);
 }
 
 #ifndef _NODISPLAY
@@ -506,7 +652,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr
 	, float xScale, float yScale
 	, HotSpotPos hotSpotPos
 	, int hotSpotX, int hotSpotY
-	, int angle) {
+	, float angle) {
 	//Get scale (absolute since negative will mirror)
 	float scaleX = abs(xScale);
 	float scaleY = abs(yScale);
@@ -521,7 +667,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr
 
 	UpdateHotSpot(hotSpotPos, width, height, hotX, hotY);
 
-	rdPtr->rc.rcAngle = (float)angle;
+	rdPtr->rc.rcAngle = angle;
 
 	rdPtr->rc.rcScaleX = scaleX;
 	rdPtr->rc.rcScaleY = scaleY;
@@ -545,7 +691,7 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 	, float xScale, float yScale
 	, HotSpotPos hotSpotPos
 	, int hotSpotX, int hotSpotY
-	, int angle) {
+	, float angle) {
 	UpdateHoImgInfo(rdPtr
 		, pSrc->GetWidth(), pSrc->GetHeight()
 		, xScale, yScale
@@ -555,3 +701,43 @@ inline void UpdateHoImgInfo(LPRDATA rdPtr, LPSURFACE pSrc
 }
 
 #endif
+
+inline void AddBackdrop(LPRDATA rdPtr, cSurface* pSf, int x, int y, DWORD dwInkEffect, DWORD dwInkEffectParam, int nObstacleType, int nLayer) {
+	rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvAddBackdrop(pSf, x, y, dwInkEffect, dwInkEffectParam, nObstacleType, nLayer);
+}
+
+//IterateBank(rdPtr, BK_FONTS, [] (const void* pAddress) {
+//
+//});
+
+inline bool IterateBank(LPRDATA rdPtr, int type, const std::function<void(const void*)>& callback) {
+	if (type < BK_IMGS || type > BK_MAX) {
+		return false;
+	}
+
+	const auto pAppli = rdPtr->rHo.hoAdRunHeader->rhIdAppli;
+
+	auto ret = LockBank(pAppli, type) == 0;
+
+	if (!ret) {
+		return ret;
+	}
+
+	const auto sz = Bank_GetEltCount(pAppli, type);
+
+	if (sz == 0) {
+		return false;
+	}
+
+	for (int i = 1; i <= sz; i++) {
+		const auto pAddress = Bank_GetEltAddr(pAppli, type, i);
+
+		if (pAddress != nullptr) {
+			callback(pAddress);
+		}
+	}
+
+	ret |= UnlockBank(pAppli, type) == 0;
+
+	return ret;
+}

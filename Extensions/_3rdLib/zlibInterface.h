@@ -12,15 +12,15 @@ constexpr auto ZLIB_DECOMPRESSFAILED = 1;
 //char* buf = nullptr;
 //auto compressSz = ZLIBI_CompressToBuffer(srcStr, buf);
 inline int ZLIBI_CompressToBuffer(const std::string& srcStr, char*& buf, int compressionLevel = Z_DEFAULT_COMPRESSION) {    
-    auto srcSz = (uLong)srcStr.length();
-    auto sz = compressBound(srcSz);    
+    const auto srcSz = (uLong)srcStr.length();
+    const auto sz = compressBound(srcSz);
 
     buf = new char [sz];
     memset(buf, 0, sz);
 
     uLong compressedSize = sz;
 
-    auto ret = compress2((Bytef*)buf, &compressedSize, (Bytef*)&srcStr [0], srcSz, compressionLevel);
+    const auto ret = compress2((Bytef*)buf, &compressedSize, (Bytef*)srcStr.data(), srcSz, compressionLevel);
 
     if (ret == Z_OK) {
         return compressedSize;
@@ -43,7 +43,7 @@ inline std::string ZLIBI_DeCompressToString(const char* srcBuf, const unsigned i
 
         auto deCompressedSize = blockSz;
 
-        auto ret = uncompress((Bytef*)deComBuf.get(), &deCompressedSize, (Bytef*)srcBuf, bufSz);
+        const auto ret = uncompress((Bytef*)deComBuf.get(), &deCompressedSize, (Bytef*)srcBuf, bufSz);
 
         if (ret == Z_OK) {
             auto dstStr = std::string(deComBuf.get(), deCompressedSize);

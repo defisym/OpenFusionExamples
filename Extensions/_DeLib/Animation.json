@@ -1,0 +1,26 @@
+{    
+    "info": {
+        "name": "test",
+        "loop": true,
+        "repeat": 0,
+        "backTo": 0,
+        "speed": 125
+    },
+    "frames":[
+        {
+            "file": "Gundam高达",
+            "interpolation": {
+                "interval": 120
+            }
+        },
+        {
+            "interpolation": {
+                "interval": 1
+            },
+            "scale":{
+                "x":5.0,
+                "y":5.0
+            }
+        }
+    ]
+}

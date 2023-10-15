@@ -62,6 +62,9 @@ enum {
 	PROPID_FORMAT_ICONSCALE,
 	PROPID_FORMAT_ICONRESAMPLE,
 
+	PROPID_ALLIGN_TABSIZE,
+	PROPID_ALLIGN_TABEMSPACE,
+
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -163,6 +166,8 @@ PropData FontPorperties[] = {
 	//PropData_EditNumber_Check(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_ROWSPACE,		IDS_PROP_ALLIGN_ROWSPACE,			IDS_PROP_ALLIGN_ROWSPACE_INFO),
 	PropData_EditNumber(PROPID_ALLIGN_COLSPACE,		IDS_PROP_ALLIGN_COLSPACE,			IDS_PROP_ALLIGN_COLSPACE_INFO),
+	PropData_EditNumber(PROPID_ALLIGN_TABSIZE,		IDS_PROP_ALLIGN_TABSIZE,			IDS_PROP_ALLIGN_TABSIZE_INFO),
+	PropData_CheckBox(PROPID_ALLIGN_TABEMSPACE,		IDS_PROP_ALLIGN_TABEMSPACE,			IDS_PROP_ALLIGN_TABEMSPACE_INFO),
 
 	//PropData_EditNumber(PROPID_OUTLINE_PIXEL,		IDS_PROP_OUTLINE_PIXEL,			IDS_PROP_OUTLINE_PIXEL_INFO),
 	//PropData_Color(PROPID_OUTLINE_COLOR,		IDS_PROP_OUTLINE_COLOR,			IDS_PROP_OUTLINE_COLOR_INFO),
@@ -512,6 +517,9 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->filterFlags = FORMAT_IGNORE_DEFAULTFLAG;
 		edPtr->bIConGlobal = false;
 		edPtr->bIConForceUpdate = false;
+
+		edPtr->tabSize = 4;
+		edPtr->bTabEM = false;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL) {
@@ -888,6 +896,8 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->nRowSpace);
 	case PROPID_ALLIGN_COLSPACE:
 		return new CPropDWordValue(edPtr->nColSpace);
+	case PROPID_ALLIGN_TABSIZE:
+		return new CPropDWordValue(edPtr->tabSize);
 
 	//case PROPID_OUTLINE_PIXEL:
 	//	return new CPropDWordValue(edPtr->nOutLinePixel);
@@ -943,6 +953,8 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bRowSpace;
 	case PROPID_ALLIGN_COLSPACE:
 		return edPtr->bColSpace;
+	case PROPID_ALLIGN_TABEMSPACE:
+		return edPtr->bTabEM;
 	case PROPID_RENDER_CLIP:
 		return edPtr->bClip;		
 	case PROPID_FORMAT_ICONGLOBAL:
@@ -1030,6 +1042,10 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 	case PROPID_ALLIGN_COLSPACE:
 		edPtr->nColSpace = ((CPropDWordValue*)pValue)->m_dwValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_ALLIGN_TABSIZE:
+		edPtr->tabSize = static_cast<unsigned char>(((CPropDWordValue*)pValue)->m_dwValue);
 		mvInvalidateObject(mV, edPtr);
 		break;
 
@@ -1124,6 +1140,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bColSpace = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_COLSPACE, TRUE);
+		break;
+	case PROPID_ALLIGN_TABEMSPACE:
+		edPtr->bTabEM = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_ALLIGN_TABEMSPACE, TRUE);
 		break;
 	case PROPID_RENDER_CLIP:
 		edPtr->bClip = nCheck;

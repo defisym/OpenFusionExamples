@@ -1,32 +1,88 @@
-#ifndef _FUNC_
-#define _FUNC_
+#pragma once
+
+// ------------------------
+// forward declaration
+// ------------------------
+
+inline void InitIni(LPRDATA rdPtr);
+inline void ReleaseIni(LPRDATA rdPtr);
+
+// ------------------------
+// definition
+// ------------------------
+
+// Default Settings:
+//  m_bStoreIsUtf8: false -> override to true
+//  m_bAllowMultiKey: false
+//  m_bAllowMultiLine: false
+//  m_bSpaces: true
+//  m_bParseQuotes: false
+//  m_bAllowKeyOnly: false
+inline void InitIni(LPRDATA rdPtr) {
+	ReleaseIni(rdPtr);
+
+	rdPtr->ini = new INI;
+	rdPtr->ini->SetUnicode();
+}
+
+inline void ReleaseIni(LPRDATA rdPtr) {
+	rdPtr->Modified = false;
+
+	delete rdPtr->ini;
+	rdPtr->ini = nullptr;
+}
 
 inline bool Modified(SI_Error Input) {
 	return Input == SI_UPDATED || Input == SI_INSERTED;
 }
 
-inline void SaveFile(LPINI Ini,const wchar_t* FilePath, const wchar_t* Key) {
+inline bool LoadFile(LPINI pIni,LPCTSTR pFilePath,LPCTSTR pKey) {
+	auto ret = SI_OK;
+
+	//Key has value, try to Decry
+	if (!StrEmpty(pKey)) {
+		Encryption Decrypt;
+		Decrypt.GenerateKey(pKey);
+
+		Decrypt.OpenFile(pFilePath);
+		Decrypt.Decrypt();
+
+		ret = pIni->LoadData(Decrypt.GetOutputStr(), Decrypt.GetOutputStrLength());
+		Decrypt.ReleaseOutputStr();
+	}
+	else {
+		ret = pIni->LoadFile(pFilePath);
+	}
+
+	return ret == SI_OK;
+}
+
+inline bool SaveFile(LPINI pIni, const wchar_t* pFilePath, const wchar_t* pKey) {
+	auto ret = true;
+
 	//Key has value, try to Encry
-	if (!StrEmpty(Key)) {
+	if (!StrEmpty(pKey)) {
 		std::string Output;
-		Ini->Save(Output);
+		pIni->Save(Output);
 
 		Encryption Encrypt;
-		Encrypt.GenerateKey(Key);
+		Encrypt.GenerateKey(pKey);
 
 		Encrypt.SetEncryptStr(Output);
 		Encrypt.Encrypt();
 
-		Encrypt.SaveFile(FilePath);
+		ret = Encrypt.SaveFile(pFilePath);
 	}
 	else {
-		Ini->SaveFile(FilePath, false);
+		ret = pIni->SaveFile(pFilePath, false) == SI_OK;
 	}
+
+	return ret;
 }
 
 inline void AutoSave(LPRDATA rdPtr) {
-	if (rdPtr->Modified && rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
-		SaveFile(Fini, rdPtr->AutoSaveFilePath, rdPtr->AutoSaveKey);
+	if (rdPtr->ini != nullptr && rdPtr->AutoSave && rdPtr->Modified) {
+		SaveFile(rdPtr->ini, rdPtr->AutoSaveFilePath->c_str(), rdPtr->AutoSaveKey->c_str());
 	}
 }
 
@@ -55,8 +111,8 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	}
 
 	if (identifier == IDENTIFIER_ACTIVE) {
-		offset += sizeof(rCom) + sizeof(rMvt) + sizeof(rSpr);
-		return offset;
+		offset += sizeof(rCom) + sizeof(rMvt) + sizeof(rSpr)+ sizeof(rAni);
+ 		return offset;
 	}
 
 	// General extensions
@@ -75,5 +131,20 @@ inline size_t GetRVOffset(LPRDATA rdPtr, LPRO object) {
 	return offset;
 }
 
-#endif // !_FUNC_
+inline void GlobalData::StashData(LPRDATA rdPtr) {
+	const std::wstring objName = GetObjectName(rdPtr);
 
+	if(!pInis.contains(objName)) {
+		pInis[objName] = rdPtr->ini;
+	}
+}
+
+inline void GlobalData::RetrieveData(LPRDATA rdPtr) {
+	const std::wstring objName = GetObjectName(rdPtr);
+	const auto it = pInis.find(objName);
+
+	if (it != pInis.end()) {
+		rdPtr->ini = it->second;
+		pInis.erase(it);
+	}
+}

@@ -45,20 +45,22 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
-//#define _USE_OPENMP
-
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 #include	<omp.h>
-#endif // _OPENMP
+#endif
 
 #include	<map>
 #include	<string>
 #include	<chrono>
 
 // My lib
-#include	"FModInterface.h"
+#include	"SDLUtilities.h"
+
 #include	"Encryption.h"
 #include	"FFMpeg.h"
+
+#include	"SDL_Interface.h"
+#include	"SDL_Mixer_Interface.h"
 
 #include	"GeneralDefinition.h"
 #include	"Definition.h"

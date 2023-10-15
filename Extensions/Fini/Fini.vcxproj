@@ -300,6 +300,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="ConvertUTF.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
+    <ClInclude Include="Localization.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SimpleIni.h" />

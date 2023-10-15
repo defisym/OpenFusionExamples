@@ -40,6 +40,14 @@ short conditionsInfos[] =
 	
 	IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
 
+	IDMN_CONDITION_IOHA, M_CONDITION_IOHA, CND_CONDITION_IOHA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_EXPRESSION,PARAM_EXPRESSION,PARA_EXPRESSION_FIXED,PARA_CONDITION_ID,
+	IDMN_CONDITION_IOHA_S, M_CONDITION_IOHA, CND_CONDITION_IOHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_ID,
+
+	IDMN_CONDITION_ORC, M_CONDITION_ORC, CND_CONDITION_ORC, 0, 0,
+	IDMN_CONDITION_RMCX, M_CONDITION_RMCX, CND_CONDITION_RMCX, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
+	IDMN_CONDITION_OCB, M_CONDITION_OCB, CND_CONDITION_OCB, 0, 0,
+	IDMN_CONDITION_OCF, M_CONDITION_OCF, CND_CONDITION_OCF, 0, 0,
 };
 
 // Definitions of parameters for each action
@@ -183,6 +191,12 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_GTPM, M_EXPRESSION_GTPM, EXP_EXPRESSION_GTPM, 0, 0,
 	IDMN_EXPRESSION_GFPM, M_EXPRESSION_GFPM, EXP_EXPRESSION_GFPM, 0, 0,
 
+	IDMN_EXPRESSION_GAID, M_EXPRESSION_GAID, EXP_EXPRESSION_GAID, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+	
+	IDMN_EXPRESSION_GCFC, M_EXPRESSION_GCFC, EXP_EXPRESSION_GCFC, 0, 1, EXPPARAM_LONG, PARA_EXPRESSION_FIXED,
+	IDMN_EXPRESSION_GADFC, M_EXPRESSION_GADFC, EXP_EXPRESSION_GADFC, 0, 3, EXPPARAM_LONG, EXPPARAM_LONG, EXPPARAM_LONG, PARA_EXPRESSION_FIXED, PARA_CONDITION_ID, PARA_CONDITION_DIR,
+
+
 };
 
 // ============================================================================
@@ -222,20 +236,40 @@ long WINAPI DLLExport IsClipBoardAvailable(LPRDATA rdPtr, long param1, long para
 
 //朝向动画
 long WINAPI DLLExport IsObjectHasAnimationInDirection(LPRDATA rdPtr, long param1, long param2) {
-	int Fixed = (int)CNC_GetIntParameter(rdPtr);
-	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
+	const int Fixed = (int)CNC_GetIntParameter(rdPtr);
+	const size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
 
-	return DirHasAnimation(Fixed, Dir);
+	return DirHasFrame(rdPtr, Fixed, Dir);
 }
 
 long WINAPI DLLExport IsObjectHasAnimationInDirection_Scope(LPRDATA rdPtr, long param1, long param2) {
-	bool negated = IsNegated(rdPtr);
+	const bool negated = IsNegated(rdPtr);
 
-	short oil = (short)OIL_GetParameter(rdPtr);
-	size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
+	const short oil = (short)OIL_GetParameter(rdPtr);
+	const size_t Dir = (size_t)CNC_GetIntParameter(rdPtr);
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [Dir](LPRDATA rdPtr, LPRO object)->bool {
-		return _DirHasAnimation(rdPtr, object, Dir);
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[Dir](LPRDATA rdPtr, LPRO object)->bool {
+		return DirHasFrame(object, Dir);
+		});
+}
+
+long WINAPI DLLExport IsObjectHasAnimationID(LPRDATA rdPtr, long param1, long param2) {
+	const int fixed = (int)CNC_GetIntParameter(rdPtr);
+	const size_t id = (size_t)CNC_GetIntParameter(rdPtr);
+
+	return ObjectHasAnimationID(rdPtr, fixed, id);
+}
+
+long WINAPI DLLExport IsObjectHasAnimationID_Scope(LPRDATA rdPtr, long param1, long param2) {
+	const bool negated = IsNegated(rdPtr);
+
+	const short oil = (short)OIL_GetParameter(rdPtr);
+	const size_t id = (size_t)CNC_GetIntParameter(rdPtr);
+
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[id] (LPRDATA rdPtr, LPRO object)->bool {
+			return ObjectHasAnimationID(object, id);
 		});
 }
 
@@ -399,6 +433,22 @@ long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
 }
 
 long WINAPI DLLExport OnMonitorChange(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
+long WINAPI DLLExport OnResizingComplete(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
+long WINAPI DLLExport ResizingMainlyChangedX(LPRDATA rdPtr, long param1, long param2) {
+	return windowResizing.bMainlyChangedX;
+}
+
+long WINAPI DLLExport OnClickBackword(LPRDATA rdPtr, long param1, long param2) {
+	return true;
+}
+
+long WINAPI DLLExport OnClickForward(LPRDATA rdPtr, long param1, long param2) {
 	return true;
 }
 
@@ -630,8 +680,8 @@ short WINAPI DLLExport GoWindowed(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
-	size_t wWidth = (size_t)CNC_GetIntParameter(rdPtr);
-	size_t wHeight = (size_t)CNC_GetIntParameter(rdPtr);
+	const auto wWidth = (size_t)CNC_GetIntParameter(rdPtr);
+	const auto wHeight = (size_t)CNC_GetIntParameter(rdPtr);
 	
 	RECT wRect;
 	::GetWindowRect(rdPtr->MainWindowHandle, &wRect);
@@ -639,26 +689,47 @@ short WINAPI DLLExport SetSize(LPRDATA rdPtr, long param1, long param2) {
 	RECT clientRect;
 	GetCurrentClientRectToScreen(rdPtr->MainWindowHandle, &clientRect);
 	
-	size_t clientWidth= clientRect.right - clientRect.left;
-	size_t clientHeight = clientRect.bottom - clientRect.top;
+	const auto clientWidth= clientRect.right - clientRect.left;
+	const auto clientHeight = clientRect.bottom - clientRect.top;
 
-	size_t owWidth = wRect.right - wRect.left;
-	size_t owHeight = wRect.bottom - wRect.top;
+	const auto owWidth = wRect.right - wRect.left;
+	const auto owHeight = wRect.bottom - wRect.top;
 
-	size_t cwOffsetW = owWidth - clientWidth;
-	size_t cwOffsetH = owHeight - clientHeight;
+	const auto cwOffsetW = owWidth - clientWidth;
+	const auto cwOffsetH = owHeight - clientHeight;
 
-	auto oldX = wRect.left;
-	auto oldY = wRect.top;
+	const auto oldX = wRect.left;
+	const auto oldY = wRect.top;
 
-	auto newX = oldX + int(clientWidth - wWidth) / 2;
-	auto newY = oldY + int(clientHeight - wHeight) / 2;
+	const auto newW = wWidth + cwOffsetW;
+	const auto newH = wHeight + cwOffsetH;
+
+	auto newX = oldX + static_cast<int>(clientWidth - wWidth) / 2;
+	auto newY = oldY + static_cast<int>(clientHeight - wHeight) / 2;
+
+	//Make sure sized window won't exceed the monitor rect
+	//https://www.cnblogs.com/163yun/p/9583512.html
+	//https://learn.microsoft.com/zh-cn/windows/win32/gdi/multiple-monitor-system-metrics
+	RECT monitor;
+	monitor.left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+	monitor.top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+	monitor.right = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	monitor.bottom = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+	// RB
+	newX = (std::min)(newX, static_cast<long>(monitor.right - newW));
+	newY = (std::min)(newY, static_cast<long>(monitor.bottom - newH));
+
+	// LT
+	// Title bar has higher priority
+	newX = (std::max)(newX, monitor.left);
+	newY = (std::max)(newY, monitor.top);
 
 	SetWindowPos(rdPtr->MainWindowHandle
-		, NULL
+		, nullptr
 		, newX, newY
-		, wWidth + cwOffsetW
-		, wHeight + cwOffsetH
+		, newW
+		, newH
 		, SWP_SHOWWINDOW| SWP_NOZORDER);
 
 	return 0;
@@ -934,26 +1005,26 @@ short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param
 			RGBA* W_Temp = (RGBA*)malloc(sizeof(RGBA) * (size + 3));
 
 			//init			
-			RGBA Input = { (double)src [2],(double)src [1],(double)src [0],0 };
+			RGBA Input = { (double)src[2],(double)src[1],(double)src[0],0 };
 			RGBA Output = { 0,0,0,0 };
 
 			//forward
-			W [0] = W [1] = W [2] = Input;
+			W[0] = W[1] = W[2] = Input;
 			for (int n1 = 3; n1 < size + 3; n1++) {
 				int offset = (n1 - 3) * stride;
-				Input = { (double)src [offset + 2],(double)src [offset + 1],(double)src [offset + 0],0 };
-				W [n1] = (c.B * Input + (c.b [1] * W [n1 - 1] + c.b [2] * W [n1 - 2] + c.b [3] * W [n1 - 3]) / c.b [0]);
+				Input = { (double)src[offset + 2],(double)src[offset + 1],(double)src[offset + 0],0 };
+				W[n1] = (c.B * Input + (c.b[1] * W[n1 - 1] + c.b[2] * W[n1 - 2] + c.b[3] * W[n1 - 3]) / c.b[0]);
 			}
 
 			//backword
-			W_Temp [size] = W_Temp [size + 1] = W_Temp [size + 2] = W [size + 2];
+			W_Temp[size] = W_Temp[size + 1] = W_Temp[size + 2] = W[size + 2];
 			for (int n2 = size - 1; n2 >= 0; n2--) {
 				int offset = n2 * stride;
-				W_Temp [n2] = (c.B * W [n2] + (c.b [1] * W_Temp [n2 + 1] + c.b [2] * W_Temp [n2 + 2] + c.b [3] * W_Temp [n2 + 3]) / c.b [0]);
-				Output = Range(W_Temp [n2]);
-				des [offset + 2] = (BYTE)Output.r;
-				des [offset + 1] = (BYTE)Output.g;
-				des [offset + 0] = (BYTE)Output.b;
+				W_Temp[n2] = (c.B * W[n2] + (c.b[1] * W_Temp[n2 + 1] + c.b[2] * W_Temp[n2 + 2] + c.b[3] * W_Temp[n2 + 3]) / c.b[0]);
+				Output = Range(W_Temp[n2]);
+				des[offset + 2] = (BYTE)Output.r;
+				des[offset + 1] = (BYTE)Output.g;
+				des[offset + 0] = (BYTE)Output.b;
 			}
 
 			free(W);
@@ -1246,37 +1317,26 @@ short WINAPI DLLExport SaveBase64ImgToFile(LPRDATA rdPtr, long param1, long para
 	// decode
 	Base64<std::wstring> base64Decoder;
 
-	try {
-		base64Decoder.base64_decode(base64);
-	}
-	catch (decltype(BASE64_DECODEERROR)) {
-		return 0;
-	}
+	base64Decoder.base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
+		// Load to surface
+		CInputMemFile MemFile;		
+		MemFile.Create(const_cast<BYTE*>(buf), sz);
 
-	size_t bufsz = base64Decoder.base64_decode_size();
-	BYTE* buffer = new BYTE [bufsz];
+		//MGR
+		CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
+		CImageFilter    pFilter(pImgMgr);
 
-	base64Decoder.base64_decode_to_pointer(buffer, bufsz);
+		cSurface* pSf = new cSurface;
+		ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
 
-	// Load to surface
-	CInputMemFile MemFile;
-	MemFile.Create(buffer, bufsz);
+		if (!pSf->IsValid()) {
+			return;
+		}
 
-	//MGR
-	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
-	CImageFilter    pFilter(pImgMgr);
+		_SavetoFile(pSf, filePath.c_str(), rdPtr, false, rdPtr->DefaultFilterName);
 
-	cSurface* pSf = new cSurface;
-	ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
-
-	if (!pSf->IsValid()) {
-		return 0;
-	}
-
-	_SavetoFile(pSf, filePath.c_str(), rdPtr, false, rdPtr->DefaultFilterName);
-
-	delete[] buffer;
-	delete pSf;
+		delete pSf;
+	});
 
 	return 0;
 }
@@ -1663,9 +1723,29 @@ long WINAPI DLLExport GetFileHash(LPRDATA rdPtr, long param1) {
 
 //获取对象当前显示动画朝向
 long WINAPI DLLExport GetObjectAnimationDirection(LPRDATA rdPtr, long param1) {
-	int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return DisplayAnimationDirection(Fixed);
+	return (long)DisplayAnimationDirection(rdPtr, Fixed);
+}
+
+long WINAPI DLLExport GetObjectAnimationID(LPRDATA rdPtr, long param1) {
+	const int Fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return (long)DisplayAnimationID(rdPtr, Fixed);
+}
+
+long WINAPI DLLExport GetObjectCurrentFrameCount(LPRDATA rdPtr, long param1) {
+	const int fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return (long)GetCurrentFrameCount(rdPtr, fixed);
+}
+
+long WINAPI DLLExport GetObjectAnimDirFrameCount(LPRDATA rdPtr, long param1) {
+	const int fixed = (int)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const int id = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	const int dir = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return (long)GetAnimDirFrameCount(rdPtr, fixed, id, dir);
 }
 
 long WINAPI DLLExport GetValWithSign(LPRDATA rdPtr, long param1) {
@@ -1920,6 +2000,15 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 	OnMonitorChange,
 
+	IsObjectHasAnimationID,
+	IsObjectHasAnimationID_Scope,
+
+	OnResizingComplete,
+	ResizingMainlyChangedX,
+
+	OnClickBackword,
+	OnClickForward,
+
 	0
 };
 
@@ -2062,6 +2151,11 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	
 	GetTotalPhysicalMemory,
 	GetFreePhysicalMemory,
+
+	GetObjectAnimationID,
+
+	GetObjectCurrentFrameCount,
+	GetObjectAnimDirFrameCount,
 
 	0
 };

@@ -1,0 +1,41 @@
+{
+    "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
+    "info": {
+        "name": "Ayumu",
+        // "updateCur":true,
+        "reset": false,
+        "loop": true,
+        "repeat": 0,
+        "backTo": 0,
+        "speed": 100
+    },
+    "frames": [
+        {
+            "file": "Ayumu.png",
+            "interpolation": {
+                "interval": 120,
+                "type": "easeOut",
+                "func_a": "bounce"
+            },
+            "hotSpot": {
+                "type": "LT"
+            }
+        },
+        {
+            "resetExceptFile": true,
+            // "file": "Ayumu.png",
+            "interpolation": {
+                "interval": 120
+            },
+            "hotSpot": {
+                "type": "RB"
+            },
+            "alpha": 255,
+            // "angle": 360,
+            "scale": {
+                "x": 2.0,
+                "y": 2.0
+            }
+        }
+    ]
+}

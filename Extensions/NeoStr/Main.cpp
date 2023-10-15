@@ -61,6 +61,12 @@ short actionsInfos[]=
 
 		IDMN_ACTION_FRD, M_ACTION_FRD, ACT_ACTION_FRD, 0, 0,
 		IDMN_ACTION_FRDGI, M_ACTION_FRDGI, ACT_ACTION_FRDGI, 0, 0,
+		
+		IDMN_ACTION_RENDER, M_ACTION_RENDER, ACT_ACTION_RENDER, 0, 0,
+
+		IDMN_ACTION_SRO, M_ACTION_SRO, ACT_ACTION_SRO, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_VISIBLERATIO, M_INCLUDEALPHA,
+
+		IDMN_ACTION_STS, M_ACTION_STS, ACT_ACTION_STS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_TABSIZE, M_TABEM,
 
 		};
 
@@ -86,7 +92,7 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GHY, M_EXPRESSION_GHY, EXP_EXPRESSION_GHY, 0, 0,
 		IDMN_EXPRESSION_GXS, M_EXPRESSION_GXS, EXP_EXPRESSION_GXS, EXPFLAG_DOUBLE, 0,
 		IDMN_EXPRESSION_GYS, M_EXPRESSION_GYS, EXP_EXPRESSION_GYS, EXPFLAG_DOUBLE, 0,
-		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, 0, 0,
+		IDMN_EXPRESSION_GA, M_EXPRESSION_GA, EXP_EXPRESSION_GA, EXPFLAG_DOUBLE, 0,
 
 		IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_STRING, EXPPARAM_LONG, M_FONTNAME, M_KEY, M_POS,
 
@@ -112,6 +118,12 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GFF, M_EXPRESSION_GFF, EXP_EXPRESSION_GFF, 0, 0,
 		
 		IDMN_EXPRESSION_GRSBFSL, M_EXPRESSION_GRSBFSL, EXP_EXPRESSION_GRSBFSL, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_STRING, M_POS, M_FILTERFLAGS,
+
+
+		IDMN_EXPRESSION_GRO_VR, M_EXPRESSION_GRO_VR, EXP_EXPRESSION_GRO_VR, EXPFLAG_DOUBLE, 0,
+
+		IDMN_EXPRESSION_GTS_TS, M_EXPRESSION_GTS_TS, EXP_EXPRESSION_GTS_TS, 0, 0,
+		IDMN_EXPRESSION_GTS_EM, M_EXPRESSION_GTS_EM, EXP_EXPRESSION_GTS_EM, 0, 0,
 
 		};
 
@@ -219,6 +231,18 @@ short WINAPI DLLExport Action_ChangeVerticalAlign(LPRDATA rdPtr, long param1, lo
 	return 0;
 }
 
+short WINAPI DLLExport Action_ChangeTabSettings(LPRDATA rdPtr, long param1, long param2) {
+	const auto tabSize = (unsigned char)CNC_GetIntParameter(rdPtr);
+	const auto bTabEM = (bool)CNC_GetIntParameter(rdPtr);
+
+	rdPtr->tabSize = tabSize;
+	rdPtr->bTabEM = bTabEM;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
 short WINAPI DLLExport Action_SetHotSpot(LPRDATA rdPtr, long param1, long param2) {
 	HotSpotPos pos = (HotSpotPos)CNC_GetIntParameter(rdPtr);
 
@@ -265,9 +289,7 @@ short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport Action_Rotate(LPRDATA rdPtr, long param1, long param2) {
-	int angle = (int)CNC_GetIntParameter(rdPtr);
-	angle = angle % 360;
-
+	const float angle = fmod(GetFloatParam(rdPtr), 360.0f);
 	rdPtr->angle = angle;
 
 	ChangeScale(rdPtr);
@@ -622,6 +644,28 @@ short WINAPI DLLExport Action_ForceRedrawGlobalICon(LPRDATA rdPtr, long param1, 
 	return 0;
 }
 
+short WINAPI DLLExport Action_Render(LPRDATA rdPtr, long param1, long param2) {
+	UpdateLastCharPos(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long param2) {
+	const float visibleRatio = Range(GetFloatParam(rdPtr), 0.0f, 1.0f);
+	const bool bIncludeAlpha = (bool)CNC_GetParameter(rdPtr);
+
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	if(pOpt->visibleRatio != visibleRatio || pOpt->bIncludeAlpha != bIncludeAlpha) {
+		pOpt->visibleRatio = visibleRatio;
+		pOpt->bIncludeAlpha = bIncludeAlpha;
+
+		rdPtr->reRender = true;
+	}
+	
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -718,7 +762,7 @@ long WINAPI DLLExport Expression_GetYScale(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetAngle(LPRDATA rdPtr, long param1) {
-	return rdPtr->angle;
+	return ReturnFloat(rdPtr->angle);
 }
 
 long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
@@ -989,6 +1033,20 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	return (long)(rdPtr->pExpRet->c_str());
 }
 
+long WINAPI DLLExport Expression_GetRenderOption_VisableRatio(LPRDATA rdPtr, long param1) {
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	return ReturnFloat(pOpt->visibleRatio);
+}
+
+long WINAPI DLLExport Expression_GetTabSettings_TabSize(LPRDATA rdPtr, long param1) {
+	return (long)(rdPtr->tabSize);
+}
+
+long WINAPI DLLExport Expression_GetTabSettings_TabEM(LPRDATA rdPtr, long param1) {
+	return (long)(rdPtr->bTabEM);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1039,6 +1097,11 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_ForceRedraw,
 			Action_ForceRedrawGlobalICon,
+			Action_Render,
+
+			Action_SetRenderOption,
+
+			Action_ChangeTabSettings,
 
 			0
 			};
@@ -1088,7 +1151,12 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			
 			Expression_GetFilterFlag,
 
-			Expression_GetRawStringByFilteredStringLength,			
+			Expression_GetRawStringByFilteredStringLength,
+
+			Expression_GetRenderOption_VisableRatio,
+
+			Expression_GetTabSettings_TabSize,
+			Expression_GetTabSettings_TabEM,
 
 			0
 			};

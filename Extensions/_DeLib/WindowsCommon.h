@@ -72,7 +72,7 @@ static LPCWSTR DefaultBlock[] = { L"Comments",	L"InternalName",	L"ProductName",
 
 inline BYTE* GetFileVersion_GetFileVersionInfo(LPCWSTR FileName) {
 	// Get FileVersionInfo
-	auto size = GetFileVersionInfoSize(FileName, NULL);
+	const auto size = GetFileVersionInfoSize(FileName, nullptr);
 
 	if (size == 0) {
 		return nullptr;
@@ -107,19 +107,19 @@ inline LPWSTR GetFileVersion_GetSubBlock(BYTE* pData, TRANSLATION* pTranslation,
 	UINT Len = 0;
 
 	// Get SubBlock based on translation
-	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
-	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
-	auto bufsz = sz + 1;
+	const LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
+	const auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
+	const auto bufsz = sz + 1;
 
-	LPWSTR block = new wchar_t[bufsz];
+	const LPWSTR block = new wchar_t[bufsz];
 	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 
 	// Get the real STR
 	LPWSTR info = nullptr;
 
 	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
-		auto isz = swprintf(nullptr, 0, L"%s", src);
-		auto ibufsz = isz + 1;
+		const auto isz = swprintf(nullptr, 0, L"%s", src);
+		const auto ibufsz = isz + 1;
 
 		*des = new wchar_t[ibufsz];
 		swprintf(*des, ibufsz, L"%s", src);
@@ -154,10 +154,10 @@ inline bool GetFileVersion_CMPDefault(BYTE* pDataA, BYTE* pDataB, int CMP) {
 
 	for (int i = 0b000000000001, count = 0; i != 0b100000000000; i = i << 1, count++) {
 		if (i & CMP) {
-			LPCWSTR infoA = GetFileVersion_GetSubBlock(pDataA, pTranslationA, DefaultBlock[count]);
-			LPCWSTR infoB = GetFileVersion_GetSubBlock(pDataB, pTranslationB, DefaultBlock[count]);
+			const LPCWSTR infoA = GetFileVersion_GetSubBlock(pDataA, pTranslationA, DefaultBlock[count]);
+			const LPCWSTR infoB = GetFileVersion_GetSubBlock(pDataB, pTranslationB, DefaultBlock[count]);
 
-			bool unequal = (wcscmp(infoA, infoB) != 0);
+			const bool unequal = (wcscmp(infoA, infoB) != 0);
 
 			delete[] infoA;
 			delete[] infoB;
@@ -180,7 +180,7 @@ inline bool GetFileVersion_CMPDefaultFile(LPCWSTR FileNameA, LPCWSTR FileNameB, 
 	BYTE* pDataA = GetFileVersion_GetFileVersionInfo(FileNameA);
 	BYTE* pDataB = GetFileVersion_GetFileVersionInfo(FileNameB);
 
-	bool ret = GetFileVersion_CMPDefault(pDataA, pDataB, CMP);
+	const bool ret = GetFileVersion_CMPDefault(pDataA, pDataB, CMP);
 
 	delete[] pDataA;
 	delete[] pDataB;
@@ -190,7 +190,7 @@ inline bool GetFileVersion_CMPDefaultFile(LPCWSTR FileNameA, LPCWSTR FileNameB, 
 
 inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	// Get FileVersionInfo
-	auto size = GetFileVersionInfoSize(FileName, NULL);
+	const auto size = GetFileVersionInfoSize(FileName, nullptr);
 	BYTE* pData = new BYTE[size * sizeof(BYTE)];
 	//unique_ptr<BYTE> pData(new BYTE[size * sizeof(BYTE)]);
 
@@ -213,19 +213,19 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	memcpy(pTranslation, Buffer, sizeof(TRANSLATION));
 
 	// Get SubBlock based on translation
-	LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
-	auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
-	auto bufsz = sz + 1;
+	const LPCWSTR Format = L"\\StringFileInfo\\%04x%04x\\%s";
+	const auto sz = swprintf(nullptr, 0, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
+	const auto bufsz = sz + 1;
 
-	LPWSTR block = new wchar_t[bufsz];
+	const LPWSTR block = new wchar_t[bufsz];
 	swprintf(block, bufsz, Format, pTranslation->wLanguage, pTranslation->wCodePage, SubBlock);
 
 	// Get the real STR
 	LPWSTR info = nullptr;
 
 	auto newStr = [] (LPWSTR* des, LPCWSTR src)->void {
-		auto isz = swprintf(nullptr, 0, L"%s", src);
-		auto ibufsz = isz + 1;
+		const auto isz = swprintf(nullptr, 0, L"%s", src);
+		const auto ibufsz = isz + 1;
 
 		*des = new wchar_t[ibufsz];
 		swprintf(*des, ibufsz, L"%s", src);
@@ -293,7 +293,7 @@ inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType
 		PROCESS_VM_READ,
 		FALSE, processID);
 
-	if (hProcess == NULL) {
+	if (hProcess == nullptr) {
 		return ret;
 	}
 
@@ -312,7 +312,7 @@ inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageTy
 
 inline SIZE_T GetProcessMemoryLimitMB() {
 	// 1 MB
-	auto sz = 1024 * 1024 * 1;
+	const auto sz = 1024 * 1024 * 1;
 	std::vector<char* > bufs;
 
 	do {
@@ -323,10 +323,10 @@ inline SIZE_T GetProcessMemoryLimitMB() {
 		}
 		catch (std::bad_alloc& e) {
 			auto info = e.what();
-			auto max = GetProcessMemoryUsageMB();
+			const auto max = GetProcessMemoryUsageMB();
 			//MSGBOX(_itos(max));			
 
-			for (auto& it : bufs) {
+			for (const auto& it : bufs) {
 				delete[] it;
 			}
 
@@ -382,39 +382,44 @@ inline SIZE_T GetSystemMemoryInfoMB(MemoryInfoType type = MemoryInfoType::FreePh
 }
 
 // memory left
-constexpr auto MIN_MEMORYLEFT = 512;
+constexpr auto MIN_MEMORYLEFT = 256;
 
+// true if physics & memory both not enough
 inline bool SystemMemoryNotEnough() {
-	return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
+	// return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
+
+	return (GetSystemMemoryInfoMB(MemoryInfoType::FreePhysicalMemory) < MIN_MEMORYLEFT)
+		&& (GetSystemMemoryInfoMB(MemoryInfoType::FreeVirtualMemory) < MIN_MEMORYLEFT);
 }
 
-// must end without L'\\'
-inline void GetFileList(std::vector<std::wstring>* Des, const std::wstring& Src) {
+// Must end without L'\\'
+inline void GetFileList(std::vector<std::wstring>* pList, const std::wstring& folder) {
+	HANDLE h = nullptr;
 	WIN32_FIND_DATA stFD;
-	HANDLE h;
-	std::wstring temp;
 
-	temp = Src + L"\\*";
+	std::wstring temp = folder + std::wstring(L"\\*");
 	h = FindFirstFile(temp.c_str(), &stFD);
 
 	while (FindNextFile(h, &stFD)) {
-		temp = Src + L"\\" + stFD.cFileName;
-		if (temp == Src + L"\\..") {
+		temp = folder + L"\\" + stFD.cFileName;
+		if (temp == folder + L"\\..") {
 			continue;
 		}
 		else if (PathIsDirectory(temp.c_str())) {
-			GetFileList(Des, temp);
+			GetFileList(pList, temp);
 		}
 		else {
-			Des->emplace_back(Src + L"\\" + stFD.cFileName);
+			pList->emplace_back(folder + L"\\" + stFD.cFileName);
 		}
 	}
+
+	FindClose(h);
 
 	return;
 }
 
 inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
-	auto pFileName = fileName.c_str();
+	const auto pFileName = fileName.c_str();
 
 	// to fix work directory issue
 	// if input is not a full path (for access filename)
@@ -426,11 +431,11 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 	//auto bMatch = regex_match(pFileName, pathRegex);
 
 	// raw
-	auto disk = pFileName[0];
-	auto deli = pFileName[1];
-	auto slash = pFileName[2];
+	const auto disk = pFileName[0];
+	const auto deli = pFileName[1];
+	const auto slash = pFileName[2];
 
-	auto bMatch = (disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z')
+	const auto bMatch = ((disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z'))
 		&& deli == L':'
 		&& slash == L'\\';
 
@@ -438,45 +443,42 @@ inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
 		return fileName;
 	}
 
-	std::wstring ret(MAX_PATH, 0);
-	auto err = GetFullPathName(pFileName, MAX_PATH, &ret.at(0), nullptr);
+	// tailing \0 -> later process issue
+	//std::wstring ret(MAX_PATH, 0);
+	//auto err = GetFullPathName(pFileName, MAX_PATH, &ret.at(0), nullptr);
 
-	//LPWSTR pFullPathName = new wchar_t [MAX_PATH];
-	//memset(pFullPathName, 0, MAX_PATH);
+	const LPWSTR pFullPathName = new wchar_t [MAX_PATH];
+	memset(pFullPathName, 0, MAX_PATH);
 
-	//auto err = GetFullPathName(pFileName, MAX_PATH, pFullPathName, nullptr);
-	//std::wstring ret = pFullPathName;
+	auto err = GetFullPathName(pFileName, MAX_PATH, pFullPathName, nullptr);
+	std::wstring ret = pFullPathName;
 
-	//delete[] pFullPathName;
+	delete[] pFullPathName;
 
 	return ret;
 }
 
-inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = CP_ACP) {
-	std::string ret;
-
-	int len = WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
+inline std::string ConvertWStrToStr(const std::wstring& input, UINT CodePage = CP_UTF8) {
+	const int len = WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), nullptr, 0, nullptr, nullptr);
 	char* pStr = new char[len + 1];
 	memset(pStr, 0, len + 1);
 
-	WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), pStr, len, NULL, NULL);
+	WideCharToMultiByte(CodePage, 0, input.c_str(), (int)input.size(), pStr, len, nullptr, nullptr);
 
-	ret = pStr;
+	std::string ret = pStr;
 	delete[] pStr;
 
 	return ret;
 }
 
-inline std::wstring ConvertStrToWStr(const std::string& input, UINT CodePage = CP_ACP) {
-	std::wstring ret;
-
-	int len = MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), NULL, 0);
-	wchar_t* pStr = new wchar_t[len + 1];
+inline std::wstring ConvertStrToWStr(const std::string& input, UINT CodePage = CP_UTF8) {
+	const int len = MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), nullptr, 0);
+	const auto pStr = new wchar_t[len + 1];
 	memset(pStr, 0, (len + 1) * sizeof(wchar_t));
 
 	MultiByteToWideChar(CodePage, 0, input.c_str(), (int)input.size(), pStr, len);
 
-	ret = pStr;
+	std::wstring ret = pStr;
 	delete[] pStr;
 
 	return ret;

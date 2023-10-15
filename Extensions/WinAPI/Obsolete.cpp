@@ -1,10 +1,10 @@
-//Funcs that don't use but may use as a reference later
+ï»¿//Funcs that don't use but may use as a reference later
 
 
-////½ØÈ¡³¡¾°ÇøÓòµ½¼ôÌù°å
+////æˆªå–åœºæ™¯åŒºåŸŸåˆ°å‰ªè´´æ¿
 //short WINAPI DLLExport BitBltFrameArea(LPRDATA rdPtr, long param1, long param2) {
-//	// ½ØÈ¡
-//	// ²Î¿¼·¶Àı£º
+//	// æˆªå–
+//	// å‚è€ƒèŒƒä¾‹ï¼š
 //	// https://docs.microsoft.com/en-us/windows/win32/gdi/capturing-an-image
 //
 //	// Source Area
@@ -38,7 +38,7 @@
 //		0, 0,
 //		SRCCOPY);
 //
-//	// Ôİ´æµ½¼ôÌù°å
+//	// æš‚å­˜åˆ°å‰ªè´´æ¿
 //	OpenClipboard(rdPtr->MainWindowHandle);
 //	EmptyClipboard();
 //	SetClipboardData(CF_BITMAP, hbmScreen);
@@ -49,7 +49,7 @@
 //	DeleteObject(hdcMemDC);
 //	ReleaseDC(rdPtr->FrameWindowHandle, hdcWindow);
 //
-//	//±£´æÓëËõ·Å
+//	//ä¿å­˜ä¸ç¼©æ”¾
 //	int Width = CNC_GetIntParameter(rdPtr);
 //	int Height = CNC_GetIntParameter(rdPtr);
 //	bool SaveToFile = CNC_GetIntParameter(rdPtr);
@@ -60,17 +60,17 @@
 //	CImageFilterMgr* pImgMgr = rdPtr->rhPtr->rh4.rh4Mv->mvImgFilterMgr;
 //	CImageFilter    pFilter(pImgMgr);
 //
-//	//·ÅÆúÁËÖ±½Ó´ÓHBITMAP»ñÈ¡ĞÅÏ¢
+//	//æ”¾å¼ƒäº†ç›´æ¥ä»HBITMAPè·å–ä¿¡æ¯
 //	//BITMAPINFO* bmp = (BITMAPINFO*)malloc(sizeof(BITMAPINFO));
 //	//memset(bmp, 0, sizeof(*bmp));
 //	//bmp->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 //	//GetDIBits(hdcMemDC, hbmScreen, 0, 1, NULL, (BITMAPINFO*)bmp, DIB_RGB_COLORS);
 //
-//	//´Ó¼ôÌù°å»ñÈ¡Î»Í¼ĞÅÏ¢
+//	//ä»å‰ªè´´æ¿è·å–ä½å›¾ä¿¡æ¯
 //	OpenClipboard(rdPtr->MainWindowHandle);
 //	BITMAPINFO* bmp = (BITMAPINFO*)GlobalLock(GetClipboardData(CF_DIB));
 //
-//	//Surface»ñÈ¡Î»Í¼ĞÅÏ¢
+//	//Surfaceè·å–ä½å›¾ä¿¡æ¯
 //	GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 //	img.Create(FrameWidth, FrameHeight, proto);
 //	img.LoadImage(bmp, GetDIBBitmap(bmp));
@@ -78,7 +78,7 @@
 //
 //	CloseClipboard();
 //
-//	//Ëõ·Å
+//	//ç¼©æ”¾
 //	cSurface ResizedImg;
 //	ResizedImg.Clone(img);
 //
@@ -87,7 +87,7 @@
 //
 //	ResizedImg.Stretch(img, 0, 0, Width, Height, BMODE_OPAQUE, BOP_COPY, 0, STRF_RESAMPLE);
 //
-//	//Êä³öËõ·ÅºóµÄÍ¼Ïñµ½¼ôÌù°å
+//	//è¾“å‡ºç¼©æ”¾åçš„å›¾åƒåˆ°å‰ªè´´æ¿
 //	OpenClipboard(rdPtr->MainWindowHandle);
 //	EmptyClipboard();
 //
@@ -100,12 +100,12 @@
 //	GlobalUnlock(cb);
 //	CloseClipboard();
 //
-//	//±£´æµ½ÎÄ¼ş	
+//	//ä¿å­˜åˆ°æ–‡ä»¶	
 //	if (!SaveToFile) {
 //		return 0;
 //	}
 //
-//	//»ñÈ¡JPEG¸ñÊ½µÄFilterID
+//	//è·å–JPEGæ ¼å¼çš„FilterID
 //	auto GetFilterID = [pImgMgr]() -> DWORD {
 //		for (int i = 0; i < pImgMgr->GetFilterCount(); i++)
 //		{
@@ -124,7 +124,7 @@
 // Alpha Blur
 //short WINAPI DLLExport MultiThreadStackBlur(LPRDATA rdPtr, long param1, long param2) {
 //	if (rdPtr->Display) {
-//		//»ñÈ¡²ÎÊı
+//		//è·å–å‚æ•°
 //		constexpr auto SB_MIN_RADIUS = 0;
 //		constexpr auto SB_MAX_RADIUS = 254;
 //
@@ -143,7 +143,7 @@
 //		int width = (int)(owidth / scale);
 //		int height = (int)(oheight / scale);
 //
-//		// ½µ²ÉÑù
+//		// é™é‡‡æ ·
 //		LPSURFACE proto = nullptr;
 //		GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 //
@@ -364,7 +364,7 @@
 //			int o_stride = (!alpha) ? ((!dir) ? pitch : byte) : ((!dir) ? Apitch : Abyte);
 //
 //			for (int i = 0; i < divide; i++) {
-//				//±ßÔµ´¦Àí
+//				//è¾¹ç¼˜å¤„ç†
 //				int t_rsize = dir ? height : width;
 //				int t_risize = ((!dir) ? t_height : t_width);
 //
@@ -396,7 +396,7 @@
 //			rdPtr->img.UnlockAlpha();
 //		}
 //
-//		//»¹Ô­´óĞ¡
+//		//è¿˜åŸå¤§å°
 //		ResizedImg.Clone(rdPtr->img);
 //
 //		rdPtr->img.Delete();

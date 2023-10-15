@@ -3,8 +3,9 @@
 #include <functional>
 #include <string_view>
 
-#define GIPP(p) (*(NeoStr::IConParamParser*)p)
-#define ONITOIC 0
+constexpr auto ONITOIC = 0;
+
+#define GIPP(p) (*(NeoStr::IConParamParser*)(p))
 
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc);
 
@@ -12,7 +13,7 @@ inline void NoClip(LPRDATA rdPtr) {
 	if (rdPtr->hotSpotPos != HotSpotPos::LT && rdPtr->hotSpotPos != HotSpotPos::CUSTOM
 		|| rdPtr->hotSpotPos == HotSpotPos::CUSTOM && (rdPtr->hotSpotX != 0 || rdPtr->hotSpotY != 0)
 		|| rdPtr->xScale != 1.0 && rdPtr->yScale != 1.0
-		|| rdPtr->angle != 0) {
+		|| rdPtr->angle != 0.0) {
 		rdPtr->bClip = false;
 	}
 }
@@ -47,6 +48,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, rdPtr->hFont
 			, rdPtr->pData->pFontCache
 			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pRegexHandler
 			, rdPtr->pData->pIConData
 			, rdPtr->pData->pFontCollection
 			, false);
@@ -64,6 +66,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 
 		rdPtr->pNeoStr->SetAlign(rdPtr->dwAlignFlags, rdPtr->bVerticalAlignOffset);
 		rdPtr->pNeoStr->SetSpace(rdPtr->nRowSpace, rdPtr->nColSpace);
+		rdPtr->pNeoStr->SetTabProperties(rdPtr->tabSize, rdPtr->bTabEM);
 
 		rdPtr->pNeoStr->LinkObject(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 		rdPtr->pNeoStr->SetIConOffset(rdPtr->iConOffsetX, rdPtr->iConOffsetY);
@@ -101,7 +104,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		//rhPtr->rhFrame->m_hdr.leWidth;
 		//rhPtr->rhFrame->m_hdr.leHeight;
 
-		LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+		const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 
 		rdPtr->pNeoStr->SetColor(rdPtr->dwColor);
 
@@ -120,7 +123,8 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
-		rdPtr->pNeoStr->RenderPerChar(&rc);
+		rdPtr->pNeoStr->RenderPerChar(&rc,
+			*static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions));
 
 		rdPtr->reRender = false;
 	}
@@ -159,6 +163,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		//MSGBOX(L"Editor Calc");
 		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
 		neoStr.SetSpace(edPtr->nRowSpace, edPtr->nColSpace);
+		neoStr.SetTabProperties(edPtr->tabSize, edPtr->bTabEM);
 
 		//MSGBOX(L"Editor Calc");
 		neoStr.LinkObject(nullptr, nullptr);

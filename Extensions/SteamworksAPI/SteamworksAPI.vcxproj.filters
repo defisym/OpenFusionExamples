@@ -20,6 +20,21 @@
       <UniqueIdentifier>{a3652386-c344-4770-9fc1-d396f796d84e}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
+    <Filter Include="Steamworks">
+      <UniqueIdentifier>{5546c756-bf10-4ba1-b0c9-18dbef874ae9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamworksHeader">
+      <UniqueIdentifier>{b14c86c1-d0bc-4766-b376-11cba2d74282}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamworksSource">
+      <UniqueIdentifier>{bae52159-a2c9-48cf-ab68-61f00052d432}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamworksBasic">
+      <UniqueIdentifier>{6c79f370-b815-453e-93f0-9856d4794588}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Steamworks\SteamDefinition">
+      <UniqueIdentifier>{f7fcc068-7478-4cc4-b583-57654569799e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -139,18 +154,63 @@
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SteamUtilities.h">
+    <ClInclude Include="..\_DeLib\WindowsException.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamAchAndStat.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamMicroTxn.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRichPresence.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\JsonInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SteamCallback.h">
-      <Filter>Header Files</Filter>
+      <Filter>Steamworks\SteamworksBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamUtilities.h">
+      <Filter>Steamworks\SteamworksBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamHttp.h">
+      <Filter>Steamworks\SteamworksBasic</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamScreenshot.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamConcepts.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRefresh.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamRemote.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamWebAPI.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamInclude.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamInit.h">
+      <Filter>Steamworks\SteamDefinition</Filter>
+    </ClInclude>
+    <ClInclude Include="SteamGamepadTextInput.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="EXTICON.BMP">
+    <Image Include="Res\EXTICON.BMP">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="EXTIMG.BMP">
+    <Image Include="Res\EXTIMG.BMP">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

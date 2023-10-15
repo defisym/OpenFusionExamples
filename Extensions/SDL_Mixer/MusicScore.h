@@ -4,13 +4,7 @@
 #include <vector>
 
 namespace MusicScore {
-	enum Score {
-		Loop,
-		NightLightsUpTheNight,
-		CrystalPrelude,
-	};
-
-	using MusicalNotes=std::vector<float>;
+	using MusicalNotes = std::vector<float>;
 
 	// base on input
 	const static MusicalNotes loop = { 0,-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1 };
@@ -29,35 +23,37 @@ namespace MusicScore {
 		5,3,2,1, -3,-5,-6,-7
 	};
 
-	inline const MusicalNotes* GetElement(Score score) {
-		switch (score) {
-		case Loop:
-			return &loop;
-		case NightLightsUpTheNight:
-			return &nightLightsUpTheNight;
-		case CrystalPrelude:
-			return &crystalPrelude;
-		}
-
-		return nullptr;
-	}
-
-	inline size_t GetSize(Score score) {
-		const auto pNote = GetElement(score);
-
+	inline size_t GetSize(const MusicalNotes* pNote) {
 		return pNote != nullptr
 			? pNote->size()
 			: 0;
-	};
+	}
 
-	inline float GetNote(int pos, Score score = Loop, float base = 0) {
-		const auto pNote = GetElement(score);
-
-		if(pNote==nullptr) {
+	inline float GetNote(int pos, const MusicalNotes* pNote, float base = 0) {
+		if (pNote == nullptr) {
 			return 0;
 		}
-		
+
 		return (*pNote)[pos % pNote->size()] - base;
+	}
+
+	inline MusicalNotes GetNote(std::wstring& score) {
+		const std::vector<wchar_t> frontChars = { L' ',L'{',L',' };
+		const std::vector<wchar_t> backChars = { L' ',L'}',L',' };
+
+		TrimStr(score, frontChars, backChars);
+
+		constexpr auto arrayDelimiter = L',';
+
+		const auto elements = SplitString(score, arrayDelimiter);
+
+		MusicScore::MusicalNotes notes;
+
+		for (auto& note : elements) {
+			notes.push_back(_stof(note));
+		}
+
+		return notes;
 	}
 
 }

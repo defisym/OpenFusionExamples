@@ -49,7 +49,11 @@
 
 #define	ACT_ACTION_SFNA					16
 
-#define	ACT_LAST						17
+#define	ACT_ACTION_SOC					17
+
+#define	ACT_ACTION_RD					18
+
+#define	ACT_LAST						19
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -74,7 +78,10 @@
 
 #define EXP_EXPRESSION_GAT	 			13
 
-#define	EXP_LAST                    	14
+#define EXP_EXPRESSION_GVOCN	 		14
+#define EXP_EXPRESSION_GAOCN	 		15
+
+#define	EXP_LAST                    	16
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -186,8 +193,10 @@ typedef struct tagRDATA
 	GlobalData* pData;
 
 	AVHWDeviceType hwDeviceType;
-
 	bool bForceNoAudio;
+
+	std::string* pVideoOverrideCodecName = nullptr;
+	std::string* pAudioOverrideCodecName = nullptr;
 
 	std::wstring* pRetStr;
 

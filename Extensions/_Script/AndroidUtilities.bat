@@ -32,7 +32,10 @@ rmdir /s /q "%ContentPath%\src"
 
 @REM Add content here
 echo f | xcopy "%SrcPath%\src\main\java\Extensions\CRun%ProjectName%.java" "%ContentPath%\app\src\main\java\Extensions\CRun%ProjectName%.java" /s /e
+
+echo f | xcopy "%SrcPath%\src\main\java\_DeLib\AndroidCommon.java" "%ContentPath%\app\src\main\java\_DeLib\AndroidCommon.java" /s /e
 echo f | xcopy "%SrcPath%\src\main\java\_DeLib\FusionUtilities.java" "%ContentPath%\app\src\main\java\_DeLib\FusionUtilities.java" /s /e
+echo f | xcopy "%SrcPath%\src\main\java\_DeLib\Downloader.java" "%ContentPath%\app\src\main\java\_DeLib\Downloader.java" /s /e
 
 @REM Use these commands if extra lib & build script are needed
 

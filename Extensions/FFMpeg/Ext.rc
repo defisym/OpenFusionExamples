@@ -141,6 +141,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Reset Display",           IDMN_ACTION_RD
+        MENUITEM SEPARATOR
         MENUITEM "Open Video",              IDMN_ACTION_OV
         MENUITEM "Open Video To",           IDMN_ACTION_OVT
         MENUITEM "Close Video",             IDMN_ACTION_CV
@@ -159,6 +161,7 @@ BEGIN
         MENUITEM "Set Size", IDMN_ACTION_STRETCH
         MENUITEM SEPARATOR
         MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
+        MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
         MENUITEM SEPARATOR
         MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
@@ -192,6 +195,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Get Current Video Frame Pointer", IDMN_EXPRESSION_GCVFP
         MENUITEM "Get Grabbed Video Frame Pointer", IDMN_EXPRESSION_GGVFP        
+        MENUITEM SEPARATOR
+        MENUITEM "Get Video Override Codec Name", IDMN_EXPRESSION_GVOCN         
+        MENUITEM "Get Audio Override Codec Name", IDMN_EXPRESSION_GAOCN         
         MENUITEM SEPARATOR
         MENUITEM "Get Hardware Decode State", IDMN_EXPRESSION_GHDS         
         MENUITEM "Get Actual Hardware Device", IDMN_EXPRESSION_GAHDE         
@@ -327,6 +333,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_ACTION_RD	       	       "Reset Display"
+
     M_ACTION_OV	       	       "Open Video %0, Decrypt Key %1"
     M_ACTION_OVT       	       "Open Video %0 to %2, Decrypt Key %1"
     M_ACTION_CV			       "Close Video"
@@ -354,6 +362,8 @@ BEGIN
     
     M_ACTION_SFNA		       "Set Force No Audio to %0"
 
+    M_ACTION_SOC		       "Set Override Codec, Video = %0, Audio = %1"
+
     M_FILEPATH                 "FilePath"
     M_KEY   	               "16 Characters Long En/Decrypt Key, E.g. '12345678ABCDEFGH'"
     M_VOLUME	               "Volume, 0 = Min, 100 = Max"
@@ -369,9 +379,11 @@ BEGIN
     M_HEIGHT                   "Height"
     M_ATEMPO                   "Audio Tempo"
     M_FORCENOAUDIO             "Force No Audio, 0 = Disable"
+    M_VCODEC                   "Video Codec"
+    M_ACODEC                   "Audio Codec"
 END
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_VO	           "%o Video Open"
     M_CONDITION_VP	           "%o Video Play"
@@ -406,6 +418,9 @@ BEGIN
     M_EXPRESSION_GWHDE 	    "GWHDE$ ("
     
     M_EXPRESSION_GAT 	    "GAT ("
+    
+    M_EXPRESSION_GVOCN 	    "GVOCN$ ("
+    M_EXPRESSION_GAOCN 	    "GAOCN$ ("
 
     M_HWA                   "Return HWA"
 END

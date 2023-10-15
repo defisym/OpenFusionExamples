@@ -20,6 +20,12 @@
     <Filter Include="MMF Headers">
       <UniqueIdentifier>{f6ef1a44-36c7-44bb-93a7-3b437087049b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Animation">
+      <UniqueIdentifier>{766c411e-0301-45a7-9fb2-ae0575323ea8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NineSlice">
+      <UniqueIdentifier>{6a435414-b2b0-439c-81c0-a7756f9dcb38}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -155,6 +161,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_3rdLib\RegexHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\Animation.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationInterface.h">
+      <Filter>Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NineSlice.h">
+      <Filter>NineSlice</Filter>
+    </ClInclude>
+    <ClInclude Include="NineSliceInterface.h">
+      <Filter>NineSlice</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameCapture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

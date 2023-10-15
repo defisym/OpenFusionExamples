@@ -23,13 +23,12 @@
 #define	MINBUILD	243
 #endif
 
-#define _NODISPLAY
-
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
 // STL
+#include    <map>
 #include	<unordered_map>
 
 #include	<vector>
@@ -64,6 +63,7 @@ class WinToastHelper;
 
 // My headers
 #include	"Fusion.h"
+#include	"FusionUtilities.h"
 #include	"ObjectSelection.h"
 #include	"EffectUtilities.h"
 

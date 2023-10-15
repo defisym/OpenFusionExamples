@@ -75,7 +75,12 @@
 #define	ACT_ACTION_SORC				24
 #define	ACT_ACTION_SORCBF			25
 
-#define	ACT_LAST					26
+#define	ACT_ACTION_SS				26
+#define	ACT_ACTION_RS				27
+
+#define	ACT_ACTION_ITOF				28
+
+#define	ACT_LAST					29
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -135,6 +140,8 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
+#define _NODISPLAY // for UpdateHoImgInfo
+
 typedef struct tagEDATA_V1
 {
 	// Header - required
@@ -145,6 +152,13 @@ typedef struct tagEDATA_V1
 //	short			sheight;
 
 	bool CompatibleMode;
+	bool bScope;
+	bool bKeepScope;
+
+	bool unused;
+
+	// buffer
+	int buffer[51];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -176,24 +190,26 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	bool CompatibleMode;
+	bool bScope;
+	bool bKeepScope;
 
-	LPVEC FuncNameStack;
-	LPVEC FuncRawParamStack;
+	std::map<std::wstring, void*>* pScope;
+	
+	LPVEC FuncNameStack;			// original name	
+	LPLIDX RecursiveIndex;			// original name
+	
+	LPVEC FuncRawParamStack;		// name independent
+	LPPARAMSTACK FuncParamStack;	// name independent
+	LPPARAMVEC FuncReturn;			// name independent
 
-	LPPARAMSTACK FuncParamStack;
-	LPTPARAM FuncTempParam;
+	LPMANGLINGNAME FuncManglingName;// mangling name
+	LPTPARAM FuncTempParam;			// mangling name
+	LPLIDX FuncLoopIndex;			// mangling name
+	LPLIDX FuncCurLoopIndex;		// mangling name
 
-	LPPARAMMAP GlobalTempParam;
-
-	LPPARAMVEC FuncReturn;
-
-	LPLIDX FuncLoopIndex;
-	LPLIDX FuncCurLoopIndex;
-
-	LPLIDX RecursiveIndex;	
-
-	//LPSTRING OutPut;
-	LPTSTR OutPut = nullptr;
+	LPPARAMMAP GlobalTempParam;		// name independent
+	
+	LPWSTR OutPut = nullptr;
 
 	std::wstring* pPreviousFuncName = nullptr;
 	Data defaultData;

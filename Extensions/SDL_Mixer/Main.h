@@ -9,8 +9,12 @@
 #define	CND_CONDITION_CP				0
 #define	CND_CONDITION_NCP				1
 #define	CND_CONDITION_CFC				2
+#define	CND_CONDITION_CPAUSED			3
+#define	CND_CONDITION_ACPAUSED			4
+#define	CND_CONDITION_CHNO				5
+#define	CND_CONDITION_BHNR				6
 
-#define	CND_LAST    					3
+#define	CND_LAST    					7
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -25,8 +29,15 @@
 #define	ACT_ACTION_SAC					7
 #define	ACT_ACTION_SABL					8
 #define	ACT_ACTION_SMCS					9
+#define	ACT_ACTION_LB					10
+#define	ACT_ACTION_RB					11
+#define	ACT_ACTION_UB					12
+#define	ACT_ACTION_SMV					13
+#define	ACT_ACTION_SEPAN				14
+#define	ACT_ACTION_SEPOS				15
+#define	ACT_ACTION_SEDIS				16
 
-#define	ACT_LAST						10
+#define	ACT_LAST						17
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -35,8 +46,18 @@
 #define	EXP_EXPRESSION_GCS				1
 #define	EXP_EXPRESSION_GCP				2
 #define	EXP_EXPRESSION_GCD				3
+#define	EXP_EXPRESSION_GCIDBN			4
+#define	EXP_EXPRESSION_GCNBID			5
+#define	EXP_EXPRESSION_GPFMN 			6
+#define	EXP_EXPRESSION_GPFHMN 			7
+#define	EXP_EXPRESSION_GBA	 			8
+#define	EXP_EXPRESSION_GMV	 			9
+#define	EXP_EXPRESSION_GEPR	 			10
+#define	EXP_EXPRESSION_GEPL	 			11
+#define	EXP_EXPRESSION_GEA	 			12
+#define	EXP_EXPRESSION_GED	 			13
 
-#define	EXP_LAST                    	4
+#define	EXP_LAST                    	14
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -100,6 +121,9 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	GlobalData* pData;
+
+	std::vector<int>* pExclusiveChannelPauseState = nullptr;
+	std::vector<int>* pMixingChannelPauseState = nullptr;
 
 	std::wstring* pRet;
 	

@@ -19,23 +19,20 @@
 enum {
 	PROPID_SETTINGS = PROPID_EXTITEM_CUSTOM_FIRST,
 
-// Example
-// -------
-//	PROPID_TEXTTITLE,	
-//	PROPID_TEXT,	
-//	PROPID_CHECK,
-//	PROPID_COMBO,
-//	PROPID_COLOR,
+	PROPID_TEXTTITLE_STEAM,
+	PROPID_CHECK_REPORTERROR,
+	PROPID_COMBO_NOTIFICATIONPOSITION,
 };
 
-// Example of content of the PROPID_COMBO combo box
-//LPCSTR ComboList[] = {
-//	0,	// reserved
-//	MAKEINTRESOURCE(IDS_FIRSTOPTION),	
-//	MAKEINTRESOURCE(IDS_SECONDOPTION),	
-//	MAKEINTRESOURCE(IDS_THIRDOPTION),	
-//	NULL
-//};
+LPCWSTR NotificationPositionComboList[] = {
+	0,	// reserved
+	MAKEINTRESOURCE(IDS_COMBO_NOTIFICATIONPOSITION_DEFAULT),
+	MAKEINTRESOURCE(IDS_COMBO_NOTIFICATIONPOSITION_LT),
+	MAKEINTRESOURCE(IDS_COMBO_NOTIFICATIONPOSITION_RT),
+	MAKEINTRESOURCE(IDS_COMBO_NOTIFICATIONPOSITION_LB),
+	MAKEINTRESOURCE(IDS_COMBO_NOTIFICATIONPOSITION_RB),
+	NULL
+};
 
 // Property definitions
 //
@@ -50,6 +47,13 @@ PropData Properties[] = {
 //	PropData_CheckBox	(PROPID_CHECK,		IDS_PROP_CHECK,			IDS_PROP_CHECK_INFO),
 //	PropData_ComboBox	(PROPID_COMBO,		IDS_PROP_COMBO,			IDS_PROP_COMBO,	ComboList),
 //	PropData_Color		(PROPID_COLOR,		IDS_PROP_COLOR,			IDS_PROP_COLOR_INFO),
+
+	PropData_Group		(PROPID_TEXTTITLE_STEAM,	IDS_PROP_TEXTTITLE_STEAM,		IDS_PROP_TEXTTITLE_STEAM),
+#ifdef WIN32
+	PropData_CheckBox(PROPID_CHECK_REPORTERROR,		IDS_PROP_CHECK_REPORTERROR,			IDS_PROP_CHECK_REPORTERROR_INFO),
+#endif
+	PropData_ComboBox	(PROPID_COMBO_NOTIFICATIONPOSITION,		IDS_PROP_COMBO_NOTIFICATIONPOSITION,			IDS_PROP_COMBO_NOTIFICATIONPOSITION_INFO,	NotificationPositionComboList),
+
 
 	// End of table (required)
 	PropData_End()
@@ -657,22 +661,12 @@ void WINAPI DLLExport ReleasePropCreateParam(LPMV mV, LPEDATA edPtr, UINT nPropI
 LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Returns a color.
-//	case PROPID_COLOR:
-//		return new CPropDWordValue(edPtr->dwColor);
-//
-//	// Returns a string
-//	case PROPID_TEXT:
-//		return new CPropStringValue(&edPtr->szText[0]);
-//
-//	// Returns the value of the combo box
-//	case PROPID_COMBO:
-//		return new CPropDWordValue(edPtr->nComboIndex);
-//	}
+	switch (nPropID) {
+	// Returns the value of the combo box
+	case PROPID_COMBO_NOTIFICATIONPOSITION:
+		return new CPropDWordValue(edPtr->NotificationPosition + 1);
+	}
+
 #endif // !defined(RUN_ONLY)
 	return NULL;
 }
@@ -682,18 +676,12 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 // --------------------
 // Returns the checked state of properties that have a check box.
 //
-BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
-{
+BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID) {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	// Return 0 (unchecked) or 1 (checked)
-//	case PROPID_CHECK:
-//		return edPtr->nCheck;
-//	}
-
+	switch (nPropID) {
+	case PROPID_CHECK_REPORTERROR:
+		return edPtr->bReportError;
+	}
 #endif // !defined(RUN_ONLY)
 	return 0;		// Unchecked
 }
@@ -709,50 +697,12 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	// Gets the pointer to the CPropValue structure
 	CPropValue* pValue = (CPropValue*)lParam;
 
-	// Example
-	// -------
-//	switch (nPropID) {
-//
-//	case PROPID_COMBO:
-//		// Simply grab the value
-//		edPtr->nComboIndex = ((CPropDWordValue*)pValue)->m_dwValue;
-//		break;
-
-//	case PROPID_COLOR:
-//		// Here too, gets the value
-//		edPtr->dwColor = ((CPropDWordValue*)pValue)->m_dwValue;
-//		break;
-
-//	case PROPID_TEXT:
-//		{
-//			// Gets the string
-//			LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
-//
-//			// You can simply poke the string if your EDITDATA structure has a fixed size,
-//			// or have an adaptive size of structure like below
-//
-//			// If the length is different
-//			if (_tcslen(pStr)!=_tcslen(edPtr->text))
-//			{
-//				// Asks MMF to reallocate the structure with the new size
-//				LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA)+_tcslen(pStr) * sizeof(TCHAR));
-//				
-//				// If reallocation worked
-//				if (pNewPtr!=NULL)
-//				{
-//					// Copy the string
-//					edPtr=pNewPtr;
-//					_tcscpy(edPtr->text, pStr);
-//				}
-//			}
-//			else
-//			{	
-//				// Same size : simply copy
-//				_tcscpy(edPtr->text, pStr);
-//			}
-//		}
-//		break;
-//	}
+	switch (nPropID) {
+	case PROPID_COMBO_NOTIFICATIONPOSITION:
+		// Simply grab the value
+		edPtr->NotificationPosition = static_cast<ENotificationPosition>(static_cast<CPropDWordValue*>(pValue)->m_dwValue - 1);
+		break;
+	}
 
 	// You may want to have your object redrawn in the frame editor after the modifications,
 	// in this case, just call this function
@@ -766,19 +716,15 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 // --------------------
 // This routine is called by MMF when the user modifies a checkbox in the properties.
 //
-void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck)
-{
+void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nCheck) {
 #ifndef RUN_ONLY
-	// Example
-	// -------
-//	switch (nPropID)
-//	{
-//	case PROPID_CHECK:
-//		edPtr->nCheck = nCheck;
-//		mvInvalidateObject(mV, edPtr);
-//		mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
-//		break;
-//	}
+	switch (nPropID) {
+	case PROPID_CHECK_REPORTERROR:
+		edPtr->bReportError = nCheck;
+		//mvInvalidateObject(mV, edPtr);
+		//mvRefreshProp(mV, edPtr, PROPID_COMBO, TRUE);
+		break;
+	}
 #endif // !defined(RUN_ONLY)
 }
 

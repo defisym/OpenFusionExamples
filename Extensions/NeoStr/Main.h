@@ -46,8 +46,13 @@
 
 #define	ACT_ACTION_FRD			    	21
 #define	ACT_ACTION_FRDGI		    	22
+#define	ACT_ACTION_RENDER		    	23
 
-#define	ACT_LAST						23
+#define	ACT_ACTION_SRO		    	    24
+
+#define	ACT_ACTION_STS		    	    25
+
+#define	ACT_LAST						26
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -98,7 +103,12 @@
 
 #define	EXP_EXPRESSION_GRSBFSL		    	31
 
-#define	EXP_LAST                    		32
+#define	EXP_EXPRESSION_GRO_VR		    	32
+
+#define	EXP_EXPRESSION_GTS_TS		    	33
+#define	EXP_EXPRESSION_GTS_EM		    	34
+
+#define	EXP_LAST                    		35
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -160,7 +170,13 @@ typedef struct tagEDATA_V1
 	bool bIConGlobal;
 	bool bIConForceUpdate;
 
-	int buffer[13];
+	unsigned char tabSize;
+	bool bTabEM;
+
+	bool bUnused_0;
+	bool bUnused_1;
+
+	int buffer[12];
 	
 	wchar_t	pText;		// Text
 
@@ -234,7 +250,7 @@ typedef struct tagRDATA
 	float xScale = 1.0;
 	float yScale = 1.0;
 
-	int angle = 0;
+	float angle = 0;
 
 	bool reRender;
 	bool bStrChanged;
@@ -270,6 +286,11 @@ typedef struct tagRDATA
 	bool bIConForceUpdate;
 
 	bool bIConNeedUpdate;
+
+	void* pRenderOptions;
+
+	unsigned char tabSize;
+	bool bTabEM;
 
 	std::wstring* pExpRet;
 

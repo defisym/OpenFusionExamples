@@ -49,12 +49,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Defisym\0"
-            VALUE "FileDescription", "String Spliter\0"
+            VALUE "FileDescription", "String Splitter\0"
             VALUE "FileVersion", "0.00\0"
-            VALUE "InternalName", "StringSpliter\0"
-            VALUE "LegalCopyright", "Copyright 2021 Defisym\0"
+            VALUE "InternalName", "StringSplitter\0"
+            VALUE "LegalCopyright", "Copyright 2021 ~ 2023 Defisym\0"
             VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "StringSpliter.mfx\0"
+            VALUE "OriginalFilename", "StringSplitter.mfx\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "\0"
             VALUE "ProductVersion", "1, 0, 0, 0\0"
@@ -172,6 +172,7 @@ BEGIN
         POPUP "Split"
             BEGIN
                 MENUITEM "Set Auto Split",  IDMN_ACTION_AS
+                MENUITEM "Set Cache Split Result",  IDMN_ACTION_CSR
                 MENUITEM SEPARATOR
                 MENUITEM "Split Data",  IDMN_ACTION_SD
                 MENUITEM SEPARATOR
@@ -322,15 +323,15 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     KPX_MARK                "MF2"
-    KPX_NAME                "String Spliter"
+    KPX_NAME                "String Splitter"
 END
 
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDST_OBJNAME            "String Spliter"
+    IDST_OBJNAME            "String Splitter"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021 ~ 2023 Defisym"
     IDST_COMMENT            "This object is a string splitter base on C++ regex."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -354,6 +355,7 @@ BEGIN
     M_ACTION_SR_K           "Set Keyword Regex to %0"
 
     M_ACTION_AS             "Set Auto Split to %0"
+    M_ACTION_CSR            "Set Cache Split Result to %0"            
 
     M_ACTION_SD             "00Split Data"
 
@@ -384,6 +386,7 @@ BEGIN
     M_ACT_SR_K			    "Keyword Regex"
 
     M_ACT_AUTO			    "1 = Enable, 0 = Disable"
+    M_ACT_CACHE			    "1 = Enable, 0 = Disable"
 END
 
 STRINGTABLE DISCARDABLE 

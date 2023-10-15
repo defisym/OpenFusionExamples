@@ -182,6 +182,7 @@ BEGIN
         MENUITEM "Call Func (ternary)", IDMN_ACTION_T
         MENUITEM SEPARATOR
         MENUITEM "Iterate Object", IDMN_ACTION_ITO
+        MENUITEM "Iterate Object Func", IDMN_ACTION_ITOF
         MENUITEM SEPARATOR
         POPUP "Loop"
         BEGIN
@@ -226,10 +227,19 @@ BEGIN
 #endif
         END
         MENUITEM SEPARATOR
-        MENUITEM "Set Object Alpha", IDMN_ACTION_SOA
-        MENUITEM "Set Object Alpha By Fixed", IDMN_ACTION_SOABF
-        MENUITEM "Set Object RGB Coef", IDMN_ACTION_SORC
-        MENUITEM "Set Object RGB Coef By Fixed", IDMN_ACTION_SORCBF
+        POPUP "Object"
+        BEGIN    
+            MENUITEM "Set Object Alpha", IDMN_ACTION_SOA
+            MENUITEM "Set Object Alpha By Fixed", IDMN_ACTION_SOABF
+            MENUITEM "Set Object RGB Coef", IDMN_ACTION_SORC
+            MENUITEM "Set Object RGB Coef By Fixed", IDMN_ACTION_SORCBF
+        END
+        MENUITEM SEPARATOR
+        POPUP "Scope"
+        BEGIN    
+            MENUITEM "Save Scope", IDMN_ACTION_SS
+            MENUITEM "Restore Scope", IDMN_ACTION_RS
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -315,7 +325,10 @@ BEGIN
             MENUITEM "Xor",IDMN_EXPRESSION_XOR
         END
         MENUITEM SEPARATOR
-        MENUITEM "Get Object Alpha", IDMN_EXPRESSION_GOA
+        POPUP "Object"
+        BEGIN   
+            MENUITEM "Get Object Alpha", IDMN_EXPRESSION_GOA
+        END
         MENUITEM SEPARATOR
         MENUITEM "Get Current FuncName", IDMN_EXPRESSION_GCFN        
         MENUITEM SEPARATOR
@@ -423,6 +436,7 @@ BEGIN
     M_ACTION_T              "Call Func (%0) ? (FuncA %1, ParamA %2) : (FuncB %3, ParamB %4) "
     
     M_ACTION_ITO            "Iterate Object %0, Iterate Name %1"
+    M_ACTION_ITOF           "Iterate Object %0, Iterate Name %1, Param = %2"
 
     M_ACTION_SSGP           "Set Global Temp Param %0 = %1"
     M_ACTION_SVGP           "Set Global Temp Param %0 = %1"
@@ -437,6 +451,9 @@ BEGIN
 
     M_ACTION_SORC           "Set Object %0 RGB Coef to %1"
     M_ACTION_SORCBF         "Set Object %0 RGB Coef to %1"
+
+    M_ACTION_SS             "Save Scope, Name = %0"
+    M_ACTION_RS             "Restore Scope, Name = %0"
 
     M_ACT_RET               "Return Value"
     M_ACT_RETA              "All Return Values, E.G. RetV1|RetV2|RetV3|..."
@@ -457,6 +474,8 @@ BEGIN
 
     M_ACT_ALPHA             "Alpha"
     M_ACT_RGBCOEF           "RGB Coef"
+
+    M_SCOPENAME             "Scope Name"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -560,6 +579,14 @@ BEGIN
     
     IDS_PROP_COMPATIBLEMODE_CHECK       "Compatible Mode"
     IDS_PROP_COMPATIBLEMODE_CHECK_INFO  "If your fusion version is below R293.9, please enable compatible mode to avoid crash in some cases when calling event by expression."
+    
+    IDS_PROP_KEEPSCOPE_TEXTTITLE            "Scope"
+
+    IDS_PROP_KEEPSCOPE_ENABLE_CHECK         "Enable"
+    IDS_PROP_KEEPSCOPE_ENABLE_CHECK_INFO    "*Experimental*\r\nEnable scope save & restore features"
+
+    IDS_PROP_KEEPSCOPE_CHECK                "Keep Scope"
+    IDS_PROP_KEEPSCOPE_CHECK_INFO           "Keep scope when calling func, may lower performance or miss up events"
 END
 
 #endif    // English (U.S.) resources

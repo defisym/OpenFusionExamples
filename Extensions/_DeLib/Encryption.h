@@ -11,9 +11,9 @@
 
 //#include <ntstatus.h>
 
-#define _USER_MODE
+#define USER_MODE
 
-#ifdef _USER_MODE
+#ifdef USER_MODE
 #pragma comment(lib, "bcrypt.lib")
 #else
 // requires cng.sys
@@ -29,8 +29,8 @@ constexpr auto DECRY = false;
 constexpr auto BUFFER_SIZE = 1024 * 256;
 
 constexpr static BYTE DefaultKey[16] = {
-0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 };
 
 constexpr static BYTE DefaultIV[16] = {
@@ -66,7 +66,7 @@ private:
 	DWORD BufferSize = BUFFER_SIZE;
 
 	template<typename T>
-	inline T* GetStr(T*& pOutput, PBYTE pSrc, size_t sz) {
+	static inline T* GetStr(T*& pOutput, const PBYTE pSrc, size_t sz) {
 		if (pSrc == nullptr) {
 			return nullptr;
 		}
@@ -80,7 +80,7 @@ private:
 	}
 
 	template<typename T>
-	inline void Release(T*& Pointer) {
+	static inline void Release(T*& Pointer) {
 		delete[] Pointer;
 		Pointer = nullptr;
 
@@ -88,12 +88,12 @@ private:
 	}
 
 	template<typename T>
-	inline bool Alloc(T*& Pointer, size_t sz) {
+	static inline bool Alloc(T*& Pointer, const size_t sz) {
 		Release(Pointer);
 		Pointer = new T[sz];
 		memset(Pointer, 0, sizeof(T) * sz);
 
-		return NULL != Pointer;
+		return nullptr != Pointer;
 	}
 
 	inline void GetReadableHash() {
@@ -103,7 +103,7 @@ private:
 		//Update output length		
 		CryptBinaryToString(this->OutputData, this->OutputLength
 			, CRYPT_STRING_HEXRAW | CRYPT_STRING_NOCRLF
-			, NULL, &this->HashLength);
+			, nullptr, &this->HashLength);
 
 		//Output		
 		this->HashStr = new WCHAR[this->HashLength];
@@ -115,10 +115,10 @@ private:
 	using HandlerType = decltype(BCryptEncrypt);
 
 	inline bool Encrypt_Core(HandlerType handler
-		, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM
-		, std::function<NTSTATUS(HandlerType handler
+		, const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM
+		, const std::function<NTSTATUS(HandlerType handler
 			, BCRYPT_KEY_HANDLE hKey
-			, PBYTE pbIV, DWORD cbBlockLen)> externalEcrypter = nullptr) {
+			, PBYTE pbIV, DWORD cbBlockLen)>& externalEcrypter = nullptr) {
 		//do nothing if input is invalid
 		if (this->InputData == nullptr) {
 			return false;
@@ -130,8 +130,8 @@ private:
 		}
 
 		//Define Vars
-		BCRYPT_ALG_HANDLE       hAesAlg = NULL;
-		BCRYPT_KEY_HANDLE       hKey = NULL;
+		BCRYPT_ALG_HANDLE       hAesAlg = nullptr;
+		BCRYPT_KEY_HANDLE       hKey = nullptr;
 		NTSTATUS                status = STATUS_UNSUCCESSFUL;
 
 		DWORD
@@ -139,8 +139,8 @@ private:
 			cbKeyObject = 0,
 			cbBlockLen = 0;
 		PBYTE
-			pbKeyObject = NULL,
-			pbIV = NULL;
+			pbKeyObject = nullptr,
+			pbIV = nullptr;
 
 		bool result = true;
 
@@ -185,7 +185,7 @@ private:
 
 		// Allocate the key object on the heap.
 		pbKeyObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbKeyObject);
-		if (NULL == pbKeyObject) {
+		if (nullptr == pbKeyObject) {
 			//wprintf(L"**** memory allocation failed\n");
 			result = false;
 			goto Cleanup;
@@ -212,7 +212,7 @@ private:
 		// Allocate a buffer for the IV. The buffer is consumed during the 
 		// encrypt/decrypt process.
 		pbIV = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbBlockLen);
-		if (NULL == pbIV) {
+		if (nullptr == pbIV) {
 			//wprintf(L"**** memory allocation failed\n");
 			result = false;
 			goto Cleanup;
@@ -258,7 +258,7 @@ private:
 			: handler(
 				hKey,
 				this->InputData, this->InputLength,
-				NULL,
+				nullptr,
 				pbIV, cbBlockLen,
 				this->OutputData, this->OutputLength,
 				&(this->OutputLength),
@@ -291,7 +291,7 @@ private:
 		return result;
 	}
 
-	inline bool OpenFileGeneral(const wchar_t* FileName, std::function<void(FILE*, long)> callBack) {
+	inline bool OpenFileGeneral(const wchar_t* FileName, const std::function<void(FILE*, long)>& callBack) {
 		Release(this->InputData);
 
 		FILE* fp = nullptr;
@@ -319,51 +319,62 @@ private:
 protected:
 
 public:
-	Encryption();
+	Encryption() = default;
 	~Encryption();
 
-	const auto GetKeyInfo() {
+	auto GetKeyInfo() {
 		return std::make_tuple(this->Key, this->KeyLength,
 			this->IV,this->IVLength);
 	}
 
 	bool OpenFile(const wchar_t* FileName);
-	bool SaveFile(const wchar_t* FileName, bool SaveSrc = false);
+	bool SaveFile(const wchar_t* FileName, bool SaveSrc = false) const;
 
-	inline PBYTE GetInputData() {
+	inline PBYTE GetData() const {
+		return this->OutputData == nullptr
+			? this->InputData
+			: this->OutputData;
+	}
+	inline DWORD GetDataLength() const {
+		return this->OutputData == nullptr
+			? this->InputLength
+			: this->OutputLength;
+	}
+
+	inline PBYTE GetInputData() const {
 		return this->InputData;
 	}
-	inline DWORD GetInputDataLength() {
+	inline DWORD GetInputDataLength() const {
 		return this->InputLength;
 	}
 
-	inline PBYTE GetOutputData() {
+	inline PBYTE GetOutputData() const {
 		return this->OutputData;
 	}
-	inline DWORD GetOutputDataLength() {
+	inline DWORD GetOutputDataLength() const {
 		return this->OutputLength;
 	}
 
 	template<typename T>
 	void SetEncryptData(const T* pBuf, DWORD sz);
 
-	void SetEncryptStr(std::string& Str);
+	void SetEncryptStr(const std::string& Str);
 	void SetEncryptStr(const char* Str, DWORD StrLength);
 
-	void SetEncryptStr(std::wstring& Str);
+	void SetEncryptStr(const std::wstring& Str);
 	void SetEncryptStr(const wchar_t* Str, DWORD StrLength);
 
 	char* GetInputStr();
 	void ReleaseInputStr();
 
-	DWORD GetInputStrLength();
+	DWORD GetInputStrLength() const;
 
 	void ReleaseInputData();
 
 	char* GetOutputStr();
 	void ReleaseOutputStr();
 
-	DWORD GetOutputStrLength();
+	DWORD GetOutputStrLength() const;
 
 	void GenerateKey(const wchar_t* KeyStr);
 
@@ -373,23 +384,23 @@ public:
 	// load to memory
 	inline bool EncryptFile(const wchar_t* pFileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		this->OpenFile(pFileName);
-		auto ret = this->Encrypt();
+		const auto ret = this->Encrypt();
 		this->ReleaseInputData();
 
 		return ret;
 	}
 	inline bool DecryptFile(const wchar_t* pFileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		this->OpenFile(pFileName);
-		auto ret = this->Decrypt();
+		const auto ret = this->Decrypt();
 		this->ReleaseInputData();
 
 		return ret;
 	}
 
-	inline bool Encrypt(LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+	inline bool Encrypt(const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		return Encrypt_Core(BCryptEncrypt, Algorithm);
 	}
-	inline bool Decrypt(LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+	inline bool Decrypt(const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		return Encrypt_Core(BCryptDecrypt, Algorithm);
 	}
 
@@ -397,17 +408,17 @@ public:
 
 #ifdef PROCESS_DIRECTLY
 private:
-	inline bool ProcessFileDirectly(const wchar_t* FileName, HandlerType handler, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+	inline bool ProcessFileDirectly(const wchar_t* FileName, HandlerType handler, const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		bool bRet = false;
 
 		OpenFileGeneral(FileName, [&] (FILE* fp, long fileSz) {
 			this->InputData = (PBYTE)fp;
 
 			bRet = Encrypt_Core(handler, Algorithm, [&] (HandlerType handler
-				, BCRYPT_KEY_HANDLE hKey
-				, PBYTE pbIV, DWORD cbBlockLen) {
-					auto bufSz = cbBlockLen * this->BufferSize;
-					auto pBuf = new BYTE[bufSz];
+				, const BCRYPT_KEY_HANDLE hKey
+				, const PBYTE pbIV, const DWORD cbBlockLen) {
+					const auto bufSz = cbBlockLen * this->BufferSize;
+					const auto pBuf = new BYTE[bufSz];
 
 					bool bFinish = false;
 
@@ -431,7 +442,7 @@ private:
 						auto ret = handler(
 							hKey,
 							pBuf, sz,
-							NULL,
+							nullptr,
 							pbIV, cbBlockLen,
 							this->OutputData + totalByteWrite, this->OutputLength - totalByteWrite,
 							&byteWrite,
@@ -465,15 +476,15 @@ private:
 
 public:
 	// actual buf size = cbBlockLen * sz
-	inline void SetBufferSize(DWORD sz = BUFFER_SIZE) {
+	inline void SetBufferSize(const DWORD sz = BUFFER_SIZE) {
 		this->BufferSize = (std::max)((DWORD)1, sz);
 	}
 
 	// read from disk
-	inline bool EncryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+	inline bool EncryptFileDirectly(const wchar_t* FileName, const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		return ProcessFileDirectly(FileName, BCryptEncrypt, Algorithm);
 	}
-	inline bool DecryptFileDirectly(const wchar_t* FileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
+	inline bool DecryptFileDirectly(const wchar_t* FileName, const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
 		return ProcessFileDirectly(FileName, BCryptDecrypt, Algorithm);
 	}
 #endif 
@@ -483,22 +494,22 @@ public:
 
 #ifndef ENCRYPTER_USE_CONVENIENCE_HASH
 	// BCRYPT_SHA256_ALGORITHM,
-	inline LPCWSTR GetHash(LPCWSTR Algorithm = BCRYPT_MD5_ALGORITHM) {
+	inline LPCWSTR GetHash(const LPCWSTR Algorithm = BCRYPT_MD5_ALGORITHM) {
 		//do nothing if input is invalid
 		if (this->InputData == nullptr) {
 			return nullptr;
 		}
 
 		//Define Vars
-		BCRYPT_ALG_HANDLE       hAlg = NULL;
-		BCRYPT_HASH_HANDLE      hHash = NULL;
+		BCRYPT_ALG_HANDLE       hAlg = nullptr;
+		BCRYPT_HASH_HANDLE      hHash = nullptr;
 		NTSTATUS                status = STATUS_UNSUCCESSFUL;
 
 		DWORD
 			cbData = 0,
 			cbHashObject = 0;
 		PBYTE
-			pbHashObject = NULL;
+			pbHashObject = nullptr;
 
 		bool result = true;
 
@@ -526,7 +537,7 @@ public:
 
 		//allocate the hash object on the heap
 		pbHashObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHashObject);
-		if (NULL == pbHashObject) {
+		if (nullptr == pbHashObject) {
 			// wprintf(L"**** memory allocation failed\n");
 			result = false;
 			goto Cleanup;
@@ -671,6 +682,32 @@ public:
 	}
 #endif 
 };
+
+// hash
+inline std::wstring GetFileHash(LPCWSTR filePath) {
+	// protection for null file
+	if (wcscmp(filePath, L"") == 0) {
+		return L"";
+	}
+
+	Encryption hash;
+	hash.OpenFile(filePath);
+
+	const auto ret = hash.GetHash();
+
+	return ret == nullptr ? L"" : ret;
+}
+inline std::wstring GetFileHash(const std::wstring& filePath) {
+	return GetFileHash(filePath.c_str());
+}
+inline std::wstring GetFileHash(LPBYTE pData, DWORD StrLength) {
+	Encryption hash;
+	hash.SetEncryptStr(reinterpret_cast<char*>(pData), StrLength);
+
+	const auto ret = hash.GetHash();
+
+	return ret == nullptr ? L"" : ret;
+}
 
 #ifdef PROCESS_DIRECTLY
 //#define BUFFER_BENCHMARK

@@ -116,8 +116,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bCache = edPtr->bCache;
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
-
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
+
+	rdPtr->pVideoOverrideCodecName = new std::string;
+	rdPtr->pAudioOverrideCodecName = new std::string;
 
 	rdPtr->atempo = DEFAULT_ATEMPO;
 
@@ -129,7 +131,33 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}	
 
-	rdPtr->pData->Create(rdPtr->bForceNoAudio, &rdPtr->pFFMpeg);
+	rdPtr->pData->Create(&rdPtr->pFFMpeg, &rdPtr->bForceNoAudio);
+
+//#define LIST_DECODERS
+
+#ifdef LIST_DECODERS
+	auto ListDecoders = [] (AVMediaType type) {
+		void* iter = nullptr;
+		const AVCodec* codec = nullptr;
+
+		while (codec = av_codec_iterate(&iter)) {
+			if (av_codec_is_decoder(codec)) {
+				if (codec->type == type) {
+					OutputDebugStringA(codec->name);
+					OutputDebugStringA("\n");
+				}
+			}
+		}
+	};
+
+	OutputDebugStringA("Video\n\n");
+	ListDecoders(AVMEDIA_TYPE_VIDEO);
+	OutputDebugStringA("\n\n");
+
+	OutputDebugStringA("Audio\n\n");
+	ListDecoders(AVMEDIA_TYPE_AUDIO);
+	OutputDebugStringA("\n\n");
+#endif
 
 	// No errors
 	return 0;
@@ -162,6 +190,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	CloseGeneral(rdPtr);
 
 	delete rdPtr->pFilePath;
+
+	delete rdPtr->pVideoOverrideCodecName;
+	delete rdPtr->pAudioOverrideCodecName;
 
 	delete rdPtr->pRetStr;	
 
@@ -223,11 +254,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	OutputDebugString(outPut.c_str());
 	OutputDebugString(L"\n");
-#endif
-
-#ifdef FMOD_AUDIO
-	rdPtr->pData->cFMI.FMI_Update();
-	rdPtr->pData->UpdateVolume(&rdPtr->pFFMpeg);
 #endif
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
@@ -392,8 +418,11 @@ LPSMASK WINAPI DLLExport GetRunObjectCollisionMask(LPRDATA rdPtr, LPARAM lParam)
 // ----------------
 // Enters the pause mode
 // 
-short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr) {
+	if (rdPtr->bPlay && rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_pause(true);
+	}
+
 	// Ok
 	return 0;
 }
@@ -404,8 +433,11 @@ short WINAPI DLLExport PauseRunObject(LPRDATA rdPtr)
 // -----------------
 // Quits the pause mode
 //
-short WINAPI DLLExport ContinueRunObject(LPRDATA rdPtr)
-{
+short WINAPI DLLExport ContinueRunObject(LPRDATA rdPtr) {
+	if (rdPtr->bPlay && rdPtr->pFFMpeg != nullptr) {
+		rdPtr->pFFMpeg->set_pause(false);
+	}
+
 	// Ok
 	return 0;
 }

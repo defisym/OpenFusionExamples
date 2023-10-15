@@ -28,6 +28,8 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
+#define _NODISPLAY // for UpdateHoImgInfo
+
 typedef struct tagEDATA_V1
 {
 	// Header - required
@@ -66,7 +68,7 @@ typedef struct tagRDATA
 	rVal			rv;				// Alterable values
 
 	// Object's runtime data
-	Deque2D* Data;
+	Deque2D::Deque2D* Data;
 
 	LPWSTR OutPut;
 

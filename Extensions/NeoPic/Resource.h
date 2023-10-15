@@ -22,11 +22,14 @@
 #define IDS_PROP_HWA_CHECK           204
 #define IDS_PROP_HWA_CHECK_INFO      205
 
-#define IDS_PROP_HASCOLLISION_CHECK      206
-#define IDS_PROP_HASCOLLISION_CHECK_INFO      207
+#define IDS_PROP_LOAD_TEXTTITLE			 206
+#define IDS_PROP_LOAD_TEXTTITLE_INFO     207
 
-#define IDS_PROP_AUTOUPDATECOLLISION_CHECK      208
-#define IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO      209
+#define IDS_PROP_LOADCALLBACK_CHECK      208
+#define IDS_PROP_LOADCALLBACK_CHECK_INFO 209
+
+#define IDS_PROP_LOADKEEPANGLE_CHECK      231
+#define IDS_PROP_LOADKEEPANGLE_CHECK_INFO 232
 
 #define IDS_PROP_QUALITY_TEXTTITLE      210
 
@@ -79,18 +82,18 @@
 #define IDMN_ACTION_Z	       		25006
 #define IDMN_ACTION_R	       		25007
 
-#define IDMN_ACTION_US	       		25008
-#define IDMN_ACTION_RC	       		25009
+#define IDMN_ACTION_AOTL	       		25008
+#define IDMN_ACTION_DOFL	       		25009
 
 #define IDMN_ACTION_S	       		25010
 
 #define IDMN_ACTION_AB	       		25011
-#define IDMN_ACTION_UC	       		25012
+#define IDMN_ACTION_ULCSF	       		25012
 
 #define IDMN_ACTION_SQ	       		25013
-#define IDMN_ACTION_SC	       		25014
+#define IDMN_ACTION_SLC	       		25014
 
-#define IDMN_ACTION_AT	       		25015
+#define IDMN_ACTION_PT	       		25015
 #define IDMN_ACTION_O	       		25016
 
 #define IDMN_ACTION_LFD	       		25017
@@ -120,6 +123,24 @@
 
 #define	IDMN_ACTION_STFWS  			25031
 
+#define	IDMN_ACTION_STC 			25032
+
+#define	IDMN_ACTION_SAS 			25033
+#define	IDMN_ACTION_LA 			    25034
+#define	IDMN_ACTION_SA 			    25035
+
+#define	IDMN_ACTION_SASPEED 	    25036
+#define	IDMN_ACTION_PA 			    25037
+#define	IDMN_ACTION_RA 			    25038
+#define	IDMN_ACTION_SAFID		    25039
+#define	IDMN_ACTION_SAFINDEX	    25040
+#define	IDMN_ACTION_SASTEP	     	25041
+
+#define	IDMN_ACTION_SNSS 			25042
+#define	IDMN_ACTION_LNS 			25043
+#define	IDMN_ACTION_RNS 			25044
+#define	IDMN_ACTION_RENDERNS 		25045
+
 // Action strings
 #define M_ACTION_LFF                 5000
 #define M_ACTION_LFL                 5001
@@ -132,18 +153,18 @@
 #define M_ACTION_Z                   5006
 #define M_ACTION_R                   5007
 
-#define M_ACTION_US                  5008
-#define M_ACTION_RC                  5009
+#define M_ACTION_AOTL                  5008
+#define M_ACTION_DOFL                  5009
 
 #define M_ACTION_S                   5010
 
 #define M_ACTION_AB          	     5011
-#define M_ACTION_UC          	     5012
+#define M_ACTION_ULCSF          	     5012
 
-#define M_ACTION_SC          	     5013
+#define M_ACTION_SLC          	     5013
 #define M_ACTION_SQ          	     5014
 
-#define M_ACTION_AT          	     5015
+#define M_ACTION_PT          	     5015
 #define M_ACTION_O          	     5016
 
 #define M_ACTION_LFD          	     5017
@@ -172,6 +193,24 @@
 #define	M_ACTION_CF 			     5030
 
 #define	M_ACTION_STFWS 			     5031
+
+#define	M_ACTION_STC 			     5032
+
+#define	M_ACTION_SAS 			     5033
+#define	M_ACTION_LA 			     5034
+#define	M_ACTION_SA 			     5035
+
+#define	M_ACTION_SASPEED 			 5036
+#define	M_ACTION_PA 			     5037
+#define	M_ACTION_RA 			     5038
+#define	M_ACTION_SAFID	 			 5039
+#define	M_ACTION_SAFINDEX 			 5040
+#define	M_ACTION_SASTEP 			 5041
+
+#define	M_ACTION_SNSS 			     5042
+#define	M_ACTION_LNS 			     5043
+#define	M_ACTION_RNS 			     5044
+#define	M_ACTION_RENDERNS 			 5045
 
 // Titles of action parameters
 #define M_ACTION_OBJECT				 5501
@@ -219,6 +258,15 @@
 
 #define M_ACTION_SAVEFILENAME        5530
 
+#define M_ACTION_COLOR               5531
+#define M_ACTION_ALPHA               5532
+
+#define M_ACTION_SPEED               5533
+#define M_ACTION_FID	             5534
+#define M_ACTION_FINDEX              5535
+#define M_ACTION_STEP                5536
+#define M_ACTION_PTMAT               5537
+
 //	Conditions
 //--------------------
 
@@ -234,6 +282,14 @@
 #define IDMN_CONDITION_CDT                  26003
 #define IDMN_CONDITION_LHI                  26004
 
+#define IDMN_CONDITION_OAF                  26005
+#define IDMN_CONDITION_IAP                  26006
+#define IDMN_CONDITION_IAPAUSED             26007
+
+#define IDMN_CONDITION_OLC                  26008
+
+#define IDMN_CONDITION_IAF                  26009
+
 // Condition strings
 #define M_CONDITION_OPLC                     6000
 #define M_CONDITION_OITRC                    6001
@@ -242,6 +298,14 @@
 
 #define M_CONDITION_CDT                      6003
 #define M_CONDITION_LHI                      6004
+
+#define M_CONDITION_OAF                      6005
+#define M_CONDITION_IAP                      6006
+#define M_CONDITION_IAPAUSED                 6007
+
+#define M_CONDITION_OLC                      6008
+
+#define M_CONDITION_IAF                      6009
 
 // Titles of condition parameters
 #define M_CND_P1				 6501
@@ -295,6 +359,16 @@
 #define IDMN_EXPRESSION_GVRBMB      27024
 #define IDMN_EXPRESSION_GVRAMB      27025
 
+#define IDMN_EXPRESSION_GAN         27026
+#define IDMN_EXPRESSION_GAFID       27027
+#define IDMN_EXPRESSION_GAFINDEX    27028
+#define IDMN_EXPRESSION_GAS         27029
+#define IDMN_EXPRESSION_GASTEP      27030
+
+#define IDMN_EXPRESSION_GLCFN       27031
+#define IDMN_EXPRESSION_GLCSF       27032
+
+#define IDMN_EXPRESSION_GAFN       27033
 
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
@@ -336,6 +410,17 @@
 #define M_EXPRESSION_GVRUMB          7023
 #define M_EXPRESSION_GVRBMB          7024
 #define M_EXPRESSION_GVRAMB          7025
+
+#define M_EXPRESSION_GAN             7026
+#define M_EXPRESSION_GAFID           7027
+#define M_EXPRESSION_GAFINDEX        7028
+#define M_EXPRESSION_GAS             7029
+#define M_EXPRESSION_GASTEP          7030
+
+#define M_EXPRESSION_GLCFN           7031
+#define M_EXPRESSION_GLCSF           7032
+
+#define M_EXPRESSION_GAFN            7033
 
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500

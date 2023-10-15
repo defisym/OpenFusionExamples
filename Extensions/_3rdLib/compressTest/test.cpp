@@ -4,8 +4,6 @@
 
 #include "data.h"
 
-using namespace std;
-
 inline void zpaq() {
 	auto srcSz = srcStr.length();
 

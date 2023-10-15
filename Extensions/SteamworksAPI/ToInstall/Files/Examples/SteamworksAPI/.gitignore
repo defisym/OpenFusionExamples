@@ -3,4 +3,6 @@ Modules/*.*
 SteamworksAPI.exe
 SteamworksAPI.dat
 
-*steam_appid.txt
+steam_appid.txt
+
+*.mdmp

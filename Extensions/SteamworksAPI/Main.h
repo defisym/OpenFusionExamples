@@ -10,26 +10,64 @@
 // ------------------------------
 #define	CND_CONDITION_RPO				0
 
-#define	CND_LAST						1
+#define	CND_CONDITION_OMTE				1
+#define	CND_CONDITION_OMTF				2
+
+#define	CND_CONDITION_ROSD				3
+
+#define	CND_CONDITION_OSS				4
+
+#define	CND_CONDITION_OID				5
+#define	CND_CONDITION_SUBMITTED			6
+
+#define	CND_LAST						7
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
 // ---------------------------
-#define	ACT_ACTION					0
+#define	ACT_ACTION_UA					0
+#define	ACT_ACTION_AS					1
 
-#define	ACT_LAST					1
+#define	ACT_ACTION_SRP					2
+#define	ACT_ACTION_CRP					3
+
+#define	ACT_ACTION_MT_SI				4
+#define	ACT_ACTION_MT_GUI				5
+#define	ACT_ACTION_MT_SR				6
+#define	ACT_ACTION_MT_F 				7
+
+#define	ACT_ACTION_SSSL 				8
+#define	ACT_ACTION_TSSU 				9
+#define	ACT_ACTION_TSSPF 				10
+#define	ACT_ACTION_TSS 					11
+
+#define	ACT_ACTION_SGTI					12
+
+#define	ACT_LAST						13
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
 // -------------------------------
 #define	EXP_EXPRESSION_GCGL				0
+#define	EXP_EXPRESSION_GSCL				1
 
-#define	EXP_LAST						1
+#define	EXP_EXPRESSION_MT_GS			2
+#define	EXP_EXPRESSION_MT_GHTMLEC		3
+#define	EXP_EXPRESSION_MT_GED			4
+#define	EXP_EXPRESSION_MT_GTID			5
+
+#define	EXP_EXPRESSION_GCBP				6
+
+#define	EXP_EXPRESSION_GGIT				7
+
+#define	EXP_LAST						8
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
+
+#define _NODISPLAY // for UpdateHoImgInfo
 
 typedef struct tagEDATA_V1
 {
@@ -43,7 +81,15 @@ typedef struct tagEDATA_V1
 #endif
 
 	// buffer
-	int buffer[52];
+	bool bReportError = false;
+
+	ENotificationPosition NotificationPosition;
+
+	bool unused_0;
+	bool unused_1;
+	bool unused_2;
+
+	int buffer[50];
 
 } EDITDATA;
 typedef EDITDATA *			LPEDATA;
@@ -82,8 +128,6 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	GlobalData* pData;
-
-	SteamUtilities* pSteamUtil;
 
 	std::wstring* pRet;
 

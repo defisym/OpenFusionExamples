@@ -7,6 +7,8 @@
 // ============================================================================
 
 // Common Include
+#include <ranges>
+
 #include	"common.h"
 
 // DEBUGGER /////////////////////////////////////////////////////////////////
@@ -65,7 +67,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    Also, if you have anything to initialise (e.g. dynamic arrays, surface objects)
    you should do it here, and free your resources in DestroyRunObject.
 */
+
 	rdPtr->CompatibleMode = edPtr->CompatibleMode;
+	rdPtr->bScope = edPtr->bScope;
+	rdPtr->bKeepScope = rdPtr->bScope && edPtr->bKeepScope;
+
+	rdPtr->pScope = new std::map<std::wstring, void*>;
 
 	rdPtr->FuncNameStack = new VEC;
 	rdPtr->FuncNameStack->reserve(DefaultVecSize);
@@ -75,6 +82,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->FuncParamStack = new PARAMSTACK;
 	rdPtr->FuncParamStack->reserve(DefaultVecSize);
+
+	rdPtr->FuncManglingName = new MANGLINGNAME;
+	rdPtr->FuncManglingName->reserve(DefaultVecSize);
 
 	rdPtr->FuncTempParam = new TPARAM;
 	rdPtr->FuncTempParam->reserve(DefaultVecSize);
@@ -97,18 +107,14 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->OutPut = nullptr;
 
 	rdPtr->pPreviousFuncName = new std::wstring;
-	rdPtr->defaultData = Data_Default;
+	rdPtr->defaultData = Data();
 
-	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
+	rdPtr->pSelect = new ObjectSelection(rdPtr);
 	rdPtr->pOnItObjName = new std::wstring;
 	rdPtr->pObject = nullptr;
 
 #ifdef _ENABLE_TOAST
 	rdPtr->pToast = new WinToastHelper(rdPtr);
-#endif
-
-#ifdef _DEBUG
-	rdPtr->pSelect->SaveScope();
 #endif
 
 	// No errors
@@ -127,6 +133,14 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	for (const auto& pScope : *rdPtr->pScope | std::views::values) {
+		delete static_cast<ObjectSelection::Scope*>(pScope);
+	}
+
+	delete rdPtr->pScope;
+
+	delete rdPtr->FuncManglingName;	
+
 	delete rdPtr->FuncNameStack;
 	delete rdPtr->FuncRawParamStack;
 
@@ -141,9 +155,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->FuncCurLoopIndex;
 
 	delete rdPtr->RecursiveIndex;
-
-	//delete rdPtr->OutPut;
-
+	
 	release_arr(rdPtr->OutPut);
 
 	delete rdPtr->pPreviousFuncName;

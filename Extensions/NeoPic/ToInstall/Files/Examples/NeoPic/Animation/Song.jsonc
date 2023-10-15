@@ -1,0 +1,38 @@
+{
+    "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/AnimationSchema.json",
+    "info": {
+        "name": "Song",
+        "updateCur":false,
+        "reset": false,
+        "loop": true,
+        "repeat": 0,
+        "backTo": 0,
+        "speed": 100
+    },
+    "frames": [
+        {
+            "file": "Song_04.png"
+        },
+        {
+            "file": "Song_05.png"
+        },
+        {
+            "file": "Song_06.png"
+        },
+        {
+            "file": "Song_07.png"
+        },
+        {
+            "file": "Song_08.png"
+        },
+        {
+            "file": "Song_09.png"
+        },
+        {
+            "file": "Song_10.png"
+        },
+        {
+            "file": "Song_11.png"
+        }
+    ]
+}

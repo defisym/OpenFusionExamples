@@ -64,7 +64,7 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>F:\DEV\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
@@ -73,7 +73,7 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>F:\DEV\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -82,7 +82,7 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>F:\DEV\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\_Steamworks_SDK\public;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -120,7 +120,7 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;neoSteam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -128,8 +128,9 @@
       <ProgramDatabaseFile>$(IntDir)Template.pdb</ProgramDatabaseFile>
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>.\redistributable_bin;.\public\steam\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\_Steamworks_SDK\redistributable_bin;..\..\..\_Steamworks_SDK\public\steam\lib\win32</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <Profile>true</Profile>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -171,14 +172,14 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;neoSteam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
       <ProgramDatabaseFile>$(IntDir)Template.pdb</ProgramDatabaseFile>
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>.\redistributable_bin;.\public\steam\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\_Steamworks_SDK\redistributable_bin;..\..\..\_Steamworks_SDK\public\steam\lib\win32</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Bscmake>
@@ -226,14 +227,14 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;neoSteam_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
       <ProgramDatabaseFile>$(IntDir)Template.pdb</ProgramDatabaseFile>
       <ImportLibrary>$(IntDir)Template.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>.\redistributable_bin;.\public\steam\lib\win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\_Steamworks_SDK\redistributable_bin;..\..\..\_Steamworks_SDK\public\steam\lib\win32</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Bscmake>
@@ -288,19 +289,34 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\Surface.h" />
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
+    <ClInclude Include="..\_3rdLib\JsonInterface.h" />
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
+    <ClInclude Include="..\_DeLib\GeneralDefinition.h" />
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
+    <ClInclude Include="..\_DeLib\WindowsException.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SteamAchAndStat.h" />
     <ClInclude Include="SteamCallback.h" />
+    <ClInclude Include="SteamConcepts.h" />
+    <ClInclude Include="SteamGamepadTextInput.h" />
+    <ClInclude Include="SteamHttp.h" />
+    <ClInclude Include="SteamInclude.h" />
+    <ClInclude Include="SteamInit.h" />
+    <ClInclude Include="SteamMicroTxn.h" />
+    <ClInclude Include="SteamRefresh.h" />
+    <ClInclude Include="SteamRemote.h" />
+    <ClInclude Include="SteamRichPresence.h" />
+    <ClInclude Include="SteamScreenshot.h" />
     <ClInclude Include="SteamUtilities.h" />
+    <ClInclude Include="SteamWebAPI.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="EXTICON.BMP" />
-    <Image Include="EXTIMG.BMP" />
+    <Image Include="Res\EXTICON.BMP" />
+    <Image Include="Res\EXTIMG.BMP" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

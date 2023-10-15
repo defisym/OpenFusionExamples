@@ -63,8 +63,8 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;F:\DEV\SDL\include;F:\DEV\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x86;F:\DEV\SDL\lib\x86;F:\DEV\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\SDL\lib\x86;..\..\..\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Release\</OutDir>
@@ -72,8 +72,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;F:\DEV\SDL\include;F:\DEV\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x86;F:\DEV\SDL\lib\x86;F:\DEV\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\SDL\lib\x86;..\..\..\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Run_Only\</OutDir>
@@ -81,8 +81,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\inc;F:\DEV\SDL\include;F:\DEV\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\api\core\lib\x86;F:\DEV\SDL\lib\x86;F:\DEV\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\..\SDL\lib\x86;..\..\..\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
     <Midl>
@@ -95,7 +95,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>F:\DEV\SDL\include;F:\DEV\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -110,7 +110,6 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -119,7 +118,7 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_mixer_ext.lib;SDL2.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -147,7 +146,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>F:\DEV\SDL\include;F:\DEV\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -164,7 +163,6 @@
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -173,7 +171,7 @@
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_mixer_ext.lib;SDL2.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -206,7 +204,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>F:\DEV\SDL\include;F:\DEV\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -223,7 +221,6 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;RUN_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -232,7 +229,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
       <ResourceOutputFileName>$(IntDir)Ext.res</ResourceOutputFileName>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_mixer_ext.lib;SDL2.lib;avcodec.lib;avformat.lib;avutil.lib;swscale.lib;swresample.lib;avfilter.lib;mmfs2.lib;kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;uuid.lib</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).mfx</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\Ext.def</ModuleDefinitionFile>
@@ -296,7 +293,6 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="..\_3rdLib\FFMpeg.h" />
-    <ClInclude Include="..\_3rdLib\FModInterface.h" />
     <ClInclude Include="..\_3rdLib\MemBuf.h" />
     <ClInclude Include="..\_3rdLib\PacketQueue.h" />
     <ClInclude Include="..\_DeLib\Encryption.h" />
@@ -304,11 +300,14 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
+    <ClInclude Include="AudioInterface.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SDL_Interface.h" />
+    <ClInclude Include="SDL_Mixer_Interface.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP" />

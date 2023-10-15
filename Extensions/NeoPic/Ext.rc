@@ -117,13 +117,23 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Can Display", IDMN_CONDITION_CD
-        MENUITEM SEPARATOR
         MENUITEM "Current Display Transparent", IDMN_CONDITION_CDT
         MENUITEM SEPARATOR
         MENUITEM "Lib Has Item", IDMN_CONDITION_LHI
         MENUITEM SEPARATOR
+        MENUITEM "On Load Callback", IDMN_CONDITION_OLC
         MENUITEM "On Preload Complete", IDMN_CONDITION_OPLC
+        MENUITEM SEPARATOR
         MENUITEM "On Iterate Ref Count", IDMN_CONDITION_OITRC
+        MENUITEM SEPARATOR         
+        POPUP "Animation"
+        BEGIN
+            MENUITEM "On Animation Finished", IDMN_CONDITION_OAF
+            MENUITEM "Is Animation Finished", IDMN_CONDITION_IAF
+            MENUITEM SEPARATOR
+            MENUITEM "Is Animation Playing", IDMN_CONDITION_IAP
+            MENUITEM "Is Animation Paused", IDMN_CONDITION_IAPAUSED
+        END
         MENUITEM SEPARATOR
     END    
 END
@@ -141,23 +151,26 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Load"
         BEGIN
+            MENUITEM "Set Load Callback",           IDMN_ACTION_SLC
+            MENUITEM "Update Load Callback Surface",         IDMN_ACTION_ULCSF
+            MENUITEM SEPARATOR
             MENUITEM "Load From File",              IDMN_ACTION_LFF
             MENUITEM "Load From Pointer",           IDMN_ACTION_LFP
             MENUITEM SEPARATOR            
             MENUITEM "Load From Lib",               IDMN_ACTION_LFL
             MENUITEM "Load From Display",           IDMN_ACTION_LFD
             MENUITEM SEPARATOR  
-            MENUITEM "Capture FrameArea",           IDMN_ACTION_CF
+            MENUITEM "Capture FrameArea",           IDMN_ACTION_CF            
         END
         POPUP "Preload"
         BEGIN
             MENUITEM "Set Preload Path",              IDMN_ACTION_SPP
+            MENUITEM SEPARATOR
             MENUITEM "Set Preload List",              IDMN_ACTION_SPL            
             MENUITEM "Set Preload List By Pointer",   IDMN_ACTION_SPLBP            
             MENUITEM SEPARATOR
             MENUITEM "Set Keep List",              IDMN_ACTION_SKL
             MENUITEM "Set Keep List By Pointer",   IDMN_ACTION_SKLBP
-            MENUITEM "Clear Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
             MENUITEM "Iterate Ref Count",          IDMN_ACTION_ITRC
         END
@@ -169,23 +182,49 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Lib"
         BEGIN
+            MENUITEM "Attach Object To Lib",               IDMN_ACTION_AOTL
+            MENUITEM "Detach Object From Lib",             IDMN_ACTION_DOFL
+            MENUITEM SEPARATOR
             MENUITEM "Reset Lib",                  IDMN_ACTION_RL
+            MENUITEM "Clean Cache",                IDMN_ACTION_CC
             MENUITEM SEPARATOR
             MENUITEM "Erase Lib Item",             IDMN_ACTION_EL
             MENUITEM "Update Lib Item",            IDMN_ACTION_UL
         END
         MENUITEM SEPARATOR
-        POPUP "Display"
+        POPUP "Animation"
         BEGIN
-            //MENUITEM "Update Src",               IDMN_ACTION_US
-            //MENUITEM "Restore Cur",              IDMN_ACTION_RC
-            //MENUITEM SEPARATOR
+            MENUITEM "Set Animation Source",        IDMN_ACTION_SAS
+            MENUITEM SEPARATOR
+            MENUITEM "Set Animation Speed",         IDMN_ACTION_SASPEED
+            MENUITEM SEPARATOR
+            MENUITEM "Set Animation Step",          IDMN_ACTION_SASTEP
+            MENUITEM "Set Animation Frame ID",      IDMN_ACTION_SAFID
+            MENUITEM "Set Animation Frame Index",   IDMN_ACTION_SAFINDEX
+            MENUITEM SEPARATOR
+            MENUITEM "Load Animation",              IDMN_ACTION_LA
+            MENUITEM "Stop Animation",              IDMN_ACTION_SA
+            MENUITEM SEPARATOR
+            MENUITEM "Pause Animation",             IDMN_ACTION_PA
+            MENUITEM "Resume Animation",            IDMN_ACTION_RA            
+        END
+        MENUITEM SEPARATOR
+        POPUP "Nine Slice"
+        BEGIN
+            MENUITEM "Set Nine Slice Source", IDMN_ACTION_SNSS
+            MENUITEM SEPARATOR
+            MENUITEM "Load Nine Slice", IDMN_ACTION_LNS
+            MENUITEM "Reset Nine Slice", IDMN_ACTION_RNS
+            MENUITEM SEPARATOR
+            MENUITEM "Render Nine Slice", IDMN_ACTION_RENDERNS
+        END
+        MENUITEM SEPARATOR
+        POPUP "Display"
+        BEGIN            
             POPUP "Settings"
             BEGIN            
-                MENUITEM "Set HotSpot",            IDMN_ACTION_SH
-                MENUITEM SEPARATOR
-                //MENUITEM "Set Collision",        IDMN_ACTION_SC
                 MENUITEM "Set Quality",            IDMN_ACTION_SQ
+                MENUITEM "Set HotSpot",            IDMN_ACTION_SH
             END
             MENUITEM SEPARATOR
             POPUP "Transform"
@@ -193,19 +232,18 @@ BEGIN
                 MENUITEM "Zoom",                   IDMN_ACTION_Z
                 MENUITEM "Stretch",                IDMN_ACTION_S
                 MENUITEM SEPARATOR                
-                MENUITEM "Rotate",                 IDMN_ACTION_R                
                 MENUITEM "Offset",                 IDMN_ACTION_O
+                MENUITEM "Rotate",                 IDMN_ACTION_R                
                 MENUITEM SEPARATOR
-                //MENUITEM "Affine",               IDMN_ACTION_AT
                 MENUITEM "Stack Blur",             IDMN_ACTION_SB
+                MENUITEM "Fill Mosaic",            IDMN_ACTION_FM
+                MENUITEM "Perspective",            IDMN_ACTION_PT
+                MENUITEM "Set Transparent Color",  IDMN_ACTION_STC
                 MENUITEM SEPARATOR
                 MENUITEM "Set Effect Param",       IDMN_ACTION_SESP
-                MENUITEM SEPARATOR
-                MENUITEM "Fill Mosaic",            IDMN_ACTION_FM
             END
             MENUITEM SEPARATOR
             MENUITEM "Add Backdrop",               IDMN_ACTION_AB
-            //MENUITEM "Update Collision",         IDMN_ACTION_UC
         END
         MENUITEM SEPARATOR
     END
@@ -224,6 +262,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Load"
         BEGIN
+            MENUITEM "Get Load Callback FileName", IDMN_EXPRESSION_GLCFN            
+            MENUITEM "Get Load Callback Surface Pointer", IDMN_EXPRESSION_GLCSF            
+            MENUITEM SEPARATOR
             MENUITEM "Get Pic FileName", IDMN_EXPRESSION_GFN
             MENUITEM "Get File FileName", IDMN_EXPRESSION_GFFN
             MENUITEM SEPARATOR
@@ -261,7 +302,19 @@ BEGIN
         POPUP "Rotate"
         BEGIN
             MENUITEM "Get Angle", IDMN_EXPRESSION_GA
-        END       
+        END   
+        MENUITEM SEPARATOR         
+        POPUP "Animation"
+        BEGIN
+            MENUITEM "Get Animation File Name",  IDMN_EXPRESSION_GAFN            
+            MENUITEM "Get Animation Name",       IDMN_EXPRESSION_GAN
+            MENUITEM SEPARATOR
+            MENUITEM "Get Animation Speed", IDMN_EXPRESSION_GAS
+            MENUITEM SEPARATOR
+            MENUITEM "Get Animation Step", IDMN_EXPRESSION_GASTEP
+            MENUITEM "Get Animation Frame ID",      IDMN_EXPRESSION_GAFID
+            MENUITEM "Get Animation Frame Index",      IDMN_EXPRESSION_GAFINDEX
+        END    
         MENUITEM SEPARATOR        
         POPUP "Hibiscus AVG Engine"
         BEGIN 
@@ -371,7 +424,7 @@ BEGIN
     M_ACTION_SPL             "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPLBP           "Set Preload list to %0, BasePath = %1, Decrypt Key = %2"
     M_ACTION_SPP             "Set Preload Path to %0, Decrypt Key = %1"
-    M_ACTION_CC              "Clear Cache, Memory Limit %0"
+    M_ACTION_CC              "Clean Cache, Memory Limit %0"
     M_ACTION_SKL             "Set Keep List to %0, BasePath = %1"
     M_ACTION_SKLBP           "Set Keep List to %0, BasePath = %1"
     M_ACTION_ITRC            "Iterate Most Referenced %0 Objects"
@@ -407,8 +460,8 @@ BEGIN
 
     M_ACTION_A             "Angle"
 
-    M_ACTION_US            "Update Src"
-    M_ACTION_RC            "Restore Cur"
+    M_ACTION_AOTL            "Attach Object To Lib %0, Access FileName %1"
+    M_ACTION_DOFL            "Detach Object From Lib"
 
     M_ACTION_S             "Stretch, Width = %0, Height = %1"
     
@@ -416,9 +469,9 @@ BEGIN
     M_ACTION_S_HEIGHT           "Height"
 
     M_ACTION_AB             "Add Backdrop %0"
-    M_ACTION_UC             "Update Collision"
 
-    M_ACTION_SC             "Set Collision to : Has Collision = %0, Auto Update Collision = %1"
+    M_ACTION_ULCSF          "Update Load Callback Surface to %0"
+    M_ACTION_SLC            "Set Load Callback to %0"
 
     M_ACTION_HC             "0 = No Collision, 1 = Has Collision"
     M_ACTION_AUC            "0 = Don't Auto Update Collision, 1 = Auto Update Collision"
@@ -427,7 +480,8 @@ BEGIN
 
     M_ACTION_RS             "0 = Fast, 1 = Resample"
 
-    M_ACTION_AT             "Affine Transformation"
+    M_ACTION_PT             "Perspective Transformation by Matrix %0"
+    M_ACTION_PTMAT          "Matrix"
 
     M_ACTION_O              "Offset, X = %0, Y = %1, Wrap = %2"
     
@@ -450,11 +504,37 @@ BEGIN
     M_ACTION_SAVEFILENAME   "Save FileName, Format is Set by Ext, e.g., File.JPG for JPG"
 
     M_ACTION_CF             "Capture FrameArea"
+    
     M_ACTION_STFWS          "Save File %0, Key %1 to File %2, Stretch to Width %3, Height %4"
+    
+    M_ACTION_STC            "Set Transparent Color to %0, Non Transparent Alpha %1"
+    M_ACTION_COLOR          "Color, -1 = First Pixel"
+    M_ACTION_ALPHA          "Non Transparent Alpha, -1 = Keep Alpha"
+
+    M_ACTION_SAS            "Set Animation Source to Lib %0, BasePath %1, Decrypt Key %2"
+    M_ACTION_LA             "Load Animation %0, Decrypt Key %1"
+    M_ACTION_SA             "Stop Animation"
+    M_ACTION_SAFID  	    "Set Animation Frame ID to %0"
+    M_ACTION_SAFINDEX 	    "Set Animation Frame Index to %0"
+    M_ACTION_SASTEP 	    "Set Animation Step to %0"
+    M_ACTION_SASPEED 	    "Set Animation Speed to %0"
+    M_ACTION_PA 		    "Pause Animation"
+    M_ACTION_RA 		    "Resume Animation"
+
+    M_ACTION_SPEED 		    "Speed, 100 = full frame rate"
+    M_ACTION_FID 		    "Interpolated Frame ID"
+    M_ACTION_FINDEX		    "Defined Frame Index"
+    M_ACTION_STEP		    "Animation Step, 0.0 ~1.0"
+
+    M_ACTION_SNSS           "Set Nine Slice Source to Lib %0, BasePath %1, Decrypt Key %2"
+    M_ACTION_LNS            "Load Nine Slice %0, Decrypt Key %1"
+    M_ACTION_RNS            "Reset Nine Slice"
+    M_ACTION_RENDERNS       "Render Nine Slice"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_CONDITION_OLC       "%o On Load Callback"
     M_CONDITION_OPLC      "%o On Preload Complete"
     M_CONDITION_OITRC     "%o On Iterate Ref Count"
     
@@ -462,6 +542,11 @@ BEGIN
     
     M_CONDITION_CDT       "%o Current Display Transparent"
     M_CONDITION_LHI       "%o Lib Has Item %0"
+
+    M_CONDITION_OAF       "%o On Animation Finished"
+    M_CONDITION_IAF       "%o Is Animation Finished"
+    M_CONDITION_IAP       "%o Is Animation Playing"
+    M_CONDITION_IAPAUSED  "%o Is Animation Paused"
 
     M_CND_P1                "Enter First Value"
     M_CND_P2                "Enter Second Value"
@@ -473,28 +558,28 @@ BEGIN
     M_EXPRESSION_GHSX            "GetXHotSpot("
     M_EXPRESSION_GHSY            "GetYHotSpot("
 
-    M_EXPRESSION_GOW            "GetOriginalWidth("
-    M_EXPRESSION_GOH            "GetOriginalHeight("
+    M_EXPRESSION_GOW             "GetOriginalWidth("
+    M_EXPRESSION_GOH             "GetOriginalHeight("
     
-    M_EXPRESSION_GCW            "GetCurrentWidth("
-    M_EXPRESSION_GCH            "GetCurrentHeight("
+    M_EXPRESSION_GCW             "GetCurrentWidth("
+    M_EXPRESSION_GCH             "GetCurrentHeight("
     
     M_EXPRESSION_GXZS            "GetXZoomScale("
     M_EXPRESSION_GYZS            "GetYZoomScale("
     
-    M_EXPRESSION_GA            "GetAngle("
+    M_EXPRESSION_GA              "GetAngle("
     
-    M_EXPRESSION_GFN            "GetFileName$("
+    M_EXPRESSION_GFN             "GetFileName$("
     M_EXPRESSION_GFFN            "GetFileFileName$("
-    M_EXPRESSION_GFP            "GetFilePath$("
+    M_EXPRESSION_GFP             "GetFilePath$("
     M_EXPRESSION_GRFP            "GetRelativeFilePath$("
-    M_EXPRESSION_GFRFP            "GetFileRelativeFilePath$("
-    M_EXPRESSION_GK            "GetKey$("
+    M_EXPRESSION_GFRFP           "GetFileRelativeFilePath$("
+    M_EXPRESSION_GK              "GetKey$("
     
-    M_EXPRESSION_GSP            "GetSurfacePointer("
+    M_EXPRESSION_GSP             "GetSurfacePointer("
     
-    M_EXPRESSION_GAVGCX            "GetAVGCoordX("
-    M_EXPRESSION_GAVGCY            "GetAVGCoordY("
+    M_EXPRESSION_GAVGCX           "GetAVGCoordX("
+    M_EXPRESSION_GAVGCY           "GetAVGCoordY("
     
     M_EXPRESSION_COORD                      "Coord"
     M_EXPRESSION_REALCOORDMODE              "Use Real Coord Mode"
@@ -511,6 +596,16 @@ BEGIN
     M_EXPRESSION_GVRUMB            "GetVRAMUsageMB("
     M_EXPRESSION_GVRBMB            "GetVRAMBudgetMB("
     M_EXPRESSION_GVRAMB            "GetVRAMAvailableMB("
+    
+    M_EXPRESSION_GAFN              "GetAFileName$("
+    M_EXPRESSION_GAN               "GetAName$("
+    M_EXPRESSION_GAFID             "GetAFID("
+    M_EXPRESSION_GAFINDEX          "GetAFIndex("
+    M_EXPRESSION_GASTEP            "GetAStep("
+    M_EXPRESSION_GAS               "GetASpeed("
+    
+    M_EXPRESSION_GLCFN             "GetLCFileName("
+    M_EXPRESSION_GLCSF             "GetLCSurfacePointer("
 
 END
 
@@ -535,10 +630,14 @@ BEGIN
     IDS_PROP_HWA_CHECK  "HWA"
     IDS_PROP_HWA_CHECK_INFO  "Use HWA When Stretching or Rotating"
 
-    IDS_PROP_HASCOLLISION_CHECK  "Has Collision"
-    IDS_PROP_HASCOLLISION_CHECK_INFO  "This Object Has Collision"
-    IDS_PROP_AUTOUPDATECOLLISION_CHECK  "Auto Update Collision"
-    IDS_PROP_AUTOUPDATECOLLISION_CHECK_INFO  "Auto Update Collision When Stretching or Rotating, May Slow Down App if Texture is Big"
+    IDS_PROP_LOAD_TEXTTITLE  "Load Options"
+    IDS_PROP_LOAD_TEXTTITLE_INFO  "Load Options"
+
+    IDS_PROP_LOADCALLBACK_CHECK  "Load Callback"
+    IDS_PROP_LOADCALLBACK_CHECK_INFO  "Trigger Callback if New File Loaded"
+
+    IDS_PROP_LOADKEEPANGLE_CHECK  "Load Keep Angle"
+    IDS_PROP_LOADKEEPANGLE_CHECK_INFO  "Keep Angle When Loading New Pic"
 
     IDS_PROP_QUALITY_TEXTTITLE   "Quality"
     IDS_PROP_QUALITY_CHECK       "Resample"

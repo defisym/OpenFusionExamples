@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿// ReSharper disable CppClangTidyClangDiagnosticShadow
+// ReSharper disable CppTooWideScopeInitStatement
+
+#pragma once
 
 //#define _FONTEMBEDDEBUG
 //#define _CONSOLE
@@ -71,18 +74,22 @@ using Gdiplus::BlurParams;
 
 #pragma endregion
 
-inline RECT operator+(RECT rA, RECT rB) {
+inline RECT operator+(const RECT& rA, const RECT& rB) {
 	return RECT { rA.left + rB.left
 				,rA.top + rB.top
 				,rA.right + rB.right
 				,rA.bottom + rB.bottom };
 }
 
+constexpr auto CHAR_SPACE = L' ';
+constexpr auto CHAR_EMSPACE = L'　';
+constexpr auto CHAR_TAB = L'\t';
+
 constexpr auto DEFAULT_EBORDER_OFFSET = 20;
 constexpr auto DEFAULT_FORMAT_RESERVE = 10;
 
-constexpr auto DEFAULT_CHARACTER = L'　';
-constexpr auto EMPTY_CHAR = L' ';
+constexpr auto DEFAULT_CHARACTER = CHAR_EMSPACE;
+constexpr auto EMPTY_CHAR = CHAR_SPACE;
 
 constexpr auto DEFAULT_PARAM = L" ";
 
@@ -144,11 +151,6 @@ private:
 
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
-
-	wchar_t regstr[2] = { L'\0' };
-	wregex* pCJK = nullptr;
-	wregex* pEmpty = nullptr;
-	wregex* pEmptyStr = nullptr;
 
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
@@ -241,7 +243,7 @@ private:
 	float xScale = 1.0;
 	float yScale = 1.0;
 
-	int angle = 0;
+	float angle = 0;
 
 	int hwaType = 0;
 	int hwaDriver = 0;
@@ -377,7 +379,7 @@ public:
 			int width = 0;
 			int height = 0;
 
-			inline ResizeCacheKeyHash GetHash() {
+			inline ResizeCacheKeyHash GetHash() const {
 				return  std::hash<void*>()(pSrc) ^std::hash<int>()(width) ^ std::hash<int>()(height);
 			}
 		};		
@@ -416,14 +418,14 @@ public:
 		}
 
 		// linked object changed, need to reset lib
-		inline bool NeedUpdateICon(LPRO pObject) {
+		inline bool NeedUpdateICon(const LPRO pObject) const {
 			return pIConObject != pObject;
 		}
 
 		// link to active -> pObject == LPRO
 		// link to other object -> pObject == Callback Identifier
 		// pIConObject == nullptr -> No ICon
-		inline void UpdateICon(LPRO pObject, IConParamParser parser) {
+		inline void UpdateICon(const LPRO pObject, const IConParamParser& parser) {
 			if (NeedUpdateICon(pObject)) {
 				ReleaseIConLib();
 			}			
@@ -434,13 +436,13 @@ public:
 		}
 
 		inline void ReleaseIConLib() {
-			for (auto& it : *this->pIConLib) {
+			for (const auto& it : *this->pIConLib) {
 				delete it.second;
 			}
 
 			this->pIConLib->clear();
 
-			for (auto& it : this->resizeCache) {
+			for (const auto& it : this->resizeCache) {
 				delete it.second;
 			}
 
@@ -478,16 +480,11 @@ private:
 	bool bExternalIConData = false;
 	IConData* pIConData = nullptr;
 
-	inline const auto GetIConData() {
+	inline const IConData* GetIConData() const {
 		return pIConData;
 	}
 
-	//IConLib* pIConLib = nullptr;
-	//LPRO pIConObject = nullptr;
-	//LPSURFACE pDefaultICon = nullptr;
-	//IConParamParser iconParamParser = nullptr;
-
-	inline bool CheckMatch(wchar_t wChar, std::wstring& data) {
+	static inline bool CheckMatch(const wchar_t wChar, const std::wstring& data) {
 		for (auto& wChartoCheck : data) {
 			if (wChartoCheck == wChar) {
 				return true;
@@ -497,37 +494,89 @@ private:
 		return false;
 	}
 
-	inline bool NotAtStart(wchar_t wChar) {
+	inline bool NotAtStart(const wchar_t wChar) const {
 		return CheckMatch(wChar, notAtStart);
 	}
 
-	inline bool NotAtEnd(wchar_t wChar) {
+	inline bool NotAtEnd(const wchar_t wChar) const {
 		return CheckMatch(wChar, notAtEnd);
 	}
 
-	inline bool RegexCore(wregex* pRegex, wchar_t wChar) {
-		regstr[0] = wChar;
+public:
+	struct RegexHandler {
+		wchar_t regstr[2] = { L'\0' };
 
-		return regex_match(regstr, *pRegex);
-	}
+		wregex* pCJK = nullptr;
+		wregex* pEmpty = nullptr;
+		wregex* pEmptyStr = nullptr;
 
-	inline bool NotCJK(wchar_t wChar) {
-		return RegexCore(this->pCJK, wChar);
-	}
+		using RegexCache = std::map<wchar_t, bool>;
 
-	inline bool NotEmpty(wchar_t wChar) {
-		return !RegexCore(this->pEmpty, wChar);
-	}
+		RegexCache CJKCache;
+		RegexCache EmptyCache;
 
-	inline bool NotEmpty(const wchar_t* pChar) {
-		return !regex_match(pChar, *this->pEmptyStr);
-	}
+		RegexHandler() {
+			constexpr auto defaultRegexFlag = static_cast<RegexFlag>(ECMAScript | optimize);
+
+			// https://www.jianshu.com/p/fcbc5cd06f39
+			// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
+			this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+				, defaultRegexFlag);
+			this->pEmpty = new wregex(L"[\\s]"
+				, defaultRegexFlag);
+			this->pEmptyStr = new wregex(L"[\\s]*"
+				, defaultRegexFlag);
+		}
+		~RegexHandler() {
+			delete this->pCJK;
+			this->pCJK = nullptr;
+
+			delete this->pEmpty;
+			this->pEmpty = nullptr;
+
+			delete this->pEmptyStr;
+			this->pEmptyStr = nullptr;
+		}
+
+		inline bool RegexCore(const wregex* pRegex, RegexCache* pCache, const wchar_t wChar) {
+			regstr[0] = wChar;
+
+			const auto it = pCache->find(wChar);
+
+			if (it == pCache->end()) {
+				const auto bRet = regex_match(regstr, *pRegex);
+				(*pCache)[wChar] = bRet;
+
+				return bRet;
+			}
+			else {
+				return it->second;
+			}
+
+			//return regex_match(regstr, *pRegex);
+		}
+
+		inline bool NotCJK(const wchar_t wChar) {
+			return RegexCore(this->pCJK, &this->CJKCache, wChar);
+		}
+
+		inline bool NotEmpty(const wchar_t wChar) {
+			return !RegexCore(this->pEmpty, &this->EmptyCache, wChar);
+		}
+
+		inline bool NotEmpty(const wchar_t* pChar) const {
+			return !regex_match(pChar, *this->pEmptyStr);
+		}
+	};
+
+private:
+	RegexHandler* pRegexCache;
 
 #ifdef  _DEBUG
 	// check a set of characters match regex
 	//wchar_t wChars[] = { L'a',L'b', L'c', L'd' };
 	//auto bMatch = CheckRegex(wChars, 4, &NeoStr::NotCJK);
-	inline bool CheckRegex(wchar_t* wChars, size_t sz
+	inline bool CheckRegex(const wchar_t* wChars, const size_t sz
 		, bool (NeoStr::* regex)(wchar_t)) {
 		auto bRet = true;
 
@@ -539,13 +588,13 @@ private:
 	}
 #endif //  _DEBUG
 
-	inline int GetStartPosX(long totalWidth, long rcWidth) const {
+	inline int GetStartPosX(const long totalWidth, const long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
 		//if (this->dwDTFlags & DT_LEFT) {
 		//	return 0;
 		//}
 		if (this->dwDTFlags & DT_CENTER) {
-			return ((rcWidth - totalWidth) >> 1);
+			return ((rcWidth - totalWidth) / 2);
 		}
 		if (this->dwDTFlags & DT_RIGHT) {
 			return rcWidth - totalWidth;
@@ -554,24 +603,23 @@ private:
 		return 0;
 	}
 
-	inline int GetStartPosY(long totalHeight, long rcHeight) const {
+	inline int GetStartPosY(const long totalHeight, const long rcHeight) const {
 		//	DT_TOP | DT_VCENTER | DT_BOTTOM
 		//if (this->dwDTFlags & DT_TOP) {
 		//	//return 0;
 		//	return this->tm.tmInternalLeading;
 		//}
 		if (this->dwDTFlags & DT_VCENTER) {
-			//return ((rcHeight - totalHeight) >> 1);
-
 			//remove offset to make exactly at the center
 			//https://docs.microsoft.com/en-us/windows/win32/gdi/string-widths-and-heights
 
-			auto verticalAlignOffset = bVerticalAlignOffset
-				? this->tm.tmInternalLeading + this->tm.tmExternalLeading
-				: 0;
+			const auto verticalAlignOffset = bVerticalAlignOffset
+				                                 //? this->tm.tmInternalLeading + this->tm.tmExternalLeading
+				                                 ? this->tm.tmDescent + this->tm.tmExternalLeading
+				                                 : 0;
 
-			//return ((rcHeight - (totalHeight - (this->tm.tmInternalLeading + this->tm.tmExternalLeading))) >> 1);
-			return ((rcHeight - (totalHeight - verticalAlignOffset)) >> 1);
+			//return ((rcHeight - totalHeight)  / 2);
+			return ((rcHeight - (totalHeight - verticalAlignOffset)) / 2);
 		}
 		if (this->dwDTFlags & DT_BOTTOM) {
 			return rcHeight - totalHeight;
@@ -581,7 +629,7 @@ private:
 	}
 
 #ifdef _DEBUG
-	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) {
+	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) const {
 		UINT  num = 0;          // number of image encoders
 		UINT  size = 0;         // size of the image encoder array in bytes
 		ImageCodecInfo* pImageCodecInfo = NULL;
@@ -615,9 +663,9 @@ private:
 	}
 #endif
 
-	inline size_t LogFontHasher(LOGFONT logFont) {
+	static inline size_t LogFontHasher(const LOGFONT& logFont) {
 		constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
-		constexpr auto HASHER_MOVE = [](size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); };
+		constexpr auto HASHER_MOVE = [](const size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); };
 
 		size_t seed = 65535;
 
@@ -643,14 +691,15 @@ private:
 	}
 
 public:
-	NeoStr(DWORD dwAlignFlags, COLORREF color
-		, HFONT hFont
+	NeoStr(const DWORD dwAlignFlags, const COLORREF color
+		, const HFONT hFont
 		// read only
 		, FontCache* pFontCache = nullptr
 		, CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr		
+		, RegexHandler* pRegexCache = nullptr
 		, IConData* pIConData = nullptr
 		, PrivateFontCollection* pFontCollection = nullptr
-		, bool needGDIPStartUp = true
+		, const bool needGDIPStartUp = true
 	) {
 		this->needGDIPStartUp = needGDIPStartUp;
 
@@ -666,28 +715,22 @@ public:
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		GetTextMetrics(hdc, &this->tm);
 
-		// https://www.jianshu.com/p/fcbc5cd06f39
-		// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
-		this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
-			, ECMAScript | optimize);
-		this->pEmpty = new wregex(L"[\\s]"
-			, ECMAScript | optimize);
-		this->pEmptyStr = new wregex(L"[\\s]*"
-			, ECMAScript | optimize);
-
 		this->pFontCollection = pFontCollection;
 
-		if (!pFontCache || !pCharSzCacheWithFont) {
-			this->bExternalCache = false;
-		}
+		if (pFontCache && pCharSzCacheWithFont && pRegexCache) {
+			this->bExternalCache = true;
 
-		if (this->bExternalCache) {
 			this->pFontCache = pFontCache;
-		}
-		else {
-			Alloc(this->pFontCache);
-		}
+			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
+			this->pRegexCache = pRegexCache;
+		}else {
+			this->bExternalCache = false;
 
+			Alloc(this->pFontCache);
+			Alloc(this->pCharSzCacheWithFont);
+			Alloc(this->pRegexCache);
+		}
+		
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
@@ -724,13 +767,6 @@ public:
 		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
 		// add a default char to return default value when input text is empty
-		if (this->bExternalCache) {
-			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
-		}
-		else {
-			Alloc(this->pCharSzCacheWithFont);
-		}
-
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
 
 		if (pIConData != nullptr) {
@@ -746,26 +782,18 @@ public:
 		//SelectObject(this->hdc, (HFONT)NULL);
 		ReleaseDC(NULL, this->hdc);
 
-		delete this->pCJK;
-		this->pCJK = nullptr;
-
-		delete this->pEmpty;
-		this->pEmpty = nullptr;
-
-		delete this->pEmptyStr;
-		this->pEmptyStr = nullptr;
-
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
 		this->pMeasure = nullptr;
 #endif
 
 		if (!this->bExternalCache) {
+			Release(this->pRegexCache);
 			Release(this->pCharSzCacheWithFont);
 			Release(this->pFontCache);
 		}
 
-		if (!bExternalIConData) {
+		if (!this->bExternalIConData) {
 			delete this->pIConData;
 			this->pIConData = nullptr;
 		}
@@ -803,12 +831,8 @@ public:
 		pCharSzCacheWithFont = new CharSizeCacheWithFont;
 	}
 
-	inline static void Alloc(FontCache*& pFontCache) {
-		pFontCache = new FontCache;
-	}
-
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		for (auto& it : *pCharSzCacheWithFont) {
+		for (const auto& it : *pCharSzCacheWithFont) {
 			//SelectObject(it.second.hdc, (HFONT)NULL);
 			ReleaseDC(NULL, it.second.hdc);
 			DeleteObject(it.second.hFont);
@@ -819,38 +843,47 @@ public:
 	}
 
 	inline static void Release(FontCache*& pFontCache) {
-		for (auto& it : *pFontCache) {
+		for (const auto& it : *pFontCache) {
 			delete it.second;
 		}
 
 		delete pFontCache;
 		pFontCache = nullptr;
 	}
+	
+	inline static void Alloc(FontCache*& pFontCache) {
+		pFontCache = new FontCache;
+	}
+
+	inline static void Release(RegexHandler*& pRegexHandler) {
+		delete pRegexHandler;
+		pRegexHandler = nullptr;
+	}
+
+	inline static void Alloc(RegexHandler*& pRegexHandler) {
+		pRegexHandler = new RegexHandler;
+	}
 
 	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
 	//https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
 	//https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
 	//https://blog.csdn.net/analogous_love/article/details/45845971
-	inline void EmbedFont(LPCWSTR pFontFile) {
-		this->pFontCollection->AddFontFile(pFontFile);
+	inline void EmbedFont(const LPCWSTR pFontFile) const {
+		EmbedFont(pFontFile, *this->pFontCollection);
 		auto count = this->pFontCollection->GetFamilyCount();
-
-		return;
 	}
 
-	inline static void EmbedFont(LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {
+	inline static void EmbedFont(const LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {
 		fontCollection.AddFontFile(pFontFile);
-
-		return;
 	}
 
-	inline static bool FontCollectionHasFont(LPWSTR pFaceName
-		, Gdiplus::FontCollection* pFontCollection) {
+	inline static bool FontCollectionHasFont(const LPWSTR pFaceName
+		, const Gdiplus::FontCollection* pFontCollection) {
 		if (pFontCollection == nullptr) {
 			return false;
 		}
 
-		int n = pFontCollection->GetFamilyCount();
+		const int n = pFontCollection->GetFamilyCount();
 
 		if (n == 0) {
 			return false;
@@ -867,13 +900,13 @@ public:
 
 		wchar_t name [LF_FACESIZE] { 0 };
 
-		LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+		const LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
 
 		bool has = false;
 		bool hasSuffixRegular = false;
 		//bool hasSuffixNormal = false;
 
-		std::wstring withRegular = (std::wstring)pFaceName + (std::wstring)L" Regular";
+		const std::wstring withRegular = (std::wstring)pFaceName + (std::wstring)L" Regular";
 		//std::wstring withNormal = (std::wstring)pFaceName + (std::wstring)L" Normal";
 
 		for (int i = 0; i < n; i++) {
@@ -881,7 +914,7 @@ public:
 			hasSuffixRegular = false;
 			//hasSuffixNormal = false;
 
-			auto hasName = [&] (LANGID language = (LANGID)0U) {
+			auto hasName = [&] (const LANGID language = (LANGID)0U) {
 				memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
 				ffs [i].GetFamilyName(name, language);
 
@@ -920,7 +953,7 @@ public:
 		return has || hasSuffixRegular/* || hasSuffixNormal*/;
 	}
 
-	inline static int GetFontStyle(LOGFONT& logFont) {
+	inline static int GetFontStyle(const LOGFONT& logFont) {
 		int fontStyle = Gdiplus::FontStyleRegular;
 
 		if (logFont.lfWeight >= FW_SEMIBOLD) {
@@ -939,7 +972,7 @@ public:
 		return fontStyle;
 	}
 		
-	inline Font GetFont(LOGFONT logFont) {
+	inline Font GetFont(LOGFONT logFont) const {
 		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
 		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
 
@@ -957,8 +990,8 @@ public:
 			: nullptr);
 	}
 
-	inline Font* GetFontPointer(LOGFONT logFont) {
-		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+	inline Font* GetFontPointer(LOGFONT logFont) const {
+		const auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
 		
 		return new Font(logFont.lfFaceName
 			, (float)abs(logFont.lfHeight)
@@ -968,15 +1001,15 @@ public:
 			: nullptr);
 	}
 
-	inline Font* GetFontPointerWithCache(LOGFONT logFont) {
-		auto logFontHash = LogFontHasher(logFont);
-		auto it = pFontCache->find(logFontHash);
+	inline Font* GetFontPointerWithCache(const LOGFONT& logFont) const {
+		const auto logFontHash = LogFontHasher(logFont);
+		const auto it = pFontCache->find(logFontHash);
 
 		if (it != pFontCache->end()) {
 			return it->second;
 		}
 		else {
-			auto newFont = GetFontPointer(logFont);
+			const auto newFont = GetFontPointer(logFont);
 			(*pFontCache)[logFontHash] = newFont;
 
 			return newFont;
@@ -985,17 +1018,17 @@ public:
 
 	// Color conversion
 	// #AARRGGBB
-	inline Color GetColor(std::wstring_view hex) {
+	inline Color GetColor(const std::wstring_view hex) const {
 		return GetColor(_h2d(hex.data(), hex.size()), true);
 	}
 	
 	// Color conversion
-	inline Color GetColor(DWORD color, bool bAlpha = false) {
+	static inline Color GetColor(const DWORD color, const bool bAlpha = false) {
 		if (bAlpha) {
-			auto A = (BYTE)((color >> 24) & 0xFF);
-			auto R = (BYTE)((color >> 16) & 0xFF);
-			auto G = (BYTE)((color >> 8) & 0xFF);
-			auto B = (BYTE)((color) & 0xFF);
+			const auto A = (BYTE)((color >> 24) & 0xFF);
+			const auto R = (BYTE)((color >> 16) & 0xFF);
+			const auto G = (BYTE)((color >> 8) & 0xFF);
+			const auto B = (BYTE)((color) & 0xFF);
 
 			return Color(A, R, G, B);
 		}
@@ -1005,11 +1038,11 @@ public:
 	}
 
 	// Color conversion
-	inline DWORD GetDWORD(Color color) {
-		auto A = color.GetAlpha();
-		auto R = color.GetRed();
-		auto G = color.GetGreen();
-		auto B = color.GetBlue();
+	static inline DWORD GetDWORD(const Color color) {
+		const auto A = color.GetAlpha();
+		const auto R = color.GetRed();
+		const auto G = color.GetGreen();
+		const auto B = color.GetBlue();
 
 		return (A << 24) | (R << 16) | (G << 8) | (B);
 	}
@@ -1019,15 +1052,15 @@ public:
 	//	return this->dwTextColor;
 	//}
 
-	inline StrSize GetDefaultCharSize() {
+	inline StrSize GetDefaultCharSize() const {
 		return this->defaultCharSz;
 	}
 
-	inline bool GetShakeUpdateState() {
+	inline bool GetShakeUpdateState() const {
 		return this->bShake;
 	}
 
-	inline ShakeType GetShakeTypeByName(std::wstring_view& param) {
+	static inline ShakeType GetShakeTypeByName(const std::wstring_view& param) {
 		do {
 			if (StringViewIEqu(param, L"None")) {
 				return ShakeType::ShakeType_None;
@@ -1044,13 +1077,13 @@ public:
 			if (StringViewIEqu(param, L"Random") || StringViewIEqu(param, L"R")) {
 				return ShakeType::ShakeType_Random;
 			}
-		} while (0);
+		} while (false);
 
 		return ShakeType::ShakeType_None;
 	}
 
-	inline void GetShakePosition(const ShakeControl& shakeControl, double timer, float& x, float& y, const StrSize* charSz) {
-		auto t = RAD(timer);
+	inline void GetShakePosition(const ShakeControl& shakeControl, const double timer, float& x, float& y, const StrSize* charSz) const {
+		const auto t = RAD(timer);
 
 		switch (shakeControl.shakeType)
 		{
@@ -1068,11 +1101,11 @@ public:
 			break;
 		}
 		case ShakeType::ShakeType_Random: {
-			auto randomX = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
-			auto randomY = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+			const auto randomX = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+			const auto randomY = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
 
-			auto wa = shakeControl.amplitude * charSz->width;
-			auto ha = shakeControl.amplitude * charSz->height;
+			const auto wa = shakeControl.amplitude * charSz->width;
+			const auto ha = shakeControl.amplitude * charSz->height;
 
 			x = float(x + wa * randomX);
 			y = float(y + ha * randomY);
@@ -1084,33 +1117,33 @@ public:
 		}
 	}
 
-	inline void SetIConOffset(float iConOffsetX = 0, float iConOffsetY = 0) {
+	inline void SetIConOffset(const float iConOffsetX = 0, const float iConOffsetY = 0) {
 		this->iConDisplay.iConOffsetX = iConOffsetX;
 		this->iConDisplay.iConOffsetY = iConOffsetY;
 	}
 
-	inline void SetIConScale(float iConScale = 1.0) {
+	inline void SetIConScale(const float iConScale = 1.0) {
 		this->iConDisplay.iConScale = iConScale;
 	}
 
-	inline void SetIConResample(bool iConResample=false){
+	inline void SetIConResample(const bool iConResample=false){
 		this->iConDisplay.iConResample = iConResample;
 	}
 
-	inline void LinkObject(LPRO pObject, IConParamParser parser) {
+	inline void LinkObject(const LPRO pObject, const IConParamParser& parser) const {
 		if (!this->bExternalIConData) {
 			this->pIConData->UpdateICon(pObject, parser);
 		}
 	}
 
-	inline void SetHWA(int type, int driver, bool preMulAlpha) {
+	inline void SetHWA(const int type, const int driver, const bool preMulAlpha) {
 		this->hwaType = type;
 		this->hwaDriver = driver;
 		this->preMulAlpha = preMulAlpha;
 	}
 
-	inline void SetColor(DWORD color) {
-		auto bColorChanged = this->dwTextColor != color;
+	inline void SetColor(const DWORD color) {
+		const auto bColorChanged = this->dwTextColor != color;
 
 		if (bColorChanged && !this->colorFormat.empty()) {
 			// no color format, update default
@@ -1126,32 +1159,32 @@ public:
 		this->dwTextColor = color;
 	}
 
-	inline void SetBorderOffset(unsigned short borderOffsetX, unsigned short borderOffsetY) {
+	inline void SetBorderOffset(const unsigned short borderOffsetX, unsigned short borderOffsetY) {
 		this->borderOffsetX = borderOffsetX;
 		this->borderOffsetY = borderOffsetX;
 	}
 
 	// set row/col space
-	inline void SetSpace(int nRowSpace = 0, int nColSpace = 0) {
+	inline void SetSpace(const int nRowSpace = 0, const int nColSpace = 0) {
 		this->nRowSpace = nRowSpace /*+ this->tm.tmInternalLeading + this->tm.tmExternalLeading*/;
 		this->nColSpace = nColSpace;
 	}
 
 	inline void SetSmooth(
-		Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias
-		, Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality
-		, Gdiplus::PixelOffsetMode pixelOffsetMode = Gdiplus::PixelOffsetMode::PixelOffsetModeHalf) {
+		const Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias
+		, const Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality
+		, const Gdiplus::PixelOffsetMode pixelOffsetMode = Gdiplus::PixelOffsetMode::PixelOffsetModeHalf) {
 		this->textRenderingHint = textRenderingHint;
 		this->smoothingMode = smoothingMode;
 		this->pixelOffsetMode = pixelOffsetMode;
 	}
 
-	inline void SetAlign(DWORD dwAlign, bool bVerticalAlignOffset) {
+	inline void SetAlign(const DWORD dwAlign, const bool bVerticalAlignOffset) {
 		this->dwDTFlags = dwAlign | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 		this->bVerticalAlignOffset = bVerticalAlignOffset;
 	}
 
-	inline void SetClip(bool clip, int renderWidth, int renderHeight) {
+	inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
 		this->bClip = clip;
 		this->renderWidth = renderWidth;
 		this->renderHeight = renderHeight;
@@ -1164,17 +1197,17 @@ public:
 	//	this->dwOutLineColor = color;
 	//}
 
-	inline void SetHotSpot(int hotSpotX = 0, int hotSpotY = 0) {
+	inline void SetHotSpot(const int hotSpotX = 0, const int hotSpotY = 0) {
 		this->hotSpotX = hotSpotX;
 		this->hotSpotY = hotSpotY;
 	}
 
-	inline void SetScale(float xScale = 1.0, float yScale = 1.0) {
+	inline void SetScale(const float xScale = 1.0, const float yScale = 1.0) {
 		this->xScale = xScale;
 		this->yScale = yScale;
 	}
 
-	inline void SetAngle(int angle = 0) {
+	inline void SetAngle(const float angle = 0) {
 		this->angle = angle;
 	}
 
@@ -1226,42 +1259,103 @@ public:
 //		}
 //	}	
 
-	inline StrSize GetCharSizeRaw(wchar_t wChar, HDC hdc) {
-		SIZE sz = { 0 };
+private:
+    struct TabContext {
+        // settings
+        int tabSize = 4;
+		wchar_t spaceChar = CHAR_SPACE;
+
+        // context
+        int curWidth;
+        StrSize spaceCharSize;
+
+		inline void UpdateSpaceChar(wchar_t spaceChar) {
+			this->spaceChar = spaceChar;
+		}
+
+        inline void UpdateContext(int curWidth, StrSize spaceCharSize) {
+            this->curWidth = curWidth;
+            this->spaceCharSize = spaceCharSize;
+        }
+
+        // TODO handle case of end of line
+        inline StrSize GetTabCharSize() const {
+            // tab size depend on space size
+            const auto actualTabSize = tabSize * spaceCharSize.width;
+            StrSize tabCharSize = { actualTabSize, spaceCharSize.height };
+
+            const auto div = static_cast<double>(curWidth) / actualTabSize;
+            const auto floor =static_cast<int>(std::floor(div));
+            const auto ceil = static_cast<int>(std::ceil(div));
+
+            // if not enough, make it enough
+            if(floor != ceil) {
+                tabCharSize.width = ceil * actualTabSize - curWidth;
+            }
+            // if enough, return default size
+            else {
+
+            }
+
+			return tabCharSize;
+        }
+    };
+
+    TabContext tabContext;
+
+public:
+	inline void SetTabProperties(int tabSize = 4, bool bEM = false) {
+		tabContext.tabSize = tabSize;
+		tabContext.spaceChar = bEM
+			? CHAR_EMSPACE
+			: CHAR_SPACE;
+    }
+
+	static inline StrSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
+		SIZE sz = { 0,0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
+
+		// special: shouldn't have width to fix non-left align offset		
+		if (wChar == L'\r' || wChar == L'\n' || wChar == L'\0') {
+			sz.cx = 0;
+		}
+		// general: has both width & height
+		else {
+			
+		}
 
 		return *(StrSize*)&sz;
 	}
 
-	inline auto GetCharSizeCacheIt(LOGFONT logFont) {
-		auto logFontHash = LogFontHasher(logFont);
+	inline auto GetCharSizeCacheIt(const LOGFONT& logFont) const {
+		const auto logFontHash = LogFontHasher(logFont);
 		auto it = pCharSzCacheWithFont->find(logFontHash);
 
 		return it;
 	}
 
-	inline StrSize GetCharSizeWithCache(wchar_t wChar, LOGFONT logFont) {
-		auto logFontHash = LogFontHasher(logFont);
-		auto it = pCharSzCacheWithFont->find(logFontHash);
+	inline StrSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
+		const auto logFontHash = LogFontHasher(logFont);
+		const auto it = pCharSzCacheWithFont->find(logFontHash);
 
 		if (it != pCharSzCacheWithFont->end()) {
 			auto& cacheSecond = it->second;
 			auto& charCache = cacheSecond.cache;
 
-			auto charIt = charCache.find(wChar);
+			const auto charIt = charCache.find(wChar);
 			if (charIt != charCache.end()) {
 				return charIt->second;
 			}
 			else {
-				auto sz = GetCharSizeRaw(wChar, cacheSecond.hdc);
+				const auto sz = GetCharSizeRaw(wChar, cacheSecond.hdc);
 				charCache[wChar] = sz;
 
 				return sz;
 			}
 		}
 		else {
-			auto hdc = GetDC(NULL);
-			auto hFont = CreateFontIndirect(&logFont);			
+			const auto hdc = GetDC(NULL);
+			const auto hFont = CreateFontIndirect(&logFont);			
 			SelectObject(hdc, hFont);
 
 			TEXTMETRIC tm;
@@ -1273,33 +1367,33 @@ public:
 		}
 	}
 
-	inline StrSize GetStrSize(LPCWSTR pStr, size_t pStrLen = -1) {
-		RECT change = { 0,0,65535,1 };
+	//inline StrSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
+	//	RECT change = { 0,0,65535,1 };
 
-		DrawTextW(
-			hdc,
-			pStr,
-			pStrLen == -1 ? wcslen(pStr) : pStrLen,
-			&change
-			, this->dwDTFlags | DT_CALCRECT
-		);
+	//	DrawTextW(
+	//		hdc,
+	//		pStr,
+	//		pStrLen == -1 ? wcslen(pStr) : pStrLen,
+	//		&change
+	//		, this->dwDTFlags | DT_CALCRECT
+	//	);
 
-		return StrSize { change.right - change.left,change.bottom - change.top };
-	}
+	//	return StrSize { change.right - change.left,change.bottom - change.top };
+	//}
 
-	inline const LPWSTR GetRawText() {
+	inline LPCWSTR GetRawText() const {
 		return this->pRawText;
 	}
 
-	inline const LPWSTR GetText() {
+	inline LPCWSTR GetText() const {
 		return this->pText;
 	}
 
-	inline void GetFormat(LPCWSTR pStr
-		, size_t flags = FORMAT_IGNORE_DEFAULTFLAG
+	inline void GetFormat(const LPCWSTR pStr
+		, const size_t flags = FORMAT_IGNORE_DEFAULTFLAG
 		, bool bForced = false		// force refresh
-		, size_t operation = 0
-		, size_t operationParam = 0) {
+		, const size_t operation = 0
+		, const size_t operationParam = 0) {
 		this->bTextValid = true;
 
 		auto TextValid = [&](const wchar_t* pStr, size_t* pLen) {
@@ -1315,7 +1409,7 @@ public:
 				return false;
 			}
 
-			if (!NotEmpty(pStr)) {
+			if (!pRegexCache->NotEmpty(pStr)) {
 				return false;
 			}
 
@@ -1363,7 +1457,7 @@ public:
 		// Format Control
 		// ---------------
 		// 
-		// /[ -> [
+		// \[ -> [
 		//	escaped
 		// 
 		// [Command] if not match follows, will be displayed as untouched
@@ -1511,7 +1605,7 @@ public:
 
 
 		auto GetRawStringByFilteredStringLength = [&]() {
-			auto offset = size_t(pSavedChar - pText);
+			const auto offset = size_t(pSavedChar - pText);
 
 			if ((operation & FORMAT_OPERATION_GetRawStringByFilteredStringLength)
 				&& offset + 1 > operationParam) {
@@ -1528,8 +1622,8 @@ public:
 
 		size_t newLineCount = 0;
 
-		bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
-		bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
+		const bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
+		const bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
 
 		bool bIgnoreFormat = false;
 		bool bIgnoreFormatExceptICon = false;
@@ -1540,8 +1634,8 @@ public:
 				break;
 			}
 
-			auto curChar = pCurChar[0];
-			auto nextChar = pCurChar[1];
+			const auto curChar = pCurChar[0];
+			const auto nextChar = pCurChar[1];
 
 			// new line
 			if (curChar == L'\r' && nextChar == L'\n') {
@@ -1600,8 +1694,8 @@ public:
 						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
 						// parse by ',', from right
-						auto ParseParamCore = [](std::wstring_view& paramParser, ParamParserCallback callBack) {
-							auto start = paramParser.find_last_of(L',');
+						auto ParseParamCore = [](std::wstring_view& paramParser, const ParamParserCallback& callBack) {
+							const auto start = paramParser.find_last_of(L',');
 
 							if (start == std::wstring::npos) {
 								callBack(paramParser);
@@ -1667,7 +1761,7 @@ public:
 									}));
 
 								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
-							} while (0);
+							} while (false);
 
 							this->iConFormat.emplace_back(FormatICon{ savedLength
 																		, savedLengthWithNewLine
@@ -1782,8 +1876,8 @@ public:
 										return;
 									}
 
-									iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX, [&](std::wstring_view& controlParam) {
-										auto size = _stof(controlParam);
+									iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX, [&](const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
 										return size;
 										});
 									});
@@ -1804,8 +1898,8 @@ public:
 										return;
 									}
 
-									iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY, [&](std::wstring_view& controlParam) {
-										auto size = _stof(controlParam);
+									iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY, [&](const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
 										return size;
 										});
 									});
@@ -1826,8 +1920,8 @@ public:
 										return;
 									}
 
-									iConDisplay.iConScale = DiffManager(iConDisplay.iConScale, [&](std::wstring_view& controlParam) {
-										auto size = _stof(controlParam);
+									iConDisplay.iConScale = DiffManager(iConDisplay.iConScale, [&](const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
 										return size;
 										});
 									});
@@ -1890,7 +1984,7 @@ public:
 											shakeControl.charOffset = _stod(controlParams.back());
 											controlParams.pop_back();
 										}
-									} while (0);
+									} while (false);
 
 									if (shakeControl.shakeType != ShakeType::ShakeType_None) {
 										this->bShake = true;
@@ -1916,7 +2010,7 @@ public:
 										return;
 									}
 
-									auto result = DiffManager(GetDWORD(colorStack.back()), [&](std::wstring_view& controlParam) {
+									const auto result = DiffManager(GetDWORD(colorStack.back()), [&](std::wstring_view& controlParam) {
 										// hex
 										if ((controlParam[0] == L'#') 
 											|| (controlParam[0] == L'0' 
@@ -1936,8 +2030,8 @@ public:
 												}));
 
 											DWORD result = 0;
-																					
-											auto size = controlParams.size();
+
+											const auto size = controlParams.size();
 											auto alpha = 0xFF;
 
 											if (size == 4) {
@@ -1974,7 +2068,7 @@ public:
 #pragma region FontControl
 						using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
 
-						auto FontFormatControl = [&](FontFormatControlCallback callBack) {
+						auto FontFormatControl = [&](const FontFormatControlCallback& callBack) {
 							StackManager(logFontStack, fontFormat, callBack);
 						};
 
@@ -2015,9 +2109,9 @@ public:
 										return;
 									}
 
-									newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&](std::wstring_view& controlParam) {
-										auto size = _stoi(controlParam);
-										auto newSize = -1 * MulDiv(size
+									newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&](const std::wstring_view& controlParam) {
+										const auto size = _stoi(controlParam);
+										const auto newSize = -1 * MulDiv(size
 											, GetDeviceCaps(this->hdc, LOGPIXELSY)
 											, 72);
 
@@ -2135,7 +2229,7 @@ public:
 #pragma endregion
 
 						bValidCommand = false;
-					} while (0);
+					} while (false);
 
 					// copy invalid command
 					if (!bIgnoreUnknown && !bValidCommand) {
@@ -2230,7 +2324,7 @@ public:
 						break;
 					}
 
-					if (NotEmpty(curChar)) {
+					if (pRegexCache->NotEmpty(curChar)) {
 						break;
 					}
 
@@ -2247,40 +2341,40 @@ public:
 			while (true) {
 				auto pCurChar = pText + pChar;
 
-				auto curChar = pCurChar [0];
-				auto nextChar = pCurChar [1];
+				auto curChar = pCurChar[0];
+				auto nextChar = pCurChar[1];
 
 				if (fontIt != this->fontFormat.end()
 					&& pChar >= fontIt->startWithNewLine) {
 					localLogFont = fontIt->logFont;
 
-					fontIt++;
+					++fontIt;
 				}
 
 				// word break
-				auto bCurNotCJK = NotCJK(curChar);
+				auto bCurNotCJK = pRegexCache->NotCJK(curChar);
 
-				auto InWord = [&]() {
+				auto InWord = [&] () {
 					bInWord = true;
 
 					notCJKStart = pChar;
 					notCJKStartWidth = curWidth;
-				};
+					};
 
-				auto OutWord = [&]() {
+				auto OutWord = [&] () {
 					bInWord = false;
 
 					//notCJKStart = -1;
 					//notCJKStartWidth = -1;
-				};
+					};
 
-				auto WB_AbleToNextLine = [&]() {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
-				auto WB_Backword = [&]() {
+				auto WB_AbleToNextLine = [&] () {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
+				auto WB_Backword = [&] () {
 					pChar = notCJKStart;
 					curWidth = notCJKStartWidth;
 
 					OutWord();
-				};
+					};
 
 				if (bCurNotCJK && !bInWord) {
 					InWord();
@@ -2291,8 +2385,20 @@ public:
 				}
 
 				// size
-				pStrSizeArr[pChar] = GetCharSizeWithCache(curChar, localLogFont);
-				auto charSz = &pStrSizeArr [pChar];
+				auto getCharSize = [&] () {
+					if (curChar != CHAR_TAB) [[likely]] {
+						return GetCharSizeWithCache(curChar, localLogFont);
+					}
+					else {
+						// update context
+						tabContext.UpdateContext(curWidth,
+							GetCharSizeWithCache(tabContext.spaceChar, localLogFont));
+						return tabContext.GetTabCharSize();
+					}
+				};
+				
+				pStrSizeArr[pChar] = getCharSize();
+				auto charSz = &pStrSizeArr[pChar];
 
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
@@ -2312,9 +2418,8 @@ public:
 					pChar += 2;
 				};
 
-				if (curWidth > rcWidth) {
-					//bool bTooNarrow = this->defaultCharSz.width > rcWidth;
-					bool bTooNarrow = charSz->width > rcWidth;
+				if (curWidth > rcWidth) {					
+					const bool bTooNarrow = charSz->width > rcWidth;
 
 					if (bTooNarrow) {
 						if (IsNewLine(curChar, nextChar)) {
@@ -2362,8 +2467,20 @@ public:
 
 					auto previousCharSz = &pStrSizeArr[pChar - 1];
 
+					auto CanRewindWidth = [&] () {
+						return curWidth - (previousCharSz->width + nColSpace + charSz->width) > 0;
+					};
+					auto RewindWidth = [&] () {
+						curWidth -= charSz->width;
+						curWidth -= nColSpace;
+					};
 					auto Punc_Backward = [&]() {
-						if (NotCJK(PreviousChar)) {
+						// unable to get back
+						if (pChar == pCharStart) {
+							return;
+						}
+
+						if (pRegexCache->NotCJK(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
 							}
@@ -2371,34 +2488,33 @@ public:
 							return;
 						}
 
-						if (curWidth - (previousCharSz->width + nColSpace + charSz->width) <= 0) {
+						if (!CanRewindWidth()) {
 							return;
 						}
 
 						pChar--;
 
-						curWidth -= charSz->width;
-
+						RewindWidth();
 						curWidth -= previousCharSz->width;
-						curWidth -= nColSpace;
 					};
 
+					// only one, merge to current line
 					if (NotAtStart(curChar)) {
 						notAtStartCharPos = pChar;
 
+						// more than one, both move to next line
 						if (NotAtStart(nextChar)) {
-							if (pChar != pCharStart) {
-								Punc_Backward();
-							}
+							Punc_Backward();
 
 							break;
 						}
 					}
 					else {
-						if (pChar != pCharStart) {
-							if (NotAtEnd(PreviousChar)) {
-								Punc_Backward();
-							}
+						if (NotAtEnd(PreviousChar)) {
+							Punc_Backward();
+						}
+						else {
+							RewindWidth();
 						}
 
 						break;
@@ -2413,6 +2529,10 @@ public:
 
 				pChar++;
 
+				if ((pText + pChar)[0] == L'\0') {
+					break;
+				}
+
 				if (pChar > pTextLen) {
 					break;
 				}
@@ -2422,7 +2542,7 @@ public:
 
 			if (!skipLine) {
 #ifdef _DEBUG
-				std::wstring str(pText + pChar);
+				std::wstring strLeft(pText + pChar);
 #endif // _DEBUG
 
 				if (!bNewLineHandled) {
@@ -2483,15 +2603,52 @@ public:
 
 		auto lastCharPos = CharPos {
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
-			+ lastStrPos.width + (lastCharSize->width >> 1)
-			,startY + lastStrPos.y + (lastCharSize->height >> 1)
+			+ lastStrPos.width + (lastCharSize->width / 2)
+			,startY + lastStrPos.y + (lastCharSize->height / 2)
 			,maxWidth
 			,totalHeight - nRowSpace };
 
 		return lastCharPos;
 	}
 
-	inline void RenderPerChar(LPRECT pRc) {
+	struct RenderOptions {
+		// displayed char / total char
+		// 1.0 -> display all
+		double visibleRatio = 1.0;
+
+		// if alpha is included, E.g., 10 char, display 5
+		// not included: 5 / 10 = 0.5, display 5 chars
+		// included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char
+		// last with 50% extra transparency
+		bool bIncludeAlpha = true;
+
+		// Characters that need to render
+		size_t textLen;
+		size_t renderCharCount;
+
+		constexpr static UCHAR MaxAlpha = 255;
+
+		inline size_t GetRenderCharCount(size_t textLen) {
+			this->textLen = textLen;
+			renderCharCount = static_cast<size_t>(std::ceil(visibleRatio * textLen));
+
+			return renderCharCount;
+		}
+
+		inline UCHAR GetRenderCharAlpha(size_t curChar) const {
+			if (!bIncludeAlpha) { return MaxAlpha; }
+
+			const auto opaqueRatio = static_cast<double>(curChar + 1) / textLen;
+
+			if (opaqueRatio < visibleRatio) { return MaxAlpha; }
+
+			const auto alpha = MaxAlpha * (1 - (opaqueRatio - visibleRatio) * textLen);
+
+			return static_cast<UCHAR>(alpha);
+		}
+	};
+
+	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 		if (!this->bTextValid) {
 			return;
 		}
@@ -2504,6 +2661,8 @@ public:
 
 		rcWidth = pRc->right - pRc->left;
 		rcHeight = pRc->bottom - pRc->top;
+
+		opt.GetRenderCharCount(pTextLen);
 
 		char scale = 1;
 		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
@@ -2544,12 +2703,12 @@ public:
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
 
-		auto clip = [this, pRc, displayRc] (int startX, int startY, const StrSize* charSz)->bool {
+		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const StrSize* charSz)->bool {
 			if (this->bClip == false) {
 				return false;
 			}
 
-			RECT charRc = { pRc->left + startX
+			const RECT charRc = { pRc->left + startX
 				,pRc->top + startY
 				,pRc->left + startX + charSz->width
 				,pRc->top + startY + charSz->height };
@@ -2575,76 +2734,142 @@ public:
 			shakeTimer++;
 		}
 
-		for (auto& curStrPos : this->strPos) {
+		try {
+			for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
-			std::wstring str(pText + curStrPos.start, curStrPos.length);
+				std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 
-			StrSize* charSz = nullptr;
+				StrSize* charSz = nullptr;
 
-			int x = GetStartPosX(curStrPos.width, rcWidth);
-			x -= pStrSizeArr [curStrPos.start].width / 8;
+#define NoGDIPlusOffset
 
-			for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
-				auto offset = curStrPos.start + curChar;
-				auto pCurChar = pText + offset;
-				charSz = &pStrSizeArr[offset];
+				auto GetGDIPlusOffset = [&] () {
+#ifdef NoGDIPlusOffset
+					return 0;
+#else
+					// https://blog.csdn.net/stevenkoh/article/details/22777295
+					const auto firstChar = (pText + curStrPos.start)[0];
+					const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
 
-				pCharPosArr[offset] = CharPos{ x + pStrSizeArr[curStrPos.start].width / 8
-											,this->startY + curStrPos.y
-											,0,0 };
+					return static_cast<int>(pStrSizeArr[curStrPos.start].width / coef);
+#endif
+					};
+
+				const auto GDIPlusOffset = GetGDIPlusOffset();
+
+				int x = GetStartPosX(curStrPos.width, rcWidth);
+				x -= GDIPlusOffset;
+
+				for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
+					auto offset = curStrPos.start + curChar;
+					if (offset >= opt.renderCharCount) {
+						throw std::exception("Exceed visable ratio");
+					}
+
+					auto pCurChar = pText + offset;
+					charSz = &pStrSizeArr[offset];
+
+					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
+												,this->startY + curStrPos.y
+												,0,0 };
 
 #pragma region FORMAT_IT				
-				auto positionX = (float)(x) + (float)(this->borderOffsetY);
-				auto positionY = (float)(curStrPos.y) + (float)(this->borderOffsetY);
+					auto positionX = (float)(x + this->borderOffsetY);
+					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
-				if (colorIt != this->colorFormat.end()
-					&& totalChar >= colorIt->start) {
-					solidBrush.SetColor(colorIt->color);
+					if (colorIt != this->colorFormat.end()
+						&& totalChar >= colorIt->start) {
+						solidBrush.SetColor(colorIt->color);
 
-					colorIt++;
-				}
+						++colorIt;
+					}
 
-				if (fontIt != this->fontFormat.end()
-					&& totalChar >= fontIt->start) {
-					this->pFont = GetFontPointerWithCache(fontIt->logFont);
+					if (fontIt != this->fontFormat.end()
+						&& totalChar >= fontIt->start) {
+						this->pFont = GetFontPointerWithCache(fontIt->logFont);
 
-					fontIt++;
-				}
+						++fontIt;
+					}
 
-				if (shakeIt != this->shakeFormat.end()
-					&& totalChar >= shakeIt->start) {
-					localShakeFormat = *shakeIt;
+					if (shakeIt != this->shakeFormat.end()
+						&& totalChar >= shakeIt->start) {
+						localShakeFormat = *shakeIt;
 
-					shakeIt++;
-				}
+						++shakeIt;
+					}
 
-				if (this->bShake) {
-					double offset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
-						+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
+					if (this->bShake) {
+						double shakeOffset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
+							+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
 
-					GetShakePosition(localShakeFormat.shakeControl, offset, positionX, positionY, charSz);
-				}
+						GetShakePosition(localShakeFormat.shakeControl, shakeOffset, positionX, positionY, charSz);
+					}
 
-				// use updated position
-				if (iConIt != this->iConFormat.end()
-					&& totalChar >= iConIt->start) {
-					iConIt->x = (size_t)positionX;
-					iConIt->y = (size_t)positionY;
+					// use updated position
+					if (iConIt != this->iConFormat.end()
+						&& totalChar >= iConIt->start) {
+						iConIt->x = (size_t)positionX;
+						iConIt->y = (size_t)positionY;
 
-					iConIt++;
-				}
+						++iConIt;
+					}
 #pragma endregion
 
-				//if (!clip(x, (this->startY + curStrPos.y), charSz)) {
-				if (!clip((int)positionX - this->borderOffsetX, (this->startY + (int)positionY - this->borderOffsetY), charSz)) {
-					//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
-					auto status = g.DrawString(pCurChar, 1, pFont
-						, PointF(positionX, positionY), &solidBrush);
-				}
+					if (!clip(x, this->startY + curStrPos.y, charSz)) {
+						struct ColorUpdater {
+							SolidBrush* pBrush = nullptr;
+							SolidBrush oldBrush = SolidBrush(Color());
 
-				x += (charSz->width + nColSpace);
+							ColorUpdater(SolidBrush* pBrush, const UCHAR alpha) {
+								if (alpha == RenderOptions::MaxAlpha) {
+									return;
+								}
+
+								// Update alpha
+								Color c;
+								pBrush->GetColor(&c);
+								this->pBrush = pBrush;
+								this->oldBrush.SetColor(c);
+
+								const auto oldAlpha = c.GetAlpha();
+								const auto newAlpha = static_cast<UCHAR>(static_cast<double>(oldAlpha * alpha) / RenderOptions::MaxAlpha);
+
+								const auto oldColor = c.GetValue();
+								const auto newColor = (newAlpha << 24)
+									| (oldColor & 0x00FFFFFF);
+
+								c.SetValue(newColor);
+								pBrush->SetColor(c);
+							}
+							~ColorUpdater() {
+								if (pBrush == nullptr) { return; }
+
+								Color c;
+								oldBrush.GetColor(&c);
+								pBrush->SetColor(c);
+							}
+						};
+
+						// RAII
+						ColorUpdater colorUpdater(&solidBrush,
+							opt.GetRenderCharAlpha(offset));
+
+						//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
+						auto status = g.DrawString(pCurChar, 1, pFont,
+							PointF(positionX, positionY),
+#ifdef NoGDIPlusOffset
+							StringFormat::GenericTypographic(),
+#endif
+							& solidBrush);
+						//assert(status == Status::Ok);
+					}
+
+					x += (charSz->width + nColSpace);
+				}
 			}
+		} catch([[maybe_unused]] std::exception& e) {
+			
 		}
 
 #ifdef _BLUR
@@ -2669,7 +2894,7 @@ public:
 		BitmapData bitmapData;
 		auto bitmapRect = Rect(0, 0, width, height);
 		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
-		unsigned int* pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
+		auto pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 
 		auto sfCoef = GetSfCoef(pMemSf);
 
@@ -2703,10 +2928,10 @@ public:
 
 		auto UpdateIt = [](auto& it,auto itEnd, size_t start) {
 			while (it != itEnd && it->start <= start) {
-				it++;
+				++it;
 			}
 
-			it--;
+			--it;
 		};
 
 		for (auto& it : this->iConFormat) {			
@@ -2801,14 +3026,14 @@ public:
 		pMemSf->Blit(*pHwaSf);
 	}
 
-	inline CharPos GetCharPos(size_t pos) {
-		auto invalid = CharPos { -1, -1, -1, -1 };
+	inline CharPos GetCharPos(const size_t pos) const {
+		const auto invalid = CharPos { -1, -1, -1, -1 };
 
 		if (pCharPosArr == nullptr) {
 			return invalid;
 		}
 
-		size_t pTextLen = wcslen(pText);
+		const size_t pTextLen = wcslen(pText);
 
 		if (pTextLen == 0) {
 			return invalid;
@@ -2821,26 +3046,26 @@ public:
 		return pCharPosArr [pos];
 	}
 
-	inline void DisplayPerChar(LPSURFACE pDst, LPRECT pRc
-		, BlitMode bm = BMODE_TRANSP, BlitOp bo = BOP_COPY, LPARAM boParam = 0, int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) {
+	inline void DisplayPerChar(const LPSURFACE pDst, const LPRECT pRc
+		, const BlitMode bm = BMODE_TRANSP, const BlitOp bo = BOP_COPY, const LPARAM boParam = 0, const int bAntiA = 0
+		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) const {
 		if (!this->bTextValid) {
 			return;
 		}
 
 		if (pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr) {
-			auto pSf = pHwaSf;
+			const auto pSf = pHwaSf;
 
-			int xOffset = -this->borderOffsetX;
-			int yOffset = -this->borderOffsetY + this->startY;
+			const int xOffset = -this->borderOffsetX;
+			const int yOffset = -this->borderOffsetY + this->startY;
 
 			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
 
-			int xPos = pRc->left + this->hotSpotX;
-			int yPos = pRc->top + this->hotSpotY;
+			const int xPos = pRc->left + this->hotSpotX;
+			const int yPos = pRc->top + this->hotSpotY;
 
 			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
-				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, (float)this->angle
+				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, this->angle
 				, bm, bo, boParam, bAntiA);
 		}
 	}

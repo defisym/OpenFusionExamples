@@ -31,9 +31,13 @@
 #define	ACT_ACTION_CS				12
 #define	ACT_ACTION_LAV				13
 #define	ACT_ACTION_LP				14
-#define	ACT_ACTION_LB64				15
+#define	ACT_ACTION_LCB64			15
+#define	ACT_ACTION_LL				16
+#define	ACT_ACTION_SLC				17
+#define	ACT_ACTION_LLO				18
+#define	ACT_ACTION_LB64				19
 
-#define	ACT_LAST					16
+#define	ACT_LAST					20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -45,14 +49,21 @@
 #define	EXP_EXPRESSION_SS			4
 #define	EXP_EXPRESSION_SAV			5
 #define	EXP_EXPRESSION_SP			6
-#define	EXP_EXPRESSION_SB64			7
+#define	EXP_EXPRESSION_SCB64		7
+#define	EXP_EXPRESSION_SB64			8
+#define	EXP_EXPRESSION_SSB64		9
+#define	EXP_EXPRESSION_LSB64		10
 
-#define	EXP_LAST                    8
+#define	EXP_LAST                    11
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
+
+#define _NODISPLAY // for UpdateHoImgInfo
+
+struct Localization;
 
 typedef struct tagEDATA_V1
 {
@@ -77,14 +88,34 @@ typedef struct tagEDATA_V2
 	bool cf25p;
 	bool allowRVforCS;
 
+} EDITDATA_V2;
+
+typedef struct tagEDATA_V3 {
+	// Header - required
+	extHeader		eHeader;
+
+	// Object's data
+//	short			swidth;
+//	short			sheight;
+
+	bool cf25p;
+	bool allowRVforCS;
+	bool bKeepOverFrame;
+
+	bool bUnused;
+
+	int buffer[51];
+
 } EDITDATA;
+typedef EDITDATA* LPEDATA;
 typedef EDITDATA *			LPEDATA;
 
 // Object versions
 #define	KCX_VERSION_V1				1
 #define	KCX_VERSION_V2				2
+#define	KCX_VERSION_V3				3
 
-#define	KCX_CURRENT_VERSION			2
+#define	KCX_CURRENT_VERSION			3
 
 // --------------------------------
 // RUNNING OBJECT DATA STRUCTURE
@@ -113,26 +144,31 @@ typedef struct tagRDATA
 	bool AutoSave = false;
 	bool Modified = false;
 
-	LPTSTR AutoSaveFilePath = nullptr;
-	LPTSTR AutoSaveKey = nullptr;
+	std::wstring* AutoSaveFilePath = nullptr;
+	std::wstring* AutoSaveKey = nullptr;
 	
 	//ReturnStr
-	LPTSTR Str = nullptr;
+	std::wstring* Str = nullptr;
 	
 	//ini
 	LPINI ini = nullptr;
 
-	LPTSTR SecLoopName = nullptr;
-	LPTSTR ItemLoopName = nullptr;
+	std::wstring* SecLoopName = nullptr;
+	std::wstring* ItemLoopName = nullptr;
 
-	LPTSTR CurrentSec = nullptr;
-	LPTSTR CurrentItem = nullptr;
+	std::wstring* CurrentSec = nullptr;
+	std::wstring* CurrentItem = nullptr;
+	
+	Localization* pLocalization = nullptr;
 
 	Base64<std::wstring>* pB64 = nullptr;
 	std::wstring* b64Str = nullptr;
 
 	bool cf25p;
 	bool allowRVforCS;
+	bool bKeepOverFrame;
+
+	GlobalData* pData;
 
 	int (*CompressToBuffer)(const std::string& srcStr, char*& buf);
 	std::string(*DeCompressToString)(const char* srcBuf, const unsigned int bufSz);

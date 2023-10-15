@@ -5,6 +5,9 @@
 
 // SDL mixer can work with SDL Audio together
 // AKA compatible with FFMpeg
+
+// Documents for Mixer X
+// https://github.com/WohlSoft/SDL-Mixer-X/tree/master/docs
 #include <SDL.h>
 #include <SDL_mixer.h>
 
@@ -16,14 +19,284 @@
 #include <chrono>
 #include <algorithm>
 #include <functional>
+#include <ranges>
 
+#include "Base64.h"
 #include "MusicScore.h"
+#include "GeneralDefinition.h"
 
-using namespace std::literals::chrono_literals;
+using std::literals::chrono_literals::operator ""ms;
 
+struct BinaryData;
+struct BinaryDataInfo;
 struct AudioEffect;
 struct AudioData;
 struct GlobalData;
+
+using BinaryBuffer = const unsigned char;
+
+struct BinaryData {
+	using AudioRef = std::vector<AudioData*>;
+
+	struct Data {
+		Encryption* pDecrypt = nullptr;
+		std::wstring hash;
+		AudioRef audioRef;
+	};
+
+	std::map<std::wstring, Data> pDatas;
+
+	BinaryData() = default;
+	~BinaryData() {
+		for (const auto& pData : pDatas | std::views::values) {
+			delete pData.pDecrypt;
+		}
+	}
+
+	inline const BinaryBuffer* GetAddress(const std::wstring& fileName) const {
+		const auto it = pDatas.find(fileName);
+
+		return it != pDatas.end()
+			? it->second.pDecrypt->GetData()
+			: nullptr;
+	}
+
+	inline bool DataNotReferenced(const std::wstring& fileName) {
+		const auto it = pDatas.find(fileName);
+
+		if (it == pDatas.end()) { return true; }
+
+		return it->second.audioRef.empty();
+	}
+
+	inline bool UpdateData(const std::wstring& fileName, const std::wstring& key) {
+		const auto it = pDatas.find(fileName);
+
+		// normal load
+		if (it == pDatas.end()) {
+			return AddData(fileName, key);
+		}
+
+		// don't need to update
+		if(it->second.hash == GetFileHash(fileName)) {
+			return false;
+		}
+
+		// cannot release old
+		if(!ReleaseData(fileName)) {
+			return false;
+		}
+
+		return AddData(fileName, key);
+	}
+
+	inline bool AddData(const std::wstring& fileName, const std::wstring& key) {
+		if(pDatas.contains(fileName)) {
+			return true;
+		}
+
+		const auto bDecrypt = !(StrEmpty(key.c_str()));
+		const auto pDecrypt = new Encryption;
+
+		pDecrypt->GenerateKey(key.c_str());
+
+		bool bRet = true;
+
+		if(!bDecrypt) {
+			bRet = pDecrypt->OpenFile(fileName.c_str());
+		}else {
+			bRet = pDecrypt->DecryptFileDirectly(fileName.c_str());
+		}
+
+		if (!bRet) { return false; }
+
+		pDatas[fileName] = { pDecrypt,  GetFileHash(fileName), AudioRef() };
+
+		return true;
+	}
+
+	inline bool ReleaseData(const std::wstring& fileName) {
+		const auto it = pDatas.find(fileName);
+
+		if (it != pDatas.end() && it->second.audioRef.empty()) {
+			delete it->second.pDecrypt;
+			pDatas.erase(it);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	inline void ReleaseData() {
+		for (auto it = pDatas.begin(); it != pDatas.end();) {
+			if(!it->second.audioRef.empty()) {
+				++it;
+
+				continue;
+			}
+
+			delete it->second.pDecrypt;
+			it = pDatas.erase(it);
+		}
+	}
+
+	inline bool AddRef(const std::wstring& fileName, AudioData* pAudioData) {
+		const auto it = pDatas.find(fileName);
+
+		if (it == pDatas.end()) { return false; }
+
+		const auto pRefVec = &it->second.audioRef;
+		if (std::ranges::find(*pRefVec, pAudioData) != pRefVec->end()) {
+			return false;
+		}
+
+		pRefVec->emplace_back(pAudioData);
+
+		return true;
+	}
+
+	inline bool RemoveRef(const std::wstring& fileName, AudioData* pAudioData) {
+		const auto it = pDatas.find(fileName);
+
+		if (it == pDatas.end()) { return false; }
+
+		const auto pRefVec = &it->second.audioRef;
+		if (std::ranges::find(*pRefVec, pAudioData) == pRefVec->end()) {
+			return false;
+		}
+
+		const auto toRemove = std::ranges::remove(*pRefVec, pAudioData);
+		pRefVec->erase(toRemove.begin(), toRemove.end());
+
+		return true;
+	}
+};
+
+struct BinaryDataInfo {
+	BinaryData* pBinaryData = nullptr;
+	char* pData = nullptr;
+	size_t sz = 0;
+
+	std::wstring dataFileName;
+	std::wstring accessFileName;
+
+	// FromMem_Serialization
+	constexpr static const wchar_t* pFromMemPrefix = L"FromMem_";
+
+	BinaryDataInfo() = default;
+	BinaryDataInfo(const wchar_t* pFileName) {
+		// FromMem_AccessFileName_Address_Size
+		constexpr auto delimiter = L'_';
+
+		size_t first = std::wstring::npos;
+		size_t last = std::wstring::npos;
+
+		// Remove Prefix
+		std::wstring rawText = pFileName;
+		first = rawText.find_first_of(delimiter);
+		rawText = rawText.substr(first + 1);
+
+		// Get Size
+		last = rawText.find_last_of(delimiter);
+		const std::wstring size = rawText.substr(last + 1);
+		rawText = rawText.substr(0, last);
+
+		// Get Address
+		last = rawText.find_last_of(delimiter);
+		const std::wstring address = rawText.substr(last + 1);
+		rawText = rawText.substr(0, last);
+
+		// Update info
+		accessFileName = rawText;
+
+		pData = reinterpret_cast<char*>(_stoi(address));
+		sz = _stoi(size);
+	}
+
+	static inline size_t GetPrefixLength() {
+		return wcslen(pFromMemPrefix);
+	}
+
+	static inline bool FromMemory(const wchar_t* pFileName) {
+		const size_t pFromMemPrefixLength = GetPrefixLength();
+
+		bool bFromMem = true;
+
+		for (size_t i = 0; i < pFromMemPrefixLength; i++) {
+			if (pFileName[i] != pFromMemPrefix[i]) {
+				bFromMem = false;
+
+				break;
+			}
+		}
+
+		return bFromMem;
+	}
+
+	inline std::wstring Serialization() const {
+		const size_t bufSz = sizeof(BinaryData*)
+			+ sizeof(char*)
+			+ sizeof(size_t)
+			+ sizeof(wchar_t) * dataFileName.length()
+			+ sizeof(size_t) * accessFileName.length();
+		const auto pBuf = new unsigned char[bufSz];
+
+		auto pBuffer = pBuf;
+		memcpy(pBuffer, &pBinaryData, sizeof(BinaryData*));
+
+		pBuffer += sizeof(BinaryData*);
+		memcpy(pBuffer, &pData, sizeof(char*));
+
+		pBuffer += sizeof(char*);
+		memcpy(pBuffer, &sz, sizeof(size_t));
+
+		pBuffer += sizeof(size_t);
+		memcpy(pBuffer, accessFileName.data(), sizeof(size_t) * accessFileName.length());
+
+		pBuffer += sizeof(wchar_t) * accessFileName.length();
+		((LPWSTR)pBuffer)[0] = L'\0';
+		pBuffer += sizeof(wchar_t);
+
+		memcpy(pBuffer, dataFileName.data(), sizeof(wchar_t) * dataFileName.length());
+		pBuffer += sizeof(wchar_t) * dataFileName.length();
+		((LPWSTR)pBuffer)[0] = L'\0';
+		pBuffer += sizeof(wchar_t);
+
+		Base64<std::wstring> base64;
+		auto ret = base64.base64_encode(pBuf, bufSz);
+
+		delete[] pBuf;
+
+		return ret;
+	}
+
+	static inline BinaryDataInfo DeSerialization(const std::wstring& data) {
+		BinaryDataInfo info;
+
+		Base64<std::wstring> base64;
+		base64.base64_decode_callback(data, [&] (const BYTE* buf, const size_t sz) {
+			auto pBuffer = buf;
+
+			info.pBinaryData = *(BinaryData**)pBuffer;
+			pBuffer += sizeof(BinaryData*);
+
+			info.pData = *(char**)pBuffer;
+			pBuffer += sizeof(char*);
+
+			info.sz = *(size_t*)pBuffer;
+			pBuffer += sizeof(size_t);
+
+			info.accessFileName = (LPCWSTR)pBuffer;
+			pBuffer += sizeof(wchar_t) * (info.accessFileName.length() + 1);
+
+			info.dataFileName = (LPCWSTR)pBuffer;
+			pBuffer += sizeof(wchar_t) * (info.dataFileName.length() + 1);
+		});
+
+		return info;
+	}
+};
 
 using EffectBuffer = unsigned char;
 
@@ -85,6 +358,11 @@ struct AudioEffect {
 
 private:
 	inline bool ProcessAudioImpl(void* stream, const int len) const {
+		// check validity
+		if (!stream || !pBuf) {
+			return false;
+		}
+
 		// not rigorous but a big enough global buffer for default spec is ok
 		// len = chunk size * (16bit / 8bit) * channel
 		memset(pBuf, 0, GlobalEffectBufferSz);
@@ -102,7 +380,6 @@ private:
 			soundtouch_clear(hSoundTouch);
 			effectPair.processor(hSoundTouch, effectPair.param);
 
-
 			soundtouch_putSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 			dataWrite = soundtouch_receiveSamples_i16(hSoundTouch, (short*)pBuf, shortSize);
 
@@ -115,16 +392,16 @@ private:
 		}
 
 		//memset(stream, 0, len);
-		memcpy(stream, pBuf, protectedBufSz);
 		//memcpy(stream, pBuf, dataWrite* sountTouchSize);
+		memcpy(stream, pBuf, protectedBufSz);
 
 		return true;
 	}
 };
 
-constexpr auto AudioDataException_DecryptFailed = -1;
-constexpr auto AudioDataException_CreateRWFailed = -2;
-constexpr auto AudioDataException_CreateMusicFailed = -3;
+constexpr auto AudioDataException_DecryptFailed = "DecryptFailed";
+constexpr auto AudioDataException_CreateRWFailed = "CreateRWFailed";
+constexpr auto AudioDataException_CreateMusicFailed = "CreateMusicFailed";
 
 struct AudioData {
 	std::wstring fileName;
@@ -137,17 +414,28 @@ struct AudioData {
 	Mix_Music* pMusic = nullptr;	
 	AudioEffect* pEffect = nullptr;
 
+	double duration = -1.0;
+
+	BinaryDataInfo* pBinaryDataInfo = nullptr;
+
 	AudioData(const wchar_t* pFileName) {
 		fileName = pFileName;
 
-		pRW = SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+		//pRW = SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+		pRW = AudioFromMemoryWrapper(pFileName, [&] () {
+			return SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+		});
 
 		if (!pRW) {
-			throw AudioDataException_CreateRWFailed;
+			throw std::exception(AudioDataException_CreateRWFailed);
 		}
 
 		if (!CreateMusic()) {
-			throw AudioDataException_CreateMusicFailed;
+			throw std::exception(AudioDataException_CreateMusicFailed);
+		}
+
+		if (pBinaryDataInfo && pBinaryDataInfo->pBinaryData) {
+			pBinaryDataInfo->pBinaryData->AddRef(pBinaryDataInfo->dataFileName, this);
 		}
 	}
 	AudioData(const wchar_t* pFileName, const wchar_t* pKey) {
@@ -159,20 +447,20 @@ struct AudioData {
 		const auto bRet = pDecrypt->DecryptFileDirectly(pFileName);
 
 		if (!bRet) {
-			throw AudioDataException_DecryptFailed;
+			throw std::exception(AudioDataException_DecryptFailed);
 		}
 
-		pRW = SDL_RWFromConstMem(pDecrypt->GetOutputData(), pDecrypt->GetOutputDataLength());
+		pRW = SDL_RWFromConstMem(pDecrypt->GetOutputData(), static_cast<int>(pDecrypt->GetOutputDataLength()));
 
 		if (!pRW) {
-			throw AudioDataException_CreateRWFailed;
+			throw std::exception(AudioDataException_CreateRWFailed);
 		}
 
 		if (!CreateMusic()) {
-			throw AudioDataException_CreateMusicFailed;
+			throw std::exception(AudioDataException_CreateMusicFailed);
 		}
 	}
-
+	
 	~AudioData() {
 		delete pEffect;
 
@@ -180,12 +468,29 @@ struct AudioData {
 		SDL_RWclose(pRW);
 
 		delete pDecrypt;
+
+		if (pBinaryDataInfo && pBinaryDataInfo->pBinaryData) {
+			pBinaryDataInfo->pBinaryData->RemoveRef(pBinaryDataInfo->dataFileName, this);
+			delete pBinaryDataInfo;
+		}
 	}
 
 	inline bool	CreateMusic() {
 		pMusic = Mix_LoadMUS_RW(pRW, 0);
 
 		return pMusic != nullptr;
+	}
+
+	inline SDL_RWops* AudioFromMemoryWrapper(const wchar_t* pFileName, const std::function<SDL_RWops*()>& cb) {
+		if (!BinaryDataInfo::FromMemory(pFileName)) { return cb(); }
+
+		pBinaryDataInfo = new BinaryDataInfo;
+		*pBinaryDataInfo = BinaryDataInfo::DeSerialization(pFileName + BinaryDataInfo::GetPrefixLength());
+
+		fileName = pBinaryDataInfo->accessFileName;
+		pRW = SDL_RWFromConstMem(pBinaryDataInfo->pData, static_cast<int>(pBinaryDataInfo->sz));
+
+		return pRW;
 	}
 };
 
@@ -198,7 +503,13 @@ constexpr auto Mix_MaxVolume = 128;
 constexpr auto Fusion_MinVolume = 0;
 constexpr auto Fusion_MaxVolume = 100;
 
+constexpr Uint8 Mix_MinDistance = 0;
+constexpr Uint8 Mix_MaxDistance = 255;
+
 struct GlobalData {
+	// destruct after all audio are closed
+	BinaryData binaryData;
+
 	using AudioDataVec = std::vector<AudioData*>;
 	AudioDataVec pAudioDatas;
 
@@ -209,19 +520,10 @@ struct GlobalData {
 	std::vector<Mix_Music*> toRelease;
 
 	HANDLE hSoundTouch = nullptr;
+	int masterVolume = 100;
 
 	GlobalData() {
-		if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-			auto error = SDL_GetError();
-
-			throw GlobalDataException_SDLInitFailed;
-		}
-
-		if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) == -1) {
-			auto error = SDL_GetError();
-
-			throw GlobalDataException_MixOpenAudioFailed;
-		}
+		SDL_GeneralInit();
 
 		hSoundTouch = soundtouch_createInstance();
 		soundtouch_setChannels(hSoundTouch, MIX_DEFAULT_CHANNELS);
@@ -420,6 +722,26 @@ struct GlobalData {
 	// play
 	// ------------
 
+	// Loop times:
+	//	 Mix loop:
+	//			 -1 -> infinite
+	//			  0 -> as 1
+	//			  1 -> as 1
+	//			  2 -> as 2
+	//			  etc...
+	//	 Fusion loop:
+	//			  0 -> infinite
+	//			  1 -> as 1
+	//			  2 -> as 2
+	//			  etc...
+	static inline int LoopConverter(int loops = 0) {
+		// loops infinitely
+		if (loops <= 0) { return -1; }
+
+		// normal loop count
+		return loops;
+	}
+
 	static inline bool PlayAudio(Mix_Music* pMusic,
 		int loops = 0, int fadeMs = -1,
 		Mix_Music* pOldMusic = nullptr) {
@@ -428,6 +750,9 @@ struct GlobalData {
 		}
 
 		//Mix_SetFreeOnStop(pMusic, true);
+
+		// Fusion loop -> Mix loop
+		loops = LoopConverter(loops);
 
 		if (fadeMs == -1) {
 			if (pOldMusic != nullptr) {
@@ -458,7 +783,7 @@ struct GlobalData {
 	}
 
 	static inline void StopAudio(Mix_Music* pMusic, int fadeMs = -1) {
-		if (fadeMs == -1) {
+		if (fadeMs == -1 || Mix_PausedMusicStream(pMusic)) {
 			Mix_HaltMusicStream(pMusic);
 		}
 		else {
@@ -502,11 +827,23 @@ struct GlobalData {
 	static inline bool AudioPlaying(Mix_Music* pMusic) {
 		return Mix_PlayingMusicStream(pMusic);
 	}
-	inline bool AudioPlaying(AudioData* pAudioData) {
+
+	static inline bool AudioPlaying(const AudioData* pAudioData) {
 		return pAudioData != nullptr
 			? AudioPlaying(pAudioData->pMusic)
 			: false;
 	}
+
+	static inline bool AudioPaused(Mix_Music* pMusic) {
+		return Mix_PausedMusicStream(pMusic);
+	}
+
+	static inline bool AudioPaused(const AudioData* pAudioData) {
+		return pAudioData != nullptr
+			? AudioPaused(pAudioData->pMusic)
+			: false;
+	}
+
 
 	static inline Mix_Fading AudioFadeState(Mix_Music* pMusic) {
 		return Mix_FadingMusicStream(pMusic);		
@@ -546,20 +883,64 @@ struct GlobalData {
 	static inline double GetAudioDuration(Mix_Music* pMusic) {
 		return Mix_MusicDuration(pMusic);
 	}
+	// in seconds
+	inline double GetAudioDuration(const wchar_t* pFileName) {
+		double duration = -1;
 
-	// 0 ~ 100 -> 0 ~ 128
-	static inline int Range(int v, int l, int h) {
-		return max(min(v, h), l);
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			duration = GetAudioDuration(pMusic);
+		});
+
+		return duration;
 	}
 
+
+	// ------------
+	// Volume
+	// ------------
+
+	// 0 ~ 100 -> 0 ~ 128
+	//static inline int Range(int v, int l, int h) {
+	//	return max(min(v, h), l);
+	//}
+
 	static inline int VolumeConverter(int volume) {
-		return (int)((Range(volume, Fusion_MinVolume, Fusion_MaxVolume) /
+		return (int)((::Range(volume, Fusion_MinVolume, Fusion_MaxVolume) /
 			static_cast<double>(Fusion_MaxVolume)) * static_cast<double>(Mix_MaxVolume));
 	}
 
 	static inline int VolumeReverseConverter(int volume) {
-		return (int)((Range(volume, Mix_MinVolume, Mix_MaxVolume) /
+		return (int)((::Range(volume, Mix_MinVolume, Mix_MaxVolume) /
 			static_cast<double>(Mix_MaxVolume)) * static_cast<double>(Fusion_MaxVolume));
+	}
+
+	// 0 ~ 100
+	inline int GetNormalizedVolume(int chanVol) const {
+		const auto newVol = static_cast<int>((chanVol * masterVolume) / static_cast<double>(Fusion_MaxVolume));
+
+		return ::Range(newVol, Fusion_MinVolume, Fusion_MaxVolume);
+	}
+
+	// 0 ~ 100
+	inline void SetMasterVolume(int volume) {
+		masterVolume = 	::Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
+
+		auto updateVolume = [&] <typename T> (const std::vector<T>& channels,
+			int(GlobalData::*pGetter)(int),
+			void(GlobalData::*pSetter)(int, int)) {
+			for (size_t channel = 0; channel < channels.size(); channel++) {
+				const auto channelVolume = (this->*pGetter)(channel);
+				(this->*pSetter)(channel, channelVolume);
+			}
+		};
+
+		updateVolume(exclusiveChannel, &GlobalData::GetExclusiveVolume, &GlobalData::SetExclusiveVolume);
+		updateVolume(mixingChannel, &GlobalData::GetMixingVolume, &GlobalData::SetMixingVolume);
+	}
+
+	// 0 ~ 100
+	inline int GetMasterVolume() const {
+		return ::Range(masterVolume, Fusion_MinVolume, Fusion_MaxVolume);
 	}
 
 	// 0 ~ 100
@@ -588,6 +969,38 @@ struct GlobalData {
 		return volume;
 	}
 
+
+	// ------------
+	// Effects
+	// ------------
+
+	static inline void SetAudioEffectPanning(Mix_Music* pMusic, Uint8 left, Uint8 right) {
+		Mix_SetMusicEffectPanning(pMusic, left, right);
+	}
+	inline void SetAudioEffectPanning(const wchar_t* pFileName, Uint8 left, Uint8 right) {
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			SetAudioEffectPanning(pMusic, left, right);
+		});
+	}
+
+	static inline void SetAudioEffectPosition(Mix_Music* pMusic, Sint16 angle, Uint8 distance) {
+		Mix_SetMusicEffectPosition(pMusic, angle, distance);
+	}
+	inline void SetAudioEffectPosition(const wchar_t* pFileName, Sint16 angle, Uint8 distance) {
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			SetAudioEffectPosition(pMusic, angle, distance);
+		});
+	}
+
+	static inline void SetAudioEffectDistance(Mix_Music* pMusic, Uint8 distance) {
+		Mix_SetMusicEffectDistance(pMusic, distance);
+	}
+	inline void SetAudioEffectDistance(const wchar_t* pFileName, Uint8 distance) {
+		GetAudioData(pFileName, [&] (Mix_Music* pMusic) {
+			SetAudioEffectDistance(pMusic, distance);
+		});
+	}
+
 	// ------------
 	// virtual channel
 	//
@@ -602,6 +1015,13 @@ struct GlobalData {
 		// ------------
 		bool bLoop = false;
 
+		// panning
+		Uint8 left = 255;
+		Uint8 right = 255;
+
+		Sint16 angle = 0;
+		Uint8 distance = 0;
+
 		// ------------
 		// exclusive only
 		// ------------
@@ -615,7 +1035,7 @@ struct GlobalData {
 		// ------------
 
 		bool bEffect = false;
-		MusicScore::Score score = MusicScore::Score::Loop;
+		MusicScore::MusicalNotes score = MusicScore::loop;
 		float base = 0;
 
 		//bool mix_bAttenuation = false;
@@ -630,6 +1050,12 @@ struct GlobalData {
 		}
 	}
 
+	template<typename T>
+	static inline void GetExtendVecElement(std::vector<T>& vec, size_t pos, T val) {
+		ExtendVec(vec, pos, val);
+		return vec[pos];
+	}
+
 	static inline void EraseVec(AudioDataVec& vec, const Mix_Music* pMusic) {
 		for (auto& i : vec) {
 			if (i != nullptr && i->pMusic == pMusic) {
@@ -638,16 +1064,62 @@ struct GlobalData {
 		}
 	}
 
+	// ---------
+	// Volume
+	// ---------
+
 	// 0 ~ 100
 	static inline int GetChannelVolume(ChannelVolume& vec, int channel) {
 		ExtendVec(vec, channel, Fusion_MaxVolume);
-		return Range(vec[channel], Fusion_MinVolume, Fusion_MaxVolume);
+		return ::Range(vec[channel], Fusion_MinVolume, Fusion_MaxVolume);
 	}
 
 	// 0 ~ 100
 	static inline void SetChannelVolume(ChannelVolume& vec, int channel, int volume) {
 		ExtendVec(vec, channel, Fusion_MaxVolume);
-		vec[channel] = Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
+		vec[channel] = ::Range(volume, Fusion_MinVolume, Fusion_MaxVolume);
+	}
+
+	// ---------
+	// Effects
+	// ---------
+
+	static inline auto GetChannelEffectPanning(ChannelSettings& vec, int channel) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		return std::make_tuple(::Range(vec[channel].left, Mix_MinDistance, Mix_MaxDistance), ::Range(vec[channel].right, Mix_MinDistance, Mix_MaxDistance));
+	}
+
+	static inline void SetChannelEffectPanning(ChannelSettings& vec, int channel, Uint8 left, Uint8 right) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		vec[channel].left = ::Range(left, Mix_MinDistance, Mix_MaxDistance);
+		vec[channel].right = ::Range(right, Mix_MinDistance, Mix_MaxDistance);
+	}
+
+	static inline auto GetChannelEffectPosition(ChannelSettings& vec, int channel) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		return std::make_tuple(vec[channel].angle, ::Range(vec[channel].distance, Mix_MinDistance, Mix_MaxDistance));
+	}
+
+	static inline void SetChannelEffectPosition(ChannelSettings& vec, int channel, Sint16 angle, Uint8 distance) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		vec[channel].angle = angle;
+		vec[channel].distance = ::Range(distance, Mix_MinDistance, Mix_MaxDistance);
+	}
+
+	static inline auto GetChannelEffectDistance(ChannelSettings& vec, int channel) {
+		ExtendVec(vec, channel, AudioSettings());
+		
+		return ::Range(vec[channel].distance, Mix_MinDistance, Mix_MaxDistance);
+	}
+
+	static inline void SetChannelEffectDistance(ChannelSettings& vec, int channel, Uint8 distance) {
+		ExtendVec(vec, channel, AudioSettings());
+
+		vec[channel].distance = ::Range(distance, Mix_MinDistance, Mix_MaxDistance);
 	}
 
 	// ------------
@@ -655,6 +1127,10 @@ struct GlobalData {
 	//
 	// only one audio can play in the same channel, switch will cross fade previous one
 	// ------------
+
+	// ---------
+	// basic
+	// ---------
 
 	AudioDataVec exclusiveChannel;
 	ChannelVolume exclusiveChannelVolume;
@@ -680,7 +1156,7 @@ struct GlobalData {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 		ExtendVec(exclusiveChannelSettings, channel, AudioSettings());
 
-		exclusiveChannelSettings[channel].bLoop = loops != 0;
+		exclusiveChannelSettings[channel].bLoop = loops != 1;
 
 		const auto pOldData = exclusiveChannel[channel];
 		const auto pOldMusic = pOldData != nullptr ? pOldData->pMusic : nullptr;
@@ -730,6 +1206,10 @@ struct GlobalData {
 		}
 	}
 
+	// ---------
+	// info
+	// ---------
+
 	inline bool ExclusiveChannelFadingState(int channel) {
 		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
 
@@ -740,6 +1220,35 @@ struct GlobalData {
 		}
 		
 		return MIX_NO_FADING;
+	}
+
+	inline const wchar_t* GetExclusiveChannelName(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			return pAudioData->fileName.c_str();
+		}
+
+		return nullptr;
+	}
+
+	inline int GetExclusiveChannelID(const wchar_t* pFileName) const {
+		int id = -1;
+
+		for (size_t channel = 0; channel < exclusiveChannel.size(); channel++) {
+			const auto pAudioData = exclusiveChannel[channel];
+
+			if (pAudioData != nullptr
+				&& StrEqu(pAudioData->fileName.c_str(), pFileName)) {
+				id = static_cast<int>(channel);
+			}
+
+			if (id != -1) { break; }
+		}
+
+		return id;
 	}
 
 	inline bool ExclusiveChannelPlaying() {
@@ -759,6 +1268,28 @@ struct GlobalData {
 
 		if (pAudioData != nullptr) {
 			return AudioPlaying(pAudioData);
+		}
+
+		return false;
+	}
+	
+	inline bool ExclusiveChannelPaused() {
+		auto bRet = false;
+
+		for (size_t channel = 0; channel < exclusiveChannel.size(); channel++) {
+			bRet |= ExclusiveChannelPaused(channel);
+		}
+
+		return bRet;
+	}
+
+	inline bool ExclusiveChannelPaused(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			return AudioPaused(pAudioData);
 		}
 
 		return false;
@@ -791,12 +1322,22 @@ struct GlobalData {
 
 		const auto pAudioData = exclusiveChannel[channel];
 
-		if (pAudioData != nullptr) {
-			return GetAudioDuration(pAudioData->pMusic);
+		if (pAudioData == nullptr) {
+			return -1;
 		}
 
-		return -1;
+		// if not updated, update it
+		if (pAudioData->duration < 0.0) {
+			pAudioData->duration = GetAudioDuration(pAudioData->pMusic);
+		}
+
+		return pAudioData->duration;
+
 	}
+
+	// ---------
+	// volume
+	// ---------
 
 	// 0 ~ 100
 	inline int GetExclusiveVolume(int channel) {
@@ -812,7 +1353,62 @@ struct GlobalData {
 		const auto pAudioData = exclusiveChannel[channel];
 
 		if (pAudioData != nullptr) {
-			SetAudioVolume(pAudioData->pMusic, volume);
+			SetAudioVolume(pAudioData->pMusic, GetNormalizedVolume(volume));
+		}
+	}
+
+	// ---------
+	// effect
+	// ---------
+
+	inline auto GetExclusiveEffectPanning(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		return GetChannelEffectPanning(exclusiveChannelSettings, channel);
+	}
+
+	inline void SetExclusiveEffectPanning(int channel, Uint8 left, Uint8 right) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		SetChannelEffectPanning(exclusiveChannelSettings, channel, left,right);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			SetAudioEffectPanning(pAudioData->pMusic, left, right);
+		}
+	}
+
+	inline auto GetExclusiveEffectPosition(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		return GetChannelEffectPosition(exclusiveChannelSettings, channel);
+	}
+
+	inline void SetExclusiveEffectPosition(int channel, Sint16 angle, Uint8 distance) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		SetChannelEffectPosition(exclusiveChannelSettings, channel, angle, distance);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			SetAudioEffectPosition(pAudioData->pMusic, angle, distance);
+		}
+	}
+
+	inline auto GetExclusiveEffectDistance(int channel) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+
+		return GetChannelEffectDistance(exclusiveChannelSettings, channel);
+	}
+
+	inline void SetExclusiveEffectDistance(int channel, Uint8 distance) {
+		ExtendVec(exclusiveChannel, channel, (AudioData*)nullptr);
+		SetChannelEffectDistance(exclusiveChannelSettings, channel, distance);
+
+		const auto pAudioData = exclusiveChannel[channel];
+
+		if (pAudioData != nullptr) {
+			SetAudioEffectDistance(pAudioData->pMusic, distance);
 		}
 	}
 
@@ -845,7 +1441,7 @@ struct GlobalData {
 
 			if (channelSettings.excl_bABLoop) {
 				const auto currentPosition = GetAudioPosition(pAudioData->pMusic);
-				const auto endPos = channelSettings.excl_end == 0
+				const auto endPos = channelSettings.excl_end == 0.0
 					? GetAudioDuration(pAudioData->pMusic)
 					: channelSettings.excl_end;
 
@@ -863,6 +1459,10 @@ struct GlobalData {
 	// not managed, one channel can play multiple musics
 	// ------------
 
+	// ---------
+	// basic
+	// ---------
+
 	std::vector<AudioDataVec> mixingChannel;
 	ChannelVolume mixingChannelVolume;
 	ChannelSettings mixingChannelSettings;
@@ -873,14 +1473,14 @@ struct GlobalData {
 	};
 
 	int delayMs = 1000;
-	std::map < std::wstring, playRecord > sameNameSize;
+	std::map<std::wstring, playRecord> sameNameSize;
 
 	inline void ClearMixingPlayRecord() {
 		const auto now = std::chrono::steady_clock::now();
 
-		for(auto& it: sameNameSize) {
+		for (auto& it : sameNameSize) {
 			const auto durMs = (now - it.second.updateTime) / 1ms;
-			if(durMs > delayMs) {
+			if (durMs > delayMs) {
 				it.second.size = 0;
 			}
 		}
@@ -929,9 +1529,7 @@ struct GlobalData {
 				{
 					{
 						soundtouch_setPitchSemiTones,
-						//MusicScore::GetNote(arrDiv * audioPlayed)
-						//MusicScore::GetNote(arrDiv * audioPlayed, MusicScore::Score::CrystalPrelude, 0)
-						MusicScore::GetNote(arrDiv * audioPlayed,channelSettings.score,channelSettings.base)
+						MusicScore::GetNote(arrDiv * audioPlayed,&channelSettings.score,channelSettings.base)
 					},
 					//{
 					//	soundtouch_setRate,
@@ -998,6 +1596,10 @@ struct GlobalData {
 		}
 	}
 
+	// ---------
+	// info
+	// ---------
+
 	inline void MixingIterateChannel(int channel,
 		const std::function<void(AudioData*)>& processor) {
 		ExtendVec(mixingChannel, channel, AudioDataVec());
@@ -1009,6 +1611,23 @@ struct GlobalData {
 				processor(pAudioData);
 			}
 		}
+	}
+
+	inline int GetMixingChannelID(const wchar_t* pFileName) {
+		int id = -1;
+
+		for (size_t channel = 0; channel < mixingChannel.size(); channel++) {
+			MixingIterateChannel(static_cast<int>(channel), [&] (AudioData* pAudioData) {
+				if (pAudioData != nullptr
+					&& StrEqu(pAudioData->fileName.c_str(), pFileName)) {
+					id = static_cast<int>(channel);
+				}
+			});
+
+			if (id != -1) { break; }
+		}
+
+		return id;
 	}
 
 	inline bool MixingChannelPlaying() {
@@ -1026,6 +1645,26 @@ struct GlobalData {
 
 		MixingIterateChannel(channel, [&] (AudioData* pAudioData) {
 			bRet |= AudioPlaying(pAudioData);
+		});
+
+		return bRet;
+	}
+
+	inline bool MixingChannelPaused() {
+		auto bRet = false;
+
+		for (size_t channel = 0; channel < mixingChannel.size(); channel++) {
+			bRet |= MixingChannelPaused(static_cast<int>(channel));
+		}
+
+		return bRet;
+	}
+
+	inline bool MixingChannelPaused(int channel) {
+		auto bRet = false;
+
+		MixingIterateChannel(channel, [&] (AudioData* pAudioData) {
+			bRet |= AudioPaused(pAudioData);
 		});
 
 		return bRet;
@@ -1055,6 +1694,10 @@ struct GlobalData {
 		return num;
 	}
 
+	// ---------
+	// volume
+	// ---------
+
 	// 0 ~ 100
 	inline int GetMixingVolume(int channel) {
 		ExtendVec(mixingChannel, channel, AudioDataVec());
@@ -1070,7 +1713,68 @@ struct GlobalData {
 
 		for (const auto& pAudioData : vec) {
 			if (pAudioData != nullptr) {
-				SetAudioVolume(pAudioData->pMusic, volume);
+				SetAudioVolume(pAudioData->pMusic, GetNormalizedVolume(volume));
+			}
+		}
+	}
+
+	// ---------
+	// effect
+	// ---------
+
+	inline auto GetMixingEffectPanning(int channel) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+
+		return GetChannelEffectPanning(mixingChannelSettings, channel);
+	}
+
+	inline void SetMixingEffectPanning(int channel, Uint8 left, Uint8 right) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+		SetChannelEffectPanning(mixingChannelSettings, channel, left, right);
+
+		const auto& vec = mixingChannel[channel];
+
+		for (const auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioEffectPanning(pAudioData->pMusic, left, right);
+			}
+		}
+	}
+
+	inline auto GetMixingEffectPosition(int channel) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+
+		return GetChannelEffectPosition(mixingChannelSettings, channel);
+	}
+
+	inline void SetMixingEffectPosition(int channel, Sint16 angle, Uint8 distance) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+		SetChannelEffectPosition(mixingChannelSettings, channel, angle, distance);
+
+		const auto& vec = mixingChannel[channel];
+
+		for (const auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioEffectPosition(pAudioData->pMusic, angle, distance);
+			}
+		}
+	}
+
+	inline auto GetMixingEffectDistance(int channel) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+
+		return GetChannelEffectDistance(mixingChannelSettings, channel);
+	}
+
+	inline void SetMixingEffectDistance(int channel, Uint8 distance) {
+		ExtendVec(mixingChannel, channel, AudioDataVec());
+		SetChannelEffectDistance(mixingChannelSettings, channel, distance);
+
+		const auto& vec = mixingChannel[channel];
+
+		for (const auto& pAudioData : vec) {
+			if (pAudioData != nullptr) {
+				SetAudioEffectDistance(pAudioData->pMusic, distance);
 			}
 		}
 	}
@@ -1091,7 +1795,7 @@ struct GlobalData {
 	//}
 
 	inline void SetMixingChannelScore(int channel, bool bEnable,
-		MusicScore::Score score = MusicScore::Score::Loop, float base = 0) {
+		const MusicScore::MusicalNotes& score = MusicScore::loop, float base = 0) {
 		ExtendVec(mixingChannelSettings, channel, AudioSettings());
 
 		mixingChannelSettings[channel].bEffect = bEnable;

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef BOOST
 
 #include <regex>

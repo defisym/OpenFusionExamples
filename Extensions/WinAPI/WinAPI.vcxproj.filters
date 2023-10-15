@@ -20,6 +20,9 @@
       <UniqueIdentifier>{aeb5b5db-84b6-4869-b544-d00abc756e07}</UniqueIdentifier>
       <Extensions>txt</Extensions>
     </Filter>
+    <Filter Include="WindowsMessage">
+      <UniqueIdentifier>{3498a8bf-e5eb-4f02-94da-a98de4d2c4c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -165,6 +168,21 @@
     </ClInclude>
     <ClInclude Include="..\_3rdLib\GetVideoFrame.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\GeneralDefinition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\WindowsException.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowResizing.h">
+      <Filter>WindowsMessage</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseHandler.h">
+      <Filter>WindowsMessage</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsMessageBase.h">
+      <Filter>WindowsMessage</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

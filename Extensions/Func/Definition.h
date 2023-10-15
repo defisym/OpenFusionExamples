@@ -2,19 +2,34 @@
 
 enum class DataType { VALUE, STRING };
 
-typedef struct Data {
+struct Data {
 	float Val = 0.0;
-	std::wstring Str;
+	std::wstring Str = L"0";
 
 	DataType Type = DataType::VALUE;
-	bool Converted = false;
-	bool IsNumber = false;
-	bool IsNumberChecked = false;
-}Data;
+	bool Converted = true;
+	bool IsNumber = true;
+	bool IsNumberChecked = true;
 
-#define Data_Val(Val) Data{ Val, std::wstring(), DataType::VALUE, false, true, true }
-#define Data_Str(Str) Data{ 0, Str, DataType::STRING, false, false, false }
-#define Data_Default  Data{ 0.0, L"", DataType::VALUE, true, true, true }
+	bool bDefault = false;
+
+	Data() {
+		this->bDefault = true;
+	}
+
+	Data(float Val) {
+		this->Val = Val;
+		this->Str = std::wstring();
+		this->Converted = false;
+	}
+	Data(const std::wstring& Str) {
+		this->Str = Str;
+		this->Type = DataType::STRING;
+		this->Converted = false;
+		this->IsNumber = false;
+		this->IsNumberChecked = false;
+	}
+};
 
 typedef std::vector<std::wstring> VEC;
 typedef VEC* LPVEC;
@@ -28,6 +43,9 @@ typedef PARAMVEC* LPPARAMVEC;
 typedef std::vector<PARAMVEC> PARAMSTACK;
 typedef PARAMSTACK* LPPARAMSTACK;
 
+typedef std::unordered_map<std::wstring, std::wstring> MANGLINGNAME;
+typedef MANGLINGNAME* LPMANGLINGNAME;
+
 typedef std::unordered_map<std::wstring, Data> PARAMMAP;
 typedef PARAMMAP* LPPARAMMAP;
 
@@ -37,20 +55,9 @@ typedef TPARAM* LPTPARAM;
 typedef std::wstring STRING;
 typedef STRING* LPSTRING;
 
-#define DefaultVecSize 20
+constexpr auto DefaultVecSize = 20;
 
-#define OStr rdPtr->OutPut
+constexpr auto Delimiter = L'|';
 
-#define Delimiter _T("|")
-
-#define ONFUNC	0
-#define ONITOBJ	9
-
-#define GetParam(Pos) rdPtr->FuncParamStack->back().at(Pos)
-
-#define HasTempParam(FuncName, ParamName) (((*rdPtr->FuncTempParam).count(GetFuncNameWithRecursiveID(FuncName)) != 0)	\
-								&&((*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)].count(ParamName) != 0))
-#define TempParam(FuncName, ParamName) (*rdPtr->FuncTempParam)[GetFuncNameWithRecursiveID(FuncName)][ParamName]
-
-//#define Return(Pos) rdPtr->FuncReturn->at(Pos)
-#define Return(Pos) GetReturn(rdPtr, Pos)
+constexpr auto ONFUNC = 0;
+constexpr auto ONITOBJ = 9;

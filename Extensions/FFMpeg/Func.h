@@ -23,9 +23,11 @@ inline void ReDisplay(LPRDATA rdPtr) {
 		rdPtr->bChanged = true;
 		rdPtr->rc.rcChanged = true;
 
+		// use video resolution to fix collision, as scale works differently here
 		UpdateHoImgInfo(rdPtr
-			, rdPtr->swidth, rdPtr->sheight
-			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleX
+			//, rdPtr->swidth, rdPtr->sheight
+			, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height()
+			, (float)rdPtr->rc.rcScaleX, (float)rdPtr->rc.rcScaleY
 			, HotSpotPos::LT, 0, 0
 			, 0);
 	}
@@ -34,7 +36,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
 	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
 
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 		pSf = CreateSurface(32, width, height);
 #else
 		pSf = CreateSurface(24, width, height);
@@ -67,12 +69,12 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 //#define _MANUAL_PM
 
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 	omp_set_num_threads(std::thread::hardware_concurrency());
 #pragma omp parallel
 #endif
 	{
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 #pragma omp for
 #endif
 		for (int y = 0; y < height; y++) {
@@ -81,9 +83,9 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 #ifndef _MANUAL_PM
 			memcpy(pMemData, pVideo, lineSz);
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 			// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
-#ifdef _USE_OPENMP
+#ifdef _OPENMP
 //#pragma omp for
 #endif
 			for (int x = 0; x < width; x++) {
@@ -110,7 +112,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 					pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
 				}
 
-#ifdef _VIDEO_ALPHA
+#ifdef VIDEO_ALPHA
 				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
 				pAlphaData[0] = pVideoData[3];
 #endif
@@ -157,7 +159,7 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 }
 
 // return pMemSf, if bHwa == true, cast it to HWA and save to pHwaSf;
-inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, LPSURFACE& pMemSf, LPSURFACE& pHwaSf) {
+inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, LPSURFACE& pHwaSf) {
 	if (!bHwa) {
 		return ConvertToLong(pMemSf);
 	}
@@ -179,7 +181,7 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) 
 	// add protection for minus position
 	msRaw = msRaw < 0 ? 0 : msRaw;
 
-	size_t ms = (size_t)msRaw;
+	const auto ms = static_cast<size_t>(msRaw);
 
 	//auto pos = rdPtr->pFFMpeg->get_videoPosition();
 
@@ -270,20 +272,27 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	*rdPtr->pFilePath = L"";
 }
 
-inline int GetFlag(LPRDATA rdPtr) {
-	return rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
+inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
+	FFMpegOptions opt;
+
+	opt.flag = rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
+	opt.videoCodecName = *rdPtr->pVideoOverrideCodecName;
+	opt.audioCodecName = *rdPtr->pAudioOverrideCodecName;
+
+	return opt;
 }
 
-inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key, DWORD flag = FFMpegFlag_Default, size_t ms = 0) {
+inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key,
+	const FFMpegOptions& opt = FFMpegOptions(), size_t ms = 0) {
 	CloseGeneral(rdPtr);
 
 	try {
 		if (StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath, flag);
+			rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
 		}
 		else {
 			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), flag);
+			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
 		}
 
 		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
@@ -310,21 +319,34 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 	catch (...) {
 		CloseGeneral(rdPtr);
 
-		// update path for condition to check
-		*rdPtr->pFilePath = filePath;
+		if (!opt.NoOverride()) {
+			auto newOpt = opt;
+			newOpt.ResetOverride();
 
-		CallEvent(ON_OPENFAILED);
+			OpenGeneral(rdPtr, filePath, key, newOpt, ms);
+		}
+		else {
+			// update path for condition to check
+			*rdPtr->pFilePath = filePath;
 
-		*rdPtr->pFilePath = L"";
+			CallEvent(ON_OPENFAILED);
+
+			*rdPtr->pFilePath = L"";
+		}
 	}
 }
 
 inline auto GetRefList(LPRDATA rdPtr) {
 	std::vector<const uint8_t*> pBufs;
+
+	if(rdPtr->pData->pMemVideoLib->data.empty()) {
+		return pBufs;
+	}
+
 	pBufs.reserve(rdPtr->pData->pMemVideoLib->data.size());
 
-	for (auto& ppFFMpeg : rdPtr->pData->ppFFMpegs_record) {
-		auto pFFMpeg = *ppFFMpeg;
+	for (const auto& ppFFMpeg : rdPtr->pData->ppFFMpegs_record) {
+		const auto pFFMpeg = *ppFFMpeg;
 
 		if (!pFFMpeg) {
 			continue;
@@ -340,7 +362,12 @@ inline auto GetRefList(LPRDATA rdPtr) {
 
 inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs) {
 	std::vector<const std::wstring*> toRemove;
-	toRemove.reserve(rdPtr->pData->pMemVideoLib->data.size() - pBufs.size());
+
+	if (rdPtr->pData->pMemVideoLib->data.empty()) {
+		return toRemove;
+	}
+
+	toRemove.reserve((std::max)(0u, rdPtr->pData->pMemVideoLib->data.size() - pBufs.size()));
 
 	for (auto& pair : rdPtr->pData->pMemVideoLib->data) {
 		auto it = std::find(pBufs.begin(), pBufs.end(), pair.second->GetOutputData());
@@ -355,23 +382,29 @@ inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs)
 }
 
 inline void CleanCache(LPRDATA rdPtr, bool forceClean) {
+	auto ExceedMemLimit = [] (size_t memLimit = DEFAULT_MEMORYLIMIT) {
+		return memLimit <= GetProcessMemoryUsageMB();
+	};
+
 	if (!rdPtr->bCache) {
 		return;
 	}
 
-	auto ExceedMemLimit = [](size_t memLimit = DEFAULT_MEMORYLIMIT) {
-		return memLimit <= GetProcessMemoryUsageMB();
-	};
+	if (rdPtr->pData->pMemVideoLib->data.empty()) {
+		return;
+	}
+
+	forceClean |= SystemMemoryNotEnough();
 
 	if (!forceClean && !ExceedMemLimit()) {
 		return;
 	}
 
-	auto pBufs = GetRefList(rdPtr);
-	auto  toRemove = GetToRemove(rdPtr, pBufs);
+	const auto pBufs = GetRefList(rdPtr);
+	const auto toRemove = GetToRemove(rdPtr, pBufs);
 
-	auto curLimit = GetProcessMemoryUsageMB();
-	auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;
+	const auto curLimit = GetProcessMemoryUsageMB();
+	const auto limit = min(curLimit, DEFAULT_MEMORYLIMIT) / 4;
 
 	for (auto& pStr : toRemove) {
 		if (!ExceedMemLimit(limit)) {

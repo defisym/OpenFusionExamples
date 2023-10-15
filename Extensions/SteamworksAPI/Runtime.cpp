@@ -69,19 +69,36 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 #endif
-
+	
 	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
-		rdPtr->pData = new GlobalData;
+		rdPtr->pData = new GlobalData();
 		SetExtUserData(rdPtr->pData);
+
+		rdPtr->pData->GetSteamUtilities([&] (SteamUtilities* pSteamUtil) {
+			if (edPtr->bReportError) {
+				rdPtr->pData->pSteamUtil->SetErrorHandler();
+			}
+
+			switch (edPtr->NotificationPosition) {
+			case k_EPositionInvalid:
+				break;
+			case k_EPositionTopLeft:
+			case k_EPositionTopRight:
+			case k_EPositionBottomLeft:
+			case k_EPositionBottomRight:
+				SteamUtils()->SetOverlayNotificationPosition(edPtr->NotificationPosition);
+			}
+		});
+		
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
 	}
 
-	// retrieve data
-	rdPtr->pSteamUtil = rdPtr->pData->pSteamUtil;
+	// update when create to fix dangling pointer
+	rdPtr->pData->Update(rdPtr);
 
 	// No errors
 	return 0;
@@ -98,6 +115,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
+	// terminate all pending callbacks that will trigger events
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetMicroTxn()->ResetCallbackResult();	
+	});
 
 	delete rdPtr->pRet;
 	rdPtr->pRet = nullptr;
@@ -112,8 +133,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // ----------------
 // Called (if you want) each loop, this routine makes the object live
 // 
-short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
-	rdPtr->pSteamUtil->Refresh();
+short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {	
+	rdPtr->pData->GetSteamUtilities([] (SteamUtilities* pSteamUtil) {
+		pSteamUtil->Refresh();
+	});
 
 	return 0;
 }
@@ -273,15 +296,11 @@ BOOL WINAPI LoadRunObject(LPRDATA rdPtr, HANDLE hf)
 // Called when the application starts or restarts.
 // Useful for storing global data
 // 
-void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data (if restarts application)
-	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
-	if (pData != NULL) {
+void WINAPI DLLExport StartApp(mv _far* mV, CRunApp* pApp) {
+	const auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
 		delete pData;
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
 	}
 }
 
@@ -290,15 +309,11 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 // -------------------
 // Called when the application ends.
 // 
-void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data
-	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+void WINAPI DLLExport EndApp(mv _far* mV, CRunApp* pApp) {
+	const auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
 		delete pData;
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
 	}
 }
 

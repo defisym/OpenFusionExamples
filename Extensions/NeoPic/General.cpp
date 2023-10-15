@@ -200,9 +200,9 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // --------------------
 // For you to update your object structure to newer versions
 // Called at both edit time and run time
-// 
-HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
-{
+HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr) {
+	// ((LPEDATA)OldEdPtr)->bLoadKeepAngle = true;
+
 	// We do nothing here
 	return 0;
 }

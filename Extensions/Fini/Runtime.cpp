@@ -24,6 +24,7 @@ enum
 
 	DB_CF25P,
 	DB_ARVFCS,
+	DB_KD,
 };
 
 // Items displayed in the debugger
@@ -74,14 +75,47 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->AutoSave = true;
 	rdPtr->Modified = false;
 
+	rdPtr->AutoSaveFilePath = new std::wstring;
+	rdPtr->AutoSaveKey = new std::wstring;
+
+	rdPtr->Str = new std::wstring;
+
+	rdPtr->SecLoopName = new std::wstring;
+	rdPtr->ItemLoopName = new std::wstring;
+
+	rdPtr->CurrentSec = new std::wstring;
+	rdPtr->CurrentItem = new std::wstring;
+
 	rdPtr->pB64 = new Base64<std::wstring>;
 	rdPtr->b64Str = new std::wstring;
 
+	rdPtr->pLocalization = new Localization;
+
 	rdPtr->cf25p = edPtr->cf25p;
 	rdPtr->allowRVforCS = edPtr->allowRVforCS;
+	rdPtr->bKeepOverFrame = edPtr->bKeepOverFrame;
 
 	rdPtr->CompressToBuffer = ZLIBI_CompressToBufferDefault;
 	rdPtr->DeCompressToString = ZLIBI_DeCompressToStringDefault;
+
+	//Init global data
+	if (GetExtUserData() == nullptr) {
+		//init global
+		auto pData = new GlobalData;
+
+		//Get specific
+
+		//Update pointer
+		SetExtUserData(pData);
+	}
+
+	//Get global data
+	//Get pointers here and never delete them.
+	rdPtr->pData = static_cast<GlobalData*>(GetExtUserData());
+
+	if (rdPtr->bKeepOverFrame) {
+		rdPtr->pData->RetrieveData(rdPtr);		
+	}
 
 	// No errors
 	return 0;
@@ -101,31 +135,30 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 */
 	//Auto Save
 	AutoSave(rdPtr);
+	rdPtr->Modified = false;
 
-	//if (rdPtr->Modified && rdPtr->AutoSave && valid(Fini) && valid(rdPtr->AutoSaveFilePath) && valid(rdPtr->AutoSaveKey)) {
-	//	if (!StrEmpty(rdPtr->AutoSaveKey)) {
-	//		std::string Output;
-	//		Fini->Save(Output);
+	if (rdPtr->bKeepOverFrame) {
+		rdPtr->pData->StashData(rdPtr);
+	}
+	else {
+		ReleaseIni(rdPtr);
+	}
+	
+	delete rdPtr->AutoSaveFilePath;
+	delete rdPtr->AutoSaveKey;
 
-	//		Encryption Encrypt;
-	//		Encrypt.GenerateKey(rdPtr->AutoSaveKey);
+	delete rdPtr->Str;
 
-	//		Encrypt.SetEncryptStr(Output);
-	//		Encrypt.Encrypt();
+	delete rdPtr->SecLoopName;
+	delete rdPtr->ItemLoopName;
 
-	//		Encrypt.SaveFile(rdPtr->AutoSaveFilePath);
-	//	}
-	//	else {
-	//		Fini->SaveFile(rdPtr->AutoSaveFilePath, false);
-	//	}
-	//}
-
-	release_ini();
-
-	release_arr(OStr);
+	delete rdPtr->CurrentSec;
+	delete rdPtr->CurrentItem;
 
 	delete rdPtr->pB64;
 	delete rdPtr->b64Str;
+
+	delete rdPtr->pLocalization;
 
 	// No errors
 	return 0;
@@ -168,7 +201,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 	// Will not be called next loop	
-	return REFLAG_ONESHOT;
+	//return REFLAG_ONESHOT;
+
+	rdPtr->pLocalization->UpdateLink();
+
+	return 0;
 }
 
 // ----------------
@@ -327,17 +364,12 @@ BOOL WINAPI LoadRunObject(LPRDATA rdPtr, HANDLE hf)
 // Called when the application starts or restarts.
 // Useful for storing global data
 // 
-void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data (if restarts application)
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp) {
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
+	}
 }
 
 // -------------------
@@ -345,17 +377,12 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 // -------------------
 // Called when the application ends.
 // 
-void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
-{
-	// Example
-	// -------
-	// Delete global data
-//	CMyData* pData = (CMyData*)mV->mvGetExtUserData(pApp, hInstLib);
-//	if ( pData != NULL )
-//	{
-//		delete pData;
-//		mV->mvSetExtUserData(pApp, hInstLib, NULL);
-//	}
+void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp) {
+	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
+	if (pData != nullptr) {
+		delete pData;
+		mV->mvSetExtUserData(pApp, hInstLib, nullptr);
+	}
 }
 
 // -------------------
@@ -568,6 +595,10 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	case DB_ARVFCS:
 		LoadString(hInstLib, IDS_ARVFCS, temp, DB_BUFFERSIZE);
 		wsprintf(pBuffer, temp, rdPtr->allowRVforCS ? L"True" : L"False");
+		break;
+	case DB_KD:
+		LoadString(hInstLib, IDS_KD, temp, DB_BUFFERSIZE);
+		wsprintf(pBuffer, temp, rdPtr->bKeepOverFrame ? L"True" : L"False");
 		break;
 	}
 

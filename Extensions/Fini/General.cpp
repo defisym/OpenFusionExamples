@@ -194,14 +194,34 @@ void WINAPI DLLExport UnloadObject(mv _far *mV, LPEDATA edPtr, int reserved)
 // For you to update your object structure to newer versions
 // Called at both edit time and run time
 // 
-HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr)
-{
-	HGLOBAL hgNew = NULL;
+HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr) {
+	HGLOBAL hgNew = nullptr;
 
-	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(OldEdPtr, hgNew, KCX_VERSION_V2, [](tagEDATA_V2* newEdPtr) {
-		newEdPtr->cf25p = true;
-		newEdPtr->allowRVforCS = true;
+	// V1->V2
+	UpdateEditData<tagEDATA_V1, tagEDATA_V2>(GetOldEdPtr((tagEDATA_V1*)OldEdPtr, hgNew),
+		hgNew, 
+		KCX_VERSION_V2, 
+		[](const tagEDATA_V1* pOld, tagEDATA_V2* pNew) {
+			// Update new
+			pNew->cf25p = true;
+			pNew->allowRVforCS = true;
 		});
+
+	// V2->V3
+	UpdateEditData<tagEDATA_V2, tagEDATA_V3>(GetOldEdPtr((tagEDATA_V2*)OldEdPtr, hgNew),
+		hgNew,
+		KCX_VERSION_V3,
+		[] (const tagEDATA_V2* pOld, tagEDATA_V3* pNew) {
+			// Copy old
+			pNew->cf25p = pOld->cf25p;
+			pNew->allowRVforCS = pOld->allowRVforCS;
+
+			// Update new
+			pNew->bKeepOverFrame = false;
+
+			pNew->bUnused = false;		
+			memset(pNew->buffer, 0, sizeof(pNew->buffer));
+	});
 
 	return hgNew;
 }

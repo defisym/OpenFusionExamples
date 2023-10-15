@@ -34,15 +34,20 @@
 // Commands of action menu
 #define IDMN_ACTION_BINARYFILEEXTRACT_SETTINGS	       		25000
 #define IDMN_ACTION_EXTRACTBINARYFILE       		25001
+#define IDMN_ACTION_DOWNLOAD       		25002
 
 // Action strings
 #define M_ACTION_BINARYFILEEXTRACT_SETTINGS                 5000
 #define M_ACTION_EXTRACTBINARYFILE                 5001
+#define M_ACTION_DOWNLOAD                 5002
 
 // Titles of action parameters
 #define M_ACTION_EXTRACTBINARYFILE_SRC				 5501
 #define M_ACTION_BINARYFILEEXTRACT_DIR				 5502
 #define M_ACTION_BINARYFILEEXTRACT_NAME				 5503
+#define M_ACTION_DOWNLOAD_URL				 5504
+#define M_ACTION_DOWNLOAD_FOLDER				 5505
+#define M_ACTION_DOWNLOAD_FILENAME				 5506
 
 
 //	Conditions
@@ -53,9 +58,13 @@
 
 // Commands of condition menu
 #define IDMN_CONDITION_ISEMBED			26000
+#define IDMN_CONDITION_DOWNLOADERROR			26001
+#define IDMN_CONDITION_DOWNLOADCOMPLETE			26002
 
 // Condition strings
 #define M_CONDITION_ISEMBED				 6000
+#define M_CONDITION_DOWNLOADERROR					 6001
+#define M_CONDITION_DOWNLOADCOMPLETE				 6002
 
 // Titles of condition parameters
 #define M_CND_P1				 6501

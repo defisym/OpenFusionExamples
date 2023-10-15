@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ Éú³ÉµÄ°üº¬ÎÄ¼þ¡£
-// ¹© Ext.rc Ê¹ÓÃ
+// Microsoft Visual C++ ï¿½ï¿½ï¿½ÉµÄ°ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½
+// ï¿½ï¿½ Ext.rc Ê¹ï¿½ï¿½
 //
 #define IDST_OBJNAME                    128
 #define IDST_AUTHOR                     129
@@ -106,6 +106,11 @@
 #define M_CONDITION_IRIE                6037
 #define M_CONDITION_IAAT                6038
 #define M_CONDITION_OMC                 6039
+#define M_CONDITION_IOHA                6040
+#define M_CONDITION_ORC					6041
+#define M_CONDITION_RMCX				6042
+#define M_CONDITION_OCB					6043
+#define M_CONDITION_OCF					6044
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define PARA_CONDITION_OBJ              6511
@@ -113,6 +118,7 @@
 #define PARA_CONDITION_IAIR             6513
 #define PARA_CONDITION_CMP              6514
 #define PARA_CONDITION_OBJECT           6515
+#define PARA_CONDITION_ID               6516
 #define M_EXPRESSION                    7000
 #define M_EXPRESSION_GPIDBN             7010
 #define M_EXPRESSION_GCLR_L             7020
@@ -155,6 +161,9 @@
 #define	M_EXPRESSION_GDT 			    7119
 #define	M_EXPRESSION_GTPM 			    7120
 #define	M_EXPRESSION_GFPM 			    7121
+#define	M_EXPRESSION_GAID 			    7122
+#define	M_EXPRESSION_GCFC 			    7123
+#define	M_EXPRESSION_GADFC 			    7124
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -231,6 +240,12 @@
 #define IDMN_CONDITION_IRIE             26038
 #define IDMN_CONDITION_IAAT             26039
 #define IDMN_CONDITION_OMC              26040
+#define IDMN_CONDITION_IOHA             26041
+#define IDMN_CONDITION_IOHA_S           26042
+#define IDMN_CONDITION_ORC				26043
+#define IDMN_CONDITION_RMCX				26044
+#define IDMN_CONDITION_OCB				26045
+#define IDMN_CONDITION_OCF				26046
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020
@@ -271,6 +286,9 @@
 #define	IDMN_EXPRESSION_GDT  			27109
 #define	IDMN_EXPRESSION_GTPM  			27110
 #define	IDMN_EXPRESSION_GFPM  			27111
+#define	IDMN_EXPRESSION_GAID  			27112
+#define	IDMN_EXPRESSION_GCFC  			27113
+#define	IDMN_EXPRESSION_GADFC  			27114
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+// ------------------------
+// include
+// ------------------------
+
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
@@ -15,9 +19,22 @@
 #include	<thread>
 #include	<functional>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+// ------------------------
+// forward declaration
+// ------------------------
+
+inline bool IsHWA(LPSURFACE Src);
+inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src);
+
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)>processer);
+inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false);
+
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
 
 struct SfCoef {
 	BYTE* pData = nullptr;
@@ -32,54 +49,74 @@ struct SfCoef {
 };
 
 inline SfCoef GetSfCoef(LPSURFACE pSf);
-inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef);
+inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef);
+inline BYTE* GetPixelAddress(int width, int height, int x, int y, const SfCoef& coef);
+inline BYTE* GetAlphaPixelAddress(int width, int height, int x, int y, const SfCoef& coef);
 
-inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor);
+inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor);
+inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor);
+inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const SfCoef&, BYTE*, BYTE*)>& process);
 
-//-----------------------------
+// ------------------------
+// definition
+// ------------------------
 
-//GetString
-inline void GetPropString(CPropValue* pValue, LPTSTR Des) {
-	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
+// -------------
+// return
+// -------------
 
-	_tcscpy_s(Des, _MAX_PATH, pStr);
+inline auto GetCurrentParamPointer(LPRDATA rdPtr) {
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const auto pResults = rhPtr->rh4.rh4Results;
+	const auto pPos = rhPtr->rh4.rh4PosPile;
+
+	return pResults[pPos + 1];
 }
-inline void GetPropString(LPMV mV, LPEDATA edPtr, CPropValue* pValue, LPTSTR Des) {
-	// Gets the string
-	LPTSTR pStr = (LPTSTR)((CPropStringValue*)pValue)->GetString();
 
-	// You can simply poke the string if your EDITDATA structure has a fixed size,
-	// or have an adaptive size of structure like below
+template<typename T>
+concept FusionReturn = std::is_same_v<T, long>
+|| std::is_same_v<T, LPCWSTR>
+|| std::is_same_v<T, float>;
 
-	// If the length is different
-	if (Des == nullptr || _tcslen(pStr) != _tcslen(Des))
-	{
-		// Asks MMF to reallocate the structure with the new size
-		LPEDATA pNewPtr = (LPEDATA)mvReAllocEditData(mV, edPtr, sizeof(EDITDATA) + _tcslen(pStr) * sizeof(TCHAR));
+// ReSharper disable once CppNotAllPathsReturnValue
+template<FusionReturn T>
+inline T GetCurrentParam(LPRDATA rdPtr) {
+	const auto pCValue = GetCurrentParamPointer(rdPtr);
 
-		// If reallocation worked
-		if (pNewPtr != NULL)
-		{
-			// Copy the string
-			edPtr = pNewPtr;
-			_tcscpy_s(Des, _tcslen(pStr), pStr);
+	if constexpr (std::is_same_v<T, long>) {
+		if (pCValue->m_type == TYPE_LONG) {
+			return pCValue->m_long;
 		}
+
+		if (pCValue->m_type == TYPE_FLOAT) {
+			return static_cast<long>(pCValue->m_double);
+		}
+
+		return 0;
 	}
-	else
-	{
-		// Same size : simply copy
-		_tcscpy_s(Des, _tcslen(pStr), pStr);
+
+	if constexpr (std::is_same_v<T, float>) {
+		if (pCValue->m_type == TYPE_LONG) {
+			return static_cast<float>(pCValue->m_long);
+		}
+
+		if (pCValue->m_type == TYPE_FLOAT) {
+			return static_cast<float>(pCValue->m_double);
+		}
+
+		return 0;
+	}
+
+	if constexpr (std::is_same_v<T, LPCWSTR>) {
+		if(pCValue->m_type== TYPE_STRING) {
+			return pCValue->m_pString;
+		}
+
+		return Default_Str;
 	}
 }
 
-//Free collision mask
-inline void FreeColMask(LPSMASK& pColMask) {
-	if (pColMask != nullptr) {
-		free(pColMask);
-		pColMask = nullptr;
-	}
-}
 
 //Return float
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
@@ -118,27 +155,156 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 
 #define ReturnString(Str) ReturnString(rdPtr, Str)
 
-//Check if a dir has animation
-inline bool _DirHasAnimation(LPRDATA rdPtr, LPRO object, size_t Dir) {
-	Dir = max(0, min(DIRID_MAX - 1, Dir));
+// -------------
+// object
+// -------------
 
-	if (object == NULL) {
+inline auto GetObjectName(LPRDATA rdPtr) {
+	return rdPtr->rHo.hoOiList->oilName;
+}
+
+// -------------
+// animation
+// -------------
+
+// Iterator
+template<typename Child>
+inline void IterateValidItem(void* pParent, short* pArr,unsigned short sz, const std::function<void(Child*)>& cb) {
+	for (decltype(sz) i = 0; i < sz; i++) {
+		if (pArr[i] > 0) {
+			const auto pChild = reinterpret_cast<Child*>(static_cast<byte*>(pParent) + pArr[i]);
+			cb(pChild);
+		}
+	}
+}
+
+//Check if object has animation
+inline bool ObjectHasAnimation(LPRO object) {
+	if (object == nullptr) {
 		return false;
 	}
 
-	return (object->roa.raAnimOffset->anOffsetToDir[Dir] > 0) ? true : false;
+	return object->roHo.hoOEFlags & OEFLAG_ANIMATIONS;
 }
 
-inline bool _DirHasAnimation(LPRDATA rdPtr, int Fixed, size_t Dir) {
-	return _DirHasAnimation(rdPtr, LproFromFixed(rdPtr, Fixed), Dir);
+inline bool ObjectHasAnimation(LPRDATA rdPtr, int Fixed) {
+	return ObjectHasAnimation(LproFromFixed(rdPtr, Fixed));
 }
 
-#define DirHasAnimation(X, Dir) _DirHasAnimation(rdPtr, X, Dir)
+//Check if object has animation ID
+inline const AnimHeader* GetObjectAnimationHeader(LPRO object) {
+	if (!ObjectHasAnimation(object)) {
+		return nullptr;
+	}
+
+	const auto pOC = object->roHo.hoCommon;
+	const auto offset = pOC->ocAnimations;
+	const auto pAH = reinterpret_cast<AnimHeader*>(reinterpret_cast<byte*>(pOC) + offset);
+
+	return pAH;
+}
+
+inline const AnimHeader* GetObjectAnimationHeader(LPRDATA rdPtr, int Fixed) {
+	return GetObjectAnimationHeader(LproFromFixed(rdPtr, Fixed));
+}
+
+//IterateAnimation(const_cast<AnimHeader*>(pAH), [] (Anim* pA) {
+//});
+inline void IterateAnimation(AnimHeader* pAH, const std::function<void(Anim*)>& cb) {
+	//for (decltype(pAH->ahAnimMax) i = 0; i < pAH->ahAnimMax; i++) {
+	//	if (pAH->ahOffsetToAnim[i] > 0) {
+	//		const auto pA = reinterpret_cast<Anim*>(reinterpret_cast<byte*>(pAH) + pAH->ahOffsetToAnim[i]);
+	//		cb(pA);
+	//	}
+	//}
+
+	IterateValidItem(pAH, pAH->ahOffsetToAnim, pAH->ahAnimMax, cb);
+}
+
+inline bool ObjectHasAnimationID(const AnimHeader* pAH, size_t id) {
+	if (pAH == nullptr) {
+		return false;
+	}
+
+	if (id > pAH->ahAnimMax - 1u) {
+		return false;
+	}
+
+	return pAH->ahOffsetToAnim[id] > 0;
+}
+
+inline bool ObjectHasAnimationID(LPRO object, size_t id) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	return ObjectHasAnimationID(pAH, id);
+}
+
+inline bool ObjectHasAnimationID(LPRDATA rdPtr, int Fixed, size_t id) {
+	return ObjectHasAnimationID(LproFromFixed(rdPtr, Fixed), id);
+}
+
+//Get object's display animation id
+inline size_t DisplayAnimationID(LPRO object) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	if (pAH == nullptr) {
+		return -1;
+	}
+
+	const auto pA = &object->roa;
+	const auto givenID = pA->raAnimOn;
+
+	if (ObjectHasAnimationID(object, givenID)) {
+		return givenID;
+	}
+
+	for (auto i = 0; i < pAH->ahAnimMax; i++) {
+		if(ObjectHasAnimationID(object, i)) {
+			return i;
+		}
+	}
+
+	// shouldn't run to here as fusion granteed that object should have animation
+	return -1;
+}
+
+inline size_t DisplayAnimationID(LPRDATA rdPtr, int Fixed) {
+	return DisplayAnimationID(LproFromFixed(rdPtr, Fixed));
+}
+
+// -------------
+// direction
+// -------------
+
+inline void IterateDirection(Anim* pA, const std::function<void(AnimDirection*)>& cb) {
+	//for (int j = 0; j < DIRID_MAX; j++) {
+	//	if (pA->anOffsetToDir[j] > 0) {
+	//		const auto pD = reinterpret_cast<AnimDirection*>(reinterpret_cast<byte*>(pA) + pA->anOffsetToDir[j]);
+	//	}
+	//}
+
+	IterateValidItem(pA, pA->anOffsetToDir, DIRID_MAX, cb);
+}
+
+//Check if a dir has frame
+inline bool DirHasFrame(LPRO object, size_t Dir) {
+	if (!ObjectHasAnimation(object)) {
+		return false;
+	}
+
+	Dir = (std::max)(0u, (std::min)(DIRID_MAX - 1u, Dir));
+
+	return object->roa.raAnimOffset->anOffsetToDir[Dir] > 0;
+}
+
+inline bool DirHasFrame(LPRDATA rdPtr, int Fixed, size_t Dir) {
+	return DirHasFrame(LproFromFixed(rdPtr, Fixed), Dir);
+}
 
 //Get object's display animation direction
-inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
-	if (object == NULL) {
-		return 0;
+inline size_t DisplayAnimationDirection(LPRO object) {
+	if (!ObjectHasAnimation(object)) {
+		return -1;
 	}
 
 	//Mechanism
@@ -149,8 +315,8 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 	size_t former = 0;
 	size_t later = 0;
 
-	size_t curdir = object->roa.raAnimDir;
-	size_t prevdir = object->roa.raAnimPreviousDir;
+	const size_t curdir = object->roa.raAnimDir;
+	const size_t prevdir = object->roa.raAnimPreviousDir;
 
 	bool clockwize;
 
@@ -168,7 +334,7 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 
 	//former
 	for (size_t pos = curdir; pos != (size_t)(-1); pos--) {
-		if (DirHasAnimation(object, pos)) {
+		if (DirHasFrame(object, pos)) {
 			former = pos;
 			break;
 		}
@@ -176,7 +342,7 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 
 	//later
 	for (size_t pos = curdir; pos <= DIRID_MAX; pos++) {
-		if (DirHasAnimation(object, pos % 32)) {
+		if (DirHasFrame(object, pos % 32)) {
 			later = pos;
 			break;
 		}
@@ -191,10 +357,54 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, LPRO object) {
 }
 
 inline size_t DisplayAnimationDirection(LPRDATA rdPtr, int Fixed) {
-	return DisplayAnimationDirection(rdPtr, LproFromFixed(rdPtr, Fixed));
+	return DisplayAnimationDirection(LproFromFixed(rdPtr, Fixed));
 }
 
-#define DisplayAnimationDirection(X) DisplayAnimationDirection(rdPtr, X)
+// -------------
+// frame
+// -------------
+
+inline int GetCurrentFrameCount(LPRO object) {
+	if(!ObjectHasAnimation(object)) {
+		return -1;
+	}
+
+	return object->roa.raAnimDirOffset->adNumberOfFrame;
+}
+
+inline int GetCurrentFrameCount(LPRDATA rdPtr, int Fixed) {
+	return GetCurrentFrameCount(LproFromFixed(rdPtr, Fixed));
+}
+
+inline int GetAnimDirFrameCount(LPRO object, size_t id, size_t Dir) {
+	const auto pAH = GetObjectAnimationHeader(object);
+
+	if (!ObjectHasAnimationID(pAH, id)) {
+		return -1;
+	}
+
+	const auto pA = reinterpret_cast<const Anim*>(reinterpret_cast<const byte*>(pAH) + pAH->ahOffsetToAnim[id]);
+
+	if (Dir >= DIRID_MAX) {
+		return -1;
+	}
+
+	if (pA->anOffsetToDir[Dir] < 0) {
+		return -1;
+	}
+
+	const auto pD = reinterpret_cast<const AnimDirection*>(reinterpret_cast<const byte*>(pA) + pA->anOffsetToDir[Dir]);
+
+	return pD->adNumberOfFrame;
+}
+
+inline int GetAnimDirFrameCount(LPRDATA rdPtr, int Fixed, size_t id, size_t Dir) {
+	return GetAnimDirFrameCount(LproFromFixed(rdPtr, Fixed), id, Dir);
+}
+
+// -------------
+// surface
+// -------------
 
 //Surface
 constexpr auto Dir_X = false;
@@ -214,22 +424,16 @@ struct RGBA {
 	double a;
 };
 
-//RGBA数值更正
-inline double Range(double A) {
-	return max(0.0, min(255.0, A));
-}
-
 inline RGBA Range(RGBA A) {
-	A.r = Range(A.r);
-	A.g = Range(A.g);
-	A.b = Range(A.b);
-	A.a = Range(A.a);
+	A.r = Range(A.r, 0.0, 255.0);
+	A.g = Range(A.g, 0.0, 255.0);
+	A.b = Range(A.b, 0.0, 255.0);
+	A.a = Range(A.a, 0.0, 255.0);
 
 	return A;
 }
 
-//RGBA运算符重载 +
-inline RGBA operator +(RGBA A, RGBA B) {
+inline RGBA operator +(RGBA A, const RGBA& B) {
 	A.r += B.r;
 	A.g += B.g;
 	A.b += B.b;
@@ -238,8 +442,7 @@ inline RGBA operator +(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBA运算符重载 -
-inline RGBA operator -(RGBA A, RGBA B) {
+inline RGBA operator -(RGBA A, const RGBA& B) {
 	A.r -= B.r;
 	A.g -= B.g;
 	A.b -= B.b;
@@ -248,17 +451,14 @@ inline RGBA operator -(RGBA A, RGBA B) {
 	return A;
 }
 
-//RGBA运算符重载 +=
-inline RGBA operator +=(RGBA A, RGBA B) {
+inline RGBA operator +=(const RGBA& A, const RGBA& B) {
 	return A + B;
 }
 
-//RGBA运算符重载 -=
-inline RGBA operator -=(RGBA A, RGBA B) {
+inline RGBA operator -=(const RGBA& A, const RGBA& B) {
 	return A - B;
 }
 
-//RGBA运算符重载 *
 inline RGBA operator *(RGBA A, double B) {
 	A.r = A.r * B;
 	A.g = A.g * B;
@@ -268,7 +468,18 @@ inline RGBA operator *(RGBA A, double B) {
 	return A;
 }
 
-//RGBA运算符重载 /
+inline RGBA operator *(double B, const RGBA& A) {
+	return A * B;
+}
+
+inline RGBA operator *(const RGBA& A, int B) {
+	return A * static_cast<double>(B);
+}
+
+inline RGBA operator *(int B, const RGBA& A) {
+	return A * B;
+}
+
 inline RGBA operator /(RGBA A, double B) {
 	A.r = A.r / B;
 	A.g = A.g / B;
@@ -278,24 +489,33 @@ inline RGBA operator /(RGBA A, double B) {
 	return A;
 }
 
-//RGBA运算符重载 *
-inline RGBA operator *(double B, RGBA A) {
-	return A * B;
-}
-
-//RGBA运算符重载 /
-inline RGBA operator /(double B, RGBA A) {
+inline RGBA operator /(double B, const RGBA& A) {
 	return A / B;
 }
 
-//RGBA运算符重载 >>
+inline RGBA operator /(const RGBA& A, int B) {
+	return A / static_cast<double>(B);
+}
+
+inline RGBA operator /(int B, const RGBA& A) {
+	return A / B;
+}
+
 inline RGBA operator >>(RGBA A, int B) {
-	A.r = (double)((int)A.r >> B);
-	A.g = (double)((int)A.g >> B);
-	A.b = (double)((int)A.b >> B);
-	A.a = (double)((int)A.a >> B);
+	A.r = static_cast<double>(static_cast<int>(A.r) >> B);
+	A.g = static_cast<double>(static_cast<int>(A.g) >> B);
+	A.b = static_cast<double>(static_cast<int>(A.b) >> B);
+	A.a = static_cast<double>(static_cast<int>(A.a) >> B);
 
 	return A;
+}
+
+//Free collision mask
+inline void FreeColMask(LPSMASK& pColMask) {
+	if (pColMask != nullptr) {
+		free(pColMask);
+		pColMask = nullptr;
+	}
 }
 
 //Create surface
@@ -304,7 +524,7 @@ inline LPSURFACE CreateHWASurface(int depth, int width, int height
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
-	cSurface* hwa = new cSurface;
+	const auto hwa = new cSurface;
 	hwa->Create(width, height, proto);
 
 	return hwa;
@@ -338,7 +558,7 @@ inline LPSURFACE CreateSurface(int depth, int width, int height) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, ST_MEMORYWITHDC, SD_DIB);
 
-	cSurface* sur = new cSurface;
+	const auto sur = new cSurface;
 	sur->Create(width, height, proto);
 
 	return sur;
@@ -365,11 +585,31 @@ inline void CreateBlankSurface(LPSURFACE Src) {
 	Src->CreateAlpha();
 }
 
+[[deprecated ("Clone won't copy alpha of HWA surface")]]
 inline LPSURFACE CreateCloneSurface(LPSURFACE Src) {
-	cSurface* sur = new cSurface;
+	const auto sur = new cSurface;
 	sur->Clone(*Src);
 
 	return sur;
+}
+
+inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
+	// clone doesn't handle hwa alpha & rtt flip properly
+	// so do it by hand
+	if (IsHWA(pSrc) && pSrc->HasAlpha()) {
+		auto pSf = CreateSurface(pSrc->GetDepth(), pSrc->GetWidth(), pSrc->GetHeight());
+		pSf->CreateAlpha();
+		pSrc->Blit(*pSf);
+		ConvertToHWATexture(rdPtr, pSf);
+
+		return pSf;
+	}
+	else {
+		const auto pSf = new cSurface;
+		pSf->Clone(*pSrc);
+
+		return pSf;
+	}
 }
 
 //Get info
@@ -570,80 +810,60 @@ inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {
 	return;
 }
 
-inline LPSURFACE Offset(LPSURFACE Src, int X, int Y, bool Wrap = true) {
-	LPSURFACE Des = CreateSurface(24, Src->GetWidth(), Src->GetHeight());
-	
-	if (X == 0 && Y == 0) {
-		Des->Clone(*Src);
-		return Des;
-	}
-
-	//Src->Blit(*Des, X, Y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-	Src->Blit(*Des, X, Y);
-
-	if (Wrap) {
-		int XWrap = X > 0 ? X - Src->GetWidth() : X + Src->GetWidth();
-		int YWrap = Y > 0 ? Y - Src->GetHeight() : Y + Src->GetHeight();
-
-		//Src->Blit(*Des, X, YWrap, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-		//Src->Blit(*Des, XWrap, Y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-		//Src->Blit(*Des, XWrap, YWrap, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
-
-		Src->Blit(*Des, X, YWrap);
-		Src->Blit(*Des, XWrap, Y);
-		Src->Blit(*Des, XWrap, YWrap);
-	}
-
-	return Des;
-}
-
-inline bool OffsetHWA(LPSURFACE Src, LPSURFACE Des, int X, int Y, bool Wrap = true) {
+inline bool Offset(LPSURFACE Src, LPSURFACE Des,
+	int X, int Y, bool Wrap = true) {
 	if (X == 0 && Y == 0) {
 		return false;
 	}
 
-	Des->BeginRendering(TRUE, 0);
+	const auto bHWA = IsHWA(Src);
+
+	if (bHWA) {
+		Des->BeginRendering(TRUE, 0);
+	}
 
 	POINT hotSpot = { 0,0 };
 	
-	auto width = Src->GetWidth();
-	auto height = Src->GetHeight();
-	
-	Src->BlitEx(*Des, (float)X, (float)Y,
+	const auto width = Src->GetWidth();
+	const auto height = Src->GetHeight();
+
+	auto BlitBitmap = [&] (int x, int y) {
+		//Src->Blit(*Des, x, y, BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
+		Src->Blit(*Des, x, y, BMODE_TRANSP, BOP_COPY);
+	};
+
+	auto BlitHWA = [&] (int x, int y) {
+		Src->BlitEx(*Des, (float)x, (float)y,
 		1.0, 1.0, 0, 0,
 		width, height, &hotSpot, (float)0,
-		BMODE_OPAQUE,
-		BOP_COPY);
+		BMODE_TRANSP,
+		BOP_COPY,0, STRF_RESAMPLE | STRF_COPYALPHA);
+	};
 
-	//Src->Blit(*Des, X, Y);
+	std::function<void(int, int)> Blit = nullptr;
 
-	if (Wrap) {
-		int XWrap = X > 0 ? X - width : X + width;
-		int YWrap = Y > 0 ? Y - height : Y + height;
-
-		Src->BlitEx(*Des, (float)X, (float)YWrap,
-			1.0, 1.0, 0, 0,
-			width, height, &hotSpot, (float)0,
-			BMODE_OPAQUE,
-			BOP_COPY);
-		Src->BlitEx(*Des, (float)XWrap, (float)Y,
-			1.0, 1.0, 0, 0,
-			width, height, &hotSpot, (float)0,
-			BMODE_OPAQUE,
-			BOP_COPY);
-		Src->BlitEx(*Des, (float)XWrap, (float)YWrap,
-			1.0, 1.0, 0, 0,
-			width, height, &hotSpot, (float)0,
-			BMODE_OPAQUE,
-			BOP_COPY);
-
-		//Src->Blit(*Des, X, YWrap);
-		//Src->Blit(*Des, XWrap, Y);
-		//Src->Blit(*Des, XWrap, YWrap);
+	if (bHWA) {
+		Blit = BlitHWA;
+	}
+	else {
+		Blit = BlitBitmap;
 	}
 
-	Des->EndRendering();
+	Blit(X, Y);
 
+	if (Wrap) {
+		const int XWrap = X > 0 ? X - width : X + width;
+		const int YWrap = Y > 0 ? Y - height : Y + height;
+
+		Blit(X, YWrap);
+		Blit(XWrap, Y);
+		Blit(XWrap, YWrap);
+	}
+
+	if (bHWA) {
+		Des->EndRendering();
+	}
+	
 	return true;
 }
 
@@ -784,7 +1004,7 @@ inline void _SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool rel
 	}
 }
 
-inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName = nullptr, bool release = false) {
+inline void __SavetoFile(LPRDATA rdPtr, LPSURFACE Src, LPCWSTR FilePath, LPCWSTR DefaultFilterName, bool release) {
 	_SavetoFile(Src, FilePath, rdPtr, release, DefaultFilterName);
 }
 
@@ -820,17 +1040,21 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 }
 
 //Load From File
+inline void _ForceAddAlpha(LPSURFACE Src, BYTE coef = 255) {
+	auto pitch = Src->GetWidth();
+	auto size = pitch * Src->GetHeight();
+
+	BYTE* pAlpha = new BYTE[size];
+	memset(pAlpha, coef, size);
+
+	Src->SetAlpha(pAlpha, pitch);
+
+	delete[] pAlpha;
+}
+
 inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 	if (!Src->HasAlpha()) {
-		auto pitch = Src->GetWidth();
-		auto size = pitch * Src->GetHeight();
-
-		BYTE* pAlpha = new BYTE[size];
-		memset(pAlpha, coef, size);
-
-		Src->SetAlpha(pAlpha, pitch);
-		
-		delete[] pAlpha;
+		_ForceAddAlpha(Src);
 	}
 }
 
@@ -912,7 +1136,8 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 #endif // _NO_REF
 
 // create a temp bitmap pSf if needed
-inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+// don't use the bitmap in callback out of this function
+inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
 	auto bHWA = IsHWA(pSf);
 	auto pBitmap = pSf;
 
@@ -927,13 +1152,29 @@ inline void ProcessBitmap(LPSURFACE pSf, std::function<void(const LPSURFACE pBit
 	}
 }
 
-inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const LPSURFACE pBitmap)> processor) {
+inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
 	ProcessBitmap(pSf, processor);
+}
+
+// create a temp HWA pSf if needed
+inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pHWA)>& processor) {
+	auto bHWA = IsHWA(pSf);
+	auto pHWA = pSf;
+
+	if (!bHWA) {
+		pHWA = ConvertHWATexture(rdPtr, pSf);
+	}
+
+	processor(pHWA);
+
+	if (!bHWA) {
+		delete pHWA;
+	}
 }
 
 //Get Valid Scale
 inline void GetValidScale(float* scale) {
-	*scale = max(1, *scale);
+	*scale = (std::max)(1.0f, *scale);
 	return;
 }
 
@@ -945,7 +1186,7 @@ inline void GetMaximumDivide(int* divide) {
 		*divide = Max;
 	}
 	else {
-		*divide = max(1, min(*divide, Max));
+		*divide = (std::max)(1, (std::min)(*divide, Max));
 	}
 	return;
 }
@@ -962,7 +1203,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	constexpr auto SB_MIN_RADIUS = 0;
 	constexpr auto SB_MAX_RADIUS = 254;
 
-	radius = min(SB_MAX_RADIUS, max(SB_MIN_RADIUS, radius));
+	radius = (std::min)(SB_MAX_RADIUS, (std::max)(SB_MIN_RADIUS, radius));
 
 	GetValidScale(&scale);
 	GetMaximumDivide(&divide);
@@ -976,7 +1217,9 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	// 降采样
 	LPSURFACE img = pSrc;
 
-	if (!(scale == 1.0)) {
+	const auto bScale = scale != 1.0f;
+
+	if (bScale) {
 		img = CreateSurface(24, width, height);
 		img->Clone(*pSrc, width, height);
 	}
@@ -985,6 +1228,10 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	auto coef = GetSfCoef(img);
 
 	if (!coef.pData) {
+		if (bScale) {
+			delete img;
+		}
+
 		return;
 	}
 
@@ -1055,7 +1302,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	PixelGetter normalGetter = [](BYTE* src, int src_offset) {
 		return RGBA{ (double)src[src_offset + 2], (double)src[src_offset + 1], (double)src[src_offset + 0], 0 };
 	};
-	PixelSetter normalSetter = [](RGBA src, BYTE* des, int des_offset) {
+	PixelSetter normalSetter = [](const RGBA& src, BYTE* des, int des_offset) {
 		des[des_offset + 2] = (BYTE)src.r;
 		des[des_offset + 1] = (BYTE)src.g;
 		des[des_offset + 0] = (BYTE)src.b;
@@ -1065,7 +1312,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	PixelGetter alphaGetter = [](BYTE* src, int src_offset) {
 		return RGBA{ (double)src[src_offset + 0], 0, 0, 0 };
 	};
-	PixelSetter alphaSetter = [](RGBA src, BYTE* des, int des_offset) {
+	PixelSetter alphaSetter = [](const RGBA& src, BYTE* des, int des_offset) {
 		des[des_offset + 0] = (BYTE)src.r;
 	};
 #endif // STACK_BLUR_ALPHA	
@@ -1232,7 +1479,7 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	ReleaseSfCoef(img, coef);
 
 	//还原大小
-	if (!(scale == 1.0)) {
+	if (bScale) {
 		pSrc->Clone(*img, owidth, oheight);
 		delete img;
 	}
@@ -1240,24 +1487,105 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	return;
 }
 
-//Affine transformation
-#ifdef _NO_REF
-inline void AffineTransformation(const LPSURFACE Src, double a11, double a12, double a21, double a22, int divide) {
-#else
-inline void AffineTransformation(LPSURFACE& Src, double a11, double a12, double a21, double a22, int divide) {
-#endif // _NO_REF
-	if (a11 == 1 && a12 == 0 && a21 == 0 && a22 == 1) {
-		return;
-	}
+// use macro to speed up compiling
+#ifdef PERSPECTIVE_TRANSFORMATION
+#pragma warning(disable : 4819)
 
-	GetMaximumDivide(&divide);
+#include "Eigen/Dense"
 
-	auto Interpolation = [=]()->RGBA {
+inline void GetReversePerspectiveTransformationPoint(double in[3][3]){
+	Eigen::Matrix<double, 3, 3, Eigen::RowMajor> arr(in[0]);
+	arr = arr.inverse().eval();
 
-	};
-
-	LPSURFACE Trans = new cSurface;
+	std::copy_n(arr.data(), 9, &in[0][0]);
 }
+
+inline constexpr auto PerspectiveTransformationPoint(const double x, const double y,
+	const double matrix[3][3]) {
+	const auto div = (matrix[2][0] * x + matrix[2][1] * y + matrix[2][2]);
+	const auto newX = (matrix[0][0] * x + matrix[0][1] * y + matrix[0][2]) / div;
+	const auto newY = (matrix[1][0] * x + matrix[1][1] * y + matrix[1][2]) / div;
+
+	return std::make_tuple(newX, newY);
+}
+
+inline constexpr auto GetPerspectiveTransformationSize(const double width, const double height,
+	const double matrix[3][3]) {
+	const auto [xLT, yLT] = PerspectiveTransformationPoint(0, 0, matrix);
+	const auto [xRT, yRT] = PerspectiveTransformationPoint(width, 0, matrix);
+	const auto [xLB, yLB] = PerspectiveTransformationPoint(0, height, matrix);
+	const auto [xRB, yRB] = PerspectiveTransformationPoint(width, height, matrix);
+
+	const auto xList = { xLT, xRT, xLB, xRB };
+	const auto yList = { yLT, yRT, yLB, yRB };
+
+	//auto getOffset = [] (const auto& list) {
+	//	auto min = (std::min)(list);
+	//	auto max = (std::max)(list);
+
+	//	return max - min;
+	//};
+
+	//const auto newWidth = getOffset(xList);
+	//const auto newHeight = getOffset(yList);
+
+	//return std::make_tuple(newWidth, newHeight);
+
+	auto minX = (std::min)(xList);
+	auto maxX = (std::max)(xList);
+	auto minY = (std::min)(yList);
+	auto maxY = (std::max)(yList);
+
+	return std::make_tuple(minX, minY, maxX, maxY);
+}
+
+inline auto PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[3][3]) {
+	const auto [minX, minY, maxX, maxY]
+		= GetPerspectiveTransformationSize(pSrc->GetWidth(), pSrc->GetHeight(), matrix);
+
+	const auto newWidth = static_cast<int>(maxX - minX);
+	const auto newHeight = static_cast<int>(maxY - minY);
+
+	const auto pBitmap = CreateSurface(pSrc->GetDepth(), newWidth, newHeight);
+	pBitmap->CreateAlpha();	
+
+	double rm[3][3] = { 0.0 };
+	std::copy_n(&matrix[0][0], 9, &rm[0][0]);
+	GetReversePerspectiveTransformationPoint(rm);
+
+	const auto pSrcCoef = GetSfCoef(pSrc);
+	const auto width = pSrc->GetWidth();
+	const auto height = pSrc->GetHeight();
+
+	IteratePixel(pBitmap, [&] (const int x, const int y,
+		const SfCoef& sfCoef,
+		BYTE* pPixel, BYTE* pAlphaPixel) {
+			//const auto r = static_cast<BYTE>(pPixel[2]);
+			//const auto g = static_cast<BYTE>(pPixel[1]);
+			//const auto b = static_cast<BYTE>(pPixel[0]);
+			//const auto a = static_cast<BYTE>(pAlphaPixel[0]);
+
+			const auto [nx, ny] = PerspectiveTransformationPoint(x + static_cast<int>(minX),
+				y + static_cast<int>(minY),
+				rm);
+			const auto nxi = Range(static_cast<int>(nx), 0, width - 1);
+			const auto nyi = Range(static_cast<int>(ny), 0, height - 1);
+
+			const auto pSrcPixel = GetPixelAddress(width, height, nxi, nyi, pSrcCoef);
+			const auto pSrcAlphaPixel = GetAlphaPixelAddress(width, height, nxi, nyi, pSrcCoef);
+
+			pPixel[2] = pSrcPixel[2];
+			pPixel[1] = pSrcPixel[1];
+			pPixel[0] = pSrcPixel[0];
+
+			pAlphaPixel[0] = pSrcAlphaPixel[0];
+	});
+
+	ReleaseSfCoef(pSrc, pSrcCoef);
+
+	return pBitmap;
+}
+#endif
 
 //dec2rgb
 #define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
@@ -1303,7 +1631,7 @@ inline SfCoef GetSfCoef(LPSURFACE pSf) {
 	return pSfCoef;
 }
 
-inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
+inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef) {
 	pSf->UnlockBuffer(coef.pData);
 
 	// alpha
@@ -1312,59 +1640,77 @@ inline void ReleaseSfCoef(LPSURFACE pSf, SfCoef coef) {
 	}
 }
 
-inline void ProcessPixel(LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+inline BYTE* GetPixelAddress(int width, int height, int x, int y, const SfCoef& coef) {
+	const auto offset = y * coef.pitch + x * coef.byte;
+	BYTE* srcPixel = coef.pData + offset;
+	
+	return srcPixel;
+}
+
+inline BYTE* GetAlphaPixelAddress(int width, int height, int x, int y, const SfCoef& coef) {
+	const auto alphaOffset = (height - 1 - y) * coef.alphaPitch + x * coef.alphaByte;
+	BYTE* alphaPixel = coef.pAlphaData + alphaOffset;
+
+	return alphaPixel;
+}
+
+inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor) {
 	ProcessBitmap(pSf, [&](const LPSURFACE Bitmap) {
-		auto ceof = GetSfCoef(pSf);
-		processor(ceof);
-		ReleaseSfCoef(pSf, ceof);
+		const auto coef = GetSfCoef(pSf);
+		processor(coef);
+		ReleaseSfCoef(pSf, coef);
 	});
 }
 
-inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, std::function<void(const SfCoef& coef)> processor) {
+inline void ProcessPixel(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor) {
 	ProcessPixel(pSf, processor);
 }
 
-inline void IteratePixel(LPSURFACE pSf,std::function<void(int,int,const SfCoef,BYTE*,BYTE*)> process) {
-	//Dimensions
-	int width = pSf->GetWidth();
-	int height = pSf->GetHeight();
+inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const SfCoef&,BYTE*,BYTE*)>& process) {
+	ProcessPixel(pSf, [&] (const SfCoef& coef) {
+		//Dimensions
+		int width = pSf->GetWidth();
+		int height = pSf->GetHeight();
 
-	auto sfCoef = GetSfCoef(pSf);
-	
-	//Lock buffer, get pitch etc.
-	BYTE* pData= sfCoef.pData;
-	int pitch = sfCoef.pitch;
-	int size = sfCoef.sz;
-	int byte = sfCoef.byte;
+		//Lock buffer, get pitch etc.
+		BYTE* pData = coef.pData;
+		int pitch = coef.pitch;
+		int size = coef.sz;
+		int byte = coef.byte;
 
-	//Alpha
-	BYTE* pAlphaData = sfCoef.pAlphaData;
-	int alphaPitch = sfCoef.alphaPitch;
-	int alphaSz = sfCoef.alphaSz;
-	int alphaByte = sfCoef.alphaByte;
+		//Alpha
+		BYTE* pAlphaData = coef.pAlphaData;
+		int alphaPitch = coef.alphaPitch;
+		int alphaSz = coef.alphaSz;
+		int alphaByte = coef.alphaByte;
 
-	////Backup buffer
-	//BYTE* temp = new BYTE[size];
-	//memcpy(temp, pData, size);
+		//Loop through all pixels
+#ifdef _OPENMP 
+		omp_set_num_threads(std::thread::hardware_concurrency());
 
-	//Loop through all pixels
-	for (int y = 0; y < height; ++y) {
-		for (int x = 0; x < width; ++x) {
-			auto offset = y * pitch + x * byte;
-			BYTE* srcPixel = pData + offset;
-			//BYTE* tempPixel = temp + offset;
+#pragma omp parallel for  
+#endif
+		for (int y = 0; y < height; ++y) {
+#ifdef _OPENMP
+//#pragma omp parallel shared(y)
+			{
+//#pragma omp parallel for
+#endif
+			for (int x = 0; x < width; ++x) {
+				const auto offset = y * pitch + x * byte;
+				BYTE* srcPixel = pData + offset;
 
-			auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
-			BYTE* alphaPixel = pAlphaData + alphaOffset;
+				const auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
+				BYTE* alphaPixel = pAlphaData + alphaOffset;
 
-			process(x, y, sfCoef
-				, srcPixel, alphaPixel);
+				process(x, y, coef
+					, srcPixel, alphaPixel);
+			}
+#ifdef _OPENMP
 		}
-	}
-
-	ReleaseSfCoef(pSf, sfCoef);
-
-	//delete[] temp;
+#endif
+		}
+});
 }
 
 // dst transparent -> src alpha
@@ -1402,7 +1748,7 @@ inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHe
 
 #ifdef _PRE_PROTECT
 	auto Range = [](int inputV, int minV, int maxV) {
-		return min(maxV, max(minV, inputV));
+		return (std::min)(maxV, (std::max)(minV, inputV));
 	};
 		
 	auto actualWidth = Range(srcX + srcWidth, 0, widthS);

@@ -53,6 +53,7 @@
 #pragma comment(lib,"Imm32.lib")
 
 //Definitions
+#include	"GeneralDefinition.h"
 #include	"Definition.h"
 
 class ObjectSelection;
@@ -73,6 +74,7 @@ class ObjectSelection;
 #include	"Encryption.h"
 #include	"StrNum.h"
 #include	"WindowsCommon.h"
+#include	"WindowsException.h"
 #include	"ObjectSelection.h"
 #include	"Base64.h"
 
@@ -82,9 +84,14 @@ class ObjectSelection;
 
 //Global Func
 #include	"Func.h"
+#include	"WindowResizing.h"
+#include	"MouseHandler.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
+extern WindowResizing windowResizing;
+extern MouseHandler mouseHandler;
+
 extern short conditionsInfos[];
 extern short actionsInfos[];
 extern short expressionsInfos[];

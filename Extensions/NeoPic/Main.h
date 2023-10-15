@@ -14,7 +14,15 @@
 #define	CND_CONDITION_CDT			3
 #define	CND_CONDITION_LHI			4
 
-#define	CND_LAST					5
+#define	CND_CONDITION_OAF			5
+#define	CND_CONDITION_IAP			6
+#define	CND_CONDITION_IAPAUSED		7
+
+#define	CND_CONDITION_OLC		    8
+
+#define	CND_CONDITION_IAF		    9
+
+#define	CND_LAST					10
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -30,18 +38,18 @@
 #define	ACT_ACTION_Z				6
 #define	ACT_ACTION_R				7
 
-#define	ACT_ACTION_US				8
-#define	ACT_ACTION_RC				9
+#define	ACT_ACTION_AOTL				8
+#define	ACT_ACTION_DOFL				9
 
 #define	ACT_ACTION_S				10
 
 #define	ACT_ACTION_AB				11
-#define	ACT_ACTION_UC				12
+#define	ACT_ACTION_ULCSF				12
 
-#define	ACT_ACTION_SC				13
+#define	ACT_ACTION_SLC				13
 #define	ACT_ACTION_SQ				14
 
-#define	ACT_ACTION_AT				15
+#define	ACT_ACTION_PT				15
 #define	ACT_ACTION_O				16
 
 #define	ACT_ACTION_LFD				17
@@ -71,7 +79,25 @@
 
 #define	ACT_ACTION_STFWS			31
 
-#define	ACT_LAST					32
+#define	ACT_ACTION_STC				32
+
+#define	ACT_ACTION_SAS				33
+#define	ACT_ACTION_LA				34
+#define	ACT_ACTION_SA				35
+
+#define	ACT_ACTION_SASPEED			36
+#define	ACT_ACTION_PA				37
+#define	ACT_ACTION_RA				38
+#define	ACT_ACTION_SAFID			39
+#define	ACT_ACTION_SAFINDEX			40
+#define	ACT_ACTION_SASTEP			41
+
+#define	ACT_ACTION_SNSS				42
+#define	ACT_ACTION_LNS				43
+#define	ACT_ACTION_RNS				44
+#define	ACT_ACTION_RENDERNS			45
+
+#define	ACT_LAST					46
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -116,7 +142,18 @@
 #define EXP_EXPRESSION_GVRBMB          	24
 #define EXP_EXPRESSION_GVRAMB          	25
 
-#define	EXP_LAST                    	26
+#define EXP_EXPRESSION_GAN          	26
+#define EXP_EXPRESSION_GAFID          	27
+#define EXP_EXPRESSION_GAFINDEX         28
+#define EXP_EXPRESSION_GAS              29
+#define EXP_EXPRESSION_GASTEP           30
+
+#define EXP_EXPRESSION_GLCFN            31
+#define EXP_EXPRESSION_GLCSF            32
+
+#define EXP_EXPRESSION_GAFN             33
+
+#define	EXP_LAST                    	34
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -135,9 +172,8 @@ typedef struct tagEDATA_V1
 	//Lib
 	bool isLib = false;
 
-	//Collision
-	bool collision = false;
-	bool autoUpdateCollision = false;
+	bool bLoadCallback = false;
+	bool bLoadKeepAngle = false;
 
 	//Display
 
@@ -183,45 +219,50 @@ typedef struct tagRDATA
 	short			swidth;
 	short			sheight;
 
-	//Lib
+	//------------
+	// Global
+	//------------
+
+	GlobalData* pData;
+
+#ifdef _USE_DXGI
+	D3DUtilities* pD3DU = nullptr;
+#endif
+
+	//------------
+	// Lib
+	//------------
+
 	bool isLib = false;
 	SurfaceLib* pLib = nullptr;							// kept over frames
+	
+	bool bLoadCallback = false;
+	LoadCallbackInfo* pLoadCallbackInfo = nullptr;
 
-	//Collision
-	bool collision = false;
-	bool autoUpdateCollision = false;
+	bool bLoadKeepAngle = false;
 
-	LPSMASK pColMask = nullptr;
-	LPSURFACE pCollisionSf = nullptr;
+	// for iterate
+	std::wstring* itCountVecStr = nullptr;
+	Count* itCountVecCount = nullptr;
 
-	//Display
+	//------------
+	// Display
+	//------------
 
-	//Settings
+	// Settings
 	volatile bool HWA = false;
 	volatile bool stretchQuality = false;
 
-	//Source
+	// Source
 	bool fromLib = false;
 	SurfaceLibValue* pLibValue = nullptr;
-	size_t* pRefCount = nullptr;
 
 	std::wstring* FileName = nullptr;
 	std::wstring* FilePath = nullptr;
 	std::wstring* RelativeFilePath = nullptr;
 	std::wstring* Key = nullptr;
-
-	//img->collision & add backdrop
-	LPSURFACE img = nullptr;
-	
-	POINT imgHotSpot = { 0,0 };
-	ZoomScale imgZoomScale = { 1.0,1.0 };
-
-	OffsetCoef imgOffset = { 0,0,false };
-	
-	int imgAngle = 0;
-	ATArray imgAT = {};
-
-	//src->display
+		
+	// src->display
 	LPSURFACE src = nullptr;
 
 	// flip cache
@@ -229,53 +270,24 @@ typedef struct tagRDATA
 	LPSURFACE pSf_HF = nullptr;
 	LPSURFACE pSf_VF = nullptr;
 	LPSURFACE pSf_VHF = nullptr;
-	
-	POINT hotSpot = { 0,0 };	
+
+	BOOL isTransparent = -1;
+	bool bCurrentDisplayTransparent = false;
+
+	float angle = 0;
+	HotSpotPos hotSpotPos;
+	POINT hotSpot = { 0,0 };
 	ZoomScale zoomScale = { 1.0,1.0 };
 
-	OffsetCoef offset = { 0,0,false };
+	LPSMASK pColMask = nullptr;
 
-	int angle = 0;
-	ATArray AT = {};
+	// capture
+	FrameCapture* pFrameCapture = nullptr;
 
-	//trans->transform
-	LPSURFACE trans = nullptr;
-
-	bool changed = false;
-
-	//preload		
-	std::vector<std::wstring>* pPreloadList = nullptr;
-	SurfaceLib* preloadLib = nullptr;
-
-	volatile HANDLE threadID;
-	volatile bool forceExit = false;
-	volatile bool preloading = false;
-	volatile bool preloadMerge = false;
-
-	size_t memoryLimit;
-	size_t sizeLimit;
-	bool autoClean;
-
-	RefCount* pCount = nullptr;							// kept over frames
-	KeepList* pKeepList = nullptr;						// kept over frames
-	RefCountVec* pCountVec = nullptr;					// update when trigger clear
-
-	HotSpotPos hotSpotPos;
-
-	GlobalData* pData;
-
-	std::wstring* itCountVecStr = nullptr;
-	Count* itCountVecCount = nullptr;
-
-	FileListMap* pFileListMap = nullptr;
-
-	bool bCurrentDisplayTransparent = false;
-	LPSURFACE pOldSf = nullptr;
-
-#ifdef _USE_DXGI
-	D3DUtilities* pD3DU = nullptr;
-#endif
-
+	// animation
+	AnimationInterface* pAI = nullptr;
+	// nine slice
+	NineSliceInterface* pNS = nullptr;
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

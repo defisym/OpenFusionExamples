@@ -1,4 +1,5 @@
 #pragma once
+#include <ranges>
 
 typedef CSimpleIni INI;
 typedef CSimpleIni* LPINI;
@@ -8,22 +9,12 @@ typedef CSimpleIni::TNamesDepend* LPINILIST;
 
 typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 
-#define Fini rdPtr->ini
-#define OStr rdPtr->Str
+constexpr auto ONIT_SEC = 0;
+constexpr auto ONIT_ITEM = 1;
 
-#define FLOAT_MAX 50+1
+constexpr auto Default_Val = L"0";
 
-#define Default_Val	_T("0")
-
-#define ONIT_SEC	0
-#define ONIT_ITEM	1
-
-#define invalid(X) if (!valid(Fini)) { return X; }
-
-#define release_str() release_arr(rdPtr->SecLoopName);release_arr(rdPtr->ItemLoopName);release_arr(rdPtr->CurrentSec);release_arr(rdPtr->CurrentItem);release_arr(rdPtr->AutoSaveFilePath);release_arr(rdPtr->AutoSaveKey);
-
-#define release_ini() release_ptr(Fini);release_str();rdPtr->Modified = false;
-#define init_ini() release_ini();Fini = new INI;Fini->SetUnicode();
+#define InvalidIni(X) if (!valid(rdPtr->ini)) { return X; }
 
 #define InvalidSec(X) if (StrEmpty(Section)) { return X; }
 #define InvalidSecItem(X) if (StrEmpty(Section) || StrEmpty(Item)) { return X; }
@@ -58,3 +49,21 @@ typedef CSimpleIni::TNamesDepend::const_iterator INIIT;
 //	BYTE	rvFree2[VALUES_NUMBEROF_ALTERABLE];
 //	LPTSTR	rvStrings[STRINGS_NUMBEROF_ALTERABLE];
 //} tagRV20U;
+
+struct tagRDATA;
+typedef tagRDATA RUNDATA;
+typedef RUNDATA* LPRDATA;
+
+struct GlobalData {
+	std::map<std::wstring, LPINI> pInis;
+
+	GlobalData() = default;
+	~GlobalData() {
+		for(const auto& pIni : pInis | std::views::values) {
+			delete pIni;
+		}
+	}
+
+	inline void StashData(LPRDATA rdPtr);
+	inline void RetrieveData(LPRDATA rdPtr);
+};

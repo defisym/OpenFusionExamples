@@ -1,0 +1,257 @@
+{
+    "title": "JSON schema for animation configuration files",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "description": "Animation",
+    "required": [
+        "info",
+        "frames"
+    ],
+    "properties": {
+        "info": {
+            "type": "object",
+            "description": "basic info of animation",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "name of the animation"
+                },
+                "restore":{
+                    "type": "boolean",
+                    "description": "restore to given coef when animation is stopped",
+                    "default": true
+                },
+                "updateCur":{
+                    "type": "boolean",
+                    "description": "update current image and doesn't load new ones, frame's file prop is ignored",
+                    "default": false
+                },
+                "reset": {
+                    "type": "boolean",
+                    "description": "reset to default if a property didn't set when goto next frame",
+                    "default": false
+                },
+                "speed": {
+                    "type": "number",
+                    "description": "speed of the animation, 100 = full frame rate",
+                    "minimum": 0,
+                    "default": 50
+                },
+                "loop": {
+                    "type": "boolean",
+                    "description": "force the animation to play forever",
+                    "default": true
+                },
+                "repeat": {
+                    "type": "number",
+                    "description": "Indicates how many times the animation should play",
+                    "minimum": 0,
+                    "default": 0
+                },
+                "backTo": {
+                    "type": "number",
+                    "description": "indicates the number of the frame at which the animation loops",
+                    "minimum": 0,
+                    "default": 0
+                }
+            }
+        },
+        "frames": {
+            "type": "array",
+            "description": "frames definition",
+            "items": {
+                "type": "object",
+                "description": "frame definition",
+                "required": [],
+                "properties": {
+                    "reset": {
+                        "type": "boolean",
+                        "description": "force reset to default"
+                    },
+                    "resetExceptFile": {
+                        "type": "boolean",
+                        "description": "force reset to default except file"
+                    },
+                    "file": {
+                        "type": "string",
+                        "description": "relative path to frame file"
+                    },
+                    "interpolation": {
+                        "type": "object",
+                        "description": "interpolation to next frame",
+                        "required": [
+                            "interval"
+                        ],
+                        "properties": {
+                            "interval": {
+                                "type": "number",
+                                "description": "frames to next frame",
+                                "default": 1
+                            },
+                            "type": {
+                                "type": "string",
+                                "description": "interpolation method to next frame",
+                                "default": "easeIn",
+                                "enum": [
+                                    "easeIn",
+                                    "easeOut",
+                                    "easeInOut",
+                                    "easeOutIn"
+                                ]
+                            },
+                            "func_a": {
+                                "type": "string",
+                                "description": "easing func a",
+                                "default": "linear",
+                                "enum": [
+                                    "linear",
+                                    "quad",
+                                    "cubic",
+                                    "quart",
+                                    "quint",
+                                    "sine",
+                                    "expo",
+                                    "circ",
+                                    "back",
+                                    "elastic",
+                                    "bounce"
+                                ]
+                            },
+                            "func_b": {
+                                "type": "string",
+                                "description": "easing func b",
+                                "default": "linear",
+                                "enum": [
+                                    "linear",
+                                    "quad",
+                                    "cubic",
+                                    "quart",
+                                    "quint",
+                                    "sine",
+                                    "expo",
+                                    "circ",
+                                    "back",
+                                    "elastic",
+                                    "bounce"
+                                ]
+                            },
+                            "overshoot": {
+                                "type": "number",
+                                "description": "overshoot",
+                                "default": 1.5
+                            },
+                            "amplitude": {
+                                "type": "number",
+                                "description": "amplitude",
+                                "default": 1.0
+                            },
+                            "period": {
+                                "type": "number",
+                                "description": "period",
+                                "default": 0.4
+                            }
+                        }
+                    },
+                    "angle": {
+                        "type": "number",
+                        "description": "angle of frame",
+                        "minimum": 0,
+                        "maximum": 360,
+                        "default": 0
+                    },
+                    "alpha": {
+                        "type": "number",
+                        "description": "alpha of frame",
+                        "minimum": 0,
+                        "maximum": 255,
+                        "default": 0
+                    },
+                    "rgbCoef": {
+                        "type": "object",
+                        "description": "rgbCoef of frame",
+                        "required": [
+                            "r",
+                            "g",
+                            "b"
+                        ],
+                        "properties": {
+                            "r": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 255,
+                                "default": 255
+                            },
+                            "g": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 255,
+                                "default": 255
+                            },
+                            "b": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 255,
+                                "default": 255
+                            }
+                        }
+                    },
+                    "scale": {
+                        "type": "object",
+                        "description": "scale of frame, default 1.0",
+                        "required": [
+                            "x",
+                            "y"
+                        ],
+                        "properties": {
+                            "x": {
+                                "type": "number",                                                           
+                                "default": 1.0
+                            },
+                            "y": {
+                                "type": "number",                                
+                                "default": 1.0
+                            }
+                        }
+                    },
+                    "hotSpot": {
+                        "type": "object",
+                        "description": "hotSpot of frame",
+                        "required": [],
+                        "properties": {
+                            "x": {
+                                "type": "number",
+                                "description": "if hotSpot type is not CUSTOM, then this value is used as x delta. if abs(x) < 1.0, then delta is x * width",
+                                "default": 0
+                            },
+                            "y": {
+                                "type": "number",
+                                "description": "if hotSpot type is not CUSTOM, then this value is used as y delta. if abs(y) < 1.0, then delta is y * height",
+                                "default": 0
+                            },
+                            "type": {
+                                "type": "string",
+                                "description": "types of hotSpot",
+                                "default": "MM",
+                                "enum": [
+                                    "LT",
+                                    "LM",
+                                    "LB",
+                                    "MT",
+                                    "MM",
+                                    "MB",
+                                    "RT",
+                                    "RM",
+                                    "RB",
+                                    "CUSTOM"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

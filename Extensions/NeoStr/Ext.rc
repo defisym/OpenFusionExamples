@@ -138,6 +138,11 @@ BEGIN
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
         MENUITEM SEPARATOR  
+        MENUITEM "Render", IDMN_ACTION_RENDER
+        MENUITEM SEPARATOR
+        MENUITEM "Change Render Size", IDMN_ACTION_CS
+        MENUITEM "Change Render Options", IDMN_ACTION_SRO
+        MENUITEM SEPARATOR
         MENUITEM "Force Redraw", IDMN_ACTION_FRD
         MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
         MENUITEM SEPARATOR    
@@ -150,9 +155,9 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Change Horizontal Align", IDMN_ACTION_CHA
             MENUITEM "Change Vertical Align", IDMN_ACTION_CVA
+            MENUITEM SEPARATOR
+            MENUITEM "Change Tab Settings", IDMN_ACTION_STS
         END
-        MENUITEM SEPARATOR
-        MENUITEM "Change Render Size", IDMN_ACTION_CS
         MENUITEM SEPARATOR        
         POPUP "Zoom && Rotate"
         BEGIN
@@ -200,6 +205,11 @@ BEGIN
         MENUITEM "Get Raw String By Filtered String Length", IDMN_EXPRESSION_GRSBFSL
         MENUITEM "Get Non Command Offset", IDMN_EXPRESSION_GNCO
         MENUITEM SEPARATOR
+        POPUP "Render Options"
+        BEGIN
+            MENUITEM "Get Visible Ratio", IDMN_EXPRESSION_GRO_VR
+        END
+        MENUITEM SEPARATOR
         POPUP "Alignment"
         BEGIN
             MENUITEM "Get Row Space", IDMN_EXPRESSION_GRS
@@ -209,6 +219,9 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Get Horizontal Align", IDMN_EXPRESSION_GHA
             MENUITEM "Get Vertical Align", IDMN_EXPRESSION_GVA
+            MENUITEM SEPARATOR
+            MENUITEM "Get Tab Size", IDMN_EXPRESSION_GTS_TS
+            MENUITEM "Get Tab Use EM Space", IDMN_EXPRESSION_GTS_EM
         END
         MENUITEM SEPARATOR
         POPUP "Size"
@@ -419,6 +432,12 @@ BEGIN
     IDS_PROP_FORMAT_FILTER_INCOMPLETE               "Filter Incomplete"
     IDS_PROP_FORMAT_FILTER_INCOMPLETE_INFO          "Filter incomplete commands when display"
 
+	IDS_PROP_ALLIGN_TABSIZE							"Tab Size"
+	IDS_PROP_ALLIGN_TABSIZE_INFO					"Tab Size"
+	IDS_PROP_ALLIGN_TABEMSPACE						"EM Space"
+	IDS_PROP_ALLIGN_TABEMSPACE_INFO					"Use EM space instead of space"
+
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -496,6 +515,15 @@ BEGIN
 
     M_ACTION_FRD            "Force Redraw"
     M_ACTION_FRDGI          "Force Redraw Global ICon"
+    M_ACTION_RENDER         "Render"
+
+    M_ACTION_SRO            "Change Render Option, Visible Ratio = %0, Include Alpha = %1"
+    M_VISIBLERATIO          "Use a 0 ~ 1 float to control characters to display"
+    M_INCLUDEALPHA          "Include Alpha"
+
+	M_ACTION_STS            "Change Tab Settings, Tab Size = %0, Use EM Space = %1"
+    M_TABSIZE          		"Tab Size = Number of Spaces"
+    M_TABEM          		"1 = Use EM Space, 0 = Use Normal Space"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -554,6 +582,11 @@ BEGIN
     
     M_EXPRESSION_GFF        "GetFilterFlag("
     M_EXPRESSION_GRSBFSL    "GetRawStringByFilteredStringLength$("
+    
+    M_EXPRESSION_GRO_VR    "GetVisableRatio("
+
+    M_EXPRESSION_GTS_TS    "GetTabSize("
+    M_EXPRESSION_GTS_EM    "GetTabEM("
 END
 
 #endif    // English (U.S.) resources

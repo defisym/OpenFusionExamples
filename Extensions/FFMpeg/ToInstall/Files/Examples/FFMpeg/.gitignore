@@ -1,8 +1,13 @@
 FFMpeg.exe
 FFMpeg.dat
 
+benchmark.exe
+
 Modules/*.*
 
 _Test_Encrypt.mp4
 startup_warning.gif
 VID.mp4
+LoopIssue.webm
+
+_PR/

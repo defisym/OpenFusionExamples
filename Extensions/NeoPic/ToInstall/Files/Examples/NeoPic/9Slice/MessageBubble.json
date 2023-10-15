@@ -1,0 +1,35 @@
+{
+    "$schema": "https://raw.githubusercontent.com/defisym/OpenFusionExamples/master/Extensions/_DeLib/NineSliceSchema.json",
+    "settings": {
+        "stretch": false
+    },
+    "frames": [
+        {
+            "file": "MessageBubble_1.png"
+        },
+        {
+            "file": "MessageBubble_2.png"
+        },
+        {
+            "file": "MessageBubble_3.png"
+        },
+        {
+            "file": "MessageBubble_4.png"
+        },
+        {
+            "file": "MessageBubble_5.png"
+        },
+        {
+            "file": "MessageBubble_6.png"
+        },
+        {
+            "file": "MessageBubble_7.png"
+        },
+        {
+            "file": "MessageBubble_8.png"
+        },
+        {
+            "file": "MessageBubble_9.png"
+        }
+    ]
+}

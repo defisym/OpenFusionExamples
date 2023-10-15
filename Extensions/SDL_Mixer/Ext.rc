@@ -119,7 +119,14 @@ BEGIN
         MENUITEM "Channel Playing", IDMN_CONDITION_CP
         MENUITEM "No Channel Playing", IDMN_CONDITION_NCP
         MENUITEM SEPARATOR
+        MENUITEM "Channel Paused", IDMN_CONDITION_CPAUSED
+        MENUITEM "All Channel Paused", IDMN_CONDITION_ACPAUSED
+        MENUITEM SEPARATOR
+        MENUITEM "Channel Has No Output",  IDMN_CONDITION_CHNO
+        MENUITEM SEPARATOR
         MENUITEM "Exclusive Channel Fading Complete", IDMN_CONDITION_CFC
+        MENUITEM SEPARATOR
+        MENUITEM "Binary Has No Reference", IDMN_CONDITION_BHNR
         MENUITEM SEPARATOR
     END
 END
@@ -138,7 +145,9 @@ BEGIN
         MENUITEM "Play Exclusive",       IDMN_ACTION_PE
         MENUITEM "Play Mixing",          IDMN_ACTION_PM
         MENUITEM SEPARATOR
-        MENUITEM "Set Volume",           IDMN_ACTION_SV
+        MENUITEM "Set Master Volume",    		 IDMN_ACTION_SMV
+        MENUITEM "Set Channel Volume",           IDMN_ACTION_SV
+        MENUITEM SEPARATOR
         MENUITEM "Set Exclusive Position",        IDMN_ACTION_SP
         MENUITEM "Set Exclusive ABLoop",          IDMN_ACTION_SABL
         MENUITEM "Set Mixing Channel Score",      IDMN_ACTION_SMCS
@@ -147,6 +156,20 @@ BEGIN
         MENUITEM "Stop All Channel",              IDMN_ACTION_SAC
         MENUITEM "Pause Specific Channel",        IDMN_ACTION_PC
         MENUITEM "Resume Specific Channel",       IDMN_ACTION_RC
+        MENUITEM SEPARATOR
+		POPUP "Binary"
+    	BEGIN
+        	MENUITEM "Load Binary",                   IDMN_ACTION_LB
+        	MENUITEM "Release Binary",                IDMN_ACTION_RB
+        	MENUITEM "Update Binary",                 IDMN_ACTION_UB
+        END
+		MENUITEM SEPARATOR
+        POPUP "Effect"
+    	BEGIN
+			MENUITEM "Set Effect Panning",            IDMN_ACTION_SEPAN
+        	MENUITEM "Set Effect Position",           IDMN_ACTION_SEPOS
+        	MENUITEM "Set Effect Distance",           IDMN_ACTION_SEDIS
+        END
         MENUITEM SEPARATOR
      END
 END
@@ -162,11 +185,31 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV       
+        MENUITEM "Get Master Volume", IDMN_EXPRESSION_GMV
+        MENUITEM "Get Channel Volume", IDMN_EXPRESSION_GV
+        MENUITEM SEPARATOR
+        MENUITEM "Get Channel ID By Name", IDMN_EXPRESSION_GCIDBN
         MENUITEM "Get Channel State", IDMN_EXPRESSION_GCS
+        MENUITEM SEPARATOR
         MENUITEM "Get Exclusive Channel Position", IDMN_EXPRESSION_GCP
         MENUITEM "Get Exclusive Channel Duration", IDMN_EXPRESSION_GCD
+        MENUITEM "Get Exclusive Channel Name By ID", IDMN_EXPRESSION_GCNBID
         MENUITEM SEPARATOR
+        POPUP "Binary"
+    	BEGIN
+			MENUITEM "Get Play From Memory Name", IDMN_EXPRESSION_GPFMN
+        	MENUITEM "Get Play From Handled Memory Name", IDMN_EXPRESSION_GPFHMN
+        	MENUITEM "Get Binary Address", IDMN_EXPRESSION_GBA
+        END
+		MENUITEM SEPARATOR
+		POPUP "Effect"
+    	BEGIN
+			MENUITEM "Get Effect Panning Left", IDMN_EXPRESSION_GEPR
+        	MENUITEM "Get Effect Panning Right", IDMN_EXPRESSION_GEPL
+        	MENUITEM "Get Effect Angle", IDMN_EXPRESSION_GEA
+        	MENUITEM "Get Effect Distance", IDMN_EXPRESSION_GED
+        END
+		MENUITEM SEPARATOR
     END
 END
 #endif
@@ -242,7 +285,7 @@ BEGIN
     IDST_OBJNAME            "SDL_Mixer"
     IDST_AUTHOR             "Defisym"
     IDST_COPYRIGHT          "Copyright 2023 Defisym"
-    IDST_COMMENT            "Quick description displayed in the Insert Object dialog box and in the object's About properties."
+    IDST_COMMENT            "Audio player based on SDL Mixer X, with unlimited channel & encrypt support"
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
@@ -268,6 +311,7 @@ BEGIN
     M_ACTION_FADE               "Fade (ms), -1 = No Fade"
 
     M_ACTION_SV                 "Set Channel %0 Volume to %1, Channel Type %2"
+    M_ACTION_SMV                "Set Master Volume to %0"
 
     M_ACTION_VOLUME             "Volume (0 ~ 100)"
     M_ACTION_EXCLUSIVE          "Channel Type, 1 = Exclusive, 0 = Mixing"
@@ -289,21 +333,53 @@ BEGIN
     M_ACTION_SCORE              "Score to use"
     M_ACTION_BASE               "Base"
 
+    M_ACTION_LB                 "Load Binary %0, Decrypt Key %1"
+    M_ACTION_RB                 "Release Binary %0"
+    M_ACTION_UB                 "Update Binary %0, Decrypt Key %1"
+    
+	M_ACTION_SEPAN              "Set Channel %0 Effect Panning, Left = %1, Right = %2, Channel Type %3"
+	M_ACTION_SEPOS              "Set Channel %0 Effect Position, Angle = %1, Distance = %2, Channel Type %3"
+	M_ACTION_SEDIS              "Set Channel %0 Effect Distance, Distance = %1, Channel Type %2"
+
+	M_ACTION_PANNING_LEFT		"Left, 0 ~ 255"
+	M_ACTION_PANNING_RIGHT		"Right, 0 ~ 255"
+	M_ACTION_POSITION_ANGLE		"Angle, 0 = due north, rotates clockwise as the value increases."
+	M_ACTION_POSITION_DISTANCE	"Distance, 0 = overlapping the listener, and 255 = as far away as possible"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_CP              "%o Channel %0 Type %1 is Playing"
     M_CONDITION_NCP             "%o No Channel is Playing"
+    M_CONDITION_CPAUSED         "%o Channel %0 Type %1 is Paused"
+    M_CONDITION_ACPAUSED        "%o All Channel is Paused"
+    M_CONDITION_CHNO            "%o Channel %0 Type %1 Has No Output"
     M_CONDITION_CFC             "%o Exclusive Channel %0 Fading Complete"
+    M_CONDITION_BHNR            "%o Binary %0 Has No Reference"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_EXPRESSION_GV             "GetVolume ("
+    M_EXPRESSION_GCIDBN         "GetID ("
+    M_EXPRESSION_GV             "GetChannelVolume ("
+    M_EXPRESSION_GMV            "GetMasterVolume ("
     M_EXPRESSION_GCS            "GetChannelState ("
     M_EXPRESSION_GCP            "GetChannelPos ("
     M_EXPRESSION_GCD            "GetChannelDur ("
+    M_EXPRESSION_GCNBID         "GetChannelName$ ("
+    M_EXPRESSION_GPFMN          "GetFromMemName$ ("
+    M_EXPRESSION_GPFHMN         "GetFromHandledMemName$ ("
+    M_EXPRESSION_GBA            "GetBinaryAddress ("
+
+    M_EXPRESSION_ADDRESS	    "Address"
+    M_EXPRESSION_OFFSET 	    "Offset"
+    M_EXPRESSION_SIZE		    "Size"
+    M_EXPRESSION_ACCESSFILENAME "Access FileName"
+
+    M_EXPRESSION_GEPR           "GetEffectPanLeft ("
+    M_EXPRESSION_GEPL           "GetEffectPanRight ("
+    M_EXPRESSION_GEA            "GetEffectAngle ("
+    M_EXPRESSION_GED            "GetEffectDistance ("
 END
 
 

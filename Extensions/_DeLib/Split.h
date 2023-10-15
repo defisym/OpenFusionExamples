@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Encryption.h"
-
 #include <vector>
+#include <ranges>
+
+#include "Encryption.h"
+#include "GeneralDefinition.h"
 
 #define UTF8_SIGNATURE     "\xEF\xBB\xBF"
 
@@ -22,44 +24,43 @@ constexpr auto RESERVE_MAGNUM = 16;
 
 constexpr auto DEFAULE_REGEXFLAG = ECMAScript | optimize;
 
-class Split :
-    public Encryption
-{
-private:
-    //Unicode
+struct SplitResult {
+    std::wstring SplitDataStr;
+    std::vector<std::wstring> SplitStrVec;
+    std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
+};
+
+class Split {
+	//Unicode
     bool Unicode = true;
 
-    //Converted str
-    wchar_t* SplitSrcStr = nullptr;
-    size_t SplitSrcStrLength = 0;
-
+    std::wstring SplitSrcStr;
     std::wstring SplitDataStr;
 
-    std::wstring MatchedStr;
     std::wstring ReplacedStr;
 
-    std::vector<std::wstring> SubStringVec;
-
-    //regex flags
+	//regex flags
     RegexFlag DefaultFlag = DEFAULE_REGEXFLAG;
     RegexFlag Flag = DefaultFlag;
 
     //Main regex, split lines
     wregex LineReg;
-    std::wstring LineRegStr;
-	
-    bool Init = false;
+    std::wstring LineRegStr;	
+    bool bLineReg = false;
 
     //EmptyLine regex, remove empty lines
     wregex EmptyLineReg;
+    std::wstring EmptyLineRegStr;
     bool RemoveEmptyLine = false;
 
     //Comment regex, remove comments
     wregex CommentReg;
+    std::wstring CommentRegStr;
     bool RemoveCommnet = false;
 
     //Indent regex, escape SPACE and TAB at the beginning and ending of string
     wregex IndentReg;
+    std::wstring IndentRegStr;
     bool RemoveIndent = false;
 
     //Result
@@ -67,10 +68,18 @@ private:
 
     //Keyword that you can quick get it's pos in vec
     wregex KeyWordReg;
+    std::wstring KeyWordRegStr;
     bool KeyWord = false;
 
     //Keyword list
-    std::vector<std::pair<size_t, std::wstring>> KeyWordPairVec;
+    using KeyWordPair = std::pair<size_t, std::wstring>;
+
+    std::vector<KeyWordPair> KeyWordPairVec;
+
+    //Match
+    std::wstring MatchedStr;
+
+    std::vector<std::wstring> SubStringVec;
 
     inline void Reserve(size_t size = RESERVE_DEFAULT) {
 		SplitStrVec.reserve(size);
@@ -78,87 +87,66 @@ private:
         KeyWordPairVec.reserve(size);
     }
 
-    //Convert
-    inline size_t GetSize(const char* Src, size_t Len, UINT CodePage = CP_UTF8) {
-        int Size = MultiByteToWideChar(CodePage, 0, Src, (int)Len, 0, 0);
-
-        return (size_t)((Size > 0) ? Size : -1);
-    }
-    inline bool Convert(const char* Src, size_t SrcLen, const wchar_t* Des, size_t DesLen, UINT CodePage = CP_UTF8) {
-        int Size = MultiByteToWideChar(CodePage, 0, Src, (int)SrcLen, (wchar_t*)Des, (int)DesLen);
-
-        return (Size > 0);
-    }
-
-    inline void NewSplitSrc(size_t Len) {
-        this->SplitSrcStrLength = Len + 1;
-        this->SplitSrcStr = new wchar_t[this->SplitSrcStrLength];
-        memset(this->SplitSrcStr, 0, sizeof(wchar_t) * (this->SplitSrcStrLength));
-    }
-    inline void ReleaseSplitSrcStr() {
-        if (this->SplitSrcStr != nullptr) {
-            delete[] this->SplitSrcStr;
-            this->SplitSrcStr = nullptr;
-        }
-    }
-
 public:
-    Split();
-    ~Split();
-
+    Split() = default;
+    ~Split() = default;
+    Split(const Split& obj) = default;
+    Split& operator= (const Split& obj) = default;
+    
     void ResetSplit();
     
-    inline void SetUnicode(bool Unicode) {
-        this->Unicode = Unicode;
-    }
+    inline void SetUnicode(bool bUnicode) { this->Unicode = bUnicode; }
 
     //load file and decrypt it
-    bool LoadFile(const wchar_t* FilePath, const wchar_t* Key, bool Unicode = true);
-    bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool Unicode = true);
+    bool LoadFile(const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode = true);
+    bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool bUnicode = true);
 
-    //load data loaded by parent class
-    void LoadData();
+    //load data from string
+    bool LoadData(const std::string& Src);
     //load data from byte str (convert to wchar)
-    void LoadData(const char* Src);
-    void LoadData(const char* Src, size_t Len);
+	bool LoadData(const char* Src);
+    bool LoadData(const char* Src, size_t Len);     //Actual loading function
     //load data from wstring
-    void LoadData(const std::wstring& Src);
+    bool LoadData(const std::wstring& Src);
     //load data from wchar
-    void LoadData(const wchar_t* Src);
-    void LoadData(const wchar_t* Src, size_t Len);
+    bool LoadData(const wchar_t* Src);
+    bool LoadData(const wchar_t* Src, size_t Len);  //Actual loading function
 
     inline void InitRegexFlag() {
         this->DefaultFlag = DEFAULE_REGEXFLAG;
         this->Flag = DefaultFlag;
     }
-    void ReSetRegexFlag();
+    void ResetRegexFlag();
 
     //E.g. SetRegexFlag(ECMAScript | icase);
     void SetRegexFlag(RegexFlag Flag);
 
     void SetCaseInsensitive(bool Enable);
 
-    inline RegexFlag GetRegexFlag() {
-        return this->Flag;
-    }
+    inline RegexFlag GetRegexFlag() const { return this->Flag; }
 
     void InitSplit(const wchar_t* Split);
-    void InitEmptyLine(const wchar_t* EnptyLine);
+    void InitEmptyLine(const wchar_t* EmptyLine);
     void InitComment(const wchar_t* Comment);
     void InitIndent(const wchar_t* Indent);
-    void InitKeyWord(const wchar_t* KeyWord);
+    void InitKeyWord(const wchar_t* pKeyWord);
 
-    void InitRegex(const wchar_t* Split, const wchar_t* EnptyLine, const wchar_t* Comment, const wchar_t* Indent, const wchar_t* KeyWord);
+    void InitRegex(const wchar_t* Split,
+        const wchar_t* EnptyLine,
+        const wchar_t* Comment, 
+        const wchar_t* Indent,
+        const wchar_t* pKeyWord);
 
     void SplitData();
 
-    inline const wchar_t* GetSplitData() {
-        if (this->SplitDataStr.empty()) {
-            return this->SplitSrcStr;
-        }
-        else{
-            return this->SplitDataStr.c_str();
-        }
+    [[nodiscard]] size_t GetHash() const;
+    void GetResult(SplitResult* pSplitResult) const;
+    void SetResult(const SplitResult* pSplitResult);
+
+    inline const wchar_t* GetSplitData() const {
+        return this->SplitDataStr.empty()
+            ? this->SplitSrcStr.c_str()
+            : this->SplitDataStr.c_str();
     }
 
     //Replace string
@@ -169,7 +157,7 @@ public:
         return ReplaceStr(std::wstring(Src), SubStr, Replace);        
     }
     inline const wchar_t* ReplaceStr(const std::wstring& Src, const wchar_t* SubStr, const wchar_t* Replace) {
-        wregex SubString(SubStr, this->Flag);
+	    const wregex SubString(SubStr, this->Flag);
         this->ReplacedStr = regex_replace(Src, SubString, Replace);
         return this->ReplacedStr.c_str();
     }
@@ -187,27 +175,27 @@ public:
 
     //Type == true search
     //Type == false match
-    inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) {
+    inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) const {
         return this->StringMatchRegex(this->GetSplitData(), SubStr,Type);
     }
-    inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) {
+    inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) const {
         return this->StringMatchRegex(std::wstring(Src), SubStr, Type);
     }
-    inline bool StringMatchRegex(const std::wstring& Src, const wchar_t* SubStr, bool Type = false) {
+    inline bool StringMatchRegex(const std::wstring& Src, const wchar_t* SubStr, bool Type = false) const {
         return Type ? regex_search(Src, wregex(SubStr, this->Flag)) : regex_match(Src, wregex(SubStr, this->Flag));
     }
 
-    inline size_t GetSubStringSize() {
+    inline size_t GetSubStringSize() const {
         return this->SubStringVec.size();
     }
-    inline const std::vector<std::wstring>* GetSubStringVec() {
+    inline const std::vector<std::wstring>* GetSubStringVec() const {
         return &this->SubStringVec;
     }
-    inline const wchar_t* GetSubString(size_t Pos) {
-        return (Pos < this->SubStringVec.size()) && (Pos >= 0) ? this->SubStringVec[Pos].c_str() : nullptr;
+    inline const wchar_t* GetSubString(size_t Pos) const {
+        return Pos < this->SubStringVec.size() ? this->SubStringVec[Pos].c_str() : nullptr;
     }
 
-    inline const wchar_t* GetMatchResult() {
+    inline const wchar_t* GetMatchResult() const {
         return this->MatchedStr.c_str();
     }
     inline const wchar_t* GetMatchResult(const wchar_t* SubStr, size_t Sub) {
@@ -223,44 +211,61 @@ public:
         return this->MatchedStr.c_str();
     }
 
-    const wchar_t* GetNextKeyWord(size_t StartPos);
-    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* KeyWord);
+    [[nodiscard]] const wchar_t* GetNextKeyWord(size_t StartPos) const;
+    const wchar_t* GetNextKeyWord(size_t StartPos, const wchar_t* pKeyWord) const;
 
-    int GetNextKeyWordPos(size_t StartPos);
-    int GetNextKeyWordPos(size_t StartPos, const wchar_t* KeyWord);
+    [[nodiscard]] int GetNextKeyWordPos(size_t StartPos) const;
+    int GetNextKeyWordPos(size_t startPos, const wchar_t* pKeyWord) const;
 
-    inline size_t GetKeyWordPairVecSize() {
+    inline size_t GetKeyWordPairVecSize() const {
         return this->KeyWordPairVec.size();
     }
-    inline const wchar_t* GetKeyWord(size_t Pos) {
-        return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
+    inline const std::vector<KeyWordPair>* GetKeyWordVec() const {
+        return &this->KeyWordPairVec;
     }
-    inline int GetKeyWordPos(size_t Pos) {
-        return (Pos < this->KeyWordPairVec.size()) && (Pos >= 0) ? (int)this->KeyWordPairVec[Pos].first : -1;
+    inline const wchar_t* GetKeyWord(size_t Pos) const {
+        return Pos < this->KeyWordPairVec.size() ? this->KeyWordPairVec[Pos].second.c_str() : nullptr;
+    }
+    inline int GetKeyWordPos(size_t Pos) const {
+        return Pos < this->KeyWordPairVec.size() ? static_cast<int>(this->KeyWordPairVec[Pos].first) : -1;
     }
 
     inline void SetSplitReserve(size_t Size) {
         this->SplitStrVec.reserve(Size);
     }
 
-    inline size_t GetSplitSize() {
+    inline size_t GetSplitSize() const {
         return this->SplitStrVec.size();
     }
-    inline const std::vector<std::wstring>* GetSplit() {
+    inline const std::vector<std::wstring>* GetSplitVec() const {
         return &this->SplitStrVec;
     }
-    inline const wchar_t* GetSplitVec(size_t Pos) {
-        return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
+    inline const wchar_t* GetSplit(size_t Pos) const {
+        return Pos < this->SplitStrVec.size() ? this->SplitStrVec[Pos].c_str() : nullptr;
     }
-    // the same as GetSplit(size_t Pos)
-    inline const wchar_t* operator[](size_t Pos) {
-        return (Pos < this->SplitStrVec.size()) && (Pos >= 0) ? this->SplitStrVec[Pos].c_str() : nullptr;
-    };
+    inline const wchar_t* operator[](size_t Pos) const {
+        return GetSplit(Pos);
+    }
+
+    bool InsertFile(const Split& newFile,
+        size_t pos, bool bReplace);
+	bool InsertFile(const wchar_t* pFilePath, const wchar_t* pKey, const bool bUnicode,
+        const size_t pos, const bool bReplace) {
+        Split newFile = *this;
+        if (!newFile.LoadFile(pFilePath, pKey, bUnicode)) {
+            return false;
+        }
+
+        return InsertFile(newFile, pos, bReplace);
+	}
+    bool InsertFile(const std::wstring& filePath, const std::wstring& key, const bool bUnicode, 
+        const size_t pos, const bool bReplace) {
+        return InsertFile(filePath.c_str(), key.c_str(), bUnicode, pos, bReplace);
+    }
 };
 
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
-inline const std::wstring NewLineEscape(const wchar_t* Src) {
-    wregex NewLineEscape(L"(\\\\r\\\\n)");
-    return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n").c_str();
-
+inline std::wstring NewLineEscape(const wchar_t* Src) {
+	const wregex NewLineEscape(L"(\\\\r\\\\n)");
+    return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n");
 }

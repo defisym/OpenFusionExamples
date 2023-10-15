@@ -1,4 +1,8 @@
 #pragma once
+#pragma message ("************************ DEPRECATED ****************************")
+#pragma message ("************************ USE FFMPEG OBJECT INSTEAD ****************************")
+
+#ifdef 0
 
 // Ref: https://github.com/leandromoreira/ffmpeg-libav-tutorial
 
@@ -210,3 +214,5 @@ inline int get_videoFrame(std::wstring filePath, size_t ms, rawDataCallBack call
 
 	return 0;
 }
+
+#endif

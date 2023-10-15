@@ -1,0 +1,42 @@
+{
+    "title": "JSON schema for 9-Slice configuration files",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "description": "9-Slice",
+    "required": [
+        "frames"
+    ],
+    "properties": {
+        "settings": {
+            "type": "object",
+            "description": "9-Slice settings",
+            "required": [],
+            "properties": {
+                "stretch": {
+                    "type": "boolean",
+                    "description": "stretch",
+                    "default": false
+                }
+            }
+        },
+        "frames": {
+            "type": "array",
+            "description": "frames definition",
+            "minItems":9,
+            "maxItems": 9,
+            "items": {
+                "type": "object",
+                "description": "frame definition",
+                "required": [
+                    "file"
+                ],
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "description": "relative path to frame file"
+                    }
+                }
+            }
+        }
+    }
+}

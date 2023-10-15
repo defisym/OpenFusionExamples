@@ -152,6 +152,15 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Load From String", IDMN_ACTION_LS
         MENUITEM "Load From Base64 String", IDMN_ACTION_LB64
+        MENUITEM "Load From Compressed Base64 String", IDMN_ACTION_LCB64
+        MENUITEM SEPARATOR
+        POPUP "Localization"
+        BEGIN
+            MENUITEM "Link Localization", IDMN_ACTION_LLO
+            MENUITEM "Load Localization", IDMN_ACTION_LL
+            MENUITEM SEPARATOR        
+            MENUITEM "Set LanguageCode", IDMN_ACTION_SLC
+        END
         MENUITEM SEPARATOR
         MENUITEM "Set Value (Section - Item)", IDMN_ACTION_SSIV
         MENUITEM "Set String (Section - Item)", IDMN_ACTION_SSIS
@@ -190,6 +199,10 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Save to String", IDMN_EXPRESSION_SS
         MENUITEM "Save to Base64 String", IDMN_EXPRESSION_SB64
+        MENUITEM "Save to Compressed Base64 String", IDMN_EXPRESSION_SCB64
+        MENUITEM SEPARATOR
+        MENUITEM "Save String to Base64 String", IDMN_EXPRESSION_SSB64
+        MENUITEM "Load String From Base64 String", IDMN_EXPRESSION_LSB64
         MENUITEM SEPARATOR
         MENUITEM "Save Alterable Value", IDMN_EXPRESSION_SAV
         MENUITEM "Save Position", IDMN_EXPRESSION_SP
@@ -268,24 +281,27 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Fini"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021 ~ 2023 Defisym"
     IDST_COMMENT            "Ini that only write disk once."
     IDST_HTTP               "https://twitter.com/defisym"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROP_CF25P_TEXTTITLE        "Settings"
+    IDS_PROP_SETTINGS_TEXTTITLE        "Settings"
     IDS_PROP_CF25P_CHECK            "2.5 Plus"
     IDS_PROP_CF25P_CHECK_INFO       "Check this to support 2.5+ unlimited alterable values"
     IDS_PROP_ARVFCS_CHECK           "Allow alterable values for counters and strings"
     IDS_PROP_ARVFCS_CHECK_INFO      "to allow save for counters and strings"
+    IDS_PROP_KD_CHECK               "Keep data over frames"
+    IDS_PROP_KD_CHECK_INFO          "According to object name.\r\nFor multiple instance, only one's data will be saved & restores"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDS_CF25P            "2.5 Plus: %s"
     IDS_ARVFCS           "Allow AV: %s"
+    IDS_KD               "Keep Data: %s"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -301,6 +317,7 @@ BEGIN
     //M_ACTION_LS     "Load From String %0, Decrypt Key %1"
     M_ACTION_LS     "Load From String %0"
     M_ACTION_LB64   "Load From Base64 String %0"
+    M_ACTION_LCB64   "Load From Compressed Base64 String %0"
 
     ACT_ACTION_S    "String"
     ACT_ACTION_F    "FileName"
@@ -328,6 +345,11 @@ BEGIN
     M_ACTION_LAV        "Load Alterable Value %1 to Object %0"
     M_ACTION_LP         "Load Position %1 to Object %0"
 
+    M_ACTION_LL         "Load Localization From File %0, Decrypt Key %1"
+    M_ACTION_LLO        "Link Localization Object %0"
+    M_ACTION_SLC        "Set LanguageCode to %0"
+    ACT_ACTION_LC       "LanguageCode"
+    ACT_ACTION_OBJ      "Localization Object Fixed"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -350,12 +372,18 @@ BEGIN
 
     M_EXPRESSION_SS             "SaveToStr$("
     M_EXPRESSION_SB64           "SaveToB64Str$("
+    M_EXPRESSION_SCB64          "SaveToCB64Str$("
     
     M_EXPRESSION_SAV            "SaveAV$("
     M_EXPRESSION_SP             "SavePos$("
     
     M_FIXED                     "Fixed Value"
     M_BASE64                    "Base64 Str"
+    M_COMPRESSED                "Compressed"
+
+    M_EXPRESSION_SSB64          "SaveStringToB64Str$("
+    M_EXPRESSION_LSB64          "LoadStringFromB64Str$("
+
 END
 
 

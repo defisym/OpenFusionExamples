@@ -91,6 +91,11 @@ short actionsInfos[]=
 		IDMN_ACTION_SORC, M_ACTION_SORC, ACT_ACTION_SORC, 0, 2, PARAM_OBJECT, PARAM_EXPRESSION, M_OBJECT, M_ACT_RGBCOEF,
 		IDMN_ACTION_SORCBF, M_ACTION_SORCBF, ACT_ACTION_SORCBF, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_OBJECT, M_ACT_RGBCOEF,
 
+		IDMN_ACTION_SS, M_ACTION_SS, ACT_ACTION_SS, 0, 1, PARAM_EXPSTRING, M_SCOPENAME,
+		IDMN_ACTION_RS, M_ACTION_RS, ACT_ACTION_RS, 0, 1, PARAM_EXPSTRING, M_SCOPENAME,
+
+		IDMN_ACTION_ITOF, M_ACTION_ITOF, ACT_ACTION_ITOF, 0, 3, PARAM_OBJECT, PARAM_EXPSTRING, PARAM_EXPSTRING, M_OBJECT, M_ITNAME, M_EXP_PARAM,
+
 		};
 
 // Definitions of parameters for each expression
@@ -166,66 +171,66 @@ short expressionsInfos[]=
 // 
 // ============================================================================
 
-long WINAPI DLLExport OnFunc(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnFunc(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return StrEqu(FuncName, rdPtr->FuncNameStack->back().c_str()) ? TRUE : FALSE;
+	return StrEqu(FuncName, rdPtr->FuncNameStack->back().c_str());
 }
 
-long WINAPI DLLExport FuncHasParamAt(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_FuncHasParamAt(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
 	return !rdPtr->FuncParamStack->back().empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1))) ? TRUE : FALSE;
+		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)));
 }
-long WINAPI DLLExport FuncHasReturnAt(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_FuncHasReturnAt(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
 	return !rdPtr->FuncReturn->empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1))) ? TRUE : FALSE;
+		&& (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)));
 }
 
-long WINAPI DLLExport GlobalHasTempParam(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_GlobalHasTempParam(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return (*rdPtr->GlobalTempParam).contains(ParamName);
 }
-long WINAPI DLLExport FuncHasTempParam(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_FuncHasTempParam(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return HasTempParam(FuncName, ParamName) ? TRUE : FALSE;
+	return HasTempParam(rdPtr, FuncName, ParamName) ;
 }
-long WINAPI DLLExport CurerntFuncHasTempParam(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_CurerntFuncHasTempParam(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return !rdPtr->FuncNameStack->empty() && HasTempParam(rdPtr->FuncNameStack->back(), ParamName) ? TRUE : FALSE;
+	return !rdPtr->FuncNameStack->empty() && HasTempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
 }
 
-long WINAPI DLLExport FuncParamAtIsNum(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_FuncParamAtIsNum(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
-	return DataIsNum(rdPtr->FuncParamStack->back().at(Pos)) ? TRUE : FALSE;
+	return DataIsNum(rdPtr->FuncParamStack->back().at(Pos));
 }
-long WINAPI DLLExport FuncReturnAtIsNum(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_FuncReturnAtIsNum(LPRDATA rdPtr, long param1, long param2) {
 	size_t Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
-	return DataIsNum(rdPtr->FuncReturn->at(Pos)) ? TRUE : FALSE;
+	return DataIsNum(rdPtr->FuncReturn->at(Pos));
 }
 
-long WINAPI DLLExport FuncTempParamIsNum(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_FuncTempParamIsNum(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return DataIsNum(TempParam(FuncName, ParamName)) ? TRUE : FALSE;
+	return DataIsNum(TempParam(rdPtr, FuncName, ParamName));
 }
-long WINAPI DLLExport CurerntFuncTempParamIsNum(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_CurerntFuncTempParamIsNum(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	return DataIsNum(TempParam(rdPtr->FuncNameStack->back(), ParamName)) ? TRUE : FALSE;
+	return DataIsNum(TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName));
 }
 
-long WINAPI DLLExport OnIterateObject(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OnIterateObject(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
 	short oil = (short)OIL_GetParameter(rdPtr);
@@ -244,7 +249,7 @@ long WINAPI DLLExport OnIterateObject(LPRDATA rdPtr, long param1, long param2) {
 	//		, [&](LPRDATA rdPtr, LPRO object)->bool { return object == rdPtr->pObject; });
 }
 
-long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_SelectAll(LPRDATA rdPtr, long param1, long param2) {
 	bool negated = IsNegated(rdPtr);
 
 	short oil = (short)OIL_GetParameter(rdPtr);
@@ -254,7 +259,7 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 	return TRUE;
 }
 
-long WINAPI DLLExport InEditor(LPRDATA rdPtr, long param1, long param2) {	
+long WINAPI DLLExport Condition_InEditor(LPRDATA rdPtr, long param1, long param2) {	
 #ifndef RUN_ONLY
 	return TRUE;
 #else
@@ -262,13 +267,13 @@ long WINAPI DLLExport InEditor(LPRDATA rdPtr, long param1, long param2) {
 #endif // !RUN_ONLY
 }
 
-long WINAPI DLLExport InSubApp(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_InSubApp(LPRDATA rdPtr, long param1, long param2) {
 	auto bSub = rdPtr->rHo.hoAdRunHeader->rhApp->m_pParentApp != nullptr;
 
 	return bSub;
 }
 
-long WINAPI DLLExport OILHasObject(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_OILHasObject(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR pObjName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return rdPtr->pSelect->OILHasObject(pObjName);
@@ -280,75 +285,76 @@ long WINAPI DLLExport OILHasObject(LPRDATA rdPtr, long param1, long param2) {
 // 
 // ============================================================================
 
-short WINAPI DLLExport SetGlobalParamStr(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetGlobalParamStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	(*rdPtr->GlobalTempParam)[ParamName] = Data_Str(Param);
+	(*rdPtr->GlobalTempParam)[ParamName] = Data(Param);
 
 	return 0;
 }
-short WINAPI DLLExport SetGlobalParamVal(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetGlobalParamVal(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	float Param = GetFloatParam(rdPtr);
 	
-	(*rdPtr->GlobalTempParam)[ParamName] = Data_Val(Param);
+	(*rdPtr->GlobalTempParam)[ParamName] = Data(Param);
 
 	return 0;
 }
 
-short WINAPI DLLExport SetTempParamStr(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetTempParamStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	TempParam(FuncName, ParamName) = Data_Str(Param);
+	TempParam(rdPtr, FuncName, ParamName) = Data(Param);
 
 	return 0;
 }
-short WINAPI DLLExport SetTempParamVal(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetTempParamVal(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	long p1 = CNC_GetFloatParameter(rdPtr);
 	float Param = *(float*)&p1;
 
-	TempParam(FuncName, ParamName) = Data_Val(Param);
+	TempParam(rdPtr, FuncName, ParamName) = Data(Param);
+
 	return 0;
 }
 
-short WINAPI DLLExport SetCurrentTempParamStr(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetCurrentTempParamStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	TempParam(rdPtr->FuncNameStack->back(), ParamName) = Data_Str(Param);
+	TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName) = Data(Param);
 
 	return 0;
 }
-short WINAPI DLLExport SetCurrentTempParamVal(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetCurrentTempParamVal(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	long p1 = CNC_GetFloatParameter(rdPtr);
 	float Param = *(float*)&p1;
 
-	TempParam(rdPtr->FuncNameStack->back(), ParamName) = Data_Val(Param);
+	TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName) = Data(Param);
 
 	return 0;
 }
 
-short WINAPI DLLExport PassReturnStr(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_PassReturnStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	return 0;
 }
-short WINAPI DLLExport PassReturnVal(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_PassReturnVal(LPRDATA rdPtr, long param1, long param2) {
 	long p1 = CNC_GetFloatParameter(rdPtr);
 	float Return = *(float*)&p1;
 
 	return 0;
 }
 
-short WINAPI DLLExport SetAllReturn(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetAllReturn(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	rdPtr->FuncReturn->clear();
 	UpdateReturn(rdPtr, Return);
@@ -356,82 +362,77 @@ short WINAPI DLLExport SetAllReturn(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetReturnValueStr(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetReturnValueStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->FuncReturn->clear();
 	rdPtr->FuncReturn->reserve(DefaultVecSize);
-	rdPtr->FuncReturn->emplace_back(Data_Str(Return));
+	rdPtr->FuncReturn->emplace_back(Data(Return));
 
 	return 0;
 }
-short WINAPI DLLExport SetReturnValueVal(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetReturnValueVal(LPRDATA rdPtr, long param1, long param2) {
 	long p1 = CNC_GetFloatParameter(rdPtr);
 	float Return = *(float*)&p1;
 
 	rdPtr->FuncReturn->clear();
 	rdPtr->FuncReturn->reserve(DefaultVecSize);
-	rdPtr->FuncReturn->emplace_back(Data_Val(Return));
+	rdPtr->FuncReturn->emplace_back(Data(Return));
 
 	return 0;
 }
 
-short WINAPI DLLExport PushReturnValueStr(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_PushReturnValueStr(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring Return = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	rdPtr->FuncReturn->emplace_back(Data_Str(Return));
+	rdPtr->FuncReturn->emplace_back(Data(Return));
 	
 	return 0;
 }
-short WINAPI DLLExport PushReturnValueVal(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_PushReturnValueVal(LPRDATA rdPtr, long param1, long param2) {
 	long p1 = CNC_GetFloatParameter(rdPtr);
 	float Return = *(float*)&p1;
 
-	rdPtr->FuncReturn->emplace_back(Data_Val(Return));
+	rdPtr->FuncReturn->emplace_back(Data(Return));
 
 	return 0;
 }
 
-short WINAPI DLLExport CallFunc(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_CallFunc(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring Param = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
+	const auto LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
 
-	(*rdPtr->FuncLoopIndex)[FuncName] = LoopIndex;
-
-	for ((*rdPtr->FuncCurLoopIndex)[FuncName] = 0; 
-		(*rdPtr->FuncCurLoopIndex)[FuncName] < LoopIndex; 
-		(*rdPtr->FuncCurLoopIndex)[FuncName]++) {
-		CallFuncCore(FuncName, Param);
-	}
-
-	rdPtr->FuncLoopIndex->erase(FuncName);
-	rdPtr->FuncCurLoopIndex->erase(FuncName);
+	CallFuncCore(rdPtr, FuncName, Param, LoopIndex);
 
 	return 0;
 }
 
-short WINAPI DLLExport SetLoopIndex(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetLoopIndex(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	size_t LoopIndex = (size_t)CNC_GetIntParameter(rdPtr);
 
-	if (rdPtr->FuncLoopIndex->count(FuncName) != 0) {
-		(*rdPtr->FuncCurLoopIndex)[FuncName] = LoopIndex;
+	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+
+	if (rdPtr->FuncLoopIndex->contains(name)) {
+		(*rdPtr->FuncCurLoopIndex)[name] = LoopIndex;
 	}
 
 	return 0;
 }
 
-short WINAPI DLLExport StopLoop(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_StopLoop(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	if (rdPtr->FuncLoopIndex->count(FuncName) != 0) {
-		(*rdPtr->FuncCurLoopIndex)[FuncName] = (*rdPtr->FuncLoopIndex)[FuncName];
+	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+
+	if (rdPtr->FuncLoopIndex->contains(name)) {
+		(*rdPtr->FuncCurLoopIndex)[name] = (*rdPtr->FuncLoopIndex)[name];
 	}
 
 	return 0;
 }
 
-short WINAPI DLLExport Ternary(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Ternary(LPRDATA rdPtr, long param1, long param2) {
 	bool Result = (bool)CNC_GetIntParameter(rdPtr);
 	
 	std::wstring FuncNameA = (LPCTSTR)CNC_GetStringParameter(rdPtr);
@@ -440,37 +441,55 @@ short WINAPI DLLExport Ternary(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FuncNameB = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring ParamB = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	CallFuncCore(Result ? FuncNameA : FuncNameB, Result ? ParamA : ParamB);	
+	CallFuncCore(rdPtr,
+		Result ? FuncNameA : FuncNameB,
+		Result ? ParamA : ParamB);
 
 	return 0;
 }
 
-short WINAPI DLLExport IterateObject(LPRDATA rdPtr, long param1, long param2) {
-	short oil = (short)OIL_GetParameter(rdPtr);
+short WINAPI DLLExport Action_IterateObject(LPRDATA rdPtr, long param1, long param2) {
+	const auto oil = (short)OIL_GetParameter(rdPtr);
 	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	
-	std::vector<LPRO> toIterate;
-	char flag = rdPtr->pSelect->ObjectIsSelected(oil) ? 0b00000010 : 0;
 
-	// usually fusion will do a internal for-each for all selected objects
-	// but when you call immediate events, this for-each will be terminated
-	// so here need a manual for-each to force it
-	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		toIterate.emplace_back(object);
-		}, flag);
+	IterateObjectCore(rdPtr, oil, [&] (const ObjectSelection::SelObj& toIterate) {
+		rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
+			for (const auto& object : toIterate) {
+				rdPtr->pObject = object;
 
-	for (auto& object : toIterate) {
-		rdPtr->pObject = object;
-		
-		CallEvent(ONITOBJ);
+				CallEvent(ONITOBJ);
 
-		rdPtr->pObject = nullptr;
-	}
+				rdPtr->pObject = nullptr;
+			}
+		});
+	});
 
 	return 0;
 }
 
-short WINAPI DLLExport Assert(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_IterateObjectFunc(LPRDATA rdPtr, long param1, long param2) {
+	const auto oil = (short)OIL_GetParameter(rdPtr);
+	*rdPtr->pOnItObjName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	std::wstring Param = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	IterateObjectCore(rdPtr, oil, [&] (const ObjectSelection::SelObj& toIterate) {
+		const FuncInfoObject funcObj(rdPtr, *rdPtr->pOnItObjName, Param);
+
+		rdPtr->pSelect->KeepScopeCall(rdPtr->bKeepScope, [&] () {
+			for (const auto& object : toIterate) {
+				rdPtr->pObject = object;
+
+				CallEvent(ONITOBJ);
+
+				rdPtr->pObject = nullptr;
+			}
+		});
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Assert(LPRDATA rdPtr, long param1, long param2) {
 	auto value = CNC_GetParameter(rdPtr);
 	std::wstring msg = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -479,7 +498,7 @@ short WINAPI DLLExport Assert(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport MsgBox(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_MsgBox(LPRDATA rdPtr, long param1, long param2) {
 	auto value = CNC_GetParameter(rdPtr);
 	std::wstring msg = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -494,7 +513,7 @@ short WINAPI DLLExport MsgBox(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Toast(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Toast(LPRDATA rdPtr, long param1, long param2) {
 	auto value = CNC_GetParameter(rdPtr);
 	std::wstring title = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	std::wstring content = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -508,7 +527,7 @@ short WINAPI DLLExport Toast(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport ToastFlags(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_ToastFlags(LPRDATA rdPtr, long param1, long param2) {
 	auto flags = CNC_GetParameter(rdPtr);
 
 #ifdef _ENABLE_TOAST
@@ -518,7 +537,7 @@ short WINAPI DLLExport ToastFlags(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetObjectAlpha(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetObjectAlpha(LPRDATA rdPtr, long param1, long param2) {
 	LPRO pObject = LPRO(CNC_GetParameter(rdPtr));
 	UCHAR alpha = UCHAR(CNC_GetIntParameter(rdPtr));
 
@@ -527,7 +546,7 @@ short WINAPI DLLExport SetObjectAlpha(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport SetObjectAlphaByFixed(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetObjectAlphaByFixed(LPRDATA rdPtr, long param1, long param2) {
 	long fixed = long(CNC_GetParameter(rdPtr));
 	UCHAR alpha = UCHAR(CNC_GetIntParameter(rdPtr));
 
@@ -536,7 +555,7 @@ short WINAPI DLLExport SetObjectAlphaByFixed(LPRDATA rdPtr, long param1, long pa
 	return 0;
 }
 
-short WINAPI DLLExport SetObjectRGBCoef(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetObjectRGBCoef(LPRDATA rdPtr, long param1, long param2) {
 	LPRO pObject = LPRO(CNC_GetParameter(rdPtr));
 	DWORD dwRGBCoef = DWORD(CNC_GetIntParameter(rdPtr));
 
@@ -545,12 +564,56 @@ short WINAPI DLLExport SetObjectRGBCoef(LPRDATA rdPtr, long param1, long param2)
 	return 0;
 }
 
-short WINAPI DLLExport SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long param2) {
 	long fixed = long(CNC_GetParameter(rdPtr));
 	DWORD dwRGBCoef = DWORD(CNC_GetIntParameter(rdPtr));
 
 	EffectUtilities::SetRGBCoef(LproFromFixed(rdPtr, fixed), EffectUtilities::BGRToRGB(dwRGBCoef));
 
+	return 0;
+}
+
+short WINAPI DLLExport Action_SaveScope(LPRDATA rdPtr, long param1, long param2) {
+	const auto pName = (LPCWSTR)CNC_GetIntParameter(rdPtr);
+
+	Assert(rdPtr->bScope, L"You must enable scope feature in properties, or this action will have not effect");
+
+	if(!rdPtr->bScope) {
+		return 0;
+	}
+
+	const auto pScope = new ObjectSelection::Scope(rdPtr);
+	rdPtr->pSelect->SaveScope(pScope);
+
+	(*rdPtr->pScope)[pName] = pScope;
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_RestoreScope(LPRDATA rdPtr, long param1, long param2) {
+	const auto pName = (LPCWSTR)CNC_GetIntParameter(rdPtr);
+
+	Assert(rdPtr->bScope, L"You must enable scope feature in properties, or this action will have not effect");
+
+	if (!rdPtr->bScope) {
+		return 0;
+	}
+
+	const auto it = rdPtr->pScope->find(pName);
+
+	if (it == rdPtr->pScope->end()) {
+		return 0;
+	}
+
+	const auto pScope = static_cast<ObjectSelection::Scope*>(it->second);
+
+	pScope->RestoreActionState(rdPtr);
+	rdPtr->pSelect->RestoreScope(*pScope);
+
+	delete pScope;
+
+	rdPtr->pScope->erase(it);
+	
 	return 0;
 }
 
@@ -560,35 +623,35 @@ short WINAPI DLLExport SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long 
 // 
 // ============================================================================
 
-long WINAPI DLLExport CallFuncRV(LPRDATA rdPtr,long param1) {
+long WINAPI DLLExport Expression_CallFuncRV(LPRDATA rdPtr,long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Param = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);	
 	
-	CallFuncCore(FuncName, Param);	
+	CallFuncCore(rdPtr, FuncName, Param);
 
-	auto& ret = Return(0);
-
+	auto& ret = GetReturn(rdPtr, 0);
 	Data_StoV(ret);
+
 	return ReturnFloat(ret.Val);
 }
 
-long WINAPI DLLExport CallFuncRS(LPRDATA rdPtr,long param1) {
+long WINAPI DLLExport Expression_CallFuncRS(LPRDATA rdPtr,long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Param = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	CallFuncCore(FuncName, Param);
+	CallFuncCore(rdPtr, FuncName, Param);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 	
 	//This returns a pointer to the string for MMF.
-	auto& ret = Return(0);
-
+	auto& ret = GetReturn(rdPtr, 0);
 	Data_VtoS(ret);
+
 	return (long)ret.Str.c_str();
 }
 
-long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetParamRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 #ifndef RUN_ONLY
@@ -597,18 +660,18 @@ long WINAPI DLLExport GetParamRV(LPRDATA rdPtr, long param1) {
 	}
 #endif
 
-	if (!rdPtr->FuncParamStack->empty()
-		&& !rdPtr->FuncParamStack->back().empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {
-		Data_StoV(GetParam(Pos));
-		return ReturnFloat(GetParam(Pos).Val);
+	if (HasParam(rdPtr, Pos)) {
+		auto& ret = GetParam(rdPtr, Pos);
+		Data_StoV(ret);
+
+		return ReturnFloat(ret.Val);
 	}
 	else {
 		return 0;
 	}
 }
 
-long WINAPI DLLExport GetParamRS(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetParamRS(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 #ifndef RUN_ONLY
@@ -621,18 +684,18 @@ long WINAPI DLLExport GetParamRS(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	if (!rdPtr->FuncParamStack->empty()
-		&& !rdPtr->FuncParamStack->back().empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)))) {
-		Data_VtoS(GetParam(Pos));
-		return (long)GetParam(Pos).Str.c_str();
+	if (HasParam(rdPtr, Pos)) {
+		auto& ret = GetParam(rdPtr, Pos);
+		Data_VtoS(ret);
+
+		return (long)ret.Str.c_str();
 	}
 	else {
 		return (long)Default_Str;
 	}	
 }
 
-long WINAPI DLLExport GetRawParam(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetRawParam(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -642,13 +705,14 @@ long WINAPI DLLExport GetRawParam(LPRDATA rdPtr, long param1) {
 		: NotInFuncError<std::wstring>();
 }
 
-long WINAPI DLLExport GetGlobalParamRV(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetGlobalParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	auto it = rdPtr->GlobalTempParam->find(ParamName);
+	const auto it = rdPtr->GlobalTempParam->find(ParamName);
 
 	if (it != rdPtr->GlobalTempParam->end()) {
 		Data_StoV(it->second);
+
 		return ReturnFloat(it->second.Val);
 	}
 	else {
@@ -656,17 +720,18 @@ long WINAPI DLLExport GetGlobalParamRV(LPRDATA rdPtr, long param1) {
 	}
 }
 
-long WINAPI DLLExport GetGlobalParamRS(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetGlobalParamRS(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	auto it = rdPtr->GlobalTempParam->find(ParamName);
+	const auto it = rdPtr->GlobalTempParam->find(ParamName);
 
 	if (it != rdPtr->GlobalTempParam->end()) {
 		Data_VtoS(it->second);
+
 		return (long)it->second.Str.c_str();
 	}
 	else {
@@ -674,31 +739,33 @@ long WINAPI DLLExport GetGlobalParamRS(LPRDATA rdPtr, long param1) {
 	}
 }
 
-long WINAPI DLLExport GetTempParamRV(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 		
 #ifndef RUN_ONLY
-	if ((*rdPtr->FuncTempParam).count(GetFuncNameWithRecursiveID(FuncName)) == 0) {
+	if (!(*rdPtr->FuncTempParam).contains(GetFuncNameWithRecursiveID(rdPtr, FuncName))) {
 		NotInFuncError<long>();
 	}
 #endif
 
-	if (HasTempParam(FuncName, ParamName)) {
-		Data_StoV(TempParam(FuncName, ParamName));
-		return ReturnFloat(TempParam(FuncName, ParamName).Val);
-	}
-	else {
+	auto& ret = TempParam(rdPtr, FuncName, ParamName);
+
+	if (ret.bDefault) {
 		return 0;
 	}
+
+	Data_StoV(ret);
+
+	return ReturnFloat(ret.Val);
 }
 
-long WINAPI DLLExport GetTempParamRS(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetTempParamRS(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ParamName = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 #ifndef RUN_ONLY
-	if ((*rdPtr->FuncTempParam).count(GetFuncNameWithRecursiveID(FuncName)) == 0) {
+	if (!(*rdPtr->FuncTempParam).contains(GetFuncNameWithRecursiveID(rdPtr, FuncName))) {
 		NotInFuncError<std::wstring>();
 	}
 #endif
@@ -706,51 +773,57 @@ long WINAPI DLLExport GetTempParamRS(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
+	auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
+
 	//This returns a pointer to the string for MMF.
-	if (HasTempParam(FuncName, ParamName)) {
-		Data_VtoS(TempParam(FuncName, ParamName));
-		return (long)TempParam(FuncName, ParamName).Str.c_str();
-	}
-	else {
+	if (ret.bDefault) {
 		return (long)Default_Str;
 	}
+
+	Data_VtoS(ret);
+
+	return (long)ret.Str.c_str();
 }
 
-long WINAPI DLLExport GetCurrentTempParamRV(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentTempParamRV(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if (HasTempParam(rdPtr->FuncNameStack->back(), ParamName)) {
-		Data_StoV(TempParam(rdPtr->FuncNameStack->back(), ParamName));
-		return ReturnFloat(TempParam(rdPtr->FuncNameStack->back(), ParamName).Val);
-	}
-	else {
+	auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
+
+	if (ret.bDefault) {
 		return 0;
 	}
+
+	Data_StoV(ret);
+
+	return ReturnFloat(ret.Val);
 }
 
-long WINAPI DLLExport GetCurrentTempParamRS(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentTempParamRS(LPRDATA rdPtr, long param1) {
 	std::wstring ParamName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
+	auto& ret = TempParam(rdPtr, rdPtr->FuncNameStack->back(), ParamName);
+
 	//This returns a pointer to the string for MMF.
-	if (HasTempParam(rdPtr->FuncNameStack->back(), ParamName)) {
-		Data_VtoS(TempParam(rdPtr->FuncNameStack->back(), ParamName));
-		return (long)TempParam(rdPtr->FuncNameStack->back(), ParamName).Str.c_str();
-	}
-	else {
+	if (ret.bDefault) {
 		return (long)Default_Str;
 	}
+
+	Data_VtoS(ret);
+
+	return (long)ret.Str.c_str();	
 }
 
-long WINAPI DLLExport GetRetRV(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetRetRV(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
-		auto& ret = Return(Pos);
-
+	if (HasReturn(rdPtr, Pos)) {
+		auto& ret = GetReturn(rdPtr, Pos);
 		Data_StoV(ret);
+
 		return ReturnFloat(ret.Val);
 	}
 	else {
@@ -758,17 +831,17 @@ long WINAPI DLLExport GetRetRV(LPRDATA rdPtr, long param1) {
 	}
 }
 
-long WINAPI DLLExport GetRetRS(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetRetRS(LPRDATA rdPtr, long param1) {
 	size_t Pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	if (!rdPtr->FuncReturn->empty() && (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)))) {
-		auto& ret = Return(Pos);
-
+	if (HasReturn(rdPtr, Pos)) {
+		auto& ret = GetReturn(rdPtr, Pos);
 		Data_VtoS(ret);
+
 		return (long)ret.Str.c_str();
 	}
 	else {
@@ -776,28 +849,28 @@ long WINAPI DLLExport GetRetRS(LPRDATA rdPtr, long param1) {
 	}
 }
 
-long WINAPI DLLExport GetRecursiveIndex(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetRecursiveIndex(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if (rdPtr->RecursiveIndex->count(FuncName) != 0) {
-		return (*rdPtr->RecursiveIndex)[FuncName];
+	if (rdPtr->RecursiveIndex->contains(FuncName)) {
+		return (long)(*rdPtr->RecursiveIndex)[FuncName];
 	}
 	else {
 		return -1;
 	}
 }
 
-long WINAPI DLLExport GetParamSize(LPRDATA rdPtr, long param1) {	
+long WINAPI DLLExport Expression_GetParamSize(LPRDATA rdPtr, long param1) {	
 	return !rdPtr->FuncParamStack->empty()
-		? rdPtr->FuncParamStack->back().size()
+		? (long)rdPtr->FuncParamStack->back().size()
 		: NotInFuncError<long>();
 }
 
-long WINAPI DLLExport GetRetSize(LPRDATA rdPtr, long param1) {
-	return rdPtr->FuncReturn->size();
+long WINAPI DLLExport Expression_GetRetSize(LPRDATA rdPtr, long param1) {
+	return (long)rdPtr->FuncReturn->size();
 }
 
-long WINAPI DLLExport TernaryRV(LPRDATA rdPtr,long param1) {
+long WINAPI DLLExport Expression_TernaryRV(LPRDATA rdPtr,long param1) {
 	bool Result = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	long p1 = CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_FLOAT);
@@ -809,22 +882,22 @@ long WINAPI DLLExport TernaryRV(LPRDATA rdPtr,long param1) {
 	return ReturnFloat(Result ? ReturnA : ReturnB);
 }
 
-long WINAPI DLLExport TernaryRS(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_TernaryRS(LPRDATA rdPtr, long param1) {
 	bool Result = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	std::wstring ReturnA = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring ReturnB = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	NewStr(OStr, Result ? ReturnA : ReturnB);
+	NewStr(rdPtr->OutPut, Result ? ReturnA : ReturnB);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)OStr;
+	return (long)rdPtr->OutPut;
 }
 
-long WINAPI DLLExport GetCurrentFuncName(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetCurrentFuncName(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
@@ -834,25 +907,27 @@ long WINAPI DLLExport GetCurrentFuncName(LPRDATA rdPtr, long param1) {
 		: NotInFuncError<std::wstring>();
 }
 
-long WINAPI DLLExport GetLoopIndex(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetLoopIndex(LPRDATA rdPtr, long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	if (rdPtr->FuncLoopIndex->count(FuncName) != 0) {
-		return (*rdPtr->FuncCurLoopIndex)[FuncName];
+	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
+
+	if (rdPtr->FuncLoopIndex->contains(name)) {
+		return (long)(*rdPtr->FuncCurLoopIndex)[name];
 	}
 	else {
 		return -1;
 	}
 }
 
-long WINAPI DLLExport EquStr(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_EquStr(LPRDATA rdPtr, long param1) {
 	std::wstring a = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring b = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	return a == b;
 }
 
-long WINAPI DLLExport EquVal(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_EquVal(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 	float a = *(float*)&p1;
 
@@ -862,7 +937,7 @@ long WINAPI DLLExport EquVal(LPRDATA rdPtr, long param1) {
 	return abs(a - b) <= 1e-6;
 }
 
-long WINAPI DLLExport GreaterVal(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GreaterVal(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 	float a = *(float*)&p1;
 
@@ -872,7 +947,7 @@ long WINAPI DLLExport GreaterVal(LPRDATA rdPtr, long param1) {
 	return a > b;
 }
 
-long WINAPI DLLExport GreaterOrEqualVal(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GreaterOrEqualVal(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 	float a = *(float*)&p1;
 
@@ -882,7 +957,7 @@ long WINAPI DLLExport GreaterOrEqualVal(LPRDATA rdPtr, long param1) {
 	return a >= b;
 }
 
-long WINAPI DLLExport LowerVal(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_LowerVal(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 	float a = *(float*)&p1;
 
@@ -892,7 +967,7 @@ long WINAPI DLLExport LowerVal(LPRDATA rdPtr, long param1) {
 	return a < b;
 }
 
-long WINAPI DLLExport LowerOrEqualVal(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_LowerOrEqualVal(LPRDATA rdPtr, long param1) {
 	long p1 = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_FLOAT);
 	float a = *(float*)&p1;
 
@@ -902,19 +977,19 @@ long WINAPI DLLExport LowerOrEqualVal(LPRDATA rdPtr, long param1) {
 	return a <= b;
 }
 
-long WINAPI DLLExport CastToBool(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_CastToBool(LPRDATA rdPtr, long param1) {
 	auto bRet = (bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG)));
 
 	return bRet;
 }
 
-long WINAPI DLLExport Negate(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_Negate(LPRDATA rdPtr, long param1) {
 	auto bRet= !(bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG)));
 
 	return bRet;
 }
 
-long WINAPI DLLExport And(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_And(LPRDATA rdPtr, long param1) {
 	auto a = bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
 	auto b = bool(CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG));
 
@@ -923,7 +998,7 @@ long WINAPI DLLExport And(LPRDATA rdPtr, long param1) {
 	return bRet;
 }
 
-long WINAPI DLLExport Or(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_Or(LPRDATA rdPtr, long param1) {
 	auto a = bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
 	auto b = bool(CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG));
 
@@ -932,7 +1007,7 @@ long WINAPI DLLExport Or(LPRDATA rdPtr, long param1) {
 	return bRet;
 }
 
-long WINAPI DLLExport Xor(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_Xor(LPRDATA rdPtr, long param1) {
 	auto a = bool(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
 	auto b = bool(CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG));
 
@@ -941,7 +1016,7 @@ long WINAPI DLLExport Xor(LPRDATA rdPtr, long param1) {
 	return bRet;
 }
 
-long WINAPI DLLExport GetObjectAlpha(LPRDATA rdPtr, long param1) {
+long WINAPI DLLExport Expression_GetObjectAlpha(LPRDATA rdPtr, long param1) {
 	long fixed = long(CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_LONG));
 
 	return EffectUtilities::GetAlpha(LproFromFixed(rdPtr, fixed));
@@ -957,127 +1032,132 @@ long WINAPI DLLExport GetObjectAlpha(LPRDATA rdPtr, long param1) {
 //
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
-			OnFunc,
+			Condition_OnFunc,
 
-			FuncHasParamAt,
-			FuncHasReturnAt,
+			Condition_FuncHasParamAt,
+			Condition_FuncHasReturnAt,
 			
-			FuncHasTempParam,
-			CurerntFuncHasTempParam,
+			Condition_FuncHasTempParam,
+			Condition_CurerntFuncHasTempParam,
 
-			FuncParamAtIsNum,
-			FuncReturnAtIsNum,
+			Condition_FuncParamAtIsNum,
+			Condition_FuncReturnAtIsNum,
 
-			FuncTempParamIsNum,
-			CurerntFuncTempParamIsNum,
+			Condition_FuncTempParamIsNum,
+			Condition_CurerntFuncTempParamIsNum,
 
-			OnIterateObject,
-			SelectAll,
+			Condition_OnIterateObject,
+			Condition_SelectAll,
 
-			InEditor,
-			InSubApp,
+			Condition_InEditor,
+			Condition_InSubApp,
 
-			OILHasObject,
+			Condition_OILHasObject,
 
-			GlobalHasTempParam,
+			Condition_GlobalHasTempParam,
 
 			0
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{
-			SetReturnValueStr,
-			PushReturnValueStr,
+			Action_SetReturnValueStr,
+			Action_PushReturnValueStr,
 
-			CallFunc,
+			Action_CallFunc,
 
-			Ternary,
+			Action_Ternary,
 
-			SetTempParamStr,
-			SetCurrentTempParamStr,
+			Action_SetTempParamStr,
+			Action_SetCurrentTempParamStr,
 
-			SetAllReturn,
+			Action_SetAllReturn,
 
-			SetLoopIndex,
-			StopLoop,
+			Action_SetLoopIndex,
+			Action_StopLoop,
 
-			PassReturnStr,
-			PassReturnVal,
+			Action_PassReturnStr,
+			Action_PassReturnVal,
 
-			SetTempParamVal,
-			SetCurrentTempParamVal,
+			Action_SetTempParamVal,
+			Action_SetCurrentTempParamVal,
 
-			SetReturnValueVal,
-			PushReturnValueVal,
+			Action_SetReturnValueVal,
+			Action_PushReturnValueVal,
 
-			IterateObject,
+			Action_IterateObject,
 
-			SetGlobalParamStr,
-			SetGlobalParamVal,
+			Action_SetGlobalParamStr,
+			Action_SetGlobalParamVal,
 
-			Assert,
-			MsgBox,
-			Toast,
-			ToastFlags,
+			Action_Assert,
+			Action_MsgBox,
+			Action_Toast,
+			Action_ToastFlags,
 
-			SetObjectAlpha,
-			SetObjectAlphaByFixed,
+			Action_SetObjectAlpha,
+			Action_SetObjectAlphaByFixed,
 
-			SetObjectRGBCoef,
-			SetObjectRGBCoefByFixed,
+			Action_SetObjectRGBCoef,
+			Action_SetObjectRGBCoefByFixed,
+
+			Action_SaveScope,
+			Action_RestoreScope,
+
+			Action_IterateObjectFunc,
 
 			0
 			};
 
 long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) = 
 			{     
-			CallFuncRV,
-			CallFuncRS,
+			Expression_CallFuncRV,
+			Expression_CallFuncRS,
 
-			GetParamRV,
-			GetParamRS,
+			Expression_GetParamRV,
+			Expression_GetParamRS,
 
-			GetRetRV,
-			GetRetRS,
+			Expression_GetRetRV,
+			Expression_GetRetRS,
 
-			GetRecursiveIndex,
+			Expression_GetRecursiveIndex,
 
-			GetParamSize,
-			GetRetSize,
+			Expression_GetParamSize,
+			Expression_GetRetSize,
 
-			TernaryRV,
-			TernaryRS,
+			Expression_TernaryRV,
+			Expression_TernaryRS,
 
-			GetTempParamRV,
-			GetTempParamRS,
+			Expression_GetTempParamRV,
+			Expression_GetTempParamRS,
 
-			GetCurrentFuncName,
+			Expression_GetCurrentFuncName,
 
-			GetCurrentTempParamRV,
-			GetCurrentTempParamRS,
+			Expression_GetCurrentTempParamRV,
+			Expression_GetCurrentTempParamRS,
 
-			GetLoopIndex,
+			Expression_GetLoopIndex,
 
-			GetGlobalParamRV,
-			GetGlobalParamRS,
+			Expression_GetGlobalParamRV,
+			Expression_GetGlobalParamRS,
 
-			EquStr,
-			EquVal,
+			Expression_EquStr,
+			Expression_EquVal,
 
-			CastToBool,
-			Negate,
-			And,
-			Or,
-			Xor,
+			Expression_CastToBool,
+			Expression_Negate,
+			Expression_And,
+			Expression_Or,
+			Expression_Xor,
 
-			GreaterVal,
-			GreaterOrEqualVal,
-			LowerVal,
-			LowerOrEqualVal,
+			Expression_GreaterVal,
+			Expression_GreaterOrEqualVal,
+			Expression_LowerVal,
+			Expression_LowerOrEqualVal,
 
-			GetObjectAlpha,
+			Expression_GetObjectAlpha,
 			
-			GetRawParam,
+			Expression_GetRawParam,
 
 			0
 			};

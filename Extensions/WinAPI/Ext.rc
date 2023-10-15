@@ -50,7 +50,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright 2019~2021 Defisym"
+            VALUE "LegalCopyright", "Copyright 2019~2023 Defisym"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -113,17 +113,32 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
-        MENUITEM "Another Instance is Running",    IDMN_CONDITION_IAIR
+        POPUP "Application"
+        BEGIN 
+            MENUITEM "Application is a Process",    IDMN_CONDITION_INAP
+            MENUITEM "Another Instance is Running",    IDMN_CONDITION_IAIR
+        END    
         MENUITEM SEPARATOR
-        MENUITEM "Mouse is Locked",             IDMN_CONDITION_IML
+        POPUP "Mouse"
+        BEGIN 
+            MENUITEM "Mouse is Locked", IDMN_CONDITION_IML
+            MENUITEM SEPARATOR
+            MENUITEM "On Click Backward", IDMN_CONDITION_OCB
+            MENUITEM "On Click Forward", IDMN_CONDITION_OCF
+        END
         MENUITEM SEPARATOR
+        POPUP "Window"
+        BEGIN 
+            MENUITEM "On Monitor Change",    IDMN_CONDITION_OMC
+            MENUITEM SEPARATOR
+            MENUITEM "On Resizing Complete",    IDMN_CONDITION_ORC
+            MENUITEM "Resizing Mainly Changed Width",    IDMN_CONDITION_RMCX
+            MENUITEM SEPARATOR
+            MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
+            MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
+        END
+        MENUITEM SEPARATOR       
         MENUITEM "Return Key State",            IDMN_CONDITION_RKS
-        MENUITEM SEPARATOR
-        MENUITEM "On Monitor Change",    IDMN_CONDITION_OMC
-        MENUITEM SEPARATOR
-        MENUITEM "Application is Maximized",    IDMN_CONDITION_IFS
-        MENUITEM "Application Has Focus",    IDMN_CONDITION_IWF
         MENUITEM SEPARATOR
         MENUITEM "CommandLine Has Param", IDMN_CONDITION_ICLIHP
         MENUITEM SEPARATOR
@@ -140,6 +155,8 @@ BEGIN
             BEGIN
                 MENUITEM "Active At Top",IDMN_CONDITION_IAAT
                 MENUITEM SEPARATOR
+                MENUITEM "Object has Animation ID",IDMN_CONDITION_IOHA              
+                MENUITEM "Object has Animation ID (Scope)",IDMN_CONDITION_IOHA_S              
                 MENUITEM "Object has Animation in Direction",IDMN_CONDITION_IDHA              
                 MENUITEM "Object has Animation in Direction (Scope)",IDMN_CONDITION_IDHA_S              
                 MENUITEM SEPARATOR
@@ -371,7 +388,12 @@ BEGIN
             MENUITEM SEPARATOR
             POPUP "Object"
             BEGIN
+                MENUITEM "Get Object Display Animation ID",      IDMN_EXPRESSION_GAID             
                 MENUITEM "Get Object Display Animation Direction",      IDMN_EXPRESSION_GAD              
+                MENUITEM SEPARATOR
+                MENUITEM "Get Object Animation Frame Count",      IDMN_EXPRESSION_GADFC        
+                MENUITEM "Get Object Display Animation Frame Count",      IDMN_EXPRESSION_GCFC                  
+                MENUITEM SEPARATOR
                 MENUITEM "Get Scoped Object Number",      IDMN_EXPRESSION_GSON    
             END            
         END
@@ -419,7 +441,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,5,151,50,14
     PUSHBUTTON      "Help",ID_HELP,145,151,50,14
     GROUPBOX        "",-1,5,6,190,135
-    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2021 Defisym",-1,21,31,155,60
+    CTEXT           "WinAPI \n\n\nExtension Dev Practise \n\nCopyright 2019~2023 Defisym",-1,21,31,155,60
 END
 #endif
 
@@ -485,7 +507,7 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2019~2021 Defisym"
+    IDST_COPYRIGHT          "Copyright 2019~2023 Defisym"
     IDST_COMMENT            "Functions that use WinAPI, For Personal Use."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -651,7 +673,12 @@ STRINGTABLE
 BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
     M_EXPRESSION_GAD "DisAniDir ("
+    M_EXPRESSION_GAID "DisAniID ("
+    M_EXPRESSION_GCFC "DisAniFC ("
+    M_EXPRESSION_GADFC "AniFC ("
+    
     M_EXPRESSION_GSON "NSObject ("
+
     PARA_EXPRESSION_FIXED "Object's Fixed Value"
 END
 
@@ -747,6 +774,9 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_IML         "%o Mouse is Locked"    
+    
+    M_CONDITION_OCB         "%o On Click Backward"    
+    M_CONDITION_OCF         "%o On Click Forward"    
 END
 
 STRINGTABLE
@@ -767,6 +797,9 @@ END
 
 STRINGTABLE
 BEGIN
+    M_CONDITION_IOHA    "%o Object %0 has Animation ID %1"
+    PARA_CONDITION_ID    "ID to Test"
+
     M_CONDITION_IDHA    "%o Object %0 has Animation in Direction %1"
     PARA_CONDITION_OBJ    "Object to Test"
     PARA_CONDITION_DIR    "Direction to Test"
@@ -808,6 +841,8 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_OMC    "%o On Monitor Change"
+    M_CONDITION_ORC    "%o On Resizing Complete"
+    M_CONDITION_RMCX   "%o Resizing Mainly Changed Width"
 END
 
 //Porperties

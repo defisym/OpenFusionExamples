@@ -106,10 +106,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pFTW = nullptr;
 
-	rdPtr->pOnItCollisionName = new wstring;
-	rdPtr->pOnItPathName = new wstring;
-	rdPtr->pMapBase64Str = new wstring;
-	rdPtr->pMapStr = new wstring;
+	rdPtr->pOnItCollisionName = new std::wstring;
+	rdPtr->pOnItPathName = new std::wstring;
+	rdPtr->pMapBase64Str = new std::wstring;
+	rdPtr->pMapStr = new std::wstring;
 
 	rdPtr->pSelect = new ObjectSelection(rdPtr->rHo.hoAdRunHeader);
 
@@ -117,17 +117,17 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pAlly = new CoordSet;
 	rdPtr->pEnemy = new CoordSet;
 	rdPtr->pUnit = new CoordSet;
-	rdPtr->pOnItAreaName = new wstring;
+	rdPtr->pOnItAreaName = new std::wstring;
 
 	rdPtr->pObject = nullptr;
 	rdPtr->pOc = new ObjectCreation(rdPtr);
 	rdPtr->pObjZoc= new CoordSet;
-	rdPtr->pOnItZocName = new wstring;
+	rdPtr->pOnItZocName = new std::wstring;
 
 	rdPtr->pObjZoc->reserve(8);
 
 	rdPtr->pAOE = new AOEClass;
-	rdPtr->pAOECoord = new vector<AOEClass::coord>;
+	rdPtr->pAOECoord = new std::vector<AOEClass::coord>;
 
 	// No errors
 	return 0;

@@ -111,8 +111,33 @@ MN_CONDITIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR        
+        POPUP "Steam Deck"
+        BEGIN        
+            MENUITEM "Running On Steam Deck", IDMN_CONDITION_ROSD
+        END
+        MENUITEM SEPARATOR        
+        POPUP "Remote Play"
+        BEGIN        
+            MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Remote Play On Device", IDMN_CONDITION_RPO
+        POPUP "Utilities"
+        BEGIN
+            MENUITEM "On Gamepad Input Dismiss", IDMN_CONDITION_OID				
+            MENUITEM "Gamepad Input Submitted", IDMN_CONDITION_SUBMITTED		
+        END    
+        MENUITEM SEPARATOR        
+        POPUP "Micro Transaction"
+        BEGIN
+            MENUITEM "On MixroTxn Error", IDMN_CONDITION_OMTE
+            MENUITEM "On MixroTxn Finish", IDMN_CONDITION_OMTF
+        END
+        MENUITEM SEPARATOR
+        POPUP "Screenshots"
+        BEGIN
+            MENUITEM "On Screenshots", IDMN_CONDITION_OSS        
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -127,8 +152,43 @@ MN_ACTIONS MENU DISCARDABLE
 BEGIN
     POPUP ""
     BEGIN
+        MENUITEM SEPARATOR        
+        POPUP "User Stats"
+        BEGIN
+            MENUITEM "Unlock Achievement",       IDMN_ACTION_UA
+            MENUITEM "Add to Stat",              IDMN_ACTION_AS
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Action example",              IDMN_ACTION
+        POPUP "Friends"
+        BEGIN
+            POPUP "Rich Presence"
+            BEGIN
+                MENUITEM "Set Rich Presence",       IDMN_ACTION_SRP
+                MENUITEM "Clear Rich Presence",       IDMN_ACTION_CRP
+            END
+        END
+        MENUITEM SEPARATOR
+        POPUP "Utilities"
+        BEGIN
+            MENUITEM "Show Gamepad Text Input", IDMN_ACTION_SGTI		
+        END    
+        MENUITEM SEPARATOR
+        POPUP "Micro Transaction"
+        BEGIN
+            MENUITEM "Micro Transaction: Set Info",       IDMN_ACTION_MT_SI	
+            MENUITEM "Micro Transaction: Get User Info",     IDMN_ACTION_MT_GUI	
+            MENUITEM "Micro Transaction: Send Request",     IDMN_ACTION_MT_SR	
+            MENUITEM "Micro Transaction: Finalize",     IDMN_ACTION_MT_F 	
+        END
+        MENUITEM SEPARATOR
+        POPUP "Screenshots"
+        BEGIN
+            MENUITEM "Trigger Screenshot", IDMN_ACTION_TSS
+            MENUITEM SEPARATOR
+            MENUITEM "Set Location", IDMN_ACTION_SSSL        
+            MENUITEM "Tag Published File", IDMN_ACTION_TSSU        
+            MENUITEM "Tag User", IDMN_ACTION_TSSPF
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -144,7 +204,25 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
-        MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
+        POPUP "Apps"
+        BEGIN
+            MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
+            MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
+        END        
+        MENUITEM SEPARATOR
+        POPUP "Utilities"
+        BEGIN
+            MENUITEM "Get Current Battery Power", IDMN_EXPRESSION_GCBP	
+            MENUITEM "Get Gamepad Input Text", IDMN_EXPRESSION_GGIT
+        END     
+        MENUITEM SEPARATOR
+        POPUP "Micro Transaction"
+        BEGIN
+            MENUITEM "Micro Transaction: Get Step", IDMN_EXPRESSION_MT_GS		
+            MENUITEM "Micro Transaction: Get HTML Error Code", IDMN_EXPRESSION_MT_GHTMLEC	
+            MENUITEM "Micro Transaction: Get Error Desc", IDMN_EXPRESSION_MT_GED		
+            MENUITEM "Micro Transaction: Get Trans ID", IDMN_EXPRESSION_MT_GTID		
+        END    
         MENUITEM SEPARATOR
     END
 END
@@ -228,7 +306,49 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    M_ACTION                "00Action example"
+    M_ACTION_UA              "Unlock Achievement %0"
+    M_ACTION_AS              "Add %1 to Stat %0"
+
+    M_ACH_NAME	             "Achievement Name"
+    M_STAT_NAME	             "Stat Name"
+    M_STAT_DATA	             "Stat Data"
+
+    M_ACTION_SRP	         "Set Rich Presence Key %0 to %1"
+    M_ACTION_CRP	         "Clear Rich Presence"
+
+    M_STAT_RPK	             "Key"
+    M_STAT_RPV	             "Value"
+
+    M_ACTION_MT_SI	         "Micro Transaction: Set Info to %0, %1, %2, %3"
+    M_ACTION_MT_GUI	         "Micro Transaction: Get User Info"
+    M_ACTION_MT_SR	         "Micro Transaction: Send Request %0, %1, %2, %3, %4, %5"
+    M_ACTION_MT_F 	         "Micro Transaction: Finalize"
+
+    M_MT_KEY		         "Web API Key"	
+    M_MT_ORDERID	         "Order ID"	
+    M_MT_USERID		         "64bit UserID, Empty = Current User"	
+    M_MT_ITEMCOUNT	         "Item Count"	
+    M_MT_ITEMID		         "Item ID"	
+    M_MT_ITEMNUM	         "Item Num"	
+    M_MT_AMOUNT		         "Price (in cent)"	
+    M_MT_DESC		         "Description"	
+    M_MT_OTHERS		         "Other Params"	
+
+    M_ACTION_TSS	         "Trigger Screenshot"
+    M_ACTION_SSSL	         "Screenshots: Set Location to %0"
+    M_ACTION_TSSU	         "Screenshots: Tag Published File %0"
+    M_ACTION_TSSPF	         "Screenshots: Tag User %0"
+
+    M_LOACTION     	         "Screenshot Location"
+    M_PFID      	         "Published File ID"
+
+    M_ACTION_SGTI      	     "Show Gamepad Text Input, InputMode = %0, LineMode = %1, Description = %2, CharMax = %3, ExistingText = %4"
+
+    M_INPUTMODE		           "1 = Password, 0 = Normal"
+    M_LINEMODE		           "1 = Multiple Line, 0 = Single Line"
+    M_DESCRIPTION	           "Description"
+    M_MAXCHAR		           "Max length"
+    M_EXISTINGTEXT	           "Existing Text"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -236,11 +356,49 @@ BEGIN
     M_CONDITION_RPO          "%o: Remote Play On Device %0"
     
     M_CND_RPO                "Device Type"
+
+    M_CONDITION_OMTE         "%o: On MixroTxn %0 at Step %1 Error"
+    M_CONDITION_OMTF         "%o: On MixroTxn %0 at Step %1 Finish"
+
+    M_MT_NAME                "Name"
+    M_MT_STEP                "Step"
+
+    M_CONDITION_ROSD          "%o: Running On Steam Deck"
+    M_CONDITION_OSS           "%o: On Screenshots"
+
+    M_CONDITION_OID		      "%o: On Gamepad Input Dismiss"
+    M_CONDITION_SUBMITTED     "%o: Gamepad Input Submitted"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_EXPRESSION_GCGL            "GetCurrentGameLanguage$ ("
+    M_EXPRESSION_GSCL            "GetSteamCommandLine$ ("
+
+    M_EXPRESSION_MT_GS		     "MTGS ("
+    M_EXPRESSION_MT_GHTMLEC	     "MTGHEC ("
+    M_EXPRESSION_MT_GED		     "MTGED$("
+    M_EXPRESSION_MT_GTID	     "MTGTID$("
+
+    M_EXPRESSION_GCBP	     	 "GCBP("
+
+    M_EXPRESSION_GGIT	     	 "GGIT$ ("
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROP_TEXTTITLE_STEAM         "Steam"
+    IDS_PROP_CHECK_REPORTERROR       "Report Error"
+    IDS_PROP_CHECK_REPORTERROR_INFO  "Report Error When Crash"
+
+    IDS_PROP_COMBO_NOTIFICATIONPOSITION             "Overlay Position"
+    IDS_PROP_COMBO_NOTIFICATIONPOSITION_INFO        "Sets which corner the Steam overlay notification popup should display itself in"
+    IDS_COMBO_NOTIFICATIONPOSITION_DEFAULT          "Default"
+    IDS_COMBO_NOTIFICATIONPOSITION_LT               "Top Left"
+    IDS_COMBO_NOTIFICATIONPOSITION_RT               "Top Right"
+    IDS_COMBO_NOTIFICATIONPOSITION_LB               "Bottom Left"
+    IDS_COMBO_NOTIFICATIONPOSITION_RB               "Bottom Right"
+
 END
 
 #endif    // English (U.S.) resources

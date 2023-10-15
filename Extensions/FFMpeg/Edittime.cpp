@@ -410,6 +410,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bForceNoAudio = false;
 
+		SDL_UpdateAppProp(mV, edPtr);
+
 //		// Call setup (remove this and return 0 if your object does not need a setup)
 //		setupParams	spa;
 //		spa.edpt = edPtr;
