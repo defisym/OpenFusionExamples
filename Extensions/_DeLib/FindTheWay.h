@@ -1142,19 +1142,20 @@ namespace FindTheWay {
 							cur.parentID = baseIdx;
 						}
 					};
+					auto updatePoint = [&] (Point& cur) {
+						cur.cost = neighPoint.cost;
+						cur.priority = static_cast<int>(heuristic(neighPoint) + neighPoint.cost);
+						updateParentPointer(cur);
+					};
 
 					Point* next = find(open_set, neighPoint);
 
 					if (next == nullptr) {
-						neighPoint.priority = heuristic(neighPoint) + neighPoint.cost;
-						updateParentPointer(neighPoint);
-
+						updatePoint(neighPoint);
 						open_set.emplace_back(neighPoint);
 					}
 					else if (next->cost > neighPoint.cost) {
-						next->cost = neighPoint.cost;
-						next->priority = heuristic(neighPoint) + neighPoint.cost;
-						updateParentPointer(*next);
+						updatePoint(*next);
 					}
 				}
 			}
