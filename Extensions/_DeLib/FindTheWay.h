@@ -1003,7 +1003,7 @@ namespace FindTheWay {
 		inline void Find(const Coord start, const Coord destination, const bool diagonal = false, const bool checkDiagonalCorner = true
 			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
 			, size_t ignoreFlag = DEFAULT_IGNOREFLAG
-			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
+			, const Heuristic& heuristic = GetManhattanDistance) {
 			// A*寻路
 			// https://www.redblobgames.com/pathfinding/a-star/introduction.html
 			// *初始化open_set和close_set；
@@ -1162,10 +1162,10 @@ namespace FindTheWay {
 						continue;
 					}
 
-					auto heuristic = [&] (Point& p)->size_t {
-						return h(neighPoint.coord, destination);
-					};
-					auto updateParentPointer = [&] (Point& cur)->void {
+					auto updatePoint = [&] (Point& cur) {
+						cur.cost = neighPoint.cost;
+						cur.priority = static_cast<int>(heuristic(neighPoint.coord, destination) + neighPoint.cost);
+
 						const auto baseIdx = findIdx(point_set, base);
 
 						// put base point into point_set
@@ -1176,11 +1176,6 @@ namespace FindTheWay {
 						else {
 							cur.parentID = baseIdx;
 						}
-					};
-					auto updatePoint = [&] (Point& cur) {
-						cur.cost = neighPoint.cost;
-						cur.priority = static_cast<int>(heuristic(neighPoint) + neighPoint.cost);
-						updateParentPointer(cur);
 					};
 
 					Point* next = find(open_set, neighPoint);
