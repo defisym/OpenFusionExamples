@@ -279,6 +279,7 @@ namespace FindTheWay {
 		using IgnoreFlagHash = size_t;
 
 		using StashPathKey = std::tuple<CoordHash, CoordHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash>;
+		StashPathKey stashPathKey;
 
 		//struct StashPathKeyCompare {
 		//	bool operator()(StashPathKey lKey, StashPathKey rKey)  const noexcept {
@@ -289,26 +290,40 @@ namespace FindTheWay {
 		//	};
 		//};
 
-		StashPathKey stashPathKey;
-
 		using StashPath = std::map<StashPathKey, Path>;
-
 		StashPath stashPath;
+
+		struct Point;
+		using Set = std::vector<Point>;
 
 		struct Point {
 			Coord coord;
 
-			Point* parent = nullptr;
+			size_t parentID = -1;
 
-			int priority;
-			size_t cost;
+			int priority = 0;
+			size_t cost = 0;
 
 			inline operator Coord() const {
 				return coord;
 			}
-		};
 
-		using Set = std::vector<Point>;
+			inline Point(Coord coord) {
+				this->coord = coord;
+			}
+
+			inline Point(Coord coord, size_t cost) {
+				this->coord = coord;
+				this->cost = cost;
+			}
+
+			inline Point* GetParent(Set& s) const {
+				if (parentID == static_cast<size_t>(-1)) { return nullptr; }
+
+				// doesn't check it here, as it should be valid
+				return &s[parentID];
+			}
+		};
 
 		Set open_set;
 		Set close_set;
@@ -452,9 +467,8 @@ namespace FindTheWay {
 			if (pMapPos == nullptr) {
 				return MAP_OBSTACLE;
 			}
-			else {
-				return *pMapPos;
-			}
+
+			return *pMapPos;
 		}
 
 		inline Path* GetPathPointer(const std::wstring* name = nullptr) {
@@ -471,7 +485,7 @@ namespace FindTheWay {
 
 			open_set.reserve(2 * PATH_RESERVE);
 			close_set.reserve(2 * PATH_RESERVE);
-			point_set.reserve(8 * this->mapSize);
+			point_set.reserve(2 * PATH_RESERVE);
 			unit_set.reserve(UNIT_RESERVE);
 
 			area.reserve(AREA_RESERVE);
@@ -974,7 +988,7 @@ namespace FindTheWay {
 			close_set.clear();
 			point_set.clear();
 
-			open_set.emplace_back(Point { start,nullptr,0,0 });
+			open_set.emplace_back(Point(start));
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			const auto neighbourSize = pNeighbour->size();
@@ -986,7 +1000,8 @@ namespace FindTheWay {
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;     // Attack enemy	
 
 			auto findSet = [] (const CoordSet& v, const Coord& p) {
-				return std::ranges::find_if(v, [&p] (auto& it)->bool { return it == p; }) != v.end();
+				return std::ranges::find_if(v,
+					[&p] (auto& it)->bool { return it == p; }) != v.end();
 			};
 
 			auto addSet = [&] (CoordSet* src) {
@@ -1024,115 +1039,129 @@ namespace FindTheWay {
 
 			while (!open_set.empty()) {
 				// Descending
-				std::ranges::sort(open_set, [] (const Point& A, const Point& B) ->bool { return A.priority > B.priority; });
+				std::ranges::sort(open_set,
+					[] (const Point& A, const Point& B) ->bool {
+						return A.priority > B.priority;
+					});
 
 				if (open_set.back().coord == destination) {
 					Point* parent = &open_set.back();
 
 					while (parent != nullptr) {
-						path.emplace_back((*parent).coord);
-						parent = (*parent).parent;
+						path.emplace_back(parent->coord);
+						parent = parent->GetParent(point_set);
 					}
 
 					std::ranges::reverse(path);
 					pathAvailable = true;
 
 					if (stash) {
-						stashPath [stashPathKey] = path;
+						stashPath[stashPathKey] = path;
 					}
 
 					return;
 				}
-				else {
-					Point base = open_set.back();
-					open_set.pop_back();
 
-					close_set.emplace_back(base);
+				Point base = open_set.back();
+				open_set.pop_back();
 
-					auto find = [] (Set& v, Point& p)->Point* {
-						const auto it = std::ranges::find_if(v,
-							[&p] (const Point& it)->bool { return it.coord == p.coord; });
+				close_set.emplace_back(base);
 
-						return it != v.end() ? &(*it) : nullptr;
+				auto findIdx = [] (Set& v, Point& p) {
+					for (size_t idx = 0; idx < v.size(); idx++) {
+						if (v[idx].coord == p.coord) {
+							return idx;
+						}
+					}
+
+					return static_cast<size_t>(-1);
+				};
+				auto find = [] (Set& v, Point& p)->Point* {
+					const auto it = std::ranges::find_if(v,
+														 [&p] (const Point& it)->bool {
+															 return it.coord == p.coord;
+														 });
+
+					return it != v.end() ? &(*it) : nullptr;
+				};
+				auto rfind = [] (Set& v, Point& p)->Point* {
+					const auto it = std::find_if(v.rbegin(), v.rend(),
+												 [&p] (const Point& it)->bool {
+													 return it.coord == p.coord;
+												 });
+
+					return it != v.rend() ? &(*it) : nullptr;
+				};
+
+				for (size_t i = 0; i < neighbourSize; i++) {
+					auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
+						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+
+					const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
+					auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
+
+					if (curCost == MAP_OBSTACLE) {
+						continue;
+					}
+
+					if (findSet(unit_set, neighCoord)) {
+						continue;
+					}
+
+					if (diagonal && checkDiagonalCorner		// check corner
+						&& (i % 2 == 1)) {					// when checking diagonal points
+						const size_t prev = i - 1;
+						const size_t next = (i + 1) % neighbourSize;
+
+						if ((GetMap(base.coord.x + (*pNeighbour)[prev].x
+									, base.coord.y + (*pNeighbour)[prev].y
+									, this->map) == MAP_OBSTACLE)
+							&& (GetMap(base.coord.x + (*pNeighbour)[next].x
+									   , base.coord.y + (*pNeighbour)[next].y
+									   , this->map) == MAP_OBSTACLE)) {
+							continue;
+						}
+					}
+
+					if (find(close_set, neighPoint) != nullptr) {
+						continue;
+					}
+
+					auto heuristic = [&] (Point& p)->size_t {
+						return h(neighPoint.coord, destination);
 					};
-					auto rfind = [] (Set& v, Point& p)->Point* {
-						const auto it = std::find_if(v.rbegin(), v.rend(),
-							[&p] (const Point& it)->bool { return it.coord == p.coord; });
+					auto updateParentPointer = [&] (Point& cur)->void {
+						const auto curIdx = findIdx(point_set, cur);
 
-						return it != v.rend() ? &(*it) : nullptr;
-					};
+						if (curIdx == static_cast<size_t>(-1)) {
+							const auto baseIdx = findIdx(point_set, base);
 
-					for (size_t i = 0; i < neighbourSize; i++) {
-						auto neighCoord = Coord { (size_t)(base.coord.x + (*pNeighbour) [i].x)
-						,(size_t)(base.coord.y + (*pNeighbour) [i].y) };
-
-						const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
-						auto neighPoint = Point { neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour) [i].generalCost };
-
-						if (curCost == MAP_OBSTACLE) {
-							continue;
-						}
-
-						if (findSet(unit_set, neighCoord)) {
-							continue;
-						}
-
-						if (diagonal && checkDiagonalCorner		// check corner
-							&& (i % 2 == 1)) {					// when checking diagonal points
-							const size_t prev = i - 1;
-							const size_t next = (i + 1) % neighbourSize;
-
-							if ((GetMap(base.coord.x + (*pNeighbour) [prev].x
-								, base.coord.y + (*pNeighbour) [prev].y
-								, this->map) == MAP_OBSTACLE)
-								&& (GetMap(base.coord.x + (*pNeighbour) [next].x
-									, base.coord.y + (*pNeighbour) [next].y
-									, this->map) == MAP_OBSTACLE)) {
-								continue;
-							}
-						}
-
-						if (find(close_set, neighPoint) != nullptr) {
-							continue;
-						}
-
-						auto heuristic = [&] (Point& p)->size_t { return h(neighPoint.coord, destination); };
-						auto updateParentPointer = [&] (Point& cur)->void {
-							Point* p = find(point_set, cur);
-
-							if (p == nullptr) {
-								//point_set.emplace_back(base);
-								//cur.parent = &point_set.back();
-
-								Point* pBase = find(point_set, base);
-
-								if (pBase == nullptr) {
-									point_set.emplace_back(base);
-									cur.parent = &point_set.back();
-								}
-								else {
-									cur.parent = pBase;
-								}
+							if (baseIdx == static_cast<size_t>(-1)) {
+								point_set.emplace_back(base);
+								cur.parentID = point_set.size() - 1;									
 							}
 							else {
-								cur.parent = p;
+								cur.parentID = baseIdx;
 							}
-						};
-
-						Point* next = find(open_set, neighPoint);
-
-						if (next == nullptr) {
-							neighPoint.priority = heuristic(neighPoint) + neighPoint.cost;
-							updateParentPointer(neighPoint);
-
-							open_set.emplace_back(neighPoint);
 						}
-						else if (next->cost > neighPoint.cost) {
-							next->cost = neighPoint.cost;
-							next->priority = heuristic(neighPoint) + neighPoint.cost;
-
-							updateParentPointer(*next);
+						else {
+							cur.parentID = curIdx;
 						}
+					};
+
+					Point* next = find(open_set, neighPoint);
+
+					if (next == nullptr) {
+						neighPoint.priority = heuristic(neighPoint) + neighPoint.cost;
+						updateParentPointer(neighPoint);
+
+						open_set.emplace_back(neighPoint);
+					}
+					else if (next->cost > neighPoint.cost) {
+						next->cost = neighPoint.cost;
+						next->priority = heuristic(neighPoint) + neighPoint.cost;
+
+						updateParentPointer(*next);
 					}
 				}
 			}
@@ -1424,7 +1453,7 @@ namespace FindTheWay {
 			close_set.clear();
 			point_set.clear();
 
-			open_set.emplace_back(Point { start,nullptr,0,0 });
+			open_set.emplace_back(Point(start));
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			const auto neighbourSize = pNeighbour->size();
@@ -1475,7 +1504,7 @@ namespace FindTheWay {
 						if (std::find_if(cur_set.begin(), cur_set.end(), [&] (const Point& it_c) {
 							return it_c.coord == it;
 							}) == cur_set.end()) {
-							cur_set.emplace_back(Point { it,nullptr,0,0 });
+							cur_set.emplace_back(Point(it));
 						}
 					}
 
@@ -1592,7 +1621,7 @@ namespace FindTheWay {
 						,(size_t)(base.coord.y + (*pNeighbour) [i].y) };
 
 						const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
-						auto neighPoint = Point { neighCoord, nullptr, 0, base.cost + curCost + (*pNeighbour) [i].generalCost };
+						auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
 
 						if (curCost == MAP_OBSTACLE) {
 							continue;
