@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// ReSharper disable CppClangTidyClangDiagnosticShadow
+
+#pragma once
 
 // 進んだ道の先　光が見つかるから
 // YOU'LL FIND THE WAY
@@ -138,7 +140,7 @@ namespace FindTheWay {
 	// Base64 encode failed
 	constexpr unsigned char BASE64_FAILED = 2;
 
-	inline std::ostream& operator<<(std::ostream& out, Exception type) {
+	inline std::ostream& operator<<(std::ostream& out, const Exception type) {
 		switch (type) {
 		case INVALID_SIZE:
 			out << "INVALID_SIZE";
@@ -149,12 +151,14 @@ namespace FindTheWay {
 		case BASE64_FAILED:
 			out << "BASE64_FAILED";
 			break;
+		default:
+			out << "UNKNOWN_ERROR";
 		}
 
 		return out;
 	}
 
-	inline std::wostream& operator<<(std::wostream& out, Exception type) {
+	inline std::wostream& operator<<(std::wostream& out, const Exception type) {
 		switch (type) {
 		case INVALID_SIZE:
 			out << L"INVALID_SIZE";
@@ -165,6 +169,8 @@ namespace FindTheWay {
 		case BASE64_FAILED:
 			out << L"BASE64_FAILED";
 			break;
+		default:
+			out << "UNKNOWN_ERROR";
 		}
 
 		return out;
@@ -395,17 +401,13 @@ namespace FindTheWay {
 			switch (type) {
 			case FindTheWay::MapType::MAP:
 				return map;
-				break;
 			case FindTheWay::MapType::TERRAIN:
 				return terrain;
-				break;
 			case FindTheWay::MapType::DYNAMIC:
 				return dynamic;
-				break;
-			default:
-				return nullptr;
-				break;
 			}
+
+			return nullptr;
 		}
 
 		//inline BYTE* _GetMapPointer(MapType type) {
@@ -439,7 +441,7 @@ namespace FindTheWay {
 				return;
 			}
 
-			*pMapPos = Range(cost);
+			*pMapPos = (BYTE)Range(cost);
 
 			updateMap = needUpdate;
 		}
@@ -744,7 +746,7 @@ namespace FindTheWay {
 
 		inline void UpdateMap() {
 			for (size_t i = 0; i < mapSize; i++) {
-				*(map + i) = Range(*(terrain + i) + *(dynamic + i));
+				*(map + i) = static_cast<BYTE>(Range(*(terrain + i) + *(dynamic + i)));
 			}
 
 			// Path/Area invalidation when map changes, clear
@@ -984,7 +986,7 @@ namespace FindTheWay {
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;     // Attack enemy	
 
 			auto findSet = [] (const CoordSet& v, const Coord& p) {
-				return std::find_if(v.begin(), v.end(), [&p] (auto& it)->bool { return it == p; }) != v.end();
+				return std::ranges::find_if(v, [&p] (auto& it)->bool { return it == p; }) != v.end();
 			};
 
 			auto addSet = [&] (CoordSet* src) {
@@ -1048,11 +1050,15 @@ namespace FindTheWay {
 					close_set.emplace_back(base);
 
 					auto find = [] (Set& v, Point& p)->Point* {
-						const auto it = std::find_if(v.begin(), v.end(), [&p] (const Point& it)->bool { return it.coord == p.coord; });
+						const auto it = std::ranges::find_if(v,
+							[&p] (const Point& it)->bool { return it.coord == p.coord; });
+
 						return it != v.end() ? &(*it) : nullptr;
 					};
 					auto rfind = [] (Set& v, Point& p)->Point* {
-						const auto it = std::find_if(v.rbegin(), v.rend(), [&p] (const Point& it)->bool { return it.coord == p.coord; });
+						const auto it = std::find_if(v.rbegin(), v.rend(),
+							[&p] (const Point& it)->bool { return it.coord == p.coord; });
+
 						return it != v.rend() ? &(*it) : nullptr;
 					};
 
@@ -1591,7 +1597,7 @@ namespace FindTheWay {
 						if (curCost == MAP_OBSTACLE) {
 							continue;
 						}
-						else if (!ignorePoint(neighPoint)) {
+						if (!ignorePoint(neighPoint)) {
 							continue;
 						}
 
