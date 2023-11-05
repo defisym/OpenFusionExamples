@@ -330,6 +330,21 @@ namespace FindTheWay {
 		Set point_set;
 		CoordSet unit_set;
 
+		inline auto findSet(const CoordSet& v, const Coord& p) {
+			return std::ranges::find_if(v,
+				[&p] (auto& it)->bool {
+					return it == p;
+				}) != v.end();
+		}
+
+		inline auto findSet(const CoordSet& v, Point& p) {
+			const auto it = std::ranges::find_if(v,
+				[&p] (const Coord& it)->bool {
+					return it == p.coord;
+				});
+			return it != v.end() ? &(*it) : nullptr;
+		}
+
 		Base64<std::wstring> base64;
 
 		Area area;
@@ -999,11 +1014,6 @@ namespace FindTheWay {
 			bool attackIgnoreAlly = ignoreFlag & 0b00010;      // Attack ally (e.g., heal)	
 			bool attackIgnoreEnemy = ignoreFlag & 0b00001;     // Attack enemy	
 
-			auto findSet = [] (const CoordSet& v, const Coord& p) {
-				return std::ranges::find_if(v,
-					[&p] (auto& it)->bool { return it == p; }) != v.end();
-			};
-
 			auto addSet = [&] (CoordSet* src) {
 				if (src == nullptr) {
 					return;
@@ -1290,10 +1300,6 @@ namespace FindTheWay {
 													const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
 
 			auto ignoreCoord = [&] (const Coord& p) {
-				auto findSet = [] (const CoordSet& v, const Coord& p) {
-					return std::ranges::find_if(v, [&p] (auto& it)->bool { return it == p; }) != v.end();
-				};
-
 				if (GetMap(p.x, p.y, this->map) == MAP_OBSTACLE) {
 					return false;
 				}
@@ -1534,11 +1540,6 @@ namespace FindTheWay {
 
 					auto find = [] (Set& v, Point& p)->Point* {
 						const auto it = std::ranges::find_if(v, [&p] (const Point& it)->bool { return it.coord == p.coord; });
-						return it != v.end() ? &(*it) : nullptr;
-					};
-
-					auto findSet = [] (CoordSet& v, Point& p) {
-						const auto it = std::ranges::find_if(v, [&p] (const Coord& it)->bool { return it == p.coord; });
 						return it != v.end() ? &(*it) : nullptr;
 					};
 
