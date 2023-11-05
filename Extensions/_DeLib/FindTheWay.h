@@ -330,14 +330,48 @@ namespace FindTheWay {
 		Set point_set;
 		CoordSet unit_set;
 
-		inline auto findSet(const CoordSet& v, const Coord& p) {
+		static inline auto find(const Path& path, const Coord& coord) -> bool {
+			return std::ranges::find(path, coord) != path.end();
+		}
+
+		static inline auto find(Set& v, Point& p) -> Point* {
+			const auto it = std::ranges::find_if(v,
+				[&p] (const Point& it)->bool {
+					return it.coord == p.coord;
+			});
+
+			return it != v.end()
+			? &(*it)
+			: nullptr;
+		}
+
+		static inline auto rfind(Set& v, Point& p) -> Point* {
+			const auto it = std::find_if(v.rbegin(), v.rend(),
+				[&p] (const Point& it)->bool {
+					return it.coord == p.coord;
+			});
+
+			return it != v.rend() ? &(*it) : nullptr;
+		}
+
+		static inline auto findIdx(const Set& v, const Point& p) {
+			for (size_t idx = 0; idx < v.size(); idx++) {
+				if (v[idx].coord == p.coord) {
+					return idx;
+				}
+			}
+
+			return static_cast<size_t>(-1);
+		}
+
+		static inline auto findSet(const CoordSet& v, const Coord& p) {
 			return std::ranges::find_if(v,
 				[&p] (auto& it)->bool {
 					return it == p;
 				}) != v.end();
 		}
 
-		inline auto findSet(const CoordSet& v, Point& p) {
+		static inline auto findSet(const CoordSet& v, Point& p) {
 			const auto it = std::ranges::find_if(v,
 				[&p] (const Coord& it)->bool {
 					return it == p.coord;
@@ -471,7 +505,7 @@ namespace FindTheWay {
 				return;
 			}
 
-			*pMapPos = (BYTE)Range(cost);
+			*pMapPos = static_cast<BYTE>(Range(cost));
 
 			updateMap = needUpdate;
 		}
@@ -722,7 +756,7 @@ namespace FindTheWay {
 					return result;
 				}
 				else {
-					return std::wstring();
+					return std::wstring{};
 				}
 			};
 
@@ -763,9 +797,9 @@ namespace FindTheWay {
 		inline std::wstring GetMap() {
 			std::wstring base64;
 
-			base64 += _itos(width).c_str();
+			base64 += _itos(width);
 			base64 += DELIMITER;
-			base64 += _itos(height).c_str();
+			base64 += _itos(height);
 
 			base64 += this->base64.base64_encode(terrain, mapSize);
 			base64 += this->base64.base64_encode(dynamic, mapSize);
@@ -827,10 +861,6 @@ namespace FindTheWay {
 		}
 
 		inline void OutPutMap(const MapType type = MapType::MAP) {
-			auto find = [] (Path& path, const Coord& coord)->bool {
-				return std::find(path.begin(), path.end(), coord) != path.end();
-			};
-
 			if (updateMap) {
 				UpdateMap();
 			}
@@ -852,11 +882,9 @@ namespace FindTheWay {
 			}
 		}
 
-		inline std::wstring OutPutMapStr(const MapType type = MapType::MAP, const bool showPath = true, const std::wstring* name = nullptr) {
-			auto find = [] (const Path& path, const Coord& coord)->bool {
-				return std::ranges::find(path, coord) != path.end();
-			};
-
+		inline std::wstring OutPutMapStr(const MapType type = MapType::MAP,
+			const bool showPath = true,
+			const std::wstring* name = nullptr) {
 			if (updateMap) {
 				UpdateMap();
 			}
@@ -909,15 +937,17 @@ namespace FindTheWay {
 		}
 
 		static inline size_t GetEuclideanDistancePow(const Coord start, const Coord destination) {
-			return (size_t)(pow(start.x - destination.x, 2) + pow(start.y - destination.y, 2));
+			return static_cast<size_t>(pow(start.x - destination.x, 2) 
+				+ pow(start.y - destination.y, 2));
 		}
 
 		static inline size_t GetEuclideanDistance(const Coord start, const Coord destination) {
-			return (size_t)sqrt(GetEuclideanDistancePow(start, destination));
+			return static_cast<size_t>(sqrt(GetEuclideanDistancePow(start, destination)));
 		}
 
 		static inline size_t GetManhattanDistance(const Coord start, const Coord destination) {
-			return abs((int)(start.x - destination.x)) + abs((int)(start.y - destination.y));
+			return abs(static_cast<int>(start.x - destination.x))
+			+ abs(static_cast<int>(start.y - destination.y));
 		}
 
 		inline bool PointObstacle(const Coord p) {
@@ -1003,7 +1033,7 @@ namespace FindTheWay {
 			close_set.clear();
 			point_set.clear();
 
-			open_set.emplace_back(Point(start));
+			open_set.emplace_back(start);
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			const auto neighbourSize = pNeighbour->size();
@@ -1077,32 +1107,6 @@ namespace FindTheWay {
 
 				close_set.emplace_back(base);
 
-				auto findIdx = [] (Set& v, Point& p) {
-					for (size_t idx = 0; idx < v.size(); idx++) {
-						if (v[idx].coord == p.coord) {
-							return idx;
-						}
-					}
-
-					return static_cast<size_t>(-1);
-				};
-				auto find = [] (Set& v, Point& p)->Point* {
-					const auto it = std::ranges::find_if(v,
-														 [&p] (const Point& it)->bool {
-															 return it.coord == p.coord;
-														 });
-
-					return it != v.end() ? &(*it) : nullptr;
-				};
-				auto rfind = [] (Set& v, Point& p)->Point* {
-					const auto it = std::find_if(v.rbegin(), v.rend(),
-												 [&p] (const Point& it)->bool {
-													 return it.coord == p.coord;
-												 });
-
-					return it != v.rend() ? &(*it) : nullptr;
-				};
-
 				for (size_t i = 0; i < neighbourSize; i++) {
 					auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
 						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
@@ -1171,7 +1175,7 @@ namespace FindTheWay {
 			}
 		}
 
-		inline void GenerateSet(Coord start, CoordSet* set, const bool add = false, bool diagonal = true) {
+		static inline void GenerateSet(Coord start, CoordSet* set, const bool add = false, bool diagonal = true) {
 			if (!add) {
 				set->clear();
 			}
@@ -1288,16 +1292,16 @@ namespace FindTheWay {
 			, const CoordSet* ally = nullptr, const CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
 			, const size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
 			, const bool attack = false) {                 // Attack = use ignore flag, only consider map collision
-													// Repel = consider both map collision & unit
+														   // Repel = consider both map collision & unit
 			if (updateMap && !attack) {
 				UpdateMap();
 			}
 
-			bool moveIgnoreZoc = ignoreFlag & 0b10000;                                                   // Move through zoc
-			bool moveIgnoreAlly = ignoreFlag & 0b01000;                                                  // Move through ally
-			bool moveIgnoreEnemy = ignoreFlag & 0b00100;                                                 // Move through enemy	
-													const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-													const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
+			bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
+			bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
+			bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
+			const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
+			const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
 
 			auto ignoreCoord = [&] (const Coord& p) {
 				if (GetMap(p.x, p.y, this->map) == MAP_OBSTACLE) {
@@ -1453,7 +1457,7 @@ namespace FindTheWay {
 			close_set.clear();
 			point_set.clear();
 
-			open_set.emplace_back(Point(start));
+			open_set.emplace_back(start);
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			const auto neighbourSize = pNeighbour->size();
@@ -1501,10 +1505,11 @@ namespace FindTheWay {
 
 					// add current area edge
 					for (auto& it : area.back()) {
-						if (std::find_if(cur_set.begin(), cur_set.end(), [&] (const Point& it_c) {
+						if (std::ranges::find_if(cur_set, 
+							[&] (const Point& it_c) {
 							return it_c.coord == it;
 							}) == cur_set.end()) {
-							cur_set.emplace_back(Point(it));
+							cur_set.emplace_back(it);
 						}
 					}
 
@@ -1537,11 +1542,6 @@ namespace FindTheWay {
 					if (addArea && !startExtraRange) {
 						area.back().emplace_back(base.coord);
 					}
-
-					auto find = [] (Set& v, Point& p)->Point* {
-						const auto it = std::ranges::find_if(v, [&p] (const Point& it)->bool { return it.coord == p.coord; });
-						return it != v.end() ? &(*it) : nullptr;
-					};
 
 					auto add = [&] (Set& v, Point& p) {
 						if (find(v, p) == nullptr) {
@@ -1689,11 +1689,11 @@ namespace FindTheWay {
 			, const bool moveIgnoreEnemy
 			, const bool attackIgnoreAlly
 			, const bool attackIgnoreEnemy) {
-			return (size_t)moveIgnoreZoc << 4
-				| (size_t)moveIgnoreAlly << 3
-				| (size_t)moveIgnoreEnemy << 2
-				| (size_t)attackIgnoreAlly << 1
-				| (size_t)attackIgnoreEnemy;
+			return static_cast<size_t>(moveIgnoreZoc) << 4
+				| static_cast<size_t>(moveIgnoreAlly) << 3
+				| static_cast<size_t>(moveIgnoreEnemy) << 2
+				| static_cast<size_t>(attackIgnoreAlly) << 1
+				| static_cast<size_t>(attackIgnoreEnemy);
 		}
 
 		inline bool GetStash() const {
