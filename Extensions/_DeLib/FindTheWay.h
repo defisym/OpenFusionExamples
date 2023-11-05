@@ -1131,21 +1131,15 @@ namespace FindTheWay {
 						return h(neighPoint.coord, destination);
 					};
 					auto updateParentPointer = [&] (Point& cur)->void {
-						const auto curIdx = findIdx(point_set, cur);
+						const auto baseIdx = findIdx(point_set, base);
 
-						if (curIdx == static_cast<size_t>(-1)) {
-							const auto baseIdx = findIdx(point_set, base);
-
-							if (baseIdx == static_cast<size_t>(-1)) {
-								point_set.emplace_back(base);
-								cur.parentID = point_set.size() - 1;									
-							}
-							else {
-								cur.parentID = baseIdx;
-							}
+						// put base point into point_set
+						if (baseIdx == static_cast<size_t>(-1)) {
+							point_set.emplace_back(base);
+							cur.parentID = point_set.size() - 1;
 						}
 						else {
-							cur.parentID = curIdx;
+							cur.parentID = baseIdx;
 						}
 					};
 
@@ -1160,7 +1154,6 @@ namespace FindTheWay {
 					else if (next->cost > neighPoint.cost) {
 						next->cost = neighPoint.cost;
 						next->priority = heuristic(neighPoint) + neighPoint.cost;
-
 						updateParentPointer(*next);
 					}
 				}
