@@ -379,6 +379,26 @@ namespace FindTheWay {
 			return it != v.end() ? &(*it) : nullptr;
 		}
 
+		static inline auto addSet(CoordSet& v, Coord& p) {
+			if (!findSet(v, p)) {
+				v.emplace_back(p);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		static inline auto addSet(CoordSet& v, Point& p) {
+			return addSet(v, p.coord);
+		}
+
+		static inline auto addSet(CoordSet& v, CoordSet& src) {
+			for(auto& it: src) {
+				addSet(v, it);
+			}
+		}
+
 		Base64<std::wstring> base64;
 
 		Area area;
@@ -1012,7 +1032,12 @@ namespace FindTheWay {
 			pathAvailable = false;
 
 			if (stash) {
-				stashPathKey = std::make_tuple(Hasher(start), Hasher(destination), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
+				stashPathKey = std::make_tuple(Hasher(start),
+					Hasher(destination), 
+					ignoreFlag, 
+					Hasher(ally),
+					Hasher(enemy), 
+					Hasher(zoc));
 
 				if (stashPath.contains(stashPathKey)) {
 					pathAvailable = true;
@@ -1049,11 +1074,7 @@ namespace FindTheWay {
 					return;
 				}
 
-				for (auto& it : *src) {
-					if (!findSet(unit_set, it)) {
-						unit_set.emplace_back(it);
-					}
-				}
+				FindTheWayClass::addSet(unit_set, *src);
 			};
 
 			unit_set.clear();
@@ -1546,17 +1567,6 @@ namespace FindTheWay {
 					auto add = [&] (Set& v, Point& p) {
 						if (find(v, p) == nullptr) {
 							v.emplace_back(p);
-
-							return true;
-						}
-						else {
-							return false;
-						}
-					};
-
-					auto addSet = [&] (CoordSet& v, Point& p) {
-						if (findSet(v, p) == nullptr) {
-							v.emplace_back(p.coord);
 
 							return true;
 						}
