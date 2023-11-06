@@ -1,3 +1,5 @@
+// ReSharper disable CppClangTidyClangDiagnosticShadow
+
 #pragma once
 
 // Origin version by Anders Riggelsen (Andos)
@@ -85,7 +87,7 @@ private:
 	LPOIL OiList;
 	LPQOI QualToOiList;		// need to be updated each time before using
 
-	// For 2.5 only:
+	// For 2.5 HWA only:
 	int oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
 
 	inline bool FilterQualifierObjects(const LPRDATA rdPtr, const short oiList, const bool negate
@@ -543,7 +545,7 @@ public:
 
 	inline bool ObjectIsSelected(const short oiList) {
 		if (!ObjectIsQualifier(oiList)) {
-			return ObjectIsSelected(OiList + oiList);
+			return ObjectIsSelected(GetLPOIL(oiList));
 		}
 		else {
 			bool selected = false;
@@ -596,8 +598,8 @@ public:
 			if (pObjectInfo == nullptr) {
 				return;
 			}
-
-			iterateCall(OiList + oiList);
+			
+			iterateCall(pObjectInfo);
 		}
 		// Qualifier object type
 		else if (oiList != -1) {
