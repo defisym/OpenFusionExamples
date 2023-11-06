@@ -36,7 +36,10 @@ namespace AOE{
 		using coord = offset;
 
 	private:
-		const std::vector<offset> dirOffset = { {1, 0}, { 0,-1 }, { -1,0 }, { 0,1 } };
+		inline static const std::vector<offset> dirOffset = { {1, 0},
+			{ 0,-1 },
+			{ -1,0 },
+			{ 0,1 } };
 
 		coord start = { 0,0 };
 		size_t dir = 0;

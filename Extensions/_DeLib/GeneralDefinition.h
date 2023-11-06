@@ -110,7 +110,7 @@ inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
 		length--;
 	}
 
-	return std::wstring_view(pStart, length);
+	return { pStart, length };
 }
 
 inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
@@ -181,7 +181,7 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 #include "StrNum.h"
 
 inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"ALERT") {
-	MessageBox(NULL, content.c_str(), title.c_str(), MB_OK);
+	MessageBox(nullptr, content.c_str(), title.c_str(), MB_OK);
 }
 
 // basic split
