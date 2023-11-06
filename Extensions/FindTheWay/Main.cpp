@@ -431,18 +431,22 @@ long WINAPI DLLExport CheckMapCostAtPoint(LPRDATA rdPtr, long param1, long param
 
 	const auto mapCost = rdPtr->pFTW->GetMap(gridX, gridY, type);
 
-	if (cost ==-1 && mapCost != MAP_OBSTACLE) {					// Check for path
+	// Check for path
+	if (cost == -1 && mapCost != MAP_OBSTACLE) {
 		return TRUE;
 	}
-	else if (cost == 65536 && mapCost == MAP_OBSTACLE) {		// Check for obstacle
+
+	// Check for obstacle
+	if (cost == 65536 && mapCost == MAP_OBSTACLE) {
 		return TRUE;
 	}
-	else if (cost == mapCost) {									// Check accurate cost
+
+	// Check accurate cost
+	if (cost == mapCost) {
 		return TRUE;
 	}
-	else {
-		return FALSE;
-	}
+
+	return FALSE;
 }
 
 long WINAPI DLLExport ObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
@@ -454,7 +458,8 @@ long WINAPI DLLExport ObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[&](LPRDATA rdPtr, LPRO object)->bool {
 		if (object->roHo.hoX < 0 || object->roHo.hoY < 0) {
 			return false;
 		}
@@ -496,15 +501,16 @@ long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) 
 
 	RetIfMapInvalid(FALSE);
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
-		if (object->roHo.hoX < 0 || object->roHo.hoY < 0) {
-			return false;
-		}
-		else {
-			auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[&] (LPRDATA rdPtr, LPRO object)->bool {
+			if (object->roHo.hoX < 0 || object->roHo.hoY < 0) {
+				return false;
+			}
+			else {
+				auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
 
-			return rdPtr->pFTW->GetMap(gridX, gridY, type) == MAP_OBSTACLE;
-		}
+				return rdPtr->pFTW->GetMap(gridX, gridY, type) == MAP_OBSTACLE;
+			}
 		});
 }
 
@@ -517,7 +523,8 @@ long WINAPI DLLExport ObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated, 
+		[&](LPRDATA rdPtr, LPRO object)->bool {
 		return object->roHo.hoX == x && object->roHo.hoY == y;
 		});
 }
@@ -532,11 +539,10 @@ long WINAPI DLLExport NoObjectAtCoord(LPRDATA rdPtr, long param1, long param2) {
 	RetIfMapInvalid(FALSE);
 
 	try {
-		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
+		rdPtr->pSelect->ForEach(rdPtr, oil, [&] (LPRO object) {
 			if (object->roHo.hoX == x && object->roHo.hoY == y) {
 				throw false;
 			}
-
 			});
 	}
 	catch (bool) {
@@ -629,8 +635,10 @@ long WINAPI DLLExport OnCreateObjectZoc(LPRDATA rdPtr, long param1, long param2)
 		//// is overlap unit
 		//&& !OverlapUnit(rdPtr, itGridCoord)
 		// is current it object
-		&& rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
-			, [&](LPRDATA rdPtr, LPRO object)->bool { return object == rdPtr->pObject; })
+		&& rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[&](LPRDATA rdPtr, LPRO object)->bool {
+				return object == rdPtr->pObject;
+			})
 		// no zoc overlap
 		//&& !rdPtr->pSelect->FilterObjects(rdPtr, oilZoc, negated
 		//	, [&](LPRDATA rdPtr, LPRO object)->bool { return object->roHo.hoX == rdPtr->itCoord.x
@@ -678,8 +686,8 @@ long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 
 	auto& area = rdPtr->pFTW->GetArea();
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated
-		, [&](LPRDATA rdPtr, LPRO object)->bool {
+	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
+		[&](LPRDATA rdPtr, LPRO object)->bool {
 			const auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
 			
 			for (size_t it = 0; it < area.size(); it++) {
@@ -720,7 +728,8 @@ long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 		objects.emplace_back(rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY }));
 		});
 
-	return rdPtr->pSelect->FilterObjects(rdPtr, oilObjA, negated, [&](LPRDATA rdPtr, LPRO object)->bool {
+	return rdPtr->pSelect->FilterObjects(rdPtr, oilObjA, negated,
+		[&](LPRDATA rdPtr, LPRO object)->bool {
 		if (std::find(objects.begin(), objects.end()
 			, rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })) != objects.end()) {
 			return true;
@@ -856,14 +865,14 @@ short WINAPI DLLExport Continue(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport IteratePath(LPRDATA rdPtr, long param1, long param2) {
-	std::wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring pathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const bool useRealCoord = (bool)CNC_GetIntParameter(rdPtr);
 
 	*rdPtr->pOnItPathName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	RetIfMapInvalid(0);
 
-	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName.empty() ? nullptr : &pathName;
 
 	if (!rdPtr->pFTW->GetPathValidity(pPathName)) {
 		return 0;
@@ -898,7 +907,7 @@ short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 	if (center) {		
 		rdPtr->pFTW->GenerateZoc(objectCoord, rdPtr->pZoc, true);
 	}
-	else if (std::find(rdPtr->pZoc->begin(), rdPtr->pZoc->end(), objectCoord) == rdPtr->pZoc->end()) {
+	else if (std::ranges::find(*rdPtr->pZoc, objectCoord) == rdPtr->pZoc->end()) {
 		rdPtr->pZoc->emplace_back(objectCoord); 
 	}
 
@@ -978,7 +987,7 @@ short WINAPI DLLExport CreateAreaOnce(LPRDATA rdPtr, long param1, long param2) {
 }
 
 short WINAPI DLLExport CreateAreaByNameOnce(LPRDATA rdPtr, long param1, long param2) {
-	std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
 	RetIfMapInvalid(0);
@@ -1036,6 +1045,8 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 	case UNIT: {
 		rdPtr->pUnit->emplace_back(objectCoord);
 		break;
+	default:
+		break;
 	}
 	}
 
@@ -1069,6 +1080,8 @@ short WINAPI DLLExport ClearUnit(LPRDATA rdPtr, long param1, long param2) {
 		rdPtr->pUnit->clear();
 		break;
 	}
+	default:
+		break;
 	}
 
 	return 0;
@@ -1130,7 +1143,7 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 
 short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long param2) {
 	const LPRO object = (LPRO)CNC_GetParameter(rdPtr);
-	std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const std::wstring objectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1441,23 +1454,23 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetStepOfPath(LPRDATA rdPtr, long param1) {
-	std::wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const std::wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
-	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName.empty() ? nullptr : &pathName;
 
 	return rdPtr->pFTW->GetDistance(pPathName);
 }
 
 long WINAPI DLLExport GetStepCoordOfPath(LPRDATA rdPtr, long param1) {
-	std::wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const std::wstring pathName = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	const auto step = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto type = (CoordType)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	RetIfMapInvalid(COORD_INVALID);
 
-	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName.empty() ? nullptr : &pathName;
 
 	return rdPtr->pFTW->GetCoordAtPath(step, type, pPathName);
 }
@@ -1522,11 +1535,11 @@ long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
 	const auto type = (MapType)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	const bool showPath = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	std::wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const std::wstring pathName = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 
 	// RetIfMapInvalid((long)Empty_Str);
 
-	const std::wstring* pPathName = pathName == L"" ? nullptr : &pathName;
+	const std::wstring* pPathName = pathName.empty() ? nullptr : &pathName;
 
 	*rdPtr->pMapStr = (rdPtr->pFTW == nullptr) ? L"InvalidMap" : rdPtr->pFTW->OutPutMapStr(type, showPath, pPathName);
 
@@ -1534,7 +1547,7 @@ long WINAPI DLLExport GetMapStr(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)(*rdPtr->pMapStr).c_str();
+	return (long)rdPtr->pMapStr->c_str();
 }
 
 long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
@@ -1568,7 +1581,7 @@ long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
 	const bool attackIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const bool attackIgnoreEnemy= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	return FindTheWayClass::GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
+	return (long)FindTheWayClass::GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
 }
 
 long WINAPI DLLExport GetMapTypeMap(LPRDATA rdPtr, long param1) {
@@ -1594,14 +1607,14 @@ long WINAPI DLLExport GetMapCostObstacle(LPRDATA rdPtr, long param1) {
 long WINAPI DLLExport GetMapCostValid(LPRDATA rdPtr, long param1) {
 	const auto cost = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return Range(cost);
+	return (long)Range(cost);
 }
 
 long WINAPI DLLExport GetIsometricGridSize(LPRDATA rdPtr, long param1) {
 	const auto isoGridWidth = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto isoGridHeight = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return FindTheWayClass::GetIsometricGridSize(isoGridWidth, isoGridHeight);
+	return (long)FindTheWayClass::GetIsometricGridSize(isoGridWidth, isoGridHeight);
 }
 
 // ----------------------------------------------------------
