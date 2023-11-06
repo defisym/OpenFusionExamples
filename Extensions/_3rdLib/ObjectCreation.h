@@ -1,3 +1,5 @@
+// ReSharper disable CppClangTidyClangDiagnosticShadow
+
 #pragma once
 
 // Origin version by Anders Riggelsen (Andos)
@@ -48,14 +50,18 @@ private:
 	LPRH rhPtr;
 	LPOBL ObjectList;
 	LPOIL OiList;
-	LPQOI QualToOiList;
-	int oiListItemSize;
+	LPQOI QualToOiList;		// need to be updated each time before using
+
+	// For 2.5 HWA only:
+	int oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
 
 	LPOI* ois;
 	LPOBL oblPtr;
 	CRunFrame* frame;
 	RunFrameLayer* layerPtr;
-	int additionalLayerSize;
+
+	// For 2.5 HWA only:
+	int additionalLayerSize = 8;
 
 	int bufferSize = sizeof(event) + sizeof(eventParam) + sizeof(CreateDuplicateParam);
 	char* buffer=nullptr;
@@ -66,48 +72,46 @@ private:
 	CALLACTION_ROUTINE createObject;
 
 	//Put the layer number in to a proper range
-	inline int GetValidLayer(int layer){		
-		return (max(-1, min(rhPtr->rhFrame->m_nLayers-1, layer)));
+	inline int GetValidLayer(int layer) const {		
+		return (max(-1, min(rhPtr->rhFrame->m_nLayers - 1, layer)));
 	}
 
-	inline void ResetEVP() {
+	inline void ResetEVP() const {
 		memset(buffer, 0, bufferSize);
-		cdp->cdpHFII = rhPtr->rhNumberOi;
+		cdp->cdpHFII = (HFII)rhPtr->rhNumberOi;
 	}
 
 public:
-	ObjectCreation(LPRDATA rdPtr) {
+	explicit ObjectCreation(LPRDATA rdPtr) {
 		this->rhPtr = rdPtr->rHo.hoAdRunHeader;
 		this->ObjectList = rhPtr->rhObjectList;		//get a pointer to the mmf object list
 		this->OiList = rhPtr->rhOiList;				//get a pointer to the mmf object info list
 		this->QualToOiList = rhPtr->rhQualToOiList;	//get a pointer to the mmf qualifier to Oi list
-
-		oiListItemSize = sizeof(objInfoList);
 
 		ois = rhPtr->rhApp->m_ois;
 		oblPtr = (LPOBL)rhPtr->rhObjectList;
 		frame = (CRunFrame*)rhPtr->rhFrame;
 		layerPtr = frame->m_pLayers;
 
-#ifdef HWABETA
-		additionalLayerSize = 8;
-#endif
-#ifndef HWABETA
-		additionalLayerSize = 0;
-#endif
-
-		//Only add the sizes to the runtime structures if they weren't compiled directly for those runtimes
-#ifndef UNICODE
-		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISUNICODE, 0, 0, 0))
-			oiListItemSize += 24;
-#endif
-#ifndef HWABETA
-		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
-			oiListItemSize += sizeof(LPVOID);
-#endif
+//#ifdef HWABETA
+//		additionalLayerSize = 8;
+//#endif
+//#ifndef HWABETA
+//		additionalLayerSize = 0;
+//#endif
+//
+//		//Only add the sizes to the runtime structures if they weren't compiled directly for those runtimes
+//#ifndef UNICODE
+//		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISUNICODE, 0, 0, 0))
+//			oiListItemSize += 24;
+//#endif
+//#ifndef HWABETA
+//		if (rhPtr->rh4.rh4Mv->mvCallFunction(NULL, EF_ISHWA, 0, 0, 0))
+//			oiListItemSize += sizeof(LPVOID);
+//#endif
 	
 		//Create the event buffer (with plenty space):
-		bufferSize = sizeof(event)+sizeof(eventParam)+sizeof(CreateDuplicateParam);
+		bufferSize = sizeof(event) + sizeof(eventParam) + sizeof(CreateDuplicateParam);
 		buffer = new char[bufferSize];
 		memset(buffer, 0, bufferSize);
 
@@ -120,10 +124,10 @@ public:
 
 		//The object creation parameters
 		cdp = (CreateDuplicateParam*)&creationParams->evp.evpW.evpW0;
-		cdp->cdpHFII = rhPtr->rhNumberOi;
+		cdp->cdpHFII = (HFII)rhPtr->rhNumberOi;
 
 		//Call the routine
-		CallTables* tables = (CallTables*)callRunTimeFunction(rdPtr, RFUNCTION_GETCALLTABLES, 0, 0);
+		const auto* tables = (CallTables*)callRunTimeFunction(rdPtr, RFUNCTION_GETCALLTABLES, 0, 0);
 		createObject = tables->pActions[2];
 	}
 
@@ -133,22 +137,33 @@ public:
 
 	inline void OCCreateObject(std::function<void(ObjectCreation* oc, CreateDuplicateParam*)> updateParam){
 		updateParam(this, cdp);
-		cdp->cdpPos.posLayer = GetValidLayer(cdp->cdpPos.posLayer);
+		cdp->cdpPos.posLayer = (short)GetValidLayer(cdp->cdpPos.posLayer);
 		
 		if (cdp->cdpOi != -1) {
 			createObject(evt);
 		}
 	}
 
-	inline short GetCreationOI(LPCWSTR objName) {
+	inline short GetCreationOI(LPCWSTR objName) const {
 		//Iterate OI list
 		objInfoList* list = rhPtr->rhOiList;
-		int num = rhPtr->rhNumberOi - 1;
+		const int num = rhPtr->rhNumberOi - 1;
 
 		for (int i = 0; i < num; i++) {
 			objInfoList info = *(objInfoList*)(((char*)list) + i * oiListItemSize);
 
-			if (wcscmp(&(info.oilName[0]), objName) == 0) {
+			// oilName may start with empty char
+			const auto pCurName = [&] () {
+				auto pOilName = info.oilName;
+
+				while (pOilName[0] == 65535) {
+					pOilName++;
+				}
+
+				return pOilName;
+				}();
+
+			if (StrEqu(objName, pCurName)) {
 				return info.oilOi;
 			}
 		}
@@ -157,7 +172,7 @@ public:
 		return -1;
 	}
 
-	inline short GetCreationOI(std::wstring& objName) {
+	inline short GetCreationOI(const std::wstring& objName) const {
 		return GetCreationOI(objName.c_str());
 	}
 
@@ -171,7 +186,7 @@ public:
 			return;
 		}
 
-		LPBackdrop_OC bkd = (LPBackdrop_OC)objOI->oiOC;
+		const auto bkd = (LPBackdrop_OC)objOI->oiOC;
 
 		cSurface imageSurface;
 		LockImageSurface(rhPtr->rhIdAppli, bkd->ocImage, imageSurface, LOCKIMAGE_READBLITONLY);
@@ -190,7 +205,7 @@ public:
 		return;
 	}
 
-	inline LPOI GetBackdropOI(LPCWSTR objName) {
+	inline LPOI GetBackdropOI(LPCWSTR objName) const {
 		// Find backdrop
 		RunFrameLayer* layerPtr = this->layerPtr;
 
@@ -199,11 +214,22 @@ public:
 
 			for (int j = 0; j < (int)layerPtr->nBkdLOs; ++j) {
 				LPOI objOI = rhPtr->rhApp->m_ois[rhPtr->rhApp->m_oi_handle_to_index[backdropPtr->loOiHandle]];
-			
-				if (wcscmp(objOI->oiName, objName) == 0) {
+
+				// oilName may start with empty char
+				const auto pCurName = [&] () {
+					auto pOilName = objOI->oiName;
+
+					while (pOilName[0] == 65535) {
+						pOilName++;
+					}
+
+					return pOilName;
+				}();
+
+				if (StrEqu(objName, pCurName)) {
 					return objOI;
 				}
-				
+
 				backdropPtr++;
 			}
 
@@ -213,7 +239,7 @@ public:
 		return nullptr;
 	}
 
-	inline LPOI GetBackdropOI(std::wstring& objName) {
+	inline LPOI GetBackdropOI(const std::wstring& objName) const {
 		return GetBackdropOI(objName.c_str());
 	}
 
