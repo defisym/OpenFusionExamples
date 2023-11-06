@@ -4,6 +4,10 @@
 
 A* Path Find, open source, 5X faster than Path Finding Object, all runtime compatible.
 
+## Note
+
+Since build 295, fusion no longer supports to call immediate events from conditions and expressions, so please avoid using `On Map Update` and `Set Map By Collision`'s event iterate mode.
+
 ## Properties
 
 - Settings
@@ -48,6 +52,9 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - *disable stash will clear everything stashed*
   - *disable this may slightly improve performance as the state hash process is skipped*
   - *disable this if you encounter hash collision*
+
+- Map
+  - Iterate Map
 
 - Set Map
   - Set Map
@@ -104,6 +111,7 @@ A* Path Find, open source, 5X faster than Path Finding Object, all runtime compa
   - On Map Update
     - *once you update terrain or dynamic, extension won't update the map immediately as you may set multiple points*
     - *usually map is updated before find/calc area if needed, then this condition will be triggered*
+  - On Iterate Map
 
 - Set Map
   - Set Map By Size

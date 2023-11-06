@@ -246,12 +246,12 @@ namespace FindTheWay {
 
 		using Neighbour = std::vector<Offset>;
 
-		const Neighbour normalNeighbour = { {1,0,STEP_GENERALCOST_NORMAL}
+		inline static const Neighbour normalNeighbour = { {1,0,STEP_GENERALCOST_NORMAL}
 										,{0,1,STEP_GENERALCOST_NORMAL}
 										,{-1,0,STEP_GENERALCOST_NORMAL}
 										,{0,-1,STEP_GENERALCOST_NORMAL} };
 
-		const Neighbour diagonalNeighbour = { {1,0,STEP_GENERALCOST_NORMAL}
+		inline static const Neighbour diagonalNeighbour = { {1,0,STEP_GENERALCOST_NORMAL}
 										,{1,1,STEP_GENERALCOST_DIAGONAL}		// diagonal
 										,{0,1,STEP_GENERALCOST_NORMAL}
 										,{-1,1,STEP_GENERALCOST_DIAGONAL}		// diagonal
@@ -429,7 +429,7 @@ namespace FindTheWay {
 		//	bool operator()(StashAreaKey lKey, StashAreaKey rKey)  const noexcept {
 		//		auto& [lc, lr, lsr, lm] = lKey;
 		//		auto& [rc, rr, rsr, rm] = rKey;
-
+		//
 		//		return (lc < rc) && (lr < rr) && (lsr < rsr) && (lm < rm);
 		//	};
 		//};
@@ -493,12 +493,6 @@ namespace FindTheWay {
 
 			return nullptr;
 		}
-
-		//inline BYTE* _GetMapPointer(MapType type) {
-		//	auto pos = (int)type;		
-
-		//	return pos < MAPTYPENUM ? *(pMap+pos) : nullptr;
-		//}
 
 		inline BYTE* GetMapPosPointer(const size_t x, const size_t y, BYTE* pMap) const {
 			if (pMap == nullptr || !PosValid(x, y)) {
@@ -621,7 +615,8 @@ namespace FindTheWay {
 			Allocate(width, height);
 			Reserve();
 		}
-		FindTheWayClass(const std::wstring& base64) {
+
+		explicit FindTheWayClass(const std::wstring& base64) {
 			SetMap(base64);
 			Reserve();
 		}
@@ -844,6 +839,25 @@ namespace FindTheWay {
 		inline void SetUpdateMapCallBack(const UpdateMapCallBack& f, void* p) {
 			updateCallBack = f;
 			updateCallBackCoef = p;
+		}
+
+		inline void IterateMap(const MapType type,
+			const std::function<void(const size_t x, const size_t y, const BYTE cost)>& cb) const {
+			const auto pMap = GetMapPointer(type);
+
+			if (pMap == nullptr) { return; }
+
+			for (size_t y = 0; y < height; y++) {
+				for (size_t x = 0; x < width; x++) {
+					const BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
+
+					if (pMapPos == nullptr) {
+						continue;
+					}
+
+					cb(x, y, *pMapPos);
+				}
+			}			
 		}
 
 		inline bool CoordObstacle(const size_t x, const size_t y, const MapType type) {
@@ -1199,7 +1213,7 @@ namespace FindTheWay {
 			set->emplace_back(start);
 		}
 
-		inline void GenerateZoc(const Coord start, CoordSet* zoc, const bool add = false, const bool diagonal = true) const {
+		static inline void GenerateZoc(const Coord start, CoordSet* zoc, const bool add = false, const bool diagonal = true) {
 			if (!add) {
 				zoc->clear();
 			}
@@ -1215,7 +1229,7 @@ namespace FindTheWay {
 			}
 		}
 
-		inline void GenerateZoc(const CoordSet& start, CoordSet* zoc, const bool add = false, bool diagonal = true) const {
+		static inline void GenerateZoc(const CoordSet& start, CoordSet* zoc, const bool add = false, bool diagonal = true) {
 			if (!add) {
 				zoc->clear();
 			}
@@ -1447,7 +1461,7 @@ namespace FindTheWay {
 				stashAreaKey = std::make_tuple(false, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
 
 				if (stashArea.contains(stashAreaKey)) {
-					auto& [sa, sp] = stashArea [stashAreaKey];
+					auto& [sa, sp] = stashArea[stashAreaKey];
 
 					area = sa;
 
@@ -1484,7 +1498,7 @@ namespace FindTheWay {
 
 			bool extraRangeCalc = false;	// Extra range calc start
 			bool updateAttack = allRange ? false : attack;		// ignore dynamic unit part when calc attack range
-																// force to evaluate them in allRange mode
+			// force to evaluate them in allRange mode
 
 			const bool moveIgnoreZoc = ignoreFlag & 0b10000;     // Move through zoc
 			const bool moveIgnoreAlly = ignoreFlag & 0b01000;    // Move through ally
@@ -1521,9 +1535,9 @@ namespace FindTheWay {
 
 					// add current area edge
 					for (auto& it : area.back()) {
-						if (std::ranges::find_if(cur_set, 
+						if (std::ranges::find_if(cur_set,
 							[&] (const Point& it_c) {
-							return it_c.coord == it;
+								return it_c.coord == it;
 							}) == cur_set.end()) {
 							cur_set.emplace_back(it);
 						}
@@ -1568,7 +1582,7 @@ namespace FindTheWay {
 						else {
 							return false;
 						}
-					};
+						};
 
 					auto ignorePoint = [&] (Point& p) {
 						const bool curAlly = ally != nullptr && findSet(*ally, p) != nullptr;
@@ -1594,12 +1608,12 @@ namespace FindTheWay {
 							}
 
 							return false;
-						};
+							};
 
 						return  (!curAlly && !curEnemy)		// currentPoint is not unit, ignore							
 							|| (curAlly && getIgnore(moveIgnoreAlly, attackIgnoreAlly))		// ignore ally?
 							|| (curEnemy && getIgnore(moveIgnoreEnemy, attackIgnoreEnemy));	// ignore enemy?
-					};
+						};
 
 					// Zoc : stop search
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
@@ -1617,8 +1631,8 @@ namespace FindTheWay {
 					}
 
 					for (size_t i = 0; i < neighbourSize; i++) {
-						const auto neighCoord = Coord { (size_t)(base.coord.x + (*pNeighbour) [i].x)
-						,(size_t)(base.coord.y + (*pNeighbour) [i].y) };
+						const auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
+						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
 
 						const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 						auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
@@ -1658,7 +1672,7 @@ namespace FindTheWay {
 					}
 
 					return false;
-				};
+					};
 
 				bool added = false;
 
@@ -1677,7 +1691,7 @@ namespace FindTheWay {
 			}
 
 			if (stash) {
-				stashArea [stashAreaKey] = make_tuple(area, extraRangeStartPos);
+				stashArea[stashAreaKey] = make_tuple(area, extraRangeStartPos);
 			}
 
 #ifdef _DEBUG

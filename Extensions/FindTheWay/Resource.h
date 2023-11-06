@@ -68,6 +68,7 @@
 #define	IDMN_ACTION_CAOEBN			25017
 #define	IDMN_ACTION_CG  			25018
 #define	IDMN_ACTION_SGS  			25019
+#define	IDMN_ACTION_ITM  			25020
 
 
 // Action strings
@@ -91,6 +92,7 @@
 #define	M_ACTION_CAOEBN				5017
 #define	M_ACTION_CG 				5018
 #define	M_ACTION_SGS 				5019
+#define	M_ACTION_ITM 				5020
 
 
 // Titles of action parameters
@@ -149,6 +151,7 @@
 
 #define	IDMN_CONDITION_SMBA				26026
 #define	IDMN_CONDITION_SMBSF			26027
+#define	IDMN_CONDITION_OITM				26028
 
 
 // Condition strings
@@ -189,6 +192,7 @@
 
 #define	M_CONDITION_SMBA				6026
 #define	M_CONDITION_SMBSF				6027
+#define	M_CONDITION_OITM				6028
 
 // Titles of condition parameters
 #define M_WIDTH				        6501

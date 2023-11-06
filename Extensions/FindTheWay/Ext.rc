@@ -122,6 +122,7 @@ BEGIN
             MENUITEM "Check Map Cost At Coord", IDMN_CONDITION_CMCAC
             MENUITEM SEPARATOR
             MENUITEM "On Map Update", IDMN_CONDITION_OMC
+            MENUITEM "On Iterate Map", IDMN_CONDITION_OITM
         END
         MENUITEM SEPARATOR
         POPUP "Set Map"
@@ -199,6 +200,11 @@ BEGIN
         MENUITEM "Continue", IDMN_ACTION_C
         MENUITEM SEPARATOR        
         MENUITEM "Set Stash", IDMN_ACTION_SS
+        MENUITEM SEPARATOR
+        POPUP "Map"
+        BEGIN
+            MENUITEM "Iterate Map", IDMN_ACTION_ITM
+        END
         MENUITEM SEPARATOR
         POPUP "Set Map"
         BEGIN
@@ -430,7 +436,7 @@ BEGIN
     M_ACTION_CG               "Create Grid %0 at Layer %1"
     M_ACTION_SGS              "Set GridSize = %0, GridOffsetX = %1, GridOffsetY = %2"
 
-
+    M_ACTION_ITM              "Iterate Map, UseRealCoord = %0, IterateName = %1"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -472,6 +478,7 @@ BEGIN
     M_CONDITION_OAOBJ          "%o Object %0 At Object %1"
     M_CONDITION_POAO           "%o Pick One %0 At %0"
 
+    M_CONDITION_OITM           "%o On Iterate Map, IterateName = %0"
 END
 
 STRINGTABLE DISCARDABLE 
