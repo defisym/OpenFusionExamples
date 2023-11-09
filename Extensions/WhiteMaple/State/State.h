@@ -1,5 +1,7 @@
 #pragma once
 
+#include "InfoBase.h"
+
 struct State {
-	size_t internalID;
+	InfoBase info;
 };

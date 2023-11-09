@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Class.h"
+#include "InfoBase.h"
 
 enum class ItemType {
 	Item,
@@ -31,10 +32,9 @@ struct SpecificHandler {
 	}
 };
 
-struct ItemBase {
-	std::wstring name;
-	std::wstring explanation;
-	std::wstring IConFileName;
+struct ItemBase {	
+	InfoBase info;
+
 	ItemType itemType;
 	int weight;
 	int price;

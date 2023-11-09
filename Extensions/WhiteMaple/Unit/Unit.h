@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Class.h"
+#include "ItemSlot.h"
 #include "UnitBase.h"
 
 struct Unit :UnitBase {
@@ -9,6 +10,6 @@ struct Unit :UnitBase {
 	size_t identifier;
 
 	Class unitClass;
-	std::vector<ItemBase*> itemSlot;
+	ItemSlot itemSlot;
 	StateHandler stateHandler;
 };

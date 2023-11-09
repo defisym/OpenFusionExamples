@@ -1,5 +1,7 @@
 #pragma once
 
-struct Card {
+#include "InfoBase.h"
 
+struct Card {
+	InfoBase info;
 };

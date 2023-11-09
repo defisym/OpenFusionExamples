@@ -3,20 +3,18 @@
 #include <vector>
 #include <string>
 
-#include "Item/ItemBase.h"
-#include "Property/Property.h"
-#include "State/StateHandler.h"
+#include "InfoBase.h"
+#include "ItemBase.h"
+#include "Property.h"
+#include "StateHandler.h"
 
 #include "UnitAttribute.h"
 
-using InternalID = long;
 using CharID = long;
 
 struct UnitBase {
 	// Basic
-	InternalID ID;
-	std::wstring name;
-	std::wstring headFileName;
+	InfoBase info;
 	CharID charID;
 	Property property;
 
