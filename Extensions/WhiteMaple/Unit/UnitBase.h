@@ -8,13 +8,16 @@
 #include "Property.h"
 #include "StateHandler.h"
 
-#include "UnitAttribute.h"
-
 using CharID = long;
 
-struct UnitBase {
+struct UnitAttribute {
+	size_t init;
+	size_t cost;
+	size_t max;
+};
+
+struct UnitBase :InfoBase {
 	// Basic
-	InfoBase info;
 	CharID charID;
 	Property property;
 
@@ -40,5 +43,9 @@ struct UnitBase {
 	std::wstring like;
 	std::wstring dislike;
 
+	UnitBase() = default;
+	UnitBase(IniInterface* pIni) :InfoBase(pIni) {
+
+	}
 	virtual ~UnitBase() {}
 };

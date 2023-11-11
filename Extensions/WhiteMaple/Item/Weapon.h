@@ -3,6 +3,7 @@
 #include <string>
 
 #include "ItemBase.h"
+#include "Correction.h"
 
 enum class WeaponType {
 	Normal,
@@ -17,6 +18,7 @@ enum class WeaponMode {
 };
 
 struct Weapon :ItemBase {
+	// effect
 	bool bAnimationAtTarget = false;
 	size_t AnimationEffectID;
 
@@ -26,14 +28,17 @@ struct Weapon :ItemBase {
 	size_t AnimationLaunchID;
 	std::wstring launchSoundEffectFileName;
 
+	// param
 	WeaponType weaponType;
 	WeaponMode weaponMode;
 
 	size_t attackRange;
 	size_t attackInterval;
 
+	// correction
 	Correction correction;
 
+	// attribute
 	bool bHeal = false;
 	bool bMagic = false;
 
@@ -50,7 +55,8 @@ struct Weapon :ItemBase {
 	size_t attachStateID;
 	double attachStatePossibility;
 
-	Weapon() :ItemBase() {
+	Weapon() = default;
+	Weapon(IniInterface* pIni) :ItemBase(pIni) {
 
 	}
 };

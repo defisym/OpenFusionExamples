@@ -7,6 +7,8 @@
 #include "Item.h"
 #include "Weapon.h"
 
+constexpr size_t MAX_ITEM = 6;
+
 struct ItemSlot {
 	std::vector<ItemBase*> itemSlot;
 	size_t weaponEquipment;
@@ -22,7 +24,7 @@ struct ItemSlot {
 	}
 
 	inline bool DropItem(size_t idx) {
-		
+
 	}
 
 	inline void IterateWeapon(const std::function<void(Weapon*)>& cb) {

@@ -12,4 +12,9 @@ struct Unit :UnitBase {
 	Class unitClass;
 	ItemSlot itemSlot;
 	StateHandler stateHandler;
+
+	Unit() = default;
+	Unit(IniInterface* pIni) :UnitBase(pIni) {
+
+	}
 };

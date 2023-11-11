@@ -1,18 +1,15 @@
 #pragma once
 
 #include "ItemBase.h"
-
-struct ItemCorrection :Correction {
-	long teamSlot;
-
-	long mood;
-	long hp;
-	long defSlot;
-};
+#include "Correction.h"
 
 struct Item :ItemBase {
-	ItemCorrection correction;
+	Correction correction;
 
+	// usability
+	bool bUnusable = false;
+
+	// state
 	bool bAttachState = false;
 	size_t attachStateID;
 	double attachStatePossibility;
@@ -21,12 +18,14 @@ struct Item :ItemBase {
 	size_t removeStateID;
 	double removeStatePossibility;
 
+	// instant effect
 	bool bInstantEffect = false;
 
 	bool bAnotherMove = false;
 	bool bAnotherAttack = false;
 
-	Item() :ItemBase() {
+	Item() = default;
+	Item(IniInterface* pIni) :ItemBase(pIni) {
 
 	}
 };

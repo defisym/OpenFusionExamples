@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "IniInterface.h"
+
 using InternalID = long;
 
 struct InfoBase {
@@ -9,4 +11,10 @@ struct InfoBase {
 	std::wstring name;
 	std::wstring explanation;
 	std::wstring pictureFileName;
+
+	InfoBase() = default;
+	InfoBase(IniInterface* pIni) {
+
+	}
+	virtual ~InfoBase() = default;
 };

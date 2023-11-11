@@ -30,11 +30,11 @@ struct SpecificHandler {
 	inline bool Usable() {
 		if (!bSpecific) { return true; }
 	}
+
+	SpecificHandler() = default;
 };
 
-struct ItemBase {	
-	InfoBase info;
-
+struct ItemBase :InfoBase {
 	ItemType itemType;
 	int weight;
 	int price;
@@ -46,23 +46,10 @@ struct ItemBase {
 	bool bUnExchangeAble = false;
 	SpecificHandler specificHandler;
 
+	ItemBase() = default;
+	ItemBase(IniInterface* pIni) :InfoBase(pIni) {
+
+	}
+
 	virtual ~ItemBase() {}
-};
-
-struct Correction {
-	long str;
-	long def;
-	long mag;
-	long res;
-	long spe;
-	long ski;
-
-	long moveRange;
-	long attackRange;
-	long attackInterval;
-	long repelRange;
-
-	long hit;
-	long critRate;
-	long defSlot;
 };
