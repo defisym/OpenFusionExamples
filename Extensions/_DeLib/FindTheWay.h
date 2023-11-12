@@ -33,12 +33,12 @@
 namespace FindTheWay {
 	using BYTE = unsigned char;
 
-	using CoordValueType = long;
-
 	enum class CoordType {
 		X,
 		Y,
 	};
+
+	using CoordValueType = long;
 
 	struct Coord {
 		CoordValueType x = 0;
@@ -54,40 +54,50 @@ namespace FindTheWay {
 		}
 
 		Coord(double x, double y) {
-			this->x = static_cast<CoordValueType>(lround(x));
-			this->y = static_cast<CoordValueType>(lround(y));
+			this->x = lround(x);
+			this->y = lround(y);
+		}
+
+		inline bool operator<(const Coord& B) const {
+			return (this->x < B.x) && (this->y < B.y);
+		}
+
+		inline bool operator==(const Coord& B) const {
+			return (this->x == B.x) && (this->y == B.y);
+		}
+
+		inline Coord operator+(const Coord& B) const {
+			return { this->x + B.x ,this->y + B.y };
+		}
+
+		inline Coord operator-(const Coord& B) const {
+			return { this->x - B.x ,this->y - B.y };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator+(const Number& B) const {
+			return { this->x + B ,this->y + B };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator-(const Number& B) const {
+			return { this->x - B ,this->y - B };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator*(const Number& B) const {
+			return { this->x * B ,this->y * B };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator/(const Number& B) const{
+			return { this->x / B ,this->y / B };
 		}
 	};
-
-	inline bool operator<(const Coord& A, const Coord& B) {
-		return (A.x < B.x) && (A.y < B.y);
-	}
-
-	inline bool operator==(const Coord& A, const Coord& B) {
-		return (A.x == B.x) && (A.y == B.y);
-	}
-
-	inline Coord operator+(const Coord& A, const Coord& B) {
-		return Coord { A.x + B.x ,A.y + B.y };
-	}
-
-	inline Coord operator+(const Coord& A, const CoordValueType& B) {
-		return Coord { A.x + B ,A.y + B };
-	}
-
-	inline Coord operator-(const Coord& A, const Coord& B) {
-		return Coord { A.x - B.x ,A.y - B.y };
-	}
-
-	inline Coord operator*(const Coord& A, const CoordValueType& B) {
-		return Coord { A.x * B ,A.y * B };
-	}
-
-	inline Coord operator/(const Coord& A, const CoordValueType& B) {
-		return Coord { A.x / B ,A.y / B };
-	}
-
-
 
 	enum class MapType {
 		MAP,
@@ -951,7 +961,7 @@ namespace FindTheWay {
 			return curPathAvaliable ? pPath->size() : STEP_UNREACHABLE;
 		}
 
-		inline size_t GetCoordAtPath(const size_t pos, const CoordType type, const std::wstring* name = nullptr) {
+		inline CoordValueType GetCoordAtPath(const size_t pos, const CoordType type, const std::wstring* name = nullptr) {
 			const Path* pPath = GetPathPointer(name);
 			const bool curPathAvaliable = GetPathValidity(name);
 
@@ -1220,8 +1230,8 @@ namespace FindTheWay {
 				close_set.emplace_back(base);
 
 				for (size_t i = 0; i < neighbourSize; i++) {
-					auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
-						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+					auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x
+						,base.coord.y + (*pNeighbour)[i].y };
 
 					const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 					auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
@@ -1698,20 +1708,20 @@ namespace FindTheWay {
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
 					if ((!moveIgnoreZoc)											// stop move if doesn't ignore zoc
 						&& (!updateAttack) && (!extraRangeCalc)						// during move
-						&& zoc != nullptr && findSet(*zoc, base) != nullptr			// current point zoc
-						&& findSet(*ally, base) == nullptr							// current point not unit
+						&& zoc != nullptr && findSet(*zoc, base) != nullptr		// current point zoc
+						&& findSet(*ally, base) == nullptr						// current point not unit
 						&& findSet(*enemy, base) == nullptr
 						&& base.coord != start) {									// not start
 						if (allRange) {
-							add(continue_set, base);								// start calc attack range from zoc
+							add(continue_set, base);							// start calc attack range from zoc
 						}
 
 						continue;
 					}
 
 					for (size_t i = 0; i < neighbourSize; i++) {
-						const auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
-						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+						const auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x,
+							base.coord.y + (*pNeighbour)[i].y };
 
 						const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 						auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);

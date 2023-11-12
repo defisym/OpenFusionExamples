@@ -338,7 +338,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
-			rdPtr->itCoord = rdPtr->pFTW->GetRealCoord(Coord{ x,y });
+			rdPtr->itCoord = rdPtr->pFTW->GetRealCoord({ x,y });
 
 			if (eventIterate) {
 				CallEvent(ONSETMAPBYCOLLISION);
@@ -391,7 +391,10 @@ long WINAPI DLLExport OnPathFound(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(FALSE);
 
-	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, ignoreFlag, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
+	FindPath(rdPtr, 
+		{ startX ,startY }, 
+		{ destinationX ,destinationY },
+		ignoreFlag, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
@@ -472,9 +475,8 @@ long WINAPI DLLExport ObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 		if (object->roHo.hoX < 0 || object->roHo.hoY < 0) {
 			return false;
 		}
-		else {
-			return Coord{ x,y } == rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
-		}
+
+			return Coord{ x,y } == rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 		});
 }
 
@@ -489,7 +491,7 @@ long WINAPI DLLExport NoObjectAtGrid(LPRDATA rdPtr, long param1, long param2) {
 
 	try {
 		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-			const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+			const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 			if (objectCoord == Coord{ x,y }) {
 				throw false;
 			}
@@ -516,7 +518,7 @@ long WINAPI DLLExport ObjectAtObstacle(LPRDATA rdPtr, long param1, long param2) 
 				return false;
 			}
 			else {
-				auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+				auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 
 				return rdPtr->pFTW->GetMap(gridX, gridY, type) == MAP_OBSTACLE;
 			}
@@ -668,7 +670,7 @@ long WINAPI DLLExport ZocValid(LPRDATA rdPtr, long param1, long param2) {
 	objects.reserve(rdPtr->pSelect->GetNumberOfSelected(oil));
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		const auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX ,object->roHo.hoY });
 			// not overlap obstacle
 		if ((rdPtr->pFTW->GetMap(objectCoord.x, objectCoord.y, MapType::TERRAIN) != MAP_OBSTACLE)
 			// not overlap unit
@@ -697,7 +699,7 @@ long WINAPI DLLExport ZocAtArea(LPRDATA rdPtr, long param1, long param2) {
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oil, negated,
 		[&](LPRDATA rdPtr, LPRO object)->bool {
-			const auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+			const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 			
 			for (size_t it = 0; it < area.size(); it++) {
 				const auto isAttack = !(it < rdPtr->extraRangeStartPos);
@@ -734,13 +736,15 @@ long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 	CoordSet objects;
 
 	rdPtr->pSelect->ForEach(rdPtr, oilObjB, [&](LPRO object) {
-		objects.emplace_back(rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY }));
+		objects.emplace_back(rdPtr->pFTW->GetGridCoord({object->roHo.hoX, object->roHo.hoY }));
 		});
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oilObjA, negated,
 		[&](LPRDATA rdPtr, LPRO object)->bool {
-		if (std::find(objects.begin(), objects.end()
-			, rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })) != objects.end()) {
+			if (std::ranges::find(objects,
+			rdPtr->pFTW->GetGridCoord({ object->roHo.hoX,
+			object->roHo.hoY }))
+			!= objects.end()) {
 			return true;
 		}
 
@@ -775,12 +779,12 @@ long WINAPI DLLExport PickOneObjectAtObject(LPRDATA rdPtr, long param1, long par
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
 		objects.emplace_back(
-			rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY })
+			rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY })
 				, object);
 		});
 
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		auto objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX ,(size_t)object->roHo.hoY });
+		auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 
 		if (!find(selected, objectCoord)) {
 			selected.emplace_back(objectCoord, object);
@@ -851,7 +855,7 @@ short WINAPI DLLExport SetMapByObject(LPRDATA rdPtr, long param1, long param2) {
 	RetIfMapInvalid(0);
 	RetIfSetMapDirectly(type, 0);
 
-	auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	auto [gridX, gridY] = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 	rdPtr->pFTW->SetMap(gridX, gridY, cost, type);
 
 	return 0;
@@ -879,7 +883,7 @@ short WINAPI DLLExport IterateMap(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pFTW->IterateMap(MapType::MAP,
 		[&] (const size_t x, const size_t y, const BYTE cost) {
 			rdPtr->itCoord = useRealCoord
-				? rdPtr->pFTW->GetRealCoord(Coord{ x,y })
+				? rdPtr->pFTW->GetRealCoord({ x,y })
 				: Coord{ x,y };
 
 			CallEvent(ONITERATEMAP);
@@ -930,7 +934,7 @@ short WINAPI DLLExport SetZocByObject(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY }); 
+	auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY }); 
 
 	if (center) {
 		FindTheWay::FindTheWayClass::GenerateZoc(objectCoord, rdPtr->pZoc, true);
@@ -1055,7 +1059,7 @@ short WINAPI DLLExport SetUnitByObject(LPRDATA rdPtr, long param1, long param2) 
 
 	RetIfMapInvalid(0);
 
-	Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 
 	constexpr auto ALLY = 0;
 	constexpr auto ENEMY = 1;
@@ -1125,7 +1129,7 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 
 	RetIfMapInvalid(0);
 
-	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const Coord objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 	FindTheWay::FindTheWayClass::GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
 	for (auto& it : *rdPtr->pObjZoc) {
@@ -1134,8 +1138,8 @@ short WINAPI DLLExport CreateObjectZoc(LPRDATA rdPtr, long param1, long param2) 
 		rdPtr->pOc->OCCreateObject([&](ObjectCreation* oc, CreateDuplicateParam* cdp) {
 			*cdp = param;
 
-			cdp->cdpPos.posX = (short)realCoord.x;
-			cdp->cdpPos.posY = (short)realCoord.y;
+			cdp->cdpPos.posX = static_cast<short>(realCoord.x);
+			cdp->cdpPos.posY = static_cast<short>(realCoord.y);
 			});
 	}
 
@@ -1152,7 +1156,7 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 	// but when you call immediate events, this for-each will be terminated
 	// so here need a manual for-each to force it
 	rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO object) {
-		const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+		const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 
 		rdPtr->pObject = object;
 		FindTheWay::FindTheWayClass::GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
@@ -1181,7 +1185,7 @@ short WINAPI DLLExport CreateObjectZocByName(LPRDATA rdPtr, long param1, long pa
 
 	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
-	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 	FindTheWay::FindTheWayClass::GenerateZoc(objectCoord, rdPtr->pObjZoc, false);
 
 	for (auto& it : *rdPtr->pObjZoc) {
@@ -1237,7 +1241,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 
 	RetIfMapInvalid(0);
 
-	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 	const auto start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
@@ -1247,7 +1251,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 	};
 
 	for (const auto& it : *rdPtr->pAOECoord) {
-		auto gridCoord = Coord{ (size_t)it.x,(size_t)it.y };
+		auto gridCoord = Coord{ it.x,it.y };
 		auto realCoord = rdPtr->pFTW->GetRealCoord(gridCoord);
 
 		if (rdPtr->pFTW->GetMap(gridCoord.x, gridCoord.y, MapType::MAP) == MAP_OBSTACLE) {
@@ -1296,7 +1300,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 
 	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
-	const Coord objectCoord = rdPtr->pFTW->GetGridCoord(Coord{ (size_t)object->roHo.hoX, (size_t)object->roHo.hoY });
+	const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
 	const auto start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
@@ -1306,7 +1310,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 	};
 
 	for (const auto& it : *rdPtr->pAOECoord) {
-		auto gridCoord = Coord{ (size_t)it.x,(size_t)it.y };
+		auto gridCoord = Coord{ it.x,it.y };
 		auto realCoord = rdPtr->pFTW->GetRealCoord(gridCoord);
 
 		if (rdPtr->pFTW->GetMap(gridCoord.x, gridCoord.y, MapType::MAP) == MAP_OBSTACLE) {
@@ -1401,7 +1405,9 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
 			if (rdPtr->pFTW->GetMap(x, y, MapType::MAP) != MAP_OBSTACLE) {
-				auto [rx, ry] = rdPtr->pFTW->GetRealCoord(Coord{ x, y });
+				auto [rx, ry] = rdPtr->pFTW->GetRealCoord({ x, y });
+
+				OutputDebugStringA(std::format("Coord: ({}, {}), Real: ({}, {})\r\n",x,y,rx,ry).c_str());
 
 				addBKD(&imageSurfaceLT, rx - hoX, ry - hoY);
 
@@ -1472,7 +1478,10 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 
 	RetIfMapInvalid(STEP_UNREACHABLE);
 
-	FindPath(rdPtr, Coord{ startX ,startY }, Coord{ destinationX ,destinationY }, ignoreFlag, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
+	FindPath(rdPtr,
+		{ startX ,startY },
+		{ destinationX ,destinationY },
+		ignoreFlag, diagonal, checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
 #ifdef _DEBUG
 	auto map = rdPtr->pFTW->OutPutMapStr();
@@ -1511,8 +1520,8 @@ long WINAPI DLLExport GetGridCoord(LPRDATA rdPtr, long param1) {
 	RetIfMapInvalid(COORD_INVALID);
 
 	return type == CoordType::X
-		? rdPtr->pFTW->GetGridCoord(Coord{ coordX ,coordY }).x
-		: rdPtr->pFTW->GetGridCoord(Coord{ coordX ,coordY }).y;
+		? rdPtr->pFTW->GetGridCoord({ coordX ,coordY }).x
+		: rdPtr->pFTW->GetGridCoord({ coordX ,coordY }).y;
 }
 
 long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
@@ -1523,8 +1532,8 @@ long WINAPI DLLExport GetRealCoord(LPRDATA rdPtr, long param1) {
 	RetIfMapInvalid(REAL_INVALID);
 
 	return type == CoordType::X
-		? rdPtr->pFTW->GetRealCoord(Coord{ coordX ,coordY }).x
-		: rdPtr->pFTW->GetRealCoord(Coord{ coordX ,coordY }).y;
+		? rdPtr->pFTW->GetRealCoord({ coordX ,coordY }).x
+		: rdPtr->pFTW->GetRealCoord({ coordX ,coordY }).y;
 }
 
 long WINAPI DLLExport GetMapCost(LPRDATA rdPtr, long param1) {

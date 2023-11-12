@@ -84,7 +84,7 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
-			auto [realX, realY] = rdPtr->pFTW->GetRealCoord(Coord{ x ,y });
+			auto [realX, realY] = rdPtr->pFTW->GetRealCoord({ x ,y });
 			const auto offset = realY * pitch + realX * byte;
 
 			if (offset >= size) {
