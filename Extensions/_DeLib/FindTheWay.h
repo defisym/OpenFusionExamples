@@ -242,11 +242,11 @@ namespace FindTheWay {
 		size_t mapSize = 0;
 
 		size_t gridSize = 1;
-		size_t gridOffsetX = 0;
-		size_t gridOffsetY = 0;
-
 		size_t isoGridWidth = 1;
 		size_t isoGridHeight = 1;
+
+		size_t gridOffsetX = 0;
+		size_t gridOffsetY = 0;
 
 		bool isometric = false;
 
@@ -661,7 +661,6 @@ namespace FindTheWay {
 			return isometric ? CalcIsometricMapHeight(height, gridSize) : CalcTraditionalMapHeight(height, gridSize);
 		}
 
-		// TODO
 		// Only support n x n map		
 		inline static size_t CalcIsometricMapWidth(const size_t width, const size_t gridSize) {
 			auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
@@ -725,6 +724,10 @@ namespace FindTheWay {
 				this->isoGridHeight = isoGridHeight;
 
 				this->gridSize = this->isoGridWidth;
+
+				ISOConverter = ISOMatrix(isoGridWidth, isoGridHeight,
+					gridOffsetX, gridOffsetY);
+				ISOConverter.SetMapSize(width, height);
 			}
 		}
 
@@ -759,25 +762,39 @@ namespace FindTheWay {
 			return (isoGridWidth << 16) | isoGridHeight;
 		}
 
+	private:
 		// 1. Rotate -> arctan( h / w )
 		// 2. Sacle -> h / w
 		// 3. Use traditional method
 		class ISOMatrix {
-			size_t width = 1;
-			size_t height = 1;
+			size_t width = 0;
+			size_t height = 0;
+
+			size_t gridWidth = 1;
+			size_t gridHeight = 1;
+
+			size_t gridOffsetX = 0;
+			size_t gridOffsetY = 0;
 
 			double matrix[2][2];
 			double reverseMatrix[2][2];
 
-			static inline auto Matrix(double m[2][2], double x, double y) {
+			Coord ISOGridOffset;
+
+			static inline auto Matrix(const double m[2][2], const double x, const double y) {
 				return std::make_tuple(m[0][0] * x + m[0][1] * y,
 					m[1][0] * x + m[1][1] * y);
 			}
 
 		public:
-			ISOMatrix(size_t width, size_t height) {
-				this->width = width;
-				this->height = height;
+			ISOMatrix() = default;
+			ISOMatrix(const size_t gridWidth, const size_t gridHeight,
+				const size_t gridOffsetX = 0, const size_t gridOffsetY = 0) {
+				this->gridWidth = gridWidth;
+				this->gridHeight = gridHeight;
+
+				this->gridOffsetX = gridOffsetX;
+				this->gridOffsetY = gridOffsetY;
 
 				// rotate 45 degree
 				// | cos, -sin |
@@ -789,7 +806,7 @@ namespace FindTheWay {
 				// | scaleX, 0		|
 				// | 0,		 scaleY |
 				const auto scaleX = sqrt(2) / 2;
-				const auto scaleY = static_cast<double>(height) / (sqrt(2) * width);
+				const auto scaleY = static_cast<double>(gridHeight) / (sqrt(2) * gridWidth);
 
 				// total
 				// scale * rotate
@@ -813,19 +830,35 @@ namespace FindTheWay {
 				reverseMatrix[1][1] = reverseScale * a;
 			}
 
-			inline auto ToISO(double x, double y) {
+			inline void SetMapSize(const size_t width, const size_t height) {
+				this->width = width;
+				this->height = height;
+
+				ISOGridOffset = { gridOffsetX + gridWidth * height / 2, gridOffsetY + 0u };
+			}
+
+			inline const Coord& GetISOGridOffset() const {
+				return ISOGridOffset;
+			}
+
+			// convert threat ( 0, 0 ) as origin -> no grid offset
+			inline auto ToISO(const double x, const double y) const {
 				return Matrix(matrix, x, y);
 			}
-			inline auto ToTradition(double x, double y) {
+			// convert threat ( 0, 0 ) as origin -> no grid offset
+			inline auto ToTradition(const double x, const double y) const {
 				return Matrix(reverseMatrix, x, y);
 			}
 		};
 
-		inline Coord GetIsometricGridCoord(const Coord& realCoord) const {
-			auto converter = ISOMatrix(isoGridWidth, isoGridHeight);
-			const auto [x, y] = converter.ToTradition(realCoord.x - gridOffsetX,
-				realCoord.y - gridOffsetY);
+		// update when grid size is updated
+		ISOMatrix ISOConverter;
 
+	public:
+		inline Coord GetIsometricGridCoord(const Coord& realCoord) const {
+			const auto& ISOGridOffset = ISOConverter.GetISOGridOffset();
+			const auto [x, y] = ISOConverter.ToTradition(realCoord.x - ISOGridOffset.x,
+				realCoord.y - ISOGridOffset.y);
 			const auto tradition = GetTraditionalGridCoord({ x + gridOffsetX,
 				y + gridOffsetY });
 
@@ -833,14 +866,13 @@ namespace FindTheWay {
 		}
 
 		inline Coord GetIsometricRealCoord(const Coord& gridCoord) const {
+			const auto& ISOGridOffset = ISOConverter.GetISOGridOffset();
 			const auto tradition = GetTraditionalRealCoord(gridCoord);
-
-			auto converter = ISOMatrix(isoGridWidth, isoGridHeight);
-			const auto [x, y] = converter.ToISO(tradition.x - gridOffsetX,
+			const auto [x, y] = ISOConverter.ToISO(tradition.x - gridOffsetX,
 				tradition.y - gridOffsetY);
 
-			return { x + gridOffsetX,
-				y + gridOffsetY };
+			return { x + ISOGridOffset.x,
+				y + ISOGridOffset.y };
 		}
 
 		inline void ClearMap(const MapType type, const BYTE cost = MAP_PATH, const bool needUpdate = true) {
@@ -852,7 +884,7 @@ namespace FindTheWay {
 		}
 
 		inline void SetMap(const std::wstring& base64) {
-			// Format: width:height:terrain:dynamic
+			// Format: width:gridHeight:terrain:dynamic
 			size_t start = 0;
 			size_t end = 0;
 
