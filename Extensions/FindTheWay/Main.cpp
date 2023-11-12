@@ -1242,7 +1242,7 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 	RetIfMapInvalid(0);
 
 	const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
-	const auto start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
+	const auto start = Coord{ objectCoord.x, objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
 
@@ -1301,7 +1301,7 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 	const auto Oi = rdPtr->pOc->GetCreationOI(objectName);
 
 	const auto objectCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
-	const auto start = AOEClass::coord{ (int)objectCoord.x,(int)objectCoord.y };
+	const auto start = Coord{ objectCoord.x, objectCoord.y };
 
 	rdPtr->pAOE->GetAOE(start, dir, type, rdPtr->pAOECoord);
 
