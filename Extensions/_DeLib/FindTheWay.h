@@ -33,9 +33,30 @@
 namespace FindTheWay {
 	using BYTE = unsigned char;
 
+	using CoordValueType = long;
+
+	enum class CoordType {
+		X,
+		Y,
+	};
+
 	struct Coord {
-		size_t x;
-		size_t y;
+		CoordValueType x = 0;
+		CoordValueType y = 0;
+
+		Coord() = default;
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		Coord(Number x, Number y) {
+			this->x = static_cast<CoordValueType>(x);
+			this->y = static_cast<CoordValueType>(y);
+		}
+
+		Coord(double x, double y) {
+			this->x = static_cast<CoordValueType>(lround(x));
+			this->y = static_cast<CoordValueType>(lround(y));
+		}
 	};
 
 	inline bool operator<(const Coord& A, const Coord& B) {
@@ -50,7 +71,7 @@ namespace FindTheWay {
 		return Coord { A.x + B.x ,A.y + B.y };
 	}
 
-	inline Coord operator+(const Coord& A, const size_t& B) {
+	inline Coord operator+(const Coord& A, const CoordValueType& B) {
 		return Coord { A.x + B ,A.y + B };
 	}
 
@@ -58,18 +79,15 @@ namespace FindTheWay {
 		return Coord { A.x - B.x ,A.y - B.y };
 	}
 
-	inline Coord operator*(const Coord& A, const size_t& B) {
+	inline Coord operator*(const Coord& A, const CoordValueType& B) {
 		return Coord { A.x * B ,A.y * B };
 	}
 
-	inline Coord operator/(const Coord& A, const size_t& B) {
+	inline Coord operator/(const Coord& A, const CoordValueType& B) {
 		return Coord { A.x / B ,A.y / B };
 	}
 
-	enum class CoordType {
-		X,
-		Y,
-	};
+
 
 	enum class MapType {
 		MAP,
@@ -633,7 +651,8 @@ namespace FindTheWay {
 			return isometric ? CalcIsometricMapHeight(height, gridSize) : CalcTraditionalMapHeight(height, gridSize);
 		}
 
-		// Only support n x n map
+		// TODO
+		// Only support n x n map		
 		inline static size_t CalcIsometricMapWidth(const size_t width, const size_t gridSize) {
 			const auto isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
 
@@ -663,21 +682,15 @@ namespace FindTheWay {
 		}
 
 		inline size_t GetGridWidth() const {
-			if (!isometric) {
-				return gridSize;
-			}
-			else {
-				return isoGridWidth;
-			}
+			return !isometric
+				? gridSize
+				: isoGridWidth;
 		}
 
 		inline size_t GetGridHeight() const {
-			if (!isometric) {
-				return gridSize;
-			}
-			else {
-				return isoGridHeight;
-			}
+			return !isometric
+				? gridSize
+				: isoGridHeight;
 		}
 
 		inline size_t GetGridOffsetX() const {
@@ -688,17 +701,19 @@ namespace FindTheWay {
 			return gridOffsetY;
 		}
 
-		inline void SetGridSize(const size_t gridSize = 1, const size_t gridOffsetX = 0, const size_t gridOffsetY = 0) {			
+		inline void SetGridSize(const size_t gridSize = 1, const size_t gridOffsetX = 0, const size_t gridOffsetY = 0) {
+			this->gridOffsetX = gridOffsetX;
+			this->gridOffsetY = gridOffsetY;
+
 			if (!isometric) {
 				this->gridSize = ZeroProtection(gridSize);
 			}
 			else {
 				this->isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
 				this->isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
-			}
 
-			this->gridOffsetX = gridOffsetX;
-			this->gridOffsetY = gridOffsetY;
+				this->gridSize = this->isoGridWidth;
+			}
 		}
 
 		inline Coord GetGridCoord(const Coord& realCoord) const {
@@ -710,11 +725,12 @@ namespace FindTheWay {
 		}
 
 		inline Coord GetTraditionalGridCoord(const Coord& realCoord) const {
-			return (realCoord - Coord { gridOffsetX ,gridOffsetY }) / gridSize;
+			return (realCoord - Coord{ gridOffsetX, gridOffsetY }) / gridSize;
 		}
 
 		inline Coord GetTraditionalRealCoord(const Coord& gridCoord) const {
-			return (gridCoord * gridSize + (size_t)(gridSize >> 1)) + Coord { gridOffsetX ,gridOffsetY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
+			return (gridCoord * gridSize + gridSize / 2)
+			+ Coord { gridOffsetX ,gridOffsetY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
 		}
 
 		inline static size_t GetIsometricGridSize(size_t isoGridWidth = 1, size_t isoGridHeight = 1) {
@@ -724,28 +740,88 @@ namespace FindTheWay {
 			return (isoGridWidth << 16) | isoGridHeight;
 		}
 
+		// 1. Rotate -> arctan( h / w )
+		// 2. Sacle -> h / w
+		// 3. Use traditional method
+		class ISOMatrix {
+			size_t width = 1;
+			size_t height = 1;
+
+			double matrix[2][2];
+			double reverseMatrix[2][2];
+
+			static inline auto Matrix(double m[2][2], double x, double y) {
+				return std::make_tuple(m[0][0] * x + m[0][1] * y,
+					m[1][0] * x + m[1][1] * y);
+			}
+
+		public:
+			ISOMatrix(size_t width, size_t height) {
+				this->width = width;
+				this->height = height;
+
+				// rotate 45 degree
+				// | cos, -sin |
+				// | sin,  cos |
+				const auto cos = 1 / sqrt(2);
+				const auto sin = cos;
+
+				// scale
+				// | scaleX, 0		|
+				// | 0,		 scaleY |
+				const auto scaleX = sqrt(2) / 2;
+				const auto scaleY = static_cast<double>(height) / (sqrt(2) * width);
+
+				// total
+				// scale * rotate
+				const auto a = scaleX * cos;
+				const auto b = scaleX * -1 * sin;
+				const auto c = scaleY * sin;
+				const auto d = scaleY * cos;
+
+				const double reverseScale = 1 / (a * c - b * d);
+
+				// matrix
+				matrix[0][0] = a;
+				matrix[0][1] = b;
+				matrix[1][0] = c;
+				matrix[1][1] = d;
+
+				//reverse matrix
+				reverseMatrix[0][0] = reverseScale * d;
+				reverseMatrix[0][1] = reverseScale * -1 * b;
+				reverseMatrix[1][0] = reverseScale * -1 * c;
+				reverseMatrix[1][1] = reverseScale * a;
+			}
+
+			inline auto ToISO(double x, double y) {
+				return Matrix(matrix, x, y);
+			}
+			inline auto ToTradition(double x, double y) {
+				return Matrix(reverseMatrix, x, y);
+			}
+		};
+
 		inline Coord GetIsometricGridCoord(const Coord& realCoord) const {
-			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
-			const size_t A = ((realCoord.x - gridOffsetX) << 1) / isoGridWidth;
-			// Y from top (fusion)
-			const size_t B = ((isoGridHeight * height - realCoord.y - gridOffsetY) << 1) / isoGridHeight;
-			// Y from bottom (Cartesian)
-			// size_t B = ((realCoord.y - gridOffsetY) << 1) / isoGridHeight;
+			auto converter = ISOMatrix(isoGridWidth, isoGridHeight);
+			const auto [x, y] = converter.ToTradition(realCoord.x - gridOffsetX,
+				realCoord.y - gridOffsetY);
 
-			const size_t coordX = ((width - 1 + A - B) >> 1);
-			const size_t coordY = (((height << 1) + width - 1 - A - B) >> 1);
+			const auto tradition = GetTraditionalGridCoord({ x + gridOffsetX,
+				y + gridOffsetY });
 
-			return Coord{ coordX,coordY };
+			return tradition;
 		}
 
 		inline Coord GetIsometricRealCoord(const Coord& gridCoord) const {
-			const size_t realX = ((isoGridWidth * (height + gridCoord.x - gridCoord.y)) >> 1) + gridOffsetX;
-			// Y from top (fusion)
-			const size_t realY = ((isoGridHeight * (height + 1 + gridCoord.y - width + gridCoord.x)) >> 1) + gridOffsetY;
-			// Y from bottom (Cartesian)
-			// size_t realY = ((isoGridHeight * (height - 1 - gridCoord.y + width - gridCoord.x)) >> 1) + gridOffsetY;
+			const auto tradition = GetTraditionalRealCoord(gridCoord);
 
-			return Coord{ realX,realY };
+			auto converter = ISOMatrix(isoGridWidth, isoGridHeight);
+			const auto [x, y] = converter.ToISO(tradition.x - gridOffsetX,
+				tradition.y - gridOffsetY);
+
+			return { x + gridOffsetX,
+				y + gridOffsetY };
 		}
 
 		inline void ClearMap(const MapType type, const BYTE cost = MAP_PATH, const bool needUpdate = true) {
@@ -1426,8 +1502,8 @@ namespace FindTheWay {
 				bool updated = false;
 				for (size_t it = 0; it < ranges.size(); it++) {
 					if (ranges [it] >= nest) {
-						area.back().emplace_back(Coord { start.x + nest * normalNeighbour [it].x
-													,start.y + nest * normalNeighbour [it].y });
+						area.back().emplace_back(start.x + nest * normalNeighbour [it].x
+												 ,start.y + nest * normalNeighbour [it].y);
 
 						updated = true;
 					}
