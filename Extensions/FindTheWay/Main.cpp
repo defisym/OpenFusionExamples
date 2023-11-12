@@ -1224,11 +1224,12 @@ short WINAPI DLLExport CreateAOE(LPRDATA rdPtr, long param1, long param2) {
 
 	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
-	bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
-	bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
-	const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-	const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
+	const auto [moveIgnoreZoc,
+		moveIgnoreAlly,
+		moveIgnoreEnemy,
+		attackIgnoreAlly,
+		attackIgnoreEnemy
+	] = FindTheWayClass::ParseIgnoreFlag(ignoreFlag);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1280,12 +1281,12 @@ short WINAPI DLLExport CreateAOEByName(LPRDATA rdPtr, long param1, long param2) 
 
 	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
 
-	bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
-	bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
-	bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
-	const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-	const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
-
+	const auto [moveIgnoreZoc,
+		moveIgnoreAlly,
+		moveIgnoreEnemy,
+		attackIgnoreAlly,
+		attackIgnoreEnemy
+	] = FindTheWayClass::ParseIgnoreFlag(ignoreFlag);
 
 	if (!LPROValid(object)) {
 		return 0;
@@ -1608,7 +1609,11 @@ long WINAPI DLLExport GetIgnoreFlag(LPRDATA rdPtr, long param1) {
 	const bool attackIgnoreAlly= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const bool attackIgnoreEnemy= (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	
-	return (long)FindTheWayClass::GetIgnoreFlag(moveIgnoreZoc, moveIgnoreAlly, moveIgnoreEnemy, attackIgnoreAlly, attackIgnoreEnemy);
+	return (long)FindTheWayClass::GetIgnoreFlag(moveIgnoreZoc,
+		moveIgnoreAlly,
+		moveIgnoreEnemy,
+		attackIgnoreAlly,
+		attackIgnoreEnemy);
 }
 
 long WINAPI DLLExport GetMapTypeMap(LPRDATA rdPtr, long param1) {

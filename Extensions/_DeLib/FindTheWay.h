@@ -937,7 +937,7 @@ namespace FindTheWay {
 
 				if (curPathAvaliable) {
 					const std::wstring displayName = name == nullptr ? L"Last Path" : *name;
-					ss << "Step of \"" << displayName << "\" = \'-\'" << std::endl;
+					ss << "Step of \"" << displayName << R"(" = '-')" << std::endl;
 				}
 				else if (name != nullptr) {
 					ss << "Target Path \"" << *name << "\" Invalid" << std::endl;
@@ -1077,11 +1077,12 @@ namespace FindTheWay {
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			const auto neighbourSize = pNeighbour->size();
 
-			const bool moveIgnoreZoc = ignoreFlag & 0b10000;   // Move through zoc
-			const bool moveIgnoreAlly = ignoreFlag & 0b01000;  // Move through ally
-			const bool moveIgnoreEnemy = ignoreFlag & 0b00100; // Move through enemy	
-			bool attackIgnoreAlly = ignoreFlag & 0b00010;      // Attack ally (e.g., heal)	
-			bool attackIgnoreEnemy = ignoreFlag & 0b00001;     // Attack enemy	
+			const auto [moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy
+			] = ParseIgnoreFlag(ignoreFlag);
 
 			auto addSet = [&] (CoordSet* src) {
 				if (src == nullptr) {
@@ -1327,11 +1328,12 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
-			bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
-			bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
-			const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-			const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
+			const auto [moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy
+			] = ParseIgnoreFlag(ignoreFlag);
 
 			auto ignoreCoord = [&] (const Coord& p) {
 				if (GetMap(p.x, p.y, this->map) == MAP_OBSTACLE) {
@@ -1500,11 +1502,12 @@ namespace FindTheWay {
 			bool updateAttack = allRange ? false : attack;		// ignore dynamic unit part when calc attack range
 			// force to evaluate them in allRange mode
 
-			const bool moveIgnoreZoc = ignoreFlag & 0b10000;     // Move through zoc
-			const bool moveIgnoreAlly = ignoreFlag & 0b01000;    // Move through ally
-			const bool moveIgnoreEnemy = ignoreFlag & 0b00100;   // Move through enemy	
-			const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-			const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
+			const auto [moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy
+			] = ParseIgnoreFlag(ignoreFlag);
 
 			//// add first grid?
 			//// add start when interval == range
@@ -1713,6 +1716,20 @@ namespace FindTheWay {
 				| static_cast<size_t>(moveIgnoreEnemy) << 2
 				| static_cast<size_t>(attackIgnoreAlly) << 1
 				| static_cast<size_t>(attackIgnoreEnemy);
+		}
+
+		inline static auto ParseIgnoreFlag(const size_t ignoreFlag = DEFAULT_IGNOREFLAG) {
+			const bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+			const bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+			const bool moveIgnoreEnemy = ignoreFlag & 0b00100;			// Move through enemy	
+			const bool attackIgnoreAlly = ignoreFlag & 0b00010;			// Attack ally (e.g., heal)	
+			const bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy
+
+			return std::make_tuple(moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy);
 		}
 
 		inline bool GetStash() const {
