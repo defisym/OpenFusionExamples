@@ -664,13 +664,13 @@ namespace FindTheWay {
 		// TODO
 		// Only support n x n map		
 		inline static size_t CalcIsometricMapWidth(const size_t width, const size_t gridSize) {
-			const auto isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
+			auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
 
 			return width / isoGridWidth;
 		}
 
 		inline static size_t CalcIsometricMapHeight(const size_t height, const size_t gridSize) {
-			const auto isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
+			auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
 
 			return height / isoGridHeight;
 		}
@@ -719,8 +719,10 @@ namespace FindTheWay {
 				this->gridSize = ZeroProtection(gridSize);
 			}
 			else {
-				this->isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
-				this->isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
+				auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
+
+				this->isoGridWidth = isoGridWidth;
+				this->isoGridHeight = isoGridHeight;
 
 				this->gridSize = this->isoGridWidth;
 			}
@@ -741,6 +743,13 @@ namespace FindTheWay {
 		inline Coord GetTraditionalRealCoord(const Coord& gridCoord) const {
 			return (gridCoord * gridSize + gridSize / 2)
 			+ Coord { gridOffsetX ,gridOffsetY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
+		}
+
+		static inline auto ParseIsometricGridSize(const size_t gridSize) {
+			const auto isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
+			const auto isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
+
+			return std::make_tuple(isoGridWidth, isoGridHeight);
 		}
 
 		inline static size_t GetIsometricGridSize(size_t isoGridWidth = 1, size_t isoGridHeight = 1) {
