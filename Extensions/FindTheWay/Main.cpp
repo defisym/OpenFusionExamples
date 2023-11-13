@@ -303,7 +303,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	const auto gridOffsetX = (size_t)CNC_GetParameter(rdPtr);
 	const auto gridOffsetY = (size_t)CNC_GetParameter(rdPtr);
 
-	const bool eventIterate = (bool)CNC_GetParameter(rdPtr);
+	bool eventIterate = (bool)CNC_GetParameter(rdPtr);
 	const int baseLayer = (int)CNC_GetParameter(rdPtr) - 1;		// Index start from 0, LAYER_ALL = -1 for All layer
 	const auto type = (MapType)CNC_GetParameter(rdPtr);
 
@@ -316,8 +316,9 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 	const auto frameWidth = frameRect.right - frameRect.left;
 	const auto frameHeight = frameRect.bottom - frameRect.top;
 
-	const size_t width = FindTheWayClass::CalcMapWidth(frameWidth, gridSize, rdPtr->isometric);
-	const size_t height = FindTheWayClass::CalcMapHeight(frameHeight, gridSize, rdPtr->isometric); 
+	const auto [width, height]
+		= FindTheWayClass::CalcMapSize(frameWidth, frameHeight,
+		gridSize, rdPtr->isometric);
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
@@ -335,6 +336,14 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 
 	const int layerOffsetX = hoPtr->hoAdRunHeader->rh3.rh3DisplayX;
 	const int layerOffsetY = hoPtr->hoAdRunHeader->rh3.rh3DisplayY;
+
+#ifndef RUN_ONLY
+	if (eventIterate && !CheckCompatibility(rdPtr)) {
+		MSGBOX(L"Event Iterate is not supported in 295 or later");
+	}
+#endif
+
+	eventIterate = eventIterate && CheckCompatibility(rdPtr);
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {

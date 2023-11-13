@@ -121,7 +121,7 @@ BEGIN
             MENUITEM "Map Available", IDMN_CONDITION_MA
             MENUITEM "Check Map Cost At Coord", IDMN_CONDITION_CMCAC
             MENUITEM SEPARATOR
-            MENUITEM "On Map Update", IDMN_CONDITION_OMC
+            //MENUITEM "On Map Update", IDMN_CONDITION_OMC
             MENUITEM "On Iterate Map", IDMN_CONDITION_OITM
         END
         MENUITEM SEPARATOR

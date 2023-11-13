@@ -1,5 +1,11 @@
 #pragma once
 
+inline bool CheckCompatibility(LPRDATA rdPtr) {
+	const auto ver = rdPtr->rHo.hoAdRunHeader->rhApp->m_miniHdr.gaPrdBuild;
+
+	return ver < 295;
+}
+
 inline void FindPath(LPRDATA rdPtr, Coord start, Coord destination, size_t ignoreFlag, bool diagonal, bool checkDiagonalCorner, bool forceFind, bool useRealCoord, const std::wstring& saveName) {
 	if (useRealCoord) {
 		start = rdPtr->pFTW->GetGridCoord(start);
@@ -18,16 +24,26 @@ inline void FindPath(LPRDATA rdPtr, Coord start, Coord destination, size_t ignor
 	}
 }
 
-inline void UpdateMapCallBackFunc(void* rdPtr) {
-	const auto pCast = (LPRDATA)rdPtr;
-	callRunTimeFunction(pCast, RFUNCTION_GENERATEEVENT, ONMAPCHANGE, 0);
+inline void UpdateMapCallBackFunc(void* pData) {
+	const auto rdPtr = (LPRDATA)pData;
+
+	if (!CheckCompatibility(rdPtr)) {
+#ifndef RUN_ONLY
+		//MSGBOX(L"Map Update Callback is not supported in 295 or later");
+#endif
+		return;
+	}
+
+	CallEvent(ONMAPCHANGE);
 }
 
 inline bool OverlapUnit(LPRDATA rdPtr,const Coord& c) {
 	return std::ranges::find(*rdPtr->pUnit, c) != rdPtr->pUnit->end();
 }
 
-inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_t gridOffsetX, size_t gridOffsetY) {
+// `gridSize` & `gridOffset` are used to find the proper pixel of picture
+inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf,
+	size_t gridSize, size_t gridOffsetX, size_t gridOffsetY) {
 	if (!pSf->IsValid()) {
 		return FALSE;
 	}
@@ -50,8 +66,9 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf, size_t gridSize, size_
 	const size_t picWidth = pSf->GetWidth();
 	const size_t picHeight = pSf->GetHeight();
 
-	const size_t width = FindTheWayClass::CalcMapWidth(pSf->GetWidth(), gridSize, false);
-	const size_t height = FindTheWayClass::CalcMapHeight(pSf->GetHeight(), gridSize, false);
+	const auto [width, height]
+		= FindTheWayClass::CalcMapSize(pSf->GetWidth(), pSf->GetHeight(),
+		gridSize, false);
 
 	try {
 		rdPtr->pFTW = new FindTheWayClass(width, height);
