@@ -737,27 +737,50 @@ long WINAPI DLLExport SelectAll(LPRDATA rdPtr, long param1, long param2) {
 long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 	const bool negated = IsNegated(rdPtr);
 
-	const auto oilObjA = (short)OIL_GetParameter(rdPtr);
-	const auto oilObjB = (short)OIL_GetParameter(rdPtr);
+	//const auto oilObjA = (short)OIL_GetParameter(rdPtr);
+	//const auto oilObjB = (short)OIL_GetParameter(rdPtr);
+
+	auto GetObjectInfo = [&] () {
+		LPRO pObj = nullptr;
+		const auto oilObj = ObjectSelection::GetOil(rdPtr, &pObj);
+
+		return std::make_tuple(oilObj, pObj);
+	};
+
+	const auto [oilObjA, pObjA] = GetObjectInfo();
+	const auto [oilObjB, pObjB] = GetObjectInfo();
 
 	RetIfMapInvalid(FALSE);
 
-	CoordSet objects;
+	struct Info {
+		LPRO pObj;
+		Coord coord;
 
-	rdPtr->pSelect->ForEach(rdPtr, oilObjB, [&](LPRO object) {
-		objects.emplace_back(rdPtr->pFTW->GetGridCoord({object->roHo.hoX, object->roHo.hoY }));
-		});
+		explicit Info(LPRO pObj, const FindTheWayClass* pFTW) {
+			this->pObj = pObj;
+			this->coord = pFTW->GetGridCoord({ pObj->roHo.hoX, pObj->roHo.hoY });
+		}
+	};
+
+	std::vector<Info> objectBs;
+
+	rdPtr->pSelect->ForEach(rdPtr, oilObjB, [&] (LPRO object) {
+		objectBs.emplace_back(object, rdPtr->pFTW);
+	});
 
 	return rdPtr->pSelect->FilterObjects(rdPtr, oilObjA, negated,
 		[&](LPRDATA rdPtr, LPRO object)->bool {
-			if (std::ranges::find(objects,
-			rdPtr->pFTW->GetGridCoord({ object->roHo.hoX,
-			object->roHo.hoY }))
-			!= objects.end()) {
-			return true;
-		}
+			const auto gridCoord = rdPtr->pFTW->GetGridCoord({ object->roHo.hoX, object->roHo.hoY });
+			const auto it = std::ranges::find_if(objectBs,[&] (const Info& info) {
+				// doesn't check self
+				if (object == info.pObj) {
+					return false;
+				}
 
-		return false;
+				return gridCoord == info.coord;
+			});
+
+			return it != objectBs.end();
 		});
 }
 
@@ -1416,7 +1439,7 @@ short WINAPI DLLExport CreateGrid(LPRDATA rdPtr, long param1, long param2) {
 			if (rdPtr->pFTW->GetMap(x, y, MapType::MAP) != MAP_OBSTACLE) {
 				auto [rx, ry] = rdPtr->pFTW->GetRealCoord({ x, y });
 
-				OutputDebugStringA(std::format("Coord: ({}, {}), Real: ({}, {})\r\n",x,y,rx,ry).c_str());
+				//OutputDebugStringA(std::format("Coord: ({}, {}), Real: ({}, {})\r\n",x,y,rx,ry).c_str());
 
 				addBKD(&imageSurfaceLT, rx - hoX, ry - hoY);
 
