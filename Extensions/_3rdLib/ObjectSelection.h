@@ -181,7 +181,7 @@ private:
 		}
 
 		while (CurrentQualToOi->qoiOiList >= 0) {
-			f(OiList + CurrentQualToOi->qoiOiList, CurrentQualToOi->qoiOiList);
+			f(GetLPOIL(CurrentQualToOi->qoiOiList), CurrentQualToOi->qoiOiList);
 			CurrentQualToOi = reinterpret_cast<LPQOI>(reinterpret_cast<char*>(CurrentQualToOi) + 4);
 
 			if (CurrentQualToOi == nullptr) {
@@ -428,7 +428,7 @@ public:
 		}
 
 		if (oiList & 0x8000) {
-			return FilterQualifierObjects(rdPtr, static_cast<short>(oiList & 0x7FFF), negate
+			return FilterQualifierObjects(rdPtr, oiList, negate
 				, filterFunction
 				, selectDestroyed) ^ negate;
 		}
