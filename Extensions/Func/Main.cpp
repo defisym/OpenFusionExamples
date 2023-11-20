@@ -626,7 +626,14 @@ short WINAPI DLLExport Action_RestoreScope(LPRDATA rdPtr, long param1, long para
 long WINAPI DLLExport Expression_CallFuncRV(LPRDATA rdPtr,long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Param = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);	
-	
+
+	if (!CheckCompatibility(rdPtr)) {
+#ifndef RUN_ONLY
+		MSGBOX(L"Expression Func is not supported in 295 or later");
+#endif
+		return 0;
+	}
+
 	CallFuncCore(rdPtr, FuncName, Param);
 
 	auto& ret = GetReturn(rdPtr, 0);
@@ -638,6 +645,14 @@ long WINAPI DLLExport Expression_CallFuncRV(LPRDATA rdPtr,long param1) {
 long WINAPI DLLExport Expression_CallFuncRS(LPRDATA rdPtr,long param1) {
 	std::wstring FuncName = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	std::wstring Param = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	if (!CheckCompatibility(rdPtr)) {
+#ifndef RUN_ONLY
+		MSGBOX(L"Expression Func is not supported in 295 or later");
+#endif
+		rdPtr->rHo.hoFlags |= HOF_STRING;
+		return (long)Default_Str;
+	}
 
 	CallFuncCore(rdPtr, FuncName, Param);
 

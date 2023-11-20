@@ -1,5 +1,11 @@
 #pragma once
 
+inline bool CheckCompatibility(LPRDATA rdPtr) {
+	const auto ver = rdPtr->rHo.hoAdRunHeader->rhApp->m_miniHdr.gaPrdBuild;
+
+	return ver < 295;
+}
+
 inline void Assert(long value, const std::wstring& msg) {
 #ifndef RUN_ONLY
 	if (!value) {
