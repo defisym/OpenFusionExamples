@@ -28,8 +28,8 @@ inline long NotInFuncError() {
 	Assert(false, L"Not In Func");
 #endif
 
-	if (std::is_same_v<Type, std::wstring()>) {
-		return (long)Default_Str;
+	if constexpr (std::is_same_v<Type, std::wstring()>) {
+		return reinterpret_cast<long>(Default_Str);
 	}
 	else {
 		return -1;
@@ -144,7 +144,7 @@ public:
 		rdPtr->FuncParamStack->emplace_back();
 		UpdateParam(rdPtr, param);
 
-		rdPtr->FuncReturn->clear();			
+		rdPtr->FuncReturn->clear();
 
 		(*rdPtr->RecursiveIndex)[funcName] += 1;
 
@@ -171,7 +171,7 @@ public:
 	}
 
 	inline const auto& GetManglingName() { return manglingName; }
-	
+
 	// handle loop
 	inline void CallFunc(const std::function<void()>& callback,
 		size_t loopIndex = 1) const {
@@ -228,7 +228,7 @@ inline void IterateObjectCore(LPRDATA rdPtr, short oil,
 		toIterate.emplace_back(object);
 		}, flag);
 
-	if(toIterate.empty()) {
+	if (toIterate.empty()) {
 		return;
 	}
 
@@ -285,5 +285,5 @@ inline Data& TempParam(LPRDATA rdPtr, const std::wstring& FuncName, const std::w
 inline bool HasTempParam(LPRDATA rdPtr, const std::wstring& FuncName, const std::wstring& ParamName) {
 	const auto& name = GetFuncNameWithRecursiveID(rdPtr, FuncName);
 
-	return  (*rdPtr->FuncTempParam).contains(name) && (*rdPtr->FuncTempParam)[name].contains(ParamName);
+	return  rdPtr->FuncTempParam->contains(name) && (*rdPtr->FuncTempParam)[name].contains(ParamName);
 }
