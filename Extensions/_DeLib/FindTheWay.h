@@ -748,8 +748,8 @@ namespace FindTheWay {
 		}
 
 	private:
-		// 1. Rotate -> arctan( h / w )
-		// 2. Sacle -> h / w
+		// 1. Rotate -> 45 degrees
+		// 2. Sacle
 		// 3. Use traditional method
 		class ISOMatrix {
 			size_t width = 0;
@@ -826,11 +826,11 @@ namespace FindTheWay {
 				return ISOGridOffset;
 			}
 
-			// convert threat ( 0, 0 ) as origin -> no grid offset
+			// convert treats ( 0, 0 ) as origin -> no grid offset
 			inline auto ToISO(const double x, const double y) const {
 				return Matrix(matrix, x, y);
 			}
-			// convert threat ( 0, 0 ) as origin -> no grid offset
+			// convert treats ( 0, 0 ) as origin -> no grid offset
 			inline auto ToTradition(const double x, const double y) const {
 				return Matrix(reverseMatrix, x, y);
 			}
