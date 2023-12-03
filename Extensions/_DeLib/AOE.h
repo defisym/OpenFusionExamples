@@ -10,50 +10,31 @@
 
 #include <vector>
 
+#include "FindTheWay.h"
+
 // AOE
 namespace AOE{
 	constexpr auto RESERVE = 50;
 
 	class AOEClass {
-	public:
-		struct offset {
-			int x;
-			int y;
-
-			inline offset operator+(const offset& A) const {
-				return offset{ A.x + this->x ,A.y + this->y };
-			}
-
-			inline offset operator*(const int& A) const {
-				return offset{ A * this->x ,A * this->y };
-			}
-
-			inline bool operator==(const offset& A) const {
-				return A.x == this->x && A.y == this->y;
-			}
-		};
-
-		using coord = offset;
-
-	private:
-		inline static const std::vector<offset> dirOffset = { {1, 0},
+		inline static const std::vector<Coord> dirOffset = { {1, 0},
 			{ 0,-1 },
 			{ -1,0 },
 			{ 0,1 } };
 
-		coord start = { 0,0 };
+		Coord start = { 0,0 };
 		size_t dir = 0;
 
-		std::vector<coord> open_set;
-		std::vector<coord> close_set;
-		std::vector<coord> cur_set;
+		std::vector<Coord> open_set;
+		std::vector<Coord> close_set;
+		std::vector<Coord> cur_set;
 
-		inline void GetAOE_1_X(const size_t size, std::vector<coord>* output) const {
+		inline void GetAOE_1_X(const size_t size, std::vector<Coord>* output) const {
 			for (size_t i = 1; i <= size; i++) {
-				output->emplace_back(start + coord{ dirOffset[dir].x * (int)i,dirOffset[dir].y * (int)i });
+				output->emplace_back(start + Coord{ dirOffset[dir].x * i,dirOffset[dir].y * i });
 			}
 		}
-		inline void GetAOE_2_X(const size_t type, std::vector<coord>* output) const {
+		inline void GetAOE_2_X(const size_t type, std::vector<Coord>* output) const {
 			int vSize = 0;
 			int hSize = 0;
 
@@ -113,11 +94,11 @@ namespace AOE{
 						y = h - (hSize >> 1);
 					}
 
-					output->emplace_back(start + coord{ x,y });
+					output->emplace_back(start + Coord{ x,y });
 				}
 			}
 		}
-		inline void GetAOE_3_X(const size_t size, std::vector<coord>* output) {
+		inline void GetAOE_3_X(const size_t size, std::vector<Coord>* output) {
 			open_set.clear();			
 			close_set.clear();
 			cur_set.clear();
@@ -128,10 +109,10 @@ namespace AOE{
 				swap(open_set, cur_set);
 
 				while (!open_set.empty()) {
-					coord base = open_set.back();
+					auto base = open_set.back();
 					open_set.pop_back();
 
-					auto find = [](std::vector<coord>& c, coord& p) {
+					auto find = [](std::vector<Coord>& c, Coord& p) {
 						return std::ranges::find(c, p) != c.end();
 					};
 
@@ -140,7 +121,7 @@ namespace AOE{
 					}
 
 					for (auto& it : dirOffset) {
-						auto cur = coord{ it.x + base.x,it.y + base.y };
+						auto cur = Coord{ it.x + base.x,it.y + base.y };
 
 						if (!find(close_set, cur)) {
 							cur_set.emplace_back(cur);
@@ -155,11 +136,11 @@ namespace AOE{
 
 			return;
 		}
-		inline void GetAOE_4_X(size_t size, std::vector<coord>* output) const {
-			output->emplace_back(start + offset{ 1,-1 });
-			output->emplace_back(start + offset{ -1,-1 });
-			output->emplace_back(start + offset{ -1,1 });
-			output->emplace_back(start + offset{ 1,1 });
+		inline void GetAOE_4_X(size_t size, std::vector<Coord>* output) const {
+			output->emplace_back(start + Coord{ 1,-1 });
+			output->emplace_back(start + Coord{ -1,-1 });
+			output->emplace_back(start + Coord{ -1,1 });
+			output->emplace_back(start + Coord{ 1,1 });
 		}
 
 	public:
@@ -172,7 +153,7 @@ namespace AOE{
 
 		}
 
-		inline void GetAOE(const coord start, const size_t dir, const size_t type, std::vector<coord>* output) {
+		inline void GetAOE(const Coord start, const size_t dir, const size_t type, std::vector<Coord>* output) {
 			output->clear();
 
 			this->start = start;

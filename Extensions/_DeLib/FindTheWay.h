@@ -33,42 +33,70 @@
 namespace FindTheWay {
 	using BYTE = unsigned char;
 
-	struct Coord {
-		size_t x;
-		size_t y;
-	};
-
-	inline bool operator<(const Coord& A, const Coord& B) {
-		return (A.x < B.x) && (A.y < B.y);
-	}
-
-	inline bool operator==(const Coord& A, const Coord& B) {
-		return (A.x == B.x) && (A.y == B.y);
-	}
-
-	inline Coord operator+(const Coord& A, const Coord& B) {
-		return Coord { A.x + B.x ,A.y + B.y };
-	}
-
-	inline Coord operator+(const Coord& A, const size_t& B) {
-		return Coord { A.x + B ,A.y + B };
-	}
-
-	inline Coord operator-(const Coord& A, const Coord& B) {
-		return Coord { A.x - B.x ,A.y - B.y };
-	}
-
-	inline Coord operator*(const Coord& A, const size_t& B) {
-		return Coord { A.x * B ,A.y * B };
-	}
-
-	inline Coord operator/(const Coord& A, const size_t& B) {
-		return Coord { A.x / B ,A.y / B };
-	}
-
 	enum class CoordType {
 		X,
 		Y,
+	};
+
+	using CoordValueType = long;
+
+	struct Coord {
+		CoordValueType x = 0;
+		CoordValueType y = 0;
+
+		Coord() = default;
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		Coord(Number x, Number y) {
+			this->x = static_cast<CoordValueType>(x);
+			this->y = static_cast<CoordValueType>(y);
+		}
+
+		Coord(double x, double y) {
+			this->x = lround(x);
+			this->y = lround(y);
+		}
+
+		inline bool operator<(const Coord& B) const {
+			return (this->x < B.x) && (this->y < B.y);
+		}
+
+		inline bool operator==(const Coord& B) const {
+			return (this->x == B.x) && (this->y == B.y);
+		}
+
+		inline Coord operator+(const Coord& B) const {
+			return { this->x + B.x ,this->y + B.y };
+		}
+
+		inline Coord operator-(const Coord& B) const {
+			return { this->x - B.x ,this->y - B.y };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator+(const Number& B) const {
+			return { this->x + B ,this->y + B };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator-(const Number& B) const {
+			return { this->x - B ,this->y - B };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator*(const Number& B) const {
+			return { this->x * B ,this->y * B };
+		}
+
+		template<typename Number>
+			requires std::is_arithmetic_v<Number>
+		inline Coord operator/(const Number& B) const{
+			return { this->x / B ,this->y / B };
+		}
 	};
 
 	enum class MapType {
@@ -214,11 +242,11 @@ namespace FindTheWay {
 		size_t mapSize = 0;
 
 		size_t gridSize = 1;
-		size_t gridOffsetX = 0;
-		size_t gridOffsetY = 0;
-
 		size_t isoGridWidth = 1;
 		size_t isoGridHeight = 1;
+
+		size_t gridOffsetX = 0;
+		size_t gridOffsetY = 0;
 
 		bool isometric = false;
 
@@ -625,59 +653,19 @@ namespace FindTheWay {
 			Free();
 		}
 
-		inline static size_t CalcMapWidth(const size_t width, const size_t gridSize, const bool isometric = false) {
-			return isometric ? CalcIsometricMapWidth(width, gridSize) : CalcTraditionalMapWidth(width, gridSize);
-		}
-
-		inline static size_t CalcMapHeight(const size_t height, const size_t gridSize, const bool isometric = false) {
-			return isometric ? CalcIsometricMapHeight(height, gridSize) : CalcTraditionalMapHeight(height, gridSize);
-		}
-
-		// Only support n x n map
-		inline static size_t CalcIsometricMapWidth(const size_t width, const size_t gridSize) {
-			const auto isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
-
-			return width / isoGridWidth;
-		}
-
-		inline static size_t CalcIsometricMapHeight(const size_t height, const size_t gridSize) {
-			const auto isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
-
-			return height / isoGridHeight;
-		}
-		
-		inline static size_t CalcTraditionalMapWidth(const size_t width, size_t gridSize) {
-			gridSize = ZeroProtection(gridSize);
-			
-			return width / gridSize;
-		}
-
-		inline static size_t CalcTraditionalMapHeight(const size_t height, size_t gridSize) {
-			gridSize = ZeroProtection(gridSize);
-
-			return height / gridSize;
-		}
-
 		inline void SetIsometric(const bool isometric) {
+			if (this->isometric == isometric) { return; }
+
 			this->isometric = isometric;
+			SetGridSize(GetIsometricGridSize(gridSize, gridSize / 2), gridOffsetX, gridOffsetY);
 		}
 
 		inline size_t GetGridWidth() const {
-			if (!isometric) {
-				return gridSize;
-			}
-			else {
-				return isoGridWidth;
-			}
+			return !isometric ? gridSize : isoGridWidth;
 		}
 
 		inline size_t GetGridHeight() const {
-			if (!isometric) {
-				return gridSize;
-			}
-			else {
-				return isoGridHeight;
-			}
+			return !isometric ? gridSize : isoGridHeight;
 		}
 
 		inline size_t GetGridOffsetX() const {
@@ -688,17 +676,22 @@ namespace FindTheWay {
 			return gridOffsetY;
 		}
 
-		inline void SetGridSize(const size_t gridSize = 1, const size_t gridOffsetX = 0, const size_t gridOffsetY = 0) {			
-			if (!isometric) {
-				this->gridSize = ZeroProtection(gridSize);
-			}
-			else {
-				this->isoGridWidth = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
-				this->isoGridHeight = ZeroProtection((gridSize & 0x0000FFFF));
-			}
-
+		inline void SetGridSize(const size_t gridSize = 1, const size_t gridOffsetX = 0, const size_t gridOffsetY = 0) {
 			this->gridOffsetX = gridOffsetX;
 			this->gridOffsetY = gridOffsetY;
+
+			auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
+			this->gridSize = isoGridWidth;
+
+			if (!isometric) { return; }
+
+			// ISOMetric specific
+			this->isoGridWidth = isoGridWidth;
+			this->isoGridHeight = isoGridHeight;
+
+			ISOConverter = ISOMatrix(isoGridWidth, isoGridHeight,
+				gridOffsetX, gridOffsetY);
+			ISOConverter.SetMapSize(width, height);
 		}
 
 		inline Coord GetGridCoord(const Coord& realCoord) const {
@@ -710,42 +703,161 @@ namespace FindTheWay {
 		}
 
 		inline Coord GetTraditionalGridCoord(const Coord& realCoord) const {
-			return (realCoord - Coord { gridOffsetX ,gridOffsetY }) / gridSize;
+			return (realCoord - Coord{ gridOffsetX, gridOffsetY }) / gridSize;
 		}
 
 		inline Coord GetTraditionalRealCoord(const Coord& gridCoord) const {
-			return (gridCoord * gridSize + (size_t)(gridSize >> 1)) + Coord { gridOffsetX ,gridOffsetY };	// gridCoord * gridSize + (size_t)(gridSize / 2);
+			return gridCoord * gridSize + gridSize / 2 + Coord{ gridOffsetX ,gridOffsetY };
+		}
+
+		static inline auto ParseIsometricGridSize(const size_t gridSize) {
+			const auto isoGridWidth = ZeroProtection((gridSize & 0x0000FFFF));
+			const auto isoGridHeight = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
+
+			return std::make_tuple(isoGridWidth, isoGridHeight);
 		}
 
 		inline static size_t GetIsometricGridSize(size_t isoGridWidth = 1, size_t isoGridHeight = 1) {
-			isoGridWidth = isoGridWidth & 0xFFFF;
-			isoGridHeight = isoGridHeight & 0xFFFF;
+			isoGridWidth = ZeroProtection(isoGridWidth & 0xFFFF);
+			isoGridHeight = ZeroProtection(isoGridHeight & 0xFFFF);
 
-			return (isoGridWidth << 16) | isoGridHeight;
+			return (isoGridHeight << 16) | isoGridWidth;
 		}
 
+		// Get the best fit map size
+		inline static auto CalcMapSize(const size_t width, const size_t height,
+			const size_t gridSize, const bool isometric = false) {
+			auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
+
+			if (!isometric) {
+				return std::make_tuple(width / isoGridWidth, height / isoGridHeight);
+			}
+
+			// ISOMetric: Width = GridWidth / 2 * (MapWidth + MapHeight)
+			//			  Height = GridHeight / 2 * (MapWidth + MapHeight)
+			const auto wh_1 = width * 2 / isoGridWidth;
+			const auto wh_2 = height * 2 / isoGridHeight;
+
+			const auto wh = (std::min)(wh_1, wh_2);
+			const bool bEven = wh % 2 == 0;
+
+			const auto mapHeight = wh / 2;
+			const auto mapWidth = mapHeight + bEven;
+
+			return std::make_tuple(mapWidth, mapHeight);
+		}
+
+	private:
+		// 1. Rotate -> 45 degrees
+		// 2. Sacle
+		// 3. Use traditional method
+		class ISOMatrix {
+			size_t width = 0;
+			size_t height = 0;
+
+			size_t gridWidth = 1;
+			size_t gridHeight = 1;
+
+			size_t gridOffsetX = 0;
+			size_t gridOffsetY = 0;
+
+			double matrix[2][2];
+			double reverseMatrix[2][2];
+
+			Coord ISOGridOffset;
+
+			static inline auto Matrix(const double m[2][2], const double x, const double y) {
+				return std::make_tuple(m[0][0] * x + m[0][1] * y,
+					m[1][0] * x + m[1][1] * y);
+			}
+
+		public:
+			ISOMatrix() = default;
+			ISOMatrix(const size_t gridWidth, const size_t gridHeight,
+				const size_t gridOffsetX = 0, const size_t gridOffsetY = 0) {
+				this->gridWidth = gridWidth;
+				this->gridHeight = gridHeight;
+
+				this->gridOffsetX = gridOffsetX;
+				this->gridOffsetY = gridOffsetY;
+
+				// rotate 45 degree
+				// | cos, -sin |
+				// | sin,  cos |
+				const auto cos = 1 / sqrt(2);
+				const auto sin = cos;
+
+				// scale
+				// | scaleX, 0		|
+				// | 0,		 scaleY |
+				const auto scaleX = sqrt(2) / 2;
+				const auto scaleY = static_cast<double>(gridHeight) / (sqrt(2) * gridWidth);
+
+				// total
+				// scale * rotate
+				const auto a = scaleX * cos;
+				const auto b = scaleX * -1 * sin;
+				const auto c = scaleY * sin;
+				const auto d = scaleY * cos;
+
+				const double reverseScale = 1 / (a * c - b * d);
+
+				// matrix
+				matrix[0][0] = a;
+				matrix[0][1] = b;
+				matrix[1][0] = c;
+				matrix[1][1] = d;
+
+				//reverse matrix
+				reverseMatrix[0][0] = reverseScale * d;
+				reverseMatrix[0][1] = reverseScale * -1 * b;
+				reverseMatrix[1][0] = reverseScale * -1 * c;
+				reverseMatrix[1][1] = reverseScale * a;
+			}
+
+			inline void SetMapSize(const size_t width, const size_t height) {
+				this->width = width;
+				this->height = height;
+
+				ISOGridOffset = { gridOffsetX + gridWidth * height / 2, gridOffsetY + 0u };
+			}
+
+			inline const Coord& GetISOGridOffset() const {
+				return ISOGridOffset;
+			}
+
+			// convert treats ( 0, 0 ) as origin -> no grid offset
+			inline auto ToISO(const double x, const double y) const {
+				return Matrix(matrix, x, y);
+			}
+			// convert treats ( 0, 0 ) as origin -> no grid offset
+			inline auto ToTradition(const double x, const double y) const {
+				return Matrix(reverseMatrix, x, y);
+			}
+		};
+
+		// update when grid size is updated
+		ISOMatrix ISOConverter;
+
+	public:
 		inline Coord GetIsometricGridCoord(const Coord& realCoord) const {
-			// https://github.com/pvcraven/isometric_test/blob/master/Doc/index.rst
-			const size_t A = ((realCoord.x - gridOffsetX) << 1) / isoGridWidth;
-			// Y from top (fusion)
-			const size_t B = ((isoGridHeight * height - realCoord.y - gridOffsetY) << 1) / isoGridHeight;
-			// Y from bottom (Cartesian)
-			// size_t B = ((realCoord.y - gridOffsetY) << 1) / isoGridHeight;
+			const auto& ISOGridOffset = ISOConverter.GetISOGridOffset();
+			const auto [x, y] = ISOConverter.ToTradition(realCoord.x - ISOGridOffset.x,
+				realCoord.y - ISOGridOffset.y);
+			const auto tradition = GetTraditionalGridCoord({ x + gridOffsetX,
+				y + gridOffsetY });
 
-			const size_t coordX = ((width - 1 + A - B) >> 1);
-			const size_t coordY = (((height << 1) + width - 1 - A - B) >> 1);
-
-			return Coord{ coordX,coordY };
+			return tradition;
 		}
 
 		inline Coord GetIsometricRealCoord(const Coord& gridCoord) const {
-			const size_t realX = ((isoGridWidth * (height + gridCoord.x - gridCoord.y)) >> 1) + gridOffsetX;
-			// Y from top (fusion)
-			const size_t realY = ((isoGridHeight * (height + 1 + gridCoord.y - width + gridCoord.x)) >> 1) + gridOffsetY;
-			// Y from bottom (Cartesian)
-			// size_t realY = ((isoGridHeight * (height - 1 - gridCoord.y + width - gridCoord.x)) >> 1) + gridOffsetY;
+			const auto& ISOGridOffset = ISOConverter.GetISOGridOffset();
+			const auto tradition = GetTraditionalRealCoord(gridCoord);
+			const auto [x, y] = ISOConverter.ToISO(tradition.x - gridOffsetX,
+				tradition.y - gridOffsetY);
 
-			return Coord{ realX,realY };
+			return { x + ISOGridOffset.x,
+				y + ISOGridOffset.y };
 		}
 
 		inline void ClearMap(const MapType type, const BYTE cost = MAP_PATH, const bool needUpdate = true) {
@@ -757,7 +869,7 @@ namespace FindTheWay {
 		}
 
 		inline void SetMap(const std::wstring& base64) {
-			// Format: width:height:terrain:dynamic
+			// Format: width:gridHeight:terrain:dynamic
 			size_t start = 0;
 			size_t end = 0;
 
@@ -875,7 +987,7 @@ namespace FindTheWay {
 			return curPathAvaliable ? pPath->size() : STEP_UNREACHABLE;
 		}
 
-		inline size_t GetCoordAtPath(const size_t pos, const CoordType type, const std::wstring* name = nullptr) {
+		inline CoordValueType GetCoordAtPath(const size_t pos, const CoordType type, const std::wstring* name = nullptr) {
 			const Path* pPath = GetPathPointer(name);
 			const bool curPathAvaliable = GetPathValidity(name);
 
@@ -937,7 +1049,7 @@ namespace FindTheWay {
 
 				if (curPathAvaliable) {
 					const std::wstring displayName = name == nullptr ? L"Last Path" : *name;
-					ss << "Step of \"" << displayName << "\" = \'-\'" << std::endl;
+					ss << "Step of \"" << displayName << R"(" = '-')" << std::endl;
 				}
 				else if (name != nullptr) {
 					ss << "Target Path \"" << *name << "\" Invalid" << std::endl;
@@ -1077,11 +1189,12 @@ namespace FindTheWay {
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 			const auto neighbourSize = pNeighbour->size();
 
-			const bool moveIgnoreZoc = ignoreFlag & 0b10000;   // Move through zoc
-			const bool moveIgnoreAlly = ignoreFlag & 0b01000;  // Move through ally
-			const bool moveIgnoreEnemy = ignoreFlag & 0b00100; // Move through enemy	
-			bool attackIgnoreAlly = ignoreFlag & 0b00010;      // Attack ally (e.g., heal)	
-			bool attackIgnoreEnemy = ignoreFlag & 0b00001;     // Attack enemy	
+			const auto [moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy
+			] = ParseIgnoreFlag(ignoreFlag);
 
 			auto addSet = [&] (CoordSet* src) {
 				if (src == nullptr) {
@@ -1143,8 +1256,8 @@ namespace FindTheWay {
 				close_set.emplace_back(base);
 
 				for (size_t i = 0; i < neighbourSize; i++) {
-					auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
-						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+					auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x
+						,base.coord.y + (*pNeighbour)[i].y };
 
 					const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 					auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
@@ -1327,11 +1440,12 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			bool moveIgnoreZoc = ignoreFlag & 0b10000;           // Move through zoc
-			bool moveIgnoreAlly = ignoreFlag & 0b01000;          // Move through ally
-			bool moveIgnoreEnemy = ignoreFlag & 0b00100;         // Move through enemy	
-			const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-			const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
+			const auto [moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy
+			] = ParseIgnoreFlag(ignoreFlag);
 
 			auto ignoreCoord = [&] (const Coord& p) {
 				if (GetMap(p.x, p.y, this->map) == MAP_OBSTACLE) {
@@ -1424,8 +1538,8 @@ namespace FindTheWay {
 				bool updated = false;
 				for (size_t it = 0; it < ranges.size(); it++) {
 					if (ranges [it] >= nest) {
-						area.back().emplace_back(Coord { start.x + nest * normalNeighbour [it].x
-													,start.y + nest * normalNeighbour [it].y });
+						area.back().emplace_back(start.x + nest * normalNeighbour [it].x
+												 ,start.y + nest * normalNeighbour [it].y);
 
 						updated = true;
 					}
@@ -1500,11 +1614,12 @@ namespace FindTheWay {
 			bool updateAttack = allRange ? false : attack;		// ignore dynamic unit part when calc attack range
 			// force to evaluate them in allRange mode
 
-			const bool moveIgnoreZoc = ignoreFlag & 0b10000;     // Move through zoc
-			const bool moveIgnoreAlly = ignoreFlag & 0b01000;    // Move through ally
-			const bool moveIgnoreEnemy = ignoreFlag & 0b00100;   // Move through enemy	
-			const bool attackIgnoreAlly = ignoreFlag & 0b00010;  // Attack ally (e.g., heal)	
-			const bool attackIgnoreEnemy = ignoreFlag & 0b00001; // Attack enemy	
+			const auto [moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy
+			] = ParseIgnoreFlag(ignoreFlag);
 
 			//// add first grid?
 			//// add start when interval == range
@@ -1619,20 +1734,20 @@ namespace FindTheWay {
 					// You must need zoc instead of treat them as dynamic, as you need to restart attack search in allRange mode
 					if ((!moveIgnoreZoc)											// stop move if doesn't ignore zoc
 						&& (!updateAttack) && (!extraRangeCalc)						// during move
-						&& zoc != nullptr && findSet(*zoc, base) != nullptr			// current point zoc
-						&& findSet(*ally, base) == nullptr							// current point not unit
+						&& zoc != nullptr && findSet(*zoc, base) != nullptr		// current point zoc
+						&& findSet(*ally, base) == nullptr						// current point not unit
 						&& findSet(*enemy, base) == nullptr
 						&& base.coord != start) {									// not start
 						if (allRange) {
-							add(continue_set, base);								// start calc attack range from zoc
+							add(continue_set, base);							// start calc attack range from zoc
 						}
 
 						continue;
 					}
 
 					for (size_t i = 0; i < neighbourSize; i++) {
-						const auto neighCoord = Coord{ (size_t)(base.coord.x + (*pNeighbour)[i].x)
-						,(size_t)(base.coord.y + (*pNeighbour)[i].y) };
+						const auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x,
+							base.coord.y + (*pNeighbour)[i].y };
 
 						const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 						auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
@@ -1713,6 +1828,20 @@ namespace FindTheWay {
 				| static_cast<size_t>(moveIgnoreEnemy) << 2
 				| static_cast<size_t>(attackIgnoreAlly) << 1
 				| static_cast<size_t>(attackIgnoreEnemy);
+		}
+
+		inline static auto ParseIgnoreFlag(const size_t ignoreFlag = DEFAULT_IGNOREFLAG) {
+			const bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
+			const bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
+			const bool moveIgnoreEnemy = ignoreFlag & 0b00100;			// Move through enemy	
+			const bool attackIgnoreAlly = ignoreFlag & 0b00010;			// Attack ally (e.g., heal)	
+			const bool attackIgnoreEnemy = ignoreFlag & 0b00001;		// Attack enemy
+
+			return std::make_tuple(moveIgnoreZoc,
+				moveIgnoreAlly,
+				moveIgnoreEnemy,
+				attackIgnoreAlly,
+				attackIgnoreEnemy);
 		}
 
 		inline bool GetStash() const {

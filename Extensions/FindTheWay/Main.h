@@ -188,7 +188,7 @@ typedef struct tagRDATA
 	std::wstring* pOnItZocName;
 
 	AOEClass* pAOE;
-	std::vector<AOEClass::coord>* pAOECoord;
+	std::vector<Coord>* pAOECoord;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

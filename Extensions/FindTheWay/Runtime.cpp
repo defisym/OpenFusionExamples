@@ -128,7 +128,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pObjZoc->reserve(8);
 
 	rdPtr->pAOE = new AOEClass;
-	rdPtr->pAOECoord = new std::vector<AOEClass::coord>;
+	rdPtr->pAOECoord = new std::vector<Coord>;
 
 	// No errors
 	return 0;
