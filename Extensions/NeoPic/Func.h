@@ -503,6 +503,7 @@ inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
 }
 
 // trigger clean up and retry loading
+// usage: LoadWrapper(rdPtr, [&] () {});
 inline void LoadWrapper(LPRDATA rdPtr, const std::function<void()>& opt) {
 	try {
 		opt();
@@ -572,18 +573,20 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 	};
 
 	auto loadCore = [&] (const std::function<void(LPSURFACE pSf)>& success) {
-		auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
-		const auto bRet = LoadFromFile(pSf,
-			fullPath.c_str(), Key,
-			rdPtr, -1, -1,
-			true, rdPtr->stretchQuality);
+		LoadWrapper(rdPtr, [&] () {
+			auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
+			const auto bRet = LoadFromFile(pSf,
+				fullPath.c_str(), Key,
+				rdPtr, -1, -1,
+				true, rdPtr->stretchQuality);
 
-		if (bRet && pSf->IsValid()) {
-			success(pSf);
-		}
-		else {
-			delete pSf;
-		}
+			if (bRet && pSf->IsValid()) {
+				success(pSf);
+			}
+			else {
+				delete pSf;
+			}
+		});		
 	};
 
 	if (rdPtr->isLib) {
@@ -645,7 +648,9 @@ inline SurfaceLibIt LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCWST
 
 	// convert to HWA if needed
 	if (obj->HWA && !IsHWA(it->second.pSf)) {
-		ConvertToHWATexture(rdPtr, it->second.pSf);
+		LoadWrapper(rdPtr, [&] () {
+			ConvertToHWATexture(rdPtr, it->second.pSf);
+		});
 	}
 
 	return it;
@@ -940,6 +945,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		else {
 			pPreloadHandler->bPaused = false;
 
+			// memory is checked above, so here will not OOM
 			// can only load bitmap in sub thread, cannot load HWA here
 			LPSURFACE pBitmap = CreateSurface(32, 4, 4);
 			LoadFromFile(pBitmap,
