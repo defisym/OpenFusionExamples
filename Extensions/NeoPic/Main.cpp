@@ -1254,9 +1254,9 @@ long WINAPI DLLExport Expression_GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
 #else
-	rdPtr->pData->GetEstimateMemUsage();
+	const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = rdPtr->pData->GetEstimateMemUsage(rdPtr->pData->pLib);
 
-	return static_cast<long>(rdPtr->pData->estimateVRAMSizeMB);
+	return static_cast<long>(estimateVRAMSizeMB);
 #endif	
 }
 

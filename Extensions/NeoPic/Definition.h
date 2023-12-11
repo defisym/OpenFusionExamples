@@ -211,9 +211,6 @@ struct GlobalData {
 	KeepList* pKeepList = nullptr;
 	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
 
-	uint64_t estimateRAMSizeMB = 0;
-	uint64_t estimateVRAMSizeMB = 0;
-
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
 #ifdef _DYNAMIC_LINK
@@ -375,31 +372,25 @@ struct GlobalData {
 	// Cache
 	//------------
 
-	inline void GetEstimateMemUsage();
+	inline static std::tuple<uint64_t, uint64_t> GetEstimateMemUsage(SurfaceLib* pLib);
 
-	inline SIZE_T GetMemoryUsageMB() {
-#ifdef _USE_DXGI
-		pD3DU->UpdateVideoMemoryInfo();
+	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, DWORD processID) {
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = GetEstimateMemUsage(pLib);
 
-		return max(GetProcessMemoryUsageMB(), (SIZE_T)pD3DU->GetLocalCurrentUsageMB());
-#else
-		GetEstimateMemUsage();
-
-		return max(GetProcessMemoryUsageMB()
-			, (SIZE_T)max(estimateRAMSizeMB, estimateVRAMSizeMB));
-#endif
+		return (std::max)(GetProcessMemoryUsageMB(processID)
+			, static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB)));
 	}
 
-	inline bool ExceedMemLimit(size_t memLimit) {
-		//OutputDebugStringW(std::format(L"memLimit: {}, Usage: {}, Exceed: {}\r\n", memLimit, GetMemoryUsageMB(), (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT)) <= GetMemoryUsageMB()).c_str());
+	inline SIZE_T GetMemoryUsageMB() const {
+		return GetMemoryUsageMB(pLib, _getpid());		
+	}
 
-#ifdef _USE_DXGI
-		auto totalVRAM = pD3DU->GetLocalBudgetMB();
+	inline static auto GetMemLimit(size_t memLimit) {
+		return (std::min)(memLimit - CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT));
+	}
 
-		return (std::min)(totalVRAM, (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT))) <= GetMemoryUsageMB();
-#else
-		return (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT)) <= GetMemoryUsageMB();
-#endif		
+	inline bool ExceedMemLimit(size_t memLimit) const {	
+		return GetMemLimit(memLimit) <= GetMemoryUsageMB();
 	}
 
 	inline FileList* GetFileList(const std::wstring& basePath) const {
@@ -488,7 +479,7 @@ struct GlobalData {
 		for (auto& it : *pLib) {
 			if (it.second.NotUsed() // only release assets that currently is not used
 				&& std::ranges::find(*pKeepList, it.first) == pKeepList->end()) {
-				pCleanVec->emplace_back(RefCountPair(it.first, it.second.refCount));
+				pCleanVec->emplace_back(it.first, it.second.refCount);
 			}
 		}
 
@@ -498,32 +489,36 @@ struct GlobalData {
 			});
 	}
 
-	inline void CleanCache(bool forceClean = false, size_t memLimit = -1) {
+	inline void CleanCache(bool forceClean = false, size_t memLimit = -1) const {
 		if (pPreloadHandler->IsPreloading()) {
 			return;
 		}
 
+		// must clean up if reaching limit
 		forceClean |= SystemMemoryNotEnough();
+		forceClean |= ExceedMemLimit(memoryLimit);
 
-		if (forceClean
-			|| (autoClean
-			&& pLib->size() > CLEAR_NUMTHRESHOLD
-			&& ExceedMemLimit(memoryLimit))) {
-			const auto tarMemLimit = forceClean && (memLimit != static_cast<size_t>(-1))
-				? memLimit
-				: memoryLimit / 2;
+		const auto bNeedClean = autoClean
+			&& pLib->size() > CLEAR_NUMTHRESHOLD;
 
-			UpdateCleanVec();
+		if (!(forceClean || bNeedClean)) { return; }
 
-			while (!pCleanVec->empty()
-				&& tarMemLimit <= GetMemoryUsageMB()) {
-				auto& fileName = pCleanVec->back().first;
+		const bool bDefaultLimit = memLimit == static_cast<size_t>(-1);
 
-				(*pLib)[fileName].Release();
-				pLib->erase(fileName);
+		const auto tarMemLimit = forceClean && !bDefaultLimit
+			? memLimit
+			: memoryLimit / 2;
 
-				pCleanVec->pop_back();
-			}
+		UpdateCleanVec();
+
+		while (!pCleanVec->empty()
+			&& tarMemLimit <= GetMemoryUsageMB()) {
+			auto& fileName = pCleanVec->back().first;
+
+			(*pLib)[fileName].Release();
+			pLib->erase(fileName);
+
+			pCleanVec->pop_back();
 		}
 	}
 
@@ -536,7 +531,11 @@ struct GlobalData {
 		SurfaceLib* pPreloadLib = nullptr;
 
 		LPRDATA rdPtr = nullptr;
-		std::atomic<HANDLE> threadID = nullptr;
+		std::atomic<HANDLE> threadHandle = nullptr;
+		std::atomic<HANDLE> parentThreadHandle = nullptr;
+
+		std::atomic<DWORD> threadID = 0;
+		std::atomic<DWORD> parentThreadID = 0;
 
 		std::atomic<bool> bForceExit = false;
 		std::atomic<bool> bPreloading = false;
@@ -566,9 +565,13 @@ struct GlobalData {
 			this->rdPtr = rdPtr;
 		}
 
-		inline void StartPreload(LPRDATA rdPtr, HANDLE handle) {
+		inline void StartPreload(LPRDATA rdPtr, HANDLE handle,HANDLE parentThreadID) {
 			this->rdPtr = rdPtr;
-			this->threadID = handle;
+			this->threadHandle = handle;
+			this->parentThreadHandle = parentThreadID;
+
+			this->threadID = GetProcessId(this->threadHandle);
+			this->parentThreadID = GetProcessId(this->parentThreadHandle);
 
 			this->bForceExit = false;
 			this->bPreloading = true;
@@ -581,7 +584,11 @@ struct GlobalData {
 
 		inline void FinishPreload() {
 			this->rdPtr = nullptr;
-			this->threadID = nullptr;
+			this->threadHandle = nullptr;
+			this->parentThreadHandle = nullptr;
+
+			this->threadID = 0;
+			this->parentThreadID = 0;
 
 			this->bForceExit = false;
 			this->bPreloading = false;
@@ -619,7 +626,7 @@ struct GlobalData {
 				ResumePreload(nullptr);
 
 				DWORD ret;
-				while (GetExitCodeThread(this->threadID, &ret)) {
+				while (GetExitCodeThread(this->threadHandle, &ret)) {
 					if (ret == 0) {
 						break;
 					}
@@ -647,7 +654,7 @@ struct GlobalData {
 	inline void MergeLib(LPRDATA rdPtr) const;
 
 	inline void PreloadLib(PreloadHandler* pPreloadHandler, const std::wstring& Key,
-		const std::function<void()>& callback);
+		const std::function<void()>& callback) const;
 
 	inline void StartPreloadProcess(LPRDATA rdPtr, FileList* pList,
 		bool fullPath, const std::wstring& BasePath,
@@ -695,7 +702,7 @@ struct GlobalData {
 		HANDLE handle;
 		DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &handle, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
 
-		pPreloadHandler->StartPreload(rdPtr, handle);
+		pPreloadHandler->StartPreload(rdPtr, handle, GetCurrentProcess());
 
 		pl.detach();
 	}

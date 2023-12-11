@@ -852,10 +852,10 @@ inline bool SurfaceLibValue::UpdateShaderUsage() {
 // GlobalData
 // ------------
 
-inline void GlobalData::GetEstimateMemUsage() {
+inline std::tuple<uint64_t, uint64_t> GlobalData::GetEstimateMemUsage(SurfaceLib* pLib) {
 	// optimize it by add/sub value when modifing lib instead of iterate if has performance issue (unlikely)
-	estimateRAMSizeMB = 0;
-	estimateVRAMSizeMB = 0;
+	uint64_t estimateRAMSizeMB = 0;
+	uint64_t estimateVRAMSizeMB = 0;
 
 	for (auto& libValue : *pLib | std::views::values) {
 		const LPSURFACE* pSfArrary = &libValue.pSf;
@@ -878,6 +878,8 @@ inline void GlobalData::GetEstimateMemUsage() {
 			}
 		}
 	}
+
+	return std::make_tuple(estimateRAMSizeMB, estimateVRAMSizeMB);
 }
 
 inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
@@ -896,7 +898,7 @@ inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
 }
 
 inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::wstring& Key,
-	const std::function<void()>& callback) {
+	const std::function<void()>& callback) const {
 	if (pPreloadHandler->pPreloadList->empty()) {
 		callback();
 
@@ -905,7 +907,15 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 
 	for (auto& it : *pPreloadHandler->pPreloadList) {
 		// Stop loading when exceed limit
-		if (ExceedMemLimit(memoryLimit)) {
+		const auto memLimit = GetMemLimit(memoryLimit);
+
+		// actually child thread will return 0 when calling GetProcessMemoryUsageMB
+		// so this function only calulate preload lib usage
+		const auto curThreadUsage = GetMemoryUsageMB(pPreloadHandler->pPreloadLib, pPreloadHandler->threadID);
+		const auto parentThreadUsage = GetMemoryUsageMB(pLib, pPreloadHandler->parentThreadID);
+		const auto totalUsage = curThreadUsage + parentThreadUsage;
+
+		if (memLimit <= totalUsage || SystemMemoryNotEnough()) {
 			break;
 		}
 
