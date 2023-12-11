@@ -502,6 +502,19 @@ inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
 		: CreateSurface(32, 4, 4);
 }
 
+// trigger clean up and retry loading
+inline void LoadWrapper(LPRDATA rdPtr, const std::function<void()>& opt) {
+	try {
+		opt();
+	} catch ([[maybe_unused]]std::bad_alloc& e) {
+		rdPtr->pData->pPreloadHandler->StopPreload();
+		rdPtr->pData->CleanCache(true);
+
+		opt();
+	}
+}
+
+
 // Load file then convert to Src type
 inline bool LoadFromFile(LPSURFACE& Src, LPCWSTR FilePath, LPCWSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool bHighQuality) {
 	// HWA?
@@ -907,7 +920,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 
 	for (auto& it : *pPreloadHandler->pPreloadList) {
 		// Stop loading when exceed limit
-		const auto memLimit = GetMemLimit(memoryLimit);
+		const auto memLimit = GetMemLimit(memoryLimit) / 2;
 
 		// actually child thread will return 0 when calling GetProcessMemoryUsageMB
 		// so this function only calulate preload lib usage

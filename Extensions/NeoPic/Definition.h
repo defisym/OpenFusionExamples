@@ -489,19 +489,25 @@ struct GlobalData {
 			});
 	}
 
+	inline void AutoClean() const {
+		if (!autoClean) { return; }
+
+		CleanCache();
+	}
+
+	// clean cache lower than given limit
 	inline void CleanCache(bool forceClean = false, size_t memLimit = -1) const {
 		if (pPreloadHandler->IsPreloading()) {
 			return;
 		}
 
 		// must clean up if reaching limit
+		const auto memoryUsage = GetMemoryUsageMB();
+
 		forceClean |= SystemMemoryNotEnough();
-		forceClean |= ExceedMemLimit(memoryLimit);
+		forceClean |= GetMemLimit(memoryLimit) <= memoryUsage;
 
-		const auto bNeedClean = autoClean
-			&& pLib->size() > CLEAR_NUMTHRESHOLD;
-
-		if (!(forceClean || bNeedClean)) { return; }
+		if (!forceClean) { return; }
 
 		const bool bDefaultLimit = memLimit == static_cast<size_t>(-1);
 
@@ -697,6 +703,8 @@ struct GlobalData {
 			pPreloadHandler, Key,
 			[&] () {
 				pPreloadHandler->FinishPreload();
+				// in case if subprocess end due to memory limit
+				CleanCache();
 		});
 
 		HANDLE handle;
