@@ -23,6 +23,9 @@
 #endif
 
 // compatible with MMF
+#pragma push_macro("Font")
+#pragma push_macro("fpFont")
+
 #undef Font
 #undef fpFont
 
@@ -2869,7 +2872,8 @@ public:
 				}
 			}
 		} catch([[maybe_unused]] std::exception& e) {
-			
+			// use exception to jump out of the loop if exceeds the
+			// render char count, so nothing to handle here
 		}
 
 #ifdef _BLUR
@@ -2897,6 +2901,9 @@ public:
 		auto pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 
 		auto sfCoef = GetSfCoef(pMemSf);
+		if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
+			return;
+		}
 
 		auto lineSz = sfCoef.pitch;
 
@@ -3072,5 +3079,5 @@ public:
 };
 
 // compatible with MMF
-#define Font FontW
-#define fpFont fpFontW
+#pragma pop_macro("Font")
+#pragma pop_macro("fpFont")

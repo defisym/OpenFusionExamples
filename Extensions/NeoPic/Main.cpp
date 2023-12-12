@@ -725,6 +725,9 @@ short WINAPI DLLExport Action_PerspectiveTrans(LPRDATA rdPtr, long param1, long 
 
 		LPSURFACE pSf = nullptr;
 		ProcessBitmap(rdPtr->src, [&] (const LPSURFACE pBitmap) {
+			const auto pResultSf = PerspectiveTransformation(pBitmap, matrix);			
+			if(pResultSf == nullptr){ return; }
+
 			pSf = PerspectiveTransformation(pBitmap, matrix);
 
 			const auto newHotSpot = PerspectiveTransformationPoint(rdPtr->hotSpot.x, rdPtr->hotSpot.y, matrix);

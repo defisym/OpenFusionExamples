@@ -59,7 +59,11 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 		return;
 	}
 
+	// pMemSf must has alpha channel, see `InitSurface`
 	auto sfCoef = GetSfCoef(pMemSf);
+	if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
+		return;
+	}
 
 	auto lineSz = sfCoef.pitch;	
 	auto alphaSz = sfCoef.sz / sfCoef.byte;
