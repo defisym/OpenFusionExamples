@@ -1712,11 +1712,14 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 			{
 //#pragma omp parallel for
 #endif
+			const auto yOffset = y * pitch;
+			const auto yAlphaOffset =  (height - 1 - y) * alphaPitch;
+
 			for (int x = 0; x < width; ++x) {
-				const auto offset = y * pitch + x * byte;
+				const auto offset = yOffset + x * byte;
 				BYTE* srcPixel = pData + offset;
 
-				const auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
+				const auto alphaOffset = yAlphaOffset + x * alphaByte;
 				BYTE* alphaPixel = pAlphaData + alphaOffset;
 
 				process(x, y, coef

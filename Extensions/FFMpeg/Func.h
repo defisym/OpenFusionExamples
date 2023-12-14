@@ -66,7 +66,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	}
 
 	auto lineSz = sfCoef.pitch;	
-	auto alphaSz = sfCoef.sz / sfCoef.byte;
+	auto alphaSz = sfCoef.alphaSz / sfCoef.alphaByte;
 
 	auto width = pMemSf->GetWidth();
 	auto height = pMemSf->GetHeight();
@@ -82,8 +82,10 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 #pragma omp for
 #endif
 		for (int y = 0; y < height; y++) {
+			const auto line = (height - 1 - y);
+
 			auto pMemData = sfCoef.pData + y * lineSz;
-			auto pVideo = pData + (height - 1 - y) * srcLineSz;
+			auto pVideo = pData + line * srcLineSz;
 
 #ifndef _MANUAL_PM
 			memcpy(pMemData, pVideo, lineSz);
@@ -92,9 +94,12 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 #ifdef _OPENMP
 //#pragma omp for
 #endif
+			const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
+			const auto pBitmapAlphaOffset = pVideo + (PIXEL_BYTE - 1);
+
 			for (int x = 0; x < width; x++) {
-				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
-				auto curAlpha = pVideo + (PIXEL_BYTE - 1) + x * PIXEL_BYTE;
+				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
+				auto curAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
 				pAlphaData[0] = *curAlpha;
 			}
 #endif
@@ -117,7 +122,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 				}
 
 #ifdef VIDEO_ALPHA
-				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
+				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
 				pAlphaData[0] = pVideoData[3];
 #endif
 			}

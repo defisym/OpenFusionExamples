@@ -2931,7 +2931,7 @@ public:
 
 		for (int y = 0; y < copyHeight; y++) {
 			const auto line = (copyHeight - 1 - y);
-			const auto pBmpOffset = line* bitmapData.Stride / 4;
+			const auto pBmpOffset = line * bitmapData.Stride / 4;
 
 			auto pData = sfCoef.pData + y * sfCoef.pitch;
 			auto pBmp = pRawBitmap + pBmpOffset;
