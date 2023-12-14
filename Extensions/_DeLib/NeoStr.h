@@ -248,7 +248,6 @@ private:
 
 	float angle = 0;
 
-	int hwaType = 0;
 	int hwaDriver = 0;
 	bool preMulAlpha = false;
 
@@ -1139,8 +1138,7 @@ public:
 		}
 	}
 
-	inline void SetHWA(const int type, const int driver, const bool preMulAlpha) {
-		this->hwaType = type;
+	inline void SetHWA(const int driver, const bool preMulAlpha) {
 		this->hwaDriver = driver;
 		this->preMulAlpha = preMulAlpha;
 	}
@@ -2651,7 +2649,7 @@ public:
 		}
 	};
 
-	inline auto GetM() { return pMemSf; }
+//#define USE_RTT
 
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 		if (!this->bTextValid) {
@@ -2689,10 +2687,20 @@ public:
 			this->pBitmap = nullptr;
 
 			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+
+#ifdef USE_RTT
+			delete pHwaSf;
+			pHwaSf = nullptr;
+
+			//pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
+			pHwaSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE, this->hwaDriver);
+			pHwaSf->CreateAlpha();
+#endif
 		}
 
-		pMemSf->Fill(BLACK);
-		_ForceAddAlpha(pMemSf, 0);
+		// don't need to reset surface, as it wll be overwritten later
+		//pMemSf->Fill(BLACK);
+		//_ForceAddAlpha(pMemSf, 0);
 
 #ifdef _DEBUG
 		auto type = pMemSf->GetType();
@@ -2907,9 +2915,11 @@ public:
 		const auto copyHeight = static_cast<int>(pBitmap->GetHeight());
 
 		BitmapData bitmapData;
-		//auto bitmapRect = Rect(0, 0, width, height);
 		auto bitmapRect = Rect(0, 0, copyWidth, copyHeight);
-		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
+		//auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		if (lockBitsRet != Gdiplus::Status::Ok) { return; }
+
 		auto pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 
 		auto sfCoef = GetSfCoef(pMemSf);
@@ -2919,7 +2929,7 @@ public:
 
 		auto lineSz = sfCoef.pitch;
 
-		for (int y = 0; y < height; y++) {
+		for (int y = 0; y < copyHeight; y++) {
 			const auto line = (copyHeight - 1 - y);
 			const auto pBmpOffset = line* bitmapData.Stride / 4;
 
@@ -2939,7 +2949,6 @@ public:
 		}
 
 		ReleaseSfCoef(pMemSf, sfCoef);
-
 		pBitmap->UnlockBits(&bitmapData);
 
 		auto flags = this->iConDisplay.iConResample
@@ -3039,17 +3048,26 @@ public:
 #endif // _DEBUG		
 		}
 
-		delete pHwaSf;
-		pHwaSf = nullptr;
-
-		pHwaSf = CreateHWASurface(32, pMemSf->GetWidth(), pMemSf->GetHeight(), this->hwaType, this->hwaDriver);
-		pHwaSf->CreateAlpha();
-
 		if (this->preMulAlpha) {
 			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
 		}
 
+#ifndef USE_RTT
+		// use render target here is even slower, this method costs 70% time of render target
+		delete pHwaSf;
+		pHwaSf = nullptr;
+
+		pHwaSf = CreateHWASurface(32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE, this->hwaDriver);
+		//pHwaSf->CreateAlpha();
+
 		pMemSf->Blit(*pHwaSf);
+#else
+		pHwaSf->BeginRendering(TRUE, 0);
+		//const auto pRTT = pMemSf->GetRenderTargetSurface();
+		pMemSf->Blit(*pHwaSf, 0, 0, BMODE_TRANSP);
+		//pMemSf->ReleaseRenderTargetSurface(pRTT);
+		pHwaSf->EndRendering();
+#endif
 	}
 
 	inline CharPos GetCharPos(const size_t pos) const {

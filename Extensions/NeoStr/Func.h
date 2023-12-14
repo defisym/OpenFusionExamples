@@ -56,7 +56,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
 
-		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv, PreMulAlpha(rdPtr));
+		rdPtr->pNeoStr->SetHWA(sfDrv, PreMulAlpha(rdPtr));
 
 		rdPtr->reRender = true;
 	}
@@ -158,7 +158,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 		int sfDrv = ps->GetDriver();
 
-		neoStr.SetHWA(ST_HWA_ROMTEXTURE, sfDrv, false);
+		neoStr.SetHWA(sfDrv, false);
 
 		//MSGBOX(L"Editor Calc");
 		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
