@@ -2651,6 +2651,8 @@ public:
 		}
 	};
 
+	inline auto GetM() { return pMemSf; }
+
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 		if (!this->bTextValid) {
 			return;
@@ -2671,13 +2673,17 @@ public:
 		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
 		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
+		//if (this->pMemSf == nullptr
+		//	|| this->pMemSf->GetWidth() != width
+		//	|| this->pMemSf->GetHeight() != height) {
 		if (this->pMemSf == nullptr
-			|| this->pMemSf->GetWidth() != width
-			|| this->pMemSf->GetHeight() != height) {
+			|| this->pMemSf->GetWidth() < width
+			|| this->pMemSf->GetHeight() < height) {
 			delete this->pMemSf;
 			this->pMemSf = nullptr;
 
 			pMemSf = CreateSurface(32, width, height);
+			pMemSf->CreateAlpha();
 
 			delete this->pBitmap;
 			this->pBitmap = nullptr;
@@ -2686,7 +2692,7 @@ public:
 		}
 
 		pMemSf->Fill(BLACK);
-		pMemSf->CreateAlpha();
+		_ForceAddAlpha(pMemSf, 0);
 
 #ifdef _DEBUG
 		auto type = pMemSf->GetType();
@@ -2892,11 +2898,17 @@ public:
 #ifdef _DEBUG
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
-		//pBitmap->Save(L"F:\\NeoStr.png", &pngClsid, NULL);
+		//const auto fileName = std::wstring(this->pRawText).substr(0, 4);
+		//const auto path = std::format(L"D:\\{}.png", fileName);
+		//pBitmap->Save(path.c_str(), &pngClsid, NULL);
 #endif // _DEBUG
 
+		const auto copyWidth = static_cast<int>(pBitmap->GetWidth());
+		const auto copyHeight = static_cast<int>(pBitmap->GetHeight());
+
 		BitmapData bitmapData;
-		auto bitmapRect = Rect(0, 0, width, height);
+		//auto bitmapRect = Rect(0, 0, width, height);
+		auto bitmapRect = Rect(0, 0, copyWidth, copyHeight);
 		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
 		auto pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 
@@ -2908,14 +2920,20 @@ public:
 		auto lineSz = sfCoef.pitch;
 
 		for (int y = 0; y < height; y++) {
+			const auto line = (copyHeight - 1 - y);
+			const auto pBmpOffset = line* bitmapData.Stride / 4;
+
 			auto pData = sfCoef.pData + y * sfCoef.pitch;
-			auto pBmp = pRawBitmap + (height - 1 - y) * bitmapData.Stride / 4;
+			auto pBmp = pRawBitmap + pBmpOffset;
 
 			memcpy(pData, pBmp, lineSz);
 
-			for (int x = 0; x < width; x++) {
-				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
-				auto curAlpha = pRawBitmap + (height - 1 - y) * bitmapData.Stride / 4 + x;
+			const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
+			const auto pBitmapAlphaOffset = pRawBitmap + pBmpOffset;
+
+			for (int x = 0; x < copyWidth; x++) {
+				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
+				auto curAlpha = pBitmapAlphaOffset + x;
 				pAlphaData [0] = (*curAlpha & 0xff000000) >> 24;
 			}
 		}
@@ -3024,7 +3042,8 @@ public:
 		delete pHwaSf;
 		pHwaSf = nullptr;
 
-		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
+		pHwaSf = CreateHWASurface(32, pMemSf->GetWidth(), pMemSf->GetHeight(), this->hwaType, this->hwaDriver);
+		pHwaSf->CreateAlpha();
 
 		if (this->preMulAlpha) {
 			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode

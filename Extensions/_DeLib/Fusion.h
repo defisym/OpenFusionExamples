@@ -1845,3 +1845,31 @@ inline uint64_t GetEstimateSize(LPSURFACE pSf) {
 inline uint64_t GetEstimateSizeMB(LPSURFACE pSf) {
 	return GetEstimateSize(pSf) >> 20;
 }
+
+inline void AccessBackground(LPRDATA rdPtr) {
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+	// non-HWA mode can access directly
+	const auto bHWA = ((rhPtr->rh4.rh4Mv->mvAppMode & SM_D3D) != 0);
+	if (!bHWA) { return; }
+
+	mvNeebBackgroundAccess(rhPtr->rh4.rh4Mv, rhPtr->rhFrame, TRUE);
+}
+
+inline void ProcessBackground(LPRDATA rdPtr, const std::function<void(const LPSURFACE)>& callback) {
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const auto ps = WinGetSurface((int)rhPtr->rhIdEditWin);
+
+	const auto bHWA = ((rhPtr->rh4.rh4Mv->mvAppMode & SM_D3D) != 0);
+
+	if (!bHWA) {
+		callback(ps);
+
+		return;
+	}
+
+	// HWA : get current render target (to use as source)
+	const auto pRTT = ps->GetRenderTargetSurface();
+	callback(ps);
+	ps->ReleaseRenderTargetSurface(pRTT);
+}
