@@ -2650,6 +2650,7 @@ public:
 	};
 
 //#define USE_RTT
+//#define REUSE_HWA
 
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 		if (!this->bTextValid) {
@@ -2671,9 +2672,6 @@ public:
 		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
 		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
-		//if (this->pMemSf == nullptr
-		//	|| this->pMemSf->GetWidth() != width
-		//	|| this->pMemSf->GetHeight() != height) {
 		if (this->pMemSf == nullptr
 			|| this->pMemSf->GetWidth() < width
 			|| this->pMemSf->GetHeight() < height) {
@@ -2688,11 +2686,17 @@ public:
 
 			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
 
+#ifdef REUSE_HWA
+			delete pHwaSf;
+			pHwaSf = nullptr;
+
+			pHwaSf = CreateHWASurface(32, width, height, ST_HWA_ROMTEXTURE, this->hwaDriver);
+#endif
+
 #ifdef USE_RTT
 			delete pHwaSf;
 			pHwaSf = nullptr;
 
-			//pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
 			pHwaSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE, this->hwaDriver);
 			pHwaSf->CreateAlpha();
 #endif
@@ -3053,13 +3057,17 @@ public:
 		}
 
 #ifndef USE_RTT
-		// use render target here is even slower, this method costs 70% time of render target
+#ifndef REUSE_HWA
+		// reuse HWA: barely has no difference
+		// seems the major cost is in blit function
 		delete pHwaSf;
 		pHwaSf = nullptr;
 
 		pHwaSf = CreateHWASurface(32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE, this->hwaDriver);
 		//pHwaSf->CreateAlpha();
-
+#endif
+		// use render target here is even slower
+		// this method costs about 70% time of render target way
 		pMemSf->Blit(*pHwaSf);
 #else
 		pHwaSf->BeginRendering(TRUE, 0);
