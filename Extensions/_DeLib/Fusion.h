@@ -1596,7 +1596,7 @@ inline LPSURFACE PerspectiveTransformation(const LPSURFACE pSrc, const double ma
 #endif
 
 //dec2rgb
-#define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
+#define DEC2RGB(DEC) RGB(((DEC) >> 16), ((DEC) >> 8) & 0xff, (DEC) & 0xff)
 
 inline SfCoef GetSfCoef(LPSURFACE pSf) {
 	SfCoef pSfCoef = { 0 };
