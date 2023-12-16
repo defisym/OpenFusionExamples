@@ -2651,6 +2651,7 @@ public:
 
 //#define USE_RTT
 //#define REUSE_HWA
+#define RENDER_TO_SURFACE
 
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 		if (!this->bTextValid) {
@@ -2681,10 +2682,12 @@ public:
 			pMemSf = CreateSurface(32, width, height);
 			pMemSf->CreateAlpha();
 
+#ifndef RENDER_TO_SURFACE
 			delete this->pBitmap;
 			this->pBitmap = nullptr;
 
 			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+#endif
 
 #ifdef REUSE_HWA
 			delete pHwaSf;
@@ -2703,11 +2706,25 @@ public:
 		}
 
 		// don't need to reset surface, as it wll be overwritten later
-		//pMemSf->Fill(BLACK);
+		pMemSf->Fill(BLACK);
 		//_ForceAddAlpha(pMemSf, 0);
+
+		//pMemSf->Fill(RGB(0x01, 0x02, 0x03));
 
 #ifdef _DEBUG
 		auto type = pMemSf->GetType();
+#endif
+
+#ifdef RENDER_TO_SURFACE
+		auto sfCoef = GetSfCoef(pMemSf);
+		if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
+			return;
+		}
+
+		delete this->pBitmap;
+		this->pBitmap = nullptr;
+
+		this->pBitmap = new Bitmap(width, height, sfCoef.pitch, PixelFormat32bppARGB, sfCoef.pData);
 #endif
 
 		Graphics g(pBitmap);
@@ -2918,6 +2935,44 @@ public:
 		const auto copyWidth = static_cast<int>(pBitmap->GetWidth());
 		const auto copyHeight = static_cast<int>(pBitmap->GetHeight());
 
+#ifdef RENDER_TO_SURFACE
+		auto lineSz = sfCoef.pitch;
+
+		for (int y = 0; y < copyHeight; y++) {
+			const auto line = (copyHeight - 1 - y);
+
+			auto pData = sfCoef.pData + y * sfCoef.pitch;
+			const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
+
+			for (int x = 0; x < copyWidth; x++) {
+				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
+				auto curData = pData + x * sfCoef.byte;
+
+				pAlphaData[0] = curData[0];
+
+				//// ARGB -> BGRA
+				//const auto a = curData[0];
+				//const auto r = curData[1];
+				//const auto g = curData[2];
+				//const auto b = curData[3];
+
+				//curData[0] = b;
+				//curData[1] = g;
+				//curData[2] = r;
+				//curData[3] = a;
+
+
+				////// A -> B
+				////curData[0] = curData[3];
+				////// B -> G
+				////curData[3] = curData[2];
+				////// R <-> G
+			}
+		}
+
+		ReleaseSfCoef(pMemSf, sfCoef);
+		pMemSf->ReverseY();
+#else
 		BitmapData bitmapData;
 		auto bitmapRect = Rect(0, 0, copyWidth, copyHeight);
 		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
@@ -2953,7 +3008,8 @@ public:
 		}
 
 		ReleaseSfCoef(pMemSf, sfCoef);
-		pBitmap->UnlockBits(&bitmapData);
+		pBitmap->UnlockBits(&bitmapData)
+#endif
 
 		auto flags = this->iConDisplay.iConResample
 			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
