@@ -609,21 +609,26 @@ LPWORD WINAPI DLLExport GetDebugTree(LPRDATA rdPtr)
 void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 {
 #if !defined(RUN_ONLY)
-	auto getString = [] (LPCWSTR pStr) {
+	auto getString = [] (const NeoStr* pNeoStr,const std::function<const wchar_t*()>& cb) {
+		if (pNeoStr == nullptr) { return L"Object Not Initialized"; }
+
+		const auto pStr = cb();
 		return pStr ? pStr : L"No String";
-	};
+		};
 
 	switch (id) {
 	case DB_DisplayString:
 	{
-		const auto result = std::format(L"Display String: {}", getString(rdPtr->pNeoStr->GetRawText()));
+		const auto result = std::format(L"Display String: {}",
+			getString(rdPtr->pNeoStr, [&] () {return rdPtr->pNeoStr->GetRawText(); }));
 		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
 
 		break;
 	}
 	case DB_FilteredString:
 	{
-		const auto result = std::format(L"Filtered String: {}", getString(rdPtr->pNeoStr->GetText()));
+		const auto result = std::format(L"Filtered String: {}",
+			getString(rdPtr->pNeoStr, [&] () {return rdPtr->pNeoStr->GetText(); }));
 		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
 
 		break;
