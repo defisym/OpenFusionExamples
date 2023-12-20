@@ -1370,7 +1370,7 @@ public:
 
 	//inline StrSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
 	//	RECT change = { 0,0,65535,1 };
-
+	//
 	//	DrawTextW(
 	//		hdc,
 	//		pStr,
@@ -1378,7 +1378,7 @@ public:
 	//		&change
 	//		, this->dwDTFlags | DT_CALCRECT
 	//	);
-
+	//
 	//	return StrSize { change.right - change.left,change.bottom - change.top };
 	//}
 
@@ -2684,6 +2684,9 @@ public:
 			delete this->pBitmap;
 			this->pBitmap = nullptr;
 
+			// Use PixelFormat32bppPARGB or manually premul alpha of font color
+			// call fusion premul is still needed, as alpha channel is used for
+			// anti-aliasing, it's not involved to font color or pixel format.
 			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
 
 #ifdef REUSE_HWA
