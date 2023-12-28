@@ -859,9 +859,7 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 
 	const auto pSf = GetSurfacePointer(rdPtr, pFilePath, pKey);
 
-	if (pSf == nullptr) {
-		return 0;
-	}
+	if (pSf == nullptr) { return 0; }
 
 	__SavetoFile(rdPtr, pSf, pSaveFilePath);
 
@@ -886,25 +884,25 @@ short WINAPI DLLExport Action_SaveToFileWithStretch(LPRDATA rdPtr, long param1, 
 	const int width = (int)CNC_GetIntParameter(rdPtr);
 	const int height = (int)CNC_GetIntParameter(rdPtr);
 
-	const auto pSave = CreateSurface(32, width, height);
 	const auto pSf = GetSurfacePointer(rdPtr, pFilePath, pKey);	
 
-	if (pSf == nullptr) {
-		return 0;
-	}
+	if (pSf == nullptr) { return 0; }
 
 	ProcessBitmap(pSf,[&](const LPSURFACE pBitmap) {
+		// TODO use bitmap directly?
+		const auto pSave = CreateSurface(32, width, height);
+
 		Stretch(pBitmap, pSave, true);
 
 #ifdef _DEBUG
 		//__SavetoClipBoard(pBitmap);
 		//__SavetoClipBoard(pSave);
 #endif // _DEBUG
+
+		__SavetoFile(rdPtr, pSave, pSaveFilePath);
+
+		delete pSave;
 	});
-
-	__SavetoFile(rdPtr, pSave, pSaveFilePath);
-
-	delete pSave;
 
 	return 0;
 }
