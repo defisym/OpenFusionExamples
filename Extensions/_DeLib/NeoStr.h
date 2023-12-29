@@ -2082,7 +2082,8 @@ public:
 								FontFormatControl([&](LOGFONT& newLogFont) {
 									// Reset
 									if (StringViewIEqu(controlParam, L"!")) {
-										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+										constexpr auto nameSz = LF_FACESIZE * sizeof(WCHAR);
+										memcpy(newLogFont.lfFaceName, this->logFontStack.front().lfFaceName, nameSz);
 
 										return;
 									}
