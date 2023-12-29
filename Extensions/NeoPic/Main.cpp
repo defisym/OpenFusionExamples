@@ -889,13 +889,23 @@ short WINAPI DLLExport Action_SaveToFileWithStretch(LPRDATA rdPtr, long param1, 
 	if (pSf == nullptr) { return 0; }
 
 	ProcessBitmap(pSf,[&](const LPSURFACE pBitmap) {
-		// TODO use bitmap directly?
+#ifdef _DEBUG
+		//__SavetoClipBoard(pBitmap);
+#endif // _DEBUG
+
+		// don't need to stretch
+		if (pBitmap->GetWidth() == width && pBitmap->GetHeight() == height) {
+			__SavetoFile(rdPtr, pBitmap, pSaveFilePath);
+
+			return;
+		}
+
+		// do stretch
 		const auto pSave = CreateSurface(32, width, height);
 
 		Stretch(pBitmap, pSave, true);
 
 #ifdef _DEBUG
-		//__SavetoClipBoard(pBitmap);
 		//__SavetoClipBoard(pSave);
 #endif // _DEBUG
 
