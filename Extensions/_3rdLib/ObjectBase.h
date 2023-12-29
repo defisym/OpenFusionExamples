@@ -29,25 +29,6 @@ protected:
 //			oiListItemSize += sizeof(LPVOID);
 //#endif
 
-	inline bool CompareObjectName(const LPCWSTR pObjectName, const LPCWSTR pCompareName) const {
-		// oilName may start with empty char
-		const auto pCurName = [&] () {
-			auto pOilName = pObjectName;
-
-			while (pOilName[0] == 65535) {
-				pOilName++;
-			}
-
-			return pOilName;
-			}();
-
-		return StrEqu(pCompareName, pCurName);
-	}
-
-	inline bool CompareObjectName(const LPOIL pOil, const LPCWSTR pCompareName) const {
-		return CompareObjectName(pOil->oilName, pCompareName);
-	}
-
 	inline void IterateOiL(const std::function<void(LPOIL)>& callBack) const {
 		const auto oiLSz = rhPtr->rhNumberOi;
 
@@ -71,6 +52,25 @@ public:
 		this->ObjectList = rhPtr->rhObjectList;		//get a pointer to the mmf object list
 		this->OiList = rhPtr->rhOiList;				//get a pointer to the mmf object info list
 		this->QualToOiList = rhPtr->rhQualToOiList;	//get a pointer to the mmf qualifier to Oi list
+	}
+
+	static inline bool CompareObjectName(const LPCWSTR pObjectName, const LPCWSTR pCompareName) {
+		// oilName may start with empty char
+		const auto pCurName = [&] () {
+			auto pOilName = pObjectName;
+
+			while (pOilName[0] == 65535) {
+				pOilName++;
+			}
+
+			return pOilName;
+			}();
+
+			return StrEqu(pCompareName, pCurName);
+	}
+
+	static inline bool CompareObjectName(const LPOIL pOil, const LPCWSTR pCompareName) {
+		return CompareObjectName(pOil->oilName, pCompareName);
 	}
 
 	//Get oil
