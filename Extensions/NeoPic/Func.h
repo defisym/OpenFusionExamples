@@ -799,6 +799,19 @@ inline LPSURFACE GetSurfacePointer(LPRDATA rdPtr, const std::wstring& FilePath, 
 // Member Functions
 // ------------
 
+inline SurfaceMemUsage::SurfaceMemUsage(LPSURFACE pSf) {
+	const bool bHWA = IsHWA(pSf);
+
+	const auto estimateSizeMB = GetEstimateSizeMB(pSf);
+
+	if (!bHWA) {
+		this->AddRAMUsage(estimateSizeMB);
+	}
+	else {
+		this->AddVRAMUsage(estimateSizeMB);
+	}
+}
+
 // ------------
 // SurfaceLibValue
 // ------------
@@ -878,15 +891,7 @@ inline SurfaceMemUsage SurfaceLibValue::GetEstimateMemUsage() const {
 			continue;
 		}
 
-		const bool bHWA = IsHWA(pSfToEstimate);
-		const auto estimateSizeMB = GetEstimateSizeMB(pSfToEstimate);
-
-		if (!bHWA) {
-			estimateMemUsage.AddRAMUsage(estimateSizeMB);
-		}
-		else {
-			estimateMemUsage.AddVRAMUsage(estimateSizeMB);
-		}
+		estimateMemUsage += SurfaceMemUsage(pSfToEstimate);
 	}
 
 	return estimateMemUsage;
@@ -909,10 +914,11 @@ inline SurfaceMemUsage GlobalData::GetEstimateMemUsage(SurfaceLib* pLib) {
 
 inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
 	if (pPreloadHandler->AbleToMerge()) {
-		for (auto& it : *pPreloadHandler->pPreloadLib) {
-			auto& [name, key] = it;
+		for (auto& [name, libValue] : *pPreloadHandler->pPreloadLib) {
+			// won't replace current ones
 			if (!pLib->contains(name)) {
-				(*pLib)[name] = key;
+				libValue.refCount.priority = pLib->size();
+				(*pLib)[name] = libValue;
 			}
 		}
 				

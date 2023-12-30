@@ -88,6 +88,13 @@ struct SurfaceMemUsage {
 	uint64_t estimateRAMSizeMB = 0;
 	uint64_t estimateVRAMSizeMB = 0;
 
+	SurfaceMemUsage() = default;
+	SurfaceMemUsage(uint64_t estimateRAMSizeMB, uint64_t estimateVRAMSizeMB) {
+		this->estimateRAMSizeMB = estimateRAMSizeMB;
+		this->estimateVRAMSizeMB = estimateVRAMSizeMB;
+	}
+	SurfaceMemUsage(LPSURFACE pSf);
+
 	inline void AddRAMUsage(uint64_t sizeMB) {
 		estimateRAMSizeMB += sizeMB;
 	}
@@ -232,6 +239,7 @@ constexpr auto Delimiter = L'|';
 
 struct GlobalData {
 	SurfaceLib* pLib = nullptr;
+	SurfaceMemUsage estimateMemUsage;
 	FileListMap* pFileListMap = nullptr;
 
 	bool bDX11 = false;
@@ -323,7 +331,7 @@ struct GlobalData {
 		delete pPreloadHandler;
 	}
 	
-	inline void UpdateLib(const std::wstring& fileName, const std::wstring& hash, const LPSURFACE pSf) const {
+	inline void UpdateLib(const std::wstring& fileName, const std::wstring& hash, const LPSURFACE pSf) {
 		const auto it = pLib->find(fileName);
 		if (it != pLib->end()) {
 			// refered by shader, move
@@ -356,10 +364,17 @@ struct GlobalData {
 
 			(*pLib)[fileName] = newValue;
 		}
+
+		estimateMemUsage += SurfaceMemUsage(pSf);
 	}
 
-	inline void DeleteLib() const {
+	inline void UpdateLib(const std::wstring& fileName, const SurfaceLibValue& libValue) {
+		UpdateLib(fileName, libValue.Hash, libValue.pSf);
+	}
+
+	inline void DeleteLib() {
 		for (auto& libValue : *pLib | std::views::values) {
+			estimateMemUsage -= libValue.GetEstimateMemUsage();
 			libValue.Release();
 		}
 
@@ -384,24 +399,39 @@ struct GlobalData {
 		return false;
 	}
 
-	inline void EraseLib(const LPCWSTR Item) const {
+	inline void EraseLib(const LPCWSTR Item) {
 		const auto fullPath = GetFullPathNameStr(Item);
 		const auto it = pLib->find(fullPath);
 
 		if (it != pLib->end() && it->second.NotUsed()) {
+			estimateMemUsage -= it->second.GetEstimateMemUsage();
 			it->second.Release();
 
 			pLib->erase(it);
 		}
 	}
 
-	inline void ResetLib() const {
-		std::erase_if(*pLib, [] (std::pair<const std::wstring, SurfaceLibValue>& item) {
+	// this function won't check if it's safe to release
+	inline void EraseLibWithoutCheck(const std::wstring& fullPath) {
+		const auto it = pLib->find(fullPath);
+
+		if (it != pLib->end()) {
+			estimateMemUsage -= it->second.GetEstimateMemUsage();
+			it->second.Release();
+
+			pLib->erase(it);
+		}
+	}
+
+	inline void ResetLib() {
+		std::erase_if(*pLib, [&] (std::pair<const std::wstring, SurfaceLibValue>& item) {
 			auto& [fileName, libValue] = item;
 
 			if (!libValue.NotUsed()) { return false; }
 
+			estimateMemUsage -= libValue.GetEstimateMemUsage();
 			libValue.Release();
+
 			return true;
 		});
 	}
@@ -513,6 +543,7 @@ struct GlobalData {
 		this->sizeLimit = sizeLimit;
 	}
 
+	// TODO Optimize
 	inline void UpdateCleanVec() const {
 		const auto mapSz = pLib->size();
 
@@ -532,14 +563,14 @@ struct GlobalData {
 			});
 	}
 
-	inline void AutoClean() const {
+	inline void AutoClean() {
 		if (!autoClean) { return; }
 
 		CleanCache();
 	}
 
 	// clean cache lower than given limit
-	inline void CleanCache(bool forceClean = false, size_t memLimit = -1) const {
+	inline void CleanCache(bool forceClean = false, size_t memLimit = -1)  {
 		if (pPreloadHandler->IsPreloading()) {
 			return;
 		}
@@ -562,11 +593,8 @@ struct GlobalData {
 
 		while (!pCleanVec->empty()
 			&& tarMemLimit <= GetMemoryUsageMB()) {
-			auto& fileName = pCleanVec->back().first;
-
-			(*pLib)[fileName].Release();
-			pLib->erase(fileName);
-
+			// check is done when generating clean list
+			EraseLibWithoutCheck(pCleanVec->back().first);
 			pCleanVec->pop_back();
 		}
 	}
@@ -757,6 +785,5 @@ struct GlobalData {
 
 		pl.detach();
 	}
-
 };
 
