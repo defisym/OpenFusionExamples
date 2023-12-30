@@ -84,7 +84,44 @@ struct ShaderRef {
 	}
 };
 
-// for flipping
+struct SurfaceMemUsage {
+	uint64_t estimateRAMSizeMB = 0;
+	uint64_t estimateVRAMSizeMB = 0;
+
+	inline void AddRAMUsage(uint64_t sizeMB) {
+		estimateRAMSizeMB += sizeMB;
+	}
+
+	inline void AddVRAMUsage(uint64_t sizeMB) {
+		estimateVRAMSizeMB += sizeMB;
+	}
+
+	inline SurfaceMemUsage operator+(const SurfaceMemUsage& usage) const {
+		return { this->estimateRAMSizeMB + usage.estimateRAMSizeMB,
+			this->estimateVRAMSizeMB + usage.estimateVRAMSizeMB };
+	}
+
+	inline SurfaceMemUsage& operator+=(const SurfaceMemUsage& usage) {
+		this->estimateRAMSizeMB += usage.estimateRAMSizeMB;
+		this->estimateVRAMSizeMB += usage.estimateVRAMSizeMB;
+
+		return *this;
+	}
+
+	inline SurfaceMemUsage operator-(const SurfaceMemUsage& usage) const {
+		return { this->estimateRAMSizeMB - usage.estimateRAMSizeMB,
+			this->estimateVRAMSizeMB - usage.estimateVRAMSizeMB };
+	}
+
+	inline SurfaceMemUsage& operator-=(const SurfaceMemUsage& usage) {
+		this->estimateRAMSizeMB -= usage.estimateRAMSizeMB;
+		this->estimateVRAMSizeMB -= usage.estimateVRAMSizeMB;
+
+		return *this;
+	}
+};
+
+// extra surfaces for flipping
 constexpr auto SurfaceLibSfNum = 4;
 
 struct SurfaceLibValue;
@@ -171,6 +208,8 @@ struct SurfaceLibValue {
 	inline bool NotUsed() {
 		return refCount.curRef == 0 && !UpdateShaderUsage();
 	}
+
+	inline SurfaceMemUsage GetEstimateMemUsage() const;
 };
 
 using SurfaceLib = std::map<std::wstring, SurfaceLibValue>;
@@ -359,12 +398,11 @@ struct GlobalData {
 	inline void ResetLib() const {
 		std::erase_if(*pLib, [] (std::pair<const std::wstring, SurfaceLibValue>& item) {
 			auto& [fileName, libValue] = item;
-			if (libValue.NotUsed()) {
-				libValue.Release();
-				return true;
-			}
 
-			return false;
+			if (!libValue.NotUsed()) { return false; }
+
+			libValue.Release();
+			return true;
 		});
 	}
 
@@ -372,7 +410,7 @@ struct GlobalData {
 	// Cache
 	//------------
 
-	inline static std::tuple<uint64_t, uint64_t> GetEstimateMemUsage(SurfaceLib* pLib);
+	inline static SurfaceMemUsage GetEstimateMemUsage(SurfaceLib* pLib);
 
 	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, DWORD processID) {
 		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = GetEstimateMemUsage(pLib);

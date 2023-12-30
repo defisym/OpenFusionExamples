@@ -386,8 +386,6 @@ constexpr auto MIN_MEMORYLEFT = 256;
 
 // true if physics & memory both not enough
 inline bool SystemMemoryNotEnough() {
-	// return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
-
 	return (GetSystemMemoryInfoMB(MemoryInfoType::FreePhysicalMemory) < MIN_MEMORYLEFT)
 		&& (GetSystemMemoryInfoMB(MemoryInfoType::FreeVirtualMemory) < MIN_MEMORYLEFT);
 }

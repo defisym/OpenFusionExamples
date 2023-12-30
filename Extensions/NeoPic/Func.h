@@ -866,38 +866,45 @@ inline bool SurfaceLibValue::UpdateShaderUsage() {
 	return bUsedInShader;
 }
 
+inline SurfaceMemUsage SurfaceLibValue::GetEstimateMemUsage() const {
+	SurfaceMemUsage estimateMemUsage;
+
+	const LPSURFACE* pSfArrary = &this->pSf;
+
+	for (int i = 0; i < SurfaceLibSfNum; i++) {
+		const auto pSf = *(pSfArrary + i);
+
+		if (pSf == nullptr) {
+			continue;
+		}
+
+		const bool bHWA = IsHWA(pSf);
+		const auto estimateSizeMB = GetEstimateSizeMB(pSf);
+
+		if (!bHWA) {
+			estimateMemUsage.AddRAMUsage(estimateSizeMB);
+		}
+		else {
+			estimateMemUsage.AddVRAMUsage(estimateSizeMB);
+		}
+	}
+
+	return estimateMemUsage;
+}
+
 // ------------
 // GlobalData
 // ------------
 
-inline std::tuple<uint64_t, uint64_t> GlobalData::GetEstimateMemUsage(SurfaceLib* pLib) {
+inline SurfaceMemUsage GlobalData::GetEstimateMemUsage(SurfaceLib* pLib) {
 	// optimize it by add/sub value when modifing lib instead of iterate if has performance issue (unlikely)
-	uint64_t estimateRAMSizeMB = 0;
-	uint64_t estimateVRAMSizeMB = 0;
+	SurfaceMemUsage estimateMemUsage;
 
 	for (auto& libValue : *pLib | std::views::values) {
-		const LPSURFACE* pSfArrary = &libValue.pSf;
-
-		for (int i = 0; i < SurfaceLibSfNum; i++) {
-			const auto pSf = *(pSfArrary + i);
-
-			if (pSf == nullptr) {
-				continue;
-			}
-
-			const bool bHWA = IsHWA(pSf);
-			const auto estimateSizeMB = GetEstimateSizeMB(pSf);
-
-			if (!bHWA) {
-				estimateRAMSizeMB += estimateSizeMB;
-			}
-			else {
-				estimateVRAMSizeMB += estimateSizeMB;
-			}
-		}
+		estimateMemUsage += libValue.GetEstimateMemUsage();
 	}
 
-	return std::make_tuple(estimateRAMSizeMB, estimateVRAMSizeMB);
+	return estimateMemUsage;
 }
 
 inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
@@ -923,9 +930,10 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		return;
 	}
 
+	const auto memLimit = GetMemLimit(memoryLimit) / 2;
+
 	for (auto& it : *pPreloadHandler->pPreloadList) {
 		// Stop loading when exceed limit
-		const auto memLimit = GetMemLimit(memoryLimit) / 2;
 
 		// actually child thread will return 0 when calling GetProcessMemoryUsageMB
 		// so this function only calulate preload lib usage
