@@ -912,19 +912,21 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1) {
-	LPCWSTR pStrSrc = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto pStrSrc = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	size_t start = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	auto GetNonCommandOffset = [](LPCWSTR pStrSrc, size_t start)->size_t {
-		auto pStr = pStrSrc + start;
-		auto len = wcslen(pStr);
+	const auto srcLen = wcslen(pStrSrc);
 
-		if (len == 0) {
-			return 0;
-		}
+	auto GetNonCommandOffset = [] (LPCWSTR pSrc, size_t pSrcLen, size_t start)->size_t {
+		if (start >= pSrcLen) { return 0; }
 
-		auto curChar = pStr[0];
-		auto nextChar = pStr[1];
+		const auto pStr = pSrc + start;
+		const auto len = wcslen(pStr);
+
+		if (len == 0) { return 0; }
+
+		const auto curChar = pStr[0];
+		const auto nextChar = pStr[1];
 
 		if (curChar == L'\\' && nextChar == L'[') {
 			return 1;
@@ -951,7 +953,7 @@ long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1)
 	size_t totalOffset = 0;
 
 	for (;;) {
-		auto curOffset = GetNonCommandOffset(pStrSrc, start);
+		const auto curOffset = GetNonCommandOffset(pStrSrc, srcLen, start);
 		totalOffset += curOffset;
 
 		if (curOffset != 0) {
@@ -962,7 +964,7 @@ long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1)
 		}
 	}
 	
-	return totalOffset;
+	return (long)totalOffset;
 }
 
 long WINAPI DLLExport Expression_GetHashedString(LPRDATA rdPtr, long param1) {
