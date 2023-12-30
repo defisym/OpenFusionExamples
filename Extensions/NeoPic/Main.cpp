@@ -368,11 +368,11 @@ short WINAPI DLLExport Action_SetKeepList(LPRDATA rdPtr, long param1, long param
 
 	if (rdPtr->isLib) {
 		if(keepListSrc.empty()) {
-			rdPtr->pData->ClearKeepList();
+			rdPtr->pData->pGC->ClearKeepList();
 		}
 		else {
 			const KeepList keepList = SplitString(keepListSrc, Delimiter);
-			rdPtr->pData->AppendKeepList(keepList, basePath);
+			rdPtr->pData->pGC->AppendKeepList(keepList, basePath);
 		}
 	}
 
@@ -388,16 +388,16 @@ short WINAPI DLLExport Action_SetKeepListByPointer(LPRDATA rdPtr, long param1, l
 		// only works in runtime due to /MD & /MDd
 		auto pKeepList = ConvertToType<pPreLoadList>(list);
 		if (pKeepList == nullptr) {
-			rdPtr->pData->ClearKeepList();
+			rdPtr->pData->pGC->ClearKeepList();
 		}
 		else {
-			rdPtr->pData->AppendKeepList(*pKeepList, basePath);
+			rdPtr->pData->pGC->AppendKeepList(*pKeepList, basePath);
 		}
 #else				
 		//load base path instead for test		
 		List keepList;
 		GetFileList(&keepList, basePath);
-		rdPtr->pData->AppendKeepList(keepList, basePath);
+		rdPtr->pData->pGC->AppendKeepList(keepList, basePath);
 #endif // !_DEBUG	
 	}
 

@@ -799,6 +799,35 @@ inline LPSURFACE GetSurfacePointer(LPRDATA rdPtr, const std::wstring& FilePath, 
 // Member Functions
 // ------------
 
+// ------------
+// GarbageCollection
+// ------------
+
+inline GarbageCollection::GarbageCollection(GlobalData* pData) {
+	this->pData = pData;
+	this->pLib = pData->pLib;
+
+	this->pKeepList = new KeepList;
+	this->pCleanVec = new RefCountVec;
+}
+
+inline void GarbageCollection::AppendKeepList(const FileList& keepList, const std::wstring& basePath) const {
+	const auto pAppendKeepList = new FileList;
+	pData->GetFullPathByFileName(*pAppendKeepList, keepList, basePath);
+
+	for (auto& it : *pAppendKeepList) {
+		if (std::ranges::find(*pKeepList, it) == pKeepList->end()) {
+			pKeepList->emplace_back(it);
+		}
+	}
+
+	delete pAppendKeepList;
+}
+
+// ------------
+// SurfaceMemUsage
+// ------------
+
 inline SurfaceMemUsage::SurfaceMemUsage(LPSURFACE pSf) {
 	const bool bHWA = IsHWA(pSf);
 
@@ -936,13 +965,13 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		return;
 	}
 
-	SurfaceMemUsage estimateMemUsage;
+	SurfaceMemUsage memUsage;
 	const auto memLimit = GetMemLimit(memoryLimit) / 2;
 
 	for (auto& it : *pPreloadHandler->pPreloadList) {
 		// child thread will return 0 when calling GetProcessMemoryUsageMB with child pid
 		// so only calulate preload lib usage
-		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = estimateMemUsage;
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = memUsage;
 		const auto curThreadUsage = static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB));
 
 		// parent usage
@@ -972,7 +1001,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 
 			if (pBitmap->IsValid()) {
 				const auto newItem = SurfaceLibValue(pBitmap, GetFileHash(it), GetTransparent(pBitmap));
-				estimateMemUsage += newItem.GetEstimateMemUsage();
+				memUsage += newItem.GetEstimateMemUsage();
 
 				(*pPreloadHandler->pPreloadLib)[it] = newItem;
 			}
@@ -984,7 +1013,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		// Stop loading
 		if (pPreloadHandler->bForceExit) {
 			for (auto& libValue : *pPreloadHandler->pPreloadLib | std::views::values) {
-				estimateMemUsage -= libValue.GetEstimateMemUsage();
+				memUsage -= libValue.GetEstimateMemUsage();
 				libValue.Release();
 			}
 

@@ -48,11 +48,6 @@ struct LoadCallbackInfo {
 	}
 };
 
-using List = std::vector<std::wstring>;
-using KeepList = List;
-using pPreLoadList = List*;
-using PreLoadList = List;
-
 struct Count {
 	size_t totalRef = 0;		// total ref times, count objects have used this
 	size_t priority = 0;		// lib size when first object ref this
@@ -228,8 +223,73 @@ using RefCountIt = RefCount::iterator;
 using RefCountPair = std::pair<std::wstring, Count>;
 using RefCountVec = std::vector<RefCountPair>;
 
-using FileList = std::vector<std::wstring>;
+using List = std::vector<std::wstring>;
+using KeepList = List;
+using pPreLoadList = List*;
+using PreLoadList = List;
+
+using FileList = List;
 using FileListMap = std::map<std::wstring, FileList*>;
+
+struct GlobalData;
+
+// TODO record in clean vec
+// count of GC, if exceeds, move to old
+constexpr auto GenerationThreshold = 10;
+
+struct GarbageCollection {
+	GlobalData* pData = nullptr;
+	SurfaceLib* pLib = nullptr;
+
+	// TODO use priority queue
+	KeepList* pKeepList = nullptr;
+	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
+
+	explicit GarbageCollection(GlobalData* pData);
+
+	~GarbageCollection() {
+		delete pKeepList;
+		delete pCleanVec;
+	}
+
+	// TODO hook to lib operation
+	inline void AddItem(){}
+	inline void RemoveItem(){}
+
+	inline void ClearKeepList() const { pKeepList->clear(); }
+	inline void AppendKeepList(const FileList& keepList, const std::wstring& basePath) const;
+
+	inline void UpdateCleanVec() const {
+		const auto mapSz = pLib->size();
+
+		pCleanVec->clear();
+		pCleanVec->reserve(mapSz);
+
+		for (auto& [name, libValue] : *pLib) {
+			if (libValue.NotUsed() // only release assets that currently is not used
+				&& std::ranges::find(*pKeepList, name) == pKeepList->end()) {
+				pCleanVec->emplace_back(name, libValue.refCount);
+			}
+		}
+
+		const auto countWeight = mapSz;		// weight of ref count
+		std::ranges::sort(*pCleanVec, [&] (const RefCountPair& l, const RefCountPair& r) {
+			return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
+			});
+	}
+	// TODO check if old Okay
+	inline bool AbleToClean() const { return !pCleanVec->empty(); }
+	// TODO return old if still need to clean
+	[[nodiscard]] inline auto GetCleanItem() const {
+		const auto item = pCleanVec->back();
+		pCleanVec->pop_back();
+
+		return item;
+	}
+	inline void CleanComplete() {
+		//TODO update generation here
+	}
+};
 
 template<typename T>
 constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
@@ -247,7 +307,7 @@ struct GlobalData {
 	bool bDX11 = false;
 	bool bPreMulAlpha = false;
 
-	const decltype(std::chrono::steady_clock::now()) startTime = std::chrono::steady_clock::now();
+	inline static const decltype(std::chrono::steady_clock::now()) startTime = std::chrono::steady_clock::now();
 
 	//------------
 	// Cache
@@ -257,8 +317,7 @@ struct GlobalData {
 	size_t memoryLimit = 0;
 	size_t sizeLimit = 0;
 
-	KeepList* pKeepList = nullptr;
-	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
+	GarbageCollection* pGC = nullptr;
 
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
@@ -302,8 +361,9 @@ struct GlobalData {
 
 		//init specific
 		pLib = new SurfaceLib;
-		pKeepList = new KeepList;
-		pCleanVec = new RefCountVec;
+
+		pGC = new GarbageCollection(this);
+
 		pFileListMap = new FileListMap;
 		pPreloadHandler = new PreloadHandler;
 	}
@@ -322,8 +382,7 @@ struct GlobalData {
 
 		DeleteLib();
 
-		delete pKeepList;
-		delete pCleanVec;
+		delete pGC;
 
 		for (const auto& pFileList : *pFileListMap | std::views::values) {
 			delete pFileList;
@@ -533,48 +592,12 @@ struct GlobalData {
 		}
 	}
 
-	inline void ClearKeepList() const {
-		pKeepList->clear();
-	}
-	inline void AppendKeepList(const FileList& keepList, const std::wstring& basePath) const {
-		const auto pAppendKeepList = new FileList;
-		GetFullPathByFileName(*pAppendKeepList, keepList, basePath);
-
-		for (auto& it : *pAppendKeepList) {
-			if (std::ranges::find(*pKeepList, it) == pKeepList->end()) {
-				pKeepList->emplace_back(it);
-			}
-		}
-
-		delete pAppendKeepList;
-	}
-
 	inline void SetClean(const bool autoClean, const size_t memoryLimit, const size_t sizeLimit) {
 		this->autoClean = autoClean;
 		this->memoryLimit = memoryLimit;
 		this->sizeLimit = sizeLimit;
 	}
-
-	// TODO Optimize
-	inline void UpdateCleanVec() const {
-		const auto mapSz = pLib->size();
-
-		pCleanVec->clear();
-		pCleanVec->reserve(mapSz);
-
-		for (auto& [name, libValue] : *pLib) {
-			if (libValue.NotUsed() // only release assets that currently is not used
-				&& std::ranges::find(*pKeepList, name) == pKeepList->end()) {
-				pCleanVec->emplace_back(name, libValue.refCount);
-			}
-		}
-
-		const auto countWeight = mapSz;		// weight of ref count
-		std::ranges::sort(*pCleanVec, [&] (const RefCountPair& l, const RefCountPair& r) {
-			return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
-			});
-	}
-
+		
 	inline void AutoClean() {
 		if (!autoClean) { return; }
 
@@ -601,14 +624,15 @@ struct GlobalData {
 			? memLimit
 			: memoryLimit / 2;
 
-		UpdateCleanVec();
+		pGC->UpdateCleanVec();
 
-		while (!pCleanVec->empty()
+		while (pGC->AbleToClean()
 			&& tarMemLimit <= GetMemoryUsageMB()) {
 			// check is done when generating clean list
-			EraseLibWithoutCheck(pCleanVec->back().first);
-			pCleanVec->pop_back();
+			EraseLibWithoutCheck(pGC->GetCleanItem().first);
 		}
+
+		pGC->CleanComplete();
 	}
 
 	//------------
