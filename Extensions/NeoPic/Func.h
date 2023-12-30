@@ -945,8 +945,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		// actually child thread will return 0 when calling GetProcessMemoryUsageMB
 		// so this function only calulate preload lib usage
 		const auto curThreadUsage = GetMemoryUsageMB(estimateMemUsage, pPreloadHandler->threadID);
-		//TODO get parent usage
-		const auto parentThreadUsage = GetMemoryUsageMB(pLib, pPreloadHandler->parentThreadID);
+		const auto parentThreadUsage = GetMemoryUsageMB(estimateMemUsage, pPreloadHandler->parentThreadID);
 		const auto totalUsage = curThreadUsage + parentThreadUsage;
 
 		if (memLimit <= totalUsage || SystemMemoryNotEnough()) {

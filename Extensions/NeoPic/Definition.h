@@ -453,9 +453,8 @@ struct GlobalData {
 		return GetMemoryUsageMB(GetEstimateMemUsage(pLib), processID);
 	}
 
-	// TODO use optimized function here
 	inline SIZE_T GetMemoryUsageMB() const {
-		return GetMemoryUsageMB(pLib, _getpid());		
+		return GetMemoryUsageMB(estimateMemUsage, _getpid());		
 	}
 
 	inline static auto GetMemLimit(size_t memLimit) {
