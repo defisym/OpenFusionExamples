@@ -233,10 +233,6 @@ using FileListMap = std::map<std::wstring, FileList*>;
 
 struct GlobalData;
 
-// TODO record in clean vec
-// count of GC, if exceeds, move to old
-constexpr auto GenerationThreshold = 10;
-
 struct GarbageCollection {
 	GlobalData* pData = nullptr;
 	SurfaceLib* pLib = nullptr;
@@ -251,10 +247,6 @@ struct GarbageCollection {
 		delete pKeepList;
 		delete pCleanVec;
 	}
-
-	// TODO hook to lib operation
-	inline void AddItem(){}
-	inline void RemoveItem(){}
 
 	inline void ClearKeepList() const { pKeepList->clear(); }
 	inline void AppendKeepList(const FileList& keepList, const std::wstring& basePath) const;
@@ -277,18 +269,14 @@ struct GarbageCollection {
 			return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
 			});
 	}
-	// TODO check if old Okay
 	inline bool AbleToClean() const { return !pCleanVec->empty(); }
-	// TODO return old if still need to clean
 	[[nodiscard]] inline auto GetCleanItem() const {
 		const auto item = pCleanVec->back();
 		pCleanVec->pop_back();
 
 		return item;
 	}
-	inline void CleanComplete() {
-		//TODO update generation here
-	}
+	static inline void CleanComplete() {}
 };
 
 template<typename T>
