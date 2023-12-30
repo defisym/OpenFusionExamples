@@ -410,15 +410,20 @@ struct GlobalData {
 	// Cache
 	//------------
 
-	inline static SurfaceMemUsage GetEstimateMemUsage(SurfaceLib* pLib);
+	inline static SurfaceMemUsage GetEstimateMemUsage(SurfaceLib* pLib);	
 
-	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, DWORD processID) {
-		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = GetEstimateMemUsage(pLib);
+	inline static SIZE_T GetMemoryUsageMB(SurfaceMemUsage usage, DWORD processID) {
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = usage;
 
 		return (std::max)(GetProcessMemoryUsageMB(processID)
 			, static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB)));
 	}
 
+	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, DWORD processID) {
+		return GetMemoryUsageMB(GetEstimateMemUsage(pLib), processID);
+	}
+
+	// TODO use optimized function here
 	inline SIZE_T GetMemoryUsageMB() const {
 		return GetMemoryUsageMB(pLib, _getpid());		
 	}
