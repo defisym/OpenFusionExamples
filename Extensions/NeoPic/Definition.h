@@ -562,10 +562,10 @@ struct GlobalData {
 		pCleanVec->clear();
 		pCleanVec->reserve(mapSz);
 
-		for (auto& it : *pLib) {
-			if (it.second.NotUsed() // only release assets that currently is not used
-				&& std::ranges::find(*pKeepList, it.first) == pKeepList->end()) {
-				pCleanVec->emplace_back(it.first, it.second.refCount);
+		for (auto& [name, libValue] : *pLib) {
+			if (libValue.NotUsed() // only release assets that currently is not used
+				&& std::ranges::find(*pKeepList, name) == pKeepList->end()) {
+				pCleanVec->emplace_back(name, libValue.refCount);
 			}
 		}
 
