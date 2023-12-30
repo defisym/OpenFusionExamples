@@ -940,14 +940,16 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 	const auto memLimit = GetMemLimit(memoryLimit) / 2;
 
 	for (auto& it : *pPreloadHandler->pPreloadList) {
-		// Stop loading when exceed limit
+		// child thread will return 0 when calling GetProcessMemoryUsageMB with child pid
+		// so only calulate preload lib usage
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = estimateMemUsage;
+		const auto curThreadUsage = static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB));
 
-		// actually child thread will return 0 when calling GetProcessMemoryUsageMB
-		// so this function only calulate preload lib usage
-		const auto curThreadUsage = GetMemoryUsageMB(estimateMemUsage, pPreloadHandler->threadID);
-		const auto parentThreadUsage = GetMemoryUsageMB(estimateMemUsage, pPreloadHandler->parentThreadID);
+		// parent usage
+		const auto parentThreadUsage = GetMemoryUsageMB();
 		const auto totalUsage = curThreadUsage + parentThreadUsage;
 
+		// Stop loading when exceed limit
 		if (memLimit <= totalUsage || SystemMemoryNotEnough()) {
 			break;
 		}

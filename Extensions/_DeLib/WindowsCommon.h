@@ -248,6 +248,19 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	return info;
 }
 
+struct ProcessHandle {
+	HANDLE hProcess = nullptr;
+
+	ProcessHandle(DWORD processID = _getpid()) {
+		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+										PROCESS_VM_READ,
+										FALSE, processID);
+	}
+	~ProcessHandle() {
+		CloseHandle(hProcess);
+	}
+};
+
 // Process mem usage
 enum class MemoryUsageType {
 	PeakWorkingSetSize,
@@ -283,15 +296,9 @@ inline SIZE_T GetMemoryUsage(const PROCESS_MEMORY_COUNTERS& pmc, MemoryUsageType
 	}
 }
 
-inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
-	HANDLE hProcess;
+inline SIZE_T GetProcessMemoryUsage(HANDLE hProcess, MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
 	PROCESS_MEMORY_COUNTERS pmc;
-
 	SIZE_T ret = 0;
-
-	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-		PROCESS_VM_READ,
-		FALSE, processID);
 
 	if (hProcess == nullptr) {
 		return ret;
@@ -301,9 +308,18 @@ inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType
 		ret = GetMemoryUsage(pmc, type);
 	}
 
-	CloseHandle(hProcess);
+	return ret;
+}
+
+inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
+	const ProcessHandle processHandle(processID);
+	const SIZE_T ret = GetProcessMemoryUsage(processHandle.hProcess);
 
 	return ret;
+}
+
+inline SIZE_T GetProcessMemoryUsageMB(HANDLE hProcess, MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
+	return (GetProcessMemoryUsage(hProcess, type) >> 20);
 }
 
 inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {

@@ -240,6 +240,8 @@ constexpr auto Delimiter = L'|';
 struct GlobalData {
 	SurfaceLib* pLib = nullptr;
 	SurfaceMemUsage estimateMemUsage;
+	ProcessHandle processHandle;
+
 	FileListMap* pFileListMap = nullptr;
 
 	bool bDX11 = false;
@@ -442,6 +444,13 @@ struct GlobalData {
 
 	inline static SurfaceMemUsage GetEstimateMemUsage(SurfaceLib* pLib);	
 
+	inline static SIZE_T GetMemoryUsageMB(SurfaceMemUsage usage, HANDLE hProcess) {
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = usage;
+
+		return (std::max)(GetProcessMemoryUsageMB(hProcess)
+			, static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB)));
+	}
+
 	inline static SIZE_T GetMemoryUsageMB(SurfaceMemUsage usage, DWORD processID) {
 		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = usage;
 
@@ -449,12 +458,16 @@ struct GlobalData {
 			, static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB)));
 	}
 
+	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, HANDLE hProcess) {
+		return GetMemoryUsageMB(GetEstimateMemUsage(pLib), hProcess);
+	}
+
 	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, DWORD processID) {
 		return GetMemoryUsageMB(GetEstimateMemUsage(pLib), processID);
 	}
 
 	inline SIZE_T GetMemoryUsageMB() const {
-		return GetMemoryUsageMB(estimateMemUsage, _getpid());		
+		return GetMemoryUsageMB(estimateMemUsage, processHandle.hProcess);		
 	}
 
 	inline static auto GetMemLimit(size_t memLimit) {

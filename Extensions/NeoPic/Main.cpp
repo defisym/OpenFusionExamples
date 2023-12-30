@@ -1244,7 +1244,7 @@ long WINAPI DLLExport Expression_GetIterateRefCountValuePriority(LPRDATA rdPtr, 
 }
 
 long WINAPI DLLExport Expression_GetRAMUsageMB(LPRDATA rdPtr, long param1) {
-	return long(GetProcessMemoryUsageMB());
+	return long(GetProcessMemoryUsageMB(rdPtr->pData->processHandle.hProcess));
 }
 
 long WINAPI DLLExport Expression_GetGPUName(LPRDATA rdPtr, long param1) {
