@@ -173,7 +173,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	FreeConsole();
 #endif
 	
-	if (rdPtr->hFont != 0) {
+	if (rdPtr->hFont != nullptr) {
 		DeleteObject(rdPtr->hFont);
 	}
 	
@@ -183,7 +183,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete static_cast<NeoStr::IConParamParser*>(rdPtr->pIConParamParser);
 	delete rdPtr->pIConItName;
 
-	if (rdPtr->pData->pIConData->pCaller == (LPRO)rdPtr) {
+	if (rdPtr->pData->pIConData->pCaller == reinterpret_cast<LPRO>(rdPtr)) {
 		rdPtr->pData->pIConData->ResetCaller();
 	}
 
@@ -467,9 +467,8 @@ void WINAPI DLLExport EndFrame(mv _far *mV, DWORD dwReserved, int nFrameIndex)
 // Note: do not forget to enable the functions in the .def file 
 // if you remove the comments below.
 
-void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf)
-{
-	GetObject(rdPtr->hFont, sizeof(LOGFONT), pLf);
+void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf) {
+	memcpy(pLf, &rdPtr->logFont, sizeof(LOGFONT));
 }
 
 // -------------------
@@ -477,27 +476,26 @@ void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf)
 // -------------------
 // Change the font used by the object.
 // 
-void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
-{
-	HFONT hFont = CreateFontIndirect(pLf);
+void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc) {
+	const HFONT hFont = CreateFontIndirect(pLf);
 
 #ifdef _DEBUG
-	LOGFONT Lf = { 0 };
+	LOGFONT Lf = { };
 	GetObject(hFont, sizeof(LOGFONT), &Lf);
 #endif // _DEBUG
 
-
-	if ( hFont != NULL ) {
-		if (rdPtr->hFont != 0) {
+	if ( hFont != nullptr) {
+		if (rdPtr->hFont != nullptr) {
 			DeleteObject(rdPtr->hFont);
 		}
 
 		rdPtr->logFont = *pLf;
 		rdPtr->hFont = hFont;
 		rdPtr->bFontChanged = true;
-		
-		SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
-		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+
+		//Seems doesn't need it here
+		//SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
+		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
 }
 
@@ -522,7 +520,7 @@ void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 		rdPtr->dwColor = rgb;
 		rdPtr->reRender = true;
 		InvalidateRect(rdPtr->hWnd, NULL, TRUE);
-		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
 }
 

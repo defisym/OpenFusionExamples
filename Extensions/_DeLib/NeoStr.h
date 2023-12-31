@@ -41,6 +41,7 @@
 #pragma comment(lib,"Gdiplus")
 
 #include <gdiplusheaders.h>
+#include <ranges>
 
 #ifdef _BLUR
 #include <gdipluseffects.h>
@@ -106,16 +107,17 @@ constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE
 
 constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
-constexpr auto FORMAT_INVALID_ICON = (DWORD)-1;
+constexpr auto FORMAT_INVALID_ICON = static_cast<DWORD>(-1);
 
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
 private:
 	HDC hdc;
+	HGDIOBJ hOldObj;
 	COLORREF dwTextColor;
 
-	//HFONT hFont;
+	HFONT hFont;
 	LOGFONT logFont;
 
 	Font* pFont = nullptr;
@@ -257,14 +259,28 @@ private:
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
 	using CharSizeCache = std::map<wchar_t, StrSize>;
-	//CharSizeCache charSzCache;
 
 	struct CharSizeCacheItem {
-		HDC hdc = NULL;
-		HFONT hFont = NULL;
+		HDC hdc = nullptr;
+		HGDIOBJ hOldObj = nullptr;
+		HFONT hFont = nullptr;
 		TEXTMETRIC tm = {0};
 
 		CharSizeCache cache;
+
+		explicit CharSizeCacheItem(const LOGFONT& logFont) {
+			hFont = CreateFontIndirect(&logFont);
+
+			hdc = GetDC(nullptr);
+			hOldObj = SelectObject(hdc, hFont);
+			GetTextMetrics(hdc, &tm);
+		}
+
+		~CharSizeCacheItem() {
+			SelectObject(hdc, hOldObj);
+			ReleaseDC(nullptr, hdc);
+			DeleteObject(hFont);
+		}
 	};
 
 	bool bExternalCache = true;
@@ -438,14 +454,14 @@ public:
 		}
 
 		inline void ReleaseIConLib() {
-			for (const auto& it : *this->pIConLib) {
-				delete it.second;
+			for (const auto& pIConSf : *this->pIConLib | std::views::values) {
+				delete pIConSf;
 			}
 
 			this->pIConLib->clear();
 
-			for (const auto& it : this->resizeCache) {
-				delete it.second;
+			for (const auto& pIConResizeSf : this->resizeCache | std::views::values) {
+				delete pIConResizeSf;
 			}
 
 			this->resizeCache.clear();
@@ -631,10 +647,10 @@ private:
 	}
 
 #ifdef _DEBUG
-	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) const {
+	static int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) {
 		UINT  num = 0;          // number of image encoders
 		UINT  size = 0;         // size of the image encoder array in bytes
-		ImageCodecInfo* pImageCodecInfo = NULL;
+		ImageCodecInfo* pImageCodecInfo = nullptr;
 
 		GetImageEncodersSize(&num, &size);
 
@@ -644,7 +660,7 @@ private:
 
 		pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
 
-		if (pImageCodecInfo == NULL) {
+		if (pImageCodecInfo == nullptr) {
 			return -1;  // Failure
 		}
 
@@ -706,15 +722,16 @@ public:
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 		}
 
-		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
-		this->hdc = GetDC(NULL);
-		SelectObject(this->hdc, hFont);
-
-		//this->hFont = hFont;
+		// duplicate font handle
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
+		this->hFont = CreateFontIndirect(&this->logFont);
+
+		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
+		this->hdc = GetDC(nullptr);
+		this->hOldObj = SelectObject(this->hdc, hFont);
 		GetTextMetrics(hdc, &this->tm);
 
 		this->pFontCollection = pFontCollection;
@@ -781,8 +798,9 @@ public:
 	}
 
 	~NeoStr() {
-		//SelectObject(this->hdc, (HFONT)NULL);
-		ReleaseDC(NULL, this->hdc);
+		SelectObject(this->hdc, this->hOldObj);
+		ReleaseDC(nullptr, this->hdc);
+		DeleteObject(this->hFont);
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
@@ -829,24 +847,18 @@ public:
 		}
 	}
 
-	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		pCharSzCacheWithFont = new CharSizeCacheWithFont;
-	}
-
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		for (const auto& it : *pCharSzCacheWithFont) {
-			//SelectObject(it.second.hdc, (HFONT)NULL);
-			ReleaseDC(NULL, it.second.hdc);
-			DeleteObject(it.second.hFont);
-		}
-
 		delete pCharSzCacheWithFont;
 		pCharSzCacheWithFont = nullptr;
 	}
 
+	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
+		pCharSzCacheWithFont = new CharSizeCacheWithFont;
+	}
+
 	inline static void Release(FontCache*& pFontCache) {
-		for (const auto& it : *pFontCache) {
-			delete it.second;
+		for (const auto& pFont : *pFontCache | std::views::values) {
+			delete pFont;
 		}
 
 		delete pFontCache;
@@ -1355,14 +1367,7 @@ public:
 			}
 		}
 		else {
-			const auto hdc = GetDC(NULL);
-			const auto hFont = CreateFontIndirect(&logFont);			
-			SelectObject(hdc, hFont);
-
-			TEXTMETRIC tm;
-			GetTextMetrics(hdc, &tm);
-
-			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont,tm };
+			pCharSzCacheWithFont->emplace(logFontHash, logFont);
 
 			return GetCharSizeWithCache(wChar,logFont);
 		}

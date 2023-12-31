@@ -145,3 +145,6 @@ This object has no properties
 ## Condition
 
 ## Expression
+
+- Get Non Command Offset
+  - if next char is a command, this expression will return the offset to command end
