@@ -39,6 +39,10 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
+#ifdef COUNT_GDI_OBJECT
+	rdPtr->pData->objectCounter.UpdateObjectCount();
+#endif
+
 	if (rdPtr->bFontChanged) {
 		rdPtr->bFontChanged = false;
 		rdPtr->bStrChanged = true;
@@ -128,6 +132,16 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 
 		rdPtr->reRender = false;
 	}
+
+#ifdef COUNT_GDI_OBJECT
+	const auto count = rdPtr->pData->objectCounter.objectCount;
+
+	rdPtr->pData->objectCounter.UpdateObjectCount();
+	if (count < rdPtr->pData->objectCounter.objectCount) {
+		const auto info = std::format(L"Add when render {}\n", rdPtr->rHo.hoOiList->oilName);
+		OutputDebugStringW(info.c_str());
+	}
+#endif
 }
 
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {

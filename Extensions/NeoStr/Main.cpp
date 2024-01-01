@@ -841,7 +841,13 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr pFilter(0, 0, NULL);
+	NeoStr pFilter(0, 0, rdPtr->hFont
+			, rdPtr->pData->pFontCache
+			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pRegexHandler
+			, rdPtr->pData->pIConData
+			, rdPtr->pData->pFontCollection
+			, false);
 	pFilter.GetFormat(pStr
 		, flags == -1
 		? rdPtr->filterFlags
@@ -1015,7 +1021,13 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	size_t filteredLength = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr pFilter(0, 0, NULL);
+	NeoStr pFilter(0, 0, rdPtr->hFont
+			, rdPtr->pData->pFontCache
+			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pRegexHandler
+			, rdPtr->pData->pIConData
+			, rdPtr->pData->pFontCollection
+			, false);
 
 	try {		
 		pFilter.GetFormat(pStr

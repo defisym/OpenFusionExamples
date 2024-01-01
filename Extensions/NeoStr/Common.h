@@ -53,6 +53,14 @@ struct GlobalData;
 #include	"WindowsCommon.h"
 #include	"ObjectSelection.h"
 
+#ifdef _DEBUG
+#define COUNT_GDI_OBJECT
+#endif
+
+#ifdef COUNT_GDI_OBJECT
+#include	"GDIObjectCounter.h"
+#endif
+
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
 #include	"Encryption.h"
@@ -69,6 +77,10 @@ struct GlobalData {
 
 	PrivateFontCollection* pFontCollection;
 	NeoStr::IConData* pIConData;
+
+#ifdef COUNT_GDI_OBJECT
+	GDIObjectCounter objectCounter;
+#endif
 
 	GlobalData(){
 		auto state = Gdiplus::GdiplusStartup(&gdiplusToken

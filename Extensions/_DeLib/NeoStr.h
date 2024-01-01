@@ -268,6 +268,11 @@ private:
 
 		CharSizeCache cache;
 
+		CharSizeCacheItem(CharSizeCacheItem& other) = delete;
+		CharSizeCacheItem(CharSizeCacheItem&& other) = delete;
+		CharSizeCacheItem& operator=(CharSizeCacheItem& other) = delete;
+		CharSizeCacheItem& operator=(CharSizeCacheItem&& other) = delete;
+
 		explicit CharSizeCacheItem(const LOGFONT& logFont) {
 			hFont = CreateFontIndirect(&logFont);
 
@@ -749,7 +754,7 @@ public:
 			Alloc(this->pCharSzCacheWithFont);
 			Alloc(this->pRegexCache);
 		}
-		
+
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
@@ -1367,8 +1372,22 @@ public:
 			}
 		}
 		else {
+#ifdef COUNT_GDI_OBJECT
+			GDIObjectCounter objectCounter;
+
+			objectCounter.UpdateObjectCount();
+#endif
 			pCharSzCacheWithFont->emplace(logFontHash, logFont);
 
+#ifdef COUNT_GDI_OBJECT
+ 			const auto count = objectCounter.objectCount;
+
+			objectCounter.UpdateObjectCount();
+			if (count < objectCounter.objectCount) {
+				const auto info = std::format(L"Add when Cache\n");
+				OutputDebugStringW(info.c_str());
+		}
+#endif
 			return GetCharSizeWithCache(wChar,logFont);
 		}
 	}
@@ -2659,6 +2678,11 @@ public:
 //#define REUSE_HWA
 
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
+#ifdef COUNT_GDI_OBJECT
+		GDIObjectCounter objectCounter;
+
+		objectCounter.UpdateObjectCount();
+#endif
 		if (!this->bTextValid) {
 			return;
 		}
@@ -3084,6 +3108,15 @@ public:
 		pMemSf->Blit(*pHwaSf, 0, 0, BMODE_TRANSP);
 		//pMemSf->ReleaseRenderTargetSurface(pRTT);
 		pHwaSf->EndRendering();
+#endif
+#ifdef COUNT_GDI_OBJECT
+		const auto count = objectCounter.objectCount;
+
+		objectCounter.UpdateObjectCount();
+		if (count < objectCounter.objectCount) {
+			const auto info = std::format(L"Add when Render to surface\n");
+			OutputDebugStringW(info.c_str());
+		}
 #endif
 	}
 

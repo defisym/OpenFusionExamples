@@ -236,6 +236,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;
 
+#ifdef COUNT_GDI_OBJECT
+	rdPtr->pData->objectCounter.UpdateObjectCount();
+#endif
+
 	// update caller state
 	rdPtr->pData->pIConData->CheckCallerValidity();
 
