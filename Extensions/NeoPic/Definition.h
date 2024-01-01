@@ -666,7 +666,7 @@ struct GlobalData {
 			this->rdPtr = rdPtr;
 		}
 
-		inline void StartPreload(LPRDATA rdPtr, HANDLE handle,HANDLE parentThreadID) {
+		inline void StartPreload(LPRDATA rdPtr, HANDLE handle, HANDLE parentThreadID) {
 			this->rdPtr = rdPtr;
 			this->threadHandle = handle;
 			this->parentThreadHandle = parentThreadID;
@@ -802,6 +802,7 @@ struct GlobalData {
 				CleanCache();
 		});
 
+		// TODO close handle?
 		HANDLE handle;
 		DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &handle, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
 

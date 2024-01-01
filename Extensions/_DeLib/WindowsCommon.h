@@ -30,7 +30,7 @@ inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	DWORD	ProcessID = 0;
 
 	//获取快照
-	HANDLE	snapshot;
+	HANDLE snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
 	//循环遍历
@@ -49,6 +49,8 @@ inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 
 	delete info;
 	return ProcessID;
+
+	CloseHandle(snapshot);
 }
 
 // FileVersion

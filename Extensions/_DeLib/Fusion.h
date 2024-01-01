@@ -1041,6 +1041,9 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 
 			delete img;
 		}
+		
+		GlobalUnlock(handle);
+		CloseClipboard();
 	}
 }
 

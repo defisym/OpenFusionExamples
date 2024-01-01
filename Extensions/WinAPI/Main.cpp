@@ -1304,7 +1304,7 @@ short WINAPI DLLExport LoadFileList(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->FileList->clear();
-	GetFileList(rdPtr, FilePath);
+	GetFileList(rdPtr->FileList, FilePath);
 
 	return 0;
 }
