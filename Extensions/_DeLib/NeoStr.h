@@ -303,6 +303,13 @@ private:
 
 	StrSize defaultCharSz;
 
+	//------------
+	// format zone
+	//------------
+
+	//---------
+	// basic
+	//---------
 	struct FormatBasic {
 		size_t start;
 		//size_t end;
@@ -310,24 +317,17 @@ private:
 		size_t startWithNewLine;
 	};
 
-	struct FormatColor {
-		size_t start;
-		//size_t end;
+	//---------
+	// non-stack based
+	//			format is saved directly
+	//---------
 
-		size_t startWithNewLine;
-
-		Color color;
+	struct FormatRemark {
+		
 	};
 
-	std::vector<FormatColor> colorFormat;
-	std::vector<Color> colorStack;
-
-	struct FormatICon {
-		size_t start;
-		//size_t end;
-
-		size_t startWithNewLine;
-
+	// for icon parse
+	struct FormatICon :FormatBasic {
 		DWORD hImage;
 
 		size_t x;
@@ -336,6 +336,22 @@ private:
 
 	std::vector<FormatICon> iConFormat;
 
+	//---------
+	// stack based
+	//		syntax: 
+	//			format records where the format starts, for rendering
+	//			stack records the format change during parsing
+	//---------
+
+	// for color control
+	struct FormatColor :FormatBasic {
+		Color color;
+	};
+
+	std::vector<FormatColor> colorFormat;
+	std::vector<Color> colorStack;
+
+	// for icon control
 	struct IConDisplay {
 		float iConOffsetX = 0;
 		float iConOffsetY = 0;
@@ -347,36 +363,23 @@ private:
 
 	IConDisplay iConDisplay = { 0,0,1.0,false };
 
-	struct FormatIConDisplay {
-		size_t start;
-		//size_t end;
-
-		size_t startWithNewLine;
-
+	struct FormatIConDisplay :FormatBasic {
 		IConDisplay iConDisplay;
 	};
 
 	std::vector<FormatIConDisplay> iConDisplayFormat;
 	std::vector<IConDisplay> iConDisplayStack;
 
-	struct FormatFont {
-		size_t start;
-		//size_t end;
-
-		size_t startWithNewLine;
-
+	// for font control
+	struct FormatFont :FormatBasic {
 		LOGFONT logFont;
 	};
 
 	std::vector<FormatFont> fontFormat;
 	std::vector<LOGFONT> logFontStack;
 
-	struct FormatShake {
-		size_t start = 0;
-		//size_t end;
-
-		size_t startWithNewLine = 0;
-
+	// for shake control
+	struct FormatShake :FormatBasic {
 		ShakeControl shakeControl;
 	};
 
@@ -1419,6 +1422,10 @@ public:
 		, bool bForced = false		// force refresh
 		, const size_t operation = 0
 		, const size_t operationParam = 0) {
+		// ------------
+		// check validity & skip
+		// ------------
+
 		this->bTextValid = true;
 
 		auto TextValid = [&](const wchar_t* pStr, size_t* pLen) {
@@ -1500,7 +1507,10 @@ public:
 		// 
 		// [!]
 		//	reset all format to what you set in properties and events
-		// 
+		//
+		// [Remark = CharCount, Content]
+		//	Insert remark that display over texts
+		//
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
 		//	if param is less than two, will be referred from left.
@@ -1594,31 +1604,35 @@ public:
 		// [!S][/!S]
 		//	set to non-strike out
 
+		// SavedChar: no command & escaped
 		auto pCurChar = pRawText;
 		auto pSavedChar = pText;
 
 		ControlParams controlParams;
 		controlParams.reserve(4);
 
+		// ------------
+		// reset formats
+		// ------------
 		this->iConFormat.clear();
 
 		this->iConDisplayStack.clear();
 		this->iConDisplayStack.emplace_back(this->iConDisplay);
 
 		this->iConDisplayFormat.clear();
-		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ 0,0,iConDisplayStack.back() });
+		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ {0,0},iConDisplayStack.back() });
 		
 		this->colorStack.clear();
 		this->colorStack.emplace_back(GetColor(this->dwTextColor));
 
 		this->colorFormat.clear();
-		this->colorFormat.emplace_back(FormatColor{ 0,0,colorStack.back() });		
+		this->colorFormat.emplace_back(FormatColor{ {0,0},colorStack.back() });
 
 		this->logFontStack.clear();
 		this->logFontStack.emplace_back(this->logFont);
 
 		this->fontFormat.clear();
-		this->fontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+		this->fontFormat.emplace_back(FormatFont{ {0,0},logFontStack.back() });
 
 		this->bShake = false;
 
@@ -1626,9 +1640,9 @@ public:
 		this->shakeStack.emplace_back(ShakeControl());
 
 		this->shakeFormat.clear();
-		this->shakeFormat.emplace_back(FormatShake{ 0,0,shakeStack.back() });
+		this->shakeFormat.emplace_back(FormatShake{ {0,0},shakeStack.back() });
 
-
+		// function that used to GetRawStringByFilteredStringLength
 		auto GetRawStringByFilteredStringLength = [&]() {
 			const auto offset = size_t(pSavedChar - pText);
 
@@ -1645,6 +1659,9 @@ public:
 			}
 		};
 
+		// ------------
+		// start parse
+		// ------------
 		size_t newLineCount = 0;
 
 		const bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
@@ -1683,7 +1700,9 @@ public:
 
 				bool bEndOfText = false;
 
+				// get command and param ([Command = Param])
 				while ((pCurChar + end)[0] != L']') {
+					// protect for end
 					if ((pCurChar - pRawText) + end == pInputLen) {
 						bEndOfText = true;
 
@@ -1708,6 +1727,7 @@ public:
 					do {
 						size_t equal = 0;
 
+						// get command (Command = Param)
 						while ((pCurChar + equal)[0] != L'=') {
 							if (equal == end) {
 								break;
@@ -1718,7 +1738,7 @@ public:
 
 						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
-						// parse by ',', from right
+						// parse by ',', from right, use a while loop to get all params
 						auto ParseParamCore = [](std::wstring_view& paramParser, const ParamParserCallback& callBack) {
 							const auto start = paramParser.find_last_of(L',');
 
@@ -1737,6 +1757,7 @@ public:
 							}
 						};
 
+						// get command and param, handle end and equal sign
 						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, max(0, (long long)equal - bEndOfRegion - 1));
 						std::wstring_view controlParam = !bEndOfRegion
 							? GetTrimmedStr(pCurChar + equal + 1, max(0, (long long)end - (long long)equal - 1))
@@ -1746,9 +1767,13 @@ public:
 							controlParam = DEFAULT_PARAM;
 						}
 
+						// length to ref format when calculating & rendering
 						size_t savedLength = pSavedChar - pText - newLineCount * 2;
 						size_t savedLengthWithNewLine = pSavedChar - pText;
 
+						// ------------
+						// parse commands & params
+						// ------------
 						if (StringViewIEqu(controlStr, L"^")) {
 							bIgnoreFormat = true;
 						}
@@ -1788,8 +1813,8 @@ public:
 								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
 							} while (false);
 
-							this->iConFormat.emplace_back(FormatICon{ savedLength
-																		, savedLengthWithNewLine
+							this->iConFormat.emplace_back(FormatICon{ {savedLength
+																		, savedLengthWithNewLine}
 																		, hImage });
 
 							// space for icon
@@ -1800,7 +1825,10 @@ public:
 						}
 
 #pragma region StackedFormat
+						// update format's last character
 						auto UpdateFormat = [&](auto& format, auto& content) {
+								// TODO this method requires content to be POD
+								// copy format except the basic part
 								auto CopyFormat = [](FormatBasic* pFormat, auto& content) {
 									auto pData = (std::remove_reference_t<decltype(content)>*)(pFormat + 1);
 									memcpy(pData, &content, sizeof(content));
@@ -1840,6 +1868,7 @@ public:
 									UpdateFormat(format, first);
 								};
 
+								// TODO add new items
 								Reset(shakeStack, shakeFormat);
 								Reset(colorStack, colorFormat);
 								Reset(logFontStack, fontFormat);
@@ -1847,8 +1876,13 @@ public:
 								break;
 							}
 
+						// manage the stack
+						// new element, call callback to update the one copied from last one
+						// parse params there
+						// or end of region, pop the stack, then update it
 						auto StackManager = [&](auto& stack, auto& format, auto callBack) {
 								if (!bEndOfRegion) {
+									// TODO POD?
 									std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
 
 									callBack(newFormat);
@@ -2276,7 +2310,7 @@ public:
 			
 			pCurChar++;
 			pSavedChar++;
-	  
+
 			GetRawStringByFilteredStringLength();
 		}
 
