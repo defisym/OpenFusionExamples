@@ -1366,6 +1366,10 @@ public:
 			: CHAR_SPACE;
     }
 
+	inline bool GetTabEm() const {
+		return tabContext.spaceChar == CHAR_EMSPACE;
+	}
+
 	static inline CharSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
 		SIZE sz = { 0,0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
@@ -2850,7 +2854,7 @@ public:
 		// render callbacks
 		// ------------
 	private:
-		using PositionCallback = std::function<void(float& x, float& y)>;
+		using PositionCallback = std::function<void(const CharSize* charSize, float& x, float& y)>;
 		using GraphicCallback = std::function<Graphics* ()>;
 
 	public:
@@ -3054,7 +3058,7 @@ public:
 
 					// update position
 					if (opt.positionCallback != nullptr) {
-						opt.positionCallback(positionX, positionY);
+						opt.positionCallback(charSz, positionX, positionY);
 					}
 
 					// ---------
@@ -3149,8 +3153,66 @@ public:
 		// ------------
 		// handle remark
 		// ------------
-		for (auto& it : this->remarkFormat) {
+		fontItHandler.Reset();
 
+		for (auto& it : this->remarkFormat) {
+			fontItHandler.UpdateIt(it.start);
+			auto remarkLogFont = fontItHandler.it->logFont;
+			remarkLogFont.lfHeight /= 2;
+
+			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
+
+			auto remarkNeoStr = NeoStr(this->dwDTFlags,this->dwTextColor,
+				remarkHFont,
+				pFontCache,
+				pCharSzCacheWithFont,
+				pRegexCache,
+				pIConData,
+				pFontCollection,
+				false);
+			remarkNeoStr.SetAlign(this->dwDTFlags, this->bVerticalAlignOffset);
+			remarkNeoStr.SetSpace(this->nRowSpace, this->nColSpace);
+			remarkNeoStr.SetTabProperties(this->tabContext.tabSize, this->GetTabEm());
+
+			remarkNeoStr.LinkObject(this->pIConData->pIConObject, this->pIConData->iconParamParser);
+			remarkNeoStr.SetIConOffset(this->iConDisplay.iConOffsetX, this->iConDisplay.iConOffsetY);
+			remarkNeoStr.SetIConScale(this->iConDisplay.iConScale);
+			remarkNeoStr.SetIConResample(this->iConDisplay.iConResample);
+
+			remarkNeoStr.GetFormat(it.remark.c_str(), this->previousFlag, true);
+
+			// render in infinite rect
+			RECT rc = {0,0,65535,65535};
+			auto cPos = remarkNeoStr.CalculateRange(&rc);
+
+			remarkNeoStr.SetColor(this->dwTextColor);
+
+			remarkNeoStr.SetClip(false, 65535, 65535);				
+			remarkNeoStr.SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
+
+			remarkNeoStr.SetSmooth(
+				this->textRenderingHint,
+				this->smoothingMode,
+				this->pixelOffsetMode );
+
+			// todo align
+			auto pCharPos = it.pCharPosArr;
+
+			auto remarkOpt = opt;
+			remarkOpt.UpdateRenderCallback(
+				[&] (const CharSize* charSize, float& x, float& y) {
+					x = float(pCharPos->x);
+					y = float(pCharPos->y - this->startY/* - charSize->height*/);
+
+					pCharPos++;
+				},			
+				[&] () {
+					return pGraphic;
+				});
+
+			remarkNeoStr.RenderPerChar(&rc, remarkOpt);
+
+			DeleteObject(remarkHFont);
 		}
 
 #ifdef _BLUR
