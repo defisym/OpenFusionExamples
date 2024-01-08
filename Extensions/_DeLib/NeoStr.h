@@ -330,17 +330,24 @@ private:
 
 	// for remark
 	struct FormatRemark :FormatBasic {
+		// updated during parsing
 		size_t remarkLength = 0;
-
 		std::wstring remark;
+		
+		// updated during rendering
+		LOGFONT logFont;
+		CharPos* pCharPosArr = nullptr;
+		size_t validLength = 0;
 	};
 
 	std::vector<FormatRemark> remarkFormat;
 
 	// for icon
 	struct FormatICon :FormatBasic {
+		// updated during parsing
 		DWORD hImage;
 
+		// updated during rendering
 		size_t x = 0;
 		size_t y = 0;
 	};
@@ -1053,6 +1060,12 @@ public:
 		}
 	}
 
+	inline int GetFontSize(int size) const {
+		return -1 * MulDiv(size,
+			GetDeviceCaps(this->hdc, LOGPIXELSY),
+			72);
+	}
+
 	// Color conversion
 	// #AARRGGBB
 	static inline Color GetColor(const std::wstring_view hex) {
@@ -1117,6 +1130,13 @@ public:
 		} while (false);
 
 		return ShakeType::ShakeType_None;
+	}
+
+	inline double GetShakeOffset(const FormatShake& shakeFormat, size_t totalChar) const {
+		const double shakeOffset = (totalChar - shakeFormat.start) * shakeFormat.shakeControl.charOffset
+			+ this->shakeTimer * shakeFormat.shakeControl.timerCoef;
+
+		return shakeOffset;
 	}
 
 	inline void GetShakePosition(const ShakeControl& shakeControl, const double timer, float& x, float& y, const StrSize* charSz) const {
@@ -2236,10 +2256,8 @@ public:
 								}
 
 								newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&] (const std::wstring_view& controlParam) {
-									const auto size = _stoi(controlParam);
-									const auto newSize = -1 * MulDiv(size
-										, GetDeviceCaps(this->hdc, LOGPIXELSY)
-										, 72);
+									const auto size = _stoi(controlParam);									
+									const auto newSize = GetFontSize(size);
 
 									return newSize;
 									});
@@ -2389,6 +2407,60 @@ public:
 		return;
 	}
 
+private:
+	template<typename Format>
+		requires std::is_base_of_v<FormatBasic, Format>
+	struct IteratorHandler {
+	private:
+		using IT = decltype(static_cast<std::vector<Format>*>(nullptr)->begin());
+
+	public:
+		std::vector<Format>* pVector = nullptr;
+		IT it;
+
+		IteratorHandler(std::vector<Format>& vector) {
+			pVector = &vector;
+			it = vector.begin();
+		}
+
+		inline IT GetInit() {
+			return pVector->begin();
+		}
+
+		inline bool End() {
+			return it == pVector->end();
+		}
+
+		inline void Reset() {
+			it = pVector->begin();
+		}
+
+		inline void Forward(size_t position, const std::function<void(IT it)>& callback) {
+			if (it != pVector->end() && position >= it->start) {
+				callback(it);
+
+				++it;
+			}
+		}
+
+		inline void ForwardWithNewLine(size_t position, const std::function<void(IT it)>& callback) {
+			if (it != pVector->end() && position >= it->startWithNewLine) {
+				callback(it);
+
+				++it;
+			}
+		}
+
+		inline void UpdateIt(size_t start) {
+			while (it != pVector->end() && it->start <= start) {
+				++it;
+			}
+
+			--it;
+		}
+	};
+
+public:
 	inline CharPos CalculateRange(LPRECT pRc) {
 		this->strPos.clear();
 
@@ -2422,8 +2494,8 @@ public:
 		size_t notAtStartCharPos = -1;
 		bool bPunctuationSkip = false;
 
-		auto fontIt = this->fontFormat.begin();
-		auto localLogFont = fontIt->logFont;
+		auto fontItHandler = IteratorHandler(this->fontFormat);
+		auto localLogFont = fontItHandler.GetInit()->logFont;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool bNewLineBegin = true;
@@ -2470,12 +2542,9 @@ public:
 				auto curChar = pCurChar[0];
 				auto nextChar = pCurChar[1];
 
-				if (fontIt != this->fontFormat.end()
-					&& pChar >= fontIt->startWithNewLine) {
+				fontItHandler.ForwardWithNewLine(pChar, [&] (auto fontIt) {
 					localLogFont = fontIt->logFont;
-
-					++fontIt;
-				}
+				});
 
 				// word break
 				auto bCurNotCJK = pRegexCache->NotCJK(curChar);
@@ -2737,6 +2806,7 @@ public:
 		return lastCharPos;
 	}
 
+	// RenderOptions is used to let character be displayed gradually
 	struct RenderOptions {
 		// displayed char / total char
 		// 1.0 -> display all
@@ -2783,6 +2853,9 @@ public:
 
 		objectCounter.UpdateObjectCount();
 #endif
+		// ------------
+		// check validity & alloc
+		// ------------
 		if (!this->bTextValid) {
 			return;
 		}
@@ -2798,6 +2871,9 @@ public:
 
 		opt.GetRenderCharCount(pTextLen);
 
+		// ------------
+		// update offscreen surface
+		// ------------
 		char scale = 1;
 		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
 		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
@@ -2843,6 +2919,9 @@ public:
 		auto type = pMemSf->GetType();
 #endif
 
+		// ------------
+		// begin rendering
+		// ------------
 		Graphics g(pBitmap);
 		
 		g.Clear(Color(0, 0, 0, 0));
@@ -2857,6 +2936,7 @@ public:
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
 
+		// clip: don't render character that out of screen
 		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const StrSize* charSz)->bool {
 			if (this->bClip == false) {
 				return false;
@@ -2875,19 +2955,26 @@ public:
 
 		size_t totalChar = 0;
 
-		auto colorIt = this->colorFormat.begin();
-		auto iConIt = this->iConFormat.begin();
-		auto fontIt = this->fontFormat.begin();
+		// non-stack based
+		auto remarkItHandler = IteratorHandler(this->remarkFormat);
+		auto iConItHandler = IteratorHandler(this->iConFormat);
 
-		auto shakeIt = this->shakeFormat.begin();
+		// stack based
+		auto colorItHandler = IteratorHandler(this->colorFormat);
+		auto fontItHandler = IteratorHandler(this->fontFormat);
+
+		auto shakeItHandler = IteratorHandler(this->shakeFormat);
 		auto localShakeFormat = this->bShake
-			? *shakeIt
+			? *shakeItHandler.GetInit()
 			: FormatShake();
 		
 		if (this->bShake) {
 			shakeTimer++;
 		}
 
+		// ------------
+		// render & calculate position of each char
+		// ------------
 		try {
 			for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
@@ -2932,42 +3019,37 @@ public:
 					auto positionX = (float)(x + this->borderOffsetY);
 					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
-					if (colorIt != this->colorFormat.end()
-						&& totalChar >= colorIt->start) {
+					// ---------
+					// update iterator
+					// ---------
+
+					// stack based
+					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
 						solidBrush.SetColor(colorIt->color);
-
-						++colorIt;
-					}
-
-					if (fontIt != this->fontFormat.end()
-						&& totalChar >= fontIt->start) {
+					});
+					fontItHandler.Forward(totalChar, [&] (auto fontIt) {
 						this->pFont = GetFontPointerWithCache(fontIt->logFont);
-
-						++fontIt;
-					}
-
-					if (shakeIt != this->shakeFormat.end()
-						&& totalChar >= shakeIt->start) {
+					});
+					shakeItHandler.Forward(totalChar, [&] (auto shakeIt) {
 						localShakeFormat = *shakeIt;
-
-						++shakeIt;
-					}
+					});
 
 					if (this->bShake) {
-						double shakeOffset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
-							+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
-
+						double shakeOffset = GetShakeOffset(localShakeFormat, totalChar);
 						GetShakePosition(localShakeFormat.shakeControl, shakeOffset, positionX, positionY, charSz);
 					}
 
-					// use updated position
-					if (iConIt != this->iConFormat.end()
-						&& totalChar >= iConIt->start) {
+					// non-stack based
+					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
+						remarkIt->logFont = fontItHandler.it->logFont;
+						remarkIt->pCharPosArr = &pCharPosArr[offset];
+						remarkIt->validLength = pTextLen - offset;
+					});
+					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
+						// use updated position
 						iConIt->x = (size_t)positionX;
 						iConIt->y = (size_t)positionY;
-
-						++iConIt;
-					}
+					});				
 #pragma endregion
 
 					if (!clip(x, this->startY + curStrPos.y, charSz)) {
@@ -3048,6 +3130,9 @@ public:
 		//pBitmap->Save(path.c_str(), &pngClsid, NULL);
 #endif // _DEBUG
 
+		// ------------
+		// copy to surface
+		// ------------
 		const auto copyWidth = static_cast<int>(pBitmap->GetWidth());
 		const auto copyHeight = static_cast<int>(pBitmap->GetHeight());
 
@@ -3088,38 +3173,40 @@ public:
 		ReleaseSfCoef(pMemSf, sfCoef);
 		pBitmap->UnlockBits(&bitmapData);
 
+		// ------------
+		// handle remark
+		// ------------
+		for(auto& it:this->remarkFormat) {
+			
+		}
+
+		// ------------
+		// handle icon
+		// ------------
 		auto flags = this->iConDisplay.iConResample
 			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
 			: 0;
 
 		flags |= STRF_COPYALPHA;
 
-		fontIt = this->fontFormat.begin();
-		auto iConDisplayIt = this->iConDisplayFormat.begin();
+		fontItHandler.Reset();
+		auto iConDisplayItHandler = IteratorHandler(this->iConDisplayFormat);
 
-		auto UpdateIt = [](auto& it,auto itEnd, size_t start) {
-			while (it != itEnd && it->start <= start) {
-				++it;
-			}
+		for (auto& it : this->iConFormat) {
+			fontItHandler.UpdateIt(it.start);
+			iConDisplayItHandler.UpdateIt(it.start);
 
-			--it;
-		};
-
-		for (auto& it : this->iConFormat) {			
-			UpdateIt(fontIt, this->fontFormat.end(), it.start);
-			UpdateIt(iConDisplayIt, this->iConDisplayFormat.end(), it.start);
-
-			bool bEnd = fontIt == this->fontFormat.end();
+			bool bEnd = fontItHandler.End();
 
 			const auto& charSize = !bEnd
-				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontIt->logFont)
+				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
 				: this->defaultCharSz;
 			const auto& tm = !bEnd
-				? GetCharSizeCacheIt(fontIt->logFont)->second.tm
+				? GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
 				: this->tm;
 
-			const auto& iConDisplay = iConDisplayIt != this->iConDisplayFormat.end()
-				? iConDisplayIt->iConDisplay
+			const auto& iConDisplay = !iConDisplayItHandler.End()
+				? iConDisplayItHandler.it->iConDisplay
 				: this->iConDisplay;
 
 			StrSize iConSize = charSize;
@@ -3185,6 +3272,9 @@ public:
 #endif // _DEBUG		
 		}
 
+		// ------------
+		// handle display: premul, HWA
+		// ------------
 		if (this->preMulAlpha) {
 			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
 		}
