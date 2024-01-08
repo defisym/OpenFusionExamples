@@ -54,7 +54,7 @@ struct GlobalData;
 #include	"ObjectSelection.h"
 
 #ifdef _DEBUG
-#define COUNT_GDI_OBJECT
+//#define COUNT_GDI_OBJECT
 #endif
 
 #ifdef COUNT_GDI_OBJECT

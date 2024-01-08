@@ -53,7 +53,7 @@ constexpr inline StrType StrIsNumCore(const std::wstring& p) {
 
 //check if a string is number
 constexpr inline bool StrIsNum(const wchar_t* p) {
-	return StrIsNumCore(p) == StrType::NotNum ? false : true;
+	return StrIsNumCore(p) != StrType::NotNum;
 }
 
 constexpr inline bool StrIsNum(const std::wstring& p) {
@@ -269,7 +269,7 @@ constexpr inline int _stoi(const std::wstring& p) {
 	return _stoi(p.c_str());
 }
 
-constexpr inline  int _stoi(const std::wstring_view& str) {
+constexpr inline int _stoi(const std::wstring_view& str) {
 	return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
 }
 
