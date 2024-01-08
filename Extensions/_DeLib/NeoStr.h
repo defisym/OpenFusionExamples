@@ -315,6 +315,12 @@ private:
 		//size_t end;
 
 		size_t startWithNewLine;
+
+		// copy POD format except the basic part
+		inline void CopyFormat(auto& content) {
+			auto pData = reinterpret_cast<std::remove_reference_t<decltype(content)>*>(this + 1);
+			memcpy(pData, &content, sizeof(content));
+		}
 	};
 
 	//---------
@@ -322,16 +328,21 @@ private:
 	//			format is saved directly
 	//---------
 
-	struct FormatRemark {
-		
+	// for remark
+	struct FormatRemark :FormatBasic {
+		size_t remarkLength = 0;
+
+		std::wstring remark;
 	};
 
-	// for icon parse
+	std::vector<FormatRemark> remarkFormat;
+
+	// for icon
 	struct FormatICon :FormatBasic {
 		DWORD hImage;
 
-		size_t x;
-		size_t y;
+		size_t x = 0;
+		size_t y = 0;
 	};
 
 	std::vector<FormatICon> iConFormat;
@@ -764,14 +775,18 @@ public:
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
 		this->strPos.reserve(20);		
-		
-		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
-		
-		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
-		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
+		// non-stack based
+		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		// stack based
+		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
-		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);		
 
 		this->fontFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->logFontStack.reserve(DEFAULT_FORMAT_RESERVE);
@@ -1040,7 +1055,7 @@ public:
 
 	// Color conversion
 	// #AARRGGBB
-	inline Color GetColor(const std::wstring_view hex) const {
+	static inline Color GetColor(const std::wstring_view hex) {
 		return GetColor(_h2d(hex.data(), hex.size()), true);
 	}
 	
@@ -1510,6 +1525,7 @@ public:
 		//
 		// [Remark = CharCount, Content]
 		//	Insert remark that display over texts
+		//	As text may include ',', parse is started from left, unlike other formats
 		//
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
@@ -1614,8 +1630,12 @@ public:
 		// ------------
 		// reset formats
 		// ------------
+
+		// non-stack based
+		this->remarkFormat.clear();
 		this->iConFormat.clear();
 
+		// stack based
 		this->iConDisplayStack.clear();
 		this->iConDisplayStack.emplace_back(this->iConDisplay);
 
@@ -1738,32 +1758,46 @@ public:
 
 						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
-						// parse by ',', from right, use a while loop to get all params
-						auto ParseParamCore = [](std::wstring_view& paramParser, const ParamParserCallback& callBack) {
-							const auto start = paramParser.find_last_of(L',');
+						// parse by ',' use a while loop to get all params
+						auto ParseParamCore = [] (std::wstring_view& paramParser, bool bReverse, const ParamParserCallback& callBack) {
+							const auto start = bReverse
+								? paramParser.find_last_of(L',')
+								: paramParser.find_first_of(L',');
 
 							if (start == std::wstring::npos) {
 								callBack(paramParser);
 
 								return false;
 							}
-							else {
-								auto paramStr = paramParser.substr(start + 1);
-								paramParser = paramParser.substr(0, start);
 
-								callBack(paramStr);
+							const auto before = paramParser.substr(0, start);
+							const auto after = paramParser.substr(start + 1);
 
-								return true;
-							}
+							auto paramStr = bReverse ? after : before;
+							callBack(paramStr);
+
+							paramParser = bReverse ? before : after;
+
+							return true;
+						};
+
+						// from left
+						auto ParseParam = [ParseParamCore] (std::wstring_view& paramParser, const ParamParserCallback& callBack) {
+							return ParseParamCore(paramParser, false, callBack);
+							};
+
+						// from right
+						auto ParseParamReverse = [ParseParamCore](std::wstring_view& paramParser, const ParamParserCallback& callBack) {
+							return ParseParamCore(paramParser, true, callBack);
 						};
 
 						// get command and param, handle end and equal sign
-						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, max(0, (long long)equal - bEndOfRegion - 1));
+						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, (std::max)(0u, equal - bEndOfRegion - 1));
 						std::wstring_view controlParam = !bEndOfRegion
-							? GetTrimmedStr(pCurChar + equal + 1, max(0, (long long)end - (long long)equal - 1))
+							? GetTrimmedStr(pCurChar + equal + 1, (std::max)(0u, end - equal - 1))
 							: controlStr;
 
-						if (controlParam.size() == 0) {
+						if (controlParam.empty()) {
 							controlParam = DEFAULT_PARAM;
 						}
 
@@ -1776,18 +1810,56 @@ public:
 						// ------------
 						if (StringViewIEqu(controlStr, L"^")) {
 							bIgnoreFormat = true;
+							bIgnoreFormatExceptICon = false;
+
+							break;
 						}
 
 						if (StringViewIEqu(controlStr, L"^-")) {
 							bIgnoreFormat = true;
 							bIgnoreFormatExceptICon = true;
+
+							break;
 						}
 
 						if (StringViewIEqu(controlStr, L"!^")) {
 							bIgnoreFormat = false;
 							bIgnoreFormatExceptICon = false;
+
+							break;
 						}
-						
+
+						if (StringViewIEqu(controlStr, L"Remark")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							auto& paramParser = controlParam;
+							controlParams.clear();
+
+							// invalid, no delimiter
+							if(!ParseParam(paramParser
+								, [&controlParams] (std::wstring_view& param) {
+									controlParams.emplace_back(GetTrimmedStr(param));
+								})) {
+								break;
+							}
+
+							const auto length = _stoi(controlParams[0]);
+
+							// invalid length
+							if (length == 0) { break; }
+
+							controlParams.emplace_back(paramParser);
+
+							this->remarkFormat.emplace_back(FormatRemark{ {savedLength,
+								savedLengthWithNewLine},
+							static_cast<size_t>(_stoi(controlParams[0])),
+								std::wstring(controlParams[1]) });
+
+							break;
+						}
+
 						if (StringViewIEqu(controlStr, L"ICon")) {
 							if (bIgnoreFormat && !bIgnoreFormatExceptICon) {
 								break;
@@ -1805,7 +1877,7 @@ public:
 
 								do {
 
-								} while (ParseParamCore(paramParser
+								} while (ParseParamReverse(paramParser
 									, [&controlParams](std::wstring_view& param) {
 										controlParams.emplace_back(GetTrimmedStr(param));
 									}));
@@ -1827,27 +1899,18 @@ public:
 #pragma region StackedFormat
 						// update format's last character
 						auto UpdateFormat = [&](auto& format, auto& content) {
-								// TODO this method requires content to be POD
-								// copy format except the basic part
-								auto CopyFormat = [](FormatBasic* pFormat, auto& content) {
-									auto pData = (std::remove_reference_t<decltype(content)>*)(pFormat + 1);
-									memcpy(pData, &content, sizeof(content));
-								};
-								
-								auto pLastFormat = (FormatBasic*)(&format.back());
+								auto pLastFormat = &format.back();
 
 								// if equal, replace last format
 								if (savedLength == pLastFormat->start) {
-									CopyFormat(pLastFormat, content);
+									pLastFormat->CopyFormat(content);
 								}
 								else {
 									std::remove_reference_t<decltype(format[0])> newFormat = format.front();
-									auto pNewFormat = (FormatBasic*)(&newFormat);
+									newFormat.start = savedLength;
+									newFormat.startWithNewLine = savedLengthWithNewLine;
 
-									pNewFormat->start = savedLength;
-									pNewFormat->startWithNewLine = savedLengthWithNewLine;		
-
-									CopyFormat(pNewFormat, content);
+									newFormat.CopyFormat(content);
 
 									format.emplace_back(newFormat);
 								}
@@ -1855,274 +1918,277 @@ public:
 
 						// reset all
 						if (StringViewIEqu(controlStr, L"!")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								auto Reset = [&](auto& stack, auto& format) {
-									std::remove_reference_t<decltype(stack[0])> first = stack.front();
-									
-									stack.clear();
-									stack.emplace_back(first);
-
-									UpdateFormat(format, first);
-								};
-
-								// TODO add new items
-								Reset(shakeStack, shakeFormat);
-								Reset(colorStack, colorFormat);
-								Reset(logFontStack, fontFormat);
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							auto Reset = [&] (auto& stack, auto& format) {
+								std::remove_reference_t<decltype(stack[0])> first = stack.front();
+
+								stack.clear();
+								stack.emplace_back(first);
+
+								UpdateFormat(format, first);
+								};
+
+							// stack based here
+							Reset(iConDisplayStack, iConDisplayFormat);
+							Reset(shakeStack, shakeFormat);
+							Reset(colorStack, colorFormat);
+							Reset(logFontStack, fontFormat);
+
+							break;
+						}
 
 						// manage the stack
 						// new element, call callback to update the one copied from last one
 						// parse params there
 						// or end of region, pop the stack, then update it
-						auto StackManager = [&](auto& stack, auto& format, auto callBack) {
-								if (!bEndOfRegion) {
-									// TODO POD?
-									std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
+						auto StackManager = [&] (auto& stack, auto& format, auto callBack) {
+							if (!bEndOfRegion) {
+								// clone one here
+								std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
 
-									callBack(newFormat);
+								callBack(newFormat);
 
-									stack.emplace_back(newFormat);
+								stack.emplace_back(newFormat);
+							}
+							else {
+								// protect for default one
+								if (stack.size() > 1) {
+									stack.pop_back();
 								}
-								else {
-									// protect for default one
-									if (stack.size() > 1) {
-										stack.pop_back();
-									}
-								}
+							}
 
-								UpdateFormat(format, stack.back());
-							};
+							UpdateFormat(format, stack.back());
+						};
 
 						// callback should calculate the diff size
-						auto DiffManager = [&](auto oldValue, auto callBack) {
-								bool bAdd = false;
-								bool bMinus = false;
+						auto DiffManager = [&] (auto oldValue, auto callBack) {
+							bool bAdd = false;
+							bool bMinus = false;
 
-								if (controlParam.front() == L'+') {
-									controlParam = controlParam.substr(1);
-									bAdd = true;
-								}
+							if (controlParam.front() == L'+') {
+								controlParam = controlParam.substr(1);
+								bAdd = true;
+							}
 
-								if (controlParam.front() == L'-') {
-									controlParam = controlParam.substr(1);
-									bAdd = true;
-									bMinus = true;
-								}
+							if (controlParam.front() == L'-') {
+								controlParam = controlParam.substr(1);
+								bAdd = true;
+								bMinus = true;
+							}
 
-								auto sizeDiff = callBack(controlParam);
+							auto sizeDiff = callBack(controlParam);
 
-								return !bAdd
-									? sizeDiff
-									: (bMinus ? -1 : +1) * sizeDiff + oldValue;
-							};
+							return !bAdd
+								? sizeDiff
+								: (bMinus ? -1 : +1) * sizeDiff + oldValue;
+						};
 
 						if (StringViewIEqu(controlStr, L"IConOffsetX")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConOffsetX = this->iConDisplayStack.front().iConOffsetX;
-
-										return;
-									}
-
-									iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX, [&](const std::wstring_view& controlParam) {
-										const auto size = _stof(controlParam);
-										return size;
-										});
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConOffsetX = this->iConDisplayStack.front().iConOffsetX;
+
+									return;
+								}
+
+								iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"IConOffsetY")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConOffsetY = this->iConDisplayStack.front().iConOffsetY;
-
-										return;
-									}
-
-									iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY, [&](const std::wstring_view& controlParam) {
-										const auto size = _stof(controlParam);
-										return size;
-										});
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConOffsetY = this->iConDisplayStack.front().iConOffsetY;
+
+									return;
+								}
+
+								iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY,
+									[&] (const std::wstring_view& controlParam) {
+									const auto size = _stof(controlParam);
+									return size;
+									});
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"IConScale")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConScale = this->iConDisplayStack.front().iConScale;
-
-										return;
-									}
-
-									iConDisplay.iConScale = DiffManager(iConDisplay.iConScale, [&](const std::wstring_view& controlParam) {
-										const auto size = _stof(controlParam);
-										return size;
-										});
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConScale = this->iConDisplayStack.front().iConScale;
+
+									return;
+								}
+
+								iConDisplay.iConScale = DiffManager(iConDisplay.iConScale,
+									[&] (const std::wstring_view& controlParam) {
+									const auto size = _stof(controlParam);
+									return size;
+									});
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"IConResample")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConResample = this->iConDisplayStack.front().iConResample;
-
-										return;
-									}
-
-									iConDisplay.iConResample = _stoi(controlParam);
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
 
-						if (StringViewIEqu(controlStr, L"Shake")) {
-								if (bIgnoreFormat) {
-									break;
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConResample = this->iConDisplayStack.front().iConResample;
+
+									return;
 								}
 
-								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
+								iConDisplay.iConResample = _stoi(controlParam);
+								});
+
+							break;
+						}
+
+						if (StringViewIEqu(controlStr, L"Shake")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(shakeStack, shakeFormat, [&] (ShakeControl& shakeControl) {
+								auto& paramParser = controlParam;
+								controlParams.clear();
+
+								do {
+
+								} while (ParseParamReverse(paramParser
+									, [&controlParams] (std::wstring_view& param) {
+										controlParams.emplace_back(GetTrimmedStr(param));
+									}));
+
+								do {
+									if (!controlParams.empty()) {
+										shakeControl.shakeType = GetShakeTypeByName(controlParams.back());
+										controlParams.pop_back();
+									}
+
+									if (!controlParams.empty()) {
+										shakeControl.amplitude = _stod(controlParams.back());
+										controlParams.pop_back();
+									}
+
+									if (!controlParams.empty()) {
+										shakeControl.timerCoef = _stod(controlParams.back());
+										controlParams.pop_back();
+									}
+
+									if (!controlParams.empty()) {
+										shakeControl.charOffset = _stod(controlParams.back());
+										controlParams.pop_back();
+									}
+								} while (false);
+
+								if (shakeControl.shakeType != ShakeType::ShakeType_None) {
+									this->bShake = true;
+								}
+
+								shakeControl.charOffset *= 360;
+								});
+
+							break;
+						}
+
+						if (StringViewIEqu(controlStr, L"Color")
+							|| StringViewIEqu(controlStr, L"C")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(colorStack, colorFormat, [&] (Color& color) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									color = colorStack.front();
+
+									return;
+								}
+
+								const auto result = DiffManager(GetDWORD(colorStack.back()), [&] (std::wstring_view& controlParam) {
+									// hex
+									if ((controlParam[0] == L'#')
+										|| (controlParam[0] == L'0'
+										&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
+										return _h2d(controlParam.data(), controlParam.size());
+									}
+
+									// dec
 									auto& paramParser = controlParam;
 									controlParams.clear();
 
 									do {
 
-									} while (ParseParamCore(paramParser
-										, [&controlParams](std::wstring_view& param) {
-											controlParams.emplace_back(GetTrimmedStr(param));
-										}));
+									} while (ParseParamReverse(paramParser
+															   , [&controlParams] (std::wstring_view& param) {
+																   controlParams.emplace_back(GetTrimmedStr(param));
+															   }));
 
-									do {
-										if (!controlParams.empty()) {
-											shakeControl.shakeType = GetShakeTypeByName(controlParams.back());
-											controlParams.pop_back();
-										}
+									DWORD result = 0;
 
-										if (!controlParams.empty()) {
-											shakeControl.amplitude = _stod(controlParams.back());
-											controlParams.pop_back();
-										}
+									const auto size = controlParams.size();
+									auto alpha = 0xFF;
 
-										if (!controlParams.empty()) {
-											shakeControl.timerCoef = _stod(controlParams.back());
-											controlParams.pop_back();
-										}
-
-										if (!controlParams.empty()) {
-											shakeControl.charOffset = _stod(controlParams.back());
-											controlParams.pop_back();
-										}
-									} while (false);
-
-									if (shakeControl.shakeType != ShakeType::ShakeType_None) {
-										this->bShake = true;
+									if (size == 4) {
+										alpha = _stoi(controlParams.back());
+										controlParams.pop_back();
 									}
 
-									shakeControl.charOffset *= 360;
-									});
+									// R
+									// R G
+									// R G B
+									// A R G B
+									for (auto i = 0; i < 3; i++) {
+										result = result << 8;
 
-								break;
-							}
+										if (!controlParams.empty()) {
+											result |= _stoi(controlParams.back());
 
-						if (StringViewIEqu(controlStr, L"Color")
-							|| StringViewIEqu(controlStr, L"C")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(colorStack, colorFormat, [&](Color& color) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										color = colorStack.front();
-
-										return;
+											controlParams.pop_back();
+										}
 									}
 
-									const auto result = DiffManager(GetDWORD(colorStack.back()), [&](std::wstring_view& controlParam) {
-										// hex
-										if ((controlParam[0] == L'#') 
-											|| (controlParam[0] == L'0' 
-												&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
-											return _h2d(controlParam.data(), controlParam.size());
-										}
-										// dec
-										else {
-											auto& paramParser = controlParam;
-											controlParams.clear();
+									result |= alpha << 24;
 
-											do {
+									return result;
+								});
 
-											} while (ParseParamCore(paramParser
-												, [&controlParams](std::wstring_view& param) {
-													controlParams.emplace_back(GetTrimmedStr(param));
-												}));
+								color = GetColor(result, true);
+								});
 
-											DWORD result = 0;
-
-											const auto size = controlParams.size();
-											auto alpha = 0xFF;
-
-											if (size == 4) {
-												alpha = _stoi(controlParams.back());
-												controlParams.pop_back();
-											}
-											
-											// R
-											// R G
-											// R G B
-											// A R G B
-											for (auto i = 0; i < 3; i++) {
-												result = result << 8;
-												
-												if (!controlParams.empty()) {
-													result |= _stoi(controlParams.back());
-
-													controlParams.pop_back();
-												}
-											}	
-
-											result |= alpha << 24;
-
-											return result;
-										}										
-										});
-
-									color = GetColor(result, true);
-									});
-
-								break;
-							}
+							break;
+						}
 
 #pragma region FontControl
 						using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
@@ -2133,158 +2199,158 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Font")
 							|| StringViewIEqu(controlStr, L"F")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										constexpr auto nameSz = LF_FACESIZE * sizeof(WCHAR);
-										memcpy(newLogFont.lfFaceName, this->logFontStack.front().lfFaceName, nameSz);
-
-										return;
-									}
-
-									memset(newLogFont.lfFaceName, 0
-										, LF_FACESIZE * sizeof(WCHAR));
-									memcpy(newLogFont.lfFaceName, controlParam.data()
-										, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									constexpr auto nameSz = LF_FACESIZE * sizeof(WCHAR);
+									memcpy(newLogFont.lfFaceName, this->logFontStack.front().lfFaceName, nameSz);
+
+									return;
+								}
+
+								memset(newLogFont.lfFaceName, 0
+									, LF_FACESIZE * sizeof(WCHAR));
+								memcpy(newLogFont.lfFaceName, controlParam.data()
+									, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Size")
 							|| StringViewIEqu(controlStr, L"S")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {									
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
-
-										return;
-									}
-
-									newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&](const std::wstring_view& controlParam) {
-										const auto size = _stoi(controlParam);
-										const auto newSize = -1 * MulDiv(size
-											, GetDeviceCaps(this->hdc, LOGPIXELSY)
-											, 72);
-
-										return newSize;
-										});
-										});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+
+									return;
+								}
+
+								newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&] (const std::wstring_view& controlParam) {
+									const auto size = _stoi(controlParam);
+									const auto newSize = -1 * MulDiv(size
+										, GetDeviceCaps(this->hdc, LOGPIXELSY)
+										, 72);
+
+									return newSize;
+									});
+									});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Bold")
 							|| StringViewIEqu(controlStr, L"B")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfWeight = FW_BOLD;
-									});								
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfWeight = FW_BOLD;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!Bold")
 							|| StringViewIEqu(controlStr, L"!B")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfWeight = FW_NORMAL;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfWeight = FW_NORMAL;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Italic")
 							|| StringViewIEqu(controlStr, L"I")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfItalic = TRUE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfItalic = TRUE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!Italic")
 							|| StringViewIEqu(controlStr, L"!I")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfItalic = FALSE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfItalic = FALSE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Underline")
 							|| StringViewIEqu(controlStr, L"U")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfUnderline = TRUE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfUnderline = TRUE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!Underline")
 							|| StringViewIEqu(controlStr, L"!U")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfUnderline = FALSE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfUnderline = FALSE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"StrikeOut")
 							|| StringViewIEqu(controlStr, L"S")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfStrikeOut = TRUE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfStrikeOut = TRUE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!StrikeOut")
 							|| StringViewIEqu(controlStr, L"!S")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfStrikeOut = FALSE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfStrikeOut = FALSE;
+								});
+
+							break;
+						}
 #pragma endregion
 #pragma endregion
 
