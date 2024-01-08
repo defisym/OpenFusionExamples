@@ -335,7 +335,6 @@ private:
 		std::wstring remark;
 		
 		// updated during rendering
-		LOGFONT logFont;
 		CharPos* pCharPosArr = nullptr;
 		size_t validLength = 0;
 	};
@@ -2806,8 +2805,12 @@ public:
 		return lastCharPos;
 	}
 
-	// RenderOptions is used to let character be displayed gradually
 	struct RenderOptions {
+		// ------------
+		// visable ratio
+		// ------------
+
+		// let character be displayed gradually
 		// displayed char / total char
 		// 1.0 -> display all
 		double visibleRatio = 1.0;
@@ -2841,6 +2844,25 @@ public:
 			const auto alpha = MaxAlpha * (1 - (opaqueRatio - visibleRatio) * textLen);
 
 			return static_cast<UCHAR>(alpha);
+		}
+
+		// ------------
+		// render callbacks
+		// ------------
+	private:
+		using PositionCallback = std::function<void(float& x, float& y)>;
+		using GraphicCallback = std::function<Graphics* ()>;
+
+	public:
+		// used to override position
+		PositionCallback positionCallback = nullptr;
+		// used to override graphic object
+		GraphicCallback graphicCallback = nullptr;
+
+		inline void UpdateRenderCallback(const PositionCallback& positionCallback,
+			const GraphicCallback& graphicCallback) {
+			this->positionCallback = positionCallback;
+			this->graphicCallback = graphicCallback;
 		}
 	};
 
@@ -2929,6 +2951,17 @@ public:
 		g.SetTextRenderingHint(this->textRenderingHint);
 		g.SetSmoothingMode(this->smoothingMode);
 		g.SetPixelOffsetMode(this->pixelOffsetMode);
+
+		// update graphic
+		auto pGraphic = &g;
+
+		if (opt.graphicCallback != nullptr) {
+			auto pGraphicOverride = opt.graphicCallback();
+
+			if (pGraphicOverride != nullptr) {
+				pGraphic = pGraphicOverride;
+			}
+		}
 
 		//Color fontColor(255, 50, 150, 250);
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
@@ -3019,6 +3052,11 @@ public:
 					auto positionX = (float)(x + this->borderOffsetY);
 					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
+					// update position
+					if (opt.positionCallback != nullptr) {
+						opt.positionCallback(positionX, positionY);
+					}
+
 					// ---------
 					// update iterator
 					// ---------
@@ -3041,7 +3079,6 @@ public:
 
 					// non-stack based
 					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
-						remarkIt->logFont = fontItHandler.it->logFont;
 						remarkIt->pCharPosArr = &pCharPosArr[offset];
 						remarkIt->validLength = pTextLen - offset;
 					});
@@ -3092,12 +3129,12 @@ public:
 							opt.GetRenderCharAlpha(offset));
 
 						//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
-						auto status = g.DrawString(pCurChar, 1, pFont,
+						auto status = pGraphic->DrawString(pCurChar, 1, pFont,
 							PointF(positionX, positionY),
 #ifdef NoGDIPlusOffset
 							StringFormat::GenericTypographic(),
 #endif
-							& solidBrush);
+							&solidBrush);
 						//assert(status == Status::Ok);
 					}
 
@@ -3107,6 +3144,13 @@ public:
 		} catch([[maybe_unused]] std::exception& e) {
 			// use exception to jump out of the loop if exceeds the
 			// render char count, so nothing to handle here
+		}
+
+		// ------------
+		// handle remark
+		// ------------
+		for (auto& it : this->remarkFormat) {
+
 		}
 
 #ifdef _BLUR
@@ -3172,13 +3216,6 @@ public:
 
 		ReleaseSfCoef(pMemSf, sfCoef);
 		pBitmap->UnlockBits(&bitmapData);
-
-		// ------------
-		// handle remark
-		// ------------
-		for(auto& it:this->remarkFormat) {
-			
-		}
 
 		// ------------
 		// handle icon
