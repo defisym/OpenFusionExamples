@@ -190,12 +190,12 @@ private:
 
 	std::vector<StrPos> strPos;
 
-	struct StrSize {
+	struct CharSize {
 		long width;
 		long height;
 	};
 
-	StrSize* pStrSizeArr = nullptr;
+	CharSize* pCharSizeArr = nullptr;
 
 	bool bShake = false;
 
@@ -258,7 +258,7 @@ private:
 	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
-	using CharSizeCache = std::map<wchar_t, StrSize>;
+	using CharSizeCache = std::map<wchar_t, CharSize>;
 
 	struct CharSizeCacheItem {
 		HDC hdc = nullptr;
@@ -301,7 +301,7 @@ public:
 private:
 	FontCache* pFontCache;
 
-	StrSize defaultCharSz;
+	CharSize defaultCharSz;
 
 	//------------
 	// format zone
@@ -856,8 +856,8 @@ public:
 		delete[] this->pText;
 		this->pText = nullptr;
 
-		delete[] this->pStrSizeArr;
-		this->pStrSizeArr = nullptr;
+		delete[] this->pCharSizeArr;
+		this->pCharSizeArr = nullptr;
 
 		delete[] this->pCharPosArr;
 		this->pCharPosArr = nullptr;
@@ -1101,7 +1101,7 @@ public:
 	//	return this->dwTextColor;
 	//}
 
-	inline StrSize GetDefaultCharSize() const {
+	inline CharSize GetDefaultCharSize() const {
 		return this->defaultCharSz;
 	}
 
@@ -1138,7 +1138,7 @@ public:
 		return shakeOffset;
 	}
 
-	inline void GetShakePosition(const ShakeControl& shakeControl, const double timer, float& x, float& y, const StrSize* charSz) const {
+	inline void GetShakePosition(const ShakeControl& shakeControl, const double timer, float& x, float& y, const CharSize* charSz) const {
 		const auto t = RAD(timer);
 
 		switch (shakeControl.shakeType)
@@ -1267,7 +1267,7 @@ public:
 	}
 
 //	// deprecated
-//	inline StrSize GetCharSizeRaw(wchar_t wChar) {
+//	inline CharSize GetCharSizeRaw(wchar_t wChar) {
 //#ifdef MEASURE_GDI_PLUS		
 //		SIZE sz = { 0 };
 //		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
@@ -1296,11 +1296,11 @@ public:
 //		//sz.cx -= this->tm
 //		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 //
-//		return *(StrSize*)&sz;
+//		return *(CharSize*)&sz;
 //	}
 //	
 //	// deprecated
-//	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
+//	inline CharSize GetCharSizeWithCache(wchar_t wChar) {
 //		auto it = charSzCache.find(wChar);
 //
 //		if (it != charSzCache.end()) {
@@ -1322,22 +1322,22 @@ private:
 
         // context
         int curWidth;
-        StrSize spaceCharSize;
+        CharSize spaceCharSize;
 
 		inline void UpdateSpaceChar(wchar_t spaceChar) {
 			this->spaceChar = spaceChar;
 		}
 
-        inline void UpdateContext(int curWidth, StrSize spaceCharSize) {
+        inline void UpdateContext(int curWidth, CharSize spaceCharSize) {
             this->curWidth = curWidth;
             this->spaceCharSize = spaceCharSize;
         }
 
         // TODO handle case of end of line
-        inline StrSize GetTabCharSize() const {
+        inline CharSize GetTabCharSize() const {
             // tab size depend on space size
             const auto actualTabSize = tabSize * spaceCharSize.width;
-            StrSize tabCharSize = { actualTabSize, spaceCharSize.height };
+            CharSize tabCharSize = { actualTabSize, spaceCharSize.height };
 
             const auto div = static_cast<double>(curWidth) / actualTabSize;
             const auto floor =static_cast<int>(std::floor(div));
@@ -1366,7 +1366,7 @@ public:
 			: CHAR_SPACE;
     }
 
-	static inline StrSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
+	static inline CharSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
 		SIZE sz = { 0,0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
@@ -1379,7 +1379,7 @@ public:
 			
 		}
 
-		return *(StrSize*)&sz;
+		return *(CharSize*)&sz;
 	}
 
 	inline auto GetCharSizeCacheIt(const LOGFONT& logFont) const {
@@ -1389,7 +1389,7 @@ public:
 		return it;
 	}
 
-	inline StrSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
+	inline CharSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
 		const auto logFontHash = LogFontHasher(logFont);
 		const auto it = pCharSzCacheWithFont->find(logFontHash);
 
@@ -1429,7 +1429,7 @@ public:
 		}
 	}
 
-	//inline StrSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
+	//inline CharSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
 	//	RECT change = { 0,0,65535,1 };
 	//
 	//	DrawTextW(
@@ -1440,7 +1440,7 @@ public:
 	//		, this->dwDTFlags | DT_CALCRECT
 	//	);
 	//
-	//	return StrSize { change.right - change.left,change.bottom - change.top };
+	//	return CharSize { change.right - change.left,change.bottom - change.top };
 	//}
 
 	inline LPCWSTR GetRawText() const {
@@ -2467,11 +2467,11 @@ public:
 			return { this->defaultCharSz.width / 2,this->defaultCharSz.height / 2 };
 		}
 
-		delete[] this->pStrSizeArr;
-		this->pStrSizeArr = nullptr;
+		delete[] this->pCharSizeArr;
+		this->pCharSizeArr = nullptr;
 
-		pStrSizeArr = new StrSize [pTextLen + 1];
-		memset(pStrSizeArr, 0, sizeof(StrSize) * (pTextLen + 1));
+		pCharSizeArr = new CharSize [pTextLen + 1];
+		memset(pCharSizeArr, 0, sizeof(CharSize) * (pTextLen + 1));
 
 		this->rcWidth = pRc->right - pRc->left;
 		this->rcHeight = pRc->bottom - pRc->top;
@@ -2591,8 +2591,8 @@ public:
 					}
 				};
 				
-				pStrSizeArr[pChar] = getCharSize();
-				auto charSz = &pStrSizeArr[pChar];
+				pCharSizeArr[pChar] = getCharSize();
+				auto charSz = &pCharSizeArr[pChar];
 
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
@@ -2659,7 +2659,7 @@ public:
 					auto pPreviousChar = pText + pChar - 1;
 					auto PreviousChar = pPreviousChar[0];
 
-					auto previousCharSz = &pStrSizeArr[pChar - 1];
+					auto previousCharSz = &pCharSizeArr[pChar - 1];
 
 					auto CanRewindWidth = [&] () {
 						return curWidth - (previousCharSz->width + nColSpace + charSz->width) > 0;
@@ -2791,7 +2791,7 @@ public:
 		}
 
 		const auto& lastStrPos = strPos.back();
-		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
+		const auto lastCharSize = &pCharSizeArr [lastStrPos.start + lastStrPos.length - 1];
 
 		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
@@ -2970,7 +2970,7 @@ public:
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
 
 		// clip: don't render character that out of screen
-		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const StrSize* charSz)->bool {
+		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const CharSize* charSz)->bool {
 			if (this->bClip == false) {
 				return false;
 			}
@@ -3014,7 +3014,7 @@ public:
 				std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 
-				StrSize* charSz = nullptr;
+				CharSize* charSz = nullptr;
 
 #define NoGDIPlusOffset
 
@@ -3026,7 +3026,7 @@ public:
 					const auto firstChar = (pText + curStrPos.start)[0];
 					const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
 
-					return static_cast<int>(pStrSizeArr[curStrPos.start].width / coef);
+					return static_cast<int>(pCharSizeArr[curStrPos.start].width / coef);
 #endif
 					};
 
@@ -3042,7 +3042,7 @@ public:
 					}
 
 					auto pCurChar = pText + offset;
-					charSz = &pStrSizeArr[offset];
+					charSz = &pCharSizeArr[offset];
 
 					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
 												,this->startY + curStrPos.y
@@ -3246,7 +3246,7 @@ public:
 				? iConDisplayItHandler.it->iConDisplay
 				: this->iConDisplay;
 
-			StrSize iConSize = charSize;
+			CharSize iConSize = charSize;
 
 			iConSize.width = int(iConSize.width * iConDisplay.iConScale);
 			iConSize.height = int(iConSize.height * iConDisplay.iConScale);
