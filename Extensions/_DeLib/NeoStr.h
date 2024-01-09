@@ -332,10 +332,11 @@ private:
 	// for remark
 	struct FormatRemark :FormatBasic {
 		// updated during parsing
-		size_t remarkLength = 0;
+		size_t baseLength = 0;
 		std::wstring remark;
 		
 		// updated during rendering
+		CharSize* pCharSizeArr = nullptr;
 		CharPos* pCharPosArr = nullptr;
 		size_t validLength = 0;
 	};
@@ -1242,7 +1243,7 @@ public:
 
 	inline void SetBorderOffset(const unsigned short borderOffsetX, unsigned short borderOffsetY) {
 		this->borderOffsetX = borderOffsetX;
-		this->borderOffsetY = borderOffsetX;
+		this->borderOffsetY = borderOffsetY;
 	}
 
 	// set row/col space
@@ -2887,7 +2888,7 @@ public:
 		// render callbacks
 		// ------------
 	private:
-		using PositionCallback = std::function<void(const CharSize* charSize, float& x, float& y)>;
+		using PositionCallback = std::function<bool(const CharSize* charSize, float& x, float& y)>;
 		using GraphicCallback = std::function<Graphics* ()>;
 
 	public:
@@ -3103,7 +3104,9 @@ public:
 
 					// update position
 					if (opt.positionCallback != nullptr) {
-						opt.positionCallback(charSz, positionX, positionY);
+						if (!opt.positionCallback(charSz, positionX, positionY)) {
+							throw std::exception("Exceed remark base length");
+						}
 					}
 
 					// ---------
@@ -3128,8 +3131,9 @@ public:
 
 					// non-stack based
 					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
+						remarkIt->pCharSizeArr = &pCharSizeArr[offset];
 						remarkIt->pCharPosArr = &pCharPosArr[offset];
-						remarkIt->validLength = pTextLen - offset;
+						remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
 					});
 					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
 						// use updated position
@@ -3197,7 +3201,7 @@ public:
 					x += (charSz->width + nColSpace);
 				}
 			}
-		} catch([[maybe_unused]] std::exception& e) {
+		} catch([[maybe_unused]] std::exception& e) {  // NOLINT(bugprone-empty-catch)
 			// use exception to jump out of the loop if exceeds the
 			// render char count, so nothing to handle here
 		}
@@ -3209,10 +3213,11 @@ public:
 		colorItHandler.Reset();
 
 		for (auto& it : this->remarkFormat) {
+			// update font & color
 			fontItHandler.UpdateIt(it.start);
 			colorItHandler.UpdateIt(it.start);
 
-
+			// create new object
 			auto remarkLogFont = fontItHandler.it->logFont;
 			remarkLogFont.lfHeight /= 2;
 
@@ -3232,15 +3237,64 @@ public:
 
 			//remarkNeoStr.SetDrawRectangle(true);
 
-			// todo align
-			auto pCharPos = it.pCharPosArr;
+			// calculate render coords
+			const auto renderRatio = static_cast<double>(it.validLength) / it.baseLength;
+			const auto remarkCharCount = it.remark.length();
+			const auto renderCharCount = static_cast<size_t>(std::ceil(renderRatio * remarkCharCount));
+
+			struct Position {
+				float x = 0;
+				float y = 0;
+			};
+
+			std::vector<Position> mainPositions(it.validLength);
+			std::vector<Position> remarkPositions(renderCharCount);
+
+			// get valid old positions
+			for (size_t idx = 0; idx < mainPositions.size(); idx++) {
+				auto pCharPos = &it.pCharPosArr[idx];
+				auto pPos = &mainPositions[idx];
+
+				pPos->x = static_cast<float>(pCharPos->x);
+				pPos->y = static_cast<float>(pCharPos->y - this->startY);
+			}
+					
+			// Todo handle line change, it's ignored in current version
+			// in different lines -> not equal
+			if (std::abs(mainPositions.rbegin()->y - mainPositions.begin()->y) > 1e-6) {
+				continue;
+			}
+
+			const auto estimateBaseCharSize = GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont);
+			const auto estimateRemarkCharSize = GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont);
+			const auto baseWidth = estimateBaseCharSize.width * it.baseLength;
+			const auto remarkWidth = (std::max)(baseWidth,
+				estimateRemarkCharSize.width * remarkCharCount);
+			const auto remarkCenterPos = mainPositions.begin()->x + baseWidth / 2.0;
+
+			const auto remarkSize = static_cast<size_t>(std::ceil(static_cast<double>(remarkWidth) / remarkCharCount));
+
+			// odd & even affects 0.5
+			const auto remarkCenterIdx = remarkCharCount / 2 - 0.5 * (remarkCharCount % 2 == 0);  // NOLINT(bugprone-integer-division)
+
+			for (size_t idx = 0; idx < remarkPositions.size(); idx++) {
+				const auto distance = remarkCenterIdx - static_cast<long>(idx);
+				auto& curPos = remarkPositions[idx];
+
+				curPos.x = static_cast<float>(remarkCenterPos - static_cast<double>(distance) * remarkSize - estimateRemarkCharSize.width / 2.0);
+				curPos.y = mainPositions.begin()->y;
+			}
+			
+			auto remarkPosIt = remarkPositions.begin();
 
 			auto remarkOpt = opt;
 			remarkOpt.UpdateRenderCallback(
 				[&] (const CharSize* charSize, float& x, float& y) {
-					// revert it to x and curStrPos.y from charPos
-					x = static_cast<float>(pCharPos->x);
-					y = static_cast<float>(pCharPos->y - this->startY);
+					if (remarkPosIt == remarkPositions.end()) { return false; }
+
+					// render position
+					x = remarkPosIt->x;
+					y = remarkPosIt->y;
 
 					// make enough space
 					y -= static_cast<float>(charSize->height);
@@ -3249,7 +3303,9 @@ public:
 					x += static_cast<float>(this->borderOffsetX);
 					y += static_cast<float>(this->borderOffsetY);
 
-					pCharPos++;
+					++remarkPosIt;
+
+					return true;
 				},			
 				[&] () {
 					return pGraphic;
