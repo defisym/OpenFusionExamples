@@ -143,6 +143,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->tabSize = edPtr->tabSize;
 	rdPtr->bTabEM = edPtr->bTabEM;
 
+	rdPtr->remarkOffsetX = edPtr->remarkOffsetX;
+	rdPtr->remarkOffsetY = edPtr->remarkOffsetY;
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {

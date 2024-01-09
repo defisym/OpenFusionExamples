@@ -68,6 +68,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_STS, M_ACTION_STS, ACT_ACTION_STS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_TABSIZE, M_TABEM,
 
+		IDMN_ACTION_SROFFSET, M_ACTION_SROFFSET, ACT_ACTION_SROFFSET, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_REMARKXOFFSET, M_REMARKYOFFSET,
+
 		};
 
 // Definitions of parameters for each expression
@@ -119,11 +121,13 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GRSBFSL, M_EXPRESSION_GRSBFSL, EXP_EXPRESSION_GRSBFSL, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_STRING, M_POS, M_FILTERFLAGS,
 
-
 		IDMN_EXPRESSION_GRO_VR, M_EXPRESSION_GRO_VR, EXP_EXPRESSION_GRO_VR, EXPFLAG_DOUBLE, 0,
 
 		IDMN_EXPRESSION_GTS_TS, M_EXPRESSION_GTS_TS, EXP_EXPRESSION_GTS_TS, 0, 0,
 		IDMN_EXPRESSION_GTS_EM, M_EXPRESSION_GTS_EM, EXP_EXPRESSION_GTS_EM, 0, 0,
+
+		IDMN_EXPRESSION_GROX, M_EXPRESSION_GROX, EXP_EXPRESSION_GROX, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_GROY, M_EXPRESSION_GROY, EXP_EXPRESSION_GROY, EXPFLAG_DOUBLE, 0,
 
 		};
 
@@ -580,8 +584,8 @@ short WINAPI DLLExport Action_SetObjectKeyValue(LPRDATA rdPtr, long param1, long
 }
 
 short WINAPI DLLExport Action_SetIConOffset(LPRDATA rdPtr, long param1, long param2) {
-	auto offsetX = GetFloatParam(rdPtr);
-	auto offsetY = GetFloatParam(rdPtr);
+	const auto offsetX = GetFloatParam(rdPtr);
+	const auto offsetY = GetFloatParam(rdPtr);
 
 	rdPtr->iConOffsetX = offsetX;
 	rdPtr->iConOffsetY = offsetY;
@@ -605,6 +609,18 @@ short WINAPI DLLExport Action_SetIConResample(LPRDATA rdPtr, long param1, long p
 	bool bResample = (bool)CNC_GetParameter(rdPtr);
 
 	rdPtr->bIConResample = bResample;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetRemarkOffset(LPRDATA rdPtr, long param1, long param2) {
+	const auto offsetX = GetFloatParam(rdPtr);
+	const auto offsetY = GetFloatParam(rdPtr);
+
+	rdPtr->remarkOffsetX = offsetX;
+	rdPtr->remarkOffsetY = offsetY;
 
 	ReDisplay(rdPtr);
 
@@ -831,6 +847,14 @@ long WINAPI DLLExport Expression_GetIConScale(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport Expression_GetIConResample(LPRDATA rdPtr, long param1) {
 	return rdPtr->bIConResample;
+}
+
+long WINAPI DLLExport Expression_GetRemarkOffsetX(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->remarkOffsetX);
+}
+
+long WINAPI DLLExport Expression_GetRemarkOffsetY(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->remarkOffsetY);
 }
 
 long WINAPI DLLExport Expression_GetVerticalOffset(LPRDATA rdPtr, long param1) {
@@ -1117,6 +1141,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_ChangeTabSettings,
 
+			Action_SetRemarkOffset,
+
 			0
 			};
 
@@ -1171,6 +1197,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetTabSettings_TabSize,
 			Expression_GetTabSettings_TabEM,
+
+			Expression_GetRemarkOffsetX,
+			Expression_GetRemarkOffsetY,
 
 			0
 			};

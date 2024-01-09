@@ -107,6 +107,11 @@
 #define	IDS_PROP_ALLIGN_TABEMSPACE				279
 #define	IDS_PROP_ALLIGN_TABEMSPACE_INFO			280
 
+#define	IDS_PROP_FORMAT_REMARKOFFSETX         281
+#define	IDS_PROP_FORMAT_REMARKOFFSETX_INFO    282
+#define	IDS_PROP_FORMAT_REMARKOFFSETY         283
+#define	IDS_PROP_FORMAT_REMARKOFFSETY_INFO    284
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -157,6 +162,8 @@
 
 #define	IDMN_ACTION_STS 		    25025
 
+#define	IDMN_ACTION_SROFFSET	    25026
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -197,6 +204,8 @@
 
 #define	M_ACTION_STS			    5025
 
+#define	M_ACTION_SROFFSET			5026
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -235,6 +244,9 @@
 
 #define M_TABSIZE					5528
 #define M_TABEM						5529
+
+#define M_REMARKXOFFSET				5530
+#define M_REMARKYOFFSET				5531
 
 //	Conditions
 //--------------------
@@ -309,6 +321,9 @@
 #define	IDMN_EXPRESSION_GTS_TS  		    27033
 #define	IDMN_EXPRESSION_GTS_EM  		    27034
 
+#define	IDMN_EXPRESSION_GROX	  		    27035
+#define	IDMN_EXPRESSION_GROY	  		    27036
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -360,6 +375,9 @@
 
 #define	M_EXPRESSION_GTS_TS 		        7033
 #define	M_EXPRESSION_GTS_EM 		        7034
+
+#define	M_EXPRESSION_GROX	 		        7035
+#define	M_EXPRESSION_GROY	 		        7036
 
 // Names of expression parameters
 #define M_POS				                7500

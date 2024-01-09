@@ -181,6 +181,8 @@ BEGIN
             MENUITEM "Set ICon Offset", IDMN_ACTION_SIO
             MENUITEM "Set ICon Scale", IDMN_ACTION_SIS
             MENUITEM "Set ICon Resample", IDMN_ACTION_SIR
+			MENUITEM SEPARATOR            
+            MENUITEM "Set Remark Offset", IDMN_ACTION_SROFFSET
         END
         MENUITEM SEPARATOR
     END
@@ -265,6 +267,9 @@ BEGIN
             MENUITEM "Get ICon Offset Y", IDMN_EXPRESSION_GIOY
             MENUITEM "Get ICon Scale", IDMN_EXPRESSION_GIS	
             MENUITEM "Get ICon Resample", IDMN_EXPRESSION_GIR
+			MENUITEM SEPARATOR
+            MENUITEM "Get Remark Offset X", IDMN_EXPRESSION_GROX
+            MENUITEM "Get Remark Offset Y", IDMN_EXPRESSION_GROY
         END	
         MENUITEM SEPARATOR
     END
@@ -437,6 +442,10 @@ BEGIN
 	IDS_PROP_ALLIGN_TABEMSPACE						"EM Space"
 	IDS_PROP_ALLIGN_TABEMSPACE_INFO					"Use EM space instead of space"
 
+	IDS_PROP_FORMAT_REMARKOFFSETX                   "Remark Offset X"
+    IDS_PROP_FORMAT_REMARKOFFSETX_INFO              "Remark Offset X, Based on Base Char Size Percent"
+    IDS_PROP_FORMAT_REMARKOFFSETY                   "Remark Offset Y"
+    IDS_PROP_FORMAT_REMARKOFFSETY_INFO              "Remark Offset Y, Based on Base Char Size Percent"
 
 END
 
@@ -524,6 +533,10 @@ BEGIN
 	M_ACTION_STS            "Change Tab Settings, Tab Size = %0, Use EM Space = %1"
     M_TABSIZE          		"Tab Size = Number of Spaces"
     M_TABEM          		"1 = Use EM Space, 0 = Use Normal Space"
+
+    M_ACTION_SROFFSET       "Set Remark Offset X = %0, Y = %1"
+    M_REMARKXOFFSET         "Remark Offset X, Based on Base Char Size Percent"
+    M_REMARKYOFFSET         "Remark Offset Y, Based on Base Char Size Percent"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -587,6 +600,9 @@ BEGIN
 
     M_EXPRESSION_GTS_TS    "GetTabSize("
     M_EXPRESSION_GTS_EM    "GetTabEM("
+
+	M_EXPRESSION_GROX	    "GROX("
+    M_EXPRESSION_GROY	    "GROY("
 END
 
 #endif    // English (U.S.) resources

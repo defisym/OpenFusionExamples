@@ -361,14 +361,20 @@ private:
 	//			format records where the format starts, for rendering
 	//			stack records the format change during parsing
 	//---------
-
-	// for color control
-	struct FormatColor :FormatBasic {
-		Color color;
+	// for remark control
+	struct RemarkDisplay {
+		float remarkOffsetX = 0;
+		float remarkOffsetY = 0;
 	};
 
-	std::vector<FormatColor> colorFormat;
-	std::vector<Color> colorStack;
+	RemarkDisplay remarkDisplay = { 0,0 };
+
+	struct FormatRemarkDisplay :FormatBasic {
+		RemarkDisplay remarkDisplay;
+	};
+
+	std::vector<FormatRemarkDisplay> remarkDisplayFormat;
+	std::vector<RemarkDisplay> remarkDisplayStack;
 
 	// for icon control
 	struct IConDisplay {
@@ -388,6 +394,14 @@ private:
 
 	std::vector<FormatIConDisplay> iConDisplayFormat;
 	std::vector<IConDisplay> iConDisplayStack;
+
+	// for color control
+	struct FormatColor :FormatBasic {
+		Color color;
+	};
+
+	std::vector<FormatColor> colorFormat;
+	std::vector<Color> colorStack;
 
 	// for font control
 	struct FormatFont :FormatBasic {
@@ -799,6 +813,9 @@ public:
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
 		// stack based
+		this->remarkDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->remarkDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
+
 		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
 
@@ -896,6 +913,8 @@ public:
 		this->SetIConOffset(pCopy->iConDisplay.iConOffsetX, pCopy->iConDisplay.iConOffsetY);
 		this->SetIConScale(pCopy->iConDisplay.iConScale);
 		this->SetIConResample(pCopy->iConDisplay.iConResample);
+
+		this->SetRemarkOffset(pCopy->remarkDisplay.remarkOffsetX, pCopy->remarkDisplay.remarkOffsetY);
 
 		this->SetSmooth(
 			pCopy->textRenderingHint,
@@ -1198,6 +1217,11 @@ public:
 		default:
 			break;
 		}
+	}
+
+	inline void SetRemarkOffset(const float remarkOffsetX = 0, const float remarkOffsetY = 0) {
+		this->remarkDisplay.remarkOffsetX = remarkOffsetX;
+		this->remarkDisplay.remarkOffsetY = remarkOffsetY;
 	}
 
 	inline void SetIConOffset(const float iConOffsetX = 0, const float iConOffsetY = 0) {
@@ -1692,6 +1716,12 @@ public:
 		this->iConFormat.clear();
 
 		// stack based
+		this->remarkDisplayStack.clear();
+		this->remarkDisplayStack.emplace_back(this->remarkDisplay);
+
+		this->remarkDisplayFormat.clear();
+		this->remarkDisplayFormat.emplace_back(FormatRemarkDisplay{ {0,0},remarkDisplayStack.back() });
+
 		this->iConDisplayStack.clear();
 		this->iConDisplayStack.emplace_back(this->iConDisplay);
 
@@ -1953,7 +1983,7 @@ public:
 						}
 
 #pragma region StackedFormat
-						// update format's last character
+						// update format for last character
 						auto UpdateFormat = [&](auto& format, auto& content) {
 								auto pLastFormat = &format.back();
 
@@ -2043,6 +2073,60 @@ public:
 								: (bMinus ? -1 : +1) * sizeDiff + oldValue;
 						};
 
+						// ------------
+						// remark
+						// ------------
+
+						if (StringViewIEqu(controlStr, L"RemarkOffsetX")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(remarkDisplayStack, remarkDisplayFormat, [&] (RemarkDisplay& remarkDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									remarkDisplay.remarkOffsetX = this->remarkDisplayStack.front().remarkOffsetX;
+
+									return;
+								}
+
+								remarkDisplay.remarkOffsetX = DiffManager(remarkDisplay.remarkOffsetX,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
+
+						if (StringViewIEqu(controlStr, L"RemarkOffsetY")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(remarkDisplayStack, remarkDisplayFormat, [&] (RemarkDisplay& remarkDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									remarkDisplay.remarkOffsetY = this->remarkDisplayStack.front().remarkOffsetY;
+
+									return;
+								}
+
+								remarkDisplay.remarkOffsetY = DiffManager(remarkDisplay.remarkOffsetY,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
+
+						// ------------
+						// icon
+						// ------------
+
 						if (StringViewIEqu(controlStr, L"IConOffsetX")) {
 							if (bIgnoreFormat) {
 								break;
@@ -2131,6 +2215,10 @@ public:
 							break;
 						}
 
+						// ------------
+						// shake
+						// ------------
+
 						if (StringViewIEqu(controlStr, L"Shake")) {
 							if (bIgnoreFormat) {
 								break;
@@ -2178,6 +2266,10 @@ public:
 
 							break;
 						}
+
+						// ------------
+						// color
+						// ------------
 
 						if (StringViewIEqu(controlStr, L"Color")
 							|| StringViewIEqu(controlStr, L"C")) {
@@ -2248,6 +2340,10 @@ public:
 						}
 
 #pragma region FontControl
+						// ------------
+						// font
+						// ------------
+
 						using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
 
 						auto FontFormatControl = [&](const FontFormatControlCallback& callBack) {
@@ -3212,10 +3308,17 @@ public:
 		fontItHandler.Reset();
 		colorItHandler.Reset();
 
+		auto remarkDisplayItHandler = IteratorHandler(this->remarkDisplayFormat);
+
 		for (auto& it : this->remarkFormat) {
 			// update font & color
 			fontItHandler.UpdateIt(it.start);
 			colorItHandler.UpdateIt(it.start);
+			remarkDisplayItHandler.UpdateIt(it.start);
+
+			const auto& remarkDisplay = !remarkDisplayItHandler.End()
+				? remarkDisplayItHandler.it->remarkDisplay
+				: this->remarkDisplay;
 
 			// create new object
 			auto remarkLogFont = fontItHandler.it->logFont;
@@ -3298,6 +3401,10 @@ public:
 
 					// make enough space
 					y -= static_cast<float>(charSize->height);
+
+					// remark offset
+					x += remarkDisplay.remarkOffsetX * static_cast<float>(estimateBaseCharSize.width);
+					y += remarkDisplay.remarkOffsetY * static_cast<float>(estimateBaseCharSize.height);
 
 					// add offset
 					x += static_cast<float>(this->borderOffsetX);

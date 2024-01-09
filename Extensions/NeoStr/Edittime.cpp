@@ -65,6 +65,8 @@ enum {
 	PROPID_ALLIGN_TABSIZE,
 	PROPID_ALLIGN_TABEMSPACE,
 
+	PROPID_FORMAT_REMARKOFFSETX,
+	PROPID_FORMAT_REMARKOFFSETY,
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -193,10 +195,13 @@ PropData FontPorperties[] = {
 
 	PropData_CheckBox(PROPID_FORMAT_ICONRESAMPLE,	IDS_PROP_FORMAT_ICONRESAMPLE,		IDS_PROP_FORMAT_ICONRESAMPLE_INFO),
 
-	PropData_EditFloat(PROPID_FORMAT_ICONOFFSETX,	IDS_PROP_FORMAT_ICONOFFSETX,		IDS_PROP_FORMAT_ICONOFFSETX_INFO),
-	PropData_EditFloat(PROPID_FORMAT_ICONOFFSETY,	IDS_PROP_FORMAT_ICONOFFSETY,		IDS_PROP_FORMAT_ICONOFFSETY_INFO),
+	PropData_SpinEditFloat(PROPID_FORMAT_ICONOFFSETX,	IDS_PROP_FORMAT_ICONOFFSETX,		IDS_PROP_FORMAT_ICONOFFSETX_INFO, nullptr),
+	PropData_SpinEditFloat(PROPID_FORMAT_ICONOFFSETY,	IDS_PROP_FORMAT_ICONOFFSETY,		IDS_PROP_FORMAT_ICONOFFSETY_INFO, nullptr),
 
-	PropData_EditFloat(PROPID_FORMAT_ICONSCALE,	IDS_PROP_FORMAT_ICONSCALE,		IDS_PROP_FORMAT_ICONSCALE_INFO),
+	PropData_SpinEditFloat(PROPID_FORMAT_ICONSCALE,	IDS_PROP_FORMAT_ICONSCALE,		IDS_PROP_FORMAT_ICONSCALE_INFO, nullptr),
+
+	PropData_SpinEditFloat(PROPID_FORMAT_REMARKOFFSETX,	IDS_PROP_FORMAT_REMARKOFFSETX,		IDS_PROP_FORMAT_REMARKOFFSETX_INFO, nullptr),
+	PropData_SpinEditFloat(PROPID_FORMAT_REMARKOFFSETY,	IDS_PROP_FORMAT_REMARKOFFSETY,		IDS_PROP_FORMAT_REMARKOFFSETY_INFO, nullptr),
 		
 	// End of table (required)
 	PropData_End()
@@ -520,6 +525,9 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->tabSize = 4;
 		edPtr->bTabEM = false;
+
+		edPtr->remarkOffsetX = 0;
+		edPtr->remarkOffsetY = 0;
 
 		// Default font
 		if (mV->mvGetDefaultFont != NULL) {
@@ -928,7 +936,10 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropFloatValue(edPtr->iConOffsetY);
 	case PROPID_FORMAT_ICONSCALE:
 		return new CPropFloatValue(edPtr->iConScale);
-
+	case PROPID_FORMAT_REMARKOFFSETX:
+		return new CPropFloatValue(edPtr->remarkOffsetX);
+	case PROPID_FORMAT_REMARKOFFSETY:
+		return new CPropFloatValue(edPtr->remarkOffsetY);
 	}
 #endif // !defined(RUN_ONLY)
 	return NULL;
@@ -1103,6 +1114,15 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 		break;
 	case PROPID_FORMAT_ICONSCALE:
 		edPtr->iConScale = ((CPropFloatValue*)pValue)->m_fValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+
+	case PROPID_FORMAT_REMARKOFFSETX:
+		edPtr->remarkOffsetX = ((CPropFloatValue*)pValue)->m_fValue;
+		mvInvalidateObject(mV, edPtr);
+		break;
+	case PROPID_FORMAT_REMARKOFFSETY:
+		edPtr->remarkOffsetY = ((CPropFloatValue*)pValue)->m_fValue;
 		mvInvalidateObject(mV, edPtr);
 		break;
 	}
