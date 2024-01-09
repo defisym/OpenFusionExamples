@@ -129,6 +129,7 @@ private:
 	DWORD dwDTFlags;
 
 	bool bClip = true;
+	bool bDrawRectangle = false;
 
 	unsigned short borderOffsetX = 0;
 	unsigned short borderOffsetY = 0;
@@ -734,6 +735,15 @@ private:
 	}
 
 public:
+	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
+		const NeoStr* pCache)
+		:NeoStr(dwAlignFlags, color, hFont,
+			pCache->pFontCache,
+			pCache->pCharSzCacheWithFont,
+			pCache->pRegexCache,
+			pCache->pIConData,
+			pCache->pFontCollection,
+			false) {}
 	NeoStr(const DWORD dwAlignFlags, const COLORREF color
 		, const HFONT hFont
 		// read only
@@ -874,6 +884,22 @@ public:
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 		}
+	}
+
+	inline void CopyProperties(const NeoStr* pCopy) {
+		this->SetAlign(pCopy->dwDTFlags, pCopy->bVerticalAlignOffset);
+		this->SetSpace(pCopy->nRowSpace, pCopy->nColSpace);
+		this->SetTabProperties(pCopy->tabContext.tabSize, pCopy->GetTabEm());
+
+		this->LinkObject(pCopy->pIConData->pIConObject, pCopy->pIConData->iconParamParser);
+		this->SetIConOffset(pCopy->iConDisplay.iConOffsetX, pCopy->iConDisplay.iConOffsetY);
+		this->SetIConScale(pCopy->iConDisplay.iConScale);
+		this->SetIConResample(pCopy->iConDisplay.iConResample);
+
+		this->SetSmooth(
+			pCopy->textRenderingHint,
+			pCopy->smoothingMode,
+			pCopy->pixelOffsetMode);
 	}
 
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
@@ -1197,13 +1223,13 @@ public:
 		this->preMulAlpha = preMulAlpha;
 	}
 
-	inline void SetColor(const DWORD color) {
+	inline void SetColor(const DWORD color, const bool bAlpha = false) {
 		const auto bColorChanged = this->dwTextColor != color;
 
 		if (bColorChanged && !this->colorFormat.empty()) {
 			// no color format, update default
 			if (this->colorFormat.size() == 1) {
-				this->colorFormat.at(0).color = GetColor(color);
+				this->colorFormat.at(0).color = GetColor(color, bAlpha);
 			}
 			// has color format, update format
 			else {
@@ -1243,6 +1269,10 @@ public:
 		this->bClip = clip;
 		this->renderWidth = renderWidth;
 		this->renderHeight = renderHeight;
+	}
+
+	inline void SetDrawRectangle(const bool bRectangle) {
+		this->bDrawRectangle = bRectangle;
 	}
 
 	//inline void SetOutLine(BYTE outLinePixel, DWORD color) {
@@ -1549,6 +1579,8 @@ public:
 		// [Remark = CharCount, Content]
 		//	Insert remark that display over texts
 		//	As text may include ',', parse is started from left, unlike other formats
+		//	remark is rendered in another NeoStr class, with the same config, but overrided position & render object
+		//	and the font size is half of the parent object when it starts rendering
 		//
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
@@ -1873,7 +1905,7 @@ public:
 							// invalid length
 							if (length == 0) { break; }
 
-							controlParams.emplace_back(paramParser);
+							controlParams.emplace_back(GetTrimmedStr(paramParser));
 
 							this->remarkFormat.emplace_back(FormatRemark{ {savedLength,
 								savedLengthWithNewLine},
@@ -1954,8 +1986,9 @@ public:
 								UpdateFormat(format, first);
 								};
 
-							// stack based here
-							Reset(iConDisplayStack, iConDisplayFormat);
+							// reset stack based here
+							// note that icon or remark requires stack based
+							// to align, so doesn't reset them here
 							Reset(shakeStack, shakeFormat);
 							Reset(colorStack, colorFormat);
 							Reset(logFontStack, fontFormat);
@@ -2898,74 +2931,84 @@ public:
 		opt.GetRenderCharCount(pTextLen);
 
 		// ------------
-		// update offscreen surface
+		// render override
+		//		used for remark rendering, render to parent directly
+		//		so child object doesn't need to alloc and render to surface
 		// ------------
-		char scale = 1;
-		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
-		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
-
-		if (this->pMemSf == nullptr
-			|| this->pMemSf->GetWidth() < width
-			|| this->pMemSf->GetHeight() < height) {
-			delete this->pMemSf;
-			this->pMemSf = nullptr;
-
-			pMemSf = CreateSurface(32, width, height);
-			pMemSf->CreateAlpha();
-
-			delete this->pBitmap;
-			this->pBitmap = nullptr;
-
-			// Use PixelFormat32bppPARGB or manually premul alpha of font color
-			// call fusion premul is still needed, as alpha channel is used for
-			// anti-aliasing, it's not involved to font color or pixel format.
-			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
-
-#ifdef REUSE_HWA
-			delete pHwaSf;
-			pHwaSf = nullptr;
-
-			pHwaSf = CreateHWASurface(32, width, height, ST_HWA_ROMTEXTURE, this->hwaDriver);
-#endif
-
-#ifdef USE_RTT
-			delete pHwaSf;
-			pHwaSf = nullptr;
-
-			pHwaSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE, this->hwaDriver);
-			pHwaSf->CreateAlpha();
-#endif
-		}
-
-		// don't need to reset surface, as it wll be overwritten later
-		//pMemSf->Fill(BLACK);
-		//_ForceAddAlpha(pMemSf, 0);
-
-#ifdef _DEBUG
-		auto type = pMemSf->GetType();
-#endif
-
-		// ------------
-		// begin rendering
-		// ------------
-		Graphics g(pBitmap);
-		
-		g.Clear(Color(0, 0, 0, 0));
-
-		g.SetTextRenderingHint(this->textRenderingHint);
-		g.SetSmoothingMode(this->smoothingMode);
-		g.SetPixelOffsetMode(this->pixelOffsetMode);
-
-		// update graphic
-		auto pGraphic = &g;
+		bool bRenderOverride = false;
+		Graphics* pGraphic = nullptr;
 
 		if (opt.graphicCallback != nullptr) {
 			auto pGraphicOverride = opt.graphicCallback();
 
 			if (pGraphicOverride != nullptr) {
 				pGraphic = pGraphicOverride;
+				bRenderOverride = true;
 			}
 		}
+
+		// ------------
+		// update offscreen surface
+		// ------------
+		if (!bRenderOverride) {
+			char scale = 1;
+			auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
+			auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
+
+			if (this->pMemSf == nullptr
+				|| this->pMemSf->GetWidth() < width
+				|| this->pMemSf->GetHeight() < height) {
+				delete this->pMemSf;
+				this->pMemSf = nullptr;
+
+				pMemSf = CreateSurface(32, width, height);
+				pMemSf->CreateAlpha();
+
+				delete this->pBitmap;
+				this->pBitmap = nullptr;
+
+				// Use PixelFormat32bppPARGB or manually premul alpha of font color
+				// call fusion premul is still needed, as alpha channel is used for
+				// anti-aliasing, it's not involved to font color or pixel format.
+				this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+
+#ifdef REUSE_HWA
+				delete pHwaSf;
+				pHwaSf = nullptr;
+
+				pHwaSf = CreateHWASurface(32, width, height, ST_HWA_ROMTEXTURE, this->hwaDriver);
+#endif
+
+#ifdef USE_RTT
+				delete pHwaSf;
+				pHwaSf = nullptr;
+
+				pHwaSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE, this->hwaDriver);
+				pHwaSf->CreateAlpha();
+#endif
+			}
+
+			// don't need to reset surface, as it wll be overwritten later
+			//pMemSf->Fill(BLACK);
+			//_ForceAddAlpha(pMemSf, 0);
+
+#ifdef _DEBUG
+			auto type = pMemSf->GetType();
+#endif
+		}
+
+		// ------------
+		// begin rendering
+		// ------------
+		if (!bRenderOverride) {
+			pGraphic = new Graphics(pBitmap);
+
+			pGraphic->Clear(Color(0, 0, 0, 0));
+
+			pGraphic->SetTextRenderingHint(this->textRenderingHint);
+			pGraphic->SetSmoothingMode(this->smoothingMode);
+			pGraphic->SetPixelOffsetMode(this->pixelOffsetMode);
+		}			
 
 		//Color fontColor(255, 50, 150, 250);
 		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
@@ -3034,6 +3077,7 @@ public:
 #endif
 					};
 
+				// ReSharper disable once CppVariableCanBeMadeConstexpr
 				const auto GDIPlusOffset = GetGDIPlusOffset();
 
 				int x = GetStartPosX(curStrPos.width, rcWidth);
@@ -3048,9 +3092,10 @@ public:
 					auto pCurChar = pText + offset;
 					charSz = &pCharSizeArr[offset];
 
-					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
-												,this->startY + curStrPos.y
-												,0,0 };
+					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset,
+													this->startY + curStrPos.y,
+													0,0,
+													ShakeControl() };
 
 #pragma region FORMAT_IT				
 					auto positionX = (float)(x + this->borderOffsetY);
@@ -3139,6 +3184,13 @@ public:
 							StringFormat::GenericTypographic(),
 #endif
 							&solidBrush);
+
+						if (bDrawRectangle) {
+							auto blackPen = Pen(&solidBrush, 1);
+							status = pGraphic->DrawRectangle(&blackPen,
+								positionX, positionY,
+								(float)charSz->width, (float)charSz->height);
+						}
 						//assert(status == Status::Ok);
 					}
 
@@ -3154,46 +3206,31 @@ public:
 		// handle remark
 		// ------------
 		fontItHandler.Reset();
+		colorItHandler.Reset();
 
 		for (auto& it : this->remarkFormat) {
 			fontItHandler.UpdateIt(it.start);
+			colorItHandler.UpdateIt(it.start);
+
+
 			auto remarkLogFont = fontItHandler.it->logFont;
 			remarkLogFont.lfHeight /= 2;
 
 			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
 
-			auto remarkNeoStr = NeoStr(this->dwDTFlags,this->dwTextColor,
-				remarkHFont,
-				pFontCache,
-				pCharSzCacheWithFont,
-				pRegexCache,
-				pIConData,
-				pFontCollection,
-				false);
-			remarkNeoStr.SetAlign(this->dwDTFlags, this->bVerticalAlignOffset);
-			remarkNeoStr.SetSpace(this->nRowSpace, this->nColSpace);
-			remarkNeoStr.SetTabProperties(this->tabContext.tabSize, this->GetTabEm());
-
-			remarkNeoStr.LinkObject(this->pIConData->pIConObject, this->pIConData->iconParamParser);
-			remarkNeoStr.SetIConOffset(this->iConDisplay.iConOffsetX, this->iConDisplay.iConOffsetY);
-			remarkNeoStr.SetIConScale(this->iConDisplay.iConScale);
-			remarkNeoStr.SetIConResample(this->iConDisplay.iConResample);
-
+			auto remarkNeoStr = NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
+			remarkNeoStr.CopyProperties(this);
 			remarkNeoStr.GetFormat(it.remark.c_str(), this->previousFlag, true);
 
 			// render in infinite rect
 			RECT rc = {0,0,65535,65535};
 			auto cPos = remarkNeoStr.CalculateRange(&rc);
 
-			remarkNeoStr.SetColor(this->dwTextColor);
-
+			remarkNeoStr.SetColor(colorItHandler.it->color.GetValue(), true);
 			remarkNeoStr.SetClip(false, 65535, 65535);				
 			remarkNeoStr.SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
 
-			remarkNeoStr.SetSmooth(
-				this->textRenderingHint,
-				this->smoothingMode,
-				this->pixelOffsetMode );
+			//remarkNeoStr.SetDrawRectangle(true);
 
 			// todo align
 			auto pCharPos = it.pCharPosArr;
@@ -3201,8 +3238,16 @@ public:
 			auto remarkOpt = opt;
 			remarkOpt.UpdateRenderCallback(
 				[&] (const CharSize* charSize, float& x, float& y) {
-					x = float(pCharPos->x);
-					y = float(pCharPos->y - this->startY/* - charSize->height*/);
+					// revert it to x and curStrPos.y from charPos
+					x = static_cast<float>(pCharPos->x);
+					y = static_cast<float>(pCharPos->y - this->startY);
+
+					// make enough space
+					y -= static_cast<float>(charSize->height);
+
+					// add offset
+					x += static_cast<float>(this->borderOffsetX);
+					y += static_cast<float>(this->borderOffsetY);
 
 					pCharPos++;
 				},			
@@ -3235,6 +3280,11 @@ public:
 		//const auto path = std::format(L"D:\\{}.png", fileName);
 		//pBitmap->Save(path.c_str(), &pngClsid, NULL);
 #endif // _DEBUG
+
+		if (!bRenderOverride) {
+			delete pGraphic; pGraphic = nullptr;
+		}
+		else { return; }
 
 		// ------------
 		// copy to surface
@@ -3426,7 +3476,7 @@ public:
 			return invalid;
 		}
 
-		return pCharPosArr [pos];
+		return pCharPosArr[pos];
 	}
 
 	inline void DisplayPerChar(const LPSURFACE pDst, const LPRECT pRc
