@@ -1803,17 +1803,29 @@ public:
 			// Parse Format
 			if (curChar == L'[') {
 				size_t end = 0;
+				size_t nestCount = 0;
 
 				bool bEndOfText = false;
 
 				// get command and param ([Command = Param])
-				while ((pCurChar + end)[0] != L']') {
+				while ((pCurChar + end)[0] != L']' || nestCount != 0) {
 					// protect for end
 					if ((pCurChar - pRawText) + end == pInputLen) {
 						bEndOfText = true;
 
 						break;
 					}
+
+					const auto pTest = pCurChar + end;
+
+					// handle nest format contorl for params
+					if ((pTest)[0] == L'\\' && (pTest + 1)[0] == L'[') {
+						end += 2;
+						continue;
+					}
+
+					if (end != 0 && (pTest)[0] == L'[') { nestCount++; }
+					if (nestCount != 0 && (pTest)[0] == L']') { nestCount--; }
 
 					end++;
 				}
@@ -3311,6 +3323,8 @@ public:
 		auto remarkDisplayItHandler = IteratorHandler(this->remarkDisplayFormat);
 
 		for (auto& it : this->remarkFormat) {
+			if (it.validLength == 0) { continue; }
+
 			// update font & color
 			fontItHandler.UpdateIt(it.start);
 			colorItHandler.UpdateIt(it.start);
@@ -3328,21 +3342,22 @@ public:
 
 			auto remarkNeoStr = NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
 			remarkNeoStr.CopyProperties(this);
+
+			remarkNeoStr.SetColor(colorItHandler.it->color.GetValue(), true);
+			remarkNeoStr.SetClip(false, 65535, 65535);
+			remarkNeoStr.SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
+			//remarkNeoStr.SetDrawRectangle(true);
+
 			remarkNeoStr.GetFormat(it.remark.c_str(), this->previousFlag, true);
 
 			// render in infinite rect
 			RECT rc = {0,0,65535,65535};
 			auto cPos = remarkNeoStr.CalculateRange(&rc);
 
-			remarkNeoStr.SetColor(colorItHandler.it->color.GetValue(), true);
-			remarkNeoStr.SetClip(false, 65535, 65535);				
-			remarkNeoStr.SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
-
-			//remarkNeoStr.SetDrawRectangle(true);
-
 			// calculate render coords
 			const auto renderRatio = static_cast<double>(it.validLength) / it.baseLength;
-			const auto remarkCharCount = it.remark.length();
+			//const auto remarkCharCount = it.remark.length();
+			const auto remarkCharCount = wcslen(remarkNeoStr.GetText());
 			const auto renderCharCount = static_cast<size_t>(std::ceil(renderRatio * remarkCharCount));
 
 			struct Position {

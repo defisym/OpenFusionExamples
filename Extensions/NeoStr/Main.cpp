@@ -964,14 +964,27 @@ long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1)
 
 		if (curChar == L'[') {
 			size_t end = 0;
+			size_t nestCount = 0;
 
-			while ((pStr + end)[0] != L']') {
+			while ((pStr + end)[0] != L']' || nestCount != 0) {
+				// protect for end
 				if (end == len) {
 					return len;
 				}
 
+				const auto pTest = pStr + end;
+
+				// handle nest format contorl for params
+				if ((pTest)[0] == L'\\' && (pTest + 1)[0] == L'[') {
+					end += 2;
+					continue;
+				}
+
+				if (end != 0 && (pTest)[0] == L'[') { nestCount++; }
+				if (nestCount != 0 && (pTest)[0] == L']') { nestCount--; }
+
 				end++;
-			}
+			}			
 
 			return end + 1;
 		}
