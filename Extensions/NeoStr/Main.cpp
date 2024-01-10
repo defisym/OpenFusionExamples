@@ -887,9 +887,9 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
-	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	auto len = wcslen(pStr);
+	const auto len = wcslen(pStr);
 
 	if (len == 0) {
 		//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -900,18 +900,20 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 	}
 
 	*rdPtr->pExpRet = pStr;
-	auto pStart = &(*rdPtr->pExpRet)[0];
+	const auto pStart = rdPtr->pExpRet->data();
 	
-	bool bInCommand = false;	
+	bool bInCommand = false;
+	size_t nestCount = 0;
+
 	//https://zh.wikipedia.org/wiki/%E8%99%9A%E7%BC%BA%E5%8F%B7
 	//const auto replaceChar = L'�';
 	const auto replaceChar = L'□';
 
 	for (size_t i = 0; i < len; i++) {
-		auto pCur = pStart + i;
+		const auto pCur = pStart + i;
 
-		auto curChar = pCur[0];
-		auto nextChar = pCur[1];
+		const auto curChar = pCur[0];
+		const auto nextChar = pCur[1];
 
 		// Escape
 		if (curChar == L'\\' && nextChar == L'[') {
@@ -922,7 +924,8 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 
 		// Parse Format
 		if (curChar == L'[') {
-			bInCommand = true;
+			if (bInCommand) { nestCount++; }
+			else { bInCommand = true; }
 		}
 
 		if (bInCommand) {
@@ -930,7 +933,8 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 		}
 
 		if (bInCommand && curChar == L']') {
-			bInCommand = false;
+			if (nestCount != 0) { nestCount--; }
+			else { bInCommand = false; }
 		}
 	}
 
