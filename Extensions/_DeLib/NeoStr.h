@@ -3007,7 +3007,9 @@ public:
 		// render callbacks
 		// ------------
 	private:
-		using PositionCallback = std::function<bool(const CharSize* charSize, float& x, float& y)>;
+		using PositionCallback = std::function<bool(const CharSize* pCharSize,
+			CharPos* pCharPos,
+			float& x, float& y)>;
 		using GraphicCallback = std::function<Graphics* ()>;
 
 	public:
@@ -3219,12 +3221,12 @@ public:
 													ShakeControl() };
 
 #pragma region FORMAT_IT				
-					auto positionX = (float)(x + this->borderOffsetY);
+					auto positionX = (float)(x + this->borderOffsetX);
 					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
 					// update position
 					if (opt.positionCallback != nullptr) {
-						if (!opt.positionCallback(charSz, positionX, positionY)) {
+						if (!opt.positionCallback(charSz, &pCharPosArr[offset], positionX, positionY)) {
 							throw std::exception("Exceed remark base length");
 						}
 					}
@@ -3394,8 +3396,32 @@ public:
 				continue;
 			}
 
-			const auto estimateBaseCharSize = GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont);
-			const auto estimateRemarkCharSize = GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont);
+			// correct base char size
+			auto CorrectCharSize = [] (const CharSize* pCharSizeSrc, size_t sz) {
+				CharSize charSizeCorrect = { 0,0 };
+
+				for (size_t idx = 0; idx < sz; idx++) {
+					const auto pCharSize = &pCharSizeSrc[idx];
+
+					charSizeCorrect.width += pCharSize->width;
+					charSizeCorrect.height += pCharSize->height;
+				}
+
+				charSizeCorrect.width = static_cast<long>(static_cast<float>(charSizeCorrect.width) / static_cast<float>(sz));
+				charSizeCorrect.height = static_cast<long>(static_cast<float>(charSizeCorrect.height) / static_cast<float>(sz));
+
+				return charSizeCorrect;
+			};
+
+			// esitmate char size
+			auto estimateBaseCharSize = mainPositions.empty()
+				? GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+				: CorrectCharSize(it.pCharSizeArr, mainPositions.size());
+			auto estimateRemarkCharSize = remarkPositions.empty()
+				? GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
+				: CorrectCharSize(remarkNeoStr.pCharSizeArr, remarkPositions.size());
+
+			// calculate position
 			const auto baseWidth = estimateBaseCharSize.width * it.baseLength;
 			const auto remarkWidth = (std::max)(baseWidth,
 				estimateRemarkCharSize.width * remarkCharCount);
@@ -3418,19 +3444,34 @@ public:
 
 			auto remarkOpt = opt;
 			remarkOpt.UpdateRenderCallback(
-				[&] (const CharSize* charSize, float& x, float& y) {
+				[&](const CharSize* pCharSize,
+				CharPos* pCharPos,
+				float& x, float& y) {
 					if (remarkPosIt == remarkPositions.end()) { return false; }
+					// get char pos offsets
+					const auto pRemarkNeoStr = &remarkNeoStr;
+
+					const auto remarkX = x - static_cast<float>(pRemarkNeoStr->borderOffsetX);
+					const auto remarkY = y - static_cast<float>(pRemarkNeoStr->borderOffsetY);
+
+					const auto remarkGDIPlusOffset = static_cast<float>(pCharPos->x) - remarkX;
+					const auto remarkstartY = pRemarkNeoStr->startY;
 
 					// render position
 					x = remarkPosIt->x;
 					y = remarkPosIt->y;
 
 					// make enough space
-					y -= static_cast<float>(charSize->height);
+					y -= static_cast<float>(pCharSize->height);
 
 					// remark offset
 					x += remarkDisplay.remarkOffsetX * static_cast<float>(estimateBaseCharSize.width);
 					y += remarkDisplay.remarkOffsetY * static_cast<float>(estimateBaseCharSize.height);
+
+					// update char pos
+					pCharPos->x = static_cast<long>(x + remarkGDIPlusOffset);
+					pCharPos->y = static_cast<long>(y) + remarkstartY;
+
 
 					// add offset
 					x += static_cast<float>(this->borderOffsetX);
