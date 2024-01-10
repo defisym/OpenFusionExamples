@@ -1621,6 +1621,7 @@ public:
 		//	*if you use content, make sure it doesn't have open []
 		//	*if remarked string changed line, then the render of its remark is skipped
 		//	*if the font size changed too much there will be overlap
+		//	*position of remark is estimated by the mean size of remarked characters
 		//	*iCon is not supported in content, for now
 		//
 		// [RemarkOffsetX = 0.0][/RemarkOffsetX]
@@ -3412,6 +3413,7 @@ public:
 			}
 
 			// correct base char size
+			// which is the mean value of all usable characters
 			auto CorrectCharSize = [] (const CharSize* pCharSizeSrc, size_t sz) {
 				CharSize charSizeCorrect = { 0,0 };
 
