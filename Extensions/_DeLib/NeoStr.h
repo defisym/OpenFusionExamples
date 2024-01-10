@@ -115,7 +115,7 @@ class NeoStr {
 private:
 	HDC hdc;
 	HGDIOBJ hOldObj;
-	COLORREF dwTextColor;
+	DWORD dwTextColor;
 
 	HFONT hFont;
 	LOGFONT logFont;
@@ -1118,6 +1118,7 @@ public:
 	}
 	
 	// Color conversion
+	// bAlpha = false: Color is COLORREF
 	static inline Color GetColor(const DWORD color, const bool bAlpha = false) {
 		if (bAlpha) {
 			const auto A = (BYTE)((color >> 24) & 0xFF);
@@ -1142,10 +1143,14 @@ public:
 		return (A << 24) | (R << 16) | (G << 8) | (B);
 	}
 
-	// Get display color
-	//inline COLORREF GetColor() {
-	//	return this->dwTextColor;
-	//}
+	// get color ref
+	static inline COLORREF GetColor(const DWORD color) {
+		const auto R = (BYTE)((color >> 16) & 0xFF);
+		const auto G = (BYTE)((color >> 8) & 0xFF);
+		const auto B = (BYTE)((color) & 0xFF);
+
+		return RGB(R, G, B);
+	}
 
 	inline CharSize GetDefaultCharSize() const {
 		return this->defaultCharSz;
@@ -1248,15 +1253,21 @@ public:
 		this->preMulAlpha = preMulAlpha;
 	}
 
-	inline void SetColor(const DWORD color, const bool bAlpha = false) {
+	// set color
+	// bAlpha = false: Color is COLORREF
+	inline void SetColor(DWORD color, const bool bAlpha = false) {
+		// COLORREF -> dwColor
+		if (!bAlpha) { color = GetDWORD(GetColor(color, false)); }
+
 		const auto bColorChanged = this->dwTextColor != color;
 
 		if (bColorChanged && !this->colorFormat.empty()) {
 			// no color format, update default
 			if (this->colorFormat.size() == 1) {
-				this->colorFormat.at(0).color = GetColor(color, bAlpha);
+				this->colorFormat.at(0).color = GetColor(color, true);
 			}
 			// has color format, update format
+			// a full refresh is needed as there are diff commands
 			else {
 				this->GetFormat(this->pRawText, this->previousFlag, true);
 			}
@@ -1729,7 +1740,7 @@ public:
 		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ {0,0},iConDisplayStack.back() });
 		
 		this->colorStack.clear();
-		this->colorStack.emplace_back(GetColor(this->dwTextColor));
+		this->colorStack.emplace_back(GetColor(this->dwTextColor, true));
 
 		this->colorFormat.clear();
 		this->colorFormat.emplace_back(FormatColor{ {0,0},colorStack.back() });
@@ -3120,7 +3131,8 @@ public:
 		}			
 
 		//Color fontColor(255, 50, 150, 250);
-		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
+		// Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
+		Color fontColor(this->dwTextColor);
 		SolidBrush solidBrush(fontColor);
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
@@ -3342,8 +3354,7 @@ public:
 
 			auto remarkNeoStr = NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
 			remarkNeoStr.CopyProperties(this);
-
-			remarkNeoStr.SetColor(colorItHandler.it->color.GetValue(), true);
+			remarkNeoStr.SetColor(GetDWORD(colorItHandler.it->color), true);
 			remarkNeoStr.SetClip(false, 65535, 65535);
 			remarkNeoStr.SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
 			//remarkNeoStr.SetDrawRectangle(true);
