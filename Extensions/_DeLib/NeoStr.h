@@ -339,6 +339,21 @@ private:
 		CharSize* pCharSizeArr = nullptr;
 		CharPos* pCharPosArr = nullptr;
 		size_t validLength = 0;
+
+		NeoStr* pNeoStr = nullptr;
+
+		FormatRemark(size_t start, size_t startWithNewLine,
+			size_t baseLength, const std::wstring& remark) :FormatBasic(start, startWithNewLine) {
+			this->baseLength = baseLength;
+			this->remark = remark;
+		}
+
+		FormatRemark(const FormatRemark&) = default;
+		FormatRemark(FormatRemark&&) = default;
+		FormatRemark& operator=(const FormatRemark&) = default;
+		FormatRemark& operator=(FormatRemark&&) = default;
+
+		~FormatRemark() { delete pNeoStr; }
 	};
 
 	std::vector<FormatRemark> remarkFormat;
@@ -1977,8 +1992,8 @@ public:
 
 							controlParams.emplace_back(GetTrimmedStr(paramParser));
 
-							this->remarkFormat.emplace_back(FormatRemark{ {savedLength,
-								savedLengthWithNewLine},
+							this->remarkFormat.emplace_back(FormatRemark{ savedLength,
+								savedLengthWithNewLine,
 							static_cast<size_t>(_stoi(controlParams[0])),
 								std::wstring(controlParams[1]) });
 
@@ -3370,23 +3385,25 @@ public:
 
 			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
 
-			auto remarkNeoStr = NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
-			remarkNeoStr.CopyProperties(this);
-			remarkNeoStr.SetColor(GetDWORD(colorItHandler.it->color), true);
-			remarkNeoStr.SetClip(false, 65535, 65535);
-			remarkNeoStr.SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
-			//remarkNeoStr.SetDrawRectangle(true);
+			it.pNeoStr = new NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
+			auto pRemarkNeoStr = it.pNeoStr;
 
-			remarkNeoStr.GetFormat(it.remark.c_str(), this->previousFlag, true);
+			pRemarkNeoStr->CopyProperties(this);
+			pRemarkNeoStr->SetColor(GetDWORD(colorItHandler.it->color), true);
+			pRemarkNeoStr->SetClip(false, 65535, 65535);
+			pRemarkNeoStr->SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
+			//remarkNeoStr->SetDrawRectangle(true);
+
+			pRemarkNeoStr->GetFormat(it.remark.c_str(), this->previousFlag, true);
 
 			// render in infinite rect
 			RECT rc = {0,0,65535,65535};
-			auto cPos = remarkNeoStr.CalculateRange(&rc);
+			auto cPos = pRemarkNeoStr->CalculateRange(&rc);
 
 			// calculate render coords
 			const auto renderRatio = static_cast<double>(it.validLength) / it.baseLength;
 			//const auto remarkCharCount = it.remark.length();
-			const auto remarkCharCount = wcslen(remarkNeoStr.GetText());
+			const auto remarkCharCount = wcslen(pRemarkNeoStr->GetText());
 			const auto renderCharCount = static_cast<size_t>(std::ceil(renderRatio * remarkCharCount));
 
 			struct Position {
@@ -3421,7 +3438,7 @@ public:
 					auto pCharSize = &pCharSizeSrc[idx];
 
 					if(pCharSize == nullptr) {
-						pCharSize = &remarkNeoStr.defaultCharSz;
+						pCharSize = &pRemarkNeoStr->defaultCharSz;
 					}
 
 					charSizeCorrect.width += pCharSize->width;
@@ -3440,7 +3457,7 @@ public:
 				: CorrectCharSize(it.pCharSizeArr, mainPositions.size());
 			auto estimateRemarkCharSize = remarkPositions.empty()
 				? GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
-				: CorrectCharSize(remarkNeoStr.pCharSizeArr, remarkPositions.size());
+				: CorrectCharSize(pRemarkNeoStr->pCharSizeArr, remarkPositions.size());
 
 			// calculate position
 			const auto baseWidth = estimateBaseCharSize.width * it.baseLength;
@@ -3470,8 +3487,6 @@ public:
 				float& x, float& y) {
 					if (remarkPosIt == remarkPositions.end()) { return false; }
 					// get char pos offsets
-					const auto pRemarkNeoStr = &remarkNeoStr;
-
 					const auto remarkX = x - static_cast<float>(pRemarkNeoStr->borderOffsetX);
 					const auto remarkY = y - static_cast<float>(pRemarkNeoStr->borderOffsetY);
 
@@ -3506,7 +3521,7 @@ public:
 					return pGraphic;
 				});
 
-			remarkNeoStr.RenderPerChar(&rc, remarkOpt);
+			pRemarkNeoStr->RenderPerChar(&rc, remarkOpt);
 
 			DeleteObject(remarkHFont);
 		}
