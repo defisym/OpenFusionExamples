@@ -99,12 +99,21 @@ constexpr auto DEFAULT_PARAM = L" ";
 
 constexpr auto SHAKE_RANDOM_RANGE = 1000;
 
+// ------------
+// Format flag
+// ------------
 constexpr auto FORMAT_IGNORE_UNKNOWN = 0b00000001;
 constexpr auto FORMAT_IGNORE_INCOMPLETE = 0b00000010;
+// text is still valid if only empty char left (aka iCon placeholder only)
+constexpr auto FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100;
 
-constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
 //constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_INCOMPLETE;
+constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
 
+// ------------
+// Format operation
+// ------------
+// will stop parsing and use exception to return
 constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
 constexpr auto FORMAT_INVALID_ICON = static_cast<DWORD>(-1);
@@ -343,7 +352,7 @@ private:
 		NeoStr* pNeoStr = nullptr;
 
 		FormatRemark(size_t start, size_t startWithNewLine,
-			size_t baseLength, const std::wstring& remark) :FormatBasic(start, startWithNewLine) {
+			size_t baseLength, const std::wstring& remark) :FormatBasic{ start, startWithNewLine } {
 			this->baseLength = baseLength;
 			this->remark = remark;
 		}
@@ -1171,6 +1180,10 @@ public:
 		return this->defaultCharSz;
 	}
 
+	inline void SetShakeTimer(const unsigned short shakeTimer) {
+		this->shakeTimer = shakeTimer;
+	}
+
 	inline bool GetShakeUpdateState() const {
 		return this->bShake;
 	}
@@ -1547,7 +1560,8 @@ public:
 
 		this->bTextValid = true;
 
-		auto TextValid = [&](const wchar_t* pStr, size_t* pLen) {
+		auto TextValid = [&](const wchar_t* pStr, size_t* pLen,
+			bool bAllowEmptyChar = false) {
 			*pLen = 0;
 
 			if (pStr == nullptr) {
@@ -1560,7 +1574,7 @@ public:
 				return false;
 			}
 
-			if (!pRegexCache->NotEmpty(pStr)) {
+			if (!bAllowEmptyChar && !pRegexCache->NotEmpty(pStr)) {
 				return false;
 			}
 
@@ -1635,9 +1649,8 @@ public:
 		//
 		//	*if you use content, make sure it doesn't have open []
 		//	*if remarked string changed line, then the render of its remark is skipped
-		//	*if the font size changed too much there will be overlap
+		//	*if the font / size changed too drastically there will be overlap
 		//	*position of remark is estimated by the mean size of remarked characters
-		//	*iCon is not supported in content, for now
 		//
 		// [RemarkOffsetX = 0.0][/RemarkOffsetX]
 		//	Remark Offset X
@@ -1802,8 +1815,7 @@ public:
 				pSavedChar[0] = L'@';
 				pSavedChar[1] = L'\0';
 #endif
-
-				throw FORMAT_OPERATION_GetRawStringByFilteredStringLength;
+				throw std::exception("Get Raw String By Filtered String Length");
 			}
 		};
 
@@ -2585,13 +2597,11 @@ public:
 			GetRawStringByFilteredStringLength();
 		}
 
-		if (!TextValid(pText, &pTextLen)) {
+		const bool bAllowEmptyChar = flags & FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing;
+
+		if (!TextValid(pText, &pTextLen, bAllowEmptyChar)) {
 			this->bTextValid = false;
-
-			return;
 		}
-
-		return;
 	}
 
 private:
@@ -3292,7 +3302,7 @@ public:
 						// use updated position
 						iConIt->x = (size_t)positionX;
 						iConIt->y = (size_t)positionY;
-					});				
+					});
 #pragma endregion
 
 					if (!clip(x, this->startY + curStrPos.y, charSz)) {
@@ -3394,7 +3404,9 @@ public:
 			pRemarkNeoStr->SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
 			//remarkNeoStr->SetDrawRectangle(true);
 
-			pRemarkNeoStr->GetFormat(it.remark.c_str(), this->previousFlag, true);
+			pRemarkNeoStr->GetFormat(it.remark.c_str(),
+				this->previousFlag | FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing,
+				true);
 
 			// render in infinite rect
 			RECT rc = {0,0,65535,65535};
@@ -3437,7 +3449,7 @@ public:
 				for (size_t idx = 0; idx < sz; idx++) {
 					auto pCharSize = &pCharSizeSrc[idx];
 
-					if(pCharSize == nullptr) {
+					if (pCharSize == nullptr) {
 						pCharSize = &pRemarkNeoStr->defaultCharSz;
 					}
 
@@ -3521,6 +3533,8 @@ public:
 					return pGraphic;
 				});
 
+			// shake timer need to be updated
+			pRemarkNeoStr->SetShakeTimer(this->shakeTimer);
 			pRemarkNeoStr->RenderPerChar(&rc, remarkOpt);
 
 			DeleteObject(remarkHFont);
@@ -3598,32 +3612,32 @@ public:
 		// ------------
 		// handle icon
 		// ------------
-		auto RenderICon = [] (NeoStr* pNeoStr) {
-			auto stretchFlags = pNeoStr->iConDisplay.iConResample
+		auto RenderICon = [] (this auto&& self, NeoStr* pFormat, NeoStr* pRender)->void {
+			auto stretchFlags = pFormat->iConDisplay.iConResample
 				? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
 				: 0;
 
 			stretchFlags |= STRF_COPYALPHA;
 
-			auto fontItHandler = IteratorHandler(pNeoStr->fontFormat);
-			auto iConDisplayItHandler = IteratorHandler(pNeoStr->iConDisplayFormat);
+			auto fontItHandler = IteratorHandler(pFormat->fontFormat);
+			auto iConDisplayItHandler = IteratorHandler(pFormat->iConDisplayFormat);
 
-			for (auto& it : pNeoStr->iConFormat) {
+			for (auto& it : pFormat->iConFormat) {
 				fontItHandler.UpdateIt(it.start);
 				iConDisplayItHandler.UpdateIt(it.start);
 
 				const bool bEnd = fontItHandler.End();
 
 				const auto& charSize = !bEnd
-					? pNeoStr->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
-					: pNeoStr->defaultCharSz;
+					? pFormat->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+					: pFormat->defaultCharSz;
 				const auto& tm = !bEnd
-					? pNeoStr->GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
-					: pNeoStr->tm;
+					? pFormat->GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
+					: pFormat->tm;
 
 				const auto& iConDisplay = !iConDisplayItHandler.End()
 					? iConDisplayItHandler.it->iConDisplay
-					: pNeoStr->iConDisplay;
+					: pFormat->iConDisplay;
 
 				CharSize iConSize = charSize;
 
@@ -3642,40 +3656,41 @@ public:
 				auto bFound = it.hImage != FORMAT_INVALID_ICON;
 
 				if (bFound) {
-					const auto IConLibIt = pNeoStr->pIConData->pIConLib->find(it.hImage);
+					const auto IConLibIt = pFormat->pIConData->pIConLib->find(it.hImage);
 					pSf = IConLibIt->second;
 				}
 				else {
-					pNeoStr->pIConData->GetDefaultICon();
-					pSf = pNeoStr->pIConData->pDefaultICon;
+					pFormat->pIConData->GetDefaultICon();
+					pSf = pFormat->pIConData->pDefaultICon;
 				}
 
 				LPSURFACE pStrecthSf = nullptr;
 
 				auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
-				auto resizeCacheIt = pNeoStr->pIConData->resizeCache.find(key);
+				auto resizeCacheIt = pFormat->pIConData->resizeCache.find(key);
 
-				if (resizeCacheIt == pNeoStr->pIConData->resizeCache.end()) {
+				if (resizeCacheIt == pFormat->pIConData->resizeCache.end()) {
 					pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
 					pStrecthSf->CreateAlpha();
 
 					auto ret = pSf->Stretch(*pStrecthSf, stretchFlags);
 
-					pNeoStr->pIConData->resizeCache[key] = pStrecthSf;
+					pFormat->pIConData->resizeCache[key] = pStrecthSf;
 				}
 				else {
 					pStrecthSf = resizeCacheIt->second;
 				}
 
-				const auto blitFlags = pNeoStr->iConDisplay.iConResample
+				const auto blitFlags = pFormat->iConDisplay.iConResample
 										   ? BLTF_ANTIA
 										   : 0;
 
-				pStrecthSf->Blit(*pNeoStr->pMemSf
+				pStrecthSf->Blit(*pRender->pMemSf
 					, it.x + iConXOffset, it.y + iConYOffset
 					, BMODE_TRANSP, BOP_COPY, 0, blitFlags);
 
-				MixAlpha(pStrecthSf, pNeoStr->pMemSf, it.x + iConXOffset, it.y + iConYOffset);
+				MixAlpha(pStrecthSf, pRender->pMemSf,
+					it.x + iConXOffset, it.y + iConYOffset);
 
 				//auto ret = pSf->Stretch(*pMemSf
 				//	, it.x + iConXOffset, it.y + iConYOffset
@@ -3684,12 +3699,16 @@ public:
 
 #ifdef _DEBUG
 			//_SavetoClipBoard(pSf, false);
-			//_SavetoClipBoard(pMemSf, false);
+			//_SavetoClipBoard(pRender->pMemSf, false);
 #endif // _DEBUG		
+			}
+
+			for (auto& it : pFormat->remarkFormat) {
+				self(it.pNeoStr, pRender);
 			}
 		};
 
-		RenderICon(this);
+		RenderICon(this, this);
 
 		// ------------
 		// handle display: premul, HWA

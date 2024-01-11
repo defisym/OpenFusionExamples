@@ -33,6 +33,30 @@ DX11: tab size = 4, em space off
 
 `[!]` reset all format to what you set in properties and events
 
+### Remark
+
+#### Insert
+
+`[Remark = CharCount, Content]` insert remark  that display over texts to the following characters
+As text may include ',', parse is started from left, unlike other formats. Remark is rendered in another NeoStr class, with the same config (color, font, etc), but overrode position & render object, and the font size is half of the parent object when it starts rendering.
+
+- *if you use content, make sure it doesn't have open `[]`*
+- *if remarked string changed line, then the render of its remark is skipped*
+- *if the font / size changed too drastically there will be overlap*
+- *position of remark is estimated by the mean size of remarked characters*
+
+#### Format
+
+`[RemarkOffsetX = 0.0][/RemarkOffsetX]` Remark Offset X
+
+- ! = reset to default
+- +/- = add/minus to current
+
+`[RemarkOffsetY = 0.0][/RemarkOffsetY]` Remark Offset Y
+
+- ! = reset to default
+- +/- = add/minus to current
+
 ### ICon
 
 #### Insert
