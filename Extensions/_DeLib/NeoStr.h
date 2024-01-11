@@ -3583,94 +3583,98 @@ public:
 		// ------------
 		// handle icon
 		// ------------
-		auto flags = this->iConDisplay.iConResample
-			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
-			: 0;
-
-		flags |= STRF_COPYALPHA;
-
-		fontItHandler.Reset();
-		auto iConDisplayItHandler = IteratorHandler(this->iConDisplayFormat);
-
-		for (auto& it : this->iConFormat) {
-			fontItHandler.UpdateIt(it.start);
-			iConDisplayItHandler.UpdateIt(it.start);
-
-			bool bEnd = fontItHandler.End();
-
-			const auto& charSize = !bEnd
-				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
-				: this->defaultCharSz;
-			const auto& tm = !bEnd
-				? GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
-				: this->tm;
-
-			const auto& iConDisplay = !iConDisplayItHandler.End()
-				? iConDisplayItHandler.it->iConDisplay
-				: this->iConDisplay;
-
-			CharSize iConSize = charSize;
-
-			iConSize.width = int(iConSize.width * iConDisplay.iConScale);
-			iConSize.height = int(iConSize.height * iConDisplay.iConScale);
-
-			auto iConXOffset = int(iConDisplay.iConOffsetX * charSize.width
-				+ (static_cast<double>(charSize.width) - iConSize.width) / 2
-				+ charSize.width / 6.0);
-			auto iConYOffset = int(iConDisplay.iConOffsetY * charSize.width
-				+ (static_cast<double>(charSize.height) - iConSize.height) / 2
-				+ (charSize.height - charSize.width)
-				- tm.tmDescent /*- tm.tmExternalLeading*/);
-
-			LPSURFACE pSf = nullptr;			
-			auto bFound = it.hImage != FORMAT_INVALID_ICON;
-
-			if (bFound) {
-				auto IConLibIt = this->pIConData->pIConLib->find(it.hImage);
-				pSf = IConLibIt->second;
-			}
-			else {
-				this->pIConData->GetDefaultICon();
-				pSf = this->pIConData->pDefaultICon;
-			}
-
-			LPSURFACE pStrecthSf = nullptr;
-
-			auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
-			auto resizeCacheIt = this->pIConData->resizeCache.find(key);
-
-			if (resizeCacheIt == this->pIConData->resizeCache.end()) {
-				pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
-				pStrecthSf->CreateAlpha();
-
-				auto ret = pSf->Stretch(*pStrecthSf, flags);
-
-				this->pIConData->resizeCache[key] = pStrecthSf;
-			}
-			else {
-				pStrecthSf = resizeCacheIt->second;
-			}
-			
-			auto flags2 = this->iConDisplay.iConResample
-				? BLTF_ANTIA
+		auto RenderICon = [] (NeoStr* pNeoStr) {
+			auto stretchFlags = pNeoStr->iConDisplay.iConResample
+				? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
 				: 0;
 
-			pStrecthSf->Blit(*pMemSf
-				, it.x + iConXOffset, it.y + iConYOffset
-				, BMODE_TRANSP, BOP_COPY, 0, flags2);
+			stretchFlags |= STRF_COPYALPHA;
 
-			MixAlpha(pStrecthSf, pMemSf, it.x + iConXOffset, it.y + iConYOffset);
+			auto fontItHandler = IteratorHandler(pNeoStr->fontFormat);
+			auto iConDisplayItHandler = IteratorHandler(pNeoStr->iConDisplayFormat);
 
-			//auto ret = pSf->Stretch(*pMemSf
-			//	, it.x + iConXOffset, it.y + iConYOffset
-			//	, iConSize.width, iConSize.width
-			//	, BMODE_OPAQUE, BOP_COPY, 0, flags);
+			for (auto& it : pNeoStr->iConFormat) {
+				fontItHandler.UpdateIt(it.start);
+				iConDisplayItHandler.UpdateIt(it.start);
+
+				const bool bEnd = fontItHandler.End();
+
+				const auto& charSize = !bEnd
+					? pNeoStr->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+					: pNeoStr->defaultCharSz;
+				const auto& tm = !bEnd
+					? pNeoStr->GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
+					: pNeoStr->tm;
+
+				const auto& iConDisplay = !iConDisplayItHandler.End()
+					? iConDisplayItHandler.it->iConDisplay
+					: pNeoStr->iConDisplay;
+
+				CharSize iConSize = charSize;
+
+				iConSize.width = int(iConSize.width * iConDisplay.iConScale);
+				iConSize.height = int(iConSize.height * iConDisplay.iConScale);
+
+				const auto iConXOffset = int(iConDisplay.iConOffsetX * charSize.width
+					+ (static_cast<double>(charSize.width) - iConSize.width) / 2
+					+ charSize.width / 6.0);
+				const auto iConYOffset = int(iConDisplay.iConOffsetY * charSize.width
+					+ (static_cast<double>(charSize.height) - iConSize.height) / 2
+					+ (charSize.height - charSize.width)
+					- tm.tmDescent /*- tm.tmExternalLeading*/);
+
+				LPSURFACE pSf = nullptr;
+				auto bFound = it.hImage != FORMAT_INVALID_ICON;
+
+				if (bFound) {
+					const auto IConLibIt = pNeoStr->pIConData->pIConLib->find(it.hImage);
+					pSf = IConLibIt->second;
+				}
+				else {
+					pNeoStr->pIConData->GetDefaultICon();
+					pSf = pNeoStr->pIConData->pDefaultICon;
+				}
+
+				LPSURFACE pStrecthSf = nullptr;
+
+				auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
+				auto resizeCacheIt = pNeoStr->pIConData->resizeCache.find(key);
+
+				if (resizeCacheIt == pNeoStr->pIConData->resizeCache.end()) {
+					pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
+					pStrecthSf->CreateAlpha();
+
+					auto ret = pSf->Stretch(*pStrecthSf, stretchFlags);
+
+					pNeoStr->pIConData->resizeCache[key] = pStrecthSf;
+				}
+				else {
+					pStrecthSf = resizeCacheIt->second;
+				}
+
+				const auto blitFlags = pNeoStr->iConDisplay.iConResample
+										   ? BLTF_ANTIA
+										   : 0;
+
+				pStrecthSf->Blit(*pNeoStr->pMemSf
+					, it.x + iConXOffset, it.y + iConYOffset
+					, BMODE_TRANSP, BOP_COPY, 0, blitFlags);
+
+				MixAlpha(pStrecthSf, pNeoStr->pMemSf, it.x + iConXOffset, it.y + iConYOffset);
+
+				//auto ret = pSf->Stretch(*pMemSf
+				//	, it.x + iConXOffset, it.y + iConYOffset
+				//	, iConSize.width, iConSize.width
+				//	, BMODE_OPAQUE, BOP_COPY, 0, flags);
 
 #ifdef _DEBUG
 			//_SavetoClipBoard(pSf, false);
 			//_SavetoClipBoard(pMemSf, false);
 #endif // _DEBUG		
-		}
+			}
+		};
+
+		RenderICon(this);
 
 		// ------------
 		// handle display: premul, HWA
