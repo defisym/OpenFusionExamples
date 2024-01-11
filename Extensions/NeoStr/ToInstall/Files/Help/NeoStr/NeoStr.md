@@ -33,6 +33,16 @@ DX11: tab size = 4, em space off
 
 `[!]` reset all format to what you set in properties and events
 
+### Values General
+
+- ! = reset to default
+- +/- = add/minus to current
+- \ = use given value directly, including sign
+  - e.g., current is 1.0
+    - -0.5 -> 1.0 - 0.5 = 0.5
+    - \+0.5 -> +0.5
+    - \-0.5 -> -0.5
+
 ### Remark
 
 #### Insert
@@ -49,13 +59,11 @@ As text may include ',', parse is started from left, unlike other formats. Remar
 
 `[RemarkOffsetX = 0.0][/RemarkOffsetX]` Remark Offset X
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[RemarkOffsetY = 0.0][/RemarkOffsetY]` Remark Offset Y
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 ### ICon
 
@@ -70,18 +78,15 @@ ICon will be resized to the font size it inserted at.
 
 `[IConOffsetX = 0.0][/IConOffsetX]` ICon Offset X
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[IConOffsetY = 0.0][/IConOffsetY]` ICon Offset Y
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[IConScale = 1.0][/IConScale]` ICon Scale
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[IConResample = 1][/IConResample]` ICon Resample, 1 = Enable, 0 = Disable
 
@@ -103,8 +108,7 @@ e.g., one param -> Type, two params -> Type & Amplitude, etc.
 
 `[Color = #FFFFFFFF][/Color]`&`[C = #FFFFFFFF][/C]`	color, hex AARRGGBB, or A, R, G, B
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 if RGB param is less than four, then it's referred in the following order:
 
@@ -125,8 +129,7 @@ if RGB param is less than four, then it's referred in the following order:
 
 `[Size = FontSize][/Size]`&`[S = FontSize][/S]`
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 #### Bold
 

@@ -1641,6 +1641,15 @@ public:
 		// [!]
 		//	reset all format to what you set in properties and events
 		//
+		// [Values General]
+		// 	! = reset to default
+		//	+/- = add/minus to current
+		//	\ = use given value directly, including sign
+		//	e.g., current is 1.0
+		//		-0.5 -> 1.0 - 0.5 = 0.5
+		//		\+0.5 -> +0.5
+		//		\-0.5 -> -0.5
+		//
 		// [Remark = CharCount, Content]
 		//	Insert remark that display over texts
 		//	As text may include ',', parse is started from left, unlike other formats
@@ -1654,13 +1663,11 @@ public:
 		//
 		// [RemarkOffsetX = 0.0][/RemarkOffsetX]
 		//	Remark Offset X
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [RemarkOffsetY = 0.0][/RemarkOffsetY]
 		//	Remark Offset Y
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		//
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
@@ -1677,18 +1684,15 @@ public:
 		// 
 		// [IConOffsetX = 0.0][/IConOffsetX]
 		//	ICon Offset X
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [IConOffsetY = 0.0][/IConOffsetY]
 		//	ICon Offset Y
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [IConScale = 1.0][/IConScale]
 		//	ICon Scale
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [IConResample = 1][/IConResample]
 		//	ICon Resample, 1 = Enable, 0 = Disable
@@ -1715,8 +1719,7 @@ public:
 		//		R G
 		//		R G B
 		//		A R G B
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [Font = FontName][/Font]
 		// [F = FontName][/F]
@@ -1724,8 +1727,7 @@ public:
 		// 
 		// [Size = FontSize][/Size]
 		// [S = FontSize][/S]
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [Bold][/Bold]
 		// [B][/B]
@@ -2121,16 +2123,31 @@ public:
 							bool bAdd = false;
 							bool bMinus = false;
 
-							if (controlParam.front() == L'+') {
-								controlParam = controlParam.substr(1);
-								bAdd = true;
-							}
+							do {
+								const auto& firstChar = controlParam.front();
 
-							if (controlParam.front() == L'-') {
-								controlParam = controlParam.substr(1);
-								bAdd = true;
-								bMinus = true;
-							}
+								// escape
+								if(firstChar == L'\\') {
+									controlParam = controlParam.substr(1);
+
+									break;
+								}
+
+								if (firstChar == L'+') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+
+									break;
+								}
+
+								if (firstChar == L'-') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+									bMinus = true;
+
+									break;
+								}
+							} while (false);
 
 							auto sizeDiff = callBack(controlParam);
 
