@@ -3414,11 +3414,15 @@ public:
 
 			// correct base char size
 			// which is the mean value of all usable characters
-			auto CorrectCharSize = [] (const CharSize* pCharSizeSrc, size_t sz) {
+			auto CorrectCharSize = [&] (const CharSize* pCharSizeSrc, size_t sz) {
 				CharSize charSizeCorrect = { 0,0 };
 
 				for (size_t idx = 0; idx < sz; idx++) {
-					const auto pCharSize = &pCharSizeSrc[idx];
+					auto pCharSize = &pCharSizeSrc[idx];
+
+					if(pCharSize == nullptr) {
+						pCharSize = &remarkNeoStr.defaultCharSz;
+					}
 
 					charSizeCorrect.width += pCharSize->width;
 					charSizeCorrect.height += pCharSize->height;
