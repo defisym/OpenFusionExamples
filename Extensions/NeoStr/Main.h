@@ -54,7 +54,11 @@
 
 #define	ACT_ACTION_SROFFSET		    	26
 
-#define	ACT_LAST						27
+#define	ACT_ACTION_FNF			    	27
+#define	ACT_ACTION_APS			    	28
+#define	ACT_ACTION_APV			    	29
+
+#define	ACT_LAST						30
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -113,7 +117,9 @@
 #define	EXP_EXPRESSION_GROX			    	35
 #define	EXP_EXPRESSION_GROY			    	36
 
-#define	EXP_LAST                    		37
+#define	EXP_EXPRESSION_GFMTS		    	37
+
+#define	EXP_LAST                    		38
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -302,6 +308,8 @@ typedef struct tagRDATA
 
 	unsigned char tabSize;
 	bool bTabEM;
+
+	FormatByVector<std::wstring>* pFormatByVector;
 
 	std::wstring* pExpRet;
 

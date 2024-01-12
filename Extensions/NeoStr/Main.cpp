@@ -70,6 +70,10 @@ short actionsInfos[]=
 
 		IDMN_ACTION_SROFFSET, M_ACTION_SROFFSET, ACT_ACTION_SROFFSET, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_REMARKXOFFSET, M_REMARKYOFFSET,
 
+		IDMN_ACTION_FNF, M_ACTION_FNF, ACT_ACTION_FNF,	0, 1, PARAM_EXPSTRING, M_FMT,
+		IDMN_ACTION_APS, M_ACTION_APS, ACT_ACTION_APS,	0, 1, PARAM_EXPSTRING, M_PARAM,
+		IDMN_ACTION_APV, M_ACTION_APV, ACT_ACTION_APV,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PARAM, M_FMT,
+
 		};
 
 // Definitions of parameters for each expression
@@ -128,6 +132,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GROX, M_EXPRESSION_GROX, EXP_EXPRESSION_GROX, EXPFLAG_DOUBLE, 0,
 		IDMN_EXPRESSION_GROY, M_EXPRESSION_GROY, EXP_EXPRESSION_GROY, EXPFLAG_DOUBLE, 0,
+
+		IDMN_EXPRESSION_GFMTS, M_EXPRESSION_GFMTS, EXP_EXPRESSION_GFMTS, EXPFLAG_STRING, 0,
 
 		};
 
@@ -682,6 +688,37 @@ short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long p
 	return 0;
 }
 
+short WINAPI DLLExport Action_Format_NewFormat(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	delete rdPtr->pFormatByVector;
+	rdPtr->pFormatByVector = new FormatByVector<std::wstring>(pStr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Format_AddParamString(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->pFormatByVector == nullptr) { return 0; }
+	rdPtr->pFormatByVector->AddParam(pStr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Format_AddParamValue(LPRDATA rdPtr, long param1, long param2) {
+	const auto value = GetFloatParam(rdPtr);
+	const auto pFMT = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->pFormatByVector == nullptr) { return 0; }
+	rdPtr->pFormatByVector->AddParam(std::vformat(wcslen(pFMT) == 0
+		? L"{}"
+		: pFMT,
+		std::make_wformat_args(value)));
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1102,6 +1139,19 @@ long WINAPI DLLExport Expression_GetTabSettings_TabEM(LPRDATA rdPtr, long param1
 	return (long)(rdPtr->bTabEM);
 }
 
+long WINAPI DLLExport Expression_Format_GetFormatString(LPRDATA rdPtr, long param1) {	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pFormatByVector != nullptr
+		? [&] () {
+			*rdPtr->pExpRet = rdPtr->pFormatByVector->GetFormatString();
+			return reinterpret_cast<long>(rdPtr->pExpRet->c_str());
+		}()
+		: reinterpret_cast<long>(Empty_Str);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1160,6 +1210,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_SetRemarkOffset,
 
+			Action_Format_NewFormat,
+			Action_Format_AddParamString,
+			Action_Format_AddParamValue,
+
 			0
 			};
 
@@ -1217,6 +1271,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetRemarkOffsetX,
 			Expression_GetRemarkOffsetY,
+
+			Expression_Format_GetFormatString,
 
 			0
 			};

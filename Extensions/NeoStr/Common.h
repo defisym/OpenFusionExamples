@@ -29,6 +29,7 @@
 
 // My lib
 #include	<string>
+#include	"FormatByVector.h"
 
 class NeoStr;
 

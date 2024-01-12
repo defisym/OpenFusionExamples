@@ -192,6 +192,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 
+	delete rdPtr->pFormatByVector;
+
 	delete rdPtr->pExpRet;
 
 	SetExtUserData(rdPtr->pData);
