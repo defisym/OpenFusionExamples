@@ -80,7 +80,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetRemarkOffset(rdPtr->remarkOffsetX, rdPtr->remarkOffsetY);
 
 		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags, rdPtr->bIConNeedUpdate);
-		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
+		const auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
 

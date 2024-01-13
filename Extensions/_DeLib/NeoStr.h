@@ -162,6 +162,8 @@ private:
 
 	bool bTextValid = true;
 	bool bPreviousForced = false;
+	bool bFormatUpdated = false;
+	RECT previousRC = {};
 
 	size_t pTextLen = 0;
 	size_t previousFlag = -1;
@@ -244,6 +246,7 @@ private:
 	};
 
 	CharPos* pCharPosArr = nullptr;
+	CharPos previousCharPos = {};
 
 	long rcWidth = 0;
 	long rcHeight = 0;
@@ -1563,6 +1566,7 @@ public:
 
 		this->bTextValid = true;
 		this->bPreviousForced = bForced;
+		this->bFormatUpdated = false;
 
 		auto TextValid = [&](const wchar_t* pStr, size_t* pLen,
 			bool bAllowEmptyChar = false) {
@@ -1604,6 +1608,7 @@ public:
 		}
 
 		previousFlag = flags;
+		bFormatUpdated = true;
 
 		// won't copy if this->pRawText is input
 		if (this->pRawText != pStr) {
@@ -2681,6 +2686,18 @@ private:
 
 public:
 	inline CharPos CalculateRange(LPRECT pRc) {
+		const bool bRectNotChanged = pRc->bottom == previousRC.bottom
+			&& pRc->top == previousRC.top
+			&& pRc->left == previousRC.left
+			&& pRc->right == previousRC.right;
+
+		// skip calculate
+		if (!this->bFormatUpdated && bRectNotChanged) {
+			return previousCharPos;
+		}
+
+		previousRC = *pRc;
+
 		this->strPos.clear();
 
 		if (!this->bTextValid) {
@@ -3015,14 +3032,15 @@ public:
 
 		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
-		auto lastCharPos = CharPos {
+		// last char pos
+		previousCharPos = CharPos {
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width / 2)
 			,startY + lastStrPos.y + (lastCharSize->height / 2)
 			,maxWidth
 			,totalHeight - nRowSpace };
 
-		return lastCharPos;
+		return previousCharPos;
 	}
 
 	struct RenderOptions {
