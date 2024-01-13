@@ -208,6 +208,7 @@ private:
 	CharSize* pCharSizeArr = nullptr;
 
 	bool bShake = false;
+	bool bChildShake = false;
 
 	unsigned short shakeTimer = 0;
 	RandGenerator<int>* pShakeRandGen = nullptr;
@@ -1185,7 +1186,7 @@ public:
 	}
 
 	inline bool GetShakeUpdateState() const {
-		return this->bShake;
+		return this->bShake || this->bChildShake;
 	}
 
 	static inline ShakeType GetShakeTypeByName(const std::wstring_view& param) {
@@ -1798,6 +1799,7 @@ public:
 		this->fontFormat.emplace_back(FormatFont{ {0,0},logFontStack.back() });
 
 		this->bShake = false;
+		this->bChildShake = false;
 
 		this->shakeStack.clear();
 		this->shakeStack.emplace_back(ShakeControl());
@@ -3228,10 +3230,9 @@ public:
 		auto localShakeFormat = this->bShake
 			? *shakeItHandler.GetInit()
 			: FormatShake();
-		
-		if (this->bShake) {
-			shakeTimer++;
-		}
+
+		// update timer if shake or child shake
+		if (this->GetShakeUpdateState()) { shakeTimer++; }
 
 		// ------------
 		// render & calculate position of each char
@@ -3497,7 +3498,7 @@ public:
 			const auto remarkSize = static_cast<size_t>(std::ceil(static_cast<double>(remarkWidth) / remarkCharCount));
 
 			// odd & even affects 0.5
-			const auto remarkCenterIdx = remarkCharCount / 2 - 0.5 * (remarkCharCount % 2 == 0);  // NOLINT(bugprone-integer-division)
+			const auto remarkCenterIdx = static_cast<double>(remarkCharCount / 2) - 0.5 * (remarkCharCount % 2 == 0);  // NOLINT(bugprone-integer-division)
 
 			for (size_t idx = 0; idx < remarkPositions.size(); idx++) {
 				const auto distance = remarkCenterIdx - static_cast<long>(idx);
@@ -3553,6 +3554,9 @@ public:
 			// shake timer need to be updated
 			pRemarkNeoStr->SetShakeTimer(this->shakeTimer);
 			pRemarkNeoStr->RenderPerChar(&rc, remarkOpt);
+
+			// update shake state here, as child's child may shake
+			this->bChildShake |= pRemarkNeoStr->GetShakeUpdateState();
 
 			DeleteObject(remarkHFont);
 		}

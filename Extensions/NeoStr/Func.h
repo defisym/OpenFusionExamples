@@ -230,7 +230,7 @@ inline void Display(LPRDATA rdPtr) {
 		int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
-		RECT rc;
+		RECT rc = {};
 
 		rc.left = screenX;
 		rc.top = screenY;
@@ -276,7 +276,7 @@ inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 	int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
-	RECT rc;
+	RECT rc = {};
 
 	rc.left = screenX;
 	rc.top = screenY;
