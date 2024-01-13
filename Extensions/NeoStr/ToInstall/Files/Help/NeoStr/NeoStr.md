@@ -15,7 +15,7 @@ DX11: tab size = 4, em space off
 
 `\[` -> `[`
 
-`[Command]` if not match follows, will be displayed as untouched depend on your flag settings
+`[Command]` if not match follows, will be displayed as untouched dep on your flag settings
 
 ### Ignore
 
@@ -39,19 +39,19 @@ DX11: tab size = 4, em space off
 - +/- = add/minus to current
 - \ = use given value directly, including sign
   - e.g., current is 1.0
-    - -0.5 -> 1.0 - 0.5 = 0.5
-    - \+0.5 -> +0.5
-    - \-0.5 -> -0.5
+    - `-0.5` -> `1.0`- `0.5` = `0.5`
+    - `\+0.5` -> `+0.5`
+    - `\-0.5` -> `-0.5`
 
 ### Remark
 
 #### Insert
 
-`[Remark = CharCount, Content]` insert remark  that display over texts to the following characters
-As text may include ',', parse is started from left, unlike other formats. Remark is rendered in another NeoStr class, with the same config (color, font, etc), but overrode position & render object, and the font size is half of the parent object when it starts rendering.
+`[Remark = CharCount, Content]` insert remark that display over texts to the following characters
+As text may include ',', parse is started from left, unlike other formats. Remark is rered in another NeoStr class, with the same config (color, font, etc), but overrode position & rer object, and the font size is half of the parent object when it starts rering.
 
 - *if you use content, make sure it doesn't have open `[]`*
-- *if remarked string changed line, then the render of its remark is skipped*
+- *if remarked string changed line, then the rer of its remark is skipped*
 - *if the font / size changed too drastically there will be overlap*
 - *position of remark is estimated by the mean size of remarked characters*
 
@@ -165,13 +165,183 @@ set to non-strike out
 
 ## Properties
 
-This object has no properties
+### Display
+
+- Hotspot
+  - Default
+  - X
+  - Y
+
+### Font
+
+- Font
+  - Vertical offset
+  - Row space
+  - Col space
+  - Tab size
+  - Tab EM space
+
+- Render
+  - Clip
+    - *if text is out of visible area, skip render*
+  - Border offset
+    - *internal offscreen surface is bigger than render size, to give enough space for shader, icon, remark, etc*
+  - Text Rendering Hint
+  - Smoothing Mode
+  - PixelOffset Mode
+
+- Format
+  - Filter unknown
+  - Filter incomplete
+
+  - icon global
+    - *enabled objects will refresh automatically if icon source changed*
+  - icon global force update
+  - icon resample
+  - icon offset x
+  - icon offset y
+  - icon scale
+
+  - Remark offset x
+  - Remark offset y
 
 ## Action
 
+- Embed Font
+  - *you must embed font here, as this extension use a different render system, so built-in embed in DX11 or old font embed object will not work*
+
+- Change Display String
+- App Display String
+- App Display String at NewLine
+
+- Render
+  - *render is delayed to display routine, or expression that need render result, you can force it here*
+
+- Change Render Size
+  - *resize object during runtime*
+- Change Render Options
+  - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
+  -  *if alpha is included, E.g., 10 char, display 5: not included: 5 / 10 = 0.5, display 5 chars, included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+
+- Force Redraw
+  - *if no change, last render result will be used, this action will force redraw even not change*
+- Force Redraw Global ICon
+
+- Alignment
+  - Change Row Space
+  - Change Col Space
+
+  - Change Vertical Offset
+    - *when vertical align is set to center, some font may have an offset, use this to fix it*
+
+  - Change Horizontal Align
+  - Change Vertical Align
+
+  - Change Tab Settings
+
+- Zoom && Rotate
+  - Change HotSpot
+
+  - Zoom
+  - Stretch
+
+  - Rotate
+
+- Format
+  - Link Active
+
+  - Link Object
+    - *if you link object, then you need to analyze icon param by yourself in callback*
+  - Set ICon Key Value
+
+  - Set Filter Flag
+
+  - Set ICon Offset
+  - Set ICon Scale
+  - Set ICon Resample
+
+  - Set Remark Offset
+
+- Format String
+  - New Format
+    - *`std::format` like format string. All params is string, so please format value to string first*
+
+  - Add String Param
+  - Add Value Param
+
 ## Condition
+
+- On Get Object ICon Callback
+  - *if you link to a object, this will be triggered to ask for icon surface pointer*
 
 ## Expression
 
+- Get Font Family Name
+
+- Get Display String
+- Get Filtered String
+  - *filter given string*
+    - `FORMAT_IGNORE_UNKNOWN = 0b00000001`
+    - `FORMAT_IGNORE_INCOMPLETE = 0b00000010`
+	- `FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100`
+- Get Padding String
+  - *replace content in `[]` to `□`, as control characters may conflict with you owns*
+- Get Raw String By Filtered String Length
 - Get Non Command Offset
-  - if next char is a command, this expression will return the offset to command end
+  - *if next char is a command, this expression will return the offset to command *
+
+- Rer Options
+  - Get Visible Ratio
+
+- Alignment
+  - Get Row Space
+  - Get Col Space
+
+  - Get Vertical Offset
+
+  - Get Horizontal Align
+  - Get Vertical Align
+
+  - Get Tab Size
+  - Get Tab Use EM Space
+
+- Size
+  - Get Max Width
+  - Get Total Height
+
+  - Get Render Width
+  - Get Render Height
+
+- Character Position
+  - Get Char X
+  - Get Char Y
+
+  - Get Last Char X
+  - Get Last Char Y
+
+- Zoom && Rotate
+  - Get HotSpot X
+  - Get HotSpot Y
+
+  - Get X Scale
+  - Get Y Scale
+
+  - Get Angle
+
+- Format
+  - Get Hashed String
+  - Get ICon Param Num
+  - Get ICon Param String
+
+  - Get Filter Flag
+
+  - Get ICon Offset X
+  - Get ICon Offset Y
+  - Get ICon Scale
+  - Get ICon Resample
+
+  - Get Remark Offset X
+  - Get Remark Offset Y
+
+- Format String
+  - Get Format String
