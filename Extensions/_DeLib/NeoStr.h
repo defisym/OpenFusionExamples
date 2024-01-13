@@ -161,6 +161,8 @@ private:
 	BYTE nShadowOffsetY = 0;
 
 	bool bTextValid = true;
+	bool bPreviousForced = false;
+
 	size_t pTextLen = 0;
 	size_t previousFlag = -1;
 
@@ -1560,6 +1562,7 @@ public:
 		// ------------
 
 		this->bTextValid = true;
+		this->bPreviousForced = bForced;
 
 		auto TextValid = [&](const wchar_t* pStr, size_t* pLen,
 			bool bAllowEmptyChar = false) {
@@ -3413,9 +3416,13 @@ public:
 
 			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
 
-			it.pNeoStr = new NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
-			auto pRemarkNeoStr = it.pNeoStr;
+			if (it.pNeoStr == nullptr
+				|| LogFontHasher(it.pNeoStr->logFont) != LogFontHasher(remarkLogFont)) {
+				delete it.pNeoStr;
+				it.pNeoStr = new NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
+			}
 
+			auto pRemarkNeoStr = it.pNeoStr;
 			pRemarkNeoStr->CopyProperties(this);
 			pRemarkNeoStr->SetColor(GetDWORD(colorItHandler.it->color), true);
 			pRemarkNeoStr->SetClip(false, 65535, 65535);
@@ -3424,7 +3431,8 @@ public:
 
 			pRemarkNeoStr->GetFormat(it.remark.c_str(),
 				this->previousFlag | FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing,
-				true);
+				// if parent is forced, then child is forced (original, operation is not handled)
+				this->bPreviousForced);
 
 			// render in infinite rect
 			RECT rc = {0,0,65535,65535};
@@ -3510,7 +3518,8 @@ public:
 			
 			auto remarkPosIt = remarkPositions.begin();
 
-			auto remarkOpt = opt;
+			// copy one option here
+			RenderOptions remarkOpt = opt;
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
 				CharPos* pCharPos,
