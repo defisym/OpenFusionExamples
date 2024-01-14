@@ -6,8 +6,8 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 ## Tab
 
-DX9: tab size = 8, em space on
-DX11: tab size = 4, em space off
+- DX9: tab size = 8, em space on
+- DX11: tab size = 4, em space off
 
 ## Format Control
 
@@ -15,7 +15,7 @@ DX11: tab size = 4, em space off
 
 `\[` -> `[`
 
-`[Command]` if not match follows, will be displayed as untouched dep on your flag settings
+`[Command]` if not match follows, will be displayed as untouched depend on your flag settings
 
 ### Ignore
 
@@ -48,10 +48,10 @@ DX11: tab size = 4, em space off
 #### Insert
 
 `[Remark = CharCount, Content]` insert remark that display over texts to the following characters
-As text may include ',', parse is started from left, unlike other formats. Remark is rered in another NeoStr class, with the same config (color, font, etc), but overrode position & rer object, and the font size is half of the parent object when it starts rering.
+As text may include `,`, parse is started from left, unlike other formats. Remark is rendered in another NeoStr class, with the same config (color, font, etc), but overrode position & render object, and the font size is half of the parent object when it starts rendering.
 
 - *if you use content, make sure it doesn't have open `[]`*
-- *if remarked string changed line, then the rer of its remark is skipped*
+- *if remarked string changed line, then the render of its remark is skipped*
 - *if the font / size changed too drastically there will be overlap*
 - *position of remark is estimated by the mean size of remarked characters*
 
@@ -180,27 +180,33 @@ set to non-strike out
   - Col space
   - Tab size
   - Tab EM space
+    - *use EM space instead of space*
 
 - Render
   - Clip
-    - *if text is out of visible area, skip render*
+    - *if text is out of visible area, skip it's render*
   - Border offset
     - *internal offscreen surface is bigger than render size, to give enough space for shader, icon, remark, etc*
   - Text Rendering Hint
+    - *See GDI Plus document*
   - Smoothing Mode
+    - *ditto*
   - PixelOffset Mode
+    - *ditto*
 
 - Format
   - Filter unknown
+    - *will not display unknown command*
   - Filter incomplete
+    - *will not display incomplete command, aka open `[` at end*
 
-  - icon global
+  - ICon global
     - *enabled objects will refresh automatically if icon source changed*
-  - icon global force update
-  - icon resample
-  - icon offset x
-  - icon offset y
-  - icon scale
+  - ICon global force update
+  - ICon resample
+  - ICon offset x
+  - ICon offset y
+  - ICon scale
 
   - Remark offset x
   - Remark offset y
@@ -208,7 +214,8 @@ set to non-strike out
 ## Action
 
 - Embed Font
-  - *you must embed font here, as this extension use a different render system, so built-in embed in DX11 or old font embed object will not work*
+  - *you must embed font here, as this extension use a different render system, so built-in embed in DX11 or old GDI font embed object will not work*
+  - *this object also embed GDI font*
 
 - Change Display String
 - App Display String
@@ -221,11 +228,14 @@ set to non-strike out
   - *resize object during runtime*
 - Change Render Options
   - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
-  -  *if alpha is included, E.g., 10 char, display 5: not included: 5 / 10 = 0.5, display 5 chars, included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+  - *include alpha: E.g., 10 chars*
+    - *not included: 5 / 10 = 0.5, display 5 chars*
+    - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
 
 - Force Redraw
   - *if no change, last render result will be used, this action will force redraw even not change*
 - Force Redraw Global ICon
+  - *redraw all objects with `ICon global` and `ICon global force update` checked*
 
 - Alignment
   - Change Row Space
@@ -235,7 +245,9 @@ set to non-strike out
     - *when vertical align is set to center, some font may have an offset, use this to fix it*
 
   - Change Horizontal Align
+    - *DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2*
   - Change Vertical Align
+    - *DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8*
 
   - Change Tab Settings
 
@@ -249,10 +261,12 @@ set to non-strike out
 
 - Format
   - Link Active
+    - *if you link active, the icon will be read from it's animation frames*
 
   - Link Object
     - *if you link object, then you need to analyze icon param by yourself in callback*
   - Set ICon Key Value
+    - *return the surface pointer here*
 
   - Set Filter Flag
 
@@ -265,6 +279,7 @@ set to non-strike out
 - Format String
   - New Format
     - *`std::format` like format string. All params is string, so please format value to string first*
+    - *if format failed, the format string will be returned*
 
   - Add String Param
   - Add Value Param
@@ -288,9 +303,9 @@ set to non-strike out
   - *replace content in `[]` to `□`, as control characters may conflict with you owns*
 - Get Raw String By Filtered String Length
 - Get Non Command Offset
-  - *if next char is a command, this expression will return the offset to command *
+  - *if next char is a command, this expression will return the offset to command*
 
-- Rer Options
+- Render Options
   - Get Visible Ratio
 
 - Alignment
@@ -330,6 +345,7 @@ set to non-strike out
 
 - Format
   - Get Hashed String
+    - *if you parser icon command by yourself, then this is helpful to use it as cache key*
   - Get ICon Param Num
   - Get ICon Param String
 

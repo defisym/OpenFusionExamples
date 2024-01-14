@@ -45,8 +45,6 @@ private:
 			return std::vformat(fmt, VectorToFormatArgs<N>(this->params));
 		} catch (std::exception& e) {
 			const auto error = e.what();
-
-			//return std::wstring{ L"failed" };
 			return this->fmt;
 		}
 	}
@@ -71,6 +69,16 @@ public:
 			GetFormatCaseGen(128);
 		default:
 			return GetFormatCaseHelper(0);
+		}
+	}
+
+	template <class... Args>
+	inline static std::wstring GetFormatString(const std::wstring& fmt, Args&&... vals) {
+		try {
+			return std::vformat(fmt, std::make_wformat_args(std::forward<Args>(vals)...));
+		} catch (std::exception& e) {
+			const auto error = e.what();
+			return fmt;
 		}
 	}
 };

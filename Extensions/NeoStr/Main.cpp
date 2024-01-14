@@ -711,10 +711,12 @@ short WINAPI DLLExport Action_Format_AddParamValue(LPRDATA rdPtr, long param1, l
 	const auto pFMT = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (rdPtr->pFormatByVector == nullptr) { return 0; }
-	rdPtr->pFormatByVector->AddParam(std::vformat(wcslen(pFMT) == 0
+	rdPtr->pFormatByVector->AddParam(
+		FormatByVector<std::wstring>::GetFormatString(
+		wcslen(pFMT) == 0
 		? L"{}"
 		: pFMT,
-		std::make_wformat_args(value)));
+		value));
 
 	return 0;
 }
