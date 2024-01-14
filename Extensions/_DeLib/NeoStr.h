@@ -371,6 +371,8 @@ private:
 		~FormatRemark() { delete pNeoStr; }
 	};
 
+	// this vector is erased before format parsing, so old pointer is erased
+	// and when parsing, vector resize doesn't affect pointer as it's not allocated
 	std::vector<FormatRemark> remarkFormat;
 
 	// for icon
@@ -391,6 +393,7 @@ private:
 	//			format records where the format starts, for rendering
 	//			stack records the format change during parsing
 	//---------
+
 	// for remark control
 	struct RemarkDisplay {
 		float remarkOffsetX = 0;
@@ -425,6 +428,22 @@ private:
 	std::vector<FormatIConDisplay> iConDisplayFormat;
 	std::vector<IConDisplay> iConDisplayStack;
 
+	// for align control
+	struct FormatAlign :FormatBasic {
+		DWORD dwDTFlags;
+	};
+
+	std::vector<FormatAlign> alignFormat;
+	std::vector<DWORD> alignStack;
+
+	// for shake control
+	struct FormatShake :FormatBasic {
+		ShakeControl shakeControl;
+	};
+
+	std::vector<FormatShake> shakeFormat;
+	std::vector<ShakeControl> shakeStack;
+
 	// for color control
 	struct FormatColor :FormatBasic {
 		Color color;
@@ -440,14 +459,6 @@ private:
 
 	std::vector<FormatFont> fontFormat;
 	std::vector<LOGFONT> logFontStack;
-
-	// for shake control
-	struct FormatShake :FormatBasic {
-		ShakeControl shakeControl;
-	};
-
-	std::vector<FormatShake> shakeFormat;
-	std::vector<ShakeControl> shakeStack;
 
 public:
 	using IConLib = std::map<DWORD, LPSURFACE>;
@@ -843,6 +854,9 @@ public:
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
 		// stack based
+		this->alignFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->alignStack.reserve(DEFAULT_FORMAT_RESERVE);
+
 		this->remarkDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->remarkDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
 
@@ -1707,6 +1721,9 @@ public:
 		//	ICon Resample, 1 = Enable, 0 = Disable
 		//	! = reset to default
 		// 
+		// [Align = LEFT]
+		//  change align of different lines
+		// 
 		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
 		//	control shake.
 		//	if param is less than four, will be referred from right.
@@ -1782,6 +1799,12 @@ public:
 		this->iConFormat.clear();
 
 		// stack based
+		this->alignStack.clear();
+		this->alignStack.emplace_back(this->dwDTFlags);
+
+		this->alignFormat.clear();
+		this->alignFormat.emplace_back(FormatAlign{ {0,0},alignStack.back() });
+
 		this->remarkDisplayStack.clear();
 		this->remarkDisplayStack.emplace_back(this->remarkDisplay);
 
@@ -2098,6 +2121,7 @@ public:
 							// reset stack based here
 							// note that icon or remark requires stack based
 							// to align, so doesn't reset them here
+							Reset(alignStack, alignFormat);
 							Reset(shakeStack, shakeFormat);
 							Reset(colorStack, colorFormat);
 							Reset(logFontStack, fontFormat);
@@ -2307,6 +2331,35 @@ public:
 
 							break;
 						}
+
+
+						// ------------
+						// align
+						// ------------
+
+						if (StringViewIEqu(controlStr, L"Align")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(alignStack, alignFormat, [&] (DWORD& dwDTFlags) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									dwDTFlags = alignStack.front();
+
+									return;
+								}
+
+								const auto& paramParser = controlParam;
+								controlParams.clear();
+
+								const auto newAlign = _stoi(paramParser);
+								dwDTFlags = (dwDTFlags & ~(DT_LEFT | DT_CENTER | DT_RIGHT)) | (newAlign);
+								});
+
+							break;
+						}
+
 
 						// ------------
 						// shake
@@ -3244,6 +3297,28 @@ public:
 		auto iConItHandler = IteratorHandler(this->iConFormat);
 
 		// stack based
+		struct AlignHandler {
+			DWORD* pOldAlign = nullptr;
+			DWORD oldAlign = 0;
+
+			AlignHandler(DWORD* pOldAlign, DWORD newAlign) {
+				if (*pOldAlign == newAlign) { return; }
+
+				this->pOldAlign = pOldAlign;
+				this->oldAlign = *pOldAlign;
+
+				*this->pOldAlign = newAlign;
+			}
+
+			~AlignHandler() {
+				if (this->pOldAlign == nullptr) { return; }
+
+				*this->pOldAlign = this->oldAlign;
+			}
+		};
+
+		auto formatAlign = this->dwDTFlags;
+		auto alignItHandler = IteratorHandler(this->alignFormat);
 		auto colorItHandler = IteratorHandler(this->colorFormat);
 		auto fontItHandler = IteratorHandler(this->fontFormat);
 
@@ -3283,6 +3358,17 @@ public:
 				// ReSharper disable once CppVariableCanBeMadeConstexpr
 				const auto GDIPlusOffset = GetGDIPlusOffset();
 
+				// ---------
+				// update iterator
+				// ---------
+
+				// stack based
+				alignItHandler.Forward(totalChar, [&] (auto alignIt) {
+					formatAlign = alignIt->dwDTFlags;
+				});
+
+				// RAII
+				auto alignHandler = AlignHandler(&this->dwDTFlags, formatAlign);
 				int x = GetStartPosX(curStrPos.width, rcWidth);
 				x -= GDIPlusOffset;
 

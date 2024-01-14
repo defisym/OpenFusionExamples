@@ -92,6 +92,12 @@ See `Values General`
 
 - ! = reset to default
 
+### Align
+
+`[Align = LEFT]`
+
+change align of different lines
+
 ### Shake
 
 `[Shake = Type, Amplitude, TimerCoef, CharOffset]`control shake.
