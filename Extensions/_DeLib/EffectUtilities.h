@@ -180,14 +180,14 @@ private:
 
 #ifdef ENABLE_TEST_FEATURE
 	inline void LoadEffect(CInputFile* pFile, std::wstring& shaderName, std::function<size_t()> paramCallback) {
-		auto fileLenth = pFile->GetLength();
-		auto fileBuf = pFile->GetBuffer(fileLenth);
+		auto fileLength = pFile->GetLength();
+		auto fileBuf = pFile->GetBuffer(fileLength);
 
 		EffectData data = { 0 };
 
 		data.pHdr = new EffectHdr;
 
-		data.pHdr->dwEffectDataSize = fileLenth;
+		data.pHdr->dwEffectDataSize = fileLength;
 		data.pHdr->dwOptions = 512;		//why?
 
 		data.effectName = shaderName;
@@ -201,9 +201,9 @@ private:
 
 		data.pName = nameBuf;
 
-		auto dataBuf = new char[fileLenth];
-		memset(dataBuf, 0, fileLenth);
-		memcpy(dataBuf, fileBuf, fileLenth);
+		auto dataBuf = new char[fileLength];
+		memset(dataBuf, 0, fileLength);
+		memcpy(dataBuf, fileBuf, fileLength);
 
 		data.pData = (LPBYTE)dataBuf;
 

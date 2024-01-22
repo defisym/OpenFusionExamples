@@ -615,7 +615,7 @@ short WINAPI DLLExport Action_AddBackdrop(LPRDATA rdPtr, long param1, long param
 	const int nObstacleType = ((LPEVP)param1)->evp.evpW.evpW0;
 	
 	if (CanDisplay(rdPtr)) {
-		GetTransfromedBitmap(rdPtr,rdPtr->src, [&](LPSURFACE pBitmap) {
+		GetTransformedBitmap(rdPtr,rdPtr->src, [&](LPSURFACE pBitmap) {
 			const auto xScale = abs(rdPtr->zoomScale.XScale);
 			const auto yScale = abs(rdPtr->zoomScale.YScale);
 

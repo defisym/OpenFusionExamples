@@ -308,7 +308,7 @@ inline auto GetRenderTargetSurface(LPRDATA rdPtr, int width, int height) {
 	}
 }
 
-inline void GetTransfromedBitmap(LPRDATA rdPtr, LPSURFACE pSrc, 
+inline void GetTransformedBitmap(LPRDATA rdPtr, LPSURFACE pSrc, 
 	const std::function<void(LPSURFACE)>& callback) {
 	// get size
 	auto width = GetCurrentWidth(rdPtr);
