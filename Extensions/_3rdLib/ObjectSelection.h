@@ -1,4 +1,5 @@
 // ReSharper disable CppClangTidyClangDiagnosticShadow
+// ReSharper disable CppClangTidyClangDiagnosticShadowField
 
 #pragma once
 
@@ -13,12 +14,14 @@
 #include <map>
 
 #include "ccxhdr.h"
+#include "EventBase.h"
+#include "ObjectBase.h"
 
 constexpr auto ForEachFlag_Default = 0b00000000;
 constexpr auto ForEachFlag_ForceAll = 0b00000001;
 constexpr auto ForEachFlag_SelectedOnly = 0b00000010;
 
-class ObjectSelection {
+class ObjectSelection :public ObjectBase {
 public:
 	using Filter = std::function<bool(LPRDATA, LPRO)>;
 	using ForEachCallBack = std::function<void(LPRO)>;
@@ -82,14 +85,6 @@ public:
 	};	
 
 private:
-	LPRH rhPtr;
-	LPOBL ObjectList;
-	LPOIL OiList;
-	LPQOI QualToOiList;		// need to be updated each time before using
-
-	// For 2.5 HWA only:
-	int oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
-
 	inline bool FilterQualifierObjects(const LPRDATA rdPtr, const short oiList, const bool negate
 		, const Filter& filterFunction
 		, const bool selectDestroyed = true) {
@@ -181,7 +176,7 @@ private:
 		}
 
 		while (CurrentQualToOi->qoiOiList >= 0) {
-			f(OiList + CurrentQualToOi->qoiOiList, CurrentQualToOi->qoiOiList);
+			f(GetLPOIL(CurrentQualToOi->qoiOiList), CurrentQualToOi->qoiOiList);
 			CurrentQualToOi = reinterpret_cast<LPQOI>(reinterpret_cast<char*>(CurrentQualToOi) + 4);
 
 			if (CurrentQualToOi == nullptr) {
@@ -212,93 +207,10 @@ private:
 		}
 	}
 
-	inline void IterateOiL(const std::function<void(LPOIL)>& callBack) const {
-		const auto oiLSz = rhPtr->rhNumberOi;
-
-		for (int i = 0; i < oiLSz; i++) {
-			const auto pCurOi = GetLPOIL(static_cast<short>(i));
-
-			if (pCurOi == nullptr) {
-				continue;
-			}
-
-			callBack(pCurOi);
-		}
-	}
-
 public:
 	explicit ObjectSelection(const LPRDATA rdPtr)
 		:ObjectSelection(rdPtr->rHo.hoAdRunHeader) {}
-	explicit ObjectSelection(const LPRH rhPtr) {
-		this->rhPtr = rhPtr;
-		this->ObjectList = rhPtr->rhObjectList;		//get a pointer to the mmf object list
-		this->OiList = rhPtr->rhOiList;				//get a pointer to the mmf object info list
-		this->QualToOiList = rhPtr->rhQualToOiList;	//get a pointer to the mmf qualifier to Oi list
-	}
-
-	//Get oil
-	inline static short GetOil(const LPRDATA rdPtr, LPRO* pObj = nullptr) {
-		// pParam points to 1st parameter, which should be of type object
-		// Offset it if you have used second or other parameter for object selection using code below
-		// LPEVP pParam2nd = (LPEVP)((LPBYTE)pParam + pParam->evpSize);
-		const LPEVP pParam = rdPtr->rHo.hoCurrentParam;
-		const auto oil = (short)pParam->evp.evpW.evpW0;
-
-		// Don't forget to skip to next param
-		const LPRO object = reinterpret_cast<LPRO>(CNC_GetParameter(rdPtr));
-
-		if (pObj != nullptr) {
-			*pObj = object;
-		}
-
-		return oil;
-	}
-
-#define OIL_GetParameter(rdPtr) ObjectSelection::GetOil(rdPtr)
-
-	// Get LPOIL
-	inline LPOIL GetLPOIL(const LPRO object) const {
-		return GetLPOIL(object->roHo.hoOi);
-	}		
-
-	inline LPOIL GetLPOIL(const short oiList) const {
-		return reinterpret_cast<LPOIL>(reinterpret_cast<char*>(OiList) + oiListItemSize * oiList);
-	}
-
-	// Get Oi for creation
-	inline short GetOiFromOiList(const short oiList) const {
-		const LPOIL pObjectInfo = GetLPOIL(oiList);
-
-		if (pObjectInfo == nullptr) {
-			return -1;
-		}
-
-		// you cannot create qualifier
-		if (oiList & 0x8000) {
-			return -1;
-		}
-
-		return pObjectInfo->oilOi;
-	}
-
-	//Get Neg, must be called at first
-	inline static bool IsNegated(const LPRDATA rdPtr) {
-		// pParam points to 1st parameter, which should be of type object
-		// Offset it if you have used second or other parameter for object selection using code below
-		// LPEVP pParam2nd = (LPEVP)((LPBYTE)pParam + pParam->evpSize);
-		LPEVP pParam = rdPtr->rHo.hoCurrentParam;
-		const bool isNegated = reinterpret_cast<event*>(reinterpret_cast<LPBYTE>(rdPtr->rHo.hoCurrentParam) - CND_SIZE)->evtFlags2 & EVFLAG2_NOT;
-
-		return isNegated;
-	}
-
-#define IsNegated(rdPtr) ObjectSelection::IsNegated(rdPtr)
-
-	inline static bool IsDestroyed(const LPRO pObj) {
-		return (static_cast<ushort>(pObj->roHo.hoFlags) & static_cast<ushort>(HOF_DESTROYED));
-	}
-
-#define IsDestroyed(pObj) ObjectSelection::IsDestroyed(pObj)
+	explicit ObjectSelection(const LPRH rhPtr) :ObjectBase(rhPtr) {}
 
 	//Get first obj
 	inline LPRO GetFirstObject(const objInfoList* pOil, const bool selected = false) const {
@@ -428,7 +340,7 @@ public:
 		}
 
 		if (oiList & 0x8000) {
-			return FilterQualifierObjects(rdPtr, static_cast<short>(oiList & 0x7FFF), negate
+			return FilterQualifierObjects(rdPtr, oiList, negate
 				, filterFunction
 				, selectDestroyed) ^ negate;
 		}
@@ -547,17 +459,14 @@ public:
 		if (!ObjectIsQualifier(oiList)) {
 			return ObjectIsSelected(GetLPOIL(oiList));
 		}
-		else {
-			bool selected = false;
 
-			IterateQualifier(oiList, [&] (const objInfoList* list, short qoiOiList) {
-				selected |= ObjectIsSelected(list);
-				});
+		bool selected = false;
 
-			return selected;
-		}
+		IterateQualifier(oiList, [&] (const objInfoList* list, short qoiOiList) {
+			selected |= ObjectIsSelected(list);
+		});
 
-		return false;
+		return selected;
 	}
 
 	//For Each, used in action
@@ -626,52 +535,6 @@ public:
 					}, selected);
 			}
 			});
-	}
-
-	inline LPOIL GetOILByName(std::wstring& objName) const {
-		return GetOILByName(objName.c_str());
-	}
-
-	inline LPOIL GetOILByName(const LPCWSTR pObjName) const {
-		LPOIL pOil = nullptr;
-
-		IterateOiL([&] (const LPOIL _pOil) {
-			// oilName may start with empty char
-			const auto pCurName = [&] () {
-				auto pOilName = _pOil->oilName;
-
-				while (pOilName[0] == 65535) {
-					pOilName++;
-				}
-
-				return pOilName;
-			}();
-
-			if (StrEqu(pObjName, pCurName)) {
-				pOil = _pOil;
-			}
-			});
-
-		return pOil;
-	}
-
-	// ReSharper disable once CppParameterMayBeConstPtrOrRef
-	inline bool OILHasObject(std::wstring& objName) const {
-		return OILHasObject(objName.c_str());
-	}
-
-	inline bool OILHasObject(const LPCWSTR pObjName) const {
-		return GetOILByName(pObjName) != nullptr;
-	}
-
-	inline bool OILHasObject(const LPOIL pOil) const {
-		bool bHas = false;
-
-		IterateOiL([&] (const LPOIL _pOil) {
-			if (pOil == _pOil) { bHas = true; }
-			});
-
-		return bHas;
 	}
 
 	inline auto SaveSelectedObject(const LPOIL pOil) const  {

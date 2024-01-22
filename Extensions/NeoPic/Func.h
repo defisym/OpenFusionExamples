@@ -502,6 +502,20 @@ inline auto CreateNewSurface(LPRDATA rdPtr, bool HWA) {
 		: CreateSurface(32, 4, 4);
 }
 
+// trigger clean up and retry loading
+// usage: LoadWrapper(rdPtr, [&] () {});
+inline void LoadWrapper(LPRDATA rdPtr, const std::function<void()>& opt) {
+	try {
+		opt();
+	} catch ([[maybe_unused]]std::bad_alloc& e) {
+		rdPtr->pData->pPreloadHandler->StopPreload();
+		rdPtr->pData->CleanCache(true);
+
+		opt();
+	}
+}
+
+
 // Load file then convert to Src type
 inline bool LoadFromFile(LPSURFACE& Src, LPCWSTR FilePath, LPCWSTR Key, LPRDATA rdPtr, int width, int height, bool NoStretch, bool bHighQuality) {
 	// HWA?
@@ -559,18 +573,20 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 	};
 
 	auto loadCore = [&] (const std::function<void(LPSURFACE pSf)>& success) {
-		auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
-		const auto bRet = LoadFromFile(pSf,
-			fullPath.c_str(), Key,
-			rdPtr, -1, -1,
-			true, rdPtr->stretchQuality);
+		LoadWrapper(rdPtr, [&] () {
+			auto pSf = CreateNewSurface(rdPtr, rdPtr->HWA);
+			const auto bRet = LoadFromFile(pSf,
+				fullPath.c_str(), Key,
+				rdPtr, -1, -1,
+				true, rdPtr->stretchQuality);
 
-		if (bRet && pSf->IsValid()) {
-			success(pSf);
-		}
-		else {
-			delete pSf;
-		}
+			if (bRet && pSf->IsValid()) {
+				success(pSf);
+			}
+			else {
+				delete pSf;
+			}
+		});		
 	};
 
 	if (rdPtr->isLib) {
@@ -632,7 +648,9 @@ inline SurfaceLibIt LoadLib(LPRDATA rdPtr, LPRDATA obj, LPCWSTR FileName, LPCWST
 
 	// convert to HWA if needed
 	if (obj->HWA && !IsHWA(it->second.pSf)) {
-		ConvertToHWATexture(rdPtr, it->second.pSf);
+		LoadWrapper(rdPtr, [&] () {
+			ConvertToHWATexture(rdPtr, it->second.pSf);
+		});
 	}
 
 	return it;
@@ -782,6 +800,48 @@ inline LPSURFACE GetSurfacePointer(LPRDATA rdPtr, const std::wstring& FilePath, 
 // ------------
 
 // ------------
+// GarbageCollection
+// ------------
+
+inline GarbageCollection::GarbageCollection(GlobalData* pData) {
+	this->pData = pData;
+	this->pLib = pData->pLib;
+
+	this->pKeepList = new KeepList;
+	this->pCleanVec = new RefCountVec;
+}
+
+inline void GarbageCollection::AppendKeepList(const FileList& keepList, const std::wstring& basePath) const {
+	const auto pAppendKeepList = new FileList;
+	pData->GetFullPathByFileName(*pAppendKeepList, keepList, basePath);
+
+	for (auto& it : *pAppendKeepList) {
+		if (std::ranges::find(*pKeepList, it) == pKeepList->end()) {
+			pKeepList->emplace_back(it);
+		}
+	}
+
+	delete pAppendKeepList;
+}
+
+// ------------
+// SurfaceMemUsage
+// ------------
+
+inline SurfaceMemUsage::SurfaceMemUsage(LPSURFACE pSf) {
+	const bool bHWA = IsHWA(pSf);
+
+	const auto estimateSizeMB = GetEstimateSizeMB(pSf);
+
+	if (!bHWA) {
+		this->AddRAMUsage(estimateSizeMB);
+	}
+	else {
+		this->AddVRAMUsage(estimateSizeMB);
+	}
+}
+
+// ------------
 // SurfaceLibValue
 // ------------
 
@@ -848,44 +908,46 @@ inline bool SurfaceLibValue::UpdateShaderUsage() {
 	return bUsedInShader;
 }
 
+inline SurfaceMemUsage SurfaceLibValue::GetEstimateMemUsage() const {
+	SurfaceMemUsage estimateMemUsage;
+
+	const LPSURFACE* pSfArrary = &this->pSf;
+
+	for (int i = 0; i < SurfaceLibSfNum; i++) {
+		const auto pSfToEstimate = *(pSfArrary + i);
+
+		if (pSfToEstimate == nullptr) {
+			continue;
+		}
+
+		estimateMemUsage += SurfaceMemUsage(pSfToEstimate);
+	}
+
+	return estimateMemUsage;
+}
+
 // ------------
 // GlobalData
 // ------------
 
-inline void GlobalData::GetEstimateMemUsage() {
+inline SurfaceMemUsage GlobalData::GetEstimateMemUsage(SurfaceLib* pLib) {
 	// optimize it by add/sub value when modifing lib instead of iterate if has performance issue (unlikely)
-	estimateRAMSizeMB = 0;
-	estimateVRAMSizeMB = 0;
+	SurfaceMemUsage estimateMemUsage;
 
 	for (auto& libValue : *pLib | std::views::values) {
-		const LPSURFACE* pSfArrary = &libValue.pSf;
-
-		for (int i = 0; i < SurfaceLibSfNum; i++) {
-			const auto pSf = *(pSfArrary + i);
-
-			if (pSf == nullptr) {
-				continue;
-			}
-
-			const bool bHWA = IsHWA(pSf);
-			const auto estimateSizeMB = GetEstimateSizeMB(pSf);
-
-			if (!bHWA) {
-				estimateRAMSizeMB += estimateSizeMB;
-			}
-			else {
-				estimateVRAMSizeMB += estimateSizeMB;
-			}
-		}
+		estimateMemUsage += libValue.GetEstimateMemUsage();
 	}
+
+	return estimateMemUsage;
 }
 
 inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
 	if (pPreloadHandler->AbleToMerge()) {
-		for (auto& it : *pPreloadHandler->pPreloadLib) {
-			auto& [name, key] = it;
+		for (auto& [name, libValue] : *pPreloadHandler->pPreloadLib) {
+			// won't replace current ones
 			if (!pLib->contains(name)) {
-				(*pLib)[name] = key;
+				libValue.refCount.priority = pLib->size();
+				(*pLib)[name] = libValue;
 			}
 		}
 				
@@ -896,16 +958,28 @@ inline void GlobalData::MergeLib(LPRDATA rdPtr) const {
 }
 
 inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::wstring& Key,
-	const std::function<void()>& callback) {
+	const std::function<void()>& callback) const {
 	if (pPreloadHandler->pPreloadList->empty()) {
 		callback();
 
 		return;
 	}
 
+	SurfaceMemUsage memUsage;
+	const auto memLimit = GetMemLimit(memoryLimit) / 2;
+
 	for (auto& it : *pPreloadHandler->pPreloadList) {
+		// child thread will return 0 when calling GetProcessMemoryUsageMB with child pid
+		// so only calulate preload lib usage
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = memUsage;
+		const auto curThreadUsage = static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB));
+
+		// parent usage
+		const auto parentThreadUsage = GetMemoryUsageMB();
+		const auto totalUsage = curThreadUsage + parentThreadUsage;
+
 		// Stop loading when exceed limit
-		if (ExceedMemLimit(memoryLimit)) {
+		if (memLimit <= totalUsage || SystemMemoryNotEnough()) {
 			break;
 		}
 
@@ -917,6 +991,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		else {
 			pPreloadHandler->bPaused = false;
 
+			// memory is checked above, so here will not OOM
 			// can only load bitmap in sub thread, cannot load HWA here
 			LPSURFACE pBitmap = CreateSurface(32, 4, 4);
 			LoadFromFile(pBitmap,
@@ -925,7 +1000,10 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 				true, pPreloadHandler->rdPtr->stretchQuality);
 
 			if (pBitmap->IsValid()) {
-				(*pPreloadHandler->pPreloadLib)[it] = SurfaceLibValue(pBitmap, GetFileHash(it), GetTransparent(pBitmap));
+				const auto newItem = SurfaceLibValue(pBitmap, GetFileHash(it), GetTransparent(pBitmap));
+				memUsage += newItem.GetEstimateMemUsage();
+
+				(*pPreloadHandler->pPreloadLib)[it] = newItem;
 			}
 			else {
 				delete pBitmap;
@@ -935,6 +1013,7 @@ inline void GlobalData::PreloadLib(PreloadHandler* pPreloadHandler, const std::w
 		// Stop loading
 		if (pPreloadHandler->bForceExit) {
 			for (auto& libValue : *pPreloadHandler->pPreloadLib | std::views::values) {
+				memUsage -= libValue.GetEstimateMemUsage();
 				libValue.Release();
 			}
 

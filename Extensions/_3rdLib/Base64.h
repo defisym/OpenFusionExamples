@@ -18,8 +18,8 @@
 // BYTE* buffer = new BYTE[bufsz];
 // base64_decode(buffer, bufsz);
 
-#ifndef _BASE64_H_
-#define _BASE64_H_
+#pragma once
+
 
 #include <vector>
 #include <string>
@@ -248,5 +248,3 @@ public:
         return true;
     }
 };
-
-#endif

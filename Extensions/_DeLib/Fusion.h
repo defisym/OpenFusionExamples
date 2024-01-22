@@ -640,10 +640,15 @@ inline bool IsHWA(LPSURFACE Src) {
 }
 
 inline bool IsOpaque(LPSURFACE pSf) {
+	if(!pSf->HasAlpha()) { return true; }
+
 	bool bRet = true;
 
 	ProcessBitmap(pSf, [&](const LPSURFACE pBitmap) {
 		auto coef = GetSfCoef(pSf);
+		if (coef.pData == nullptr || coef.pAlphaData == nullptr) {		
+			return;
+		}
 
 		for (int i = 0; i < coef.alphaSz; i++) {
 			if (coef.pAlphaData[i] != 255) {
@@ -1036,6 +1041,9 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 
 			delete img;
 		}
+		
+		GlobalUnlock(handle);
+		CloseClipboard();
 	}
 }
 
@@ -1226,11 +1234,8 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 
 	//Lock buffer, get pitch etc.
 	auto coef = GetSfCoef(img);
-
-	if (!coef.pData) {
-		if (bScale) {
-			delete img;
-		}
+	if (coef.pData == nullptr) {		
+		if (bScale) { delete img;	}
 
 		return;
 	}
@@ -1539,7 +1544,7 @@ inline constexpr auto GetPerspectiveTransformationSize(const double width, const
 	return std::make_tuple(minX, minY, maxX, maxY);
 }
 
-inline auto PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[3][3]) {
+inline LPSURFACE PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[3][3]) {
 	const auto [minX, minY, maxX, maxY]
 		= GetPerspectiveTransformationSize(pSrc->GetWidth(), pSrc->GetHeight(), matrix);
 
@@ -1554,6 +1559,12 @@ inline auto PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[
 	GetReversePerspectiveTransformationPoint(rm);
 
 	const auto pSrcCoef = GetSfCoef(pSrc);
+	if (pSrcCoef.pData == nullptr || pSrcCoef.pAlphaData == nullptr) {
+		delete pBitmap;
+
+		return nullptr;
+	}
+
 	const auto width = pSrc->GetWidth();
 	const auto height = pSrc->GetHeight();
 
@@ -1588,7 +1599,7 @@ inline auto PerspectiveTransformation(const LPSURFACE pSrc, const double matrix[
 #endif
 
 //dec2rgb
-#define DEC2RGB(DEC) RGB((DEC >> 16), (DEC >> 8) & 0xff, (DEC) & 0xff)
+#define DEC2RGB(DEC) RGB(((DEC) >> 16), ((DEC) >> 8) & 0xff, (DEC) & 0xff)
 
 inline SfCoef GetSfCoef(LPSURFACE pSf) {
 	SfCoef pSfCoef = { 0 };
@@ -1657,6 +1668,14 @@ inline BYTE* GetAlphaPixelAddress(int width, int height, int x, int y, const SfC
 inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor) {
 	ProcessBitmap(pSf, [&](const LPSURFACE Bitmap) {
 		const auto coef = GetSfCoef(pSf);
+		if (coef.pData == nullptr) {		
+			return;
+		}
+
+		if(pSf->HasAlpha() && coef.pAlphaData == nullptr) {
+			return;
+		}
+
 		processor(coef);
 		ReleaseSfCoef(pSf, coef);
 	});
@@ -1696,11 +1715,14 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 			{
 //#pragma omp parallel for
 #endif
+			const auto yOffset = y * pitch;
+			const auto yAlphaOffset =  (height - 1 - y) * alphaPitch;
+
 			for (int x = 0; x < width; ++x) {
-				const auto offset = y * pitch + x * byte;
+				const auto offset = yOffset + x * byte;
 				BYTE* srcPixel = pData + offset;
 
-				const auto alphaOffset = (height - 1 - y) * alphaPitch + x * alphaByte;
+				const auto alphaOffset = yAlphaOffset + x * alphaByte;
 				BYTE* alphaPixel = pAlphaData + alphaOffset;
 
 				process(x, y, coef
@@ -1726,7 +1748,14 @@ inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHe
 	}
 
 	auto srcCoef = GetSfCoef(pSrc);
+	if (srcCoef.pData == nullptr || srcCoef.pAlphaData == nullptr) {
+		return false;
+	}
+
 	auto dstCoef = GetSfCoef(pDst);
+	if (dstCoef.pData == nullptr || dstCoef.pAlphaData == nullptr) {	
+		return false;
+	}
 
 	int widthS = pSrc->GetWidth();
 	int heightS = pSrc->GetHeight();
@@ -1821,4 +1850,32 @@ inline uint64_t GetEstimateSize(LPSURFACE pSf) {
 
 inline uint64_t GetEstimateSizeMB(LPSURFACE pSf) {
 	return GetEstimateSize(pSf) >> 20;
+}
+
+inline void AccessBackground(LPRDATA rdPtr) {
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+	// non-HWA mode can access directly
+	const auto bHWA = ((rhPtr->rh4.rh4Mv->mvAppMode & SM_D3D) != 0);
+	if (!bHWA) { return; }
+
+	mvNeebBackgroundAccess(rhPtr->rh4.rh4Mv, rhPtr->rhFrame, TRUE);
+}
+
+inline void ProcessBackground(LPRDATA rdPtr, const std::function<void(const LPSURFACE)>& callback) {
+	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const auto ps = WinGetSurface((int)rhPtr->rhIdEditWin);
+
+	const auto bHWA = ((rhPtr->rh4.rh4Mv->mvAppMode & SM_D3D) != 0);
+
+	if (!bHWA) {
+		callback(ps);
+
+		return;
+	}
+
+	// HWA : get current render target (to use as source)
+	const auto pRTT = ps->GetRenderTargetSurface();
+	callback(ps);
+	ps->ReleaseRenderTargetSurface(pRTT);
 }

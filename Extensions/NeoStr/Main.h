@@ -52,7 +52,13 @@
 
 #define	ACT_ACTION_STS		    	    25
 
-#define	ACT_LAST						26
+#define	ACT_ACTION_SROFFSET		    	26
+
+#define	ACT_ACTION_FNF			    	27
+#define	ACT_ACTION_APS			    	28
+#define	ACT_ACTION_APV			    	29
+
+#define	ACT_LAST						30
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -108,7 +114,12 @@
 #define	EXP_EXPRESSION_GTS_TS		    	33
 #define	EXP_EXPRESSION_GTS_EM		    	34
 
-#define	EXP_LAST                    		35
+#define	EXP_EXPRESSION_GROX			    	35
+#define	EXP_EXPRESSION_GROY			    	36
+
+#define	EXP_EXPRESSION_GFMTS		    	37
+
+#define	EXP_LAST                    		38
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -131,11 +142,11 @@ typedef struct tagEDATA_V1
 	//Unused
 	BYTE nOutLinePixel;
 	COLORREF dwOutLineColor;
-	//Unused_End
 
 	bool bShadow;
 	BYTE nShadowOffsetX;
 	BYTE nShadowOffsetY;
+	//Unused_End
 	
 	bool bRowSpace;
 	bool bColSpace;
@@ -173,10 +184,13 @@ typedef struct tagEDATA_V1
 	unsigned char tabSize;
 	bool bTabEM;
 
+	float remarkOffsetX;
+	float remarkOffsetY;
+
 	bool bUnused_0;
 	bool bUnused_1;
 
-	int buffer[12];
+	int buffer[10];
 	
 	wchar_t	pText;		// Text
 
@@ -273,6 +287,9 @@ typedef struct tagRDATA
 
 	GlobalData* pData;
 
+	float remarkOffsetX;
+	float remarkOffsetY;
+
 	float iConOffsetX;
 	float iConOffsetY;
 
@@ -291,6 +308,8 @@ typedef struct tagRDATA
 
 	unsigned char tabSize;
 	bool bTabEM;
+
+	FormatByVector<std::wstring>* pFormatByVector;
 
 	std::wstring* pExpRet;
 

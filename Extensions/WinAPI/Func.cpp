@@ -295,6 +295,8 @@ int ReturnDPIScaling(bool bAppScaled) {
 	const auto caps = GetDeviceCaps(desktopDc, LOGPIXELSX);
 	const auto scale = static_cast<int>(100 * (caps / 96.0));
 
+	ReleaseDC(nullptr, desktopDc);
+
 	return scale;
 }
 
@@ -499,31 +501,6 @@ void SavetoFile(LPSURFACE Src, LPCWSTR FilePath, LPRDATA rdPtr, bool release) {
 	return;
 }
 
-//iterate file
-void GetFileList(LPRDATA rdPtr, std::wstring& Src) {
-	WIN32_FIND_DATA stFD;
-	HANDLE h;
-	std::wstring temp;
-
-	temp = Src + L"\\*";
-	h = FindFirstFile(temp.c_str(), &stFD);
-
-	while (FindNextFile(h, &stFD)) {
-		temp = Src + L"\\" + stFD.cFileName;
-		if (temp == Src + L"\\..") {
-			continue;
-		}
-		else if (PathIsDirectory(temp.c_str())) {
-			GetFileList(rdPtr, temp);
-		}
-		else {			
-			rdPtr->FileList->emplace_back(Src + L"\\" + stFD.cFileName);
-		}
-	}
-
-	return;
-}
-
 //Refresh Monitor State
 void RefreshMonitorState(LPRDATA rdPtr) {
 	auto newMonitorHandle = MonitorFromWindow(rdPtr->MainWindowHandle, MONITOR_DEFAULTTONEAREST);
@@ -596,7 +573,7 @@ void StopAllApplication() {
 	}
 		
 	//获取快照
-	HANDLE	snapshot;
+	HANDLE snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
 	//循环遍历
@@ -618,5 +595,7 @@ void StopAllApplication() {
 	DeleteAllApplicationName();	
 	
 	delete info;
+	CloseHandle(snapshot);
+
 	return;
 }

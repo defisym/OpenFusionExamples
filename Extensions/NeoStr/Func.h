@@ -39,6 +39,10 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
+#ifdef COUNT_GDI_OBJECT
+	rdPtr->pData->objectCounter.UpdateObjectCount();
+#endif
+
 	if (rdPtr->bFontChanged) {
 		rdPtr->bFontChanged = false;
 		rdPtr->bStrChanged = true;
@@ -56,7 +60,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
 
-		rdPtr->pNeoStr->SetHWA(ST_HWA_ROMTEXTURE, sfDrv, PreMulAlpha(rdPtr));
+		rdPtr->pNeoStr->SetHWA(sfDrv, PreMulAlpha(rdPtr));
 
 		rdPtr->reRender = true;
 	}
@@ -73,8 +77,10 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetIConScale(rdPtr->iConScale);
 		rdPtr->pNeoStr->SetIConResample(rdPtr->bIConResample);
 
+		rdPtr->pNeoStr->SetRemarkOffset(rdPtr->remarkOffsetX, rdPtr->remarkOffsetY);
+
 		rdPtr->pNeoStr->GetFormat(rdPtr->pStr->c_str(), rdPtr->filterFlags, rdPtr->bIConNeedUpdate);
-		auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
+		const auto cPos = rdPtr->pNeoStr->CalculateRange(&rc);
 
 		rdPtr->charPos = { cPos.x,cPos.y, cPos.maxWidth,cPos.totalHeight };
 
@@ -128,6 +134,16 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 
 		rdPtr->reRender = false;
 	}
+
+#ifdef COUNT_GDI_OBJECT
+	const auto count = rdPtr->pData->objectCounter.objectCount;
+
+	rdPtr->pData->objectCounter.UpdateObjectCount();
+	if (count < rdPtr->pData->objectCounter.objectCount) {
+		const auto info = std::format(L"Add when render {}\n", rdPtr->rHo.hoOiList->oilName);
+		OutputDebugStringW(info.c_str());
+	}
+#endif
 }
 
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
@@ -158,7 +174,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 		int sfDrv = ps->GetDriver();
 
-		neoStr.SetHWA(ST_HWA_ROMTEXTURE, sfDrv, false);
+		neoStr.SetHWA(sfDrv, false);
 
 		//MSGBOX(L"Editor Calc");
 		neoStr.SetAlign(edPtr->dwAlignFlags, edPtr->bVerticalAlignOffset);
@@ -170,6 +186,8 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.SetIConOffset(edPtr->iConOffsetX, edPtr->iConOffsetY);
 		neoStr.SetIConScale(edPtr->iConScale);
 		neoStr.SetIConResample(edPtr->bIConResample);
+
+		neoStr.SetRemarkOffset(edPtr->remarkOffsetX, edPtr->remarkOffsetY);
 
 		neoStr.GetFormat(&edPtr->pText, edPtr->filterFlags);
 		neoStr.CalculateRange(rc);
@@ -212,7 +230,7 @@ inline void Display(LPRDATA rdPtr) {
 		int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 		int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
-		RECT rc;
+		RECT rc = {};
 
 		rc.left = screenX;
 		rc.top = screenY;
@@ -258,7 +276,7 @@ inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
 	int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 	int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
-	RECT rc;
+	RECT rc = {};
 
 	rc.left = screenX;
 	rc.top = screenY;

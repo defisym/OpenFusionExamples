@@ -23,6 +23,9 @@
 #endif
 
 // compatible with MMF
+#pragma push_macro("Font")
+#pragma push_macro("fpFont")
+
 #undef Font
 #undef fpFont
 
@@ -38,6 +41,7 @@
 #pragma comment(lib,"Gdiplus")
 
 #include <gdiplusheaders.h>
+#include <ranges>
 
 #ifdef _BLUR
 #include <gdipluseffects.h>
@@ -95,24 +99,34 @@ constexpr auto DEFAULT_PARAM = L" ";
 
 constexpr auto SHAKE_RANDOM_RANGE = 1000;
 
+// ------------
+// Format flag
+// ------------
 constexpr auto FORMAT_IGNORE_UNKNOWN = 0b00000001;
 constexpr auto FORMAT_IGNORE_INCOMPLETE = 0b00000010;
+// text is still valid if only empty char left (aka iCon placeholder only)
+constexpr auto FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100;
 
-constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
 //constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_INCOMPLETE;
+constexpr auto FORMAT_IGNORE_DEFAULTFLAG = FORMAT_IGNORE_UNKNOWN | FORMAT_IGNORE_INCOMPLETE;
 
+// ------------
+// Format operation
+// ------------
+// will stop parsing and use exception to return
 constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
-constexpr auto FORMAT_INVALID_ICON = (DWORD)-1;
+constexpr auto FORMAT_INVALID_ICON = static_cast<DWORD>(-1);
 
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
 private:
 	HDC hdc;
-	COLORREF dwTextColor;
+	HGDIOBJ hOldObj;
+	DWORD dwTextColor;
 
-	//HFONT hFont;
+	HFONT hFont;
 	LOGFONT logFont;
 
 	Font* pFont = nullptr;
@@ -124,6 +138,7 @@ private:
 	DWORD dwDTFlags;
 
 	bool bClip = true;
+	bool bDrawRectangle = false;
 
 	unsigned short borderOffsetX = 0;
 	unsigned short borderOffsetY = 0;
@@ -146,6 +161,10 @@ private:
 	BYTE nShadowOffsetY = 0;
 
 	bool bTextValid = true;
+	bool bPreviousForced = false;
+	bool bFormatUpdated = false;
+	RECT previousRC = {};
+
 	size_t pTextLen = 0;
 	size_t previousFlag = -1;
 
@@ -185,14 +204,15 @@ private:
 
 	std::vector<StrPos> strPos;
 
-	struct StrSize {
+	struct CharSize {
 		long width;
 		long height;
 	};
 
-	StrSize* pStrSizeArr = nullptr;
+	CharSize* pCharSizeArr = nullptr;
 
 	bool bShake = false;
+	bool bChildShake = false;
 
 	unsigned short shakeTimer = 0;
 	RandGenerator<int>* pShakeRandGen = nullptr;
@@ -226,6 +246,7 @@ private:
 	};
 
 	CharPos* pCharPosArr = nullptr;
+	CharPos previousCharPos = {};
 
 	long rcWidth = 0;
 	long rcHeight = 0;
@@ -245,7 +266,6 @@ private:
 
 	float angle = 0;
 
-	int hwaType = 0;
 	int hwaDriver = 0;
 	bool preMulAlpha = false;
 
@@ -254,15 +274,34 @@ private:
 	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
-	using CharSizeCache = std::map<wchar_t, StrSize>;
-	//CharSizeCache charSzCache;
+	using CharSizeCache = std::map<wchar_t, CharSize>;
 
 	struct CharSizeCacheItem {
-		HDC hdc = NULL;
-		HFONT hFont = NULL;
+		HDC hdc = nullptr;
+		HGDIOBJ hOldObj = nullptr;
+		HFONT hFont = nullptr;
 		TEXTMETRIC tm = {0};
 
 		CharSizeCache cache;
+
+		CharSizeCacheItem(CharSizeCacheItem& other) = delete;
+		CharSizeCacheItem(CharSizeCacheItem&& other) = delete;
+		CharSizeCacheItem& operator=(CharSizeCacheItem& other) = delete;
+		CharSizeCacheItem& operator=(CharSizeCacheItem&& other) = delete;
+
+		explicit CharSizeCacheItem(const LOGFONT& logFont) {
+			hFont = CreateFontIndirect(&logFont);
+
+			hdc = GetDC(nullptr);
+			hOldObj = SelectObject(hdc, hFont);
+			GetTextMetrics(hdc, &tm);
+		}
+
+		~CharSizeCacheItem() {
+			SelectObject(hdc, hOldObj);
+			ReleaseDC(nullptr, hdc);
+			DeleteObject(hFont);
+		}
 	};
 
 	bool bExternalCache = true;
@@ -278,41 +317,99 @@ public:
 private:
 	FontCache* pFontCache;
 
-	StrSize defaultCharSz;
+	CharSize defaultCharSz;
 
+	//------------
+	// format zone
+	//------------
+
+	//---------
+	// basic
+	//---------
 	struct FormatBasic {
 		size_t start;
 		//size_t end;
 
 		size_t startWithNewLine;
+
+		// copy POD format except the basic part
+		inline void CopyFormat(auto& content) {
+			auto pData = reinterpret_cast<std::remove_reference_t<decltype(content)>*>(this + 1);
+			memcpy(pData, &content, sizeof(content));
+		}
 	};
 
-	struct FormatColor {
-		size_t start;
-		//size_t end;
+	//---------
+	// non-stack based
+	//			format is saved directly
+	//---------
 
-		size_t startWithNewLine;
+	// for remark
+	struct FormatRemark :FormatBasic {
+		// updated during parsing
+		size_t baseLength = 0;
+		std::wstring remark;
+		
+		// updated during rendering
+		CharSize* pCharSizeArr = nullptr;
+		CharPos* pCharPosArr = nullptr;
+		size_t validLength = 0;
 
-		Color color;
+		NeoStr* pNeoStr = nullptr;
+
+		FormatRemark(size_t start, size_t startWithNewLine,
+			size_t baseLength, const std::wstring& remark) :FormatBasic{ start, startWithNewLine } {
+			this->baseLength = baseLength;
+			this->remark = remark;
+		}
+
+		FormatRemark(const FormatRemark&) = default;
+		FormatRemark(FormatRemark&&) = default;
+		FormatRemark& operator=(const FormatRemark&) = default;
+		FormatRemark& operator=(FormatRemark&&) = default;
+
+		~FormatRemark() { delete pNeoStr; }
 	};
 
-	std::vector<FormatColor> colorFormat;
-	std::vector<Color> colorStack;
+	// this vector is erased before format parsing, so old pointer is erased
+	// and when parsing, vector resize doesn't affect pointer as it's not allocated
+	std::vector<FormatRemark> remarkFormat;
 
-	struct FormatICon {
-		size_t start;
-		//size_t end;
-
-		size_t startWithNewLine;
-
+	// for icon
+	struct FormatICon :FormatBasic {
+		// updated during parsing
 		DWORD hImage;
 
-		size_t x;
-		size_t y;
+		// updated during rendering
+		size_t x = 0;
+		size_t y = 0;
 	};
 
 	std::vector<FormatICon> iConFormat;
 
+	//---------
+	// stack based
+	//		syntax: 
+	//			format records where the format starts, for rendering
+	//			stack records the format change during parsing
+	//---------
+
+	// for remark control
+	struct RemarkDisplay {
+		float remarkOffsetX = 0;
+		float remarkOffsetY = 0;
+	};
+
+	RemarkDisplay remarkDisplay = { 0,0 };
+
+	struct FormatRemarkDisplay :FormatBasic {
+		RemarkDisplay remarkDisplay;
+	};
+
+	std::vector<FormatRemarkDisplay> remarkDisplayFormat;
+	std::vector<RemarkDisplay> remarkDisplayStack;
+
+	// for icon control
 	struct IConDisplay {
 		float iConOffsetX = 0;
 		float iConOffsetY = 0;
@@ -324,41 +421,44 @@ private:
 
 	IConDisplay iConDisplay = { 0,0,1.0,false };
 
-	struct FormatIConDisplay {
-		size_t start;
-		//size_t end;
-
-		size_t startWithNewLine;
-
+	struct FormatIConDisplay :FormatBasic {
 		IConDisplay iConDisplay;
 	};
 
 	std::vector<FormatIConDisplay> iConDisplayFormat;
 	std::vector<IConDisplay> iConDisplayStack;
 
-	struct FormatFont {
-		size_t start;
-		//size_t end;
-
-		size_t startWithNewLine;
-
-		LOGFONT logFont;
+	// for align control
+	struct FormatAlign :FormatBasic {
+		DWORD dwDTFlags;
 	};
 
-	std::vector<FormatFont> fontFormat;
-	std::vector<LOGFONT> logFontStack;
+	std::vector<FormatAlign> alignFormat;
+	std::vector<DWORD> alignStack;
 
-	struct FormatShake {
-		size_t start = 0;
-		//size_t end;
-
-		size_t startWithNewLine = 0;
-
+	// for shake control
+	struct FormatShake :FormatBasic {
 		ShakeControl shakeControl;
 	};
 
 	std::vector<FormatShake> shakeFormat;
 	std::vector<ShakeControl> shakeStack;
+
+	// for color control
+	struct FormatColor :FormatBasic {
+		Color color;
+	};
+
+	std::vector<FormatColor> colorFormat;
+	std::vector<Color> colorStack;
+
+	// for font control
+	struct FormatFont :FormatBasic {
+		LOGFONT logFont;
+	};
+
+	std::vector<FormatFont> fontFormat;
+	std::vector<LOGFONT> logFontStack;
 
 public:
 	using IConLib = std::map<DWORD, LPSURFACE>;
@@ -436,14 +536,14 @@ public:
 		}
 
 		inline void ReleaseIConLib() {
-			for (const auto& it : *this->pIConLib) {
-				delete it.second;
+			for (const auto& pIConSf : *this->pIConLib | std::views::values) {
+				delete pIConSf;
 			}
 
 			this->pIConLib->clear();
 
-			for (const auto& it : this->resizeCache) {
-				delete it.second;
+			for (const auto& pIConResizeSf : this->resizeCache | std::views::values) {
+				delete pIConResizeSf;
 			}
 
 			this->resizeCache.clear();
@@ -629,10 +729,10 @@ private:
 	}
 
 #ifdef _DEBUG
-	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) const {
+	static int GetEncoderClsid(const WCHAR* format, CLSID* pClsid) {
 		UINT  num = 0;          // number of image encoders
 		UINT  size = 0;         // size of the image encoder array in bytes
-		ImageCodecInfo* pImageCodecInfo = NULL;
+		ImageCodecInfo* pImageCodecInfo = nullptr;
 
 		GetImageEncodersSize(&num, &size);
 
@@ -642,7 +742,7 @@ private:
 
 		pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
 
-		if (pImageCodecInfo == NULL) {
+		if (pImageCodecInfo == nullptr) {
 			return -1;  // Failure
 		}
 
@@ -691,6 +791,15 @@ private:
 	}
 
 public:
+	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
+		const NeoStr* pCache)
+		:NeoStr(dwAlignFlags, color, hFont,
+			pCache->pFontCache,
+			pCache->pCharSzCacheWithFont,
+			pCache->pRegexCache,
+			pCache->pIConData,
+			pCache->pFontCollection,
+			false) {}
 	NeoStr(const DWORD dwAlignFlags, const COLORREF color
 		, const HFONT hFont
 		// read only
@@ -704,15 +813,16 @@ public:
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 		}
 
-		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
-		this->hdc = GetDC(NULL);
-		SelectObject(this->hdc, hFont);
-
-		//this->hFont = hFont;
+		// duplicate font handle
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
+		this->hFont = CreateFontIndirect(&this->logFont);
+
+		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
+		this->hdc = GetDC(nullptr);
+		this->hOldObj = SelectObject(this->hdc, hFont);
 		GetTextMetrics(hdc, &this->tm);
 
 		this->pFontCollection = pFontCollection;
@@ -730,21 +840,31 @@ public:
 			Alloc(this->pCharSzCacheWithFont);
 			Alloc(this->pRegexCache);
 		}
-		
+
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
 		this->SetColor(color);
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
 		this->strPos.reserve(20);		
-		
-		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
-		
-		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
-		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
+		// non-stack based
+		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
+
+		// stack based
+		this->alignFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->alignStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->remarkDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->remarkDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->iConDisplayFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->iConDisplayStack.reserve(DEFAULT_FORMAT_RESERVE);
+
+		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->colorStack.reserve(DEFAULT_FORMAT_RESERVE);
-		this->colorFormat.reserve(DEFAULT_FORMAT_RESERVE);		
 
 		this->fontFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->logFontStack.reserve(DEFAULT_FORMAT_RESERVE);
@@ -779,8 +899,9 @@ public:
 	}
 
 	~NeoStr() {
-		//SelectObject(this->hdc, (HFONT)NULL);
-		ReleaseDC(NULL, this->hdc);
+		SelectObject(this->hdc, this->hOldObj);
+		ReleaseDC(nullptr, this->hdc);
+		DeleteObject(this->hFont);
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
@@ -807,8 +928,8 @@ public:
 		delete[] this->pText;
 		this->pText = nullptr;
 
-		delete[] this->pStrSizeArr;
-		this->pStrSizeArr = nullptr;
+		delete[] this->pCharSizeArr;
+		this->pCharSizeArr = nullptr;
 
 		delete[] this->pCharPosArr;
 		this->pCharPosArr = nullptr;
@@ -827,24 +948,36 @@ public:
 		}
 	}
 
-	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		pCharSzCacheWithFont = new CharSizeCacheWithFont;
+	inline void CopyProperties(const NeoStr* pCopy) {
+		this->SetAlign(pCopy->dwDTFlags, pCopy->bVerticalAlignOffset);
+		this->SetSpace(pCopy->nRowSpace, pCopy->nColSpace);
+		this->SetTabProperties(pCopy->tabContext.tabSize, pCopy->GetTabEm());
+
+		this->LinkObject(pCopy->pIConData->pIConObject, pCopy->pIConData->iconParamParser);
+		this->SetIConOffset(pCopy->iConDisplay.iConOffsetX, pCopy->iConDisplay.iConOffsetY);
+		this->SetIConScale(pCopy->iConDisplay.iConScale);
+		this->SetIConResample(pCopy->iConDisplay.iConResample);
+
+		this->SetRemarkOffset(pCopy->remarkDisplay.remarkOffsetX, pCopy->remarkDisplay.remarkOffsetY);
+
+		this->SetSmooth(
+			pCopy->textRenderingHint,
+			pCopy->smoothingMode,
+			pCopy->pixelOffsetMode);
 	}
 
 	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		for (const auto& it : *pCharSzCacheWithFont) {
-			//SelectObject(it.second.hdc, (HFONT)NULL);
-			ReleaseDC(NULL, it.second.hdc);
-			DeleteObject(it.second.hFont);
-		}
-
 		delete pCharSzCacheWithFont;
 		pCharSzCacheWithFont = nullptr;
 	}
 
+	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
+		pCharSzCacheWithFont = new CharSizeCacheWithFont;
+	}
+
 	inline static void Release(FontCache*& pFontCache) {
-		for (const auto& it : *pFontCache) {
-			delete it.second;
+		for (const auto& pFont : *pFontCache | std::views::values) {
+			delete pFont;
 		}
 
 		delete pFontCache;
@@ -1016,13 +1149,20 @@ public:
 		}
 	}
 
+	inline int GetFontSize(int size) const {
+		return -1 * MulDiv(size,
+			GetDeviceCaps(this->hdc, LOGPIXELSY),
+			72);
+	}
+
 	// Color conversion
 	// #AARRGGBB
-	inline Color GetColor(const std::wstring_view hex) const {
+	static inline Color GetColor(const std::wstring_view hex) {
 		return GetColor(_h2d(hex.data(), hex.size()), true);
 	}
 	
 	// Color conversion
+	// bAlpha = false: Color is COLORREF
 	static inline Color GetColor(const DWORD color, const bool bAlpha = false) {
 		if (bAlpha) {
 			const auto A = (BYTE)((color >> 24) & 0xFF);
@@ -1047,17 +1187,25 @@ public:
 		return (A << 24) | (R << 16) | (G << 8) | (B);
 	}
 
-	// Get display color
-	//inline COLORREF GetColor() {
-	//	return this->dwTextColor;
-	//}
+	// get color ref
+	static inline COLORREF GetColor(const DWORD color) {
+		const auto R = (BYTE)((color >> 16) & 0xFF);
+		const auto G = (BYTE)((color >> 8) & 0xFF);
+		const auto B = (BYTE)((color) & 0xFF);
 
-	inline StrSize GetDefaultCharSize() const {
+		return RGB(R, G, B);
+	}
+
+	inline CharSize GetDefaultCharSize() const {
 		return this->defaultCharSz;
 	}
 
+	inline void SetShakeTimer(const unsigned short shakeTimer) {
+		this->shakeTimer = shakeTimer;
+	}
+
 	inline bool GetShakeUpdateState() const {
-		return this->bShake;
+		return this->bShake || this->bChildShake;
 	}
 
 	static inline ShakeType GetShakeTypeByName(const std::wstring_view& param) {
@@ -1082,7 +1230,14 @@ public:
 		return ShakeType::ShakeType_None;
 	}
 
-	inline void GetShakePosition(const ShakeControl& shakeControl, const double timer, float& x, float& y, const StrSize* charSz) const {
+	inline double GetShakeOffset(const FormatShake& shakeFormat, size_t totalChar) const {
+		const double shakeOffset = (totalChar - shakeFormat.start) * shakeFormat.shakeControl.charOffset
+			+ this->shakeTimer * shakeFormat.shakeControl.timerCoef;
+
+		return shakeOffset;
+	}
+
+	inline void GetShakePosition(const ShakeControl& shakeControl, const double timer, float& x, float& y, const CharSize* charSz) const {
 		const auto t = RAD(timer);
 
 		switch (shakeControl.shakeType)
@@ -1117,6 +1272,11 @@ public:
 		}
 	}
 
+	inline void SetRemarkOffset(const float remarkOffsetX = 0, const float remarkOffsetY = 0) {
+		this->remarkDisplay.remarkOffsetX = remarkOffsetX;
+		this->remarkDisplay.remarkOffsetY = remarkOffsetY;
+	}
+
 	inline void SetIConOffset(const float iConOffsetX = 0, const float iConOffsetY = 0) {
 		this->iConDisplay.iConOffsetX = iConOffsetX;
 		this->iConDisplay.iConOffsetY = iConOffsetY;
@@ -1136,21 +1296,26 @@ public:
 		}
 	}
 
-	inline void SetHWA(const int type, const int driver, const bool preMulAlpha) {
-		this->hwaType = type;
+	inline void SetHWA(const int driver, const bool preMulAlpha) {
 		this->hwaDriver = driver;
 		this->preMulAlpha = preMulAlpha;
 	}
 
-	inline void SetColor(const DWORD color) {
+	// set color
+	// bAlpha = false: Color is COLORREF
+	inline void SetColor(DWORD color, const bool bAlpha = false) {
+		// COLORREF -> dwColor
+		if (!bAlpha) { color = GetDWORD(GetColor(color, false)); }
+
 		const auto bColorChanged = this->dwTextColor != color;
 
 		if (bColorChanged && !this->colorFormat.empty()) {
 			// no color format, update default
 			if (this->colorFormat.size() == 1) {
-				this->colorFormat.at(0).color = GetColor(color);
+				this->colorFormat.at(0).color = GetColor(color, true);
 			}
 			// has color format, update format
+			// a full refresh is needed as there are diff commands
 			else {
 				this->GetFormat(this->pRawText, this->previousFlag, true);
 			}
@@ -1161,7 +1326,7 @@ public:
 
 	inline void SetBorderOffset(const unsigned short borderOffsetX, unsigned short borderOffsetY) {
 		this->borderOffsetX = borderOffsetX;
-		this->borderOffsetY = borderOffsetX;
+		this->borderOffsetY = borderOffsetY;
 	}
 
 	// set row/col space
@@ -1190,6 +1355,10 @@ public:
 		this->renderHeight = renderHeight;
 	}
 
+	inline void SetDrawRectangle(const bool bRectangle) {
+		this->bDrawRectangle = bRectangle;
+	}
+
 	//inline void SetOutLine(BYTE outLinePixel, DWORD color) {
 	//	this->bOutLine = outLinePixel;
 	//	this->nOutLinePixel = outLinePixel;
@@ -1212,7 +1381,7 @@ public:
 	}
 
 //	// deprecated
-//	inline StrSize GetCharSizeRaw(wchar_t wChar) {
+//	inline CharSize GetCharSizeRaw(wchar_t wChar) {
 //#ifdef MEASURE_GDI_PLUS		
 //		SIZE sz = { 0 };
 //		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
@@ -1241,11 +1410,11 @@ public:
 //		//sz.cx -= this->tm
 //		//sz.cy -= (this->tm.tmInternalLeading + this->tm.tmExternalLeading);
 //
-//		return *(StrSize*)&sz;
+//		return *(CharSize*)&sz;
 //	}
 //	
 //	// deprecated
-//	inline StrSize GetCharSizeWithCache(wchar_t wChar) {
+//	inline CharSize GetCharSizeWithCache(wchar_t wChar) {
 //		auto it = charSzCache.find(wChar);
 //
 //		if (it != charSzCache.end()) {
@@ -1267,22 +1436,22 @@ private:
 
         // context
         int curWidth;
-        StrSize spaceCharSize;
+        CharSize spaceCharSize;
 
 		inline void UpdateSpaceChar(wchar_t spaceChar) {
 			this->spaceChar = spaceChar;
 		}
 
-        inline void UpdateContext(int curWidth, StrSize spaceCharSize) {
+        inline void UpdateContext(int curWidth, CharSize spaceCharSize) {
             this->curWidth = curWidth;
             this->spaceCharSize = spaceCharSize;
         }
 
         // TODO handle case of end of line
-        inline StrSize GetTabCharSize() const {
+        inline CharSize GetTabCharSize() const {
             // tab size depend on space size
             const auto actualTabSize = tabSize * spaceCharSize.width;
-            StrSize tabCharSize = { actualTabSize, spaceCharSize.height };
+            CharSize tabCharSize = { actualTabSize, spaceCharSize.height };
 
             const auto div = static_cast<double>(curWidth) / actualTabSize;
             const auto floor =static_cast<int>(std::floor(div));
@@ -1311,7 +1480,11 @@ public:
 			: CHAR_SPACE;
     }
 
-	static inline StrSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
+	inline bool GetTabEm() const {
+		return tabContext.spaceChar == CHAR_EMSPACE;
+	}
+
+	static inline CharSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
 		SIZE sz = { 0,0 };
 		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
 
@@ -1324,7 +1497,7 @@ public:
 			
 		}
 
-		return *(StrSize*)&sz;
+		return *(CharSize*)&sz;
 	}
 
 	inline auto GetCharSizeCacheIt(const LOGFONT& logFont) const {
@@ -1334,7 +1507,7 @@ public:
 		return it;
 	}
 
-	inline StrSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
+	inline CharSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
 		const auto logFontHash = LogFontHasher(logFont);
 		const auto it = pCharSzCacheWithFont->find(logFontHash);
 
@@ -1354,22 +1527,29 @@ public:
 			}
 		}
 		else {
-			const auto hdc = GetDC(NULL);
-			const auto hFont = CreateFontIndirect(&logFont);			
-			SelectObject(hdc, hFont);
+#ifdef COUNT_GDI_OBJECT
+			GDIObjectCounter objectCounter;
 
-			TEXTMETRIC tm;
-			GetTextMetrics(hdc, &tm);
+			objectCounter.UpdateObjectCount();
+#endif
+			pCharSzCacheWithFont->emplace(logFontHash, logFont);
 
-			(*pCharSzCacheWithFont)[logFontHash] = { hdc,hFont,tm };
+#ifdef COUNT_GDI_OBJECT
+ 			const auto count = objectCounter.objectCount;
 
+			objectCounter.UpdateObjectCount();
+			if (count < objectCounter.objectCount) {
+				const auto info = std::format(L"Add when Cache\n");
+				OutputDebugStringW(info.c_str());
+		}
+#endif
 			return GetCharSizeWithCache(wChar,logFont);
 		}
 	}
 
-	//inline StrSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
+	//inline CharSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
 	//	RECT change = { 0,0,65535,1 };
-
+	//
 	//	DrawTextW(
 	//		hdc,
 	//		pStr,
@@ -1377,8 +1557,8 @@ public:
 	//		&change
 	//		, this->dwDTFlags | DT_CALCRECT
 	//	);
-
-	//	return StrSize { change.right - change.left,change.bottom - change.top };
+	//
+	//	return CharSize { change.right - change.left,change.bottom - change.top };
 	//}
 
 	inline LPCWSTR GetRawText() const {
@@ -1394,9 +1574,16 @@ public:
 		, bool bForced = false		// force refresh
 		, const size_t operation = 0
 		, const size_t operationParam = 0) {
-		this->bTextValid = true;
+		// ------------
+		// check validity & skip
+		// ------------
 
-		auto TextValid = [&](const wchar_t* pStr, size_t* pLen) {
+		this->bTextValid = true;
+		this->bPreviousForced = bForced;
+		this->bFormatUpdated = false;
+
+		auto TextValid = [&](const wchar_t* pStr, size_t* pLen,
+			bool bAllowEmptyChar = false) {
 			*pLen = 0;
 
 			if (pStr == nullptr) {
@@ -1409,7 +1596,7 @@ public:
 				return false;
 			}
 
-			if (!pRegexCache->NotEmpty(pStr)) {
+			if (!bAllowEmptyChar && !pRegexCache->NotEmpty(pStr)) {
 				return false;
 			}
 
@@ -1435,6 +1622,7 @@ public:
 		}
 
 		previousFlag = flags;
+		bFormatUpdated = true;
 
 		// won't copy if this->pRawText is input
 		if (this->pRawText != pStr) {
@@ -1475,7 +1663,35 @@ public:
 		// 
 		// [!]
 		//	reset all format to what you set in properties and events
+		//
+		// [Values General]
+		// 	! = reset to default
+		//	+/- = add/minus to current
+		//	\ = use given value directly, including sign
+		//	e.g., current is 1.0
+		//		-0.5 -> 1.0 - 0.5 = 0.5
+		//		\+0.5 -> +0.5
+		//		\-0.5 -> -0.5
+		//
+		// [Remark = CharCount, Content]
+		//	Insert remark that display over texts
+		//	As text may include ',', parse is started from left, unlike other formats
+		//	remark is rendered in another NeoStr class, with the same config (color, font, etc), but overrode position & render object
+		//	and the font size is half of the parent object when it starts rendering
+		//
+		//	*if you use content, make sure it doesn't have open []
+		//	*if remarked string changed line, then the render of its remark is skipped
+		//	*if the font / size changed too drastically there will be overlap
+		//	*position of remark is estimated by the mean size of remarked characters
+		//
+		// [RemarkOffsetX = 0.0][/RemarkOffsetX]
+		//	Remark Offset X
+		//	See [Values General]
 		// 
+		// [RemarkOffsetY = 0.0][/RemarkOffsetY]
+		//	Remark Offset Y
+		//	See [Values General]
+		//
 		// [ICon = Direction, Frame]
 		//	insert icon based on linked active.
 		//	if param is less than two, will be referred from left.
@@ -1491,22 +1707,22 @@ public:
 		// 
 		// [IConOffsetX = 0.0][/IConOffsetX]
 		//	ICon Offset X
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [IConOffsetY = 0.0][/IConOffsetY]
 		//	ICon Offset Y
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [IConScale = 1.0][/IConScale]
 		//	ICon Scale
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [IConResample = 1][/IConResample]
 		//	ICon Resample, 1 = Enable, 0 = Disable
 		//	! = reset to default
+		// 
+		// [Align = LEFT]
+		//  change align of different lines
 		// 
 		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
 		//	control shake.
@@ -1529,8 +1745,7 @@ public:
 		//		R G
 		//		R G B
 		//		A R G B
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [Font = FontName][/Font]
 		// [F = FontName][/F]
@@ -1538,8 +1753,7 @@ public:
 		// 
 		// [Size = FontSize][/Size]
 		// [S = FontSize][/S]
-		//	! = reset to default
-		//	+/- = add/minus to current
+		//	See [Values General]
 		// 
 		// [Bold][/Bold]
 		// [B][/B]
@@ -1569,41 +1783,62 @@ public:
 		// [!S][/!S]
 		//	set to non-strike out
 
+		// SavedChar: no command & escaped
 		auto pCurChar = pRawText;
 		auto pSavedChar = pText;
 
 		ControlParams controlParams;
 		controlParams.reserve(4);
 
+		// ------------
+		// reset formats
+		// ------------
+
+		// non-stack based
+		this->remarkFormat.clear();
 		this->iConFormat.clear();
+
+		// stack based
+		this->alignStack.clear();
+		this->alignStack.emplace_back(this->dwDTFlags);
+
+		this->alignFormat.clear();
+		this->alignFormat.emplace_back(FormatAlign{ {0,0},alignStack.back() });
+
+		this->remarkDisplayStack.clear();
+		this->remarkDisplayStack.emplace_back(this->remarkDisplay);
+
+		this->remarkDisplayFormat.clear();
+		this->remarkDisplayFormat.emplace_back(FormatRemarkDisplay{ {0,0},remarkDisplayStack.back() });
 
 		this->iConDisplayStack.clear();
 		this->iConDisplayStack.emplace_back(this->iConDisplay);
 
 		this->iConDisplayFormat.clear();
-		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ 0,0,iConDisplayStack.back() });
+		this->iConDisplayFormat.emplace_back(FormatIConDisplay{ {0,0},iConDisplayStack.back() });
 		
 		this->colorStack.clear();
-		this->colorStack.emplace_back(GetColor(this->dwTextColor));
+		this->colorStack.emplace_back(GetColor(this->dwTextColor, true));
 
 		this->colorFormat.clear();
-		this->colorFormat.emplace_back(FormatColor{ 0,0,colorStack.back() });		
+		this->colorFormat.emplace_back(FormatColor{ {0,0},colorStack.back() });
 
 		this->logFontStack.clear();
 		this->logFontStack.emplace_back(this->logFont);
 
 		this->fontFormat.clear();
-		this->fontFormat.emplace_back(FormatFont{ 0,0,logFontStack.back() });
+		this->fontFormat.emplace_back(FormatFont{ {0,0},logFontStack.back() });
 
 		this->bShake = false;
+		this->bChildShake = false;
 
 		this->shakeStack.clear();
 		this->shakeStack.emplace_back(ShakeControl());
 
 		this->shakeFormat.clear();
-		this->shakeFormat.emplace_back(FormatShake{ 0,0,shakeStack.back() });
+		this->shakeFormat.emplace_back(FormatShake{ {0,0},shakeStack.back() });
 
-
+		// function that used to GetRawStringByFilteredStringLength
 		auto GetRawStringByFilteredStringLength = [&]() {
 			const auto offset = size_t(pSavedChar - pText);
 
@@ -1615,11 +1850,13 @@ public:
 				pSavedChar[0] = L'@';
 				pSavedChar[1] = L'\0';
 #endif
-
-				throw FORMAT_OPERATION_GetRawStringByFilteredStringLength;
+				throw std::exception("Get Raw String By Filtered String Length");
 			}
 		};
 
+		// ------------
+		// start parse
+		// ------------
 		size_t newLineCount = 0;
 
 		const bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
@@ -1655,15 +1892,29 @@ public:
 			// Parse Format
 			if (curChar == L'[') {
 				size_t end = 0;
+				size_t nestCount = 0;
 
 				bool bEndOfText = false;
 
-				while ((pCurChar + end)[0] != L']') {
+				// get command and param ([Command = Param])
+				while ((pCurChar + end)[0] != L']' || nestCount != 0) {
+					// protect for end
 					if ((pCurChar - pRawText) + end == pInputLen) {
 						bEndOfText = true;
 
 						break;
 					}
+
+					const auto pTest = pCurChar + end;
+
+					// handle nest format contorl for params
+					if ((pTest)[0] == L'\\' && (pTest + 1)[0] == L'[') {
+						end += 2;
+						continue;
+					}
+
+					if (end != 0 && (pTest)[0] == L'[') { nestCount++; }
+					if (nestCount != 0 && (pTest)[0] == L']') { nestCount--; }
 
 					end++;
 				}
@@ -1683,6 +1934,7 @@ public:
 					do {
 						size_t equal = 0;
 
+						// get command (Command = Param)
 						while ((pCurChar + equal)[0] != L'=') {
 							if (equal == end) {
 								break;
@@ -1693,51 +1945,108 @@ public:
 
 						using ParamParserCallback = std::function<void(std::wstring_view&)>;
 
-						// parse by ',', from right
-						auto ParseParamCore = [](std::wstring_view& paramParser, const ParamParserCallback& callBack) {
-							const auto start = paramParser.find_last_of(L',');
+						// parse by ',' use a while loop to get all params
+						auto ParseParamCore = [] (std::wstring_view& paramParser, bool bReverse, const ParamParserCallback& callBack) {
+							const auto start = bReverse
+								? paramParser.find_last_of(L',')
+								: paramParser.find_first_of(L',');
 
 							if (start == std::wstring::npos) {
 								callBack(paramParser);
 
 								return false;
 							}
-							else {
-								auto paramStr = paramParser.substr(start + 1);
-								paramParser = paramParser.substr(0, start);
 
-								callBack(paramStr);
+							const auto before = paramParser.substr(0, start);
+							const auto after = paramParser.substr(start + 1);
 
-								return true;
-							}
+							auto paramStr = bReverse ? after : before;
+							callBack(paramStr);
+
+							paramParser = bReverse ? before : after;
+
+							return true;
 						};
 
-						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, max(0, (long long)equal - bEndOfRegion - 1));
+						// from left
+						auto ParseParam = [ParseParamCore] (std::wstring_view& paramParser, const ParamParserCallback& callBack) {
+							return ParseParamCore(paramParser, false, callBack);
+							};
+
+						// from right
+						auto ParseParamReverse = [ParseParamCore](std::wstring_view& paramParser, const ParamParserCallback& callBack) {
+							return ParseParamCore(paramParser, true, callBack);
+						};
+
+						// get command and param, handle end and equal sign
+						std::wstring_view controlStr = GetTrimmedStr(pCurChar + bEndOfRegion + 1, (std::max)(0u, equal - bEndOfRegion - 1));
 						std::wstring_view controlParam = !bEndOfRegion
-							? GetTrimmedStr(pCurChar + equal + 1, max(0, (long long)end - (long long)equal - 1))
+							? GetTrimmedStr(pCurChar + equal + 1, (std::max)(0u, end - equal - 1))
 							: controlStr;
 
-						if (controlParam.size() == 0) {
+						if (controlParam.empty()) {
 							controlParam = DEFAULT_PARAM;
 						}
 
+						// length to ref format when calculating & rendering
 						size_t savedLength = pSavedChar - pText - newLineCount * 2;
 						size_t savedLengthWithNewLine = pSavedChar - pText;
 
+						// ------------
+						// parse commands & params
+						// ------------
 						if (StringViewIEqu(controlStr, L"^")) {
 							bIgnoreFormat = true;
+							bIgnoreFormatExceptICon = false;
+
+							break;
 						}
 
 						if (StringViewIEqu(controlStr, L"^-")) {
 							bIgnoreFormat = true;
 							bIgnoreFormatExceptICon = true;
+
+							break;
 						}
 
 						if (StringViewIEqu(controlStr, L"!^")) {
 							bIgnoreFormat = false;
 							bIgnoreFormatExceptICon = false;
+
+							break;
 						}
-						
+
+						if (StringViewIEqu(controlStr, L"Remark")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							auto& paramParser = controlParam;
+							controlParams.clear();
+
+							// invalid, no delimiter
+							if(!ParseParam(paramParser
+								, [&controlParams] (std::wstring_view& param) {
+									controlParams.emplace_back(GetTrimmedStr(param));
+								})) {
+								break;
+							}
+
+							const auto length = _stoi(controlParams[0]);
+
+							// invalid length
+							if (length == 0) { break; }
+
+							controlParams.emplace_back(GetTrimmedStr(paramParser));
+
+							this->remarkFormat.emplace_back(FormatRemark{ savedLength,
+								savedLengthWithNewLine,
+							static_cast<size_t>(_stoi(controlParams[0])),
+								std::wstring(controlParams[1]) });
+
+							break;
+						}
+
 						if (StringViewIEqu(controlStr, L"ICon")) {
 							if (bIgnoreFormat && !bIgnoreFormatExceptICon) {
 								break;
@@ -1755,7 +2064,7 @@ public:
 
 								do {
 
-								} while (ParseParamCore(paramParser
+								} while (ParseParamReverse(paramParser
 									, [&controlParams](std::wstring_view& param) {
 										controlParams.emplace_back(GetTrimmedStr(param));
 									}));
@@ -1763,8 +2072,8 @@ public:
 								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
 							} while (false);
 
-							this->iConFormat.emplace_back(FormatICon{ savedLength
-																		, savedLengthWithNewLine
+							this->iConFormat.emplace_back(FormatICon{ {savedLength
+																		, savedLengthWithNewLine}
 																		, hImage });
 
 							// space for icon
@@ -1775,26 +2084,20 @@ public:
 						}
 
 #pragma region StackedFormat
+						// update format for last character
 						auto UpdateFormat = [&](auto& format, auto& content) {
-								auto CopyFormat = [](FormatBasic* pFormat, auto& content) {
-									auto pData = (std::remove_reference_t<decltype(content)>*)(pFormat + 1);
-									memcpy(pData, &content, sizeof(content));
-								};
-								
-								auto pLastFormat = (FormatBasic*)(&format.back());
+								auto pLastFormat = &format.back();
 
 								// if equal, replace last format
 								if (savedLength == pLastFormat->start) {
-									CopyFormat(pLastFormat, content);
+									pLastFormat->CopyFormat(content);
 								}
 								else {
 									std::remove_reference_t<decltype(format[0])> newFormat = format.front();
-									auto pNewFormat = (FormatBasic*)(&newFormat);
+									newFormat.start = savedLength;
+									newFormat.startWithNewLine = savedLengthWithNewLine;
 
-									pNewFormat->start = savedLength;
-									pNewFormat->startWithNewLine = savedLengthWithNewLine;		
-
-									CopyFormat(pNewFormat, content);
+									newFormat.CopyFormat(content);
 
 									format.emplace_back(newFormat);
 								}
@@ -1802,270 +2105,391 @@ public:
 
 						// reset all
 						if (StringViewIEqu(controlStr, L"!")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								auto Reset = [&](auto& stack, auto& format) {
-									std::remove_reference_t<decltype(stack[0])> first = stack.front();
-									
-									stack.clear();
-									stack.emplace_back(first);
-
-									UpdateFormat(format, first);
-								};
-
-								Reset(shakeStack, shakeFormat);
-								Reset(colorStack, colorFormat);
-								Reset(logFontStack, fontFormat);
-
+							if (bIgnoreFormat) {
 								break;
 							}
 
-						auto StackManager = [&](auto& stack, auto& format, auto callBack) {
-								if (!bEndOfRegion) {
-									std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
+							auto Reset = [&] (auto& stack, auto& format) {
+								std::remove_reference_t<decltype(stack[0])> first = stack.front();
 
-									callBack(newFormat);
+								stack.clear();
+								stack.emplace_back(first);
 
-									stack.emplace_back(newFormat);
+								UpdateFormat(format, first);
+								};
+
+							// reset stack based here
+							// note that icon or remark requires stack based
+							// to align, so doesn't reset them here
+							Reset(alignStack, alignFormat);
+							Reset(shakeStack, shakeFormat);
+							Reset(colorStack, colorFormat);
+							Reset(logFontStack, fontFormat);
+
+							break;
+						}
+
+						// manage the stack
+						// new element, call callback to update the one copied from last one
+						// parse params there
+						// or end of region, pop the stack, then update it
+						auto StackManager = [&] (auto& stack, auto& format, auto callBack) {
+							if (!bEndOfRegion) {
+								// clone one here
+								std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
+
+								callBack(newFormat);
+
+								stack.emplace_back(newFormat);
+							}
+							else {
+								// protect for default one
+								if (stack.size() > 1) {
+									stack.pop_back();
 								}
-								else {
-									// protect for default one
-									if (stack.size() > 1) {
-										stack.pop_back();
-									}
-								}
+							}
 
-								UpdateFormat(format, stack.back());
-							};
+							UpdateFormat(format, stack.back());
+						};
 
 						// callback should calculate the diff size
-						auto DiffManager = [&](auto oldValue, auto callBack) {
-								bool bAdd = false;
-								bool bMinus = false;
+						auto DiffManager = [&] (auto oldValue, auto callBack) {
+							bool bAdd = false;
+							bool bMinus = false;
 
-								if (controlParam.front() == L'+') {
+							do {
+								const auto& firstChar = controlParam.front();
+
+								// escape
+								if(firstChar == L'\\') {
 									controlParam = controlParam.substr(1);
-									bAdd = true;
+
+									break;
 								}
 
-								if (controlParam.front() == L'-') {
+								if (firstChar == L'+') {
+									controlParam = controlParam.substr(1);
+									bAdd = true;
+
+									break;
+								}
+
+								if (firstChar == L'-') {
 									controlParam = controlParam.substr(1);
 									bAdd = true;
 									bMinus = true;
+
+									break;
+								}
+							} while (false);
+
+							auto sizeDiff = callBack(controlParam);
+
+							return !bAdd
+								? sizeDiff
+								: (bMinus ? -1 : +1) * sizeDiff + oldValue;
+						};
+
+						// ------------
+						// remark
+						// ------------
+
+						if (StringViewIEqu(controlStr, L"RemarkOffsetX")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(remarkDisplayStack, remarkDisplayFormat, [&] (RemarkDisplay& remarkDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									remarkDisplay.remarkOffsetX = this->remarkDisplayStack.front().remarkOffsetX;
+
+									return;
 								}
 
-								auto sizeDiff = callBack(controlParam);
+								remarkDisplay.remarkOffsetX = DiffManager(remarkDisplay.remarkOffsetX,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
 
-								return !bAdd
-									? sizeDiff
-									: (bMinus ? -1 : +1) * sizeDiff + oldValue;
-							};
+							break;
+						}
+
+						if (StringViewIEqu(controlStr, L"RemarkOffsetY")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(remarkDisplayStack, remarkDisplayFormat, [&] (RemarkDisplay& remarkDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									remarkDisplay.remarkOffsetY = this->remarkDisplayStack.front().remarkOffsetY;
+
+									return;
+								}
+
+								remarkDisplay.remarkOffsetY = DiffManager(remarkDisplay.remarkOffsetY,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
+
+						// ------------
+						// icon
+						// ------------
 
 						if (StringViewIEqu(controlStr, L"IConOffsetX")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConOffsetX = this->iConDisplayStack.front().iConOffsetX;
-
-										return;
-									}
-
-									iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX, [&](const std::wstring_view& controlParam) {
-										const auto size = _stof(controlParam);
-										return size;
-										});
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConOffsetX = this->iConDisplayStack.front().iConOffsetX;
+
+									return;
+								}
+
+								iConDisplay.iConOffsetX = DiffManager(iConDisplay.iConOffsetX,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"IConOffsetY")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConOffsetY = this->iConDisplayStack.front().iConOffsetY;
-
-										return;
-									}
-
-									iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY, [&](const std::wstring_view& controlParam) {
-										const auto size = _stof(controlParam);
-										return size;
-										});
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConOffsetY = this->iConDisplayStack.front().iConOffsetY;
+
+									return;
+								}
+
+								iConDisplay.iConOffsetY = DiffManager(iConDisplay.iConOffsetY,
+									[&] (const std::wstring_view& controlParam) {
+									const auto size = _stof(controlParam);
+									return size;
+									});
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"IConScale")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConScale = this->iConDisplayStack.front().iConScale;
-
-										return;
-									}
-
-									iConDisplay.iConScale = DiffManager(iConDisplay.iConScale, [&](const std::wstring_view& controlParam) {
-										const auto size = _stof(controlParam);
-										return size;
-										});
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConScale = this->iConDisplayStack.front().iConScale;
+
+									return;
+								}
+
+								iConDisplay.iConScale = DiffManager(iConDisplay.iConScale,
+									[&] (const std::wstring_view& controlParam) {
+									const auto size = _stof(controlParam);
+									return size;
+									});
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"IConResample")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(iConDisplayStack, iConDisplayFormat, [&](IConDisplay& iConDisplay) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										iConDisplay.iConResample = this->iConDisplayStack.front().iConResample;
-
-										return;
-									}
-
-									iConDisplay.iConResample = _stoi(controlParam);
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
 
-						if (StringViewIEqu(controlStr, L"Shake")) {
-								if (bIgnoreFormat) {
-									break;
+							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									iConDisplay.iConResample = this->iConDisplayStack.front().iConResample;
+
+									return;
 								}
 
-								StackManager(shakeStack, shakeFormat, [&](ShakeControl& shakeControl) {
+								iConDisplay.iConResample = _stoi(controlParam);
+								});
+
+							break;
+						}
+
+
+						// ------------
+						// align
+						// ------------
+
+						if (StringViewIEqu(controlStr, L"Align")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(alignStack, alignFormat, [&] (DWORD& dwDTFlags) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									dwDTFlags = alignStack.front();
+
+									return;
+								}
+
+								const auto& paramParser = controlParam;
+								controlParams.clear();
+
+								const auto newAlign = _stoi(paramParser);
+								dwDTFlags = (dwDTFlags & ~(DT_LEFT | DT_CENTER | DT_RIGHT)) | (newAlign);
+								});
+
+							break;
+						}
+
+
+						// ------------
+						// shake
+						// ------------
+
+						if (StringViewIEqu(controlStr, L"Shake")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(shakeStack, shakeFormat, [&] (ShakeControl& shakeControl) {
+								auto& paramParser = controlParam;
+								controlParams.clear();
+
+								do {
+
+								} while (ParseParamReverse(paramParser
+									, [&controlParams] (std::wstring_view& param) {
+										controlParams.emplace_back(GetTrimmedStr(param));
+									}));
+
+								do {
+									if (!controlParams.empty()) {
+										shakeControl.shakeType = GetShakeTypeByName(controlParams.back());
+										controlParams.pop_back();
+									}
+
+									if (!controlParams.empty()) {
+										shakeControl.amplitude = _stod(controlParams.back());
+										controlParams.pop_back();
+									}
+
+									if (!controlParams.empty()) {
+										shakeControl.timerCoef = _stod(controlParams.back());
+										controlParams.pop_back();
+									}
+
+									if (!controlParams.empty()) {
+										shakeControl.charOffset = _stod(controlParams.back());
+										controlParams.pop_back();
+									}
+								} while (false);
+
+								if (shakeControl.shakeType != ShakeType::ShakeType_None) {
+									this->bShake = true;
+								}
+
+								shakeControl.charOffset *= 360;
+								});
+
+							break;
+						}
+
+						// ------------
+						// color
+						// ------------
+
+						if (StringViewIEqu(controlStr, L"Color")
+							|| StringViewIEqu(controlStr, L"C")) {
+							if (bIgnoreFormat) {
+								break;
+							}
+
+							StackManager(colorStack, colorFormat, [&] (Color& color) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									color = colorStack.front();
+
+									return;
+								}
+
+								const auto result = DiffManager(GetDWORD(colorStack.back()), [&] (std::wstring_view& controlParam) {
+									// hex
+									if ((controlParam[0] == L'#')
+										|| (controlParam[0] == L'0'
+										&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
+										return _h2d(controlParam.data(), controlParam.size());
+									}
+
+									// dec
 									auto& paramParser = controlParam;
 									controlParams.clear();
 
 									do {
 
-									} while (ParseParamCore(paramParser
-										, [&controlParams](std::wstring_view& param) {
-											controlParams.emplace_back(GetTrimmedStr(param));
-										}));
+									} while (ParseParamReverse(paramParser
+															   , [&controlParams] (std::wstring_view& param) {
+																   controlParams.emplace_back(GetTrimmedStr(param));
+															   }));
 
-									do {
-										if (!controlParams.empty()) {
-											shakeControl.shakeType = GetShakeTypeByName(controlParams.back());
-											controlParams.pop_back();
-										}
+									DWORD result = 0;
 
-										if (!controlParams.empty()) {
-											shakeControl.amplitude = _stod(controlParams.back());
-											controlParams.pop_back();
-										}
+									const auto size = controlParams.size();
+									auto alpha = 0xFF;
 
-										if (!controlParams.empty()) {
-											shakeControl.timerCoef = _stod(controlParams.back());
-											controlParams.pop_back();
-										}
-
-										if (!controlParams.empty()) {
-											shakeControl.charOffset = _stod(controlParams.back());
-											controlParams.pop_back();
-										}
-									} while (false);
-
-									if (shakeControl.shakeType != ShakeType::ShakeType_None) {
-										this->bShake = true;
+									if (size == 4) {
+										alpha = _stoi(controlParams.back());
+										controlParams.pop_back();
 									}
 
-									shakeControl.charOffset *= 360;
-									});
+									// R
+									// R G
+									// R G B
+									// A R G B
+									for (auto i = 0; i < 3; i++) {
+										result = result << 8;
 
-								break;
-							}
+										if (!controlParams.empty()) {
+											result |= _stoi(controlParams.back());
 
-						if (StringViewIEqu(controlStr, L"Color")
-							|| StringViewIEqu(controlStr, L"C")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								StackManager(colorStack, colorFormat, [&](Color& color) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										color = colorStack.front();
-
-										return;
+											controlParams.pop_back();
+										}
 									}
 
-									const auto result = DiffManager(GetDWORD(colorStack.back()), [&](std::wstring_view& controlParam) {
-										// hex
-										if ((controlParam[0] == L'#') 
-											|| (controlParam[0] == L'0' 
-												&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
-											return _h2d(controlParam.data(), controlParam.size());
-										}
-										// dec
-										else {
-											auto& paramParser = controlParam;
-											controlParams.clear();
+									result |= alpha << 24;
 
-											do {
+									return result;
+								});
 
-											} while (ParseParamCore(paramParser
-												, [&controlParams](std::wstring_view& param) {
-													controlParams.emplace_back(GetTrimmedStr(param));
-												}));
+								color = GetColor(result, true);
+								});
 
-											DWORD result = 0;
-
-											const auto size = controlParams.size();
-											auto alpha = 0xFF;
-
-											if (size == 4) {
-												alpha = _stoi(controlParams.back());
-												controlParams.pop_back();
-											}
-											
-											// R
-											// R G
-											// R G B
-											// A R G B
-											for (auto i = 0; i < 3; i++) {
-												result = result << 8;
-												
-												if (!controlParams.empty()) {
-													result |= _stoi(controlParams.back());
-
-													controlParams.pop_back();
-												}
-											}	
-
-											result |= alpha << 24;
-
-											return result;
-										}										
-										});
-
-									color = GetColor(result, true);
-									});
-
-								break;
-							}
+							break;
+						}
 
 #pragma region FontControl
+						// ------------
+						// font
+						// ------------
+
 						using FontFormatControlCallback = std::function<void(LOGFONT& logFont)>;
 
 						auto FontFormatControl = [&](const FontFormatControlCallback& callBack) {
@@ -2074,157 +2498,156 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Font")
 							|| StringViewIEqu(controlStr, L"F")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
-
-										return;
-									}
-
-									memset(newLogFont.lfFaceName, 0
-										, LF_FACESIZE * sizeof(WCHAR));
-									memcpy(newLogFont.lfFaceName, controlParam.data()
-										, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									constexpr auto nameSz = LF_FACESIZE * sizeof(WCHAR);
+									memcpy(newLogFont.lfFaceName, this->logFontStack.front().lfFaceName, nameSz);
+
+									return;
+								}
+
+								memset(newLogFont.lfFaceName, 0
+									, LF_FACESIZE * sizeof(WCHAR));
+								memcpy(newLogFont.lfFaceName, controlParam.data()
+									, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Size")
 							|| StringViewIEqu(controlStr, L"S")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {									
-									// Reset
-									if (StringViewIEqu(controlParam, L"!")) {
-										newLogFont.lfHeight = this->logFontStack.front().lfHeight;
-
-										return;
-									}
-
-									newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&](const std::wstring_view& controlParam) {
-										const auto size = _stoi(controlParam);
-										const auto newSize = -1 * MulDiv(size
-											, GetDeviceCaps(this->hdc, LOGPIXELSY)
-											, 72);
-
-										return newSize;
-										});
-										});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									newLogFont.lfHeight = this->logFontStack.front().lfHeight;
+
+									return;
+								}
+
+								newLogFont.lfHeight = DiffManager(newLogFont.lfHeight, [&] (const std::wstring_view& controlParam) {
+									const auto size = _stoi(controlParam);									
+									const auto newSize = GetFontSize(size);
+
+									return newSize;
+									});
+									});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Bold")
 							|| StringViewIEqu(controlStr, L"B")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfWeight = FW_BOLD;
-									});								
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfWeight = FW_BOLD;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!Bold")
 							|| StringViewIEqu(controlStr, L"!B")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfWeight = FW_NORMAL;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfWeight = FW_NORMAL;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Italic")
 							|| StringViewIEqu(controlStr, L"I")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfItalic = TRUE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfItalic = TRUE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!Italic")
 							|| StringViewIEqu(controlStr, L"!I")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfItalic = FALSE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfItalic = FALSE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"Underline")
 							|| StringViewIEqu(controlStr, L"U")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfUnderline = TRUE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfUnderline = TRUE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!Underline")
 							|| StringViewIEqu(controlStr, L"!U")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfUnderline = FALSE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfUnderline = FALSE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"StrikeOut")
 							|| StringViewIEqu(controlStr, L"S")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfStrikeOut = TRUE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfStrikeOut = TRUE;
+								});
+
+							break;
+						}
 
 						if (StringViewIEqu(controlStr, L"!StrikeOut")
 							|| StringViewIEqu(controlStr, L"!S")) {
-								if (bIgnoreFormat) {
-									break;
-								}
-
-								FontFormatControl([&](LOGFONT& newLogFont) {
-									newLogFont.lfStrikeOut = FALSE;
-									});
-
+							if (bIgnoreFormat) {
 								break;
 							}
+
+							FontFormatControl([&] (LOGFONT& newLogFont) {
+								newLogFont.lfStrikeOut = FALSE;
+								});
+
+							break;
+						}
 #pragma endregion
 #pragma endregion
 
@@ -2250,31 +2673,95 @@ public:
 			
 			pCurChar++;
 			pSavedChar++;
-	  
+
 			GetRawStringByFilteredStringLength();
 		}
 
-		if (!TextValid(pText, &pTextLen)) {
+		const bool bAllowEmptyChar = flags & FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing;
+
+		if (!TextValid(pText, &pTextLen, bAllowEmptyChar)) {
 			this->bTextValid = false;
-
-			return;
 		}
-
-		return;
 	}
 
+private:
+	template<typename Format>
+		requires std::is_base_of_v<FormatBasic, Format>
+	struct IteratorHandler {
+	private:
+		using IT = decltype(static_cast<std::vector<Format>*>(nullptr)->begin());
+
+	public:
+		std::vector<Format>* pVector = nullptr;
+		IT it;
+
+		IteratorHandler(std::vector<Format>& vector) {
+			pVector = &vector;
+			it = vector.begin();
+		}
+
+		inline IT GetInit() {
+			return pVector->begin();
+		}
+
+		inline bool End() {
+			return it == pVector->end();
+		}
+
+		inline void Reset() {
+			it = pVector->begin();
+		}
+
+		inline void Forward(size_t position, const std::function<void(IT it)>& callback) {
+			if (it != pVector->end() && position >= it->start) {
+				callback(it);
+
+				++it;
+			}
+		}
+
+		inline void ForwardWithNewLine(size_t position, const std::function<void(IT it)>& callback) {
+			if (it != pVector->end() && position >= it->startWithNewLine) {
+				callback(it);
+
+				++it;
+			}
+		}
+
+		inline void UpdateIt(size_t start) {
+			while (it != pVector->end() && it->start <= start) {
+				++it;
+			}
+
+			--it;
+		}
+	};
+
+public:
 	inline CharPos CalculateRange(LPRECT pRc) {
+		const bool bRectNotChanged = pRc->bottom == previousRC.bottom
+			&& pRc->top == previousRC.top
+			&& pRc->left == previousRC.left
+			&& pRc->right == previousRC.right;
+
+		// skip calculate
+		if (!this->bFormatUpdated && bRectNotChanged) {
+			return previousCharPos;
+		}
+
+		previousRC = *pRc;
+
 		this->strPos.clear();
 
 		if (!this->bTextValid) {
 			return { this->defaultCharSz.width / 2,this->defaultCharSz.height / 2 };
 		}
 
-		delete[] this->pStrSizeArr;
-		this->pStrSizeArr = nullptr;
+		delete[] this->pCharSizeArr;
+		this->pCharSizeArr = nullptr;
 
-		pStrSizeArr = new StrSize [pTextLen + 1];
-		memset(pStrSizeArr, 0, sizeof(StrSize) * (pTextLen + 1));
+		pCharSizeArr = new CharSize [pTextLen + 1];
+		memset(pCharSizeArr, 0, sizeof(CharSize) * (pTextLen + 1));
 
 		this->rcWidth = pRc->right - pRc->left;
 		this->rcHeight = pRc->bottom - pRc->top;
@@ -2296,8 +2783,8 @@ public:
 		size_t notAtStartCharPos = -1;
 		bool bPunctuationSkip = false;
 
-		auto fontIt = this->fontFormat.begin();
-		auto localLogFont = fontIt->logFont;
+		auto fontItHandler = IteratorHandler(this->fontFormat);
+		auto localLogFont = fontItHandler.GetInit()->logFont;
 
 		for (size_t pChar = 0; pChar < pTextLen; ) {
 			bool bNewLineBegin = true;
@@ -2344,12 +2831,9 @@ public:
 				auto curChar = pCurChar[0];
 				auto nextChar = pCurChar[1];
 
-				if (fontIt != this->fontFormat.end()
-					&& pChar >= fontIt->startWithNewLine) {
+				fontItHandler.ForwardWithNewLine(pChar, [&] (auto fontIt) {
 					localLogFont = fontIt->logFont;
-
-					++fontIt;
-				}
+				});
 
 				// word break
 				auto bCurNotCJK = pRegexCache->NotCJK(curChar);
@@ -2397,8 +2881,8 @@ public:
 					}
 				};
 				
-				pStrSizeArr[pChar] = getCharSize();
-				auto charSz = &pStrSizeArr[pChar];
+				pCharSizeArr[pChar] = getCharSize();
+				auto charSz = &pCharSizeArr[pChar];
 
 				curWidth += charSz->width;
 				curHeight = max(curHeight, charSz->height);
@@ -2465,7 +2949,7 @@ public:
 					auto pPreviousChar = pText + pChar - 1;
 					auto PreviousChar = pPreviousChar[0];
 
-					auto previousCharSz = &pStrSizeArr[pChar - 1];
+					auto previousCharSz = &pCharSizeArr[pChar - 1];
 
 					auto CanRewindWidth = [&] () {
 						return curWidth - (previousCharSz->width + nColSpace + charSz->width) > 0;
@@ -2597,21 +3081,27 @@ public:
 		}
 
 		const auto& lastStrPos = strPos.back();
-		const auto lastCharSize = &pStrSizeArr [lastStrPos.start + lastStrPos.length - 1];
+		const auto lastCharSize = &pCharSizeArr [lastStrPos.start + lastStrPos.length - 1];
 
 		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
-		auto lastCharPos = CharPos {
+		// last char pos
+		previousCharPos = CharPos {
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 			+ lastStrPos.width + (lastCharSize->width / 2)
 			,startY + lastStrPos.y + (lastCharSize->height / 2)
 			,maxWidth
 			,totalHeight - nRowSpace };
 
-		return lastCharPos;
+		return previousCharPos;
 	}
 
 	struct RenderOptions {
+		// ------------
+		// visable ratio
+		// ------------
+
+		// let character be displayed gradually
 		// displayed char / total char
 		// 1.0 -> display all
 		double visibleRatio = 1.0;
@@ -2646,9 +3136,41 @@ public:
 
 			return static_cast<UCHAR>(alpha);
 		}
+
+		// ------------
+		// render callbacks
+		// ------------
+	private:
+		using PositionCallback = std::function<bool(const CharSize* pCharSize,
+			CharPos* pCharPos,
+			float& x, float& y)>;
+		using GraphicCallback = std::function<Graphics* ()>;
+
+	public:
+		// used to override position
+		PositionCallback positionCallback = nullptr;
+		// used to override graphic object
+		GraphicCallback graphicCallback = nullptr;
+
+		inline void UpdateRenderCallback(const PositionCallback& positionCallback,
+			const GraphicCallback& graphicCallback) {
+			this->positionCallback = positionCallback;
+			this->graphicCallback = graphicCallback;
+		}
 	};
 
+//#define USE_RTT
+//#define REUSE_HWA
+
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
+#ifdef COUNT_GDI_OBJECT
+		GDIObjectCounter objectCounter;
+
+		objectCounter.UpdateObjectCount();
+#endif
+		// ------------
+		// check validity & alloc
+		// ------------
 		if (!this->bTextValid) {
 			return;
 		}
@@ -2664,46 +3186,95 @@ public:
 
 		opt.GetRenderCharCount(pTextLen);
 
-		char scale = 1;
-		auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
-		auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
+		// ------------
+		// render override
+		//		used for remark rendering, render to parent directly
+		//		so child object doesn't need to alloc and render to surface
+		// ------------
+		bool bRenderOverride = false;
+		Graphics* pGraphic = nullptr;
 
-		if (this->pMemSf == nullptr
-			|| this->pMemSf->GetWidth() != width
-			|| this->pMemSf->GetHeight() != height) {
-			delete this->pMemSf;
-			this->pMemSf = nullptr;
+		if (opt.graphicCallback != nullptr) {
+			auto pGraphicOverride = opt.graphicCallback();
 
-			pMemSf = CreateSurface(32, width, height);
-
-			delete this->pBitmap;
-			this->pBitmap = nullptr;
-
-			this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+			if (pGraphicOverride != nullptr) {
+				pGraphic = pGraphicOverride;
+				bRenderOverride = true;
+			}
 		}
 
-		pMemSf->Fill(BLACK);
-		pMemSf->CreateAlpha();
+		// ------------
+		// update offscreen surface
+		// ------------
+		if (!bRenderOverride) {
+			char scale = 1;
+			auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
+			auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
 
-#ifdef _DEBUG
-		auto type = pMemSf->GetType();
+			if (this->pMemSf == nullptr
+				|| this->pMemSf->GetWidth() < width
+				|| this->pMemSf->GetHeight() < height) {
+				delete this->pMemSf;
+				this->pMemSf = nullptr;
+
+				pMemSf = CreateSurface(32, width, height);
+				pMemSf->CreateAlpha();
+
+				delete this->pBitmap;
+				this->pBitmap = nullptr;
+
+				// Use PixelFormat32bppPARGB or manually premul alpha of font color
+				// call fusion premul is still needed, as alpha channel is used for
+				// anti-aliasing, it's not involved to font color or pixel format.
+				this->pBitmap = new Bitmap(width, height, PixelFormat32bppARGB);
+
+#ifdef REUSE_HWA
+				delete pHwaSf;
+				pHwaSf = nullptr;
+
+				pHwaSf = CreateHWASurface(32, width, height, ST_HWA_ROMTEXTURE, this->hwaDriver);
 #endif
 
-		Graphics g(pBitmap);
-		
-		g.Clear(Color(0, 0, 0, 0));
+#ifdef USE_RTT
+				delete pHwaSf;
+				pHwaSf = nullptr;
 
-		g.SetTextRenderingHint(this->textRenderingHint);
-		g.SetSmoothingMode(this->smoothingMode);
-		g.SetPixelOffsetMode(this->pixelOffsetMode);
+				pHwaSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE, this->hwaDriver);
+				pHwaSf->CreateAlpha();
+#endif
+			}
+
+			// don't need to reset surface, as it wll be overwritten later
+			//pMemSf->Fill(BLACK);
+			//_ForceAddAlpha(pMemSf, 0);
+
+#ifdef _DEBUG
+			auto type = pMemSf->GetType();
+#endif
+		}
+
+		// ------------
+		// begin rendering
+		// ------------
+		if (!bRenderOverride) {
+			pGraphic = new Graphics(pBitmap);
+
+			pGraphic->Clear(Color(0, 0, 0, 0));
+
+			pGraphic->SetTextRenderingHint(this->textRenderingHint);
+			pGraphic->SetSmoothingMode(this->smoothingMode);
+			pGraphic->SetPixelOffsetMode(this->pixelOffsetMode);
+		}			
 
 		//Color fontColor(255, 50, 150, 250);
-		Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
+		// Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
+		Color fontColor(this->dwTextColor);
 		SolidBrush solidBrush(fontColor);
 
 		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
 
-		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const StrSize* charSz)->bool {
+		// clip: don't render character that out of screen
+		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const CharSize* charSz)->bool {
 			if (this->bClip == false) {
 				return false;
 			}
@@ -2721,26 +3292,54 @@ public:
 
 		size_t totalChar = 0;
 
-		auto colorIt = this->colorFormat.begin();
-		auto iConIt = this->iConFormat.begin();
-		auto fontIt = this->fontFormat.begin();
+		// non-stack based
+		auto remarkItHandler = IteratorHandler(this->remarkFormat);
+		auto iConItHandler = IteratorHandler(this->iConFormat);
 
-		auto shakeIt = this->shakeFormat.begin();
+		// stack based
+		struct AlignHandler {
+			DWORD* pOldAlign = nullptr;
+			DWORD oldAlign = 0;
+
+			AlignHandler(DWORD* pOldAlign, DWORD newAlign) {
+				if (*pOldAlign == newAlign) { return; }
+
+				this->pOldAlign = pOldAlign;
+				this->oldAlign = *pOldAlign;
+
+				*this->pOldAlign = newAlign;
+			}
+
+			~AlignHandler() {
+				if (this->pOldAlign == nullptr) { return; }
+
+				*this->pOldAlign = this->oldAlign;
+			}
+		};
+
+		auto formatAlign = this->dwDTFlags;
+		auto alignItHandler = IteratorHandler(this->alignFormat);
+		auto colorItHandler = IteratorHandler(this->colorFormat);
+		auto fontItHandler = IteratorHandler(this->fontFormat);
+
+		auto shakeItHandler = IteratorHandler(this->shakeFormat);
 		auto localShakeFormat = this->bShake
-			? *shakeIt
+			? *shakeItHandler.GetInit()
 			: FormatShake();
-		
-		if (this->bShake) {
-			shakeTimer++;
-		}
 
+		// update timer if shake or child shake
+		if (this->GetShakeUpdateState()) { shakeTimer++; }
+
+		// ------------
+		// render & calculate position of each char
+		// ------------
 		try {
 			for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
 				std::wstring str(pText + curStrPos.start, curStrPos.length);
 #endif // _DEBUG
 
-				StrSize* charSz = nullptr;
+				CharSize* charSz = nullptr;
 
 #define NoGDIPlusOffset
 
@@ -2752,12 +3351,24 @@ public:
 					const auto firstChar = (pText + curStrPos.start)[0];
 					const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
 
-					return static_cast<int>(pStrSizeArr[curStrPos.start].width / coef);
+					return static_cast<int>(pCharSizeArr[curStrPos.start].width / coef);
 #endif
 					};
 
+				// ReSharper disable once CppVariableCanBeMadeConstexpr
 				const auto GDIPlusOffset = GetGDIPlusOffset();
 
+				// ---------
+				// update iterator
+				// ---------
+
+				// stack based
+				alignItHandler.Forward(totalChar, [&] (auto alignIt) {
+					formatAlign = alignIt->dwDTFlags;
+				});
+
+				// RAII
+				auto alignHandler = AlignHandler(&this->dwDTFlags, formatAlign);
 				int x = GetStartPosX(curStrPos.width, rcWidth);
 				x -= GDIPlusOffset;
 
@@ -2768,52 +3379,55 @@ public:
 					}
 
 					auto pCurChar = pText + offset;
-					charSz = &pStrSizeArr[offset];
+					charSz = &pCharSizeArr[offset];
 
-					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset
-												,this->startY + curStrPos.y
-												,0,0 };
+					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset,
+													this->startY + curStrPos.y,
+													0,0,
+													ShakeControl() };
 
 #pragma region FORMAT_IT				
-					auto positionX = (float)(x + this->borderOffsetY);
+					auto positionX = (float)(x + this->borderOffsetX);
 					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
 
-					if (colorIt != this->colorFormat.end()
-						&& totalChar >= colorIt->start) {
+					// update position
+					if (opt.positionCallback != nullptr) {
+						if (!opt.positionCallback(charSz, &pCharPosArr[offset], positionX, positionY)) {
+							throw std::exception("Exceed remark base length");
+						}
+					}
+
+					// ---------
+					// update iterator
+					// ---------
+
+					// stack based
+					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
 						solidBrush.SetColor(colorIt->color);
-
-						++colorIt;
-					}
-
-					if (fontIt != this->fontFormat.end()
-						&& totalChar >= fontIt->start) {
+					});
+					fontItHandler.Forward(totalChar, [&] (auto fontIt) {
 						this->pFont = GetFontPointerWithCache(fontIt->logFont);
-
-						++fontIt;
-					}
-
-					if (shakeIt != this->shakeFormat.end()
-						&& totalChar >= shakeIt->start) {
+					});
+					shakeItHandler.Forward(totalChar, [&] (auto shakeIt) {
 						localShakeFormat = *shakeIt;
-
-						++shakeIt;
-					}
+					});
 
 					if (this->bShake) {
-						double shakeOffset = (totalChar - localShakeFormat.start) * localShakeFormat.shakeControl.charOffset
-							+ this->shakeTimer * localShakeFormat.shakeControl.timerCoef;
-
+						double shakeOffset = GetShakeOffset(localShakeFormat, totalChar);
 						GetShakePosition(localShakeFormat.shakeControl, shakeOffset, positionX, positionY, charSz);
 					}
 
-					// use updated position
-					if (iConIt != this->iConFormat.end()
-						&& totalChar >= iConIt->start) {
+					// non-stack based
+					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
+						remarkIt->pCharSizeArr = &pCharSizeArr[offset];
+						remarkIt->pCharPosArr = &pCharPosArr[offset];
+						remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
+					});
+					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
+						// use updated position
 						iConIt->x = (size_t)positionX;
 						iConIt->y = (size_t)positionY;
-
-						++iConIt;
-					}
+					});
 #pragma endregion
 
 					if (!clip(x, this->startY + curStrPos.y, charSz)) {
@@ -2856,20 +3470,208 @@ public:
 							opt.GetRenderCharAlpha(offset));
 
 						//Gdiplus::FontStyle style = (Gdiplus::FontStyle)this->pFont->GetStyle();
-						auto status = g.DrawString(pCurChar, 1, pFont,
+						auto status = pGraphic->DrawString(pCurChar, 1, pFont,
 							PointF(positionX, positionY),
 #ifdef NoGDIPlusOffset
 							StringFormat::GenericTypographic(),
 #endif
-							& solidBrush);
+							&solidBrush);
+
+						if (bDrawRectangle) {
+							auto blackPen = Pen(&solidBrush, 1);
+							status = pGraphic->DrawRectangle(&blackPen,
+								positionX, positionY,
+								(float)charSz->width, (float)charSz->height);
+						}
 						//assert(status == Status::Ok);
 					}
 
 					x += (charSz->width + nColSpace);
 				}
 			}
-		} catch([[maybe_unused]] std::exception& e) {
+		} catch([[maybe_unused]] std::exception& e) {  // NOLINT(bugprone-empty-catch)
+			// use exception to jump out of the loop if exceeds the
+			// render char count, so nothing to handle here
+		}
+
+		// ------------
+		// handle remark
+		// ------------
+		fontItHandler.Reset();
+		colorItHandler.Reset();
+
+		auto remarkDisplayItHandler = IteratorHandler(this->remarkDisplayFormat);
+
+		for (auto& it : this->remarkFormat) {
+			if (it.validLength == 0) { continue; }
+
+			// update font & color
+			fontItHandler.UpdateIt(it.start);
+			colorItHandler.UpdateIt(it.start);
+			remarkDisplayItHandler.UpdateIt(it.start);
+
+			const auto& remarkDisplay = !remarkDisplayItHandler.End()
+				? remarkDisplayItHandler.it->remarkDisplay
+				: this->remarkDisplay;
+
+			// create new object
+			auto remarkLogFont = fontItHandler.it->logFont;
+			remarkLogFont.lfHeight /= 2;
+
+			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
+
+			if (it.pNeoStr == nullptr
+				|| LogFontHasher(it.pNeoStr->logFont) != LogFontHasher(remarkLogFont)) {
+				delete it.pNeoStr;
+				it.pNeoStr = new NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
+			}
+
+			auto pRemarkNeoStr = it.pNeoStr;
+			pRemarkNeoStr->CopyProperties(this);
+			pRemarkNeoStr->SetColor(GetDWORD(colorItHandler.it->color), true);
+			pRemarkNeoStr->SetClip(false, 65535, 65535);
+			pRemarkNeoStr->SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
+			//remarkNeoStr->SetDrawRectangle(true);
+
+			pRemarkNeoStr->GetFormat(it.remark.c_str(),
+				this->previousFlag | FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing,
+				// if parent is forced, then child is forced (original, operation is not handled)
+				this->bPreviousForced);
+
+			// render in infinite rect
+			RECT rc = {0,0,65535,65535};
+			auto cPos = pRemarkNeoStr->CalculateRange(&rc);
+
+			// calculate render coords
+			const auto renderRatio = static_cast<double>(it.validLength) / it.baseLength;
+			//const auto remarkCharCount = it.remark.length();
+			const auto remarkCharCount = wcslen(pRemarkNeoStr->GetText());
+			const auto renderCharCount = static_cast<size_t>(std::ceil(renderRatio * remarkCharCount));
+
+			struct Position {
+				float x = 0;
+				float y = 0;
+			};
+
+			std::vector<Position> mainPositions(it.validLength);
+			std::vector<Position> remarkPositions(renderCharCount);
+
+			// get valid old positions
+			for (size_t idx = 0; idx < mainPositions.size(); idx++) {
+				auto pCharPos = &it.pCharPosArr[idx];
+				auto pPos = &mainPositions[idx];
+
+				pPos->x = static_cast<float>(pCharPos->x);
+				pPos->y = static_cast<float>(pCharPos->y - this->startY);
+			}
+					
+			// Todo handle line change, it's ignored in current version
+			// in different lines -> not equal
+			if (std::abs(mainPositions.rbegin()->y - mainPositions.begin()->y) > 1e-6) {
+				continue;
+			}
+
+			// correct base char size
+			// which is the mean value of all usable characters
+			auto CorrectCharSize = [&] (const CharSize* pCharSizeSrc, size_t sz) {
+				CharSize charSizeCorrect = { 0,0 };
+
+				for (size_t idx = 0; idx < sz; idx++) {
+					auto pCharSize = &pCharSizeSrc[idx];
+
+					if (pCharSize == nullptr) {
+						pCharSize = &pRemarkNeoStr->defaultCharSz;
+					}
+
+					charSizeCorrect.width += pCharSize->width;
+					charSizeCorrect.height += pCharSize->height;
+				}
+
+				charSizeCorrect.width = static_cast<long>(static_cast<float>(charSizeCorrect.width) / static_cast<float>(sz));
+				charSizeCorrect.height = static_cast<long>(static_cast<float>(charSizeCorrect.height) / static_cast<float>(sz));
+
+				return charSizeCorrect;
+			};
+
+			// esitmate char size
+			auto estimateBaseCharSize = mainPositions.empty()
+				? GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+				: CorrectCharSize(it.pCharSizeArr, mainPositions.size());
+			auto estimateRemarkCharSize = remarkPositions.empty()
+				? GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
+				: CorrectCharSize(pRemarkNeoStr->pCharSizeArr, remarkPositions.size());
+
+			// calculate position
+			const auto baseWidth = estimateBaseCharSize.width * it.baseLength;
+			const auto remarkWidth = (std::max)(baseWidth,
+				estimateRemarkCharSize.width * remarkCharCount);
+			const auto remarkCenterPos = mainPositions.begin()->x + baseWidth / 2.0;
+
+			const auto remarkSize = static_cast<size_t>(std::ceil(static_cast<double>(remarkWidth) / remarkCharCount));
+
+			// odd & even affects 0.5
+			const auto remarkCenterIdx = static_cast<double>(remarkCharCount / 2) - 0.5 * (remarkCharCount % 2 == 0);  // NOLINT(bugprone-integer-division)
+
+			for (size_t idx = 0; idx < remarkPositions.size(); idx++) {
+				const auto distance = remarkCenterIdx - static_cast<long>(idx);
+				auto& curPos = remarkPositions[idx];
+
+				curPos.x = static_cast<float>(remarkCenterPos - static_cast<double>(distance) * remarkSize - estimateRemarkCharSize.width / 2.0);
+				curPos.y = mainPositions.begin()->y;
+			}
 			
+			auto remarkPosIt = remarkPositions.begin();
+
+			// copy one option here
+			RenderOptions remarkOpt = opt;
+			remarkOpt.UpdateRenderCallback(
+				[&](const CharSize* pCharSize,
+				CharPos* pCharPos,
+				float& x, float& y) {
+					if (remarkPosIt == remarkPositions.end()) { return false; }
+					// get char pos offsets
+					const auto remarkX = x - static_cast<float>(pRemarkNeoStr->borderOffsetX);
+					const auto remarkY = y - static_cast<float>(pRemarkNeoStr->borderOffsetY);
+
+					const auto remarkGDIPlusOffset = static_cast<float>(pCharPos->x) - remarkX;
+					const auto remarkstartY = pRemarkNeoStr->startY;
+
+					// render position
+					x = remarkPosIt->x;
+					y = remarkPosIt->y;
+
+					// make enough space
+					y -= static_cast<float>(pCharSize->height);
+
+					// remark offset
+					x += remarkDisplay.remarkOffsetX * static_cast<float>(estimateBaseCharSize.width);
+					y += remarkDisplay.remarkOffsetY * static_cast<float>(estimateBaseCharSize.height);
+
+					// update char pos
+					pCharPos->x = static_cast<long>(x + remarkGDIPlusOffset);
+					pCharPos->y = static_cast<long>(y) + remarkstartY;
+
+
+					// add offset
+					x += static_cast<float>(this->borderOffsetX);
+					y += static_cast<float>(this->borderOffsetY);
+
+					++remarkPosIt;
+
+					return true;
+				},			
+				[&] () {
+					return pGraphic;
+				});
+
+			// shake timer need to be updated
+			pRemarkNeoStr->SetShakeTimer(this->shakeTimer);
+			pRemarkNeoStr->RenderPerChar(&rc, remarkOpt);
+
+			// update shake state here, as child's child may shake
+			this->bChildShake |= pRemarkNeoStr->GetShakeUpdateState();
+
+			DeleteObject(remarkHFont);
 		}
 
 #ifdef _BLUR
@@ -2888,142 +3690,196 @@ public:
 #ifdef _DEBUG
 		//CLSID pngClsid;
 		//GetEncoderClsid(L"image/png", &pngClsid);
-		//pBitmap->Save(L"F:\\NeoStr.png", &pngClsid, NULL);
+		//const auto fileName = std::wstring(this->pRawText).substr(0, 4);
+		//const auto path = std::format(L"D:\\{}.png", fileName);
+		//pBitmap->Save(path.c_str(), &pngClsid, NULL);
 #endif // _DEBUG
 
+		if (!bRenderOverride) {
+			delete pGraphic; pGraphic = nullptr;
+		}
+		else { return; }
+
+		// ------------
+		// copy to surface
+		// ------------
+		const auto copyWidth = static_cast<int>(pBitmap->GetWidth());
+		const auto copyHeight = static_cast<int>(pBitmap->GetHeight());
+
 		BitmapData bitmapData;
-		auto bitmapRect = Rect(0, 0, width, height);
-		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		auto bitmapRect = Rect(0, 0, copyWidth, copyHeight);
+		auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
+		//auto lockBitsRet = pBitmap->LockBits(&bitmapRect, ImageLockMode::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+		if (lockBitsRet != Gdiplus::Status::Ok) { return; }
+
 		auto pRawBitmap = (unsigned int*)bitmapData.Scan0;   // for easy access and indexing
 
 		auto sfCoef = GetSfCoef(pMemSf);
+		if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
+			return;
+		}
 
 		auto lineSz = sfCoef.pitch;
 
-		for (int y = 0; y < height; y++) {
+		for (int y = 0; y < copyHeight; y++) {
+			const auto line = (copyHeight - 1 - y);
+			const auto pBmpOffset = line * bitmapData.Stride / 4;
+
 			auto pData = sfCoef.pData + y * sfCoef.pitch;
-			auto pBmp = pRawBitmap + (height - 1 - y) * bitmapData.Stride / 4;
+			auto pBmp = pRawBitmap + pBmpOffset;
 
 			memcpy(pData, pBmp, lineSz);
 
-			for (int x = 0; x < width; x++) {
-				auto pAlphaData = sfCoef.pAlphaData + (height - 1 - y) * sfCoef.alphaPitch + x * sfCoef.alphaByte;
-				auto curAlpha = pRawBitmap + (height - 1 - y) * bitmapData.Stride / 4 + x;
+			const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
+			const auto pBitmapAlphaOffset = pRawBitmap + pBmpOffset;
+
+			for (int x = 0; x < copyWidth; x++) {
+				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
+				auto curAlpha = pBitmapAlphaOffset + x;
 				pAlphaData [0] = (*curAlpha & 0xff000000) >> 24;
 			}
 		}
 
 		ReleaseSfCoef(pMemSf, sfCoef);
-
 		pBitmap->UnlockBits(&bitmapData);
 
-		auto flags = this->iConDisplay.iConResample
-			? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
-			: 0;
-
-		flags |= STRF_COPYALPHA;
-
-		fontIt = this->fontFormat.begin();
-		auto iConDisplayIt = this->iConDisplayFormat.begin();
-
-		auto UpdateIt = [](auto& it,auto itEnd, size_t start) {
-			while (it != itEnd && it->start <= start) {
-				++it;
-			}
-
-			--it;
-		};
-
-		for (auto& it : this->iConFormat) {			
-			UpdateIt(fontIt, this->fontFormat.end(), it.start);
-			UpdateIt(iConDisplayIt, this->iConDisplayFormat.end(), it.start);
-
-			bool bEnd = fontIt == this->fontFormat.end();
-
-			const auto& charSize = !bEnd
-				? this->GetCharSizeWithCache(DEFAULT_CHARACTER, fontIt->logFont)
-				: this->defaultCharSz;
-			const auto& tm = !bEnd
-				? GetCharSizeCacheIt(fontIt->logFont)->second.tm
-				: this->tm;
-
-			const auto& iConDisplay = iConDisplayIt != this->iConDisplayFormat.end()
-				? iConDisplayIt->iConDisplay
-				: this->iConDisplay;
-
-			StrSize iConSize = charSize;
-
-			iConSize.width = int(iConSize.width * iConDisplay.iConScale);
-			iConSize.height = int(iConSize.height * iConDisplay.iConScale);
-
-			auto iConXOffset = int(iConDisplay.iConOffsetX * charSize.width
-				+ (static_cast<double>(charSize.width) - iConSize.width) / 2
-				+ charSize.width / 6.0);
-			auto iConYOffset = int(iConDisplay.iConOffsetY * charSize.width
-				+ (static_cast<double>(charSize.height) - iConSize.height) / 2
-				+ (charSize.height - charSize.width)
-				- tm.tmDescent /*- tm.tmExternalLeading*/);
-
-			LPSURFACE pSf = nullptr;			
-			auto bFound = it.hImage != FORMAT_INVALID_ICON;
-
-			if (bFound) {
-				auto IConLibIt = this->pIConData->pIConLib->find(it.hImage);
-				pSf = IConLibIt->second;
-			}
-			else {
-				this->pIConData->GetDefaultICon();
-				pSf = this->pIConData->pDefaultICon;
-			}
-
-			LPSURFACE pStrecthSf = nullptr;
-
-			auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
-			auto resizeCacheIt = this->pIConData->resizeCache.find(key);
-
-			if (resizeCacheIt == this->pIConData->resizeCache.end()) {
-				pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
-				pStrecthSf->CreateAlpha();
-
-				auto ret = pSf->Stretch(*pStrecthSf, flags);
-
-				this->pIConData->resizeCache[key] = pStrecthSf;
-			}
-			else {
-				pStrecthSf = resizeCacheIt->second;
-			}
-			
-			auto flags2 = this->iConDisplay.iConResample
-				? BLTF_ANTIA
+		// ------------
+		// handle icon
+		// ------------
+		auto RenderICon = [] (this auto&& self, NeoStr* pFormat, NeoStr* pRender)->void {
+			auto stretchFlags = pFormat->iConDisplay.iConResample
+				? STRF_RESAMPLE | STRF_RESAMPLE_TRANSP
 				: 0;
 
-			pStrecthSf->Blit(*pMemSf
-				, it.x + iConXOffset, it.y + iConYOffset
-				, BMODE_TRANSP, BOP_COPY, 0, flags2);
+			stretchFlags |= STRF_COPYALPHA;
 
-			MixAlpha(pStrecthSf, pMemSf, it.x + iConXOffset, it.y + iConYOffset);
+			auto fontItHandler = IteratorHandler(pFormat->fontFormat);
+			auto iConDisplayItHandler = IteratorHandler(pFormat->iConDisplayFormat);
 
-			//auto ret = pSf->Stretch(*pMemSf
-			//	, it.x + iConXOffset, it.y + iConYOffset
-			//	, iConSize.width, iConSize.width
-			//	, BMODE_OPAQUE, BOP_COPY, 0, flags);
+			for (auto& it : pFormat->iConFormat) {
+				fontItHandler.UpdateIt(it.start);
+				iConDisplayItHandler.UpdateIt(it.start);
+
+				const bool bEnd = fontItHandler.End();
+
+				const auto& charSize = !bEnd
+					? pFormat->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+					: pFormat->defaultCharSz;
+				const auto& tm = !bEnd
+					? pFormat->GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
+					: pFormat->tm;
+
+				const auto& iConDisplay = !iConDisplayItHandler.End()
+					? iConDisplayItHandler.it->iConDisplay
+					: pFormat->iConDisplay;
+
+				CharSize iConSize = charSize;
+
+				iConSize.width = int(iConSize.width * iConDisplay.iConScale);
+				iConSize.height = int(iConSize.height * iConDisplay.iConScale);
+
+				const auto iConXOffset = int(iConDisplay.iConOffsetX * charSize.width
+					+ (static_cast<double>(charSize.width) - iConSize.width) / 2
+					+ charSize.width / 6.0);
+				const auto iConYOffset = int(iConDisplay.iConOffsetY * charSize.width
+					+ (static_cast<double>(charSize.height) - iConSize.height) / 2
+					+ (charSize.height - charSize.width)
+					- tm.tmDescent /*- tm.tmExternalLeading*/);
+
+				LPSURFACE pSf = nullptr;
+				auto bFound = it.hImage != FORMAT_INVALID_ICON;
+
+				if (bFound) {
+					const auto IConLibIt = pFormat->pIConData->pIConLib->find(it.hImage);
+					pSf = IConLibIt->second;
+				}
+				else {
+					pFormat->pIConData->GetDefaultICon();
+					pSf = pFormat->pIConData->pDefaultICon;
+				}
+
+				LPSURFACE pStrecthSf = nullptr;
+
+				auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();
+				auto resizeCacheIt = pFormat->pIConData->resizeCache.find(key);
+
+				if (resizeCacheIt == pFormat->pIConData->resizeCache.end()) {
+					pStrecthSf = CreateSurface(32, iConSize.width, iConSize.width);
+					pStrecthSf->CreateAlpha();
+
+					auto ret = pSf->Stretch(*pStrecthSf, stretchFlags);
+
+					pFormat->pIConData->resizeCache[key] = pStrecthSf;
+				}
+				else {
+					pStrecthSf = resizeCacheIt->second;
+				}
+
+				const auto blitFlags = pFormat->iConDisplay.iConResample
+										   ? BLTF_ANTIA
+										   : 0;
+
+				pStrecthSf->Blit(*pRender->pMemSf
+					, it.x + iConXOffset, it.y + iConYOffset
+					, BMODE_TRANSP, BOP_COPY, 0, blitFlags);
+
+				MixAlpha(pStrecthSf, pRender->pMemSf,
+					it.x + iConXOffset, it.y + iConYOffset);
+
+				//auto ret = pSf->Stretch(*pMemSf
+				//	, it.x + iConXOffset, it.y + iConYOffset
+				//	, iConSize.width, iConSize.width
+				//	, BMODE_OPAQUE, BOP_COPY, 0, flags);
 
 #ifdef _DEBUG
 			//_SavetoClipBoard(pSf, false);
-			//_SavetoClipBoard(pMemSf, false);
+			//_SavetoClipBoard(pRender->pMemSf, false);
 #endif // _DEBUG		
-		}
+			}
 
-		delete pHwaSf;
-		pHwaSf = nullptr;
+			for (auto& it : pFormat->remarkFormat) {
+				self(it.pNeoStr, pRender);
+			}
+		};
 
-		pHwaSf = CreateHWASurface(32, width, height, this->hwaType, this->hwaDriver);
+		RenderICon(this, this);
 
+		// ------------
+		// handle display: premul, HWA
+		// ------------
 		if (this->preMulAlpha) {
 			pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
 		}
 
+#ifndef USE_RTT
+#ifndef REUSE_HWA
+		// reuse HWA: barely has no difference
+		// seems the major cost is in blit function
+		delete pHwaSf;
+		pHwaSf = nullptr;
+
+		pHwaSf = CreateHWASurface(32, pMemSf->GetWidth(), pMemSf->GetHeight(), ST_HWA_ROMTEXTURE, this->hwaDriver);
+		//pHwaSf->CreateAlpha();
+#endif
+		// use render target here is even slower
+		// this method costs about 70% time of render target way
 		pMemSf->Blit(*pHwaSf);
+#else
+		pHwaSf->BeginRendering(TRUE, 0);
+		//const auto pRTT = pMemSf->GetRenderTargetSurface();
+		pMemSf->Blit(*pHwaSf, 0, 0, BMODE_TRANSP);
+		//pMemSf->ReleaseRenderTargetSurface(pRTT);
+		pHwaSf->EndRendering();
+#endif
+#ifdef COUNT_GDI_OBJECT
+		const auto count = objectCounter.objectCount;
+
+		objectCounter.UpdateObjectCount();
+		if (count < objectCounter.objectCount) {
+			const auto info = std::format(L"Add when Render to surface\n");
+			OutputDebugStringW(info.c_str());
+		}
+#endif
 	}
 
 	inline CharPos GetCharPos(const size_t pos) const {
@@ -3043,7 +3899,7 @@ public:
 			return invalid;
 		}
 
-		return pCharPosArr [pos];
+		return pCharPosArr[pos];
 	}
 
 	inline void DisplayPerChar(const LPSURFACE pDst, const LPRECT pRc
@@ -3072,5 +3928,5 @@ public:
 };
 
 // compatible with MMF
-#define Font FontW
-#define fpFont fpFontW
+#pragma pop_macro("Font")
+#pragma pop_macro("fpFont")

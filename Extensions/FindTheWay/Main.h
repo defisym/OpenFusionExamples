@@ -44,8 +44,9 @@
 
 #define	CND_CONDITION_SMBA				26
 #define	CND_CONDITION_SMBSF				27
+#define	CND_CONDITION_OITM				28
 
-#define	CND_LAST						28
+#define	CND_LAST						29
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -70,8 +71,9 @@
 #define	ACT_ACTION_CAOEBN				17
 #define	ACT_ACTION_CG					18
 #define	ACT_ACTION_SGS					19
+#define	ACT_ACTION_ITM					20
 
-#define	ACT_LAST						20
+#define	ACT_LAST						21
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -163,6 +165,7 @@ typedef struct tagRDATA
 
 	std::wstring* pOnItCollisionName;
 	std::wstring* pOnItPathName;
+	std::wstring* pOnItMapName;
 	std::wstring* pMapBase64Str;
 	std::wstring* pMapStr;
 
@@ -185,7 +188,7 @@ typedef struct tagRDATA
 	std::wstring* pOnItZocName;
 
 	AOEClass* pAOE;
-	std::vector<AOEClass::coord>* pAOECoord;
+	std::vector<Coord>* pAOECoord;
 
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;

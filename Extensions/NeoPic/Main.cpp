@@ -368,11 +368,11 @@ short WINAPI DLLExport Action_SetKeepList(LPRDATA rdPtr, long param1, long param
 
 	if (rdPtr->isLib) {
 		if(keepListSrc.empty()) {
-			rdPtr->pData->ClearKeepList();
+			rdPtr->pData->pGC->ClearKeepList();
 		}
 		else {
 			const KeepList keepList = SplitString(keepListSrc, Delimiter);
-			rdPtr->pData->AppendKeepList(keepList, basePath);
+			rdPtr->pData->pGC->AppendKeepList(keepList, basePath);
 		}
 	}
 
@@ -388,16 +388,16 @@ short WINAPI DLLExport Action_SetKeepListByPointer(LPRDATA rdPtr, long param1, l
 		// only works in runtime due to /MD & /MDd
 		auto pKeepList = ConvertToType<pPreLoadList>(list);
 		if (pKeepList == nullptr) {
-			rdPtr->pData->ClearKeepList();
+			rdPtr->pData->pGC->ClearKeepList();
 		}
 		else {
-			rdPtr->pData->AppendKeepList(*pKeepList, basePath);
+			rdPtr->pData->pGC->AppendKeepList(*pKeepList, basePath);
 		}
 #else				
 		//load base path instead for test		
 		List keepList;
 		GetFileList(&keepList, basePath);
-		rdPtr->pData->AppendKeepList(keepList, basePath);
+		rdPtr->pData->pGC->AppendKeepList(keepList, basePath);
 #endif // !_DEBUG	
 	}
 
@@ -725,6 +725,9 @@ short WINAPI DLLExport Action_PerspectiveTrans(LPRDATA rdPtr, long param1, long 
 
 		LPSURFACE pSf = nullptr;
 		ProcessBitmap(rdPtr->src, [&] (const LPSURFACE pBitmap) {
+			const auto pResultSf = PerspectiveTransformation(pBitmap, matrix);			
+			if(pResultSf == nullptr){ return; }
+
 			pSf = PerspectiveTransformation(pBitmap, matrix);
 
 			const auto newHotSpot = PerspectiveTransformationPoint(rdPtr->hotSpot.x, rdPtr->hotSpot.y, matrix);
@@ -856,9 +859,7 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 
 	const auto pSf = GetSurfacePointer(rdPtr, pFilePath, pKey);
 
-	if (pSf == nullptr) {
-		return 0;
-	}
+	if (pSf == nullptr) { return 0; }
 
 	__SavetoFile(rdPtr, pSf, pSaveFilePath);
 
@@ -883,25 +884,35 @@ short WINAPI DLLExport Action_SaveToFileWithStretch(LPRDATA rdPtr, long param1, 
 	const int width = (int)CNC_GetIntParameter(rdPtr);
 	const int height = (int)CNC_GetIntParameter(rdPtr);
 
-	const auto pSave = CreateSurface(32, width, height);
 	const auto pSf = GetSurfacePointer(rdPtr, pFilePath, pKey);	
 
-	if (pSf == nullptr) {
-		return 0;
-	}
+	if (pSf == nullptr) { return 0; }
 
 	ProcessBitmap(pSf,[&](const LPSURFACE pBitmap) {
+#ifdef _DEBUG
+		//__SavetoClipBoard(pBitmap);
+#endif // _DEBUG
+
+		// don't need to stretch
+		if (pBitmap->GetWidth() == width && pBitmap->GetHeight() == height) {
+			__SavetoFile(rdPtr, pBitmap, pSaveFilePath);
+
+			return;
+		}
+
+		// do stretch
+		const auto pSave = CreateSurface(32, width, height);
+
 		Stretch(pBitmap, pSave, true);
 
 #ifdef _DEBUG
-		//__SavetoClipBoard(pBitmap);
 		//__SavetoClipBoard(pSave);
 #endif // _DEBUG
+
+		__SavetoFile(rdPtr, pSave, pSaveFilePath);
+
+		delete pSave;
 	});
-
-	__SavetoFile(rdPtr, pSave, pSaveFilePath);
-
-	delete pSave;
 
 	return 0;
 }
@@ -1233,7 +1244,7 @@ long WINAPI DLLExport Expression_GetIterateRefCountValuePriority(LPRDATA rdPtr, 
 }
 
 long WINAPI DLLExport Expression_GetRAMUsageMB(LPRDATA rdPtr, long param1) {
-	return long(GetProcessMemoryUsageMB());
+	return long(GetProcessMemoryUsageMB(rdPtr->pData->processHandle.hProcess));
 }
 
 long WINAPI DLLExport Expression_GetGPUName(LPRDATA rdPtr, long param1) {
@@ -1254,9 +1265,9 @@ long WINAPI DLLExport Expression_GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
 
 	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
 #else
-	rdPtr->pData->GetEstimateMemUsage();
+	const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = rdPtr->pData->GetEstimateMemUsage(rdPtr->pData->pLib);
 
-	return static_cast<long>(rdPtr->pData->estimateVRAMSizeMB);
+	return static_cast<long>(estimateVRAMSizeMB);
 #endif	
 }
 

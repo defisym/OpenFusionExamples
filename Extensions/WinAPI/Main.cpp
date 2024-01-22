@@ -1304,7 +1304,7 @@ short WINAPI DLLExport LoadFileList(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring FilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->FileList->clear();
-	GetFileList(rdPtr, FilePath);
+	GetFileList(rdPtr->FileList, FilePath);
 
 	return 0;
 }
@@ -1360,6 +1360,9 @@ short WINAPI DLLExport GetVideoFrame(LPRDATA rdPtr, long param1, long param2) {
 		auto pMemSf = CreateSurface(24, width, height);
 
 		auto sfCoef = GetSfCoef(pMemSf);
+		if (sfCoef.pData == nullptr) {		
+			return;
+		}
 
 		auto lineSz = sfCoef.pitch;
 		auto alphaSz = sfCoef.sz / sfCoef.byte;

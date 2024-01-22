@@ -268,7 +268,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	rdPtr->pNS->Render();
 
 	if (rdPtr->isLib) {
-		rdPtr->pData->CleanCache(false);
+		rdPtr->pData->AutoClean();
 		rdPtr->pData->MergeLib(rdPtr);
 	}
 

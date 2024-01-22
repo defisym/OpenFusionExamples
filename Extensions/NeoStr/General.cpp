@@ -202,6 +202,9 @@ HGLOBAL WINAPI DLLExport UpdateEditStructure(mv __far *mV, void __far * OldEdPtr
 	//edPtr->tabSize = 4;
 	//edPtr->bTabEM = false;
 
+	//edPtr->remarkOffsetX = 0;
+	//edPtr->remarkOffsetY = 0;
+
 	// We do nothing here
 	return 0;
 }

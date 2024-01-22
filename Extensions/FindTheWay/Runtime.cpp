@@ -108,6 +108,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pOnItCollisionName = new std::wstring;
 	rdPtr->pOnItPathName = new std::wstring;
+	rdPtr->pOnItMapName = new std::wstring;
 	rdPtr->pMapBase64Str = new std::wstring;
 	rdPtr->pMapStr = new std::wstring;
 
@@ -127,7 +128,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pObjZoc->reserve(8);
 
 	rdPtr->pAOE = new AOEClass;
-	rdPtr->pAOECoord = new std::vector<AOEClass::coord>;
+	rdPtr->pAOECoord = new std::vector<Coord>;
 
 	// No errors
 	return 0;
@@ -149,6 +150,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete rdPtr->pOnItCollisionName;
 	delete rdPtr->pOnItPathName;
+	delete rdPtr->pOnItMapName;
 	delete rdPtr->pMapBase64Str;
 	delete rdPtr->pMapStr;
 

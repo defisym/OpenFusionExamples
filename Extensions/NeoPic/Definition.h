@@ -48,11 +48,6 @@ struct LoadCallbackInfo {
 	}
 };
 
-using List = std::vector<std::wstring>;
-using KeepList = List;
-using pPreLoadList = List*;
-using PreLoadList = List;
-
 struct Count {
 	size_t totalRef = 0;		// total ref times, count objects have used this
 	size_t priority = 0;		// lib size when first object ref this
@@ -84,7 +79,51 @@ struct ShaderRef {
 	}
 };
 
-// for flipping
+struct SurfaceMemUsage {
+	uint64_t estimateRAMSizeMB = 0;
+	uint64_t estimateVRAMSizeMB = 0;
+
+	SurfaceMemUsage() = default;
+	SurfaceMemUsage(uint64_t estimateRAMSizeMB, uint64_t estimateVRAMSizeMB) {
+		this->estimateRAMSizeMB = estimateRAMSizeMB;
+		this->estimateVRAMSizeMB = estimateVRAMSizeMB;
+	}
+	SurfaceMemUsage(LPSURFACE pSf);
+
+	inline void AddRAMUsage(uint64_t sizeMB) {
+		estimateRAMSizeMB += sizeMB;
+	}
+
+	inline void AddVRAMUsage(uint64_t sizeMB) {
+		estimateVRAMSizeMB += sizeMB;
+	}
+
+	inline SurfaceMemUsage operator+(const SurfaceMemUsage& usage) const {
+		return { this->estimateRAMSizeMB + usage.estimateRAMSizeMB,
+			this->estimateVRAMSizeMB + usage.estimateVRAMSizeMB };
+	}
+
+	inline SurfaceMemUsage& operator+=(const SurfaceMemUsage& usage) {
+		this->estimateRAMSizeMB += usage.estimateRAMSizeMB;
+		this->estimateVRAMSizeMB += usage.estimateVRAMSizeMB;
+
+		return *this;
+	}
+
+	inline SurfaceMemUsage operator-(const SurfaceMemUsage& usage) const {
+		return { this->estimateRAMSizeMB - usage.estimateRAMSizeMB,
+			this->estimateVRAMSizeMB - usage.estimateVRAMSizeMB };
+	}
+
+	inline SurfaceMemUsage& operator-=(const SurfaceMemUsage& usage) {
+		this->estimateRAMSizeMB -= usage.estimateRAMSizeMB;
+		this->estimateVRAMSizeMB -= usage.estimateVRAMSizeMB;
+
+		return *this;
+	}
+};
+
+// extra surfaces for flipping
 constexpr auto SurfaceLibSfNum = 4;
 
 struct SurfaceLibValue;
@@ -171,6 +210,8 @@ struct SurfaceLibValue {
 	inline bool NotUsed() {
 		return refCount.curRef == 0 && !UpdateShaderUsage();
 	}
+
+	inline SurfaceMemUsage GetEstimateMemUsage() const;
 };
 
 using SurfaceLib = std::map<std::wstring, SurfaceLibValue>;
@@ -182,8 +223,61 @@ using RefCountIt = RefCount::iterator;
 using RefCountPair = std::pair<std::wstring, Count>;
 using RefCountVec = std::vector<RefCountPair>;
 
-using FileList = std::vector<std::wstring>;
+using List = std::vector<std::wstring>;
+using KeepList = List;
+using pPreLoadList = List*;
+using PreLoadList = List;
+
+using FileList = List;
 using FileListMap = std::map<std::wstring, FileList*>;
+
+struct GlobalData;
+
+struct GarbageCollection {
+	GlobalData* pData = nullptr;
+	SurfaceLib* pLib = nullptr;
+
+	// TODO use priority queue
+	KeepList* pKeepList = nullptr;
+	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
+
+	explicit GarbageCollection(GlobalData* pData);
+
+	~GarbageCollection() {
+		delete pKeepList;
+		delete pCleanVec;
+	}
+
+	inline void ClearKeepList() const { pKeepList->clear(); }
+	inline void AppendKeepList(const FileList& keepList, const std::wstring& basePath) const;
+
+	inline void UpdateCleanVec() const {
+		const auto mapSz = pLib->size();
+
+		pCleanVec->clear();
+		pCleanVec->reserve(mapSz);
+
+		for (auto& [name, libValue] : *pLib) {
+			if (libValue.NotUsed() // only release assets that currently is not used
+				&& std::ranges::find(*pKeepList, name) == pKeepList->end()) {
+				pCleanVec->emplace_back(name, libValue.refCount);
+			}
+		}
+
+		const auto countWeight = mapSz;		// weight of ref count
+		std::ranges::sort(*pCleanVec, [&] (const RefCountPair& l, const RefCountPair& r) {
+			return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
+			});
+	}
+	inline bool AbleToClean() const { return !pCleanVec->empty(); }
+	[[nodiscard]] inline auto GetCleanItem() const {
+		const auto item = pCleanVec->back();
+		pCleanVec->pop_back();
+
+		return item;
+	}
+	static inline void CleanComplete() {}
+};
 
 template<typename T>
 constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
@@ -193,12 +287,15 @@ constexpr auto Delimiter = L'|';
 
 struct GlobalData {
 	SurfaceLib* pLib = nullptr;
+	SurfaceMemUsage estimateMemUsage;
+	ProcessHandle processHandle;
+
 	FileListMap* pFileListMap = nullptr;
 
 	bool bDX11 = false;
 	bool bPreMulAlpha = false;
 
-	const decltype(std::chrono::steady_clock::now()) startTime = std::chrono::steady_clock::now();
+	inline static const decltype(std::chrono::steady_clock::now()) startTime = std::chrono::steady_clock::now();
 
 	//------------
 	// Cache
@@ -208,11 +305,7 @@ struct GlobalData {
 	size_t memoryLimit = 0;
 	size_t sizeLimit = 0;
 
-	KeepList* pKeepList = nullptr;
-	RefCountVec* pCleanVec = nullptr;					// update when trigger clear
-
-	uint64_t estimateRAMSizeMB = 0;
-	uint64_t estimateVRAMSizeMB = 0;
+	GarbageCollection* pGC = nullptr;
 
 #ifdef _USE_DXGI
 	D3DUtilities* pD3DU = nullptr;
@@ -256,8 +349,9 @@ struct GlobalData {
 
 		//init specific
 		pLib = new SurfaceLib;
-		pKeepList = new KeepList;
-		pCleanVec = new RefCountVec;
+
+		pGC = new GarbageCollection(this);
+
 		pFileListMap = new FileListMap;
 		pPreloadHandler = new PreloadHandler;
 	}
@@ -276,8 +370,7 @@ struct GlobalData {
 
 		DeleteLib();
 
-		delete pKeepList;
-		delete pCleanVec;
+		delete pGC;
 
 		for (const auto& pFileList : *pFileListMap | std::views::values) {
 			delete pFileList;
@@ -287,7 +380,7 @@ struct GlobalData {
 		delete pPreloadHandler;
 	}
 	
-	inline void UpdateLib(const std::wstring& fileName, const std::wstring& hash, const LPSURFACE pSf) const {
+	inline void UpdateLib(const std::wstring& fileName, const std::wstring& hash, const LPSURFACE pSf) {
 		const auto it = pLib->find(fileName);
 		if (it != pLib->end()) {
 			// refered by shader, move
@@ -320,10 +413,17 @@ struct GlobalData {
 
 			(*pLib)[fileName] = newValue;
 		}
+
+		estimateMemUsage += SurfaceMemUsage(pSf);
 	}
 
-	inline void DeleteLib() const {
+	inline void UpdateLib(const std::wstring& fileName, const SurfaceLibValue& libValue) {
+		UpdateLib(fileName, libValue.Hash, libValue.pSf);
+	}
+
+	inline void DeleteLib() {
 		for (auto& libValue : *pLib | std::views::values) {
+			estimateMemUsage -= libValue.GetEstimateMemUsage();
 			libValue.Release();
 		}
 
@@ -348,26 +448,40 @@ struct GlobalData {
 		return false;
 	}
 
-	inline void EraseLib(const LPCWSTR Item) const {
+	inline void EraseLib(const LPCWSTR Item) {
 		const auto fullPath = GetFullPathNameStr(Item);
 		const auto it = pLib->find(fullPath);
 
 		if (it != pLib->end() && it->second.NotUsed()) {
+			estimateMemUsage -= it->second.GetEstimateMemUsage();
 			it->second.Release();
 
 			pLib->erase(it);
 		}
 	}
 
-	inline void ResetLib() const {
-		std::erase_if(*pLib, [] (std::pair<const std::wstring, SurfaceLibValue>& item) {
-			auto& [fileName, libValue] = item;
-			if (libValue.NotUsed()) {
-				libValue.Release();
-				return true;
-			}
+	// this function won't check if it's safe to release
+	inline void EraseLibWithoutCheck(const std::wstring& fullPath) {
+		const auto it = pLib->find(fullPath);
 
-			return false;
+		if (it != pLib->end()) {
+			estimateMemUsage -= it->second.GetEstimateMemUsage();
+			it->second.Release();
+
+			pLib->erase(it);
+		}
+	}
+
+	inline void ResetLib() {
+		std::erase_if(*pLib, [&] (std::pair<const std::wstring, SurfaceLibValue>& item) {
+			auto& [fileName, libValue] = item;
+
+			if (!libValue.NotUsed()) { return false; }
+
+			estimateMemUsage -= libValue.GetEstimateMemUsage();
+			libValue.Release();
+
+			return true;
 		});
 	}
 
@@ -375,31 +489,40 @@ struct GlobalData {
 	// Cache
 	//------------
 
-	inline void GetEstimateMemUsage();
+	inline static SurfaceMemUsage GetEstimateMemUsage(SurfaceLib* pLib);	
 
-	inline SIZE_T GetMemoryUsageMB() {
-#ifdef _USE_DXGI
-		pD3DU->UpdateVideoMemoryInfo();
+	inline static SIZE_T GetMemoryUsageMB(SurfaceMemUsage usage, HANDLE hProcess) {
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = usage;
 
-		return max(GetProcessMemoryUsageMB(), (SIZE_T)pD3DU->GetLocalCurrentUsageMB());
-#else
-		GetEstimateMemUsage();
-
-		return max(GetProcessMemoryUsageMB()
-			, (SIZE_T)max(estimateRAMSizeMB, estimateVRAMSizeMB));
-#endif
+		return (std::max)(GetProcessMemoryUsageMB(hProcess)
+			, static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB)));
 	}
 
-	inline bool ExceedMemLimit(size_t memLimit) {
-		//OutputDebugStringW(std::format(L"memLimit: {}, Usage: {}, Exceed: {}\r\n", memLimit, GetMemoryUsageMB(), (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT)) <= GetMemoryUsageMB()).c_str());
+	inline static SIZE_T GetMemoryUsageMB(SurfaceMemUsage usage, DWORD processID) {
+		const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = usage;
 
-#ifdef _USE_DXGI
-		auto totalVRAM = pD3DU->GetLocalBudgetMB();
+		return (std::max)(GetProcessMemoryUsageMB(processID)
+			, static_cast<SIZE_T>((std::max)(estimateRAMSizeMB, estimateVRAMSizeMB)));
+	}
 
-		return (std::min)(totalVRAM, (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT))) <= GetMemoryUsageMB();
-#else
-		return (std::min)(memLimit + CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT)) <= GetMemoryUsageMB();
-#endif		
+	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, HANDLE hProcess) {
+		return GetMemoryUsageMB(GetEstimateMemUsage(pLib), hProcess);
+	}
+
+	inline static SIZE_T GetMemoryUsageMB(SurfaceLib* pLib, DWORD processID) {
+		return GetMemoryUsageMB(GetEstimateMemUsage(pLib), processID);
+	}
+
+	inline SIZE_T GetMemoryUsageMB() const {
+		return GetMemoryUsageMB(estimateMemUsage, processHandle.hProcess);		
+	}
+
+	inline static auto GetMemLimit(size_t memLimit) {
+		return (std::min)(memLimit - CLEAR_MEMRANGE, static_cast<size_t>(MAX_MEMORYLIMIT));
+	}
+
+	inline bool ExceedMemLimit(size_t memLimit) const {	
+		return GetMemLimit(memLimit) <= GetMemoryUsageMB();
 	}
 
 	inline FileList* GetFileList(const std::wstring& basePath) const {
@@ -457,74 +580,47 @@ struct GlobalData {
 		}
 	}
 
-	inline void ClearKeepList() const {
-		pKeepList->clear();
-	}
-	inline void AppendKeepList(const FileList& keepList, const std::wstring& basePath) const {
-		const auto pAppendKeepList = new FileList;
-		GetFullPathByFileName(*pAppendKeepList, keepList, basePath);
-
-		for (auto& it : *pAppendKeepList) {
-			if (std::ranges::find(*pKeepList, it) == pKeepList->end()) {
-				pKeepList->emplace_back(it);
-			}
-		}
-
-		delete pAppendKeepList;
-	}
-
 	inline void SetClean(const bool autoClean, const size_t memoryLimit, const size_t sizeLimit) {
 		this->autoClean = autoClean;
 		this->memoryLimit = memoryLimit;
 		this->sizeLimit = sizeLimit;
 	}
+		
+	inline void AutoClean() {
+		if (!autoClean) { return; }
 
-	inline void UpdateCleanVec() const {
-		const auto mapSz = pLib->size();
-
-		pCleanVec->clear();
-		pCleanVec->reserve(mapSz);
-
-		for (auto& it : *pLib) {
-			if (it.second.NotUsed() // only release assets that currently is not used
-				&& std::ranges::find(*pKeepList, it.first) == pKeepList->end()) {
-				pCleanVec->emplace_back(RefCountPair(it.first, it.second.refCount));
-			}
-		}
-
-		const auto countWeight = mapSz;		// weight of ref count
-		std::ranges::sort(*pCleanVec, [&] (const RefCountPair& l, const RefCountPair& r) {
-			return l.second.GetWeight(countWeight) > r.second.GetWeight(countWeight);	// decending
-			});
+		CleanCache();
 	}
 
-	inline void CleanCache(bool forceClean = false, size_t memLimit = -1) {
+	// clean cache lower than given limit
+	inline void CleanCache(bool forceClean = false, size_t memLimit = -1)  {
 		if (pPreloadHandler->IsPreloading()) {
 			return;
 		}
 
+		// must clean up if reaching limit
+		const auto memoryUsage = GetMemoryUsageMB();
+
 		forceClean |= SystemMemoryNotEnough();
+		forceClean |= GetMemLimit(memoryLimit) <= memoryUsage;
 
-		if (forceClean
-			|| (autoClean
-			&& pLib->size() > CLEAR_NUMTHRESHOLD
-			&& ExceedMemLimit(memoryLimit))) {
-			const auto tarMemLimit = forceClean && (memLimit != static_cast<size_t>(-1))
-				? memLimit
-				: memoryLimit / 2;
+		if (!forceClean) { return; }
 
-			UpdateCleanVec();
+		const bool bDefaultLimit = memLimit == static_cast<size_t>(-1);
 
-			while (!pCleanVec->empty()
-				&& tarMemLimit <= GetMemoryUsageMB()) {
-				auto& fileName = pCleanVec->back().first;
+		const auto tarMemLimit = forceClean && !bDefaultLimit
+			? memLimit
+			: memoryLimit / 2;
 
-				(*pLib)[fileName].Release();
-				pLib->erase(fileName);
+		pGC->UpdateCleanVec();
 
-				pCleanVec->pop_back();
-			}
+		while (pGC->AbleToClean()
+			&& tarMemLimit <= GetMemoryUsageMB()) {
+			// check is done when generating clean list
+			EraseLibWithoutCheck(pGC->GetCleanItem().first);
 		}
+
+		pGC->CleanComplete();
 	}
 
 	//------------
@@ -536,7 +632,11 @@ struct GlobalData {
 		SurfaceLib* pPreloadLib = nullptr;
 
 		LPRDATA rdPtr = nullptr;
-		std::atomic<HANDLE> threadID = nullptr;
+		std::atomic<HANDLE> threadHandle = nullptr;
+		std::atomic<HANDLE> parentThreadHandle = nullptr;
+
+		std::atomic<DWORD> threadID = 0;
+		std::atomic<DWORD> parentThreadID = 0;
 
 		std::atomic<bool> bForceExit = false;
 		std::atomic<bool> bPreloading = false;
@@ -566,9 +666,13 @@ struct GlobalData {
 			this->rdPtr = rdPtr;
 		}
 
-		inline void StartPreload(LPRDATA rdPtr, HANDLE handle) {
+		inline void StartPreload(LPRDATA rdPtr, HANDLE handle, HANDLE parentThreadID) {
 			this->rdPtr = rdPtr;
-			this->threadID = handle;
+			this->threadHandle = handle;
+			this->parentThreadHandle = parentThreadID;
+
+			this->threadID = GetProcessId(this->threadHandle);
+			this->parentThreadID = GetProcessId(this->parentThreadHandle);
 
 			this->bForceExit = false;
 			this->bPreloading = true;
@@ -581,7 +685,11 @@ struct GlobalData {
 
 		inline void FinishPreload() {
 			this->rdPtr = nullptr;
-			this->threadID = nullptr;
+			this->threadHandle = nullptr;
+			this->parentThreadHandle = nullptr;
+
+			this->threadID = 0;
+			this->parentThreadID = 0;
 
 			this->bForceExit = false;
 			this->bPreloading = false;
@@ -619,7 +727,7 @@ struct GlobalData {
 				ResumePreload(nullptr);
 
 				DWORD ret;
-				while (GetExitCodeThread(this->threadID, &ret)) {
+				while (GetExitCodeThread(this->threadHandle, &ret)) {
 					if (ret == 0) {
 						break;
 					}
@@ -647,7 +755,7 @@ struct GlobalData {
 	inline void MergeLib(LPRDATA rdPtr) const;
 
 	inline void PreloadLib(PreloadHandler* pPreloadHandler, const std::wstring& Key,
-		const std::function<void()>& callback);
+		const std::function<void()>& callback) const;
 
 	inline void StartPreloadProcess(LPRDATA rdPtr, FileList* pList,
 		bool fullPath, const std::wstring& BasePath,
@@ -690,15 +798,17 @@ struct GlobalData {
 			pPreloadHandler, Key,
 			[&] () {
 				pPreloadHandler->FinishPreload();
+				// in case if subprocess end due to memory limit
+				CleanCache();
 		});
 
+		// TODO close handle?
 		HANDLE handle;
 		DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &handle, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
 
-		pPreloadHandler->StartPreload(rdPtr, handle);
+		pPreloadHandler->StartPreload(rdPtr, handle, GetCurrentProcess());
 
 		pl.detach();
 	}
-
 };
 

@@ -143,6 +143,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->tabSize = edPtr->tabSize;
 	rdPtr->bTabEM = edPtr->bTabEM;
 
+	rdPtr->remarkOffsetX = edPtr->remarkOffsetX;
+	rdPtr->remarkOffsetY = edPtr->remarkOffsetY;
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
@@ -173,7 +176,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	FreeConsole();
 #endif
 	
-	if (rdPtr->hFont != 0) {
+	if (rdPtr->hFont != nullptr) {
 		DeleteObject(rdPtr->hFont);
 	}
 	
@@ -183,11 +186,13 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete static_cast<NeoStr::IConParamParser*>(rdPtr->pIConParamParser);
 	delete rdPtr->pIConItName;
 
-	if (rdPtr->pData->pIConData->pCaller == (LPRO)rdPtr) {
+	if (rdPtr->pData->pIConData->pCaller == reinterpret_cast<LPRO>(rdPtr)) {
 		rdPtr->pData->pIConData->ResetCaller();
 	}
 
 	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	delete rdPtr->pFormatByVector;
 
 	delete rdPtr->pExpRet;
 
@@ -235,6 +240,10 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 	// Will not be called next loop	
 	//return REFLAG_ONESHOT;
+
+#ifdef COUNT_GDI_OBJECT
+	rdPtr->pData->objectCounter.UpdateObjectCount();
+#endif
 
 	// update caller state
 	rdPtr->pData->pIConData->CheckCallerValidity();
@@ -467,9 +476,8 @@ void WINAPI DLLExport EndFrame(mv _far *mV, DWORD dwReserved, int nFrameIndex)
 // Note: do not forget to enable the functions in the .def file 
 // if you remove the comments below.
 
-void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf)
-{
-	GetObject(rdPtr->hFont, sizeof(LOGFONT), pLf);
+void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf) {
+	memcpy(pLf, &rdPtr->logFont, sizeof(LOGFONT));
 }
 
 // -------------------
@@ -477,27 +485,26 @@ void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf)
 // -------------------
 // Change the font used by the object.
 // 
-void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc)
-{
-	HFONT hFont = CreateFontIndirect(pLf);
+void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc) {
+	const HFONT hFont = CreateFontIndirect(pLf);
 
 #ifdef _DEBUG
-	LOGFONT Lf = { 0 };
+	LOGFONT Lf = { };
 	GetObject(hFont, sizeof(LOGFONT), &Lf);
 #endif // _DEBUG
 
-
-	if ( hFont != NULL ) {
-		if (rdPtr->hFont != 0) {
+	if ( hFont != nullptr) {
+		if (rdPtr->hFont != nullptr) {
 			DeleteObject(rdPtr->hFont);
 		}
 
 		rdPtr->logFont = *pLf;
 		rdPtr->hFont = hFont;
 		rdPtr->bFontChanged = true;
-		
-		SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
-		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+
+		//Seems doesn't need it here
+		//SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
+		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
 }
 
@@ -522,7 +529,7 @@ void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 		rdPtr->dwColor = rgb;
 		rdPtr->reRender = true;
 		InvalidateRect(rdPtr->hWnd, NULL, TRUE);
-		callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
+		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
 }
 
@@ -609,21 +616,26 @@ LPWORD WINAPI DLLExport GetDebugTree(LPRDATA rdPtr)
 void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 {
 #if !defined(RUN_ONLY)
-	auto getString = [] (LPCWSTR pStr) {
+	auto getString = [] (const NeoStr* pNeoStr,const std::function<const wchar_t*()>& cb) {
+		if (pNeoStr == nullptr) { return L"Object Not Initialized"; }
+
+		const auto pStr = cb();
 		return pStr ? pStr : L"No String";
-	};
+		};
 
 	switch (id) {
 	case DB_DisplayString:
 	{
-		const auto result = std::format(L"Display String: {}", getString(rdPtr->pNeoStr->GetRawText()));
+		const auto result = std::format(L"Display String: {}",
+			getString(rdPtr->pNeoStr, [&] () {return rdPtr->pNeoStr->GetRawText(); }));
 		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
 
 		break;
 	}
 	case DB_FilteredString:
 	{
-		const auto result = std::format(L"Filtered String: {}", getString(rdPtr->pNeoStr->GetText()));
+		const auto result = std::format(L"Filtered String: {}",
+			getString(rdPtr->pNeoStr, [&] () {return rdPtr->pNeoStr->GetText(); }));
 		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
 
 		break;

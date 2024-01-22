@@ -30,7 +30,7 @@ inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 	DWORD	ProcessID = 0;
 
 	//获取快照
-	HANDLE	snapshot;
+	HANDLE snapshot;
 	snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
 	//循环遍历
@@ -49,6 +49,8 @@ inline DWORD GetProcessIDByName(LPCTSTR ApplicationName) {
 
 	delete info;
 	return ProcessID;
+
+	CloseHandle(snapshot);
 }
 
 // FileVersion
@@ -248,6 +250,19 @@ inline LPWSTR GetFileVersion(LPCWSTR FileName, LPCWSTR SubBlock) {
 	return info;
 }
 
+struct ProcessHandle {
+	HANDLE hProcess = nullptr;
+
+	ProcessHandle(DWORD processID = _getpid()) {
+		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+										PROCESS_VM_READ,
+										FALSE, processID);
+	}
+	~ProcessHandle() {
+		CloseHandle(hProcess);
+	}
+};
+
 // Process mem usage
 enum class MemoryUsageType {
 	PeakWorkingSetSize,
@@ -283,15 +298,9 @@ inline SIZE_T GetMemoryUsage(const PROCESS_MEMORY_COUNTERS& pmc, MemoryUsageType
 	}
 }
 
-inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
-	HANDLE hProcess;
+inline SIZE_T GetProcessMemoryUsage(HANDLE hProcess, MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
 	PROCESS_MEMORY_COUNTERS pmc;
-
 	SIZE_T ret = 0;
-
-	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-		PROCESS_VM_READ,
-		FALSE, processID);
 
 	if (hProcess == nullptr) {
 		return ret;
@@ -301,9 +310,18 @@ inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType
 		ret = GetMemoryUsage(pmc, type);
 	}
 
-	CloseHandle(hProcess);
+	return ret;
+}
+
+inline SIZE_T GetProcessMemoryUsage(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
+	const ProcessHandle processHandle(processID);
+	const SIZE_T ret = GetProcessMemoryUsage(processHandle.hProcess);
 
 	return ret;
+}
+
+inline SIZE_T GetProcessMemoryUsageMB(HANDLE hProcess, MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
+	return (GetProcessMemoryUsage(hProcess, type) >> 20);
 }
 
 inline SIZE_T GetProcessMemoryUsageMB(DWORD processID = _getpid(), MemoryUsageType type = MemoryUsageType::WorkingSetSize) {
@@ -386,8 +404,6 @@ constexpr auto MIN_MEMORYLEFT = 256;
 
 // true if physics & memory both not enough
 inline bool SystemMemoryNotEnough() {
-	// return GetSystemMemoryInfoMB() < MIN_MEMORYLEFT;
-
 	return (GetSystemMemoryInfoMB(MemoryInfoType::FreePhysicalMemory) < MIN_MEMORYLEFT)
 		&& (GetSystemMemoryInfoMB(MemoryInfoType::FreeVirtualMemory) < MIN_MEMORYLEFT);
 }

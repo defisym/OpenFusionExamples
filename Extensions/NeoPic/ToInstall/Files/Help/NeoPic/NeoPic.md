@@ -58,6 +58,7 @@ Special thanks to @PiKeyAr (From Github) and @Senda (From Discord), who help a l
     - *preload all files in given path in background, `On Preload Complete` is triggered when background loading completed*
     - *if the lib object triggered loading is destroyed, then the loading will be paused, until another valid lib object is created*
     - *images loaded in background is bitmap due to fusion's limitation*
+    - *preload will only use half of the memory limit to reserve enough memory for other objects, as they may also allocate memory before preload finishes and auto clean triggers, which may causes random crash*
 
   - Set Preload List
     - *preload given files in base path, delimited by `|`*

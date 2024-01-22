@@ -68,6 +68,12 @@ short actionsInfos[]=
 
 		IDMN_ACTION_STS, M_ACTION_STS, ACT_ACTION_STS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_TABSIZE, M_TABEM,
 
+		IDMN_ACTION_SROFFSET, M_ACTION_SROFFSET, ACT_ACTION_SROFFSET, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_REMARKXOFFSET, M_REMARKYOFFSET,
+
+		IDMN_ACTION_FNF, M_ACTION_FNF, ACT_ACTION_FNF,	0, 1, PARAM_EXPSTRING, M_FMT,
+		IDMN_ACTION_APS, M_ACTION_APS, ACT_ACTION_APS,	0, 1, PARAM_EXPSTRING, M_PARAM,
+		IDMN_ACTION_APV, M_ACTION_APV, ACT_ACTION_APV,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PARAM, M_FMT,
+
 		};
 
 // Definitions of parameters for each expression
@@ -119,11 +125,15 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GRSBFSL, M_EXPRESSION_GRSBFSL, EXP_EXPRESSION_GRSBFSL, EXPFLAG_STRING, 3, EXPPARAM_STRING, EXPPARAM_LONG, EXPPARAM_LONG, M_STRING, M_POS, M_FILTERFLAGS,
 
-
 		IDMN_EXPRESSION_GRO_VR, M_EXPRESSION_GRO_VR, EXP_EXPRESSION_GRO_VR, EXPFLAG_DOUBLE, 0,
 
 		IDMN_EXPRESSION_GTS_TS, M_EXPRESSION_GTS_TS, EXP_EXPRESSION_GTS_TS, 0, 0,
 		IDMN_EXPRESSION_GTS_EM, M_EXPRESSION_GTS_EM, EXP_EXPRESSION_GTS_EM, 0, 0,
+
+		IDMN_EXPRESSION_GROX, M_EXPRESSION_GROX, EXP_EXPRESSION_GROX, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_GROY, M_EXPRESSION_GROY, EXP_EXPRESSION_GROY, EXPFLAG_DOUBLE, 0,
+
+		IDMN_EXPRESSION_GFMTS, M_EXPRESSION_GFMTS, EXP_EXPRESSION_GFMTS, EXPFLAG_STRING, 0,
 
 		};
 
@@ -580,8 +590,8 @@ short WINAPI DLLExport Action_SetObjectKeyValue(LPRDATA rdPtr, long param1, long
 }
 
 short WINAPI DLLExport Action_SetIConOffset(LPRDATA rdPtr, long param1, long param2) {
-	auto offsetX = GetFloatParam(rdPtr);
-	auto offsetY = GetFloatParam(rdPtr);
+	const auto offsetX = GetFloatParam(rdPtr);
+	const auto offsetY = GetFloatParam(rdPtr);
 
 	rdPtr->iConOffsetX = offsetX;
 	rdPtr->iConOffsetY = offsetY;
@@ -605,6 +615,18 @@ short WINAPI DLLExport Action_SetIConResample(LPRDATA rdPtr, long param1, long p
 	bool bResample = (bool)CNC_GetParameter(rdPtr);
 
 	rdPtr->bIConResample = bResample;
+
+	ReDisplay(rdPtr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetRemarkOffset(LPRDATA rdPtr, long param1, long param2) {
+	const auto offsetX = GetFloatParam(rdPtr);
+	const auto offsetY = GetFloatParam(rdPtr);
+
+	rdPtr->remarkOffsetX = offsetX;
+	rdPtr->remarkOffsetY = offsetY;
 
 	ReDisplay(rdPtr);
 
@@ -663,6 +685,39 @@ short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long p
 		rdPtr->reRender = true;
 	}
 	
+	return 0;
+}
+
+short WINAPI DLLExport Action_Format_NewFormat(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	delete rdPtr->pFormatByVector;
+	rdPtr->pFormatByVector = new FormatByVector<std::wstring>(pStr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Format_AddParamString(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->pFormatByVector == nullptr) { return 0; }
+	rdPtr->pFormatByVector->AddParam(pStr);
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Format_AddParamValue(LPRDATA rdPtr, long param1, long param2) {
+	const auto value = GetFloatParam(rdPtr);
+	const auto pFMT = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	if (rdPtr->pFormatByVector == nullptr) { return 0; }
+	rdPtr->pFormatByVector->AddParam(
+		FormatByVector<std::wstring>::GetFormatString(
+		wcslen(pFMT) == 0
+		? L"{}"
+		: pFMT,
+		value));
+
 	return 0;
 }
 
@@ -833,6 +888,14 @@ long WINAPI DLLExport Expression_GetIConResample(LPRDATA rdPtr, long param1) {
 	return rdPtr->bIConResample;
 }
 
+long WINAPI DLLExport Expression_GetRemarkOffsetX(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->remarkOffsetX);
+}
+
+long WINAPI DLLExport Expression_GetRemarkOffsetY(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->remarkOffsetY);
+}
+
 long WINAPI DLLExport Expression_GetVerticalOffset(LPRDATA rdPtr, long param1) {
 	return rdPtr->bVerticalAlignOffset;
 }
@@ -841,7 +904,13 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr pFilter(0, 0, NULL);
+	NeoStr pFilter(0, 0, rdPtr->hFont
+			, rdPtr->pData->pFontCache
+			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pRegexHandler
+			, rdPtr->pData->pIConData
+			, rdPtr->pData->pFontCollection
+			, false);
 	pFilter.GetFormat(pStr
 		, flags == -1
 		? rdPtr->filterFlags
@@ -857,9 +926,9 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
-	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 
-	auto len = wcslen(pStr);
+	const auto len = wcslen(pStr);
 
 	if (len == 0) {
 		//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -870,18 +939,20 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 	}
 
 	*rdPtr->pExpRet = pStr;
-	auto pStart = &(*rdPtr->pExpRet)[0];
+	const auto pStart = rdPtr->pExpRet->data();
 	
-	bool bInCommand = false;	
+	bool bInCommand = false;
+	size_t nestCount = 0;
+
 	//https://zh.wikipedia.org/wiki/%E8%99%9A%E7%BC%BA%E5%8F%B7
 	//const auto replaceChar = L'�';
 	const auto replaceChar = L'□';
 
 	for (size_t i = 0; i < len; i++) {
-		auto pCur = pStart + i;
+		const auto pCur = pStart + i;
 
-		auto curChar = pCur[0];
-		auto nextChar = pCur[1];
+		const auto curChar = pCur[0];
+		const auto nextChar = pCur[1];
 
 		// Escape
 		if (curChar == L'\\' && nextChar == L'[') {
@@ -892,7 +963,8 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 
 		// Parse Format
 		if (curChar == L'[') {
-			bInCommand = true;
+			if (bInCommand) { nestCount++; }
+			else { bInCommand = true; }
 		}
 
 		if (bInCommand) {
@@ -900,7 +972,8 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 		}
 
 		if (bInCommand && curChar == L']') {
-			bInCommand = false;
+			if (nestCount != 0) { nestCount--; }
+			else { bInCommand = false; }
 		}
 	}
 
@@ -912,19 +985,21 @@ long WINAPI DLLExport Expression_GetPaddingString(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1) {
-	LPCWSTR pStrSrc = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto pStrSrc = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	size_t start = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	auto GetNonCommandOffset = [](LPCWSTR pStrSrc, size_t start)->size_t {
-		auto pStr = pStrSrc + start;
-		auto len = wcslen(pStr);
+	const auto srcLen = wcslen(pStrSrc);
 
-		if (len == 0) {
-			return 0;
-		}
+	auto GetNonCommandOffset = [] (LPCWSTR pSrc, size_t pSrcLen, size_t start)->size_t {
+		if (start >= pSrcLen) { return 0; }
 
-		auto curChar = pStr[0];
-		auto nextChar = pStr[1];
+		const auto pStr = pSrc + start;
+		const auto len = wcslen(pStr);
+
+		if (len == 0) { return 0; }
+
+		const auto curChar = pStr[0];
+		const auto nextChar = pStr[1];
 
 		if (curChar == L'\\' && nextChar == L'[') {
 			return 1;
@@ -932,14 +1007,27 @@ long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1)
 
 		if (curChar == L'[') {
 			size_t end = 0;
+			size_t nestCount = 0;
 
-			while ((pStr + end)[0] != L']') {
+			while ((pStr + end)[0] != L']' || nestCount != 0) {
+				// protect for end
 				if (end == len) {
 					return len;
 				}
 
+				const auto pTest = pStr + end;
+
+				// handle nest format contorl for params
+				if ((pTest)[0] == L'\\' && (pTest + 1)[0] == L'[') {
+					end += 2;
+					continue;
+				}
+
+				if (end != 0 && (pTest)[0] == L'[') { nestCount++; }
+				if (nestCount != 0 && (pTest)[0] == L']') { nestCount--; }
+
 				end++;
-			}
+			}			
 
 			return end + 1;
 		}
@@ -951,7 +1039,7 @@ long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1)
 	size_t totalOffset = 0;
 
 	for (;;) {
-		auto curOffset = GetNonCommandOffset(pStrSrc, start);
+		const auto curOffset = GetNonCommandOffset(pStrSrc, srcLen, start);
 		totalOffset += curOffset;
 
 		if (curOffset != 0) {
@@ -962,7 +1050,7 @@ long WINAPI DLLExport Expression_GetNonCommandOffset(LPRDATA rdPtr, long param1)
 		}
 	}
 	
-	return totalOffset;
+	return (long)totalOffset;
 }
 
 long WINAPI DLLExport Expression_GetHashedString(LPRDATA rdPtr, long param1) {
@@ -1013,7 +1101,13 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	size_t filteredLength = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr pFilter(0, 0, NULL);
+	NeoStr pFilter(0, 0, rdPtr->hFont
+			, rdPtr->pData->pFontCache
+			, rdPtr->pData->pCharSzCacheWithFont
+			, rdPtr->pData->pRegexHandler
+			, rdPtr->pData->pIConData
+			, rdPtr->pData->pFontCollection
+			, false);
 
 	try {		
 		pFilter.GetFormat(pStr
@@ -1045,6 +1139,19 @@ long WINAPI DLLExport Expression_GetTabSettings_TabSize(LPRDATA rdPtr, long para
 
 long WINAPI DLLExport Expression_GetTabSettings_TabEM(LPRDATA rdPtr, long param1) {
 	return (long)(rdPtr->bTabEM);
+}
+
+long WINAPI DLLExport Expression_Format_GetFormatString(LPRDATA rdPtr, long param1) {	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pFormatByVector != nullptr
+		? [&] () {
+			*rdPtr->pExpRet = rdPtr->pFormatByVector->GetFormatString();
+			return reinterpret_cast<long>(rdPtr->pExpRet->c_str());
+		}()
+		: reinterpret_cast<long>(Empty_Str);
 }
 
 // ----------------------------------------------------------
@@ -1103,6 +1210,12 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_ChangeTabSettings,
 
+			Action_SetRemarkOffset,
+
+			Action_Format_NewFormat,
+			Action_Format_AddParamString,
+			Action_Format_AddParamValue,
+
 			0
 			};
 
@@ -1157,6 +1270,11 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetTabSettings_TabSize,
 			Expression_GetTabSettings_TabEM,
+
+			Expression_GetRemarkOffsetX,
+			Expression_GetRemarkOffsetY,
+
+			Expression_Format_GetFormatString,
 
 			0
 			};

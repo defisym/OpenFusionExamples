@@ -6,8 +6,8 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 ## Tab
 
-DX9: tab size = 8, em space on
-DX11: tab size = 4, em space off
+- DX9: tab size = 8, em space on
+- DX11: tab size = 4, em space off
 
 ## Format Control
 
@@ -33,6 +33,38 @@ DX11: tab size = 4, em space off
 
 `[!]` reset all format to what you set in properties and events
 
+### Values General
+
+- ! = reset to default
+- +/- = add/minus to current
+- \ = use given value directly, including sign
+  - e.g., current is 1.0
+    - `-0.5` -> `1.0`- `0.5` = `0.5`
+    - `\+0.5` -> `+0.5`
+    - `\-0.5` -> `-0.5`
+
+### Remark
+
+#### Insert
+
+`[Remark = CharCount, Content]` insert remark that display over texts to the following characters
+As text may include `,`, parse is started from left, unlike other formats. Remark is rendered in another NeoStr class, with the same config (color, font, etc), but overrode position & render object, and the font size is half of the parent object when it starts rendering.
+
+- *if you use content, make sure it doesn't have open `[]`*
+- *if remarked string changed line, then the render of its remark is skipped*
+- *if the font / size changed too drastically there will be overlap*
+- *position of remark is estimated by the mean size of remarked characters*
+
+#### Format
+
+`[RemarkOffsetX = 0.0][/RemarkOffsetX]` Remark Offset X
+
+See `Values General`
+
+`[RemarkOffsetY = 0.0][/RemarkOffsetY]` Remark Offset Y
+
+See `Values General`
+
 ### ICon
 
 #### Insert
@@ -46,22 +78,25 @@ ICon will be resized to the font size it inserted at.
 
 `[IConOffsetX = 0.0][/IConOffsetX]` ICon Offset X
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[IConOffsetY = 0.0][/IConOffsetY]` ICon Offset Y
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[IConScale = 1.0][/IConScale]` ICon Scale
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 `[IConResample = 1][/IConResample]` ICon Resample, 1 = Enable, 0 = Disable
 
 - ! = reset to default
+
+### Align
+
+`[Align = LEFT]`
+
+change align of different lines
 
 ### Shake
 
@@ -79,8 +114,7 @@ e.g., one param -> Type, two params -> Type & Amplitude, etc.
 
 `[Color = #FFFFFFFF][/Color]`&`[C = #FFFFFFFF][/C]`	color, hex AARRGGBB, or A, R, G, B
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 if RGB param is less than four, then it's referred in the following order:
 
@@ -101,8 +135,7 @@ if RGB param is less than four, then it's referred in the following order:
 
 `[Size = FontSize][/Size]`&`[S = FontSize][/S]`
 
-- ! = reset to default
-- +/- = add/minus to current
+See `Values General`
 
 #### Bold
 
@@ -138,10 +171,199 @@ set to non-strike out
 
 ## Properties
 
-This object has no properties
+### Display
+
+- Hotspot
+  - Default
+  - X
+  - Y
+
+### Font
+
+- Font
+  - Vertical offset
+  - Row space
+  - Col space
+  - Tab size
+  - Tab EM space
+    - *use EM space instead of space*
+
+- Render
+  - Clip
+    - *if text is out of visible area, skip it's render*
+  - Border offset
+    - *internal offscreen surface is bigger than render size, to give enough space for shader, icon, remark, etc*
+  - Text Rendering Hint
+    - *See GDI Plus document*
+  - Smoothing Mode
+    - *ditto*
+  - PixelOffset Mode
+    - *ditto*
+
+- Format
+  - Filter unknown
+    - *will not display unknown command*
+  - Filter incomplete
+    - *will not display incomplete command, aka open `[` at end*
+
+  - ICon global
+    - *enabled objects will refresh automatically if icon source changed*
+  - ICon global force update
+  - ICon resample
+  - ICon offset x
+  - ICon offset y
+  - ICon scale
+
+  - Remark offset x
+  - Remark offset y
 
 ## Action
 
+- Embed Font
+  - *you must embed font here, as this extension use a different render system, so built-in embed in DX11 or old GDI font embed object will not work*
+  - *this object also embed GDI font*
+
+- Change Display String
+- App Display String
+- App Display String at NewLine
+
+- Render
+  - *render is delayed to display routine, or expression that need render result, you can force it here*
+
+- Change Render Size
+  - *resize object during runtime*
+- Change Render Options
+  - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
+  - *include alpha: E.g., 10 chars*
+    - *not included: 5 / 10 = 0.5, display 5 chars*
+    - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+
+- Force Redraw
+  - *if no change, last render result will be used, this action will force redraw even not change*
+- Force Redraw Global ICon
+  - *redraw all objects with `ICon global` and `ICon global force update` checked*
+
+- Alignment
+  - Change Row Space
+  - Change Col Space
+
+  - Change Vertical Offset
+    - *when vertical align is set to center, some font may have an offset, use this to fix it*
+
+  - Change Horizontal Align
+    - *DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2*
+  - Change Vertical Align
+    - *DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8*
+
+  - Change Tab Settings
+
+- Zoom && Rotate
+  - Change HotSpot
+
+  - Zoom
+  - Stretch
+
+  - Rotate
+
+- Format
+  - Link Active
+    - *if you link active, the icon will be read from it's animation frames*
+
+  - Link Object
+    - *if you link object, then you need to analyze icon param by yourself in callback*
+  - Set ICon Key Value
+    - *return the surface pointer here*
+
+  - Set Filter Flag
+
+  - Set ICon Offset
+  - Set ICon Scale
+  - Set ICon Resample
+
+  - Set Remark Offset
+
+- Format String
+  - New Format
+    - *`std::format` like format string. All params is string, so please format value to string first*
+    - *if format failed, the format string will be returned*
+
+  - Add String Param
+  - Add Value Param
+
 ## Condition
 
+- On Get Object ICon Callback
+  - *if you link to a object, this will be triggered to ask for icon surface pointer*
+
 ## Expression
+
+- Get Font Family Name
+
+- Get Display String
+- Get Filtered String
+  - *filter given string*
+    - `FORMAT_IGNORE_UNKNOWN = 0b00000001`
+    - `FORMAT_IGNORE_INCOMPLETE = 0b00000010`
+	- `FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100`
+- Get Padding String
+  - *replace content in `[]` to `□`, as control characters may conflict with you owns*
+- Get Raw String By Filtered String Length
+- Get Non Command Offset
+  - *if next char is a command, this expression will return the offset to command*
+
+- Render Options
+  - Get Visible Ratio
+
+- Alignment
+  - Get Row Space
+  - Get Col Space
+
+  - Get Vertical Offset
+
+  - Get Horizontal Align
+  - Get Vertical Align
+
+  - Get Tab Size
+  - Get Tab Use EM Space
+
+- Size
+  - Get Max Width
+  - Get Total Height
+
+  - Get Render Width
+  - Get Render Height
+
+- Character Position
+  - Get Char X
+  - Get Char Y
+
+  - Get Last Char X
+  - Get Last Char Y
+
+- Zoom && Rotate
+  - Get HotSpot X
+  - Get HotSpot Y
+
+  - Get X Scale
+  - Get Y Scale
+
+  - Get Angle
+
+- Format
+  - Get Hashed String
+    - *if you parser icon command by yourself, then this is helpful to use it as cache key*
+  - Get ICon Param Num
+  - Get ICon Param String
+
+  - Get Filter Flag
+
+  - Get ICon Offset X
+  - Get ICon Offset Y
+  - Get ICon Scale
+  - Get ICon Resample
+
+  - Get Remark Offset X
+  - Get Remark Offset Y
+
+- Format String
+  - Get Format String
