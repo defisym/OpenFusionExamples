@@ -279,7 +279,7 @@ short WINAPI DLLExport Action_MixroTxn_Finalize(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_SetLocation(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_SetLocation(LPRDATA rdPtr, long param1, long param2) {
 	const auto pLocation = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
@@ -288,7 +288,7 @@ short WINAPI DLLExport Action_Sceenshot_SetLocation(LPRDATA rdPtr, long param1, 
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_TagPublishedFile(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_TagPublishedFile(LPRDATA rdPtr, long param1, long param2) {
 	const auto publishedFileID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
@@ -298,7 +298,7 @@ short WINAPI DLLExport Action_Sceenshot_TagPublishedFile(LPRDATA rdPtr, long par
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_TagUser(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_TagUser(LPRDATA rdPtr, long param1, long param2) {
 	const auto steamID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
@@ -308,7 +308,7 @@ short WINAPI DLLExport Action_Sceenshot_TagUser(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_Trigger(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_Trigger(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
 		pSteamUtil->GetSteamScreenshot()->Trigger();
 	});
@@ -467,10 +467,10 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_MixroTxn_SendRequest,
 			Action_MixroTxn_Finalize,
 
-			Action_Sceenshot_SetLocation,
-			Action_Sceenshot_TagPublishedFile,
-			Action_Sceenshot_TagUser,
-			Action_Sceenshot_Trigger,
+			Action_Screenshot_SetLocation,
+			Action_Screenshot_TagPublishedFile,
+			Action_Screenshot_TagUser,
+			Action_Screenshot_Trigger,
 
 			Action_ShowGamepadTextInput,
 
