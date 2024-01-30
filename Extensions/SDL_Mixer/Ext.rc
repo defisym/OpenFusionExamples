@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "SDL_Mixer\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "SDL_Mixer\0"
-            VALUE "LegalCopyright", "Copyright 2023 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2023~2024 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "SDL_Mixer.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -284,7 +284,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "SDL_Mixer"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2023 Defisym"
+    IDST_COPYRIGHT          "Copyright 2023~2024 Defisym"
     IDST_COMMENT            "Audio player based on SDL Mixer X, with unlimited channel & encrypt support"
     IDST_HTTP               "https://twitter.com/defisym"
 END
