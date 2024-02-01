@@ -169,4 +169,6 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
 
 	memcpy(this->Key, generatedKeyStr, KEY_LENGTH);
 	memcpy(this->IV, generatedKeyStr + STR_LENGTH, KEY_LENGTH);
+
+	delete[] generatedKeyStr;
 }
