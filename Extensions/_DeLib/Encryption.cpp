@@ -102,12 +102,13 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
 	Release(this->Key);
 	Release(this->IV);
 
-	this->Key = new BYTE[16];
-	this->IV = new BYTE[16];
+	this->Key = new BYTE[KEY_LENGTH];
+	this->IV = new BYTE[KEY_LENGTH];
 
-	if (KeyStr == nullptr) {
-		memcpy(this->Key, DefaultKey, 16);
-		memcpy(this->IV, DefaultIV, 16);
+	// empty, use default string
+	if (KeyStr == nullptr || wcslen(KeyStr) == 0) {
+		memcpy(this->Key, DefaultKey, KEY_LENGTH);
+		memcpy(this->IV, DefaultIV, KEY_LENGTH);
 
 		return;
 	}
@@ -119,26 +120,27 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
 
 	// length enough
 	if (strLength == wantedLength) {
-		memcpy(this->Key, KeyStr, 8 * sizeof(wchar_t));
-		memcpy(this->IV, KeyStr + 8, 8 * sizeof(wchar_t));
+		memcpy(this->Key, KeyStr, KEY_LENGTH);
+		memcpy(this->IV, KeyStr + STR_LENGTH, KEY_LENGTH);
 
 		return;
 	}
 
 	// too long, do hash move
 	if (strLength > wantedLength) {
-		size_t loop = keyStrLength - 16;
-		auto pChar = KeyStr + loop;
+		size_t loop = keyStrLength - KEY_LENGTH;
+		auto pChar = KeyStr + KEY_LENGTH;
 
-		memcpy(this->Key, KeyStr, 8 * sizeof(wchar_t));
-		memcpy(this->IV, KeyStr + 8, 8 * sizeof(wchar_t));
+		memcpy(this->Key, KeyStr, KEY_LENGTH);
+		memcpy(this->IV, KeyStr + STR_LENGTH, KEY_LENGTH);
 
 		for (; loop != 0; loop--) {
 			const auto curChar = pChar[0];
+			pChar++;
 
-			for (size_t pos = 0; pos < 8; pos++) {
-				((wchar_t*)this->Key + pos)[0] ^= curChar;
-				((wchar_t*)this->IV + pos)[0] ^= curChar;
+			for (size_t pos = 0; pos < STR_LENGTH; pos++) {
+				(reinterpret_cast<wchar_t*>(this->Key) + pos)[0] ^= curChar;
+				(reinterpret_cast<wchar_t*>(this->IV) + pos)[0] ^= curChar;
 			}
 		}
 
@@ -152,16 +154,19 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
 		seed ^= KeyStr[loop - 1] + HASHER_MOVE(seed);
 	}
 
-	auto generatedKeyStr = new wchar_t[16];
-	memset(generatedKeyStr, 0, 16 * sizeof(wchar_t));
+	const auto generatedKeyStr = new wchar_t[KEY_LENGTH];
+	memset(generatedKeyStr, 0, KEY_LENGTH * sizeof(wchar_t));
 	memcpy(generatedKeyStr, KeyStr, keyStrLength * sizeof(wchar_t));
 
-	for (size_t loop = keyStrLength; loop < 16; loop++) {
-		auto pChar = generatedKeyStr + loop - 1;
-		wchar_t high = HIBYTE(seed);
-		wchar_t low = LOBYTE(seed);
+	for (size_t loop = keyStrLength; loop < KEY_LENGTH; loop++) {
+		const auto pChar = generatedKeyStr + loop;
+		const wchar_t high = HIBYTE(seed);
+		const wchar_t low = LOBYTE(seed);
 		pChar[0] = high ^ low;
 
 		seed ^= pChar[0] + HASHER_MOVE(seed);
 	}
+
+	memcpy(this->Key, generatedKeyStr, KEY_LENGTH);
+	memcpy(this->IV, generatedKeyStr + STR_LENGTH, KEY_LENGTH);
 }

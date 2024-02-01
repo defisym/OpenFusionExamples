@@ -35,14 +35,17 @@
 constexpr auto ENCRY = true;
 constexpr auto DECRY = false;
 
+constexpr auto KEY_LENGTH = 16;
+constexpr auto STR_LENGTH = KEY_LENGTH / sizeof(wchar_t);
+
 constexpr auto BUFFER_SIZE = 1024 * 256;
 
-constexpr static BYTE DefaultKey[16] = {
+constexpr static BYTE DefaultKey[KEY_LENGTH] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 };
 
-constexpr static BYTE DefaultIV[16] = {
+constexpr static BYTE DefaultIV[KEY_LENGTH] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 };
@@ -63,8 +66,8 @@ private:
 	PBYTE Key = nullptr;
 	PBYTE IV = nullptr;
 
-	DWORD KeyLength = 16;
-	DWORD IVLength = 16;
+	DWORD KeyLength = KEY_LENGTH;
+	DWORD IVLength = KEY_LENGTH;
 
 	char* InputStr = nullptr;
 	char* OutputStr = nullptr;
@@ -390,20 +393,20 @@ public:
 #ifdef _DEBUG
 	inline bool CompareGeneratedKey(const wchar_t* pL, const wchar_t* pR) {
 		auto CopyResult = [&] (PBYTE pCache) {
-			memcpy(pCache, this->Key, 16);
-			memcpy(pCache + 16, this->IV, 16);
+			memcpy(pCache, this->Key, KEY_LENGTH);
+			memcpy(pCache + KEY_LENGTH, this->IV, KEY_LENGTH);
 			};
 
 		// save old
-		auto pOld = new BYTE[32];
+		const auto pOld = new BYTE[32];
 		CopyResult(pOld);
 
 		// compare result
-		auto pLResult = new BYTE[32];
+		const auto pLResult = new BYTE[32];
 		GenerateKey(pL);
 		CopyResult(pLResult);
 
-		auto pRResult = new BYTE[32];
+		const auto pRResult = new BYTE[32];
 		GenerateKey(pR);
 		CopyResult(pRResult);
 
@@ -416,8 +419,8 @@ public:
 		}
 
 		// restore old
-		memcpy(this->Key, pOld, 16);
-		memcpy(this->IV, pOld + 16, 16);
+		memcpy(this->Key, pOld, KEY_LENGTH);
+		memcpy(this->IV, pOld + KEY_LENGTH, KEY_LENGTH);
 
 		// clean up
 		delete[] pOld;
