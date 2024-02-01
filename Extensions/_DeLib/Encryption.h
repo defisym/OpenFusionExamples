@@ -25,9 +25,9 @@
 // for hash
 #pragma comment(lib, "Crypt32.lib")
 
-// compatible with WinBase
-#pragma push_macro("EncryptFile")
-#pragma push_macro("DecryptFile")
+//// compatible with WinBase
+//#pragma push_macro("EncryptFile")
+//#pragma push_macro("DecryptFile")
 
 #undef EncryptFile
 #undef DecryptFile
@@ -816,6 +816,6 @@ inline void BufferBenchMark(Encryption& Encrypt, std::wstring wFilePath, bool en
 
 #endif
 
-// compatible with WinBase
-#pragma pop_macro("EncryptFile")
-#pragma pop_macro("DecryptFile")
+//// compatible with WinBase
+//#pragma pop_macro("EncryptFile")
+//#pragma pop_macro("DecryptFile")
