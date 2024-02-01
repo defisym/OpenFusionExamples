@@ -1,12 +1,17 @@
 {
     "files.associations": {
-        "*.bsc": "ini",
-        "*.file": "plaintext",
-        "_GlobalProgress": "ini",
-        "*.vdf": "plaintext",
-        "*.asc": "AvgScript",
-        "*.dat": "ini",
-        "*.sav": "ini",
-        "list": "cpp"
-    }
+		"*.bsc": "ini",
+		"*.file": "plaintext",
+		"_GlobalProgress": "ini",
+		"*.vdf": "plaintext",
+		"*.asc": "AvgScript",
+		"*.dat": "ini",
+		"*.sav": "ini",
+		"*.wsb": "xml",
+		"list": "cpp",
+		"regex": "cpp",
+		"xlocale": "cpp",
+		"xstring": "cpp",
+		"queue": "cpp"
+	}
 }

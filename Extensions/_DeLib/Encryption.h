@@ -11,6 +11,8 @@
 
 //#include <ntstatus.h>
 
+#include "GeneralDefinition.h"
+
 #define USER_MODE
 
 #ifdef USER_MODE
@@ -22,6 +24,13 @@
 
 // for hash
 #pragma comment(lib, "Crypt32.lib")
+
+// compatible with WinBase
+#pragma push_macro("EncryptFile")
+#pragma push_macro("DecryptFile")
+
+#undef EncryptFile
+#undef DecryptFile
 
 constexpr auto ENCRY = true;
 constexpr auto DECRY = false;
@@ -377,9 +386,47 @@ public:
 	DWORD GetOutputStrLength() const;
 
 	void GenerateKey(const wchar_t* KeyStr);
+	
+#ifdef _DEBUG
+	inline bool CompareGeneratedKey(const wchar_t* pL, const wchar_t* pR) {
+		auto CopyResult = [&] (PBYTE pCache) {
+			memcpy(pCache, this->Key, 16);
+			memcpy(pCache + 16, this->IV, 16);
+			};
 
-#undef EncryptFile
-#undef DecryptFile
+		// save old
+		auto pOld = new BYTE[32];
+		CopyResult(pOld);
+
+		// compare result
+		auto pLResult = new BYTE[32];
+		GenerateKey(pL);
+		CopyResult(pLResult);
+
+		auto pRResult = new BYTE[32];
+		GenerateKey(pR);
+		CopyResult(pRResult);
+
+		bool bEqual = true;
+
+		for (size_t idx = 0; idx < 32; idx++) {
+			bEqual = bEqual && (pLResult[idx] == pRResult[idx]);
+
+			if (!bEqual) { break; }
+		}
+
+		// restore old
+		memcpy(this->Key, pOld, 16);
+		memcpy(this->IV, pOld + 16, 16);
+
+		// clean up
+		delete[] pOld;
+		delete[] pLResult;
+		delete[] pRResult;
+
+		return bEqual;
+	}
+#endif
 
 	// load to memory
 	inline bool EncryptFile(const wchar_t* pFileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
@@ -765,3 +812,7 @@ inline void BufferBenchMark(Encryption& Encrypt, std::wstring wFilePath, bool en
 #endif
 
 #endif
+
+// compatible with WinBase
+#pragma pop_macro("EncryptFile")
+#pragma pop_macro("DecryptFile")
