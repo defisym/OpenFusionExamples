@@ -322,7 +322,10 @@ private:
 	//------------
 	// format zone
 	//------------
+public:
+	using ControlParams = std::vector<std::wstring_view>;
 
+private:
 	//---------
 	// basic
 	//---------
@@ -349,8 +352,22 @@ private:
 		// updated during parsing
 		size_t rawStart;
 		std::wstring callbackName;
+		std::vector<std::wstring> callbackParams;
 
 		// updated during rendering
+
+		FormatTag(size_t start, size_t startWithNewLine,
+			size_t rawStart, const ControlParams& controlParams) :FormatBasic{ start, startWithNewLine } {
+			this->rawStart = rawStart;
+
+			auto it = controlParams.begin();
+			this->callbackName = { it->data(),it->size() };
+			++it;
+
+			for (; it != controlParams.end(); ++it) {
+				this->callbackParams.emplace_back(it->data(), it->size());
+			}
+		}
 	};
 
 	std::vector<FormatTag> tagFormat;
@@ -473,7 +490,6 @@ private:
 
 public:
 	using IConLib = std::map<DWORD, LPSURFACE>;
-	using ControlParams = std::vector<std::wstring_view>;
 	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
 
 	struct IConData {
@@ -1685,8 +1701,9 @@ public:
 		//		\-0.5 -> -0.5
 		//
 		// [Tag = CallbackName, Params]
-		//	Trigger callback when render to this
-		//	Tags in remarks will be ignored
+		//	Trigger callback when render to it, tags in remarks will be ignored
+		//	*you need to retrieve each param
+		//	*then handle it by your self
 		//
 		// [Remark = CharCount, Content]
 		//	Insert remark that display over texts
@@ -2033,11 +2050,22 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"Tag")) {
-							this->tagFormat.emplace_back(FormatTag{ {savedLength,
-								savedLengthWithNewLine},
+							auto& paramParser = controlParam;
+							controlParams.clear();
+
+							do {
+
+							} while (ParseParam(paramParser
+								, [&controlParams] (std::wstring_view& param) {
+									controlParams.emplace_back(GetTrimmedStr(param));
+								}));
+
+							if (controlParams.empty()) { break; }
+
+							this->tagFormat.emplace_back(savedLength,
+								savedLengthWithNewLine,
 								static_cast<size_t>(pCurChar - pRawText),
-								{controlParam.data(),controlParam.size() }
-							});
+								controlParams);
 
 							break;
 						}
@@ -2065,10 +2093,10 @@ public:
 
 							controlParams.emplace_back(GetTrimmedStr(paramParser));
 
-							this->remarkFormat.emplace_back(FormatRemark{ savedLength,
+							this->remarkFormat.emplace_back(savedLength,
 								savedLengthWithNewLine,
-							static_cast<size_t>(_stoi(controlParams[0])),
-								std::wstring(controlParams[1]) });
+								static_cast<size_t>(_stoi(controlParams[0])),
+								std::wstring(controlParams[1]));
 
 							break;
 						}
@@ -3189,7 +3217,7 @@ public:
 		// ------------
 	private:
 		// trigger custom tag callback when rendering
-		using TagCallback = std::function<void(const std::wstring&)>;
+		using TagCallback = std::function<void(const std::wstring&, const std::vector<std::wstring>&)>;
 
 	public:
 		// only index lager than this will be triggered
@@ -3449,7 +3477,7 @@ public:
 						if (opt.tagCallback == nullptr) { return; }
 						if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
 
-						opt.tagCallback(tagIt->callbackName);
+						opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
 					});
 
 					// stack based

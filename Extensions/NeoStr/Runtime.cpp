@@ -139,9 +139,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bIConNeedUpdate = false;
 
 	rdPtr->pRenderOptions = new NeoStr::RenderOptions;
-	static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions)->UpdateTagCallback([=] (const std::wstring& callbackName) {
+	static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions)->UpdateTagCallback([=] (const std::wstring& callbackName, const std::vector<std::wstring>& callbackParams) {
 		*rdPtr->pTagCallbackName = callbackName;
+		rdPtr->pTagCallbackParams = &callbackParams;
 		CallEvent(ONTAGCB);
+		rdPtr->pTagCallbackParams = nullptr;
 	});
 	rdPtr->pTagCallbackName = new std::wstring;
 

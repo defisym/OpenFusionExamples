@@ -346,6 +346,9 @@
 
 #define	IDMN_EXPRESSION_GFMTS	  		    27037
 
+#define	IDMN_EXPRESSION_GTPN	  		    27038
+#define	IDMN_EXPRESSION_GTPS	  		    27039
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -402,6 +405,9 @@
 #define	M_EXPRESSION_GROY	 		        7036
 
 #define	M_EXPRESSION_GFMTS	 		        7037
+
+#define	M_EXPRESSION_GTPN	 		        7038
+#define	M_EXPRESSION_GTPS	 		        7039
 
 // Names of expression parameters
 #define M_POS				                7500

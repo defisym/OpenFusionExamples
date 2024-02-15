@@ -43,6 +43,15 @@ String that based on GDI Plus, with scaling, rotating & format control support
     - `\+0.5` -> `+0.5`
     - `\-0.5` -> `-0.5`
 
+### Tag
+
+#### Insert
+
+`[Tag = CallbackName, Params]`
+
+Trigger callback when render to it, tags in remarks will be ignored.
+*you need to retrieve each param then handle it by your self*
+
 ### Remark
 
 #### Insert
@@ -112,7 +121,7 @@ e.g., one param -> Type, two params -> Type & Amplitude, etc.
 
 ### Color
 
-`[Color = #FFFFFFFF][/Color]`&`[C = #FFFFFFFF][/C]`	color, hex AARRGGBB, or A, R, G, B
+`[Color = #FFFFFFFF][/Color]`&`[C = #FFFFFFFF][/C]` color, hex AARRGGBB, or A, R, G, B
 
 See `Values General`
 
@@ -294,6 +303,7 @@ set to non-strike out
 
 - On Get Object ICon Callback
   - *if you link to a object, this will be triggered to ask for icon surface pointer*
+- On Tag Callback
 
 ## Expression
 
@@ -304,7 +314,7 @@ set to non-strike out
   - *filter given string*
     - `FORMAT_IGNORE_UNKNOWN = 0b00000001`
     - `FORMAT_IGNORE_INCOMPLETE = 0b00000010`
-	- `FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100`
+    - `FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100`
 - Get Padding String
   - *replace content in `[]` to `□`, as control characters may conflict with you owns*
 - Get Raw String By Filtered String Length

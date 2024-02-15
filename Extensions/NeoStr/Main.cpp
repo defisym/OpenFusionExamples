@@ -138,6 +138,8 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GFMTS, M_EXPRESSION_GFMTS, EXP_EXPRESSION_GFMTS, EXPFLAG_STRING, 0,
 
+		IDMN_EXPRESSION_GTPN, M_EXPRESSION_GTPN, EXP_EXPRESSION_GTPN, 0, 0,
+		IDMN_EXPRESSION_GTPS, M_EXPRESSION_GTPS, EXP_EXPRESSION_GTPS, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_POS,
 		};
 
 
@@ -183,6 +185,9 @@ short WINAPI DLLExport Action_ChangeString(LPRDATA rdPtr, long param1, long para
 	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	*rdPtr->pStr = pStr;
+
+	// reset tag callback index
+	static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions)->tagCallbackIndex = static_cast<size_t>(-1);
 
 	ReDisplay(rdPtr);
 
@@ -681,7 +686,7 @@ short WINAPI DLLExport Action_Render(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetRenderOption_VisibleRatio(LPRDATA rdPtr, long param1, long param2) {
 	const float visibleRatio = Range(GetFloatParam(rdPtr), 0.0f, 1.0f);
 	const bool bIncludeAlpha = (bool)CNC_GetParameter(rdPtr);
 
@@ -1084,8 +1089,8 @@ long WINAPI DLLExport Expression_GetHashedString(LPRDATA rdPtr, long param1) {
 	return (long)(hash);
 }
 
-long WINAPI DLLExport Expression_GetParamNum(LPRDATA rdPtr, long param1) {
-	auto pParams = (NeoStr::ControlParams*)(rdPtr->pIConParams);
+long WINAPI DLLExport Expression_GetIConParamNum(LPRDATA rdPtr, long param1) {
+	const auto pParams = static_cast<NeoStr::ControlParams*>(rdPtr->pIConParams);
 
 	if (pParams == nullptr) {
 		return -1;
@@ -1094,14 +1099,10 @@ long WINAPI DLLExport Expression_GetParamNum(LPRDATA rdPtr, long param1) {
 	return (long)(pParams->size());
 }
 
-long WINAPI DLLExport Expression_GetParamString(LPRDATA rdPtr, long param1) {
-	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+long WINAPI DLLExport Expression_GetIConParamString(LPRDATA rdPtr, long param1) {
+	const size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	auto pParams = (NeoStr::ControlParams*)(rdPtr->pIConParams);
-
-	if (pParams == nullptr) {
-		return -1;
-	}
+	const auto pParams = static_cast<NeoStr::ControlParams*>(rdPtr->pIConParams);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1177,6 +1178,34 @@ long WINAPI DLLExport Expression_Format_GetFormatString(LPRDATA rdPtr, long para
 		: reinterpret_cast<long>(Empty_Str);
 }
 
+long WINAPI DLLExport Expression_GetTagParamNum(LPRDATA rdPtr, long param1) {
+	const auto pParams = rdPtr->pTagCallbackParams;
+
+	if (pParams == nullptr) {
+		return -1;
+	}
+
+	return (long)(pParams->size());
+}
+
+long WINAPI DLLExport Expression_GetTagParamString(LPRDATA rdPtr, long param1) {
+	const size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto pParams = rdPtr->pTagCallbackParams;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(pParams != nullptr && pParams->size() > pos
+		? [&] () {
+			*rdPtr->pExpRet = (*pParams)[pos];
+			return rdPtr->pExpRet->c_str();
+		}()
+			: Empty_Str);
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1230,7 +1259,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_ForceRedrawGlobalICon,
 			Action_Render,
 
-			Action_SetRenderOption,
+			Action_SetRenderOption_VisibleRatio,
 
 			Action_ChangeTabSettings,
 
@@ -1285,8 +1314,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetNonCommandOffset,
 
 			Expression_GetHashedString,
-			Expression_GetParamNum,
-			Expression_GetParamString,
+			Expression_GetIConParamNum,
+			Expression_GetIConParamString,
 			
 			Expression_GetFilterFlag,
 
@@ -1301,6 +1330,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetRemarkOffsetY,
 
 			Expression_Format_GetFormatString,
+
+			Expression_GetTagParamNum,
+			Expression_GetTagParamString,
 
 			0
 			};

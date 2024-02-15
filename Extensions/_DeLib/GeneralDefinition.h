@@ -177,6 +177,10 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	return true;
 }
 
+inline std::wstring StringViewToString(const std::wstring_view& str) {
+	return { str.data(), str.size() };
+}
+
 // MSGBOX
 #include "StrNum.h"
 

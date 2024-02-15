@@ -122,7 +122,10 @@
 
 #define	EXP_EXPRESSION_GFMTS		    	37
 
-#define	EXP_LAST                    		38
+#define	EXP_EXPRESSION_GTPN		    		38
+#define	EXP_EXPRESSION_GTPS		    		39
+
+#define	EXP_LAST                    		40
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -309,6 +312,7 @@ typedef struct tagRDATA
 
 	void* pRenderOptions;
 	std::wstring* pTagCallbackName;
+	const std::vector<std::wstring>* pTagCallbackParams;
 
 	unsigned char tabSize;
 	bool bTabEM;

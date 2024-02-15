@@ -220,6 +220,9 @@ BEGIN
         POPUP "Render Options"
         BEGIN
             MENUITEM "Get Visible Ratio", IDMN_EXPRESSION_GRO_VR
+            MENUITEM SEPARATOR
+            MENUITEM "Get Tag Param Num", IDMN_EXPRESSION_GTPN
+            MENUITEM "Get Tag Param String", IDMN_EXPRESSION_GTPS
         END
         MENUITEM SEPARATOR
         POPUP "Alignment"
@@ -633,6 +636,9 @@ BEGIN
     M_EXPRESSION_GROY	    "GROY("
 
     M_EXPRESSION_GFMTS	    "GFMTS("
+
+    M_EXPRESSION_GTPN       "GetTagParamNum("
+    M_EXPRESSION_GTPS       "GetTagParamString$("
 END
 
 #endif    // English (U.S.) resources
