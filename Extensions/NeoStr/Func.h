@@ -4,6 +4,7 @@
 #include <string_view>
 
 constexpr auto ONITOIC = 0;
+constexpr auto ONTAGCB = 1;
 
 #define GIPP(p) (*(NeoStr::IConParamParser*)(p))
 

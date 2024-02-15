@@ -139,6 +139,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bIConNeedUpdate = false;
 
 	rdPtr->pRenderOptions = new NeoStr::RenderOptions;
+	static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions)->UpdateTagCallback([=] (const std::wstring& callbackName) {
+		*rdPtr->pTagCallbackName = callbackName;
+		CallEvent(ONTAGCB);
+	});
+	rdPtr->pTagCallbackName = new std::wstring;
 
 	rdPtr->tabSize = edPtr->tabSize;
 	rdPtr->bTabEM = edPtr->bTabEM;
@@ -191,6 +196,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	}
 
 	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+	delete rdPtr->pTagCallbackName;
 
 	delete rdPtr->pFormatByVector;
 

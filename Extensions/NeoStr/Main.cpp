@@ -23,6 +23,7 @@
 short conditionsInfos[]=
 		{
 		IDMN_CONDITION_OGOIC, M_CONDITION_OGOIC, CND_CONDITION_OGOIC, 0, 1, PARAM_EXPSTRING, M_ICONITNAME,
+		IDMN_CONDITION_OTAGCB, M_CONDITION_OTAGCB, CND_CONDITION_OTAGCB, 0, 1, PARAM_EXPSTRING, M_TAGCBNAME,
 		};
 
 // Definitions of parameters for each action
@@ -73,6 +74,8 @@ short actionsInfos[]=
 		IDMN_ACTION_FNF, M_ACTION_FNF, ACT_ACTION_FNF,	0, 1, PARAM_EXPSTRING, M_FMT,
 		IDMN_ACTION_APS, M_ACTION_APS, ACT_ACTION_APS,	0, 1, PARAM_EXPSTRING, M_PARAM,
 		IDMN_ACTION_APV, M_ACTION_APV, ACT_ACTION_APV,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PARAM, M_FMT,
+
+		IDMN_ACTION_STAGCBIDX, M_ACTION_STAGCBIDX, ACT_ACTION_STAGCBIDX, 0, 1, PARAM_EXPRESSION, M_STAGCBIDX,
 
 		};
 
@@ -149,6 +152,12 @@ long WINAPI DLLExport Condition_OnGetObjectICon(LPRDATA rdPtr, long param1, long
 	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return StrEqu(pLoopName, rdPtr->pIConItName->c_str());
+}
+
+long WINAPI DLLExport Condition_OnTagCallback(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	return StrEqu(pLoopName, rdPtr->pTagCallbackName->c_str());
 }
 
 
@@ -688,6 +697,20 @@ short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long p
 	return 0;
 }
 
+short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndex(LPRDATA rdPtr, long param1, long param2) {
+	const auto idx = (size_t)CNC_GetParameter(rdPtr) - 1;
+
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	if (pOpt->tagCallbackIndex != idx) {
+		pOpt->tagCallbackIndex = idx;
+
+		rdPtr->reRender = true;
+	}
+
+	return 0;
+}
+
 short WINAPI DLLExport Action_Format_NewFormat(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
@@ -1165,6 +1188,7 @@ long WINAPI DLLExport Expression_Format_GetFormatString(LPRDATA rdPtr, long para
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			Condition_OnGetObjectICon,
+			Condition_OnTagCallback,
 			
 			0
 			};
@@ -1215,6 +1239,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Format_NewFormat,
 			Action_Format_AddParamString,
 			Action_Format_AddParamValue,
+
+			Action_SetRenderOption_TagCallbackIndex,
 
 			0
 			};

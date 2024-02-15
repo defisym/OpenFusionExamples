@@ -117,6 +117,7 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Get Object ICon Callback", IDMN_CONDITION_OGOIC
+        MENUITEM "On Tag Callback", IDMN_CONDITION_OTAGCB
         MENUITEM SEPARATOR
     END
 END
@@ -142,6 +143,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Change Render Size", IDMN_ACTION_CS
         MENUITEM "Change Render Options", IDMN_ACTION_SRO
+        MENUITEM "Change Tag Callback Index", IDMN_ACTION_STAGCBIDX
         MENUITEM SEPARATOR
         MENUITEM "Force Redraw", IDMN_ACTION_FRD
         MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
@@ -557,11 +559,17 @@ BEGIN
     
     M_FMT					"Format String"
     M_PARAM					"Format Param"
+
+    M_ACTION_STAGCBIDX		"Set Tag Callback Index = %0"
+
+    M_TAGCBNAME				"Callback Name"
+    M_STAGCBIDX				"Index Larger Than This Will be Triggered"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_OGOIC       "%o On Get Object ICon Callback %0"
+    M_CONDITION_OTAGCB      "%o On Tag Callback %0"
 END
 
 STRINGTABLE DISCARDABLE 

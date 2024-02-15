@@ -344,6 +344,17 @@ private:
 	//			format is saved directly
 	//---------
 
+	// for tag
+	struct FormatTag :FormatBasic {
+		// updated during parsing
+		size_t rawStart;
+		std::wstring callbackName;
+
+		// updated during rendering
+	};
+
+	std::vector<FormatTag> tagFormat;
+
 	// for remark
 	struct FormatRemark :FormatBasic {
 		// updated during parsing
@@ -849,8 +860,8 @@ public:
 		this->strPos.reserve(20);		
 
 		// non-stack based
+		this->tagFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
-
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
 		// stack based
@@ -1673,6 +1684,10 @@ public:
 		//		\+0.5 -> +0.5
 		//		\-0.5 -> -0.5
 		//
+		// [Tag = CallbackName, Params]
+		//	Trigger callback when render to this
+		//	Tags in remarks will be ignored
+		//
 		// [Remark = CharCount, Content]
 		//	Insert remark that display over texts
 		//	As text may include ',', parse is started from left, unlike other formats
@@ -1795,6 +1810,7 @@ public:
 		// ------------
 
 		// non-stack based
+		this->tagFormat.clear();
 		this->remarkFormat.clear();
 		this->iConFormat.clear();
 
@@ -2012,6 +2028,16 @@ public:
 						if (StringViewIEqu(controlStr, L"!^")) {
 							bIgnoreFormat = false;
 							bIgnoreFormatExceptICon = false;
+
+							break;
+						}
+
+						if (StringViewIEqu(controlStr, L"Tag")) {
+							this->tagFormat.emplace_back(FormatTag{ {savedLength,
+								savedLengthWithNewLine},
+								static_cast<size_t>(pCurChar - pRawText),
+								{controlParam.data(),controlParam.size() }
+							});
 
 							break;
 						}
@@ -3157,6 +3183,22 @@ public:
 			this->positionCallback = positionCallback;
 			this->graphicCallback = graphicCallback;
 		}
+
+		// ------------
+		// tag callbacks
+		// ------------
+	private:
+		// trigger custom tag callback when rendering
+		using TagCallback = std::function<void(const std::wstring&)>;
+
+	public:
+		// only index lager than this will be triggered
+		size_t tagCallbackIndex = static_cast<size_t>(-1);
+		TagCallback tagCallback = nullptr;
+
+		inline void UpdateTagCallback(const TagCallback& tagCallback) {
+			this->tagCallback = tagCallback;
+		}
 	};
 
 //#define USE_RTT
@@ -3293,6 +3335,7 @@ public:
 		size_t totalChar = 0;
 
 		// non-stack based
+		auto tagItHandler = IteratorHandler(this->tagFormat);
 		auto remarkItHandler = IteratorHandler(this->remarkFormat);
 		auto iConItHandler = IteratorHandler(this->iConFormat);
 
@@ -3400,6 +3443,14 @@ public:
 					// ---------
 					// update iterator
 					// ---------
+
+					// non-stack based
+					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
+						if (opt.tagCallback == nullptr) { return; }
+						if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
+
+						opt.tagCallback(tagIt->callbackName);
+					});
 
 					// stack based
 					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
@@ -3624,6 +3675,9 @@ public:
 
 			// copy one option here
 			RenderOptions remarkOpt = opt;
+			// skip custom tag callback
+			remarkOpt.UpdateTagCallback(nullptr);
+			// overrider render, directly to parent
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
 				CharPos* pCharPos,

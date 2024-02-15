@@ -168,6 +168,8 @@
 #define	IDMN_ACTION_APS			    25028
 #define	IDMN_ACTION_APV			    25029
 
+#define	IDMN_ACTION_STAGCBIDX		25030
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -214,6 +216,8 @@
 #define	M_ACTION_APS				5028
 #define	M_ACTION_APV				5029
 
+#define	M_ACTION_STAGCBIDX			5030
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -259,6 +263,9 @@
 #define M_FMT						5532
 #define M_PARAM						5533
 
+#define M_TAGCBNAME					5534
+#define M_STAGCBIDX					5535
+
 //	Conditions
 //--------------------
 
@@ -267,9 +274,11 @@
 
 // Commands of condition menu
 #define IDMN_CONDITION_OGOIC         26000
+#define IDMN_CONDITION_OTAGCB        26001
 
 // Condition strings
 #define M_CONDITION_OGOIC       	 6000
+#define M_CONDITION_OTAGCB       	 6001
 
 // Titles of condition parameters
 #define M_CND_P1				     6501

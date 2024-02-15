@@ -7,8 +7,9 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_OGOIC				0
+#define	CND_CONDITION_OTAGCB			1
 
-#define	CND_LAST						1
+#define	CND_LAST						2
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -58,7 +59,9 @@
 #define	ACT_ACTION_APS			    	28
 #define	ACT_ACTION_APV			    	29
 
-#define	ACT_LAST						30
+#define	ACT_ACTION_STAGCBIDX	    	30
+
+#define	ACT_LAST						31
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -305,6 +308,7 @@ typedef struct tagRDATA
 	bool bIConNeedUpdate;
 
 	void* pRenderOptions;
+	std::wstring* pTagCallbackName;
 
 	unsigned char tabSize;
 	bool bTabEM;
