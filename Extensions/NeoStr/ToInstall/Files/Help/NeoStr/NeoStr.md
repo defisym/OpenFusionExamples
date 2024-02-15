@@ -237,20 +237,23 @@ set to non-strike out
 - App Display String at NewLine
 
 - Render
-  - *render is delayed to display routine, or expression that need render result, you can force it here*
+  - Render
+    - *render is delayed to display routine, or expression that need render result, you can force it here*
 
-- Change Render Size
-  - *resize object during runtime*
-- Change Render Options
-  - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
-  - *include alpha: E.g., 10 chars*
-    - *not included: 5 / 10 = 0.5, display 5 chars*
-    - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+  - Change Render Size
+    - *resize object during runtime*
+  - Change Visible Ration
+    - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
+    - *include alpha: E.g., 10 chars*
+      - *not included: 5 / 10 = 0.5, display 5 chars*
+      - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+  - Change Tag Callback Index
+    - *only index lager than this will be triggered*
 
-- Force Redraw
-  - *if no change, last render result will be used, this action will force redraw even not change*
-- Force Redraw Global ICon
-  - *redraw all objects with `ICon global` and `ICon global force update` checked*
+  - Force Redraw
+    - *if no change, last render result will be used, this action will force redraw even not change*
+  - Force Redraw Global ICon
+    - *redraw all objects with `ICon global` and `ICon global force update` checked*
 
 - Alignment
   - Change Row Space
@@ -323,6 +326,9 @@ set to non-strike out
 
 - Render Options
   - Get Visible Ratio
+  
+  - Get Tag Param Num
+  - Get Tag Param String
 
 - Alignment
   - Get Row Space

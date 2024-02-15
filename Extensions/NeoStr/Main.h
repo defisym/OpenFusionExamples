@@ -49,7 +49,7 @@
 #define	ACT_ACTION_FRDGI		    	22
 #define	ACT_ACTION_RENDER		    	23
 
-#define	ACT_ACTION_SRO		    	    24
+#define	ACT_ACTION_SRO_VR	    	    24
 
 #define	ACT_ACTION_STS		    	    25
 
@@ -59,7 +59,7 @@
 #define	ACT_ACTION_APS			    	28
 #define	ACT_ACTION_APV			    	29
 
-#define	ACT_ACTION_STAGCBIDX	    	30
+#define	ACT_ACTION_SRO_STAGCBIDX	    30
 
 #define	ACT_LAST						31
 

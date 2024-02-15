@@ -158,7 +158,7 @@
 #define	IDMN_ACTION_FRDGI		    25022
 #define	IDMN_ACTION_RENDER		    25023
 
-#define	IDMN_ACTION_SRO 		    25024
+#define	IDMN_ACTION_SRO_VR 		    25024
 
 #define	IDMN_ACTION_STS 		    25025
 
@@ -168,7 +168,7 @@
 #define	IDMN_ACTION_APS			    25028
 #define	IDMN_ACTION_APV			    25029
 
-#define	IDMN_ACTION_STAGCBIDX		25030
+#define	IDMN_ACTION_SRO_STAGCBIDX	25030
 
 // Action strings
 #define M_ACTION_CS                 5000
@@ -206,7 +206,7 @@
 #define	M_ACTION_FRDGI			    5022
 #define	M_ACTION_RENDER			    5023
 
-#define	M_ACTION_SRO			    5024
+#define	M_ACTION_SRO_VR			    5024
 
 #define	M_ACTION_STS			    5025
 
@@ -216,7 +216,7 @@
 #define	M_ACTION_APS				5028
 #define	M_ACTION_APV				5029
 
-#define	M_ACTION_STAGCBIDX			5030
+#define	M_ACTION_SRO_STAGCBIDX		5030
 
 // Titles of action parameters
 #define M_WIDTH				        5501

@@ -138,16 +138,19 @@ BEGIN
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
-        MENUITEM SEPARATOR  
-        MENUITEM "Render", IDMN_ACTION_RENDER
         MENUITEM SEPARATOR
-        MENUITEM "Change Render Size", IDMN_ACTION_CS
-        MENUITEM "Change Render Options", IDMN_ACTION_SRO
-        MENUITEM "Change Tag Callback Index", IDMN_ACTION_STAGCBIDX
+        POPUP "Render"
+        BEGIN
+           MENUITEM "Render", IDMN_ACTION_RENDER
+           MENUITEM SEPARATOR
+           MENUITEM "Change Render Size", IDMN_ACTION_CS
+           MENUITEM "Change Visible Ratio", IDMN_ACTION_SRO_VR
+           MENUITEM "Change Tag Callback Index", IDMN_ACTION_SRO_STAGCBIDX
+           MENUITEM SEPARATOR
+           MENUITEM "Force Redraw", IDMN_ACTION_FRD
+           MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Force Redraw", IDMN_ACTION_FRD
-        MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
-        MENUITEM SEPARATOR    
         POPUP "Alignment"
         BEGIN    
             MENUITEM "Change Row Space", IDMN_ACTION_CRS
@@ -544,7 +547,7 @@ BEGIN
     M_ACTION_FRDGI          "Force Redraw Global ICon"
     M_ACTION_RENDER         "Render"
 
-    M_ACTION_SRO            "Change Render Option, Visible Ratio = %0, Include Alpha = %1"
+    M_ACTION_SRO_VR         "Change Visible Ratio = %0, Include Alpha = %1"
     M_VISIBLERATIO          "Use a 0 ~ 1 float to control characters to display"
     M_INCLUDEALPHA          "Include Alpha"
 
@@ -563,10 +566,10 @@ BEGIN
     M_FMT					"Format String"
     M_PARAM					"Format Param"
 
-    M_ACTION_STAGCBIDX		"Set Tag Callback Index = %0"
+    M_ACTION_SRO_STAGCBIDX	"Set Tag Callback Index = %0"
 
     M_TAGCBNAME				"Callback Name"
-    M_STAGCBIDX				"Index Larger Than This Will be Triggered"
+    M_STAGCBIDX			"Index Larger Than This Will be Triggered"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -636,6 +639,7 @@ BEGIN
     M_EXPRESSION_GROY	    "GROY("
 
     M_EXPRESSION_GFMTS	    "GFMTS("
+
 
     M_EXPRESSION_GTPN       "GetTagParamNum("
     M_EXPRESSION_GTPS       "GetTagParamString$("
