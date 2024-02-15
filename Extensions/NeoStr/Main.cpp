@@ -186,9 +186,6 @@ short WINAPI DLLExport Action_ChangeString(LPRDATA rdPtr, long param1, long para
 
 	*rdPtr->pStr = pStr;
 
-	// reset tag callback index
-	static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions)->tagCallbackIndex = static_cast<size_t>(-1);
-
 	ReDisplay(rdPtr);
 
 	return 0;
