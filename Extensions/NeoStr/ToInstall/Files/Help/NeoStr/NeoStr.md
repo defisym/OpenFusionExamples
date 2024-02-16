@@ -248,7 +248,14 @@ set to non-strike out
       - *not included: 5 / 10 = 0.5, display 5 chars*
       - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
   - Change Tag Callback Index
-    - *only index lager than this will be triggered*
+    - *only tag's index (location in the raw string) lager than this will be triggered*
+    - *default is `-1`*
+  - Change Tag Callback Index Managed
+    - *default is false*
+    - *reset to false if you change the index manually*
+    - *index is update by the following rules:*
+      - *after render, the index will be set to the current raw string length*
+      - *when using `Change Display String`, if it's not an append of previous string, then the index is reset to 0, aka trigger all*
 
   - Force Redraw
     - *if no change, last render result will be used, this action will force redraw even not change*

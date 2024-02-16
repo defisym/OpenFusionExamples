@@ -3227,6 +3227,27 @@ public:
 		inline void UpdateTagCallback(const TagCallback& tagCallback) {
 			this->tagCallback = tagCallback;
 		}
+
+		// update to current raw text length
+		inline bool UpdateTagCallbackIndex(const NeoStr* pNeoStr) {
+			if (pNeoStr == nullptr) { return false; }
+
+			const auto rawTextLen = [&] ()->size_t {
+				const auto pRawText = pNeoStr->GetRawText();
+
+				if (pRawText == nullptr) { return 0; }
+
+				// index start from 0
+				const auto len = wcslen(pRawText) - 1;	
+
+				return len;
+			}();
+
+			const bool bChanged = this->tagCallbackIndex != rawTextLen;
+			this->tagCallbackIndex = rawTextLen;
+
+			return bChanged;
+		}
 	};
 
 //#define USE_RTT

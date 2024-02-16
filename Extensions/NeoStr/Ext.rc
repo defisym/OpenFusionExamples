@@ -146,6 +146,7 @@ BEGIN
            MENUITEM "Change Render Size", IDMN_ACTION_CS
            MENUITEM "Change Visible Ratio", IDMN_ACTION_SRO_VR
            MENUITEM "Change Tag Callback Index", IDMN_ACTION_SRO_STAGCBIDX
+           MENUITEM "Change Tag Callback Index Managed", IDMN_ACTION_SRO_STAGCBIDXM
            MENUITEM SEPARATOR
            MENUITEM "Force Redraw", IDMN_ACTION_FRD
            MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
@@ -567,9 +568,11 @@ BEGIN
     M_PARAM					"Format Param"
 
     M_ACTION_SRO_STAGCBIDX	"Set Tag Callback Index = %0"
+    M_ACTION_SRO_STAGCBIDXM	"Set Tag Callback Index Managed = %0"
 
     M_TAGCBNAME				"Callback Name"
-    M_STAGCBIDX			"Index Larger Than This Will be Triggered"
+    M_STAGCBIDX			    "Index Larger Than This Will be Triggered"
+    M_STAGCBIDXM		    "1 = Index Managed Internally, 0 = Manually"
 END
 
 STRINGTABLE DISCARDABLE 

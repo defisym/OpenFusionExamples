@@ -60,8 +60,9 @@
 #define	ACT_ACTION_APV			    	29
 
 #define	ACT_ACTION_SRO_STAGCBIDX	    30
+#define	ACT_ACTION_SRO_STAGCBIDXM	    31
 
-#define	ACT_LAST						31
+#define	ACT_LAST						32
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -311,6 +312,7 @@ typedef struct tagRDATA
 	bool bIConNeedUpdate;
 
 	void* pRenderOptions;
+	bool bTagCallbackIndexManaged;
 	std::wstring* pTagCallbackName;
 	const std::vector<std::wstring>* pTagCallbackParams;
 

@@ -130,8 +130,12 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
-		rdPtr->pNeoStr->RenderPerChar(&rc,
-			*static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions));
+		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
+		if(rdPtr->bTagCallbackIndexManaged) {
+			pRenderOptions->UpdateTagCallbackIndex(rdPtr->pNeoStr);
+		}
 
 		rdPtr->reRender = false;
 	}

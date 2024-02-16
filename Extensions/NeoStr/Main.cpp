@@ -76,6 +76,7 @@ short actionsInfos[]=
 		IDMN_ACTION_APV, M_ACTION_APV, ACT_ACTION_APV,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PARAM, M_FMT,
 
 		IDMN_ACTION_SRO_STAGCBIDX, M_ACTION_SRO_STAGCBIDX, ACT_ACTION_SRO_STAGCBIDX, 0, 1, PARAM_EXPRESSION, M_STAGCBIDX,
+		IDMN_ACTION_SRO_STAGCBIDXM, M_ACTION_SRO_STAGCBIDXM, ACT_ACTION_SRO_STAGCBIDXM, 0, 1, PARAM_EXPRESSION, M_STAGCBIDXM,
 
 		};
 
@@ -182,9 +183,39 @@ short WINAPI DLLExport Action_ChangeRenderSize(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport Action_ChangeString(LPRDATA rdPtr, long param1, long param2) {
-	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	*rdPtr->pStr = pStr;
+	struct IndexManagedHelper {
+		LPRDATA rdPtr = nullptr;
+		bool bAppend = false;
+
+		IndexManagedHelper(LPRDATA rdPtr, const LPCWSTR pStr) {
+			if (!rdPtr->bTagCallbackIndexManaged) { return; }
+
+			this->rdPtr = rdPtr;
+			this->bAppend = StringAppend(rdPtr->pStr->c_str(), pStr);
+		}
+		~IndexManagedHelper() {
+			if (this->rdPtr == nullptr) { return; }
+
+			const auto pOpt = static_cast<NeoStr::RenderOptions*>(this->rdPtr->pRenderOptions);
+
+			// not append, reset
+			if (!this->bAppend) {
+				pOpt->tagCallbackIndex = 0;
+			}
+			// append, use previous render result
+			else {
+
+			}
+		}
+	};
+
+	// RAII
+	{
+		IndexManagedHelper helper(rdPtr, pStr);
+		*rdPtr->pStr = pStr;
+	}
 
 	ReDisplay(rdPtr);
 
@@ -702,6 +733,7 @@ short WINAPI DLLExport Action_SetRenderOption_VisibleRatio(LPRDATA rdPtr, long p
 short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndex(LPRDATA rdPtr, long param1, long param2) {
 	const auto idx = (size_t)CNC_GetParameter(rdPtr) - 1;
 
+	rdPtr->bTagCallbackIndexManaged = false;
 	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 
 	if (pOpt->tagCallbackIndex != idx) {
@@ -712,6 +744,24 @@ short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndex(LPRDATA rdPtr, lo
 
 	return 0;
 }
+
+short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndexManaged(LPRDATA rdPtr, long param1, long param2) {
+	const auto bManaged = (bool)CNC_GetParameter(rdPtr);
+
+	// no change
+	if (rdPtr->bTagCallbackIndexManaged == bManaged) { return 0; }
+
+	// changed
+	rdPtr->bTagCallbackIndexManaged = bManaged;
+
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+	if (pOpt->UpdateTagCallbackIndex(rdPtr->pNeoStr)) {
+		rdPtr->reRender = true;
+	}
+
+	return 0;
+}
+
 
 short WINAPI DLLExport Action_Format_NewFormat(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -1267,6 +1317,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Format_AddParamValue,
 
 			Action_SetRenderOption_TagCallbackIndex,
+			Action_SetRenderOption_TagCallbackIndexManaged,
 
 			0
 			};

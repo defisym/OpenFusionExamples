@@ -177,6 +177,37 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	return true;
 }
 
+// true if pR is pL's append
+inline bool StringAppend(const LPCWSTR pL, const LPCWSTR pR) {
+	const auto lLength = wcslen(pL);
+	const auto rLength = wcslen(pR);
+
+	if (lLength > rLength) { return false; }
+
+	for (size_t i = 0; i < lLength; i++) {
+		if (pL[i] != pR[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+inline bool StringIAppend(const LPCWSTR pL,const LPCWSTR pR) {
+	const auto lLength = wcslen(pL);
+	const auto rLength = wcslen(pR);
+
+	if (lLength > rLength) { return false; }
+
+	for (size_t i = 0; i < lLength; i++) {
+		if (ChrCmpIW(pL[i], pR[i]) != 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 inline std::wstring StringViewToString(const std::wstring_view& str) {
 	return { str.data(), str.size() };
 }

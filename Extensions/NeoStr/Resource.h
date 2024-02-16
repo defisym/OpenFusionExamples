@@ -169,6 +169,7 @@
 #define	IDMN_ACTION_APV			    25029
 
 #define	IDMN_ACTION_SRO_STAGCBIDX	25030
+#define	IDMN_ACTION_SRO_STAGCBIDXM	25031
 
 // Action strings
 #define M_ACTION_CS                 5000
@@ -217,6 +218,7 @@
 #define	M_ACTION_APV				5029
 
 #define	M_ACTION_SRO_STAGCBIDX		5030
+#define	M_ACTION_SRO_STAGCBIDXM		5031
 
 // Titles of action parameters
 #define M_WIDTH				        5501
@@ -265,6 +267,7 @@
 
 #define M_TAGCBNAME					5534
 #define M_STAGCBIDX					5535
+#define M_STAGCBIDXM				5536
 
 //	Conditions
 //--------------------
