@@ -264,7 +264,7 @@ inline size_t DisplayAnimationID(LPRO object) {
 		}
 	}
 
-	// shouldn't run to here as fusion granteed that object should have animation
+	// shouldn't run to here as fusion guaranteed that object should have animation
 	return -1;
 }
 
@@ -315,25 +315,25 @@ inline size_t DisplayAnimationDirection(LPRO object) {
 	size_t former = 0;
 	size_t later = 0;
 
-	const size_t curdir = object->roa.raAnimDir;
-	const size_t prevdir = object->roa.raAnimPreviousDir;
+	const size_t curDir = object->roa.raAnimDir;
+	const size_t prevDir = object->roa.raAnimPreviousDir;
 
-	bool clockwize;
+	bool clockwise;
 
-	if (prevdir == 0) {
-		if (curdir <= 16) {
-			clockwize = false;
+	if (prevDir == 0) {
+		if (curDir <= 16) {
+			clockwise = false;
 		}
 		else {
-			clockwize = true;
+			clockwise = true;
 		}
 	}
 	else {
-		clockwize = prevdir >= curdir;
+		clockwise = prevDir >= curDir;
 	}
 
 	//former
-	for (size_t pos = curdir; pos != (size_t)(-1); pos--) {
+	for (size_t pos = curDir; pos != (size_t)(-1); pos--) {
 		if (DirHasFrame(object, pos)) {
 			former = pos;
 			break;
@@ -341,18 +341,18 @@ inline size_t DisplayAnimationDirection(LPRO object) {
 	}
 
 	//later
-	for (size_t pos = curdir; pos <= DIRID_MAX; pos++) {
+	for (size_t pos = curDir; pos <= DIRID_MAX; pos++) {
 		if (DirHasFrame(object, pos % 32)) {
 			later = pos;
 			break;
 		}
 	}
 
-	if ((curdir - former) == (later - curdir)) {
-		return !clockwize ? former : later % 32;
+	if ((curDir - former) == (later - curDir)) {
+		return !clockwise ? former : later % 32;
 	}
 	else {
-		return (curdir - former) <= (later - curdir) ? former : later % 32;
+		return (curDir - former) <= (later - curDir) ? former : later % 32;
 	}
 }
 
@@ -1783,11 +1783,11 @@ inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHe
 	auto actualWidth = Range(srcX + srcWidth, 0, widthS);
 	auto actualHeight = Range(srcY + srcHeight, 0, heightS);
 
-	auto acutalSrcX= Range(srcX, 0, widthS);
-	auto acutalSrcY = Range(srcY, 0, heightS);
+	auto actualSrcX= Range(srcX, 0, widthS);
+	auto actualSrcY = Range(srcY, 0, heightS);
 
-	for (int y = acutalSrcY; y < actualHeight; y++) {
-		for (int x = acutalSrcX; x < actualWidth; x++) {
+	for (int y = actualSrcY; y < actualHeight; y++) {
+		for (int x = actualSrcX; x < actualWidth; x++) {
 #else
 	for (int y = srcY; y < srcY + srcHeight; y++) {
 		for (int x = srcX; x < srcX + srcWidth; x++) {
