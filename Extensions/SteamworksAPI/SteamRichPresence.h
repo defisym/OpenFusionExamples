@@ -4,18 +4,17 @@
 
 #include "SteamInclude.h"
 
-class SteamRichPresence :public SteamCallbackClass {
+class SteamRichPresence :public SteamCallbackClass<SteamRichPresence> {
 private:
-	inline void CallCallback(void* udata = nullptr) override {
-		bCallbackSuccess = false;
-		pCallback = GetCallBack<FriendRichPresenceUpdate_t>([&] (const FriendRichPresenceUpdate_t* pCallback) {
-			bCallbackSuccess = true;
-		});
-		SteamFriends()->RequestFriendRichPresence(*static_cast<CSteamID*>(udata));
+	friend class SteamCallbackClass;
+	inline void InitCallback() override {
+		AddCallback(GetCallBack<FriendRichPresenceUpdate_t>([&] (const FriendRichPresenceUpdate_t* pCallback) {
+			return true;
+			}));
 	}
-public:
-	SteamRichPresence() = default;
-	~SteamRichPresence() override = default;
+	public:
+		SteamRichPresence() = default;
+		~SteamRichPresence() override = default;
 
 	template <STR Name>
 	inline bool SetRichPresence(const Name pchKey, const Name pchValue) {
@@ -55,7 +54,9 @@ public:
 		}
 	}
 
-	inline void RequestFriendRichPresence(CSteamID steamIDFriend) {
-		SteamRichPresence::CallCallback(&steamIDFriend);
+	inline void RequestFriendRichPresence(CSteamID steamIDFriend) const {
+		CallCallback([&] () {
+			SteamFriends()->RequestFriendRichPresence(steamIDFriend);
+		});
 	}
 };

@@ -2,7 +2,7 @@
 
 #include "SteamInclude.h"
 
-class SteamScreenshot :public SteamCallbackClass {
+class SteamScreenshot :public SteamCallbackClass<SteamScreenshot> {
 public:
 	using OnScreenshotCallback = std::function<void()>;
 	OnScreenshotCallback onScreenshotCallback = nullptr;
@@ -10,23 +10,22 @@ public:
 private:
 	ScreenshotHandle handle = NULL;
 
-	inline void CallCallback(void* udata = nullptr) override {
-		bCallbackSuccess = false;
-		pCallback = GetCallBack<ScreenshotReady_t>([&] (const ScreenshotReady_t* pCallback) {
-			bCallbackSuccess = pCallback->m_eResult == k_EResultOK;
+	friend class SteamCallbackClass;
+	inline void InitCallback() override {
+		AddCallback(GetCallBack<ScreenshotReady_t>([&] (const ScreenshotReady_t* pCallback) {
+			const auto bSuccess = pCallback->m_eResult == k_EResultOK;
 			handle = pCallback->m_hLocal;
 
-			if (bCallbackSuccess) {
+			if (bSuccess) {
 				onScreenshotCallback();
 			}
 
-			bCallbackSuccess = false;
-		});
+			return bSuccess;
+			}));
 	}
+
 public:
-	SteamScreenshot() {
-		SteamScreenshot::CallCallback();
-	}
+	SteamScreenshot() = default;
 	~SteamScreenshot() override = default;
 
 	inline void SetCallback(const OnScreenshotCallback& callback) {
@@ -35,7 +34,7 @@ public:
 
 	template <STR Name>
 	inline bool SetLocation(const Name pchLocation) {
-		if(!bCallbackSuccess) {
+		if(!GetCallbackStat()) {
 			return false;
 		}
 
@@ -48,7 +47,7 @@ public:
 	}
 
 	inline bool TagPublishedFile(const PublishedFileId_t unPublishedFileID) const {
-		if (!bCallbackSuccess) {
+		if (!GetCallbackStat()) {
 			return false;
 		}
 
@@ -56,7 +55,7 @@ public:
 	}
 	
 	inline bool TagUser(const CSteamID steamID) const {
-		if (!bCallbackSuccess) {
+		if (!GetCallbackStat()) {
 			return false;
 		}
 
