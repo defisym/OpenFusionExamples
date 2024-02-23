@@ -15,7 +15,6 @@ private:
 	uint32 unBufferSize = 0;
 
 private:
-	friend class SteamCallbackClass;
 	inline void InitCallback() override {
 		SteamAPICall_t hCall = 0;
 		bool bSuccess = SteamHTTP()->SendHTTPRequest(hRequest, &hCall);
@@ -46,8 +45,7 @@ public:
 	// Get
 	SteamHttp(const char* pchFullURL,
 		const ErrorCallback& errorCallback,
-		const FinishCallback& finishCallback)
-		:SteamCallbackClass(false) {
+		const FinishCallback& finishCallback) {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
 		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodGET, pchFullURL);
@@ -57,8 +55,7 @@ public:
 	SteamHttp(const char* pchAbsoluteURL,
 		const char* pchContentType, const char* pubBody, const uint32 unBodyLen,
 		const ErrorCallback& errorCallback,
-		const FinishCallback& finishCallback)
-		:SteamCallbackClass(false) {
+		const FinishCallback& finishCallback) {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
 		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodPOST, pchAbsoluteURL);

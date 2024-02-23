@@ -157,13 +157,9 @@ protected:
 public:
 	// child classes init pCallback with GetCallBack
 	// then call the async operation
-	explicit SteamCallbackClass(bool bAutoCallInit = true) {
+	explicit SteamCallbackClass() {
 		this->appID = SteamUtils()->GetAppID();
 		SteamCallbacks.reserve(DefaultCallbackCount);
-		// CRTP
-		if (bAutoCallInit) {
-			static_cast<Derived*>(this)->InitCallback();
-		}
 	}
 	virtual ~SteamCallbackClass() {
 		for (const auto& it : SteamCallbacks) {

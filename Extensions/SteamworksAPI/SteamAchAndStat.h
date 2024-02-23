@@ -16,7 +16,6 @@ concept STAT = std::is_same_v<std::remove_cv_t<T>, int32 > || std::is_same_v<std
 
 class SteamAchAndStat :public SteamCallbackClass<SteamAchAndStat>, public SteamRefreshClass {
 private:
-	friend class SteamCallbackClass;
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
 			return pCallback->m_eResult == k_EResultOK
@@ -27,6 +26,7 @@ private:
 public:
 	SteamAchAndStat(RefreshTasks* pTasks)
 		: SteamRefreshClass(pTasks) {
+		SteamAchAndStat::InitCallback();
 		CallCallback([]() {
 			bool bSuccess = SteamUserStats()->RequestCurrentStats();
 		});

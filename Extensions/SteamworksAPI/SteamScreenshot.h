@@ -10,7 +10,6 @@ public:
 private:
 	ScreenshotHandle handle = NULL;
 
-	friend class SteamCallbackClass;
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<ScreenshotReady_t>([&] (const ScreenshotReady_t* pCallback) {
 			const auto bSuccess = pCallback->m_eResult == k_EResultOK;
@@ -25,7 +24,7 @@ private:
 	}
 
 public:
-	SteamScreenshot() = default;
+	SteamScreenshot() { SteamScreenshot::InitCallback(); }
 	~SteamScreenshot() override = default;
 
 	inline void SetCallback(const OnScreenshotCallback& callback) {

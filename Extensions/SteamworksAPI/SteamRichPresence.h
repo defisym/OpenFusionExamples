@@ -6,14 +6,13 @@
 
 class SteamRichPresence :public SteamCallbackClass<SteamRichPresence> {
 private:
-	friend class SteamCallbackClass;
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<FriendRichPresenceUpdate_t>([&] (const FriendRichPresenceUpdate_t* pCallback) {
 			return true;
 			}));
 	}
 	public:
-		SteamRichPresence() = default;
+		SteamRichPresence() { SteamRichPresence::InitCallback(); }
 		~SteamRichPresence() override = default;
 
 	template <STR Name>

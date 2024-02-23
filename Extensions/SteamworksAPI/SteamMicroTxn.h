@@ -72,7 +72,6 @@ public:
 	}
 
 private:
-	friend class SteamCallbackClass;
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<MicroTxnAuthorizationResponse_t>([&] (const MicroTxnAuthorizationResponse_t* pCallback) {
 			step = Step::Callback_Pending;
@@ -153,7 +152,7 @@ private:
 	}
 
 public:
-	SteamMicroTxn() = default;
+	SteamMicroTxn() { SteamMicroTxn::InitCallback(); }
 	~SteamMicroTxn() override {
 		ResetCallbackResult();
 	}

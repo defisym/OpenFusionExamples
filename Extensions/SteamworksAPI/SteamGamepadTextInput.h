@@ -16,7 +16,6 @@ private:
 	DismissCallback dismissCallback = nullptr;
 
 private:
-	friend class SteamCallbackClass;
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<GamepadTextInputDismissed_t>([&] (const GamepadTextInputDismissed_t* pCallback) {
 			bSubmitted = pCallback->m_bSubmitted;
@@ -39,7 +38,7 @@ private:
 	}
 
 public:
-	SteamGamepadTextInput() = default;
+	SteamGamepadTextInput() { SteamGamepadTextInput::InitCallback(); }
 	~SteamGamepadTextInput() override = default;
 
 	inline const std::string& GetText() const { return inputText; }
