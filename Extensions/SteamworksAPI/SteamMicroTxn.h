@@ -152,8 +152,7 @@ private:
 	}
 
 public:
-	SteamMicroTxn()
-		:SteamCallbackClass() {		
+	SteamMicroTxn()	{		
 		SteamMicroTxn::CallCallback();
 	}
 	~SteamMicroTxn() override {

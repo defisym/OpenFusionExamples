@@ -69,9 +69,9 @@ private:
 	SteamRefreshClass::RefreshTasks refreshTasks;
 
 public:
-	const CSteamID playerID;
-	const uint64 appID;
-	const int buildID;
+	CSteamID playerID;
+	uint64 appID;
+	int buildID;
 
 	SteamUtilities() :
 		playerID(SteamUser()->GetSteamID()),

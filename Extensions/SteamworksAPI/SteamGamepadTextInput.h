@@ -34,7 +34,7 @@ private:
 		});
 	}
 public:
-	SteamGamepadTextInput() :SteamCallbackClass() {
+	SteamGamepadTextInput() {
 		SteamGamepadTextInput::CallCallback();
 	}
 	~SteamGamepadTextInput() override {

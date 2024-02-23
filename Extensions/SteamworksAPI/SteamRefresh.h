@@ -26,7 +26,7 @@ private:
 	}
 
 public:
-	SteamRefreshClass(RefreshTasks* pTasks) {
+	explicit SteamRefreshClass(RefreshTasks* pTasks) {
 		this->pTasks = pTasks;
 	}
 

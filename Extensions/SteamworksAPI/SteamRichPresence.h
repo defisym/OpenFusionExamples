@@ -14,12 +14,8 @@ private:
 		SteamFriends()->RequestFriendRichPresence(*static_cast<CSteamID*>(udata));
 	}
 public:
-	SteamRichPresence()
-		:SteamCallbackClass() {
-	}
-	~SteamRichPresence() override {
-
-	}
+	SteamRichPresence() = default;
+	~SteamRichPresence() override = default;
 
 	template <STR Name>
 	inline bool SetRichPresence(const Name pchKey, const Name pchValue) {

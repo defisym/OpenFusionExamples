@@ -26,13 +26,11 @@ private:
 	}
 public:
 	SteamAchAndStat(RefreshTasks* pTasks)
-		:SteamCallbackClass(), SteamRefreshClass(pTasks) {
+		: SteamRefreshClass(pTasks) {
 		SteamAchAndStat::CallCallback();
 	}
-	~SteamAchAndStat() override {
+	~SteamAchAndStat() override = default;
 
-	}
-	
 	//------------
 	// Achievements
 	//------------

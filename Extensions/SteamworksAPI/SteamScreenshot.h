@@ -24,13 +24,10 @@ private:
 		});
 	}
 public:
-	SteamScreenshot()
-		:SteamCallbackClass() {
+	SteamScreenshot() {
 		SteamScreenshot::CallCallback();
 	}
-	~SteamScreenshot() override {
-
-	}
+	~SteamScreenshot() override = default;
 
 	inline void SetCallback(const OnScreenshotCallback& callback) {
 		onScreenshotCallback = callback;
