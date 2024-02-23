@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SteamInclude.h"
+#include "SteamRefresh.h"
 
 //------------
 // Concepts
@@ -13,7 +14,7 @@ concept STAT = std::is_same_v<std::remove_cv_t<T>, int32 > || std::is_same_v<std
 // Class
 //------------
 
-class SteamAchAndStat :public SteamCallbackClass {
+class SteamAchAndStat :public SteamCallbackClass, public SteamRefreshClass {
 private:
 	inline void CallCallback(void* udata = nullptr) override {
 		bCallbackSuccess = false;
@@ -24,8 +25,8 @@ private:
 		bool bSuccess = SteamUserStats()->RequestCurrentStats();
 	}
 public:
-	SteamAchAndStat(Refresh::RefreshTasks* pTasks)
-		:SteamCallbackClass(pTasks, Refresh::RefreshType::AchievementAndStat) {
+	SteamAchAndStat(RefreshTasks* pTasks)
+		:SteamCallbackClass(), SteamRefreshClass(pTasks) {
 		SteamAchAndStat::CallCallback();
 	}
 	~SteamAchAndStat() override {
@@ -84,7 +85,7 @@ public:
 
 			if (!bUnlock) {
 				SteamUserStats()->SetAchievement(pAchName);
-				AddToRefresh();
+				AddToRefresh(RefreshType::AchievementAndStat);
 			}
 		}
 	}
@@ -118,7 +119,7 @@ public:
 			}
 
 			SteamUserStats()->SetStat(pStatName, data);
-			AddToRefresh();
+			AddToRefresh(RefreshType::AchievementAndStat);
 		}
 	}
 
@@ -136,7 +137,7 @@ public:
 			GetStat(pStatName, &pData);
 
 			SteamUserStats()->SetStat(pStatName, pData + data);
-			AddToRefresh();
+			AddToRefresh(RefreshType::AchievementAndStat);
 		}
 	}
 };

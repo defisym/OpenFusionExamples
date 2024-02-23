@@ -66,16 +66,17 @@ private:
 	// Tasks
 	//------------
 
-	Refresh::RefreshTasks refreshTasks;
+	SteamRefreshClass::RefreshTasks refreshTasks;
 
 public:
 	const CSteamID playerID;
 	const uint64 appID;
 	const int buildID;
 
-	SteamUtilities() :playerID(SteamUser()->GetSteamID()),
+	SteamUtilities() :
+		playerID(SteamUser()->GetSteamID()),
 		appID(SteamUtils()->GetAppID()),
-		buildID(SteamApps()->GetAppBuildId()) {		
+		buildID(SteamApps()->GetAppBuildId()) {
 		InitSteamCommandLine();
 
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
@@ -100,7 +101,7 @@ public:
 	// Error
 	//------------
 
-	inline void SetErrorHandler() const {
+	static inline void SetErrorHandler() {
 #ifdef WIN32
 		if(IsDebuggerPresent()) {
 			return;
@@ -142,7 +143,7 @@ public:
 
 	inline void Refresh() {
 		// handle tasks
-		Refresh::Refresh(&refreshTasks);
+		SteamRefreshClass::Refresh(&refreshTasks);
 
 		// run callback
 		SteamAPI_RunCallbacks();		

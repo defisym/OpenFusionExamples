@@ -136,11 +136,6 @@ inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<void(CallBac
 // Base class
 // ------------
 class SteamCallbackClass {
-private:
-	// copy only, do not release
-	Refresh::RefreshTasks* pTasks = nullptr;
-	Refresh::RefreshType type = Refresh::RefreshType::None;
-
 protected:
 	uint64 appID = 0;
 
@@ -149,24 +144,13 @@ protected:
 
 public:
 	// child classes init pCallback with GetCallBack
-	// then call then async operation
-	explicit SteamCallbackClass(Refresh::RefreshTasks* pTasks = nullptr,
-		Refresh::RefreshType type = Refresh::RefreshType::None) {
+	// then call the async operation
+	explicit SteamCallbackClass() {
 		this->appID = SteamUtils()->GetAppID();
-
-		this->pTasks = pTasks;
-		this->type = type;
 	}
 	virtual ~SteamCallbackClass() {
 		delete pCallback;
 		pCallback = nullptr;
-	}
-
-	// Add task then refresh it in handle rountine
-	inline void AddToRefresh() const {
-		if (pTasks != nullptr) {
-			Refresh::UniquePush(pTasks, type);
-		}
 	}
 
 	inline bool GetCallbackStat() const {
