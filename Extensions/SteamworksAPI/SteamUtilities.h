@@ -11,6 +11,7 @@
 #include "SteamRichPresence.h"
 #include "SteamScreenshot.h"
 #include "SteamGamepadTextInput.h"
+#include "SteamDLC.h"
 
 #include "SteamRemote.h"
 
@@ -55,6 +56,7 @@ private:
 	SteamRichPresence* pSteamRichPresence = nullptr;
 	SteamScreenshot* pSteamScreenshot = nullptr;
 	SteamGamepadTextInput* pSteamGamepadTextInput = nullptr;
+	SteamDLC* pSteamDLC = nullptr;
 	
 	//------------
 	// None Callback
@@ -70,7 +72,7 @@ private:
 
 public:
 	CSteamID playerID;
-	uint64 appID;
+	AppId_t appID;
 	int buildID;
 
 	SteamUtilities() :
@@ -84,6 +86,7 @@ public:
 		pSteamRichPresence = new SteamRichPresence();
 		pSteamScreenshot = new SteamScreenshot();
 		pSteamGamepadTextInput = new SteamGamepadTextInput();
+		pSteamDLC = new SteamDLC();
 
 		pSteamRemote = new SteamRemote();
 	}
@@ -93,6 +96,7 @@ public:
 		delete pSteamRichPresence;
 		delete pSteamScreenshot;
 		delete pSteamGamepadTextInput;
+		delete pSteamDLC;
 		
 		delete pSteamRemote;
 	}
@@ -134,6 +138,7 @@ public:
 	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
 	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }
 	inline SteamGamepadTextInput* GetSteamGamepadTextInput() const { return pSteamGamepadTextInput; }
+	inline SteamDLC* GetSteamDLC() const { return pSteamDLC; }
 
 	inline SteamRemote* GetRemote() const { return pSteamRemote; }
 

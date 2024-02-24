@@ -5,6 +5,7 @@ constexpr auto OnMixroTxnError = 1;
 constexpr auto OnMixroTxnFinish = 2;
 constexpr auto OnScreenshot = 4;
 constexpr auto OnInputDismiss = 5;
+constexpr auto OnDLCInstalled = 7;
 
 class SteamUtilities;
 
@@ -71,12 +72,15 @@ private:
 	inline void UpdateMicroTxnCallback() const;
 	inline void UpdateScreenshotCallback() const;
 	inline void UpdateGamepadTextInputCallback() const;
+	inline void UpdateSteamDLCCallback() const;
 
 public:
+	// update rdPtr when changing frame
 	inline void Update(LPRDATA rdPtr) {
 		UpdateRdPtr(rdPtr);
 		UpdateMicroTxnCallback();
 		UpdateScreenshotCallback();
 		UpdateGamepadTextInputCallback();
+		UpdateSteamDLCCallback();
 	}
 };

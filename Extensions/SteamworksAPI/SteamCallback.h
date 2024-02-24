@@ -141,7 +141,7 @@ constexpr auto DefaultCallbackCount = 1;
 
 class SteamCallbackClass {
 protected:
-	uint32 appID = 0;
+	AppId_t appID = 0;
 	std::vector<SteamCallback*> SteamCallbacks;
 
 	inline bool CallbackIndexValid(size_t index) const {

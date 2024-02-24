@@ -25,7 +25,6 @@ public:
 	}
 	~SteamDLC() override = default;
 
-private:
 	static inline bool ActivateGameOverlayToStore(const AppId_t nAppID, const EOverlayToStoreFlag eFlag = k_EOverlayToStoreFlag_None) {
 		if (!SteamUtils()->IsOverlayEnabled()) { return false; }
 
@@ -34,7 +33,6 @@ private:
 		return true;
 	}
 
-public:
 	inline bool InGamePurchase_ShowAllDownloadAbleContent() const {
 		return ActivateGameOverlayToStore(this->appID);
 	}

@@ -10,7 +10,7 @@ inline void GlobalData::UpdateMicroTxnCallback() const {
 			//CallEvent(OnMixroTxnFinish);
 			AddEvent(OnMixroTxnFinish);
 		});
-});
+	});
 }
 
 inline void GlobalData::UpdateScreenshotCallback() const {
@@ -19,7 +19,7 @@ inline void GlobalData::UpdateScreenshotCallback() const {
 		[&] () {
 			CallEvent(OnScreenshot);
 		});
-});
+	});
 }
 
 inline void GlobalData::UpdateGamepadTextInputCallback() const {
@@ -28,6 +28,16 @@ inline void GlobalData::UpdateGamepadTextInputCallback() const {
 		[&] (bool bSubmitted, const std::string& text) {
 			CallEvent(OnInputDismiss);
 		});
-});
+	});
 }
+
+inline void GlobalData::UpdateSteamDLCCallback() const {
+	GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamDLC()->SetDLCInstallCallback([&] (AppId_t nAppId) {
+			rdPtr->callBackAppID = nAppId;
+			CallEvent(OnDLCInstalled);
+		});
+	});
+}
+
 

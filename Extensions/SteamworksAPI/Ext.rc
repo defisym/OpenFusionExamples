@@ -138,6 +138,11 @@ BEGIN
         BEGIN
             MENUITEM "On Screenshots", IDMN_CONDITION_OSS        
         END
+		MENUITEM SEPARATOR
+        POPUP "DLC"
+        BEGIN
+            MENUITEM "On DLC Install Complete", IDMN_CONDITION_ODLCIC        
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -155,8 +160,11 @@ BEGIN
         MENUITEM SEPARATOR        
         POPUP "User Stats"
         BEGIN
-            MENUITEM "Unlock Achievement",       IDMN_ACTION_UA
+            MENUITEM "Unlock Achievement",       			IDMN_ACTION_UA
+            MENUITEM "Indicate Achievement Progress",       IDMN_ACTION_IAP
+        	MENUITEM SEPARATOR        
             MENUITEM "Add to Stat",              IDMN_ACTION_AS
+            MENUITEM "Set Avg Rate Stat",        IDMN_ACTION_SARS
         END
         MENUITEM SEPARATOR
         POPUP "Friends"
@@ -189,6 +197,12 @@ BEGIN
             MENUITEM "Tag Published File", IDMN_ACTION_TSSU        
             MENUITEM "Tag User", IDMN_ACTION_TSSPF
         END
+		MENUITEM SEPARATOR
+        POPUP "DLC"
+        BEGIN
+            MENUITEM "Activate Game Overlay To Store", IDMN_ACTION_AGOTS
+            MENUITEM "Install DLC", IDMN_ACTION_ID
+		END
         MENUITEM SEPARATOR
     END
 END
@@ -344,11 +358,22 @@ BEGIN
 
     M_ACTION_SGTI      	     "Show Gamepad Text Input, InputMode = %0, LineMode = %1, Description = %2, CharMax = %3, ExistingText = %4"
 
-    M_INPUTMODE		           "1 = Password, 0 = Normal"
-    M_LINEMODE		           "1 = Multiple Line, 0 = Single Line"
-    M_DESCRIPTION	           "Description"
-    M_MAXCHAR		           "Max length"
-    M_EXISTINGTEXT	           "Existing Text"
+    M_INPUTMODE		         "1 = Password, 0 = Normal"
+    M_LINEMODE		         "1 = Multiple Line, 0 = Single Line"
+    M_DESCRIPTION	         "Description"
+    M_MAXCHAR		         "Max length"
+    M_EXISTINGTEXT	         "Existing Text"
+
+    M_ACTION_IAP          	 "Indicate Achievement %0 Progress, Cur = %1, Max = %2"
+    M_ACTION_SARS         	 "Set Avg Rate Stat %0, CountThisSession = %1, SessionLength = %2"
+    M_ACTION_AGOTS        	 "Activate Game Overlay To Store, AppID = %0, Flag = %1"
+    M_ACTION_ID          	 "Install DLC %0"
+
+	M_CURPROGRESS			 "Current Progress"
+	M_MAXPROGRESS			 "Max Progress"
+	M_COUNTTHISSESSION		 "Count This Session"
+	M_SESSIONLENGTH			 "Session Length"
+	M_GOTSFLAG			 	 "Game Overlay To Store Flag"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -368,6 +393,9 @@ BEGIN
 
     M_CONDITION_OID		      "%o: On Gamepad Input Dismiss"
     M_CONDITION_SUBMITTED     "%o: Gamepad Input Submitted"
+
+    M_CONDITION_ODLCIC        "%o: On DLC %0 Install Complete"
+    M_APPID				      "App ID"
 END
 
 STRINGTABLE DISCARDABLE 
