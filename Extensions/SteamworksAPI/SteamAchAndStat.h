@@ -140,4 +140,36 @@ public:
 			AddToRefresh(RefreshType::AchievementAndStat);
 		}
 	}
+
+
+	// the unit of dSessionLength should be the same as Window prop
+	// you set in Steamworks
+	template <STR Name, STAT Stat>
+	inline void SetAvgRateStat(const Name pStatName, const float flCountThisSession, const double dSessionLength) {
+		if constexpr (WSTR<Name>) {
+			SetAvgRateStat(ConvertWStrToStr(pStatName).c_str(), flCountThisSession, dSessionLength);
+		}
+		else {
+			if (!GetCallbackStat()) {
+				return;
+			}
+
+			SteamUserStats()->UpdateAvgRateStat(pStatName, flCountThisSession, dSessionLength);
+			AddToRefresh(RefreshType::AchievementAndStat);
+		}
+	}
+
+	template <STR Name, STAT Stat>
+	inline void IndicateAchievementProgress(const Name pStatName, const uint32 nCurProgress, const uint32 nMaxProgress) {
+		if constexpr (WSTR<Name>) {
+			IndicateAchievementProgress(ConvertWStrToStr(pStatName).c_str(), nCurProgress, nMaxProgress);
+		}
+		else {
+			if (!GetCallbackStat()) {
+				return;
+			}
+
+			SteamUserStats()->IndicateAchievementProgress(pStatName, nCurProgress, nMaxProgress);
+		}
+	}
 };
