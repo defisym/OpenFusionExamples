@@ -2,7 +2,7 @@
 
 #include "SteamInclude.h"
 
-class SteamScreenshot :public SteamCallbackClass<SteamScreenshot> {
+class SteamScreenshot :public SteamCallbackClass {
 public:
 	using OnScreenshotCallback = std::function<void()>;
 	OnScreenshotCallback onScreenshotCallback = nullptr;

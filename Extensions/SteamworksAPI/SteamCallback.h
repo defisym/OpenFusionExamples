@@ -144,7 +144,6 @@ inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<bool(CallBac
 // ------------
 constexpr auto DefaultCallbackCount = 1;
 
-template<class Derived>
 class SteamCallbackClass {
 protected:
 	uint64 appID = 0;

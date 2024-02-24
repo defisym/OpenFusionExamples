@@ -14,7 +14,7 @@
 
 #define USETESTSANDBOX
 
-class SteamMicroTxn :public SteamCallbackClass<SteamMicroTxn> {
+class SteamMicroTxn :public SteamCallbackClass {
 public:
 	enum class Step {
 		GetUsetInfo_Pending,

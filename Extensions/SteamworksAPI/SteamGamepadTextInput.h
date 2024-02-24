@@ -7,7 +7,7 @@
 //constexpr size_t GamepadTextInputDismissed = 0;
 //constexpr size_t FloatingGamepadTextInputDismissed = 1;
 
-class SteamGamepadTextInput :public SteamCallbackClass<SteamGamepadTextInput> {
+class SteamGamepadTextInput :public SteamCallbackClass {
 private:
 	std::string inputText;
 	bool bSubmitted = false;

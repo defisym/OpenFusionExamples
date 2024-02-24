@@ -2,7 +2,7 @@
 
 #include "SteamInclude.h"
 
-class SteamHttp :public SteamCallbackClass<SteamHttp> {
+class SteamHttp :public SteamCallbackClass {
 private:
 	using FinishCallback = std::function<void(uint8*, uint32)>;
 	FinishCallback finishCallback = nullptr;

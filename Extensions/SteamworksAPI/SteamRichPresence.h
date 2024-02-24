@@ -4,7 +4,7 @@
 
 #include "SteamInclude.h"
 
-class SteamRichPresence :public SteamCallbackClass<SteamRichPresence> {
+class SteamRichPresence :public SteamCallbackClass {
 private:
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<FriendRichPresenceUpdate_t>([&] (const FriendRichPresenceUpdate_t* pCallback) {
