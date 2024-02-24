@@ -121,22 +121,17 @@ inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<bool(CallBac
 //
 //class SteamFunction :public SteamCallbackClass {
 //private:
-//	inline void CallCallback(void* udata = nullptr) override {
-//		bCallbackSuccess = false;
-//		pCallback = GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
-//			bCallbackSuccess = pCallback->m_eResult == k_EResultOK
-//				&& pCallback->m_nGameID == appID;
-//		});
-//		bool bSuccess = SteamUserStats()->RequestCurrentStats();
+//	inline void InitCallback() override {
+//	AddCallback(GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
+//		return pCallback->m_eResult == k_EResultOK
+//			&& pCallback->m_nGameID == appID;
+//		}));
 //	}
 //public:
-//	SteamFunction(Refresh::RefreshTasks* pTasks)
-//		:SteamCallbackClass(pTasks, Refresh::RefreshType::AchievementAndStat) {
-//		SteamFunction::CallCallback();
+//	SteamFunction() {
+//		SteamFunction::InitCallback();
 //	}
-//	~SteamFunction() override {
-//
-//	}
+//	~SteamFunction() override = default;
 //};
 
 // ------------
@@ -146,7 +141,7 @@ constexpr auto DefaultCallbackCount = 1;
 
 class SteamCallbackClass {
 protected:
-	uint64 appID = 0;
+	uint32 appID = 0;
 	std::vector<SteamCallback*> SteamCallbacks;
 
 	inline bool CallbackIndexValid(size_t index) const {
@@ -183,10 +178,14 @@ public:
 	inline void AddCallback(SteamCallback* pCallback) {
 		SteamCallbacks.emplace_back(pCallback);
 	}
+	// reset callback result then call worker, keep worker nullptr if callback
+	// will be triggered by Steam
 	// call the first callback by default
 	inline void CallCallback(const std::function<void()>& worker = nullptr) const {
 		CallCallback(0, worker);
 	}
+	// reset callback result then call worker, keep worker nullptr if callback
+	// will be triggered by Steam
 	// call the given callback
 	inline void CallCallback(size_t index, const std::function<void()>& worker = nullptr) const {
 		if (!CallbackIndexValid(index)) { return; }
