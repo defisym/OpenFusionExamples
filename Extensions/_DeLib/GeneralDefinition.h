@@ -27,7 +27,7 @@
 #define release_ptr(X) if (valid(X)) {delete (X); (X) = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] (X); (X) = nullptr;}
 
-#define ResertPtr(X) X=nullptr;
+#define ResertPtr(X) (X) = nullptr;
 
 #define RAD(_DEG) ((PI*(_DEG))/180)
 #define DEG(_RAD) ((180*(_RAD))/PI)
