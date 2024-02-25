@@ -67,7 +67,9 @@
 
 #define	EXP_EXPRESSION_GGIT				7
 
-#define	EXP_LAST						8
+#define	EXP_EXPRESSION_GDDPP			8
+
+#define	EXP_LAST						9
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

@@ -57,10 +57,14 @@ public:
 	}
 
 	// 0.00 ~ 100.00
-	static inline float GetDlcDownloadProgressPercent(const AppId_t appID) {
+	// return -1.0 if not downloading
+	static inline float GetDLCDownloadProgressPercent(const AppId_t appID) {
 		uint64 bytesDownloaded = 0;
 		uint64 bytesTotal = 0;
-		SteamApps()->GetDlcDownloadProgress(appID, &bytesDownloaded, &bytesTotal);
+
+		if (!SteamApps()->GetDlcDownloadProgress(appID, &bytesDownloaded, &bytesTotal)) {
+			return -1.0f;
+		}
 
 		float percent = static_cast<float>(static_cast<double>(bytesDownloaded) / static_cast<double>(bytesTotal));
 		percent = round(percent * 10000) / 100;

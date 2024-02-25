@@ -81,6 +81,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCBP, M_EXPRESSION_GCBP, EXP_EXPRESSION_GCBP, 0, 0,
 
 		IDMN_EXPRESSION_GGIT, M_EXPRESSION_GGIT, EXP_EXPRESSION_GGIT, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GDDPP, M_EXPRESSION_GDDPP, EXP_EXPRESSION_GDDPP, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, M_APPID,
+
 		};
 
 
@@ -491,6 +494,21 @@ long WINAPI DLLExport Expression_GetGamepadText(LPRDATA rdPtr, long param1) {
 	});
 }
 
+long WINAPI DLLExport Expression_GetDLCDownloadProgressPercent(LPRDATA rdPtr, long param1) {
+	const auto appID = (AppId_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+
+	//Return the float without conversion
+	return rdPtr->pData->GetSteamUtilities<long>(ConvertToLong(-1.0f),
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto progress = SteamDLC::GetDLCDownloadProgressPercent(appID);
+
+			return ConvertToLong(progress);
+	});
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -560,6 +578,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetCurrentBatteryPower,
 
 			Expression_GetGamepadText,
+	
+			Expression_GetDLCDownloadProgressPercent,
 
 			0
 			};

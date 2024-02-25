@@ -236,7 +236,12 @@ BEGIN
             MENUITEM "Micro Transaction: Get HTML Error Code", IDMN_EXPRESSION_MT_GHTMLEC	
             MENUITEM "Micro Transaction: Get Error Desc", IDMN_EXPRESSION_MT_GED		
             MENUITEM "Micro Transaction: Get Trans ID", IDMN_EXPRESSION_MT_GTID		
-        END    
+        END
+        MENUITEM SEPARATOR
+        POPUP "DLC"
+        BEGIN
+            MENUITEM "Get DLC Download Progress Percent", IDMN_EXPRESSION_GDDPP
+        END
         MENUITEM SEPARATOR
     END
 END
@@ -411,6 +416,8 @@ BEGIN
     M_EXPRESSION_GCBP	     	 "GCBP("
 
     M_EXPRESSION_GGIT	     	 "GGIT$ ("
+
+    M_EXPRESSION_GDDPP	     	 "GDDPP ("
 END
 
 STRINGTABLE

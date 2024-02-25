@@ -175,6 +175,8 @@
 
 #define	IDMN_EXPRESSION_GGIT 				27007
 
+#define	IDMN_EXPRESSION_GDDPP 				27008
+
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
 #define M_EXPRESSION_GSCL				7001
@@ -187,6 +189,8 @@
 #define	M_EXPRESSION_GCBP				7006
 
 #define	M_EXPRESSION_GGIT				7007
+
+#define	M_EXPRESSION_GDDPP				7008
 
 // Names of expression parameters
 #define M_EXP_P1				 7500
