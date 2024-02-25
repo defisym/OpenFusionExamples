@@ -16,10 +16,21 @@ concept STAT = std::is_same_v<std::remove_cv_t<T>, int32 > || std::is_same_v<std
 
 class SteamAchAndStat :public SteamCallbackClass, public SteamRefreshClass {
 private:
+	static constexpr size_t UserStatsReceived = 0;
+	static constexpr size_t UserStatsStored = 1;
+	static constexpr size_t UserAchievementStored = 2;
+
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
 			return pCallback->m_eResult == k_EResultOK
 				&& pCallback->m_nGameID == appID;
+			}));
+		AddCallback(GetCallBack<UserStatsStored_t>([&] (const UserStatsStored_t* pCallback) {
+			return pCallback->m_eResult == k_EResultOK
+				&& pCallback->m_nGameID == appID;
+			}));
+		AddCallback(GetCallBack<UserAchievementStored_t>([&] (const UserAchievementStored_t* pCallback) {
+			return pCallback->m_nGameID == appID;
 			}));
 	}
 

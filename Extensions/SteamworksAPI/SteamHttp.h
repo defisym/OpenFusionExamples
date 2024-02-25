@@ -48,6 +48,8 @@ public:
 		const FinishCallback& finishCallback) {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
+
+		// init request before init callback
 		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodGET, pchFullURL);
 		SteamHttp::InitCallback();
 	}
@@ -58,6 +60,8 @@ public:
 		const FinishCallback& finishCallback) {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
+
+		// init request before init callback
 		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodPOST, pchAbsoluteURL);
 		SteamHTTP()->SetHTTPRequestRawPostBody(hRequest, pchContentType, (uint8*)pubBody, unBodyLen);
 		SteamHttp::InitCallback();

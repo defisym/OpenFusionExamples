@@ -4,9 +4,6 @@
 
 #include "SteamInclude.h"
 
-//constexpr size_t GamepadTextInputDismissed = 0;
-//constexpr size_t FloatingGamepadTextInputDismissed = 1;
-
 class SteamGamepadTextInput :public SteamCallbackClass {
 private:
 	std::string inputText;
@@ -15,7 +12,9 @@ private:
 	using DismissCallback = std::function<void(bool bSubmitted, const std::string& text)>;
 	DismissCallback dismissCallback = nullptr;
 
-private:
+	static constexpr size_t GamepadTextInputDismissed = 0;
+	static constexpr size_t FloatingGamepadTextInputDismissed = 1;
+
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<GamepadTextInputDismissed_t>([&] (const GamepadTextInputDismissed_t* pCallback) {
 			bSubmitted = pCallback->m_bSubmitted;

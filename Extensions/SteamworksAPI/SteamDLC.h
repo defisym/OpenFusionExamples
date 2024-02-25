@@ -20,9 +20,7 @@ private:
 			}));
 	}
 public:
-	SteamDLC() {
-		SteamDLC::InitCallback();
-	}
+	SteamDLC() { SteamDLC::InitCallback(); }
 	~SteamDLC() override = default;
 
 	static inline bool ActivateGameOverlayToStore(const AppId_t nAppID, const EOverlayToStoreFlag eFlag = k_EOverlayToStoreFlag_None) {

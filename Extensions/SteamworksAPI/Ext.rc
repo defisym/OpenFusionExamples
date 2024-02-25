@@ -373,7 +373,7 @@ BEGIN
 	M_MAXPROGRESS			 "Max Progress"
 	M_COUNTTHISSESSION		 "Count This Session"
 	M_SESSIONLENGTH			 "Session Length"
-	M_GOTSFLAG			 	 "Game Overlay To Store Flag"
+	M_GOTSFLAG			 	 "Game Overlay To Store Flag, 0 = Open store page, 1 = Add to Cart & Open store page, 2 = Add to Cart & Open cart page"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -395,7 +395,7 @@ BEGIN
     M_CONDITION_SUBMITTED     "%o: Gamepad Input Submitted"
 
     M_CONDITION_ODLCIC        "%o: On DLC %0 Install Complete"
-    M_APPID				      "App ID"
+    M_APPID				      "App ID, 0 = k_uAppIdInvalid"
 END
 
 STRINGTABLE DISCARDABLE 

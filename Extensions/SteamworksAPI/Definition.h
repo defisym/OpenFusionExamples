@@ -35,7 +35,8 @@ struct GlobalData {
 		return pSteamUtil != nullptr;
 	}
 
-	//rdPtr->pData->GetSteamUtilities([] (SteamUtilities* pSteamUtil) {});
+	// rdPtr->pData->GetSteamUtilities([] (SteamUtilities* pSteamUtil) {});
+	// wrapper function, only call callback if steam init successfully
 	inline void GetSteamUtilities(const std::function<void(SteamUtilities* pSteamUtil)>& callback,
 		const std::function<bool(SteamUtilities* pSteamUtil)>& extraCond = nullptr) const {
 		const bool bExtra = extraCond != nullptr
@@ -49,6 +50,7 @@ struct GlobalData {
 		callback(pSteamUtil);
 	}
 
+	// wrapper function, only call callback if steam init successfully & extra condition is true
 	template<typename T>
 	inline T GetSteamUtilities(const T defaultValue,
 		const std::function<T(SteamUtilities* pSteamUtil)>& callback,
