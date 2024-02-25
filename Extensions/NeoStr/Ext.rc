@@ -117,7 +117,9 @@ BEGIN
     BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Get Object ICon Callback", IDMN_CONDITION_OGOIC
+        MENUITEM SEPARATOR
         MENUITEM "On Tag Callback", IDMN_CONDITION_OTAGCB
+        MENUITEM "On Tag Callback Forward", IDMN_CONDITION_OTAGCBF
         MENUITEM SEPARATOR
     END
 END
@@ -224,6 +226,8 @@ BEGIN
         POPUP "Render Options"
         BEGIN
             MENUITEM "Get Visible Ratio", IDMN_EXPRESSION_GRO_VR
+            MENUITEM SEPARATOR
+            MENUITEM "Get Tag Callback Name", IDMN_EXPRESSION_GTCBN
             MENUITEM SEPARATOR
             MENUITEM "Get Tag Param Num", IDMN_EXPRESSION_GTPN
             MENUITEM "Get Tag Param String", IDMN_EXPRESSION_GTPS
@@ -579,6 +583,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     M_CONDITION_OGOIC       "%o On Get Object ICon Callback %0"
     M_CONDITION_OTAGCB      "%o On Tag Callback %0"
+    M_CONDITION_OTAGCBF     "%o On Tag Callback Forward"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -643,7 +648,7 @@ BEGIN
 
     M_EXPRESSION_GFMTS	    "GFMTS("
 
-
+    M_EXPRESSION_GTCBN      "GetTagCallbackName("
     M_EXPRESSION_GTPN       "GetTagParamNum("
     M_EXPRESSION_GTPS       "GetTagParamString$("
 END

@@ -278,10 +278,12 @@
 // Commands of condition menu
 #define IDMN_CONDITION_OGOIC         26000
 #define IDMN_CONDITION_OTAGCB        26001
+#define IDMN_CONDITION_OTAGCBF       26002
 
 // Condition strings
 #define M_CONDITION_OGOIC       	 6000
 #define M_CONDITION_OTAGCB       	 6001
+#define M_CONDITION_OTAGCBF       	 6002
 
 // Titles of condition parameters
 #define M_CND_P1				     6501
@@ -351,6 +353,7 @@
 
 #define	IDMN_EXPRESSION_GTPN	  		    27038
 #define	IDMN_EXPRESSION_GTPS	  		    27039
+#define	IDMN_EXPRESSION_GTCBN	  		    27040
 
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
@@ -411,6 +414,7 @@
 
 #define	M_EXPRESSION_GTPN	 		        7038
 #define	M_EXPRESSION_GTPS	 		        7039
+#define	M_EXPRESSION_GTCBN	 		        7040
 
 // Names of expression parameters
 #define M_POS				                7500

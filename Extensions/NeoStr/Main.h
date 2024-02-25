@@ -8,8 +8,9 @@
 // ------------------------------
 #define	CND_CONDITION_OGOIC				0
 #define	CND_CONDITION_OTAGCB			1
+#define	CND_CONDITION_OTAGCBF			2
 
-#define	CND_LAST						2
+#define	CND_LAST						3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -125,8 +126,9 @@
 
 #define	EXP_EXPRESSION_GTPN		    		38
 #define	EXP_EXPRESSION_GTPS		    		39
+#define	EXP_EXPRESSION_GTCBN		    	40
 
-#define	EXP_LAST                    		40
+#define	EXP_LAST                    		41
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

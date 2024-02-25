@@ -143,9 +143,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		*rdPtr->pTagCallbackName = callbackName;
 		rdPtr->pTagCallbackParams = &callbackParams;
 		CallEvent(ONTAGCB);
+		CallEvent(ONTAGCBF);
 		rdPtr->pTagCallbackParams = nullptr;
 	});
-	rdPtr->bTagCallbackIndexManaged = false;
+
+	rdPtr->bTagCallbackIndexManaged = true;
 	rdPtr->pTagCallbackName = new std::wstring;
 	rdPtr->pTagCallbackParams = nullptr;
 

@@ -24,6 +24,8 @@ short conditionsInfos[]=
 		{
 		IDMN_CONDITION_OGOIC, M_CONDITION_OGOIC, CND_CONDITION_OGOIC, 0, 1, PARAM_EXPSTRING, M_ICONITNAME,
 		IDMN_CONDITION_OTAGCB, M_CONDITION_OTAGCB, CND_CONDITION_OTAGCB, 0, 1, PARAM_EXPSTRING, M_TAGCBNAME,
+		IDMN_CONDITION_OTAGCBF, M_CONDITION_OTAGCBF, CND_CONDITION_OTAGCBF, 0, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -141,6 +143,7 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GTPN, M_EXPRESSION_GTPN, EXP_EXPRESSION_GTPN, 0, 0,
 		IDMN_EXPRESSION_GTPS, M_EXPRESSION_GTPS, EXP_EXPRESSION_GTPS, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_POS,
+		IDMN_EXPRESSION_GTCBN, M_EXPRESSION_GTCBN, EXP_EXPRESSION_GTCBN, EXPFLAG_STRING, 0,
 		};
 
 
@@ -161,6 +164,9 @@ long WINAPI DLLExport Condition_OnTagCallback(LPRDATA rdPtr, long param1, long p
 	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return StrEqu(pLoopName, rdPtr->pTagCallbackName->c_str());
+}
+long WINAPI DLLExport Condition_OnTagCallbackForward(LPRDATA rdPtr, long param1, long param2) {
+	return true;
 }
 
 
@@ -1252,6 +1258,14 @@ long WINAPI DLLExport Expression_GetTagParamString(LPRDATA rdPtr, long param1) {
 			: Empty_Str);
 }
 
+long WINAPI DLLExport Expression_GetTagCallbackName(LPRDATA rdPtr, long param1) {	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pTagCallbackName->c_str();
+}
+
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -1265,6 +1279,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			{ 
 			Condition_OnGetObjectICon,
 			Condition_OnTagCallback,
+			Condition_OnTagCallbackForward,
 			
 			0
 			};
@@ -1381,6 +1396,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetTagParamNum,
 			Expression_GetTagParamString,
+			Expression_GetTagCallbackName,
 
 			0
 			};

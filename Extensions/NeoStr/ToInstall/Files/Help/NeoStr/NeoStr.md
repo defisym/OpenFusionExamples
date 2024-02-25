@@ -251,7 +251,7 @@ set to non-strike out
     - *only tag's index (location in the raw string) lager than this will be triggered*
     - *default is `-1`*
   - Change Tag Callback Index Managed
-    - *default is false*
+    - *default is true*
     - *reset to false if you change the index manually*
     - *index is update by the following rules:*
       - *after render, the index will be set to the current raw string length*
@@ -313,7 +313,10 @@ set to non-strike out
 
 - On Get Object ICon Callback
   - *if you link to a object, this will be triggered to ask for icon surface pointer*
+
 - On Tag Callback
+- On Tag Callback Forward
+  - *triggered for each callback, for forwarding*
 
 ## Expression
 
@@ -334,6 +337,8 @@ set to non-strike out
 - Render Options
   - Get Visible Ratio
   
+  - Get Tag Callback Name
+
   - Get Tag Param Num
   - Get Tag Param String
 

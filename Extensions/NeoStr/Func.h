@@ -5,6 +5,7 @@
 
 constexpr auto ONITOIC = 0;
 constexpr auto ONTAGCB = 1;
+constexpr auto ONTAGCBF = 2;
 
 #define GIPP(p) (*(NeoStr::IConParamParser*)(p))
 
