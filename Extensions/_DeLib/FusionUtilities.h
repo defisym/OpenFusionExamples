@@ -252,19 +252,18 @@ inline void SDL_UpdateAppProp(mv _far* mV, LPEDATA edPtr) {
 // Cast anytype to fusion's expression return
 
 template<typename T>
-constexpr inline long ConvertToLong(T t) {
+inline long ConvertToLong(T t) {
 	return *((long*)&t);
 }
 
 template<typename T>
-constexpr inline T ConvertToType(long l) {
+inline T ConvertToType(long l) {
 	return *((T*)&l);
 }
 
 // Cast anytype
-
 template<typename Input, typename Output>
-constexpr inline Output ConvertToType(Input l) {
+inline Output ConvertToType(Input l) {
 	return *((Output*)&l);
 }
 
