@@ -11,6 +11,7 @@
 #include "SteamRichPresence.h"
 #include "SteamScreenshot.h"
 #include "SteamGamepadTextInput.h"
+#include "SteamDLC.h"
 
 #include "SteamRemote.h"
 
@@ -55,6 +56,7 @@ private:
 	SteamRichPresence* pSteamRichPresence = nullptr;
 	SteamScreenshot* pSteamScreenshot = nullptr;
 	SteamGamepadTextInput* pSteamGamepadTextInput = nullptr;
+	SteamDLC* pSteamDLC = nullptr;
 	
 	//------------
 	// None Callback
@@ -66,16 +68,17 @@ private:
 	// Tasks
 	//------------
 
-	Refresh::RefreshTasks refreshTasks;
+	SteamRefreshClass::RefreshTasks refreshTasks;
 
 public:
-	const CSteamID playerID;
-	const uint64 appID;
-	const int buildID;
+	CSteamID playerID;
+	AppId_t appID;
+	int buildID;
 
-	SteamUtilities() :playerID(SteamUser()->GetSteamID()),
+	SteamUtilities() :
+		playerID(SteamUser()->GetSteamID()),
 		appID(SteamUtils()->GetAppID()),
-		buildID(SteamApps()->GetAppBuildId()) {		
+		buildID(SteamApps()->GetAppBuildId()) {
 		InitSteamCommandLine();
 
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
@@ -83,6 +86,7 @@ public:
 		pSteamRichPresence = new SteamRichPresence();
 		pSteamScreenshot = new SteamScreenshot();
 		pSteamGamepadTextInput = new SteamGamepadTextInput();
+		pSteamDLC = new SteamDLC();
 
 		pSteamRemote = new SteamRemote();
 	}
@@ -92,6 +96,7 @@ public:
 		delete pSteamRichPresence;
 		delete pSteamScreenshot;
 		delete pSteamGamepadTextInput;
+		delete pSteamDLC;
 		
 		delete pSteamRemote;
 	}
@@ -100,7 +105,7 @@ public:
 	// Error
 	//------------
 
-	inline void SetErrorHandler() const {
+	static inline void SetErrorHandler() {
 #ifdef WIN32
 		if(IsDebuggerPresent()) {
 			return;
@@ -133,6 +138,7 @@ public:
 	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
 	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }
 	inline SteamGamepadTextInput* GetSteamGamepadTextInput() const { return pSteamGamepadTextInput; }
+	inline SteamDLC* GetSteamDLC() const { return pSteamDLC; }
 
 	inline SteamRemote* GetRemote() const { return pSteamRemote; }
 
@@ -142,7 +148,7 @@ public:
 
 	inline void Refresh() {
 		// handle tasks
-		Refresh::Refresh(&refreshTasks);
+		SteamRefreshClass::Refresh(&refreshTasks);
 
 		// run callback
 		SteamAPI_RunCallbacks();		

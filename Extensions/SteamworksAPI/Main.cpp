@@ -33,6 +33,9 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_OID, M_CONDITION_OID, CND_CONDITION_OID, 0, 0,
 		IDMN_CONDITION_SUBMITTED, M_CONDITION_SUBMITTED, CND_CONDITION_SUBMITTED, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
+		IDMN_CONDITION_ODLCIC, M_CONDITION_ODLCIC, CND_CONDITION_ODLCIC, 0, 1, PARAM_EXPRESSION, M_APPID,
+
 		};
 
 // Definitions of parameters for each action
@@ -55,6 +58,13 @@ short actionsInfos[]=
 		IDMN_ACTION_TSS, M_ACTION_TSS,	ACT_ACTION_TSS,	0, 0,
 
 		IDMN_ACTION_SGTI, M_ACTION_SGTI,	ACT_ACTION_SGTI,	0, 5, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPSTRING, M_INPUTMODE, M_LINEMODE, M_DESCRIPTION, M_MAXCHAR, M_EXISTINGTEXT,
+
+		IDMN_ACTION_IAP, M_ACTION_IAP,	ACT_ACTION_IAP, 0, 3, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_ACH_NAME, M_CURPROGRESS, M_MAXPROGRESS,
+		IDMN_ACTION_SARS, M_ACTION_SARS,	ACT_ACTION_SARS, 0, 3, PARAM_EXPSTRING, PARAM_EXPRESSION, PARAM_EXPRESSION, M_STAT_NAME, M_COUNTTHISSESSION, M_SESSIONLENGTH,
+
+		IDMN_ACTION_AGOTS, M_ACTION_AGOTS,	ACT_ACTION_AGOTS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_APPID, M_GOTSFLAG, 
+		IDMN_ACTION_ID, M_ACTION_ID, ACT_ACTION_ID, 0, 1, PARAM_EXPRESSION, M_APPID, 
+
 		};
 
 // Definitions of parameters for each expression
@@ -71,6 +81,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GCBP, M_EXPRESSION_GCBP, EXP_EXPRESSION_GCBP, 0, 0,
 
 		IDMN_EXPRESSION_GGIT, M_EXPRESSION_GGIT, EXP_EXPRESSION_GGIT, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_GDDPP, M_EXPRESSION_GDDPP, EXP_EXPRESSION_GDDPP, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, M_APPID,
+
 		};
 
 
@@ -174,6 +187,15 @@ long WINAPI DLLExport Condition_GamepadInputSubmitted(LPRDATA rdPtr, long param1
 	return rdPtr->pData->pSteamUtil->GetSteamGamepadTextInput()->GetSubmitted();
 }
 
+long WINAPI DLLExport Condition_OnDLCInstallComplete(LPRDATA rdPtr, long param1, long param2) {
+	const auto appID = (AppId_t)CNC_GetParameter(rdPtr);
+
+	if (!rdPtr->pData->SteamUtilitiesValid()) {
+		return false;
+	}
+
+	return rdPtr->callBackAppID = appID;
+}
 
 // ============================================================================
 //
@@ -191,12 +213,33 @@ short WINAPI DLLExport Action_UnlockAchievement(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
+short WINAPI DLLExport Action_IndicateAchievementProgress(LPRDATA rdPtr, long param1, long param2) {
+	const auto pAchievementName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto nCurProgress = (uint32)CNC_GetParameter(rdPtr);
+	const auto nMaxProgress = (uint32)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetAchAndStat()->IndicateAchievementProgress(pAchievementName, nCurProgress, nMaxProgress);
+	});
+
+	return 0;
+}
+
 short WINAPI DLLExport Action_AddToStat(LPRDATA rdPtr, long param1, long param2) {
 	const auto pStatName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto data = (int)CNC_GetIntParameter(rdPtr);
 
+	
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetAvgRateStat(LPRDATA rdPtr, long param1, long param2) {
+	const auto pStatName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto flCountThisSession = GetFloatParam(rdPtr);
+	const auto dSessionLength = GetFloatParam(rdPtr);
+
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetAchAndStat()->AddStat(pStatName, data);
+		pSteamUtil->GetAchAndStat()->SetAvgRateStat(pStatName, flCountThisSession, dSessionLength);
 	});
 
 	return 0;
@@ -279,7 +322,7 @@ short WINAPI DLLExport Action_MixroTxn_Finalize(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_SetLocation(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_SetLocation(LPRDATA rdPtr, long param1, long param2) {
 	const auto pLocation = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
@@ -288,7 +331,7 @@ short WINAPI DLLExport Action_Sceenshot_SetLocation(LPRDATA rdPtr, long param1, 
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_TagPublishedFile(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_TagPublishedFile(LPRDATA rdPtr, long param1, long param2) {
 	const auto publishedFileID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
@@ -298,7 +341,7 @@ short WINAPI DLLExport Action_Sceenshot_TagPublishedFile(LPRDATA rdPtr, long par
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_TagUser(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_TagUser(LPRDATA rdPtr, long param1, long param2) {
 	const auto steamID = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
@@ -308,7 +351,7 @@ short WINAPI DLLExport Action_Sceenshot_TagUser(LPRDATA rdPtr, long param1, long
 	return 0;
 }
 
-short WINAPI DLLExport Action_Sceenshot_Trigger(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_Screenshot_Trigger(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
 		pSteamUtil->GetSteamScreenshot()->Trigger();
 	});
@@ -325,6 +368,28 @@ short WINAPI DLLExport Action_ShowGamepadTextInput(LPRDATA rdPtr, long param1, l
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
 		pSteamUtil->GetSteamGamepadTextInput()->ShowGamepadTextInput(inputMode,lineMode,description.c_str(),maxChar,existingText.c_str());
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_ActivateGameOverlayToStore(LPRDATA rdPtr, long param1, long param2) {
+	const auto nAppID = (AppId_t)CNC_GetParameter(rdPtr);
+	const auto eFlag = (EOverlayToStoreFlag)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		SteamDLC::ActivateGameOverlayToStore(nAppID, eFlag);
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_InstallDLC(LPRDATA rdPtr, long param1, long param2) {
+	const auto nAppID = (AppId_t)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		if (SteamDLC::DLCInstalled(nAppID)) { return; }
+		SteamDLC::InstallDLC(nAppID);
 	});
 
 	return 0;
@@ -429,6 +494,21 @@ long WINAPI DLLExport Expression_GetGamepadText(LPRDATA rdPtr, long param1) {
 	});
 }
 
+long WINAPI DLLExport Expression_GetDLCDownloadProgressPercent(LPRDATA rdPtr, long param1) {
+	const auto appID = (AppId_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	//Setting the HOF_FLOAT flag lets MMF know that you are returning a float.
+	rdPtr->rHo.hoFlags |= HOF_FLOAT;
+
+	//Return the float without conversion
+	return rdPtr->pData->GetSteamUtilities<long>(ConvertToLong(-1.0f),
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto progress = SteamDLC::GetDLCDownloadProgressPercent(appID);
+
+			return ConvertToLong(progress);
+	});
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -451,6 +531,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_OnGamepadInputDismiss,
 			Condition_GamepadInputSubmitted,
 
+			Condition_OnDLCInstallComplete,
+
 			0
 			};
 	
@@ -467,12 +549,18 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_MixroTxn_SendRequest,
 			Action_MixroTxn_Finalize,
 
-			Action_Sceenshot_SetLocation,
-			Action_Sceenshot_TagPublishedFile,
-			Action_Sceenshot_TagUser,
-			Action_Sceenshot_Trigger,
+			Action_Screenshot_SetLocation,
+			Action_Screenshot_TagPublishedFile,
+			Action_Screenshot_TagUser,
+			Action_Screenshot_Trigger,
 
 			Action_ShowGamepadTextInput,
+
+			Action_IndicateAchievementProgress,
+			Action_SetAvgRateStat,
+
+			Action_ActivateGameOverlayToStore,
+			Action_InstallDLC,
 
 			0
 			};
@@ -490,6 +578,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetCurrentBatteryPower,
 
 			Expression_GetGamepadText,
+	
+			Expression_GetDLCDownloadProgressPercent,
 
 			0
 			};

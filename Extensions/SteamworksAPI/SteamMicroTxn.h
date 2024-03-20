@@ -72,11 +72,8 @@ public:
 	}
 
 private:
-	inline void CallCallback(void* udata = nullptr) override {
-		bCallbackSuccess = false;
-		pCallback = GetCallBack<MicroTxnAuthorizationResponse_t>([&] (const MicroTxnAuthorizationResponse_t* pCallback) {
-			bCallbackSuccess = true;
-
+	inline void InitCallback() override {
+		AddCallback(GetCallBack<MicroTxnAuthorizationResponse_t>([&] (const MicroTxnAuthorizationResponse_t* pCallback) {
 			step = Step::Callback_Pending;
 
 			m_unAppID = pCallback->m_unAppID;
@@ -88,7 +85,9 @@ private:
 			}
 
 			step = Step::Callback_Finish;
-		});
+
+			return true;
+			}));
 	}
 
 	inline void ParseJson(uint8* pBodyDataBuffer, uint32 unBufferSize,
@@ -138,7 +137,8 @@ private:
 			{'=',"%3D"}
 		};
 
-		auto ret = in;
+		// copy url
+		std::string ret = in;
 
 		for (const auto& [chr, rep] : escapeMap) {
 			auto pos = ret.find(chr);
@@ -152,10 +152,7 @@ private:
 	}
 
 public:
-	SteamMicroTxn()
-		:SteamCallbackClass() {		
-		SteamMicroTxn::CallCallback();
-	}
+	SteamMicroTxn() { SteamMicroTxn::InitCallback(); }
 	~SteamMicroTxn() override {
 		ResetCallbackResult();
 	}

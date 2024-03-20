@@ -158,7 +158,7 @@
 #define	IDMN_ACTION_FRDGI		    25022
 #define	IDMN_ACTION_RENDER		    25023
 
-#define	IDMN_ACTION_SRO 		    25024
+#define	IDMN_ACTION_SRO_VR 		    25024
 
 #define	IDMN_ACTION_STS 		    25025
 
@@ -167,6 +167,9 @@
 #define	IDMN_ACTION_FNF			    25027
 #define	IDMN_ACTION_APS			    25028
 #define	IDMN_ACTION_APV			    25029
+
+#define	IDMN_ACTION_SRO_STAGCBIDX	25030
+#define	IDMN_ACTION_SRO_STAGCBIDXM	25031
 
 // Action strings
 #define M_ACTION_CS                 5000
@@ -204,7 +207,7 @@
 #define	M_ACTION_FRDGI			    5022
 #define	M_ACTION_RENDER			    5023
 
-#define	M_ACTION_SRO			    5024
+#define	M_ACTION_SRO_VR			    5024
 
 #define	M_ACTION_STS			    5025
 
@@ -213,6 +216,9 @@
 #define	M_ACTION_FNF				5027
 #define	M_ACTION_APS				5028
 #define	M_ACTION_APV				5029
+
+#define	M_ACTION_SRO_STAGCBIDX		5030
+#define	M_ACTION_SRO_STAGCBIDXM		5031
 
 // Titles of action parameters
 #define M_WIDTH				        5501
@@ -259,6 +265,10 @@
 #define M_FMT						5532
 #define M_PARAM						5533
 
+#define M_TAGCBNAME					5534
+#define M_STAGCBIDX					5535
+#define M_STAGCBIDXM				5536
+
 //	Conditions
 //--------------------
 
@@ -267,9 +277,13 @@
 
 // Commands of condition menu
 #define IDMN_CONDITION_OGOIC         26000
+#define IDMN_CONDITION_OTAGCB        26001
+#define IDMN_CONDITION_OTAGCBF       26002
 
 // Condition strings
 #define M_CONDITION_OGOIC       	 6000
+#define M_CONDITION_OTAGCB       	 6001
+#define M_CONDITION_OTAGCBF       	 6002
 
 // Titles of condition parameters
 #define M_CND_P1				     6501
@@ -337,6 +351,10 @@
 
 #define	IDMN_EXPRESSION_GFMTS	  		    27037
 
+#define	IDMN_EXPRESSION_GTPN	  		    27038
+#define	IDMN_EXPRESSION_GTPS	  		    27039
+#define	IDMN_EXPRESSION_GTCBN	  		    27040
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -393,6 +411,10 @@
 #define	M_EXPRESSION_GROY	 		        7036
 
 #define	M_EXPRESSION_GFMTS	 		        7037
+
+#define	M_EXPRESSION_GTPN	 		        7038
+#define	M_EXPRESSION_GTPS	 		        7039
+#define	M_EXPRESSION_GTCBN	 		        7040
 
 // Names of expression parameters
 #define M_POS				                7500

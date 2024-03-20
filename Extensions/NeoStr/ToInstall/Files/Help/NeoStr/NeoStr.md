@@ -43,6 +43,15 @@ String that based on GDI Plus, with scaling, rotating & format control support
     - `\+0.5` -> `+0.5`
     - `\-0.5` -> `-0.5`
 
+### Tag
+
+#### Insert
+
+`[Tag = CallbackName, Params]`
+
+Trigger callback when render to it, tags in remarks will be ignored.
+*you need to retrieve each param then handle it by your self*
+
 ### Remark
 
 #### Insert
@@ -112,7 +121,7 @@ e.g., one param -> Type, two params -> Type & Amplitude, etc.
 
 ### Color
 
-`[Color = #FFFFFFFF][/Color]`&`[C = #FFFFFFFF][/C]`	color, hex AARRGGBB, or A, R, G, B
+`[Color = #FFFFFFFF][/Color]`&`[C = #FFFFFFFF][/C]` color, hex AARRGGBB, or A, R, G, B
 
 See `Values General`
 
@@ -228,20 +237,30 @@ set to non-strike out
 - App Display String at NewLine
 
 - Render
-  - *render is delayed to display routine, or expression that need render result, you can force it here*
+  - Render
+    - *render is delayed to display routine, or expression that need render result, you can force it here*
 
-- Change Render Size
-  - *resize object during runtime*
-- Change Render Options
-  - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
-  - *include alpha: E.g., 10 chars*
-    - *not included: 5 / 10 = 0.5, display 5 chars*
-    - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+  - Change Render Size
+    - *resize object during runtime*
+  - Change Visible Ration
+    - *let character be displayed gradually, displayed char / total char, 1.0 -> display all*
+    - *include alpha: E.g., 10 chars*
+      - *not included: 5 / 10 = 0.5, display 5 chars*
+      - *included: (4 * 255 + 125) / 10 * 255 = 0.45, display 4 char, last with 50% extra transparency*
+  - Change Tag Callback Index
+    - *only tag's index (location in the raw string) lager than this will be triggered*
+    - *default is `-1`*
+  - Change Tag Callback Index Managed
+    - *default is true*
+    - *reset to false if you change the index manually*
+    - *index is update by the following rules:*
+      - *after render, the index will be set to the current raw string length*
+      - *when using `Change Display String`, if it's not an append of previous string, then the index is reset to 0, aka trigger all*
 
-- Force Redraw
-  - *if no change, last render result will be used, this action will force redraw even not change*
-- Force Redraw Global ICon
-  - *redraw all objects with `ICon global` and `ICon global force update` checked*
+  - Force Redraw
+    - *if no change, last render result will be used, this action will force redraw even not change*
+  - Force Redraw Global ICon
+    - *redraw all objects with `ICon global` and `ICon global force update` checked*
 
 - Alignment
   - Change Row Space
@@ -295,6 +314,10 @@ set to non-strike out
 - On Get Object ICon Callback
   - *if you link to a object, this will be triggered to ask for icon surface pointer*
 
+- On Tag Callback
+- On Tag Callback Forward
+  - *triggered for each callback, for forwarding*
+
 ## Expression
 
 - Get Font Family Name
@@ -304,7 +327,7 @@ set to non-strike out
   - *filter given string*
     - `FORMAT_IGNORE_UNKNOWN = 0b00000001`
     - `FORMAT_IGNORE_INCOMPLETE = 0b00000010`
-	- `FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100`
+    - `FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing = 0b00000100`
 - Get Padding String
   - *replace content in `[]` to `□`, as control characters may conflict with you owns*
 - Get Raw String By Filtered String Length
@@ -313,6 +336,11 @@ set to non-strike out
 
 - Render Options
   - Get Visible Ratio
+  
+  - Get Tag Callback Name
+
+  - Get Tag Param Num
+  - Get Tag Param String
 
 - Alignment
   - Get Row Space

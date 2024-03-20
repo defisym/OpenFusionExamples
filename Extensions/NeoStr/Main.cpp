@@ -23,6 +23,9 @@
 short conditionsInfos[]=
 		{
 		IDMN_CONDITION_OGOIC, M_CONDITION_OGOIC, CND_CONDITION_OGOIC, 0, 1, PARAM_EXPSTRING, M_ICONITNAME,
+		IDMN_CONDITION_OTAGCB, M_CONDITION_OTAGCB, CND_CONDITION_OTAGCB, 0, 1, PARAM_EXPSTRING, M_TAGCBNAME,
+		IDMN_CONDITION_OTAGCBF, M_CONDITION_OTAGCBF, CND_CONDITION_OTAGCBF, 0, 0,
+
 		};
 
 // Definitions of parameters for each action
@@ -64,7 +67,7 @@ short actionsInfos[]=
 		
 		IDMN_ACTION_RENDER, M_ACTION_RENDER, ACT_ACTION_RENDER, 0, 0,
 
-		IDMN_ACTION_SRO, M_ACTION_SRO, ACT_ACTION_SRO, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_VISIBLERATIO, M_INCLUDEALPHA,
+		IDMN_ACTION_SRO_VR, M_ACTION_SRO_VR, ACT_ACTION_SRO_VR, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_VISIBLERATIO, M_INCLUDEALPHA,
 
 		IDMN_ACTION_STS, M_ACTION_STS, ACT_ACTION_STS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_TABSIZE, M_TABEM,
 
@@ -73,6 +76,9 @@ short actionsInfos[]=
 		IDMN_ACTION_FNF, M_ACTION_FNF, ACT_ACTION_FNF,	0, 1, PARAM_EXPSTRING, M_FMT,
 		IDMN_ACTION_APS, M_ACTION_APS, ACT_ACTION_APS,	0, 1, PARAM_EXPSTRING, M_PARAM,
 		IDMN_ACTION_APV, M_ACTION_APV, ACT_ACTION_APV,	0, 2, PARAM_EXPRESSION, PARAM_EXPSTRING, M_PARAM, M_FMT,
+
+		IDMN_ACTION_SRO_STAGCBIDX, M_ACTION_SRO_STAGCBIDX, ACT_ACTION_SRO_STAGCBIDX, 0, 1, PARAM_EXPRESSION, M_STAGCBIDX,
+		IDMN_ACTION_SRO_STAGCBIDXM, M_ACTION_SRO_STAGCBIDXM, ACT_ACTION_SRO_STAGCBIDXM, 0, 1, PARAM_EXPRESSION, M_STAGCBIDXM,
 
 		};
 
@@ -135,6 +141,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GFMTS, M_EXPRESSION_GFMTS, EXP_EXPRESSION_GFMTS, EXPFLAG_STRING, 0,
 
+		IDMN_EXPRESSION_GTPN, M_EXPRESSION_GTPN, EXP_EXPRESSION_GTPN, 0, 0,
+		IDMN_EXPRESSION_GTPS, M_EXPRESSION_GTPS, EXP_EXPRESSION_GTPS, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_POS,
+		IDMN_EXPRESSION_GTCBN, M_EXPRESSION_GTCBN, EXP_EXPRESSION_GTCBN, EXPFLAG_STRING, 0,
 		};
 
 
@@ -149,6 +158,15 @@ long WINAPI DLLExport Condition_OnGetObjectICon(LPRDATA rdPtr, long param1, long
 	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	return StrEqu(pLoopName, rdPtr->pIConItName->c_str());
+}
+
+long WINAPI DLLExport Condition_OnTagCallback(LPRDATA rdPtr, long param1, long param2) {
+	LPCWSTR pLoopName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	return StrEqu(pLoopName, rdPtr->pTagCallbackName->c_str());
+}
+long WINAPI DLLExport Condition_OnTagCallbackForward(LPRDATA rdPtr, long param1, long param2) {
+	return true;
 }
 
 
@@ -171,9 +189,39 @@ short WINAPI DLLExport Action_ChangeRenderSize(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport Action_ChangeString(LPRDATA rdPtr, long param1, long param2) {
-	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-	*rdPtr->pStr = pStr;
+	struct IndexManagedHelper {
+		LPRDATA rdPtr = nullptr;
+		bool bAppend = false;
+
+		IndexManagedHelper(LPRDATA rdPtr, const LPCWSTR pStr) {
+			if (!rdPtr->bTagCallbackIndexManaged) { return; }
+
+			this->rdPtr = rdPtr;
+			this->bAppend = StringAppend(rdPtr->pStr->c_str(), pStr);
+		}
+		~IndexManagedHelper() {
+			if (this->rdPtr == nullptr) { return; }
+
+			const auto pOpt = static_cast<NeoStr::RenderOptions*>(this->rdPtr->pRenderOptions);
+
+			// not append, reset
+			if (!this->bAppend) {
+				pOpt->tagCallbackIndex = 0;
+			}
+			// append, use previous render result
+			else {
+
+			}
+		}
+	};
+
+	// RAII
+	{
+		IndexManagedHelper helper(rdPtr, pStr);
+		*rdPtr->pStr = pStr;
+	}
 
 	ReDisplay(rdPtr);
 
@@ -672,7 +720,7 @@ short WINAPI DLLExport Action_Render(LPRDATA rdPtr, long param1, long param2) {
 	return 0;
 }
 
-short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long param2) {
+short WINAPI DLLExport Action_SetRenderOption_VisibleRatio(LPRDATA rdPtr, long param1, long param2) {
 	const float visibleRatio = Range(GetFloatParam(rdPtr), 0.0f, 1.0f);
 	const bool bIncludeAlpha = (bool)CNC_GetParameter(rdPtr);
 
@@ -687,6 +735,39 @@ short WINAPI DLLExport Action_SetRenderOption(LPRDATA rdPtr, long param1, long p
 	
 	return 0;
 }
+
+short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndex(LPRDATA rdPtr, long param1, long param2) {
+	const auto idx = (size_t)CNC_GetParameter(rdPtr) - 1;
+
+	rdPtr->bTagCallbackIndexManaged = false;
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+	if (pOpt->tagCallbackIndex != idx) {
+		pOpt->tagCallbackIndex = idx;
+
+		rdPtr->reRender = true;
+	}
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndexManaged(LPRDATA rdPtr, long param1, long param2) {
+	const auto bManaged = (bool)CNC_GetParameter(rdPtr);
+
+	// no change
+	if (rdPtr->bTagCallbackIndexManaged == bManaged) { return 0; }
+
+	// changed
+	rdPtr->bTagCallbackIndexManaged = bManaged;
+
+	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+	if (pOpt->UpdateTagCallbackIndex(rdPtr->pNeoStr)) {
+		rdPtr->reRender = true;
+	}
+
+	return 0;
+}
+
 
 short WINAPI DLLExport Action_Format_NewFormat(LPRDATA rdPtr, long param1, long param2) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -1061,8 +1142,8 @@ long WINAPI DLLExport Expression_GetHashedString(LPRDATA rdPtr, long param1) {
 	return (long)(hash);
 }
 
-long WINAPI DLLExport Expression_GetParamNum(LPRDATA rdPtr, long param1) {
-	auto pParams = (NeoStr::ControlParams*)(rdPtr->pIConParams);
+long WINAPI DLLExport Expression_GetIConParamNum(LPRDATA rdPtr, long param1) {
+	const auto pParams = static_cast<NeoStr::ControlParams*>(rdPtr->pIConParams);
 
 	if (pParams == nullptr) {
 		return -1;
@@ -1071,14 +1152,10 @@ long WINAPI DLLExport Expression_GetParamNum(LPRDATA rdPtr, long param1) {
 	return (long)(pParams->size());
 }
 
-long WINAPI DLLExport Expression_GetParamString(LPRDATA rdPtr, long param1) {
-	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+long WINAPI DLLExport Expression_GetIConParamString(LPRDATA rdPtr, long param1) {
+	const size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	auto pParams = (NeoStr::ControlParams*)(rdPtr->pIConParams);
-
-	if (pParams == nullptr) {
-		return -1;
-	}
+	const auto pParams = static_cast<NeoStr::ControlParams*>(rdPtr->pIConParams);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1154,6 +1231,42 @@ long WINAPI DLLExport Expression_Format_GetFormatString(LPRDATA rdPtr, long para
 		: reinterpret_cast<long>(Empty_Str);
 }
 
+long WINAPI DLLExport Expression_GetTagParamNum(LPRDATA rdPtr, long param1) {
+	const auto pParams = rdPtr->pTagCallbackParams;
+
+	if (pParams == nullptr) {
+		return -1;
+	}
+
+	return (long)(pParams->size());
+}
+
+long WINAPI DLLExport Expression_GetTagParamString(LPRDATA rdPtr, long param1) {
+	const size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	const auto pParams = rdPtr->pTagCallbackParams;
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(pParams != nullptr && pParams->size() > pos
+		? [&] () {
+			*rdPtr->pExpRet = (*pParams)[pos];
+			return rdPtr->pExpRet->c_str();
+		}()
+			: Empty_Str);
+}
+
+long WINAPI DLLExport Expression_GetTagCallbackName(LPRDATA rdPtr, long param1) {	
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)rdPtr->pTagCallbackName->c_str();
+}
+
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1165,6 +1278,8 @@ long WINAPI DLLExport Expression_Format_GetFormatString(LPRDATA rdPtr, long para
 long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) = 
 			{ 
 			Condition_OnGetObjectICon,
+			Condition_OnTagCallback,
+			Condition_OnTagCallbackForward,
 			
 			0
 			};
@@ -1206,7 +1321,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_ForceRedrawGlobalICon,
 			Action_Render,
 
-			Action_SetRenderOption,
+			Action_SetRenderOption_VisibleRatio,
 
 			Action_ChangeTabSettings,
 
@@ -1215,6 +1330,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_Format_NewFormat,
 			Action_Format_AddParamString,
 			Action_Format_AddParamValue,
+
+			Action_SetRenderOption_TagCallbackIndex,
+			Action_SetRenderOption_TagCallbackIndexManaged,
 
 			0
 			};
@@ -1259,8 +1377,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetNonCommandOffset,
 
 			Expression_GetHashedString,
-			Expression_GetParamNum,
-			Expression_GetParamString,
+			Expression_GetIConParamNum,
+			Expression_GetIConParamString,
 			
 			Expression_GetFilterFlag,
 
@@ -1275,6 +1393,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetRemarkOffsetY,
 
 			Expression_Format_GetFormatString,
+
+			Expression_GetTagParamNum,
+			Expression_GetTagParamString,
+			Expression_GetTagCallbackName,
 
 			0
 			};

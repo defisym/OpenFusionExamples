@@ -6,20 +6,14 @@
 
 class SteamRichPresence :public SteamCallbackClass {
 private:
-	inline void CallCallback(void* udata = nullptr) override {
-		bCallbackSuccess = false;
-		pCallback = GetCallBack<FriendRichPresenceUpdate_t>([&] (const FriendRichPresenceUpdate_t* pCallback) {
-			bCallbackSuccess = true;
-		});
-		SteamFriends()->RequestFriendRichPresence(*static_cast<CSteamID*>(udata));
+	inline void InitCallback() override {
+		AddCallback(GetCallBack<FriendRichPresenceUpdate_t>([&] (const FriendRichPresenceUpdate_t* pCallback) {
+			return true;
+			}));
 	}
-public:
-	SteamRichPresence()
-		:SteamCallbackClass() {
-	}
-	~SteamRichPresence() override {
-
-	}
+	public:
+		SteamRichPresence() { SteamRichPresence::InitCallback(); }
+		~SteamRichPresence() override = default;
 
 	template <STR Name>
 	inline bool SetRichPresence(const Name pchKey, const Name pchValue) {
@@ -59,7 +53,9 @@ public:
 		}
 	}
 
-	inline void RequestFriendRichPresence(CSteamID steamIDFriend) {
-		SteamRichPresence::CallCallback(&steamIDFriend);
+	inline void RequestFriendRichPresence(CSteamID steamIDFriend) const {
+		CallCallback([&] () {
+			SteamFriends()->RequestFriendRichPresence(steamIDFriend);
+		});
 	}
 };

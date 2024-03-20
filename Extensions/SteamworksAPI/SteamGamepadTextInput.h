@@ -9,14 +9,14 @@ private:
 	std::string inputText;
 	bool bSubmitted = false;
 
-	SteamCallback* pGamepadTextInputDismissed = nullptr;
-	SteamCallback* pFloatingGamepadTextInputDismissed = nullptr;
-
 	using DismissCallback = std::function<void(bool bSubmitted, const std::string& text)>;
 	DismissCallback dismissCallback = nullptr;
 
-	inline void CallCallback(void* udata = nullptr) override {
-		pGamepadTextInputDismissed = GetCallBack<GamepadTextInputDismissed_t>([&] (const GamepadTextInputDismissed_t* pCallback) {
+	static constexpr size_t GamepadTextInputDismissed = 0;
+	static constexpr size_t FloatingGamepadTextInputDismissed = 1;
+
+	inline void InitCallback() override {
+		AddCallback(GetCallBack<GamepadTextInputDismissed_t>([&] (const GamepadTextInputDismissed_t* pCallback) {
 			bSubmitted = pCallback->m_bSubmitted;
 
 			if (bSubmitted) {
@@ -28,19 +28,17 @@ private:
 			if (this->dismissCallback != nullptr) {
 				this->dismissCallback(pCallback->m_bSubmitted, GetText());
 			}
-		});
-		pFloatingGamepadTextInputDismissed = GetCallBack<FloatingGamepadTextInputDismissed_t>([&] (const FloatingGamepadTextInputDismissed_t* pCallback) {
-			return;
-		});
+
+			return true;
+			}));
+		AddCallback(GetCallBack<FloatingGamepadTextInputDismissed_t>([&] (const FloatingGamepadTextInputDismissed_t* pCallback) {
+			return true;
+			}));
 	}
+
 public:
-	SteamGamepadTextInput() :SteamCallbackClass() {
-		SteamGamepadTextInput::CallCallback();
-	}
-	~SteamGamepadTextInput() override {
-		delete pGamepadTextInputDismissed;
-		delete pFloatingGamepadTextInputDismissed;
-	}
+	SteamGamepadTextInput() { SteamGamepadTextInput::InitCallback(); }
+	~SteamGamepadTextInput() override = default;
 
 	inline const std::string& GetText() const { return inputText; }
 

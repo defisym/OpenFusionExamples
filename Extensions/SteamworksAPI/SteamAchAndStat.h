@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SteamInclude.h"
+#include "SteamRefresh.h"
 
 //------------
 // Concepts
@@ -13,25 +14,36 @@ concept STAT = std::is_same_v<std::remove_cv_t<T>, int32 > || std::is_same_v<std
 // Class
 //------------
 
-class SteamAchAndStat :public SteamCallbackClass {
+class SteamAchAndStat :public SteamCallbackClass, public SteamRefreshClass {
 private:
-	inline void CallCallback(void* udata = nullptr) override {
-		bCallbackSuccess = false;
-		pCallback = GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
-			bCallbackSuccess = pCallback->m_eResult == k_EResultOK
-				&& pCallback->m_nGameID == appID;
-		});
-		bool bSuccess = SteamUserStats()->RequestCurrentStats();
-	}
-public:
-	SteamAchAndStat(Refresh::RefreshTasks* pTasks)
-		:SteamCallbackClass(pTasks, Refresh::RefreshType::AchievementAndStat) {
-		SteamAchAndStat::CallCallback();
-	}
-	~SteamAchAndStat() override {
+	static constexpr size_t UserStatsReceived = 0;
+	static constexpr size_t UserStatsStored = 1;
+	static constexpr size_t UserAchievementStored = 2;
 
+	inline void InitCallback() override {
+		AddCallback(GetCallBack<UserStatsReceived_t>([&] (const UserStatsReceived_t* pCallback) {
+			return pCallback->m_eResult == k_EResultOK
+				&& pCallback->m_nGameID == appID;
+			}));
+		AddCallback(GetCallBack<UserStatsStored_t>([&] (const UserStatsStored_t* pCallback) {
+			return pCallback->m_eResult == k_EResultOK
+				&& pCallback->m_nGameID == appID;
+			}));
+		AddCallback(GetCallBack<UserAchievementStored_t>([&] (const UserAchievementStored_t* pCallback) {
+			return pCallback->m_nGameID == appID;
+			}));
 	}
-	
+
+public:
+	SteamAchAndStat(RefreshTasks* pTasks)
+		: SteamRefreshClass(pTasks) {
+		SteamAchAndStat::InitCallback();
+		CallCallback([]() {
+			bool bSuccess = SteamUserStats()->RequestCurrentStats();
+		});
+	}
+	~SteamAchAndStat() override = default;
+
 	//------------
 	// Achievements
 	//------------
@@ -54,7 +66,7 @@ public:
 			: nullptr);
 		}
 		else {
-			if(!bCallbackSuccess) {
+			if(!GetCallbackStat()) {
 				return;
 			}
 
@@ -75,7 +87,7 @@ public:
 			UnlockAchievement(ConvertWStrToStr(pAchName).c_str());
 		}
 		else {
-			if (!bCallbackSuccess) {
+			if (!GetCallbackStat()) {
 				return;
 			}
 
@@ -84,7 +96,7 @@ public:
 
 			if (!bUnlock) {
 				SteamUserStats()->SetAchievement(pAchName);
-				AddToRefresh();
+				AddToRefresh(RefreshType::AchievementAndStat);
 			}
 		}
 	}
@@ -99,7 +111,7 @@ public:
 			GetStat(ConvertWStrToStr(pStatName).c_str(), pData);
 		}
 		else {
-			if (!bCallbackSuccess) {
+			if (!GetCallbackStat()) {
 				return;
 			}
 
@@ -113,12 +125,12 @@ public:
 			SetStat(ConvertWStrToStr(pStatName).c_str(), data);
 		}
 		else {
-			if (!bCallbackSuccess) {
+			if (!GetCallbackStat()) {
 				return;
 			}
 
 			SteamUserStats()->SetStat(pStatName, data);
-			AddToRefresh();
+			AddToRefresh(RefreshType::AchievementAndStat);
 		}
 	}
 
@@ -128,7 +140,7 @@ public:
 			AddStat(ConvertWStrToStr(pStatName).c_str(), data);
 		}
 		else {
-			if (!bCallbackSuccess) {
+			if (!GetCallbackStat()) {
 				return;
 			}
 
@@ -136,7 +148,39 @@ public:
 			GetStat(pStatName, &pData);
 
 			SteamUserStats()->SetStat(pStatName, pData + data);
-			AddToRefresh();
+			AddToRefresh(RefreshType::AchievementAndStat);
+		}
+	}
+
+
+	// the unit of dSessionLength should be the same as Window prop
+	// you set in Steamworks
+	template <STR Name>
+	inline void SetAvgRateStat(const Name pStatName, const float flCountThisSession, const double dSessionLength) {
+		if constexpr (WSTR<Name>) {
+			SetAvgRateStat(ConvertWStrToStr(pStatName).c_str(), flCountThisSession, dSessionLength);
+		}
+		else {
+			if (!GetCallbackStat()) {
+				return;
+			}
+
+			SteamUserStats()->UpdateAvgRateStat(pStatName, flCountThisSession, dSessionLength);
+			AddToRefresh(RefreshType::AchievementAndStat);
+		}
+	}
+
+	template <STR Name>
+	inline void IndicateAchievementProgress(const Name pStatName, const uint32 nCurProgress, const uint32 nMaxProgress) {
+		if constexpr (WSTR<Name>) {
+			IndicateAchievementProgress(ConvertWStrToStr(pStatName).c_str(), nCurProgress, nMaxProgress);
+		}
+		else {
+			if (!GetCallbackStat()) {
+				return;
+			}
+
+			SteamUserStats()->IndicateAchievementProgress(pStatName, nCurProgress, nMaxProgress);
 		}
 	}
 };

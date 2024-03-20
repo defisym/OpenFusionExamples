@@ -32,6 +32,11 @@
 // ------------
 class SteamCallback {
 public:
+	// callback result
+	bool bCallbackSuccess = false;
+	// reset callback result, for next callback
+	void ResetCallbackResult() { bCallbackSuccess = false; }
+
 	virtual ~SteamCallback() = default;
 };
 
@@ -41,7 +46,7 @@ public:
 template<typename CallBackType>
 class SteamCallbackHandler :public SteamCallback {
 private:
-	using Handler = std::function<void(CallBackType*)>;
+	using Handler = std::function<bool(CallBackType*)>;
 	Handler handler = nullptr;
 
 	STEAM_CALLBACK(SteamCallbackHandler, CallbackManager, CallBackType);
@@ -56,14 +61,15 @@ public:
 
 template<typename CallBackType>
 inline void SteamCallbackHandler<CallBackType>::CallbackManager(CallBackType* pCallback) {
-	handler(pCallback);
+	bCallbackSuccess = handler(pCallback);
 }
 
 // ------------
 // Function to get new instance
 // ------------
+// return true: callback success
 template<typename CallBackType>
-inline auto GetCallBack(std::function<void(CallBackType*)> callback) {
+inline auto GetCallBack(std::function<bool(CallBackType*)> callback) {
 	return new SteamCallbackHandler<CallBackType>(callback);
 }
 
@@ -73,7 +79,7 @@ inline auto GetCallBack(std::function<void(CallBackType*)> callback) {
 template<typename CallBackType>
 class SteamCallResultHandler :public SteamCallback {
 private:
-	using Handler = std::function<void(CallBackType*, bool)>;
+	using Handler = std::function<bool(CallBackType*, bool)>;
 	Handler handler = nullptr;
 
 	SteamAPICall_t hSteamAPICall = 0;
@@ -93,14 +99,15 @@ public:
 
 template<typename CallBackType>
 inline void SteamCallResultHandler<CallBackType>::OnCallbackResult(CallBackType* pCallback, bool bIOFailure) {
-	handler(pCallback, bIOFailure);
+	bCallbackSuccess = handler(pCallback, bIOFailure);
 }
 
 // ------------
 // Function to get new instance
 // ------------
+// return true: callback success
 template<typename CallBackType>
-inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<void(CallBackType*, bool)> callback) {
+inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<bool(CallBackType*, bool)> callback) {
 	return new SteamCallResultHandler<CallBackType>(hSteamAPICall, callback);
 }
 
@@ -114,64 +121,76 @@ inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<void(CallBac
 //
 //class SteamFunction :public SteamCallbackClass {
 //private:
-//	inline void CallCallback(void* udata = nullptr) override {
-//		bCallbackSuccess = false;
-//		pCallback = GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
-//			bCallbackSuccess = pCallback->m_eResult == k_EResultOK
-//				&& pCallback->m_nGameID == appID;
-//		});
-//		bool bSuccess = SteamUserStats()->RequestCurrentStats();
+//	inline void InitCallback() override {
+//	AddCallback(GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
+//		return pCallback->m_eResult == k_EResultOK
+//			&& pCallback->m_nGameID == appID;
+//		}));
 //	}
 //public:
-//	SteamFunction(Refresh::RefreshTasks* pTasks)
-//		:SteamCallbackClass(pTasks, Refresh::RefreshType::AchievementAndStat) {
-//		SteamFunction::CallCallback();
+//	SteamFunction() {
+//		SteamFunction::InitCallback();
 //	}
-//	~SteamFunction() override {
-//
-//	}
+//	~SteamFunction() override = default;
 //};
 
 // ------------
 // Base class
 // ------------
+constexpr auto DefaultCallbackCount = 1;
+
 class SteamCallbackClass {
-private:
-	// copy only, do not release
-	Refresh::RefreshTasks* pTasks = nullptr;
-	Refresh::RefreshType type = Refresh::RefreshType::None;
-
 protected:
-	uint64 appID = 0;
+	AppId_t appID = 0;
+	std::vector<SteamCallback*> SteamCallbacks;
 
-	SteamCallback* pCallback = nullptr;
-	bool bCallbackSuccess = false;
+	inline bool CallbackIndexValid(size_t index) const {
+		return SteamCallbacks.size() > index;
+	}
 
 public:
 	// child classes init pCallback with GetCallBack
-	// then call then async operation
-	explicit SteamCallbackClass(Refresh::RefreshTasks* pTasks = nullptr,
-		Refresh::RefreshType type = Refresh::RefreshType::None) {
+	// then call the async operation
+	explicit SteamCallbackClass() {
 		this->appID = SteamUtils()->GetAppID();
-
-		this->pTasks = pTasks;
-		this->type = type;
+		SteamCallbacks.reserve(DefaultCallbackCount);
 	}
 	virtual ~SteamCallbackClass() {
-		delete pCallback;
-		pCallback = nullptr;
-	}
-
-	// Add task then refresh it in handle rountine
-	inline void AddToRefresh() const {
-		if (pTasks != nullptr) {
-			Refresh::UniquePush(pTasks, type);
+		for (const auto& it : SteamCallbacks) {
+			delete it;
 		}
 	}
 
-	inline bool GetCallbackStat() const {
-		return bCallbackSuccess;
+	inline bool GetCallbackStat(size_t index = 0) const {
+		if (!CallbackIndexValid(index)) { return false; }
+
+		return SteamCallbacks[index]->bCallbackSuccess;
+	}
+	inline SteamCallback* GetCallback(size_t index = 0) const {
+		if (!CallbackIndexValid(index)) { return nullptr; }
+
+		return SteamCallbacks[index];
 	}
 
-	virtual inline void CallCallback(void* udata = nullptr) = 0;
+	// add callbacks, must be implemented
+	virtual inline void InitCallback() = 0;
+
+	inline void AddCallback(SteamCallback* pCallback) {
+		SteamCallbacks.emplace_back(pCallback);
+	}
+	// reset callback result then call worker, keep worker nullptr if callback
+	// will be triggered by Steam
+	// call the first callback by default
+	inline void CallCallback(const std::function<void()>& worker = nullptr) const {
+		CallCallback(0, worker);
+	}
+	// reset callback result then call worker, keep worker nullptr if callback
+	// will be triggered by Steam
+	// call the given callback
+	inline void CallCallback(size_t index, const std::function<void()>& worker = nullptr) const {
+		if (!CallbackIndexValid(index)) { return; }
+		SteamCallbacks[index]->ResetCallbackResult();
+
+		if (worker != nullptr) { worker(); }
+	}
 };

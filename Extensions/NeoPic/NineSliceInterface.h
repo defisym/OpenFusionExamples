@@ -199,7 +199,7 @@ struct NineSliceInterface {
 				return bRet;
 			};
 
-			auto drawHorizentally = [&] (size_t index, int x, int y, int clipY) {
+			auto drawHorizontally = [&] (size_t index, int x, int y, int clipY) {
 				return draw(index, 1,
 					x, y, x, width,
 					&cSurface::GetWidth,
@@ -214,7 +214,7 @@ struct NineSliceInterface {
 					x, y, y, height,
 					&cSurface::GetHeight,
 					[&] (size_t idx, int destX, int destY, int clip) {
-					return drawHorizentally(idx, destX, destY, clip);
+					return drawHorizontally(idx, destX, destY, clip);
 					});
 			};
 
@@ -224,7 +224,7 @@ struct NineSliceInterface {
 			const auto stretchWidth = width - minWidth;
 			const auto stretchHeight = height - minHeight;
 
-			auto drawHorizentally = [&] (size_t index, int y, int h) {
+			auto drawHorizontally = [&] (size_t index, int y, int h) {
 				bool bRet = true;
 
 				bRet &= pLibValue[index + 0]->pSf->Stretch(*pRTT,
@@ -247,17 +247,17 @@ struct NineSliceInterface {
 				return bRet;
 			};
 
-			bRet &= drawHorizentally(static_cast<size_t>(Tile::LT),
+			bRet &= drawHorizontally(static_cast<size_t>(Tile::LT),
 				0,
 				pLibValue[static_cast<size_t>(Tile::LT)]->pSf->GetHeight());
 
 			if (stretchHeight != 0) {
-				bRet &= drawHorizentally(static_cast<size_t>(Tile::LM),
+				bRet &= drawHorizontally(static_cast<size_t>(Tile::LM),
 					pLibValue[static_cast<size_t>(Tile::LT)]->pSf->GetHeight(),
 					stretchHeight);
 			}
 
-			bRet &= drawHorizentally(static_cast<size_t>(Tile::LB),
+			bRet &= drawHorizontally(static_cast<size_t>(Tile::LB),
 				height - pLibValue[static_cast<size_t>(Tile::LB)]->pSf->GetHeight(),
 				pLibValue[static_cast<size_t>(Tile::LB)]->pSf->GetHeight());
 		}
@@ -287,7 +287,7 @@ struct NineSliceInterface {
 
 			// don't reset stretch if it's already the min size
 			auto resetScale = [] (const int wantedSz, const int renderedSz, const int minSz, float& scale) {
-				if (renderedSz != minSz) {		// sz>=minSz, granteed by Render
+				if (renderedSz != minSz) {		// sz>=minSz, granted by Render
 					scale = scale / abs(scale);
 				}else {
 					scale = static_cast<float>(wantedSz) / static_cast<float>(minSz);

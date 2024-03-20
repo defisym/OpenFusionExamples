@@ -20,7 +20,9 @@
 #define	CND_CONDITION_OID				5
 #define	CND_CONDITION_SUBMITTED			6
 
-#define	CND_LAST						7
+#define	CND_CONDITION_ODLCIC			7
+
+#define	CND_LAST						8
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -43,7 +45,12 @@
 
 #define	ACT_ACTION_SGTI					12
 
-#define	ACT_LAST						13
+#define	ACT_ACTION_IAP					13
+#define	ACT_ACTION_SARS					14
+#define	ACT_ACTION_AGOTS				15
+#define	ACT_ACTION_ID					16
+
+#define	ACT_LAST						17
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -60,7 +67,9 @@
 
 #define	EXP_EXPRESSION_GGIT				7
 
-#define	EXP_LAST						8
+#define	EXP_EXPRESSION_GDDPP			8
+
+#define	EXP_LAST						9
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -128,6 +137,7 @@ typedef struct tagRDATA
 
 	// Object's runtime data
 	GlobalData* pData;
+	AppId_t callBackAppID;
 
 	std::wstring* pRet;
 

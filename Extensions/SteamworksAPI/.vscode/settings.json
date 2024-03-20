@@ -1,17 +1,13 @@
 {
-    "files.associations": {
+	"files.associations": {
 		"*.bsc": "ini",
 		"*.file": "plaintext",
 		"_GlobalProgress": "ini",
-		"*.vdf": "plaintext",
+		"*.vdf": "vdf",
 		"*.asc": "AvgScript",
 		"*.dat": "ini",
 		"*.sav": "ini",
 		"*.wsb": "xml",
-		"list": "cpp",
-		"regex": "cpp",
-		"xlocale": "cpp",
-		"xstring": "cpp",
-		"queue": "cpp"
+		"string": "cpp"
 	}
 }

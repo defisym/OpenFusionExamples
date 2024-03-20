@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "V2NeoStr\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "V2NeoStr\0"
-            VALUE "LegalCopyright", "Copyright 2022~2023 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2022~2024 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "V2NeoStr.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -118,6 +118,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "On Get Object ICon Callback", IDMN_CONDITION_OGOIC
         MENUITEM SEPARATOR
+        MENUITEM "On Tag Callback", IDMN_CONDITION_OTAGCB
+        MENUITEM "On Tag Callback Forward", IDMN_CONDITION_OTAGCBF
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -137,15 +140,20 @@ BEGIN
         MENUITEM "Change Display String", IDMN_ACTION_CSTR
         MENUITEM "Append Display String", IDMN_ACTION_ASTR
         MENUITEM "Append Display String at NewLine", IDMN_ACTION_ASTRNL
-        MENUITEM SEPARATOR  
-        MENUITEM "Render", IDMN_ACTION_RENDER
         MENUITEM SEPARATOR
-        MENUITEM "Change Render Size", IDMN_ACTION_CS
-        MENUITEM "Change Render Options", IDMN_ACTION_SRO
+        POPUP "Render"
+        BEGIN
+           MENUITEM "Render", IDMN_ACTION_RENDER
+           MENUITEM SEPARATOR
+           MENUITEM "Change Render Size", IDMN_ACTION_CS
+           MENUITEM "Change Visible Ratio", IDMN_ACTION_SRO_VR
+           MENUITEM "Change Tag Callback Index", IDMN_ACTION_SRO_STAGCBIDX
+           MENUITEM "Change Tag Callback Index Managed", IDMN_ACTION_SRO_STAGCBIDXM
+           MENUITEM SEPARATOR
+           MENUITEM "Force Redraw", IDMN_ACTION_FRD
+           MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
+        END
         MENUITEM SEPARATOR
-        MENUITEM "Force Redraw", IDMN_ACTION_FRD
-        MENUITEM "Force Redraw Global ICon", IDMN_ACTION_FRDGI
-        MENUITEM SEPARATOR    
         POPUP "Alignment"
         BEGIN    
             MENUITEM "Change Row Space", IDMN_ACTION_CRS
@@ -218,6 +226,11 @@ BEGIN
         POPUP "Render Options"
         BEGIN
             MENUITEM "Get Visible Ratio", IDMN_EXPRESSION_GRO_VR
+            MENUITEM SEPARATOR
+            MENUITEM "Get Tag Callback Name", IDMN_EXPRESSION_GTCBN
+            MENUITEM SEPARATOR
+            MENUITEM "Get Tag Param Num", IDMN_EXPRESSION_GTPN
+            MENUITEM "Get Tag Param String", IDMN_EXPRESSION_GTPS
         END
         MENUITEM SEPARATOR
         POPUP "Alignment"
@@ -359,7 +372,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "NeoStr"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022~2023 Defisym"
+    IDST_COPYRIGHT          "Copyright 2022~2024 Defisym"
     IDST_COMMENT            "NeoStr"
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -539,7 +552,7 @@ BEGIN
     M_ACTION_FRDGI          "Force Redraw Global ICon"
     M_ACTION_RENDER         "Render"
 
-    M_ACTION_SRO            "Change Render Option, Visible Ratio = %0, Include Alpha = %1"
+    M_ACTION_SRO_VR         "Change Visible Ratio = %0, Include Alpha = %1"
     M_VISIBLERATIO          "Use a 0 ~ 1 float to control characters to display"
     M_INCLUDEALPHA          "Include Alpha"
 
@@ -557,11 +570,20 @@ BEGIN
     
     M_FMT					"Format String"
     M_PARAM					"Format Param"
+
+    M_ACTION_SRO_STAGCBIDX	"Set Tag Callback Index = %0"
+    M_ACTION_SRO_STAGCBIDXM	"Set Tag Callback Index Managed = %0"
+
+    M_TAGCBNAME				"Callback Name"
+    M_STAGCBIDX			    "Index Larger Than This Will be Triggered"
+    M_STAGCBIDXM		    "1 = Index Managed Internally, 0 = Manually"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
     M_CONDITION_OGOIC       "%o On Get Object ICon Callback %0"
+    M_CONDITION_OTAGCB      "%o On Tag Callback %0"
+    M_CONDITION_OTAGCBF     "%o On Tag Callback Forward"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -625,6 +647,10 @@ BEGIN
     M_EXPRESSION_GROY	    "GROY("
 
     M_EXPRESSION_GFMTS	    "GFMTS("
+
+    M_EXPRESSION_GTCBN      "GetTagCallbackName("
+    M_EXPRESSION_GTPN       "GetTagParamNum("
+    M_EXPRESSION_GTPS       "GetTagParamString$("
 END
 
 #endif    // English (U.S.) resources

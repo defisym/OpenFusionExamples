@@ -14,19 +14,18 @@ private:
 	uint8* pBodyDataBuffer = nullptr;
 	uint32 unBufferSize = 0;
 
-	inline void CallCallback(void* udata = nullptr) override {
-		bCallbackSuccess = false;
-
+private:
+	inline void InitCallback() override {
 		SteamAPICall_t hCall = 0;
 		bool bSuccess = SteamHTTP()->SendHTTPRequest(hRequest, &hCall);
-		pCallback = GetCallBack<HTTPRequestCompleted_t>(hCall,
+		AddCallback(GetCallBack<HTTPRequestCompleted_t>(hCall,
 			[&] (const HTTPRequestCompleted_t* pCallback, bool bIOFailure) {
-				bCallbackSuccess = pCallback->m_eStatusCode == k_EHTTPStatusCode200OK;
+				const auto bCallbackSuccess = pCallback->m_eStatusCode == k_EHTTPStatusCode200OK;
 
 				if (!bCallbackSuccess) {
 					errorCallback(pCallback->m_eStatusCode);
 
-					return;
+					return false;
 				}
 
 				SteamHTTP()->GetHTTPResponseBodySize(hRequest, &unBufferSize);
@@ -37,31 +36,35 @@ private:
 				SteamHTTP()->GetHTTPResponseBodyData(hRequest, pBodyDataBuffer, unBufferSize);
 
 				finishCallback(pBodyDataBuffer, unBufferSize);
-		});
+
+				return true;
+			}));
 	}
 
 public:
 	// Get
 	SteamHttp(const char* pchFullURL,
 		const ErrorCallback& errorCallback,
-		const FinishCallback& finishCallback)
-		:SteamCallbackClass() {
+		const FinishCallback& finishCallback) {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
+
+		// init request before init callback
 		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodGET, pchFullURL);
-		SteamHttp::CallCallback();
+		SteamHttp::InitCallback();
 	}
 	// Post
 	SteamHttp(const char* pchAbsoluteURL,
 		const char* pchContentType, const char* pubBody, const uint32 unBodyLen,
 		const ErrorCallback& errorCallback,
-		const FinishCallback& finishCallback)
-		:SteamCallbackClass() {
+		const FinishCallback& finishCallback) {
 		this->finishCallback = finishCallback;
 		this->errorCallback = errorCallback;
+
+		// init request before init callback
 		hRequest = SteamHTTP()->CreateHTTPRequest(k_EHTTPMethodPOST, pchAbsoluteURL);
 		SteamHTTP()->SetHTTPRequestRawPostBody(hRequest, pchContentType, (uint8*)pubBody, unBodyLen);
-		SteamHttp::CallCallback();
+		SteamHttp::InitCallback();
 	}
 	~SteamHttp() override {
 		SteamHTTP()->ReleaseHTTPRequest(hRequest);

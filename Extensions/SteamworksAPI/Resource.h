@@ -55,6 +55,11 @@
 
 #define	IDMN_ACTION_SGTI 			25012
 
+#define	IDMN_ACTION_IAP 			25013
+#define	IDMN_ACTION_SARS 			25014
+#define	IDMN_ACTION_AGOTS 			25015
+#define	IDMN_ACTION_ID 				25016
+
 // Action strings
 #define M_ACTION_UA                 5000
 #define M_ACTION_AS                 5001
@@ -73,6 +78,11 @@
 #define	M_ACTION_TSS 				5011
 
 #define	M_ACTION_SGTI 				5012
+
+#define	M_ACTION_IAP 				5013
+#define	M_ACTION_SARS 				5014
+#define	M_ACTION_AGOTS 				5015
+#define	M_ACTION_ID 				5016
 
 
 // Titles of action parameters
@@ -97,6 +107,11 @@
 #define M_DESCRIPTION			 5519
 #define M_MAXCHAR				 5520
 #define M_EXISTINGTEXT			 5521
+#define M_CURPROGRESS			 5522
+#define M_MAXPROGRESS			 5523
+#define M_COUNTTHISSESSION		 5524
+#define M_SESSIONLENGTH			 5525
+#define M_GOTSFLAG			 	 5526
 
 
 //	Conditions
@@ -118,6 +133,8 @@
 #define	IDMN_CONDITION_OID				26005
 #define	IDMN_CONDITION_SUBMITTED		26006
 
+#define	IDMN_CONDITION_ODLCIC			26007
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
@@ -131,10 +148,13 @@
 #define	M_CONDITION_OID					6005
 #define	M_CONDITION_SUBMITTED			6006
 
+#define	M_CONDITION_ODLCIC				6007
+
 // Titles of condition parameters
 #define M_CND_RPO						6501
 #define M_MT_NAME						6502
 #define M_MT_STEP						6503
+#define M_APPID							6504
 
 //	EXPRESSIONS
 //---------------------
@@ -155,6 +175,8 @@
 
 #define	IDMN_EXPRESSION_GGIT 				27007
 
+#define	IDMN_EXPRESSION_GDDPP 				27008
+
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
 #define M_EXPRESSION_GSCL				7001
@@ -167,6 +189,8 @@
 #define	M_EXPRESSION_GCBP				7006
 
 #define	M_EXPRESSION_GGIT				7007
+
+#define	M_EXPRESSION_GDDPP				7008
 
 // Names of expression parameters
 #define M_EXP_P1				 7500

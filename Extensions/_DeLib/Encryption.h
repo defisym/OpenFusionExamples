@@ -11,6 +11,8 @@
 
 //#include <ntstatus.h>
 
+#include "GeneralDefinition.h"
+
 #define USER_MODE
 
 #ifdef USER_MODE
@@ -23,17 +25,27 @@
 // for hash
 #pragma comment(lib, "Crypt32.lib")
 
+//// compatible with WinBase
+//#pragma push_macro("EncryptFile")
+//#pragma push_macro("DecryptFile")
+
+#undef EncryptFile
+#undef DecryptFile
+
 constexpr auto ENCRY = true;
 constexpr auto DECRY = false;
 
+constexpr auto KEY_LENGTH = 16;
+constexpr auto STR_LENGTH = KEY_LENGTH / sizeof(wchar_t);
+
 constexpr auto BUFFER_SIZE = 1024 * 256;
 
-constexpr static BYTE DefaultKey[16] = {
+constexpr static BYTE DefaultKey[KEY_LENGTH] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 };
 
-constexpr static BYTE DefaultIV[16] = {
+constexpr static BYTE DefaultIV[KEY_LENGTH] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 };
@@ -54,8 +66,8 @@ private:
 	PBYTE Key = nullptr;
 	PBYTE IV = nullptr;
 
-	DWORD KeyLength = 16;
-	DWORD IVLength = 16;
+	DWORD KeyLength = KEY_LENGTH;
+	DWORD IVLength = KEY_LENGTH;
 
 	char* InputStr = nullptr;
 	char* OutputStr = nullptr;
@@ -377,9 +389,47 @@ public:
 	DWORD GetOutputStrLength() const;
 
 	void GenerateKey(const wchar_t* KeyStr);
+	
+#ifdef _DEBUG
+	inline bool CompareGeneratedKey(const wchar_t* pL, const wchar_t* pR) {
+		auto CopyResult = [&] (PBYTE pCache) {
+			memcpy(pCache, this->Key, KEY_LENGTH);
+			memcpy(pCache + KEY_LENGTH, this->IV, KEY_LENGTH);
+			};
 
-#undef EncryptFile
-#undef DecryptFile
+		// save old
+		const auto pOld = new BYTE[32];
+		CopyResult(pOld);
+
+		// compare result
+		const auto pLResult = new BYTE[32];
+		GenerateKey(pL);
+		CopyResult(pLResult);
+
+		const auto pRResult = new BYTE[32];
+		GenerateKey(pR);
+		CopyResult(pRResult);
+
+		bool bEqual = true;
+
+		for (size_t idx = 0; idx < 32; idx++) {
+			bEqual = bEqual && (pLResult[idx] == pRResult[idx]);
+
+			if (!bEqual) { break; }
+		}
+
+		// restore old
+		memcpy(this->Key, pOld, KEY_LENGTH);
+		memcpy(this->IV, pOld + KEY_LENGTH, KEY_LENGTH);
+
+		// clean up
+		delete[] pOld;
+		delete[] pLResult;
+		delete[] pRResult;
+
+		return bEqual;
+	}
+#endif
 
 	// load to memory
 	inline bool EncryptFile(const wchar_t* pFileName, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
@@ -765,3 +815,7 @@ inline void BufferBenchMark(Encryption& Encrypt, std::wstring wFilePath, bool en
 #endif
 
 #endif
+
+//// compatible with WinBase
+//#pragma pop_macro("EncryptFile")
+//#pragma pop_macro("DecryptFile")

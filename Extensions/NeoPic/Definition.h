@@ -633,10 +633,7 @@ struct GlobalData {
 
 		LPRDATA rdPtr = nullptr;
 		std::atomic<HANDLE> threadHandle = nullptr;
-		std::atomic<HANDLE> parentThreadHandle = nullptr;
-
 		std::atomic<DWORD> threadID = 0;
-		std::atomic<DWORD> parentThreadID = 0;
 
 		std::atomic<bool> bForceExit = false;
 		std::atomic<bool> bPreloading = false;
@@ -666,13 +663,22 @@ struct GlobalData {
 			this->rdPtr = rdPtr;
 		}
 
-		inline void StartPreload(LPRDATA rdPtr, HANDLE handle, HANDLE parentThreadID) {
-			this->rdPtr = rdPtr;
-			this->threadHandle = handle;
-			this->parentThreadHandle = parentThreadID;
+		inline void StartPreload(LPRDATA rdPtr, std::thread& thread) {
+			StartPreload(rdPtr, thread.native_handle());
+		}
 
+		// the handle passed in will be duplicated
+		inline void StartPreload(LPRDATA rdPtr, HANDLE handle) {
+			this->rdPtr = rdPtr;
+
+			// duplicate the handle passed in
+			HANDLE duplicatedHandle = nullptr;
+			const auto bRet = DuplicateHandle(GetCurrentProcess(), handle,
+				GetCurrentProcess(), &duplicatedHandle,
+				THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
+
+			this->threadHandle = duplicatedHandle;
 			this->threadID = GetProcessId(this->threadHandle);
-			this->parentThreadID = GetProcessId(this->parentThreadHandle);
 
 			this->bForceExit = false;
 			this->bPreloading = true;
@@ -685,11 +691,12 @@ struct GlobalData {
 
 		inline void FinishPreload() {
 			this->rdPtr = nullptr;
-			this->threadHandle = nullptr;
-			this->parentThreadHandle = nullptr;
 
+			// close the duplicate handle
+			const auto bRet = CloseHandle(this->threadHandle);
+
+			this->threadHandle = nullptr;
 			this->threadID = 0;
-			this->parentThreadID = 0;
 
 			this->bForceExit = false;
 			this->bPreloading = false;
@@ -802,11 +809,7 @@ struct GlobalData {
 				CleanCache();
 		});
 
-		// TODO close handle?
-		HANDLE handle;
-		DuplicateHandle(GetCurrentProcess(), pl.native_handle(), GetCurrentProcess(), &handle, THREAD_QUERY_INFORMATION | THREAD_TERMINATE, NULL, NULL);
-
-		pPreloadHandler->StartPreload(rdPtr, handle, GetCurrentProcess());
+		pPreloadHandler->StartPreload(rdPtr, pl);
 
 		pl.detach();
 	}

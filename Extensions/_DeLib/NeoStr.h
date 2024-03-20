@@ -322,7 +322,10 @@ private:
 	//------------
 	// format zone
 	//------------
+public:
+	using ControlParams = std::vector<std::wstring_view>;
 
+private:
 	//---------
 	// basic
 	//---------
@@ -343,6 +346,31 @@ private:
 	// non-stack based
 	//			format is saved directly
 	//---------
+
+	// for tag
+	struct FormatTag :FormatBasic {
+		// updated during parsing
+		size_t rawStart;
+		std::wstring callbackName;
+		std::vector<std::wstring> callbackParams;
+
+		// updated during rendering
+
+		FormatTag(size_t start, size_t startWithNewLine,
+			size_t rawStart, const ControlParams& controlParams) :FormatBasic{ start, startWithNewLine } {
+			this->rawStart = rawStart;
+
+			auto it = controlParams.begin();
+			this->callbackName = { it->data(),it->size() };
+			++it;
+
+			for (; it != controlParams.end(); ++it) {
+				this->callbackParams.emplace_back(it->data(), it->size());
+			}
+		}
+	};
+
+	std::vector<FormatTag> tagFormat;
 
 	// for remark
 	struct FormatRemark :FormatBasic {
@@ -462,7 +490,6 @@ private:
 
 public:
 	using IConLib = std::map<DWORD, LPSURFACE>;
-	using ControlParams = std::vector<std::wstring_view>;
 	using IConParamParser = std::function<DWORD(ControlParams&, IConLib&)>;
 
 	struct IConData {
@@ -849,8 +876,8 @@ public:
 		this->strPos.reserve(20);		
 
 		// non-stack based
+		this->tagFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
-
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
 		// stack based
@@ -1673,6 +1700,11 @@ public:
 		//		\+0.5 -> +0.5
 		//		\-0.5 -> -0.5
 		//
+		// [Tag = CallbackName, Params]
+		//	Trigger callback when render to it, tags in remarks will be ignored
+		//	*you need to retrieve each param
+		//	*then handle it by your self
+		//
 		// [Remark = CharCount, Content]
 		//	Insert remark that display over texts
 		//	As text may include ',', parse is started from left, unlike other formats
@@ -1795,6 +1827,7 @@ public:
 		// ------------
 
 		// non-stack based
+		this->tagFormat.clear();
 		this->remarkFormat.clear();
 		this->iConFormat.clear();
 
@@ -2016,6 +2049,27 @@ public:
 							break;
 						}
 
+						if (StringViewIEqu(controlStr, L"Tag")) {
+							auto& paramParser = controlParam;
+							controlParams.clear();
+
+							do {
+
+							} while (ParseParam(paramParser
+								, [&controlParams] (std::wstring_view& param) {
+									controlParams.emplace_back(GetTrimmedStr(param));
+								}));
+
+							if (controlParams.empty()) { break; }
+
+							this->tagFormat.emplace_back(savedLength,
+								savedLengthWithNewLine,
+								static_cast<size_t>(pCurChar - pRawText),
+								controlParams);
+
+							break;
+						}
+
 						if (StringViewIEqu(controlStr, L"Remark")) {
 							if (bIgnoreFormat) {
 								break;
@@ -2039,10 +2093,10 @@ public:
 
 							controlParams.emplace_back(GetTrimmedStr(paramParser));
 
-							this->remarkFormat.emplace_back(FormatRemark{ savedLength,
+							this->remarkFormat.emplace_back(savedLength,
 								savedLengthWithNewLine,
-							static_cast<size_t>(_stoi(controlParams[0])),
-								std::wstring(controlParams[1]) });
+								static_cast<size_t>(_stoi(controlParams[0])),
+								std::wstring(controlParams[1]));
 
 							break;
 						}
@@ -3157,6 +3211,43 @@ public:
 			this->positionCallback = positionCallback;
 			this->graphicCallback = graphicCallback;
 		}
+
+		// ------------
+		// tag callbacks
+		// ------------
+	private:
+		// trigger custom tag callback when rendering
+		using TagCallback = std::function<void(const std::wstring&, const std::vector<std::wstring>&)>;
+
+	public:
+		// only index lager than this will be triggered
+		size_t tagCallbackIndex = static_cast<size_t>(-1);
+		TagCallback tagCallback = nullptr;
+
+		inline void UpdateTagCallback(const TagCallback& tagCallback) {
+			this->tagCallback = tagCallback;
+		}
+
+		// update to current raw text length
+		inline bool UpdateTagCallbackIndex(const NeoStr* pNeoStr) {
+			if (pNeoStr == nullptr) { return false; }
+
+			const auto rawTextLen = [&] ()->size_t {
+				const auto pRawText = pNeoStr->GetRawText();
+
+				if (pRawText == nullptr) { return 0; }
+
+				// index start from 0
+				const auto len = wcslen(pRawText) - 1;	
+
+				return len;
+			}();
+
+			const bool bChanged = this->tagCallbackIndex != rawTextLen;
+			this->tagCallbackIndex = rawTextLen;
+
+			return bChanged;
+		}
 	};
 
 //#define USE_RTT
@@ -3293,6 +3384,7 @@ public:
 		size_t totalChar = 0;
 
 		// non-stack based
+		auto tagItHandler = IteratorHandler(this->tagFormat);
 		auto remarkItHandler = IteratorHandler(this->remarkFormat);
 		auto iConItHandler = IteratorHandler(this->iConFormat);
 
@@ -3400,6 +3492,14 @@ public:
 					// ---------
 					// update iterator
 					// ---------
+
+					// non-stack based
+					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
+						if (opt.tagCallback == nullptr) { return; }
+						if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
+
+						opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
+					});
 
 					// stack based
 					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
@@ -3624,6 +3724,9 @@ public:
 
 			// copy one option here
 			RenderOptions remarkOpt = opt;
+			// skip custom tag callback
+			remarkOpt.UpdateTagCallback(nullptr);
+			// overrider render, directly to parent
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
 				CharPos* pCharPos,

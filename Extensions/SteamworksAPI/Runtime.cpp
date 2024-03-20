@@ -69,7 +69,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->swidth = edPtr->swidth;
 	rdPtr->sheight = edPtr->sheight;
 #endif
-	
+
 	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
@@ -78,7 +78,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 		rdPtr->pData->GetSteamUtilities([&] (SteamUtilities* pSteamUtil) {
 			if (edPtr->bReportError) {
-				rdPtr->pData->pSteamUtil->SetErrorHandler();
+				SteamUtilities::SetErrorHandler();
 			}
 
 			switch (edPtr->NotificationPosition) {

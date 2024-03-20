@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "String Splitter\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "StringSplitter\0"
-            VALUE "LegalCopyright", "Copyright 2021 ~ 2023 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2021~2024 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "StringSplitter.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -331,7 +331,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "String Splitter"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021 ~ 2023 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021~2024 Defisym"
     IDST_COMMENT            "This object is a string splitter base on C++ regex."
     IDST_HTTP               "https://twitter.com/defisym"
 END

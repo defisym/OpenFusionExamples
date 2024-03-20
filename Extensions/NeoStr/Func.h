@@ -4,6 +4,8 @@
 #include <string_view>
 
 constexpr auto ONITOIC = 0;
+constexpr auto ONTAGCB = 1;
+constexpr auto ONTAGCBF = 2;
 
 #define GIPP(p) (*(NeoStr::IConParamParser*)(p))
 
@@ -129,8 +131,12 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
-		rdPtr->pNeoStr->RenderPerChar(&rc,
-			*static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions));
+		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+
+		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
+		if(rdPtr->bTagCallbackIndexManaged) {
+			pRenderOptions->UpdateTagCallbackIndex(rdPtr->pNeoStr);
+		}
 
 		rdPtr->reRender = false;
 	}

@@ -7,8 +7,10 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_OGOIC				0
+#define	CND_CONDITION_OTAGCB			1
+#define	CND_CONDITION_OTAGCBF			2
 
-#define	CND_LAST						1
+#define	CND_LAST						3
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -48,7 +50,7 @@
 #define	ACT_ACTION_FRDGI		    	22
 #define	ACT_ACTION_RENDER		    	23
 
-#define	ACT_ACTION_SRO		    	    24
+#define	ACT_ACTION_SRO_VR	    	    24
 
 #define	ACT_ACTION_STS		    	    25
 
@@ -58,7 +60,10 @@
 #define	ACT_ACTION_APS			    	28
 #define	ACT_ACTION_APV			    	29
 
-#define	ACT_LAST						30
+#define	ACT_ACTION_SRO_STAGCBIDX	    30
+#define	ACT_ACTION_SRO_STAGCBIDXM	    31
+
+#define	ACT_LAST						32
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -119,7 +124,11 @@
 
 #define	EXP_EXPRESSION_GFMTS		    	37
 
-#define	EXP_LAST                    		38
+#define	EXP_EXPRESSION_GTPN		    		38
+#define	EXP_EXPRESSION_GTPS		    		39
+#define	EXP_EXPRESSION_GTCBN		    	40
+
+#define	EXP_LAST                    		41
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -305,6 +314,9 @@ typedef struct tagRDATA
 	bool bIConNeedUpdate;
 
 	void* pRenderOptions;
+	bool bTagCallbackIndexManaged;
+	std::wstring* pTagCallbackName;
+	const std::vector<std::wstring>* pTagCallbackParams;
 
 	unsigned char tabSize;
 	bool bTabEM;
