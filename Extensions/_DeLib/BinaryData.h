@@ -31,6 +31,11 @@ struct BinaryData {
 		}
 	}
 
+	BinaryData(const BinaryData& other) = delete;
+	BinaryData(BinaryData&& other) noexcept = delete;
+	BinaryData& operator=(const BinaryData& other) = delete;
+	BinaryData& operator=(BinaryData&& other) noexcept = delete;
+
 	inline const BinaryBuffer* GetAddress(const std::wstring& fileName) const {
 		const auto it = pDatas.find(fileName);
 
@@ -153,7 +158,9 @@ struct BinaryData {
 
 template<typename DataType>
 struct BinaryDataInfo {
-	BinaryData<DataType>* pBinaryData = nullptr;
+	using BinaryDataType = BinaryData<DataType>;
+
+	BinaryDataType* pBinaryData = nullptr;
 	char* pData = nullptr;
 	size_t sz = 0;
 
@@ -164,7 +171,7 @@ struct BinaryDataInfo {
 	constexpr static const wchar_t* pFromMemPrefix = L"FromMem_";
 
 	BinaryDataInfo() = default;
-	BinaryDataInfo(const wchar_t* pFileName) {
+	explicit BinaryDataInfo(const wchar_t* pFileName) {
 		// FromMem_AccessFileName_Address_Size
 		constexpr auto delimiter = L'_';
 
@@ -214,24 +221,26 @@ struct BinaryDataInfo {
 	}
 
 	inline std::wstring Serialization() const {
-		const size_t bufSz = sizeof(BinaryData*)
+		const size_t bufSz = sizeof(BinaryDataType*)
 			+ sizeof(char*)
 			+ sizeof(size_t)
+			+ sizeof(wchar_t) * accessFileName.length()
+			+ sizeof(wchar_t) * 1		// for '\0'
 			+ sizeof(wchar_t) * dataFileName.length()
-			+ sizeof(size_t) * accessFileName.length();
+			+ sizeof(wchar_t) * 1;	// for '\0'
 		const auto pBuf = new unsigned char[bufSz];
 
 		auto pBuffer = pBuf;
-		memcpy(pBuffer, &pBinaryData, sizeof(BinaryData*));
+		memcpy(pBuffer, &pBinaryData, sizeof(BinaryDataType*));
 
-		pBuffer += sizeof(BinaryData*);
+		pBuffer += sizeof(BinaryDataType*);
 		memcpy(pBuffer, &pData, sizeof(char*));
 
 		pBuffer += sizeof(char*);
 		memcpy(pBuffer, &sz, sizeof(size_t));
 
 		pBuffer += sizeof(size_t);
-		memcpy(pBuffer, accessFileName.data(), sizeof(size_t) * accessFileName.length());
+		memcpy(pBuffer, accessFileName.data(), sizeof(wchar_t) * accessFileName.length());
 
 		pBuffer += sizeof(wchar_t) * accessFileName.length();
 		((LPWSTR)pBuffer)[0] = L'\0';
@@ -257,8 +266,8 @@ struct BinaryDataInfo {
 		base64.base64_decode_callback(data, [&] (const BYTE* buf, const size_t sz) {
 			auto pBuffer = buf;
 
-			info.pBinaryData = *(BinaryData**)pBuffer;
-			pBuffer += sizeof(BinaryData*);
+			info.pBinaryData = *(BinaryDataType**)pBuffer;
+			pBuffer += sizeof(BinaryDataType*);
 
 			info.pData = *(char**)pBuffer;
 			pBuffer += sizeof(char*);
@@ -284,7 +293,9 @@ inline std::wstring GetFromMemoryName(LPCWSTR pAccessFilePath, void* address, si
 	info.pData = static_cast<char*>(address);
 	info.sz = size;
 
-	return std::format(L"FromMem_{}", info.Serialization());
+	return std::format(L"{}{}", 
+		BinaryDataInfo<DataType>::pFromMemPrefix,
+		info.Serialization());
 }
 
 template<typename DataType>
@@ -298,20 +309,22 @@ inline std::wstring GetFromHandledMemoryName(BinaryData<DataType>* pBinaryData,
 	info.pBinaryData = pBinaryData;
 	const auto pManagedBinaryData = info.pBinaryData->GetAddress(info.dataFileName);
 	info.pData = pManagedBinaryData != nullptr
-		? static_cast<char*>(pManagedBinaryData + offset)
+		? (char*)(pManagedBinaryData + offset)
 		: nullptr;
 	info.sz = size;
 
-	return std::format(L"FromMem_{}", info.Serialization());
+	return std::format(L"{}{}",
+		BinaryDataInfo<DataType>::pFromMemPrefix,
+		info.Serialization());
 }
 
 template<typename DataType, typename ReturnType>
 inline ReturnType LoadFromMemoryWrapper(const wchar_t* pFileName,
 	const std::function<ReturnType()>& cb,
-	const std::function<ReturnType(BinaryDataInfo<DataType>)>& memoryCb) {
+	const std::function<ReturnType(const BinaryDataInfo<DataType>&)>& memoryCb) {
 	if (!BinaryDataInfo<DataType>::FromMemory(pFileName)) { return cb(); }
 
-	auto pBinaryDataInfo = BinaryDataInfo<DataType>::DeSerialization(pFileName + BinaryDataInfo<DataType>::GetPrefixLength());
+	auto binaryDataInfo = BinaryDataInfo<DataType>::DeSerialization(pFileName + BinaryDataInfo<DataType>::GetPrefixLength());
 
-	return memoryCb(pBinaryDataInfo);
+	return memoryCb(binaryDataInfo);
 }
