@@ -407,12 +407,7 @@ long WINAPI DLLExport Expression_GetPlayFromMemoryName(LPRDATA rdPtr, long param
 	const auto address = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto size = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	BinaryDataInfo info;
-	info.accessFileName = pAccessFilePath;
-	info.pData = reinterpret_cast<char*>(address);
-	info.sz = size;
-
-	*rdPtr->pRet = std::format(L"FromMem_{}", info.Serialization());
+	*rdPtr->pRet = GetFromMemoryName<AudioData>(pAccessFilePath, reinterpret_cast<char*>(address), size);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -427,18 +422,9 @@ long WINAPI DLLExport Expression_GetPlayFromHandledMemoryName(LPRDATA rdPtr, lon
 	const auto offset = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto size = (int)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	BinaryDataInfo info;
-	info.dataFileName = pDataFilePath;
-	info.accessFileName = pAccessFilePath;
-
-	info.pBinaryData = &rdPtr->pData->binaryData;
-	const auto pBinaryData = info.pBinaryData->GetAddress(info.dataFileName);
-	info.pData = pBinaryData != nullptr
-		? (char*)(pBinaryData + offset)
-		: nullptr;
-	info.sz = size;
-
-	*rdPtr->pRet = std::format(L"FromMem_{}", info.Serialization());
+	*rdPtr->pRet = GetFromHandledMemoryName(&rdPtr->pData->binaryData,
+		pAccessFilePath,
+		pDataFilePath, offset, size);
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
