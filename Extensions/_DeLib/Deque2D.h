@@ -189,21 +189,13 @@ namespace Deque2D {
 			std::wstring Output = this->Save();
 			UINT CodePage = Unicode ? CP_UTF8 : CP_ACP;
 
-			DWORD dbuffsize = WideCharToMultiByte(CodePage, 0, Output.c_str(), -1, NULL, 0, NULL, FALSE);
-			if (dbuffsize == (size_t)(-1)) {
+			std::string byteString;
+			if(!Split::SaveData(byteString, Output.c_str(), Output.length(), CodePage)){
 				return;
-			}
-
-			char* dbuff = new char[dbuffsize + 1];
-			memset(dbuff, 0, dbuffsize + 1);
-
-			if (!WideCharToMultiByte(CodePage, 0, Output.c_str(), -1, dbuff, dbuffsize, NULL, FALSE)) {
-				return;
-			}
+			};
 
 			Encryption Encrypt;
-			Encrypt.SetEncryptStr(dbuff, strlen(dbuff));
-			delete[] dbuff;
+			Encrypt.SetEncryptStr(byteString);
 
 			if (Key == L"") {
 				Encrypt.GenerateKey(Key.c_str());
@@ -273,8 +265,7 @@ namespace Deque2D {
 
 			try {
 				ret = get<int>(SearchResultVec.at(index).Data);
-			}
-			catch (std::bad_variant_access& e) {
+			} catch (std::bad_variant_access& e) {
 				const auto info = e.what();
 			}
 
@@ -285,8 +276,7 @@ namespace Deque2D {
 
 			try {
 				ret = get<double>(SearchResultVec.at(index).Data);
-			}
-			catch (std::bad_variant_access& e) {
+			} catch (std::bad_variant_access& e) {
 				const auto info = e.what();
 			}
 
@@ -297,8 +287,7 @@ namespace Deque2D {
 
 			try {
 				ret = get<std::wstring>(SearchResultVec.at(index).Data);
-			}
-			catch (std::bad_variant_access& e) {
+			} catch (std::bad_variant_access& e) {
 				const auto info = e.what();
 			}
 
@@ -441,7 +430,7 @@ namespace Deque2D {
 				}
 			}
 
-			std::ranges::sort(Dat, [=](const DataDeq& a, const DataDeq& b) { return descend ? a[DataPos] > b[DataPos]: a[DataPos] < b[DataPos]; });
+			std::ranges::sort(Dat, [=] (const DataDeq& a, const DataDeq& b) { return descend ? a[DataPos] > b[DataPos]: a[DataPos] < b[DataPos]; });
 		}
 		inline void ArrayShuffle() {
 			std::random_device rd;
@@ -632,8 +621,7 @@ namespace Deque2D {
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
 				try {
 					ret = get<int>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
-				}
-				catch (std::bad_variant_access& e) {
+				} catch (std::bad_variant_access& e) {
 					const auto info = e.what();
 				}
 			}
@@ -659,8 +647,7 @@ namespace Deque2D {
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
 				try {
 					ret = get<double>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
-				}
-				catch (std::bad_variant_access& e) {
+				} catch (std::bad_variant_access& e) {
 					const auto info = e.what();
 				}
 			}
@@ -686,8 +673,7 @@ namespace Deque2D {
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
 				try {
 					ret = get<std::wstring>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
-				}
-				catch (std::bad_variant_access& e) {
+				} catch (std::bad_variant_access& e) {
 					const auto info = e.what();
 				}
 			}
@@ -707,7 +693,7 @@ namespace Deque2D {
 
 		inline void DataSort(size_t ArrayPos, bool descend = true) {
 			if (ArrayPosValid(ArrayPos)) {
-				std::ranges::sort(Dat[ArrayPos], [=](const Data& a, const Data& b) { return descend ? a > b:a < b; });
+				std::ranges::sort(Dat[ArrayPos], [=] (const Data& a, const Data& b) { return descend ? a > b:a < b; });
 			}
 		}
 		inline void DataShuffle(size_t ArrayPos) {

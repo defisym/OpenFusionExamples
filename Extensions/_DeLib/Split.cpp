@@ -32,7 +32,7 @@ bool Split::LoadFile(const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicod
 
     Encryption encrypt;
 
-    if(!encrypt.OpenFile(pFilePath)) {
+    if (!encrypt.OpenFile(pFilePath)) {
         return false;
     }
 
@@ -53,6 +53,37 @@ bool Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool
     return LoadFile(FilePath.c_str(), Key.c_str(), bUnicode);
 }
 
+// general save / load, do conversion
+static bool LoadData(std::wstring& output,
+        const char* pSrc, size_t len,
+        bool& bUnicode) {
+    if (pSrc == nullptr) {
+        return false;
+    }
+
+    //BOM
+    if ((len >= 3) && (memcmp(pSrc, UTF8_SIGNATURE, 3) == 0)) {
+        bUnicode = true;
+
+        pSrc += 3;
+        len -= 3;
+    }
+
+    if (len == 0) {
+        return false;
+    }
+
+    const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
+    return to_wide_string(output, pSrc, len, codePage);
+}
+static bool SaveData(std::string& output,
+    const wchar_t* pSrc, size_t len,
+    bool bUnicode = true) {
+    UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
+    return to_byte_string(output, pSrc, len, codePage);
+}
+
+// multibyte, do conversion
 bool Split::LoadData(const std::string& Src) {
     return this->LoadData(Src.c_str(), Src.length());
 }
@@ -60,42 +91,16 @@ bool Split::LoadData(const char* Src) {
     return this->LoadData(Src, strlen(Src));
 }
 bool Split::LoadData(const char* Src, size_t Len) {
-    if (Src == nullptr) {
+    if (!LoadData(this->SplitSrcStr, Src, Len, this->Unicode)) {
         return false;
     }
 
-	//BOM
-    if ((Len >= 3) && (memcmp(Src, UTF8_SIGNATURE, 3) == 0)) {
-        Src += 3;
-        Len -= 3;
-        this->Unicode = true;
-    }
-
-    if (Len == 0) {
-        return false;
-    }
-
-    const UINT CodePage = this->Unicode ? CP_UTF8 : CP_ACP;
-    const int OutputLength = MultiByteToWideChar(CodePage, 0, 
-        Src, static_cast<int>(Len),
-        nullptr, 0);
-
-    if (OutputLength == 0) {
-        return false;
-    }
-
-    this->SplitSrcStr = std::wstring(OutputLength, 0);
-    if (!MultiByteToWideChar(CodePage, 0, 
-        Src, static_cast<int>(Len),
-        this->SplitSrcStr.data(), OutputLength)) {
-        return false;
-    }
-	
     this->Reserve(this->SplitSrcStr.length() / RESERVE_MAGNUM);
 
     return true;
 }
 
+// wide char, load directly
 bool Split::LoadData(const std::wstring& Src) {
     return this->LoadData(Src.c_str(), Src.length());
 }
@@ -177,8 +182,8 @@ void Split::SplitData() {
     this->KeyWordPairVec.clear();
 
     //remove comment
-    this->SplitDataStr = this->RemoveComment 
-        ? regex_replace(this->SplitSrcStr, this->CommentReg, L"") 
+    this->SplitDataStr = this->RemoveComment
+        ? regex_replace(this->SplitSrcStr, this->CommentReg, L"")
         : this->SplitSrcStr;
 
     //iterate lines	
@@ -191,7 +196,7 @@ void Split::SplitData() {
     for (const wsregex_token_iterator end; pos != end; ++pos) {
         //current str
         std::wstring Tmp = pos->str();
-		
+
         //remove empty line
         if (this->RemoveEmptyLine && regex_match(Tmp, this->EmptyLineReg)) {
             continue;
@@ -200,11 +205,11 @@ void Split::SplitData() {
         //remove indent
         this->SplitStrVec.emplace_back(this->RemoveIndent ? regex_replace(Tmp, this->IndentReg, L"") : Tmp);
 
-    	//update keyword
+        //update keyword
         if (this->KeyWord && regex_match(this->SplitStrVec.back(), this->KeyWordReg)) {
             this->KeyWordPairVec.emplace_back(this->SplitStrVec.size() - 1, this->SplitStrVec.back());
         }
-    }    
+    }
 }
 
 size_t Split::GetHash() const {
@@ -269,10 +274,10 @@ int Split::GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_
 
     size_t CurPos = 0;
     size_t PrePos = 0;
-    for (size_t i = 0; 
+    for (size_t i = 0;
         regex_search(StrBegin, StrEnd, matches, SubString) && (i <= Sub);
-        i++, 
-        PrePos = Src.length() - matches.suffix().length(), 
+        i++,
+        PrePos = Src.length() - matches.suffix().length(),
         StrBegin = matches[0].second) {
         CurPos = PrePos + matches.position(0u);
 
@@ -396,7 +401,7 @@ bool Split::InsertFile(const Split& newFile,
     }
 
     // insert new
-    for(auto& newKeywordPos : newKeywordVec | std::views::keys) {
+    for (auto& newKeywordPos : newKeywordVec | std::views::keys) {
         newKeywordPos += pos;
     }
 

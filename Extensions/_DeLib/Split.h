@@ -22,7 +22,7 @@ constexpr auto RESERVE_DEFAULT = 50;
 // usually the vec size is SplitSrcStrLength / RESERVE_MAGNUM
 constexpr auto RESERVE_MAGNUM = 16;
 
-constexpr auto DEFAULE_REGEXFLAG = ECMAScript | optimize;
+constexpr auto DEFAULT_REGEXFLAG = ECMAScript | optimize;
 
 struct SplitResult {
     std::wstring SplitDataStr;
@@ -31,7 +31,7 @@ struct SplitResult {
 };
 
 class Split {
-	//Unicode
+    //Unicode
     bool Unicode = true;
 
     std::wstring SplitSrcStr;
@@ -39,13 +39,13 @@ class Split {
 
     std::wstring ReplacedStr;
 
-	//regex flags
-    RegexFlag DefaultFlag = DEFAULE_REGEXFLAG;
+    //regex flags
+    RegexFlag DefaultFlag = DEFAULT_REGEXFLAG;
     RegexFlag Flag = DefaultFlag;
 
     //Main regex, split lines
     wregex LineReg;
-    std::wstring LineRegStr;	
+    std::wstring LineRegStr;
     bool bLineReg = false;
 
     //EmptyLine regex, remove empty lines
@@ -82,7 +82,7 @@ class Split {
     std::vector<std::wstring> SubStringVec;
 
     inline void Reserve(size_t size = RESERVE_DEFAULT) {
-		SplitStrVec.reserve(size);
+        SplitStrVec.reserve(size);
         SubStringVec.reserve(size);
         KeyWordPairVec.reserve(size);
     }
@@ -92,19 +92,28 @@ public:
     ~Split() = default;
     Split(const Split& obj) = default;
     Split& operator= (const Split& obj) = default;
-    
+
     void ResetSplit();
-    
+
     inline void SetUnicode(bool bUnicode) { this->Unicode = bUnicode; }
 
     //load file and decrypt it
     bool LoadFile(const wchar_t* pFilePath, const wchar_t* pKey, bool bUnicode = true);
     bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool bUnicode = true);
 
+    // load data and handle unicode
+    static bool LoadData(std::string& output,
+        const char* pSrc, size_t len,
+        bool bUnicode = true);
+    // save data and handle unicode    
+    static bool SaveData(std::string& output,
+        const char* pSrc, size_t len,
+        bool bUnicode = true);
+
     //load data from string
     bool LoadData(const std::string& Src);
     //load data from byte str (convert to wchar)
-	bool LoadData(const char* Src);
+    bool LoadData(const char* Src);
     bool LoadData(const char* Src, size_t Len);     //Actual loading function
     //load data from wstring
     bool LoadData(const std::wstring& Src);
@@ -113,7 +122,7 @@ public:
     bool LoadData(const wchar_t* Src, size_t Len);  //Actual loading function
 
     inline void InitRegexFlag() {
-        this->DefaultFlag = DEFAULE_REGEXFLAG;
+        this->DefaultFlag = DEFAULT_REGEXFLAG;
         this->Flag = DefaultFlag;
     }
     void ResetRegexFlag();
@@ -133,7 +142,7 @@ public:
 
     void InitRegex(const wchar_t* Split,
         const wchar_t* EnptyLine,
-        const wchar_t* Comment, 
+        const wchar_t* Comment,
         const wchar_t* Indent,
         const wchar_t* pKeyWord);
 
@@ -152,12 +161,12 @@ public:
     //Replace string
     inline const wchar_t* ReplaceStr(const wchar_t* SubStr, const wchar_t* Replace) {
         return ReplaceStr(this->GetSplitData(), Replace, Replace);
-    }	
+    }
     inline const wchar_t* ReplaceStr(const wchar_t* Src, const wchar_t* SubStr, const wchar_t* Replace) {
-        return ReplaceStr(std::wstring(Src), SubStr, Replace);        
+        return ReplaceStr(std::wstring(Src), SubStr, Replace);
     }
     inline const wchar_t* ReplaceStr(const std::wstring& Src, const wchar_t* SubStr, const wchar_t* Replace) {
-	    const wregex SubString(SubStr, this->Flag);
+        const wregex SubString(SubStr, this->Flag);
         this->ReplacedStr = regex_replace(Src, SubString, Replace);
         return this->ReplacedStr.c_str();
     }
@@ -176,7 +185,7 @@ public:
     //Type == true search
     //Type == false match
     inline bool StringMatchRegex(const wchar_t* SubStr, bool Type = false) const {
-        return this->StringMatchRegex(this->GetSplitData(), SubStr,Type);
+        return this->StringMatchRegex(this->GetSplitData(), SubStr, Type);
     }
     inline bool StringMatchRegex(const wchar_t* Src, const wchar_t* SubStr, bool Type = false) const {
         return this->StringMatchRegex(std::wstring(Src), SubStr, Type);
@@ -249,7 +258,7 @@ public:
 
     bool InsertFile(const Split& newFile,
         size_t pos, bool bReplace);
-	bool InsertFile(const wchar_t* pFilePath, const wchar_t* pKey, const bool bUnicode,
+    bool InsertFile(const wchar_t* pFilePath, const wchar_t* pKey, const bool bUnicode,
         const size_t pos, const bool bReplace) {
         Split newFile = *this;
         if (!newFile.LoadFile(pFilePath, pKey, bUnicode)) {
@@ -257,8 +266,8 @@ public:
         }
 
         return InsertFile(newFile, pos, bReplace);
-	}
-    bool InsertFile(const std::wstring& filePath, const std::wstring& key, const bool bUnicode, 
+    }
+    bool InsertFile(const std::wstring& filePath, const std::wstring& key, const bool bUnicode,
         const size_t pos, const bool bReplace) {
         return InsertFile(filePath.c_str(), key.c_str(), bUnicode, pos, bReplace);
     }
@@ -266,6 +275,6 @@ public:
 
 //if you input \r\n in MMF, fusion will convert it to \\r\\n, which not match \r\n, so we convert it back here
 inline std::wstring NewLineEscape(const wchar_t* Src) {
-	const wregex NewLineEscape(L"(\\\\r\\\\n)");
+    const wregex NewLineEscape(L"(\\\\r\\\\n)");
     return regex_replace(std::wstring(Src), NewLineEscape, L"\r\n");
 }
