@@ -92,7 +92,21 @@
 		"set": "cpp",
 		"span": "cpp",
 		"valarray": "cpp",
-		"coroutine": "cpp"
+		"coroutine": "cpp",
+		"*.ipp": "cpp",
+		"bitset": "cpp",
+		"unordered_set": "cpp",
+		"csignal": "cpp",
+		"cstdarg": "cpp",
+		"cwctype": "cpp",
+		"cfenv": "cpp",
+		"codecvt": "cpp",
+		"future": "cpp",
+		"semaphore": "cpp",
+		"source_location": "cpp",
+		"stack": "cpp",
+		"strstream": "cpp",
+		"typeindex": "cpp"
 	},
     "json.schemas": [    
         {
