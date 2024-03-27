@@ -20,7 +20,7 @@ void Split::ResetSplit() {
     //reset flag
     this->bLineReg = false;
     this->RemoveEmptyLine = false;
-    this->RemoveCommnet = false;
+    this->RemoveComment = false;
     this->RemoveIndent = false;
     this->KeyWord = false;
 
@@ -76,18 +76,18 @@ bool Split::LoadData(const char* Src, size_t Len) {
     }
 
     const UINT CodePage = this->Unicode ? CP_UTF8 : CP_ACP;
-    const int OutputLenth = MultiByteToWideChar(CodePage, 0, 
+    const int OutputLength = MultiByteToWideChar(CodePage, 0, 
         Src, static_cast<int>(Len),
         nullptr, 0);
 
-    if (OutputLenth == 0) {
+    if (OutputLength == 0) {
         return false;
     }
 
-    this->SplitSrcStr = std::wstring(OutputLenth, 0);
+    this->SplitSrcStr = std::wstring(OutputLength, 0);
     if (!MultiByteToWideChar(CodePage, 0, 
         Src, static_cast<int>(Len),
-        this->SplitSrcStr.data(), OutputLenth)) {
+        this->SplitSrcStr.data(), OutputLength)) {
         return false;
     }
 	
@@ -134,7 +134,7 @@ void Split::InitEmptyLine(const wchar_t* EmptyLine) {
 void Split::InitComment(const wchar_t* Comment) {
     this->CommentReg.assign(Comment, this->Flag);
     this->CommentRegStr = Comment;
-    this->RemoveCommnet = true;
+    this->RemoveComment = true;
 }
 
 void Split::InitIndent(const wchar_t* Indent) {
@@ -150,15 +150,15 @@ void Split::InitKeyWord(const wchar_t* pKeyWord) {
 }
 
 void Split::InitRegex(const wchar_t* Split,
-    const wchar_t* EnptyLine,
+    const wchar_t* EmptyLine,
     const wchar_t* Comment,
     const wchar_t* Indent,
     const wchar_t* pKeyWord) {
     if (wcslen(Split) != 0) {
         this->InitSplit(Split);
     }
-    if (wcslen(EnptyLine) != 0) {
-        this->InitEmptyLine(EnptyLine);
+    if (wcslen(EmptyLine) != 0) {
+        this->InitEmptyLine(EmptyLine);
     }
     if (wcslen(Comment) != 0) {
         this->InitComment(Comment);
@@ -177,7 +177,7 @@ void Split::SplitData() {
     this->KeyWordPairVec.clear();
 
     //remove comment
-    this->SplitDataStr = this->RemoveCommnet 
+    this->SplitDataStr = this->RemoveComment 
         ? regex_replace(this->SplitSrcStr, this->CommentReg, L"") 
         : this->SplitSrcStr;
 
@@ -216,7 +216,7 @@ size_t Split::GetHash() const {
     const auto SplitFlag = (this->Unicode >> 5)
         | (this->bLineReg >> 4)
         | (this->RemoveEmptyLine >> 3)
-        | (this->RemoveCommnet >> 2)
+        | (this->RemoveComment >> 2)
         | (this->RemoveIndent >> 1)
         | (this->KeyWord >> 0);
     seed ^= SplitFlag + HASHER_MOVE(seed);

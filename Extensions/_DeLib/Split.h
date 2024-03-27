@@ -56,7 +56,7 @@ class Split {
     //Comment regex, remove comments
     wregex CommentReg;
     std::wstring CommentRegStr;
-    bool RemoveCommnet = false;
+    bool RemoveComment = false;
 
     //Indent regex, escape SPACE and TAB at the beginning and ending of string
     wregex IndentReg;
@@ -164,7 +164,7 @@ public:
 
     //Get the pos of string that occurs sub times, default = 0
     //Returns -1 if no match or not enough occurs
-    //Set sub to -1 to get the last occurence's pos
+    //Set sub to -1 to get the last occurrence's pos
     int GetSubStringPos(const wchar_t* SubStr, size_t Sub = 0);
     int GetSubStringPos(const wchar_t* Src, const wchar_t* SubStr, size_t Sub = 0);
     int GetSubStringPos(const std::wstring& Src, const wchar_t* SubStr, size_t Sub = 0, bool SaveAll = false);

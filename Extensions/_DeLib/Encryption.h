@@ -130,7 +130,7 @@ private:
 		, const LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM
 		, const std::function<NTSTATUS(HandlerType handler
 			, BCRYPT_KEY_HANDLE hKey
-			, PBYTE pbIV, DWORD cbBlockLen)>& externalEcrypter = nullptr) {
+			, PBYTE pbIV, DWORD cbBlockLen)>& externalEncrypter = nullptr) {
 		//do nothing if input is invalid
 		if (this->InputData == nullptr) {
 			return false;
@@ -263,8 +263,8 @@ private:
 
 		// Use the key to encrypt the plaintext buffer.
 		// For block sized messages, block padding will add an extra block.
-		status = externalEcrypter != nullptr
-			? externalEcrypter(handler
+		status = externalEncrypter != nullptr
+			? externalEncrypter(handler
 				, hKey
 				, pbIV, cbBlockLen)
 			: handler(
