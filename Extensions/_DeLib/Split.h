@@ -102,12 +102,12 @@ public:
     bool LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool bUnicode = true);
 
     // load data and handle unicode
-    static bool LoadData(std::string& output,
-        const char* pSrc, size_t len,
-        bool bUnicode = true);
+    static bool LoadData(std::wstring& output,
+        const char* pSrc, const size_t len,
+        bool& bUnicode);
     // save data and handle unicode    
     static bool SaveData(std::string& output,
-        const char* pSrc, size_t len,
+        const wchar_t* pSrc, const size_t len,
         bool bUnicode = true);
 
     //load data from string

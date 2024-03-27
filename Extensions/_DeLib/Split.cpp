@@ -54,14 +54,14 @@ bool Split::LoadFile(const std::wstring& FilePath, const std::wstring& Key, bool
 }
 
 // general save / load, do conversion
-static bool LoadData(std::wstring& output,
-        const char* pSrc, size_t len,
-        bool& bUnicode) {
+bool Split::LoadData(std::wstring& output,
+    const char* pSrc, size_t len,
+    bool& bUnicode) {
     if (pSrc == nullptr) {
         return false;
     }
 
-    //BOM
+    // BOM
     if ((len >= 3) && (memcmp(pSrc, UTF8_SIGNATURE, 3) == 0)) {
         bUnicode = true;
 
@@ -76,10 +76,10 @@ static bool LoadData(std::wstring& output,
     const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
     return to_wide_string(output, pSrc, len, codePage);
 }
-static bool SaveData(std::string& output,
-    const wchar_t* pSrc, size_t len,
-    bool bUnicode = true) {
-    UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
+bool Split::SaveData(std::string& output,
+    const wchar_t* pSrc, const size_t len,
+    bool bUnicode) {
+    const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
     return to_byte_string(output, pSrc, len, codePage);
 }
 
