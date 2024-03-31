@@ -10,11 +10,9 @@
 constexpr auto CHAR_STR_END = L'\0';
 constexpr auto CHAR_DELIMITER = L',';
 constexpr auto CHAR_STR_QUOTATION = L'\"';
+constexpr auto STR_NEWLINE = L"\r\n";
 
 struct CSVHandler {
-	using NewLineCb = std::function<void()>;
-	using NewItemCb = std::function<void(const std::wstring_view&)>;
-
 	//process quota escape
 	static inline std::wstring EscapeDoubleToSingle(const std::wstring_view& src) {
 		std::wstring escape;
@@ -47,6 +45,11 @@ struct CSVHandler {
 
 		return escape;
 	}
+};
+
+struct CSVParser :CSVHandler {
+	using NewLineCb = std::function<void()>;
+	using NewItemCb = std::function<void(const std::wstring_view&)>;
 
 	struct ParseOptions {
 		bool bRemoveQuota = false;
@@ -131,5 +134,50 @@ struct CSVHandler {
 		}
 
 		return true;
+	}
+};
+
+struct CSVBuilder :CSVHandler {
+	std::wstring result;
+
+	inline CSVBuilder* Reset() {
+		result.clear();
+
+		return this;
+	}
+
+	struct BuildOptions {
+		bool bAddQuota = false;
+		bool bEscapeSingleQuota = false;
+		bool bTrim = false;
+	};
+
+private:
+	inline CSVBuilder* AddNewItemWithQuote(const std::wstring_view& item,
+		const BuildOptions& opt = {}) {
+		if (opt.bAddQuota) { result += CHAR_STR_QUOTATION; }
+		result += item;
+		if (opt.bAddQuota) { result += CHAR_STR_QUOTATION; }
+
+		result += CHAR_DELIMITER;
+
+		return this;
+	}
+public:
+	inline CSVBuilder* AddNewItem(std::wstring_view item,
+		const BuildOptions& opt = {}) {
+		if (opt.bTrim) { item = GetTrimmedStr(item); }
+
+		return AddNewItemWithQuote(opt.bEscapeSingleQuota && item.find_first_of(CHAR_STR_QUOTATION) != std::wstring::npos
+			? EscapeSingleToDouble(item)
+			: item,
+			opt);
+	}
+
+	inline CSVBuilder* AddNewLine() {
+		if (result.back() == CHAR_DELIMITER) { result.pop_back(); }
+		result += STR_NEWLINE;
+
+		return this;
 	}
 };
