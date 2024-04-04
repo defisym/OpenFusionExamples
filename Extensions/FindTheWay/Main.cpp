@@ -996,7 +996,7 @@ short WINAPI DLLExport IterateArea(LPRDATA rdPtr, long param1, long param2) {
 		for (auto& it_c : s) {
 			rdPtr->itCoord = it_c;
 
-			CallEvent(ONITERATEAREA)
+			CallEvent(ONITERATEAREA);
 		}
 	};
 
@@ -1196,7 +1196,7 @@ short WINAPI DLLExport CreateObjectZocByEvent(LPRDATA rdPtr, long param1, long p
 		for (auto& it : *rdPtr->pObjZoc) {
 			rdPtr->itCoord = rdPtr->pFTW->GetRealCoord(it);
 
-			CallEvent(ONCREATEZOC)
+			CallEvent(ONCREATEZOC);
 		}
 
 		rdPtr->pObject = nullptr;
