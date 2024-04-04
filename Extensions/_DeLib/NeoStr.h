@@ -137,16 +137,13 @@ private:
 
 	DWORD dwDTFlags;
 
-	bool bClip = true;
+	// add rectangle on each char, for debug
 	bool bDrawRectangle = false;
 
 	unsigned short borderOffsetX = 0;
 	unsigned short borderOffsetY = 0;
 
 	bool bVerticalAlignOffset;
-
-	int renderWidth = 0;
-	int renderHeight = 0;
 
 	Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias;
 	Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality;
@@ -1376,12 +1373,7 @@ public:
 		this->bVerticalAlignOffset = bVerticalAlignOffset;
 	}
 
-	inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
-		this->bClip = clip;
-		this->renderWidth = renderWidth;
-		this->renderHeight = renderHeight;
-	}
-
+	// add rectangle on each char, for debug
 	inline void SetDrawRectangle(const bool bRectangle) {
 		this->bDrawRectangle = bRectangle;
 	}
@@ -3192,6 +3184,40 @@ public:
 		}
 
 		// ------------
+		// clip
+		// ------------
+
+		// clip: don't render character that out of screen
+		bool bClip = false;
+
+		// render size: the frame size
+		RECT renderRect = { 0,0,65535,65535 };
+
+		// clip: don't render character that out of screen
+		inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
+			this->bClip = clip;
+			this->renderRect = { 0,0,renderWidth,renderHeight };
+		}
+
+		// rect has part inside render rect
+		inline bool RectInside(const RECT& rect) const {
+			return (rect.left < renderRect.right
+				&& rect.right > renderRect.left
+				&& rect.top < renderRect.bottom
+				&& rect.bottom > renderRect.top);
+		}
+
+		inline bool ClipChar(const int objectX, const int objectY,
+			const int charX, const int charY, const CharSize* charSz) const {
+			if (!this->bClip) { return false; }
+
+			return !RectInside({ objectX + charX,
+				objectY + charY,
+				objectX + charX + charSz->width,
+				objectY + charY + charSz->height });
+		}
+
+		// ------------
 		// render callbacks
 		// ------------
 	private:
@@ -3298,9 +3324,8 @@ public:
 		// update offscreen surface
 		// ------------
 		if (!bRenderOverride) {
-			char scale = 1;
-			auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
-			auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
+			auto width = rcWidth + this->borderOffsetX * 2;
+			auto height = totalHeight + this->borderOffsetY * 2;
 
 			if (this->pMemSf == nullptr
 				|| this->pMemSf->GetWidth() < width
@@ -3361,25 +3386,6 @@ public:
 		// Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 		Color fontColor(this->dwTextColor);
 		SolidBrush solidBrush(fontColor);
-
-		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
-
-		// clip: don't render character that out of screen
-		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const CharSize* charSz)->bool {
-			if (this->bClip == false) {
-				return false;
-			}
-
-			const RECT charRc = { pRc->left + startX
-				,pRc->top + startY
-				,pRc->left + startX + charSz->width
-				,pRc->top + startY + charSz->height };
-
-			return !(charRc.left < displayRc.right
-				&& charRc.right > displayRc.left
-				&& charRc.top < displayRc.bottom
-				&& charRc.bottom > displayRc.top);
-		};
 
 		size_t totalChar = 0;
 
@@ -3530,7 +3536,8 @@ public:
 					});
 #pragma endregion
 
-					if (!clip(x, this->startY + curStrPos.y, charSz)) {
+					if (!opt.ClipChar(pRc->left, pRc->top,
+						x, this->startY + curStrPos.y, charSz)) {
 						struct ColorUpdater {
 							SolidBrush* pBrush = nullptr;
 							SolidBrush oldBrush = SolidBrush(Color());
@@ -3629,7 +3636,6 @@ public:
 			auto pRemarkNeoStr = it.pNeoStr;
 			pRemarkNeoStr->CopyProperties(this);
 			pRemarkNeoStr->SetColor(GetDWORD(colorItHandler.it->color), true);
-			pRemarkNeoStr->SetClip(false, 65535, 65535);
 			pRemarkNeoStr->SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
 			//remarkNeoStr->SetDrawRectangle(true);
 
@@ -3724,6 +3730,8 @@ public:
 
 			// copy one option here
 			RenderOptions remarkOpt = opt;
+			// do not clip
+			remarkOpt.SetClip(false, 65535, 65535);
 			// skip custom tag callback
 			remarkOpt.UpdateTagCallback(nullptr);
 			// overrider render, directly to parent
