@@ -200,6 +200,8 @@ set to non-strike out
 - Render
   - Clip
     - *if text is out of visible area, skip it's render*
+  - Clip to object
+    - *if text is out of object area, skip it's render*
   - Border offset
     - *internal offscreen surface is bigger than render size, to give enough space for shader, icon, remark, etc*
   - Text Rendering Hint
