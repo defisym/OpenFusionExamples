@@ -17,8 +17,8 @@
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("(\\+|\\-)?[0-9]+(\\.[0-9]+)?")
 
-#define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
-#define AddEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_PUSHEVENT , X, 0);
+#define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0)
+#define AddEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_PUSHEVENT , X, 0)
 
 #define valid(X) ((X) != nullptr)
 
@@ -27,7 +27,7 @@
 #define release_ptr(X) if (valid(X)) {delete (X); (X) = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] (X); (X) = nullptr;}
 
-#define ResertPtr(X) (X) = nullptr;
+#define ResetPtr(X) (X) = nullptr;
 
 #define RAD(_DEG) ((PI*(_DEG))/180)
 #define DEG(_RAD) ((180*(_RAD))/PI)
