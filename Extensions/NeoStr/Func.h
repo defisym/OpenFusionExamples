@@ -115,16 +115,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 
 		rdPtr->pNeoStr->SetColor(rdPtr->dwColor);
-
-		rdPtr->pNeoStr->SetClip(rdPtr->bClip
-			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
-			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
-		//rdPtr->pNeoStr->SetBorderOffset(5, 5);
 		rdPtr->pNeoStr->SetBorderOffset(rdPtr->borderOffsetX, rdPtr->borderOffsetY);
-
-		//rdPtr->pNeoStr->SetClip(false
-		//	, 65535
-		//	, 65535);
 
 		rdPtr->pNeoStr->SetSmooth(
 			Gdiplus::TextRenderingHint(rdPtr->textRenderingHint)
@@ -132,6 +123,9 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
 		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+		pRenderOptions->SetClip(rdPtr->bClip
+			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
+			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
 
 		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
 		if(rdPtr->bTagCallbackIndexManaged) {
@@ -199,9 +193,6 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.CalculateRange(rc);
 
 		neoStr.SetColor(edPtr->dwColor);
-
-		neoStr.SetClip(false, 65535, 65535);
-		//neoStr.SetBorderOffset(5, 5);
 		neoStr.SetBorderOffset(edPtr->borderOffsetX, edPtr->borderOffsetY);
 
 		neoStr.SetSmooth(

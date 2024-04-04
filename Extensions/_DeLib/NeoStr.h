@@ -137,13 +137,6 @@ private:
 
 	DWORD dwDTFlags;
 
-	// clip: don't render character that out of screen
-	bool bClip = true;
-
-	// render size: the frame size
-	long renderWidth = 0;
-	long renderHeight = 0;
-
 	// add rectangle on each char, for debug
 	bool bDrawRectangle = false;
 
@@ -1378,14 +1371,6 @@ public:
 	inline void SetAlign(const DWORD dwAlign, const bool bVerticalAlignOffset) {
 		this->dwDTFlags = dwAlign | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 		this->bVerticalAlignOffset = bVerticalAlignOffset;
-	}
-
-	// clip: don't render character that out of screen
-	inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
-		this->bClip = clip;
-
-		this->renderWidth = renderWidth;
-		this->renderHeight = renderHeight;
 	}
 
 	// add rectangle on each char, for debug
@@ -3203,10 +3188,10 @@ public:
 		// ------------
 
 		// clip: don't render character that out of screen
-		bool bClip = true;
+		bool bClip = false;
 
 		// render size: the frame size
-		RECT renderRect = {};
+		RECT renderRect = { 0,0,65535,65535 };
 
 		// clip: don't render character that out of screen
 		inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
@@ -3226,10 +3211,10 @@ public:
 			const int charX, const int charY, const CharSize* charSz) const {
 			if (!this->bClip) { return false; }
 
-			return !RectInside({ objectX + charX
-				,objectY + charY
-				,objectX + charX + charSz->width
-				,objectY + charY + charSz->height });
+			return !RectInside({ objectX + charX,
+				objectY + charY,
+				objectX + charX + charSz->width,
+				objectY + charY + charSz->height });
 		}
 
 		// ------------
@@ -3402,25 +3387,6 @@ public:
 		Color fontColor(this->dwTextColor);
 		SolidBrush solidBrush(fontColor);
 
-		RECT displayRc = { 0,0,this->renderWidth, this->renderHeight };
-
-		// clip: don't render character that out of screen
-		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const CharSize* charSz)->bool {
-			if (this->bClip == false) {
-				return false;
-			}
-
-			const RECT charRc = { pRc->left + startX
-				,pRc->top + startY
-				,pRc->left + startX + charSz->width
-				,pRc->top + startY + charSz->height };
-
-			return !(charRc.left < displayRc.right
-				&& charRc.right > displayRc.left
-				&& charRc.top < displayRc.bottom
-				&& charRc.bottom > displayRc.top);
-		};
-
 		size_t totalChar = 0;
 
 		// non-stack based
@@ -3570,7 +3536,8 @@ public:
 					});
 #pragma endregion
 
-					if (!clip(x, this->startY + curStrPos.y, charSz)) {
+					if (!opt.ClipChar(pRc->left, pRc->top,
+						x, this->startY + curStrPos.y, charSz)) {
 						struct ColorUpdater {
 							SolidBrush* pBrush = nullptr;
 							SolidBrush oldBrush = SolidBrush(Color());
@@ -3669,7 +3636,6 @@ public:
 			auto pRemarkNeoStr = it.pNeoStr;
 			pRemarkNeoStr->CopyProperties(this);
 			pRemarkNeoStr->SetColor(GetDWORD(colorItHandler.it->color), true);
-			pRemarkNeoStr->SetClip(false, 65535, 65535);
 			pRemarkNeoStr->SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
 			//remarkNeoStr->SetDrawRectangle(true);
 
@@ -3764,6 +3730,8 @@ public:
 
 			// copy one option here
 			RenderOptions remarkOpt = opt;
+			// do not clip
+			remarkOpt.SetClip(false, 65535, 65535);
 			// skip custom tag callback
 			remarkOpt.UpdateTagCallback(nullptr);
 			// overrider render, directly to parent
