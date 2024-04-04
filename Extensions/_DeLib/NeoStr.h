@@ -3191,6 +3191,7 @@ public:
 
 		// clip: don't render character that out of screen
 		bool bClip = false;
+		// clip to object: don't render character that out of object
 		bool bClipToObject = false;
 
 		// render size: the frame size
