@@ -137,16 +137,20 @@ private:
 
 	DWORD dwDTFlags;
 
+	// clip: don't render character that out of screen
 	bool bClip = true;
+
+	// render size: the frame size
+	long renderWidth = 0;
+	long renderHeight = 0;
+
+	// add rectangle on each char, for debug
 	bool bDrawRectangle = false;
 
 	unsigned short borderOffsetX = 0;
 	unsigned short borderOffsetY = 0;
 
 	bool bVerticalAlignOffset;
-
-	int renderWidth = 0;
-	int renderHeight = 0;
 
 	Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias;
 	Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality;
@@ -1376,12 +1380,15 @@ public:
 		this->bVerticalAlignOffset = bVerticalAlignOffset;
 	}
 
+	// clip: don't render character that out of screen
 	inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
 		this->bClip = clip;
+
 		this->renderWidth = renderWidth;
 		this->renderHeight = renderHeight;
 	}
 
+	// add rectangle on each char, for debug
 	inline void SetDrawRectangle(const bool bRectangle) {
 		this->bDrawRectangle = bRectangle;
 	}
@@ -3192,6 +3199,40 @@ public:
 		}
 
 		// ------------
+		// clip
+		// ------------
+
+		// clip: don't render character that out of screen
+		bool bClip = true;
+
+		// render size: the frame size
+		RECT renderRect = {};
+
+		// clip: don't render character that out of screen
+		inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
+			this->bClip = clip;
+			this->renderRect = { 0,0,renderWidth,renderHeight };
+		}
+
+		// rect has part inside render rect
+		inline bool RectInside(const RECT& rect) const {
+			return (rect.left < renderRect.right
+				&& rect.right > renderRect.left
+				&& rect.top < renderRect.bottom
+				&& rect.bottom > renderRect.top);
+		}
+
+		inline bool ClipChar(const int objectX, const int objectY,
+			const int charX, const int charY, const CharSize* charSz) const {
+			if (!this->bClip) { return false; }
+
+			return !RectInside({ objectX + charX
+				,objectY + charY
+				,objectX + charX + charSz->width
+				,objectY + charY + charSz->height });
+		}
+
+		// ------------
 		// render callbacks
 		// ------------
 	private:
@@ -3298,9 +3339,8 @@ public:
 		// update offscreen surface
 		// ------------
 		if (!bRenderOverride) {
-			char scale = 1;
-			auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
-			auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
+			auto width = rcWidth + this->borderOffsetX * 2;
+			auto height = totalHeight + this->borderOffsetY * 2;
 
 			if (this->pMemSf == nullptr
 				|| this->pMemSf->GetWidth() < width
@@ -3362,7 +3402,7 @@ public:
 		Color fontColor(this->dwTextColor);
 		SolidBrush solidBrush(fontColor);
 
-		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
+		RECT displayRc = { 0,0,this->renderWidth, this->renderHeight };
 
 		// clip: don't render character that out of screen
 		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const CharSize* charSz)->bool {
