@@ -109,6 +109,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pixelOffsetMode = edPtr->pixelOffsetMode;
 
 	rdPtr->bClip = edPtr->bClip;
+	rdPtr->bClipToObject = edPtr->bClipToObject;
 	rdPtr->borderOffsetX = edPtr->borderOffsetX;
 	rdPtr->borderOffsetY = edPtr->borderOffsetY;
 

@@ -39,6 +39,7 @@ enum {
 	
 	PROPID_RENDER_TITLE,
 	PROPID_RENDER_CLIP,	
+	PROPID_RENDER_CLIPTOOBJECT,	
 	PROPID_RENDER_BorderOffsetX,	
 	PROPID_RENDER_BorderOffsetY,	
 	PROPID_RENDER_TextRenderingHint,
@@ -180,6 +181,7 @@ PropData FontPorperties[] = {
 	PropData_Group(PROPID_RENDER_TITLE,	IDS_PROP_RENDER_TITLE,		IDS_PROP_RENDER_TITLE),
 	
 	PropData_CheckBox(PROPID_RENDER_CLIP,	IDS_PROP_RENDER_CLIP,		IDS_PROP_RENDER_CLIP_INFO),
+	PropData_CheckBox(PROPID_RENDER_CLIPTOOBJECT,	IDS_PROP_RENDER_CLIPTOOBJECT,		IDS_PROP_RENDER_CLIPTOOBJECT_INFO),
 	
 	PropData_EditNumber(PROPID_RENDER_BorderOffsetX,	IDS_PROP_RENDER_BorderOffsetX,		IDS_PROP_RENDER_BorderOffsetX_INFO),
 	PropData_EditNumber(PROPID_RENDER_BorderOffsetY,	IDS_PROP_RENDER_BorderOffsetY,		IDS_PROP_RENDER_BorderOffsetY_INFO),
@@ -507,6 +509,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->pixelOffsetMode = 5;
 
 		edPtr->bClip = true;
+		edPtr->bClipToObject = false;
 
 		edPtr->borderOffsetX = DEFAULT_EBORDER_OFFSET;
 		edPtr->borderOffsetY = DEFAULT_EBORDER_OFFSET;
@@ -970,7 +973,9 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 	case PROPID_ALLIGN_TABEMSPACE:
 		return edPtr->bTabEM;
 	case PROPID_RENDER_CLIP:
-		return edPtr->bClip;		
+		return edPtr->bClip;
+	case PROPID_RENDER_CLIPTOOBJECT:
+		return edPtr->bClipToObject;	
 	case PROPID_FORMAT_ICONGLOBAL:
 		return edPtr->bIConGlobal;
 	case PROPID_FORMAT_ICONGLOBALFORCEUPDATE:
@@ -1173,6 +1178,11 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bClip = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_RENDER_CLIP, TRUE);
+		break;
+	case PROPID_RENDER_CLIPTOOBJECT:
+		edPtr->bClipToObject = nCheck;
+		mvInvalidateObject(mV, edPtr);
+		mvRefreshProp(mV, edPtr, PROPID_RENDER_CLIPTOOBJECT, TRUE);
 		break;
 	case PROPID_FORMAT_ICONGLOBAL:
 		edPtr->bIConGlobal = nCheck;

@@ -126,6 +126,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		pRenderOptions->SetClip(rdPtr->bClip
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
+		pRenderOptions->SetClipToObject(rdPtr->bClipToObject);
 
 		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
 		if(rdPtr->bTagCallbackIndexManaged) {
@@ -201,7 +202,11 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
 
 		//MSGBOX(L"Editor Render");
-		neoStr.RenderPerChar(rc);
+		NeoStr::RenderOptions opt;
+		opt.SetClip(false, 65535, 65535);
+		opt.SetClipToObject(edPtr->bClipToObject);
+
+		neoStr.RenderPerChar(rc, opt);
 
 		//neoStr.SetHotSpot(edPtr->hotSpotPos, edPtr->hotSpotX, edPtr->hotSpotY);
 		neoStr.SetHotSpot(0, 0);

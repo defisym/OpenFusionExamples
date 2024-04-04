@@ -112,6 +112,9 @@
 #define	IDS_PROP_FORMAT_REMARKOFFSETY         283
 #define	IDS_PROP_FORMAT_REMARKOFFSETY_INFO    284
 
+#define	IDS_PROP_RENDER_CLIPTOOBJECT          285
+#define	IDS_PROP_RENDER_CLIPTOOBJECT_INFO     286
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300

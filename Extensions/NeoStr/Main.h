@@ -196,8 +196,8 @@ typedef struct tagEDATA_V1
 	float remarkOffsetX;
 	float remarkOffsetY;
 
+	bool bClipToObject;
 	bool bUnused_0;
-	bool bUnused_1;
 
 	int buffer[10];
 	
@@ -257,6 +257,7 @@ typedef struct tagRDATA
 	BYTE pixelOffsetMode;
 
 	bool bClip;
+	bool bClipToObject;
 	int oldX;
 	int oldY;
 

@@ -393,6 +393,8 @@ BEGIN
     IDS_PROP_RENDER_TITLE                           "Render"
     IDS_PROP_RENDER_CLIP                            "Clip"
     IDS_PROP_RENDER_CLIP_INFO                       "Only render text in the visible area, will trigger re-render when visible area extends"
+    IDS_PROP_RENDER_CLIPTOOBJECT                    "Clip to Object"
+    IDS_PROP_RENDER_CLIPTOOBJECT_INFO               "Only render text in the object area"
     IDS_PROP_RENDER_TextRenderingHint               "Text Rendering Hint"
     IDS_PROP_RENDER_TextRenderingHint_INFO          "Gets or sets the rendering mode for text associated with this Graphics"
     COMBO_TextRenderingHintSystemDefault            "TextRenderingHintSystemDefault"

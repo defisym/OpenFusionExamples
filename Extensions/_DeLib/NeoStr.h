@@ -3123,7 +3123,7 @@ public:
 
 		// fix empty (e.g., \r\n only) string crash
 		if (strPos.empty()) {
-			return CharPos{ 0 };
+			return CharPos{};
 		}
 
 		const auto& lastStrPos = strPos.back();
@@ -3132,12 +3132,14 @@ public:
 		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
 		// last char pos
-		previousCharPos = CharPos {
+		previousCharPos = CharPos{
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
-			+ lastStrPos.width + (lastCharSize->width / 2)
-			,startY + lastStrPos.y + (lastCharSize->height / 2)
-			,maxWidth
-			,totalHeight - nRowSpace };
+				+ lastStrPos.width + (lastCharSize->width / 2),
+			startY + lastStrPos.y + (lastCharSize->height / 2),
+			maxWidth,
+			totalHeight - nRowSpace,
+			ShakeControl()
+		};
 
 		return previousCharPos;
 	}
@@ -3189,14 +3191,19 @@ public:
 
 		// clip: don't render character that out of screen
 		bool bClip = false;
+		bool bClipToObject = false;
 
 		// render size: the frame size
 		RECT renderRect = { 0,0,65535,65535 };
 
 		// clip: don't render character that out of screen
-		inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
-			this->bClip = clip;
+		inline void SetClip(const bool bClip, const int renderWidth, const int renderHeight) {
+			this->bClip = bClip;
 			this->renderRect = { 0,0,renderWidth,renderHeight };
+		}
+		// clip to object: don't render character that out of object
+		inline void SetClipToObject(const bool bClip) {
+			this->bClipToObject = bClip;
 		}
 
 		// rect has part inside render rect
@@ -3207,9 +3214,10 @@ public:
 				&& rect.bottom > renderRect.top);
 		}
 
-		inline bool ClipChar(const int objectX, const int objectY,
+		inline bool ClipChar(int objectX, int objectY,
 			const int charX, const int charY, const CharSize* charSz) const {
 			if (!this->bClip) { return false; }
+			if (this->bClipToObject) { objectX = 0; objectY = 0; }
 
 			return !RectInside({ objectX + charX,
 				objectY + charY,
@@ -3279,6 +3287,7 @@ public:
 //#define USE_RTT
 //#define REUSE_HWA
 
+	// pRc: object rect
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 #ifdef COUNT_GDI_OBJECT
 		GDIObjectCounter objectCounter;
@@ -3326,6 +3335,10 @@ public:
 		if (!bRenderOverride) {
 			auto width = rcWidth + this->borderOffsetX * 2;
 			auto height = totalHeight + this->borderOffsetY * 2;
+
+			if (opt.bClipToObject) {
+				opt.SetClip(true, rcWidth, rcHeight);
+			}
 
 			if (this->pMemSf == nullptr
 				|| this->pMemSf->GetWidth() < width
