@@ -159,22 +159,13 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 	if (ps != NULL) {	// Do the following if this surface exists
 		// Create font
-		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
-
-		// Ink effects
-		BOOL bTransp = ((oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) != 0);
-		BlitMode bm = (bTransp) ? BMODE_TRANSP : BMODE_OPAQUE;
-		BOOL bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
-		BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
-		LPARAM boParam = oiPtr->oiHdr.oiInkEffectParam;
-
 		//MSGBOX(L"L: "+_itos(rc->left)+ L"T: " + _itos(rc->top), L"RECT");
 
 		// Draw text
+		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
 		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
 
 		int sfDrv = ps->GetDriver();
-
 		neoStr.SetHWA(sfDrv, false);
 
 		//MSGBOX(L"Editor Calc");
@@ -202,20 +193,29 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
 
 		//MSGBOX(L"Editor Render");
-		NeoStr::RenderOptions opt;
-		opt.SetClip(false, 65535, 65535);
-		opt.SetClipToObject(edPtr->bClipToObject);
+		NeoStr::RenderOptions renderOpt;
+		renderOpt.SetClip(false, 65535, 65535);
+		renderOpt.SetClipToObject(edPtr->bClipToObject);
 
-		neoStr.RenderPerChar(rc, opt);
+		neoStr.RenderPerChar(rc, renderOpt);
 
 		//neoStr.SetHotSpot(edPtr->hotSpotPos, edPtr->hotSpotX, edPtr->hotSpotY);
 		neoStr.SetHotSpot(0, 0);
 		neoStr.SetScale(1.0, 1.0);
 		neoStr.SetAngle(0);
 
-		//MSGBOX(L"Editor Display PerChar");
-		neoStr.DisplayPerChar(ps, rc
-			, bm, bo, boParam, bAntiA);
+		//MSGBOX(L"Editor Display");
+
+		// Ink effects
+		NeoStr::BlitOptions blitOpt;
+
+		const BOOL bTransp = ((oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) != 0);
+		blitOpt.bm = (bTransp) ? BMODE_TRANSP : BMODE_OPAQUE;
+		blitOpt.bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
+		blitOpt.bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
+		blitOpt.boParam = oiPtr->oiHdr.oiInkEffectParam;
+
+		neoStr.BlitResult(ps, rc, blitOpt);
 
 		// Delete font
 		if (hFont != NULL)
@@ -224,13 +224,13 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 }
 
 inline void Display(LPRDATA rdPtr) {
-	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
-	LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
+	const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
 
 	if (ps != nullptr && rdPtr->pStr != nullptr) {
 		// On-screen coords
-		int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
-		int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
+		const int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
+		const int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
 		RECT rc = {};
 
@@ -238,7 +238,6 @@ inline void Display(LPRDATA rdPtr) {
 		rc.top = screenY;
 		//rc.right = rc.left + rdPtr->rHo.hoImgWidth;
 		//rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
-
 		rc.right = rc.left + rdPtr->swidth;
 		rc.bottom = rc.top + rdPtr->sheight;
 
@@ -248,14 +247,8 @@ inline void Display(LPRDATA rdPtr) {
 			, rdPtr->hotSpotX, rdPtr->hotSpotY
 			, &rc);
 
-		int hotSpotX = screenX - rc.left;
-		int hotSpotY = screenY - rc.top;
-
-		// Ink effects
-		BlitMode bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
-		BOOL bAntiA = (rdPtr->rs.rsEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
-		BlitOp bo = (BlitOp)(rdPtr->rs.rsEffect & EFFECT_MASK);
-		int boParam = rdPtr->rs.rsEffectParam;
+		const int hotSpotX = screenX - rc.left;
+		const int hotSpotY = screenY - rc.top;
 
 		// Draw text
 		HandleUpdate(rdPtr, rc);
@@ -264,8 +257,15 @@ inline void Display(LPRDATA rdPtr) {
 		rdPtr->pNeoStr->SetScale(rdPtr->xScale, rdPtr->yScale);
 		rdPtr->pNeoStr->SetAngle(rdPtr->angle);
 
-		rdPtr->pNeoStr->DisplayPerChar(ps, &rc
-			, bm, bo, boParam, bAntiA);
+		const auto pBlitOptions = static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions);
+
+		// Ink effects
+		pBlitOptions->bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
+		pBlitOptions->bAntiA = (rdPtr->rs.rsEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
+		pBlitOptions->bo = (BlitOp)(rdPtr->rs.rsEffect & EFFECT_MASK);
+		pBlitOptions->boParam = rdPtr->rs.rsEffectParam;
+
+		rdPtr->pNeoStr->BlitResult(ps, &rc, *pBlitOptions);
 
 		rdPtr->bStrChanged = false;
 	}

@@ -319,6 +319,8 @@ typedef struct tagRDATA
 	std::wstring* pTagCallbackName;
 	const std::vector<std::wstring>* pTagCallbackParams;
 
+	void* pBlitOptions;
+
 	unsigned char tabSize;
 	bool bTabEM;
 

@@ -148,6 +148,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		rdPtr->pTagCallbackParams = nullptr;
 	});
 
+	rdPtr->pBlitOptions = new NeoStr::BlitOptions;
+
 	rdPtr->bTagCallbackIndexManaged = true;
 	rdPtr->pTagCallbackName = new std::wstring;
 	rdPtr->pTagCallbackParams = nullptr;
@@ -204,6 +206,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 	delete rdPtr->pTagCallbackName;
+
+	delete static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions);
 
 	delete rdPtr->pFormatByVector;
 

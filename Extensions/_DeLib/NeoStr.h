@@ -4027,9 +4027,27 @@ public:
 		return pCharPosArr[pos];
 	}
 
-	inline void DisplayPerChar(const LPSURFACE pDst, const LPRECT pRc
-		, const BlitMode bm = BMODE_TRANSP, const BlitOp bo = BOP_COPY, const LPARAM boParam = 0, const int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) const {
+	struct BlitOptions {
+		// ------------
+		// scroll
+		// ------------
+		bool bScroll = false;
+
+		float scrollCoefX = 1.0f;
+		float scrollCoefY = 1.0f;
+
+		// ------------
+		// fusion params
+		// ------------
+		BlitMode bm = BMODE_TRANSP;
+		BlitOp bo = BOP_COPY;
+		LPARAM boParam = 0;
+		int bAntiA = 0;
+	};
+
+	inline void BlitResult(const LPSURFACE pDst,
+		const LPRECT pRc,
+		const BlitOptions& opt = BlitOptions()) const {
 		if (!this->bTextValid) {
 			return;
 		}
@@ -4042,12 +4060,19 @@ public:
 
 			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
 
-			const int xPos = pRc->left + this->hotSpotX;
-			const int yPos = pRc->top + this->hotSpotY;
+			int sX = 0;
+			int sY = 0;
+			int sW = pSf->GetWidth();
+			int sH = pSf->GetHeight();
 
-			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
-				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, this->angle
-				, bm, bo, boParam, bAntiA);
+			int xPos = pRc->left + this->hotSpotX;
+			int yPos = pRc->top + this->hotSpotY;
+
+			const auto bRet = pSf->BlitEx(*pDst, (float)xPos, (float)yPos,
+				this->xScale, this->yScale,
+				sX, sY, sW, sH,
+				&hotSpot, this->angle,
+				opt.bm, opt.bo, opt.boParam, opt.bAntiA);
 		}
 	}
 };
