@@ -3746,6 +3746,7 @@ public:
 			RenderOptions remarkOpt = opt;
 			// do not clip
 			remarkOpt.SetClip(false, 65535, 65535);
+			remarkOpt.SetClipToObject(false);
 			// skip custom tag callback
 			remarkOpt.UpdateTagCallback(nullptr);
 			// overrider render, directly to parent
