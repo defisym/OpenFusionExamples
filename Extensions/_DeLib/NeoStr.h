@@ -4061,17 +4061,12 @@ public:
 
 			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
 
-			int sX = 0;
-			int sY = 0;
-			int sW = pSf->GetWidth();
-			int sH = pSf->GetHeight();
+			const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+			const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
 
-			int xPos = pRc->left + this->hotSpotX;
-			int yPos = pRc->top + this->hotSpotY;
-
-			const auto bRet = pSf->BlitEx(*pDst, (float)xPos, (float)yPos,
+			const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
 				this->xScale, this->yScale,
-				sX, sY, sW, sH,
+				0, 0, pSf->GetWidth(), pSf->GetHeight(),
 				&hotSpot, this->angle,
 				opt.bm, opt.bo, opt.boParam, opt.bAntiA);
 		}
