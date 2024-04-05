@@ -109,6 +109,8 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 	}
 
 	if (rdPtr->reRender) {
+		rdPtr->reRender = false;
+
 		////App Size
 		//rhPtr->rhApp->m_hdr.gaCxWin;
 		//rhPtr->rhApp->m_hdr.gaCyWin;
@@ -139,8 +141,6 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		if(rdPtr->bTagCallbackIndexManaged) {
 			pRenderOptions->UpdateTagCallbackIndex(rdPtr->pNeoStr);
 		}
-
-		rdPtr->reRender = false;
 	}
 
 #ifdef COUNT_GDI_OBJECT
@@ -295,8 +295,6 @@ inline void Display(LPRDATA rdPtr) {
 
 		rdPtr->scrollCoefX = pBlitOptions->scrollCoefX;
 		rdPtr->scrollCoefY = pBlitOptions->scrollCoefY;
-
-		rdPtr->bStrChanged = false;
 	}
 }
 
