@@ -1454,8 +1454,8 @@ private:
 		wchar_t spaceChar = CHAR_SPACE;
 
         // context
-        int curWidth;
-        CharSize spaceCharSize;
+        int curWidth = 0;
+        CharSize spaceCharSize = {};
 
 		inline void UpdateSpaceChar(wchar_t spaceChar) {
 			this->spaceChar = spaceChar;
@@ -3161,8 +3161,8 @@ public:
 		bool bIncludeAlpha = true;
 
 		// Characters that need to render
-		size_t textLen;
-		size_t renderCharCount;
+		size_t textLen = 0;
+		size_t renderCharCount = 0;
 
 		constexpr static UCHAR MaxAlpha = 255;
 
@@ -4034,8 +4034,10 @@ public:
 		// ------------
 		bool bScroll = false;
 
-		float scrollCoefX = 1.0f;
-		float scrollCoefY = 1.0f;
+		float scrollCoefX = 0.0f;
+		float scrollCoefY = 0.0f;
+
+		//LPSURFACE pScrollViewport;
 
 		// ------------
 		// fusion params
@@ -4054,21 +4056,48 @@ public:
 		}
 
 		if (pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr) {
-			const auto pSf = pHwaSf;
+			if (!opt.bScroll) {
+				const auto pSf = pHwaSf;
 
-			const int xOffset = -this->borderOffsetX;
-			const int yOffset = -this->borderOffsetY + this->startY;
+				const int xOffset = -this->borderOffsetX;
+				const int yOffset = -this->borderOffsetY + this->startY;
 
-			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
+				POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
 
-			const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
-			const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+				const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+				const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
 
-			const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
-				this->xScale, this->yScale,
-				0, 0, pSf->GetWidth(), pSf->GetHeight(),
-				&hotSpot, this->angle,
-				opt.bm, opt.bo, opt.boParam, opt.bAntiA);
+				const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
+					this->xScale, this->yScale,
+					0, 0, pSf->GetWidth(), pSf->GetHeight(),
+					&hotSpot, this->angle,
+					opt.bm, opt.bo, opt.boParam, opt.bAntiA);
+			}
+			else {
+				const auto pSf = pMemSf;
+
+				const auto startX = static_cast<int>(pSf->GetWidth() * opt.scrollCoefX) + this->borderOffsetX;
+				const auto startY = static_cast<int>(pSf->GetHeight() * opt.scrollCoefY) + this->borderOffsetY;
+				const auto objectWidth = (std::min)(pRc->right - pRc->left, static_cast<long>(pSf->GetWidth() - startX));
+				const auto objectHeight = (std::min)(pRc->bottom - pRc->top, static_cast<long>(pSf->GetHeight() - startY));
+
+				if (startX >= pSf->GetWidth()) { return; }
+				if (startY >= pSf->GetHeight()) { return; }
+				if (objectWidth <= 0) { return; }
+				if (objectHeight <= 0) { return; }
+
+				POINT hotSpot = { this->hotSpotX,this->hotSpotY };
+
+				const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+				const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+
+				// blit HWA version directly will mess the alpha channel
+				const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
+					this->xScale, this->yScale,
+					startX, startY, objectWidth, objectHeight,
+					&hotSpot, this->angle,
+					opt.bm, opt.bo, opt.boParam, opt.bAntiA);
+			}
 		}
 	}
 };

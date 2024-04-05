@@ -90,12 +90,17 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->reRender = true;
 	}
 
-	if (rdPtr->bClip		// only clip mode needs to redraw
+	if (!rdPtr->bScroll && rdPtr->bClip		// only clip mode needs to redraw
 		&& (rdPtr->oldX != rc.left
 			|| rdPtr->oldY != rc.top)) {
 		rdPtr->oldX = rc.left;
 		rdPtr->oldY = rc.top;
 
+		rdPtr->reRender = true;
+	}
+
+	if (rdPtr->bUpdateScroll && rdPtr->bClip) {
+		rdPtr->bUpdateScroll = false;
 		rdPtr->reRender = true;
 	}
 
@@ -123,10 +128,12 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
 
 		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
-		pRenderOptions->SetClip(rdPtr->bClip
+
+		// clip should be disabled if scroll is enabled, to make sure the full size is rendered
+		pRenderOptions->SetClip(!rdPtr->bScroll && rdPtr->bClip
 			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
-		pRenderOptions->SetClipToObject(rdPtr->bClipToObject);
+		pRenderOptions->SetClipToObject(!rdPtr->bScroll && rdPtr->bClipToObject);
 
 		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
 		if(rdPtr->bTagCallbackIndexManaged) {
@@ -264,6 +271,11 @@ inline void Display(LPRDATA rdPtr) {
 		pBlitOptions->bAntiA = (rdPtr->rs.rsEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
 		pBlitOptions->bo = (BlitOp)(rdPtr->rs.rsEffect & EFFECT_MASK);
 		pBlitOptions->boParam = rdPtr->rs.rsEffectParam;
+
+		// scroll
+		pBlitOptions->bScroll = rdPtr->bScroll;
+		pBlitOptions->scrollCoefX = rdPtr->scrollCoefX;
+		pBlitOptions->scrollCoefY = rdPtr->scrollCoefY;
 
 		rdPtr->pNeoStr->BlitResult(ps, &rc, *pBlitOptions);
 

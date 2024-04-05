@@ -1112,6 +1112,7 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	case PROPID_HOTSPOT_Y:
 		edPtr->hotSpotY = ((CPropDWordValue*)pValue)->m_dwValue;
 		mvInvalidateObject(mV, edPtr);
+		break;
 	case PROPID_FORMAT_ICONOFFSETX:
 		edPtr->iConOffsetX = ((CPropFloatValue*)pValue)->m_fValue;
 		mvInvalidateObject(mV, edPtr);

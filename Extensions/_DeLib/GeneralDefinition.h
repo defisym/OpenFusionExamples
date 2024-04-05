@@ -300,3 +300,20 @@ template<typename T>
 inline void UpdateRange(T& v, T minv, T maxv) {
 	v = (std::max)(minv, (std::min)(maxv, v));
 }
+
+// https://stackoverflow.com/questions/4915462/how-should-i-do-floating-point-comparison
+inline bool NearlyEqual(const float a, const float b,
+						// those defaults are arbitrary and could be removed
+						const float epsilon = 128 * FLT_EPSILON,
+						const float abs_th = FLT_MIN) {
+	//assert(std::numeric_limits<float>::epsilon() <= epsilon);
+	//assert(epsilon < 1.f);
+
+	if (a == b) return true;  // NOLINT(clang-diagnostic-float-equal)
+
+	const auto diff = std::abs(a - b);
+	const auto norm = (std::min)((std::abs(a) + std::abs(b)), (std::numeric_limits<float>::max)());
+	// or even faster: std::min(std::abs(a + b), std::numeric_limits<float>::max());
+	// keeping this commented out until I update figures below
+	return diff < (std::max)(abs_th, epsilon * norm);
+}

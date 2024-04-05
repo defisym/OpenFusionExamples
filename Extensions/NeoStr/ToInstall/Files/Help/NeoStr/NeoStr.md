@@ -278,6 +278,13 @@ set to non-strike out
 
   - Change Tab Settings
 
+- Scroll
+  - *use object size as viewport, scroll content inside it*
+
+  - Disable
+  - Set Scroll Coef
+    - *will enable scroll automatically*
+
 - Zoom && Rotate
   - Change HotSpot
 
@@ -369,6 +376,10 @@ set to non-strike out
 
   - Get Last Char X
   - Get Last Char Y
+
+- Scroll
+  - Get Scroll Coef X
+  - Get Scroll Coef Y
 
 - Zoom && Rotate
   - Get HotSpot X

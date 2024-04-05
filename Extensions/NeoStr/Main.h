@@ -63,7 +63,10 @@
 #define	ACT_ACTION_SRO_STAGCBIDX	    30
 #define	ACT_ACTION_SRO_STAGCBIDXM	    31
 
-#define	ACT_LAST						32
+#define	ACT_ACTION_SCROLL_D			    32
+#define	ACT_ACTION_SCROLL_SSC		    33
+
+#define	ACT_LAST						34
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -128,7 +131,10 @@
 #define	EXP_EXPRESSION_GTPS		    		39
 #define	EXP_EXPRESSION_GTCBN		    	40
 
-#define	EXP_LAST                    		41
+#define	EXP_EXPRESSION_S_GCX		    	41
+#define	EXP_EXPRESSION_S_GCY		    	42
+
+#define	EXP_LAST                    		43
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -325,6 +331,12 @@ typedef struct tagRDATA
 	bool bTabEM;
 
 	FormatByVector<std::wstring>* pFormatByVector;
+
+	bool bUpdateScroll = false;
+
+	bool bScroll = false;
+	float scrollCoefX = 0.0f;
+	float scrollCoefY = 0.0f;
 
 	std::wstring* pExpRet;
 

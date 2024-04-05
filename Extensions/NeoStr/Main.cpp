@@ -80,6 +80,9 @@ short actionsInfos[]=
 		IDMN_ACTION_SRO_STAGCBIDX, M_ACTION_SRO_STAGCBIDX, ACT_ACTION_SRO_STAGCBIDX, 0, 1, PARAM_EXPRESSION, M_STAGCBIDX,
 		IDMN_ACTION_SRO_STAGCBIDXM, M_ACTION_SRO_STAGCBIDXM, ACT_ACTION_SRO_STAGCBIDXM, 0, 1, PARAM_EXPRESSION, M_STAGCBIDXM,
 
+		IDMN_ACTION_SCROLL_D, M_ACTION_SCROLL_D, ACT_ACTION_SCROLL_D, 0, 0,
+		IDMN_ACTION_SCROLL_SSC, M_ACTION_SCROLL_SSC, ACT_ACTION_SCROLL_SSC, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_SCROLLCOEFX, M_SCROLLCOEFY,
+
 		};
 
 // Definitions of parameters for each expression
@@ -144,6 +147,9 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GTPN, M_EXPRESSION_GTPN, EXP_EXPRESSION_GTPN, 0, 0,
 		IDMN_EXPRESSION_GTPS, M_EXPRESSION_GTPS, EXP_EXPRESSION_GTPS, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_POS,
 		IDMN_EXPRESSION_GTCBN, M_EXPRESSION_GTCBN, EXP_EXPRESSION_GTCBN, EXPFLAG_STRING, 0,
+
+		IDMN_EXPRESSION_S_GCX, M_EXPRESSION_S_GCX, EXP_EXPRESSION_S_GCX, EXPFLAG_DOUBLE, 0,
+		IDMN_EXPRESSION_S_GCY, M_EXPRESSION_S_GCY, EXP_EXPRESSION_S_GCY, EXPFLAG_DOUBLE, 0,
 		};
 
 
@@ -802,6 +808,27 @@ short WINAPI DLLExport Action_Format_AddParamValue(LPRDATA rdPtr, long param1, l
 	return 0;
 }
 
+short WINAPI DLLExport Action_Scroll_Disable(LPRDATA rdPtr, long param1, long param2) {
+	if (rdPtr->bScroll) { rdPtr->bUpdateScroll = true; }
+	rdPtr->bScroll = false;
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_Scroll_SetScrollCoef(LPRDATA rdPtr, long param1, long param2) {
+	const auto scrollCoefX = GetFloatParam(rdPtr);
+	const auto scrollCoefY = GetFloatParam(rdPtr);
+
+	if (!rdPtr->bScroll) { rdPtr->bUpdateScroll = true; }
+
+	rdPtr->bScroll = true;
+
+	rdPtr->scrollCoefX = scrollCoefX;
+	rdPtr->scrollCoefY = scrollCoefY;
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -1266,6 +1293,13 @@ long WINAPI DLLExport Expression_GetTagCallbackName(LPRDATA rdPtr, long param1) 
 	return (long)rdPtr->pTagCallbackName->c_str();
 }
 
+long WINAPI DLLExport Expression_Scroll_GetCoefX(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->scrollCoefX);
+}
+
+long WINAPI DLLExport Expression_Scroll_GetCoefY(LPRDATA rdPtr, long param1) {
+	return ReturnFloat(rdPtr->scrollCoefY);
+}
 
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
@@ -1334,6 +1368,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetRenderOption_TagCallbackIndex,
 			Action_SetRenderOption_TagCallbackIndexManaged,
 
+			Action_Scroll_Disable,
+			Action_Scroll_SetScrollCoef,
+
 			0
 			};
 
@@ -1397,6 +1434,9 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetTagParamNum,
 			Expression_GetTagParamString,
 			Expression_GetTagCallbackName,
+
+			Expression_Scroll_GetCoefX,
+			Expression_Scroll_GetCoefY,
 
 			0
 			};
