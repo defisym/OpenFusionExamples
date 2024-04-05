@@ -4009,7 +4009,7 @@ public:
 	}
 
 	inline CharPos GetCharPos(const size_t pos) const {
-		const auto invalid = CharPos { -1, -1, -1, -1 };
+		constexpr auto invalid = CharPos { -1, -1, -1, -1, ShakeControl() };
 
 		if (pCharPosArr == nullptr) {
 			return invalid;
@@ -4037,61 +4037,78 @@ public:
 		float scrollCoefX = 0.0f;
 		float scrollCoefY = 0.0f;
 
-		//LPSURFACE pScrollViewport;
+		int scrollOffsetX = 0;
+		int scrollOffsetY = 0;
 
 		// ------------
 		// fusion params
 		// ------------
+		bool bNoBlit = false;
+
 		BlitMode bm = BMODE_TRANSP;
 		BlitOp bo = BOP_COPY;
 		LPARAM boParam = 0;
 		int bAntiA = 0;
 	};
 
+	// pRc: object rect
 	inline void BlitResult(const LPSURFACE pDst,
 		const LPRECT pRc,
-		const BlitOptions& opt = BlitOptions()) const {
+		BlitOptions& opt) const {
 		if (!this->bTextValid) {
 			return;
 		}
 
-		if (pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr) {
-			if (!opt.bScroll) {
-				const auto pSf = pHwaSf;
+		const bool bAllSurfaceValid = pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr;
+		if (!opt.bNoBlit && !bAllSurfaceValid) { return; }
 
-				const int xOffset = -this->borderOffsetX;
-				const int yOffset = -this->borderOffsetY + this->startY;
+		if (!opt.bScroll) {
+			const auto pSf = pHwaSf;
 
-				POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
+			const int xOffset = -this->borderOffsetX;
+			const int yOffset = -this->borderOffsetY + this->startY;
 
-				const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
-				const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+			POINT hotSpot = { this->hotSpotX - xOffset, this->hotSpotY - yOffset };
 
+			const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+			const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+
+			if (!opt.bNoBlit) {
 				const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
 					this->xScale, this->yScale,
 					0, 0, pSf->GetWidth(), pSf->GetHeight(),
 					&hotSpot, this->angle,
 					opt.bm, opt.bo, opt.boParam, opt.bAntiA);
 			}
-			else {
-				const auto pSf = pMemSf;
 
-				const auto startX = static_cast<int>(pSf->GetWidth() * opt.scrollCoefX) + this->borderOffsetX;
-				const auto startY = static_cast<int>(pSf->GetHeight() * opt.scrollCoefY) + this->borderOffsetY;
-				const auto objectWidth = (std::min)(pRc->right - pRc->left, static_cast<long>(pSf->GetWidth() - startX));
-				const auto objectHeight = (std::min)(pRc->bottom - pRc->top, static_cast<long>(pSf->GetHeight() - startY));
+			// update coef based on display
+			opt.scrollCoefX = 0.0f;
+			opt.scrollCoefY = -1.0f * this->startY / pSf->GetHeight();
+		}
+		else {
+			const auto pSf = pMemSf;
 
-				if (startX >= pSf->GetWidth()) { return; }
-				if (startY >= pSf->GetHeight()) { return; }
-				if (objectWidth <= 0) { return; }
-				if (objectHeight <= 0) { return; }
+			auto startX = static_cast<int>(pSf->GetWidth() * opt.scrollCoefX) + this->borderOffsetX;
+			auto startY = static_cast<int>(pSf->GetHeight() * opt.scrollCoefY) + this->borderOffsetY;
+			auto objectWidth = (std::min)(pRc->right - pRc->left, static_cast<long>(pSf->GetWidth() - startX));
+			auto objectHeight = (std::min)(pRc->bottom - pRc->top, static_cast<long>(pSf->GetHeight() - startY));
 
-				// hotsopt is relative to the source size, so kept it not changed here
-				POINT hotSpot = { this->hotSpotX,this->hotSpotY };
+			if (startX >= pSf->GetWidth()) { return; }
+			if (startY >= pSf->GetHeight()) { return; }
 
-				const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
-				const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+			// hotsopt is relative to the source size, so kept it not changed here
+			POINT hotSpot = { this->hotSpotX, this->hotSpotY };
 
+			float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+			float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+
+			if (startX < 0) { xPos -= startX; objectWidth += startX; startX = 0; }
+			if (startY < 0) { yPos -= startY; objectHeight += startY; startY = 0; }
+
+			if (objectWidth <= 0) { return; }
+			if (objectHeight <= 0) { return; }
+
+			if (!opt.bNoBlit) {
 				// blit HWA version directly will mess the alpha channel
 				const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
 					this->xScale, this->yScale,
@@ -4099,6 +4116,10 @@ public:
 					&hotSpot, this->angle,
 					opt.bm, opt.bo, opt.boParam, opt.bAntiA);
 			}
+
+			// update offset based on coef
+			opt.scrollOffsetX = startX - this->borderOffsetX;
+			opt.scrollOffsetY = startY - this->borderOffsetY + this->startY;
 		}
 	}
 };

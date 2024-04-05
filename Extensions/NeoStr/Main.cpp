@@ -965,19 +965,29 @@ long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetCharX(LPRDATA rdPtr, long param1) {
-	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	UpdateLastCharPos(rdPtr);
+	auto charPosX = rdPtr->pNeoStr->GetCharPos(pos).x;
+
+	if (rdPtr->bScroll) {
+		charPosX -= static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions)->scrollOffsetX;
+	}
 	
-	return rdPtr->pNeoStr->GetCharPos(pos).x;
+	return charPosX;
 }
 
 long WINAPI DLLExport Expression_GetCharY(LPRDATA rdPtr, long param1) {
-	size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const size_t pos = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	UpdateLastCharPos(rdPtr);
+	auto charPosY = rdPtr->pNeoStr->GetCharPos(pos).y;
 
-	return rdPtr->pNeoStr->GetCharPos(pos).y;
+	if (rdPtr->bScroll) {
+		charPosY -= static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions)->scrollOffsetY;
+	}
+
+	return charPosY;
 }
 
 long WINAPI DLLExport Expression_GetIConOffsetX(LPRDATA rdPtr, long param1) {

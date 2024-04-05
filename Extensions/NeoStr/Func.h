@@ -154,6 +154,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 #endif
 }
 
+// edittime display
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
 	//MSGBOX(L"Editor Display");
 	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
@@ -230,6 +231,32 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 	}
 }
 
+inline RECT GetRuntimeObjectRect(LPRDATA rdPtr) {
+	// On-screen coords
+	const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+	const int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
+	const int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
+
+	RECT rc = {};
+
+	rc.left = screenX;
+	rc.top = screenY;
+	//rc.right = rc.left + rdPtr->rHo.hoImgWidth;
+	//rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+	rc.right = rc.left + rdPtr->swidth;
+	rc.bottom = rc.top + rdPtr->sheight;
+
+	UpdateRectByHotSpot(rdPtr->hotSpotPos
+		//, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
+		, rdPtr->swidth, rdPtr->sheight
+		, rdPtr->hotSpotX, rdPtr->hotSpotY
+		, &rc);
+
+	return rc;
+}
+
+// runtime display
 inline void Display(LPRDATA rdPtr) {
 	const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 	const LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
@@ -239,20 +266,7 @@ inline void Display(LPRDATA rdPtr) {
 		const int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
 		const int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
-		RECT rc = {};
-
-		rc.left = screenX;
-		rc.top = screenY;
-		//rc.right = rc.left + rdPtr->rHo.hoImgWidth;
-		//rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
-		rc.right = rc.left + rdPtr->swidth;
-		rc.bottom = rc.top + rdPtr->sheight;
-
-		UpdateRectByHotSpot(rdPtr->hotSpotPos
-			//, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
-			, rdPtr->swidth, rdPtr->sheight
-			, rdPtr->hotSpotX, rdPtr->hotSpotY
-			, &rc);
+		auto rc = GetRuntimeObjectRect(rdPtr);
 
 		const int hotSpotX = screenX - rc.left;
 		const int hotSpotY = screenY - rc.top;
@@ -279,25 +293,30 @@ inline void Display(LPRDATA rdPtr) {
 
 		rdPtr->pNeoStr->BlitResult(ps, &rc, *pBlitOptions);
 
+		rdPtr->scrollCoefX = pBlitOptions->scrollCoefX;
+		rdPtr->scrollCoefY = pBlitOptions->scrollCoefY;
+
 		rdPtr->bStrChanged = false;
 	}
 }
 
 inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
-	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
-
-	// On-screen coords
-	int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
-	int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
-
-	RECT rc = {};
-
-	rc.left = screenX;
-	rc.top = screenY;
-	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
-	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+	auto rc = GetRuntimeObjectRect(rdPtr);
 
 	HandleUpdate(rdPtr, rc);
+
+	const auto pBlitOptions = static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions);
+
+	pBlitOptions->bNoBlit = true;
+	pBlitOptions->bScroll = rdPtr->bScroll;
+	pBlitOptions->scrollCoefX = rdPtr->scrollCoefX;
+	pBlitOptions->scrollCoefY = rdPtr->scrollCoefY;
+
+	rdPtr->pNeoStr->BlitResult(nullptr, &rc, *pBlitOptions);
+
+	pBlitOptions->bNoBlit = false;
+	rdPtr->scrollCoefX = pBlitOptions->scrollCoefX;
+	rdPtr->scrollCoefY = pBlitOptions->scrollCoefY;
 
 	return rdPtr->charPos;
 }
