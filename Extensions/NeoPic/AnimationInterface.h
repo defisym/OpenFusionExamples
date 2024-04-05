@@ -277,7 +277,7 @@ public:
 						UpdateHotSpot(pAI, pA->GetNextFrame());
 				},
 				[&] () {
-						CallEvent(ONANIMATIONFINISHED)
+						CallEvent(ONANIMATIONFINISHED);
 				});
 			}
 		} while (false);

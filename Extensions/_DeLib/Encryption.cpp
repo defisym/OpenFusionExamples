@@ -115,7 +115,7 @@ void Encryption::GenerateKey(const wchar_t* KeyStr) {
 
 	const auto keyStrLength = wcslen(KeyStr);
 
-	const DWORD strLength = sizeof(wchar_t) * keyStrLength;
+	const DWORD strLength = sizeof(wchar_t) * static_cast<DWORD>(keyStrLength);
 	const DWORD wantedLength = this->KeyLength + this->IVLength;
 
 	// length enough

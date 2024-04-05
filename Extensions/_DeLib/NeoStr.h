@@ -137,16 +137,13 @@ private:
 
 	DWORD dwDTFlags;
 
-	bool bClip = true;
+	// add rectangle on each char, for debug
 	bool bDrawRectangle = false;
 
 	unsigned short borderOffsetX = 0;
 	unsigned short borderOffsetY = 0;
 
 	bool bVerticalAlignOffset;
-
-	int renderWidth = 0;
-	int renderHeight = 0;
 
 	Gdiplus::TextRenderingHint textRenderingHint = Gdiplus::TextRenderingHint::TextRenderingHintAntiAlias;
 	Gdiplus::SmoothingMode smoothingMode = Gdiplus::SmoothingMode::SmoothingModeHighQuality;
@@ -1376,12 +1373,7 @@ public:
 		this->bVerticalAlignOffset = bVerticalAlignOffset;
 	}
 
-	inline void SetClip(const bool clip, const int renderWidth, const int renderHeight) {
-		this->bClip = clip;
-		this->renderWidth = renderWidth;
-		this->renderHeight = renderHeight;
-	}
-
+	// add rectangle on each char, for debug
 	inline void SetDrawRectangle(const bool bRectangle) {
 		this->bDrawRectangle = bRectangle;
 	}
@@ -1462,8 +1454,8 @@ private:
 		wchar_t spaceChar = CHAR_SPACE;
 
         // context
-        int curWidth;
-        CharSize spaceCharSize;
+        int curWidth = 0;
+        CharSize spaceCharSize = {};
 
 		inline void UpdateSpaceChar(wchar_t spaceChar) {
 			this->spaceChar = spaceChar;
@@ -3131,7 +3123,7 @@ public:
 
 		// fix empty (e.g., \r\n only) string crash
 		if (strPos.empty()) {
-			return CharPos{ 0 };
+			return CharPos{};
 		}
 
 		const auto& lastStrPos = strPos.back();
@@ -3140,12 +3132,14 @@ public:
 		this->startY = GetStartPosY(totalHeight - nRowSpace, rcHeight);
 
 		// last char pos
-		previousCharPos = CharPos {
+		previousCharPos = CharPos{
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
-			+ lastStrPos.width + (lastCharSize->width / 2)
-			,startY + lastStrPos.y + (lastCharSize->height / 2)
-			,maxWidth
-			,totalHeight - nRowSpace };
+				+ lastStrPos.width + (lastCharSize->width / 2),
+			startY + lastStrPos.y + (lastCharSize->height / 2),
+			maxWidth,
+			totalHeight - nRowSpace,
+			ShakeControl()
+		};
 
 		return previousCharPos;
 	}
@@ -3167,8 +3161,8 @@ public:
 		bool bIncludeAlpha = true;
 
 		// Characters that need to render
-		size_t textLen;
-		size_t renderCharCount;
+		size_t textLen = 0;
+		size_t renderCharCount = 0;
 
 		constexpr static UCHAR MaxAlpha = 255;
 
@@ -3189,6 +3183,47 @@ public:
 			const auto alpha = MaxAlpha * (1 - (opaqueRatio - visibleRatio) * textLen);
 
 			return static_cast<UCHAR>(alpha);
+		}
+
+		// ------------
+		// clip
+		// ------------
+
+		// clip: don't render character that out of screen
+		bool bClip = false;
+		// clip to object: don't render character that out of object
+		bool bClipToObject = false;
+
+		// render size: the frame size
+		RECT renderRect = { 0,0,65535,65535 };
+
+		// clip: don't render character that out of screen
+		inline void SetClip(const bool bClip, const int renderWidth, const int renderHeight) {
+			this->bClip = bClip;
+			this->renderRect = { 0,0,renderWidth,renderHeight };
+		}
+		// clip to object: don't render character that out of object
+		inline void SetClipToObject(const bool bClip) {
+			this->bClipToObject = bClip;
+		}
+
+		// rect has part inside render rect
+		inline bool RectInside(const RECT& rect) const {
+			return (rect.left < renderRect.right
+				&& rect.right > renderRect.left
+				&& rect.top < renderRect.bottom
+				&& rect.bottom > renderRect.top);
+		}
+
+		inline bool ClipChar(int objectX, int objectY,
+			const int charX, const int charY, const CharSize* charSz) const {
+			if (!this->bClip) { return false; }
+			if (this->bClipToObject) { objectX = 0; objectY = 0; }
+
+			return !RectInside({ objectX + charX,
+				objectY + charY,
+				objectX + charX + charSz->width,
+				objectY + charY + charSz->height });
 		}
 
 		// ------------
@@ -3253,6 +3288,7 @@ public:
 //#define USE_RTT
 //#define REUSE_HWA
 
+	// pRc: object rect
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
 #ifdef COUNT_GDI_OBJECT
 		GDIObjectCounter objectCounter;
@@ -3298,9 +3334,12 @@ public:
 		// update offscreen surface
 		// ------------
 		if (!bRenderOverride) {
-			char scale = 1;
-			auto width = abs((rcWidth + this->borderOffsetX * 2) * scale);
-			auto height = abs((totalHeight + this->borderOffsetY * 2) * scale);
+			auto width = rcWidth + this->borderOffsetX * 2;
+			auto height = totalHeight + this->borderOffsetY * 2;
+
+			if (opt.bClipToObject) {
+				opt.SetClip(true, rcWidth, rcHeight);
+			}
 
 			if (this->pMemSf == nullptr
 				|| this->pMemSf->GetWidth() < width
@@ -3361,25 +3400,6 @@ public:
 		// Color fontColor(255, GetRValue(this->dwTextColor), GetGValue(this->dwTextColor), GetBValue(this->dwTextColor));
 		Color fontColor(this->dwTextColor);
 		SolidBrush solidBrush(fontColor);
-
-		RECT displayRc = { 0,0,(LONG)this->renderWidth, (LONG)this->renderHeight };
-
-		// clip: don't render character that out of screen
-		auto clip = [this, pRc, displayRc] (const int startX, const int startY, const CharSize* charSz)->bool {
-			if (this->bClip == false) {
-				return false;
-			}
-
-			const RECT charRc = { pRc->left + startX
-				,pRc->top + startY
-				,pRc->left + startX + charSz->width
-				,pRc->top + startY + charSz->height };
-
-			return !(charRc.left < displayRc.right
-				&& charRc.right > displayRc.left
-				&& charRc.top < displayRc.bottom
-				&& charRc.bottom > displayRc.top);
-		};
 
 		size_t totalChar = 0;
 
@@ -3530,7 +3550,8 @@ public:
 					});
 #pragma endregion
 
-					if (!clip(x, this->startY + curStrPos.y, charSz)) {
+					if (!opt.ClipChar(pRc->left, pRc->top,
+						x, this->startY + curStrPos.y, charSz)) {
 						struct ColorUpdater {
 							SolidBrush* pBrush = nullptr;
 							SolidBrush oldBrush = SolidBrush(Color());
@@ -3629,7 +3650,6 @@ public:
 			auto pRemarkNeoStr = it.pNeoStr;
 			pRemarkNeoStr->CopyProperties(this);
 			pRemarkNeoStr->SetColor(GetDWORD(colorItHandler.it->color), true);
-			pRemarkNeoStr->SetClip(false, 65535, 65535);
 			pRemarkNeoStr->SetBorderOffset(this->borderOffsetX, this->borderOffsetY);
 			//remarkNeoStr->SetDrawRectangle(true);
 
@@ -3724,6 +3744,9 @@ public:
 
 			// copy one option here
 			RenderOptions remarkOpt = opt;
+			// do not clip
+			remarkOpt.SetClip(false, 65535, 65535);
+			remarkOpt.SetClipToObject(false);
 			// skip custom tag callback
 			remarkOpt.UpdateTagCallback(nullptr);
 			// overrider render, directly to parent
@@ -3986,7 +4009,7 @@ public:
 	}
 
 	inline CharPos GetCharPos(const size_t pos) const {
-		const auto invalid = CharPos { -1, -1, -1, -1 };
+		constexpr auto invalid = CharPos { -1, -1, -1, -1, ShakeControl() };
 
 		if (pCharPosArr == nullptr) {
 			return invalid;
@@ -4005,27 +4028,98 @@ public:
 		return pCharPosArr[pos];
 	}
 
-	inline void DisplayPerChar(const LPSURFACE pDst, const LPRECT pRc
-		, const BlitMode bm = BMODE_TRANSP, const BlitOp bo = BOP_COPY, const LPARAM boParam = 0, const int bAntiA = 0
-		, DWORD dwLeftMargin = 0, DWORD dwRightMargin = 0, DWORD dwTabSize = 8) const {
+	struct BlitOptions {
+		// ------------
+		// scroll
+		// ------------
+		bool bScroll = false;
+
+		float scrollCoefX = 0.0f;
+		float scrollCoefY = 0.0f;
+
+		int scrollOffsetX = 0;
+		int scrollOffsetY = 0;
+
+		// ------------
+		// fusion params
+		// ------------
+		bool bNoBlit = false;
+
+		BlitMode bm = BMODE_TRANSP;
+		BlitOp bo = BOP_COPY;
+		LPARAM boParam = 0;
+		int bAntiA = 0;
+	};
+
+	// pRc: object rect
+	inline void BlitResult(const LPSURFACE pDst,
+		const LPRECT pRc,
+		BlitOptions& opt) const {
 		if (!this->bTextValid) {
 			return;
 		}
 
-		if (pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr) {
+		const bool bAllSurfaceValid = pDst != nullptr && pHwaSf != nullptr && pMemSf != nullptr;
+		if (!opt.bNoBlit && !bAllSurfaceValid) { return; }
+
+		if (!opt.bScroll) {
 			const auto pSf = pHwaSf;
 
 			const int xOffset = -this->borderOffsetX;
 			const int yOffset = -this->borderOffsetY + this->startY;
 
-			POINT hotSpot = { this->hotSpotX - xOffset,this->hotSpotY - yOffset };
+			POINT hotSpot = { this->hotSpotX - xOffset, this->hotSpotY - yOffset };
 
-			const int xPos = pRc->left + this->hotSpotX;
-			const int yPos = pRc->top + this->hotSpotY;
+			const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+			const float yPos = static_cast<float>(pRc->top + this->hotSpotY);
 
-			pSf->BlitEx(*pDst, (float)xPos, (float)yPos, this->xScale, this->yScale
-				, 0, 0, pSf->GetWidth(), pSf->GetHeight(), &hotSpot, this->angle
-				, bm, bo, boParam, bAntiA);
+			if (!opt.bNoBlit) {
+				const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
+					this->xScale, this->yScale,
+					0, 0, pSf->GetWidth(), pSf->GetHeight(),
+					&hotSpot, this->angle,
+					opt.bm, opt.bo, opt.boParam, opt.bAntiA);
+			}
+
+			// update coef based on display
+			opt.scrollCoefX = 0.0f;
+			opt.scrollCoefY = -1.0f * this->startY / pSf->GetHeight();
+		}
+		else {
+			const auto pSf = pMemSf;
+
+			auto startX = static_cast<int>(pSf->GetWidth() * opt.scrollCoefX) + this->borderOffsetX;
+			auto startY = static_cast<int>(pSf->GetHeight() * opt.scrollCoefY) + this->borderOffsetY;
+			auto objectWidth = (std::min)(pRc->right - pRc->left, static_cast<long>(pSf->GetWidth() - startX));
+			auto objectHeight = (std::min)(pRc->bottom - pRc->top, static_cast<long>(pSf->GetHeight() - startY));
+
+			if (startX >= pSf->GetWidth()) { return; }
+			if (startY >= pSf->GetHeight()) { return; }
+
+			// hotsopt is relative to the source size, so kept it not changed here
+			POINT hotSpot = { this->hotSpotX, this->hotSpotY };
+
+			float xPos = static_cast<float>(pRc->left + this->hotSpotX);
+			float yPos = static_cast<float>(pRc->top + this->hotSpotY);
+
+			if (startX < 0) { xPos -= startX; objectWidth += startX; startX = 0; }
+			if (startY < 0) { yPos -= startY; objectHeight += startY; startY = 0; }
+
+			if (objectWidth <= 0) { return; }
+			if (objectHeight <= 0) { return; }
+
+			if (!opt.bNoBlit) {
+				// blit HWA version directly will mess the alpha channel
+				const auto bRet = pSf->BlitEx(*pDst, xPos, yPos,
+					this->xScale, this->yScale,
+					startX, startY, objectWidth, objectHeight,
+					&hotSpot, this->angle,
+					opt.bm, opt.bo, opt.boParam, opt.bAntiA);
+			}
+
+			// update offset based on coef
+			opt.scrollOffsetX = startX - this->borderOffsetX;
+			opt.scrollOffsetY = startY - this->borderOffsetY + this->startY;
 		}
 	}
 };

@@ -200,6 +200,8 @@ set to non-strike out
 - Render
   - Clip
     - *if text is out of visible area, skip it's render*
+  - Clip to object
+    - *if text is out of object area, skip it's render*
   - Border offset
     - *internal offscreen surface is bigger than render size, to give enough space for shader, icon, remark, etc*
   - Text Rendering Hint
@@ -275,6 +277,13 @@ set to non-strike out
     - *DT_TOP = 0, DT_VCENTER = 4, DT_BOTTOM = 8*
 
   - Change Tab Settings
+
+- Scroll
+  - *use object size as viewport, scroll content inside it*
+
+  - Disable
+  - Set Scroll Coef
+    - *will enable scroll automatically*
 
 - Zoom && Rotate
   - Change HotSpot
@@ -367,6 +376,10 @@ set to non-strike out
 
   - Get Last Char X
   - Get Last Char Y
+
+- Scroll
+  - Get Scroll Coef X
+  - Get Scroll Coef Y
 
 - Zoom && Rotate
   - Get HotSpot X

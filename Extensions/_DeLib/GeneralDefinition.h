@@ -17,8 +17,8 @@
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("(\\+|\\-)?[0-9]+(\\.[0-9]+)?")
 
-#define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0);
-#define AddEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_PUSHEVENT , X, 0);
+#define CallEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_GENERATEEVENT, X, 0)
+#define AddEvent(X) callRunTimeFunction(rdPtr, RFUNCTION_PUSHEVENT , X, 0)
 
 #define valid(X) ((X) != nullptr)
 
@@ -27,7 +27,7 @@
 #define release_ptr(X) if (valid(X)) {delete (X); (X) = nullptr;}
 #define release_arr(X) if (valid(X)) {delete[] (X); (X) = nullptr;}
 
-#define ResertPtr(X) (X) = nullptr;
+#define ResetPtr(X) (X) = nullptr;
 
 #define RAD(_DEG) ((PI*(_DEG))/180)
 #define DEG(_RAD) ((180*(_RAD))/PI)
@@ -64,7 +64,7 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 // }
 
 //don't use this func if Str = nullptr, return Default_Str directly
-inline void NewStr(LPWSTR & Tar, const LPCWSTR Str) {
+inline void NewStr(LPWSTR& Tar, const LPCWSTR Str) {
 	release_arr(Tar);
 	const rsize_t total_length = wcslen(Str) + 1;
 
@@ -72,7 +72,7 @@ inline void NewStr(LPWSTR & Tar, const LPCWSTR Str) {
 	wcscpy_s(Tar, total_length, Str);
 }
 
-inline void NewStr(LPWSTR & Tar, const std::wstring & Str) {
+inline void NewStr(LPWSTR& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
@@ -81,21 +81,61 @@ inline void NewStr(std::wstring& Tar, const std::wstring& Str) {
 }
 
 // convert string to wstring
-inline std::wstring to_wide_string(const std::string& input, const UINT codePage = CP_UTF8) {
-	const auto size_needed = MultiByteToWideChar(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0);
+inline bool to_wide_string(std::wstring& output,
+		const char* pSrc, size_t len,
+		const UINT codePage = CP_UTF8) {
+	const int outputLength = MultiByteToWideChar(codePage, 0,
+		pSrc, static_cast<int>(len),
+		nullptr, 0);
 
-	std::wstring result(size_needed, 0);
-	MultiByteToWideChar(codePage, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed);
+	if (outputLength == 0) {
+		return false;
+	}
+
+	output = std::wstring(outputLength, 0);
+	if (!MultiByteToWideChar(codePage, 0,
+		pSrc, static_cast<int>(len),
+		output.data(), outputLength)) {
+		return false;
+	}
+
+	return true;
+}
+// convert string to wstring, indicate no error occurs
+inline std::wstring to_wide_string(const std::string& input, const UINT codePage = CP_UTF8) {
+	std::wstring result;
+	to_wide_string(result, input.c_str(), input.length(), codePage);
 
 	return result;
 }
 
-// convert wstring to string 
-inline std::string to_byte_string(const std::wstring& input, const UINT codePage = CP_UTF8) {
-	const auto size_needed = WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), nullptr, 0, nullptr, nullptr);
+// convert wstring to string
+inline bool to_byte_string(std::string& output,
+		const wchar_t* pSrc, size_t len,
+		const UINT codePage = CP_UTF8) {
+	const int outputLength = WideCharToMultiByte(codePage, 0,
+			pSrc, static_cast<int>(len),
+			nullptr, 0,
+			nullptr, nullptr);
 
-	std::string result(size_needed, 0);
-	WideCharToMultiByte(codePage, 0, &input.at(0), (int)input.size(), &result.at(0), size_needed, nullptr, nullptr);
+	if (outputLength == 0) {
+		return false;
+	}
+
+	output = std::string(outputLength, 0);
+	if (!WideCharToMultiByte(codePage, 0,
+		pSrc, static_cast<int>(len),
+		output.data(), outputLength,
+		nullptr, nullptr)) {
+		return false;
+	}
+
+	return true;
+}
+// convert wstring to string, indicate no error occurs
+inline std::string to_byte_string(const std::wstring& input, const UINT codePage = CP_UTF8) {
+	std::string result;
+	to_byte_string(result, input.c_str(), input.length(), codePage);
 
 	return result;
 }
@@ -135,7 +175,7 @@ inline void TrimStr(std::wstring& str,
 		}
 
 		return false;
-	};
+		};
 
 	while (needTrim(front)) {
 		str.erase(str.begin());
@@ -193,7 +233,7 @@ inline bool StringAppend(const LPCWSTR pL, const LPCWSTR pR) {
 	return true;
 }
 
-inline bool StringIAppend(const LPCWSTR pL,const LPCWSTR pR) {
+inline bool StringIAppend(const LPCWSTR pL, const LPCWSTR pR) {
 	const auto lLength = wcslen(pL);
 	const auto rLength = wcslen(pR);
 
@@ -240,7 +280,7 @@ inline std::vector<T> SplitString(const std::wstring& input, const wchar_t delim
 	, std::function<T(const std::wstring&)> callBack) {
 	std::vector<T> resultList;
 
-	SplitStringCore(input, delimiter, [&](const std::wstring& item) {
+	SplitStringCore(input, delimiter, [&] (const std::wstring& item) {
 		resultList.emplace_back(callBack(item));
 		});
 
@@ -248,7 +288,7 @@ inline std::vector<T> SplitString(const std::wstring& input, const wchar_t delim
 }
 
 inline std::vector<std::wstring> SplitString(const std::wstring& input, const wchar_t delimiter) {
-	return SplitString<std::wstring>(input, delimiter, [](const std::wstring& item) {return item; });
+	return SplitString<std::wstring>(input, delimiter, [] (const std::wstring& item) {return item; });
 }
 
 template<typename T>
@@ -259,4 +299,21 @@ inline T Range(T v, T minv, T maxv) {
 template<typename T>
 inline void UpdateRange(T& v, T minv, T maxv) {
 	v = (std::max)(minv, (std::min)(maxv, v));
+}
+
+// https://stackoverflow.com/questions/4915462/how-should-i-do-floating-point-comparison
+inline bool NearlyEqual(const float a, const float b,
+						// those defaults are arbitrary and could be removed
+						const float epsilon = 128 * FLT_EPSILON,
+						const float abs_th = FLT_MIN) {
+	//assert(std::numeric_limits<float>::epsilon() <= epsilon);
+	//assert(epsilon < 1.f);
+
+	if (a == b) return true;  // NOLINT(clang-diagnostic-float-equal)
+
+	const auto diff = std::abs(a - b);
+	const auto norm = (std::min)((std::abs(a) + std::abs(b)), (std::numeric_limits<float>::max)());
+	// or even faster: std::min(std::abs(a + b), std::numeric_limits<float>::max());
+	// keeping this commented out until I update figures below
+	return diff < (std::max)(abs_th, epsilon * norm);
 }

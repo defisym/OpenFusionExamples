@@ -564,7 +564,7 @@ inline void LoadFromFile(LPRDATA rdPtr, LPCWSTR FileName, LPCWSTR Key = L"") {
 				// so update back must change the address
 				const auto pOldSf = *ppSf;
 
-				CallEvent(ONLOADCALLBACK)
+				CallEvent(ONLOADCALLBACK);
 
 					if (pOldSf != *ppSf) {
 						changed(*ppSf);

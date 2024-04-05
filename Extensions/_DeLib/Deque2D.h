@@ -45,14 +45,14 @@ namespace Deque2D {
 
 		std::vector<SearchResult> SearchResultVec;
 
-		inline size_t GetValidArrayPos(size_t ArrayPos) {
+		inline size_t GetValidArrayPos(size_t ArrayPos) const {
 			return min(this->ArrayBackPos(), ArrayPos);
 		}
-		inline size_t GetValidDataPos(size_t ArrayPos, size_t DataPos) {
+		inline size_t GetValidDataPos(size_t ArrayPos, size_t DataPos) const {
 			return min(this->DataBackPos(ArrayPos), DataPos);
 		}
 
-		inline Pos GetValidPos(size_t ArrayPos, size_t DataPos) {
+		inline Pos GetValidPos(size_t ArrayPos, size_t DataPos) const {
 			Pos ValidPos;
 			ValidPos.ArrayPos = GetValidArrayPos(ArrayPos);
 			ValidPos.DataPos = GetValidDataPos(ValidPos.ArrayPos, DataPos);
@@ -61,37 +61,38 @@ namespace Deque2D {
 		}
 
 		//process quota escape
-		inline std::wstring EscapeDoubleToSingle(const std::wstring& Src) {
-			std::wstring Escape;
+		static inline std::wstring EscapeDoubleToSingle(const std::wstring& src) {
+			std::wstring escape;
 
-			for (size_t pos = 0; pos != Src.length(); pos++) {
-				bool End = (pos == Src.length() - 1);
+			for (size_t pos = 0; pos != src.length(); pos++) {
+				const bool end = (pos == src.length() - 1);
 
-				auto Cur = Src[pos];
-				auto Next = !End ? Src[pos + 1] : CHARSTREND;
+				const auto cur = src[pos];
+				const auto next = !end ? src[pos + 1] : CHARSTREND;
 
-				Escape += Src[pos];
+				escape += src[pos];
 
-				if ((Cur == CHARSTRQUOTATIONMARK) && (Next == CHARSTRQUOTATIONMARK)) {
+				if ((cur == CHARSTRQUOTATIONMARK) && (next == CHARSTRQUOTATIONMARK)) {
 					pos++;
 				}
 			}
 
-			return Escape;
+			return escape;
 		}
-		inline std::wstring EscapeSingleToDouble(const std::wstring& Src) {
-			std::wstring Escape;
 
-			for (size_t pos = 0; pos != Src.length(); pos++) {
-				auto Cur = Src[pos];
+		static inline std::wstring EscapeSingleToDouble(const std::wstring& src) {
+			std::wstring escape;
 
-				Escape += Src[pos];
-				if (Cur == CHARSTRQUOTATIONMARK) {
-					Escape += Src[pos];
+			for (const wchar_t pos : src) {
+				const auto cur = pos;
+
+				escape += pos;
+				if (cur == CHARSTRQUOTATIONMARK) {
+					escape += pos;
 				}
 			}
 
-			return Escape;
+			return escape;
 		}
 
 		//Get token between tokenstart and tokenstart (don't include Src[tokenend])
@@ -188,38 +189,30 @@ namespace Deque2D {
 			std::wstring Output = this->Save();
 			UINT CodePage = Unicode ? CP_UTF8 : CP_ACP;
 
-			DWORD dbuffsize = WideCharToMultiByte(CodePage, 0, Output.c_str(), -1, NULL, 0, NULL, FALSE);
-			if (dbuffsize == (size_t)(-1)) {
+			std::string byteString;
+			if(!Split::SaveData(byteString, Output.c_str(), Output.length(), CodePage)){
 				return;
-			}
-
-			char* dbuff = new char[dbuffsize + 1];
-			memset(dbuff, 0, dbuffsize + 1);
-
-			if (!WideCharToMultiByte(CodePage, 0, Output.c_str(), -1, dbuff, dbuffsize, NULL, FALSE)) {
-				return;
-			}
+			};
 
 			Encryption Encrypt;
-			Encrypt.SetEncryptStr(dbuff, strlen(dbuff));
-			delete[] dbuff;
+			Encrypt.SetEncryptStr(byteString);
 
-			if (Key != L"") {
+			if (Key == L"") {
 				Encrypt.GenerateKey(Key.c_str());
 				Encrypt.Encrypt();
-				Encrypt.SaveFile(FilePath.c_str());
+				const auto result = Encrypt.SaveFile(FilePath.c_str());
 			}
 			else {
-				Encrypt.SaveFile(FilePath.c_str(), true);
+				const auto result = Encrypt.SaveFile(FilePath.c_str(), true);
 			}
 		}
 		//Save to string
 		inline std::wstring Save() {
 			std::wstring Output;
 
-			for (auto it2D = Dat.begin(); it2D != Dat.end(); it2D++) {
-				for (auto it = (*it2D).begin(); it != (*it2D).end(); it++) {
-					switch ((*it).index()) {
+			for (auto it2D = Dat.begin(); it2D != Dat.end(); ++it2D) {
+				for (auto it = it2D->begin(); it != it2D->end(); ++it) {
+					switch (it->index()) {
 						//int
 					case 0:
 						Output += std::to_wstring(get<int>((*it)));
@@ -230,12 +223,16 @@ namespace Deque2D {
 						break;
 						//wstring
 					case 2:
-						Output += STRQUOTATIONMARK + EscapeSingleToDouble(get<std::wstring>((*it))) + STRQUOTATIONMARK;
+						Output += STRQUOTATIONMARK;
+						Output += EscapeSingleToDouble(get<std::wstring>((*it)));
+						Output += STRQUOTATIONMARK;
+						break;
+					default:
 						break;
 					}
 
 					//end() point to the next value
-					if (it != (*it2D).end() - 1) {
+					if (it != it2D->end() - 1) {
 						Output += DELIMITER;
 					}
 					else if (it2D != Dat.end() - 1) {
@@ -248,53 +245,50 @@ namespace Deque2D {
 		}
 
 		//Search
-		inline bool LastSearchMatched() {
-			return SearchResultVec.size() != 0;
+		inline bool LastSearchMatched() const {
+			return !SearchResultVec.empty();
 		}
 
-		inline size_t GetSearchResultVecSize() {
+		inline size_t GetSearchResultVecSize() const {
 			return SearchResultVec.size();
 		}
 
-		inline size_t GetSearchResultArrayPos(size_t index) {
+		inline size_t GetSearchResultArrayPos(size_t index) const {
 			return SearchResultVec.at(index).Pos.ArrayPos;
 		}
-		inline size_t GetSearchResultDataPos(size_t index) {
+		inline size_t GetSearchResultDataPos(size_t index) const {
 			return SearchResultVec.at(index).Pos.DataPos;
 		}
 
-		inline int GetSearchResultDataInt(size_t index) {
+		inline int GetSearchResultDataInt(size_t index) const {
 			int ret = 0;
 
 			try {
 				ret = get<int>(SearchResultVec.at(index).Data);
-			}
-			catch (std::bad_variant_access) {
-				//
+			} catch (std::bad_variant_access& e) {
+				const auto info = e.what();
 			}
 
 			return ret;
 		}
-		inline double GetSearchResultDataDouble(size_t index) {
+		inline double GetSearchResultDataDouble(size_t index) const {
 			double ret = 0.0;
 
 			try {
 				ret = get<double>(SearchResultVec.at(index).Data);
-			}
-			catch (std::bad_variant_access) {
-				//
+			} catch (std::bad_variant_access& e) {
+				const auto info = e.what();
 			}
 
 			return ret;
 		}
-		inline std::wstring GetSearchResultDataString(size_t index) {
-			std::wstring ret = L"";
+		inline std::wstring GetSearchResultDataString(size_t index) const {
+			std::wstring ret;
 
 			try {
 				ret = get<std::wstring>(SearchResultVec.at(index).Data);
-			}
-			catch (std::bad_variant_access) {
-				//
+			} catch (std::bad_variant_access& e) {
+				const auto info = e.what();
 			}
 
 			return ret;
@@ -325,16 +319,16 @@ namespace Deque2D {
 
 
 		//Array
-		inline bool ArrayPosValid(size_t ArrayPos) {
+		inline bool ArrayPosValid(size_t ArrayPos) const {
 			if (Dat.empty()) {
 				return false;
 			}
-			else if (ArrayPos != GetValidArrayPos(ArrayPos)) {
+
+			if (ArrayPos != GetValidArrayPos(ArrayPos)) {
 				return false;
 			}
-			else {
-				return true;
-			}
+
+			return true;
 		}
 
 		inline void ArrayClear() {
@@ -394,16 +388,16 @@ namespace Deque2D {
 			}
 		}
 
-		inline size_t ArraySize() {
+		inline size_t ArraySize() const {
 			return Dat.size();
 		}
-		inline size_t ArrayBackPos() {
+		inline size_t ArrayBackPos() const {
 			return ArraySize() - 1;
 		}
 
 		inline DataDeq ArrayPopFront() {
 			if (Dat.empty()) {
-				return DataDeq();
+				return {};
 			}
 
 			DataDeq Ret = Dat.front();
@@ -412,7 +406,7 @@ namespace Deque2D {
 		}
 		inline DataDeq ArrayPopBack() {
 			if (Dat.empty()) {
-				return DataDeq();
+				return {};
 			}
 
 			DataDeq Ret = Dat.back();
@@ -422,7 +416,7 @@ namespace Deque2D {
 
 		inline DataDeq ArrayAt(size_t ArrayPos) {
 			if (Dat.empty()) {
-				return DataDeq();
+				return {};
 			}
 
 			return Dat[GetValidArrayPos(ArrayPos)];
@@ -436,13 +430,13 @@ namespace Deque2D {
 				}
 			}
 
-			sort(Dat.begin(), Dat.end(), [=](const DataDeq& a, const DataDeq& b) { return descend ? a[DataPos] > b[DataPos]: a[DataPos] < b[DataPos]; });
+			std::ranges::sort(Dat, [=] (const DataDeq& a, const DataDeq& b) { return descend ? a[DataPos] > b[DataPos]: a[DataPos] < b[DataPos]; });
 		}
 		inline void ArrayShuffle() {
 			std::random_device rd;
 			std::mt19937 eng{ rd() };
 
-			shuffle(Dat.begin(), Dat.end(), eng);
+			std::ranges::shuffle(Dat, eng);
 		}
 
 		inline void ArraySearch(Data Data) {
@@ -545,14 +539,14 @@ namespace Deque2D {
 			}
 		}
 
-		inline size_t DataSize(size_t ArrayPos) {
+		inline size_t DataSize(size_t ArrayPos) const {
 			if (ArrayPosValid(ArrayPos)) {
 				return Dat[ArrayPos].size();
 			}
 
 			return 0;
 		}
-		inline size_t DataBackPos(size_t ArrayPos) {
+		inline size_t DataBackPos(size_t ArrayPos) const {
 			if (ArrayPosValid(ArrayPos)) {
 				return DataSize(ArrayPos) - 1;
 			}
@@ -627,9 +621,8 @@ namespace Deque2D {
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
 				try {
 					ret = get<int>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
-				}
-				catch (std::bad_variant_access) {
-					//
+				} catch (std::bad_variant_access& e) {
+					const auto info = e.what();
 				}
 			}
 
@@ -654,9 +647,8 @@ namespace Deque2D {
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
 				try {
 					ret = get<double>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
-				}
-				catch (std::bad_variant_access) {
-					//
+				} catch (std::bad_variant_access& e) {
+					const auto info = e.what();
 				}
 			}
 
@@ -666,7 +658,7 @@ namespace Deque2D {
 			Pos ValidPos = GetValidPos(ArrayPos, DataPos);
 
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
-				return get_if<double>(&Dat[ValidPos.ArrayPos][ValidPos.DataPos]);;
+				return get_if<double>(&Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
 			}
 			else {
 				return nullptr;
@@ -681,9 +673,8 @@ namespace Deque2D {
 			if (DataPosValid(ValidPos.ArrayPos, ValidPos.DataPos)) {
 				try {
 					ret = get<std::wstring>(Dat[ValidPos.ArrayPos][ValidPos.DataPos]);
-				}
-				catch (std::bad_variant_access) {
-					//
+				} catch (std::bad_variant_access& e) {
+					const auto info = e.what();
 				}
 			}
 
@@ -702,7 +693,7 @@ namespace Deque2D {
 
 		inline void DataSort(size_t ArrayPos, bool descend = true) {
 			if (ArrayPosValid(ArrayPos)) {
-				sort(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), [=](const Data& a, const Data& b) { return descend ? a > b:a < b; });
+				std::ranges::sort(Dat[ArrayPos], [=] (const Data& a, const Data& b) { return descend ? a > b:a < b; });
 			}
 		}
 		inline void DataShuffle(size_t ArrayPos) {
@@ -710,7 +701,7 @@ namespace Deque2D {
 				std::random_device rd;
 				std::mt19937 eng{ rd() };
 
-				shuffle(Dat[ArrayPos].begin(), Dat[ArrayPos].end(), eng);
+				std::ranges::shuffle(Dat[ArrayPos], eng);
 			}
 		}
 
@@ -733,7 +724,7 @@ namespace Deque2D {
 
 			if (ArrayPosValid(ArrayPos)) {
 				for (auto& it : Dat[ArrayPos]) {
-					if ((it.index() == (size_t)DataType::STRING) && regex_match(get<std::wstring>(it), Reg)) {
+					if ((it.index() == static_cast<size_t>(DataType::STRING)) && regex_match(get<std::wstring>(it), Reg)) {
 						this->SearchResultVec.emplace_back(SearchResult{ it,Pos{ArrayPos,DataPos} });
 					}
 

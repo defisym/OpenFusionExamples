@@ -154,6 +154,9 @@
     <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\_DeLib\CSVHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

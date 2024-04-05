@@ -109,6 +109,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pixelOffsetMode = edPtr->pixelOffsetMode;
 
 	rdPtr->bClip = edPtr->bClip;
+	rdPtr->bClipToObject = edPtr->bClipToObject;
 	rdPtr->borderOffsetX = edPtr->borderOffsetX;
 	rdPtr->borderOffsetY = edPtr->borderOffsetY;
 
@@ -146,6 +147,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		CallEvent(ONTAGCBF);
 		rdPtr->pTagCallbackParams = nullptr;
 	});
+
+	rdPtr->pBlitOptions = new NeoStr::BlitOptions;
 
 	rdPtr->bTagCallbackIndexManaged = true;
 	rdPtr->pTagCallbackName = new std::wstring;
@@ -203,6 +206,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 
 	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 	delete rdPtr->pTagCallbackName;
+
+	delete static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions);
 
 	delete rdPtr->pFormatByVector;
 

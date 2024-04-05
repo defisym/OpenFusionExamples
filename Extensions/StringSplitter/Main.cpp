@@ -170,9 +170,9 @@ long WINAPI DLLExport OnIterateReplaceEach(LPRDATA rdPtr, long param1, long para
 short WINAPI DLLExport ResetSplit(LPRDATA rdPtr, long param1, long param2) {
 	Splitter->ResetSplit();
 
-	ResertPtr(rdPtr->CurrentSplitStr);
-	ResertPtr(rdPtr->CurrentKeyWord);
-	ResertPtr(rdPtr->CurrentSubString);
+	ResetPtr(rdPtr->CurrentSplitStr);
+	ResetPtr(rdPtr->CurrentKeyWord);
+	ResetPtr(rdPtr->CurrentSubString);
 
 	return 0;
 }

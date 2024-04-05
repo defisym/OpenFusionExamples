@@ -166,6 +166,12 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Change Tab Settings", IDMN_ACTION_STS
         END
+        MENUITEM SEPARATOR
+		POPUP "Scroll"
+        BEGIN
+            MENUITEM "Disable", IDMN_ACTION_SCROLL_D	
+            MENUITEM "Set Scroll Coef", IDMN_ACTION_SCROLL_SSC
+		END
         MENUITEM SEPARATOR        
         POPUP "Zoom && Rotate"
         BEGIN
@@ -265,6 +271,12 @@ BEGIN
             MENUITEM "Get Last Char Y", IDMN_EXPRESSION_GLCY
         END
         MENUITEM SEPARATOR
+		POPUP "Scroll"
+        BEGIN
+            MENUITEM "Get Scroll Coef X", IDMN_EXPRESSION_S_GCX	
+            MENUITEM "Get Scroll Coef Y", IDMN_EXPRESSION_S_GCY
+		END
+		MENUITEM SEPARATOR
         POPUP "Zoom && Rotate"
         BEGIN
             MENUITEM "Get HotSpot X", IDMN_EXPRESSION_GHX
@@ -393,6 +405,8 @@ BEGIN
     IDS_PROP_RENDER_TITLE                           "Render"
     IDS_PROP_RENDER_CLIP                            "Clip"
     IDS_PROP_RENDER_CLIP_INFO                       "Only render text in the visible area, will trigger re-render when visible area extends"
+    IDS_PROP_RENDER_CLIPTOOBJECT                    "Clip to Object"
+    IDS_PROP_RENDER_CLIPTOOBJECT_INFO               "Only render text in the object area"
     IDS_PROP_RENDER_TextRenderingHint               "Text Rendering Hint"
     IDS_PROP_RENDER_TextRenderingHint_INFO          "Gets or sets the rendering mode for text associated with this Graphics"
     COMBO_TextRenderingHintSystemDefault            "TextRenderingHintSystemDefault"
@@ -577,6 +591,12 @@ BEGIN
     M_TAGCBNAME				"Callback Name"
     M_STAGCBIDX			    "Index Larger Than This Will be Triggered"
     M_STAGCBIDXM		    "1 = Index Managed Internally, 0 = Manually"
+
+	M_ACTION_SCROLL_D		"Disable Scroll"
+	M_ACTION_SCROLL_SSC		"Set Scroll Coef, X = %0, Y = %1"
+
+	M_SCROLLCOEFX			"Scroll Coef X"
+	M_SCROLLCOEFY			"Scroll Coef Y"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -651,6 +671,9 @@ BEGIN
     M_EXPRESSION_GTCBN      "GetTagCallbackName("
     M_EXPRESSION_GTPN       "GetTagParamNum("
     M_EXPRESSION_GTPS       "GetTagParamString$("
+    
+	M_EXPRESSION_S_GCX      "GetScrollCoefX("
+    M_EXPRESSION_S_GCY      "GetScrollCoefY("
 END
 
 #endif    // English (U.S.) resources

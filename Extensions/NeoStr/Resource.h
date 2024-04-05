@@ -112,6 +112,9 @@
 #define	IDS_PROP_FORMAT_REMARKOFFSETY         283
 #define	IDS_PROP_FORMAT_REMARKOFFSETY_INFO    284
 
+#define	IDS_PROP_RENDER_CLIPTOOBJECT          285
+#define	IDS_PROP_RENDER_CLIPTOOBJECT_INFO     286
+
 // 	Debug tree
 //-------------------
 #define	IDS_SEPARATOR   				300
@@ -171,6 +174,9 @@
 #define	IDMN_ACTION_SRO_STAGCBIDX	25030
 #define	IDMN_ACTION_SRO_STAGCBIDXM	25031
 
+#define	IDMN_ACTION_SCROLL_D		25032
+#define	IDMN_ACTION_SCROLL_SSC		25033
+
 // Action strings
 #define M_ACTION_CS                 5000
 #define	M_ACTION_CSTR				5001
@@ -220,6 +226,9 @@
 #define	M_ACTION_SRO_STAGCBIDX		5030
 #define	M_ACTION_SRO_STAGCBIDXM		5031
 
+#define	M_ACTION_SCROLL_D			5032
+#define	M_ACTION_SCROLL_SSC			5033
+
 // Titles of action parameters
 #define M_WIDTH				        5501
 #define M_HEIGHT				    5502
@@ -268,6 +277,9 @@
 #define M_TAGCBNAME					5534
 #define M_STAGCBIDX					5535
 #define M_STAGCBIDXM				5536
+
+#define M_SCROLLCOEFX				5537
+#define M_SCROLLCOEFY				5538
 
 //	Conditions
 //--------------------
@@ -355,6 +367,9 @@
 #define	IDMN_EXPRESSION_GTPS	  		    27039
 #define	IDMN_EXPRESSION_GTCBN	  		    27040
 
+#define	IDMN_EXPRESSION_S_GCX	  		    27041
+#define	IDMN_EXPRESSION_S_GCY	  		    27042
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -415,6 +430,9 @@
 #define	M_EXPRESSION_GTPN	 		        7038
 #define	M_EXPRESSION_GTPS	 		        7039
 #define	M_EXPRESSION_GTCBN	 		        7040
+
+#define	M_EXPRESSION_S_GCX	 		        7041
+#define	M_EXPRESSION_S_GCY	 		        7042
 
 // Names of expression parameters
 #define M_POS				                7500

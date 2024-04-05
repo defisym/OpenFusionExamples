@@ -24,279 +24,13 @@
 #include "Base64.h"
 #include "MusicScore.h"
 #include "GeneralDefinition.h"
+#include "BinaryData.h"
 
 using std::literals::chrono_literals::operator ""ms;
 
-struct BinaryData;
-struct BinaryDataInfo;
 struct AudioEffect;
 struct AudioData;
 struct GlobalData;
-
-using BinaryBuffer = const unsigned char;
-
-struct BinaryData {
-	using AudioRef = std::vector<AudioData*>;
-
-	struct Data {
-		Encryption* pDecrypt = nullptr;
-		std::wstring hash;
-		AudioRef audioRef;
-	};
-
-	std::map<std::wstring, Data> pDatas;
-
-	BinaryData() = default;
-	~BinaryData() {
-		for (const auto& pData : pDatas | std::views::values) {
-			delete pData.pDecrypt;
-		}
-	}
-
-	inline const BinaryBuffer* GetAddress(const std::wstring& fileName) const {
-		const auto it = pDatas.find(fileName);
-
-		return it != pDatas.end()
-			? it->second.pDecrypt->GetData()
-			: nullptr;
-	}
-
-	inline bool DataNotReferenced(const std::wstring& fileName) {
-		const auto it = pDatas.find(fileName);
-
-		if (it == pDatas.end()) { return true; }
-
-		return it->second.audioRef.empty();
-	}
-
-	inline bool UpdateData(const std::wstring& fileName, const std::wstring& key) {
-		const auto it = pDatas.find(fileName);
-
-		// normal load
-		if (it == pDatas.end()) {
-			return AddData(fileName, key);
-		}
-
-		// don't need to update
-		if(it->second.hash == GetFileHash(fileName)) {
-			return false;
-		}
-
-		// cannot release old
-		if(!ReleaseData(fileName)) {
-			return false;
-		}
-
-		return AddData(fileName, key);
-	}
-
-	inline bool AddData(const std::wstring& fileName, const std::wstring& key) {
-		if(pDatas.contains(fileName)) {
-			return true;
-		}
-
-		const auto bDecrypt = !(StrEmpty(key.c_str()));
-		const auto pDecrypt = new Encryption;
-
-		pDecrypt->GenerateKey(key.c_str());
-
-		bool bRet = true;
-
-		if(!bDecrypt) {
-			bRet = pDecrypt->OpenFile(fileName.c_str());
-		}else {
-			bRet = pDecrypt->DecryptFileDirectly(fileName.c_str());
-		}
-
-		if (!bRet) { return false; }
-
-		pDatas[fileName] = { pDecrypt,  GetFileHash(fileName), AudioRef() };
-
-		return true;
-	}
-
-	inline bool ReleaseData(const std::wstring& fileName) {
-		const auto it = pDatas.find(fileName);
-
-		if (it != pDatas.end() && it->second.audioRef.empty()) {
-			delete it->second.pDecrypt;
-			pDatas.erase(it);
-
-			return true;
-		}
-
-		return false;
-	}
-
-	inline void ReleaseData() {
-		for (auto it = pDatas.begin(); it != pDatas.end();) {
-			if(!it->second.audioRef.empty()) {
-				++it;
-
-				continue;
-			}
-
-			delete it->second.pDecrypt;
-			it = pDatas.erase(it);
-		}
-	}
-
-	inline bool AddRef(const std::wstring& fileName, AudioData* pAudioData) {
-		const auto it = pDatas.find(fileName);
-
-		if (it == pDatas.end()) { return false; }
-
-		const auto pRefVec = &it->second.audioRef;
-		if (std::ranges::find(*pRefVec, pAudioData) != pRefVec->end()) {
-			return false;
-		}
-
-		pRefVec->emplace_back(pAudioData);
-
-		return true;
-	}
-
-	inline bool RemoveRef(const std::wstring& fileName, AudioData* pAudioData) {
-		const auto it = pDatas.find(fileName);
-
-		if (it == pDatas.end()) { return false; }
-
-		const auto pRefVec = &it->second.audioRef;
-		if (std::ranges::find(*pRefVec, pAudioData) == pRefVec->end()) {
-			return false;
-		}
-
-		const auto toRemove = std::ranges::remove(*pRefVec, pAudioData);
-		pRefVec->erase(toRemove.begin(), toRemove.end());
-
-		return true;
-	}
-};
-
-struct BinaryDataInfo {
-	BinaryData* pBinaryData = nullptr;
-	char* pData = nullptr;
-	size_t sz = 0;
-
-	std::wstring dataFileName;
-	std::wstring accessFileName;
-
-	// FromMem_Serialization
-	constexpr static const wchar_t* pFromMemPrefix = L"FromMem_";
-
-	BinaryDataInfo() = default;
-	BinaryDataInfo(const wchar_t* pFileName) {
-		// FromMem_AccessFileName_Address_Size
-		constexpr auto delimiter = L'_';
-
-		size_t first = std::wstring::npos;
-		size_t last = std::wstring::npos;
-
-		// Remove Prefix
-		std::wstring rawText = pFileName;
-		first = rawText.find_first_of(delimiter);
-		rawText = rawText.substr(first + 1);
-
-		// Get Size
-		last = rawText.find_last_of(delimiter);
-		const std::wstring size = rawText.substr(last + 1);
-		rawText = rawText.substr(0, last);
-
-		// Get Address
-		last = rawText.find_last_of(delimiter);
-		const std::wstring address = rawText.substr(last + 1);
-		rawText = rawText.substr(0, last);
-
-		// Update info
-		accessFileName = rawText;
-
-		pData = reinterpret_cast<char*>(_stoi(address));
-		sz = _stoi(size);
-	}
-
-	static inline size_t GetPrefixLength() {
-		return wcslen(pFromMemPrefix);
-	}
-
-	static inline bool FromMemory(const wchar_t* pFileName) {
-		const size_t pFromMemPrefixLength = GetPrefixLength();
-
-		bool bFromMem = true;
-
-		for (size_t i = 0; i < pFromMemPrefixLength; i++) {
-			if (pFileName[i] != pFromMemPrefix[i]) {
-				bFromMem = false;
-
-				break;
-			}
-		}
-
-		return bFromMem;
-	}
-
-	inline std::wstring Serialization() const {
-		const size_t bufSz = sizeof(BinaryData*)
-			+ sizeof(char*)
-			+ sizeof(size_t)
-			+ sizeof(wchar_t) * dataFileName.length()
-			+ sizeof(size_t) * accessFileName.length();
-		const auto pBuf = new unsigned char[bufSz];
-
-		auto pBuffer = pBuf;
-		memcpy(pBuffer, &pBinaryData, sizeof(BinaryData*));
-
-		pBuffer += sizeof(BinaryData*);
-		memcpy(pBuffer, &pData, sizeof(char*));
-
-		pBuffer += sizeof(char*);
-		memcpy(pBuffer, &sz, sizeof(size_t));
-
-		pBuffer += sizeof(size_t);
-		memcpy(pBuffer, accessFileName.data(), sizeof(size_t) * accessFileName.length());
-
-		pBuffer += sizeof(wchar_t) * accessFileName.length();
-		((LPWSTR)pBuffer)[0] = L'\0';
-		pBuffer += sizeof(wchar_t);
-
-		memcpy(pBuffer, dataFileName.data(), sizeof(wchar_t) * dataFileName.length());
-		pBuffer += sizeof(wchar_t) * dataFileName.length();
-		((LPWSTR)pBuffer)[0] = L'\0';
-		pBuffer += sizeof(wchar_t);
-
-		Base64<std::wstring> base64;
-		auto ret = base64.base64_encode(pBuf, bufSz);
-
-		delete[] pBuf;
-
-		return ret;
-	}
-
-	static inline BinaryDataInfo DeSerialization(const std::wstring& data) {
-		BinaryDataInfo info;
-
-		Base64<std::wstring> base64;
-		base64.base64_decode_callback(data, [&] (const BYTE* buf, const size_t sz) {
-			auto pBuffer = buf;
-
-			info.pBinaryData = *(BinaryData**)pBuffer;
-			pBuffer += sizeof(BinaryData*);
-
-			info.pData = *(char**)pBuffer;
-			pBuffer += sizeof(char*);
-
-			info.sz = *(size_t*)pBuffer;
-			pBuffer += sizeof(size_t);
-
-			info.accessFileName = (LPCWSTR)pBuffer;
-			pBuffer += sizeof(wchar_t) * (info.accessFileName.length() + 1);
-
-			info.dataFileName = (LPCWSTR)pBuffer;
-			pBuffer += sizeof(wchar_t) * (info.dataFileName.length() + 1);
-		});
-
-		return info;
-	}
-};
 
 using EffectBuffer = unsigned char;
 
@@ -416,15 +150,13 @@ struct AudioData {
 
 	double duration = -1.0;
 
-	BinaryDataInfo* pBinaryDataInfo = nullptr;
+	BinaryDataInfo<AudioData>* pBinaryDataInfo = nullptr;
 
 	AudioData(const wchar_t* pFileName) {
 		fileName = pFileName;
 
 		//pRW = SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
-		pRW = AudioFromMemoryWrapper(pFileName, [&] () {
-			return SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
-		});
+		pRW = AudioFromMemoryWrapper(pFileName);
 
 		if (!pRW) {
 			throw std::exception(AudioDataException_CreateRWFailed);
@@ -481,16 +213,21 @@ struct AudioData {
 		return pMusic != nullptr;
 	}
 
-	inline SDL_RWops* AudioFromMemoryWrapper(const wchar_t* pFileName, const std::function<SDL_RWops*()>& cb) {
-		if (!BinaryDataInfo::FromMemory(pFileName)) { return cb(); }
+	inline SDL_RWops* AudioFromMemoryWrapper(const wchar_t* pFileName) {
+		return LoadFromMemoryWrapper<AudioData, SDL_RWops*>(pFileName,
+			[&] () {
+				return SDL_RWFromFile(ConvertWStrToStr(pFileName, CP_UTF8).c_str(), "rb");
+			},
+			[&] (const BinaryDataInfo<AudioData>& binaryDataInfo) {
+				// no memory leak here, memory is holded by class
+				// alloc & release by RAII
+				pBinaryDataInfo = new BinaryDataInfo<AudioData>;
+				*pBinaryDataInfo = binaryDataInfo;
+				fileName = pBinaryDataInfo->accessFileName;
+				pRW = SDL_RWFromConstMem(pBinaryDataInfo->pData, static_cast<int>(pBinaryDataInfo->sz));
 
-		pBinaryDataInfo = new BinaryDataInfo;
-		*pBinaryDataInfo = BinaryDataInfo::DeSerialization(pFileName + BinaryDataInfo::GetPrefixLength());
-
-		fileName = pBinaryDataInfo->accessFileName;
-		pRW = SDL_RWFromConstMem(pBinaryDataInfo->pData, static_cast<int>(pBinaryDataInfo->sz));
-
-		return pRW;
+				return pRW;
+		});
 	}
 };
 
@@ -508,7 +245,7 @@ constexpr Uint8 Mix_MaxDistance = 255;
 
 struct GlobalData {
 	// destruct after all audio are closed
-	BinaryData binaryData;
+	BinaryData<AudioData> binaryData;
 
 	using AudioDataVec = std::vector<AudioData*>;
 	AudioDataVec pAudioDatas;
@@ -1575,7 +1312,7 @@ struct GlobalData {
 	inline void PauseMixing(int channel) {
 		ExtendVec(mixingChannel, channel, AudioDataVec());
 
-		const auto vec = mixingChannel[channel];
+		const auto& vec = mixingChannel[channel];
 
 		for (const auto& pAudioData : vec) {
 			if (pAudioData != nullptr) {
@@ -1587,7 +1324,7 @@ struct GlobalData {
 	inline void ResumeMixing(int channel) {
 		ExtendVec(mixingChannel, channel, AudioDataVec());
 
-		const auto vec = mixingChannel[channel];
+		const auto& vec = mixingChannel[channel];
 
 		for (const auto& pAudioData : vec) {
 			if (pAudioData != nullptr) {

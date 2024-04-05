@@ -90,7 +90,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->reRender = true;
 	}
 
-	if (rdPtr->bClip		// only clip mode needs to redraw
+	if (!rdPtr->bScroll && rdPtr->bClip		// only clip mode needs to redraw
 		&& (rdPtr->oldX != rc.left
 			|| rdPtr->oldY != rc.top)) {
 		rdPtr->oldX = rc.left;
@@ -99,11 +99,18 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->reRender = true;
 	}
 
+	if (rdPtr->bUpdateScroll && rdPtr->bClip) {
+		rdPtr->bUpdateScroll = false;
+		rdPtr->reRender = true;
+	}
+
 	if (rdPtr->pNeoStr != nullptr && rdPtr->pNeoStr->GetShakeUpdateState()) {
 		rdPtr->reRender = true;
 	}
 
 	if (rdPtr->reRender) {
+		rdPtr->reRender = false;
+
 		////App Size
 		//rhPtr->rhApp->m_hdr.gaCxWin;
 		//rhPtr->rhApp->m_hdr.gaCyWin;
@@ -115,16 +122,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
 
 		rdPtr->pNeoStr->SetColor(rdPtr->dwColor);
-
-		rdPtr->pNeoStr->SetClip(rdPtr->bClip
-			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
-			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
-		//rdPtr->pNeoStr->SetBorderOffset(5, 5);
 		rdPtr->pNeoStr->SetBorderOffset(rdPtr->borderOffsetX, rdPtr->borderOffsetY);
-
-		//rdPtr->pNeoStr->SetClip(false
-		//	, 65535
-		//	, 65535);
 
 		rdPtr->pNeoStr->SetSmooth(
 			Gdiplus::TextRenderingHint(rdPtr->textRenderingHint)
@@ -133,12 +131,16 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 
 		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 
+		// clip should be disabled if scroll is enabled, to make sure the full size is rendered
+		pRenderOptions->SetClip(!rdPtr->bScroll && rdPtr->bClip
+			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
+			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
+		pRenderOptions->SetClipToObject(!rdPtr->bScroll && rdPtr->bClipToObject);
+
 		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
 		if(rdPtr->bTagCallbackIndexManaged) {
 			pRenderOptions->UpdateTagCallbackIndex(rdPtr->pNeoStr);
 		}
-
-		rdPtr->reRender = false;
 	}
 
 #ifdef COUNT_GDI_OBJECT
@@ -152,6 +154,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 #endif
 }
 
+// edittime display
 inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr, RECT FAR* rc) {
 	//MSGBOX(L"Editor Display");
 	LPSURFACE ps = WinGetSurface((int)mV->mvIdEditWin);
@@ -164,22 +167,13 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 
 	if (ps != NULL) {	// Do the following if this surface exists
 		// Create font
-		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
-
-		// Ink effects
-		BOOL bTransp = ((oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) != 0);
-		BlitMode bm = (bTransp) ? BMODE_TRANSP : BMODE_OPAQUE;
-		BOOL bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
-		BlitOp bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
-		LPARAM boParam = oiPtr->oiHdr.oiInkEffectParam;
-
 		//MSGBOX(L"L: "+_itos(rc->left)+ L"T: " + _itos(rc->top), L"RECT");
 
 		// Draw text
+		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
 		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
 
 		int sfDrv = ps->GetDriver();
-
 		neoStr.SetHWA(sfDrv, false);
 
 		//MSGBOX(L"Editor Calc");
@@ -199,9 +193,6 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		neoStr.CalculateRange(rc);
 
 		neoStr.SetColor(edPtr->dwColor);
-
-		neoStr.SetClip(false, 65535, 65535);
-		//neoStr.SetBorderOffset(5, 5);
 		neoStr.SetBorderOffset(edPtr->borderOffsetX, edPtr->borderOffsetY);
 
 		neoStr.SetSmooth(
@@ -210,16 +201,29 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 			, Gdiplus::PixelOffsetMode(edPtr->pixelOffsetMode - 1));
 
 		//MSGBOX(L"Editor Render");
-		neoStr.RenderPerChar(rc);
+		NeoStr::RenderOptions renderOpt;
+		renderOpt.SetClip(false, 65535, 65535);
+		renderOpt.SetClipToObject(edPtr->bClipToObject);
+
+		neoStr.RenderPerChar(rc, renderOpt);
 
 		//neoStr.SetHotSpot(edPtr->hotSpotPos, edPtr->hotSpotX, edPtr->hotSpotY);
 		neoStr.SetHotSpot(0, 0);
 		neoStr.SetScale(1.0, 1.0);
 		neoStr.SetAngle(0);
 
-		//MSGBOX(L"Editor Display PerChar");
-		neoStr.DisplayPerChar(ps, rc
-			, bm, bo, boParam, bAntiA);
+		//MSGBOX(L"Editor Display");
+
+		// Ink effects
+		NeoStr::BlitOptions blitOpt;
+
+		const BOOL bTransp = ((oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_TRANSPARENT) != 0);
+		blitOpt.bm = (bTransp) ? BMODE_TRANSP : BMODE_OPAQUE;
+		blitOpt.bAntiA = (oiPtr->oiHdr.oiInkEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
+		blitOpt.bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
+		blitOpt.boParam = oiPtr->oiHdr.oiInkEffectParam;
+
+		neoStr.BlitResult(ps, rc, blitOpt);
 
 		// Delete font
 		if (hFont != NULL)
@@ -227,39 +231,45 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 	}
 }
 
+inline RECT GetRuntimeObjectRect(LPRDATA rdPtr) {
+	// On-screen coords
+	const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+
+	const int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
+	const int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
+
+	RECT rc = {};
+
+	rc.left = screenX;
+	rc.top = screenY;
+	//rc.right = rc.left + rdPtr->rHo.hoImgWidth;
+	//rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+	rc.right = rc.left + rdPtr->swidth;
+	rc.bottom = rc.top + rdPtr->sheight;
+
+	UpdateRectByHotSpot(rdPtr->hotSpotPos
+		//, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
+		, rdPtr->swidth, rdPtr->sheight
+		, rdPtr->hotSpotX, rdPtr->hotSpotY
+		, &rc);
+
+	return rc;
+}
+
+// runtime display
 inline void Display(LPRDATA rdPtr) {
-	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
-	LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
+	const LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
+	const LPSURFACE ps = WinGetSurface((int)rhPtr->rhIdEditWin);
 
 	if (ps != nullptr && rdPtr->pStr != nullptr) {
 		// On-screen coords
-		int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
-		int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
+		const int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
+		const int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
 
-		RECT rc = {};
+		auto rc = GetRuntimeObjectRect(rdPtr);
 
-		rc.left = screenX;
-		rc.top = screenY;
-		//rc.right = rc.left + rdPtr->rHo.hoImgWidth;
-		//rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
-
-		rc.right = rc.left + rdPtr->swidth;
-		rc.bottom = rc.top + rdPtr->sheight;
-
-		UpdateRectByHotSpot(rdPtr->hotSpotPos
-			//, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
-			, rdPtr->swidth, rdPtr->sheight
-			, rdPtr->hotSpotX, rdPtr->hotSpotY
-			, &rc);
-
-		int hotSpotX = screenX - rc.left;
-		int hotSpotY = screenY - rc.top;
-
-		// Ink effects
-		BlitMode bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
-		BOOL bAntiA = (rdPtr->rs.rsEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
-		BlitOp bo = (BlitOp)(rdPtr->rs.rsEffect & EFFECT_MASK);
-		int boParam = rdPtr->rs.rsEffectParam;
+		const int hotSpotX = screenX - rc.left;
+		const int hotSpotY = screenY - rc.top;
 
 		// Draw text
 		HandleUpdate(rdPtr, rc);
@@ -268,28 +278,43 @@ inline void Display(LPRDATA rdPtr) {
 		rdPtr->pNeoStr->SetScale(rdPtr->xScale, rdPtr->yScale);
 		rdPtr->pNeoStr->SetAngle(rdPtr->angle);
 
-		rdPtr->pNeoStr->DisplayPerChar(ps, &rc
-			, bm, bo, boParam, bAntiA);
+		const auto pBlitOptions = static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions);
 
-		rdPtr->bStrChanged = false;
+		// Ink effects
+		pBlitOptions->bm = (rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE;
+		pBlitOptions->bAntiA = (rdPtr->rs.rsEffect & EFFECTFLAG_ANTIALIAS) ? TRUE : FALSE;
+		pBlitOptions->bo = (BlitOp)(rdPtr->rs.rsEffect & EFFECT_MASK);
+		pBlitOptions->boParam = rdPtr->rs.rsEffectParam;
+
+		// scroll
+		pBlitOptions->bScroll = rdPtr->bScroll;
+		pBlitOptions->scrollCoefX = rdPtr->scrollCoefX;
+		pBlitOptions->scrollCoefY = rdPtr->scrollCoefY;
+
+		rdPtr->pNeoStr->BlitResult(ps, &rc, *pBlitOptions);
+
+		rdPtr->scrollCoefX = pBlitOptions->scrollCoefX;
+		rdPtr->scrollCoefY = pBlitOptions->scrollCoefY;
 	}
 }
 
 inline CharPos UpdateLastCharPos(LPRDATA rdPtr) {
-	LPRH rhPtr = rdPtr->rHo.hoAdRunHeader;
-
-	// On-screen coords
-	int screenX = rdPtr->rHo.hoX - rhPtr->rhWindowX;
-	int screenY = rdPtr->rHo.hoY - rhPtr->rhWindowY;
-
-	RECT rc = {};
-
-	rc.left = screenX;
-	rc.top = screenY;
-	rc.right = rc.left + rdPtr->rHo.hoImgWidth;
-	rc.bottom = rc.top + rdPtr->rHo.hoImgHeight;
+	auto rc = GetRuntimeObjectRect(rdPtr);
 
 	HandleUpdate(rdPtr, rc);
+
+	const auto pBlitOptions = static_cast<NeoStr::BlitOptions*>(rdPtr->pBlitOptions);
+
+	pBlitOptions->bNoBlit = true;
+	pBlitOptions->bScroll = rdPtr->bScroll;
+	pBlitOptions->scrollCoefX = rdPtr->scrollCoefX;
+	pBlitOptions->scrollCoefY = rdPtr->scrollCoefY;
+
+	rdPtr->pNeoStr->BlitResult(nullptr, &rc, *pBlitOptions);
+
+	pBlitOptions->bNoBlit = false;
+	rdPtr->scrollCoefX = pBlitOptions->scrollCoefX;
+	rdPtr->scrollCoefY = pBlitOptions->scrollCoefY;
 
 	return rdPtr->charPos;
 }
