@@ -4086,6 +4086,7 @@ public:
 				if (objectWidth <= 0) { return; }
 				if (objectHeight <= 0) { return; }
 
+				// hotsopt is relative to the source size, so kept it not changed here
 				POINT hotSpot = { this->hotSpotX,this->hotSpotY };
 
 				const float xPos = static_cast<float>(pRc->left + this->hotSpotX);
