@@ -202,8 +202,8 @@ private:
 	std::vector<StrPos> strPos;
 
 	struct CharSize {
-		long width;
-		long height;
+		long width = 0;
+		long height = 0;
 	};
 
 	CharSize* pCharSizeArr = nullptr;
@@ -242,6 +242,7 @@ private:
 		ShakeControl shakeControl;
 	};
 
+	// CharPos must be calculated in Render as align command may change position
 	CharPos* pCharPosArr = nullptr;
 	CharPos previousCharPos = {};
 
@@ -1601,6 +1602,7 @@ public:
 		this->bPreviousForced = bForced;
 		this->bFormatUpdated = false;
 
+		// if valid, len = wcslen(pStr)
 		auto TextValid = [&](const wchar_t* pStr, size_t* pLen,
 			bool bAllowEmptyChar = false) {
 			*pLen = 0;
@@ -1649,8 +1651,7 @@ public:
 			this->pRawText = nullptr;
 
 			this->pRawText = new wchar_t[pInputLen + 1];
-			memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
-
+			// if valid, len = wcslen(pStr), copy directly without memset to '\0'
 			memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
 		}
 
@@ -2806,8 +2807,7 @@ public:
 		delete[] this->pCharSizeArr;
 		this->pCharSizeArr = nullptr;
 
-		pCharSizeArr = new CharSize [pTextLen + 1];
-		memset(pCharSizeArr, 0, sizeof(CharSize) * (pTextLen + 1));
+		pCharSizeArr = new CharSize[pTextLen + 1];
 
 		this->rcWidth = pRc->right - pRc->left;
 		this->rcHeight = pRc->bottom - pRc->top;
@@ -3285,11 +3285,15 @@ public:
 		}
 	};
 
+// use render target -> slower
 //#define USE_RTT
+// do not re alloc HWA each time -> no difference 
 //#define REUSE_HWA
+// call tag callback after render, in case mid-tag references later char pos
+#define CALL_TAGCALLBACK_AFTERRENDER
 
 	// pRc: object rect
-	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
+	inline void RenderPerChar(LPRECT pRc, RenderOptions& opt) {
 #ifdef COUNT_GDI_OBJECT
 		GDIObjectCounter objectCounter;
 
@@ -3305,8 +3309,7 @@ public:
 		delete[] this->pCharPosArr;
 		this->pCharPosArr = nullptr;
 
-		pCharPosArr = new CharPos [pTextLen + 1];
-		memset(pCharPosArr, 0, sizeof(CharPos) * (pTextLen + 1));
+		pCharPosArr = new CharPos[pTextLen + 1];
 
 		rcWidth = pRc->right - pRc->left;
 		rcHeight = pRc->bottom - pRc->top;
@@ -3404,7 +3407,16 @@ public:
 		size_t totalChar = 0;
 
 		// non-stack based
+		auto tagCallbackHandler = [&] (auto tagIt) {
+			if (opt.tagCallback == nullptr) { return; }
+			if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
+
+			opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
+		};
+
+#ifndef CALL_TAGCALLBACK_AFTERRENDER
 		auto tagItHandler = IteratorHandler(this->tagFormat);
+#endif
 		auto remarkItHandler = IteratorHandler(this->remarkFormat);
 		auto iConItHandler = IteratorHandler(this->iConFormat);
 
@@ -3514,12 +3526,11 @@ public:
 					// ---------
 
 					// non-stack based
+#ifndef CALL_TAGCALLBACK_AFTERRENDER
 					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
-						if (opt.tagCallback == nullptr) { return; }
-						if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
-
-						opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
+						tagCallbackHandler(tagIt);
 					});
+#endif
 
 					// stack based
 					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
@@ -3615,6 +3626,12 @@ public:
 			// render char count, so nothing to handle here
 		}
 
+#ifdef CALL_TAGCALLBACK_AFTERRENDER
+		for (auto it = this->tagFormat.begin(); it != this->tagFormat.end();++it) {
+			tagCallbackHandler(it);
+		}
+#endif
+
 		// ------------
 		// handle remark
 		// ------------
@@ -3622,6 +3639,14 @@ public:
 		colorItHandler.Reset();
 
 		auto remarkDisplayItHandler = IteratorHandler(this->remarkDisplayFormat);
+
+		// copy one option here
+		RenderOptions remarkOpt = opt;
+		// do not clip
+		remarkOpt.SetClip(false, 65535, 65535);
+		remarkOpt.SetClipToObject(false);
+		// skip custom tag callback
+		remarkOpt.UpdateTagCallback(nullptr);
 
 		for (auto& it : this->remarkFormat) {
 			if (it.validLength == 0) { continue; }
@@ -3742,13 +3767,11 @@ public:
 			
 			auto remarkPosIt = remarkPositions.begin();
 
-			// copy one option here
-			RenderOptions remarkOpt = opt;
-			// do not clip
-			remarkOpt.SetClip(false, 65535, 65535);
-			remarkOpt.SetClipToObject(false);
-			// skip custom tag callback
-			remarkOpt.UpdateTagCallback(nullptr);
+			// update ratio, copy base will cause issue if parent enabled
+			//if (!NearlyEqualDBL(opt.visibleRatio, 1.0)) {
+			//	remarkOpt.visibleRatio = renderRatio;
+			//}
+			remarkOpt.visibleRatio = 1.0;
 			// overrider render, directly to parent
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
@@ -3964,6 +3987,9 @@ public:
 			}
 
 			for (auto& it : pFormat->remarkFormat) {
+				const auto pNeoStr = it.pNeoStr;
+				if (pNeoStr == nullptr) { continue; }
+
 				self(it.pNeoStr, pRender);
 			}
 		};

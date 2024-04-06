@@ -137,6 +137,8 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
 		pRenderOptions->SetClipToObject(!rdPtr->bScroll && rdPtr->bClipToObject);
 
+		// params like clip will be reset in render routine,
+		// but it will be reset to external each call, so it's safe
 		rdPtr->pNeoStr->RenderPerChar(&rc, *pRenderOptions);
 		if(rdPtr->bTagCallbackIndexManaged) {
 			pRenderOptions->UpdateTagCallbackIndex(rdPtr->pNeoStr);
