@@ -3293,7 +3293,7 @@ public:
 #define CALL_TAGCALLBACK_AFTERRENDER
 
 	// pRc: object rect
-	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
+	inline void RenderPerChar(LPRECT pRc, RenderOptions& opt) {
 #ifdef COUNT_GDI_OBJECT
 		GDIObjectCounter objectCounter;
 
