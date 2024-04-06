@@ -202,8 +202,8 @@ private:
 	std::vector<StrPos> strPos;
 
 	struct CharSize {
-		long width;
-		long height;
+		long width = 0;
+		long height = 0;
 	};
 
 	CharSize* pCharSizeArr = nullptr;
@@ -242,6 +242,7 @@ private:
 		ShakeControl shakeControl;
 	};
 
+	// CharPos must be calculated in Render as align command may change position
 	CharPos* pCharPosArr = nullptr;
 	CharPos previousCharPos = {};
 
@@ -1601,6 +1602,7 @@ public:
 		this->bPreviousForced = bForced;
 		this->bFormatUpdated = false;
 
+		// if valid, len = wcslen(pStr)
 		auto TextValid = [&](const wchar_t* pStr, size_t* pLen,
 			bool bAllowEmptyChar = false) {
 			*pLen = 0;
@@ -1649,8 +1651,7 @@ public:
 			this->pRawText = nullptr;
 
 			this->pRawText = new wchar_t[pInputLen + 1];
-			memset(pRawText, 0, sizeof(wchar_t) * (pInputLen + 1));
-
+			// if valid, len = wcslen(pStr), copy directly without memset to '\0'
 			memcpy(pRawText, pStr, sizeof(wchar_t) * (pInputLen + 1));
 		}
 
@@ -2806,8 +2807,7 @@ public:
 		delete[] this->pCharSizeArr;
 		this->pCharSizeArr = nullptr;
 
-		pCharSizeArr = new CharSize [pTextLen + 1];
-		memset(pCharSizeArr, 0, sizeof(CharSize) * (pTextLen + 1));
+		pCharSizeArr = new CharSize[pTextLen + 1];
 
 		this->rcWidth = pRc->right - pRc->left;
 		this->rcHeight = pRc->bottom - pRc->top;
@@ -3305,8 +3305,7 @@ public:
 		delete[] this->pCharPosArr;
 		this->pCharPosArr = nullptr;
 
-		pCharPosArr = new CharPos [pTextLen + 1];
-		memset(pCharPosArr, 0, sizeof(CharPos) * (pTextLen + 1));
+		pCharPosArr = new CharPos[pTextLen + 1];
 
 		rcWidth = pRc->right - pRc->left;
 		rcHeight = pRc->bottom - pRc->top;
