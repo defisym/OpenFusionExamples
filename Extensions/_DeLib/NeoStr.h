@@ -3640,6 +3640,14 @@ public:
 
 		auto remarkDisplayItHandler = IteratorHandler(this->remarkDisplayFormat);
 
+		// copy one option here
+		RenderOptions remarkOpt = opt;
+		// do not clip
+		remarkOpt.SetClip(false, 65535, 65535);
+		remarkOpt.SetClipToObject(false);
+		// skip custom tag callback
+		remarkOpt.UpdateTagCallback(nullptr);
+
 		for (auto& it : this->remarkFormat) {
 			if (it.validLength == 0) { continue; }
 
@@ -3759,13 +3767,11 @@ public:
 			
 			auto remarkPosIt = remarkPositions.begin();
 
-			// copy one option here
-			RenderOptions remarkOpt = opt;
-			// do not clip
-			remarkOpt.SetClip(false, 65535, 65535);
-			remarkOpt.SetClipToObject(false);
-			// skip custom tag callback
-			remarkOpt.UpdateTagCallback(nullptr);
+			// update ratio, copy base will cause issue if parent enabled
+			//if (!NearlyEqualDBL(opt.visibleRatio, 1.0)) {
+			//	remarkOpt.visibleRatio = renderRatio;
+			//}
+			remarkOpt.visibleRatio = 1.0;
 			// overrider render, directly to parent
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
