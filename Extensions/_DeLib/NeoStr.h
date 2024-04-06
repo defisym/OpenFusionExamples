@@ -3285,8 +3285,12 @@ public:
 		}
 	};
 
+// use render target -> slower
 //#define USE_RTT
+// do not re alloc HWA each time -> no difference 
 //#define REUSE_HWA
+// call tag callback after render, in case mid-tag references later char pos
+#define CALL_TAGCALLBACK_AFTERRENDER
 
 	// pRc: object rect
 	inline void RenderPerChar(LPRECT pRc, RenderOptions opt = RenderOptions()) {
@@ -3403,7 +3407,16 @@ public:
 		size_t totalChar = 0;
 
 		// non-stack based
+		auto tagCallbackHandler = [&] (auto tagIt) {
+			if (opt.tagCallback == nullptr) { return; }
+			if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
+
+			opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
+		};
+
+#ifndef CALL_TAGCALLBACK_AFTERRENDER
 		auto tagItHandler = IteratorHandler(this->tagFormat);
+#endif
 		auto remarkItHandler = IteratorHandler(this->remarkFormat);
 		auto iConItHandler = IteratorHandler(this->iConFormat);
 
@@ -3513,12 +3526,11 @@ public:
 					// ---------
 
 					// non-stack based
+#ifndef CALL_TAGCALLBACK_AFTERRENDER
 					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
-						if (opt.tagCallback == nullptr) { return; }
-						if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
-
-						opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
+						tagCallbackHandler(tagIt);
 					});
+#endif
 
 					// stack based
 					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
@@ -3613,6 +3625,12 @@ public:
 			// use exception to jump out of the loop if exceeds the
 			// render char count, so nothing to handle here
 		}
+
+#ifdef CALL_TAGCALLBACK_AFTERRENDER
+		for (auto it = this->tagFormat.begin(); it != this->tagFormat.end();++it) {
+			tagCallbackHandler(it);
+		}
+#endif
 
 		// ------------
 		// handle remark
