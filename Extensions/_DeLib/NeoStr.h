@@ -3987,6 +3987,9 @@ public:
 			}
 
 			for (auto& it : pFormat->remarkFormat) {
+				const auto pNeoStr = it.pNeoStr;
+				if (pNeoStr == nullptr) { continue; }
+
 				self(it.pNeoStr, pRender);
 			}
 		};
