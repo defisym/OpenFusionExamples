@@ -372,13 +372,20 @@ private:
 
 	// for remark
 	struct FormatRemark :FormatBasic {
+		// ------
 		// updated during parsing
+		// ------
+
+		// remark length
 		size_t baseLength = 0;
 		std::wstring remark;
 		
+		// ------
 		// updated during rendering
+		// ------
 		CharSize* pCharSizeArr = nullptr;
 		CharPos* pCharPosArr = nullptr;
+		// 0 -> end of text
 		size_t validLength = 0;
 
 		NeoStr* pNeoStr = nullptr;
@@ -3152,6 +3159,7 @@ public:
 		// let character be displayed gradually
 		// displayed char / total char
 		// 1.0 -> display all
+		// should between 0.0 ~ 1.0
 		double visibleRatio = 1.0;
 
 		// if alpha is included, E.g., 10 char, display 5
@@ -3552,7 +3560,8 @@ public:
 					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
 						remarkIt->pCharSizeArr = &pCharSizeArr[offset];
 						remarkIt->pCharPosArr = &pCharPosArr[offset];
-						remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
+						//remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
+						remarkIt->validLength = (std::min)(opt.renderCharCount - offset, remarkIt->baseLength);
 					});
 					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
 						// use updated position
@@ -3649,7 +3658,11 @@ public:
 		remarkOpt.UpdateTagCallback(nullptr);
 
 		for (auto& it : this->remarkFormat) {
+			// no enough place
 			if (it.validLength == 0) { continue; }
+			// ReSharper disable once GrammarMistakeInComment
+			// don't need to handle this as it's granted by validLength
+			// if (it.start > opt.renderCharCount) { continue; }
 
 			// update font & color
 			fontItHandler.UpdateIt(it.start);
@@ -3767,11 +3780,12 @@ public:
 			
 			auto remarkPosIt = remarkPositions.begin();
 
-			// update ratio, copy base will cause issue if parent enabled
-			//if (!NearlyEqualDBL(opt.visibleRatio, 1.0)) {
-			//	remarkOpt.visibleRatio = renderRatio;
-			//}
-			remarkOpt.visibleRatio = 1.0;
+			// update ratio if not display all
+			if (opt.visibleRatio < 1.0) {
+				const auto ratio = static_cast<double>(opt.renderCharCount - it.start) / it.baseLength;
+				remarkOpt.visibleRatio = Range(ratio, 0.0, 1.0);
+			}
+
 			// overrider render, directly to parent
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
