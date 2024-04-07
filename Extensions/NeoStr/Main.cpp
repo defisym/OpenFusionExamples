@@ -196,8 +196,7 @@ long WINAPI DLLExport Condition_PosOverlapTriggerRect(LPRDATA rdPtr, long param1
 	y = y - rdPtr->rHo.hoY - hotSpotY;
 
 	// check
-	std::wstring triggerName;
-	return rdPtr->pNeoStr->OverlapTrigger(x, y, triggerName) && StrEqu(triggerName.c_str(), pTriggerName);
+	return rdPtr->pNeoStr->OverlapTrigger(x, y, pTriggerName);
 }
 
 

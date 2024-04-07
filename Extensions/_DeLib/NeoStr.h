@@ -407,10 +407,23 @@ public:
 		}
 	}
 
+	inline bool OverlapTrigger(int x, int y, const wchar_t* pTriggerName) const {
+		for (const auto& [trigger, rect] : triggerRect) {
+			const bool bInside = x > rect.left && x< rect.right
+				&& y>rect.top && y < rect.bottom;
+			if (bInside && StrEqu(pTriggerName, trigger.c_str())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	inline bool OverlapTrigger(int x, int y, std::wstring& triggerName) const {
 		for (const auto& [trigger, rect] : triggerRect) {
-			if (x > rect.left && x< rect.right
-				&& y>rect.top && y < rect.bottom) {
+			const bool bInside = x > rect.left && x < rect.right
+				&& y>rect.top && y < rect.bottom;
+			if (bInside) {
 				triggerName = trigger;
 
 				return true;
