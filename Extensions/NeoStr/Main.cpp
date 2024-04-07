@@ -151,6 +151,9 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_S_GCX, M_EXPRESSION_S_GCX, EXP_EXPRESSION_S_GCX, EXPFLAG_DOUBLE, 0,
 		IDMN_EXPRESSION_S_GCY, M_EXPRESSION_S_GCY, EXP_EXPRESSION_S_GCY, EXPFLAG_DOUBLE, 0,
+		
+		IDMN_EXPRESSION_GCOTN, M_EXPRESSION_GCOTN, EXP_EXPRESSION_GCOTN, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GCOTC, M_EXPRESSION_GCOTC, EXP_EXPRESSION_GCOTC, EXPFLAG_STRING, 0,
 		};
 
 
@@ -196,7 +199,12 @@ long WINAPI DLLExport Condition_PosOverlapTriggerRect(LPRDATA rdPtr, long param1
 	y = y - rdPtr->rHo.hoY - hotSpotY;
 
 	// check
-	return rdPtr->pNeoStr->OverlapTrigger(x, y, pTriggerName);
+	rdPtr->currentTriggerIndex = rdPtr->pNeoStr->OverlapTrigger(x, y,
+		!StrEmpty(pTriggerName)
+		? pTriggerName
+		: nullptr);
+
+	return rdPtr->currentTriggerIndex != static_cast<size_t>(-1);
 }
 
 
@@ -1335,6 +1343,26 @@ long WINAPI DLLExport Expression_Scroll_GetCoefY(LPRDATA rdPtr, long param1) {
 	return ReturnFloat(rdPtr->scrollCoefY);
 }
 
+long WINAPI DLLExport Expression_GetCurrentOverlapTriggerName(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->currentTriggerIndex != static_cast<size_t>(-1)
+	? rdPtr->pNeoStr->GetCurrentTrigger(rdPtr->currentTriggerIndex).triggerName.c_str()
+	: Empty_Str);
+}
+
+long WINAPI DLLExport Expression_GetCurrentOverlapTriggerContent(LPRDATA rdPtr, long param1) {
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return (long)(rdPtr->currentTriggerIndex != static_cast<size_t>(-1)
+	? rdPtr->pNeoStr->GetCurrentTrigger(rdPtr->currentTriggerIndex).content.c_str()
+	: Empty_Str);
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -1473,5 +1501,7 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_Scroll_GetCoefX,
 			Expression_Scroll_GetCoefY,
 
+			Expression_GetCurrentOverlapTriggerName,
+			Expression_GetCurrentOverlapTriggerContent,
 			0
 			};

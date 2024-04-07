@@ -160,6 +160,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->remarkOffsetX = edPtr->remarkOffsetX;
 	rdPtr->remarkOffsetY = edPtr->remarkOffsetY;
 
+	rdPtr->currentTriggerIndex = static_cast<size_t>(-1);
+
 	rdPtr->pExpRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {

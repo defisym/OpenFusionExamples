@@ -374,6 +374,9 @@
 #define	IDMN_EXPRESSION_S_GCX	  		    27041
 #define	IDMN_EXPRESSION_S_GCY	  		    27042
 
+#define	IDMN_EXPRESSION_GCOTN	  		    27043
+#define	IDMN_EXPRESSION_GCOTC	  		    27044
+
 // Expression strings
 #define	M_EXPRESSION_GSTR				    7000
 #define M_EXPRESSION_GRS					7001
@@ -437,6 +440,9 @@
 
 #define	M_EXPRESSION_S_GCX	 		        7041
 #define	M_EXPRESSION_S_GCY	 		        7042
+
+#define	M_EXPRESSION_GCOTN	 		        7043
+#define	M_EXPRESSION_GCOTC	 		        7044
 
 // Names of expression parameters
 #define M_POS				                7500
