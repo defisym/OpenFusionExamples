@@ -100,8 +100,6 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 			rdPtr->oldY = rc.top;
 
 			rdPtr->reRender = true;
-
-			OutputDebugStringW(L"Trigger clip rerender\n");
 		}
 	}
 

@@ -118,6 +118,10 @@ constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
 constexpr auto FORMAT_INVALID_ICON = static_cast<DWORD>(-1);
 
+// D3D limitation
+// https://learn.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-limits
+constexpr long D3D11_TEXTURE_SIZE = 16384;
+
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
@@ -3558,6 +3562,14 @@ public:
 				opt.SetClip(true, rcWidth, rcHeight);
 			}
 
+			width = (std::min)(D3D11_TEXTURE_SIZE, width);
+			height = (std::min)(D3D11_TEXTURE_SIZE, height);
+#ifdef _DEBUG
+			if(width == D3D11_TEXTURE_SIZE|| height == D3D11_TEXTURE_SIZE) {
+				OutputDebugStringW(L"Texture Size Invalid, Shrink");
+			}
+#endif
+
 			if (this->pMemSf == nullptr
 				|| this->pMemSf->GetWidth() < width
 				|| this->pMemSf->GetHeight() < height) {
@@ -4240,7 +4252,7 @@ public:
 #endif
 		// use render target here is even slower
 		// this method costs about 70% time of render target way
-		pMemSf->Blit(*pHwaSf);
+		const auto bBlitResult = pMemSf->Blit(*pHwaSf);
 #else
 		pHwaSf->BeginRendering(TRUE, 0);
 		//const auto pRTT = pMemSf->GetRenderTargetSurface();
