@@ -90,13 +90,19 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->reRender = true;
 	}
 
-	if (!rdPtr->bScroll && rdPtr->bClip		// only clip mode needs to redraw
-		&& (rdPtr->oldX != rc.left
-			|| rdPtr->oldY != rc.top)) {
-		rdPtr->oldX = rc.left;
-		rdPtr->oldY = rc.top;
+	// only clip mode needs to redraw
+	if (!rdPtr->bScroll && rdPtr->bClip) {		
+		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
+		const auto bCoordChanged = rdPtr->oldX != rc.left || rdPtr->oldY != rc.top;
 
-		rdPtr->reRender = true;
+		if (pRenderOptions->bCharClipped && bCoordChanged) {
+			rdPtr->oldX = rc.left;
+			rdPtr->oldY = rc.top;
+
+			rdPtr->reRender = true;
+
+			OutputDebugStringW(L"Trigger clip rerender\n");
+		}
 	}
 
 	if (rdPtr->bUpdateScroll && rdPtr->bClip) {

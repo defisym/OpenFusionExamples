@@ -3400,6 +3400,8 @@ public:
 		bool bClip = false;
 		// clip to object: don't render character that out of object
 		bool bClipToObject = false;
+		// char clipped during rendering
+		bool bCharClipped = false;
 
 		// render size: the frame size
 		RECT renderRect = { 0,0,65535,65535 };
@@ -3423,14 +3425,18 @@ public:
 		}
 
 		inline bool ClipChar(int objectX, int objectY,
-			const int charX, const int charY, const CharSize* charSz) const {
+			const int charX, const int charY, const CharSize* charSz) {
 			if (!this->bClip) { return false; }
 			if (this->bClipToObject) { objectX = 0; objectY = 0; }
 
-			return !RectInside({ objectX + charX,
+			const auto bRet = !RectInside({ objectX + charX,
 				objectY + charY,
 				objectX + charX + charSz->width,
 				objectY + charY + charSz->height });
+
+			this->bCharClipped |= bRet;
+
+			return bRet;
 		}
 
 		// ------------
@@ -3547,6 +3553,7 @@ public:
 			auto width = rcWidth + this->borderOffsetX * 2;
 			auto height = totalHeight + this->borderOffsetY * 2;
 
+			opt.bCharClipped = false;
 			if (opt.bClipToObject) {
 				opt.SetClip(true, rcWidth, rcHeight);
 			}
