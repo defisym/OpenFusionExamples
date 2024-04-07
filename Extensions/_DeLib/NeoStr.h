@@ -3346,8 +3346,12 @@ public:
 			GetStartPosX(lastStrPos.width, rcWidth) - lastCharSize->width / 4
 				+ lastStrPos.width + (lastCharSize->width / 2),
 			startY + lastStrPos.y + (lastCharSize->height / 2),
-			maxWidth,
-			totalHeight - nRowSpace,
+			// if render by this size, space is not enough
+			maxWidth + nColSpace,
+			totalHeight,
+			// col / row space removed
+			//maxWidth,
+			//totalHeight - nRowSpace,
 			ShakeControl()
 		};
 
