@@ -391,6 +391,7 @@ public:
 
 				if (previousCharX >= charPos.x || bLastLoop) {
 					const auto& startCharPos = trigger.pCharPosArr[rectStart];
+					rectStart = idx;
 
 					const auto lastCharIndex = idx - 1 + bLastLoop;
 					const auto& lastCharPos = trigger.pCharPosArr[lastCharIndex];
@@ -402,7 +403,6 @@ public:
 				}
 
 				previousCharX = charPos.x;
-				rectStart = idx;
 			}
 		}
 	}
