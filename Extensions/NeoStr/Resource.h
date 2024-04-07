@@ -291,14 +291,18 @@
 #define IDMN_CONDITION_OGOIC         26000
 #define IDMN_CONDITION_OTAGCB        26001
 #define IDMN_CONDITION_OTAGCBF       26002
+#define IDMN_CONDITION_POTR      	 26003
 
 // Condition strings
 #define M_CONDITION_OGOIC       	 6000
 #define M_CONDITION_OTAGCB       	 6001
 #define M_CONDITION_OTAGCBF       	 6002
+#define M_CONDITION_POTR	       	 6003
 
 // Titles of condition parameters
-#define M_CND_P1				     6501
+#define M_TRIGGERX				     6501
+#define M_TRIGGERY				     6502
+#define M_TRIGGERNAME			     6503
 
 //	EXPRESSIONS
 //---------------------

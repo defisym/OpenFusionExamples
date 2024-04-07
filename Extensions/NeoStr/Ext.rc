@@ -121,6 +121,8 @@ BEGIN
         MENUITEM "On Tag Callback", IDMN_CONDITION_OTAGCB
         MENUITEM "On Tag Callback Forward", IDMN_CONDITION_OTAGCBF
         MENUITEM SEPARATOR
+        MENUITEM "Position Overlap Trigger Rect", IDMN_CONDITION_POTR
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -604,6 +606,11 @@ BEGIN
     M_CONDITION_OGOIC       "%o On Get Object ICon Callback %0"
     M_CONDITION_OTAGCB      "%o On Tag Callback %0"
     M_CONDITION_OTAGCBF     "%o On Tag Callback Forward"
+    
+	M_CONDITION_POTR     	"%o Position [ %0, %1 ] Overlap Trigger %2 Rect"
+	M_TRIGGERX				"X Position"
+	M_TRIGGERY				"Y Position"
+	M_TRIGGERNAME			"Trigger Name"
 END
 
 STRINGTABLE DISCARDABLE 

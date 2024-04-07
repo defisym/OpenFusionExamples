@@ -242,6 +242,7 @@ private:
 		ShakeControl shakeControl;
 	};
 
+	// original position of character (not affected by shake), relative to non-border offset start
 	// CharPos must be calculated in Render as align command may change position
 	CharPos* pCharPosArr = nullptr;
 	CharPos previousCharPos = {};
@@ -345,14 +346,146 @@ private:
 	//			format is saved directly
 	//---------
 
+	// for trigger
+	struct FormatTrigger :FormatBasic {
+		// ------
+		// updated during parsing
+		// ------
+		size_t triggerLength = 0;
+		std::wstring trigger;
+
+		// ------
+		// updated during rendering
+		// ------
+		CharSize* pCharSizeArr = nullptr;
+		CharPos* pCharPosArr = nullptr;
+
+		FormatTrigger(size_t start, size_t startWithNewLine,
+			const std::wstring& trigger) :FormatBasic{ start, startWithNewLine } {
+			this->trigger = trigger;
+		}
+	};
+
+	std::vector<FormatTrigger> triggerFormat;
+	std::vector<std::pair<std::wstring, RECT>> triggerRect;
+public:
+	inline void GetTriggerRect() {
+		triggerRect.clear();
+		std::vector<size_t> validIndex;
+
+		for (const auto& trigger : triggerFormat) {
+			validIndex.clear();
+
+			auto GetChar = [&] (size_t index) {
+				return pText[trigger.startWithNewLine + index];
+				};
+			auto ChangeLine = [] (WCHAR curChar) {
+				return curChar == L'\r' || curChar == L'\n';
+				};
+
+			for (size_t idx = 0; idx < trigger.triggerLength; idx++) {			
+				const auto curChar = GetChar(idx);
+				if (ChangeLine(curChar)) { continue; }
+
+				validIndex.emplace_back(idx);
+			}
+
+			long previousCharX = MIN_LONG;
+
+			long minY = MAX_LONG;
+			long maxY = -1;
+
+			while (!validIndex.empty()) {
+				for (size_t index = 0; index < validIndex.size(); index++) {
+					const auto idx = validIndex[index];
+					const auto& charPos = trigger.pCharPosArr[idx];
+					const auto& charSize = trigger.pCharSizeArr[idx];
+					const auto curChar = GetChar(idx);
+
+					auto UpdateSize = [&] () {
+						minY = (std::min)(minY, charPos.y);
+						maxY = (std::max)(maxY, charPos.y + charSize.height);
+					};
+
+					if (previousCharX >= charPos.x ) {
+						const auto& startCharPos = trigger.pCharPosArr[validIndex.front()];
+
+						const auto lastCharIndex = validIndex[index == 0
+							? validIndex.size() - 1
+							: index - 1];
+						const auto& lastCharPos = trigger.pCharPosArr[lastCharIndex];
+						const auto& lastCharSize = trigger.pCharSizeArr[lastCharIndex];
+
+						if (minY == MAX_LONG && maxY == -1) { UpdateSize(); }
+
+						triggerRect.emplace_back(trigger.trigger,
+							RECT{ startCharPos.x, minY,
+								lastCharPos.x + lastCharSize.width, maxY });
+
+						minY = MAX_LONG;
+						maxY = -1;
+
+						const auto start = validIndex.begin();
+						const auto end = index == 0
+							? validIndex.end()
+							: validIndex.begin() + (index - 1);
+
+						if(start == end) {
+							validIndex.erase(start);
+						}
+						else {
+							validIndex.erase(start, end);
+						}
+
+						break;
+					}
+
+					UpdateSize();
+					previousCharX = charPos.x;
+				}
+			}		
+		}
+	}
+
+	inline bool OverlapTrigger(int x, int y, const wchar_t* pTriggerName) const {
+		for (const auto& [trigger, rect] : triggerRect) {
+			const bool bInside = x > rect.left && x< rect.right
+				&& y>rect.top && y < rect.bottom;
+			if (bInside && StrEqu(pTriggerName, trigger.c_str())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	inline bool OverlapTrigger(int x, int y, std::wstring& triggerName) const {
+		for (const auto& [trigger, rect] : triggerRect) {
+			const bool bInside = x > rect.left && x < rect.right
+				&& y>rect.top && y < rect.bottom;
+			if (bInside) {
+				triggerName = trigger;
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+private:
+
 	// for tag
 	struct FormatTag :FormatBasic {
+		// ------
 		// updated during parsing
+		// ------
 		size_t rawStart;
 		std::wstring callbackName;
 		std::vector<std::wstring> callbackParams;
 
+		// ------
 		// updated during rendering
+		// ------
 
 		FormatTag(size_t start, size_t startWithNewLine,
 			size_t rawStart, const ControlParams& controlParams) :FormatBasic{ start, startWithNewLine } {
@@ -372,13 +505,20 @@ private:
 
 	// for remark
 	struct FormatRemark :FormatBasic {
+		// ------
 		// updated during parsing
+		// ------
+
+		// remark length
 		size_t baseLength = 0;
 		std::wstring remark;
 		
+		// ------
 		// updated during rendering
+		// ------
 		CharSize* pCharSizeArr = nullptr;
 		CharPos* pCharPosArr = nullptr;
+		// 0 -> end of text
 		size_t validLength = 0;
 
 		NeoStr* pNeoStr = nullptr;
@@ -403,10 +543,14 @@ private:
 
 	// for icon
 	struct FormatICon :FormatBasic {
+		// ------
 		// updated during parsing
+		// ------
 		DWORD hImage;
 
+		// ------
 		// updated during rendering
+		// ------
 		size_t x = 0;
 		size_t y = 0;
 	};
@@ -874,6 +1018,7 @@ public:
 		this->strPos.reserve(20);		
 
 		// non-stack based
+		this->triggerFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->tagFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
@@ -1693,6 +1838,9 @@ public:
 		//		\+0.5 -> +0.5
 		//		\-0.5 -> -0.5
 		//
+		// [Trigger = TriggerName][/Trigger]
+		//	Embraced characters are trigger rect
+		//
 		// [Tag = CallbackName, Params]
 		//	Trigger callback when render to it, tags in remarks will be ignored
 		//	*you need to retrieve each param
@@ -1820,6 +1968,7 @@ public:
 		// ------------
 
 		// non-stack based
+		this->triggerFormat.clear();
 		this->tagFormat.clear();
 		this->remarkFormat.clear();
 		this->iConFormat.clear();
@@ -2042,6 +2191,21 @@ public:
 							break;
 						}
 
+						if (StringViewIEqu(controlStr, L"Trigger")) {
+							// new trigger
+							if (!bEndOfRegion) {
+								this->triggerFormat.emplace_back(savedLength, savedLengthWithNewLine,
+									std::wstring(controlParam));
+								break;
+							}
+
+							if (this->triggerFormat.empty()) { break; }
+
+							// end of region, calculate length
+							auto& lastTrigger = this->triggerFormat.back();
+							lastTrigger.triggerLength = savedLengthWithNewLine - lastTrigger.startWithNewLine;
+						}
+
 						if (StringViewIEqu(controlStr, L"Tag")) {
 							auto& paramParser = controlParam;
 							controlParams.clear();
@@ -2119,9 +2283,9 @@ public:
 								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
 							} while (false);
 
-							this->iConFormat.emplace_back(FormatICon{ {savedLength
-																		, savedLengthWithNewLine}
-																		, hImage });
+							this->iConFormat.emplace_back(FormatICon{ {savedLength,
+																		savedLengthWithNewLine},
+																		hImage });
 
 							// space for icon
 							pSavedChar[0] = DEFAULT_CHARACTER;
@@ -2724,10 +2888,23 @@ public:
 			GetRawStringByFilteredStringLength();
 		}
 
+		// ------------
+		// valid check
+		// ------------
 		const bool bAllowEmptyChar = flags & FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing;
 
 		if (!TextValid(pText, &pTextLen, bAllowEmptyChar)) {
 			this->bTextValid = false;
+			return;
+		}
+
+		// ------------
+		// after parse
+		// ------------
+		// handle open trigger tags
+		if (!this->triggerFormat.empty() && this->triggerFormat.back().triggerLength == 0) {
+			auto& lastTrigger = this->triggerFormat.back();
+			lastTrigger.triggerLength = pTextLen - lastTrigger.startWithNewLine;
 		}
 	}
 
@@ -3152,6 +3329,7 @@ public:
 		// let character be displayed gradually
 		// displayed char / total char
 		// 1.0 -> display all
+		// should between 0.0 ~ 1.0
 		double visibleRatio = 1.0;
 
 		// if alpha is included, E.g., 10 char, display 5
@@ -3407,6 +3585,8 @@ public:
 		size_t totalChar = 0;
 
 		// non-stack based
+		auto triggerItHandler = IteratorHandler(this->triggerFormat);
+
 		auto tagCallbackHandler = [&] (auto tagIt) {
 			if (opt.tagCallback == nullptr) { return; }
 			if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
@@ -3525,13 +3705,6 @@ public:
 					// update iterator
 					// ---------
 
-					// non-stack based
-#ifndef CALL_TAGCALLBACK_AFTERRENDER
-					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
-						tagCallbackHandler(tagIt);
-					});
-#endif
-
 					// stack based
 					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
 						solidBrush.SetColor(colorIt->color);
@@ -3549,10 +3722,20 @@ public:
 					}
 
 					// non-stack based
+					triggerItHandler.Forward(totalChar, [&] (auto triggerIt) {
+						triggerIt->pCharSizeArr = &pCharSizeArr[offset];
+						triggerIt->pCharPosArr = &pCharPosArr[offset];
+					});
+#ifndef CALL_TAGCALLBACK_AFTERRENDER
+					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
+						tagCallbackHandler(tagIt);
+					});
+#endif
 					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
 						remarkIt->pCharSizeArr = &pCharSizeArr[offset];
 						remarkIt->pCharPosArr = &pCharPosArr[offset];
-						remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
+						//remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
+						remarkIt->validLength = (std::min)(opt.renderCharCount - offset, remarkIt->baseLength);
 					});
 					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
 						// use updated position
@@ -3626,6 +3809,7 @@ public:
 			// render char count, so nothing to handle here
 		}
 
+		this->GetTriggerRect();
 #ifdef CALL_TAGCALLBACK_AFTERRENDER
 		for (auto it = this->tagFormat.begin(); it != this->tagFormat.end();++it) {
 			tagCallbackHandler(it);
@@ -3649,7 +3833,11 @@ public:
 		remarkOpt.UpdateTagCallback(nullptr);
 
 		for (auto& it : this->remarkFormat) {
+			// no enough place
 			if (it.validLength == 0) { continue; }
+			// ReSharper disable once GrammarMistakeInComment
+			// don't need to handle this as it's granted by validLength
+			// if (it.start > opt.renderCharCount) { continue; }
 
 			// update font & color
 			fontItHandler.UpdateIt(it.start);
@@ -3767,11 +3955,12 @@ public:
 			
 			auto remarkPosIt = remarkPositions.begin();
 
-			// update ratio, copy base will cause issue if parent enabled
-			//if (!NearlyEqualDBL(opt.visibleRatio, 1.0)) {
-			//	remarkOpt.visibleRatio = renderRatio;
-			//}
-			remarkOpt.visibleRatio = 1.0;
+			// update ratio if not display all
+			if (opt.visibleRatio < 1.0) {
+				const auto ratio = static_cast<double>(opt.renderCharCount - it.start) / it.baseLength;
+				remarkOpt.visibleRatio = Range(ratio, 0.0, 1.0);
+			}
+
 			// overrider render, directly to parent
 			remarkOpt.UpdateRenderCallback(
 				[&](const CharSize* pCharSize,
