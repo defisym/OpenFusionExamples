@@ -371,39 +371,79 @@ private:
 public:
 	inline void GetTriggerRect() {
 		triggerRect.clear();
+		std::vector<size_t> validIndex;
 
 		for (const auto& trigger : triggerFormat) {
-			long previousCharX = -1;
-			size_t rectStart = 0;
+			validIndex.clear();
+
+			auto GetChar = [&] (size_t index) {
+				return pText[trigger.startWithNewLine + index];
+				};
+			auto ChangeLine = [] (WCHAR curChar) {
+				return curChar == L'\r' || curChar == L'\n';
+				};
+
+			for (size_t idx = 0; idx < trigger.triggerLength; idx++) {			
+				const auto curChar = GetChar(idx);
+				if (ChangeLine(curChar)) { continue; }
+
+				validIndex.emplace_back(idx);
+			}
+
+			long previousCharX = MIN_LONG;
 
 			long minY = MAX_LONG;
 			long maxY = -1;
 
-			for (size_t idx = 0; idx < trigger.triggerLength; idx++) {
-				const auto& charPos = trigger.pCharPosArr[idx];
-				const auto& charSize = trigger.pCharSizeArr[idx];
+			while (!validIndex.empty()) {
+				for (size_t index = 0; index < validIndex.size(); index++) {
+					const auto idx = validIndex[index];
+					const auto& charPos = trigger.pCharPosArr[idx];
+					const auto& charSize = trigger.pCharSizeArr[idx];
+					const auto curChar = GetChar(idx);
 
-				minY = (std::min)(minY, charPos.y);
-				maxY = (std::max)(maxY, charPos.y + charSize.height);
+					auto UpdateSize = [&] () {
+						minY = (std::min)(minY, charPos.y);
+						maxY = (std::max)(maxY, charPos.y + charSize.height);
+					};
 
-				// rewind to next line or end
-				const auto bLastLoop = idx + 1 == trigger.triggerLength;
+					if (previousCharX >= charPos.x ) {
+						const auto& startCharPos = trigger.pCharPosArr[validIndex.front()];
 
-				if (previousCharX >= charPos.x || bLastLoop) {
-					const auto& startCharPos = trigger.pCharPosArr[rectStart];
-					rectStart = idx;
+						const auto lastCharIndex = validIndex[index == 0
+							? validIndex.size() - 1
+							: index - 1];
+						const auto& lastCharPos = trigger.pCharPosArr[lastCharIndex];
+						const auto& lastCharSize = trigger.pCharSizeArr[lastCharIndex];
 
-					const auto lastCharIndex = idx - 1 + bLastLoop;
-					const auto& lastCharPos = trigger.pCharPosArr[lastCharIndex];
-					const auto& lastCharSize = trigger.pCharSizeArr[lastCharIndex];
+						if (minY == MAX_LONG && maxY == -1) { UpdateSize(); }
 
-					triggerRect.emplace_back(trigger.trigger,
-						RECT{ startCharPos.x, minY,
-						lastCharPos.x + lastCharSize.width, maxY });
+						triggerRect.emplace_back(trigger.trigger,
+							RECT{ startCharPos.x, minY,
+								lastCharPos.x + lastCharSize.width, maxY });
+
+						minY = MAX_LONG;
+						maxY = -1;
+
+						const auto start = validIndex.begin();
+						const auto end = index == 0
+							? validIndex.end()
+							: validIndex.begin() + (index - 1);
+
+						if(start == end) {
+							validIndex.erase(start);
+						}
+						else {
+							validIndex.erase(start, end);
+						}
+
+						break;
+					}
+
+					UpdateSize();
+					previousCharX = charPos.x;
 				}
-
-				previousCharX = charPos.x;
-			}
+			}		
 		}
 	}
 
@@ -2163,7 +2203,7 @@ public:
 
 							// end of region, calculate length
 							auto& lastTrigger = this->triggerFormat.back();
-							lastTrigger.triggerLength = savedLength - lastTrigger.start;
+							lastTrigger.triggerLength = savedLengthWithNewLine - lastTrigger.startWithNewLine;
 						}
 
 						if (StringViewIEqu(controlStr, L"Tag")) {
@@ -2864,7 +2904,7 @@ public:
 		// handle open trigger tags
 		if (!this->triggerFormat.empty() && this->triggerFormat.back().triggerLength == 0) {
 			auto& lastTrigger = this->triggerFormat.back();
-			lastTrigger.triggerLength = pTextLen - lastTrigger.start - newLineCount * 2;
+			lastTrigger.triggerLength = pTextLen - lastTrigger.startWithNewLine;
 		}
 	}
 
