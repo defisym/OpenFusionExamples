@@ -339,6 +339,7 @@ set to non-strike out
   - *triggered for each callback, for forwarding*
 
 - Position Overlap Trigger Rect
+  - *this condition will call render, so if you call immediate events inside render, e.g., tag, fusion above 295 will crash*
 
 ## Expression
 
