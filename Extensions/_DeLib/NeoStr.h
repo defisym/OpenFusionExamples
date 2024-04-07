@@ -242,6 +242,7 @@ private:
 		ShakeControl shakeControl;
 	};
 
+	// original position of character (not affected by shake), relative to non-border offset start
 	// CharPos must be calculated in Render as align command may change position
 	CharPos* pCharPosArr = nullptr;
 	CharPos previousCharPos = {};
@@ -345,14 +346,40 @@ private:
 	//			format is saved directly
 	//---------
 
+	// for trigger
+	struct FormatTrigger :FormatBasic {
+		// ------
+		// updated during parsing
+		// ------
+		size_t triggerLength = 0;
+		std::wstring trigger;
+
+		// ------
+		// updated during rendering
+		// ------
+		CharSize* pCharSizeArr = nullptr;
+		CharPos* pCharPosArr = nullptr;
+
+		FormatTrigger(size_t start, size_t startWithNewLine,
+			const std::wstring& trigger) :FormatBasic{ start, startWithNewLine } {
+			this->trigger = trigger;
+		}
+	};
+
+	std::vector<FormatTrigger> triggerFormat;
+
 	// for tag
 	struct FormatTag :FormatBasic {
+		// ------
 		// updated during parsing
+		// ------
 		size_t rawStart;
 		std::wstring callbackName;
 		std::vector<std::wstring> callbackParams;
 
+		// ------
 		// updated during rendering
+		// ------
 
 		FormatTag(size_t start, size_t startWithNewLine,
 			size_t rawStart, const ControlParams& controlParams) :FormatBasic{ start, startWithNewLine } {
@@ -410,10 +437,14 @@ private:
 
 	// for icon
 	struct FormatICon :FormatBasic {
+		// ------
 		// updated during parsing
+		// ------
 		DWORD hImage;
 
+		// ------
 		// updated during rendering
+		// ------
 		size_t x = 0;
 		size_t y = 0;
 	};
@@ -881,6 +912,7 @@ public:
 		this->strPos.reserve(20);		
 
 		// non-stack based
+		this->triggerFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->tagFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
@@ -1827,6 +1859,7 @@ public:
 		// ------------
 
 		// non-stack based
+		this->triggerFormat.clear();
 		this->tagFormat.clear();
 		this->remarkFormat.clear();
 		this->iConFormat.clear();
@@ -2049,6 +2082,21 @@ public:
 							break;
 						}
 
+						if (StringViewIEqu(controlStr, L"Trigger")) {
+							// new trigger
+							if (!bEndOfRegion) {
+								this->triggerFormat.emplace_back(savedLength, savedLengthWithNewLine,
+									std::wstring(controlParam));
+								break;
+							}
+
+							if (this->triggerFormat.empty()) { break; }
+
+							// end of region, calculate length
+							auto& lastTrigger = this->triggerFormat.back();
+							lastTrigger.triggerLength = savedLength - lastTrigger.start;
+						}
+
 						if (StringViewIEqu(controlStr, L"Tag")) {
 							auto& paramParser = controlParam;
 							controlParams.clear();
@@ -2126,9 +2174,9 @@ public:
 								hImage = pIConData->iconParamParser(controlParams, *this->pIConData->pIConLib);
 							} while (false);
 
-							this->iConFormat.emplace_back(FormatICon{ {savedLength
-																		, savedLengthWithNewLine}
-																		, hImage });
+							this->iConFormat.emplace_back(FormatICon{ {savedLength,
+																		savedLengthWithNewLine},
+																		hImage });
 
 							// space for icon
 							pSavedChar[0] = DEFAULT_CHARACTER;
@@ -2731,10 +2779,23 @@ public:
 			GetRawStringByFilteredStringLength();
 		}
 
+		// ------------
+		// valid check
+		// ------------
 		const bool bAllowEmptyChar = flags & FORMAT_IGNORE_AllowEmptyCharStringAfterFormatParsing;
 
 		if (!TextValid(pText, &pTextLen, bAllowEmptyChar)) {
 			this->bTextValid = false;
+			return;
+		}
+
+		// ------------
+		// after parse
+		// ------------
+		// handle open trigger tags
+		if (!this->triggerFormat.empty() && this->triggerFormat.back().triggerLength == 0) {
+			auto& lastTrigger = this->triggerFormat.back();
+			lastTrigger.triggerLength = pTextLen - lastTrigger.start - newLineCount * 2;
 		}
 	}
 
@@ -3415,6 +3476,8 @@ public:
 		size_t totalChar = 0;
 
 		// non-stack based
+		auto triggerItHandler = IteratorHandler(this->triggerFormat);
+
 		auto tagCallbackHandler = [&] (auto tagIt) {
 			if (opt.tagCallback == nullptr) { return; }
 			if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
@@ -3533,13 +3596,6 @@ public:
 					// update iterator
 					// ---------
 
-					// non-stack based
-#ifndef CALL_TAGCALLBACK_AFTERRENDER
-					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
-						tagCallbackHandler(tagIt);
-					});
-#endif
-
 					// stack based
 					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
 						solidBrush.SetColor(colorIt->color);
@@ -3557,6 +3613,15 @@ public:
 					}
 
 					// non-stack based
+					triggerItHandler.Forward(totalChar, [&] (auto triggerIt) {
+						triggerIt->pCharSizeArr = &pCharSizeArr[offset];
+						triggerIt->pCharPosArr = &pCharPosArr[offset];
+					});
+#ifndef CALL_TAGCALLBACK_AFTERRENDER
+					tagItHandler.Forward(totalChar, [&] (auto tagIt) {
+						tagCallbackHandler(tagIt);
+					});
+#endif
 					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
 						remarkIt->pCharSizeArr = &pCharSizeArr[offset];
 						remarkIt->pCharPosArr = &pCharPosArr[offset];
