@@ -352,7 +352,8 @@ private:
 		// updated during parsing
 		// ------
 		size_t triggerLength = 0;
-		std::wstring trigger;
+		std::wstring triggerName;
+		std::wstring content;
 
 		// ------
 		// updated during rendering
@@ -362,18 +363,26 @@ private:
 
 		FormatTrigger(size_t start, size_t startWithNewLine,
 			const std::wstring& trigger) :FormatBasic{ start, startWithNewLine } {
-			this->trigger = trigger;
+			this->triggerName = trigger;
+		}
+		FormatTrigger(size_t start, size_t startWithNewLine,
+			const std::wstring& trigger, const std::wstring& content)
+		:FormatTrigger{ start, startWithNewLine,trigger } {
+			this->content = content;
 		}
 	};
 
 	std::vector<FormatTrigger> triggerFormat;
-	std::vector<std::pair<std::wstring, RECT>> triggerRect;
+
+	using TriggerRect = std::pair<size_t, RECT>;
+	std::vector<TriggerRect> triggerRect;
 public:
 	inline void GetTriggerRect() {
 		triggerRect.clear();
 		std::vector<size_t> validIndex;
 
-		for (const auto& trigger : triggerFormat) {
+		for (size_t triggerIdx = 0; triggerIdx < triggerFormat.size(); triggerIdx++) {
+			const auto& trigger = triggerFormat[triggerIdx];
 			validIndex.clear();
 
 			auto GetChar = [&] (size_t index) {
@@ -418,7 +427,7 @@ public:
 
 						if (minY == MAX_LONG && maxY == -1) { UpdateSize(); }
 
-						triggerRect.emplace_back(trigger.trigger,
+						triggerRect.emplace_back(triggerIdx,
 							RECT{ startCharPos.x, minY,
 								lastCharPos.x + lastCharSize.width, maxY });
 
@@ -447,31 +456,28 @@ public:
 		}
 	}
 
-	inline bool OverlapTrigger(int x, int y, const wchar_t* pTriggerName) const {
-		for (const auto& [trigger, rect] : triggerRect) {
+	inline size_t OverlapTrigger(int x, int y, const wchar_t* pTriggerName = nullptr) {
+		const auto it = std::ranges::find_if(triggerRect, [&] (const TriggerRect& triggerRect) {
+			const auto& [triggerIdx, rect] = triggerRect;
 			const bool bInside = x > rect.left && x< rect.right
 				&& y>rect.top && y < rect.bottom;
-			if (bInside && StrEqu(pTriggerName, trigger.c_str())) {
-				return true;
-			}
-		}
+			const bool bNameMatch = pTriggerName != nullptr
+				? StrEqu(pTriggerName, triggerFormat[triggerIdx].triggerName.c_str())
+				: true;
 
-		return false;
+			return bInside && bNameMatch;
+		});
+
+		if (it == triggerRect.end()) { return static_cast<size_t>(-1); }
+
+		return it->first;
 	}
 
-	inline bool OverlapTrigger(int x, int y, std::wstring& triggerName) const {
-		for (const auto& [trigger, rect] : triggerRect) {
-			const bool bInside = x > rect.left && x < rect.right
-				&& y>rect.top && y < rect.bottom;
-			if (bInside) {
-				triggerName = trigger;
-
-				return true;
-			}
-		}
-
-		return false;
+	// no protection, you should use the index return from OverlapTrigger
+	inline const FormatTrigger& GetCurrentTrigger(size_t index) {
+		return this->triggerFormat[index];
 	}
+
 private:
 
 	// for tag
@@ -1019,6 +1025,8 @@ public:
 
 		// non-stack based
 		this->triggerFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->triggerRect.reserve(DEFAULT_FORMAT_RESERVE);
+
 		this->tagFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->remarkFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
@@ -1838,8 +1846,11 @@ public:
 		//		\+0.5 -> +0.5
 		//		\-0.5 -> -0.5
 		//
-		// [Trigger = TriggerName][/Trigger]
+		// [Trigger = TriggerName, Content][/Trigger]
 		//	Embraced characters are trigger rect
+		//	As text may include ',', parse is started from left, unlike other formats
+		//
+		//	*if you use content, make sure it doesn't have open []
 		//
 		// [Tag = CallbackName, Params]
 		//	Trigger callback when render to it, tags in remarks will be ignored
@@ -1969,6 +1980,8 @@ public:
 
 		// non-stack based
 		this->triggerFormat.clear();
+		this->triggerRect.clear();
+
 		this->tagFormat.clear();
 		this->remarkFormat.clear();
 		this->iConFormat.clear();
@@ -2194,8 +2207,24 @@ public:
 						if (StringViewIEqu(controlStr, L"Trigger")) {
 							// new trigger
 							if (!bEndOfRegion) {
-								this->triggerFormat.emplace_back(savedLength, savedLengthWithNewLine,
+								auto& paramParser = controlParam;
+								controlParams.clear();
+
+								// no delimiter -> only name
+								if (!ParseParam(paramParser
+									, [&controlParams] (std::wstring_view& param) {
+										controlParams.emplace_back(GetTrimmedStr(param));
+									})) {
+									this->triggerFormat.emplace_back(savedLength, savedLengthWithNewLine,
 									std::wstring(controlParam));
+								}
+								// has param
+								else {
+									this->triggerFormat.emplace_back(savedLength, savedLengthWithNewLine,
+										std::wstring(controlParams[0]),
+										std::wstring(GetTrimmedStr(paramParser)));
+								}
+
 								break;
 							}
 
