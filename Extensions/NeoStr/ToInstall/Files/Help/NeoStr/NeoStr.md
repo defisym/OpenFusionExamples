@@ -43,6 +43,14 @@ String that based on GDI Plus, with scaling, rotating & format control support
     - `\+0.5` -> `+0.5`
     - `\-0.5` -> `-0.5`
 
+### Trigger
+
+#### Insert
+
+`[Trigger = TriggerName][/Trigger]`
+
+Embraced characters are trigger rect
+
 ### Tag
 
 #### Insert
@@ -326,6 +334,8 @@ set to non-strike out
 - On Tag Callback
 - On Tag Callback Forward
   - *triggered for each callback, for forwarding*
+
+- Position Overlap Trigger Rect
 
 ## Expression
 

@@ -367,6 +367,59 @@ private:
 	};
 
 	std::vector<FormatTrigger> triggerFormat;
+	std::vector<std::pair<std::wstring, RECT>> triggerRect;
+public:
+	inline void GetTriggerRect() {
+		triggerRect.clear();
+
+		for (const auto& trigger : triggerFormat) {
+			long previousCharX = -1;
+			size_t rectStart = 0;
+
+			long minY = MAX_LONG;
+			long maxY = -1;
+
+			for (size_t idx = 0; idx < trigger.triggerLength; idx++) {
+				const auto& charPos = trigger.pCharPosArr[idx];
+				const auto& charSize = trigger.pCharSizeArr[idx];
+
+				minY = (std::min)(minY, charPos.y);
+				maxY = (std::max)(maxY, charPos.y + charSize.height);
+
+				// rewind to next line or end
+				const auto bLastLoop = idx + 1 == trigger.triggerLength;
+
+				if (previousCharX >= charPos.x || bLastLoop) {
+					const auto& startCharPos = trigger.pCharPosArr[rectStart];
+
+					const auto lastCharIndex = idx - 1 + bLastLoop;
+					const auto& lastCharPos = trigger.pCharPosArr[lastCharIndex];
+					const auto& lastCharSize = trigger.pCharSizeArr[lastCharIndex];
+
+					triggerRect.emplace_back(trigger.trigger,
+						RECT{ startCharPos.x, minY,
+						lastCharPos.x + lastCharSize.width, maxY });
+				}
+
+				previousCharX = charPos.x;
+				rectStart = idx;
+			}
+		}
+	}
+
+	inline bool OverlapTrigger(int x, int y, std::wstring& triggerName) const {
+		for (const auto& [trigger, rect] : triggerRect) {
+			if (x > rect.left && x< rect.right
+				&& y>rect.top && y < rect.bottom) {
+				triggerName = trigger;
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+private:
 
 	// for tag
 	struct FormatTag :FormatBasic {
@@ -1731,6 +1784,9 @@ public:
 		//		-0.5 -> 1.0 - 0.5 = 0.5
 		//		\+0.5 -> +0.5
 		//		\-0.5 -> -0.5
+		//
+		// [Trigger = TriggerName][/Trigger]
+		//	Embraced characters are trigger rect
 		//
 		// [Tag = CallbackName, Params]
 		//	Trigger callback when render to it, tags in remarks will be ignored
@@ -3700,6 +3756,7 @@ public:
 			// render char count, so nothing to handle here
 		}
 
+		this->GetTriggerRect();
 #ifdef CALL_TAGCALLBACK_AFTERRENDER
 		for (auto it = this->tagFormat.begin(); it != this->tagFormat.end();++it) {
 			tagCallbackHandler(it);

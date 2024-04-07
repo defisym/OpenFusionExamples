@@ -25,6 +25,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_OGOIC, M_CONDITION_OGOIC, CND_CONDITION_OGOIC, 0, 1, PARAM_EXPSTRING, M_ICONITNAME,
 		IDMN_CONDITION_OTAGCB, M_CONDITION_OTAGCB, CND_CONDITION_OTAGCB, 0, 1, PARAM_EXPSTRING, M_TAGCBNAME,
 		IDMN_CONDITION_OTAGCBF, M_CONDITION_OTAGCBF, CND_CONDITION_OTAGCBF, 0, 0,
+		IDMN_CONDITION_POTR, M_CONDITION_POTR, CND_CONDITION_POTR, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 3, PARAM_EXPRESSION, PARAM_EXPRESSION, PARAM_EXPSTRING, M_TRIGGERX, M_TRIGGERY, M_TRIGGERNAME,
 
 		};
 
@@ -173,6 +174,30 @@ long WINAPI DLLExport Condition_OnTagCallback(LPRDATA rdPtr, long param1, long p
 }
 long WINAPI DLLExport Condition_OnTagCallbackForward(LPRDATA rdPtr, long param1, long param2) {
 	return true;
+}
+long WINAPI DLLExport Condition_PosOverlapTriggerRect(LPRDATA rdPtr, long param1, long param2) {
+	auto x = CNC_GetIntParameter(rdPtr);
+	auto y = CNC_GetIntParameter(rdPtr);
+	const auto pTriggerName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+
+	// render
+	UpdateLastCharPos(rdPtr);
+
+	// get hotspot
+	int hotSpotX = rdPtr->hotSpotX;
+	int hotSpotY = rdPtr->hotSpotY;
+
+	UpdateHotSpot(rdPtr->hotSpotPos
+		, rdPtr->rHo.hoImgWidth, rdPtr->rHo.hoImgHeight
+		, hotSpotX, hotSpotY);
+
+	// corret to left top of object
+	x = x - rdPtr->rHo.hoX - hotSpotX;
+	y = y - rdPtr->rHo.hoY - hotSpotY;
+
+	// check
+	std::wstring triggerName;
+	return rdPtr->pNeoStr->OverlapTrigger(x, y, triggerName) && StrEqu(triggerName.c_str(), pTriggerName);
 }
 
 
@@ -1324,6 +1349,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_OnGetObjectICon,
 			Condition_OnTagCallback,
 			Condition_OnTagCallbackForward,
+			Condition_PosOverlapTriggerRect,
 			
 			0
 			};

@@ -9,8 +9,9 @@
 #define	CND_CONDITION_OGOIC				0
 #define	CND_CONDITION_OTAGCB			1
 #define	CND_CONDITION_OTAGCBF			2
+#define	CND_CONDITION_POTR				3
 
-#define	CND_LAST						3
+#define	CND_LAST						4
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
