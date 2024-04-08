@@ -305,6 +305,9 @@ BEGIN
 			MENUITEM SEPARATOR
             MENUITEM "Get Remark Offset X", IDMN_EXPRESSION_GROX
             MENUITEM "Get Remark Offset Y", IDMN_EXPRESSION_GROY
+            MENUITEM SEPARATOR
+            MENUITEM "Get Current Overlap Trigger Name", IDMN_EXPRESSION_GCOTN
+            MENUITEM "Get Current Overlap Trigger Content", IDMN_EXPRESSION_GCOTC
         END	
         MENUITEM SEPARATOR
         POPUP "Format String"
@@ -681,6 +684,9 @@ BEGIN
     
 	M_EXPRESSION_S_GCX      "GetScrollCoefX("
     M_EXPRESSION_S_GCY      "GetScrollCoefY("
+    
+	M_EXPRESSION_GCOTN      "GCOTN$("
+	M_EXPRESSION_GCOTC      "GCOTC$("
 END
 
 #endif    // English (U.S.) resources

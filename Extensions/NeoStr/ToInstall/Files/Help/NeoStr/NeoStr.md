@@ -47,9 +47,12 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 #### Insert
 
-`[Trigger = TriggerName][/Trigger]`
+`[Trigger = TriggerName, Content][/Trigger]`
 
-Embraced characters are trigger rect
+Embraced characters are trigger rect.
+As text may include ',', parse is started from left, unlike other formats
+
+- *if you use content, make sure it doesn't have open `[]`*
 
 ### Tag
 
@@ -64,7 +67,7 @@ Trigger callback when render to it, tags in remarks will be ignored.
 
 #### Insert
 
-`[Remark = CharCount, Content]` insert remark that display over texts to the following characters
+`[Remark = CharCount, Content]` insert remark that display over texts to the following characters.
 As text may include `,`, parse is started from left, unlike other formats. Remark is rendered in another NeoStr class, with the same config (color, font, etc), but overrode position & render object, and the font size is half of the parent object when it starts rendering.
 
 - *if you use content, make sure it doesn't have open `[]`*
@@ -336,6 +339,7 @@ set to non-strike out
   - *triggered for each callback, for forwarding*
 
 - Position Overlap Trigger Rect
+  - *this condition will call render, so if you call immediate events inside render, e.g., tag, fusion above 295 will crash*
 
 ## Expression
 

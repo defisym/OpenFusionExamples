@@ -135,7 +135,10 @@
 #define	EXP_EXPRESSION_S_GCX		    	41
 #define	EXP_EXPRESSION_S_GCY		    	42
 
-#define	EXP_LAST                    		43
+#define	EXP_EXPRESSION_GCOTN		    	43
+#define	EXP_EXPRESSION_GCOTC		    	44
+
+#define	EXP_LAST                    		45
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -338,6 +341,8 @@ typedef struct tagRDATA
 	bool bScroll = false;
 	float scrollCoefX = 0.0f;
 	float scrollCoefY = 0.0f;
+
+	size_t currentTriggerIndex = 0;
 
 	std::wstring* pExpRet;
 
