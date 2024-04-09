@@ -298,6 +298,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />
     <ClInclude Include="..\_DeLib\NeoStr.h" />
+    <ClInclude Include="..\_DeLib\NeoStrFormatParser.h" />
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Func.h" />
