@@ -2,6 +2,8 @@
 
 #include <functional>
 
+#include "EOSCommandLine.h"
+
 //immediate conditon ID
 constexpr auto ON_LoginComplete = 0;
 constexpr auto ON_LogoutComplete = 4;
@@ -18,6 +20,12 @@ typedef EDITDATA* LPEDATA;
 struct tagRDATA;
 typedef tagRDATA RUNDATA;
 typedef RUNDATA* LPRDATA;
+
+enum class SandboxComboListEnum {
+	Dev,
+	Stage,
+	Live,
+};
 
 enum class AuthTypeComboListEnum {
 	Developer,
@@ -41,8 +49,6 @@ inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum com
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 }
 
-inline auto GetAuthPremissions(LPEDATA rdPtr);
-
 struct GlobalData {
 	LPRDATA rdPtr = nullptr;
 
@@ -55,11 +61,20 @@ struct GlobalData {
 	std::string productVersion;
 
 	std::string productId;
-	std::string sandboxId;
-	std::string deploymentId;
 
 	std::string clientId;
 	std::string clientSecret;
+
+	SandboxComboListEnum sandboxType = SandboxComboListEnum::Dev;
+
+	std::string devSandboxId;
+	std::string devDeploymentId;
+	std::string stageSandboxId;
+	std::string stageDeploymentId;
+	std::string liveSandboxId;
+	std::string liveDeploymentId;
+
+	EOSCommandLine cmdLine;
 	
 	GlobalData() = default;
 	~GlobalData();
@@ -71,6 +86,41 @@ struct GlobalData {
 	inline void EOSUpdate() const {
 		//EOSUpdatePlatform();
 		pEOSUtilities->Update();
+	}
+	
+	// Sandbox can be override by Epic Launcher command line
+	// Sandbox ID: This ID can be obtained from the Epic Games Launcher at launch time in the form of the epicsandboxid launch argument provided to all games.
+	// Deployment ID: This ID can be set within your build in a custom if/switch statement block targeting the expected deployment for the sandbox in question.
+	// https://dev.epicgames.com/docs/epic-games-store/testing-guide#sandboxdeployment-id-handling-epic-games-store-publishing-tools-only
+	inline auto GetSandboxInfo() {
+		if (cmdLine.bValid && !cmdLine.epicSandboxID.empty()) {
+			const auto& sandboxId = cmdLine.epicSandboxID;
+
+			if (sandboxId == devSandboxId) {
+				return std::make_tuple(devSandboxId, devDeploymentId);
+			}
+
+			if (sandboxId == stageSandboxId) {
+				return std::make_tuple(stageSandboxId, stageDeploymentId);
+			}
+
+			if (sandboxId == liveSandboxId) {
+				return std::make_tuple(liveSandboxId, liveDeploymentId);
+			}
+		}
+
+		switch (sandboxType) {
+		case SandboxComboListEnum::Dev:
+			return std::make_tuple(devSandboxId, devDeploymentId);
+		case SandboxComboListEnum::Stage:
+			return std::make_tuple(stageSandboxId, stageDeploymentId);
+		case SandboxComboListEnum::Live:
+			return std::make_tuple(liveSandboxId, liveDeploymentId);
+		}
+
+		// default value
+		// this line shouldn't be reached, just make clang-tidy happy
+		return std::make_tuple(devSandboxId, devDeploymentId);
 	}
 
 	inline bool EOSInit(LPEDATA edPtr);

@@ -68,9 +68,10 @@ private:
 
 	std::string lastErrorType;
 	std::string lastErrorInfo;
-	
+
+	// Get from global, don't need to release
+	const EOSCommandLine* pCmdLine = nullptr;
 	EOSUtilities_RuntimeOptions runtimeOpt;
-	EOSCommandLine cmdLine;
 
 	EOS_HPlatform platformHandle = nullptr;
 
@@ -90,15 +91,14 @@ private:
 	constexpr static auto InvalidID = "InvalidID";
 
 public:
-	EOSUtilities(const EOSUtilities_RuntimeOptions& runtimeOpt,
-		const EOS_InitializeOptions& initOpt, const EOS_Platform_Options& platOpt) {
-		if (bInit) {
-			return;
-		}
-
+	EOSUtilities(const EOSCommandLine* pCmdLine,
+		const EOSUtilities_RuntimeOptions& runtimeOpt,
+		const EOS_InitializeOptions& initOpt,
+		const EOS_Platform_Options& platOpt) {
 		state = EOSState::TryInit;
 
 		// runtime
+		this->pCmdLine = pCmdLine;
 		this->runtimeOpt = runtimeOpt;
 
 		// sdk
@@ -279,7 +279,7 @@ public:
 		case EOS_ELoginCredentialType::EOS_LCT_ExchangeCode:
 		{
 			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
-			if (!cmdLine.bValid) {
+			if (!pCmdLine->bValid) {
 				SetLastError("Auth", "Invalid exchange code");
 				state = EOSState::AuthFailed;
 				authLoginCb(this);
@@ -287,7 +287,7 @@ public:
 				return;
 			}
 
-			authCredentials.Token = cmdLine.authType.c_str();
+			authCredentials.Token = pCmdLine->authType.c_str();
 
 			break;
 		}

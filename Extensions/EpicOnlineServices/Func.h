@@ -83,16 +83,26 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 
 	// platform
 	productId = ConvertWStrToStr(edPtr->pProductId);
-	sandboxId = ConvertWStrToStr(edPtr->pSandboxId);
-	deploymentId = ConvertWStrToStr(edPtr->pDeploymentId);
 
 	clientId = ConvertWStrToStr(edPtr->pClientId);
 	clientSecret = ConvertWStrToStr(edPtr->pClientSecret);
+
+	sandboxType = edPtr->sandboxType;
+
+	devSandboxId = ConvertWStrToStr(edPtr->pDevSandboxId);
+	devDeploymentId = ConvertWStrToStr(edPtr->pDevDeploymentId);
+	stageSandboxId = ConvertWStrToStr(edPtr->pStageSandboxId);
+	stageDeploymentId = ConvertWStrToStr(edPtr->pStageDeploymentId);
+	liveSandboxId = ConvertWStrToStr(edPtr->pLiveSandboxId);
+	liveDeploymentId = ConvertWStrToStr(edPtr->pLiveDeploymentId);
 
 	EOS_Platform_Options platOpt{};
 	platOpt.ApiVersion = EOS_INITIALIZE_API_LATEST;
 
 	platOpt.ProductId = productId.c_str();
+
+	const auto& [sandboxId, deploymentId] = GetSandboxInfo();
+
 	platOpt.SandboxId = sandboxId.c_str();
 	platOpt.DeploymentId = deploymentId.c_str();
 
@@ -106,10 +116,13 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	runtimeOpt.bRequireLauncher = edPtr->bRequireLauncher;
 	runtimeOpt.bRequireBootstrap = edPtr->bRequireBootstrap;
 
-	pEOSUtilities = new EOSUtilities(runtimeOpt, initOpt, platOpt);
+	pEOSUtilities = new EOSUtilities(&cmdLine,
+		runtimeOpt,
+		initOpt,
+		platOpt);
 	EOSInitPlatform();
 
-	pEOSUtilities->SetErrorCallback([=] (const std::string& str) {
+	pEOSUtilities->SetErrorCallback([this] (const std::string& str) {
 #ifdef _DEBUG
 		OutputDebugStringA(str.c_str());
 		OutputDebugStringA("\r\n");

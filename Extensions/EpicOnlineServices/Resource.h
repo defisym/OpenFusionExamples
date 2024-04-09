@@ -28,49 +28,61 @@
 #define IDS_PROP_PlatformOptions_TEXTTITLE                      205
 #define IDS_PROP_PlatformOptions_ProductId_TEXT                 206
 #define IDS_PROP_PlatformOptions_ProductId_TEXT_INFO            207
-#define IDS_PROP_PlatformOptions_SandboxId_TEXT                 208
-#define IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            209
-#define IDS_PROP_PlatformOptions_DeploymentId_TEXT              210
-#define IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         211
 
-#define IDS_PROP_PlatformOptions_ClientId_TEXT                  212
-#define IDS_PROP_PlatformOptions_ClientId_TEXT_INFO             213
-#define IDS_PROP_PlatformOptions_ClientSecret_TEXT              214
-#define IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO         215
+#define IDS_PROP_PlatformOptions_ClientId_TEXT                  208
+#define IDS_PROP_PlatformOptions_ClientId_TEXT_INFO             209
+#define IDS_PROP_PlatformOptions_ClientSecret_TEXT              210
+#define IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO         211
 
-#define IDS_PROP_RuntimeOptions_TEXTTITLE                       216
-#define IDS_PROP_RuntimeOptions_AuthType_COMBO                  217
-#define IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO             218
+#define IDS_PROP_PlatformOptions_DefaultSandbox_COMBO			212
+#define IDS_PROP_PlatformOptions_DefaultSandbox_COMBO_INFO		213
 
-#define IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER          219
+#define IDS_PROP_PlatformOptions_DevSandboxId_TEXT              214
+#define IDS_PROP_PlatformOptions_StageSandboxId_TEXT            215
+#define IDS_PROP_PlatformOptions_LiveSandboxId_TEXT             216
+#define IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            217
+#define IDS_PROP_PlatformOptions_DevDeploymentId_TEXT           218
+#define IDS_PROP_PlatformOptions_StageDeploymentId_TEXT         219
+#define IDS_PROP_PlatformOptions_LiveDeploymentId_TEXT          220
+#define IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         221
 
-#define IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK              220
-#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK               221
-#define IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK                  222
-#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK         223
-#define IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK                     224
-#define IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK                   225
+#define IDS_PROP_RuntimeOptions_TEXTTITLE                       222
+#define IDS_PROP_RuntimeOptions_AuthType_COMBO                  223
+#define IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO             224
 
-#define IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK_INFO         226
-#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK_INFO          227
-#define IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK_INFO             228
-#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK_INFO    229
-#define IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK_INFO                230
-#define IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK_INFO              231
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FOLDER          225
 
-#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           232
-#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      233
-#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          234
-#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     235
-#define IDS_PROP_RuntimeOptions_AutoLogin_CHECK                 236
-#define IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO            237
-#define IDS_PROP_RuntimeOptions_AutoLogout_CHECK                238
-#define IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO           239
+#define IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK              226
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK               227
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK                  228
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK         229
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK                     230
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK                   231
+
+#define IDS_PROP_RuntimeOptions_AuthPermissions_BasicProfile_CHECK_INFO         232
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsList_CHECK_INFO          233
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Presence_CHECK_INFO             234
+#define IDS_PROP_RuntimeOptions_AuthPermissions_FriendsManagement_CHECK_INFO    235
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Email_CHECK_INFO                236
+#define IDS_PROP_RuntimeOptions_AuthPermissions_Country_CHECK_INFO              237
+
+#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK           238
+#define IDS_PROP_RuntimeOptions_RequireLauncher_CHECK_INFO      239
+#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK          240
+#define IDS_PROP_RuntimeOptions_RequireBootstrap_CHECK_INFO     241
+#define IDS_PROP_RuntimeOptions_AutoLogin_CHECK                 242
+#define IDS_PROP_RuntimeOptions_AutoLogin_CHECK_INFO            243
+#define IDS_PROP_RuntimeOptions_AutoLogout_CHECK                244
+#define IDS_PROP_RuntimeOptions_AutoLogout_CHECK_INFO           245
 
 #define IDS_AuthType_Developer                                  300
 #define IDS_AuthType_ExchangeCode                               301
 #define IDS_AuthType_PersistentAuth                             302
 #define IDS_AuthType_AccountPortal                              303
+
+#define IDS_DefaultSandbox_Dev									304
+#define IDS_DefaultSandbox_Stage								305
+#define IDS_DefaultSandbox_Live									306
 
 // 	Debug tree
 //-------------------
