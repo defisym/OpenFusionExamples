@@ -1828,12 +1828,8 @@ public:
 		// [Command] if not match follows, will be displayed as untouched
 		//	depend on your flag settings
 		// 
-		// [^]
-		//	ignore all formats after this
-		// 
-		// [^-]
-		//	ignore all formats except [ICon] after this
-		//	icon controls like [IConOffsetX] are also ignored
+		// [^ = Exclude, ...]
+		//	ignore all formats after this exclude given ones
 		// 
 		// [!^]
 		//	stop ignore all formats
@@ -2055,7 +2051,7 @@ public:
 		const bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
 
 		bool bIgnoreFormat = false;
-		bool bIgnoreFormatExceptICon = false;
+		ControlParams ignoreFormatExclude;
 
 		while (true) {
 			// End
@@ -2187,23 +2183,37 @@ public:
 						// ------------
 						// parse commands & params
 						// ------------
+						auto CurrentCommandIgnored = [&] () {
+							if (!bIgnoreFormat) { return false; }
+
+							for (const auto& it : ignoreFormatExclude) {
+								if (StringViewIEqu(controlStr, it)) { return false; }
+							}
+
+							return true;
+							};
+
 						if (StringViewIEqu(controlStr, L"^")) {
 							bIgnoreFormat = true;
-							bIgnoreFormatExceptICon = false;
+							ignoreFormatExclude.clear();
 
-							break;
-						}
+							auto& paramParser = controlParam;
 
-						if (StringViewIEqu(controlStr, L"^-")) {
-							bIgnoreFormat = true;
-							bIgnoreFormatExceptICon = true;
+							do {
+
+							} while (ParseParam(paramParser
+								, [&ignoreFormatExclude] (std::wstring_view& param) {
+									ignoreFormatExclude.emplace_back(GetTrimmedStr(param));
+								}));
+
+							ignoreFormatExclude.erase(std::ranges::unique(ignoreFormatExclude).begin(), ignoreFormatExclude.end());
 
 							break;
 						}
 
 						if (StringViewIEqu(controlStr, L"!^")) {
 							bIgnoreFormat = false;
-							bIgnoreFormatExceptICon = false;
+							ignoreFormatExclude.clear();
 
 							break;
 						}
@@ -2261,9 +2271,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"Remark")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							auto& paramParser = controlParam;
 							controlParams.clear();
@@ -2292,9 +2300,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"ICon")) {
-							if (bIgnoreFormat && !bIgnoreFormatExceptICon) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							DWORD hImage = FORMAT_INVALID_ICON;
 
@@ -2349,10 +2355,6 @@ public:
 
 						// reset all
 						if (StringViewIEqu(controlStr, L"!")) {
-							if (bIgnoreFormat) {
-								break;
-							}
-
 							auto Reset = [&] (auto& stack, auto& format) {
 								std::remove_reference_t<decltype(stack[0])> first = stack.front();
 
@@ -2439,9 +2441,7 @@ public:
 						// ------------
 
 						if (StringViewIEqu(controlStr, L"RemarkOffsetX")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(remarkDisplayStack, remarkDisplayFormat, [&] (RemarkDisplay& remarkDisplay) {
 								// Reset
@@ -2462,9 +2462,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"RemarkOffsetY")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(remarkDisplayStack, remarkDisplayFormat, [&] (RemarkDisplay& remarkDisplay) {
 								// Reset
@@ -2489,9 +2487,7 @@ public:
 						// ------------
 
 						if (StringViewIEqu(controlStr, L"IConOffsetX")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
 								// Reset
@@ -2512,9 +2508,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"IConOffsetY")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
 								// Reset
@@ -2535,9 +2529,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"IConScale")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
 								// Reset
@@ -2558,9 +2550,7 @@ public:
 						}
 
 						if (StringViewIEqu(controlStr, L"IConResample")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(iConDisplayStack, iConDisplayFormat, [&] (IConDisplay& iConDisplay) {
 								// Reset
@@ -2582,9 +2572,7 @@ public:
 						// ------------
 
 						if (StringViewIEqu(controlStr, L"Align")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(alignStack, alignFormat, [&] (DWORD& dwDTFlags) {
 								// Reset
@@ -2610,9 +2598,7 @@ public:
 						// ------------
 
 						if (StringViewIEqu(controlStr, L"Shake")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(shakeStack, shakeFormat, [&] (ShakeControl& shakeControl) {
 								auto& paramParser = controlParam;
@@ -2663,9 +2649,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Color")
 							|| StringViewIEqu(controlStr, L"C")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							StackManager(colorStack, colorFormat, [&] (Color& color) {
 								// Reset
@@ -2742,9 +2726,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Font")
 							|| StringViewIEqu(controlStr, L"F")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								// Reset
@@ -2766,9 +2748,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Size")
 							|| StringViewIEqu(controlStr, L"S")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								// Reset
@@ -2791,9 +2771,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Bold")
 							|| StringViewIEqu(controlStr, L"B")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfWeight = FW_BOLD;
@@ -2804,9 +2782,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"!Bold")
 							|| StringViewIEqu(controlStr, L"!B")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfWeight = FW_NORMAL;
@@ -2817,9 +2793,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Italic")
 							|| StringViewIEqu(controlStr, L"I")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfItalic = TRUE;
@@ -2830,9 +2804,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"!Italic")
 							|| StringViewIEqu(controlStr, L"!I")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfItalic = FALSE;
@@ -2843,9 +2815,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"Underline")
 							|| StringViewIEqu(controlStr, L"U")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfUnderline = TRUE;
@@ -2856,9 +2826,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"!Underline")
 							|| StringViewIEqu(controlStr, L"!U")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfUnderline = FALSE;
@@ -2869,9 +2837,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"StrikeOut")
 							|| StringViewIEqu(controlStr, L"S")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfStrikeOut = TRUE;
@@ -2882,9 +2848,7 @@ public:
 
 						if (StringViewIEqu(controlStr, L"!StrikeOut")
 							|| StringViewIEqu(controlStr, L"!S")) {
-							if (bIgnoreFormat) {
-								break;
-							}
+							if (CurrentCommandIgnored()) { break; }
 
 							FontFormatControl([&] (LOGFONT& newLogFont) {
 								newLogFont.lfStrikeOut = FALSE;

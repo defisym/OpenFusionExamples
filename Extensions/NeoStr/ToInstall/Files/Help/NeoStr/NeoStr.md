@@ -19,11 +19,7 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 ### Ignore
 
-`[^]` ignore all formats after this
-
-### Ignore non Icon
-
-`[^-]` ignore all formats except `[ICon]` after this. icon controls like `[IConOffsetX]` are also ignored
+`[^ = Exclude, ...]` ignore all formats after this exclude given ones
 
 ### Stop Ignore
 
