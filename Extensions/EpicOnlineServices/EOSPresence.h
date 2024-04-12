@@ -8,7 +8,7 @@
 // https://dev.epicgames.com/docs/zh-Hans/epic-account-services/eos-presence-interface
 // https://dev.epicgames.com/zh-CN/news/getting-and-setting-player-presence
 
-class EOSPresence :private PlatformBase {
+class EOSPresence :public PlatformBase {
 private:
 	using CallbackType = std::function<void(EOSPresence*)>;
 	inline const static CallbackType defaultCb = [] (EOSPresence*) {};
@@ -44,8 +44,10 @@ public:
 		queryPresenceOptions.LocalUserId = pEU->accountId;
 		queryPresenceOptions.TargetUserId = pEU->accountId;
 
+		callbackCounter.CallCallback();
 		EOS_Presence_QueryPresence(preHandle, &queryPresenceOptions, this, [] (const EOS_Presence_QueryPresenceCallbackInfo* Data) {
 			const auto pEP = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEP->callbackCounter);
 
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 				pEP->pEU->SetLastError("Presence", "Failed to query presence", Data->ResultCode);
@@ -53,7 +55,7 @@ public:
 			}
 			
 			pEP->bPresenceQuery = true;
-			pEP->presenceQueryCb(pEP);
+			pEP->presenceQueryCb(pEP);			
 		});
 	}
 
@@ -117,8 +119,10 @@ private:
 				setPresenceOptions.LocalUserId = pEU->accountId;
 				setPresenceOptions.PresenceModificationHandle = presenceModificationHandle;
 
+				callbackCounter.CallCallback();
 				EOS_Presence_SetPresence(preHandle, &setPresenceOptions, this, [] (const EOS_Presence_SetPresenceCallbackInfo* Data) {
 					const auto pEP = static_cast<decltype(this)>(Data->ClientData);
+					CallbackCounterHelper callbackCounterHelper(pEP->callbackCounter);
 
 					if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 						pEP->pEU->SetLastError("Presence", "Failed to set presence", Data->ResultCode);

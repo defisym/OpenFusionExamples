@@ -112,6 +112,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 	delete rdPtr->pRet;
 	rdPtr->pRet = nullptr;
 
+	// wait for callback complete, to avoid crash
+	rdPtr->pData->EOSWaitForCallbackComplete();
+
 	// No errors
 	return 0;
 }

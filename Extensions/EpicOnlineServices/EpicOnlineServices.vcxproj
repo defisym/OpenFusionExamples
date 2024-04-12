@@ -375,6 +375,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="Common.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="EOSAchievement.h" />
+    <ClInclude Include="EOSCallbackCounter.h" />
     <ClInclude Include="EOSPlatformBase.h" />
     <ClInclude Include="EOSCommandLine.h" />
     <ClInclude Include="EOSInclude.h" />

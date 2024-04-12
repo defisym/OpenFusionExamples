@@ -68,6 +68,11 @@ inline GlobalData::~GlobalData() {
 	else {
 		release();
 	}
+
+	EOSWaitForCallbackComplete();
+
+	EOSReleasePlatform();
+	delete pEOSUtilities;	
 }
 
 inline bool GlobalData::EOSInit(LPEDATA edPtr) {

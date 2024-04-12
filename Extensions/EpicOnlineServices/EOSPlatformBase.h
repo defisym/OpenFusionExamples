@@ -1,10 +1,12 @@
 #pragma once
 
+#include "EOSCallbackCounter.h"
 #include "EOSUtilities.h"
 
 class PlatformBase {
 protected:
 	EOSUtilities* pEU = nullptr;
+	CallbackCounter callbackCounter;
 
 public:
 	explicit PlatformBase(EOSUtilities* pEU) {
@@ -17,6 +19,10 @@ public:
 
 	inline bool PlatformOK() const {
 		return pEU->PlatformOK();
+	}
+
+	inline bool AllCallbackComplete() const {
+		return callbackCounter.AllCallbackComplete();
 	}
 };
 

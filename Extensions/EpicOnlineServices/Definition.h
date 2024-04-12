@@ -151,6 +151,30 @@ struct GlobalData {
 		pEOSAchievement->PlatformInit();
 		pEOSStat->PlatformInit();
 		pEOSPresence->PlatformInit();
+	inline bool EOSCallbackComplete()const {
+		bool bFinish = true;
+
+		auto checkCallback = [] (auto* pEOS) {
+			return pEOS != nullptr
+				? pEOS->AllCallbackComplete()
+				: true;
+			};
+
+		bFinish = bFinish && checkCallback(pEOSAchievement);
+		bFinish = bFinish && checkCallback(pEOSStat);
+		bFinish = bFinish && checkCallback(pEOSPresence);
+		bFinish = bFinish && checkCallback(pEOSUtilities);
+
+		return bFinish;
+	}
+
+	inline void EOSWaitForCallbackComplete() const {
+		while (!EOSCallbackComplete()) {
+			//OutputDebugStringA("Wait...\n");
+			EOSUpdate();
+		}
+
+		//OutputDebugStringA("Complete!\n");
 	}
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {
