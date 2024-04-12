@@ -293,15 +293,23 @@ BEGIN
     IDS_PROP_PlatformOptions_TEXTTITLE                      "PlatformOptions"
     IDS_PROP_PlatformOptions_ProductId_TEXT                 "ProductId"
     IDS_PROP_PlatformOptions_ProductId_TEXT_INFO            "The Product ID of the game, provided by Epic Games"
-    IDS_PROP_PlatformOptions_SandboxId_TEXT                 "SandboxId"
-    IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            "The Sandbox ID of the game, provided by Epic Games"
-    IDS_PROP_PlatformOptions_DeploymentId_TEXT              "DeploymentId"
-    IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         "The Deployment ID of the game, provided by Epic Games"
-    
+
     IDS_PROP_PlatformOptions_ClientId_TEXT                  "ClientId"
     IDS_PROP_PlatformOptions_ClientId_TEXT_INFO             "Client ID of the service permissions entry."
     IDS_PROP_PlatformOptions_ClientSecret_TEXT              "ClientSecret"
     IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO         "Client secret for accessing the set of permissions"
+
+ 	IDS_PROP_PlatformOptions_DefaultSandbox_COMBO         	"Default Sandbox"
+    IDS_PROP_PlatformOptions_DefaultSandbox_COMBO_INFO    	"Default sandbox, will be override with Epic Launcher command line."
+
+    IDS_PROP_PlatformOptions_DevSandboxId_TEXT              "Dev SandboxId"
+    IDS_PROP_PlatformOptions_StageSandboxId_TEXT            "Stage SandboxId"
+    IDS_PROP_PlatformOptions_LiveSandboxId_TEXT             "Live SandboxId"
+    IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO            "The Sandbox ID of the game, provided by Epic Games"
+    IDS_PROP_PlatformOptions_DevDeploymentId_TEXT           "Dev DeploymentId"
+    IDS_PROP_PlatformOptions_StageDeploymentId_TEXT         "Stage DeploymentId"
+    IDS_PROP_PlatformOptions_LiveDeploymentId_TEXT          "Live DeploymentId"
+    IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO         "The Deployment ID of the game, provided by Epic Games"
     
     IDS_PROP_RuntimeOptions_TEXTTITLE                       "RuntimeOptions"
     IDS_PROP_RuntimeOptions_AuthType_COMBO                  "AuthType"
@@ -337,6 +345,10 @@ BEGIN
     IDS_AuthType_ExchangeCode                               "ExchangeCode"
     IDS_AuthType_PersistentAuth                             "PersistentAuth"
     IDS_AuthType_AccountPortal                              "AccountPortal"
+
+	IDS_DefaultSandbox_Dev									"Dev"
+	IDS_DefaultSandbox_Stage								"Stage"
+	IDS_DefaultSandbox_Live									"Live"
 END
 
 STRINGTABLE DISCARDABLE 
