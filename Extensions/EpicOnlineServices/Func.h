@@ -138,7 +138,7 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 		runtimeOpt,
 		initOpt,
 		platOpt);
-	EOSInitPlatform();
+	EOSAllocPlatform();
 
 	pEOSUtilities->SetErrorCallback([this] (const std::string& str) {
 #ifdef _DEBUG

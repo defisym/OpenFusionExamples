@@ -84,7 +84,6 @@ struct GlobalData {
 	}
 
 	inline void EOSUpdate() const {
-		//EOSUpdatePlatform();
 		pEOSUtilities->Update();
 	}
 	
@@ -128,7 +127,7 @@ struct GlobalData {
 
 	inline bool EOSInit(LPEDATA edPtr);
 
-	inline void EOSInitPlatform() {
+	inline void EOSAllocPlatform() {
 		pEOSAchievement = new EOSAchievement(pEOSUtilities);
 		pEOSStat = new EOSStat(pEOSUtilities);
 		pEOSPresence = new EOSPresence(pEOSUtilities);
@@ -139,18 +138,19 @@ struct GlobalData {
 		delete pEOSStat;
 		delete pEOSPresence;
 	}
-	
+
+	inline void EOSInitPlatform() const {
+		pEOSAchievement->PlatformInit();
+		pEOSStat->PlatformInit();
+		pEOSPresence->PlatformInit();
+	}
+
 	inline void EOSUpdatePlatform() const {
 		pEOSAchievement->PlatformUpdate();
 		pEOSStat->PlatformUpdate();
 		pEOSPresence->PlatformUpdate();
 	}
 
-	// init platform here
-	inline void EOSLoginSuccess() const {
-		pEOSAchievement->PlatformInit();
-		pEOSStat->PlatformInit();
-		pEOSPresence->PlatformInit();
 	inline bool EOSCallbackComplete()const {
 		bool bFinish = true;
 
@@ -201,7 +201,7 @@ struct GlobalData {
 					}
 
 					if (state == EOSState::ConnectSuccess) {
-						EOSLoginSuccess();
+						EOSInitPlatform();
 						callback(true);
 					}
 				});
