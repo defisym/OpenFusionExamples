@@ -41,61 +41,61 @@ private:
 		const auto& item = cur.item;
 
 		do {
-			if(Compare(item.c_str(), EOSCommandLine_AuthLogin)) {
+			if(StrIEqu(item.c_str(), EOSCommandLine_AuthLogin)) {
 				authLogin = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_AuthPassword)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_AuthPassword)) {
 				authPassword = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_AuthType)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_AuthType)) {
 				authType = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicApp)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicApp)) {
 				epicApp = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicEnv)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicEnv)) {
 				epicEnv = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicPortal)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicPortal)) {
 				epicPortal = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicUserName)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicUserName)) {
 				epicUserName = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicUserID)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicUserID)) {
 				epicUserID = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicLocal)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicLocal)) {
 				epicLocal = cur.content;
 
 				break;
 			}
 
-			if (Compare(item.c_str(), EOSCommandLine_EpicSandboxID)) {
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicSandboxID)) {
 				epicSandboxID = cur.content;
 
 				break;
@@ -120,7 +120,7 @@ public:
 
 	EOSCommandLine() {
 		// get command line
-		const auto& [progname, cli]=CLI::detail::split_program_name(GetCommandLineA());
+		const auto& [progname, cli] = CLI::detail::split_program_name(GetCommandLineA());
 		commandLine = cli;
 
 		const auto& splitResult = SplitString(commandLine, EOSCommandLine_Space);
@@ -134,9 +134,5 @@ public:
 				DispatchParam();
 			}
 		}
-	}
-
-	static bool Compare(const char* pX, const char* pY) {
-		return _stricmp(pX, pY) == 0;
 	}
 };

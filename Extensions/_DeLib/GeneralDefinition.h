@@ -10,10 +10,6 @@
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 
-#define StrEqu(X,Y) (wcscmp(X,Y) == 0)
-#define StrIEqu(X,Y) (_wcsicmp(X,Y) == 0)
-#define StrEmpty(X) StrEqu(X,Empty_Str)
-
 //You need "\\+" to escape +
 #define RegStr_IsNum _T("(\\+|\\-)?[0-9]+(\\.[0-9]+)?")
 
@@ -262,49 +258,79 @@ inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"AL
 // basic split
 #include <functional>
 
-template<typename STR, typename CHR>
-	requires (std::is_same_v<std::remove_cv_t<STR>, std::wstring>
-&& std::is_same_v<std::remove_cv_t<CHR>, wchar_t>)
-|| (std::is_same_v<std::remove_cv_t<STR>, std::string>
-&& std::is_same_v<std::remove_cv_t<CHR>, char>)
-inline void SplitStringCore(const STR& input, const CHR delimiter
-	, const std::function<void(const STR&)>& callBack) {
+template<typename T>
+concept CHR = std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, char>
+|| std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, wchar_t>;
+
+template<CHR T>
+inline bool StrEqu(const T* l, const T* r) {
+	 if constexpr(std::is_same_v<T, char>) {
+		 return strcmp(l, r) == 0;
+	 }else {
+		 return wcscmp(l, r) == 0;
+	 }
+}
+
+template<CHR T>
+inline bool StrIEqu(const T* l, const T* r) {
+	if constexpr (std::is_same_v<T, char>) {
+		return _stricmp(l, r) == 0;
+	}
+	else {
+		return _wcsicmp(l, r) == 0;
+	}
+}
+
+template<CHR T>
+inline bool StrEmpty(const T* pStr) {
+	if constexpr (std::is_same_v<T, char>) {
+		return StrEqu(pStr, "");
+	}
+	else {
+		return StrEqu(pStr, L"");
+	}
+}
+
+template<CHR T>
+inline void SplitStringCore(const std::basic_string<T>& input,
+	const T delimiter,
+	const std::function<void(const std::basic_string_view<T>&)>& callBack) {
 	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
 	size_t start = input.find_first_not_of(delimiter);
 	size_t end = start;
 
-	while (start != STR::npos) {
+	while (start != std::basic_string<T>::npos) {
 		end = input.find(delimiter, start);
-		callBack(input.substr(start, end - start));
+		callBack({ input.data() + start,
+			end == std::basic_string<T>::npos
+			? input.length() - start
+			: end - start });
 		start = input.find_first_not_of(delimiter, end);
 	}
 }
 
-template<typename T,typename STR, typename CHR>
-	requires (std::is_same_v<std::remove_cv_t<STR>, std::wstring>
-&& std::is_same_v<std::remove_cv_t<CHR>, wchar_t>)
-|| (std::is_same_v<std::remove_cv_t<STR>, std::string>
-&& std::is_same_v<std::remove_cv_t<CHR>, char>)
-inline std::vector<T> SplitString(const STR& input, const CHR delimiter
-	, std::function<T(const STR&)> callBack) {
-	std::vector<T> resultList;
+template<typename RET, CHR T>
+inline std::vector<RET> SplitString(const std::basic_string<T>& input,
+	const T delimiter,
+	std::function<RET(const std::basic_string_view<T>&)> callBack) {
+	std::vector<RET> resultList;
 
-	SplitStringCore<STR, CHR>(input, delimiter,
-		[&] (const STR& item) {
-			resultList.emplace_back(callBack(item));
+	SplitStringCore<T>(input, delimiter,
+		[&] (const std::basic_string_view<T>& item) {
+			resultList.emplace_back(std::move(callBack(item)));
 		});
 
 	return resultList;
 }
 
-template<typename STR, typename CHR>
-	requires (std::is_same_v<std::remove_cv_t<STR>, std::wstring>
-&& std::is_same_v<std::remove_cv_t<CHR>, wchar_t>)
-|| (std::is_same_v<std::remove_cv_t<STR>, std::string>
-&& std::is_same_v<std::remove_cv_t<CHR>, char>)
-inline std::vector<STR> SplitString(const STR & input, const CHR delimiter) {
-	return SplitString<STR, STR, CHR>(input, delimiter,
-		[] (const STR& item) {return item; });
+template<CHR T>
+inline std::vector<std::basic_string<T>> SplitString(const std::basic_string<T>& input, const T delimiter) {
+	return SplitString<std::basic_string<T>, T>(input, delimiter,
+		[] (const std::basic_string_view<T>& item) {
+			std::basic_string<T> obj{ item.data(),item.length() };
+
+			return obj;
+		});
 }
 
 template<typename T>
