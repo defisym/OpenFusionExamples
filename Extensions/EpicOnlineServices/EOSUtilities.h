@@ -87,6 +87,8 @@ private:
 	CallbackType deletePersistentAuthCb = nullptr;
 
 	CallbackType connectCb = nullptr;
+	CallbackType authExpirationCb = nullptr;
+	EOS_NotificationId notificationId = 0;
 
 	constexpr static auto InvalidID = "InvalidID";
 
@@ -180,6 +182,7 @@ public:
 		EOS_Platform_Tick(platformHandle);
 	}
 
+	inline auto Init() const { return bInit; }
 	inline auto State() const { return state; }
 
 public:
@@ -251,11 +254,7 @@ private:
 
 public:
 	inline void AuthLogin(const CallbackType& cb = defaultCb) {
-		if (state != EOSState::InitSuccess) {
-			return;
-		}
-
-		if (state == EOSState::TryAuth || state == EOSState::AuthFailed) {
+		if(!(state == EOSState::InitSuccess || state == EOSState::AuthFailed)) {
 			return;
 		}
 
@@ -408,7 +407,7 @@ public:
 					pEU->authLoginCb(pEU);
 
 					return;
-				};
+				}
 
 				const auto authHandle = EOS_Platform_GetAuthInterface(pEU->platformHandle);
 
@@ -473,11 +472,7 @@ public:
 	}
 
 	inline void Connect(const CallbackType& cb = defaultCb) {
-		if (state != EOSState::AuthSuccess) {
-			return;
-		}
-
-		if (state == EOSState::TryConnect || state == EOSState::ConnectFailed) {
+		if (!(state == EOSState::AuthSuccess || state == EOSState::ConnectFailed)) {
 			return;
 		}
 
@@ -502,6 +497,9 @@ public:
 				pEU->productUserId = Data->LocalUserId;
 				pEU->state = EOSState::ConnectSuccess;
 				pEU->connectCb(pEU);
+
+				pEU->RemoveNotifyAuthExpiration();
+				pEU->AddNotifyAuthExpiration();
 
 				return;
 			}
@@ -540,6 +538,28 @@ public:
 			pEU->SetLastError("Connect", Data->ResultCode);
 			pEU->state = EOSState::ConnectFailed;
 			pEU->connectCb(pEU);
+		});
+	}
+
+	inline void RemoveNotifyAuthExpiration() {
+		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+		EOS_Connect_RemoveNotifyAuthExpiration(connectHandle, notificationId);
+		notificationId = 0;
+	}
+
+	inline void AddNotifyAuthExpiration(const CallbackType& cb = defaultCb) {
+		authExpirationCb = cb;
+
+		EOS_Connect_AddNotifyAuthExpirationOptions opt{};
+		opt.ApiVersion = EOS_CONNECT_ADDNOTIFYAUTHEXPIRATION_API_LATEST;
+
+		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+		notificationId = EOS_Connect_AddNotifyAuthExpiration(connectHandle, &opt, this, [] (const EOS_Connect_AuthExpirationCallbackInfo* Data) {
+			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+
+			// reconnect
+			pEU->state = EOSState::AuthSuccess;
+			pEU->Connect();
 		});
 	}
 

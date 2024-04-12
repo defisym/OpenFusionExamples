@@ -88,7 +88,7 @@ struct GlobalData {
 		pEOSUtilities->Update();
 	}
 	
-	// Sandbox can be override by Epic Launcher command line
+	// Sandbox can be overridden by Epic Launcher command line
 	// Sandbox ID: This ID can be obtained from the Epic Games Launcher at launch time in the form of the epicsandboxid launch argument provided to all games.
 	// Deployment ID: This ID can be set within your build in a custom if/switch statement block targeting the expected deployment for the sandbox in question.
 	// https://dev.epicgames.com/docs/epic-games-store/testing-guide#sandboxdeployment-id-handling-epic-games-store-publishing-tools-only
@@ -154,7 +154,7 @@ struct GlobalData {
 	}
 
 	inline void EOSLogin(const std::function<void(bool)>& callback) const {
-		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::InitSuccess) {
+		if (!pEOSUtilities || !pEOSUtilities->Init()) {
 			callback(false);
 
 			return;
