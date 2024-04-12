@@ -197,6 +197,22 @@ inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	return true;
 }
 
+inline bool StringViewIEqu(const std::wstring_view& l, const std::wstring_view& r) {
+	const auto length = r.length();
+
+	if (length != l.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		if (ChrCmpIW(l[i], r[i]) != 0) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	const auto length = wcslen(pStr);
 
