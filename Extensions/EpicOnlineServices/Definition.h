@@ -97,14 +97,17 @@ struct GlobalData {
 			const auto& sandboxId = cmdLine.epicSandboxID;
 
 			if (sandboxId == devSandboxId) {
+				sandboxType = SandboxComboListEnum::Dev;
 				return std::make_tuple(devSandboxId, devDeploymentId);
 			}
 
 			if (sandboxId == stageSandboxId) {
+				sandboxType = SandboxComboListEnum::Stage;
 				return std::make_tuple(stageSandboxId, stageDeploymentId);
 			}
 
 			if (sandboxId == liveSandboxId) {
+				sandboxType = SandboxComboListEnum::Live;
 				return std::make_tuple(liveSandboxId, liveDeploymentId);
 			}
 		}
