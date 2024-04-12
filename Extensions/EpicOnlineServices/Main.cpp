@@ -68,7 +68,7 @@ long WINAPI DLLExport Condition_OnLogout(LPRDATA rdPtr, long param1, long param2
 }
 
 long WINAPI DLLExport Condition_LoginSuccess(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->bUserLogin;
+	return rdPtr->pData->logOpt.bUserLogin;
 }
 
 long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long param2) {
@@ -111,7 +111,7 @@ long WINAPI DLLExport Condition_OnError(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->EOSLogin([=] (bool bSuccess) {
-		rdPtr->bUserLogin = bSuccess;
+		rdPtr->pData->logOpt.bUserLogin = bSuccess;
 		AddEvent(ON_LoginComplete);
 		});
 
@@ -120,7 +120,7 @@ short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport Action_Logout(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->EOSLogout([=] (bool bSuccess) {
-		rdPtr->bUserLogin = !bSuccess;
+		rdPtr->pData->logOpt.bUserLogin = !bSuccess;
 		AddEvent(ON_LogoutComplete);
 		});
 

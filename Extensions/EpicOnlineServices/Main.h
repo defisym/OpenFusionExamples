@@ -140,14 +140,7 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 
-	bool bAutoLogin;
-	bool bAutoLogout;
-
-	std::wstring* pRet;
-
-	bool bLoginCalled = false;
-	bool bUserLogin = false;
-	
+	std::wstring* pRet;	
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

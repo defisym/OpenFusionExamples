@@ -42,31 +42,9 @@ inline auto GetAuthPremissions(LPEDATA edPtr) {
 }
 
 inline GlobalData::~GlobalData() {
-	auto release = [this] () {
-		EOSReleasePlatform();
-		delete pEOSUtilities;
-	};
-
-	if (rdPtr->bAutoLogout && rdPtr->bUserLogin) {
-		std::atomic bLogoutFinish = false;
-
-		EOSLogout([&bLogoutFinish] (bool) {
-			bLogoutFinish = true;
-		});
-
-		while (true) {
-			if(bLogoutFinish) {
-				release();
-				break;
-			}
-
-			// need update here to trigger callback
-			// shouldn't be called after release
-			EOSUpdate();
-		}
-	}
-	else {
-		release();
+	if (logOpt.bAutoLogout && logOpt.bUserLogin) {
+		// logout will add callback count internally
+		EOSLogout([] (bool) {});
 	}
 
 	EOSWaitForCallbackComplete();

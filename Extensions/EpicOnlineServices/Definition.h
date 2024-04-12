@@ -49,8 +49,17 @@ inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum com
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 }
 
+struct LogOpt {
+	bool bAutoLogin = false;
+	bool bAutoLogout = false;
+
+	bool bLoginCalled = false;
+	bool bUserLogin = false;
+};
+
 struct GlobalData {
 	LPRDATA rdPtr = nullptr;
+	LogOpt logOpt;
 
 	EOSUtilities* pEOSUtilities = nullptr;
 	EOSAchievement* pEOSAchievement = nullptr;
@@ -207,6 +216,13 @@ struct GlobalData {
 				});
 			}
 		});		
+	}
+
+	inline void EOSAutoLogin(const std::function<void(bool)>& callback) {
+		if (logOpt.bAutoLogin && !logOpt.bLoginCalled) {
+			logOpt.bLoginCalled = true;
+			EOSLogin(callback);
+		}
 	}
 
 	inline void EOSLogout(const std::function<void(bool)>& callback) const {
