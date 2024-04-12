@@ -279,7 +279,7 @@ public:
 		case EOS_ELoginCredentialType::EOS_LCT_ExchangeCode:
 		{
 			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
-			if (!pCmdLine->bValid) {
+			if (pCmdLine->authPassword.empty()) {
 				SetLastError("Auth", "Invalid exchange code");
 				state = EOSState::AuthFailed;
 				authLoginCb(this);

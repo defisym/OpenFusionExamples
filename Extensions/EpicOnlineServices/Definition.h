@@ -93,7 +93,7 @@ struct GlobalData {
 	// Deployment ID: This ID can be set within your build in a custom if/switch statement block targeting the expected deployment for the sandbox in question.
 	// https://dev.epicgames.com/docs/epic-games-store/testing-guide#sandboxdeployment-id-handling-epic-games-store-publishing-tools-only
 	inline auto GetSandboxInfo() {
-		if (cmdLine.bValid && !cmdLine.epicSandboxID.empty()) {
+		if (!cmdLine.epicSandboxID.empty()) {
 			const auto& sandboxId = cmdLine.epicSandboxID;
 
 			if (sandboxId == devSandboxId) {
