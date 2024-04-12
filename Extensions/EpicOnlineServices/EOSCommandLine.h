@@ -4,8 +4,7 @@
 #include "GeneralDefinition.h"
 
 // Example:
-// -AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal  -epicusername=<username> -epicuserid=<userid> -epiclocale=en-US -epicsandboxid=<sandboxid>
-// -AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal -epicusername=<username>-epicuserid<userid> -epiclocale=en-US
+// -AUTH_LOGIN=unused -AUTH_PASSWORD=<password> -AUTH_TYPE=exchangecode -epicapp=<appid> -epicenv=Prod -EpicPortal  -epicusername=<username> -epicuserid=<userid> -epiclocale=en-US -epicsandboxid=<sandboxid> -epicdeploymentid=<deploymentid>
 
 // https://eoshelp.epicgames.com/s/case/5004z00001rezlvAAA/login-with-exchange-code?language=zh_CN
 // the Launcher will use the equals sign, so any custom parsing that you do should factor this in, for example:
@@ -24,6 +23,7 @@ private:
 	static constexpr const char* EOSCommandLine_EpicUserID = "-epicUserID";
 	static constexpr const char* EOSCommandLine_EpicLocal = "-epicLocal";
 	static constexpr const char* EOSCommandLine_EpicSandboxID = "-epicSandboxID";
+	static constexpr const char* EOSCommandLine_EpicDeploymentID = "-epicDeploymentid";
 
 	static constexpr char EOSCommandLine_Dash = '-';
 	static constexpr char EOSCommandLine_Equal = '=';
@@ -101,6 +101,12 @@ private:
 				break;
 			}
 
+
+			if (StrIEqu(item.c_str(), EOSCommandLine_EpicDeploymentID)) {
+				epicDeploymentID = cur.content;
+
+				break;
+			}
 		} while (false);
 	}
 
@@ -117,6 +123,7 @@ public:
 	std::string epicUserID;
 	std::string epicLocal;
 	std::string epicSandboxID;
+	std::string epicDeploymentID;
 
 	EOSCommandLine() {
 		// get command line
