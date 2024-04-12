@@ -262,33 +262,49 @@ inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"AL
 // basic split
 #include <functional>
 
-inline void SplitStringCore(const std::wstring& input, const wchar_t delimiter
-	, const std::function<void(const std::wstring&)>& callBack) {
+template<typename STR, typename CHR>
+	requires (std::is_same_v<std::remove_cv_t<STR>, std::wstring>
+&& std::is_same_v<std::remove_cv_t<CHR>, wchar_t>)
+|| (std::is_same_v<std::remove_cv_t<STR>, std::string>
+&& std::is_same_v<std::remove_cv_t<CHR>, char>)
+inline void SplitStringCore(const STR& input, const CHR delimiter
+	, const std::function<void(const STR&)>& callBack) {
 	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
 	size_t start = input.find_first_not_of(delimiter);
 	size_t end = start;
 
-	while (start != std::wstring::npos) {
+	while (start != STR::npos) {
 		end = input.find(delimiter, start);
 		callBack(input.substr(start, end - start));
 		start = input.find_first_not_of(delimiter, end);
 	}
 }
 
-template<typename T>
-inline std::vector<T> SplitString(const std::wstring& input, const wchar_t delimiter
-	, std::function<T(const std::wstring&)> callBack) {
+template<typename T,typename STR, typename CHR>
+	requires (std::is_same_v<std::remove_cv_t<STR>, std::wstring>
+&& std::is_same_v<std::remove_cv_t<CHR>, wchar_t>)
+|| (std::is_same_v<std::remove_cv_t<STR>, std::string>
+&& std::is_same_v<std::remove_cv_t<CHR>, char>)
+inline std::vector<T> SplitString(const STR& input, const CHR delimiter
+	, std::function<T(const STR&)> callBack) {
 	std::vector<T> resultList;
 
-	SplitStringCore(input, delimiter, [&] (const std::wstring& item) {
-		resultList.emplace_back(callBack(item));
+	SplitStringCore<STR, CHR>(input, delimiter,
+		[&] (const STR& item) {
+			resultList.emplace_back(callBack(item));
 		});
 
 	return resultList;
 }
 
-inline std::vector<std::wstring> SplitString(const std::wstring& input, const wchar_t delimiter) {
-	return SplitString<std::wstring>(input, delimiter, [] (const std::wstring& item) {return item; });
+template<typename STR, typename CHR>
+	requires (std::is_same_v<std::remove_cv_t<STR>, std::wstring>
+&& std::is_same_v<std::remove_cv_t<CHR>, wchar_t>)
+|| (std::is_same_v<std::remove_cv_t<STR>, std::string>
+&& std::is_same_v<std::remove_cv_t<CHR>, char>)
+inline std::vector<STR> SplitString(const STR & input, const CHR delimiter) {
+	return SplitString<STR, STR, CHR>(input, delimiter,
+		[] (const STR& item) {return item; });
 }
 
 template<typename T>
