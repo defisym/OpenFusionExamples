@@ -112,6 +112,10 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	// runtime
 	EOSUtilities_RuntimeOptions runtimeOpt{};
 	runtimeOpt.authCredentialsType = AuthTypeComboListEnumToLoginCredentialType(edPtr->authType);
+	if(cmdLine.bValid&&cmdLine.authType == "exchangecode") {
+		runtimeOpt.authCredentialsType = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
+	}
+
 	runtimeOpt.authPremissions = GetAuthPremissions(edPtr);
 	runtimeOpt.bRequireLauncher = edPtr->bRequireLauncher;
 	runtimeOpt.bRequireBootstrap = edPtr->bRequireBootstrap;

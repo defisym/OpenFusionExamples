@@ -287,7 +287,7 @@ public:
 				return;
 			}
 
-			authCredentials.Token = pCmdLine->authType.c_str();
+			authCredentials.Token = pCmdLine->authPassword.c_str();
 
 			break;
 		}
