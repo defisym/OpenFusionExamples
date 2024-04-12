@@ -103,6 +103,11 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 
 	const auto& [sandboxId, deploymentId] = GetSandboxInfo();
 
+	//MessageBoxA(nullptr,
+	//	std::format("CMD\r\nsandbox: {}, deploy: {}\r\ndev sandbox: {}, dev deploy: {}\r\nstage sandbox: {}, stage deploy: {}\r\nlive sandbox: {}, live deploy: {}",sandboxId,deploymentId,devSandboxId,devDeploymentId,stageSandboxId,stageDeploymentId,liveSandboxId,liveDeploymentId).c_str(),
+	//	"Title",
+	//	MB_OK);
+
 	platOpt.SandboxId = sandboxId.c_str();
 	platOpt.DeploymentId = deploymentId.c_str();
 
