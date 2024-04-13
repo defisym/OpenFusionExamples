@@ -96,7 +96,7 @@ public:
 	}
 
 private:
-	inline bool SetPresence(const std::function<bool(EOS_HPresenceModification)>& typeCb,
+	inline bool SetPresence(const std::function<EOS_EResult(EOS_HPresenceModification)>& typeCb,
 		const CallbackType& cb = defaultCb) {
 		if (!PlatformOK()) { return false; }
 		
@@ -109,7 +109,8 @@ private:
 		EOS_HPresenceModification presenceModificationHandle = nullptr;
 
 		if(EOSUtilities::EOSOK(EOS_Presence_CreatePresenceModification(preHandle, &createPresenceModificationOptions, &presenceModificationHandle))) {
-			const auto bSuccess = typeCb(presenceModificationHandle);
+			const auto result = typeCb(presenceModificationHandle);
+			const auto bSuccess = EOSUtilities::EOSOK(result);
 
 			if(bSuccess) {
 				presenceSetCb = cb;
@@ -132,10 +133,11 @@ private:
 					pEP->presenceSetCb(pEP);
 				});
 			}
+			else {
+				pEU->SetLastError("Presence", "Failed to set presence", result);
+			}
 
 			EOS_PresenceModification_Release(presenceModificationHandle);
-
-			pEU->SetLastError("Presence", "Failed to set presence");
 			return bSuccess;
 		}
 
@@ -150,7 +152,7 @@ public:
 			setStatusOptions.ApiVersion = EOS_PRESENCEMODIFICATION_SETSTATUS_API_LATEST;
 			setStatusOptions.Status = status;
 
-			return EOSUtilities::EOSOK(EOS_PresenceModification_SetStatus(presenceModificationHandle, &setStatusOptions));
+			return EOS_PresenceModification_SetStatus(presenceModificationHandle, &setStatusOptions);
 		});		
 	}
 
@@ -160,7 +162,7 @@ public:
 			setRawRichTextOptions.ApiVersion = EOS_PRESENCEMODIFICATION_SETRAWRICHTEXT_API_LATEST;
 			setRawRichTextOptions.RichText = richText.c_str();
 
-			return EOSUtilities::EOSOK(EOS_PresenceModification_SetRawRichText(presenceModificationHandle, &setRawRichTextOptions));
+			return EOS_PresenceModification_SetRawRichText(presenceModificationHandle, &setRawRichTextOptions);
 		});
 	}
 
@@ -181,11 +183,11 @@ public:
 			setDataOptions.RecordsCount = sz;
 			setDataOptions.Records = pArray;
 
-			const bool bRet = EOSUtilities::EOSOK(EOS_PresenceModification_SetData(presenceModificationHandle, &setDataOptions));
+			const auto result = EOS_PresenceModification_SetData(presenceModificationHandle, &setDataOptions);
 
 			delete[] pArray;
 
-			return bRet;
+			return result;
 		});
 	}
 	
@@ -205,11 +207,11 @@ public:
 			deleteDataOptions.RecordsCount = sz;
 			deleteDataOptions.Records = pArray;
 
-			const bool bRet = EOSUtilities::EOSOK(EOS_PresenceModification_DeleteData(presenceModificationHandle, &deleteDataOptions));
+			const auto result =EOS_PresenceModification_DeleteData(presenceModificationHandle, &deleteDataOptions);
 
 			delete[] pArray;
 
-			return bRet;
+			return result;
 		});
 	}
 };
