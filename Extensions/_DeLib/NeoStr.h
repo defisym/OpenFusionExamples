@@ -616,6 +616,20 @@ private:
 	std::vector<FormatAlign> alignFormat;
 	std::vector<DWORD> alignStack;
 
+	struct CharOffsetDisplay {
+		float charOffsetX = 0.0f;
+		float charOffsetY = 0.0f;
+	};
+
+	CharOffsetDisplay charOffsetDisplay = { 0.0f,0.0f };
+
+	struct FormatCharOffsetDisplay :FormatBasic {
+		CharOffsetDisplay charOffsetDisplay;
+	};
+
+	std::vector<FormatCharOffsetDisplay> charOffsetFormat;
+	std::vector<CharOffsetDisplay> charOffsetStack;
+
 	// for shake control
 	struct FormatShake :FormatBasic {
 		ShakeControl shakeControl;
@@ -1036,6 +1050,9 @@ public:
 		this->iConFormat.reserve(DEFAULT_FORMAT_RESERVE);
 
 		// stack based
+		this->charOffsetFormat.reserve(DEFAULT_FORMAT_RESERVE);
+		this->charOffsetStack.reserve(DEFAULT_FORMAT_RESERVE);
+
 		this->alignFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->alignStack.reserve(DEFAULT_FORMAT_RESERVE);
 
@@ -1907,7 +1924,15 @@ public:
 		// 
 		// [Align = LEFT]
 		//  change align of different lines
+		//
+		// [CharOffsetX = 0.0][/CharOffsetX]
+		//  Char Offset X
+		//	See [Values General]
 		// 
+		// [CharOffsetY = 0.0][/CharOffsetY]
+		//  Char Offset Y
+		//	See [Values General]
+		//
 		// [Shake = Type, Amplitude, TimerCoef, CharOffset]
 		//	control shake.
 		//	if param is less than four, will be referred from right.
@@ -1987,6 +2012,12 @@ public:
 		this->iConFormat.clear();
 
 		// stack based
+		this->charOffsetStack.clear();
+		this->charOffsetStack.emplace_back(this->charOffsetDisplay);
+
+		this->charOffsetFormat.clear();
+		this->charOffsetFormat.emplace_back(FormatCharOffsetDisplay{ {0,0},charOffsetStack.back() });
+
 		this->alignStack.clear();
 		this->alignStack.emplace_back(this->dwDTFlags);
 
@@ -2367,6 +2398,7 @@ public:
 							// reset stack based here
 							// note that icon or remark requires stack based
 							// to align, so doesn't reset them here
+							Reset(charOffsetStack, charOffsetFormat);
 							Reset(alignStack, alignFormat);
 							Reset(shakeStack, shakeFormat);
 							Reset(colorStack, colorFormat);
@@ -2592,6 +2624,47 @@ public:
 							break;
 						}
 
+						if (StringViewIEqu(controlStr, L"CharOffsetX")) {
+							if (CurrentCommandIgnored()) { break; }
+
+							StackManager(charOffsetStack, charOffsetFormat, [&] (CharOffsetDisplay& charPosDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									charPosDisplay.charOffsetX = this->charOffsetStack.front().charOffsetX;
+
+									return;
+								}
+
+								charPosDisplay.charOffsetX = DiffManager(charPosDisplay.charOffsetX,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
+
+						if (StringViewIEqu(controlStr, L"CharOffsetY")) {
+							if (CurrentCommandIgnored()) { break; }
+
+							StackManager(charOffsetStack, charOffsetFormat, [&] (CharOffsetDisplay& charPosDisplay) {
+								// Reset
+								if (StringViewIEqu(controlParam, L"!")) {
+									charPosDisplay.charOffsetY = this->charOffsetStack.front().charOffsetY;
+
+									return;
+								}
+
+								charPosDisplay.charOffsetY = DiffManager(charPosDisplay.charOffsetY,
+									[&] (const std::wstring_view& controlParam) {
+										const auto size = _stof(controlParam);
+										return size;
+									});
+								});
+
+							break;
+						}
 
 						// ------------
 						// shake
@@ -3637,6 +3710,8 @@ public:
 			}
 		};
 
+		auto charOffsetDisplay = this->charOffsetDisplay;
+		auto charOffsetItHandler = IteratorHandler(this->charOffsetFormat);
 		auto formatAlign = this->dwDTFlags;
 		auto alignItHandler = IteratorHandler(this->alignFormat);
 		auto colorItHandler = IteratorHandler(this->colorFormat);
@@ -3687,7 +3762,7 @@ public:
 					formatAlign = alignIt->dwDTFlags;
 				});
 
-				// RAII
+				// RAII: align only has effect for current line
 				auto alignHandler = AlignHandler(&this->dwDTFlags, formatAlign);
 				int x = GetStartPosX(curStrPos.width, rcWidth);
 				x -= GDIPlusOffset;
@@ -3698,17 +3773,39 @@ public:
 						throw std::exception("Exceed visable ratio");
 					}
 
+					// get char size
 					auto pCurChar = pText + offset;
 					charSz = &pCharSizeArr[offset];
 
-					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset,
-													this->startY + curStrPos.y,
+
+					// ---------
+					// update iterator
+					// ---------
+
+					// stack based
+					charOffsetItHandler.Forward(totalChar, [&] (auto charPosIt) {
+						charOffsetDisplay = charPosIt->charOffsetDisplay;
+					});
+
+					const double charOffsetX = charOffsetDisplay.charOffsetX * static_cast<double>(charSz->width);
+					const double charOffsetY = charOffsetDisplay.charOffsetY * static_cast<double>(charSz->height);
+
+					// corrected position (no border offset)
+					const double displayX = x + charOffsetX;
+					const double displayY = curStrPos.y + charOffsetY;
+
+					// position relative to object left top
+					pCharPosArr[offset] = CharPos{ static_cast<long>(displayX + GDIPlusOffset),
+													static_cast<long>(this->startY + displayY),
 													0,0,
 													ShakeControl() };
 
-#pragma region FORMAT_IT				
-					auto positionX = (float)(x + this->borderOffsetX);
-					auto positionY = (float)(curStrPos.y + this->borderOffsetY);
+					const auto& curCharPos = pCharPosArr[offset];
+
+#pragma region FORMAT_IT
+					// position relative to bitmap for rendering
+					auto positionX = static_cast<float>(displayX + this->borderOffsetX);
+					auto positionY = static_cast<float>(displayY + this->borderOffsetY);
 
 					// update position
 					if (opt.positionCallback != nullptr) {
@@ -3755,14 +3852,14 @@ public:
 					});
 					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
 						// use updated position
-						iConIt->x = (size_t)positionX;
-						iConIt->y = (size_t)positionY;
+						iConIt->x = static_cast<size_t>(positionX);
+						iConIt->y = static_cast<size_t>(positionY);
 					});
 #pragma endregion
 
 					if (!opt.ClipChar(pRc->left, pRc->top,
-						x, this->startY + curStrPos.y, charSz)) {
-						struct ColorUpdater {
+						curCharPos.x, curCharPos.y, charSz)) {
+						struct ColorUpdater {  // NOLINT(cppcoreguidelines-special-member-functions)
 							SolidBrush* pBrush = nullptr;
 							SolidBrush oldBrush = SolidBrush(Color());
 
@@ -3812,7 +3909,8 @@ public:
 							auto blackPen = Pen(&solidBrush, 1);
 							status = pGraphic->DrawRectangle(&blackPen,
 								positionX, positionY,
-								(float)charSz->width, (float)charSz->height);
+								static_cast<float>(charSz->width),
+								static_cast<float>(charSz->height));
 						}
 						//assert(status == Status::Ok);
 					}
