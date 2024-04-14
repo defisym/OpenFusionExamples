@@ -14,8 +14,12 @@ public:
 	}
 	virtual ~PlatformBase() = default;
 
+	// init platform, usually need to query data first
 	virtual inline void PlatformInit() = 0;
-	virtual inline void PlatformUpdate() = 0;
+	// query data
+	virtual inline void PlatformQuery() = 0;
+	// handle update task if needed
+	virtual inline void PlatformUpdate() {}
 
 	inline bool PlatformOK() const {
 		return pEU->PlatformOK();
@@ -47,5 +51,5 @@ public:
 //	explicit EOSStat(EOSUtilities* pEU) : PlatformBase(pEU) {}
 //	~EOSStat() override = default;
 //	inline void PlatformInit() override {}
-//	inline void PlatformUpdate() override {}
+//	inline void PlatformQuery() override {}
 //};

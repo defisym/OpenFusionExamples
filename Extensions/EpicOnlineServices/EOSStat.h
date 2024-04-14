@@ -17,13 +17,15 @@ private:
 	CallbackType statQueryCb;
 	CallbackType statIngestCb;
 
+	bool bNeedIngest = false;
+
 public:
 	explicit EOSStat(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSStat() override = default;
 	inline void PlatformInit() override {
-		QueryStat();
+		PlatformQuery();
 	}
-	inline void PlatformUpdate() override {
+	inline void PlatformQuery() override {
 		QueryStat();
 	}
 

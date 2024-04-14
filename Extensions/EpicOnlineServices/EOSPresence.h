@@ -23,9 +23,9 @@ public:
 	explicit EOSPresence(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSPresence() override = default;
 	inline void PlatformInit() override {
-		QueryPresence();
+		PlatformQuery();
 	}
-	inline void PlatformUpdate() override {
+	inline void PlatformQuery() override {
 		QueryPresence();
 	}
 
@@ -180,7 +180,7 @@ public:
 
 			EOS_PresenceModification_SetDataOptions setDataOptions{};
 			setDataOptions.ApiVersion = EOS_PRESENCEMODIFICATION_SETDATA_API_LATEST;
-			setDataOptions.RecordsCount = sz;
+			setDataOptions.RecordsCount = static_cast<int32_t>(sz);
 			setDataOptions.Records = pArray;
 
 			const auto result = EOS_PresenceModification_SetData(presenceModificationHandle, &setDataOptions);
@@ -204,7 +204,7 @@ public:
 
 			EOS_PresenceModification_DeleteDataOptions deleteDataOptions{};
 			deleteDataOptions.ApiVersion = EOS_PRESENCEMODIFICATION_DELETEDATA_API_LATEST;
-			deleteDataOptions.RecordsCount = sz;
+			deleteDataOptions.RecordsCount = static_cast<int32_t>(sz);
 			deleteDataOptions.Records = pArray;
 
 			const auto result =EOS_PresenceModification_DeleteData(presenceModificationHandle, &deleteDataOptions);

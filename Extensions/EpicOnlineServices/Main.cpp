@@ -149,20 +149,20 @@ short WINAPI DLLExport Action_Query(LPRDATA rdPtr, long param1, long param2) {
 
 	do {
 		if (StrEmpty(pQueryType)) {
-			rdPtr->pData->EOSUpdatePlatform();
+			rdPtr->pData->EOSQueryPlatform();
 			break;
 		}
 
 		if(StrIEqu(pQueryType, EOSQueryType::Achievement)) {
-			rdPtr->pData->pEOSAchievement->PlatformUpdate();
+			rdPtr->pData->pEOSAchievement->PlatformQuery();
 			break;
 		}
 		if (StrIEqu(pQueryType, EOSQueryType::Stat)) {
-			rdPtr->pData->pEOSStat->PlatformUpdate();
+			rdPtr->pData->pEOSStat->PlatformQuery();
 			break;
 		}
 		if (StrIEqu(pQueryType, EOSQueryType::Presence)) {
-			rdPtr->pData->pEOSPresence->PlatformUpdate();
+			rdPtr->pData->pEOSPresence->PlatformQuery();
 			break;
 		}
 	} while (false);

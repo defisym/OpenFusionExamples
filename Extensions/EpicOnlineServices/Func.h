@@ -42,11 +42,7 @@ inline auto GetAuthPremissions(LPEDATA edPtr) {
 }
 
 inline GlobalData::~GlobalData() {
-	if (logOpt.bAutoLogout && logOpt.bUserLogin) {
-		// logout will add callback count internally
-		EOSLogout([] (bool) {});
-	}
-
+	EOSAutoLogout();	// no need to use callback to call events here, as app is terminated
 	EOSWaitForCallbackComplete();
 
 	EOSReleasePlatform();

@@ -93,6 +93,7 @@ struct GlobalData {
 	}
 
 	inline void EOSUpdate() const {
+		EOSUpdatePlatform();
 		pEOSUtilities->Update();
 	}
 	
@@ -136,6 +137,7 @@ struct GlobalData {
 
 	inline bool EOSInit(LPEDATA edPtr);
 
+	// same as platform functions, but do them together
 	inline void EOSAllocPlatform() {
 		pEOSAchievement = new EOSAchievement(pEOSUtilities);
 		pEOSStat = new EOSStat(pEOSUtilities);
@@ -152,6 +154,12 @@ struct GlobalData {
 		pEOSAchievement->PlatformInit();
 		pEOSStat->PlatformInit();
 		pEOSPresence->PlatformInit();
+	}
+
+	inline void EOSQueryPlatform() const {
+		pEOSAchievement->PlatformQuery();
+		pEOSStat->PlatformQuery();
+		pEOSPresence->PlatformQuery();
 	}
 
 	inline void EOSUpdatePlatform() const {
@@ -186,7 +194,12 @@ struct GlobalData {
 		//OutputDebugStringA("Complete!\n");
 	}
 
-	inline void EOSLogin(const std::function<void(bool)>& callback) const {
+private:
+	using LogResultCallback = std::function<void(bool)>;
+	inline const static LogResultCallback defaultCb = [] (bool) {};
+
+public:
+	inline void EOSLogin(const LogResultCallback& callback = defaultCb) const {
 		if (!pEOSUtilities || !pEOSUtilities->Init()) {
 			callback(false);
 
@@ -218,14 +231,15 @@ struct GlobalData {
 		});		
 	}
 
-	inline void EOSAutoLogin(const std::function<void(bool)>& callback) {
+	inline void EOSAutoLogin(const LogResultCallback& callback = defaultCb) {
 		if (logOpt.bAutoLogin && !logOpt.bLoginCalled) {
 			logOpt.bLoginCalled = true;
+			// login will add callback count internally
 			EOSLogin(callback);
 		}
 	}
 
-	inline void EOSLogout(const std::function<void(bool)>& callback) const {
+	inline void EOSLogout(const LogResultCallback& callback = defaultCb) const {
 		if (!pEOSUtilities && pEOSUtilities->State() < EOSState::AuthSuccess) {
 			callback(false);
 
@@ -236,5 +250,12 @@ struct GlobalData {
 		pEOSUtilities->AuthLogout([this, callback] (const EOSUtilities* pEU) {
 			callback(pEU->State() == EOSState::InitSuccess);
 		});
+	}
+
+	inline void EOSAutoLogout(const LogResultCallback& callback = defaultCb) const {
+		if (logOpt.bAutoLogout && logOpt.bUserLogin) {
+			// logout will add callback count internally
+			EOSLogout(callback);
+		}
 	}
 };

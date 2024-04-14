@@ -21,9 +21,9 @@ public:
 	explicit EOSAchievement(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSAchievement() override = default;
 	inline void PlatformInit() override {
-		QueryAchievementDefinitions();
+		PlatformQuery();
 	}
-	inline void PlatformUpdate() override {
+	inline void PlatformQuery() override {
 		QueryAchievementDefinitions();
 	}
 
