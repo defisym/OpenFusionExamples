@@ -7,7 +7,7 @@ EpicOnlineServices
 ## Note
 
 Almost everything is **async**!
-Wait operations complete before changing frame, or the game may crash!
+Extension will wait until all callbacks finishes. This may cause lags.
 
 ## Properties
 
