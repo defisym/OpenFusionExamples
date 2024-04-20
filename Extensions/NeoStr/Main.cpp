@@ -1257,13 +1257,20 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 
 	try {		
 		pFilter.GetFormat(pStr
-			, flags == -1 ? rdPtr->filterFlags : flags
+			, flags == static_cast<size_t>(-1) ? rdPtr->filterFlags : flags
 			, true
 			, FORMAT_OPERATION_GetRawStringByFilteredStringLength
 			, filteredLength);		
 	}
-	catch (int) {
-		*rdPtr->pExpRet = pFilter.GetRawText() != nullptr ? pFilter.GetRawText() : Default_Str;
+	catch ([[maybe_unused]] NeoStrFormatException& e) {
+		// not the flag we want, may hide other errors
+		if (e.GetFlag() != FORMAT_OPERATION_GetRawStringByFilteredStringLength) {
+			throw;
+		}
+
+		*rdPtr->pExpRet = pFilter.GetRawText() != nullptr
+			? pFilter.GetRawText()
+			: Default_Str;
 	}
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.

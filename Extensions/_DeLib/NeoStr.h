@@ -118,6 +118,19 @@ constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
 constexpr auto FORMAT_INVALID_ICON = static_cast<DWORD>(-1);
 
+struct NeoStrFormatException final :std::exception {
+private:
+	int flag = 0;
+
+public:
+	NeoStrFormatException(char const* const pMsg, int flag = 0) noexcept
+		:std::exception(pMsg) {
+		this->flag = flag;
+	}
+
+	inline int GetFlag() const noexcept { return this->flag; }
+};
+
 // D3D limitation
 // https://learn.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-limits
 constexpr long D3D11_TEXTURE_SIZE = 16384;
@@ -2069,7 +2082,8 @@ public:
 				pSavedChar[0] = L'@';
 				pSavedChar[1] = L'\0';
 #endif
-				throw std::exception("Get Raw String By Filtered String Length");
+				throw NeoStrFormatException("Get Raw String By Filtered String Length", 
+					FORMAT_OPERATION_GetRawStringByFilteredStringLength);
 			}
 		};
 
@@ -3728,6 +3742,20 @@ public:
 		// ------------
 		// render & calculate position of each char
 		// ------------
+		// Exceptions used to terminate render, should be catched and do nothing
+		struct NeoStrRenderException final :std::exception {
+		private:
+			int flag = 0;
+
+		public:
+			NeoStrRenderException(char const* const pMsg, int flag = 0) noexcept
+				:std::exception(pMsg) {
+				this->flag = flag;
+			}
+
+			inline int GetFlag() const noexcept { return this->flag; }
+		};
+
 		try {
 			for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
@@ -3770,7 +3798,7 @@ public:
 				for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 					auto offset = curStrPos.start + curChar;
 					if (offset >= opt.renderCharCount) {
-						throw std::exception("Exceed visable ratio");
+						throw NeoStrRenderException("Exceed visable ratio");
 					}
 
 					// get char size
@@ -3810,7 +3838,7 @@ public:
 					// update position
 					if (opt.positionCallback != nullptr) {
 						if (!opt.positionCallback(charSz, &pCharPosArr[offset], positionX, positionY)) {
-							throw std::exception("Exceed remark base length");
+							throw NeoStrRenderException("Exceed remark base length");
 						}
 					}
 
@@ -3918,7 +3946,7 @@ public:
 					x += (charSz->width + nColSpace);
 				}
 			}
-		} catch([[maybe_unused]] std::exception& e) {  // NOLINT(bugprone-empty-catch)
+		} catch([[maybe_unused]] NeoStrRenderException& e) {  // NOLINT(bugprone-empty-catch)
 			// use exception to jump out of the loop if exceeds the
 			// render char count, so nothing to handle here
 		}
