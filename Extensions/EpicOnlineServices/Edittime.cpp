@@ -24,12 +24,21 @@ enum {
 	PROPID_InitializeOptions_AppVersion_TEXT,	
 
 	PROPID_PlatformOptions_TEXTTITLE,	
-	PROPID_PlatformOptions_ProductId_TEXT,	
-	PROPID_PlatformOptions_SandboxId_TEXT,	
-	PROPID_PlatformOptions_DeploymentId_TEXT,	
+	PROPID_PlatformOptions_ProductId_TEXT,
 
-	PROPID_PlatformOptions_ClientId_TEXT,	
-	PROPID_PlatformOptions_ClientSecret_TEXT,	
+	PROPID_PlatformOptions_ClientId_TEXT,
+	PROPID_PlatformOptions_ClientSecret_TEXT,
+
+	PROPID_PlatformOptions_DefaultSandbox_COMBO,
+
+	PROPID_PlatformOptions_DevSandboxId_TEXT,	
+	PROPID_PlatformOptions_DevDeploymentId_TEXT,
+
+	PROPID_PlatformOptions_StageSandboxId_TEXT,
+	PROPID_PlatformOptions_StageDeploymentId_TEXT,
+
+	PROPID_PlatformOptions_LiveSandboxId_TEXT,
+	PROPID_PlatformOptions_LiveDeploymentId_TEXT,
 
 	PROPID_RuntimeOptions_TEXTTITLE,	
 	PROPID_RuntimeOptions_AuthType_COMBO,
@@ -46,6 +55,16 @@ enum {
 	PROPID_RuntimeOptions_RequireBootstrap_CHECK,	
 	PROPID_RuntimeOptions_AutoLogin_CHECK,	
 	PROPID_RuntimeOptions_AutoLogout_CHECK,	
+};
+
+LPCWSTR DefaultSandboxComboList[] = {
+	0,	// reserved
+
+	MAKEINTRESOURCE(IDS_DefaultSandbox_Dev),
+	MAKEINTRESOURCE(IDS_DefaultSandbox_Stage),
+	MAKEINTRESOURCE(IDS_DefaultSandbox_Live),
+
+	NULL
 };
 
 LPCWSTR AuthTypeComboList[] = {
@@ -79,11 +98,18 @@ PropData Properties[] = {
 
 	PropData_Group		(PROPID_PlatformOptions_TEXTTITLE,	IDS_PROP_PlatformOptions_TEXTTITLE,		IDS_PROP_PlatformOptions_TEXTTITLE),
 	PropData_EditString	(PROPID_PlatformOptions_ProductId_TEXT,		IDS_PROP_PlatformOptions_ProductId_TEXT,			IDS_PROP_PlatformOptions_ProductId_TEXT_INFO),
-	PropData_EditString	(PROPID_PlatformOptions_SandboxId_TEXT,		IDS_PROP_PlatformOptions_SandboxId_TEXT,			IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO),
-	PropData_EditString	(PROPID_PlatformOptions_DeploymentId_TEXT,		IDS_PROP_PlatformOptions_DeploymentId_TEXT,			IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO),
 
-	PropData_EditString	(PROPID_PlatformOptions_ClientId_TEXT,		IDS_PROP_PlatformOptions_ClientId_TEXT,			IDS_PROP_PlatformOptions_ClientId_TEXT_INFO),
-	PropData_EditString	(PROPID_PlatformOptions_ClientSecret_TEXT,		IDS_PROP_PlatformOptions_ClientSecret_TEXT,			IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO),
+	PropData_EditString(PROPID_PlatformOptions_ClientId_TEXT,		IDS_PROP_PlatformOptions_ClientId_TEXT,			IDS_PROP_PlatformOptions_ClientId_TEXT_INFO),
+	PropData_EditString(PROPID_PlatformOptions_ClientSecret_TEXT,		IDS_PROP_PlatformOptions_ClientSecret_TEXT,			IDS_PROP_PlatformOptions_ClientSecret_TEXT_INFO),
+
+	PropData_ComboBox(PROPID_PlatformOptions_DefaultSandbox_COMBO,		IDS_PROP_PlatformOptions_DefaultSandbox_COMBO,			IDS_PROP_PlatformOptions_DefaultSandbox_COMBO_INFO,	DefaultSandboxComboList),
+
+	PropData_EditString	(PROPID_PlatformOptions_DevSandboxId_TEXT,		IDS_PROP_PlatformOptions_DevSandboxId_TEXT,			IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO),
+	PropData_EditString	(PROPID_PlatformOptions_DevDeploymentId_TEXT,		IDS_PROP_PlatformOptions_DevDeploymentId_TEXT,			IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO),
+	PropData_EditString(PROPID_PlatformOptions_StageSandboxId_TEXT,		IDS_PROP_PlatformOptions_StageSandboxId_TEXT,			IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO),
+	PropData_EditString(PROPID_PlatformOptions_StageDeploymentId_TEXT,		IDS_PROP_PlatformOptions_StageDeploymentId_TEXT,			IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO),
+	PropData_EditString(PROPID_PlatformOptions_LiveSandboxId_TEXT,		IDS_PROP_PlatformOptions_LiveSandboxId_TEXT,			IDS_PROP_PlatformOptions_SandboxId_TEXT_INFO),
+	PropData_EditString(PROPID_PlatformOptions_LiveDeploymentId_TEXT,		IDS_PROP_PlatformOptions_LiveDeploymentId_TEXT,			IDS_PROP_PlatformOptions_DeploymentId_TEXT_INFO),
 
 	PropData_Group		(PROPID_RuntimeOptions_TEXTTITLE,	IDS_PROP_RuntimeOptions_TEXTTITLE,		IDS_PROP_RuntimeOptions_TEXTTITLE),
 	PropData_ComboBox	(PROPID_RuntimeOptions_AuthType_COMBO,		IDS_PROP_RuntimeOptions_AuthType_COMBO,			IDS_PROP_RuntimeOptions_AuthType_COMBO_INFO,	AuthTypeComboList),
@@ -393,6 +419,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		//copyProp(edPtr->pAppName, PROPID_APP_PROJECTNAME);
 		//copyProp(edPtr->pAppVersion, PROPID_APP_FILEVERSION);
 
+		edPtr->sandboxType = SandboxComboListEnum::Dev;
 		edPtr->authType = AuthTypeComboListEnum::ExchangeCode;		
 		
 		edPtr->bAuthPremissions_BasicProfile = true;
@@ -739,15 +766,26 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 
 	case PROPID_PlatformOptions_ProductId_TEXT:
 		return new CPropStringValue(edPtr->pProductId);
-	case PROPID_PlatformOptions_SandboxId_TEXT:
-		return new CPropStringValue(edPtr->pSandboxId);
-	case PROPID_PlatformOptions_DeploymentId_TEXT:
-		return new CPropStringValue(edPtr->pDeploymentId);
-
 	case PROPID_PlatformOptions_ClientId_TEXT:
 		return new CPropStringValue(edPtr->pClientId);
 	case PROPID_PlatformOptions_ClientSecret_TEXT:
 		return new CPropStringValue(edPtr->pClientSecret);
+
+	case PROPID_PlatformOptions_DefaultSandbox_COMBO:
+		return new CPropDWordValue(static_cast<int>(edPtr->sandboxType));
+
+	case PROPID_PlatformOptions_DevSandboxId_TEXT:
+		return new CPropStringValue(edPtr->pDevSandboxId);
+	case PROPID_PlatformOptions_DevDeploymentId_TEXT:
+		return new CPropStringValue(edPtr->pDevDeploymentId);
+	case PROPID_PlatformOptions_StageSandboxId_TEXT:
+		return new CPropStringValue(edPtr->pStageSandboxId);
+	case PROPID_PlatformOptions_StageDeploymentId_TEXT:
+		return new CPropStringValue(edPtr->pStageDeploymentId);
+	case PROPID_PlatformOptions_LiveSandboxId_TEXT:
+		return new CPropStringValue(edPtr->pLiveSandboxId);
+	case PROPID_PlatformOptions_LiveDeploymentId_TEXT:
+		return new CPropStringValue(edPtr->pLiveDeploymentId);
 
 	case PROPID_RuntimeOptions_AuthType_COMBO:
 		return new CPropDWordValue(static_cast<int>(edPtr->authType));
@@ -822,18 +860,35 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	case PROPID_PlatformOptions_ProductId_TEXT:
 		UpdateText(edPtr->pProductId, EOS_IDSZ);
 		break;
-	case PROPID_PlatformOptions_SandboxId_TEXT:
-		UpdateText(edPtr->pSandboxId, EOS_IDSZ);
-		break;
-	case PROPID_PlatformOptions_DeploymentId_TEXT:
-		UpdateText(edPtr->pDeploymentId, EOS_IDSZ);
-		break;
-
 	case PROPID_PlatformOptions_ClientId_TEXT:
 		UpdateText(edPtr->pClientId, EOS_IDSZ);
 		break;
 	case PROPID_PlatformOptions_ClientSecret_TEXT:
 		UpdateText(edPtr->pClientSecret, 2 * EOS_IDSZ);
+		break;
+
+	case PROPID_PlatformOptions_DefaultSandbox_COMBO:
+		// Simply grab the value
+		edPtr->sandboxType = static_cast<SandboxComboListEnum>(dynamic_cast<CPropDWordValue*>(pValue)->m_dwValue);
+		break;
+
+	case PROPID_PlatformOptions_DevSandboxId_TEXT:
+		UpdateText(edPtr->pDevSandboxId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_DevDeploymentId_TEXT:
+		UpdateText(edPtr->pDevDeploymentId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_StageSandboxId_TEXT:
+		UpdateText(edPtr->pStageSandboxId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_StageDeploymentId_TEXT:
+		UpdateText(edPtr->pStageDeploymentId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_LiveSandboxId_TEXT:
+		UpdateText(edPtr->pLiveSandboxId, EOS_IDSZ);
+		break;
+	case PROPID_PlatformOptions_LiveDeploymentId_TEXT:
+		UpdateText(edPtr->pLiveDeploymentId, EOS_IDSZ);
 		break;
 
 	case PROPID_RuntimeOptions_AuthType_COMBO:

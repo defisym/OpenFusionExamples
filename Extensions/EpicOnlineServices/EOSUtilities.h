@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "EOSCallbackCounter.h"
 #include "EOSInclude.h"
 
 #include "EOSCommandLine.h"
@@ -68,9 +69,10 @@ private:
 
 	std::string lastErrorType;
 	std::string lastErrorInfo;
-	
+
+	// Get from global, don't need to release
+	const EOSCommandLine* pCmdLine = nullptr;
 	EOSUtilities_RuntimeOptions runtimeOpt;
-	EOSCommandLine cmdLine;
 
 	EOS_HPlatform platformHandle = nullptr;
 
@@ -86,19 +88,26 @@ private:
 	CallbackType deletePersistentAuthCb = nullptr;
 
 	CallbackType connectCb = nullptr;
+	CallbackType authExpirationCb = nullptr;
+	EOS_NotificationId notificationId = 0;
 
 	constexpr static auto InvalidID = "InvalidID";
 
+	CallbackCounter callbackCounter;
 public:
-	EOSUtilities(const EOSUtilities_RuntimeOptions& runtimeOpt,
-		const EOS_InitializeOptions& initOpt, const EOS_Platform_Options& platOpt) {
-		if (bInit) {
-			return;
-		}
+	inline bool AllCallbackComplete() const {
+		return callbackCounter.AllCallbackComplete();
+	}
 
+public:
+	EOSUtilities(const EOSCommandLine* pCmdLine,
+		const EOSUtilities_RuntimeOptions& runtimeOpt,
+		const EOS_InitializeOptions& initOpt,
+		const EOS_Platform_Options& platOpt) {
 		state = EOSState::TryInit;
 
 		// runtime
+		this->pCmdLine = pCmdLine;
 		this->runtimeOpt = runtimeOpt;
 
 		// sdk
@@ -180,6 +189,7 @@ public:
 		EOS_Platform_Tick(platformHandle);
 	}
 
+	inline auto Init() const { return bInit; }
 	inline auto State() const { return state; }
 
 public:
@@ -237,9 +247,11 @@ private:
 		EOS_Auth_DeletePersistentAuthOptions deletePersistentAuthOptions = {};
 		deletePersistentAuthOptions.ApiVersion = EOS_AUTH_DELETEPERSISTENTAUTH_API_LATEST;
 
+		callbackCounter.CallCallback();
 		EOS_Auth_DeletePersistentAuth(authHandle, &deletePersistentAuthOptions, this,
 			[] (const EOS_Auth_DeletePersistentAuthCallbackInfo* Data) {
 				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+				CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 				if(!EOSOK(Data->ResultCode)) {
 					pEU->SetLastError("Auth", "Failed to delete persistent auth", Data->ResultCode);
@@ -251,11 +263,7 @@ private:
 
 public:
 	inline void AuthLogin(const CallbackType& cb = defaultCb) {
-		if (state != EOSState::InitSuccess) {
-			return;
-		}
-
-		if (state == EOSState::TryAuth || state == EOSState::AuthFailed) {
+		if(!(state == EOSState::InitSuccess || state == EOSState::AuthFailed)) {
 			return;
 		}
 
@@ -279,7 +287,7 @@ public:
 		case EOS_ELoginCredentialType::EOS_LCT_ExchangeCode:
 		{
 			authCredentials.Type = EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
-			if (!cmdLine.bValid) {
+			if (pCmdLine->authPassword.empty()) {
 				SetLastError("Auth", "Invalid exchange code");
 				state = EOSState::AuthFailed;
 				authLoginCb(this);
@@ -287,7 +295,7 @@ public:
 				return;
 			}
 
-			authCredentials.Token = cmdLine.authType.c_str();
+			authCredentials.Token = pCmdLine->authPassword.c_str();
 
 			break;
 		}
@@ -345,9 +353,11 @@ public:
 		loginOptions.ScopeFlags = runtimeOpt.authPremissions;
 		loginOptions.Credentials = &authCredentials;
 
+		callbackCounter.CallCallback();
 		EOS_Auth_Login(authHandle, &loginOptions, this,
 			[] (const EOS_Auth_LoginCallbackInfo* Data) {
 				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+				CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 				if (!EOSOK(Data->ResultCode)) {
 					pEU->SetLastError("Auth", Data->ResultCode);
@@ -408,7 +418,7 @@ public:
 					pEU->authLoginCb(pEU);
 
 					return;
-				};
+				}
 
 				const auto authHandle = EOS_Platform_GetAuthInterface(pEU->platformHandle);
 
@@ -453,8 +463,10 @@ public:
 		logoutOptions.ApiVersion = EOS_AUTH_LOGOUT_API_LATEST;
 		logoutOptions.LocalUserId = accountId;
 
+		callbackCounter.CallCallback();
 		EOS_Auth_Logout(authHandle,&logoutOptions,this,[](const EOS_Auth_LogoutCallbackInfo* Data) {
 			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 			if (!EOSOK(Data->ResultCode)) {
 				pEU->SetLastError("Auth", Data->ResultCode);
@@ -473,17 +485,15 @@ public:
 	}
 
 	inline void Connect(const CallbackType& cb = defaultCb) {
-		if (state != EOSState::AuthSuccess) {
-			return;
-		}
-
-		if (state == EOSState::TryConnect || state == EOSState::ConnectFailed) {
+		if (!(state == EOSState::AuthSuccess || state == EOSState::ConnectFailed)) {
 			return;
 		}
 
 		state = EOSState::TryConnect;
 		connectCb = cb;
-		
+
+		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+
 		EOS_Connect_Credentials connectCredentials{};
 		connectCredentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
 		connectCredentials.Token = pAuthToken->AccessToken;
@@ -494,14 +504,18 @@ public:
 		connectOptions.Credentials = &connectCredentials;
 		connectOptions.UserLoginInfo = nullptr;
 
-		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+		callbackCounter.CallCallback();
 		EOS_Connect_Login(connectHandle, &connectOptions, this, [] (const EOS_Connect_LoginCallbackInfo* Data) {
 			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 			if (EOSOK(Data->ResultCode)) {
 				pEU->productUserId = Data->LocalUserId;
 				pEU->state = EOSState::ConnectSuccess;
 				pEU->connectCb(pEU);
+
+				pEU->RemoveNotifyAuthExpiration();
+				pEU->AddNotifyAuthExpiration();
 
 				return;
 			}
@@ -516,9 +530,11 @@ public:
 				}
 
 				// NOTE: We're not deleting the received context because we're passing it down to another SDK call
+				pEU->callbackCounter.CallCallback();
 				EOS_Connect_CreateUser(connectHandle, &createUserOptions, pEU, 
 					[](const EOS_Connect_CreateUserCallbackInfo* Data) {
 						const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+						CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 						if (!EOSOK(Data->ResultCode)) {
 							pEU->SetLastError("Auth", "Failed to copy ID token", Data->ResultCode);
@@ -540,6 +556,28 @@ public:
 			pEU->SetLastError("Connect", Data->ResultCode);
 			pEU->state = EOSState::ConnectFailed;
 			pEU->connectCb(pEU);
+		});
+	}
+
+	inline void RemoveNotifyAuthExpiration() {
+		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+		EOS_Connect_RemoveNotifyAuthExpiration(connectHandle, notificationId);
+		notificationId = 0;
+	}
+
+	inline void AddNotifyAuthExpiration(const CallbackType& cb = defaultCb) {
+		authExpirationCb = cb;
+
+		EOS_Connect_AddNotifyAuthExpirationOptions opt{};
+		opt.ApiVersion = EOS_CONNECT_ADDNOTIFYAUTHEXPIRATION_API_LATEST;
+
+		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+		notificationId = EOS_Connect_AddNotifyAuthExpiration(connectHandle, &opt, this, [] (const EOS_Connect_AuthExpirationCallbackInfo* Data) {
+			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+
+			// reconnect
+			pEU->state = EOSState::AuthSuccess;
+			pEU->Connect();
 		});
 	}
 

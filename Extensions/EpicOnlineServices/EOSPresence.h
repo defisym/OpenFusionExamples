@@ -8,7 +8,7 @@
 // https://dev.epicgames.com/docs/zh-Hans/epic-account-services/eos-presence-interface
 // https://dev.epicgames.com/zh-CN/news/getting-and-setting-player-presence
 
-class EOSPresence :private PlatformBase {
+class EOSPresence :public PlatformBase {
 private:
 	using CallbackType = std::function<void(EOSPresence*)>;
 	inline const static CallbackType defaultCb = [] (EOSPresence*) {};
@@ -23,9 +23,9 @@ public:
 	explicit EOSPresence(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSPresence() override = default;
 	inline void PlatformInit() override {
-		QueryPresence();
+		PlatformQuery();
 	}
-	inline void PlatformUpdate() override {
+	inline void PlatformQuery() override {
 		QueryPresence();
 	}
 
@@ -44,8 +44,10 @@ public:
 		queryPresenceOptions.LocalUserId = pEU->accountId;
 		queryPresenceOptions.TargetUserId = pEU->accountId;
 
+		callbackCounter.CallCallback();
 		EOS_Presence_QueryPresence(preHandle, &queryPresenceOptions, this, [] (const EOS_Presence_QueryPresenceCallbackInfo* Data) {
 			const auto pEP = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEP->callbackCounter);
 
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 				pEP->pEU->SetLastError("Presence", "Failed to query presence", Data->ResultCode);
@@ -53,7 +55,7 @@ public:
 			}
 			
 			pEP->bPresenceQuery = true;
-			pEP->presenceQueryCb(pEP);
+			pEP->presenceQueryCb(pEP);			
 		});
 	}
 
@@ -94,7 +96,7 @@ public:
 	}
 
 private:
-	inline bool SetPresence(const std::function<bool(EOS_HPresenceModification)>& typeCb,
+	inline bool SetPresence(const std::function<EOS_EResult(EOS_HPresenceModification)>& typeCb,
 		const CallbackType& cb = defaultCb) {
 		if (!PlatformOK()) { return false; }
 		
@@ -107,7 +109,8 @@ private:
 		EOS_HPresenceModification presenceModificationHandle = nullptr;
 
 		if(EOSUtilities::EOSOK(EOS_Presence_CreatePresenceModification(preHandle, &createPresenceModificationOptions, &presenceModificationHandle))) {
-			const auto bSuccess = typeCb(presenceModificationHandle);
+			const auto result = typeCb(presenceModificationHandle);
+			const auto bSuccess = EOSUtilities::EOSOK(result);
 
 			if(bSuccess) {
 				presenceSetCb = cb;
@@ -117,8 +120,10 @@ private:
 				setPresenceOptions.LocalUserId = pEU->accountId;
 				setPresenceOptions.PresenceModificationHandle = presenceModificationHandle;
 
+				callbackCounter.CallCallback();
 				EOS_Presence_SetPresence(preHandle, &setPresenceOptions, this, [] (const EOS_Presence_SetPresenceCallbackInfo* Data) {
 					const auto pEP = static_cast<decltype(this)>(Data->ClientData);
+					CallbackCounterHelper callbackCounterHelper(pEP->callbackCounter);
 
 					if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 						pEP->pEU->SetLastError("Presence", "Failed to set presence", Data->ResultCode);
@@ -128,10 +133,11 @@ private:
 					pEP->presenceSetCb(pEP);
 				});
 			}
+			else {
+				pEU->SetLastError("Presence", "Failed to set presence", result);
+			}
 
 			EOS_PresenceModification_Release(presenceModificationHandle);
-
-			pEU->SetLastError("Presence", "Failed to set presence");
 			return bSuccess;
 		}
 
@@ -146,7 +152,7 @@ public:
 			setStatusOptions.ApiVersion = EOS_PRESENCEMODIFICATION_SETSTATUS_API_LATEST;
 			setStatusOptions.Status = status;
 
-			return EOSUtilities::EOSOK(EOS_PresenceModification_SetStatus(presenceModificationHandle, &setStatusOptions));
+			return EOS_PresenceModification_SetStatus(presenceModificationHandle, &setStatusOptions);
 		});		
 	}
 
@@ -156,7 +162,7 @@ public:
 			setRawRichTextOptions.ApiVersion = EOS_PRESENCEMODIFICATION_SETRAWRICHTEXT_API_LATEST;
 			setRawRichTextOptions.RichText = richText.c_str();
 
-			return EOSUtilities::EOSOK(EOS_PresenceModification_SetRawRichText(presenceModificationHandle, &setRawRichTextOptions));
+			return EOS_PresenceModification_SetRawRichText(presenceModificationHandle, &setRawRichTextOptions);
 		});
 	}
 
@@ -174,14 +180,14 @@ public:
 
 			EOS_PresenceModification_SetDataOptions setDataOptions{};
 			setDataOptions.ApiVersion = EOS_PRESENCEMODIFICATION_SETDATA_API_LATEST;
-			setDataOptions.RecordsCount = sz;
+			setDataOptions.RecordsCount = static_cast<int32_t>(sz);
 			setDataOptions.Records = pArray;
 
-			const bool bRet = EOSUtilities::EOSOK(EOS_PresenceModification_SetData(presenceModificationHandle, &setDataOptions));
+			const auto result = EOS_PresenceModification_SetData(presenceModificationHandle, &setDataOptions);
 
 			delete[] pArray;
 
-			return bRet;
+			return result;
 		});
 	}
 	
@@ -198,14 +204,14 @@ public:
 
 			EOS_PresenceModification_DeleteDataOptions deleteDataOptions{};
 			deleteDataOptions.ApiVersion = EOS_PRESENCEMODIFICATION_DELETEDATA_API_LATEST;
-			deleteDataOptions.RecordsCount = sz;
+			deleteDataOptions.RecordsCount = static_cast<int32_t>(sz);
 			deleteDataOptions.Records = pArray;
 
-			const bool bRet = EOSUtilities::EOSOK(EOS_PresenceModification_DeleteData(presenceModificationHandle, &deleteDataOptions));
+			const auto result =EOS_PresenceModification_DeleteData(presenceModificationHandle, &deleteDataOptions);
 
 			delete[] pArray;
 
-			return bRet;
+			return result;
 		});
 	}
 };

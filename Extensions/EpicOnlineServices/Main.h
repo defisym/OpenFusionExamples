@@ -7,7 +7,7 @@
 // DEFINITION OF CONDITIONS CODES
 // ------------------------------
 #define	CND_CONDITION_ONLOGIN				0
-#define	CND_CONDITION_USERLOGIN			1
+#define	CND_CONDITION_USERLOGIN				1
 #define	CND_CONDITION_QUEARYCOMPLETE		2
 #define	CND_CONDITION_ONERROR				3
 #define	CND_CONDITION_ONLOGOUT				4
@@ -65,11 +65,19 @@ typedef struct tagEDATA_V1
 
 	// PlatformOptions
 	wchar_t pProductId[EOS_IDSZ];
-	wchar_t pSandboxId[EOS_IDSZ];
-	wchar_t pDeploymentId[EOS_IDSZ];
 
 	wchar_t pClientId[EOS_IDSZ];
 	wchar_t pClientSecret[2 * EOS_IDSZ];
+
+	// Sandbox	
+	SandboxComboListEnum sandboxType;	// default
+
+	wchar_t pDevSandboxId[EOS_IDSZ];
+	wchar_t pDevDeploymentId[EOS_IDSZ];
+	wchar_t pStageSandboxId[EOS_IDSZ];
+	wchar_t pStageDeploymentId[EOS_IDSZ];
+	wchar_t pLiveSandboxId[EOS_IDSZ];
+	wchar_t pLiveDeploymentId[EOS_IDSZ];
 
 	// RuntimeOptions
 	AuthTypeComboListEnum authType;
@@ -132,14 +140,7 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 
-	bool bAutoLogin;
-	bool bAutoLogout;
-
-	std::wstring* pRet;
-
-	bool bLoginCalled = false;
-	bool bUserLogin = false;
-	
+	std::wstring* pRet;	
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

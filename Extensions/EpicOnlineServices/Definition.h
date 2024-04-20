@@ -2,6 +2,8 @@
 
 #include <functional>
 
+#include "EOSCommandLine.h"
+
 //immediate conditon ID
 constexpr auto ON_LoginComplete = 0;
 constexpr auto ON_LogoutComplete = 4;
@@ -18,6 +20,12 @@ typedef EDITDATA* LPEDATA;
 struct tagRDATA;
 typedef tagRDATA RUNDATA;
 typedef RUNDATA* LPRDATA;
+
+enum class SandboxComboListEnum {
+	Dev,
+	Stage,
+	Live,
+};
 
 enum class AuthTypeComboListEnum {
 	Developer,
@@ -41,10 +49,17 @@ inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum com
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 }
 
-inline auto GetAuthPremissions(LPEDATA rdPtr);
+struct LogOpt {
+	bool bAutoLogin = false;
+	bool bAutoLogout = false;
+
+	bool bLoginCalled = false;
+	bool bUserLogin = false;
+};
 
 struct GlobalData {
 	LPRDATA rdPtr = nullptr;
+	LogOpt logOpt;
 
 	EOSUtilities* pEOSUtilities = nullptr;
 	EOSAchievement* pEOSAchievement = nullptr;
@@ -55,11 +70,20 @@ struct GlobalData {
 	std::string productVersion;
 
 	std::string productId;
-	std::string sandboxId;
-	std::string deploymentId;
 
 	std::string clientId;
 	std::string clientSecret;
+
+	SandboxComboListEnum sandboxType = SandboxComboListEnum::Dev;
+
+	std::string devSandboxId;
+	std::string devDeploymentId;
+	std::string stageSandboxId;
+	std::string stageDeploymentId;
+	std::string liveSandboxId;
+	std::string liveDeploymentId;
+
+	EOSCommandLine cmdLine;
 	
 	GlobalData() = default;
 	~GlobalData();
@@ -69,13 +93,52 @@ struct GlobalData {
 	}
 
 	inline void EOSUpdate() const {
-		//EOSUpdatePlatform();
+		EOSUpdatePlatform();
 		pEOSUtilities->Update();
+	}
+	
+	// Sandbox can be overridden by Epic Launcher command line
+	// Sandbox ID: This ID can be obtained from the Epic Games Launcher at launch time in the form of the epicsandboxid launch argument provided to all games.
+	// Deployment ID: This ID can be set within your build in a custom if/switch statement block targeting the expected deployment for the sandbox in question.
+	// https://dev.epicgames.com/docs/epic-games-store/testing-guide#sandboxdeployment-id-handling-epic-games-store-publishing-tools-only
+	inline auto GetSandboxInfo() {
+		if (!cmdLine.epicSandboxID.empty()) {
+			const auto& sandboxId = cmdLine.epicSandboxID;
+
+			if (sandboxId == devSandboxId) {
+				sandboxType = SandboxComboListEnum::Dev;
+				return std::make_tuple(devSandboxId, devDeploymentId);
+			}
+
+			if (sandboxId == stageSandboxId) {
+				sandboxType = SandboxComboListEnum::Stage;
+				return std::make_tuple(stageSandboxId, stageDeploymentId);
+			}
+
+			if (sandboxId == liveSandboxId) {
+				sandboxType = SandboxComboListEnum::Live;
+				return std::make_tuple(liveSandboxId, liveDeploymentId);
+			}
+		}
+
+		switch (sandboxType) {
+		case SandboxComboListEnum::Dev:
+			return std::make_tuple(devSandboxId, devDeploymentId);
+		case SandboxComboListEnum::Stage:
+			return std::make_tuple(stageSandboxId, stageDeploymentId);
+		case SandboxComboListEnum::Live:
+			return std::make_tuple(liveSandboxId, liveDeploymentId);
+		}
+
+		// default value
+		// this line shouldn't be reached, just make clang-tidy happy
+		return std::make_tuple(devSandboxId, devDeploymentId);
 	}
 
 	inline bool EOSInit(LPEDATA edPtr);
 
-	inline void EOSInitPlatform() {
+	// same as platform functions, but do them together
+	inline void EOSAllocPlatform() {
 		pEOSAchievement = new EOSAchievement(pEOSUtilities);
 		pEOSStat = new EOSStat(pEOSUtilities);
 		pEOSPresence = new EOSPresence(pEOSUtilities);
@@ -86,22 +149,58 @@ struct GlobalData {
 		delete pEOSStat;
 		delete pEOSPresence;
 	}
-	
+
+	inline void EOSInitPlatform() const {
+		pEOSAchievement->PlatformInit();
+		pEOSStat->PlatformInit();
+		pEOSPresence->PlatformInit();
+	}
+
+	inline void EOSQueryPlatform() const {
+		pEOSAchievement->PlatformQuery();
+		pEOSStat->PlatformQuery();
+		pEOSPresence->PlatformQuery();
+	}
+
 	inline void EOSUpdatePlatform() const {
 		pEOSAchievement->PlatformUpdate();
 		pEOSStat->PlatformUpdate();
 		pEOSPresence->PlatformUpdate();
 	}
 
-	// init platform here
-	inline void EOSLoginSuccess() const {
-		pEOSAchievement->PlatformInit();
-		pEOSStat->PlatformInit();
-		pEOSPresence->PlatformInit();
+	inline bool EOSCallbackComplete()const {
+		bool bFinish = true;
+
+		auto checkCallback = [] (auto* pEOS) {
+			return pEOS != nullptr
+				? pEOS->AllCallbackComplete()
+				: true;
+			};
+
+		bFinish = bFinish && checkCallback(pEOSAchievement);
+		bFinish = bFinish && checkCallback(pEOSStat);
+		bFinish = bFinish && checkCallback(pEOSPresence);
+		bFinish = bFinish && checkCallback(pEOSUtilities);
+
+		return bFinish;
 	}
 
-	inline void EOSLogin(const std::function<void(bool)>& callback) const {
-		if (!pEOSUtilities && pEOSUtilities->State() != EOSState::InitSuccess) {
+	inline void EOSWaitForCallbackComplete() const {
+		while (!EOSCallbackComplete()) {
+			//OutputDebugStringA("Wait...\n");
+			EOSUpdate();
+		}
+
+		//OutputDebugStringA("Complete!\n");
+	}
+
+private:
+	using LogResultCallback = std::function<void(bool)>;
+	inline const static LogResultCallback defaultCb = [] (bool) {};
+
+public:
+	inline void EOSLogin(const LogResultCallback& callback = defaultCb) const {
+		if (!pEOSUtilities || !pEOSUtilities->Init()) {
 			callback(false);
 
 			return;
@@ -124,7 +223,7 @@ struct GlobalData {
 					}
 
 					if (state == EOSState::ConnectSuccess) {
-						EOSLoginSuccess();
+						EOSInitPlatform();
 						callback(true);
 					}
 				});
@@ -132,7 +231,15 @@ struct GlobalData {
 		});		
 	}
 
-	inline void EOSLogout(const std::function<void(bool)>& callback) const {
+	inline void EOSAutoLogin(const LogResultCallback& callback = defaultCb) {
+		if (logOpt.bAutoLogin && !logOpt.bLoginCalled) {
+			logOpt.bLoginCalled = true;
+			// login will add callback count internally
+			EOSLogin(callback);
+		}
+	}
+
+	inline void EOSLogout(const LogResultCallback& callback = defaultCb) const {
 		if (!pEOSUtilities && pEOSUtilities->State() < EOSState::AuthSuccess) {
 			callback(false);
 
@@ -143,5 +250,12 @@ struct GlobalData {
 		pEOSUtilities->AuthLogout([this, callback] (const EOSUtilities* pEU) {
 			callback(pEU->State() == EOSState::InitSuccess);
 		});
+	}
+
+	inline void EOSAutoLogout(const LogResultCallback& callback = defaultCb) const {
+		if (logOpt.bAutoLogout && logOpt.bUserLogin) {
+			// logout will add callback count internally
+			EOSLogout(callback);
+		}
 	}
 };
