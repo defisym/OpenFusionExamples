@@ -68,7 +68,7 @@ long WINAPI DLLExport Condition_OnLogout(LPRDATA rdPtr, long param1, long param2
 }
 
 long WINAPI DLLExport Condition_LoginSuccess(LPRDATA rdPtr, long param1, long param2) {
-	return rdPtr->bUserLogin;
+	return rdPtr->pData->logOpt.bUserLogin;
 }
 
 long WINAPI DLLExport Condition_QueryComplete(LPRDATA rdPtr, long param1, long param2) {
@@ -111,7 +111,7 @@ long WINAPI DLLExport Condition_OnError(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->EOSLogin([=] (bool bSuccess) {
-		rdPtr->bUserLogin = bSuccess;
+		rdPtr->pData->logOpt.bUserLogin = bSuccess;
 		AddEvent(ON_LoginComplete);
 		});
 
@@ -120,7 +120,7 @@ short WINAPI DLLExport Action_Login(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport Action_Logout(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->EOSLogout([=] (bool bSuccess) {
-		rdPtr->bUserLogin = !bSuccess;
+		rdPtr->pData->logOpt.bUserLogin = !bSuccess;
 		AddEvent(ON_LogoutComplete);
 		});
 
@@ -149,20 +149,20 @@ short WINAPI DLLExport Action_Query(LPRDATA rdPtr, long param1, long param2) {
 
 	do {
 		if (StrEmpty(pQueryType)) {
-			rdPtr->pData->EOSUpdatePlatform();
+			rdPtr->pData->EOSQueryPlatform();
 			break;
 		}
 
 		if(StrIEqu(pQueryType, EOSQueryType::Achievement)) {
-			rdPtr->pData->pEOSAchievement->PlatformUpdate();
+			rdPtr->pData->pEOSAchievement->PlatformQuery();
 			break;
 		}
 		if (StrIEqu(pQueryType, EOSQueryType::Stat)) {
-			rdPtr->pData->pEOSStat->PlatformUpdate();
+			rdPtr->pData->pEOSStat->PlatformQuery();
 			break;
 		}
 		if (StrIEqu(pQueryType, EOSQueryType::Presence)) {
-			rdPtr->pData->pEOSPresence->PlatformUpdate();
+			rdPtr->pData->pEOSPresence->PlatformQuery();
 			break;
 		}
 	} while (false);

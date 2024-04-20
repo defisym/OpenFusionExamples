@@ -29,6 +29,7 @@ struct Data {
 		this->IsNumber = false;
 		this->IsNumberChecked = false;
 	}
+	Data(const std::wstring_view& Str) :Data(std::wstring(Str)) {}
 };
 
 typedef std::vector<std::wstring> VEC;

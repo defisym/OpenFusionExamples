@@ -66,8 +66,8 @@ inline void UpdateCore(LPRDATA rdPtr, const std::wstring& Param, LPPARAMVEC Tar)
 		return;
 	}
 
-	SplitStringCore(Param, Delimiter, [&] (const std::wstring& item) {
-		Tar->emplace_back(Data(item));
+	SplitStringCore<wchar_t>(Param, Delimiter, [&] (const std::wstring_view& item) {
+		Tar->emplace_back(item);
 	});
 }
 

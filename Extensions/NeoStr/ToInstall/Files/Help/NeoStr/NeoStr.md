@@ -19,11 +19,7 @@ String that based on GDI Plus, with scaling, rotating & format control support
 
 ### Ignore
 
-`[^]` ignore all formats after this
-
-### Ignore non Icon
-
-`[^-]` ignore all formats except `[ICon]` after this. icon controls like `[IConOffsetX]` are also ignored
+`[^ = Exclude, ...]` ignore all formats after this exclude given ones
 
 ### Stop Ignore
 
@@ -118,6 +114,16 @@ See `Values General`
 
 change align of different lines
 
+### Char Offset
+
+`[CharOffsetX = 0.0][/CharOffsetX]` Char Offset Y
+
+See `Values General`
+
+`[CharOffsetY = 0.0][/CharOffsetY]` Char Offset Y
+
+See `Values General`
+
 ### Shake
 
 `[Shake = Type, Amplitude, TimerCoef, CharOffset]`control shake.
@@ -128,7 +134,7 @@ e.g., one param -> Type, two params -> Type & Amplitude, etc.
 - type: shake type, default is None, can be X/Y/Random. X/Y is based on cosine.
 - amplitude: default is 1.0, relative to character size. size = 30, amplitude = 0.5, will shake in range of [ -15 ~ 15 ]
 - timer coef: default is 1.0, shake faster when higher.
-- char offset: default is 1.0 / 6.0, relative to 360 degree. charOffset = 0.2, actual offset is 72 degree. determines the movement interval of adjacent characters.only works in X/Y mode ( cosine )
+- char offset: default is 1.0 / 6.0, relative to 360 degree. charOffset = 0.2, actual offset is 72 degree. determines the movement interval of adjacent characters. only works in X/Y mode ( cosine )
 
 ### Color
 
