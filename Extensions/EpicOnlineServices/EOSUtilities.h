@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "EOSCallbackCounter.h"
 #include "EOSInclude.h"
 
 #include "EOSCommandLine.h"
@@ -91,6 +92,12 @@ private:
 	EOS_NotificationId notificationId = 0;
 
 	constexpr static auto InvalidID = "InvalidID";
+
+	CallbackCounter callbackCounter;
+public:
+	inline bool AllCallbackComplete() const {
+		return callbackCounter.AllCallbackComplete();
+	}
 
 public:
 	EOSUtilities(const EOSCommandLine* pCmdLine,
@@ -240,9 +247,11 @@ private:
 		EOS_Auth_DeletePersistentAuthOptions deletePersistentAuthOptions = {};
 		deletePersistentAuthOptions.ApiVersion = EOS_AUTH_DELETEPERSISTENTAUTH_API_LATEST;
 
+		callbackCounter.CallCallback();
 		EOS_Auth_DeletePersistentAuth(authHandle, &deletePersistentAuthOptions, this,
 			[] (const EOS_Auth_DeletePersistentAuthCallbackInfo* Data) {
 				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+				CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 				if(!EOSOK(Data->ResultCode)) {
 					pEU->SetLastError("Auth", "Failed to delete persistent auth", Data->ResultCode);
@@ -344,9 +353,11 @@ public:
 		loginOptions.ScopeFlags = runtimeOpt.authPremissions;
 		loginOptions.Credentials = &authCredentials;
 
+		callbackCounter.CallCallback();
 		EOS_Auth_Login(authHandle, &loginOptions, this,
 			[] (const EOS_Auth_LoginCallbackInfo* Data) {
 				const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+				CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 				if (!EOSOK(Data->ResultCode)) {
 					pEU->SetLastError("Auth", Data->ResultCode);
@@ -452,8 +463,10 @@ public:
 		logoutOptions.ApiVersion = EOS_AUTH_LOGOUT_API_LATEST;
 		logoutOptions.LocalUserId = accountId;
 
+		callbackCounter.CallCallback();
 		EOS_Auth_Logout(authHandle,&logoutOptions,this,[](const EOS_Auth_LogoutCallbackInfo* Data) {
 			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 			if (!EOSOK(Data->ResultCode)) {
 				pEU->SetLastError("Auth", Data->ResultCode);
@@ -478,7 +491,9 @@ public:
 
 		state = EOSState::TryConnect;
 		connectCb = cb;
-		
+
+		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+
 		EOS_Connect_Credentials connectCredentials{};
 		connectCredentials.ApiVersion = EOS_CONNECT_CREDENTIALS_API_LATEST;
 		connectCredentials.Token = pAuthToken->AccessToken;
@@ -489,9 +504,10 @@ public:
 		connectOptions.Credentials = &connectCredentials;
 		connectOptions.UserLoginInfo = nullptr;
 
-		const auto connectHandle = EOS_Platform_GetConnectInterface(platformHandle);
+		callbackCounter.CallCallback();
 		EOS_Connect_Login(connectHandle, &connectOptions, this, [] (const EOS_Connect_LoginCallbackInfo* Data) {
 			const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 			if (EOSOK(Data->ResultCode)) {
 				pEU->productUserId = Data->LocalUserId;
@@ -514,9 +530,11 @@ public:
 				}
 
 				// NOTE: We're not deleting the received context because we're passing it down to another SDK call
+				pEU->callbackCounter.CallCallback();
 				EOS_Connect_CreateUser(connectHandle, &createUserOptions, pEU, 
 					[](const EOS_Connect_CreateUserCallbackInfo* Data) {
 						const auto pEU = static_cast<decltype(this)>(Data->ClientData);
+						CallbackCounterHelper callbackCounterHelper(pEU->callbackCounter);
 
 						if (!EOSOK(Data->ResultCode)) {
 							pEU->SetLastError("Auth", "Failed to copy ID token", Data->ResultCode);

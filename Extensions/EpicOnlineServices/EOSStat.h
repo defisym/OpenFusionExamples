@@ -8,7 +8,7 @@
 // https://dev.epicgames.com/docs/zh-Hans/game-services/eos-stats-interface
 // https://dev.epicgames.com/zh-CN/news/manage-player-statistics-with-epic-online-services
 
-class EOSStat :private PlatformBase {
+class EOSStat :public PlatformBase {
 private:
 	using CallbackType = std::function<void(EOSStat*)>;
 	inline const static CallbackType defaultCb = [] (EOSStat*) {};
@@ -17,13 +17,15 @@ private:
 	CallbackType statQueryCb;
 	CallbackType statIngestCb;
 
+	bool bNeedIngest = false;
+
 public:
 	explicit EOSStat(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSStat() override = default;
 	inline void PlatformInit() override {
-		QueryStat();
+		PlatformQuery();
 	}
-	inline void PlatformUpdate() override {
+	inline void PlatformQuery() override {
 		QueryStat();
 	}
 
@@ -47,8 +49,10 @@ public:
 		queryStatOptions.StatNames = nullptr;
 		queryStatOptions.StatNamesCount = 0;
 
+		callbackCounter.CallCallback();
 		EOS_Stats_QueryStats(statHandle, &queryStatOptions, this, [] (const EOS_Stats_OnQueryStatsCompleteCallbackInfo* Data) {
 			const auto pES = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pES->callbackCounter);
 
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 				pES->pEU->SetLastError("Stat", "Failed to query stat", Data->ResultCode);
@@ -84,8 +88,10 @@ public:
 		ingestStatOptions.Stats = pArray;
 		ingestStatOptions.StatsCount = sz;
 
+		callbackCounter.CallCallback();
 		EOS_Stats_IngestStat(statHandle, &ingestStatOptions,this,[](const EOS_Stats_IngestStatCompleteCallbackInfo* Data) {
 			const auto pES = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pES->callbackCounter);
 
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 				pES->pEU->SetLastError("Stat", "Failed to ingest stat", Data->ResultCode);
@@ -174,7 +180,7 @@ public:
 		auto count = GetStatCount();
 
 		for (decltype(count) i = 0; i < count; i++) {
-			GetStatByIndex(i, cb);
+			auto bRet = GetStatByIndex(i, cb);
 		}
 	}
 };

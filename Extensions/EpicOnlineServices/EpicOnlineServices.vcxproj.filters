@@ -175,6 +175,9 @@
     <ClInclude Include="..\_DeLib\GeneralDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EOSCallbackCounter.h">
+      <Filter>EpicOnlineServices\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

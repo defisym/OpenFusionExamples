@@ -8,7 +8,7 @@
 // https://dev.epicgames.com/docs/zh-Hans/game-services/achievements
 // https://dev.epicgames.com/zh-CN/news/adding-achievements-to-your-game
 
-class EOSAchievement :private PlatformBase {
+class EOSAchievement :public PlatformBase {
 private:
 	using CallbackType = std::function<void(EOSAchievement*)>;
 	inline const static CallbackType defaultCb = [] (EOSAchievement*) {};
@@ -21,9 +21,9 @@ public:
 	explicit EOSAchievement(EOSUtilities* pEU) : PlatformBase(pEU) {}
 	~EOSAchievement() override = default;
 	inline void PlatformInit() override {
-		QueryAchievementDefinitions();
+		PlatformQuery();
 	}
-	inline void PlatformUpdate() override {
+	inline void PlatformQuery() override {
 		QueryAchievementDefinitions();
 	}
 
@@ -41,8 +41,10 @@ public:
 		opt.ApiVersion = EOS_ACHIEVEMENTS_QUERYDEFINITIONS_API_LATEST;
 		opt.LocalUserId = pEU->productUserId;
 
+		callbackCounter.CallCallback();
 		EOS_Achievements_QueryDefinitions(achHandle, &opt, this, [] (const EOS_Achievements_OnQueryDefinitionsCompleteCallbackInfo* Data) {
 			const auto pEA = static_cast<decltype(this)>(Data->ClientData);
+			CallbackCounterHelper callbackCounterHelper(pEA->callbackCounter);
 
 			if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 				pEA->pEU->SetLastError("Achievement", "Failed to query definition", Data->ResultCode);
@@ -75,9 +77,11 @@ public:
 		unlockAchievementsOptions.AchievementIds = pArray;
 		unlockAchievementsOptions.AchievementsCount = sz;
 
+		callbackCounter.CallCallback();
 		EOS_Achievements_UnlockAchievements(achHandle, &unlockAchievementsOptions, this,
 			[] (const EOS_Achievements_OnUnlockAchievementsCompleteCallbackInfo* Data) {
 				const auto pEA = static_cast<decltype(this)>(Data->ClientData);
+				CallbackCounterHelper callbackCounterHelper(pEA->callbackCounter);
 
 				if (!EOSUtilities::EOSOK(Data->ResultCode)) {
 					pEA->pEU->SetLastError("Achievement", "Failed to unlock achievement", Data->ResultCode);
@@ -164,7 +168,7 @@ public:
 		auto count = GetAchievementCount();
 
 		for (decltype(count) i = 0; i < count; i++) {			
-			GetAchievementByIndex(i, cb);
+			auto bRet = GetAchievementByIndex(i, cb);
 		}
 	}
 };

@@ -71,16 +71,17 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 #endif
 
 	rdPtr->pRet = new std::wstring;
-	
-	rdPtr->bAutoLogin = edPtr->bAutoLogin;
-	rdPtr->bAutoLogout = edPtr->bAutoLogout;
-
-	rdPtr->bLoginCalled = false;
-	rdPtr->bUserLogin = false;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		rdPtr->pData->SetRundata(rdPtr);
+
+		auto& logOpt = rdPtr->pData->logOpt;
+
+		logOpt.bAutoLogin = edPtr->bAutoLogin;
+		logOpt.bAutoLogout = edPtr->bAutoLogout;
+		logOpt.bLoginCalled = false;
+		logOpt.bUserLogin = false;
 
 		rdPtr->pData->EOSInit(edPtr);
 
@@ -112,6 +113,9 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 	delete rdPtr->pRet;
 	rdPtr->pRet = nullptr;
 
+	// wait for callback complete, to avoid crash
+	rdPtr->pData->EOSWaitForCallbackComplete();
+
 	// No errors
 	return 0;
 }
@@ -124,20 +128,16 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 	rdPtr->pData->EOSUpdate();
-	
-	if (rdPtr->bAutoLogin && !rdPtr->bLoginCalled) {
-		rdPtr->bLoginCalled = true;
+	rdPtr->pData->EOSAutoLogin([=] (bool bSuccess) {
 		// must be here as AddEvent / CallEvent has no effect in CreateRunObject
 		// async callback from different thread, must capture by value
-		rdPtr->pData->EOSLogin([=] (bool bSuccess) {
-			rdPtr->bUserLogin = bSuccess;
-			AddEvent(ON_LoginComplete);
+		rdPtr->pData->logOpt.bUserLogin = bSuccess;
+		AddEvent(ON_LoginComplete);
 
 #ifdef _DEBUG
-			if (bSuccess) { EOSLoginDebug(rdPtr); }
+		if (bSuccess) { EOSLoginDebug(rdPtr); }
 #endif
 		});
-	}
 
 	return 0;
 }

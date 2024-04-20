@@ -49,8 +49,17 @@ inline auto AuthTypeComboListEnumToLoginCredentialType(AuthTypeComboListEnum com
 	return EOS_ELoginCredentialType::EOS_LCT_ExchangeCode;
 }
 
+struct LogOpt {
+	bool bAutoLogin = false;
+	bool bAutoLogout = false;
+
+	bool bLoginCalled = false;
+	bool bUserLogin = false;
+};
+
 struct GlobalData {
 	LPRDATA rdPtr = nullptr;
+	LogOpt logOpt;
 
 	EOSUtilities* pEOSUtilities = nullptr;
 	EOSAchievement* pEOSAchievement = nullptr;
@@ -84,7 +93,7 @@ struct GlobalData {
 	}
 
 	inline void EOSUpdate() const {
-		//EOSUpdatePlatform();
+		EOSUpdatePlatform();
 		pEOSUtilities->Update();
 	}
 	
@@ -128,7 +137,8 @@ struct GlobalData {
 
 	inline bool EOSInit(LPEDATA edPtr);
 
-	inline void EOSInitPlatform() {
+	// same as platform functions, but do them together
+	inline void EOSAllocPlatform() {
 		pEOSAchievement = new EOSAchievement(pEOSUtilities);
 		pEOSStat = new EOSStat(pEOSUtilities);
 		pEOSPresence = new EOSPresence(pEOSUtilities);
@@ -139,21 +149,57 @@ struct GlobalData {
 		delete pEOSStat;
 		delete pEOSPresence;
 	}
-	
+
+	inline void EOSInitPlatform() const {
+		pEOSAchievement->PlatformInit();
+		pEOSStat->PlatformInit();
+		pEOSPresence->PlatformInit();
+	}
+
+	inline void EOSQueryPlatform() const {
+		pEOSAchievement->PlatformQuery();
+		pEOSStat->PlatformQuery();
+		pEOSPresence->PlatformQuery();
+	}
+
 	inline void EOSUpdatePlatform() const {
 		pEOSAchievement->PlatformUpdate();
 		pEOSStat->PlatformUpdate();
 		pEOSPresence->PlatformUpdate();
 	}
 
-	// init platform here
-	inline void EOSLoginSuccess() const {
-		pEOSAchievement->PlatformInit();
-		pEOSStat->PlatformInit();
-		pEOSPresence->PlatformInit();
+	inline bool EOSCallbackComplete()const {
+		bool bFinish = true;
+
+		auto checkCallback = [] (auto* pEOS) {
+			return pEOS != nullptr
+				? pEOS->AllCallbackComplete()
+				: true;
+			};
+
+		bFinish = bFinish && checkCallback(pEOSAchievement);
+		bFinish = bFinish && checkCallback(pEOSStat);
+		bFinish = bFinish && checkCallback(pEOSPresence);
+		bFinish = bFinish && checkCallback(pEOSUtilities);
+
+		return bFinish;
 	}
 
-	inline void EOSLogin(const std::function<void(bool)>& callback) const {
+	inline void EOSWaitForCallbackComplete() const {
+		while (!EOSCallbackComplete()) {
+			//OutputDebugStringA("Wait...\n");
+			EOSUpdate();
+		}
+
+		//OutputDebugStringA("Complete!\n");
+	}
+
+private:
+	using LogResultCallback = std::function<void(bool)>;
+	inline const static LogResultCallback defaultCb = [] (bool) {};
+
+public:
+	inline void EOSLogin(const LogResultCallback& callback = defaultCb) const {
 		if (!pEOSUtilities || !pEOSUtilities->Init()) {
 			callback(false);
 
@@ -177,7 +223,7 @@ struct GlobalData {
 					}
 
 					if (state == EOSState::ConnectSuccess) {
-						EOSLoginSuccess();
+						EOSInitPlatform();
 						callback(true);
 					}
 				});
@@ -185,7 +231,15 @@ struct GlobalData {
 		});		
 	}
 
-	inline void EOSLogout(const std::function<void(bool)>& callback) const {
+	inline void EOSAutoLogin(const LogResultCallback& callback = defaultCb) {
+		if (logOpt.bAutoLogin && !logOpt.bLoginCalled) {
+			logOpt.bLoginCalled = true;
+			// login will add callback count internally
+			EOSLogin(callback);
+		}
+	}
+
+	inline void EOSLogout(const LogResultCallback& callback = defaultCb) const {
 		if (!pEOSUtilities && pEOSUtilities->State() < EOSState::AuthSuccess) {
 			callback(false);
 
@@ -196,5 +250,12 @@ struct GlobalData {
 		pEOSUtilities->AuthLogout([this, callback] (const EOSUtilities* pEU) {
 			callback(pEU->State() == EOSState::InitSuccess);
 		});
+	}
+
+	inline void EOSAutoLogout(const LogResultCallback& callback = defaultCb) const {
+		if (logOpt.bAutoLogout && logOpt.bUserLogin) {
+			// logout will add callback count internally
+			EOSLogout(callback);
+		}
 	}
 };

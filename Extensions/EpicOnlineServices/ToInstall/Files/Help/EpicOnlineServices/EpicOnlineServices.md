@@ -7,7 +7,7 @@ EpicOnlineServices
 ## Note
 
 Almost everything is **async**!
-Wait operations complete before changing frame, or the game may crash!
+Extension will wait until all callbacks finishes. This may cause lags.
 
 ## Properties
 
@@ -22,7 +22,9 @@ Wait operations complete before changing frame, or the game may crash!
     - *see: [Preferred Login Types for Epic Account](https://dev.epicgames.com/docs/en-US/epic-account-services/auth/auth-interface#preferred-login-types-for-epic-account)*
     - *To debug with DevAuthTool, disable VPN to avoid 502 error. Set portal: 6547, name: EOS.*
   - Auth Permissions
-    - *Permissions required when login, make sure you have enabled it in dev portal*
+    - *Permissions required when login, make sure you have enabled it in dev portal, edit in `Your Product` -> `Epic Account Services` -> `APPLICATIONS` -> `Permissions`*
+    - *if permission mismatch (both more than or less than), you'll get a infinite refresh in login overlay with internal error code `18206`, aka `Corrective action is required to continue`*
+    - *see also: [this thread](https://eoshelp.epicgames.com/s/question/0D54z00009EYZ8bCAH/in-unreal-engine-5-eosauthlogin-never-recieve-completed-callback?language=en_US)*
   - AutoLogin
     - *auto login when first object is created*
   - AutoLogout

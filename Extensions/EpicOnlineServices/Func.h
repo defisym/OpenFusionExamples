@@ -42,32 +42,11 @@ inline auto GetAuthPremissions(LPEDATA edPtr) {
 }
 
 inline GlobalData::~GlobalData() {
-	auto release = [this] () {
-		EOSReleasePlatform();
-		delete pEOSUtilities;
-	};
+	EOSAutoLogout();	// no need to use callback to call events here, as app is terminated
+	EOSWaitForCallbackComplete();
 
-	if (rdPtr->bAutoLogout && rdPtr->bUserLogin) {
-		std::atomic bLogoutFinish = false;
-
-		EOSLogout([&bLogoutFinish] (bool) {
-			bLogoutFinish = true;
-		});
-
-		while (true) {
-			if(bLogoutFinish) {
-				release();
-				break;
-			}
-
-			// need update here to trigger callback
-			// shouldn't be called after release
-			EOSUpdate();
-		}
-	}
-	else {
-		release();
-	}
+	EOSReleasePlatform();
+	delete pEOSUtilities;	
 }
 
 inline bool GlobalData::EOSInit(LPEDATA edPtr) {
@@ -103,6 +82,11 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 
 	const auto& [sandboxId, deploymentId] = GetSandboxInfo();
 
+	//MessageBoxA(nullptr,
+	//	std::format("CMD\r\nsandbox: {}, deploy: {}\r\ndev sandbox: {}, dev deploy: {}\r\nstage sandbox: {}, stage deploy: {}\r\nlive sandbox: {}, live deploy: {}",sandboxId,deploymentId,devSandboxId,devDeploymentId,stageSandboxId,stageDeploymentId,liveSandboxId,liveDeploymentId).c_str(),
+	//	"Title",
+	//	MB_OK);
+
 	platOpt.SandboxId = sandboxId.c_str();
 	platOpt.DeploymentId = deploymentId.c_str();
 
@@ -128,7 +112,7 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 		runtimeOpt,
 		initOpt,
 		platOpt);
-	EOSInitPlatform();
+	EOSAllocPlatform();
 
 	pEOSUtilities->SetErrorCallback([this] (const std::string& str) {
 #ifdef _DEBUG
