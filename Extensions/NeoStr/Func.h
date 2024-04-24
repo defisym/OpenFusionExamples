@@ -40,6 +40,10 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
 
+inline NeoStr::IConData* GetIConData(LPRDATA rdPtr) {
+	return rdPtr->bIConGlobal ? rdPtr->pData->pIConData : nullptr;
+}
+
 inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 #ifdef COUNT_GDI_OBJECT
 	rdPtr->pData->objectCounter.UpdateObjectCount();
@@ -50,14 +54,12 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
-		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor
-			, rdPtr->hFont
-			, rdPtr->pData->pFontCache
-			, rdPtr->pData->pCharSzCacheWithFont
-			, rdPtr->pData->pRegexHandler
-			, rdPtr->pData->pIConData
-			, rdPtr->pData->pFontCollection
-			, false);
+		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont, false,
+			{ rdPtr->pData->pFontCache,
+				rdPtr->pData->pCharSzCacheWithFont,
+				rdPtr->pData->pRegexHandler,
+				rdPtr->pData->pFontCollection },
+			GetIConData(rdPtr));
 
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
@@ -338,12 +340,12 @@ inline void SetIConUpdate(LPRDATA rdPtr) {
 }
 
 inline void GlobalIConUpdater(LPRDATA rdPtr) {
-	if (rdPtr->bIConGlobal) {
-		if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
-			SetIConUpdate(rdPtr);
-		}
+	if (!rdPtr->bIConGlobal) { return; }
 
-		rdPtr->pData->pIConData->pCaller = (LPRO)rdPtr;
-		rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
+	if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
+		SetIConUpdate(rdPtr);
 	}
+
+	rdPtr->pData->pIConData->pCaller = (LPRO)rdPtr;
+	rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 }

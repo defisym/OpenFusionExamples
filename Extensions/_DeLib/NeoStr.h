@@ -1000,28 +1000,49 @@ public:
 	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
 		const NeoStr* pCache)
 		:NeoStr(dwAlignFlags, color, hFont,
-			pCache->pFontCache,
+		false,
+		{ pCache->pFontCache,
 			pCache->pCharSzCacheWithFont,
 			pCache->pRegexCache,
-			pCache->pIConData,
-			pCache->pFontCollection,
-			false) {}
-	NeoStr(const DWORD dwAlignFlags, const COLORREF color
-		, const HFONT hFont
+			pCache->pFontCollection },
+			pCache->pIConData) {}
+
+	struct NeoStrFontCache {
+		FontCache* pFontCache = nullptr;
+		CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr;
+		RegexHandler* pRegexCache = nullptr;
+		PrivateFontCollection* pFontCollection = nullptr;
+
+		inline bool CacheValid() const {
+			return pFontCache && pCharSzCacheWithFont && pRegexCache;
+		}
+
+		inline void UpdateNeoStr(NeoStr* pNeoStr) const {
+			pNeoStr->bExternalCache = true;
+
+			pNeoStr->pFontCache = this->pFontCache;
+			pNeoStr->pCharSzCacheWithFont = this->pCharSzCacheWithFont;
+			pNeoStr->pRegexCache = this->pRegexCache;
+		}
+	};
+
+	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
+		const bool needGDIPStartUp = true,
 		// read only
-		, FontCache* pFontCache = nullptr
-		, CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr		
-		, RegexHandler* pRegexCache = nullptr
-		, IConData* pIConData = nullptr
-		, PrivateFontCollection* pFontCollection = nullptr
-		, const bool needGDIPStartUp = true
-	) {
+		const NeoStrFontCache& neoStrFontCache = {},
+		IConData* pIConData = nullptr) {
+		// ------
+		// GDI Env
+		// ------
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 		}
 
+		// ------
+		// Basic Font
+		// ------
 		// duplicate font handle
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		this->hFont = CreateFontIndirect(&this->logFont);
@@ -1031,17 +1052,22 @@ public:
 		this->hOldObj = SelectObject(this->hdc, hFont);
 		GetTextMetrics(hdc, &this->tm);
 
-		this->pFontCollection = pFontCollection;
+		this->SetColor(color);
+		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
-		if (pFontCache && pCharSzCacheWithFont && pRegexCache) {
-			this->bExternalCache = true;
+		this->strPos.reserve(20);
 
-			this->pFontCache = pFontCache;
-			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
-			this->pRegexCache = pRegexCache;
-		}else {
-			this->bExternalCache = false;
+		// ------
+		// Cache
+		// ------
 
+		// Font
+		this->pFontCollection = neoStrFontCache.pFontCollection;
+		this->bExternalCache = neoStrFontCache.CacheValid();
+
+		if (this->bExternalCache) {
+			neoStrFontCache.UpdateNeoStr(this);		
+		}else {			
 			Alloc(this->pFontCache);
 			Alloc(this->pCharSzCacheWithFont);
 			Alloc(this->pRegexCache);
@@ -1049,11 +1075,13 @@ public:
 
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
-		this->SetColor(color);
-		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
+		// ICon
+		this->bExternalIConData = pIConData != nullptr;
+		this->pIConData = this->bExternalIConData ? pIConData : new IConData;
 
-		this->strPos.reserve(20);		
-
+		// ------
+		// Format
+		// ------
 		// non-stack based
 		this->triggerFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->triggerRect.reserve(DEFAULT_FORMAT_RESERVE);
@@ -1100,14 +1128,6 @@ public:
 #endif
 		// add a default char to return default value when input text is empty
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
-
-		if (pIConData != nullptr) {
-			bExternalIConData = true;
-			this->pIConData = pIConData;
-		}
-		else {
-			this->pIConData = new IConData;
-		}
 	}
 
 	~NeoStr() {
@@ -1215,7 +1235,11 @@ public:
 	//https://blog.csdn.net/analogous_love/article/details/45845971
 	inline void EmbedFont(const LPCWSTR pFontFile) const {
 		EmbedFont(pFontFile, *this->pFontCollection);
-		auto count = this->pFontCollection->GetFamilyCount();
+#ifdef _DEBUG
+		if (this->pFontCollection != nullptr) {
+			auto count = this->pFontCollection->GetFamilyCount();
+		}
+#endif
 	}
 
 	inline static void EmbedFont(const LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {

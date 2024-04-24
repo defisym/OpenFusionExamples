@@ -482,7 +482,7 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 	auto bDestroyObject = IsDestroyed(pObject);
 	
 	if (!bDestroyCaller
-		&& pObject != nullptr && LPROValid(pObject, IDENTIFIER_ACTIVE) && !bDestroyObject) {
+		&& pObject != nullptr && !bDestroyObject && LPROValid(pObject, IDENTIFIER_ACTIVE) ) {
 		rdPtr->pIConObject = pObject;
 
 		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
@@ -1054,19 +1054,20 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr pFilter(0, 0, rdPtr->hFont
-			, rdPtr->pData->pFontCache
-			, rdPtr->pData->pCharSzCacheWithFont
-			, rdPtr->pData->pRegexHandler
-			, rdPtr->pData->pIConData
-			, rdPtr->pData->pFontCollection
-			, false);
-	pFilter.GetFormat(pStr
-		, flags == -1
+	NeoStr filter(0, 0, rdPtr->hFont, false,
+			{ rdPtr->pData->pFontCache,
+			rdPtr->pData->pCharSzCacheWithFont,
+			rdPtr->pData->pRegexHandler,
+			rdPtr->pData->pFontCollection },
+			// use global data here to avoid unnecessary alloc
+			rdPtr->pData->pIConData);
+
+	filter.GetFormat(pStr,
+		flags == static_cast<size_t>(-1)
 		? rdPtr->filterFlags
 		: flags);
 
-	*rdPtr->pExpRet = pFilter.GetText() != nullptr ? pFilter.GetText() : Default_Str;
+	*rdPtr->pExpRet = filter.GetText() != nullptr ? filter.GetText() : Default_Str;
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -1247,16 +1248,16 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	size_t filteredLength = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr pFilter(0, 0, rdPtr->hFont
-			, rdPtr->pData->pFontCache
-			, rdPtr->pData->pCharSzCacheWithFont
-			, rdPtr->pData->pRegexHandler
-			, rdPtr->pData->pIConData
-			, rdPtr->pData->pFontCollection
-			, false);
+	NeoStr filter(0, 0, rdPtr->hFont, false,
+		{ rdPtr->pData->pFontCache,
+			rdPtr->pData->pCharSzCacheWithFont,
+			rdPtr->pData->pRegexHandler,
+			rdPtr->pData->pFontCollection },
+			// use global data here to avoid unnecessary alloc
+			rdPtr->pData->pIConData);
 
 	try {		
-		pFilter.GetFormat(pStr
+		filter.GetFormat(pStr
 			, flags == static_cast<size_t>(-1) ? rdPtr->filterFlags : flags
 			, true
 			, FORMAT_OPERATION_GetRawStringByFilteredStringLength
@@ -1268,8 +1269,8 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 			throw;
 		}
 
-		*rdPtr->pExpRet = pFilter.GetRawText() != nullptr
-			? pFilter.GetRawText()
+		*rdPtr->pExpRet = filter.GetRawText() != nullptr
+			? filter.GetRawText()
 			: Default_Str;
 	}
 
