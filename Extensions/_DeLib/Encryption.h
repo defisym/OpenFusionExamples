@@ -341,6 +341,7 @@ public:
 
 	bool OpenFile(const wchar_t* FileName);
 	bool SaveFile(const wchar_t* FileName, bool SaveSrc = false) const;
+	bool static SaveFile(const wchar_t* pFileName, PBYTE pData, DWORD sz);
 
 	inline PBYTE GetData() const {
 		return this->OutputData == nullptr
