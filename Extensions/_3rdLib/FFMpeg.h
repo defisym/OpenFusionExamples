@@ -767,19 +767,16 @@ private:
 					hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
 
 					if (hw_pix_fmt != AV_PIX_FMT_NONE) {
+						hw_pix_fmt_global = hw_pix_fmt;
+
 						break;
 					}
 				}
 
-				if (hw_pix_fmt == AV_PIX_FMT_NONE) {
-					//throw FFMpegException_HWInitFailed;
-					bHWDecode = false;
-				}
-			}			
-		}
-
-		if (bHWDecode) {
-			hw_pix_fmt_global = hw_pix_fmt;
+				// No valid pixel format found
+				// throw FFMpegException_HWInitFailed;
+				bHWDecode = false;
+			}
 		}
 #endif
 
