@@ -124,6 +124,10 @@ constexpr auto PIXEL_BYTE = 3;
 #define HW_DECODE
 
 #ifdef HW_DECODE
+// copy to surface directly without copy back to memory
+// D3D11 Only
+#define HW_COPYTOSURFACE
+
 static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
@@ -306,7 +310,9 @@ private:
 #ifdef HW_DECODE
 	bool bHWDecode = false;
 
+#ifndef HW_COPYTOSURFACE
 	AVFrame* pSWFrame = nullptr;
+#endif
 #endif // HW_DECODE
 
 	//AVFrame vFrame = { 0 };
@@ -885,7 +891,7 @@ private:
 		}
 #endif //  AUDIO_TEMPO
 
-#ifdef HW_DECODE
+#if defined HW_DECODE && !defined HW_COPYTOSURFACE
 		if (bHWDecode) {
 			pSWFrame = av_frame_alloc();
 			if (!pSWFrame) {
@@ -1327,7 +1333,7 @@ private:
 		else if (response < 0) {
 			av_frame_unref(pFrame);
 
-#ifdef HW_DECODE
+#if defined HW_DECODE && !defined HW_COPYTOSURFACE
 			if (bHWDecode) {
 				av_frame_unref(pSWFrame);
 			}
@@ -1376,7 +1382,7 @@ private:
 				|| (bSeeking && (videoClock >= seekingTargetPts))) {
 				auto pFrameToConvert = pFrame;
 
-#ifdef HW_DECODE
+#if defined HW_DECODE && !defined HW_COPYTOSURFACE
 				if (bHWDecode) {
 					if (pFrame->format == hw_pix_fmt) {
 						/* retrieve data from GPU to CPU */
@@ -1390,7 +1396,12 @@ private:
 				}
 #endif
 
+#ifdef HW_COPYTOSURFACE
+				// pass ID3D11Texture2D pointer directly
+				callBack(pFrameToConvert->data[0], -1, -1);
+#else
 				convertData(pFrameToConvert, callBack);
+#endif
 			}
 
 			av_frame_unref(pFrame);
@@ -1698,7 +1709,7 @@ public:
 		av_frame_free(&pAFilterFrame);
 #endif //  AUDIO_TEMPO
 
-#ifdef HW_DECODE
+#if defined HW_DECODE && !defined HW_COPYTOSURFACE
 		if (bHWDecode) {
 			av_frame_free(&pSWFrame);
 		}
@@ -2058,7 +2069,7 @@ public:
 			return -1;
 		}
 
-#ifdef HW_DECODE
+#if defined HW_DECODE && !defined HW_COPYTOSURFACE
 		AVFrame* pLocalSWFrame = nullptr;
 		AVFrame* pOldSWFrame = nullptr;
 
@@ -2125,7 +2136,7 @@ public:
 		videoClock = oldClock;
 		videoPts = oldPts;
 
-#ifdef HW_DECODE
+#if defined HW_DECODE && !defined HW_COPYTOSURFACE
 		if (bHWDecode) {
 			pSWFrame = pOldSWFrame;
 			av_frame_free(&pLocalSWFrame);

@@ -145,6 +145,33 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	return;
 }
 
+#ifdef HW_COPYTOSURFACE
+#include <d3d11.h>
+
+#pragma comment(lib,"D3D11.lib")
+
+inline void InitSurface_HW(LPSURFACE& pSf, const int width, const int height) {
+	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
+
+#ifdef VIDEO_ALPHA
+		pSf = CreateHWASurface(32, width, height);
+#else
+		pSf = CreateHWASurface(24, width, height);
+#endif
+	}
+}
+
+inline void CopyData_HW(ID3D11Texture2D* pD3D11Texture,
+	LPSURFACE pHWASf,
+	bool bPm) {
+	const auto info = GetSurfaceInfo(pHWASf);
+	const auto ppD3D11Texture = (ID3D11Texture2D**)info.m_ppD3D11Texture;
+	const auto pD3D11Context = (ID3D11DeviceContext*)info.m_pD3D11Context;
+
+	pD3D11Context->CopyResource(*ppD3D11Texture, pD3D11Texture);
+}
+#endif
+
 inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, LPSURFACE& pSf) {
 	if (rdPtr->pFFMpeg == nullptr) {
 		return;
