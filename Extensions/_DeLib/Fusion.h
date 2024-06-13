@@ -614,10 +614,9 @@ inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
 
 //Get info
 inline D3D11SURFINFO GetSurfaceInfo(LPSURFACE pSf) {
-	D3D11SURFINFO info = { 0 };
-	auto pInfo = &info;
-
+	D3D11SURFINFO info = { };
 	info.m_lSize= sizeof(D3D11SURFINFO);
+
 	auto ret = pSf->GetDriverInfo(&info);
 
 	return info;
