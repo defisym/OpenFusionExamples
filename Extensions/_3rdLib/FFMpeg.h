@@ -124,7 +124,8 @@ constexpr auto PIXEL_BYTE = 3;
 #define HW_DECODE
 
 #ifdef HW_DECODE
-static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
+// global variable for AVCodecContext->get_format callback
+inline static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
 constexpr auto FFMpegFlag_Default = 0;
@@ -760,23 +761,28 @@ private:
 			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
 
 			if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+				// enum types to get a valid device
 				const auto hw_types = HW_GetDeviceType();
 
 				for (const auto& type : hw_types) {
-					hw_type = type;
-					hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
+					const auto fmt = HW_GetPixelFormat(pVCodec, type);
 
-					if (hw_pix_fmt != AV_PIX_FMT_NONE) {
-						hw_pix_fmt_global = hw_pix_fmt;
+					if (fmt != AV_PIX_FMT_NONE) {
+						hw_type = type;
+						hw_pix_fmt = fmt;
 
 						break;
 					}
 				}
 
-				// No valid pixel format found
-				// throw FFMpegException_HWInitFailed;
-				bHWDecode = false;
+				if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+					//throw FFMpegException_HWInitFailed;
+					bHWDecode = false;
+					hw_type = AV_HWDEVICE_TYPE_NONE;
+				}
 			}
+
+			hw_pix_fmt_global = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
 		}
 #endif
 
