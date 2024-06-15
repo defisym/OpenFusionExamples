@@ -439,7 +439,7 @@ private:
 	inline int64_t get_ChannelLayout() const {
 		//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
 
-		int channels = pACodecParameters->channels;
+		int channels = pACodecParameters->ch_layout.nb_channels;
 		uint64_t channel_layout = pACodecParameters->channel_layout;
 
 		if (channels > 0 && channel_layout == 0) {
@@ -1440,11 +1440,11 @@ private:
 			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples
 				, const_cast<const uint8_t**>(pBaseFrame->data), pBaseFrame->nb_samples);
 
-			const auto audioSize = pBaseFrame->channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
+			const auto channels = pBaseFrame->ch_layout.nb_channels;
+			const auto pcm_bytes = 2 * channels;
+			const auto audioSize = channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
 
 			audioPts = audioClock;
-
-			const auto pcm_bytes = 2 * pBaseFrame->channels;
 			audioClock += static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
 
 			return audioSize;
