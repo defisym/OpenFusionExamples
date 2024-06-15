@@ -313,8 +313,6 @@ private:
 	AVFrame* pVLastFrame = nullptr;	
 
 	AVPacket* pPacket = nullptr;
-	//AVPacket* pFlushPacket = nullptr;
-	AVPacket flushPacket;
 
 	PacketQueue audioQueue;
 	PacketQueue videoQueue;
@@ -900,16 +898,6 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		//pFlushPacket = av_packet_alloc();
-		//if (!pFlushPacket) {
-		//	throw FFMpegException_InitFailed;
-		//}
-
-		//pFlushPacket->data = (unsigned char*)"FLUSH";
-
-		av_init_packet(&flushPacket);
-		flushPacket.data = (unsigned char*)"FLUSH";
-
 		pVPacket = av_packet_alloc();
 		if (!pVPacket) {
 			throw FFMpegException_InitFailed;
@@ -997,18 +985,16 @@ private:
 	}
 
 	inline int seekFrame(AVFormatContext* pFormatContext, const int stream_index, const int64_t ms = 0, const int flags = seekFlags) const {
-		int response = 0;
-
 		// input second
 		const auto seek_target = get_protectedTimeStamp(ms, flags);
 
-		response = flags >= 0
-			? av_seek_frame(pFormatContext, stream_index
-				, seek_target
-				, flags)
-			: avformat_seek_file(pFormatContext, stream_index
-				, seek_target, seek_target, seek_target
-				, -1 * flags);
+		int response = flags >= 0
+						   ? av_seek_frame(pFormatContext, stream_index
+										   , seek_target
+										   , flags)
+						   : avformat_seek_file(pFormatContext, stream_index
+												, seek_target, seek_target, seek_target
+												, -1 * flags);
 
 		//response = avformat_seek_file(pFormatContext, stream_index
 		//	, seek_target, seek_target, seek_target
@@ -1273,12 +1259,6 @@ private:
 			}
 		}
 
-		//if (pPacket->data == flushPacket.data) {
-		//	avcodec_flush_buffers(pCodecContext);
-		//
-		//	return 0;
-		//}
-
 		const auto bNoPacket = bRespond == false;
 		const auto pInputPacket = !bNoPacket ? pPacket : nullptr;
 
@@ -1498,7 +1478,7 @@ private:
 		const auto curTime = get_curTime();
 		const auto pausedTime = get_pausedTime();
 		
-		// reset frameTimer with a extimate time
+		// reset frameTimer with an extimate time
 		if (frameTimer == -1) {
 			frameTimer = curTime - videoPts;
 			tempoTimer = curTime;
@@ -1541,10 +1521,6 @@ private:
 	}
 
 	inline SyncState get_syncState() {
-		//if (bFinish) {
-		//	return SyncState::SYNC_SYNC;
-		//}
-
 		auto delay = videoPts - frameLastPts;
 
 		if (delay <= 0 || delay >= 1) {
@@ -1677,7 +1653,6 @@ public:
 		delete[] audio_buf;
 
 		av_packet_free(&pPacket);
-		//av_packet_free(&pFlushPacket);
 
 		av_packet_free(&pVPacket);
 		av_packet_free(&pAPacket);
@@ -1925,15 +1900,13 @@ public:
 		}
 
 		if (video_stream_index >= 0) {
-			videoQueue.flush();
-			//videoQueue.put(&flushPacket);
+			videoQueue.flush();			
 			avcodec_flush_buffers(pVCodecContext);
 
 		}
 
 		if (audio_stream_index >= 0) {
-			audioQueue.flush();
-			//audioQueue.put(&flushPacket);
+			audioQueue.flush();			
 			avcodec_flush_buffers(pACodecContext);
 		}
 
@@ -1943,18 +1916,6 @@ public:
 
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
-		//TODO
-		//if (!bForceNoAudio) {
-		//	audio_buf_index = 0;
-		//	audio_buf_size = 0;
-		//	memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
-		//	memset(audio_stream, 0, audio_stream_len);
-		//}
-
-		//if (ms == 0) {
-			//reset_sync();
-			//reset_finishState();
-		//}
 
 		reset_sync();
 		reset_finishState();
@@ -1974,7 +1935,7 @@ public:
 			                      ? atempo
 			                      : DEFAULT_ATEMPO;
 
-		// won't update if param is the same
+		// won't update if param is the same		
 		if (this->atempo == newTempo) {
 			return;
 		}
