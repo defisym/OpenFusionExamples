@@ -193,6 +193,7 @@ constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
 using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
+using frameCallBack = std::function<void(const AVFrame*)>;
 using Setter = std::function<void*(void* dst, int val, size_t size)>;
 using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
@@ -266,6 +267,10 @@ private:
 	AVFormatContext* pSeekFormatContext = nullptr;
 
 #ifdef  HW_DECODE
+	bool bHWDecode = false;
+	// software frame retrieved from GPU
+	AVFrame* pSWFrame = nullptr;
+
 	// fall back to CPU decode
 	bool bHWFallback = false;
 
@@ -304,17 +309,8 @@ private:
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
 
-#ifdef HW_DECODE
-	bool bHWDecode = false;
-
-	AVFrame* pSWFrame = nullptr;
-#endif // HW_DECODE
-
-	//AVFrame vFrame = { 0 };
-	//AVFrame aFrame = { 0 };
-
-	//AVFrame* pVFrame = &vFrame;
-	//AVFrame* pAFrame = &aFrame;
+	// refered
+	AVFrame* pVLastFrame = nullptr;	
 
 	AVPacket* pPacket = nullptr;
 	//AVPacket* pFlushPacket = nullptr;
@@ -328,12 +324,6 @@ private:
 
 	AVPacket* pVPacket = nullptr;
 	AVPacket* pAPacket = nullptr;
-
-	//AVPacket vPacket = { 0 };
-	//AVPacket aPacket = { 0 };
-
-	//AVPacket* pVPacket = &vPacket;
-	//AVPacket* pAPacket = &aPacket;
 
 	SwsContext* swsContext = nullptr;
 
@@ -884,6 +874,11 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
+		pVLastFrame = av_frame_alloc();
+		if (!pVLastFrame) {
+			throw FFMpegException_InitFailed;
+		}
+
 #ifdef AUDIO_TEMPO
 		pAFilterFrame = av_frame_alloc();
 		if (!pAFilterFrame) {
@@ -1025,22 +1020,39 @@ private:
 		return response;
 	}
 
+	struct TempFrame {
+		bool bValid = false;
+
+		AVPacket* pPacket = nullptr;
+		AVFrame* pFrame = nullptr;
+		AVFrame* pLastFrame = nullptr;
+
+		TempFrame() {
+			pPacket = av_packet_alloc();
+			if (!pPacket) { return; }
+
+			pFrame = av_frame_alloc();
+			if (!pFrame) { return; }
+
+			pLastFrame = av_frame_alloc();
+			if (!pLastFrame) { return; }
+
+			bValid = true;
+		}
+
+		~TempFrame() {
+			av_frame_free(&pLastFrame);
+			av_frame_free(&pFrame);
+			av_packet_free(&pPacket);
+		}
+	};
+
 	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext
-		, double targetPts, const rawDataCallBack& callBack) {
+		, double targetPts, const rawDataCallBack& callBack, bool bAccurateSeek = true) {
 		int response = 0;
 
-		AVPacket* pPacket = av_packet_alloc();
-		if (!pPacket) {
-			return -1;
-		}
-
-		AVFrame* pFrame = av_frame_alloc();
-		if (!pFrame) {
-			return -1;
-		}
-
-		int loaclStride = 0;
-		int loaclHeight = 0;
+		TempFrame frames;
+		if (!frames.bValid) { return -1; }
 
 		this->bSeeking = true;
 		this->seekingTargetPts = targetPts;
@@ -1048,11 +1060,11 @@ private:
 		//how many packet processed
 		//int count = 0;
 
-		while (av_read_frame(pFormatContext, pPacket) >= 0) {
+		while (av_read_frame(pFormatContext, frames.pPacket) >= 0) {
 			// if it's the video stream
-			if (pPacket->stream_index == video_stream_index) {
+			if (frames.pPacket->stream_index == video_stream_index) {
 				// decode
-				response = avcodec_send_packet(pCodecContext, pPacket);
+				response = avcodec_send_packet(pCodecContext, frames.pPacket);
 
 				if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
 #ifdef _DEBUG
@@ -1062,11 +1074,7 @@ private:
 					break;
 				}
 
-				response = decode_vpacket(pCodecContext, pPacket, pFrame
-					, [&](const unsigned char* pData, const int stride, const int height) {
-						loaclStride = stride;
-						loaclHeight = height;
-					});
+				response = decode_vpacket(pCodecContext, frames.pPacket, frames.pFrame, frames.pLastFrame);
 
 				// wait until receive enough packets
 				if (response == AVERROR(EAGAIN)) {
@@ -1076,12 +1084,13 @@ private:
 				if (response < 0) { break; }
 
 				// goto target
+				if (!bAccurateSeek) { break; }
 				if (videoClock >= targetPts) { break; }
 
 				//count++;
 			}
 
-			av_packet_unref(pPacket);
+			av_packet_unref(frames.pPacket);
 		}
 
 //#define _REVERT_TO_TARGET
@@ -1098,11 +1107,7 @@ private:
 #endif // _REVERT_TO_TARGET
 
 		this->bSeeking = false;
-
-		av_frame_free(&pFrame);
-		av_packet_free(&pPacket);
-
-		callBack(p_global_bgr_buffer, loaclStride, loaclHeight);
+		convert_frame(frames.pLastFrame, callBack);
 
 		return response;
 	}
@@ -1153,18 +1158,60 @@ private:
 		return response;
 	}
 
+	inline void convert_frame(AVFrame* pFrame, const rawDataCallBack& callBack) {
+#ifdef HW_DECODE
+		if (bHWDecode) {
+			av_frame_unref(pSWFrame);
+
+			if (pFrame->format == hw_pix_fmt) {
+				/* retrieve data from GPU to CPU */
+				if (av_hwframe_transfer_data(pSWFrame, pFrame, 0) < 0) {
+					//fprintf(stderr, "Error transferring the data to system memory\n");
+					throw FFMpegException_HWDecodeFailed;
+				}
+
+				pFrame = pSWFrame;
+			}
+		}
+#endif // HW_DECODE
+
+		// Convert data to Bitmap data
+		// https://zhuanlan.zhihu.com/p/53305541
+
+		// allocate buffer
+		if (p_global_bgr_buffer == nullptr) {
+			num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
+			p_global_bgr_buffer = new uint8_t[num_bytes];
+		}
+
+		// allocate sws
+		if (swsContext == nullptr) {
+			//auto pFormat = pFrame->format;
+
+			swsContext = sws_getContext(pFrame->width, pFrame->height
+				, static_cast<AVPixelFormat>(pFrame->format),
+				pFrame->width, pFrame->height
+				, PIXEL_FORMAT
+				, NULL, nullptr, nullptr, nullptr);
+		}
+
+		// make sure the sws_scale output is point to start.
+		const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
+
+		uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+
+		sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
+
+		//bgr_buffer[0] is the BGR raw data
+		callBack(bgr_buffer[0], linesize[0], pFrame->height);
+	}
+
 	inline int decode_frame(const rawDataCallBack& callBack) {
-		int response = 0;
-		int how_many_packets_to_process = 0;
-
-		SyncState syncState = SyncState::SYNC_SYNC;
-
-		int loaclStride = 0;
-		int loaclHeight = 0;
+		SyncState syncState;
 
 		do {
 			// fill buffer
-			response = fill_queue();
+			int response = fill_queue();
 
 			// calc delay
 			syncState = get_syncState();
@@ -1179,10 +1226,7 @@ private:
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				response = decode_videoFrame([&](const unsigned char* pData, const int stride, const int height) {
-					loaclStride = stride;
-					loaclHeight = height;
-					});
+				response = decode_videoFrame(pVLastFrame);
 
 				if (response == AVERROR(EAGAIN)) {
 					syncState = SyncState::SYNC_CLOCKFASTER;
@@ -1202,8 +1246,8 @@ private:
 			}
 
 		} while (syncState != SyncState::SYNC_SYNC);
-				
-		callBack(p_global_bgr_buffer, loaclStride, loaclHeight);
+
+		convert_frame(pVLastFrame, callBack);
 
 		return 0;
 	}
@@ -1215,14 +1259,14 @@ private:
 	// - Call avcodec_receive_frame() (decoding) or avcodec_receive_packet() (encoding) in a loop until AVERROR_EOF is returned. The functions will not return AVERROR(EAGAIN), unless you forgot to enter draining mode.
 	// - Before decoding can be resumed again, the codec has to be reset with avcodec_flush_buffers().
 
-	using Decoder = int(FFMpeg::*)(AVCodecContext*, const AVPacket*, AVFrame*, const rawDataCallBack&);
+	using Decoder = int(FFMpeg::*)(AVCodecContext*, const AVPacket*, AVFrame*, AVFrame*);
 
-	inline int decode_frameCore(bool& bFinishState, bool& bSendEAgain
-		, const bool& bBlockState
-		, PacketQueue& queue
-		, AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame
-		, Decoder decoder
-		, const rawDataCallBack& callBack) {
+	// pFrame: frame to receive data
+	// pLastFrame: frame to ref latest pFrame
+	inline int decode_frameCore(bool& bFinishState, bool& bSendEAgain,
+		const bool& bBlockState, PacketQueue& queue,
+		AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame, AVFrame* pLastFrame,
+		Decoder decoder) {
 		BOOL bRespond = true;
 		
 		if (!bSendEAgain) {
@@ -1251,7 +1295,7 @@ private:
 			return response;
 		}
 
-		response = (this->*decoder)(pCodecContext, pInputPacket, pFrame, callBack);
+		response = (this->*decoder)(pCodecContext, pInputPacket, pFrame, pLastFrame);
 
 		bFinishState = (response == AVERROR_EOF);
 
@@ -1269,56 +1313,22 @@ private:
 		return response;
 	}
 
-	inline int decode_videoFrame(const rawDataCallBack& callBack) {
-		return decode_frameCore(bVideoFinish, bVideoSendEAgain
-			, false
-			, videoQueue
-			, pVCodecContext, pVPacket, pVFrame
-			, &FFMpeg::decode_vpacket
-			, callBack);
+	inline int decode_videoFrame(AVFrame* pLastFrame) {
+		return decode_frameCore(bVideoFinish, bVideoSendEAgain,
+			false, videoQueue,
+			pVCodecContext, pVPacket, pVFrame, pLastFrame
+			, &FFMpeg::decode_vpacket);
 	}
 
 	inline int decode_audioFrame() {
-		return decode_frameCore(bAudioFinish, bAudioSendEAgain
-			, !bReadFinish && !bAudioCallbackPause
-			, audioQueue
-			, pACodecContext, pAPacket, pAFrame
-			, &FFMpeg::decode_apacket
-			, nullptr);
+		return decode_frameCore(bAudioFinish, bAudioSendEAgain,
+			!bReadFinish && !bAudioCallbackPause, audioQueue,
+			pACodecContext, pAPacket, pAFrame, nullptr,
+			&FFMpeg::decode_apacket);
 	}
 
-	// Convert data to Fusion data
-	// https://zhuanlan.zhihu.com/p/53305541
-	inline void convertData(AVFrame* pFrame, const rawDataCallBack& callBack) {
-		// allocate buffer
-		if (p_global_bgr_buffer == nullptr) {
-			num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
-			p_global_bgr_buffer = new uint8_t[num_bytes];
-		}
-
-		// allocate sws
-		if (swsContext == nullptr) {
-			//auto pFormat = pFrame->format;
-
-			swsContext = sws_getContext(pFrame->width, pFrame->height
-				, static_cast<AVPixelFormat>(pFrame->format),
-				pFrame->width, pFrame->height
-				, PIXEL_FORMAT
-				, NULL, nullptr, nullptr, nullptr);
-		}
-
-		// make sure the sws_scale output is point to start.
-		const int linesize [8] = { abs(pFrame->linesize [0] * PIXEL_BYTE) };
-
-		uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
-
-		sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-		//bgr_buffer[0] is the BGR raw data
-		callBack(bgr_buffer[0], linesize[0], pFrame->height);
-	}
-
-	inline int decode_vpacket(AVCodecContext* pVCodecContext, const AVPacket* pVPacket, AVFrame* pFrame, const rawDataCallBack& callBack) {
+	inline int decode_vpacket(AVCodecContext* pVCodecContext, const AVPacket* pVPacket,
+		AVFrame* pFrame, AVFrame* pLastFrame) {
 		// Return decoded output data (into a frame) from a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		int response = avcodec_receive_frame(pVCodecContext, pFrame);
@@ -1332,12 +1342,6 @@ private:
 		}
 		else if (response < 0) {
 			av_frame_unref(pFrame);
-
-#ifdef HW_DECODE
-			if (bHWDecode) {
-				av_frame_unref(pSWFrame);
-			}
-#endif // HW_DECODE
 
 			return response;
 		}
@@ -1380,23 +1384,8 @@ private:
 
 			if (!bSeeking
 				|| (bSeeking && (videoClock >= seekingTargetPts))) {
-				auto pFrameToConvert = pFrame;
-
-#ifdef HW_DECODE
-				if (bHWDecode) {
-					if (pFrame->format == hw_pix_fmt) {
-						/* retrieve data from GPU to CPU */
-						if ((response = av_hwframe_transfer_data(pSWFrame, pFrame, 0)) < 0) {
-							//fprintf(stderr, "Error transferring the data to system memory\n");
-							throw FFMpegException_HWDecodeFailed;
-						}
-
-						pFrameToConvert = pSWFrame;
-					}
-				}
-#endif
-
-				convertData(pFrameToConvert, callBack);
+				av_frame_unref(pLastFrame);
+				av_frame_ref(pLastFrame, pFrame);
 			}
 
 			av_frame_unref(pFrame);
@@ -1406,7 +1395,8 @@ private:
 	}
 
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
-	inline int decode_apacket(AVCodecContext* pACodecContext, const AVPacket* pAPacket, AVFrame* pFrame, const rawDataCallBack& callBack) {
+	inline int decode_apacket(AVCodecContext* pACodecContext, const AVPacket* pAPacket,
+		AVFrame* pFrame, AVFrame* pLastFrame) {
 		int response = avcodec_receive_frame(pACodecContext, pFrame);
 
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
@@ -1425,7 +1415,7 @@ private:
 			return -1;
 		}
 
-		while (1) {
+		while (true) {
 			//response = av_buffersink_get_frame(buffersink_ctx, pFrame);
 			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
@@ -1699,6 +1689,8 @@ public:
 
 		av_frame_free(&pVFrame);
 		av_frame_free(&pAFrame);
+
+		av_frame_free(&pVLastFrame);
 
 #ifdef AUDIO_TEMPO
 		av_frame_free(&pAFilterFrame);
@@ -2036,8 +2028,6 @@ public:
 	}
 
 	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const rawDataCallBack& callBack) {
-		int response = 0;
-
 		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pCodecContext) {
 			return -1;
@@ -2054,32 +2044,7 @@ public:
 			return -1;
 		}
 
-		AVPacket* pPacket = av_packet_alloc();
-		if (!pPacket) {
-			return -1;
-		}
-
-		AVFrame* pFrame = av_frame_alloc();
-		if (!pFrame) {
-			return -1;
-		}
-
-#ifdef HW_DECODE
-		AVFrame* pLocalSWFrame = nullptr;
-		AVFrame* pOldSWFrame = nullptr;
-
-		if (bHWDecode) {
-			AVFrame* pLocalSWFrame = av_frame_alloc();
-			if (!pLocalSWFrame) {
-				return -1;
-			}
-
-			auto pOldSWFrame = pSWFrame;
-			pSWFrame = pLocalSWFrame;
-		}
-#endif // HW_DECODE
-
-		response = seekFrame(pSeekFormatContext, video_stream_index, ms);
+		int response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
 		if (response < 0) {
 			return -1;
@@ -2092,54 +2057,11 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
-		if (bAccurateSeek) {
-			response = forwardFrame(pSeekFormatContext, pCodecContext, ms / 1000.0, callBack);
-
-			if (response < 0) {
-				return -1;
-			}
-		}
-		else {
-			int how_many_packets_to_process = 0;
-
-			while (av_read_frame(pSeekFormatContext, pPacket) >= 0) {
-				// if it's the video stream
-				if (pPacket->stream_index == video_stream_index) {
-					response = avcodec_send_packet(pCodecContext, pPacket);
-
-					if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
-						break;
-					}
-
-					response = decode_vpacket(pCodecContext, pPacket, pFrame, callBack);
-
-					//wait until receive enough frames
-					if (response == AVERROR(EAGAIN)) {
-						continue;
-					}
-
-					if (response < 0) { break; }
-
-					// stop it, otherwise we'll be saving hundreds of frames
-					if (--how_many_packets_to_process <= 0) { break; }
-				}
-
-				av_packet_unref(pPacket);
-			}
-		}
+		response = forwardFrame(pSeekFormatContext, pCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;
 		videoPts = oldPts;
 
-#ifdef HW_DECODE
-		if (bHWDecode) {
-			pSWFrame = pOldSWFrame;
-			av_frame_free(&pLocalSWFrame);
-		}
-#endif // HW_DECODE
-
-		av_frame_free(&pFrame);
-		av_packet_free(&pPacket);
 		avcodec_free_context(&pCodecContext);
 
 		return response;
