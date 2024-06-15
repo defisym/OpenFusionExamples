@@ -1136,23 +1136,19 @@ private:
 				break;
 			}
 
-			bool bValid = false;
+			do {
+				if (pPacket->stream_index == video_stream_index) {
+					videoQueue.put(pPacket);
+					break;
+				}
 
-			// if it's the video stream
-			if (pPacket->stream_index == video_stream_index) {
-				videoQueue.put(pPacket);
-				bValid = true;
-			}
+				if (pPacket->stream_index == audio_stream_index) {
+					audioQueue.put(pPacket);
+					break;
+				}
 
-			// if it's the audio stream
-			if (pPacket->stream_index == audio_stream_index) {
-				audioQueue.put(pPacket);
-				bValid = true;
-			}
-
-			if (!bValid) {
 				av_packet_unref(pPacket);
-			}
+			} while (false);
 		}
 
 		return response;
@@ -1262,7 +1258,7 @@ private:
 	using Decoder = int(FFMpeg::*)(AVCodecContext*, const AVPacket*, AVFrame*, AVFrame*);
 
 	// pFrame: frame to receive data
-	// pLastFrame: frame to ref latest pFrame
+	// pLastFrame: frame to ref latest updated pFrame
 	inline int decode_frameCore(bool& bFinishState, bool& bSendEAgain,
 		const bool& bBlockState, PacketQueue& queue,
 		AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame, AVFrame* pLastFrame,
@@ -1279,7 +1275,7 @@ private:
 
 		//if (pPacket->data == flushPacket.data) {
 		//	avcodec_flush_buffers(pCodecContext);
-
+		//
 		//	return 0;
 		//}
 
@@ -1291,7 +1287,7 @@ private:
 		int response = avcodec_send_packet(pCodecContext, pPacket);
 		bSendEAgain = (response == AVERROR(EAGAIN));
 
-		if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
+		if (response < 0 && !bSendEAgain && response != AVERROR_EOF) {
 			return response;
 		}
 
@@ -1299,7 +1295,7 @@ private:
 
 		bFinishState = (response == AVERROR_EOF);
 
-		// won't release if current packed didn't used
+		// won't release if current packed didn't use
 		if (!bSendEAgain) {
 			if (pPacket && pPacket->data) {
 				av_packet_unref(pPacket);
@@ -1340,56 +1336,55 @@ private:
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			return response;
 		}
-		else if (response < 0) {
+
+		if (response < 0) {
 			av_frame_unref(pFrame);
 
 			return response;
 		}
 
-		if (response >= 0) {
-			//videoPts = 0;
-			videoPts = static_cast<double>(pFrame->best_effort_timestamp);
+		//videoPts = 0;
+		videoPts = static_cast<double>(pFrame->best_effort_timestamp);
 
-			if (pVPacket != nullptr) {
-				if (pVPacket->dts == AV_NOPTS_VALUE
-					&& pFrame->opaque
-					&& *static_cast<uint64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
-					videoPts = static_cast<double>(*(uint64_t*)pFrame->opaque);
-				}
-				else {
-					videoPts = static_cast<double>(pVPacket->dts != AV_NOPTS_VALUE
-						? pFrame->best_effort_timestamp
-						: 0);
-				}
+		if (pVPacket != nullptr) {
+			if (pVPacket->dts == AV_NOPTS_VALUE
+				&& pFrame->opaque
+				&& *static_cast<uint64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
+				videoPts = static_cast<double>(*(uint64_t*)pFrame->opaque);
 			}
-
-			videoPts *= av_q2d(pVideoStream->time_base);
-
-			//if (pFrame->key_frame == 1) {
-			//	firstKeyFrame = (std::min)(videoPts, firstKeyFrame);
-			//}
-
-#ifdef _CONSOLE
-			if (bJumped) {
-				printf("Cur video pts: %f\n", videoPts);
+			else {
+				videoPts = static_cast<double>(pVPacket->dts != AV_NOPTS_VALUE
+					? pFrame->best_effort_timestamp
+					: 0);
 			}
-#endif
-			videoPts = synchronize_video(pFrame, videoPts);
-
-#ifdef _CONSOLE
-			if (bJumped) {
-				printf("Cur synced video pts: %f\n", videoPts);
-			}
-#endif
-
-			if (!bSeeking
-				|| (bSeeking && (videoClock >= seekingTargetPts))) {
-				av_frame_unref(pLastFrame);
-				av_frame_ref(pLastFrame, pFrame);
-			}
-
-			av_frame_unref(pFrame);
 		}
+
+		videoPts *= av_q2d(pVideoStream->time_base);
+
+		//if (pFrame->key_frame == 1) {
+		//	firstKeyFrame = (std::min)(videoPts, firstKeyFrame);
+		//}
+
+#ifdef _CONSOLE
+		if (bJumped) {
+			printf("Cur video pts: %f\n", videoPts);
+		}
+#endif
+		videoPts = synchronize_video(pFrame, videoPts);
+
+#ifdef _CONSOLE
+		if (bJumped) {
+			printf("Cur synced video pts: %f\n", videoPts);
+		}
+#endif
+
+		if (!bSeeking
+			|| (bSeeking && (videoClock >= seekingTargetPts))) {
+			av_frame_unref(pLastFrame);
+			av_frame_ref(pLastFrame, pFrame);
+		}
+
+		av_frame_unref(pFrame);
 
 		return response;
 	}
@@ -1402,7 +1397,8 @@ private:
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			return response;
 		}
-		else if (response < 0) {
+
+		if (response < 0) {
 			av_frame_unref(pFrame);
 
 			return response;
@@ -1410,13 +1406,12 @@ private:
 
 #ifdef AUDIO_TEMPO
 		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
-		//response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, 0);
+
 		if (response < 0) {
 			return -1;
 		}
 
 		while (true) {
-			//response = av_buffersink_get_frame(buffersink_ctx, pFrame);
 			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
 			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 				break;
@@ -1668,7 +1663,7 @@ public:
 		audioQueue.flush();
 		videoQueue.flush();
 
-		// flush will restart queue and may cause dead lock
+		// flush will restart queue and may cause deadlock
 		// so pause again here
 		// as call destructor directly is UB
 		audioQueue.pause();
@@ -1697,9 +1692,7 @@ public:
 #endif //  AUDIO_TEMPO
 
 #ifdef HW_DECODE
-		if (bHWDecode) {
-			av_frame_free(&pSWFrame);
-		}
+		av_frame_free(&pSWFrame);
 #endif // HW_DECODE		
 
 #ifdef AUDIO_TEMPO
@@ -1718,9 +1711,7 @@ public:
 		avformat_close_input(&pSeekFormatContext);
 
 #ifdef HW_DECODE
-		if (bHWDecode) {
-			av_buffer_unref(&hw_device_ctx);
-		}
+		av_buffer_unref(&hw_device_ctx);
 #endif // HW_DECODE		
 
 		if (bFromMem) {
@@ -2022,7 +2013,7 @@ public:
 #endif //  AUDIO_TEMPO
 	}
 
-	//Play core
+	// call set_videoPosition first to seek to target frame
 	inline int goto_videoPosition(const size_t ms, const rawDataCallBack& callBack) {
 		return forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0, callBack);
 	}
@@ -2068,17 +2059,11 @@ public:
 	}
 
 	inline int get_nextFrame(const rawDataCallBack& callBack) {
-		int response = 0;
-		int how_many_packets_to_process = 0;
+		int response = handleLoop();
 
-		response = handleLoop();
-
-		if (!bFinish) {
-			response = decode_frame(callBack);
-		}
+		if (!bFinish) { response = decode_frame(callBack); }
 
 		//do not wait audio finish to get fluent loop
-
 		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
 		bFinish = bReadFinish && bVideoFinish;
 

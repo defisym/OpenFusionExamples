@@ -274,7 +274,7 @@ public:
 		SDL_LockMutex(mutex);
 #endif
 
-		queue.push(pkt);
+		queue.emplace(pkt);
 
 		dataSize += pkt.size;
 		//nb_packets++;
