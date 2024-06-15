@@ -9,6 +9,9 @@
 // ReSharper disable CppClangTidyClangDiagnosticShadow
 // ReSharper disable CppClangTidyClangDiagnosticReservedMacroIdentifier
 
+// ReSharper disable CppClangTidyMiscThrowByValueCatchByReference
+// ReSharper disable CppClangTidyHicppExceptionBaseclass
+// ReSharper disable CppInitializedValueIsAlwaysRewritten
 #pragma once
 
 #pragma warning(disable : 4819)
@@ -334,7 +337,7 @@ private:
 	AVDictionary* pVOptionsDict = nullptr;
 	AVDictionary* pAOptionsDict = nullptr;
 
-	AVRational rational = { 0 };
+	AVRational rational = { };
 	double decimalRational = 0;
 
 	int64_t totalDuration = 0;
@@ -378,7 +381,7 @@ private:
 		std::vector<AVHWDeviceType> types;
 
 		while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE) {
-			auto pName = av_hwdevice_get_type_name(type);
+			[[maybe_unused]] auto pName = av_hwdevice_get_type_name(type);
 
 			// valid
 			types.emplace_back(type);
@@ -615,7 +618,7 @@ private:
 
 	// TODO merge into init_formatContext
 	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName) {		
-		AVProbeData probeData = { nullptr };
+		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -658,7 +661,7 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		(*pBuf) = new MemBuf(pBuffer, bfSz);
+		(*pBuf) = new MemBuf(pBuffer, static_cast<int>(bfSz));
 
 		*pAvioContext = avio_alloc_context((*pBuf)->get(), (*pBuf)->getSize(), 0, (*pBuf)
 			, [](void* opaque, uint8_t* buf, const int buf_size) {
@@ -684,7 +687,7 @@ private:
 
 		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
 		//might crash in avformat_open_input due to access violation if not set
-		AVProbeData probeData = { nullptr };
+		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -930,7 +933,7 @@ private:
 		decimalRational = static_cast<double>(rational.num) / rational.den;
 
 		//timePerFrameInMs = decimalRational * 1000;
-		totalTime = totalDuration * decimalRational;
+		totalTime = static_cast<double>(totalDuration) * decimalRational;
 
 		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
 		totalTimeInMs = totalDuration == INT64_MAX
@@ -971,7 +974,7 @@ private:
 		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
 		// (this may not be supported by all demuxers).
 		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME){
-			const auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
+			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
 
 			return static_cast<int64_t>(protectedTimeStamp);
 		}
@@ -979,7 +982,7 @@ private:
 		// default
 		// all timestamps are in units of the stream selected by stream_index or if stream_index is -1, in AV_TIME_BASE units
 		// av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		const auto protectedTimeStamp = get_protectedTimeInSecond(ms) / av_q2d(pVideoStream->time_base);
+		const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
 
 		return static_cast<int64_t>(protectedTimeStamp);
 	}
@@ -1329,8 +1332,8 @@ private:
 		if (pVPacket != nullptr) {
 			if (pVPacket->dts == AV_NOPTS_VALUE
 				&& pFrame->opaque
-				&& *static_cast<uint64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
-				videoPts = static_cast<double>(*(uint64_t*)pFrame->opaque);
+				&& *static_cast<int64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
+				videoPts = static_cast<double>(*static_cast<uint64_t*>(pFrame->opaque));
 			}
 			else {
 				videoPts = static_cast<double>(pVPacket->dts != AV_NOPTS_VALUE
@@ -1405,7 +1408,7 @@ private:
 
 			if (pAPacket != nullptr) {
 				if (pAPacket->pts != AV_NOPTS_VALUE) {
-					audioClock = av_q2d(pAudioStream->time_base) * pAPacket->pts;
+					audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
 #ifdef _CONSOLE
 					if (bJumped) {
 						printf("Cur audio clock: %f\n", audioClock);
@@ -1456,17 +1459,15 @@ private:
 	}
 
 	//synchronize
-	inline double synchronize_video(const AVFrame* pVFrame, double videoPts) {
-		double frameDelay = 0;
-
-		if (videoPts != 0) {
+	inline double synchronize_video(const AVFrame* pVFrame, double videoPts) {		
+		if (!NearlyEqualDBL(videoPts, 0.0)) {
 			videoClock = videoPts;
 		}
 		else {
 			videoPts = videoClock;
 		}
 
-		frameDelay = av_q2d(pVideoStream->time_base);
+		double frameDelay = av_q2d(pVideoStream->time_base);
 		frameDelay += pVFrame->repeat_pict * (frameDelay * 0.5);
 
 		videoClock += frameDelay;
@@ -1478,8 +1479,8 @@ private:
 		const auto curTime = get_curTime();
 		const auto pausedTime = get_pausedTime();
 		
-		// reset frameTimer with an extimate time
-		if (frameTimer == -1) {
+		// reset frameTimer with an extimate time		
+		if (NearlyEqualDBL(frameTimer, -1.0)) {
 			frameTimer = curTime - videoPts;
 			tempoTimer = curTime;
 		}
@@ -1589,11 +1590,11 @@ private:
 	}
 
 	static inline double get_ptsMS(const AVPacket* pPacket, const AVStream* pStream) {
-		return pPacket->pts * av_q2d(pStream->time_base) * 1000;
+		return static_cast<double>(pPacket->pts) * av_q2d(pStream->time_base) * 1000;
 	}
 
 	static inline double get_dtsMS(const AVPacket* pPacket, const AVStream* pStream) {
-		return pPacket->dts * av_q2d(pStream->time_base) * 1000;
+		return static_cast<double>(pPacket->dts) * av_q2d(pStream->time_base) * 1000;
 	}
 
 	inline int handleLoop() {
@@ -1794,9 +1795,9 @@ public:
 			return L"MEDIACODEC";
 		case AV_HWDEVICE_TYPE_VULKAN:
 			return L"VULKAN";
-		default:
-			return L"NONE";
 		}
+
+		return L"NONE";
 	}
 
 	inline static AVHWDeviceType get_hwDeviceTypeByName(const std::wstring& deviceName) {
@@ -1882,8 +1883,6 @@ public:
 	}
 
 	inline int set_videoPosition(int64_t ms = 0, const int flags = seekFlags) {
-		int response = 0;
-
 		int steam_index = -1;
 
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
@@ -1893,7 +1892,7 @@ public:
 		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
 			? Range(ms, static_cast<int64_t>(0), get_videoDuration())
 			: ms;
-		response = seekFrame(pFormatContext, steam_index, ms, flags);
+		int response = seekFrame(pFormatContext, steam_index, ms, flags);
 
 		if (response < 0) {
 			return response;
@@ -1936,7 +1935,7 @@ public:
 			                      : DEFAULT_ATEMPO;
 
 		// won't update if param is the same		
-		if (this->atempo == newTempo) {
+		if (NearlyEqualFLT(this->atempo, newTempo)) {
 			return;
 		}
 
