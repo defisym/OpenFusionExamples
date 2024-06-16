@@ -8,8 +8,8 @@ inline void CleanCache(LPRDATA rdPtr, bool forceClean = false);
 
 inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->bStretch) {
-		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / width;
-		rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / height;
+		rdPtr->rc.rcScaleX = static_cast<float>(static_cast<double>(rdPtr->swidth) / width);
+		rdPtr->rc.rcScaleY = static_cast<float>(static_cast<double>(rdPtr->sheight) / height);
 	}
 	else {
 		rdPtr->rc.rcScaleX = 1.0;
@@ -145,7 +145,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	return;
 }
 
-inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, LPSURFACE& pSf) {
+inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	if (rdPtr->pFFMpeg == nullptr) {
 		return;
 	}
@@ -222,8 +222,8 @@ inline bool GetVideoFinishState(LPRDATA rdPtr) {
 	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
 }
 
-inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key) {
-	auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
+inline Encryption* LoadMemVideo(LPRDATA rdPtr, const std::wstring& filePath, const std::wstring& key) {
+	const auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
 
 	if (rdPtr->bCache) {
 		auto it = pMemVideoLib->GetItem(filePath);
@@ -233,25 +233,17 @@ inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstr
 		}
 	}
 
-	bool bRetry = false;
-
-	auto pEncrypt = new Encryption;
+	const auto pEncrypt = new Encryption;
 	pEncrypt->GenerateKey(key.c_str());
 
-retry:
-	try {
-		//pEncrypt->DecryptFile(filePath.c_str());
+	try {		
 		pEncrypt->DecryptFileDirectly(filePath.c_str());
 	}
-	catch (std::bad_alloc& e) {
-		if (rdPtr->bCache && !bRetry) {
-			bRetry = true;
+	catch ([[maybe_unused]] std::bad_alloc& e) {
+		if (rdPtr->bCache) {
 			CleanCache(rdPtr, true);
-
-			goto retry;
+			pEncrypt->DecryptFileDirectly(filePath.c_str());			
 		}
-
-		throw e;
 	}
 	
 	if (rdPtr->bCache) {
@@ -314,7 +306,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 
 		// display first valid frame
-		SetPositionGeneral(rdPtr, ms);
+		SetPositionGeneral(rdPtr, static_cast<int>(ms));
 
 		ReDisplay(rdPtr);
 	}
@@ -371,12 +363,12 @@ inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs)
 
 	toRemove.reserve((std::max)(0u, rdPtr->pData->pMemVideoLib->data.size() - pBufs.size()));
 
-	for (auto& pair : rdPtr->pData->pMemVideoLib->data) {
-		auto it = std::find(pBufs.begin(), pBufs.end(), pair.second->GetOutputData());
+	for (auto& [name, pEncrypt] : rdPtr->pData->pMemVideoLib->data) {
+		auto it = std::ranges::find(pBufs, pEncrypt->GetOutputData());
 
 		// not referred
 		if (it == pBufs.end()) {
-			toRemove.emplace_back(&pair.first);
+			toRemove.emplace_back(&name);
 		}
 	}
 
