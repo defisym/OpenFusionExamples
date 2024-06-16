@@ -613,8 +613,7 @@ private:
 	}
 #endif //  AUDIO_TEMPO
 
-	// TODO merge into init_formatContext
-	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName) {		
+	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName = "") {
 		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
 		//probeData.buf_size = bfSz;
@@ -630,15 +629,14 @@ private:
 			}
 
 			if (static_cast<size_t>(probeData.buf_size + 1) > bfSz) {
-				throw FFMpegException_InitFailed;
+				return nullptr;
 			}
 
 			probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(2 * probeData.buf_size), bfSz));
 		}
-
-		return nullptr;
 	}
 
+	// from file
 	static inline void init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
 		*pFormatContext = avformat_alloc_context();
 		if (!*pFormatContext) {
@@ -653,6 +651,7 @@ private:
 		}
 	}
 
+	// from memory
 	static inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, MemBuf** pBuf, unsigned char* pBuffer, const size_t bfSz) {
 		if (pBuffer == nullptr) {
 			throw FFMpegException_InitFailed;
@@ -680,31 +679,11 @@ private:
 			throw FFMpegException_InitFailed;
 		}
 
-		(*pFormatContext)->pb = *pAvioContext;
+		auto pInputFormat = init_Probe(pBuffer, bfSz);
+		if(!pInputFormat){ throw FFMpegException_InitFailed; }
 
 		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
 		//might crash in avformat_open_input due to access violation if not set
-		AVProbeData probeData = { };
-		probeData.buf = pBuffer;
-		//probeData.buf_size = bfSz;
-		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
-		probeData.filename = "";
-
-		// Determine the input-format:
-		while(true){
-			(*pFormatContext)->iformat = av_probe_input_format(&probeData, 1);
-
-			if ((*pFormatContext)->iformat != nullptr) {
-				break;
-			}
-
-			if (static_cast<size_t>(probeData.buf_size + 1) > bfSz) {
-				throw FFMpegException_InitFailed;
-			}
-						
-			probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(2 * probeData.buf_size), bfSz));
-		}
-
 		(*pFormatContext)->iformat = pInputFormat;
 		(*pFormatContext)->pb = *pAvioContext;
 		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
