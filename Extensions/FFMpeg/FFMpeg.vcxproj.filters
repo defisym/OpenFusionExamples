@@ -20,6 +20,12 @@
     <Filter Include="MMF Headers">
       <UniqueIdentifier>{f6ef1a44-36c7-44bb-93a7-3b437087049b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FFMpeg">
+      <UniqueIdentifier>{2919ef09-01e8-4d18-a140-6ed49363e047}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AudioInterface">
+      <UniqueIdentifier>{4e0f1015-303b-41c2-95eb-48b3ed675afc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -136,9 +142,6 @@
     <ClInclude Include="..\_DeLib\WindowsCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_3rdLib\FFMpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\_DeLib\Fusion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -148,9 +151,6 @@
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_3rdLib\PacketQueue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\_DeLib\Encryption.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -158,16 +158,22 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_3rdLib\MemBuf.h">
-      <Filter>Header Files</Filter>
+      <Filter>FFMpeg</Filter>
     </ClInclude>
-    <ClInclude Include="SDL_Mixer_Interface.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\_3rdLib\PacketQueue.h">
+      <Filter>FFMpeg</Filter>
     </ClInclude>
-    <ClInclude Include="SDL_Interface.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\_3rdLib\FFMpeg.h">
+      <Filter>FFMpeg</Filter>
     </ClInclude>
     <ClInclude Include="AudioInterface.h">
-      <Filter>Header Files</Filter>
+      <Filter>AudioInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="SDL_Mixer_Interface.h">
+      <Filter>AudioInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="SDL_Interface.h">
+      <Filter>AudioInterface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
