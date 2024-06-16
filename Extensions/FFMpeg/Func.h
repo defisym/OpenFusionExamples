@@ -304,8 +304,6 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
 		}
 
-		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
-
 		rdPtr->bOpen = true;
 		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 		*rdPtr->pFilePath = filePath;

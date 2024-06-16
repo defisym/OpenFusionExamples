@@ -338,9 +338,6 @@ private:
 	PacketQueue audioQueue;
 	PacketQueue videoQueue;
 
-	int audioQSize = MAX_AUDIOQ_SIZE;
-	int videoQSize = MAX_VIDEOQ_SIZE;
-
 	AVPacket* pVPacket = nullptr;
 	AVPacket* pAPacket = nullptr;
 
@@ -1113,21 +1110,6 @@ private:
 		return response;
 	}
 
-	inline int fill_queue() {
-		int response = 0;
-
-		while (true) {
-			if (videoQueue.getDataSize() > videoQSize && audioQueue.getDataSize() > audioQSize) {
-				break;
-			}
-
-			response = fill_queueonce();
-			if (response < 0) { return response; }
-		}
-
-		return response;
-	}
-
 	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
 #ifdef HW_DECODE
 		if (bHWDecode) {
@@ -1824,11 +1806,6 @@ public:
 	}
 
 	//Set
-	inline void set_queueSize(const int audioQSize = MAX_AUDIOQ_SIZE, const int videoQSize = MAX_VIDEOQ_SIZE) {
-		this->audioQSize = audioQSize;
-		this->videoQSize = videoQSize;
-	}
-
 	inline void set_pause(const bool bPause) {
 		this->bPause = bPause;
 

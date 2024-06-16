@@ -243,16 +243,6 @@ short WINAPI DLLExport Action_SetPositionWithFlag(LPRDATA rdPtr, long param1, lo
 }
 
 short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long param2) {
-	int audioQSize = (int)CNC_GetIntParameter(rdPtr);
-	int videoQSize = (int)CNC_GetIntParameter(rdPtr);
-
-	rdPtr->audioQSize = audioQSize == -1 ? MAX_AUDIOQ_SIZE : audioQSize;
-	rdPtr->videoQSize = videoQSize == -1 ? MAX_VIDEOQ_SIZE : videoQSize;
-
-	if (rdPtr->pFFMpeg != nullptr) {
-		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
-	}	
-
 	return 0;
 }
 

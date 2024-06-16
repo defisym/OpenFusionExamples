@@ -160,7 +160,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Size", IDMN_ACTION_STRETCH
         MENUITEM SEPARATOR
-        MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
+        //MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
         MENUITEM SEPARATOR
