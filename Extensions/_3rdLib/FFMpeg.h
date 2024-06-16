@@ -9,7 +9,6 @@
 // ReSharper disable CppClangTidyClangDiagnosticShadow
 // ReSharper disable CppClangTidyClangDiagnosticReservedMacroIdentifier
 
-// ReSharper disable CppClangTidyMiscThrowByValueCatchByReference
 // ReSharper disable CppClangTidyHicppExceptionBaseclass
 // ReSharper disable CppInitializedValueIsAlwaysRewritten
 #pragma once
@@ -87,15 +86,34 @@ constexpr auto SDL_EXCEPTION_AUDIO = 1;
 static volatile int Stat_Quit = 0;
 static volatile int Stat_QuitComplete = 1;
 
-// Exceptions & error code
+// Queue state
+constexpr auto END_OF_QUEUE = -5;
+
+// Exceptions
 constexpr auto FFMpegException_InitFailed = -1;
 constexpr auto FFMpegException_HWInitFailed = -2;
-
 constexpr auto FFMpegException_HWDecodeFailed = -3;
-
 constexpr auto FFMpegException_FilterInitFailed = -4;
 
-constexpr auto END_OF_QUEUE = -5;
+struct FFMpegException final :std::exception {
+	int _flag = 0;
+	static const char* GetInfo(int errorCode) {
+		switch(errorCode) {
+		case FFMpegException_InitFailed:
+			return "Init failed";
+		case FFMpegException_HWInitFailed:
+			return "Init hardware decode failed";
+		case FFMpegException_HWDecodeFailed:
+			return "Hardware decode failed";
+		case FFMpegException_FilterInitFailed:
+			return "Filter init failed";
+		default:
+			return "Unknown error";
+		}
+	}
+
+	FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
+};
 
 #ifdef _DEBUG
 constexpr auto FFMpegError_EOF = AVERROR_EOF;
@@ -454,7 +472,7 @@ private:
 			0, nullptr);
 
 		if (ret != 0 || !swrContext || swr_init(swrContext) < 0) {
-			throw FFMpegException_InitFailed;
+			throw FFMpegException(FFMpegException_InitFailed);
 		}
 
 		bUpdateSwr = false;
@@ -485,8 +503,7 @@ private:
 		try {
 			filter_graph = avfilter_graph_alloc();
 			if (!outputs || !inputs || !filter_graph) {
-				//ret = AVERROR(ENOMEM);
-				throw FFMpegException_FilterInitFailed;
+				throw FFMpegException(FFMpegException_FilterInitFailed);
 			}
 
 			/* buffer audio source: the decoded frames from the decoder will be inserted here. */
@@ -513,7 +530,7 @@ private:
 				filterArgs.c_str(), nullptr, filter_graph);
 			if (ret < 0) {
 				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer source\n");
-				throw FFMpegException_FilterInitFailed;
+				throw FFMpegException(FFMpegException_FilterInitFailed);
 			}
 
 			/* buffer audio sink: to terminate the filter chain. */
@@ -523,7 +540,7 @@ private:
 				nullptr, nullptr, filter_graph);
 			if (ret < 0) {
 				//av_log(NULL, AV_LOG_ERROR, "Cannot create audio buffer sink\n");
-				throw FFMpegException_FilterInitFailed;
+				throw FFMpegException(FFMpegException_FilterInitFailed);
 			}
 
 			//ret = av_opt_set_int_list(buffersink_ctx, "sample_fmts", out_sample_fmts, -1,
@@ -576,11 +593,11 @@ private:
 
 			if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
 				&inputs, &outputs, nullptr)) < 0) {
-				throw FFMpegException_FilterInitFailed;
+				throw FFMpegException(FFMpegException_FilterInitFailed);
 			}
 			
 			if ((ret = avfilter_graph_config(filter_graph, nullptr)) < 0) {
-				throw FFMpegException_FilterInitFailed;
+				throw FFMpegException(FFMpegException_FilterInitFailed);
 			}
 
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
@@ -596,9 +613,9 @@ private:
 			//	(char*)av_x_if_null(av_get_sample_fmt_name((AVSampleFormat)outlink->format), "?"),
 			//	args);
 		}
-		catch (int) {
-			// init failed
-			ret = FFMpegException_FilterInitFailed;
+		// init failed
+		catch (FFMpegException& e) {
+			ret = e._flag;
 		}
 
 		avfilter_inout_free(&inputs);
@@ -689,13 +706,13 @@ private:
 		return true;
 	}
 
-	inline void init_general() {
+	inline int init_general() {
 #pragma region FFMpegInit
 		// find stream
 		pFormatContext->probesize = PROBE_SIZE;
 
 		if (avformat_find_stream_info(pFormatContext, nullptr) < 0) {
-			throw FFMpegException_InitFailed;
+			return FFMpegException_InitFailed;
 		}
 
 		//---------------------
@@ -706,7 +723,7 @@ private:
 		video_stream_index = av_find_best_stream(pFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &pVCodec, 0);
 		
 		if (video_stream_index < 0) {
-			throw FFMpegException_InitFailed;
+			return FFMpegException_InitFailed;
 		}
 
 		pVideoStream = pFormatContext->streams[video_stream_index];
@@ -753,11 +770,11 @@ private:
 
 		pVCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pVCodecContext) {
-			throw FFMpegException_InitFailed;
+			return FFMpegException_InitFailed;
 		}
 
 		if (avcodec_parameters_to_context(pVCodecContext, pVCodecParameters) < 0) {
-			throw FFMpegException_InitFailed;
+			return FFMpegException_InitFailed;
 		}
 
 		pVCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
@@ -770,16 +787,13 @@ private:
 		if (bHWDecode) {
 			//pVCodecContext->extra_hw_frames = 4;
 			pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
-				const enum AVPixelFormat* p;
-
-				for (p = pix_fmts; *p != -1; p++) {
+				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
 					if (*p == hw_pix_fmt_global) {
 						return *p;
 					}
 				}
 
 				//fprintf(stderr, "Failed to get HW surface format.\n");
-
 				return AV_PIX_FMT_NONE;
 			};
 
@@ -791,11 +805,11 @@ private:
 #endif
 
 		if (avcodec_open2(pVCodecContext, pVCodec, nullptr) < 0) {
-			throw FFMpegException_InitFailed;
+			return FFMpegException_InitFailed;
 		}
 
 		if (pVCodecContext->pix_fmt == AV_PIX_FMT_NONE) {
-			throw FFMpegException_InitFailed;
+			return FFMpegException_InitFailed;
 		}
 
 		//---------------------
@@ -826,64 +840,48 @@ private:
 
 			pACodecContext = avcodec_alloc_context3(pACodec);
 			if (!pACodecContext) {
-				throw FFMpegException_InitFailed;
+				return FFMpegException_InitFailed;
 			}
 
 			if (avcodec_parameters_to_context(pACodecContext, pACodecParameters) < 0) {
-				throw FFMpegException_InitFailed;
+				return FFMpegException_InitFailed;
 			}
 
 			if (avcodec_open2(pACodecContext, pACodec, nullptr) < 0) {
-				throw FFMpegException_InitFailed;
+				return FFMpegException_InitFailed;
 			}
 		}		
 
 		// init others
 		pVFrame = av_frame_alloc();
-		if (!pVFrame) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pVFrame) { return FFMpegException_InitFailed; }
 
 		pAFrame = av_frame_alloc();
-		if (!pAFrame) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pAFrame) { return FFMpegException_InitFailed; }
 
 		pVLastFrame = av_frame_alloc();
-		if (!pVLastFrame) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pVLastFrame) { return FFMpegException_InitFailed; }
 
 #ifdef AUDIO_TEMPO
 		pAFilterFrame = av_frame_alloc();
-		if (!pAFilterFrame) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pAFilterFrame) { return FFMpegException_InitFailed; }
 #endif //  AUDIO_TEMPO
 
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			pSWFrame = av_frame_alloc();
-			if (!pSWFrame) {
-				throw FFMpegException_InitFailed;
-			}
+			if (!pSWFrame) { return FFMpegException_InitFailed; }
 		}
 #endif // HW_DECODE
 
 		pPacket = av_packet_alloc();
-		if (!pPacket) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pPacket) { return FFMpegException_InitFailed; }
 
 		pVPacket = av_packet_alloc();
-		if (!pVPacket) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pVPacket) { return FFMpegException_InitFailed; }
 
 		pAPacket = av_packet_alloc();
-		if (!pAPacket) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!pAPacket) { return FFMpegException_InitFailed; }
 
 		//pVideoStream = pFormatContext->streams [video_stream_index];
 
@@ -927,6 +925,8 @@ private:
 			set_audioTempo(DEFAULT_ATEMPO);
 		}
 #pragma endregion
+
+		return 0;
 }
 
 	inline int64_t get_protectedTimeInSecond(const int64_t ms) const {		
@@ -1126,7 +1126,7 @@ private:
 				/* retrieve data from GPU to CPU */
 				if (av_hwframe_transfer_data(pSWFrame, pFrame, 0) < 0) {
 					//fprintf(stderr, "Error transferring the data to system memory\n");
-					throw FFMpegException_HWDecodeFailed;
+					throw FFMpegException(FFMpegException_HWDecodeFailed);
 				}
 
 				pFrame = pSWFrame;
@@ -1589,13 +1589,13 @@ public:
 		this->options = opt;
 
 		if(!init_formatContext(&pFormatContext, filePath)) {
-			throw FFMpegException_InitFailed;
+			throw FFMpegException(FFMpegException_InitFailed);
 		}
 		if (!init_formatContext(&pSeekFormatContext, filePath)) {
-			throw FFMpegException_InitFailed;
-		}	
+			throw FFMpegException(FFMpegException_InitFailed);
+		}
 
-		init_general();
+		if (const auto ret = init_general(); ret != 0) { throw FFMpegException(ret); }
 	}
 
 	//Load from memory
@@ -1606,13 +1606,13 @@ public:
 		this->options = opt;
 
 		if (!init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz)) {
-			throw FFMpegException_InitFailed;
+			throw FFMpegException(FFMpegException_InitFailed);
 		}
 		if (!init_formatContext(&pSeekFormatContext, &pSeekAvioContext, &pSeekMemBuf, pBuffer, bfSz)) {
-			throw FFMpegException_InitFailed;
+			throw FFMpegException(FFMpegException_InitFailed);
 		}
 
-		init_general();
+		if (const auto ret = init_general(); ret != 0) { throw FFMpegException(ret); }
 	}
 
 	~FFMpeg() {

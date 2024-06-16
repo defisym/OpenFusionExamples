@@ -325,7 +325,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		ReDisplay(rdPtr);
 	}
-	catch (...) {
+	catch ([[maybe_unused]] FFMpegException& e) {
 		CloseGeneral(rdPtr);
 
 		if (!opt.NoOverride()) {
