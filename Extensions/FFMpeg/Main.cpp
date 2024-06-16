@@ -242,7 +242,11 @@ short WINAPI DLLExport Action_SetPositionWithFlag(LPRDATA rdPtr, long param1, lo
 	return 0;
 }
 
+[[deprecated ]]
 short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long param2) {
+#ifndef RUN_ONLY
+	MSGBOX(L"Queue size is now automatically managed");
+#endif
 	return 0;
 }
 
