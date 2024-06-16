@@ -637,25 +637,23 @@ private:
 	}
 
 	// from file
-	static inline void init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
+	static inline bool init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
 		*pFormatContext = avformat_alloc_context();
-		if (!*pFormatContext) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!*pFormatContext) { return false; }
 		
 		//auto iformat = init_Probe(nullptr, 0, ConvertWStrToStr(filePath, CP_UTF8).c_str());
 
 		// convert to UTF-8 to avoid crash in some versions
 		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), nullptr, nullptr) != 0) {
-			throw FFMpegException_InitFailed;
+			return false;
 		}
+
+		return true;
 	}
 
 	// from memory
-	static inline void init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, MemBuf** pBuf, unsigned char* pBuffer, const size_t bfSz) {
-		if (pBuffer == nullptr) {
-			throw FFMpegException_InitFailed;
-		}
+	static inline bool init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, MemBuf** pBuf, unsigned char* pBuffer, const size_t bfSz) {
+		if (pBuffer == nullptr) { return false; }
 
 		(*pBuf) = new MemBuf(pBuffer, static_cast<int>(bfSz));
 
@@ -670,17 +668,13 @@ private:
 				return pMemBuf->seek(offset, whence);
 			});
 
-		if (!*pAvioContext) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!*pAvioContext) { return false; }
 
 		*pFormatContext = avformat_alloc_context();
-		if (!*pFormatContext) {
-			throw FFMpegException_InitFailed;
-		}
+		if (!*pFormatContext) { return false; }
 
 		auto pInputFormat = init_Probe(pBuffer, bfSz);
-		if(!pInputFormat){ throw FFMpegException_InitFailed; }
+		if(!pInputFormat) { return false; }
 
 		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
 		//might crash in avformat_open_input due to access violation if not set
@@ -689,8 +683,10 @@ private:
 		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
 
 		if (avformat_open_input(pFormatContext, nullptr, nullptr, nullptr) < 0) {
-			throw FFMpegException_InitFailed;
+			return false;
 		}
+
+		return true;
 	}
 
 	inline void init_general() {
@@ -1592,8 +1588,12 @@ public:
 		bFromMem = false;
 		this->options = opt;
 
-		init_formatContext(&pFormatContext, filePath);
-		init_formatContext(&pSeekFormatContext, filePath);
+		if(!init_formatContext(&pFormatContext, filePath)) {
+			throw FFMpegException_InitFailed;
+		}
+		if (!init_formatContext(&pSeekFormatContext, filePath)) {
+			throw FFMpegException_InitFailed;
+		}	
 
 		init_general();
 	}
@@ -1605,8 +1605,12 @@ public:
 		bFromMem = true;
 		this->options = opt;
 
-		init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz);
-		init_formatContext(&pSeekFormatContext, &pSeekAvioContext, &pSeekMemBuf, pBuffer, bfSz);
+		if (!init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz)) {
+			throw FFMpegException_InitFailed;
+		}
+		if (!init_formatContext(&pSeekFormatContext, &pSeekAvioContext, &pSeekMemBuf, pBuffer, bfSz)) {
+			throw FFMpegException_InitFailed;
+		}
 
 		init_general();
 	}
@@ -1684,10 +1688,6 @@ public:
 	}
 
 	//Get
-	//inline int64_t get_timePerFrame() {
-	//	return (int64_t)(timePerFrameInMs);
-	//}
-
 	inline const uint8_t* get_memBufSrc() const {
 		if (bFromMem == false) {
 			return nullptr;
