@@ -1078,42 +1078,47 @@ private:
 	}
 
 	//Decode
+	inline int fill_queueonce() {
+		const auto response = av_read_frame(pFormatContext, pPacket);
+
+		bReadFinish = (response == AVERROR_EOF);
+
+		const bool bStop = videoQueue.readFinish() && audioQueue.readFinish();
+
+		if (bReadFinish && !bStop) {
+			videoQueue.stopBlock();
+			audioQueue.stopBlock();
+		}
+
+		if (response < 0) { return response; }
+
+		do {
+			if (pPacket->stream_index == video_stream_index) {
+				videoQueue.put(pPacket);
+				break;
+			}
+
+			if (pPacket->stream_index == audio_stream_index) {
+				audioQueue.put(pPacket);
+				break;
+			}
+
+			av_packet_unref(pPacket);
+		} while (false);
+
+		return response;
+	}
+
 	inline int fill_queue() {
 		int response = 0;
 
 		while (true) {
-			if (videoQueue.getDataSize() > videoQSize || audioQueue.getDataSize() > audioQSize) {
+			if (videoQueue.getDataSize() > videoQSize && audioQueue.getDataSize() > audioQSize) {
 				break;
 			}
 
-			response = av_read_frame(pFormatContext, pPacket);
-
-			bReadFinish = (response == AVERROR_EOF);
-
-			const bool bStop = videoQueue.readFinish() && audioQueue.readFinish();
-
-			if (bReadFinish && !bStop) {
-				videoQueue.stopBlock();
-				audioQueue.stopBlock();
-			}
-
-			if (response < 0) {
-				break;
-			}
-
-			do {
-				if (pPacket->stream_index == video_stream_index) {
-					videoQueue.put(pPacket);
-					break;
-				}
-
-				if (pPacket->stream_index == audio_stream_index) {
-					audioQueue.put(pPacket);
-					break;
-				}
-
-				av_packet_unref(pPacket);
-			} while (false);
+			response = fill_queueonce();
+			if (response < 0) { return response; }
 		}
 
 		return response;
@@ -1172,7 +1177,7 @@ private:
 
 		do {
 			// fill buffer
-			int response = fill_queue();
+			//int response = fill_queue();
 
 			// calc delay
 			syncState = get_syncState();
@@ -1187,13 +1192,22 @@ private:
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				response = decode_videoFrame(pVLastFrame);
+				int response;
 
-				if (response == AVERROR(EAGAIN)) {
-					syncState = SyncState::SYNC_CLOCKFASTER;
+				do {
+					response = decode_videoFrame(pVLastFrame);
 
-					continue;
-				}
+					if (response == QUEUE_WAITING) {
+						fill_queueonce();
+						continue;
+					}
+
+					if (response == AVERROR(EAGAIN)) {
+						continue;
+					}
+
+					break;
+				} while (true);
 
 				if (response < 0) {
 					//auto e1 = AVERROR_EOF;
@@ -1359,16 +1373,13 @@ private:
 
 		if (response < 0) {
 			av_frame_unref(pFrame);
-
 			return response;
 		}
 
 #ifdef AUDIO_TEMPO
 		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
 
-		if (response < 0) {
-			return -1;
-		}
+		if (response < 0) { return response; }
 
 		while (true) {
 			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
@@ -2037,18 +2048,33 @@ public:
 
 				//检查是否需要执行解码操作
 				if (audio_buf_index >= audio_buf_size) {
-					// We have already sent all our data; get more
-					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
-					int audio_size = decode_audioFrame();
+					int response;
+
+					do {
+						// We have already sent all our data; get more
+						// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+						response = decode_audioFrame();
+
+						if (response == QUEUE_WAITING) {
+							fill_queueonce();
+							continue;
+						}
+
+						if (response == AVERROR(EAGAIN)) {
+							continue;
+						}
+
+						break;
+					} while (true);
 
 					// If error, output silence.
-					if (audio_size < 0) {
+					if (response < 0) {
 						audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
 						memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 					}
 					else {
 						//返回packet中包含的原始音频数据长度(多帧)						
-						audio_buf_size = audio_size;
+						audio_buf_size = response;
 					}
 
 					//初始化累计写入缓存长度
