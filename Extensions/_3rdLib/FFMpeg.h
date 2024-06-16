@@ -298,9 +298,11 @@ private:
 #endif //  HW_DECODE
 
 #ifdef AUDIO_TEMPO
+	// only used when updating the following context
 	AVFilterGraph* filter_graph = nullptr;
 	const char* filters_descr = "";
 
+	// used in decodeing
 	AVFilterContext* buffersrc_ctx = nullptr;
 	AVFilterContext* buffersink_ctx = nullptr;
 
@@ -483,8 +485,8 @@ private:
 
 #ifdef AUDIO_TEMPO
 	// https://ffmpeg.org/doxygen/7.0/decode_filter_audio_8c-example.html
-	inline int init_audioFilters(const AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
-		, AVFilterGraph* filter_graph, const char* filters_descr) {		
+	inline int init_audioFilters(const AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx,
+		AVFilterGraph*& filter_graph, const char* filters_descr) {		
 		if (this->bNoAudio) {
 			return -1;
 		}
