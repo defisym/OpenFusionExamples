@@ -294,8 +294,8 @@ public:
 	}
 
 	//block: 阻塞线程并等待
-	inline BOOL get(AVPacket* pPacket, bool block = true) {
-		BOOL ret = false;
+	inline int get(AVPacket* pPacket, bool block = true) {
+		int ret = false;
 
 #ifdef QUEUE_SPINLOCK
 		SDL_AtomicLock(&audioLock);

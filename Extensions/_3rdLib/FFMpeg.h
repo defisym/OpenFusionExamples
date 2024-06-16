@@ -14,16 +14,6 @@
 #pragma once
 
 #pragma warning(disable : 4819)
-#pragma warning(disable : 4996)
-
-// uncomment if you don't want to set in properties
-//#pragma comment(lib,"avcodec.lib")
-//#pragma comment(lib,"avdevice.lib")
-//#pragma comment(lib,"avfilter.lib")
-//#pragma comment(lib,"avformat.lib")
-//#pragma comment(lib,"avutil.lib")
-//#pragma comment(lib,"swresample.lib")
-//#pragma comment(lib,"swscale.lib")
 
 #include <string>
 #include <format>
@@ -35,6 +25,7 @@
 #include "WindowsCommon.h"
 #include "GeneralDefinition.h"
 
+// FFMpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -50,12 +41,23 @@ extern "C" {
 #include <libavfilter/buffersink.h>
 }
 
-extern "C" {
-#include <SDL.h>
-#include <SDL_thread.h>
-}
+// uncomment if you don't want to set in properties
+//#pragma comment(lib,"avcodec.lib")
+//#pragma comment(lib,"avdevice.lib")
+//#pragma comment(lib,"avfilter.lib")
+//#pragma comment(lib,"avformat.lib")
+//#pragma comment(lib,"avutil.lib")
+//#pragma comment(lib,"swresample.lib")
+//#pragma comment(lib,"swscale.lib")
+
+// ------------------------------------
+// Constants
+// ------------------------------------
 
 // SDL
+#include <SDL.h>
+#include <SDL_thread.h>
+
 constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
 constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 
@@ -89,7 +91,9 @@ static volatile int Stat_QuitComplete = 1;
 // Queue state
 constexpr auto END_OF_QUEUE = -5;
 
-// Exceptions
+// ------------------------------------
+// FFMpeg Exception
+// ------------------------------------
 constexpr auto FFMpegException_InitFailed = -1;
 constexpr auto FFMpegException_HWInitFailed = -2;
 constexpr auto FFMpegException_HWDecodeFailed = -3;
@@ -112,7 +116,7 @@ struct FFMpegException final :std::exception {
 		}
 	}
 
-	FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
+	explicit FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
 };
 
 #ifdef _DEBUG
@@ -147,6 +151,9 @@ constexpr auto PIXEL_BYTE = 3;
 inline static auto hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
+// ------------------------------------
+// FFMpeg Options
+// ------------------------------------
 constexpr auto FFMpegFlag_Default = 0;
 
 constexpr auto FFMpegFlag_HWDeviceMask = 0xFFFF;
@@ -212,8 +219,6 @@ constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
 using frameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
-using Setter = std::function<void*(void* dst, int val, size_t size)>;
-using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 class FFMpeg {
 private:
@@ -2007,6 +2012,9 @@ public:
 
 		return response;
 	}
+
+	using Setter = std::function<void* (void* dst, int val, size_t size)>;
+	using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 	inline int audio_fillData(uint8_t* stream, int len, const Setter& setter, const Mixer& mixer) {
 		SDL_AtomicLock(&audioLock);
