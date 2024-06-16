@@ -379,6 +379,19 @@ private:
 
 	SDL_SpinLock audioLock = 0;
 	bool bAudioCallbackPause = false;
+
+	// RAII
+	struct LockHelper {
+	private:
+		SDL_SpinLock* _plock = nullptr;
+	public:
+		explicit LockHelper(SDL_SpinLock* plock) :_plock(plock) {
+			SDL_AtomicLock(plock);
+		}
+		~LockHelper() {
+			SDL_AtomicUnlock(_plock);
+		}
+	};
 #pragma endregion
 
 #pragma endregion
