@@ -325,6 +325,7 @@ private:
 	int audio_stream_index = -1;
 
 	AVCodecContext* pVCodecContext = nullptr;
+	AVCodecContext* pVGetCodecContext = nullptr;
 	AVCodecContext* pACodecContext = nullptr;
 
 	AVFrame* pVFrame = nullptr;
@@ -337,9 +338,6 @@ private:
 
 	PacketQueue audioQueue;
 	PacketQueue videoQueue;
-
-	int audioQSize = MAX_AUDIOQ_SIZE;
-	int videoQSize = MAX_VIDEOQ_SIZE;
 
 	AVPacket* pVPacket = nullptr;
 	AVPacket* pAPacket = nullptr;
@@ -708,6 +706,53 @@ private:
 		return true;
 	}
 
+	inline int init_videoCodecContext(AVCodecContext** pVCodecContext) {
+		*pVCodecContext = avcodec_alloc_context3(pVCodec);
+		if (!*pVCodecContext) {
+			return FFMpegException_InitFailed;
+		}
+
+		if (avcodec_parameters_to_context(*pVCodecContext, pVCodecParameters) < 0) {
+			return FFMpegException_InitFailed;
+		}
+
+		(*pVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
+		if (options.flag & FFMpegFlag_Fast) {
+			(*pVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
+		}
+
+#ifdef HW_DECODE
+		if (bHWDecode) {
+			//(*pVCodecContext)->extra_hw_frames = 4;
+			(*pVCodecContext)->get_format = [] (AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
+				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
+					if (*p == hw_pix_fmt_global) {
+						return *p;
+					}
+				}
+
+				//fprintf(stderr, "Failed to get HW surface format.\n");
+				return AV_PIX_FMT_NONE;
+				};
+
+			if (HW_InitDecoder((*pVCodecContext), hw_type) < 0) {
+				//throw FFMpegException_HWInitFailed;
+				bHWDecode = false;
+			}
+		}
+#endif
+
+		if (avcodec_open2(*pVCodecContext, pVCodec, nullptr) < 0) {
+			return FFMpegException_InitFailed;
+		}
+
+		if ((*pVCodecContext)->pix_fmt == AV_PIX_FMT_NONE) {
+			return FFMpegException_InitFailed;
+		}
+
+		return 0;
+	}
+
 	inline int init_general() {
 #pragma region FFMpegInit
 		// find stream
@@ -770,47 +815,10 @@ private:
 		}
 #endif
 
-		pVCodecContext = avcodec_alloc_context3(pVCodec);
-		if (!pVCodecContext) {
+		if (init_videoCodecContext(&pVCodecContext) != 0) {
 			return FFMpegException_InitFailed;
 		}
-
-		if (avcodec_parameters_to_context(pVCodecContext, pVCodecParameters) < 0) {
-			return FFMpegException_InitFailed;
-		}
-
-		pVCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
-		
-		if (options.flag & FFMpegFlag_Fast) {
-			pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
-		}
-
-#ifdef HW_DECODE
-		if (bHWDecode) {
-			//pVCodecContext->extra_hw_frames = 4;
-			pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
-				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
-					if (*p == hw_pix_fmt_global) {
-						return *p;
-					}
-				}
-
-				//fprintf(stderr, "Failed to get HW surface format.\n");
-				return AV_PIX_FMT_NONE;
-			};
-
-			if (HW_InitDecoder(pVCodecContext, hw_type) < 0) {
-				//throw FFMpegException_HWInitFailed;
-				bHWDecode = false;
-			}
-		}
-#endif
-
-		if (avcodec_open2(pVCodecContext, pVCodec, nullptr) < 0) {
-			return FFMpegException_InitFailed;
-		}
-
-		if (pVCodecContext->pix_fmt == AV_PIX_FMT_NONE) {
+		if (init_videoCodecContext(&pVGetCodecContext) != 0) {
 			return FFMpegException_InitFailed;
 		}
 
@@ -1058,19 +1066,6 @@ private:
 			av_packet_unref(frames.pPacket);
 		}
 
-//#define _REVERT_TO_TARGET
-
-#ifdef _REVERT_TO_TARGET
-		// revert to target
-		set_videoPosition((int64_t)(targetPts * 1000));
-		videoClock = targetPts * 1000;
-#else
-		// revert to start
-		if (targetPts == 0.0) {			
-			set_videoPosition(0);
-		}
-#endif // _REVERT_TO_TARGET
-
 		this->bSeeking = false;
 		convert_frame(frames.pLastFrame, callBack);
 
@@ -1078,6 +1073,23 @@ private:
 	}
 
 	//Decode
+	inline int fill_decode(const std::function<int()>& decode) {
+		do {
+			int response = decode();
+
+			if (response == QUEUE_WAITING) {
+				fill_queueonce();
+				continue;
+			}
+
+			if (response == AVERROR(EAGAIN)) {
+				continue;
+			}
+
+			return response;
+		} while (true);
+	}
+
 	inline int fill_queueonce() {
 		const auto response = av_read_frame(pFormatContext, pPacket);
 
@@ -1109,22 +1121,10 @@ private:
 		return response;
 	}
 
-	inline int fill_queue() {
-		int response = 0;
-
-		while (true) {
-			if (videoQueue.getDataSize() > videoQSize && audioQueue.getDataSize() > audioQSize) {
-				break;
-			}
-
-			response = fill_queueonce();
-			if (response < 0) { return response; }
-		}
-
-		return response;
-	}
-
 	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
+		// data invalid, do not trigger callback, in case of get a black frame
+		if (!pFrame->data[0]) { return; }
+
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_unref(pSWFrame);
@@ -1176,9 +1176,6 @@ private:
 		SyncState syncState;
 
 		do {
-			// fill buffer
-			//int response = fill_queue();
-
 			// calc delay
 			syncState = get_syncState();
 
@@ -1192,22 +1189,9 @@ private:
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				int response;
-
-				do {
-					response = decode_videoFrame(pVLastFrame);
-
-					if (response == QUEUE_WAITING) {
-						fill_queueonce();
-						continue;
-					}
-
-					if (response == AVERROR(EAGAIN)) {
-						continue;
-					}
-
-					break;
-				} while (true);
+				int response = fill_decode([&]() {
+					return  decode_videoFrame(pVLastFrame);
+				});
 
 				if (response < 0) {
 					//auto e1 = AVERROR_EOF;
@@ -1393,15 +1377,13 @@ private:
 			}
 #endif //  AUDIO_TEMPO
 
-			if (pAPacket != nullptr) {
-				if (pAPacket->pts != AV_NOPTS_VALUE) {
-					audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
+			if (pAPacket != nullptr && pAPacket->pts != AV_NOPTS_VALUE) {
+				audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
 #ifdef _CONSOLE
-					if (bJumped) {
-						printf("Cur audio clock: %f\n", audioClock);
-					}
-#endif
+				if (bJumped) {
+					printf("Cur audio clock: %f\n", audioClock);
 				}
+#endif
 			}
 
 #ifdef AUDIO_TEMPO
@@ -1548,14 +1530,12 @@ private:
 		return SyncState::SYNC_SYNC;
 	}
 
-	inline void reset_sync() {
-		videoPts = 0;
-		audioPts = 0;
+	inline void reset_sync(const double targetPts = 0) {
+		videoPts = targetPts;
+		audioPts = targetPts;
 
-		//globalPts = 0;
-
-		videoClock = 0;
-		audioClock = 0;
+		videoClock = targetPts;
+		audioClock = targetPts;
 
 		frameTimer = -1;
 		frameLastPts = 0;
@@ -1630,6 +1610,11 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
+		//Wait for callback finish
+		this->bAudioCallbackPause = true;
+
+		SDL_AtomicLock(&audioLock);
+
 		// must be flushed before free the context
 		audioQueue.flush();
 		videoQueue.flush();
@@ -1639,11 +1624,6 @@ public:
 		// as call destructor directly is UB
 		audioQueue.pause();
 		videoQueue.pause();
-
-		//Wait for callback finish
-		this->bAudioCallbackPause = true;
-
-		SDL_AtomicLock(&audioLock);
 
 		delete[] audio_buf;
 
@@ -1673,6 +1653,7 @@ public:
 		swr_free(&swrContext);
 
 		avcodec_free_context(&pVCodecContext);
+		avcodec_free_context(&pVGetCodecContext);
 		avcodec_free_context(&pACodecContext);
 
 		avformat_close_input(&pFormatContext);
@@ -1836,11 +1817,6 @@ public:
 	}
 
 	//Set
-	inline void set_queueSize(const int audioQSize = MAX_AUDIOQ_SIZE, const int videoQSize = MAX_VIDEOQ_SIZE) {
-		this->audioQSize = audioQSize;
-		this->videoQSize = videoQSize;
-	}
-
 	inline void set_pause(const bool bPause) {
 		this->bPause = bPause;
 
@@ -1874,6 +1850,7 @@ public:
 
 	inline int set_videoPosition(int64_t ms = 0, const int flags = seekFlags) {
 		int steam_index = -1;
+		const auto targetPts = static_cast<double>(ms) / 1000.0;
 
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
 		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
@@ -1888,16 +1865,19 @@ public:
 			return response;
 		}
 
+		SDL_AtomicLock(&audioLock);
+
 		if (video_stream_index >= 0) {
 			videoQueue.flush();			
 			avcodec_flush_buffers(pVCodecContext);
-
 		}
 
 		if (audio_stream_index >= 0) {
 			audioQueue.flush();			
 			avcodec_flush_buffers(pACodecContext);
 		}
+
+		SDL_AtomicUnlock(&audioLock);
 
 #ifdef _CONSOLE
 		bJumped = true;
@@ -1906,7 +1886,7 @@ public:
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
 
-		reset_sync();
+		reset_sync(targetPts);
 		reset_finishState();
 
 		return response;
@@ -1965,26 +1945,30 @@ public:
 
 	// call set_videoPosition first to seek to target frame
 	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
-		return forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0, callBack);
+		const auto targetPts = ms / 1000.0;
+
+		// As audio thread can affect the main format context, lock it here
+		SDL_AtomicLock(&audioLock);
+		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
+		SDL_AtomicUnlock(&audioLock);
+
+//#define _REVERT_TO_TARGET
+
+#ifdef _REVERT_TO_TARGET
+		// revert to target
+		set_videoPosition((int64_t)(targetPts * 1000));
+		videoClock = targetPts * 1000;
+#else
+		// revert to start, to not skip frames
+		if (targetPts == 0.0) {
+			set_videoPosition(0);
+		}
+#endif // _REVERT_TO_TARGET
+
+		return response;
 	}
 
 	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
-		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
-		if (!pCodecContext) {
-			return -1;
-		}
-
-		if (avcodec_parameters_to_context(pCodecContext, pVCodecParameters) < 0) {
-			return -1;
-		}
-
-		pCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
-		pCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
-
-		if (avcodec_open2(pCodecContext, pVCodec, nullptr) < 0) {
-			return -1;
-		}
-
 		int response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
 		if (response < 0) {
@@ -1998,12 +1982,11 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
-		response = forwardFrame(pSeekFormatContext, pCodecContext, ms / 1000.0, callBack, bAccurateSeek);
+		avcodec_flush_buffers(pVGetCodecContext);
+		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;
 		videoPts = oldPts;
-
-		avcodec_free_context(&pCodecContext);
 
 		return response;
 	}
@@ -2048,24 +2031,11 @@ public:
 
 				//检查是否需要执行解码操作
 				if (audio_buf_index >= audio_buf_size) {
-					int response;
-
-					do {
-						// We have already sent all our data; get more
-						// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
-						response = decode_audioFrame();
-
-						if (response == QUEUE_WAITING) {
-							fill_queueonce();
-							continue;
-						}
-
-						if (response == AVERROR(EAGAIN)) {
-							continue;
-						}
-
-						break;
-					} while (true);
+					// We have already sent all our data; get more
+					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+					int response = fill_decode([&] () {
+						return decode_audioFrame();
+					});					
 
 					// If error, output silence.
 					if (response < 0) {
