@@ -126,6 +126,7 @@ constexpr auto QUEUE_WAITING = -1;
 
 class PacketQueue {
 private:
+	AVPacket* pEmptyPacket = nullptr;
 	std::queue<AVPacket> queue;
 	int dataSize = 0;
 
@@ -157,6 +158,8 @@ private:
 
 public:
 	PacketQueue() {
+		pEmptyPacket = av_packet_alloc();
+
 #ifdef QUEUE_SPINLOCK
 #else
 		mutex = SDL_CreateMutex();
@@ -165,6 +168,8 @@ public:
 	}
 
 	~PacketQueue() {
+		av_packet_free(&pEmptyPacket);
+
 		flush();
 		pause();
 
@@ -259,7 +264,7 @@ public:
 		restore();
 	}
 
-	inline bool put(const AVPacket * pPacket) {
+	inline bool put(AVPacket* pPacket) {
 		//AVPacket pkt;
 
 		//if (av_packet_ref(&pkt, pPacket) < 0) {
@@ -267,6 +272,7 @@ public:
 		//}
 
 		const AVPacket pkt = *pPacket;
+		*pPacket = *pEmptyPacket;
 
 #ifdef QUEUE_SPINLOCK
 		SDL_AtomicLock(&audioLock);
