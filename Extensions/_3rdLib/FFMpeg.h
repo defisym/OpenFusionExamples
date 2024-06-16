@@ -59,14 +59,14 @@ extern "C" {
 #include <SDL_thread.h>
 
 constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
-constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 
+constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto AUDIO_BUFFER_SIZE = (MAX_AUDIO_FRAME_SIZE * 3) / 2;
 
-constexpr auto MAX_AUDIOQ_SIZE = (5 * 16 * 1024);
-constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
+constexpr auto MAX_AUDIOQ_SIZE = 5 * 16 * 1024;
+constexpr auto MAX_VIDEOQ_SIZE = 5 * 256 * 1024;
 
-constexpr auto PROBE_SIZE = (32 * 4096);
+constexpr auto PROBE_SIZE = 32 * 4096;
 
 // This object will convert data to the following format for playing
 constexpr auto TARGET_CHANNEL_NUMBER = 2;
@@ -83,12 +83,6 @@ constexpr auto ATEMPO_MAX = 32.0f;
 
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
-
-constexpr auto SDL_EXCEPTION_INIT = 0;
-constexpr auto SDL_EXCEPTION_AUDIO = 1;
-
-static volatile int Stat_Quit = 0;
-static volatile int Stat_QuitComplete = 1;
 
 // Queue state
 constexpr auto END_OF_QUEUE = -5;
