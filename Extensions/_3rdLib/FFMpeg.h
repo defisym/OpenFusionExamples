@@ -660,14 +660,14 @@ private:
 	}
 
 	// from file
-	static inline bool init_formatContext(AVFormatContext** pFormatContext, const std::wstring& filePath) {
-		*pFormatContext = avformat_alloc_context();
-		if (!*pFormatContext) { return false; }
+	static inline bool init_formatContext(AVFormatContext** ppFormatContext, const std::wstring& filePath) {
+		*ppFormatContext = avformat_alloc_context();
+		if (!*ppFormatContext) { return false; }
 		
 		//auto iformat = init_Probe(nullptr, 0, ConvertWStrToStr(filePath, CP_UTF8).c_str());
 
 		// convert to UTF-8 to avoid crash in some versions
-		if (avformat_open_input(pFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), nullptr, nullptr) != 0) {
+		if (avformat_open_input(ppFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), nullptr, nullptr) != 0) {
 			return false;
 		}
 
@@ -675,12 +675,12 @@ private:
 	}
 
 	// from memory
-	static inline bool init_formatContext(AVFormatContext** pFormatContext, AVIOContext** pAvioContext, MemBuf** pBuf, unsigned char* pBuffer, const size_t bfSz) {
+	static inline bool init_formatContext(AVFormatContext** ppFormatContext, AVIOContext** ppAvioContext, MemBuf** ppBuf, unsigned char* pBuffer, const size_t bfSz) {
 		if (pBuffer == nullptr) { return false; }
 
-		(*pBuf) = new MemBuf(pBuffer, static_cast<int>(bfSz));
+		(*ppBuf) = new MemBuf(pBuffer, static_cast<int>(bfSz));
 
-		*pAvioContext = avio_alloc_context((*pBuf)->get(), (*pBuf)->getSize(), 0, (*pBuf)
+		*ppAvioContext = avio_alloc_context((*ppBuf)->get(), (*ppBuf)->getSize(), 0, (*ppBuf)
 			, [](void* opaque, uint8_t* buf, const int buf_size) {
 				const auto pMemBuf = static_cast<MemBuf*>(opaque);
 				return pMemBuf->read(buf, buf_size);
@@ -691,21 +691,21 @@ private:
 				return pMemBuf->seek(offset, whence);
 			});
 
-		if (!*pAvioContext) { return false; }
+		if (!*ppAvioContext) { return false; }
 
-		*pFormatContext = avformat_alloc_context();
-		if (!*pFormatContext) { return false; }
+		*ppFormatContext = avformat_alloc_context();
+		if (!*ppFormatContext) { return false; }
 
 		auto pInputFormat = init_Probe(pBuffer, bfSz);
 		if(!pInputFormat) { return false; }
 
 		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
 		//might crash in avformat_open_input due to access violation if not set
-		(*pFormatContext)->iformat = pInputFormat;
-		(*pFormatContext)->pb = *pAvioContext;
-		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
+		(*ppFormatContext)->iformat = pInputFormat;
+		(*ppFormatContext)->pb = *ppAvioContext;
+		(*ppFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
 
-		if (avformat_open_input(pFormatContext, nullptr, nullptr, nullptr) < 0) {
+		if (avformat_open_input(ppFormatContext, nullptr, nullptr, nullptr) < 0) {
 			return false;
 		}
 
@@ -713,25 +713,25 @@ private:
 	}
 
 	// init the given AVCodecContext by pVCodec, which must be valid before calling this
-	inline int init_videoCodecContext(AVCodecContext** pVCodecContext) {
-		*pVCodecContext = avcodec_alloc_context3(pVCodec);
-		if (!*pVCodecContext) {
+	inline int init_videoCodecContext(AVCodecContext** ppVCodecContext) {
+		*ppVCodecContext = avcodec_alloc_context3(pVCodec);
+		if (!*ppVCodecContext) {
 			return FFMpegException_InitFailed;
 		}
 
-		if (avcodec_parameters_to_context(*pVCodecContext, pVCodecParameters) < 0) {
+		if (avcodec_parameters_to_context(*ppVCodecContext, pVCodecParameters) < 0) {
 			return FFMpegException_InitFailed;
 		}
 
-		(*pVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
+		(*ppVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
 		if (options.flag & FFMpegFlag_Fast) {
-			(*pVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
+			(*ppVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
 		}
 
 #ifdef HW_DECODE
 		if (bHWDecode) {
-			//(*pVCodecContext)->extra_hw_frames = 4;
-			(*pVCodecContext)->get_format = [] (AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
+			//(*ppVCodecContext)->extra_hw_frames = 4;
+			(*ppVCodecContext)->get_format = [] (AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
 				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
 					if (*p == hw_pix_fmt_global) {
 						return *p;
@@ -742,18 +742,18 @@ private:
 				return AV_PIX_FMT_NONE;
 				};
 
-			if (HW_InitDecoder((*pVCodecContext), hw_type) < 0) {
+			if (HW_InitDecoder((*ppVCodecContext), hw_type) < 0) {
 				//throw FFMpegException_HWInitFailed;
 				bHWDecode = false;
 			}
 		}
 #endif
 
-		if (avcodec_open2(*pVCodecContext, pVCodec, nullptr) < 0) {
+		if (avcodec_open2(*ppVCodecContext, pVCodec, nullptr) < 0) {
 			return FFMpegException_InitFailed;
 		}
 
-		if ((*pVCodecContext)->pix_fmt == AV_PIX_FMT_NONE) {
+		if ((*ppVCodecContext)->pix_fmt == AV_PIX_FMT_NONE) {
 			return FFMpegException_InitFailed;
 		}
 
@@ -1405,13 +1405,14 @@ private:
 
 			// 计算转换后的sample个数 a * b / c
 			// https://blog.csdn.net/u013346305/article/details/48682935
-			const int dst_nb_samples = static_cast<int>(av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
-				+ pBaseFrame->nb_samples
-				, TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, static_cast<AVRounding>(1)));
+			const int dst_nb_samples = 
+				static_cast<int>(av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
+				+ pBaseFrame->nb_samples,
+				TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, static_cast<AVRounding>(1)));
 
 			// 转换，返回值为转换后的sample个数
-			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples
-				, const_cast<const uint8_t**>(pBaseFrame->data), pBaseFrame->nb_samples);
+			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples,
+				pBaseFrame->data, pBaseFrame->nb_samples);
 
 			const auto channels = pBaseFrame->ch_layout.nb_channels;
 			const auto pcm_bytes = 2 * channels;
