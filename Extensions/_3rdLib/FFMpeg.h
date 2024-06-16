@@ -325,6 +325,7 @@ private:
 	int audio_stream_index = -1;
 
 	AVCodecContext* pVCodecContext = nullptr;
+	AVCodecContext* pVGetCodecContext = nullptr;
 	AVCodecContext* pACodecContext = nullptr;
 
 	AVFrame* pVFrame = nullptr;
@@ -705,6 +706,53 @@ private:
 		return true;
 	}
 
+	inline int init_videoCodecContext(AVCodecContext** pVCodecContext) {
+		*pVCodecContext = avcodec_alloc_context3(pVCodec);
+		if (!*pVCodecContext) {
+			return FFMpegException_InitFailed;
+		}
+
+		if (avcodec_parameters_to_context(*pVCodecContext, pVCodecParameters) < 0) {
+			return FFMpegException_InitFailed;
+		}
+
+		(*pVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
+		if (options.flag & FFMpegFlag_Fast) {
+			(*pVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
+		}
+
+#ifdef HW_DECODE
+		if (bHWDecode) {
+			//(*pVCodecContext)->extra_hw_frames = 4;
+			(*pVCodecContext)->get_format = [] (AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
+				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
+					if (*p == hw_pix_fmt_global) {
+						return *p;
+					}
+				}
+
+				//fprintf(stderr, "Failed to get HW surface format.\n");
+				return AV_PIX_FMT_NONE;
+				};
+
+			if (HW_InitDecoder((*pVCodecContext), hw_type) < 0) {
+				//throw FFMpegException_HWInitFailed;
+				bHWDecode = false;
+			}
+		}
+#endif
+
+		if (avcodec_open2(*pVCodecContext, pVCodec, nullptr) < 0) {
+			return FFMpegException_InitFailed;
+		}
+
+		if ((*pVCodecContext)->pix_fmt == AV_PIX_FMT_NONE) {
+			return FFMpegException_InitFailed;
+		}
+
+		return 0;
+	}
+
 	inline int init_general() {
 #pragma region FFMpegInit
 		// find stream
@@ -767,47 +815,10 @@ private:
 		}
 #endif
 
-		pVCodecContext = avcodec_alloc_context3(pVCodec);
-		if (!pVCodecContext) {
+		if (init_videoCodecContext(&pVCodecContext) != 0) {
 			return FFMpegException_InitFailed;
 		}
-
-		if (avcodec_parameters_to_context(pVCodecContext, pVCodecParameters) < 0) {
-			return FFMpegException_InitFailed;
-		}
-
-		pVCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
-		
-		if (options.flag & FFMpegFlag_Fast) {
-			pVCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
-		}
-
-#ifdef HW_DECODE
-		if (bHWDecode) {
-			//pVCodecContext->extra_hw_frames = 4;
-			pVCodecContext->get_format = [](AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
-				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
-					if (*p == hw_pix_fmt_global) {
-						return *p;
-					}
-				}
-
-				//fprintf(stderr, "Failed to get HW surface format.\n");
-				return AV_PIX_FMT_NONE;
-			};
-
-			if (HW_InitDecoder(pVCodecContext, hw_type) < 0) {
-				//throw FFMpegException_HWInitFailed;
-				bHWDecode = false;
-			}
-		}
-#endif
-
-		if (avcodec_open2(pVCodecContext, pVCodec, nullptr) < 0) {
-			return FFMpegException_InitFailed;
-		}
-
-		if (pVCodecContext->pix_fmt == AV_PIX_FMT_NONE) {
+		if (init_videoCodecContext(&pVGetCodecContext) != 0) {
 			return FFMpegException_InitFailed;
 		}
 
@@ -1642,6 +1653,7 @@ public:
 		swr_free(&swrContext);
 
 		avcodec_free_context(&pVCodecContext);
+		avcodec_free_context(&pVGetCodecContext);
 		avcodec_free_context(&pACodecContext);
 
 		avformat_close_input(&pFormatContext);
@@ -1957,22 +1969,6 @@ public:
 	}
 
 	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
-		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
-		if (!pCodecContext) {
-			return -1;
-		}
-
-		if (avcodec_parameters_to_context(pCodecContext, pVCodecParameters) < 0) {
-			return -1;
-		}
-
-		pCodecContext->thread_count = static_cast<int>(std::thread::hardware_concurrency());
-		pCodecContext->flags2 |= AV_CODEC_FLAG2_FAST;
-
-		if (avcodec_open2(pCodecContext, pVCodec, nullptr) < 0) {
-			return -1;
-		}
-
 		int response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
 		if (response < 0) {
@@ -1986,12 +1982,11 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
-		response = forwardFrame(pSeekFormatContext, pCodecContext, ms / 1000.0, callBack, bAccurateSeek);
+		avcodec_flush_buffers(pVGetCodecContext);
+		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;
 		videoPts = oldPts;
-
-		avcodec_free_context(&pCodecContext);
 
 		return response;
 	}
