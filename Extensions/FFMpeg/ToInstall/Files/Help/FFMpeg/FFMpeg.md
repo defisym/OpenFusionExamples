@@ -16,7 +16,7 @@ This object is based on cross platform lib, FFMpeg & SDL, in theory there is not
 
 **NOTE:** this object uses SDL_Mixer for multi-instance. Also because of the HWA issue mentioned above, too many objects will take a long time to blit.
 
-**NOTE:** this object runs synchronously, it will try decode video frame in `HandleRunObject` routine called once per frame. If your game is heavy then it will skip more frames. Audio decode is in another thread, but the packet queue is filled in `HandleRunObject`.
+**NOTE:** this object runs synchronously, it will try decode video frame in `HandleRunObject` routine called once per frame. If your game is heavy then it will skip more frames. Audio decode is in another thread.
 
 **NOTE:** you need to check `Run when minimized` & `Run while resizing`, or audio will be paused due to main thread is paused
 
@@ -63,10 +63,6 @@ Here follows all dlls needed by this object:
     - Currently reading decrypt file didn't use a stream (it's provided by another class and FFMpeg only has a memory reader), so it may cost some time to decrypt. With this on extension will cache these file in memory over frames instead of reloading
   - Force No Audio
     - *Don't play audio and sync with external clock*
-
-- Queue
-  - *Data is split into packet in FFMpeg, and usually it needs several packets to decode one frame. For audio, it's played in another thread and use a callback to ask for more data, so the decoded packets are cached in a queue, and won't add new ones if cached data exceeds this limit. However, some formats with higher resolution may need more data to decode, which may exceed the limit (e.g., aida_alpha.mov), then the application will keep waiting forever. In this case, extend this limit will solve it.*
-  - *Note that when decoding, extension will firstly try filling up the queue. Usually it's fast but if the queue size is too big it may be time-consuming, and causes lag when seeking.*
 
 - Hardware Decode
   - Hardware Device
@@ -116,8 +112,6 @@ Here follows all dlls needed by this object:
 - Set Size
   - *set object size*
 
-- Set Queue Size
-  - *see Properties->Queue*
 - Set Override Codec
   - *Force to use given codec. E.g., use `libvpx-vp9` to enable `WebM` alpha support*
   - *if given codec is invalid or cannot open video. extension will reset to default then try again. If the error still exists, `On Video Open Failed` will be triggered*

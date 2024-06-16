@@ -182,24 +182,20 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, 
 	}
 }
 
-inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) {
+inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	if (!rdPtr->bOpen) {
 		return;
 	}
 
 	// add protection for minus position
-	msRaw = msRaw < 0 ? 0 : msRaw;
-
-	const auto ms = static_cast<size_t>(msRaw);
+	ms =(std::max)(ms, 0);
 
 	//auto pos = rdPtr->pFFMpeg->get_videoPosition();
 
 	rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-
 	if (rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE) {
 		rdPtr->pFFMpeg->goto_videoPosition(ms, [&](const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
-			ReDisplay(rdPtr);
 			});
 	}
 
@@ -317,9 +313,8 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 
+		// display first valid frame
 		SetPositionGeneral(rdPtr, ms);
-
-		//BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
 
 		ReDisplay(rdPtr);
 	}

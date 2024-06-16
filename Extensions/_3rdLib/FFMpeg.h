@@ -127,10 +127,10 @@ constexpr auto FFMpegError_ENOMEM = AVERROR(ENOMEM);
 #endif
 
 // Defines				   
-constexpr auto seekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
-//constexpr auto seekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
-//constexpr auto seekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
-//constexpr auto seekFlags = AVSEEK_FLAG_FRAME;
+constexpr auto SeekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
+//constexpr auto SeekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
+//constexpr auto SeekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
+//constexpr auto SeekFlags = AVSEEK_FLAG_FRAME;
 
 #define VIDEO_ALPHA
 
@@ -272,7 +272,6 @@ private:
 
 #pragma region FFMpeg
 	FFMpegOptions options;
-	//DWORD flag = FFMpegFlag_Default;
 
 	bool bFromMem = false;
 	bool bNoAudio = false;
@@ -288,15 +287,12 @@ private:
 	AVFormatContext* pSeekFormatContext = nullptr;
 
 #ifdef  HW_DECODE
+	// auto fall back to CPU decode if init hardware failed
 	bool bHWDecode = false;
 	// software frame retrieved from GPU
 	AVFrame* pSWFrame = nullptr;
 
-	// fall back to CPU decode
-	bool bHWFallback = false;
-
 	AVBufferRef* hw_device_ctx = nullptr;
-	//AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_DXVA2;
 	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
 #endif //  HW_DECODE
@@ -311,7 +307,6 @@ private:
 	AVFrame* pAFilterFrame = nullptr;
 #endif //  AUDIO_TEMPO
 
-	//float atempo = DEFAULT_ATEMPO;
 	float atempo = -1;
 	double tempoTimer = 0.0;
 
@@ -331,7 +326,7 @@ private:
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
 
-	// refered
+	// refered to last valid pVFrame
 	AVFrame* pVLastFrame = nullptr;	
 
 	AVPacket* pPacket = nullptr;
@@ -356,16 +351,14 @@ private:
 	AVRational rational = { };
 	double decimalRational = 0;
 
-	int64_t totalDuration = 0;
-	//double timePerFrameInMs = 0;
-
 	double totalTime = 0;
 	int64_t totalTimeInMs = 0;
+	int64_t totalDuration = 0;
 
+	// buffer for format conversion
 	uint8_t* p_global_bgr_buffer = nullptr;
+	// conversion buffer size
 	int num_bytes = 0;
-
-	//double firstKeyFrame = -1;
 
 #pragma endregion
 
@@ -383,12 +376,32 @@ private:
 	// output
 	void* audio_stream = nullptr;
 	size_t audio_stream_len = 0;
-	
+
 	SDL_SpinLock audioLock = 0;
 	bool bAudioCallbackPause = false;
 #pragma endregion
 
 #pragma endregion
+
+	// ------------------------------------
+	// General
+	// ------------------------------------
+
+	static inline std::wstring GetErrorStr(const int errnum) {
+		const auto buf = new char[AV_ERROR_MAX_STRING_SIZE];
+
+		av_make_error_string(buf, AV_ERROR_MAX_STRING_SIZE, errnum);
+
+		auto result = ConvertStrToWStr(buf);
+
+		delete[] buf;
+
+		return result;
+	}
+
+	// ------------------------------------
+	// Init
+	// ------------------------------------
 
 #ifdef HW_DECODE
 	static inline std::vector<AVHWDeviceType> HW_GetDeviceType() {
@@ -439,29 +452,6 @@ private:
 		return err;
 	}
 #endif
-
-	static inline std::wstring GetErrorStr(const int errnum) {
-		const auto buf = new char[AV_ERROR_MAX_STRING_SIZE];
-
-		av_make_error_string(buf, AV_ERROR_MAX_STRING_SIZE, errnum);
-
-		auto result = ConvertStrToWStr(buf);
-
-		delete[] buf;
-
-		return result;
-	}
-
-	inline AVChannelLayout get_ChannelLayout() const {
-		const auto pChannalLayout = &pACodecParameters->ch_layout;
-		const auto channels = pChannalLayout->nb_channels;
-
-		if(pChannalLayout->order == AV_CHANNEL_ORDER_UNSPEC) {
-			av_channel_layout_default(pChannalLayout, channels);
-		}
-
-		return *pChannalLayout;	
-	}
 
 	inline void init_SwrContext(const AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
 		AVChannelLayout targetChannelLayout = {};
@@ -630,6 +620,7 @@ private:
 	}
 #endif //  AUDIO_TEMPO
 
+	// probe video format
 	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName = "") {
 		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
@@ -706,6 +697,7 @@ private:
 		return true;
 	}
 
+	// init the given AVCodecContext by pVCodec, which must be valid before calling this
 	inline int init_videoCodecContext(AVCodecContext** pVCodecContext) {
 		*pVCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!*pVCodecContext) {
@@ -753,6 +745,7 @@ private:
 		return 0;
 	}
 
+	// init FFMpeg
 	inline int init_general() {
 #pragma region FFMpegInit
 		// find stream
@@ -893,8 +886,6 @@ private:
 		pAPacket = av_packet_alloc();
 		if (!pAPacket) { return FFMpegException_InitFailed; }
 
-		//pVideoStream = pFormatContext->streams [video_stream_index];
-
 		// https://www.appsloveworld.com/cplus/100/107/finding-duration-number-of-frames-of-webm-using-ffmpeg-libavformat
 		if (pVideoStream->duration != AV_NOPTS_VALUE) {
 			totalDuration = pVideoStream->duration;
@@ -903,27 +894,18 @@ private:
 		}
 		else if (pFormatContext->duration != AV_NOPTS_VALUE) {
 			totalDuration = pFormatContext->duration;
-
 			rational = time_base_q;
 		}
 		else {
 			totalDuration = INT64_MAX;
-
 			rational = { 1,1000 };
 		}
 
 		decimalRational = static_cast<double>(rational.num) / rational.den;
-
-		//timePerFrameInMs = decimalRational * 1000;
 		totalTime = static_cast<double>(totalDuration) * decimalRational;
-
-		//totalTimeInMs = double(pVideoStream->duration)* av_q2d(pVideoStream->time_base) * 1000;
 		totalTimeInMs = totalDuration == INT64_MAX
 						? totalDuration
-						:static_cast<int64_t>(round(totalTime * 1000));
-
-		//int num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, this->get_width(), this->get_width(), 1);
-		//p_global_bgr_buffer = new uint8_t[num_bytes];
+						: static_cast<int64_t>(round(totalTime * 1000));
 #pragma endregion
 
 #pragma region AudioInit	
@@ -937,7 +919,11 @@ private:
 #pragma endregion
 
 		return 0;
-}
+	}
+
+	// ------------------------------------
+	// Seek
+	// ------------------------------------
 
 	inline int64_t get_protectedTimeInSecond(const int64_t ms) const {		
 		const auto protectedTimeInMs = Range(ms, static_cast<int64_t>(0), totalTimeInMs);
@@ -946,7 +932,7 @@ private:
 		return protectedTimeInSecond;
 	}
 
-	inline int64_t get_protectedTimeStamp(const int64_t ms, const int flags = seekFlags) const {
+	inline int64_t get_protectedTimeStamp(const int64_t ms, const int flags = SeekFlags) const {
 		// seek by byte, do nothing
 		// If flags contain AVSEEK_FLAG_BYTE, then all timestamps are in bytes and are the file position
 		// (this may not be supported by all demuxers).
@@ -957,7 +943,7 @@ private:
 		// seek by frame, do conversion
 		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
 		// (this may not be supported by all demuxers).
-		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME){
+		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME) {
 			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
 
 			return static_cast<int64_t>(protectedTimeStamp);
@@ -971,21 +957,17 @@ private:
 		return static_cast<int64_t>(protectedTimeStamp);
 	}
 
-	inline int seekFrame(AVFormatContext* pFormatContext, const int stream_index, const int64_t ms = 0, const int flags = seekFlags) const {
+	inline int seekFrame(AVFormatContext* pFormatContext, const int stream_index, const int64_t ms = 0, const int flags = SeekFlags) const {
 		// input second
 		const auto seek_target = get_protectedTimeStamp(ms, flags);
 
 		int response = flags >= 0
-						   ? av_seek_frame(pFormatContext, stream_index
-										   , seek_target
-										   , flags)
-						   : avformat_seek_file(pFormatContext, stream_index
-												, seek_target, seek_target, seek_target
-												, -1 * flags);
-
-		//response = avformat_seek_file(pFormatContext, stream_index
-		//	, seek_target, seek_target, seek_target
-		//	, seekFlags);
+			? av_seek_frame(pFormatContext, stream_index,
+				seek_target,
+				flags)
+			: avformat_seek_file(pFormatContext, stream_index,
+				seek_target, seek_target, seek_target,
+				-1 * flags);
 
 		//https://stackoverflow.com/questions/45526098/repeating-ffmpeg-stream-libavcodec-libavformat
 		//avio_seek(pFormatContext->pb, 0, SEEK_SET);
@@ -993,38 +975,40 @@ private:
 		return response;
 	}
 
-	struct TempFrame {
-		bool bValid = false;
-
-		AVPacket* pPacket = nullptr;
-		AVFrame* pFrame = nullptr;
-		AVFrame* pLastFrame = nullptr;
-
-		TempFrame() {
-			pPacket = av_packet_alloc();
-			if (!pPacket) { return; }
-
-			pFrame = av_frame_alloc();
-			if (!pFrame) { return; }
-
-			pLastFrame = av_frame_alloc();
-			if (!pLastFrame) { return; }
-
-			bValid = true;
-		}
-
-		~TempFrame() {
-			av_frame_free(&pLastFrame);
-			av_frame_free(&pFrame);
-			av_packet_free(&pPacket);
-		}
-	};
-
+	// forward to next valid frame
+	// if the main AVFormatContext is used, you should use audio lock
+	// as audio thread will affect it when filling queue
 	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext,
 		 double targetPts, const frameDataCallBack& callBack, bool bAccurateSeek = true) {
-		int response = 0;
+		// temp frames used in seeking
+		struct TempFrame {
+			bool bValid = false;
 
-		TempFrame frames;
+			AVPacket* pPacket = nullptr;
+			AVFrame* pFrame = nullptr;
+			AVFrame* pLastFrame = nullptr;
+
+			TempFrame() {
+				pPacket = av_packet_alloc();
+				if (!pPacket) { return; }
+
+				pFrame = av_frame_alloc();
+				if (!pFrame) { return; }
+
+				pLastFrame = av_frame_alloc();
+				if (!pLastFrame) { return; }
+
+				bValid = true;
+			}
+
+			~TempFrame() {
+				av_frame_free(&pLastFrame);
+				av_frame_free(&pFrame);
+				av_packet_free(&pPacket);
+			}
+		};
+
+		const TempFrame frames;
 		if (!frames.bValid) { return -1; }
 
 		this->bSeeking = true;
@@ -1032,6 +1016,8 @@ private:
 
 		//how many packet processed
 		//int count = 0;
+
+		int response = 0;
 
 		while (av_read_frame(pFormatContext, frames.pPacket) >= 0) {
 			// if it's the video stream
@@ -1072,7 +1058,10 @@ private:
 		return response;
 	}
 
-	//Decode
+	// ------------------------------------
+	// Decode
+	// ------------------------------------
+
 	inline int fill_decode(const std::function<int()>& decode) {
 		do {
 			int response = decode();
@@ -1427,7 +1416,10 @@ private:
 #endif //  AUDIO_TEMPO
 	}
 
-	//synchronize
+	// ------------------------------------
+	// Synchronize
+	// ------------------------------------
+
 	inline double synchronize_video(const AVFrame* pVFrame, double videoPts) {		
 		if (!NearlyEqualDBL(videoPts, 0.0)) {
 			videoClock = videoPts;
@@ -1563,6 +1555,10 @@ private:
 		return static_cast<double>(pPacket->dts) * av_q2d(pStream->time_base) * 1000;
 	}
 
+	// ------------------------------------
+	// Loop
+	// ------------------------------------
+
 	inline int handleLoop() {
 		int response = 0;
 
@@ -1678,7 +1674,57 @@ public:
 		SDL_AtomicUnlock(&audioLock);
 	}
 
-	//Get
+	// ------------------------------------
+	// Pause
+	// ------------------------------------
+
+	inline bool get_pause() const {
+		return this->bPause;
+	}
+
+	inline void set_pause(const bool bPause) {
+		this->bPause = bPause;
+
+		if (bPause) {
+			pausePts = get_curTime();
+		}
+		else {
+			unPausePts = get_curTime();
+		}
+	}
+
+	inline double get_pausedTime(bool bReset = true) {
+		const auto pausedTime = unPausePts - pausePts;
+		reset_pausePts();
+
+		return pausedTime;
+	}
+
+	inline void reset_pausePts() {
+		pausePts = 0;
+		unPausePts = 0;
+	}
+
+	// ------------------------------------
+	// Play control
+	// ------------------------------------
+
+	inline void set_loop(const bool bLoop) {
+		this->bLoop = bLoop;
+	}
+
+	inline bool get_loopState() const {
+		return bLoop;
+	}
+
+	inline bool get_finishState() const {
+		return bFinish;
+	}
+
+	// ------------------------------------
+	// Video info
+	// ------------------------------------
+
 	inline const uint8_t* get_memBufSrc() const {
 		if (bFromMem == false) {
 			return nullptr;
@@ -1693,32 +1739,12 @@ public:
 		return pSrc;
 	}
 
-	inline bool get_finishState() const {
-		return bFinish;
-	}
-
-	inline bool get_pause() const {
-		return this->bPause;
-	}
-
-	inline int get_sdl_volume() const {
-		return volume;
-	}
-
-	inline int get_volume() const {
-		return static_cast<int>((volume / 128.0) * 100);
-	}
-
 	inline int64_t get_videoPosition() const {
 		return static_cast<int64_t>(videoPts * 1000);
 	}
 
 	inline int64_t get_videoDuration() const {
 		return static_cast<int64_t>(totalTimeInMs);
-	}
-
-	inline bool get_loopState() const {
-		return bLoop;
 	}
 
 	inline int get_width() const {
@@ -1728,6 +1754,10 @@ public:
 	inline int get_height() const {
 		return pVideoStream->codecpar->height;
 	}
+
+	// ------------------------------------
+	// Hardware decode
+	// ------------------------------------
 
 	inline bool get_hwDecodeState() const {
 		return bHWDecode;
@@ -1812,43 +1842,13 @@ public:
 		return AV_HWDEVICE_TYPE_NONE;
 	}
 
-	inline float get_audioTempo() const {
-		return this->atempo;
-	}
+	// ------------------------------------
+	// Video control
+	// ------------------------------------
 
-	//Set
-	inline void set_pause(const bool bPause) {
-		this->bPause = bPause;
-
-		if (bPause) {
-			pausePts = get_curTime();
-		}
-		else {
-			unPausePts = get_curTime();
-		}
-	}
-
-	inline void reset_pausePts() {
-		pausePts = 0;
-		unPausePts = 0;
-	}
-
-	inline double get_pausedTime(bool bReset = true) {
-		const auto pausedTime = unPausePts - pausePts;
-		reset_pausePts();
-
-		return pausedTime;
-	}
-
-	inline void set_sdl_volume(const int volume) {
-		this->volume = Range(volume, 0, 128);
-	}
-
-	inline void set_volume(const int volume) {		
-		this->volume = static_cast<int>((Range(volume, 0, 100) / 100.0) * 128);
-	}
-
-	inline int set_videoPosition(int64_t ms = 0, const int flags = seekFlags) {
+	// seek to given time stamp
+	// call goto_videoPosition to next valid frame if needed
+	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
 		int steam_index = -1;
 		const auto targetPts = static_cast<double>(ms) / 1000.0;
 
@@ -1868,12 +1868,12 @@ public:
 		SDL_AtomicLock(&audioLock);
 
 		if (video_stream_index >= 0) {
-			videoQueue.flush();			
+			videoQueue.flush();
 			avcodec_flush_buffers(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
-			audioQueue.flush();			
+			audioQueue.flush();
 			avcodec_flush_buffers(pACodecContext);
 		}
 
@@ -1892,17 +1892,108 @@ public:
 		return response;
 	}
 
-	inline void set_loop(const bool bLoop) {
-		this->bLoop = bLoop;
+	// call set_videoPosition first to seek to target frame
+	// then call this to decode to next valid frame if needed
+	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
+		const auto targetPts = ms / 1000.0;
+
+		// As audio thread can affect the main format context, lock it here
+		SDL_AtomicLock(&audioLock);
+		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
+		SDL_AtomicUnlock(&audioLock);
+
+//#define _REVERT_TO_TARGET
+
+#ifdef _REVERT_TO_TARGET
+		// revert to target
+		set_videoPosition((int64_t)(targetPts * 1000));
+		videoClock = targetPts * 1000;
+#else
+		// revert to start, to not skip frames
+		if (targetPts == 0.0) {
+			set_videoPosition(0);
+		}
+#endif // _REVERT_TO_TARGET
+
+		return response;
 	}
+
+	// get video frame of given time stamp
+	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
+		int response = seekFrame(pSeekFormatContext, video_stream_index, ms);
+
+		if (response < 0) {
+			return -1;
+		}
+
+		// keep current pts & clock
+		const auto oldClock = videoClock;
+		const auto oldPts = videoPts;
+
+		videoClock = 0;
+		videoPts = 0;
+
+		avcodec_flush_buffers(pVGetCodecContext);
+		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
+
+		videoClock = oldClock;
+		videoPts = oldPts;
+
+		return response;
+	}
+
+	// read next frame and handle loop automatically
+	inline int get_nextFrame(const frameDataCallBack& callBack) {
+		int response = handleLoop();
+
+		if (!bFinish) { response = decode_frame(callBack); }
+
+		//do not wait audio finish to get fluent loop
+		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
+		bFinish = bReadFinish && bVideoFinish;
+
+#ifdef _CONSOLE
+		bJumped = false;
+#endif
+
+		return response;
+	}
+
+	// ------------------------------------
+	// Volume
+	// ------------------------------------
+
+	// range: 0 ~ 100
+	inline void set_volume(const int volume) {
+		this->volume = static_cast<int>((Range(volume, 0, 100) / 100.0) * 128);
+	}
+
+	// range: 0 ~ 100
+	inline int get_volume() const {
+		return static_cast<int>((volume / 128.0) * 100);
+	}
+
+	// range: 0 ~ 128
+	inline void set_sdl_volume(const int volume) {
+		this->volume = Range(volume, 0, 128);
+	}
+
+	// range: 0 ~ 128
+	inline int get_sdl_volume() const {
+		return volume;
+	}
+
+	// ------------------------------------
+	// Audio control
+	// ------------------------------------
 
 	inline void set_audioTempo(float atempo) {
 #ifndef AUDIO_TEMPO
 		this->atempo = DEFAULT_ATEMPO;
 #else
 		const auto newTempo = atempo > 0
-			                      ? atempo
-			                      : DEFAULT_ATEMPO;
+			? atempo
+			: DEFAULT_ATEMPO;
 
 		// won't update if param is the same		
 		if (NearlyEqualFLT(this->atempo, newTempo)) {
@@ -1943,68 +2034,8 @@ public:
 #endif //  AUDIO_TEMPO
 	}
 
-	// call set_videoPosition first to seek to target frame
-	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
-		const auto targetPts = ms / 1000.0;
-
-		// As audio thread can affect the main format context, lock it here
-		SDL_AtomicLock(&audioLock);
-		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
-		SDL_AtomicUnlock(&audioLock);
-
-//#define _REVERT_TO_TARGET
-
-#ifdef _REVERT_TO_TARGET
-		// revert to target
-		set_videoPosition((int64_t)(targetPts * 1000));
-		videoClock = targetPts * 1000;
-#else
-		// revert to start, to not skip frames
-		if (targetPts == 0.0) {
-			set_videoPosition(0);
-		}
-#endif // _REVERT_TO_TARGET
-
-		return response;
-	}
-
-	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
-		int response = seekFrame(pSeekFormatContext, video_stream_index, ms);
-
-		if (response < 0) {
-			return -1;
-		}
-
-		// keep current pts & clock
-		const auto oldClock = videoClock;
-		const auto oldPts = videoPts;
-
-		videoClock = 0;
-		videoPts = 0;
-
-		avcodec_flush_buffers(pVGetCodecContext);
-		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
-
-		videoClock = oldClock;
-		videoPts = oldPts;
-
-		return response;
-	}
-
-	inline int get_nextFrame(const frameDataCallBack& callBack) {
-		int response = handleLoop();
-
-		if (!bFinish) { response = decode_frame(callBack); }
-
-		//do not wait audio finish to get fluent loop
-		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
-		bFinish = bReadFinish && bVideoFinish;
-
-#ifdef _CONSOLE
-		bJumped = false;
-#endif
-
-		return response;
+	inline float get_audioTempo() const {
+		return this->atempo;
 	}
 
 	using Setter = std::function<void* (void* dst, int val, size_t size)>;
