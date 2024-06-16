@@ -6,11 +6,11 @@
 // SafeSEH:NO
 
 // ReSharper disable CppInconsistentNaming
+// ReSharper disable CppUnusedIncludeDirective
 // ReSharper disable CppClangTidyClangDiagnosticShadow
 // ReSharper disable CppClangTidyClangDiagnosticReservedMacroIdentifier
+// ReSharper disable CppClangTidyCppcoreguidelinesSpecialMemberFunctions
 
-// ReSharper disable CppClangTidyHicppExceptionBaseclass
-// ReSharper disable CppInitializedValueIsAlwaysRewritten
 #pragma once
 
 #pragma warning(disable : 4819)
@@ -144,7 +144,7 @@ constexpr auto PIXEL_BYTE = 3;
 
 #ifdef HW_DECODE
 // global variable for AVCodecContext->get_format callback
-inline static enum AVPixelFormat hw_pix_fmt_global = AV_PIX_FMT_NONE;
+inline static auto hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
 constexpr auto FFMpegFlag_Default = 0;
@@ -211,12 +211,9 @@ public:
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
-using rawDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
-using frameCallBack = std::function<void(const AVFrame*)>;
+using frameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 using Setter = std::function<void*(void* dst, int val, size_t size)>;
 using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
-
-using Uint8 = unsigned char;
 
 class FFMpeg {
 private:
@@ -426,7 +423,7 @@ private:
 	}
 
 	inline int HW_InitDecoder(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
-		int err = 0;
+		int err;
 
 		if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
 			nullptr, nullptr, 0)) < 0) {
@@ -491,7 +488,7 @@ private:
 
 		SDL_AtomicLock(&audioLock);
 		
-		int ret = 0;
+		int ret;
 				
 		// release
 		avfilter_graph_free(&filter_graph);
@@ -1010,8 +1007,8 @@ private:
 		}
 	};
 
-	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext
-		, double targetPts, const rawDataCallBack& callBack, bool bAccurateSeek = true) {
+	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext,
+		 double targetPts, const frameDataCallBack& callBack, bool bAccurateSeek = true) {
 		int response = 0;
 
 		TempFrame frames;
@@ -1117,7 +1114,7 @@ private:
 		return response;
 	}
 
-	inline void convert_frame(AVFrame* pFrame, const rawDataCallBack& callBack) {
+	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_unref(pSWFrame);
@@ -1165,7 +1162,7 @@ private:
 		callBack(bgr_buffer[0], linesize[0], pFrame->height);
 	}
 
-	inline int decode_frame(const rawDataCallBack& callBack) {
+	inline int decode_frame(const frameDataCallBack& callBack) {
 		SyncState syncState;
 
 		do {
@@ -1466,8 +1463,6 @@ private:
 
 	inline double get_audioClock() {
 		double pts = audioClock; /* maintained in the audio thread */
-
-		auto hw_buf_size = audio_buf_size - audio_buf_index;
 		auto bytes_per_sec = 0;
 
 		if (pAudioStream) {
@@ -1488,6 +1483,7 @@ private:
 
 			pts = audioCallbackStartPts + protectedTimePlayed;
 #else
+			auto hw_buf_size = audio_buf_size - audio_buf_index;
 			pts -= static_cast<double>(hw_buf_size) / bytes_per_sec;
 #endif
 		}
@@ -1952,11 +1948,11 @@ public:
 	}
 
 	// call set_videoPosition first to seek to target frame
-	inline int goto_videoPosition(const size_t ms, const rawDataCallBack& callBack) {
+	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
 		return forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0, callBack);
 	}
 
-	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const rawDataCallBack& callBack) {
+	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
 		AVCodecContext* pCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!pCodecContext) {
 			return -1;
@@ -1996,7 +1992,7 @@ public:
 		return response;
 	}
 
-	inline int get_nextFrame(const rawDataCallBack& callBack) {
+	inline int get_nextFrame(const frameDataCallBack& callBack) {
 		int response = handleLoop();
 
 		if (!bFinish) { response = decode_frame(callBack); }
@@ -2012,22 +2008,15 @@ public:
 		return response;
 	}
 
-	inline int audio_fillData(Uint8* stream, int len, const Setter& setter, const Mixer& mixer) {
+	inline int audio_fillData(uint8_t* stream, int len, const Setter& setter, const Mixer& mixer) {
 		SDL_AtomicLock(&audioLock);
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
-		//this->audioCallbackStartPts = audioClock;
-		//this->audioCallbackStartTimer = get_curTime();
 
 		setter(stream, 0, len);
 
 		if (!bNoAudio && !bExit && !bPause) {
-			//每次写入stream的数据长度
-			int wt_stream_len = 0;
-			//每解码后的数据长度
-			int audio_size = 0;
-
 			this->audioCallbackStartPts = audioClock;
 			this->audioCallbackStartTimer = get_curTime();
 
@@ -2042,7 +2031,7 @@ public:
 				if (audio_buf_index >= audio_buf_size) {
 					// We have already sent all our data; get more
 					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
-					audio_size = decode_audioFrame();
+					int audio_size = decode_audioFrame();
 
 					// If error, output silence.
 					if (audio_size < 0) {
@@ -2059,7 +2048,7 @@ public:
 				}
 
 				//计算解码缓存剩余长度
-				wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
+				int wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
 
 				//检查每次写入缓存的数据长度是否超过指定长度(1024)
 				if (wt_stream_len > len) {
