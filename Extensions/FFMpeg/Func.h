@@ -190,16 +190,22 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	// add protection for minus position
 	ms =(std::max)(ms, 0);
 
-	//auto pos = rdPtr->pFFMpeg->get_videoPosition();
+	do {
+		//auto pos = rdPtr->pFFMpeg->get_videoPosition();
+		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
 
-	rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-	if (rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE) {
-		rdPtr->pFFMpeg->goto_videoPosition(ms, [&](const unsigned char* pData, const int stride, const int height) {
+		bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
+		if (!bGoto) { break; }
+		rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
+			ReDisplay(rdPtr);
 			});
-	}
 
-	ReDisplay(rdPtr);
+		// revert
+		if (ms == 0) {
+			rdPtr->pFFMpeg->set_videoPosition(ms, flags);
+		}
+	} while (false);
 }
 
 inline bool GetVideoPlayState(LPRDATA rdPtr) {

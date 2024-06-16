@@ -1623,7 +1623,7 @@ public:
 		bExit = true;
 
 		//Wait for callback finish
-		this->bAudioCallbackPause = true;
+		bAudioCallbackPause = true;
 
 		SDL_AtomicLock(&audioLock);
 
@@ -1862,14 +1862,24 @@ public:
 	// Video control
 	// ------------------------------------
 
-	// seek to given time stamp
-	// call goto_videoPosition to next valid frame if needed
-	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
+	inline int get_streamIndex() const {
 		int steam_index = -1;
-		const auto targetPts = static_cast<double>(ms) / 1000.0;
 
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
 		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
+
+		return steam_index;
+	}
+
+
+	// seek to given time stamp
+	// call goto_videoPosition to next valid frame if needed
+	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
+		LockHelper lockHelper(&audioLock);
+
+		const auto targetPts = static_cast<double>(ms) / 1000.0;
+		const int steam_index = get_streamIndex();
+		if (steam_index == -1) { return -1; }
 
 		// protection	
 		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
@@ -1877,11 +1887,7 @@ public:
 			: ms;
 		int response = seekFrame(pFormatContext, steam_index, ms, flags);
 
-		if (response < 0) {
-			return response;
-		}
-
-		SDL_AtomicLock(&audioLock);
+		if (response < 0) { return response; }
 
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
@@ -1893,7 +1899,8 @@ public:
 			avcodec_flush_buffers(pACodecContext);
 		}
 
-		SDL_AtomicUnlock(&audioLock);
+		reset_sync(targetPts);
+		reset_finishState();
 
 #ifdef _CONSOLE
 		bJumped = true;
@@ -1902,34 +1909,17 @@ public:
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
 
-		reset_sync(targetPts);
-		reset_finishState();
-
 		return response;
 	}
 
 	// call set_videoPosition first to seek to target frame
 	// then call this to decode to next valid frame if needed
 	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
-		const auto targetPts = ms / 1000.0;
-
 		// As audio thread can affect the main format context, lock it here
-		SDL_AtomicLock(&audioLock);
+		LockHelper lockHelper(&audioLock);
+
+		const auto targetPts = ms / 1000.0;
 		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
-		SDL_AtomicUnlock(&audioLock);
-
-//#define _REVERT_TO_TARGET
-
-#ifdef _REVERT_TO_TARGET
-		// revert to target
-		set_videoPosition((int64_t)(targetPts * 1000));
-		videoClock = targetPts * 1000;
-#else
-		// revert to start, to not skip frames
-		if (targetPts == 0.0) {
-			set_videoPosition(0);
-		}
-#endif // _REVERT_TO_TARGET
 
 		return response;
 	}
@@ -2058,68 +2048,71 @@ public:
 	using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 	inline int audio_fillData(uint8_t* stream, int len, const Setter& setter, const Mixer& mixer) {
-		SDL_AtomicLock(&audioLock);
+		LockHelper lockHelper(&audioLock);
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
 
 		setter(stream, 0, len);
 
-		if (!bNoAudio && !bExit && !bPause) {
-			this->audioCallbackStartPts = audioClock;
-			this->audioCallbackStartTimer = get_curTime();
+		bool bValid = !bNoAudio && !bExit && !bPause && !bSeeking;
 
-			//检查音频缓存的剩余长度
-			while (len > 0) {
-				if (this->bAudioCallbackPause) {
-					//SDL_CondWait(cond_audioCallbackPause, mutex_audio);
-					break;
-				}
-
-				//检查是否需要执行解码操作
-				if (audio_buf_index >= audio_buf_size) {
-					// We have already sent all our data; get more
-					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
-					int response = fill_decode([&] () {
-						return decode_audioFrame();
-					});					
-
-					// If error, output silence.
-					if (response < 0) {
-						audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
-						memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
-					}
-					else {
-						//返回packet中包含的原始音频数据长度(多帧)						
-						audio_buf_size = response;
-					}
-
-					//初始化累计写入缓存长度
-					audio_buf_index = 0;
-				}
-
-				//计算解码缓存剩余长度
-				int wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
-
-				//检查每次写入缓存的数据长度是否超过指定长度(1024)
-				if (wt_stream_len > len) {
-					//指定长度从解码的缓存中取数据
-					wt_stream_len = len;
-				}
-
-				//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
-				mixer(stream, audio_buf + audio_buf_index, len, volume);
-
-				//更新解码音频缓存的剩余长度
-				len -= wt_stream_len;
-				//更新缓存写入位置
-				stream += wt_stream_len;
-				//更新累计写入缓存数据长度
-				audio_buf_index += wt_stream_len;
-			}
+		if (!bValid) {
+			return 0;
 		}
 
-		SDL_AtomicUnlock(&audioLock);
+		this->audioCallbackStartPts = audioClock;
+		this->audioCallbackStartTimer = get_curTime();
+
+		//检查音频缓存的剩余长度
+		while (len > 0) {
+			if (this->bAudioCallbackPause) {
+				//SDL_CondWait(cond_audioCallbackPause, mutex_audio);
+				break;
+			}
+
+			//检查是否需要执行解码操作
+			if (audio_buf_index >= audio_buf_size) {
+				// We have already sent all our data; get more
+				// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+				int response = fill_decode([&] () {
+					return decode_audioFrame();
+				});
+
+				// If error, output silence.
+				if (response < 0) {
+					audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
+					memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
+				}
+				else {
+					//返回packet中包含的原始音频数据长度(多帧)						
+					audio_buf_size = response;
+				}
+
+				//初始化累计写入缓存长度
+				audio_buf_index = 0;
+			}
+
+			//计算解码缓存剩余长度
+			int wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
+
+			//检查每次写入缓存的数据长度是否超过指定长度(1024)
+			if (wt_stream_len > len) {
+				//指定长度从解码的缓存中取数据
+				wt_stream_len = len;
+			}
+
+			//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
+			mixer(stream, audio_buf + audio_buf_index, len, volume);
+
+			//更新解码音频缓存的剩余长度
+			len -= wt_stream_len;
+			//更新缓存写入位置
+			stream += wt_stream_len;
+			//更新累计写入缓存数据长度
+			audio_buf_index += wt_stream_len;
+		}
+
 
 		return 0;
 	}
