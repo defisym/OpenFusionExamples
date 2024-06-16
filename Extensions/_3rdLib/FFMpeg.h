@@ -465,7 +465,7 @@ private:
 		return *pChannalLayout;	
 	}
 
-	inline void init_SwrContext(AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
+	inline void init_SwrContext(const AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
 		AVChannelLayout targetChannelLayout = {};
 		av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
 		const auto ret = swr_alloc_set_opts2(&swrContext,
@@ -1661,9 +1661,7 @@ public:
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
 
-		avcodec_close(pVCodecContext);
 		avcodec_free_context(&pVCodecContext);
-		avcodec_close(pACodecContext);
 		avcodec_free_context(&pACodecContext);
 
 		avformat_close_input(&pFormatContext);
@@ -1774,6 +1772,8 @@ public:
 			return L"MEDIACODEC";
 		case AV_HWDEVICE_TYPE_VULKAN:
 			return L"VULKAN";
+		case AV_HWDEVICE_TYPE_D3D12VA:
+			return L"D3D12VA";
 		}
 
 		return L"NONE";

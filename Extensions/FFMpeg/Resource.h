@@ -59,9 +59,10 @@
 #define COMBO_AV_HWDEVICE_TYPE_OPENCL                     228
 #define COMBO_AV_HWDEVICE_TYPE_MEDIACODEC                 229
 #define COMBO_AV_HWDEVICE_TYPE_VULKAN                     230
+#define COMBO_AV_HWDEVICE_TYPE_D3D12VA                    231
 
-#define	IDS_PROP_FORCENOAUDIO_CHECK						231
-#define	IDS_PROP_FORCENOAUDIO_CHECK_INFO    			232
+#define	IDS_PROP_FORCENOAUDIO_CHECK						240
+#define	IDS_PROP_FORCENOAUDIO_CHECK_INFO    			241
 
 
 // 	Debug tree
