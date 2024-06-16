@@ -76,7 +76,9 @@ constexpr auto TARGET_SAMPLE_RATE = 44100;
 #define AUDIO_TEMPO
 
 #ifdef AUDIO_TEMPO
-constexpr auto DEFAULT_ATEMPO = 1.0f;
+constexpr auto ATEMPO_DEFAULT = 1.0f;
+// Faster than this may lose sync
+constexpr auto ATEMPO_MAX = 32.0f;
 #endif
 
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
@@ -932,7 +934,7 @@ private:
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
-			set_audioTempo(DEFAULT_ATEMPO);
+			set_audioTempo(ATEMPO_DEFAULT);
 		}
 #pragma endregion
 
@@ -2009,11 +2011,11 @@ public:
 
 	inline void set_audioTempo(float atempo) {
 #ifndef AUDIO_TEMPO
-		this->atempo = DEFAULT_ATEMPO;
+		this->atempo = ATEMPO_DEFAULT;
 #else
 		const auto newTempo = atempo > 0
-			? atempo
-			: DEFAULT_ATEMPO;
+			? (std::min)(atempo, ATEMPO_MAX)
+			: ATEMPO_DEFAULT;
 
 		// won't update if param is the same		
 		if (NearlyEqualFLT(this->atempo, newTempo)) {

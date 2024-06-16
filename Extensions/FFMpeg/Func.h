@@ -300,6 +300,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
 
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
+		rdPtr->atempo = rdPtr->pFFMpeg->get_audioTempo();
 
 		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 

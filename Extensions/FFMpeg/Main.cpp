@@ -332,6 +332,7 @@ short WINAPI DLLExport Action_SetAudioTempo(LPRDATA rdPtr, long param1, long par
 
 	if (rdPtr->pFFMpeg != nullptr) {
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
+		rdPtr->atempo = rdPtr->pFFMpeg->get_audioTempo();
 	}
 
 	return 0;

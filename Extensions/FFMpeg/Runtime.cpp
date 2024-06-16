@@ -117,7 +117,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
 
-	rdPtr->atempo = DEFAULT_ATEMPO;
+	rdPtr->atempo = ATEMPO_DEFAULT;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
