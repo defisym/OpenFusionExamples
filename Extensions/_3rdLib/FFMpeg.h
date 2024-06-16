@@ -1058,19 +1058,6 @@ private:
 			av_packet_unref(frames.pPacket);
 		}
 
-//#define _REVERT_TO_TARGET
-
-#ifdef _REVERT_TO_TARGET
-		// revert to target
-		set_videoPosition((int64_t)(targetPts * 1000));
-		videoClock = targetPts * 1000;
-#else
-		// revert to start
-		if (targetPts == 0.0) {			
-			set_videoPosition(0);
-		}
-#endif // _REVERT_TO_TARGET
-
 		this->bSeeking = false;
 		convert_frame(frames.pLastFrame, callBack);
 
@@ -1078,6 +1065,23 @@ private:
 	}
 
 	//Decode
+	inline int fill_decode(const std::function<int()>& decode) {
+		do {
+			int response = decode();
+
+			if (response == QUEUE_WAITING) {
+				fill_queueonce();
+				continue;
+			}
+
+			if (response == AVERROR(EAGAIN)) {
+				continue;
+			}
+
+			return response;
+		} while (true);
+	}
+
 	inline int fill_queueonce() {
 		const auto response = av_read_frame(pFormatContext, pPacket);
 
@@ -1176,9 +1180,6 @@ private:
 		SyncState syncState;
 
 		do {
-			// fill buffer
-			//int response = fill_queue();
-
 			// calc delay
 			syncState = get_syncState();
 
@@ -1192,22 +1193,9 @@ private:
 				// decode new video frame
 			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
 			case FFMpeg::SyncState::SYNC_SYNC:
-				int response;
-
-				do {
-					response = decode_videoFrame(pVLastFrame);
-
-					if (response == QUEUE_WAITING) {
-						fill_queueonce();
-						continue;
-					}
-
-					if (response == AVERROR(EAGAIN)) {
-						continue;
-					}
-
-					break;
-				} while (true);
+				int response = fill_decode([&]() {
+					return  decode_videoFrame(pVLastFrame);
+				});
 
 				if (response < 0) {
 					//auto e1 = AVERROR_EOF;
@@ -1630,6 +1618,11 @@ public:
 	~FFMpeg() {
 		bExit = true;
 
+		//Wait for callback finish
+		this->bAudioCallbackPause = true;
+
+		SDL_AtomicLock(&audioLock);
+
 		// must be flushed before free the context
 		audioQueue.flush();
 		videoQueue.flush();
@@ -1639,11 +1632,6 @@ public:
 		// as call destructor directly is UB
 		audioQueue.pause();
 		videoQueue.pause();
-
-		//Wait for callback finish
-		this->bAudioCallbackPause = true;
-
-		SDL_AtomicLock(&audioLock);
 
 		delete[] audio_buf;
 
@@ -1888,6 +1876,8 @@ public:
 			return response;
 		}
 
+		SDL_AtomicLock(&audioLock);
+
 		if (video_stream_index >= 0) {
 			videoQueue.flush();			
 			avcodec_flush_buffers(pVCodecContext);
@@ -1898,6 +1888,8 @@ public:
 			audioQueue.flush();			
 			avcodec_flush_buffers(pACodecContext);
 		}
+
+		SDL_AtomicUnlock(&audioLock);
 
 #ifdef _CONSOLE
 		bJumped = true;
@@ -1965,7 +1957,27 @@ public:
 
 	// call set_videoPosition first to seek to target frame
 	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
-		return forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0, callBack);
+		const auto targetPts = ms / 1000.0;
+
+		// As audio thread can affect the main format context, lock it here
+		SDL_AtomicLock(&audioLock);
+		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
+		SDL_AtomicUnlock(&audioLock);
+
+//#define _REVERT_TO_TARGET
+
+#ifdef _REVERT_TO_TARGET
+		// revert to target
+		set_videoPosition((int64_t)(targetPts * 1000));
+		videoClock = targetPts * 1000;
+#else
+		// revert to start, to not skip frames
+		if (targetPts == 0.0) {
+			set_videoPosition(0);
+		}
+#endif // _REVERT_TO_TARGET
+
+		return response;
 	}
 
 	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
@@ -2048,24 +2060,11 @@ public:
 
 				//检查是否需要执行解码操作
 				if (audio_buf_index >= audio_buf_size) {
-					int response;
-
-					do {
-						// We have already sent all our data; get more
-						// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
-						response = decode_audioFrame();
-
-						if (response == QUEUE_WAITING) {
-							fill_queueonce();
-							continue;
-						}
-
-						if (response == AVERROR(EAGAIN)) {
-							continue;
-						}
-
-						break;
-					} while (true);
+					// We have already sent all our data; get more
+					// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+					int response = fill_decode([&] () {
+						return decode_audioFrame();
+					});					
 
 					// If error, output silence.
 					if (response < 0) {
