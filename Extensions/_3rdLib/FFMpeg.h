@@ -68,8 +68,6 @@ constexpr auto MAX_VIDEOQ_SIZE = (5 * 256 * 1024);
 constexpr auto PROBE_SIZE = (32 * 4096);
 
 // This object will convert data to the following format for playing
-// Channel Layout https://www.cnblogs.com/wangguchangqing/p/5851490.html
-constexpr auto TARGET_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
 constexpr auto TARGET_CHANNEL_NUMBER = 2;
 constexpr auto TARGET_SAMPLE_FORMAT = AV_SAMPLE_FMT_S16;
 constexpr auto TARGET_SAMPLE_RATE = 44100;
@@ -436,33 +434,26 @@ private:
 		return result;
 	}
 
-	inline int64_t get_ChannelLayout() const {
-		//int index = av_get_channel_layout_channel_index(av_get_default_channel_layout(4), AV_CH_FRONT_CENTER);
+	inline AVChannelLayout get_ChannelLayout() const {
+		const auto pChannalLayout = &pACodecParameters->ch_layout;
+		const auto channels = pChannalLayout->nb_channels;
 
-		int channels = pACodecParameters->ch_layout.nb_channels;
-		uint64_t channel_layout = pACodecParameters->channel_layout;
-
-		if (channels > 0 && channel_layout == 0) {
-			channel_layout = av_get_default_channel_layout(channels);
-		}
-		else if (channels == 0 && channel_layout > 0) {
-			channels = av_get_channel_layout_nb_channels(channel_layout);
+		if(pChannalLayout->order == AV_CHANNEL_ORDER_UNSPEC) {
+			av_channel_layout_default(pChannalLayout, channels);
 		}
 
-		const auto layout = av_get_default_channel_layout(channels);
-
-		return layout;
+		return *pChannalLayout;	
 	}
 
-	inline void init_SwrContext(const int64_t in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
-		swrContext = swr_alloc_set_opts(swrContext
-			, TARGET_CHANNEL_LAYOUT
-			, TARGET_SAMPLE_FORMAT, TARGET_SAMPLE_RATE
-			, in_ch_layout
-			, in_sample_fmt, in_sample_rate
-			, 0, nullptr);
+	inline void init_SwrContext(AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
+		AVChannelLayout targetChannelLayout = {};
+		av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
+		const auto ret = swr_alloc_set_opts2(&swrContext,
+			&targetChannelLayout, TARGET_SAMPLE_FORMAT, TARGET_SAMPLE_RATE,
+			in_ch_layout, in_sample_fmt, in_sample_rate,
+			0, nullptr);
 
-		if (!swrContext || swr_init(swrContext) < 0) {
+		if (ret != 0 || !swrContext || swr_init(swrContext) < 0) {
 			throw FFMpegException_InitFailed;
 		}
 
@@ -470,6 +461,7 @@ private:
 	}
 
 #ifdef AUDIO_TEMPO
+	// https://ffmpeg.org/doxygen/7.0/decode_filter_audio_8c-example.html
 	inline int init_audioFilters(const AVFormatContext* fmt_ctx, AVCodecContext* dec_ctx
 		, AVFilterGraph* filter_graph, const char* filters_descr) {		
 		if (this->bNoAudio) {
@@ -498,16 +490,21 @@ private:
 			}
 
 			/* buffer audio source: the decoded frames from the decoder will be inserted here. */
-			if (!dec_ctx->channel_layout) {
-				dec_ctx->channel_layout = av_get_default_channel_layout(dec_ctx->channels);
+			if(dec_ctx->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC) {
+				av_channel_layout_default(&dec_ctx->ch_layout, dec_ctx->ch_layout.nb_channels);
 			}
-			
+
+			std::string chLayout;
+			chLayout.resize(128, '\0');
+
+			av_channel_layout_describe(&dec_ctx->ch_layout, chLayout.data(), chLayout.size());
+
 			// match source
 			AVRational time_base = fmt_ctx->streams[audio_stream_index]->time_base;
 
-			const auto filterArgs = std::format("time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout={:#x}"
+			const auto filterArgs = std::format("time_base={}/{}:sample_rate={}:sample_fmt={}:channel_layout={}"
 				, time_base.num, time_base.den, dec_ctx->sample_rate,
-				av_get_sample_fmt_name(dec_ctx->sample_fmt), dec_ctx->channel_layout);
+				av_get_sample_fmt_name(dec_ctx->sample_fmt), chLayout);
 
 			// create
 			const AVFilter* abuffersrc = avfilter_get_by_name("abuffer");
@@ -708,6 +705,8 @@ private:
 			probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(2 * probeData.buf_size), bfSz));
 		}
 
+		(*pFormatContext)->iformat = pInputFormat;
+		(*pFormatContext)->pb = *pAvioContext;
 		(*pFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
 
 		if (avformat_open_input(pFormatContext, nullptr, nullptr, nullptr) < 0) {
@@ -1425,9 +1424,9 @@ private:
 
 			// update context to avoid crash
 			if (bUpdateSwr) {
-				init_SwrContext(pBaseFrame->channel_layout
-					, static_cast<AVSampleFormat>(pBaseFrame->format)
-					, pBaseFrame->sample_rate);
+				init_SwrContext(&pBaseFrame->ch_layout,
+					static_cast<AVSampleFormat>(pBaseFrame->format),
+					pBaseFrame->sample_rate);
 			}
 
 			// 计算转换后的sample个数 a * b / c
