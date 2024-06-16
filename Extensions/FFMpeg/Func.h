@@ -302,8 +302,9 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 		*rdPtr->pFilePath = filePath;
 
-		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
+		rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay);
+		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
 		rdPtr->atempo = rdPtr->pFFMpeg->get_audioTempo();
