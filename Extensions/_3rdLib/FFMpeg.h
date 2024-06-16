@@ -215,6 +215,19 @@ public:
 	}
 };
 
+// RAII
+struct LockHelper {
+private:
+	SDL_SpinLock* _plock = nullptr;
+public:
+	explicit LockHelper(SDL_SpinLock* plock) :_plock(plock) {
+		SDL_AtomicLock(plock);
+	}
+	~LockHelper() {
+		SDL_AtomicUnlock(_plock);
+	}
+};
+
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // pData, stride, height
@@ -333,6 +346,8 @@ private:
 
 	AVPacket* pPacket = nullptr;
 
+	SDL_SpinLock queueLock = 0;
+
 	PacketQueue audioQueue;
 	PacketQueue videoQueue;
 
@@ -382,18 +397,6 @@ private:
 	SDL_SpinLock audioLock = 0;
 	bool bAudioCallbackPause = false;
 
-	// RAII
-	struct LockHelper {
-	private:
-		SDL_SpinLock* _plock = nullptr;
-	public:
-		explicit LockHelper(SDL_SpinLock* plock) :_plock(plock) {
-			SDL_AtomicLock(plock);
-		}
-		~LockHelper() {
-			SDL_AtomicUnlock(_plock);
-		}
-	};
 #pragma endregion
 
 #pragma endregion
@@ -1095,6 +1098,7 @@ private:
 	}
 
 	inline int fill_queueonce() {
+		LockHelper lockHelper(&queueLock);
 		const auto response = av_read_frame(pFormatContext, pPacket);
 
 		bReadFinish = (response == AVERROR_EOF);
