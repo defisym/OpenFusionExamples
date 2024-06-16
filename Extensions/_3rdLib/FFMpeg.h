@@ -1111,6 +1111,9 @@ private:
 	}
 
 	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
+		// data invalid, do not trigger callback, in case of get a black frame
+		if (!pFrame->data[0]) { return; }
+
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_unref(pSWFrame);
@@ -1363,15 +1366,13 @@ private:
 			}
 #endif //  AUDIO_TEMPO
 
-			if (pAPacket != nullptr) {
-				if (pAPacket->pts != AV_NOPTS_VALUE) {
-					audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
+			if (pAPacket != nullptr && pAPacket->pts != AV_NOPTS_VALUE) {
+				audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
 #ifdef _CONSOLE
-					if (bJumped) {
-						printf("Cur audio clock: %f\n", audioClock);
-					}
-#endif
+				if (bJumped) {
+					printf("Cur audio clock: %f\n", audioClock);
 				}
+#endif
 			}
 
 #ifdef AUDIO_TEMPO
@@ -1518,14 +1519,12 @@ private:
 		return SyncState::SYNC_SYNC;
 	}
 
-	inline void reset_sync() {
-		videoPts = 0;
-		audioPts = 0;
+	inline void reset_sync(const double targetPts = 0) {
+		videoPts = targetPts;
+		audioPts = targetPts;
 
-		//globalPts = 0;
-
-		videoClock = 0;
-		audioClock = 0;
+		videoClock = targetPts;
+		audioClock = targetPts;
 
 		frameTimer = -1;
 		frameLastPts = 0;
@@ -1839,6 +1838,7 @@ public:
 
 	inline int set_videoPosition(int64_t ms = 0, const int flags = seekFlags) {
 		int steam_index = -1;
+		const auto targetPts = static_cast<double>(ms) / 1000.0;
 
 		if (video_stream_index >= 0) { steam_index = video_stream_index; }
 		else if (audio_stream_index >= 0) { steam_index = audio_stream_index; }
@@ -1858,7 +1858,6 @@ public:
 		if (video_stream_index >= 0) {
 			videoQueue.flush();			
 			avcodec_flush_buffers(pVCodecContext);
-
 		}
 
 		if (audio_stream_index >= 0) {
@@ -1875,7 +1874,7 @@ public:
 		printf("Cur Video Pts: %f, Cur Clock: %f, Cur Pos: %lld, Jump to MS: %zu\n", videoPts, videoClock, oldPos, ms);
 #endif
 
-		reset_sync();
+		reset_sync(targetPts);
 		reset_finishState();
 
 		return response;
