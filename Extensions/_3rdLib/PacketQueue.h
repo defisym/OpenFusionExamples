@@ -265,26 +265,17 @@ public:
 	}
 
 	inline bool put(AVPacket* pPacket) {
-		//AVPacket pkt;
-
-		//if (av_packet_ref(&pkt, pPacket) < 0) {
-		//	return false;
-		//}
-
-		const AVPacket pkt = *pPacket;
-		*pPacket = *pEmptyPacket;
-
 #ifdef QUEUE_SPINLOCK
 		SDL_AtomicLock(&audioLock);
 #else
 		SDL_LockMutex(mutex);
 #endif
+		AVPacket pkt = *pEmptyPacket;
+		av_packet_move_ref(&pkt, pPacket);
 
 		queue.emplace(pkt);
-
 		dataSize += pkt.size;
-		//nb_packets++;
-
+		
 #ifdef QUEUE_SPINLOCK
 #else
 		SDL_CondSignal(cond);
@@ -317,16 +308,10 @@ public:
 			}
 
 			if (!queue.empty()) {
-				//if (av_packet_ref(pPacket, &queue.front()) < 0) {
-				//	ret = false;
-
-				//	break;
-				//}
-
-				*pPacket = queue.front();
+				av_packet_unref(pPacket);
+				av_packet_move_ref(pPacket, &queue.front());
 
 				queue.pop();
-				//nb_packets--;
 				dataSize -= pPacket->size;
 
 				ret = true;

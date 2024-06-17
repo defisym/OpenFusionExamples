@@ -1043,6 +1043,7 @@ private:
 #ifdef _DEBUG
 					auto err = GetErrorStr(response);
 #endif // _DEBUG
+					av_packet_unref(frames.pPacket);
 
 					break;
 				}
@@ -1068,6 +1069,8 @@ private:
 
 		this->bSeeking = false;
 		convert_frame(frames.pLastFrame, callBack);
+
+		av_packet_unref(frames.pPacket);
 
 		return response;
 	}
@@ -1100,13 +1103,15 @@ private:
 		bReadFinish = (response == AVERROR_EOF);
 
 		const bool bStop = videoQueue.readFinish() && audioQueue.readFinish();
-
 		if (bReadFinish && !bStop) {
 			videoQueue.stopBlock();
 			audioQueue.stopBlock();
 		}
 
-		if (response < 0) { return response; }
+		if (response < 0) {
+			av_packet_unref(pPacket);
+			return response;
+		}
 
 		do {
 			if (pPacket->stream_index == video_stream_index) {
@@ -1126,9 +1131,6 @@ private:
 	}
 
 	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
-		// data invalid, do not trigger callback, in case of get a black frame
-		if (!pFrame->data[0]) { return; }
-
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_unref(pSWFrame);
@@ -1140,10 +1142,14 @@ private:
 					throw FFMpegException(FFMpegException_HWDecodeFailed);
 				}
 
-				pFrame = pSWFrame;
+				av_frame_unref(pFrame);
+				av_frame_move_ref(pFrame, pSWFrame);
 			}
 		}
 #endif // HW_DECODE
+
+		// data invalid, do not trigger callback, in case of get a black frame
+		if (!pFrame->data[0]) { return; }
 
 		// Convert data to Bitmap data
 		// https://zhuanlan.zhihu.com/p/53305541
@@ -1172,8 +1178,10 @@ private:
 
 		sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
 
-		//bgr_buffer[0] is the BGR raw data
+		//bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
 		callBack(bgr_buffer[0], linesize[0], pFrame->height);
+
+		av_frame_unref(pFrame);
 	}
 
 	inline int decode_frame(const frameDataCallBack& callBack) {
@@ -1181,20 +1189,18 @@ private:
 
 		do {
 			// calc delay
-			syncState = get_syncState();
-
-			//syncState = SyncState::SYNC_SYNC;
+			syncState = get_syncState();			
 
 			// decode
 			switch (syncState) {
 				// video is faster, wait
-			case FFMpeg::SyncState::SYNC_VIDEOFASTER:
+			case SyncState::SYNC_VIDEOFASTER:
 				return 0;
 				// decode new video frame
-			case FFMpeg::SyncState::SYNC_CLOCKFASTER:
-			case FFMpeg::SyncState::SYNC_SYNC:
+			case SyncState::SYNC_CLOCKFASTER:
+			case SyncState::SYNC_SYNC:
 				int response = fill_decode([&]() {
-					return  decode_videoFrame(pVLastFrame);
+					return decode_videoFrame(pVLastFrame);
 				});
 
 				if (response < 0) {
@@ -1226,6 +1232,7 @@ private:
 
 	// pFrame: frame to receive data
 	// pLastFrame: frame to ref latest updated pFrame
+	// This function will handle the av_packet_unref
 	inline int decode_frameCore(bool& bFinishState, bool& bSendEAgain,
 		const bool& bBlockState, PacketQueue& queue,
 		AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame, AVFrame* pLastFrame,
@@ -1249,6 +1256,7 @@ private:
 		bSendEAgain = (response == AVERROR(EAGAIN));
 
 		if (response < 0 && !bSendEAgain && response != AVERROR_EOF) {
+			av_packet_unref(pPacket);
 			return response;
 		}
 
@@ -1258,9 +1266,7 @@ private:
 
 		// won't release if current packed didn't use
 		if (!bSendEAgain) {
-			if (pPacket && pPacket->data) {
-				av_packet_unref(pPacket);
-			}
+			av_packet_unref(pPacket);
 		}
 
 		if (bFinishState) {
@@ -1284,27 +1290,24 @@ private:
 			&FFMpeg::decode_apacket);
 	}
 
+	// This function will handle the av_frame_unref
+	// av_packet_unref is handled by caller
 	inline int decode_vpacket(AVCodecContext* pVCodecContext, const AVPacket* pVPacket,
 		AVFrame* pFrame, AVFrame* pLastFrame) {
 		// Return decoded output data (into a frame) from a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		int response = avcodec_receive_frame(pVCodecContext, pFrame);
 
-#ifdef _DEBUG
-		auto err = GetErrorStr(response);
-#endif
-
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+			av_frame_unref(pFrame);
 			return response;
 		}
 
 		if (response < 0) {
 			av_frame_unref(pFrame);
-
 			return response;
 		}
 
-		//videoPts = 0;
 		videoPts = static_cast<double>(pFrame->best_effort_timestamp);
 
 		if (pVPacket != nullptr) {
@@ -1339,10 +1342,10 @@ private:
 		}
 #endif
 
-		if (!bSeeking
-			|| (bSeeking && (videoClock >= seekingTargetPts))) {
+		// update laset frame by moving ref
+		if (!bSeeking || (bSeeking && (videoClock >= seekingTargetPts))) {
 			av_frame_unref(pLastFrame);
-			av_frame_ref(pLastFrame, pFrame);
+			av_frame_move_ref(pLastFrame, pFrame);
 		}
 
 		av_frame_unref(pFrame);
@@ -1350,12 +1353,15 @@ private:
 		return response;
 	}
 
+	// This function will handle the av_frame_unref
+	// av_packet_unref is handled by caller
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
 	inline int decode_apacket(AVCodecContext* pACodecContext, const AVPacket* pAPacket,
 		AVFrame* pFrame, AVFrame* pLastFrame) {
 		int response = avcodec_receive_frame(pACodecContext, pFrame);
 
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+			av_frame_unref(pFrame);
 			return response;
 		}
 
@@ -1364,10 +1370,18 @@ private:
 			return response;
 		}
 
+		// frame to process
+		auto pBaseFrame = pFrame;
+
+		// a while loop is wrapped in, `av_buffersink_get_frame` to get filtered frame
 #ifdef AUDIO_TEMPO
+		pBaseFrame = pAFilterFrame;
 		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
 
-		if (response < 0) { return response; }
+		if (response < 0) {
+			av_frame_unref(pFrame);
+			return response;
+		}
 
 		while (true) {
 			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
@@ -1376,8 +1390,8 @@ private:
 			}
 
 			if (response < 0) {
-				av_frame_unref(pFrame);
 				av_frame_unref(pAFilterFrame);
+				av_frame_unref(pFrame);
 			}
 #endif //  AUDIO_TEMPO
 
@@ -1389,12 +1403,6 @@ private:
 				}
 #endif
 			}
-
-#ifdef AUDIO_TEMPO
-			auto pBaseFrame = pAFilterFrame;
-#else
-			auto pBaseFrame = pFrame;
-#endif //  AUDIO_TEMPO
 
 			// update context to avoid crash
 			if (bUpdateSwr) {
@@ -1421,15 +1429,23 @@ private:
 			audioPts = audioClock;
 			audioClock += static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
 
+#ifdef AUDIO_TEMPO
+  			av_frame_unref(pAFilterFrame);
+#endif //  AUDIO_TEMPO
+
+			av_frame_unref(pFrame);
+
 			return audioSize;
 
 #ifdef AUDIO_TEMPO
 		}
 
-		av_frame_unref(pAFrame);
+		av_frame_unref(pAFilterFrame);
+#endif //  AUDIO_TEMPO
+
+		av_frame_unref(pFrame);
 
 		return -1;
-#endif //  AUDIO_TEMPO
 	}
 
 	// ------------------------------------
