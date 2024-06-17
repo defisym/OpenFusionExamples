@@ -9,6 +9,10 @@ EpicOnlineServices
 Almost everything is **async**!
 Extension will wait until all callbacks finishes. This may cause lags.
 
+If your game supports other platform, e.g., Steam, you can create a file along with the execution file to disable everything. You should grantee no platform features will be called, or may crash. The easiest way is use `Platform Enabled` condition to disable event group.
+
+for example, exe path is `C:\YourGame\Game.exe`, then you can create file `C:\YourGame\Platform\NoEpic` to disable `EpicOnlineServices`. This filename is hard coded.
+
 ## Properties
 
 - Initialize Options
@@ -58,6 +62,8 @@ Extension will wait until all callbacks finishes. This may cause lags.
   - Set Rich Text
 
 ## Condition
+
+- Platform Enabled
 
 - General
   - On Error

@@ -23,4 +23,4 @@ You need [`steam_appid.txt`](https://partner.steamgames.com/doc/api/steam_api#St
 
 If your game supports other platform, e.g., Epic, you can create a file along with the execution file to disable everything. You should grantee no platform features will be called, or may crash. The easiest way is use `Platform Enabled` condition to disable event group.
 
-for example, exe path is `C:\YourGame\Game.exe`, then you can create file `C:\YourGame\Platform\NoSteam` to disable. This filename is hard coded.
+for example, exe path is `C:\YourGame\Game.exe`, then you can create file `C:\YourGame\Platform\NoSteam` to disable `SteamworksAPI`. This filename is hard coded.
