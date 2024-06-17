@@ -27,6 +27,7 @@ short conditionsInfos[]=
 		IDMN_CONDITION_QUEARYCOMPLETE, M_CONDITION_QUEARYCOMPLETE, CND_CONDITION_QUEARYCOMPLETE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING, M_QUERYTYPE,
 		IDMN_CONDITION_ONERROR, M_CONDITION_ONERROR, CND_CONDITION_ONERROR, 0, 0,
 		IDMN_CONDITION_ONLOGOUT, M_CONDITION_ONLOGOUT, CND_CONDITION_ONLOGOUT, 0, 0,
+		IDMN_CONDITION_PE, M_CONDITION_PE, CND_CONDITION_PE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 
 		};
 
@@ -58,6 +59,10 @@ short expressionsInfos[]=
 // CONDITION ROUTINES
 // 
 // ============================================================================
+
+long WINAPI DLLExport Condition_PlatformEnabled(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pData->bEnable;
+}
 
 long WINAPI DLLExport Condition_OnLogin(LPRDATA rdPtr, long param1, long param2) {
 	return true;
@@ -259,6 +264,7 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_QueryComplete,
 			Condition_OnError,
 			Condition_OnLogout,
+			Condition_PlatformEnabled,
 
 			0
 			};
