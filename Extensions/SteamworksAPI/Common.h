@@ -48,6 +48,8 @@
 #include	"WindowsCommon.h"
 #include	"GeneralDefinition.h"
 
+#include	"PlatformUtilities.h"
+
 #include	"SteamUtilities.h"
 #include	"SteamInit.h"
 

@@ -112,6 +112,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR        
+        MENUITEM "Platfrom Enabled", IDMN_CONDITION_PE
+        MENUITEM SEPARATOR        
         POPUP "Steam Deck"
         BEGIN        
             MENUITEM "Running On Steam Deck", IDMN_CONDITION_ROSD
@@ -401,6 +403,8 @@ BEGIN
 
     M_CONDITION_ODLCIC        "%o: On DLC %0 Install Complete"
     M_APPID				      "App ID, 0 = k_uAppIdInvalid"
+
+    M_CONDITION_PE            "%o: Platform Enabled"
 END
 
 STRINGTABLE DISCARDABLE 
