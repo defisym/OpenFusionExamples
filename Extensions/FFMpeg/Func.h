@@ -1,3 +1,4 @@
+// ReSharper disable CppInconsistentNaming
 #pragma once
 
 #include <functional>
@@ -182,6 +183,12 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, 
 	}
 }
 
+constexpr auto SeekFlag_NoGoto = 0x0001 << 16;
+constexpr auto SeekFlag_NoRevert = 0x0002 << 16;
+
+// seek video to given position
+// by default, it will decode to first valid frame, and revert back if target timestamp is 0
+// this behaviour can be controlled by flags
 inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	if (!rdPtr->bOpen) {
 		return;
@@ -193,18 +200,17 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	do {
 		//auto pos = rdPtr->pFFMpeg->get_videoPosition();
 		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-
+		
 		bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
-		if (!bGoto) { break; }
+		if (!bGoto || flags & SeekFlag_NoRevert) { break; }
 		rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 			ReDisplay(rdPtr);
 			});
 
 		// revert
-		if (ms == 0) {
-			rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-		}
+		if (ms != 0 || flags & SeekFlag_NoRevert) { break; }
+		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
 	} while (false);
 }
 
@@ -286,11 +292,21 @@ inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 }
 
 inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key,
-	const FFMpegOptions& opt = FFMpegOptions(), size_t ms = 0) {
+	const FFMpegOptions& opt = FFMpegOptions(), const size_t ms = 0) {
 	CloseGeneral(rdPtr);
 
 	try {
-		if (StrEmpty(key.c_str())) {
+		const auto bUrl = [&] () {
+			const std::wstring http = L"http://";
+			const std::wstring https = L"https://";
+
+			auto prefix = filePath.substr(0, https.length());
+			_wcslwr_s(prefix.data(), prefix.length() + 1);
+
+			return http == prefix || https == prefix;
+			}();
+
+		if (bUrl || StrEmpty(key.c_str())) {
 			rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
 		}
 		else {
@@ -298,6 +314,13 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
 		}
 
+		// update display
+		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+		// display first valid frame
+		SetPositionGeneral(rdPtr, static_cast<int>(ms));
+
+		// update state
 		rdPtr->bOpen = true;
 		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 		*rdPtr->pFilePath = filePath;
@@ -308,13 +331,6 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
 		rdPtr->atempo = rdPtr->pFFMpeg->get_audioTempo();
-
-		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-		// display first valid frame
-		SetPositionGeneral(rdPtr, static_cast<int>(ms));
 
 		ReDisplay(rdPtr);
 	}

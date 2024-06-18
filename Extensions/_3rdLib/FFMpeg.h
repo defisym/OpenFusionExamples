@@ -236,7 +236,7 @@ private:
 	bool bExit = false;
 
 	bool bLoop = false;
-	bool bPause = false;	// used in audio
+	bool bPause = true;	// used in audio
 
 	double pausePts = 0;
 	double unPausePts = 0;
@@ -1603,7 +1603,6 @@ private:
 
 public:
 	//Load from file
-	//FFMpeg(const std::wstring& filePath, const DWORD flag = FFMpegFlag_Default) {
 	FFMpeg(const std::wstring& filePath, const FFMpegOptions& opt = FFMpegOptions()) {
 		bFromMem = false;
 		this->options = opt;
@@ -1620,7 +1619,6 @@ public:
 
 	//Load from memory
 	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
-	//FFMpeg(unsigned char* pBuffer, const size_t bfSz, const DWORD flag = FFMpegFlag_Default) {
 	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const FFMpegOptions& opt = FFMpegOptions()) {
 		bFromMem = true;
 		this->options = opt;
