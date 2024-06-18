@@ -59,6 +59,8 @@ struct LogOpt {
 
 struct GlobalData {
 	LPRDATA rdPtr = nullptr;
+	bool bEnable = false;
+
 	LogOpt logOpt;
 
 	EOSUtilities* pEOSUtilities = nullptr;

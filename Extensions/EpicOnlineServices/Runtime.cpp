@@ -83,7 +83,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		logOpt.bLoginCalled = false;
 		logOpt.bUserLogin = false;
 
-		rdPtr->pData->EOSInit(edPtr);
+		rdPtr->pData->bEnable = EnablePlatform(L"Platform/NoEpic");
+		if (rdPtr->pData->bEnable) { rdPtr->pData->EOSInit(edPtr); }
 
 		SetExtUserData(rdPtr->pData);
 	}
@@ -113,6 +114,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 	delete rdPtr->pRet;
 	rdPtr->pRet = nullptr;
 
+	if (!rdPtr->pData->bEnable) { return 0; }
+
 	// wait for callback complete, to avoid crash
 	rdPtr->pData->EOSWaitForCallbackComplete();
 
@@ -127,6 +130,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 // Called (if you want) each loop, this routine makes the object live
 // 
 short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
+	if (!rdPtr->pData->bEnable) { return 0; }
+
 	rdPtr->pData->EOSUpdate();
 	rdPtr->pData->EOSAutoLogin([=] (bool bSuccess) {
 		// must be here as AddEvent / CallEvent has no effect in CreateRunObject

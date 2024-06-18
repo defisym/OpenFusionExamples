@@ -20,3 +20,7 @@ as lib file will use steam_api.dll by default, which is conflict with built-in o
 ## Usage
 
 You need [`steam_appid.txt`](https://partner.steamgames.com/doc/api/steam_api#SteamAPI_Init) to debug, you need to put this file to Data->Runtime->Unicode to work in editor, and put mfa folder for standalone. Note that some features may not work in steam version fusion's editor like steam overlay.
+
+If your game supports other platform, e.g., Epic, you can create a file along with the execution file to disable everything. You should grantee no platform features will be called, or may crash. The easiest way is use `Platform Enabled` condition to disable event group.
+
+for example, exe path is `C:\YourGame\Game.exe`, then you can create file `C:\YourGame\Platform\NoSteam` to disable `SteamworksAPI`. This filename is hard coded.

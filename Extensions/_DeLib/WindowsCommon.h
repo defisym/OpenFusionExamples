@@ -432,29 +432,74 @@ inline void GetFileList(std::vector<std::wstring>* pList, const std::wstring& fo
 	FindClose(h);
 }
 
-inline std::wstring GetFullPathNameStr(const std::wstring& fileName) {
+inline auto SplitPath(const wchar_t* pPath) {
+	const auto pDrive = new wchar_t[MAX_PATH];
+	memset(pDrive, 0, MAX_PATH);
+	const auto pDir = new wchar_t[MAX_PATH];
+	memset(pDir, 0, MAX_PATH);
+	const auto pFileName = new wchar_t[MAX_PATH];
+	memset(pFileName, 0, MAX_PATH);
+	const auto pExt = new wchar_t[MAX_PATH];
+	memset(pExt, 0, MAX_PATH);
+
+	_wsplitpath_s(pPath,
+		pDrive, MAX_PATH,
+		pDir, MAX_PATH,
+		pFileName, MAX_PATH,
+		pExt, MAX_PATH);
+
+	auto ret = std::make_tuple(std::wstring(pDrive),
+		std::wstring(pDir),
+		std::wstring(pFileName),
+		std::wstring(pExt));
+
+	delete[] pDrive;
+	delete[] pDir;
+	delete[] pFileName;
+	delete[] pExt;
+
+	return ret;
+}
+
+inline std::wstring GetModuleFileNameStr(const HMODULE hModule = nullptr) {
+	const LPWSTR pFullPathName = new wchar_t[MAX_PATH];
+	memset(pFullPathName, 0, MAX_PATH);
+
+	auto err = GetModuleFileName(hModule, pFullPathName, MAX_PATH);
+	std::wstring ret = pFullPathName;
+
+	delete[] pFullPathName;
+
+	return ret;
+}
+
+inline std::wstring GetFullPathNameStr(const std::wstring& fileName,
+	const bool bReturnNonAbsolutePathDirectly = true) {
 	const auto pFileName = fileName.c_str();
 
 	// to fix work directory issue
 	// if input is not a full path (for access filename)
 	// then return it directly
 	// full path doesn't have work dir issue, as it's just calculate
+	if (bReturnNonAbsolutePathDirectly) {
+		// regex
+		//auto pathRegex = wregex(L"^[a-zA-Z]:\\\\.*$", ECMAScript | optimize);
+		//auto bMatch = regex_match(pFileName, pathRegex);
 
-	// regex
-	//auto pathRegex = wregex(L"^[a-zA-Z]:\\\\.*$", ECMAScript | optimize);
-	//auto bMatch = regex_match(pFileName, pathRegex);
+		// raw
+		const auto disk = pFileName[0];
+		const auto deli = pFileName[1];
+		const auto slash = pFileName[2];
 
-	// raw
-	const auto disk = pFileName[0];
-	const auto deli = pFileName[1];
-	const auto slash = pFileName[2];
+		// Windows only supports 26 disks
+		const auto bMatch = ((disk >= L'a' && disk <= L'z') 
+			|| (disk >= L'A' && disk <= L'Z'))
+			&& deli == L':'
+			&& slash == L'\\';
 
-	const auto bMatch = ((disk >= L'a' && disk <= L'z') || (disk >= L'A' && disk <= L'Z'))
-		&& deli == L':'
-		&& slash == L'\\';
-
-	if (!bMatch) {
-		return fileName;
+		if (!bMatch) {
+			return fileName;
+		}
 	}
 
 	// tailing \0 -> later process issue

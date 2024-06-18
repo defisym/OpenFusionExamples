@@ -39,13 +39,12 @@ struct GlobalData {
 	// wrapper function, only call callback if steam init successfully
 	inline void GetSteamUtilities(const std::function<void(SteamUtilities* pSteamUtil)>& callback,
 		const std::function<bool(SteamUtilities* pSteamUtil)>& extraCond = nullptr) const {
+		if (!SteamUtilitiesValid()) { return; }
+
 		const bool bExtra = extraCond != nullptr
 			? extraCond(pSteamUtil)
 			: true;
-
-		if (!SteamUtilitiesValid() || !bExtra) {
-			return;
-		}
+		if (!bExtra) { return; }
 
 		callback(pSteamUtil);
 	}
@@ -55,13 +54,12 @@ struct GlobalData {
 	inline T GetSteamUtilities(const T defaultValue,
 		const std::function<T(SteamUtilities* pSteamUtil)>& callback,
 		const std::function<bool(SteamUtilities* pSteamUtil)>& extraCond = nullptr) const {
+		if (!SteamUtilitiesValid()){ return defaultValue; }
+
 		const bool bExtra = extraCond != nullptr
 			? extraCond(pSteamUtil)
 			: true;
-
-		if (!SteamUtilitiesValid() || !bExtra) {
-			return defaultValue;
-		}
+		if (!bExtra) { return defaultValue; }
 
 		return callback(pSteamUtil);
 	}

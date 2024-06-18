@@ -31,6 +31,8 @@
 #include	"GeneralDefinition.h"
 #include	"WindowsCommon.h"
 
+#include	"PlatformUtilities.h"
+
 #include	"EOSUtilities.h"
 #include	"EOSPlatformInclude.h"
 

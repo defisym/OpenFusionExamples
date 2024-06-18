@@ -135,6 +135,8 @@
 
 #define	IDMN_CONDITION_ODLCIC			26007
 
+#define	IDMN_CONDITION_PE				26008
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
@@ -149,6 +151,8 @@
 #define	M_CONDITION_SUBMITTED			6006
 
 #define	M_CONDITION_ODLCIC				6007
+
+#define	M_CONDITION_PE					6008
 
 // Titles of condition parameters
 #define M_CND_RPO						6501

@@ -22,7 +22,9 @@
 
 #define	CND_CONDITION_ODLCIC			7
 
-#define	CND_LAST						8
+#define	CND_CONDITION_PE				8
+
+#define	CND_LAST						9
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
