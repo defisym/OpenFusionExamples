@@ -36,6 +36,7 @@ short conditionsInfos[]=
 
 		IDMN_CONDITION_ODLCIC, M_CONDITION_ODLCIC, CND_CONDITION_ODLCIC, 0, 1, PARAM_EXPRESSION, M_APPID,
 
+		IDMN_CONDITION_PE, M_CONDITION_PE, CND_CONDITION_PE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 		};
 
 // Definitions of parameters for each action
@@ -93,6 +94,10 @@ short expressionsInfos[]=
 // CONDITION ROUTINES
 // 
 // ============================================================================
+
+long WINAPI DLLExport Condition_PlatformEnabled(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pData->SteamUtilitiesValid();
+}
 
 long WINAPI DLLExport Condition_RemotePlayOn(LPRDATA rdPtr, long param1, long param2) {
 	const auto pPlatform = (LPCWSTR)CNC_GetStringParameter(rdPtr);
@@ -160,7 +165,6 @@ long WINAPI DLLExport Condition_RunningOnSteamDeck(LPRDATA rdPtr, long param1, l
 	}
 
 	return SteamUtils()->IsSteamRunningOnSteamDeck();
-
 }
 
 long WINAPI DLLExport Condition_OnScreenshot(LPRDATA rdPtr, long param1, long param2) {
@@ -532,6 +536,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_GamepadInputSubmitted,
 
 			Condition_OnDLCInstallComplete,
+
+			Condition_PlatformEnabled,
 
 			0
 			};
