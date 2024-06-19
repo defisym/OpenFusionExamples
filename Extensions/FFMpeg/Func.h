@@ -296,14 +296,19 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 	CloseGeneral(rdPtr);
 
 	try {
-		const auto bUrl = [&] () {
-			const std::wstring http = L"http://";
-			const std::wstring https = L"https://";
+		// URL:
+		//	http://...	https://...
+		//	ftp://...	file://...
+		const auto bUrl = [&] {
+			const auto idx = filePath.find_first_of(L':');
+			if (idx == std::wstring::npos) { return false; }
+			if (filePath[idx + 1] != L'/' || filePath[idx + 2] != L'/') { return false; }
 
-			auto prefix = filePath.substr(0, https.length());
-			_wcslwr_s(prefix.data(), prefix.length() + 1);
-
-			return http == prefix || https == prefix;
+			const auto prefix = filePath.substr(0, idx);
+			return StrIEqu(prefix.c_str(), L"http")
+				|| StrIEqu(prefix.c_str(), L"https")
+				|| StrIEqu(prefix.c_str(), L"ftp")
+				|| StrIEqu(prefix.c_str(), L"file");
 			}();
 
 		if (bUrl || StrEmpty(key.c_str())) {
