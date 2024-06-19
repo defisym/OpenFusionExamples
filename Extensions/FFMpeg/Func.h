@@ -330,16 +330,20 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
 		}
 
+		// update state
+		rdPtr->bOpen = true;
+		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
+		*rdPtr->pFilePath = filePath;
+
 		// update display
 		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
 		// display first valid frame
 		SetPositionGeneral(rdPtr, static_cast<int>(ms));
 
-		// update state
-		rdPtr->bOpen = true;
-		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
-		*rdPtr->pFilePath = filePath;
+		// update FFMpeg
+		// audio pause is updated in handle routine, in case event cost a long time
+		// rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay, false);
 
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
 		rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay);
