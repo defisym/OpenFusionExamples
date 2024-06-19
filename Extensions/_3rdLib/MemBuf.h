@@ -36,6 +36,10 @@ public:
 		return this->pSrcBuf;
 	}
 
+	inline int getSrcSize() const {
+		return srcBufSize;
+	}
+
 	inline uint8_t* get() const {
 		return pBuf;
 	}
