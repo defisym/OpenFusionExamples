@@ -332,8 +332,9 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		// update state
 		rdPtr->bOpen = true;
-		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 		*rdPtr->pFilePath = filePath;
+		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
+		rdPtr->bPlayStateUpdated = true;
 
 		// update display
 		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
@@ -346,7 +347,6 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		// rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay, false);
 
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
-		rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay);
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);

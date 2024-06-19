@@ -176,29 +176,19 @@ short WINAPI DLLExport Action_CloseVideo(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_PlayVideo(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->bPlay) {
-		return 0;
-	}
+	if (rdPtr->bPlay) { return 0; }
 
 	rdPtr->bPlay = true;
-
-	if (rdPtr->pFFMpeg != nullptr) {
-		rdPtr->pFFMpeg->set_pause(false);
-	}
+	rdPtr->bPlayStateUpdated = true;
 
 	return 0;
 }
 
 short WINAPI DLLExport Action_PauseVideo(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->bPlay) {
-		return 0;
-	}
+	if (!rdPtr->bPlay) { return 0; }
 
 	rdPtr->bPlay = false;
-
-	if (rdPtr->pFFMpeg != nullptr) {
-		rdPtr->pFFMpeg->set_pause(true);
-	}
+	rdPtr->bPlayStateUpdated = true;
 
 	return 0;
 }
@@ -207,7 +197,6 @@ short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2)
 	int newVolume = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->volume = min(100, max(0, newVolume));
-
 	if (rdPtr->pFFMpeg != nullptr) {
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 	}

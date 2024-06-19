@@ -1487,7 +1487,7 @@ private:
 
 		const auto timeTempo = curTime - pausedTime - tempoTimer;
 
-		return  (tempoTimer - frameTimer) + timeTempo * static_cast<double>(this->atempo);
+		return (tempoTimer - frameTimer) + timeTempo * static_cast<double>(this->atempo);
 	}
 
 	inline double get_audioClock() {
@@ -1713,8 +1713,9 @@ public:
 		return this->bPause;
 	}
 
-	inline void set_pause(const bool bPause) {
+	inline void set_pause(const bool bPause, const bool bUpdatePts = true) {
 		this->bPause = bPause;
+		if (!bUpdatePts) { return; }
 
 		if (bPause) {
 			pausePts = get_curTime();
