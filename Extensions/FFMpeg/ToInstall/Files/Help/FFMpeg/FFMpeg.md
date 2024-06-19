@@ -110,6 +110,13 @@ Here follows all dlls needed by this object:
     #define AVSEEK_FLAG_FRAME    8 ///< seeking based on frame number
   ```
 
+  - *except `FFMpeg` flags, there are other flag you can use. by default, it will decode to first valid frame (accurate seek enabled & not `AVSEEK_FLAG_BYTE`), and revert back if target timestamp is 0*
+
+  ```C++
+    constexpr auto SeekFlag_NoGoto = 0x0001 << 16;    // do not decode to next valid frame
+    constexpr auto SeekFlag_NoRevert = 0x0002 << 16;  // do not revert if timestamp is 0
+  ```
+
 - Set Size
   - *set object size*
 

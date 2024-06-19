@@ -3,9 +3,15 @@
 
 #include <functional>
 
+// -----------------------------
+// Forward declaration
+// -----------------------------
+
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false);
 
-//-----------------------------
+// -----------------------------
+// Display
+// -----------------------------
 
 inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->bStretch) {
@@ -183,11 +189,16 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, 
 	}
 }
 
-constexpr auto SeekFlag_NoGoto = 0x0001 << 16;
-constexpr auto SeekFlag_NoRevert = 0x0002 << 16;
+// -----------------------------
+// Video control
+// -----------------------------
+
+constexpr auto SeekFlag_NoGoto = 0x0001 << 16;	// do not decode to next valid frame
+constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp is 0
 
 // seek video to given position
-// by default, it will decode to first valid frame, and revert back if target timestamp is 0
+// by default, it will decode to first valid frame (accurate seek enabled & not `AVSEEK_FLAG_BYTE`)
+// and revert back if target timestamp is 0
 // this behaviour can be controlled by flags
 inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	if (!rdPtr->bOpen) {
@@ -358,6 +369,10 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		}
 	}
 }
+
+// -----------------------------
+// Cache control
+// -----------------------------
 
 inline auto GetRefList(LPRDATA rdPtr) {
 	std::vector<const uint8_t*> pBufs;
