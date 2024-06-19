@@ -604,8 +604,8 @@ listed by `ffmpeg -codecs`
 | osq               | OSQ (Original Sound Quality)                                                                              |
 | paf_audio         | Amazing Studio Packed Animation File Audio                                                                |
 | pcm_alaw          | PCM A-law / G.711 A-law                                                                                   |
-| pcm_bluray        | PCM signed 16                                                                                             | 20                | 24-bit big-endian for Blu-ray media |
-| pcm_dvd           | PCM signed 20                                                                                             | 24-bit big-endian |
+| pcm_bluray        | PCM signed 16\|20\|24-bit big-endian for Blu-ray media                                                   |
+| pcm_dvd           | PCM signed 20\|24-bit big-endian                                                                          |
 | pcm_f16le         | PCM 16.8 floating point little-endian                                                                     |
 | pcm_f24le         | PCM 24.0 floating point little-endian                                                                     |
 | pcm_f32be         | PCM 32-bit floating point big-endian                                                                      |
