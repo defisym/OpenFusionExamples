@@ -240,6 +240,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 #ifdef _LOOPBENCH
+	using namespace std::literals;
+
 	auto now = std::chrono::steady_clock::now();
 	auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
@@ -254,9 +256,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	if (rdPtr->bOpen && rdPtr->bPlay) {
 #ifdef _LOOPBENCH
-		//auto now = std::chrono::steady_clock::now();
-		//auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
-
 		auto beforeDecode = std::chrono::steady_clock::now();
 #endif
 
@@ -291,7 +290,6 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		auto totalTime = rdPtr->pFFMpeg->get_videoDuration();
 		auto curTime = rdPtr->pFFMpeg->get_videoPosition();
 
-
 		//assert(totalTime >= curTime);
 	}
 #endif // _DEBUG
@@ -303,9 +301,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		&& rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
-	else {
-		return 0;
-	}
+
+	return 0;
 }
 
 // ----------------
