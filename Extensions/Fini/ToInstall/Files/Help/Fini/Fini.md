@@ -42,7 +42,7 @@ about 200X faster when writing and 10X faster when reading, but you need to **lo
 
 - Load From File
   - *if you load from file, extension will auto initialize itself.*
-  - *if the file is not encrypted, keep the key section empty.*
+  - *if the file is not [encrypted](https://github.com/defisym/OpenFusionExamples/tree/master/Extensions/Encrypter/ToInstall/Files), keep the key section empty.*
 - Save to File
   - *if you don't want to encrypt the file, keep the key section empty.*
 
