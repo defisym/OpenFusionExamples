@@ -1,4 +1,5 @@
 // ReSharper disable CppInconsistentNaming
+// ReSharper disable CppTooWideScope
 #pragma once
 
 #include <functional>
@@ -307,28 +308,48 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 	CloseGeneral(rdPtr);
 
 	try {
-		// URL:
-		//	http://...	https://...
-		//	ftp://...	file://...
-		const auto bUrl = [&] {
-			const auto idx = filePath.find_first_of(L':');
-			if (idx == std::wstring::npos) { return false; }
-			if (filePath[idx + 1] != L'/' || filePath[idx + 2] != L'/') { return false; }
+		do {
+			// URL:
+			//	http://...	https://...
+			//	ftp://...	file://...
+			const auto bUrl = [&] {
+				const auto idx = filePath.find_first_of(L':');
+				if (idx == std::wstring::npos) { return false; }
+				if (filePath[idx + 1] != L'/' || filePath[idx + 2] != L'/') { return false; }
 
-			const auto prefix = filePath.substr(0, idx);
-			return StrIEqu(prefix.c_str(), L"http")
-				|| StrIEqu(prefix.c_str(), L"https")
-				|| StrIEqu(prefix.c_str(), L"ftp")
-				|| StrIEqu(prefix.c_str(), L"file");
-			}();
+				const auto prefix = filePath.substr(0, idx);
+				return StrIEqu(prefix.c_str(), L"http")
+					|| StrIEqu(prefix.c_str(), L"https")
+					|| StrIEqu(prefix.c_str(), L"ftp")
+					|| StrIEqu(prefix.c_str(), L"file");
+				}();
 
-		if (bUrl || StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
-		}
-		else {
+			if (bUrl) {
+				rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
+				break;
+			}
+
+			// Pointer address
+			//	validation of address is not granteed
+			const auto pData = reinterpret_cast<uint8_t*>(ston<size_t>(filePath.c_str()));  // NOLINT(performance-no-int-to-ptr)
+			const auto sz = ston<size_t>(key.c_str());
+			const auto bFromMem = pData != nullptr && sz != 0;
+
+			if(bFromMem) {
+				rdPtr->pFFMpeg = new FFMpeg(pData, sz, opt);
+				break;
+			}
+
+			// Unencrpyted file
+			if (StrEmpty(key.c_str())) {
+				rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
+				break;
+			}
+
+			// Encrypted file
 			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
-		}
+		} while (false);
 
 		// update state
 		rdPtr->bOpen = true;

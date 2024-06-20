@@ -76,8 +76,9 @@ Here follows all dlls needed by this object:
 
 - Open Video
   - *If open failed, extension will keep previous frame*
-  - *If key is not empty, extension will treat it as an encrypted file. Decode a normal file in encrypted way usually will crash. You can encrypt files by another extension.*
-  - *Encrypt & decrypt are based on AES so without your key no one can get your file, unless they dump it from memory.*
+  - *If filename is an URL, e.g., [Apple iPhone X](https://www.apple.com/105/media/us/iphone-x/2017/01df5b43-28e4-4848-bf20-490c34a926a7/films/feature/iphone-x-feature-tpl-cc-us-20170912_1920x1080h.mp4), the key will be ignored. Note that player may freeze if play over a bad network connection. This lag can be reduced by moving queue to another thread, which is not implemented*
+  - *If filename and key can be convert to number and it's non-zero, then filename will be treat to the data address, key is size of data. Note that extension will not check if the address is valid, and you should not release it before you close the video.*
+  - *If key is not empty, extension will treat it as an encrypted file. Decode a normal file in encrypted way usually will crash. You can encrypt files by [Encrypter](https://github.com/defisym/OpenFusionExamples/tree/master/Extensions/Encrypter/ToInstall/Files). Encrypt & decrypt are based on AES so without your key no one can get your file, unless they dump it from memory. Play encrypted videos may cost more memory as decrypt stream is not implemented*
 - Open Video To
   - *Open video to a given timestamp*
 
