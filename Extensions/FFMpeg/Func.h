@@ -107,8 +107,8 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 			for (int x = 0; x < width; x++) {
 				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
-				auto curAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
-				pAlphaData[0] = *curAlpha;
+				const auto pCurAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
+				pAlphaData[0] = pCurAlpha[0];
 			}
 #endif
 #else
