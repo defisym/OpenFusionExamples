@@ -169,6 +169,11 @@ inline bool SaveData(std::string& output,
 	return to_byte_string(output, pSrc, len, codePage);
 }
 
+// ------------------------------------------
+// Trim
+//	char to trim: space, \t \n \r \f \v
+// ------------------------------------------
+
 inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
 	while (pStart[0] == L' ') {
 		pStart++;
