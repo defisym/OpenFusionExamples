@@ -354,6 +354,7 @@ private:
 
 	bool bUpdateSwr = true;
 	SwrContext* swrContext = nullptr;
+	AVChannelLayout targetChannelLayout = {};
 
 	AVStream* pVideoStream = nullptr;
 	AVStream* pAudioStream = nullptr;
@@ -468,8 +469,6 @@ private:
 #endif
 
 	inline void init_SwrContext(const AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
-		AVChannelLayout targetChannelLayout = {};
-		av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
 		const auto ret = swr_alloc_set_opts2(&swrContext,
 			&targetChannelLayout, TARGET_SAMPLE_FORMAT, TARGET_SAMPLE_RATE,
 			in_ch_layout, in_sample_fmt, in_sample_rate,
@@ -936,6 +935,7 @@ private:
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
 			set_audioTempo(ATEMPO_DEFAULT);
+			av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
 		}
 #pragma endregion
 
@@ -1418,18 +1418,18 @@ private:
 					pBaseFrame->sample_rate);
 			}
 
-			// 计算转换后的sample个数 a * b / c
-			// https://blog.csdn.net/u013346305/article/details/48682935
+			// sample after convert: a * b / c
+			// https://ffmpeg.org/doxygen/7.0/resample_audio_8c-example.html
 			const int dst_nb_samples = 
 				static_cast<int>(av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
 				+ pBaseFrame->nb_samples,
 				TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, static_cast<AVRounding>(1)));
 
-			// 转换，返回值为转换后的sample个数
+			// return number of samples output per channel
 			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples,
 				pBaseFrame->data, pBaseFrame->nb_samples);
 
-			const auto channels = pBaseFrame->ch_layout.nb_channels;
+			const auto channels = targetChannelLayout.nb_channels;
 			const auto pcm_bytes = 2 * channels;
 			const auto audioSize = channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
 
