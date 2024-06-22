@@ -58,15 +58,11 @@ extern "C" {
 #include <SDL.h>
 #include <SDL_thread.h>
 
+// SDL audio
 constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
 
 constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto AUDIO_BUFFER_SIZE = (MAX_AUDIO_FRAME_SIZE * 3) / 2;
-
-constexpr auto MAX_AUDIOQ_SIZE = 5 * 16 * 1024;
-constexpr auto MAX_VIDEOQ_SIZE = 5 * 256 * 1024;
-
-constexpr auto PROBE_SIZE = 32 * 4096;
 
 // This object will convert data to the following format for playing
 constexpr auto TARGET_CHANNEL_NUMBER = 2;
@@ -81,8 +77,16 @@ constexpr auto ATEMPO_DEFAULT = 1.0f;
 constexpr auto ATEMPO_MAX = 32.0f;
 #endif
 
+// Probe
+constexpr auto PROBE_SIZE = 32 * 4096;
+
+// Sync
 constexpr auto AV_SYNC_THRESHOLD = 0.01;
 constexpr auto AV_NOSYNC_THRESHOLD = 10.0;
+
+// Queue size
+constexpr auto MAX_AUDIOQ_SIZE = 5 * 16 * 1024;
+constexpr auto MAX_VIDEOQ_SIZE = 5 * 256 * 1024;
 
 // Queue state
 constexpr auto END_OF_QUEUE = -5;
@@ -377,11 +381,11 @@ private:
 #pragma endregion
 
 #pragma region Audio
-	//保存解码一个packet后的多帧原始音频数据
+	// buffer that holds PCM audio data
 	uint8_t* audio_buf = nullptr;
-	//解码后的多帧音频数据长度
+	// decoded audio data length
 	unsigned int audio_buf_size = 0;
-	//累计写入stream的长度
+	// total audio data write into stream
 	unsigned int audio_buf_index = 0;
 
 	double audioCallbackStartPts = 0;
@@ -704,8 +708,8 @@ private:
 		if (!fmt) { fmt = init_Probe(pBuffer, bfSz); }
 		if (!fmt) { return false; }
 
-		//https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
-		//might crash in avformat_open_input due to access violation if not set
+		// might crash in avformat_open_input due to access violation if not set
+		// https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
 		(*ppFormatContext)->iformat = fmt;
 		(*ppFormatContext)->pb = *ppAvioContext;
 		(*ppFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
@@ -990,8 +994,8 @@ private:
 				seek_target, seek_target, seek_target,
 				-1 * flags);
 
-		//https://stackoverflow.com/questions/45526098/repeating-ffmpeg-stream-libavcodec-libavformat
-		//avio_seek(pFormatContext->pb, 0, SEEK_SET);
+		// https://stackoverflow.com/questions/45526098/repeating-ffmpeg-stream-libavcodec-libavformat
+		// avio_seek(pFormatContext->pb, 0, SEEK_SET);
 
 		return response;
 	}
@@ -1332,10 +1336,6 @@ private:
 
 		videoPts *= av_q2d(pVideoStream->time_base);
 
-		//if (pFrame->key_frame == 1) {
-		//	firstKeyFrame = (std::min)(videoPts, firstKeyFrame);
-		//}
-
 #ifdef _CONSOLE
 		if (bJumped) {
 			printf("Cur video pts: %f\n", videoPts);
@@ -1362,6 +1362,7 @@ private:
 
 	// This function will handle the av_frame_unref
 	// av_packet_unref is handled by caller
+	// return the decoded audio data length when success
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
 	inline int decode_apacket(AVCodecContext* pACodecContext, const AVPacket* pAPacket,
 		AVFrame* pFrame, AVFrame* pLastFrame) {
@@ -2081,29 +2082,22 @@ public:
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
-
 		setter(stream, 0, len);
 
 		bool bValid = !bNoAudio && !bExit && !bPause && !bSeeking;
-
-		if (!bValid) {
-			return 0;
-		}
+		if (!bValid) { return 0; }
 
 		this->audioCallbackStartPts = audioClock;
 		this->audioCallbackStartTimer = get_curTime();
 
-		//检查音频缓存的剩余长度
+		// check the lenth remain in audio cache
 		while (len > 0) {
-			if (this->bAudioCallbackPause) {
-				//SDL_CondWait(cond_audioCallbackPause, mutex_audio);
-				break;
-			}
+			if (this->bAudioCallbackPause) { break; }
 
-			//检查是否需要执行解码操作
+			// check if we need to decode
 			if (audio_buf_index >= audio_buf_size) {
 				// We have already sent all our data; get more
-				// 从缓存队列中提取数据包、解码，并返回解码后的数据长度，audio_buf缓存中可能包含多帧解码后的音频数据
+				// decode new frame, and return the data length. audio_buf may contain more than one frame data				
 				int response = fill_decode([&] () {
 					return decode_audioFrame();
 				});
@@ -2114,34 +2108,26 @@ public:
 					memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 				}
 				else {
-					//返回packet中包含的原始音频数据长度(多帧)						
+					// return the audio data length
 					audio_buf_size = response;
 				}
 
-				//初始化累计写入缓存长度
+				// reset write index
 				audio_buf_index = 0;
 			}
 
-			//计算解码缓存剩余长度
+			// calculate the remain length of decode cache, protect if exceeds
 			int wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
+			if (wt_stream_len > len) { wt_stream_len = len; }
 
-			//检查每次写入缓存的数据长度是否超过指定长度(1024)
-			if (wt_stream_len > len) {
-				//指定长度从解码的缓存中取数据
-				wt_stream_len = len;
-			}
-
-			//每次从解码的缓存数据中以指定长度抽取数据并写入stream传递给声卡
+			// mix audio steam from given index
 			mixer(stream, audio_buf + audio_buf_index, len, volume);
 
-			//更新解码音频缓存的剩余长度
+			// update
 			len -= wt_stream_len;
-			//更新缓存写入位置
 			stream += wt_stream_len;
-			//更新累计写入缓存数据长度
 			audio_buf_index += wt_stream_len;
 		}
-
 
 		return 0;
 	}
