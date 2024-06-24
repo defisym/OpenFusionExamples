@@ -83,7 +83,12 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		logOpt.bLoginCalled = false;
 		logOpt.bUserLogin = false;
 
-		rdPtr->pData->bEnable = EnablePlatform(L"Platform/NoEpic");
+		rdPtr->pData->bEnable =
+#ifdef PLATFORM_ENABLE_CONTROL
+			EnablePlatform(L"Platform/NoEpic");
+#else
+			true;
+#endif
 		if (rdPtr->pData->bEnable) { rdPtr->pData->EOSInit(edPtr); }
 
 		SetExtUserData(rdPtr->pData);

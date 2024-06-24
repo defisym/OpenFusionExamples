@@ -22,6 +22,8 @@
 #define	MINBUILD	292
 #endif
 
+// Define this flag to contorl enable by file
+#define PLATFORM_ENABLE_CONTROL
 
 #ifdef _DEBUG
 #include	<assert.h>
