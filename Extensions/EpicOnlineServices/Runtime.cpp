@@ -122,7 +122,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 	if (!rdPtr->pData->bEnable) { return 0; }
 
 	// wait for callback complete, to avoid crash
-	rdPtr->pData->EOSWaitForCallbackComplete();
+	//rdPtr->pData->EOSWaitForCallbackComplete();
 
 	// No errors
 	return 0;
@@ -138,10 +138,11 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr) {
 	if (!rdPtr->pData->bEnable) { return 0; }
 
 	rdPtr->pData->EOSUpdate();
-	rdPtr->pData->EOSAutoLogin([=] (bool bSuccess) {
+	rdPtr->pData->EOSAutoLogin([] (GlobalData* pData, bool bSuccess) {
 		// must be here as AddEvent / CallEvent has no effect in CreateRunObject
 		// async callback from different thread, must capture by value
-		rdPtr->pData->logOpt.bUserLogin = bSuccess;
+		pData->logOpt.bUserLogin = bSuccess;
+		const auto rdPtr = pData->rdPtr;
 		AddEvent(ON_LoginComplete);
 
 #ifdef _DEBUG
