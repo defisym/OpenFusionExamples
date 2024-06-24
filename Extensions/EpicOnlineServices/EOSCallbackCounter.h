@@ -2,6 +2,10 @@
 
 #include <atomic>
 
+enum class CallbackType {
+	
+};
+
 class CallbackCounter {
 private:
 	std::atomic<size_t> callbackCount = 0;
@@ -14,8 +18,13 @@ public:
 
 class CallbackCounterHelper {
 public:
+	CallbackCounterHelper(const CallbackCounterHelper&) = delete;
+	CallbackCounterHelper(CallbackCounterHelper&&) = delete;
+	CallbackCounterHelper& operator=(const CallbackCounterHelper&) = delete;
+	CallbackCounterHelper& operator=(CallbackCounterHelper&&) = delete;
+
 	CallbackCounter& callbackCounter;
-	CallbackCounterHelper(CallbackCounter& cc) : callbackCounter(cc) {}
+	explicit CallbackCounterHelper(CallbackCounter& cc) : callbackCounter(cc) {}
 	~CallbackCounterHelper() {
 		callbackCounter.FinishCallback();
 	}
