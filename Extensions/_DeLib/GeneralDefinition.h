@@ -404,8 +404,10 @@ inline bool NearlyEqualCore(const T a, const T b,
 	if (a == b) return true;  // NOLINT(clang-diagnostic-float-equal)
 
 	const auto diff = std::abs(a - b);
-	const auto norm = (std::min)((std::abs(a) + std::abs(b)), (std::numeric_limits<T>::max)());
-	// or even faster: std::min(std::abs(a + b), std::numeric_limits<float>::max());
+	// or even faster:
+	//const auto norm = (std::min)(std::abs(a + b),
+	const auto norm = (std::min)(std::abs(a) + std::abs(b),
+		(std::numeric_limits<T>::max)());
 	// keeping this commented out until I update figures below
 	return diff < (std::max)(abs_th, epsilon * norm);
 }
