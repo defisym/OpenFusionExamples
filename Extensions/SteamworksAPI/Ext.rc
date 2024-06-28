@@ -206,6 +206,11 @@ BEGIN
             MENUITEM "Install DLC", IDMN_ACTION_ID
 		END
         MENUITEM SEPARATOR
+        POPUP "Inventory"
+        BEGIN
+            MENUITEM "Trigger Item Drop", IDMN_ACTION_TID
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -381,6 +386,9 @@ BEGIN
 	M_COUNTTHISSESSION		 "Count This Session"
 	M_SESSIONLENGTH			 "Session Length"
 	M_GOTSFLAG			 	 "Game Overlay To Store Flag, 0 = Open store page, 1 = Add to Cart & Open store page, 2 = Add to Cart & Open cart page"
+
+    M_ACTION_TID             "Trigger Item %0 Drop"
+    M_DLT                    "Drop List Definition"
 END
 
 STRINGTABLE DISCARDABLE 

@@ -52,7 +52,7 @@ private:
 
 	//std::vector<SteamCallbackClass*> pCallbackClasses;
 
-	SteamAchAndStat* pAchAndStat = nullptr;
+	SteamAchAndStat* pSteamAchAndStat = nullptr;
 	SteamInv* pSteamInventory = nullptr;
 
 	SteamMicroTxn* pSteamMicroTxn = nullptr;
@@ -84,7 +84,7 @@ public:
 		buildID(SteamApps()->GetAppBuildId()) {
 		InitSteamCommandLine();
 
-		pAchAndStat = new SteamAchAndStat(&refreshTasks);
+		pSteamAchAndStat = new SteamAchAndStat(&refreshTasks);
 		pSteamInventory = new SteamInv(&refreshTasks);
 
 		pSteamMicroTxn = new SteamMicroTxn();
@@ -96,7 +96,9 @@ public:
 		pSteamRemote = new SteamRemote();
 	}
 	~SteamUtilities() {
-		delete pAchAndStat;
+		delete pSteamAchAndStat;
+		delete pSteamInventory;
+
 		delete pSteamMicroTxn;
 		delete pSteamRichPresence;
 		delete pSteamScreenshot;
@@ -138,7 +140,7 @@ public:
 	// Impl Class
 	//------------
 
-	inline SteamAchAndStat* GetAchAndStat() const { return pAchAndStat; }
+	inline SteamAchAndStat* GetAchAndStat() const { return pSteamAchAndStat; }
 	inline SteamInv* GetSteamInventory() const { return pSteamInventory; }
 
 	inline SteamMicroTxn* GetMicroTxn() const { return pSteamMicroTxn; }

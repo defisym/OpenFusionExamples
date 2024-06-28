@@ -51,8 +51,9 @@
 #define	ACT_ACTION_SARS					14
 #define	ACT_ACTION_AGOTS				15
 #define	ACT_ACTION_ID					16
+#define	ACT_ACTION_TID					17
 
-#define	ACT_LAST						17
+#define	ACT_LAST						18
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

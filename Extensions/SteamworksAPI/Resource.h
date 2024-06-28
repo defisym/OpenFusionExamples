@@ -59,6 +59,7 @@
 #define	IDMN_ACTION_SARS 			25014
 #define	IDMN_ACTION_AGOTS 			25015
 #define	IDMN_ACTION_ID 				25016
+#define	IDMN_ACTION_TID				25017
 
 // Action strings
 #define M_ACTION_UA                 5000
@@ -83,6 +84,7 @@
 #define	M_ACTION_SARS 				5014
 #define	M_ACTION_AGOTS 				5015
 #define	M_ACTION_ID 				5016
+#define	M_ACTION_TID 				5017
 
 
 // Titles of action parameters
@@ -159,6 +161,7 @@
 #define M_MT_NAME						6502
 #define M_MT_STEP						6503
 #define M_APPID							6504
+#define M_DLT							6505
 
 //	EXPRESSIONS
 //---------------------

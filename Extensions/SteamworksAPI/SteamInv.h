@@ -3,9 +3,17 @@
 #include "SteamInclude.h"
 
 class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
+	using OnInventoryResultReady = std::function<void(bool)>;
+	OnInventoryResultReady onInventoryResultReadyCallback = nullptr;
+
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<SteamInventoryResultReady_t>([this] (const SteamInventoryResultReady_t* pCallback) {
 			const auto bCallbackSuccess = pCallback->m_result == k_EResultOK;
+
+			if (onInventoryResultReadyCallback != nullptr) {
+				onInventoryResultReadyCallback(bCallbackSuccess);
+			}
+
 			SteamInventory()->DestroyResult(pCallback->m_handle);
 			return bCallbackSuccess;
 			}));
@@ -20,6 +28,10 @@ public:
 		SteamInv::InitCallback();
 	}
 	~SteamInv() override = default;
+
+	inline void SetCallback(const OnInventoryResultReady& callback) {
+		onInventoryResultReadyCallback = callback;
+	}
 
 #ifdef _DEBUG
 private:

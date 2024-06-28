@@ -65,6 +65,7 @@ short actionsInfos[]=
 
 		IDMN_ACTION_AGOTS, M_ACTION_AGOTS,	ACT_ACTION_AGOTS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_APPID, M_GOTSFLAG, 
 		IDMN_ACTION_ID, M_ACTION_ID, ACT_ACTION_ID, 0, 1, PARAM_EXPRESSION, M_APPID, 
+		IDMN_ACTION_TID, M_ACTION_TID, ACT_ACTION_TID, 0, 1, PARAM_EXPRESSION, M_DLT,
 
 		};
 
@@ -399,6 +400,16 @@ short WINAPI DLLExport Action_InstallDLC(LPRDATA rdPtr, long param1, long param2
 	return 0;
 }
 
+short WINAPI DLLExport Action_TriggerItemDrop(LPRDATA rdPtr, long param1, long param2) {
+	const auto dropListDefinition = (SteamItemDef_t)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		SteamInv::TriggerItemDrop(dropListDefinition);
+	});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -567,6 +578,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 
 			Action_ActivateGameOverlayToStore,
 			Action_InstallDLC,
+
+			Action_TriggerItemDrop,
 
 			0
 			};
