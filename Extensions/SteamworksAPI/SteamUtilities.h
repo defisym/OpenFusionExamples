@@ -12,6 +12,7 @@
 #include "SteamScreenshot.h"
 #include "SteamGamepadTextInput.h"
 #include "SteamDLC.h"
+#include "SteamInv.h"
 
 #include "SteamRemote.h"
 
@@ -52,6 +53,8 @@ private:
 	//std::vector<SteamCallbackClass*> pCallbackClasses;
 
 	SteamAchAndStat* pAchAndStat = nullptr;
+	SteamInv* pSteamInventory = nullptr;
+
 	SteamMicroTxn* pSteamMicroTxn = nullptr;
 	SteamRichPresence* pSteamRichPresence = nullptr;
 	SteamScreenshot* pSteamScreenshot = nullptr;
@@ -82,6 +85,8 @@ public:
 		InitSteamCommandLine();
 
 		pAchAndStat = new SteamAchAndStat(&refreshTasks);
+		pSteamInventory = new SteamInv(&refreshTasks);
+
 		pSteamMicroTxn = new SteamMicroTxn();
 		pSteamRichPresence = new SteamRichPresence();
 		pSteamScreenshot = new SteamScreenshot();
@@ -134,6 +139,8 @@ public:
 	//------------
 
 	inline SteamAchAndStat* GetAchAndStat() const { return pAchAndStat; }
+	inline SteamInv* GetSteamInventory() const { return pSteamInventory; }
+
 	inline SteamMicroTxn* GetMicroTxn() const { return pSteamMicroTxn; }
 	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
 	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }

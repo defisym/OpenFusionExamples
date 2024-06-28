@@ -211,6 +211,9 @@
     <ClInclude Include="..\_3rdLib\PlatformUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SteamInv.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP">
