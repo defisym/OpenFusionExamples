@@ -35,7 +35,7 @@ private:
 	}
 
 public:
-	SteamAchAndStat(RefreshTasks* pTasks)
+	explicit SteamAchAndStat(RefreshTasks* pTasks)
 		: SteamRefreshClass(pTasks) {
 		SteamAchAndStat::InitCallback();
 		CallCallback([]() {
