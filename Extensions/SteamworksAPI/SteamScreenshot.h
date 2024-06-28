@@ -15,7 +15,7 @@ private:
 			const auto bSuccess = pCallback->m_eResult == k_EResultOK;
 			handle = pCallback->m_hLocal;
 
-			if (bSuccess) {
+			if (bSuccess && onScreenshotCallback != nullptr) {
 				onScreenshotCallback();
 			}
 
