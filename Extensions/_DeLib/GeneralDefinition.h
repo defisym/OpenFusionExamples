@@ -396,8 +396,8 @@ inline void UpdateRange(T& v, T minv, T maxv) {
 template<typename T>
 inline bool NearlyEqualCore(const T a, const T b,
 						// those defaults are arbitrary and could be removed
-						const T epsilon ,
-						const T abs_th ) {
+						const T epsilon,
+						const T abs_th) {
 	//assert(std::numeric_limits<float>::epsilon() <= epsilon);
 	//assert(epsilon < 1.f);
 
@@ -424,4 +424,11 @@ inline bool NearlyEqualDBL(const double a, const double b,
 						const double epsilon = 128 * DBL_EPSILON,
 						const double abs_th = DBL_MIN) {
 	return NearlyEqualCore<double>(a, b, epsilon, abs_th);
+}
+
+inline bool NearlyEqualLDBL(const long double a, const long double b,
+						// those defaults are arbitrary and could be removed
+						const long double epsilon = 128 * LDBL_EPSILON,
+						const long double abs_th = LDBL_MIN) {
+	return NearlyEqualCore<long double>(a, b, epsilon, abs_th);
 }
