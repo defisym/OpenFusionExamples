@@ -22,8 +22,26 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 				if (!bCallbackSuccess) { break; }
 				if (!CheckResultSteamID(pCallback)) { break; }
 				if (!GetResultItems(pCallback)) { break; }
-				if (!onInventoryResultReadyCallback) { break; }
 
+				// if user has it, update
+				const auto playerItemDetailIt = std::ranges::remove_if(playerItems, [&] (SteamItemDetails_t& playerItemDetail) {
+					const auto itemDetailIt = std::ranges::find_if(itemDetails, [&] (const SteamItemDetails_t& itemDetail) {
+						return playerItemDetail.m_itemId == itemDetail.m_itemId;
+					});
+					if (itemDetailIt == itemDetails.end()) { return false; }
+					if (itemDetailIt->m_unFlags & k_ESteamItemRemoved) { return true; }
+
+					playerItemDetail = *itemDetailIt;
+					itemDetails.erase(itemDetailIt);
+
+					return false;
+				}).begin();
+				playerItems.erase(playerItemDetailIt, playerItems.end());
+
+				// if user doesn't have it, add
+				playerItems.insert(playerItems.end(), itemDetails.begin(), itemDetails.end());
+
+				if (!onInventoryResultReadyCallback) { break; }
 				onInventoryResultReadyCallback(bCallbackSuccess);
 			} while (false);
 
@@ -31,11 +49,10 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 			return bCallbackSuccess;
 			}));
 		AddCallback(GetCallBack<SteamInventoryFullUpdate_t>([this] (const SteamInventoryFullUpdate_t* pCallback) {
-			const auto vecDetails = GetResultItems(pCallback);
-
 			do {
 				if (!CheckResultSteamID(pCallback)) { break; }
 				if (!GetResultItems(pCallback)) { break; }
+
 				if (!onInventoryFullUpdateCallback) { break; }
 
 				onInventoryFullUpdateCallback();
