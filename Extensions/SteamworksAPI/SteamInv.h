@@ -5,20 +5,42 @@
 class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 	using OnInventoryResultReady = std::function<void(bool)>;
 	OnInventoryResultReady onInventoryResultReadyCallback = nullptr;
+	using OnInventoryFullUpdate = std::function<void()>;
+	OnInventoryFullUpdate onInventoryFullUpdateCallback = nullptr;
+
+	using ItemDetails = std::vector<SteamItemDetails_t>;
+	// item details get in callback
+	ItemDetails itemDetails;
+	// user item details
+	ItemDetails playerItems;
 
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<SteamInventoryResultReady_t>([this] (const SteamInventoryResultReady_t* pCallback) {
 			const auto bCallbackSuccess = pCallback->m_result == k_EResultOK;
 
-			if (onInventoryResultReadyCallback != nullptr) {
+			do {
+				if (!bCallbackSuccess) { break; }
+				if (!CheckResultSteamID(pCallback)) { break; }
+				if (!GetResultItems(pCallback)) { break; }
+				if (!onInventoryResultReadyCallback) { break; }
+
 				onInventoryResultReadyCallback(bCallbackSuccess);
-			}
+			} while (false);
 
 			SteamInventory()->DestroyResult(pCallback->m_handle);
 			return bCallbackSuccess;
 			}));
 		AddCallback(GetCallBack<SteamInventoryFullUpdate_t>([this] (const SteamInventoryFullUpdate_t* pCallback) {
 			const auto vecDetails = GetResultItems(pCallback);
+
+			do {
+				if (!CheckResultSteamID(pCallback)) { break; }
+				if (!GetResultItems(pCallback)) { break; }
+				if (!onInventoryFullUpdateCallback) { break; }
+
+				onInventoryFullUpdateCallback();
+			} while (false);
+			
 			return true;
 			}));
 	}
@@ -32,6 +54,9 @@ public:
 	inline void SetCallback(const OnInventoryResultReady& callback) {
 		onInventoryResultReadyCallback = callback;
 	}
+	inline void SetCallback(const OnInventoryFullUpdate& callback) {
+		onInventoryFullUpdateCallback = callback;
+	}
 
 #ifdef _DEBUG
 private:
@@ -44,22 +69,24 @@ public:
 #endif
 
 	template<typename T>
-	static inline auto GetResultItems(T pCallback) {
-		std::vector<SteamItemDetails_t> vecDetails;
+	static inline bool CheckResultSteamID(T pCallback) {
+		// calling SerializeResult/DeserializeResult, but it is better to be safe.
+		return SteamInventory()->CheckResultSteamID(pCallback->m_handle, SteamUser()->GetSteamID());
+	}
 
+	template<typename T>
+	inline bool GetResultItems(T pCallback) {
 		do {
-			// Ignore results that belong to some other SteamID - this normally won't happen, unless you start
-			// calling SerializeResult/DeserializeResult, but it is better to be safe.
-			if (!SteamInventory()->CheckResultSteamID(pCallback->m_handle, SteamUser()->GetSteamID())) { break; }
-
 			// get items		
 			uint32 count = 0;
 			if (!SteamInventory()->GetResultItems(pCallback->m_handle, nullptr, &count)) { break; }
-			vecDetails.resize(count);
-			if (!SteamInventory()->GetResultItems(pCallback->m_handle, vecDetails.data(), &count)) { break; }
+			itemDetails.resize(count);
+			if (!SteamInventory()->GetResultItems(pCallback->m_handle, itemDetails.data(), &count)) { break; }
+
+			return true;
 		} while (false);
 
-		return vecDetails;
+		return false;
 	}
 
 	static inline void GetAllItems() {
