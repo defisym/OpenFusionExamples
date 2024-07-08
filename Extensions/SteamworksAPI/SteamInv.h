@@ -74,9 +74,11 @@ public:
 	}
 	~SteamInv() override = default;
 
+	// OnInventoryResultReady
 	inline void SetCallback(const OnInventoryResultReady& callback) {
 		onInventoryResultReadyCallback = callback;
 	}
+	// OnInventoryFullUpdate
 	inline void SetCallback(const OnInventoryFullUpdate& callback) {
 		onInventoryFullUpdateCallback = callback;
 	}
