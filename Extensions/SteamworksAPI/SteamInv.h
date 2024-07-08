@@ -17,6 +17,20 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 	SteamInventoryResult_t hLastFullUpdate = k_SteamInventoryResultInvalid;
 
 	inline void InitCallback() override {
+		AddCallback(GetCallBack<SteamInventoryFullUpdate_t>([this] (const SteamInventoryFullUpdate_t* pCallback) {
+			// This callback triggers immediately before the ResultReady callback. We shouldn't
+			// free the result handle here, as we wil always free it at the end of ResultReady.
+			do {
+				if (!GetResultItems(pCallback)) { break; }
+				playerItems = itemDetails;
+				if (!onInventoryFullUpdateCallback) { break; }
+				onInventoryFullUpdateCallback();
+			} while (false);
+
+			// Remember that we just processed this full update to avoid doing work in ResultReady
+			hLastFullUpdate = pCallback->m_handle;
+			return true;
+			}));
 		AddCallback(GetCallBack<SteamInventoryResultReady_t>([this] (const SteamInventoryResultReady_t* pCallback) {
 			const auto bCallbackSuccess = pCallback->m_result == k_EResultOK;
 
@@ -50,36 +64,6 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 
 			SteamInventory()->DestroyResult(pCallback->m_handle);
 			return bCallbackSuccess;
-			}));
-		AddCallback(GetCallBack<SteamInventoryFullUpdate_t>([this] (const SteamInventoryFullUpdate_t* pCallback) {
-			do {
-				if (!CheckResultSteamID(pCallback)) { break; }
-				if (!GetResultItems(pCallback)) { break; }
-
-				// if user has it, update
-				const auto playerItemDetailIt = std::ranges::remove_if(playerItems, [&] (SteamItemDetails_t& playerItemDetail) {
-					const auto itemDetailIt = std::ranges::find_if(itemDetails, [&] (const SteamItemDetails_t& itemDetail) {
-						return playerItemDetail.m_itemId == itemDetail.m_itemId;
-					});
-					if (itemDetailIt == itemDetails.end()) { return true; }
-
-					playerItemDetail = *itemDetailIt;
-					itemDetails.erase(itemDetailIt);
-
-					return false;
-				}).begin();
-				playerItems.erase(playerItemDetailIt, playerItems.end());
-
-				// if user doesn't have it, add
-				playerItems.insert(playerItems.end(), itemDetails.begin(), itemDetails.end());
-
-				if (!onInventoryFullUpdateCallback) { break; }
-				onInventoryFullUpdateCallback();
-			} while (false);
-
-			// Remember that we just processed this full update to avoid doing work in ResultReady
-			hLastFullUpdate = pCallback->m_handle;
-			return true;
 			}));
 	}
 public:
