@@ -3,10 +3,10 @@
 #include "SteamInclude.h"
 
 class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
-	using OnInventoryResultReady = std::function<void(bool)>;
-	OnInventoryResultReady onInventoryResultReadyCallback = nullptr;
 	using OnInventoryFullUpdate = std::function<void()>;
 	OnInventoryFullUpdate onInventoryFullUpdateCallback = nullptr;
+	using OnInventoryResultReady = std::function<void(bool)>;
+	OnInventoryResultReady onInventoryResultReadyCallback = nullptr;
 
 	using ItemDetails = std::vector<SteamItemDetails_t>;
 	// item details get in callback
@@ -74,13 +74,13 @@ public:
 	}
 	~SteamInv() override = default;
 
-	// OnInventoryResultReady
-	inline void SetCallback(const OnInventoryResultReady& callback) {
-		onInventoryResultReadyCallback = callback;
-	}
 	// OnInventoryFullUpdate
 	inline void SetCallback(const OnInventoryFullUpdate& callback) {
 		onInventoryFullUpdateCallback = callback;
+	}
+	// OnInventoryResultReady
+	inline void SetCallback(const OnInventoryResultReady& callback) {
+		onInventoryResultReadyCallback = callback;
 	}
 
 	static inline void GenerateTestItems(const SteamItemDef_t* pArrayItemDefs, const uint32* punArrayQuantity, uint32 unArrayLength) {
