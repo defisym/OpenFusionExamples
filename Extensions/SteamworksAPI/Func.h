@@ -40,4 +40,16 @@ inline void GlobalData::UpdateSteamDLCCallback() const {
 	});
 }
 
-
+inline void GlobalData::UpdateSteamInventoryCallback() const {
+	GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		// result ready
+		pSteamUtil->GetSteamInventory()->SetCallback([&] (bool bSuccess) {
+			rdPtr->bCallbackSuccess = bSuccess;
+			CallEvent(OnInventoryResultReady);
+		});
+		// full update
+		pSteamUtil->GetSteamInventory()->SetCallback([&] () {
+			CallEvent(OnInventoryFullUpdate);
+		});
+	});
+}

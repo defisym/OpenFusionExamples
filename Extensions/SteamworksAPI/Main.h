@@ -141,6 +141,7 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 	AppId_t callBackAppID;
+	bool bCallbackSuccess;
 
 	std::wstring* pRet;
 

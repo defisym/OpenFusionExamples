@@ -70,6 +70,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->sheight = edPtr->sheight;
 #endif
 
+	rdPtr->callBackAppID = k_uAppIdInvalid;
+	rdPtr->bCallbackSuccess = false;
+
 	rdPtr->pRet = new std::wstring;
 
 	if (GetExtUserData() == nullptr) {
