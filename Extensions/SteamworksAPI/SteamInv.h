@@ -62,6 +62,7 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 				onInventoryResultReadyCallback(bCallbackSuccess);
 			} while (false);
 
+			if (pCallback->m_handle == hLastFullUpdate) { hLastFullUpdate = k_SteamInventoryResultInvalid; }
 			SteamInventory()->DestroyResult(pCallback->m_handle);
 			return bCallbackSuccess;
 			}));
