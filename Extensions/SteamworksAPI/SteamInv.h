@@ -67,6 +67,7 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 			return bCallbackSuccess;
 			}));
 	}
+
 public:
 	explicit SteamInv(RefreshTasks* pTasks)
 		: SteamRefreshClass(pTasks) {
@@ -83,7 +84,7 @@ public:
 		onInventoryResultReadyCallback = callback;
 	}
 
-	static inline void GenerateTestItems(const SteamItemDef_t* pArrayItemDefs, const uint32* punArrayQuantity, uint32 unArrayLength) {
+	static inline void GenerateTestItems(const SteamItemDef_t* pArrayItemDefs, const uint32* punArrayQuantity, const uint32 unArrayLength) {
 		SteamInventory()->GenerateItems(nullptr, pArrayItemDefs, punArrayQuantity, unArrayLength);
 	}
 	static inline void GenerateTestItems(const wchar_t* pArrayItemDefs, const wchar_t* punArrayQuantity) {
@@ -104,8 +105,8 @@ public:
 
 #ifdef _DEBUG
 	static inline void GenerateTestItems() {
-		SteamItemDef_t newItems[2] = { 110,111 };
-		uint32 quantities[2] = { 1,1 };
+		constexpr SteamItemDef_t newItems[2] = { 110,111 };
+		constexpr uint32 quantities[2] = { 1,1 };
 
 		GenerateTestItems(newItems, quantities, std::size(newItems));
 	}
@@ -137,13 +138,43 @@ public:
 		SteamInventory()->GetAllItems(&handle);
 	}
 
-	static inline void TriggerItemDrop(SteamItemDef_t dropListDefinition) {
+	static inline void TriggerItemDrop(const SteamItemDef_t dropListDefinition) {
 		SteamInventoryResult_t handle = k_SteamInventoryResultInvalid;
 		SteamInventory()->TriggerItemDrop(&handle, dropListDefinition);		
 	}
 
-	static inline void ConsumeItem(SteamItemInstanceID_t itemConsume, uint32 unQuantity) {
+	static inline void ConsumeItem(const SteamItemInstanceID_t itemConsume, const uint32 unQuantity) {
 		SteamInventoryResult_t handle = k_SteamInventoryResultInvalid;
 		SteamInventory()->ConsumeItem(&handle, itemConsume, unQuantity);
 	}
+
+	struct ItemHelper {
+		// ------------------------
+		// General
+		// ------------------------
+		static std::wstring GetItemDefinitionProperty(const SteamItemDef_t itemDef,
+			const wchar_t* pPropName, const wchar_t* pDefault = Empty_Str) {
+			uint32 bufSize = 512;
+			auto ret = std::string(bufSize, 0);
+			if (SteamInventory()->GetItemDefinitionProperty(itemDef, ConvertWStrToStr(pPropName).c_str(), ret.data(), &bufSize)
+				&& bufSize <= ret.size()) {
+				return ConvertStrToWStr(ret);
+			}
+
+			return pDefault;
+		}
+
+		// ------------------------
+		// Specific
+		// ------------------------
+		static std::wstring GetLocalizedName(const SteamItemDef_t itemDef) {
+			return GetItemDefinitionProperty(itemDef, L"name", L"(unknown)");
+		}
+		static std::wstring GetLocalizedDescription(const SteamItemDef_t itemDef) {
+			return GetItemDefinitionProperty(itemDef, L"description");
+		}
+		static std::wstring GetIconURL(const SteamItemDef_t itemDef) {
+			return GetItemDefinitionProperty(itemDef, L"icon_url");
+		}
+	};
 };
