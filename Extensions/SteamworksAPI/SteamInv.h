@@ -81,13 +81,31 @@ public:
 		onInventoryFullUpdateCallback = callback;
 	}
 
+	static inline void GenerateTestItems(const SteamItemDef_t* pArrayItemDefs, const uint32* punArrayQuantity, uint32 unArrayLength) {
+		SteamInventory()->GenerateItems(nullptr, pArrayItemDefs, punArrayQuantity, unArrayLength);
+	}
+	static inline void GenerateTestItems(const wchar_t* pArrayItemDefs, const wchar_t* punArrayQuantity) {
+		constexpr auto delimiter = L',';
+
+		const auto def = SplitString<SteamItemDef_t, wchar_t>(pArrayItemDefs, delimiter, [] (const std::wstring_view& item) {
+			return _stoi(item);
+		});
+		const auto quant = SplitString<uint32, wchar_t>(pArrayItemDefs, delimiter, [] (const std::wstring_view& item) {
+			return static_cast<uint32>(_stoi(item));
+		});
+
+		const auto sz = (std::min)(def.size(), quant.size());
+		if (sz == 0) { return; }
+
+		GenerateTestItems(def.data(), quant.data(), sz);
+	}
+
 #ifdef _DEBUG
-private:
-	SteamItemDef_t newItems[2] = { 110,111 };
-	uint32 quantities[2] = { 1,1 };
-public:
-	inline void GenerateTestItems() const {
-		SteamInventory()->GenerateItems(nullptr, newItems, quantities, std::size(newItems));
+	static inline void GenerateTestItems() {
+		SteamItemDef_t newItems[2] = { 110,111 };
+		uint32 quantities[2] = { 1,1 };
+
+		GenerateTestItems(newItems, quantities, std::size(newItems));
 	}
 #endif
 
