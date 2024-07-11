@@ -194,6 +194,9 @@ constexpr double _get_fracture(int n) {
 template<typename Arithmetic>
 //convert string to double, 5X faster than std::stod
 constexpr inline Arithmetic ston(const wchar_t* p) {
+	constexpr bool bUnsigned = std::is_unsigned_v<Arithmetic>;
+	constexpr bool bFloat = std::is_floating_point_v<Arithmetic>;
+
 	Arithmetic r = 0;
 	bool neg = false;
 
@@ -210,7 +213,7 @@ constexpr inline Arithmetic ston(const wchar_t* p) {
 		++p;
 	}
 
-	if constexpr (std::is_floating_point_v<Arithmetic>) {
+	if constexpr (bFloat) {
 		if (*p == L'.') {
 			Arithmetic f = 0;
 			int n = 0;
@@ -224,15 +227,9 @@ constexpr inline Arithmetic ston(const wchar_t* p) {
 
 			r += f * _get_fracture(n);
 		}
-
-		//if (*p != L'\0') {
-		//	return 0;
-		//}
 	}
 
-	if (neg) {
-		r = -r;
-	}
+	if constexpr (!bUnsigned) { if (neg) { r = -r; } }
 
 	return r;
 }
