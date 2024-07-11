@@ -60,6 +60,9 @@
 #define	IDMN_ACTION_AGOTS 			25015
 #define	IDMN_ACTION_ID 				25016
 #define	IDMN_ACTION_TID				25017
+#define	IDMN_ACTION_CI				25018
+#define	IDMN_ACTION_GTI				25019
+#define	IDMN_ACTION_GAI				25020
 
 // Action strings
 #define M_ACTION_UA                 5000
@@ -85,7 +88,9 @@
 #define	M_ACTION_AGOTS 				5015
 #define	M_ACTION_ID 				5016
 #define	M_ACTION_TID 				5017
-
+#define	M_ACTION_CI					5018
+#define	M_ACTION_GTI				5019
+#define	M_ACTION_GAI				5020
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
@@ -139,6 +144,9 @@
 
 #define	IDMN_CONDITION_PE				26008
 
+#define	IDMN_CONDITION_OIFU				26009
+#define	IDMN_CONDITION_OIRR				26010
+
 // Condition strings
 #define M_CONDITION_RPO					6000
 
@@ -156,12 +164,19 @@
 
 #define	M_CONDITION_PE					6008
 
+#define	M_CONDITION_OIFU				6009
+#define	M_CONDITION_OIRR				6010
+
 // Titles of condition parameters
 #define M_CND_RPO						6501
 #define M_MT_NAME						6502
 #define M_MT_STEP						6503
 #define M_APPID							6504
 #define M_DLT							6505
+#define M_IIID							6506
+#define M_QUANTITY						6507
+#define M_ITEMDEFARR					6508
+#define M_QUANTITYARR					6509
 
 //	EXPRESSIONS
 //---------------------
@@ -184,6 +199,13 @@
 
 #define	IDMN_EXPRESSION_GDDPP 				27008
 
+#define	IDMN_EXPRESSION_I_GPIC				27009
+#define	IDMN_EXPRESSION_I_GPIIID			27010
+#define	IDMN_EXPRESSION_I_GPID				27011
+#define	IDMN_EXPRESSION_I_GPIQ 				27012
+#define	IDMN_EXPRESSION_I_GPIF 				27013
+#define	IDMN_EXPRESSION_I_GIP				27014
+
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
 #define M_EXPRESSION_GSCL				7001
@@ -199,9 +221,18 @@
 
 #define	M_EXPRESSION_GDDPP				7008
 
+#define	M_EXPRESSION_I_GPIC				7009
+#define	M_EXPRESSION_I_GPIIID			7010
+#define	M_EXPRESSION_I_GPID				7011
+#define	M_EXPRESSION_I_GPIQ 			7012
+#define	M_EXPRESSION_I_GPIF 			7013
+#define	M_EXPRESSION_I_GIP				7014
+
 // Names of expression parameters
-#define M_EXP_P1				 7500
-#define	M_EXP_P2				 7501
+#define M_ITEMINDEX				 7500
+#define	M_ITEMDEF				 7501
+#define	M_ITEMPROP				 7502
+#define	M_ITEMPROPDEFAULT		 7503
 
 // Next default values for new objects
 // 

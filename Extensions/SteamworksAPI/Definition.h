@@ -6,8 +6,8 @@ constexpr auto OnMixroTxnFinish = 2;
 constexpr auto OnScreenshot = 4;
 constexpr auto OnInputDismiss = 5;
 constexpr auto OnDLCInstalled = 7;
-constexpr auto OnInventoryResultReady = 9;
-constexpr auto OnInventoryFullUpdate = 10;
+constexpr auto OnInventoryFullUpdate = 9;
+constexpr auto OnInventoryResultReady = 10;
 
 class SteamUtilities;
 

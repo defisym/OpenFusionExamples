@@ -37,6 +37,9 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ODLCIC, M_CONDITION_ODLCIC, CND_CONDITION_ODLCIC, 0, 1, PARAM_EXPRESSION, M_APPID,
 
 		IDMN_CONDITION_PE, M_CONDITION_PE, CND_CONDITION_PE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+
+		IDMN_CONDITION_OIFU, M_CONDITION_OIFU, CND_CONDITION_OIFU, 0, 0,
+		IDMN_CONDITION_OIRR, M_CONDITION_OIRR, CND_CONDITION_OIRR, 0, 0,
 		};
 
 // Definitions of parameters for each action
@@ -65,7 +68,11 @@ short actionsInfos[]=
 
 		IDMN_ACTION_AGOTS, M_ACTION_AGOTS,	ACT_ACTION_AGOTS, 0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_APPID, M_GOTSFLAG, 
 		IDMN_ACTION_ID, M_ACTION_ID, ACT_ACTION_ID, 0, 1, PARAM_EXPRESSION, M_APPID, 
+
 		IDMN_ACTION_TID, M_ACTION_TID, ACT_ACTION_TID, 0, 1, PARAM_EXPRESSION, M_DLT,
+		IDMN_ACTION_CI, M_ACTION_CI, ACT_ACTION_CI, 0, 2, PARAM_EXPSTRING, PARAM_EXPRESSION, M_IIID, M_QUANTITY,
+		IDMN_ACTION_GTI, M_ACTION_GTI, ACT_ACTION_GTI, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ITEMDEFARR, M_QUANTITYARR,
+		IDMN_ACTION_GAI, M_ACTION_GAI, ACT_ACTION_GAI, 0, 0,
 
 		};
 
@@ -85,6 +92,13 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_GGIT, M_EXPRESSION_GGIT, EXP_EXPRESSION_GGIT, EXPFLAG_STRING, 0,
 
 		IDMN_EXPRESSION_GDDPP, M_EXPRESSION_GDDPP, EXP_EXPRESSION_GDDPP, EXPFLAG_DOUBLE, 1, EXPPARAM_LONG, M_APPID,
+		
+		IDMN_EXPRESSION_I_GPIC, M_EXPRESSION_I_GPIC, EXP_EXPRESSION_I_GPIC, 0, 0,
+		IDMN_EXPRESSION_I_GPIIID, M_EXPRESSION_I_GPIIID, EXP_EXPRESSION_I_GPIIID, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_ITEMINDEX,
+		IDMN_EXPRESSION_I_GPID, M_EXPRESSION_I_GPID, EXP_EXPRESSION_I_GPID, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
+		IDMN_EXPRESSION_I_GPIQ, M_EXPRESSION_I_GPIQ, EXP_EXPRESSION_I_GPIQ, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
+		IDMN_EXPRESSION_I_GPIF, M_EXPRESSION_I_GPIF, EXP_EXPRESSION_I_GPIF, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
+		IDMN_EXPRESSION_I_GIP, M_EXPRESSION_I_GIP, EXP_EXPRESSION_I_GIP, EXPFLAG_STRING, 3, EXPPARAM_LONG, M_ITEMDEF, EXPPARAM_STRING, M_ITEMPROP, EXPPARAM_STRING, M_ITEMPROPDEFAULT,
 
 		};
 
@@ -169,11 +183,7 @@ long WINAPI DLLExport Condition_RunningOnSteamDeck(LPRDATA rdPtr, long param1, l
 }
 
 long WINAPI DLLExport Condition_OnScreenshot(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->pData->SteamUtilitiesValid()) {
-		return false;
-	}
-
-	return true;
+	return rdPtr->pData->SteamUtilitiesValid();
 }
 
 long WINAPI DLLExport Condition_OnGamepadInputDismiss(LPRDATA rdPtr, long param1, long param2) {
@@ -199,7 +209,15 @@ long WINAPI DLLExport Condition_OnDLCInstallComplete(LPRDATA rdPtr, long param1,
 		return false;
 	}
 
-	return rdPtr->callBackAppID = appID;
+	return rdPtr->callBackAppID == appID;
+}
+
+long WINAPI DLLExport Condition_OnInventoryFullUpdate(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pData->SteamUtilitiesValid();
+}
+
+long WINAPI DLLExport Condition_OnInventoryResultReady(LPRDATA rdPtr, long param1, long param2) {
+	return rdPtr->pData->SteamUtilitiesValid();
 }
 
 // ============================================================================
@@ -410,6 +428,36 @@ short WINAPI DLLExport Action_TriggerItemDrop(LPRDATA rdPtr, long param1, long p
 	return 0;
 }
 
+short WINAPI DLLExport Action_ConsumeItem(LPRDATA rdPtr, long param1, long param2) {
+	const auto itemConsume = ston<SteamItemInstanceID_t>((LPCWSTR)CNC_GetParameter(rdPtr));
+	const auto unQuantity = (uint32)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		SteamInv::ConsumeItem(itemConsume, unQuantity);
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_GenerateTestItems(LPRDATA rdPtr, long param1, long param2) {
+	const auto pArrayItemDefs = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pUnArrayQuantity = (LPCWSTR)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		SteamInv::GenerateTestItems(pArrayItemDefs, pUnArrayQuantity);
+	});
+
+	return 0;
+}
+
+short WINAPI DLLExport Action_GetAllItems(LPRDATA rdPtr, long param1, long param2) {
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		SteamInv::GetAllItems();
+	});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -524,6 +572,87 @@ long WINAPI DLLExport Expression_GetDLCDownloadProgressPercent(LPRDATA rdPtr, lo
 	});
 }
 
+long WINAPI DLLExport Expression_Inventory_GetPlayerItemCount(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->GetSteamUtilities<long>(-1,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			return static_cast<long>(playerItems.size());
+	});
+}
+
+long WINAPI DLLExport Expression_Inventory_GetPlayerItemInstanceID(LPRDATA rdPtr, long param1) {
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			if (playerItems.size() <= index) { return (long)Empty_Str; }
+
+			const auto& item = playerItems[index];
+			*rdPtr->pRet = std::format(L"{}", item.m_itemId);
+			return reinterpret_cast<long>(rdPtr->pRet->c_str());
+	});
+}
+
+long WINAPI DLLExport Expression_Inventory_GetPlayerItemDef(LPRDATA rdPtr, long param1) {
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return rdPtr->pData->GetSteamUtilities<long>(-1,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			if (playerItems.size() <= index) { return (long)Empty_Str; }
+
+			const auto& item = playerItems[index];
+			return static_cast<long>(item.m_iDefinition);
+	});
+}
+
+long WINAPI DLLExport Expression_Inventory_GetPlayerItemQuantity(LPRDATA rdPtr, long param1) {
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return rdPtr->pData->GetSteamUtilities<long>(-1,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			if (playerItems.size() <= index) { return (long)Empty_Str; }
+
+			const auto& item = playerItems[index];
+			return static_cast<long>(item.m_unQuantity);
+	});
+}
+
+long WINAPI DLLExport Expression_Inventory_GetPlayerItemFlags(LPRDATA rdPtr, long param1) {
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return rdPtr->pData->GetSteamUtilities<long>(-1,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			if (playerItems.size() <= index) { return (long)Empty_Str; }
+
+			const auto& item = playerItems[index];
+			return static_cast<long>(item.m_unFlags);
+	});
+}
+
+long WINAPI DLLExport Expression_Inventory_GetItemProp(LPRDATA rdPtr, long param1) {
+	const auto itemDef = (SteamItemDef_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto pProp = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+	const auto pDefault = (LPCWSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+			*rdPtr->pRet = SteamInv::ItemHelper::GetItemDefinitionProperty(itemDef, pProp, pDefault);
+			return reinterpret_cast<long>(rdPtr->pRet->c_str());
+	});
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -549,6 +678,9 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_OnDLCInstallComplete,
 
 			Condition_PlatformEnabled,
+			
+			Condition_OnInventoryFullUpdate,
+			Condition_OnInventoryResultReady,
 
 			0
 			};
@@ -580,6 +712,9 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_InstallDLC,
 
 			Action_TriggerItemDrop,
+			Action_ConsumeItem,
+			Action_GenerateTestItems,
+			Action_GetAllItems,
 
 			0
 			};
@@ -599,6 +734,13 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetGamepadText,
 	
 			Expression_GetDLCDownloadProgressPercent,
+
+			Expression_Inventory_GetPlayerItemCount,
+			Expression_Inventory_GetPlayerItemInstanceID,
+			Expression_Inventory_GetPlayerItemDef,
+			Expression_Inventory_GetPlayerItemQuantity,
+			Expression_Inventory_GetPlayerItemFlags,
+			Expression_Inventory_GetItemProp,
 
 			0
 			};

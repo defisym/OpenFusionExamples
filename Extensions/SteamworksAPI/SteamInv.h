@@ -93,7 +93,7 @@ public:
 		const auto def = SplitString<SteamItemDef_t, wchar_t>(pArrayItemDefs, delimiter, [] (const std::wstring_view& item) {
 			return _stoi(item);
 		});
-		const auto quant = SplitString<uint32, wchar_t>(pArrayItemDefs, delimiter, [] (const std::wstring_view& item) {
+		const auto quant = SplitString<uint32, wchar_t>(punArrayQuantity, delimiter, [] (const std::wstring_view& item) {
 			return static_cast<uint32>(_stoi(item));
 		});
 
@@ -112,6 +112,7 @@ public:
 	}
 #endif
 
+	// return true if the handle's SteamID is current user's SteamID
 	template<typename T>
 	static inline bool CheckResultSteamID(T pCallback) {
 		// calling SerializeResult/DeserializeResult, but it is better to be safe.
@@ -131,6 +132,10 @@ public:
 		} while (false);
 
 		return false;
+	}
+
+	inline const ItemDetails& GetPlayerItems() {
+		return playerItems;
 	}
 
 	static inline void GetAllItems() {
