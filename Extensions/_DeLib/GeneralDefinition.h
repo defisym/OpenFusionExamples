@@ -401,16 +401,18 @@ inline void UpdateRange(T& v, T minv, T maxv) {
 template<typename T>
 inline bool NearlyEqualCore(const T a, const T b,
 						// those defaults are arbitrary and could be removed
-						const T epsilon ,
-						const T abs_th ) {
+						const T epsilon,
+						const T abs_th) {
 	//assert(std::numeric_limits<float>::epsilon() <= epsilon);
 	//assert(epsilon < 1.f);
 
 	if (a == b) return true;  // NOLINT(clang-diagnostic-float-equal)
 
 	const auto diff = std::abs(a - b);
-	const auto norm = (std::min)((std::abs(a) + std::abs(b)), (std::numeric_limits<T>::max)());
-	// or even faster: std::min(std::abs(a + b), std::numeric_limits<float>::max());
+	// or even faster:
+	//const auto norm = (std::min)(std::abs(a + b),
+	const auto norm = (std::min)(std::abs(a) + std::abs(b),
+		(std::numeric_limits<T>::max)());
 	// keeping this commented out until I update figures below
 	return diff < (std::max)(abs_th, epsilon * norm);
 }
@@ -427,4 +429,11 @@ inline bool NearlyEqualDBL(const double a, const double b,
 						const double epsilon = 128 * DBL_EPSILON,
 						const double abs_th = DBL_MIN) {
 	return NearlyEqualCore<double>(a, b, epsilon, abs_th);
+}
+
+inline bool NearlyEqualLDBL(const long double a, const long double b,
+						// those defaults are arbitrary and could be removed
+						const long double epsilon = 128 * LDBL_EPSILON,
+						const long double abs_th = LDBL_MIN) {
+	return NearlyEqualCore<long double>(a, b, epsilon, abs_th);
 }
