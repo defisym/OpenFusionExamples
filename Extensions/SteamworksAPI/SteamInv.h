@@ -85,7 +85,8 @@ public:
 	}
 
 	static inline void GenerateTestItems(const SteamItemDef_t* pArrayItemDefs, const uint32* punArrayQuantity, const uint32 unArrayLength) {
-		SteamInventory()->GenerateItems(nullptr, pArrayItemDefs, punArrayQuantity, unArrayLength);
+		SteamInventoryResult_t handle = k_SteamInventoryResultInvalid;
+		SteamInventory()->GenerateItems(&handle, pArrayItemDefs, punArrayQuantity, unArrayLength);
 	}
 	static inline void GenerateTestItems(const wchar_t* pArrayItemDefs, const wchar_t* punArrayQuantity) {
 		constexpr auto delimiter = L',';
