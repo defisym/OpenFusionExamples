@@ -119,6 +119,11 @@
 #define M_COUNTTHISSESSION		 5524
 #define M_SESSIONLENGTH			 5525
 #define M_GOTSFLAG			 	 5526
+#define M_DLT					 5527
+#define M_IIID					 5528
+#define M_QUANTITY				 5529
+#define M_ITEMDEFARR			 5530
+#define M_QUANTITYARR			 5531
 
 
 //	Conditions
@@ -172,11 +177,6 @@
 #define M_MT_NAME						6502
 #define M_MT_STEP						6503
 #define M_APPID							6504
-#define M_DLT							6505
-#define M_IIID							6506
-#define M_QUANTITY						6507
-#define M_ITEMDEFARR					6508
-#define M_QUANTITYARR					6509
 
 //	EXPRESSIONS
 //---------------------
