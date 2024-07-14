@@ -94,14 +94,14 @@ public:
 		const auto def = SplitString<SteamItemDef_t, wchar_t>(pArrayItemDefs, delimiter, [] (const std::wstring_view& item) {
 			return _stoi(item);
 		});
-		const auto quant = SplitString<uint32, wchar_t>(punArrayQuantity, delimiter, [] (const std::wstring_view& item) {
+		const auto qty = SplitString<uint32, wchar_t>(punArrayQuantity, delimiter, [] (const std::wstring_view& item) {
 			return static_cast<uint32>(_stoi(item));
 		});
 
-		const auto sz = (std::min)(def.size(), quant.size());
+		const auto sz = (std::min)(def.size(), qty.size());
 		if (sz == 0) { return; }
 
-		GenerateTestItems(def.data(), quant.data(), sz);
+		GenerateTestItems(def.data(), qty.data(), sz);
 	}
 
 #ifdef _DEBUG
