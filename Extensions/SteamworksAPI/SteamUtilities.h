@@ -12,6 +12,7 @@
 #include "SteamScreenshot.h"
 #include "SteamGamepadTextInput.h"
 #include "SteamDLC.h"
+#include "SteamFriend.h"
 #include "SteamInv.h"
 
 #include "SteamRemote.h"
@@ -60,6 +61,7 @@ private:
 	SteamScreenshot* pSteamScreenshot = nullptr;
 	SteamGamepadTextInput* pSteamGamepadTextInput = nullptr;
 	SteamDLC* pSteamDLC = nullptr;
+	SteamFriend* pSteamFriend = nullptr;
 	
 	//------------
 	// None Callback
@@ -92,6 +94,7 @@ public:
 		pSteamScreenshot = new SteamScreenshot();
 		pSteamGamepadTextInput = new SteamGamepadTextInput();
 		pSteamDLC = new SteamDLC();
+		pSteamFriend = new SteamFriend();
 
 		pSteamRemote = new SteamRemote();
 	}
@@ -104,6 +107,7 @@ public:
 		delete pSteamScreenshot;
 		delete pSteamGamepadTextInput;
 		delete pSteamDLC;
+		delete pSteamFriend;
 		
 		delete pSteamRemote;
 	}
@@ -148,6 +152,7 @@ public:
 	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }
 	inline SteamGamepadTextInput* GetSteamGamepadTextInput() const { return pSteamGamepadTextInput; }
 	inline SteamDLC* GetSteamDLC() const { return pSteamDLC; }
+	inline SteamFriend* GetSteamFriend() const { return pSteamFriend; }
 
 	inline SteamRemote* GetRemote() const { return pSteamRemote; }
 

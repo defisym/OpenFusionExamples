@@ -74,6 +74,8 @@ short actionsInfos[]=
 		IDMN_ACTION_GTI, M_ACTION_GTI, ACT_ACTION_GTI, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ITEMDEFARR, M_QUANTITYARR,
 		IDMN_ACTION_GAI, M_ACTION_GAI, ACT_ACTION_GAI, 0, 0,
 
+		IDMN_ACTION_UFL, M_ACTION_UFL, ACT_ACTION_UFL, 0, 1, PARAM_EXPRESSION, M_FRIENDFLAG,
+
 		};
 
 // Definitions of parameters for each expression
@@ -99,6 +101,10 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_I_GPIQ, M_EXPRESSION_I_GPIQ, EXP_EXPRESSION_I_GPIQ, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
 		IDMN_EXPRESSION_I_GPIF, M_EXPRESSION_I_GPIF, EXP_EXPRESSION_I_GPIF, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
 		IDMN_EXPRESSION_I_GIP, M_EXPRESSION_I_GIP, EXP_EXPRESSION_I_GIP, EXPFLAG_STRING, 3, EXPPARAM_LONG, EXPPARAM_STRING, EXPPARAM_STRING, M_ITEMDEF, M_ITEMPROP, M_ITEMPROPDEFAULT,
+		
+		IDMN_EXPRESSION_F_GFLS, M_EXPRESSION_F_GFLS, EXP_EXPRESSION_F_GFLS, 0, 0,
+		IDMN_EXPRESSION_F_GFN, M_EXPRESSION_F_GFN, EXP_EXPRESSION_F_GFN, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FRIENDIDX,
+		IDMN_EXPRESSION_F_GFA, M_EXPRESSION_F_GFA, EXP_EXPRESSION_F_GFA, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_FRIENDIDX, M_FRIENDAVATARTYPE,
 
 		};
 
@@ -458,6 +464,16 @@ short WINAPI DLLExport Action_GetAllItems(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
+short WINAPI DLLExport Action_UpdateFriendList(LPRDATA rdPtr, long param1, long param2) {
+	const auto flags = (int)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamFriend()->UpdateFriendList(flags);
+	});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -653,6 +669,119 @@ long WINAPI DLLExport Expression_Inventory_GetItemProp(LPRDATA rdPtr, long param
 	});
 }
 
+long WINAPI DLLExport Expression_Friend_GetFriendListSize(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->GetSteamUtilities<long>(-1,
+		[&] (SteamUtilities* pSteamUtil) {
+			return pSteamUtil->GetSteamFriend()->GetFriendList().size();
+	});
+}
+
+long WINAPI DLLExport Expression_Friend_GetFriendName(LPRDATA rdPtr, long param1) {
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& friendList = pSteamUtil->GetSteamFriend()->GetFriendList();
+			if (friendList.size() <= index) { return (long)Empty_Str; }
+
+			*rdPtr->pRet = ConvertStrToWStr(SteamFriends()->GetFriendPersonaName(friendList[index]));
+			return reinterpret_cast<long>(rdPtr->pRet->c_str());
+	});
+}
+
+long WINAPI DLLExport Expression_Friend_GetFriendAvatar(LPRDATA rdPtr, long param1) {
+	enum class AvatarSize {
+		Small,
+		Medium,
+		Large,
+	};
+
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (AvatarSize)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return rdPtr->pData->GetSteamUtilities<long>((long)nullptr,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto pFriend = pSteamUtil->GetSteamFriend();
+			const auto& friendList = pFriend->GetFriendList();
+			if (friendList.size() <= index) { return (long)nullptr; }
+
+			const auto hImg = [] (const CSteamID steamID, const AvatarSize avatarSize) {
+				switch (avatarSize) {
+				case AvatarSize::Small:
+					return SteamFriends()->GetSmallFriendAvatar(steamID);
+				case AvatarSize::Medium:
+					return SteamFriends()->GetMediumFriendAvatar(steamID);
+				case AvatarSize::Large:
+					return SteamFriends()->GetLargeFriendAvatar(steamID);
+				}
+
+				// make clang tidy happy
+				return SteamFriends()->GetLargeFriendAvatar(steamID);
+			}(friendList[index], type);
+
+			auto pMemSf = [pFriend, rdPtr] (const int hImg)->LPSURFACE {
+				// get data
+				if (!pFriend->GetFriendAvatar(hImg)) { return nullptr; }
+				const auto pData = pFriend->GetFriendAvatarBuffer();
+
+				// alloc surface
+				uint32 width = 0;
+				uint32 height = 0;
+				SteamUtils()->GetImageSize(hImg, &width, &height);
+
+				const auto pMemSf = CreateSurface(32, static_cast<int>(width), static_cast<int>(height));
+				pMemSf->CreateAlpha();
+
+				const auto sfCoef = GetSfCoef(pMemSf);
+				if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
+					return nullptr;
+				}
+
+				const auto lineSz = sfCoef.pitch;
+				auto alphaSz = sfCoef.alphaSz / sfCoef.alphaByte;
+				
+				for (int y = 0; y < static_cast<int>(height); y++) {
+					const auto line = (height - 1 - y);
+					const auto pMemData = sfCoef.pData + y * lineSz;
+					const auto pImg = pData + line * lineSz;
+
+					// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
+					constexpr static auto PIXEL_BYTE = 4;
+					const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
+					const auto pBitmapAlphaOffset = pImg + (PIXEL_BYTE - 1);
+
+					for (int x = 0; x < static_cast<int>(width); x++) {
+						const auto pPixelData = reinterpret_cast<uint32*>(pMemData + x * sfCoef.byte);
+						const auto curPixel = reinterpret_cast<const uint32*>(pImg + x * PIXEL_BYTE);
+						// Steam: RGBA -> Fusion: BGRA
+						pPixelData[0] = EffectUtilities::RGBToBGR(*curPixel);
+
+						const auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
+						const auto curAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
+						pAlphaData[0] = *curAlpha;
+					}
+				}
+#ifdef _DEBUG
+				//_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
+
+				ReleaseSfCoef(pMemSf, sfCoef);
+
+				if (rdPtr->bPm) {
+					pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+				}
+
+				return pMemSf;
+				}(hImg);
+
+			return reinterpret_cast<long>(pMemSf);
+	});
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -716,6 +845,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_GenerateTestItems,
 			Action_GetAllItems,
 
+			Action_UpdateFriendList,
+
 			0
 			};
 
@@ -741,6 +872,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_Inventory_GetPlayerItemQuantity,
 			Expression_Inventory_GetPlayerItemFlags,
 			Expression_Inventory_GetItemProp,
+
+			Expression_Friend_GetFriendListSize,
+			Expression_Friend_GetFriendName,
+			Expression_Friend_GetFriendAvatar,
 
 			0
 			};

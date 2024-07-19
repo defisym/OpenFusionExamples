@@ -63,6 +63,7 @@
 #define	IDMN_ACTION_CI				25018
 #define	IDMN_ACTION_GTI				25019
 #define	IDMN_ACTION_GAI				25020
+#define	IDMN_ACTION_UFL				25021
 
 // Action strings
 #define M_ACTION_UA                 5000
@@ -91,6 +92,7 @@
 #define	M_ACTION_CI					5018
 #define	M_ACTION_GTI				5019
 #define	M_ACTION_GAI				5020
+#define	M_ACTION_UFL				5021
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
@@ -124,6 +126,7 @@
 #define M_QUANTITY				 5529
 #define M_ITEMDEFARR			 5530
 #define M_QUANTITYARR			 5531
+#define M_FRIENDFLAG			 5532
 
 
 //	Conditions
@@ -206,6 +209,10 @@
 #define	IDMN_EXPRESSION_I_GPIF 				27013
 #define	IDMN_EXPRESSION_I_GIP				27014
 
+#define	IDMN_EXPRESSION_F_GFLS				27015
+#define	IDMN_EXPRESSION_F_GFN				27016
+#define	IDMN_EXPRESSION_F_GFA				27017
+
 // Expression strings
 #define M_EXPRESSION_GCGL				7000
 #define M_EXPRESSION_GSCL				7001
@@ -228,11 +235,17 @@
 #define	M_EXPRESSION_I_GPIF 			7013
 #define	M_EXPRESSION_I_GIP				7014
 
+#define	M_EXPRESSION_F_GFLS				7015
+#define	M_EXPRESSION_F_GFN				7016
+#define	M_EXPRESSION_F_GFA				7017
+
 // Names of expression parameters
 #define M_ITEMINDEX				 7500
 #define	M_ITEMDEF				 7501
 #define	M_ITEMPROP				 7502
 #define	M_ITEMPROPDEFAULT		 7503
+#define	M_FRIENDIDX				 7504
+#define	M_FRIENDAVATARTYPE		 7505
 
 // Next default values for new objects
 // 

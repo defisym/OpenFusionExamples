@@ -58,8 +58,9 @@
 #define	ACT_ACTION_CI					18
 #define	ACT_ACTION_GTI					19
 #define	ACT_ACTION_GAI					20
+#define	ACT_ACTION_UFL					21
 
-#define	ACT_LAST						21
+#define	ACT_LAST						22
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -85,7 +86,11 @@
 #define	EXP_EXPRESSION_I_GPIF 			13
 #define	EXP_EXPRESSION_I_GIP			14
 
-#define	EXP_LAST						15
+#define	EXP_EXPRESSION_F_GFLS			15
+#define	EXP_EXPRESSION_F_GFN			16
+#define	EXP_EXPRESSION_F_GFA			17
+
+#define	EXP_LAST						18
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -155,6 +160,7 @@ typedef struct tagRDATA
 	GlobalData* pData;
 	AppId_t callBackAppID;
 	bool bCallbackSuccess;
+	bool bPm;
 
 	std::wstring* pRet;
 

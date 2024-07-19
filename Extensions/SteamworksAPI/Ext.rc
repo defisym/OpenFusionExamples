@@ -177,6 +177,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Friends"
         BEGIN
+            MENUITEM "Update Friend List",       IDMN_ACTION_UFL
+            MENUITEM SEPARATOR
             POPUP "Rich Presence"
             BEGIN
                 MENUITEM "Set Rich Presence",       IDMN_ACTION_SRP
@@ -240,7 +242,14 @@ BEGIN
         BEGIN
             MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
             MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
-        END        
+        END   
+        MENUITEM SEPARATOR
+        POPUP "Friends"
+        BEGIN
+            MENUITEM "Get Friend List Size",    IDMN_EXPRESSION_F_GFLS
+            MENUITEM "Get Friend Name",       	IDMN_EXPRESSION_F_GFN
+            MENUITEM "Get Friend Avatar",       IDMN_EXPRESSION_F_GFA
+        END
         MENUITEM SEPARATOR
         POPUP "Utilities"
         BEGIN
@@ -422,6 +431,9 @@ BEGIN
 	M_QUANTITYARR			 "Quantity Arr, E.g.,: qty_1, qty_2, ..."
 
     M_ACTION_GAI             "Get All Items"
+
+    M_ACTION_UFL             "Update Friend List, Friend Flag = %0"
+    M_FRIENDFLAG             "Friend Flag"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -478,6 +490,13 @@ BEGIN
 	M_ITEMDEF					 "Item Definition"
 	M_ITEMPROP					 "Item Property"
 	M_ITEMPROPDEFAULT			 "Default Property"
+
+	M_EXPRESSION_F_GFLS			 "GFLS ("
+	M_EXPRESSION_F_GFN			 "GFN$ ("
+	M_EXPRESSION_F_GFA			 "GFA ("
+
+	M_FRIENDIDX                  "Friend Index"
+	M_FRIENDAVATARTYPE           "Friend Avatar Type"
 END
 
 STRINGTABLE

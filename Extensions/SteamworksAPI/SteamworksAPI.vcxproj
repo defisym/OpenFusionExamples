@@ -308,6 +308,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="SteamCallback.h" />
     <ClInclude Include="SteamConcepts.h" />
     <ClInclude Include="SteamDLC.h" />
+    <ClInclude Include="SteamFriend.h" />
     <ClInclude Include="SteamGamepadTextInput.h" />
     <ClInclude Include="SteamHttp.h" />
     <ClInclude Include="SteamInclude.h" />

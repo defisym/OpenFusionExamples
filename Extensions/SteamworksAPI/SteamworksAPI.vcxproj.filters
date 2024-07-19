@@ -214,6 +214,9 @@
     <ClInclude Include="SteamInv.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
+    <ClInclude Include="SteamFriend.h">
+      <Filter>Steamworks\SteamworksHeader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP">
