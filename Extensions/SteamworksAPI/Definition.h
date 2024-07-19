@@ -6,6 +6,8 @@ constexpr auto OnMixroTxnFinish = 2;
 constexpr auto OnScreenshot = 4;
 constexpr auto OnInputDismiss = 5;
 constexpr auto OnDLCInstalled = 7;
+constexpr auto OnInventoryFullUpdate = 9;
+constexpr auto OnInventoryResultReady = 10;
 
 class SteamUtilities;
 
@@ -65,22 +67,23 @@ struct GlobalData {
 	}
 
 private:
-	inline void UpdateRdPtr(LPRDATA rdPtr) {
-		this->rdPtr = rdPtr;
-	}
+	inline void UpdateRdPtr(LPRDATA rdPtr) { this->rdPtr = rdPtr; }
 
 	inline void UpdateMicroTxnCallback() const;
 	inline void UpdateScreenshotCallback() const;
 	inline void UpdateGamepadTextInputCallback() const;
 	inline void UpdateSteamDLCCallback() const;
+	inline void UpdateSteamInventoryCallback() const;
 
 public:
 	// update rdPtr when changing frame
 	inline void Update(LPRDATA rdPtr) {
 		UpdateRdPtr(rdPtr);
+
 		UpdateMicroTxnCallback();
 		UpdateScreenshotCallback();
 		UpdateGamepadTextInputCallback();
 		UpdateSteamDLCCallback();
+		UpdateSteamInventoryCallback();
 	}
 };
