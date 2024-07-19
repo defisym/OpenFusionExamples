@@ -16,3 +16,4 @@ Files listed in gitignore are also used but remain untouched, you need to clone 
 - [CLI11](https://github.com/CLIUtils/CLI11)
 - [WinToast](https://github.com/mohabouje/WinToast)
 - [nlohmann](https://github.com/nlohmann/json)
+- [va_args_iterators](https://github.com/cormacc/va_args_iterators)

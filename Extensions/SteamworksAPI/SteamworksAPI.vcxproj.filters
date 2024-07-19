@@ -217,6 +217,9 @@
     <ClInclude Include="SteamFriend.h">
       <Filter>Steamworks\SteamworksHeader</Filter>
     </ClInclude>
+    <ClInclude Include="..\_3rdLib\va_args_iterators\pp_iter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Res\EXTICON.BMP">
