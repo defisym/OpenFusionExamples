@@ -20,8 +20,8 @@
 #include "SteamScreenshot.h"
 #include "SteamGamepadTextInput.h"
 #include "SteamDLC.h"
-#include "SteamFriend.h"
 #include "SteamInv.h"
+#include "SteamFriend.h"
 
 #include "SteamRemote.h"
 

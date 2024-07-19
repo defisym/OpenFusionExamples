@@ -251,7 +251,7 @@ constexpr inline float _stof(const wchar_t* p) {
 }
 
 constexpr inline float _stof(const std::wstring& p) {
-	return static_cast<float>(_stod(p));
+	return _stof(p.c_str());
 }
 
 constexpr inline float _stof(const std::wstring_view& str) {

@@ -176,29 +176,19 @@ short WINAPI DLLExport Action_CloseVideo(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_PlayVideo(LPRDATA rdPtr, long param1, long param2) {
-	if (rdPtr->bPlay) {
-		return 0;
-	}
+	if (rdPtr->bPlay) { return 0; }
 
 	rdPtr->bPlay = true;
-
-	if (rdPtr->pFFMpeg != nullptr) {
-		rdPtr->pFFMpeg->set_pause(false);
-	}
+	rdPtr->bPlayStateUpdated = true;
 
 	return 0;
 }
 
 short WINAPI DLLExport Action_PauseVideo(LPRDATA rdPtr, long param1, long param2) {
-	if (!rdPtr->bPlay) {
-		return 0;
-	}
+	if (!rdPtr->bPlay) { return 0; }
 
 	rdPtr->bPlay = false;
-
-	if (rdPtr->pFFMpeg != nullptr) {
-		rdPtr->pFFMpeg->set_pause(true);
-	}
+	rdPtr->bPlayStateUpdated = true;
 
 	return 0;
 }
@@ -207,7 +197,6 @@ short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2)
 	int newVolume = (int)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->volume = min(100, max(0, newVolume));
-
 	if (rdPtr->pFFMpeg != nullptr) {
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 	}
@@ -242,17 +231,11 @@ short WINAPI DLLExport Action_SetPositionWithFlag(LPRDATA rdPtr, long param1, lo
 	return 0;
 }
 
+[[deprecated ]]
 short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long param2) {
-	int audioQSize = (int)CNC_GetIntParameter(rdPtr);
-	int videoQSize = (int)CNC_GetIntParameter(rdPtr);
-
-	rdPtr->audioQSize = audioQSize == -1 ? MAX_AUDIOQ_SIZE : audioQSize;
-	rdPtr->videoQSize = videoQSize == -1 ? MAX_VIDEOQ_SIZE : videoQSize;
-
-	if (rdPtr->pFFMpeg != nullptr) {
-		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
-	}	
-
+#ifndef RUN_ONLY
+	MSGBOX(L"Queue size is now automatically managed");
+#endif
 	return 0;
 }
 
@@ -338,6 +321,7 @@ short WINAPI DLLExport Action_SetAudioTempo(LPRDATA rdPtr, long param1, long par
 
 	if (rdPtr->pFFMpeg != nullptr) {
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
+		rdPtr->atempo = rdPtr->pFFMpeg->get_audioTempo();
 	}
 
 	return 0;
@@ -420,8 +404,8 @@ long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long 
 	}
 
 	InitSurface(rdPtr->pGrabbedFrame, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);	
+	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);
+	//__SavetoClipBoard(rdPtr->pGrabbedFrame);
 
 	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
 }

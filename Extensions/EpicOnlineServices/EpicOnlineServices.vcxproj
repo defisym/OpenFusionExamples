@@ -210,7 +210,7 @@
       <OutputFile>.\Debug/Template.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "D:\Epic Games\MobiusBandAxEJb\Modules"</Command>
+      <Command>copy "$(TargetPath)" "E:\Epic Games\MobiusBandAxEJb\Modules"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy to runtime folder for test</Message>
