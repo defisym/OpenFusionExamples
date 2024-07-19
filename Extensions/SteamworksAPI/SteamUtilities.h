@@ -22,6 +22,7 @@
 #include "SteamDLC.h"
 #include "SteamInv.h"
 #include "SteamFriend.h"
+#include "SteamGameRecord.h"
 
 #include "SteamRemote.h"
 
@@ -30,7 +31,7 @@
 //------------
 #define REFRESH_CLASS SteamAchAndStat
 #define CALLBACK_CLASS SteamMicroTxn, SteamRichPresence, SteamScreenshot, \
-	SteamGamepadTextInput, SteamDLC, SteamInv, SteamFriend
+	SteamGamepadTextInput, SteamDLC, SteamInv, SteamFriend, SteamGameRecord
 
 //------------
 // None Callback
