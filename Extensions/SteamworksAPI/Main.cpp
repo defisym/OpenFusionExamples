@@ -74,6 +74,8 @@ short actionsInfos[]=
 		IDMN_ACTION_GTI, M_ACTION_GTI, ACT_ACTION_GTI, 0, 2, PARAM_EXPSTRING, PARAM_EXPSTRING, M_ITEMDEFARR, M_QUANTITYARR,
 		IDMN_ACTION_GAI, M_ACTION_GAI, ACT_ACTION_GAI, 0, 0,
 
+		IDMN_ACTION_UFL, M_ACTION_UFL, ACT_ACTION_UFL, 0, 1, PARAM_EXPRESSION, M_FRIENDFLAG,
+
 		};
 
 // Definitions of parameters for each expression
@@ -99,6 +101,10 @@ short expressionsInfos[]=
 		IDMN_EXPRESSION_I_GPIQ, M_EXPRESSION_I_GPIQ, EXP_EXPRESSION_I_GPIQ, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
 		IDMN_EXPRESSION_I_GPIF, M_EXPRESSION_I_GPIF, EXP_EXPRESSION_I_GPIF, 0, 1, EXPPARAM_LONG, M_ITEMINDEX,
 		IDMN_EXPRESSION_I_GIP, M_EXPRESSION_I_GIP, EXP_EXPRESSION_I_GIP, EXPFLAG_STRING, 3, EXPPARAM_LONG, EXPPARAM_STRING, EXPPARAM_STRING, M_ITEMDEF, M_ITEMPROP, M_ITEMPROPDEFAULT,
+		
+		IDMN_EXPRESSION_F_GFLS, M_EXPRESSION_F_GFLS, EXP_EXPRESSION_F_GFLS, 0, 0,
+		IDMN_EXPRESSION_F_GFN, M_EXPRESSION_F_GFN, EXP_EXPRESSION_F_GFN, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_FRIENDIDX,
+		IDMN_EXPRESSION_F_GFA, M_EXPRESSION_F_GFA, EXP_EXPRESSION_F_GFA, 0, 2, EXPPARAM_LONG, EXPPARAM_LONG, M_FRIENDIDX, M_FRIENDAVATARTYPE,
 
 		};
 
@@ -156,8 +162,8 @@ long WINAPI DLLExport Condition_OnMixroTxnError(LPRDATA rdPtr, long param1, long
 
 	//MSGBOX(std::format(L"Error Step {}", (int)rdPtr->pData->pSteamUtil->GetMicroTxn()->step));
 
-	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
-		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
+	return 	step == rdPtr->pData->pSteamUtil->GetSteamMicroTxn()->step
+		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetSteamMicroTxn()->name).c_str());
 }
 
 long WINAPI DLLExport Condition_OnMixroTxnFinish(LPRDATA rdPtr, long param1, long param2) {
@@ -170,8 +176,8 @@ long WINAPI DLLExport Condition_OnMixroTxnFinish(LPRDATA rdPtr, long param1, lon
 
 	//MSGBOX(std::format(L"Finish Step {}", (int)rdPtr->pData->pSteamUtil->GetMicroTxn()->step));
 
-	return 	step == rdPtr->pData->pSteamUtil->GetMicroTxn()->step
-		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetMicroTxn()->name).c_str());
+	return 	step == rdPtr->pData->pSteamUtil->GetSteamMicroTxn()->step
+		&& StrEqu(pName, ConvertStrToWStr(rdPtr->pData->pSteamUtil->GetSteamMicroTxn()->name).c_str());
 }
 
 long WINAPI DLLExport Condition_RunningOnSteamDeck(LPRDATA rdPtr, long param1, long param2) {
@@ -230,7 +236,7 @@ short WINAPI DLLExport Action_UnlockAchievement(LPRDATA rdPtr, long param1, long
 	const auto pAchievementName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetAchAndStat()->UnlockAchievement(pAchievementName);
+		pSteamUtil->GetSteamAchAndStat()->UnlockAchievement(pAchievementName);
 	});
 
 	return 0;
@@ -242,7 +248,7 @@ short WINAPI DLLExport Action_IndicateAchievementProgress(LPRDATA rdPtr, long pa
 	const auto nMaxProgress = (uint32)CNC_GetParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetAchAndStat()->IndicateAchievementProgress(pAchievementName, nCurProgress, nMaxProgress);
+		pSteamUtil->GetSteamAchAndStat()->IndicateAchievementProgress(pAchievementName, nCurProgress, nMaxProgress);
 	});
 
 	return 0;
@@ -262,7 +268,7 @@ short WINAPI DLLExport Action_SetAvgRateStat(LPRDATA rdPtr, long param1, long pa
 	const auto dSessionLength = GetFloatParam(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetAchAndStat()->SetAvgRateStat(pStatName, flCountThisSession, dSessionLength);
+		pSteamUtil->GetSteamAchAndStat()->SetAvgRateStat(pStatName, flCountThisSession, dSessionLength);
 	});
 
 	return 0;
@@ -273,7 +279,7 @@ short WINAPI DLLExport Action_SetRichPresence(LPRDATA rdPtr, long param1, long p
 	const auto pchValue = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		const auto bRet = pSteamUtil->GetRichPresence()->SetRichPresence(pchKey, pchValue);
+		const auto bRet = pSteamUtil->GetSteamRichPresence()->SetRichPresence(pchKey, pchValue);
 	});
 
 	return 0;
@@ -281,7 +287,7 @@ short WINAPI DLLExport Action_SetRichPresence(LPRDATA rdPtr, long param1, long p
 
 short WINAPI DLLExport Action_ClearRichPresence(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->GetSteamUtilities([] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetRichPresence()->ClearRichPresence();
+		pSteamUtil->GetSteamRichPresence()->ClearRichPresence();
 	});
 
 	return 0;
@@ -295,12 +301,12 @@ short WINAPI DLLExport Action_MixroTxn_SetInfo(LPRDATA rdPtr, long param1, long 
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
 		if (StrEmpty(userID)) {
-			pSteamUtil->GetMicroTxn()->SetMicroTxnInfo(
+			pSteamUtil->GetSteamMicroTxn()->SetMicroTxnInfo(
 				ConvertWStrToStr(name),
 				ConvertWStrToStr(key),
 				std::stoull(orderID));
 		}else {
-			pSteamUtil->GetMicroTxn()->SetMicroTxnInfo(
+			pSteamUtil->GetSteamMicroTxn()->SetMicroTxnInfo(
 				ConvertWStrToStr(name),
 				ConvertWStrToStr(key),
 				std::stoull(orderID),
@@ -313,7 +319,7 @@ short WINAPI DLLExport Action_MixroTxn_SetInfo(LPRDATA rdPtr, long param1, long 
 
 short WINAPI DLLExport Action_MixroTxn_GetUserInfo(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->GetSteamUtilities([] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetMicroTxn()->GetUserInfo();
+		pSteamUtil->GetSteamMicroTxn()->GetUserInfo();
 	});
 
 	return 0;
@@ -328,7 +334,7 @@ short WINAPI DLLExport Action_MixroTxn_SendRequest(LPRDATA rdPtr, long param1, l
 	const auto otherParams = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetMicroTxn()->SendRequest(itemcount, itemid, qty,
+		pSteamUtil->GetSteamMicroTxn()->SendRequest(itemcount, itemid, qty,
 		std::stoll(amount),
 		ConvertWStrToStr(description),
 		ConvertWStrToStr(otherParams));
@@ -339,7 +345,7 @@ short WINAPI DLLExport Action_MixroTxn_SendRequest(LPRDATA rdPtr, long param1, l
 
 short WINAPI DLLExport Action_MixroTxn_Finalize(LPRDATA rdPtr, long param1, long param2) {
 	rdPtr->pData->GetSteamUtilities([] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetMicroTxn()->Finalize();
+		pSteamUtil->GetSteamMicroTxn()->Finalize();
 	});
 
 	return 0;
@@ -458,6 +464,16 @@ short WINAPI DLLExport Action_GetAllItems(LPRDATA rdPtr, long param1, long param
 	return 0;
 }
 
+short WINAPI DLLExport Action_UpdateFriendList(LPRDATA rdPtr, long param1, long param2) {
+	const auto flags = (int)CNC_GetParameter(rdPtr);
+
+	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+		pSteamUtil->GetSteamFriend()->UpdateFriendList(flags);
+	});
+
+	return 0;
+}
+
 // ============================================================================
 //
 // EXPRESSIONS ROUTINES
@@ -498,13 +514,13 @@ long WINAPI DLLExport Expression_GetSteamCommandLine(LPRDATA rdPtr, long param1)
 
 long WINAPI DLLExport Expression_MixroTxn_GetStep(LPRDATA rdPtr, long param1) {
 	return rdPtr->pData->SteamUtilitiesValid()
-		? (long)rdPtr->pData->pSteamUtil->GetMicroTxn()->step
+		? (long)rdPtr->pData->pSteamUtil->GetSteamMicroTxn()->step
 		: (long)-1;
 }
 
 long WINAPI DLLExport Expression_MixroTxn_GetHTMLErrorCode(LPRDATA rdPtr, long param1) {
 	return rdPtr->pData->SteamUtilitiesValid()
-		? (long)rdPtr->pData->pSteamUtil->GetMicroTxn()->code
+		? (long)rdPtr->pData->pSteamUtil->GetSteamMicroTxn()->code
 		: (long)k_EHTTPStatusCodeInvalid;
 }
 
@@ -515,11 +531,11 @@ long WINAPI DLLExport Expression_MixroTxn_GetErrorDesc(LPRDATA rdPtr, long param
 	//This returns a pointer to the string for MMF.
 	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
 	[&] (SteamUtilities* pSteamUtil) {
-		*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetMicroTxn()->errordesc);
+		*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetSteamMicroTxn()->errordesc);
 		return (long)rdPtr->pRet->c_str();
 	},
 	[&] (SteamUtilities* pSteamUtil) {
-		return !pSteamUtil->GetMicroTxn()->errordesc.empty();
+		return !pSteamUtil->GetSteamMicroTxn()->errordesc.empty();
 	});
 }
 
@@ -530,11 +546,11 @@ long WINAPI DLLExport Expression_MixroTxn_GetTransID(LPRDATA rdPtr, long param1)
 	//This returns a pointer to the string for MMF.
 	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
 		[&] (SteamUtilities* pSteamUtil) {
-			*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetMicroTxn()->transid);
+			*rdPtr->pRet = ConvertStrToWStr(pSteamUtil->GetSteamMicroTxn()->transid);
 			return (long)rdPtr->pRet->c_str();
 	},
 		[&] (SteamUtilities* pSteamUtil) {
-			return !pSteamUtil->GetMicroTxn()->transid.empty();
+			return !pSteamUtil->GetSteamMicroTxn()->transid.empty();
 	});
 }
 
@@ -575,7 +591,7 @@ long WINAPI DLLExport Expression_GetDLCDownloadProgressPercent(LPRDATA rdPtr, lo
 long WINAPI DLLExport Expression_Inventory_GetPlayerItemCount(LPRDATA rdPtr, long param1) {
 	return rdPtr->pData->GetSteamUtilities<long>(-1,
 		[&] (SteamUtilities* pSteamUtil) {
-			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			const auto& playerItems = pSteamUtil->GetSteamInv()->GetPlayerItems();
 			return static_cast<long>(playerItems.size());
 	});
 }
@@ -589,7 +605,7 @@ long WINAPI DLLExport Expression_Inventory_GetPlayerItemInstanceID(LPRDATA rdPtr
 	//This returns a pointer to the string for MMF.
 	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
 		[&] (SteamUtilities* pSteamUtil) {
-			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			const auto& playerItems = pSteamUtil->GetSteamInv()->GetPlayerItems();
 			if (playerItems.size() <= index) { return (long)Empty_Str; }
 
 			const auto& item = playerItems[index];
@@ -603,7 +619,7 @@ long WINAPI DLLExport Expression_Inventory_GetPlayerItemDef(LPRDATA rdPtr, long 
 
 	return rdPtr->pData->GetSteamUtilities<long>(-1,
 		[&] (SteamUtilities* pSteamUtil) {
-			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			const auto& playerItems = pSteamUtil->GetSteamInv()->GetPlayerItems();
 			if (playerItems.size() <= index) { return (long)Empty_Str; }
 
 			const auto& item = playerItems[index];
@@ -616,7 +632,7 @@ long WINAPI DLLExport Expression_Inventory_GetPlayerItemQuantity(LPRDATA rdPtr, 
 
 	return rdPtr->pData->GetSteamUtilities<long>(-1,
 		[&] (SteamUtilities* pSteamUtil) {
-			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			const auto& playerItems = pSteamUtil->GetSteamInv()->GetPlayerItems();
 			if (playerItems.size() <= index) { return (long)Empty_Str; }
 
 			const auto& item = playerItems[index];
@@ -629,7 +645,7 @@ long WINAPI DLLExport Expression_Inventory_GetPlayerItemFlags(LPRDATA rdPtr, lon
 
 	return rdPtr->pData->GetSteamUtilities<long>(-1,
 		[&] (SteamUtilities* pSteamUtil) {
-			const auto& playerItems = pSteamUtil->GetSteamInventory()->GetPlayerItems();
+			const auto& playerItems = pSteamUtil->GetSteamInv()->GetPlayerItems();
 			if (playerItems.size() <= index) { return (long)Empty_Str; }
 
 			const auto& item = playerItems[index];
@@ -650,6 +666,119 @@ long WINAPI DLLExport Expression_Inventory_GetItemProp(LPRDATA rdPtr, long param
 		[&] (SteamUtilities* pSteamUtil) {
 			*rdPtr->pRet = SteamInv::ItemHelper::GetItemDefinitionProperty(itemDef, pProp, pDefault);
 			return reinterpret_cast<long>(rdPtr->pRet->c_str());
+	});
+}
+
+long WINAPI DLLExport Expression_Friend_GetFriendListSize(LPRDATA rdPtr, long param1) {
+	return rdPtr->pData->GetSteamUtilities<long>(-1,
+		[&] (SteamUtilities* pSteamUtil) {
+			return pSteamUtil->GetSteamFriend()->GetFriendList().size();
+	});
+}
+
+long WINAPI DLLExport Expression_Friend_GetFriendName(LPRDATA rdPtr, long param1) {
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	//Setting the HOF_STRING flag lets MMF know that you are a string.
+	rdPtr->rHo.hoFlags |= HOF_STRING;
+
+	//This returns a pointer to the string for MMF.
+	return rdPtr->pData->GetSteamUtilities<long>((long)Empty_Str,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto& friendList = pSteamUtil->GetSteamFriend()->GetFriendList();
+			if (friendList.size() <= index) { return (long)Empty_Str; }
+
+			*rdPtr->pRet = ConvertStrToWStr(SteamFriends()->GetFriendPersonaName(friendList[index]));
+			return reinterpret_cast<long>(rdPtr->pRet->c_str());
+	});
+}
+
+long WINAPI DLLExport Expression_Friend_GetFriendAvatar(LPRDATA rdPtr, long param1) {
+	enum class AvatarSize {
+		Small,
+		Medium,
+		Large,
+	};
+
+	const auto index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	const auto type = (AvatarSize)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+
+	return rdPtr->pData->GetSteamUtilities<long>((long)nullptr,
+		[&] (SteamUtilities* pSteamUtil) {
+			const auto pFriend = pSteamUtil->GetSteamFriend();
+			const auto& friendList = pFriend->GetFriendList();
+			if (friendList.size() <= index) { return (long)nullptr; }
+
+			const auto hImg = [] (const CSteamID steamID, const AvatarSize avatarSize) {
+				switch (avatarSize) {
+				case AvatarSize::Small:
+					return SteamFriends()->GetSmallFriendAvatar(steamID);
+				case AvatarSize::Medium:
+					return SteamFriends()->GetMediumFriendAvatar(steamID);
+				case AvatarSize::Large:
+					return SteamFriends()->GetLargeFriendAvatar(steamID);
+				}
+
+				// make clang tidy happy
+				return SteamFriends()->GetLargeFriendAvatar(steamID);
+			}(friendList[index], type);
+
+			auto pMemSf = [pFriend, rdPtr] (const int hImg)->LPSURFACE {
+				// get data
+				if (!pFriend->GetFriendAvatar(hImg)) { return nullptr; }
+				const auto pData = pFriend->GetFriendAvatarBuffer();
+
+				// alloc surface
+				uint32 width = 0;
+				uint32 height = 0;
+				SteamUtils()->GetImageSize(hImg, &width, &height);
+
+				const auto pMemSf = CreateSurface(32, static_cast<int>(width), static_cast<int>(height));
+				pMemSf->CreateAlpha();
+
+				const auto sfCoef = GetSfCoef(pMemSf);
+				if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
+					return nullptr;
+				}
+
+				const auto lineSz = sfCoef.pitch;
+				auto alphaSz = sfCoef.alphaSz / sfCoef.alphaByte;
+				
+				for (int y = 0; y < static_cast<int>(height); y++) {
+					const auto line = (height - 1 - y);
+					const auto pMemData = sfCoef.pData + y * lineSz;
+					const auto pImg = pData + line * lineSz;
+
+					// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
+					constexpr static auto PIXEL_BYTE = 4;
+					const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
+					const auto pBitmapAlphaOffset = pImg + (PIXEL_BYTE - 1);
+
+					for (int x = 0; x < static_cast<int>(width); x++) {
+						const auto pPixelData = reinterpret_cast<uint32*>(pMemData + x * sfCoef.byte);
+						const auto curPixel = reinterpret_cast<const uint32*>(pImg + x * PIXEL_BYTE);
+						// Steam: RGBA -> Fusion: BGRA
+						pPixelData[0] = EffectUtilities::RGBToBGR(*curPixel);
+
+						const auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
+						const auto curAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
+						pAlphaData[0] = *curAlpha;
+					}
+				}
+#ifdef _DEBUG
+				//_SavetoClipBoard(pMemSf, false);
+#endif // _DEBUG
+
+				ReleaseSfCoef(pMemSf, sfCoef);
+
+				if (rdPtr->bPm) {
+					pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
+				}
+
+				return pMemSf;
+				}(hImg);
+
+			return reinterpret_cast<long>(pMemSf);
 	});
 }
 
@@ -716,6 +845,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_GenerateTestItems,
 			Action_GetAllItems,
 
+			Action_UpdateFriendList,
+
 			0
 			};
 
@@ -741,6 +872,10 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_Inventory_GetPlayerItemQuantity,
 			Expression_Inventory_GetPlayerItemFlags,
 			Expression_Inventory_GetItemProp,
+
+			Expression_Friend_GetFriendListSize,
+			Expression_Friend_GetFriendName,
+			Expression_Friend_GetFriendAvatar,
 
 			0
 			};

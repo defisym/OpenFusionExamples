@@ -6,5 +6,6 @@ WinToast/*
 _FFMpeg_Ref/*
 
 nlohmann/*
+va_args_iterators/*
 
 CLI11.hpp

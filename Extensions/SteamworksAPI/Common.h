@@ -65,6 +65,7 @@
 // My header
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
+#include	"EffectUtilities.h"
 
 #include	"Func.h"
 

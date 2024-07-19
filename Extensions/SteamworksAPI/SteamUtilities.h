@@ -4,6 +4,8 @@
 #include <string>
 #include <functional>
 
+#include "va_args_iterators/pp_iter.h"
+
 #include "SteamInclude.h"
 
 #include "SteamAchAndStat.h"
@@ -13,12 +15,35 @@
 #include "SteamGamepadTextInput.h"
 #include "SteamDLC.h"
 #include "SteamInv.h"
+#include "SteamFriend.h"
+
 
 #include "SteamRemote.h"
 
 #ifdef WIN32
 #include "WindowsException.h"
 #endif
+
+//------------
+// Callback
+//------------
+#define REFRESH_CLASS SteamAchAndStat
+#define CALLBACK_CLASS SteamMicroTxn, SteamRichPresence, SteamScreenshot, \
+	SteamGamepadTextInput, SteamDLC, SteamInv, SteamFriend
+
+//------------
+// None Callback
+//------------
+#define GENERAL_CLASS SteamRemote
+
+//------------
+// GENERATE
+//------------
+#define DECLEAR_CLASS(x) x* p##x = nullptr;
+#define DELETE_CLASS(x) delete p##x;
+#define CREATE_REFRESH_CLASS(x) p##x = new x(&refreshTasks);
+#define CREATE_NONREFRESH_CLASS(x) p##x = new x();
+#define GET_CLASS(x) inline x* Get##x() const { return p##x; }
 
 class SteamUtilities {
 private:
@@ -46,32 +71,8 @@ public:
 	}
 
 private:
-	//------------
-	// Callback
-	//------------
-
-	//std::vector<SteamCallbackClass*> pCallbackClasses;
-
-	SteamAchAndStat* pSteamAchAndStat = nullptr;
-	SteamInv* pSteamInventory = nullptr;
-
-	SteamMicroTxn* pSteamMicroTxn = nullptr;
-	SteamRichPresence* pSteamRichPresence = nullptr;
-	SteamScreenshot* pSteamScreenshot = nullptr;
-	SteamGamepadTextInput* pSteamGamepadTextInput = nullptr;
-	SteamDLC* pSteamDLC = nullptr;
-	
-	//------------
-	// None Callback
-	//------------
-
-	SteamRemote* pSteamRemote = nullptr;
-
-	//------------
-	// Tasks
-	//------------
-
 	SteamRefreshClass::RefreshTasks refreshTasks;
+	PP_EACH(DECLEAR_CLASS, REFRESH_CLASS, CALLBACK_CLASS, GENERAL_CLASS);
 
 public:
 	CSteamID playerID;
@@ -84,28 +85,11 @@ public:
 		buildID(SteamApps()->GetAppBuildId()) {
 		InitSteamCommandLine();
 
-		pSteamAchAndStat = new SteamAchAndStat(&refreshTasks);
-		pSteamInventory = new SteamInv(&refreshTasks);
-
-		pSteamMicroTxn = new SteamMicroTxn();
-		pSteamRichPresence = new SteamRichPresence();
-		pSteamScreenshot = new SteamScreenshot();
-		pSteamGamepadTextInput = new SteamGamepadTextInput();
-		pSteamDLC = new SteamDLC();
-
-		pSteamRemote = new SteamRemote();
+		PP_EACH(CREATE_REFRESH_CLASS, REFRESH_CLASS);
+		PP_EACH(CREATE_NONREFRESH_CLASS, CALLBACK_CLASS, GENERAL_CLASS);
 	}
 	~SteamUtilities() {
-		delete pSteamAchAndStat;
-		delete pSteamInventory;
-
-		delete pSteamMicroTxn;
-		delete pSteamRichPresence;
-		delete pSteamScreenshot;
-		delete pSteamGamepadTextInput;
-		delete pSteamDLC;
-		
-		delete pSteamRemote;
+		PP_EACH(DELETE_CLASS, REFRESH_CLASS, CALLBACK_CLASS, GENERAL_CLASS);
 	}
 
 	//------------
@@ -140,16 +124,7 @@ public:
 	// Impl Class
 	//------------
 
-	inline SteamAchAndStat* GetAchAndStat() const { return pSteamAchAndStat; }
-	inline SteamInv* GetSteamInventory() const { return pSteamInventory; }
-
-	inline SteamMicroTxn* GetMicroTxn() const { return pSteamMicroTxn; }
-	inline SteamRichPresence* GetRichPresence() const { return pSteamRichPresence; }
-	inline SteamScreenshot* GetSteamScreenshot() const { return pSteamScreenshot; }
-	inline SteamGamepadTextInput* GetSteamGamepadTextInput() const { return pSteamGamepadTextInput; }
-	inline SteamDLC* GetSteamDLC() const { return pSteamDLC; }
-
-	inline SteamRemote* GetRemote() const { return pSteamRemote; }
+	PP_EACH(GET_CLASS, REFRESH_CLASS, CALLBACK_CLASS, GENERAL_CLASS);
 
 	//------------
 	// Refresh

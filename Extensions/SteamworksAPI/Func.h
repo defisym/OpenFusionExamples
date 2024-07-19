@@ -2,7 +2,7 @@
 
 inline void GlobalData::UpdateMicroTxnCallback() const {
 	GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetMicroTxn()->SetCallback(
+		pSteamUtil->GetSteamMicroTxn()->SetCallback(
 		[&] (SteamMicroTxn::Step step, EHTTPStatusCode code) {
 			CallEvent(OnMixroTxnError);
 		},
@@ -43,11 +43,11 @@ inline void GlobalData::UpdateSteamDLCCallback() const {
 inline void GlobalData::UpdateSteamInventoryCallback() const {
 	GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
 		// full update
-		pSteamUtil->GetSteamInventory()->SetCallback([&] () {
+		pSteamUtil->GetSteamInv()->SetCallback([&] () {
 			CallEvent(OnInventoryFullUpdate);
 		});
 		// result ready
-		pSteamUtil->GetSteamInventory()->SetCallback([&] (bool bSuccess) {
+		pSteamUtil->GetSteamInv()->SetCallback([&] (bool bSuccess) {
 			rdPtr->bCallbackSuccess = bSuccess;
 			CallEvent(OnInventoryResultReady);
 		});
