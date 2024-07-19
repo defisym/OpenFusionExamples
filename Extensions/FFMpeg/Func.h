@@ -1,15 +1,23 @@
+// ReSharper disable CppInconsistentNaming
+// ReSharper disable CppTooWideScope
 #pragma once
 
 #include <functional>
 
+// -----------------------------
+// Forward declaration
+// -----------------------------
+
 inline void CleanCache(LPRDATA rdPtr, bool forceClean = false);
 
-//-----------------------------
+// -----------------------------
+// Display
+// -----------------------------
 
 inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 	if (rdPtr->bStretch) {
-		rdPtr->rc.rcScaleX = ((float)rdPtr->swidth) / width;
-		rdPtr->rc.rcScaleY = ((float)rdPtr->sheight) / height;
+		rdPtr->rc.rcScaleX = static_cast<float>(static_cast<double>(rdPtr->swidth) / width);
+		rdPtr->rc.rcScaleY = static_cast<float>(static_cast<double>(rdPtr->sheight) / height);
 	}
 	else {
 		rdPtr->rc.rcScaleX = 1.0;
@@ -59,7 +67,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 		return;
 	}
 
-	// pMemSf must has alpha channel, see `InitSurface`
+	// pMemSf must have alpha channel, see `InitSurface`
 	auto sfCoef = GetSfCoef(pMemSf);
 	if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
 		return;
@@ -99,8 +107,8 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 
 			for (int x = 0; x < width; x++) {
 				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
-				auto curAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
-				pAlphaData[0] = *curAlpha;
+				const auto pCurAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
+				pAlphaData[0] = pCurAlpha[0];
 			}
 #endif
 #else
@@ -145,7 +153,7 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	return;
 }
 
-inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, LPSURFACE& pSf) {
+inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	if (rdPtr->pFFMpeg == nullptr) {
 		return;
 	}
@@ -182,28 +190,40 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, 
 	}
 }
 
-inline void SetPositionGeneral(LPRDATA rdPtr, int msRaw, int flags = seekFlags) {
+// -----------------------------
+// Video control
+// -----------------------------
+
+constexpr auto SeekFlag_NoGoto = 0x0001 << 16;	// do not decode to next valid frame
+constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp is 0
+
+// seek video to given position
+// by default, it will decode to first valid frame (accurate seek enabled & not `AVSEEK_FLAG_BYTE`)
+// and revert back if target timestamp is 0
+// this behaviour can be controlled by flags
+inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	if (!rdPtr->bOpen) {
 		return;
 	}
 
 	// add protection for minus position
-	msRaw = msRaw < 0 ? 0 : msRaw;
+	ms =(std::max)(ms, 0);
 
-	const auto ms = static_cast<size_t>(msRaw);
-
-	//auto pos = rdPtr->pFFMpeg->get_videoPosition();
-
-	rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-
-	if (rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE) {
-		rdPtr->pFFMpeg->goto_videoPosition(ms, [&](const unsigned char* pData, const int stride, const int height) {
+	do {
+		//auto pos = rdPtr->pFFMpeg->get_videoPosition();
+		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
+		
+		bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
+		if (!bGoto || flags & SeekFlag_NoRevert) { break; }
+		rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 			ReDisplay(rdPtr);
 			});
-	}
 
-	ReDisplay(rdPtr);
+		// revert
+		if (ms != 0 || flags & SeekFlag_NoRevert) { break; }
+		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
+	} while (false);
 }
 
 inline bool GetVideoPlayState(LPRDATA rdPtr) {
@@ -226,8 +246,8 @@ inline bool GetVideoFinishState(LPRDATA rdPtr) {
 	return rdPtr->pFFMpeg != nullptr && rdPtr->pFFMpeg->get_finishState();
 }
 
-inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key) {
-	auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
+inline Encryption* LoadMemVideo(LPRDATA rdPtr, const std::wstring& filePath, const std::wstring& key) {
+	const auto pMemVideoLib = rdPtr->pData->pMemVideoLib;
 
 	if (rdPtr->bCache) {
 		auto it = pMemVideoLib->GetItem(filePath);
@@ -237,25 +257,17 @@ inline Encryption* LoadMemVideo(LPRDATA rdPtr, std::wstring& filePath, std::wstr
 		}
 	}
 
-	bool bRetry = false;
-
-	auto pEncrypt = new Encryption;
+	const auto pEncrypt = new Encryption;
 	pEncrypt->GenerateKey(key.c_str());
 
-retry:
-	try {
-		//pEncrypt->DecryptFile(filePath.c_str());
+	try {		
 		pEncrypt->DecryptFileDirectly(filePath.c_str());
 	}
-	catch (std::bad_alloc& e) {
-		if (rdPtr->bCache && !bRetry) {
-			bRetry = true;
+	catch ([[maybe_unused]] std::bad_alloc& e) {
+		if (rdPtr->bCache) {
 			CleanCache(rdPtr, true);
-
-			goto retry;
+			pEncrypt->DecryptFileDirectly(filePath.c_str());			
 		}
-
-		throw e;
 	}
 	
 	if (rdPtr->bCache) {
@@ -292,40 +304,78 @@ inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 }
 
 inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key,
-	const FFMpegOptions& opt = FFMpegOptions(), size_t ms = 0) {
+	const FFMpegOptions& opt = FFMpegOptions(), const size_t ms = 0) {
 	CloseGeneral(rdPtr);
 
 	try {
-		if (StrEmpty(key.c_str())) {
-			rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
-		}
-		else {
+		do {
+			// URL:
+			//	http://...	https://...
+			//	ftp://...	file://...
+			const auto bUrl = [&] {
+				const auto idx = filePath.find_first_of(L':');
+				if (idx == std::wstring::npos) { return false; }
+				if (filePath[idx + 1] != L'/' || filePath[idx + 2] != L'/') { return false; }
+
+				const auto prefix = filePath.substr(0, idx);
+				return StrIEqu(prefix.c_str(), L"http")
+					|| StrIEqu(prefix.c_str(), L"https")
+					|| StrIEqu(prefix.c_str(), L"ftp")
+					|| StrIEqu(prefix.c_str(), L"file");
+				}();
+
+			if (bUrl) {
+				rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
+				break;
+			}
+
+			// Pointer address
+			//	validation of address is not granteed
+			const auto pData = reinterpret_cast<uint8_t*>(ston<size_t>(filePath.c_str()));  // NOLINT(performance-no-int-to-ptr)
+			const auto sz = ston<size_t>(key.c_str());
+			const auto bFromMem = pData != nullptr && sz != 0;
+
+			if(bFromMem) {
+				rdPtr->pFFMpeg = new FFMpeg(pData, sz, opt);
+				break;
+			}
+
+			// Unencrpyted file
+			if (StrEmpty(key.c_str())) {
+				rdPtr->pFFMpeg = new FFMpeg(filePath, opt);
+				break;
+			}
+
+			// Encrypted file
 			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
 			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
-		}
+		} while (false);
 
-		rdPtr->pFFMpeg->set_queueSize(rdPtr->audioQSize, rdPtr->videoQSize);
-
+		// update state
 		rdPtr->bOpen = true;
-		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 		*rdPtr->pFilePath = filePath;
+		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
+		rdPtr->bPlayStateUpdated = true;
 
-		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
+		// update display
+		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+		// display first valid frame
+		SetPositionGeneral(rdPtr, static_cast<int>(ms));
+
+		// update FFMpeg
+		// audio pause is updated in handle routine, in case event cost a long time
+		// rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay, false);
+
 		rdPtr->pFFMpeg->set_loop(rdPtr->bLoop);
+		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 
 		rdPtr->pFFMpeg->set_audioTempo(rdPtr->atempo);
-
-		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-
-		SetPositionGeneral(rdPtr, ms);
-
-		//BlitVideoFrame(rdPtr, ms, rdPtr->pMemSf);
+		rdPtr->atempo = rdPtr->pFFMpeg->get_audioTempo();
 
 		ReDisplay(rdPtr);
 	}
-	catch (...) {
+	catch ([[maybe_unused]] FFMpegException& e) {
 		CloseGeneral(rdPtr);
 
 		if (!opt.NoOverride()) {
@@ -344,6 +394,10 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		}
 	}
 }
+
+// -----------------------------
+// Cache control
+// -----------------------------
 
 inline auto GetRefList(LPRDATA rdPtr) {
 	std::vector<const uint8_t*> pBufs;
@@ -378,12 +432,12 @@ inline auto GetToRemove(LPRDATA rdPtr, const std::vector<const uint8_t*>& pBufs)
 
 	toRemove.reserve((std::max)(0u, rdPtr->pData->pMemVideoLib->data.size() - pBufs.size()));
 
-	for (auto& pair : rdPtr->pData->pMemVideoLib->data) {
-		auto it = std::find(pBufs.begin(), pBufs.end(), pair.second->GetOutputData());
+	for (auto& [name, pEncrypt] : rdPtr->pData->pMemVideoLib->data) {
+		auto it = std::ranges::find(pBufs, pEncrypt->GetOutputData());
 
 		// not referred
 		if (it == pBufs.end()) {
-			toRemove.emplace_back(&pair.first);
+			toRemove.emplace_back(&name);
 		}
 	}
 

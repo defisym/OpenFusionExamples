@@ -2,6 +2,9 @@
 
 #include "AudioInterface.h"
 
+constexpr auto SDL_EXCEPTION_INIT = 0;
+constexpr auto SDL_EXCEPTION_AUDIO = 1;
+
 class SI :public AudioInterface {
 private:
 	using AudioCallback = void(*)(void* userdata, Uint8* stream, int len);

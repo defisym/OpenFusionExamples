@@ -92,14 +92,11 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pFilePath = new std::wstring;
 
 	rdPtr->bLoop = edPtr->bLoop;
-
-	rdPtr->audioQSize = edPtr->audioQSize;
-	rdPtr->videoQSize = edPtr->videoQSize;
-
 	rdPtr->bAccurateSeek = edPtr->bAccurateSeek;
 	
 	rdPtr->bOpen = false;
 	rdPtr->bPlay = false;
+	rdPtr->bPlayStateUpdated = false;
 
 	rdPtr->volume = 100;
 
@@ -121,7 +118,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
 
-	rdPtr->atempo = DEFAULT_ATEMPO;
+	rdPtr->atempo = ATEMPO_DEFAULT;
 
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
@@ -244,6 +241,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 */
 
 #ifdef _LOOPBENCH
+	using namespace std::literals;
+
 	auto now = std::chrono::steady_clock::now();
 	auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
 
@@ -256,15 +255,20 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 	OutputDebugString(L"\n");
 #endif
 
-	if (rdPtr->bOpen && rdPtr->bPlay) {
-#ifdef _LOOPBENCH
-		//auto now = std::chrono::steady_clock::now();
-		//auto duration = (now - *rdPtr->pPreviousTimer) / 1ms;
+	do {
+		if (!rdPtr->bOpen) { break; }
 
+		// update audio pause
+		// only update state, pts is not updated
+		rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay, rdPtr->bPlayStateUpdated);
+		rdPtr->bPlayStateUpdated = false;
+
+		if (!rdPtr->bPlay) { break; }
+#ifdef _LOOPBENCH
 		auto beforeDecode = std::chrono::steady_clock::now();
 #endif
 
-		rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
+		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 			ReDisplay(rdPtr);
 			});
@@ -274,31 +278,28 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		}
 
 #ifdef _LOOPBENCH
-		auto decodeDuration = (std::chrono::steady_clock::now() - beforeDecode) / 1ms;
-		
-		std::wstring outPut2 = L"Decode Duration: ";
-		outPut2 += _itos((int)decodeDuration);
+			auto decodeDuration = (std::chrono::steady_clock::now() - beforeDecode) / 1ms;
 
-		OutputDebugString(outPut2.c_str());
-		OutputDebugString(L"\n");
+			std::wstring outPut2 = L"Decode Duration: ";
+			outPut2 += _itos((int)decodeDuration);
 
-		if (rdPtr->pFFMpeg->get_finishState()) {
-			OutputDebugString(L"======FINISH======\n");
-		}
+			OutputDebugString(outPut2.c_str());
+			OutputDebugString(L"\n");
+
+			if (rdPtr->pFFMpeg->get_finishState()) {
+				OutputDebugString(L"======FINISH======\n");
+			}
 #endif
-	}
 
-#ifdef _DEBUG
-	if (rdPtr->pFFMpeg != nullptr) {
+#ifdef _DEBUG		
 		auto bFinish = rdPtr->pFFMpeg->get_finishState();
 
 		auto totalTime = rdPtr->pFFMpeg->get_videoDuration();
 		auto curTime = rdPtr->pFFMpeg->get_videoPosition();
 
-
 		//assert(totalTime >= curTime);
-	}
 #endif // _DEBUG
+	} while (false);
 
 	CleanCache(rdPtr, false);
 
@@ -307,9 +308,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		&& rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
-	else {
-		return 0;
-	}
+
+	return 0;
 }
 
 // ----------------
