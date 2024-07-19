@@ -1,13 +1,19 @@
 #pragma once
 
-#include <any>
 #include <string>
 #include <functional>
 
-#include	"va_args_iterators/pp_iter.h"
+#include "va_args_iterators/pp_iter.h"
 
 #include "SteamInclude.h"
 
+#ifdef WIN32
+#include "WindowsException.h"
+#endif
+
+//------------
+// Class
+//------------
 #include "SteamAchAndStat.h"
 #include "SteamMicroTxn.h"
 #include "SteamRichPresence.h"
@@ -18,10 +24,6 @@
 #include "SteamInv.h"
 
 #include "SteamRemote.h"
-
-#ifdef WIN32
-#include "WindowsException.h"
-#endif
 
 //------------
 // Callback
