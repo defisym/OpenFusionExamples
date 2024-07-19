@@ -17,7 +17,6 @@
 #include "SteamInv.h"
 #include "SteamFriend.h"
 
-
 #include "SteamRemote.h"
 
 #ifdef WIN32
