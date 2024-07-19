@@ -51,8 +51,6 @@ private:
 	// Callback
 	//------------
 
-	//std::vector<SteamCallbackClass*> pCallbackClasses;
-
 	SteamAchAndStat* pSteamAchAndStat = nullptr;
 	SteamInv* pSteamInventory = nullptr;
 
@@ -87,13 +85,13 @@ public:
 		InitSteamCommandLine();
 
 		pSteamAchAndStat = new SteamAchAndStat(&refreshTasks);
-		pSteamInventory = new SteamInv(&refreshTasks);
 
 		pSteamMicroTxn = new SteamMicroTxn();
 		pSteamRichPresence = new SteamRichPresence();
 		pSteamScreenshot = new SteamScreenshot();
 		pSteamGamepadTextInput = new SteamGamepadTextInput();
 		pSteamDLC = new SteamDLC();
+		pSteamInventory = new SteamInv();
 		pSteamFriend = new SteamFriend();
 
 		pSteamRemote = new SteamRemote();

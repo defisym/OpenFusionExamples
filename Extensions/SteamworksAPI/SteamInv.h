@@ -2,7 +2,7 @@
 
 #include "SteamInclude.h"
 
-class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
+class SteamInv :public SteamCallbackClass {
 	using OnInventoryFullUpdate = std::function<void()>;
 	OnInventoryFullUpdate onInventoryFullUpdateCallback = nullptr;
 	using OnInventoryResultReady = std::function<void(bool)>;
@@ -69,8 +69,7 @@ class SteamInv :public SteamCallbackClass, public SteamRefreshClass {
 	}
 
 public:
-	explicit SteamInv(RefreshTasks* pTasks)
-		: SteamRefreshClass(pTasks) {
+	explicit SteamInv() {
 		SteamInv::InitCallback();
 	}
 	~SteamInv() override = default;
