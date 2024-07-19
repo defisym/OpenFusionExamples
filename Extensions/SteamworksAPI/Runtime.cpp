@@ -121,7 +121,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast) {
 */
 	// terminate all pending callbacks that will trigger events
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetMicroTxn()->ResetCallbackResult();	
+		pSteamUtil->GetSteamMicroTxn()->ResetCallbackResult();
 	});
 
 	delete rdPtr->pRet;
