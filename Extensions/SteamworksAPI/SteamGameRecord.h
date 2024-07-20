@@ -4,6 +4,8 @@
 
 class SteamGameRecord :public SteamCallbackClass {
 private:
+	bool bEnable = false;
+
 	inline void InitCallback() override {
 	//AddCallback(GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
 	//	return pCallback->m_eResult == k_EResultOK
@@ -13,28 +15,33 @@ private:
 public:
 	SteamGameRecord() {
 		SteamGameRecord::InitCallback();
+		bEnable = SteamTimeline() != nullptr;
 	}
 	~SteamGameRecord() override = default;
 
-	static inline void SetTimelineStateDescription(const char* pchDescription, const float flTimeDelta) {
+	inline void SetTimelineStateDescription(const char* pchDescription, const float flTimeDelta) const {
+		if (!bEnable) { return; }
 		SteamTimeline()->SetTimelineStateDescription(pchDescription, flTimeDelta);
 	}
 
-	static inline void ClearTimelineStateDescription(const float flTimeDelta) {
+	inline void ClearTimelineStateDescription(const float flTimeDelta) const {
+		if (!bEnable) { return; }
 		SteamTimeline()->ClearTimelineStateDescription(flTimeDelta);
 	}
 
-	static inline void AddTimelineEvent(const char* pchIcon, const char* pchTitle,
+	void SetTimelineGameMode(const ETimelineGameMode eMode) const {
+		if (!bEnable) { return; }
+		SteamTimeline()->SetTimelineGameMode(eMode);
+	}
+
+	inline void AddTimelineEvent(const char* pchIcon, const char* pchTitle,
 		const char* pchDescription, const uint32 unPriority,
 		const float flStartOffsetSeconds, const float flDurationSeconds,
-		const ETimelineEventClipPriority ePossibleClip) {
+		const ETimelineEventClipPriority ePossibleClip) const {
+		if (!bEnable) { return; }
 		SteamTimeline()->AddTimelineEvent(pchIcon,pchTitle,
 			pchDescription,unPriority,
 			flStartOffsetSeconds,flDurationSeconds,
 			ePossibleClip);
-	}
-
-	static void SetTimelineGameMode(const ETimelineGameMode eMode) {
-		SteamTimeline()->SetTimelineGameMode(eMode);
 	}
 };
