@@ -65,6 +65,11 @@
 #define	IDMN_ACTION_GAI				25020
 #define	IDMN_ACTION_UFL				25021
 
+#define	IDMN_ACTION_STLSD			25022
+#define	IDMN_ACTION_CTLSD			25023
+#define	IDMN_ACTION_STLGM			25024
+#define	IDMN_ACTION_ATLE			25025
+
 // Action strings
 #define M_ACTION_UA                 5000
 #define M_ACTION_AS                 5001
@@ -93,6 +98,11 @@
 #define	M_ACTION_GTI				5019
 #define	M_ACTION_GAI				5020
 #define	M_ACTION_UFL				5021
+
+#define	M_ACTION_STLSD				5022
+#define	M_ACTION_CTLSD				5023
+#define	M_ACTION_STLGM				5024
+#define	M_ACTION_ATLE				5025
 
 // Titles of action parameters
 #define M_ACH_NAME				 5501
@@ -127,6 +137,15 @@
 #define M_ITEMDEFARR			 5530
 #define M_QUANTITYARR			 5531
 #define M_FRIENDFLAG			 5532
+
+#define M_TLDESCRIPTION			 5533
+#define M_TLTIMEDELTA			 5534
+#define M_TLGAMEMODE			 5535
+#define M_TLICON			 	 5536
+#define M_TLTITLE			 	 5537
+#define M_TLPRIORITY			 5538
+#define M_TLDURATION			 5539
+#define M_TLPOSSIBLECLIP		 5540
 
 
 //	Conditions
