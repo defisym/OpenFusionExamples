@@ -40,7 +40,7 @@ public:
 		const ETimelineEventClipPriority ePossibleClip) const {
 		if (!bEnable) { return; }
 		SteamTimeline()->AddTimelineEvent(pchIcon,pchTitle,
-			pchDescription,unPriority,
+			pchDescription, (std::min)(unPriority, k_unMaxTimelinePriority),
 			flStartOffsetSeconds,flDurationSeconds,
 			ePossibleClip);
 	}
