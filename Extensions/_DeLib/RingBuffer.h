@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
 #include <cstring>
 
+template<typename DataType>
 struct RingBuffer {
-	uint8_t* pBuffer = nullptr;
+	DataType* pBuffer = nullptr;
 	size_t bufferSz = 0;
 
 	explicit RingBuffer(const size_t sz) :bufferSz(sz) {
@@ -16,8 +16,8 @@ struct RingBuffer {
 	}
 
 	void AllocBuffer() {
-		pBuffer = new uint8_t[bufferSz];
-		memset(pBuffer, 0, sizeof(uint8_t) * bufferSz);
+		pBuffer = new DataType[bufferSz];
+		memset(pBuffer, 0, sizeof(DataType) * bufferSz);
 	}
 
 	void ReleaseBuffer() {
@@ -32,13 +32,13 @@ struct RingBuffer {
 
 	size_t writeIndex = 0;
 
-	virtual void WriteData(const uint8_t* pBuf, const size_t sz) {
+	virtual void WriteData(const DataType* pBuf, const size_t sz) {
 		const auto remain = bufferSz - writeIndex;
 		const auto write = (std::min)(sz, remain);
 		const auto left = sz - write;
 
 		const auto pStart = pBuffer + writeIndex;
-		memcpy(pStart, pBuf, sizeof(uint8_t) * write);
+		memcpy(pStart, pBuf, sizeof(DataType) * write);
 
 		writeIndex += write;
 		if (writeIndex == bufferSz) { writeIndex = 0; }
@@ -49,13 +49,13 @@ struct RingBuffer {
 
 	size_t readIndex = 0;
 
-	virtual void ReadData(uint8_t* pBuf, const size_t sz) {
+	virtual void ReadData(DataType* pBuf, const size_t sz) {
 		const auto remain = bufferSz - readIndex;
 		const auto read = (std::min)(sz, remain);
 		const auto left = sz - read;
 
 		const auto pStart = pBuffer + readIndex;
-		memcpy(pBuf, pStart, sizeof(uint8_t) * read);
+		memcpy(pBuf, pStart, sizeof(DataType) * read);
 
 		readIndex += read;
 		if (readIndex == bufferSz) { readIndex = 0; }
