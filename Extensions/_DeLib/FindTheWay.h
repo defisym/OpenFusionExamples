@@ -423,10 +423,6 @@ namespace FindTheWay {
 		static inline auto addSet(CoordSet& v, CoordSet& src) {
 			v.insert(v.end(), src.begin(), src.end());
 			v.erase(std::ranges::unique(v).begin(), v.end());
-
-			//for(auto& it: src) {
-			//	addSet(v, it);
-			//}
 		}
 
 		Base64<std::wstring> base64;
@@ -1241,17 +1237,10 @@ namespace FindTheWay {
 					return;
 				}
 
+				auto baseIdx = static_cast<size_t>(-1);
 				Point base = open_set.back();
 				open_set.pop_back();
-
 				close_set.emplace_back(base);
-
-				// put base point into point_set
-				auto baseIdx = findIdx(point_set, base);
-				if (baseIdx == static_cast<size_t>(-1)) {
-					point_set.emplace_back(base);
-					baseIdx = point_set.size() - 1;
-				}
 
 				for (size_t i = 0; i < neighbourSize; i++) {
 					auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x
@@ -1284,8 +1273,14 @@ namespace FindTheWay {
 					auto updatePoint = [&] (Point& cur) {
 						cur.cost = neighPoint.cost;
 						cur.priority = static_cast<int>(heuristic(neighPoint.coord, destination) + neighPoint.cost);
+
+						// put base point into point_set
+						if (baseIdx == static_cast<size_t>(-1)) [[unlikely]] {
+							point_set.emplace_back(base);
+							baseIdx = point_set.size() - 1;
+						}
 						cur.parentID = baseIdx;
-					};
+						};
 
 					Point* next = find(open_set, neighPoint);
 
