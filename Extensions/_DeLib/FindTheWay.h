@@ -1212,12 +1212,15 @@ namespace FindTheWay {
 				}
 			}
 
+#define USE_INSERT_SORTED
 			while (!open_set.empty()) {
+#ifndef USE_INSERT_SORTED
 				// Descending
 				std::ranges::sort(open_set,
 					[] (const Point& A, const Point& B) ->bool {
 						return A.priority > B.priority;
 					});
+#endif
 
 				if (open_set.back().coord == destination) {
 					Point* parent = &open_set.back();
@@ -1288,7 +1291,14 @@ namespace FindTheWay {
 
 					if (next == nullptr) {
 						updatePoint(neighPoint);
+#ifdef USE_INSERT_SORTED
+						InsertSortedUpperBound(open_set, neighPoint,
+							[] (const Point& A, const Point& B) ->bool {
+								return A.priority > B.priority;
+					});
+#else
 						open_set.emplace_back(neighPoint);
+#endif
 					}
 					else if (next->cost > neighPoint.cost) {
 						updatePoint(*next);
