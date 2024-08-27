@@ -15,6 +15,7 @@
 
 #include <functional>
 #include <algorithm>
+#include <numbers>
 #include <string>
 #include <vector>
 #include <cmath>
@@ -784,19 +785,19 @@ namespace FindTheWay {
 				// rotate 45 degree
 				// | cos, -sin |
 				// | sin,  cos |
-				const auto cos = 1 / sqrt(2);
-				const auto sin = cos;
+				constexpr auto cos = 1 / std::numbers::sqrt2;
+				constexpr auto sin = cos;
 
 				// scale
 				// | scaleX, 0		|
 				// | 0,		 scaleY |
-				const auto scaleX = sqrt(2) / 2;
-				const auto scaleY = static_cast<double>(gridHeight) / (sqrt(2) * gridWidth);
+				constexpr auto scaleX = std::numbers::sqrt2 / 2;
+				const auto scaleY = static_cast<double>(gridHeight) / (std::numbers::sqrt2 * gridWidth);
 
 				// total
 				// scale * rotate
-				const auto a = scaleX * cos;
-				const auto b = scaleX * -1 * sin;
+				constexpr auto a = scaleX * cos;
+				constexpr auto b = scaleX * -1 * sin;
 				const auto c = scaleY * sin;
 				const auto d = scaleY * cos;
 
@@ -1011,7 +1012,7 @@ namespace FindTheWay {
 				UpdateMap();
 			}
 
-			std::cout << "MapType : " << type << std::endl;
+			std::cout << "MapType : " << type << '\n';
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
 					Coord cur = { x,y };
@@ -1024,7 +1025,7 @@ namespace FindTheWay {
 					}
 					std::cout << ' ';
 				}
-				std::cout << std::endl;
+				std::cout << '\n';
 			}
 		}
 
@@ -1037,8 +1038,8 @@ namespace FindTheWay {
 
 			std::wstringstream ss;
 
-			ss << L"MapType : " << type << std::endl;
-			ss << L"Obstacle = \'*\', Path = \'#\'" << std::endl;
+			ss << L"MapType : " << type << '\n';
+			ss << L"Obstacle = \'*\', Path = \'#\'" << '\n';
 
 			const Path* pPath = nullptr;
 			bool curPathAvaliable = false;
@@ -1049,14 +1050,14 @@ namespace FindTheWay {
 
 				if (curPathAvaliable) {
 					const std::wstring displayName = name == nullptr ? L"Last Path" : *name;
-					ss << "Step of \"" << displayName << R"(" = '-')" << std::endl;
+					ss << "Step of \"" << displayName << R"(" = '-')" << '\n';
 				}
 				else if (name != nullptr) {
-					ss << "Target Path \"" << *name << "\" Invalid" << std::endl;
+					ss << "Target Path \"" << *name << "\" Invalid" << '\n';
 				}
 			}
 
-			ss << L"----------" << std::endl;
+			ss << L"----------" << '\n';
 
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
@@ -1068,7 +1069,7 @@ namespace FindTheWay {
 					}
 					ss << ' ';
 				}
-				ss << std::endl;
+				ss << '\n';
 			}
 
 			return ss.str();
@@ -1334,7 +1335,8 @@ namespace FindTheWay {
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 
 			for (auto& it : *pNeighbour) {
-				auto cur = Coord { (size_t)(start.x + it.x),(size_t)(start.y + it.y) };
+				auto cur = Coord{ static_cast<size_t>(start.x + it.x),
+					static_cast<size_t>(start.y + it.y) };
 
 				if (std::ranges::find(*zoc, cur) == zoc->end()) {
 					zoc->emplace_back(cur);
@@ -1353,8 +1355,8 @@ namespace FindTheWay {
 		}
 
 		inline std::wstring OutPutAreaStr(const Coord start, const size_t range
-			, CoordSet* ally = nullptr, CoordSet* enemy = nullptr
-			, CoordSet* zoc = nullptr
+			, const CoordSet* ally = nullptr, const CoordSet* enemy = nullptr
+			, const CoordSet* zoc = nullptr
 			, bool allRange = false, size_t extraRangeStartPos = 0) {
 			std::wstringstream ss;
 			if (!extraRangeStartPos) {
@@ -1406,16 +1408,16 @@ namespace FindTheWay {
 				else {
 					for (auto& it_C : area [it]) {
 						if (it_C == Coord { 5, 4 }) {
-							std::cout << "1" << std::endl;
+							std::cout << "1" << '\n';
 						}
 						*GetMapPosPointer(it_C.x, it_C.y, temp) = 124;
 					}
 				}
 			}
 
-			//updateSet(zoc, 50);
-			//updateSet(ally, 49);
-			//updateSet(enemy, 48);
+			updateSet(zoc, 50);
+			updateSet(ally, 49);
+			updateSet(enemy, 48);
 
 			*GetMapPosPointer(start.x, start.y, temp) = 254;
 
@@ -1423,7 +1425,7 @@ namespace FindTheWay {
 				for (size_t x = 0; x < width; x++) {
 					ss << out(*GetMapPosPointer(x, y, temp)) << ' ';
 				}
-				ss << std::endl;
+				ss << '\n';
 			}
 
 			delete[] temp;
