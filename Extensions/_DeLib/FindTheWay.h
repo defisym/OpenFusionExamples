@@ -1360,7 +1360,7 @@ namespace FindTheWay {
 			auto updateSet = [&] (const CoordSet* p, const BYTE cost) {
 				if (p != nullptr) {
 					for (const auto& it : *p) {
-						*GetMapPosPointer(it.x, it.y, temp) = cost;
+						if (const auto pMapPos = GetMapPosPointer(it.x, it.y, temp)) { *pMapPos = cost; }
 					}
 				}
 			};
