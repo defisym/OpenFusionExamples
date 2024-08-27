@@ -50,12 +50,12 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 
 // inline static size_t Hasher(const Object& o) {
 	// size_t seed = ElementNum;
-
+	//
 	// seed ^= o.ele_1 + HASHER_MOVE(seed);
 	// seed ^= o.ele_2 + HASHER_MOVE(seed);
 	// ...
 	// seed ^= o.ele_ElementNum + HASHER_MOVE(seed);
-
+	//
 	// return seed;
 // }
 
@@ -436,4 +436,25 @@ inline bool NearlyEqualLDBL(const long double a, const long double b,
 						const long double epsilon = 128 * LDBL_EPSILON,
 						const long double abs_th = LDBL_MIN) {
 	return NearlyEqualCore<long double>(a, b, epsilon, abs_th);
+}
+
+template<typename T>
+typename std::vector<T>::iterator
+InsertSortedUpperBound(std::vector<T>& vec, T const& item) {
+	return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
+}
+template<typename T, typename Pred>
+typename std::vector<T>::iterator
+InsertSortedUpperBound(std::vector<T>& vec, T const& item, Pred pred) {
+	return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
+}
+template<typename T>
+typename std::vector<T>::iterator
+InsertSortedLowerBound(std::vector<T>& vec, T const& item) {
+	return vec.insert(std::lower_bound(vec.begin(), vec.end(), item), item);
+}
+template<typename T, typename Pred>
+typename std::vector<T>::iterator
+InsertSortedLowerBound(std::vector<T>& vec, T const& item, Pred pred) {
+	return vec.insert(std::lower_bound(vec.begin(), vec.end(), item, pred), item);
 }
