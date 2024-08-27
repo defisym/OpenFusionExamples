@@ -369,9 +369,7 @@ namespace FindTheWay {
 					return it.coord == p.coord;
 			});
 
-			return it != v.end()
-			? &(*it)
-			: nullptr;
+			return it != v.end() ? &(*it) : nullptr;
 		}
 
 		static inline auto rfind(Set& v, Point& p) -> Point* {
@@ -1008,9 +1006,7 @@ namespace FindTheWay {
 		}
 
 		inline void OutPutMap(const MapType type = MapType::MAP) {
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			std::cout << "MapType : " << type << '\n';
 			for (size_t y = 0; y < height; y++) {
@@ -1032,9 +1028,7 @@ namespace FindTheWay {
 		inline std::wstring OutPutMapStr(const MapType type = MapType::MAP,
 			const bool showPath = true,
 			const std::wstring* name = nullptr) {
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			std::wstringstream ss;
 
@@ -1076,11 +1070,9 @@ namespace FindTheWay {
 		}
 
 		inline void SaveLastPath(const std::wstring& name) {
-			if (!pathAvailable) {
-				return;
-			}
+			if (!pathAvailable) { return; }
 
-			savedPath [name] = path;
+			savedPath[name] = path;
 		}
 
 		static inline size_t GetEuclideanDistancePow(const Coord start, const Coord destination) {
@@ -1111,9 +1103,7 @@ namespace FindTheWay {
 			, const Heuristic& h = FindTheWayClass::GetManhattanDistance) {
 			// Still try to find a way even start & destination is obstacle
 			// ......By setting them to path
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			const BYTE startCost = GetMap(start.x, start.y, this->map);
 			const BYTE destinationCost = GetMap(destination.x, destination.y, this->map);
@@ -1152,9 +1142,7 @@ namespace FindTheWay {
 			// 			* 设置节点m的parent为节点n
 			// 			* 计算节点m的优先级
 
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			pathAvailable = false;
 
@@ -1198,9 +1186,7 @@ namespace FindTheWay {
 			] = ParseIgnoreFlag(ignoreFlag);
 
 			auto addSet = [&] (CoordSet* src) {
-				if (src == nullptr) {
-					return;
-				}
+				if (src == nullptr) { return; }
 
 				FindTheWayClass::addSet(unit_set, *src);
 			};
@@ -1244,9 +1230,7 @@ namespace FindTheWay {
 					std::ranges::reverse(path);
 					pathAvailable = true;
 
-					if (stash) {
-						stashPath[stashPathKey] = path;
-					}
+					if (stash) { stashPath[stashPathKey] = path; }
 
 					return;
 				}
@@ -1263,13 +1247,9 @@ namespace FindTheWay {
 					const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 					auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
 
-					if (curCost == MAP_OBSTACLE) {
-						continue;
-					}
+					if (curCost == MAP_OBSTACLE) { continue; }
 
-					if (findSet(unit_set, neighCoord)) {
-						continue;
-					}
+					if (findSet(unit_set, neighCoord)) { continue; }
 
 					if (diagonal && checkDiagonalCorner		// check corner
 						&& (i % 2 == 1)) {					// when checking diagonal points
@@ -1286,9 +1266,7 @@ namespace FindTheWay {
 						}
 					}
 
-					if (find(close_set, neighPoint) != nullptr) {
-						continue;
-					}
+					if (find(close_set, neighPoint) != nullptr) { continue; }
 
 					auto updatePoint = [&] (Point& cur) {
 						cur.cost = neighPoint.cost;
@@ -1320,17 +1298,13 @@ namespace FindTheWay {
 		}
 
 		static inline void GenerateSet(Coord start, CoordSet* set, const bool add = false, bool diagonal = true) {
-			if (!add) {
-				set->clear();
-			}
+			if (!add) { set->clear(); }
 
 			set->emplace_back(start);
 		}
 
 		static inline void GenerateZoc(const Coord start, CoordSet* zoc, const bool add = false, const bool diagonal = true) {
-			if (!add) {
-				zoc->clear();
-			}
+			if (!add) { zoc->clear(); }
 
 			const auto pNeighbour = diagonal ? &diagonalNeighbour : &normalNeighbour;
 
@@ -1345,9 +1319,7 @@ namespace FindTheWay {
 		}
 
 		static inline void GenerateZoc(const CoordSet& start, CoordSet* zoc, const bool add = false, bool diagonal = true) {
-			if (!add) {
-				zoc->clear();
-			}
+			if (!add) { zoc->clear(); }
 
 			for (const auto& it : start) {
 				GenerateZoc(it, zoc, true);
@@ -1359,9 +1331,7 @@ namespace FindTheWay {
 			, const CoordSet* zoc = nullptr
 			, bool allRange = false, size_t extraRangeStartPos = 0) {
 			std::wstringstream ss;
-			if (!extraRangeStartPos) {
-				extraRangeStartPos = range;
-			}
+			if (!extraRangeStartPos) { extraRangeStartPos = range; }
 
 			const auto temp = new BYTE [mapSize];
 			memcpy(temp, map, mapSize);
@@ -1395,9 +1365,7 @@ namespace FindTheWay {
 				}
 			};
 
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			for (size_t it = 0; it < area.size(); it++) {
 				if (it < extraRangeStartPos) {
@@ -1438,9 +1406,7 @@ namespace FindTheWay {
 			, const size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
 			, const bool attack = false) {                 // Attack = use ignore flag, only consider map collision
 														   // Repel = consider both map collision & unit
-			if (updateMap && !attack) {
-				UpdateMap();
-			}
+			if (updateMap && !attack) { UpdateMap(); }
 
 			const auto [moveIgnoreZoc,
 				moveIgnoreAlly,
@@ -1501,9 +1467,7 @@ namespace FindTheWay {
 			, const CoordSet* ally = nullptr, const CoordSet* enemy = nullptr, CoordSet* zoc = nullptr
 			, size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
 			, const bool attack = false) {
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			if (stash) {
 				settings = { range,startRange,attack,false,0 };
@@ -1530,9 +1494,7 @@ namespace FindTheWay {
 			}
 
 			for (size_t nest = 0; nest <= range; nest++) {
-				if (nest <= startRange) {
-					continue;
-				}
+				if (nest <= startRange) { continue; }
 
 				area.emplace_back();
 				area.back().reserve(4);
@@ -1547,9 +1509,7 @@ namespace FindTheWay {
 					}
 				}
 
-				if (!updated) {
-					break;
-				}
+				if (!updated) { break; }
 			}
 
 			if (stash) {
@@ -1568,9 +1528,7 @@ namespace FindTheWay {
 			// allRange: Calc move & attack at the same time
 			, bool allRange = false, const size_t allRangeAttackRange = 0, size_t* extraRangeStartPosOut = nullptr
 			, const bool diagonal = false) {
-			if (updateMap) {
-				UpdateMap();
-			}
+			if (updateMap) { UpdateMap(); }
 
 			if (stash) {
 				settings = { range,startRange,attack,allRange,allRangeAttackRange };
