@@ -729,7 +729,7 @@ namespace FindTheWay {
 			auto [isoGridWidth, isoGridHeight] = ParseIsometricGridSize(gridSize);
 
 			if (!isometric) {
-				return std::make_tuple(width / isoGridWidth, height / isoGridHeight);
+				return std::make_tuple(width / isoGridWidth, height / isoGridWidth);
 			}
 
 			// ISOMetric: Width = GridWidth / 2 * (MapWidth + MapHeight)
