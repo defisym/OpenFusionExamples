@@ -55,7 +55,12 @@ HRESULT WINAPI D3D11CreateDeviceAndSwapChainOverride(
 // https://www.unknowncheats.me/forum/d3d-tutorials-and-source/88297-directx-11-hooking-detours.html
 void HookD3D::AttachCreateDevice() {
     HMODULE hD3D11 = nullptr;
-    hD3D11 = LoadLibrary(L"d3d11.dll");
+    hD3D11 = GetModuleHandle(L"d3d11.dll");
+
+    // handle the dll init order may be different
+    if (!hD3D11) {
+        hD3D11 = LoadLibrary(L"d3d11.dll");
+    }
 
     MODULEINFO Info_D3D11 = {  };
     auto bRet = GetModuleInformation(GetCurrentProcess(), hD3D11, &Info_D3D11, sizeof(MODULEINFO));
