@@ -251,6 +251,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
+    <ClCompile Include="D3D\HookD3D.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -302,6 +303,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
     <ClInclude Include="AudioInterface.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="D3D\HookD3D.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Main.h" />

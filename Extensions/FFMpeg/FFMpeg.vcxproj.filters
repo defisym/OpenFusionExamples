@@ -26,6 +26,9 @@
     <Filter Include="AudioInterface">
       <UniqueIdentifier>{4e0f1015-303b-41c2-95eb-48b3ed675afc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="D3D">
+      <UniqueIdentifier>{13fac545-32c1-43b3-b417-518b6976cee5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -42,6 +45,9 @@
     </ClCompile>
     <ClCompile Include="..\_DeLib\Encryption.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D\HookD3D.cpp">
+      <Filter>D3D</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +180,9 @@
     </ClInclude>
     <ClInclude Include="SDL_Interface.h">
       <Filter>AudioInterface</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D\HookD3D.h">
+      <Filter>D3D</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

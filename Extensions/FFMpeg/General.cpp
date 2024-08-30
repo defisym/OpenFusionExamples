@@ -57,6 +57,8 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 //
 extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet)
 {
+
+	HookD3D::AttachCreateDevice();
 	// No error
 	return 0;
 }
