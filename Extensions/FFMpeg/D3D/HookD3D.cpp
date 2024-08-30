@@ -72,10 +72,18 @@ void HookD3D::AttachCreateDevice() {
 
 	DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());        
-    detourResult = DetourAttach(&(PVOID&)addrD3D11CreateDevice,
+    DetourAttach(&(PVOID&)addrD3D11CreateDevice,
         (PVOID)D3D11CreateDeviceOverride);
-    detourResult = DetourAttach(&(PVOID&)addrD3D11CreateDeviceAndSwapChain,
+    DetourAttach(&(PVOID&)addrD3D11CreateDeviceAndSwapChain,
         (PVOID)D3D11CreateDeviceAndSwapChainOverride);
     DetourTransactionCommit();
 }
-void HookD3D::DetachCreateDevice() {}
+void HookD3D::DetachCreateDevice() {
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourDetach(&(PVOID&)addrD3D11CreateDevice,
+        (PVOID)D3D11CreateDeviceOverride);
+    DetourDetach(&(PVOID&)addrD3D11CreateDeviceAndSwapChain,
+        (PVOID)D3D11CreateDeviceAndSwapChainOverride);
+    DetourTransactionCommit();
+}
