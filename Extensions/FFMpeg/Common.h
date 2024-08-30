@@ -54,7 +54,9 @@
 #include	<chrono>
 
 // D3D
+#ifdef _DEBUG
 #include "D3D/HookD3D.h"
+#endif
 
 // My lib
 #include	"SDLUtilities.h"
