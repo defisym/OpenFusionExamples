@@ -212,9 +212,9 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 	do {
 		//auto pos = rdPtr->pFFMpeg->get_videoPosition();
 		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-		
-		bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
-		if (!bGoto || flags & SeekFlag_NoRevert) { break; }
+
+        const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
+		if (!bGoto || flags & SeekFlag_NoGoto) { break; }
 		rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
 			ReDisplay(rdPtr);
