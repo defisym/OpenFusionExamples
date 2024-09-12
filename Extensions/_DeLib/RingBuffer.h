@@ -15,15 +15,19 @@ struct RingBuffer {
 		ReleaseBuffer();
 	}
 
-	void AllocBuffer() {
-		pBuffer = new DataType[bufferSz];
-		memset(pBuffer, 0, sizeof(DataType) * bufferSz);
-	}
+    void AllocBuffer() {
+        pBuffer = new DataType[bufferSz];
+        ResetBuffer();
+    }
 
 	void ReleaseBuffer() {
 		delete[] pBuffer;
 		pBuffer = nullptr;
 	}
+
+    virtual void ResetBuffer() {
+        memset(pBuffer, 0, sizeof(DataType) * bufferSz);
+    }
 
 	// ------------------------
 	// Read & Write logic are almost the same
