@@ -17,6 +17,10 @@ struct ThreadSafeRingBuffer :public RingBuffer<DataType> {
 		RingBuffer<DataType>::ReleaseBuffer();
 	}
 
+	void ResetIndex() override {
+		const auto lockHelper = LockHelper(&lock);
+		RingBuffer<DataType>::ResetIndex();
+	}
     void ResetBuffer() override {
         const auto lockHelper = LockHelper(&lock);
         RingBuffer<DataType>::ResetBuffer();
