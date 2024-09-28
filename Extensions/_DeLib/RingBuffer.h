@@ -33,6 +33,10 @@ struct RingBuffer {
 	// Read & Write logic are almost the same
 	// but allow some spaghetti code here
 	// ------------------------
+	virtual void ResetIndex() {
+		writeIndex = 0;
+		readIndex = 0;
+	}
 
 	size_t writeIndex = 0;
 
