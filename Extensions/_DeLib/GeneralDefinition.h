@@ -191,6 +191,23 @@ inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
 	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
 }
 
+inline std::string_view GetTrimmedStr(LPSTR pStart, size_t length) {
+    while (pStart[0] == ' ') {
+        pStart++;
+        length--;
+    }
+
+    while ((pStart + length - 1)[0] == ' ') {
+        length--;
+    }
+
+    return { pStart, length };
+}
+
+inline std::string_view GetTrimmedStr(std::string_view& str) {
+    return GetTrimmedStr(const_cast<char*>(str.data()), str.size());
+}
+
 inline void TrimStr(std::wstring& str,
 	const std::vector<wchar_t>& frontChars = { L' ' },
 	const std::vector<wchar_t>& backChars = { L' ' }) {
