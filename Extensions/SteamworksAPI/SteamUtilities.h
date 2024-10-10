@@ -59,9 +59,9 @@ private:
 	}
 
 public:
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline auto GetSteamCommandLine() {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			return ConvertStrToWStr(cmdLine);
 		}
 		else {

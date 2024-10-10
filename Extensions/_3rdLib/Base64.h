@@ -29,11 +29,10 @@
 typedef unsigned char BYTE;
 constexpr auto RETURNSIZE = 50;
 constexpr auto BASE64_DECODEERROR = 0;
+#include "StringTraits.h"
 
-template<class T> 
-concept STR = std::is_same_v<T, std::wstring> || std::is_same_v<T, std::string>;
 
-template<STR base64Str>
+template<StringConcept base64Str>
 std::wstring base64_chars_G(const std::wstring type) {
     std::wstring base64_charsW =
         L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -43,7 +42,7 @@ std::wstring base64_chars_G(const std::wstring type) {
     return base64_charsW;
 }
 
-template<STR base64Str>
+template<StringConcept base64Str>
 std::string base64_chars_G(const std::string type) {
     std::string base64_charsA =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -53,7 +52,7 @@ std::string base64_chars_G(const std::string type) {
     return base64_charsA;
 }
 
-template<STR base64Str>
+template<StringConcept base64Str>
 wchar_t base64_char_G(const std::wstring type, size_t retType) {
     switch (retType) {
     case 0:
@@ -67,7 +66,7 @@ wchar_t base64_char_G(const std::wstring type, size_t retType) {
     }
 }
 
-template<STR base64Str>
+template<StringConcept base64Str>
 char base64_char_G(const std::string type, size_t retType) {
     switch (retType) {
     case 0:
@@ -81,7 +80,7 @@ char base64_char_G(const std::string type, size_t retType) {
     }
 }
 
-template<STR base64Str>
+template<StringConcept base64Str>
 class Base64 {
 private:
     const base64Str type;

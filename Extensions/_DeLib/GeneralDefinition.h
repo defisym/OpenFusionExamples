@@ -328,12 +328,9 @@ inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"AL
 
 // basic split
 #include <functional>
+#include "StringTraits.h"
 
-template<typename T>
-concept CHR = std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, char>
-|| std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, wchar_t>;
-
-template<CHR T>
+template<CharConcept T>
 inline bool StrEqu(const T* l, const T* r) {
 	 if constexpr(std::is_same_v<T, char>) {
 		 return strcmp(l, r) == 0;
@@ -342,7 +339,7 @@ inline bool StrEqu(const T* l, const T* r) {
 	 }
 }
 
-template<CHR T>
+template<CharConcept T>
 inline bool StrIEqu(const T* l, const T* r) {
 	if constexpr (std::is_same_v<T, char>) {
 		return _stricmp(l, r) == 0;
@@ -352,7 +349,7 @@ inline bool StrIEqu(const T* l, const T* r) {
 	}
 }
 
-template<CHR T>
+template<CharConcept T>
 inline bool StrEmpty(const T* pStr) {
 	if constexpr (std::is_same_v<T, char>) {
 		return StrEqu(pStr, "");
@@ -362,7 +359,7 @@ inline bool StrEmpty(const T* pStr) {
 	}
 }
 
-template<CHR T>
+template<CharConcept T>
 inline void SplitStringCore(const std::basic_string<T>& input,
 	const T delimiter,
 	const std::function<void(const std::basic_string_view<T>&)>& callBack) {
@@ -380,7 +377,7 @@ inline void SplitStringCore(const std::basic_string<T>& input,
 	}
 }
 
-template<typename RET, CHR T>
+template<typename RET, CharConcept T>
 inline std::vector<RET> SplitString(const std::basic_string<T>& input,
 	const T delimiter,
 	std::function<RET(const std::basic_string_view<T>&)> callBack) {
@@ -394,7 +391,7 @@ inline std::vector<RET> SplitString(const std::basic_string<T>& input,
 	return resultList;
 }
 
-template<CHR T>
+template<CharConcept T>
 inline std::vector<std::basic_string<T>> SplitString(const std::basic_string<T>& input, const T delimiter) {
 	return SplitString<std::basic_string<T>, T>(input, delimiter,
 		[] (const std::basic_string_view<T>& item) {

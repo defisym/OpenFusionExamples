@@ -7,6 +7,7 @@
 #include <format>
 
 #include "StringTraits.h"
+#include "ArithmeticTraits.h"
 
 #include "GeneralDefinition.h"
 
@@ -172,9 +173,6 @@ void _copy_str(const StringType& src,
 
 	memcpy(*ppDst, src.data(), sizeof(CT) * size);
 }
-
-template<typename T>
-concept ArithmeticConcept = std::is_arithmetic_v<T>;
 
 //convert double to string, 2X faster than to_string
 template<ArithmeticConcept Arithmetic>

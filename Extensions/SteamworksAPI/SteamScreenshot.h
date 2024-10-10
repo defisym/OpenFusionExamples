@@ -31,13 +31,13 @@ public:
 		onScreenshotCallback = callback;
 	}
 
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline bool SetLocation(const Name pchLocation) {
 		if(!GetCallbackStat()) {
 			return false;
 		}
 
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			return SetLocation(ConvertWStrToStr(pchLocation).c_str());
 		}
 		else {

@@ -2,10 +2,9 @@
 
 #include <random>
 
-template <class T>
-concept NUMBER = std::is_arithmetic_v<T>;
+#include "ArithmeticTraits.h"
 
-template <NUMBER T>
+template <ArithmeticConcept T>
 class RandGenerator {
 private:
 	std::random_device rd;
