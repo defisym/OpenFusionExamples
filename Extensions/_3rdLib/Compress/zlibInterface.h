@@ -3,7 +3,11 @@
 #include "zlib/zlib.h"
 #include "_DeLib/GeneralDefinition.h"
 
+#ifdef _WIN64
+#pragma	comment(lib, RELATIVE_PATH("zlibstatic_x64.lib"))
+#else
 #pragma	comment(lib, RELATIVE_PATH("zlibstatic.lib"))
+#endif
 
 #include <string>
 #include <memory>
