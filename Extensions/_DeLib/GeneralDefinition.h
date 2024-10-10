@@ -35,6 +35,11 @@
 
 #define TURNCATE_SHORT(v) ((short)(v) & 0x7FFF)
 
+#define CONNECT_STR(l, r) l##r
+#define STRINGIFY(s) #s
+#define CUR_FOLDER CONNECT_STR(__FILE__, "\\..\\")
+#define RELATIVE_PATH(path) CONNECT_STR(CUR_FOLDER, path)
+
 constexpr auto CLEAR_MEMRANGE = 128;
 constexpr auto CLEAR_NUMTHRESHOLD = 50;
 

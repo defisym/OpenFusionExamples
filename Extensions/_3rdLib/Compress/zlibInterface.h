@@ -1,7 +1,9 @@
 #pragma once
 
 #include "zlib/zlib.h"
-#pragma	comment(lib,"zlibstatic.lib")
+#include "GeneralDefinition.h"
+
+#pragma	comment(lib, RELATIVE_PATH("zlibstatic.lib"))
 
 #include <string>
 #include <memory>
@@ -54,7 +56,7 @@ inline std::string ZLIBI_DeCompressToString(const char* srcBuf, const unsigned i
         if (ret == Z_BUF_ERROR) {
             blockSz = blockSz << 1;
             continue;
-        }
+        }	
 
         throw ZLIB_DECOMPRESSFAILED;
     }

@@ -4,11 +4,12 @@
 #pragma warning(disable : 26495)
 
 #include "zpaq/libzpaq.h"
+#include "GeneralDefinition.h"
 
 #ifdef _DEBUG
-#pragma	comment(lib,"zpaqstaticd.lib")
+#pragma	comment(lib, RELATIVE_PATH("zpaqstaticd.lib"))
 #else
-#pragma	comment(lib,"zpaqstatic.lib")
+#pragma	comment(lib, RELATIVE_PATH("zpaqstatic.lib"))
 #endif
 
 #include <vector>
