@@ -6,6 +6,8 @@
 #include <cmath>
 #include <format>
 
+#include "StringTraits.h"
+
 #include "GeneralDefinition.h"
 
 enum class StrType :uint8_t {
@@ -14,37 +16,7 @@ enum class StrType :uint8_t {
     IsFloat,
 };
 
-template<typename T>
-concept StringType = std::is_same_v<std::remove_cvref<T>, std::string> || std::is_same_v<std::remove_cvref<T>, std::wstring>;
-
-template<typename StringType = std::wstring>
-struct CharType {
-    using Type = std::remove_cvref_t<decltype(StringType{}[0])>;
-
-    static size_t Length(const Type* p) {
-        if constexpr (std::is_same_v<std::remove_cvref<StringType>, std::wstring>) {
-            return wcslen(p);
-        }
-        else {
-            return strlen(p);
-        }
-    }
-};
-
-template<typename StringType = std::wstring>
-struct ViewType {};
-
-template<>
-struct ViewType<std::string> {
-    using Type = std::string_view;
-};
-
-template<>
-struct ViewType<std::wstring> {
-    using Type = std::wstring_view;
-};
-
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 struct MathSign {};
 
 template<>
@@ -120,7 +92,7 @@ struct MathSign<std::wstring> {
 };
 
 //check if a string is number
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr StrType StrIsNumCore(const typename CharType<StringType>::Type* p) {
 	auto type = StrType::IsNum;
 
@@ -153,7 +125,7 @@ constexpr StrType StrIsNumCore(const typename CharType<StringType>::Type* p) {
 	return type;
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr StrType StrIsNumCore(const StringType& p) {
 	return StrIsNumCore<StringType>(p.c_str());
 }
@@ -167,7 +139,7 @@ constexpr bool StrIsNum(const char* p) {
     return StrIsNumCore<std::string>(p) != StrType::NotNum;
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr bool StrIsNum(const StringType& p) {
 	return StrIsNum(p.c_str());
 }
@@ -181,12 +153,12 @@ constexpr bool StrIsFloat(const char* p) {
     return StrIsNumCore<std::string>(p) == StrType::IsFloat;
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr bool StrIsFloat(const StringType& p) {
 	return StrIsFloat(p.c_str());
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 void _copy_str(const StringType& src,
                typename CharType<StringType>::Type** ppDst) {
     using CT = typename CharType<StringType>::Type;
@@ -202,85 +174,85 @@ void _copy_str(const StringType& src,
 }
 
 template<typename T>
-concept Arithmetic = std::is_arithmetic_v<T>;
+concept ArithmeticConcept = std::is_arithmetic_v<T>;
 
 //convert double to string, 2X faster than to_string
-template<typename Arithmetic>
+template<ArithmeticConcept Arithmetic>
 void ntos(std::wstring& str, const Arithmetic Val) {
     str = std::format(L"{}", Val);
 }
 
-template<typename Arithmetic>
+template<ArithmeticConcept Arithmetic>
 void ntos(std::string& str, const Arithmetic Val) {
     str = std::format("{}", Val);
 }
 
-template<typename Arithmetic, typename StringType = std::wstring>
+template<ArithmeticConcept Arithmetic, StringConcept StringType = std::wstring>
 StringType ntos(const Arithmetic Val) {
     StringType str;
     ntos<Arithmetic>(str, Val);
     return str;
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _itos(const int Val) {
     return ntos<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _itos(const size_t Val) {
 	return ntos<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _dtos(const double Val) {
 	return ntos<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _ftos(const float Val) {
 	return ntos<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 void _dtos(const double Val, StringType& Str) {
 	Str = ntos<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 void _ftos(const float Val, StringType& Str) {
 	Str = ntos<decltype(Val), StringType>(Val);
 }
 
 //Same as ntos, but with sign
-template<typename Arithmetic>
+template<ArithmeticConcept Arithmetic>
 void ntos_signed(std::wstring& Str, const Arithmetic Val) {
     Str = std::format(L"{:+}", Val);
 }
 
-template<typename Arithmetic>
+template<ArithmeticConcept Arithmetic>
 void ntos_signed(std::string& Str, const Arithmetic Val) {
     Str = std::format("{:+}", Val);
 }
 
-template<typename Arithmetic, typename StringType = std::wstring>
+template<ArithmeticConcept Arithmetic, StringConcept StringType = std::wstring>
 StringType ntos_signed(const Arithmetic Val) {
     StringType str;
     ntos_signed<Arithmetic>(str, Val);
     return str;
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _dtos_signed(const double Val) {
 	return ntos_signed<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _ftos_signed(const float Val) {
 	return ntos_signed<decltype(Val), StringType>(Val);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 void _dtos_signed(const double Val, StringType& Str) {
 	Str = ntos_signed<decltype(Val), StringType>(Val);
 }
@@ -293,7 +265,7 @@ inline void _dtos_signed(const double Val, char** Str) {
     _copy_str<std::string>(_dtos_signed<std::string>(Val), Str);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 void _ftos_signed(const float Val, StringType& Str) {
 	_dtos_signed(static_cast<double>(Val), Str);
 }
@@ -304,24 +276,6 @@ inline void _ftos_signed(const float Val, wchar_t** Str) {
 
 inline void _ftos_signed(const float Val, char** Str) {
     _dtos_signed(Val, Str);
-}
-
-template<typename StringType = std::wstring>
-void _dtos_signed_s(StringType& Str, const double Val, const size_t SpaceNum = 1) {
-    const auto positive = Val >= 0;
-    auto sign = positive ? MathSign<StringType>::POS : MathSign<StringType>::NEG;
-
-    auto ret = _dtos(abs(Val));
-    auto totalLength = SpaceNum + ret.length();
-
-    if constexpr (std::is_same_v<std::remove_cvref<StringType>, std::wstring>) {
-        const auto fmt = std::format(L"{}{{:>{}}}", sign, totalLength);
-        Str = std::vformat(std::wstring_view(fmt), std::make_wformat_args(ret));
-    }
-    else {
-        const auto fmt = std::format("{}{{:>{}}}", sign, totalLength);
-        Str = std::vformat(std::string_view(fmt), std::make_format_args(ret));
-    }
 }
 
 inline void _dtos_signed_s(std::wstring& Str, const double Val, const size_t SpaceNum = 1) {
@@ -346,13 +300,13 @@ inline void _dtos_signed_s(std::string& Str, const double Val, const size_t Spac
     Str = std::vformat(std::string_view(fmt), std::make_format_args(ret));
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _dtos_signed_s(const double Val, const size_t SpaceNum = 1) {
     StringType str;
     _dtos_signed_s(str, Val, SpaceNum);
     return str;
 }
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 StringType _ftos_signed_s(const float Val, const size_t SpaceNum = 1) {
 	return _dtos_signed_s<StringType>(static_cast<double>(Val), SpaceNum);
 }
@@ -398,7 +352,7 @@ constexpr double _get_fracture(const int n) {
 	}
 }
 
-template<typename Arithmetic, typename StringType = std::wstring>
+template<ArithmeticConcept Arithmetic, StringConcept StringType = std::wstring>
 //convert string to double, 5X faster than std::stod
 constexpr Arithmetic ston(const typename CharType<StringType>::Type* p) {
 	constexpr bool bUnsigned = std::is_unsigned_v<Arithmetic>;
@@ -449,12 +403,12 @@ constexpr double _stod(const char* p) {
     return ston<double, std::string>(p);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr double _stod(const StringType& p) {
 	return _stod(p.c_str());
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr double _stod(const typename ViewType<StringType>::Type& str) {
     return _stod(GetTrimmedStr(const_cast<typename CharType<StringType>::Type*>(str.data()), str.size()).data());
 }
@@ -467,12 +421,12 @@ constexpr float _stof(const char* p) {
     return static_cast<float>(_stod(p));
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr float _stof(const StringType& p) {
 	return _stof(p.c_str());
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr float _stof(const typename ViewType<StringType>::Type& str) {
 	return static_cast<float>(_stod(str));
 }
@@ -485,18 +439,18 @@ constexpr int _stoi(const char* p) {
     return ston<int, std::string>(p);
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr int _stoi(const StringType& p) {
 	return _stoi(p.c_str());
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr int _stoi(const typename ViewType<StringType>::Type& str) {
 	return _stoi(GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size()).data());
 }
 
 //convert Hex to Dex
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr int _hexSheet(const typename CharType<StringType>::Type p) {
 	switch (p) {
 	//numbers
@@ -580,7 +534,7 @@ constexpr int _hexSheet(const typename CharType<StringType>::Type p) {
 	}
 }
 
-template<typename StringType = std::wstring>
+template<StringConcept StringType = std::wstring>
 constexpr DWORD _h2d(const typename CharType<StringType>::Type* p, const size_t strLen = -1) {
     auto len = strLen == static_cast<size_t>(-1)
         ? CharType<StringType>::Length(p)
@@ -590,7 +544,9 @@ constexpr DWORD _h2d(const typename CharType<StringType>::Type* p, const size_t 
 		p += 1;
 		len -= 1;
 	}
-	if ((*p == MathSign<StringType>::ZERO) && (*(p + 1) == MathSign<StringType>::x || *(p + 1) == MathSign<StringType>::X)) {
+
+	if ((*p == MathSign<StringType>::ZERO)
+        && (*(p + 1) == MathSign<StringType>::x || *(p + 1) == MathSign<StringType>::X)) {
 		p += 2;
 		len -= 2;
 	}

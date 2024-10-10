@@ -8,50 +8,36 @@
 #include "StrNum.h"
 
 namespace CSV {
-    template<typename T>
-    concept STR = std::is_same_v<std::remove_cvref_t<T>, std::string>
-        || std::is_same_v<std::remove_cvref_t<T>, std::wstring>;
-
-    template<STR T>
-    struct GetViewType {};
+    template<StringConcept StringType>
+    struct SpecialChar {};
 
     template<>
-    struct GetViewType<std::string> {
-        using ViewType = std::string_view;
-        using CharType = char;
-
+    struct SpecialChar<std::string> {    
         constexpr static auto CHAR_STR_END = '\0';
         constexpr static auto CHAR_DELIMITER = ',';
         constexpr static auto CHAR_STR_QUOTATION = '\"';
         constexpr static auto STR_NEWLINE = "\r\n";
         constexpr static auto STR_RET = '\r';
         constexpr static auto STR_LINEFEED = '\n';
-
-        static size_t GetLength(const CharType* pStr) { return strlen(pStr); }
     };
 
     template<>
-    struct GetViewType<std::wstring> {
-        using ViewType = std::wstring_view;
-        using CharType = wchar_t;
-
+    struct SpecialChar<std::wstring> {
         constexpr static auto CHAR_STR_END = L'\0';
         constexpr static auto CHAR_DELIMITER = L',';
         constexpr static auto CHAR_STR_QUOTATION = L'\"';
         constexpr static auto STR_NEWLINE = L"\r\n";
         constexpr static auto STR_RET = L'\r';
         constexpr static auto STR_LINEFEED = L'\n';
-
-        static size_t GetLength(const CharType* pStr) { return wcslen(pStr); }
     };
 
-    template<STR T>
+    template<StringConcept StringType>
     struct CSVHandler {
-        using ViewType = typename GetViewType<T>::ViewType;        
-        T escape;
+        using ViewType = typename ViewType<StringType>::Type;
+        StringType escape;
 
         //process quota escape
-        inline T EscapeDoubleToSingle(const ViewType& src) {
+        inline StringType EscapeDoubleToSingle(const ViewType& src) {
             escape.clear();
             escape.reserve(src.length());
 
@@ -59,11 +45,11 @@ namespace CSV {
                 const bool end = (pos == src.length() - 1);
 
                 const auto cur = src[pos];
-                const auto next = !end ? src[pos + 1] : GetViewType<T>::CHAR_STR_END;
+                const auto next = !end ? src[pos + 1] : SpecialChar<StringType>::CHAR_STR_END;
 
                 escape += src[pos];
 
-                if ((cur == GetViewType<T>::CHAR_STR_QUOTATION) && (next == GetViewType<T>::CHAR_STR_QUOTATION)) {
+                if ((cur == SpecialChar<StringType>::CHAR_STR_QUOTATION) && (next == SpecialChar<StringType>::CHAR_STR_QUOTATION)) {
                     pos++;
                 }
             }
@@ -71,12 +57,12 @@ namespace CSV {
             return escape;
         }
 
-        inline T EscapeSingleToDouble(const ViewType& src) {
+        inline StringType EscapeSingleToDouble(const ViewType& src) {
             escape.clear();
             escape.reserve(src.length());
 
             for (const auto& pos : src) {
-                if (pos == GetViewType<T>::CHAR_STR_QUOTATION) { escape += pos; }
+                if (pos == SpecialChar<StringType>::CHAR_STR_QUOTATION) { escape += pos; }
                 escape += pos;
             }
 
@@ -84,10 +70,10 @@ namespace CSV {
         }
     };
 
-    template<STR T>
-    struct CSVParser :CSVHandler<T> {
+    template<StringConcept StringType>
+    struct CSVParser :CSVHandler<StringType> {
         using NewLineCb = std::function<void()>;
-        using NewItemCb = std::function<void(const typename GetViewType<T>::ViewType&)>;
+        using NewItemCb = std::function<void(const typename ViewType<StringType>::Type&)>;
 
         struct ParseOptions {
             bool bRemoveQuota = false;
@@ -97,7 +83,7 @@ namespace CSV {
 
         // parse the given CSV string
         // you need to reset the data receiver first
-        inline bool ParseCSV(const typename GetViewType<T>::CharType* pStr,
+        inline bool ParseCSV(const typename CharType<StringType>::Type* pStr,
             const NewLineCb& newLineCb, const NewItemCb& newItemCb,
             const ParseOptions& opt = {}) {
             // protection
@@ -105,7 +91,7 @@ namespace CSV {
             if (newLineCb == nullptr) { return false; }
             if (newItemCb == nullptr) { return false; }
 
-            const auto strLen = GetViewType<T>::GetLength(pStr);
+            const auto strLen = CharType<StringType>::Length(pStr);
 
             if (strLen == 0) { return false; }
 
@@ -122,17 +108,17 @@ namespace CSV {
                 const auto curChar = pStr[pos];
                 const auto nextChar = pStr[pos + 1];
 
-                const bool bEnd = nextChar == GetViewType<T>::CHAR_STR_END;
+                const bool bEnd = nextChar == SpecialChar<StringType>::CHAR_STR_END;
 
                 // quota
-                if (!bInQuota && (curChar == GetViewType<T>::CHAR_STR_QUOTATION)) {
+                if (!bInQuota && (curChar == SpecialChar<StringType>::CHAR_STR_QUOTATION)) {
                     bInQuota = true;
                     continue;
                 }
 
-                if (bInQuota && (curChar == GetViewType<T>::CHAR_STR_QUOTATION)) {
+                if (bInQuota && (curChar == SpecialChar<StringType>::CHAR_STR_QUOTATION)) {
                     //double quota
-                    if (nextChar == GetViewType<T>::CHAR_STR_QUOTATION) {
+                    if (nextChar == SpecialChar<StringType>::CHAR_STR_QUOTATION) {
                         bDoubleQuota = true;
                         pos++;
                         continue;
@@ -144,23 +130,23 @@ namespace CSV {
                 //get token
                 if (bInQuota) { continue; }
                 
-                const auto bNewLine = curChar == GetViewType<T>::STR_RET
-                    && nextChar == GetViewType<T>::STR_LINEFEED;
-                const auto bDelimiter = curChar == GetViewType<T>::CHAR_DELIMITER;
+                const auto bNewLine = curChar == SpecialChar<StringType>::STR_RET
+                    && nextChar == SpecialChar<StringType>::STR_LINEFEED;
+                const auto bDelimiter = curChar == SpecialChar<StringType>::CHAR_DELIMITER;
 
                 if (!bEnd && !bNewLine && !bDelimiter) { continue; }
 
                 // len is valid here, as curChar is not content unless it's end
                 const auto tokenLen = pos - tokenStart + bEnd;
-                const auto bRemoveQuota = opt.bRemoveQuota && pStr[tokenStart] == GetViewType<T>::CHAR_STR_QUOTATION;
+                const auto bRemoveQuota = opt.bRemoveQuota && pStr[tokenStart] == SpecialChar<StringType>::CHAR_STR_QUOTATION;
 
-                typename GetViewType<T>::ViewType token(pStr + tokenStart + bRemoveQuota,
+                typename SpecialChar<StringType>::ViewType token(pStr + tokenStart + bRemoveQuota,
                     tokenLen - 2 * bRemoveQuota);
 
                 if (opt.bTrim) { token = GetTrimmedStr(token); }
 
                 newItemCb(opt.bEscapeDoubleQuota && bDoubleQuota
-                    ? CSVHandler<T>::EscapeDoubleToSingle(token)
+                    ? CSVHandler<StringType>::EscapeDoubleToSingle(token)
                     : token);
                 bDoubleQuota = false;
 
@@ -176,9 +162,9 @@ namespace CSV {
         }
     };
 
-    template<STR T>
-    struct CSVBuilder :CSVHandler<T> {
-        T result;
+    template<StringConcept StringType>
+    struct CSVBuilder :CSVHandler<StringType> {
+        StringType result;
 
         inline CSVBuilder* Reset() {
             result.clear();
@@ -193,30 +179,30 @@ namespace CSV {
         };
 
     private:
-        inline CSVBuilder* AddNewItemWithQuote(const typename GetViewType<T>::ViewType& item,
+        inline CSVBuilder* AddNewItemWithQuote(const typename ViewType<StringType>::Type& item,
             const BuildOptions& opt = {}) {
-            if (opt.bAddQuota) { result += GetViewType<T>::CHAR_STR_QUOTATION; }
+            if (opt.bAddQuota) { result += SpecialChar<StringType>::CHAR_STR_QUOTATION; }
             result += item;
-            if (opt.bAddQuota) { result += GetViewType<T>::CHAR_STR_QUOTATION; }
+            if (opt.bAddQuota) { result += SpecialChar<StringType>::CHAR_STR_QUOTATION; }
 
-            result += GetViewType<T>::CHAR_DELIMITER;
+            result += SpecialChar<StringType>::CHAR_DELIMITER;
 
             return this;
         }
     public:
-        inline CSVBuilder* AddNewItem(typename GetViewType<T>::ViewType item,
+        inline CSVBuilder* AddNewItem(typename ViewType<StringType>::Type item,
             const BuildOptions& opt = {}) {
             if (opt.bTrim) { item = GetTrimmedStr(item); }
 
-            return AddNewItemWithQuote(opt.bEscapeSingleQuota && item.find_first_of(GetViewType<T>::CHAR_STR_QUOTATION) != T::npos
-                ? CSVHandler<T>::EscapeSingleToDouble(item)
+            return AddNewItemWithQuote(opt.bEscapeSingleQuota && item.find_first_of(SpecialChar<StringType>::CHAR_STR_QUOTATION) != StringType::npos
+                ? CSVHandler<StringType>::EscapeSingleToDouble(item)
                 : item,
                 opt);
         }
 
         inline CSVBuilder* AddNewLine() {
-            if (result.back() == GetViewType<T>::CHAR_DELIMITER) { result.pop_back(); }
-            result += GetViewType<T>::STR_NEWLINE;
+            if (result.back() == SpecialChar<StringType>::CHAR_DELIMITER) { result.pop_back(); }
+            result += SpecialChar<StringType>::STR_NEWLINE;
 
             return this;
         }
