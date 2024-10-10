@@ -1,7 +1,7 @@
 #pragma once
 
 #include "zlib/zlib.h"
-#include "GeneralDefinition.h"
+#include "_DeLib/GeneralDefinition.h"
 
 #pragma	comment(lib, RELATIVE_PATH("zlibstatic.lib"))
 
