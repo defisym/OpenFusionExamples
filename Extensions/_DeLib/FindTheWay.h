@@ -895,7 +895,7 @@ namespace FindTheWay {
 				this->base64.base64_decode_to_pointer(GetSubStr(start, end), terrain, mapSize);
 				this->base64.base64_decode_to_pointer(GetSubStr(start, end), dynamic, mapSize);
 			}
-			catch (decltype(BASE64_DECODEERROR)) {
+			catch (decltype(BASE64_DECODE_ERROR)) {
 				throw INVALID_DATA;
 			}
 

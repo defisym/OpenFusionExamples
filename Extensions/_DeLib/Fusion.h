@@ -117,7 +117,6 @@ inline T GetCurrentParam(LPRDATA rdPtr) {
 	}
 }
 
-
 //Return float
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	if (Val == (int)Val) {

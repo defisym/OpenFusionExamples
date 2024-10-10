@@ -20,17 +20,16 @@
 
 #pragma once
 
-
 #include <vector>
 #include <string>
 #include <iostream>
 #include <functional>
 
-typedef unsigned char BYTE;
-constexpr auto RETURNSIZE = 50;
-constexpr auto BASE64_DECODEERROR = 0;
 #include "StringTraits.h"
 
+typedef unsigned char BYTE;
+constexpr auto RETURN_SIZE = 50;
+constexpr auto BASE64_DECODE_ERROR = 0;
 
 template<StringConcept base64Str>
 std::wstring base64_chars_G(const std::wstring type) {
@@ -101,7 +100,7 @@ private:
         auto ret = (isalnum(c) || (c == plusChar) || (c == slashChar));
 
         if (!ret) {
-            throw BASE64_DECODEERROR;
+            throw BASE64_DECODE_ERROR;
         }
 
         return ret;
@@ -114,7 +113,7 @@ private:
 
 public:
     Base64() {
-        reserve(RETURNSIZE);
+        reserve(RETURN_SIZE);
     }
     ~Base64() {
 
@@ -238,7 +237,7 @@ public:
         const std::function<void(const BYTE* buff, const size_t size)>& callback) {
         try {
             this->base64_decode(encoded_string);
-        } catch (decltype(BASE64_DECODEERROR)) {
+        } catch (decltype(BASE64_DECODE_ERROR)) {
             return false;
         }
 
