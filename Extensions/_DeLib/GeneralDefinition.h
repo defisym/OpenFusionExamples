@@ -477,3 +477,45 @@ typename std::vector<T>::iterator
 InsertSortedLowerBound(std::vector<T>& vec, T const& item, Pred pred) {
 	return vec.insert(std::lower_bound(vec.begin(), vec.end(), item, pred), item);
 }
+
+#include<algorithm>
+
+template<CharConcept T>
+void ToLower(T* pStr, const size_t sz) {
+    for(size_t index = 0;index<sz;index++) {
+        auto& chr = pStr[index];
+        chr = tolower(chr);
+    }
+}
+
+template<StringConcept T>
+void ToLower(T& str) {
+    std::ranges::transform(str, str.begin(), ::tolower);
+}
+
+template<StringConcept T>
+T ToLower(const T& str) {
+    T ret = str;
+    std::ranges::transform(ret, ret.begin(), ::tolower);
+    return ret;
+}
+
+template<CharConcept T>
+void ToUpper(T* pStr, const size_t sz) {
+    for (size_t index = 0; index < sz; index++) {
+        auto& chr = pStr[index];
+        chr = ToUpper(chr);
+    }
+}
+
+template<StringConcept T>
+void ToUpper(T& str) {
+    std::ranges::transform(str, str.begin(), ::toupper);
+}
+
+template<StringConcept T>
+T ToUpper(const T& str) {
+    T ret = str;
+    std::ranges::transform(ret, ret.begin(), ::ToUpper);
+    return ret;
+}
