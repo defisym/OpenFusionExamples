@@ -1,6 +1,6 @@
 #pragma once
 
-#include <WindowsCommon.h>
+#include <_DeLib/WindowsCommon.h>
 
 #include "nlohmann/json.hpp"
 
@@ -10,7 +10,7 @@ constexpr auto MakeJsonParseErrorString(const char* pBase, const char* pContent)
 
 using JsonData = nlohmann::basic_json<>;
 
-class JsonObject {
+class JsonObject {  // NOLINT(cppcoreguidelines-special-member-functions)
 public:
     JsonObject() = default;
     explicit JsonObject(const JsonData& data) {}
@@ -59,8 +59,8 @@ public:
         return LoadCore(pBuf);
     }
 
-    inline void SetComment(bool bComment = true){
-        this->bComment = bComment;
+    inline void SetComment(const bool bEnableComment = true){
+        this->bComment = bEnableComment;
     }
 
     inline const JsonData& Get() {
