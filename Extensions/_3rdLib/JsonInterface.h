@@ -9,6 +9,7 @@ constexpr auto MakeJsonParseErrorString(const char* pBase, const char* pContent)
 }
 
 using JsonData = nlohmann::basic_json<>;
+using JsonIt = nlohmann::json::iterator;
 
 class JsonObject {  // NOLINT(cppcoreguidelines-special-member-functions)
 public:
@@ -27,12 +28,9 @@ private:
 
     template<typename T>
     inline bool LoadCore(T* in) {
-        if (in == nullptr) {
-            return false;
-        }
+        if (in == nullptr) { return false; }
 
         try {
-            //data = Json::parse(in);
             data = Json::parse(in, nullptr, true, this->bComment);            
         } catch (std::exception& e) {    //nlohmann::json_abi_v3_11_2::detail::parse_error
             const auto pErr = e.what();
@@ -48,15 +46,15 @@ private:
     }
 
 public:
+    inline bool Load(const char* pBuf) { return LoadCore(pBuf); }
+
+    inline bool Load(FILE* fp) { return LoadCore(fp); }
+
     inline bool Load(const wchar_t* pFileName) {
         FILE* fp = nullptr;
         _wfopen_s(&fp, pFileName, L"rb");
 
-        return LoadCore(fp);
-    }
-
-    inline bool Load(const char* pBuf) {
-        return LoadCore(pBuf);
+        return Load(fp);
     }
 
     inline void SetComment(const bool bEnableComment = true){
