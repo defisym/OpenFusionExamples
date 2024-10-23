@@ -494,7 +494,7 @@ void ToLower(T& str) {
 }
 
 template<StringConcept T>
-T ToLower(const T& str) {
+[[nodiscard]] T ToLower(const T& str) {
     T ret = str;
     std::ranges::transform(ret, ret.begin(), ::tolower);
     return ret;
@@ -514,7 +514,7 @@ void ToUpper(T& str) {
 }
 
 template<StringConcept T>
-T ToUpper(const T& str) {
+[[nodiscard]] T ToUpper(const T& str) {
     T ret = str;
     std::ranges::transform(ret, ret.begin(), ::ToUpper);
     return ret;
