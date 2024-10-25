@@ -5,9 +5,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../_3rdLib/",
+                "${workspaceFolder}/../_3rdLib/Boost;",
                 "${workspaceFolder}/../../Inc/",
-                "${workspaceFolder}",
-                "C:\\Boost\\"
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",

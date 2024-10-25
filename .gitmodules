@@ -1,0 +1,3 @@
+[submodule "Extensions/_3rdLib/Boost"]
+	path = Extensions/_3rdLib/Boost
+	url = https://github.com/boostorg/boost.git
