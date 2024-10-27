@@ -357,6 +357,8 @@ class FFMpeg {
 	int64_t totalTimeInMs = 0;
 	int64_t totalDuration = 0;
 
+    int64_t frameCount = 0;
+
 	// buffer for format conversion
 	uint8_t* p_global_bgr_buffer = nullptr;
 	// conversion buffer size
@@ -918,6 +920,12 @@ class FFMpeg {
 		totalTimeInMs = totalDuration == INT64_MAX
 						? totalDuration
 						: static_cast<int64_t>(round(totalTime * 1000));
+
+        frameCount = pVideoStream->nb_frames;
+        if (frameCount == 0
+            && pVideoStream->avg_frame_rate.num != 0 && pVideoStream->avg_frame_rate.den != 0) {
+            frameCount = static_cast<int64_t>(totalTime * av_q2d(pVideoStream->avg_frame_rate));
+        }
 #pragma endregion
 
 #pragma region AudioInit	
@@ -1765,8 +1773,12 @@ public:
 	}
 
 	inline int64_t get_videoDuration() const {
-		return static_cast<int64_t>(totalTimeInMs);
+		return totalTimeInMs;
 	}
+
+    inline int64_t get_videoFrameCount() const {
+        return frameCount;
+    }
 
 	inline int get_width() const {
 		return pVideoStream->codecpar->width;
