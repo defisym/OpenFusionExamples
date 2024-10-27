@@ -67,7 +67,7 @@ now you should build the extensions rely on boost
 
 #### FFMpeg
 
-Extension relies on X86 LGPL Shared 5.1
+Extension relies on X86 LGPL Shared 7.1
 
 Located at the same level of repo folder, aka in repo's parent folder
 
