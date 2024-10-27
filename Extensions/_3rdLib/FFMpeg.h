@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "MemBuf.h"
+#include "LockHelper.h"
 #include "PacketQueue.h"
 #include "WindowsCommon.h"
 #include "GeneralDefinition.h"
@@ -90,6 +91,9 @@ constexpr auto MAX_VIDEOQ_SIZE = 5 * 256 * 1024;
 
 // Queue state
 constexpr auto END_OF_QUEUE = -5;
+
+// time base
+constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // ------------------------------------
 // FFMpeg Exception
@@ -168,8 +172,7 @@ constexpr auto FFMpegFlag_ForceNoAudio = FFMpegFlag_MakeFlag(0b0000000000000010)
 class FFMpeg;
 
 class FFMpegOptions {
-private:
-	friend class FFMpeg;
+    friend class FFMpeg;
 
 	const AVCodec* pVideoCodec = nullptr;
 	const AVCodec* pAudioCodec = nullptr;
@@ -215,26 +218,7 @@ public:
 	}
 };
 
-// RAII
-struct LockHelper {
-private:
-	SDL_SpinLock* _plock = nullptr;
-public:
-	explicit LockHelper(SDL_SpinLock* plock) :_plock(plock) {
-		SDL_AtomicLock(plock);
-	}
-	~LockHelper() {
-		SDL_AtomicUnlock(_plock);
-	}
-};
-
-constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
-
-// pData, stride, height
-using frameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
-
 class FFMpeg {
-private:
 #pragma region value
 #pragma region control
 	bool bExit = false;
@@ -272,7 +256,7 @@ private:
 	double frameLastPts = 0;
 	double frameLastDelay = 40e-3;
 
-	enum class SyncState {
+    enum class SyncState :std::uint8_t {
 		SYNC_VIDEOFASTER,
 		SYNC_CLOCKFASTER,
 		SYNC_SYNC,
@@ -400,6 +384,11 @@ private:
 
 #pragma endregion
 
+#pragma endregion
+
+#pragma region type
+    // pData, stride, height
+    using FrameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 #pragma endregion
 
 	// ------------------------------------
@@ -913,7 +902,6 @@ private:
 		// https://www.appsloveworld.com/cplus/100/107/finding-duration-number-of-frames-of-webm-using-ffmpeg-libavformat
 		if (pVideoStream->duration != AV_NOPTS_VALUE) {
 			totalDuration = pVideoStream->duration;
-
 			rational = pVideoStream->time_base;
 		}
 		else if (pFormatContext->duration != AV_NOPTS_VALUE) {
@@ -1004,7 +992,7 @@ private:
 	// if the main AVFormatContext is used, you should use audio lock
 	// as audio thread will affect it when filling queue
 	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext,
-		 double targetPts, const frameDataCallBack& callBack, bool bAccurateSeek = true) {
+		 double targetPts, const FrameDataCallBack& callBack, bool bAccurateSeek = true) {
 		// temp frames used in seeking
 		struct TempFrame {
 			bool bValid = false;
@@ -1141,7 +1129,7 @@ private:
 		return response;
 	}
 
-	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
+	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_unref(pSWFrame);
@@ -1195,7 +1183,7 @@ private:
 		av_frame_unref(pFrame);
 	}
 
-	inline int decode_frame(const frameDataCallBack& callBack) {
+	inline int decode_frame(const FrameDataCallBack& callBack) {
 		SyncState syncState;
 
 		do {
@@ -1550,14 +1538,14 @@ private:
 			if (diff <= -syncThreshold) {
 				return SyncState::SYNC_CLOCKFASTER;
 			}
+
 			// video is faster
-			else if (diff >= syncThreshold) {
-				return SyncState::SYNC_VIDEOFASTER;
-			}
-			else {
-				return SyncState::SYNC_SYNC;
-			}
-		}
+            if (diff >= syncThreshold) {
+                return SyncState::SYNC_VIDEOFASTER;
+            }
+
+            return SyncState::SYNC_SYNC;
+        }
 
 		return SyncState::SYNC_SYNC;
 	}
@@ -1931,7 +1919,7 @@ public:
 
 	// call set_videoPosition first to seek to target frame
 	// then call this to decode to next valid frame if needed
-	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
+	inline int goto_videoPosition(const size_t ms, const FrameDataCallBack& callBack) {
 		// As audio thread can affect the main format context, lock it here
 		LockHelper lockHelper(&audioLock);
 
@@ -1942,7 +1930,7 @@ public:
 	}
 
 	// get video frame of given time stamp
-	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
+	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const FrameDataCallBack& callBack) {
 		// update context
 		if (!pSeekFormatContext) {
 			const auto bSuccess = bFromMem
@@ -1979,7 +1967,7 @@ public:
 	}
 
 	// read next frame and handle loop automatically
-	inline int get_nextFrame(const frameDataCallBack& callBack) {
+	inline int get_nextFrame(const FrameDataCallBack& callBack) {
 		int response = handleLoop();
 
 		if (!bFinish) { response = decode_frame(callBack); }
