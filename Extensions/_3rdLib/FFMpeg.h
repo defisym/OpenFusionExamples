@@ -1893,15 +1893,15 @@ public:
 	// call goto_videoPosition to next valid frame if needed
 	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
 		LockHelper lockHelper(&audioLock);
-
-		const auto targetPts = static_cast<double>(ms) / 1000.0;
-		const int steam_index = get_streamIndex();
-		if (steam_index == -1) { return -1; }
+        const int steam_index = get_streamIndex();
+        if (steam_index == -1) { return -1; }
 
 		// protection	
 		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
 			? Range(ms, static_cast<int64_t>(0), get_videoDuration())
 			: ms;
+        const auto targetPts = static_cast<double>(ms) / 1000.0;
+
 		int response = seekFrame(pFormatContext, steam_index, ms, flags);
 
 		if (response < 0) { return response; }
