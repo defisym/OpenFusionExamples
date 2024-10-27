@@ -1066,7 +1066,7 @@ class FFMpeg {
 
 				// goto target
 				if (!bAccurateSeek) { break; }
-				if (videoClock >= targetPts) { break; }
+                if (videoClock > targetPts || NearlyEqualDBL(videoClock, targetPts)) { break; }
 
 				//count++;
 			}
