@@ -1697,8 +1697,8 @@ public:
 			delete pSeekMemBuf;
 			pSeekMemBuf = nullptr;
 
-			av_freep(&pAvioContext);
-			av_freep(&pSeekAvioContext);
+            avio_context_free(&pAvioContext);
+            avio_context_free(&pSeekAvioContext);
 		}
 
 		delete[] p_global_bgr_buffer;
