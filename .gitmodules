@@ -1,3 +1,9 @@
 [submodule "Extensions/_3rdLib/Boost"]
 	path = Extensions/_3rdLib/Boost
 	url = https://github.com/boostorg/boost.git
+[submodule "Extensions/_3rdLib/nlohmann"]
+	path = Extensions/_3rdLib/nlohmann
+	url = https://github.com/nlohmann/json.git
+[submodule "Extensions/_3rdLib/va_args_iterators"]
+	path = Extensions/_3rdLib/va_args_iterators
+	url = https://github.com/cormacc/va_args_iterators.git
