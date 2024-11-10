@@ -2,7 +2,7 @@
 
 #include <_DeLib/WindowsCommon.h>
 
-#include "nlohmann/include/nlohmann/json.hpp"
+#include "nlohmann/single_include/nlohmann/json.hpp"
 
 constexpr auto MakeJsonParseErrorString(const char* pBase, const char* pContent) {
     return std::string(pBase) + std::string(": ") + std::string(pContent);
