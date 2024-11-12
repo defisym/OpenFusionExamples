@@ -880,10 +880,9 @@ namespace FindTheWay {
 
 					return result;
 				}
-				else {
-					return std::wstring{};
-				}
-			};
+
+			    return std::wstring{};
+            };
 
 			const auto width = _stoi(GetSubStr(start, end));
 			const auto height = _stoi(GetSubStr(start, end));
@@ -895,18 +894,9 @@ namespace FindTheWay {
 				this->base64.base64_decode_to_pointer(GetSubStr(start, end), terrain, mapSize);
 				this->base64.base64_decode_to_pointer(GetSubStr(start, end), dynamic, mapSize);
 			}
-			catch (decltype(BASE64_DECODE_ERROR)) {
-				throw INVALID_DATA;
+            catch ([[maybe_unused]] std::exception& e) {
+				throw;
 			}
-
-			//DWORD dwNeed = mapSize;
-
-			//if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, terrain, &dwNeed, NULL, NULL)) {
-			//	throw INVALID_DATA;
-			//}
-			//if (!CryptStringToBinary(GetSubStr(start, end).c_str(), 0, CRYPT_STRING_BASE64, dynamic, &dwNeed, NULL, NULL)) {
-			//	throw INVALID_DATA;
-			//}
 
 			UpdateMap();
 		}

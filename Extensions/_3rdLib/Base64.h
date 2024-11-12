@@ -24,7 +24,7 @@
 #include <string>
 #include <functional>
 
-#include <_DeLib/StringTraits.h>
+#include "StringTraits.h"
 
 namespace Base64Constants {
     constexpr auto B64EndChar = 0;

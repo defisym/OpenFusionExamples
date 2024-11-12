@@ -1,6 +1,6 @@
 #pragma once
 
-#include <_DeLib/WindowsCommon.h>
+#include "WindowsCommon.h"
 
 #include "nlohmann/single_include/nlohmann/json.hpp"
 

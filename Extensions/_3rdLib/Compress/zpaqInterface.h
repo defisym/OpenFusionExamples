@@ -4,7 +4,7 @@
 #pragma warning(disable : 26495)
 
 #include "zpaq/libzpaq.h"
-#include "_DeLib/GeneralDefinition.h"
+#include "GeneralDefinition.h"
 
 #ifdef _DEBUG
 #pragma	comment(lib, RELATIVE_PATH("zpaqstaticd.lib"))
