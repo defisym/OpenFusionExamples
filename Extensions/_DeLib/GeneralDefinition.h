@@ -33,7 +33,7 @@
 #define SetExtUserData(pData) MV->mvSetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib, pData)
 #define GetExtUserData() MV->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
 
-#define TURNCATE_SHORT(v) ((short)(v) & 0x7FFF)
+#define TRUNCATE_SHORT(v) ((short)(v) & 0x7FFF)
 
 #define CONNECT_STR(l, r) l##r
 #define STRINGIFY(s) #s

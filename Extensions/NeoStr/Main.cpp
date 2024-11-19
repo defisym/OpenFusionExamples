@@ -215,8 +215,8 @@ long WINAPI DLLExport Condition_PosOverlapTriggerRect(LPRDATA rdPtr, long param1
 // ============================================================================
 
 short WINAPI DLLExport Action_ChangeRenderSize(LPRDATA rdPtr, long param1, long param2) {
-	short width = TURNCATE_SHORT(CNC_GetIntParameter(rdPtr));
-	short height = TURNCATE_SHORT(CNC_GetIntParameter(rdPtr));
+	short width = TRUNCATE_SHORT(CNC_GetIntParameter(rdPtr));
+	short height = TRUNCATE_SHORT(CNC_GetIntParameter(rdPtr));
 
 	rdPtr->swidth = width;
 	rdPtr->sheight = height;
