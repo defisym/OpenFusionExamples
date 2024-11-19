@@ -1,12 +1,13 @@
+# Reference
+_FFMpeg_Ref/*
+
+# Libs
 Compress/lz4/*
 Compress/zlib/*
 Compress/zpaq/*
 
 Eigen/*
 WinToast/*
-nlohmann/*
-va_args_iterators/*
 
+# Header only
 CLI11.hpp
-
-_FFMpeg_Ref/*
