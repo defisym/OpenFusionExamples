@@ -1105,7 +1105,7 @@ class FFMpeg {
 	}
 
 	inline int fill_queueonce() {
-		LockHelper lockHelper(&queueLock);
+		SpinLockHelper lockHelper(&queueLock);
 		const auto response = av_read_frame(pFormatContext, pPacket);
 
 		bReadFinish = (response == AVERROR_EOF);
@@ -1893,7 +1893,7 @@ public:
 	// seek to given time stamp
 	// call goto_videoPosition to next valid frame if needed
 	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
-		LockHelper lockHelper(&audioLock);
+        SpinLockHelper lockHelper(&audioLock);
         const int steam_index = get_streamIndex();
         if (steam_index == -1) { return -1; }
 
@@ -1934,7 +1934,7 @@ public:
 	// then call this to decode to next valid frame if needed
 	inline int goto_videoPosition(const size_t ms, const FrameDataCallBack& callBack) {
 		// As audio thread can affect the main format context, lock it here
-		LockHelper lockHelper(&audioLock);
+        SpinLockHelper lockHelper(&audioLock);
 
 		const auto targetPts = ms / 1000.0;
 		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
@@ -2079,7 +2079,7 @@ public:
 	using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 	inline int audio_fillData(uint8_t* stream, int len, const Setter& setter, const Mixer& mixer) {
-		LockHelper lockHelper(&audioLock);
+        SpinLockHelper lockHelper(&audioLock);
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;
