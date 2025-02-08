@@ -248,8 +248,13 @@ set to non-strike out
 ## Action
 
 - Embed Font
-  - *you must embed font here, as this extension use a different render system, so built-in embed in DX11 or old GDI font embed object will not work*
-  - *this object also embed GDI font*
+  - *TL;DR: you **MUST** use **this action** to embed font*
+  - *Explanation*
+    - *Fusion's font system works differently under different runtimes. For windows, DX9 relies on GDI and DX11 relies on other font libs*
+    - *For DX9, aka GDI, you can use the font embed object, which is a wrapper of `AddFontResourceEx` or it's similar. You need to ship fonts with your game or embed it in binary files then handle it by yourself.*
+    - *For DX11, fusion auto embed referred fonts. However, the document was outdated so there's no info about this mechanism (there's a feature called font bank on other runtimes including Android, and there's a few documents about the counterpart of images. But as for me, the attempt to utilize it to auto embed fonts in DX11 failed due to the lack of document).*
+    - *This extensions relies on GDI plus, a successor of GDI for now (and there's no grantee to not move to other font libs in the future), which is a different render system comparing to Fusion, so the previous methods (font embed object for GDI in DX9 and built-in embed in DX11) to embed font will not work except **this action***
+    - *Note that this object also embed GDI font, so you can replace that object safely if needed*
 
 - Change Display String
 - App Display String
