@@ -150,10 +150,7 @@ long WINAPI DLLExport GetCurRandomTable(LPRDATA rdPtr, long param1) {
 
 	size_t count = 0;
 	for (auto& it : *rdPtr->pRandomTable) {
-		std::wstring ret(3, '\0');
-		swprintf(&ret[0], 3, L"%2d", it);
-
-		(*rdPtr->pCurTableStr) += ret.c_str();
+		(*rdPtr->pCurTableStr) += std::format(L"{:2d}", it);;
 		(*rdPtr->pCurTableStr) +=L" ";
 
 		count++;
