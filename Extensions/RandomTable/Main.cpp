@@ -140,7 +140,7 @@ long WINAPI DLLExport GetNRandomNumberAverage(LPRDATA rdPtr, long param1) {
 		result += GetRandomNumber(rdPtr);
 	}
 
-	return result/ size;
+	return static_cast<long>(static_cast<double>(result) / size);
 }
 
 long WINAPI DLLExport GetCurRandomTable(LPRDATA rdPtr, long param1) {
