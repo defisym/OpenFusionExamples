@@ -103,10 +103,10 @@ private:
 
 		unsigned int dataWrite = 0;
 
-		constexpr auto sountTouchSize = sizeof(const short);
+		constexpr auto soundTouchSize = sizeof(const short);
 
 		const auto protectedBufSz = min(bufSz, len);
-		const auto shortSize = protectedBufSz / sountTouchSize;
+		const auto shortSize = protectedBufSz / soundTouchSize;
 
 		memcpy(pBuf, stream, protectedBufSz);
 
