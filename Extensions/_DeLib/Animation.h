@@ -383,7 +383,7 @@ private:
     inline AnimationFrameData* GetNext() {
         if (static_cast<size_t>(curIndex + 1) >= pFrameDatas.size()) {
             if (pAnimationInfo->loop || repeatCount > 0) {
-                repeatCount = max(0, repeatCount - 1);
+                repeatCount = (std::max)(0, repeatCount - 1);
 
                 return pFrameDatas[pAnimationInfo->backTo];
             }
@@ -448,10 +448,9 @@ public:
 
         pCurFrameData = new AnimationFrameData(*pFrameDatas.front());
 
-        //pAnimationInfo->speed = Range(pAnimationInfo->speed, Animation_MinSpeed, Animation_MaxSpeed);
         pAnimationInfo->speed = (std::max)(pAnimationInfo->speed, Animation_MinSpeed);
         pAnimationInfo->backTo = Range(pAnimationInfo->backTo, 0, static_cast<int>(pFrameDatas.size() - 1));
-        pAnimationInfo->repeat = max(0, pAnimationInfo->repeat);
+        pAnimationInfo->repeat = (std::max)(0, pAnimationInfo->repeat);
 
         // init
         pPrevious = pFrameDatas[0];

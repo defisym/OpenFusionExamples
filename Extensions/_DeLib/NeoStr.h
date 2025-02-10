@@ -2848,11 +2848,12 @@ public:
 									return;
 								}
 
-								memset(newLogFont.lfFaceName, 0
-									, LF_FACESIZE * sizeof(WCHAR));
-								memcpy(newLogFont.lfFaceName, controlParam.data()
-									, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
-								});
+                                memset(newLogFont.lfFaceName, 0,
+                                    LF_FACESIZE * sizeof(WCHAR));
+                                memcpy(newLogFont.lfFaceName, controlParam.data(),
+                                    (std::min)(static_cast<size_t>(LF_FACESIZE),
+                                    controlParam.size()) * sizeof(WCHAR));
+                                });
 
 							break;
 						}
@@ -3216,7 +3217,7 @@ public:
 				auto charSz = &pCharSizeArr[pChar];
 
 				curWidth += charSz->width;
-				curHeight = max(curHeight, charSz->height);
+				curHeight = (std::max)(curHeight, charSz->height);
 
 				bNewLineHandled = false;
 
@@ -3368,7 +3369,7 @@ public:
 				std::wstring strEscaped(pText + pChar);
 #endif // _DEBUG
 
-				auto end = min(pChar, pTextLen) - 2 * newLine;
+				auto end = (std::min)(pChar, pTextLen) - 2 * newLine;
 				
 				if (end <= pCharStart) {
 					end = pCharStart;
@@ -3392,7 +3393,7 @@ public:
 #endif // _DEBUG
 
 				maxWidth = curWidth != 0
-					? max(maxWidth, curWidth - nColSpace)
+					? (std::max)(maxWidth, curWidth - nColSpace)
 					: maxWidth;
 			}
 

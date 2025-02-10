@@ -110,7 +110,7 @@ long WINAPI DLLExport GetRandomNumber(LPRDATA rdPtr,long param1) {
 
 long WINAPI DLLExport ShowRandomNumber(LPRDATA rdPtr, long param1) {	
 	size_t p1 = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t pos = min(max(0, p1), (size_t)(rdPtr->maxSize-1));
+	size_t pos = (std::min)((std::max)(0u, p1), (size_t)(rdPtr->maxSize-1));
 
 	return (*rdPtr->pRandomTable)[pos];
 }
@@ -128,12 +128,12 @@ long WINAPI DLLExport SavetoBase64(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetRandomTableSize(LPRDATA rdPtr, long param1) {	
-	return rdPtr->maxSize;
+	return static_cast<long>(rdPtr->maxSize);
 }
 
 long WINAPI DLLExport GetNRandomNumberAverage(LPRDATA rdPtr, long param1) {
-	size_t p1 = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	size_t size = min(max(0, p1), (size_t)(rdPtr->maxSize - 1));
+	size_t p1 = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);    
+	size_t size = ::Range(p1, 0u, rdPtr->maxSize - 1);;
 
 	int result = 0;
 	for (size_t i = 0; i < size; i++) {

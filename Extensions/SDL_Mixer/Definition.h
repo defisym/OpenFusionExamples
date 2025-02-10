@@ -105,7 +105,7 @@ private:
 
 		constexpr auto soundTouchSize = sizeof(const short);
 
-		const auto protectedBufSz = min(bufSz, len);
+		const auto protectedBufSz = (std::min)(bufSz, len);
 		const auto shortSize = protectedBufSz / soundTouchSize;
 
 		memcpy(pBuf, stream, protectedBufSz);
@@ -637,10 +637,6 @@ struct GlobalData {
 	// ------------
 
 	// 0 ~ 100 -> 0 ~ 128
-	//static inline int Range(int v, int l, int h) {
-	//	return max(min(v, h), l);
-	//}
-
 	static inline int VolumeConverter(int volume) {
 		return (int)((::Range(volume, Fusion_MinVolume, Fusion_MaxVolume) /
 			static_cast<double>(Fusion_MaxVolume)) * static_cast<double>(Mix_MaxVolume));

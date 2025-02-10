@@ -5,14 +5,6 @@
 // 進んだ道の先　光が見つかるから
 // YOU'LL FIND THE WAY
 
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#endif
-
 #include <functional>
 #include <algorithm>
 #include <numbers>
@@ -215,7 +207,7 @@ namespace FindTheWay {
 	constexpr auto MAP_OBSTACLE = 255;
 
 	template <typename T>
-	constexpr auto Range(T X) { return (max(MAP_PATH, min(MAP_OBSTACLE, X))); }
+    constexpr auto Range(T x) { return ::Range(x, static_cast<T>(MAP_PATH), static_cast<T>(MAP_OBSTACLE)); }
 
 	constexpr auto STEP_UNREACHABLE = 65536;
 
@@ -545,7 +537,7 @@ namespace FindTheWay {
 				return;
 			}
 
-			*pMapPos = static_cast<BYTE>(Range(cost));
+			*pMapPos = Range(cost);
 
 			updateMap = needUpdate;
 		}

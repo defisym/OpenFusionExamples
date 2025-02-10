@@ -21,7 +21,7 @@ namespace Easing {
 	inline double back(double step, EaseVars vars) { return (vars.overshoot + 1.0) * pow(step, 3.0) - vars.overshoot * pow(step, 2.0); }
 	inline double elastic(double step, EaseVars vars) {
 		step -= 1.0;
-		float amp = (float)max(1.0, vars.amplitude);
+		float amp = (float)(std::max)(1.0, vars.amplitude);
 		float s = (float)(vars.period / (2.0 * PI) * asin(1.0 / amp));
 		return -(amp * pow(2.0, 10 * step) * sin((step - s) * (2 * PI) / vars.period));
 	}

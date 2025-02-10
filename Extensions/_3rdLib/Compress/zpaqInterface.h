@@ -119,7 +119,7 @@ public:
     }
 
     void output(char* buf, size_t bufSz) {
-        auto sz = min(dstBuf.size(), bufSz);
+        auto sz = (std::min)(dstBuf.size(), bufSz);
         memcpy(buf, dstBuf.data(), sz);
     }
 };

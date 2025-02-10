@@ -46,10 +46,10 @@ namespace Deque2D {
 		std::vector<SearchResult> SearchResultVec;
 
 		inline size_t GetValidArrayPos(size_t ArrayPos) const {
-			return min(this->ArrayBackPos(), ArrayPos);
+			return (std::min)(this->ArrayBackPos(), ArrayPos);
 		}
 		inline size_t GetValidDataPos(size_t ArrayPos, size_t DataPos) const {
-			return min(this->DataBackPos(ArrayPos), DataPos);
+			return (std::min)(this->DataBackPos(ArrayPos), DataPos);
 		}
 
 		inline Pos GetValidPos(size_t ArrayPos, size_t DataPos) const {
@@ -123,9 +123,7 @@ namespace Deque2D {
 		}
 		//Load from string
 		inline void Load(const std::wstring& Src) {
-			if (Src.length() == 0) {
-				return;
-			}
+            if (Src.empty()) { return; }
 
 			//Reset
 			Dat.clear();
