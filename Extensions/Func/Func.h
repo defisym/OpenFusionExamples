@@ -238,16 +238,16 @@ inline void IterateObjectCore(LPRDATA rdPtr, short oil,
 inline bool HasParam(LPRDATA rdPtr, size_t Pos) {
 	return !rdPtr->FuncParamStack->empty()
 		&& !rdPtr->FuncParamStack->back().empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)));
+		&& Pos < rdPtr->FuncParamStack->back().size();
 }
 
 inline Data& GetParam(LPRDATA rdPtr, size_t Pos) {
 	return rdPtr->FuncParamStack->back().at(Pos);
 }
 
-inline bool HasReturn(LPRDATA rdPtr, size_t Pos) {
+inline bool HasReturn(LPRDATA rdPtr, size_t Pos) {   
 	return !rdPtr->FuncReturn->empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)));
+		&& Pos < rdPtr->FuncReturn->size();
 }
 
 inline Data& GetReturn(LPRDATA rdPtr, size_t Pos) {
