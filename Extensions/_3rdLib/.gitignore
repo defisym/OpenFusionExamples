@@ -7,7 +7,5 @@ Compress/zlib/*
 Compress/zpaq/*
 
 Eigen/*
-WinToast/*
 
 # Header only
-CLI11.hpp

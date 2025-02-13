@@ -10,3 +10,6 @@
 [submodule "Extensions/_3rdLib/CLI11"]
 	path = Extensions/_3rdLib/CLI11
 	url = https://github.com/CLIUtils/CLI11.git
+[submodule "Extensions/_3rdLib/WinToast"]
+	path = Extensions/_3rdLib/WinToast
+	url = https://github.com/mohabouje/WinToast.git

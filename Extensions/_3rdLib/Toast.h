@@ -1,8 +1,7 @@
+#pragma once
+
 // https://github.com/mohabouje/WinToast
-
-#include "WinToast/wintoastlib.h"
-
-using namespace WinToastLib;
+#include "wintoastlib.h"
 
 constexpr auto WinToastError_InCompatible = 1;
 constexpr auto WinToastError_InitFailed = 2;
@@ -63,16 +62,16 @@ private:
         auto version = _itos((rhApp->m_miniHdr.gaVersion << 16) + rhApp->m_miniHdr.gaSubVersion);
 #endif
 
-        WinToast::instance()->setAppName(appName);
+        WinToastLib::WinToast::instance()->setAppName(appName);
         const auto aumi =
-            WinToast::configureAUMI(companyName
+            WinToastLib::WinToast::configureAUMI(companyName
                 , productName
                 , appName
                 , version);
 
-        WinToast::instance()->setAppUserModelId(aumi);
+        WinToastLib::WinToast::instance()->setAppUserModelId(aumi);
 
-        if (!WinToast::instance()->initialize()) {
+        if (!WinToastLib::WinToast::instance()->initialize()) {
             //throw WinToastError_InitFailed;
             return;
         }
@@ -93,7 +92,7 @@ public:
         this->rdPtr = rdPtr;     
         this->pToastHandler = new WinToastHandler;
         this->bAvailable = true;
-    };
+    }
 
     ~WinToastHelper() {
         // exception of access violation if notification still exists when closing
@@ -101,14 +100,14 @@ public:
         //    WinToast::instance()->hideToast(ID);
         //}
 
-        WinToast::instance()->clear();
+        WinToastLib::WinToast::instance()->clear();
 
         delete pToastHandler;
         pToastHandler = nullptr;
     };
 
     inline bool IsCompatible() {
-        return WinToast::isCompatible();
+        return WinToastLib::WinToast::isCompatible();
     }
 
     inline void SetFlag(DWORD flags = WinToastFlags_Default) {
@@ -125,17 +124,17 @@ public:
             return false;
         }
 
-        WinToastTemplate templ = WinToastTemplate(WinToastTemplate::Text02);
+        WinToastLib::WinToastTemplate templ = WinToastLib::WinToastTemplate(WinToastLib::WinToastTemplate::Text02);
 
-        templ.setTextField(title, WinToastTemplate::FirstLine);
-        templ.setTextField(content, WinToastTemplate::SecondLine);
+        templ.setTextField(title, WinToastLib::WinToastTemplate::FirstLine);
+        templ.setTextField(content, WinToastLib::WinToastTemplate::SecondLine);
 
         if (bImmediatePush) {
-            WinToast::instance()->clear();
+            WinToastLib::WinToast::instance()->clear();
         }
 
-        WinToast::WinToastError error;
-        auto ret = WinToast::instance()->showToast(templ, pToastHandler, &error);
+        WinToastLib::WinToast::WinToastError error;
+        auto ret = WinToastLib::WinToast::instance()->showToast(templ, pToastHandler, &error);
 
         bool bValid = !(ret < 0);
 
