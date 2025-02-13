@@ -18,7 +18,6 @@ Files listed in gitignore are also used but remain untouched, please download th
 - [LZ4](https://github.com/lz4/lz4)
 - [ZLib](https://zlib.net/)
 - [ZPaq](https://github.com/zpaq/zpaq)
-- [WinToast](https://github.com/mohabouje/WinToast)
 
 ### Submodule
 
