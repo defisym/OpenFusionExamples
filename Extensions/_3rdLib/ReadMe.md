@@ -23,3 +23,7 @@ Files listed in gitignore are also used but remain untouched, please download th
 
 1. run `git submodule update --init` to update submodules
 2. build according to the document. [This file](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/ReadMe.md)contains an example about how to build boost from submodule
+
+## Troubleshooting
+
+Those libs are well-designed and are widely used in several famous infrastructure, so usually there's no compatibility issues even with the last builds. However, if the worst case occurs (e.g., a new pure virtual interface added), please feel free to open an issue.
