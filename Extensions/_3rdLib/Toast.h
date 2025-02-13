@@ -16,18 +16,11 @@ public:
     ~WinToastHandler() {}
 
     // Public interfaces
-    void toastActivated() const override {
-        return;
-    }
-    void toastActivated(int actionIndex) const {
-        return;
-    }
-    void toastDismissed(WinToastDismissalReason state) const override {
-        return;
-    }
-    void toastFailed() const override {
-        return;
-    }
+    void toastActivated() const override {}
+    void toastActivated(int actionIndex) const override {}
+    void toastActivated(const char* response) const override {}
+    void toastDismissed(WinToastDismissalReason state) const override {}
+    void toastFailed() const override {}
 };
 
 class WinToastHelper {
@@ -51,7 +44,7 @@ private:
         auto companyName = L"Clickteam";
         auto productName = L"Fusion";
 
-        auto version = _itos(rhApp->m_miniHdr.gaPrdBuild);
+        auto version = _itos(static_cast<size_t>(rhApp->m_miniHdr.gaPrdBuild));
 #else
         auto appName = rhApp->m_name;
         auto companyName = rhApp->m_copyright == nullptr
