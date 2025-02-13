@@ -48,7 +48,7 @@ private:
 
 #if !defined(RUN_ONLY)
         auto appName = L"Edrt";
-        auto companyName = L"Clicteam";
+        auto companyName = L"Clickteam";
         auto productName = L"Fusion";
 
         auto version = _itos(rhApp->m_miniHdr.gaPrdBuild);
