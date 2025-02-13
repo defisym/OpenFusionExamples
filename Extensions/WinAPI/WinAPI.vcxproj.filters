@@ -163,9 +163,6 @@
     <ClInclude Include="..\_DeLib\FusionUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_3rdLib\CLI11.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\_3rdLib\GetVideoFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
