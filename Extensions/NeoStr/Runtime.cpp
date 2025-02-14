@@ -641,13 +641,29 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 		const auto pStr = cb();
 		return pStr ? pStr : L"No String";
 		};
+    auto copyString = [&pBuffer] (const std::wstring& result) {
+        if (result.length() < DB_BUFFERSIZE) {
+            memcpy(pBuffer, result.c_str(), sizeof(wchar_t) * result.length());
+            pBuffer[result.length()] = L'\0';
+
+            return;
+        }
+
+        constexpr auto turncated = L"(...turncated)";
+        const auto turncatedLength = wcslen(turncated);
+
+        const auto allowedLength = DB_BUFFERSIZE - turncatedLength - 1;
+        memcpy(pBuffer, result.c_str(), sizeof(wchar_t) * allowedLength);
+        memcpy(pBuffer + allowedLength, turncated, sizeof(wchar_t) * turncatedLength);
+        pBuffer[DB_BUFFERSIZE] = L'\0';
+        };
 
 	switch (id) {
 	case DB_DisplayString:
 	{
 		const auto result = std::format(L"Display String: {}",
 			getString(rdPtr->pNeoStr, [&] () {return rdPtr->pNeoStr->GetRawText(); }));
-		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
+        copyString(result);
 
 		break;
 	}
@@ -655,7 +671,7 @@ void WINAPI DLLExport GetDebugItem(LPTSTR pBuffer, LPRDATA rdPtr, int id)
 	{
 		const auto result = std::format(L"Filtered String: {}",
 			getString(rdPtr->pNeoStr, [&] () {return rdPtr->pNeoStr->GetText(); }));
-		wcscpy_s(pBuffer, DB_BUFFERSIZE, result.c_str());
+        copyString(result);
 
 		break;
 	}
