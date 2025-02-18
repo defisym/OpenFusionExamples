@@ -10,99 +10,101 @@
 // auto data = base64_decode(encoded_string);
 // 2.
 // size_t bufsz = BIGENOUGH;
-// BYTE* buffer = new BYTE[BIGENOUGH];
+// unsigned char* buffer = new unsigned char[BIGENOUGH];
 // base64_decode(encoded_string, buffer, bufsz);
 // 3.
 // base64_decode(encoded_string);
 // size_t bufsz = base64_decode_size();
-// BYTE* buffer = new BYTE[bufsz];
+// unsigned char* buffer = new unsigned char[bufsz];
 // base64_decode(buffer, bufsz);
 
 #pragma once
 
-
 #include <vector>
 #include <string>
-#include <iostream>
 #include <functional>
 
-typedef unsigned char BYTE;
-constexpr auto RETURNSIZE = 50;
-constexpr auto BASE64_DECODEERROR = 0;
+#include "StringTraits.h"
 
-template<class T> 
-concept STR = std::is_same_v<T, std::wstring> || std::is_same_v<T, std::string>;
-
-template<STR base64Str>
-std::wstring base64_chars_G(const std::wstring type) {
-    std::wstring base64_charsW =
-        L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        L"abcdefghijklmnopqrstuvwxyz"
-        L"0123456789+/";
-
-    return base64_charsW;
+namespace Base64Constants {
+    constexpr auto B64EndChar = 0;
+    constexpr auto PlusChar = 1;
+    constexpr auto SlashChar = 2;
+    constexpr auto StrEndChar = -1;
 }
 
-template<STR base64Str>
-std::string base64_chars_G(const std::string type) {
-    std::string base64_charsA =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz"
-        "0123456789+/";
+template<StringConcept StringType = std::wstring>
+struct Base64Helper {};
 
-    return base64_charsA;
-}
+template<>
+struct Base64Helper<std::string> {
+    static std::string base64_chars() {
+        static const std::string base64_charsA =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
+            "0123456789+/";
 
-template<STR base64Str>
-wchar_t base64_char_G(const std::wstring type, size_t retType) {
-    switch (retType) {
-    case 0:
-        return L'=';
-    case 1:
-        return L'+';
-    case 2:
-        return L'/';
-    default:
-        return L'\0';
+        return base64_charsA;
     }
-}
 
-template<STR base64Str>
-char base64_char_G(const std::string type, size_t retType) {
-    switch (retType) {
-    case 0:
-        return '=';
-    case 1:
-        return '+';
-    case 2:
-        return '/';
-    default:
-        return '\0';
+    static constexpr char get_base64_char(const size_t retType) {
+        switch (retType) {
+        case Base64Constants::B64EndChar:
+            return '=';
+        case Base64Constants::PlusChar:
+            return '+';
+        case Base64Constants::SlashChar:
+            return '/';
+        default:
+            return '\0';
+        }
     }
-}
+};
 
-template<STR base64Str>
+template<>
+struct Base64Helper<std::wstring> {
+    static std::wstring base64_chars() {
+        static const std::wstring base64_charsW =
+            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            L"abcdefghijklmnopqrstuvwxyz"
+            L"0123456789+/";
+
+        return base64_charsW;
+    }
+
+    static constexpr wchar_t get_base64_char(const size_t retType) {
+        switch (retType) {
+        case Base64Constants::B64EndChar:
+            return L'=';
+        case Base64Constants::PlusChar:
+            return L'+';
+        case Base64Constants::SlashChar:
+            return L'/';
+        default:
+            return L'\0';
+        }
+    }
+};
+
+template<StringConcept Base64Str>
 class Base64 {
-private:
-    const base64Str type;
-    using base64Char = std::remove_const_t<std::remove_reference_t<decltype(type[0])>>;
+    using Helper = Base64Helper<Base64Str>;
+    Base64Str base64_chars = Helper::base64_chars();
     
-    const base64Char b64EndChar = base64_char_G<base64Str>(type, 0);
-    
-    const base64Char plusChar = base64_char_G<base64Str>(type, 1);
-    const base64Char slashChar = base64_char_G<base64Str>(type, 2);
-    const base64Char strEndChar = base64_char_G<base64Str>(type, -1);
+    using Base64Char = typename CharType<Base64Str>::Type;
+    Base64Char b64EndChar = Helper::get_base64_char(Base64Constants::B64EndChar);
+    Base64Char plusChar = Helper::get_base64_char(Base64Constants::PlusChar);
+    Base64Char slashChar = Helper::get_base64_char(Base64Constants::SlashChar);
+    Base64Char strEndChar = Helper::get_base64_char(Base64Constants::StrEndChar);
 
-    const base64Str base64_chars = base64_chars_G<base64Str>(type);
-
-    base64Str enRet;
-    std::vector<BYTE> deRet;
+    Base64Str enRet;
+    std::vector<unsigned char> deRet;
     
-    inline bool is_base64(base64Char c) {
+    inline bool is_base64(Base64Char c) {
         auto ret = (isalnum(c) || (c == plusChar) || (c == slashChar));
 
         if (!ret) {
-            throw BASE64_DECODEERROR;
+            throw std::exception("BASE64_DECODE_ERROR");
         }
 
         return ret;
@@ -115,18 +117,15 @@ private:
 
 public:
     Base64() {
-        reserve(RETURNSIZE);
-    }
-    ~Base64() {
-
+        static constexpr auto RETURN_SIZE = 50;
+        reserve(RETURN_SIZE);
     }
 
-    inline base64Str base64_encode(BYTE const* buf, unsigned int bufLen) {
+    inline Base64Str base64_encode(unsigned char const* buf, unsigned int bufLen) {
         int i = 0;
-        int j = 0;
 
-        BYTE char_array_4[4];
-        BYTE char_array_3[3];        
+        unsigned char char_array_4[4];
+        unsigned char char_array_3[3];        
 
         enRet.clear();
 
@@ -139,7 +138,7 @@ public:
                 char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
                 char_array_4[3] = char_array_3[2] & 0x3f;
 
-                for (i = 0; (i < 4); i++) {
+                for (i = 0; i < 4; i++) {
                     enRet += base64_chars[char_array_4[i]];
                 }
 
@@ -148,30 +147,31 @@ public:
         }
 
         if (i) {
-            for (j = i; j < 3; j++) {
-                char_array_3[j] = (BYTE)strEndChar;
+            for (int j = i; j < 3; j++) {
+                char_array_3[j] = static_cast<unsigned char>(strEndChar);
             }
 
             char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[1] = static_cast<unsigned char>(((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4));
+            char_array_4[2] = static_cast<unsigned char>(((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6));
             char_array_4[3] = char_array_3[2] & 0x3f;
 
-            for (j = 0; (j < i + 1); j++)
+            for (int j = 0; j < i + 1; j++) {
                 enRet += base64_chars[char_array_4[j]];
+            }
 
-            while ((i++ < 3))
+            while (i++ < 3) {
                 enRet += b64EndChar;
+            }
         }
 
         return enRet;
     }
-    inline std::vector<BYTE> base64_decode(const base64Str& encoded_string) {
+    inline std::vector<unsigned char> base64_decode(const Base64Str& encoded_string) {
         int i = 0;
-        int j = 0;
 
-        base64Char char_array_4[4];
-        base64Char char_array_3[3];
+        Base64Char char_array_4[4];
+        Base64Char char_array_3[3];
 
         deRet.clear();
 
@@ -184,7 +184,7 @@ public:
 
             if (i == 4) {
                 for (i = 0; i < 4; i++) {
-                    char_array_4[i] = (base64Char)base64_chars.find(char_array_4[i]);
+                    char_array_4[i] = static_cast<Base64Char>(base64_chars.find(char_array_4[i]));
                 }
 
                 char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -192,7 +192,7 @@ public:
                 char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
                 for (i = 0; (i < 3); i++) {
-                    deRet.emplace_back((BYTE)char_array_3[i]);
+                    deRet.emplace_back(static_cast<unsigned char>(char_array_3[i]));
                 }
 
                 i = 0;
@@ -200,46 +200,46 @@ public:
         }
 
         if (i) {
-            for (j = i; j < 4; j++) {
+            for (int j = i; j < 4; j++) {
                 char_array_4[j] = 0;
             }
 
-            for (j = 0; j < 4; j++) {
-                char_array_4[j] = (base64Char)base64_chars.find(char_array_4[j]);
+            for (int j = 0; j < 4; j++) {
+                char_array_4[j] = static_cast<Base64Char>(base64_chars.find(char_array_4[j]));
             }
 
             char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
             char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
             char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-            for (j = 0; (j < i - 1); j++) {
-                deRet.emplace_back((BYTE)char_array_3[j]);
+            for (int j = 0; j < i - 1; j++) {
+                deRet.emplace_back(static_cast<unsigned char>(char_array_3[j]));
             }
         }
 
         return deRet;
     }
 
-    [[deprecated]] inline size_t base64_decode_size() {
+    [[deprecated]] inline size_t base64_decode_size() const {
         return deRet.size();
     }
-    [[deprecated]] inline void base64_decode_to_pointer(BYTE* buff, size_t size) {
-        memcpy(buff, &deRet[0], (std::min)(size, deRet.size()));
+    [[deprecated]] inline void base64_decode_to_pointer(unsigned char* buff, const size_t size) const {
+        memcpy(buff, deRet.data(), (std::min)(size, deRet.size()));
     }
 
-    inline bool base64_decode_to_pointer(const base64Str& encoded_string, BYTE* buff, size_t size) {
-        return base64_decode_callback(encoded_string, [&] (const BYTE* base64_buff, const size_t base64_size) {
+    inline bool base64_decode_to_pointer(const Base64Str& encoded_string, unsigned char* buff, size_t size) {
+        return base64_decode_callback(encoded_string, [&] (const unsigned char* base64_buff, const size_t base64_size) {
             memcpy(buff, base64_buff, (std::min)(size, base64_size));
         });
     }
 
     // decode internally, use callback to process raw data
     // don't need to make a temp buffer
-    inline bool base64_decode_callback(const base64Str& encoded_string,
-        const std::function<void(const BYTE* buff, const size_t size)>& callback) {
+    inline bool base64_decode_callback(const Base64Str& encoded_string,
+        const std::function<void(const unsigned char* buff, const size_t size)>& callback) {
         try {
             this->base64_decode(encoded_string);
-        } catch (decltype(BASE64_DECODEERROR)) {
+        } catch ([[maybe_unused]] std::exception& e) {
             return false;
         }
 

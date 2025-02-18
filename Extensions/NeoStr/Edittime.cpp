@@ -1078,11 +1078,11 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	//	break;
 		
 	case PROPID_RENDER_BorderOffsetX:
-		edPtr->borderOffsetX = (unsigned short)max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+		edPtr->borderOffsetX = (unsigned short)(std::max)((DWORD)0, ((CPropDWordValue*)pValue)->m_dwValue);
 		mvInvalidateObject(mV, edPtr);
 		break;
 	case PROPID_RENDER_BorderOffsetY:
-		edPtr->borderOffsetY = (unsigned short)max(0, ((CPropDWordValue*)pValue)->m_dwValue);
+        edPtr->borderOffsetY = (unsigned short)(std::max)((DWORD)0, ((CPropDWordValue*)pValue)->m_dwValue);
 		mvInvalidateObject(mV, edPtr);
 		break;
 

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "lz4/lib/lz4hc.h"
-#pragma	comment(lib,"lz4static.lib")
+#include "GeneralDefinition.h"
+
+#pragma	comment(lib, RELATIVE_PATH("lz4static.lib"))
 
 #include <string>
 #include <memory>

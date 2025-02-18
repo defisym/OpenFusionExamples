@@ -196,7 +196,7 @@ short WINAPI DLLExport Action_PauseVideo(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_SetVolume(LPRDATA rdPtr, long param1, long param2) {
 	int newVolume = (int)CNC_GetIntParameter(rdPtr);
 
-	rdPtr->volume = min(100, max(0, newVolume));
+    rdPtr->volume = ::Range(newVolume, 0, 100);
 	if (rdPtr->pFFMpeg != nullptr) {
 		rdPtr->pFFMpeg->set_volume(rdPtr->volume);
 	}
@@ -300,8 +300,8 @@ short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
 	int width = (int)CNC_GetIntParameter(rdPtr);
 	int height = (int)CNC_GetIntParameter(rdPtr);
 	
-	rdPtr->swidth = max(0, width);
-	rdPtr->sheight = max(0, height);
+	rdPtr->swidth = (std::max)(0, width);
+	rdPtr->sheight = (std::max)(0, height);
 	
 	rdPtr->bStretch = true;
 

@@ -421,13 +421,14 @@ inline void GetFileList(std::vector<std::wstring>* pList, const std::wstring& fo
 		if (temp == folder + L"\\..") {
 			continue;
 		}
-		else if (PathIsDirectory(temp.c_str())) {
-			GetFileList(pList, temp);
-		}
-		else {
-			pList->emplace_back(folder + L"\\" + stFD.cFileName);
-		}
-	}
+
+        if (PathIsDirectory(temp.c_str())) {
+            GetFileList(pList, temp);
+        }
+        else {
+            pList->emplace_back(folder + L"\\" + stFD.cFileName);
+        }
+    }
 
 	FindClose(h);
 }

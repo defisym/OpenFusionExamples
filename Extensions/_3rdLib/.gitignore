@@ -1,11 +1,11 @@
-Eigen/*
-lz4/*
-zlib/*
-zpaq/*
-WinToast/*
+# Reference
 _FFMpeg_Ref/*
 
-nlohmann/*
-va_args_iterators/*
+# Libs
+Compress/lz4/*
+Compress/zlib/*
+Compress/zpaq/*
 
-CLI11.hpp
+Eigen/*
+
+# Header only

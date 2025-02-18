@@ -194,6 +194,10 @@ inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, 
 // Video control
 // -----------------------------
 
+inline bool VideoSingleFrame(LPRDATA rdPtr) {
+    return rdPtr->pFFMpeg->get_videoFrameCount() == 1;
+}
+
 constexpr auto SeekFlag_NoGoto = 0x0001 << 16;	// do not decode to next valid frame
 constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp is 0
 
@@ -202,28 +206,28 @@ constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp i
 // and revert back if target timestamp is 0
 // this behaviour can be controlled by flags
 inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
-	if (!rdPtr->bOpen) {
-		return;
-	}
+    if (!rdPtr->bOpen) { return; }
 
-	// add protection for minus position
-	ms =(std::max)(ms, 0);
+    // add protection for minus position
+    ms = (std::max)(ms, 0);
 
-	do {
-		//auto pos = rdPtr->pFFMpeg->get_videoPosition();
-		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-		
-		bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
-		if (!bGoto || flags & SeekFlag_NoRevert) { break; }
-		rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
-			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
-			ReDisplay(rdPtr);
-			});
+    // in case of only one frame, aka static picture, only use goto
+    // as seek for picture won't reset the context and cannot decode next time
+    const auto bSingleFrame = VideoSingleFrame(rdPtr);
 
-		// revert
-		if (ms != 0 || flags & SeekFlag_NoRevert) { break; }
-		rdPtr->pFFMpeg->set_videoPosition(ms, flags);
-	} while (false);
+    //auto pos = rdPtr->pFFMpeg->get_videoPosition();
+    if (!bSingleFrame) { rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
+
+    const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
+    if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return; }
+    rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
+        CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
+        ReDisplay(rdPtr);
+        });
+
+    // revert
+    if (ms != 0 || flags & SeekFlag_NoRevert) { return; }
+    if (!bSingleFrame) { rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
 }
 
 inline bool GetVideoPlayState(LPRDATA rdPtr) {

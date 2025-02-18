@@ -1,6 +1,5 @@
 #pragma once
 
-#include <any>
 #include <string>
 #include <functional>
 
@@ -8,6 +7,13 @@
 
 #include "SteamInclude.h"
 
+#ifdef WIN32
+#include "WindowsException.h"
+#endif
+
+//------------
+// Class
+//------------
 #include "SteamAchAndStat.h"
 #include "SteamMicroTxn.h"
 #include "SteamRichPresence.h"
@@ -16,19 +22,16 @@
 #include "SteamDLC.h"
 #include "SteamInv.h"
 #include "SteamFriend.h"
+#include "SteamGameRecord.h"
 
 #include "SteamRemote.h"
-
-#ifdef WIN32
-#include "WindowsException.h"
-#endif
 
 //------------
 // Callback
 //------------
 #define REFRESH_CLASS SteamAchAndStat
 #define CALLBACK_CLASS SteamMicroTxn, SteamRichPresence, SteamScreenshot, \
-	SteamGamepadTextInput, SteamDLC, SteamInv, SteamFriend
+	SteamGamepadTextInput, SteamDLC, SteamInv, SteamFriend, SteamGameRecord
 
 //------------
 // None Callback
@@ -59,9 +62,9 @@ private:
 	}
 
 public:
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline auto GetSteamCommandLine() {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			return ConvertStrToWStr(cmdLine);
 		}
 		else {

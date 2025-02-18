@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "MemBuf.h"
+#include "LockHelper.h"
 #include "PacketQueue.h"
 #include "WindowsCommon.h"
 #include "GeneralDefinition.h"
@@ -47,6 +48,7 @@ extern "C" {
 //#pragma comment(lib,"avfilter.lib")
 //#pragma comment(lib,"avformat.lib")
 //#pragma comment(lib,"avutil.lib")
+//#pragma comment(lib,"postproc.lib")
 //#pragma comment(lib,"swresample.lib")
 //#pragma comment(lib,"swscale.lib")
 
@@ -90,6 +92,9 @@ constexpr auto MAX_VIDEOQ_SIZE = 5 * 256 * 1024;
 
 // Queue state
 constexpr auto END_OF_QUEUE = -5;
+
+// time base
+constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 
 // ------------------------------------
 // FFMpeg Exception
@@ -168,8 +173,7 @@ constexpr auto FFMpegFlag_ForceNoAudio = FFMpegFlag_MakeFlag(0b0000000000000010)
 class FFMpeg;
 
 class FFMpegOptions {
-private:
-	friend class FFMpeg;
+    friend class FFMpeg;
 
 	const AVCodec* pVideoCodec = nullptr;
 	const AVCodec* pAudioCodec = nullptr;
@@ -215,26 +219,7 @@ public:
 	}
 };
 
-// RAII
-struct LockHelper {
-private:
-	SDL_SpinLock* _plock = nullptr;
-public:
-	explicit LockHelper(SDL_SpinLock* plock) :_plock(plock) {
-		SDL_AtomicLock(plock);
-	}
-	~LockHelper() {
-		SDL_AtomicUnlock(_plock);
-	}
-};
-
-constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
-
-// pData, stride, height
-using frameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
-
 class FFMpeg {
-private:
 #pragma region value
 #pragma region control
 	bool bExit = false;
@@ -272,7 +257,7 @@ private:
 	double frameLastPts = 0;
 	double frameLastDelay = 40e-3;
 
-	enum class SyncState {
+    enum class SyncState :std::uint8_t {
 		SYNC_VIDEOFASTER,
 		SYNC_CLOCKFASTER,
 		SYNC_SYNC,
@@ -373,6 +358,8 @@ private:
 	int64_t totalTimeInMs = 0;
 	int64_t totalDuration = 0;
 
+    int64_t frameCount = 0;
+
 	// buffer for format conversion
 	uint8_t* p_global_bgr_buffer = nullptr;
 	// conversion buffer size
@@ -400,6 +387,11 @@ private:
 
 #pragma endregion
 
+#pragma endregion
+
+#pragma region type
+    // pData, stride, height
+    using FrameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 #pragma endregion
 
 	// ------------------------------------
@@ -913,7 +905,6 @@ private:
 		// https://www.appsloveworld.com/cplus/100/107/finding-duration-number-of-frames-of-webm-using-ffmpeg-libavformat
 		if (pVideoStream->duration != AV_NOPTS_VALUE) {
 			totalDuration = pVideoStream->duration;
-
 			rational = pVideoStream->time_base;
 		}
 		else if (pFormatContext->duration != AV_NOPTS_VALUE) {
@@ -930,6 +921,12 @@ private:
 		totalTimeInMs = totalDuration == INT64_MAX
 						? totalDuration
 						: static_cast<int64_t>(round(totalTime * 1000));
+
+        frameCount = pVideoStream->nb_frames;
+        if (frameCount == 0
+            && pVideoStream->avg_frame_rate.num != 0 && pVideoStream->avg_frame_rate.den != 0) {
+            frameCount = static_cast<int64_t>(totalTime * av_q2d(pVideoStream->avg_frame_rate));
+        }
 #pragma endregion
 
 #pragma region AudioInit	
@@ -1004,7 +1001,7 @@ private:
 	// if the main AVFormatContext is used, you should use audio lock
 	// as audio thread will affect it when filling queue
 	inline int forwardFrame(AVFormatContext* pFormatContext, AVCodecContext* pCodecContext,
-		 double targetPts, const frameDataCallBack& callBack, bool bAccurateSeek = true) {
+		 double targetPts, const FrameDataCallBack& callBack, bool bAccurateSeek = true) {
 		// temp frames used in seeking
 		struct TempFrame {
 			bool bValid = false;
@@ -1070,7 +1067,7 @@ private:
 
 				// goto target
 				if (!bAccurateSeek) { break; }
-				if (videoClock >= targetPts) { break; }
+                if (videoClock > targetPts || NearlyEqualDBL(videoClock, targetPts)) { break; }
 
 				//count++;
 			}
@@ -1108,7 +1105,7 @@ private:
 	}
 
 	inline int fill_queueonce() {
-		LockHelper lockHelper(&queueLock);
+		SpinLockHelper lockHelper(&queueLock);
 		const auto response = av_read_frame(pFormatContext, pPacket);
 
 		bReadFinish = (response == AVERROR_EOF);
@@ -1141,7 +1138,7 @@ private:
 		return response;
 	}
 
-	inline void convert_frame(AVFrame* pFrame, const frameDataCallBack& callBack) {
+	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
 #ifdef HW_DECODE
 		if (bHWDecode) {
 			av_frame_unref(pSWFrame);
@@ -1195,7 +1192,7 @@ private:
 		av_frame_unref(pFrame);
 	}
 
-	inline int decode_frame(const frameDataCallBack& callBack) {
+	inline int decode_frame(const FrameDataCallBack& callBack) {
 		SyncState syncState;
 
 		do {
@@ -1550,14 +1547,14 @@ private:
 			if (diff <= -syncThreshold) {
 				return SyncState::SYNC_CLOCKFASTER;
 			}
+
 			// video is faster
-			else if (diff >= syncThreshold) {
-				return SyncState::SYNC_VIDEOFASTER;
-			}
-			else {
-				return SyncState::SYNC_SYNC;
-			}
-		}
+            if (diff >= syncThreshold) {
+                return SyncState::SYNC_VIDEOFASTER;
+            }
+
+            return SyncState::SYNC_SYNC;
+        }
 
 		return SyncState::SYNC_SYNC;
 	}
@@ -1697,8 +1694,8 @@ public:
 			delete pSeekMemBuf;
 			pSeekMemBuf = nullptr;
 
-			av_freep(&pAvioContext);
-			av_freep(&pSeekAvioContext);
+            avio_context_free(&pAvioContext);
+            avio_context_free(&pSeekAvioContext);
 		}
 
 		delete[] p_global_bgr_buffer;
@@ -1777,8 +1774,12 @@ public:
 	}
 
 	inline int64_t get_videoDuration() const {
-		return static_cast<int64_t>(totalTimeInMs);
+		return totalTimeInMs;
 	}
+
+    inline int64_t get_videoFrameCount() const {
+        return frameCount;
+    }
 
 	inline int get_width() const {
 		return pVideoStream->codecpar->width;
@@ -1892,16 +1893,16 @@ public:
 	// seek to given time stamp
 	// call goto_videoPosition to next valid frame if needed
 	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
-		LockHelper lockHelper(&audioLock);
-
-		const auto targetPts = static_cast<double>(ms) / 1000.0;
-		const int steam_index = get_streamIndex();
-		if (steam_index == -1) { return -1; }
+        SpinLockHelper lockHelper(&audioLock);
+        const int steam_index = get_streamIndex();
+        if (steam_index == -1) { return -1; }
 
 		// protection	
 		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
 			? Range(ms, static_cast<int64_t>(0), get_videoDuration())
 			: ms;
+        const auto targetPts = static_cast<double>(ms) / 1000.0;
+
 		int response = seekFrame(pFormatContext, steam_index, ms, flags);
 
 		if (response < 0) { return response; }
@@ -1931,9 +1932,9 @@ public:
 
 	// call set_videoPosition first to seek to target frame
 	// then call this to decode to next valid frame if needed
-	inline int goto_videoPosition(const size_t ms, const frameDataCallBack& callBack) {
+	inline int goto_videoPosition(const size_t ms, const FrameDataCallBack& callBack) {
 		// As audio thread can affect the main format context, lock it here
-		LockHelper lockHelper(&audioLock);
+        SpinLockHelper lockHelper(&audioLock);
 
 		const auto targetPts = ms / 1000.0;
 		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
@@ -1942,7 +1943,7 @@ public:
 	}
 
 	// get video frame of given time stamp
-	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const frameDataCallBack& callBack) {
+	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const FrameDataCallBack& callBack) {
 		// update context
 		if (!pSeekFormatContext) {
 			const auto bSuccess = bFromMem
@@ -1979,7 +1980,7 @@ public:
 	}
 
 	// read next frame and handle loop automatically
-	inline int get_nextFrame(const frameDataCallBack& callBack) {
+	inline int get_nextFrame(const FrameDataCallBack& callBack) {
 		int response = handleLoop();
 
 		if (!bFinish) { response = decode_frame(callBack); }
@@ -2078,7 +2079,7 @@ public:
 	using Mixer = std::function<void(void* dst, const void* src, size_t len, int volume)>;
 
 	inline int audio_fillData(uint8_t* stream, int len, const Setter& setter, const Mixer& mixer) {
-		LockHelper lockHelper(&audioLock);
+        SpinLockHelper lockHelper(&audioLock);
 
 		this->audio_stream = stream;
 		this->audio_stream_len = len;

@@ -920,11 +920,11 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 
 	switch (nPropID) {
 	case PROPID_MEMORYLIMIT: {
-		edPtr->memoryLimit = MemRange(((CPropDWordValue*)pValue)->m_dwValue);
+		edPtr->memoryLimit = (size_t)MemRange(((CPropDWordValue*)pValue)->m_dwValue);
 		break;
 	}
 	case PROPID_SIZELIMIT: {
-		edPtr->sizeLimit = max(0,((CPropDWordValue*)pValue)->m_dwValue);
+        edPtr->sizeLimit = (size_t)(std::max)((DWORD)0, ((CPropDWordValue*)pValue)->m_dwValue);
 		break;
 	}
 	case PROPID_HOTSPOT: {

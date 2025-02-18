@@ -411,7 +411,7 @@ long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
 
 	if (pObj != nullptr && LPROValid(pObj, IDENTIFIER_ACTIVE)) {
 		LPRO pResult = nullptr;
-		int zOrder = MININT;
+		int zOrder = (std::numeric_limits<int>::min)();
 
 		rdPtr->pSelect->ForEach(rdPtr, oil, [&](LPRO pObject) {
 			if (pObject->ros.rsZOrder >= zOrder) {
@@ -923,12 +923,12 @@ short WINAPI DLLExport LoadFromBackDrop(LPRDATA rdPtr, long param1, long param2)
 short WINAPI DLLExport RecursiveGaussBlur(LPRDATA rdPtr, long param1, long param2) {
 	if (rdPtr->Display) {
 		//获取参数
-		constexpr auto MIN_SIGMA = 0;
+		constexpr auto MIN_SIGMA = 0.0;
 		constexpr auto MAX_SIGMA = 1.615;
 
 		long p1 = CNC_GetFloatParameter(rdPtr);
 		double sigma = *(float*)&p1;
-		sigma = min(MAX_SIGMA, max(MIN_SIGMA, sigma));
+		sigma = (std::min)(MAX_SIGMA, (std::max)(MIN_SIGMA, sigma));
 
 		long p2 = CNC_GetFloatParameter(rdPtr);
 		float scale = *(float*)&p2;
@@ -1120,7 +1120,7 @@ short WINAPI DLLExport MultiThreadGaussBlur(LPRDATA rdPtr, long param1, long par
 		constexpr auto GB_MAX_RADIUS = 65535;
 
 		int radius = CNC_GetIntParameter(rdPtr);
-		radius = min(GB_MAX_RADIUS, max(GB_MIN_RADIUS, radius));
+		radius = (std::min)(GB_MAX_RADIUS, (std::max)(GB_MIN_RADIUS, radius));
 
 		float sigma = (float)(radius - 0.5) / 3;
 
@@ -1692,7 +1692,7 @@ long WINAPI DLLExport GetFileListSize(LPRDATA rdPtr, long param1) {
 
 long WINAPI DLLExport GetFileListAt(LPRDATA rdPtr, long param1) {
 	size_t Pos = CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	Pos = max(0, min(Pos, rdPtr->FileList->size() - 1));
+	Pos = (std::max)(0u, (std::min)(Pos, rdPtr->FileList->size() - 1));
 
 	NewStr(rdPtr->FileListOutPut, rdPtr->FileList->at(Pos));
 

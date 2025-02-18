@@ -414,7 +414,7 @@ short WINAPI DLLExport Action_IterateRefCount(LPRDATA rdPtr, long param1, long p
 		refVec.reserve(mapSz);
 
 		for (auto& it : *rdPtr->pLib) {
-			refVec.emplace_back(RefCountPair(it.first, it.second.refCount));
+			refVec.emplace_back(it.first, it.second.refCount);
 		}
 
 		const auto countWeight = mapSz;		// weight of ref count

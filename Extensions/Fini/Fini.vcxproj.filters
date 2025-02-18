@@ -151,15 +151,6 @@
     <ClInclude Include="..\_3rdLib\Base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_3rdLib\lz4Interface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\_3rdLib\zlibInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\_3rdLib\zpaqInterface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\_DeLib\Fusion.h">
       <Filter>Header Files</Filter>
     </ClInclude>

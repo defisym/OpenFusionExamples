@@ -1,13 +1,5 @@
 #pragma once
 
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#endif
-
 #include <vector>
 
 #include "FindTheWay.h"
@@ -157,7 +149,7 @@ namespace AOE{
 			output->clear();
 
 			this->start = start;
-			this->dir = max(0, min(3, dir));
+            this->dir = ::Range(dir, 0u, 3u);
 
 			switch (type / 10) {
 			case 2:

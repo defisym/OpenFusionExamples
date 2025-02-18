@@ -45,9 +45,6 @@ class ObjectSelection;
 //#define _ENABLE_TOAST
 
 #ifdef _ENABLE_TOAST
-#endif
-
-#ifdef _ENABLE_TOAST
 class WinToastHelper;
 #endif
 

@@ -58,9 +58,9 @@ public:
 		}
 	}
 
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline void ResetAchievement(const Name pAchName = nullptr) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			ResetAchievement(pAchName != nullptr
 			? ConvertWStrToStr(pAchName).c_str()
 			: nullptr);
@@ -81,9 +81,9 @@ public:
 		}
 	}
 
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline void UnlockAchievement(const Name pAchName) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			UnlockAchievement(ConvertWStrToStr(pAchName).c_str());
 		}
 		else {
@@ -105,9 +105,9 @@ public:
 	// Stat
 	//------------
 
-	template <STR Name, STAT Stat>
+	template <CStyleStrConcept Name, STAT Stat>
 	inline void GetStat(const Name pStatName, Stat* pData) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			GetStat(ConvertWStrToStr(pStatName).c_str(), pData);
 		}
 		else {
@@ -119,9 +119,9 @@ public:
 		}
 	}
 
-	template <STR Name, STAT Stat>
+	template <CStyleStrConcept Name, STAT Stat>
 	inline void SetStat(const Name pStatName, const Stat data) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			SetStat(ConvertWStrToStr(pStatName).c_str(), data);
 		}
 		else {
@@ -134,9 +134,9 @@ public:
 		}
 	}
 
-	template <STR Name, STAT Stat>
+	template <CStyleStrConcept Name, STAT Stat>
 	inline void AddStat(const Name pStatName, const Stat data) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			AddStat(ConvertWStrToStr(pStatName).c_str(), data);
 		}
 		else {
@@ -155,9 +155,9 @@ public:
 
 	// the unit of dSessionLength should be the same as Window prop
 	// you set in Steamworks
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline void SetAvgRateStat(const Name pStatName, const float flCountThisSession, const double dSessionLength) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			SetAvgRateStat(ConvertWStrToStr(pStatName).c_str(), flCountThisSession, dSessionLength);
 		}
 		else {
@@ -170,9 +170,9 @@ public:
 		}
 	}
 
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline void IndicateAchievementProgress(const Name pStatName, const uint32 nCurProgress, const uint32 nMaxProgress) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			IndicateAchievementProgress(ConvertWStrToStr(pStatName).c_str(), nCurProgress, nMaxProgress);
 		}
 		else {

@@ -6,8 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",
-                "${workspaceFolder}/../../Inc/",
-                "C:\\Boost"
+				"${workspaceFolder}/../_3rdLib/Boost;",
+                "${workspaceFolder}/../../Inc/"
             ],
             "defines": [
                 "_DEBUG",

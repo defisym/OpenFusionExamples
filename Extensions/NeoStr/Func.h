@@ -131,16 +131,16 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetBorderOffset(rdPtr->borderOffsetX, rdPtr->borderOffsetY);
 
 		rdPtr->pNeoStr->SetSmooth(
-			Gdiplus::TextRenderingHint(rdPtr->textRenderingHint)
-			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
-			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
+			static_cast<Gdiplus::TextRenderingHint>(rdPtr->textRenderingHint),
+            static_cast<Gdiplus::SmoothingMode>(rdPtr->smoothingMode - 1),
+            static_cast<Gdiplus::PixelOffsetMode>(rdPtr->pixelOffsetMode - 1));
 
 		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 
 		// clip should be disabled if scroll is enabled, to make sure the full size is rendered
-		pRenderOptions->SetClip(!rdPtr->bScroll && rdPtr->bClip
-			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
-			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
+		pRenderOptions->SetClip(!rdPtr->bScroll && rdPtr->bClip,
+			(std::min)(static_cast<LONG>(rhPtr->rhApp->m_hdr.gaCxWin), rhPtr->rhFrame->m_hdr.leWidth),
+			(std::min)(static_cast<LONG>(rhPtr->rhApp->m_hdr.gaCyWin), rhPtr->rhFrame->m_hdr.leHeight));
 		pRenderOptions->SetClipToObject(!rdPtr->bScroll && rdPtr->bClipToObject);
 
 		// params like clip will be reset in render routine,

@@ -267,6 +267,9 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 #ifdef _LOOPBENCH
 		auto beforeDecode = std::chrono::steady_clock::now();
 #endif
+        // only one frame, do not need to get next frame, as there's no next frame
+        // and finish state won't be updated
+        if (VideoSingleFrame(rdPtr)) { break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
 			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);

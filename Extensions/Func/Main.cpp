@@ -180,14 +180,12 @@ long WINAPI DLLExport Condition_OnFunc(LPRDATA rdPtr, long param1, long param2) 
 long WINAPI DLLExport Condition_FuncHasParamAt(LPRDATA rdPtr, long param1, long param2) {
 	const auto Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
-	return !rdPtr->FuncParamStack->back().empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncParamStack->back().size() - 1)));
+    return HasParam(rdPtr, Pos);
 }
 long WINAPI DLLExport Condition_FuncHasReturnAt(LPRDATA rdPtr, long param1, long param2) {
 	const auto Pos = (size_t)CNC_GetStringParameter(rdPtr);
 
-	return !rdPtr->FuncReturn->empty()
-		&& (Pos == max(Pos, min(Pos, rdPtr->FuncReturn->size() - 1)));
+	return HasReturn(rdPtr, Pos);
 }
 
 long WINAPI DLLExport Condition_GlobalHasTempParam(LPRDATA rdPtr, long param1, long param2) {

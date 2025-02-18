@@ -46,13 +46,28 @@ Don't forget to copy dlls to fusion root (along with `mmf2u.exe`) and fusion run
 
 #### Boost
 
-<https://www.boost.org/>
+you can get boost from <https://www.boost.org/>
 
-Located at `C` root
+##### Direct download
+
+download release then unzip it to `_3rdLib/Extensions/Boost`
+
+##### Submodule
+
+reference: <https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview>
+
+1. open git bash, then cd to this repo
+2. run `git submodule update --init` to init submodule, which will clone boost first
+3. cd boost folder
+4. run `git submodule update --init` again to init submodule in boost repo
+5. run `./bootstrap.bat` to build `b2.exe`
+6. run `./b2 header`, which will build headers to boost folder, just like the release you downloaded
+
+now you should build the extensions rely on boost
 
 #### FFMpeg
 
-Extension relies on X86 LGPL Shared 5.1
+Extension relies on X86 LGPL Shared 7.1
 
 Located at the same level of repo folder, aka in repo's parent folder
 

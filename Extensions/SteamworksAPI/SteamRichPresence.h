@@ -15,9 +15,9 @@ private:
 		SteamRichPresence() { SteamRichPresence::InitCallback(); }
 		~SteamRichPresence() override = default;
 
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline bool SetRichPresence(const Name pchKey, const Name pchValue) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			return SetRichPresence(ConvertWStrToStr(pchKey).c_str(), ConvertWStrToStr(pchValue).c_str());
 		}
 		else {
@@ -29,9 +29,9 @@ private:
 		SteamFriends()->ClearRichPresence();
 	}
 	
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	inline auto GetFriendRichPresence(CSteamID steamIDFriend,const Name pchKey) {
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			return ConvertStrToWStr(GetFriendRichPresence(steamIDFriend, ConvertWStrToStr(pchKey).c_str()));
 		}
 		else {
@@ -43,10 +43,10 @@ private:
 		return SteamFriends()->GetFriendRichPresenceKeyCount(steamIDFriend);
 	}
 
-	template <STR Name>
+	template <CStyleStrConcept Name>
 	static inline auto GetFriendRichPresenceKeyByIndex(CSteamID steamIDFriend, int iKey) {
 		const auto pRet = SteamFriends()->GetFriendRichPresenceKeyByIndex(steamIDFriend, iKey);
-		if constexpr (WSTR<Name>) {
+		if constexpr (CStyleWideStrConcept<Name>) {
 			return ConvertStrToWStr(pRet);
 		}else {
 			return std::string(pRet);

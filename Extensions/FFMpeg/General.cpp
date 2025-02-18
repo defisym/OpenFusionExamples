@@ -167,6 +167,7 @@ LPCTSTR szDep[] = {
 		L"avfilter-10.dll",
 		L"avformat-61.dll",
 		L"avutil-59.dll",
+		L"postproc-58.dll",
 		L"swresample-5.dll",
 		L"swscale-8.dll",
 

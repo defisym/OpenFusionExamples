@@ -4,11 +4,12 @@
 #pragma warning(disable : 26495)
 
 #include "zpaq/libzpaq.h"
+#include "GeneralDefinition.h"
 
 #ifdef _DEBUG
-#pragma	comment(lib,"zpaqstaticd.lib")
+#pragma	comment(lib, RELATIVE_PATH("zpaqstaticd.lib"))
 #else
-#pragma	comment(lib,"zpaqstatic.lib")
+#pragma	comment(lib, RELATIVE_PATH("zpaqstatic.lib"))
 #endif
 
 #include <vector>
@@ -118,7 +119,7 @@ public:
     }
 
     void output(char* buf, size_t bufSz) {
-        auto sz = min(dstBuf.size(), bufSz);
+        auto sz = (std::min)(dstBuf.size(), bufSz);
         memcpy(buf, dstBuf.data(), sz);
     }
 };

@@ -8,6 +8,7 @@ build it.
 ## Params
 
 | Command    | Info                                                             |
+| ---------- | ---------------------------------------------------------------- |
 | --configs  | config to build, default is `Release Unicode` `Run_Only Unicode` |
 | --target   | target to build, default is `rebuild`                            |
 | --platform | platform to build, default is `Win32`                            |
