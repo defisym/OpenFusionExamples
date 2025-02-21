@@ -3717,7 +3717,11 @@ public:
 
 		auto tagCallbackHandler = [&] (auto tagIt) {
 			if (opt.tagCallback == nullptr) { return; }
-			if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
+            if (tagIt->rawStart <= opt.tagCallbackIndex
+                // fix tag at start cannot be triggered
+                && opt.tagCallbackIndex != 0) {
+                return;
+            }
 
 			opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
 		};
