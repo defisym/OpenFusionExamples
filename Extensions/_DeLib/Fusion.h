@@ -1066,9 +1066,9 @@ inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 
 // return false if created the blank surface
 #ifdef _NO_REF
-inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src
-	, int width, int height, bool NoStretch, bool HighQuality
-	, std::function<bool(CImageFilterMgr*, const LPSURFACE)> load) {
+inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src,
+	int width, int height, bool NoStretch, bool HighQuality,
+	const std::function<bool(CImageFilterMgr*, const LPSURFACE)>& load) {
 #else
 inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src
 	, int width, int height, bool NoStretch, bool HighQuality
@@ -1320,9 +1320,9 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	};
 #endif // STACK_BLUR_ALPHA	
 
-	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des
-		, int size, bool dir
-		, PixelGetter getter, PixelSetter setter) {
+	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des,
+		int size, bool dir,
+		const PixelGetter& getter, const PixelSetter& setter) {
 		int div = radius * 2 + 1;
 		int sizem = size - 1;
 
