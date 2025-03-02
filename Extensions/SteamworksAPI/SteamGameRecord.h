@@ -34,22 +34,25 @@ public:
 		SteamTimeline()->SetTimelineGameMode(eMode);
 	}
 
-	inline void AddTimelineEvent(const char* pchIcon, const char* pchTitle,
-		const char* pchDescription, const uint32 unPriority,
+private:
+    TimelineEventHandle_t hPreviousHandle = 0;
+public:
+    inline void AddTimelineEvent(const char* pchTitle, const char* pchDescription,
+         const char* pchIcon, const uint32 unPriority,
 		const float flStartOffsetSeconds, const float flDurationSeconds,
-		const ETimelineEventClipPriority ePossibleClip) const {
+		const ETimelineEventClipPriority ePossibleClip) {
 		if (!bEnable) { return; }
 
         // new in 1.61
-        // if duration is 0, then it is an instantneous event
+        // if duration is 0, then it is an instantaneous event
         if (NearlyEqualFLT(flDurationSeconds, 0.0f)) {
-            SteamTimeline()->AddRangeTimelineEvent(pchTitle, pchDescription,
+            hPreviousHandle = SteamTimeline()->AddRangeTimelineEvent(pchTitle, pchDescription,
                 pchIcon, (std::min)(unPriority, k_unMaxTimelinePriority),
                 flStartOffsetSeconds, flDurationSeconds,
                 ePossibleClip);
         }
         else {
-            SteamTimeline()->AddInstantaneousTimelineEvent(pchTitle, pchDescription,
+            hPreviousHandle = SteamTimeline()->AddInstantaneousTimelineEvent(pchTitle, pchDescription,
                 pchIcon, (std::min)(unPriority, k_unMaxTimelinePriority),
                 flStartOffsetSeconds,
                 ePossibleClip);

@@ -522,12 +522,13 @@ short WINAPI DLLExport Action_AddTimelineEvent(LPRDATA rdPtr, long param1, long 
 	const auto ePossibleClip = (ETimelineEventClipPriority)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
-		pSteamUtil->GetSteamGameRecord()->AddTimelineEvent(ConvertWStrToStr(pICon).c_str(),
-			ConvertWStrToStr(pTitle).c_str(),
-			ConvertWStrToStr(pDescription).c_str(),
-			unPriority,flStartOffsetSeconds,flDurationSeconds,
-			ePossibleClip);
-	});
+        pSteamUtil->GetSteamGameRecord()->AddTimelineEvent(
+            ConvertWStrToStr(pTitle).c_str(),
+            ConvertWStrToStr(pDescription).c_str(),
+            ConvertWStrToStr(pICon).c_str(),
+            unPriority, flStartOffsetSeconds, flDurationSeconds,
+            ePossibleClip);
+    });
 
 	return 0;
 }
