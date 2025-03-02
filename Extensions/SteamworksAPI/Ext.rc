@@ -454,7 +454,7 @@ BEGIN
     M_TLICON                 "ICon Name, E.g., steam_marker, steam_achievement, ..."
     M_TLTITLE                "Title"
     M_TLPRIORITY             "ICon Priority (0 ~ 1000)"
-    M_TLDURATION             "Duration (in seconds)"
+    M_TLDURATION             "Duration (in seconds, 0 for instantaneous event)"
     M_TLPOSSIBLECLIP         "Clip Priority, 1 = None, 2 = Standard, 3 = Featured"
 END
 

@@ -39,9 +39,20 @@ public:
 		const float flStartOffsetSeconds, const float flDurationSeconds,
 		const ETimelineEventClipPriority ePossibleClip) const {
 		if (!bEnable) { return; }
-		SteamTimeline()->AddTimelineEvent(pchIcon,pchTitle,
-			pchDescription, (std::min)(unPriority, k_unMaxTimelinePriority),
-			flStartOffsetSeconds,flDurationSeconds,
-			ePossibleClip);
+
+        // new in 1.61
+        // if duration is 0, then it is an instantneous event
+        if (NearlyEqualFLT(flDurationSeconds, 0.0f)) {
+            SteamTimeline()->AddRangeTimelineEvent(pchTitle, pchDescription,
+                pchIcon, (std::min)(unPriority, k_unMaxTimelinePriority),
+                flStartOffsetSeconds, flDurationSeconds,
+                ePossibleClip);
+        }
+        else {
+            SteamTimeline()->AddInstantaneousTimelineEvent(pchTitle, pchDescription,
+                pchIcon, (std::min)(unPriority, k_unMaxTimelinePriority),
+                flStartOffsetSeconds,
+                ePossibleClip);
+        }
 	}
 };
