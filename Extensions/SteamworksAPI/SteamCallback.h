@@ -126,6 +126,14 @@ inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<bool(CallBac
 //		return pCallback->m_eResult == k_EResultOK
 //			&& pCallback->m_nGameID == appID;
 //		}));
+//
+//  if api has STEAM_CALL_RESULT(CallbackType) above the definition
+//  or returns a SteamAPICall_t
+//  the following callback result should be used instead of callback
+//	AddCallback(GetCallBack<CallbackType>([&] (const CallbackType* pCallback) {
+//		return pCallback->m_eResult == k_EResultOK
+//			&& pCallback->m_nGameID == appID;
+//		}));
 //	}
 //public:
 //	SteamFunction() {
