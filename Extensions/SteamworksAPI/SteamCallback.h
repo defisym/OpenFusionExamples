@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <utility>
 
 // ------------
 // Official Callback example
@@ -53,8 +54,8 @@ private:
 
 public:
 	explicit SteamCallbackHandler(Handler handler) {
-		this->handler = handler;
-	}
+		this->handler = std::move(handler);
+    }
 
 	~SteamCallbackHandler() override = default;
 };
@@ -70,7 +71,7 @@ inline void SteamCallbackHandler<CallBackType>::CallbackManager(CallBackType* pC
 // return true: callback success
 template<typename CallBackType>
 inline auto GetCallBack(std::function<bool(CallBackType*)> callback) {
-	return new SteamCallbackHandler<CallBackType>(callback);
+	return new SteamCallbackHandler<CallBackType>(std::move(callback));
 }
 
 // ------------
@@ -89,8 +90,8 @@ private:
 
 public:
 	explicit SteamCallResultHandler(SteamAPICall_t hSteamAPICall, Handler handler) {
-		this->handler = handler;
-		this->hSteamAPICall = hSteamAPICall;
+		this->handler = std::move(handler);
+        this->hSteamAPICall = hSteamAPICall;
 		callResult.Set(hSteamAPICall, this, &SteamCallResultHandler::OnCallbackResult);
 	}
 
@@ -108,7 +109,7 @@ inline void SteamCallResultHandler<CallBackType>::OnCallbackResult(CallBackType*
 // return true: callback success
 template<typename CallBackType>
 inline auto GetCallBack(SteamAPICall_t hSteamAPICall, std::function<bool(CallBackType*, bool)> callback) {
-	return new SteamCallResultHandler<CallBackType>(hSteamAPICall, callback);
+	return new SteamCallResultHandler<CallBackType>(hSteamAPICall, std::move(callback));
 }
 
 // ------------
