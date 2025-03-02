@@ -19,14 +19,14 @@ public:
 	}
 	~SteamGameRecord() override = default;
 
-	inline void SetTimelineStateDescription(const char* pchDescription, const float flTimeDelta) const {
+	inline void SetTimelineTooltip(const char* pchDescription, const float flTimeDelta) const {
 		if (!bEnable) { return; }
-		SteamTimeline()->SetTimelineStateDescription(pchDescription, flTimeDelta);
+		SteamTimeline()->SetTimelineTooltip(pchDescription, flTimeDelta);
 	}
 
-	inline void ClearTimelineStateDescription(const float flTimeDelta) const {
+	inline void ClearTimelineTooltip(const float flTimeDelta) const {
 		if (!bEnable) { return; }
-		SteamTimeline()->ClearTimelineStateDescription(flTimeDelta);
+		SteamTimeline()->ClearTimelineTooltip(flTimeDelta);
 	}
 
 	void SetTimelineGameMode(const ETimelineGameMode eMode) const {

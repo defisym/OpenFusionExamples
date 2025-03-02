@@ -226,8 +226,8 @@ BEGIN
         MENUITEM SEPARATOR
 		POPUP "Game Record"
         BEGIN
-            MENUITEM "Set Timeline State Description", IDMN_ACTION_STLSD		
-            MENUITEM "Clear Timeline State Description", IDMN_ACTION_CTLSD		
+            MENUITEM "Set Timeline Tooltip", IDMN_ACTION_STLT		
+            MENUITEM "Clear Timeline Tooltip", IDMN_ACTION_CTLT		
             MENUITEM "Set Timeline GameMode", IDMN_ACTION_STLGM		
             MENUITEM "Add Timeline Event", IDMN_ACTION_ATLE		
 		END
@@ -443,8 +443,8 @@ BEGIN
     M_ACTION_UFL             "Update Friend List, Friend Flag = %0"
     M_FRIENDFLAG             "Friend Flag"
 
-    M_ACTION_STLSD           "Set Timeline State Description to %0, Time Delta %1"
-    M_ACTION_CTLSD           "Clear Timeline State Description, Time Delta %1"
+    M_ACTION_STLT            "Set Timeline Tooltip to %0, Time Delta %1"
+    M_ACTION_CTLT            "Clear Timeline Tooltip, Time Delta %1"
     M_ACTION_STLGM           "Set Timeline GameMode to %0"
     M_ACTION_ATLE            "Add Timeline Event, ICon = %0, Title = %1, Description = %2, Priority = %3, Time Delta = %4, Duration = %5, Possible Clip = %6"
    
