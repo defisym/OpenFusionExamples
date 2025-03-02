@@ -38,9 +38,6 @@ public:
 	explicit SteamAchAndStat(RefreshTasks* pTasks)
 		: SteamRefreshClass(pTasks) {
 		SteamAchAndStat::InitCallback();
-		CallCallback([]() {
-			bool bSuccess = SteamUserStats()->RequestCurrentStats();
-		});
 	}
 	~SteamAchAndStat() override = default;
 
