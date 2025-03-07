@@ -10,6 +10,8 @@ Although this runtime is frequently used and almost everyone's computer have thi
 
 Platforms like Steam has tools to help you achieve this, `App Admin` -> `Edit Steamworks Settings` -> `Installation` -> `Redistributables`, check the check box of `2022 (also includes 2019, 2017 & 2015)` under `Visual C++ Redist`.
 
+Note that you should always install the latest X86 version, as the extension is built with the latest version and utilizes the features introduces in modern C++ standards. Error may not be reported when you trying to load any extension with older version of universal runtime installed, but it may crash when executing the code that involves latest features. So please try updating the runtime when you encounter any crash.
+
 ### Fusion
 
 All extensions has build events to auto copy the mfx to fusion install folder, in this repo is copy to the Steam folder: `C:\Steam\steamapps\common\Clickteam Fusion 2.5`
