@@ -63,7 +63,7 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;C:\Boost;$(IncludePath)</IncludePath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;..\_3rdLib\Boost;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
@@ -72,7 +72,7 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;C:\Boost;$(IncludePath)</IncludePath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;..\_3rdLib\Boost;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -81,7 +81,7 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;C:\Boost;$(IncludePath)</IncludePath>
+    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;..\_3rdLib\Boost;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -95,7 +95,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;C:\Boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;..\_3rdLib\Boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -144,7 +144,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;C:\Boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;..\_3rdLib\Boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -200,7 +200,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;C:\Boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\_3rdLib;..\_DeLib;..\..\Inc;..\_3rdLib\Boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>

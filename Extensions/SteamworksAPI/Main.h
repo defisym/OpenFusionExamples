@@ -22,7 +22,12 @@
 
 #define	CND_CONDITION_ODLCIC			7
 
-#define	CND_LAST						8
+#define	CND_CONDITION_PE				8
+
+#define	CND_CONDITION_OIFU				9
+#define	CND_CONDITION_OIRR				10
+
+#define	CND_LAST						11
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -49,8 +54,18 @@
 #define	ACT_ACTION_SARS					14
 #define	ACT_ACTION_AGOTS				15
 #define	ACT_ACTION_ID					16
+#define	ACT_ACTION_TID					17
+#define	ACT_ACTION_CI					18
+#define	ACT_ACTION_GTI					19
+#define	ACT_ACTION_GAI					20
+#define	ACT_ACTION_UFL					21
 
-#define	ACT_LAST						17
+#define	ACT_ACTION_STLT				    22
+#define	ACT_ACTION_CTLT				    23
+#define	ACT_ACTION_STLGM				24
+#define	ACT_ACTION_ATLE					25
+
+#define	ACT_LAST						26
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -69,7 +84,18 @@
 
 #define	EXP_EXPRESSION_GDDPP			8
 
-#define	EXP_LAST						9
+#define	EXP_EXPRESSION_I_GPIC			9
+#define	EXP_EXPRESSION_I_GPIIID			10
+#define	EXP_EXPRESSION_I_GPID			11
+#define	EXP_EXPRESSION_I_GPIQ 			12
+#define	EXP_EXPRESSION_I_GPIF 			13
+#define	EXP_EXPRESSION_I_GIP			14
+
+#define	EXP_EXPRESSION_F_GFLS			15
+#define	EXP_EXPRESSION_F_GFN			16
+#define	EXP_EXPRESSION_F_GFA			17
+
+#define	EXP_LAST						18
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -138,6 +164,8 @@ typedef struct tagRDATA
 	// Object's runtime data
 	GlobalData* pData;
 	AppId_t callBackAppID;
+	bool bCallbackSuccess;
+	bool bPm;
 
 	std::wstring* pRet;
 

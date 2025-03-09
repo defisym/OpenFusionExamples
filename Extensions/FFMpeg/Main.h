@@ -173,6 +173,7 @@ typedef struct tagRDATA
 
 	bool bOpen;
 	bool bPlay;	
+	bool bPlayStateUpdated;	
 
 	int volume;
 

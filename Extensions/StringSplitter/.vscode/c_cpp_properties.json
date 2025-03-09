@@ -3,10 +3,10 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:\\Boost",
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../_DeLib/",
                 "${workspaceFolder}/../_3rdLib/",
+				"${workspaceFolder}/../_3rdLib/Boost;",
                 "${workspaceFolder}/../../Inc/"
             ],
             "defines": [

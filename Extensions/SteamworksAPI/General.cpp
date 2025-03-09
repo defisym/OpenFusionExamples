@@ -57,7 +57,14 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 // Called when the extension is loaded into memory.
 //
 extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet) {
-	steamInit.Init();
+	const auto bInit =
+#ifdef PLATFORM_ENABLE_CONTROL
+		EnablePlatform(L"Platform/NoSteam");
+#else
+		true;
+#endif
+
+	if (bInit) { steamInit.Init(); }
 
 	// No error
 	return 0;

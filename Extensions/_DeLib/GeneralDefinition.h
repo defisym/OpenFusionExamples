@@ -33,7 +33,12 @@
 #define SetExtUserData(pData) MV->mvSetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib, pData)
 #define GetExtUserData() MV->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
 
-#define TURNCATE_SHORT(v) ((short)(v) & 0x7FFF)
+#define TRUNCATE_SHORT(v) ((short)(v) & 0x7FFF)
+
+#define CONNECT_STR(l, r) l##r
+#define STRINGIFY(s) #s
+#define CUR_FOLDER CONNECT_STR(__FILE__, "\\..\\")
+#define RELATIVE_PATH(path) CONNECT_STR(CUR_FOLDER, path)
 
 constexpr auto CLEAR_MEMRANGE = 128;
 constexpr auto CLEAR_NUMTHRESHOLD = 50;
@@ -50,12 +55,12 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 
 // inline static size_t Hasher(const Object& o) {
 	// size_t seed = ElementNum;
-
+	//
 	// seed ^= o.ele_1 + HASHER_MOVE(seed);
 	// seed ^= o.ele_2 + HASHER_MOVE(seed);
 	// ...
 	// seed ^= o.ele_ElementNum + HASHER_MOVE(seed);
-
+	//
 	// return seed;
 // }
 
@@ -136,6 +141,44 @@ inline std::string to_byte_string(const std::wstring& input, const UINT codePage
 	return result;
 }
 
+// general save / load, do conversion
+inline bool LoadData(std::wstring& output,
+	const char* pSrc, size_t len,
+	bool& bUnicode) {
+	if (pSrc == nullptr) {
+		return false;
+	}
+
+	// BOM
+	constexpr auto UTF8_SIGNATURE = "\xEF\xBB\xBF";
+
+	if ((len >= 3) && (memcmp(pSrc, UTF8_SIGNATURE, 3) == 0)) {
+		bUnicode = true;
+
+		pSrc += 3;
+		len -= 3;
+	}
+
+	if (len == 0) {
+		return false;
+	}
+
+	const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
+	return to_wide_string(output, pSrc, len, codePage);
+}
+// save data and handle unicode    
+inline bool SaveData(std::string& output,
+	const wchar_t* pSrc, const size_t len,
+	bool bUnicode = true) {
+	const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
+	return to_byte_string(output, pSrc, len, codePage);
+}
+
+// ------------------------------------------
+// Trim
+//	char to trim: space, \t \n \r \f \v
+// ------------------------------------------
+
 inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
 	while (pStart[0] == L' ') {
 		pStart++;
@@ -151,6 +194,23 @@ inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
 
 inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
 	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
+}
+
+inline std::string_view GetTrimmedStr(LPSTR pStart, size_t length) {
+    while (pStart[0] == ' ') {
+        pStart++;
+        length--;
+    }
+
+    while ((pStart + length - 1)[0] == ' ') {
+        length--;
+    }
+
+    return { pStart, length };
+}
+
+inline std::string_view GetTrimmedStr(std::string_view& str) {
+    return GetTrimmedStr(const_cast<char*>(str.data()), str.size());
 }
 
 inline void TrimStr(std::wstring& str,
@@ -273,12 +333,9 @@ inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"AL
 
 // basic split
 #include <functional>
+#include "StringTraits.h"
 
-template<typename T>
-concept CHR = std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, char>
-|| std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, wchar_t>;
-
-template<CHR T>
+template<CharConcept T>
 inline bool StrEqu(const T* l, const T* r) {
 	 if constexpr(std::is_same_v<T, char>) {
 		 return strcmp(l, r) == 0;
@@ -287,7 +344,7 @@ inline bool StrEqu(const T* l, const T* r) {
 	 }
 }
 
-template<CHR T>
+template<CharConcept T>
 inline bool StrIEqu(const T* l, const T* r) {
 	if constexpr (std::is_same_v<T, char>) {
 		return _stricmp(l, r) == 0;
@@ -297,7 +354,7 @@ inline bool StrIEqu(const T* l, const T* r) {
 	}
 }
 
-template<CHR T>
+template<CharConcept T>
 inline bool StrEmpty(const T* pStr) {
 	if constexpr (std::is_same_v<T, char>) {
 		return StrEqu(pStr, "");
@@ -307,7 +364,7 @@ inline bool StrEmpty(const T* pStr) {
 	}
 }
 
-template<CHR T>
+template<CharConcept T>
 inline void SplitStringCore(const std::basic_string<T>& input,
 	const T delimiter,
 	const std::function<void(const std::basic_string_view<T>&)>& callBack) {
@@ -325,7 +382,7 @@ inline void SplitStringCore(const std::basic_string<T>& input,
 	}
 }
 
-template<typename RET, CHR T>
+template<typename RET, CharConcept T>
 inline std::vector<RET> SplitString(const std::basic_string<T>& input,
 	const T delimiter,
 	std::function<RET(const std::basic_string_view<T>&)> callBack) {
@@ -339,7 +396,7 @@ inline std::vector<RET> SplitString(const std::basic_string<T>& input,
 	return resultList;
 }
 
-template<CHR T>
+template<CharConcept T>
 inline std::vector<std::basic_string<T>> SplitString(const std::basic_string<T>& input, const T delimiter) {
 	return SplitString<std::basic_string<T>, T>(input, delimiter,
 		[] (const std::basic_string_view<T>& item) {
@@ -363,16 +420,18 @@ inline void UpdateRange(T& v, T minv, T maxv) {
 template<typename T>
 inline bool NearlyEqualCore(const T a, const T b,
 						// those defaults are arbitrary and could be removed
-						const T epsilon ,
-						const T abs_th ) {
+						const T epsilon,
+						const T abs_th) {
 	//assert(std::numeric_limits<float>::epsilon() <= epsilon);
 	//assert(epsilon < 1.f);
 
 	if (a == b) return true;  // NOLINT(clang-diagnostic-float-equal)
 
 	const auto diff = std::abs(a - b);
-	const auto norm = (std::min)((std::abs(a) + std::abs(b)), (std::numeric_limits<T>::max)());
-	// or even faster: std::min(std::abs(a + b), std::numeric_limits<float>::max());
+	// or even faster:
+	//const auto norm = (std::min)(std::abs(a + b),
+	const auto norm = (std::min)(std::abs(a) + std::abs(b),
+		(std::numeric_limits<T>::max)());
 	// keeping this commented out until I update figures below
 	return diff < (std::max)(abs_th, epsilon * norm);
 }
@@ -389,4 +448,74 @@ inline bool NearlyEqualDBL(const double a, const double b,
 						const double epsilon = 128 * DBL_EPSILON,
 						const double abs_th = DBL_MIN) {
 	return NearlyEqualCore<double>(a, b, epsilon, abs_th);
+}
+
+inline bool NearlyEqualLDBL(const long double a, const long double b,
+						// those defaults are arbitrary and could be removed
+						const long double epsilon = 128 * LDBL_EPSILON,
+						const long double abs_th = LDBL_MIN) {
+	return NearlyEqualCore<long double>(a, b, epsilon, abs_th);
+}
+
+template<typename T>
+typename std::vector<T>::iterator
+InsertSortedUpperBound(std::vector<T>& vec, T const& item) {
+	return vec.insert(std::upper_bound(vec.begin(), vec.end(), item), item);
+}
+template<typename T, typename Pred>
+typename std::vector<T>::iterator
+InsertSortedUpperBound(std::vector<T>& vec, T const& item, Pred pred) {
+	return vec.insert(std::upper_bound(vec.begin(), vec.end(), item, pred), item);
+}
+template<typename T>
+typename std::vector<T>::iterator
+InsertSortedLowerBound(std::vector<T>& vec, T const& item) {
+	return vec.insert(std::lower_bound(vec.begin(), vec.end(), item), item);
+}
+template<typename T, typename Pred>
+typename std::vector<T>::iterator
+InsertSortedLowerBound(std::vector<T>& vec, T const& item, Pred pred) {
+	return vec.insert(std::lower_bound(vec.begin(), vec.end(), item, pred), item);
+}
+
+#include<algorithm>
+
+template<CharConcept T>
+void ToLower(T* pStr, const size_t sz) {
+    for(size_t index = 0;index<sz;index++) {
+        auto& chr = pStr[index];
+        chr = tolower(chr);
+    }
+}
+
+template<StringConcept T>
+void ToLower(T& str) {
+    std::ranges::transform(str, str.begin(), ::tolower);
+}
+
+template<StringConcept T>
+[[nodiscard]] T ToLower(const T& str) {
+    T ret = str;
+    std::ranges::transform(ret, ret.begin(), ::tolower);
+    return ret;
+}
+
+template<CharConcept T>
+void ToUpper(T* pStr, const size_t sz) {
+    for (size_t index = 0; index < sz; index++) {
+        auto& chr = pStr[index];
+        chr = ToUpper(chr);
+    }
+}
+
+template<StringConcept T>
+void ToUpper(T& str) {
+    std::ranges::transform(str, str.begin(), ::toupper);
+}
+
+template<StringConcept T>
+[[nodiscard]] T ToUpper(const T& str) {
+    T ret = str;
+    std::ranges::transform(ret, ret.begin(), ::ToUpper);
+    return ret;
 }

@@ -280,7 +280,7 @@ struct GarbageCollection {
 };
 
 template<typename T>
-constexpr auto MemRange(T X) { return min(MAX_MEMORYLIMIT, max(0, X)); }
+constexpr auto MemRange(T X) { return ::Range(X, (T)0, (T)MAX_MEMORYLIMIT); }
 
 constexpr auto DEFAULT_FILELISTSIZE = 1000;
 constexpr auto Delimiter = L'|';

@@ -160,7 +160,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Size", IDMN_ACTION_STRETCH
         MENUITEM SEPARATOR
-        MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
+        //MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
         MENUITEM SEPARATOR
@@ -320,6 +320,7 @@ COMBO_AV_HWDEVICE_TYPE_DRM                    "DRM"
 COMBO_AV_HWDEVICE_TYPE_OPENCL                 "OPENCL"
 COMBO_AV_HWDEVICE_TYPE_MEDIACODEC             "MEDIACODEC"
 COMBO_AV_HWDEVICE_TYPE_VULKAN                 "VULKAN"
+COMBO_AV_HWDEVICE_TYPE_D3D12VA                "D3D12VA"
 
 IDS_PROP_FORCENOAUDIO_CHECK            "Force No Audio"
 IDS_PROP_FORCENOAUDIO_CHECK_INFO       "Don't play audio and sync with external clock"

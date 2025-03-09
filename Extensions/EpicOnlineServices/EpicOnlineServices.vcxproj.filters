@@ -178,6 +178,9 @@
     <ClInclude Include="EOSCallbackCounter.h">
       <Filter>EpicOnlineServices\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\_3rdLib\PlatformUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

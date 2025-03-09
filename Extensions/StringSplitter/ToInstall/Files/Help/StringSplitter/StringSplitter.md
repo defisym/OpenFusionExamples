@@ -24,7 +24,7 @@ This object has no properties.
   - *reset object if needed*
 
 - Load From File
-  - *if the file is not encrypted, keep the key section empty.*  
+  - *if the file is not [encrypted](https://github.com/defisym/OpenFusionExamples/tree/master/Extensions/Encrypter/ToInstall/Files), keep the key section empty.*  
   - *you need to define the file code page, 1 = `Unicode`, 0 = `ANSI`*
   - *this action will automatically start split if auto split is set to on*
 - Load From String

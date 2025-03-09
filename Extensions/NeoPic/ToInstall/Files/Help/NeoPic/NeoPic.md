@@ -2,9 +2,11 @@
 
 ## Description
 
-Enable the power to load encrypted image files, to store them to a lib that keeps data over frames, or to do something like stack blur or affine transformation.
+Enable the power to load [encrypted](https://github.com/defisym/OpenFusionExamples/tree/master/Extensions/Encrypter/ToInstall/Files) image files, to store them to a lib that keeps data over frames, or to do something like stack blur or affine transformation.
 
 Special thanks to @PiKeyAr (From Github) and @Senda (From Discord), who help a lot to polishing this extension.
+
+**Note** only one lib is maintained, so create multiple lib objects has no effect.
 
 ## Known issue
 

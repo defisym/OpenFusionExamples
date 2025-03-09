@@ -209,8 +209,10 @@ Since build 295, fusion no longer supports to call immediate events from conditi
         isoGridWidth = isoGridWidth & 0xFFFF;
         isoGridHeight = isoGridHeight & 0xFFFF;
 
-        return (isoGridWidth << 16) | isoGridHeight;
+        return (isoGridHeight << 16) | isoGridWidth;
       ```
+
+    - *you can pass this even if you are under traditional mode, in that case only low 16 bit are used as grid size*
 
   - Get Grid Coord
   - Get Real Coord

@@ -1,16 +1,17 @@
 #pragma once
 
-#include <WindowsCommon.h>
+#include "WindowsCommon.h"
 
-#include "nlohmann/json.hpp"
+#include "nlohmann/single_include/nlohmann/json.hpp"
 
 constexpr auto MakeJsonParseErrorString(const char* pBase, const char* pContent) {
     return std::string(pBase) + std::string(": ") + std::string(pContent);
 }
 
 using JsonData = nlohmann::basic_json<>;
+using JsonIt = nlohmann::json::iterator;
 
-class JsonObject {
+class JsonObject {  // NOLINT(cppcoreguidelines-special-member-functions)
 public:
     JsonObject() = default;
     explicit JsonObject(const JsonData& data) {}
@@ -27,12 +28,9 @@ private:
 
     template<typename T>
     inline bool LoadCore(T* in) {
-        if (in == nullptr) {
-            return false;
-        }
+        if (in == nullptr) { return false; }
 
         try {
-            //data = Json::parse(in);
             data = Json::parse(in, nullptr, true, this->bComment);            
         } catch (std::exception& e) {    //nlohmann::json_abi_v3_11_2::detail::parse_error
             const auto pErr = e.what();
@@ -48,19 +46,19 @@ private:
     }
 
 public:
+    inline bool Load(const char* pBuf) { return LoadCore(pBuf); }
+
+    inline bool Load(FILE* fp) { return LoadCore(fp); }
+
     inline bool Load(const wchar_t* pFileName) {
         FILE* fp = nullptr;
         _wfopen_s(&fp, pFileName, L"rb");
 
-        return LoadCore(fp);
+        return Load(fp);
     }
 
-    inline bool Load(const char* pBuf) {
-        return LoadCore(pBuf);
-    }
-
-    inline void SetComment(bool bComment = true){
-        this->bComment = bComment;
+    inline void SetComment(const bool bEnableComment = true){
+        this->bComment = bEnableComment;
     }
 
     inline const JsonData& Get() {

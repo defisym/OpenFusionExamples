@@ -22,6 +22,8 @@
 #define	MINBUILD	292
 #endif
 
+// Define this flag to contorl enable by file
+#define PLATFORM_ENABLE_CONTROL
 
 #ifdef _DEBUG
 #include	<assert.h>
@@ -48,6 +50,8 @@
 #include	"WindowsCommon.h"
 #include	"GeneralDefinition.h"
 
+#include	"PlatformUtilities.h"
+
 #include	"SteamUtilities.h"
 #include	"SteamInit.h"
 
@@ -61,6 +65,7 @@
 // My header
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
+#include	"EffectUtilities.h"
 
 #include	"Func.h"
 

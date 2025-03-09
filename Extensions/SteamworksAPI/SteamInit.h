@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SteamInclude.h"
+#include "WindowsCommon.h"
 
 struct SteamInit {
 	bool bInit = false;
@@ -8,8 +9,6 @@ struct SteamInit {
 
 	inline void Init() {
 		if (!bInit) {
-			//bInit = SteamAPI_Init();
-
 			const auto initResult = SteamAPI_InitEx(&errMsg);
 			bInit = initResult == k_ESteamAPIInitResult_OK;
 		}

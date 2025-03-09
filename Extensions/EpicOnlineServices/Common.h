@@ -23,6 +23,9 @@
 #define	MINBUILD	243
 #endif
 
+// Define this flag to contorl enable by file
+#define PLATFORM_ENABLE_CONTROL
+
 // General includes
 #include	"ccxhdr.h"
 #include	"Surface.h"
@@ -30,6 +33,8 @@
 // My lib
 #include	"GeneralDefinition.h"
 #include	"WindowsCommon.h"
+
+#include	"PlatformUtilities.h"
 
 #include	"EOSUtilities.h"
 #include	"EOSPlatformInclude.h"

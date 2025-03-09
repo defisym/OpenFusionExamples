@@ -118,6 +118,19 @@ constexpr auto FORMAT_OPERATION_GetRawStringByFilteredStringLength = 0b00000001;
 
 constexpr auto FORMAT_INVALID_ICON = static_cast<DWORD>(-1);
 
+struct NeoStrFormatException final :std::exception {
+private:
+	int flag = 0;
+
+public:
+	NeoStrFormatException(char const* const pMsg, int flag = 0) noexcept
+		:std::exception(pMsg) {
+		this->flag = flag;
+	}
+
+	inline int GetFlag() const noexcept { return this->flag; }
+};
+
 // D3D limitation
 // https://learn.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-limits
 constexpr long D3D11_TEXTURE_SIZE = 16384;
@@ -987,28 +1000,49 @@ public:
 	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
 		const NeoStr* pCache)
 		:NeoStr(dwAlignFlags, color, hFont,
-			pCache->pFontCache,
+		false,
+		{ pCache->pFontCache,
 			pCache->pCharSzCacheWithFont,
 			pCache->pRegexCache,
-			pCache->pIConData,
-			pCache->pFontCollection,
-			false) {}
-	NeoStr(const DWORD dwAlignFlags, const COLORREF color
-		, const HFONT hFont
+			pCache->pFontCollection },
+			pCache->pIConData) {}
+
+	struct NeoStrFontCache {
+		FontCache* pFontCache = nullptr;
+		CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr;
+		RegexHandler* pRegexCache = nullptr;
+		PrivateFontCollection* pFontCollection = nullptr;
+
+		inline bool CacheValid() const {
+			return pFontCache && pCharSzCacheWithFont && pRegexCache;
+		}
+
+		inline void UpdateNeoStr(NeoStr* pNeoStr) const {
+			pNeoStr->bExternalCache = true;
+
+			pNeoStr->pFontCache = this->pFontCache;
+			pNeoStr->pCharSzCacheWithFont = this->pCharSzCacheWithFont;
+			pNeoStr->pRegexCache = this->pRegexCache;
+		}
+	};
+
+	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
+		const bool needGDIPStartUp = true,
 		// read only
-		, FontCache* pFontCache = nullptr
-		, CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr		
-		, RegexHandler* pRegexCache = nullptr
-		, IConData* pIConData = nullptr
-		, PrivateFontCollection* pFontCollection = nullptr
-		, const bool needGDIPStartUp = true
-	) {
+		const NeoStrFontCache& neoStrFontCache = {},
+		IConData* pIConData = nullptr) {
+		// ------
+		// GDI Env
+		// ------
 		this->needGDIPStartUp = needGDIPStartUp;
 
 		if (this->needGDIPStartUp) {
 			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 		}
 
+		// ------
+		// Basic Font
+		// ------
 		// duplicate font handle
 		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
 		this->hFont = CreateFontIndirect(&this->logFont);
@@ -1018,17 +1052,22 @@ public:
 		this->hOldObj = SelectObject(this->hdc, hFont);
 		GetTextMetrics(hdc, &this->tm);
 
-		this->pFontCollection = pFontCollection;
+		this->SetColor(color);
+		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
 
-		if (pFontCache && pCharSzCacheWithFont && pRegexCache) {
-			this->bExternalCache = true;
+		this->strPos.reserve(20);
 
-			this->pFontCache = pFontCache;
-			this->pCharSzCacheWithFont = pCharSzCacheWithFont;
-			this->pRegexCache = pRegexCache;
-		}else {
-			this->bExternalCache = false;
+		// ------
+		// Cache
+		// ------
 
+		// Font
+		this->pFontCollection = neoStrFontCache.pFontCollection;
+		this->bExternalCache = neoStrFontCache.CacheValid();
+
+		if (this->bExternalCache) {
+			neoStrFontCache.UpdateNeoStr(this);		
+		}else {			
 			Alloc(this->pFontCache);
 			Alloc(this->pCharSzCacheWithFont);
 			Alloc(this->pRegexCache);
@@ -1036,11 +1075,13 @@ public:
 
 		this->pFont = GetFontPointerWithCache(this->logFont);
 
-		this->SetColor(color);
-		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
+		// ICon
+		this->bExternalIConData = pIConData != nullptr;
+		this->pIConData = this->bExternalIConData ? pIConData : new IConData;
 
-		this->strPos.reserve(20);		
-
+		// ------
+		// Format
+		// ------
 		// non-stack based
 		this->triggerFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->triggerRect.reserve(DEFAULT_FORMAT_RESERVE);
@@ -1087,14 +1128,6 @@ public:
 #endif
 		// add a default char to return default value when input text is empty
 		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
-
-		if (pIConData != nullptr) {
-			bExternalIConData = true;
-			this->pIConData = pIConData;
-		}
-		else {
-			this->pIConData = new IConData;
-		}
 	}
 
 	~NeoStr() {
@@ -1202,7 +1235,11 @@ public:
 	//https://blog.csdn.net/analogous_love/article/details/45845971
 	inline void EmbedFont(const LPCWSTR pFontFile) const {
 		EmbedFont(pFontFile, *this->pFontCollection);
-		auto count = this->pFontCollection->GetFamilyCount();
+#ifdef _DEBUG
+		if (this->pFontCollection != nullptr) {
+			auto count = this->pFontCollection->GetFamilyCount();
+		}
+#endif
 	}
 
 	inline static void EmbedFont(const LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {
@@ -2069,7 +2106,8 @@ public:
 				pSavedChar[0] = L'@';
 				pSavedChar[1] = L'\0';
 #endif
-				throw std::exception("Get Raw String By Filtered String Length");
+				throw NeoStrFormatException("Get Raw String By Filtered String Length", 
+					FORMAT_OPERATION_GetRawStringByFilteredStringLength);
 			}
 		};
 
@@ -2411,7 +2449,7 @@ public:
 						// new element, call callback to update the one copied from last one
 						// parse params there
 						// or end of region, pop the stack, then update it
-						auto StackManager = [&] (auto& stack, auto& format, auto callBack) {
+						auto StackManager = [&] (auto& stack, auto& format, const auto& callBack) {
 							if (!bEndOfRegion) {
 								// clone one here
 								std::remove_reference_t<decltype(stack[0])> newFormat = stack.back();
@@ -2810,11 +2848,12 @@ public:
 									return;
 								}
 
-								memset(newLogFont.lfFaceName, 0
-									, LF_FACESIZE * sizeof(WCHAR));
-								memcpy(newLogFont.lfFaceName, controlParam.data()
-									, min(LF_FACESIZE, controlParam.size()) * sizeof(WCHAR));
-								});
+                                memset(newLogFont.lfFaceName, 0,
+                                    LF_FACESIZE * sizeof(WCHAR));
+                                memcpy(newLogFont.lfFaceName, controlParam.data(),
+                                    (std::min)(static_cast<size_t>(LF_FACESIZE),
+                                    controlParam.size()) * sizeof(WCHAR));
+                                });
 
 							break;
 						}
@@ -3124,7 +3163,7 @@ public:
 				auto curChar = pCurChar[0];
 				auto nextChar = pCurChar[1];
 
-				fontItHandler.ForwardWithNewLine(pChar, [&] (auto fontIt) {
+				fontItHandler.ForwardWithNewLine(pChar, [&] (const auto& fontIt) {
 					localLogFont = fontIt->logFont;
 				});
 
@@ -3178,7 +3217,7 @@ public:
 				auto charSz = &pCharSizeArr[pChar];
 
 				curWidth += charSz->width;
-				curHeight = max(curHeight, charSz->height);
+				curHeight = (std::max)(curHeight, charSz->height);
 
 				bNewLineHandled = false;
 
@@ -3330,7 +3369,7 @@ public:
 				std::wstring strEscaped(pText + pChar);
 #endif // _DEBUG
 
-				auto end = min(pChar, pTextLen) - 2 * newLine;
+				auto end = (std::min)(pChar, pTextLen) - 2 * newLine;
 				
 				if (end <= pCharStart) {
 					end = pCharStart;
@@ -3354,7 +3393,7 @@ public:
 #endif // _DEBUG
 
 				maxWidth = curWidth != 0
-					? max(maxWidth, curWidth - nColSpace)
+					? (std::max)(maxWidth, curWidth - nColSpace)
 					: maxWidth;
 			}
 
@@ -3676,9 +3715,13 @@ public:
 		// non-stack based
 		auto triggerItHandler = IteratorHandler(this->triggerFormat);
 
-		auto tagCallbackHandler = [&] (auto tagIt) {
+		auto tagCallbackHandler = [&] (const auto& tagIt) {
 			if (opt.tagCallback == nullptr) { return; }
-			if (tagIt->rawStart <= opt.tagCallbackIndex) { return; }
+            if (tagIt->rawStart <= opt.tagCallbackIndex
+                // fix tag at start cannot be triggered
+                && opt.tagCallbackIndex != 0) {
+                return;
+            }
 
 			opt.tagCallback(tagIt->callbackName, tagIt->callbackParams);
 		};
@@ -3728,6 +3771,20 @@ public:
 		// ------------
 		// render & calculate position of each char
 		// ------------
+		// Exceptions used to terminate render, should be catched and do nothing
+		struct NeoStrRenderException final :std::exception {
+		private:
+			int flag = 0;
+
+		public:
+			NeoStrRenderException(char const* const pMsg, int flag = 0) noexcept
+				:std::exception(pMsg) {
+				this->flag = flag;
+			}
+
+			inline int GetFlag() const noexcept { return this->flag; }
+		};
+
 		try {
 			for (auto& curStrPos : this->strPos) {
 #ifdef _DEBUG
@@ -3758,7 +3815,7 @@ public:
 				// ---------
 
 				// stack based
-				alignItHandler.Forward(totalChar, [&] (auto alignIt) {
+				alignItHandler.Forward(totalChar, [&] (const auto& alignIt) {
 					formatAlign = alignIt->dwDTFlags;
 				});
 
@@ -3770,33 +3827,15 @@ public:
 				for (size_t curChar = 0; curChar < curStrPos.length; curChar++, totalChar++) {
 					auto offset = curStrPos.start + curChar;
 					if (offset >= opt.renderCharCount) {
-						throw std::exception("Exceed visable ratio");
+						throw NeoStrRenderException("Exceed visable ratio");
 					}
 
 					// get char size
 					auto pCurChar = pText + offset;
 					charSz = &pCharSizeArr[offset];
 
-
-					// ---------
-					// update iterator
-					// ---------
-
-					// stack based
-					charOffsetItHandler.Forward(totalChar, [&] (auto charPosIt) {
-						charOffsetDisplay = charPosIt->charOffsetDisplay;
-					});
-
-					const double charOffsetX = charOffsetDisplay.charOffsetX * static_cast<double>(charSz->width);
-					const double charOffsetY = charOffsetDisplay.charOffsetY * static_cast<double>(charSz->height);
-
-					// corrected position (no border offset)
-					const double displayX = x + charOffsetX;
-					const double displayY = curStrPos.y + charOffsetY;
-
-					// position relative to object left top
-					pCharPosArr[offset] = CharPos{ static_cast<long>(displayX + GDIPlusOffset),
-													static_cast<long>(this->startY + displayY),
+					pCharPosArr[offset] = CharPos{ x + GDIPlusOffset,
+													this->startY + curStrPos.y,
 													0,0,
 													ShakeControl() };
 
@@ -3810,7 +3849,7 @@ public:
 					// update position
 					if (opt.positionCallback != nullptr) {
 						if (!opt.positionCallback(charSz, &pCharPosArr[offset], positionX, positionY)) {
-							throw std::exception("Exceed remark base length");
+							throw NeoStrRenderException("Exceed remark base length");
 						}
 					}
 
@@ -3819,13 +3858,13 @@ public:
 					// ---------
 
 					// stack based
-					colorItHandler.Forward(totalChar, [&] (auto colorIt) {
+					colorItHandler.Forward(totalChar, [&] (const auto& colorIt) {
 						solidBrush.SetColor(colorIt->color);
 					});
-					fontItHandler.Forward(totalChar, [&] (auto fontIt) {
+					fontItHandler.Forward(totalChar, [&] (const auto& fontIt) {
 						this->pFont = GetFontPointerWithCache(fontIt->logFont);
 					});
-					shakeItHandler.Forward(totalChar, [&] (auto shakeIt) {
+					shakeItHandler.Forward(totalChar, [&] (const auto& shakeIt) {
 						localShakeFormat = *shakeIt;
 					});
 
@@ -3835,7 +3874,7 @@ public:
 					}
 
 					// non-stack based
-					triggerItHandler.Forward(totalChar, [&] (auto triggerIt) {
+					triggerItHandler.Forward(totalChar, [&] (const auto& triggerIt) {
 						triggerIt->pCharSizeArr = &pCharSizeArr[offset];
 						triggerIt->pCharPosArr = &pCharPosArr[offset];
 					});
@@ -3844,13 +3883,13 @@ public:
 						tagCallbackHandler(tagIt);
 					});
 #endif
-					remarkItHandler.Forward(totalChar, [&] (auto remarkIt) {
+					remarkItHandler.Forward(totalChar, [&] (const auto& remarkIt) {
 						remarkIt->pCharSizeArr = &pCharSizeArr[offset];
 						remarkIt->pCharPosArr = &pCharPosArr[offset];
 						//remarkIt->validLength = (std::min)(pTextLen - offset, remarkIt->baseLength);
 						remarkIt->validLength = (std::min)(opt.renderCharCount - offset, remarkIt->baseLength);
 					});
-					iConItHandler.Forward(totalChar, [&] (auto iConIt) {
+					iConItHandler.Forward(totalChar, [&] (const auto& iConIt) {
 						// use updated position
 						iConIt->x = static_cast<size_t>(positionX);
 						iConIt->y = static_cast<size_t>(positionY);
@@ -3918,7 +3957,7 @@ public:
 					x += (charSz->width + nColSpace);
 				}
 			}
-		} catch([[maybe_unused]] std::exception& e) {  // NOLINT(bugprone-empty-catch)
+		} catch([[maybe_unused]] NeoStrRenderException& e) {  // NOLINT(bugprone-empty-catch)
 			// use exception to jump out of the loop if exceeds the
 			// render char count, so nothing to handle here
 		}

@@ -25,7 +25,7 @@
 #endif
 
 // must be here to avoid conflict of min/max macro
-#include	"CLI11.hpp"
+#include	"CLI11/include/CLI/CLI.hpp"
 
 // General includes
 #include	"ccxhdr.h"

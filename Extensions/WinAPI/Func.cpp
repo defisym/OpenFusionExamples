@@ -174,7 +174,7 @@ DPOINT GetFrameScale(LPRDATA rdPtr) {
 	POINT Cur = { CurrentFrameRect.right - CurrentFrameRect.left,CurrentFrameRect.bottom - CurrentFrameRect.top };
 
 	//获取缩放前显示的最小区域大小
-	POINT Min = { min(rdPtr->AppW,rdPtr->FrameW),min(rdPtr->AppH,rdPtr->FrameH) };
+	POINT Min = { (std::min)(rdPtr->AppW,rdPtr->FrameW),(std::min)(rdPtr->AppH,rdPtr->FrameH) };
 
 	return DPOINT{ Cur.x / (double)Min.x,Cur.y / (double)Min.y };
 }

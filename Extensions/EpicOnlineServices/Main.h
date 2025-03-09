@@ -11,8 +11,9 @@
 #define	CND_CONDITION_QUEARYCOMPLETE		2
 #define	CND_CONDITION_ONERROR				3
 #define	CND_CONDITION_ONLOGOUT				4
+#define	CND_CONDITION_PE					5
 
-#define	CND_LAST							5
+#define	CND_LAST							6
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES

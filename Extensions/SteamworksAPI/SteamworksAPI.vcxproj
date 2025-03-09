@@ -112,6 +112,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -168,6 +169,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -223,6 +225,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;RUN_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -294,6 +297,8 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\TigsExt.hpp" />
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="..\_3rdLib\JsonInterface.h" />
+    <ClInclude Include="..\_3rdLib\PlatformUtilities.h" />
+    <ClInclude Include="..\_3rdLib\va_args_iterators\pp_iter.h" />
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
@@ -307,15 +312,18 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="SteamCallback.h" />
     <ClInclude Include="SteamConcepts.h" />
     <ClInclude Include="SteamDLC.h" />
+    <ClInclude Include="SteamFriend.h" />
     <ClInclude Include="SteamGamepadTextInput.h" />
     <ClInclude Include="SteamHttp.h" />
     <ClInclude Include="SteamInclude.h" />
     <ClInclude Include="SteamInit.h" />
+    <ClInclude Include="SteamInv.h" />
     <ClInclude Include="SteamMicroTxn.h" />
     <ClInclude Include="SteamRefresh.h" />
     <ClInclude Include="SteamRemote.h" />
     <ClInclude Include="SteamRichPresence.h" />
     <ClInclude Include="SteamScreenshot.h" />
+    <ClInclude Include="SteamGameRecord.h" />
     <ClInclude Include="SteamUtilities.h" />
     <ClInclude Include="SteamWebAPI.h" />
   </ItemGroup>

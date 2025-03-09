@@ -117,7 +117,6 @@ inline T GetCurrentParam(LPRDATA rdPtr) {
 	}
 }
 
-
 //Return float
 inline long ReturnFloat(LPRDATA rdPtr, float Val) {
 	if (Val == (int)Val) {
@@ -614,10 +613,9 @@ inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
 
 //Get info
 inline D3D11SURFINFO GetSurfaceInfo(LPSURFACE pSf) {
-	D3D11SURFINFO info = { 0 };
-	auto pInfo = &info;
-
+	D3D11SURFINFO info = { };
 	info.m_lSize= sizeof(D3D11SURFINFO);
+
 	auto ret = pSf->GetDriverInfo(&info);
 
 	return info;
@@ -1068,9 +1066,9 @@ inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 
 // return false if created the blank surface
 #ifdef _NO_REF
-inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src
-	, int width, int height, bool NoStretch, bool HighQuality
-	, std::function<bool(CImageFilterMgr*, const LPSURFACE)> load) {
+inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src,
+	int width, int height, bool NoStretch, bool HighQuality,
+	const std::function<bool(CImageFilterMgr*, const LPSURFACE)>& load) {
 #else
 inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src
 	, int width, int height, bool NoStretch, bool HighQuality
@@ -1322,9 +1320,9 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	};
 #endif // STACK_BLUR_ALPHA	
 
-	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des
-		, int size, bool dir
-		, PixelGetter getter, PixelSetter setter) {
+	auto StackBlur1DFilter = [=](BYTE* src, BYTE* des,
+		int size, bool dir,
+		const PixelGetter& getter, const PixelSetter& setter) {
 		int div = radius * 2 + 1;
 		int sizem = size - 1;
 
@@ -1738,96 +1736,88 @@ inline void IteratePixel(LPSURFACE pSf, const std::function<void(int,int,const S
 // dst transparent -> src alpha
 // TODO: BOP_BLEND_REPLACETRANSP ?
 inline bool MixAlpha(LPSURFACE pSrc, int srcX, int srcY, int srcWidth, int srcHeight
-	, LPSURFACE pDst, int destX, int destY) {
-	if(!pSrc->HasAlpha()){
-		return false;
-	}
+	, LPSURFACE pDst, const int destX, const int destY) {
+	if (!pSrc->HasAlpha()) { return false; }
+	if (!pDst->HasAlpha()) { pDst->CreateAlpha(); }
 
-	if (!pDst->HasAlpha()) {
-		pDst->CreateAlpha();
-	}
-
-	auto srcCoef = GetSfCoef(pSrc);
+	// source ceof
+	const auto srcCoef = GetSfCoef(pSrc);
 	if (srcCoef.pData == nullptr || srcCoef.pAlphaData == nullptr) {
 		return false;
 	}
 
-	auto dstCoef = GetSfCoef(pDst);
+	// dst coef
+	const auto dstCoef = GetSfCoef(pDst);
 	if (dstCoef.pData == nullptr || dstCoef.pAlphaData == nullptr) {	
 		return false;
 	}
 
-	int widthS = pSrc->GetWidth();
-	int heightS = pSrc->GetHeight();
+	// source ceof
+	const int widthS = pSrc->GetWidth();
+	const int heightS = pSrc->GetHeight();
 
-	BYTE* pAlphaDataS = srcCoef.pAlphaData;
-	int alphaPitchS = srcCoef.alphaPitch;
+	const BYTE* pAlphaDataS = srcCoef.pAlphaData;
+	const int alphaPitchS = srcCoef.alphaPitch;
 	int alphaSzS = srcCoef.alphaSz;
-	int alphaByteS = srcCoef.alphaByte;
+	const int alphaByteS = srcCoef.alphaByte;
 
-	int widthD = pDst->GetWidth();
-	int heightD = pDst->GetHeight();
+	// dst coef
+	const int widthD = pDst->GetWidth();
+	const int heightD = pDst->GetHeight();
 
 	BYTE* pAlphaDataD = dstCoef.pAlphaData;
-	int alphaPitchD = dstCoef.alphaPitch;
+	const int alphaPitchD = dstCoef.alphaPitch;
 	int alphaSzD = dstCoef.alphaSz;
-	int alphaByteD = dstCoef.alphaByte;
+	const int alphaByteD = dstCoef.alphaByte;
 
-#define _PRE_PROTECT
+	// protect data range
+	//	┌──────┐
+	//	│  ┌───┼───┐
+	//	└──┼───┘   │
+	//	   └───────┘
+	//	Left is source, left top is [ destX, destY ], right is dest
+	//	Only the intersect part is valid
 
-#ifdef _PRE_PROTECT
-	auto Range = [](int inputV, int minV, int maxV) {
+	auto range = [](const int inputV, const int minV, const int maxV) {
 		return (std::min)(maxV, (std::max)(minV, inputV));
 	};
-		
-	auto actualWidth = Range(srcX + srcWidth, 0, widthS);
-	auto actualHeight = Range(srcY + srcHeight, 0, heightS);
 
-	auto actualSrcX= Range(srcX, 0, widthS);
-	auto actualSrcY = Range(srcY, 0, heightS);
+	// valid src range
+	const auto actualSrcX = range(srcX, 0, widthS);
+	const auto actualSrcY = range(srcY, 0, heightS);
 
-	for (int y = actualSrcY; y < actualHeight; y++) {
-		for (int x = actualSrcX; x < actualWidth; x++) {
-#else
-	for (int y = srcY; y < srcY + srcHeight; y++) {
-		for (int x = srcX; x < srcX + srcWidth; x++) {
-#endif
-			auto Protection = [](LPSURFACE pSf, int x, int y) {
-				if (x < 0 || x >= pSf->GetWidth()) {
-					return false;
-				}
+	const auto actualWidth = range(srcX + srcWidth, 0, widthS);
+	const auto actualHeight = range(srcY + srcHeight, 0, heightS);
 
-				if (y < 0 || y >= pSf->GetHeight()) {
-					return false;
-				}
+	// valid dst range
+	auto startX = range(actualSrcX + destX, 0, widthD) - destX;
+	startX = (std::max)(startX, actualSrcX);
 
-				return true;
-			};
+	auto endX = range(actualWidth + destX, 0, widthD) - destX;
+	endX = (std::min)(endX, actualWidth);
 
-			auto dstX = (x + destX);
-			auto dstY = (y + destY);
+	auto startY = range(actualSrcY + destY, 0, heightD) - destY;
+	startY = (std::max)(startY, actualSrcY);
 
-			//protection
-#ifdef _PRE_PROTECT
-			if (!Protection(pDst, dstX, dstY)) {
-#else
-			if (!Protection(pSrc, x, y) || !Protection(pDst, dstX, dstY)) {
-#endif
-				continue;
-			}
+	auto endY = range(actualHeight + destY, 0, heightD) - destY;
+	endY = (std::min)(endY, actualHeight);
 
-			auto alphaOffsetS = (y)*alphaPitchS + x * alphaByteS;
-			auto alphaOffsetD = (dstY)*alphaPitchD + dstX * alphaByteD;
+	for (int y = startY; y < endY; y++) {
+		for (int x = startX; x < endX; x++) {
+			const auto dstX = x + destX;
+			const auto dstY = y + destY;
 
-			BYTE* alphaPixelS = pAlphaDataS + alphaOffsetS;
+			const auto alphaOffsetS = y * alphaPitchS + x * alphaByteS;
+			const auto alphaOffsetD = dstY * alphaPitchD + dstX * alphaByteD;
+
+			const BYTE* alphaPixelS = pAlphaDataS + alphaOffsetS;
 			BYTE* alphaPixelD = pAlphaDataD + alphaOffsetD;
 
-			auto src = 1.0 - alphaPixelS[0] / 255.0;
-			auto dst = 1.0 - alphaPixelD[0] / 255.0;
+			const auto src = 1.0 - alphaPixelS[0] / 255.0;
+			const auto dst = 1.0 - alphaPixelD[0] / 255.0;
+			const auto result = (1.0 - src * dst) * 255;
 
-			auto result = (1.0 - src * dst) * 255;
-
-			*alphaPixelD = (BYTE)result;
+			alphaPixelD[0] = static_cast<BYTE>(result);
 		}
 	}
 

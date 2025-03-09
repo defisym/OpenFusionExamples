@@ -45,7 +45,7 @@ namespace MusicScore {
 
 		constexpr auto arrayDelimiter = L',';
 
-		const auto elements = SplitString(score, arrayDelimiter);
+		const auto elements = SplitString<wchar_t>(score, arrayDelimiter);
 
 		MusicScore::MusicalNotes notes;
 

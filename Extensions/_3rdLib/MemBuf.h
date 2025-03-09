@@ -32,15 +32,19 @@ public:
 		delete[] this->pBuf;
 	}
 
-	inline const uint8_t* const getSrc() {
+	inline const uint8_t* getSrc() const {
 		return this->pSrcBuf;
 	}
 
-	inline uint8_t* get() {
+	inline int getSrcSize() const {
+		return srcBufSize;
+	}
+
+	inline uint8_t* get() const {
 		return pBuf;
 	}
 
-	inline int getSize() {
+	inline int getSize() const {
 		return bufSize;
 	}
 
@@ -80,7 +84,6 @@ public:
 
 			return bufferIndex;
 		case AVSEEK_SIZE:
-			return -1;
 		default:
 			return -1;
 		}

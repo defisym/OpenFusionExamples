@@ -112,6 +112,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR        
+        MENUITEM "Platfrom Enabled", IDMN_CONDITION_PE
+        MENUITEM SEPARATOR        
         POPUP "Steam Deck"
         BEGIN        
             MENUITEM "Running On Steam Deck", IDMN_CONDITION_ROSD
@@ -144,6 +146,12 @@ BEGIN
             MENUITEM "On DLC Install Complete", IDMN_CONDITION_ODLCIC        
         END
         MENUITEM SEPARATOR
+        POPUP "Inventory"
+        BEGIN
+            MENUITEM "On Inventory Full Update", IDMN_CONDITION_OIFU       
+            MENUITEM "On Inventory Result Ready", IDMN_CONDITION_OIRR       
+        END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -169,6 +177,8 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Friends"
         BEGIN
+            MENUITEM "Update Friend List",       IDMN_ACTION_UFL
+            MENUITEM SEPARATOR
             POPUP "Rich Presence"
             BEGIN
                 MENUITEM "Set Rich Presence",       IDMN_ACTION_SRP
@@ -204,6 +214,24 @@ BEGIN
             MENUITEM "Install DLC", IDMN_ACTION_ID
 		END
         MENUITEM SEPARATOR
+        POPUP "Inventory"
+        BEGIN
+            MENUITEM "Generate Test Items", IDMN_ACTION_GTI
+            MENUITEM SEPARATOR
+            MENUITEM "Get All Items", IDMN_ACTION_GAI
+            MENUITEM SEPARATOR
+            MENUITEM "Trigger Item Drop", IDMN_ACTION_TID
+            MENUITEM "Consume Item", IDMN_ACTION_CI            
+        END
+        MENUITEM SEPARATOR
+		POPUP "Game Record"
+        BEGIN
+            MENUITEM "Set Timeline Tooltip", IDMN_ACTION_STLT		
+            MENUITEM "Clear Timeline Tooltip", IDMN_ACTION_CTLT		
+            MENUITEM "Set Timeline GameMode", IDMN_ACTION_STLGM		
+            MENUITEM "Add Timeline Event", IDMN_ACTION_ATLE		
+		END
+        MENUITEM SEPARATOR
     END
 END
 #endif
@@ -222,7 +250,14 @@ BEGIN
         BEGIN
             MENUITEM "Get Current Game Language", IDMN_EXPRESSION_GCGL
             MENUITEM "Get Steam Command Line", IDMN_EXPRESSION_GSCL
-        END        
+        END   
+        MENUITEM SEPARATOR
+        POPUP "Friends"
+        BEGIN
+            MENUITEM "Get Friend List Size",    IDMN_EXPRESSION_F_GFLS
+            MENUITEM "Get Friend Name",       	IDMN_EXPRESSION_F_GFN
+            MENUITEM "Get Friend Avatar",       IDMN_EXPRESSION_F_GFA
+        END
         MENUITEM SEPARATOR
         POPUP "Utilities"
         BEGIN
@@ -241,6 +276,18 @@ BEGIN
         POPUP "DLC"
         BEGIN
             MENUITEM "Get DLC Download Progress Percent", IDMN_EXPRESSION_GDDPP
+        END
+		MENUITEM SEPARATOR
+        POPUP "Inventory"
+        BEGIN
+            MENUITEM "Get Player Item Count", IDMN_EXPRESSION_I_GPIC
+			MENUITEM SEPARATOR
+            MENUITEM "Get Player Item Instance ID", IDMN_EXPRESSION_I_GPIIID
+            MENUITEM "Get Player Item Def", IDMN_EXPRESSION_I_GPID
+            MENUITEM "Get Player Item Quantity", IDMN_EXPRESSION_I_GPIQ
+            MENUITEM "Get Player Item Flags", IDMN_EXPRESSION_I_GPIF
+			MENUITEM SEPARATOR
+            MENUITEM "Get Item Prop", IDMN_EXPRESSION_I_GIP
         END
         MENUITEM SEPARATOR
     END
@@ -379,10 +426,42 @@ BEGIN
 	M_COUNTTHISSESSION		 "Count This Session"
 	M_SESSIONLENGTH			 "Session Length"
 	M_GOTSFLAG			 	 "Game Overlay To Store Flag, 0 = Open store page, 1 = Add to Cart & Open store page, 2 = Add to Cart & Open cart page"
+
+    M_ACTION_TID             "Trigger Item %0 Drop"
+    M_DLT                    "Drop List Definition"
+
+    M_ACTION_CI              "Consume Item, Instance ID = %0, Quantity = %1"
+	M_IIID					 "Item Instance ID"	
+	M_QUANTITY				 "Quantity"	
+
+    M_ACTION_GTI             "Generate Test Items, Def = %0, Quantity = %1"
+	M_ITEMDEFARR			 "Item Def Arr, E.g.,: def_1, def_2, ..."
+	M_QUANTITYARR			 "Quantity Arr, E.g.,: qty_1, qty_2, ..."
+
+    M_ACTION_GAI             "Get All Items"
+
+    M_ACTION_UFL             "Update Friend List, Friend Flag = %0"
+    M_FRIENDFLAG             "Friend Flag"
+
+    M_ACTION_STLT            "Set Timeline Tooltip to %0, Time Delta %1"
+    M_ACTION_CTLT            "Clear Timeline Tooltip, Time Delta %1"
+    M_ACTION_STLGM           "Set Timeline GameMode to %0"
+    M_ACTION_ATLE            "Add Timeline Event, ICon = %0, Title = %1, Description = %2, Priority = %3, Time Delta = %4, Duration = %5, Possible Clip = %6"
+   
+    M_TLDESCRIPTION          "Description for Current Game State"
+    M_TLTIMEDELTA            "Time Delta (in seconds)"
+    M_TLGAMEMODE             "Game Mode, 1 = Playing, 2 = Staging, 3 = Menus, 4 = Loading"
+    M_TLICON                 "ICon Name, E.g., steam_marker, steam_achievement, ..."
+    M_TLTITLE                "Title"
+    M_TLPRIORITY             "ICon Priority (0 ~ 1000)"
+    M_TLDURATION             "Duration (in seconds, 0 for instantaneous event)"
+    M_TLPOSSIBLECLIP         "Clip Priority, 1 = None, 2 = Standard, 3 = Featured"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    M_CONDITION_PE           "%o: Platform Enabled"
+
     M_CONDITION_RPO          "%o: Remote Play On Device %0"
     
     M_CND_RPO                "Device Type"
@@ -393,14 +472,17 @@ BEGIN
     M_MT_NAME                "Name"
     M_MT_STEP                "Step"
 
-    M_CONDITION_ROSD          "%o: Running On Steam Deck"
-    M_CONDITION_OSS           "%o: On Screenshots"
+    M_CONDITION_ROSD         "%o: Running On Steam Deck"
+    M_CONDITION_OSS          "%o: On Screenshots"
 
-    M_CONDITION_OID		      "%o: On Gamepad Input Dismiss"
-    M_CONDITION_SUBMITTED     "%o: Gamepad Input Submitted"
+    M_CONDITION_OID		     "%o: On Gamepad Input Dismiss"
+    M_CONDITION_SUBMITTED    "%o: Gamepad Input Submitted"
 
-    M_CONDITION_ODLCIC        "%o: On DLC %0 Install Complete"
-    M_APPID				      "App ID, 0 = k_uAppIdInvalid"
+    M_CONDITION_ODLCIC       "%o: On DLC %0 Install Complete"
+    M_APPID				     "App ID, 0 = k_uAppIdInvalid"
+
+    M_CONDITION_OIFU		 "%o: On Inventory Full Update"
+    M_CONDITION_OIRR		 "%o: On Inventory Result Ready"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -410,14 +492,33 @@ BEGIN
 
     M_EXPRESSION_MT_GS		     "MTGS ("
     M_EXPRESSION_MT_GHTMLEC	     "MTGHEC ("
-    M_EXPRESSION_MT_GED		     "MTGED$("
-    M_EXPRESSION_MT_GTID	     "MTGTID$("
+    M_EXPRESSION_MT_GED		     "MTGED$ ("
+    M_EXPRESSION_MT_GTID	     "MTGTID$ ("
 
-    M_EXPRESSION_GCBP	     	 "GCBP("
+    M_EXPRESSION_GCBP	     	 "GCBP ("
 
     M_EXPRESSION_GGIT	     	 "GGIT$ ("
 
     M_EXPRESSION_GDDPP	     	 "GDDPP ("
+
+    M_EXPRESSION_I_GPIC			 "GPIC ("
+    M_EXPRESSION_I_GPIIID		 "GPIIID$ ("
+    M_EXPRESSION_I_GPID			 "GPID ("
+    M_EXPRESSION_I_GPIQ 		 "GPIQ ("
+    M_EXPRESSION_I_GPIF 		 "GPIF ("
+    M_EXPRESSION_I_GIP			 "GIP$ ("
+
+	M_ITEMINDEX					 "Item Index"
+	M_ITEMDEF					 "Item Definition"
+	M_ITEMPROP					 "Item Property"
+	M_ITEMPROPDEFAULT			 "Default Property"
+
+	M_EXPRESSION_F_GFLS			 "GFLS ("
+	M_EXPRESSION_F_GFN			 "GFN$ ("
+	M_EXPRESSION_F_GFA			 "GFA ("
+
+	M_FRIENDIDX                  "Friend Index"
+	M_FRIENDAVATARTYPE           "Friend Avatar Type"
 END
 
 STRINGTABLE

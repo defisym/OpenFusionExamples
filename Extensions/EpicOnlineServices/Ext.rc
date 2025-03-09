@@ -116,6 +116,8 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR
+        MENUITEM "Platfrom Enabled", IDMN_CONDITION_PE    
+        MENUITEM SEPARATOR
         POPUP "General"
         BEGIN
             MENUITEM "On Error", IDMN_CONDITION_ONERROR
@@ -382,7 +384,9 @@ BEGIN
     M_CONDITION_ONERROR     "%o On Error"
 
     M_CONDITION_USERLOGIN        "%o User Login"
-    M_CONDITION_QUEARYCOMPLETE      "%o Query Type %0 Complete"
+    M_CONDITION_QUEARYCOMPLETE   "%o Query Type %0 Complete"
+
+    M_CONDITION_PE          "%o: Platform Enabled"
 END
 
 STRINGTABLE DISCARDABLE 

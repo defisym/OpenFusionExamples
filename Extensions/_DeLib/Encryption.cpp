@@ -18,25 +18,25 @@ bool Encryption::OpenFile(const wchar_t* FileName) {
         });
 }
 
+bool Encryption::SaveFile(const wchar_t* pFileName, PBYTE pData, DWORD sz) {
+	if (pData == nullptr) { return false; }
+
+	FILE* fp = nullptr;
+
+	const auto err = _wfopen_s(&fp, pFileName, L"wb");
+	if (err != 0|| fp == nullptr) { return false; }
+
+	const auto elementCount = fwrite(pData, sz, 1, fp);
+	const auto ret = fclose(fp);
+
+	return ret == 0;
+}
+
 bool Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) const {
     PBYTE Output = SaveSrc ? this->InputData : this->OutputData;
     DWORD Length = SaveSrc ? this->InputLength : this->OutputLength;
 
-    if (Output == nullptr) {
-        return false;
-    }
-
-    FILE* fp = nullptr;
-
-    _wfopen_s(&fp, FileName, L"wb");
-    if (fp == nullptr) {
-        return false;
-    }
-
-    fwrite(Output, Length, 1, fp);
-    fclose(fp);
-
-    return true;
+	return SaveFile(FileName, Output, Length);
 }
 
 template<typename T>

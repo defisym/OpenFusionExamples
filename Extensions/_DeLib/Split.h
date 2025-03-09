@@ -6,8 +6,6 @@
 #include "Encryption.h"
 #include "GeneralDefinition.h"
 
-#define UTF8_SIGNATURE     "\xEF\xBB\xBF"
-
 #define NEWLINE     L"\r\n"
 #define TAB         L"\t"
 #define SPACE       L" "
@@ -103,12 +101,16 @@ public:
 
     // load data and handle unicode
     static bool LoadData(std::wstring& output,
-        const char* pSrc, const size_t len,
-        bool& bUnicode);
+        const char* pSrc, size_t len,
+        bool& bUnicode) {
+        return ::LoadData(output, pSrc, len, bUnicode);
+    }
     // save data and handle unicode    
     static bool SaveData(std::string& output,
         const wchar_t* pSrc, const size_t len,
-        bool bUnicode = true);
+        bool bUnicode = true){
+        return ::SaveData(output, pSrc, len, bUnicode);
+    }
 
     //load data from string
     bool LoadData(const std::string& Src);
@@ -141,7 +143,7 @@ public:
     void InitKeyWord(const wchar_t* pKeyWord);
 
     void InitRegex(const wchar_t* Split,
-        const wchar_t* EnptyLine,
+        const wchar_t* EmptyLine,
         const wchar_t* Comment,
         const wchar_t* Indent,
         const wchar_t* pKeyWord);

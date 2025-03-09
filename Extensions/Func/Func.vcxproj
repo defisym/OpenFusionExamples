@@ -63,7 +63,7 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\_3rdLib\WinToast\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
@@ -72,7 +72,7 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\_3rdLib\WinToast\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
@@ -81,7 +81,7 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <IncludePath>..\_3rdLib\WinToast\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
     <LibraryPath>..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -250,7 +250,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\_3rdLib\WinToast\wintoastlib.cpp" />
+    <ClCompile Include="..\_3rdLib\WinToast\src\wintoastlib.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -294,7 +294,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="..\_3rdLib\ObjectSelection.h" />
     <ClInclude Include="..\_3rdLib\Toast.h" />
-    <ClInclude Include="..\_3rdLib\WinToast\wintoastlib.h" />
+    <ClInclude Include="..\_3rdLib\WinToast\include\wintoastlib.h" />
     <ClInclude Include="..\_DeLib\EffectUtilities.h" />
     <ClInclude Include="..\_DeLib\Fusion.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />

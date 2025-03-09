@@ -40,6 +40,10 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 }
 
+inline NeoStr::IConData* GetIConData(LPRDATA rdPtr) {
+	return rdPtr->bIConGlobal ? rdPtr->pData->pIConData : nullptr;
+}
+
 inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 #ifdef COUNT_GDI_OBJECT
 	rdPtr->pData->objectCounter.UpdateObjectCount();
@@ -50,14 +54,12 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
-		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor
-			, rdPtr->hFont
-			, rdPtr->pData->pFontCache
-			, rdPtr->pData->pCharSzCacheWithFont
-			, rdPtr->pData->pRegexHandler
-			, rdPtr->pData->pIConData
-			, rdPtr->pData->pFontCollection
-			, false);
+		rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont, false,
+			{ rdPtr->pData->pFontCache,
+				rdPtr->pData->pCharSzCacheWithFont,
+				rdPtr->pData->pRegexHandler,
+				rdPtr->pData->pFontCollection },
+			GetIConData(rdPtr));
 
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		int sfDrv = wSurf->GetDriver();
@@ -129,16 +131,16 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->pNeoStr->SetBorderOffset(rdPtr->borderOffsetX, rdPtr->borderOffsetY);
 
 		rdPtr->pNeoStr->SetSmooth(
-			Gdiplus::TextRenderingHint(rdPtr->textRenderingHint)
-			, Gdiplus::SmoothingMode(rdPtr->smoothingMode - 1)
-			, Gdiplus::PixelOffsetMode(rdPtr->pixelOffsetMode - 1));
+			static_cast<Gdiplus::TextRenderingHint>(rdPtr->textRenderingHint),
+            static_cast<Gdiplus::SmoothingMode>(rdPtr->smoothingMode - 1),
+            static_cast<Gdiplus::PixelOffsetMode>(rdPtr->pixelOffsetMode - 1));
 
 		const auto pRenderOptions = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 
 		// clip should be disabled if scroll is enabled, to make sure the full size is rendered
-		pRenderOptions->SetClip(!rdPtr->bScroll && rdPtr->bClip
-			, min(rhPtr->rhApp->m_hdr.gaCxWin, rhPtr->rhFrame->m_hdr.leWidth)
-			, min(rhPtr->rhApp->m_hdr.gaCyWin, rhPtr->rhFrame->m_hdr.leHeight));
+		pRenderOptions->SetClip(!rdPtr->bScroll && rdPtr->bClip,
+			(std::min)(static_cast<LONG>(rhPtr->rhApp->m_hdr.gaCxWin), rhPtr->rhFrame->m_hdr.leWidth),
+			(std::min)(static_cast<LONG>(rhPtr->rhApp->m_hdr.gaCyWin), rhPtr->rhFrame->m_hdr.leHeight));
 		pRenderOptions->SetClipToObject(!rdPtr->bScroll && rdPtr->bClipToObject);
 
 		// params like clip will be reset in render routine,
@@ -338,12 +340,12 @@ inline void SetIConUpdate(LPRDATA rdPtr) {
 }
 
 inline void GlobalIConUpdater(LPRDATA rdPtr) {
-	if (rdPtr->bIConGlobal) {
-		if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
-			SetIConUpdate(rdPtr);
-		}
+	if (!rdPtr->bIConGlobal) { return; }
 
-		rdPtr->pData->pIConData->pCaller = (LPRO)rdPtr;
-		rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
+	if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
+		SetIConUpdate(rdPtr);
 	}
+
+	rdPtr->pData->pIConData->pCaller = (LPRO)rdPtr;
+	rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 }

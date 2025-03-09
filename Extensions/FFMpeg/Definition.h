@@ -1,12 +1,14 @@
 #pragma once
 
+#include <ranges>
+
 #include "AudioInterface.h"
 
-//Condition_OnVideoFinish
+// Condition_OnVideoFinish
 constexpr auto ON_FINISH = 4;
+// Condition_OnVideoOpenFailed
 constexpr auto ON_OPENFAILED = 5;
 
-using namespace std::literals;
 using Timer = std::chrono::time_point<std::chrono::steady_clock>;
 
 struct MemVideoLib {
@@ -14,10 +16,7 @@ struct MemVideoLib {
 
 	using It = decltype(data.find(std::wstring()));
 
-	MemVideoLib() {
-
-	}
-
+	MemVideoLib() = default;
 	~MemVideoLib() {
 		EraseAll();
 	}
@@ -36,8 +35,8 @@ struct MemVideoLib {
 	}
 
 	inline void EraseAll() {
-		for (auto& it : data) {
-			delete it.second;
+		for (const auto& pEncryption : data | std::views::values) {
+			delete pEncryption;
 		}
 
 		data.clear();
