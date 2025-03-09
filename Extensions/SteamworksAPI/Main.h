@@ -60,8 +60,8 @@
 #define	ACT_ACTION_GAI					20
 #define	ACT_ACTION_UFL					21
 
-#define	ACT_ACTION_STLSD				22
-#define	ACT_ACTION_CTLSD				23
+#define	ACT_ACTION_STLT				    22
+#define	ACT_ACTION_CTLT				    23
 #define	ACT_ACTION_STLGM				24
 #define	ACT_ACTION_ATLE					25
 
