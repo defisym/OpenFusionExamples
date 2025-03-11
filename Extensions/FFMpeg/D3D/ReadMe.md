@@ -2,7 +2,7 @@
 
 This document is only for developers who wants to mess the FFMpeg extension.
 
-Fusion doesn't provide direct access to D3D functions, which make it very hard to debug when you trying to involving D3D stuffs, as debug layer can only be enabled when initialize D3D.
+Fusion doesn't provide direct access to D3D functions, which make it very hard to debug when you trying to involve D3D stuffs, as debug layer can only be enabled when initializing D3D.
 
 The good news is, fusion won't init D3D until all extension dlls are loaded, so we can do some tricks to enable debug layer before D3D is initialized, by hooking D3D init functions in `Initialize` (from `General.cpp`, called when dll be loaded).
 
