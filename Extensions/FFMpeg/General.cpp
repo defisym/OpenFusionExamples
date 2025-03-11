@@ -57,7 +57,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 //
 extern "C" int WINAPI DLLExport Initialize(mv _far* mV, int quiet) {
 #ifdef _DEBUG
-	HookD3D::AttachCreateDevice();
+    if (!HookD3D::AttachCreateDevice()) {
+        OutputDebugString(_T("Failed to hook D3D"));
+    }
 #endif
 	// No error
 	return 0;
@@ -71,7 +73,9 @@ extern "C" int WINAPI DLLExport Initialize(mv _far* mV, int quiet) {
 // 
 extern "C" int WINAPI DLLExport Free(mv _far* mV) {
 #ifdef _DEBUG
-	HookD3D::DetachCreateDevice();
+    if (!HookD3D::DetachCreateDevice()) {
+        OutputDebugString(_T("Failed to unhook D3D"));
+    }
 #endif
 	// No error
 	return 0;
