@@ -6,8 +6,12 @@
 #include <Windows.h>
 #include <psapi.h>
 
-#include "Detours/detours.h"
-#pragma comment(lib, "D3D/Detours/detours.lib")
+#include "Detours/include/detours.h"
+#ifdef _WIN64
+#pragma comment(lib, "D3D/Detours/lib.X64/detours.lib")
+#else
+#pragma comment(lib, "D3D/Detours/lib.X86/detours.lib")
+#endif
 
 decltype(D3D11CreateDevice)* addrD3D11CreateDevice = nullptr;
 decltype(D3D11CreateDeviceAndSwapChain)* addrD3D11CreateDeviceAndSwapChain = nullptr;
