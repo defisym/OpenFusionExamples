@@ -23,7 +23,7 @@ struct Adapter {
                 return hr;
             }
 
-            pAdapters.emplace_back();
+            pAdapters.emplace_back(pDXGIAdapter);
             ++AdapterOrdinal;
         }
 
