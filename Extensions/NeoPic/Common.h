@@ -47,12 +47,12 @@ struct NineSliceInterface;
 // if you need to compatible with windows 7 (which doesn't support DX12)
 // you need to comment both macro below, which will disable VRam check
 
-// #define _USE_DXGI
-//// #define _DYNAMIC_LINK
+// #define QUERY_VRAM
+//// #define DYNAMIC_LINK_DXGI
 
 // disabled for windows 7 compatibilty
-#ifdef _USE_DXGI
-#include	"D3DUtilities.h"
+#ifdef QUERY_VRAM
+#include	"D3DUtilities/VRAMUtilities.h"
 #endif
 
 #include	"GeneralDefinition.h"

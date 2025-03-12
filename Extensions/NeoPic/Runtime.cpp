@@ -173,8 +173,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pData = static_cast<GlobalData*>(GetExtUserData());
 
 	//Get general
-#ifdef _USE_DXGI
-	rdPtr->pD3DU = rdPtr->pData->pD3DU;
+#ifdef QUERY_VRAM
+	rdPtr->pVRAMU = rdPtr->pData->pVRAMU;
 #endif
 
 	//Get specific

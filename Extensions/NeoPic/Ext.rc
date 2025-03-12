@@ -326,11 +326,18 @@ BEGIN
         BEGIN
             MENUITEM "Get RAM Usage MB", IDMN_EXPRESSION_GRUMB
             MENUITEM SEPARATOR
-            MENUITEM "Get GPU Name", IDMN_EXPRESSION_GGPUN
-            MENUITEM SEPARATOR
-            MENUITEM "Get VRAM Usage MB", IDMN_EXPRESSION_GVRUMB
-            MENUITEM "Get VRAM Budget MB", IDMN_EXPRESSION_GVRBMB
-            //MENUITEM "Get VRAM Available MB", IDMN_EXPRESSION_GVRAMB
+			POPUP "GPU"
+        	BEGIN
+            	MENUITEM "Get GPU Count", IDMN_EXPRESSION_GGIC
+            	MENUITEM SEPARATOR
+            	MENUITEM "Get GPU Name", IDMN_EXPRESSION_GGPUN
+            	MENUITEM SEPARATOR
+            	MENUITEM "Get VRAM Usage MB", IDMN_EXPRESSION_GVRUMB
+            	MENUITEM "Get VRAM Budget MB", IDMN_EXPRESSION_GVRBMB
+#ifdef QUERY_NON_LOCAL
+            	MENUITEM "Get VRAM Available MB", IDMN_EXPRESSION_GVRAMB
+#endif
+        	END
         END
         MENUITEM SEPARATOR        
     END
@@ -590,6 +597,9 @@ BEGIN
     M_EXPRESSION_GITRCVP           "GetITRCVP("
 
     M_EXPRESSION_GRUMB             "GetRAMUsageMB("
+
+    M_EXPRESSION_GGIC              "GetGPUCount("
+    M_EXPRESSION_GPUINDEX          "GPU Index"
 
     M_EXPRESSION_GGPUN             "GetGPUName$("
     

@@ -2,15 +2,26 @@
 
 #include "Adapter.h"
 
+#include <chrono>
+
+//#define QUERY_NON_LOCAL
+
 struct VRAMUtilities final :Adapter {
     struct VRAMInfo {
         DXGI_ADAPTER_DESC desc;
         UINT64 localBudgetOverride = 0;
         DXGI_QUERY_VIDEO_MEMORY_INFO localVideoMemoryInfo = {  };
+#ifdef QUERY_NON_LOCAL
         DXGI_QUERY_VIDEO_MEMORY_INFO nonLocalVideoMemoryInfo = {  };
+#endif
     };
 
     std::vector<VRAMInfo> infos;
+
+    using TimeStamp = decltype(std::chrono::system_clock::now());
+    std::vector<TimeStamp> intervals;
+    // in ms
+    constexpr static size_t DEFAULT_INTERVAL = 17;
 
     VRAMUtilities(DXGI& DXGI) :Adapter(DXGI) {
         for (auto& it : pAdapters) {
@@ -19,7 +30,8 @@ struct VRAMUtilities final :Adapter {
 
             it->GetDesc(&info.desc);
             UpdateVideoMemoryInfo(it.Get(), info);
-    }
+            intervals.emplace_back(std::chrono::system_clock::now());
+        }        
     }
     ~VRAMUtilities() = default;
 
@@ -33,9 +45,11 @@ struct VRAMUtilities final :Adapter {
         return infos[index].localVideoMemoryInfo;
     }
 
+#ifdef QUERY_NON_LOCAL
     inline const DXGI_QUERY_VIDEO_MEMORY_INFO& GetNonLocalVideoMemoryInfo(size_t index = 0) {
         return infos[index].nonLocalVideoMemoryInfo;
     }
+#endif
 
     inline const UINT64 GetLocalBudgetMB(size_t index = 0) {
         return (GetLocalVideoMemoryInfo().Budget >> 20);
@@ -79,6 +93,11 @@ struct VRAMUtilities final :Adapter {
         hr = pAdapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info.localVideoMemoryInfo);
         if (FAILED(hr)) { return hr; }
 
+        if (info.localBudgetOverride != 0) {
+            info.localVideoMemoryInfo.Budget = info.localBudgetOverride;
+        }
+
+#ifdef QUERY_NON_LOCAL
         // Per the above comment, obtaining the non-local memory info is not strictly
         // required, and can typically be ignored completely. In some cases, such as on
         // integrated GPUs, non-local memory does not even exist, and QueryVideoMemoryInfo
@@ -86,15 +105,23 @@ struct VRAMUtilities final :Adapter {
         // under high memory pressure in order to make forward progress on the system.
         hr = pAdapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, &info.nonLocalVideoMemoryInfo);
         if (FAILED(hr)) { return hr; }
-
-        if (info.localBudgetOverride != 0) {
-            info.localVideoMemoryInfo.Budget = info.localBudgetOverride;
-        }
+#endif
 
         return S_OK;
     }
-    inline HRESULT UpdateVideoMemoryInfo(size_t index = 0) {        
-        return UpdateVideoMemoryInfo(pAdapters[index].Get(), infos[index]);
+    inline HRESULT UpdateVideoMemoryInfo(size_t index = 0) {
+        using namespace std::chrono_literals;
+        const auto now = std::chrono::system_clock::now();
+        const auto interval = (now - intervals[index]) / 1ms;
+
+        if (interval > DEFAULT_INTERVAL) {
+            intervals[index] = now;
+            return UpdateVideoMemoryInfo(pAdapters[index].Get(), infos[index]);
+        }
+
+        // do not query if not exceed the time limit
+        // by default is 17ms, aka one frame
+        return S_OK;
     }
 };
 

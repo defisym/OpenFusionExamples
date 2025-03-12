@@ -368,7 +368,9 @@
 #define IDMN_EXPRESSION_GLCFN       27031
 #define IDMN_EXPRESSION_GLCSF       27032
 
-#define IDMN_EXPRESSION_GAFN       27033
+#define IDMN_EXPRESSION_GAFN        27033
+
+#define IDMN_EXPRESSION_GGIC        27034
 
 // Expression strings
 #define M_EXPRESSION_GHSX			 7000
@@ -422,10 +424,13 @@
 
 #define M_EXPRESSION_GAFN            7033
 
+#define M_EXPRESSION_GGIC            7034
+
 // Names of expression parameters
 #define M_EXPRESSION_COORD				         7500
 #define	M_EXPRESSION_REALCOORDMODE				 7501
 #define	M_EXPRESSION_BASEPATH				     7502
+#define	M_EXPRESSION_GPUINDEX				     7503
 
 // Next default values for new objects
 // 
