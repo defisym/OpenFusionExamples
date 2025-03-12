@@ -6,7 +6,14 @@
 
 #include "D3DException.h"
 
+// define this macro if dynamic link is needed
+//#define DYNAMIC_LINK_DXGI
+
 struct DXGI {
+#ifdef DYNAMIC_LINK_DXGI
+    HINSTANCE hDXGI = nullptr;
+#endif
+
     template <typename T>
     using ComPtr = Microsoft::WRL::ComPtr<T>;
 
@@ -14,6 +21,20 @@ struct DXGI {
     UINT dxgiFactoryFlags = 0;
 
     DXGI(UINT flags = 0) {
+#ifdef DYNAMIC_LINK_DXGI
+        wchar_t rootDir[MAX_PATH] = {};
+        GetCurrentDirectory(MAX_PATH - 1, rootDir);
+
+        wchar_t dllPath[2 * MAX_PATH] = {};
+        wsprintf(dllPath, L"%s\\%s", rootDir, L"Modules\\DXGI.DLL");
+
+        hDXGI = LoadLibrary(dllPath);
+
+        if (hDXGI == nullptr) {
+            MSGBOX(L"Load Failed");
+        }
+#endif
+
         dxgiFactoryFlags = flags;
         auto hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&pDXGIFactory));
         if (FAILED(hr)) {
@@ -21,5 +42,12 @@ struct DXGI {
         }
     }
 
-    ~DXGI() = default;
+    ~DXGI() {
+#ifdef DYNAMIC_LINK_DXGI
+        if (hDXGI != nullptr) {
+            FreeLibrary(hDXGI);
+            hDXGI = nullptr;
+        }
+#endif
+    }
 };
