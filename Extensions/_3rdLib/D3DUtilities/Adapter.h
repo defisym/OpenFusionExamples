@@ -4,13 +4,12 @@
 
 #include <vector>
 
-class Adapter {
+struct Adapter {
     DXGI& DXGIRef;
 
     std::vector<DXGI::ComPtr<IDXGIAdapter3>> pAdapters = {};
     UINT AdapterOrdinal = 0;
 
-public:
     inline HRESULT EnumAdapters() {
         HRESULT hr;
         DXGI::ComPtr<IDXGIAdapter> pTempAdapter;
