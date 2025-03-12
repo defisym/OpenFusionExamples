@@ -153,11 +153,11 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GRUMB, M_EXPRESSION_GRUMB, EXP_EXPRESSION_GRUMB, 0, 0,
 		
-		IDMN_EXPRESSION_GGPUN, M_EXPRESSION_GGPUN, EXP_EXPRESSION_GGPUN, EXPFLAG_STRING, 0,
+		IDMN_EXPRESSION_GGPUN, M_EXPRESSION_GGPUN, EXP_EXPRESSION_GGPUN, EXPFLAG_STRING, 1, EXPPARAM_LONG, M_EXPRESSION_GPUINDEX,
 		
-		IDMN_EXPRESSION_GVRUMB, M_EXPRESSION_GVRUMB, EXP_EXPRESSION_GVRUMB, 0, 0,
-		IDMN_EXPRESSION_GVRBMB, M_EXPRESSION_GVRBMB, EXP_EXPRESSION_GVRBMB, 0, 0,
-		IDMN_EXPRESSION_GVRAMB, M_EXPRESSION_GVRAMB, EXP_EXPRESSION_GVRAMB, 0, 0,
+		IDMN_EXPRESSION_GVRUMB, M_EXPRESSION_GVRUMB, EXP_EXPRESSION_GVRUMB, 0, 1, EXPPARAM_LONG, M_EXPRESSION_GPUINDEX,
+		IDMN_EXPRESSION_GVRBMB, M_EXPRESSION_GVRBMB, EXP_EXPRESSION_GVRBMB, 0, 1, EXPPARAM_LONG, M_EXPRESSION_GPUINDEX,
+		IDMN_EXPRESSION_GVRAMB, M_EXPRESSION_GVRAMB, EXP_EXPRESSION_GVRAMB, 0, 1, EXPPARAM_LONG, M_EXPRESSION_GPUINDEX,
 
 		IDMN_EXPRESSION_GAN, M_EXPRESSION_GAN, EXP_EXPRESSION_GAN, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GAFID, M_EXPRESSION_GAFID, EXP_EXPRESSION_GAFID, 0, 0,
@@ -170,7 +170,7 @@ short expressionsInfos[]=
 
 		IDMN_EXPRESSION_GAFN, M_EXPRESSION_GAFN, EXP_EXPRESSION_GAFN, EXPFLAG_STRING, 0,
 
-
+		IDMN_EXPRESSION_GGIC, M_EXPRESSION_GGIC, EXP_EXPRESSION_GGIC, 0, 0,
 		};
 
 
@@ -1247,47 +1247,80 @@ long WINAPI DLLExport Expression_GetRAMUsageMB(LPRDATA rdPtr, long param1) {
 	return long(GetProcessMemoryUsageMB(rdPtr->pData->processHandle.hProcess));
 }
 
+long WINAPI DLLExport Expression_GetGPUInfoCount(LPRDATA rdPtr, long param1) {
+#ifdef QUERY_VRAM
+    if (rdPtr->pVRAMU == nullptr) {
+#endif	
+        return 0;
+#ifdef QUERY_VRAM
+    }
+       
+    return long(rdPtr->pVRAMU->GetInfoCount());
+#endif	
+}
+
 long WINAPI DLLExport Expression_GetGPUName(LPRDATA rdPtr, long param1) {
+    const size_t index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-#ifdef _USE_DXGI
-	return (long)rdPtr->pD3DU->GetDesc().Description;
+#ifdef QUERY_VRAM
+    if (rdPtr->pVRAMU == nullptr) {
+        return (long)L"DXGI Init Failed";
+    }
+
+    return (long)rdPtr->pVRAMU->GetDesc(index).Description;
 #else
-	return (long)L"DXGI Not Enabled";
+    return (long)L"DXGI Not Enabled";
 #endif
 }
 
 long WINAPI DLLExport Expression_GetVRAMUsageMB(LPRDATA rdPtr, long param1) {
-#ifdef _USE_DXGI
-	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+    const size_t index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().CurrentUsage >> 20);
-#else
-	const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = rdPtr->pData->GetEstimateMemUsage(rdPtr->pData->pLib);
+#ifdef QUERY_VRAM
+    if (rdPtr->pVRAMU == nullptr) {
+#endif	
+        const auto [estimateRAMSizeMB, estimateVRAMSizeMB] = rdPtr->pData->GetEstimateMemUsage(rdPtr->pData->pLib);
 
-	return static_cast<long>(estimateVRAMSizeMB);
+        return static_cast<long>(estimateVRAMSizeMB);
+#ifdef QUERY_VRAM
+    }
+
+    rdPtr->pVRAMU->UpdateVideoMemoryInfo(index);
+    return long(rdPtr->pVRAMU->GetLocalVideoMemoryInfo(index).CurrentUsage >> 20);
 #endif	
 }
 
 long WINAPI DLLExport Expression_GetVRAMBudgetMB(LPRDATA rdPtr, long param1) {
-#ifdef _USE_DXGI
-	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+    const size_t index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().Budget >> 20);
-#else
-	return -1;
+#ifdef QUERY_VRAM
+    if (rdPtr->pVRAMU == nullptr) {
+#endif	
+        return -1;
+#ifdef QUERY_VRAM
+    }
+
+    rdPtr->pVRAMU->UpdateVideoMemoryInfo(index);
+    return long(rdPtr->pVRAMU->GetLocalVideoMemoryInfo(index).Budget >> 20);
 #endif	
 }
 
 long WINAPI DLLExport Expression_GetVRAMAvailableMB(LPRDATA rdPtr, long param1) {
-#ifdef _USE_DXGI
-	rdPtr->pD3DU->UpdateVideoMemoryInfo();
+    const size_t index = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	return long(rdPtr->pD3DU->GetLocalVideoMemoryInfo().AvailableForReservation >> 20);
-#else
-	return -1;
+#ifdef QUERY_VRAM
+    if (rdPtr->pVRAMU == nullptr) {
+#endif	
+        return -1;
+#ifdef QUERY_VRAM
+    }
+
+    rdPtr->pVRAMU->UpdateVideoMemoryInfo(index);
+    return long(rdPtr->pVRAMU->GetLocalVideoMemoryInfo(index).AvailableForReservation >> 20);
 #endif
 }
 
@@ -1507,6 +1540,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 			Expression_GetLoadCallbackSf,
 
 			Expression_GetAnimationFileName,
+
+			Expression_GetGPUInfoCount,
 
 			0
 			};

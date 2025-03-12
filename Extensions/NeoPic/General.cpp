@@ -156,7 +156,7 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 // Data\Runtime folder).
 // 
 
-#if defined(_USE_DXGI) && defined(_DYNAMIC_LINK) 
+#if defined(QUERY_VRAM) && defined(DYNAMIC_LINK_DXGI) 
 LPCTSTR szDep[] = {
 	_T("dxgi.dll"),
 	NULL

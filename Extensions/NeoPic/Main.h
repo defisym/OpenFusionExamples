@@ -153,7 +153,9 @@
 
 #define EXP_EXPRESSION_GAFN             33
 
-#define	EXP_LAST                    	34
+#define EXP_EXPRESSION_GGIC             34
+
+#define	EXP_LAST                    	35
 
 // ---------------------
 // OBJECT DATA STRUCTURE 
@@ -225,8 +227,8 @@ typedef struct tagRDATA
 
 	GlobalData* pData;
 
-#ifdef _USE_DXGI
-	D3DUtilities* pD3DU = nullptr;
+#ifdef QUERY_VRAM
+    VRAMUtilities* pVRAMU = nullptr;
 #endif
 
 	//------------

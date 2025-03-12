@@ -223,8 +223,12 @@ Special thanks to @PiKeyAr (From Github) and @Senda (From Discord), who help a l
 - System Info
   - *you need to enable `DXGI` macro then rebuild it to enable all expressions (or return -1 / error message), then this ext will not be compatible with windows 7*
   - Get RAM Usage MB
-  
-  - Get GPU Name
-  
-  - Get VRAM Usage MB
-  - Get VRAM Budget MB
+  - GPU
+    - Get GPU Count
+
+    - Get GPU Name
+
+    - Get VRAM Usage MB
+      - *query discrete card info may take a long time*
+    - Get VRAM Budget MB
+      - *query discrete card info may take a long time*

@@ -307,11 +307,9 @@ struct GlobalData {
 
 	GarbageCollection* pGC = nullptr;
 
-#ifdef _USE_DXGI
-	D3DUtilities* pD3DU = nullptr;
-#ifdef _DYNAMIC_LINK
-	HINSTANCE DXGI = nullptr;
-#endif
+#ifdef QUERY_VRAM
+    DXGI* pDXGI = nullptr;
+    VRAMUtilities* pVRAMU = nullptr;
 #endif
 
 	//------------
@@ -324,27 +322,17 @@ struct GlobalData {
 
 	GlobalData() {
 		//init general
-#ifdef _USE_DXGI
-#ifdef _DYNAMIC_LINK
-		wchar_t rootDir[MAX_PATH] = {};
-		GetCurrentDirectory(MAX_PATH - 1, rootDir);
+#ifdef QUERY_VRAM
+        try {
+            pDXGI = new DXGI;
+            pVRAMU = new VRAMUtilities(*pDXGI);
+        } catch ([[maybe_unused]] D3DException& err) {
+            delete pDXGI;
+            pDXGI = nullptr;
 
-		wchar_t dllPath[2 * MAX_PATH] = {};
-		wsprintf(dllPath, L"%s\\%s", rootDir, L"Modules\\DXGI.DLL");
-
-		DXGI = LoadLibrary(dllPath);
-
-		if (DXGI == nullptr) {
-			MSGBOX(L"Load Failed");
-		}
-#endif
-		pD3DU = new D3DUtilities;
-
-		//auto& Desc = pD3DU->GetDesc();
-		//MSGBOX(Desc.Description);
-
-		//pD3DU->UpdateVideoMemoryInfo();
-		//auto& info = pD3DU->GetLocalVideoMemoryInfo();
+            delete pVRAMU;
+            pVRAMU = nullptr;
+        }
 #endif
 
 		//init specific
@@ -357,15 +345,9 @@ struct GlobalData {
 	}
 
 	~GlobalData() {
-#ifdef _USE_DXGI
-		delete pD3DU;
-
-#ifdef _DYNAMIC_LINK
-		if (DXGI != nullptr) {
-			FreeLibrary(pData->DXGI);
-			DXGI = nullptr;
-		}
-#endif
+#ifdef QUERY_VRAM
+		delete pVRAMU;
+        delete pDXGI;
 #endif
 
 		DeleteLib();
