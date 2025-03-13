@@ -8,11 +8,11 @@
 
 struct VRAMUtilities final :Adapter {
     struct VRAMInfo {
-        DXGI_ADAPTER_DESC desc;
+        DXGI_ADAPTER_DESC desc = {};
         UINT64 localBudgetOverride = 0;
-        DXGI_QUERY_VIDEO_MEMORY_INFO localVideoMemoryInfo = {  };
+        DXGI_QUERY_VIDEO_MEMORY_INFO localVideoMemoryInfo = {};
 #ifdef QUERY_NON_LOCAL
-        DXGI_QUERY_VIDEO_MEMORY_INFO nonLocalVideoMemoryInfo = {  };
+        DXGI_QUERY_VIDEO_MEMORY_INFO nonLocalVideoMemoryInfo = {};
 #endif
     };
 
@@ -35,7 +35,7 @@ struct VRAMUtilities final :Adapter {
     }
     ~VRAMUtilities() = default;
 
-    inline size_t GetInfoCount() { return infos.size(); }
+    inline size_t GetInfoCount() const { return infos.size(); }
 
     inline const DXGI_ADAPTER_DESC& GetDesc(size_t index = 0) {
         return infos[index].desc;
@@ -109,6 +109,8 @@ struct VRAMUtilities final :Adapter {
 
         return S_OK;
     }
+
+    // won't query again if called during one frame
     inline HRESULT UpdateVideoMemoryInfo(size_t index = 0) {
         using namespace std::chrono_literals;
         const auto now = std::chrono::system_clock::now();
