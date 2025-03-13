@@ -1,10 +1,11 @@
 #pragma once
 
-#include <wrl.h>
+
 #include <dxgi1_4.h>
 #pragma comment(lib,"DXGI.lib")
 
 #include "D3DException.h"
+#include "D3DDefinition.h"
 
 // define this macro if dynamic link is needed
 //#define DYNAMIC_LINK_DXGI
@@ -13,9 +14,6 @@ struct DXGI {
 #ifdef DYNAMIC_LINK_DXGI
     HINSTANCE hDXGI = nullptr;
 #endif
-
-    template <typename T>
-    using ComPtr = Microsoft::WRL::ComPtr<T>;
 
     ComPtr<IDXGIFactory2> pDXGIFactory = nullptr;
     UINT dxgiFactoryFlags = 0;

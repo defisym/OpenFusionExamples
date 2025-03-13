@@ -7,16 +7,16 @@
 struct Adapter {
     DXGI& DXGIRef;
 
-    std::vector<DXGI::ComPtr<IDXGIAdapter3>> pAdapters = {};
+    std::vector<ComPtr<IDXGIAdapter3>> pAdapters = {};
     UINT AdapterOrdinal = 0;
 
     inline HRESULT EnumAdapters() {
         HRESULT hr;
-        DXGI::ComPtr<IDXGIAdapter> pTempAdapter;
+        ComPtr<IDXGIAdapter> pTempAdapter;
         AdapterOrdinal = 0;
 
         while (DXGIRef.pDXGIFactory->EnumAdapters(AdapterOrdinal, &pTempAdapter) != DXGI_ERROR_NOT_FOUND) {
-            DXGI::ComPtr<IDXGIAdapter3> pDXGIAdapter = nullptr;
+            ComPtr<IDXGIAdapter3> pDXGIAdapter = nullptr;
             hr = pTempAdapter->QueryInterface(IID_PPV_ARGS(&pDXGIAdapter));
             
             if (FAILED(hr)) {              
