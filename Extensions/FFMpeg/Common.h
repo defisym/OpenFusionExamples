@@ -53,17 +53,6 @@
 #include	<string>
 #include	<chrono>
 
-// copy hardware decode result directly 
-// instead of copy to memory first
-#define COPY_D3D_TEXTURE
-
-#ifdef COPY_D3D_TEXTURE
-#ifdef _DEBUG
-#include "D3D/HookD3D.h"
-#endif
-
-#endif
-
 // My lib
 #include	"SDLUtilities.h"
 
@@ -86,6 +75,19 @@
 #include	"FusionUtilities.h"
 
 #include	"Func.h"
+
+
+// copy hardware decode result directly 
+// instead of copy to memory first
+#define COPY_D3D_TEXTURE
+
+#ifdef COPY_D3D_TEXTURE
+#ifdef _DEBUG
+#include "D3D/HookD3D.h"
+#endif
+#include "D3DUtilities/ShaderCompiler.h"
+
+#endif
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
