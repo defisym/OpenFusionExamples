@@ -53,9 +53,15 @@
 #include	<string>
 #include	<chrono>
 
-// D3D
+// copy hardware decode result directly 
+// instead of copy to memory first
+#define COPY_D3D_TEXTURE
+
+#ifdef COPY_D3D_TEXTURE
 #ifdef _DEBUG
 #include "D3D/HookD3D.h"
+#endif
+
 #endif
 
 // My lib
