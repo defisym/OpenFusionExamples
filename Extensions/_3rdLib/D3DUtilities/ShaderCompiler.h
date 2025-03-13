@@ -28,6 +28,9 @@ struct ShaderCompiler {
     // Targets:
     // https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/specifying-compiler-targets
 
+    constexpr static auto DEFAULT_ENTRYPOINT = "Main";
+    constexpr static auto DEFAULT_TARGET = "5_0";
+
     bool CompileShader(const void* pData, const size_t sz,
        const char* pEntryPoint, const char* pTarget,
        Blob& shaderBlob) {
@@ -100,9 +103,11 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] VertexShader CreateVertexShader(const void* pData, const size_t sz,
-        const char* pEntryPoint = "Main", const char* pTarget = "vs_5_0") {
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob vertexShaderBlob = nullptr;
-        if (!CompileShader(pData, sz, pEntryPoint, pTarget, vertexShaderBlob)) {
+        if (!CompileShader(pData, sz,
+            pEntryPoint, std::format("vs_{}", pTarget).c_str(),
+            vertexShaderBlob)) {
             return nullptr;
         }
 
@@ -110,9 +115,11 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] VertexShader CreateVertexShader(const wchar_t* pFileName,
-        const char* pEntryPoint = "Main", const char* pTarget = "vs_5_0") {
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob vertexShaderBlob = nullptr;
-        if (!CompileShader(pFileName, pEntryPoint, pTarget, vertexShaderBlob)) {
+        if (!CompileShader(pFileName,
+            pEntryPoint, std::format("vs_{}", pTarget).c_str(),
+            vertexShaderBlob)) {
             return nullptr;
         }
 
@@ -138,9 +145,11 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] PixelShader CreatePixelShader(const void* pData, const size_t sz,
-        const char* pEntryPoint = "Main", const char* pTarget = "ps_5_0") {
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob pixelShaderBlob = nullptr;
-        if (!CompileShader(pData, sz, pEntryPoint, pTarget, pixelShaderBlob)) {
+        if (!CompileShader(pData, sz,
+            pEntryPoint, std::format("ps_{}", pTarget).c_str(),
+            pixelShaderBlob)) {
             return nullptr;
         }
 
@@ -148,9 +157,11 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] PixelShader CreatePixelShader(const wchar_t* pFileName,
-        const char* pEntryPoint = "Main", const char* pTarget = "ps_5_0") {
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob pixelShaderBlob = nullptr;
-        if (!CompileShader(pFileName, pEntryPoint, pTarget, pixelShaderBlob)) {
+        if (!CompileShader(pFileName,
+            pEntryPoint, std::format("ps_{}", pTarget).c_str(),
+            pixelShaderBlob)) {
             return nullptr;
         }
 
