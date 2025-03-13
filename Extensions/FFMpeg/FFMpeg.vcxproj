@@ -315,6 +315,14 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <Image Include="EXTICON.BMP" />
     <Image Include="EXTIMG.BMP" />
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Shader\ps.hlsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="Shader\vs.hlsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

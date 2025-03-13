@@ -69,6 +69,11 @@
 //-------------------
 #define	IDS_SEPARATOR   				300
 
+// 	Shader
+//-------------------
+#define SHADER_TEMPLATE_VS              400
+#define SHADER_TEMPLATE_PS              401
+
 // 	Actions
 //-------------------
 

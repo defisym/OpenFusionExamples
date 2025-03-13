@@ -85,6 +85,10 @@
 #ifdef _DEBUG
 #include "D3D/HookD3D.h"
 #endif
+
+#include "D3DUtilities/ShaderResource.h"
+#include "D3DUtilities/ShaderInterface.h"
+
 #include "D3DUtilities/ShaderCompiler.h"
 
 #endif
