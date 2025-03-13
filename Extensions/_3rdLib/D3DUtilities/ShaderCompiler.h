@@ -25,8 +25,11 @@ struct ShaderCompiler {
     using VertexShader = ComPtr<ID3D11VertexShader>;
     using PixelShader = ComPtr<ID3D11PixelShader>;
 
+    // Targets:
+    // https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/specifying-compiler-targets
+
     bool CompileShader(const void* pData, const size_t sz,
-       const char* pEntryPoint, const char* pProfile,
+       const char* pEntryPoint, const char* pTarget,
        Blob& shaderBlob) {
         constexpr UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -36,7 +39,7 @@ struct ShaderCompiler {
             pData, sz,
             nullptr,
             nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            pEntryPoint, pProfile,
+            pEntryPoint, pTarget,
             compileFlags, 0,
             &tempShaderBlob, &errorBlob))) {
             errorMsg = "D3D11: Failed to read shader from buffer\n";
@@ -53,7 +56,7 @@ struct ShaderCompiler {
     }
 
     bool CompileShader(const wchar_t* pFileName,
-        const char* pEntryPoint, const char* pProfile,
+        const char* pEntryPoint, const char* pTarget,
         Blob& shaderBlob) {
         constexpr UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -62,7 +65,7 @@ struct ShaderCompiler {
         if (FAILED(D3DCompileFromFile(
             pFileName,
             nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            pEntryPoint, pProfile,
+            pEntryPoint, pTarget,
             compileFlags, 0,
             &tempShaderBlob, &errorBlob))) {
             errorMsg = "D3D11: Failed to read shader from file\n";
@@ -97,9 +100,9 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] VertexShader CreateVertexShader(const void* pData, const size_t sz,
-        const char* pEntryPoint = "Main", const char* pProfile = "vs_5_0") {
+        const char* pEntryPoint = "Main", const char* pTarget = "vs_5_0") {
         Blob vertexShaderBlob = nullptr;
-        if (!CompileShader(pData, sz, pEntryPoint, pProfile, vertexShaderBlob)) {
+        if (!CompileShader(pData, sz, pEntryPoint, pTarget, vertexShaderBlob)) {
             return nullptr;
         }
 
@@ -107,9 +110,9 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] VertexShader CreateVertexShader(const wchar_t* pFileName,
-        const char* pEntryPoint = "Main", const char* pProfile = "vs_5_0") {
+        const char* pEntryPoint = "Main", const char* pTarget = "vs_5_0") {
         Blob vertexShaderBlob = nullptr;
-        if (!CompileShader(pFileName, pEntryPoint, pProfile, vertexShaderBlob)) {
+        if (!CompileShader(pFileName, pEntryPoint, pTarget, vertexShaderBlob)) {
             return nullptr;
         }
 
@@ -135,9 +138,9 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] PixelShader CreatePixelShader(const void* pData, const size_t sz,
-        const char* pEntryPoint = "Main", const char* pProfile = "ps_5_0") {
+        const char* pEntryPoint = "Main", const char* pTarget = "ps_5_0") {
         Blob pixelShaderBlob = nullptr;
-        if (!CompileShader(pData, sz, pEntryPoint, pProfile, pixelShaderBlob)) {
+        if (!CompileShader(pData, sz, pEntryPoint, pTarget, pixelShaderBlob)) {
             return nullptr;
         }
 
@@ -145,9 +148,9 @@ struct ShaderCompiler {
     }
 
     [[nodiscard]] PixelShader CreatePixelShader(const wchar_t* pFileName,
-        const char* pEntryPoint = "Main", const char* pProfile = "ps_5_0") {
+        const char* pEntryPoint = "Main", const char* pTarget = "ps_5_0") {
         Blob pixelShaderBlob = nullptr;
-        if (!CompileShader(pFileName, pEntryPoint, pProfile, pixelShaderBlob)) {
+        if (!CompileShader(pFileName, pEntryPoint, pTarget, pixelShaderBlob)) {
             return nullptr;
         }
 
