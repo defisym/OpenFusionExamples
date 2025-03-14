@@ -300,7 +300,9 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 	FFMpegOptions opt;
 
-	opt.flag = rdPtr->hwDeviceType | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0);
+	opt.flag = rdPtr->hwDeviceType 
+        | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0)
+        | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : 0);
 	opt.videoCodecName = *rdPtr->pVideoOverrideCodecName;
 	opt.audioCodecName = *rdPtr->pAudioOverrideCodecName;
 

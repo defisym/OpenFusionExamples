@@ -169,6 +169,7 @@ constexpr auto FFMpegFlag_MakeFlag(const auto flag) {
 
 constexpr auto FFMpegFlag_Fast = FFMpegFlag_MakeFlag(0b0000000000000001);
 constexpr auto FFMpegFlag_ForceNoAudio = FFMpegFlag_MakeFlag(0b0000000000000010);
+constexpr auto FFMpegFlag_CopyToTexture = FFMpegFlag_MakeFlag(0b0000000000000100);
 
 class FFMpeg;
 
@@ -293,6 +294,9 @@ class FFMpeg {
 	AVBufferRef* hw_device_ctx = nullptr;
 	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
+
+    // copy hardware decode result to texture
+    bool bCopyToTexture = false;
 #endif //  HW_DECODE
 
 #ifdef AUDIO_TEMPO
@@ -890,6 +894,10 @@ class FFMpeg {
 		if (bHWDecode) {
 			pSWFrame = av_frame_alloc();
 			if (!pSWFrame) { return FFMpegException_InitFailed; }
+
+            if (options.flag & FFMpegFlag_CopyToTexture) {
+                bCopyToTexture = true;
+            }
 		}
 #endif // HW_DECODE
 
