@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-//#define _FFMPEG
-
 constexpr auto ONMONITORCHANGE = 13;
 constexpr auto ONRESIZINGCOMPLETE = 16;
 

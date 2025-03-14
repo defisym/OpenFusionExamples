@@ -31,6 +31,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include	"Macro.h"
+
 //STL
 #include	<deque>
 #include	<vector>
@@ -41,9 +43,6 @@
 #include	<chrono>
 
 //WinAPI
-
-//Thread
-//#include	<tlhelp32.h>
 
 //FileList
 #include	<shlwapi.h>
