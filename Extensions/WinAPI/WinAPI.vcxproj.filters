@@ -181,6 +181,9 @@
     <ClInclude Include="WindowsMessageBase.h">
       <Filter>WindowsMessage</Filter>
     </ClInclude>
+    <ClInclude Include="Macro.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="RES\EXTICON.BMP">
