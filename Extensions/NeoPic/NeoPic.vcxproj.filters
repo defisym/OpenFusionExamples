@@ -178,6 +178,9 @@
     <ClInclude Include="FrameCapture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Macro.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
