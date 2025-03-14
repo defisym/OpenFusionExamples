@@ -518,6 +518,39 @@ inline void FreeColMask(LPSMASK& pColMask) {
 	}
 }
 
+// double buffer helper
+struct RenderHelper {
+    LPSURFACE pSf = nullptr;
+
+    RenderHelper(LPSURFACE p,
+        BOOL bClear = TRUE, RGBAREF dwRgba = 0) :pSf(p) {
+        if (!IsHWA(p)) { return; }
+        pSf = p;
+        pSf->BeginRendering(bClear, dwRgba);
+    }
+    ~RenderHelper() {
+        if (pSf == nullptr) { return; }
+        pSf->EndRendering();
+    }
+};
+
+struct RenderTargetHelper {
+    LPSURFACE pSf = nullptr;
+    LPSURFACE pRTT = nullptr;
+
+    RenderTargetHelper(LPSURFACE p) :pSf(p) {
+        if (!IsHWA(p)) { return; }
+        pSf = p;
+        pRTT = pSf->GetRenderTargetSurface();
+    }
+    ~RenderTargetHelper() {
+        if (pSf == nullptr) { return; }
+        pSf->ReleaseRenderTargetSurface(pRTT);
+    }
+
+    LPSURFACE GetRenderTarget()const { return pRTT; }
+};
+
 //Create surface
 inline LPSURFACE CreateHWASurface(int depth, int width, int height,
 	int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
