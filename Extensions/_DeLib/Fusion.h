@@ -28,7 +28,8 @@
 // ------------------------
 
 inline bool IsHWA(LPSURFACE Src);
-inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src);
+inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src,
+    int type = ST_HWA_ROMTEXTURE);
 
 inline void _SavetoClipBoard(LPSURFACE Src, bool release = false, HWND Handle = NULL);
 inline void __SavetoClipBoard(LPSURFACE Src, HWND Handle = NULL, bool release = false);
@@ -518,8 +519,8 @@ inline void FreeColMask(LPSMASK& pColMask) {
 }
 
 //Create surface
-inline LPSURFACE CreateHWASurface(int depth, int width, int height
-	, int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
+inline LPSURFACE CreateHWASurface(int depth, int width, int height,
+	int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
@@ -529,24 +530,27 @@ inline LPSURFACE CreateHWASurface(int depth, int width, int height
 	return hwa;
 }
 
-inline void CreateHWASurface(LPSURFACE pSf, int depth, int width, int height
-	, int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
+inline void CreateHWASurface(LPSURFACE pSf, 
+    int depth, int width, int height,
+    int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
 	LPSURFACE proto = nullptr;
 	GetSurfacePrototype(&proto, depth, type, driver);
 
 	pSf->Create(width, height, proto);
 }
 
-inline LPSURFACE CreateHWASurface(LPRDATA rdPtr, int depth, int width, int height
-	, int type = ST_HWA_ROMTEXTURE) {
+inline LPSURFACE CreateHWASurface(LPRDATA rdPtr,
+    int depth, int width, int height,
+	int type = ST_HWA_ROMTEXTURE) {
 	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 	int sfDrv = wSurf->GetDriver();
 
 	return CreateHWASurface(depth, width, height, type, sfDrv);
 }
 
-inline void CreateHWASurface(LPRDATA rdPtr, LPSURFACE pSf, int depth, int width, int height
-	, int type = ST_HWA_ROMTEXTURE) {
+inline void CreateHWASurface(LPRDATA rdPtr, LPSURFACE pSf,
+    int depth, int width, int height,
+	int type = ST_HWA_ROMTEXTURE) {
 	LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 	int sfDrv = wSurf->GetDriver();
 
@@ -692,13 +696,13 @@ inline BOOL GetTransparent(LPSURFACE pSf) {
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
 	return IsHWA(Src) 
 	? Src 
-	: CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_RTTEXTURE);
+	: CreateHWASurface(rdPtr,
+        Src->GetDepth(), Src->GetWidth(), Src->GetHeight(),
+        ST_HWA_RTTEXTURE);
 }
 
 inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
-	if (IsHWA(Src)) {
-		return;
-	}
+    if (IsHWA(Src)) { return; }
 
 	auto pBitmap = Src;
 	Src = ConvertHWATarget(rdPtr, Src);
@@ -712,16 +716,11 @@ inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
 #endif // _NO_REF
 
 inline LPSURFACE ConvertBitmap(LPSURFACE pOldSf) {
-	if (!IsHWA(pOldSf)) {
-		return pOldSf;
-	}
+    if (!IsHWA(pOldSf)) { return pOldSf; }
 
 	LPSURFACE pMemSf = CreateSurface(pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
 
-	if (pOldSf->HasAlpha()) {
-		pMemSf->CreateAlpha();
-	}
-
+    if (pOldSf->HasAlpha()) { pMemSf->CreateAlpha(); }
 	pOldSf->Blit(*pMemSf);
 
 	return pMemSf;
@@ -731,46 +730,39 @@ inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
 	return ConvertBitmap(pOldSf);
 }
 
-inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src) {
-	if (IsHWA(Src)) {
-		return Src;
-	}
+inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src,
+    int type = ST_HWA_ROMTEXTURE) {
+    if (IsHWA(Src)) { return Src; }
 
-	cSurface* hwa = CreateHWASurface(rdPtr, Src->GetDepth(), Src->GetWidth(), Src->GetHeight(), ST_HWA_ROMTEXTURE);
+	cSurface* hwa = CreateHWASurface(rdPtr,
+        Src->GetDepth(), Src->GetWidth(), Src->GetHeight(),
+        type);
 
-	if (Src->HasAlpha()) {
-		hwa->CreateAlpha();
-	}
-
+    if (Src->HasAlpha()) { hwa->CreateAlpha(); }
 	Src->Blit(*hwa);
 
 	return hwa;
 }
 
 inline void ConvertToBitmap(LPRDATA rdPtr, LPSURFACE& pOldSf) {
-	if (!IsHWA(pOldSf)) {
-		return;
-	}
+    if (!IsHWA(pOldSf)) { return; }
 
 	auto pHWA = pOldSf;
 	pOldSf = ConvertBitmap(rdPtr, pOldSf);	
 	delete pHWA;
 }
 
-inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src) {
-	if (IsHWA(Src)) {
-		return;
-	}
+inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src,
+     int type = ST_HWA_ROMTEXTURE) {
+    if (IsHWA(Src)) { return; }
 
 	auto pBitmap = Src;
-	Src = ConvertHWATexture(rdPtr, Src);
+    Src = ConvertHWATexture(rdPtr, Src, type);
 	delete pBitmap;
 }
 
 inline void ConvertToBitmap_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf) {
-	if (!IsHWA(pOldSf)) {
-		return;
-	}
+    if (!IsHWA(pOldSf)) { return; }
 
 	auto pBitmap = ConvertBitmap(rdPtr, pOldSf);
 	CreateSurface(pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight());
@@ -780,13 +772,14 @@ inline void ConvertToBitmap_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf) {
 	delete pBitmap;
 }
 
-inline void ConvertToHWATexture_NRef(LPRDATA rdPtr,const LPSURFACE pOldSf) {
-	if (IsHWA(pOldSf)) {
-		return;
-	}
+inline void ConvertToHWATexture_NRef(LPRDATA rdPtr,const LPSURFACE pOldSf,
+    int type = ST_HWA_ROMTEXTURE) {
+    if (IsHWA(pOldSf)) { return; }
 
-	auto pHWA = ConvertHWATexture(rdPtr, pOldSf);
-	CreateHWASurface(rdPtr, pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight(), ST_HWA_ROMTEXTURE);
+	auto pHWA = ConvertHWATexture(rdPtr, pOldSf, type);
+	CreateHWASurface(rdPtr,
+        pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight(),
+        type);
 
 	pHWA->Blit(*pOldSf);
 
@@ -1858,14 +1851,9 @@ inline void ProcessBackground(LPRDATA rdPtr, const std::function<void(const LPSU
 
 	const auto bHWA = ((rhPtr->rh4.rh4Mv->mvAppMode & SM_D3D) != 0);
 
-	if (!bHWA) {
-		callback(ps);
-
-		return;
-	}
+    if (!bHWA) { callback(ps); return; }
 
 	// HWA : get current render target (to use as source)
-	const auto pRTT = ps->GetRenderTargetSurface();
-	callback(ps);
-	ps->ReleaseRenderTargetSurface(pRTT);
+    auto helper = RenderTargetHelper{ ps };
+	callback(helper.GetRenderTarget());
 }
