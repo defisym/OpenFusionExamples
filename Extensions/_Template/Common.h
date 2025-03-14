@@ -27,6 +27,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include	"Macro.h"
+
 // My lib
 #include	"GeneralDefinition.h"
 #include	"Definition.h"
