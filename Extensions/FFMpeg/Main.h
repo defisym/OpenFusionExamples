@@ -112,10 +112,10 @@ typedef struct tagEDATA_V1
 	bool bCache;
 
 	AVHWDeviceType hwDeviceType;
-
 	bool bForceNoAudio;
+    bool bCopyToTexture;
 
-	bool bBuffer[2];
+	bool bBuffer[1];
 	int buffer[47];
 
 } EDITDATA;
@@ -195,6 +195,7 @@ typedef struct tagRDATA
 
 	AVHWDeviceType hwDeviceType;
 	bool bForceNoAudio;
+    bool bCopyToTexture;
 
 	std::string* pVideoOverrideCodecName = nullptr;
 	std::string* pAudioOverrideCodecName = nullptr;
