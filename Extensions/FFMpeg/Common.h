@@ -56,6 +56,7 @@
 #include	<chrono>
 
 // My lib
+#include	"D3DUtilities/TextureUtilities.h"
 #include	"SDLUtilities.h"
 
 #include	"Encryption.h"
@@ -80,14 +81,10 @@
 
 #ifdef COPY_D3D_TEXTURE
 #ifdef _DEBUG
-#include "D3D/HookD3D.h"
+#include	"D3D/HookD3D.h"
 #endif
 
-#include "D3DUtilities/ShaderResource.h"
-#include "D3DUtilities/ShaderInterface.h"
-
-#include "D3DUtilities/ShaderCompiler.h"
-
+#include	"D3DUtilities/ShaderInterface.h"
 #endif
 
 // Globals and Prototypes
