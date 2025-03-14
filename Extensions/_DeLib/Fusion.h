@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-// ------------------------
+// ------------------------------------------------
 // include
-// ------------------------
+// ------------------------------------------------
 
 #include	"ccxhdr.h"
 #include	"Surface.h"
@@ -23,9 +23,9 @@
 #include <omp.h>
 #endif
 
-// ------------------------
-// forward declaration
-// ------------------------
+// ------------------------------------------------
+// Forward declaration
+// ------------------------------------------------
 
 inline bool IsHWA(LPSURFACE Src);
 inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src,
@@ -59,13 +59,13 @@ inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void
 inline void ProcessPixel(LPSURFACE pSf, const std::function<void(const SfCoef& coef)>& processor);
 inline void IteratePixel(LPSURFACE pSf, const std::function<void(int, int, const SfCoef&, BYTE*, BYTE*)>& process);
 
-// ------------------------
-// definition
-// ------------------------
+// ------------------------------------------------
+// Definition
+// ------------------------------------------------
 
-// -------------
-// return
-// -------------
+// ------------------------------------
+// Return value
+// ------------------------------------
 
 inline auto GetCurrentParamPointer(LPRDATA rdPtr) {
 	const auto rhPtr = rdPtr->rHo.hoAdRunHeader;
@@ -155,17 +155,17 @@ inline long ReturnString(LPRDATA rdPtr, const std::wstring& str) {
 
 #define ReturnString(Str) ReturnString(rdPtr, Str)
 
-// -------------
-// object
-// -------------
+// ------------------------------------
+// Object
+// ------------------------------------
 
 inline auto GetObjectName(LPRDATA rdPtr) {
 	return rdPtr->rHo.hoOiList->oilName;
 }
 
-// -------------
-// animation
-// -------------
+// ------------------------------------
+// Animation
+// ------------------------------------
 
 // Iterator
 template<typename Child>
@@ -209,15 +209,9 @@ inline const AnimHeader* GetObjectAnimationHeader(LPRDATA rdPtr, int Fixed) {
 }
 
 //IterateAnimation(const_cast<AnimHeader*>(pAH), [] (Anim* pA) {
+// 
 //});
 inline void IterateAnimation(AnimHeader* pAH, const std::function<void(Anim*)>& cb) {
-	//for (decltype(pAH->ahAnimMax) i = 0; i < pAH->ahAnimMax; i++) {
-	//	if (pAH->ahOffsetToAnim[i] > 0) {
-	//		const auto pA = reinterpret_cast<Anim*>(reinterpret_cast<byte*>(pAH) + pAH->ahOffsetToAnim[i]);
-	//		cb(pA);
-	//	}
-	//}
-
 	IterateValidItem(pAH, pAH->ahOffsetToAnim, pAH->ahAnimMax, cb);
 }
 
@@ -272,9 +266,9 @@ inline size_t DisplayAnimationID(LPRDATA rdPtr, int Fixed) {
 	return DisplayAnimationID(LproFromFixed(rdPtr, Fixed));
 }
 
-// -------------
-// direction
-// -------------
+// ------------------------------------
+// Direction
+// ------------------------------------
 
 inline void IterateDirection(Anim* pA, const std::function<void(AnimDirection*)>& cb) {
 	//for (int j = 0; j < DIRID_MAX; j++) {
@@ -360,9 +354,9 @@ inline size_t DisplayAnimationDirection(LPRDATA rdPtr, int Fixed) {
 	return DisplayAnimationDirection(LproFromFixed(rdPtr, Fixed));
 }
 
-// -------------
-// frame
-// -------------
+// ------------------------------------
+// Frame
+// ------------------------------------
 
 inline int GetCurrentFrameCount(LPRO object) {
 	if(!ObjectHasAnimation(object)) {
@@ -402,11 +396,14 @@ inline int GetAnimDirFrameCount(LPRDATA rdPtr, int Fixed, size_t id, size_t Dir)
 	return GetAnimDirFrameCount(LproFromFixed(rdPtr, Fixed), id, Dir);
 }
 
-// -------------
-// surface
-// -------------
+// ------------------------------------
+// Surface
+// ------------------------------------
 
-//Surface
+// ------------------------
+// Surface macro
+// ------------------------
+
 constexpr auto Dir_X = false;
 constexpr auto Dir_Y = true;
 
@@ -416,7 +413,10 @@ constexpr auto Do_Alpha = true;
 constexpr auto Fast = false;
 constexpr auto HighQuality = true;
 
-//Pixel
+// ------------------------
+// Pixel
+// ------------------------
+
 struct RGBA {
 	double r;
 	double g;
@@ -518,7 +518,10 @@ inline void FreeColMask(LPSMASK& pColMask) {
 	}
 }
 
-// double buffer helper
+// ------------------------
+// Double buffer helper
+// ------------------------
+
 struct RenderHelper {
     LPSURFACE pSf = nullptr;
 
@@ -551,7 +554,55 @@ struct RenderTargetHelper {
     LPSURFACE GetRenderTarget()const { return pRTT; }
 };
 
-//Create surface
+
+// ------------------------------------
+// Result:
+// ST_HWA_SCREEN -> RenderHelper: 
+//                          both D3D11Texture/RenderTargetTexture are null
+//               -> RenderTargetHelper: 
+//                          RenderTargetTexture
+// ST_HWA_RTTEXTURE  -> RenderHelper: 
+//                          both D3D11Texture/RenderTargetTexture are not null
+//                          D3D11Texture will crash
+//                          only RenderTargetTexture is valid
+//                   -> RenderTargetHelper: 
+//                          both D3D11Texture/RenderTargetTexture are null
+// ST_HWA_ROUTEXTURE -> same as ST_HWA_ROMTEXTURE
+// ST_HWA_ROMTEXTURE -> RenderHelper: 
+//                          both D3D11Texture/RenderTargetTexture are null
+//                   -> RenderTargetHelper: 
+//                          both D3D11Texture/RenderTargetTexture are null
+// ------------------------------------
+//
+//#include "../_3rdLib/D3DUtilities/TextureUtilities.h"
+//
+//auto RenderHelperTest = [] (LPSURFACE pSf) {
+//    auto GetTextureDesc = [] (const D3D11SURFINFO& info) {
+//        auto Texture = CastPointer((void**)info.m_ppD3D11Texture);
+//        auto TextureDesc = GetDesc(Texture);
+//        auto RTTTexture = CastPointer((void**)info.m_ppD3D11RenderTargetTexture);
+//        auto RTTTextureDesc = GetDesc(RTTTexture); 
+//        
+//        return;
+//        };
+//    
+//    auto type = pSf->GetType();
+//
+//    {
+//        auto helper = RenderHelper{ pSf };
+//        GetTextureDesc(GetSurfaceInfo(pSf));
+//
+//    }
+//    {
+//        auto helper = RenderTargetHelper{ pSf };
+//        GetTextureDesc(GetSurfaceInfo(helper.GetRenderTarget()));
+//    }
+//    };
+
+// ------------------------
+// Create surface
+// ------------------------
+
 inline LPSURFACE CreateHWASurface(int depth, int width, int height,
 	int type = ST_HWA_ROMTEXTURE, int driver = SD_D3D11) {
 	LPSURFACE proto = nullptr;
@@ -648,7 +699,10 @@ inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
 	}
 }
 
-//Get info
+// ------------------------
+// Get info
+// ------------------------
+
 inline D3D11SURFINFO GetSurfaceInfo(LPSURFACE pSf) {
 	D3D11SURFINFO info = { };
 	info.m_lSize= sizeof(D3D11SURFINFO);
@@ -669,10 +723,9 @@ inline auto GetD3DDevice(LPRDATA rdPtr) {
 	return GetD3DInfo(rdPtr).m_pD3D11Device;
 }
 
-//Convert to HWA
-inline bool IsHWA(LPSURFACE Src) {
-	return Src->GetType() >= ST_HWA_SCREEN;
-}
+// ------------------------
+// Transparent
+// ------------------------
 
 inline bool IsOpaque(LPSURFACE pSf) {
 	if(!pSf->HasAlpha()) { return true; }
@@ -726,6 +779,24 @@ inline BOOL GetTransparent(LPSURFACE pSf) {
 	return IsHWA(pSf) ? transpTBD : pSf->IsTransparent();
 }
 
+// ------------------------
+// Convert surface
+// ------------------------
+
+#define _NO_REF
+
+#ifdef _NO_REF
+#else
+#endif // _NO_REF
+
+// ------------------
+// Convert to HWA
+// ------------------
+
+inline bool IsHWA(LPSURFACE Src) {
+    return Src->GetType() >= ST_HWA_SCREEN;
+}
+
 inline LPSURFACE ConvertHWATarget(LPRDATA rdPtr, LPSURFACE Src) {
 	return IsHWA(Src) 
 	? Src 
@@ -742,11 +813,45 @@ inline void ConvertToHWATarget(LPRDATA rdPtr, LPSURFACE& Src) {
 	delete pBitmap;
 }
 
-#define _NO_REF
+inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src,
+    int type = ST_HWA_ROMTEXTURE) {
+    if (IsHWA(Src)) { return Src; }
 
-#ifdef _NO_REF
-#else
-#endif // _NO_REF
+    cSurface* hwa = CreateHWASurface(rdPtr,
+        Src->GetDepth(), Src->GetWidth(), Src->GetHeight(),
+        type);
+
+    if (Src->HasAlpha()) { hwa->CreateAlpha(); }
+    Src->Blit(*hwa);
+
+    return hwa;
+}
+
+inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src, int type) {
+    if (IsHWA(Src)) { return; }
+
+    auto pBitmap = Src;
+    Src = ConvertHWATexture(rdPtr, Src, type);
+    delete pBitmap;
+}
+
+inline void ConvertToHWATexture_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf,
+    int type = ST_HWA_ROMTEXTURE) {
+    if (IsHWA(pOldSf)) { return; }
+
+    auto pHWA = ConvertHWATexture(rdPtr, pOldSf, type);
+    CreateHWASurface(rdPtr,
+        pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight(),
+        type);
+
+    pHWA->Blit(*pOldSf);
+
+    delete pHWA;
+}
+
+// ------------------
+// Convert to Bitmap
+// ------------------
 
 inline LPSURFACE ConvertBitmap(LPSURFACE pOldSf) {
     if (!IsHWA(pOldSf)) { return pOldSf; }
@@ -763,35 +868,12 @@ inline LPSURFACE ConvertBitmap(LPRDATA rdPtr, LPSURFACE pOldSf) {
 	return ConvertBitmap(pOldSf);
 }
 
-inline LPSURFACE ConvertHWATexture(LPRDATA rdPtr, LPSURFACE Src,
-    int type = ST_HWA_ROMTEXTURE) {
-    if (IsHWA(Src)) { return Src; }
-
-	cSurface* hwa = CreateHWASurface(rdPtr,
-        Src->GetDepth(), Src->GetWidth(), Src->GetHeight(),
-        type);
-
-    if (Src->HasAlpha()) { hwa->CreateAlpha(); }
-	Src->Blit(*hwa);
-
-	return hwa;
-}
-
 inline void ConvertToBitmap(LPRDATA rdPtr, LPSURFACE& pOldSf) {
     if (!IsHWA(pOldSf)) { return; }
 
 	auto pHWA = pOldSf;
 	pOldSf = ConvertBitmap(rdPtr, pOldSf);	
 	delete pHWA;
-}
-
-inline void ConvertToHWATexture(LPRDATA rdPtr, LPSURFACE& Src,
-     int type = ST_HWA_ROMTEXTURE) {
-    if (IsHWA(Src)) { return; }
-
-	auto pBitmap = Src;
-    Src = ConvertHWATexture(rdPtr, Src, type);
-	delete pBitmap;
 }
 
 inline void ConvertToBitmap_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf) {
@@ -805,19 +887,9 @@ inline void ConvertToBitmap_NRef(LPRDATA rdPtr, const LPSURFACE pOldSf) {
 	delete pBitmap;
 }
 
-inline void ConvertToHWATexture_NRef(LPRDATA rdPtr,const LPSURFACE pOldSf,
-    int type = ST_HWA_ROMTEXTURE) {
-    if (IsHWA(pOldSf)) { return; }
-
-	auto pHWA = ConvertHWATexture(rdPtr, pOldSf, type);
-	CreateHWASurface(rdPtr,
-        pOldSf, pOldSf->GetDepth(), pOldSf->GetWidth(), pOldSf->GetHeight(),
-        type);
-
-	pHWA->Blit(*pOldSf);
-
-	delete pHWA;
-}
+// ------------------------
+// Surface operation
+// ------------------------
 
 inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
 	DWORD flag = 0;
@@ -832,7 +904,6 @@ inline DWORD GetFlag(LPSURFACE Src, bool HighQuality) {
 	return flag;
 }
 
-//Stretch Surface
 inline void Stretch(LPSURFACE Src, LPSURFACE Des, bool HighQuality) {	
 	auto ret = Src->Stretch(*Des, 0, 0, Des->GetWidth(), Des->GetHeight(), BMODE_OPAQUE, BOP_COPY, 0, GetFlag(Src, HighQuality));
 
@@ -896,9 +967,11 @@ inline bool Offset(LPSURFACE Src, LPSURFACE Des,
 	return true;
 }
 
-//Get Ext's FilterName
+// ------------------------
+// Filter
+// ------------------------
 
-//指针Map需要使用自定义比较
+//Get Ext's FilterName
 struct LPWSTR_Compare
 {
 	bool operator()(LPCWSTR l, LPCWSTR r)  const noexcept { return (wcscmp(l, r) < 0); };
@@ -981,7 +1054,9 @@ inline DWORD GetFilterIDByFileName(LPRDATA rdPtr, LPCTSTR FilePath, LPCWSTR Defa
 	return FilterID;
 }
 
-//Save && Load
+// ------------------------
+// Save && Load
+// ------------------------
 
 //Save to Clipboard
 inline void _SavetoClipBoard(LPSURFACE Src, bool release, HWND Handle) {
@@ -1071,6 +1146,10 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 	}
 }
 
+// ------------------------
+// Alpha
+// ------------------------
+
 //Load From File
 inline void _ForceAddAlpha(LPSURFACE Src, BYTE coef = 255) {
 	auto pitch = Src->GetWidth();
@@ -1089,6 +1168,10 @@ inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
 		_ForceAddAlpha(Src);
 	}
 }
+
+// ------------------------
+// Load from file
+// ------------------------
 
 // return false if created the blank surface
 #ifdef _NO_REF
@@ -1167,6 +1250,14 @@ inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA
 }
 #endif // _NO_REF
 
+// ------------------------
+// Process
+// ------------------------
+
+// ------------------
+// Process Bitmap
+// ------------------
+
 // create a temp bitmap pSf if needed
 // don't use the bitmap in callback out of this function
 inline void ProcessBitmap(LPSURFACE pSf, const std::function<void(const LPSURFACE pBitmap)>& processor) {
@@ -1188,6 +1279,10 @@ inline void ProcessBitmap(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void
 	ProcessBitmap(pSf, processor);
 }
 
+// ------------------
+// Process HWA
+// ------------------
+
 // create a temp HWA pSf if needed
 inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(const LPSURFACE pHWA)>& processor) {
 	auto bHWA = IsHWA(pSf);
@@ -1203,6 +1298,10 @@ inline void ProcessHWA(LPRDATA rdPtr, LPSURFACE pSf, const std::function<void(co
 		delete pHWA;
 	}
 }
+
+// ------------------
+// Blur
+// ------------------
 
 //Get Valid Scale
 inline void GetValidScale(float* scale) {
@@ -1516,6 +1615,10 @@ inline void StackBlur(LPSURFACE& pSrc, int radius, float scale, int divide) {
 	return;
 }
 
+// ------------------
+// Perspection transformation
+// ------------------
+
 // use macro to speed up compiling
 #ifdef PERSPECTIVE_TRANSFORMATION
 #pragma warning(disable : 4819)
@@ -1621,6 +1724,10 @@ inline LPSURFACE PerspectiveTransformation(const LPSURFACE pSrc, const double ma
 	return pBitmap;
 }
 #endif
+
+// ------------------------
+// Sf Coef
+// ------------------------
 
 //dec2rgb
 #define DEC2RGB(DEC) RGB(((DEC) >> 16), ((DEC) >> 8) & 0xff, (DEC) & 0xff)
