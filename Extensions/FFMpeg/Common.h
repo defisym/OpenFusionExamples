@@ -45,6 +45,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include	"Macro.h"
+
 #ifdef _OPENMP
 #include	<omp.h>
 #endif
@@ -75,11 +77,6 @@
 #include	"FusionUtilities.h"
 
 #include	"Func.h"
-
-
-// copy hardware decode result directly 
-// instead of copy to memory first
-#define COPY_D3D_TEXTURE
 
 #ifdef COPY_D3D_TEXTURE
 #ifdef _DEBUG

@@ -306,6 +306,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="D3D\HookD3D.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
+    <ClInclude Include="Macro.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SDL_Interface.h" />

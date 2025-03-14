@@ -1,6 +1,7 @@
 //Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
+#include "Macro.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -106,7 +107,7 @@ EXO_IMAGE               BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
 // Shader
 //
 
-#if defined(COPY_D3D_TEXTURE)
+#ifdef COPY_D3D_TEXTURE
 SHADER_TEMPLATE_VS      RCDATA    "Shader\\vs.hlsl"
 SHADER_TEMPLATE_PS      RCDATA    "Shader\\ps.hlsl"
 #endif
