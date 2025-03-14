@@ -4,7 +4,9 @@
 
 #include <chrono>
 
-//#define QUERY_NON_LOCAL
+// define this macro to query non local memory
+// which can be ignored in most cases
+// #define QUERY_NON_LOCAL
 
 struct VRAMUtilities final :Adapter {
     struct VRAMInfo {
