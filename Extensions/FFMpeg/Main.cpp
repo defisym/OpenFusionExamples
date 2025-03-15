@@ -386,18 +386,18 @@ long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetCurrentVideoFramePointer(LPRDATA rdPtr, long param1) {
-	bool bHwa = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool bWantHWA = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	if (!rdPtr->bOpen) {
 		return 0;
 	}
 
-	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pMemSf, rdPtr->pHwaSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pMemSf, rdPtr->pHwaSf);
 }
 
 long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long param1) {
 	size_t ms = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool bHwa = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool bWantHWA = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	if (!rdPtr->bOpen) {
 		return 0;
@@ -407,7 +407,7 @@ long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long 
 	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);
 	//__SavetoClipBoard(rdPtr->pGrabbedFrame);
 
-	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
 }
 
 long WINAPI DLLExport Expression_GetVideoOpen(LPRDATA rdPtr, long param1) {

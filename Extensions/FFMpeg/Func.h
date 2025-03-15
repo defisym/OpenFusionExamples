@@ -175,18 +175,33 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 		});
 }
 
-// return pMemSf, if bHwa == true, cast it to HWA and save to pHwaSf;
-inline long ReturnVideoFrame(LPRDATA rdPtr, bool bHwa, const LPSURFACE& pMemSf, LPSURFACE& pHwaSf) {
-	if (!bHwa) {
-		return ConvertToLong(pMemSf);
+// convert pSrc to pDst if needed
+inline long ReturnVideoFrame(LPRDATA rdPtr, bool bWantHWA, const LPSURFACE& pSrc, LPSURFACE& pDst) {
+    // want bitmap
+	if (!bWantHWA) {
+        // source is bitmap
+        if(!IsHWA(pSrc)){ return ConvertToLong(pSrc); }
+        // source is HWA
+        else {
+            delete pDst;
+            pDst = nullptr;
+            pDst = ConvertBitmap(rdPtr, pSrc);
+
+            return ConvertToLong(pSrc);
+        }
 	}
+    // want HWA
 	else {
-		delete pHwaSf;
-		pHwaSf = nullptr;
+        // source is HWA
+        if (IsHWA(pSrc)) { return ConvertToLong(pSrc); }
+        // source is bitmap
+        else {
+            delete pDst;
+            pDst = nullptr;
+            pDst = ConvertHWATexture(rdPtr, pSrc);
 
-		pHwaSf = ConvertHWATexture(rdPtr, pMemSf);
-
-		return ConvertToLong(pHwaSf);
+            return ConvertToLong(pDst);
+        }
 	}
 }
 
