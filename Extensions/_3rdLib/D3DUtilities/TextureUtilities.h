@@ -3,17 +3,35 @@
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
 
-// fusion surface info use pointer to pointer to hold texture
-inline ID3D11Texture2D* CastPointer(void** ppTexture) {
+// fusion surface info use pointer to pointer to hold texture & view
+template<typename T>
+inline T* CastPointer(void** ppTexture) {
     if (ppTexture == nullptr) { return nullptr; }
-    return *reinterpret_cast<ID3D11Texture2D**>(ppTexture);
+    return *reinterpret_cast<T**>(ppTexture);
 }
 
-inline ID3D11Texture2D* CastPointer(void* pTexture) {
-    return reinterpret_cast<ID3D11Texture2D*>(pTexture);
+template<typename T>
+inline T* CastPointer(void* pTexture) {
+    return reinterpret_cast<T*>(pTexture);
 }
 
-inline D3D11_TEXTURE2D_DESC GetDesc(ID3D11Texture2D* pD3DTexture) {
+inline ID3D11Texture2D* CastTexturePointer(void** pTexture) {
+    return CastPointer<ID3D11Texture2D>(pTexture);
+}
+
+inline ID3D11Texture2D* CastTexturePointer(void* pTexture) {
+    return CastPointer<ID3D11Texture2D>(pTexture);
+}
+
+inline ID3D11RenderTargetView* CastRenderTargetViewPointer(void** pTexture) {
+    return CastPointer<ID3D11RenderTargetView>(pTexture);
+}
+
+inline ID3D11RenderTargetView* CastRenderTargetViewPointer(void* pTexture) {
+    return CastPointer<ID3D11RenderTargetView>(pTexture);
+}
+
+inline D3D11_TEXTURE2D_DESC GetTextureDesc(ID3D11Texture2D* pD3DTexture) {
     if (pD3DTexture == nullptr) { return {}; }
     
     D3D11_TEXTURE2D_DESC desc = {};
@@ -23,6 +41,6 @@ inline D3D11_TEXTURE2D_DESC GetDesc(ID3D11Texture2D* pD3DTexture) {
 }
 
 // use void* for texture to hide conversion routine
-inline D3D11_TEXTURE2D_DESC GetDesc(void* pTexture) {
-    return GetDesc(CastPointer(pTexture));
+inline D3D11_TEXTURE2D_DESC GetTextureDesc(void* pTexture) {
+    return GetTextureDesc(CastTexturePointer(pTexture));
 }
