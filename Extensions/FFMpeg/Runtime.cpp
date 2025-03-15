@@ -114,6 +114,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
+    rdPtr->bCopyToTexture = edPtr->bCopyToTexture;
 
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
