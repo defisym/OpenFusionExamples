@@ -175,8 +175,8 @@ inline void CopyTexture(const unsigned char* pData,
     auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
     auto RTTInfo = GetSurfaceInfo(pRTTSf);
 
-    auto pFusionDevice = RTTInfo.m_pD3D11Device;
-    auto pFusionDeviceCtx = RTTInfo.m_pD3D11Context;
+    auto pFusionDevice = CastPointer<ID3D11Device>((void*)RTTInfo.m_pD3D11Device);
+    auto pFusionDeviceCtx = CastPointer<ID3D11DeviceContext>((void*)RTTInfo.m_pD3D11Context);
 
     auto pRTTTexture = CastTexturePointer((void**)RTTInfo.m_ppD3D11RenderTargetTexture);    
     auto pRTTTextureView = CastRenderTargetViewPointer((void**)RTTInfo.m_ppD3D11RenderTargetView);
@@ -192,6 +192,90 @@ inline void CopyTexture(const unsigned char* pData,
     auto RTTDesc = GetTextureDesc(pRTTTexture);
 
     // Start Process
+
+    // 1. Create a shared texture
+    HRESULT hr = S_OK;
+    ComPtr<ID3D11Texture2D> pSharedTexture;
+
+    D3D11_TEXTURE2D_DESC sharedDesc = RTTDesc;
+    sharedDesc.Format = FrameDesc.Format;
+    sharedDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+    hr = pFFMpegDevice->CreateTexture2D(&sharedDesc, nullptr, &pSharedTexture);
+    if (FAILED(hr)) { return; }
+
+    // 2. Create shared handle
+    ComPtr<IDXGIResource> dxgiShareTexture;
+    hr = pSharedTexture->QueryInterface(IID_PPV_ARGS(&dxgiShareTexture));
+    if (FAILED(hr)) { return; }
+
+    HANDLE sharedHandle = nullptr;
+    hr = dxgiShareTexture->GetSharedHandle(&sharedHandle);
+    if (FAILED(hr)) { return; }
+
+    // 3. Copy frame
+
+    // the result maybe an array texture
+    // one solution is use CopySubresourceRegion to copy it to a new texture
+    // and set SrcSubresource to pFrameIndex
+    pFFMpegDeviceCtx->CopySubresourceRegion(pSharedTexture.Get(), 0, 0, 0, 0, pFrameTexture, pFrameIndex, 0);
+    pFFMpegDeviceCtx->Flush();
+
+    //// another solution create a srv
+    //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    //srvDesc.Format = FrameDesc.Format;
+    //srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+
+    //// decoded video texture only has one mip level
+    //// MostDetailedMip: which one start to use, the max reslution one is 0
+    //// MipLevels: how many we can use, only one is 1
+
+    //// ID3D11Texture2D is texture
+    //if (pFrameIndex == 0) {
+    //    srvDesc.Texture2D.MostDetailedMip = 0;
+    //    srvDesc.Texture2D.MipLevels = 1;
+    //}
+    //// ID3D11Texture2D is an array texture
+    //else {
+    //    srvDesc.Texture2DArray.MostDetailedMip = 0;
+    //    srvDesc.Texture2DArray.MipLevels = 1;
+    //    srvDesc.Texture2DArray.FirstArraySlice = pFrameIndex;
+    //    srvDesc.Texture2DArray.ArraySize = 1;
+    //}
+
+    // 4. format conversion
+
+    // open shared resource
+    ComPtr<ID3D11Texture2D> pSharedFrameTexture;
+    hr = pFusionDevice->OpenSharedResource(sharedHandle, IID_PPV_ARGS(&pSharedFrameTexture));
+    if (FAILED(hr)) { return; }
+
+    // create srv
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    // Create new shader resource view
+    // NV12 cannot create srv directly, split to two planes
+    ComPtr<ID3D11ShaderResourceView> pSrvY = nullptr;
+    srvDesc.Format = DXGI_FORMAT_R8_UNORM;
+    hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvY);
+    if (FAILED(hr)) { return; }
+
+    ComPtr<ID3D11ShaderResourceView> pSrvUV = nullptr;
+    srvDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+    hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvUV);
+    if (FAILED(hr)) { return; }
+
+    //pFusionDeviceCtx->PSSetShaderResources(0, 1, &pSrv);
+
+    // Set resources
+    pFusionDeviceCtx->OMSetRenderTargets(1, &pRTTTextureView, nullptr);
+    //pFusionDeviceCtx->PSSetShader(m_PixelShaderLuminance, nullptr, 0);
+    //pFusionDeviceCtx->RSSetViewports(1, &m_VPLuminance);
+
+    // Draw textured quad onto render target
+    //pFusionDeviceCtx->Draw(NUMVERTICES, 0);
 
     return;
 }
