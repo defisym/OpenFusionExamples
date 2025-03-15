@@ -149,8 +149,51 @@ inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
 }
 
 inline void CopyTexture(const unsigned char* pData,
-     LPSURFACE pDst, bool bPm) {
+     LPSURFACE pRTTSf, bool bPm) {
+    // FFMpeg Context
     const auto pCtx = (const FFMpeg::CopyToTextureContext*)pData;
+
+    auto pFFMpegDevice = pCtx->pD3D11VADeciveCtx->device;
+    auto pFFMpegDeviceCtx = pCtx->pD3D11VADeciveCtx->device_context;
+
+    auto pFrameTexture = pCtx->pTexture;
+    auto pFrameIndex = pCtx->index;
+
+    // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
+    // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
+    // Bind flags:  512 (D3D11_BIND_DECODER)
+    //                  Set this flag to indicate that a 2D texture is used to 
+    //                  receive output from the decoder API. The common way to 
+    //                  create resources for a decoder output is by calling the 
+    //                  ID3D11Device::CreateTexture2D method to create an array 
+    //                  of 2D textures. However, you cannot use texture arrays 
+    //                  that are created with this flag in calls to 
+    //                  ID3D11Device::CreateShaderResourceView.
+    auto FrameDesc = GetTextureDesc(pFrameTexture);
+
+    // Fusion Context
+    auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
+    auto RTTInfo = GetSurfaceInfo(pRTTSf);
+
+    auto pFusionDevice = RTTInfo.m_pD3D11Device;
+    auto pFusionDeviceCtx = RTTInfo.m_pD3D11Context;
+
+    auto pRTTTexture = CastTexturePointer((void**)RTTInfo.m_ppD3D11RenderTargetTexture);    
+    auto pRTTTextureView = CastRenderTargetViewPointer((void**)RTTInfo.m_ppD3D11RenderTargetView);
+
+    // Format:      DXGI_FORMAT_B8G8R8A8_UNORM
+    // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
+    // Bind flags:  40 (D3D11_BIND_SHADER_RESOURCE & D3D11_BIND_RENDER_TARGET)
+    //              D3D11_BIND_SHADER_RESOURCE
+    //                  Bind a buffer or texture to a shader stage; this flag cannot 
+    //                  be used with the D3D11_MAP_WRITE_NO_OVERWRITE flag.
+    //              D3D11_BIND_RENDER_TARGET
+    //                  Bind a texture as a render target for the output-merger stage.
+    auto RTTDesc = GetTextureDesc(pRTTTexture);
+
+    // Start Process
+
+    return;
 }
 
 inline void CopyData(
