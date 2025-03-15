@@ -30,14 +30,16 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavutil/imgutils.h>
+
+#include <libavutil/opt.h>
 #include <libavutil/time.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/hwcontext_d3d11va.h>
+
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 
 #include <libavfilter/avfilter.h>
-#include <libavutil/opt.h>
-
 #include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
 }
@@ -297,6 +299,13 @@ class FFMpeg {
 
     // copy hardware decode result to texture
     bool bCopyToTexture = false;
+
+    struct CopyToTextureContext {
+        AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
+
+        ID3D11Texture2D* pTexture = nullptr;
+        intptr_t index = 0;
+    } copyToTextureCtx = {};
 #endif //  HW_DECODE
 
 #ifdef AUDIO_TEMPO
@@ -1146,57 +1155,85 @@ class FFMpeg {
 		return response;
 	}
 
-	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
+    // only available when bCopyToTexture enabled
+    // do nothing, just pass D3D11 texture to callback, furture process not needed
+    inline void convert_textureFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
+        copyToTextureCtx = { .pD3D11VADeciveCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx,
+            .pTexture = (ID3D11Texture2D*)pFrame->data[0] ,
+            .index = (intptr_t)pFrame->data[1] };
+
+        callBack((const unsigned char*)(&copyToTextureCtx), pFrame->width, pFrame->height);
+    }
+
+    // convert hardware frame to bitmap frame, aka copy data from GPU to CPU
+    // callback is not called here, should call convert_bitmapFrame later for display
+    inline void convert_hardwareFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        av_frame_unref(pSWFrame);
+
+        if (pFrame->format == hw_pix_fmt) {
+            /* retrieve data from GPU to CPU */
+            if (av_hwframe_transfer_data(pSWFrame, pFrame, 0) < 0) {
+                //fprintf(stderr, "Error transferring the data to system memory\n");
+                throw FFMpegException(FFMpegException_HWDecodeFailed);
+            }
+
+            av_frame_unref(pFrame);
+            av_frame_move_ref(pFrame, pSWFrame);
+        }
+    }
+    
+    // convert bitmap frame pixel format to PIXEL_FORMAT
+    inline void convert_bitmapFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        // data invalid, do not trigger callback, in case of get a black frame
+        if (!pFrame->data[0]) { return; }
+
+        // Convert data to Bitmap data
+        // https://zhuanlan.zhihu.com/p/53305541
+
+        // allocate buffer
+        if (p_global_bgr_buffer == nullptr) {
+            num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
+            p_global_bgr_buffer = new uint8_t[num_bytes];
+        }
+
+        // allocate sws
+        if (swsContext == nullptr) {
+            //auto pFormat = pFrame->format;
+
+            swsContext = sws_getContext(pFrame->width, pFrame->height,
+                static_cast<AVPixelFormat>(pFrame->format),
+                pFrame->width, pFrame->height,
+                PIXEL_FORMAT,
+                NULL, nullptr, nullptr, nullptr);
+        }
+
+        // make sure the sws_scale output is point to start.
+        const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
+
+        uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+
+        sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
+
+        //bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
+        callBack(bgr_buffer[0], linesize[0], pFrame->height);
+    }
+
+	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {     
 #ifdef HW_DECODE
 		if (bHWDecode) {
-			av_frame_unref(pSWFrame);
+            if (bCopyToTexture) { 
+                convert_textureFrame(pFrame, callBack);
+                av_frame_unref(pFrame); 
 
-			if (pFrame->format == hw_pix_fmt) {
-				/* retrieve data from GPU to CPU */
-				if (av_hwframe_transfer_data(pSWFrame, pFrame, 0) < 0) {
-					//fprintf(stderr, "Error transferring the data to system memory\n");
-					throw FFMpegException(FFMpegException_HWDecodeFailed);
-				}
-
-				av_frame_unref(pFrame);
-				av_frame_move_ref(pFrame, pSWFrame);
-			}
+                return;
+            }
+            
+            convert_hardwareFrame(pFrame, callBack);
 		}
 #endif // HW_DECODE
 
-		// data invalid, do not trigger callback, in case of get a black frame
-		if (!pFrame->data[0]) { return; }
-
-		// Convert data to Bitmap data
-		// https://zhuanlan.zhihu.com/p/53305541
-
-		// allocate buffer
-		if (p_global_bgr_buffer == nullptr) {
-			num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
-			p_global_bgr_buffer = new uint8_t[num_bytes];
-		}
-
-		// allocate sws
-		if (swsContext == nullptr) {
-			//auto pFormat = pFrame->format;
-
-			swsContext = sws_getContext(pFrame->width, pFrame->height
-				, static_cast<AVPixelFormat>(pFrame->format),
-				pFrame->width, pFrame->height
-				, PIXEL_FORMAT
-				, NULL, nullptr, nullptr, nullptr);
-		}
-
-		// make sure the sws_scale output is point to start.
-		const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
-
-		uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
-
-		sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-		//bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
-		callBack(bgr_buffer[0], linesize[0], pFrame->height);
-
+        convert_bitmapFrame(pFrame, callBack);
 		av_frame_unref(pFrame);
 	}
 
