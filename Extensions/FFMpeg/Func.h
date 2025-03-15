@@ -41,24 +41,22 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	}
 }
 
-inline void InitSurface(LPSURFACE& pSf, const int width, const int height) {
+inline void InitSurface(LPSURFACE& pSf, 
+    const int width, const int height, 
+    bool bHWA = false) {
 	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
-
+        if (!bHWA) {
 #ifdef VIDEO_ALPHA
-		pSf = CreateSurface(32, width, height);
+            pSf = CreateSurface(32, width, height);
 #else
-		pSf = CreateSurface(24, width, height);
+            pSf = CreateSurface(24, width, height);
 #endif
+        }
+        else {
+            pSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE);
+        }
 
-		auto alphaSz = width * height;
-
-		auto pAlpha = new BYTE[alphaSz];
-		memset(pAlpha, 255, alphaSz);
-
-		pSf->SetAlpha(pAlpha, width);
-
-		delete[] pAlpha;
-		pAlpha = nullptr;
+        _AddAlpha(pSf);
 	}
 }
 
@@ -379,8 +377,10 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		rdPtr->bPlayStateUpdated = true;
 
 		// update display
-		UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-		InitSurface(rdPtr->pMemSf, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+        UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+        InitSurface(rdPtr->pMemSf,
+            rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
+            rdPtr->bCopyToTexture);
 		// display first valid frame
 		SetPositionGeneral(rdPtr, static_cast<int>(ms));
 
