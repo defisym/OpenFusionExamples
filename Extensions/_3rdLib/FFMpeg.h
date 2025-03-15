@@ -300,12 +300,16 @@ class FFMpeg {
     // copy hardware decode result to texture
     bool bCopyToTexture = false;
 
+public:
     struct CopyToTextureContext {
         AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
 
         ID3D11Texture2D* pTexture = nullptr;
         intptr_t index = 0;
-    } copyToTextureCtx = {};
+    };
+
+private:
+    CopyToTextureContext copyToTextureCtx = {};
 #endif //  HW_DECODE
 
 #ifdef AUDIO_TEMPO
