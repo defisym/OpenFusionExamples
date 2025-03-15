@@ -1150,23 +1150,25 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 // Alpha
 // ------------------------
 
-//Load From File
+// set alpha to coef
+// 0 is transparent, 255 is opaque
 inline void _ForceAddAlpha(LPSURFACE Src, BYTE coef = 255) {
-	auto pitch = Src->GetWidth();
-	auto size = pitch * Src->GetHeight();
+	auto width = Src->GetWidth();
+    auto height = Src->GetHeight();
+	auto alphaSz = width * height;
 
-	BYTE* pAlpha = new BYTE[size];
-	memset(pAlpha, coef, size);
+	BYTE* pAlpha = new BYTE[alphaSz];
+	memset(pAlpha, coef, alphaSz);
 
-	Src->SetAlpha(pAlpha, pitch);
+	Src->SetAlpha(pAlpha, width);
 
 	delete[] pAlpha;
 }
 
+// add alpha then init to coef if surface doesn't have alpha channel
+// 0 is transparent, 255 is opaque
 inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
-	if (!Src->HasAlpha()) {
-		_ForceAddAlpha(Src);
-	}
+    if (!Src->HasAlpha()) { _ForceAddAlpha(Src); }
 }
 
 // ------------------------
@@ -1179,9 +1181,9 @@ inline bool _LoadCore(LPRDATA rdPtr, const LPSURFACE Src,
 	int width, int height, bool NoStretch, bool HighQuality,
 	const std::function<bool(CImageFilterMgr*, const LPSURFACE)>& load) {
 #else
-inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src
-	, int width, int height, bool NoStretch, bool HighQuality
-	, std::function<bool(CImageFilterMgr*, LPSURFACE&)> load) {
+inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src,
+	int width, int height, bool NoStretch, bool HighQuality,
+    const std::function<bool(CImageFilterMgr*, const LPSURFACE)>& load) {
 #endif // _NO_REF
 	//MGR
 	CImageFilterMgr* pImgMgr = rdPtr->rHo.hoAdRunHeader->rh4.rh4Mv->mvImgFilterMgr;
@@ -1219,34 +1221,46 @@ inline bool _LoadCore(LPRDATA rdPtr, LPSURFACE& Src
 }
 
 #ifdef _NO_REF
-inline bool _LoadFromFile(const LPSURFACE Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
-	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
-		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
-		});
+inline bool _LoadFromFile(const LPSURFACE Src, LPCTSTR FilePath, 
+    LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+    return _LoadCore(rdPtr, Src,
+        width, height, NoStretch, HighQuality,
+        [FilePath] (CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
+            return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
+        });
 }
 
-inline bool _LoadFromMemFile(const LPSURFACE Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+inline bool _LoadFromMemFile(const LPSURFACE Src, LPBYTE pData, DWORD dataSz,
+    LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	CInputMemFile MemFile;
 	MemFile.Create(pData, dataSz);
 
-	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
-		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
-		});
+    return _LoadCore(rdPtr, Src,
+        width, height, NoStretch, HighQuality,
+        [&MemFile] (CImageFilterMgr* pImgMgr, const LPSURFACE pSf) {
+            return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
+        });
 }
 #else
-inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
-	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [FilePath](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
-		return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
-		});
+inline bool _LoadFromFile(LPSURFACE& Src, LPCTSTR FilePath,
+    LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+    return _LoadCore(rdPtr, Src,
+        width, height, NoStretch, HighQuality,
+        [FilePath] (CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
+            return ImportImage(pImgMgr, FilePath, pSf, 0, 0);
+        });
 }
 
-inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz, LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
+inline bool _LoadFromMemFile(LPSURFACE& Src, LPBYTE pData, DWORD dataSz,
+    LPRDATA rdPtr, int width, int height, bool NoStretch, bool HighQuality) {
 	CInputMemFile MemFile;
 	MemFile.Create(pData, dataSz);
 
-	return _LoadCore(rdPtr, Src, width, height, NoStretch, HighQuality, [&MemFile](CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
-		return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
-		});
+    return _LoadCore(rdPtr, Src,
+        width, height, NoStretch, HighQuality,
+        [&MemFile] (CImageFilterMgr* pImgMgr, LPSURFACE& pSf) {
+            return ImportImageFromInputFile(pImgMgr, &MemFile, pSf, 0, 0);
+        });
 }
 #endif // _NO_REF
 
