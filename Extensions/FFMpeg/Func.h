@@ -60,11 +60,8 @@ inline void InitSurface(LPSURFACE& pSf,
 	}
 }
 
-inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf, bool bPm) {
-	if (pData == nullptr || pMemSf == nullptr) {
-		return;
-	}
-
+inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
+    LPSURFACE pMemSf, bool bPm) {
 	// pMemSf must have alpha channel, see `InitSurface`
 	auto sfCoef = GetSfCoef(pMemSf);
 	if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
@@ -151,13 +148,35 @@ inline void CopyData(const unsigned char* pData, int srcLineSz, LPSURFACE pMemSf
 	return;
 }
 
+inline void CopyTexture(const unsigned char* pData,
+     LPSURFACE pDst, bool bPm) {
+    const auto pCtx = (const FFMpeg::CopyToTextureContext*)pData;
+}
+
+inline void CopyData(
+    // passed in callback
+    const unsigned char* pData, const int stride, const int height,
+    // dest & requirement
+    LPSURFACE pDst, bool bPm, bool bCopyToTexture) {
+    if (pData == nullptr || pDst == nullptr) { return; }
+    
+    // pDst must match bCopyToTexture, see `InitSurface`
+    if (!bCopyToTexture) {
+        CopyBitmap(pData, stride, pDst, bPm);
+    }
+    else {
+        CopyTexture(pData, pDst, bPm);
+    }
+}
+
 inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	if (rdPtr->pFFMpeg == nullptr) {
 		return;
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
-		CopyData(pData, stride, pSf, rdPtr->bPm);
+        CopyData(pData, stride, height,
+            pSf, rdPtr->bPm, rdPtr->bCopyToTexture);
 		ReDisplay(rdPtr);
 		});
 }
@@ -168,7 +187,8 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 	}
 
 	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
-		CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
+        CopyData(pData, stride, height,
+            rdPtr->pMemSf, rdPtr->bPm, rdPtr->bCopyToTexture);
 		ReDisplay(rdPtr);
 		});
 }
@@ -234,7 +254,8 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
     if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return; }
     rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
-        CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
+        CopyData(pData, stride, height, 
+            rdPtr->pMemSf, rdPtr->bPm, rdPtr->bCopyToTexture);        
         ReDisplay(rdPtr);
         });
 
