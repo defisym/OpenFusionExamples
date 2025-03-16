@@ -124,6 +124,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
+
+        // create it here instead of constructor to solve dependency
+        rdPtr->pData->pCTTHandler = new CopyToTextureHandler{ rdPtr, hInstLib };
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -507,8 +510,11 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		delete pData;
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+        // delete it here instead of destructor to solve dependency
+        delete pData->pCTTHandler;
+        
+        delete pData;
+        mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
 }
 
@@ -524,7 +530,10 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		delete pData;
+        // delete it here instead of destructor to solve dependency
+        delete pData->pCTTHandler; 
+        
+        delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
 }

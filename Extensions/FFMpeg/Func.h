@@ -3,7 +3,6 @@
 #pragma once
 
 #include <functional>
-#include <directxmath.h>
 
 // -----------------------------
 // Forward declaration
@@ -149,16 +148,17 @@ inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
 	return;
 }
 
-inline void CopyTexture(const unsigned char* pData,
+struct CopyTextureContext {
+    CopyToTextureHandler* pCTTHandler = nullptr;
+    const FFMpeg::CopyToTextureContext* pFFMpegCtx = nullptr;
+};
+
+inline void CopyTexture(const unsigned char* pData, const int width, const int height,
      LPSURFACE pRTTSf, bool bPm) {
-    // FFMpeg Context
-    const auto pCtx = (const FFMpeg::CopyToTextureContext*)pData;
-
-    auto pFFMpegDevice = pCtx->pD3D11VADeciveCtx->device;
-    auto pFFMpegDeviceCtx = pCtx->pD3D11VADeciveCtx->device_context;
-
-    auto pFrameTexture = pCtx->pTexture;
-    auto sharedHandle = pCtx->sharedHandle;
+    // 1. basic info
+    const auto pCtx = (const CopyTextureContext*)pData;
+    auto pCTTHandler = pCtx->pCTTHandler;
+    HRESULT hr = S_OK;
 
     // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
     // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
@@ -170,7 +170,8 @@ inline void CopyTexture(const unsigned char* pData,
     //                  of 2D textures. However, you cannot use texture arrays 
     //                  that are created with this flag in calls to 
     //                  ID3D11Device::CreateShaderResourceView.
-    auto FrameDesc = GetTextureDesc(pFrameTexture);
+    auto pFrameTexture = pCtx->pFFMpegCtx->pTexture;
+    auto sharedHandle = pCtx->pFFMpegCtx->sharedHandle;
 
     // Fusion Context
     auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
@@ -178,9 +179,6 @@ inline void CopyTexture(const unsigned char* pData,
 
     auto pFusionDevice = CastPointer<ID3D11Device>((void*)RTTInfo.m_pD3D11Device);
     auto pFusionDeviceCtx = CastPointer<ID3D11DeviceContext>((void*)RTTInfo.m_pD3D11Context);
-
-    auto pRTTTexture = CastTexturePointer((void**)RTTInfo.m_ppD3D11RenderTargetTexture);    
-    auto pRTTTextureView = CastRenderTargetViewPointer((void**)RTTInfo.m_ppD3D11RenderTargetView);
 
     // Format:      DXGI_FORMAT_B8G8R8A8_UNORM
     // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
@@ -190,158 +188,37 @@ inline void CopyTexture(const unsigned char* pData,
     //                  be used with the D3D11_MAP_WRITE_NO_OVERWRITE flag.
     //              D3D11_BIND_RENDER_TARGET
     //                  Bind a texture as a render target for the output-merger stage.
-    auto RTTDesc = GetTextureDesc(pRTTTexture);
+    auto pRTTTexture = CastTexturePointer((void**)RTTInfo.m_ppD3D11RenderTargetTexture);    
+    auto pRTTTextureView = CastRenderTargetViewPointer((void**)RTTInfo.m_ppD3D11RenderTargetView);
 
-    // Compiler
-    auto compiler = ShaderCompiler{ pFusionDevice };
-
-    // Start Process
-
-    // 1. Create a shared texture
-    HRESULT hr = S_OK;
- 
-    // TODO 
-    // 2 & 3 can be done in FFMpeg
-
-    // 4. vertex shader    
-    // do nothing this stage
+    // 2. vertex shader
     
-    // TODO 
-    // reuse shader
-    auto [vsBlob, vs] = compiler.CreateVertexShader(L"D:\\Dev\\OpenFusionExamples\\Extensions\\FFMpeg\\Shader\\vs.hlsl", "Main");
+    // indice
+    pFusionDeviceCtx->IASetInputLayout(pCTTHandler->pInputLayout.Get());
 
-    // input layouts
+    ID3D11Buffer* vertexBuffers[] = { pCTTHandler->pVertexBuffer.Get() };   
+    pFusionDeviceCtx->IASetVertexBuffers(0, std::size(vertexBuffers), vertexBuffers,
+        &pCTTHandler->vertexBufferInfo.stride,
+        &pCTTHandler->vertexBufferInfo.offset);
 
-    // What we expect in shader
-    // struct VSInput {
-    //     float3 position : POSITION;
-    //     float3 color : COLOR0;
-    // };
-
-    // We should then create an input layout exactly with this format
-    using Position = DirectX::XMFLOAT3;
-    using Color = DirectX::XMFLOAT3;
-
-    struct VertexShaderInput {
-        Position position = {};
-        Color color = {};
-    };
-
-    D3D11_INPUT_ELEMENT_DESC vertexInputLayoutInfo[] = {
-        {
-            "POSITION",
-            0,
-            DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
-            0,
-            offsetof(VertexShaderInput, position),
-            D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
-            0
-        },
-        {
-            "COLOR",
-            0,
-            DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
-            0,
-            offsetof(VertexShaderInput, color),
-            D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
-            0
-        }
-    };
-
-    ComPtr<ID3D11InputLayout> pInputLayout;
-    hr = pFusionDevice->CreateInputLayout(vertexInputLayoutInfo, std::size(vertexInputLayoutInfo),
-        vsBlob.Get()->GetBufferPointer(), vsBlob.Get()->GetBufferSize(), &pInputLayout);
-    if (FAILED(hr)) { return; }
-
-    pFusionDeviceCtx->IASetInputLayout(pInputLayout.Get());
-
-    // vertex buffer
-
-    // Center: (0, 0)
-    // 
-    //  (-1, 1)©°©¤©¤©Ð©¤©¤©´(1, 1)
-    //         ©À©¤©¤©à©¤©¤©È
-    //  (-1,-1)©¸©¤©¤©Ø©¤©¤©¼(1,-1)
-    //
-
-    constexpr Position POSITION_LT = { -1, 1, 0 };  // 0
-    constexpr Position POSITION_RT = {  1, 1, 0 };  // 1
-    constexpr Position POSITION_RB = {  1,-1, 0 };  // 2
-    constexpr Position POSITION_LB = { -1,-1, 0 };  // 3
-
-    constexpr Color COLOR_WHITE = { 1.0f, 1.0f, 1.0f };
-
-    constexpr VertexShaderInput vertices[] = {
-        { POSITION_LT, COLOR_WHITE },
-        { POSITION_RT, COLOR_WHITE },
-        { POSITION_RB, COLOR_WHITE },
-        { POSITION_LB, COLOR_WHITE },
-    };
-
-    D3D11_BUFFER_DESC vsibd = {};
-    vsibd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vsibd.ByteWidth = sizeof(vertices);
-    vsibd.StructureByteStride = sizeof(VertexShaderInput);
-    
-    D3D11_SUBRESOURCE_DATA sd = {};
-    sd.pSysMem = vertices;
-
-    ComPtr<ID3D11Buffer> pVertexBuffer;
-    hr = pFusionDevice->CreateBuffer(&vsibd, &sd, &pVertexBuffer);
-    if (FAILED(hr)) { return; }
-
-    UINT stride = sizeof(VertexShaderInput);
-    UINT offset = 0u;
-    ID3D11Buffer* vertexBuffers[] = { pVertexBuffer.Get() };
-    pFusionDeviceCtx->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
-
-    // indice buffer
-
-    // D3D render triangle in clockwise order
-
-    //
-    //  (0)©°©¤©¤©Ð©¤©¤©´(1)
-    //     ©À©¤©¤©à©¤©¤©È
-    //  (3)©¸©¤©¤©Ø©¤©¤©¼(2)
-    //
-
-    const UINT16 indices[] = {
-        0,1,2,      // first
-        0,2,3,      // second
-    };
-
-    auto indicesSize = std::size(indices);
-    D3D11_BUFFER_DESC ibd = {};
-    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    ibd.ByteWidth = sizeof(indices);
-    ibd.StructureByteStride = sizeof(UINT16);
-
-    D3D11_SUBRESOURCE_DATA isd = {};
-    isd.pSysMem = indices;
-
-    ComPtr<ID3D11Buffer> pIndexBuffer;
-    hr = pFusionDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer);
-    if (FAILED(hr)) { return; }
-
-    pFusionDeviceCtx->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+    pFusionDeviceCtx->IASetIndexBuffer(pCTTHandler->pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
     pFusionDeviceCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+    auto [vsBlob, vs] = pCTTHandler->vsBundle;
     pFusionDeviceCtx->VSSetShader(vs.Get(), 0, 0);
 
-    // 5. rasterizer
+    // 3. rasterizer
     D3D11_VIEWPORT viewPort = {};
     viewPort.TopLeftX = 0;
     viewPort.TopLeftY = 0;
-    viewPort.Width = (FLOAT)RTTDesc.Width;
-    viewPort.Height = (FLOAT)RTTDesc.Height;
+    viewPort.Width = (FLOAT)width;
+    viewPort.Height = (FLOAT)height;
     viewPort.MaxDepth = 1;
     viewPort.MinDepth = 0;
     pFusionDeviceCtx->RSSetViewports(1, &viewPort);
 
-    // 6. pixel shader
+    // 4. pixel shader
     // we do actual conversion here
-
-    auto [psBlob, ps] = compiler.CreatePixelShader(L"D:\\Dev\\OpenFusionExamples\\Extensions\\FFMpeg\\Shader\\NV12ToBGRA.hlsl", "Main");
 
     // open shared resource
     ComPtr<ID3D11Texture2D> pSharedFrameTexture;
@@ -370,34 +247,19 @@ inline void CopyTexture(const unsigned char* pData,
     pFusionDeviceCtx->PSSetShaderResources(0, std::size(srvs), srvs);
 
     // create sampler
-    D3D11_SAMPLER_DESC sampDesc = {};
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-
-    ComPtr<ID3D11SamplerState> pSamplerStateY = nullptr;
-    hr = pFusionDevice->CreateSamplerState(&sampDesc, &pSamplerStateY);
-    if (FAILED(hr)) { return; }
-
-    ComPtr<ID3D11SamplerState> pSamplerStateUV = nullptr;
-    hr = pFusionDevice->CreateSamplerState(&sampDesc, &pSamplerStateUV);
-    if (FAILED(hr)) { return; }
-
     ID3D11SamplerState* sss[] = {
-        pSamplerStateY.Get(),pSamplerStateUV.Get()
+        pCTTHandler->pSamplerStateY.Get(),pCTTHandler->pSamplerStateUV.Get()
     };
     pFusionDeviceCtx->PSSetSamplers(0, std::size(sss), sss);
 
     // create constant buffer
-
     // size of buffer must be multiple of 16
     struct alignas(16) PixelSizeBuffer {
         float fPixelWidth;
         float fPixelHeight;
     };
 
-    PixelSizeBuffer psb = { 1.0f / RTTDesc.Width, 1.0f / RTTDesc.Height };
+    PixelSizeBuffer psb = { 1.0f / width, 1.0f / height };
 
     D3D11_BUFFER_DESC psbDesc = {};
     psbDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -415,28 +277,34 @@ inline void CopyTexture(const unsigned char* pData,
     ID3D11Buffer* cb[] = { pConstantBuffer.Get()};
     pFusionDeviceCtx->PSSetConstantBuffers(0, std::size(cb), cb);
 
+    auto [psBlob, ps] = pCTTHandler->psBundle;
     pFusionDeviceCtx->PSSetShader(ps.Get(), 0, 0);
 
     // 7. render
     ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
     pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
-    pFusionDeviceCtx->DrawIndexed(indicesSize, 0, 0);
+    pFusionDeviceCtx->DrawIndexed(pCTTHandler->indicesSize, 0, 0);
 
     return;
 }
 
 inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     // passed in callback
-    const unsigned char* pData, const int stride, const int height) {
+    const unsigned char* pData, const int width, const int height) {
     if (pData == nullptr || pDst == nullptr) { return; }
 
     // pDst must match bCopyToTexture, see `InitSurface`
     if (!rdPtr->bCopyToTexture) {
-        CopyBitmap(pData, stride, pDst, rdPtr->bPm);
+        CopyBitmap(pData, width, pDst, rdPtr->bPm);
     }
     else {
-        CopyTexture(pData, pDst, rdPtr->bPm);
+        auto ctx = CopyTextureContext{
+        .pCTTHandler = rdPtr->pData->pCTTHandler,
+        .pFFMpegCtx = (const FFMpeg::CopyToTextureContext*)pData
+        };
+
+        CopyTexture((const unsigned char*)(&ctx), width, height, pDst, rdPtr->bPm);
     }
 }
 

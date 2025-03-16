@@ -304,6 +304,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="AudioInterface.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="D3D\HookD3D.h" />
+    <ClInclude Include="D3D\CopyToTextureHandler.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Macro.h" />

@@ -196,6 +196,9 @@
     <ClInclude Include="Macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="D3D\CopyToTextureHandler.h">
+      <Filter>D3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">

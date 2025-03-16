@@ -79,15 +79,15 @@
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
 
-#include	"Func.h"
-
 #ifdef COPY_D3D_TEXTURE
 #ifdef _DEBUG
 #include	"D3D/HookD3D.h"
 #endif
 
-#include	"D3DUtilities/ShaderInterface.h"
+#include	"D3D/CopyToTextureHandler.h"
 #endif
+
+#include	"Func.h"
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;
