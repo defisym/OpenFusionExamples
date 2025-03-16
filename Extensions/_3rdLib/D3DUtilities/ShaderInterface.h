@@ -16,20 +16,20 @@ struct ShaderInterface {
         delete pCompiler;
     }
 
-    [[nodiscard]] ShaderCompiler::VertexShader CreateVertexShader(const HMODULE hModule, const int resourceId,
+    [[nodiscard]] ShaderCompiler::VertexShaderBundle CreateVertexShader(const HMODULE hModule, const int resourceId,
         const char* pEntryPoint = ShaderCompiler::DEFAULT_ENTRYPOINT,
         const char* pTarget = ShaderCompiler::DEFAULT_TARGET) {
         const auto [pData, sz] = GetShaderResource(hModule, resourceId);
-        if (pData == nullptr) { return nullptr; }
+        if (pData == nullptr) { return ShaderCompiler::GetNullBundle<ShaderCompiler::VertexShaderBundle>(); }
 
         return pCompiler->CreateVertexShader(pData, sz, pEntryPoint, pTarget);
     }
 
-    [[nodiscard]] ShaderCompiler::PixelShader CreatePixelShader(const HMODULE hModule, const int resourceId,
+    [[nodiscard]] ShaderCompiler::PixelShaderBundle CreatePixelShader(const HMODULE hModule, const int resourceId,
         const char* pEntryPoint = ShaderCompiler::DEFAULT_ENTRYPOINT,
         const char* pTarget = ShaderCompiler::DEFAULT_TARGET) {
         const auto [pData, sz] = GetShaderResource(hModule, resourceId);
-        if (pData == nullptr) { return nullptr; }
+        if (pData == nullptr) { return ShaderCompiler::GetNullBundle<ShaderCompiler::PixelShaderBundle>(); }
 
         return pCompiler->CreatePixelShader(pData, sz, pEntryPoint, pTarget);
     }
