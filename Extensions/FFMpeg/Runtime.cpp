@@ -273,8 +273,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
         if (VideoSingleFrame(rdPtr)) { break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
-            CopyData(pData, stride, height,
-                rdPtr->pMemSf, rdPtr->bPm, rdPtr->bCopyToTexture);
+            CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
 			ReDisplay(rdPtr);
 			});
 

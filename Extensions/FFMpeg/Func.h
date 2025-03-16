@@ -473,19 +473,17 @@ inline void CopyTexture(const unsigned char* pData,
     return;
 }
 
-inline void CopyData(
+inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     // passed in callback
-    const unsigned char* pData, const int stride, const int height,
-    // dest & requirement
-    LPSURFACE pDst, bool bPm, bool bCopyToTexture) {
+    const unsigned char* pData, const int stride, const int height) {
     if (pData == nullptr || pDst == nullptr) { return; }
-    
+
     // pDst must match bCopyToTexture, see `InitSurface`
-    if (!bCopyToTexture) {
-        CopyBitmap(pData, stride, pDst, bPm);
+    if (!rdPtr->bCopyToTexture) {
+        CopyBitmap(pData, stride, pDst, rdPtr->bPm);
     }
     else {
-        CopyTexture(pData, pDst, bPm);
+        CopyTexture(pData, pDst, rdPtr->bPm);
     }
 }
 
@@ -495,8 +493,7 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
-        CopyData(pData, stride, height,
-            pSf, rdPtr->bPm, rdPtr->bCopyToTexture);
+        CopyData(rdPtr, pSf, pData, stride, height);
 		ReDisplay(rdPtr);
 		});
 }
@@ -507,8 +504,7 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 	}
 
 	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
-        CopyData(pData, stride, height,
-            rdPtr->pMemSf, rdPtr->bPm, rdPtr->bCopyToTexture);
+        CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
 		ReDisplay(rdPtr);
 		});
 }
@@ -574,8 +570,7 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
     if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return; }
     rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
-        CopyData(pData, stride, height, 
-            rdPtr->pMemSf, rdPtr->bPm, rdPtr->bCopyToTexture);        
+        CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);     
         ReDisplay(rdPtr);
         });
 
