@@ -74,8 +74,9 @@
 
 // 	Shader
 //-------------------
-#define SHADER_TEMPLATE_VS              400
-#define SHADER_TEMPLATE_PS              401
+#define SHADER_VS_TEMPLATE              400
+#define SHADER_PS_TEMPLATE              401
+#define SHADER_PS_NV12ToBGRA            402
 
 // 	Actions
 //-------------------

@@ -32,6 +32,12 @@
     <Filter Include="Shader">
       <UniqueIdentifier>{e58258cf-c804-49d2-a9cb-34cd768a28fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\PixelShader">
+      <UniqueIdentifier>{d01729ae-3a10-43ae-992f-086232685c25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader\VertexShader">
+      <UniqueIdentifier>{c1600f4e-b08c-4add-beef-01c5f0d8504d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -203,11 +209,14 @@
     <CustomBuild Include="..\Help\ExtSdk.chm">
       <Filter>Information</Filter>
     </CustomBuild>
+    <CustomBuild Include="Shader\NV12ToBGRA.hlsl">
+      <Filter>Shader\PixelShader</Filter>
+    </CustomBuild>
     <CustomBuild Include="Shader\ps.hlsl">
-      <Filter>Shader</Filter>
+      <Filter>Shader\PixelShader</Filter>
     </CustomBuild>
     <CustomBuild Include="Shader\vs.hlsl">
-      <Filter>Shader</Filter>
+      <Filter>Shader\VertexShader</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>
