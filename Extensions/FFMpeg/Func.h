@@ -158,7 +158,7 @@ inline void CopyTexture(const unsigned char* pData,
     auto pFFMpegDeviceCtx = pCtx->pD3D11VADeciveCtx->device_context;
 
     auto pFrameTexture = pCtx->pTexture;
-    auto pFrameIndex = pCtx->index;
+    auto sharedHandle = pCtx->sharedHandle;
 
     // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
     // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
@@ -199,53 +199,7 @@ inline void CopyTexture(const unsigned char* pData,
 
     // 1. Create a shared texture
     HRESULT hr = S_OK;
-    ComPtr<ID3D11Texture2D> pSharedTexture;
-
-    D3D11_TEXTURE2D_DESC sharedDesc = RTTDesc;
-    sharedDesc.Format = FrameDesc.Format;
-    sharedDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-    hr = pFFMpegDevice->CreateTexture2D(&sharedDesc, nullptr, &pSharedTexture);
-    if (FAILED(hr)) { return; }
-
-    // 2. Create shared handle    
-    ComPtr<IDXGIResource> dxgiShareTexture;
-    hr = pSharedTexture->QueryInterface(IID_PPV_ARGS(&dxgiShareTexture));
-    if (FAILED(hr)) { return; }
-
-    HANDLE sharedHandle = nullptr;
-    hr = dxgiShareTexture->GetSharedHandle(&sharedHandle);
-    if (FAILED(hr)) { return; }
-
-    // 3. Copy frame
-
-    // the result maybe an array texture
-    // one solution is use CopySubresourceRegion to copy it to a new texture
-    // and set SrcSubresource to pFrameIndex
-    pFFMpegDeviceCtx->CopySubresourceRegion(pSharedTexture.Get(), 0, 0, 0, 0, pFrameTexture, pFrameIndex, 0);
-    pFFMpegDeviceCtx->Flush();
-
-    //// another solution create a srv
-    //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-    //srvDesc.Format = FrameDesc.Format;
-    //srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-
-    //// decoded video texture only has one mip level
-    //// MostDetailedMip: which one start to use, the max reslution one is 0
-    //// MipLevels: how many we can use, only one is 1
-
-    //// ID3D11Texture2D is texture
-    //if (pFrameIndex == 0) {
-    //    srvDesc.Texture2D.MostDetailedMip = 0;
-    //    srvDesc.Texture2D.MipLevels = 1;
-    //}
-    //// ID3D11Texture2D is an array texture
-    //else {
-    //    srvDesc.Texture2DArray.MostDetailedMip = 0;
-    //    srvDesc.Texture2DArray.MipLevels = 1;
-    //    srvDesc.Texture2DArray.FirstArraySlice = pFrameIndex;
-    //    srvDesc.Texture2DArray.ArraySize = 1;
-    //}
-
+ 
     // TODO 
     // 2 & 3 can be done in FFMpeg
 
@@ -255,7 +209,6 @@ inline void CopyTexture(const unsigned char* pData,
     // TODO 
     // reuse shader
     auto [vsBlob, vs] = compiler.CreateVertexShader(L"D:\\Dev\\OpenFusionExamples\\Extensions\\FFMpeg\\Shader\\vs.hlsl", "Main");
-
 
     // input layouts
 

@@ -154,6 +154,8 @@ constexpr auto PIXEL_BYTE = 3;
 #define HW_DECODE
 
 #ifdef HW_DECODE
+#include "D3DUtilities/D3DDefinition.h"
+
 // global variable for AVCodecContext->get_format callback
 inline static auto hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
@@ -299,13 +301,13 @@ class FFMpeg {
 
     // copy hardware decode result to texture
     bool bCopyToTexture = false;
-
+    ComPtr<ID3D11Texture2D> pSharedTexture;
+    HANDLE sharedHandle = nullptr;
 public:
     struct CopyToTextureContext {
         AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
-
         ID3D11Texture2D* pTexture = nullptr;
-        intptr_t index = 0;
+        HANDLE sharedHandle = nullptr;
     };
 
 private:
@@ -808,10 +810,11 @@ private:
 
 #ifdef HW_DECODE
 		const auto hw_deviceType = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
-
 		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
+        bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
 
 		if (bHWDecode) {
+            // update pixel format
 			hw_type = hw_deviceType;
 			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
 
@@ -907,10 +910,6 @@ private:
 		if (bHWDecode) {
 			pSWFrame = av_frame_alloc();
 			if (!pSWFrame) { return FFMpegException_InitFailed; }
-
-            if (options.flag & FFMpegFlag_CopyToTexture) {
-                bCopyToTexture = true;
-            }
 		}
 #endif // HW_DECODE
 
@@ -1163,9 +1162,67 @@ private:
     // do nothing, just pass D3D11 texture to callback, furture process not needed
     inline void convert_textureFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
         auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
+        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
+
+        auto pTexture = (ID3D11Texture2D*)pFrame->data[0];
+        auto pIndex = (intptr_t)pFrame->data[1];
+
+        if (pSharedTexture == nullptr) {
+            HRESULT hr = S_OK;
+
+            D3D11_TEXTURE2D_DESC sharedDesc = {};
+            pTexture->GetDesc(&sharedDesc);
+            
+            sharedDesc.ArraySize = 1;
+            sharedDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+            sharedDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+            hr = pHWCtx->device->CreateTexture2D(&sharedDesc, nullptr, &pSharedTexture);
+            if (FAILED(hr)) { return; }
+
+            // 2. Create shared handle    
+            ComPtr<IDXGIResource> dxgiShareTexture;
+            hr = pSharedTexture->QueryInterface(IID_PPV_ARGS(&dxgiShareTexture));
+            if (FAILED(hr)) { return; }
+
+            sharedHandle = nullptr;
+            hr = dxgiShareTexture->GetSharedHandle(&sharedHandle);
+            if (FAILED(hr)) { return; }
+        }
+
+        // failed to create
+        if (sharedHandle == nullptr) { return; }
+
+        // the result maybe an array texture
+        // one solution is use CopySubresourceRegion to copy it to a new texture
+        // and set SrcSubresource to pFrameIndex
+        pHWCtx->device_context->CopySubresourceRegion(pSharedTexture.Get(), 0, 0, 0, 0, pTexture, pIndex, 0);
+        pHWCtx->device_context->Flush();
+
+        //// another solution create a srv and use it as shader resource
+        //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+        //srvDesc.Format = FrameDesc.Format;
+        //srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        
+        //// decoded video texture only has one mip level
+        //// MostDetailedMip: which one start to use, the max reslution one is 0
+        //// MipLevels: how many we can use, only one is 1
+        
+        //// ID3D11Texture2D is texture
+        //if (pFrameIndex == 0) {
+        //    srvDesc.Texture2D.MostDetailedMip = 0;
+        //    srvDesc.Texture2D.MipLevels = 1;
+        //}
+        //// ID3D11Texture2D is an array texture
+        //else {
+        //    srvDesc.Texture2DArray.MostDetailedMip = 0;
+        //    srvDesc.Texture2DArray.MipLevels = 1;
+        //    srvDesc.Texture2DArray.FirstArraySlice = pFrameIndex;
+        //    srvDesc.Texture2DArray.ArraySize = 1;
+        //}
+
         copyToTextureCtx = { .pD3D11VADeciveCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx,
-            .pTexture = (ID3D11Texture2D*)pFrame->data[0] ,
-            .index = (intptr_t)pFrame->data[1] };
+            .pTexture = pSharedTexture.Get(),
+            .sharedHandle = sharedHandle };
 
         callBack((const unsigned char*)(&copyToTextureCtx), pFrame->width, pFrame->height);
     }
