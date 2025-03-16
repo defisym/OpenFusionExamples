@@ -29,6 +29,9 @@
     <Filter Include="D3D">
       <UniqueIdentifier>{13fac545-32c1-43b3-b417-518b6976cee5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{e58258cf-c804-49d2-a9cb-34cd768a28fa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -184,6 +187,9 @@
     <ClInclude Include="D3D\HookD3D.h">
       <Filter>D3D</Filter>
     </ClInclude>
+    <ClInclude Include="Macro.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
@@ -196,6 +202,12 @@
   <ItemGroup>
     <CustomBuild Include="..\Help\ExtSdk.chm">
       <Filter>Information</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Shader\ps.hlsl">
+      <Filter>Shader</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Shader\vs.hlsl">
+      <Filter>Shader</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>
