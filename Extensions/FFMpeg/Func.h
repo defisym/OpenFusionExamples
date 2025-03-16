@@ -192,6 +192,9 @@ inline void CopyTexture(const unsigned char* pData,
     //                  Bind a texture as a render target for the output-merger stage.
     auto RTTDesc = GetTextureDesc(pRTTTexture);
 
+    // Compiler
+    auto compiler = ShaderCompiler{ pFusionDevice };
+
     // Start Process
 
     // 1. Create a shared texture
@@ -204,7 +207,7 @@ inline void CopyTexture(const unsigned char* pData,
     hr = pFFMpegDevice->CreateTexture2D(&sharedDesc, nullptr, &pSharedTexture);
     if (FAILED(hr)) { return; }
 
-    // 2. Create shared handle
+    // 2. Create shared handle    
     ComPtr<IDXGIResource> dxgiShareTexture;
     hr = pSharedTexture->QueryInterface(IID_PPV_ARGS(&dxgiShareTexture));
     if (FAILED(hr)) { return; }
@@ -243,7 +246,149 @@ inline void CopyTexture(const unsigned char* pData,
     //    srvDesc.Texture2DArray.ArraySize = 1;
     //}
 
-    // 4. format conversion
+    // TODO 
+    // 2 & 3 can be done in FFMpeg
+
+    // 4. vertex shader    
+    // do nothing this stage
+    
+    // TODO 
+    // reuse shader
+    auto [vsBlob, vs] = compiler.CreateVertexShader(L"D:\\Dev\\OpenFusionExamples\\Extensions\\FFMpeg\\Shader\\vs.hlsl", "Main");
+
+
+    // input layouts
+
+    // What we expect in shader
+    // struct VSInput {
+    //     float3 position : POSITION;
+    //     float3 color : COLOR0;
+    // };
+
+    // We should then create an input layout exactly with this format
+    using Position = DirectX::XMFLOAT3;
+    using Color = DirectX::XMFLOAT3;
+
+    struct VertexShaderInput {
+        Position position = {};
+        Color color = {};
+    };
+
+    D3D11_INPUT_ELEMENT_DESC vertexInputLayoutInfo[] = {
+        {
+            "POSITION",
+            0,
+            DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
+            0,
+            offsetof(VertexShaderInput, position),
+            D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
+            0
+        },
+        {
+            "COLOR",
+            0,
+            DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
+            0,
+            offsetof(VertexShaderInput, color),
+            D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
+            0
+        }
+    };
+
+    ComPtr<ID3D11InputLayout> pInputLayout;
+    hr = pFusionDevice->CreateInputLayout(vertexInputLayoutInfo, std::size(vertexInputLayoutInfo),
+        vsBlob.Get()->GetBufferPointer(), vsBlob.Get()->GetBufferSize(), &pInputLayout);
+    if (FAILED(hr)) { return; }
+
+    pFusionDeviceCtx->IASetInputLayout(pInputLayout.Get());
+
+    // vertex buffer
+
+    // Center: (0, 0)
+    // 
+    //  (-1, 1)©°©¤©¤©Ð©¤©¤©´(1, 1)
+    //         ©À©¤©¤©à©¤©¤©È
+    //  (-1,-1)©¸©¤©¤©Ø©¤©¤©¼(1,-1)
+    //
+
+    constexpr Position POSITION_LT = { -1, 1, 0 };  // 0
+    constexpr Position POSITION_RT = {  1, 1, 0 };  // 1
+    constexpr Position POSITION_RB = {  1,-1, 0 };  // 2
+    constexpr Position POSITION_LB = { -1,-1, 0 };  // 3
+
+    constexpr Color COLOR_WHITE = { 1.0f, 1.0f, 1.0f };
+
+    constexpr VertexShaderInput vertices[] = {
+        { POSITION_LT, COLOR_WHITE },
+        { POSITION_RT, COLOR_WHITE },
+        { POSITION_RB, COLOR_WHITE },
+        { POSITION_LB, COLOR_WHITE },
+    };
+
+    D3D11_BUFFER_DESC vsibd = {};
+    vsibd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vsibd.ByteWidth = sizeof(vertices);
+    vsibd.StructureByteStride = sizeof(VertexShaderInput);
+    
+    D3D11_SUBRESOURCE_DATA sd = {};
+    sd.pSysMem = vertices;
+
+    ComPtr<ID3D11Buffer> pVertexBuffer;
+    hr = pFusionDevice->CreateBuffer(&vsibd, &sd, &pVertexBuffer);
+    if (FAILED(hr)) { return; }
+
+    UINT stride = sizeof(VertexShaderInput);
+    UINT offset = 0u;
+    ID3D11Buffer* vertexBuffers[] = { pVertexBuffer.Get() };
+    pFusionDeviceCtx->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
+
+    // indice buffer
+
+    // D3D render triangle in clockwise order
+
+    //
+    //  (0)©°©¤©¤©Ð©¤©¤©´(1)
+    //     ©À©¤©¤©à©¤©¤©È
+    //  (3)©¸©¤©¤©Ø©¤©¤©¼(2)
+    //
+
+    const UINT16 indices[] = {
+        0,1,2,      // first
+        0,2,3,      // second
+    };
+
+    auto indicesSize = std::size(indices);
+    D3D11_BUFFER_DESC ibd = {};
+    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    ibd.ByteWidth = sizeof(indices);
+    ibd.StructureByteStride = sizeof(UINT16);
+
+    D3D11_SUBRESOURCE_DATA isd = {};
+    isd.pSysMem = indices;
+
+    ComPtr<ID3D11Buffer> pIndexBuffer;
+    hr = pFusionDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer);
+    if (FAILED(hr)) { return; }
+
+    pFusionDeviceCtx->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+    pFusionDeviceCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    pFusionDeviceCtx->VSSetShader(vs.Get(), 0, 0);
+
+    // 5. rasterizer
+    D3D11_VIEWPORT viewPort = {};
+    viewPort.TopLeftX = 0;
+    viewPort.TopLeftY = 0;
+    viewPort.Width = (FLOAT)RTTDesc.Width;
+    viewPort.Height = (FLOAT)RTTDesc.Height;
+    viewPort.MaxDepth = 1;
+    viewPort.MinDepth = 0;
+    pFusionDeviceCtx->RSSetViewports(1, &viewPort);
+
+    // 6. pixel shader
+    // we do actual conversion here
+
+    auto [psBlob, ps] = compiler.CreatePixelShader(L"D:\\Dev\\OpenFusionExamples\\Extensions\\FFMpeg\\Shader\\NV12ToBGRA.hlsl", "Main");
 
     // open shared resource
     ComPtr<ID3D11Texture2D> pSharedFrameTexture;
@@ -268,123 +413,62 @@ inline void CopyTexture(const unsigned char* pData,
     hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvUV);
     if (FAILED(hr)) { return; }
 
-    // 5. render
+    ID3D11ShaderResourceView* srvs[] = { pSrvY.Get(), pSrvUV.Get() };
+    pFusionDeviceCtx->PSSetShaderResources(0, std::size(srvs), srvs);
 
-    auto compiler = ShaderCompiler{ pFusionDevice };
+    // create sampler
+    D3D11_SAMPLER_DESC sampDesc = {};
+    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 
-    // vertex shader
+    ComPtr<ID3D11SamplerState> pSamplerStateY = nullptr;
+    hr = pFusionDevice->CreateSamplerState(&sampDesc, &pSamplerStateY);
+    if (FAILED(hr)) { return; }
 
-    // do nothing this stage
-    
-    // Center: (0, 0)
-    // 
-    //  (-1, 1)©°©¤©¤©Ð©¤©¤©´(1, 1)
-    //         ©À©¤©¤©à©¤©¤©È
-    //  (-1,-1)©¸©¤©¤©Ø©¤©¤©¼(1,-1)
-    //
-    
-    struct Vertex {
-        float x; float y; float z;
+    ComPtr<ID3D11SamplerState> pSamplerStateUV = nullptr;
+    hr = pFusionDevice->CreateSamplerState(&sampDesc, &pSamplerStateUV);
+    if (FAILED(hr)) { return; }
+
+    ID3D11SamplerState* sss[] = {
+        pSamplerStateY.Get(),pSamplerStateUV.Get()
+    };
+    pFusionDeviceCtx->PSSetSamplers(0, std::size(sss), sss);
+
+    // create constant buffer
+
+    // size of buffer must be multiple of 16
+    struct alignas(16) PixelSizeBuffer {
+        float fPixelWidth;
+        float fPixelHeight;
     };
 
-    constexpr Vertex vertices[] = {
-        {-1, 1,	0},
-        {1,	1, 0},
-        {1, -1, 0},
-        {-1, -1, 0},
-    };
+    PixelSizeBuffer psb = { 1.0f / RTTDesc.Width, 1.0f / RTTDesc.Height };
 
-    D3D11_BUFFER_DESC bd = {};
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.ByteWidth = sizeof(vertices);
-    bd.StructureByteStride = sizeof(Vertex);
-    D3D11_SUBRESOURCE_DATA sd = {};
-    sd.pSysMem = vertices;
+    D3D11_BUFFER_DESC psbDesc = {};
+    psbDesc.Usage = D3D11_USAGE_DEFAULT;
+    psbDesc.ByteWidth = sizeof(PixelSizeBuffer);
+    psbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    psbDesc.CPUAccessFlags = 0;
 
-    ComPtr<ID3D11Buffer> pVertexBuffer;
-    pFusionDevice->CreateBuffer(&bd, &sd, &pVertexBuffer);
+    D3D11_SUBRESOURCE_DATA initData = {};
+    initData.pSysMem = &psb;
 
-    UINT stride = sizeof(Vertex);
-    UINT offset = 0u;
-    ID3D11Buffer* vertexBuffers[] = { pVertexBuffer.Get() };
-    pFusionDeviceCtx->IASetVertexBuffers(0, 1, vertexBuffers, &stride, &offset);
+    ComPtr<ID3D11Buffer> pConstantBuffer = nullptr;
+    hr = pFusionDevice->CreateBuffer(&psbDesc, &initData, &pConstantBuffer);
+    if (FAILED(hr)) { return; }
 
-    // D3D render triangle in clockwise order
-    
-    //
-    //  (0)©°©¤©¤©Ð©¤©¤©´(1)
-    //     ©À©¤©¤©à©¤©¤©È
-    //  (3)©¸©¤©¤©Ø©¤©¤©¼(2)
-    //
+    ID3D11Buffer* cb[] = { pConstantBuffer.Get()};
+    pFusionDeviceCtx->PSSetConstantBuffers(0, std::size(cb), cb);
 
-    const UINT16 indices[] = {
-        0,1,2,      // first
-        0,2,3       // second
-    };
+    pFusionDeviceCtx->PSSetShader(ps.Get(), 0, 0);
 
-    auto indicesSize = std::size(indices);
-    D3D11_BUFFER_DESC ibd = {};
-    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    ibd.ByteWidth = sizeof(indices);
-    ibd.StructureByteStride = sizeof(UINT16);
-    D3D11_SUBRESOURCE_DATA isd = {};
-    isd.pSysMem = indices;
+    // 7. render
+    ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
+    pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
-    ComPtr<ID3D11Buffer> pIndexBuffer;
-    pFusionDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer);
-    pFusionDeviceCtx->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-    pFusionDeviceCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    using Position = DirectX::XMFLOAT3;
-    using Color = DirectX::XMFLOAT3;
-
-    struct VertexPositionColor {
-        Position position;
-        Color color;
-    };
-
-    D3D11_INPUT_ELEMENT_DESC vertexInputLayoutInfo[] = {
-        {
-            "POSITION",
-            0,
-            DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
-            0,
-            offsetof(VertexPositionColor, position),
-            D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
-            0
-        },
-        {
-            "COLOR",
-            0,
-            DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
-            0,
-            offsetof(VertexPositionColor, color),
-            D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA,
-            0
-        }
-    };
-
-    auto [vsBlob,vs] = compiler.CreateVertexShader(L"D:\\Dev\\OpenFusionExamples\\Extensions\\FFMpeg\\Shader\\vs.hlsl","Main");
-
-    ComPtr<ID3D11InputLayout> pInputLayout;
-    pFusionDevice->CreateInputLayout(vertexInputLayoutInfo, std::size(vertexInputLayoutInfo),
-        vsBlob.Get()->GetBufferPointer(), vsBlob.Get()->GetBufferSize(), &pInputLayout);
-    pFusionDeviceCtx->IASetInputLayout(pInputLayout.Get());
-    pFusionDeviceCtx->VSSetShader(vs.Get(), 0, 0);
-
-    // pixel shader stage
-    
-    // we do actual conversion here
-
-    //pFusionDeviceCtx->PSSetShaderResources(0, 1, &pSrv);
-
-    // Set resources
-    pFusionDeviceCtx->OMSetRenderTargets(1, &pRTTTextureView, nullptr);
-    //pFusionDeviceCtx->PSSetShader(m_PixelShaderLuminance, nullptr, 0);
-    //pFusionDeviceCtx->RSSetViewports(1, &m_VPLuminance);
-
-    // Draw textured quad onto render target
-    //pFusionDeviceCtx->Draw(NUMVERTICES, 0);
+    pFusionDeviceCtx->DrawIndexed(indicesSize, 0, 0);
 
     return;
 }
