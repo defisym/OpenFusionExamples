@@ -33,7 +33,7 @@ struct CopyToTextureHandler {
         
         // vertex shader
         vsBundle = inf.CreateVertexShader(hInstLib, SHADER_VS_TEMPLATE, "Main");
-        auto [vsBlob, vs] = vsBundle;
+        auto& [vsBlob, vs] = vsBundle;
 
         // input layouts
 
@@ -144,8 +144,6 @@ struct CopyToTextureHandler {
         if (FAILED(hr)) { return; }
 
         // 6. pixel shader
-        // we do actual conversion here
-
         psBundle = inf.CreatePixelShader(hInstLib, SHADER_PS_NV12ToBGRA, "Main");
 
         // create sampler

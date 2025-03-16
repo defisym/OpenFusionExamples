@@ -204,10 +204,11 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     pFusionDeviceCtx->IASetIndexBuffer(pCTTHandler->pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
     pFusionDeviceCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    auto [vsBlob, vs] = pCTTHandler->vsBundle;
+    auto& [vsBlob, vs] = pCTTHandler->vsBundle;
     pFusionDeviceCtx->VSSetShader(vs.Get(), 0, 0);
 
     // 3. rasterizer
+    // shouldn't be shared as resolution may different
     D3D11_VIEWPORT viewPort = {};
     viewPort.TopLeftX = 0;
     viewPort.TopLeftY = 0;
@@ -253,6 +254,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     pFusionDeviceCtx->PSSetSamplers(0, std::size(sss), sss);
 
     // create constant buffer
+    // shouldn't be shared as resolution may different
+    
     // size of buffer must be multiple of 16
     struct alignas(16) PixelSizeBuffer {
         float fPixelWidth;
@@ -277,10 +280,10 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     ID3D11Buffer* cb[] = { pConstantBuffer.Get()};
     pFusionDeviceCtx->PSSetConstantBuffers(0, std::size(cb), cb);
 
-    auto [psBlob, ps] = pCTTHandler->psBundle;
+    auto& [psBlob, ps] = pCTTHandler->psBundle;
     pFusionDeviceCtx->PSSetShader(ps.Get(), 0, 0);
 
-    // 7. render
+    // 5. render
     ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
     pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
