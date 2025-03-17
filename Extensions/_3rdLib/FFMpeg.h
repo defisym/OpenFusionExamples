@@ -307,6 +307,8 @@ class FFMpeg {
     ComPtr<ID3D11Texture2D> pSharedTexture;
     HANDLE sharedHandle = nullptr;
 
+    ComPtr<ID3D11Query> pEvent = nullptr;
+
 public:
     struct CopyToTextureContext {
         AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
@@ -513,6 +515,9 @@ private:
         if ((err = HW_UpdateDeviceContext(type)) < 0) {
             return err;
         }
+
+        D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT, 0 };
+        GetDeviceContext()->device->CreateQuery(&queryDesc, &pEvent);
 
 		pCodecContext->hw_device_ctx = av_buffer_ref(hw_device_ctx);
 
@@ -818,14 +823,6 @@ private:
 			return FFMpegException_InitFailed;
 		}
 
-#ifdef HW_DECODE
-        if (bHWDecode) {
-            // send dummy to flush context
-            AVPacket dummy_pkt = { 0 };
-            avcodec_send_packet(*ppVCodecContext, &dummy_pkt);
-            gpu_flush_buffers(*ppVCodecContext);
-        }
-#endif
 		return 0;
 	}
 
@@ -1105,7 +1102,6 @@ private:
 		//how many packet processed
 		//int count = 0;
 
-        gpu_flush_buffers(pCodecContext);
 		int response = 0;
 
 		while (av_read_frame(pFormatContext, frames.pPacket) >= 0) {
@@ -1205,12 +1201,26 @@ private:
 		return response;
 	}
 
+    inline AVD3D11VADeviceContext* GetDeviceContext() {
+        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
+        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
+
+        return pHWCtx;
+    }
+
+public:
+    inline void WaitGPU() {
+        auto pHWCtx = GetDeviceContext();
+        pHWCtx->device_context->End(pEvent.Get());
+        while (pHWCtx->device_context->GetData(pEvent.Get(), nullptr, 0, 0) == S_FALSE) {}
+    }
+
+private:
     // only available when bCopyToTexture enabled
     // do nothing, just pass D3D11 texture to callback, furture process not needed
     inline void convert_textureFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
-        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
-        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
-            
+        auto pHWCtx = GetDeviceContext();
+
         auto pTexture = (ID3D11Texture2D*)pFrame->data[0];
         auto pIndex = (intptr_t)pFrame->data[1];
 
@@ -1244,16 +1254,17 @@ private:
         // and set SrcSubresource to pFrameIndex
         pHWCtx->device_context->CopySubresourceRegion(pSharedTexture.Get(), 0, 0, 0, 0, pTexture, pIndex, 0);
         pHWCtx->device_context->Flush();
+        //WaitGPU();
 
         //// another solution create a srv and use it as shader resource
         //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
         //srvDesc.Format = FrameDesc.Format;
         //srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        
+        //
         //// decoded video texture only has one mip level
         //// MostDetailedMip: which one start to use, the max reslution one is 0
         //// MipLevels: how many we can use, only one is 1
-        
+        //
         //// ID3D11Texture2D is texture
         //if (pFrameIndex == 0) {
         //    srvDesc.Texture2D.MostDetailedMip = 0;
@@ -1267,7 +1278,7 @@ private:
         //    srvDesc.Texture2DArray.ArraySize = 1;
         //}
 
-        copyToTextureCtx = { .pD3D11VADeciveCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx,
+        copyToTextureCtx = { .pD3D11VADeciveCtx = pHWCtx,
             .pTexture = pSharedTexture.Get(),
             .sharedHandle = sharedHandle };
 
@@ -1458,8 +1469,6 @@ private:
 		// Return decoded output data (into a frame) from a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		int response = avcodec_receive_frame(pVCodecContext, pFrame);
-        // flush after receive frame
-        gpu_flush_buffers(pVCodecContext);
 
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			av_frame_unref(pFrame);
@@ -2077,7 +2086,6 @@ public:
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
 			avcodec_flush_buffers(pVCodecContext);
-            gpu_flush_buffers(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
@@ -2142,8 +2150,6 @@ public:
 		videoPts = 0;
 
 		avcodec_flush_buffers(pVGetCodecContext);
-        gpu_flush_buffers(pVGetCodecContext);
-
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;
