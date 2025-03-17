@@ -1224,6 +1224,11 @@ public:
         while (pHWCtx->device_context->GetData(pEvent.Get(), nullptr, 0, 0) == S_FALSE) {}
     }
 
+    inline void FlushAndWaitGPU(AVCodecContext* pCtx) {
+        gpu_flush_buffers(pCtx);
+        WaitGPU();
+    }
+
 private:
     // only available when bCopyToTexture enabled
     // do nothing, just pass D3D11 texture to callback, furture process not needed
@@ -2164,6 +2169,8 @@ public:
 		videoPts = 0;
 
 		avcodec_flush_buffers(pVGetCodecContext);
+        FlushAndWaitGPU(pVGetCodecContext);
+
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;

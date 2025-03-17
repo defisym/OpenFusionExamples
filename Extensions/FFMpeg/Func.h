@@ -319,6 +319,8 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
+        if (rdPtr->bCopyToTexture) { rdPtr->pFFMpeg->WaitGPU(); }
+
         CopyData(rdPtr, pSf, pData, stride, height);
 		ReDisplay(rdPtr);
 		});
