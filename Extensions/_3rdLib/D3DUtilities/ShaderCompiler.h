@@ -56,7 +56,7 @@ struct ShaderCompiler {
             &tempShaderBlob, &errorBlob))) {
             errorMsg = "D3D11: Failed to read shader from buffer\n";
             if (errorBlob != nullptr) {
-                errorMsg += std::format("D3D11: With message: {}", errorBlob->GetBufferPointer());
+                errorMsg += std::format("D3D11: With message: {}", (const char*)errorBlob->GetBufferPointer());
             }
 
             return false;
