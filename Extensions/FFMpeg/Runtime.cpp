@@ -79,7 +79,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rdPtr->pSf = new cSurface;
 	//rdPtr->pFrame = new cSurface;
 		
-	rdPtr->pMemSf = nullptr;
+	rdPtr->pDisplaySf = nullptr;
 	rdPtr->pGrabbedFrame = nullptr;	
 	
 	rdPtr->pReturnSf = nullptr;
@@ -181,7 +181,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	FreeConsole();
 #endif
 
-	delete rdPtr->pMemSf;	
+	delete rdPtr->pDisplaySf;	
 	delete rdPtr->pGrabbedFrame;
 
 	delete rdPtr->pReturnSf;
@@ -277,7 +277,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
         if (VideoSingleFrame(rdPtr)) { break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
-            CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
+            CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
 			ReDisplay(rdPtr);
 			});
 
@@ -311,8 +311,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	CleanCache(rdPtr, false);
 
-	if (rdPtr->pMemSf != nullptr
-		&& rdPtr->pMemSf->IsValid()
+	if (rdPtr->pDisplaySf != nullptr
+		&& rdPtr->pDisplaySf->IsValid()
 		&& rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
@@ -331,7 +331,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
 
-	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
+	if (rdPtr->pDisplaySf != nullptr && rdPtr->pDisplaySf->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
@@ -344,9 +344,9 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		// Hot spot (transform center)
 		POINT point = { 0, 0 };
 
-		rdPtr->pMemSf->BlitEx(*ps, (float)screenX, (float)screenY,
+		rdPtr->pDisplaySf->BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-			rdPtr->pMemSf->GetWidth(), rdPtr->pMemSf->GetHeight(), &point, rdPtr->rc.rcAngle,
+			rdPtr->pDisplaySf->GetWidth(), rdPtr->pDisplaySf->GetHeight(), &point, rdPtr->rc.rcAngle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, BLTF_ANTIA);

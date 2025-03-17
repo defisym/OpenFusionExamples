@@ -364,11 +364,11 @@ short WINAPI DLLExport Action_SetOverrideCodec(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport Action_ResetDisplay(LPRDATA rdPtr, long param1, long param2) {
-	if (!GetVideoPlayState(rdPtr) && rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
-		_ForceAddAlpha(rdPtr->pMemSf, 0);
+	if (!GetVideoPlayState(rdPtr) && rdPtr->pDisplaySf != nullptr && rdPtr->pDisplaySf->IsValid()) {
+		_ForceAddAlpha(rdPtr->pDisplaySf, 0);
 
 		if(rdPtr->bPm) {
-			rdPtr->pMemSf->PremultiplyAlpha();
+			rdPtr->pDisplaySf->PremultiplyAlpha();
 		}
 	}
 
@@ -410,7 +410,7 @@ long WINAPI DLLExport Expression_GetCurrentVideoFramePointer(LPRDATA rdPtr, long
 		return 0;
 	}
 
-	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pMemSf, rdPtr->pReturnSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pDisplaySf, rdPtr->pReturnSf);
 }
 
 long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long param1) {

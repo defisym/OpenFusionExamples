@@ -26,7 +26,7 @@ inline void UpdateScale(LPRDATA rdPtr, int width, int height) {
 }
 
 inline void ReDisplay(LPRDATA rdPtr) {
-	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
+	if (rdPtr->pDisplaySf != nullptr && rdPtr->pDisplaySf->IsValid()) {
 		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 		rdPtr->bChanged = true;
 		rdPtr->rc.rcChanged = true;
@@ -361,7 +361,7 @@ inline void NextVideoFrame(LPRDATA rdPtr) {
 	}
 
 	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
-        CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
+        CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
 		ReDisplay(rdPtr);
 		});
 }
@@ -433,7 +433,7 @@ inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
         // to avoid green screen at start
         if (rdPtr->bCopyToTexture) { rdPtr->pFFMpeg->WaitGPU(); }
 
-        CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
+        CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
         ReDisplay(rdPtr);
         });
     if (response < 0) { return false; }
@@ -583,7 +583,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		// update display
         UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-        InitSurface(rdPtr->pMemSf,
+        InitSurface(rdPtr->pDisplaySf,
             rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
             rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState());
 		// display first valid frame

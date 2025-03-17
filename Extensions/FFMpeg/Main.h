@@ -153,7 +153,7 @@ typedef struct tagRDATA
 	short			sheight;
 
 	// MemSf
-	LPSURFACE pMemSf;	
+	LPSURFACE pDisplaySf;	
 	LPSURFACE pGrabbedFrame;
 
 	// convert format to this when return surface
