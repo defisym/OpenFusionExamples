@@ -154,10 +154,8 @@ constexpr auto PIXEL_BYTE = 3;
 #define HW_DECODE
 
 #ifdef HW_DECODE
+// for ComPtr
 #include "D3DUtilities/D3DDefinition.h"
-
-// global variable for AVCodecContext->get_format callback
-inline static auto hw_pix_fmt_global = AV_PIX_FMT_NONE;
 #endif
 
 // ------------------------------------
@@ -303,6 +301,7 @@ class FFMpeg {
     bool bCopyToTexture = false;
     ComPtr<ID3D11Texture2D> pSharedTexture;
     HANDLE sharedHandle = nullptr;
+
 public:
     struct CopyToTextureContext {
         AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
@@ -341,6 +340,17 @@ private:
 	AVCodecContext* pVCodecContext = nullptr;
 	AVCodecContext* pVGetCodecContext = nullptr;
 	AVCodecContext* pACodecContext = nullptr;
+
+    // Opaque data passed to AVCodecContext.opaque
+    struct AVCodecCtxOpaque {
+#ifdef  HW_DECODE
+        // used in AVCodecContext->get_format callback
+        AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
+#endif //  HW_DECODE
+    };
+
+    AVCodecCtxOpaque VCodecCtxQpaque = {};
+    AVCodecCtxOpaque VGetCodecCtxQpaque = {};
 
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
@@ -733,7 +743,7 @@ private:
 	}
 
 	// init the given AVCodecContext by pVCodec, which must be valid before calling this
-	inline int init_videoCodecContext(AVCodecContext** ppVCodecContext) {
+    inline int init_videoCodecContext(AVCodecContext** ppVCodecContext, AVCodecCtxOpaque* pOpaque = nullptr) {
 		*ppVCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!*ppVCodecContext) {
 			return FFMpegException_InitFailed;
@@ -743,6 +753,7 @@ private:
 			return FFMpegException_InitFailed;
 		}
 
+        (*ppVCodecContext)->opaque = pOpaque;
 		(*ppVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
 		if (options.flag & FFMpegFlag_Fast) {
 			(*ppVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
@@ -752,8 +763,11 @@ private:
 		if (bHWDecode) {
 			//(*ppVCodecContext)->extra_hw_frames = 4;
 			(*ppVCodecContext)->get_format = [] (AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
+                const auto pOpaque = (AVCodecCtxOpaque*)ctx->opaque;
+                const auto hw_pix_fmt = pOpaque->hw_pix_fmt;
+
 				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
-					if (*p == hw_pix_fmt_global) {
+					if (*p == hw_pix_fmt) {
 						return *p;
 					}
 				}
@@ -834,22 +848,18 @@ private:
 				}
 
 				if (hw_pix_fmt == AV_PIX_FMT_NONE) {
-					//throw FFMpegException_HWInitFailed;
-					bHWDecode = false;
-					hw_type = AV_HWDEVICE_TYPE_NONE;
+                    hw_type = AV_HWDEVICE_TYPE_NONE;
+                    bHWDecode = false;
 				}
 			}
 
-			hw_pix_fmt_global = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
+            VCodecCtxQpaque.hw_pix_fmt = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
 		}
 #endif
 
-		if (init_videoCodecContext(&pVCodecContext) != 0) {
+        if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
 		}
-		//if (init_videoCodecContext(&pVGetCodecContext) != 0) {
-		//	return FFMpegException_InitFailed;
-		//}
 
 		//---------------------
 		// Audio
@@ -2059,7 +2069,10 @@ public:
 				: init_formatContext(&pSeekFormatContext, pFormatContext->url, pFormatContext->iformat);
 			if (!bSuccess) { return FFMpegException_InitFailed; }			
 		}
-		if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext) != 0) {
+
+        // copy opaque context
+        VGetCodecCtxQpaque = VCodecCtxQpaque;
+        if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
 		}
 
