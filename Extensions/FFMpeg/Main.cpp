@@ -291,6 +291,8 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring deviceName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
+    // auto managed
+    if (rdPtr->bCopyToTexture) { return 0; }
 	rdPtr->hwDeviceType = FFMpeg::get_hwDeviceTypeByName(deviceName);
 
 	return 0;
