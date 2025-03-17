@@ -1246,9 +1246,6 @@ private:
     
     // convert bitmap frame pixel format to PIXEL_FORMAT
     inline void convert_bitmapFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
-        // data invalid, do not trigger callback, in case of get a black frame
-        if (!pFrame->data[0]) { return; }
-
         // Convert data to Bitmap data
         // https://zhuanlan.zhihu.com/p/53305541
 
@@ -1280,7 +1277,10 @@ private:
         callBack(bgr_buffer[0], linesize[0], pFrame->height);
     }
 
-	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {     
+	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        // data invalid, do not trigger callback, in case of get a black frame
+        if (!pFrame->data[0]) { return; }
+
 #ifdef HW_DECODE
 		if (bHWDecode) {
             if (bCopyToTexture) { 
