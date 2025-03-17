@@ -144,7 +144,7 @@ struct CopyToTextureHandler {
         if (FAILED(hr)) { return; }
 
         // 6. pixel shader
-        psBundle = inf.CreatePixelShader(hInstLib, SHADER_PS_NV12ToBGRA, "Main");
+        psBundle = inf.CreatePixelShader(hInstLib, SHADER_PS_YUVToBGRA, "Main");
 
         // create sampler
         D3D11_SAMPLER_DESC sampDesc = {};

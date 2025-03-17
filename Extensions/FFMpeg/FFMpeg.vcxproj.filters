@@ -212,7 +212,7 @@
     <CustomBuild Include="..\Help\ExtSdk.chm">
       <Filter>Information</Filter>
     </CustomBuild>
-    <CustomBuild Include="Shader\NV12ToBGRA.hlsl">
+    <CustomBuild Include="Shader\YUVToBGRA.hlsl">
       <Filter>Shader\PixelShader</Filter>
     </CustomBuild>
     <CustomBuild Include="Shader\ps.hlsl">

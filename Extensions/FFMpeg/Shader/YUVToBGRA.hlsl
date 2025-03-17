@@ -47,9 +47,16 @@ PSOutput Main(PSInput input)
 {
     PSOutput output = (PSOutput)0;
     
-    float2 texCoord = input.position.xy * float2(fPixelWidth, fPixelHeight);
-    float y = texY.Sample(samplerY, texCoord);
-    float2 uv = texUV.Sample(samplerUV, texCoord);        
+    // may get green slide in float mode
+    // 
+    //float2 texCoord = input.position.xy * float2(fPixelWidth, fPixelHeight);
+    //float y = texY.Sample(samplerY, texCoord);
+    //float2 uv = texUV.Sample(samplerUV, texCoord);        
+    //output.color = float4(ConvertYUVtoRGB(float3(y, uv)), 1.0);
+    
+    uint2 texCoord = input.position.xy;
+    float y = texY.Load(uint3(texCoord, 0));
+    float2 uv = texUV.Load(uint3(texCoord / 2, 0));
     output.color = float4(ConvertYUVtoRGB(float3(y, uv)), 1.0);
     
     return output;

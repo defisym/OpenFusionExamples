@@ -326,7 +326,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="Shader\NV12ToBGRA.hlsl">
+    <CustomBuild Include="Shader\YUVToBGRA.hlsl">
       <FileType>Document</FileType>
     </CustomBuild>
   </ItemGroup>
