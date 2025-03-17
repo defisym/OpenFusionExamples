@@ -2105,6 +2105,7 @@ public:
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
 			avcodec_flush_buffers(pVCodecContext);
+            FlushAndWaitGPU(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
