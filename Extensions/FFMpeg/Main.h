@@ -53,7 +53,9 @@
 
 #define	ACT_ACTION_RD					18
 
-#define	ACT_LAST						19
+#define	ACT_ACTION_SCTT					19
+
+#define	ACT_LAST						20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES

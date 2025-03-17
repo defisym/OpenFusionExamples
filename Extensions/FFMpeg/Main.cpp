@@ -71,6 +71,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_RD, M_ACTION_RD, ACT_ACTION_RD,	0, 0,
 
+        IDMN_ACTION_SCTT, M_ACTION_SCTT, ACT_ACTION_SCTT, 0, 1, PARAM_EXPRESSION, M_COPYTOTEXTURE,
+
 		};
 
 // Definitions of parameters for each expression
@@ -291,11 +293,25 @@ short WINAPI DLLExport Action_EraseVideo(LPRDATA rdPtr, long param1, long param2
 short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param2) {
 	std::wstring deviceName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
-    // auto managed
-    if (rdPtr->bCopyToTexture) { return 0; }
 	rdPtr->hwDeviceType = FFMpeg::get_hwDeviceTypeByName(deviceName);
 
+    // auto managed
+    if (rdPtr->hwDeviceType != AV_HWDEVICE_TYPE_D3D11VA) {
+        rdPtr->bCopyToTexture = false;
+    }
+
 	return 0;
+}
+
+short WINAPI DLLExport Action_SetCopyToTexture(LPRDATA rdPtr, long param1, long param2) {
+    rdPtr->bCopyToTexture = (bool)CNC_GetIntParameter(rdPtr);
+    
+    // auto managed
+    if (rdPtr->bCopyToTexture) {
+        rdPtr->hwDeviceType = AV_HWDEVICE_TYPE_D3D11VA;
+    }
+
+    return 0;
 }
 
 short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
@@ -527,6 +543,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetOverrideCodec,
 
 			Action_ResetDisplay,
+
+            Action_SetCopyToTexture,
 
 			0
 			};

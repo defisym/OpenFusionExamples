@@ -119,6 +119,8 @@
 
 #define IDMN_ACTION_RD     			25018
 
+#define IDMN_ACTION_SCTT   			25019
+
 // Action strings
 #define M_ACTION_OV	       		    5000
 #define	M_ACTION_CV				    5001
@@ -151,6 +153,8 @@
 
 #define M_ACTION_RD     		    5018
 
+#define M_ACTION_SCTT     		    5019
+
 // Titles of action parameters
 #define M_FILEPATH				 5501
 #define M_KEY   				 5502
@@ -169,6 +173,7 @@
 #define M_FORCENOAUDIO	         5515
 #define M_VCODEC				 5516
 #define M_ACODEC				 5517
+#define M_COPYTOTEXTURE			 5518
 
 
 //	Conditions

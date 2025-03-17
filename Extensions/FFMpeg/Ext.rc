@@ -175,6 +175,7 @@ BEGIN
         //MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
+        MENUITEM "Set Copy To Texture Device", IDMN_ACTION_SCTT
         MENUITEM SEPARATOR
         MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
         MENUITEM "Erase Cached Video",      IDMN_ACTION_ERASEV
@@ -374,6 +375,7 @@ BEGIN
     M_ACTION_ERASEV		       "Erase Cached Video %0"
     
     M_ACTION_SHDE		       "Set Hardware Decode Device to %0"
+    M_ACTION_SCTT		       "Set Copy To Texture to %0"
     
     M_ACTION_STRETCH	       "Set Size to Width = %0, Height = %1"
 
@@ -400,6 +402,7 @@ BEGIN
     M_FORCENOAUDIO             "Force No Audio, 0 = Disable"
     M_VCODEC                   "Video Codec"
     M_ACODEC                   "Audio Codec"
+	M_COPYTOTEXTURE			   "Copy To Texture"
 END
 
 STRINGTABLE DISCARDABLE
