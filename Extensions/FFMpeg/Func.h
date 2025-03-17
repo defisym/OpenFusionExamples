@@ -44,7 +44,9 @@ inline void ReDisplay(LPRDATA rdPtr) {
 inline void InitSurface(LPSURFACE& pSf, 
     const int width, const int height, 
     bool bHWA = false) {
-	if (pSf == nullptr || pSf->GetWidth() != width || pSf->GetHeight() != height) {
+    if (pSf == nullptr
+        || pSf->GetWidth() != width || pSf->GetHeight() != height
+        || IsHWA(pSf) != bHWA) {
         if (!bHWA) {
 #ifdef VIDEO_ALPHA
             pSf = CreateSurface(32, width, height);
