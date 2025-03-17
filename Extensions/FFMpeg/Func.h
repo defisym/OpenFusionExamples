@@ -376,12 +376,12 @@ inline bool VideoSingleFrame(LPRDATA rdPtr) {
 constexpr auto SeekFlag_NoGoto = 0x0001 << 16;	// do not decode to next valid frame
 constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp is 0
 
-// seek video to given position
+// seek video to given position, return false on decode error
 // by default, it will decode to first valid frame (accurate seek enabled & not `AVSEEK_FLAG_BYTE`)
 // and revert back if target timestamp is 0
 // this behaviour can be controlled by flags
-inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
-    if (!rdPtr->bOpen) { return; }
+inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
+    if (!rdPtr->bOpen) { return true; }
 
     // add protection for minus position
     ms = (std::max)(ms, 0);
@@ -390,22 +390,29 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     // as seek for picture won't reset the context and cannot decode next time
     const auto bSingleFrame = VideoSingleFrame(rdPtr);
 
+    int response = 0;
+
     //auto pos = rdPtr->pFFMpeg->get_videoPosition();
-    if (!bSingleFrame) { rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
+    if (!bSingleFrame) { response = rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
+    if (response < 0) { return false; }
 
     const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
-    if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return; }
-    rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
+    if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return true; }
+    response = rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
         // to avoid green screen at start
         if (rdPtr->bCopyToTexture) { rdPtr->pFFMpeg->WaitGPU(); }
 
         CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
         ReDisplay(rdPtr);
         });
+    if (response < 0) { return false; }
 
     // revert
-    if (ms != 0 || flags & SeekFlag_NoRevert) { return; }
+    if (ms != 0 || flags & SeekFlag_NoRevert) { return true; }
     if (!bSingleFrame) { rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
+    if (response < 0) { return false; }
+
+    return true;
 }
 
 inline bool GetVideoPlayState(LPRDATA rdPtr) {
@@ -549,7 +556,10 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
             rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
             rdPtr->bCopyToTexture);
 		// display first valid frame
-		SetPositionGeneral(rdPtr, static_cast<int>(ms));
+        if (!SetPositionGeneral(rdPtr, static_cast<int>(ms))) {
+            // failed to display first frame, which indicates error
+            throw FFMpegException(FFMpegException_DecodeFailed);
+        }
 
 		// update FFMpeg
 		// audio pause is updated in handle routine, in case event cost a long time
