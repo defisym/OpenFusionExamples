@@ -104,24 +104,27 @@ constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 // ------------------------------------
 constexpr auto FFMpegException_InitFailed = -1;
 constexpr auto FFMpegException_HWInitFailed = -2;
-constexpr auto FFMpegException_HWDecodeFailed = -3;
-constexpr auto FFMpegException_FilterInitFailed = -4;
+constexpr auto FFMpegException_DecodeFailed = -3;
+constexpr auto FFMpegException_HWDecodeFailed = -4;
+constexpr auto FFMpegException_FilterInitFailed = -5;
 
 struct FFMpegException final :std::exception {
 	int _flag = 0;
 	static const char* GetInfo(int errorCode) {
-		switch(errorCode) {
-		case FFMpegException_InitFailed:
-			return "Init failed";
-		case FFMpegException_HWInitFailed:
-			return "Init hardware decode failed";
-		case FFMpegException_HWDecodeFailed:
-			return "Hardware decode failed";
-		case FFMpegException_FilterInitFailed:
-			return "Filter init failed";
-		default:
-			return "Unknown error";
-		}
+        switch (errorCode) {
+        case FFMpegException_InitFailed:
+            return "Init failed";
+        case FFMpegException_HWInitFailed:
+            return "Init hardware decode failed";
+        case FFMpegException_DecodeFailed:
+            return "Decode failed";
+        case FFMpegException_HWDecodeFailed:
+            return "Hardware decode failed";
+        case FFMpegException_FilterInitFailed:
+            return "Filter init failed";
+        default:
+            return "Unknown error";
+        }
 	}
 
 	explicit FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
