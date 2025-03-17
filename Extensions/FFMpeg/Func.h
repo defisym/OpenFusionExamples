@@ -559,20 +559,28 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 	catch ([[maybe_unused]] FFMpegException& e) {
 		CloseGeneral(rdPtr);
 
-		if (!opt.NoOverride()) {
-			auto newOpt = opt;
-			newOpt.ResetOverride();
+        // fallback to software decode
+        if (rdPtr->hwDeviceType != AV_HWDEVICE_TYPE_NONE || rdPtr->bCopyToTexture) {
+            rdPtr->hwDeviceType = AV_HWDEVICE_TYPE_NONE;
+            rdPtr->bCopyToTexture = false;
 
-			OpenGeneral(rdPtr, filePath, key, newOpt, ms);
-		}
-		else {
-			// update path for condition to check
-			*rdPtr->pFilePath = filePath;
+            OpenGeneral(rdPtr, filePath, key, GetOptions(rdPtr), ms);
+        }
+        // fallback to default decoder
+        else if (!opt.NoOverride()) {
+            FFMpegOptions newOpt = opt;
+            newOpt.ResetOverride();
 
-			CallEvent(ON_OPENFAILED);
+            OpenGeneral(rdPtr, filePath, key, newOpt, ms);
+        }
+        else {
+            // update path for condition to check
+            *rdPtr->pFilePath = filePath;
 
-			*rdPtr->pFilePath = L"";
-		}
+            CallEvent(ON_OPENFAILED);
+
+            *rdPtr->pFilePath = L"";
+        }
 	}
 }
 
