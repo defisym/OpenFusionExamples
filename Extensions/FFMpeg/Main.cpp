@@ -410,7 +410,7 @@ long WINAPI DLLExport Expression_GetCurrentVideoFramePointer(LPRDATA rdPtr, long
 		return 0;
 	}
 
-	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pMemSf, rdPtr->pHwaSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pMemSf, rdPtr->pReturnSf);
 }
 
 long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long param1) {
@@ -427,7 +427,7 @@ long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long 
 	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);
 	//__SavetoClipBoard(rdPtr->pGrabbedFrame);
 
-	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pGrabbedFrame, rdPtr->pReturnSf);
 }
 
 long WINAPI DLLExport Expression_GetVideoOpen(LPRDATA rdPtr, long param1) {

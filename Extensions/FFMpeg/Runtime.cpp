@@ -82,7 +82,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->pMemSf = nullptr;
 	rdPtr->pGrabbedFrame = nullptr;	
 	
-	rdPtr->pHwaSf = nullptr;
+	rdPtr->pReturnSf = nullptr;
 
 	rdPtr->bHwa = edPtr->bHwa;
 
@@ -184,7 +184,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pMemSf;	
 	delete rdPtr->pGrabbedFrame;
 
-	delete rdPtr->pHwaSf;
+	delete rdPtr->pReturnSf;
 		
 	delete rdPtr->pPreviousTimer;
 

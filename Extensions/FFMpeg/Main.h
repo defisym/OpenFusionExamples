@@ -156,8 +156,8 @@ typedef struct tagRDATA
 	LPSURFACE pMemSf;	
 	LPSURFACE pGrabbedFrame;
 
-	// HwaSf
-	LPSURFACE pHwaSf;
+	// convert format to this when return surface
+	LPSURFACE pReturnSf;
 
 	bool bHwa;
 
