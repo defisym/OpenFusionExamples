@@ -475,7 +475,9 @@ inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 
 	opt.flag = rdPtr->hwDeviceType 
         | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0)
-        | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : 0);
+        | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : 0)
+		| (rdPtr->bSharedHardWareDevice ? FFMpegFlag_SharedHardWareDevice  : 0);
+
 	opt.videoCodecName = *rdPtr->pVideoOverrideCodecName;
 	opt.audioCodecName = *rdPtr->pAudioOverrideCodecName;
 

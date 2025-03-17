@@ -47,6 +47,7 @@ enum {
 
 	PROPID_HWDECODE_TEXTTITLE,
 
+	PROPID_HWDECODE_SHARED_HARDWARE_DEVICE,
     PROPID_HWDECODE_COPY_TO_TEXTURE,
     PROPID_HWDECODE_DEVICE_COMBO,
 };
@@ -114,6 +115,7 @@ PropData Properties[] = {
 
 	PropData_Group(PROPID_HWDECODE_TEXTTITLE, IDS_PROP_HWDECODE_TEXTTITLE, IDS_PROP_HWDECODE_TEXTTITLE),
     
+	PropData_CheckBox(PROPID_HWDECODE_SHARED_HARDWARE_DEVICE, IDS_PROP_HWDECODE_SHARED_HARDWARE_DEVICE_CHECK, IDS_PROP_HWDECODE_SHARED_HARDWARE_DEVICE_CHECK_INFO),
     PropData_CheckBox(PROPID_HWDECODE_COPY_TO_TEXTURE, IDS_PROP_HWDECODE_COPY_TO_TEXTURE_CHECK, IDS_PROP_HWDECODE_COPY_TO_TEXTURE_CHECK_INFO),
 	
     PropData_ComboBox(PROPID_HWDECODE_DEVICE_COMBO,	IDS_PROP_HWDECODE_DEVICE_COMBO,	IDS_PROP_HWDECODE_DEVICE_COMBO_INFO, HWDecode_ComboList),
@@ -414,6 +416,7 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bForceNoAudio = false;
         edPtr->bCopyToTexture = false;
+        edPtr->bSharedHardWareDevice = false;
 
 		SDL_UpdateAppProp(mV, edPtr);
 
@@ -828,8 +831,11 @@ BOOL WINAPI DLLExport GetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return edPtr->bCache;
 	case PROPID_CACHE_FORCENOAUDIO:
 		return edPtr->bForceNoAudio;
-    case PROPID_HWDECODE_COPY_TO_TEXTURE:
-        return edPtr->bCopyToTexture;
+
+	case PROPID_HWDECODE_SHARED_HARDWARE_DEVICE:
+		return edPtr->bSharedHardWareDevice;
+	case PROPID_HWDECODE_COPY_TO_TEXTURE:
+        return edPtr->bCopyToTexture;	
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -951,6 +957,10 @@ void WINAPI DLLExport SetPropCheck(LPMV mV, LPEDATA edPtr, UINT nPropID, BOOL nC
 		edPtr->bForceNoAudio = nCheck;
 		mvInvalidateObject(mV, edPtr);
 		mvRefreshProp(mV, edPtr, PROPID_CACHE_FORCENOAUDIO, TRUE);
+		break;
+
+	case PROPID_HWDECODE_SHARED_HARDWARE_DEVICE:
+		edPtr->bSharedHardWareDevice = nCheck;
 		break;
     case PROPID_HWDECODE_COPY_TO_TEXTURE:
         edPtr->bCopyToTexture = nCheck;

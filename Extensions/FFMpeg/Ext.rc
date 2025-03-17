@@ -337,6 +337,9 @@ COMBO_AV_HWDEVICE_TYPE_D3D12VA                "D3D12VA"
 IDS_PROP_FORCENOAUDIO_CHECK            "Force No Audio"
 IDS_PROP_FORCENOAUDIO_CHECK_INFO       "Don't play audio and sync with external clock"
 
+IDS_PROP_HWDECODE_SHARED_HARDWARE_DEVICE_CHECK			"Shared Hardware Device"
+IDS_PROP_HWDECODE_SHARED_HARDWARE_DEVICE_CHECK_INFO   	"All instances with the same hardware device type will share the same hardware device.\nMinimize the memory usage."
+
 IDS_PROP_HWDECODE_COPY_TO_TEXTURE_CHECK         "Copy To Texture"
 IDS_PROP_HWDECODE_COPY_TO_TEXTURE_CHECK_INFO    "Copy hardware decode result to texture directly instead of convert to bitmap first.\nHardware device will be forced to D3D11VA to match Fusion runtime."
 
