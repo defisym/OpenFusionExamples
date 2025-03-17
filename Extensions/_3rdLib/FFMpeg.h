@@ -306,6 +306,7 @@ class FFMpeg {
     bool bCopyToTexture = false;
     ComPtr<ID3D11Texture2D> pSharedTexture;
     HANDLE sharedHandle = nullptr;
+    DXGI_FORMAT textureFormat = DXGI_FORMAT_UNKNOWN;
 
     ComPtr<ID3D11Query> pEvent = nullptr;
 
@@ -314,6 +315,7 @@ public:
         AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
         ID3D11Texture2D* pTexture = nullptr;
         HANDLE sharedHandle = nullptr;
+        DXGI_FORMAT textureFormat = DXGI_FORMAT_UNKNOWN;
     };
 
 private:
@@ -1227,6 +1229,7 @@ private:
         if (pSharedTexture == nullptr) {
             HRESULT hr = S_OK;
 
+            // 1. create shared texture
             D3D11_TEXTURE2D_DESC sharedDesc = {};
             pTexture->GetDesc(&sharedDesc);
             
@@ -1244,6 +1247,9 @@ private:
             sharedHandle = nullptr;
             hr = dxgiShareTexture->GetSharedHandle(&sharedHandle);
             if (FAILED(hr)) { return; }
+
+            // 3. update texture format
+            textureFormat = sharedDesc.Format;
         }
 
         // failed to create
@@ -1280,7 +1286,8 @@ private:
 
         copyToTextureCtx = { .pD3D11VADeciveCtx = pHWCtx,
             .pTexture = pSharedTexture.Get(),
-            .sharedHandle = sharedHandle };
+            .sharedHandle = sharedHandle,
+            .textureFormat = textureFormat };
 
         callBack((const unsigned char*)(&copyToTextureCtx), pFrame->width, pFrame->height);
     }
