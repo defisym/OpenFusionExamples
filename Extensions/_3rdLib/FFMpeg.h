@@ -15,6 +15,7 @@
 
 #pragma warning(disable : 4819)
 
+#include <map>
 #include <string>
 #include <format>
 #include <functional>
@@ -172,6 +173,7 @@ constexpr auto FFMpegFlag_MakeFlag(const auto flag) {
 constexpr auto FFMpegFlag_Fast = FFMpegFlag_MakeFlag(0b0000000000000001);
 constexpr auto FFMpegFlag_ForceNoAudio = FFMpegFlag_MakeFlag(0b0000000000000010);
 constexpr auto FFMpegFlag_CopyToTexture = FFMpegFlag_MakeFlag(0b0000000000000100);
+constexpr auto FFMpegFlag_SharedHardWareDevice = FFMpegFlag_MakeFlag(0b0000000000001000);
 
 class FFMpeg;
 
@@ -296,6 +298,9 @@ class FFMpeg {
 	AVBufferRef* hw_device_ctx = nullptr;
 	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
+
+    bool bSharedHardWareDevice = false;
+    inline static std::map<AVHWDeviceType, AVBufferRef*> sharedHardwareDevice;
 
     // copy hardware decode result to texture
     bool bCopyToTexture = false;
@@ -478,18 +483,40 @@ private:
 		}
 	}
 
-	inline int HW_InitDecoder(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
-		int err;
+    // update hardware device context to hw_device_ctx
+    inline int HW_UpdateDeviceContext(const AVHWDeviceType type) {
+        if (!bSharedHardWareDevice) {
+            return av_hwdevice_ctx_create(&hw_device_ctx, type,
+                nullptr, nullptr, 0);
+        }
 
-		if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
-			nullptr, nullptr, 0)) < 0) {
-			//fprintf(stderr, "Failed to create specified HW device.\n");
-			return err;
-		}
+        if (sharedHardwareDevice.contains(type)) {
+            hw_device_ctx = av_buffer_ref(sharedHardwareDevice[type]);
+
+            return 0;
+        }
+        else {
+            int err = 0;
+            if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
+                nullptr, nullptr, 0)) < 0) {
+                return err;
+            }
+
+            sharedHardwareDevice[type] = av_buffer_ref(hw_device_ctx);
+
+            return 0;
+        }
+    }
+    
+    inline int HW_InitDecoderDeviceContext(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
+        int err = 0;
+        if ((err = HW_UpdateDeviceContext(type)) < 0) {
+            return err;
+        }
 
 		pCodecContext->hw_device_ctx = av_buffer_ref(hw_device_ctx);
 
-		return err;
+		return 0;
 	}
 #endif
 
@@ -776,7 +803,7 @@ private:
 				return AV_PIX_FMT_NONE;
 				};
 
-			if (HW_InitDecoder((*ppVCodecContext), hw_type) < 0) {
+			if (HW_InitDecoderDeviceContext((*ppVCodecContext), hw_type) < 0) {
 				//throw FFMpegException_HWInitFailed;
 				bHWDecode = false;
 			}
@@ -826,8 +853,9 @@ private:
 		const auto hw_deviceType = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
 		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
         bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
+        bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;
 
-		if (bHWDecode) {
+        if (bHWDecode) {
             // update pixel format
 			hw_type = hw_deviceType;
 			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
