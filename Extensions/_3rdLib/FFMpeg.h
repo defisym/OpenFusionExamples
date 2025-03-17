@@ -818,6 +818,14 @@ private:
 			return FFMpegException_InitFailed;
 		}
 
+#ifdef HW_DECODE
+        if (bHWDecode) {
+            // send dummy to flush context
+            AVPacket dummy_pkt = { 0 };
+            avcodec_send_packet(*ppVCodecContext, &dummy_pkt);
+            gpu_flush_buffers(*ppVCodecContext);
+        }
+#endif
 		return 0;
 	}
 
@@ -1097,6 +1105,7 @@ private:
 		//how many packet processed
 		//int count = 0;
 
+        gpu_flush_buffers(pCodecContext);
 		int response = 0;
 
 		while (av_read_frame(pFormatContext, frames.pPacket) >= 0) {
@@ -1201,7 +1210,7 @@ private:
     inline void convert_textureFrame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
         auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
         auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
-
+            
         auto pTexture = (ID3D11Texture2D*)pFrame->data[0];
         auto pIndex = (intptr_t)pFrame->data[1];
 
@@ -1449,6 +1458,8 @@ private:
 		// Return decoded output data (into a frame) from a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga11e6542c4e66d3028668788a1a74217c
 		int response = avcodec_receive_frame(pVCodecContext, pFrame);
+        // flush after receive frame
+        gpu_flush_buffers(pVCodecContext);
 
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
 			av_frame_unref(pFrame);
@@ -2024,6 +2035,18 @@ public:
 	// Video control
 	// ------------------------------------
 
+    inline void gpu_flush_buffers(AVCodecContext* pCtx) {
+#ifdef HW_DECODE
+        auto pBuffer = pCtx->hw_device_ctx;
+        if (pBuffer == nullptr) { return; }
+
+        auto pHWDCtx = (AVHWDeviceContext*)pCtx->hw_device_ctx->data;
+        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
+
+        pHWCtx->device_context->Flush();
+#endif
+    }
+
 	inline int get_streamIndex() const {
 		int steam_index = -1;
 
@@ -2054,6 +2077,7 @@ public:
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
 			avcodec_flush_buffers(pVCodecContext);
+            gpu_flush_buffers(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
@@ -2118,6 +2142,8 @@ public:
 		videoPts = 0;
 
 		avcodec_flush_buffers(pVGetCodecContext);
+        gpu_flush_buffers(pVGetCodecContext);
+
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;
