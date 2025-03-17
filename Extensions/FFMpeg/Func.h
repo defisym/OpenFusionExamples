@@ -394,8 +394,10 @@ inline void SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
     if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return; }
     rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
-        rdPtr->pFFMpeg->WaitGPU();  // to avoid green screen
-        CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);     
+        // to avoid green screen at start
+        if (rdPtr->bCopyToTexture) { rdPtr->pFFMpeg->WaitGPU(); }
+
+        CopyData(rdPtr, rdPtr->pMemSf, pData, stride, height);
         ReDisplay(rdPtr);
         });
 
