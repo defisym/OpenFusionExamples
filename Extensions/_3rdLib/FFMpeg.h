@@ -1204,6 +1204,8 @@ private:
 	}
 
     inline AVD3D11VADeviceContext* GetDeviceContext() {
+        if (hw_device_ctx == nullptr) { return nullptr; }
+
         auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
         auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
 
@@ -1213,6 +1215,8 @@ private:
 public:
     inline void WaitGPU() {
         auto pHWCtx = GetDeviceContext();
+        if (pHWCtx == nullptr) { return; }
+
         pHWCtx->device_context->End(pEvent.Get());
         while (pHWCtx->device_context->GetData(pEvent.Get(), nullptr, 0, 0) == S_FALSE) {}
     }
