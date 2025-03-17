@@ -407,7 +407,7 @@ long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long 
 
 	InitSurface(rdPtr->pGrabbedFrame,
         rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
-        rdPtr->bCopyToTexture);
+        rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState());
 	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);
 	//__SavetoClipBoard(rdPtr->pGrabbedFrame);
 

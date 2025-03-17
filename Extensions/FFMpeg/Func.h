@@ -300,7 +300,7 @@ inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     if (pData == nullptr || pDst == nullptr) { return; }
 
     // pDst must match bCopyToTexture, see `InitSurface`
-    if (!rdPtr->bCopyToTexture) {
+    if (!(rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState())) {
         CopyBitmap(pData, width, pDst, rdPtr->bPm);
     }
     else {
@@ -554,7 +554,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
         UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
         InitSurface(rdPtr->pMemSf,
             rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
-            rdPtr->bCopyToTexture);
+            rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState());
 		// display first valid frame
         if (!SetPositionGeneral(rdPtr, static_cast<int>(ms))) {
             // failed to display first frame, which indicates error
