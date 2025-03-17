@@ -174,6 +174,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     //                  ID3D11Device::CreateShaderResourceView.
     auto pFrameTexture = pCtx->pFFMpegCtx->pTexture;
     auto sharedHandle = pCtx->pFFMpegCtx->sharedHandle;
+    auto textureFormat = pCtx->pFFMpegCtx->textureFormat;
 
     // Fusion Context
     auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
@@ -235,19 +236,50 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     srvDesc.Texture2D.MipLevels = 1;
 
     // create new shader resource view
-    // NV12 cannot create srv directly, split to two planes
+    DXGI_FORMAT yFormat = DXGI_FORMAT_UNKNOWN;
     ComPtr<ID3D11ShaderResourceView> pSrvY = nullptr;
-    srvDesc.Format = DXGI_FORMAT_R8_UNORM;
+    
+    DXGI_FORMAT uvFormat = DXGI_FORMAT_UNKNOWN;
+    ComPtr<ID3D11ShaderResourceView> pSrvUV = nullptr;
+
+    // YUV cannot create srv directly, split to two planes
+    switch (textureFormat) {
+    case DXGI_FORMAT_NV12:
+    {
+        yFormat = DXGI_FORMAT_R8_UNORM;
+        uvFormat = DXGI_FORMAT_R8G8_UNORM;
+
+        break;
+    }
+    case DXGI_FORMAT_P010:
+    case DXGI_FORMAT_P016:
+    {
+        yFormat = DXGI_FORMAT_R16_UNORM;
+        uvFormat = DXGI_FORMAT_R16G16_UNORM;
+
+        break;
+    }
+    default: break;
+    }    
+
+    // format not supported
+    if (yFormat == DXGI_FORMAT_UNKNOWN || yFormat == DXGI_FORMAT_UNKNOWN) { return; }
+
+    srvDesc.Format = yFormat;
     hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvY);
     if (FAILED(hr)) { return; }
 
-    ComPtr<ID3D11ShaderResourceView> pSrvUV = nullptr;
-    srvDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+    srvDesc.Format = uvFormat;
     hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvUV);
     if (FAILED(hr)) { return; }
 
     ID3D11ShaderResourceView* srvs[] = { pSrvY.Get(), pSrvUV.Get() };
     pFusionDeviceCtx->PSSetShaderResources(0, std::size(srvs), srvs);
+
+    // TODO
+    // default shader uses UNORM & float, may lose precision
+    auto& [psBlob, ps] = pCTTHandler->psBundle;
+    pFusionDeviceCtx->PSSetShader(ps.Get(), 0, 0);
 
     // create sampler
     ID3D11SamplerState* sss[] = {
@@ -281,9 +313,6 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
 
     ID3D11Buffer* cb[] = { pConstantBuffer.Get()};
     pFusionDeviceCtx->PSSetConstantBuffers(0, std::size(cb), cb);
-
-    auto& [psBlob, ps] = pCTTHandler->psBundle;
-    pFusionDeviceCtx->PSSetShader(ps.Get(), 0, 0);
 
     // 5. render
     ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
