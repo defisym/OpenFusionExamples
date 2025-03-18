@@ -2136,6 +2136,8 @@ public:
 	inline int goto_videoPosition(const size_t ms, const FrameDataCallBack& callBack) {
 		// As audio thread can affect the main format context, lock it here
         SpinLockHelper lockHelper(&audioLock);
+        // clear video queue to clear old data, e.g., filled by audio thread with old context
+        videoQueue.flush();
 
 		const auto targetPts = ms / 1000.0;
 		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
@@ -2158,7 +2160,7 @@ public:
         // copy hw_pix_fmt from opaque context
         VGetCodecCtxQpaque.hw_pix_fmt = VCodecCtxQpaque.hw_pix_fmt;
         // CopyToTextureContext only copy pD3D11VADeciveCtx (shared)
-        // other member shouldn't be copied!
+        // other members shouldn't be copied!
         VGetCodecCtxQpaque.copyToTextureCtx.pD3D11VADeciveCtx = VCodecCtxQpaque.copyToTextureCtx.pD3D11VADeciveCtx;
         if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
