@@ -146,7 +146,7 @@ struct ShaderCompiler {
             nullptr,
             &pixelShader))) {
             errorMsg = "D3D11: Failed to compile pixel shader\n";
-            return std::make_tuple(nullptr, nullptr);
+            return GetNullBundle<PixelShaderBundle>();
         }
 
         return std::make_tuple(pixelShaderBlob, pixelShader);
@@ -158,7 +158,7 @@ struct ShaderCompiler {
         if (!CompileShader(pData, sz,
             pEntryPoint, std::format("ps_{}", pTarget).c_str(),
             pixelShaderBlob)) {
-            return std::make_tuple(nullptr, nullptr);
+            return GetNullBundle<PixelShaderBundle>();
         }
 
         return CreatePixelShader(pixelShaderBlob);
@@ -170,7 +170,7 @@ struct ShaderCompiler {
         if (!CompileShader(pFileName,
             pEntryPoint, std::format("ps_{}", pTarget).c_str(),
             pixelShaderBlob)) {
-            return std::make_tuple(nullptr, nullptr);
+            return GetNullBundle<PixelShaderBundle>();
         }
 
         return CreatePixelShader(pixelShaderBlob);
