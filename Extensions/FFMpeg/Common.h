@@ -57,8 +57,6 @@
 
 // My lib
 #include	"D3DUtilities/TextureUtilities.h"
-#include	"D3DUtilities/ShaderCompiler.h"
-
 #include	"SDLUtilities.h"
 
 #include	"Encryption.h"
