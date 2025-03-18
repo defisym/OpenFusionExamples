@@ -36,7 +36,6 @@ struct ShaderCompiler {
 
     // Targets:
     // https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/specifying-compiler-targets
-
     constexpr static auto DEFAULT_ENTRYPOINT = "Main";
     constexpr static auto DEFAULT_TARGET = "5_0";
 
