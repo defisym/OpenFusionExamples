@@ -13,3 +13,6 @@
 [submodule "Extensions/_3rdLib/WinToast"]
 	path = Extensions/_3rdLib/WinToast
 	url = https://github.com/mohabouje/WinToast.git
+[submodule "Extensions/FFMpeg/D3D/Detours"]
+	path = Extensions/FFMpeg/D3D/Detours
+	url = https://github.com/microsoft/Detours.git

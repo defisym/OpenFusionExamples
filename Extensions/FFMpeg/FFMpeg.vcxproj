@@ -251,6 +251,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
+    <ClCompile Include="D3D\HookD3D.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -302,8 +303,11 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
     <ClInclude Include="AudioInterface.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="D3D\HookD3D.h" />
+    <ClInclude Include="D3D\CopyToTextureHandler.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="Func.h" />
+    <ClInclude Include="Macro.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SDL_Interface.h" />
@@ -312,6 +316,19 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <ItemGroup>
     <Image Include="EXTICON.BMP" />
     <Image Include="EXTIMG.BMP" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Shader\ps.hlsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="Shader\vs.hlsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Shader\YUVToBGRA.hlsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

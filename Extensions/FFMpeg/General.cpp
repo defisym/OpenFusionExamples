@@ -55,8 +55,12 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 // Where you want to do COLD-START initialization.
 // Called when the extension is loaded into memory.
 //
-extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet)
-{
+extern "C" int WINAPI DLLExport Initialize(mv _far* mV, int quiet) {
+#ifdef _DEBUG
+    if (!HookD3D::AttachCreateDevice()) {
+        OutputDebugString(_T("Failed to hook D3D"));
+    }
+#endif
 	// No error
 	return 0;
 }
@@ -67,8 +71,12 @@ extern "C" int WINAPI DLLExport Initialize(mv _far *mV, int quiet)
 // Where you want to kill and initialized data opened in the above routine
 // Called just before freeing the DLL.
 // 
-extern "C" int WINAPI DLLExport Free(mv _far *mV)
-{
+extern "C" int WINAPI DLLExport Free(mv _far* mV) {
+#ifdef _DEBUG
+    if (!HookD3D::DetachCreateDevice()) {
+        OutputDebugString(_T("Failed to unhook D3D"));
+    }
+#endif
 	// No error
 	return 0;
 }

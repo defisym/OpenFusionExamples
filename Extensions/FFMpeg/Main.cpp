@@ -71,6 +71,8 @@ short actionsInfos[]=
 
 		IDMN_ACTION_RD, M_ACTION_RD, ACT_ACTION_RD,	0, 0,
 
+        IDMN_ACTION_SCTT, M_ACTION_SCTT, ACT_ACTION_SCTT, 0, 1, PARAM_EXPRESSION, M_COPYTOTEXTURE,
+
 		};
 
 // Definitions of parameters for each expression
@@ -293,7 +295,23 @@ short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param
 
 	rdPtr->hwDeviceType = FFMpeg::get_hwDeviceTypeByName(deviceName);
 
+    // auto managed
+    if (rdPtr->hwDeviceType != AV_HWDEVICE_TYPE_D3D11VA) {
+        rdPtr->bCopyToTexture = false;
+    }
+
 	return 0;
+}
+
+short WINAPI DLLExport Action_SetCopyToTexture(LPRDATA rdPtr, long param1, long param2) {
+    rdPtr->bCopyToTexture = (bool)CNC_GetIntParameter(rdPtr);
+    
+    // auto managed
+    if (rdPtr->bCopyToTexture) {
+        rdPtr->hwDeviceType = AV_HWDEVICE_TYPE_D3D11VA;
+    }
+
+    return 0;
 }
 
 short WINAPI DLLExport Action_Stretch(LPRDATA rdPtr, long param1, long param2) {
@@ -346,11 +364,11 @@ short WINAPI DLLExport Action_SetOverrideCodec(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport Action_ResetDisplay(LPRDATA rdPtr, long param1, long param2) {
-	if (!GetVideoPlayState(rdPtr) && rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
-		_ForceAddAlpha(rdPtr->pMemSf, 0);
+	if (!GetVideoPlayState(rdPtr) && rdPtr->pDisplaySf != nullptr && rdPtr->pDisplaySf->IsValid()) {
+		_ForceAddAlpha(rdPtr->pDisplaySf, 0);
 
 		if(rdPtr->bPm) {
-			rdPtr->pMemSf->PremultiplyAlpha();
+			rdPtr->pDisplaySf->PremultiplyAlpha();
 		}
 	}
 
@@ -386,28 +404,30 @@ long WINAPI DLLExport Expression_GetVolume(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_GetCurrentVideoFramePointer(LPRDATA rdPtr, long param1) {
-	bool bHwa = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool bWantHWA = (bool)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	if (!rdPtr->bOpen) {
 		return 0;
 	}
 
-	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pMemSf, rdPtr->pHwaSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pDisplaySf, rdPtr->pReturnSf);
 }
 
 long WINAPI DLLExport Expression_GetGrabbedVideoFramePointer(LPRDATA rdPtr,long param1) {
 	size_t ms = (size_t)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_INT);
-	bool bHwa = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
+	bool bWantHWA = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	if (!rdPtr->bOpen) {
 		return 0;
 	}
 
-	InitSurface(rdPtr->pGrabbedFrame, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+	InitSurface(rdPtr->pGrabbedFrame,
+        rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
+        rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState());
 	BlitVideoFrame(rdPtr, ms, rdPtr->pGrabbedFrame);
 	//__SavetoClipBoard(rdPtr->pGrabbedFrame);
 
-	return ReturnVideoFrame(rdPtr, bHwa, rdPtr->pGrabbedFrame, rdPtr->pHwaSf);
+	return ReturnVideoFrame(rdPtr, bWantHWA, rdPtr->pGrabbedFrame, rdPtr->pReturnSf);
 }
 
 long WINAPI DLLExport Expression_GetVideoOpen(LPRDATA rdPtr, long param1) {
@@ -523,6 +543,8 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetOverrideCodec,
 
 			Action_ResetDisplay,
+
+            Action_SetCopyToTexture,
 
 			0
 			};

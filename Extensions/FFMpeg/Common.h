@@ -45,6 +45,8 @@
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
+#include	"Macro.h"
+
 #ifdef _OPENMP
 #include	<omp.h>
 #endif
@@ -54,6 +56,7 @@
 #include	<chrono>
 
 // My lib
+#include	"D3DUtilities/TextureUtilities.h"
 #include	"SDLUtilities.h"
 
 #include	"Encryption.h"
@@ -73,6 +76,14 @@
 // My header
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
+
+#ifdef COPY_D3D_TEXTURE
+#ifdef _DEBUG
+#include	"D3D/HookD3D.h"
+#endif
+
+#include	"D3D/CopyToTextureHandler.h"
+#endif
 
 #include	"Func.h"
 

@@ -53,7 +53,9 @@
 
 #define	ACT_ACTION_RD					18
 
-#define	ACT_LAST						19
+#define	ACT_ACTION_SCTT					19
+
+#define	ACT_LAST						20
 
 // -------------------------------
 // DEFINITION OF EXPRESSIONS CODES
@@ -112,10 +114,10 @@ typedef struct tagEDATA_V1
 	bool bCache;
 
 	AVHWDeviceType hwDeviceType;
-
 	bool bForceNoAudio;
+    bool bCopyToTexture;
+	bool bSharedHardWareDevice;
 
-	bool bBuffer[2];
 	int buffer[47];
 
 } EDITDATA;
@@ -151,11 +153,11 @@ typedef struct tagRDATA
 	short			sheight;
 
 	// MemSf
-	LPSURFACE pMemSf;	
+	LPSURFACE pDisplaySf;	
 	LPSURFACE pGrabbedFrame;
 
-	// HwaSf
-	LPSURFACE pHwaSf;
+	// convert format to this when return surface
+	LPSURFACE pReturnSf;
 
 	bool bHwa;
 
@@ -195,6 +197,8 @@ typedef struct tagRDATA
 
 	AVHWDeviceType hwDeviceType;
 	bool bForceNoAudio;
+    bool bCopyToTexture;
+    bool bSharedHardWareDevice;
 
 	std::string* pVideoOverrideCodecName = nullptr;
 	std::string* pAudioOverrideCodecName = nullptr;

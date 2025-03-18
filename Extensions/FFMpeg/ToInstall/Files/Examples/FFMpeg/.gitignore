@@ -1,7 +1,8 @@
 FFMpeg.exe
 FFMpeg.dat
 
-benchmark.exe
+Benchmark.exe
+Benchmark.dat
 
 Modules/*.*
 

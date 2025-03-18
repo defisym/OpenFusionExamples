@@ -15,6 +15,7 @@
 
 #pragma warning(disable : 4819)
 
+#include <map>
 #include <string>
 #include <format>
 #include <functional>
@@ -30,14 +31,16 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavutil/imgutils.h>
+
+#include <libavutil/opt.h>
 #include <libavutil/time.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/hwcontext_d3d11va.h>
+
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 
 #include <libavfilter/avfilter.h>
-#include <libavutil/opt.h>
-
 #include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
 }
@@ -101,24 +104,27 @@ constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
 // ------------------------------------
 constexpr auto FFMpegException_InitFailed = -1;
 constexpr auto FFMpegException_HWInitFailed = -2;
-constexpr auto FFMpegException_HWDecodeFailed = -3;
-constexpr auto FFMpegException_FilterInitFailed = -4;
+constexpr auto FFMpegException_DecodeFailed = -3;
+constexpr auto FFMpegException_HWDecodeFailed = -4;
+constexpr auto FFMpegException_FilterInitFailed = -5;
 
 struct FFMpegException final :std::exception {
 	int _flag = 0;
 	static const char* GetInfo(int errorCode) {
-		switch(errorCode) {
-		case FFMpegException_InitFailed:
-			return "Init failed";
-		case FFMpegException_HWInitFailed:
-			return "Init hardware decode failed";
-		case FFMpegException_HWDecodeFailed:
-			return "Hardware decode failed";
-		case FFMpegException_FilterInitFailed:
-			return "Filter init failed";
-		default:
-			return "Unknown error";
-		}
+        switch (errorCode) {
+        case FFMpegException_InitFailed:
+            return "Init failed";
+        case FFMpegException_HWInitFailed:
+            return "Init hardware decode failed";
+        case FFMpegException_DecodeFailed:
+            return "Decode failed";
+        case FFMpegException_HWDecodeFailed:
+            return "Hardware decode failed";
+        case FFMpegException_FilterInitFailed:
+            return "Filter init failed";
+        default:
+            return "Unknown error";
+        }
 	}
 
 	explicit FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
@@ -152,8 +158,8 @@ constexpr auto PIXEL_BYTE = 3;
 #define HW_DECODE
 
 #ifdef HW_DECODE
-// global variable for AVCodecContext->get_format callback
-inline static auto hw_pix_fmt_global = AV_PIX_FMT_NONE;
+// for ComPtr
+#include "D3DUtilities/D3DDefinition.h"
 #endif
 
 // ------------------------------------
@@ -169,6 +175,8 @@ constexpr auto FFMpegFlag_MakeFlag(const auto flag) {
 
 constexpr auto FFMpegFlag_Fast = FFMpegFlag_MakeFlag(0b0000000000000001);
 constexpr auto FFMpegFlag_ForceNoAudio = FFMpegFlag_MakeFlag(0b0000000000000010);
+constexpr auto FFMpegFlag_CopyToTexture = FFMpegFlag_MakeFlag(0b0000000000000100);
+constexpr auto FFMpegFlag_SharedHardWareDevice = FFMpegFlag_MakeFlag(0b0000000000001000);
 
 class FFMpeg;
 
@@ -293,6 +301,25 @@ class FFMpeg {
 	AVBufferRef* hw_device_ctx = nullptr;
 	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
+
+    bool bSharedHardWareDevice = false;
+    inline static std::map<AVHWDeviceType, AVBufferRef*> sharedHardwareDevice;
+    
+public:
+    struct CopyToTextureContext {
+        AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
+        ComPtr<ID3D11Texture2D> pTexture = nullptr;
+        HANDLE sharedHandle = nullptr;
+        DXGI_FORMAT textureFormat = DXGI_FORMAT_UNKNOWN;
+    };
+
+private:
+    // copy hardware decode result to texture
+    bool bCopyToTexture = false;
+
+    // for wait gpu
+    ComPtr<ID3D11Query> pEvent = nullptr;
+
 #endif //  HW_DECODE
 
 #ifdef AUDIO_TEMPO
@@ -322,6 +349,21 @@ class FFMpeg {
 	AVCodecContext* pVCodecContext = nullptr;
 	AVCodecContext* pVGetCodecContext = nullptr;
 	AVCodecContext* pACodecContext = nullptr;
+
+    // Opaque data passed to AVCodecContext.opaque
+    struct AVCodecCtxOpaque {
+#ifdef  HW_DECODE
+        // used in AVCodecContext->get_format callback
+        AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
+        // video & get use separate context to avoid conflict
+        // e.g., if share the same texture, call get first, and it's result 
+        // not updated in video decode, then the incorrect frame will be displayed
+        CopyToTextureContext copyToTextureCtx = {};
+#endif //  HW_DECODE
+    };
+
+    AVCodecCtxOpaque VCodecCtxQpaque = {};
+    AVCodecCtxOpaque VGetCodecCtxQpaque = {};
 
 	AVFrame* pVFrame = nullptr;
 	AVFrame* pAFrame = nullptr;
@@ -449,18 +491,43 @@ class FFMpeg {
 		}
 	}
 
-	inline int HW_InitDecoder(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
-		int err;
+    // update hardware device context to hw_device_ctx
+    inline int HW_UpdateDeviceContext(const AVHWDeviceType type) {
+        if (!bSharedHardWareDevice) {
+            return av_hwdevice_ctx_create(&hw_device_ctx, type,
+                nullptr, nullptr, 0);
+        }
 
-		if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
-			nullptr, nullptr, 0)) < 0) {
-			//fprintf(stderr, "Failed to create specified HW device.\n");
-			return err;
-		}
+        if (sharedHardwareDevice.contains(type)) {
+            hw_device_ctx = av_buffer_ref(sharedHardwareDevice[type]);
+
+            return 0;
+        }
+        else {
+            int err = 0;
+            if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
+                nullptr, nullptr, 0)) < 0) {
+                return err;
+            }
+
+            sharedHardwareDevice[type] = av_buffer_ref(hw_device_ctx);
+
+            return 0;
+        }
+    }
+    
+    inline int HW_InitDecoderDeviceContext(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
+        int err = 0;
+        if ((err = HW_UpdateDeviceContext(type)) < 0) {
+            return err;
+        }
+
+        D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT, 0 };
+        GetDeviceContext()->device->CreateQuery(&queryDesc, &pEvent);
 
 		pCodecContext->hw_device_ctx = av_buffer_ref(hw_device_ctx);
 
-		return err;
+		return 0;
 	}
 #endif
 
@@ -714,7 +781,7 @@ class FFMpeg {
 	}
 
 	// init the given AVCodecContext by pVCodec, which must be valid before calling this
-	inline int init_videoCodecContext(AVCodecContext** ppVCodecContext) {
+    inline int init_videoCodecContext(AVCodecContext** ppVCodecContext, AVCodecCtxOpaque* pOpaque = nullptr) {
 		*ppVCodecContext = avcodec_alloc_context3(pVCodec);
 		if (!*ppVCodecContext) {
 			return FFMpegException_InitFailed;
@@ -724,6 +791,7 @@ class FFMpeg {
 			return FFMpegException_InitFailed;
 		}
 
+        (*ppVCodecContext)->opaque = pOpaque;
 		(*ppVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
 		if (options.flag & FFMpegFlag_Fast) {
 			(*ppVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
@@ -733,8 +801,11 @@ class FFMpeg {
 		if (bHWDecode) {
 			//(*ppVCodecContext)->extra_hw_frames = 4;
 			(*ppVCodecContext)->get_format = [] (AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)->AVPixelFormat {
+                const auto pOpaque = (AVCodecCtxOpaque*)ctx->opaque;
+                const auto hw_pix_fmt = pOpaque->hw_pix_fmt;
+
 				for (const enum AVPixelFormat* p = pix_fmts; *p != -1; p++) {
-					if (*p == hw_pix_fmt_global) {
+					if (*p == hw_pix_fmt) {
 						return *p;
 					}
 				}
@@ -743,7 +814,7 @@ class FFMpeg {
 				return AV_PIX_FMT_NONE;
 				};
 
-			if (HW_InitDecoder((*ppVCodecContext), hw_type) < 0) {
+			if (HW_InitDecoderDeviceContext((*ppVCodecContext), hw_type) < 0) {
 				//throw FFMpegException_HWInitFailed;
 				bHWDecode = false;
 			}
@@ -791,10 +862,12 @@ class FFMpeg {
 
 #ifdef HW_DECODE
 		const auto hw_deviceType = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
-
 		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
+        bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
+        bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;
 
-		if (bHWDecode) {
+        if (bHWDecode) {
+            // update pixel format
 			hw_type = hw_deviceType;
 			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
 
@@ -814,22 +887,18 @@ class FFMpeg {
 				}
 
 				if (hw_pix_fmt == AV_PIX_FMT_NONE) {
-					//throw FFMpegException_HWInitFailed;
-					bHWDecode = false;
-					hw_type = AV_HWDEVICE_TYPE_NONE;
+                    hw_type = AV_HWDEVICE_TYPE_NONE;
+                    bHWDecode = false;
 				}
 			}
 
-			hw_pix_fmt_global = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
+            VCodecCtxQpaque.hw_pix_fmt = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
 		}
 #endif
 
-		if (init_videoCodecContext(&pVCodecContext) != 0) {
+        if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
 		}
-		//if (init_videoCodecContext(&pVGetCodecContext) != 0) {
-		//	return FFMpegException_InitFailed;
-		//}
 
 		//---------------------
 		// Audio
@@ -1076,7 +1145,7 @@ class FFMpeg {
 		}
 
 		this->bSeeking = false;
-		convert_frame(frames.pLastFrame, callBack);
+        convert_frame(pCodecContext, frames.pLastFrame, callBack);
 
 		av_packet_unref(frames.pPacket);
 
@@ -1138,57 +1207,174 @@ class FFMpeg {
 		return response;
 	}
 
-	inline void convert_frame(AVFrame* pFrame, const FrameDataCallBack& callBack) {
+    inline AVD3D11VADeviceContext* GetDeviceContext() {
+        if (hw_device_ctx == nullptr) { return nullptr; }
+
+        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
+        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
+
+        return pHWCtx;
+    }
+
+public:
+    inline void WaitGPU() {
+        auto pHWCtx = GetDeviceContext();
+        if (pHWCtx == nullptr) { return; }
+
+        pHWCtx->device_context->End(pEvent.Get());
+        while (pHWCtx->device_context->GetData(pEvent.Get(), nullptr, 0, 0) == S_FALSE) {}
+    }
+
+    inline void FlushAndWaitGPU(AVCodecContext* pCtx) {
+        gpu_flush_buffers(pCtx);
+        WaitGPU();
+    }
+
+private:
+    // only available when bCopyToTexture enabled
+    // do nothing, just pass D3D11 texture to callback, furture process not needed
+    inline void convert_textureFrame(AVCodecContext* pCodecContext,
+        AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        auto pHWCtx = GetDeviceContext();
+
+        auto pTexture = (ID3D11Texture2D*)pFrame->data[0];
+        auto pIndex = (intptr_t)pFrame->data[1];
+
+        auto pOpaque = (AVCodecCtxOpaque*)pCodecContext->opaque;
+        auto pCTTCtx = &pOpaque->copyToTextureCtx;
+
+        if (pCTTCtx->pTexture == nullptr) {
+            HRESULT hr = S_OK;
+
+            // 1. create shared texture
+            D3D11_TEXTURE2D_DESC sharedDesc = {};
+            pTexture->GetDesc(&sharedDesc);
+            
+            sharedDesc.ArraySize = 1;
+            sharedDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+            sharedDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+            hr = pHWCtx->device->CreateTexture2D(&sharedDesc, nullptr, &pCTTCtx->pTexture);
+            if (FAILED(hr)) { return; }
+
+            // 2. Create shared handle    
+            ComPtr<IDXGIResource> dxgiShareTexture;
+            hr = pCTTCtx->pTexture->QueryInterface(IID_PPV_ARGS(&dxgiShareTexture));
+            if (FAILED(hr)) { return; }
+
+            pCTTCtx->sharedHandle = nullptr;
+            hr = dxgiShareTexture->GetSharedHandle(&pCTTCtx->sharedHandle);
+            if (FAILED(hr)) { return; }
+
+            // 3. update texture format
+            pCTTCtx->textureFormat = sharedDesc.Format;
+        }
+
+        // failed to create
+        if (pCTTCtx->sharedHandle == nullptr) { return; }
+
+        // the result maybe an array texture
+        // one solution is use CopySubresourceRegion to copy it to a new texture
+        // and set SrcSubresource to pFrameIndex
+        pHWCtx->device_context->CopySubresourceRegion(pCTTCtx->pTexture.Get(), 0, 0, 0, 0, pTexture, pIndex, 0);
+        pHWCtx->device_context->Flush();
+        //WaitGPU();
+
+        //// another solution create a srv and use it as shader resource
+        //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+        //srvDesc.Format = FrameDesc.Format;
+        //srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        //
+        //// decoded video texture only has one mip level
+        //// MostDetailedMip: which one start to use, the max reslution one is 0
+        //// MipLevels: how many we can use, only one is 1
+        //
+        //// ID3D11Texture2D is texture
+        //if (pFrameIndex == 0) {
+        //    srvDesc.Texture2D.MostDetailedMip = 0;
+        //    srvDesc.Texture2D.MipLevels = 1;
+        //}
+        //// ID3D11Texture2D is an array texture
+        //else {
+        //    srvDesc.Texture2DArray.MostDetailedMip = 0;
+        //    srvDesc.Texture2DArray.MipLevels = 1;
+        //    srvDesc.Texture2DArray.FirstArraySlice = pFrameIndex;
+        //    srvDesc.Texture2DArray.ArraySize = 1;
+        //}
+
+        callBack((const unsigned char*)(pCTTCtx), pFrame->width, pFrame->height);
+    }
+
+    // convert hardware frame to bitmap frame, aka copy data from GPU to CPU
+    // callback is not called here, should call convert_bitmapFrame later for display
+    inline void convert_hardwareFrame(AVCodecContext* pCodecContext, 
+        AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        av_frame_unref(pSWFrame);
+
+        if (pFrame->format == hw_pix_fmt) {
+            /* retrieve data from GPU to CPU */
+            if (av_hwframe_transfer_data(pSWFrame, pFrame, 0) < 0) {
+                //fprintf(stderr, "Error transferring the data to system memory\n");
+                throw FFMpegException(FFMpegException_HWDecodeFailed);
+            }
+
+            av_frame_unref(pFrame);
+            av_frame_move_ref(pFrame, pSWFrame);
+        }
+    }
+    
+    // convert bitmap frame pixel format to PIXEL_FORMAT
+    inline void convert_bitmapFrame(AVCodecContext* pCodecContext, 
+        AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        // Convert data to Bitmap data
+        // https://zhuanlan.zhihu.com/p/53305541
+
+        // allocate buffer
+        if (p_global_bgr_buffer == nullptr) {
+            num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
+            p_global_bgr_buffer = new uint8_t[num_bytes];
+        }
+
+        // allocate sws
+        if (swsContext == nullptr) {
+            //auto pFormat = pFrame->format;
+
+            swsContext = sws_getContext(pFrame->width, pFrame->height,
+                static_cast<AVPixelFormat>(pFrame->format),
+                pFrame->width, pFrame->height,
+                PIXEL_FORMAT,
+                NULL, nullptr, nullptr, nullptr);
+        }
+
+        // make sure the sws_scale output is point to start.
+        const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
+
+        uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
+
+        sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
+
+        //bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
+        callBack(bgr_buffer[0], linesize[0], pFrame->height);
+    }
+
+	inline void convert_frame(AVCodecContext* pCodecContext, 
+        AVFrame* pFrame, const FrameDataCallBack& callBack) {
+        // data invalid, do not trigger callback, in case of get a black frame
+        if (!pFrame->data[0]) { return; }
+
 #ifdef HW_DECODE
 		if (bHWDecode) {
-			av_frame_unref(pSWFrame);
+            if (bCopyToTexture) { 
+                convert_textureFrame(pCodecContext, pFrame, callBack);
+                av_frame_unref(pFrame); 
 
-			if (pFrame->format == hw_pix_fmt) {
-				/* retrieve data from GPU to CPU */
-				if (av_hwframe_transfer_data(pSWFrame, pFrame, 0) < 0) {
-					//fprintf(stderr, "Error transferring the data to system memory\n");
-					throw FFMpegException(FFMpegException_HWDecodeFailed);
-				}
-
-				av_frame_unref(pFrame);
-				av_frame_move_ref(pFrame, pSWFrame);
-			}
+                return;
+            }
+            
+            convert_hardwareFrame(pCodecContext, pFrame, callBack);
 		}
 #endif // HW_DECODE
 
-		// data invalid, do not trigger callback, in case of get a black frame
-		if (!pFrame->data[0]) { return; }
-
-		// Convert data to Bitmap data
-		// https://zhuanlan.zhihu.com/p/53305541
-
-		// allocate buffer
-		if (p_global_bgr_buffer == nullptr) {
-			num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
-			p_global_bgr_buffer = new uint8_t[num_bytes];
-		}
-
-		// allocate sws
-		if (swsContext == nullptr) {
-			//auto pFormat = pFrame->format;
-
-			swsContext = sws_getContext(pFrame->width, pFrame->height
-				, static_cast<AVPixelFormat>(pFrame->format),
-				pFrame->width, pFrame->height
-				, PIXEL_FORMAT
-				, NULL, nullptr, nullptr, nullptr);
-		}
-
-		// make sure the sws_scale output is point to start.
-		const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
-
-		uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
-
-		sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-		//bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
-		callBack(bgr_buffer[0], linesize[0], pFrame->height);
-
+        convert_bitmapFrame(pCodecContext, pFrame, callBack);
 		av_frame_unref(pFrame);
 	}
 
@@ -1224,7 +1410,7 @@ class FFMpeg {
 
 		} while (syncState != SyncState::SYNC_SYNC);
 
-		convert_frame(pVLastFrame, callBack);
+        convert_frame(pVCodecContext, pVLastFrame, callBack);
 
 		return 0;
 	}
@@ -1880,6 +2066,18 @@ public:
 	// Video control
 	// ------------------------------------
 
+    inline void gpu_flush_buffers(AVCodecContext* pCtx) {
+#ifdef HW_DECODE
+        auto pBuffer = pCtx->hw_device_ctx;
+        if (pBuffer == nullptr) { return; }
+
+        auto pHWDCtx = (AVHWDeviceContext*)pCtx->hw_device_ctx->data;
+        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
+
+        pHWCtx->device_context->Flush();
+#endif
+    }
+
 	inline int get_streamIndex() const {
 		int steam_index = -1;
 
@@ -1910,6 +2108,7 @@ public:
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
 			avcodec_flush_buffers(pVCodecContext);
+            FlushAndWaitGPU(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
@@ -1953,7 +2152,11 @@ public:
 				: init_formatContext(&pSeekFormatContext, pFormatContext->url, pFormatContext->iformat);
 			if (!bSuccess) { return FFMpegException_InitFailed; }			
 		}
-		if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext) != 0) {
+
+        // copy hw_pix_fmt from opaque context
+        // CopyToTextureContext shouldn't be copied! 
+        VGetCodecCtxQpaque.hw_pix_fmt = VCodecCtxQpaque.hw_pix_fmt;
+        if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
 		}
 
@@ -1971,6 +2174,8 @@ public:
 		videoPts = 0;
 
 		avcodec_flush_buffers(pVGetCodecContext);
+        FlushAndWaitGPU(pVGetCodecContext);
+
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;

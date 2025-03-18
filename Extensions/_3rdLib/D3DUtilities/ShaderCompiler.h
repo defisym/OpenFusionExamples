@@ -22,11 +22,22 @@ struct ShaderCompiler {
     // ------------------------------------------
 
     using Blob = ComPtr<ID3DBlob>;
+
     using VertexShader = ComPtr<ID3D11VertexShader>;
+    using VertexShaderBundle = decltype(std::make_tuple(Blob{}, VertexShader{}));
+
     using PixelShader = ComPtr<ID3D11PixelShader>;
+    using PixelShaderBundle = decltype(std::make_tuple(Blob{}, PixelShader{}));
+
+    template<typename T>
+    static T GetNullBundle() {
+        return std::make_tuple(nullptr, nullptr);
+    }
 
     // Targets:
     // https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/specifying-compiler-targets
+    constexpr static auto DEFAULT_ENTRYPOINT = "Main";
+    constexpr static auto DEFAULT_TARGET = "5_0";
 
     bool CompileShader(const void* pData, const size_t sz,
        const char* pEntryPoint, const char* pTarget,
@@ -44,7 +55,7 @@ struct ShaderCompiler {
             &tempShaderBlob, &errorBlob))) {
             errorMsg = "D3D11: Failed to read shader from buffer\n";
             if (errorBlob != nullptr) {
-                errorMsg += std::format("D3D11: With message: {}", errorBlob->GetBufferPointer());
+                errorMsg += std::format("D3D11: With message: {}", (const char*)errorBlob->GetBufferPointer());
             }
 
             return false;
@@ -85,7 +96,7 @@ struct ShaderCompiler {
     // Compile VertexShader
     // ------------------------------------------
 
-    [[nodiscard]] VertexShader CreateVertexShader(const Blob& vertexShaderBlob) {
+    [[nodiscard]] VertexShaderBundle CreateVertexShader(const Blob& vertexShaderBlob) {
         VertexShader vertexShader;
         if (FAILED(pDevice->CreateVertexShader(
             vertexShaderBlob->GetBufferPointer(),
@@ -93,37 +104,41 @@ struct ShaderCompiler {
             nullptr,
             &vertexShader))) {
             errorMsg = "D3D11: Failed to compile vertex shader\n";
-            return nullptr;
+            return GetNullBundle<VertexShaderBundle>();
         }
 
-        return vertexShader;
+        return std::make_tuple(vertexShaderBlob, vertexShader);
     }
 
-    [[nodiscard]] VertexShader CreateVertexShader(const void* pData, const size_t sz,
-        const char* pEntryPoint = "Main", const char* pTarget = "vs_5_0") {
+    [[nodiscard]] VertexShaderBundle CreateVertexShader(const void* pData, const size_t sz,
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob vertexShaderBlob = nullptr;
-        if (!CompileShader(pData, sz, pEntryPoint, pTarget, vertexShaderBlob)) {
-            return nullptr;
+        if (!CompileShader(pData, sz,
+            pEntryPoint, std::format("vs_{}", pTarget).c_str(),
+            vertexShaderBlob)) {
+            return GetNullBundle<VertexShaderBundle>();
         }
 
         return CreateVertexShader(vertexShaderBlob);
     }
 
-    [[nodiscard]] VertexShader CreateVertexShader(const wchar_t* pFileName,
-        const char* pEntryPoint = "Main", const char* pTarget = "vs_5_0") {
+    [[nodiscard]] VertexShaderBundle CreateVertexShader(const wchar_t* pFileName,
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob vertexShaderBlob = nullptr;
-        if (!CompileShader(pFileName, pEntryPoint, pTarget, vertexShaderBlob)) {
-            return nullptr;
+        if (!CompileShader(pFileName,
+            pEntryPoint, std::format("vs_{}", pTarget).c_str(),
+            vertexShaderBlob)) {
+            return GetNullBundle<VertexShaderBundle>();
         }
 
-        return CreateVertexShader(vertexShaderBlob);       
+        return CreateVertexShader(vertexShaderBlob);
     }
 
     // ------------------------------------------
     // Compile PixelShader
     // ------------------------------------------
 
-    [[nodiscard]] PixelShader CreatePixelShader(const Blob& pixelShaderBlob) {
+    [[nodiscard]] PixelShaderBundle CreatePixelShader(const Blob& pixelShaderBlob) {
         PixelShader pixelShader;
         if (FAILED(pDevice->CreatePixelShader(
             pixelShaderBlob->GetBufferPointer(),
@@ -131,27 +146,31 @@ struct ShaderCompiler {
             nullptr,
             &pixelShader))) {
             errorMsg = "D3D11: Failed to compile pixel shader\n";
-            return nullptr;
+            return std::make_tuple(nullptr, nullptr);
         }
 
-        return pixelShader;
+        return std::make_tuple(pixelShaderBlob, pixelShader);
     }
 
-    [[nodiscard]] PixelShader CreatePixelShader(const void* pData, const size_t sz,
-        const char* pEntryPoint = "Main", const char* pTarget = "ps_5_0") {
+    [[nodiscard]] PixelShaderBundle CreatePixelShader(const void* pData, const size_t sz,
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob pixelShaderBlob = nullptr;
-        if (!CompileShader(pData, sz, pEntryPoint, pTarget, pixelShaderBlob)) {
-            return nullptr;
+        if (!CompileShader(pData, sz,
+            pEntryPoint, std::format("ps_{}", pTarget).c_str(),
+            pixelShaderBlob)) {
+            return std::make_tuple(nullptr, nullptr);
         }
 
         return CreatePixelShader(pixelShaderBlob);
     }
 
-    [[nodiscard]] PixelShader CreatePixelShader(const wchar_t* pFileName,
-        const char* pEntryPoint = "Main", const char* pTarget = "ps_5_0") {
+    [[nodiscard]] PixelShaderBundle CreatePixelShader(const wchar_t* pFileName,
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
         Blob pixelShaderBlob = nullptr;
-        if (!CompileShader(pFileName, pEntryPoint, pTarget, pixelShaderBlob)) {
-            return nullptr;
+        if (!CompileShader(pFileName,
+            pEntryPoint, std::format("ps_{}", pTarget).c_str(),
+            pixelShaderBlob)) {
+            return std::make_tuple(nullptr, nullptr);
         }
 
         return CreatePixelShader(pixelShaderBlob);

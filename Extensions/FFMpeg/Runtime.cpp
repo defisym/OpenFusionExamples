@@ -79,10 +79,10 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	//rdPtr->pSf = new cSurface;
 	//rdPtr->pFrame = new cSurface;
 		
-	rdPtr->pMemSf = nullptr;
+	rdPtr->pDisplaySf = nullptr;
 	rdPtr->pGrabbedFrame = nullptr;	
 	
-	rdPtr->pHwaSf = nullptr;
+	rdPtr->pReturnSf = nullptr;
 
 	rdPtr->bHwa = edPtr->bHwa;
 
@@ -114,6 +114,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->hwDeviceType = edPtr->hwDeviceType;
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
+    rdPtr->bCopyToTexture = edPtr->bCopyToTexture;
+    rdPtr->bSharedHardWareDevice = edPtr->bSharedHardWareDevice;
 
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
@@ -123,6 +125,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
+
+        // create it here instead of constructor to solve dependency
+        rdPtr->pData->pCTTHandler = new CopyToTextureHandler{ rdPtr, hInstLib };
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -176,10 +181,10 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	FreeConsole();
 #endif
 
-	delete rdPtr->pMemSf;	
+	delete rdPtr->pDisplaySf;	
 	delete rdPtr->pGrabbedFrame;
 
-	delete rdPtr->pHwaSf;
+	delete rdPtr->pReturnSf;
 		
 	delete rdPtr->pPreviousTimer;
 
@@ -272,7 +277,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
         if (VideoSingleFrame(rdPtr)) { break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
-			CopyData(pData, stride, rdPtr->pMemSf, rdPtr->bPm);
+            CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
 			ReDisplay(rdPtr);
 			});
 
@@ -306,8 +311,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
 	CleanCache(rdPtr, false);
 
-	if (rdPtr->pMemSf != nullptr
-		&& rdPtr->pMemSf->IsValid()
+	if (rdPtr->pDisplaySf != nullptr
+		&& rdPtr->pDisplaySf->IsValid()
 		&& rdPtr->rc.rcChanged) {
 		return REFLAG_DISPLAY;
 	}
@@ -326,7 +331,7 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
    If you return REFLAG_DISPLAY in HandleRunObject this routine will run.
 */
 
-	if (rdPtr->pMemSf != nullptr && rdPtr->pMemSf->IsValid()) {
+	if (rdPtr->pDisplaySf != nullptr && rdPtr->pDisplaySf->IsValid()) {
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();
@@ -339,9 +344,9 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 		// Hot spot (transform center)
 		POINT point = { 0, 0 };
 
-		rdPtr->pMemSf->BlitEx(*ps, (float)screenX, (float)screenY,
+		rdPtr->pDisplaySf->BlitEx(*ps, (float)screenX, (float)screenY,
 			rdPtr->rc.rcScaleX, rdPtr->rc.rcScaleY, 0, 0,
-			rdPtr->pMemSf->GetWidth(), rdPtr->pMemSf->GetHeight(), &point, rdPtr->rc.rcAngle,
+			rdPtr->pDisplaySf->GetWidth(), rdPtr->pDisplaySf->GetHeight(), &point, rdPtr->rc.rcAngle,
 			(rdPtr->rs.rsEffect & EFFECTFLAG_TRANSPARENT) ? BMODE_TRANSP : BMODE_OPAQUE,
 			BlitOp(rdPtr->rs.rsEffect & EFFECT_MASK),
 			rdPtr->rs.rsEffectParam, BLTF_ANTIA);
@@ -506,8 +511,11 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		delete pData;
-		mV->mvSetExtUserData(pApp, hInstLib, NULL);
+        // delete it here instead of destructor to solve dependency
+        delete pData->pCTTHandler;
+        
+        delete pData;
+        mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
 }
 
@@ -523,7 +531,10 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-		delete pData;
+        // delete it here instead of destructor to solve dependency
+        delete pData->pCTTHandler; 
+        
+        delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
 }

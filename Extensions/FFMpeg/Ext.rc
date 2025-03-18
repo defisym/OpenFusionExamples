@@ -1,6 +1,7 @@
 //Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
+#include "Macro.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -103,6 +104,17 @@ EXO_IMAGE               BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Shader
+//
+
+#ifdef COPY_D3D_TEXTURE
+SHADER_VS_TEMPLATE      RCDATA    "Shader\\vs.hlsl"
+SHADER_PS_TEMPLATE      RCDATA    "Shader\\ps.hlsl"
+SHADER_PS_YUVToBGRA     RCDATA    "Shader\\YUVToBGRA.hlsl"
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Menu
 //
 
@@ -163,6 +175,7 @@ BEGIN
         //MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
+        MENUITEM "Set Copy To Texture Device", IDMN_ACTION_SCTT
         MENUITEM SEPARATOR
         MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
         MENUITEM "Erase Cached Video",      IDMN_ACTION_ERASEV
@@ -325,6 +338,12 @@ COMBO_AV_HWDEVICE_TYPE_D3D12VA                "D3D12VA"
 IDS_PROP_FORCENOAUDIO_CHECK            "Force No Audio"
 IDS_PROP_FORCENOAUDIO_CHECK_INFO       "Don't play audio and sync with external clock"
 
+IDS_PROP_HWDECODE_SHARED_HARDWARE_DEVICE_CHECK			"Shared Hardware Device"
+IDS_PROP_HWDECODE_SHARED_HARDWARE_DEVICE_CHECK_INFO   	"All instances with the same hardware device type will share the same hardware device.\nMinimize the memory usage."
+
+IDS_PROP_HWDECODE_COPY_TO_TEXTURE_CHECK         "Copy To Texture"
+IDS_PROP_HWDECODE_COPY_TO_TEXTURE_CHECK_INFO    "Copy hardware decode result to texture directly instead of convert to bitmap first.\nHardware device will be forced to D3D11VA to match Fusion runtime."
+
 END
 
 STRINGTABLE DISCARDABLE 
@@ -356,6 +375,7 @@ BEGIN
     M_ACTION_ERASEV		       "Erase Cached Video %0"
     
     M_ACTION_SHDE		       "Set Hardware Decode Device to %0"
+    M_ACTION_SCTT		       "Set Copy To Texture to %0"
     
     M_ACTION_STRETCH	       "Set Size to Width = %0, Height = %1"
 
@@ -382,6 +402,7 @@ BEGIN
     M_FORCENOAUDIO             "Force No Audio, 0 = Disable"
     M_VCODEC                   "Video Codec"
     M_ACODEC                   "Audio Codec"
+	M_COPYTOTEXTURE			   "Copy To Texture"
 END
 
 STRINGTABLE DISCARDABLE
