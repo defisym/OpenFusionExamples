@@ -1243,6 +1243,7 @@ private:
         auto pOpaque = (AVCodecCtxOpaque*)pCodecContext->opaque;
         auto pCTTCtx = &pOpaque->copyToTextureCtx;
 
+        // init
         if (pCTTCtx->pTexture == nullptr) {
             HRESULT hr = S_OK;
 
@@ -1265,7 +1266,8 @@ private:
             hr = dxgiShareTexture->GetSharedHandle(&pCTTCtx->sharedHandle);
             if (FAILED(hr)) { return; }
 
-            // 3. update texture format
+            // 3. update device & texture format
+            pCTTCtx->pD3D11VADeciveCtx = pHWCtx;
             pCTTCtx->textureFormat = sharedDesc.Format;
         }
 
@@ -2154,8 +2156,10 @@ public:
 		}
 
         // copy hw_pix_fmt from opaque context
-        // CopyToTextureContext shouldn't be copied! 
         VGetCodecCtxQpaque.hw_pix_fmt = VCodecCtxQpaque.hw_pix_fmt;
+        // CopyToTextureContext only copy pD3D11VADeciveCtx (shared)
+        // other member shouldn't be copied!
+        VGetCodecCtxQpaque.copyToTextureCtx.pD3D11VADeciveCtx = VCodecCtxQpaque.copyToTextureCtx.pD3D11VADeciveCtx;
         if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
 		}

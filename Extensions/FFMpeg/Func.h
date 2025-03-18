@@ -174,7 +174,6 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     //                  of 2D textures. However, you cannot use texture arrays 
     //                  that are created with this flag in calls to 
     //                  ID3D11Device::CreateShaderResourceView.
-    auto pFrameTexture = pCtx->pFFMpegCtx->pTexture;
     auto sharedHandle = pCtx->pFFMpegCtx->sharedHandle;
     auto textureFormat = pCtx->pFFMpegCtx->textureFormat;
 
@@ -232,7 +231,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     if (FAILED(hr)) { return; }
 
     // create srv
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Texture2D.MipLevels = 1;
