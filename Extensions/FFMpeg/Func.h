@@ -163,6 +163,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     HRESULT hr = S_OK;
 
     // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
+    //              DXGI_FORMAT_P010 (YUV 4:2:2)
+    //              DXGI_FORMAT_P010 (YUV 4:2:2)
     // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
     // Bind flags:  512 (D3D11_BIND_DECODER)
     //                  Set this flag to indicate that a 2D texture is used to 
@@ -259,11 +261,12 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
 
         break;
     }
-    default: break;
-    }    
-
     // format not supported
-    if (yFormat == DXGI_FORMAT_UNKNOWN || yFormat == DXGI_FORMAT_UNKNOWN) { return; }
+    default:
+    {
+        return;
+    }
+    }    
 
     srvDesc.Format = yFormat;
     hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvY);
