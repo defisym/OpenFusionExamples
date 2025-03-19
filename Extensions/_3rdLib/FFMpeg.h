@@ -565,6 +565,9 @@ private:
             return err;
         }
 
+        // Wait GPU only implemeneted for D3D11VA
+        if (type != AV_HWDEVICE_TYPE_D3D11VA) { return 0; }
+
         D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT, 0 };
         hw_getDeviceContext()->device->CreateQuery(&queryDesc, &pEvent);
 
@@ -1269,6 +1272,8 @@ private:
 
     inline void gpu_flush(AVCodecContext* pCtx) {
 #ifdef HW_DECODE
+        if (hw_type != AV_HWDEVICE_TYPE_D3D11VA) { return; }
+
         auto pBuffer = pCtx->hw_device_ctx;
         if (pBuffer == nullptr) { return; }
 
@@ -1281,6 +1286,8 @@ private:
 
 public:
     inline void gpu_wait() {
+        if (hw_type != AV_HWDEVICE_TYPE_D3D11VA) { return; }
+
         auto pHWCtx = hw_getDeviceContext();
         if (pHWCtx == nullptr) { return; }
 
