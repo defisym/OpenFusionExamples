@@ -331,7 +331,7 @@ inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     if (pData == nullptr || pDst == nullptr) { return; }
 
     // pDst must match bCopyToTexture, see `InitSurface`
-    if (!(rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState())) {
+    if (!rdPtr->pFFMpeg->get_copyToTextureState()) {
         CopyBitmap(pData, width, pDst, rdPtr->bPm);
     }
     else {
@@ -350,7 +350,7 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
-        if (rdPtr->bCopyToTexture) { rdPtr->pFFMpeg->WaitGPU(); }
+        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->WaitGPU(); }
 
         CopyData(rdPtr, pSf, pData, stride, height);
 		ReDisplay(rdPtr);
@@ -433,7 +433,7 @@ inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return true; }
     response = rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
         // to avoid green screen at start
-        if (rdPtr->bCopyToTexture) { rdPtr->pFFMpeg->WaitGPU(); }
+        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->WaitGPU(); }
 
         CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
         ReDisplay(rdPtr);
@@ -587,7 +587,7 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
         UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
         InitSurface(rdPtr->pDisplaySf,
             rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
-            rdPtr->bCopyToTexture && rdPtr->pFFMpeg->get_hwDecodeState());
+            rdPtr->pFFMpeg->get_copyToTextureState());
 		// display first valid frame
         if (!SetPositionGeneral(rdPtr, static_cast<int>(ms))) {
             // failed to display first frame, which indicates error

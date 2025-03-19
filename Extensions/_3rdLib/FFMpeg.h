@@ -1985,6 +1985,10 @@ public:
 		return bHWDecode;
 	}
 
+    inline bool get_copyToTextureState() const {
+        return get_hwDecodeState() && bCopyToTexture;
+    }
+
 	inline const wchar_t* get_hwDeviceName() const {
 		return get_hwDeviceNameByType(bHWDecode ? hw_type : AV_HWDEVICE_TYPE_NONE);
 	}
