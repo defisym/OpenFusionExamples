@@ -34,8 +34,8 @@ String that based on GDI Plus, with scaling, rotating & format control support
 - ! = reset to default
 - +/- = add/minus to current
 - \ = use given value directly, including sign
-  - e.g., current is 1.0
-    - `-0.5` -> `1.0`- `0.5` = `0.5`
+  - e.g., current is `1.0`
+    - `-0.5` -> `1.0` - `0.5` = `0.5`
     - `\+0.5` -> `+0.5`
     - `\-0.5` -> `-0.5`
 
@@ -110,9 +110,9 @@ See `Values General`
 
 ### Align
 
-`[Align = LEFT]`
+`[Align = DT_LEFT]`
 
-change align of different lines
+change align of different lines, DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2
 
 ### Char Offset
 

@@ -1959,8 +1959,8 @@ public:
 		//	ICon Resample, 1 = Enable, 0 = Disable
 		//	! = reset to default
 		// 
-		// [Align = LEFT]
-		//  change align of different lines
+		// [Align = DT_LEFT]
+		//  change align of different lines, DT_LEFT = 0, DT_CENTER = 1, DT_RIGHT = 2
 		//
 		// [CharOffsetX = 0.0][/CharOffsetX]
 		//  Char Offset X
