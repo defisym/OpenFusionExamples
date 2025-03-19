@@ -24,6 +24,7 @@
 #include "MemBuf.h"
 #include "LockHelper.h"
 #include "PacketQueue.h"
+#include "HoldHelper.h"
 #include "WindowsCommon.h"
 #include "GeneralDefinition.h"
 
@@ -255,8 +256,6 @@ class FFMpeg {
 
 	double videoPts = 0;
 	double audioPts = 0;
-
-	//int64_t globalPts = 0;
 
 	double audioClock = 0;
 	double videoClock = 0;
@@ -2107,7 +2106,6 @@ public:
 		return steam_index;
 	}
 
-
 	// seek to given time stamp
 	// call goto_videoPosition to next valid frame if needed
 	inline int set_videoPosition(int64_t ms = 0, const int flags = SeekFlags) {
@@ -2190,17 +2188,14 @@ public:
 		}
 
 		// keep current pts & clock
-		const auto oldClock = videoClock;
-		const auto oldPts = videoPts;
+        const auto clockHelper = HoldHelper{ &videoClock };
+        const auto ptsHelper = HoldHelper{ &videoPts };
 
 		videoClock = 0;
 		videoPts = 0;
 
         gpu_flushCodecAndWait(pVGetCodecContext);
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
-
-		videoClock = oldClock;
-		videoPts = oldPts;
 
 		return response;
 	}
