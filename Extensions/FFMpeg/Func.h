@@ -350,7 +350,7 @@ inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	}
 
 	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
-        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->WaitGPU(); }
+        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
 
         CopyData(rdPtr, pSf, pData, stride, height);
 		ReDisplay(rdPtr);
@@ -433,7 +433,7 @@ inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return true; }
     response = rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
         // to avoid green screen at start
-        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->WaitGPU(); }
+        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
 
         CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
         ReDisplay(rdPtr);

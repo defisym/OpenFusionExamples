@@ -440,7 +440,7 @@ private:
 	// General
 	// ------------------------------------
 
-	static inline std::wstring GetErrorStr(const int errnum) {
+	static inline std::wstring getErrorStr(const int errnum) {
 		const auto buf = new char[AV_ERROR_MAX_STRING_SIZE];
 
 		av_make_error_string(buf, AV_ERROR_MAX_STRING_SIZE, errnum);
@@ -457,7 +457,7 @@ private:
 	// ------------------------------------
 
 #ifdef HW_DECODE
-	static inline std::vector<AVHWDeviceType> HW_GetDeviceType() {
+	static inline std::vector<AVHWDeviceType> hw_getDeviceType() {
 		auto type = AV_HWDEVICE_TYPE_NONE;
 
 		std::vector<AVHWDeviceType> types;
@@ -476,7 +476,7 @@ private:
 		return types;
 	}
 
-	static inline AVPixelFormat HW_GetPixelFormat(const AVCodec* pCodec, const AVHWDeviceType type) {
+	static inline AVPixelFormat hw_getPixelFormat(const AVCodec* pCodec, const AVHWDeviceType type) {
 		for (int i = 0;; i++) {
 			const AVCodecHWConfig* config = avcodec_get_hw_config(pCodec, i);
 			if (!config) {
@@ -491,8 +491,17 @@ private:
 		}
 	}
 
+    inline AVD3D11VADeviceContext* hw_getDeviceContext() {
+        if (hw_device_ctx == nullptr) { return nullptr; }
+
+        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
+        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
+
+        return pHWCtx;
+    }
+
     // update hardware device context to hw_device_ctx
-    inline int HW_UpdateDeviceContext(const AVHWDeviceType type) {
+    inline int hw_updateDeviceContext(const AVHWDeviceType type) {
         if (!bSharedHardWareDevice) {
             return av_hwdevice_ctx_create(&hw_device_ctx, type,
                 nullptr, nullptr, 0);
@@ -516,14 +525,14 @@ private:
         }
     }
     
-    inline int HW_InitDecoderDeviceContext(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
+    inline int hw_initDecoderDeviceContext(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
         int err = 0;
-        if ((err = HW_UpdateDeviceContext(type)) < 0) {
+        if ((err = hw_updateDeviceContext(type)) < 0) {
             return err;
         }
 
         D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT, 0 };
-        GetDeviceContext()->device->CreateQuery(&queryDesc, &pEvent);
+        hw_getDeviceContext()->device->CreateQuery(&queryDesc, &pEvent);
 
 		pCodecContext->hw_device_ctx = av_buffer_ref(hw_device_ctx);
 
@@ -531,7 +540,7 @@ private:
 	}
 #endif
 
-	inline void init_SwrContext(const AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
+	inline void init_swrContext(const AVChannelLayout* in_ch_layout, const AVSampleFormat in_sample_fmt, const int in_sample_rate) {
 		const auto ret = swr_alloc_set_opts2(&swrContext,
 			&targetChannelLayout, TARGET_SAMPLE_FORMAT, TARGET_SAMPLE_RATE,
 			in_ch_layout, in_sample_fmt, in_sample_rate,
@@ -697,7 +706,7 @@ private:
 #endif //  AUDIO_TEMPO
 
 	// probe video format
-	static inline const AVInputFormat* init_Probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName = "") {
+	static inline const AVInputFormat* init_probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName = "") {
 		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -730,7 +739,7 @@ private:
 		*ppFormatContext = avformat_alloc_context();
 		if (!*ppFormatContext) { return false; }
 		
-		//auto iformat = init_Probe(nullptr, 0, pFilePath);
+		//auto iformat = init_probe(nullptr, 0, pFilePath);
 
 		// convert to UTF-8 to avoid crash in some versions
 		if (avformat_open_input(ppFormatContext, pFilePath, fmt, nullptr) != 0) {
@@ -764,7 +773,7 @@ private:
 		*ppFormatContext = avformat_alloc_context();
 		if (!*ppFormatContext) { return false; }
 
-		if (!fmt) { fmt = init_Probe(pBuffer, bfSz); }
+		if (!fmt) { fmt = init_probe(pBuffer, bfSz); }
 		if (!fmt) { return false; }
 
 		// might crash in avformat_open_input due to access violation if not set
@@ -814,7 +823,7 @@ private:
 				return AV_PIX_FMT_NONE;
 				};
 
-			if (HW_InitDecoderDeviceContext((*ppVCodecContext), hw_type) < 0) {
+			if (hw_initDecoderDeviceContext((*ppVCodecContext), hw_type) < 0) {
 				//throw FFMpegException_HWInitFailed;
 				bHWDecode = false;
 			}
@@ -869,14 +878,14 @@ private:
         if (bHWDecode) {
             // update pixel format
 			hw_type = hw_deviceType;
-			hw_pix_fmt = HW_GetPixelFormat(pVCodec, hw_type);
+			hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
 
 			if (hw_pix_fmt == AV_PIX_FMT_NONE) {
 				// enum types to get a valid device
-				const auto hw_types = HW_GetDeviceType();
+				const auto hw_types = hw_getDeviceType();
 
 				for (const auto& type : hw_types) {
-					const auto fmt = HW_GetPixelFormat(pVCodec, type);
+					const auto fmt = hw_getPixelFormat(pVCodec, type);
 
 					if (fmt != AV_PIX_FMT_NONE) {
 						hw_type = type;
@@ -1118,7 +1127,7 @@ private:
 
 				if (response < 0 && response != AVERROR(EAGAIN) && response != AVERROR_EOF) {
 #ifdef _DEBUG
-					auto err = GetErrorStr(response);
+					auto err = getErrorStr(response);
 #endif // _DEBUG
 					av_packet_unref(frames.pPacket);
 
@@ -1207,27 +1216,30 @@ private:
 		return response;
 	}
 
-    inline AVD3D11VADeviceContext* GetDeviceContext() {
-        if (hw_device_ctx == nullptr) { return nullptr; }
+    inline void gpu_flush(AVCodecContext* pCtx) {
+#ifdef HW_DECODE
+        auto pBuffer = pCtx->hw_device_ctx;
+        if (pBuffer == nullptr) { return; }
 
-        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
+        auto pHWDCtx = (AVHWDeviceContext*)pCtx->hw_device_ctx->data;
         auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
 
-        return pHWCtx;
+        pHWCtx->device_context->Flush();
+#endif
     }
 
 public:
-    inline void WaitGPU() {
-        auto pHWCtx = GetDeviceContext();
+    inline void gpu_wait() {
+        auto pHWCtx = hw_getDeviceContext();
         if (pHWCtx == nullptr) { return; }
 
         pHWCtx->device_context->End(pEvent.Get());
         while (pHWCtx->device_context->GetData(pEvent.Get(), nullptr, 0, 0) == S_FALSE) {}
     }
 
-    inline void FlushAndWaitGPU(AVCodecContext* pCtx) {
-        gpu_flush_buffers(pCtx);
-        WaitGPU();
+    inline void gpu_flushAndWait(AVCodecContext* pCtx) {
+        gpu_flush(pCtx);
+        gpu_wait();
     }
 
 private:
@@ -1235,7 +1247,7 @@ private:
     // do nothing, just pass D3D11 texture to callback, furture process not needed
     inline void convert_textureFrame(AVCodecContext* pCodecContext,
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
-        auto pHWCtx = GetDeviceContext();
+        auto pHWCtx = hw_getDeviceContext();
 
         auto pTexture = (ID3D11Texture2D*)pFrame->data[0];
         auto pIndex = (intptr_t)pFrame->data[1];
@@ -1279,7 +1291,7 @@ private:
         // and set SrcSubresource to pFrameIndex
         pHWCtx->device_context->CopySubresourceRegion(pCTTCtx->pTexture.Get(), 0, 0, 0, 0, pTexture, pIndex, 0);
         pHWCtx->device_context->Flush();
-        //WaitGPU();
+        //gpu_wait();
 
         //// another solution create a srv and use it as shader resource
         //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -1599,7 +1611,7 @@ private:
 
 			// update context to avoid crash
 			if (bUpdateSwr) {
-				init_SwrContext(&pBaseFrame->ch_layout,
+				init_swrContext(&pBaseFrame->ch_layout,
 					static_cast<AVSampleFormat>(pBaseFrame->format),
 					pBaseFrame->sample_rate);
 			}
@@ -1981,13 +1993,13 @@ public:
 	// Hardware decode
 	// ------------------------------------
 
-	inline bool get_hwDecodeState() const {
-		return bHWDecode;
-	}
-
     inline bool get_copyToTextureState() const {
         return get_hwDecodeState() && bCopyToTexture;
     }
+
+	inline bool get_hwDecodeState() const {
+		return bHWDecode;
+	}
 
 	inline const wchar_t* get_hwDeviceName() const {
 		return get_hwDeviceNameByType(bHWDecode ? hw_type : AV_HWDEVICE_TYPE_NONE);
@@ -2072,18 +2084,6 @@ public:
 	// Video control
 	// ------------------------------------
 
-    inline void gpu_flush_buffers(AVCodecContext* pCtx) {
-#ifdef HW_DECODE
-        auto pBuffer = pCtx->hw_device_ctx;
-        if (pBuffer == nullptr) { return; }
-
-        auto pHWDCtx = (AVHWDeviceContext*)pCtx->hw_device_ctx->data;
-        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
-
-        pHWCtx->device_context->Flush();
-#endif
-    }
-
 	inline int get_streamIndex() const {
 		int steam_index = -1;
 
@@ -2114,7 +2114,7 @@ public:
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
 			avcodec_flush_buffers(pVCodecContext);
-            FlushAndWaitGPU(pVCodecContext);
+            gpu_flushAndWait(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
@@ -2184,7 +2184,7 @@ public:
 		videoPts = 0;
 
 		avcodec_flush_buffers(pVGetCodecContext);
-        FlushAndWaitGPU(pVGetCodecContext);
+        gpu_flushAndWait(pVGetCodecContext);
 
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
