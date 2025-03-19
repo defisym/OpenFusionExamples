@@ -442,7 +442,7 @@ inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 
     // revert
     if (ms != 0 || flags & SeekFlag_NoRevert) { return true; }
-    if (!bSingleFrame) { rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
+    if (!bSingleFrame) { response = rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
     if (response < 0) { return false; }
 
     return true;
