@@ -1243,6 +1243,19 @@ public:
     }
 
 private:
+    inline void gpu_flushCodecAndWait(AVCodecContext* pAVCodecContext) {
+        // ensure any ongoing GPU operations complete before invalidating codec buffers.
+        gpu_flushAndWait(pAVCodecContext);
+        // clears the internal FFmpeg decoder state and ensures old frames won't 
+        // interfere with the new stream position.
+        avcodec_flush_buffers(pAVCodecContext);
+        
+        // Optional
+        // this may be necessary if your pipeline requires additional synchronization
+        // but often the first flush is sufficient.
+        //gpu_flushAndWait(pAVCodecContext);
+    }
+
     // only available when bCopyToTexture enabled
     // do nothing, just pass D3D11 texture to callback, furture process not needed
     inline void convert_textureFrame(AVCodecContext* pCodecContext,
@@ -2113,8 +2126,8 @@ public:
 
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
-			avcodec_flush_buffers(pVCodecContext);
             gpu_flushAndWait(pVCodecContext);
+            avcodec_flush_buffers(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
@@ -2183,8 +2196,8 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
-		avcodec_flush_buffers(pVGetCodecContext);
         gpu_flushAndWait(pVGetCodecContext);
+        avcodec_flush_buffers(pVGetCodecContext);
 
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
