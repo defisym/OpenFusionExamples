@@ -518,10 +518,10 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 	FFMpegOptions opt;
 
-	opt.flag = rdPtr->hwDeviceType 
-        | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : 0)
-        | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : 0)
-		| (rdPtr->bSharedHardWareDevice ? FFMpegFlag_SharedHardWareDevice  : 0);
+    opt.flag = rdPtr->hwDeviceType
+        | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : FFMpegFlag_Disabled)
+        | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : FFMpegFlag_Disabled)
+        | (rdPtr->bSharedHardWareDevice ? FFMpegFlag_SharedHardWareDevice : FFMpegFlag_Disabled);
 
 	opt.videoCodecName = *rdPtr->pVideoOverrideCodecName;
 	opt.audioCodecName = *rdPtr->pAudioOverrideCodecName;

@@ -166,7 +166,7 @@ constexpr auto PIXEL_BYTE = 3;
 // FFMpeg Options
 // ------------------------------------
 constexpr auto FFMpegFlag_Default = 0;
-
+constexpr auto FFMpegFlag_Disabled = 0;
 constexpr auto FFMpegFlag_HWDeviceMask = 0xFFFF;
 
 constexpr auto FFMpegFlag_MakeFlag(const auto flag) {
