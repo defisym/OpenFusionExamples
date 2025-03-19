@@ -61,6 +61,10 @@ extern "C" int WINAPI DLLExport Initialize(mv _far* mV, int quiet) {
         OutputDebugString(_T("Failed to hook D3D"));
     }
 #endif
+
+    // init shaerd device
+    FFMpeg::hw_initSharedHardwareDevice();
+
 	// No error
 	return 0;
 }
@@ -77,6 +81,10 @@ extern "C" int WINAPI DLLExport Free(mv _far* mV) {
         OutputDebugString(_T("Failed to unhook D3D"));
     }
 #endif
+
+    // release all allocated shared device
+    FFMpeg::hw_releaseSharedHardwareDevice();
+
 	// No error
 	return 0;
 }

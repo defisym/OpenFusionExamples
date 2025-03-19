@@ -505,6 +505,23 @@ private:
         return pHWCtx;
     }
 
+public:
+    inline static void hw_initSharedHardwareDevice() {
+        // do nothing: it's better to get paired
+        sharedHardwareDevice = {};
+    }
+
+    inline static void hw_releaseSharedHardwareDevice() {
+        // release all context
+        for (auto& [deviceType, pDeviceContext] : sharedHardwareDevice) {
+            av_buffer_unref(&pDeviceContext);
+            auto p = pDeviceContext;
+        }
+
+        sharedHardwareDevice.clear();
+    }
+
+private:
     // update hardware device context to hw_device_ctx
     inline int hw_updateDeviceContext(const AVHWDeviceType type) {
         if (!bSharedHardWareDevice) {
