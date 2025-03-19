@@ -105,8 +105,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 	rdPtr->pEncrypt = nullptr;
 
-	rdPtr->bChanged = true;
-	rdPtr->bPm = PreMulAlpha(rdPtr);
+    rdPtr->bPm = PreMulAlpha(rdPtr);
+    rdPtr->bChanged = true;
+    rdPtr->bPositionSet = false;
 
 	rdPtr->pRetStr = new std::wstring;
 
@@ -266,6 +267,12 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 		// update audio pause
 		// only update state, pts is not updated
 		rdPtr->pFFMpeg->set_pause(!rdPtr->bPlay, rdPtr->bPlayStateUpdated);
+
+        // flag should be cancel when pause
+        if (!rdPtr->bPlay && rdPtr->bPlayStateUpdated) {
+            rdPtr->bPositionSet = false;
+        }
+
 		rdPtr->bPlayStateUpdated = false;
 
 		if (!rdPtr->bPlay) { break; }
@@ -275,6 +282,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
         // only one frame, do not need to get next frame, as there's no next frame
         // and finish state won't be updated
         if (VideoSingleFrame(rdPtr)) { break; }
+        if (rdPtr->bPositionSet) { rdPtr->bPositionSet = false; break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
             CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);

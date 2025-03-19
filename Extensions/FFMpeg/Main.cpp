@@ -220,6 +220,8 @@ short WINAPI DLLExport Action_SetPosition(LPRDATA rdPtr, long param1, long param
 	int msRaw = (int)CNC_GetIntParameter(rdPtr);
 
 	SetPositionGeneral(rdPtr, msRaw);
+    // true if goto target position
+    rdPtr->bPositionSet = true;
 
 	return 0;
 }
@@ -229,6 +231,8 @@ short WINAPI DLLExport Action_SetPositionWithFlag(LPRDATA rdPtr, long param1, lo
 	int flag = (int)CNC_GetIntParameter(rdPtr);
 
 	SetPositionGeneral(rdPtr, msRaw, flag);
+    // true if goto target position
+    rdPtr->bPositionSet = !(flag & SeekFlag_NoGoto);
 
 	return 0;
 }
