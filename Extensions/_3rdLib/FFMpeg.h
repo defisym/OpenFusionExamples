@@ -1243,17 +1243,18 @@ public:
     }
 
 private:
-    inline void gpu_flushCodecAndWait(AVCodecContext* pAVCodecContext) {
+    // shouldn't call this by audio codec
+    inline void gpu_flushCodecAndWait(AVCodecContext* pVCodecContext) {
         // ensure any ongoing GPU operations complete before invalidating codec buffers.
-        gpu_flushAndWait(pAVCodecContext);
+        gpu_flushAndWait(pVCodecContext);
         // clears the internal FFmpeg decoder state and ensures old frames won't 
         // interfere with the new stream position.
-        avcodec_flush_buffers(pAVCodecContext);
+        avcodec_flush_buffers(pVCodecContext);
         
         // Optional
         // this may be necessary if your pipeline requires additional synchronization
         // but often the first flush is sufficient.
-        //gpu_flushAndWait(pAVCodecContext);
+        //gpu_flushAndWait(pVCodecContext);
     }
 
     // only available when bCopyToTexture enabled
@@ -2126,8 +2127,7 @@ public:
 
 		if (video_stream_index >= 0) {
 			videoQueue.flush();
-            gpu_flushAndWait(pVCodecContext);
-            avcodec_flush_buffers(pVCodecContext);
+            gpu_flushCodecAndWait(pVCodecContext);
 		}
 
 		if (audio_stream_index >= 0) {
@@ -2196,9 +2196,7 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
-        gpu_flushAndWait(pVGetCodecContext);
-        avcodec_flush_buffers(pVGetCodecContext);
-
+        gpu_flushCodecAndWait(pVGetCodecContext);
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
 		videoClock = oldClock;
