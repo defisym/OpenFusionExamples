@@ -276,6 +276,18 @@ class FFMpeg {
 	bool bSeeking = false;
 	double seekingTargetPts = 0.0;
 
+    // update audio clock when seeking, or the video clock is used
+//#define UPDATE_AUDIOCLOCK_WHEN_SEEKING
+#ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
+    // actually decode audio and update clock, or estimate by packet pts
+#define DECODE_AUDIO_WHEN_SEEKING
+#endif
+
+#ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
+    double seekingAudioClock = 0.0;
+    double prevAudioClockOffset = 0.0;
+#endif
+
 #pragma endregion
 
 #pragma region FFMpeg
@@ -1159,10 +1171,7 @@ private:
 				response = decode_vpacket(pCodecContext, frames.pPacket, frames.pFrame, frames.pLastFrame);
 
 				// wait until receive enough packets
-				if (response == AVERROR(EAGAIN)) {
-					continue;
-				}
-
+                if (response == AVERROR(EAGAIN)) { continue; }
 				if (response < 0) { break; }
 
 				// goto target
@@ -1171,6 +1180,26 @@ private:
 
 				//count++;
 			}
+#ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
+            // if it's the audio stream
+            if (frames.pPacket->stream_index == audio_stream_index) {
+#ifdef DECODE_AUDIO_WHEN_SEEKING
+                // main codec
+                if (pCodecContext != pVCodecContext) { continue; }
+
+                response = decode_apacket(pCodecContext, frames.pPacket, frames.pFrame, nullptr);
+
+                // wait until receive enough packets
+                if (response == AVERROR(EAGAIN)) { continue; }
+                if (response < 0) { break; }
+#else
+                // do not decode packet, just update audio clock
+                if (frames.pPacket != nullptr && frames.pPacket->pts != AV_NOPTS_VALUE) {
+                    seekingAudioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(frames.pPacket->pts);
+                }
+#endif
+            }
+#endif
 
 			av_packet_unref(frames.pPacket);
 		}
@@ -1666,9 +1695,14 @@ private:
 			const auto channels = targetChannelLayout.nb_channels;
 			const auto pcm_bytes = 2 * channels;
 			const auto audioSize = channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
+            const auto clockOffset = static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
 
 			audioPts = audioClock;
-			audioClock += static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
+            audioClock += clockOffset;
+
+#ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
+            prevAudioClockOffset = clockOffset;
+#endif
 
 #ifdef AUDIO_TEMPO
   			av_frame_unref(pAFilterFrame);
@@ -2175,10 +2209,32 @@ public:
 		// As audio thread can affect the main format context, lock it here
         SpinLockHelper lockHelper(&audioLock);
         // clear video queue to clear old data, e.g., filled by audio thread with old context
-        videoQueue.flush();
+        // which may break decoder then return bad frames
+        if (video_stream_index >= 0) { videoQueue.flush(); }
+
+        // clear audio queue
+        if (audio_stream_index >= 0) {
+            audioQueue.flush();
+            // video packet will be used for decode while audio packet are dropped
+            // so flush is needed here
+            avcodec_flush_buffers(pACodecContext);
+        }
 
 		const auto targetPts = ms / 1000.0;
 		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
+
+        // reset sync, or video will be treat as faster and playback won't continue
+        // until audio thread catches up, which causes a "jump" of video frame finally
+        // the frame will change in a very fast speed which is not demanded
+#ifndef UPDATE_AUDIOCLOCK_WHEN_SEEKING
+        audioPts = videoPts;
+        audioClock = videoClock;
+#else
+#ifndef DECODE_AUDIO_WHEN_SEEKING
+        audioPts = seekingAudioClock;
+        audioClock = seekingAudioClock + prevAudioClockOffset;   
+#endif
+#endif
 
 		return response;
 	}
