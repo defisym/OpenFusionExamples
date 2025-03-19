@@ -24,7 +24,10 @@
 #include "MemBuf.h"
 #include "LockHelper.h"
 #include "PacketQueue.h"
+
+#include "Rule035.h"
 #include "HoldHelper.h"
+
 #include "WindowsCommon.h"
 #include "GeneralDefinition.h"
 
@@ -310,6 +313,9 @@ public:
         ComPtr<ID3D11Texture2D> pTexture = nullptr;
         HANDLE sharedHandle = nullptr;
         DXGI_FORMAT textureFormat = DXGI_FORMAT_UNKNOWN;
+
+        CopyToTextureContext() = default;
+        RULE_NO_COPY(CopyToTextureContext);
     };
 
 private:
