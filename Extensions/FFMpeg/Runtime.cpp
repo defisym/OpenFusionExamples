@@ -128,7 +128,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		SetExtUserData(rdPtr->pData);
 
         // create it here instead of constructor to solve dependency
-        rdPtr->pData->pCTTHandler = new CopyToTextureHandler{ rdPtr, hInstLib };
+        rdPtr->pData->pCTTHandler = new CopyToTextureHandler{ (ID3D11Device*)GetD3DDevice(rdPtr), hInstLib };
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();

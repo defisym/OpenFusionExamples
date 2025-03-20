@@ -2,10 +2,10 @@
 
 #include <directxmath.h>
 
-#include "D3DUtilities/ShaderInterface.h"
+#include "D3DUtilities/ShaderResourceCompiler.h"
 
 struct CopyToTextureHandler {
-    ShaderInterface inf;
+    ShaderResourceCompiler compiler;
 
     using VertexShaderBundle = ShaderCompiler::VertexShaderBundle;
     VertexShaderBundle vsBundle = ShaderCompiler::GetNullBundle<VertexShaderBundle>();
@@ -26,13 +26,12 @@ struct CopyToTextureHandler {
     size_t indicesSize = 0u;
     ComPtr<ID3D11Buffer> pIndexBuffer;
 
-    CopyToTextureHandler(LPRDATA rdPtr, const HMODULE hInstLib) :inf(rdPtr) {
+    CopyToTextureHandler(ID3D11Device* pDevice, const HMODULE hInstLib) :compiler(pDevice) {
         // result
         HRESULT hr = S_OK;
-        auto pFusionDevice = (ID3D11Device*)GetD3DInfo(rdPtr).m_pD3D11Device;
         
         // vertex shader
-        vsBundle = inf.CreateVertexShader(hInstLib, SHADER_VS_TEMPLATE, "Main");
+        vsBundle = compiler.CreateVertexShader(hInstLib, SHADER_VS_TEMPLATE, "Main");
         auto& [vsBlob, vs] = vsBundle;
 
         // input layouts
@@ -73,7 +72,7 @@ struct CopyToTextureHandler {
             }
         };
                
-        hr = pFusionDevice->CreateInputLayout(vertexInputLayoutInfo, std::size(vertexInputLayoutInfo),
+        hr = pDevice->CreateInputLayout(vertexInputLayoutInfo, std::size(vertexInputLayoutInfo),
             vsBlob.Get()->GetBufferPointer(), vsBlob.Get()->GetBufferSize(), &pInputLayout);
         if (FAILED(hr)) { return; }
 
@@ -108,7 +107,7 @@ struct CopyToTextureHandler {
         D3D11_SUBRESOURCE_DATA sd = {};
         sd.pSysMem = vertices;
 
-        hr = pFusionDevice->CreateBuffer(&vsibd, &sd, &pVertexBuffer);
+        hr = pDevice->CreateBuffer(&vsibd, &sd, &pVertexBuffer);
         if (FAILED(hr)) { return; }
 
         vertexBufferInfo = {
@@ -140,11 +139,11 @@ struct CopyToTextureHandler {
         D3D11_SUBRESOURCE_DATA isd = {};
         isd.pSysMem = indices;
 
-        hr = pFusionDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer);
+        hr = pDevice->CreateBuffer(&ibd, &isd, &pIndexBuffer);
         if (FAILED(hr)) { return; }
 
         // 6. pixel shader
-        psBundle = inf.CreatePixelShader(hInstLib, SHADER_PS_YUVToBGRA, "Main");
+        psBundle = compiler.CreatePixelShader(hInstLib, SHADER_PS_YUVToBGRA, "Main");
 
         // create sampler
         D3D11_SAMPLER_DESC sampDesc = {};
@@ -153,10 +152,10 @@ struct CopyToTextureHandler {
         sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
         sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 
-        hr = pFusionDevice->CreateSamplerState(&sampDesc, &pSamplerStateY);
+        hr = pDevice->CreateSamplerState(&sampDesc, &pSamplerStateY);
         if (FAILED(hr)) { return; }
 
-        hr = pFusionDevice->CreateSamplerState(&sampDesc, &pSamplerStateUV);
+        hr = pDevice->CreateSamplerState(&sampDesc, &pSamplerStateUV);
         if (FAILED(hr)) { return; }
     }
 };
