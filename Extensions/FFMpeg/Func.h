@@ -196,21 +196,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     auto pRTTTextureView = CastRenderTargetViewPointer((void**)RTTInfo.m_ppD3D11RenderTargetView);
 
     // 2. vertex shader
+    pCTTHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);
     
-    // indice
-    pFusionDeviceCtx->IASetInputLayout(pCTTHandler->pInputLayout.Get());
-
-    ID3D11Buffer* vertexBuffers[] = { pCTTHandler->pVertexBuffer.Get() };   
-    pFusionDeviceCtx->IASetVertexBuffers(0, std::size(vertexBuffers), vertexBuffers,
-        &pCTTHandler->vertexBufferInfo.stride,
-        &pCTTHandler->vertexBufferInfo.offset);
-
-    pFusionDeviceCtx->IASetIndexBuffer(pCTTHandler->pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-    pFusionDeviceCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    auto& [vsBlob, vs] = pCTTHandler->vsBundle;
-    pFusionDeviceCtx->VSSetShader(vs.Get(), 0, 0);
-
     // 3. rasterizer
     // shouldn't be shared as resolution may different
     D3D11_VIEWPORT viewPort = {};
@@ -224,6 +211,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
 
     // 4. pixel shader
     // we do actual conversion here
+    pCTTHandler->pixelHelper.UpdateContext(pFusionDeviceCtx);
 
     // open shared resource
     ComPtr<ID3D11Texture2D> pSharedFrameTexture;
@@ -244,6 +232,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     ComPtr<ID3D11ShaderResourceView> pSrvUV = nullptr;
 
     // YUV cannot create srv directly, split to two planes
+    // uses UNORM in view & float in shader, may lose precision
     switch (textureFormat) {
     case DXGI_FORMAT_NV12:
     {
@@ -278,17 +267,6 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     ID3D11ShaderResourceView* srvs[] = { pSrvY.Get(), pSrvUV.Get() };
     pFusionDeviceCtx->PSSetShaderResources(0, std::size(srvs), srvs);
 
-    // TODO
-    // default shader uses UNORM & float, may lose precision
-    auto& [psBlob, ps] = pCTTHandler->psBundle;
-    pFusionDeviceCtx->PSSetShader(ps.Get(), 0, 0);
-
-    // create sampler
-    ID3D11SamplerState* sss[] = {
-        pCTTHandler->pSamplerStateY.Get(),pCTTHandler->pSamplerStateUV.Get()
-    };
-    pFusionDeviceCtx->PSSetSamplers(0, std::size(sss), sss);
-
     // create constant buffer
     // shouldn't be shared as resolution may different
     
@@ -320,7 +298,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
     pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
-    pFusionDeviceCtx->DrawIndexed(pCTTHandler->indicesSize, 0, 0);
+    pFusionDeviceCtx->DrawIndexed(pCTTHandler->vertexHelper.indicesSize, 0, 0);
 
     return;
 }

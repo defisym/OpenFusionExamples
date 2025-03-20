@@ -107,9 +107,9 @@ EXO_IMAGE               BITMAP  MOVEABLE PURE   "RES\\EXTIMG.BMP"
 // Shader
 //
 
-#ifdef COPY_D3D_TEXTURE
-SHADER_VS_TEMPLATE      RCDATA    "Shader\\vs.hlsl"
-SHADER_PS_TEMPLATE      RCDATA    "Shader\\ps.hlsl"
+#ifndef PRE_COMPILE_SHADER
+SHADER_VS_TEMPLATE      RCDATA    "Shader\\VS.hlsl"
+SHADER_PS_TEMPLATE      RCDATA    "Shader\\PS.hlsl"
 SHADER_PS_YUVToBGRA     RCDATA    "Shader\\YUVToBGRA.hlsl"
 #endif
 

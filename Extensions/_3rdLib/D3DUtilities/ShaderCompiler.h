@@ -4,8 +4,10 @@
 #include <format>
 
 #include <d3d11.h>
+#ifndef PRE_COMPILE_SHADER
 #include <d3dcompiler.h>
 #pragma comment(lib, "d3dcompiler.lib")
+#endif
 
 #include "D3DDefinition.h"
 
@@ -39,6 +41,7 @@ struct ShaderCompiler {
     constexpr static auto DEFAULT_ENTRYPOINT = "Main";
     constexpr static auto DEFAULT_TARGET = "5_0";
 
+#ifndef PRE_COMPILE_SHADER
     bool CompileShader(const void* pData, const size_t sz,
        const char* pEntryPoint, const char* pTarget,
        Blob& shaderBlob) {
@@ -91,11 +94,27 @@ struct ShaderCompiler {
 
         return true;
     }
+#endif
 
     // ------------------------------------------
     // Compile VertexShader
     // ------------------------------------------
 
+#ifdef PRE_COMPILE_SHADER
+    [[nodiscard]] VertexShaderBundle CreateVertexShader(const void* pShaderBytecode, SIZE_T bytecodeLength) {
+        VertexShader vertexShader;
+        if (FAILED(pDevice->CreateVertexShader(
+            pShaderBytecode,
+            bytecodeLength,
+            nullptr,
+            &vertexShader))) {
+            errorMsg = "D3D11: Failed to compile vertex shader\n";
+            return GetNullBundle<VertexShaderBundle>();
+        }
+
+        return std::make_tuple(nullptr, vertexShader);
+    }
+#else
     [[nodiscard]] VertexShaderBundle CreateVertexShader(const Blob& vertexShaderBlob) {
         VertexShader vertexShader;
         if (FAILED(pDevice->CreateVertexShader(
@@ -133,11 +152,27 @@ struct ShaderCompiler {
 
         return CreateVertexShader(vertexShaderBlob);
     }
+#endif
 
     // ------------------------------------------
     // Compile PixelShader
     // ------------------------------------------
 
+#ifdef PRE_COMPILE_SHADER
+    [[nodiscard]] PixelShaderBundle CreatePixelShader(const void* pShaderBytecode, SIZE_T bytecodeLength) {
+        PixelShader pixelShader;
+        if (FAILED(pDevice->CreatePixelShader(
+            pShaderBytecode,
+            bytecodeLength,
+            nullptr,
+            &pixelShader))) {
+            errorMsg = "D3D11: Failed to compile pixel shader\n";
+            return GetNullBundle<PixelShaderBundle>();
+        }
+
+        return std::make_tuple(nullptr, pixelShader);
+    }
+#else
     [[nodiscard]] PixelShaderBundle CreatePixelShader(const Blob& pixelShaderBlob) {
         PixelShader pixelShader;
         if (FAILED(pDevice->CreatePixelShader(
@@ -175,4 +210,5 @@ struct ShaderCompiler {
 
         return CreatePixelShader(pixelShaderBlob);
     }
+#endif
 };

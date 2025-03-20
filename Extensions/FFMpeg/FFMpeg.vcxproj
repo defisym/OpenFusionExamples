@@ -318,17 +318,59 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <Image Include="EXTIMG.BMP" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="Shader\ps.hlsl">
+    <CustomBuild Include="Shader\PS.hlsl">
       <FileType>Document</FileType>
     </CustomBuild>
-    <CustomBuild Include="Shader\vs.hlsl">
+    <FxCompile Include="Shader\VS.hlsl">
       <FileType>Document</FileType>
-    </CustomBuild>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">VS_%(Filename)</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
+      </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">VS_%(Filename)</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
+      </ObjectFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">VS_%(Filename)</VariableName>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
+      </ObjectFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">Main</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">Shader\Inc\%(Filename).inc</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">Main</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">Shader\Inc\%(Filename).inc</HeaderFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">Main</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">5.0</ShaderModel>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">Shader\Inc\%(Filename).inc</HeaderFileOutput>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="Shader\YUVToBGRA.hlsl">
+    <FxCompile Include="Shader\YUVToBGRA.hlsl">
       <FileType>Document</FileType>
-    </CustomBuild>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">Main</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">Main</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">Main</EntryPointName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">PS_%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">Shader\Inc\%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">PS_%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">Shader\Inc\%(Filename).inc</HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">PS_%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">Shader\Inc\%(Filename).inc</HeaderFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
+      </ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
+      </ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
+      </ObjectFileOutput>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -9,13 +9,12 @@ struct PSOutput
     float4 color: SV_Target0;
 };
 
+SamplerState samp : register(s0);
+
 // Y plane
 Texture2D<float> texY : register(t0);
-SamplerState samplerY : register(s0);
-
 // UV plane
 Texture2D<float2> texUV : register(t1);
-SamplerState samplerUV : register(s1);
 
 cbuffer PS_PIXELSIZE : register(b0)
 {
@@ -50,8 +49,8 @@ PSOutput Main(PSInput input)
     // may get green slide in float mode
     // 
     //float2 texCoord = input.position.xy * float2(fPixelWidth, fPixelHeight);
-    //float y = texY.Sample(samplerY, texCoord);
-    //float2 uv = texUV.Sample(samplerUV, texCoord);        
+    //float y = texY.Sample(samp, texCoord);
+    //float2 uv = texUV.Sample(samp, texCoord);        
     //output.color = float4(ConvertYUVtoRGB(float3(y, uv)), 1.0);
     
     uint2 texCoord = input.position.xy;

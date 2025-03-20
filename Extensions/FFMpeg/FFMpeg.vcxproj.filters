@@ -212,14 +212,16 @@
     <CustomBuild Include="..\Help\ExtSdk.chm">
       <Filter>Information</Filter>
     </CustomBuild>
-    <CustomBuild Include="Shader\YUVToBGRA.hlsl">
+    <CustomBuild Include="Shader\PS.hlsl">
       <Filter>Shader\PixelShader</Filter>
     </CustomBuild>
-    <CustomBuild Include="Shader\ps.hlsl">
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shader\YUVToBGRA.hlsl">
       <Filter>Shader\PixelShader</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Shader\vs.hlsl">
+    </FxCompile>
+    <FxCompile Include="Shader\vs.hlsl">
       <Filter>Shader\VertexShader</Filter>
-    </CustomBuild>
+    </FxCompile>
   </ItemGroup>
 </Project>
