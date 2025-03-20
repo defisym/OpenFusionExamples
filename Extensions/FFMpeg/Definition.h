@@ -56,6 +56,7 @@ struct MemVideoLib {
 };
 
 struct D3DSharedHandler;
+struct D3DLocalHandler;
 
 struct GlobalData {
 	std::vector<FFMpeg**> ppFFMpegs_record;

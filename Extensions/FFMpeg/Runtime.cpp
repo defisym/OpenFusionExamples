@@ -117,6 +117,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
     rdPtr->bCopyToTexture = edPtr->bCopyToTexture;
     rdPtr->bSharedHardWareDevice = edPtr->bSharedHardWareDevice;
+    rdPtr->pD3DLocalHandler = new D3DLocalHandler{ (ID3D11Device*)GetD3DDevice(rdPtr) };
 
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
@@ -193,6 +194,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	CloseGeneral(rdPtr);
 
 	delete rdPtr->pFilePath;
+    
+    delete rdPtr->pD3DLocalHandler;
 
 	delete rdPtr->pVideoOverrideCodecName;
 	delete rdPtr->pAudioOverrideCodecName;

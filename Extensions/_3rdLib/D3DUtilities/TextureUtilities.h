@@ -1,5 +1,7 @@
 #pragma once
 
+#include <d3d11.h>
+#pragma comment(lib, "d3d11.lib")
 
 // fusion surface info use pointer to pointer to hold texture & view
 template<typename T>

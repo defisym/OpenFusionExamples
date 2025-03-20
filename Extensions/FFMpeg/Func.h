@@ -152,6 +152,7 @@ inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
 
 struct CopyTextureContext {
     D3DSharedHandler* pD3DSharedHandler = nullptr;
+    D3DLocalHandler* pD3DLocalHandler = nullptr;
     const FFMpeg::CopyToTextureContext* pFFMpegCtx = nullptr;
 };
 
@@ -160,6 +161,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     // 1. basic info
     const auto pCtx = (const CopyTextureContext*)pData;
     auto pD3DSharedHandler = pCtx->pD3DSharedHandler;
+    auto pD3DLocalHandler = pCtx->pD3DLocalHandler;
+    
     HRESULT hr = S_OK;
 
     // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
@@ -197,110 +200,23 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
 
     // 2. vertex shader
     pD3DSharedHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);
-    
-    // 3. rasterizer
-    // shouldn't be shared as resolution may different
-    D3D11_VIEWPORT viewPort = {};
-    viewPort.TopLeftX = 0;
-    viewPort.TopLeftY = 0;
-    viewPort.Width = (FLOAT)width;
-    viewPort.Height = (FLOAT)height;
-    viewPort.MaxDepth = 1;
-    viewPort.MinDepth = 0;
-    pFusionDeviceCtx->RSSetViewports(1, &viewPort);
 
-    // 4. pixel shader
-    // we do actual conversion here
+    // 3. pixel shader
     pD3DSharedHandler->pixelHelper.UpdateContext(pFusionDeviceCtx);
 
-    // open shared resource
-    ComPtr<ID3D11Texture2D> pSharedFrameTexture;
-    hr = pFusionDevice->OpenSharedResource(sharedHandle, IID_PPV_ARGS(&pSharedFrameTexture));
-    if (FAILED(hr)) { return; }
+    // 4. resolution & shared texture
+    pD3DLocalHandler->UpdateResolution(pFusionDeviceCtx, width, height);
+    if (FAILED(pD3DLocalHandler->hr)) { return; }
+    pD3DLocalHandler->UpdateSharedTexture(pFusionDeviceCtx, sharedHandle, textureFormat);
+    if (FAILED(pD3DLocalHandler->hr)) { return; }
 
-    // create srv
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.MipLevels = 1;
-
-    // create new shader resource view
-    DXGI_FORMAT yFormat = DXGI_FORMAT_UNKNOWN;
-    ComPtr<ID3D11ShaderResourceView> pSrvY = nullptr;
-    
-    DXGI_FORMAT uvFormat = DXGI_FORMAT_UNKNOWN;
-    ComPtr<ID3D11ShaderResourceView> pSrvUV = nullptr;
-
-    // YUV cannot create srv directly, split to two planes
-    // uses UNORM in view & float in shader, may lose precision
-    switch (textureFormat) {
-    case DXGI_FORMAT_NV12:
-    {
-        yFormat = DXGI_FORMAT_R8_UNORM;
-        uvFormat = DXGI_FORMAT_R8G8_UNORM;
-
-        break;
-    }
-    case DXGI_FORMAT_P010:
-    case DXGI_FORMAT_P016:
-    {
-        yFormat = DXGI_FORMAT_R16_UNORM;
-        uvFormat = DXGI_FORMAT_R16G16_UNORM;
-
-        break;
-    }
-    // format not supported
-    default:
-    {
-        return;
-    }
-    }    
-
-    srvDesc.Format = yFormat;
-    hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvY);
-    if (FAILED(hr)) { return; }
-
-    srvDesc.Format = uvFormat;
-    hr = pFusionDevice->CreateShaderResourceView(pSharedFrameTexture.Get(), &srvDesc, &pSrvUV);
-    if (FAILED(hr)) { return; }
-
-    ID3D11ShaderResourceView* srvs[] = { pSrvY.Get(), pSrvUV.Get() };
-    pFusionDeviceCtx->PSSetShaderResources(0, std::size(srvs), srvs);
-
-    // create constant buffer
-    // shouldn't be shared as resolution may different
-    
-    // size of buffer must be multiple of 16
-    struct alignas(16) PixelSizeBuffer {
-        float fPixelWidth;
-        float fPixelHeight;
-    };
-
-    PixelSizeBuffer psb = { 1.0f / width, 1.0f / height };
-
-    D3D11_BUFFER_DESC psbDesc = {};
-    psbDesc.Usage = D3D11_USAGE_DEFAULT;
-    psbDesc.ByteWidth = sizeof(PixelSizeBuffer);
-    psbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    psbDesc.CPUAccessFlags = 0;
-
-    D3D11_SUBRESOURCE_DATA initData = {};
-    initData.pSysMem = &psb;
-
-    ComPtr<ID3D11Buffer> pConstantBuffer = nullptr;
-    hr = pFusionDevice->CreateBuffer(&psbDesc, &initData, &pConstantBuffer);
-    if (FAILED(hr)) { return; }
-
-    ID3D11Buffer* cb[] = { pConstantBuffer.Get()};
-    pFusionDeviceCtx->PSSetConstantBuffers(0, std::size(cb), cb);
+    pD3DLocalHandler->UpdateContext(pFusionDeviceCtx);
 
     // 5. render
     ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
     pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
     pFusionDeviceCtx->DrawIndexed(pD3DSharedHandler->vertexHelper.indicesSize, 0, 0);
-
-    return;
 }
 
 inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
@@ -315,6 +231,7 @@ inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     else {
         auto ctx = CopyTextureContext{
         .pD3DSharedHandler = rdPtr->pData->pD3DSharedHandler,
+        .pD3DLocalHandler = rdPtr->pD3DLocalHandler,
         .pFFMpegCtx = (const FFMpeg::CopyToTextureContext*)pData
         };
 
