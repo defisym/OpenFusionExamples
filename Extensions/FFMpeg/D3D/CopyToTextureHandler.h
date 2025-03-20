@@ -1,7 +1,7 @@
 #pragma once
 
-#include "D3DUtilities/VertexStaticHelper.h"
-#include "D3DUtilities/PixelStaticHelper.h"
+#include "D3DUtilities/VertexSharedHelper.h"
+#include "D3DUtilities/PixelSharedHelper.h"
 
 #ifdef PRE_COMPILE_SHADER
 #include "Shader/Inc/VS.inc"
@@ -14,8 +14,8 @@ struct CopyToTextureHandler {
 #else
     ShaderResourceCompiler compiler;
 #endif
-    VertexStaticHelper vertexHelper;
-    PixelStaticHelper pixelHelper;
+    VertexSharedHelper vertexHelper;
+    PixelSharedHelper pixelHelper;
 
     CopyToTextureHandler(ID3D11Device* pDevice, const HMODULE hInstLib) 
         :compiler(pDevice), 

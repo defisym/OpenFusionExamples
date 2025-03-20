@@ -181,8 +181,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
     auto RTTInfo = GetSurfaceInfo(pRTTSf);
 
-    auto pFusionDevice = CastPointer<ID3D11Device>((void*)RTTInfo.m_pD3D11Device);
-    auto pFusionDeviceCtx = CastPointer<ID3D11DeviceContext>((void*)RTTInfo.m_pD3D11Context);
+    auto pFusionDevice = (ID3D11Device*)RTTInfo.m_pD3D11Device;
+    auto pFusionDeviceCtx = (ID3D11DeviceContext*)RTTInfo.m_pD3D11Context;
 
     // Format:      DXGI_FORMAT_B8G8R8A8_UNORM
     // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
@@ -192,8 +192,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     //                  be used with the D3D11_MAP_WRITE_NO_OVERWRITE flag.
     //              D3D11_BIND_RENDER_TARGET
     //                  Bind a texture as a render target for the output-merger stage.
-    auto pRTTTexture = CastTexturePointer((void**)RTTInfo.m_ppD3D11RenderTargetTexture);    
-    auto pRTTTextureView = CastRenderTargetViewPointer((void**)RTTInfo.m_ppD3D11RenderTargetView);
+    auto pRTTTexture = *(ID3D11Texture2D**)(RTTInfo.m_ppD3D11RenderTargetTexture);    
+    auto pRTTTextureView = *(ID3D11RenderTargetView**)(RTTInfo.m_ppD3D11RenderTargetView);
 
     // 2. vertex shader
     pCTTHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);

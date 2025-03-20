@@ -55,8 +55,16 @@
 #include	<string>
 #include	<chrono>
 
+#ifdef COPY_D3D_TEXTURE
+#ifdef _DEBUG
+#include	"D3D/HookD3D.h"
+#endif
+
+#include <d3d11.h>
+#pragma comment(lib, "d3d11.lib")
+#endif
+
 // My lib
-#include	"D3DUtilities/TextureUtilities.h"
 #include	"SDLUtilities.h"
 
 #include	"Encryption.h"
@@ -78,10 +86,6 @@
 #include	"FusionUtilities.h"
 
 #ifdef COPY_D3D_TEXTURE
-#ifdef _DEBUG
-#include	"D3D/HookD3D.h"
-#endif
-
 #include	"D3D/CopyToTextureHandler.h"
 #endif
 

@@ -8,11 +8,11 @@
 #include "ShaderResourceCompiler.h"
 #endif
 
-// VertexStaticHelper
+// VertexSharedHelper
 // for 2D rendering, vertex routine are mostly the same
 // so we can create a helper class to simplify the shared process
 
-struct VertexStaticHelper {
+struct VertexSharedHelper {
     HRESULT hr = S_OK;
 
 	using VertexShaderBundle = ShaderCompiler::VertexShaderBundle;
@@ -30,9 +30,9 @@ struct VertexStaticHelper {
 	ComPtr<ID3D11Buffer> pIndexBuffer;
 
 #ifdef PRE_COMPILE_SHADER
-    VertexStaticHelper(ShaderCompiler* pCompiler, const void* pShaderBytecode, SIZE_T bytecodeLength) {
+    VertexSharedHelper(ShaderCompiler* pCompiler, const void* pShaderBytecode, SIZE_T bytecodeLength) {
 #else
-    VertexStaticHelper(ShaderResourceCompiler * pCompiler, const HMODULE hInstLib, const int resourceId,
+    VertexSharedHelper(ShaderResourceCompiler * pCompiler, const HMODULE hInstLib, const int resourceId,
         const char* pEntryPoint = ShaderCompiler::DEFAULT_ENTRYPOINT,
         const char* pTarget = ShaderCompiler::DEFAULT_TARGET) {
 #endif

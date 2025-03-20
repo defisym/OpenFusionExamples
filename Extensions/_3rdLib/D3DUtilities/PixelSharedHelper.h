@@ -6,7 +6,7 @@
 #include "ShaderResourceCompiler.h"
 #endif
 
-struct PixelStaticHelper {
+struct PixelSharedHelper {
     HRESULT hr = S_OK;
 
     using PixelShaderBundle = ShaderCompiler::PixelShaderBundle;
@@ -15,9 +15,9 @@ struct PixelStaticHelper {
     ComPtr<ID3D11SamplerState> pSamplerState = nullptr;
 
 #ifdef PRE_COMPILE_SHADER
-    PixelStaticHelper(ShaderCompiler* pCompiler, const void* pShaderBytecode, SIZE_T bytecodeLength) {
+    PixelSharedHelper(ShaderCompiler* pCompiler, const void* pShaderBytecode, SIZE_T bytecodeLength) {
 #else
-    PixelStaticHelper(ShaderResourceCompiler* pCompiler, const HMODULE hInstLib, const int resourceId,
+    PixelSharedHelper(ShaderResourceCompiler* pCompiler, const HMODULE hInstLib, const int resourceId,
         const char* pEntryPoint = ShaderCompiler::DEFAULT_ENTRYPOINT,
         const char* pTarget = ShaderCompiler::DEFAULT_TARGET) {
 #endif
