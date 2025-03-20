@@ -128,7 +128,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 		SetExtUserData(rdPtr->pData);
 
         // create it here instead of constructor to solve dependency
-        rdPtr->pData->pCTTHandler = new CopyToTextureHandler{ (ID3D11Device*)GetD3DDevice(rdPtr), hInstLib };
+        rdPtr->pData->pD3DSharedHandler = new D3DSharedHandler{ (ID3D11Device*)GetD3DDevice(rdPtr), hInstLib };
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -520,7 +520,7 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
         // delete it here instead of destructor to solve dependency
-        delete pData->pCTTHandler;
+        delete pData->pD3DSharedHandler;
         
         delete pData;
         mV->mvSetExtUserData(pApp, hInstLib, NULL);
@@ -540,7 +540,7 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
         // delete it here instead of destructor to solve dependency
-        delete pData->pCTTHandler; 
+        delete pData->pD3DSharedHandler; 
         
         delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);

@@ -8,7 +8,8 @@
 #include "Shader/Inc/YUVToBGRA.inc"
 #endif
 
-struct CopyToTextureHandler {
+// shared by all instance
+struct D3DSharedHandler {
 #ifdef PRE_COMPILE_SHADER
     ShaderCompiler compiler;    
 #else
@@ -17,7 +18,7 @@ struct CopyToTextureHandler {
     VertexSharedHelper vertexHelper;
     PixelSharedHelper pixelHelper;
 
-    CopyToTextureHandler(ID3D11Device* pDevice, const HMODULE hInstLib) 
+    D3DSharedHandler(ID3D11Device* pDevice, const HMODULE hInstLib) 
         :compiler(pDevice), 
 #ifdef PRE_COMPILE_SHADER
         vertexHelper(&compiler, VS_VS, sizeof(VS_VS)),
@@ -31,3 +32,4 @@ struct CopyToTextureHandler {
         if (FAILED(pixelHelper.hr)) { return; }       
     }
 };
+

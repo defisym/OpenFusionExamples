@@ -86,7 +86,7 @@
 #include	"FusionUtilities.h"
 
 #ifdef COPY_D3D_TEXTURE
-#include	"D3D/CopyToTextureHandler.h"
+#include	"D3D/D3DHandler.h"
 #endif
 
 #include	"Func.h"

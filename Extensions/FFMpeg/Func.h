@@ -151,7 +151,7 @@ inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
 }
 
 struct CopyTextureContext {
-    CopyToTextureHandler* pCTTHandler = nullptr;
+    D3DSharedHandler* pD3DSharedHandler = nullptr;
     const FFMpeg::CopyToTextureContext* pFFMpegCtx = nullptr;
 };
 
@@ -159,7 +159,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
      LPSURFACE pRTTSf, bool bPm) {
     // 1. basic info
     const auto pCtx = (const CopyTextureContext*)pData;
-    auto pCTTHandler = pCtx->pCTTHandler;
+    auto pD3DSharedHandler = pCtx->pD3DSharedHandler;
     HRESULT hr = S_OK;
 
     // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
@@ -196,7 +196,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     auto pRTTTextureView = *(ID3D11RenderTargetView**)(RTTInfo.m_ppD3D11RenderTargetView);
 
     // 2. vertex shader
-    pCTTHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);
+    pD3DSharedHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);
     
     // 3. rasterizer
     // shouldn't be shared as resolution may different
@@ -211,7 +211,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
 
     // 4. pixel shader
     // we do actual conversion here
-    pCTTHandler->pixelHelper.UpdateContext(pFusionDeviceCtx);
+    pD3DSharedHandler->pixelHelper.UpdateContext(pFusionDeviceCtx);
 
     // open shared resource
     ComPtr<ID3D11Texture2D> pSharedFrameTexture;
@@ -298,7 +298,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
     pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
-    pFusionDeviceCtx->DrawIndexed(pCTTHandler->vertexHelper.indicesSize, 0, 0);
+    pFusionDeviceCtx->DrawIndexed(pD3DSharedHandler->vertexHelper.indicesSize, 0, 0);
 
     return;
 }
@@ -314,7 +314,7 @@ inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     }
     else {
         auto ctx = CopyTextureContext{
-        .pCTTHandler = rdPtr->pData->pCTTHandler,
+        .pD3DSharedHandler = rdPtr->pData->pD3DSharedHandler,
         .pFFMpegCtx = (const FFMpeg::CopyToTextureContext*)pData
         };
 
