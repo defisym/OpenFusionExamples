@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #ifdef PRE_COMPILE_SHADER
 #include "ShaderCompiler.h"
 #else
@@ -12,7 +14,9 @@ struct PixelSharedHelper {
     using PixelShaderBundle = ShaderCompiler::PixelShaderBundle;
     PixelShaderBundle psBundle = ShaderCompiler::GetNullBundle<PixelShaderBundle>();
 
-    ComPtr<ID3D11SamplerState> pSamplerState = nullptr;
+    // for set sampler
+    std::vector<ID3D11SamplerState*> pSamplerStateArr = {};
+    std::vector<ComPtr<ID3D11SamplerState>> pSamplerStates = {};
 
 #ifdef PRE_COMPILE_SHADER
     PixelSharedHelper(ShaderCompiler* pCompiler, const void* pShaderBytecode, SIZE_T bytecodeLength) {
@@ -45,16 +49,45 @@ struct PixelSharedHelper {
         sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
         sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
         sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-
-        hr = pDevice->CreateSamplerState(&sampDesc, &pSamplerState);
+        
+        hr = CreateSampler(pDevice, 1, &sampDesc);
         if (FAILED(hr)) { return; }
+    }
+
+    inline void ClearSampler() {
+        pSamplerStateArr.clear();
+        pSamplerStates.clear();
+    }
+
+    // a default sampler with desc
+    //      D3D11_SAMPLER_DESC sampDesc = {};
+    //      sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    //      sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    //      sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    //      sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    // will be created by default, usually enough for most cases.
+    // call this function if you need to override it.
+    inline HRESULT CreateSampler(ID3D11Device* pDevice,
+        size_t numDesc, D3D11_SAMPLER_DESC* pDesc) {
+        ClearSampler();
+
+        for (size_t index = 0; index < numDesc; index++) {
+            ComPtr<ID3D11SamplerState> pTempSamplerState = nullptr;
+            hr = pDevice->CreateSamplerState(&pDesc[index], &pTempSamplerState);
+            if (FAILED(hr)) { ClearSampler(); return hr; }
+
+            // is safe here, as move ComPtr will copy pointer
+            pSamplerStateArr.emplace_back(pTempSamplerState.Get());
+            pSamplerStates.emplace_back(std::move(pTempSamplerState));
+        }
+
+        return S_OK;
     }
 
     inline void UpdateContext(ID3D11DeviceContext* pDeviceCtx) {
         auto& [psBlob, ps] = psBundle;
         pDeviceCtx->PSSetShader(ps.Get(), 0, 0);
-
-        ID3D11SamplerState* sss[] = { pSamplerState.Get() };
-        pDeviceCtx->PSSetSamplers(0, std::size(sss), sss);
+                
+        pDeviceCtx->PSSetSamplers(0, pSamplerStateArr.size(), pSamplerStateArr.data());
     }
 };
