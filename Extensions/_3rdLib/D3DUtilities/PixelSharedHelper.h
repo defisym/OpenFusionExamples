@@ -8,6 +8,21 @@
 #include "ShaderResourceCompiler.h"
 #endif
 
+// ------------------------------------------------
+// PixelSharedHelper
+// ------------------------------------------------
+// 
+// this class holds a shader and it's sampler, which should be the same 
+// for all instances that shares it.
+// for constant buffer (pass params) and shader resource view (changed by texture)
+// please create it for each instance as they should be different 
+// and be frequently updated.
+// you can create another class to handle that, a recommend name for that 
+// is PixelLocalHandler or D3DLocalHandler.
+// 
+// Note: user should grantee that PixelSharedHelper MUST MATCH PixelLocalHandler 
+//       when update context during render
+
 struct PixelSharedHelper {
     HRESULT hr = S_OK;
 

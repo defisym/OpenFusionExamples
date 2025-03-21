@@ -8,7 +8,10 @@
 #include "ShaderResourceCompiler.h"
 #endif
 
+// ------------------------------------------------
 // VertexSharedHelper
+// ------------------------------------------------
+// 
 // for 2D rendering, vertex routine are mostly the same
 // so we can create a helper class to simplify the shared process
 
