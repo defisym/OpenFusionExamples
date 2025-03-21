@@ -195,8 +195,8 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     //                  be used with the D3D11_MAP_WRITE_NO_OVERWRITE flag.
     //              D3D11_BIND_RENDER_TARGET
     //                  Bind a texture as a render target for the output-merger stage.
-    auto pRTTTexture = *(ID3D11Texture2D**)(RTTInfo.m_ppD3D11RenderTargetTexture);    
-    auto pRTTTextureView = *(ID3D11RenderTargetView**)(RTTInfo.m_ppD3D11RenderTargetView);
+    auto pRTTexture = *(ID3D11Texture2D**)(RTTInfo.m_ppD3D11RenderTargetTexture);    
+    auto pRTTextureView = *(ID3D11RenderTargetView**)(RTTInfo.m_ppD3D11RenderTargetView);
 
     // 2. vertex shader
     pD3DSharedHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);
@@ -213,7 +213,7 @@ inline void CopyTexture(const unsigned char* pData, const int width, const int h
     pD3DLocalHandler->UpdateContext(pFusionDeviceCtx);
 
     // 5. render
-    ID3D11RenderTargetView* rtvs[] = { pRTTTextureView };
+    ID3D11RenderTargetView* rtvs[] = { pRTTextureView };
     pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
 
     pFusionDeviceCtx->DrawIndexed(pD3DSharedHandler->vertexHelper.indicesSize, 0, 0);
