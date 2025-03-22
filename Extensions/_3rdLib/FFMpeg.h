@@ -232,6 +232,16 @@ public:
 };
 
 class FFMpeg {
+#pragma region type
+    // pData, stride, height
+    using FrameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
+#ifdef HW_DECODE
+    // convert texture
+    using TextureConverter = void(FFMpeg::*)(AVCodecContext* pCodecContext,
+        AVFrame* pFrame, const FrameDataCallBack& callBack);
+#endif
+#pragma endregion
+
 #pragma region value
 #pragma region control
 	bool bExit = false;
@@ -306,7 +316,7 @@ class FFMpeg {
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = nullptr;
 
-#ifdef  HW_DECODE
+#ifdef HW_DECODE
 	// auto fall back to CPU decode if init hardware failed
 	bool bHWDecode = false;
 	// software frame retrieved from GPU
@@ -333,6 +343,7 @@ public:
 private:
     // copy hardware decode result to texture
     bool bCopyToTexture = false;
+    TextureConverter convert_textureFrame = nullptr;
 
     // for wait gpu
     ComPtr<ID3D11Query> pEvent = nullptr;
@@ -446,11 +457,6 @@ private:
 
 #pragma endregion
 
-#pragma endregion
-
-#pragma region type
-    // pData, stride, height
-    using FrameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 #pragma endregion
 
 	// ------------------------------------
@@ -909,8 +915,6 @@ private:
 #ifdef HW_DECODE
 		const auto hw_deviceType = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
 		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
-        bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
-        bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;
 
         if (bHWDecode) {
             // update pixel format
@@ -940,6 +944,19 @@ private:
 
             VCodecCtxQpaque.hw_pix_fmt = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
 		}
+
+        // Hardware decode state and type will be change in previous block
+        if (bHWDecode) {
+            bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;
+            bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
+            if (bCopyToTexture) {
+                auto pConverter = get_textureConverter(hw_type);
+
+                // not supported
+                if (pConverter == nullptr) { bCopyToTexture = false; }
+                else { convert_textureFrame = pConverter; }
+            }
+        }
 #endif
 
         if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0) {
@@ -1317,7 +1334,7 @@ private:
 
     // only available when bCopyToTexture enabled
     // do nothing, just pass D3D11 texture to callback, furture process not needed
-    inline void convert_textureFrame(AVCodecContext* pCodecContext,
+    inline void convert_textureFrameD3D11(AVCodecContext* pCodecContext,
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
         auto pHWCtx = hw_getDeviceContext();
 
@@ -1450,7 +1467,7 @@ private:
 #ifdef HW_DECODE
 		if (bHWDecode) {
             if (bCopyToTexture) { 
-                convert_textureFrame(pCodecContext, pFrame, callBack);
+                (this->*convert_textureFrame)(pCodecContext, pFrame, callBack);
                 av_frame_unref(pFrame); 
 
                 return;
@@ -2069,6 +2086,18 @@ public:
 	// ------------------------------------
 	// Hardware decode
 	// ------------------------------------
+
+    // return nullptr if not support
+    inline TextureConverter get_textureConverter(AVHWDeviceType type) {
+        switch (type) {
+        case AV_HWDEVICE_TYPE_D3D11VA:
+            return &FFMpeg::convert_textureFrameD3D11;
+        default:
+            return nullptr;
+        }
+
+        return nullptr;
+    }
 
     inline bool get_copyToTextureState() const {
         return get_hwDecodeState() && bCopyToTexture;
