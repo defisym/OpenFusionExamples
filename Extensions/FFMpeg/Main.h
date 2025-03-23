@@ -187,6 +187,7 @@ typedef struct tagRDATA
 	bool bPm;
 	bool bChanged;
     bool bPositionSet;
+    bool bResetDisplay;
 
 	double scaleX;
 	double scaleY;

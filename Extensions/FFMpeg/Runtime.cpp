@@ -108,6 +108,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
     rdPtr->bPm = PreMulAlpha(rdPtr);
     rdPtr->bChanged = true;
     rdPtr->bPositionSet = false;
+    rdPtr->bResetDisplay = false;
 
 	rdPtr->pRetStr = new std::wstring;
 
@@ -343,6 +344,10 @@ short WINAPI DLLExport DisplayRunObject(LPRDATA rdPtr)
 */
 
 	if (rdPtr->pDisplaySf != nullptr && rdPtr->pDisplaySf->IsValid()) {
+        // handle ResetDisplay
+        if (!GetVideoPlayState(rdPtr) && rdPtr->bResetDisplay) { return 0; }
+        rdPtr->bResetDisplay = false;
+
 		// Begin render process...
 		LPSURFACE ps = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
 		//int nDrv = ps->GetDriver();

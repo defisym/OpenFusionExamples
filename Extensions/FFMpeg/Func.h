@@ -58,6 +58,7 @@ inline void InitSurface(LPSURFACE& pSf,
             pSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE);
         }
 
+        // alpha channel is ignored if surface type is ST_HWA_RTTEXTURE
         _AddAlpha(pSf);
 	}
 }

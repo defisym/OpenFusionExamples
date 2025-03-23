@@ -557,7 +557,6 @@ struct RenderTargetHelper {
     LPSURFACE GetRenderTarget()const { return pRTT; }
 };
 
-
 // ------------------------------------
 // Result:
 // ST_HWA_SCREEN -> RenderHelper: 
