@@ -131,6 +131,8 @@ Here follows all dlls needed by this object:
 - Set Size
   - *set object size*
 
+- Set Thread Count
+  - *see Properties->Thread Count*
 - Set Override Codec
   - *Force to use given codec. E.g., use `libvpx-vp9` to enable `WebM` alpha support*
   - *if given codec is invalid or cannot open video. extension will reset to default then try again. If the error still exists, `On Video Open Failed` will be triggered*
@@ -202,6 +204,7 @@ Here follows all dlls needed by this object:
   - *You can get the cSurface pointer of current frame / frame with given time stamp. Pass it to another extension then do anything you like.*
   - *Note the target extension should build in /MD, aka use the same heap. Or it may crash due to access violation. See: <https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170>*
 
+- Get Thread Count
 - Get Video Override Codec Name
 - Get Audio Override Codec Name
 
