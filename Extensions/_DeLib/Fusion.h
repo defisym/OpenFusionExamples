@@ -1171,7 +1171,7 @@ inline void _ForceAddAlpha(LPSURFACE Src, BYTE coef = 255) {
 // add alpha then init to coef if surface doesn't have alpha channel
 // 0 is transparent, 255 is opaque
 inline void _AddAlpha(LPSURFACE Src, BYTE coef = 255) {
-    if (!Src->HasAlpha()) { _ForceAddAlpha(Src); }
+    if (!Src->HasAlpha()) { _ForceAddAlpha(Src, coef); }
 }
 
 // ------------------------
