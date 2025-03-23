@@ -175,7 +175,7 @@ BEGIN
         //MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
         MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
-        MENUITEM "Set Copy To Texture Device", IDMN_ACTION_SCTT
+        MENUITEM "Set Copy To Texture", IDMN_ACTION_SCTT
         MENUITEM SEPARATOR
         MENUITEM "Cache Video",             IDMN_ACTION_CACHEV
         MENUITEM "Erase Cached Video",      IDMN_ACTION_ERASEV
