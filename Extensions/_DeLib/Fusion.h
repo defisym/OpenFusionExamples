@@ -1156,16 +1156,10 @@ inline void _LoadFromClipBoard(LPSURFACE Src, int width, int height, bool NoStre
 // set alpha to coef
 // 0 is transparent, 255 is opaque
 inline void _ForceAddAlpha(LPSURFACE Src, BYTE coef = 255) {
-	auto width = Src->GetWidth();
-    auto height = Src->GetHeight();
-	auto alphaSz = width * height;
-
-	BYTE* pAlpha = new BYTE[alphaSz];
-	memset(pAlpha, coef, alphaSz);
-
-	Src->SetAlpha(pAlpha, width);
-
-	delete[] pAlpha;
+    if (!Src->HasAlpha()) { Src->CreateAlpha(); }
+    const auto sfCoef = GetSfAlphaCoef(Src);
+    memset(sfCoef.pAlphaData, coef, sfCoef.alphaSz);
+    ReleaseSfAlphaCoef(Src);
 }
 
 // add alpha then init to coef if surface doesn't have alpha channel
