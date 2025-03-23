@@ -51,6 +51,9 @@ struct SfCoef {
 
 inline SfCoef GetSfCoef(LPSURFACE pSf);
 inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef);
+inline SfCoef GetSfAlphaCoef(LPSURFACE pSf);
+inline void ReleaseSfAlphaCoef(LPSURFACE pSf);
+inline void GetSfAlphaCoef(LPSURFACE pSf, SfCoef& pSfCoef);
 inline BYTE* GetPixelAddress(int width, int height, int x, int y, const SfCoef& coef);
 inline BYTE* GetAlphaPixelAddress(int width, int height, int x, int y, const SfCoef& coef);
 
@@ -1747,11 +1750,9 @@ inline LPSURFACE PerspectiveTransformation(const LPSURFACE pSrc, const double ma
 #define DEC2RGB(DEC) RGB(((DEC) >> 16), ((DEC) >> 8) & 0xff, (DEC) & 0xff)
 
 inline SfCoef GetSfCoef(LPSURFACE pSf) {
-	SfCoef pSfCoef = { 0 };
+	SfCoef pSfCoef = {};
 	
-	if (pSf == nullptr) {
-		return pSfCoef;
-	}
+    if (pSf == nullptr) { return pSfCoef; }
 
 	int width = pSf->GetWidth();
 	int height = pSf->GetHeight();
@@ -1770,30 +1771,45 @@ inline SfCoef GetSfCoef(LPSURFACE pSf) {
 	pSfCoef.byte = pSf->GetDepth() >> 3;
 
 	// alpha
-	if (pSf->HasAlpha()) {
-		pSfCoef.pAlphaData = pSf->LockAlpha();
-		
-		if (!pSfCoef.pAlphaData) { return pSfCoef; }
-		
-		pSfCoef.alphaPitch = pSf->GetAlphaPitch();
-		if (pSfCoef.alphaPitch < 0) {
-			pSfCoef.alphaPitch *= -1;
-			pSfCoef.pAlphaData -= pSfCoef.alphaPitch * (height - 1);
-		}
-		pSfCoef.alphaSz = pSfCoef.alphaPitch * height;
-		pSfCoef.alphaByte = 1;
-	}
+    GetSfAlphaCoef(pSf, pSfCoef);
 
 	return pSfCoef;
 }
 
 inline void ReleaseSfCoef(LPSURFACE pSf, const SfCoef& coef) {
-	pSf->UnlockBuffer(coef.pData);
+	pSf->UnlockBuffer(coef.pData);	
+    ReleaseSfAlphaCoef(pSf);    // alpha
+}
 
-	// alpha
-	if (pSf->HasAlpha()) {
-		pSf->UnlockAlpha();
-	}
+inline SfCoef GetSfAlphaCoef(LPSURFACE pSf) {
+    SfCoef pSfCoef = {};
+    if (pSf == nullptr) { return pSfCoef; }
+    GetSfAlphaCoef(pSf, pSfCoef);
+
+    return pSfCoef;
+}
+
+inline void ReleaseSfAlphaCoef(LPSURFACE pSf) {
+    if (pSf->HasAlpha()) { pSf->UnlockAlpha(); }
+}
+
+inline void GetSfAlphaCoef(LPSURFACE pSf, SfCoef& pSfCoef) {
+    if (pSf == nullptr) { return; }
+    if (!pSf->HasAlpha()) { return; }
+
+    int width = pSf->GetWidth();
+    int height = pSf->GetHeight();
+
+    pSfCoef.pAlphaData = pSf->LockAlpha();
+    if (!pSfCoef.pAlphaData) { return; }
+
+    pSfCoef.alphaPitch = pSf->GetAlphaPitch();
+    if (pSfCoef.alphaPitch < 0) {
+        pSfCoef.alphaPitch *= -1;
+        pSfCoef.pAlphaData -= pSfCoef.alphaPitch * (height - 1);
+    }
+    pSfCoef.alphaSz = pSfCoef.alphaPitch * height;
+    pSfCoef.alphaByte = 1;
 }
 
 inline BYTE* GetPixelAddress(int width, int height, int x, int y, const SfCoef& coef) {
