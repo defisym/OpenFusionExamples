@@ -32,7 +32,7 @@
 #define	ACT_ACTION_SP					6
 #define	ACT_ACTION_SPWF					7
 
-#define	ACT_ACTION_SQS					8
+#define	ACT_ACTION_STC					8
 
 #define	ACT_ACTION_SAS					9
 
@@ -83,7 +83,9 @@
 #define EXP_EXPRESSION_GVOCN	 		14
 #define EXP_EXPRESSION_GAOCN	 		15
 
-#define	EXP_LAST                    	16
+#define EXP_EXPRESSION_GTC		 		16
+
+#define	EXP_LAST                    	17
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

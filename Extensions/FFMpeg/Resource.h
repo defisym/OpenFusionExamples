@@ -98,7 +98,7 @@
 #define	IDMN_ACTION_SP				25006
 #define	IDMN_ACTION_SPWF			25007
 
-#define	IDMN_ACTION_SQS 			25008
+#define	IDMN_ACTION_STC 			25008
 
 #define	IDMN_ACTION_SAS 			25009
 
@@ -132,7 +132,7 @@
 #define	M_ACTION_SP				    5006
 #define	M_ACTION_SPWF				5007
 
-#define	M_ACTION_SQS				5008
+#define	M_ACTION_STC				5008
 
 #define	M_ACTION_SAS				5009
 
@@ -163,7 +163,7 @@
 #define M_POSITION				 5505
 #define M_POSITION_WF			 5506
 #define M_FLAGS				     5507
-#define M_AUDIOQUEUESIZE		 5508
+#define M_THEADCOUNT			 5508
 #define M_VIDEOQUEUESIZE	     5509
 #define M_ACCURATESEEK		     5510
 #define M_HWDECODEDEVICE		 5511
@@ -241,6 +241,8 @@
 #define IDMN_EXPRESSION_GVOCN     		27014
 #define IDMN_EXPRESSION_GAOCN     		27015
 
+#define IDMN_EXPRESSION_GTC     		27016
+
 // Expression strings
 #define	M_EXPRESSION_GVN			    7000
 #define M_EXPRESSION_GVP			    7001
@@ -264,6 +266,8 @@
 
 #define M_EXPRESSION_GVOCN     			7014
 #define M_EXPRESSION_GAOCN     			7015
+
+#define M_EXPRESSION_GTC     			7016
 
 // Names of expression parameters
 #define M_HWA   				 7500

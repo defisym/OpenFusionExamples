@@ -50,7 +50,7 @@ short actionsInfos[]=
 		IDMN_ACTION_SP, M_ACTION_SP, ACT_ACTION_SP,	0, 1, PARAM_EXPRESSION, M_POSITION,
 		IDMN_ACTION_SPWF, M_ACTION_SPWF, ACT_ACTION_SPWF,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_POSITION_WF, M_FLAGS,
 
-		IDMN_ACTION_SQS, M_ACTION_SQS, ACT_ACTION_SQS,	0, 2, PARAM_EXPRESSION, PARAM_EXPRESSION, M_AUDIOQUEUESIZE, M_VIDEOQUEUESIZE,
+		IDMN_ACTION_STC, M_ACTION_STC, ACT_ACTION_STC, 0, 1, PARAM_EXPRESSION, M_THEADCOUNT,
 
 		IDMN_ACTION_SAS, M_ACTION_SAS, ACT_ACTION_SAS, 0, 1, PARAM_EXPRESSION, M_ACCURATESEEK,
 
@@ -100,6 +100,8 @@ short expressionsInfos[]=
 		
 		IDMN_EXPRESSION_GVOCN, M_EXPRESSION_GVOCN, EXP_EXPRESSION_GVOCN, EXPFLAG_STRING, 0,
 		IDMN_EXPRESSION_GAOCN, M_EXPRESSION_GAOCN, EXP_EXPRESSION_GAOCN, EXPFLAG_STRING, 0,
+
+        IDMN_EXPRESSION_GTC, M_EXPRESSION_GTC, EXP_EXPRESSION_GTC, 0, 0,
 		};
 
 
@@ -237,12 +239,11 @@ short WINAPI DLLExport Action_SetPositionWithFlag(LPRDATA rdPtr, long param1, lo
 	return 0;
 }
 
-[[deprecated ]]
-short WINAPI DLLExport Action_SetQueueSize(LPRDATA rdPtr, long param1, long param2) {
-#ifndef RUN_ONLY
-	MSGBOX(L"Queue size is now automatically managed");
-#endif
-	return 0;
+short WINAPI DLLExport Action_SetThreadCount(LPRDATA rdPtr, long param1, long param2) {
+    const auto threadCount = (int)CNC_GetIntParameter(rdPtr);
+    rdPtr->threadCount = FFMpegOptions::GetValidThreadCount(threadCount);
+
+    return 0;
 }
 
 short WINAPI DLLExport Action_SetAccurateSeek(LPRDATA rdPtr, long param1, long param2) {
@@ -487,6 +488,10 @@ long WINAPI DLLExport Expression_GetAudioOverrideCodecName(LPRDATA rdPtr, long p
 	return (long)rdPtr->pRetStr->c_str();
 }
 
+long WINAPI DLLExport Expression_GetThreadCount(LPRDATA rdPtr, long param1) {
+    return rdPtr->threadCount;
+}
+
 // ----------------------------------------------------------
 // Condition / Action / Expression jump table
 // ----------------------------------------------------------
@@ -524,7 +529,7 @@ short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Action_SetPosition,
 			Action_SetPositionWithFlag,
 
-			Action_SetQueueSize,
+            Action_SetThreadCount,
 
 			Action_SetAccurateSeek,
 
@@ -574,6 +579,8 @@ long (WINAPI * ExpressionJumps[])(LPRDATA rdPtr, long param) =
 
 			Expression_GetVideoOverrideCodecName,
 			Expression_GetAudioOverrideCodecName,
+
+            Expression_GetThreadCount,
 
 			0
 			};

@@ -172,7 +172,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Set Size", IDMN_ACTION_STRETCH
         MENUITEM SEPARATOR
-        //MENUITEM "Set Queue Size",          IDMN_ACTION_SQS
+        MENUITEM "Set Thread Count", IDMN_ACTION_STC
         MENUITEM "Set Override Codec", IDMN_ACTION_SOC
         MENUITEM "Set Hardware Decode Device", IDMN_ACTION_SHDE
         MENUITEM "Set Copy To Texture", IDMN_ACTION_SCTT
@@ -209,6 +209,7 @@ BEGIN
         MENUITEM "Get Current Video Frame Pointer", IDMN_EXPRESSION_GCVFP
         MENUITEM "Get Grabbed Video Frame Pointer", IDMN_EXPRESSION_GGVFP        
         MENUITEM SEPARATOR
+        MENUITEM "Get Thread Count", IDMN_EXPRESSION_GTC     
         MENUITEM "Get Video Override Codec Name", IDMN_EXPRESSION_GVOCN         
         MENUITEM "Get Audio Override Codec Name", IDMN_EXPRESSION_GAOCN         
         MENUITEM SEPARATOR
@@ -367,7 +368,7 @@ BEGIN
     M_ACTION_SP			       "Set Video Position to %0"
     M_ACTION_SPWF		       "Set Video Position to %0 With Flag %1"
     
-    M_ACTION_SQS		       "Set Audio Queue Size to %0, Video Queue Size to %1"
+    M_ACTION_STC		       "Set Thread Count to %0"
     
     M_ACTION_SAS		       "Set Accurate Seek to %0"
     
@@ -392,7 +393,7 @@ BEGIN
     M_POSITION                 "Position (ms)"
     M_POSITION_WF              "Position, Depend on flag"
     M_FLAGS                    "Seek Flag, 1 = Backward, 2 = Byte, 4 = Any, 8 = Frame"
-    M_AUDIOQUEUESIZE           "Audio Queue Size"
+    M_THEADCOUNT           	   "Thread Count, 0 = Auto Detect"
     M_VIDEOQUEUESIZE           "Video Queue Size"
     M_ACCURATESEEK             "Accurate Seek"
     M_HWDECODEDEVICE           "Hardware Decode Device"    
@@ -443,6 +444,8 @@ BEGIN
     
     M_EXPRESSION_GVOCN 	    "GVOCN$ ("
     M_EXPRESSION_GAOCN 	    "GAOCN$ ("
+
+    M_EXPRESSION_GTC 	    "GTC ("
 
     M_HWA                   "Return HWA"
 END
