@@ -106,7 +106,7 @@ typedef struct tagEDATA_V1
 
 	bool bLoop;
 
-	int audioQSize;
+	int threadCount;
 	int videoQSize;
 
 	bool bAccurateSeek;
@@ -168,7 +168,7 @@ typedef struct tagRDATA
 
 	bool bLoop;
 
-	int audioQSize;
+	int threadCount;
 	int videoQSize;
 
 	bool bAccurateSeek;

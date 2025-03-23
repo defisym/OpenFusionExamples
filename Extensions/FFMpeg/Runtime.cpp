@@ -98,6 +98,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bPlay = false;
 	rdPtr->bPlayStateUpdated = false;
 
+    rdPtr->threadCount = edPtr->threadCount;
+
 	rdPtr->volume = 100;
 
 	rdPtr->pFFMpeg = nullptr;

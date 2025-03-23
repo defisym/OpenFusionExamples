@@ -421,6 +421,8 @@ inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 
 	opt.videoCodecName = *rdPtr->pVideoOverrideCodecName;
 	opt.audioCodecName = *rdPtr->pAudioOverrideCodecName;
+    
+    opt.SetThreadCount(rdPtr->threadCount);
 
 	return opt;
 }

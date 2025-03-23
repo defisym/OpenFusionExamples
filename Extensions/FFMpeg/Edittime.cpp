@@ -42,7 +42,7 @@ enum {
 
 	PROPID_QUEUE_TEXTTITLE,
 
-	PROPID_AUDIOQUEUESIZE_EDITNUMBER,
+	PROPID_THREADCOUNT_EDITNUMBER,
 	PROPID_VIDEOQUEUESIZE_EDITNUMBER,
 
 	PROPID_HWDECODE_TEXTTITLE,
@@ -110,7 +110,7 @@ PropData Properties[] = {
 
 	//PropData_Group(PROPID_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE, IDS_PROP_QUEUE_TEXTTITLE),
 
-	//PropData_EditNumber(PROPID_AUDIOQUEUESIZE_EDITNUMBER, IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER, IDS_PROP_AUDIOQUEUESIZE_EDITNUMBER_INFO),
+	PropData_EditNumber(PROPID_THREADCOUNT_EDITNUMBER, IDS_PROP_THREADCOUNT_EDITNUMBER, IDS_PROP_THREADCOUNT_EDITNUMBER_INFO),
 	//PropData_EditNumber(PROPID_VIDEOQUEUESIZE_EDITNUMBER, IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER, IDS_PROP_VIDEOQUEUESIZE_EDITNUMBER_INFO),
 
 	PropData_Group(PROPID_HWDECODE_TEXTTITLE, IDS_PROP_HWDECODE_TEXTTITLE, IDS_PROP_HWDECODE_TEXTTITLE),
@@ -405,8 +405,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 
 		edPtr->bLoop = true;
 
-		edPtr->audioQSize = MAX_AUDIOQ_SIZE;
 		edPtr->videoQSize = MAX_VIDEOQ_SIZE;
+		edPtr->threadCount = 0;
 
 		edPtr->bAccurateSeek = true;
 
@@ -797,8 +797,8 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 //	}
 
 	switch (nPropID) {
-	case PROPID_AUDIOQUEUESIZE_EDITNUMBER:
-		 return new CPropDWordValue(edPtr->audioQSize);
+	case PROPID_THREADCOUNT_EDITNUMBER:
+		 return new CPropDWordValue(edPtr->threadCount);
 	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
 		return new CPropDWordValue(edPtr->videoQSize);
 
@@ -899,8 +899,8 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 //	}
 
 	switch (nPropID) {
-	case PROPID_AUDIOQUEUESIZE_EDITNUMBER:
-		edPtr->audioQSize = (int)(std::max)((DWORD)0, ((CPropDWordValue*)pValue)->m_dwValue);
+	case PROPID_THREADCOUNT_EDITNUMBER:
+		edPtr->threadCount = (int)(std::max)((DWORD)0, ((CPropDWordValue*)pValue)->m_dwValue);
 		break;
 	case PROPID_VIDEOQUEUESIZE_EDITNUMBER:
 		edPtr->videoQSize = (int)(std::max)((DWORD)0, ((CPropDWordValue*)pValue)->m_dwValue);

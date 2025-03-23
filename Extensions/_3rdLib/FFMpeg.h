@@ -214,10 +214,12 @@ class FFMpegOptions {
 	inline bool AudioCodecValid() {	
 		return CodecValid(audioCodecName.c_str(), AVMEDIA_TYPE_AUDIO, pAudioCodec);
 	}
+
 public:
 	DWORD flag = FFMpegFlag_Default;
 	std::string videoCodecName;
 	std::string audioCodecName;
+    int threadCount = 0;
 
 	FFMpegOptions() = default;
 
@@ -229,6 +231,16 @@ public:
 	inline bool NoOverride() const {
 		return videoCodecName.empty() && audioCodecName.empty();
 	}
+
+    inline static int GetValidThreadCount(int thread) {
+        const auto concurrency = static_cast<int>(std::thread::hardware_concurrency());
+        thread = std::abs(thread);      // protect for minus
+        return thread > concurrency ? concurrency : thread;
+    }
+
+    inline void SetThreadCount(int thread) {
+        threadCount = GetValidThreadCount(thread);
+    }
 };
 
 class FFMpeg {
@@ -844,7 +856,7 @@ private:
 		}
 
         (*ppVCodecContext)->opaque = pOpaque;
-		(*ppVCodecContext)->thread_count = static_cast<int>(std::thread::hardware_concurrency());
+        (*ppVCodecContext)->thread_count = options.threadCount;
 		if (options.flag & FFMpegFlag_Fast) {
 			(*ppVCodecContext)->flags2 |= AV_CODEC_FLAG2_FAST;
 		}

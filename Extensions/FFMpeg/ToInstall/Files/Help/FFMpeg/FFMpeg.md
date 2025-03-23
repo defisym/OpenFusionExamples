@@ -64,6 +64,9 @@ Here follows all dlls needed by this object:
     - Currently reading decrypt file didn't use a stream (it's provided by another class and FFMpeg only has a memory reader), so it may cost some time to decrypt. With this on extension will cache these file in memory over frames instead of reloading
   - Force No Audio
     - *Don't play audio and sync with external clock*
+  - Thread Count
+    - *Thread used for decoding, more thread will be faster but use more and memory*
+    - *0 for auto detect, but the actual thread used won't greater than the number of CPU cores.*
 
 - Hardware Decode
   - Shared Hardware Device
