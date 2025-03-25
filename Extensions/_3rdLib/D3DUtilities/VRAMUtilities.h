@@ -25,15 +25,10 @@ struct VRAMUtilities final :Adapter {
     // in ms
     constexpr static size_t DEFAULT_INTERVAL = 17;
 
-    VRAMUtilities(DXGI& DXGI) :Adapter(DXGI) {
-        for (auto& it : pAdapters) {
-            infos.emplace_back();
-            auto& info = infos.back();
-
-            it->GetDesc(&info.desc);
-            UpdateVideoMemoryInfo(it.Get(), info);
-            intervals.emplace_back(std::chrono::system_clock::now());
-        }        
+	VRAMUtilities() = default;
+    VRAMUtilities(IDXGIFactory2* pDXGIFactory) :Adapter(pDXGIFactory) {
+		if(InitVideoMemoryInfo() == S_OK){return;}
+        throw D3DException("Failed to query adapter info.");
     }
     ~VRAMUtilities() = default;
 
@@ -68,6 +63,23 @@ struct VRAMUtilities final :Adapter {
     inline const UINT64 GetLocalCurrentReservationMB(size_t index = 0) {
         return (GetLocalVideoMemoryInfo().CurrentReservation >> 20);
     }
+
+	// init the vector of VRAMInfo
+	inline HRESULT InitVideoMemoryInfo() {
+        for (auto& it : pAdapters) {
+            infos.emplace_back();
+            auto& info = infos.back();
+
+            it->GetDesc(&info.desc);
+
+			HRESULT hr = UpdateVideoMemoryInfo(it.Get(), info);
+            if(FAILED(hr)){ return hr; }
+
+            intervals.emplace_back(std::chrono::system_clock::now());
+        }
+
+        return S_OK;
+	}
 
     //https://blog.csdn.net/caoshangpa/article/details/78623044
     //https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/TechniqueDemos/D3D12MemoryManagement/src/Framework.h

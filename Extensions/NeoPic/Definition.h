@@ -325,7 +325,7 @@ struct GlobalData {
 #ifdef QUERY_VRAM
         try {
             pDXGI = new DXGI;
-            pVRAMU = new VRAMUtilities(*pDXGI);
+            pVRAMU = new VRAMUtilities(pDXGI->pDXGIFactory.Get());
         } catch ([[maybe_unused]] D3DException& err) {
             delete pDXGI;
             pDXGI = nullptr;
