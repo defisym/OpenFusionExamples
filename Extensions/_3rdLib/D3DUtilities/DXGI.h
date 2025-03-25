@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <dxgi1_4.h>
 #pragma comment(lib,"DXGI.lib")
 

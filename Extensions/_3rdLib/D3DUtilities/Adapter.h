@@ -10,9 +10,11 @@ struct Adapter {
 
     inline HRESULT EnumAdapters(IDXGIFactory2* pDXGIFactory) {
         HRESULT hr;
-        ComPtr<IDXGIAdapter> pTempAdapter;
+
+        pAdapters.clear();
         AdapterOrdinal = 0;
 
+        ComPtr<IDXGIAdapter> pTempAdapter;
         while (pDXGIFactory->EnumAdapters(AdapterOrdinal, &pTempAdapter) != DXGI_ERROR_NOT_FOUND) {
             ComPtr<IDXGIAdapter3> pDXGIAdapter = nullptr;
             hr = pTempAdapter->QueryInterface(IID_PPV_ARGS(&pDXGIAdapter));
