@@ -16,6 +16,8 @@ If you have something good and want to share, just simply fork this repo, then p
 
 ### Extensions
 
+See [this ReadMe](Extensions/ReadMe.md) for more details about using the following extensions.
+
 #### Extension
 
 | Name               | Author  | Platform         | Released | CEM | Description                                                                                                                        |

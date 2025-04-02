@@ -12,6 +12,11 @@ Platforms like Steam has tools to help you achieve this, `App Admin` -> `Edit St
 
 Note that you should always install the latest X86 version, as the extension is built with the latest version and utilizes the features introduces in modern C++ standards. Error may not be reported when you trying to load any extension with older version of universal runtime installed, but it may crash when executing the code that involves latest features. So please try updating the runtime when you encounter any crash.
 
+Reasons to use dynamic instead of static link:
+
+- [avoid potential issues](https://learn.microsoft.com/en-us/troubleshoot/developer/visualstudio/cpp/libraries/use-c-run-time)
+- [share objects across extensions](https://learn.microsoft.com/en-us/cpp/c-runtime-library/potential-errors-passing-crt-objects-across-dll-boundaries?view=msvc-170)
+
 ### Fusion
 
 All extensions has build events to auto copy the mfx to fusion install folder, in this repo is copy to the Steam folder: `C:\Steam\steamapps\common\Clickteam Fusion 2.5`
