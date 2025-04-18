@@ -1753,6 +1753,35 @@ public:
 			else {
 				const auto sz = GetCharSizeRaw(wChar, cacheSecond.hdc);
 				charCache[wChar] = sz;
+                Gdiplus::RectF bounds;
+                CharSize GDIPSz = {};
+
+                {
+                    StringFormat format;
+                    format.SetFormatFlags(Gdiplus::StringFormatFlags::StringFormatFlagsMeasureTrailingSpaces);
+                    Gdiplus::CharacterRange range(0, 1);
+                    format.SetMeasurableCharacterRanges(1, &range);
+
+                    Gdiplus::Region region;
+                    Gdiplus::RectF layoutRect = { 0,0,65535,65535 };
+                    const auto pFont = GetFontPointerWithCache(logFont);
+
+                    Graphics g(cacheSecond.hdc);
+                    g.MeasureCharacterRanges(&wChar, 1, pFont, layoutRect, &format, 1, &region);
+                    region.GetBounds(&bounds, &g);
+
+                    FontFamily fontFamily;
+                    pFont->GetFamily(&fontFamily);
+                    UINT emHeight = fontFamily.GetEmHeight(Gdiplus::FontStyle::FontStyleRegular);
+                    UINT ascent = fontFamily.GetCellAscent(Gdiplus::FontStyle::FontStyleRegular);
+                    UINT descent = fontFamily.GetCellDescent(Gdiplus::FontStyle::FontStyleRegular);
+
+                    UINT lineSpacing = fontFamily.GetLineSpacing(Gdiplus::FontStyle::FontStyleRegular);
+                    auto ls = pFont->GetSize() * lineSpacing / (float)emHeight;
+
+                    float lineHeight = pFont->GetSize() * (ascent + descent) / (float)emHeight;
+                    GDIPSz = {.width = (long)bounds.Width,.height = (long)ls };
+                }
 
 				return sz;
 			}
