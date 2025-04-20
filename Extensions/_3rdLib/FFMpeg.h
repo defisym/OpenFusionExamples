@@ -2159,9 +2159,19 @@ public:
 			if (!bSuccess) { return FFMpegException_InitFailed; }
 		}
 
-        if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
-			return FFMpegException_InitFailed;
+        if (!pVGetCodecContext ) {
+            // force to share context
+            const auto sharedHardWareDeviceHelper = HoldHelper{ &bSharedHardWareDevice };
+            bSharedHardWareDevice = true;
+
+            if (init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
+                return FFMpegException_InitFailed;
+            }
 		}
+
+        if (!VGetCodecCtxQpaque.hTextureCtx) {
+            VGetCodecCtxQpaque.hTextureCtx = pAdapter->AllocContext();
+        }
 
         // copy opaque context
         VGetCodecCtxQpaque.hw_pix_fmt = VCodecCtxQpaque.hw_pix_fmt;
