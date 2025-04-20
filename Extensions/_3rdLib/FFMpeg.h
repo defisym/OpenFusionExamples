@@ -2190,7 +2190,6 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
-        //TODO flush context
         gpu_flushCodecAndWait(pVGetCodecContext);
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 
