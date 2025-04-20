@@ -89,6 +89,7 @@
 #include	"D3D/D3DHandler.h"
 #endif
 
+#include	"WindowsCommon.h"
 #include	"Func.h"
 
 // Globals and Prototypes
