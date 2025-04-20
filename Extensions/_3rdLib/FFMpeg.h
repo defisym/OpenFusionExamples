@@ -844,10 +844,6 @@ private:
 				//throw FFMpegException_HWInitFailed;
 				bHWDecode = false;
 			}
-
-            if (bHWDecode && bCopyToTexture) {
-                pOpaque->hTextureCtx = pAdapter->AllocContext();
-            }
 		}
 #endif
 
@@ -925,19 +921,19 @@ private:
 
         // Hardware decode state and type will be change in previous block
         if (bHWDecode) {
-            bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;
-            bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
-            if (bCopyToTexture) {
-                if (!FFMpegAdapterSupport(hw_type)) { bCopyToTexture = false; }
-                // will create default adapter if not support
-                pAdapter = FFMpegAdapterFactory(hw_type, hw_getDeviceContext());
-            }
+            bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;      
+            bCopyToTexture = (options.flag & FFMpegFlag_CopyToTexture)
+                && FFMpegAdapterSupport(hw_type);
         }
 #endif
 
         if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0) {
-			return FFMpegException_InitFailed;
-		}
+            return FFMpegException_InitFailed;
+        }
+
+        // will create default adapter if not support or in software mode
+        pAdapter = FFMpegAdapterFactory(hw_type, hw_getDeviceContext());
+        VCodecCtxQpaque.hTextureCtx = pAdapter->AllocContext();
 
 		//---------------------
 		// Audio
