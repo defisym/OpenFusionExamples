@@ -1,10 +1,10 @@
 #include "FFMpegAdapterD3D11.h"
 
-inline AVD3D11VADeviceContext* FFMpegAdapterD3D11::GetHWCtx() {
+AVD3D11VADeviceContext* FFMpegAdapterD3D11::GetHWCtx() {
     return (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
 }
 
-inline FFMpegAdapterD3D11::FFMpegAdapterD3D11(AVHWDeviceContext* pHWDCtx) : FFMpegAdapter(pHWDCtx) {
+FFMpegAdapterD3D11::FFMpegAdapterD3D11(AVHWDeviceContext* pHWDCtx) : FFMpegAdapter(pHWDCtx) {
     D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT, 0 };
     GetHWCtx()->device->CreateQuery(&queryDesc, &pEvent);
 }
@@ -105,4 +105,11 @@ void FFMpegAdapterD3D11::convert_textureFrame(AVCodecContext* pCodecContext,
     //}
 
     callBack((const unsigned char*)(pCTTCtx), pFrame->width, pFrame->height);
+}
+
+// CopyToTextureContext only copy pD3D11VADeciveCtx (shared)
+// other members shouldn't be copied!
+void FFMpegAdapterD3D11::CopyContext(TextureContextHandle src, TextureContextHandle dst) {
+    ((CopyToTextureContext*)dst)->pD3D11VADeciveCtx
+        = ((CopyToTextureContext*)src)->pD3D11VADeciveCtx;
 }

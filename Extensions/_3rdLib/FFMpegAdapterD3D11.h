@@ -29,5 +29,6 @@ struct FFMpegAdapterD3D11 :FFMpegAdapter {
     TextureContextHandle AllocContext() override;
     void FreeContext(TextureContextHandle& h) override;;
     void convert_textureFrame(AVCodecContext* pCodecContext,
-        AVFrame* pFrame, const FrameDataCallBack& callBack) override;;
+        AVFrame* pFrame, const FrameDataCallBack& callBack) override;
+    void CopyContext(TextureContextHandle src, TextureContextHandle dst) override;
 };

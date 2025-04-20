@@ -26,9 +26,7 @@
 #include "LockHelper.h"
 #include "PacketQueue.h"
 
-#include "Rule035.h"
 #include "HoldHelper.h"
-
 #include "GeneralDefinition.h"
 
 // FFMpeg
@@ -39,7 +37,6 @@ extern "C" {
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
 #include <libavutil/imgutils.h>
-#include <libavutil/hwcontext_d3d11va.h>
 
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
@@ -165,8 +162,6 @@ constexpr auto PIXEL_BYTE = 3;
 #define HW_DECODE
 
 #ifdef HW_DECODE
-// for ComPtr
-#include "D3DUtilities/D3DDefinition.h"
 // Adapter
 #include "FFMpegAdapter.h"
 #endif
@@ -343,25 +338,11 @@ class FFMpeg {
 
     bool bSharedHardWareDevice = false;
     inline static std::map<AVHWDeviceType, AVBufferRef*> sharedHardwareDevice;
-    
-public:
-    struct CopyToTextureContext {
-        AVD3D11VADeviceContext* pD3D11VADeciveCtx = nullptr;
-        ComPtr<ID3D11Texture2D> pTexture = nullptr;
-        HANDLE sharedHandle = nullptr;
-        DXGI_FORMAT textureFormat = DXGI_FORMAT_UNKNOWN;
-
-        CopyToTextureContext() = default;
-        RULE_NO_COPY(CopyToTextureContext);
-    };
 
 private:
     // copy hardware decode result to texture
     bool bCopyToTexture = false;
-    TextureConverter convert_textureFrame = nullptr;
-
-    // for wait gpu
-    ComPtr<ID3D11Query> pEvent = nullptr;
+    std::unique_ptr<FFMpegAdapter> pAdapter = nullptr;
 
 #endif //  HW_DECODE
 
@@ -392,18 +373,6 @@ private:
 	AVCodecContext* pVCodecContext = nullptr;
 	AVCodecContext* pVGetCodecContext = nullptr;
 	AVCodecContext* pACodecContext = nullptr;
-
-    // Opaque data passed to AVCodecContext.opaque
-    struct AVCodecCtxOpaque {
-#ifdef  HW_DECODE
-        // used in AVCodecContext->get_format callback
-        AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
-        // video & get use separate context to avoid conflict
-        // e.g., if share the same texture, call get first, and it's result 
-        // not updated in video decode, then the incorrect frame will be displayed
-        CopyToTextureContext copyToTextureCtx = {};
-#endif //  HW_DECODE
-    };
 
     AVCodecCtxOpaque VCodecCtxQpaque = {};
     AVCodecCtxOpaque VGetCodecCtxQpaque = {};
@@ -529,13 +498,9 @@ private:
 		}
 	}
 
-    inline AVD3D11VADeviceContext* hw_getDeviceContext() {
+    inline AVHWDeviceContext* hw_getDeviceContext() {
         if (hw_device_ctx == nullptr) { return nullptr; }
-
-        auto pHWDCtx = (AVHWDeviceContext*)hw_device_ctx->data;
-        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
-
-        return pHWCtx;
+        return (AVHWDeviceContext*)hw_device_ctx->data;
     }
 
 public:
@@ -585,12 +550,6 @@ private:
         if ((err = hw_updateDeviceContext(type)) < 0) {
             return err;
         }
-
-        // Wait GPU only implemeneted for D3D11VA
-        if (type != AV_HWDEVICE_TYPE_D3D11VA) { return 0; }
-
-        D3D11_QUERY_DESC queryDesc = { D3D11_QUERY_EVENT, 0 };
-        hw_getDeviceContext()->device->CreateQuery(&queryDesc, &pEvent);
 
 		pCodecContext->hw_device_ctx = av_buffer_ref(hw_device_ctx);
 
@@ -885,6 +844,10 @@ private:
 				//throw FFMpegException_HWInitFailed;
 				bHWDecode = false;
 			}
+
+            if (bHWDecode && bCopyToTexture) {
+                pOpaque->hTextureCtx = pAdapter->AllocContext();
+            }
 		}
 #endif
 
@@ -965,11 +928,9 @@ private:
             bSharedHardWareDevice = options.flag & FFMpegFlag_SharedHardWareDevice;
             bCopyToTexture = options.flag & FFMpegFlag_CopyToTexture;
             if (bCopyToTexture) {
-                auto pConverter = get_textureConverter(hw_type);
-
-                // not supported
-                if (pConverter == nullptr) { bCopyToTexture = false; }
-                else { convert_textureFrame = pConverter; }
+                if (!FFMpegAdapterSupport(hw_type)) { bCopyToTexture = false; }
+                // will create default adapter if not support
+                pAdapter = FFMpegAdapterFactory(hw_type, hw_getDeviceContext());
             }
         }
 #endif
@@ -1302,33 +1263,17 @@ private:
 		return response;
 	}
 
-    inline void gpu_flush(AVCodecContext* pCtx) {
-#ifdef HW_DECODE
-        if (hw_type != AV_HWDEVICE_TYPE_D3D11VA) { return; }
-
-        auto pBuffer = pCtx->hw_device_ctx;
-        if (pBuffer == nullptr) { return; }
-
-        auto pHWDCtx = (AVHWDeviceContext*)pCtx->hw_device_ctx->data;
-        auto pHWCtx = (AVD3D11VADeviceContext*)pHWDCtx->hwctx;
-
-        pHWCtx->device_context->Flush();
-#endif
+    inline void gpu_flush() {
+        pAdapter->gpu_flush();
     }
 
 public:
     inline void gpu_wait() {
-        if (hw_type != AV_HWDEVICE_TYPE_D3D11VA) { return; }
-
-        auto pHWCtx = hw_getDeviceContext();
-        if (pHWCtx == nullptr) { return; }
-
-        pHWCtx->device_context->End(pEvent.Get());
-        while (pHWCtx->device_context->GetData(pEvent.Get(), nullptr, 0, 0) == S_FALSE) {}
+        pAdapter->gpu_wait();
     }
 
     inline void gpu_flushAndWait(AVCodecContext* pCtx) {
-        gpu_flush(pCtx);
+        gpu_flush();
         gpu_wait();
     }
 
@@ -1345,81 +1290,6 @@ private:
         // this may be necessary if your pipeline requires additional synchronization
         // but often the first flush is sufficient.
         //gpu_flushAndWait(pVCodecContext);
-    }
-
-    // only available when bCopyToTexture enabled
-    // do nothing, just pass D3D11 texture to callback, furture process not needed
-    inline void convert_textureFrameD3D11(AVCodecContext* pCodecContext,
-        AVFrame* pFrame, const FrameDataCallBack& callBack) {
-        auto pHWCtx = hw_getDeviceContext();
-
-        auto pTexture = (ID3D11Texture2D*)pFrame->data[0];
-        auto pIndex = (intptr_t)pFrame->data[1];
-
-        auto pOpaque = (AVCodecCtxOpaque*)pCodecContext->opaque;
-        auto pCTTCtx = &pOpaque->copyToTextureCtx;
-
-        // init
-        if (pCTTCtx->pTexture == nullptr) {
-            HRESULT hr = S_OK;
-
-            // 1. create shared texture
-            D3D11_TEXTURE2D_DESC sharedDesc = {};
-            pTexture->GetDesc(&sharedDesc);
-            
-            sharedDesc.ArraySize = 1;
-            sharedDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-            sharedDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-            hr = pHWCtx->device->CreateTexture2D(&sharedDesc, nullptr, &pCTTCtx->pTexture);
-            if (FAILED(hr)) { return; }
-
-            // 2. Create shared handle    
-            ComPtr<IDXGIResource> dxgiShareTexture;
-            hr = pCTTCtx->pTexture->QueryInterface(IID_PPV_ARGS(&dxgiShareTexture));
-            if (FAILED(hr)) { return; }
-
-            pCTTCtx->sharedHandle = nullptr;
-            hr = dxgiShareTexture->GetSharedHandle(&pCTTCtx->sharedHandle);
-            if (FAILED(hr)) { return; }
-
-            // 3. update device & texture format
-            pCTTCtx->pD3D11VADeciveCtx = pHWCtx;
-            pCTTCtx->textureFormat = sharedDesc.Format;
-        }
-
-        // failed to create
-        if (pCTTCtx->sharedHandle == nullptr) { return; }
-
-        // the result maybe an array texture
-        // one solution is use CopySubresourceRegion to copy it to a new texture
-        // and set SrcSubresource to pFrameIndex
-        pHWCtx->device_context->CopySubresourceRegion(pCTTCtx->pTexture.Get(), 0, 0, 0, 0, pTexture, pIndex, 0);
-        pHWCtx->device_context->Flush();
-        //gpu_wait();
-
-        //// another solution create a srv and use it as shader resource
-        //D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-        //srvDesc.Format = FrameDesc.Format;
-        //srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        //
-        //// decoded video texture only has one mip level
-        //// MostDetailedMip: which one start to use, the max reslution one is 0
-        //// MipLevels: how many we can use, only one is 1
-        //
-        //// ID3D11Texture2D is texture
-        //if (pFrameIndex == 0) {
-        //    srvDesc.Texture2D.MostDetailedMip = 0;
-        //    srvDesc.Texture2D.MipLevels = 1;
-        //}
-        //// ID3D11Texture2D is an array texture
-        //else {
-        //    srvDesc.Texture2DArray.MostDetailedMip = 0;
-        //    srvDesc.Texture2DArray.MipLevels = 1;
-        //    srvDesc.Texture2DArray.FirstArraySlice = pFrameIndex;
-        //    srvDesc.Texture2DArray.ArraySize = 1;
-        //}
-
-        callBack((const unsigned char*)(pCTTCtx), pFrame->width, pFrame->height);
     }
 
     // convert hardware frame to bitmap frame, aka copy data from GPU to CPU
@@ -1482,7 +1352,7 @@ private:
 #ifdef HW_DECODE
 		if (bHWDecode) {
             if (bCopyToTexture) { 
-                (this->*convert_textureFrame)(pCodecContext, pFrame, callBack);
+                pAdapter->convert_textureFrame(pCodecContext, pFrame, callBack);
                 av_frame_unref(pFrame); 
 
                 return;
@@ -1986,7 +1856,10 @@ public:
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
 
-		avcodec_free_context(&pVCodecContext);
+        pAdapter->FreeContext(VCodecCtxQpaque.hTextureCtx);        
+        pAdapter->FreeContext(VGetCodecCtxQpaque.hTextureCtx);
+        
+        avcodec_free_context(&pVCodecContext);
 		avcodec_free_context(&pVGetCodecContext);
 		avcodec_free_context(&pACodecContext);
 
@@ -2101,18 +1974,6 @@ public:
 	// ------------------------------------
 	// Hardware decode
 	// ------------------------------------
-
-    // return nullptr if not support
-    inline TextureConverter get_textureConverter(AVHWDeviceType type) {
-        switch (type) {
-        case AV_HWDEVICE_TYPE_D3D11VA:
-            return &FFMpeg::convert_textureFrameD3D11;
-        default:
-            return nullptr;
-        }
-
-        return nullptr;
-    }
 
     inline bool get_copyToTextureState() const {
         return get_hwDecodeState() && bCopyToTexture;
@@ -2299,17 +2160,16 @@ public:
 					&pSeekMemBuf, const_cast<uint8_t*>(pMemBuf->getSrc()), pMemBuf->getSrcSize(),
 					pFormatContext->iformat)
 				: init_formatContext(&pSeekFormatContext, pFormatContext->url, pFormatContext->iformat);
-			if (!bSuccess) { return FFMpegException_InitFailed; }			
+			if (!bSuccess) { return FFMpegException_InitFailed; }
 		}
 
-        // copy hw_pix_fmt from opaque context
-        VGetCodecCtxQpaque.hw_pix_fmt = VCodecCtxQpaque.hw_pix_fmt;
-        // CopyToTextureContext only copy pD3D11VADeciveCtx (shared)
-        // other members shouldn't be copied!
-        VGetCodecCtxQpaque.copyToTextureCtx.pD3D11VADeciveCtx = VCodecCtxQpaque.copyToTextureCtx.pD3D11VADeciveCtx;
         if (!pVGetCodecContext && init_videoCodecContext(&pVGetCodecContext, &VGetCodecCtxQpaque) != 0) {
 			return FFMpegException_InitFailed;
 		}
+
+        // copy opaque context
+        VGetCodecCtxQpaque.hw_pix_fmt = VCodecCtxQpaque.hw_pix_fmt;
+        pAdapter->CopyContext(VCodecCtxQpaque.hTextureCtx, VGetCodecCtxQpaque.hTextureCtx);
 
 		int response = seekFrame(pSeekFormatContext, video_stream_index, ms);
 
@@ -2324,6 +2184,7 @@ public:
 		videoClock = 0;
 		videoPts = 0;
 
+        //TODO flush context
         gpu_flushCodecAndWait(pVGetCodecContext);
 		response = forwardFrame(pSeekFormatContext, pVGetCodecContext, ms / 1000.0, callBack, bAccurateSeek);
 

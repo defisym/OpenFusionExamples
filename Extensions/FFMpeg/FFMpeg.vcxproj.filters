@@ -58,6 +58,9 @@
     <ClCompile Include="D3D\HookD3D.cpp">
       <Filter>D3D</Filter>
     </ClCompile>
+    <ClCompile Include="..\_3rdLib\FFMpeg.cpp">
+      <Filter>FFMpeg</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">

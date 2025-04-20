@@ -4,6 +4,8 @@
 
 #include <functional>
 
+#include "FFMpegAdapterD3D11.h"
+
 // -----------------------------
 // Forward declaration
 // -----------------------------
@@ -154,7 +156,7 @@ inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
 struct CopyTextureContext {
     D3DSharedHandler* pD3DSharedHandler = nullptr;
     D3DLocalHandler* pD3DLocalHandler = nullptr;
-    const FFMpeg::CopyToTextureContext* pFFMpegCtx = nullptr;
+    const CopyToTextureContext* pFFMpegCtx = nullptr;
 };
 
 inline void CopyTexture(const unsigned char* pData, const int width, const int height,
@@ -233,7 +235,7 @@ inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
         auto ctx = CopyTextureContext{
         .pD3DSharedHandler = rdPtr->pData->pD3DSharedHandler,
         .pD3DLocalHandler = rdPtr->pD3DLocalHandler,
-        .pFFMpegCtx = (const FFMpeg::CopyToTextureContext*)pData
+        .pFFMpegCtx = (const CopyToTextureContext*)pData
         };
 
         CopyTexture((const unsigned char*)(&ctx), width, height, pDst, rdPtr->bPm);

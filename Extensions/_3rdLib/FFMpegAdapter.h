@@ -1,9 +1,12 @@
 #pragma once
 
+#pragma warning(disable : 4819)
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
+#include <memory>
 #include "FFMpegDefinition.h"
 
 using TextureContextHandle = void*;
@@ -31,4 +34,10 @@ struct FFMpegAdapter {
     virtual void convert_textureFrame(AVCodecContext* pCodecContext,
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
     };
+    // copy shared resource in context handle
+    virtual void CopyContext(TextureContextHandle src, TextureContextHandle dst) {};
 };
+
+bool FFMpegAdapterSupport(const AVHWDeviceType type);
+std::unique_ptr<FFMpegAdapter> FFMpegAdapterFactory(const AVHWDeviceType type,
+    AVHWDeviceContext* pHWDCtx);
