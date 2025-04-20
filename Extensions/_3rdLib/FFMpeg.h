@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 #include <format>
+#include <thread>
 #include <functional>
 #include <inttypes.h>
 
@@ -28,7 +29,6 @@
 #include "Rule035.h"
 #include "HoldHelper.h"
 
-#include "WindowsCommon.h"
 #include "GeneralDefinition.h"
 
 // FFMpeg
@@ -480,7 +480,7 @@ private:
 
 		av_make_error_string(buf, AV_ERROR_MAX_STRING_SIZE, errnum);
 
-		auto result = ConvertStrToWStr(buf);
+		auto result = to_wide_string(buf);
 
 		delete[] buf;
 
@@ -786,7 +786,7 @@ private:
 	// from file
 	static inline bool init_formatContext(AVFormatContext** ppFormatContext, const std::wstring& filePath,
 		const AVInputFormat* fmt = nullptr) {
-		return init_formatContext(ppFormatContext, ConvertWStrToStr(filePath, CP_UTF8).c_str(), fmt);
+		return init_formatContext(ppFormatContext, to_byte_string(filePath, CP_UTF8).c_str(), fmt);
 	}
 	// from file
 	static inline bool init_formatContext(AVFormatContext** ppFormatContext, const char* pFilePath,
