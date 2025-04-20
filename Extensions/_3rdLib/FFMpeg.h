@@ -333,7 +333,7 @@ class FFMpeg {
 	AVFrame* pSWFrame = nullptr;
 
 	AVBufferRef* hw_device_ctx = nullptr;
-	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_D3D11VA;
+	AVHWDeviceType hw_type = AV_HWDEVICE_TYPE_NONE;
 	AVPixelFormat hw_pix_fmt= AV_PIX_FMT_NONE;
 
     bool bSharedHardWareDevice = false;
@@ -887,34 +887,33 @@ private:
 		}
 
 #ifdef HW_DECODE
-		const auto hw_deviceType = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
-		bHWDecode = hw_deviceType != AV_HWDEVICE_TYPE_NONE;
+        hw_type = static_cast<AVHWDeviceType>(options.flag & FFMpegFlag_HWDeviceMask);
+		bHWDecode = hw_type != AV_HWDEVICE_TYPE_NONE;
 
         if (bHWDecode) {
             // update pixel format
-			hw_type = hw_deviceType;
-			hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
+            hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
 
-			if (hw_pix_fmt == AV_PIX_FMT_NONE) {
-				// enum types to get a valid device
-				const auto hw_types = hw_getDeviceType();
+            if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+                // enum types to get a valid device
+                const auto hw_types = hw_getDeviceType();
 
-				for (const auto& type : hw_types) {
-					const auto fmt = hw_getPixelFormat(pVCodec, type);
+                for (const auto& type : hw_types) {
+                    const auto fmt = hw_getPixelFormat(pVCodec, type);
 
-					if (fmt != AV_PIX_FMT_NONE) {
-						hw_type = type;
-						hw_pix_fmt = fmt;
+                    if (fmt != AV_PIX_FMT_NONE) {
+                        hw_type = type;
+                        hw_pix_fmt = fmt;
 
-						break;
-					}
-				}
+                        break;
+                    }
+                }
 
-				if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+                if (hw_pix_fmt == AV_PIX_FMT_NONE) {
                     hw_type = AV_HWDEVICE_TYPE_NONE;
                     bHWDecode = false;
-				}
-			}
+                }
+            }
 
             VCodecCtxQpaque.hw_pix_fmt = bHWDecode ? hw_pix_fmt : AV_PIX_FMT_NONE;
 		}
