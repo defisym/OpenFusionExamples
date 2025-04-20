@@ -59,6 +59,8 @@ extern "C" {
 //#pragma comment(lib,"swresample.lib")
 //#pragma comment(lib,"swscale.lib")
 
+#include "FFMpegDefinition.h"
+
 // ------------------------------------
 // Constants
 // ------------------------------------
@@ -66,6 +68,7 @@ extern "C" {
 // SDL
 #include <SDL.h>
 #include <SDL_thread.h>
+#include <SDLUtilities.h>
 
 // SDL audio
 constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
@@ -164,6 +167,8 @@ constexpr auto PIXEL_BYTE = 3;
 #ifdef HW_DECODE
 // for ComPtr
 #include "D3DUtilities/D3DDefinition.h"
+// Adapter
+#include "FFMpegAdapter.h"
 #endif
 
 // ------------------------------------
@@ -245,8 +250,6 @@ public:
 
 class FFMpeg {
 #pragma region type
-    // pData, stride, height
-    using FrameDataCallBack = std::function<void(const unsigned char*, const int, const int)>;
 #ifdef HW_DECODE
     // convert texture
     using TextureConverter = void(FFMpeg::*)(AVCodecContext* pCodecContext,
