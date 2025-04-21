@@ -38,6 +38,9 @@
     <Filter Include="Shader\VertexShader">
       <UniqueIdentifier>{c1600f4e-b08c-4add-beef-01c5f0d8504d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FFMpeg\FFMpegAdapter">
+      <UniqueIdentifier>{d7eaa09a-3da4-4a2b-bf4e-0e6489b384da}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -57,6 +60,15 @@
     </ClCompile>
     <ClCompile Include="D3D\HookD3D.cpp">
       <Filter>D3D</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_3rdLib\FFMpeg.cpp">
+      <Filter>FFMpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_3rdLib\FFMpegAdapterD3D11.cpp">
+      <Filter>FFMpeg\FFMpegAdapter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_3rdLib\FFMpegAdapter.cpp">
+      <Filter>FFMpeg\FFMpegAdapter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -196,8 +208,17 @@
     <ClInclude Include="Macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D3D\CopyToTextureHandler.h">
+    <ClInclude Include="D3D\D3DHandler.h">
       <Filter>D3D</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\FFMpegAdapter.h">
+      <Filter>FFMpeg\FFMpegAdapter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\FFMpegAdapterD3D11.h">
+      <Filter>FFMpeg\FFMpegAdapter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\FFMpegDefinition.h">
+      <Filter>FFMpeg</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
