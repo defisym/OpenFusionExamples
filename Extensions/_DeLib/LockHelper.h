@@ -100,3 +100,63 @@ template<>
 struct GetLockHelper<SDL_mutex> {
     using Type = MutexLockHelper;
 };
+
+// ------------------------------------------------
+// ManualLockHelper
+// ------------------------------------------------
+
+template<LockConcept LockType>
+struct ManualLockHelper;
+
+template<>
+struct ManualLockHelper<SDL_SpinLock> {
+private:
+    SDL_SpinLock* _plock = nullptr;
+    SpinLockHelper* pHelper = nullptr;
+public:
+    explicit ManualLockHelper(SDL_SpinLock* plock) :_plock(plock) { }
+    explicit ManualLockHelper(Lock<SDL_SpinLock>& lock)
+        :ManualLockHelper(lock.GetLock()) {
+    }
+    ~ManualLockHelper() { Unlock(); }
+
+    void Lock() { pHelper = new SpinLockHelper{ _plock }; }
+    void Unlock() { delete pHelper; pHelper = nullptr; }
+};
+
+using SpinLockManualHelper = ManualLockHelper<SDL_SpinLock>;
+
+template<>
+struct ManualLockHelper<SDL_mutex> {
+private:
+    SDL_mutex* _plock = nullptr;
+    MutexLockHelper* pHelper = nullptr;
+public:
+    explicit ManualLockHelper(SDL_mutex* plock) :_plock(plock) { }
+    explicit ManualLockHelper(Lock<SDL_mutex>& lock)
+        :ManualLockHelper(lock.GetLock()) {
+    }
+    ~ManualLockHelper() { Unlock(); }
+
+    void Lock() { pHelper = new MutexLockHelper{ _plock }; }
+    void Unlock() { delete pHelper; pHelper = nullptr; }
+};
+
+using MutexLockManualHelper = ManualLockHelper<SDL_mutex>;
+
+// ------------------------------------------------
+// Get ManualLockHelper
+// ------------------------------------------------
+
+template<LockConcept LockType>
+struct GetManualLockHelper;
+
+template<>
+struct GetManualLockHelper<SDL_SpinLock> {
+    using Type = SpinLockManualHelper;
+};
+
+template<>
+struct GetManualLockHelper<SDL_mutex> {
+    using Type = MutexLockManualHelper;
+};
