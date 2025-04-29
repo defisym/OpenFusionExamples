@@ -172,6 +172,12 @@ namespace CSV {
             return this;
         }
 
+        inline CSVBuilder* ReAlloc(size_t sz) {
+            result.reserve(sz);
+
+            return this;
+        }
+
         struct BuildOptions {
             bool bAddQuota = false;
             bool bEscapeSingleQuota = false;
