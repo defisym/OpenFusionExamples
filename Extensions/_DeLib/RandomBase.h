@@ -39,7 +39,7 @@ struct RandomBase {
     Distribute dist;
 
     template<typename T, typename... Ts>
-        requires SameType<T, Ts...>
+        requires SameTypeCVRef<T, Ts...> // allows e.g., int & const int
     RandomBase(T&& first, Ts&&... rest) {
         if constexpr (sizeof...(rest) == 0) {
             dist = Distribute(first);
