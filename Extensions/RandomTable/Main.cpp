@@ -63,7 +63,7 @@ short expressionsInfos[]=
 // Generate Random Table
 short WINAPI DLLExport GenerateRandomTable(LPRDATA rdPtr, long param1, long param2) {
 	for (auto& it : *rdPtr->pRandomTable) {
-		it = rdPtr->pRand->GenerateRandNumber();
+		it = rdPtr->pRand->Generate();
 	}
 
 	return 0;	

@@ -68,7 +68,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->maxSize = edPtr->maxSize;
 
 	rdPtr->pBase64 = new Base64<std::wstring>;
-	rdPtr->pRand = new RandGenerator<int>(0, 99);
+	rdPtr->pRand = new RandGenerator(0, 99);
 	rdPtr->pBuffer = new BYTE[rdPtr->maxSize];	
 	rdPtr->pRandomTable = new std::deque<BYTE>;
 	rdPtr->pBase64Str = new std::wstring;

@@ -84,7 +84,7 @@ typedef struct tagRDATA
 	std::deque<BYTE>* pRandomTable;
 
 	Base64<std::wstring>* pBase64;
-	RandGenerator<int>* pRand;
+	RandGenerator* pRand;
 
 	std::wstring* pBase64Str;
 	std::wstring* pCurTableStr;
