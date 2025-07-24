@@ -365,17 +365,17 @@ inline bool StrEmpty(const T* pStr) {
 }
 
 template<CharConcept T>
-inline void SplitStringCore(const std::basic_string<T>& input,
+inline void SplitStringCore(const std::basic_string_view<T>& input,
 	const T delimiter,
 	const std::function<void(const std::basic_string_view<T>&)>& callBack) {
 	//https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
 	size_t start = input.find_first_not_of(delimiter);
 	size_t end = start;
 
-	while (start != std::basic_string<T>::npos) {
+	while (start != std::basic_string_view<T>::npos) {
 		end = input.find(delimiter, start);
 		callBack({ input.data() + start,
-			end == std::basic_string<T>::npos
+			end == std::basic_string_view<T>::npos
 			? input.length() - start
 			: end - start });
 		start = input.find_first_not_of(delimiter, end);
