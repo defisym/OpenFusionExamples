@@ -364,6 +364,7 @@ inline bool StrEmpty(const T* pStr) {
 	}
 }
 
+// split string by delimiter
 template<CharConcept T>
 inline void SplitStringCore(const std::basic_string_view<T>& input,
 	const T delimiter,
@@ -380,6 +381,28 @@ inline void SplitStringCore(const std::basic_string_view<T>& input,
 			: end - start });
 		start = input.find_first_not_of(delimiter, end);
 	}
+}
+
+// split string by delimiter, return but will terminate if callback returns false
+template<CharConcept T>
+inline void SplitStringUntilCore(const std::basic_string_view<T>& input,
+    const T delimiter,
+    const std::function<bool(const std::basic_string_view<T>&)>& callBack) {
+    //https://stackoverflow.com/questions/53849/how-do-i-tokenize-a-string-in-c
+    size_t start = input.find_first_not_of(delimiter);
+    size_t end = start;
+
+    while (start != std::basic_string_view<T>::npos) {
+        end = input.find(delimiter, start);
+        if (!callBack({ input.data() + start,
+            end == std::basic_string_view<T>::npos
+            ? input.length() - start
+            : end - start })) {
+            break;
+        }
+
+        start = input.find_first_not_of(delimiter, end);
+    }
 }
 
 template<typename RET, CharConcept T>
