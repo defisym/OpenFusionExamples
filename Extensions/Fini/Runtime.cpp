@@ -95,9 +95,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->allowRVforCS = edPtr->allowRVforCS;
 	rdPtr->bKeepOverFrame = edPtr->bKeepOverFrame;
 
-	rdPtr->CompressToBuffer = ZLIBI_CompressToBufferDefault;
-	rdPtr->DeCompressToString = ZLIBI_DeCompressToStringDefault;
-
 	//Init global data
 	if (GetExtUserData() == nullptr) {
 		//init global

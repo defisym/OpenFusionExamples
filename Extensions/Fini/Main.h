@@ -169,10 +169,6 @@ typedef struct tagRDATA
 	bool bKeepOverFrame;
 
 	GlobalData* pData;
-
-	int (*CompressToBuffer)(const std::string& srcStr, char*& buf);
-	std::string(*DeCompressToString)(const char* srcBuf, const unsigned int bufSz);
-
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 

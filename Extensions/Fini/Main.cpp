@@ -170,7 +170,7 @@ short WINAPI DLLExport Action_LoadFromCompressedBase64(LPRDATA rdPtr, long param
 	InitIni(rdPtr);
 
 	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
-		rdPtr->ini->LoadData(rdPtr->DeCompressToString((const char*)buf, sz));
+		rdPtr->ini->LoadData(ZLIBI_UnCompress((const char*)buf, sz));
 		});
 
 	return 0;
@@ -527,15 +527,12 @@ long WINAPI DLLExport Expression_SaveToBase64(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport Expression_SaveToCompressedBase64(LPRDATA rdPtr, long param1) {	
-	std::string Output;
-	rdPtr->ini->Save(Output);
+	std::string iniOutput;
+	rdPtr->ini->Save(iniOutput);
 
-	char* buf = nullptr;
-	const auto compressSz = rdPtr->CompressToBuffer(Output, buf);
-
-	*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
-
-	delete[] buf;
+    const auto compressed = ZLIBI_Compress(iniOutput);
+	*rdPtr->b64Str = rdPtr->pB64->base64_encode((const BYTE*)compressed.data(), 
+        compressed.size());
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
@@ -554,12 +551,9 @@ long WINAPI DLLExport Expression_SaveStringToBase64(LPRDATA rdPtr, long param1) 
 	if(!bCompress) {
 		*rdPtr->b64Str = rdPtr->pB64->base64_encode(pData, dataSz);
 	}else {
-		char* buf = nullptr;
-		const auto compressSz = rdPtr->CompressToBuffer(str, buf);
-
-		*rdPtr->b64Str = rdPtr->pB64->base64_encode((BYTE*)buf, compressSz);
-
-		delete[] buf;
+        const auto compressed = ZLIBI_Compress(str);
+        *rdPtr->b64Str = rdPtr->pB64->base64_encode((const BYTE*)compressed.data(),
+            compressed.size());
 	}
 
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
@@ -575,10 +569,10 @@ long WINAPI DLLExport Expression_LoadStringFromBase64(LPRDATA rdPtr, long param1
 
 	rdPtr->pB64->base64_decode_callback(base64, [&] (const BYTE* buf, const size_t sz) {
 		if (!bCompress) {			
-			*rdPtr->b64Str = to_wide_string(std::string((char*)buf, sz));
+			*rdPtr->b64Str = to_wide_string(std::string((const char*)buf, sz));
 		}
-		else {
-			*rdPtr->b64Str = to_wide_string(rdPtr->DeCompressToString((char*)buf, sz));
+		else {           
+			*rdPtr->b64Str = to_wide_string(ZLIBI_UnCompress((const char*)buf, sz));
 		}
 	});
 
