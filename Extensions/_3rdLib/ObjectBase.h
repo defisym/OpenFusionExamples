@@ -3,6 +3,10 @@
 
 #pragma once
 
+#ifdef _DEBUG
+#include <cassert>
+#endif
+
 #include <functional>
 #include <string>
 
@@ -17,7 +21,7 @@ protected:
 	LPQOI QualToOiList;		// need to be updated each time before using
 
 	// For 2.5 HWA only:
-	int oiListItemSize = sizeof(objInfoList) + sizeof(LPVOID);
+	int oiListItemSize = sizeof(objInfoList);
 
 	//Only add the sizes to the runtime structures if they weren't compiled directly for those runtimes
 //#ifndef UNICODE
