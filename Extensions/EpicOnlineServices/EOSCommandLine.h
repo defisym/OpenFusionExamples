@@ -127,7 +127,12 @@ public:
 
 	EOSCommandLine() {
 		// get command line
-		const auto& [progname, cli] = CLI::detail::split_program_name(GetCommandLineA());
+        // CLI11 requires the command line input is UTF-8
+        // GetCommandLineA return value is not UTF-8 encoded
+        // depending on the locale settings, so convert it here
+        // to avoid crash
+        const auto utf8CmdLine = to_byte_string(GetCommandLineW());
+		const auto& [progname, cli] = CLI::detail::split_program_name(utf8CmdLine);
 		commandLine = cli;
 
 		const auto& splitResult = SplitString(commandLine, EOSCommandLine_Space);
