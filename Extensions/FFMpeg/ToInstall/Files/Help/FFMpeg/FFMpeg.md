@@ -31,14 +31,13 @@ SDL Mixer X: Upstream is <https://github.com/WohlSoft/SDL-Mixer-X>, this extensi
 Here follows all dlls needed by this object:
 
 - FFMpeg
-  - avcodec-61.dll
-  - avdevice-61.dll
-  - avfilter-10.dll
-  - avformat-61.dll
-  - avutil-59.dll
-  - postproc-58.dll
-  - swresample-5.dll
-  - swscale-8.dll
+  - avcodec-62.dll
+  - avdevice-62.dll
+  - avfilter-11.dll
+  - avformat-62.dll
+  - avutil-60.dll
+  - swresample-6.dll
+  - swscale-9.dll
 
 - SDL
   - SDL2.dll
@@ -222,274 +221,278 @@ listed by `ffmpeg -codecs`
 
 #### Video Codec
 
-| Codec           | Info                                                                                                                                                               |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 012v            | Uncompressed 4:2:2 10-bit                                                                                                                                          |
-| 4xm             | 4X Movie                                                                                                                                                           |
-| 8bps            | QuickTime 8BPS video                                                                                                                                               |
-| aasc            | Autodesk RLE                                                                                                                                                       |
-| agm             | Amuse Graphics Movie                                                                                                                                               |
-| aic             | Apple Intermediate Codec                                                                                                                                           |
-| alias_pix       | Alias/Wavefront PIX image                                                                                                                                          |
-| amv             | AMV Video                                                                                                                                                          |
-| anm             | Deluxe Paint Animation                                                                                                                                             |
-| ansi            | ASCII/ANSI art                                                                                                                                                     |
-| apng            | APNG (Animated Portable Network Graphics) image                                                                                                                    |
-| arbc            | Gryphon's Anim Compressor                                                                                                                                          |
-| argo            | Argonaut Games Video                                                                                                                                               |
-| asv1            | ASUS V1                                                                                                                                                            |
-| asv2            | ASUS V2                                                                                                                                                            |
-| aura            | Auravision AURA                                                                                                                                                    |
-| aura2           | Auravision Aura 2                                                                                                                                                  |
-| av1             | Alliance for Open Media AV1 (decoders: libdav1d libaom-av1 av1 av1_cuvid av1_qsv) (encoders: libaom-av1 av1_nvenc av1_qsv av1_amf av1_vaapi)                       |
-| avrn            | Avid AVI Codec                                                                                                                                                     |
-| avrp            | Avid 1:1 10-bit RGB Packer                                                                                                                                         |
-| avs             | AVS (Audio Video Standard) video                                                                                                                                   |
-| avui            | Avid Meridien Uncompressed                                                                                                                                         |
-| bethsoftvid     | Bethesda VID video                                                                                                                                                 |
-| bfi             | Brute Force & Ignorance                                                                                                                                            |
-| binkvideo       | Bink video                                                                                                                                                         |
-| bintext         | Binary text                                                                                                                                                        |
-| bitpacked       | Bitpacked                                                                                                                                                          |
-| bmp             | BMP (Windows and OS/2 bitmap)                                                                                                                                      |
-| bmv_video       | Discworld II BMV video                                                                                                                                             |
-| brender_pix     | BRender PIX image                                                                                                                                                  |
-| c93             | Interplay C93                                                                                                                                                      |
-| cavs            | Chinese AVS (Audio Video Standard) (AVS1-P2, JiZhun profile)                                                                                                       |
-| cdgraphics      | CD Graphics video                                                                                                                                                  |
-| cdtoons         | CDToons video                                                                                                                                                      |
-| cdxl            | Commodore CDXL video                                                                                                                                               |
-| cfhd            | GoPro CineForm HD                                                                                                                                                  |
-| cinepak         | Cinepak                                                                                                                                                            |
-| clearvideo      | Iterated Systems ClearVideo                                                                                                                                        |
-| cljr            | Cirrus Logic AccuPak                                                                                                                                               |
-| cllc            | Canopus Lossless Codec                                                                                                                                             |
-| cmv             | Electronic Arts CMV video (decoders: eacmv)                                                                                                                        |
-| cpia            | CPiA video format                                                                                                                                                  |
-| cri             | Cintel RAW                                                                                                                                                         |
-| cscd            | CamStudio (decoders: camstudio)                                                                                                                                    |
-| cyuv            | Creative YUV (CYUV)                                                                                                                                                |
-| dds             | DirectDraw Surface image decoder                                                                                                                                   |
-| dfa             | Chronomaster DFA                                                                                                                                                   |
-| dirac           | Dirac (encoders: vc2)                                                                                                                                              |
-| dnxhd           | VC3/DNxHD                                                                                                                                                          |
-| dpx             | DPX (Digital Picture Exchange) image                                                                                                                               |
-| dsicinvideo     | Delphine Software International CIN video                                                                                                                          |
-| dvvideo         | DV (Digital Video)                                                                                                                                                 |
-| dxa             | Feeble Files/ScummVM DXA                                                                                                                                           |
-| dxtory          | Dxtory                                                                                                                                                             |
-| dxv             | Resolume DXV                                                                                                                                                       |
-| escape124       | Escape 124                                                                                                                                                         |
-| escape130       | Escape 130                                                                                                                                                         |
-| exr             | OpenEXR image                                                                                                                                                      |
-| ffv1            | FFmpeg video codec #1                                                                                                                                              |
-| ffvhuff         | Huffyuv FFmpeg variant                                                                                                                                             |
-| fic             | Mirillis FIC                                                                                                                                                       |
-| fits            | FITS (Flexible Image Transport System)                                                                                                                             |
-| flashsv         | Flash Screen Video v1                                                                                                                                              |
-| flashsv2        | Flash Screen Video v2                                                                                                                                              |
-| flic            | Autodesk Animator Flic video                                                                                                                                       |
-| flv1            | FLV / Sorenson Spark / Sorenson H.263 (Flash Video) (decoders: flv) (encoders: flv)                                                                                |
-| fmvc            | FM Screen Capture Codec                                                                                                                                            |
-| fraps           | Fraps                                                                                                                                                              |
-| frwu            | Forward Uncompressed                                                                                                                                               |
-| g2m             | Go2Meeting                                                                                                                                                         |
-| gdv             | Gremlin Digital Video                                                                                                                                              |
-| gem             | GEM Raster image                                                                                                                                                   |
-| gif             | CompuServe GIF (Graphics Interchange Format)                                                                                                                       |
-| h261            | H.261                                                                                                                                                              |
-| h263            | H.263 / H.263-1996, H.263+ / H.263-1998 / H.263 version 2                                                                                                          |
-| h263i           | Intel H.263                                                                                                                                                        |
-| h263p           | H.263+ / H.263-1998 / H.263 version 2                                                                                                                              |
-| h264            | H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 (decoders: h264 h264_qsv libopenh264 h264_cuvid) (encoders: libopenh264 h264_amf h264_mf h264_nvenc h264_qsv h264_vaapi) |
-| hap             | Vidvox Hap                                                                                                                                                         |
-| hdr             | HDR (Radiance RGBE format) image                                                                                                                                   |
-| hevc            | H.265 / HEVC (High Efficiency Video Coding) (decoders: hevc hevc_qsv hevc_cuvid) (encoders: hevc_amf hevc_mf hevc_nvenc hevc_qsv hevc_vaapi libkvazaar)            |
-| hnm4video       | HNM 4 video                                                                                                                                                        |
-| hq_hqa          | Canopus HQ/HQA                                                                                                                                                     |
-| hqx             | Canopus HQX                                                                                                                                                        |
-| huffyuv         | HuffYUV                                                                                                                                                            |
-| hymt            | HuffYUV MT                                                                                                                                                         |
-| idcin           | id Quake II CIN video (decoders: idcinvideo)                                                                                                                       |
-| idf             | iCEDraw text                                                                                                                                                       |
-| iff_ilbm        | IFF ACBM/ANIM/DEEP/ILBM/PBM/RGB8/RGBN (decoders: iff)                                                                                                              |
-| imm4            | Infinity IMM4                                                                                                                                                      |
-| imm5            | Infinity IMM5                                                                                                                                                      |
-| indeo2          | Intel Indeo 2                                                                                                                                                      |
-| indeo3          | Intel Indeo 3                                                                                                                                                      |
-| indeo4          | Intel Indeo Video Interactive 4                                                                                                                                    |
-| indeo5          | Intel Indeo Video Interactive 5                                                                                                                                    |
-| interplayvideo  | Interplay MVE video                                                                                                                                                |
-| ipu             | IPU Video                                                                                                                                                          |
-| jpeg2000        | JPEG 2000 (encoders: jpeg2000 libopenjpeg)                                                                                                                         |
-| jpegls          | JPEG-LS                                                                                                                                                            |
-| jpegxl          | JPEG XL (decoders: libjxl) (encoders: libjxl)                                                                                                                      |
-| jv              | Bitmap Brothers JV video                                                                                                                                           |
-| kgv1            | Kega Game Video                                                                                                                                                    |
-| kmvc            | Karl Morton's video codec                                                                                                                                          |
-| lagarith        | Lagarith lossless                                                                                                                                                  |
-| lead            | LEAD MCMP                                                                                                                                                          |
-| loco            | LOCO                                                                                                                                                               |
-| lscr            | LEAD Screen Capture                                                                                                                                                |
-| m101            | Matrox Uncompressed SD                                                                                                                                             |
-| mad             | Electronic Arts Madcow Video (decoders: eamad)                                                                                                                     |
-| magicyuv        | MagicYUV video                                                                                                                                                     |
-| mdec            | Sony PlayStation MDEC (Motion DECoder)                                                                                                                             |
-| media100        | Media 100i                                                                                                                                                         |
-| mimic           | Mimic                                                                                                                                                              |
-| mjpeg           | Motion JPEG (decoders: mjpeg mjpeg_cuvid mjpeg_qsv) (encoders: mjpeg mjpeg_qsv mjpeg_vaapi)                                                                        |
-| mjpegb          | Apple MJPEG-B                                                                                                                                                      |
-| mmvideo         | American Laser Games MM Video                                                                                                                                      |
-| mobiclip        | MobiClip Video                                                                                                                                                     |
-| motionpixels    | Motion Pixels video                                                                                                                                                |
-| mpeg1video      | MPEG-1 video (decoders: mpeg1video mpeg1_cuvid)                                                                                                                    |
-| mpeg2video      | MPEG-2 video (decoders: mpeg2video mpegvideo mpeg2_qsv mpeg2_cuvid) (encoders: mpeg2video mpeg2_qsv mpeg2_vaapi)                                                   |
-| mpeg4           | MPEG-4 part 2 (decoders: mpeg4 mpeg4_cuvid)                                                                                                                        |
-| msa1            | MS ATC Screen                                                                                                                                                      |
-| mscc            | Mandsoft Screen Capture Codec                                                                                                                                      |
-| msmpeg4v1       | MPEG-4 part 2 Microsoft variant version 1                                                                                                                          |
-| msmpeg4v2       | MPEG-4 part 2 Microsoft variant version 2                                                                                                                          |
-| msmpeg4v3       | MPEG-4 part 2 Microsoft variant version 3 (decoders: msmpeg4) (encoders: msmpeg4)                                                                                  |
-| msp2            | Microsoft Paint (MSP) version 2                                                                                                                                    |
-| msrle           | Microsoft RLE                                                                                                                                                      |
-| mss1            | MS Screen 1                                                                                                                                                        |
-| mss2            | MS Windows Media Video V9 Screen                                                                                                                                   |
-| msvideo1        | Microsoft Video 1                                                                                                                                                  |
-| mszh            | LCL (LossLess Codec Library) MSZH                                                                                                                                  |
-| mts2            | MS Expression Encoder Screen                                                                                                                                       |
-| mv30            | MidiVid 3.0                                                                                                                                                        |
-| mvc1            | Silicon Graphics Motion Video Compressor 1                                                                                                                         |
-| mvc2            | Silicon Graphics Motion Video Compressor 2                                                                                                                         |
-| mvdv            | MidiVid VQ                                                                                                                                                         |
-| mvha            | MidiVid Archive Codec                                                                                                                                              |
-| mwsc            | MatchWare Screen Capture Codec                                                                                                                                     |
-| mxpeg           | Mobotix MxPEG video                                                                                                                                                |
-| notchlc         | NotchLC                                                                                                                                                            |
-| nuv             | NuppelVideo/RTJPEG                                                                                                                                                 |
-| paf_video       | Amazing Studio Packed Animation File Video                                                                                                                         |
-| pam             | PAM (Portable AnyMap) image                                                                                                                                        |
-| pbm             | PBM (Portable BitMap) image                                                                                                                                        |
-| pcx             | PC Paintbrush PCX image                                                                                                                                            |
-| pdv             | PDV (PlayDate Video)                                                                                                                                               |
-| pfm             | PFM (Portable FloatMap) image                                                                                                                                      |
-| pgm             | PGM (Portable GrayMap) image                                                                                                                                       |
-| pgmyuv          | PGMYUV (Portable GrayMap YUV) image                                                                                                                                |
-| pgx             | PGX (JPEG2000 Test Format)                                                                                                                                         |
-| phm             | PHM (Portable HalfFloatMap) image                                                                                                                                  |
-| photocd         | Kodak Photo CD                                                                                                                                                     |
-| pictor          | Pictor/PC Paint                                                                                                                                                    |
-| pixlet          | Apple Pixlet                                                                                                                                                       |
-| png             | PNG (Portable Network Graphics) image                                                                                                                              |
-| ppm             | PPM (Portable PixelMap) image                                                                                                                                      |
-| prores          | Apple ProRes (iCodec Pro) (encoders: prores prores_aw prores_ks)                                                                                                   |
-| prosumer        | Brooktree ProSumer Video                                                                                                                                           |
-| psd             | Photoshop PSD file                                                                                                                                                 |
-| ptx             | V.Flash PTX image                                                                                                                                                  |
-| qdraw           | Apple QuickDraw                                                                                                                                                    |
-| qoi             | QOI (Quite OK Image)                                                                                                                                               |
-| qpeg            | Q-team QPEG                                                                                                                                                        |
-| qtrle           | QuickTime Animation (RLE) video                                                                                                                                    |
-| r10k            | AJA Kona 10-bit RGB Codec                                                                                                                                          |
-| r210            | Uncompressed RGB 10-bit                                                                                                                                            |
-| rasc            | RemotelyAnywhere Screen Capture                                                                                                                                    |
-| rawvideo        | raw video                                                                                                                                                          |
-| rl2             | RL2 video                                                                                                                                                          |
-| roq             | id RoQ video (decoders: roqvideo) (encoders: roqvideo)                                                                                                             |
-| rpza            | QuickTime video (RPZA)                                                                                                                                             |
-| rscc            | innoHeim/Rsupport Screen Capture Codec                                                                                                                             |
-| rtv1            | RTV1 (RivaTuner Video)                                                                                                                                             |
-| rv10            | RealVideo 1.0                                                                                                                                                      |
-| rv20            | RealVideo 2.0                                                                                                                                                      |
-| rv30            | RealVideo 3.0                                                                                                                                                      |
-| rv40            | RealVideo 4.0                                                                                                                                                      |
-| sanm            | LucasArts SANM/SMUSH video                                                                                                                                         |
-| scpr            | ScreenPressor                                                                                                                                                      |
-| screenpresso    | Screenpresso                                                                                                                                                       |
-| sga             | Digital Pictures SGA Video                                                                                                                                         |
-| sgi             | SGI image                                                                                                                                                          |
-| sgirle          | SGI RLE 8-bit                                                                                                                                                      |
-| sheervideo      | BitJazz SheerVideo                                                                                                                                                 |
-| simbiosis_imx   | Simbiosis Interactive IMX Video                                                                                                                                    |
-| smackvideo      | Smacker video (decoders: smackvid)                                                                                                                                 |
-| smc             | QuickTime Graphics (SMC)                                                                                                                                           |
-| smvjpeg         | Sigmatel Motion Video                                                                                                                                              |
-| snow            | Snow                                                                                                                                                               |
-| sp5x            | Sunplus JPEG (SP5X)                                                                                                                                                |
-| speedhq         | NewTek SpeedHQ                                                                                                                                                     |
-| srgc            | Screen Recorder Gold Codec                                                                                                                                         |
-| sunrast         | Sun Rasterfile image                                                                                                                                               |
-| svq1            | Sorenson Vector Quantizer 1 / Sorenson Video 1 / SVQ1                                                                                                              |
-| svq3            | Sorenson Vector Quantizer 3 / Sorenson Video 3 / SVQ3                                                                                                              |
-| targa           | Truevision Targa image                                                                                                                                             |
-| targa_y216      | Pinnacle TARGA CineWave YUV16                                                                                                                                      |
-| tdsc            | TDSC                                                                                                                                                               |
-| tgq             | Electronic Arts TGQ video (decoders: eatgq)                                                                                                                        |
-| tgv             | Electronic Arts TGV video (decoders: eatgv)                                                                                                                        |
-| theora          | Theora (encoders: libtheora)                                                                                                                                       |
-| thp             | Nintendo Gamecube THP video                                                                                                                                        |
-| tiertexseqvideo | Tiertex Limited SEQ video                                                                                                                                          |
-| tiff            | TIFF image                                                                                                                                                         |
-| tmv             | 8088flex TMV                                                                                                                                                       |
-| tqi             | Electronic Arts TQI video (decoders: eatqi)                                                                                                                        |
-| truemotion1     | Duck TrueMotion 1.0                                                                                                                                                |
-| truemotion2     | Duck TrueMotion 2.0                                                                                                                                                |
-| truemotion2rt   | Duck TrueMotion 2.0 Real Time                                                                                                                                      |
-| tscc            | TechSmith Screen Capture Codec (decoders: camtasia)                                                                                                                |
-| tscc2           | TechSmith Screen Codec 2                                                                                                                                           |
-| txd             | Renderware TXD (TeXture Dictionary) image                                                                                                                          |
-| ulti            | IBM UltiMotion (decoders: ultimotion)                                                                                                                              |
-| utvideo         | Ut Video                                                                                                                                                           |
-| v210            | Uncompressed 4:2:2 10-bit                                                                                                                                          |
-| v210x           | Uncompressed 4:2:2 10-bit                                                                                                                                          |
-| v308            | Uncompressed packed 4:4:4                                                                                                                                          |
-| v408            | Uncompressed packed QT 4:4:4:4                                                                                                                                     |
-| v410            | Uncompressed 4:4:4 10-bit                                                                                                                                          |
-| vb              | Beam Software VB                                                                                                                                                   |
-| vble            | VBLE Lossless Codec                                                                                                                                                |
-| vbn             | Vizrt Binary Image                                                                                                                                                 |
-| vc1             | SMPTE VC-1 (decoders: vc1 vc1_qsv vc1_cuvid)                                                                                                                       |
-| vc1image        | Windows Media Video 9 Image v2                                                                                                                                     |
-| vcr1            | ATI VCR1                                                                                                                                                           |
-| vixl            | Miro VideoXL (decoders: xl)                                                                                                                                        |
-| vmdvideo        | Sierra VMD video                                                                                                                                                   |
-| vmix            | vMix Video                                                                                                                                                         |
-| vmnc            | VMware Screen Codec / VMware Video                                                                                                                                 |
-| vnull           | Null video codec                                                                                                                                                   |
-| vp3             | On2 VP3                                                                                                                                                            |
-| vp4             | On2 VP4                                                                                                                                                            |
-| vp5             | On2 VP5                                                                                                                                                            |
-| vp6             | On2 VP6                                                                                                                                                            |
-| vp6a            | On2 VP6 (Flash version, with alpha channel)                                                                                                                        |
-| vp6f            | On2 VP6 (Flash version)                                                                                                                                            |
-| vp7             | On2 VP7                                                                                                                                                            |
-| vp8             | On2 VP8 (decoders: vp8 libvpx vp8_cuvid vp8_qsv) (encoders: libvpx vp8_vaapi)                                                                                      |
-| vp9             | Google VP9 (decoders: vp9 libvpx-vp9 vp9_cuvid vp9_qsv) (encoders: libvpx-vp9 vp9_vaapi vp9_qsv)                                                                   |
-| vqc             | ViewQuest VQC                                                                                                                                                      |
-| vvc             | H.266 / VVC (Versatile Video Coding)                                                                                                                               |
-| wbmp            | WBMP (Wireless Application Protocol Bitmap) image                                                                                                                  |
-| wcmv            | WinCAM Motion Video                                                                                                                                                |
-| webp            | WebP (encoders: libwebp_anim libwebp)                                                                                                                              |
-| wmv1            | Windows Media Video 7                                                                                                                                              |
-| wmv2            | Windows Media Video 8                                                                                                                                              |
-| wmv3            | Windows Media Video 9                                                                                                                                              |
-| wmv3image       | Windows Media Video 9 Image                                                                                                                                        |
-| wnv1            | Winnov WNV1                                                                                                                                                        |
-| wrapped_avframe | AVFrame to AVPacket passthrough                                                                                                                                    |
-| ws_vqa          | Westwood Studios VQA (Vector Quantized Animation) video (decoders: vqavideo)                                                                                       |
-| xan_wc3         | Wing Commander III / Xan                                                                                                                                           |
-| xan_wc4         | Wing Commander IV / Xxan                                                                                                                                           |
-| xbin            | eXtended BINary text                                                                                                                                               |
-| xbm             | XBM (X BitMap) image                                                                                                                                               |
-| xface           | X-face image                                                                                                                                                       |
-| xpm             | XPM (X PixMap) image                                                                                                                                               |
-| xwd             | XWD (X Window Dump) image                                                                                                                                          |
-| y41p            | Uncompressed YUV 4:1:1 12-bit                                                                                                                                      |
-| ylc             | YUY2 Lossless Codec                                                                                                                                                |
-| yop             | Psygnosis YOP Video                                                                                                                                                |
-| yuv4            | Uncompressed packed 4:2:0                                                                                                                                          |
-| zerocodec       | ZeroCodec Lossless Video                                                                                                                                           |
-| zlib            | LCL (LossLess Codec Library) ZLIB                                                                                                                                  |
-| zmbv            | Zip Motion Blocks Video                                                                                                                                            |
+| Codec           | Info                                                                                                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 012v            | Uncompressed 4:2:2 10-bit                                                                                                                                                                 |
+| 4xm             | 4X Movie                                                                                                                                                                                  |
+| 8bps            | QuickTime 8BPS video                                                                                                                                                                      |
+| aasc            | Autodesk RLE                                                                                                                                                                              |
+| agm             | Amuse Graphics Movie                                                                                                                                                                      |
+| aic             | Apple Intermediate Codec                                                                                                                                                                  |
+| alias_pix       | Alias/Wavefront PIX image                                                                                                                                                                 |
+| amv             | AMV Video                                                                                                                                                                                 |
+| anm             | Deluxe Paint Animation                                                                                                                                                                    |
+| ansi            | ASCII/ANSI art                                                                                                                                                                            |
+| apng            | APNG (Animated Portable Network Graphics) image                                                                                                                                           |
+| apv             | Advanced Professional Video (encoders: liboapv)                                                                                                                                           |
+| arbc            | Gryphon's Anim Compressor                                                                                                                                                                 |
+| argo            | Argonaut Games Video                                                                                                                                                                      |
+| asv1            | ASUS V1                                                                                                                                                                                   |
+| asv2            | ASUS V2                                                                                                                                                                                   |
+| aura            | Auravision AURA                                                                                                                                                                           |
+| aura2           | Auravision Aura 2                                                                                                                                                                         |
+| av1             | Alliance for Open Media AV1 (decoders: libdav1d libaom-av1 av1 av1_cuvid av1_qsv av1_amf) (encoders: libaom-av1 av1_nvenc av1_qsv av1_amf av1_mf av1_vaapi av1_vulkan)                    |
+| avrn            | Avid AVI Codec                                                                                                                                                                            |
+| avrp            | Avid 1:1 10-bit RGB Packer                                                                                                                                                                |
+| avs             | AVS (Audio Video Standard) video                                                                                                                                                          |
+| avui            | Avid Meridien Uncompressed                                                                                                                                                                |
+| bethsoftvid     | Bethesda VID video                                                                                                                                                                        |
+| bfi             | Brute Force & Ignorance                                                                                                                                                                   |
+| binkvideo       | Bink video                                                                                                                                                                                |
+| bintext         | Binary text                                                                                                                                                                               |
+| bitpacked       | Bitpacked                                                                                                                                                                                 |
+| bmp             | BMP (Windows and OS/2 bitmap)                                                                                                                                                             |
+| bmv_video       | Discworld II BMV video                                                                                                                                                                    |
+| brender_pix     | BRender PIX image                                                                                                                                                                         |
+| c93             | Interplay C93                                                                                                                                                                             |
+| cavs            | Chinese AVS (Audio Video Standard) (AVS1-P2, JiZhun profile)                                                                                                                              |
+| cdgraphics      | CD Graphics video                                                                                                                                                                         |
+| cdtoons         | CDToons video                                                                                                                                                                             |
+| cdxl            | Commodore CDXL video                                                                                                                                                                      |
+| cfhd            | GoPro CineForm HD                                                                                                                                                                         |
+| cinepak         | Cinepak                                                                                                                                                                                   |
+| clearvideo      | Iterated Systems ClearVideo                                                                                                                                                               |
+| cljr            | Cirrus Logic AccuPak                                                                                                                                                                      |
+| cllc            | Canopus Lossless Codec                                                                                                                                                                    |
+| cmv             | Electronic Arts CMV video (decoders: eacmv)                                                                                                                                               |
+| cpia            | CPiA video format                                                                                                                                                                         |
+| cri             | Cintel RAW                                                                                                                                                                                |
+| cscd            | CamStudio (decoders: camstudio)                                                                                                                                                           |
+| cyuv            | Creative YUV (CYUV)                                                                                                                                                                       |
+| dds             | DirectDraw Surface image decoder                                                                                                                                                          |
+| dfa             | Chronomaster DFA                                                                                                                                                                          |
+| dirac           | Dirac (encoders: vc2)                                                                                                                                                                     |
+| dnxhd           | VC3/DNxHD                                                                                                                                                                                 |
+| dpx             | DPX (Digital Picture Exchange) image                                                                                                                                                      |
+| dsicinvideo     | Delphine Software International CIN video                                                                                                                                                 |
+| dvvideo         | DV (Digital Video)                                                                                                                                                                        |
+| dxa             | Feeble Files/ScummVM DXA                                                                                                                                                                  |
+| dxtory          | Dxtory                                                                                                                                                                                    |
+| dxv             | Resolume DXV                                                                                                                                                                              |
+| escape124       | Escape 124                                                                                                                                                                                |
+| escape130       | Escape 130                                                                                                                                                                                |
+| exr             | OpenEXR image                                                                                                                                                                             |
+| ffv1            | FFmpeg video codec #1 (encoders: ffv1 ffv1_vulkan)                                                                                                                                        |
+| ffvhuff         | Huffyuv FFmpeg variant                                                                                                                                                                    |
+| fic             | Mirillis FIC                                                                                                                                                                              |
+| fits            | FITS (Flexible Image Transport System)                                                                                                                                                    |
+| flashsv         | Flash Screen Video v1                                                                                                                                                                     |
+| flashsv2        | Flash Screen Video v2                                                                                                                                                                     |
+| flic            | Autodesk Animator Flic video                                                                                                                                                              |
+| flv1            | FLV / Sorenson Spark / Sorenson H.263 (Flash Video) (decoders: flv) (encoders: flv)                                                                                                       |
+| fmvc            | FM Screen Capture Codec                                                                                                                                                                   |
+| fraps           | Fraps                                                                                                                                                                                     |
+| frwu            | Forward Uncompressed                                                                                                                                                                      |
+| g2m             | Go2Meeting                                                                                                                                                                                |
+| gdv             | Gremlin Digital Video                                                                                                                                                                     |
+| gem             | GEM Raster image                                                                                                                                                                          |
+| gif             | CompuServe GIF (Graphics Interchange Format)                                                                                                                                              |
+| h261            | H.261                                                                                                                                                                                     |
+| h263            | H.263 / H.263-1996, H.263+ / H.263-1998 / H.263 version 2                                                                                                                                 |
+| h263i           | Intel H.263                                                                                                                                                                               |
+| h263p           | H.263+ / H.263-1998 / H.263 version 2                                                                                                                                                     |
+| h264            | H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10 (decoders: h264 h264_qsv libopenh264 h264_amf h264_cuvid) (encoders: libopenh264 h264_amf h264_mf h264_nvenc h264_qsv h264_vaapi h264_vulkan)   |
+| hap             | Vidvox Hap                                                                                                                                                                                |
+| hdr             | HDR (Radiance RGBE format) image                                                                                                                                                          |
+| hevc            | H.265 / HEVC (High Efficiency Video Coding) (decoders: hevc hevc_qsv hevc_amf hevc_cuvid) (encoders: hevc_amf hevc_d3d12va hevc_mf hevc_nvenc hevc_qsv hevc_vaapi hevc_vulkan libkvazaar) |
+| hnm4video       | HNM 4 video                                                                                                                                                                               |
+| hq_hqa          | Canopus HQ/HQA                                                                                                                                                                            |
+| hqx             | Canopus HQX                                                                                                                                                                               |
+| huffyuv         | HuffYUV                                                                                                                                                                                   |
+| hymt            | HuffYUV MT                                                                                                                                                                                |
+| idcin           | id Quake II CIN video (decoders: idcinvideo)                                                                                                                                              |
+| idf             | iCEDraw text                                                                                                                                                                              |
+| iff_ilbm        | IFF ACBM/ANIM/DEEP/ILBM/PBM/RGB8/RGBN (decoders: iff)                                                                                                                                     |
+| imm4            | Infinity IMM4                                                                                                                                                                             |
+| imm5            | Infinity IMM5                                                                                                                                                                             |
+| indeo2          | Intel Indeo 2                                                                                                                                                                             |
+| indeo3          | Intel Indeo 3                                                                                                                                                                             |
+| indeo4          | Intel Indeo Video Interactive 4                                                                                                                                                           |
+| indeo5          | Intel Indeo Video Interactive 5                                                                                                                                                           |
+| interplayvideo  | Interplay MVE video                                                                                                                                                                       |
+| ipu             | IPU Video                                                                                                                                                                                 |
+| jpeg2000        | JPEG 2000 (encoders: jpeg2000 libopenjpeg)                                                                                                                                                |
+| jpegls          | JPEG-LS                                                                                                                                                                                   |
+| jpegxl          | JPEG XL (decoders: libjxl) (encoders: libjxl)                                                                                                                                             |
+| jpegxl_anim     | JPEG XL animated (decoders: libjxl_anim) (encoders: libjxl_anim)                                                                                                                          |
+| jv              | Bitmap Brothers JV video                                                                                                                                                                  |
+| kgv1            | Kega Game Video                                                                                                                                                                           |
+| kmvc            | Karl Morton's video codec                                                                                                                                                                 |
+| lagarith        | Lagarith lossless                                                                                                                                                                         |
+| lead            | LEAD MCMP                                                                                                                                                                                 |
+| loco            | LOCO                                                                                                                                                                                      |
+| lscr            | LEAD Screen Capture                                                                                                                                                                       |
+| m101            | Matrox Uncompressed SD                                                                                                                                                                    |
+| mad             | Electronic Arts Madcow Video (decoders: eamad)                                                                                                                                            |
+| magicyuv        | MagicYUV video                                                                                                                                                                            |
+| mdec            | Sony PlayStation MDEC (Motion DECoder)                                                                                                                                                    |
+| media100        | Media 100i                                                                                                                                                                                |
+| mimic           | Mimic                                                                                                                                                                                     |
+| mjpeg           | Motion JPEG (decoders: mjpeg mjpeg_cuvid mjpeg_qsv) (encoders: mjpeg mjpeg_qsv mjpeg_vaapi)                                                                                               |
+| mjpegb          | Apple MJPEG-B                                                                                                                                                                             |
+| mmvideo         | American Laser Games MM Video                                                                                                                                                             |
+| mobiclip        | MobiClip Video                                                                                                                                                                            |
+| motionpixels    | Motion Pixels video                                                                                                                                                                       |
+| mpeg1video      | MPEG-1 video (decoders: mpeg1video mpeg1_cuvid)                                                                                                                                           |
+| mpeg2video      | MPEG-2 video (decoders: mpeg2video mpegvideo mpeg2_qsv mpeg2_cuvid) (encoders: mpeg2video mpeg2_qsv mpeg2_vaapi)                                                                          |
+| mpeg4           | MPEG-4 part 2 (decoders: mpeg4 mpeg4_cuvid)                                                                                                                                               |
+| msa1            | MS ATC Screen                                                                                                                                                                             |
+| mscc            | Mandsoft Screen Capture Codec                                                                                                                                                             |
+| msmpeg4v1       | MPEG-4 part 2 Microsoft variant version 1                                                                                                                                                 |
+| msmpeg4v2       | MPEG-4 part 2 Microsoft variant version 2                                                                                                                                                 |
+| msmpeg4v3       | MPEG-4 part 2 Microsoft variant version 3 (decoders: msmpeg4) (encoders: msmpeg4)                                                                                                         |
+| msp2            | Microsoft Paint (MSP) version 2                                                                                                                                                           |
+| msrle           | Microsoft RLE                                                                                                                                                                             |
+| mss1            | MS Screen 1                                                                                                                                                                               |
+| mss2            | MS Windows Media Video V9 Screen                                                                                                                                                          |
+| msvideo1        | Microsoft Video 1                                                                                                                                                                         |
+| mszh            | LCL (LossLess Codec Library) MSZH                                                                                                                                                         |
+| mts2            | MS Expression Encoder Screen                                                                                                                                                              |
+| mv30            | MidiVid 3.0                                                                                                                                                                               |
+| mvc1            | Silicon Graphics Motion Video Compressor 1                                                                                                                                                |
+| mvc2            | Silicon Graphics Motion Video Compressor 2                                                                                                                                                |
+| mvdv            | MidiVid VQ                                                                                                                                                                                |
+| mvha            | MidiVid Archive Codec                                                                                                                                                                     |
+| mwsc            | MatchWare Screen Capture Codec                                                                                                                                                            |
+| mxpeg           | Mobotix MxPEG video                                                                                                                                                                       |
+| notchlc         | NotchLC                                                                                                                                                                                   |
+| nuv             | NuppelVideo/RTJPEG                                                                                                                                                                        |
+| paf_video       | Amazing Studio Packed Animation File Video                                                                                                                                                |
+| pam             | PAM (Portable AnyMap) image                                                                                                                                                               |
+| pbm             | PBM (Portable BitMap) image                                                                                                                                                               |
+| pcx             | PC Paintbrush PCX image                                                                                                                                                                   |
+| pdv             | PDV (PlayDate Video)                                                                                                                                                                      |
+| pfm             | PFM (Portable FloatMap) image                                                                                                                                                             |
+| pgm             | PGM (Portable GrayMap) image                                                                                                                                                              |
+| pgmyuv          | PGMYUV (Portable GrayMap YUV) image                                                                                                                                                       |
+| pgx             | PGX (JPEG2000 Test Format)                                                                                                                                                                |
+| phm             | PHM (Portable HalfFloatMap) image                                                                                                                                                         |
+| photocd         | Kodak Photo CD                                                                                                                                                                            |
+| pictor          | Pictor/PC Paint                                                                                                                                                                           |
+| pixlet          | Apple Pixlet                                                                                                                                                                              |
+| png             | PNG (Portable Network Graphics) image                                                                                                                                                     |
+| ppm             | PPM (Portable PixelMap) image                                                                                                                                                             |
+| prores          | Apple ProRes (iCodec Pro) (encoders: prores prores_aw prores_ks)                                                                                                                          |
+| prores_raw      | Apple ProRes RAW                                                                                                                                                                          |
+| prosumer        | Brooktree ProSumer Video                                                                                                                                                                  |
+| psd             | Photoshop PSD file                                                                                                                                                                        |
+| ptx             | V.Flash PTX image                                                                                                                                                                         |
+| qdraw           | Apple QuickDraw                                                                                                                                                                           |
+| qoi             | QOI (Quite OK Image)                                                                                                                                                                      |
+| qpeg            | Q-team QPEG                                                                                                                                                                               |
+| qtrle           | QuickTime Animation (RLE) video                                                                                                                                                           |
+| r10k            | AJA Kona 10-bit RGB Codec                                                                                                                                                                 |
+| r210            | Uncompressed RGB 10-bit                                                                                                                                                                   |
+| rasc            | RemotelyAnywhere Screen Capture                                                                                                                                                           |
+| rawvideo        | raw video                                                                                                                                                                                 |
+| rl2             | RL2 video                                                                                                                                                                                 |
+| roq             | id RoQ video (decoders: roqvideo) (encoders: roqvideo)                                                                                                                                    |
+| rpza            | QuickTime video (RPZA)                                                                                                                                                                    |
+| rscc            | innoHeim/Rsupport Screen Capture Codec                                                                                                                                                    |
+| rtv1            | RTV1 (RivaTuner Video)                                                                                                                                                                    |
+| rv10            | RealVideo 1.0                                                                                                                                                                             |
+| rv20            | RealVideo 2.0                                                                                                                                                                             |
+| rv30            | RealVideo 3.0                                                                                                                                                                             |
+| rv40            | RealVideo 4.0                                                                                                                                                                             |
+| rv60            | RealVideo 6.0                                                                                                                                                                             |
+| sanm            | LucasArts SANM/SMUSH video                                                                                                                                                                |
+| scpr            | ScreenPressor                                                                                                                                                                             |
+| screenpresso    | Screenpresso                                                                                                                                                                              |
+| sga             | Digital Pictures SGA Video                                                                                                                                                                |
+| sgi             | SGI image                                                                                                                                                                                 |
+| sgirle          | SGI RLE 8-bit                                                                                                                                                                             |
+| sheervideo      | BitJazz SheerVideo                                                                                                                                                                        |
+| simbiosis_imx   | Simbiosis Interactive IMX Video                                                                                                                                                           |
+| smackvideo      | Smacker video (decoders: smackvid)                                                                                                                                                        |
+| smc             | QuickTime Graphics (SMC)                                                                                                                                                                  |
+| smvjpeg         | Sigmatel Motion Video                                                                                                                                                                     |
+| snow            | Snow                                                                                                                                                                                      |
+| sp5x            | Sunplus JPEG (SP5X)                                                                                                                                                                       |
+| speedhq         | NewTek SpeedHQ                                                                                                                                                                            |
+| srgc            | Screen Recorder Gold Codec                                                                                                                                                                |
+| sunrast         | Sun Rasterfile image                                                                                                                                                                      |
+| svq1            | Sorenson Vector Quantizer 1 / Sorenson Video 1 / SVQ1                                                                                                                                     |
+| svq3            | Sorenson Vector Quantizer 3 / Sorenson Video 3 / SVQ3                                                                                                                                     |
+| targa           | Truevision Targa image                                                                                                                                                                    |
+| targa_y216      | Pinnacle TARGA CineWave YUV16                                                                                                                                                             |
+| tdsc            | TDSC                                                                                                                                                                                      |
+| tgq             | Electronic Arts TGQ video (decoders: eatgq)                                                                                                                                               |
+| tgv             | Electronic Arts TGV video (decoders: eatgv)                                                                                                                                               |
+| theora          | Theora (encoders: libtheora)                                                                                                                                                              |
+| thp             | Nintendo Gamecube THP video                                                                                                                                                               |
+| tiertexseqvideo | Tiertex Limited SEQ video                                                                                                                                                                 |
+| tiff            | TIFF image                                                                                                                                                                                |
+| tmv             | 8088flex TMV                                                                                                                                                                              |
+| tqi             | Electronic Arts TQI video (decoders: eatqi)                                                                                                                                               |
+| truemotion1     | Duck TrueMotion 1.0                                                                                                                                                                       |
+| truemotion2     | Duck TrueMotion 2.0                                                                                                                                                                       |
+| truemotion2rt   | Duck TrueMotion 2.0 Real Time                                                                                                                                                             |
+| tscc            | TechSmith Screen Capture Codec (decoders: camtasia)                                                                                                                                       |
+| tscc2           | TechSmith Screen Codec 2                                                                                                                                                                  |
+| txd             | Renderware TXD (TeXture Dictionary) image                                                                                                                                                 |
+| ulti            | IBM UltiMotion (decoders: ultimotion)                                                                                                                                                     |
+| utvideo         | Ut Video                                                                                                                                                                                  |
+| v210            | Uncompressed 4:2:2 10-bit                                                                                                                                                                 |
+| v210x           | Uncompressed 4:2:2 10-bit                                                                                                                                                                 |
+| v308            | Uncompressed packed 4:4:4                                                                                                                                                                 |
+| v408            | Uncompressed packed QT 4:4:4:4                                                                                                                                                            |
+| v410            | Uncompressed 4:4:4 10-bit                                                                                                                                                                 |
+| vb              | Beam Software VB                                                                                                                                                                          |
+| vble            | VBLE Lossless Codec                                                                                                                                                                       |
+| vbn             | Vizrt Binary Image                                                                                                                                                                        |
+| vc1             | SMPTE VC-1 (decoders: vc1 vc1_qsv vc1_cuvid)                                                                                                                                              |
+| vc1image        | Windows Media Video 9 Image v2                                                                                                                                                            |
+| vcr1            | ATI VCR1                                                                                                                                                                                  |
+| vixl            | Miro VideoXL (decoders: xl)                                                                                                                                                               |
+| vmdvideo        | Sierra VMD video                                                                                                                                                                          |
+| vmix            | vMix Video                                                                                                                                                                                |
+| vmnc            | VMware Screen Codec / VMware Video                                                                                                                                                        |
+| vnull           | Null video codec                                                                                                                                                                          |
+| vp3             | On2 VP3                                                                                                                                                                                   |
+| vp4             | On2 VP4                                                                                                                                                                                   |
+| vp5             | On2 VP5                                                                                                                                                                                   |
+| vp6             | On2 VP6                                                                                                                                                                                   |
+| vp6a            | On2 VP6 (Flash version, with alpha channel)                                                                                                                                               |
+| vp6f            | On2 VP6 (Flash version)                                                                                                                                                                   |
+| vp7             | On2 VP7                                                                                                                                                                                   |
+| vp8             | On2 VP8 (decoders: vp8 libvpx vp8_cuvid vp8_qsv) (encoders: libvpx vp8_vaapi)                                                                                                             |
+| vp9             | Google VP9 (decoders: vp9 libvpx-vp9 vp9_amf vp9_cuvid vp9_qsv) (encoders: libvpx-vp9 vp9_vaapi vp9_qsv)                                                                                  |
+| vqc             | ViewQuest VQC                                                                                                                                                                             |
+| vvc             | H.266 / VVC (Versatile Video Coding) (decoders: vvc vvc_qsv)                                                                                                                              |
+| wbmp            | WBMP (Wireless Application Protocol Bitmap) image                                                                                                                                         |
+| wcmv            | WinCAM Motion Video                                                                                                                                                                       |
+| webp            | WebP (encoders: libwebp_anim libwebp)                                                                                                                                                     |
+| wmv1            | Windows Media Video 7                                                                                                                                                                     |
+| wmv2            | Windows Media Video 8                                                                                                                                                                     |
+| wmv3            | Windows Media Video 9                                                                                                                                                                     |
+| wmv3image       | Windows Media Video 9 Image                                                                                                                                                               |
+| wnv1            | Winnov WNV1                                                                                                                                                                               |
+| wrapped_avframe | AVFrame to AVPacket passthrough                                                                                                                                                           |
+| ws_vqa          | Westwood Studios VQA (Vector Quantized Animation) video (decoders: vqavideo)                                                                                                              |
+| xan_wc3         | Wing Commander III / Xan                                                                                                                                                                  |
+| xan_wc4         | Wing Commander IV / Xxan                                                                                                                                                                  |
+| xbin            | eXtended BINary text                                                                                                                                                                      |
+| xbm             | XBM (X BitMap) image                                                                                                                                                                      |
+| xface           | X-face image                                                                                                                                                                              |
+| xpm             | XPM (X PixMap) image                                                                                                                                                                      |
+| xwd             | XWD (X Window Dump) image                                                                                                                                                                 |
+| y41p            | Uncompressed YUV 4:1:1 12-bit                                                                                                                                                             |
+| ylc             | YUY2 Lossless Codec                                                                                                                                                                       |
+| yop             | Psygnosis YOP Video                                                                                                                                                                       |
+| yuv4            | Uncompressed packed 4:2:0                                                                                                                                                                 |
+| zerocodec       | ZeroCodec Lossless Video                                                                                                                                                                  |
+| zlib            | LCL (LossLess Codec Library) ZLIB                                                                                                                                                         |
+| zmbv            | Zip Motion Blocks Videoz                                                                                                                                                                  |
 
 #### Audio Codec
 
@@ -539,9 +542,11 @@ listed by `ffmpeg -codecs`
 | adpcm_ima_ssi     | ADPCM IMA Simon & Schuster Interactive                                                                    |
 | adpcm_ima_wav     | ADPCM IMA WAV                                                                                             |
 | adpcm_ima_ws      | ADPCM IMA Westwood                                                                                        |
+| adpcm_ima_xbox    | ADPCM IMA Xbox                                                                                            |
 | adpcm_ms          | ADPCM Microsoft                                                                                           |
 | adpcm_mtaf        | ADPCM MTAF                                                                                                |
 | adpcm_psx         | ADPCM Playstation                                                                                         |
+| adpcm_sanyo       | ADPCM Sanyo                                                                                               |
 | adpcm_sbpro_2     | ADPCM Sound Blaster Pro 2-bit                                                                             |
 | adpcm_sbpro_3     | ADPCM Sound Blaster Pro 2.6-bit                                                                           |
 | adpcm_sbpro_4     | ADPCM Sound Blaster Pro 4-bit                                                                             |
@@ -593,6 +598,7 @@ listed by `ffmpeg -codecs`
 | flac              | FLAC (Free Lossless Audio Codec)                                                                          |
 | ftr               | FTR Voice                                                                                                 |
 | g723_1            | G.723.1                                                                                                   |
+| g728              | G.728                                                                                                     |
 | g729              | G.729                                                                                                     |
 | gremlin_dpcm      | DPCM Gremlin                                                                                              |
 | gsm               | GSM                                                                                                       |
@@ -623,8 +629,8 @@ listed by `ffmpeg -codecs`
 | osq               | OSQ (Original Sound Quality)                                                                              |
 | paf_audio         | Amazing Studio Packed Animation File Audio                                                                |
 | pcm_alaw          | PCM A-law / G.711 A-law                                                                                   |
-| pcm_bluray        | PCM signed 16\|20\|24-bit big-endian for Blu-ray media                                                   |
-| pcm_dvd           | PCM signed 20\|24-bit big-endian                                                                          |
+| pcm_bluray        | PCM signed 16                                                                                             | 20                | 24-bit big-endian for Blu-ray media |
+| pcm_dvd           | PCM signed 20                                                                                             | 24-bit big-endian |
 | pcm_f16le         | PCM 16.8 floating point little-endian                                                                     |
 | pcm_f24le         | PCM 24.0 floating point little-endian                                                                     |
 | pcm_f32be         | PCM 32-bit floating point big-endian                                                                      |
