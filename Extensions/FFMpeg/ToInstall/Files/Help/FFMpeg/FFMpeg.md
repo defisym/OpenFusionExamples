@@ -22,7 +22,7 @@ This object is based on cross platform lib, FFMpeg & SDL, in theory there is not
 
 **NOTE:** this object requires FFMpeg & SDL
 
-FFMpeg: you need to download release (e.g., `ffmpeg-n7.1-latest-win32-lgpl-shared-7.1.zip` ) from <https://github.com/defisym/FFmpeg-Builds-Win32/releases>, then put dlls into Fusion root & `Runtime/Unicode`, or you need to build X86 version from FFMpeg source code, as the official 32 bit support has stopped.
+FFMpeg: you need to download release (e.g., `ffmpeg-n8.0-latest-win32-lgpl-shared-8.0.zip` ) from <https://github.com/defisym/FFmpeg-Builds-Win32/releases>, then put dlls into Fusion root & `Runtime/Unicode`, or you need to build X86 version from FFMpeg source code, as the official 32 bit support has stopped.
 
 SDL: you need to download `SDL2-2.24.0-win32-x86.zip` from <https://github.com/libsdl-org/SDL/releases>, then put X86 dlls into Fusion root & `Runtime/Unicode`
 
