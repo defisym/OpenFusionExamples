@@ -1498,7 +1498,7 @@ long WINAPI DLLExport GetStep(LPRDATA rdPtr, long param1) {
 	const auto destinationX = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto destinationY = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	const bool diagonal = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const bool checkDiagonalCorner = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
@@ -1628,7 +1628,7 @@ long WINAPI DLLExport GetAbleLineRange(LPRDATA rdPtr, long param1) {
 	const auto dir = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 	const auto range = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
-	const auto ignoreFlag = (size_t)CNC_GetParameter(rdPtr);
+	const auto ignoreFlag = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	const bool attack = (bool)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
