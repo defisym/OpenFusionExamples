@@ -53,7 +53,7 @@ BEGIN
             VALUE "FileDescription", "FFMpeg\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "FFMpeg\0"
-            VALUE "LegalCopyright", "Copyright 2022~2024 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2022~2025 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "FFMpeg.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -291,7 +291,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "FFMpeg"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022~2024 Defisym"
+    IDST_COPYRIGHT          "Copyright 2022~2025 Defisym"
     IDST_COMMENT            "FFMpeg"
     IDST_HTTP               "https://twitter.com/defisym"
 END

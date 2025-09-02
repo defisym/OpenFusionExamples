@@ -51,7 +51,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright 2019~2024 Defisym"
+            VALUE "LegalCopyright", "Copyright 2019~2025 Defisym"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -508,7 +508,7 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2019~2024 Defisym"
+    IDST_COPYRIGHT          "Copyright 2019~2025 Defisym"
     IDST_COMMENT            "Functions that use WinAPI, For Personal Use."
     IDST_HTTP               "https://twitter.com/defisym"
 END
