@@ -290,7 +290,7 @@ short WINAPI DLLExport Action_LoadFromDisplay(LPRDATA rdPtr, long param1, long p
 
 short WINAPI DLLExport Action_LoadFromPointer(LPRDATA rdPtr, long param1, long param2) {
 	const auto pSf = ConvertToType<LPSURFACE>(CNC_GetParameter(rdPtr));
-	const auto pFileName= (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pFileName= (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	rdPtr->pAI->StopAnimation();
 	rdPtr->pNS->ResetNineSlice();

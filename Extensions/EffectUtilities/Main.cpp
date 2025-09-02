@@ -86,7 +86,7 @@ const long p3 = CNC_GetParameter(rdPtr);
 
 short WINAPI DLLExport Action_SetEffect(LPRDATA rdPtr, long param1, long param2) {
 	const auto pObject = (LPRO)CNC_GetParameter(rdPtr);
-	const auto pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pEffectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
 		return 0;
@@ -99,7 +99,7 @@ short WINAPI DLLExport Action_SetEffect(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long param2) {
 	const auto pObject = (LPRO)CNC_GetParameter(rdPtr);
-	const auto pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pParamName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	long param = (long)CNC_GetParameter(rdPtr);
 
 	if (!LPROValid(pObject, IDENTIFIER_ACTIVE)) {
@@ -120,8 +120,8 @@ short WINAPI DLLExport Action_SetEffectParam(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport Action_SetBackDropEffect(LPRDATA rdPtr, long param1, long param2) {
-	auto pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
-	auto pEffectName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	auto pBackDropName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	auto pEffectName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 #ifdef ENABLE_TEST_FEATURE
 	rdPtr->pEffectUtilities->SetEffect(pBackDropName, pEffectName);
@@ -131,8 +131,8 @@ short WINAPI DLLExport Action_SetBackDropEffect(LPRDATA rdPtr, long param1, long
 }
 
 short WINAPI DLLExport Action_SetBackDropEffectParam(LPRDATA rdPtr, long param1, long param2) {
-	const auto pBackDropName = (LPCWSTR)CNC_GetParameter(rdPtr);
-	const auto pParamName = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pBackDropName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
+	const auto pParamName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	long param = (long)CNC_GetParameter(rdPtr);
 
 	const auto pEffectVec = rdPtr->pEffectUtilities->GetEffect(pBackDropName);

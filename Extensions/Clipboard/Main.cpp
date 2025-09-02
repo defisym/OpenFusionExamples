@@ -84,7 +84,7 @@ long WINAPI DLLExport Condition(LPRDATA rdPtr, long param1, long param2)
 
 short WINAPI DLLExport Action_Save(LPRDATA rdPtr, long param1, long param2) {
 	const auto filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	const auto pFormatStr = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pFormatStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	FusionClipboard::FusionClipboard fc;
 
@@ -109,7 +109,7 @@ short WINAPI DLLExport Action_Save(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport Action_Load(LPRDATA rdPtr, long param1, long param2) {
 	const auto filePath = (LPCWSTR)CNC_GetStringParameter(rdPtr);
-	const auto pFormatStr = (LPCWSTR)CNC_GetParameter(rdPtr);
+	const auto pFormatStr = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	FusionClipboard::FusionClipboard fc;
 

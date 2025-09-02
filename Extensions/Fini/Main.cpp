@@ -355,7 +355,7 @@ short WINAPI DLLExport Action_Iterate_Item(LPRDATA rdPtr, long param1, long para
 }
 
 short WINAPI DLLExport Action_LoadAlterValue(LPRDATA rdPtr, long param1, long param2) {	
-	size_t fixed = (size_t)CNC_GetParameter(rdPtr);
+	size_t fixed = (size_t)CNC_GetIntParameter(rdPtr);
 	LPCTSTR base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	LPRO object = LproFromFixed(rdPtr, fixed);
@@ -430,7 +430,7 @@ short WINAPI DLLExport Action_LoadAlterValue(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport Action_LoadPosition(LPRDATA rdPtr, long param1, long param2) {
-	size_t fixed = (size_t)CNC_GetParameter(rdPtr);
+	size_t fixed = (size_t)CNC_GetIntParameter(rdPtr);
 	LPCTSTR base64 = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
 	LPRO object = LproFromFixed(rdPtr, fixed);
