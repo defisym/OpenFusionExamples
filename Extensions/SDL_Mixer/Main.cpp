@@ -90,8 +90,8 @@ short expressionsInfos[]=
 // ============================================================================
 
 long WINAPI DLLExport Condition_ChannelPlaying(LPRDATA rdPtr, long param1, long param2) {
-	const auto channel = (int)CNC_GetParameter(rdPtr);
-	const auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	return bExclusive
 		? rdPtr->pData->ExclusiveChannelPlaying(channel)
@@ -103,8 +103,8 @@ long WINAPI DLLExport Condition_NoChannelPlaying(LPRDATA rdPtr, long param1, lon
 }
 
 long WINAPI DLLExport Condition_ChannelPaused(LPRDATA rdPtr, long param1, long param2) {
-	const auto channel = (int)CNC_GetParameter(rdPtr);
-	const auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	return bExclusive
 		? rdPtr->pData->ExclusiveChannelPaused(channel)
@@ -116,14 +116,14 @@ long WINAPI DLLExport Condition_AllChannelPaused(LPRDATA rdPtr, long param1, lon
 }
 
 long WINAPI DLLExport Condition_ChannelFadingComplete(LPRDATA rdPtr, long param1, long param2) {
-	const auto channel = (int)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
 
 	return rdPtr->pData->ExclusiveChannelFadingState(channel) == MIX_NO_FADING;	
 }
 
 long WINAPI DLLExport Condition_ChannelHasNoOutput(LPRDATA rdPtr, long param1, long param2) {
-	const auto channel = (int)CNC_GetParameter(rdPtr);
-	const auto bExclusive = (bool)CNC_GetParameter(rdPtr);
+	const auto channel = (int)CNC_GetIntParameter(rdPtr);
+	const auto bExclusive = (bool)CNC_GetIntParameter(rdPtr);
 
 	// no output -> not playing or paused
 	const auto bPlaying = bExclusive
