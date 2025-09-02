@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "V2NeoStr\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "V2NeoStr\0"
-            VALUE "LegalCopyright", "Copyright 2022~2024 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2022~2025 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "V2NeoStr.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -389,7 +389,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "NeoStr"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2022~2024 Defisym"
+    IDST_COPYRIGHT          "Copyright 2022~2025 Defisym"
     IDST_COMMENT            "NeoStr"
     IDST_HTTP               "https://twitter.com/defisym"
 END

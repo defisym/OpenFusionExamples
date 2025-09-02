@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "Fini\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "Fini\0"
-            VALUE "LegalCopyright", "Copyright 2021~2024 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2021~2025 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Fini.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -281,7 +281,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Fini"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021~2024 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021~2025 Defisym"
     IDST_COMMENT            "Ini that only write disk once."
     IDST_HTTP               "https://twitter.com/defisym"
 END
