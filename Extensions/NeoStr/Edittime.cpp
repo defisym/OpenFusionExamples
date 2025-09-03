@@ -484,8 +484,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 	if ( IS_COMPATIBLE(mV) )
 	{
 		// Set default object settings
-		edPtr->swidth = 32;
-		edPtr->sheight = 32;
+		edPtr->swidth = 150;
+		edPtr->sheight = 16;
 
 		// Default alignment
 		edPtr->dwAlignFlags = DT_LEFT|DT_TOP;

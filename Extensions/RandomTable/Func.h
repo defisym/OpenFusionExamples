@@ -7,7 +7,7 @@ inline int GetRandomNumber(LPRDATA rdPtr) {
 	int result = rdPtr->pRandomTable->front();
 
 	rdPtr->pRandomTable->pop_front();
-	rdPtr->pRandomTable->emplace_back(rdPtr->pRand->GenerateRandNumber());
+	rdPtr->pRandomTable->emplace_back(rdPtr->pRand->Generate());
 
 	return result;
 }

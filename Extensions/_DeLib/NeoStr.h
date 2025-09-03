@@ -229,7 +229,7 @@ private:
 	bool bChildShake = false;
 
 	unsigned short shakeTimer = 0;
-	RandGenerator<int>* pShakeRandGen = nullptr;
+	RandGenerator* pShakeRandGen = nullptr;
 
 	enum class ShakeType {
 		ShakeType_None = 0,
@@ -1112,7 +1112,7 @@ public:
 		this->shakeFormat.reserve(DEFAULT_FORMAT_RESERVE);
 		this->shakeStack.reserve(DEFAULT_FORMAT_RESERVE);
 
-		this->pShakeRandGen = new RandGenerator<int>(-1 * SHAKE_RANDOM_RANGE, SHAKE_RANDOM_RANGE);
+		this->pShakeRandGen = new RandGenerator(-1 * SHAKE_RANDOM_RANGE, SHAKE_RANDOM_RANGE);
 
 #ifdef MEASURE_GDI_PLUS		
 		this->pMeasure = new Graphics(hdc);
@@ -1492,8 +1492,8 @@ public:
 			break;
 		}
 		case ShakeType::ShakeType_Random: {
-			const auto randomX = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
-			const auto randomY = this->pShakeRandGen->GenerateRandNumber() / (1.0 * SHAKE_RANDOM_RANGE);
+			const auto randomX = this->pShakeRandGen->Generate() / (1.0 * SHAKE_RANDOM_RANGE);
+			const auto randomY = this->pShakeRandGen->Generate() / (1.0 * SHAKE_RANDOM_RANGE);
 
 			const auto wa = shakeControl.amplitude * charSz->width;
 			const auto ha = shakeControl.amplitude * charSz->height;

@@ -126,6 +126,7 @@ public:
 
 //char* buf = nullptr;
 //auto compressSz = LZ4I_CompressToBuffer(srcStr, buf);
+[[DEPRECATED("Use ZLIBI_Compress instead")]]
 inline int ZPAQI_CompressToBuffer(const std::string& srcStr, char*& buf, const char* compressionLevel = "34,128,1") {
     strReader r(srcStr);
     bufWriter w;
@@ -141,11 +142,13 @@ inline int ZPAQI_CompressToBuffer(const std::string& srcStr, char*& buf, const c
     return compressedSize;
 }
 
+[[DEPRECATED("Use ZLIBI_Compress instead")]]
 inline int ZPAQI_CompressToBufferDefault(const std::string& srcStr, char*& buf) {
     return ZPAQI_CompressToBuffer(srcStr, buf);
 }
 
 //auto deCompressStr = ZPAQI_DeCompressToString(buf, compressSz);
+[[DEPRECATED("Use ZLIBI_Compress instead")]]
 inline std::string ZPAQI_DeCompressToString(const char* srcBuf, const unsigned int bufSz, const unsigned char estimateRatio = 0) {
     bufReader r(srcBuf, bufSz);
     strWriter w;
@@ -155,6 +158,7 @@ inline std::string ZPAQI_DeCompressToString(const char* srcBuf, const unsigned i
     return w.output();
 }
 
+[[DEPRECATED("Use ZLIBI_Compress instead")]]
 inline std::string ZPAQI_DeCompressToStringDefault(const char* srcBuf, const unsigned int bufSz) {
     return ZPAQI_DeCompressToString(srcBuf, bufSz);
 }

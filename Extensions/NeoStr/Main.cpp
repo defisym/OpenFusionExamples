@@ -664,9 +664,9 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_SetObjectKeyValue(LPRDATA rdPtr, long param1, long param2) {
-	size_t hash = (size_t)CNC_GetParameter(rdPtr);
+	size_t hash = (size_t)CNC_GetIntParameter(rdPtr);
 	LPSURFACE pSf = (LPSURFACE)CNC_GetParameter(rdPtr);
-	bool bOverWrite = (bool)CNC_GetParameter(rdPtr);
+	bool bOverWrite = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->iconLibKey = hash;
 	rdPtr->pIConLibValue = pSf;
@@ -698,7 +698,7 @@ short WINAPI DLLExport Action_SetIConScale(LPRDATA rdPtr, long param1, long para
 }
 
 short WINAPI DLLExport Action_SetIConResample(LPRDATA rdPtr, long param1, long param2) {
-	bool bResample = (bool)CNC_GetParameter(rdPtr);
+	bool bResample = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->bIConResample = bResample;
 
@@ -720,7 +720,7 @@ short WINAPI DLLExport Action_SetRemarkOffset(LPRDATA rdPtr, long param1, long p
 }
 
 short WINAPI DLLExport Action_SetVerticalOffset(LPRDATA rdPtr, long param1, long param2) {
-	bool bVerticalAlignOffset = (bool)CNC_GetParameter(rdPtr);
+	bool bVerticalAlignOffset = (bool)CNC_GetIntParameter(rdPtr);
 
 	rdPtr->bVerticalAlignOffset = bVerticalAlignOffset;
 
@@ -760,7 +760,7 @@ short WINAPI DLLExport Action_Render(LPRDATA rdPtr, long param1, long param2) {
 
 short WINAPI DLLExport Action_SetRenderOption_VisibleRatio(LPRDATA rdPtr, long param1, long param2) {
 	const float visibleRatio = Range(GetFloatParam(rdPtr), 0.0f, 1.0f);
-	const bool bIncludeAlpha = (bool)CNC_GetParameter(rdPtr);
+	const bool bIncludeAlpha = (bool)CNC_GetIntParameter(rdPtr);
 
 	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
 
@@ -775,7 +775,7 @@ short WINAPI DLLExport Action_SetRenderOption_VisibleRatio(LPRDATA rdPtr, long p
 }
 
 short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndex(LPRDATA rdPtr, long param1, long param2) {
-	const auto idx = (size_t)CNC_GetParameter(rdPtr) - 1;
+	const auto idx = (size_t)CNC_GetIntParameter(rdPtr) - 1;
 
 	rdPtr->bTagCallbackIndexManaged = false;
 	const auto pOpt = static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
@@ -790,7 +790,7 @@ short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndex(LPRDATA rdPtr, lo
 }
 
 short WINAPI DLLExport Action_SetRenderOption_TagCallbackIndexManaged(LPRDATA rdPtr, long param1, long param2) {
-	const auto bManaged = (bool)CNC_GetParameter(rdPtr);
+	const auto bManaged = (bool)CNC_GetIntParameter(rdPtr);
 
 	// no change
 	if (rdPtr->bTagCallbackIndexManaged == bManaged) { return 0; }

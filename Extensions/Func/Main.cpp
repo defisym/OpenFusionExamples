@@ -545,7 +545,7 @@ short WINAPI DLLExport Action_SetObjectAlpha(LPRDATA rdPtr, long param1, long pa
 }
 
 short WINAPI DLLExport Action_SetObjectAlphaByFixed(LPRDATA rdPtr, long param1, long param2) {
-	const long fixed = long(CNC_GetParameter(rdPtr));
+	const long fixed = long(CNC_GetIntParameter(rdPtr));
 	const auto alpha = UCHAR(CNC_GetIntParameter(rdPtr));
 
 	EffectUtilities::SetAlpha(LproFromFixed(rdPtr, fixed), alpha);
@@ -563,7 +563,7 @@ short WINAPI DLLExport Action_SetObjectRGBCoef(LPRDATA rdPtr, long param1, long 
 }
 
 short WINAPI DLLExport Action_SetObjectRGBCoefByFixed(LPRDATA rdPtr, long param1, long param2) {
-	const long fixed = long(CNC_GetParameter(rdPtr));
+	const long fixed = long(CNC_GetIntParameter(rdPtr));
 	const auto dwRGBCoef = DWORD(CNC_GetIntParameter(rdPtr));
 
 	EffectUtilities::SetRGBCoef(LproFromFixed(rdPtr, fixed), EffectUtilities::BGRToRGB(dwRGBCoef));
