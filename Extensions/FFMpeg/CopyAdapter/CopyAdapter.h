@@ -1,5 +1,11 @@
 #pragma once
 
+#pragma warning(disable : 4819)
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
 struct tagRDATA;
 typedef struct tagRDATA RUNDATA;
 typedef	RUNDATA* LPRDATA;
@@ -19,3 +25,6 @@ struct CopyAdapter {
     virtual bool CopyTexture(LPSURFACE pDst,
         const unsigned char* pData, const int width, const int height) = 0;
 };
+
+bool CopyAdapterSupport(const AVHWDeviceType type);
+CopyAdapter* CopyAdapterFactory(LPRDATA rdPtr, const AVHWDeviceType type);
