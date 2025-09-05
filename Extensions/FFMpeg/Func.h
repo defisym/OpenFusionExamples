@@ -43,203 +43,13 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	}
 }
 
-inline void InitSurface(LPSURFACE& pSf, 
-    const int width, const int height, 
-    bool bHWA = false) {
-    if (pSf == nullptr
-        || pSf->GetWidth() != width || pSf->GetHeight() != height
-        || IsHWA(pSf) != bHWA) {
-        if (!bHWA) {
-#ifdef VIDEO_ALPHA
-            pSf = CreateSurface(32, width, height);
-#else
-            pSf = CreateSurface(24, width, height);
-#endif
-        }
-        else {
-            pSf = CreateHWASurface(32, width, height, ST_HWA_RTTEXTURE);
-        }
-
-        // alpha channel is ignored if surface type is ST_HWA_RTTEXTURE
-        _AddAlpha(pSf);
-	}
-}
-
-inline void CopyBitmap(const unsigned char* pData, int srcLineSz,
-    LPSURFACE pMemSf, bool bPm) {
-	// pMemSf must have alpha channel, see `InitSurface`
-	auto sfCoef = GetSfCoef(pMemSf);
-	if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {
-		return;
-	}
-
-	auto lineSz = sfCoef.pitch;	
-	auto alphaSz = sfCoef.alphaSz / sfCoef.alphaByte;
-
-	auto width = pMemSf->GetWidth();
-	auto height = pMemSf->GetHeight();
-
-//#define _MANUAL_PM
-
-#ifdef _OPENMP
-	omp_set_num_threads(std::thread::hardware_concurrency());
-#pragma omp parallel
-#endif
-	{
-#ifdef _OPENMP
-#pragma omp for
-#endif
-		for (int y = 0; y < height; y++) {
-			const auto line = (height - 1 - y);
-
-			auto pMemData = sfCoef.pData + y * lineSz;
-			auto pVideo = pData + line * srcLineSz;
-
-#ifndef _MANUAL_PM
-			memcpy(pMemData, pVideo, lineSz);
-#ifdef VIDEO_ALPHA
-			// 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
-#ifdef _OPENMP
-//#pragma omp for
-#endif
-			const auto pSfAlphaOffset = sfCoef.pAlphaData + line * sfCoef.alphaPitch;
-			const auto pBitmapAlphaOffset = pVideo + (PIXEL_BYTE - 1);
-
-			for (int x = 0; x < width; x++) {
-				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
-				const auto pCurAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
-				pAlphaData[0] = pCurAlpha[0];
-			}
-#endif
-#else
-			for (int x = 0; x < width; x++) {
-				auto pVideoData = pVideo + x * PIXEL_BYTE;
-
-				auto pRGBData = pMemData + x * sfCoef.byte;
-				if (!bPm) {
-					pRGBData[0] = pVideoData[0];
-					pRGBData[1] = pVideoData[1];
-					pRGBData[2] = pVideoData[2];
-				}
-				else {
-					auto alphaCoef = pVideoData[3] / 255.0;
-
-					pRGBData[0] = (BYTE)(pVideoData[0] * alphaCoef);
-					pRGBData[1] = (BYTE)(pVideoData[1] * alphaCoef);
-					pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
-				}
-
-#ifdef VIDEO_ALPHA
-				auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
-				pAlphaData[0] = pVideoData[3];
-#endif
-			}
-
-#endif
-		}
-	}
-#ifdef _DEBUG
-	//_SavetoClipBoard(pMemSf, false);
-#endif // _DEBUG
-
-	ReleaseSfCoef(pMemSf, sfCoef);
-
-#ifndef _MANUAL_PM
-	if (bPm) {
-		pMemSf->PremultiplyAlpha();		// only needed in DX11 premultiplied mode
-	}
-#endif
-
-	return;
-}
-
-struct CopyTextureContext {
-    D3DSharedHandler* pD3DSharedHandler = nullptr;
-    D3DLocalHandler* pD3DLocalHandler = nullptr;
-    const CopyToTextureContext* pFFMpegCtx = nullptr;
-};
-
-inline void CopyTexture(const unsigned char* pData, const int width, const int height,
-     LPSURFACE pRTTSf, bool bPm) {
-    // 1. basic info
-    const auto pCtx = (const CopyTextureContext*)pData;
-    auto pD3DSharedHandler = pCtx->pD3DSharedHandler;
-    auto pD3DLocalHandler = pCtx->pD3DLocalHandler;
-    
-    HRESULT hr = S_OK;
-
-    // Format:      DXGI_FORMAT_NV12 (YUV 4:2:0)
-    //              DXGI_FORMAT_P010 (YUV 4:2:2)
-    //              DXGI_FORMAT_P010 (YUV 4:2:2)
-    // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
-    // Bind flags:  512 (D3D11_BIND_DECODER)
-    //                  Set this flag to indicate that a 2D texture is used to 
-    //                  receive output from the decoder API. The common way to 
-    //                  create resources for a decoder output is by calling the 
-    //                  ID3D11Device::CreateTexture2D method to create an array 
-    //                  of 2D textures. However, you cannot use texture arrays 
-    //                  that are created with this flag in calls to 
-    //                  ID3D11Device::CreateShaderResourceView.
-    auto sharedHandle = pCtx->pFFMpegCtx->sharedHandle;
-    auto textureFormat = pCtx->pFFMpegCtx->textureFormat;
-
-    // Fusion Context
-    auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
-    auto RTTInfo = GetSurfaceInfo(pRTTSf);
-
-    auto pFusionDevice = (ID3D11Device*)RTTInfo.m_pD3D11Device;
-    auto pFusionDeviceCtx = (ID3D11DeviceContext*)RTTInfo.m_pD3D11Context;
-
-    // Format:      DXGI_FORMAT_B8G8R8A8_UNORM
-    // Usage:       D3D11_USAGE_DEFAULT (GPU write & read)
-    // Bind flags:  40 (D3D11_BIND_SHADER_RESOURCE & D3D11_BIND_RENDER_TARGET)
-    //              D3D11_BIND_SHADER_RESOURCE
-    //                  Bind a buffer or texture to a shader stage; this flag cannot 
-    //                  be used with the D3D11_MAP_WRITE_NO_OVERWRITE flag.
-    //              D3D11_BIND_RENDER_TARGET
-    //                  Bind a texture as a render target for the output-merger stage.
-    auto pRTTexture = *(ID3D11Texture2D**)(RTTInfo.m_ppD3D11RenderTargetTexture);    
-    auto pRTTextureView = *(ID3D11RenderTargetView**)(RTTInfo.m_ppD3D11RenderTargetView);
-
-    // 2. vertex shader
-    pD3DSharedHandler->vertexHelper.UpdateContext(pFusionDeviceCtx);
-
-    // 3. pixel shader
-    pD3DSharedHandler->pixelHelper.UpdateContext(pFusionDeviceCtx);
-
-    // 4. resolution & shared texture
-    pD3DLocalHandler->UpdateResolution(pFusionDeviceCtx, width, height);
-    if (FAILED(pD3DLocalHandler->hr)) { return; }
-    pD3DLocalHandler->UpdateSharedTexture(pFusionDeviceCtx, sharedHandle, textureFormat);
-    if (FAILED(pD3DLocalHandler->hr)) { return; }
-
-    pD3DLocalHandler->UpdateContext(pFusionDeviceCtx);
-
-    // 5. render
-    ID3D11RenderTargetView* rtvs[] = { pRTTextureView };
-    pFusionDeviceCtx->OMSetRenderTargets(1, rtvs, nullptr);
-
-    pFusionDeviceCtx->DrawIndexed(pD3DSharedHandler->vertexHelper.indicesSize, 0, 0);
-}
-
 inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
     // passed in callback
     const unsigned char* pData, const int width, const int height) {
     if (pData == nullptr || pDst == nullptr) { return; }
 
     // pDst must match bCopyToTexture, see `InitSurface`
-    if (!rdPtr->pFFMpeg->get_copyToTextureState()) {
-        CopyBitmap(pData, width, pDst, rdPtr->bPm);
-    }
-    else {
-        auto ctx = CopyTextureContext{
-        .pD3DSharedHandler = rdPtr->pData->pD3DSharedHandler,
-        .pD3DLocalHandler = rdPtr->pD3DLocalHandler,
-        .pFFMpegCtx = (const CopyToTextureContext*)pData
-        };
-
-        CopyTexture((const unsigned char*)(&ctx), width, height, pDst, rdPtr->bPm);
-    }
+    rdPtr->pCopyAdapter->CopyTexture(pDst, pData, width, height);
 }
 
 inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
@@ -485,10 +295,10 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 
 		// update display
         UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
-        InitSurface(rdPtr->pDisplaySf,
-            rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height(),
-            rdPtr->pFFMpeg->get_copyToTextureState());
-		// display first valid frame
+        rdPtr->pCopyAdapter->InitTexture(rdPtr->pDisplaySf,
+            rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());
+		
+        // display first valid frame
         if (!SetPositionGeneral(rdPtr, static_cast<int>(ms))) {
             // failed to display first frame, which indicates error
             throw FFMpegException(FFMpegException_DecodeFailed);

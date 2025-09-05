@@ -63,8 +63,6 @@ struct GlobalData {
 	MemVideoLib* pMemVideoLib = nullptr;
 	AudioInterface* pAI = nullptr;
 
-    D3DSharedHandler* pD3DSharedHandler = nullptr;
-
 	GlobalData() {
 		pMemVideoLib = new MemVideoLib();
 		pAI = new SMI();

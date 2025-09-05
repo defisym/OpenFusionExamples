@@ -69,6 +69,7 @@
 
 #include	"Encryption.h"
 #include	"FFMpeg.h"
+#include	"CopyAdapter/CopyAdapter.h" 
 
 #include	"SDL_Interface.h"
 #include	"SDL_Mixer_Interface.h"
@@ -84,11 +85,6 @@
 // My header
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
-#include	"CopyAdapter/CopyAdapter.h" 
-
-#ifdef COPY_D3D_TEXTURE
-#include	"D3D/D3DHandler.h"
-#endif
 
 #include	"WindowsCommon.h"
 #include	"Func.h"
