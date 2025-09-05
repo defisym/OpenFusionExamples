@@ -3,7 +3,7 @@
 #include "common.h"
 #include "FFMpegAdapterD3D11.h"
 
-inline CopyAdapterD3D11::CopyAdapterD3D11(LPRDATA p) :CopyAdapter(p) {
+CopyAdapterD3D11::CopyAdapterD3D11(LPRDATA p) :CopyAdapter(p) {
     auto pD3DDevice = (ID3D11Device*)GetD3DDevice(rdPtr);
 
     if (!pD3DSharedHandler) {
