@@ -4,6 +4,7 @@
 
 #include <functional>
 
+#include "FFMpegAdapter.h"
 #include "CopyAdapter.h"
 
 // -----------------------------
@@ -221,6 +222,10 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	rdPtr->bPlay = false;
 
 	*rdPtr->pFilePath = L"";
+}
+
+inline bool CopyToTextureValid(const AVHWDeviceType type) {
+    return FFMpegAdapterSupport(type) && CopyAdapterSupport(type);
 }
 
 inline FFMpegOptions GetOptions(LPRDATA rdPtr) {

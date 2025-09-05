@@ -301,9 +301,7 @@ short WINAPI DLLExport Action_SetHWDevice(LPRDATA rdPtr, long param1, long param
 	rdPtr->hwDeviceType = FFMpeg::get_hwDeviceTypeByName(deviceName);
 
     // auto managed
-    if (rdPtr->hwDeviceType != AV_HWDEVICE_TYPE_D3D11VA) {
-        rdPtr->bCopyToTexture = false;
-    }
+    rdPtr->bCopyToTexture = CopyToTextureValid(rdPtr->hwDeviceType);
 
 	return 0;
 }
@@ -312,9 +310,8 @@ short WINAPI DLLExport Action_SetCopyToTexture(LPRDATA rdPtr, long param1, long 
     rdPtr->bCopyToTexture = (bool)CNC_GetIntParameter(rdPtr);
     
     // auto managed
-    if (rdPtr->bCopyToTexture) {
-        rdPtr->hwDeviceType = AV_HWDEVICE_TYPE_D3D11VA;
-    }
+    if (rdPtr->bCopyToTexture) { rdPtr->hwDeviceType = AV_HWDEVICE_TYPE_D3D11VA; }
+    rdPtr->bCopyToTexture = CopyToTextureValid(rdPtr->hwDeviceType);
 
     return 0;
 }
