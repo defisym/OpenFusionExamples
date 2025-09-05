@@ -69,7 +69,7 @@
 
 #include	"Encryption.h"
 #include	"FFMpeg.h"
-#include	"CopyAdapter/CopyAdapter.h" 
+#include	"CopyAdapter.h" 
 
 #include	"SDL_Interface.h"
 #include	"SDL_Mixer_Interface.h"
