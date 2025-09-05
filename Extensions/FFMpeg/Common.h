@@ -84,6 +84,7 @@
 // My header
 #include	"Fusion.h"
 #include	"FusionUtilities.h"
+#include	"CopyAdapter/CopyAdapter.h" 
 
 #ifdef COPY_D3D_TEXTURE
 #include	"D3D/D3DHandler.h"

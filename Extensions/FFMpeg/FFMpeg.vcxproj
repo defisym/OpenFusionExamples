@@ -95,7 +95,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -146,7 +146,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -204,7 +204,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -254,6 +254,9 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClCompile Include="..\_3rdLib\FFMpegAdapter.cpp" />
     <ClCompile Include="..\_3rdLib\FFMpegAdapterD3D11.cpp" />
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
+    <ClCompile Include="CopyAdapter\CopyAdapter.cpp" />
+    <ClCompile Include="CopyAdapter\CopyAdapterBitmap.cpp" />
+    <ClCompile Include="CopyAdapter\CopyAdapterD3D11.cpp" />
     <ClCompile Include="D3D\HookD3D.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
@@ -309,6 +312,9 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\WindowsCommon.h" />
     <ClInclude Include="AudioInterface.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="CopyAdapter\CopyAdapter.h" />
+    <ClInclude Include="CopyAdapter\CopyAdapterBitmap.h" />
+    <ClInclude Include="CopyAdapter\CopyAdapterD3D11.h" />
     <ClInclude Include="D3D\D3DHandler.h" />
     <ClInclude Include="D3D\HookD3D.h" />
     <ClInclude Include="Definition.h" />

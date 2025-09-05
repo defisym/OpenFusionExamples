@@ -154,7 +154,7 @@ struct D3DLocalHandler {
         pDeviceCtx->UpdateSubresource(pConstantBuffer.Get(), 0, nullptr, &psb, 0, 0);
     }
 
-    inline void UpdateContext(ID3D11DeviceContext* pDeviceCtx) {
+    inline void UpdateContext(ID3D11DeviceContext* pDeviceCtx) const {
         // rasterizer
         pDeviceCtx->RSSetViewports(1, &viewPort);
 
