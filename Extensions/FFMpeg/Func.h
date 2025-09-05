@@ -4,7 +4,7 @@
 
 #include <functional>
 
-#include "FFMpegAdapterD3D11.h"
+#include "CopyAdapter.h"
 
 // -----------------------------
 // Forward declaration
@@ -292,6 +292,9 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 		*rdPtr->pFilePath = filePath;
 		rdPtr->bPlay = rdPtr->bPlayAfterLoad;
 		rdPtr->bPlayStateUpdated = true;
+
+        // update copy adapter
+        UpdateCopyAdapter(rdPtr->pCopyAdapter, rdPtr, rdPtr->pFFMpeg->get_hwDeviceType());
 
 		// update display
         UpdateScale(rdPtr, rdPtr->pFFMpeg->get_width(), rdPtr->pFFMpeg->get_height());

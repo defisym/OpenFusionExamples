@@ -28,3 +28,6 @@ struct CopyAdapter {
 
 bool CopyAdapterSupport(const AVHWDeviceType type);
 CopyAdapter* CopyAdapterFactory(LPRDATA rdPtr, const AVHWDeviceType type);
+
+bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter, 
+    LPRDATA rdPtr, const AVHWDeviceType type);
