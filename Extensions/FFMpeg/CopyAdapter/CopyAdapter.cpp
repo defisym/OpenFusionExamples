@@ -5,11 +5,15 @@
 #include "CopyAdapterBitmap.h"
 #include "CopyAdapterD3D11.h"
 
-bool CopyAdapter::InitTexture(LPSURFACE& pSf, const int width, const int height) {
-    return pSf == nullptr
-        || pSf->GetWidth() != width || pSf->GetHeight() != height;
+bool CopyAdapter::TextureValid(LPSURFACE pSf, const int width, const int height) {
+    return pSf != nullptr
+        && pSf->IsValid()
+        && pSf->GetWidth() == width
+        && pSf->GetHeight() == height;
 }
 
+bool CopyAdapter::CopyValid(LPSURFACE pDst, const unsigned char* pData) {
+    return pData != nullptr && pDst != nullptr;
 }
 
 bool CopyAdapterSupport(LPRDATA rdPtr, const AVHWDeviceType type) {

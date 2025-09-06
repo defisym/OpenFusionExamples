@@ -4,7 +4,7 @@
 
 bool CopyAdapterBitmap::InitTexture(LPSURFACE& pSf, 
     const int width, const int height) {
-    if (!CopyAdapter::InitTexture(pSf, width, height) && !IsHWA(pSf)) {
+    if (!CopyAdapter::TextureValid(pSf, width, height) && !IsHWA(pSf)) {
         return false;
     }
 
@@ -22,6 +22,9 @@ bool CopyAdapterBitmap::InitTexture(LPSURFACE& pSf,
 
 bool CopyAdapterBitmap::CopyTexture(LPSURFACE pMemSf,
     const unsigned char* pData, const int srcLineSz, const int reserved) {
+    // validate
+    if (!CopyAdapter::CopyValid(pMemSf, pData)) { return false; }
+
     // pMemSf must have alpha channel, see `InitSurface`
     auto sfCoef = GetSfCoef(pMemSf);
     if (sfCoef.pData == nullptr || sfCoef.pAlphaData == nullptr) {

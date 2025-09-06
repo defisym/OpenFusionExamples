@@ -19,11 +19,15 @@ struct CopyAdapter {
     CopyAdapter(LPRDATA p) :rdPtr(p) {};
     virtual ~CopyAdapter() = default;
 
-    // return true if need to create new texture
+    // return true if new texture created
     virtual bool InitTexture(LPSURFACE& pSf,
-        const int width, const int height);
+        const int width, const int height) = 0;
+    static bool TextureValid(LPSURFACE pSf, const int width, const int height);
+
+    // return true if success
     virtual bool CopyTexture(LPSURFACE pDst,
         const unsigned char* pData, const int width, const int height) = 0;
+    static bool CopyValid(LPSURFACE pDst, const unsigned char* pData);
 };
 
 // only check support, no fallback

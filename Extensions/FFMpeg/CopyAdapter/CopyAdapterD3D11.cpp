@@ -15,7 +15,7 @@ CopyAdapterD3D11::CopyAdapterD3D11(LPRDATA p) :CopyAdapter(p) {
 
 bool CopyAdapterD3D11::InitTexture(LPSURFACE& pSf,
     const int width, const int height) {
-    if (!CopyAdapter::InitTexture(pSf, width, height) && IsHWA(pSf)) {
+    if (!CopyAdapter::TextureValid(pSf, width, height) && IsHWA(pSf)) {
         return false;
     }
 
@@ -29,6 +29,9 @@ bool CopyAdapterD3D11::InitTexture(LPSURFACE& pSf,
 
 bool CopyAdapterD3D11::CopyTexture(LPSURFACE pRTTSf,
     const unsigned char* pData, const int width, const int height) {
+    // 0. validate
+    if (!CopyAdapter::CopyValid(pRTTSf, pData)) { return false; }
+
     // 1. basic info
     const auto pFFMpegCtx = (const CopyToTextureContext*)pData;
     HRESULT hr = S_OK;
@@ -86,5 +89,6 @@ bool CopyAdapterD3D11::CopyTexture(LPSURFACE pRTTSf,
 
     pFusionDeviceCtx->DrawIndexed(pD3DSharedHandler->vertexHelper.indicesSize, 0, 0);
 
+    // 6. return
     return true;
 }
