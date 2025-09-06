@@ -288,7 +288,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
         if (rdPtr->bPositionSet) { rdPtr->bPositionSet = false; break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
-            CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
+            rdPtr->pCopyAdapter->CopyTexture(rdPtr->pDisplaySf, pData, stride, height);
 			ReDisplay(rdPtr);
 			});
 

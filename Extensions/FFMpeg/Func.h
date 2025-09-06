@@ -44,35 +44,25 @@ inline void ReDisplay(LPRDATA rdPtr) {
 	}
 }
 
-inline void CopyData(LPRDATA rdPtr, LPSURFACE pDst,
-    // passed in callback
-    const unsigned char* pData, const int width, const int height) {
-    if (pData == nullptr || pDst == nullptr) { return; }
-
-    // pDst must match bCopyToTexture, see `InitSurface`
-    rdPtr->pCopyAdapter->CopyTexture(pDst, pData, width, height);
-}
-
 inline void BlitVideoFrame(LPRDATA rdPtr, size_t ms, const LPSURFACE& pSf) {
 	if (rdPtr->pFFMpeg == nullptr) {
 		return;
 	}
 
-	rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek, [&](const unsigned char* pData, const int stride, const int height) {
-        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
+    rdPtr->pFFMpeg->get_videoFrame(ms, rdPtr->bAccurateSeek,
+        [&] (const unsigned char* pData, const int stride, const int height) {
+            if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
 
-        CopyData(rdPtr, pSf, pData, stride, height);
-		ReDisplay(rdPtr);
-		});
+            rdPtr->pCopyAdapter->CopyTexture(pSf, pData, stride, height);
+            ReDisplay(rdPtr);
+        });
 }
 
 inline void NextVideoFrame(LPRDATA rdPtr) {
-	if (rdPtr->pFFMpeg == nullptr) {
-		return;
-	}
+    if (rdPtr->pFFMpeg == nullptr) { return; }
 
 	rdPtr->pFFMpeg->get_nextFrame([&](const unsigned char* pData, const int stride, const int height) {
-        CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
+        rdPtr->pCopyAdapter->CopyTexture(rdPtr->pDisplaySf, pData, stride, height);
 		ReDisplay(rdPtr);
 		});
 }
@@ -140,12 +130,13 @@ inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
 
     const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
     if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return true; }
-    response = rdPtr->pFFMpeg->goto_videoPosition(ms, [&] (const unsigned char* pData, const int stride, const int height) {
-        // to avoid green screen at start
-        if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
+    response = rdPtr->pFFMpeg->goto_videoPosition(ms,
+        [&] (const unsigned char* pData, const int stride, const int height) {
+            // to avoid green screen at start
+            if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
 
-        CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
-        ReDisplay(rdPtr);
+            rdPtr->pCopyAdapter->CopyTexture(rdPtr->pDisplaySf, pData, stride, height);
+            ReDisplay(rdPtr);
         });
     if (response < 0) { return false; }
 
@@ -233,6 +224,8 @@ inline bool CopyToTextureValid(LPRDATA rdPtr, const AVHWDeviceType type) {
 inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 	FFMpegOptions opt;
 
+    // bCopyToTexture is updated by CopyToTextureValid each time updated
+    // won't be true if FFMpegAdapter and CopyAdapter not supported
     opt.flag = rdPtr->hwDeviceType
         | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : FFMpegFlag_Disabled)
         | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : FFMpegFlag_Disabled)
