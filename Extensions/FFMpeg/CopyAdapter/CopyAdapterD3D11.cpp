@@ -4,7 +4,7 @@
 #include "FFMpegAdapterD3D11.h"
 
 CopyAdapterD3D11::CopyAdapterD3D11(LPRDATA p) :CopyAdapter(p) {
-    auto pD3DDevice = (ID3D11Device*)GetD3DDevice(rdPtr);
+    auto pD3DDevice = (ID3D11Device*)GetD3D11Device(rdPtr);
 
     if (!pD3DSharedHandler) {
         pD3DSharedHandler = std::make_unique<D3DSharedHandler>(pD3DDevice, hInstLib);
@@ -50,7 +50,7 @@ bool CopyAdapterD3D11::CopyTexture(LPSURFACE pRTTSf,
 
     // Fusion Context
     auto renderHelper = RenderHelper{ pRTTSf };     // ST_HWA_RTTEXTURE
-    auto RTTInfo = GetSurfaceInfo(pRTTSf);
+    auto RTTInfo = GetD3D11SurfaceInfo(pRTTSf);
 
     auto pFusionDevice = (ID3D11Device*)RTTInfo.m_pD3D11Device;
     auto pFusionDeviceCtx = (ID3D11DeviceContext*)RTTInfo.m_pD3D11Context;
