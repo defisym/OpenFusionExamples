@@ -23,23 +23,27 @@ bool CopyAdapterSupport(LPRDATA rdPtr, const AVHWDeviceType type) {
 
 bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter,
     LPRDATA rdPtr, const AVHWDeviceType type) {
-    do {
-        if (type == AV_HWDEVICE_TYPE_NONE 
-            && dynamic_cast<CopyAdapterBitmap*>(pCopyAdapter) == nullptr) {
-            delete pCopyAdapter;
-            pCopyAdapter = new CopyAdapterBitmap{ rdPtr };
-
-            return true;
-        }
-
-        if (type == AV_HWDEVICE_TYPE_D3D11VA 
-            && dynamic_cast<CopyAdapterD3D11*>(pCopyAdapter) == nullptr) {            
+    switch (type) {
+    case AV_HWDEVICE_TYPE_D3D11VA:
+        if (D3D11(rdPtr)
+            && dynamic_cast<CopyAdapterD3D11*>(pCopyAdapter) == nullptr) {
             delete pCopyAdapter;
             pCopyAdapter = new CopyAdapterD3D11{ rdPtr };
 
             return true;
         }
-    } while (false);
 
+        [[fallthrough]];
+    case AV_HWDEVICE_TYPE_NONE: 
+        [[fallthrough]];
+    default:
+        if (dynamic_cast<CopyAdapterBitmap*>(pCopyAdapter) == nullptr) {
+            delete pCopyAdapter;
+            pCopyAdapter = new CopyAdapterBitmap{ rdPtr };
+
+            return true;
+        }
+    }
+   
     return false;
 }
