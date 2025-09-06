@@ -37,15 +37,12 @@ bool CopyAdapterBitmap::CopyTexture(LPSURFACE pMemSf,
     auto width = pMemSf->GetWidth();
     auto height = pMemSf->GetHeight();
 
-    //#define _MANUAL_PM
-
     for (int y = 0; y < height; y++) {
         const auto line = (height - 1 - y);
 
         auto pMemData = sfCoef.pData + y * lineSz;
         auto pVideo = pData + line * srcLineSz;
 
-#ifndef _MANUAL_PM
         memcpy(pMemData, pVideo, lineSz);
 #ifdef VIDEO_ALPHA
         // 32 bit: 4 bytes per pixel: blue, green, red, unused (0)
@@ -56,30 +53,6 @@ bool CopyAdapterBitmap::CopyTexture(LPSURFACE pMemSf,
             auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
             const auto pCurAlpha = pBitmapAlphaOffset + x * PIXEL_BYTE;
             pAlphaData[0] = pCurAlpha[0];
-        }
-#endif
-#else
-        for (int x = 0; x < width; x++) {
-            auto pVideoData = pVideo + x * PIXEL_BYTE;
-
-            auto pRGBData = pMemData + x * sfCoef.byte;
-            if (!bPm) {
-                pRGBData[0] = pVideoData[0];
-                pRGBData[1] = pVideoData[1];
-                pRGBData[2] = pVideoData[2];
-            }
-            else {
-                auto alphaCoef = pVideoData[3] / 255.0;
-
-                pRGBData[0] = (BYTE)(pVideoData[0] * alphaCoef);
-                pRGBData[1] = (BYTE)(pVideoData[1] * alphaCoef);
-                pRGBData[2] = (BYTE)(pVideoData[2] * alphaCoef);
-            }
-
-#ifdef VIDEO_ALPHA
-            auto pAlphaData = pSfAlphaOffset + x * sfCoef.alphaByte;
-            pAlphaData[0] = pVideoData[3];
-#endif
         }
 #endif
     }

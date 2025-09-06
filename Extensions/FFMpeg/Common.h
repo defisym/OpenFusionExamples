@@ -47,15 +47,11 @@
 
 #include	"Macro.h"
 
-#ifdef _OPENMP
-#include	<omp.h>
-#endif
-
 #include	<map>
 #include	<string>
 #include	<chrono>
 
-#ifdef COPY_D3D_TEXTURE
+#ifdef COPY_TEXTURE
 #ifdef _DEBUG
 #include	"D3D/HookD3D.h"
 #endif
