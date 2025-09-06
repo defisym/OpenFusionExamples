@@ -25,15 +25,21 @@ bool CopyAdapterSupport(LPRDATA rdPtr, const AVHWDeviceType type) {
     return false;
 }
 
+template<typename Adapter, class... Types>
+    requires std::is_base_of_v<CopyAdapter, Adapter>
+void UpdateCopyAdapterImpl(CopyAdapter*& pCopyAdapter, Types&&... args) {
+    if (dynamic_cast<Adapter*>(pCopyAdapter) == nullptr) {
+        delete pCopyAdapter;
+        pCopyAdapter = new Adapter{ std::forward<Types>(args)... };
+    }
+}
+
 bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter,
     LPRDATA rdPtr, const AVHWDeviceType type) {
     switch (type) {
     case AV_HWDEVICE_TYPE_D3D11VA:
-        if (D3D11(rdPtr)
-            && dynamic_cast<CopyAdapterD3D11*>(pCopyAdapter) == nullptr) {
-            delete pCopyAdapter;
-            pCopyAdapter = new CopyAdapterD3D11{ rdPtr };
-
+        if (D3D11(rdPtr)) { // valid to create
+            UpdateCopyAdapterImpl<CopyAdapterD3D11>(pCopyAdapter, rdPtr);
             return true;
         }
 
@@ -41,12 +47,8 @@ bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter,
     case AV_HWDEVICE_TYPE_NONE: 
         [[fallthrough]];
     default:
-        if (dynamic_cast<CopyAdapterBitmap*>(pCopyAdapter) == nullptr) {
-            delete pCopyAdapter;
-            pCopyAdapter = new CopyAdapterBitmap{ rdPtr };
-
-            return true;
-        }
+        UpdateCopyAdapterImpl<CopyAdapterBitmap>(pCopyAdapter, rdPtr);
+        return true;
     }
    
     return false;
