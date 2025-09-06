@@ -224,8 +224,10 @@ inline void CloseGeneral(LPRDATA rdPtr) {
 	*rdPtr->pFilePath = L"";
 }
 
-inline bool CopyToTextureValid(const AVHWDeviceType type) {
-    return FFMpegAdapterSupport(type) && CopyAdapterSupport(type);
+// each time update AVHWDeviceType 
+// should call this function to verify support
+inline bool CopyToTextureValid(LPRDATA rdPtr, const AVHWDeviceType type) {
+    return FFMpegAdapterSupport(type) && CopyAdapterSupport(rdPtr, type);
 }
 
 inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
