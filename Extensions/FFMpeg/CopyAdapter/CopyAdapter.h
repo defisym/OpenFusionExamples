@@ -26,8 +26,8 @@ struct CopyAdapter {
         const unsigned char* pData, const int width, const int height) = 0;
 };
 
-bool CopyAdapterSupport(const AVHWDeviceType type);
-CopyAdapter* CopyAdapterFactory(LPRDATA rdPtr, const AVHWDeviceType type);
-
+// only check support, no fallback
+bool CopyAdapterSupport(LPRDATA rdPtr, const AVHWDeviceType type);
+// always fallback to bitmap
 bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter, 
     LPRDATA rdPtr, const AVHWDeviceType type);
