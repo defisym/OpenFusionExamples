@@ -4,7 +4,7 @@
 
 bool CopyAdapterBitmap::InitTexture(LPSURFACE& pSf, 
     const int width, const int height) {
-    if (!CopyAdapter::TextureValid(pSf, width, height) && !IsHWA(pSf)) {
+    if (CopyAdapter::TextureValid(pSf, width, height) && !IsHWA(pSf)) {
         return false;
     }
 

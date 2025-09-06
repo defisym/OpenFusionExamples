@@ -15,7 +15,7 @@ CopyAdapterD3D11::CopyAdapterD3D11(LPRDATA p) :CopyAdapter(p) {
 
 bool CopyAdapterD3D11::InitTexture(LPSURFACE& pSf,
     const int width, const int height) {
-    if (!CopyAdapter::TextureValid(pSf, width, height) && IsHWA(pSf)) {
+    if (CopyAdapter::TextureValid(pSf, width, height) && IsHWA(pSf)) {
         return false;
     }
 
