@@ -592,12 +592,12 @@ struct RenderTargetHelper {
 //
 //    {
 //        auto helper = RenderHelper{ pSf };
-//        GetTextureDesc(GetSurfaceInfo(pSf));
+//        GetTextureDesc(GetD3D11SurfaceInfo(pSf));
 //
 //    }
 //    {
 //        auto helper = RenderTargetHelper{ pSf };
-//        GetTextureDesc(GetSurfaceInfo(helper.GetRenderTarget()));
+//        GetTextureDesc(GetD3D11SurfaceInfo(helper.GetRenderTarget()));
 //    }
 //    };
 
@@ -705,24 +705,52 @@ inline LPSURFACE CreateCloneSurface(LPRDATA rdPtr, LPSURFACE pSrc) {
 // Get info
 // ------------------------
 
-inline D3D11SURFINFO GetSurfaceInfo(LPSURFACE pSf) {
-	D3D11SURFINFO info = { };
-	info.m_lSize= sizeof(D3D11SURFINFO);
+template<typename SurfInfo>
+concept SurfInfoConcept = requires(SurfInfo info) {
+    info.m_lSize;    
+    std::is_same_v<SurfInfo, D3DSURFINFO>
+        || std::is_same_v<SurfInfo, D3D11SURFINFO>;
+};
+
+template<SurfInfoConcept SurfInfo>
+inline SurfInfo GetSurfaceInfo(LPSURFACE pSf) {
+    SurfInfo info = { };
+	info.m_lSize= sizeof(SurfInfo);
 
 	auto ret = pSf->GetDriverInfo(&info);
 
 	return info;
 }
 
+inline auto GetD3DSurfaceInfo(LPSURFACE pSf) {
+    return GetSurfaceInfo<D3DSURFINFO>(pSf);
+}
+
+inline auto GetD3D11SurfaceInfo(LPSURFACE pSf) {
+    return GetSurfaceInfo<D3D11SURFINFO>(pSf);
+}
+
 inline auto GetD3DInfo(LPRDATA rdPtr) {
+    auto pSf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
+    auto info = GetD3DSurfaceInfo(pSf);
+
+    return info;
+}
+
+inline auto GetD3DDevice(LPRDATA rdPtr) {
+    return GetD3DInfo(rdPtr).m_pD3DDevice;
+}
+
+
+inline auto GetD3D11Info(LPRDATA rdPtr) {
 	auto pSf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
-	auto info = GetSurfaceInfo(pSf);
+	auto info = GetD3D11SurfaceInfo(pSf);
 
 	return info;
 }
 
-inline auto GetD3DDevice(LPRDATA rdPtr) {
-	return GetD3DInfo(rdPtr).m_pD3D11Device;
+inline auto GetD3D11Device(LPRDATA rdPtr) {
+	return GetD3D11Info(rdPtr).m_pD3D11Device;
 }
 
 // ------------------------

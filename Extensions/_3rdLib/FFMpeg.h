@@ -1981,6 +1981,10 @@ public:
 		return get_hwDeviceNameByType(bHWDecode ? hw_type : AV_HWDEVICE_TYPE_NONE);
 	}
 
+    inline AVHWDeviceType get_hwDeviceType() const {
+        return bHWDecode ? hw_type : AV_HWDEVICE_TYPE_NONE;
+    }
+
 	inline static const wchar_t* get_hwDeviceNameByType(const AVHWDeviceType type) {
 		switch (type)
 		{

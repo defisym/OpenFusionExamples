@@ -32,8 +32,7 @@ struct FFMpegAdapter {
     virtual void FreeContext(TextureContextHandle& h) { h = nullptr; }
     // do nothing, just pass D3D11 texture to callback, furture process not needed
     virtual void convert_textureFrame(AVCodecContext* pCodecContext,
-        AVFrame* pFrame, const FrameDataCallBack& callBack) {
-    };
+        AVFrame* pFrame, const FrameDataCallBack& callBack) {};
     // copy shared resource in context handle
     virtual void CopyContext(TextureContextHandle src, TextureContextHandle dst) {};
 };

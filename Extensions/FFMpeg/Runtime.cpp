@@ -120,7 +120,9 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->bForceNoAudio = edPtr->bForceNoAudio;
     rdPtr->bCopyToTexture = edPtr->bCopyToTexture;
     rdPtr->bSharedHardWareDevice = edPtr->bSharedHardWareDevice;
-    rdPtr->pD3DLocalHandler = new D3DLocalHandler{ (ID3D11Device*)GetD3DDevice(rdPtr) };
+
+    // update copy to texture flag
+    rdPtr->bCopyToTexture &= CopyToTextureValid(rdPtr, rdPtr->hwDeviceType);
 
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
@@ -130,9 +132,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	if (GetExtUserData() == nullptr) {
 		rdPtr->pData = new GlobalData;
 		SetExtUserData(rdPtr->pData);
-
-        // create it here instead of constructor to solve dependency
-        rdPtr->pData->pD3DSharedHandler = new D3DSharedHandler{ (ID3D11Device*)GetD3DDevice(rdPtr), hInstLib };
 	}
 	else {
 		rdPtr->pData = (GlobalData*)GetExtUserData();
@@ -197,8 +196,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	CloseGeneral(rdPtr);
 
 	delete rdPtr->pFilePath;
-    
-    delete rdPtr->pD3DLocalHandler;
 
 	delete rdPtr->pVideoOverrideCodecName;
 	delete rdPtr->pAudioOverrideCodecName;
@@ -291,7 +288,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
         if (rdPtr->bPositionSet) { rdPtr->bPositionSet = false; break; }
 
 		rdPtr->pFFMpeg->get_nextFrame([&] (const unsigned char* pData, const int stride, const int height) {
-            CopyData(rdPtr, rdPtr->pDisplaySf, pData, stride, height);
+            rdPtr->pCopyAdapter->CopyTexture(rdPtr->pDisplaySf, pData, stride, height);
 			ReDisplay(rdPtr);
 			});
 
@@ -528,10 +525,7 @@ void WINAPI DLLExport StartApp(mv _far *mV, CRunApp* pApp)
 	// -------
 	// Delete global data (if restarts application)
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
-	if (pData != NULL) {
-        // delete it here instead of destructor to solve dependency
-        delete pData->pD3DSharedHandler;
-        
+	if (pData != NULL) {        
         delete pData;
         mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}
@@ -549,9 +543,6 @@ void WINAPI DLLExport EndApp(mv _far *mV, CRunApp* pApp)
 	// Delete global data
 	auto pData = (GlobalData*)mV->mvGetExtUserData(pApp, hInstLib);
 	if (pData != NULL) {
-        // delete it here instead of destructor to solve dependency
-        delete pData->pD3DSharedHandler; 
-        
         delete pData;
 		mV->mvSetExtUserData(pApp, hInstLib, NULL);
 	}

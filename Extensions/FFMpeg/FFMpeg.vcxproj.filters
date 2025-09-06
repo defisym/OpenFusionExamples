@@ -41,6 +41,9 @@
     <Filter Include="FFMpeg\FFMpegAdapter">
       <UniqueIdentifier>{d7eaa09a-3da4-4a2b-bf4e-0e6489b384da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CopyAdapter">
+      <UniqueIdentifier>{71f1b5b0-e712-452c-95c5-eb716e5c41d2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -69,6 +72,15 @@
     </ClCompile>
     <ClCompile Include="..\_3rdLib\FFMpegAdapter.cpp">
       <Filter>FFMpeg\FFMpegAdapter</Filter>
+    </ClCompile>
+    <ClCompile Include="CopyAdapter\CopyAdapter.cpp">
+      <Filter>CopyAdapter</Filter>
+    </ClCompile>
+    <ClCompile Include="CopyAdapter\CopyAdapterD3D11.cpp">
+      <Filter>CopyAdapter</Filter>
+    </ClCompile>
+    <ClCompile Include="CopyAdapter\CopyAdapterBitmap.cpp">
+      <Filter>CopyAdapter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -219,6 +231,15 @@
     </ClInclude>
     <ClInclude Include="..\_3rdLib\FFMpegDefinition.h">
       <Filter>FFMpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="CopyAdapter\CopyAdapter.h">
+      <Filter>CopyAdapter</Filter>
+    </ClInclude>
+    <ClInclude Include="CopyAdapter\CopyAdapterD3D11.h">
+      <Filter>CopyAdapter</Filter>
+    </ClInclude>
+    <ClInclude Include="CopyAdapter\CopyAdapterBitmap.h">
+      <Filter>CopyAdapter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

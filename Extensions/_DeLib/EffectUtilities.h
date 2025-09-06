@@ -41,7 +41,7 @@ private:
 
 	inline ID3D11Device* GetD3D11Device() {
 		return this->bD3D11
-			? (ID3D11Device*)::GetD3DDevice(rdPtr)
+			? (ID3D11Device*)::GetD3D11Device(rdPtr)
 			: nullptr;
 	}
 #endif

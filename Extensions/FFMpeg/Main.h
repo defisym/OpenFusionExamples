@@ -203,7 +203,7 @@ typedef struct tagRDATA
 	bool bForceNoAudio;
     bool bCopyToTexture;
     bool bSharedHardWareDevice;
-    D3DLocalHandler* pD3DLocalHandler = nullptr;
+    CopyAdapter* pCopyAdapter = nullptr;
 
 	std::string* pVideoOverrideCodecName = nullptr;
 	std::string* pAudioOverrideCodecName = nullptr;
