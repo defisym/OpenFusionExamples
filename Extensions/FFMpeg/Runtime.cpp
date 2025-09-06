@@ -122,7 +122,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
     rdPtr->bSharedHardWareDevice = edPtr->bSharedHardWareDevice;
 
     // update copy to texture flag
-    rdPtr->bCopyToTexture = CopyToTextureValid(rdPtr->hwDeviceType);
+    rdPtr->bCopyToTexture &= CopyToTextureValid(rdPtr, rdPtr->hwDeviceType);
 
 	rdPtr->pVideoOverrideCodecName = new std::string;
 	rdPtr->pAudioOverrideCodecName = new std::string;
