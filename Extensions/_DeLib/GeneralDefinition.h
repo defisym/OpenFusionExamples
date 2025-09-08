@@ -38,6 +38,16 @@
 #define CONNECT_STR(l, r) l##r
 #define STRINGIFY(s) #s
 #define CUR_FOLDER CONNECT_STR(__FILE__, "\\..\\")
+
+// Note: if you are using files inside a shard network folder
+// RELATIVE_PATH macro will return a path like \\Mac\Home\Dev
+// which is not supported by the linker.
+// in this case, please use symbolic link (mklink /D) to create a local folder
+// which points to the network folder, and use RELATIVE_PATH with that local folder
+// for example, mklink /D C:\Dev Z:\Mac\Home\Dev
+// depending on your network drive settings.
+// direct link to path like mklink /D C:\Dev \\Mac\Home\Dev is not supported by Windows
+// and path like that cannot open in Explorer either.
 #define RELATIVE_PATH(path) CONNECT_STR(CUR_FOLDER, path)
 
 constexpr auto CLEAR_MEMRANGE = 128;
