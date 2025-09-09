@@ -6,6 +6,7 @@
 
 // Windows
 // TODO used in to_byte_string, move to Cpp STL to remove dependents
+#define NOMINMAX
 #define WIN32_LEAN_AND_MEAN 
 #include <windows.h>
 

@@ -1,11 +1,13 @@
 #pragma once
 
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 #include <vector>
 #include <functional>
 
 #include <iostream>
-
-#include <Windows.h>
 
 namespace FusionClipboard {
 	//constexpr auto MMFFRMED = 49987;

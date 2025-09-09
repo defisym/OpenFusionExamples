@@ -1,10 +1,12 @@
 #include "HookD3D.h"
 
-#include <d3d11.h>
-#pragma comment(lib, "D3D11.lib")
-
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <psapi.h>
+
+#include <d3d11.h>
+#pragma comment(lib, "D3D11.lib")
 
 #include "Detours/include/detours.h"
 #ifdef _WIN64
