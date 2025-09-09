@@ -10,6 +10,7 @@
 //#include "RegexHelper.h"
 
 // Windows
+#define WIN32_LEAN_AND_MEAN 
 #include <windows.h>
 
 // Thread
@@ -524,4 +525,8 @@ inline std::string ConvertWStrToStr(const std::wstring& input, const UINT codePa
 
 inline std::wstring ConvertStrToWStr(const std::string& input, const UINT codePage = CP_UTF8) {
 	return to_wide_string(input, codePage);
+}
+
+inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"ALERT") {
+    MessageBox(nullptr, content.c_str(), title.c_str(), MB_OK);
 }
