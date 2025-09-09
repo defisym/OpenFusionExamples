@@ -1,11 +1,29 @@
 #pragma once
 
-#include <Shlwapi.h>
+// ------------------------------------------
+// include
+// ------------------------------------------
 
+// Windows
+// TODO used in to_byte_string, move to Cpp STL to remove dependents
+#define WIN32_LEAN_AND_MEAN 
+#include <windows.h>
+
+// STL
 #include <string>
 #include <string_view>
 
 #include <vector>
+#include <functional>
+#include <algorithm>
+
+// Custom
+#include "StringTraits.h"
+#include "ArithmeticTraits.h"
+
+// ------------------------------------------
+// Macro Helper
+// ------------------------------------------
 
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
@@ -50,6 +68,9 @@
 // and path like that cannot open in Explorer either.
 #define RELATIVE_PATH(path) CONNECT_STR(CUR_FOLDER, path)
 
+// ------------------------------------------
+// Constants
+// ------------------------------------------
 constexpr auto CLEAR_MEMRANGE = 128;
 constexpr auto CLEAR_NUMTHRESHOLD = 50;
 
@@ -57,39 +78,47 @@ constexpr auto CLEAR_NUMTHRESHOLD = 50;
 constexpr auto MAX_MEMORYLIMIT = 3 * 1024 + 256;
 constexpr auto DEFAULT_MEMORYLIMIT = 3 * 1024;
 
-// hasher
+// ------------------------------------------
+// Hasher
+// ------------------------------------------
+//   Calculate hash of given object
+//     inline static size_t Hasher(const Object& o) {
+//         size_t seed = ElementNum;
+//         
+//         seed ^= o.ele_1 + HASHER_MOVE(seed);
+//         seed ^= o.ele_2 + HASHER_MOVE(seed);
+//         ...
+//         seed ^= o.ele_ElementNum + HASHER_MOVE(seed);
+//         
+//         return seed;
+//     }
 static constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
 static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); }
 
-// Usage
-
-// inline static size_t Hasher(const Object& o) {
-	// size_t seed = ElementNum;
-	//
-	// seed ^= o.ele_1 + HASHER_MOVE(seed);
-	// seed ^= o.ele_2 + HASHER_MOVE(seed);
-	// ...
-	// seed ^= o.ele_ElementNum + HASHER_MOVE(seed);
-	//
-	// return seed;
-// }
+// ------------------------------------------
+// Copy string
+// ------------------------------------------
 
 //don't use this func if Str = nullptr, return Default_Str directly
-inline void NewStr(LPWSTR& Tar, const LPCWSTR Str) {
+inline void NewStr(wchar_t*& Tar, const wchar_t* Str) {
 	release_arr(Tar);
 	const rsize_t total_length = wcslen(Str) + 1;
 
-	Tar = new WCHAR[total_length];
+	Tar = new wchar_t[total_length];
 	wcscpy_s(Tar, total_length, Str);
 }
 
-inline void NewStr(LPWSTR& Tar, const std::wstring& Str) {
+inline void NewStr(wchar_t*& Tar, const std::wstring& Str) {
 	NewStr(Tar, Str.c_str());
 }
 
 inline void NewStr(std::wstring& Tar, const std::wstring& Str) {
 	Tar = Str;
 }
+
+// ------------------------------------------
+// CodePage conversion
+// ------------------------------------------
 
 // convert string to wstring
 inline bool to_wide_string(std::wstring& output,
@@ -251,6 +280,85 @@ inline void TrimStr(std::wstring& str,
 	}
 };
 
+// ------------------------------------------
+// Case
+// ------------------------------------------
+
+template<CharConcept T>
+void ToLower(T* pStr, const size_t sz) {
+    for (size_t index = 0; index < sz; index++) {
+        auto& chr = pStr[index];
+        chr = tolower(chr);
+    }
+}
+
+template<StringConcept T>
+void ToLower(T& str) {
+    std::ranges::transform(str, str.begin(), ::tolower);
+}
+
+template<StringConcept T>
+[[nodiscard]] T ToLower(const T& str) {
+    T ret = str;
+    std::ranges::transform(ret, ret.begin(), ::tolower);
+    return ret;
+}
+
+template<CharConcept T>
+void ToUpper(T* pStr, const size_t sz) {
+    for (size_t index = 0; index < sz; index++) {
+        auto& chr = pStr[index];
+        chr = ToUpper(chr);
+    }
+}
+
+template<StringConcept T>
+void ToUpper(T& str) {
+    std::ranges::transform(str, str.begin(), ::toupper);
+}
+
+template<StringConcept T>
+[[nodiscard]] T ToUpper(const T& str) {
+    T ret = str;
+    std::ranges::transform(ret, ret.begin(), ::toupper);
+    return ret;
+}
+
+template<CharConcept T>
+inline bool CharIEqu(const T l, const T r) {
+    return (l == r) || (::tolower(l) == ::tolower(r));
+}
+
+template<CharConcept T>
+inline bool StrEqu(const T* l, const T* r) {
+    if constexpr (std::is_same_v<T, char>) {
+        return strcmp(l, r) == 0;
+    }
+    else {
+        return wcscmp(l, r) == 0;
+    }
+}
+
+template<CharConcept T>
+inline bool StrIEqu(const T* l, const T* r) {
+    if constexpr (std::is_same_v<T, char>) {
+        return _stricmp(l, r) == 0;
+    }
+    else {
+        return _wcsicmp(l, r) == 0;
+    }
+}
+
+template<CharConcept T>
+inline bool StrEmpty(const T* pStr) {
+    if constexpr (std::is_same_v<T, char>) {
+        return StrEqu(pStr, "");
+    }
+    else {
+        return StrEqu(pStr, L"");
+    }
+}
+
 inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	const auto length = wcslen(pStr);
 
@@ -275,7 +383,7 @@ inline bool StringViewIEqu(const std::wstring_view& l, const std::wstring_view& 
 	}
 
 	for (size_t i = 0; i < length; i++) {
-		if (ChrCmpIW(l[i], r[i]) != 0) {
+		if (CharIEqu(l[i], r[i]) != 0) {
 			return false;
 		}
 	}
@@ -291,7 +399,7 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	}
 
 	for (size_t i = 0; i < length; i++) {
-		if (ChrCmpIW(str[i], pStr[i]) != 0) {
+		if (CharIEqu(str[i], pStr[i]) != 0) {
 			return false;
 		}
 	}
@@ -322,7 +430,7 @@ inline bool StringIAppend(const LPCWSTR pL, const LPCWSTR pR) {
 	if (lLength > rLength) { return false; }
 
 	for (size_t i = 0; i < lLength; i++) {
-		if (ChrCmpIW(pL[i], pR[i]) != 0) {
+		if (CharIEqu(pL[i], pR[i]) != 0) {
 			return false;
 		}
 	}
@@ -334,45 +442,9 @@ inline std::wstring StringViewToString(const std::wstring_view& str) {
 	return { str.data(), str.size() };
 }
 
-// MSGBOX
-#include "StrNum.h"
-
-inline void MSGBOX(const std::wstring& content, const std::wstring& title = L"ALERT") {
-	MessageBox(nullptr, content.c_str(), title.c_str(), MB_OK);
-}
-
+// ------------------------------------------
 // basic split
-#include <functional>
-#include "StringTraits.h"
-
-template<CharConcept T>
-inline bool StrEqu(const T* l, const T* r) {
-	 if constexpr(std::is_same_v<T, char>) {
-		 return strcmp(l, r) == 0;
-	 }else {
-		 return wcscmp(l, r) == 0;
-	 }
-}
-
-template<CharConcept T>
-inline bool StrIEqu(const T* l, const T* r) {
-	if constexpr (std::is_same_v<T, char>) {
-		return _stricmp(l, r) == 0;
-	}
-	else {
-		return _wcsicmp(l, r) == 0;
-	}
-}
-
-template<CharConcept T>
-inline bool StrEmpty(const T* pStr) {
-	if constexpr (std::is_same_v<T, char>) {
-		return StrEqu(pStr, "");
-	}
-	else {
-		return StrEqu(pStr, L"");
-	}
-}
+// ------------------------------------------
 
 // split string by delimiter
 template<CharConcept T>
@@ -439,15 +511,23 @@ inline std::vector<std::basic_string<T>> SplitString(const std::basic_string<T>&
 		});
 }
 
-template<typename T>
+// ------------------------------------------
+// Range
+// ------------------------------------------
+
+template<ArithmeticConcept T>
 inline T Range(T v, T minv, T maxv) {
 	return (std::max)(minv, (std::min)(maxv, v));
 }
 
-template<typename T>
+template<ArithmeticConcept T>
 inline void UpdateRange(T& v, T minv, T maxv) {
 	v = (std::max)(minv, (std::min)(maxv, v));
 }
+
+// ------------------------------------------
+// float compare
+// ------------------------------------------
 
 // https://stackoverflow.com/questions/4915462/how-should-i-do-floating-point-comparison
 template<typename T>
@@ -490,6 +570,10 @@ inline bool NearlyEqualLDBL(const long double a, const long double b,
 	return NearlyEqualCore<long double>(a, b, epsilon, abs_th);
 }
 
+// ------------------------------------------
+// Insert sort
+// ------------------------------------------
+
 template<typename T>
 typename std::vector<T>::iterator
 InsertSortedUpperBound(std::vector<T>& vec, T const& item) {
@@ -511,44 +595,3 @@ InsertSortedLowerBound(std::vector<T>& vec, T const& item, Pred pred) {
 	return vec.insert(std::lower_bound(vec.begin(), vec.end(), item, pred), item);
 }
 
-#include<algorithm>
-
-template<CharConcept T>
-void ToLower(T* pStr, const size_t sz) {
-    for(size_t index = 0;index<sz;index++) {
-        auto& chr = pStr[index];
-        chr = tolower(chr);
-    }
-}
-
-template<StringConcept T>
-void ToLower(T& str) {
-    std::ranges::transform(str, str.begin(), ::tolower);
-}
-
-template<StringConcept T>
-[[nodiscard]] T ToLower(const T& str) {
-    T ret = str;
-    std::ranges::transform(ret, ret.begin(), ::tolower);
-    return ret;
-}
-
-template<CharConcept T>
-void ToUpper(T* pStr, const size_t sz) {
-    for (size_t index = 0; index < sz; index++) {
-        auto& chr = pStr[index];
-        chr = ToUpper(chr);
-    }
-}
-
-template<StringConcept T>
-void ToUpper(T& str) {
-    std::ranges::transform(str, str.begin(), ::toupper);
-}
-
-template<StringConcept T>
-[[nodiscard]] T ToUpper(const T& str) {
-    T ret = str;
-    std::ranges::transform(ret, ret.begin(), ::toupper);
-    return ret;
-}
