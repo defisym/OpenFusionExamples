@@ -549,6 +549,6 @@ void ToUpper(T& str) {
 template<StringConcept T>
 [[nodiscard]] T ToUpper(const T& str) {
     T ret = str;
-    std::ranges::transform(ret, ret.begin(), ::ToUpper);
+    std::ranges::transform(ret, ret.begin(), ::toupper);
     return ret;
 }
