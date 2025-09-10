@@ -4,12 +4,6 @@
 // include
 // ------------------------------------------
 
-// Windows
-// TODO used in to_byte_string, move to Cpp STL to remove dependents
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN 
-#include <windows.h>
-
 // STL
 #include <string>
 #include <string_view>
@@ -123,71 +117,28 @@ inline void NewStr(std::wstring& Tar, const std::wstring& Str) {
 
 // convert string to wstring
 inline bool to_wide_string(std::wstring& output,
-		const char* pSrc, size_t len,
-		const UINT codePage = CP_UTF8) {
-	const int outputLength = MultiByteToWideChar(codePage, 0,
-		pSrc, static_cast<int>(len),
-		nullptr, 0);
-
-	if (outputLength == 0) {
-		return false;
-	}
-
-	output = std::wstring(outputLength, 0);
-	if (!MultiByteToWideChar(codePage, 0,
-		pSrc, static_cast<int>(len),
-		output.data(), outputLength)) {
-		return false;
-	}
-
-	return true;
-}
+        const char* pSrc, size_t len,
+        const unsigned int codePage);
 // convert string to wstring, indicate no error occurs
-inline std::wstring to_wide_string(const std::string& input, const UINT codePage = CP_UTF8) {
-	std::wstring result;
-	to_wide_string(result, input.c_str(), input.length(), codePage);
-
-	return result;
-}
+inline std::wstring to_wide_string(const std::string& input,
+    const unsigned int codePage);
 
 // convert wstring to string
 inline bool to_byte_string(std::string& output,
-		const wchar_t* pSrc, size_t len,
-		const UINT codePage = CP_UTF8) {
-	const int outputLength = WideCharToMultiByte(codePage, 0,
-			pSrc, static_cast<int>(len),
-			nullptr, 0,
-			nullptr, nullptr);
-
-	if (outputLength == 0) {
-		return false;
-	}
-
-	output = std::string(outputLength, 0);
-	if (!WideCharToMultiByte(codePage, 0,
-		pSrc, static_cast<int>(len),
-		output.data(), outputLength,
-		nullptr, nullptr)) {
-		return false;
-	}
-
-	return true;
-}
+        const wchar_t* pSrc, size_t len,
+        const unsigned int codePage);
 // convert wstring to string, indicate no error occurs
-inline std::string to_byte_string(const std::wstring& input, const UINT codePage = CP_UTF8) {
-	std::string result;
-	to_byte_string(result, input.c_str(), input.length(), codePage);
+inline std::string to_byte_string(const std::wstring& input,
+    const unsigned int codePage);
 
-	return result;
-}
+// get unicode codepage
+inline unsigned int GetUnicodeCodePage(bool bUnicode = true);
 
 // general save / load, do conversion
 inline bool LoadData(std::wstring& output,
 	const char* pSrc, size_t len,
 	bool& bUnicode) {
-	if (pSrc == nullptr) {
-		return false;
-	}
+    if (pSrc == nullptr) { return false; }
 
 	// BOM
 	constexpr auto UTF8_SIGNATURE = "\xEF\xBB\xBF";
@@ -199,20 +150,91 @@ inline bool LoadData(std::wstring& output,
 		len -= 3;
 	}
 
-	if (len == 0) {
-		return false;
-	}
+    if (len == 0) { return false; }
 
-	const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
-	return to_wide_string(output, pSrc, len, codePage);
+	return to_wide_string(output, pSrc, len, GetUnicodeCodePage(bUnicode));
 }
 // save data and handle unicode    
 inline bool SaveData(std::string& output,
 	const wchar_t* pSrc, const size_t len,
 	bool bUnicode = true) {
-	const UINT codePage = bUnicode ? CP_UTF8 : CP_ACP;
-	return to_byte_string(output, pSrc, len, codePage);
+	return to_byte_string(output, pSrc, len, GetUnicodeCodePage(bUnicode));
 }
+
+// ------------------------------------------
+// CodePage conversion implementation
+// ------------------------------------------
+
+#ifdef _WIN32
+
+// Windows
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN 
+#include <windows.h>
+
+inline bool to_wide_string(std::wstring& output,
+    const char* pSrc, size_t len,
+    const unsigned int codePage = CP_UTF8) {
+    const int outputLength = MultiByteToWideChar(codePage, 0,
+        pSrc, static_cast<int>(len),
+        nullptr, 0);
+
+    if (outputLength == 0) {
+        return false;
+    }
+
+    output = std::wstring(outputLength, 0);
+    if (!MultiByteToWideChar(codePage, 0,
+        pSrc, static_cast<int>(len),
+        output.data(), outputLength)) {
+        return false;
+    }
+
+    return true;
+}
+inline std::wstring to_wide_string(const std::string& input,
+    const unsigned int codePage = CP_UTF8) {
+    std::wstring result;
+    to_wide_string(result, input.c_str(), input.length(), codePage);
+
+    return result;
+}
+
+inline bool to_byte_string(std::string& output,
+    const wchar_t* pSrc, size_t len,
+    const unsigned int codePage = CP_UTF8) {
+    const int outputLength = WideCharToMultiByte(codePage, 0,
+            pSrc, static_cast<int>(len),
+            nullptr, 0,
+            nullptr, nullptr);
+
+    if (outputLength == 0) {
+        return false;
+    }
+
+    output = std::string(outputLength, 0);
+    if (!WideCharToMultiByte(codePage, 0,
+        pSrc, static_cast<int>(len),
+        output.data(), outputLength,
+        nullptr, nullptr)) {
+        return false;
+    }
+
+    return true;
+}
+inline std::string to_byte_string(const std::wstring& input,
+    const unsigned int codePage = CP_UTF8) {
+    std::string result;
+    to_byte_string(result, input.c_str(), input.length(), codePage);
+
+    return result;
+}
+
+inline unsigned int GetUnicodeCodePage(bool bUnicode) {
+   return bUnicode ? CP_UTF8 : CP_ACP;
+}
+
+#endif
 
 // ------------------------------------------
 // Trim
