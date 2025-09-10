@@ -19,7 +19,9 @@ bool CopyAdapter::CopyValid(LPSURFACE pDst, const unsigned char* pData) {
 bool CopyAdapterSupport(LPRDATA rdPtr, const AVHWDeviceType type) {
     do {
         if (type == AV_HWDEVICE_TYPE_NONE) { return true; }
+#ifdef _WIN32
         if (type == AV_HWDEVICE_TYPE_D3D11VA && D3D11(rdPtr)) { return true; }
+#endif
     } while (false);
 
     return false;
@@ -37,6 +39,7 @@ void UpdateCopyAdapterImpl(CopyAdapter*& pCopyAdapter, Types&&... args) {
 bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter,
     LPRDATA rdPtr, const AVHWDeviceType type) {
     switch (type) {
+#ifdef _WIN32
     case AV_HWDEVICE_TYPE_D3D11VA:
         if (D3D11(rdPtr)) { // valid to create
             UpdateCopyAdapterImpl<CopyAdapterD3D11>(pCopyAdapter, rdPtr);
@@ -44,6 +47,7 @@ bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter,
         }
 
         [[fallthrough]];
+#endif
     case AV_HWDEVICE_TYPE_NONE: 
         [[fallthrough]];
     default:

@@ -51,7 +51,11 @@
 #include	<string>
 #include	<chrono>
 
-#ifdef COPY_TEXTURE
+// Dependents for texture copy
+//  copy hardware decode result directly 
+//  instead of copy to memory first 
+//  then do pixel format conversion
+#ifdef _WIN32
 #ifdef _DEBUG
 #include	"D3D/HookD3D.h"
 #endif
