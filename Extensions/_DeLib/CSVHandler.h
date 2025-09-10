@@ -6,6 +6,7 @@
 #include <functional>
 
 #include "StrNum.h"
+#include "GeneralDefinition.h"
 
 namespace CSV {
     template<StringConcept StringType>
