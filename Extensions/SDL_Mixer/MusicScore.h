@@ -3,6 +3,8 @@
 #include <map>
 #include <vector>
 
+#include "StrNum.h"
+
 namespace MusicScore {
 	using MusicalNotes = std::vector<float>;
 

@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "va_args_iterators/pp_iter.h"
+#include "StrNum.h"
 
 #include "SteamInclude.h"
 

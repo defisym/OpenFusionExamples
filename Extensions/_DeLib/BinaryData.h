@@ -9,6 +9,7 @@
 
 #include "Base64.h"
 #include "Encryption.h"
+#include "StrNum.h"
 
 using BinaryBuffer = const unsigned char;
 

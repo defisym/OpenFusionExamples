@@ -9,8 +9,6 @@
 #include "StringTraits.h"
 #include "ArithmeticTraits.h"
 
-#include "GeneralDefinition.h"
-
 enum class StrType :uint8_t {
     NotNum,
     IsNum,

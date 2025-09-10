@@ -5,10 +5,6 @@
 #include <vector>
 #include <thread>
 
-////Boost
-//#define BOOST
-//#include "RegexHelper.h"
-
 // Windows
 #define NOMINMAX　
 #define WIN32_LEAN_AND_MEAN 
@@ -20,7 +16,7 @@
 #pragma comment(lib,"Kernel32.lib")
 
 // FileList
-#include	<shlwapi.h>
+#include <shlwapi.h>
 #pragma	comment(lib,"shlwapi.lib")
 
 // Memory

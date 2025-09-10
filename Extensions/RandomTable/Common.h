@@ -31,6 +31,8 @@
 #include	"RandGenerator.h"
 #include	"Base64.h"
 
+#include	"GeneralDefinition.h"
+
 #include	<string>
 #include	<deque>
 

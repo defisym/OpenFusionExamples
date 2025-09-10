@@ -6,14 +6,14 @@
 #include <functional>
 
 #include <d3d11.h>
+#pragma comment(lib, "d3d11.lib")
 
 #include "EffectEx.h"
 #include "CfcFile.h"
 
 #include "Fusion.h"
 #include "FusionUtilities.h"
-
-#include "WindowsCommon.h"
+#include "GeneralDefinition.h"
 
 #ifdef HWABETA
 constexpr auto additionalLayerSize = 8;
@@ -266,7 +266,7 @@ public:
 
 			this->effectData.emplace_back(EffectData{ pEH, pName, pData
 				, nullptr, nullptr, false
-				, std::move(ConvertStrToWStr(pName))});
+				, std::move(to_wide_string(pName))});
 
 			if (pEH->dwEffectParamsOffset == 0) {
 				continue;
@@ -291,7 +291,7 @@ public:
 				pParamName += strlen(paramName) + 1;
 
 				this->effectData.back().effectParam.emplace_back(EffectParamData{ paramName, paramType
-					, std::move(ConvertStrToWStr(paramName))});
+					, std::move(to_wide_string(paramName))});
 			}
 		}
 
