@@ -2775,7 +2775,7 @@ public:
 									if ((controlParam[0] == L'#')
 										|| (controlParam[0] == L'0'
 										&& (controlParam[1] == L'x' || controlParam[1] == L'X'))) {
-										return _h2d(controlParam.data(), controlParam.size());
+										return (DWORD)_h2d(controlParam.data(), controlParam.size());
 									}
 
 									// dec

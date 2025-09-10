@@ -531,7 +531,9 @@ constexpr int _hexSheet(const typename CharType<StringType>::Type p) {
 	}
 }
 
-// DWORD: unsigned long -> std::uint32_t 
+// DWORD: unsigned long -> std::uint32_t
+// for 64 bit & non-Windows compatibility
+// unlike Linux, long is still 32 bit in 64bit Windows
 template<StringConcept StringType = std::wstring>
 constexpr std::uint32_t _h2d(const typename CharType<StringType>::Type* p, const size_t strLen = -1) {
     auto len = strLen == static_cast<size_t>(-1)
