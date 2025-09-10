@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <format>
+#include <stdint.h>
 
 #include "StringTraits.h"
 #include "ArithmeticTraits.h"
@@ -530,8 +531,9 @@ constexpr int _hexSheet(const typename CharType<StringType>::Type p) {
 	}
 }
 
+// DWORD: unsigned long -> std::uint32_t 
 template<StringConcept StringType = std::wstring>
-constexpr DWORD _h2d(const typename CharType<StringType>::Type* p, const size_t strLen = -1) {
+constexpr std::uint32_t _h2d(const typename CharType<StringType>::Type* p, const size_t strLen = -1) {
     auto len = strLen == static_cast<size_t>(-1)
         ? CharType<StringType>::Length(p)
         : strLen;
@@ -547,14 +549,11 @@ constexpr DWORD _h2d(const typename CharType<StringType>::Type* p, const size_t 
 		len -= 2;
 	}
 
-	DWORD ret = 0;
+    std::uint32_t ret = 0;
 
-	for (DWORD pow = 1; len != 0; pow = pow << 4, --len) {
+	for (std::uint32_t pow = 1; len != 0; pow = pow << 4, --len) {
 		const auto conv = _hexSheet(*(p + len - 1));
-
-		if (conv == -1) {
-			break;
-		}
+        if (conv == -1) { break; }
 
 		ret += conv * pow;
 	}
