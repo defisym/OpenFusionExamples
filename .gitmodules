@@ -1,18 +1,24 @@
 [submodule "Extensions/_3rdLib/Boost"]
 	path = Extensions/_3rdLib/Boost
 	url = https://github.com/boostorg/boost.git
+	shallow = true
 [submodule "Extensions/_3rdLib/nlohmann"]
 	path = Extensions/_3rdLib/nlohmann
 	url = https://github.com/nlohmann/json.git
+	shallow = true
 [submodule "Extensions/_3rdLib/va_args_iterators"]
 	path = Extensions/_3rdLib/va_args_iterators
 	url = https://github.com/cormacc/va_args_iterators.git
+	shallow = true
 [submodule "Extensions/_3rdLib/CLI11"]
 	path = Extensions/_3rdLib/CLI11
 	url = https://github.com/CLIUtils/CLI11.git
+	shallow = true
 [submodule "Extensions/_3rdLib/WinToast"]
 	path = Extensions/_3rdLib/WinToast
 	url = https://github.com/mohabouje/WinToast.git
+	shallow = true
 [submodule "Extensions/FFMpeg/D3D/Detours"]
 	path = Extensions/FFMpeg/D3D/Detours
 	url = https://github.com/microsoft/Detours.git
+	shallow = true
