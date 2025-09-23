@@ -1,36 +1,72 @@
 #pragma once
 
-#include <SDL_atomic.h>
-#pragma comment(lib, "SDL2.lib")
-
 #include "RingBuffer.h"
 #include "LockHelper.h"
 
-template<typename DataType>
-struct ThreadSafeRingBuffer :public RingBuffer<DataType> {
-	SDL_SpinLock lock = 0;
+template<typename Type, LockConcept LockType = SDL_SpinLock>
+struct ThreadSafeRingBuffer :private RingBuffer<Type> {
+    Lock<LockType> lock;
+    using BufferLockHelper = typename GetLockHelper<LockType>::Type;
+    using Callback = typename RingBuffer<Type>::Callback;
 
-	explicit ThreadSafeRingBuffer(const size_t sz) :RingBuffer<DataType>(sz) {}
+    ThreadSafeRingBuffer() = default;
+    ThreadSafeRingBuffer(const size_t sz) :RingBuffer<Type>(sz) {}
 
-	~ThreadSafeRingBuffer() override {
-		const auto lockHelper = SpinLockHelper(&lock);
-		RingBuffer<DataType>::ReleaseBuffer();
-	}
-
-	void ResetIndex() override {
-		const auto lockHelper = SpinLockHelper(&lock);
-		RingBuffer<DataType>::ResetIndex();
-	}
-    void ResetBuffer() override {
-        const auto lockHelper = SpinLockHelper(&lock);
-        RingBuffer<DataType>::ResetBuffer();
+    ~ThreadSafeRingBuffer() override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::Release();
     }
-	void WriteData(const DataType* pBuf, const size_t sz) override {
-		const auto lockHelper = SpinLockHelper(&lock);
-		RingBuffer<DataType>::WriteData(pBuf, sz);
-	}
-	void ReadData(DataType* pBuf, const size_t sz) override {
-		const auto lockHelper = SpinLockHelper(&lock);
-		RingBuffer<DataType>::ReadData(pBuf, sz);
-	}
+
+    size_t GetElementCount() override {
+        const auto lockHelper = BufferLockHelper(lock);
+        return RingBuffer<Type>::GetElementCount();
+    }
+
+    size_t GetWriteIndex() {
+        const auto lockHelper = BufferLockHelper(lock);
+        return RingBuffer<Type>::writeIndex;
+    }
+
+    size_t GetReadIndex() {
+        const auto lockHelper = BufferLockHelper(lock);
+        return RingBuffer<Type>::readIndex;
+    }
+
+    void WriteData(const Type* pBuf, const size_t sz) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::WriteData(pBuf, sz);
+    }
+    void WriteData(const size_t sz, const Callback& cb) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::WriteData(sz, cb);
+    }
+    void ReadData(Type* pBuf, const size_t sz) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::ReadData(pBuf, sz);
+    }
+    void ReadData(const size_t sz, const Callback& cb) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::ReadData(sz, cb);
+    }
+    void ResetIndex() override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::ResetIndex();
+    }
+    void DiscardUnreadBuffer() override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::DiscardUnreadBuffer();
+    }
+
+    bool Alloc(const size_t sz) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        return RingBuffer<Type>::Alloc(sz);
+    }
+    bool Extend(const size_t sz, int val = 0) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        return RingBuffer<Type>::Extend(sz, val);
+    }
+    void Reset(int val = 0) override {
+        const auto lockHelper = BufferLockHelper(lock);
+        RingBuffer<Type>::Reset(val);
+    }
 };

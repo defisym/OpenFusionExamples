@@ -1,74 +1,96 @@
 #pragma once
 
-#include <cstring>
+#include <cassert>
+#include <algorithm>
+#include <functional>
 
-template<typename DataType>
-struct RingBuffer {
-	DataType* pBuffer = nullptr;
-	size_t bufferSz = 0;
+#include "Buffer.h"
 
-	explicit RingBuffer(const size_t sz) :bufferSz(sz) {
-		AllocBuffer();
-	}
+template<typename Type>
+struct RingBuffer :Buffer<Type> {
+    size_t readIndex = 0;
+    size_t writeIndex = 0;
+    size_t elementCount = 0;
 
-	virtual ~RingBuffer() {
-		ReleaseBuffer();
-	}
+    // TODO: Overflow Not Protected!
+    virtual size_t GetElementCount() { return elementCount; }
 
-    void AllocBuffer() {
-        pBuffer = new DataType[bufferSz];
-        ResetBuffer();
+    RingBuffer() = default;
+    RingBuffer(const size_t sz) :Buffer<Type>(sz) {}
+
+    using Callback = std::function<void(Type*)>;
+
+    // ------------------------
+    // Read & Write logic are almost the same
+    // but allow some spaghetti code here
+    // ------------------------
+
+    // copy pData to buffer
+    virtual void WriteData(const Type* pData, const size_t dataSize) {
+        const auto remain = this->_sz - writeIndex;
+        const auto write = (std::min)(dataSize, remain);
+        const auto left = dataSize - write;
+
+        const auto pStart = this->_pBuf + writeIndex;
+        memcpy(pStart, pData, sizeof(Type) * write);
+
+        elementCount += write;
+        writeIndex += write;
+        if (writeIndex == this->_sz) { writeIndex = 0; }
+
+        if (left == 0) { return; }
+        RingBuffer::WriteData(pData + write, left);
     }
 
-	void ReleaseBuffer() {
-		delete[] pBuffer;
-		pBuffer = nullptr;
-	}
+    // get buffer at current index and forward sz
+    // caller should grantee that pointer and offset are valid
+    // then write data
+    virtual void WriteData(const size_t sz, const Callback& cb) {
+        assert(sz + writeIndex <= this->_sz);
+        auto pStart = this->_pBuf + writeIndex;
+        cb(pStart);
 
-    virtual void ResetBuffer() {
-        memset(pBuffer, 0, sizeof(DataType) * bufferSz);
+        elementCount += sz;
+        writeIndex += sz;
+        if (writeIndex == this->_sz) { writeIndex = 0; }
     }
 
-	// ------------------------
-	// Read & Write logic are almost the same
-	// but allow some spaghetti code here
-	// ------------------------
-	virtual void ResetIndex() {
-		writeIndex = 0;
-		readIndex = 0;
-	}
+    // copy buffer to pBuf
+    virtual void ReadData(Type* pBuf, const size_t sz) {
+        const auto remain = this->_sz - readIndex;
+        const auto read = (std::min)(sz, remain);
+        const auto left = sz - read;
 
-	size_t writeIndex = 0;
+        const auto pStart = this->_pBuf + readIndex;
+        memcpy(pBuf, pStart, sizeof(Type) * read);
 
-	virtual void WriteData(const DataType* pBuf, const size_t sz) {
-		const auto remain = bufferSz - writeIndex;
-		const auto write = (std::min)(sz, remain);
-		const auto left = sz - write;
+        elementCount -= read;
+        readIndex += read;
+        if (readIndex == this->_sz) { readIndex = 0; }
 
-		const auto pStart = pBuffer + writeIndex;
-		memcpy(pStart, pBuf, sizeof(DataType) * write);
+        if (left == 0) { return; }
+        RingBuffer::ReadData(pBuf + read, left);
+    }
 
-		writeIndex += write;
-		if (writeIndex == bufferSz) { writeIndex = 0; }
+    // get buffer at current index and forward sz
+    // caller should grantee that pointer and offset are valid
+    // then read data
+    //
+    // return nullptr if data not enough (readIndex + sz > writeIndex)
+    virtual void ReadData(const size_t sz, const Callback& cb) {
+        assert(sz + readIndex <= this->_sz);
+        //if (readIndex + sz > writeIndex) { cb(nullptr); return; }
+        if (elementCount == 0) { cb(nullptr); return; }
 
-		if (left == 0) { return; }
-		RingBuffer::WriteData(pBuf + write, left);
-	}
+        auto pStart = this->_pBuf + readIndex;
+        cb(pStart);
 
-	size_t readIndex = 0;
+        elementCount -= sz;
+        readIndex += sz;
+        if (readIndex == this->_sz) { readIndex = 0; }
+    }
 
-	virtual void ReadData(DataType* pBuf, const size_t sz) {
-		const auto remain = bufferSz - readIndex;
-		const auto read = (std::min)(sz, remain);
-		const auto left = sz - read;
+    virtual void ResetIndex() { writeIndex = 0; readIndex = 0; }
 
-		const auto pStart = pBuffer + readIndex;
-		memcpy(pBuf, pStart, sizeof(DataType) * read);
-
-		readIndex += read;
-		if (readIndex == bufferSz) { readIndex = 0; }
-
-		if (left == 0) { return; }
-		RingBuffer::ReadData(pBuf + read, left);
-	}
+    virtual void DiscardUnreadBuffer() { readIndex = writeIndex; elementCount = 0; }
 };
