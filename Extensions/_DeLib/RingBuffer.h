@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef OFE_RINGBUFFER_H
+#define OFE_RINGBUFFER_H
+
 #include <cassert>
 #include <algorithm>
 #include <functional>
@@ -94,3 +97,5 @@ struct RingBuffer :Buffer<Type> {
 
     virtual void DiscardUnreadBuffer() { readIndex = writeIndex; elementCount = 0; }
 };
+
+#endif // OFE_RINGBUFFER_H

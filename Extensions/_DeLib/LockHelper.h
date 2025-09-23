@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef OFE_LOCKHELPER_H
+#define OFE_LOCKHELPER_H
+
 // ------------------------------------------------
 // Include
 // ------------------------------------------------
@@ -160,3 +163,5 @@ template<>
 struct GetManualLockHelper<SDL_mutex> {
     using Type = MutexLockManualHelper;
 };
+
+#endif // OFE_LOCKHELPER_H

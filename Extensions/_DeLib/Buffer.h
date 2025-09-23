@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef OFE_BUFFER_H
+#define OFE_BUFFER_H
+
 #include <cstring>
 
 template<typename Type>
@@ -116,3 +119,5 @@ struct IndexBuffer :Buffer<Type> {
     // return current pointer
     Type* GetData() { return this->GetBuffer() + index; }
 };
+
+#endif // OFE_BUFFER_H

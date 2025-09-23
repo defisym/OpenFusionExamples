@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef OFE_THREADSAFERINGBUFFER_H
+#define OFE_THREADSAFERINGBUFFER_H
+
 #include "RingBuffer.h"
 #include "LockHelper.h"
 
@@ -70,3 +73,5 @@ struct ThreadSafeRingBuffer :private RingBuffer<Type> {
         RingBuffer<Type>::Reset(val);
     }
 };
+
+#endif // OFE_THREADSAFERINGBUFFER_H
