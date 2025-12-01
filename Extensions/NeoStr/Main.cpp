@@ -399,58 +399,87 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 	std::wstring FilePath = GetFullPathNameStr((LPCTSTR)CNC_GetStringParameter(rdPtr));
 	LPCTSTR Key = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	bool bFromMem = !StrEmpty(Key);
-	Encryption* E = nullptr;
-
-	if (bFromMem) {
-		E = new Encryption;
-		E->GenerateKey(Key);
-
-		E->OpenFile(FilePath.c_str());
-		E->Decrypt();
-	}
-
-	int ret = 0;
-	DWORD fontNum = 0;
-
-	auto flags = FR_PRIVATE;
-
-	//ret = RemoveFontResourceEx(FilePath.c_str(), flags, 0);
-	ret = bFromMem
-		? (int)AddFontMemResourceEx(E->GetOutputData(), E->GetOutputDataLength(), 0, &fontNum)
-		: AddFontResourceEx(FilePath.c_str(), flags, 0);
-
-	if (ret == 0) {
-		return 0;
-	}
-
-	auto gdipRet = bFromMem
-		? rdPtr->pData->pFontCollection->AddMemoryFont(E->GetOutputData(), E->GetOutputDataLength())
-		: rdPtr->pData->pFontCollection->AddFontFile(FilePath.c_str());
-
-	if (gdipRet != Gdiplus::Status::Ok) {
-		return 0;
-	}
+	bool bFromMem = !StrEmpty(Key);	
 
 	auto fontNames = bFromMem
-		? GetFontNameFromFile((LPCWSTR)E->GetOutputData(), E->GetOutputDataLength())
+		? GetFontNameFromFile((LPCWSTR)pE->GetOutputData(), pE->GetOutputDataLength())
 		: GetFontNameFromFile(FilePath.c_str());
+	
+	// already embedded
+	if (rdPtr->pData->FontEmbed(fontNames)){
+		return 0;
+	}
 
-	delete E;
+	std::unique_ptr<Encryption> pE = nullptr;
+	
+	if (bFromMem) {
+		pE = std::make_unique<Encryption>();		
+		pE->GenerateKey(Key);
+
+		pE->OpenFile(FilePath.c_str());
+		pE->Decrypt();
+	}
+
+	struct GDIEmbedHelper {
+		HANDLE hMem = nullptr;
+		DWORD fontNum = 0;
+
+		DWORD flags = FR_PRIVATE;
+
+		bool EmbedFontFromMemory(PVOID pFileView, DWORD cjSizes){
+			hMem = AddFontMemResourceEx(pFileView, cjSizes, 0, &fontNum);
+			return hMem != nullptr;
+		}
+		bool RemoveFontFromMemory(){
+			return RemoveFontMemResourceEx(hMem);
+		}
+
+		bool EmbedFontFromFile(LPCWSTR pName){
+			fontNum = AddFontResourceEx(pName, flags, 0) != 0;
+			return fontNum != 0;
+		}
+		bool RemoveFontFromFile(LPCWSTR pName) {
+			return RemoveFontResourceEx(pName, flags, 0);
+		}
+	};
+
+	GDIEmbedHelper gdiEmbedHelper = {};
+
+	// GDI embed, compatible with Fusion built-in string under D3D9
+	// aka replace the old font embed object
+	auto bGDIEmbed = bFromMem
+		? gdiEmbedHelper.EmbedFontFromMemory(pE->GetOutputData(), pE->GetOutputDataLength())
+		: gdiEmbedHelper.EmbedFontFromFile(FilePath.c_str());
+
+	if (!bGDIEmbed) { return 0;	}
+
+	// NeoStr embed
+	auto bNeoStrEmbed = bFromMem
+		?rdPtr->pData->EmbedFontFromMemory((const char*)pE->GetOutputData(),
+			(size_t)pE->GetOutputDataLength());
+		:rdPtr->pData->EmbedFontFromFile(FilePath);
 
 #ifdef _FONTEMBEDDEBUG
 	MSGBOX((std::wstring)L"Embed " + FilePath +
-		(std::wstring)(gdipRet != Gdiplus::Status::Ok
-			? L" Not OK"
-			: L" OK"));
- 
-	auto font = rdPtr->pData->pFontCollection->GetFamilyCount();
- 
+		(std::wstring)(bNeoStrEmbed ? L" Not OK" : L" OK"));
+
 	for (auto& i : fontNames) {
 		wprintf(L"%s\n", i.c_str());
 		//std::wcout << i << std::endl;
 	}
 #endif // _FONTEMBEDDEBUG
+
+	// rollback if NeoStr embed failed
+	if (!bNeoStrEmbed) {
+		auto bGDIRemove = bFromMem
+			? gdiEmbedHelper.RemoveFontFromMemory()
+			: gdiEmbedHelper.RemoveFontFromFile(FilePath.c_str());
+
+		return 0;
+	}
+
+	// embed success, add to embed list
+	rdPtr->pData->AddEmbedFont(fontNames);
 
 	//refresh objects
 	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
