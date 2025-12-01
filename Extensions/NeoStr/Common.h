@@ -137,13 +137,13 @@ struct GlobalData {
 	bool EmbedFontFromFile(const std::wstring& filePath){
 		auto gdipRet = pFontCollection->AddFontFile(filePath.c_str());
 		
-		return == Gdiplus::Status::Ok
+        return gdipRet == Gdiplus::Status::Ok;
 	}
 
 	bool EmbedFontFromMemory(const char* pData, const size_t sz){
-		auto gdipRet = pFontCollection->AddMemoryFont((const PBYTE)pData, (DWORD)sz)
-		
-		return == Gdiplus::Status::Ok
+        auto gdipRet = pFontCollection->AddMemoryFont((const PBYTE)pData, (DWORD)sz);
+
+        return gdipRet == Gdiplus::Status::Ok;
 	}
 };
 
