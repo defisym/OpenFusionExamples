@@ -406,7 +406,7 @@ inline bool StringViewIEqu(const std::wstring_view& l, const std::wstring_view& 
 	}
 
 	for (size_t i = 0; i < length; i++) {
-		if (CharIEqu(l[i], r[i]) != 0) {
+		if (!CharIEqu(l[i], r[i])) {
 			return false;
 		}
 	}
@@ -422,7 +422,7 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 	}
 
 	for (size_t i = 0; i < length; i++) {
-		if (CharIEqu(str[i], pStr[i]) != 0) {
+		if (!CharIEqu(str[i], pStr[i])) {
 			return false;
 		}
 	}
@@ -453,7 +453,7 @@ inline bool StringIAppend(const LPCWSTR pL, const LPCWSTR pR) {
 	if (lLength > rLength) { return false; }
 
 	for (size_t i = 0; i < lLength; i++) {
-		if (CharIEqu(pL[i], pR[i]) != 0) {
+		if (!CharIEqu(pL[i], pR[i])) {
 			return false;
 		}
 	}
