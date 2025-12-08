@@ -62,17 +62,22 @@ struct Buffer {  // NOLINT(cppcoreguidelines-special-member-functions)
     Type* GetBuffer() { return _pBuf; }
 };
 
-template<typename Type = ORLProcessValueType>
-void CopyToBuffer(Buffer<Type>* pBuf, const Type* pSrc, const size_t sz) {
-    pBuf->Alloc(sz);   // size will be updated in alloc
+template<typename Source, typename Type = ORLProcessValueType>
+void CopyToBuffer(Buffer<Type>* pBuf, const Source* pSrc, const size_t sz) {
+	pBuf->Alloc(sz);   // size will be updated in alloc
 	pBuf->Reset();
-    memcpy(pBuf->_pBuf, pSrc, sizeof(Type) * sz);
-}
 
-// convert if possible
+	if constexpr (std::is_same_v<Type, std::decay_t<Source>>) {
+		memcpy(pBuf->_pBuf, pSrc, sizeof(Type) * sz);
+	}
+	// convert if possible
+	for (size_t idx = 0; idx < sz; idx++) {
+		pBuf->_pBuf[idx] = static_cast<Type>(pSrc[idx]);
+	}
+}
 template<typename Source, typename Type = ORLProcessValueType>
 void CopyToBuffer(Buffer<Type>* pBuf, const Source& src, const size_t sz) {
-    CopyToBuffer(pBuf, static_cast<const Type*>(src), sz);
+	CopyToBuffer(pBuf, static_cast<const Type*>(src), sz);
 }
 
 template<typename Type = ORLProcessValueType>
