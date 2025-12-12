@@ -8,6 +8,8 @@ constexpr auto SDLGeneral_BufferSize = 4096;
 constexpr auto SDLGeneralException_SDLInitFailed = -1;
 constexpr auto SDLGeneralException_MixOpenAudioFailed = -2;
 
+inline static size_t InitCount = 0u;
+
 // Init SDL with check, to make extensions compatible
 // SDL mixer will close previous channels if already initialized, which may crash
 // All extensions shares the same audio params
@@ -28,5 +30,17 @@ inline void SDL_GeneralInit() {
 
             throw SDLGeneralException_MixOpenAudioFailed;
         }
+    }
+
+    ++InitCount;
+}
+
+inline void SDL_GeneralQuit() {
+    if (InitCount == 0u) { return; }
+
+    --InitCount;
+    if (InitCount == 0u) {
+        Mix_CloseAudio();
+        SDL_Quit();
     }
 }

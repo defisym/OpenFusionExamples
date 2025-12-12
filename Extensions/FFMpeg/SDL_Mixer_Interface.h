@@ -99,15 +99,15 @@ private:
         pAudioDatas.clear();
     }
 
+    size_t initCount = 0u;
+
 public:
     SMI() {        
-        SDL_GeneralInit();
+        SDL_GeneralInit();        
     }
     ~SMI() override {
         ReleaseAudioData();
-
-        Mix_CloseAudio();
-        SDL_Quit();
+        SDL_GeneralQuit();
     }
 
     inline void AddInstance(FFMpeg** ppFFMpeg, void* pData) override {

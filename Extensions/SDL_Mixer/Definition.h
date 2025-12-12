@@ -271,8 +271,7 @@ struct GlobalData {
 
 		soundtouch_destroyInstance(hSoundTouch);		
 
-		Mix_CloseAudio();
-		SDL_Quit();
+		SDL_GeneralQuit();
 	}
 
 	// ------------
