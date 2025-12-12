@@ -28,7 +28,10 @@
 #include	"Surface.h"
 
 // My lib
+#include	<vector>
 #include	<string>
+#include	<memory>
+
 #include	"FormatByVector.h"
 
 class NeoStr;
@@ -76,6 +79,7 @@ struct GlobalData {
 	NeoStr::CharSizeCacheWithFont* pCharSzCacheWithFont;
 	NeoStr::RegexHandler* pRegexHandler;
 
+	std::vector<std::wstring> embedFontList;
 	PrivateFontCollection* pFontCollection;
 	NeoStr::IConData* pIConData;
 
@@ -106,6 +110,40 @@ struct GlobalData {
 		NeoStr::Release(pRegexHandler);
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
+	}
+
+	// return true if all font names are added
+	// do not call embed
+	bool FontEmbed(const FontNames& fontNames) {
+		for (const auto& fontName : fontNames) {
+			auto it = std::find(embedFontList.begin(), embedFontList.end(), fontName);
+			if (it == embedFontList.end()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	void AddEmbedFont(const FontNames& fontNames){
+		for (const auto& fontName : fontNames) {
+			auto it = std::find(embedFontList.begin(), embedFontList.end(), fontName);
+			if (it == embedFontList.end()) {
+				embedFontList.push_back(fontName);
+			}
+		}
+	}
+
+	bool EmbedFontFromFile(const std::wstring& filePath){
+		auto gdipRet = pFontCollection->AddFontFile(filePath.c_str());
+		
+        return gdipRet == Gdiplus::Status::Ok;
+	}
+
+	bool EmbedFontFromMemory(const char* pData, const size_t sz){
+        auto gdipRet = pFontCollection->AddMemoryFont((const PBYTE)pData, (DWORD)sz);
+
+        return gdipRet == Gdiplus::Status::Ok;
 	}
 };
 
