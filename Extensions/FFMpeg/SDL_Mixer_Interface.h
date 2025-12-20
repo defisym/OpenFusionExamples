@@ -103,7 +103,7 @@ private:
 
 public:
     SMI() {        
-        SDL_GeneralInit();        
+        SDL_GeneralInit();
     }
     ~SMI() override {
         ReleaseAudioData();
