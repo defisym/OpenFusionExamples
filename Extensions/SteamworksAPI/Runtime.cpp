@@ -82,7 +82,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 
 		rdPtr->pData->GetSteamUtilities([&] (SteamUtilities* pSteamUtil) {
 			if (edPtr->bReportError) {
-				SteamUtilities::SetErrorHandler();
+                pSteamUtil->SetErrorHandler();
 			}
 
 			switch (edPtr->NotificationPosition) {

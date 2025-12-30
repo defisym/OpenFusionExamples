@@ -116,10 +116,13 @@ namespace WindowsException {
         return EXCEPTION_CONTINUE_SEARCH;
     }
 
-    inline void SetSEHFilter(LPTOP_LEVEL_EXCEPTION_FILTER filter = DefaultFilter) {
-        SetUnhandledExceptionFilter(filter);
+    inline LPTOP_LEVEL_EXCEPTION_FILTER SetSEHFilter(LPTOP_LEVEL_EXCEPTION_FILTER filter = DefaultFilter) {
+        return SetUnhandledExceptionFilter(filter);
     }
-    inline void SetVEHFilter(PVECTORED_EXCEPTION_HANDLER filter = DefaultFilter) {
-        AddVectoredExceptionHandler(1, filter);
+    inline PVOID SetVEHFilter(PVECTORED_EXCEPTION_HANDLER filter = DefaultFilter) {
+        return AddVectoredExceptionHandler(1, filter);
+    }
+    inline void RemoveVEHFilter(PVOID filter) {
+        RemoveVectoredExceptionHandler(filter);
     }
 }

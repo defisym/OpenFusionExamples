@@ -93,19 +93,20 @@ public:
 	}
 	~SteamUtilities() {
 		PP_EACH(DELETE_CLASS, REFRESH_CLASS, CALLBACK_CLASS, GENERAL_CLASS);
+        RemoveErrorHandler();
 	}
 
 	//------------
 	// Error
 	//------------
+    
+    PVOID hFilter = nullptr;
 
-	static inline void SetErrorHandler() {
+	inline void SetErrorHandler() {
 #ifdef WIN32
-		if(IsDebuggerPresent()) {
-			return;
-		}
+        if (IsDebuggerPresent()) { return; }
 
-		WindowsException::SetVEHFilter([](EXCEPTION_POINTERS* pExceptionInfo)->LONG {
+        hFilter = WindowsException::SetVEHFilter([](EXCEPTION_POINTERS* pExceptionInfo)->LONG {
 			const auto code = pExceptionInfo->ExceptionRecord->ExceptionCode;
 
 			if (!WindowsException::ExceptionUnknown(code)) {
@@ -122,6 +123,13 @@ public:
 		});
 #endif
 	}
+
+    inline void RemoveErrorHandler() {
+        if (!hFilter) { return; }
+
+        WindowsException::RemoveVEHFilter(hFilter);
+        hFilter = nullptr;
+    }
 
 	//------------
 	// Impl Class
