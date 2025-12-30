@@ -4,6 +4,8 @@
 
 Alternative Steamworks object, compatible (maybe) with ten-years-old original one.
 
+If you want to drop the compatibility, you can disable the macro `CompatibleWithSteamworksObject` in `SteamInclude.h` then use `steam_api.dll` directly.
+
 ## Update SDK
 
 as lib file will use steam_api.dll by default, which is conflict with built-in ones, so we need to modify it to load new ones...

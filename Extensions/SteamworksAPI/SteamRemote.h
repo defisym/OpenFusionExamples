@@ -67,8 +67,4 @@ public:
 			callBack(unSessionID);
 		}
 	}
-
-	static inline bool StartRemotePlayTogether(bool bShowOverlay = true) {
-		return SteamRemotePlay()->BStartRemotePlayTogether(bShowOverlay);
-	}
 };
