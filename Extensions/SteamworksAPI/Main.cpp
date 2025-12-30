@@ -264,7 +264,10 @@ short WINAPI DLLExport Action_AddToStat(LPRDATA rdPtr, long param1, long param2)
 	const auto pStatName = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 	const auto data = (int)CNC_GetIntParameter(rdPtr);
 
-	
+    rdPtr->pData->GetSteamUtilities([&] (const SteamUtilities* pSteamUtil) {
+        pSteamUtil->GetSteamAchAndStat()->AddStat(pStatName, data);
+    });
+
 	return 0;
 }
 

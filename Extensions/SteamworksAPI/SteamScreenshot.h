@@ -10,6 +10,8 @@ public:
 private:
 	ScreenshotHandle handle = NULL;
 
+    static constexpr size_t ScreenshotReady = 0;
+
 	inline void InitCallback() override {
 		AddCallback(GetCallBack<ScreenshotReady_t>([&] (const ScreenshotReady_t* pCallback) {
 			const auto bSuccess = pCallback->m_eResult == k_EResultOK;
@@ -33,7 +35,7 @@ public:
 
 	template <CStyleStrConcept Name>
 	inline bool SetLocation(const Name pchLocation) {
-		if(!GetCallbackStat()) {
+		if(!GetCallbackStat(ScreenshotReady)) {
 			return false;
 		}
 
@@ -46,7 +48,7 @@ public:
 	}
 
 	inline bool TagPublishedFile(const PublishedFileId_t unPublishedFileID) const {
-		if (!GetCallbackStat()) {
+		if (!GetCallbackStat(ScreenshotReady)) {
 			return false;
 		}
 
@@ -54,7 +56,7 @@ public:
 	}
 	
 	inline bool TagUser(const CSteamID steamID) const {
-		if (!GetCallbackStat()) {
+		if (!GetCallbackStat(ScreenshotReady)) {
 			return false;
 		}
 
