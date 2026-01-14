@@ -242,7 +242,7 @@ public:
 	}
 
 	inline void EOSLogout(const LogResultCallback& callback = defaultCb) {
-		if (!pEOSUtilities && pEOSUtilities->State() < EOSState::AuthSuccess) {
+		if (!pEOSUtilities || pEOSUtilities->State() < EOSState::AuthSuccess) {
 			callback(this, false);
 
 			return;
