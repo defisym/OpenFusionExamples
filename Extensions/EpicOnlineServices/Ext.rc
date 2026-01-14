@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "EpicOnlineServices\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "EpicOnlineServices\0"
-            VALUE "LegalCopyright", "Copyright 2023~2025 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2023~2026 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "EpicOnlineServices.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -279,9 +279,9 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "EpicOnlineServices"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2023~2025 Defisym"
+    IDST_COPYRIGHT          "Copyright 2023~2026 Defisym"
     IDST_COMMENT            "EpicOnlineServices"
-    IDST_HTTP               "https://twitter.com/defisym"
+    IDST_HTTP               "https://github.com/defisym/OpenFusionExamples"
 END
 
 STRINGTABLE DISCARDABLE 
