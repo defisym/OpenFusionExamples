@@ -93,6 +93,13 @@ inline bool GlobalData::EOSInit(LPEDATA edPtr) {
 	platOpt.ClientCredentials.ClientId = clientId.c_str();
 	platOpt.ClientCredentials.ClientSecret = clientSecret.c_str();
 
+    // D3D9 compatibility
+    // see: https://dev.epicgames.com/docs/epic-online-services/working-with-the-eos-sdk/eos-overlay-overview
+    const auto sfDrv = WinGetSurfaceDriver(rdPtr);
+    if (sfDrv == SD_D3D9) {
+        platOpt.Flags |= EOS_PF_WINDOWS_ENABLE_OVERLAY_D3D9;
+    }
+
 	// runtime
 	EOSUtilities_RuntimeOptions runtimeOpt{};
 
