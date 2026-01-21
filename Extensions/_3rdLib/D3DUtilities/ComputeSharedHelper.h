@@ -98,6 +98,7 @@ struct ComputeSharedHelper {
 
     // CS should clean up after dispatch
     // use this method to automatically clean up
+    // https://learn.microsoft.com/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-dispatch
     inline void Dispatch(ID3D11DeviceContext* pDeviceCtx,
         UINT ThreadGroupCountX,
         UINT ThreadGroupCountY,
