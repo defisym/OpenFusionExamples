@@ -43,4 +43,13 @@ struct ShaderResourceCompiler :ShaderCompiler {
 
         return ShaderCompiler::CreatePixelShader(pData, sz, pEntryPoint, pTarget);
     }
+
+    [[nodiscard]] ShaderCompiler::ComputeShaderBundle CreateComputeShader(const HMODULE hModule, const int resourceId,
+    const char* pEntryPoint = ShaderCompiler::DEFAULT_ENTRYPOINT,
+    const char* pTarget = ShaderCompiler::DEFAULT_TARGET) {
+        const auto [pData, sz] = GetShaderResource(hModule, resourceId);
+        if (pData == nullptr) { return ShaderCompiler::GetNullBundle<ShaderCompiler::ComputeShaderBundle>(); }
+
+        return ShaderCompiler::CreateComputeShader(pData, sz, pEntryPoint, pTarget);
+    }
 };

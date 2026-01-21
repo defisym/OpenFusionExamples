@@ -31,6 +31,9 @@ struct ShaderCompiler {
     using PixelShader = ComPtr<ID3D11PixelShader>;
     using PixelShaderBundle = decltype(std::make_tuple(Blob{}, PixelShader{}));
 
+    using ComputeShader = ComPtr<ID3D11ComputeShader>;
+    using ComputeShaderBundle = decltype(std::make_tuple(Blob{}, ComputeShader{}));
+
     template<typename T>
     static T GetNullBundle() {
         return std::make_tuple(nullptr, nullptr);
@@ -209,6 +212,65 @@ struct ShaderCompiler {
         }
 
         return CreatePixelShader(pixelShaderBlob);
+    }
+#endif
+
+
+    // ------------------------------------------
+    // Compile ComputeShader
+    // ------------------------------------------
+
+#ifdef PRE_COMPILE_SHADER
+    [[nodiscard]] ComputeShaderBundle CreateComputeShader(const void* pShaderBytecode, SIZE_T bytecodeLength) {
+        ComputeShader computeShader;
+        if (FAILED(pDevice->CreateComputeShader(
+            pShaderBytecode,
+            bytecodeLength,
+            nullptr,
+            &computeShader))) {
+            errorMsg = "D3D11: Failed to compile compute shader\n";
+            return GetNullBundle<ComputeShaderBundle>();
+        }
+
+        return std::make_tuple(nullptr, computeShader);
+    }
+#else
+    [[nodiscard]] ComputeShaderBundle CreateComputeShader(const Blob& computeShaderBlob) {
+        ComputeShader computeShader;
+        if (FAILED(pDevice->CreateComputeShader(
+            computeShaderBlob->GetBufferPointer(),
+            computeShaderBlob->GetBufferSize(),
+            nullptr,
+            &computeShader))) {
+            errorMsg = "D3D11: Failed to compile compute shader\n";
+            return GetNullBundle<ComputeShaderBundle>();
+        }
+
+        return std::make_tuple(computeShaderBlob, computeShader);
+    }
+
+    [[nodiscard]] ComputeShaderBundle CreateComputeShader(const void* pData, const size_t sz,
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
+        Blob computeShaderBlob = nullptr;
+        if (!CompileShader(pData, sz,
+            pEntryPoint, std::format("cs_{}", pTarget).c_str(),
+            computeShaderBlob)) {
+            return GetNullBundle<ComputeShaderBundle>();
+        }
+
+        return CreateComputeShader(computeShaderBlob);
+    }
+
+    [[nodiscard]] ComputeShaderBundle CreateComputeShader(const wchar_t* pFileName,
+        const char* pEntryPoint = DEFAULT_ENTRYPOINT, const char* pTarget = DEFAULT_TARGET) {
+        Blob computeShaderBlob = nullptr;
+        if (!CompileShader(pFileName,
+            pEntryPoint, std::format("cs_{}", pTarget).c_str(),
+            computeShaderBlob)) {
+            return GetNullBundle<ComputeShaderBundle>();
+        }
+
+        return CreateComputeShader(computeShaderBlob);
     }
 #endif
 };
