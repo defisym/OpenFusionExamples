@@ -109,11 +109,11 @@ struct ComputeSharedHelper {
             ThreadGroupCountZ);
 
         // Unbind the input textures from the CS for good housekeeping
-        ID3D11ShaderResourceView* nullSRV[] = { NULL };
+        ID3D11ShaderResourceView* nullSRV[] = { nullptr };
         pDeviceCtx->CSSetShaderResources(0, 1, nullSRV);
 
         // Unbind output from compute shader
-        ID3D11UnorderedAccessView* nullUAV[] = { NULL };
+        ID3D11UnorderedAccessView* nullUAV[] = { nullptr };
         pDeviceCtx->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
     }
 };
