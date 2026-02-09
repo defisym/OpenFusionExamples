@@ -810,32 +810,73 @@ private:
 
 public:
 	struct RegexHandler {
-		wchar_t regstr[2] = { L'\0' };
+		wchar_t regstr[2] = { L'\0', L'\0' };
 
-		wregex* pCJK = nullptr;
+		wregex* pWordBreak = nullptr;
 		wregex* pEmpty = nullptr;
 		wregex* pEmptyStr = nullptr;
 
 		using RegexCache = std::map<wchar_t, bool>;
 
-		RegexCache CJKCache;
+		RegexCache WordBreakCache;
 		RegexCache EmptyCache;
+
+        // reference
+        // previously a complex regex was used
+        //  https://www.jianshu.com/p/fcbc5cd06f39
+        //  filter -> match == no CJK, may miss some part, so add [a-zA-Z]
+        //  L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
+        inline std::wstring BuildWordBreakRegex() {
+            // not word
+            std::wstring notWordRegStr = {};
+
+            notWordRegStr += L"\\x{D800}-\\x{DFFF}";        // surrogate
+
+            notWordRegStr += L"\\x{4E00}-\\x{9FFF}";        // CJK Unified Ideographs
+            notWordRegStr += L"\\x{3040}-\\x{30FF}";        // Hiragana + Katakana
+            //notWordRegStr += L"\\x{AC00}-\\x{D7AF}";        // Hangul
+            
+            // word
+            std::wstring wordRegStr = {};
+
+            wordRegStr += L"0-9";                           // number
+            wordRegStr += L"a-zA-Z";                        // Basic Latin
+            wordRegStr += L"\\x{00C0}-\\x{024F}";           // Latin-1 / Extended
+            wordRegStr += L"\\x{0370}-\\x{03FF}";           // Greek
+            wordRegStr += L"\\x{0400}-\\x{04FF}";           // Cyrillic
+            wordRegStr += L"\\x{AC00}-\\x{D7AF}";           // Hangul
+
+            return std::format(L"(?![{}])[{}]", notWordRegStr, wordRegStr);
+        }
+
+#ifdef  _DEBUG
+        // check a set of characters match regex
+        //wchar_t wChars[] = { L'a',L'b', L'c', L'd' };
+        //auto bMatch = CheckRegex(wChars, wcslen(wChars), pRegex);
+        inline bool CheckRegex(const wchar_t* wChars, const size_t sz,
+            wregex* pRegex) {
+            auto bRet = true;
+            wchar_t regstr[2] = { L'\0', L'\0' };
+
+            for (size_t i = 0; i < sz; i++) {
+                regstr[0] = wChars[i];
+                bRet &= regex_match(regstr, *pRegex);
+            }
+
+            return bRet;
+        }
+#endif //  _DEBUG
 
 		RegexHandler() {
 			constexpr auto defaultRegexFlag = static_cast<RegexFlag>(ECMAScript | optimize);
 
-			// https://www.jianshu.com/p/fcbc5cd06f39
-			// filter -> match == no CJK, may miss some part, so add [a-zA-Z]
-			this->pCJK = new wregex(L"[a-zA-Z\\u2E80-\\uA4CF\\uF900-\\uFAFF\\uFE10-\\uFE1F\\uFE30-\\uFE4F\\uFF00-\\uFFEF]"
-				, defaultRegexFlag);
-			this->pEmpty = new wregex(L"[\\s]"
-				, defaultRegexFlag);
-			this->pEmptyStr = new wregex(L"[\\s]*"
-				, defaultRegexFlag);
+			this->pWordBreak = new wregex(BuildWordBreakRegex(), defaultRegexFlag);
+            this->pEmpty = new wregex(L"[\\s]", defaultRegexFlag);
+            this->pEmptyStr = new wregex(L"[\\s]*", defaultRegexFlag);
 		}
 		~RegexHandler() {
-			delete this->pCJK;
-			this->pCJK = nullptr;
+			delete this->pWordBreak;
+			this->pWordBreak = nullptr;
 
 			delete this->pEmpty;
 			this->pEmpty = nullptr;
@@ -862,10 +903,10 @@ public:
 			//return regex_match(regstr, *pRegex);
 		}
 
-		inline bool NotCJK(const wchar_t wChar) {
-			return RegexCore(this->pCJK, &this->CJKCache, wChar);
+		inline bool WordBreak(const wchar_t wChar) {
+			return RegexCore(this->pWordBreak, &this->WordBreakCache, wChar);
 		}
-
+            
 		inline bool NotEmpty(const wchar_t wChar) {
 			return !RegexCore(this->pEmpty, &this->EmptyCache, wChar);
 		}
@@ -877,22 +918,6 @@ public:
 
 private:
 	RegexHandler* pRegexCache;
-
-#ifdef  _DEBUG
-	// check a set of characters match regex
-	//wchar_t wChars[] = { L'a',L'b', L'c', L'd' };
-	//auto bMatch = CheckRegex(wChars, 4, &NeoStr::NotCJK);
-	inline bool CheckRegex(const wchar_t* wChars, const size_t sz
-		, bool (NeoStr::* regex)(wchar_t)) {
-		auto bRet = true;
-
-		for (size_t i = 0; i < sz; i++) {
-			bRet &= (this->*regex)(wChars[i]);
-		}
-
-		return bRet;
-	}
-#endif //  _DEBUG
 
 	inline int GetStartPosX(const long totalWidth, const long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
@@ -3109,8 +3134,8 @@ public:
 		bool bNegRowSpace = nRowSpace < 0;
 
 		bool bInWord = false;
-		size_t notCJKStart = -1;
-		size_t notCJKStartWidth = -1;
+		size_t wordBreakStart = -1;
+		size_t wordBreakStartWidth = -1;
 
 		size_t notAtStartCharPos = -1;
 		bool bPunctuationSkip = false;
@@ -3168,35 +3193,35 @@ public:
 				});
 
 				// word break
-				auto bCurNotCJK = pRegexCache->NotCJK(curChar);
+				auto bCurWordBreak = pRegexCache->WordBreak(curChar);
 
 				auto InWord = [&] () {
 					bInWord = true;
 
-					notCJKStart = pChar;
-					notCJKStartWidth = curWidth;
+					wordBreakStart = pChar;
+					wordBreakStartWidth = curWidth;
 					};
 
 				auto OutWord = [&] () {
 					bInWord = false;
 
-					//notCJKStart = -1;
-					//notCJKStartWidth = -1;
+					//wordBreakStart = -1;
+					//wordBreakStartWidth = -1;
 					};
 
-				auto WB_AbleToNextLine = [&] () {return (curWidth - notCJKStartWidth) < (size_t)rcWidth; };
+				auto WB_AbleToNextLine = [&] () {return (curWidth - wordBreakStartWidth) < (size_t)rcWidth; };
 				auto WB_Backword = [&] () {
-					pChar = notCJKStart;
-					curWidth = notCJKStartWidth;
+					pChar = wordBreakStart;
+					curWidth = wordBreakStartWidth;
 
 					OutWord();
 					};
 
-				if (bCurNotCJK && !bInWord) {
+				if (bCurWordBreak && !bInWord) {
 					InWord();
 				}
 
-				if (!bCurNotCJK && bInWord) {
+				if (!bCurWordBreak && bInWord) {
 					OutWord();
 				}
 
@@ -3251,27 +3276,14 @@ public:
 					}
 
 					// word break
-					if (bInWord) {
-						// merge
-						auto bMerge = false;
-
-						//if (nextChar != L'\0') {
-						//	auto nextNextChar = pCurChar[2];
-						//	bMerge = NotCJK(nextChar) && !NotCJK(nextNextChar);
-						//}
-
-						if (bMerge) {
-							pChar += 2;
-
-							break;
-						}
+					if (bInWord) {					
 						// next line
-						else if (WB_AbleToNextLine()) {
+						if (WB_AbleToNextLine()) {
 							WB_Backword();
 
 							break;
 						}
-						// too narrow, do nothing
+						// word is longer than line, do nothing
 						else {
 
 						}
@@ -3296,7 +3308,7 @@ public:
 							return;
 						}
 
-						if (pRegexCache->NotCJK(PreviousChar)) {
+						if (pRegexCache->WordBreak(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
 							}
@@ -3801,7 +3813,7 @@ public:
 #else
 					// https://blog.csdn.net/stevenkoh/article/details/22777295
 					const auto firstChar = (pText + curStrPos.start)[0];
-					const auto coef = pRegexCache->NotCJK(firstChar) ? 2.75 : 8;
+					const auto coef = pRegexCache->WordBreak(firstChar) ? 2.75 : 8;
 
 					return static_cast<int>(pCharSizeArr[curStrPos.start].width / coef);
 #endif
