@@ -116,4 +116,19 @@ struct ComputeSharedHelper {
         ID3D11UnorderedAccessView* nullUAV[8] = { };
         pDeviceCtx->CSSetUnorderedAccessViews(0, std::size(nullUAV), nullUAV, 0);
     }
+
+    inline void DispatchIndirect(ID3D11DeviceContext* pDeviceCtx,
+        ID3D11Buffer* pBufferForArgs, 
+        UINT AlignedByteOffsetForArgs) {
+        // Dispatch
+        pDeviceCtx->DispatchIndirect(pBufferForArgs, AlignedByteOffsetForArgs);
+
+        // Unbind the input textures from the CS for good housekeeping
+        ID3D11ShaderResourceView* nullSRV[8] = { };
+        pDeviceCtx->CSSetShaderResources(0, std::size(nullSRV), nullSRV);
+
+        // Unbind output from compute shader
+        ID3D11UnorderedAccessView* nullUAV[8] = { };
+        pDeviceCtx->CSSetUnorderedAccessViews(0, std::size(nullUAV), nullUAV, 0);
+    }
 };
