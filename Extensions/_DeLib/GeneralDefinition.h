@@ -19,7 +19,7 @@
 // ------------------------------------------
 // Macro Helper
 // ------------------------------------------
-
+#if defined(MMFEXT) || defined(PROEXT)
 #define Empty_Str	_T("")
 #define Default_Str	_T("")
 
@@ -47,6 +47,7 @@
 #define GetExtUserData() MV->mvGetExtUserData(rdPtr->rHo.hoAdRunHeader->rhApp, hInstLib)
 
 #define TRUNCATE_SHORT(v) ((short)(v) & 0x7FFF)
+#endif
 
 #define CONNECT_STR(l, r) l##r
 #define STRINGIFY(s) #s
