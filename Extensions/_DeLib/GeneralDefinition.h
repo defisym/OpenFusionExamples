@@ -97,11 +97,11 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(wchar_t*& Tar, const wchar_t* Str) {
-	release_arr(Tar);
-	const rsize_t total_length = wcslen(Str) + 1;
+    if (Tar != nullptr) { delete[] Tar; Tar = nullptr; }
+    const rsize_t total_length = wcslen(Str) + 1;
 
-	Tar = new wchar_t[total_length];
-	wcscpy_s(Tar, total_length, Str);
+    Tar = new wchar_t[total_length];
+    wcscpy_s(Tar, total_length, Str);
 }
 
 inline void NewStr(wchar_t*& Tar, const std::wstring& Str) {
