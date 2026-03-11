@@ -29,3 +29,4 @@
 [submodule "Extensions/_3rdLib/simpleini"]
 	path = Extensions/_3rdLib/simpleini
 	url = https://github.com/brofield/simpleini.git
+	shallow = true
