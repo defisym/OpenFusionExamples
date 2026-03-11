@@ -99,7 +99,7 @@ long WINAPI DLLExport Condition_SecItemHasValue(LPRDATA rdPtr, long param1, long
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	InvalidSecItem(FALSE);
+    if (StrEmpty(Section) || StrEmpty(Item)) { return FALSE; }
 
 	return rdPtr->ini->SectionExists(Section) && rdPtr->ini->KeyExists(Section, Item);
 }
@@ -222,7 +222,7 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 	LPCTSTR FilePath = (LPCTSTR)param1;
 	LPCTSTR Key = (LPCTSTR)param2;
 
-	InvalidIni(0);
+    if (rdPtr->ini == nullptr) { return 0; }
 	
 	SaveFile(rdPtr->ini, FilePath, Key);
 
@@ -233,14 +233,11 @@ short WINAPI DLLExport Action_SetSecItem_Value(LPRDATA rdPtr, long param1, long 
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	if (rdPtr->ini == nullptr) {
-		InitIni(rdPtr);
-	}
+    long p = CNC_GetFloatParameter(rdPtr);
+    float Value = *(float*)&p;
 
-	InvalidSecItem(0);
-
-	long p = CNC_GetFloatParameter(rdPtr);
-	float Value = *(float*)&p;
+    if (rdPtr->ini == nullptr) { InitIni(rdPtr); }
+    if (StrEmpty(Section) || StrEmpty(Item)) { return 0; }
 
 	rdPtr->Modified = Modified(rdPtr->ini->SetValue(Section, Item,
 		std::format(L"{}", Value).c_str()))
@@ -252,14 +249,10 @@ short WINAPI DLLExport Action_SetSecItem_Value(LPRDATA rdPtr, long param1, long 
 short WINAPI DLLExport Action_SetSecItem_String(LPRDATA rdPtr, long param1, long param2) {	
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
-	
-	if (rdPtr->ini == nullptr) {
-		InitIni(rdPtr);
-	}
+    LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	InvalidSecItem(0);
-
-	LPCTSTR String = (LPCTSTR)CNC_GetStringParameter(rdPtr);	
+    if (rdPtr->ini == nullptr) { InitIni(rdPtr); }
+    if (StrEmpty(Section) || StrEmpty(Item)) { return 0; }
 
 	rdPtr->Modified = Modified(rdPtr->ini->SetValue(Section, Item, String))
 		|| rdPtr->Modified;
@@ -273,7 +266,7 @@ short WINAPI DLLExport Action_CopySection(LPRDATA rdPtr, long param1, long param
 
 	bool DeleteSrc = (bool)CNC_GetIntParameter(rdPtr);
 
-	InvalidIni(0);
+    if (rdPtr->ini == nullptr) { return 0; }
 
 	if (StrEmpty(Src) || StrEmpty(Des)) {
 		return 0;
@@ -300,12 +293,10 @@ short WINAPI DLLExport Action_DeleteSecItem(LPRDATA rdPtr, long param1, long par
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	InvalidIni(0);
-	InvalidSec(0);
+    if (rdPtr->ini == nullptr) { return 0; }
+    if (StrEmpty(Section)) { return 0; }
 
-	if (StrEqu(Item, Empty_Str)) {
-		Item = nullptr;
-	}
+    if (StrEqu(Item, Empty_Str)) { Item = nullptr; }
 
 	rdPtr->Modified = rdPtr->ini->Delete(Section, Item, true)
 		|| rdPtr->Modified;
@@ -316,7 +307,7 @@ short WINAPI DLLExport Action_DeleteSecItem(LPRDATA rdPtr, long param1, long par
 short WINAPI DLLExport Action_Iterate_Section(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	InvalidIni(0);
+    if (rdPtr->ini == nullptr) { return 0; }
 
 	*rdPtr->SecLoopName = LoopName;
 
@@ -335,7 +326,7 @@ short WINAPI DLLExport Action_Iterate_Item(LPRDATA rdPtr, long param1, long para
 	LPCTSTR SectionName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR LoopName = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	InvalidIni(0);
+    if (rdPtr->ini == nullptr) { return 0; }
 	
 	*rdPtr->ItemLoopName = LoopName;
 
@@ -459,8 +450,8 @@ long WINAPI DLLExport Expression_GetSecItem_Value(LPRDATA rdPtr, long param1) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	LPCTSTR Item = (LPCTSTR)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_STRING);
 	
-	InvalidIni(0);
-	InvalidSecItem(0);
+    if (rdPtr->ini == nullptr) { return 0; }
+    if (StrEmpty(Section) || StrEmpty(Item)) { return 0; }
 		
 	LPCTSTR String = rdPtr->ini->GetValue(Section, Item, Default_Val);
 
@@ -474,8 +465,8 @@ long WINAPI DLLExport Expression_GetSecItem_String(LPRDATA rdPtr, long param1) {
 	//Setting the HOF_STRING flag lets MMF know that you are a string.
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
-	InvalidIni((long)Default_Str);	
-	InvalidSecItem((long)Default_Str);
+    if (rdPtr->ini == nullptr) { return (long)Default_Str; }
+    if (StrEmpty(Section)) { return (long)Default_Str; }
 
 	const auto pToFind = rdPtr->ini->GetValue(Section, Item, Default_Str);
 	*rdPtr->Str =  rdPtr->pLocalization->GetLocalization(pToFind);

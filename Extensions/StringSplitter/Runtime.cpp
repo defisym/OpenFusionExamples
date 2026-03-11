@@ -119,8 +119,33 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    When your object is destroyed (either with a Destroy action or at the end of
    the frame) this routine is called. You must free any resources you have allocated!
 */
-	release_ptr(Splitter);
-	release_str();
+	// release splitter
+	delete Splitter;
+	Splitter = nullptr; 
+
+	// release strings
+	// Need not to release
+	// 	rdPtr->CurrentSplitStr
+	//	rdPtr->CurrentKeyWord
+	//	rdPtr->CurrentSubString
+	// cause they are pointed to Split class's member value
+	delete[] rdPtr->SplitStrVecLoopName;
+	rdPtr->SplitStrVecLoopName = nullptr;
+
+	delete[] rdPtr->KeyWordPairVecLoopName;
+	rdPtr->KeyWordPairVecLoopName = nullptr;
+
+	delete[] rdPtr->SubStringVecLoopName;
+	rdPtr->SubStringVecLoopName = nullptr;
+
+	delete[] rdPtr->CurrentReplaceString;
+	rdPtr->CurrentReplaceString = nullptr;
+
+	delete[] rdPtr->ReplacEachResult;
+	rdPtr->ReplacEachResult = nullptr;
+
+	delete[] rdPtr->ReplaceEachLoopName;
+	rdPtr->ReplaceEachLoopName = nullptr;
 
 	// No errors
 	return 0;

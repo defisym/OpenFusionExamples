@@ -14,11 +14,6 @@ constexpr auto ONIT_ITEM = 1;
 
 constexpr auto Default_Val = L"0";
 
-#define InvalidIni(X) if (!valid(rdPtr->ini)) { return X; }
-
-#define InvalidSec(X) if (StrEmpty(Section)) { return X; }
-#define InvalidSecItem(X) if (StrEmpty(Section) || StrEmpty(Item)) { return X; }
-
 //// 2.5+ unlimited values and strings
 //typedef struct tagRV25P {
 //	CValue* rvpValues;
