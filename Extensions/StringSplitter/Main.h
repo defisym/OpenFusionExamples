@@ -141,7 +141,7 @@ typedef struct tagRDATA
 	GlobalData* pData;
 
 	//Split
-	Split* S;
+	Split* pSplitter;
 	
 	//Auto Split
 	bool AutoSplit = false;

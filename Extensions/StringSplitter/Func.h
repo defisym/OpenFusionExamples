@@ -4,19 +4,19 @@
 
 inline void SplitData(LPRDATA rdPtr) {
 	if(!rdPtr->bCache) {
-		Splitter->SplitData();
+        rdPtr->pSplitter->SplitData();
 
 		return;
 	}
 
-	const auto hash = Splitter->GetHash();
+	const auto hash = rdPtr->pSplitter->GetHash();
 	const auto it = rdPtr->pData->data.find(hash);
 
 	if (it != rdPtr->pData->data.end()) {
-		Splitter->SetResult(&it->second);
+        rdPtr->pSplitter->SetResult(&it->second);
 	}
 	else {
-		Splitter->SplitData();
-		Splitter->GetResult(&rdPtr->pData->data[hash]);
+        rdPtr->pSplitter->SplitData();
+        rdPtr->pSplitter->GetResult(&rdPtr->pData->data[hash]);
 	}
 }

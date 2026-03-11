@@ -66,7 +66,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
    you should do it here, and free your resources in DestroyRunObject.
 */
 	//Split
-	rdPtr->S = new Split;
+    rdPtr->pSplitter = new Split;
 
 	//Auto Split
 	rdPtr->AutoSplit = false;
@@ -120,8 +120,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
    the frame) this routine is called. You must free any resources you have allocated!
 */
 	// release splitter
-	delete Splitter;
-	Splitter = nullptr; 
+	delete rdPtr->pSplitter;
+    rdPtr->pSplitter = nullptr;
 
 	// release strings
 	// Need not to release
