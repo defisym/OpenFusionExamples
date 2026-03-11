@@ -28,7 +28,7 @@
 #include	"Surface.h"
 
 // My headers
-#include	"SimpleIni.h"
+#include	"simpleini\simpleini.h"
 #include	"GeneralDefinition.h"
 #include	"Definition.h"
 #include	"Encryption.h"

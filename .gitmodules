@@ -26,3 +26,6 @@
 	path = Extensions/_3rdLib/Compress/zlib
 	url = https://github.com/madler/zlib.git
 	shallow = true
+[submodule "Extensions/_3rdLib/simpleini"]
+	path = Extensions/_3rdLib/simpleini
+	url = https://github.com/brofield/simpleini.git

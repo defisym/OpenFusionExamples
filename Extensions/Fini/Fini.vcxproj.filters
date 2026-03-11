@@ -136,12 +136,6 @@
     <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConvertUTF.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleIni.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\_DeLib\Encryption.h">
       <Filter>Header Files</Filter>
     </ClInclude>
