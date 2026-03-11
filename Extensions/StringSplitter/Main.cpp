@@ -359,7 +359,7 @@ short WINAPI DLLExport IterateReplaceEach(LPRDATA rdPtr, long param1, long param
 		rdPtr->CurrentReplaceString = nullptr;
 	}
 
-	NewStr(rdPtr->ReplacEachResult, Result.c_str());
+	NewStr(rdPtr->ReplaceEachResult, Result.c_str());
 
 	return 0;
 }
@@ -407,7 +407,7 @@ short WINAPI DLLExport IterateReplaceEachAll(LPRDATA rdPtr, long param1, long pa
 		Src = Result;		
 	} while (regex_search(Src, SubString));
 
-	NewStr(rdPtr->ReplacEachResult, Src.c_str());
+	NewStr(rdPtr->ReplaceEachResult, Src.c_str());
 
 	return 0;
 }
@@ -625,7 +625,7 @@ long WINAPI DLLExport GetReplaceEachResult(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	//This returns a pointer to the string for MMF.
-	return (long)(rdPtr->ReplacEachResult != nullptr ? rdPtr->ReplacEachResult : Default_Str);
+	return (long)(rdPtr->ReplaceEachResult != nullptr ? rdPtr->ReplaceEachResult : Default_Str);
 }
 
 long WINAPI DLLExport GetSubStringVecPointer(LPRDATA rdPtr, long param1) {

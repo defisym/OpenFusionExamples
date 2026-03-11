@@ -88,7 +88,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->CurrentMatchString = nullptr;
 	rdPtr->CurrentReplaceString = nullptr;
 
-	rdPtr->ReplacEachResult = nullptr;
+	rdPtr->ReplaceEachResult = nullptr;
 
 	//Init global data
 	if (GetExtUserData() == nullptr) {
@@ -141,8 +141,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete[] rdPtr->CurrentReplaceString;
 	rdPtr->CurrentReplaceString = nullptr;
 
-	delete[] rdPtr->ReplacEachResult;
-	rdPtr->ReplacEachResult = nullptr;
+	delete[] rdPtr->ReplaceEachResult;
+	rdPtr->ReplaceEachResult = nullptr;
 
 	delete[] rdPtr->ReplaceEachLoopName;
 	rdPtr->ReplaceEachLoopName = nullptr;

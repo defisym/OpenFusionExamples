@@ -164,7 +164,7 @@ typedef struct tagRDATA
 	LPCWSTR CurrentMatchString = nullptr;
 	LPWSTR CurrentReplaceString = nullptr;
 
-	LPWSTR ReplacEachResult = nullptr;
+	LPWSTR ReplaceEachResult = nullptr;
 } RUNDATA;
 typedef	RUNDATA	*			LPRDATA;
 
