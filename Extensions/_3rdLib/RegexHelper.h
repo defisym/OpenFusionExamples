@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef BOOST
+#ifndef USE_BOOST_REGEX
 
 #include <regex>
 

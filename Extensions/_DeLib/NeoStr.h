@@ -12,7 +12,7 @@
 #include <string_view>
 
 //Boost
-#define BOOST
+#define USE_BOOST_REGEX
 #include "RegexHelper.h"
 
 //#include <FusionUtilities.h>

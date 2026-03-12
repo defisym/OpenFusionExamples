@@ -13,7 +13,7 @@
 #define ALL         L".*"
 
 //Boost
-#define BOOST
+#define USE_BOOST_REGEX
 #include "RegexHelper.h"
 
 constexpr auto RESERVE_DEFAULT = 50;
