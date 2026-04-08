@@ -9,7 +9,6 @@
                 "${workspaceFolder}/../../Inc/",
                 "${workspaceFolder}\\..\\..\\..\\FFMpeg\\include",
                 "${workspaceFolder}\\..\\..\\..\\SDL\\include",
-                "C:\\Program Files (x86)\\FMOD SoundSystem\\FMOD Studio API Windows\\api\\core\\inc"
             ],
             "defines": [
                 "_DEBUG",
