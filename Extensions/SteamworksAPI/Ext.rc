@@ -112,7 +112,7 @@ BEGIN
     POPUP ""
     BEGIN
         MENUITEM SEPARATOR        
-        MENUITEM "Platfrom Enabled", IDMN_CONDITION_PE
+        MENUITEM "Platform Enabled", IDMN_CONDITION_PE
         MENUITEM SEPARATOR        
         POPUP "Steam Deck"
         BEGIN        
