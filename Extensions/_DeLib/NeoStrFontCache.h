@@ -6,12 +6,17 @@
 #include "NeoStrLayout.h"
 #include "NeoStrWordBreakHandler.h"
 
+struct NeoStrFont {};
+struct NeoStrFontInfo {};
+
 struct NeoStrFontCache {
     using CharSizeCache = std::map<wchar_t, CharSize>;
     WordBreakHandler* pWordBreakCache = nullptr;
 
     using FontNames = std::vector<std::wstring>;
     FontNames embedFontList;
+
+    virtual ~NeoStrFontCache() {};
 
     virtual bool CacheValid() const;
     virtual void Alloc();
@@ -24,6 +29,11 @@ struct NeoStrFontCache {
 
     virtual bool EmbedFontFromFile(const std::wstring& filePath) = 0;
     virtual bool EmbedFontFromMemory(const char* pData, const size_t sz) = 0;
+
+    virtual NeoStrFont GetFont(const NeoStrFontInfo& fontInfo) const = 0;
+    virtual NeoStrFont GetFontWithCache(const NeoStrFontInfo& fontInfo) const = 0;
+    virtual CharSize GetCharSizeWithCache(const wchar_t wChar, 
+        const NeoStrFontInfo& fontInfo) = 0;
 };
 
 std::unique_ptr<NeoStrFontCache> NeoStrFontCacheFactory(const NeoStrBackendType type);

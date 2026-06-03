@@ -162,47 +162,7 @@ private:
 	std::wstring notAtStart = L"!%),.:;>?]}¢¨°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠";
 	std::wstring notAtEnd = L"$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥";
 
-	using CharSizeCache = std::map<wchar_t, CharSize>;
-
-	struct CharSizeCacheItem {
-		HDC hdc = nullptr;
-		HGDIOBJ hOldObj = nullptr;
-		HFONT hFont = nullptr;
-		TEXTMETRIC tm = {0};
-
-		CharSizeCache cache;
-
-		CharSizeCacheItem(CharSizeCacheItem& other) = delete;
-		CharSizeCacheItem(CharSizeCacheItem&& other) = delete;
-		CharSizeCacheItem& operator=(CharSizeCacheItem& other) = delete;
-		CharSizeCacheItem& operator=(CharSizeCacheItem&& other) = delete;
-
-		explicit CharSizeCacheItem(const LOGFONT& logFont) {
-			hFont = CreateFontIndirect(&logFont);
-
-			hdc = GetDC(nullptr);
-			hOldObj = SelectObject(hdc, hFont);
-			GetTextMetrics(hdc, &tm);
-		}
-
-		~CharSizeCacheItem() {
-			SelectObject(hdc, hOldObj);
-			ReleaseDC(nullptr, hdc);
-			DeleteObject(hFont);
-		}
-	};
-
 	bool bExternalCache = true;
-
-	using LogFontHash = size_t;
-public:
-	using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheItem>;
-private:
-
-public:
-	using FontCache = std::map<LogFontHash, Font*>;
-private:
-
 	CharSize defaultCharSz;
 
 	//------------
@@ -753,33 +713,6 @@ private:
 	}
 #endif
 
-	static inline size_t LogFontHasher(const LOGFONT& logFont) {
-		constexpr auto HASHER_MAGICNUMBER = 0x9e3779b9;
-		constexpr auto HASHER_MOVE = [](const size_t seed) { return HASHER_MAGICNUMBER + (seed << 6) + (seed >> 2); };
-
-		size_t seed = 65535;
-
-		seed ^= logFont.lfHeight + HASHER_MOVE(seed);
-		seed ^= logFont.lfWidth + HASHER_MOVE(seed);
-		seed ^= logFont.lfEscapement + HASHER_MOVE(seed);
-		seed ^= logFont.lfOrientation + HASHER_MOVE(seed);
-		seed ^= logFont.lfWeight + HASHER_MOVE(seed);
-		seed ^= logFont.lfItalic + HASHER_MOVE(seed);
-		seed ^= logFont.lfUnderline + HASHER_MOVE(seed);
-		seed ^= logFont.lfStrikeOut + HASHER_MOVE(seed);
-		seed ^= logFont.lfCharSet + HASHER_MOVE(seed);
-		seed ^= logFont.lfOutPrecision + HASHER_MOVE(seed);
-		seed ^= logFont.lfClipPrecision + HASHER_MOVE(seed);
-		seed ^= logFont.lfQuality + HASHER_MOVE(seed);
-		seed ^= logFont.lfPitchAndFamily + HASHER_MOVE(seed);
-
-		for (auto i = 0; i < LF_FACESIZE; i++) {
-			seed ^= logFont.lfFaceName[i] + HASHER_MOVE(seed);
-		}
-
-		return seed;
-	}
-
     NeoStrFontCacheGDIPlus fontCache = {};
 
 public:
@@ -830,8 +763,8 @@ public:
 		}else {		
             fontCache.Alloc();
 		}
-
-		this->pFont = GetFontPointerWithCache(this->logFont);
+        
+        this->pFont = fontCache.GetFontPointerWithCache(this->logFont);
 
 		// ICon
 		this->bExternalIConData = pIConData != nullptr;
@@ -884,8 +817,8 @@ public:
 		this->measureBaseSize = { long(boundRect.GetRight() - boundRect.GetLeft()),long(boundRect.GetBottom() - boundRect.GetTop()) };
 		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
-		// add a default char to return default value when input text is empty
-		this->defaultCharSz = this->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
+		// add a default char to return default value when input text is empty        
+		this->defaultCharSz = fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
 	}
 
 	~NeoStr() {
@@ -952,176 +885,6 @@ public:
 			pCopy->textRenderingHint,
 			pCopy->smoothingMode,
 			pCopy->pixelOffsetMode);
-	}
-
-	inline static void Release(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		delete pCharSzCacheWithFont;
-		pCharSzCacheWithFont = nullptr;
-	}
-
-	inline static void Alloc(CharSizeCacheWithFont*& pCharSzCacheWithFont) {
-		pCharSzCacheWithFont = new CharSizeCacheWithFont;
-	}
-
-	inline static void Release(FontCache*& pFontCache) {
-		for (const auto& pFont : *pFontCache | std::views::values) {
-			delete pFont;
-		}
-
-		delete pFontCache;
-		pFontCache = nullptr;
-	}
-	
-	inline static void Alloc(FontCache*& pFontCache) {
-		pFontCache = new FontCache;
-	}
-
-	inline static void Release(WordBreakHandler*& pRegexHandler) {
-		delete pRegexHandler;
-		pRegexHandler = nullptr;
-	}
-
-	inline static void Alloc(WordBreakHandler*& pRegexHandler) {
-		pRegexHandler = new WordBreakHandler;
-	}
-
-	inline static bool FontCollectionHasFont(const LPWSTR pFaceName
-		, const Gdiplus::FontCollection* pFontCollection) {
-		if (pFontCollection == nullptr) {
-			return false;
-		}
-
-		const int n = pFontCollection->GetFamilyCount();
-
-		if (n == 0) {
-			return false;
-		}
-
-		FontFamily* ffs = new FontFamily [n];
-
-		int found;
-		pFontCollection->GetFamilies(n, ffs, &found);
-
-		if (found == 0) {
-			return false;
-		}
-
-		wchar_t name [LF_FACESIZE] { 0 };
-
-		const LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-
-		bool has = false;
-		bool hasSuffixRegular = false;
-		//bool hasSuffixNormal = false;
-
-		const std::wstring withRegular = (std::wstring)pFaceName + (std::wstring)L" Regular";
-		//std::wstring withNormal = (std::wstring)pFaceName + (std::wstring)L" Normal";
-
-		for (int i = 0; i < n; i++) {
-			has = false;
-			hasSuffixRegular = false;
-			//hasSuffixNormal = false;
-
-			auto hasName = [&] (const LANGID language = (LANGID)0U) {
-				memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
-				ffs [i].GetFamilyName(name, language);
-
-				has |= (_wcsicmp(name, pFaceName) == 0);
-
-				if (has) {
-					return;
-				}
-
-				hasSuffixRegular |= (_wcsicmp(name, withRegular.c_str()) == 0);
-
-				if (hasSuffixRegular) {
-					return;
-				}
-
-				//hasSuffixNormal |= (_wcsicmp(name, withNormal.c_str()) == 0);
-			};
-
-			hasName();
-			hasName(language);
-
-			if (has || hasSuffixRegular/* || hasSuffixNormal*/) {
-				if (hasSuffixRegular) {
-					wcscpy_s(pFaceName, LF_FACESIZE, withRegular.c_str());
-				}
-				//if (hasSuffixNormal) {
-				//	wcscpy_s(pFaceName, LF_FACESIZE, withNormal.c_str());
-				//}
-
-				break;
-			}
-		}
-
-		delete[] ffs;
-
-		return has || hasSuffixRegular/* || hasSuffixNormal*/;
-	}
-
-	inline static int GetFontStyle(const LOGFONT& logFont) {
-		int fontStyle = Gdiplus::FontStyleRegular;
-
-		if (logFont.lfWeight >= FW_SEMIBOLD) {
-			fontStyle = fontStyle | Gdiplus::FontStyleBold;
-		}
-		if (logFont.lfItalic) {
-			fontStyle = fontStyle | Gdiplus::FontStyleItalic;
-		}
-		if (logFont.lfUnderline) {
-			fontStyle = fontStyle | Gdiplus::FontStyleUnderline;
-		}
-		if (logFont.lfStrikeOut) {
-			fontStyle = fontStyle | Gdiplus::FontStyleStrikeout;
-		}
-
-		return fontStyle;
-	}
-		
-	inline Font GetFont(LOGFONT logFont) const {
-		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");        
-		auto bFound = FontCollectionHasFont(logFont.lfFaceName, fontCache.pFontCollection);
-
-#ifdef _FONTEMBEDDEBUG
-		if (!bFound) {
-			MSGBOX((std::wstring)this->logFont.lfFaceName + (std::wstring)L" Not Found");
-		}
-#endif // _FONTEMBEDDEBUG
-
-		return Font(logFont.lfFaceName
-			, (float)abs(logFont.lfHeight)
-			, GetFontStyle(logFont)
-			, Gdiplus::UnitWorld
-			, bFound ? fontCache.pFontCollection
-			: nullptr);
-	}
-
-	inline Font* GetFontPointer(LOGFONT logFont) const {
-		const auto bFound = FontCollectionHasFont(logFont.lfFaceName, fontCache.pFontCollection);
-		
-		return new Font(logFont.lfFaceName
-			, (float)abs(logFont.lfHeight)
-			, GetFontStyle(logFont)
-			, Gdiplus::UnitWorld
-			, bFound ? fontCache.pFontCollection
-			: nullptr);
-	}
-
-	inline Font* GetFontPointerWithCache(const LOGFONT& logFont) const {
-		const auto logFontHash = LogFontHasher(logFont);
-		const auto it = fontCache.pFontCache->find(logFontHash);
-
-		if (it != fontCache.pFontCache->end()) {
-			return it->second;
-		}
-		else {
-			const auto newFont = GetFontPointer(logFont);
-			(*fontCache.pFontCache)[logFontHash] = newFont;
-
-			return newFont;
-		}
 	}
 
 	inline int GetFontSize(int size) const {
@@ -1452,69 +1215,6 @@ public:
 
 	inline bool GetTabEm() const {
 		return tabContext.spaceChar == CHAR_EMSPACE;
-	}
-
-	static inline CharSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc) {
-		SIZE sz = { 0,0 };
-		GetTextExtentPoint32(hdc, &wChar, 1, &sz);
-
-		// special: shouldn't have width to fix non-left align offset		
-		if (wChar == L'\r' || wChar == L'\n' || wChar == L'\0') {
-			sz.cx = 0;
-		}
-		// general: has both width & height
-		else {
-			
-		}
-
-		return *(CharSize*)&sz;
-	}
-
-	inline auto GetCharSizeCacheIt(const LOGFONT& logFont) const {
-		const auto logFontHash = LogFontHasher(logFont);
-		auto it = fontCache.pCharSzCacheWithFont->find(logFontHash);
-
-		return it;
-	}
-
-	inline CharSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
-		const auto logFontHash = LogFontHasher(logFont);
-		const auto it = fontCache.pCharSzCacheWithFont->find(logFontHash);
-
-		if (it != fontCache.pCharSzCacheWithFont->end()) {
-			auto& cacheSecond = it->second;
-			auto& charCache = cacheSecond.cache;
-
-			const auto charIt = charCache.find(wChar);
-			if (charIt != charCache.end()) {
-				return charIt->second;
-			}
-			else {
-				const auto sz = GetCharSizeRaw(wChar, cacheSecond.hdc);
-				charCache[wChar] = sz;
-
-				return sz;
-			}
-		}
-		else {
-#ifdef COUNT_GDI_OBJECT
-			GDIObjectCounter objectCounter;
-
-			objectCounter.UpdateObjectCount();
-#endif
-            fontCache.pCharSzCacheWithFont->emplace(logFontHash, logFont);
-
-#ifdef COUNT_GDI_OBJECT
- 			const auto count = objectCounter.objectCount;
-
-			objectCounter.UpdateObjectCount();
-			if (count < objectCounter.objectCount) {
-				const auto info = std::format(L"Add when Cache\n");
-				OutputDebugStringW(info.c_str());
-		}
-#endif
-			return GetCharSizeWithCache(wChar,logFont);
-		}
 	}
 
 	//inline CharSize GetStrSize(const LPCWSTR pStr, const size_t pStrLen = -1) const {
@@ -2942,12 +2642,12 @@ public:
 				// size
 				auto getCharSize = [&] () {
 					if (curChar != CHAR_TAB) [[likely]] {
-						return GetCharSizeWithCache(curChar, localLogFont);
+						return fontCache.GetCharSizeWithCache(curChar, localLogFont);
 					}
 					else {
 						// update context
 						tabContext.UpdateContext(curWidth,
-							GetCharSizeWithCache(tabContext.spaceChar, localLogFont));
+                            fontCache.GetCharSizeWithCache(tabContext.spaceChar, localLogFont));
 						return tabContext.GetTabCharSize();
 					}
 				};
@@ -3600,8 +3300,8 @@ public:
 					colorItHandler.Forward(totalChar, [&] (const auto& colorIt) {
 						solidBrush.SetColor(colorIt->color);
 					});
-					fontItHandler.Forward(totalChar, [&] (const auto& fontIt) {
-						this->pFont = GetFontPointerWithCache(fontIt->logFont);
+					fontItHandler.Forward(totalChar, [&] (const auto& fontIt) {                        
+						this->pFont = fontCache.GetFontPointerWithCache(fontIt->logFont);
 					});
 					shakeItHandler.Forward(totalChar, [&] (const auto& shakeIt) {
 						localShakeFormat = *shakeIt;
@@ -3747,7 +3447,7 @@ public:
 			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
 
 			if (it.pNeoStr == nullptr
-				|| LogFontHasher(it.pNeoStr->logFont) != LogFontHasher(remarkLogFont)) {
+				|| NeoStrFontCacheGDIPlus::LogFontHasher(it.pNeoStr->logFont) != NeoStrFontCacheGDIPlus::LogFontHasher(remarkLogFont)) {
 				delete it.pNeoStr;
 				it.pNeoStr = new NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
 			}
@@ -3820,10 +3520,10 @@ public:
 
 			// esitmate char size
 			auto estimateBaseCharSize = mainPositions.empty()
-				? GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+				? fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
 				: CorrectCharSize(it.pCharSizeArr, mainPositions.size());
 			auto estimateRemarkCharSize = remarkPositions.empty()
-				? GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
+				? fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
 				: CorrectCharSize(pRemarkNeoStr->pCharSizeArr, remarkPositions.size());
 
 			// calculate position
@@ -3993,10 +3693,10 @@ public:
 				const bool bEnd = fontItHandler.End();
 
 				const auto& charSize = !bEnd
-					? pFormat->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
-					: pFormat->defaultCharSz;
+					? pFormat->fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+					: pFormat->defaultCharSz;                
 				const auto& tm = !bEnd
-					? pFormat->GetCharSizeCacheIt(fontItHandler.it->logFont)->second.tm
+					? pFormat->fontCache.GetCharSizeCacheItem(fontItHandler.it->logFont).tm
 					: pFormat->tm;
 
 				const auto& iConDisplay = !iConDisplayItHandler.End()
