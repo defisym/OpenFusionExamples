@@ -18,6 +18,37 @@ struct NeoStrFontCacheGDIPlus :public NeoStrFontCache {
     PrivateFontCollection* pFontCollection = nullptr;
 
     bool CacheValid() const override;  
-    virtual void Alloc() override;
-    virtual void Release() override;
+    void Alloc() override;
+    void Release() override;
+
+    bool EmbedFontFromFile(const std::wstring& filePath) override;
+    bool EmbedFontFromMemory(const char* pData, const size_t sz) override;
+};
+
+struct CharSizeCacheItem {
+    HDC hdc = nullptr;
+    HGDIOBJ hOldObj = nullptr;
+    HFONT hFont = nullptr;
+    TEXTMETRIC tm = { 0 };
+
+    NeoStrFontCache::CharSizeCache cache;
+
+    CharSizeCacheItem(CharSizeCacheItem& other) = delete;
+    CharSizeCacheItem(CharSizeCacheItem&& other) = delete;
+    CharSizeCacheItem& operator=(CharSizeCacheItem& other) = delete;
+    CharSizeCacheItem& operator=(CharSizeCacheItem&& other) = delete;
+
+    explicit CharSizeCacheItem(const LOGFONT& logFont) {
+        hFont = CreateFontIndirect(&logFont);
+
+        hdc = GetDC(nullptr);
+        hOldObj = SelectObject(hdc, hFont);
+        GetTextMetrics(hdc, &tm);
+    }
+
+    ~CharSizeCacheItem() {
+        SelectObject(hdc, hOldObj);
+        ReleaseDC(nullptr, hdc);
+        DeleteObject(hFont);
+    }
 };

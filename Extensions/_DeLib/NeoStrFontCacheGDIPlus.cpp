@@ -1,33 +1,5 @@
 #include "NeoStrFontCacheGDIPlus.h"
 
-struct CharSizeCacheItem {
-    HDC hdc = nullptr;
-    HGDIOBJ hOldObj = nullptr;
-    HFONT hFont = nullptr;
-    TEXTMETRIC tm = { 0 };
-
-    NeoStrFontCache::CharSizeCache cache;
-
-    CharSizeCacheItem(CharSizeCacheItem& other) = delete;
-    CharSizeCacheItem(CharSizeCacheItem&& other) = delete;
-    CharSizeCacheItem& operator=(CharSizeCacheItem& other) = delete;
-    CharSizeCacheItem& operator=(CharSizeCacheItem&& other) = delete;
-
-    explicit CharSizeCacheItem(const LOGFONT& logFont) {
-        hFont = CreateFontIndirect(&logFont);
-
-        hdc = GetDC(nullptr);
-        hOldObj = SelectObject(hdc, hFont);
-        GetTextMetrics(hdc, &tm);
-    }
-
-    ~CharSizeCacheItem() {
-        SelectObject(hdc, hOldObj);
-        ReleaseDC(nullptr, hdc);
-        DeleteObject(hFont);
-    }
-};
-
 bool NeoStrFontCacheGDIPlus::CacheValid() const {
     if (!NeoStrFontCache::CacheValid()) { return false; }
     if (pFontCache == nullptr) { return false; }
@@ -57,4 +29,22 @@ void NeoStrFontCacheGDIPlus::Release() {
 
     delete pFontCollection;
     pFontCollection = nullptr;
+}
+
+// reference:
+//  https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
+//  https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
+//  https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
+//  https://blog.csdn.net/analogous_love/article/details/45845971
+
+bool NeoStrFontCacheGDIPlus::EmbedFontFromFile(const std::wstring& filePath) {
+    auto gdipRet = pFontCollection->AddFontFile(filePath.c_str());
+
+    return gdipRet == Gdiplus::Status::Ok;
+}
+
+bool NeoStrFontCacheGDIPlus::EmbedFontFromMemory(const char* pData, const size_t sz) {
+    auto gdipRet = pFontCollection->AddMemoryFont((const PBYTE)pData, (DWORD)sz);
+
+    return gdipRet == Gdiplus::Status::Ok;
 }

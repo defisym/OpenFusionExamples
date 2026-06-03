@@ -31,6 +31,7 @@
 #undef fpFont
 
 #include "NeoStrDefinitionGDIPlus.h"
+#include "NeoStrFontCacheGDIPlus.h"
 
 //#define MEASURE_GDI_PLUS
 
@@ -89,7 +90,6 @@ private:
 	ULONG_PTR           gdiplusToken;
 
 	Bitmap* pBitmap = nullptr;
-	PrivateFontCollection* pFontCollection = nullptr;
 
 #ifdef MEASURE_GDI_PLUS
 	Graphics* pMeasure;
@@ -198,12 +198,10 @@ private:
 public:
 	using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheItem>;
 private:
-	CharSizeCacheWithFont* pCharSzCacheWithFont;
 
 public:
 	using FontCache = std::map<LogFontHash, Font*>;
 private:
-	FontCache* pFontCache;
 
 	CharSize defaultCharSz;
 
@@ -680,8 +678,6 @@ private:
 		return CheckMatch(wChar, notAtEnd);
 	}
 
-    WordBreakHandler* pRegexCache;
-
 	inline int GetStartPosX(const long totalWidth, const long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
 		//if (this->dwDTFlags & DT_LEFT) {
@@ -784,40 +780,17 @@ private:
 		return seed;
 	}
 
+    NeoStrFontCacheGDIPlus fontCache = {};
+
 public:
 	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
 		const NeoStr* pCache)
-		:NeoStr(dwAlignFlags, color, hFont,
-		false,
-		{ pCache->pFontCache,
-			pCache->pCharSzCacheWithFont,
-			pCache->pRegexCache,
-			pCache->pFontCollection },
-			pCache->pIConData) {}
-
-	struct NeoStrFontCache {
-		FontCache* pFontCache = nullptr;
-		CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr;
-        WordBreakHandler* pRegexCache = nullptr;
-		PrivateFontCollection* pFontCollection = nullptr;
-
-		inline bool CacheValid() const {
-			return pFontCache && pCharSzCacheWithFont && pRegexCache;
-		}
-
-		inline void UpdateNeoStr(NeoStr* pNeoStr) const {
-			pNeoStr->bExternalCache = true;
-
-			pNeoStr->pFontCache = this->pFontCache;
-			pNeoStr->pCharSzCacheWithFont = this->pCharSzCacheWithFont;
-			pNeoStr->pRegexCache = this->pRegexCache;
-		}
-	};
+        :NeoStr(dwAlignFlags, color, hFont, false, pCache->fontCache, pCache->pIConData) {
+    }
 
 	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
 		const bool needGDIPStartUp = true,
-		// read only
-		const NeoStrFontCache& neoStrFontCache = {},
+		const NeoStrFontCacheGDIPlus& neoStrFontCache = {},
 		IConData* pIConData = nullptr) {
 		// ------
 		// GDI Env
@@ -850,15 +823,12 @@ public:
 		// ------
 
 		// Font
-		this->pFontCollection = neoStrFontCache.pFontCollection;
 		this->bExternalCache = neoStrFontCache.CacheValid();
 
 		if (this->bExternalCache) {
-			neoStrFontCache.UpdateNeoStr(this);		
-		}else {			
-			Alloc(this->pFontCache);
-			Alloc(this->pCharSzCacheWithFont);
-			Alloc(this->pRegexCache);
+            fontCache = neoStrFontCache;
+		}else {		
+            fontCache.Alloc();
 		}
 
 		this->pFont = GetFontPointerWithCache(this->logFont);
@@ -929,9 +899,7 @@ public:
 #endif
 
 		if (!this->bExternalCache) {
-			Release(this->pRegexCache);
-			Release(this->pCharSzCacheWithFont);
-			Release(this->pFontCache);
+            fontCache.Release();
 		}
 
 		if (!this->bExternalIConData) {
@@ -1015,23 +983,6 @@ public:
 
 	inline static void Alloc(WordBreakHandler*& pRegexHandler) {
 		pRegexHandler = new WordBreakHandler;
-	}
-
-	//https://stackoverflow.com/questions/42595856/fonts-added-with-addfontresourceex-are-not-working-in-gdi
-	//https://docs.microsoft.com/zh-cn/windows/win32/api/gdiplusheaders/nf-gdiplusheaders-privatefontcollection-addfontfile
-	//https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
-	//https://blog.csdn.net/analogous_love/article/details/45845971
-	inline void EmbedFont(const LPCWSTR pFontFile) const {
-		EmbedFont(pFontFile, *this->pFontCollection);
-#ifdef _DEBUG
-		if (this->pFontCollection != nullptr) {
-			auto count = this->pFontCollection->GetFamilyCount();
-		}
-#endif
-	}
-
-	inline static void EmbedFont(const LPCWSTR pFontFile, PrivateFontCollection& fontCollection) {
-		fontCollection.AddFontFile(pFontFile);
 	}
 
 	inline static bool FontCollectionHasFont(const LPWSTR pFaceName
@@ -1130,8 +1081,8 @@ public:
 	}
 		
 	inline Font GetFont(LOGFONT logFont) const {
-		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");
-		auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+		//auto bTest = StrIEqu(this->logFont.lfFaceName, L"思源黑体 CN");        
+		auto bFound = FontCollectionHasFont(logFont.lfFaceName, fontCache.pFontCollection);
 
 #ifdef _FONTEMBEDDEBUG
 		if (!bFound) {
@@ -1143,31 +1094,31 @@ public:
 			, (float)abs(logFont.lfHeight)
 			, GetFontStyle(logFont)
 			, Gdiplus::UnitWorld
-			, bFound ? this->pFontCollection
+			, bFound ? fontCache.pFontCollection
 			: nullptr);
 	}
 
 	inline Font* GetFontPointer(LOGFONT logFont) const {
-		const auto bFound = FontCollectionHasFont(logFont.lfFaceName, this->pFontCollection);
+		const auto bFound = FontCollectionHasFont(logFont.lfFaceName, fontCache.pFontCollection);
 		
 		return new Font(logFont.lfFaceName
 			, (float)abs(logFont.lfHeight)
 			, GetFontStyle(logFont)
 			, Gdiplus::UnitWorld
-			, bFound ? this->pFontCollection
+			, bFound ? fontCache.pFontCollection
 			: nullptr);
 	}
 
 	inline Font* GetFontPointerWithCache(const LOGFONT& logFont) const {
 		const auto logFontHash = LogFontHasher(logFont);
-		const auto it = pFontCache->find(logFontHash);
+		const auto it = fontCache.pFontCache->find(logFontHash);
 
-		if (it != pFontCache->end()) {
+		if (it != fontCache.pFontCache->end()) {
 			return it->second;
 		}
 		else {
 			const auto newFont = GetFontPointer(logFont);
-			(*pFontCache)[logFontHash] = newFont;
+			(*fontCache.pFontCache)[logFontHash] = newFont;
 
 			return newFont;
 		}
@@ -1521,16 +1472,16 @@ public:
 
 	inline auto GetCharSizeCacheIt(const LOGFONT& logFont) const {
 		const auto logFontHash = LogFontHasher(logFont);
-		auto it = pCharSzCacheWithFont->find(logFontHash);
+		auto it = fontCache.pCharSzCacheWithFont->find(logFontHash);
 
 		return it;
 	}
 
 	inline CharSize GetCharSizeWithCache(const wchar_t wChar, const LOGFONT& logFont) {
 		const auto logFontHash = LogFontHasher(logFont);
-		const auto it = pCharSzCacheWithFont->find(logFontHash);
+		const auto it = fontCache.pCharSzCacheWithFont->find(logFontHash);
 
-		if (it != pCharSzCacheWithFont->end()) {
+		if (it != fontCache.pCharSzCacheWithFont->end()) {
 			auto& cacheSecond = it->second;
 			auto& charCache = cacheSecond.cache;
 
@@ -1551,7 +1502,7 @@ public:
 
 			objectCounter.UpdateObjectCount();
 #endif
-			pCharSzCacheWithFont->emplace(logFontHash, logFont);
+            fontCache.pCharSzCacheWithFont->emplace(logFontHash, logFont);
 
 #ifdef COUNT_GDI_OBJECT
  			const auto count = objectCounter.objectCount;
@@ -1616,7 +1567,7 @@ public:
 				return false;
 			}
 
-			if (!bAllowEmptyChar && !pRegexCache->NotEmpty(pStr)) {
+			if (!bAllowEmptyChar && !fontCache.pWordBreakCache->NotEmpty(pStr)) {
 				return false;
 			}
 
@@ -2931,7 +2882,7 @@ public:
 						break;
 					}
 
-					if (pRegexCache->NotEmpty(curChar)) {
+					if (fontCache.pWordBreakCache->NotEmpty(curChar)) {
 						break;
 					}
 
@@ -2955,8 +2906,8 @@ public:
 					localLogFont = fontIt->logFont;
 				});
 
-				// word break
-				auto bCurWordBreak = pRegexCache->WordBreak(curChar);
+				// word break                
+				auto bCurWordBreak = fontCache.pWordBreakCache->WordBreak(curChar);
 
 				auto InWord = [&] () {
 					bInWord = true;
@@ -3071,7 +3022,7 @@ public:
 							return;
 						}
 
-						if (pRegexCache->WordBreak(PreviousChar)) {
+						if (fontCache.pWordBreakCache->WordBreak(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
 							}

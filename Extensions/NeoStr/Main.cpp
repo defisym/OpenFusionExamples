@@ -416,7 +416,7 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
         : GetFontNameFromFile(FilePath.c_str());
 
     // already embedded
-    if (rdPtr->pData->FontEmbed(fontNames)) {
+    if (rdPtr->pData->fontCache.FontEmbed(fontNames)) {
         return 0;
     }
 
@@ -456,9 +456,9 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 
 	// NeoStr embed
     auto bNeoStrEmbed = bFromMem
-        ? rdPtr->pData->EmbedFontFromMemory((const char*)pE->GetOutputData(),
+        ? rdPtr->pData->fontCache.EmbedFontFromMemory((const char*)pE->GetOutputData(),
             (size_t)pE->GetOutputDataLength())
-        : rdPtr->pData->EmbedFontFromFile(FilePath);
+        : rdPtr->pData->fontCache.EmbedFontFromFile(FilePath);
 
 #ifdef _FONTEMBEDDEBUG
 	MSGBOX((std::wstring)L"Embed " + FilePath +
@@ -480,7 +480,7 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 	}
 
 	// embed success, add to embed list
-	rdPtr->pData->AddEmbedFont(fontNames);
+    rdPtr->pData->fontCache.AddEmbedFont(fontNames);
 
 	//refresh objects
 	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
@@ -1087,12 +1087,9 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
 	NeoStr filter(0, 0, rdPtr->hFont, false,
-			{ rdPtr->pData->pFontCache,
-			rdPtr->pData->pCharSzCacheWithFont,
-			rdPtr->pData->pRegexHandler,
-			rdPtr->pData->pFontCollection },
-			// use global data here to avoid unnecessary alloc
-			rdPtr->pData->pIConData);
+        rdPtr->pData->fontCache,
+        // use global data here to avoid unnecessary alloc
+		rdPtr->pData->pIConData);
 
 	filter.GetFormat(pStr,
 		flags == static_cast<size_t>(-1)
@@ -1281,12 +1278,9 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
 	NeoStr filter(0, 0, rdPtr->hFont, false,
-		{ rdPtr->pData->pFontCache,
-			rdPtr->pData->pCharSzCacheWithFont,
-			rdPtr->pData->pRegexHandler,
-			rdPtr->pData->pFontCollection },
-			// use global data here to avoid unnecessary alloc
-			rdPtr->pData->pIConData);
+        rdPtr->pData->fontCache,
+        // use global data here to avoid unnecessary alloc
+		rdPtr->pData->pIConData);
 
 	try {		
 		filter.GetFormat(pStr

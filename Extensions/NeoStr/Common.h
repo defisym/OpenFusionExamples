@@ -69,12 +69,7 @@ struct GlobalData {
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 	
-	NeoStr::FontCache* pFontCache;
-	NeoStr::CharSizeCacheWithFont* pCharSzCacheWithFont;
-	WordBreakHandler* pRegexHandler;
-
-	std::vector<std::wstring> embedFontList;
-	PrivateFontCollection* pFontCollection;
+    NeoStrFontCacheGDIPlus fontCache = {};
 	NeoStr::IConData* pIConData;
 
 #ifdef COUNT_GDI_OBJECT
@@ -87,57 +82,15 @@ struct GlobalData {
 			, NULL);
 		gdiInitialized = true;
 
-		NeoStr::Alloc(pFontCache);
-		NeoStr::Alloc(pCharSzCacheWithFont);
-		NeoStr::Alloc(pRegexHandler);
-
-		pFontCollection = new PrivateFontCollection;
+        fontCache.Alloc();
 		pIConData = new NeoStr::IConData;
 	}
 
 	~GlobalData() {
 		delete pIConData;
-		delete pFontCollection;
-
-		NeoStr::Release(pFontCache);
-		NeoStr::Release(pCharSzCacheWithFont);
-		NeoStr::Release(pRegexHandler);
+        fontCache.Release();
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
-	}
-
-	// return true if all font names are added
-	// do not call embed
-	bool FontEmbed(const FontNames& fontNames) {
-		for (const auto& fontName : fontNames) {
-			auto it = std::find(embedFontList.begin(), embedFontList.end(), fontName);
-			if (it == embedFontList.end()) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	void AddEmbedFont(const FontNames& fontNames){
-		for (const auto& fontName : fontNames) {
-			auto it = std::find(embedFontList.begin(), embedFontList.end(), fontName);
-			if (it == embedFontList.end()) {
-				embedFontList.push_back(fontName);
-			}
-		}
-	}
-
-	bool EmbedFontFromFile(const std::wstring& filePath){
-		auto gdipRet = pFontCollection->AddFontFile(filePath.c_str());
-		
-        return gdipRet == Gdiplus::Status::Ok;
-	}
-
-	bool EmbedFontFromMemory(const char* pData, const size_t sz){
-        auto gdipRet = pFontCollection->AddMemoryFont((const PBYTE)pData, (DWORD)sz);
-
-        return gdipRet == Gdiplus::Status::Ok;
 	}
 };
 
