@@ -32,15 +32,6 @@
 
 #include "NeoStrDefinitionGDIPlus.h"
 
-inline RECT operator+(const RECT& rA, const RECT& rB) {
-	return RECT { rA.left + rB.left
-				,rA.top + rB.top
-				,rA.right + rB.right
-				,rA.bottom + rB.bottom };
-}
-
-
-
 //#define MEASURE_GDI_PLUS
 
 class NeoStr {
