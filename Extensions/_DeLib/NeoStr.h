@@ -10,6 +10,7 @@
 #include <vector>
 #include <functional>
 #include <string_view>
+#include <ranges>
 
 #include "NeoStrDefinitions.h"
 #include "NeoStrLayout.h"
@@ -29,54 +30,7 @@
 #undef Font
 #undef fpFont
 
-#pragma region _GDIPLUS_INIT
-
-//#define _BLUR
-
-#ifdef _BLUR
-#define GDIPVER 0x0110
-#endif
-
-#include <gdiplus.h>
-#pragma comment(lib,"Gdiplus")
-
-#include <gdiplusheaders.h>
-#include <ranges>
-
-#ifdef _BLUR
-#include <gdipluseffects.h>
-#endif
-
-using Gdiplus::GdiplusStartupInput;
-using Gdiplus::Graphics;
-using Gdiplus::GraphicsPath;
-using Gdiplus::StringFormat;
-using Gdiplus::StringAlignment;
-using Gdiplus::FillMode;
-using Gdiplus::Color;
-using Gdiplus::Font;
-using Gdiplus::Pen;
-using Gdiplus::LineJoin;
-using Gdiplus::SolidBrush;
-using Gdiplus::Rect;
-using Gdiplus::RectF;
-using Gdiplus::PointF;
-using Gdiplus::Region;
-using Gdiplus::Bitmap;
-using Gdiplus::BitmapData;
-using Gdiplus::ImageLockMode;
-using Gdiplus::ImageCodecInfo;
-using Gdiplus::PrivateFontCollection;
-using Gdiplus::InstalledFontCollection;
-using Gdiplus::FontFamily;
-using Gdiplus::GetImageEncodersSize;
-
-#ifdef _BLUR
-using Gdiplus::Blur;
-using Gdiplus::BlurParams;
-#endif
-
-#pragma endregion
+#include "NeoStrDefinitionGDIPlus.h"
 
 inline RECT operator+(const RECT& rA, const RECT& rB) {
 	return RECT { rA.left + rB.left
