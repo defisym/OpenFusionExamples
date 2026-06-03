@@ -35,13 +35,7 @@
 #include	"FormatByVector.h"
 
 class NeoStr;
-
-struct CharPos {
-	long x;
-	long y;
-	long maxWidth;
-	long totalHeight;
-};
+#include "NeoStrLayout.h"
 
 enum class HotSpotPos;
 struct GlobalData;

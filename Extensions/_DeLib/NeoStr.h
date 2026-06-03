@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "NeoStrDefinitions.h"
+#include "NeoStrLayout.h"
 #include "NeoStrWordBreakHandler.h"
 
 //#include <FusionUtilities.h>
@@ -157,24 +158,9 @@ private:
 	wchar_t measureStr[3] = { L'.',L'.',L'.' };
 #endif
 
-	struct StrPos {
-		size_t start;
-		size_t end;
-		size_t length;
-		long width;
-		long height;
-		long x;
-		long y;
-	};
-
 	std::vector<StrPos> strPos;
 
-	struct CharSize {
-		long width = 0;
-		long height = 0;
-	};
-
-	CharSize* pCharSizeArr = nullptr;
+    CharSize* pCharSizeArr = nullptr;
 
 	bool bShake = false;
 	bool bChildShake = false;
@@ -198,13 +184,6 @@ private:
 		// offset between characters
 		// mul 360 = actual offset
 		double charOffset = 1.0 / 6.0;
-	};
-
-	struct CharPos {
-		long x = 0;
-		long y = 0;
-		long maxWidth = 0;
-		long totalHeight = 0;
 	};
 
 	// original position of character (not affected by shake), relative to non-border offset start

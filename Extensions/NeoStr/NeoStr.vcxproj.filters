@@ -172,6 +172,9 @@
     <ClInclude Include="..\_DeLib\NeoStrDefinitions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrLayout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
