@@ -77,7 +77,7 @@ struct GlobalData {
 	
 	NeoStr::FontCache* pFontCache;
 	NeoStr::CharSizeCacheWithFont* pCharSzCacheWithFont;
-	NeoStr::RegexHandler* pRegexHandler;
+	WordBreakHandler* pRegexHandler;
 
 	std::vector<std::wstring> embedFontList;
 	PrivateFontCollection* pFontCollection;
