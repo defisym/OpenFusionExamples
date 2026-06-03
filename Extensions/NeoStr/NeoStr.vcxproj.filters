@@ -20,6 +20,12 @@
     <Filter Include="MMF Headers">
       <UniqueIdentifier>{f6ef1a44-36c7-44bb-93a7-3b437087049b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="NeoStr">
+      <UniqueIdentifier>{a1264bc0-83cd-4d3c-a64d-641a1095c00d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NeoStr\Backends">
+      <UniqueIdentifier>{5ef699b0-280a-493e-99ee-398ee20ad1da}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Edittime.cpp">
@@ -36,6 +42,12 @@
     </ClCompile>
     <ClCompile Include="..\_DeLib\Encryption.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrBackend.cpp">
+      <Filter>NeoStr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrFontCache.cpp">
+      <Filter>NeoStr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -136,9 +148,6 @@
     <ClInclude Include="Func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_DeLib\NeoStr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\_DeLib\Fusion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -166,14 +175,29 @@
     <ClInclude Include="..\_DeLib\FormatByVector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_DeLib\NeoStrWordBreakHandler.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\_DeLib\NeoStr.h">
+      <Filter>NeoStr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrBackend.h">
+      <Filter>NeoStr</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrDefinitions.h">
-      <Filter>Header Files</Filter>
+      <Filter>NeoStr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrFontCache.h">
+      <Filter>NeoStr</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrLayout.h">
-      <Filter>Header Files</Filter>
+      <Filter>NeoStr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrWordBreakHandler.h">
+      <Filter>NeoStr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrFontCacheGDIPlus.h">
+      <Filter>NeoStr\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrDefinitionGDIPlus.h">
+      <Filter>NeoStr\Backends</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
