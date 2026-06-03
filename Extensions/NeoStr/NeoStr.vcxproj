@@ -250,6 +250,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrBackend.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrFontCache.cpp" />
+    <ClCompile Include="..\_DeLib\NeoStrFontCacheGDIPlus.cpp" />
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />

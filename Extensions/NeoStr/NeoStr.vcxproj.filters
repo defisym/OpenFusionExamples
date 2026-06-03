@@ -49,6 +49,9 @@
     <ClCompile Include="..\_DeLib\NeoStrFontCache.cpp">
       <Filter>NeoStr</Filter>
     </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrFontCacheGDIPlus.cpp">
+      <Filter>NeoStr\Backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">

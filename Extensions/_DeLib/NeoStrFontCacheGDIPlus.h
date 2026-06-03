@@ -5,24 +5,19 @@
 #include "NeoStrFontCache.h"
 #include "NeoStrDefinitionGDIPlus.h"
 
-struct NeoStrFontCacheGDIPlus:public NeoStrFontCache {
-    //using LogFontHash = size_t;
-    //using FontCache = std::map<LogFontHash, Font*>;
+struct CharSizeCacheItem;
 
-    //FontCache* pFontCache = nullptr;
-    //CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr;
-    //WordBreakHandler* pRegexCache = nullptr;
-    //PrivateFontCollection* pFontCollection = nullptr;
+struct NeoStrFontCacheGDIPlus :public NeoStrFontCache {
+    using LogFontHash = size_t;
+    using FontCache = std::map<LogFontHash, Font*>;
 
-    //inline bool CacheValid() const {
-    //    return pFontCache && pCharSzCacheWithFont && pRegexCache;
-    //}
+    using CharSizeCacheWithFont = std::map<LogFontHash, CharSizeCacheItem>;
 
-    //inline void UpdateNeoStr(NeoStr* pNeoStr) const {
-    //    pNeoStr->bExternalCache = true;
+    FontCache* pFontCache = nullptr;
+    CharSizeCacheWithFont* pCharSzCacheWithFont = nullptr;
+    PrivateFontCollection* pFontCollection = nullptr;
 
-    //    pNeoStr->pFontCache = this->pFontCache;
-    //    pNeoStr->pCharSzCacheWithFont = this->pCharSzCacheWithFont;
-    //    pNeoStr->pRegexCache = this->pRegexCache;
-    //}
+    bool CacheValid() const override;  
+    virtual void Alloc() override;
+    virtual void Release() override;
 };
