@@ -516,10 +516,11 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 		rdPtr->pIConObject = pObject;
 
 		GIPP(rdPtr->pIConParamParser) = [=](NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
-			// check caller validity
-			if (IsDestroyed((LPRO)rdPtr)) {
-				return FORMAT_INVALID_ICON;
-			}
+			// invalid handle
+            const auto hInvalid = static_cast<DWORD>(FORMAT_INVALID_ICON);
+            
+            // check caller validity
+            if (IsDestroyed((LPRO)rdPtr)) { return hInvalid; }
 
 			// parse param
 			int frame = 0;
@@ -546,7 +547,7 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 			} while (0);
 			
 			// find image
-			DWORD hImage = FORMAT_INVALID_ICON;
+			auto hImage = hInvalid;
 			auto appli = rdPtr->rHo.hoAdRunHeader->rhIdAppli;
 
 			do {
@@ -573,7 +574,7 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 				hImage = pDir->adFrame[frame];
 			} while (0);
 
-			if (hImage == FORMAT_INVALID_ICON) {
+			if (hImage == hInvalid) {
 				return hImage;
 			}
 
@@ -625,10 +626,11 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 		GIPP(rdPtr->pIConParamParser) = 
 			[=, loopName = std::wstring(pLoopName)]
 			(NeoStr::ControlParams& controlParams, NeoStr::IConLib& iConLib) {
+            // invalid handle
+            const auto hInvalid = static_cast<DWORD>(FORMAT_INVALID_ICON);
+
 			// check caller validity
-			if (IsDestroyed((LPRO)rdPtr)) {
-				return FORMAT_INVALID_ICON;
-			}
+            if (IsDestroyed((LPRO)rdPtr)) { return hInvalid; }
 			
 			// call callback
 			rdPtr->bOverWrite = false;
@@ -647,7 +649,7 @@ short WINAPI DLLExport Action_LinkObject(LPRDATA rdPtr, long param1, long param2
 			//	SetIConUpdate(rdPtr);
 			//}
 
-			if (rdPtr->iconLibKey == FORMAT_INVALID_ICON) {
+			if (rdPtr->iconLibKey == hInvalid) {
 				return rdPtr->iconLibKey;
 			}
 
