@@ -205,9 +205,6 @@ private:
 		long y = 0;
 		long maxWidth = 0;
 		long totalHeight = 0;
-
-		// Shake
-		ShakeControl shakeControl;
 	};
 
 	// original position of character (not affected by shake), relative to non-border offset start
@@ -3278,11 +3275,7 @@ public:
 			startY + lastStrPos.y + (lastCharSize->height / 2),
 			// if render by this size, space is not enough
 			maxWidth + nColSpace,
-			totalHeight,
-			// col / row space removed
-			//maxWidth,
-			//totalHeight - nRowSpace,
-			ShakeControl()
+			totalHeight
 		};
 
 		return previousCharPos;
@@ -3708,8 +3701,7 @@ public:
 					// position relative to object left top
 					pCharPosArr[offset] = CharPos{ static_cast<long>(displayX + GDIPlusOffset),
 													static_cast<long>(this->startY + displayY),
-													0,0,
-													ShakeControl() };
+													0,0 };
 
 					const auto& curCharPos = pCharPosArr[offset];
 
@@ -4249,7 +4241,7 @@ public:
 	}
 
 	inline CharPos GetCharPos(const size_t pos) const {
-		constexpr auto invalid = CharPos { -1, -1, -1, -1, ShakeControl() };
+		constexpr auto invalid = CharPos { -1, -1, -1, -1 };
 
 		if (pCharPosArr == nullptr) {
 			return invalid;
