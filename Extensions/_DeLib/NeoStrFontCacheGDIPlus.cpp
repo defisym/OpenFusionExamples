@@ -1,5 +1,9 @@
 #include "NeoStrFontCacheGDIPlus.h"
 
+NeoStrFontInfoGDIPlus::NeoStrFontInfoGDIPlus(const LOGFONT& logFont) {
+    this->logFont = logFont;
+}
+
 bool NeoStrFontCacheGDIPlus::CacheValid() const {
     if (!NeoStrFontCache::CacheValid()) { return false; }
     if (pFontCache == nullptr) { return false; }
@@ -49,17 +53,17 @@ bool NeoStrFontCacheGDIPlus::EmbedFontFromMemory(const char* pData, const size_t
     return gdipRet == Gdiplus::Status::Ok;
 }
 
+bool NeoStrFontCacheGDIPlus::HasFont(const NeoStrFontInfo& fontInfo) const {
+    const auto& logFont = static_cast<const NeoStrFontInfoGDIPlus&>(fontInfo).logFont;
+    return false;
+}
+
 NeoStrFont NeoStrFontCacheGDIPlus::GetFont(const NeoStrFontInfo& fontInfo) const {
     const auto& logFont = static_cast<const NeoStrFontInfoGDIPlus&>(fontInfo).logFont;
-    return NeoStrFontGDIPlus{ GetFontPointer(logFont) };
+    return GetFontPointerWithCache(logFont);
 }
 
-NeoStrFont NeoStrFontCacheGDIPlus::GetFontWithCache(const NeoStrFontInfo& fontInfo) const {
-    const auto& logFont = static_cast<const NeoStrFontInfoGDIPlus&>(fontInfo).logFont;
-    return NeoStrFontGDIPlus{ GetFontPointerWithCache(logFont) };
-}
-
-CharSize NeoStrFontCacheGDIPlus::GetCharSizeWithCache(const wchar_t wChar,
+CharSize NeoStrFontCacheGDIPlus::GetCharSize(const wchar_t wChar,
     const NeoStrFontInfo& fontInfo) {
     const auto& logFont = static_cast<const NeoStrFontInfoGDIPlus&>(fontInfo).logFont;
     return GetCharSizeWithCache(wChar, logFont);
@@ -274,12 +278,4 @@ size_t NeoStrFontCacheGDIPlus::LogFontHasher(const LOGFONT& logFont) {
     }
 
     return seed;
-}
-
-NeoStrFontGDIPlus::NeoStrFontGDIPlus(Font* pFont) {
-    this->pFont = pFont;
-}
-
-NeoStrFontInfoGDIPlus::NeoStrFontInfoGDIPlus(const LOGFONT& logFont) {
-    this->logFont = logFont;
 }
