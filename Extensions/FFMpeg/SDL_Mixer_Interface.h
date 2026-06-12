@@ -99,18 +99,23 @@ private:
         pAudioDatas.clear();
     }
 
-    size_t initCount = 0u;
+    bool bInit = false;
 
 public:
     SMI() {        
-        SDL_GeneralInit();
+        const auto ret = SDL_GeneralInit();
+        bInit = (ret == SDLGeneral_OK);
     }
     ~SMI() override {
         ReleaseAudioData();
         SDL_GeneralQuit();
     }
 
+    inline bool IsInitialized() override { return bInit; }
+
     inline void AddInstance(FFMpeg** ppFFMpeg, void* pData) override {
+        if (!bInit) { return; }
+
         auto pAudioData = new AudioData(ppFFMpeg);
 
     	audioChannel.AddInstance(pAudioData);

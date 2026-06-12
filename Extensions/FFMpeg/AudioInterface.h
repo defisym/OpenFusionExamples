@@ -4,6 +4,7 @@ class AudioInterface {
 public:
 	AudioInterface() = default;
 	virtual ~AudioInterface() = default;
+    virtual inline bool IsInitialized() = 0;
 	virtual inline void AddInstance(FFMpeg** ppFFMpeg, void* pData) = 0;
 	virtual inline void RemoveInstance(FFMpeg** ppFFMpeg, void* pData) = 0;
 };
