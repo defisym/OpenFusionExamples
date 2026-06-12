@@ -52,6 +52,9 @@
     <ClCompile Include="..\_DeLib\NeoStrFontCacheGDIPlus.cpp">
       <Filter>NeoStr\Backends</Filter>
     </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrFontCacheFreeType.cpp">
+      <Filter>NeoStr\Backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -200,6 +203,12 @@
       <Filter>NeoStr\Backends</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrDefinitionGDIPlus.h">
+      <Filter>NeoStr\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrFontCacheFreeType.h">
+      <Filter>NeoStr\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrDefinitionFreeType.h">
       <Filter>NeoStr\Backends</Filter>
     </ClInclude>
   </ItemGroup>
