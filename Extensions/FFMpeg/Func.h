@@ -224,12 +224,14 @@ inline bool CopyToTextureValid(LPRDATA rdPtr, const AVHWDeviceType type) {
 inline FFMpegOptions GetOptions(LPRDATA rdPtr) {
 	FFMpegOptions opt;
 
+    opt.flag = rdPtr->hwDeviceType;
+    // ForceNoAudio if audio interface init failed
+    if (!rdPtr->pData->pAI->IsInitialized()) { opt.flag |= FFMpegFlag_ForceNoAudio; }
+    if (rdPtr->bForceNoAudio) { opt.flag |= FFMpegFlag_ForceNoAudio; }
     // bCopyToTexture is updated by CopyToTextureValid each time updated
     // won't be true if FFMpegAdapter and CopyAdapter not supported
-    opt.flag = rdPtr->hwDeviceType
-        | (rdPtr->bForceNoAudio ? FFMpegFlag_ForceNoAudio : FFMpegFlag_Disabled)
-        | (rdPtr->bCopyToTexture ? FFMpegFlag_CopyToTexture : FFMpegFlag_Disabled)
-        | (rdPtr->bSharedHardWareDevice ? FFMpegFlag_SharedHardWareDevice : FFMpegFlag_Disabled);
+    if (rdPtr->bCopyToTexture) { opt.flag |= FFMpegFlag_CopyToTexture; }
+    if (rdPtr->bSharedHardWareDevice) { opt.flag |= FFMpegFlag_SharedHardWareDevice; }
 
 	opt.videoCodecName = *rdPtr->pVideoOverrideCodecName;
 	opt.audioCodecName = *rdPtr->pAudioOverrideCodecName;
