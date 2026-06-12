@@ -71,7 +71,6 @@
 #include	"FFMpeg.h"
 #include	"CopyAdapter.h" 
 
-#include	"SDL_Interface.h"
 #include	"SDL_Mixer_Interface.h"
 
 #include	"GeneralDefinition.h"

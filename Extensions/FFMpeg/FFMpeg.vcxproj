@@ -322,7 +322,6 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="Macro.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="SDL_Interface.h" />
     <ClInclude Include="SDL_Mixer_Interface.h" />
   </ItemGroup>
   <ItemGroup>

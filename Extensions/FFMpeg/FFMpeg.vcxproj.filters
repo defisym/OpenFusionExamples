@@ -211,9 +211,6 @@
     <ClInclude Include="SDL_Mixer_Interface.h">
       <Filter>AudioInterface</Filter>
     </ClInclude>
-    <ClInclude Include="SDL_Interface.h">
-      <Filter>AudioInterface</Filter>
-    </ClInclude>
     <ClInclude Include="D3D\HookD3D.h">
       <Filter>D3D</Filter>
     </ClInclude>
