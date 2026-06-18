@@ -31,6 +31,7 @@
 #undef fpFont
 
 #include "NeoStrDefinitionGDIPlus.h"
+#include "NeoStrContextGDIPlus.h"
 #include "NeoStrFontCacheGDIPlus.h"
 
 //#define MEASURE_GDI_PLUS
@@ -86,9 +87,7 @@ private:
 	// Set to false if app have a shared GDI plus environment
 	bool needGDIPStartUp = true;
 
-	GdiplusStartupInput gdiplusStartupInput;
-	ULONG_PTR           gdiplusToken;
-
+    NeoStrContextGDIPlus ctx = {};
 	Bitmap* pBitmap = nullptr;
 
 #ifdef MEASURE_GDI_PLUS
@@ -729,10 +728,7 @@ public:
 		// GDI Env
 		// ------
 		this->needGDIPStartUp = needGDIPStartUp;
-
-		if (this->needGDIPStartUp) {
-			Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
-		}
+        if (this->needGDIPStartUp) { ctx.Initialize(); }
 
 		// ------
 		// Basic Font
@@ -864,9 +860,7 @@ public:
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
 
-		if (this->needGDIPStartUp) {
-			Gdiplus::GdiplusShutdown(gdiplusToken);
-		}
+        if (this->needGDIPStartUp) { ctx.Shutdown(); }
 	}
 
 	inline void CopyProperties(const NeoStr* pCopy) {
