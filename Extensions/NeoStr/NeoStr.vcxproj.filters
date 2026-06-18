@@ -55,6 +55,9 @@
     <ClCompile Include="..\_DeLib\NeoStrFontCacheFreeType.cpp">
       <Filter>NeoStr\Backends</Filter>
     </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrContext.cpp">
+      <Filter>NeoStr</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -210,6 +213,9 @@
     </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrDefinitionFreeType.h">
       <Filter>NeoStr\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrContext.h">
+      <Filter>NeoStr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

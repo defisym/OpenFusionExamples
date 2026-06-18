@@ -65,10 +65,7 @@ struct GlobalData;
 #include	"NeoStr.h"
 
 struct GlobalData {
-	bool gdiInitialized = false;
-	GdiplusStartupInput gdiplusStartupInput;
-	ULONG_PTR           gdiplusToken;
-	
+    NeoStrContextGDIPlus ctx = {};
     NeoStrFontCacheGDIPlus fontCache = {};
 	NeoStr::IConData* pIConData;
 
@@ -77,11 +74,7 @@ struct GlobalData {
 #endif
 
 	GlobalData(){
-		auto state = Gdiplus::GdiplusStartup(&gdiplusToken
-			, &gdiplusStartupInput
-			, NULL);
-		gdiInitialized = true;
-
+        ctx.Initialize();
         fontCache.Alloc();
 		pIConData = new NeoStr::IConData;
 	}
@@ -89,8 +82,7 @@ struct GlobalData {
 	~GlobalData() {
 		delete pIConData;
         fontCache.Release();
-
-		Gdiplus::GdiplusShutdown(gdiplusToken);
+        ctx.Shutdown();
 	}
 };
 
