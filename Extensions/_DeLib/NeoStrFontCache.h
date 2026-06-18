@@ -3,6 +3,8 @@
 #include <memory>
 
 #include "NeoStrBackend.h"
+
+#include "NeoStrContext.h"
 #include "NeoStrLayout.h"
 #include "NeoStrWordBreakHandler.h"
 
@@ -17,6 +19,11 @@ struct NeoStrFontCache {
     FontNames embedFontList;
 
     virtual ~NeoStrFontCache() {};
+
+    // some font lib init context globally
+    // that's why this function is not an abstract function
+    // or default impl with ptr
+    virtual void SetContext(NeoStrContext* pCtx) {};
 
     virtual bool CacheValid() const;
     virtual void Alloc();
