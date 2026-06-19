@@ -174,9 +174,19 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		// Create font
 		//MSGBOX(L"L: "+_itos(rc->left)+ L"T: " + _itos(rc->top), L"RECT");
 
-		// Draw text
+        // alloc context to optimize edittime rendering
+        // static GlobalData will hang fusion when closing mfa using NeoStr
+        // due to order or something else
+        // new and let OS handle it when free dll
+        static GlobalData* pCtx = nullptr;
+        // intentional leak
+        if (pCtx == nullptr) { pCtx = new GlobalData(); }
+        
+        // Draw text
 		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
-		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
+        //NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
+		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont,
+            false, pCtx->fontCache, pCtx->pIConData);
 
 		int sfDrv = ps->GetDriver();
 		neoStr.SetHWA(sfDrv, false);
