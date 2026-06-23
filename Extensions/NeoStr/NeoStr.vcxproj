@@ -250,6 +250,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrBackend.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrContext.cpp" />
+    <ClCompile Include="..\_DeLib\NeoStrContextFreeType.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrContextGDIPlus.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrFontCache.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrFontCacheFreeType.cpp" />
@@ -306,6 +307,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\NeoStr.h" />
     <ClInclude Include="..\_DeLib\NeoStrBackend.h" />
     <ClInclude Include="..\_DeLib\NeoStrContext.h" />
+    <ClInclude Include="..\_DeLib\NeoStrContextFreeType.h" />
     <ClInclude Include="..\_DeLib\NeoStrContextGDIPlus.h" />
     <ClInclude Include="..\_DeLib\NeoStrDefinitionFreeType.h" />
     <ClInclude Include="..\_DeLib\NeoStrDefinitionGDIPlus.h" />

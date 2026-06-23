@@ -61,6 +61,9 @@
     <ClCompile Include="..\_DeLib\NeoStrContextGDIPlus.cpp">
       <Filter>NeoStr\Backends</Filter>
     </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrContextFreeType.cpp">
+      <Filter>NeoStr\Backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -221,6 +224,9 @@
       <Filter>NeoStr</Filter>
     </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrContextGDIPlus.h">
+      <Filter>NeoStr\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrContextFreeType.h">
       <Filter>NeoStr\Backends</Filter>
     </ClInclude>
   </ItemGroup>
