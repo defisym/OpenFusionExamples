@@ -1,16 +1,18 @@
 #include "NeoStrContextGDIPlus.h"
 
 bool NeoStrContextGDIPlus::Initialize() {
-    if (gdiInitialized) { return true; }
+    if (bInitialized) { return true; }
 
     status = Gdiplus::GdiplusStartup(&gdiplusToken
         , &gdiplusStartupInput
         , NULL);
-    gdiInitialized = status == Gdiplus::Status::Ok;
+    bInitialized = (status == Gdiplus::Status::Ok);
 
-    return gdiInitialized;
+    return bInitialized;
 }
 
 void NeoStrContextGDIPlus::Shutdown() {
+    if (!bInitialized) { return; }
+
     Gdiplus::GdiplusShutdown(gdiplusToken);
 }
