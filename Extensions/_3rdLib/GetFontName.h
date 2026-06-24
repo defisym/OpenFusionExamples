@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN 
@@ -170,22 +170,22 @@ inline FontNames GetFontNameFromFile(LPCWSTR lpszFilePath) {
 #endif					
 					
 					//https://gist.github.com/honood/3851840
-					// ÓÃ uint16_t ÊÇÒòÎª Linux µÄ wchar_t Îª4×Ö½Ú
-					// ¶ø TTF ÎÄ¼şÖĞµÄĞÅÏ¢ÊÇÒÔ2×Ö½Ú wchar_t ¼ÇÂ¼µÄ
+					// ç”¨ uint16_t æ˜¯å› ä¸º Linux çš„ wchar_t ä¸º4å­—èŠ‚
+					// è€Œ TTF æ–‡ä»¶ä¸­çš„ä¿¡æ¯æ˜¯ä»¥2å­—èŠ‚ wchar_t è®°å½•çš„
 					if (ttRecord.uPlatformID == 3) {						
-						// ½« pbuf ×ª»»Îª¹Ì¶¨2×Ö½Ú wchar_t µÄ×Ö·û´®Ö¸Õë
+						// å°† pbuf è½¬æ¢ä¸ºå›ºå®š2å­—èŠ‚ wchar_t çš„å­—ç¬¦ä¸²æŒ‡é’ˆ
 						uint16_t* pwch = (uint16_t*)lpszNameBuf;
-						// ¼ÆËã2×Ö½Ú wchar_t µÄ×Ö·û¸öÊı£¨Ô­ÒòÍ¬ÉÏ£©
+						// è®¡ç®—2å­—èŠ‚ wchar_t çš„å­—ç¬¦ä¸ªæ•°ï¼ˆåŸå› åŒä¸Šï¼‰
 						uint16_t cwch = ttRecord.uStringLength / sizeof(uint16_t);
 						uint16_t wSz = cwch + 1;
-						// ÎªÓëÆ½Ì¨Ïà¹ØµÄÄ¿±ê wchar_t Ö¸Õë·ÖÅä¿Õ¼ä
+						// ä¸ºä¸å¹³å°ç›¸å…³çš„ç›®æ ‡ wchar_t æŒ‡é’ˆåˆ†é…ç©ºé—´
 						wchar_t* pwstr=new wchar_t[wSz];
 						memset(pwstr, 0, wSz * sizeof(wchar_t));
 
 						if (pwstr != NULL) {
 							for (uint32_t iwch = 0; iwch < cwch; iwch++) {
-								// ½«¹Ì¶¨2×Ö½ÚµÄ wchar_t ×ª»»×Ö½ÚĞòºó
-								// ¸³Öµ¸øÓëÆ½Ì¨Ïà¹ØµÄ wchar_t ×Ö·ûÊı×é
+								// å°†å›ºå®š2å­—èŠ‚çš„ wchar_t è½¬æ¢å­—èŠ‚åºå
+								// èµ‹å€¼ç»™ä¸å¹³å°ç›¸å…³çš„ wchar_t å­—ç¬¦æ•°ç»„
 								pwstr[iwch] = SWAPWORD(*pwch);
 								pwch++;
 							}

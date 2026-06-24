@@ -6,8 +6,8 @@
 #include <thread>
 
 // Windows
-#define NOMINMAX　
-#define WIN32_LEAN_AND_MEAN 
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 // Thread

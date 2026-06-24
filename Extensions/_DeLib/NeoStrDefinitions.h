@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <exception>
 
@@ -6,7 +6,7 @@
 // Char Defaults
 // ------------
 constexpr auto CHAR_SPACE = L' ';
-constexpr auto CHAR_EMSPACE = L'¡¡';
+constexpr auto CHAR_EMSPACE = L'\x3000';
 constexpr auto CHAR_TAB = L'\t';
 
 constexpr auto DEFAULT_EBORDER_OFFSET = 20;
