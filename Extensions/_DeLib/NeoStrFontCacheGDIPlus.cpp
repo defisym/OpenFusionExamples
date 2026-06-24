@@ -41,8 +41,8 @@ void NeoStrFontCacheGDIPlus::Release() {
 //  https://www.codeproject.com/Articles/42041/How-to-Use-a-Font-Without-Installing-it
 //  https://blog.csdn.net/analogous_love/article/details/45845971
 
-bool NeoStrFontCacheGDIPlus::EmbedFontFromFile(const std::wstring& filePath) {
-    auto gdipRet = pFontCollection->AddFontFile(filePath.c_str());
+bool NeoStrFontCacheGDIPlus::EmbedFontFromFile(const std::filesystem::path& filePath) {    
+    auto gdipRet = pFontCollection->AddFontFile(filePath.wstring().c_str());
 
     return gdipRet == Gdiplus::Status::Ok;
 }

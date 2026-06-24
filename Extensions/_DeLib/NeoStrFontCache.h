@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <filesystem>
 
 #include "NeoStrBackend.h"
 
@@ -34,7 +35,7 @@ struct NeoStrFontCache {
     bool FontEmbed(const FontNames& fontNames);
     void AddEmbedFont(const FontNames& fontNames);
 
-    virtual bool EmbedFontFromFile(const std::wstring& filePath) = 0;
+    virtual bool EmbedFontFromFile(const std::filesystem::path& filePath) = 0;
     virtual bool EmbedFontFromMemory(const char* pData, const size_t sz) = 0;
 
     virtual bool HasFont(const NeoStrFontInfo& fontInfo) const = 0;

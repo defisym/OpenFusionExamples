@@ -26,7 +26,7 @@ struct NeoStrFontCacheGDIPlus :public NeoStrFontCache {
     void Alloc() override;
     void Release() override;
 
-    bool EmbedFontFromFile(const std::wstring& filePath) override;
+    bool EmbedFontFromFile(const std::filesystem::path& filePath) override;
     bool EmbedFontFromMemory(const char* pData, const size_t sz) override;
 
     bool HasFont(const NeoStrFontInfo& fontInfo) const override;
