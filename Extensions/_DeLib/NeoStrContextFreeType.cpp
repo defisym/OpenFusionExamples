@@ -4,7 +4,7 @@ bool NeoStrContextFreeType::Initialize() {
     if (bInitialized) { return true; }
 
     error = FT_Init_FreeType(&library);
-    bInitialized = (error == 0);
+    bInitialized = (error == FT_Err_Ok);
 
     return bInitialized;
 }

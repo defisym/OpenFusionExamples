@@ -1,15 +1,23 @@
 #pragma once
 
 #include "NeoStrFontCache.h"
-#include "NeoStrDefinitionFreeType.h"
+#include "NeoStrContextFreeType.h"
 
 struct CharSizeCacheItem;
 struct NeoStrFontInfoFreeType :public NeoStrFontInfo {
  
 };
 
-struct NeoStrFontCacheGDIPlus :public NeoStrFontCache {
-       bool CacheValid() const override;
+struct NeoStrFontCacheFreeType :public NeoStrFontCache {
+    using FontCache = std::vector<FT_Face>;
+
+    FontCache* pFontCache = nullptr;
+
+    NeoStrContextFreeType* pCtx = nullptr;
+
+    void SetContext(NeoStrContext* pCtx) override;
+
+    bool CacheValid() const override;
     void Alloc() override;
     void Release() override;
 
