@@ -94,7 +94,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->dwColor = edPtr->dwColor = edPtr->dwColor = edPtr->dwColor;
 	rdPtr->dwAlignFlags = edPtr->dwAlignFlags;
 	rdPtr->logFont = edPtr->logFont;
-	rdPtr->hFont = CreateFontIndirect(&edPtr->logFont);
 
 	rdPtr->nOutLinePixel = edPtr->nOutLinePixel;
 	rdPtr->dwOutLineColor = edPtr->dwOutLineColor;
@@ -191,10 +190,6 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 #ifdef _CONSOLE
 	FreeConsole();
 #endif
-	
-	if (rdPtr->hFont != nullptr) {
-		DeleteObject(rdPtr->hFont);
-	}
 	
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
@@ -505,26 +500,8 @@ void WINAPI GetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf) {
 // Change the font used by the object.
 // 
 void WINAPI SetRunObjectFont(LPRDATA rdPtr, LOGFONT* pLf, RECT* pRc) {
-	const HFONT hFont = CreateFontIndirect(pLf);
-
-#ifdef _DEBUG
-	LOGFONT Lf = { };
-	GetObject(hFont, sizeof(LOGFONT), &Lf);
-#endif // _DEBUG
-
-	if ( hFont != nullptr) {
-		if (rdPtr->hFont != nullptr) {
-			DeleteObject(rdPtr->hFont);
-		}
-
-		rdPtr->logFont = *pLf;
-		rdPtr->hFont = hFont;
-		rdPtr->bFontChanged = true;
-
-		//Seems doesn't need it here
-		//SendMessage(rdPtr->hWnd, WM_SETFONT, (WPARAM)rdPtr->hFont, FALSE);
-		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
-	}
+    rdPtr->logFont = *pLf;
+    rdPtr->bFontChanged = true;
 }
 
 // ---------------------

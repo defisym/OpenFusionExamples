@@ -54,7 +54,7 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
-        rdPtr->pNeoStr = new NeoStr(rdPtr->dwAlignFlags, rdPtr->dwColor, rdPtr->hFont, false,
+        rdPtr->pNeoStr = new NeoStr(rdPtr->logFont, rdPtr->dwColor, rdPtr->dwAlignFlags, false,
             rdPtr->pData->fontCache,
             GetIConData(rdPtr));
 
@@ -183,9 +183,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
         if (pCtx == nullptr) { pCtx = new GlobalData(); }
         
         // Draw text
-		HFONT hFont = CreateFontIndirect(&edPtr->logFont);
-        //NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont);
-		NeoStr neoStr(edPtr->dwAlignFlags, edPtr->dwColor, hFont,
+        NeoStr neoStr(edPtr->logFont, edPtr->dwColor, edPtr->dwAlignFlags,
             false, pCtx->fontCache, pCtx->pIConData);
 
 		int sfDrv = ps->GetDriver();
@@ -238,11 +236,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
 		blitOpt.bo = (BlitOp)(oiPtr->oiHdr.oiInkEffect & EFFECT_MASK);
 		blitOpt.boParam = oiPtr->oiHdr.oiInkEffectParam;
 
-		neoStr.BlitResult(ps, rc, blitOpt);
-
-		// Delete font
-		if (hFont != NULL)
-			DeleteObject(hFont);
+		neoStr.BlitResult(ps, rc, blitOpt);		
 	}
 }
 

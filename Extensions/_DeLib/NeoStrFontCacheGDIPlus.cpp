@@ -140,7 +140,7 @@ const CharSizeCacheItem& NeoStrFontCacheGDIPlus::GetCharSizeCacheItem(const LOGF
 
     if (it != pCharSzCacheWithFont->end()) { return it->second; }
 
-    static auto emptyItem= CharSizeCacheItem{};
+    static auto emptyItem = CharSizeCacheItem{};
     return emptyItem;
 }
 

@@ -250,7 +250,6 @@ typedef struct tagRDATA
 	COLORREF		dwColor;		// text color
 	DWORD			dwAlignFlags;	// alignment flags
 	LOGFONT			logFont;		// text font
-	HFONT			hFont;			// text font
 
 	//Unused
 	BYTE nOutLinePixel;

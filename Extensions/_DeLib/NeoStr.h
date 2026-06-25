@@ -38,14 +38,12 @@
 
 class NeoStr {
 private:
-	HDC hdc;
-	HGDIOBJ hOldObj;
-	DWORD dwTextColor;
+    HDC hdc;
 
-	HFONT hFont;
 	LOGFONT logFont;
-
 	Font* pFont = nullptr;
+    
+    DWORD dwTextColor;
 
 	TEXTMETRIC tm;
 	int nRowSpace = 0;
@@ -715,12 +713,12 @@ private:
     NeoStrFontCacheGDIPlus fontCache = {};
 
 public:
-	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
+	NeoStr(const LOGFONT& logFont, const COLORREF color, const DWORD dwAlignFlags,
 		const NeoStr* pCache)
-        :NeoStr(dwAlignFlags, color, hFont, false, pCache->fontCache, pCache->pIConData) {
+        :NeoStr(logFont, color, dwAlignFlags, false, pCache->fontCache, pCache->pIConData) {
     }
 
-	NeoStr(const DWORD dwAlignFlags, const COLORREF color, const HFONT hFont,
+	NeoStr(const LOGFONT& logFont, const COLORREF color, const DWORD dwAlignFlags,
 		const bool needGDIPStartUp = true,
 		const NeoStrFontCacheGDIPlus& neoStrFontCache = {},
 		IConData* pIConData = nullptr) {
@@ -733,14 +731,8 @@ public:
 		// ------
 		// Basic Font
 		// ------
-		// duplicate font handle
-		GetObject(hFont, sizeof(LOGFONT), &this->logFont);
-		this->hFont = CreateFontIndirect(&this->logFont);
-
-		//this->hdc = GetDC(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
-		this->hdc = GetDC(nullptr);
-		this->hOldObj = SelectObject(this->hdc, hFont);
-		GetTextMetrics(hdc, &this->tm);
+        this->hdc = GetDC(nullptr);
+        this->logFont = logFont;
 
 		this->SetColor(color);
 		this->dwDTFlags = dwAlignFlags | DT_NOPREFIX | DT_WORDBREAK | DT_EDITCONTROL;
@@ -756,10 +748,12 @@ public:
 
 		if (this->bExternalCache) {
             fontCache = neoStrFontCache;
-		}else {		
+		}else {
+            fontCache.SetContext(&ctx);
             fontCache.Alloc();
 		}
-        
+
+        this->tm = fontCache.GetCharSizeCacheItem(this->logFont).tm;
         this->pFont = fontCache.GetFontPointerWithCache(this->logFont);
 
 		// ICon
@@ -818,9 +812,7 @@ public:
 	}
 
 	~NeoStr() {
-		SelectObject(this->hdc, this->hOldObj);
-		ReleaseDC(nullptr, this->hdc);
-		DeleteObject(this->hFont);
+        ReleaseDC(nullptr, this->hdc);
 
 #ifdef MEASURE_GDI_PLUS		
 		delete this->pMeasure;
@@ -3438,13 +3430,11 @@ public:
 			auto remarkLogFont = fontItHandler.it->logFont;
 			remarkLogFont.lfHeight /= 2;
 
-			auto remarkHFont = CreateFontIndirect(&remarkLogFont);
-
-			if (it.pNeoStr == nullptr
-				|| NeoStrFontCacheGDIPlus::LogFontHasher(it.pNeoStr->logFont) != NeoStrFontCacheGDIPlus::LogFontHasher(remarkLogFont)) {
-				delete it.pNeoStr;
-				it.pNeoStr = new NeoStr(this->dwDTFlags, this->dwTextColor, remarkHFont, this);
-			}
+            if (it.pNeoStr == nullptr
+                || NeoStrFontCacheGDIPlus::LogFontHasher(it.pNeoStr->logFont) != NeoStrFontCacheGDIPlus::LogFontHasher(remarkLogFont)) {
+                delete it.pNeoStr;
+                it.pNeoStr = new NeoStr(remarkLogFont, this->dwTextColor, this->dwDTFlags, this);
+            }
 
 			auto pRemarkNeoStr = it.pNeoStr;
 			pRemarkNeoStr->CopyProperties(this);
@@ -3594,8 +3584,6 @@ public:
 
 			// update shake state here, as child's child may shake
 			this->bChildShake |= pRemarkNeoStr->GetShakeUpdateState();
-
-			DeleteObject(remarkHFont);
 		}
 
 #ifdef _BLUR
