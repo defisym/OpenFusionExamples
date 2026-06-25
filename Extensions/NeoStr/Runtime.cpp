@@ -197,8 +197,8 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete static_cast<NeoStr::IConParamParser*>(rdPtr->pIConParamParser);
 	delete rdPtr->pIConItName;
 
-	if (rdPtr->pData->pIConData->pCaller == reinterpret_cast<LPRO>(rdPtr)) {
-		rdPtr->pData->pIConData->ResetCaller();
+	if (rdPtr->pData->iconData.pCaller == reinterpret_cast<LPRO>(rdPtr)) {
+		rdPtr->pData->iconData.ResetCaller();
 	}
 
 	delete static_cast<NeoStr::RenderOptions*>(rdPtr->pRenderOptions);
@@ -260,7 +260,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 #endif
 
 	// update caller state
-	rdPtr->pData->pIConData->CheckCallerValidity();
+	rdPtr->pData->iconData.CheckCallerValidity();
 
 	if (rdPtr->rc.rcChanged)
 		return REFLAG_DISPLAY;

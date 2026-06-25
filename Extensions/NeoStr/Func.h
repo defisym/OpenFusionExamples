@@ -41,7 +41,7 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline NeoStr::IConData* GetIConData(LPRDATA rdPtr) {
-	return rdPtr->bIConGlobal ? rdPtr->pData->pIConData : nullptr;
+	return rdPtr->bIConGlobal ? &rdPtr->pData->iconData : nullptr;
 }
 
 inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
@@ -54,8 +54,9 @@ inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
 		rdPtr->bStrChanged = true;
 
 		delete rdPtr->pNeoStr;
-        rdPtr->pNeoStr = new NeoStr(rdPtr->logFont, rdPtr->dwColor, rdPtr->dwAlignFlags, false,
-            rdPtr->pData->fontCache,
+        rdPtr->pNeoStr = new NeoStr(rdPtr->logFont, rdPtr->dwColor, rdPtr->dwAlignFlags,
+            &rdPtr->pData->ctx,
+            &rdPtr->pData->fontCache,
             GetIConData(rdPtr));
 
 		LPSURFACE wSurf = WinGetSurface((int)rdPtr->rHo.hoAdRunHeader->rhIdEditWin);
@@ -184,7 +185,7 @@ inline void Display(mv _far* mV, fpObjInfo oiPtr, fpLevObj loPtr, LPEDATA edPtr,
         
         // Draw text
         NeoStr neoStr(edPtr->logFont, edPtr->dwColor, edPtr->dwAlignFlags,
-            false, pCtx->fontCache, pCtx->pIConData);
+            &pCtx->ctx, &pCtx->fontCache, &pCtx->iconData);
 
 		int sfDrv = ps->GetDriver();
 		neoStr.SetHWA(sfDrv, false);
@@ -343,10 +344,10 @@ inline void SetIConUpdate(LPRDATA rdPtr) {
 inline void GlobalIConUpdater(LPRDATA rdPtr) {
 	if (!rdPtr->bIConGlobal) { return; }
 
-	if (rdPtr->pData->pIConData->NeedUpdateICon(rdPtr->pIConObject)) {
+	if (rdPtr->pData->iconData.NeedUpdateICon(rdPtr->pIConObject)) {
 		SetIConUpdate(rdPtr);
 	}
 
-	rdPtr->pData->pIConData->pCaller = (LPRO)rdPtr;
-	rdPtr->pData->pIConData->UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
+	rdPtr->pData->iconData.pCaller = (LPRO)rdPtr;
+	rdPtr->pData->iconData.UpdateICon(rdPtr->pIConObject, GIPP(rdPtr->pIConParamParser));
 }

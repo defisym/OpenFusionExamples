@@ -66,7 +66,7 @@ struct GlobalData;
 struct GlobalData {
     NeoStrContextGDIPlus ctx = {};
     NeoStrFontCacheGDIPlus fontCache = {};
-	NeoStr::IConData* pIConData;
+    NeoStr::IConData iconData = {};
 
 #ifdef COUNT_GDI_OBJECT
 	GDIObjectCounter objectCounter;
@@ -74,12 +74,10 @@ struct GlobalData {
 
 	GlobalData(){
         ctx.Initialize();
-        fontCache.Alloc();
-		pIConData = new NeoStr::IConData;
+        fontCache.Alloc();		
 	}
 
 	~GlobalData() {
-		delete pIConData;
         fontCache.Release();
         ctx.Shutdown();
 	}

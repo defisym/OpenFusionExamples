@@ -1108,10 +1108,11 @@ long WINAPI DLLExport Expression_GetFilteredString(LPRDATA rdPtr, long param1) {
 	LPCWSTR pStr = (LPCWSTR)CNC_GetFirstExpressionParameter(rdPtr, param1, TYPE_STRING);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-	NeoStr filter(rdPtr->logFont, 0, 0, false,
-        rdPtr->pData->fontCache,
-        // use global data here to avoid unnecessary alloc
-		rdPtr->pData->pIConData);
+    // use global data here to avoid unnecessary alloc
+    NeoStr filter(rdPtr->logFont, 0, 0,
+        &rdPtr->pData->ctx,
+        &rdPtr->pData->fontCache,
+        &rdPtr->pData->iconData);
 
 	filter.GetFormat(pStr,
 		flags == static_cast<size_t>(-1)
@@ -1299,10 +1300,11 @@ long WINAPI DLLExport Expression_GetRawStringByFilteredStringLength(LPRDATA rdPt
 	size_t filteredLength = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 	size_t flags = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_LONG);
 
-    NeoStr filter(rdPtr->logFont, 0, 0, false,
-        rdPtr->pData->fontCache,
-        // use global data here to avoid unnecessary alloc
-		rdPtr->pData->pIConData);
+    // use global data here to avoid unnecessary alloc
+    NeoStr filter(rdPtr->logFont, 0, 0,
+        &rdPtr->pData->ctx,
+        &rdPtr->pData->fontCache,
+		&rdPtr->pData->iconData);
 
 	try {		
 		filter.GetFormat(pStr

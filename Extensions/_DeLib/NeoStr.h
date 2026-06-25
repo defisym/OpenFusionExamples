@@ -38,6 +38,11 @@
 
 class NeoStr {
 private:
+    bool bExternalContext = false;
+    NeoStrContextGDIPlus* pCtx = nullptr;
+    bool bExternalFontCache = false;
+    NeoStrFontCacheGDIPlus* pFontCache = nullptr;
+
     HDC hdc;
 
 	LOGFONT logFont;
@@ -82,10 +87,6 @@ private:
 	LPWSTR pRawText = nullptr;
 	LPWSTR pText = nullptr;
 
-	// Set to false if app have a shared GDI plus environment
-	bool needGDIPStartUp = true;
-
-    NeoStrContextGDIPlus ctx = {};
 	Bitmap* pBitmap = nullptr;
 
 #ifdef MEASURE_GDI_PLUS
@@ -710,24 +711,17 @@ private:
 	}
 #endif
 
-    NeoStrFontCacheGDIPlus fontCache = {};
 
 public:
 	NeoStr(const LOGFONT& logFont, const COLORREF color, const DWORD dwAlignFlags,
 		const NeoStr* pCache)
-        :NeoStr(logFont, color, dwAlignFlags, false, pCache->fontCache, pCache->pIConData) {
+        :NeoStr(logFont, color, dwAlignFlags, pCache->pCtx, pCache->pFontCache, pCache->pIConData) {
     }
 
 	NeoStr(const LOGFONT& logFont, const COLORREF color, const DWORD dwAlignFlags,
-		const bool needGDIPStartUp = true,
-		const NeoStrFontCacheGDIPlus& neoStrFontCache = {},
+		NeoStrContextGDIPlus* pCtx = nullptr,
+		NeoStrFontCacheGDIPlus* pFontCache = nullptr,
 		IConData* pIConData = nullptr) {
-		// ------
-		// GDI Env
-		// ------
-		this->needGDIPStartUp = needGDIPStartUp;
-        if (this->needGDIPStartUp) { ctx.Initialize(); }
-
 		// ------
 		// Basic Font
 		// ------
@@ -743,18 +737,23 @@ public:
 		// Cache
 		// ------
 
-		// Font
-		this->bExternalCache = neoStrFontCache.CacheValid();
+        // Ctx
+        this->bExternalContext = pCtx != nullptr;
+        this->pCtx = this->bExternalContext ? pCtx : new NeoStrContextGDIPlus;
+        if (this->bExternalContext) { 
+            this->pCtx->Initialize(); 
+        }
 
-		if (this->bExternalCache) {
-            fontCache = neoStrFontCache;
-		}else {
-            fontCache.SetContext(&ctx);
-            fontCache.Alloc();
-		}
+        // Font
+        this->bExternalFontCache = pFontCache != nullptr;
+        this->pFontCache = this->bExternalFontCache ? pFontCache : new NeoStrFontCacheGDIPlus;
+        if (this->bExternalFontCache) { 
+            this->pFontCache->SetContext(this->pCtx);
+            this->pFontCache->Alloc();
+        }
 
-        this->tm = fontCache.GetCharSizeCacheItem(this->logFont).tm;
-        this->pFont = fontCache.GetFontPointerWithCache(this->logFont);
+        this->tm = pFontCache->GetCharSizeCacheItem(this->logFont).tm;
+        this->pFont = pFontCache->GetFontPointerWithCache(this->logFont);
 
 		// ICon
 		this->bExternalIConData = pIConData != nullptr;
@@ -808,7 +807,7 @@ public:
 		this->measureBaseSize.cy = long(this->pFont->GetHeight(this->pMeasure));
 #endif
 		// add a default char to return default value when input text is empty        
-		this->defaultCharSz = fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
+		this->defaultCharSz = pFontCache->GetCharSizeWithCache(DEFAULT_CHARACTER, this->logFont);
 	}
 
 	~NeoStr() {
@@ -819,14 +818,24 @@ public:
 		this->pMeasure = nullptr;
 #endif
 
-		if (!this->bExternalCache) {
-            fontCache.Release();
-		}
-
 		if (!this->bExternalIConData) {
 			delete this->pIConData;
 			this->pIConData = nullptr;
 		}
+
+        if (!this->bExternalFontCache) {
+            this->pFontCache->Release();
+
+            delete this->pFontCache;
+            this->pFontCache = nullptr;
+        }
+
+        if (!this->bExternalContext) {
+            this->pCtx->Shutdown();
+
+            delete this->pCtx;
+            this->pCtx = nullptr;
+        }
 
 		delete this->pShakeRandGen;
 		this->pShakeRandGen = nullptr;
@@ -851,8 +860,6 @@ public:
 
 		delete this->pHwaSf;
 		this->pHwaSf = nullptr;
-
-        if (this->needGDIPStartUp) { ctx.Shutdown(); }
 	}
 
 	inline void CopyProperties(const NeoStr* pCopy) {
@@ -1253,7 +1260,7 @@ public:
 				return false;
 			}
 
-			if (!bAllowEmptyChar && !fontCache.pWordBreakCache->NotEmpty(pStr)) {
+			if (!bAllowEmptyChar && !pFontCache->pWordBreakCache->NotEmpty(pStr)) {
 				return false;
 			}
 
@@ -2568,7 +2575,7 @@ public:
 						break;
 					}
 
-					if (fontCache.pWordBreakCache->NotEmpty(curChar)) {
+					if (pFontCache->pWordBreakCache->NotEmpty(curChar)) {
 						break;
 					}
 
@@ -2593,7 +2600,7 @@ public:
 				});
 
 				// word break                
-				auto bCurWordBreak = fontCache.pWordBreakCache->WordBreak(curChar);
+				auto bCurWordBreak = pFontCache->pWordBreakCache->WordBreak(curChar);
 
 				auto InWord = [&] () {
 					bInWord = true;
@@ -2628,12 +2635,12 @@ public:
 				// size
 				auto getCharSize = [&] () {
 					if (curChar != CHAR_TAB) [[likely]] {
-						return fontCache.GetCharSizeWithCache(curChar, localLogFont);
+						return pFontCache->GetCharSizeWithCache(curChar, localLogFont);
 					}
 					else {
 						// update context
 						tabContext.UpdateContext(curWidth,
-                            fontCache.GetCharSizeWithCache(tabContext.spaceChar, localLogFont));
+                            pFontCache->GetCharSizeWithCache(tabContext.spaceChar, localLogFont));
 						return tabContext.GetTabCharSize();
 					}
 				};
@@ -2708,7 +2715,7 @@ public:
 							return;
 						}
 
-						if (fontCache.pWordBreakCache->WordBreak(PreviousChar)) {
+						if (pFontCache->pWordBreakCache->WordBreak(PreviousChar)) {
 							if (WB_AbleToNextLine()) {
 								WB_Backword();
 							}
@@ -3287,7 +3294,7 @@ public:
 						solidBrush.SetColor(colorIt->color);
 					});
 					fontItHandler.Forward(totalChar, [&] (const auto& fontIt) {                        
-						this->pFont = fontCache.GetFontPointerWithCache(fontIt->logFont);
+						this->pFont = pFontCache->GetFontPointerWithCache(fontIt->logFont);
 					});
 					shakeItHandler.Forward(totalChar, [&] (const auto& shakeIt) {
 						localShakeFormat = *shakeIt;
@@ -3504,10 +3511,10 @@ public:
 
 			// esitmate char size
 			auto estimateBaseCharSize = mainPositions.empty()
-				? fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+				? pFontCache->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
 				: CorrectCharSize(it.pCharSizeArr, mainPositions.size());
 			auto estimateRemarkCharSize = remarkPositions.empty()
-				? fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
+				? pFontCache->GetCharSizeWithCache(DEFAULT_CHARACTER, remarkLogFont)
 				: CorrectCharSize(pRemarkNeoStr->pCharSizeArr, remarkPositions.size());
 
 			// calculate position
@@ -3675,10 +3682,10 @@ public:
 				const bool bEnd = fontItHandler.End();
 
 				const auto& charSize = !bEnd
-					? pFormat->fontCache.GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
+					? pFormat->pFontCache->GetCharSizeWithCache(DEFAULT_CHARACTER, fontItHandler.it->logFont)
 					: pFormat->defaultCharSz;                
 				const auto& tm = !bEnd
-					? pFormat->fontCache.GetCharSizeCacheItem(fontItHandler.it->logFont).tm
+					? pFormat->pFontCache->GetCharSizeCacheItem(fontItHandler.it->logFont).tm
 					: pFormat->tm;
 
 				const auto& iConDisplay = !iConDisplayItHandler.End()
