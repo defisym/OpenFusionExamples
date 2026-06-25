@@ -33,7 +33,7 @@ struct NeoStrFontCache {
 
     // return true if all font names are added
     // do not call embed
-    bool FontEmbed(const FontNames& fontNames);
+    bool FontEmbed(const FontNames& fontNames) const;
     void AddEmbedFont(const FontNames& fontNames);
 
     virtual bool EmbedFontFromFile(const std::filesystem::path& filePath) = 0;

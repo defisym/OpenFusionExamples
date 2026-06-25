@@ -205,7 +205,7 @@ NeoStrFontCache::FontNames NeoStrFontCache::GetFontNamesFromMemory(const char* p
 
 // return true if all font names are added
 // do not call embed
-bool NeoStrFontCache::FontEmbed(const FontNames& fontNames) {
+bool NeoStrFontCache::FontEmbed(const FontNames& fontNames) const {
     for (const auto& fontName : fontNames) {
         auto it = std::find(embedFontList.begin(), embedFontList.end(), fontName);
         if (it == embedFontList.end()) {
