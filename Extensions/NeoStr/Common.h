@@ -47,7 +47,6 @@ struct GlobalData;
 
 // My header
 #include	"GeneralDefinition.h"
-#include	"GetFontName.h"
 #include	"WindowsCommon.h"
 #include	"ObjectSelection.h"
 

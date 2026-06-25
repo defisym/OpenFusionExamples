@@ -412,8 +412,9 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 	}
 
     auto fontNames = bFromMem
-        ? GetFontNameFromFile((LPCWSTR)pE->GetOutputData(), pE->GetOutputDataLength())
-        : GetFontNameFromFile(FilePath.c_str());
+        ? NeoStrFontCache::GetFontNamesFromMemory(reinterpret_cast<char*>(pE->GetOutputData()),
+                                                pE->GetOutputDataLength())
+        : NeoStrFontCache::GetFontNamesFromFile(FilePath.c_str());
 
     // already embedded
     if (rdPtr->pData->fontCache.FontEmbed(fontNames)) {
@@ -999,21 +1000,23 @@ long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
 	size_t pos = (size_t)CNC_GetNextExpressionParameter(rdPtr, param1, TYPE_INT);
 
 	bool bFromMem = !StrEmpty(Key);
-	Encryption* E = nullptr;
+	Encryption* pE = nullptr;
 
 	if (bFromMem) {
-		E = new Encryption;
-		E->GenerateKey(Key);
+		pE = new Encryption;
+		pE->GenerateKey(Key);
 
-		E->OpenFile(filePath.c_str());
-		E->Decrypt();
+		pE->OpenFile(filePath.c_str());
+		pE->Decrypt();
 	}
 
-	auto fontNames = bFromMem
-		? GetFontNameFromFile((LPCWSTR)E->GetOutputData(), E->GetOutputDataLength())
-		: GetFontNameFromFile(filePath.c_str());
+    auto fontNames = bFromMem
+        ? NeoStrFontCache::GetFontNamesFromMemory(reinterpret_cast<char*>(pE->GetOutputData()),
+                                                pE->GetOutputDataLength())
+        : NeoStrFontCache::GetFontNamesFromFile(filePath.c_str());
 
-	delete E;
+
+	delete pE;
 
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
