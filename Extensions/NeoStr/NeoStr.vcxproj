@@ -248,10 +248,10 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
-    <ClCompile Include="..\_DeLib\NeoStrBackend.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrContext.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrContextFreeType.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrContextGDIPlus.cpp" />
+    <ClCompile Include="..\_DeLib\NeoStrFactory.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrFontCache.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrFontCacheFreeType.cpp" />
     <ClCompile Include="..\_DeLib\NeoStrFontCacheGDIPlus.cpp" />
@@ -305,12 +305,12 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_DeLib\FusionUtilities.h" />
     <ClInclude Include="..\_DeLib\GeneralDefinition.h" />
     <ClInclude Include="..\_DeLib\NeoStr.h" />
-    <ClInclude Include="..\_DeLib\NeoStrBackend.h" />
     <ClInclude Include="..\_DeLib\NeoStrContext.h" />
     <ClInclude Include="..\_DeLib\NeoStrContextFreeType.h" />
     <ClInclude Include="..\_DeLib\NeoStrContextGDIPlus.h" />
     <ClInclude Include="..\_DeLib\NeoStrDefinitionFreeType.h" />
     <ClInclude Include="..\_DeLib\NeoStrDefinitionGDIPlus.h" />
+    <ClInclude Include="..\_DeLib\NeoStrFactory.h" />
     <ClInclude Include="..\_DeLib\NeoStrFontCacheFreeType.h" />
     <ClInclude Include="..\_DeLib\NeoStrFontCacheGDIPlus.h" />
     <ClInclude Include="..\_DeLib\NeoStrDefinitions.h" />

@@ -1,6 +1,4 @@
-#include "NeoStrFontCache.h"
-
-#include "NeoStrFontCacheGDIPlus.h"
+﻿#include "NeoStrFontCache.h"
 
 bool NeoStrFontCache::CacheValid() const {
     return pWordBreakCache != nullptr;
@@ -37,16 +35,4 @@ void NeoStrFontCache::AddEmbedFont(const FontNames& fontNames) {
             embedFontList.push_back(fontName);
         }
     }
-}
-
-std::unique_ptr<NeoStrFontCache> NeoStrFontCacheFactory(const NeoStrBackendType type) {
-    do {
-#ifdef _WIN32
-        if (type == NeoStrBackendType::GDIPLUS) {
-            return std::make_unique<NeoStrFontCacheGDIPlus>();
-        }
-#endif
-    } while (false);
-
-    return nullptr;
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <filesystem>
 
 #include "NeoStrBackend.h"
@@ -42,5 +41,3 @@ struct NeoStrFontCache {
     virtual NeoStrFont GetFont(const NeoStrFontInfo& fontInfo) const = 0;
     virtual CharSize GetCharSize(const wchar_t wChar, const NeoStrFontInfo& fontInfo) = 0;
 };
-
-std::unique_ptr<NeoStrFontCache> NeoStrFontCacheFactory(const NeoStrBackendType type);

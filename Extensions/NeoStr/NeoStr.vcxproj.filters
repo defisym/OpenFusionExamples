@@ -43,9 +43,6 @@
     <ClCompile Include="..\_DeLib\Encryption.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\_DeLib\NeoStrBackend.cpp">
-      <Filter>NeoStr</Filter>
-    </ClCompile>
     <ClCompile Include="..\_DeLib\NeoStrFontCache.cpp">
       <Filter>NeoStr</Filter>
     </ClCompile>
@@ -63,6 +60,9 @@
     </ClCompile>
     <ClCompile Include="..\_DeLib\NeoStrContextFreeType.cpp">
       <Filter>NeoStr\Backends</Filter>
+    </ClCompile>
+    <ClCompile Include="..\_DeLib\NeoStrFactory.cpp">
+      <Filter>NeoStr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -193,9 +193,6 @@
     <ClInclude Include="..\_DeLib\NeoStr.h">
       <Filter>NeoStr</Filter>
     </ClInclude>
-    <ClInclude Include="..\_DeLib\NeoStrBackend.h">
-      <Filter>NeoStr</Filter>
-    </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrDefinitions.h">
       <Filter>NeoStr</Filter>
     </ClInclude>
@@ -228,6 +225,9 @@
     </ClInclude>
     <ClInclude Include="..\_DeLib\NeoStrContextFreeType.h">
       <Filter>NeoStr\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_DeLib\NeoStrFactory.h">
+      <Filter>NeoStr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
