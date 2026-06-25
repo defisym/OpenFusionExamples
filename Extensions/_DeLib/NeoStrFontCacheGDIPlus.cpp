@@ -70,13 +70,11 @@ CharSize NeoStrFontCacheGDIPlus::GetCharSize(const wchar_t wChar,
 }
 
 Font* NeoStrFontCacheGDIPlus::GetFontPointer(const LOGFONT& logFont) const {
-    const auto bFound = FontCollectionHasFont(logFont.lfFaceName, pFontCollection);
-
     return new Font(logFont.lfFaceName,
         (float)abs(logFont.lfHeight),
         GetFontStyle(logFont),
         Gdiplus::UnitWorld,
-        bFound ? pFontCollection : nullptr);
+        FontEmbed(logFont.lfFaceName) ? pFontCollection : nullptr);
 }
 
 Font* NeoStrFontCacheGDIPlus::GetFontPointerWithCache(const LOGFONT& logFont) const {
@@ -141,81 +139,6 @@ const CharSizeCacheItem& NeoStrFontCacheGDIPlus::GetCharSizeCacheItem(const LOGF
     if (it != pCharSzCacheWithFont->end()) { return it->second; }
 
     return CharSizeCacheItem{};
-}
-
-bool NeoStrFontCacheGDIPlus::FontCollectionHasFont(const LPCWSTR pFaceName, const Gdiplus::FontCollection* pFontCollection) {
-    if (pFontCollection == nullptr) {
-        return false;
-    }
-
-    const int n = pFontCollection->GetFamilyCount();
-
-    if (n == 0) {
-        return false;
-    }
-
-    FontFamily* ffs = new FontFamily[n];
-
-    int found;
-    pFontCollection->GetFamilies(n, ffs, &found);
-
-    if (found == 0) {
-        return false;
-    }
-
-    wchar_t name[LF_FACESIZE]{ 0 };
-
-    const LANGID language = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-
-    bool has = false;
-    bool hasSuffixRegular = false;
-    //bool hasSuffixNormal = false;
-
-    const std::wstring withRegular = (std::wstring)pFaceName + (std::wstring)L" Regular";
-    //std::wstring withNormal = (std::wstring)pFaceName + (std::wstring)L" Normal";
-
-    for (int i = 0; i < n; i++) {
-        has = false;
-        hasSuffixRegular = false;
-        //hasSuffixNormal = false;
-
-        auto hasName = [&] (const LANGID language = (LANGID)0U) {
-            memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
-            ffs[i].GetFamilyName(name, language);
-
-            has |= (_wcsicmp(name, pFaceName) == 0);
-
-            if (has) {
-                return;
-            }
-
-            hasSuffixRegular |= (_wcsicmp(name, withRegular.c_str()) == 0);
-
-            if (hasSuffixRegular) {
-                return;
-            }
-
-            //hasSuffixNormal |= (_wcsicmp(name, withNormal.c_str()) == 0);
-            };
-
-        hasName();
-        hasName(language);
-
-        if (has || hasSuffixRegular/* || hasSuffixNormal*/) {
-            //if (hasSuffixRegular) {
-            //    wcscpy_s(pFaceName, LF_FACESIZE, withRegular.c_str());
-            //}
-            //if (hasSuffixNormal) {
-            //	wcscpy_s(pFaceName, LF_FACESIZE, withNormal.c_str());
-            //}
-
-            break;
-        }
-    }
-
-    delete[] ffs;
-
-    return has || hasSuffixRegular/* || hasSuffixNormal*/;
 }
 
 int NeoStrFontCacheGDIPlus::GetFontStyle(const LOGFONT& logFont) {

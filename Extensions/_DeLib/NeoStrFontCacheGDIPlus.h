@@ -39,8 +39,6 @@ struct NeoStrFontCacheGDIPlus :public NeoStrFontCache {
          const LOGFONT& logFont);
     const CharSizeCacheItem& GetCharSizeCacheItem(const LOGFONT& logFont) const;
 
-    static bool FontCollectionHasFont(const LPCWSTR pFaceName,
-        const Gdiplus::FontCollection* pFontCollection);
     static int GetFontStyle(const LOGFONT& logFont);
     static CharSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc);
     static size_t LogFontHasher(const LOGFONT& logFont);
