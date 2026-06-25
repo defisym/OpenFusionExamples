@@ -292,6 +292,7 @@ typedef struct tagRDATA
 
 	CharPos charPos;
 
+    void* pIConData;
 	LPRO pIConObject;
 	void* pIConParamParser;
 	

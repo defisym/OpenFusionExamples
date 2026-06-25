@@ -119,6 +119,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	
 	rdPtr->bFontChanged = true;
 
+    rdPtr->pIConData = new NeoStr::IConData;
 	rdPtr->pIConObject = nullptr;
 	rdPtr->pIConParamParser = new NeoStr::IConParamParser;
 
@@ -192,6 +193,7 @@ short WINAPI DLLExport DestroyRunObject(LPRDATA rdPtr, long fast)
 	delete rdPtr->pStr;
 	delete rdPtr->pNeoStr;
 
+    delete static_cast<NeoStr::IConData*>(rdPtr->pIConData);
 	delete static_cast<NeoStr::IConParamParser*>(rdPtr->pIConParamParser);
 	delete rdPtr->pIConItName;
 

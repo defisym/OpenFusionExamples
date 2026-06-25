@@ -41,7 +41,9 @@ inline void ReDisplay(LPRDATA rdPtr) {
 }
 
 inline NeoStr::IConData* GetIConData(LPRDATA rdPtr) {
-	return rdPtr->bIConGlobal ? &rdPtr->pData->iconData : nullptr;
+	return rdPtr->bIConGlobal 
+        ? &rdPtr->pData->iconData 
+        : static_cast<NeoStr::IConData*>(rdPtr->pIConData);
 }
 
 inline void HandleUpdate(LPRDATA rdPtr, RECT rc) {
