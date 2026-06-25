@@ -244,8 +244,6 @@ typedef struct tagRDATA
 	// Object's runtime data
 	short			swidth;
 	short			sheight;
-
-	HWND			hWnd;
 	
 	COLORREF		dwColor;		// text color
 	DWORD			dwAlignFlags;	// alignment flags

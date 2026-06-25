@@ -88,8 +88,6 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->hotSpotY = y;
 
 	ChangeScale(rdPtr);
-
-	rdPtr->hWnd = rdPtr->rHo.hoAdRunHeader->rhHMainWin;
 	
 	rdPtr->dwColor = edPtr->dwColor = edPtr->dwColor = edPtr->dwColor;
 	rdPtr->dwAlignFlags = edPtr->dwAlignFlags;
@@ -524,8 +522,6 @@ void WINAPI SetRunObjectTextColor(LPRDATA rdPtr, COLORREF rgb)
 	if (rdPtr->dwColor != rgb) {
 		rdPtr->dwColor = rgb;
 		rdPtr->reRender = true;
-		InvalidateRect(rdPtr->hWnd, NULL, TRUE);
-		//callRunTimeFunction(rdPtr, RFUNCTION_REDRAW, 0, 0);
 	}
 }
 
