@@ -2,8 +2,6 @@
 
 #include <filesystem>
 
-#include "NeoStrBackend.h"
-
 #include "NeoStrContext.h"
 #include "NeoStrLayout.h"
 #include "NeoStrWordBreakHandler.h"
@@ -29,6 +27,10 @@ struct NeoStrFontCache {
     virtual void Alloc();
     virtual void Release();
     
+    // read font names from file
+    static FontNames GetFontNamesFromFile(const std::filesystem::path& filePath);
+    static FontNames GetFontNamesFromMemory(const char* pData, const size_t sz);
+
     // return true if all font names are added
     // do not call embed
     bool FontEmbed(const FontNames& fontNames);
