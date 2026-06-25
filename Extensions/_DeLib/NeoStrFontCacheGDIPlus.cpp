@@ -138,7 +138,8 @@ const CharSizeCacheItem& NeoStrFontCacheGDIPlus::GetCharSizeCacheItem(const LOGF
 
     if (it != pCharSzCacheWithFont->end()) { return it->second; }
 
-    return CharSizeCacheItem{};
+    static auto emptyItem= CharSizeCacheItem{};
+    return emptyItem;
 }
 
 int NeoStrFontCacheGDIPlus::GetFontStyle(const LOGFONT& logFont) {
