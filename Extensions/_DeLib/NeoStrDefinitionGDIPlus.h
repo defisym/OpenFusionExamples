@@ -1,5 +1,11 @@
 #pragma once
 
+#ifndef ENABLE_GDIPLUS
+#define ENABLE_GDIPLUS
+#endif // ENABLE_GDIPLUS
+
+#ifdef ENABLE_GDIPLUS
+
 #include <windows.h>
 
 //#define _BLUR
@@ -45,3 +51,5 @@ using Gdiplus::GetImageEncodersSize;
 using Gdiplus::Blur;
 using Gdiplus::BlurParams;
 #endif
+
+#endif // ENABLE_GDIPLUS

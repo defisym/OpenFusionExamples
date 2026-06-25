@@ -1,5 +1,7 @@
 #include "NeoStrContextGDIPlus.h"
 
+#ifdef ENABLE_GDIPLUS
+
 bool NeoStrContextGDIPlus::Initialize() {
     if (bInitialized) { return true; }
 
@@ -16,3 +18,5 @@ void NeoStrContextGDIPlus::Shutdown() {
 
     Gdiplus::GdiplusShutdown(gdiplusToken);
 }
+
+#endif // ENABLE_GDIPLUS

@@ -1,5 +1,7 @@
 #include "NeoStrContextFreeType.h"
 
+#ifdef ENABLE_FREETYPE
+
 bool NeoStrContextFreeType::Initialize() {
     if (bInitialized) { return true; }
 
@@ -12,3 +14,5 @@ bool NeoStrContextFreeType::Initialize() {
 void NeoStrContextFreeType::Shutdown() {
     error = FT_Done_FreeType(library);
 }
+
+#endif // ENABLE_FREETYPE

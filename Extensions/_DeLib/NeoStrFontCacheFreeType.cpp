@@ -1,5 +1,7 @@
 ﻿#include "NeoStrFontCacheFreeType.h"
 
+#ifdef ENABLE_FREETYPE
+
 void NeoStrFontCacheFreeType::SetContext(NeoStrContext* pCtx) {
     this->pCtx = dynamic_cast<NeoStrContextFreeType*>(pCtx);
 }
@@ -88,3 +90,5 @@ NeoStrFont NeoStrFontCacheFreeType::GetFont(const NeoStrFontInfo& fontInfo) cons
 CharSize NeoStrFontCacheFreeType::GetCharSize(const wchar_t wChar, const NeoStrFontInfo& fontInfo) {
     return CharSize();
 }
+
+#endif // ENABLE_FREETYPE

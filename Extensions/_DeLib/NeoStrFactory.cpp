@@ -5,13 +5,20 @@
 #endif
 
 #ifdef BACKEND_GDIPLUS
+#include "NeoStrDefinitionGDIPlus.h"
+
+#ifdef ENABLE_GDIPLUS
+#define AVAILABLE_GDIPLUS
+
 #include "NeoStrContextGDIPlus.h"
 #include "NeoStrFontCacheGDIPlus.h"
+#endif // ENABLE_GDIPLUS
+
 #endif
 
 bool NeoStrBackendSupport(const NeoStrBackendType type) {
     switch (type) {
-#ifdef BACKEND_GDIPLUS
+#ifdef AVAILABLE_GDIPLUS
     case NeoStrBackendType::GDIPLUS: { return true; }
 #endif
     default: return false;
@@ -22,7 +29,7 @@ bool NeoStrBackendSupport(const NeoStrBackendType type) {
 
 std::unique_ptr<NeoStrContext> NeoStrContextFactory(const NeoStrBackendType type) {
     do {
-#ifdef BACKEND_GDIPLUS
+#ifdef AVAILABLE_GDIPLUS
         if (type == NeoStrBackendType::GDIPLUS) {
             return std::make_unique<NeoStrContextGDIPlus>();
         }
@@ -34,7 +41,7 @@ std::unique_ptr<NeoStrContext> NeoStrContextFactory(const NeoStrBackendType type
 
 std::unique_ptr<NeoStrFontCache> NeoStrFontCacheFactory(const NeoStrBackendType type) {
     do {
-#ifdef BACKEND_GDIPLUS
+#ifdef AVAILABLE_GDIPLUS
         if (type == NeoStrBackendType::GDIPLUS) {
             return std::make_unique<NeoStrFontCacheGDIPlus>();
         }

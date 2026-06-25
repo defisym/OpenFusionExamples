@@ -3,6 +3,8 @@
 #include "NeoStrFontCache.h"
 #include "NeoStrContextFreeType.h"
 
+#ifdef ENABLE_FREETYPE
+
 struct CharSizeCacheItem;
 struct NeoStrFontInfoFreeType :public NeoStrFontInfo {
  
@@ -28,3 +30,5 @@ struct NeoStrFontCacheFreeType :public NeoStrFontCache {
     NeoStrFont GetFont(const NeoStrFontInfo& fontInfo) const override;
     CharSize GetCharSize(const wchar_t wChar, const NeoStrFontInfo& fontInfo) override;
 };
+
+#endif // ENABLE_FREETYPE

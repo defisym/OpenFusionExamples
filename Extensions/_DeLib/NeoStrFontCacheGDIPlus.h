@@ -5,6 +5,8 @@
 #include "NeoStrFontCache.h"
 #include "NeoStrDefinitionGDIPlus.h"
 
+#ifdef ENABLE_GDIPLUS
+
 struct CharSizeCacheItem;
 struct NeoStrFontInfoGDIPlus :public NeoStrFontInfo { 
     LOGFONT logFont = {}; 
@@ -72,3 +74,5 @@ struct CharSizeCacheItem {
         DeleteObject(hFont);
     }
 };
+
+#endif // ENABLE_GDIPLUS

@@ -1,5 +1,7 @@
 #include "NeoStrFontCacheGDIPlus.h"
 
+#ifdef ENABLE_GDIPLUS
+
 NeoStrFontInfoGDIPlus::NeoStrFontInfoGDIPlus(const LOGFONT& logFont) {
     this->logFont = logFont;
 }
@@ -203,3 +205,5 @@ size_t NeoStrFontCacheGDIPlus::LogFontHasher(const LOGFONT& logFont) {
 
     return seed;
 }
+
+#endif // ENABLE_GDIPLUS
