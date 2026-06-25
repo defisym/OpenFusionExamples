@@ -411,13 +411,13 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 		pE->Decrypt();
 	}
 
-    auto fontNames = bFromMem
+    auto fontName = bFromMem
         ? NeoStrFontCache::GetFontNamesFromMemory(reinterpret_cast<char*>(pE->GetOutputData()),
                                                 pE->GetOutputDataLength())
         : NeoStrFontCache::GetFontNamesFromFile(FilePath.c_str());
 
     // already embedded
-    if (rdPtr->pData->fontCache.FontEmbed(fontNames)) {
+    if (rdPtr->pData->fontCache.FontEmbed(fontName)) {
         return 0;
     }
 
@@ -465,10 +465,40 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 	MSGBOX((std::wstring)L"Embed " + FilePath +
 		(std::wstring)(bNeoStrEmbed ? L" Not OK" : L" OK"));
 
-	for (auto& i : fontNames) {
-		wprintf(L"%s\n", i.c_str());
-		//std::wcout << i << std::endl;
-	}
+    for (const auto& font : fc.embedFontList) {
+        OutputDebugStringW(L"NewFont\n");
+
+        OutputDebugStringW(L"FamilyNames\n");
+        for (const auto& it : font.FamilyNames) {
+            OutputDebugStringW(it.c_str());
+            OutputDebugStringW(L"\n");
+        }
+        OutputDebugStringW(L"SubFamilyNames\n");
+        for (const auto& it : font.SubFamilyNames) {
+            OutputDebugStringW(it.c_str());
+            OutputDebugStringW(L"\n");
+        }
+
+        OutputDebugStringW(L"FullNames\n");
+        for (const auto& it : font.FullNames) {
+            OutputDebugStringW(it.c_str());
+            OutputDebugStringW(L"\n");
+        }
+
+        OutputDebugStringW(L"PreferredFamilyNames\n");
+        for (const auto& it : font.PreferredFamilyNames) {
+            OutputDebugStringW(it.c_str());
+            OutputDebugStringW(L"\n");
+        }
+
+        OutputDebugStringW(L"PreferredSubFamilyNames\n");
+        for (const auto& it : font.PreferredSubFamilyNames) {
+            OutputDebugStringW(it.c_str());
+            OutputDebugStringW(L"\n");
+        }
+
+        OutputDebugStringW(L"\n");
+    }	
 #endif // _FONTEMBEDDEBUG
 
 	// rollback if NeoStr embed failed
@@ -481,26 +511,15 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
 	}
 
 	// embed success, add to embed list
-    rdPtr->pData->fontCache.AddEmbedFont(fontNames);
+    rdPtr->pData->fontCache.AddEmbedFont(fontName);
 
 	//refresh objects
 	ObjectSelection Oc(rdPtr->rHo.hoAdRunHeader);
-	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [fontNames](LPRO pObject) {
+	Oc.IterateObjectWithIdentifier(rdPtr, rdPtr->rHo.hoIdentifier, [fontName](LPRO pObject) {
 		LPRDATA pObj = (LPRDATA)pObject;
-
-		std::wstring withRegular = (std::wstring)pObj->logFont.lfFaceName + (std::wstring)L" Regular";
-		//std::wstring withNormal = (std::wstring)pObj->logFont.lfFaceName + (std::wstring)L" Normal";
-
-		for (auto& name : fontNames) {
-			if (StrIEqu(pObj->logFont.lfFaceName, name.c_str())
-				|| StrIEqu(withRegular.c_str(), name.c_str())
-				/*|| StrIEqu(withNormal.c_str(), name.c_str())*/) {
-				SetRunObjectFont(pObj, &pObj->logFont, nullptr);
-				
-				return;
-			}
-		}
-
+        if (fontName.HasName(pObj->logFont.lfFaceName)) {
+            SetRunObjectFont(pObj, &pObj->logFont, nullptr);
+        }
 		});
 
 	return 0;
@@ -1010,7 +1029,7 @@ long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
 		pE->Decrypt();
 	}
 
-    auto fontNames = bFromMem
+    auto fontName = bFromMem
         ? NeoStrFontCache::GetFontNamesFromMemory(reinterpret_cast<char*>(pE->GetOutputData()),
                                                 pE->GetOutputDataLength())
         : NeoStrFontCache::GetFontNamesFromFile(filePath.c_str());
@@ -1021,7 +1040,7 @@ long WINAPI DLLExport Expression_GetFontFamilyName(LPRDATA rdPtr, long param1) {
 	rdPtr->rHo.hoFlags |= HOF_STRING;
 
 	try{
-		auto& name = fontNames.at(pos);
+		auto& name = fontName.FamilyNames.at(pos);
 		NewStr(*rdPtr->pExpRet, name);
 
 		return (long)rdPtr->pExpRet->c_str();

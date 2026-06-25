@@ -13,7 +13,27 @@ struct NeoStrFontCache {
     using CharSizeCache = std::map<wchar_t, CharSize>;
     WordBreakHandler* pWordBreakCache = nullptr;
 
-    using FontNames = std::vector<std::wstring>;
+    enum class FontNameID :std::uint16_t {
+        Family = 1,
+        Subfamily = 2,
+        FullName = 4,
+        PreferredFamily = 16,
+        PreferredSubfamily = 17,
+    };
+
+    struct FontName {
+        std::vector<std::wstring> FamilyNames;
+        std::vector<std::wstring> SubFamilyNames;
+        std::vector<std::wstring> FullNames;
+        std::vector<std::wstring> PreferredFamilyNames;
+        std::vector<std::wstring> PreferredSubFamilyNames;
+
+        static bool NameIDValid(const std::uint16_t id);
+        bool HasName(const std::wstring& fontName) const;
+        bool HasName(const FontName& fontName) const;
+    };
+
+    using FontNames = std::vector<FontName>;
     FontNames embedFontList;
 
     virtual ~NeoStrFontCache() {};
@@ -28,13 +48,14 @@ struct NeoStrFontCache {
     virtual void Release();
     
     // read font names from file
-    static FontNames GetFontNamesFromFile(const std::filesystem::path& filePath);
-    static FontNames GetFontNamesFromMemory(const char* pData, const size_t sz);
+    static FontName GetFontNamesFromFile(const std::filesystem::path& filePath);
+    static FontName GetFontNamesFromMemory(const char* pData, const size_t sz);
 
-    // return true if all font names are added
+    // return true if font names are added
     // do not call embed
-    bool FontEmbed(const FontNames& fontNames) const;
-    void AddEmbedFont(const FontNames& fontNames);
+    bool FontEmbed(const std::wstring& fontName) const;
+    bool FontEmbed(const FontName& fontName) const;
+    void AddEmbedFont(const FontName& fontName);
 
     virtual bool EmbedFontFromFile(const std::filesystem::path& filePath) = 0;
     virtual bool EmbedFontFromMemory(const char* pData, const size_t sz) = 0;
