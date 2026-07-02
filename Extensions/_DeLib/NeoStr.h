@@ -740,20 +740,20 @@ public:
         // Ctx
         this->bExternalContext = pCtx != nullptr;
         this->pCtx = this->bExternalContext ? pCtx : new NeoStrContextGDIPlus;
-        if (this->bExternalContext) { 
+        if (!this->bExternalContext) { 
             this->pCtx->Initialize(); 
         }
 
         // Font
         this->bExternalFontCache = pFontCache != nullptr;
         this->pFontCache = this->bExternalFontCache ? pFontCache : new NeoStrFontCacheGDIPlus;
-        if (this->bExternalFontCache) { 
+        if (!this->bExternalFontCache) { 
             this->pFontCache->SetContext(this->pCtx);
             this->pFontCache->Alloc();
         }
 
-        this->tm = pFontCache->GetCharSizeCacheItem(this->logFont).tm;
-        this->pFont = pFontCache->GetFontPointerWithCache(this->logFont);
+        this->tm = this->pFontCache->GetCharSizeCacheItem(this->logFont).tm;
+        this->pFont = this->pFontCache->GetFontPointerWithCache(this->logFont);
 
 		// ICon
 		this->bExternalIConData = pIConData != nullptr;
