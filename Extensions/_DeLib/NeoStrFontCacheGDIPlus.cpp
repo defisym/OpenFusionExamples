@@ -57,7 +57,7 @@ bool NeoStrFontCacheGDIPlus::EmbedFontFromMemory(const char* pData, const size_t
 
 bool NeoStrFontCacheGDIPlus::HasFont(const NeoStrFontInfo& fontInfo) const {
     const auto& logFont = static_cast<const NeoStrFontInfoGDIPlus&>(fontInfo).logFont;
-    return false;
+    return FontEmbed(logFont.lfFaceName);
 }
 
 NeoStrFont NeoStrFontCacheGDIPlus::GetFont(const NeoStrFontInfo& fontInfo) const {
