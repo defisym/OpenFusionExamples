@@ -3,9 +3,6 @@
 
 #pragma once
 
-//#define _FONTEMBEDDEBUG
-//#define _CONSOLE
-
 #include <map>
 #include <vector>
 #include <functional>

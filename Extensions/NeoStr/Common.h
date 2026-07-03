@@ -32,6 +32,11 @@
 #include	<string>
 #include	<memory>
 
+//#define _CONSOLE
+#ifdef _CONSOLE
+#include <iostream>
+#endif
+
 #include	"FormatByVector.h"
 
 class NeoStr;
@@ -84,10 +89,6 @@ struct GlobalData {
 };
 
 #include	"Func.h"
-
-#ifdef _CONSOLE
-#include <iostream>
-#endif
 
 // Globals and Prototypes
 extern HINSTANCE hInstLib;

@@ -461,6 +461,7 @@ short WINAPI DLLExport Action_EmbedFont(LPRDATA rdPtr, long param1, long param2)
             (size_t)pE->GetOutputDataLength())
         : rdPtr->pData->fontCache.EmbedFontFromFile(FilePath);
 
+//#define _FONTEMBEDDEBUG
 #ifdef _FONTEMBEDDEBUG
 	MSGBOX((std::wstring)L"Embed " + FilePath +
 		(std::wstring)(bNeoStrEmbed ? L" Not OK" : L" OK"));
