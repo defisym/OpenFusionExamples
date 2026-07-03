@@ -72,47 +72,40 @@ CharSize NeoStrFontCacheGDIPlus::GetCharSize(const wchar_t wChar,
 }
 
 Font* NeoStrFontCacheGDIPlus::GetFontPointer(const LOGFONT& logFont) const {
-    auto fontName = logFont.lfFaceName;
-    auto pCollection = pFontCollection;
-
     do {
-        {
-            FontFamily family(fontName, pFontCollection);
-            if (family.GetLastStatus() == Gdiplus::Status::Ok) { break; }
+        if (pFontCollection == nullptr) { break; }
+
+        const int n = pFontCollection->GetFamilyCount();
+        if (n == 0) { break; }
+
+        int found;
+        auto pFFS = std::make_unique<FontFamily[]>(n);
+        pFontCollection->GetFamilies(n, pFFS.get(), &found);
+
+        if (found == 0) { break; }
+        wchar_t name[LF_FACESIZE] = { 0 };
+
+        for (int i = 0; i < found; i++) {
+            memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
+            pFFS[i].GetFamilyName(name);
+
+            const auto it = GetEmbedFontNameIt(name);
+            if (it == embedFontList.cend()) { continue; }
+            if (!it->HasName(logFont.lfFaceName)) { continue; }
+
+            return new Font(&pFFS[i],
+                (float)abs(logFont.lfHeight),
+                GetFontStyle(logFont),
+                Gdiplus::UnitWorld);
         }
-
-        const auto it = GetEmbedFontNameIt(fontName);
-        if (it == embedFontList.cend()) { pCollection = nullptr; break; }
-
-        if (!it->FullNames.empty()) {
-            fontName = it->FullNames[0].c_str();
-
-            FontFamily family(fontName, pFontCollection);
-            if (family.GetLastStatus() == Gdiplus::Status::Ok) { break; }
-        }
-        
-        if (!it->FamilyNames.empty()) {
-            fontName = it->FamilyNames[0].c_str();
-
-            FontFamily family(fontName, pFontCollection);
-            if (family.GetLastStatus() == Gdiplus::Status::Ok) { break; }
-        }
-
-        if (!it->PreferredFamilyNames.empty()) {
-            fontName = it->PreferredFamilyNames[0].c_str();
-
-            FontFamily family(fontName, pFontCollection);
-            if (family.GetLastStatus() == Gdiplus::Status::Ok) { break; }
-        }
-
-        pCollection = nullptr;
     } while (false);
 
-    return new Font(fontName,
+    // use global font collection
+    return new Font(logFont.lfFaceName,
         (float)abs(logFont.lfHeight),
         GetFontStyle(logFont),
         Gdiplus::UnitWorld,
-        pCollection);
+        nullptr);
 }
 
 Font* NeoStrFontCacheGDIPlus::GetFontPointerWithCache(const LOGFONT& logFont) const {
