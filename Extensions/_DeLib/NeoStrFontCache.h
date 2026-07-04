@@ -21,6 +21,20 @@ struct NeoStrFontCache {
         PreferredSubfamily = 17,
     };
 
+    using FontNameScore = std::uint16_t;
+    consteval static FontNameScore GetFontNameScore(const FontNameID& type) {
+        switch (type) {
+        case FontNameID::PreferredFamily: return 50;
+        case FontNameID::Family: return 80;
+        case FontNameID::FullName: return 100;
+
+        case FontNameID::Subfamily: return 20;
+        case FontNameID::PreferredSubfamily: return 20;
+        }
+
+        return 0;   
+    }
+
     struct FontName {
         std::vector<std::wstring> FamilyNames;
         std::vector<std::wstring> SubFamilyNames;
@@ -31,6 +45,8 @@ struct NeoStrFontCache {
         static bool NameIDValid(const std::uint16_t id);
         bool HasName(const std::wstring& fontName) const;
         bool HasName(const FontName& fontName) const;
+
+        FontNameScore GetMatchScore(const std::wstring& fontName) const;
     };
 
     using FontNames = std::vector<FontName>;

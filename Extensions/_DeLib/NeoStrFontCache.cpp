@@ -41,6 +41,39 @@ bool NeoStrFontCache::FontName::HasName(const FontName& fontName) const {
     return false;
 }
 
+// Ref: https://learn.microsoft.com/typography/opentype/spec/name
+NeoStrFontCache::FontNameScore NeoStrFontCache::FontName::GetMatchScore(const std::wstring& fontName) const {
+    FontNameScore score = 0;
+
+    if (std::ranges::contains(FullNames, fontName)) {
+        score += GetFontNameScore(FontNameID::FullName);
+    }
+    if (std::ranges::contains(FamilyNames, fontName)) {
+        score += GetFontNameScore(FontNameID::Family);
+    }
+    if (std::ranges::contains(PreferredFamilyNames, fontName)) {
+        score += GetFontNameScore(FontNameID::PreferredFamily);
+    }
+
+    if (score == 0) { return 0; }
+
+    // add extra score if this is regular font
+    const static std::wstring regular = L"Regular";
+
+    if (PreferredSubFamilyNames.empty()) {
+        if (std::ranges::contains(SubFamilyNames, regular)) {
+            score += GetFontNameScore(FontNameID::Subfamily);
+        }
+    }
+    else {
+        if (std::ranges::contains(PreferredSubFamilyNames, regular)) {
+            score += GetFontNameScore(FontNameID::PreferredSubfamily);
+        }
+    }
+
+    return score;
+}
+
 
 bool NeoStrFontCache::CacheValid() const {
     return pWordBreakCache != nullptr;

@@ -85,19 +85,38 @@ Font* NeoStrFontCacheGDIPlus::GetFontPointer(const LOGFONT& logFont) const {
         if (found == 0) { break; }
         wchar_t name[LF_FACESIZE] = { 0 };
 
+        struct MatchedFont {
+            FontNameScore score = 0;
+            const FontName* pFontName = nullptr;
+            const FontFamily* pFamily = nullptr;
+        };
+
+        std::vector<MatchedFont> matchNameVec = {};
+        matchNameVec.reserve(found);
+
+        const auto fontName = std::wstring(logFont.lfFaceName);
+
         for (int i = 0; i < found; i++) {
             memset(name, 0, LF_FACESIZE * sizeof(wchar_t));
             pFFS[i].GetFamilyName(name);
 
-            const auto it = GetEmbedFontNameIt(name);
-            if (it == embedFontList.cend()) { continue; }
-            if (!it->HasName(logFont.lfFaceName)) { continue; }
+            const auto pFontName = GetEmbedFontName(name);
+            if (pFontName == nullptr) { continue; }
 
-            return new Font(&pFFS[i],
-                (float)abs(logFont.lfHeight),
-                GetFontStyle(logFont),
-                Gdiplus::UnitWorld);
+            const auto score = pFontName->GetMatchScore(fontName);
+            if (score == 0) { continue; }
+
+            matchNameVec.emplace_back(score, pFontName, &pFFS[i]);
         }
+
+        if (matchNameVec.empty()) { break; }
+        std::ranges::sort(matchNameVec,
+            [] (const MatchedFont& l, const MatchedFont& r) {return l.score > r.score; });
+
+        return new Font(matchNameVec.front().pFamily,
+            (float)abs(logFont.lfHeight),
+            GetFontStyle(logFont),
+            Gdiplus::UnitWorld);
     } while (false);
 
     // use global font collection
