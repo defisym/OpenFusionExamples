@@ -13,13 +13,13 @@ bool NeoStrFontCache::FontName::NameIDValid(const std::uint16_t id) {
 }
 
 bool NeoStrFontCache::FontName::HasName(const std::wstring& fontName) const {
-    if (std::ranges::find(FullNames, fontName) != FullNames.end()) {
+    if (std::ranges::contains(FullNames, fontName)) {
         return true;
     }
-    if (std::ranges::find(FamilyNames, fontName) != FamilyNames.end()) {
+    if (std::ranges::contains(FamilyNames, fontName)) {
         return true;
     }
-    if (std::ranges::find(PreferredFamilyNames, fontName) != PreferredFamilyNames.end()) {
+    if (std::ranges::contains(PreferredFamilyNames, fontName)) {
         return true;
     }
 
@@ -28,12 +28,12 @@ bool NeoStrFontCache::FontName::HasName(const std::wstring& fontName) const {
 
 bool NeoStrFontCache::FontName::HasName(const FontName& fontName) const {
     for (const auto& familyName : fontName.FamilyNames) {
-        if (std::ranges::find(FamilyNames, familyName) != FamilyNames.end()) {
+        if (std::ranges::contains(FamilyNames, familyName)) {
             return true;
         }
     }
     for (const auto& fullName : fontName.FullNames) {
-        if (std::ranges::find(FullNames, fullName) != FullNames.end()) {
+        if (std::ranges::contains(FullNames, fullName)) {
             return true;
         }
     }
@@ -131,8 +131,8 @@ NeoStrFontCache::FontName NeoStrFontCache::GetFontNamesFromMemory(const char* pD
     };
 
     struct TT_TABLE_DIRECTORY {
-        char szTag[4];			//table name
-        std::uint32_t uCheckSum;			//Check sum
+        char szTag[4];			        //table name
+        std::uint32_t uCheckSum;		//Check sum
         std::uint32_t uOffset;			//Offset from beginning of file
         std::uint32_t uLength;			//length of the table in bytes
     };
@@ -149,7 +149,7 @@ NeoStrFontCache::FontName NeoStrFontCache::GetFontNamesFromMemory(const char* pD
        std::uint16_t uLanguageID;
        std::uint16_t uNameID;
        std::uint16_t uStringLength;
-       std::uint16_t uStringOffset; //from start of storage area
+       std::uint16_t uStringOffset;     //from start of storage area
     };
 
     struct MemoryReader {
@@ -237,7 +237,7 @@ NeoStrFontCache::FontName NeoStrFontCache::GetFontNamesFromMemory(const char* pD
         auto nPos = reader.Tell();
         reader.Seek(tblDir.uOffset + ttRecord.uStringOffset + ttNTHeader.uStorageOffset);
 
-        //bug fix: see the post by SimonSays to read more about it
+        // bug fix: see the post by SimonSays to read more about it
         auto sz = ttRecord.uStringLength + 1;
         auto lpszNameBuf = new char[2 * sz];
         memset(lpszNameBuf, 0, 2 * sz);
@@ -265,7 +265,6 @@ NeoStrFontCache::FontName NeoStrFontCache::GetFontNamesFromMemory(const char* pD
                 pwch++;
             }
 
-            //wcstombs(lpszNameBuf, pwstr, (ttRecord.uStringLength + sizeof(char)) * 2);
             const auto type = static_cast<FontNameID>(ttRecord.uNameID);
             switch (type) {
             case FontNameID::Family: fontName.FamilyNames.emplace_back(pwstr); break;
