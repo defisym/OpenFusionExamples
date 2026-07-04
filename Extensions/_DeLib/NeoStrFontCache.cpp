@@ -252,14 +252,6 @@ NeoStrFontCache::FontName NeoStrFontCache::GetFontNamesFromMemory(const char* pD
     return fontName;
 }
 
-decltype(NeoStrFontCache::FontNames{}.cend()) NeoStrFontCache::GetEmbedFontNameIt(const std::wstring& fontName) const {
-    for (auto it = embedFontList.cbegin(); it != embedFontList.cend(); it++) {
-        if (it->HasName(fontName)) { return it; }
-    }
-
-    return embedFontList.cend();
-}
-
 bool NeoStrFontCache::FontEmbed(const std::wstring& fontName) const {
     for (const auto& fontNameItem : embedFontList) {
         if (fontNameItem.HasName(fontName)) { return true; }
@@ -278,4 +270,20 @@ bool NeoStrFontCache::FontEmbed(const FontName& fontName) const {
 
 void NeoStrFontCache::AddEmbedFont(const FontName& fontName) {
     embedFontList.push_back(fontName);
+}
+
+const NeoStrFontCache::FontName* NeoStrFontCache::GetEmbedFontName(const std::wstring& fontName) const {
+    for (const auto& it : embedFontList) {
+        if (std::ranges::contains(it.FullNames, fontName)) { return &it; }
+    }
+
+    for (const auto& it : embedFontList) {
+        if (std::ranges::contains(it.FamilyNames, fontName)) { return &it; }
+    }
+
+    for (const auto& it : embedFontList) {
+        if (std::ranges::contains(it.PreferredFamilyNames, fontName)) { return &it; }
+    }
+
+    return nullptr;
 }

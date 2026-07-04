@@ -51,13 +51,13 @@ struct NeoStrFontCache {
     static FontName GetFontNamesFromFile(const std::filesystem::path& filePath);
     static FontName GetFontNamesFromMemory(const char* pData, const size_t sz);
 
-    decltype(FontNames{}.cend()) GetEmbedFontNameIt(const std::wstring& fontName) const;
-
     // return true if font names are added
     // do not call embed
     bool FontEmbed(const std::wstring& fontName) const;
     bool FontEmbed(const FontName& fontName) const;
     void AddEmbedFont(const FontName& fontName);
+
+    const FontName* GetEmbedFontName(const std::wstring& fontName) const;
 
     virtual bool EmbedFontFromFile(const std::filesystem::path& filePath) = 0;
     virtual bool EmbedFontFromMemory(const char* pData, const size_t sz) = 0;
