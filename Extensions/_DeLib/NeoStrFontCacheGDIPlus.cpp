@@ -1,4 +1,5 @@
 #include "NeoStrFontCacheGDIPlus.h"
+#include "NeoStrDefinitions.h"
 
 #ifdef ENABLE_GDIPLUS
 
@@ -182,14 +183,16 @@ CharSize NeoStrFontCacheGDIPlus::GetCharSizeWithCache(const wchar_t wChar, const
     }
 }
 
-const CharSizeCacheItem& NeoStrFontCacheGDIPlus::GetCharSizeCacheItem(const LOGFONT& logFont) const {
+const CharSizeCacheItem& NeoStrFontCacheGDIPlus::GetCharSizeCacheItem(const LOGFONT& logFont) {
     const auto logFontHash = LogFontHasher(logFont);
     auto it = pCharSzCacheWithFont->find(logFontHash);
 
     if (it != pCharSzCacheWithFont->end()) { return it->second; }
 
-    static auto emptyItem = CharSizeCacheItem{};
-    return emptyItem;
+    // force font load
+    const auto charSz = GetCharSizeWithCache(DEFAULT_CHARACTER, logFont);
+
+    return GetCharSizeCacheItem(logFont);
 }
 
 int NeoStrFontCacheGDIPlus::GetFontStyle(const LOGFONT& logFont) {

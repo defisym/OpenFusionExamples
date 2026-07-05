@@ -39,7 +39,7 @@ struct NeoStrFontCacheGDIPlus :public NeoStrFontCache {
     Font* GetFontPointerWithCache(const LOGFONT& logFont) const;
     CharSize GetCharSizeWithCache(const wchar_t wChar,
          const LOGFONT& logFont);
-    const CharSizeCacheItem& GetCharSizeCacheItem(const LOGFONT& logFont) const;
+    const CharSizeCacheItem& GetCharSizeCacheItem(const LOGFONT& logFont);
 
     static int GetFontStyle(const LOGFONT& logFont);
     static CharSize GetCharSizeRaw(const wchar_t wChar, const HDC hdc);
