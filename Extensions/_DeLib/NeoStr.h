@@ -633,6 +633,15 @@ private:
 		return CheckMatch(wChar, notAtEnd);
 	}
 
+    // return the number of char should escape for new line
+    // 0 if not new line
+    inline size_t IsNewLine(const wchar_t& cur, const wchar_t& next) const {
+        if (cur == L'\r' && next == L'\n') { return 2; }
+        if (cur == L'\n') { return 1; }
+
+        return 0;
+    }
+
 	inline int GetStartPosX(const long totalWidth, const long rcWidth) const {
 		//DT_LEFT | DT_CENTER | DT_RIGHT
 		//if (this->dwDTFlags & DT_LEFT) {
@@ -1543,7 +1552,7 @@ public:
 		// ------------
 		// start parse
 		// ------------
-		size_t newLineCount = 0;
+		size_t newLineChrCount = 0;
 
 		const bool bIgnoreUnknown = flags & FORMAT_IGNORE_UNKNOWN;
 		const bool bIgnoreIncomplete = flags & FORMAT_IGNORE_INCOMPLETE;
@@ -1560,10 +1569,10 @@ public:
 			const auto curChar = pCurChar[0];
 			const auto nextChar = pCurChar[1];
 
-			// new line
-			if (curChar == L'\r' && nextChar == L'\n') {
-				newLineCount++;
-			}
+            // new line
+            if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {
+                newLineChrCount += escLen;
+            }
 
 			// Escape
 			if (curChar == L'\\' && nextChar == L'[') {
@@ -1675,7 +1684,7 @@ public:
 						}
 
 						// length to ref format when calculating & rendering
-						size_t savedLength = pSavedChar - pText - newLineCount * 2;
+                        size_t savedLength = pSavedChar - pText - newLineChrCount;
 						size_t savedLengthWithNewLine = pSavedChar - pText;
 
 						// ------------
@@ -2551,6 +2560,7 @@ public:
 			bool bNewLineBegin = true;
 
 			bool newLine = false;		// newline
+            size_t newLineChrCount = 0;
 			bool skipLine = false;		// current line only has /r/n
 			bool bNewLineHandled = false;
 
@@ -2560,9 +2570,6 @@ public:
 			pCharStart = pChar;
 
 			// ignore all empty contents followed in the end of line
-			auto IsNewLine = [](const wchar_t& cur, const wchar_t& next) {
-				return (cur == L'\r' && next == L'\n');
-			};
 			auto EscapeEmpty = [&]() {
 				while (true) {
 					auto curChar = (pText + pChar)[0];
@@ -2576,8 +2583,8 @@ public:
 						break;
 					}
 
-					if (IsNewLine(curChar, nextChar)) {
-						pChar += 2;
+                    if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {
+						pChar += escLen;
 
 						break;
 					}
@@ -2651,8 +2658,9 @@ public:
 				bNewLineHandled = false;
 
 				// handle new line state and add pointer
-				auto HandleNewLine = [&]() {
+                auto HandleNewLine = [&] (const size_t escLen) {
 					newLine = true;
+                    newLineChrCount = escLen;
 					skipLine = (pChar == pCharStart);
 					bNewLineHandled = true;
 
@@ -2660,15 +2668,15 @@ public:
 						bPunctuationSkip = true;
 					}
 
-					pChar += 2;
+					pChar += escLen;
 				};
 
 				if (curWidth > rcWidth) {					
 					const bool bTooNarrow = charSz->width > rcWidth;
 
 					if (bTooNarrow) {
-						if (IsNewLine(curChar, nextChar)) {
-							HandleNewLine();
+                        if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {						
+                            HandleNewLine(escLen);
 
 							break;
 						}
@@ -2753,8 +2761,8 @@ public:
 					}
 				}
 
-				if (IsNewLine(curChar, nextChar)) {
-					HandleNewLine();
+                if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {
+                    HandleNewLine(escLen);
 
 					break;
 				}
@@ -2785,7 +2793,7 @@ public:
 				std::wstring strEscaped(pText + pChar);
 #endif // _DEBUG
 
-				auto end = (std::min)(pChar, pTextLen) - 2 * newLine;
+				auto end = (std::min)(pChar, pTextLen) - newLineChrCount;
 				
 				if (end <= pCharStart) {
 					end = pCharStart;
