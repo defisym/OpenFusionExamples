@@ -1569,9 +1569,24 @@ public:
 			const auto curChar = pCurChar[0];
 			const auto nextChar = pCurChar[1];
 
+            auto CopyChr = [&] () {
+                pSavedChar[0] = pCurChar[0];
+
+                pCurChar++;
+                pSavedChar++;
+
+                GetRawStringByFilteredStringLength();
+                };
+
             // new line
             if (const auto escLen = IsNewLine(curChar, nextChar); escLen != NEWLINE_NON) {
                 newLineChrCount += escLen;
+
+                for (size_t chrCount = 0; chrCount < escLen; chrCount++) {
+                    CopyChr();
+                }
+
+                continue;
             }
 
 			// Escape
@@ -2426,13 +2441,8 @@ public:
 					continue;
 				}
 			}
-
-			pSavedChar[0] = pCurChar[0];
 			
-			pCurChar++;
-			pSavedChar++;
-
-			GetRawStringByFilteredStringLength();
+            CopyChr();
 		}
 
 		// ------------
