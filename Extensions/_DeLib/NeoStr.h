@@ -636,10 +636,10 @@ private:
     // return the number of char should escape for new line
     // 0 if not new line
     inline size_t IsNewLine(const wchar_t& cur, const wchar_t& next) const {
-        if (cur == L'\r' && next == L'\n') { return 2; }
-        if (cur == L'\n') { return 1; }
+        if (cur == L'\r' && next == L'\n') { return NEWLINE_CRLF; }
+        if (cur == L'\n') { return NEWLINE_LF; }
 
-        return 0;
+        return NEWLINE_NON;
     }
 
 	inline int GetStartPosX(const long totalWidth, const long rcWidth) const {
@@ -1570,7 +1570,7 @@ public:
 			const auto nextChar = pCurChar[1];
 
             // new line
-            if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {
+            if (const auto escLen = IsNewLine(curChar, nextChar); escLen != NEWLINE_NON) {
                 newLineChrCount += escLen;
             }
 
@@ -2583,7 +2583,7 @@ public:
 						break;
 					}
 
-                    if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {
+                    if (const auto escLen = IsNewLine(curChar, nextChar); escLen != NEWLINE_NON) {
 						pChar += escLen;
 
 						break;
@@ -2675,7 +2675,7 @@ public:
 					const bool bTooNarrow = charSz->width > rcWidth;
 
 					if (bTooNarrow) {
-                        if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {						
+                        if (const auto escLen = IsNewLine(curChar, nextChar); escLen != NEWLINE_NON) {
                             HandleNewLine(escLen);
 
 							break;
@@ -2761,7 +2761,7 @@ public:
 					}
 				}
 
-                if (const auto escLen = IsNewLine(curChar, nextChar); escLen != 0) {
+                if (const auto escLen = IsNewLine(curChar, nextChar); escLen != NEWLINE_NON) {
                     HandleNewLine(escLen);
 
 					break;

@@ -18,6 +18,13 @@ constexpr auto EMPTY_CHAR = CHAR_SPACE;
 constexpr auto DEFAULT_PARAM = L" ";
 
 // ------------
+// New Line Char Count
+// ------------
+constexpr auto NEWLINE_NON = 0;
+constexpr auto NEWLINE_LF = 1;
+constexpr auto NEWLINE_CRLF = 2;
+
+// ------------
 // Effect Defaults
 // ------------
 constexpr auto SHAKE_RANDOM_RANGE = 1000;
