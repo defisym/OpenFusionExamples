@@ -580,32 +580,48 @@ public:
 			this->resizeCache.clear();
 		}
 
-		inline void GetDefaultICon() {
-			if (this->pDefaultICon == nullptr) {
-				LPSURFACE proto = nullptr;
-				GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
+        inline LPSURFACE GetDefaultICon() {
+            if (this->pDefaultICon != nullptr) {
+                return this->pDefaultICon;
+            }
 
-				this->pDefaultICon = new cSurface;
-				this->pDefaultICon->Create(128, 128, proto);
+            LPSURFACE proto = nullptr;
+            GetSurfacePrototype(&proto, 24, ST_MEMORYWITHDC, SD_DIB);
 
-				_AddAlpha(this->pDefaultICon, 175);
+            this->pDefaultICon = new cSurface;
+            this->pDefaultICon->Create(128, 128, proto);
 
-				this->pDefaultICon->Fill(RGB(200, 200, 200));
+            _AddAlpha(this->pDefaultICon, 175);
 
-				this->pDefaultICon->Line(0, 0, 127, 0);
-				this->pDefaultICon->Line(0, 0, 0, 127);
-				this->pDefaultICon->Line(127, 127, 127, 0);
-				this->pDefaultICon->Line(127, 127, 0, 127);
+            this->pDefaultICon->Fill(RGB(200, 200, 200));
 
-				this->pDefaultICon->Line(0, 0, 127, 127);
-				this->pDefaultICon->Line(127, 0, 0, 127);
+            this->pDefaultICon->Line(0, 0, 127, 0);
+            this->pDefaultICon->Line(0, 0, 0, 127);
+            this->pDefaultICon->Line(127, 127, 127, 0);
+            this->pDefaultICon->Line(127, 127, 0, 127);
+
+            this->pDefaultICon->Line(0, 0, 127, 127);
+            this->pDefaultICon->Line(127, 0, 0, 127);
 
 #ifdef _DEBUG
-				//_SavetoClipBoard(this->pDefaultICon, false);
+            //_SavetoClipBoard(this->pDefaultICon, false);
 #endif // _DEBUG
-			}
-		}
-	};
+
+            return this->pDefaultICon;
+        }
+	
+        inline LPSURFACE GetICon(DWORD hImage) {
+            auto bFound = hImage != FORMAT_INVALID_ICON;
+
+            if (bFound) {
+                const auto IConLibIt = pIConLib->find(hImage);
+                return IConLibIt->second;
+            }
+            else {
+                return GetDefaultICon();
+            }
+        }
+};
 
 private:
 	bool bExternalIConData = false;
@@ -3720,18 +3736,7 @@ public:
 					+ (charSize.height - charSize.width)
 					- tm.tmDescent /*- tm.tmExternalLeading*/);
 
-				LPSURFACE pSf = nullptr;
-				auto bFound = it.hImage != FORMAT_INVALID_ICON;
-
-				if (bFound) {
-					const auto IConLibIt = pFormat->pIConData->pIConLib->find(it.hImage);
-					pSf = IConLibIt->second;
-				}
-				else {
-					pFormat->pIConData->GetDefaultICon();
-					pSf = pFormat->pIConData->pDefaultICon;
-				}
-
+				LPSURFACE pSf = pFormat->pIConData->GetICon(it.hImage);
 				LPSURFACE pStrecthSf = nullptr;
 
 				auto key = IConData::ResizeCacheKey{ pSf , iConSize.width, iConSize.width }.GetHash();

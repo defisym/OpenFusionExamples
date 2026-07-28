@@ -581,12 +581,10 @@ short WINAPI DLLExport Action_LinkActive(LPRDATA rdPtr, long param1, long param2
 				}
 
 				auto pRoa = &pObject->roa;
+                auto offset = pRoa->raAnimOffset->anOffsetToDir[direction];
+                if (offset < 0) { break; }
 
-				if (pRoa->raAnimOffset->anOffsetToDir[direction] < 0) {
-					break;
-				}
-
-				auto pDir = &pRoa->raAnimDirOffset[direction];
+                auto pDir = reinterpret_cast<LPAD>(reinterpret_cast<char*>(pRoa->raAnimOffset) + offset);
 
 				if (frame >= pDir->adNumberOfFrame) {
 					break;
