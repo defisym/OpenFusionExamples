@@ -36,6 +36,7 @@ short conditionsInfos[] =
 	IDMN_CONDITION_IDHA_S, M_CONDITION_IDHA, CND_CONDITION_IDHA_S, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2,PARAM_OBJECT,PARAM_EXPRESSION,PARA_CONDITION_OBJECT,PARA_CONDITION_DIR,
 	
 	IDMN_CONDITION_IRIE, M_CONDITION_IRIE, CND_CONDITION_IRIE, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
+	IDMN_CONDITION_IRISA, M_CONDITION_IRISA, CND_CONDITION_IRISA, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 0,
 	IDMN_CONDITION_IAAT, M_CONDITION_IAAT, CND_CONDITION_IAAT, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_OBJECT, PARA_CONDITION_OBJECT,
 	
 	IDMN_CONDITION_OMC, M_CONDITION_OMC, CND_CONDITION_OMC, 0, 0,
@@ -152,6 +153,8 @@ short expressionsInfos[] =
 	IDMN_EXPRESSION_IFS, M_EXPRESSION_IFS, EXP_EXPRESSION_IFS, 0, 0,
 
 	IDMN_EXPRESSION_GFN, M_EXPRESSION_GFN, EXP_EXPRESSION_GFN, EXPFLAG_STRING, 0,
+	IDMN_EXPRESSION_GNOF, M_EXPRESSION_GNOF, EXP_EXPRESSION_GNOF, 0, 0,
+	IDMN_EXPRESSION_GNOL, M_EXPRESSION_GNOL, EXP_EXPRESSION_GNOL, 0, 0,
 
 	IDMN_EXPRESSION_GT, M_EXPRESSION_GT, EXP_EXPRESSION_GT, EXPFLAG_STRING, 0,
 
@@ -399,6 +402,12 @@ long WINAPI DLLExport IsRunningInEditor(LPRDATA rdPtr, long param1, long param2)
 #else
 	return true;
 #endif // RUN_ONLY	
+}
+
+long WINAPI DLLExport IsRunningInSubApp(LPRDATA rdPtr, long param1, long param2) {
+	const auto bSub = rdPtr->rHo.hoAdRunHeader->rhApp->m_pParentApp != nullptr;
+
+	return bSub;
 }
 
 long WINAPI DLLExport IsActiveAtTop(LPRDATA rdPtr, long param1, long param2) {
@@ -1578,6 +1587,14 @@ long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 	return (long)rdPtr->rhPtr->rhFrame->m_name;
 }
 
+long WINAPI DLLExport GetNumberOfFrames(LPRDATA rdPtr, long param1) {
+	return rdPtr->rhPtr->m_hdr.gaNbFrames;
+}
+
+long WINAPI DLLExport GetNumberOfLayers(LPRDATA rdPtr, long param1) {
+	return rdPtr->rhPtr->rhFrame->m_nLayers;
+}
+
 //获取当前时间
 long WINAPI DLLExport GetCurTime(LPRDATA rdPtr, long param1) {
 	LPSYSTEMTIME lpSystemTime = new SYSTEMTIME;
@@ -1998,6 +2015,7 @@ long (WINAPI* ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 	IsObjectHasAnimationInDirection_Scope,
 
 	IsRunningInEditor,
+	IsRunningInSubApp,
 
 	IsActiveAtTop,
 
@@ -2117,6 +2135,8 @@ long (WINAPI* ExpressionJumps[])(LPRDATA rdPtr, long param) =
 	ReturnFullScreen,
 
 	GetFrameName,
+	GetNumberOfFrames,
+	GetNumberOfLayers,
 
 	GetCurTime,
 	GetPlayTime,
