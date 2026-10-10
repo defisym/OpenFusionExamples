@@ -1588,7 +1588,7 @@ long WINAPI DLLExport GetFrameName(LPRDATA rdPtr, long param1) {
 }
 
 long WINAPI DLLExport GetNumberOfFrames(LPRDATA rdPtr, long param1) {
-	return rdPtr->rhPtr->m_hdr.gaNbFrames;
+	return rdPtr->rhPtr->rhApp->m_hdr.gaNbFrames;
 }
 
 long WINAPI DLLExport GetNumberOfLayers(LPRDATA rdPtr, long param1) {
