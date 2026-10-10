@@ -52,7 +52,7 @@ BEGIN
             VALUE "FileDescription", "Fini\0"
             VALUE "FileVersion", "0.00\0"
             VALUE "InternalName", "Fini\0"
-            VALUE "LegalCopyright", "Copyright 2021~2025 Defisym\0"
+            VALUE "LegalCopyright", "Copyright 2021~2026 Defisym\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Fini.mfx\0"
             VALUE "PrivateBuild", "\0"
@@ -282,14 +282,14 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDST_OBJNAME            "Fini"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2021~2025 Defisym"
+    IDST_COPYRIGHT          "Copyright 2021~2026 Defisym"
     IDST_COMMENT            "Ini that only write disk once."
-    IDST_HTTP               "https://twitter.com/defisym"
+    IDST_HTTP               "https://github.com/defisym/OpenFusionExamples"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_PROP_SETTINGS_TEXTTITLE        "Settings"
+    IDS_PROP_SETTINGS_TEXTTITLE     "Settings"
     IDS_PROP_CF25P_CHECK            "2.5 Plus"
     IDS_PROP_CF25P_CHECK_INFO       "Check this to support 2.5+ unlimited alterable values"
     IDS_PROP_ARVFCS_CHECK           "Allow alterable values for counters and strings"
@@ -315,10 +315,9 @@ BEGIN
 
     M_ACTION_LF     "Load From File %0, Decrypt Key %1"
     M_ACTION_SF     "Save to File %0, Encrypt Key %1"
-    //M_ACTION_LS     "Load From String %0, Decrypt Key %1"
     M_ACTION_LS     "Load From String %0"
     M_ACTION_LB64   "Load From Base64 String %0"
-    M_ACTION_LCB64   "Load From Compressed Base64 String %0"
+    M_ACTION_LCB64  "Load From Compressed Base64 String %0"
 
     ACT_ACTION_S    "String"
     ACT_ACTION_F    "FileName"
