@@ -25,7 +25,8 @@ short conditionsInfos[]=
 		IDMN_CONDITION_ITS, M_CONDITION_ITS, CND_CONDITION_ITS, 0, 1, PARAM_EXPSTRING,M_CND_ITN,
 		IDMN_CONDITION_ITI, M_CONDITION_ITI, CND_CONDITION_ITI, 0, 1, PARAM_EXPSTRING,M_CND_ITN,
 
-		IDMN_CONDITION_SIHV, M_CONDITION_SIHV, CND_CONDITION_SIHV, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
+		IDMN_CONDITION_SHI, M_CONDITION_SHI, CND_CONDITION_SHI, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 2, PARAM_EXPSTRING,PARAM_EXPSTRING,ACT_ACTION_SSI_S,ACT_ACTION_SSI_I,
+        IDMN_CONDITION_HS, M_CONDITION_HS, CND_CONDITION_HS, EVFLAGS_ALWAYS | EVFLAGS_NOTABLE, 1, PARAM_EXPSTRING,ACT_ACTION_SSI_S
 		};
 
 // Definitions of parameters for each action
@@ -95,13 +96,21 @@ long WINAPI DLLExport Condition_OnIterate_Item(LPRDATA rdPtr, long param1, long 
 	return StrEqu(LoopName, rdPtr->ItemLoopName->c_str());
 }
 
-long WINAPI DLLExport Condition_SecItemHasValue(LPRDATA rdPtr, long param1, long param2) {
+long WINAPI DLLExport Condition_SecHasItem(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR Item = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
     if (StrEmpty(Section) || StrEmpty(Item)) { return FALSE; }
 
 	return rdPtr->ini->SectionExists(Section) && rdPtr->ini->KeyExists(Section, Item);
+}
+
+long WINAPI DLLExport Condition_HasSec(LPRDATA rdPtr, long param1, long param2) {
+    LPCTSTR Section = (LPCTSTR)CNC_GetStringParameter(rdPtr);
+
+    if (StrEmpty(Section)) { return FALSE; }
+
+    return rdPtr->ini->SectionExists(Section);
 }
 
 // ============================================================================
@@ -741,7 +750,8 @@ long (WINAPI * ConditionJumps[])(LPRDATA rdPtr, long param1, long param2) =
 			Condition_OnIterate_Section,
 			Condition_OnIterate_Item,
 
-			Condition_SecItemHasValue,
+			Condition_SecHasItem,
+            Condition_HasSec,
 			};
 	
 short (WINAPI * ActionJumps[])(LPRDATA rdPtr, long param1, long param2) =

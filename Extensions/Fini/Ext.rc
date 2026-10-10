@@ -122,7 +122,8 @@ BEGIN
             MENUITEM "On Iterate Items", IDMN_CONDITION_ITI
         END
         MENUITEM SEPARATOR
-        MENUITEM "Section - Item Has Value", IDMN_CONDITION_SIHV
+        MENUITEM "Has Section", IDMN_CONDITION_HS
+        MENUITEM "Section Has Item", IDMN_CONDITION_SHI
         MENUITEM SEPARATOR
     END
 END
@@ -357,7 +358,8 @@ BEGIN
     M_CONDITION_ITS             "%o On Iterate Sections, Loop Name %0"
     M_CONDITION_ITI             "%o On Iterate Items, Loop Name %0"
 
-    M_CONDITION_SIHV            "%o Section %0 - Item %1 Has Value"
+    M_CONDITION_SHI             "%o Section %0 Has Item %1"
+    M_CONDITION_HS              "%o Has Section %0"
 
     M_CND_ITN                   "Loop Name"
 END
