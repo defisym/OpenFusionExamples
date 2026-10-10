@@ -111,6 +111,7 @@
 #define M_CONDITION_RMCX				6042
 #define M_CONDITION_OCB					6043
 #define M_CONDITION_OCF					6044
+#define M_CONDITION_IRISA				6045
 #define PARA_CONDITION_INAP             6500
 #define PARA_CONDITION_RKS              6510
 #define PARA_CONDITION_OBJ              6511
@@ -164,6 +165,8 @@
 #define	M_EXPRESSION_GAID 			    7122
 #define	M_EXPRESSION_GCFC 			    7123
 #define	M_EXPRESSION_GADFC 			    7124
+#define	M_EXPRESSION_GNOF 			    7125
+#define	M_EXPRESSION_GNOL 			    7126
 #define M_EXP_P1                        7500
 #define M_EXP_P2                        7501
 #define PARA_EXPRESSION_GPIDBN          7510
@@ -246,6 +249,7 @@
 #define IDMN_CONDITION_RMCX				26044
 #define IDMN_CONDITION_OCB				26045
 #define IDMN_CONDITION_OCF				26046
+#define IDMN_CONDITION_IRISA			26047
 #define IDMN_EXPRESSION                 27000
 #define IDMN_EXPRESSION_GPIDBN          27010
 #define IDMN_EXPRESSION_GCLR_L          27020
@@ -289,6 +293,8 @@
 #define	IDMN_EXPRESSION_GAID  			27112
 #define	IDMN_EXPRESSION_GCFC  			27113
 #define	IDMN_EXPRESSION_GADFC  			27114
+#define	IDMN_EXPRESSION_GNOF  			27115
+#define	IDMN_EXPRESSION_GNOL  			27116
 #define ID_Menu                         40025
 #define ID_SETTINGS_APPSETTINGS         40026
 #define ID_APPSETTINGS_APPHASMENU       40027

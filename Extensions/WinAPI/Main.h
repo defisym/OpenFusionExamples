@@ -27,8 +27,9 @@
 #define	CND_CONDITION_RMCX			17
 #define	CND_CONDITION_OCB			18
 #define	CND_CONDITION_OCF			19
+#define	CND_CONDITION_IRISA			20
 
-#define	CND_LAST					20
+#define	CND_LAST					21
 
 // ---------------------------
 // DEFINITION OF ACTIONS CODES
@@ -166,7 +167,10 @@
 #define	EXP_EXPRESSION_GCFC			40
 #define	EXP_EXPRESSION_GADFC		41
 
-#define	EXP_LAST                    42
+#define	EXP_EXPRESSION_GNOF			42
+#define	EXP_EXPRESSION_GNOL			43
+
+#define	EXP_LAST                    44
 
 // ---------------------
 // OBJECT DATA STRUCTURE 

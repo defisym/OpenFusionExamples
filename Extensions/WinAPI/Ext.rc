@@ -19,7 +19,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Ó¢Óï(ÃÀ¹ú) resources
+// Ó¢ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -51,7 +51,7 @@ BEGIN
             VALUE "FileDescription", "WinAPI"
             VALUE "FileVersion", "0.0.0.3"
             VALUE "InternalName", "WinAPI"
-            VALUE "LegalCopyright", "Copyright 2019~2025 Defisym"
+            VALUE "LegalCopyright", "Copyright 2019~2026 Defisym & RainbowHype"
             VALUE "OriginalFilename", "WinAPI.mfx"
             VALUE "ProductVersion", "0.0.0.3"
             VALUE "SpecialBuild", "00000001"
@@ -150,6 +150,7 @@ BEGIN
             POPUP "Runtime"
             BEGIN
                 MENUITEM " Running in Editor",IDMN_CONDITION_IRIE
+                MENUITEM " Running in Sub App",IDMN_CONDITION_IRISA
             END            
             MENUITEM SEPARATOR
             POPUP "Object"
@@ -385,6 +386,8 @@ BEGIN
             POPUP "Frame"
             BEGIN
                 MENUITEM "Get Frame Name",      IDMN_EXPRESSION_GFN              
+                MENUITEM "Get Number of Frames",      IDMN_EXPRESSION_GNOF 
+                MENUITEM "Get Number of Layers",      IDMN_EXPRESSION_GNOL 
             END
             MENUITEM SEPARATOR
             POPUP "Object"
@@ -508,7 +511,7 @@ STRINGTABLE
 BEGIN
     IDST_OBJNAME            "WinAPI"
     IDST_AUTHOR             "Defisym"
-    IDST_COPYRIGHT          "Copyright 2019~2025 Defisym"
+    IDST_COPYRIGHT          "Copyright 2019~2026 Defisym & RainbowHype"
     IDST_COMMENT            "Functions that use WinAPI, For Personal Use."
     IDST_HTTP               "https://twitter.com/defisym"
 END
@@ -673,6 +676,8 @@ END
 STRINGTABLE
 BEGIN
     M_EXPRESSION_GFN "FrameName$ ("
+    M_EXPRESSION_GNOF "NFrames ("
+    M_EXPRESSION_GNOL "NLayers ("
     M_EXPRESSION_GAD "DisAniDir ("
     M_EXPRESSION_GAID "DisAniID ("
     M_EXPRESSION_GCFC "DisAniFC ("
@@ -832,6 +837,7 @@ END
 STRINGTABLE
 BEGIN
     M_CONDITION_IRIE    "%o Running in Editor"
+    M_CONDITION_IRISA    "%o Running in Sub App"
 END
 
 STRINGTABLE
@@ -877,7 +883,7 @@ BEGIN
     IDS_PROP_DISPLAY_CHECK_INFO "Picture Captured in 'Capture Frame Area to Clipboard' will be Automaticly Displayed"
 END
 
-#endif    // Ó¢Óï(ÃÀ¹ú) resources
+#endif    // Ó¢ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
