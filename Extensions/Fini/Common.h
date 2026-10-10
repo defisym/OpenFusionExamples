@@ -24,6 +24,7 @@
 #endif
 
 // General includes
+#define     NOMINMAX
 #include	"ccxhdr.h"
 #include	"Surface.h"
 
