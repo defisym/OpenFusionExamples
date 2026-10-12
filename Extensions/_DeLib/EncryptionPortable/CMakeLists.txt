@@ -3,7 +3,10 @@ project(EncryptionPortable LANGUAGES CXX)
 
 find_package(OpenSSL 1.1.1 REQUIRED COMPONENTS Crypto)
 
-add_library(encryption_portable EncryptionPortable.cpp)
+add_library(encryption_portable
+  EncryptionPortable.cpp
+  EncryptionPortableConvenience.cpp
+)
 target_include_directories(encryption_portable PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(encryption_portable PUBLIC cxx_std_17)
 target_link_libraries(encryption_portable PUBLIC OpenSSL::Crypto)
