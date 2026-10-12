@@ -11,12 +11,14 @@ namespace encryption_portable {
 
 constexpr std::size_t kAesKeySize = 16;
 constexpr std::size_t kIvSize = 16;
-constexpr std::size_t kHashSize = 32;
+constexpr std::size_t kMd5Size = 16;
+constexpr std::size_t kSha256Size = 32;
 constexpr std::size_t kKeyIvWordCount = 16;
 
 using Key = std::array<std::uint8_t, kAesKeySize>;
 using Iv = std::array<std::uint8_t, kIvSize>;
-using Sha256 = std::array<std::uint8_t, kHashSize>;
+using Md5 = std::array<std::uint8_t, kMd5Size>;
+using Sha256 = std::array<std::uint8_t, kSha256Size>;
 
 // Converts wchar_t input to UTF-16 code units, then reproduces GenerateKey's
 // 16-unit key/IV layout. Empty input selects the legacy default key and IV.
@@ -35,9 +37,11 @@ bool decrypt_cbc_stream(std::istream& ciphertext,
                         const Iv& iv,
                         std::string* error = nullptr);
 
-// Computes SHA-256 without reading the whole input into memory.
-bool sha256_stream(std::istream& input,
-                   Sha256& digest,
+// Streaming digest functions. MD5 matches the legacy GetHash default;
+// SHA-256 is available for new callers.
+bool md5_stream(std::istream& input, Md5& digest,
+                std::string* error = nullptr);
+bool sha256_stream(std::istream& input, Sha256& digest,
                    std::string* error = nullptr);
 
 }  // namespace encryption_portable

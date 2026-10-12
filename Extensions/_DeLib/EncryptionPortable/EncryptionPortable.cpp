@@ -69,6 +69,51 @@ void store_word_le(std::uint16_t word, std::uint8_t* output) {
     output[1] = static_cast<std::uint8_t>(word >> 8);
 }
 
+bool digest_stream(std::istream& input, const EVP_MD* algorithm,
+                   std::uint8_t* digest, unsigned int expected_size,
+                   std::string* error) {
+    EVP_MD_CTX* raw_context = EVP_MD_CTX_new();
+    if (raw_context == nullptr) {
+        set_error(error, "Could not allocate OpenSSL digest context");
+        return false;
+    }
+
+    const auto free_context = [](EVP_MD_CTX* context) {
+        EVP_MD_CTX_free(context);
+    };
+    const std::unique_ptr<EVP_MD_CTX, decltype(free_context)> context(
+        raw_context, free_context);
+
+    if (EVP_DigestInit_ex(context.get(), algorithm, nullptr) != 1) {
+        set_error(error, "Could not initialize digest");
+        return false;
+    }
+
+    std::array<char, kIoBufferSize> buffer{};
+    while (input) {
+        input.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+        const auto count = input.gcount();
+        if (count > 0 &&
+            EVP_DigestUpdate(context.get(), buffer.data(),
+                             static_cast<std::size_t>(count)) != 1) {
+            set_error(error, "Digest update failed");
+            return false;
+        }
+    }
+    if (input.bad()) {
+        set_error(error, "Reading input for digest failed");
+        return false;
+    }
+
+    unsigned int digest_size = 0;
+    if (EVP_DigestFinal_ex(context.get(), digest, &digest_size) != 1 ||
+        digest_size != expected_size) {
+        set_error(error, "Finalizing digest failed");
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 bool derive_key_and_iv(std::wstring_view input, Key& key, Iv& iv,
@@ -187,49 +232,14 @@ bool decrypt_cbc_stream(std::istream& ciphertext,
     return true;
 }
 
-bool sha256_stream(std::istream& input,
-                   Sha256& digest,
-                   std::string* error) {
-    EVP_MD_CTX* raw_context = EVP_MD_CTX_new();
-    if (raw_context == nullptr) {
-        set_error(error, "Could not allocate OpenSSL digest context");
-        return false;
-    }
+bool md5_stream(std::istream& input, Md5& digest, std::string* error) {
+    return digest_stream(input, EVP_md5(), digest.data(),
+                         static_cast<unsigned int>(digest.size()), error);
+}
 
-    const auto free_context = [](EVP_MD_CTX* context) {
-        EVP_MD_CTX_free(context);
-    };
-    const std::unique_ptr<EVP_MD_CTX, decltype(free_context)> context(
-        raw_context, free_context);
-
-    if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1) {
-        set_error(error, "Could not initialize SHA-256");
-        return false;
-    }
-
-    std::array<char, kIoBufferSize> buffer{};
-    while (input) {
-        input.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-        const auto count = input.gcount();
-        if (count > 0 &&
-            EVP_DigestUpdate(context.get(), buffer.data(),
-                             static_cast<std::size_t>(count)) != 1) {
-            set_error(error, "SHA-256 update failed");
-            return false;
-        }
-    }
-    if (input.bad()) {
-        set_error(error, "Reading input for SHA-256 failed");
-        return false;
-    }
-
-    unsigned int digest_size = 0;
-    if (EVP_DigestFinal_ex(context.get(), digest.data(), &digest_size) != 1 ||
-        digest_size != digest.size()) {
-        set_error(error, "Finalizing SHA-256 failed");
-        return false;
-    }
-    return true;
+bool sha256_stream(std::istream& input, Sha256& digest, std::string* error) {
+    return digest_stream(input, EVP_sha256(), digest.data(),
+                         static_cast<unsigned int>(digest.size()), error);
 }
 
 }  // namespace encryption_portable

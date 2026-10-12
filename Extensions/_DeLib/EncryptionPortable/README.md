@@ -1,9 +1,10 @@
 # Portable encryption sample
 
 This standalone C++17 sample keeps the cryptographic core free of BCrypt and
-Win32 APIs. OpenSSL EVP supplies AES-128-CBC/PKCS#7 decryption and SHA-256.
-The same source can be built for Windows, Linux, macOS, Android NDK, and iOS
-when OpenSSL 1.1.1+ is supplied for the target ABI.
+Win32 APIs. OpenSSL EVP supplies AES-128-CBC/PKCS#7 decryption, MD5 (matching
+the legacy `GetHash` default), and SHA-256. The same source can be built for
+Windows, Linux, macOS, Android NDK, and iOS when OpenSSL 1.1.1+ is supplied for
+the target ABI.
 
 ## Deterministic key and IV generation
 
@@ -33,13 +34,17 @@ This is intended for deterministic transparent asset encryption, not password
 hardening. It adds no salt or random per-file metadata. It preserves the
 AES-128-CBC file cipher and key/IV layout, but does not authenticate ciphertext.
 
-## Streaming decryption
+## Streaming decryption and hashing
 
 `decrypt_cbc_stream` reads and decrypts 64 KiB chunks with bounded memory.
 OpenSSL retains CBC state across updates and validates/removes PKCS#7 padding
 at the final step. On failure, the output stream may already contain partial
 plaintext; file callers should write to a temporary file and publish it only
 after success.
+
+`md5_stream` and `sha256_stream` hash input in the same bounded-memory way.
+MD5 is provided to match the legacy default; SHA-256 is available for new
+callers.
 
 ## Dependency and build
 
