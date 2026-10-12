@@ -1,27 +1,47 @@
 # Portable encryption sample
 
-This standalone C++17 sample keeps the cryptographic core free of BCrypt and
-Win32 APIs. OpenSSL EVP supplies AES-128-CBC/PKCS#7 decryption, MD5 (matching
-the legacy `GetHash` default), and SHA-256. The same source can be built for
-Windows, Linux, macOS, Android NDK, and iOS when OpenSSL 1.1.1+ is supplied for
-the target ABI.
+This standalone C++17 sample exposes a C-style API for code that consumes or
+produces buffers, including FFmpeg AVIO callbacks. The crypto core has no
+BCrypt or Win32 dependency. OpenSSL EVP supplies AES-128-CBC/PKCS#7 encryption
+and decryption, plus streaming MD5 (the legacy `GetHash` default) and SHA-256.
+
+## C API
+
+Include `EncryptionPortable.h` from C or C++. Call
+`Encryption_DeriveKeyAndIv` once, then create one cipher context per
+operation with `Encryption_CipherCreate`. Feed input chunks to
+`Encryption_CipherUpdate`, consume exactly the reported output byte count,
+and call `Encryption_CipherFinal` at end-of-input. The context retains CBC
+state across calls and handles PKCS#7 padding at Final. Encrypt and decrypt
+use the same API selected by `EncryptionCipherMode`.
+
+Update output buffers must provide at least `input_length + 16` bytes;
+Final output buffers must provide 16 bytes. Decryption may emit plaintext
+before Final validates padding. For an AVIO read callback, keep a pending
+plaintext buffer and its offset, produce more output by feeding ciphertext
+chunks when that buffer empties, then call Final at ciphertext EOF. This API is
+sequential; seeking requires recreating the cipher state from the beginning or
+implementing CBC-aware checkpoints. On failure, already emitted output is not
+rolled back.
+
+The hash API uses `Encryption_HashCreate/Update/Final/Destroy` and caller-
+owned buffers. `ENCRYPTION_HASH_MD5` matches the existing default hash;
+`ENCRYPTION_HASH_SHA256` is also available.
 
 ## Deterministic key and IV generation
 
-`derive_key_and_iv` uses `if constexpr(sizeof(wchar_t))` to normalize input
-into 16-bit units. On Windows, 16-bit `wchar_t` values are copied directly.
-On platforms with 32-bit `wchar_t`, values from 0 through 0xFFFF are also
-copied as raw units, and larger valid Unicode values are encoded as UTF-16
-surrogate pairs. This preserves arbitrary 16-bit key material while allowing
-the same ordinary Unicode input to produce the same UTF-16 units on both
-representations. Values above U+10FFFF are rejected.
+`Encryption_DeriveKeyAndIv` normalizes `wchar_t` units using
+`if constexpr(sizeof(wchar_t))`. On Windows, 16-bit values are copied
+directly. On platforms with 32-bit `wchar_t`, values from 0 through 0xFFFF
+are preserved as raw 16-bit key material, and larger valid Unicode values are
+encoded as UTF-16 surrogate pairs. Values above U+10FFFF are rejected.
 
 The function reproduces the existing 16-unit layout: the first eight 16-bit
 units form the 16-byte AES key and the next eight form the 16-byte IV. Inputs
 shorter than 16 units use the original fill algorithm; inputs longer than 16
-units XOR each trailing unit into all words of the key and IV. Empty input
-uses the legacy default byte arrays. Words are serialized explicitly as
-little-endian, so CPU byte order does not affect the result.
+units XOR each trailing unit into all key and IV words. Empty input uses the
+legacy default byte arrays. Words are serialized explicitly as little-endian,
+so CPU byte order does not affect the result.
 
 The original short-input expansion used `size_t`, making results depend on
 32-bit versus 64-bit builds. This implementation fixes that arithmetic to
@@ -31,20 +51,8 @@ with keys shorter than 16 UTF-16 units, those derived values may differ and
 should be checked before switching them over.
 
 This is intended for deterministic transparent asset encryption, not password
-hardening. It adds no salt or random per-file metadata. It preserves the
-AES-128-CBC file cipher and key/IV layout, but does not authenticate ciphertext.
-
-## Streaming decryption and hashing
-
-`decrypt_cbc_stream` reads and decrypts 64 KiB chunks with bounded memory.
-OpenSSL retains CBC state across updates and validates/removes PKCS#7 padding
-at the final step. On failure, the output stream may already contain partial
-plaintext; file callers should write to a temporary file and publish it only
-after success.
-
-`md5_stream` and `sha256_stream` hash input in the same bounded-memory way.
-MD5 is provided to match the legacy default; SHA-256 is available for new
-callers.
+hardening. It adds no salt or random per-file metadata. CBC does not
+authenticate ciphertext.
 
 ## Dependency and build
 

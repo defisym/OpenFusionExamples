@@ -1,47 +1,94 @@
-#pragma once
+#ifndef ENCRYPTION_PORTABLE_H
+#define ENCRYPTION_PORTABLE_H
 
-#include <array>
-#include <cstddef>
-#include <cstdint>
-#include <iosfwd>
-#include <string>
-#include <string_view>
+#include <stddef.h>
+#include <stdint.h>
+#include <wchar.h>
 
-namespace encryption_portable {
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-constexpr std::size_t kAesKeySize = 16;
-constexpr std::size_t kIvSize = 16;
-constexpr std::size_t kMd5Size = 16;
-constexpr std::size_t kSha256Size = 32;
-constexpr std::size_t kKeyIvWordCount = 16;
+#define ENCRYPTION_AES_KEY_SIZE 16
+#define ENCRYPTION_AES_IV_SIZE 16
+#define ENCRYPTION_BLOCK_SIZE 16
+#define ENCRYPTION_MD5_SIZE 16
+#define ENCRYPTION_SHA256_SIZE 32
+#define ENCRYPTION_KEY_IV_WORD_COUNT 16
 
-using Key = std::array<std::uint8_t, kAesKeySize>;
-using Iv = std::array<std::uint8_t, kIvSize>;
-using Md5 = std::array<std::uint8_t, kMd5Size>;
-using Sha256 = std::array<std::uint8_t, kSha256Size>;
+typedef enum EncryptionResult {
+    ENCRYPTION_OK = 0,
+    ENCRYPTION_INVALID_ARGUMENT,
+    ENCRYPTION_OUT_OF_MEMORY,
+    ENCRYPTION_BUFFER_TOO_SMALL,
+    ENCRYPTION_CRYPTO_ERROR,
+    ENCRYPTION_INVALID_PADDING,
+    ENCRYPTION_INVALID_STATE
+} EncryptionResult;
 
-// Converts wchar_t input to UTF-16 code units, then reproduces GenerateKey's
-// 16-unit key/IV layout. Empty input selects the legacy default key and IV.
-// The short-input expansion uses fixed 32-bit arithmetic for cross-platform
-// determinism.
-bool derive_key_and_iv(std::wstring_view input, Key& key, Iv& iv,
-                       std::string* error = nullptr);
+typedef enum EncryptionCipherMode {
+    ENCRYPTION_DECRYPT = 0,
+    ENCRYPTION_ENCRYPT = 1
+} EncryptionCipherMode;
 
-// Decrypts AES-128-CBC with PKCS#7 padding incrementally. Memory use is
-// bounded by the internal I/O buffer. On failure, output may contain partial
-// plaintext; callers writing files should use a temporary file and rename it
-// only after this function succeeds.
-bool decrypt_cbc_stream(std::istream& ciphertext,
-                        std::ostream& plaintext,
-                        const Key& key,
-                        const Iv& iv,
-                        std::string* error = nullptr);
+typedef enum EncryptionHashAlgorithm {
+    ENCRYPTION_HASH_MD5 = 0,
+    ENCRYPTION_HASH_SHA256 = 1
+} EncryptionHashAlgorithm;
 
-// Streaming digest functions. MD5 matches the legacy GetHash default;
+typedef struct EncryptionCipherContext EncryptionCipherContext;
+typedef struct EncryptionHashContext EncryptionHashContext;
+
+// Converts wchar_t units to the stable UTF-16-unit representation used by the
+// legacy key expansion, then emits 16-byte AES key and IV. input_length is a
+// count of wchar_t units; an empty input selects the legacy default key/IV.
+EncryptionResult Encryption_DeriveKeyAndIv(
+    const wchar_t* input,
+    size_t input_length,
+    uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    uint8_t iv[ENCRYPTION_AES_IV_SIZE]);
+
+// Incremental AES-128-CBC with PKCS#7 padding. Create one context per
+// operation. Each Update output buffer must have input_length + 16 bytes
+// capacity. Call Final exactly once at end-of-input; it may emit up to 16
+// bytes. Update/Final report actual output length through output_length.
+EncryptionResult Encryption_CipherCreate(
+    EncryptionCipherMode mode,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionCipherContext** context);
+EncryptionResult Encryption_CipherUpdate(
+    EncryptionCipherContext* context,
+    const uint8_t* input,
+    size_t input_length,
+    uint8_t* output,
+    size_t output_capacity,
+    size_t* output_length);
+EncryptionResult Encryption_CipherFinal(
+    EncryptionCipherContext* context,
+    uint8_t* output,
+    size_t output_capacity,
+    size_t* output_length);
+void Encryption_CipherDestroy(EncryptionCipherContext* context);
+
+// Incremental hashes. MD5 is available to match the legacy GetHash default;
 // SHA-256 is available for new callers.
-bool md5_stream(std::istream& input, Md5& digest,
-                std::string* error = nullptr);
-bool sha256_stream(std::istream& input, Sha256& digest,
-                   std::string* error = nullptr);
+EncryptionResult Encryption_HashCreate(
+    EncryptionHashAlgorithm algorithm,
+    EncryptionHashContext** context);
+EncryptionResult Encryption_HashUpdate(
+    EncryptionHashContext* context,
+    const uint8_t* input,
+    size_t input_length);
+EncryptionResult Encryption_HashFinal(
+    EncryptionHashContext* context,
+    uint8_t* output,
+    size_t output_capacity,
+    size_t* output_length);
+void Encryption_HashDestroy(EncryptionHashContext* context);
 
-}  // namespace encryption_portable
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
+#endif  // ENCRYPTION_PORTABLE_H
