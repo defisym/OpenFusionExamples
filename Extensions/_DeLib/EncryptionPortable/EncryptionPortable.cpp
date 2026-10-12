@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <array>
-#include <climits>
+#include <cstdint>
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -26,60 +26,42 @@ std::uint32_t hasher_move(std::uint32_t seed) {
     return kHasherMagicNumber + (seed << 6) + (seed >> 2);
 }
 
-bool append_utf16(std::uint32_t code_point,
-                  std::vector<std::uint16_t>& output) {
-    if (code_point > 0x10ffffu ||
-        (code_point >= 0xd800u && code_point <= 0xdfffu)) {
+bool append_utf16(std::uint32_t value, std::vector<std::uint16_t>& output) {
+    if (value > 0x10ffffu) {
         return false;
     }
-
-    if (code_point <= 0xffffu) {
-        output.push_back(static_cast<std::uint16_t>(code_point));
+    if (value <= 0xffffu) {
+        // Preserve every 16-bit value, including surrogate-range values. The
+        // original API consumes wchar_t units as key material, not text.
+        output.push_back(static_cast<std::uint16_t>(value));
         return true;
     }
 
-    code_point -= 0x10000u;
-    output.push_back(static_cast<std::uint16_t>(0xd800u + (code_point >> 10)));
-    output.push_back(static_cast<std::uint16_t>(0xdc00u + (code_point & 0x3ffu)));
+    value -= 0x10000u;
+    output.push_back(static_cast<std::uint16_t>(0xd800u + (value >> 10)));
+    output.push_back(static_cast<std::uint16_t>(0xdc00u + (value & 0x3ffu)));
     return true;
 }
 
-bool to_utf16_from_32bit_wchar(std::wstring_view input,
-                               std::vector<std::uint16_t>& output) {
-    output.clear();
-    output.reserve(input.size());
-    for (const auto value : input) {
-        if (!append_utf16(static_cast<std::uint32_t>(value), output)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool to_utf16_from_16bit_wchar(std::wstring_view input,
-                               std::vector<std::uint16_t>& output) {
+bool to_utf16(std::wstring_view input, std::vector<std::uint16_t>& output) {
     output.clear();
     output.reserve(input.size());
 
-    for (std::size_t i = 0; i < input.size(); ++i) {
-        const auto unit = static_cast<std::uint16_t>(input[i]);
-        if (unit >= 0xd800u && unit <= 0xdbffu) {
-            if (i + 1 >= input.size()) {
-                return false;
-            }
-            const auto low = static_cast<std::uint16_t>(input[++i]);
-            if (low < 0xdc00u || low > 0xdfffu) {
-                return false;
-            }
-            output.push_back(unit);
-            output.push_back(low);
-        } else if (unit >= 0xdc00u && unit <= 0xdfffu) {
-            return false;
-        } else {
-            output.push_back(unit);
+    if constexpr (sizeof(wchar_t) == 2) {
+        for (const auto value : input) {
+            output.push_back(static_cast<std::uint16_t>(value));
         }
+        return true;
+    } else if constexpr (sizeof(wchar_t) == 4) {
+        for (const auto value : input) {
+            if (!append_utf16(static_cast<std::uint32_t>(value), output)) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        return false;
     }
-    return true;
 }
 
 void store_word_le(std::uint16_t word, std::uint8_t* output) {
@@ -92,14 +74,8 @@ void store_word_le(std::uint16_t word, std::uint8_t* output) {
 bool derive_key_and_iv(std::wstring_view input, Key& key, Iv& iv,
                        std::string* error) {
     std::vector<std::uint16_t> units;
-    bool valid = false;
-    if constexpr (sizeof(wchar_t) == 2) {
-        valid = to_utf16_from_16bit_wchar(input, units);
-    } else if constexpr (sizeof(wchar_t) == 4) {
-        valid = to_utf16_from_32bit_wchar(input, units);
-    }
-    if (!valid) {
-        set_error(error, "Input contains an invalid Unicode code point or surrogate sequence");
+    if (!to_utf16(input, units)) {
+        set_error(error, "Input contains a wchar_t value outside the supported range");
         return false;
     }
 
@@ -176,9 +152,7 @@ bool decrypt_cbc_stream(std::istream& ciphertext,
         }
 
         int produced = 0;
-        if (EVP_DecryptUpdate(context.get(),
-                              output.data(),
-                              &produced,
+        if (EVP_DecryptUpdate(context.get(), output.data(), &produced,
                               reinterpret_cast<const unsigned char*>(input.data()),
                               static_cast<int>(count)) != 1) {
             set_error(error, "AES-CBC decryption failed");
