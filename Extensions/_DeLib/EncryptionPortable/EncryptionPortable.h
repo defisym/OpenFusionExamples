@@ -5,37 +5,27 @@
 #include <cstdint>
 #include <iosfwd>
 #include <string>
+#include <string_view>
 
 namespace encryption_portable {
 
-// New-format parameters. Generate a fresh salt for every file and store it
-// alongside the ciphertext (for example in a versioned file header).
-constexpr std::size_t kSaltSize = 16;
-constexpr std::size_t kKeySize = 32;
+constexpr std::size_t kAesKeySize = 16;
 constexpr std::size_t kIvSize = 16;
 constexpr std::size_t kHashSize = 32;
-constexpr std::uint32_t kDefaultPbkdf2Iterations = 200000;
+constexpr std::size_t kKeyIvWordCount = 16;
 
-using Salt = std::array<std::uint8_t, kSaltSize>;
-using Key = std::array<std::uint8_t, kKeySize>;
+using Key = std::array<std::uint8_t, kAesKeySize>;
 using Iv = std::array<std::uint8_t, kIvSize>;
 using Sha256 = std::array<std::uint8_t, kHashSize>;
 
-// Creates cryptographically random salt bytes using the selected OpenSSL
-// provider/platform RNG.
-bool make_salt(Salt& salt, std::string* error = nullptr);
-
-// Derives AES-256 key and CBC IV from UTF-8 password bytes and per-file salt.
-// The IV is derived for compatibility with the existing class's key+IV API;
-// use a unique random salt for every encryption operation.
-bool derive_key_and_iv(const std::string& password_utf8,
-                       const Salt& salt,
-                       Key& key,
-                       Iv& iv,
-                       std::uint32_t iterations = kDefaultPbkdf2Iterations,
+// Converts wchar_t input to UTF-16 code units, then reproduces GenerateKey's
+// 16-unit key/IV layout. Empty input selects the legacy default key and IV.
+// The short-input expansion uses fixed 32-bit arithmetic for cross-platform
+// determinism.
+bool derive_key_and_iv(std::wstring_view input, Key& key, Iv& iv,
                        std::string* error = nullptr);
 
-// Decrypts AES-256-CBC with PKCS#7 padding incrementally. Memory use is
+// Decrypts AES-128-CBC with PKCS#7 padding incrementally. Memory use is
 // bounded by the internal I/O buffer. On failure, output may contain partial
 // plaintext; callers writing files should use a temporary file and rename it
 // only after this function succeeds.

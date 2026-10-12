@@ -8,9 +8,7 @@
 #include <ostream>
 #include <vector>
 
-#include <openssl/crypto.h>
 #include <openssl/evp.h>
-#include <openssl/rand.h>
 
 namespace encryption_portable {
 namespace {
@@ -22,45 +20,125 @@ void set_error(std::string* error, const char* message) {
 }
 
 constexpr std::size_t kIoBufferSize = 64 * 1024;
+constexpr std::uint32_t kHasherMagicNumber = 0x9e3779b9u;
 
-}  // namespace
+std::uint32_t hasher_move(std::uint32_t seed) {
+    return kHasherMagicNumber + (seed << 6) + (seed >> 2);
+}
 
-bool make_salt(Salt& salt, std::string* error) {
-    if (RAND_bytes(salt.data(), static_cast<int>(salt.size())) != 1) {
-        set_error(error, "OpenSSL random number generation failed");
+bool append_utf16(std::uint32_t code_point,
+                  std::vector<std::uint16_t>& output) {
+    if (code_point > 0x10ffffu ||
+        (code_point >= 0xd800u && code_point <= 0xdfffu)) {
         return false;
+    }
+
+    if (code_point <= 0xffffu) {
+        output.push_back(static_cast<std::uint16_t>(code_point));
+        return true;
+    }
+
+    code_point -= 0x10000u;
+    output.push_back(static_cast<std::uint16_t>(0xd800u + (code_point >> 10)));
+    output.push_back(static_cast<std::uint16_t>(0xdc00u + (code_point & 0x3ffu)));
+    return true;
+}
+
+bool to_utf16_from_32bit_wchar(std::wstring_view input,
+                               std::vector<std::uint16_t>& output) {
+    output.clear();
+    output.reserve(input.size());
+    for (const auto value : input) {
+        if (!append_utf16(static_cast<std::uint32_t>(value), output)) {
+            return false;
+        }
     }
     return true;
 }
 
-bool derive_key_and_iv(const std::string& password_utf8,
-                       const Salt& salt,
-                       Key& key,
-                       Iv& iv,
-                       std::uint32_t iterations,
+bool to_utf16_from_16bit_wchar(std::wstring_view input,
+                               std::vector<std::uint16_t>& output) {
+    output.clear();
+    output.reserve(input.size());
+
+    for (std::size_t i = 0; i < input.size(); ++i) {
+        const auto unit = static_cast<std::uint16_t>(input[i]);
+        if (unit >= 0xd800u && unit <= 0xdbffu) {
+            if (i + 1 >= input.size()) {
+                return false;
+            }
+            const auto low = static_cast<std::uint16_t>(input[++i]);
+            if (low < 0xdc00u || low > 0xdfffu) {
+                return false;
+            }
+            output.push_back(unit);
+            output.push_back(low);
+        } else if (unit >= 0xdc00u && unit <= 0xdfffu) {
+            return false;
+        } else {
+            output.push_back(unit);
+        }
+    }
+    return true;
+}
+
+void store_word_le(std::uint16_t word, std::uint8_t* output) {
+    output[0] = static_cast<std::uint8_t>(word & 0xffu);
+    output[1] = static_cast<std::uint8_t>(word >> 8);
+}
+
+}  // namespace
+
+bool derive_key_and_iv(std::wstring_view input, Key& key, Iv& iv,
                        std::string* error) {
-    if (password_utf8.size() > static_cast<std::size_t>(INT_MAX) ||
-        iterations == 0 || iterations > static_cast<std::uint32_t>(INT_MAX)) {
-        set_error(error, "Invalid password length or PBKDF2 iteration count");
+    std::vector<std::uint16_t> units;
+    bool valid = false;
+    if constexpr (sizeof(wchar_t) == 2) {
+        valid = to_utf16_from_16bit_wchar(input, units);
+    } else if constexpr (sizeof(wchar_t) == 4) {
+        valid = to_utf16_from_32bit_wchar(input, units);
+    }
+    if (!valid) {
+        set_error(error, "Input contains an invalid Unicode code point or surrogate sequence");
         return false;
     }
 
-    std::array<std::uint8_t, kKeySize + kIvSize> material{};
-    if (PKCS5_PBKDF2_HMAC(password_utf8.data(),
-                          static_cast<int>(password_utf8.size()),
-                          salt.data(),
-                          static_cast<int>(salt.size()),
-                          static_cast<int>(iterations),
-                          EVP_sha256(),
-                          static_cast<int>(material.size()),
-                          material.data()) != 1) {
-        set_error(error, "PBKDF2-HMAC-SHA-256 failed");
-        return false;
+    std::array<std::uint16_t, kKeyIvWordCount> material{};
+    if (units.empty()) {
+        // Match the legacy DefaultKey and DefaultIV byte arrays.
+        for (std::size_t i = 0; i < 8; ++i) {
+            const auto first = static_cast<std::uint8_t>(i * 2);
+            const auto second = static_cast<std::uint8_t>(i * 2 + 1);
+            material[i] = static_cast<std::uint16_t>(first | (second << 8));
+            material[i + 8] = material[i];
+        }
+    } else if (units.size() < material.size()) {
+        std::copy(units.begin(), units.end(), material.begin());
+        auto seed = static_cast<std::uint32_t>(units.size());
+        for (std::size_t i = units.size(); i > 0; --i) {
+            seed ^= static_cast<std::uint32_t>(units[i - 1]) + hasher_move(seed);
+        }
+        for (std::size_t i = units.size(); i < material.size(); ++i) {
+            const auto high = static_cast<std::uint16_t>((seed >> 8) & 0xffu);
+            const auto low = static_cast<std::uint16_t>(seed & 0xffu);
+            material[i] = static_cast<std::uint16_t>(high ^ low);
+            seed ^= static_cast<std::uint32_t>(material[i]) + hasher_move(seed);
+        }
+    } else {
+        std::copy_n(units.begin(), material.size(), material.begin());
+        for (std::size_t i = material.size(); i < units.size(); ++i) {
+            const auto value = units[i];
+            for (std::size_t word = 0; word < 8; ++word) {
+                material[word] ^= value;
+                material[word + 8] ^= value;
+            }
+        }
     }
 
-    std::copy_n(material.begin(), key.size(), key.begin());
-    std::copy_n(material.begin() + key.size(), iv.size(), iv.begin());
-    OPENSSL_cleanse(material.data(), material.size());
+    for (std::size_t i = 0; i < 8; ++i) {
+        store_word_le(material[i], key.data() + i * 2);
+        store_word_le(material[i + 8], iv.data() + i * 2);
+    }
     return true;
 }
 
@@ -81,9 +159,9 @@ bool decrypt_cbc_stream(std::istream& ciphertext,
     const std::unique_ptr<EVP_CIPHER_CTX, decltype(free_context)> context(
         raw_context, free_context);
 
-    if (EVP_DecryptInit_ex(context.get(), EVP_aes_256_cbc(), nullptr,
+    if (EVP_DecryptInit_ex(context.get(), EVP_aes_128_cbc(), nullptr,
                            key.data(), iv.data()) != 1) {
-        set_error(error, "Could not initialize AES-256-CBC decryption");
+        set_error(error, "Could not initialize AES-128-CBC decryption");
         return false;
     }
 
