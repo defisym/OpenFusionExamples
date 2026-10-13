@@ -146,3 +146,25 @@ CMake's OpenSSL package paths at a cross-compiled OpenSSL installation. Do not
 link a host `libcrypto` into a mobile target. This sample does not bundle
 OpenSSL or claim per-platform build verification; dependency packaging remains
 the consuming project's responsibility.
+
+
+## FILE-based convenience functions
+
+File variants are provided for encryption, decryption, and hashing: Encryption_EncryptFile, Encryption_DecryptFile, Encryption_EncryptFileToBuffer, Encryption_DecryptFileToBuffer, and Encryption_HashFile. They take caller-owned FILE handles rather than paths, so each platform can open paths using its own native encoding and policy. Functions start at each handle's current position; they neither rewind nor close handles. File-to-file calls require distinct input and output handles. Open the destination separately and discard its partial contents if an operation fails.
+
+Example file-to-file encryption:
+
+```c
+#include <stdio.h>
+#include "EncryptionPortableConvenience.h"
+
+FILE* source = fopen(source_path, "rb");
+FILE* destination = fopen(encrypted_path, "wb");
+EncryptionResult result = Encryption_EncryptFile(source, destination, key, iv);
+fclose(source);
+fclose(destination);
+```
+
+For a file-to-memory decrypt, allocate ciphertext_size bytes, then call Encryption_DecryptFileToBuffer; on success, output_length contains the exact plaintext size. Encryption_EncryptFileToBuffer is available when the output must be an in-memory buffer. Encryption_HashFile computes MD5 or SHA-256 incrementally without loading the whole file.
+
+The original EncryptFile did not overwrite its source: it loaded the source into memory, retained the encrypted output in the Encryption object, and only wrote a file when SaveFile was called with a path. EncryptFileDirectly also kept its output in memory. The new file-to-file helpers therefore require separate source and destination handles.

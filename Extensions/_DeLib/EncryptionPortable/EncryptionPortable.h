@@ -22,7 +22,8 @@ typedef enum EncryptionResult {
     ENCRYPTION_BUFFER_TOO_SMALL,
     ENCRYPTION_CRYPTO_ERROR,
     ENCRYPTION_INVALID_PADDING,
-    ENCRYPTION_INVALID_STATE
+    ENCRYPTION_INVALID_STATE,
+    ENCRYPTION_IO_ERROR
 } EncryptionResult;
 
 typedef enum EncryptionCipherMode {

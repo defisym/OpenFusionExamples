@@ -2,6 +2,7 @@
 #define ENCRYPTION_PORTABLE_CONVENIENCE_H
 
 #include "EncryptionPortable.h"
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +31,25 @@ EncryptionResult Encryption_HashBuffer(
     const uint8_t* input, size_t input_length,
     uint8_t* output, size_t output_capacity, size_t* output_length);
 
+// File helpers use caller-owned FILE handles at their current positions.
+// They do not rewind or close the handles. Use distinct source/destination files.
+EncryptionResult Encryption_EncryptFile(FILE* input_file, FILE* output_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE]);
+EncryptionResult Encryption_DecryptFile(FILE* input_file, FILE* output_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE]);
+EncryptionResult Encryption_EncryptFileToBuffer(FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+EncryptionResult Encryption_DecryptFileToBuffer(FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+EncryptionResult Encryption_HashFile(FILE* input_file,
+    EncryptionHashAlgorithm algorithm, uint8_t* output,
+    size_t output_capacity, size_t* output_length);
 // Reads input incrementally, encrypts it, and sends ciphertext chunks to a
 // caller callback. A successful read callback returning bytes_read == 0 means EOF.
 EncryptionResult Encryption_EncryptReader(
