@@ -32,7 +32,7 @@ EncryptionResult Encryption_HashBuffer(
     uint8_t* output, size_t output_capacity, size_t* output_length);
 
 // File helpers use caller-owned FILE handles at their current positions.
-// They do not rewind or close the handles. Use distinct source/destination files.
+// They do not rewind or close handles. Source and destination must be distinct files.
 EncryptionResult Encryption_EncryptFile(FILE* input_file, FILE* output_file,
     const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
     const uint8_t iv[ENCRYPTION_AES_IV_SIZE]);

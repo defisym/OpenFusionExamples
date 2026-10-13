@@ -150,7 +150,17 @@ the consuming project's responsibility.
 
 ## FILE-based convenience functions
 
-File variants are provided for encryption, decryption, and hashing: Encryption_EncryptFile, Encryption_DecryptFile, Encryption_EncryptFileToBuffer, Encryption_DecryptFileToBuffer, and Encryption_HashFile. They take caller-owned FILE handles rather than paths, so each platform can open paths using its own native encoding and policy. Functions start at each handle's current position; they neither rewind nor close handles. File-to-file calls require distinct input and output handles. Open the destination separately and discard its partial contents if an operation fails.
+File variants are available for encryption, decryption, and hashing:
+Encryption_EncryptFile, Encryption_DecryptFile, Encryption_EncryptFileToBuffer,
+Encryption_DecryptFileToBuffer, and Encryption_HashFile. They take caller-owned
+FILE handles instead of paths, so the caller chooses platform-specific path
+handling and encoding. Functions start at each handle's current position; they
+neither rewind nor close handles.
+
+File-to-file calls require distinct source and destination files, not merely
+different FILE handles that refer to the same path. Never open the source path
+as a truncating destination. The caller opens and closes both handles. If an
+operation fails, discard the partial destination file.
 
 Example file-to-file encryption:
 
@@ -159,12 +169,23 @@ Example file-to-file encryption:
 #include "EncryptionPortableConvenience.h"
 
 FILE* source = fopen(source_path, "rb");
+if (source == NULL) return 1;
 FILE* destination = fopen(encrypted_path, "wb");
+if (destination == NULL) { fclose(source); return 2; }
 EncryptionResult result = Encryption_EncryptFile(source, destination, key, iv);
+const int close_error = fclose(destination) != 0;
 fclose(source);
-fclose(destination);
+if (result != ENCRYPTION_OK || close_error) { /* discard destination */ }
 ```
 
-For a file-to-memory decrypt, allocate ciphertext_size bytes, then call Encryption_DecryptFileToBuffer; on success, output_length contains the exact plaintext size. Encryption_EncryptFileToBuffer is available when the output must be an in-memory buffer. Encryption_HashFile computes MD5 or SHA-256 incrementally without loading the whole file.
+For file-to-memory decryption, allocate ciphertext_size bytes and call
+Encryption_DecryptFileToBuffer; on success, output_length gives the exact
+plaintext size. Encryption_EncryptFileToBuffer provides the matching
+file-to-buffer operation. Encryption_HashFile computes MD5 or SHA-256
+incrementally without loading the whole file.
 
-The original EncryptFile did not overwrite its source: it loaded the source into memory, retained the encrypted output in the Encryption object, and only wrote a file when SaveFile was called with a path. EncryptFileDirectly also kept its output in memory. The new file-to-file helpers therefore require separate source and destination handles.
+The original EncryptFile did not overwrite its source: it loaded the source
+into memory, retained the encrypted output in the Encryption object, and wrote
+a file only when SaveFile was called with a destination path. EncryptFileDirectly
+also kept its output in memory. The new file-to-file helpers require separate
+source and destination files.
