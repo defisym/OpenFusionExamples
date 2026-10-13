@@ -5,18 +5,22 @@ produces buffers, including FFmpeg AVIO callbacks. The crypto core has no
 BCrypt or Win32 dependency. OpenSSL EVP supplies AES-128-CBC/PKCS#7 encryption
 and decryption, plus streaming MD5 (the legacy `GetHash` default) and SHA-256.
 
-## One decrypt backend, two output choices
+## One streaming cipher backend, multiple output choices
 
-Both file-reading modes use the same incremental CBC decryptor and padding
-finalization. The caller chooses only where each plaintext chunk goes:
+Encryption and decryption both read input incrementally through a C callback,
+run the same CBC update/final loop, and send output chunks to a C write callback.
+The selected mode controls whether PKCS#7 padding is added or validated.
 
-1. `Encryption_DecryptReader` sends chunks to a write callback. Use this for
-   audio/video playback; the callback can feed an AVIO-side pending buffer.
-2. `Encryption_DecryptReaderToBuffer` sends those same chunks to a buffer
-   sink owned by the caller. Use this for image/texture loading when the full
-   plaintext is needed in memory.
+1. `Encryption_EncryptReader` encrypts source chunks and writes ciphertext
+   chunks to the callback. Use this to encrypt large files without holding the
+   full input or output in memory.
+2. `Encryption_DecryptReader` decrypts source chunks and writes plaintext
+   chunks to the callback. Use this for audio/video playback.
+3. `Encryption_EncryptReaderToBuffer` and `Encryption_DecryptReaderToBuffer`
+   use the same reader/cipher loop with a caller-buffer sink for applications
+   that need a complete result in memory.
 
-Both functions read ciphertext through the same `EncryptionReadCallback`.
+All reader functions use the same `EncryptionReadCallback` for input.
 The callback returns `ENCRYPTION_OK` with `bytes_read == 0` at EOF. A sample
 adapter for a caller-opened C `FILE*` is:
 
@@ -30,15 +34,14 @@ static EncryptionResult read_file(
 ```
 
 The file/path API stays with the caller, so Windows, Linux, macOS, Android, and
-iOS can use their preferred file handles while sharing the same decryptor.
+iOS can use their preferred file handles while sharing the same cipher backend.
 
 ### Full-buffer image/texture output
 
-The output buffer needs a safe capacity before decryption starts. CBC with
-PKCS#7 padding always produces fewer plaintext bytes than ciphertext bytes,
-so ciphertext size is a simple safe capacity. The exact plaintext length
-depends on the final padding and is returned through `output_length` after
-successful decryption.
+For decryption, ciphertext size is a safe output capacity; the exact
+plaintext size depends on the final PKCS#7 padding and is returned through
+`output_length` after successful decryption. For encryption, reserve plaintext
+size plus one AES block for padding.
 
 C++ callers can use `EncryptionPortable.hpp`:
 
@@ -52,17 +55,17 @@ bool load_texture(const encryption_portable::Key& key,
                   EncryptionReadCallback read_file,
                   void* file) {
     encryption_portable::DecryptReaderContext decryptor(key, iv, encrypted_size);
-if (!decryptor.IsValid()) {
-    return false;
-}
-std::vector<std::uint8_t> pixels(decryptor.GetDecryptedBufferSize());
-std::size_t pixel_size = 0;
-const auto result = decryptor.DecryptToBuffer(
-    read_file, file, pixels.data(), pixels.size(), &pixel_size);
-if (result != ENCRYPTION_OK) {
-    return false; // discard pixels; padding or I/O may have failed
-}
-pixels.resize(pixel_size);
+    if (!decryptor.IsValid()) {
+        return false;
+    }
+    std::vector<std::uint8_t> pixels(decryptor.GetDecryptedBufferSize());
+    std::size_t pixel_size = 0;
+    const auto result = decryptor.DecryptToBuffer(
+        read_file, file, pixels.data(), pixels.size(), &pixel_size);
+    if (result != ENCRYPTION_OK) {
+        return false; // discard pixels; padding or I/O may have failed
+    }
+    pixels.resize(pixel_size);
     return true;
 }
 ```
@@ -72,8 +75,10 @@ buffer with capacity equal to the encrypted file size.
 
 ### Audio/video streaming output
 
-`Encryption_DecryptReader` uses the exact same read/decrypt/final path, but
-calls the supplied write callback for each plaintext chunk. For FFmpeg AVIO,
+`Encryption_DecryptReader` calls the supplied write callback for each plaintext
+chunk. `Encryption_EncryptReader` has the same callback shape and backend, but
+emits ciphertext chunks. Both retain only the current input/output chunks and
+cipher state. For FFmpeg AVIO,
 that callback should append plaintext to a pending queue; the AVIO read
 callback drains that queue and requests more decrypted data when it runs dry.
 Decryption may emit bytes before Final validates PKCS#7 padding, so treat a
