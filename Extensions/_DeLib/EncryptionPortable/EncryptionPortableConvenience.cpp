@@ -12,6 +12,28 @@ namespace {
 
 constexpr size_t kReaderBufferSize = 64 * 1024;
 
+struct MemoryReader {
+    const uint8_t* input;
+    size_t length;
+    size_t offset;
+};
+
+EncryptionResult read_memory(void* user_data, uint8_t* buffer,
+                             size_t capacity, size_t* bytes_read) {
+    if (user_data == nullptr || buffer == nullptr || bytes_read == nullptr) {
+        return ENCRYPTION_INVALID_ARGUMENT;
+    }
+    auto* reader = static_cast<MemoryReader*>(user_data);
+    const size_t remaining = reader->length - reader->offset;
+    const size_t count = std::min(capacity, remaining);
+    if (count != 0) {
+        std::memcpy(buffer, reader->input + reader->offset, count);
+        reader->offset += count;
+    }
+    *bytes_read = count;
+    return ENCRYPTION_OK;
+}
+
 struct BufferSink {
     uint8_t* output;
     size_t capacity;
@@ -170,8 +192,15 @@ EncryptionResult Encryption_DecryptBuffer(
     const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
     const uint8_t* input, size_t input_length,
     uint8_t* output, size_t output_capacity, size_t* output_length) {
-    return cipher_buffer(ENCRYPTION_DECRYPT, key, iv, input, input_length,
-                         output, output_capacity, output_length);
+    if (input == nullptr && input_length != 0) {
+        if (output_length != nullptr) {
+            *output_length = 0;
+        }
+        return ENCRYPTION_INVALID_ARGUMENT;
+    }
+    MemoryReader reader{input, input_length, 0};
+    return Encryption_DecryptReaderToBuffer(
+        key, iv, read_memory, &reader, output, output_capacity, output_length);
 }
 
 EncryptionResult Encryption_HashBuffer(
