@@ -23,51 +23,7 @@ struct EncryptionHashContext {
 
 namespace {
 
-constexpr uint32_t kHasherMagicNumber = 0x9e3779b9u;
 constexpr size_t kIoBufferSize = 64 * 1024;
-
-uint32_t hasher_move(uint32_t seed) {
-    return kHasherMagicNumber + (seed << 6) + (seed >> 2);
-}
-
-bool append_utf16(uint32_t value, std::vector<uint16_t>& output) {
-    if (value > 0x10ffffu) {
-        return false;
-    }
-    if (value <= 0xffffu) {
-        // Preserve every 16-bit value as key material, including surrogate-
-        // range values. This is not text validation.
-        output.push_back(static_cast<uint16_t>(value));
-        return true;
-    }
-
-    value -= 0x10000u;
-    output.push_back(static_cast<uint16_t>(0xd800u + (value >> 10)));
-    output.push_back(static_cast<uint16_t>(0xdc00u + (value & 0x3ffu)));
-    return true;
-}
-
-bool to_utf16_units(const wchar_t* input, size_t length,
-                    std::vector<uint16_t>& output) {
-    output.clear();
-    output.reserve(length);
-
-    if constexpr (sizeof(wchar_t) == 2) {
-        for (size_t i = 0; i < length; ++i) {
-            output.push_back(static_cast<uint16_t>(input[i]));
-        }
-        return true;
-    } else if constexpr (sizeof(wchar_t) == 4) {
-        for (size_t i = 0; i < length; ++i) {
-            if (!append_utf16(static_cast<uint32_t>(input[i]), output)) {
-                return false;
-            }
-        }
-        return true;
-    } else {
-        return false;
-    }
-}
 
 void store_word_le(uint16_t word, uint8_t* output) {
     output[0] = static_cast<uint8_t>(word & 0xffu);
@@ -90,20 +46,19 @@ const EVP_MD* get_digest(EncryptionHashAlgorithm algorithm) {
 extern "C" {
 
 EncryptionResult Encryption_DeriveKeyAndIv(
-    const wchar_t* input, size_t input_length,
+    const void* input, size_t input_size,
     uint8_t key[ENCRYPTION_AES_KEY_SIZE],
     uint8_t iv[ENCRYPTION_AES_IV_SIZE]) {
-    if ((input == nullptr && input_length != 0) || key == nullptr || iv == nullptr) {
+    if ((input == nullptr && input_size != 0) || key == nullptr || iv == nullptr) {
         return ENCRYPTION_INVALID_ARGUMENT;
     }
 
-    std::vector<uint16_t> units;
-    if (input_length != 0 && !to_utf16_units(input, input_length, units)) {
-        return ENCRYPTION_INVALID_ARGUMENT;
-    }
-
+    constexpr size_t kInputUnits = ENCRYPTION_KEY_IV_WORD_COUNT;
+    const auto* bytes = static_cast<const uint8_t*>(input);
+    const size_t unit_count = input_size / 2 + input_size % 2;
     std::array<uint16_t, ENCRYPTION_KEY_IV_WORD_COUNT> material{};
-    if (units.empty()) {
+
+    if (unit_count == 0) {
         // Match legacy DefaultKey/DefaultIV bytes 00,01,...,0F.
         for (size_t i = 0; i < 8; ++i) {
             const auto low = static_cast<uint8_t>(i * 2);
@@ -111,25 +66,32 @@ EncryptionResult Encryption_DeriveKeyAndIv(
             material[i] = static_cast<uint16_t>(low | (high << 8));
             material[i + 8] = material[i];
         }
-    } else if (units.size() < material.size()) {
-        std::copy(units.begin(), units.end(), material.begin());
-        uint32_t seed = static_cast<uint32_t>(units.size());
-        for (size_t i = units.size(); i > 0; --i) {
-            seed ^= static_cast<uint32_t>(units[i - 1]) + hasher_move(seed);
-        }
-        for (size_t i = units.size(); i < material.size(); ++i) {
-            const uint16_t high = static_cast<uint16_t>((seed >> 8) & 0xffu);
-            const uint16_t low = static_cast<uint16_t>(seed & 0xffu);
-            material[i] = static_cast<uint16_t>(high ^ low);
-            seed ^= static_cast<uint32_t>(material[i]) + hasher_move(seed);
-        }
     } else {
-        std::copy_n(units.begin(), material.size(), material.begin());
-        for (size_t i = material.size(); i < units.size(); ++i) {
-            const uint16_t value = units[i];
-            for (size_t word = 0; word < 8; ++word) {
-                material[word] ^= value;
-                material[word + 8] ^= value;
+        const auto input_unit = [bytes, input_size](size_t index) {
+            const size_t offset = index * 2;
+            const uint16_t low = bytes[offset];
+            const uint16_t high = offset + 1 < input_size
+                ? static_cast<uint16_t>(bytes[offset + 1]) << 8
+                : 0;
+            return static_cast<uint16_t>(low | high);
+        };
+
+        if (unit_count < kInputUnits) {
+            // Repeat the raw little-endian 16-bit units to fill key/IV material.
+            for (size_t i = 0; i < kInputUnits; ++i) {
+                material[i] = input_unit(i % unit_count);
+            }
+        } else {
+            for (size_t i = 0; i < kInputUnits; ++i) {
+                material[i] = input_unit(i);
+            }
+            // Fold each excess unit into every key and IV word.
+            for (size_t i = kInputUnits; i < unit_count; ++i) {
+                const uint16_t value = input_unit(i);
+                for (size_t word = 0; word < 8; ++word) {
+                    material[word] ^= value;
+                    material[word + 8] ^= value;
+                }
             }
         }
     }

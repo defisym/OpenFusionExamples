@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <wchar.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,12 +38,11 @@ typedef enum EncryptionHashAlgorithm {
 typedef struct EncryptionCipherContext EncryptionCipherContext;
 typedef struct EncryptionHashContext EncryptionHashContext;
 
-// Converts wchar_t units to the stable UTF-16-unit representation used by the
-// legacy key expansion, then emits 16-byte AES key and IV. input_length is a
-// count of wchar_t units; an empty input selects the legacy default key/IV.
+// Derives a deterministic AES key and IV from arbitrary input bytes.
+// input_size is measured in bytes; an empty buffer selects legacy defaults.
 EncryptionResult Encryption_DeriveKeyAndIv(
-    const wchar_t* input,
-    size_t input_length,
+    const void* input,
+    size_t input_size,
     uint8_t key[ENCRYPTION_AES_KEY_SIZE],
     uint8_t iv[ENCRYPTION_AES_IV_SIZE]);
 
