@@ -275,6 +275,21 @@ EncryptionResult Encryption_DecryptReaderToBuffer(
     return result;
 }
 
+EncryptionResult Encryption_EncryptFileStream(FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE], const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionWriteCallback write_callback, void* write_user_data) {
+    if (input_file == nullptr) return ENCRYPTION_INVALID_ARGUMENT;
+    FileReader reader{input_file};
+    return Encryption_EncryptReader(key, iv, read_file, &reader, write_callback, write_user_data);
+}
+
+EncryptionResult Encryption_DecryptFileStream(FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE], const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionWriteCallback write_callback, void* write_user_data) {
+    if (input_file == nullptr) return ENCRYPTION_INVALID_ARGUMENT;
+    FileReader reader{input_file};
+    return Encryption_DecryptReader(key, iv, read_file, &reader, write_callback, write_user_data);
+}
 EncryptionResult Encryption_EncryptFile(FILE* input_file, FILE* output_file,
     const uint8_t key[ENCRYPTION_AES_KEY_SIZE], const uint8_t iv[ENCRYPTION_AES_IV_SIZE]) {
     if (input_file == nullptr || output_file == nullptr || input_file == output_file) return ENCRYPTION_INVALID_ARGUMENT;

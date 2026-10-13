@@ -33,6 +33,16 @@ EncryptionResult Encryption_HashBuffer(
 
 // File helpers use caller-owned FILE handles at their current positions.
 // They do not rewind or close handles. Source and destination must be distinct files.
+// These wrappers read a FILE incrementally and send each result chunk to the
+// caller's write callback. They do not accumulate the complete output.
+EncryptionResult Encryption_EncryptFileStream(FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionWriteCallback write_callback, void* write_user_data);
+EncryptionResult Encryption_DecryptFileStream(FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionWriteCallback write_callback, void* write_user_data);
 EncryptionResult Encryption_EncryptFile(FILE* input_file, FILE* output_file,
     const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
     const uint8_t iv[ENCRYPTION_AES_IV_SIZE]);

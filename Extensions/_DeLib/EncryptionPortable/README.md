@@ -150,7 +150,9 @@ the consuming project's responsibility.
 
 ## FILE-based convenience functions
 
-File variants are available for encryption, decryption, and hashing:
+For a FILE source with a caller-defined output sink, use Encryption_EncryptFileStream or Encryption_DecryptFileStream. Each reads in chunks and calls the writer callback as chunks become available; neither accumulates the full output. The callback can write a destination file, append to a playback queue, or forward data elsewhere. These functions process synchronously until EOF.
+
+File variants are also available for file-to-file encryption/decryption and hashing:
 Encryption_EncryptFile, Encryption_DecryptFile, Encryption_EncryptFileToBuffer,
 Encryption_DecryptFileToBuffer, and Encryption_HashFile. They take caller-owned
 FILE handles instead of paths, so the caller chooses platform-specific path
