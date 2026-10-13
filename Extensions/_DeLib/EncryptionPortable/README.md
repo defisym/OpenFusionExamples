@@ -32,11 +32,14 @@ The callback returns `ENCRYPTION_OK` with `bytes_read == 0` at EOF. A sample
 adapter for a caller-opened C `FILE*` is:
 
 ```c
+#include <stdio.h>
+#include "EncryptionPortableCallbacks.h"
+
 static EncryptionResult read_file(
     void *user_data, uint8_t *buffer, size_t capacity, size_t *bytes_read) {
     FILE *file = (FILE *)user_data;
     *bytes_read = fread(buffer, 1, capacity, file);
-    return ferror(file) ? ENCRYPTION_CRYPTO_ERROR : ENCRYPTION_OK;
+    return ferror(file) ? ENCRYPTION_IO_ERROR : ENCRYPTION_OK;
 }
 ```
 
@@ -176,14 +179,23 @@ Example file-to-file encryption:
 #include <stdio.h>
 #include "EncryptionPortableFile.h"
 
-FILE* source = fopen(source_path, "rb");
-if (source == NULL) return 1;
-FILE* destination = fopen(encrypted_path, "wb");
-if (destination == NULL) { fclose(source); return 2; }
-EncryptionResult result = Encryption_EncryptFile(source, destination, key, iv);
-const int close_error = fclose(destination) != 0;
-fclose(source);
-if (result != ENCRYPTION_OK || close_error) { /* discard destination */ }
+int encrypt_file(const char* source_path, const char* encrypted_path,
+                 const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+                 const uint8_t iv[ENCRYPTION_AES_IV_SIZE]) {
+    FILE* source = fopen(source_path, "rb");
+    if (source == NULL) return 1;
+    FILE* destination = fopen(encrypted_path, "wb");
+    if (destination == NULL) { fclose(source); return 2; }
+    EncryptionResult result = Encryption_EncryptFile(source, destination, key, iv);
+    const int flush_error = fflush(destination) != 0;
+    const int close_error = fclose(destination) != 0;
+    fclose(source);
+    if (result != ENCRYPTION_OK || flush_error || close_error) {
+        /* discard the partial destination file */
+        return 3;
+    }
+    return 0;
+}
 ```
 
 For file-to-memory decryption, include `EncryptionPortableFile.h`, allocate ciphertext_size bytes, and call
