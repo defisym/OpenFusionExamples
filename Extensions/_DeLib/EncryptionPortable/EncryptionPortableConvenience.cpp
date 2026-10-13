@@ -1,11 +1,36 @@
 #include "EncryptionPortableConvenience.h"
 
 #include <algorithm>
+#include <array>
+#include <cstdio>
+#include <cstring>
 #include <limits>
 #include <new>
 #include <vector>
 
 namespace {
+
+constexpr size_t kReaderBufferSize = 64 * 1024;
+
+struct BufferSink {
+    uint8_t* output;
+    size_t capacity;
+    size_t size;
+};
+
+EncryptionResult append_to_buffer(void* user_data,
+                                  const uint8_t* data,
+                                  size_t data_length) {
+    auto* sink = static_cast<BufferSink*>(user_data);
+    if (data_length > sink->capacity - sink->size) {
+        return ENCRYPTION_BUFFER_TOO_SMALL;
+    }
+    if (data_length != 0) {
+        std::memcpy(sink->output + sink->size, data, data_length);
+        sink->size += data_length;
+    }
+    return ENCRYPTION_OK;
+}
 
 EncryptionResult cipher_buffer(
     EncryptionCipherMode mode,
@@ -63,6 +88,70 @@ EncryptionResult cipher_buffer(
     return ENCRYPTION_OK;
 }
 
+// The single file-reader/decryptor backend. Streaming playback and full-buffer
+// output differ only in the write callback supplied by the caller.
+EncryptionResult decrypt_reader(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback,
+    void* read_user_data,
+    EncryptionWriteCallback write_callback,
+    void* write_user_data) {
+    if (key == nullptr || iv == nullptr || read_callback == nullptr ||
+        write_callback == nullptr) {
+        return ENCRYPTION_INVALID_ARGUMENT;
+    }
+
+    EncryptionCipherContext* context = nullptr;
+    auto result = Encryption_CipherCreate(ENCRYPTION_DECRYPT, key, iv, &context);
+    if (result != ENCRYPTION_OK) {
+        return result;
+    }
+
+    std::array<uint8_t, kReaderBufferSize> input{};
+    std::array<uint8_t, kReaderBufferSize + ENCRYPTION_BLOCK_SIZE> plaintext{};
+
+    for (;;) {
+        size_t bytes_read = 0;
+        result = read_callback(read_user_data, input.data(), input.size(), &bytes_read);
+        if (result != ENCRYPTION_OK) {
+            break;
+        }
+        if (bytes_read > input.size()) {
+            result = ENCRYPTION_INVALID_ARGUMENT;
+            break;
+        }
+        if (bytes_read == 0) {
+            break;
+        }
+
+        size_t produced = 0;
+        result = Encryption_CipherUpdate(context, input.data(), bytes_read,
+                                         plaintext.data(), plaintext.size(), &produced);
+        if (result != ENCRYPTION_OK) {
+            break;
+        }
+        if (produced != 0) {
+            result = write_callback(write_user_data, plaintext.data(), produced);
+            if (result != ENCRYPTION_OK) {
+                break;
+            }
+        }
+    }
+
+    if (result == ENCRYPTION_OK) {
+        size_t produced = 0;
+        result = Encryption_CipherFinal(context, plaintext.data(), plaintext.size(),
+                                        &produced);
+        if (result == ENCRYPTION_OK && produced != 0) {
+            result = write_callback(write_user_data, plaintext.data(), produced);
+        }
+    }
+
+    Encryption_CipherDestroy(context);
+    return result;
+}
+
 }  // namespace
 
 extern "C" {
@@ -107,6 +196,36 @@ EncryptionResult Encryption_HashBuffer(
         result = Encryption_HashFinal(context, output, output_capacity, output_length);
     }
     Encryption_HashDestroy(context);
+    return result;
+}
+
+EncryptionResult Encryption_DecryptReader(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback, void* read_user_data,
+    EncryptionWriteCallback write_callback, void* write_user_data) {
+    return decrypt_reader(key, iv, read_callback, read_user_data,
+                          write_callback, write_user_data);
+}
+
+EncryptionResult Encryption_DecryptReaderToBuffer(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback, void* read_user_data,
+    uint8_t* output, size_t output_capacity, size_t* output_length) {
+    if (output_length != nullptr) {
+        *output_length = 0;
+    }
+    if (output == nullptr || output_length == nullptr) {
+        return ENCRYPTION_INVALID_ARGUMENT;
+    }
+
+    BufferSink sink{output, output_capacity, 0};
+    const auto result = decrypt_reader(key, iv, read_callback, read_user_data,
+                                       append_to_buffer, &sink);
+    if (result == ENCRYPTION_OK) {
+        *output_length = sink.size;
+    }
     return result;
 }
 

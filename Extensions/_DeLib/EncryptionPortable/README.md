@@ -5,80 +5,93 @@ produces buffers, including FFmpeg AVIO callbacks. The crypto core has no
 BCrypt or Win32 dependency. OpenSSL EVP supplies AES-128-CBC/PKCS#7 encryption
 and decryption, plus streaming MD5 (the legacy `GetHash` default) and SHA-256.
 
-## One-shot memory helpers
+## One decrypt backend, two output choices
 
-For data already in memory, include `EncryptionPortableConvenience.h` and call
-`Encryption_EncryptBuffer`, `Encryption_DecryptBuffer`, or
-`Encryption_HashBuffer`. The helpers allocate temporary workspace internally,
-create/destroy the incremental context, process PKCS#7 finalization, and write
-the result to your buffer. They do not take ownership of caller buffers.
+Both file-reading modes use the same incremental CBC decryptor and padding
+finalization. The caller chooses only where each plaintext chunk goes:
+
+1. `Encryption_DecryptReader` sends chunks to a write callback. Use this for
+   audio/video playback; the callback can feed an AVIO-side pending buffer.
+2. `Encryption_DecryptReaderToBuffer` sends those same chunks to a buffer
+   sink owned by the caller. Use this for image/texture loading when the full
+   plaintext is needed in memory.
+
+Both functions read ciphertext through the same `EncryptionReadCallback`.
+The callback returns `ENCRYPTION_OK` with `bytes_read == 0` at EOF. A sample
+adapter for a caller-opened C `FILE*` is:
 
 ```c
-#include "EncryptionPortableConvenience.h"
-#include <string.h>
-
-int encrypt_and_decrypt_asset(void) {
-    const wchar_t key_input[] = L"0123456789abcdef";
-    const uint8_t asset[] = "asset";
-    uint8_t key[ENCRYPTION_AES_KEY_SIZE];
-    uint8_t iv[ENCRYPTION_AES_IV_SIZE];
-    uint8_t encrypted[sizeof(asset) + ENCRYPTION_BLOCK_SIZE];
-    uint8_t decrypted[sizeof(encrypted)];
-    size_t encrypted_size = 0;
-    size_t decrypted_size = 0;
-
-    if (Encryption_DeriveKeyAndIv(
-            key_input, sizeof(key_input) / sizeof(key_input[0]) - 1,
-            key, iv) != ENCRYPTION_OK) {
-        return 1;
-    }
-    if (Encryption_EncryptBuffer(
-            key, iv, asset, sizeof(asset) - 1,
-            encrypted, sizeof(encrypted), &encrypted_size) != ENCRYPTION_OK) {
-        return 2;
-    }
-    if (Encryption_DecryptBuffer(
-            key, iv, encrypted, encrypted_size,
-            decrypted, sizeof(decrypted), &decrypted_size) != ENCRYPTION_OK) {
-        return 3;
-    }
-
-    return decrypted_size == sizeof(asset) - 1 &&
-           memcmp(decrypted, asset, decrypted_size) == 0 ? 0 : 4;
+static EncryptionResult read_file(
+    void *user_data, uint8_t *buffer, size_t capacity, size_t *bytes_read) {
+    FILE *file = (FILE *)user_data;
+    *bytes_read = fread(buffer, 1, capacity, file);
+    return ferror(file) ? ENCRYPTION_CRYPTO_ERROR : ENCRYPTION_OK;
 }
 ```
 
-For one-shot encryption, reserve `input_length + 16` bytes (PKCS#7 always adds
-padding, including a full block for block-aligned input). For decryption,
-output capacity equal to ciphertext length is sufficient. On invalid padding,
-the one-shot decrypt helper does not copy partial plaintext into the caller's
-output buffer.
+The file/path API stays with the caller, so Windows, Linux, macOS, Android, and
+iOS can use their preferred file handles while sharing the same decryptor.
 
-## Incremental C API and FFmpeg AVIO
+### Full-buffer image/texture output
 
-For streaming, include `EncryptionPortable.h`. Create a cipher context with
-`Encryption_CipherCreate`, feed chunks to `Encryption_CipherUpdate`, consume
-exactly the reported output byte count, and call `Encryption_CipherFinal` at
-end-of-input. Encrypt and decrypt use the same API selected by
-`EncryptionCipherMode`. Update output buffers must provide at least
-`input_length + 16` bytes; Final output buffers must provide 16 bytes.
+The output buffer needs a safe capacity before decryption starts. CBC with
+PKCS#7 padding always produces fewer plaintext bytes than ciphertext bytes,
+so ciphertext size is a simple safe capacity. The exact plaintext length
+depends on the final padding and is returned through `output_length` after
+successful decryption.
 
-An AVIO read callback can keep a pending plaintext buffer and offset. When it
-runs out, read ciphertext from the memory asset, feed it through Update, and
-return available plaintext. At ciphertext EOF call Final once, deliver any
-remaining bytes, then report EOF. This is sequential; see the seek notes
-below. Decryption may emit bytes before Final validates PKCS#7 padding, and
-CBC does not authenticate ciphertext.
+C++ callers can use `EncryptionPortable.hpp`:
 
-The hash API has one-shot `Encryption_HashBuffer` and incremental
-`Encryption_HashCreate/Update/Final/Destroy` forms. MD5 matches the existing
-default hash; SHA-256 is also available.
+```cpp
+#include "EncryptionPortable.hpp"
+#include <vector>
 
-## Seeking in CBC data
+bool load_texture(const encryption_portable::Key& key,
+                  const encryption_portable::Iv& iv,
+                  std::size_t encrypted_size,
+                  EncryptionReadCallback read_file,
+                  void* file) {
+    encryption_portable::DecryptReaderContext decryptor(key, iv, encrypted_size);
+if (!decryptor.IsValid()) {
+    return false;
+}
+std::vector<std::uint8_t> pixels(decryptor.GetDecryptedBufferSize());
+std::size_t pixel_size = 0;
+const auto result = decryptor.DecryptToBuffer(
+    read_file, file, pixels.data(), pixels.size(), &pixel_size);
+if (result != ENCRYPTION_OK) {
+    return false; // discard pixels; padding or I/O may have failed
+}
+pixels.resize(pixel_size);
+    return true;
+}
+```
 
+The C API can call `Encryption_DecryptReaderToBuffer` directly, passing a
+buffer with capacity equal to the encrypted file size.
+
+### Audio/video streaming output
+
+`Encryption_DecryptReader` uses the exact same read/decrypt/final path, but
+calls the supplied write callback for each plaintext chunk. For FFmpeg AVIO,
+that callback should append plaintext to a pending queue; the AVIO read
+callback drains that queue and requests more decrypted data when it runs dry.
+Decryption may emit bytes before Final validates PKCS#7 padding, so treat a
+later failure as invalidating the playback operation.
+
+For in-memory input, the convenience functions
+`Encryption_EncryptBuffer`, `Encryption_DecryptBuffer`, and
+`Encryption_HashBuffer` handle the whole buffer in one call. Encryption
+output capacity must be `input_length + 16`; decryption output capacity equal
+to ciphertext length is sufficient.
+
+## Incremental C API and FFmpeg seeking
+
+The lower-level API is `Encryption_CipherCreate/Update/Final/Destroy`.
+It is also useful when the caller needs to control buffering directly.
 FFmpeg performs timestamp seeking at the demuxer layer, generally choosing a
 keyframe and decoding forward. The AVIO seek callback works in byte offsets.
-For a plaintext byte position `p`, restart CBC at the containing block:
+For plaintext offset `p`, restart CBC at its containing block:
 
 ```text
 block_offset = p - (p % 16)
@@ -87,13 +100,11 @@ seek_iv      = original_iv                         if block_offset == 0
                ciphertext[block_offset - 16..-1]   otherwise
 ```
 
-Create a fresh decrypt context using `seek_iv`, begin reading ciphertext at
-`block_offset`, then discard `skip_bytes` of produced plaintext before
-returning data to AVIO. For `SEEK_END`/size queries, determine plaintext size
-once by finalizing decryption of the last block and validating the padding.
-Seeking is not implemented as a separate convenience function in this sample;
-the incremental API provides the pieces to build the AVIO adapter. Seeking
-requires random access to the ciphertext source.
+Create a fresh decrypt context using `seek_iv`, read ciphertext starting at
+`block_offset`, and discard `skip_bytes` of produced plaintext. For
+`SEEK_END`/size queries, decrypt the final block once to validate padding and
+determine the exact plaintext length. Seeking requires random access to the
+ciphertext source; the two high-level reader helpers are sequential.
 
 ## Deterministic key and IV generation
 
@@ -118,7 +129,8 @@ with keys shorter than 16 UTF-16 units, those derived values may differ and
 should be checked before switching them over.
 
 This is intended for deterministic transparent asset encryption, not password
-hardening. It adds no salt or random per-file metadata.
+hardening. It adds no salt or random per-file metadata. CBC does not
+authenticate ciphertext.
 
 ## Dependency and build
 
