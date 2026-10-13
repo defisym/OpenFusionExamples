@@ -5,7 +5,9 @@ find_package(OpenSSL 1.1.1 REQUIRED COMPONENTS Crypto)
 
 add_library(encryption_portable
   EncryptionPortable.cpp
-  EncryptionPortableConvenience.cpp
+  EncryptionPortableStream.cpp
+  EncryptionPortableBuffer.cpp
+  EncryptionPortableFile.cpp
 )
 target_include_directories(encryption_portable PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(encryption_portable PUBLIC cxx_std_17)

@@ -5,6 +5,13 @@ produces buffers, including FFmpeg AVIO callbacks. The crypto core has no
 BCrypt or Win32 dependency. OpenSSL EVP supplies AES-128-CBC/PKCS#7 encryption
 and decryption, plus streaming MD5 (the legacy `GetHash` default) and SHA-256.
 
+## API modules
+
+- `EncryptionPortable.h`: low-level cipher/hash contexts and byte-buffer key/IV derivation.
+- `EncryptionPortableStream.h`: reader-to-writer streaming operations.
+- `EncryptionPortableBuffer.h`: memory buffer helpers and callback-stream-to-buffer helpers.
+- `EncryptionPortableFile.h`: FILE-specific streaming, file-to-file, file-to-buffer, and hash helpers.
+
 ## One streaming cipher backend, multiple output choices
 
 Encryption and decryption both read input incrementally through a C callback,
@@ -20,7 +27,7 @@ The selected mode controls whether PKCS#7 padding is added or validated.
    use the same reader/cipher loop with a caller-buffer sink for applications
    that need a complete result in memory.
 
-All reader functions use the same `EncryptionReadCallback` for input.
+Include `EncryptionPortableStream.h` for the reader/writer API and `EncryptionPortableCallbacks.h` for callback types alone. Each reader uses the same `EncryptionReadCallback` for input.
 The callback returns `ENCRYPTION_OK` with `bytes_read == 0` at EOF. A sample
 adapter for a caller-opened C `FILE*` is:
 
@@ -33,8 +40,7 @@ static EncryptionResult read_file(
 }
 ```
 
-The file/path API stays with the caller, so Windows, Linux, macOS, Android, and
-iOS can use their preferred file handles while sharing the same cipher backend.
+FILE-specific adapters are declared separately in `EncryptionPortableFile.h`; path opening remains with the caller.
 
 ### Full-buffer image/texture output
 
@@ -43,10 +49,10 @@ plaintext size depends on the final PKCS#7 padding and is returned through
 `output_length` after successful decryption. For encryption, reserve plaintext
 size plus one AES block for padding.
 
-C++ callers can use `EncryptionPortable.hpp`:
+C++ callers can include `EncryptionPortableBuffer.hpp` for the buffer sizing context:
 
 ```cpp
-#include "EncryptionPortable.hpp"
+#include "EncryptionPortableBuffer.hpp"
 #include <vector>
 
 bool load_texture(const encryption_portable::Key& key,
@@ -84,7 +90,7 @@ callback drains that queue and requests more decrypted data when it runs dry.
 Decryption may emit bytes before Final validates PKCS#7 padding, so treat a
 later failure as invalidating the playback operation.
 
-For in-memory input, the convenience functions
+Include `EncryptionPortableBuffer.h` for these buffer helpers. For in-memory input,
 `Encryption_EncryptBuffer`, `Encryption_DecryptBuffer`, and
 `Encryption_HashBuffer` handle the whole buffer in one call. Encryption
 output capacity must be `input_length + 16`; decryption output capacity equal
@@ -148,9 +154,9 @@ OpenSSL or claim per-platform build verification; dependency packaging remains
 the consuming project's responsibility.
 
 
-## FILE-based convenience functions
+## FILE API
 
-For a FILE source with a caller-defined output sink, use Encryption_EncryptFileStream or Encryption_DecryptFileStream. Each reads in chunks and calls the writer callback as chunks become available; neither accumulates the full output. The callback can write a destination file, append to a playback queue, or forward data elsewhere. These functions process synchronously until EOF.
+Include `EncryptionPortableFile.h` for FILE wrappers. For a FILE source with a caller-defined output sink, use Encryption_EncryptFileStream or Encryption_DecryptFileStream. Each reads in chunks and calls the writer callback as chunks become available; neither accumulates the full output. The callback can write a destination file, append to a playback queue, or forward data elsewhere. These functions process synchronously until EOF.
 
 File variants are also available for file-to-file encryption/decryption and hashing:
 Encryption_EncryptFile, Encryption_DecryptFile, Encryption_EncryptFileToBuffer,
@@ -168,7 +174,7 @@ Example file-to-file encryption:
 
 ```c
 #include <stdio.h>
-#include "EncryptionPortableConvenience.h"
+#include "EncryptionPortableFile.h"
 
 FILE* source = fopen(source_path, "rb");
 if (source == NULL) return 1;
@@ -180,7 +186,7 @@ fclose(source);
 if (result != ENCRYPTION_OK || close_error) { /* discard destination */ }
 ```
 
-For file-to-memory decryption, allocate ciphertext_size bytes and call
+For file-to-memory decryption, include `EncryptionPortableFile.h`, allocate ciphertext_size bytes, and call
 Encryption_DecryptFileToBuffer; on success, output_length gives the exact
 plaintext size. Encryption_EncryptFileToBuffer provides the matching
 file-to-buffer operation. Encryption_HashFile computes MD5 or SHA-256
