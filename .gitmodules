@@ -26,3 +26,8 @@
 	path = Extensions/_3rdLib/simpleini
 	url = https://github.com/brofield/simpleini.git
 	shallow = true
+[submodule "Examples/JCW"]
+	path = Examples/JCW
+	url = https://github.com/TypeJCW/PublicDomainMFAs.git
+	shallow = true
+
