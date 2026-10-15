@@ -97,10 +97,10 @@ See [this ReadMe](Extensions/ReadMe.md) for more details about using the followi
 | FastloopSave     | Defisym  | Save by Fastloop, could be easily extended to fit any systems                                                            |
 | Flow             | Defisym  | a common error of beginners about flow control, like esc open/close menu but only one side can be triggered              |
 | IniControlInit   | Defisym  | How to init a ini file                                                                                                   |
-| Map Maker        | JaCobWeb | A simple map maker that supports saving and loading via Arrays. Part of TypeJCW's Public Domain MFAs                     |
+| [Map Maker](<https://github.com/TypeJCW/PublicDomainMFAs/tree/main/Frame Manipulation/JaCobWeb's Map Maker>)        | JaCobWeb | A simple map maker that supports saving and loading via Arrays. Part of TypeJCW's Public Domain MFAs                     |
 | MouseState       | Defisym  | to show if LMB/RMB is pushed down                                                                                        |
 | PauseWithTextBox | Defisym  | pause app with an explanation                                                                                            |
-| Pathfinding Example| JaCobWeb | A simple, yet powerful Pathfinding Example. Part of TypeJCW's Public Domain MFAs                                       |
+| [Pathfinding Example](<https://github.com/TypeJCW/PublicDomainMFAs/tree/main/Pathfinding/JaCobWeb's Pathfinding Example>)| JaCobWeb | A simple, yet powerful Pathfinding Example. Part of TypeJCW's Public Domain MFAs                                       |
 | Regex_IsNum      | Defisym  | check if a string is number by using string splitter                                                                     |
 | Shotgun          | Defisym  | Simple Shotgun                                                                                                           |
 | StringScan       | Defisym  | Search the string and excerpt text in ()                                                                                 |
