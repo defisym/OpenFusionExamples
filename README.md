@@ -86,6 +86,7 @@ See [this ReadMe](Extensions/ReadMe.md) for more details about using the followi
 
 | Name             | Author   | Description                                                                                                              |
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [A* Navigator](<https://github.com/TypeJCW/PublicDomainMFAs/tree/main/Pathfinding/A*%20Navigator>)        | JaCobWeb | an "extension-less" A* pathfinding solution made for all platforms, including Windows, Mac, iOS, Android, HTML, Flash, XNA, UWP, and Java. Requires Clickteam Fusion 2.5 + Addon. **In Beta** Part of TypeJCW's Public Domain MFAs                     |
 | BinaryExtract    | Defisym  | Extract binary file to any folder you want                                                                               |
 | Blank Char       | Defisym  | blank char used for align to git rid of DX11 string limit                                                                |
 | Bullet Time      | Defisym  | A simple bullet time example                                                                                             |
