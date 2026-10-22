@@ -114,3 +114,8 @@ See [this ReadMe](Extensions/ReadMe.md) for more details about using the followi
 
 Some mfa files used for Fusion tutorials in [my blog](https://www.zhihu.com/column/FusionGamers).
 
+## Contributors
+
+<a href="https://github.com/defisym/OpenFusionExamples/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=defisym/OpenFusionExamples" />
+</a>
