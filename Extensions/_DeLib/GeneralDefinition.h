@@ -11,6 +11,13 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <cfloat>
+#ifdef _WIN32
+#include <limits>
+#include <cwctype>
+#else
+#include <filesystem>
+#endif
 
 // Custom
 #include "StringTraits.h"
@@ -42,7 +49,25 @@
 
 #define CONNECT_STR(l, r) l##r
 #define STRINGIFY(s) #s
+#ifdef _WIN32
 #define CUR_FOLDER CONNECT_STR(__FILE__, "\\..\\")
+#else
+namespace DeLibDetail {
+    class PathString {
+        std::string value;
+    public:
+        explicit PathString(const std::filesystem::path& path) : value(path.string()) {}
+
+        // Pointer access requires an owner whose lifetime the caller can retain.
+        operator char*() & noexcept { return value.data(); }
+        operator const char*() const & noexcept { return value.c_str(); }
+        operator char*() && = delete;
+        operator const char*() const && = delete;
+        size_t size() const noexcept { return value.size(); }
+    };
+}
+#define CUR_FOLDER DeLibDetail::PathString(std::filesystem::path(__FILE__).parent_path() / "")
+#endif
 
 // Note: if you are using files inside a shard network folder
 // RELATIVE_PATH macro will return a path like \\Mac\Home\Dev
@@ -53,7 +78,12 @@
 // depending on your network drive settings.
 // direct link to path like mklink /D C:\Dev \\Mac\Home\Dev is not supported by Windows
 // and path like that cannot open in Explorer either.
+#ifdef _WIN32
 #define RELATIVE_PATH(path) CONNECT_STR(CUR_FOLDER, path)
+#else
+#define RELATIVE_PATH(relative) DeLibDetail::PathString( \
+    (std::filesystem::path(__FILE__).parent_path() / (relative)).lexically_normal())
+#endif
 
 // ------------------------------------------
 // Constants
@@ -88,11 +118,11 @@ static constexpr auto HASHER_MOVE(size_t seed) { return HASHER_MAGICNUMBER + (se
 
 //don't use this func if Str = nullptr, return Default_Str directly
 inline void NewStr(wchar_t*& Tar, const wchar_t* Str) {
-    if (Tar != nullptr) { delete[] Tar; Tar = nullptr; }
-    const rsize_t total_length = wcslen(Str) + 1;
-
-    Tar = new wchar_t[total_length];
-    wcscpy_s(Tar, total_length, Str);
+    const size_t total_length = std::wcslen(Str) + 1;
+    auto replacement = new wchar_t[total_length];
+    std::wmemcpy(replacement, Str, total_length);
+    delete[] Tar;
+    Tar = replacement;
 }
 
 inline void NewStr(wchar_t*& Tar, const std::wstring& Str) {
@@ -160,8 +190,12 @@ inline bool SaveData(std::string& output,
 #ifdef _WIN32
 
 // Windows
+#ifndef NOMINMAX
 #define NOMINMAX
-#define WIN32_LEAN_AND_MEAN 
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 
 inline bool to_wide_string(std::wstring& output,
@@ -226,6 +260,123 @@ inline unsigned int GetUnicodeCodePage(bool bUnicode) {
    return bUnicode ? CP_UTF8 : CP_ACP;
 }
 
+#else
+// POSIX / GNU libiconv. Android requires an explicitly supplied iconv implementation.
+#include <cerrno>
+#include <iconv.h>
+
+inline constexpr unsigned int CP_UTF8 = 65001;
+inline constexpr unsigned int CP_ACP = 0;
+
+// Compatibility policy, not detection of an OS-wide Windows ANSI code page.
+#ifndef DELIB_ACP_ENCODING
+#define DELIB_ACP_ENCODING "UTF-8"
+#endif
+
+namespace DeLibDetail {
+    inline std::string EncodingName(const unsigned int codePage) {
+        switch (codePage) {
+        case CP_ACP:
+            return DELIB_ACP_ENCODING;
+        case CP_UTF8: return "UTF-8";
+        case 65000: return "UTF-7";
+        case 1200: return "UTF-16LE";
+        case 1201: return "UTF-16BE";
+        case 12000: return "UTF-32LE";
+        case 12001: return "UTF-32BE";
+        case 20127: return "ASCII";
+        case 54936: return "GB18030";
+        default:
+            if (codePage >= 28591 && codePage <= 28606) {
+                return "ISO-8859-" + std::to_string(codePage - 28590);
+            }
+            return "CP" + std::to_string(codePage);
+        }
+    }
+
+    // iconv implementations expose either char** or const char** for the input cursor.
+    template<typename Function>
+    inline size_t RunIconv(Function function, iconv_t converter, char** input, size_t* inputLeft,
+            char** output, size_t* outputLeft) {
+        if constexpr (std::is_invocable_v<Function, iconv_t, char**, size_t*, char**, size_t*>) {
+            return function(converter, input, inputLeft, output, outputLeft);
+        } else {
+            const char* source = input == nullptr ? nullptr : *input;
+            const auto result = function(converter, input == nullptr ? nullptr : &source,
+                    inputLeft, output, outputLeft);
+            if (input != nullptr) { *input = const_cast<char*>(source); }
+            return result;
+        }
+    }
+
+    inline bool ConvertBytes(std::string& output, const char* input, const size_t length,
+            const std::string& sourceEncoding, const std::string& targetEncoding) {
+        if (input == nullptr || length == 0 || sourceEncoding.empty() || targetEncoding.empty()) {
+            return false;
+        }
+        const auto converter = iconv_open(targetEncoding.c_str(), sourceEncoding.c_str());
+        if (converter == (iconv_t)-1) { return false; }
+        struct CloseIconv {
+            iconv_t converter;
+            ~CloseIconv() { iconv_close(converter); }
+        } closer{converter};
+        std::string converted;
+        char* source = const_cast<char*>(input);
+        size_t inputLeft = length;
+        auto step = [&](const bool flush) {
+            char buffer[256];
+            char* target = buffer;
+            size_t outputLeft = sizeof(buffer);
+            const auto result = RunIconv(&iconv, converter, flush ? nullptr : &source,
+                    flush ? nullptr : &inputLeft, &target, &outputLeft);
+            const auto error = errno;
+            converted.append(buffer, sizeof(buffer) - outputLeft);
+            if (result == static_cast<size_t>(-1)) { return error == E2BIG ? 1 : -1; }
+            // Never silently accept irreversible substitutions on a non-Windows backend.
+            return result == 0 ? 0 : -1;
+        };
+        int state;
+        do { state = step(false); } while (state == 1);
+        if (state < 0 || inputLeft != 0) { return false; }
+        do { state = step(true); } while (state == 1);
+        if (state < 0) { return false; }
+        output.swap(converted);
+        return true;
+    }
+}
+
+inline bool to_wide_string(std::wstring& output, const char* pSrc, size_t len,
+        const unsigned int codePage = CP_UTF8) {
+    std::string converted;
+    if (!DeLibDetail::ConvertBytes(converted, pSrc, len, DeLibDetail::EncodingName(codePage), "WCHAR_T")
+            || converted.size() % sizeof(wchar_t) != 0) { return false; }
+    std::wstring result(converted.size() / sizeof(wchar_t), 0);
+    std::memcpy(result.data(), converted.data(), converted.size());
+    output.swap(result);
+    return true;
+}
+
+inline std::wstring to_wide_string(const std::string& input, const unsigned int codePage = CP_UTF8) {
+    std::wstring result;
+    to_wide_string(result, input.data(), input.size(), codePage);
+    return result;
+}
+
+inline bool to_byte_string(std::string& output, const wchar_t* pSrc, size_t len,
+        const unsigned int codePage = CP_UTF8) {
+    if (len > (std::numeric_limits<size_t>::max)() / sizeof(wchar_t)) { return false; }
+    return DeLibDetail::ConvertBytes(output, reinterpret_cast<const char*>(pSrc), len * sizeof(wchar_t),
+            "WCHAR_T", DeLibDetail::EncodingName(codePage));
+}
+
+inline std::string to_byte_string(const std::wstring& input, const unsigned int codePage = CP_UTF8) {
+    std::string result;
+    to_byte_string(result, input.data(), input.size(), codePage);
+    return result;
+}
+
+inline unsigned int GetUnicodeCodePage(bool bUnicode) { return bUnicode ? CP_UTF8 : CP_ACP; }
+
 #endif
 
 // ------------------------------------------
@@ -233,13 +384,13 @@ inline unsigned int GetUnicodeCodePage(bool bUnicode) {
 //	char to trim: space, \t \n \r \f \v
 // ------------------------------------------
 
-inline std::wstring_view GetTrimmedStr(LPWSTR pStart, size_t length) {
-	while (pStart[0] == L' ') {
+inline std::wstring_view GetTrimmedStr(wchar_t* pStart, size_t length) {
+	while (length != 0 && pStart[0] == L' ') {
 		pStart++;
 		length--;
 	}
 
-	while ((pStart + length - 1)[0] == L' ') {
+	while (length != 0 && pStart[length - 1] == L' ') {
 		length--;
 	}
 
@@ -250,13 +401,13 @@ inline std::wstring_view GetTrimmedStr(std::wstring_view& str) {
 	return GetTrimmedStr(const_cast<wchar_t*>(str.data()), str.size());
 }
 
-inline std::string_view GetTrimmedStr(LPSTR pStart, size_t length) {
-    while (pStart[0] == ' ') {
+inline std::string_view GetTrimmedStr(char* pStart, size_t length) {
+    while (length != 0 && pStart[0] == ' ') {
         pStart++;
         length--;
     }
 
-    while ((pStart + length - 1)[0] == ' ') {
+    while (length != 0 && pStart[length - 1] == ' ') {
         length--;
     }
 
@@ -274,6 +425,7 @@ inline void TrimStr(std::wstring& str,
 	constexpr auto back = false;
 
 	auto needTrim = [&] (bool dir) {
+        if (str.empty()) { return false; }
 		const std::vector<wchar_t>& chars = dir ? frontChars : backChars;
 
 		for (const auto& it : chars) {
@@ -299,49 +451,58 @@ inline void TrimStr(std::wstring& str,
 // Case
 // ------------------------------------------
 
-template<CharConcept T>
-void ToLower(T* pStr, const size_t sz) {
-    for (size_t index = 0; index < sz; index++) {
-        auto& chr = pStr[index];
-        chr = tolower(chr);
+namespace DeLibDetail {
+    template<CharConcept T>
+    inline T LowerChar(const T value) {
+        if constexpr (std::is_same_v<T, wchar_t>) {
+            return static_cast<T>(std::towlower(static_cast<wint_t>(value)));
+        } else {
+            return static_cast<T>(std::tolower(static_cast<unsigned char>(value)));
+        }
+    }
+    template<CharConcept T>
+    inline T UpperChar(const T value) {
+        if constexpr (std::is_same_v<T, wchar_t>) {
+            return static_cast<T>(std::towupper(static_cast<wint_t>(value)));
+        } else {
+            return static_cast<T>(std::toupper(static_cast<unsigned char>(value)));
+        }
     }
 }
 
-template<StringConcept T>
-void ToLower(T& str) {
-    std::ranges::transform(str, str.begin(), ::tolower);
+template<CharConcept T>
+void ToLower(T* pStr, const size_t sz) {
+    for (size_t index = 0; index < sz; ++index) { pStr[index] = DeLibDetail::LowerChar(pStr[index]); }
 }
+
+template<StringConcept T>
+void ToLower(T& str) { ToLower(str.data(), str.size()); }
 
 template<StringConcept T>
 [[nodiscard]] T ToLower(const T& str) {
     T ret = str;
-    std::ranges::transform(ret, ret.begin(), ::tolower);
+    ToLower(ret);
     return ret;
 }
 
 template<CharConcept T>
 void ToUpper(T* pStr, const size_t sz) {
-    for (size_t index = 0; index < sz; index++) {
-        auto& chr = pStr[index];
-        chr = ToUpper(chr);
-    }
+    for (size_t index = 0; index < sz; ++index) { pStr[index] = DeLibDetail::UpperChar(pStr[index]); }
 }
 
 template<StringConcept T>
-void ToUpper(T& str) {
-    std::ranges::transform(str, str.begin(), ::toupper);
-}
+void ToUpper(T& str) { ToUpper(str.data(), str.size()); }
 
 template<StringConcept T>
 [[nodiscard]] T ToUpper(const T& str) {
     T ret = str;
-    std::ranges::transform(ret, ret.begin(), ::toupper);
+    ToUpper(ret);
     return ret;
 }
 
 template<CharConcept T>
 inline bool CharIEqu(const T l, const T r) {
-    return (l == r) || (::tolower(l) == ::tolower(r));
+    return (l == r) || (DeLibDetail::LowerChar(l) == DeLibDetail::LowerChar(r));
 }
 
 template<CharConcept T>
@@ -356,12 +517,21 @@ inline bool StrEqu(const T* l, const T* r) {
 
 template<CharConcept T>
 inline bool StrIEqu(const T* l, const T* r) {
+#ifdef _WIN32
     if constexpr (std::is_same_v<T, char>) {
         return _stricmp(l, r) == 0;
     }
     else {
         return _wcsicmp(l, r) == 0;
     }
+#else
+    while (*l != 0 && *r != 0) {
+        if (!CharIEqu(*l, *r)) { return false; }
+        ++l;
+        ++r;
+    }
+    return *l == *r;
+#endif
 }
 
 template<CharConcept T>
@@ -374,7 +544,7 @@ inline bool StrEmpty(const T* pStr) {
     }
 }
 
-inline bool StringViewEqu(const std::wstring_view& str, const LPCWSTR pStr) {
+inline bool StringViewEqu(const std::wstring_view& str, const wchar_t* pStr) {
 	const auto length = wcslen(pStr);
 
 	if (length != str.size()) {
@@ -406,7 +576,7 @@ inline bool StringViewIEqu(const std::wstring_view& l, const std::wstring_view& 
 	return true;
 }
 
-inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
+inline bool StringViewIEqu(const std::wstring_view& str, const wchar_t* pStr) {
 	const auto length = wcslen(pStr);
 
 	if (length != str.size()) {
@@ -423,7 +593,7 @@ inline bool StringViewIEqu(const std::wstring_view& str, const LPCWSTR pStr) {
 }
 
 // true if pR is pL's append
-inline bool StringAppend(const LPCWSTR pL, const LPCWSTR pR) {
+inline bool StringAppend(const wchar_t* pL, const wchar_t* pR) {
 	const auto lLength = wcslen(pL);
 	const auto rLength = wcslen(pR);
 
@@ -438,7 +608,7 @@ inline bool StringAppend(const LPCWSTR pL, const LPCWSTR pR) {
 	return true;
 }
 
-inline bool StringIAppend(const LPCWSTR pL, const LPCWSTR pR) {
+inline bool StringIAppend(const wchar_t* pL, const wchar_t* pR) {
 	const auto lLength = wcslen(pL);
 	const auto rLength = wcslen(pR);
 

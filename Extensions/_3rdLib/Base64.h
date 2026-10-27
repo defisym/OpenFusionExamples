@@ -23,6 +23,8 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <stdexcept>
+#include <climits>
 
 #include "StringTraits.h"
 
@@ -104,7 +106,7 @@ class Base64 {
         auto ret = (isalnum(c) || (c == plusChar) || (c == slashChar));
 
         if (!ret) {
-            throw std::exception("BASE64_DECODE_ERROR");
+            throw std::invalid_argument("BASE64_DECODE_ERROR");
         }
 
         return ret;
@@ -168,6 +170,26 @@ public:
         return enRet;
     }
     inline std::vector<unsigned char> base64_decode(const Base64Str& encoded_string) {
+        // Reject malformed padding/characters rather than silently decoding a valid prefix.
+        const auto length = encoded_string.size();
+        if (length % 4 != 0 || length > static_cast<size_t>(INT_MAX)) {
+            throw std::invalid_argument("BASE64_DECODE_ERROR");
+        }
+        size_t padding = 0;
+        if (length && encoded_string[length - 1] == b64EndChar) { ++padding; }
+        if (length > 1 && encoded_string[length - 2] == b64EndChar) { ++padding; }
+        for (size_t pos = 0; pos < length; ++pos) {
+            const auto ch = encoded_string[pos];
+            if (pos >= length - padding) {
+                if (ch != b64EndChar) { throw std::invalid_argument("BASE64_DECODE_ERROR"); }
+            } else if (base64_chars.find(ch) == Base64Str::npos) {
+                throw std::invalid_argument("BASE64_DECODE_ERROR");
+            }
+        }
+        if (padding && (base64_chars.find(encoded_string[length - padding - 1])
+                & (padding == 2 ? 15 : 3))) {
+            throw std::invalid_argument("BASE64_DECODE_ERROR");
+        }
         int i = 0;
 
         Base64Char char_array_4[4];
