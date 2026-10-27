@@ -1,4 +1,4 @@
-﻿// ReSharper disable CppClangTidyClangDiagnosticShadow
+// ReSharper disable CppClangTidyClangDiagnosticShadow
 
 #pragma once
 
@@ -20,11 +20,12 @@
 
 #include <iostream>
 
+#include "GeneralDefinition.h"
 #include "Base64.h"
 #include "StrNum.h"
 
 namespace FindTheWay {
-	using BYTE = unsigned char;
+	using MapData = unsigned char;
 
 	enum class CoordType {
 		X,
@@ -248,16 +249,16 @@ namespace FindTheWay {
 		UpdateMapCallBack updateCallBack = nullptr;
 		void* updateCallBackCoef = nullptr;
 
-		BYTE* map = nullptr;
-		BYTE* terrain = nullptr;
-		BYTE* dynamic = nullptr;
+		MapData* map = nullptr;
+		MapData* terrain = nullptr;
+		MapData* dynamic = nullptr;
 
-		//BYTE* pMap[MAPTYPENUM];
+		//MapData* pMap[MAPTYPENUM];
 
 		struct Offset {
-			char x;
-			char y;
-			char generalCost;
+			signed char x;
+			signed char y;
+			signed char generalCost;
 		};
 
 		// Neighbour offset
@@ -288,18 +289,20 @@ namespace FindTheWay {
 
 		// do not stash in debug mode
 #ifdef _DEBUG
-		bool stash = false;
-#endif
-
-#ifdef NDEBUG
-		bool stash = true;
+        bool stash = false;
+#elif defined(NDEBUG)
+        bool stash = true;
+#else
+        bool stash = false;
 #endif
 
 		using CoordHash = size_t;
 		using CoordSetHash = size_t;
 		using IgnoreFlagHash = size_t;
+		using Diagonal = bool;
+		using CheckDiagonalCorner = bool;
 
-		using StashPathKey = std::tuple<CoordHash, CoordHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash>;
+		using StashPathKey = std::tuple<CoordHash, CoordHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash, Diagonal, CheckDiagonalCorner>;
 		StashPathKey stashPathKey;
 
 		//struct StashPathKeyCompare {
@@ -437,7 +440,7 @@ namespace FindTheWay {
 		using AreaRangeHash = size_t;
 		using IsLine = bool;
 
-		using StashAreaKey = std::tuple<IsLine, CoordHash, AreaRangeHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash>;
+		using StashAreaKey = std::tuple<IsLine, CoordHash, AreaRangeHash, IgnoreFlagHash, CoordSetHash, CoordSetHash, CoordSetHash, Diagonal>;
 		using StashAreaValue = std::tuple<Area, size_t>;
 
 		AreaRange settings;
@@ -499,7 +502,7 @@ namespace FindTheWay {
 			return (x < width) && (y < height) && ((y * width + x) < (mapSize));
 		}
 
-		inline BYTE* GetMapPointer(const MapType type) const {
+		inline MapData* GetMapPointer(const MapType type) const {
 			switch (type) {
 			case FindTheWay::MapType::MAP:
 				return map;
@@ -512,7 +515,7 @@ namespace FindTheWay {
 			return nullptr;
 		}
 
-		inline BYTE* GetMapPosPointer(const size_t x, const size_t y, BYTE* pMap) const {
+		inline MapData* GetMapPosPointer(const size_t x, const size_t y, MapData* pMap) const {
 			if (pMap == nullptr || !PosValid(x, y)) {
 				return nullptr;
 			}
@@ -520,18 +523,18 @@ namespace FindTheWay {
 			return pMap + y * width + x;
 		}
 
-		inline BYTE* GetMapPosPointer(const size_t x, const size_t y, const MapType type) const {
+		inline MapData* GetMapPosPointer(const size_t x, const size_t y, const MapType type) const {
 			return GetMapPosPointer(x, y, GetMapPointer(type));
 		}
 
-		inline void ClearMap(BYTE* pMap, const BYTE cost = MAP_PATH, const bool needUpdate = true) {
+		inline void ClearMap(MapData* pMap, const MapData cost = MAP_PATH, const bool needUpdate = true) {
 			memset(pMap, Range(cost), mapSize);
 
-			updateMap = needUpdate;
+			updateMap = updateMap || needUpdate;
 		}
 
-		inline void SetMap(const size_t x, const size_t y, const BYTE cost, BYTE* pMap, const bool needUpdate = true) {
-			BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
+		inline void SetMap(const size_t x, const size_t y, const MapData cost, MapData* pMap, const bool needUpdate = true) {
+			MapData* pMapPos = GetMapPosPointer(x, y, pMap);
 
 			if (pMapPos == nullptr) {
 				return;
@@ -539,11 +542,11 @@ namespace FindTheWay {
 
 			*pMapPos = Range(cost);
 
-			updateMap = needUpdate;
+			updateMap = updateMap || needUpdate;
 		}
 
-		inline BYTE GetMap(const size_t x, const size_t y, BYTE* pMap) const {
-			const BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
+		inline MapData GetMap(const size_t x, const size_t y, MapData* pMap) const {
+			const MapData* pMapPos = GetMapPosPointer(x, y, pMap);
 
 			if (pMapPos == nullptr) {
 				return MAP_OBSTACLE;
@@ -579,15 +582,15 @@ namespace FindTheWay {
 			this->width = width;
 			this->height = height;
 
-			this->mapSize = width * height;
+            this->mapSize = width * height;
 
 			if (mapSize == 0) {
 				throw INVALID_SIZE;
 			}
 
-			map = new BYTE [mapSize];
-			terrain = new BYTE [mapSize];
-			dynamic = new BYTE [mapSize];
+			map = new MapData[mapSize];
+			terrain = new MapData[mapSize];
+			dynamic = new MapData[mapSize];
 
 			memset(map, 0, mapSize);
 			memset(terrain, 0, mapSize);
@@ -629,14 +632,16 @@ namespace FindTheWay {
 		}
 
 	public:
-		FindTheWayClass(const size_t width, const size_t height) {
-			Allocate(width, height);
-			Reserve();
-		}
+        FindTheWayClass(const size_t width, const size_t height) {
+            Reserve();
+            Allocate(width, height);
+        }
+        FindTheWayClass(const FindTheWayClass&) = delete;
+        FindTheWayClass& operator=(const FindTheWayClass&) = delete;
 
 		explicit FindTheWayClass(const std::wstring& base64) {
-			SetMap(base64);
-			Reserve();
+            Reserve();
+            SetMap(base64);
 		}
 
 		~FindTheWayClass() {
@@ -700,7 +705,7 @@ namespace FindTheWay {
 			return gridCoord * gridSize + gridSize / 2 + Coord{ gridOffsetX ,gridOffsetY };
 		}
 
-		static inline auto ParseIsometricGridSize(const size_t gridSize) {
+		static inline std::tuple<size_t, size_t> ParseIsometricGridSize(const size_t gridSize) {
 			const auto isoGridWidth = ZeroProtection((gridSize & 0x0000FFFF));
 			const auto isoGridHeight = ZeroProtection((gridSize & 0xFFFF0000) >> 16);
 
@@ -850,50 +855,50 @@ namespace FindTheWay {
 				y + ISOGridOffset.y };
 		}
 
-		inline void ClearMap(const MapType type, const BYTE cost = MAP_PATH, const bool needUpdate = true) {
+		inline void ClearMap(const MapType type, const MapData cost = MAP_PATH, const bool needUpdate = true) {
 			ClearMap(GetMapPointer(type), cost, needUpdate);
 		}
 
-		inline void SetMap(const size_t x, const size_t y, const BYTE cost, const MapType type, const bool needUpdate = true) {
+		inline void SetMap(const size_t x, const size_t y, const MapData cost, const MapType type, const bool needUpdate = true) {
 			SetMap(x, y, cost, GetMapPointer(type), needUpdate);
 		}
 
-		inline void SetMap(const std::wstring& base64) {
-			// Format: width:gridHeight:terrain:dynamic
-			size_t start = 0;
-			size_t end = 0;
-
-			auto GetSubStr = [base64] (size_t& start, size_t& end)->std::wstring {
-				if (end != std::wstring::npos) {
-					end = base64.find(DELIMITER, start);
-					std::wstring result = base64.substr(start, end - start);
-
-					start = end + 1;
-
-					return result;
-				}
-
-			    return std::wstring{};
+        inline void SetMap(const std::wstring& encoded) {
+            std::wstring fields[4];
+            size_t start = 0;
+            for (size_t i = 0; i < 4; ++i) {
+                const auto end = encoded.find(DELIMITER, start);
+                if ((i < 3) == (end == std::wstring::npos)) { throw INVALID_DATA; }
+                fields[i] = encoded.substr(start, end - start);
+                start = end + 1;
+            }
+            auto dimension = [](const std::wstring& field) -> size_t {
+                if (field.empty() || field.find_first_not_of(L"0123456789") != std::wstring::npos) {
+                    throw INVALID_DATA;
+                }
+                size_t consumed = 0;
+                const auto value = std::stoull(field, &consumed);
+                if (consumed != field.size() || value == 0 || value > (std::numeric_limits<size_t>::max)()) {
+                    throw INVALID_DATA;
+                }
+                return static_cast<size_t>(value);
             };
+            const auto newWidth = dimension(fields[0]);
+            const auto newHeight = dimension(fields[1]);
+            if (newWidth > (std::numeric_limits<size_t>::max)() / newHeight) { throw INVALID_SIZE; }
+            const auto size = newWidth * newHeight;
+            // Validate before replacing the existing map. Bytes are unsigned on all targets.
+            const auto newTerrain = this->base64.base64_decode(fields[2]);
+            const auto newDynamic = this->base64.base64_decode(fields[3]);
+            if (newTerrain.size() != size || newDynamic.size() != size) { throw INVALID_DATA; }
+            Free();
+            Allocate(newWidth, newHeight);
+            std::copy(newTerrain.begin(), newTerrain.end(), terrain);
+            std::copy(newDynamic.begin(), newDynamic.end(), dynamic);
+            UpdateMap();
+        }
 
-			const auto width = _stoi(GetSubStr(start, end));
-			const auto height = _stoi(GetSubStr(start, end));
-
-			Free();
-			Allocate(width, height);
-
-			try {
-				this->base64.base64_decode_to_pointer(GetSubStr(start, end), terrain, mapSize);
-				this->base64.base64_decode_to_pointer(GetSubStr(start, end), dynamic, mapSize);
-			}
-            catch ([[maybe_unused]] std::exception& e) {
-				throw;
-			}
-
-			UpdateMap();
-		}
-
-		inline BYTE GetMap(const size_t x, const size_t y, const MapType type, const bool forceUpdate = true) {
+		inline MapData GetMap(const size_t x, const size_t y, const MapType type, const bool forceUpdate = true) {
 			if (forceUpdate && updateMap && type == MapType::MAP) {
 				UpdateMap();
 			}
@@ -907,25 +912,27 @@ namespace FindTheWay {
 			base64 += _itos(width);
 			base64 += DELIMITER;
 			base64 += _itos(height);
+            base64 += DELIMITER;
 
 			base64 += this->base64.base64_encode(terrain, mapSize);
-			base64 += this->base64.base64_encode(dynamic, mapSize);
+			base64 += DELIMITER;
+            base64 += this->base64.base64_encode(dynamic, mapSize);
 
 			return base64;
 		}
 
 		inline void UpdateMap() {
 			for (size_t i = 0; i < mapSize; i++) {
-				*(map + i) = static_cast<BYTE>(Range(*(terrain + i) + *(dynamic + i)));
+				*(map + i) = static_cast<MapData>(Range(*(terrain + i) + *(dynamic + i)));
 			}
 
 			// Path/Area invalidation when map changes, clear
 			ClearData();
 
 			//Callback
-			if (updateCallBack != nullptr) {
-				updateCallBack(updateCallBackCoef);
-			}
+            // A callback may re-enter the runtime and replace/clear this registration.
+            const auto callback = updateCallBack;
+            if (callback != nullptr) { callback(updateCallBackCoef); }
 		}
 
 		inline void SetUpdateMapCallBack(const UpdateMapCallBack& f, void* p) {
@@ -934,14 +941,14 @@ namespace FindTheWay {
 		}
 
 		inline void IterateMap(const MapType type,
-			const std::function<void(const size_t x, const size_t y, const BYTE cost)>& cb) const {
+			const std::function<void(const size_t x, const size_t y, const MapData cost)>& cb) const {
 			const auto pMap = GetMapPointer(type);
 
 			if (pMap == nullptr) { return; }
 
 			for (size_t y = 0; y < height; y++) {
 				for (size_t x = 0; x < width; x++) {
-					const BYTE* pMapPos = GetMapPosPointer(x, y, pMap);
+					const MapData* pMapPos = GetMapPosPointer(x, y, pMap);
 
 					if (pMapPos == nullptr) {
 						continue;
@@ -1074,7 +1081,7 @@ namespace FindTheWay {
 			return CoordObstacle(p.x, p.y, MapType::MAP);
 		}
 
-		inline BYTE GetPointCost(const Coord p) {
+		inline MapData GetPointCost(const Coord p) {
 			return GetMap(p.x, p.y, MapType::MAP);
 		}
 
@@ -1086,16 +1093,18 @@ namespace FindTheWay {
 			// ......By setting them to path
 			if (updateMap) { UpdateMap(); }
 
-			const BYTE startCost = GetMap(start.x, start.y, this->map);
-			const BYTE destinationCost = GetMap(destination.x, destination.y, this->map);
+			const MapData startCost = GetMap(start.x, start.y, this->map);
+			const MapData destinationCost = GetMap(destination.x, destination.y, this->map);
 
 			SetMap(start.x, start.y, MAP_PATH, this->map, false);
 			SetMap(destination.x, destination.y, MAP_PATH, this->map, false);
 
-			Find(start, destination, diagonal, checkDiagonalCorner, ally, enemy, zoc, ignoreFlag, h);
-
-			SetMap(start.x, start.y, startCost, this->map, false);
-			SetMap(destination.x, destination.y, destinationCost, this->map, false);
+            const bool oldStash = stash;
+            stash = false;
+            Find(start, destination, diagonal, checkDiagonalCorner, ally, enemy, zoc, ignoreFlag, h);
+            SetMap(start.x, start.y, startCost, this->map, false);
+            SetMap(destination.x, destination.y, destinationCost, this->map, false);
+            stash = oldStash;
 		}
 
 		inline void Find(const Coord start, const Coord destination, const bool diagonal = false, const bool checkDiagonalCorner = true
@@ -1133,7 +1142,7 @@ namespace FindTheWay {
 					ignoreFlag, 
 					Hasher(ally),
 					Hasher(enemy), 
-					Hasher(zoc));
+					Hasher(zoc), diagonal, checkDiagonalCorner);
 
 				if (stashPath.contains(stashPathKey)) {
 					pathAvailable = true;
@@ -1185,8 +1194,8 @@ namespace FindTheWay {
 			if (!moveIgnoreZoc && zoc != nullptr) {
 				for (auto& it : *zoc) {
 					if (!findSet(unit_set, it)
-						&& !findSet(*ally, it)				// current point not unit
-						&& !findSet(*enemy, it)
+						&& !(ally && findSet(*ally, it))				// current point not unit
+						&& !(enemy && findSet(*enemy, it))
 						&& it != start && it != destination) {
 						unit_set.emplace_back(it);
 					}
@@ -1228,7 +1237,7 @@ namespace FindTheWay {
 					auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x
 						,base.coord.y + (*pNeighbour)[i].y };
 
-					const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
+					const MapData curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 					auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
 
 					if (curCost == MAP_OBSTACLE) { continue; }
@@ -1272,14 +1281,17 @@ namespace FindTheWay {
 						InsertSortedUpperBound(open_set, neighPoint,
 							[] (const Point& A, const Point& B) ->bool {
 								return A.priority > B.priority;
-					});
+                        });
 #else
 						open_set.emplace_back(neighPoint);
 #endif
 					}
 					else if (next->cost > neighPoint.cost) {
-						updatePoint(*next);
-					}
+                        updatePoint(*next);
+                        std::ranges::sort(open_set, [](const Point& a, const Point& b) {
+                            return a.priority > b.priority;
+                        });
+                    }
 				}
 			}
 		}
@@ -1309,7 +1321,7 @@ namespace FindTheWay {
 			if (!add) { zoc->clear(); }
 
 			for (const auto& it : start) {
-				GenerateZoc(it, zoc, true);
+				GenerateZoc(it, zoc, true, diagonal);
 			}
 		}
 
@@ -1320,10 +1332,10 @@ namespace FindTheWay {
 			std::wstringstream ss;
 			if (!extraRangeStartPos) { extraRangeStartPos = range; }
 
-			const auto temp = new BYTE [mapSize];
+			const auto temp = new MapData [mapSize];
 			memcpy(temp, map, mapSize);
 
-			auto out = [&] (const BYTE cost)->wchar_t {
+			auto out = [&] (const MapData cost)->wchar_t {
 				switch (cost) {
 				case MAP_OBSTACLE:
 					return L'*';
@@ -1344,7 +1356,7 @@ namespace FindTheWay {
 				}
 			};
 
-			auto updateSet = [&] (const CoordSet* p, const BYTE cost) {
+			auto updateSet = [&] (const CoordSet* p, const MapData cost) {
 				if (p != nullptr) {
 					for (const auto& it : *p) {
 						if (const auto pMapPos = GetMapPosPointer(it.x, it.y, temp)) { *pMapPos = cost; }
@@ -1393,7 +1405,7 @@ namespace FindTheWay {
 			, const size_t ignoreFlag = DEFAULT_IGNOREFLAG // Move range ignore ally && Attack range ignore enemy by default
 			, const bool attack = false) {                 // Attack = use ignore flag, only consider map collision
 														   // Repel = consider both map collision & unit
-			if (updateMap && !attack) { UpdateMap(); }
+			if (updateMap) { UpdateMap(); }
 
 			const auto [moveIgnoreZoc,
 				moveIgnoreAlly,
@@ -1430,7 +1442,8 @@ namespace FindTheWay {
 				return true;
 			};
 
-			auto& offset = normalNeighbour [dir];
+			if (dir >= normalNeighbour.size()) { return 0; }
+            auto& offset = normalNeighbour [dir];
 			auto coord = start;
 			size_t moveable = 0;
 
@@ -1445,7 +1458,7 @@ namespace FindTheWay {
 				moveable++;
 			}
 
-			moveable--;			// remove last while add
+			if (moveable != 0) { --moveable; } // exclude the first blocked cell
 
 			return moveable;
 		}
@@ -1458,7 +1471,7 @@ namespace FindTheWay {
 
 			if (stash) {
 				settings = { range,startRange,attack,false,0 };
-				stashAreaKey = std::make_tuple(true, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
+				stashAreaKey = std::make_tuple(true, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc), false);
 
 				if (stashArea.contains(stashAreaKey)) {
 					auto& [sa, sp] = stashArea [stashAreaKey];
@@ -1519,7 +1532,7 @@ namespace FindTheWay {
 
 			if (stash) {
 				settings = { range,startRange,attack,allRange,allRangeAttackRange };
-				stashAreaKey = std::make_tuple(false, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc));
+				stashAreaKey = std::make_tuple(false, Hasher(start), Hasher(settings), ignoreFlag, Hasher(ally), Hasher(enemy), Hasher(zoc), diagonal);
 
 				if (stashArea.contains(stashAreaKey)) {
 					auto& [sa, sp] = stashArea[stashAreaKey];
@@ -1596,7 +1609,7 @@ namespace FindTheWay {
 					}
 
 					// add current area edge
-					for (auto& it : area.back()) {
+                    if (!area.empty()) for (auto& it : area.back()) {
 						if (std::ranges::find_if(cur_set,
 							[&] (const Point& it_c) {
 								return it_c.coord == it;
@@ -1682,8 +1695,8 @@ namespace FindTheWay {
 					if ((!moveIgnoreZoc)											// stop move if doesn't ignore zoc
 						&& (!updateAttack) && (!extraRangeCalc)						// during move
 						&& zoc != nullptr && findSet(*zoc, base) != nullptr		// current point zoc
-						&& findSet(*ally, base) == nullptr						// current point not unit
-						&& findSet(*enemy, base) == nullptr
+						&& (ally == nullptr || findSet(*ally, base) == nullptr)						// current point not unit
+						&& (enemy == nullptr || findSet(*enemy, base) == nullptr)
 						&& base.coord != start) {									// not start
 						if (allRange) {
 							add(continue_set, base);							// start calc attack range from zoc
@@ -1696,7 +1709,7 @@ namespace FindTheWay {
 						const auto neighCoord = Coord{ base.coord.x + (*pNeighbour)[i].x,
 							base.coord.y + (*pNeighbour)[i].y };
 
-						const BYTE curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
+						const MapData curCost = GetMap(neighCoord.x, neighCoord.y, this->map);
 						auto neighPoint = Point(neighCoord, base.cost + curCost + (*pNeighbour)[i].generalCost);
 
 						if (curCost == MAP_OBSTACLE) {
@@ -1777,7 +1790,7 @@ namespace FindTheWay {
 				| static_cast<size_t>(attackIgnoreEnemy);
 		}
 
-		inline static auto ParseIgnoreFlag(const size_t ignoreFlag = DEFAULT_IGNOREFLAG) {
+		inline static std::tuple<bool, bool, bool, bool, bool> ParseIgnoreFlag(const size_t ignoreFlag = DEFAULT_IGNOREFLAG) {
 			const bool moveIgnoreZoc = ignoreFlag & 0b10000;			// Move through zoc
 			const bool moveIgnoreAlly = ignoreFlag & 0b01000;			// Move through ally
 			const bool moveIgnoreEnemy = ignoreFlag & 0b00100;			// Move through enemy	
