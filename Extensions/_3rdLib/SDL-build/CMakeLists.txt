@@ -76,9 +76,11 @@ if(MINGW)
     list(APPEND mixer_args "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS} -Dalloca=__builtin_alloca")
 endif()
 ExternalProject_Add(ofe_mixerx
-    SOURCE_DIR "${mixer_source}" DOWNLOAD_COMMAND "" UPDATE_COMMAND ""
+    SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/MixerX" DOWNLOAD_COMMAND "" UPDATE_COMMAND ""
+    BINARY_DIR "${CMAKE_BINARY_DIR}/mixerx-wrapper-build"
     DEPENDS ofe_audio_codecs
     CMAKE_ARGS ${mixer_args}
+        "-DOFE_MIXER_SOURCE:PATH=${mixer_source}"
         "-DCMAKE_PREFIX_PATH:PATH=${stage}"
         "-DSDL2_DIR:PATH=${stage}/lib/cmake/SDL2"
         "-DAUDIO_CODECS_REPO_PATH:PATH=${SOURCE_DIR}"
