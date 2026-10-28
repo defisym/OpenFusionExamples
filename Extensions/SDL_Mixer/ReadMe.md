@@ -6,7 +6,7 @@ Audio Extension based on [SDL_Mixer](https://github.com/libsdl-org/SDL_mixer) & 
 
 Audio Effect powered by [SoundTouch](http://www.surina.net/soundtouch/index.html)
 
-for more information, please check the [Help File](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/SDL_MIXER/ToInstall/Files/Help/SDL_MIXER/SDL_MIXER.md)
+for more information, please check the [Help File](ToInstall/Files/Help/SDL_Mixer/SDL_Mixer.md)
 
 ## Reference
 
@@ -82,7 +82,7 @@ For a manual Win32 SDK build from the repository root:
 ```powershell
 git submodule update --init --depth 1 Extensions/_3rdLib/SoundTouch
 cmake -S Extensions/_3rdLib/SoundTouch-build -B Extensions/_3rdLib/SoundTouch-build/out/manual-x86 -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX="$PWD/Extensions/_3rdLib/SoundTouch-sdk"
-cmake --build Extensions/_3rdLib/SoundTouch-build/out/manual-x86 --config Release --target SoundTouchDLL
+cmake --build Extensions/_3rdLib/SoundTouch-build/out/manual-x86 --config Release --target soundtouch_sdk
 cmake --install Extensions/_3rdLib/SoundTouch-build/out/manual-x86 --config Release
 ```
 
