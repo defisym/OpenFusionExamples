@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_OfeSoundTouchDependencies>$(MSBuildThisFileDirectory)</_OfeSoundTouchDependencies>
+    <_OfeDefaultSoundTouchRoot>$(_OfeSoundTouchDependencies)SoundTouch-sdk</_OfeDefaultSoundTouchRoot>
+    <OfeSoundTouchRoot Condition="'$(OfeSoundTouchRoot)'==''">$(_OfeDefaultSoundTouchRoot)</OfeSoundTouchRoot>
+    <OfeAutoBuildSoundTouch Condition="'$(OfeAutoBuildSoundTouch)'=='' And '$(OfeSoundTouchRoot)'=='$(_OfeDefaultSoundTouchRoot)'">true</OfeAutoBuildSoundTouch>
+    <OfeAutoBuildSoundTouch Condition="'$(OfeAutoBuildSoundTouch)'==''">false</OfeAutoBuildSoundTouch>
+    <OfeSoundTouchArch Condition="'$(Platform)'=='Win32'">x86</OfeSoundTouchArch>
+    <OfeSoundTouchArch Condition="'$(Platform)'=='x64'">x64</OfeSoundTouchArch>
+    <OfeSoundTouchInclude Condition="'$(OfeSoundTouchInclude)'=='' And Exists('$(OfeSoundTouchRoot)\SoundTouchDLL.h')">$(OfeSoundTouchRoot)</OfeSoundTouchInclude>
+    <OfeSoundTouchInclude Condition="'$(OfeSoundTouchInclude)'==''">$(OfeSoundTouchRoot)\include</OfeSoundTouchInclude>
+    <OfeSoundTouchLibDir Condition="'$(OfeSoundTouchLibDir)'=='' And Exists('$(OfeSoundTouchRoot)\SoundTouchDLL.lib')">$(OfeSoundTouchRoot)</OfeSoundTouchLibDir>
+    <OfeSoundTouchLibDir Condition="'$(OfeSoundTouchLibDir)'==''">$(OfeSoundTouchRoot)\lib\$(OfeSoundTouchArch)</OfeSoundTouchLibDir>
+    <OfeSoundTouchGenerator Condition="'$(OfeSoundTouchGenerator)'==''">Visual Studio 17 2022</OfeSoundTouchGenerator>
+    <OfeSoundTouchCMake Condition="'$(OfeSoundTouchCMake)'=='' And Exists('$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe')">$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</OfeSoundTouchCMake>
+    <OfeSoundTouchCMake Condition="'$(OfeSoundTouchCMake)'==''">cmake</OfeSoundTouchCMake>
+    <OfeSoundTouchGit Condition="'$(OfeSoundTouchGit)'==''">git</OfeSoundTouchGit>
+    <_OfeSoundTouchVSInstance Condition="'$(VSInstallDir)'!=''">$(VSInstallDir).</_OfeSoundTouchVSInstance>
+  </PropertyGroup>
+  <Target Name="CheckOfeSoundTouchSDK" BeforeTargets="ClCompile" Condition="'$(DesignTimeBuild)'!='true'">
+    <Error Condition="'$(OfeSoundTouchArch)'==''" Text="The SoundTouch SDK supports Win32 and x64." />
+    <Error Condition="!Exists('$(OfeSoundTouchInclude)\SoundTouchDLL.h') Or !Exists('$(OfeSoundTouchLibDir)\SoundTouchDLL.lib')"
+           Text="Build SoundTouchDependencies or set OfeSoundTouchRoot to an existing SoundTouch SDK." />
+  </Target>
+</Project>

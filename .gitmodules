@@ -31,3 +31,16 @@
 	url = https://github.com/TypeJCW/PublicDomainMFAs.git
 	shallow = true
 
+[submodule "SDL2"]
+	path = Extensions/_3rdLib/SDL2
+	url = https://github.com/libsdl-org/SDL.git
+	shallow = true
+	branch = SDL2
+[submodule "SDL-Mixer-X"]
+	path = Extensions/_3rdLib/SDL-Mixer-X
+	url = https://github.com/WohlSoft/SDL-Mixer-X.git
+	shallow = true
+[submodule "SoundTouch"]
+	path = Extensions/_3rdLib/SoundTouch
+	url = https://codeberg.org/soundtouch/soundtouch.git
+	shallow = true

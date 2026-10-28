@@ -9,3 +9,12 @@ Compress/zpaq/*
 Eigen/*
 
 # Header only
+
+# Generated unified SDL SDK and dependency builds
+/SDL-sdk/
+/SDL-build/out/
+
+# Generated independent SoundTouch SDK and builds
+/SoundTouch-sdk/
+/SoundTouch-build/out/
+/.ofe-submodules.lock

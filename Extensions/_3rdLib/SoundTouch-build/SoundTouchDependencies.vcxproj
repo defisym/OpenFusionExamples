@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32"><Configuration>Release</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C90AE0ED-7F66-4E85-A010-EAE8BE60CBD7}</ProjectGuid>
+    <RootNamespace>SoundTouchDependencies</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <Import Project="..\SoundTouch.props" />
+  <PropertyGroup>
+    <IntDir>$(ProjectDir)out\msbuild\$(Platform)\</IntDir>
+    <OutDir>$(IntDir)</OutDir>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="CMakeLists.txt" />
+    <None Include="EnsureSDK.cmake" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="BuildSoundTouchDependencies" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)'!='true' And '$(OfeAutoBuildSoundTouch)'=='true'">
+    <Message Importance="high" Text="Checking SoundTouch SDK ($(OfeSoundTouchArch))..." />
+    <Exec Condition="'$(OfeAutoBuildSoundTouch)'=='true'"
+          Command="&quot;$(OfeSoundTouchCMake)&quot; &quot;-DOFE_REPO_ROOT=$(_OfeSoundTouchDependencies)..\..&quot; &quot;-DOFE_SOUND_ROOT=$(OfeSoundTouchRoot)/.&quot; &quot;-DOFE_ARCH=$(OfeSoundTouchArch)&quot; &quot;-DOFE_GENERATOR=$(OfeSoundTouchGenerator)&quot; &quot;-DOFE_TOOLSET=$(PlatformToolset)&quot; &quot;-DOFE_GENERATOR_INSTANCE=$(_OfeSoundTouchVSInstance)&quot; &quot;-DOFE_GIT_EXECUTABLE=$(OfeSoundTouchGit)&quot; -P &quot;$(_OfeSoundTouchDependencies)SoundTouch-build\EnsureSDK.cmake&quot;" />
+  </Target>
+</Project>

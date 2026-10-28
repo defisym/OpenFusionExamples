@@ -30,7 +30,7 @@ inline int SDL_GeneralInit() {
         InitDetails::bInitSDL = true;
     }
 
-    if (!Mix_AudioOpened()) {
+    if (Mix_QuerySpec(nullptr, nullptr, nullptr) == 0) {
 		// If your app needs precisely what is requested, specify zero for `allowed_changes`
         if (Mix_OpenAudioDevice(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, SDLGeneral_BufferSize,
             nullptr, 0) == -1) {

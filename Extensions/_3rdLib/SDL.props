@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_OfeSDLDependencies>$(MSBuildThisFileDirectory)</_OfeSDLDependencies>
+    <_OfeDefaultSDLRoot>$(_OfeSDLDependencies)SDL-sdk</_OfeDefaultSDLRoot>
+    <OfeSDLRoot Condition="'$(OfeSDLRoot)'==''">$(_OfeDefaultSDLRoot)</OfeSDLRoot>
+    <OfeAutoBuildSDL Condition="'$(OfeAutoBuildSDL)'=='' And '$(OfeSDLRoot)'=='$(_OfeDefaultSDLRoot)'">true</OfeAutoBuildSDL>
+    <OfeAutoBuildSDL Condition="'$(OfeAutoBuildSDL)'==''">false</OfeAutoBuildSDL>
+    <OfeSDLArch Condition="'$(Platform)'=='Win32'">x86</OfeSDLArch>
+    <OfeSDLArch Condition="'$(Platform)'=='x64'">x64</OfeSDLArch>
+    <OfeSDLGenerator Condition="'$(OfeSDLGenerator)'==''">Visual Studio 17 2022</OfeSDLGenerator>
+    <OfeSDLCMake Condition="'$(OfeSDLCMake)'=='' And Exists('$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe')">$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</OfeSDLCMake>
+    <OfeSDLCMake Condition="'$(OfeSDLCMake)'==''">cmake</OfeSDLCMake>
+    <OfeSDLGit Condition="'$(OfeSDLGit)'==''">git</OfeSDLGit>
+    <_OfeSDLVSInstance Condition="'$(VSInstallDir)'!=''">$(VSInstallDir).</_OfeSDLVSInstance>
+  </PropertyGroup>
+  <Target Name="CheckOfeSDLSDK" BeforeTargets="ClCompile" Condition="'$(DesignTimeBuild)'!='true'">
+    <Error Condition="'$(OfeSDLArch)'==''" Text="The SDL SDK supports Win32 and x64." />
+    <Error Condition="!Exists('$(OfeSDLRoot)\include\SDL.h') Or !Exists('$(OfeSDLRoot)\include\SDL_mixer.h') Or !Exists('$(OfeSDLRoot)\lib\$(OfeSDLArch)\SDL2.lib') Or !Exists('$(OfeSDLRoot)\lib\$(OfeSDLArch)\SDL2_mixer_ext.lib')"
+           Text="Build the SDL SDK as documented in Extensions/SDL_Mixer/ReadMe.md, or set OfeSDLRoot to an existing combined SDL SDK." />
+  </Target>
+</Project>
