@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32"><Configuration>Release</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E7DA8559-E315-4F4C-AD96-8BE9914F7C75}</ProjectGuid>
+    <RootNamespace>FFmpegDependencies</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <Import Project="..\FFmpeg.props" />
+  <PropertyGroup>
+    <IntDir>$(ProjectDir)out\msbuild\$(Platform)\</IntDir>
+    <OutDir>$(IntDir)</OutDir>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="FFmpegVersion.cmake" />
+    <None Include="ValidateSDK.cmake" />
+    <None Include="EnsureSDK.cmake" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="BuildFFmpegDependencies" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)'!='true' And '$(OfeAutoBuildFFmpeg)'=='true'">
+    <Message Importance="high" Text="Checking FFmpeg SDK ($(OfeFFmpegArch))..." />
+    <Exec Condition="'$(OfeAutoBuildFFmpeg)'=='true'"
+          StdOutEncoding="UTF-8" StdErrEncoding="UTF-8" UseUtf8Encoding="Always"
+          Command="chcp 65001 &gt;nul &amp; &quot;$(OfeFFmpegCMake)&quot; &quot;-DOFE_FFMPEG_ROOT=$(OfeFFmpegRoot)/.&quot; &quot;-DOFE_ARCH=$(OfeFFmpegArch)&quot; -P &quot;$(_OfeFFmpegDependencies)FFmpeg-build\EnsureSDK.cmake&quot;" />
+  </Target>
+</Project>
