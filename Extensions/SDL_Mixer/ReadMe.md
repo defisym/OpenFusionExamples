@@ -27,7 +27,9 @@ SDL2 and SDL Mixer X are pinned submodules in `Extensions/_3rdLib/SDL2` and `Ext
 
 ### Automatic preparation in Visual Studio
 
-With Git and CMake 3.21+ installed, clone OFE and open the plugin solution in Visual Studio 2022, then build or rebuild it. Both solutions include the `SDLDependencies` utility project, and both plugins reference it as a build dependency. That project invokes CMake to initialize the two pinned submodules and build the combined SDK before the plugin is compiled; `SDL.props` only selects and checks the SDK paths. A recursive clone is optional. If the SDK matches the checked-out revisions, it is reused; parallel plugin builds wait for the same SDK preparation rather than building it twice. AudioCodecs is downloaded on the first build.
+With Git and CMake 3.21+ installed, clone OFE and open the plugin solution in Visual Studio 2022 or 2026, then build or rebuild it. Both solutions include the `SDLDependencies` utility project, and both plugins reference it as a build dependency. That project invokes CMake to initialize the two pinned submodules and build the combined SDK before the plugin is compiled; `SDL.props` only selects and checks the SDK paths. A recursive clone is optional. If the SDK matches the checked-out revisions, it is reused; parallel plugin builds wait for the same SDK preparation rather than building it twice. AudioCodecs is downloaded on the first build.
+
+The generator follows the running IDE (VS 2022 or VS 2026); VS 2026 requires CMake 4.2+. The projects still request the v143 toolset, so install the VS 2022 C++ build tools component when using VS 2026. Explicit `OfeSDLGenerator` / `OfeSoundTouchGenerator` overrides are supported. Build directories are separated by generator, VS instance and toolset. Dependency command output is also saved in each generated SDK root as `.ofe-build.log` for troubleshooting.
 
 The CMake installation bundled with Visual Studio's C++ CMake tools is detected automatically; otherwise `cmake` must be on PATH. Git must be on PATH, or its executable can be selected with `OfeSDLGit`. `OfeSDLCMake` can similarly select another CMake executable.
 

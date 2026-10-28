@@ -12,6 +12,7 @@
     <OfeSoundTouchInclude Condition="'$(OfeSoundTouchInclude)'==''">$(OfeSoundTouchRoot)\include</OfeSoundTouchInclude>
     <OfeSoundTouchLibDir Condition="'$(OfeSoundTouchLibDir)'=='' And Exists('$(OfeSoundTouchRoot)\SoundTouchDLL.lib')">$(OfeSoundTouchRoot)</OfeSoundTouchLibDir>
     <OfeSoundTouchLibDir Condition="'$(OfeSoundTouchLibDir)'==''">$(OfeSoundTouchRoot)\lib\$(OfeSoundTouchArch)</OfeSoundTouchLibDir>
+    <OfeSoundTouchGenerator Condition="'$(OfeSoundTouchGenerator)'=='' And '$(VisualStudioVersion)'=='18.0'">Visual Studio 18 2026</OfeSoundTouchGenerator>
     <OfeSoundTouchGenerator Condition="'$(OfeSoundTouchGenerator)'==''">Visual Studio 17 2022</OfeSoundTouchGenerator>
     <OfeSoundTouchCMake Condition="'$(OfeSoundTouchCMake)'=='' And Exists('$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe')">$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</OfeSoundTouchCMake>
     <OfeSoundTouchCMake Condition="'$(OfeSoundTouchCMake)'==''">cmake</OfeSoundTouchCMake>
