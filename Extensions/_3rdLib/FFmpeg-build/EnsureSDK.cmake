@@ -40,8 +40,21 @@ file(MAKE_DIRECTORY "${work}/downloads")
 # Different SDK destinations still share the archive cache and staging area.
 file(LOCK "${work}/.ofe-prepare.lock" GUARD PROCESS TIMEOUT 1800)
 if(NOT OFE_FFMPEG_ARCHIVE)
-    set(OFE_FFMPEG_ARCHIVE "${work}/downloads/${OFE_FFMPEG_SHA256}.zip")
-    if(NOT EXISTS "${OFE_FFMPEG_ARCHIVE}")
+    # Accept both our hash-named cache and a browser download's original name.
+    foreach(candidate IN ITEMS "${work}/downloads/${OFE_FFMPEG_SHA256}.zip"
+                               "${work}/downloads/${package}.zip")
+        if(EXISTS "${candidate}" AND NOT IS_DIRECTORY "${candidate}")
+            file(SHA256 "${candidate}" candidate_hash)
+            if(candidate_hash STREQUAL OFE_FFMPEG_SHA256)
+                set(OFE_FFMPEG_ARCHIVE "${candidate}")
+                message(STATUS "Using verified local FFmpeg archive: ${candidate}")
+                break()
+            endif()
+            message(WARNING "Ignoring FFmpeg cache with SHA256 mismatch: ${candidate}")
+        endif()
+    endforeach()
+    if(NOT OFE_FFMPEG_ARCHIVE)
+        set(OFE_FFMPEG_ARCHIVE "${work}/downloads/${OFE_FFMPEG_SHA256}.zip")
         message(STATUS "Downloading ${url}")
         file(DOWNLOAD "${url}" "${OFE_FFMPEG_ARCHIVE}.part"
             STATUS status TLS_VERIFY ON TIMEOUT 600 INACTIVITY_TIMEOUT 60 SHOW_PROGRESS)

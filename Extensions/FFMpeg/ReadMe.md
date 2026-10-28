@@ -28,6 +28,14 @@ From the repository root, prepare the default SDK manually:
 cmake -DOFE_ARCH=x86 -P Extensions/_3rdLib/FFmpeg-build/EnsureSDK.cmake
 ```
 
+You can also download the ZIP with a browser and place it, without renaming or extracting, at:
+
+```text
+Extensions/_3rdLib/FFmpeg-build/out/downloads/ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip
+```
+
+The dependency target checks this file and its hash-named cache before downloading. A matching SHA-256 reuses the local ZIP without network access. A mismatched cache is reported and skipped; the original-name ZIP is left untouched and the target downloads the configured package. A `.part` file is an incomplete download and is not reused. Use the filename corresponding to the configured version and variant when updating dependencies.
+
 For an offline build, add `-DOFE_FFMPEG_ARCHIVE="D:/Downloads/ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip"`; the same pinned SHA-256 is still required. `-DOFE_FFMPEG_ROOT="D:/Dev/FFMpeg"` selects a different SDK destination for manual preparation; use the same path for `OfeFFmpegRoot` when compiling the plugin.
 
 After rebuilding the edit-time and runtime `.mfx` files, deploy the seven FFmpeg DLLs from the SDK's `bin` directory into the Fusion root and `Data/Runtime/Unicode`, alongside the matching SDL DLLs. Dependency preparation does not copy DLLs into a Fusion installation. Check the updated `GetDependencies()` names when replacing an existing installation.
