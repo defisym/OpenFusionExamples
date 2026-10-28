@@ -6,7 +6,7 @@ Audio Extension based on [SDL_Mixer](https://github.com/libsdl-org/SDL_mixer) & 
 
 Audio Effect powered by [SoundTouch](http://www.surina.net/soundtouch/index.html)
 
-for more information, please check the [Help File](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/SDL_MIXER/ToInstall/Files/Help/SDL_MIXER/SDL_MIXER.md)
+for more information, please check the [Help File](ToInstall/Files/Help/SDL_Mixer/SDL_Mixer.md)
 
 ## Reference
 
@@ -82,13 +82,17 @@ For a manual Win32 SDK build from the repository root:
 ```powershell
 git submodule update --init --depth 1 Extensions/_3rdLib/SoundTouch
 cmake -S Extensions/_3rdLib/SoundTouch-build -B Extensions/_3rdLib/SoundTouch-build/out/manual-x86 -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX="$PWD/Extensions/_3rdLib/SoundTouch-sdk"
-cmake --build Extensions/_3rdLib/SoundTouch-build/out/manual-x86 --config Release --target SoundTouchDLL
+cmake --build Extensions/_3rdLib/SoundTouch-build/out/manual-x86 --config Release --target soundtouch_sdk
 cmake --install Extensions/_3rdLib/SoundTouch-build/out/manual-x86 --config Release
 ```
 
 Set `OfeSoundTouchRoot` to keep using an existing SDK, such as `D:\Dev\SoundTouch`. Its original flat layout with `SoundTouchDLL.h` and `SoundTouchDLL.lib` directly in that folder remains supported, as does the generated `include`/`lib/x86` layout. An external SDK disables automatic SoundTouch builds by default; `OfeAutoBuildSoundTouch=false` can also disable them explicitly. `OfeSoundTouchCMake` and `OfeSoundTouchGit` select tool executables if needed.
 
 Deploy the generated Win32 `SoundTouchDLL.dll` alongside the SDL DLLs in the Fusion root and `Data/Runtime/Unicode`. The plugin still declares the same DLL dependency and uses the same C API; no audio-processing code or extra SoundTouch core DLL is introduced. SDK builds do not automatically publish runtime DLLs into a Fusion installation.
+
+### Visual Studio header navigation
+
+After the first SDK build, Visual Studio may need time to index the newly generated headers. Compilation can succeed while opening an include or navigating to a definition still reports a missing file. Wait for background indexing to finish before changing include paths. If the problem persists, check the active configuration's evaluated include directories and that the SDK files exist.
 
 ### Building MixerX separately (original workflow)
 

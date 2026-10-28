@@ -57,7 +57,7 @@ you can get boost from <https://www.boost.org/>
 
 ##### Direct download
 
-download release then unzip it to `_3rdLib/Extensions/Boost`
+download release then unzip it to `Extensions/_3rdLib/Boost`
 
 ##### Submodule
 
@@ -74,14 +74,9 @@ now you should build the extensions rely on boost
 
 #### FFMpeg
 
-Extension relies on X86 LGPL Shared 7.1
+FFMpeg's `FFmpegDependencies` project prepares its Win32 shared SDK automatically. The selected version and archive SHA-256 are recorded in [`FFmpegVersion.cmake`](_3rdLib/FFmpeg-build/FFmpegVersion.cmake); the current default is **9.0 LGPL shared** from [FFmpeg-Builds-Win32](https://github.com/defisym/FFmpeg-Builds-Win32/releases/tag/latest).
 
-Located at the same level of repo folder, aka in repo's parent folder
-
-You can get auto builds here:
-
-- ~~<https://github.com/sudo-nautilus/FFmpeg-Builds-Win32/releases/tag/latest>~~
-- <https://github.com/defisym/FFmpeg-Builds-Win32>
+See [FFMpeg's build instructions](FFMpeg/ReadMe.md#building-the-windows-plugin) for automatic preparation, local ZIP downloads and version updates. An existing SDK, including the original directory next to OFE, can still be selected with `OfeFFmpegRoot`.
 
 #### SDL and SDL Mixer X
 

@@ -39,3 +39,7 @@ The dependency target checks this file and its hash-named cache before downloadi
 For an offline build, add `-DOFE_FFMPEG_ARCHIVE="D:/Downloads/ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip"`; the same pinned SHA-256 is still required. `-DOFE_FFMPEG_ROOT="D:/Dev/FFMpeg"` selects a different SDK destination for manual preparation; use the same path for `OfeFFmpegRoot` when compiling the plugin.
 
 After rebuilding the edit-time and runtime `.mfx` files, deploy the seven FFmpeg DLLs from the SDK's `bin` directory into the Fusion root and `Data/Runtime/Unicode`, alongside the matching SDL DLLs. Dependency preparation does not copy DLLs into a Fusion installation. Check the updated `GetDependencies()` names when replacing an existing installation.
+
+### Visual Studio header navigation
+
+After the first SDK preparation, Visual Studio may need time to index the downloaded headers. Compilation can succeed while opening an include still reports a missing file. Wait for background indexing to finish. If navigation still fails, check that the active configuration's evaluated include directories contain `$(OfeFFmpegRoot)\include` and that the requested file exists there. The same applies to newly generated SDL headers; see [SDL_Mixer's troubleshooting note](../SDL_Mixer/ReadMe.md#visual-studio-header-navigation).

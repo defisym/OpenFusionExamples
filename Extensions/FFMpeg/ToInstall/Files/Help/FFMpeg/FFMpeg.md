@@ -22,9 +22,11 @@ This object is based on cross platform lib, FFMpeg & SDL, in theory there is not
 
 **NOTE:** this object requires FFMpeg & SDL
 
-FFMpeg: you need to download release (e.g., `ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip` ) from <https://github.com/defisym/FFmpeg-Builds-Win32/releases>, then put dlls into Fusion root & `Runtime/Unicode`, or you need to build X86 version from FFMpeg source code, as the official 32 bit support has stopped.
+FFMpeg: use the Win32 LGPL shared DLLs matching your plugin build. The current default SDK is 9.0 (`ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip`) from [FFmpeg-Builds-Win32](https://github.com/defisym/FFmpeg-Builds-Win32/releases/tag/latest). Copy the DLLs from the package's `bin` directory into the Fusion root and `Data/Runtime/Unicode`. If you build the plugin yourself, `FFmpegDependencies` prepares the configured SDK automatically; see the [build instructions](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/FFMpeg/ReadMe.md#building-the-windows-plugin) for version selection and local ZIP preparation.
 
 SDL2 and SDL Mixer X: for development, initialize the pinned submodules and build the combined SDK using the [SDL_Mixer build instructions](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/SDL_Mixer/ReadMe.md#how-to-build). Both plugins use this SDK through the shared `SDL.props` property sheet. To run the plugins, put matching X86 `SDL2.dll` and `SDL2_mixer_ext.dll` files in the Fusion root and `Data/Runtime/Unicode`. SDL2's stable Windows binaries are available from [SDL releases](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10), and MixerX binaries are provided in this repository's `Extensions/SDL_Mixer/MixerXLib` directory. Rebuild old plugin binaries before replacing the forked MixerX DLL.
+
+The following DLL names correspond to the current default FFmpeg 9.0 SDK. When using another plugin build, use the DLL versions required by that build; do not mix DLLs from different FFmpeg packages.
 
 Here follows all dlls needed by this object:
 
