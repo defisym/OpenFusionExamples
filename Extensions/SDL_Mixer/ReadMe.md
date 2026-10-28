@@ -90,10 +90,6 @@ Set `OfeSoundTouchRoot` to keep using an existing SDK, such as `D:\Dev\SoundTouc
 
 Deploy the generated Win32 `SoundTouchDLL.dll` alongside the SDL DLLs in the Fusion root and `Data/Runtime/Unicode`. The plugin still declares the same DLL dependency and uses the same C API; no audio-processing code or extra SoundTouch core DLL is introduced. SDK builds do not automatically publish runtime DLLs into a Fusion installation.
 
-### Visual Studio header navigation
-
-After the first SDK build, Visual Studio may need time to index the newly generated headers. Compilation can succeed while opening an include or navigating to a definition still reports a missing file. Wait for background indexing to finish before changing include paths. If the problem persists, check the active configuration's evaluated include directories and that the SDK files exist.
-
 ### Building MixerX separately (original workflow)
 
 The original standalone CMake/Visual Studio workflow still applies. Use the upstream [WohlSoft/SDL-Mixer-X](https://github.com/WohlSoft/SDL-Mixer-X) checkout instead of the old fork, and follow the upstream [guide](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/docs/index.md#general-build-on-unix-like-platform-and-install-into-the-system). The commands below run from a `build` directory inside that checkout. This standalone workflow builds its own SDL through AudioCodecs; use the combined SDK workflow above when building OFE's pinned pair together.

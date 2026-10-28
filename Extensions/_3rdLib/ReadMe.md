@@ -6,7 +6,7 @@ This folder contains the following types of files:
 
 - Interfaces or utils to work with 3rdLibs, like [FFMpeg](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/_3rdLib/FFMpeg.h), [SDLUtilities](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/_3rdLib/SDLUtilities.h)
 - Modified 3rdLibs, like [ObjectSelection](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/_3rdLib/ObjectSelection.h)
-- 3rdLibs's release or submodule, like [Boost](Boost)
+- 3rdLibs's release or submodule
 
 ## How to initialize
 
