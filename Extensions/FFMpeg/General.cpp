@@ -9,7 +9,7 @@
 
 // Common Include
 #include	"common.h"
-#include "FFMpegDependencies.h"
+#include	"FFMpegDependencies.h"
 
 HINSTANCE hInstLib;
 

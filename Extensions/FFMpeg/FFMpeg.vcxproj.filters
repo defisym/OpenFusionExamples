@@ -238,6 +238,9 @@
     <ClInclude Include="CopyAdapter\CopyAdapterBitmap.h">
       <Filter>CopyAdapter</Filter>
     </ClInclude>
+    <ClInclude Include="..\_3rdLib\FFMpegDependencies.h">
+      <Filter>FFMpeg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="EXTICON.BMP">
