@@ -9,6 +9,7 @@
 
 // Common Include
 #include	"common.h"
+#include "FFMpegDependencies.h"
 
 HINSTANCE hInstLib;
 
@@ -174,13 +175,7 @@ short WINAPI DLLExport GetRunObjectInfos(mv _far *mV, fpKpxRunInfos infoPtr)
 
 LPCTSTR szDep[] = {
 		//FFMpeg
-		L"avcodec-63.dll",
-		L"avdevice-63.dll",
-		L"avfilter-12.dll",
-		L"avformat-63.dll",
-		L"avutil-61.dll",
-		L"swresample-7.dll",
-		L"swscale-10.dll",
+		OFE_FFMPEG_DEPENDENCIES,
 
 		//SDL
 		L"SDL2.dll",

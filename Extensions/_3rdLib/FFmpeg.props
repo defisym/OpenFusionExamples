@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_OfeFFmpegDependencies>$(MSBuildThisFileDirectory)</_OfeFFmpegDependencies>
+    <_OfeDefaultFFmpegRoot>$(_OfeFFmpegDependencies)FFmpeg-sdk</_OfeDefaultFFmpegRoot>
+    <OfeFFmpegRoot Condition="'$(OfeFFmpegRoot)'==''">$(_OfeDefaultFFmpegRoot)</OfeFFmpegRoot>
+    <OfeAutoBuildFFmpeg Condition="'$(OfeAutoBuildFFmpeg)'=='' And '$(OfeFFmpegRoot)'=='$(_OfeDefaultFFmpegRoot)'">true</OfeAutoBuildFFmpeg>
+    <OfeAutoBuildFFmpeg Condition="'$(OfeAutoBuildFFmpeg)'==''">false</OfeAutoBuildFFmpeg>
+    <OfeFFmpegArch Condition="'$(Platform)'=='Win32'">x86</OfeFFmpegArch>
+    <OfeFFmpegCMake Condition="'$(OfeFFmpegCMake)'=='' And Exists('$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe')">$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</OfeFFmpegCMake>
+    <OfeFFmpegCMake Condition="'$(OfeFFmpegCMake)'==''">cmake</OfeFFmpegCMake>
+  </PropertyGroup>
+  <Target Name="CheckOfeFFmpegSDK" BeforeTargets="ClCompile" Condition="'$(DesignTimeBuild)'!='true'">
+    <Error Condition="'$(OfeFFmpegArch)'!='x86'" Text="The configured FFmpeg release supports Win32 only." />
+    <Error Condition="!Exists('$(OfeFFmpegRoot)\include\libavcodec\avcodec.h') Or !Exists('$(OfeFFmpegRoot)\include\libavdevice\version_major.h')"
+           Text="Build FFmpegDependencies, or set OfeFFmpegRoot to an existing shared FFmpeg SDK." />
+    <ItemGroup>
+      <_OfeFFmpegRequiredLib Include="avcodec;avdevice;avfilter;avformat;avutil;swresample;swscale" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(OfeFFmpegRoot)\lib\%(_OfeFFmpegRequiredLib.Identity).lib')"
+           Text="FFmpeg import library missing: $(OfeFFmpegRoot)\lib\%(_OfeFFmpegRequiredLib.Identity).lib" />
+  </Target>
+</Project>
