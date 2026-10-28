@@ -83,27 +83,15 @@ You can get auto builds here:
 - ~~<https://github.com/sudo-nautilus/FFmpeg-Builds-Win32/releases/tag/latest>~~
 - <https://github.com/defisym/FFmpeg-Builds-Win32>
 
-#### SDL
+#### SDL and SDL Mixer X
 
-<https://github.com/libsdl-org/SDL/releases/tag/release-2.28.5>
-
-Located at the same level of repo folder, aka in repo's parent folder
-
-#### SDL Mixer
-
-Originally made by WohlSoft, this repo uses a forked version:
-
-<https://github.com/defisym/SDL-Mixer-X>
-
-You can build it following the readme of repo and `SDL_Mixer` extension, then put dependency to the SDL folder, `include` & `lib`
-
-Located at the same level of repo folder, aka in repo's parent folder
+SDL2 and upstream MixerX are pinned submodules. The shared `SDLDependencies` project lets Visual Studio initialize and build their combined SDK automatically; see [SDL_Mixer's build instructions](SDL_Mixer/ReadMe.md#how-to-build). Both SDL_Mixer and FFMpeg use the same generated SDK through `SDL.props`. An existing external SDL SDK can still be selected with `OfeSDLRoot`.
 
 #### SoundTouch
 
 <https://www.surina.net/soundtouch/>
 
-Located at the same level of repo folder, aka in repo's parent folder
+The official source is pinned as `Extensions/_3rdLib/SoundTouch`. SDL_Mixer's `SoundTouchDependencies` project builds its DLL SDK automatically; see [the build instructions](SDL_Mixer/ReadMe.md#soundtouch-dependency). An existing external SDK, including the original flat directory next to OFE, can be selected with `OfeSoundTouchRoot`.
 
 #### Steamworks
 

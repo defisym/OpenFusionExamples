@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32"><Configuration>Release</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{91BF4C20-F127-4BD4-8DF8-EE32126D054A}</ProjectGuid>
+    <RootNamespace>SDLDependencies</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <Import Project="..\SDL.props" />
+  <PropertyGroup>
+    <IntDir>$(ProjectDir)out\msbuild\$(Platform)\</IntDir>
+    <OutDir>$(IntDir)</OutDir>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="CMakeLists.txt" />
+    <None Include="StageSDK.cmake" />
+    <None Include="EnsureSDK.cmake" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="BuildSDLDependencies" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)'!='true' And '$(OfeAutoBuildSDL)'=='true'">
+    <Message Importance="high" Text="Checking SDL2 and MixerX SDK ($(OfeSDLArch))..." />
+    <Exec Condition="'$(OfeAutoBuildSDL)'=='true'"
+          StdOutEncoding="UTF-8" StdErrEncoding="UTF-8" UseUtf8Encoding="Always"
+          Command="chcp 65001 &gt;nul &amp; &quot;$(OfeSDLCMake)&quot; &quot;-DOFE_REPO_ROOT=$(_OfeSDLDependencies)..\..&quot; &quot;-DOFE_SDL_ROOT=$(OfeSDLRoot)/.&quot; &quot;-DOFE_ARCH=$(OfeSDLArch)&quot; &quot;-DOFE_GENERATOR=$(OfeSDLGenerator)&quot; &quot;-DOFE_TOOLSET=$(PlatformToolset)&quot; &quot;-DOFE_GENERATOR_INSTANCE=$(_OfeSDLVSInstance)&quot; &quot;-DOFE_GIT_EXECUTABLE=$(OfeSDLGit)&quot; -P &quot;$(_OfeSDLDependencies)SDL-build\EnsureSDK.cmake&quot;" />
+  </Target>
+</Project>
