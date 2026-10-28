@@ -37,6 +37,9 @@ if(MINGW)
     endif()
     target_link_options(SoundTouchDLL PRIVATE -static -static-libgcc -static-libstdc++)
 endif()
+# VS builds a named target through <target>.vcxproj in the requested build
+# directory. The upstream DLL project lives in upstream/, so expose a root target.
+add_custom_target(soundtouch_sdk DEPENDS SoundTouchDLL)
 install(TARGETS SoundTouchDLL
     RUNTIME DESTINATION "lib/${sdk_arch}"
     ARCHIVE DESTINATION "lib/${sdk_arch}")

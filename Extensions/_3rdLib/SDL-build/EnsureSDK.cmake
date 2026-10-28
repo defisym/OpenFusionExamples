@@ -37,7 +37,7 @@ if(NOT OFE_GIT_EXECUTABLE)
 endif()
 function(run)
     execute_process(COMMAND ${ARGV} RESULT_VARIABLE result
-        OUTPUT_VARIABLE output ERROR_VARIABLE errors
+        OUTPUT_VARIABLE output ERROR_VARIABLE errors ENCODING UTF-8
         ECHO_OUTPUT_VARIABLE ECHO_ERROR_VARIABLE)
     file(APPEND "${build_log}" "\nCommand: ${ARGV}\n${output}${errors}\nResult: ${result}\n")
     if(NOT result STREQUAL "0")

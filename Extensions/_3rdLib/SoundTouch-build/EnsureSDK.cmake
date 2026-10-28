@@ -37,7 +37,7 @@ if(NOT OFE_GIT_EXECUTABLE)
 endif()
 function(run)
     execute_process(COMMAND ${ARGV} RESULT_VARIABLE result
-        OUTPUT_VARIABLE output ERROR_VARIABLE errors
+        OUTPUT_VARIABLE output ERROR_VARIABLE errors ENCODING UTF-8
         ECHO_OUTPUT_VARIABLE ECHO_ERROR_VARIABLE)
     file(APPEND "${build_log}" "\nCommand: ${ARGV}\n${output}${errors}\nResult: ${result}\n")
     if(NOT result STREQUAL "0")
@@ -118,6 +118,6 @@ if(OFE_TOOLCHAIN_FILE)
     list(APPEND configure "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${OFE_TOOLCHAIN_FILE}")
 endif()
 run(${configure})
-run("${CMAKE_COMMAND}" --build "${OFE_BUILD_DIR}" --config Release --target SoundTouchDLL --parallel 4)
+run("${CMAKE_COMMAND}" --build "${OFE_BUILD_DIR}" --config Release --target soundtouch_sdk --parallel 4)
 run("${CMAKE_COMMAND}" --install "${OFE_BUILD_DIR}" --config Release)
 file(WRITE "${stamp}" "${signature}")

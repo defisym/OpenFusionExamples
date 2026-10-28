@@ -32,6 +32,7 @@
   <Target Name="BuildSoundTouchDependencies" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)'!='true' And '$(OfeAutoBuildSoundTouch)'=='true'">
     <Message Importance="high" Text="Checking SoundTouch SDK ($(OfeSoundTouchArch))..." />
     <Exec Condition="'$(OfeAutoBuildSoundTouch)'=='true'"
-          Command="&quot;$(OfeSoundTouchCMake)&quot; &quot;-DOFE_REPO_ROOT=$(_OfeSoundTouchDependencies)..\..&quot; &quot;-DOFE_SOUND_ROOT=$(OfeSoundTouchRoot)/.&quot; &quot;-DOFE_ARCH=$(OfeSoundTouchArch)&quot; &quot;-DOFE_GENERATOR=$(OfeSoundTouchGenerator)&quot; &quot;-DOFE_TOOLSET=$(PlatformToolset)&quot; &quot;-DOFE_GENERATOR_INSTANCE=$(_OfeSoundTouchVSInstance)&quot; &quot;-DOFE_GIT_EXECUTABLE=$(OfeSoundTouchGit)&quot; -P &quot;$(_OfeSoundTouchDependencies)SoundTouch-build\EnsureSDK.cmake&quot;" />
+          StdOutEncoding="UTF-8" StdErrEncoding="UTF-8" UseUtf8Encoding="Always"
+          Command="chcp 65001 &gt;nul &amp; &quot;$(OfeSoundTouchCMake)&quot; &quot;-DOFE_REPO_ROOT=$(_OfeSoundTouchDependencies)..\..&quot; &quot;-DOFE_SOUND_ROOT=$(OfeSoundTouchRoot)/.&quot; &quot;-DOFE_ARCH=$(OfeSoundTouchArch)&quot; &quot;-DOFE_GENERATOR=$(OfeSoundTouchGenerator)&quot; &quot;-DOFE_TOOLSET=$(PlatformToolset)&quot; &quot;-DOFE_GENERATOR_INSTANCE=$(_OfeSoundTouchVSInstance)&quot; &quot;-DOFE_GIT_EXECUTABLE=$(OfeSoundTouchGit)&quot; -P &quot;$(_OfeSoundTouchDependencies)SoundTouch-build\EnsureSDK.cmake&quot;" />
   </Target>
 </Project>
