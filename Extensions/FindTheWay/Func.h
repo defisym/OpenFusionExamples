@@ -71,7 +71,7 @@ inline bool SetMapBySurface(LPRDATA rdPtr, cSurface* pSf,
 		gridSize, false);
 
 	try {
-		rdPtr->pFTW = new FindTheWayClass(width, height);
+		rdPtr->pFTW = new FindTheWayFusion(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 		rdPtr->pFTW->SetIsometric(false);
 	}

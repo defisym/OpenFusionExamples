@@ -19,3 +19,11 @@ find_package(Threads REQUIRED)
 add_executable(path_owner_thread_test PathOwnerThreadTest.cpp)
 target_link_libraries(path_owner_thread_test PRIVATE DeLib::Helpers Threads::Threads)
 add_test(NAME path_owner_threads COMMAND path_owner_thread_test)
+
+add_executable(map_data_test MapDataTest.cpp)
+target_link_libraries(map_data_test PRIVATE DeLib::Helpers)
+add_test(NAME map_data COMMAND map_data_test)
+
+add_executable(event_adapter_test EventAdapterTest.cpp)
+target_link_libraries(event_adapter_test PRIVATE DeLib::Helpers)
+add_test(NAME event_adapter COMMAND event_adapter_test)

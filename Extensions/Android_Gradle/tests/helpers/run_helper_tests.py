@@ -26,6 +26,8 @@ run([args.cmake, '--build', build / 'cmake', '--parallel', '2'])
 run([build / 'cmake/general_definition_test'])
 run([build / 'cmake/acp_override_test'])
 run([build / 'cmake/path_owner_thread_test'])
+run([build / 'cmake/map_data_test'])
+run([build / 'cmake/event_adapter_test'])
 include = ['-I', core, '-I', core.parent / '_3rdLib']
 for name, flags, expected in [('default', [], 0), ('debug', ['-D_DEBUG'], 0),
                                ('release', ['-DNDEBUG'], 1), ('both', ['-D_DEBUG', '-DNDEBUG'], 0)]:
@@ -40,6 +42,10 @@ if args.sanitize:
          '-funsigned-char', *include, tests / 'GeneralDefinitionTest.cpp', tests / 'HelperOtherTU.cpp',
          '-o', binary, *args.iconv_library])
     run([binary], env=dict(os.environ, ASAN_OPTIONS='detect_leaks=0'))
+    map_data = build / 'map-data-sanitized'
+    run([args.cxx, '-std=c++20', '-g', '-fsanitize=address,undefined', '-fno-omit-frame-pointer',
+         '-funsigned-char', *include, tests / 'MapDataTest.cpp', '-o', map_data, *args.iconv_library])
+    run([map_data], env=dict(os.environ, ASAN_OPTIONS='detect_leaks=0'))
     threaded = build / 'path-owner-thread-sanitized'
     run([args.cxx, '-std=c++20', '-g', '-pthread', '-fsanitize=address,undefined', '-fno-omit-frame-pointer',
          *include, tests / 'PathOwnerThreadTest.cpp', '-o', threaded, *args.iconv_library])

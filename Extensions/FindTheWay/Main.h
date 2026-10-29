@@ -158,7 +158,7 @@ typedef struct tagRDATA
 	// Object's runtime data
 	bool isometric;
 
-	FindTheWayClass* pFTW;
+	FindTheWayFusion* pFTW;
 
 	size_t itIndex;
 	Coord itCoord;

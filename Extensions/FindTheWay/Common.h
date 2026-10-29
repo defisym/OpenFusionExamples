@@ -37,6 +37,7 @@ class ObjectSelection;
 #include	"Definition.h"
 
 #include	"FindTheWay.h"
+#include "FindTheWayFusion.h"
 using namespace FindTheWay;
 
 #include	"AOE.h"
