@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 
 //AddPostPlugins
 android {
+    namespace BUILD_APPID
     // r28+ emits Android's required 16 KB compatible native libraries.
     ndkVersion project.findProperty("FTW_NDK_VERSION") ?: "28.2.13676358"
     compileSdkVersion BUILD_API.toInteger()
@@ -10,7 +11,10 @@ android {
     defaultConfig {
         // Shared C++ core. CMake builds one JNI library for every selected export ABI.
         externalNativeBuild {
-            cmake { arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON" }
+            cmake { arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                if (project.hasProperty("FTW_ICONV_ROOT")) {
+                    arguments "-DFTW_ICONV_ROOT=" + file(project.property("FTW_ICONV_ROOT")).absolutePath
+                } }
         }
         //DefaultConfigs
         // applicationId BUILD_APPID

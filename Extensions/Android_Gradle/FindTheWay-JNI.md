@@ -8,9 +8,9 @@
 
 ## 审核状态
 
-此草案包含三个可分别审核的提交：共享头的平台兼容、共享核心行为修正、Android JNI 适配。
-共享 C++ 的行为改动会影响 Windows，需作者审核后再合并。主机验证已经完成；Android SDK、
-NDK、真实 Fusion Runtime 和设备验证尚未完成，因此此草案尚不能作为移动端发布版本。
+此草案按共享 helper、核心修正、MapData 和 Android JNI 组织审核。
+共享 C++ 的行为改动会影响 Windows，需作者审核后再合并。主机验证、四种 Android ABI 编译及真实 Fusion Runtime 的 Debug APK 联合构建已完成；
+尚未完成设备/模拟器运行和实际游戏验收。
 
 共享 helper 的平台差异集中在 `GeneralDefinition.h`，由 `DeLib::Helpers` 提供包含路径和
 非 Windows 的 iconv 依赖；寻路代码继续调用原 helper。详见
@@ -50,9 +50,8 @@ Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显
 可以用 `-PFTW_NDK_VERSION=...` 选择另一套兼容 NDK。最终导出必须同时包含对应 ABI 的
 `libfindtheway.so` 和 `libc++_shared.so`。不要把主机 Linux `.so` 放进 Android 包。
 
-本草案尚未完成 Android 工具链与真实 Fusion Runtime 的联合构建验证，也未验证 ABI 打包、
-设备/模拟器、真实对象选择/创建和背景碰撞。当前结果是可复现的主机 JNI 验证草案，尚不能
-作为移动端发布验收结论。
+已完成 Android 工具链与真实 Fusion Runtime 的联合构建、四种 ABI 打包、APK 签名及 zipalign 检查。
+尚未完成设备/模拟器、实际游戏、真实对象选择/创建和背景碰撞运行验证。
 
 ## 主机验证
 
@@ -94,3 +93,27 @@ Android 包包含 Java 适配器、JNI 源码、CMake 模块、ProGuard 规则�
 
 维护约定：以后修改 FindTheWay Java/JNI、共享头依赖或构建配置时，必须同步检查和更新
 `Extensions/_Script/FindTheWay.bat`，并验证暂存包的头文件依赖及独立 CMake 构建。
+
+## Android 目标编译记录
+
+已用 JDK 21、Gradle 8.14.3、AGP 8.11.1、compileSdk 35、NDK r28c 和 CMake 3.22.1，
+按批处理的 25 文件布局，与私有 Fusion Runtime 联合执行 `:app:assembleDebug` 成功。
+APK 内含 arm64-v8a、armeabi-v7a、x86、x86_64 的 findtheway 和共享 libc++。
+独立 Release 原生库 ELF LOAD 段对齐为 16 KB；Debug APK 签名及 zipalign 检查通过。
+测试工程只补了应用占位图标，没有实际游戏数据，未做设备/模拟器运行验收。
+私有 Runtime/SDK 文件不随公开代码提交。
+
+构建时显式提供每个 ABI 的 iconv：
+
+```text
+<iconv-root>/<ABI>/include/iconv.h
+<iconv-root>/<ABI>/lib/libiconv.a
+```
+
+Gradle 传入 `-PFTW_ICONV_ROOT=/path/to/iconv-root`；CMake 自动按 ANDROID_ABI 选择依赖，
+缺少相应头文件或库时直接报错。不要使用主机 Linux 的 iconv 库。
+静态链接 libiconv 的发行需同时安排其许可证、对应源码及重链接材料；当前测试依赖与产物
+保留在构建环境中，没有把第三方源码或预编译库写入仓库。
+
+此次联合构建修复了 AndroidCommon.java 漏打包、图片句柄的 int 类型，以及 Gradle namespace、
+旧 dexOptions、manifest excluded 参数和可选 Play Core 版本配置；后续维护继续同步批处理。

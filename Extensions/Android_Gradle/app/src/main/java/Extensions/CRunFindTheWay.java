@@ -1353,21 +1353,21 @@ public class CRunFindTheWay extends CRunExtension {
                     return;
                 }
 
-                short hImageLT = object.roa.raAnimDirOffset.adFrames[0];
+                int hImageLT = object.roa.raAnimDirOffset.adFrames[0];
                 CImage cImageLT = ho.getImageBank().getImageFromHandle(hImageLT);
 
                 if (1 >= nFrame) {
                     return;
                 }
 
-                short hImageR = object.roa.raAnimDirOffset.adFrames[1];
+                int hImageR = object.roa.raAnimDirOffset.adFrames[1];
                 CImage cImageR = ho.getImageBank().getImageFromHandle(hImageR);
 
                 if (2 >= nFrame) {
                     return;
                 }
 
-                short hImageB = object.roa.raAnimDirOffset.adFrames[2];
+                int hImageB = object.roa.raAnimDirOffset.adFrames[2];
                 CImage cImageB = ho.getImageBank().getImageFromHandle(hImageB);
 
                 int hoX = 0;

@@ -22,6 +22,7 @@ call :CopyFile "%SrcPath%\src\main\java\Extensions\CRunFindTheWay.java" "%Conten
 call :CopyFile "%SrcPath%\src\main\java\_DeLib\AOEClass.java" "%ContentPath%\app\src\main\java\_DeLib\AOEClass.java" || goto PackageError
 call :CopyFile "%SrcPath%\src\main\java\_DeLib\Coord.java" "%ContentPath%\app\src\main\java\_DeLib\Coord.java" || goto PackageError
 call :CopyFile "%SrcPath%\src\main\java\_DeLib\FindTheWayClass.java" "%ContentPath%\app\src\main\java\_DeLib\FindTheWayClass.java" || goto PackageError
+call :CopyFile "%SrcPath%\src\main\java\_DeLib\AndroidCommon.java" "%ContentPath%\app\src\main\java\_DeLib\AndroidCommon.java" || goto PackageError
 call :CopyFile "%SrcPath%\src\main\java\_DeLib\FusionUtilities.java" "%ContentPath%\app\src\main\java\_DeLib\FusionUtilities.java" || goto PackageError
 call :CopyFile "%SrcPath%\src\main\java\_3rdLib\ObjectCreationClass.java" "%ContentPath%\app\src\main\java\_3rdLib\ObjectCreationClass.java" || goto PackageError
 call :CopyFile "%SrcPath%\src\main\java\_3rdLib\ObjectSelectionClass.java" "%ContentPath%\app\src\main\java\_3rdLib\ObjectSelectionClass.java" || goto PackageError

@@ -28,7 +28,7 @@ public class CRun {
 public class CObject {
  public int hoX,hoY; public Animation roa=new Animation(); public Values rov=new Values(); public Sprite ros=new Sprite();
  public static class Animation {public Direction raAnimDirOffset=new Direction();}
- public static class Direction {public short adNumberOfFrame=3; public short[] adFrames={0,1,2};}
+ public static class Direction {public short adNumberOfFrame=3; public int[] adFrames={0,1,2};}
  public static class Values {public Expressions.CValue[] rvValues={new Expressions.CValue(0),new Expressions.CValue(0)};}
  public static class Sprite {public int rsEffect,rsEffectParam;}
 }''',
@@ -40,7 +40,7 @@ public class CExtension extends CObject {
  public void generateEvent(int id,int p){listener.accept(id);}
  public Expressions.CValue getExpParam(){return params.remove();}
  public Bank getImageBank(){return new Bank();}
- public static class Bank {public Banks.CImage getImageFromHandle(short h){throw new UnsupportedOperationException("SDK fixture");}}
+ public static class Bank {public Banks.CImage getImageFromHandle(int h){throw new UnsupportedOperationException("SDK fixture");}}
 }''',
 'Actions/CActExtension.java':'''package Actions;
 public class CActExtension {
