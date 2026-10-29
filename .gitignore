@@ -15,3 +15,7 @@ Extensions/*_Release.zip
 Extensions/*/ToInstall/Files/Data/Runtime/Android/*.zip
 Extensions/*/ToInstall/Files/Data/Runtime/Html5/*.js
 Extensions/Android_Extensions.lnk
+
+# Generated FFmpeg SDK and dependency downloads
+/Extensions/_3rdLib/FFmpeg-sdk/
+/Extensions/_3rdLib/FFmpeg-build/out/

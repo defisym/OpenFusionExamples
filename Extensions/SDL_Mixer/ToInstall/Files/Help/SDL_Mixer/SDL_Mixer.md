@@ -1,4 +1,4 @@
-# Template
+# SDL_Mixer
 
 ## Description
 
@@ -15,6 +15,18 @@ Mixing channels won't provide some manage features like set position of exclusiv
 Actually the channel is virtual, this object only uses the music stream of SDL_Mixer_X, managed internally and provide channels for fusion A/C/Es
 
 **NOTE:** you need to check `Run when minimized` & `Run while resizing`, or audio will be paused due to main thread is paused
+
+## Installation dependencies
+
+This Windows plugin requires the Win32 (x86) DLLs:
+
+- `SDL2.dll`
+- `SDL2_mixer_ext.dll`
+- `SoundTouchDLL.dll`
+
+Copy them to the Fusion root, alongside `mmf2u.exe`, and to `Data/Runtime/Unicode` inside the Fusion installation. Use matching SDL2 and MixerX DLLs for SDL_Mixer and FFMpeg when both plugins are installed. A 64-bit DLL cannot be used with the Win32 plugin.
+
+Install the latest [x86 Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x86.exe) as well. Developers can prepare the DLL SDKs through `SDLDependencies` and `SoundTouchDependencies`; see the [build instructions](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/SDL_Mixer/ReadMe.md#how-to-build). SDK preparation does not copy DLLs into a Fusion installation.
 
 ## Properties
 

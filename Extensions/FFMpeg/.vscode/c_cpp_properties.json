@@ -8,7 +8,7 @@
                 "${workspaceFolder}/../_3rdLib/",
                 "${workspaceFolder}/../../Inc/",
                 "${workspaceFolder}\\..\\..\\..\\FFMpeg\\include",
-                "${workspaceFolder}\\..\\..\\..\\SDL\\include",
+                "${workspaceFolder}/../_3rdLib/SDL-sdk/include",
             ],
             "defines": [
                 "_DEBUG",

@@ -10,7 +10,7 @@ Special thanks to @SelfReflection31 (From Github) and @Ruthoranium (From Discord
 
 This object is based on cross platform lib, FFMpeg & SDL, in theory there is not too difficult to bring it to other platforms like Android.
 
-**NOTE:** this object may conflict with other objects that need SDL, due to the dll version, and the possible double initialize (SDL needs to be initialized before using, and will fail if it's already initialized). This extension uses a custom version of SDL_Mixer_X to detect if initialized or not, to compatible with other extensions in this repo, e.g., SDL_Mixer
+**NOTE:** this object shares SDL audio with other extensions in this repo, e.g., SDL_Mixer. It uses `Mix_QuerySpec` to avoid reopening an initialized mixer and an initialization count to keep audio open while nested Fusion applications still use the same extension DLL. Use matching SDL2 and SDL Mixer X DLL versions across extensions.
 
 **NOTE:** this object uses a bitmap surface, as fusion didn't provide methods to write a HWA texture directly, and convert it will cost more than 3ms.
 
@@ -22,11 +22,11 @@ This object is based on cross platform lib, FFMpeg & SDL, in theory there is not
 
 **NOTE:** this object requires FFMpeg & SDL
 
-FFMpeg: you need to download release (e.g., `ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip` ) from <https://github.com/defisym/FFmpeg-Builds-Win32/releases>, then put dlls into Fusion root & `Runtime/Unicode`, or you need to build X86 version from FFMpeg source code, as the official 32 bit support has stopped.
+FFMpeg: use the Win32 LGPL shared DLLs matching your plugin build. The current default SDK is 9.0 (`ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip`) from [FFmpeg-Builds-Win32](https://github.com/defisym/FFmpeg-Builds-Win32/releases/tag/latest). Copy the DLLs from the package's `bin` directory into the Fusion root and `Data/Runtime/Unicode`. If you build the plugin yourself, `FFmpegDependencies` prepares the configured SDK automatically; see the [build instructions](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/FFMpeg/ReadMe.md#building-the-windows-plugin) for version selection and local ZIP preparation.
 
-SDL: you need to download `SDL2-2.24.0-win32-x86.zip` from <https://github.com/libsdl-org/SDL/releases>, then put X86 dlls into Fusion root & `Runtime/Unicode`
+SDL2 and SDL Mixer X: for development, initialize the pinned submodules and build the combined SDK using the [SDL_Mixer build instructions](https://github.com/defisym/OpenFusionExamples/blob/master/Extensions/SDL_Mixer/ReadMe.md#how-to-build). Both plugins use this SDK through the shared `SDL.props` property sheet. To run the plugins, put matching X86 `SDL2.dll` and `SDL2_mixer_ext.dll` files in the Fusion root and `Data/Runtime/Unicode`. SDL2's stable Windows binaries are available from [SDL releases](https://github.com/libsdl-org/SDL/releases/tag/release-2.32.10), and MixerX binaries are provided in this repository's `Extensions/SDL_Mixer/MixerXLib` directory. Rebuild old plugin binaries before replacing the forked MixerX DLL.
 
-SDL Mixer X: Upstream is <https://github.com/WohlSoft/SDL-Mixer-X>, this extension added a few custom functions to original lib, so please clone [this repo](https://github.com/defisym/SDL-Mixer-X) first, then follow the [guide](https://github.com/WohlSoft/SDL-Mixer-X/blob/master/docs/index.md#general-build-on-unix-like-platform-and-install-into-the-system) to build it by yourself
+The following DLL names correspond to the current default FFmpeg 9.0 SDK. When using another plugin build, use the DLL versions required by that build; do not mix DLLs from different FFmpeg packages.
 
 Here follows all dlls needed by this object:
 

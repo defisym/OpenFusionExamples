@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.21)
+if(NOT ARCH MATCHES "^(x86|x64)$")
+    message(FATAL_ERROR "Unknown SDK architecture: ${ARCH}")
+endif()
+foreach(path IN ITEMS "${STAGE}/include/SDL2/SDL.h" "${STAGE}/include/SDL2/SDL_config.h"
+        "${MIXER_SOURCE}/include/SDL_mixer.h" "${STAGE}/bin/SDL2.dll" "${STAGE}/bin/SDL2_mixer_ext.dll")
+    if(NOT EXISTS "${path}")
+        message(FATAL_ERROR "SDK build output is missing: ${path}")
+    endif()
+endforeach()
+# Upstream installs MixerX's header as SDL_mixer_ext.h. OFE uses SDL_mixer.h.
+# Copy from the pinned submodule, never from an unrelated official SDL_mixer SDK.
+file(MAKE_DIRECTORY "${SDK}/include" "${SDK}/lib/${ARCH}")
+file(COPY "${STAGE}/include/SDL2/" DESTINATION "${SDK}/include")
+file(COPY "${MIXER_SOURCE}/include/SDL_mixer.h" DESTINATION "${SDK}/include")
+file(COPY "${STAGE}/bin/SDL2.dll" "${STAGE}/bin/SDL2_mixer_ext.dll" DESTINATION "${SDK}/lib/${ARCH}")
+foreach(name IN ITEMS SDL2 SDL2_mixer_ext)
+    if(EXISTS "${STAGE}/lib/${name}.lib")
+        file(COPY "${STAGE}/lib/${name}.lib" DESTINATION "${SDK}/lib/${ARCH}")
+    elseif(EXISTS "${STAGE}/lib/lib${name}.dll.a")
+        # Keep MinGW import libraries in their native format; MSVC builds use .lib.
+        file(COPY "${STAGE}/lib/lib${name}.dll.a" DESTINATION "${SDK}/lib/${ARCH}")
+    else()
+        message(FATAL_ERROR "Missing import library for ${name}")
+    endif()
+endforeach()
+message(STATUS "SDL2 and MixerX SDK ready: ${SDK} (${ARCH})")

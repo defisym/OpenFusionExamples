@@ -53,6 +53,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
   </ImportGroup>
+  <Import Project="..\_3rdLib\SDL.props" />
+  <Import Project="..\_3rdLib\FFmpeg.props" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>16.0.31515.66</_ProjectFileVersion>
@@ -63,8 +65,8 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\SDL\lib\x86;..\..\..\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OfeSDLRoot)\include;$(OfeFFmpegRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OfeSDLRoot)\lib\$(OfeSDLArch);$(OfeFFmpegRoot)\lib;..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Release\</OutDir>
@@ -72,8 +74,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\SDL\lib\x86;..\..\..\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OfeSDLRoot)\include;$(OfeFFmpegRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OfeSDLRoot)\lib\$(OfeSDLArch);$(OfeFFmpegRoot)\lib;..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Run_Only\</OutDir>
@@ -81,8 +83,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\SDL\lib\x86;..\..\..\FFMpeg\lib;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OfeSDLRoot)\include;$(OfeFFmpegRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OfeSDLRoot)\lib\$(OfeSDLArch);$(OfeFFmpegRoot)\lib;..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
     <Midl>
@@ -95,7 +97,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\CopyAdapter;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OfeSDLRoot)\include;$(OfeFFmpegRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\CopyAdapter;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -146,7 +148,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\CopyAdapter;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OfeSDLRoot)\include;$(OfeFFmpegRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\CopyAdapter;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -204,7 +206,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\SDL\include;..\..\..\FFMpeg\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\CopyAdapter;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OfeSDLRoot)\include;$(OfeFFmpegRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;.\CopyAdapter;.\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -303,6 +305,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_3rdLib\FFMpegAdapter.h" />
     <ClInclude Include="..\_3rdLib\FFMpegAdapterD3D11.h" />
     <ClInclude Include="..\_3rdLib\FFMpegDefinition.h" />
+    <ClInclude Include="..\_3rdLib\FFMpegDependencies.h" />
     <ClInclude Include="..\_3rdLib\MemBuf.h" />
     <ClInclude Include="..\_3rdLib\PacketQueue.h" />
     <ClInclude Include="..\_DeLib\Encryption.h" />
@@ -382,6 +385,22 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
       </ObjectFileOutput>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\_3rdLib\SDL-build\SDLDependencies.vcxproj">
+      <Project>{91BF4C20-F127-4BD4-8DF8-EE32126D054A}</Project>
+      <SetConfiguration>Configuration=Release</SetConfiguration>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\_3rdLib\FFmpeg-build\FFmpegDependencies.vcxproj">
+      <Project>{E7DA8559-E315-4F4C-AD96-8BE9914F7C75}</Project>
+      <SetConfiguration>Configuration=Release</SetConfiguration>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

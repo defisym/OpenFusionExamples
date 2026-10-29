@@ -55,55 +55,21 @@ Don't forget to copy dlls to fusion root (along with `mmf2u.exe`) and fusion run
 
 you can get boost from <https://www.boost.org/>
 
-##### Direct download
-
-download release then unzip it to `_3rdLib/Extensions/Boost`
-
-##### Submodule
-
-reference: <https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview>
-
-1. open git bash, then cd to this repo
-2. run `git submodule update --init` to init submodule, which will clone boost first
-3. cd boost folder
-4. run `git submodule update --init` again to init submodule in boost repo
-5. run `./bootstrap.bat` to build `b2.exe`
-6. run `./b2 header`, which will build headers to boost folder, just like the release you downloaded
-
-now you should build the extensions rely on boost
-
 #### FFMpeg
 
-Extension relies on X86 LGPL Shared 7.1
+FFMpeg's `FFmpegDependencies` project prepares its Win32 shared SDK automatically. The selected version and archive SHA-256 are recorded in [`FFmpegVersion.cmake`](_3rdLib/FFmpeg-build/FFmpegVersion.cmake); the current default is **9.0 LGPL shared** from [FFmpeg-Builds-Win32](https://github.com/defisym/FFmpeg-Builds-Win32/releases/tag/latest).
 
-Located at the same level of repo folder, aka in repo's parent folder
+See [FFMpeg's build instructions](FFMpeg/ReadMe.md#building-the-windows-plugin) for automatic preparation, local ZIP downloads and version updates. An existing SDK, including the original directory next to OFE, can still be selected with `OfeFFmpegRoot`.
 
-You can get auto builds here:
+#### SDL and SDL Mixer X
 
-- ~~<https://github.com/sudo-nautilus/FFmpeg-Builds-Win32/releases/tag/latest>~~
-- <https://github.com/defisym/FFmpeg-Builds-Win32>
-
-#### SDL
-
-<https://github.com/libsdl-org/SDL/releases/tag/release-2.28.5>
-
-Located at the same level of repo folder, aka in repo's parent folder
-
-#### SDL Mixer
-
-Originally made by WohlSoft, this repo uses a forked version:
-
-<https://github.com/defisym/SDL-Mixer-X>
-
-You can build it following the readme of repo and `SDL_Mixer` extension, then put dependency to the SDL folder, `include` & `lib`
-
-Located at the same level of repo folder, aka in repo's parent folder
+SDL2 and upstream MixerX are pinned submodules. The shared `SDLDependencies` project lets Visual Studio initialize and build their combined SDK automatically; see [SDL_Mixer's build instructions](SDL_Mixer/ReadMe.md#how-to-build). Both SDL_Mixer and FFMpeg use the same generated SDK through `SDL.props`. An existing external SDL SDK can still be selected with `OfeSDLRoot`.
 
 #### SoundTouch
 
 <https://www.surina.net/soundtouch/>
 
-Located at the same level of repo folder, aka in repo's parent folder
+The official source is pinned as `Extensions/_3rdLib/SoundTouch`. SDL_Mixer's `SoundTouchDependencies` project builds its DLL SDK automatically; see [the build instructions](SDL_Mixer/ReadMe.md#soundtouch-dependency). An existing external SDK, including the original flat directory next to OFE, can be selected with `OfeSoundTouchRoot`.
 
 #### Steamworks
 

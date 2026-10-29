@@ -53,6 +53,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC60.props" />
   </ImportGroup>
+  <Import Project="..\_3rdLib\SDL.props" />
+  <Import Project="..\_3rdLib\SoundTouch.props" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>16.0.31515.66</_ProjectFileVersion>
@@ -63,8 +65,8 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\..\..\SoundTouch;..\..\..\SDL\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\SoundTouch;..\..\..\SDL\lib\x86;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OfeSoundTouchInclude);$(OfeSDLRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OfeSoundTouchLibDir);$(OfeSDLRoot)\lib\$(OfeSDLArch);..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Release\</OutDir>
@@ -72,8 +74,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\..\..\SoundTouch;..\..\..\SDL\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\SoundTouch;..\..\..\SDL\lib\x86;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OfeSoundTouchInclude);$(OfeSDLRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OfeSoundTouchLibDir);$(OfeSDLRoot)\lib\$(OfeSDLArch);..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Run_Only Unicode|Win32'">
     <OutDir>.\Obj\Unicode\Run_Only\</OutDir>
@@ -81,8 +83,8 @@
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
     <TargetExt>.mfx</TargetExt>
-    <IncludePath>..\..\..\SoundTouch;..\..\..\SDL\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\..\SoundTouch;..\..\..\SDL\lib\x86;..\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(OfeSoundTouchInclude);$(OfeSDLRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(OfeSoundTouchLibDir);$(OfeSDLRoot)\lib\$(OfeSDLArch);..\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
     <Midl>
@@ -95,7 +97,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\SoundTouch;..\..\..\SDL\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OfeSoundTouchInclude);$(OfeSDLRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -144,7 +146,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\SoundTouch;..\..\..\SDL\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OfeSoundTouchInclude);$(OfeSDLRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -200,7 +202,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Extensions\Un
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\SoundTouch;..\..\..\SDL\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OfeSoundTouchInclude);$(OfeSDLRoot)\include;..\_3rdLib;..\_DeLib;..\..\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;STRICT;UNICODE;_UNICODE;RUN_ONLY;HWABETA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -301,6 +303,20 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <ItemGroup>
     <Image Include="EXTICON.BMP" />
     <Image Include="EXTIMG.BMP" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\_3rdLib\SoundTouch-build\SoundTouchDependencies.vcxproj">
+      <Project>{C90AE0ED-7F66-4E85-A010-EAE8BE60CBD7}</Project>
+      <SetConfiguration>Configuration=Release</SetConfiguration>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\_3rdLib\SDL-build\SDLDependencies.vcxproj">
+      <Project>{91BF4C20-F127-4BD4-8DF8-EE32126D054A}</Project>
+      <SetConfiguration>Configuration=Release</SetConfiguration>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
