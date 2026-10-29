@@ -4,6 +4,8 @@ apply plugin: 'com.android.application'
 
 //AddPostPlugins
 android {
+    // r28+ emits Android's required 16 KB compatible native libraries.
+    ndkVersion project.findProperty("FTW_NDK_VERSION") ?: "28.2.13676358"
     compileSdkVersion BUILD_API.toInteger()
 
     compileOptions {
@@ -25,6 +27,11 @@ android {
         else
         {
             manifestPlaceholders = [MaxWrite: "28", Legacy: "false"]
+        }
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
         }
         //DefaultConfigs
     }
@@ -54,6 +61,12 @@ android {
     }
     aaptOptions {
         noCompress "ccn", "mp3", "wav", "ogg", "aac", "mp4", "m4v", "mov", "avi"
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
     }
     lintOptions {
         checkReleaseBuilds false

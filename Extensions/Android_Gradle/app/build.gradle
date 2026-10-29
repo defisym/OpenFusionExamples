@@ -3,9 +3,15 @@ apply plugin: 'com.android.application'
 
 //AddPostPlugins
 android {
+    // r28+ emits Android's required 16 KB compatible native libraries.
+    ndkVersion project.findProperty("FTW_NDK_VERSION") ?: "28.2.13676358"
     compileSdkVersion BUILD_API.toInteger()
 
     defaultConfig {
+        // Shared C++ core. CMake builds one JNI library for every selected export ABI.
+        externalNativeBuild {
+            cmake { arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON" }
+        }
         //DefaultConfigs
         // applicationId BUILD_APPID
         // minSdkVersion BUILD_MIN.toInteger()
@@ -50,6 +56,12 @@ android {
                 minifyEnabled false
                 //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
             }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
         }
     }
     lintOptions {
