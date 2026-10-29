@@ -78,3 +78,19 @@ Fusion 分发测试仅在 SDK 边界使用 fixture，原 Java 扩展及 JNI/核�
 iOS 可以直接在 Objective-C++ `.mm` 适配层包含同样的共享头文件，调用 C++ 无需 JNI。
 本次未修改 iOS 文件，也未创建第二套核心。后续重点是对齐 iOS Runtime 的 ACE 参数、对象
 选择/创建和事件回调，而非再次移植寻路算法。
+
+## Windows 打包脚本
+
+运行 `Extensions/_Script/FindTheWay.bat`，使用 7-Zip 创建 Android Runtime 源码包并复制到
+FindTheWay 的 ToInstall 目录。`FusionRoot` 和 `CompressPath` 可通过环境变量覆盖默认路径；
+未找到 Fusion 安装目录时仍生成 ToInstall 包。脚本不再自动终止本机 JDK 进程。
+
+Android 包包含 Java 适配器、JNI 源码、CMake 模块、ProGuard 规则，以及
+`app/src/main/cpp/shared/_DeLib` / `_3rdLib` 中所需的共享头文件。CMake 优先使用包内头文件，
+保留 `FTW_CORE_INCLUDE` 显式覆盖能力。包中不包含测试、Fusion SDK 或主机编译产物。
+
+这是源码打包，不是 Android ABI 编译：目标 ABI 的 iconv、NDK/CMake 和真实 Fusion Runtime
+仍须由构建环境提供。此脚本不会把 Linux `.so` 或 Windows SDK 打包进去。
+
+维护约定：以后修改 FindTheWay Java/JNI、共享头依赖或构建配置时，必须同步检查和更新
+`Extensions/_Script/FindTheWay.bat`，并验证暂存包的头文件依赖及独立 CMake 构建。
