@@ -22,18 +22,18 @@ def sha(path: Path) -> str:
 
 def source_hashes(root: Path) -> dict[str, str]:
     import re
-    owned = [root / 'iOS/FindTheWayCore', root / 'iOS/Helpers']
-    pending = [root / 'iOS/Classes/Extensions/CRunFindTheWay.h',
-               root / 'iOS/Classes/Extensions/CRunFindTheWay.m']
+    owned = [root / 'iOS/FindTheWay/Core', root / 'iOS/Helpers']
+    pending = [root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.h',
+               root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m']
     for folder in owned:
         pending.extend(p for p in folder.rglob('*') if p.suffix in {'.h', '.mm', '.cpp'}
                        and 'tests' not in p.parts)
-    pending.append(root / 'iOS/FindTheWayCore/CMakeLists.txt')
+    pending.append(root / 'iOS/FindTheWay/Core/CMakeLists.txt')
     # Producer configuration changes must also invalidate transferred binaries.
-    project = root.parent / 'iOS/FindTheWay'
+    project = root / 'iOS/FindTheWay'
     pending.extend(project / name for name in ('CMakeLists.txt', 'build.py')
                    if (project / name).is_file())
-    pending.append(root / 'iOS/FindTheWayCore/build_xcframework.py')
+    pending.append(root / 'iOS/FindTheWay/Core/build_xcframework.py')
     hashes = {}
     while pending:
         source = pending.pop().resolve()
@@ -46,12 +46,12 @@ def source_hashes(root: Path) -> dict[str, str]:
         hashes[name] = hashlib.sha256(source.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
         for include in re.findall(r'^\s*#\s*include\s*"([^"]+)"',
                                   source.read_text(encoding='utf-8-sig'), re.M):
-            candidates = [source.parent / include, root / 'iOS/FindTheWayCore/include' / include,
+            candidates = [source.parent / include, root / 'iOS/FindTheWay/Core/include' / include,
                           root / '_DeLib' / include, root / '_3rdLib' / include]
             match = next((p for p in candidates if p.is_file()), None)
             if match:
                 pending.append(match)
-            elif source.is_relative_to((root / 'iOS/FindTheWayCore').resolve()):
+            elif source.is_relative_to((root / 'iOS/FindTheWay/Core').resolve()):
                 raise ValueError(f'Unresolved shared dependency: {include}; update the shared-core checkout')
     return hashes
 

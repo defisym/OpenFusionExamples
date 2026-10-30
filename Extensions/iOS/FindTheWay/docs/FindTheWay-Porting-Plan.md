@@ -1,11 +1,11 @@
 # FindTheWay iOS port: investigation and proposal
 
-Implementation milestone: `FindTheWayCore/` now contains a static C++20 library with
+Implementation milestone: `../Core/` now contains a static C++20 library with
 C-compatible map, path, serialization and coordinate APIs, C caller tests, and an Apple Silicon-only
 XCFramework build script. Linux host checks passed against isolated current-master
 headers. Owned Runtime helpers have an initial implementation under `Helpers/`.
 Apple builds, full ACE integration, and Android helper synchronization remain
-pending; see `FindTheWayCore/README.md` for exact scope and helper findings.
+pending; see `../Core/README.md` for exact scope and helper findings.
 
 DarkEdif follow-up: upstream documentation and generated adapters confirm that
 an encoded `.ext` can carry precompiled XCFrameworks plus thin Runtime sources.
@@ -13,9 +13,14 @@ Xcode references may still require adding after export. See `DarkEdif-Reference.
 this supersedes the earlier uncertainty about whether that delivery model exists.
 Our own encoder/export round trip remains unverified.
 
-Build layout: root `iOS/FindTheWay/` owns the CMake entry project and Mac CLI
+Build layout: `Extensions/iOS/FindTheWay/` owns the CMake entry project and Mac CLI
 producer. Windows RunOnly defaults to its `Artifacts/Current` handoff directory.
 Native-only manifests are distinguished from full .ext release manifests.
+
+The historical SDK scaffold inspected below has since been removed from the
+repository: SDK.xcodeproj, Application.cci, the template and bundled SDK tools.
+The plugin Runtime sources are retained under `../Runtime/`; external SDK
+reference projects remain outside the source tree.
 
 ## Baseline and evidence
 

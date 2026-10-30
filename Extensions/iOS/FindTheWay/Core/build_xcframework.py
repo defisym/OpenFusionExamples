@@ -12,7 +12,7 @@ import tempfile
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--core-include', type=pathlib.Path,
-                        default=pathlib.Path(__file__).resolve().parents[2] / '_DeLib')
+                        default=pathlib.Path(__file__).resolve().parents[3] / '_DeLib')
     parser.add_argument('--project-source', type=pathlib.Path,
                         default=pathlib.Path(__file__).resolve().parent,
                         help='CMake entry project; defaults to the standalone core')

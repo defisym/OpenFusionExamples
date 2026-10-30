@@ -17,10 +17,10 @@ class PublisherTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / 'Extensions'
-        for name in ('iOS/Classes/Extensions/CRunFindTheWay.h',
-                     'iOS/Classes/Extensions/CRunFindTheWay.m',
-                     'iOS/FindTheWayCore/CMakeLists.txt',
-                     'iOS/FindTheWayCore/build_xcframework.py'):
+        for name in ('iOS/FindTheWay/Runtime/CRunFindTheWay.h',
+                     'iOS/FindTheWay/Runtime/CRunFindTheWay.m',
+                     'iOS/FindTheWay/Core/CMakeLists.txt',
+                     'iOS/FindTheWay/Core/build_xcframework.py'):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('// source fixture')
@@ -63,7 +63,7 @@ class PublisherTests(unittest.TestCase):
         publisher.stage(self.bundle, self.root)
         output = self.root / 'FindTheWay/ToInstall/Files/Data/Runtime/iPhone/FindTheWay.ext'
         before = output.read_bytes()
-        (self.root / 'iOS/Classes/Extensions/CRunFindTheWay.m').write_text('// changed')
+        (self.root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m').write_text('// changed')
         with self.assertRaisesRegex(ValueError, 'stale'):
             publisher.stage(self.bundle, self.root)
         self.assertEqual(output.read_bytes(), before)
@@ -79,15 +79,15 @@ class PublisherTests(unittest.TestCase):
             publisher.stage(self.bundle, self.root)
 
     def test_windows_line_endings_do_not_invalidate_sources(self):
-        source = self.root / 'iOS/Classes/Extensions/CRunFindTheWay.m'
+        source = self.root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m'
         source.write_bytes(b'// source\n// fixture\n')
         self.record()
         source.write_bytes(b'// source\r\n// fixture\r\n')
         publisher.verify(self.bundle, self.root)
 
     def test_producer_project_changes_invalidate_bundle(self):
-        project = self.root.parent / 'iOS/FindTheWay'
-        project.mkdir(parents=True)
+        project = self.root / 'iOS/FindTheWay'
+        project.mkdir(parents=True, exist_ok=True)
         (project / 'CMakeLists.txt').write_text('# producer fixture')
         self.record()
         (project / 'CMakeLists.txt').write_text('# changed configuration')

@@ -1,6 +1,6 @@
 # FindTheWay iOS publishing from Visual Studio RunOnly
 
-The Run_Only Unicode configuration imports FindTheWay.Publish.targets. Its iOS
+The Run_Only Unicode configuration imports FindTheWay/Publish.targets. Its iOS
 staging target runs before PackageFindTheWayAndroid, so the current master Python
 publisher includes iOS outputs when archiving the entire ToInstall tree. It also
 runs after Build when invoked without the Android publishing target. Debug and
@@ -17,7 +17,7 @@ release pipeline.
 ## Artifact preparation on Mac
 
 The per-extension CMake project and scripted producer are in root
-`iOS/FindTheWay/`; see its README. CMake uses Ninja/Make, followed by
+`Extensions/iOS/FindTheWay/`; see its README. CMake uses Ninja/Make, followed by
 `xcodebuild -create-xcframework`; no Xcode GUI is required. The default producer
 output is a native-only manifest until a real matching .ext is supplied.
 
@@ -69,7 +69,7 @@ msbuild Extensions\FindTheWay\FindTheWay.vcxproj /t:Build ^
 Defaults:
 
 - FindTheWayPackageIOS=true. Missing or stale iOS artifacts fail the build.
-- FindTheWayIOSArtifacts=iOS/FindTheWay/Artifacts/Current (repository root).
+- FindTheWayIOSArtifacts=Extensions/iOS/FindTheWay/Artifacts/Current (repository root).
 - FindTheWayPython=python; override with a Python 3.10+ executable path if needed.
 
 Explicitly build without staging iOS using `/p:FindTheWayPackageIOS=false`.

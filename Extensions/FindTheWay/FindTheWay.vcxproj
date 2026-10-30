@@ -319,5 +319,5 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <Exec WorkingDirectory="$(ProjectDir)"
           Command="call &quot;$(ProjectDir)..\_Script\FindTheWay.bat&quot; --no-pause" />
   </Target>
-  <Import Project="..\iOS\FindTheWay.Publish.targets" />
+  <Import Project="..\iOS\FindTheWay\Publish.targets" />
 </Project>

@@ -9,7 +9,7 @@ the old local Java-only checkout is insufficient. No Xcode GUI is needed.
 From the repository root:
 
 ```sh
-python3 iOS/FindTheWay/build.py --minimum-ios "$FTW_MINIMUM_IOS"
+python3 Extensions/iOS/FindTheWay/build.py --minimum-ios "$FTW_MINIMUM_IOS"
 ```
 
 For the first compile probe, set `FTW_MINIMUM_IOS=17.0`; this is a test target,
@@ -19,12 +19,12 @@ sample Runtime project has not been established as supported by the C++20 core.
 
 The command independently configures iphoneos arm64 and iphonesimulator arm64
 using CMake and Ninja (Make fallback), then uses xcodebuild -create-xcframework.
-Build files live in iOS/FindTheWay/Build. The generated CMake project builds the
+Build files live in Extensions/iOS/FindTheWay/Build. The generated CMake project builds the
 existing core target; no algorithms or DarkEdif code are duplicated here.
 
 ## Transfer to Windows
 
-Successful builds replace iOS/FindTheWay/Artifacts/Current with rollback on
+Successful builds replace Extensions/iOS/FindTheWay/Artifacts/Current with rollback on
 publication failure. The directory contains the static XCFramework, integration
 instructions and a source/file-hash manifest. Source changes during a build fail
 publication. Source fingerprints normalize Git CRLF/LF differences; binary hashes
@@ -48,7 +48,7 @@ working .ext. Full ACE integration and the .ext encoder/export round trip remain
 unfinished. Once a real matching .ext exists, a release bundle can be prepared:
 
 ```sh
-python3 iOS/FindTheWay/build.py --minimum-ios "$FTW_MINIMUM_IOS" \
+python3 Extensions/iOS/FindTheWay/build.py --minimum-ios "$FTW_MINIMUM_IOS" \
   --extension-package /path/to/FindTheWay.ext
 ```
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(FindTheWayCore LANGUAGES C CXX)
-set(FTW_CORE_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/../../_DeLib" CACHE PATH "Current shared core headers")
+set(FTW_CORE_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/../../../_DeLib" CACHE PATH "Current shared core headers")
 if(NOT EXISTS "${FTW_CORE_INCLUDE}/FindTheWayFusion.h")
     message(FATAL_ERROR "Shared core is outdated: select master 29edeed0 or newer, or set FTW_CORE_INCLUDE")
 endif()

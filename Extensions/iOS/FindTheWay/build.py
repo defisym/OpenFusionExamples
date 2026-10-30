@@ -12,7 +12,7 @@ import sys
 import tempfile
 
 PROJECT = Path(__file__).resolve().parent
-REPO = PROJECT.parents[1]
+REPO = PROJECT.parents[2]
 EXTENSIONS = REPO / 'Extensions'
 
 
@@ -31,8 +31,8 @@ def build(args):
     before = publisher.source_hashes(EXTENSIONS)
     destination = args.output.resolve()
     # Prevent an output replacement from removing source/build inputs.
-    if destination == REPO or REPO.is_relative_to(destination) or destination.is_relative_to(EXTENSIONS):
-        raise ValueError('Output must be outside Extensions and must not contain the repository')
+    if destination == REPO or REPO.is_relative_to(destination) or (destination.is_relative_to(REPO) and not destination.is_relative_to(PROJECT / 'Artifacts')):
+        raise ValueError('Output inside the repository must be under this plugin Artifacts directory')
     if destination == PROJECT or PROJECT.is_relative_to(destination):
         raise ValueError('Output must not contain the iOS project')
     build_dir = args.build_dir.resolve()
@@ -42,7 +42,7 @@ def build(args):
     with tempfile.TemporaryDirectory(prefix='.build-stage-', dir=destination.parent) as temporary:
         bundle = Path(temporary) / 'bundle'
         bundle.mkdir()
-        command = [sys.executable, str(EXTENSIONS / 'iOS/FindTheWayCore/build_xcframework.py'),
+        command = [sys.executable, str(EXTENSIONS / 'iOS/FindTheWay/Core/build_xcframework.py'),
                    '--project-source', str(PROJECT), '--build-dir', str(build_dir),
                    '--output', str(bundle / 'FindTheWayCore.xcframework'),
                    '--minimum-ios', args.minimum_ios]

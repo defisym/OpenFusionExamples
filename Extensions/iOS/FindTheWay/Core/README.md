@@ -15,8 +15,8 @@ than pointers cast to long, avoiding Windows LLP64 versus Apple LP64 assumptions
 All operations on a map belong to its owning Fusion thread; the registry mutex
 protects handles, not concurrent access to a map. Each call retains a shared owner.
 
-The preferred per-plugin entry point is now `iOS/FindTheWay/build.py` at the
-repository root. The lower-level command below remains available. Both use
+The preferred per-plugin entry point is `Extensions/iOS/FindTheWay/build.py`, run
+from the repository root. The lower-level command below remains available. Both use
 CMake with Ninja/Make and Apple command-line packaging tools.
 
 ## Build on Apple Silicon
@@ -70,7 +70,7 @@ Reference sources:
 - Android: _3rdLib/ObjectSelectionClass.java and ObjectCreationClass.java.
 - iOS: SDK ObjectSelection.h/.m, CEvents.m creation actions, and CRun APIs.
 
-Initial iOS helper implementation now lives in `../Helpers`; see its README for
+Initial iOS helper implementation now lives in `../../Helpers`; see its README for
 implemented methods, Runtime verification, and pending Android synchronization.
 The following table records the full parity target, not completed validation:
 
