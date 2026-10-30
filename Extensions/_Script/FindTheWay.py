@@ -65,6 +65,10 @@ def native_tools() -> tuple[Path, Path, Path]:
     cmake_dir = sdk / 'cmake' / CMAKE_VERSION / 'bin'
     cmake = cmake_dir / ('cmake' + executable)
     ninja = cmake_dir / ('ninja' + executable)
+    if not cmake.is_file() or not ninja.is_file():
+        installed = installed_cmake(sdk)
+        if installed:
+            cmake, ninja = installed
     packages = []
     if not (ndk / 'build/cmake/android.toolchain.cmake').is_file():
         packages.append('ndk;' + NDK_VERSION)
@@ -73,6 +77,8 @@ def native_tools() -> tuple[Path, Path, Path]:
     if packages:
         manager_name = 'sdkmanager.bat' if os.name == 'nt' else 'sdkmanager'
         managers = list((sdk / 'cmdline-tools').glob('*/bin/' + manager_name))
+        if (sdk / 'tools/bin' / manager_name).is_file():
+            managers.append(sdk / 'tools/bin' / manager_name)
         managers.sort(key=lambda p: (p.parent.parent.name != 'latest', str(p)))
         if not managers:
             raise FileNotFoundError(f'Install Android SDK Command-line Tools in {sdk}; required packages: {packages}')
@@ -81,6 +87,39 @@ def native_tools() -> tuple[Path, Path, Path]:
     if not cmake.is_file() or not ninja.is_file() or not (ndk / 'build/cmake/android.toolchain.cmake').is_file():
         raise FileNotFoundError(f'Android NDK {NDK_VERSION} / CMake {CMAKE_VERSION} installation incomplete in {sdk}')
     return ndk, cmake, ninja
+
+def installed_cmake(sdk: Path) -> tuple[Path, Path] | None:
+    executable = '.exe' if os.name == 'nt' else ''
+    candidates = list((sdk / 'cmake').glob('*/bin/cmake' + executable))
+    if os.name == 'nt':
+        vswhere = Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Microsoft Visual Studio/Installer/vswhere.exe'
+        if vswhere.is_file():
+            result = subprocess.run([str(vswhere), '-all', '-products', '*', '-property',
+                                     'installationPath', '-utf8'], capture_output=True,
+                                    text=True, encoding='utf-8', errors='replace', check=True)
+            for line in result.stdout.splitlines():
+                if line.strip():
+                    candidates.append(Path(line.strip()) / 'Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe')
+    if shutil.which('cmake'):
+        candidates.append(Path(shutil.which('cmake')))
+    for cmake in candidates:
+        ninjas = [cmake.parent / ('ninja' + executable),
+                  cmake.parent.parent.parent / 'Ninja' / ('ninja' + executable)]
+        if shutil.which('ninja'):
+            ninjas.append(Path(shutil.which('ninja')))
+        ninja = next((p for p in ninjas if p.is_file()), None)
+        if not cmake.is_file() or ninja is None:
+            continue
+        try:
+            result = subprocess.run([str(cmake), '--version'], capture_output=True, text=True,
+                                    encoding='utf-8', errors='replace', check=True)
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        version = re.search(r'cmake version (\d+)\.(\d+)', result.stdout)
+        if version and tuple(map(int, version.groups())) >= (3, 22):
+            logging.info('Using installed CMake and Ninja: %s; %s', cmake, ninja)
+            return cmake, ninja
+    return None
 
 def build_native(stage: Path) -> None:
     ndk, cmake, ninja = native_tools()

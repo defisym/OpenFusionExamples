@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -100,6 +101,45 @@ class PublisherTests(unittest.TestCase):
             self.assertTrue((self.stage / name).is_file(), name)
         manifest = json.loads((self.stage / 'FindTheWay-package-manifest.json').read_text())
         self.assertTrue(all(publish.digest(self.stage / p) == h for p, h in manifest.items()))
+
+    def test_other_installed_cmake_works_without_sdkmanager(self):
+        sdk = self.root / 'Sdk'
+        toolchain = sdk / 'ndk' / publish.NDK_VERSION / 'build/cmake/android.toolchain.cmake'
+        toolchain.parent.mkdir(parents=True)
+        toolchain.touch()
+        cmake = sdk / 'cmake/3.31.8/bin/cmake'
+        cmake.parent.mkdir(parents=True)
+        cmake.touch()
+        ninja = cmake.parent / 'ninja'
+        ninja.touch()
+        result = subprocess.CompletedProcess([], 0, 'cmake version 3.31.8\n', '')
+        with patch.dict(publish.os.environ, {'ANDROID_HOME': str(sdk)}, clear=True), \
+             patch.object(publish.shutil, 'which', return_value=None), \
+             patch.object(publish.subprocess, 'run', return_value=result), \
+             patch.object(publish, 'run', side_effect=AssertionError('Must not invoke sdkmanager')):
+            self.assertEqual(publish.native_tools(), (toolchain.parents[2], cmake, ninja))
+            result.stdout = 'cmake version 3.20.0\n'
+            with self.assertRaisesRegex(FileNotFoundError, 'Command-line Tools'):
+                publish.native_tools()
+
+    def test_visual_studio_cmake_and_sibling_ninja_are_discovered(self):
+        programs = self.root / 'Program Files (x86)'
+        vswhere = programs / 'Microsoft Visual Studio/Installer/vswhere.exe'
+        vs = self.root / 'Visual Studio'
+        base = vs / 'Common7/IDE/CommonExtensions/Microsoft/CMake'
+        cmake = base / 'CMake/bin/cmake.exe'
+        ninja = base / 'Ninja/ninja.exe'
+        for path in (vswhere, cmake, ninja):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch()
+        outputs = [subprocess.CompletedProcess([], 0, str(vs) + '\n', ''),
+                   subprocess.CompletedProcess([], 0, 'cmake version 3.31.8\n', '')]
+        with patch.object(publish, 'Path', type(self.root)), \
+             patch.object(publish.os, 'name', 'nt'), \
+             patch.dict(publish.os.environ, {'ProgramFiles(x86)': str(programs)}), \
+             patch.object(publish.shutil, 'which', return_value=None), \
+             patch.object(publish.subprocess, 'run', side_effect=outputs):
+            self.assertEqual(publish.installed_cmake(self.root / 'Sdk'), (cmake, ninja))
 
     def test_missing_library_preserves_previous_stage(self):
         self.stage.mkdir()

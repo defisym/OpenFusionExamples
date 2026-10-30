@@ -43,11 +43,12 @@ Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显
 
 ### Visual Studio 一键打包
 
-构建 `FindTheWay.vcxproj` 的 Debug Unicode、Release Unicode 或 Run_Only Unicode 配置后，
+构建 `FindTheWay.vcxproj` 的 Run_Only Unicode 配置后，
 项目会自动调用 `Extensions/_Script/FindTheWay.bat`，生成
 `Extensions/FindTheWay/ToInstall/Files/Data/Runtime/Android/FindTheWay.zip`，并按发布器规则安装、归档。
 需要 Python 3.10+；首次运行需要网络下载并校验 iconv 对应源码。
-即使 Windows 输出已是最新，点击构建也会重新打包 Android 输入。
+Release Unicode 只生成 Windows 编辑器扩展，Debug Unicode 也不自动打包 Android。
+RunOnly 即使 Windows 输出已是最新，点击构建也会重新打包 Android 输入。
 打包失败会使 VS 构建失败，详细错误可查看“输出”窗口及
 `Extensions/Android_Gradle/FindTheWay-package.log`，不会暂停等待键盘输入。
 只构建 Windows 时可用 MSBuild 属性 `/p:FindTheWayPackageAndroid=false` 关闭这一步。
@@ -58,8 +59,9 @@ Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显
 
 开发机需要 Android SDK：依次查找 `ANDROID_HOME`、`ANDROID_SDK_ROOT`，Windows 下再查找
 `%LOCALAPPDATA%/Android/Sdk`。非标准安装位置可将 `ANDROID_HOME` 指向 Fusion 配置的 SDK。
-脚本使用 NDK r28c `28.2.13676358` 和 SDK CMake `3.22.1`；缺少时会调用该 SDK 的
-Command-line Tools / sdkmanager 安装，需已接受 Android SDK 许可证并具备网络访问。
+脚本使用 NDK r28c `28.2.13676358`，优先 SDK CMake `3.22.1`；没有该版本时，
+会查找其他 SDK CMake、Visual Studio 自带的 CMake/Ninja 以及 PATH 中的工具，要求 CMake >= 3.22。
+仍缺少工具时会调用该 SDK 的 Command-line Tools / sdkmanager 安装，需已接受 Android SDK 许可证并具备网络访问。
 没有 Command-line Tools 或依赖安装失败时明确报错，不会继续发布旧库。
 
 CMake 直接编译共享 C++20 核心，目标 Android API 21、Release 优化、16 KB 页对齐。

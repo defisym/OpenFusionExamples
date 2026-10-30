@@ -56,8 +56,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <!-- Android/shared inputs are collected dynamically by the publisher. -->
-    <FindTheWayPackageAndroid Condition="'$(FindTheWayPackageAndroid)'==''">true</FindTheWayPackageAndroid>
-    <DisableFastUpToDateCheck Condition="'$(FindTheWayPackageAndroid)'=='true'">true</DisableFastUpToDateCheck>
+    <FindTheWayPackageAndroid Condition="'$(FindTheWayPackageAndroid)'=='' and '$(Configuration)'=='Run_Only Unicode'">true</FindTheWayPackageAndroid>
+    <DisableFastUpToDateCheck Condition="'$(FindTheWayPackageAndroid)'=='true' and '$(Configuration)'=='Run_Only Unicode'">true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>16.0.31515.66</_ProjectFileVersion>
@@ -314,7 +314,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   </ImportGroup>
   <!-- Run even when the Windows linker has no work, after existing copy events. -->
   <Target Name="PackageFindTheWayAndroid" AfterTargets="Build"
-          Condition="'$(FindTheWayPackageAndroid)'=='true' and '$(DesignTimeBuild)'!='true'">
+          Condition="'$(FindTheWayPackageAndroid)'=='true' and '$(Configuration)'=='Run_Only Unicode' and '$(DesignTimeBuild)'!='true'">
     <Message Text="Packaging FindTheWay Android extension ZIP" Importance="high" />
     <Exec WorkingDirectory="$(ProjectDir)"
           Command="call &quot;$(ProjectDir)..\_Script\FindTheWay.bat&quot; --no-pause" />
