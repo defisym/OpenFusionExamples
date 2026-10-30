@@ -1,0 +1,36 @@
+{
+  "build": {
+    "minimum_ios": "17.0",
+    "xcode": "Xcode 27.1\nBuild version 27A9275"
+  },
+  "files": {
+    "FindTheWayCore.xcframework/Info.plist": "947cb74ecdef874195b81cc16b7fa790b865504ae2796f0c8f2874e882aa6481",
+    "FindTheWayCore.xcframework/ios-arm64-simulator/Headers/FindTheWayCore.h": "b534fbd26d25bf76d9356beceacd49cc609da2b2e383b5f412ed24bab7e9a68d",
+    "FindTheWayCore.xcframework/ios-arm64-simulator/libFindTheWayCore.a": "54de05547ddb8351065b9498f00f64136aa14d0cf9bd4351e8463f9b29602d7d",
+    "FindTheWayCore.xcframework/ios-arm64/Headers/FindTheWayCore.h": "b534fbd26d25bf76d9356beceacd49cc609da2b2e383b5f412ed24bab7e9a68d",
+    "FindTheWayCore.xcframework/ios-arm64/libFindTheWayCore.a": "2f558fe0fc0f520cb505e232bcd7bb25d14284357f05bcbf94e872268253385b",
+    "Integration.md": "7ac63f86b54e659477454912a1f0944b82dc59e604a74b32af2fc433023a33a1"
+  },
+  "kind": "native",
+  "schema": 1,
+  "sources": {
+    "_3rdLib/Base64.h": "cffc7b8db1cf2f92a88792176e2f77f7ea3bdbefd588c6b652246cfb983a25fb",
+    "_DeLib/ArithmeticTraits.h": "a42a4295b975cd62b8726e35e1418d3e16ba14f8f8fde4e2f70dae20d7e54ec7",
+    "_DeLib/FindTheWay.h": "a3786142854540e02f6d360c3e3bc4c1583a9bceec6f2ae1d1dc26af18cb2209",
+    "_DeLib/FindTheWayFusion.h": "0bf3cf80b2f38229d68becbd58c95786d12313c853dcbc4910e6988b9ad1c048",
+    "_DeLib/GeneralDefinition.h": "5d4cbc9c0dec62b837e7c8ddf1b767822d30f0111ad73e31c12005b1ac7259d8",
+    "_DeLib/MapData.h": "5d758e97c9f16a9adcbfed9342867d5f5515a029cb4a1a06cf4b17f555cd283a",
+    "_DeLib/StrNum.h": "75f7e22938c25f10279e837d672d546065d50a7ec6dd5c94382fa6240e884c9e",
+    "_DeLib/StringTraits.h": "850ef3b598e02b1e5ced31f89270571f3b9e2597009885bd903371d0c598bc3e",
+    "iOS/FindTheWay/CMakeLists.txt": "30a45a5d1081633a7d01d3c0f8ca651adfb20bfa77c4ec32f4a51b342e3afcc6",
+    "iOS/FindTheWay/Core/CMakeLists.txt": "930661d0bfae8741a8d17eed96f203e127b6b89ccc60acf16b0dc17ecdb2d1be",
+    "iOS/FindTheWay/Core/FindTheWayCore.cpp": "48d0849aca79337341145fe6fb454b7c721b15aaf6a83f73524d4163be366f41",
+    "iOS/FindTheWay/Core/build_xcframework.py": "35cd3156d548746647788717531d2eccf040f7dc53b90c6d27c10dae4d7d2dee",
+    "iOS/FindTheWay/Core/include/FindTheWayCore.h": "b534fbd26d25bf76d9356beceacd49cc609da2b2e383b5f412ed24bab7e9a68d",
+    "iOS/FindTheWay/Runtime/CRunFindTheWay.h": "f754348b0d8093587363cf0b51f1d9aa22757170a29f51b47aa9bcff41295532",
+    "iOS/FindTheWay/Runtime/CRunFindTheWay.m": "eabcc7af7d7eba2ec7b17bb1a66e15231b012f9efa39f5a0f456f0104ff71a17",
+    "iOS/FindTheWay/build.py": "238f3bd1f2c262af857cf1081437b68c7170c47d91ccd1684b0cee2fdd99d930",
+    "iOS/Helpers/FTWObjectHelpers.h": "196d8fe97dcd40fff693fdfc6066d6f1d5969e133757d9c2636d85cb7bd581b2",
+    "iOS/Helpers/FTWObjectHelpers.mm": "cc8d038e9bd2f9a1987ad13df64dcb6991522ca49aca817c190bd4766a4b6232"
+  }
+}
