@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-rem One entry point. Python prepares/verifies all Android dependencies and publishes the packages.
+rem One entry point. Python prepares dependencies, builds four-ABI JNI libraries and publishes the packages.
 py -3 --version >nul 2>nul
 if not errorlevel 1 (
     py -3 "%~dp0FindTheWay.py"

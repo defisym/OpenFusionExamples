@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import urllib.request
 import zipfile
@@ -32,6 +33,76 @@ def copy(source: Path, target: Path) -> None:
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def fusion_root() -> Path:
+    return Path(os.environ.get('FusionRoot', r'C:\Steam\steamapps\common\Clickteam Fusion 2.5'))
+
+ABIS = {'arm64-v8a': 'aarch64-linux-android',
+        'armeabi-v7a': 'arm-linux-androideabi',
+        'x86': 'i686-linux-android', 'x86_64': 'x86_64-linux-android'}
+NDK_VERSION = '28.2.13676358'
+CMAKE_VERSION = '3.22.1'
+
+def run(command: list[str]) -> None:
+    logging.info('Running: %s', subprocess.list2cmdline(command))
+    with subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          text=True, encoding='utf-8', errors='replace') as process:
+        for line in process.stdout:
+            logging.info('%s', line.rstrip())
+        if process.wait():
+            raise RuntimeError(f'Native build command failed (exit {process.returncode}); see log above')
+
+def native_tools() -> tuple[Path, Path, Path]:
+    roots = [Path(os.environ[key]) for key in ('ANDROID_HOME', 'ANDROID_SDK_ROOT')
+             if os.environ.get(key)]
+    if os.environ.get('LOCALAPPDATA'):
+        roots.append(Path(os.environ['LOCALAPPDATA']) / 'Android/Sdk')
+    sdk = next((p for p in roots if p.is_dir()), None)
+    if sdk is None:
+        raise FileNotFoundError('Android SDK not found. Set ANDROID_HOME to the SDK directory configured in Fusion.')
+    executable = '.exe' if os.name == 'nt' else ''
+    ndk = sdk / 'ndk' / NDK_VERSION
+    cmake_dir = sdk / 'cmake' / CMAKE_VERSION / 'bin'
+    cmake = cmake_dir / ('cmake' + executable)
+    ninja = cmake_dir / ('ninja' + executable)
+    packages = []
+    if not (ndk / 'build/cmake/android.toolchain.cmake').is_file():
+        packages.append('ndk;' + NDK_VERSION)
+    if not cmake.is_file() or not ninja.is_file():
+        packages.append('cmake;' + CMAKE_VERSION)
+    if packages:
+        manager_name = 'sdkmanager.bat' if os.name == 'nt' else 'sdkmanager'
+        managers = list((sdk / 'cmdline-tools').glob('*/bin/' + manager_name))
+        managers.sort(key=lambda p: (p.parent.parent.name != 'latest', str(p)))
+        if not managers:
+            raise FileNotFoundError(f'Install Android SDK Command-line Tools in {sdk}; required packages: {packages}')
+        logging.info('Preparing missing Android native tools: %s', ', '.join(packages))
+        run([str(managers[0]), '--sdk_root=' + str(sdk), '--install', *packages])
+    if not cmake.is_file() or not ninja.is_file() or not (ndk / 'build/cmake/android.toolchain.cmake').is_file():
+        raise FileNotFoundError(f'Android NDK {NDK_VERSION} / CMake {CMAKE_VERSION} installation incomplete in {sdk}')
+    return ndk, cmake, ninja
+
+def build_native(stage: Path) -> None:
+    ndk, cmake, ninja = native_tools()
+    host = {'win32': 'windows-x86_64', 'linux': 'linux-x86_64', 'darwin': 'darwin-x86_64'}[sys.platform]
+    toolchain = ndk / 'toolchains/llvm/prebuilt' / host
+    strip = toolchain / 'bin' / ('llvm-strip.exe' if os.name == 'nt' else 'llvm-strip')
+    for abi, triple in ABIS.items():
+        build = ANDROID / '_NativeBuild' / abi
+        output = build / 'out'
+        run([str(cmake), '-S', str(stage / 'app/src/main/cpp'), '-B', str(build), '-G', 'Ninja',
+             '-DCMAKE_MAKE_PROGRAM=' + ninja.as_posix(),
+             '-DCMAKE_TOOLCHAIN_FILE=' + (ndk / 'build/cmake/android.toolchain.cmake').as_posix(),
+             '-DCMAKE_BUILD_TYPE=Release', '-DANDROID_ABI=' + abi, '-DANDROID_PLATFORM=android-21',
+             '-DANDROID_STL=c++_shared', '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
+             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + output.as_posix()])
+        run([str(cmake), '--build', str(build), '--parallel', str(min(os.cpu_count() or 2, 8))])
+        target = stage / 'app/src/main/jniLibs' / abi
+        copy(output / 'libfindtheway.so', target / 'libfindtheway.so')
+        copy(toolchain / 'sysroot/usr/lib' / triple / 'libc++_shared.so', target / 'libc++_shared.so')
+        for library in target.glob('*.so'):
+            run([str(strip), '--strip-unneeded', str(library)])
+        logging.info('Prepared JNI libraries for %s', abi)
 
 def source_archive() -> Path:
     manifest = json.loads((ICONV / 'manifest.json').read_text())
@@ -120,10 +191,13 @@ def stage_android(stage: Path) -> None:
     java_sources(stage)
     shared_headers(stage)
     shutil.copytree(ANDROID / 'cmake', stage / 'cmake')
-    for source, relative in [(ANDROID / 'release.gradle', 'app/build.gradle'),
-                             (ANDROID / 'ReleaseSettings.gradle', 'settings.gradle'),
-                             (ANDROID / 'app/proguard-rules.pro', 'app/proguard-rules.txt'),
-                             (ANDROID / 'FindTheWay-JNI.md', 'FindTheWay-JNI.md'),
+    # R8 discovers JAR consumer rules without replacing Fusion's ProGuard file.
+    rules = stage / 'app/libs/FindTheWay-JNI-rules.jar'
+    rules.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(rules, 'w', zipfile.ZIP_DEFLATED) as archive_rules:
+        archive_rules.writestr('META-INF/proguard/FindTheWay.pro',
+                              (ANDROID / 'FindTheWay-JNI.pro').read_bytes())
+    for source, relative in [(ANDROID / 'FindTheWay-JNI.md', 'FindTheWay-JNI.md'),
                              (EXTENSIONS.parent / 'LICENSE', 'FindTheWay-LICENSE.txt')]:
         copy(source, stage / relative)
     target = stage / 'app/src/main/cpp/third_party/iconv'
@@ -131,6 +205,7 @@ def stage_android(stage: Path) -> None:
         if source.is_file() and source.name not in {'.gitignore', 'source.tar.gz'}:
             copy(source, target / source.relative_to(ICONV))
     copy(archive, target / 'source.tar.gz')
+    build_native(stage)
     entries = {str(p.relative_to(stage)).replace('\\', '/'): digest(p)
                for p in sorted(stage.rglob('*')) if p.is_file()}
     (stage / 'FindTheWay-package-manifest.json').write_text(json.dumps(entries, indent=2), encoding='utf-8')
@@ -161,7 +236,7 @@ def publish(stage: Path) -> None:
     html_output = install / 'Data/Runtime/Html5/FindTheWay.js'
     html_output.parent.mkdir(parents=True, exist_ok=True)
     html_output.write_bytes(data)
-    fusion = Path(os.environ.get('FusionRoot', r'C:\Steam\steamapps\common\Clickteam Fusion 2.5'))
+    fusion = fusion_root()
     if (fusion / 'Data/Runtime/Android').is_dir():
         copy(android_zip, fusion / 'Data/Runtime/Android/FindTheWay.zip')
     else:

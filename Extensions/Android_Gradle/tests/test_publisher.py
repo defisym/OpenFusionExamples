@@ -41,6 +41,7 @@ class PublisherTests(unittest.TestCase):
             android / 'release.gradle': '// gradle\n',
             android / 'ReleaseSettings.gradle': '// settings\n',
             android / 'app/proguard-rules.pro': '# rules\n',
+            android / 'FindTheWay-JNI.pro': '-keep class _DeLib.FindTheWayClass { *; }\n',
             android / 'FindTheWay-JNI.md': '# notes\n',
             self.root / 'LICENSE': 'license\n',
             iconv / 'arm64-v8a/lib/libiconv.a': 'library',
@@ -59,6 +60,36 @@ class PublisherTests(unittest.TestCase):
                                      SEEDS=['Extensions/Main.java'])
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
+        root_patch = patch.object(publish, 'fusion_root', return_value=self.root / 'Fusion')
+        root_patch.start()
+        self.addCleanup(root_patch.stop)
+
+        def fake_build(stage):
+            for abi in publish.ABIS:
+                for name in ('libfindtheway.so', 'libc++_shared.so'):
+                    target = stage / 'app/src/main/jniLibs' / abi / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(b'fixture library')
+        native_patch = patch.object(publish, 'build_native', side_effect=fake_build)
+        native_patch.start()
+        self.addCleanup(native_patch.stop)
+
+    def test_package_leaves_default_gradle_and_runtime_untouched(self):
+        runtime = publish.fusion_root() / 'Data/Runtime/Android/RuntimeAndroid.zip'
+        runtime.parent.mkdir(parents=True)
+        runtime.write_bytes(b'untouched runtime')
+        publish.stage_android(self.stage)
+        self.assertEqual(runtime.read_bytes(), b'untouched runtime')
+        self.assertFalse((self.stage / 'app/build.gradle').exists())
+        self.assertFalse((self.stage / 'settings.gradle').exists())
+        self.assertFalse((self.stage / 'app/proguard-rules.txt').exists())
+        self.assertFalse((self.stage / 'app/FindTheWay-native.gradle').exists())
+        with publish.zipfile.ZipFile(self.stage / 'app/libs/FindTheWay-JNI-rules.jar') as rules:
+            self.assertIn(b'-keep class _DeLib.FindTheWayClass',
+                          rules.read('META-INF/proguard/FindTheWay.pro'))
+        for abi in publish.ABIS:
+            for name in ('libfindtheway.so', 'libc++_shared.so'):
+                self.assertTrue((self.stage / 'app/src/main/jniLibs' / abi / name).is_file())
 
     def test_complete_recursive_dependencies(self):
         publish.stage_android(self.stage)
