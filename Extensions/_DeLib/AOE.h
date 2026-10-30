@@ -6,6 +6,7 @@
 
 // AOE
 namespace AOE{
+    using FindTheWay::Coord;
 	constexpr auto RESERVE = 50;
 
 	class AOEClass {
@@ -149,7 +150,7 @@ namespace AOE{
 			output->clear();
 
 			this->start = start;
-            this->dir = ::Range(dir, 0u, 3u);
+            this->dir = ::Range<size_t>(dir, 0, 3);
 
 			switch (type / 10) {
 			case 2:

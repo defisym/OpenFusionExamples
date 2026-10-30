@@ -4,6 +4,9 @@ apply plugin: 'com.android.application'
 
 //AddPostPlugins
 android {
+    namespace BUILD_APPID
+    // r28+ emits Android's required 16 KB compatible native libraries.
+    ndkVersion project.findProperty("FTW_NDK_VERSION") ?: "28.2.13676358"
     compileSdkVersion BUILD_API.toInteger()
 
     compileOptions {
@@ -20,11 +23,19 @@ android {
                 && BUILD_TARGET.toInteger() == 29
                     && BUILD_WITH_LEGACY.toBoolean()==true)
         {
-            manifestPlaceholders = [MaxWrite: "29", Legacy: "true"]
+            manifestPlaceholders = [MaxWrite: "29", Legacy: "true", excluded: project.findProperty("BUILD_EXCLUDED") ?: "false"]
         }
         else
         {
-            manifestPlaceholders = [MaxWrite: "28", Legacy: "false"]
+            manifestPlaceholders = [MaxWrite: "28", Legacy: "false", excluded: project.findProperty("BUILD_EXCLUDED") ?: "false"]
+        }
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                if (project.hasProperty("FTW_ICONV_ROOT")) {
+                    arguments "-DFTW_ICONV_ROOT=" + file(project.property("FTW_ICONV_ROOT")).absolutePath
+                }
+            }
         }
         //DefaultConfigs
     }
@@ -55,6 +66,12 @@ android {
     aaptOptions {
         noCompress "ccn", "mp3", "wav", "ogg", "aac", "mp4", "m4v", "mov", "avi"
     }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
     lintOptions {
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
@@ -67,10 +84,7 @@ android {
             dirs 'libs'
         }
     }	
-    dexOptions {
-        preDexLibraries false
-        javaMaxHeapSize "4g"
-    }
+
 }
 
 dependencies {
@@ -80,7 +94,7 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$version_X_appcompat"
     implementation "androidx.core:core:$version_X_core"
     implementation "androidx.documentfile:documentfile:$version_X_documentfile"
-    implementation "com.google.android.play:core:$version_X_play_core"
+    implementation "com.google.android.play:core:${project.findProperty('version_X_play_core') ?: '1.10.3'}"
     implementation 'org.apache.commons:commons-io:1.3.2'
     //Googlelibs
     implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')

@@ -107,7 +107,7 @@ public class FusionUtilities {
         return ObjectList[id];
     }
 
-    public static Bitmap GenerateBitmapFromHandle(CExtension rhPtr, short hImage) {
+    public static Bitmap GenerateBitmapFromHandle(CExtension rhPtr, int hImage) {
         CImage cImage = rhPtr.getImageBank().getImageFromHandle(hImage);
 
         return GenerateBitmap(cImage);
@@ -131,7 +131,7 @@ public class FusionUtilities {
         // Duplique
         Bitmap bImage = GenerateBitmap(cImage);
 
-        short handle = rhPtr.hoAdRunHeader.rhApp.imageBank.addImage(bImage, (short) cImage.getXSpot(),
+        int handle = rhPtr.hoAdRunHeader.rhApp.imageBank.addImage(bImage, (short) cImage.getXSpot(),
                 (short) cImage.getYSpot(), (short) cImage.getXAP(), (short) cImage.getYAP(), true);
 
         // Ajoute a la liste

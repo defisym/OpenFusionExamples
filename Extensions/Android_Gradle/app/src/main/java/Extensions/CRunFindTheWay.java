@@ -12,9 +12,7 @@ import RunLoop.CCreateObjectInfo;
 import Services.CBinaryFile;
 
 import Services.CRect;
-import android.graphics.Bitmap;
 
-import android.graphics.Color;
 import androidx.annotation.NonNull;
 
 import java.util.Vector;
@@ -35,10 +33,6 @@ import static _3rdLib.ObjectCreationClass.GetEvtParam;
 import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
 
 public class CRunFindTheWay extends CRunExtension {
-    // TODO DEBUG
-    private static final boolean DEBUG = true;
-    // private static final boolean DEBUG = false;
-
     // Define ACE ID here
     // Condition
     final int CND_CONDITION_SMBS = 0;
@@ -80,7 +74,9 @@ public class CRunFindTheWay extends CRunExtension {
     final int CND_CONDITION_SMBA = 26;
     final int CND_CONDITION_SMBSF = 27;
 
-    final int CND_LAST = 28;
+    final int CND_CONDITION_OITM = 28;
+
+    final int CND_LAST = 29;
 
     // Action
     final int ACT_ACTION_SM = 0;
@@ -103,6 +99,7 @@ public class CRunFindTheWay extends CRunExtension {
     final int ACT_ACTION_CAOEBN = 17;
     final int ACT_ACTION_CG = 18;
     final int ACT_ACTION_SGS = 19;
+    final int ACT_ACTION_ITM = 20;
 
     // Expression
     final int EXP_EXPRESSION_GITX = 0;
@@ -147,6 +144,7 @@ public class CRunFindTheWay extends CRunExtension {
 
     String pOnItCollisionName;
     String pOnItPathName;
+    String pOnItMapName;
     String pMapBase64Str;
     String pMapStr;
 
@@ -220,6 +218,15 @@ public class CRunFindTheWay extends CRunExtension {
 
     @Override
     public void destroyRunObject(boolean bFast) {
+        resetMap();
+        pSelect = null;
+        pOc = null;
+        pZoc.clear();
+        pAlly.clear();
+        pEnemy.clear();
+        pUnit.clear();
+        pObjZoc.clear();
+        pAOECoord.clear();
     }
 
     @Override
@@ -235,7 +242,7 @@ public class CRunFindTheWay extends CRunExtension {
     public boolean condition(int num, CCndExtension cnd) {
         switch (num) {
             case CND_CONDITION_SMBS: {
-                this.pFTW = null;
+                resetMap();
 
                 int width = cnd.getParamExpression(rh, 0);
                 int height = cnd.getParamExpression(rh, 1);
@@ -248,14 +255,11 @@ public class CRunFindTheWay extends CRunExtension {
                     return false;
                 }
 
-                if (DEBUG) {
-                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
-                }
 
                 return true;
             }
             case CND_CONDITION_SMBB: {
-                this.pFTW = null;
+                resetMap();
 
                 String base64 = cnd.getParamExpString(rh, 0);
 
@@ -267,79 +271,32 @@ public class CRunFindTheWay extends CRunExtension {
                     return false;
                 }
 
-                if (DEBUG) {
-                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
-                }
 
                 return true;
             }
+            // GPU/desktop surface APIs have no portable mobile counterpart.
+            // Keep ACE IDs and consume every parameter before returning failure.
             case CND_CONDITION_SMBA: {
-                this.pFTW = null;
-
-                int fixed = cnd.getParamExpression(rh, 0);
-
-                int frame = cnd.getParamExpression(rh, 1);
-
-                int gridSize = cnd.getParamExpression(rh, 2);
-                int gridOffsetX = cnd.getParamExpression(rh, 3);
-                int gridOffsetY = cnd.getParamExpression(rh, 4);
-
-                CObject object = LproFromFixed(ho, fixed);
-
-                if (!LPROValid(object, IDENTIFIER_ACTIVE)) {
-                    // must be active object
-                    return false;
-                }
-
-                short nFrame = object.roa.raAnimDirOffset.adNumberOfFrame;
-
-                if (frame >= (int) nFrame) {
-                    return false;
-                }
-
-                short hImage = object.roa.raAnimDirOffset.adFrames[0];
-                Bitmap image = GenerateBitmapFromHandle(ho, hImage);
-
-                int picWidth = image.getWidth();
-                int picHeight = image.getHeight();
-
-                int width = FindTheWayClass.CalcMapWidth(picWidth, gridSize, false);
-                int height = FindTheWayClass.CalcMapHeight(picHeight, gridSize, false);
-
-                try {
-                    this.pFTW = new FindTheWayClass(width, height);
-                    this.pFTW.SetUpdateMapCallBack(this::UpdateMapCallBackFunc, ho);
-                    this.pFTW.SetIsometric(false);
-                } catch (Throwable e) {
-                    return false;
-                }
-
-                this.pFTW.SetGridSize(gridSize, gridOffsetX, gridOffsetY);
-
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        Coord realCoord = this.pFTW.GetRealCoord(new Coord(x, y));
-
-                        int color = image.getPixel(realCoord.x, realCoord.y);
-
-                        int costT = Color.red(color);
-                        int costD = Color.green(color);
-
-                        this.pFTW.SetMap(x, y, costT, MapType.TERRAIN, true);
-                        this.pFTW.SetMap(x, y, costD, MapType.DYNAMIC, true);
-                    }
-                }
-
-                this.pFTW.SetIsometric(this.isometric);
-
-                if (DEBUG) {
-                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
-                }
-
-                return true;
+                for (int i = 0; i < 5; i++) { cnd.getParamExpression(rh, i); }
+                resetMap();
+                return false;
+            }
+            case CND_CONDITION_SMBSF: {
+                for (int i = 0; i < 4; i++) { cnd.getParamExpression(rh, i); }
+                resetMap();
+                return false;
+            }
+            case CND_CONDITION_SMBP: {
+                cnd.getParamExpString(rh, 0);
+                for (int i = 1; i < 4; i++) { cnd.getParamExpression(rh, i); }
+                resetMap();
+                return false;
+            }
+            case CND_CONDITION_OITM: {
+                return Objects.equals(this.pOnItMapName, cnd.getParamExpString(rh, 0));
             }
             case CND_CONDITION_SMBC: {
-                this.pFTW = null;
+                resetMap();
 
                 int gridSize = cnd.getParamExpression(rh, 0);
                 int gridOffsetX = cnd.getParamExpression(rh, 1);
@@ -360,8 +317,9 @@ public class CRunFindTheWay extends CRunExtension {
                 int frameWidth = frameRect.right - frameRect.left;
                 int frameHeight = frameRect.bottom - frameRect.top;
 
-                int width = FindTheWayClass.CalcMapWidth(frameWidth, gridSize, this.isometric);
-                int height = FindTheWayClass.CalcMapHeight(frameHeight, gridSize, this.isometric);
+                Coord mapSize = FindTheWayClass.CalcMapSize(frameWidth, frameHeight, gridSize, this.isometric);
+                int width = mapSize.x;
+                int height = mapSize.y;
 
                 try {
                     this.pFTW = new FindTheWayClass(width, height);
@@ -388,9 +346,6 @@ public class CRunFindTheWay extends CRunExtension {
                     }
                 }
 
-                if (DEBUG) {
-                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
-                }
 
                 return true;
             }
@@ -422,9 +377,6 @@ public class CRunFindTheWay extends CRunExtension {
                 FindPath(new Coord(startX, startY), new Coord(destinationX, destinationY), ignoreFlag, diagonal,
                         checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
-                if (DEBUG) {
-                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
-                }
 
                 return this.pFTW.GetPathValidity(null);
             }
@@ -435,7 +387,7 @@ public class CRunFindTheWay extends CRunExtension {
                     return false;
                 }
 
-                return this.pFTW.GetPathValidity(pathName);
+                return this.pFTW.GetPathValidity(pathName.isEmpty() ? null : pathName);
             }
             case CND_CONDITION_OITP: {
                 String iterateName = cnd.getParamExpString(rh, 0);
@@ -830,7 +782,7 @@ public class CRunFindTheWay extends CRunExtension {
                 this.pSelect.ForEach(oil, new ObjectSelectionClass.ForEachCallBackClass() {
                     @Override
                     public void ForEachCallBack(CObject object) {
-                        objects.add(new tuple(new Coord(object.hoX, object.hoY), object));
+                        objects.add(new tuple(CRunFindTheWay.this.pFTW.GetGridCoord(new Coord(object.hoX, object.hoY)), object));
                     }
                 });
 
@@ -936,35 +888,28 @@ public class CRunFindTheWay extends CRunExtension {
             case ACT_ACTION_C: {
                 return; // Force fusion to evaluate conditions, as empty events will be skipped
             }
+            case ACT_ACTION_ITM: {
+                boolean real = act.getParamExpression(rh, 0) != 0;
+                String name = act.getParamExpString(rh, 1);
+                if (pFTW == null) { return; }
+                iterateSnapshot(pFTW.GetMapCoordinates(real), name, CND_CONDITION_OITM);
+                return;
+            }
             case ACT_ACTION_ITP: {
                 String pathName = act.getParamExpString(rh, 0);
-                boolean useRealCoord = (act.getParamExpression(rh, 1) != 0);
-
-                this.pOnItPathName = act.getParamExpString(rh, 2);
-
-                if (this.pFTW == null) {
-                    return;
+                boolean real = act.getParamExpression(rh, 1) != 0;
+                String name = act.getParamExpString(rh, 2);
+                if (pFTW == null) { return; }
+                String savedName = pathName.isEmpty() ? null : pathName;
+                if (!pFTW.GetPathValidity(savedName)) { return; }
+                Vector<Coord> coords = new Vector<>();
+                int count = pFTW.GetDistance(savedName);
+                for (int i = 0; i < count; i++) {
+                    Coord c = new Coord(pFTW.GetCoordAtPath(i, CoordType.X, savedName),
+                            pFTW.GetCoordAtPath(i, CoordType.Y, savedName), true);
+                    coords.add(real ? pFTW.GetRealCoord(c) : c);
                 }
-
-                String pPathName = Objects.equals(pathName, "") ? null : pathName;
-
-                if (!this.pFTW.GetPathValidity(pPathName)) {
-                    return;
-                }
-
-                this.itIndex = 0;
-                int totalSteps = this.pFTW.GetDistance(pPathName);
-
-                for (int step = 0; step < totalSteps; step++) {
-                    Coord coord = new Coord(this.pFTW.GetCoordAtPath(step, CoordType.X, pPathName),
-                            this.pFTW.GetCoordAtPath(step, CoordType.Y, pPathName));
-
-                    this.itCoord = useRealCoord ? this.pFTW.GetRealCoord(coord) : coord;
-                    this.itIndex = step;
-
-                    CallEvent(ho, CND_CONDITION_OITP);
-                }
-
+                iterateSnapshot(coords, name, CND_CONDITION_OITP);
                 return;
             }
             case ACT_ACTION_SZBO: {
@@ -1404,34 +1349,29 @@ public class CRunFindTheWay extends CRunExtension {
                     return;
                 }
 
-                short hImageLT = object.roa.raAnimDirOffset.adFrames[0];
+                int hImageLT = object.roa.raAnimDirOffset.adFrames[0];
                 CImage cImageLT = ho.getImageBank().getImageFromHandle(hImageLT);
 
                 if (1 >= nFrame) {
                     return;
                 }
 
-                short hImageR = object.roa.raAnimDirOffset.adFrames[1];
+                int hImageR = object.roa.raAnimDirOffset.adFrames[1];
                 CImage cImageR = ho.getImageBank().getImageFromHandle(hImageR);
 
                 if (2 >= nFrame) {
                     return;
                 }
 
-                short hImageB = object.roa.raAnimDirOffset.adFrames[2];
+                int hImageB = object.roa.raAnimDirOffset.adFrames[2];
                 CImage cImageB = ho.getImageBank().getImageFromHandle(hImageB);
 
-                int hoX = 0;
-                int hoY = 0;
-
-                hoX = -cImageLT.getXSpot();
-                hoY = -cImageLT.getYSpot();
-
-                if (DEBUG) {
-                    // no hotspot offset when debugging
-                    hoX = 0;
-                    hoY = 0;
-                }
+                // Windows aligns all three image surfaces to the LT frame's origin.
+                // Android applies each frame's hotspot, so translate the border anchors.
+                int rightAnchorX = cImageR.getXSpot() - cImageLT.getXSpot();
+                int rightAnchorY = cImageR.getYSpot() - cImageLT.getYSpot();
+                int bottomAnchorX = cImageB.getXSpot() - cImageLT.getXSpot();
+                int bottomAnchorY = cImageB.getYSpot() - cImageLT.getYSpot();
 
                 int effect = object.ros.rsEffect;
                 int effectParam = object.ros.rsEffectParam;
@@ -1448,17 +1388,20 @@ public class CRunFindTheWay extends CRunExtension {
                         if (this.pFTW.GetMap(x, y, MapType.MAP, true) != MAP_OBSTACLE) {
                             Coord coord = this.pFTW.GetRealCoord(new Coord(x, y));
 
-                            addBackdrop(ho, cImageLT, coord.x - hoX, coord.y - hoY, nLayer, nObstacleType, effect,
+                            // The LT frame is anchored at the cell center.
+                            addBackdrop(ho, cImageLT, coord.x, coord.y, nLayer, nObstacleType, effect,
                                     effectParam);
 
                             if (this.pFTW.GetMap(x + 1, y, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(ho, cImageR, coord.x - hoX + (x + 1 == width ? 0 : rOffset), coord.y - hoY,
+                                addBackdrop(ho, cImageR, coord.x + rightAnchorX + (x + 1 == width ? 0 : rOffset),
+                                        coord.y + rightAnchorY,
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
 
                             if (this.pFTW.GetMap(x, y + 1, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(ho, cImageB, coord.x - hoX, coord.y - hoY + (y + 1 == height ? 0 : bOffset),
+                                addBackdrop(ho, cImageB, coord.x + bottomAnchorX,
+                                        coord.y + bottomAnchorY + (y + 1 == height ? 0 : bOffset),
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
@@ -1525,9 +1468,6 @@ public class CRunFindTheWay extends CRunExtension {
                 FindPath(new Coord(startX, startY), new Coord(destinationX, destinationY), ignoreFlag, diagonal,
                         checkDiagonalCorner, forceFind, useRealCoord, saveName);
 
-                if (DEBUG) {
-                    String output = this.pFTW.OutPutMapStr(MapType.MAP, false, null);
-                }
 
                 expRet.forceInt(this.pFTW.GetDistance(null));
                 return expRet;
@@ -1581,7 +1521,7 @@ public class CRunFindTheWay extends CRunExtension {
                 CoordType type = CoordType.values()[ho.getExpParam().getInt()];
 
                 if (this.pFTW == null) {
-                    expRet.forceInt(COORD_INVALID);
+                    expRet.forceInt(REAL_INVALID);
                     return expRet;
                 }
 
@@ -1599,7 +1539,7 @@ public class CRunFindTheWay extends CRunExtension {
                 MapType type = MapType.values()[ho.getExpParam().getInt()];
 
                 if (this.pFTW == null) {
-                    expRet.forceInt(COORD_INVALID);
+                    expRet.forceInt(MAP_OBSTACLE);
                     return expRet;
                 }
 
@@ -1719,6 +1659,39 @@ public class CRunFindTheWay extends CRunExtension {
     }
 
     // Functions
+    private void resetMap() {
+        if (pFTW != null) { pFTW.close(); }
+        pFTW = null;
+        areaPos = areaSize = 0;
+        extraRangeStartPos = DEFAULT_EXTRARANGESTARTPOS;
+    }
+
+    private int iterationDepth;
+
+    private void iterateSnapshot(Vector<Coord> coords, String name, int event) {
+        String previousName = event == CND_CONDITION_OITM ? pOnItMapName : pOnItPathName;
+        Coord previousCoord = itCoord;
+        int previousIndex = itIndex;
+        boolean nested = iterationDepth++ != 0;
+        try {
+            if (event == CND_CONDITION_OITM) { pOnItMapName = name; }
+            else { pOnItPathName = name; }
+            for (int i = 0; i < coords.size(); i++) {
+                itCoord = coords.get(i);
+                if (event == CND_CONDITION_OITP) { itIndex = i; }
+                CallEvent(ho, event);
+            }
+        } finally {
+            --iterationDepth;
+            if (nested) {
+                if (event == CND_CONDITION_OITM) { pOnItMapName = previousName; }
+                else { pOnItPathName = previousName; }
+                itCoord = previousCoord;
+                itIndex = previousIndex;
+            }
+        }
+    }
+
     public void FindPath(Coord start, Coord destination, int ignoreFlag, boolean diagonal, boolean checkDiagonalCorner,
             boolean forceFind, boolean useRealCoord, String saveName) {
         if (useRealCoord) {
@@ -1728,10 +1701,10 @@ public class CRunFindTheWay extends CRunExtension {
 
         if (!forceFind) {
             this.pFTW.Find(start, destination, diagonal, checkDiagonalCorner, this.pAlly, this.pEnemy, this.pZoc,
-                    ignoreFlag, FindTheWayClass::GetManhattanDistance);
+                    ignoreFlag);
         } else {
             this.pFTW.ForceFind(start, destination, diagonal, checkDiagonalCorner, this.pAlly, this.pEnemy, this.pZoc,
-                    ignoreFlag, FindTheWayClass::GetManhattanDistance);
+                    ignoreFlag);
         }
 
         if (!Objects.equals(saveName, "")) {

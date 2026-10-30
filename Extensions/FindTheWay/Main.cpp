@@ -158,7 +158,7 @@ long WINAPI DLLExport SetMapBySize(LPRDATA rdPtr, long param1, long param2) {
 	const auto height = (size_t)CNC_GetIntParameter(rdPtr);
 
 	try {
-		rdPtr->pFTW = new FindTheWayClass(width, height);
+		rdPtr->pFTW = new FindTheWayFusion(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
@@ -180,7 +180,7 @@ long WINAPI DLLExport SetMapByBase64(LPRDATA rdPtr, long param1, long param2) {
 	const std::wstring base64 = (LPCWSTR)CNC_GetStringParameter(rdPtr);
 
 	try {
-		rdPtr->pFTW = new FindTheWayClass(base64);
+		rdPtr->pFTW = new FindTheWayFusion(base64);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
@@ -322,7 +322,7 @@ long WINAPI DLLExport SetMapByCollision(LPRDATA rdPtr, long param1, long param2)
 		gridSize, rdPtr->isometric);
 
 	try {
-		rdPtr->pFTW = new FindTheWayClass(width, height);
+		rdPtr->pFTW = new FindTheWayFusion(width, height);
 		rdPtr->pFTW->SetUpdateMapCallBack(UpdateMapCallBackFunc, rdPtr);
 		rdPtr->pFTW->SetIsometric(rdPtr->isometric);
 	}
@@ -757,7 +757,7 @@ long WINAPI DLLExport ObjectAtObject(LPRDATA rdPtr, long param1, long param2) {
 		LPRO pObj;
 		Coord coord;
 
-		explicit Info(LPRO pObj, const FindTheWayClass* pFTW) {
+		explicit Info(LPRO pObj, const FindTheWayFusion* pFTW) {
 			this->pObj = pObj;
 			this->coord = pFTW->GetGridCoord({ pObj->roHo.hoX, pObj->roHo.hoY });
 		}
