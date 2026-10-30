@@ -19,3 +19,9 @@ Extensions/Android_Extensions.lnk
 # Generated FFmpeg SDK and dependency downloads
 /Extensions/_3rdLib/FFmpeg-sdk/
 /Extensions/_3rdLib/FFmpeg-build/out/
+
+# Mac-prepared iOS release artifacts
+/Extensions/iOS/_Artifacts/
+/Extensions/FindTheWay/ToInstall/Files/Data/Runtime/iPhone/FindTheWay.ext
+/Extensions/FindTheWay/ToInstall/Files/Tools/FindTheWay-iOS.zip
+__pycache__/

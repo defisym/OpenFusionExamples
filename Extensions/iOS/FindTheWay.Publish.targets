@@ -1,0 +1,15 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FindTheWayPackageIOS Condition="'$(FindTheWayPackageIOS)'==''">true</FindTheWayPackageIOS>
+    <FindTheWayPython Condition="'$(FindTheWayPython)'==''">python</FindTheWayPython>
+    <FindTheWayIOSArtifacts Condition="'$(FindTheWayIOSArtifacts)'==''">$(MSBuildThisFileDirectory)..\..\iOS\FindTheWay\Artifacts\Current</FindTheWayIOSArtifacts>
+  </PropertyGroup>
+  <!-- Run before the existing publisher creates the combined ToInstall archive. -->
+  <Target Name="PackageFindTheWayIOS" BeforeTargets="PackageFindTheWayAndroid" AfterTargets="Build"
+          Condition="'$(FindTheWayPackageIOS)'=='true' and '$(Configuration)'=='Run_Only Unicode' and '$(DesignTimeBuild)'!='true'">
+    <Error Condition="!Exists('$(FindTheWayIOSArtifacts)\manifest.json')"
+           Text="iOS artifacts are not prepared. Build/validate on Mac, set FindTheWayIOSArtifacts, or explicitly use /p:FindTheWayPackageIOS=false for a build without iOS packaging." />
+    <Exec WorkingDirectory="$(ProjectDir)"
+          Command="&quot;$(FindTheWayPython)&quot; &quot;$(MSBuildThisFileDirectory)..\_Script\FindTheWayIOS.py&quot; --artifacts &quot;$(FindTheWayIOSArtifacts)&quot;" />
+  </Target>
+</Project>
