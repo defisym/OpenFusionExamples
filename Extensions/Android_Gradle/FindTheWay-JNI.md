@@ -1,144 +1,151 @@
-# FindTheWay Android JNI 迁移草案
+# FindTheWay Android JNI port
 
-架构：Fusion Java ACE 分发 → JNI 参数/结果封送 → 同一份 `_DeLib/FindTheWay.h`、`_DeLib/AOE.h`。
+Architecture: Fusion Java ACE dispatch -> JNI parameter/result marshalling -> the shared
+`_DeLib/FindTheWay.h` and `_DeLib/AOE.h` implementations.
 
-寻路、地图代价、直线/移动/攻击范围、ZOC、AOE、等距坐标和缓存均执行 C++。Java 的
-`FindTheWayClass`、`AOEClass` 只保留封送和资源管理；对象选择、对象创建、Fusion 参数和事件
-仍使用移动 Runtime 的 Java API。共享核心继续保持 Header Only，不复制出 Android 算法分支。
+Pathfinding, map costs, line/movement/attack ranges, ZOC, AOE, isometric conversion, and caching
+run in C++. Java `FindTheWayClass` / `AOEClass` provide marshalling and resource management.
+Object selection, creation, Fusion parameters, and events use the mobile Runtime's Java APIs.
+The shared core remains header-only; there is no separate Android algorithm implementation.
 
-## 审核状态
+This document describes this extension. For another port, derive commands, dependencies, and
+paths from that extension's own build configuration and publisher.
 
-此草案按共享 helper、核心修正、MapData 和 Android JNI 组织审核。
-共享 C++ 的行为改动会影响 Windows，需作者审核后再合并。主机验证、四种 Android ABI 编译及真实 Fusion Runtime 的 Debug APK 联合构建已完成；
-尚未完成设备/模拟器运行和实际游戏验收。
+## Review and validation status
 
-共享 helper 的平台差异集中在 `GeneralDefinition.h`，由 `DeLib::Helpers` 提供包含路径和
-非 Windows 的 iconv 依赖；寻路代码继续调用原 helper。详见
-[GeneralDefinition-Portability.md](../_DeLib/GeneralDefinition-Portability.md)。
+The changes separate shared helpers, core fixes, map data, and Android JNI for review. Shared
+C++ behavior changes affect Windows and require author review before merging. Host checks,
+four-ABI Android compilation, and real Fusion Runtime Debug APK builds have passed.
+The author also confirmed Windows publishing/build success and reported successful Android
+testing after the backdrop-border correction. This feedback is not exhaustive device or API coverage.
 
-## Fusion 接口
+Platform differences in shared helpers are concentrated in `GeneralDefinition.h`. The
+`DeLib::Helpers` CMake interface supplies include paths and non-Windows iconv dependencies.
+See [GeneralDefinition-Portability.md](../_DeLib/GeneralDefinition-Portability.md).
 
-所有公开编号与 `Extensions/FindTheWay/Main.h` 一致：29 个条件、21 个动作、20 个表达式。
-新增条件 28（OnIterateMap）和动作 20（IterateMap）；沿用新版 C++ 的等距网格打包：
-低 16 位为宽，高 16 位为高。地图和路径迭代先取得坐标快照，事件可嵌套执行；路径迭代
-更新步索引，地图迭代只更新坐标，与 C++ 一致。
+## Fusion interface
 
-条件 12（图片文件建图）、26（Active 纹理建图）、27（桌面 surface 指针建图）明确消费
-参数、释放旧地图并返回 false。没有伪造成功结果。条件 2 的事件驱动碰撞建图仍可用；直接
-调用移动 Runtime 碰撞接口的分支保留，必须在实际 Runtime 中验证。背景生成、对象选择与
-对象创建也保留现有 Java 实现，主机 API fixture 不验证这些 SDK 行为。
+Public IDs match `Extensions/FindTheWay/Main.h`: 29 conditions, 21 actions, and 20 expressions.
+Condition 28 is OnIterateMap; action 20 is IterateMap. Isometric grid sizes use the current C++
+encoding: width in the low 16 bits and height in the high 16 bits. Map/path iterations snapshot
+coordinates before invoking events, allowing nesting; path iteration updates the step index,
+while map iteration updates only coordinates, matching C++.
 
-## 生命周期与回调
+Conditions 12 (image-file map), 26 (Active texture map), and 27 (desktop surface-pointer map)
+consume their parameters, release the old map, and return false. They do not report false success.
+Condition 2 supports event-driven collision-map generation. Direct mobile collision APIs,
+backdrop generation, selection, and creation retain Java Runtime integration; host API fixtures
+do not establish their behavior on a device.
 
-每个地图由一个 opaque `long` ID 标识。JNI 注册表持有 C++ `shared_ptr`，每次调用也暂时
-持有所有权；嵌套事件即使释放地图，也不会让当前 native 调用访问已释放对象。
-Java `close()` 幂等，扩展重新建图及销毁时显式调用。没有跨调用保存 `JNIEnv*` 或 Java owner
-全局引用，回调仅在当前 Fusion 调用线程同步执行。
+## Lifetime, callbacks, and coordinates
 
-JNI 回调名被 ProGuard keep 规则保留。Java callback 异常保持原异常穿过 JNI；原生异常转换为
-Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显式转换，路径名支持中文、
-补充平面字符和嵌入 NUL，不依赖 `NewStringUTF` 的编码差异。
+Each map has an opaque `long` handle. A JNI registry owns C++ `shared_ptr` instances and each call
+temporarily retains ownership, so a nested event may release a map without invalidating the
+active call. Java `close()` is idempotent; rebuilding and destroying the extension release resources.
+No `JNIEnv*` or Java-owner local reference is retained across calls. Callbacks execute synchronously
+on the calling Fusion thread.
 
-背景网格主体以格子中心为热点锚点；右、下边框按各自热点相对主体热点的差值调整锚点，
-使 Runtime 应用各帧热点后，三张图片仍共享 Windows 版的左上角基准。
-不使用 DEBUG 坐标开关。右边缘、下边缘的业务偏移及地图边界规则保持不变。
+ProGuard/R8 consumer rules preserve JNI callback names. Java callback exceptions remain pending;
+C++ exceptions are converted to Java exceptions rather than crossing the JNI ABI. String conversion
+explicitly handles UTF-16 and platform `wchar_t` widths, including supplementary characters and
+embedded NUL; it does not rely on `NewStringUTF` as a general Unicode conversion.
 
-## 构建
+The main grid image uses the cell center as its hotspot anchor. Right/bottom border anchors
+include each frame's hotspot difference from the main frame, so Runtime hotspot handling leaves
+all three images aligned to the Windows reference origin. There is no DEBUG coordinate switch.
+Application edge offsets and outer-boundary rules are preserved.
 
-### Visual Studio 一键打包
+## Build and publish
 
-构建 `FindTheWay.vcxproj` 的 Run_Only Unicode 配置后，
-项目会自动调用 `Extensions/_Script/FindTheWay.bat`，生成
-`Extensions/FindTheWay/ToInstall/Files/Data/Runtime/Android/FindTheWay.zip`，并按发布器规则安装、归档。
-需要 Python 3.10+；首次运行需要网络下载并校验 iconv 对应源码。
-Release Unicode 只生成 Windows 编辑器扩展，Debug Unicode 也不自动打包 Android。
-RunOnly 即使 Windows 输出已是最新，点击构建也会重新打包 Android 输入。
-打包失败会使 VS 构建失败，详细错误可查看“输出”窗口及
-`Extensions/Android_Gradle/FindTheWay-package.log`，不会暂停等待键盘输入。
-只构建 Windows 时可用 MSBuild 属性 `/p:FindTheWayPackageAndroid=false` 关闭这一步。
+Build the VS `FindTheWay.vcxproj` **Run_Only Unicode** configuration, or run:
 
-这里在发布阶段就编译四 ABI 的 JNI 库，Fusion 导出 APK 时只负责 Java 编译、资源和库打包。
-发布包不包含 `app/build.gradle`、`settings.gradle` 或默认 ProGuard 文件，也不修改安装目录的
-`RuntimeAndroid.zip`。这与 DarkEDIF 预编译原生库的发布方式一致。
-
-开发机需要 Android SDK：依次查找 `ANDROID_HOME`、`ANDROID_SDK_ROOT`，Windows 下再查找
-`%LOCALAPPDATA%/Android/Sdk`。非标准安装位置可将 `ANDROID_HOME` 指向 Fusion 配置的 SDK。
-脚本使用 NDK r28c `28.2.13676358`，优先 SDK CMake `3.22.1`；没有该版本时，
-会查找其他 SDK CMake、Visual Studio 自带的 CMake/Ninja 以及 PATH 中的工具，要求 CMake >= 3.22。
-仍缺少工具时会调用该 SDK 的 Command-line Tools / sdkmanager 安装，需已接受 Android SDK 许可证并具备网络访问。
-没有 Command-line Tools 或依赖安装失败时明确报错，不会继续发布旧库。
-
-CMake 直接编译共享 C++20 核心，目标 Android API 21、Release 优化、16 KB 页对齐。
-每次发布都对全部 ABI 执行配置和增量编译，构建缓存位于 `Android_Gradle/_NativeBuild`。
-修改共享头文件后仍只需执行同一个 bat。
-
-## 主机验证
-
-需要 Linux、JDK 17+（输出 Java 8 字节码）、GCC 14+、CMake 3.22+、Python 3。
-设置 JAVA_HOME，并让 java/javac/cmake/g++ 在 PATH 中可用，然后运行：
-
-```sh
-python3 Extensions/Android_Gradle/tests/run_host_tests.py \
-  --build-dir /tmp/findtheway-host --sanitize
+```bat
+Extensions\_Script\FindTheWay.bat
 ```
 
-在审核隔离目录中也可使用 `--core /path/to/proposed/Extensions/_DeLib`，不修改原共享头文件。
+Both invoke the Python publisher and create
+`Extensions/FindTheWay/ToInstall/Files/Data/Runtime/Android/FindTheWay.zip`, then install/archive
+according to the publisher's configuration. Python 3.10+ is required; no pip or 7-Zip is needed.
+Initial dependency/source downloads need network access. Release Unicode builds only the
+Windows editor extension; Debug Unicode does not publish Android automatically. RunOnly reaches
+the publisher even when Windows output is already up to date. Set the MSBuild property
+`/p:FindTheWayPackageAndroid=false` to skip Android publishing for a RunOnly build.
 
-测试覆盖：直接 C++ 参考与真实 JNI 的路径、范围、ZOC、全部 AOE 型号和方向、等距坐标结果
-比对；200 张随机加权地图与独立 Dijkstra 的比对；严格序列化验证与失败导入保持原地图；
-缓存模式、强制寻路、UTF-16 名称、重入/异常回调和 1000 次创建/释放。
-Fusion 分发测试仅在 SDK 边界使用 fixture，原 Java 扩展及 JNI/核心均为实际代码。
-另审计全部 ACE ID，并用 ASan/UBSan 检查 C++。当前沙箱在 ptrace 下运行，LSan 不可用；
-脚本显式关闭泄漏检测，不宣称已通过 native 泄漏检查。
+The publisher prebuilds all supported JNI ABIs. Fusion's APK export compiles Java, links resources,
+and packages libraries using its own templates. The extension ZIP does not replace
+`app/build.gradle`, `settings.gradle`, or the application's ProGuard file, and does not modify
+the installed `RuntimeAndroid.zip`.
 
-## iOS 后续
+### Tool discovery
 
-iOS 可以直接在 Objective-C++ `.mm` 适配层包含同样的共享头文件，调用 C++ 无需 JNI。
-本次未修改 iOS 文件，也未创建第二套核心。后续重点是对齐 iOS Runtime 的 ACE 参数、对象
-选择/创建和事件回调，而非再次移植寻路算法。
+SDK lookup checks `ANDROID_HOME`, `ANDROID_SDK_ROOT`, then `%LOCALAPPDATA%/Android/Sdk` on Windows.
+For a nonstandard installation, point `ANDROID_HOME` at the SDK configured in Fusion.
+The current publisher uses NDK r28c `28.2.13676358` and prefers SDK CMake `3.22.1`. If unavailable,
+it searches other SDK versions, VS-bundled CMake/Ninja, and PATH for compatible CMake >= 3.22.
+Missing packages can be installed through SDK Command-line Tools / sdkmanager, subject to network
+access and accepted SDK licenses. Missing installation tools or failed setup produce explicit errors.
 
-## Windows 打包脚本
+CMake builds the shared C++20 core with Release optimization, native Android API 21, and 16 KB
+ELF alignment. Every publish configures/builds all ABIs incrementally; caches live under
+`Android_Gradle/_NativeBuild`. Shared-header changes use the same publishing entry point.
+The APK build's JDK, compileSdk, targetSdk, and minSdk remain part of Fusion's application setup.
 
-运行 `Extensions/_Script/FindTheWay.bat`，由 Python 准备 iconv、编译 JNI、打包并复制到
-FindTheWay 的 ToInstall 目录。`FusionRoot` 可覆盖默认 Fusion 安装路径；未找到安装目录时
-仍生成 ToInstall 包。脚本只依赖 Python 标准库，不需要 pip 或 7-Zip。
-失败时返回非零，独立运行会暂停；VS 调用不暂停。日志在 `Android_Gradle/FindTheWay-package.log`。
+### Package contents
 
-扩展 ZIP 的运行所需内容：
+- `app/src/main/java`: the extension adapter and owned helpers only.
+- `app/src/main/jniLibs/<ABI>/libfindtheway.so` and `libc++_shared.so` for arm64-v8a,
+  armeabi-v7a, x86, and x86_64.
+- `app/libs/FindTheWay-JNI-rules.jar`: JNI keep rules under `META-INF/proguard`, discovered by R8
+  without replacing the application's global rules.
+- Owned JNI/CMake sources, recursively collected shared headers, iconv dependencies, corresponding
+  source, and licenses for inspection/relinking.
+- A per-file SHA-256 manifest.
 
-- `app/src/main/java`：Java ACE 适配器和依赖类。
-- `app/src/main/jniLibs/<ABI>/libfindtheway.so` 与 `libc++_shared.so`：全部四 ABI。
-- `app/libs/FindTheWay-JNI-rules.jar`：`META-INF/proguard` 中的 JNI 名称保留规则，由 R8
-  自动读取，不覆盖 Fusion 默认的 ProGuard 配置。
-- JNI/CMake、递归收集的共享头文件、iconv 目标库、对应源码及许可证，便于检查和重链接。
-- 逐文件 SHA-256 清单。
+Fusion retains its Material dependencies, generated resources, signing, obfuscation, and AAB
+configuration. Native extensions sharing libc++ must use compatible runtimes.
 
-Fusion 保留自己的默认 Gradle、Material 依赖、资源生成、签名、混淆和 AAB 配置。
-没有构建钩子，也无需修改默认 Runtime 模板。多个扩展共享的 libc++ 应使用兼容 NDK 版本。
+Java collection includes explicit extension entry points plus owned `_DeLib` / `_3rdLib` helpers.
+SDK Runtime, Banks, Objects, and built-in extension sources belong to the installed Fusion and
+must never be included merely because they exist in the development checkout. The publisher copies
+owned native/CMake directories; new compilation units must still be declared in CMakeLists.txt.
 
-发布器复制整个 native 源码和 CMake 目录，递归收集共享 C++ 头和自有 Java 依赖。
-Java 收集范围仅为显式列出的扩展入口、`_DeLib` 和 `_3rdLib` helper；开发 SDK 中的 Runtime、
-Banks、Objects、其他内置扩展等由已安装 Fusion 提供，绝不能随 FTW 包覆盖它们。
-新增编译单元须在 CMakeLists.txt 中声明；不再额外维护源文件复制清单。
-后续修改源码/依赖时须同步检查 bat/Python 发布流程，并验证 APK 内全部 ABI 的库。
+Pinned four-ABI `libiconv.a` / `iconv.h` files live in `_3rdLib/iconv-android`. Publishing checks
+SHA-256, tolerating CRLF checkout only for headers while validating binaries byte-for-byte.
+Corresponding source is downloaded, verified, cached, and packaged with license/relinking material.
+No host Linux libraries or private Fusion SDK sources are published.
 
-四 ABI 的 libiconv.a / iconv.h 固定在 `_3rdLib/iconv-android`，发布前校验 SHA-256；
-头文件兼容 Windows CRLF 检出，静态库按字节校验。对应开源源码自动下载、校验、缓存并进入 ZIP。
-首次发布需要网络。源代码和重链接材料随包保留，不使用主机 Linux 库或私有 Fusion SDK 源码。
+`FusionRoot` overrides the default Fusion install location. Without an installed target directory,
+the ToInstall package is still produced. Failures return nonzero and are logged to
+`Android_Gradle/FindTheWay-package.log`; standalone batch runs pause on failure, while VS calls do not.
+Maintain this publisher whenever sources, dependencies, or build configuration change, and verify
+the actual resulting ZIP/APK rather than only manually copied files.
 
-## Android 目标编译记录
+## Verification
 
-已用 JDK 21、Gradle 8.14.3、AGP 8.11.1、compileSdk 35、NDK r28c 和 CMake 3.22.1，
-完成四 ABI 编译和真实 Fusion Runtime Debug APK 联合构建。
-以原始 Runtime 的 app/build.gradle 和 settings.gradle 逐字节恢复后的配置，
-仅加入 jniLibs 中的 FTW/libc++ 预编译库，APK 构建成功；APK 内四 ABI 的两种库均存在。
-Material3 主题的资源链接通过；共享 C++ 核心未因发布方式改变而修改。
-
-尚未在 Windows cmd 中执行新版 NDK 构建入口，未进行设备/模拟器和实际游戏运行验收。
-不提交私有 Runtime 模板、SDK 或测试应用源码到公开仓库。
-
-主机发布器回归：
+Host checks require Linux, JDK 17+, GCC 14+, CMake 3.22+, and Python 3, with `JAVA_HOME` and tools configured:
 
 ```sh
+python3 Extensions/Android_Gradle/tests/run_host_tests.py --build-dir /tmp/findtheway-host --sanitize
 python3 -m unittest discover -s Extensions/Android_Gradle/tests -p test_publisher.py -v
 ```
+
+Use `--core /path/to/proposed/Extensions/_DeLib` to test isolated shared-header proposals.
+Checks compare C++/JNI paths, ranges, ZOC, AOE types/directions, and isometric coordinates; include
+200 weighted-map Dijkstra comparisons, serialization failures, cache/force-find modes, Unicode,
+reentrant/exception callbacks, and repeated creation/release. ACE tests use explicit Runtime API
+fixtures; backdrop tests compare image origins after per-frame hotspot application, including
+internal obstacles and outer boundaries. These fixtures do not render a device screen.
+ASan/UBSan checks run separately; LSan was disabled in the recorded ptrace-limited environment.
+
+Four-ABI APK builds passed with JDK 21, Gradle 8.14.3, AGP 8.11.1, compileSdk 35, NDK r28c, and
+CMake 3.22.1 in the recorded environment. The original Runtime Gradle files were restored byte-for-
+byte and the extension was supplied through prebuilt jniLibs. The APK contained both required
+libraries for all ABIs, and Material3 resource linking passed. Other installed Runtime dependency
+versions may require a newer Build API; the author's core 1.17 setup required API 36.
+Private Runtime/SDK/test-application sources are not committed to the public repository.
+
+## Future iOS work
+
+An Objective-C++ `.mm` adapter can use the same shared C++ headers without JNI. iOS requires its
+own Runtime ACE, object, event, build, and packaging checks. Android success does not establish
+an iOS port, and no second algorithm implementation is needed.
