@@ -3,6 +3,7 @@ import Actions.CActExtension;
 import Conditions.CCndExtension;
 import Expressions.CValue;
 import Services.CBinaryFile;
+import Objects.CObject;
 import java.util.*;
 
 /** Real extension and JNI facade, with explicit runtime API doubles only at the Fusion boundary. */
@@ -72,6 +73,29 @@ public final class AdapterDispatchTest {
   check(ext.pFTW==null,"extension destruction clears handle");
   boolean closed=false;try{map.GetMap();}catch(IllegalStateException e){closed=true;}
   check(closed,"extension destruction releases native resource");
+  checkBackdropAnchors();
   System.out.println("PASS: "+count+" Fusion adapter checks (runtime API fixture)");
+ }
+ private static void checkBackdropAnchors(){
+  CRunFindTheWay ext=new CRunFindTheWay();
+  check(ext.condition(0,new CCndExtension(2,2)),"backdrop map");
+  ext.action(19,new CActExtension(32,5,9));
+  ext.action(0,new CActExtension(1,0,255,1,0));
+  ext.action(0,new CActExtension(0,1,255,1,0));
+  CObject tile=new CObject();
+  tile.rov.rvValues[0].forceInt(5);tile.rov.rvValues[1].forceInt(7);
+  int[][] expected={{21,25,0},{26,25,0},{21,32,0},{53,57,0},{53,57,0},{53,57,0}};
+  for(int hotspot:new int[]{0,16,7}){
+   for(int i=0;i<3;i++){
+    ext.ho.imageBank.images[i].xSpot=hotspot+i;
+    ext.ho.imageBank.images[i].ySpot=hotspot+2*i;
+   }
+   _DeLib.FusionUtilities.backdrops.clear();
+   ext.action(18,new CActExtension(tile,1));
+   check(_DeLib.FusionUtilities.backdrops.size()==expected.length,"backdrop count");
+   for(int i=0;i<expected.length;i++)check(Arrays.equals(_DeLib.FusionUtilities.backdrops.get(i),expected[i]),
+    "Runtime hotspot anchor; preserve internal edge offsets and map-boundary behavior");
+  }
+  ext.destroyRunObject(false);
  }
 }

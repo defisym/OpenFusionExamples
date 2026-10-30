@@ -33,10 +33,6 @@ import static _3rdLib.ObjectCreationClass.GetEvtParam;
 import static RunLoop.CRun.OBSTACLE_TRANSPARENT;
 
 public class CRunFindTheWay extends CRunExtension {
-    // TODO DEBUG
-    private static final boolean DEBUG = false;
-    // private static final boolean DEBUG = false;
-
     // Define ACE ID here
     // Condition
     final int CND_CONDITION_SMBS = 0;
@@ -1370,18 +1366,6 @@ public class CRunFindTheWay extends CRunExtension {
                 int hImageB = object.roa.raAnimDirOffset.adFrames[2];
                 CImage cImageB = ho.getImageBank().getImageFromHandle(hImageB);
 
-                int hoX = 0;
-                int hoY = 0;
-
-                hoX = -cImageLT.getXSpot();
-                hoY = -cImageLT.getYSpot();
-
-                if (DEBUG) {
-                    // no hotspot offset when debugging
-                    hoX = 0;
-                    hoY = 0;
-                }
-
                 int effect = object.ros.rsEffect;
                 int effectParam = object.ros.rsEffectParam;
 
@@ -1397,17 +1381,18 @@ public class CRunFindTheWay extends CRunExtension {
                         if (this.pFTW.GetMap(x, y, MapType.MAP, true) != MAP_OBSTACLE) {
                             Coord coord = this.pFTW.GetRealCoord(new Coord(x, y));
 
-                            addBackdrop(ho, cImageLT, coord.x - hoX, coord.y - hoY, nLayer, nObstacleType, effect,
+                            // Runtime applies each image's hotspot; pass the grid-center anchor unchanged.
+                            addBackdrop(ho, cImageLT, coord.x, coord.y, nLayer, nObstacleType, effect,
                                     effectParam);
 
                             if (this.pFTW.GetMap(x + 1, y, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(ho, cImageR, coord.x - hoX + (x + 1 == width ? 0 : rOffset), coord.y - hoY,
+                                addBackdrop(ho, cImageR, coord.x + (x + 1 == width ? 0 : rOffset), coord.y,
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
 
                             if (this.pFTW.GetMap(x, y + 1, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(ho, cImageB, coord.x - hoX, coord.y - hoY + (y + 1 == height ? 0 : bOffset),
+                                addBackdrop(ho, cImageB, coord.x, coord.y + (y + 1 == height ? 0 : bOffset),
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }

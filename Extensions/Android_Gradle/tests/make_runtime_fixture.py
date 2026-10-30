@@ -1,6 +1,7 @@
 """Generate compile/test doubles, never production SDK replacements.
 Only ACE dispatch, marshalling, event iteration and lifecycle are exercised here.
-Object selection/creation, backdrop and native collision APIs deliberately fail if called.
+Backdrop calls only record anchor coordinates; no rendering is simulated.
+Object selection/creation and native collision APIs deliberately fail if called.
 """
 from pathlib import Path
 import sys
@@ -23,7 +24,7 @@ public class CRun {
 'RunLoop/CCreateObjectInfo.java':'package RunLoop; public class CCreateObjectInfo {}',
 'Services/CRect.java':'package Services; public class CRect {public int left=0,top=0,right=32,bottom=32;}',
 'Services/CBinaryFile.java':'package Services; public class CBinaryFile {public byte readByte(){return 0;}}',
-'Banks/CImage.java':'package Banks; public class CImage {public int getXSpot(){return 0;} public int getYSpot(){return 0;}}',
+'Banks/CImage.java':'package Banks; public class CImage {public int xSpot,ySpot; public int getXSpot(){return xSpot;} public int getYSpot(){return ySpot;}}',
 'Objects/CObject.java':'''package Objects;
 public class CObject {
  public int hoX,hoY; public Animation roa=new Animation(); public Values rov=new Values(); public Sprite ros=new Sprite();
@@ -39,8 +40,12 @@ public class CExtension extends CObject {
  public java.util.ArrayDeque<Expressions.CValue> params=new java.util.ArrayDeque<>();
  public void generateEvent(int id,int p){listener.accept(id);}
  public Expressions.CValue getExpParam(){return params.remove();}
- public Bank getImageBank(){return new Bank();}
- public static class Bank {public Banks.CImage getImageFromHandle(int h){throw new UnsupportedOperationException("SDK fixture");}}
+ public Bank imageBank=new Bank();
+ public Bank getImageBank(){return imageBank;}
+ public static class Bank {
+  public Banks.CImage[] images={new Banks.CImage(),new Banks.CImage(),new Banks.CImage()};
+  public Banks.CImage getImageFromHandle(int h){return images[h];}
+ }
 }''',
 'Actions/CActExtension.java':'''package Actions;
 public class CActExtension {
@@ -78,7 +83,8 @@ public class FusionUtilities {
  public static boolean LPROValid(Objects.CObject o){return o!=null;}
  public static boolean LPROValid(Objects.CObject o,int identifier){return o!=null;}
  public static boolean colMaskTestPoint(Objects.CExtension ho,int x,int y,int layer,int plan){throw new UnsupportedOperationException("SDK collision fixture");}
- public static void addBackdrop(Objects.CExtension ho,Banks.CImage image,int x,int y,int layer,int obstacle,int effect,int param){throw new UnsupportedOperationException("SDK backdrop fixture");}
+ public static final java.util.List<int[]> backdrops=new java.util.ArrayList<>();
+ public static void addBackdrop(Objects.CExtension ho,Banks.CImage image,int x,int y,int layer,int obstacle,int effect,int param){backdrops.add(new int[]{x,y,layer});}
 }''',
 '_3rdLib/ObjectSelectionClass.java':'''package _3rdLib;
 public class ObjectSelectionClass {

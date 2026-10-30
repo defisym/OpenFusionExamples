@@ -39,6 +39,9 @@ JNI 回调名被 ProGuard keep 规则保留。Java callback 异常保持原异�
 Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显式转换，路径名支持中文、
 补充平面字符和嵌入 NUL，不依赖 `NewStringUTF` 的编码差异。
 
+背景网格生成将格子中心直接作为图片热点锚点交给 Runtime，热点由 Runtime 应用；
+不再通过 DEBUG 开关启用/关闭额外补偿。右边缘、下边缘的业务偏移及地图边界规则保持不变。
+
 ## 构建
 
 ### Visual Studio 一键打包
