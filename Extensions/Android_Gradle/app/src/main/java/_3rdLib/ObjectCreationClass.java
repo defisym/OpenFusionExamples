@@ -2,10 +2,7 @@ package _3rdLib;
 
 import Application.CRunApp;
 import Events.CEvent;
-import Events.CEventProgram;
-import Events.CQualToOiList;
 import Frame.CLayer;
-import OI.COI;
 import OI.CObjectCommon;
 import Objects.CObject;
 import Params.CParam;
@@ -38,14 +35,7 @@ import static java.lang.Math.min;
 //         });
 // }
 
-public class ObjectCreationClass {
-    private final CRunApp rhPtr;
-    private final CRun run;
-    private final CEventProgram eventProgram;
-
-    private final CObject[] ObjectList;
-    private final CObjInfo[] OiList;
-    private final CQualToOiList[] QualToOiList;
+public class ObjectCreationClass extends ObjectBaseClass {
 
     int GetValidLayer(int layer) {
         return (max(-1, min(run.rhFrame.nLayers - 1, layer)));
@@ -98,19 +88,12 @@ public class ObjectCreationClass {
         }
     }
 
-    CreateDuplicateParam cdp;
-
     public ObjectCreationClass(CRunApp runApp) {
-        rhPtr = runApp;
-        run = rhPtr.run;
-        eventProgram = rhPtr.frame.evtProg;
-        ObjectList = run.rhObjectList; // get a pointer to the mmf object list
-        OiList = run.rhOiList; // get a pointer to the mmf object info list
-        QualToOiList = eventProgram.qualToOiList; // get a pointer to the mmf qualifier to Oi list
+        super(runApp);
     }
 
     public void OCCreateObject(CreationParamClass updateParam) {
-        cdp = new CreateDuplicateParam();
+        CreateDuplicateParam cdp = new CreateDuplicateParam();
         updateParam.CreationParam(this, cdp);
 
         cdp.layer = GetValidLayer(cdp.layer);
@@ -118,11 +101,11 @@ public class ObjectCreationClass {
         if (cdp.oi != -1) {
             int number = run.f_CreateObject(cdp.HFII, cdp.oi, cdp.x, cdp.y, cdp.dir, (short) 0, cdp.layer, -1);
 
-            if (number > 0) {
-                CObject pHo = ObjectList[number];
+            if (number >= 0) {
+                CObject pHo = run.rhObjectList[number];
                 run.rhEvtProg.evt_AddCurrentObject(pHo);
 
-                if ((pHo.hoOEFlags & CObjectCommon.OEFLAG_SPRITES) != 0) {
+                if (cdp.layer != -1 && (pHo.hoOEFlags & CObjectCommon.OEFLAG_SPRITES) != 0) {
                     // Hide object if layer hidden
                     CLayer pLayer = run.rhFrame.layers[cdp.layer];
                     if ((pLayer.dwOptions & (CLayer.FLOPT_TOHIDE | CLayer.FLOPT_VISIBLE)) != CLayer.FLOPT_VISIBLE) {
@@ -135,19 +118,8 @@ public class ObjectCreationClass {
     }
 
     public short GetCreationOI(String objName) {
-        COI oiPtr;
-
-        // Iterate OI list
-        for (oiPtr = run.rhApp.OIList.getFirstOI(); oiPtr != null; oiPtr = run.rhApp.OIList.getNextOI()) {
-            if (oiPtr.oiType >= 2) {
-                if (oiPtr.oiName.equalsIgnoreCase(objName)) {
-                    return oiPtr.oiHandle;
-                }
-            }
-        }
-
-        // No object was found
-        return -1;
+        CObjInfo oil = GetOILByName(objName);
+        return oil == null ? -1 : oil.oilOi;
     }
 
     public static CParam GetEvtParam(CEvent evt, CRun rhPtr, int _num) {

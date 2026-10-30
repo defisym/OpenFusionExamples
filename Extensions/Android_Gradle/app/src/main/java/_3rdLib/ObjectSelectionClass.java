@@ -1,39 +1,30 @@
 package _3rdLib;
 
 // Origin version by Anders Riggelsen (Andos)
-
-// Add For-Each support
+// Shared helpers follow Windows ObjectSelection; runtime structures remain Android-specific.
 
 import Application.CRunApp;
 import Conditions.CCndExtension;
 import Events.CEvent;
+import Events.CEventGroup;
 import Events.CEventProgram;
 import Events.CQualToOiList;
 import Objects.CObject;
-import Params.PARAM_OBJECT;
 import RunLoop.CObjInfo;
-import RunLoop.CRun;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static Objects.CObject.HOF_DESTROYED;
 
-// Usage
-// boolean negated = ObjectSelectionClass.IsNegated(cnd);
-// short oil = ObjectSelectionClass.GetOil(act, rh, 0);
-// short oil = ObjectSelectionClass.GetOil(cnd, rh, 0);
-
-public class ObjectSelectionClass {
-    private final CRunApp rhPtr;
-    private final CRun run;
-    private final CEventProgram eventProgram;
-
-    private final CObject[] ObjectList;
-    private final CObjInfo[] OiList;
-    private CQualToOiList[] QualToOiList;
+public class ObjectSelectionClass extends ObjectBaseClass {
+    public static final int ForEachFlag_Default = 0;
+    public static final int ForEachFlag_ForceAll = 1;
+    public static final int ForEachFlag_SelectedOnly = 2;
 
     public static abstract class FilterClass {
         public abstract boolean Filter(Object rdPtr, CObject object);
@@ -43,359 +34,362 @@ public class ObjectSelectionClass {
         public abstract void ForEachCallBack(CObject object);
     }
 
-    // Filter qualifier objects
-    private boolean FilterQualifierObjects(Object rdPtr, int OiList, boolean negate, FilterClass filter) {
-        QualToOiList = eventProgram.qualToOiList;
-        CQualToOiList CurrentQualToOi = QualToOiList[OiList];
+    public static class Scope {
+        private final boolean rh2ActionLoop;
+        private final boolean rh2ActionOn;
+        private final int rh2ActionCount;
+        private final int rh2ActionLoopCount;
+        private final CEventGroup rhEventGroup;
+        private final Map<CObjInfo, List<CObject>> objects = new LinkedHashMap<>();
 
-        boolean hasSelected = false;
-        int i = 0;
-        int length = CurrentQualToOi.qoiList.length;
-        while (i < length) {
-            int CurrentOi = CurrentQualToOi.qoiList[i + 1];
-
-            hasSelected = (((hasSelected ? 1 : 0) |
-                    (FilterNonQualifierObjects(rdPtr, CurrentOi, negate, filter) ? 1 : 0))) != 0;
-
-            i += 2;
-        }
-        return hasSelected;
-    }
-
-    // Filter normal objects
-    private boolean FilterNonQualifierObjects(Object rdPtr, int OiList, boolean negate, FilterClass filter) {
-        CObjInfo pObjectInfo = this.OiList[OiList]; // GetOILFromOI(Oi);
-
-        if (pObjectInfo == null) {
-            return false;
+        public Scope(CRunApp runApp) {
+            CEventProgram program = runApp.frame.evtProg;
+            rh2ActionLoop = program.rh2ActionLoop;
+            rh2ActionOn = program.rh2ActionOn;
+            rh2ActionCount = program.rh2ActionCount;
+            rh2ActionLoopCount = program.rh2ActionLoopCount;
+            rhEventGroup = program.rhEventGroup;
         }
 
-        if (pObjectInfo.oilEventCount != eventProgram.rh2EventCount) {
-            SelectAll(OiList); // The SOL is invalid, must reset.
+        public void RestoreActionState(CRunApp runApp) {
+            CEventProgram program = runApp.frame.evtProg;
+            program.rh2ActionLoop = rh2ActionLoop;
+            program.rh2ActionOn = rh2ActionOn;
+            program.rh2ActionCount = rh2ActionCount;
+            program.rh2ActionLoopCount = rh2ActionLoopCount;
+            program.rhEventGroup = rhEventGroup;
         }
 
-        // If SOL is empty
-        if (pObjectInfo.oilNumOfSelected <= 0) {
-            return false;
-        }
-
-        boolean hasSelected = false;
-
-        int firstSelected = -1;
-        int count = 0;
-        int current = pObjectInfo.oilListSelected;
-        CObject previous = null;
-
-        while ((current & 0x80000000) == 0) {
-            CObject pObject = ObjectList[current];
-
-            if (pObject == null) {
-                continue;
+        public void AddSelObj(CObjInfo oil, List<CObject> selected) {
+            if (!objects.containsKey(oil)) {
+                objects.put(oil, new ArrayList<>(selected));
             }
-
-            boolean filterResult = filter.Filter(rdPtr, pObject);
-            boolean useObject = ((filterResult ? 1 : 0) ^ (negate ? 1 : 0)) != 0;
-            hasSelected = ((hasSelected ? 1 : 0) | (useObject ? 1 : 0)) != 0;
-
-            if (useObject) {
-                if (firstSelected == -1) {
-                    firstSelected = current;
-                }
-
-                if (previous != null) {
-                    previous.hoNextSelected = (short) current;
-                }
-
-                previous = pObject;
-                count++;
-            }
-            current = pObject.hoNextSelected;
-        }
-        if (previous != null) {
-            previous.hoNextSelected = -1;
         }
 
-        pObjectInfo.oilListSelected = (short) firstSelected;
-        pObjectInfo.oilNumOfSelected = count;
-
-        return hasSelected;
+        public Map<CObjInfo, List<CObject>> GetSelObj() {
+            return objects;
+        }
     }
 
     public ObjectSelectionClass(CRunApp runApp) {
-        rhPtr = runApp;
-        run = rhPtr.run;
-        eventProgram = rhPtr.frame.evtProg;
-        ObjectList = run.rhObjectList; // get a pointer to the mmf object list
-        OiList = run.rhOiList; // get a pointer to the mmf object info list
-        QualToOiList = eventProgram.qualToOiList; // get a pointer to the mmf qualifier to Oi list
+        super(runApp);
     }
 
-    // Get oil
-    public static short GetOil(CEvent evt, CRun rhPtr, int _num) {
-        PARAM_OBJECT param = (PARAM_OBJECT) evt.evtParams[_num];
-        return param.oiList;
+    private CObject GetObject(int number) {
+        return number >= 0 && number < run.rhObjectList.length ? run.rhObjectList[number] : null;
     }
 
-    // Get LPOIL
-    // Returns the object-info structure from a given object-type
-    public CObjInfo GetLPOIL(int oiList) {
-        for (int i = 0; i < run.rhMaxOI; ++i) {
-            CObjInfo oil = OiList[i];
-            if (oil.oilOi == oiList)
-                return oil;
+    private void IterateQualifier(int oiList, BiConsumer<CObjInfo, Integer> callback) {
+        if (oiList == -1 || !ObjectIsQualifier(oiList) || eventProgram.qualToOiList == null) {
+            return;
         }
-        return null;
+        int index = oiList & 0x7FFF;
+        if (index >= eventProgram.qualToOiList.length) {
+            return;
+        }
+        CQualToOiList qualifier = eventProgram.qualToOiList[index];
+        if (qualifier == null || qualifier.qoiList == null) {
+            return;
+        }
+        // Android stores pairs of OI handle, OI list index, rather than byte offsets.
+        for (int i = 0; i + 1 < qualifier.qoiList.length; i += 2) {
+            int member = qualifier.qoiList[i + 1];
+            if (member < 0) {
+                break;
+            }
+            CObjInfo oil = GetLPOIL(member);
+            if (oil != null) {
+                callback.accept(oil, member);
+            }
+        }
     }
 
-    // Get Oi for creation
-    public short GetOiFromOiList(int oiList) {
-        CObjInfo pObjectInfo = GetLPOIL(oiList);
-
-        if (pObjectInfo == null) {
-            return -1;
+    private void IterateObject(CObjInfo oil, Consumer<CObject> callback,
+                               boolean selected, boolean selectDestroyed) {
+        if (oil == null) {
+            return;
         }
-
-        // you cannot create qualifier
-        if ((oiList & 0x8000) != 0) {
-            return -1;
+        int number = selected ? oil.oilListSelected : oil.oilObject;
+        while (number >= 0) {
+            CObject object = GetObject(number);
+            if (object == null) {
+                break; // A missing link cannot be followed.
+            }
+            if (selectDestroyed || (object.hoFlags & HOF_DESTROYED) == 0) {
+                callback.accept(object);
+            }
+            number = selected ? object.hoNextSelected : object.hoNumNext;
         }
-
-        return pObjectInfo.oilOi;
     }
 
-    // Get Neg, must be called at first
     public static boolean IsNegated(CCndExtension cnd) {
         return (cnd.evtFlags2 & CEvent.EVFLAG2_NOT) != 0;
     }
 
-    // Selects *all* objects of the given object-type
+    public CObject GetFirstObject(CObjInfo oil, boolean selected) {
+        return oil == null || oil.oilObject < 0 ? null
+                : GetObject(selected ? oil.oilListSelected : oil.oilObject);
+    }
+
+    public CObject GetFirstObject(CObjInfo oil) {
+        return GetFirstObject(oil, false);
+    }
+
+    public CObject GetFirstObject(int oiList, boolean selected) {
+        return GetFirstObject(GetLPOIL(oiList), selected);
+    }
+
+    public CObject GetFirstObject(int oiList) {
+        return GetFirstObject(oiList, false);
+    }
+
+    // Selected means there is a current, nonempty SOL; ObjectIsSelected also accepts empty SOLs.
+    public boolean Selected(CObjInfo oil) {
+        return ObjectIsSelected(oil) && oil.oilListSelected >= 0;
+    }
+
+    public boolean Selected(int oiList) {
+        return Selected(GetLPOIL(oiList));
+    }
+
+    public static boolean ObjectIsQualifier(int oiList) {
+        return (oiList & 0x8000) != 0;
+    }
+
+    public boolean ObjectIsSelected(CObjInfo oil) {
+        return oil != null && oil.oilEventCount == eventProgram.rh2EventCount;
+    }
+
+    public boolean ObjectIsSelected(int oiList) {
+        if (!ObjectIsQualifier(oiList)) {
+            return ObjectIsSelected(GetLPOIL(oiList));
+        }
+        boolean[] selected = {false};
+        IterateQualifier(oiList, (oil, index) -> selected[0] |= ObjectIsSelected(oil));
+        return selected[0];
+    }
+
     public void SelectAll(int oiList) {
-        CObjInfo pObjectInfo = this.OiList[oiList]; // GetOILFromOI(Oi);
-        if (pObjectInfo == null)
+        CObjInfo oil = GetLPOIL(oiList);
+        if (oil == null) {
             return;
-        pObjectInfo.oilNumOfSelected = pObjectInfo.oilNObjects;
-        pObjectInfo.oilListSelected = pObjectInfo.oilObject;
-        pObjectInfo.oilEventCount = eventProgram.rh2EventCount;
-
-        int i = pObjectInfo.oilObject;
-        while ((i & 0x80000000) == 0) {
-            CObject pObject = run.rhObjectList[i];
-            if (pObject == null)
-                continue;
-            pObject.hoNextSelected = pObject.hoNumNext;
-            i = pObject.hoNumNext;
         }
-        return;
+        oil.oilNumOfSelected = oil.oilNObjects;
+        oil.oilListSelected = oil.oilObject;
+        oil.oilEventCount = eventProgram.rh2EventCount;
+        IterateObject(oil, object -> object.hoNextSelected = object.hoNumNext, false, true);
     }
 
-    // Resets all objects of the given object-type
     public void SelectNone(int oiList) {
-        CObjInfo pObjectInfo = this.OiList[oiList]; // GetOILFromOI(Oi);
-        if (pObjectInfo == null)
-            return;
-        pObjectInfo.oilNumOfSelected = 0;
-        pObjectInfo.oilListSelected = -1;
-        pObjectInfo.oilEventCount = eventProgram.rh2EventCount;
+        SelectObjects(GetLPOIL(oiList), new ArrayList<>());
     }
 
-    // Resets the SOL and inserts only one given object
     public void SelectOneObject(CObject object) {
-        CObjInfo pObjectInfo = object.hoOiList;
-        if (pObjectInfo == null)
-            return;
-        pObjectInfo.oilNumOfSelected = 1;
-        pObjectInfo.oilEventCount = eventProgram.rh2EventCount;
-        pObjectInfo.oilListSelected = object.hoNumber;
-        CObject cObj = ObjectList[object.hoNumber];
-        if (cObj != null)
-            cObj.hoNextSelected = -1;
+        if (object != null) {
+            List<CObject> objects = new ArrayList<>();
+            objects.add(object);
+            SelectObjects(GetLPOIL(object), objects);
+        }
     }
 
-    // Resets the SOL and inserts the given list of objects
     public void SelectObjects(int oiList, List<CObject> objects) {
-        CObjInfo pObjectInfo = this.OiList[oiList]; // GetOILFromOI(Oi);
+        SelectObjects(GetLPOIL(oiList), objects);
+    }
 
-        if (pObjectInfo == null)
+    public void SelectObjects(CObjInfo oil, List<CObject> objects) {
+        if (oil == null) {
             return;
-
-        pObjectInfo.oilNumOfSelected = objects.size();
-        pObjectInfo.oilEventCount = eventProgram.rh2EventCount;
-
-        Iterator<CObject> i = objects.iterator();
-
-        if (!i.hasNext())
-            return;
-
-        int prevNumber = i.next().hoNumber;
-        pObjectInfo.oilListSelected = (short) prevNumber;
-
-        while (i.hasNext()) {
-            int currentNumber = i.next().hoNumber;
-            if (ObjectList[prevNumber] != null) {
-                ObjectList[prevNumber].hoNextSelected = (short) currentNumber;
-                prevNumber = currentNumber;
-            }
         }
-        if (ObjectList[prevNumber] != null)
-            ObjectList[prevNumber].hoNextSelected = -1;
-    }
-
-    // Run a custom filter on the SOL (via function callback)
-    public boolean FilterObjects(Object rdPtr, int oiList, boolean negate, FilterClass filter) {
-        if ((oiList & 0x8000) != 0) {
-            return ((FilterQualifierObjects(rdPtr, oiList & 0x7FFF, negate, filter) ? 1 : 0) ^ (negate ? 1 : 0)) != 0;
-        }
-        return ((FilterNonQualifierObjects(rdPtr, oiList & 0x7FFF, negate, filter) ? 1 : 0) ^ (negate ? 1 : 0)) != 0;
-    }
-
-    // Return the number of selected objects for the given object-type
-    public int GetNumberOfSelected(int oiList) {
-        if ((oiList & 0x8000) != 0) {
-            oiList &= 0x7FFF; // Mask out the qualifier part
-            int numberSelected = 0;
-
-            QualToOiList = eventProgram.qualToOiList;
-            CQualToOiList CurrentQualToOi = QualToOiList[oiList];
-
-            int i = 0;
-            int length = CurrentQualToOi.qoiList.length;
-            while (i < length) {
-                CObjInfo CurrentOi = GetLPOIL(CurrentQualToOi.qoiList[i + 1]);
-                if (CurrentOi == null)
-                    return 0;
-                numberSelected += CurrentOi.oilNumOfSelected;
-                i += 2;
+        oil.oilEventCount = eventProgram.rh2EventCount;
+        oil.oilNumOfSelected = 0;
+        oil.oilListSelected = -1;
+        CObject previous = null;
+        for (CObject object : objects) {
+            // A callback can delete objects or reuse their slots before a scope is restored.
+            if (object == null || GetObject(object.hoNumber) != object || object.hoOiList != oil) {
+                continue;
             }
-            return numberSelected;
-        } else {
-            CObjInfo pObjectInfo = this.OiList[oiList]; // GetOILFromOI(Oi);
-            if (pObjectInfo == null)
-                return 0;
-            return pObjectInfo.oilNumOfSelected;
+            if (previous == null) {
+                oil.oilListSelected = object.hoNumber;
+            } else {
+                previous.hoNextSelected = object.hoNumber;
+            }
+            previous = object;
+            ++oil.oilNumOfSelected;
+        }
+        if (previous != null) {
+            previous.hoNextSelected = -1;
         }
     }
 
-    // Return the number of objects for the given object-type
-    public int GetNumberOfObject(int oiList) {
-        if ((oiList & 0x8000) != 0) {
-            oiList &= 0x7FFF; // Mask out the qualifier part
-            int number = 0;
-
-            QualToOiList = eventProgram.qualToOiList;
-            CQualToOiList CurrentQualToOi = QualToOiList[oiList];
-
-            int i = 0;
-            int length = CurrentQualToOi.qoiList.length;
-            while (i < length) {
-                CObjInfo CurrentOi = GetLPOIL(CurrentQualToOi.qoiList[i + 1]);
-                if (CurrentOi == null)
-                    return 0;
-                number += CurrentOi.oilNObjects;
-                i += 2;
-            }
-            return number;
-        } else {
-            CObjInfo pObjectInfo = this.OiList[oiList]; // GetOILFromOI(Oi);
-            if (pObjectInfo == null)
-                return 0;
-            return pObjectInfo.oilNObjects;
-        }
-    }
-
-    // Check if object is given type
-    public boolean ObjectIsOfType(CObject obj, int oiList) {
-        if ((oiList & 0x8000) != 0) {
-            oiList &= 0x7FFF; // Mask out the qualifier part
-
-            QualToOiList = eventProgram.qualToOiList;
-            CQualToOiList CurrentQualToOi = QualToOiList[oiList];
-
-            int i = 0;
-            while (i < CurrentQualToOi.qoiList.length) {
-                CObjInfo CurrentOi = run.rhOiList[CurrentQualToOi.qoiList[i + 1]]; // GetOILFromOI(Oi);
-                if (CurrentOi == null)
-                    return false;
-                if (CurrentOi.oilOi == obj.hoOi)
-                    return true;
-                i += 2;
-            }
+    private boolean FilterNonQualifierObjects(Object rdPtr, int oiList, boolean negate,
+                                               FilterClass filter, boolean selectDestroyed) {
+        CObjInfo oil = GetLPOIL(oiList);
+        if (oil == null) {
             return false;
         }
-        return (obj.hoOi == run.rhOiList[oiList].oilOi);
-    }
-
-    public void ForEach(int oiList, ForEachCallBackClass f, boolean forceAll) {
-        BiConsumer<CObjInfo, Boolean> iterate = (CObjInfo list, Boolean selected) -> {
-            short num = selected ? list.oilListSelected : list.oilObject;
-
-            while (num > 0) {
-                CObject obj = run.rhObjectList[num];
-
-                if (obj == null) {
-                    break;
-                }
-
-                if ((obj.hoFlags & HOF_DESTROYED) == 0) {
-                    f.ForEachCallBack(obj);
-                }
-
-                num = selected ? obj.hoNextSelected : obj.hoNumNext;
-            }
-        };
-
-        Consumer<CObjInfo> iterateCall = (CObjInfo list) -> {
-            if (forceAll) {
-                iterate.accept(list, false);
-                return;
-            }
-
-            if (list.oilEventCount == eventProgram.rh2EventCount) {
-                // Object type already filtered, loop through selected list
-                iterate.accept(list, true);
-            } else {
-                // Object type not filtered yet, loop through all objects instead
-                iterate.accept(list, false);
-            }
-        };
-
-        // Single object type
-        if (oiList >= 0) {
-            CObjInfo pObjectInfo = this.OiList[oiList];
-
-            if (pObjectInfo == null) {
-                return;
-            }
-
-            iterateCall.accept(pObjectInfo);
-        } else if (oiList != -1) {
-            oiList &= 0x7FFF;
-
-            QualToOiList = eventProgram.qualToOiList;
-            CQualToOiList CurrentQualToOi = QualToOiList[oiList];
-
-            if (CurrentQualToOi == null) {
-                return;
-            }
-
-            int i = 0;
-            int length = CurrentQualToOi.qoiList.length;
-            while (i < length) {
-                CObjInfo CurrentOi = this.OiList[CurrentQualToOi.qoiList[i + 1]];
-
-                if (CurrentOi == null) {
-                    return;
-                }
-
-                iterateCall.accept(CurrentOi);
-
-                i += 2;
-            }
-
+        if (!ObjectIsSelected(oil)) {
+            SelectAll(oiList);
         }
-        // Qualifier object type
+        if (oil.oilNumOfSelected <= 0) {
+            return false;
+        }
+        List<CObject> selected = new ArrayList<>();
+        IterateObject(oil, object -> {
+            if (filter.Filter(rdPtr, object) ^ negate) {
+                selected.add(object);
+            }
+        }, true, selectDestroyed);
+        SelectObjects(oil, selected);
+        return oil.oilNumOfSelected != 0;
     }
 
-    public void ForEach(int oiList, ForEachCallBackClass f) {
-        ForEach(oiList, f, false);
+    public boolean FilterObjects(Object rdPtr, int oiList, boolean negate, FilterClass filter) {
+        return FilterObjects(rdPtr, oiList, negate, filter, true);
+    }
+
+    public boolean FilterObjects(Object rdPtr, int oiList, boolean negate,
+                                 FilterClass filter, boolean selectDestroyed) {
+        if (oiList == -1) {
+            return false;
+        }
+        if (ObjectIsQualifier(oiList)) {
+            boolean[] selected = {false};
+            IterateQualifier(oiList, (oil, index) -> selected[0] |=
+                    FilterNonQualifierObjects(rdPtr, index, negate, filter, selectDestroyed));
+            return selected[0] ^ negate;
+        }
+        if (GetLPOIL(oiList) == null) {
+            return false;
+        }
+        return FilterNonQualifierObjects(rdPtr, oiList, negate, filter, selectDestroyed) ^ negate;
+    }
+
+    public int GetNumberOfSelected(int oiList) {
+        if (ObjectIsQualifier(oiList)) {
+            int[] count = {0};
+            IterateQualifier(oiList, (oil, index) -> count[0] += oil.oilNumOfSelected);
+            return count[0];
+        }
+        CObjInfo oil = GetLPOIL(oiList);
+        return oil == null ? 0 : oil.oilNumOfSelected;
+    }
+
+    public int GetNumberOfObject(int oiList) {
+        if (ObjectIsQualifier(oiList)) {
+            int[] count = {0};
+            IterateQualifier(oiList, (oil, index) -> count[0] += oil.oilNObjects);
+            return count[0];
+        }
+        CObjInfo oil = GetLPOIL(oiList);
+        return oil == null ? 0 : oil.oilNObjects;
+    }
+
+    public boolean ObjectIsOfType(CObject object, int oiList) {
+        if (object == null) {
+            return false;
+        }
+        if (ObjectIsQualifier(oiList)) {
+            boolean[] matches = {false};
+            IterateQualifier(oiList, (oil, index) -> matches[0] |= oil.oilOi == object.hoOi);
+            return matches[0];
+        }
+        CObjInfo oil = GetLPOIL(oiList);
+        return oil != null && oil.oilOi == object.hoOi;
+    }
+
+    public void ForEach(int oiList, ForEachCallBackClass callback, int flag) {
+        boolean forceAll = (flag & ForEachFlag_ForceAll) != 0;
+        boolean selectedOnly = (flag & ForEachFlag_SelectedOnly) != 0;
+        Consumer<CObjInfo> iterate = oil -> {
+            if (oil == null) {
+                return;
+            }
+            if (forceAll) {
+                IterateObject(oil, callback::ForEachCallBack, false, false);
+            } else if (ObjectIsSelected(oil)) {
+                IterateObject(oil, callback::ForEachCallBack, true, false);
+            } else if (!selectedOnly) {
+                IterateObject(oil, callback::ForEachCallBack, false, false);
+            }
+        };
+        if (ObjectIsQualifier(oiList)) {
+            IterateQualifier(oiList, (oil, index) -> iterate.accept(oil));
+        } else {
+            iterate.accept(GetLPOIL(oiList));
+        }
+    }
+
+    // Preserve the existing Android boolean overload.
+    public void ForEach(int oiList, ForEachCallBackClass callback, boolean forceAll) {
+        ForEach(oiList, callback, forceAll ? ForEachFlag_ForceAll : ForEachFlag_Default);
+    }
+
+    public void ForEach(int oiList, ForEachCallBackClass callback) {
+        ForEach(oiList, callback, ForEachFlag_Default);
+    }
+
+    public void IterateObjectWithIdentifier(Object rdPtr, int identifier,
+                                            ForEachCallBackClass callback, boolean selected) {
+        IterateOiL(oil -> {
+            CObject first = GetFirstObject(oil, selected);
+            if (first != null && first.hoIdentifier == identifier) {
+                IterateObject(oil, callback::ForEachCallBack, selected, false);
+            }
+        });
+    }
+
+    public void IterateObjectWithIdentifier(Object rdPtr, int identifier, ForEachCallBackClass callback) {
+        IterateObjectWithIdentifier(rdPtr, identifier, callback, false);
+    }
+
+    public List<CObject> SaveSelectedObject(CObjInfo oil) {
+        List<CObject> selected = new ArrayList<>();
+        IterateObject(oil, selected::add, true, false);
+        return selected;
+    }
+
+    public void SaveScope(Scope scope) {
+        IterateOiL(oil -> {
+            if (ObjectIsSelected(oil)) {
+                scope.AddSelObj(oil, SaveSelectedObject(oil));
+            }
+        });
+    }
+
+    public Scope SaveScope() {
+        Scope scope = new Scope(rhPtr);
+        SaveScope(scope);
+        return scope;
+    }
+
+    public void RestoreScope(Scope scope) {
+        for (Map.Entry<CObjInfo, List<CObject>> entry : scope.GetSelObj().entrySet()) {
+            if (OILHasObject(entry.getKey())) {
+                SelectObjects(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    public void KeepScopeCall(boolean keepScope, Runnable callback) {
+        if (!keepScope) {
+            callback.run();
+            return;
+        }
+        Scope scope = SaveScope();
+        try {
+            callback.run();
+        } finally {
+            scope.RestoreActionState(rhPtr);
+            RestoreScope(scope);
+        }
+    }
+
+    public static void KeepScopeCall(ObjectSelectionClass selection, boolean keepScope, Runnable callback) {
+        if (selection == null || !keepScope) {
+            callback.run();
+        } else {
+            selection.KeepScopeCall(true, callback);
+        }
     }
 }
