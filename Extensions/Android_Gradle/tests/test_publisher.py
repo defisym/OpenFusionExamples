@@ -88,6 +88,30 @@ class PublisherTests(unittest.TestCase):
         with patch.object(publish.urllib.request, 'urlopen', return_value=io.BytesIO(self.payload)):
             self.assertEqual(publish.source_archive().read_bytes(), self.payload)
 
+    def test_windows_crlf_headers_are_accepted_but_edits_are_rejected(self):
+        header = self.iconv / 'arm64-v8a/include/iconv.h'
+        header.parent.mkdir(parents=True)
+        original = b'/* iconv */\nextern int iconv_open();\n'
+        manifest_path = self.iconv / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['files']['arm64-v8a/include/iconv.h'] = hashlib.sha256(original).hexdigest()
+        manifest_path.write_text(json.dumps(manifest))
+        header.write_bytes(original.replace(b'\n', b'\r\n'))
+        publish.stage_android(self.stage)
+        self.assertTrue((self.stage / 'app/src/main/cpp/third_party/iconv/arm64-v8a/include/iconv.h').is_file())
+        header.write_bytes(header.read_bytes() + b'/* edited */\r\n')
+        with self.assertRaisesRegex(ValueError, 'Modified iconv dependency:.*expected SHA-256'):
+            publish.source_archive()
+
+    def test_binary_line_endings_are_never_normalized(self):
+        manifest_path = self.iconv / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['files']['arm64-v8a/lib/libiconv.a'] = hashlib.sha256(b'archive\n').hexdigest()
+        manifest_path.write_text(json.dumps(manifest))
+        self.lib.write_bytes(b'archive\r\n')
+        with self.assertRaisesRegex(ValueError, 'Modified iconv dependency'):
+            publish.source_archive()
+
     def test_bad_download_does_not_remain_in_cache(self):
         (self.iconv / 'source.tar.gz').unlink()
         with patch.object(publish.urllib.request, 'urlopen', return_value=io.BytesIO(b'wrong')):

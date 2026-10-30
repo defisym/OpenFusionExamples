@@ -1,0 +1,3 @@
+# Header hashes in manifest.json use LF, including on Windows checkouts.
+*.h text eol=lf
+*.a binary

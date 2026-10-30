@@ -37,8 +37,16 @@ def source_archive() -> Path:
     manifest = json.loads((ICONV / 'manifest.json').read_text())
     for relative, expected in manifest['files'].items():
         path = ICONV / relative
-        if not path.is_file() or digest(path) != expected:
-            raise ValueError(f'Missing or modified iconv dependency: {path}')
+        if not path.is_file():
+            raise ValueError(f'Missing iconv dependency: {path}; update/check your repository checkout')
+        data = path.read_bytes()
+        # Existing Windows checkouts may already have converted headers to CRLF.
+        # Accept only that text transformation; libraries remain byte-exact.
+        if path.suffix == '.h':
+            data = data.replace(b'\r\n', b'\n')
+        actual = hashlib.sha256(data).hexdigest()
+        if actual != expected:
+            raise ValueError(f'Modified iconv dependency: {path}; expected SHA-256 {expected}, got {actual}')
     archive = ICONV / 'source.tar.gz'
     if not archive.exists() or digest(archive) != manifest['source_sha256']:
         temporary = archive.with_suffix('.download')
