@@ -112,7 +112,9 @@ FindTheWay 的 ToInstall 目录。`FusionRoot` 可覆盖默认 Fusion 安装路�
 Fusion 保留自己的默认 Gradle、Material 依赖、资源生成、签名、混淆和 AAB 配置。
 没有构建钩子，也无需修改默认 Runtime 模板。多个扩展共享的 libc++ 应使用兼容 NDK 版本。
 
-发布器复制整个 native 源码和 CMake 目录，递归收集共享 C++ 头和 Java 依赖。
+发布器复制整个 native 源码和 CMake 目录，递归收集共享 C++ 头和自有 Java 依赖。
+Java 收集范围仅为显式列出的扩展入口、`_DeLib` 和 `_3rdLib` helper；开发 SDK 中的 Runtime、
+Banks、Objects、其他内置扩展等由已安装 Fusion 提供，绝不能随 FTW 包覆盖它们。
 新增编译单元须在 CMakeLists.txt 中声明；不再额外维护源文件复制清单。
 后续修改源码/依赖时须同步检查 bat/Python 发布流程，并验证 APK 内全部 ABI 的库。
 

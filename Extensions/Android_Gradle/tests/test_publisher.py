@@ -102,6 +102,26 @@ class PublisherTests(unittest.TestCase):
         manifest = json.loads((self.stage / 'FindTheWay-package-manifest.json').read_text())
         self.assertTrue(all(publish.digest(self.stage / p) == h for p, h in manifest.items()))
 
+    def test_full_development_sdk_is_not_published(self):
+        # Real SDK checkouts contain hundreds of Runtime sources next to helpers.
+        main = publish.JAVA / 'Extensions/Main.java'
+        main.write_text(main.read_text() + '\nimport Runtime.MMFRuntime; class Ext extends CRunExtension {}')
+        helper = publish.JAVA / '_DeLib/Helper.java'
+        helper.write_text(helper.read_text() + '\nimport Banks.CImage;')
+        for name, content in {
+            'Runtime/MMFRuntime.java': 'package Runtime; import Objects.CObject; class MMFRuntime {}',
+            'Objects/CObject.java': 'package Objects; class CObject {}',
+            'Banks/CImage.java': 'package Banks; class CImage {}',
+            'Extensions/CRunExtension.java': 'package Extensions; class CRunExtension {}',
+        }.items():
+            path = publish.JAVA / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content)
+        publish.stage_android(self.stage)
+        output = self.stage / 'app/src/main/java'
+        actual = {p.relative_to(output).as_posix() for p in output.rglob('*.java')}
+        self.assertEqual(actual, {'Extensions/Main.java', '_DeLib/Helper.java', '_DeLib/Common.java'})
+
     def test_other_installed_cmake_works_without_sdkmanager(self):
         sdk = self.root / 'Sdk'
         toolchain = sdk / 'ndk' / publish.NDK_VERSION / 'build/cmake/android.toolchain.cmake'

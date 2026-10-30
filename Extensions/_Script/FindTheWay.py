@@ -175,7 +175,12 @@ def source_archive() -> Path:
 def java_sources(stage: Path) -> None:
     pending = [JAVA / name for name in SEEDS]
     seen: set[Path] = set()
-    # Resolve imports and same-package class references, including static imports.
+    seeds = set(pending)
+    def owned(source: Path) -> bool:
+        # The development SDK also contains Runtime, Banks, Objects, etc. Those
+        # belong to Fusion's installed Runtime, never to this extension package.
+        return source in seeds or source.relative_to(JAVA).parts[0] in {'_DeLib', '_3rdLib'}
+    # Resolve project imports and same-package helpers, including static imports.
     while pending:
         source = pending.pop()
         if source in seen:
@@ -188,11 +193,12 @@ def java_sources(stage: Path) -> None:
             while parts:
                 candidate = JAVA.joinpath(*parts).with_suffix('.java')
                 if candidate.is_file():
-                    pending.append(candidate)
+                    if owned(candidate):
+                        pending.append(candidate)
                     break
                 parts.pop()
         for candidate in source.parent.glob('*.java'):
-            if re.search(r'\b' + re.escape(candidate.stem) + r'\b', text):
+            if owned(candidate) and re.search(r'\b' + re.escape(candidate.stem) + r'\b', text):
                 pending.append(candidate)
 
 def shared_headers(stage: Path) -> None:
