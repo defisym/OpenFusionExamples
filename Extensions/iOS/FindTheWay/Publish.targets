@@ -8,8 +8,8 @@
   <Target Name="PackageFindTheWayIOS" BeforeTargets="PackageFindTheWayAndroid" AfterTargets="Build"
           Condition="'$(FindTheWayPackageIOS)'=='true' and '$(Configuration)'=='Run_Only Unicode' and '$(DesignTimeBuild)'!='true'">
     <Error Condition="!Exists('$(FindTheWayIOSArtifacts)\manifest.json')"
-           Text="iOS artifacts are not prepared. Build/validate on Mac, set FindTheWayIOSArtifacts, or explicitly use /p:FindTheWayPackageIOS=false for a build without iOS packaging." />
-    <Exec WorkingDirectory="$(ProjectDir)"
-          Command="&quot;$(FindTheWayPython)&quot; &quot;$(MSBuildThisFileDirectory)..\..\_Script\FindTheWayIOS.py&quot; --artifacts &quot;$(FindTheWayIOSArtifacts)&quot;" />
+           Text="iOS core artifacts are not prepared. Build on Mac, set FindTheWayIOSArtifacts, or explicitly use /p:FindTheWayPackageIOS=false." />
+    <Exec WorkingDirectory="$(ProjectDir)" EnvironmentVariables="FusionRoot=$(FusionRoot)"
+          Command="&quot;$(FindTheWayPython)&quot; &quot;$(MSBuildThisFileDirectory)..\..\_Script\FindTheWayIOS.py&quot; --artifacts &quot;$(FindTheWayIOSArtifacts)&quot; --install" />
   </Target>
 </Project>

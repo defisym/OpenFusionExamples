@@ -43,6 +43,9 @@ Keep private SDK/exporter material outside the public repository.
    Publish only after all builds/verification succeed; preserve previous outputs
    on failure. Keep Build directories ignored and transfer only owned artifacts.
 7. Publish the extension as .ext, including required native and adapter material.
+   Native-only manifests are valid inputs to a Windows packager: verify compiled
+   dependencies, then package the current Runtime adapter there. Do not force a
+   Mac rebuild merely because the thin source adapter changed.
    Validate its actual encoding and export round trip; do not rename an arbitrary
    ZIP to .ext. Fusion may export files without adding their Xcode references.
    Verify library/source references, include paths, system dependencies and final
@@ -53,8 +56,9 @@ Keep private SDK/exporter material outside the public repository.
    application scaffolding selectively. A GUI utility is not evidence of a CLI.
    Reference architecture is guidance, not proof that every mechanism is optimal.
    Hook Windows publishing into the target extension's existing release entry
-   point before its final archive is produced. Distinguish native-only artifacts
-   from a complete plugin; never report an unfinished adapter as release-ready.
+   point before its final archive is produced. Install to the actual Fusion
+   iPhone runtime directory when requested; fail clearly for a missing directory.
+   Distinguish successful packaging from complete Runtime feature parity.
    Put plugin-specific generated-output rules in that plugin's .gitignore.
 9. Validate in layers: host/core and ABI tests; actual Apple compile/link;
    helpers against private Runtime declarations; .ext install/export; simulator
@@ -82,3 +86,25 @@ ac3f3f9dd5d54e9fc2c980b33450c79f23ad58b2).
   for a different publisher. Do not inherit its old SDK, VS, Intel or 32-bit defaults.
 - Android's prebuild-before-packaging model also avoids replacing Fusion's Gradle
   and manifest configuration. Treat that as a design lesson, not an iOS build recipe.
+
+## Legacy SDK .ext format and independent CLI
+
+The repository's make_ext.py is independently implemented; it does not wrap or
+copy DarkEdif. Compatibility checks against non-placeholder SDK packages establish
+an involutive byte framing around a traditionally encrypted ZIP, with project.txt
+holding six NUL-terminated PBX insertion blocks (source build files/references,
+group entries, Sources entries, header references, header group entries). Generate
+owned IDs and validate ZIP decryption/CRC plus payload contents before publishing.
+Do not put private SDK sources into regression fixtures or package them wholesale.
+
+A C/Objective-C Runtime pair can emit Mach-O .linker_option directives selecting
+separate device/simulator archives by TargetConditionals. Use this only after
+verifying the target exporter's library search paths and actual links. The supplied
+project searches SRCROOT, allowing both uniquely named archives at ZIP root.
+This can avoid manual framework-reference edits; it is not a universal exporter
+assumption. Retain the XCFramework as the native handoff representation.
+
+Wine is optional validation material, not a publishing dependency. If it cannot
+run a legacy 32-bit maker reliably in the executor, report that limitation; do not
+claim its GUI or command-line interface passed. A verified independent format CLI
+is preferable to fragile coordinate clicking when it meets the target workflow.

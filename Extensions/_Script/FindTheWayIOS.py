@@ -1,11 +1,12 @@
-"""Verify and stage a Mac-prepared iOS extension for the RunOnly publisher.
+"""Package and optionally install FindTheWay iOS from a verified Mac core.
 
-This consumes release artifacts; it does not build Apple binaries or invent .ext files.
+Consumes verified Mac native artifacts and creates the current Runtime .ext on Windows.
 """
 from __future__ import annotations
 import argparse
 import hashlib
 import json
+import importlib.util
 import os
 from pathlib import Path, PurePosixPath
 import plistlib
@@ -20,11 +21,14 @@ def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def source_hashes(root: Path) -> dict[str, str]:
+def source_hashes(root: Path, include_runtime: bool = True) -> dict[str, str]:
     import re
-    owned = [root / 'iOS/FindTheWay/Core', root / 'iOS/Helpers']
-    pending = [root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.h',
-               root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m']
+    owned = [root / 'iOS/FindTheWay/Core']
+    pending = []
+    if include_runtime:
+        owned.append(root / 'iOS/Helpers')
+        pending = [root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.h',
+                   root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m']
     for folder in owned:
         pending.extend(p for p in folder.rglob('*') if p.suffix in {'.h', '.mm', '.cpp'}
                        and 'tests' not in p.parts)
@@ -104,17 +108,57 @@ def verify(bundle: Path, root: Path) -> dict[str, Path]:
     files = payload_files(bundle, require_extension=kind == 'release')
     if manifest.get('schema') != 1:
         raise ValueError('Unsupported iOS artifact manifest')
-    if manifest.get('sources') != source_hashes(root):
+    expected = source_hashes(root, include_runtime=kind != 'native')
+    recorded = manifest.get('sources', {})
+    matches = (all(recorded.get(name) == value for name, value in expected.items())
+               if kind == 'native' and isinstance(recorded, dict) else recorded == expected)
+    if not matches:
         raise ValueError('iOS artifacts are stale or from a different source checkout; rebuild on Mac')
     if manifest.get('files') != {name: sha(path) for name, path in files.items()}:
         raise ValueError('iOS artifact file set or SHA-256 mismatch')
     return files
 
 
-def stage(bundle: Path, root: Path) -> None:
-    files = verify(bundle, root)  # Complete validation before replacing existing outputs.
-    if 'FindTheWay.ext' not in files:
-        raise ValueError('Native core verified, but the full .ext package is not ready; complete iOS packaging first')
+def extension_codec():
+    script = Path(__file__).resolve().parents[1] / 'iOS/Tools/make_ext.py'
+    spec = importlib.util.spec_from_file_location('ftw_ext_codec', script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def package_contents(files: dict[str, Path], root: Path) -> dict[str, bytes]:
+    payload = {}
+    runtime = root / 'iOS/FindTheWay/Runtime'
+    for name in ('CRunFindTheWay.h', 'CRunFindTheWay.m'):
+        payload['Classes/Extensions/' + name] = (runtime / name).read_bytes()
+    info = plistlib.loads(files['FindTheWayCore.xcframework/Info.plist'].read_bytes())
+    for entry in info['AvailableLibraries']:
+        folder = 'FindTheWayCore.xcframework/' + entry['LibraryIdentifier'] + '/'
+        platform = 'iphonesimulator' if entry.get('SupportedPlatformVariant') == 'simulator' else 'iphoneos'
+        payload['libFindTheWayCore_' + platform + '.a'] = files[folder + entry['LibraryPath']].read_bytes()
+        header = files.get(folder + entry.get('HeadersPath', 'Headers') + '/FindTheWayCore.h')
+        if not header:
+            raise ValueError('Native bundle is missing the compiled public ABI header')
+        data = header.read_bytes()
+        previous = payload.get('Classes/Extensions/FindTheWayCore.h', data)
+        if previous != data:
+            raise ValueError('Device and simulator public ABI headers differ')
+        payload['Classes/Extensions/FindTheWayCore.h'] = data
+    for name, path in files.items():
+        if name.startswith('FindTheWayCore.xcframework/'):
+            payload['Frameworks/' + name] = path.read_bytes()
+    license_file = root.parent / 'LICENSE'
+    if license_file.is_file():
+        payload['FindTheWay-LICENSE.txt'] = license_file.read_bytes()
+    return payload
+
+
+def stage(bundle: Path, root: Path, fusion_root: Path | None = None) -> None:
+    files = verify(bundle, root)
+    destination = fusion_root / 'Data/Runtime/iPhone' if fusion_root else None
+    if destination and not destination.is_dir():
+        raise ValueError('Fusion iPhone runtime directory is missing; set FusionRoot to the installed Fusion directory')
     install = root / 'FindTheWay/ToInstall/Files'
     extension = install / 'Data/Runtime/iPhone/FindTheWay.ext'
     support = install / 'Tools/FindTheWay-iOS.zip'
@@ -129,17 +173,25 @@ def stage(bundle: Path, root: Path) -> None:
                     output.write(path, name)
             output.write(bundle / 'manifest.json', 'manifest.json')
         copied = temporary / extension.name
-        shutil.copyfile(files['FindTheWay.ext'], copied)
+        extension_codec().write_extension('FindTheWay', package_contents(files, root), copied)
         os.replace(archive, support)
         os.replace(copied, extension)
-    # The existing Android publisher archives all of ToInstall after this target.
-    print(f'Staged iOS extension: {extension}')
-    print(f'Staged Xcode integration bundle: {support}')
+    if destination:
+        with tempfile.NamedTemporaryFile(dir=destination, prefix='FindTheWay-', suffix='.partial', delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(extension.read_bytes())
+        try:
+            os.replace(temporary, destination / 'FindTheWay.ext')
+        finally:
+            temporary.unlink(missing_ok=True)
+        print(f'Installed iOS extension: {destination / "FindTheWay.ext"}')
+    print(f'Created and verified iOS extension: {extension}')
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--artifacts', type=Path, required=True)
+    parser.add_argument('--install', action='store_true', help='Install into FusionRoot/Data/Runtime/iPhone')
     actions = parser.add_mutually_exclusive_group()
     actions.add_argument('--verify-only', action='store_true',
                          help='Verify transferred native/release artifacts without publishing')
@@ -154,14 +206,15 @@ def main() -> None:
         kind = json.loads((bundle / 'manifest.json').read_text(encoding='utf-8')).get('kind', 'release')
         print(f'Verified {kind} artifacts: {len(files)} payload files')
         if kind == 'native':
-            print('Core verified; complete .ext packaging is not ready.')
+            print('Core verified; Windows can package the current Runtime adapter.')
     elif args.record_manifest:
         files = payload_files(bundle)
         manifest = {'schema': 1, 'sources': source_hashes(EXTENSIONS),
                     'files': {name: sha(path) for name, path in files.items()}}
         (bundle / 'manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding='utf-8')
     else:
-        stage(bundle, EXTENSIONS)
+        fusion = Path(os.environ.get('FusionRoot') or r'C:\Steam\steamapps\common\Clickteam Fusion 2.5') if args.install else None
+        stage(bundle, EXTENSIONS, fusion)
 
 
 if __name__ == '__main__':

@@ -39,7 +39,10 @@ class PublisherTests(unittest.TestCase):
             library = self.bundle / 'FindTheWayCore.xcframework' / name / 'libFindTheWayCore.a'
             library.parent.mkdir(parents=True)
             library.write_bytes(b'!<arch>\narchive fixture')
-            entry = dict(LibraryIdentifier=name, LibraryPath=library.name,
+            headers = library.parent / 'Headers'
+            headers.mkdir()
+            (headers / 'FindTheWayCore.h').write_text('// ABI fixture')
+            entry = dict(LibraryIdentifier=name, LibraryPath=library.name, HeadersPath='Headers',
                          SupportedPlatform='ios', SupportedArchitectures=['arm64'])
             if variant == 'simulator':
                 entry['SupportedPlatformVariant'] = variant
@@ -57,7 +60,10 @@ class PublisherTests(unittest.TestCase):
     def test_valid_staging_and_support_archive(self):
         publisher.stage(self.bundle, self.root)
         install = self.root / 'FindTheWay/ToInstall/Files'
-        self.assertEqual((install / 'Data/Runtime/iPhone/FindTheWay.ext').read_bytes(), b'extension fixture')
+        contents = publisher.extension_codec().read_extension((install / 'Data/Runtime/iPhone/FindTheWay.ext').read_bytes())
+        self.assertIn('libFindTheWayCore_iphoneos.a', contents)
+        self.assertIn('libFindTheWayCore_iphonesimulator.a', contents)
+        self.assertEqual(contents['Classes/Extensions/CRunFindTheWay.m'], b'// source fixture')
         with zipfile.ZipFile(install / 'Tools/FindTheWay-iOS.zip') as archive:
             self.assertIn('FindTheWayCore.xcframework/Info.plist', archive.namelist())
             self.assertIn('Integration.md', archive.namelist())
@@ -72,7 +78,7 @@ class PublisherTests(unittest.TestCase):
             publisher.stage(self.bundle, self.root)
         self.assertEqual(output.read_bytes(), before)
 
-    def test_native_bundle_verifies_but_cannot_publish_plugin(self):
+    def test_native_bundle_builds_extension_without_rebuilding_core(self):
         (self.bundle / 'FindTheWay.ext').unlink()
         files = publisher.payload_files(self.bundle, require_extension=False)
         (self.bundle / 'manifest.json').write_text(json.dumps({
@@ -84,8 +90,13 @@ class PublisherTests(unittest.TestCase):
             publisher.main()
         self.assertIn('Verified native artifacts', output.getvalue())
         self.assertFalse((self.root / 'FindTheWay/ToInstall').exists())
-        with self.assertRaisesRegex(ValueError, 'full .ext package is not ready'):
-            publisher.stage(self.bundle, self.root)
+        # Runtime-only changes must not require another Apple core build.
+        runtime = self.root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m'
+        runtime.write_text('// updated Runtime adapter')
+        publisher.stage(self.bundle, self.root)
+        output = self.root / 'FindTheWay/ToInstall/Files/Data/Runtime/iPhone/FindTheWay.ext'
+        contents = publisher.extension_codec().read_extension(output.read_bytes())
+        self.assertEqual(contents['Classes/Extensions/CRunFindTheWay.m'], b'// updated Runtime adapter')
 
     def test_windows_line_endings_do_not_invalidate_sources(self):
         source = self.root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m'
@@ -102,6 +113,16 @@ class PublisherTests(unittest.TestCase):
         (project / 'CMakeLists.txt').write_text('# changed configuration')
         with self.assertRaisesRegex(ValueError, 'stale'):
             publisher.verify(self.bundle, self.root)
+
+    def test_install_requires_real_runtime_directory(self):
+        with self.assertRaisesRegex(ValueError, 'Fusion iPhone runtime directory'):
+            publisher.stage(self.bundle, self.root, Path(self.temp.name) / 'MissingFusion')
+        fusion = Path(self.temp.name) / 'Fusion'
+        target = fusion / 'Data/Runtime/iPhone'
+        target.mkdir(parents=True)
+        publisher.stage(self.bundle, self.root, fusion)
+        self.assertTrue((target / 'FindTheWay.ext').is_file())
+        self.assertIn('project.txt', publisher.extension_codec().read_extension((target / 'FindTheWay.ext').read_bytes()))
 
     def test_tampered_binary_rejected(self):
         library = next(self.bundle.rglob('*.a'))
