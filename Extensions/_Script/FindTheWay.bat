@@ -17,5 +17,6 @@ if errorlevel 1 goto Failed
 exit /b 0
 :Failed
 echo ERROR: Packaging failed. See Android_Gradle\FindTheWay-package.log for details.
-pause
+rem VS/MSBuild captures the error; never wait for keyboard input there.
+if /I not "%~1"=="--no-pause" pause
 exit /b 1

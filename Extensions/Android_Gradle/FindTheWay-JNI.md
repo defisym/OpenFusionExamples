@@ -41,6 +41,19 @@ Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显
 
 ## 构建
 
+### Visual Studio 一键打包
+
+构建 `FindTheWay.vcxproj` 的 Debug Unicode、Release Unicode 或 Run_Only Unicode 配置后，
+项目会自动调用 `Extensions/_Script/FindTheWay.bat`，生成
+`Extensions/FindTheWay/ToInstall/Files/Data/Runtime/Android/FindTheWay.zip`，并按发布器规则安装、归档。
+需要 Python 3.10+；首次运行需要网络下载并校验 iconv 对应源码。
+即使 Windows 输出已是最新，点击构建也会重新打包 Android 输入。
+打包失败会使 VS 构建失败，详细错误可查看“输出”窗口及
+`Extensions/Android_Gradle/FindTheWay-package.log`，不会暂停等待键盘输入。
+只构建 Windows 时可用 MSBuild 属性 `/p:FindTheWayPackageAndroid=false` 关闭这一步。
+
+这里生成供 Fusion Android 导出器使用的扩展 ZIP；JNI 的四 ABI 原生库由 Fusion 构建 APK 时编译。
+
 构建时把本仓库的相对目录结构保持完整。CMake 默认引用
 `Extensions/_DeLib`；若导出目录结构不同，可通过 `FTW_CORE_INCLUDE` 指向共享头文件目录，
 `_3rdLib` 通过共享 helper 的 CMake 接口加入搜索路径。Android 默认使用发布包携带的目标 ABI iconv。
