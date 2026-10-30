@@ -22,32 +22,11 @@ Creation by name without an HFII requires an explicit layer. Position
 parameter decoding, backdrop creation, scope save/restore and action-state guards
 remain to be implemented before full FindTheWay ACE integration.
 
-## Cross-platform parity
-
-Windows ObjectSelection.h/ObjectCreation.h define the reference behavior; inspect
-current Android ObjectSelectionClass.java/ObjectCreationClass.java together with
-the mobile Runtime implementation before changing either side.
-
-| Scenario | iOS helper behavior | Android synchronization work |
-| --- | --- | --- |
-| Empty explicit replacement | Clears affected SOLs | Check explicit clear versus SelectObjects no-op callers |
-| Desktop empty SelectObjects overload | Caller must preserve desktop no-op explicitly | Preserve existing caller contract |
-| Unfiltered OI | Iteration falls back to all objects | Check event-count validity and selected-only mode |
-| Qualifier | Expands distinct concrete OI-list indices | Use identical qualifier scenarios |
-| Negated condition | Retains predicate XOR negate, returns nonempty XOR negate | Preserve Runtime condition-negation convention |
-| Destroyed objects | ForEach excludes; filtering defaults to including | Match Windows flags rather than one global policy |
-| Nested iteration | Snapshot slot+creation ID, resolve before callback | Compare mutation/replacement scenarios |
-| Creation result zero | Treated as success | Current master accepts slot zero; retain paired checks |
-| Default layer -1 | No layers[-1] access | Current master guards sentinel; keep paired checks |
-| Physics creation | Attractor/body/normal-object hooks follow Runtime creation | Android helper retains its pre-existing direct-create behavior; physics remains a platform difference |
-
-The empty-input difference requires care: the Windows vector SelectObjects
-overload also returns without clearing. Earlier investigation notes described
-the SDK early return as a missing feature; it is not by itself a Windows parity
-bug. The owned helper deliberately names explicit clearing/replacement separately.
-Master 9ff0b78a already contains an Android helper parity update. This PR preserves
-those sources; it does not claim new Android changes or validation. The table
-tracks pending paired checks rather than claiming completed synchronization.
+Compare behavior against the maintained Windows and Android helpers, including
+qualifiers, event stamps, slot zero, negation and layer sentinels. The explicit
+replace API clears empty selections; the desktop vector SelectObjects overload
+may be a no-op. Filter predicates must remain pure. No scope/action-state guard
+is implemented yet.
 
 ## Apple verification
 
