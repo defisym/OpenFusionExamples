@@ -1,4 +1,4 @@
-// ReSharper disable CppClangTidyClangDiagnosticShadow
+﻿// ReSharper disable CppClangTidyClangDiagnosticShadow
 
 #pragma once
 
