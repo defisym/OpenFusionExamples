@@ -84,7 +84,7 @@ public class FusionUtilities {
  public static boolean LPROValid(Objects.CObject o,int identifier){return o!=null;}
  public static boolean colMaskTestPoint(Objects.CExtension ho,int x,int y,int layer,int plan){throw new UnsupportedOperationException("SDK collision fixture");}
  public static final java.util.List<int[]> backdrops=new java.util.ArrayList<>();
- public static void addBackdrop(Objects.CExtension ho,Banks.CImage image,int x,int y,int layer,int obstacle,int effect,int param){backdrops.add(new int[]{x,y,layer});}
+ public static void addBackdrop(Objects.CExtension ho,Banks.CImage image,int x,int y,int layer,int obstacle,int effect,int param){backdrops.add(new int[]{x,y,layer,image.getXSpot(),image.getYSpot()});}
 }''',
 '_3rdLib/ObjectSelectionClass.java':'''package _3rdLib;
 public class ObjectSelectionClass {

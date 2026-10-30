@@ -85,16 +85,24 @@ public final class AdapterDispatchTest {
   CObject tile=new CObject();
   tile.rov.rvValues[0].forceInt(5);tile.rov.rvValues[1].forceInt(7);
   int[][] expected={{21,25,0},{26,25,0},{21,32,0},{53,57,0},{53,57,0},{53,57,0}};
-  for(int hotspot:new int[]{0,16,7}){
+  int[][][] hotspots={{{0,0},{0,0},{0,0}},{{16,16},{16,16},{16,16}},
+   {{16,16},{0,0},{0,0}},{{7,9},{12,1},{3,20}}};
+  for(int[][] spots:hotspots){
    for(int i=0;i<3;i++){
-    ext.ho.imageBank.images[i].xSpot=hotspot+i;
-    ext.ho.imageBank.images[i].ySpot=hotspot+2*i;
+    ext.ho.imageBank.images[i].xSpot=spots[i][0];
+    ext.ho.imageBank.images[i].ySpot=spots[i][1];
    }
    _DeLib.FusionUtilities.backdrops.clear();
    ext.action(18,new CActExtension(tile,1));
    check(_DeLib.FusionUtilities.backdrops.size()==expected.length,"backdrop count");
-   for(int i=0;i<expected.length;i++)check(Arrays.equals(_DeLib.FusionUtilities.backdrops.get(i),expected[i]),
-    "Runtime hotspot anchor; preserve internal edge offsets and map-boundary behavior");
+   for(int i=0;i<expected.length;i++){
+    int[] call=_DeLib.FusionUtilities.backdrops.get(i);
+    // Runtime subtracts each image's own hotspot. Compare final image origins
+    // with Windows' common LT origin, not the raw Java anchor coordinates.
+    check(call[0]-call[3]==expected[i][0]-spots[0][0]
+     &&call[1]-call[4]==expected[i][1]-spots[0][1]&&call[2]==expected[i][2],
+     "Backdrop rendered origin matches Windows beside obstacles and at map boundaries");
+   }
   }
   ext.destroyRunObject(false);
  }

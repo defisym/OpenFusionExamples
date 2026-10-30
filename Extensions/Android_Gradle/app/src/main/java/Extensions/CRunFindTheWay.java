@@ -1366,6 +1366,13 @@ public class CRunFindTheWay extends CRunExtension {
                 int hImageB = object.roa.raAnimDirOffset.adFrames[2];
                 CImage cImageB = ho.getImageBank().getImageFromHandle(hImageB);
 
+                // Windows aligns all three image surfaces to the LT frame's origin.
+                // Android applies each frame's hotspot, so translate the border anchors.
+                int rightAnchorX = cImageR.getXSpot() - cImageLT.getXSpot();
+                int rightAnchorY = cImageR.getYSpot() - cImageLT.getYSpot();
+                int bottomAnchorX = cImageB.getXSpot() - cImageLT.getXSpot();
+                int bottomAnchorY = cImageB.getYSpot() - cImageLT.getYSpot();
+
                 int effect = object.ros.rsEffect;
                 int effectParam = object.ros.rsEffectParam;
 
@@ -1381,18 +1388,20 @@ public class CRunFindTheWay extends CRunExtension {
                         if (this.pFTW.GetMap(x, y, MapType.MAP, true) != MAP_OBSTACLE) {
                             Coord coord = this.pFTW.GetRealCoord(new Coord(x, y));
 
-                            // Runtime applies each image's hotspot; pass the grid-center anchor unchanged.
+                            // The LT frame is anchored at the cell center.
                             addBackdrop(ho, cImageLT, coord.x, coord.y, nLayer, nObstacleType, effect,
                                     effectParam);
 
                             if (this.pFTW.GetMap(x + 1, y, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(ho, cImageR, coord.x + (x + 1 == width ? 0 : rOffset), coord.y,
+                                addBackdrop(ho, cImageR, coord.x + rightAnchorX + (x + 1 == width ? 0 : rOffset),
+                                        coord.y + rightAnchorY,
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
 
                             if (this.pFTW.GetMap(x, y + 1, MapType.MAP, true) == MAP_OBSTACLE) {
-                                addBackdrop(ho, cImageB, coord.x, coord.y + (y + 1 == height ? 0 : bOffset),
+                                addBackdrop(ho, cImageB, coord.x + bottomAnchorX,
+                                        coord.y + bottomAnchorY + (y + 1 == height ? 0 : bOffset),
                                         nLayer,
                                         nObstacleType, effect, effectParam);
                             }
