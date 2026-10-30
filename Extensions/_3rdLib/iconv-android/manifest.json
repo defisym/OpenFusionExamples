@@ -1,0 +1,17 @@
+{
+  "version": "1.19 (winlibs mirror)",
+  "ndk": "28.2.13676358",
+  "api": 21,
+  "source_url": "https://api.github.com/repos/winlibs/libiconv/tarball/accac417318a3eef7402685a268cab8037e62ba1",
+  "source_sha256": "9aeb82b79f17274876e0995f19db56e4d73df621ba323395bcd0d483e611f5a4",
+  "files": {
+    "arm64-v8a/include/iconv.h": "6cc86f6331d7f87c832dee56885e0098ced022b8cdc11936fe44afecb77ea273",
+    "arm64-v8a/lib/libiconv.a": "18bc24eb39ccca5787a4f6d5c5b9ff20ee6a31bfbd7624447922902000917557",
+    "armeabi-v7a/include/iconv.h": "6cc86f6331d7f87c832dee56885e0098ced022b8cdc11936fe44afecb77ea273",
+    "armeabi-v7a/lib/libiconv.a": "558dfd8a4826b25faec0c1bbdef40f786a3ef33cb2ccb4b559c14a62fb5e711c",
+    "x86/include/iconv.h": "6cc86f6331d7f87c832dee56885e0098ced022b8cdc11936fe44afecb77ea273",
+    "x86/lib/libiconv.a": "56f51d5ff56cb4290f4ea1ef594d2935cdddbce6bf72dbdd53b5f701def8dc33",
+    "x86_64/include/iconv.h": "6cc86f6331d7f87c832dee56885e0098ced022b8cdc11936fe44afecb77ea273",
+    "x86_64/lib/libiconv.a": "7cbdaac6f0bc10a0df129afcb4eca29c898d76f485191b191c9142eec980a785"
+  }
+}

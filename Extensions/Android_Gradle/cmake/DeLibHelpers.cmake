@@ -12,7 +12,18 @@ target_include_directories(delib_helpers INTERFACE
 if(NOT WIN32)
     # Linux normally supplies iconv in libc; Apple/libiconv may require a library.
     # Android has no public NDK iconv API: supply a cross-built iconv to FindIconv.
-    set(FTW_ICONV_ROOT "" CACHE PATH "iconv prefixes containing one directory per Android ABI")
+    set(FTW_DEFAULT_ICONV_ROOT "")
+    if(ANDROID)
+        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/third_party/iconv/manifest.json")
+            set(FTW_DEFAULT_ICONV_ROOT "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/third_party/iconv")
+        elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../../_3rdLib/iconv-android/manifest.json")
+            set(FTW_DEFAULT_ICONV_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../_3rdLib/iconv-android")
+        endif()
+    endif()
+    set(FTW_ICONV_ROOT "${FTW_DEFAULT_ICONV_ROOT}" CACHE PATH "iconv prefixes containing one directory per Android ABI")
+    if(ANDROID AND NOT FTW_ICONV_ROOT AND FTW_DEFAULT_ICONV_ROOT)
+        set(FTW_ICONV_ROOT "${FTW_DEFAULT_ICONV_ROOT}" CACHE PATH "Target iconv" FORCE)
+    endif()
     if(ANDROID AND FTW_ICONV_ROOT)
         if(NOT EXISTS "${FTW_ICONV_ROOT}/${ANDROID_ABI}/include/iconv.h"
                 OR NOT EXISTS "${FTW_ICONV_ROOT}/${ANDROID_ABI}/lib/libiconv.a")

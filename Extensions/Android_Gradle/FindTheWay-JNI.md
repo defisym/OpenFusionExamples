@@ -43,7 +43,7 @@ Java 异常，不跨 JNI ABI 抛出 C++ 异常。字符串按 UTF-16/wchar_t 显
 
 构建时把本仓库的相对目录结构保持完整。CMake 默认引用
 `Extensions/_DeLib`；若导出目录结构不同，可通过 `FTW_CORE_INCLUDE` 指向共享头文件目录，
-`_3rdLib` 通过共享 helper 的 CMake 接口加入搜索路径。Android 还须提供目标 ABI 的 iconv。
+`_3rdLib` 通过共享 helper 的 CMake 接口加入搜索路径。Android 默认使用发布包携带的目标 ABI iconv。
 
 `app/build.gradle` 和 `release.gradle` 都配置 externalNativeBuild。默认 NDK r28c
 `28.2.13676358`、CMake `3.22.1`、C++20、共享 libc++，并配置 16 KB 页对齐。
@@ -80,16 +80,16 @@ iOS 可以直接在 Objective-C++ `.mm` 适配层包含同样的共享头文件�
 
 ## Windows 打包脚本
 
-运行 `Extensions/_Script/FindTheWay.bat`，使用 7-Zip 创建 Android Runtime 源码包并复制到
-FindTheWay 的 ToInstall 目录。`FusionRoot` 和 `CompressPath` 可通过环境变量覆盖默认路径；
+运行 `Extensions/_Script/FindTheWay.bat`，由 Python 创建 Android Runtime 源码包并复制到
+FindTheWay 的 ToInstall 目录。`FusionRoot` 可通过环境变量覆盖默认安装路径；
 未找到 Fusion 安装目录时仍生成 ToInstall 包。脚本不再自动终止本机 JDK 进程。
 
 Android 包包含 Java 适配器、JNI 源码、CMake 模块、ProGuard 规则，以及
 `app/src/main/cpp/shared/_DeLib` / `_3rdLib` 中所需的共享头文件。CMake 优先使用包内头文件，
-保留 `FTW_CORE_INCLUDE` 显式覆盖能力。包中不包含测试、Fusion SDK 或主机编译产物。
+保留 `FTW_CORE_INCLUDE` 显式覆盖能力。包中不包含测试、Fusion SDK 或主机编译产物；包含经过校验的 Android 目标 iconv。
 
-这是源码打包，不是 Android ABI 编译：目标 ABI 的 iconv、NDK/CMake 和真实 Fusion Runtime
-仍须由构建环境提供。此脚本不会把 Linux `.so` 或 Windows SDK 打包进去。
+这是源码打包，不是 Android ABI 编译：目标 ABI 的 iconv 已随包提供；NDK/CMake 和真实 Fusion Runtime
+仍由 Fusion 构建环境提供。此脚本不会把 Linux `.so` 或 Windows SDK 打包进去。
 
 维护约定：以后修改 FindTheWay Java/JNI、共享头依赖或构建配置时，必须同步检查和更新
 `Extensions/_Script/FindTheWay.bat`，并验证暂存包的头文件依赖及独立 CMake 构建。
@@ -97,7 +97,7 @@ Android 包包含 Java 适配器、JNI 源码、CMake 模块、ProGuard 规则�
 ## Android 目标编译记录
 
 已用 JDK 21、Gradle 8.14.3、AGP 8.11.1、compileSdk 35、NDK r28c 和 CMake 3.22.1，
-按批处理的 25 文件布局，与私有 Fusion Runtime 联合执行 `:app:assembleDebug` 成功。
+按批处理生成的源码包布局，与私有 Fusion Runtime 联合执行 `:app:assembleDebug` 成功。
 APK 内含 arm64-v8a、armeabi-v7a、x86、x86_64 的 findtheway 和共享 libc++。
 独立 Release 原生库 ELF LOAD 段对齐为 16 KB；Debug APK 签名及 zipalign 检查通过。
 测试工程只补了应用占位图标，没有实际游戏数据，未做设备/模拟器运行验收。
@@ -110,10 +110,31 @@ APK 内含 arm64-v8a、armeabi-v7a、x86、x86_64 的 findtheway 和共享 libc+
 <iconv-root>/<ABI>/lib/libiconv.a
 ```
 
-Gradle 传入 `-PFTW_ICONV_ROOT=/path/to/iconv-root`；CMake 自动按 ANDROID_ABI 选择依赖，
+开发者如需覆盖内置依赖，可传入 `-PFTW_ICONV_ROOT=/path/to/iconv-root`；CMake 自动按 ANDROID_ABI 选择依赖，
 缺少相应头文件或库时直接报错。不要使用主机 Linux 的 iconv 库。
-静态链接 libiconv 的发行需同时安排其许可证、对应源码及重链接材料；当前测试依赖与产物
-保留在构建环境中，没有把第三方源码或预编译库写入仓库。
+静态链接 libiconv 的发行需同时安排其许可证、对应源码及重链接材料；目标 iconv 预编译库、许可证及源码获取校验信息已随工程维护；发布器将对应源码自动纳入 ZIP。
 
 此次联合构建修复了 AndroidCommon.java 漏打包、图片句柄的 int 类型，以及 Gradle namespace、
 旧 dexOptions、manifest excluded 参数和可选 Play Core 版本配置；后续维护继续同步批处理。
+
+## 一键发布（iconv 修复）
+
+运行 `Extensions/_Script/FindTheWay.bat` 即可；它调用同目录的 FindTheWay.py，要求 Python 3.10+，
+只使用标准库，不需要 pip、7-Zip、额外 iconv 参数或 IDE 工程。准备依赖失败会停住窗口，完整日志在
+`Android_Gradle/FindTheWay-package.log`。原有 HTML5 与 ToInstall/综合发布包仍由同一入口生成。
+
+发布器复制完整 native 源码目录和 CMake 模块目录，递归收集引用的共享 C++ 头文件、项目 Java 导入
+及同包类引用，因而新增 .cpp/.c/本地头文件不再依赖手工补一个复制条目。
+项目新增 native 编译单元仍需在 CMakeLists.txt 中声明，这与是否打包是不同职责。
+
+四个 ABI 的目标 libiconv.a / iconv.h 已固定在 `_3rdLib/iconv-android`，发布前校验 SHA-256。
+对应开源源码按固定提交自动下载、校验并缓存，再与许可证及构建说明一起进入 ZIP。
+Fusion 默认构建从 ZIP 内找到 iconv，不再需要 `-PFTW_ICONV_ROOT`；该参数仅作为开发者覆盖选项。
+首次发布需要网络下载对应源码；下载或文件校验失败时不会生成新的不完整发布包。
+
+此处的一键是依赖准备/发布的一键；Fusion 原有的 JDK、Android SDK/NDK 构建环境仍由 Fusion 配置管理。
+测试以无外部 iconv 参数的新目录构建，并检查默认依赖路径实际指向包内。
+
+默认构建复验已通过：全新临时工程不含 FTW_ICONV_ROOT 属性，也没有传入该命令行参数，
+四种 ABI 的 CMakeCache 均指向解压包内 iconv；真实 Runtime 的 assembleDebug 成功。
+发布器另有 6 项无 SDK 单元检查，覆盖新 native 源文件、Java/头文件依赖、缺库、篡改及下载校验。
