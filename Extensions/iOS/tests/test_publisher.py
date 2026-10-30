@@ -1,5 +1,9 @@
 import importlib.util
 import json
+import sys
+import io
+from contextlib import redirect_stdout
+from unittest.mock import patch
 from pathlib import Path
 import plistlib
 import tempfile
@@ -75,6 +79,11 @@ class PublisherTests(unittest.TestCase):
             'schema': 1, 'kind': 'native', 'sources': publisher.source_hashes(self.root),
             'files': {name: publisher.sha(path) for name, path in files.items()}}))
         publisher.verify(self.bundle, self.root)
+        with patch.object(publisher, 'EXTENSIONS', self.root), patch.object(
+                sys, 'argv', ['publisher', '--verify-only', '--artifacts', str(self.bundle)]), redirect_stdout(io.StringIO()) as output:
+            publisher.main()
+        self.assertIn('Verified native artifacts', output.getvalue())
+        self.assertFalse((self.root / 'FindTheWay/ToInstall').exists())
         with self.assertRaisesRegex(ValueError, 'full .ext package is not ready'):
             publisher.stage(self.bundle, self.root)
 

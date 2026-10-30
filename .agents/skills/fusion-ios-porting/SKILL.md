@@ -47,7 +47,12 @@ Keep private SDK/exporter material outside the public repository.
    ZIP to .ext. Fusion may export files without adding their Xcode references.
    Verify library/source references, include paths, system dependencies and final
    linkage; prefer an idempotent integration step if project references are missing.
-8. Hook Windows publishing into the target extension's existing release entry
+8. Prefer a one-way handoff: Mac compiles native artifacts; Windows stages the
+   adapter and creates .ext. Do not require returning a Windows-made .ext to Mac.
+   Retain useful official packaging utilities and usage guides; remove obsolete
+   application scaffolding selectively. A GUI utility is not evidence of a CLI.
+   Reference architecture is guidance, not proof that every mechanism is optimal.
+   Hook Windows publishing into the target extension's existing release entry
    point before its final archive is produced. Distinguish native-only artifacts
    from a complete plugin; never report an unfinished adapter as release-ready.
    Put plugin-specific generated-output rules in that plugin's .gitignore.

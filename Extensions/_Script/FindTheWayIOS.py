@@ -140,13 +140,22 @@ def stage(bundle: Path, root: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--artifacts', type=Path, required=True)
-    parser.add_argument('--record-manifest', action='store_true',
+    actions = parser.add_mutually_exclusive_group()
+    actions.add_argument('--verify-only', action='store_true',
+                         help='Verify transferred native/release artifacts without publishing')
+    actions.add_argument('--record-manifest', action='store_true',
                         help='Record hashes after completing Mac build/export/Runtime validation')
     args = parser.parse_args()
     bundle = args.artifacts.resolve()
     if not bundle.is_dir():
         parser.error('iOS artifact directory is missing; prepare it on Mac or explicitly disable iOS packaging')
-    if args.record_manifest:
+    if args.verify_only:
+        files = verify(bundle, EXTENSIONS)
+        kind = json.loads((bundle / 'manifest.json').read_text(encoding='utf-8')).get('kind', 'release')
+        print(f'Verified {kind} artifacts: {len(files)} payload files')
+        if kind == 'native':
+            print('Core verified; complete .ext packaging is not ready.')
+    elif args.record_manifest:
         files = payload_files(bundle)
         manifest = {'schema': 1, 'sources': source_hashes(EXTENSIONS),
                     'files': {name: sha(path) for name, path in files.items()}}

@@ -31,6 +31,18 @@ python3 Extensions/iOS/FindTheWay/build.py --minimum-ios 17.0 \
   --extension-package /path/to/FindTheWay.ext
 ```
 
+On Windows, verify the transferred core without attempting plugin publication:
+
+```bat
+python Extensions\_Script\FindTheWayIOS.py --verify-only --artifacts Extensions\iOS\FindTheWay\Artifacts\Current
+```
+
+The official GUI maker and SDK usage guide are retained in `../Tools/`. They are
+references/manual fallback, not a verified command-line automation interface.
+The intended release flow is Mac core compilation followed by Windows adapter
+and .ext packaging; there is no need to send a Windows-made .ext back to Mac.
+The optional --extension-package switch only bundles an already-existing .ext.
+
 Windows RunOnly verifies artifacts from this directory by default. Override
 `FindTheWayIOSArtifacts` for another transfer directory or explicitly use
 `FindTheWayPackageIOS=false` until full-plugin publishing is ready. Verified release
