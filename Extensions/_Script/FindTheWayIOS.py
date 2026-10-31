@@ -18,7 +18,13 @@ EXTENSIONS = Path(__file__).resolve().parent.parent
 
 
 def sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    data = path.read_bytes()
+    # Git's Windows text checkout may change these Mac-generated artifacts to
+    # CRLF. Normalize only known text payloads; archives/.ext stay byte-exact.
+    if path.suffix == '.h' or path.name == 'Integration.md' or (
+            path.name == 'Info.plist' and data.startswith(b'<?xml')):
+        data = data.replace(b'\r\n', b'\n')
+    return hashlib.sha256(data).hexdigest()
 
 
 def source_hashes(root: Path, include_runtime: bool = True) -> dict[str, str]:
@@ -114,8 +120,13 @@ def verify(bundle: Path, root: Path) -> dict[str, Path]:
                if kind == 'native' and isinstance(recorded, dict) else recorded == expected)
     if not matches:
         raise ValueError('iOS artifacts are stale or from a different source checkout; rebuild on Mac')
-    if manifest.get('files') != {name: sha(path) for name, path in files.items()}:
-        raise ValueError('iOS artifact file set or SHA-256 mismatch')
+    recorded_files = manifest.get('files')
+    actual_files = {name: sha(path) for name, path in files.items()}
+    if recorded_files != actual_files:
+        names = (sorted(name for name in set(recorded_files) | set(actual_files)
+                        if recorded_files.get(name) != actual_files.get(name))
+                 if isinstance(recorded_files, dict) else ['manifest.json files entry'])
+        raise ValueError('iOS artifact file set or SHA-256 mismatch: ' + ', '.join(names))
     return files
 
 
@@ -142,7 +153,7 @@ def package_contents(files: dict[str, Path], root: Path) -> dict[str, bytes]:
         header = files.get(folder + entry.get('HeadersPath', 'Headers') + '/FindTheWayCore.h')
         if not header:
             raise ValueError('Native bundle is missing the compiled public ABI header')
-        data = header.read_bytes()
+        data = header.read_bytes().replace(b'\r\n', b'\n')
         previous = payload.get('Classes/Extensions/FindTheWayCore.h', data)
         if previous != data:
             raise ValueError('Device and simulator public ABI headers differ')

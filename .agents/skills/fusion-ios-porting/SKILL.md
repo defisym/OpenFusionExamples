@@ -43,7 +43,9 @@ Keep private SDK/exporter material outside the public repository.
    XCFramework when it matches the exported project's linking model. Prebuilding
    isolates language settings, not the deployment availability of libc++ APIs.
 6. Stage binaries with source/configuration and per-file hashes, normalize Git
-   text line endings for source fingerprints, and keep binary hashes byte-exact.
+   text line endings for source fingerprints and transferred artifact text
+   (public headers, XML metadata and integration notes). Windows Git checkout
+   can convert these to CRLF. Keep static archive/.ext hashes byte-exact.
    Publish only after all builds/verification succeed; preserve previous outputs
    on failure. Keep Build directories ignored and transfer only owned artifacts.
 7. Publish the extension as .ext, including required native and adapter material.

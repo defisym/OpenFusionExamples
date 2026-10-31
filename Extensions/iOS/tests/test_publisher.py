@@ -36,7 +36,7 @@ class PublisherTests(unittest.TestCase):
         self.bundle.mkdir()
         # Synthetic packaging fixtures, not executable extension/binary evidence.
         (self.bundle / 'FindTheWay.ext').write_bytes(b'extension fixture')
-        (self.bundle / 'Integration.md').write_text('integration fixture')
+        (self.bundle / 'Integration.md').write_text('integration fixture\n')
         self.libraries = []
         for variant in ('device', 'simulator'):
             name = 'ios-arm64' + ('-simulator' if variant == 'simulator' else '')
@@ -45,7 +45,7 @@ class PublisherTests(unittest.TestCase):
             library.write_bytes(b'!<arch>\narchive fixture')
             headers = library.parent / 'Headers'
             headers.mkdir()
-            (headers / 'FindTheWayCore.h').write_text('// ABI fixture')
+            (headers / 'FindTheWayCore.h').write_text('// ABI fixture\n')
             entry = dict(LibraryIdentifier=name, LibraryPath=library.name, HeadersPath='Headers',
                          SupportedPlatform='ios', SupportedArchitectures=['arm64'])
             if variant == 'simulator':
@@ -112,6 +112,36 @@ class PublisherTests(unittest.TestCase):
         self.record()
         source.write_bytes(b'// source\r\n// fixture\r\n')
         publisher.verify(self.bundle, self.root)
+
+    def test_windows_line_endings_do_not_invalidate_artifact_text(self):
+        # Mac-generated XML/header/docs are Git text, unlike static libraries.
+        for path in self.bundle.rglob('*'):
+            if path.is_file() and (path.suffix in {'.h', '.plist'} or path.name == 'Integration.md'):
+                data = path.read_bytes()
+                self.assertIn(b'\n', data)
+                path.write_bytes(data.replace(b'\n', b'\r\n'))
+        publisher.verify(self.bundle, self.root)
+        publisher.stage(self.bundle, self.root)
+
+    def test_mixed_header_line_endings_are_equivalent(self):
+        header = next(self.bundle.rglob('*.h'))
+        header.write_bytes(header.read_bytes().replace(b'\n', b'\r\n'))
+        publisher.stage(self.bundle, self.root)
+        file = self.root / 'FindTheWay/ToInstall/Files/Data/Runtime/iPhone/FindTheWay.ext'
+        contents = publisher.extension_codec().read_extension(file.read_bytes())
+        self.assertEqual(contents['Classes/Extensions/FindTheWayCore.h'], b'// ABI fixture\n')
+
+    def test_artifact_text_edits_are_still_rejected(self):
+        header = next(self.bundle.rglob('*.h'))
+        header.write_bytes(header.read_bytes().replace(b'fixture', b'changed'))
+        with self.assertRaisesRegex(ValueError, 'SHA-256 mismatch.*FindTheWayCore.h'):
+            publisher.verify(self.bundle, self.root)
+
+    def test_binary_line_endings_are_not_normalized(self):
+        library = next(self.bundle.rglob('*.a'))
+        library.write_bytes(library.read_bytes() + b'\r\n')
+        with self.assertRaisesRegex(ValueError, 'SHA-256 mismatch.*libFindTheWayCore.a'):
+            publisher.verify(self.bundle, self.root)
 
     def test_producer_project_changes_invalidate_bundle(self):
         project = self.root / 'iOS/FindTheWay'
