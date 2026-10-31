@@ -32,13 +32,49 @@ FTWStatus ftw_map_release(FTWMap map);
 FTWStatus ftw_map_create_serialized(const char *bytes, uint64_t length, FTWMap *out_map);
 FTWStatus ftw_map_export(FTWMap map, char *buffer, uint64_t capacity, uint64_t *out_length);
 /* Isometric width/height are packed by the bridge, not by the caller.
- * Offsets are nonnegative, matching the shared core's size_t offset API. */
+ * Signed offsets are translated at the C boundary to avoid LLP64/LP64 differences. */
 FTWStatus ftw_map_set_grid(FTWMap map, int32_t isometric, int32_t width,
                            int32_t height, int32_t offset_x, int32_t offset_y);
 FTWStatus ftw_map_convert_coord(FTWMap map, FTWCoord input, int32_t to_grid,
                                 FTWCoord *out_coord);
 FTWStatus ftw_map_set_cost(FTWMap map, int32_t x, int32_t y, int32_t cost, int32_t layer);
 FTWStatus ftw_map_get_cost(FTWMap map, int32_t x, int32_t y, int32_t layer, int32_t *out_cost);
+/* ABI 2: Windows algorithm coverage. Lists are copied, not retained. UTF-8
+ * path names are NUL terminated; NULL/empty selects the last path. */
+typedef struct FTWLists {
+    const FTWCoord *ally, *enemy, *zoc;
+    uint64_t ally_count, enemy_count, zoc_count;
+} FTWLists;
+typedef struct FTWAreaOptions {
+    FTWCoord start;
+    int32_t line, attack, range, start_range, ignore, all_range, attack_range;
+} FTWAreaOptions;
+typedef struct FTWAreaPoint { FTWCoord coord; uint64_t ring; } FTWAreaPoint;
+FTWStatus ftw_map_set_lists(FTWMap, const FTWLists *);
+FTWStatus ftw_map_find_ex(FTWMap, FTWCoord, FTWCoord, uint32_t flags,
+                         uint32_t ignore, const char *save_name, uint64_t *count);
+FTWStatus ftw_map_named_path(FTWMap, const char *name, FTWCoord *, uint64_t, uint64_t *);
+FTWStatus ftw_map_area(FTWMap, const FTWAreaOptions *, uint64_t *rings, uint64_t *attack_start);
+FTWStatus ftw_map_copy_area(FTWMap, FTWAreaPoint *, uint64_t, uint64_t *);
+FTWStatus ftw_map_line_range(FTWMap, FTWCoord, int32_t direction, int32_t range,
+                            uint32_t ignore, int32_t attack, int32_t *result);
+FTWStatus ftw_generate_zoc(FTWCoord, FTWCoord *, uint64_t, uint64_t *);
+FTWStatus ftw_map_aoe(FTWMap, FTWCoord, uint32_t direction, uint32_t type,
+                     uint32_t ignore, FTWCoord *, uint64_t, uint64_t *);
+FTWStatus ftw_map_stash(FTWMap, int32_t enable);
+FTWStatus ftw_map_clear_costs(FTWMap, int32_t cost, int32_t layer);
+/* Desktop GetMap semantics: outside-map coordinates sample as obstacle (255),
+ * while the original strict get_cost API retains argument validation. */
+FTWStatus ftw_map_sample_cost(FTWMap, int32_t x, int32_t y, int32_t layer, int32_t *cost);
+FTWStatus ftw_map_dimensions(FTWMap, int32_t *width, int32_t *height);
+FTWStatus ftw_map_display(FTWMap, int32_t layer, int32_t show_path,
+                         const char *name, char *, uint64_t, uint64_t *);
+/* Poll lazy merged-map updates without invoking Runtime code inside C++. */
+FTWStatus ftw_map_take_updates(FTWMap, uint64_t *count);
+/* Callback is borrowed, synchronous on the owner thread. Do not throw through it.
+ * The core retains its map across callbacks; replacement/release is permitted. */
+typedef void (*FTWUpdateCallback)(void *context, FTWMap map);
+FTWStatus ftw_map_set_callback(FTWMap, FTWUpdateCallback, void *context);
 #ifdef __cplusplus
 }
 #endif

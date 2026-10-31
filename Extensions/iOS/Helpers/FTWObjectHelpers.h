@@ -44,3 +44,6 @@ public:
     CObject* create(const CreateParams& params) const;
 };
 }
+
+@class CExtension;
+extern "C" void ftw_ios_generate_event(CRun* run, CExtension* object, int code);

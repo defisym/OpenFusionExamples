@@ -27,8 +27,8 @@ def source_hashes(root: Path, include_runtime: bool = True) -> dict[str, str]:
     pending = []
     if include_runtime:
         owned.append(root / 'iOS/Helpers')
-        pending = [root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.h',
-                   root / 'iOS/FindTheWay/Runtime/CRunFindTheWay.m']
+        pending = [p for p in (root / 'iOS/FindTheWay/Runtime').glob('*')
+                   if p.suffix in {'.h', '.m', '.mm'}]
     for folder in owned:
         pending.extend(p for p in folder.rglob('*') if p.suffix in {'.h', '.mm', '.cpp'}
                        and 'tests' not in p.parts)
@@ -130,8 +130,10 @@ def extension_codec():
 def package_contents(files: dict[str, Path], root: Path) -> dict[str, bytes]:
     payload = {}
     runtime = root / 'iOS/FindTheWay/Runtime'
-    for name in ('CRunFindTheWay.h', 'CRunFindTheWay.m'):
+    for name in ('CRunFindTheWay.h', 'CRunFindTheWay.m', 'FTWObjectAdapter.mm', 'FTWPlatformAdapter.mm'):
         payload['Classes/Extensions/' + name] = (runtime / name).read_bytes()
+    for name in ('FTWObjectHelpers.h', 'FTWObjectHelpers.mm'):
+        payload['Classes/Extensions/' + name] = (root / 'iOS/Helpers' / name).read_bytes()
     info = plistlib.loads(files['FindTheWayCore.xcframework/Info.plist'].read_bytes())
     for entry in info['AvailableLibraries']:
         folder = 'FindTheWayCore.xcframework/' + entry['LibraryIdentifier'] + '/'

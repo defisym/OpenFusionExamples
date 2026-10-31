@@ -5,7 +5,7 @@
 int main(void) {
     FTWMap handle=0, unchanged=91;
     int32_t cost=-1;
-    CHECK(ftw_abi_version()==1);
+    CHECK(ftw_abi_version()==2);
     CHECK(ftw_map_create(0,4,&unchanged)==FTW_INVALID_ARGUMENT && unchanged==91);
     CHECK(ftw_map_create(INT32_MAX,2,&handle)==FTW_INVALID_ARGUMENT);
     CHECK(ftw_map_create(4,4,&handle)==FTW_OK && handle!=0);
@@ -56,7 +56,7 @@ int main(void) {
         CHECK(ftw_map_convert_coord(handle,(FTWCoord){2,1},0,&coord)==FTW_OK);
         CHECK(ftw_map_convert_coord(handle,coord,1,&coord)==FTW_OK && coord.x==2 && coord.y==1);
         CHECK(ftw_map_set_grid(handle,1,65536,32,0,0)==FTW_INVALID_ARGUMENT);
-        CHECK(ftw_map_set_grid(handle,0,32,32,-1,0)==FTW_INVALID_ARGUMENT);
+        CHECK(ftw_map_set_grid(handle,0,32,32,-1,0)==FTW_OK);
         CHECK(ftw_map_export(handle,0,0,&length)==FTW_OK && length>0);
         char* encoded=(char*)malloc((size_t)length);
         CHECK(encoded!=0);

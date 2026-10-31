@@ -38,10 +38,15 @@ def main():
     with tempfile.TemporaryDirectory(prefix='ftw-runtime-test-') as folder:
         output = Path(folder) / 'test'
         subprocess.run([args.compiler, *compile_flags,
-                        '-I', str(tests / 'runtime_fixture'), '-I', str(project / 'Runtime'),
+                        '-x', 'objective-c++', '-std=c++11',
+                        '-I', str(tests / 'runtime_fixture'), '-I', str(tests.parent / 'Helpers'), '-I', str(project / 'Runtime'),
                         '-I', str(project / 'Core/include'),
                         str(project / 'Runtime/CRunFindTheWay.m'),
                         str(tests / 'runtime_fixture/RuntimeAdapterTest.m'),
+                        str(project / 'Runtime/FTWObjectAdapter.mm'),
+                        str(project / 'Runtime/FTWPlatformAdapter.mm'),
+                        str(tests.parent / 'Helpers/FTWObjectHelpers.mm'),
+                        '-x', 'none',
                         str(args.core_library.resolve()), *flags, '-o', str(output)], check=True)
         subprocess.run([str(output)], check=True)
 

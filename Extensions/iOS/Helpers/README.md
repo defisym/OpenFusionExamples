@@ -1,43 +1,39 @@
 # iOS Runtime object helpers
 
-`FTWObjectHelpers.h/.mm` are extension-owned Objective-C++ helpers. They use
-Runtime declarations locally and do not modify or redistribute SDK source.
-They require C++11 and manual-reference-counted Runtime settings. They are not
-linked into the placeholder extension yet and have not been compiled on Apple.
+`FTWObjectHelpers.h/.mm` are owned Objective-C++ helpers, packaged and used by
+FindTheWay's Runtime adapter. They require C++11 and manual reference counting.
+They do not redistribute or modify private SDK code.
 
-Selection implements qualifier expansion, event-count-aware all/selected/fallback
-iteration, explicit SOL replacement/clearing, and negated filtering. ForEach takes
-an initial snapshot of object slots and creation IDs, then resolves each object
-before invoking a callback. Objects created later are not visited; removed or
-replaced slots are skipped. Callbacks may cause nested events, but must keep the
-run header and helper owner alive. Filter predicates must not generate events or
-mutate the Runtime. This is an explicit restriction, not a general event sandbox.
-Qualifiers must come from valid Runtime event parameters: the SDK does not expose
-the qualifier array length for arbitrary-ID validation.
+Selection supports qualifiers, event-count-aware all/selected/fallback traversal,
+SOL replacement/clearing, and the Windows filtering/negation convention. A foreach
+snapshot uses object slots and creation IDs; removed/replaced objects are skipped,
+and objects created later are not visited. Explicit replacement with an empty
+list clears the SOL. Callers implementing the desktop vector overload's empty
+no-op must retain that distinction.
 
-Creation accepts resolved parameters, clamps layers to [-1, nLayers-1], accepts
-object slot zero, adds the new object to event selection, registers physics,
-and applies hidden-layer visibility. Name lookup uses the current frame OIL and skips leading U+FFFF markers.
-Creation by name without an HFII requires an explicit layer. Position
-parameter decoding, backdrop creation, scope save/restore and action-state guards
-remain to be implemented before full FindTheWay ACE integration.
+`ftw_ios_generate_event` preserves selection and action-loop state across nested
+immediate events. Generation checks prevent a reused slot from selecting a new
+object during restoration. Predicate filters must not dispatch events or mutate
+object lists. All calls execute on Fusion's owning thread.
 
-Compare behavior against the maintained Windows and Android helpers, including
-qualifiers, event stamps, slot zero, negation and layer sentinels. The explicit
-replace API clears empty selections; the desktop vector SelectObjects overload
-may be a no-op. Filter predicates must remain pure. No scope/action-state guard
-is implemented yet.
+Creation looks up the current frame's OI handles by name, skips U+FFFF name markers,
+clamps layers to [-1, nLayers-1], accepts slot zero, selects newly created objects,
+registers physics and applies hidden-layer visibility. The adapter decodes copied
+position/create parameters using SDK `read_Position`, preserving direction,
+parent/repeat behavior, HFII, OI and layer sentinels. Grid backdrops use the SDK's
+separate backdrop API.
 
-## Apple verification
+Compare portable semantics with the maintained Windows helpers; use the actual
+iOS Runtime's types and calling conventions for platform details. Qualifier IDs
+must originate from valid Runtime event parameters; the SDK does not expose the
+qualifier-array length for validating arbitrary external IDs.
 
-Run on an Apple Silicon Mac with the supplied exported project's Runtime sources:
+Check both helpers and complete adapter against an exported project's SDK:
 
 ```sh
-python3 check_helpers.py --runtime-project /path/to/Proj
+python3 Extensions/iOS/Helpers/check_helpers.py --runtime-project /path/to/Proj
 ```
 
-This syntax-checks the actual implementation against private SDK declarations,
-without compiling or publishing the SDK. It must be followed by Runtime tests:
-normal/qualifier objects, stale/current/empty selection, negation, destroyed
-objects, nested events deleting/replacing objects, successful slot-zero creation,
-failed creation, layer -1, hidden layers, and physics-enabled objects.
+Run on Apple Silicon with selected full Xcode. This is a declaration/syntax check;
+it must be followed by actual export, link and Runtime tests, including physics,
+hidden layers, parent positions, qualifiers, empty selections and nested events.

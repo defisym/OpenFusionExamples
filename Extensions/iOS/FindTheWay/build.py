@@ -57,12 +57,13 @@ def build(args):
             '# FindTheWay iOS integration\n\n'
             'Build host: Apple Silicon. Slices: iOS arm64 and iOS Simulator arm64.\n'
             f'Minimum iOS selected for this build: {args.minimum_ios}.\n\n'
-            'Add the static FindTheWayCore.xcframework to the exported App target\n'
-            'with Do Not Embed. Link Apple libc++ and iconv. The Runtime adapter\n'
-            'includes FindTheWayCore.h; it does not compile the shared C++20 core.\n\n'
-            'This build command verifies source/file hashes and packaging metadata.\n'
-            'It does not establish full Runtime ACE/export/device validation.\n'
-            'The current adapter is incomplete; a native bundle is not a usable .ext.\n',
+            'Transfer Artifacts/Current to Windows. RunOnly verifies the core and\n'
+            'packages the current Runtime sources into FindTheWay.ext automatically.\n'
+            'The extension autolinks the correct device/simulator archive, libc++\n'
+            'and iconv using the supplied exporter SRCROOT library search path.\n'
+            'The Runtime sources require C++11; shared C++20 stays precompiled.\n\n'
+            'This command verifies source/file hashes and packaging metadata.\n'
+            'It does not establish Fusion export or final App/device validation.\n',
             encoding='utf-8')
         files = publisher.payload_files(bundle, require_extension=kind == 'release')
         manifest = {'schema': 1, 'kind': kind, 'sources': before,
@@ -87,7 +88,7 @@ def build(args):
             raise
     print(f'{kind} artifacts ready: {destination}')
     if kind == 'native':
-        print('Core ready; Windows full-plugin publishing still requires a real FindTheWay.ext.')
+        print('Core ready; Windows RunOnly can package and install the current iOS Runtime adapter.')
 
 
 def main():

@@ -145,3 +145,27 @@ CObject* Creation::create(const CreateParams& params) const {
     return object;
 }
 }
+
+#import "CExtension.h"
+extern "C" void ftw_ios_generate_event(CRun* run, CExtension* object, int code) {
+    FTWiOS::Selection selection(run);
+    CEventProgram* events=run->rhEvtProg;
+    int count=events->rh2EventCount, action=events->rh2ActionCount, loop=events->rh2ActionLoopCount;
+    BOOL on=events->rh2ActionOn, looping=events->rh2ActionLoop;
+    LPEVT start=events->rh4ActionStart;
+    struct Saved {short type;int stamp;std::vector<FTWiOS::ObjectRef> objects;};
+    std::vector<Saved> saved;
+    for(short type=0;type<run->rhMaxOI;++type) if(run->rhOiList[type]) {
+        int stamp=run->rhOiList[type]->oilEventCount;
+        saved.push_back({type,stamp,stamp==count?selection.snapshot(type,FTWiOS::IterateSelectedOnly,true):std::vector<FTWiOS::ObjectRef>{}});
+    }
+    @try { [object generateEvent:code withParam:0]; }
+    @finally {
+        events->rh2ActionCount=action;events->rh2ActionLoopCount=loop;
+        events->rh2ActionOn=on;events->rh2ActionLoop=looping;events->rh4ActionStart=start;
+        for(const auto& state:saved) {
+            if(state.stamp==count) selection.replace(state.type,state.objects);
+            else run->rhOiList[state.type]->oilEventCount=state.stamp;
+        }
+    }
+}

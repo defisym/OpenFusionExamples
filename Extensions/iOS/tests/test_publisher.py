@@ -23,6 +23,10 @@ class PublisherTests(unittest.TestCase):
         self.root = Path(self.temp.name) / 'Extensions'
         for name in ('iOS/FindTheWay/Runtime/CRunFindTheWay.h',
                      'iOS/FindTheWay/Runtime/CRunFindTheWay.m',
+                     'iOS/FindTheWay/Runtime/FTWObjectAdapter.mm',
+                     'iOS/FindTheWay/Runtime/FTWPlatformAdapter.mm',
+                     'iOS/Helpers/FTWObjectHelpers.h',
+                     'iOS/Helpers/FTWObjectHelpers.mm',
                      'iOS/FindTheWay/Core/CMakeLists.txt',
                      'iOS/FindTheWay/Core/build_xcframework.py'):
             path = self.root / name
@@ -62,6 +66,10 @@ class PublisherTests(unittest.TestCase):
         install = self.root / 'FindTheWay/ToInstall/Files'
         contents = publisher.extension_codec().read_extension((install / 'Data/Runtime/iPhone/FindTheWay.ext').read_bytes())
         self.assertIn('libFindTheWayCore_iphoneos.a', contents)
+        self.assertIn('Classes/Extensions/FTWObjectAdapter.mm', contents)
+        self.assertIn('Classes/Extensions/FTWPlatformAdapter.mm', contents)
+        self.assertIn('Classes/Extensions/FTWObjectHelpers.mm', contents)
+        self.assertEqual(contents['project.txt'].count(b'in Sources */ ='), 4)
         self.assertIn('libFindTheWayCore_iphonesimulator.a', contents)
         self.assertEqual(contents['Classes/Extensions/CRunFindTheWay.m'], b'// source fixture')
         with zipfile.ZipFile(install / 'Tools/FindTheWay-iOS.zip') as archive:

@@ -19,7 +19,11 @@ Keep private SDK/exporter material outside the public repository.
 1. Inspect current Windows ACE definitions, mobile adapters, the installed exporter
    and a real exported project. Inventory IDs, property layout, parameter decoding,
    events, selection, creation and unsupported operations before implementation.
-2. Reuse computational algorithms in shared C++. Keep Runtime objects, selection,
+2. Treat the Windows C++ implementation as the behavioral oracle for portable
+   features. Add direct comparisons against its actual classes for paths, flags,
+   units/ZOC, area layers, line ranges, AOE and caching; do not use Android output
+   as the specification. Adapt only platform-specific I/O/object mechanics using
+   the actual iOS SDK. Reuse computational algorithms in shared C++. Keep Runtime objects, selection,
    creation and event dispatch in an owned adapter. Compare helpers with current
    Windows and Android versions; preserve each Runtime's actual representations.
    Check qualifiers, OI handle/index distinctions, slot zero, empty selections,
@@ -60,7 +64,13 @@ Keep private SDK/exporter material outside the public repository.
    iPhone runtime directory when requested; fail clearly for a missing directory.
    Distinguish successful packaging from complete Runtime feature parity.
    Put plugin-specific generated-output rules in that plugin's .gitignore.
-9. Validate in layers: host/core and ABI tests; actual Apple compile/link;
+9. Image maps need CPU-readable pixels, including reloading purged Runtime data.
+   Preserve sampling coordinates, red/green channels, row pitch and image format;
+   distinguish logical colors from premultiplied display colors. Delegate paths
+   to the Runtime resource loader for sandbox, bundle, embedded and security-scoped
+   files. Do not invent writable paths to read images or dereference desktop
+   surface pointers on iOS. Document irrecoverable export quantization/alpha loss.
+10. Validate in layers: host/core and ABI tests; actual Apple compile/link;
    helpers against private Runtime declarations; .ext install/export; simulator
    and device behavior. User-supplied Apple build logs establish that build only,
    not full ACE coverage or device correctness. Keep concise usage documentation;
