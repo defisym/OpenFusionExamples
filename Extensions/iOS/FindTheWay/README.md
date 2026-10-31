@@ -1,17 +1,20 @@
 # FindTheWay iOS
 
-## Build on Apple Silicon, then publish on Windows
+## Native artifacts and Windows publishing
 
 The Runtime implements the Windows C++ condition/action/expression set, except
 condition 27, which accepts a Windows-only `cSurface*`. On iOS use picture import
 (condition 12) or an Active's fixed value/frame (condition 26). This is source
 coverage, not a claim that Fusion export or device tests have already passed.
 
-**Rebuild the native core for this revision.** ABI 2 adds unit/ZOC-aware searches,
-areas, line ranges, AOE, map display, caching and map-update callbacks. The older
-checked-in ABI 1 archives are intentionally rejected as stale. No shared algorithm
-header has been changed; the iOS C boundary calls the same C++ classes as Windows.
+`Artifacts/Current` contains the author-built **ABI 2** core, built with Xcode
+27.2 (27B52) for iOS 17.0 device/simulator arm64. Source fingerprints and archive
+hashes match this revision; Windows can package these artifacts directly.
+ABI 2 adds unit/ZOC-aware searches, areas, line ranges, AOE, map display, caching
+and map-update callbacks. No shared algorithm header has been changed; the iOS
+C boundary calls the same C++ classes as Windows.
 
+Rebuild only after native sources, ABI or producer configuration change.
 Requires full Xcode selected with xcode-select, Python 3.10+, CMake 3.22+, and
 optionally Ninja. Both iOS device and simulator use arm64; no Intel/Rosetta slice.
 
