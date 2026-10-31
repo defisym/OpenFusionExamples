@@ -1,9 +1,11 @@
 #pragma once
 
-// #include <queue>
+#include <cstring>
+#include <new>
 
 extern "C" {
 #include <libavformat/avformat.h>
+#include <libavutil/mem.h>
 }
 
 // 4KB
@@ -15,21 +17,24 @@ private:
 
 	uint8_t* pBuf = nullptr;
 	int bufSize = 0;
+    bool ownsBuffer = true;
 
 	uint8_t* pSrcBuf = nullptr;
 	int srcBufSize = 0;
 
 public:
+    void releaseBuffer() { ownsBuffer = false; }
 	MemBuf(uint8_t* pSrcBuf, int srcBufSize, int bufSize = MEM_BUFFER_SIZE) {
 		this->pSrcBuf = pSrcBuf;
 		this->srcBufSize = srcBufSize;
 
-		this->pBuf = new uint8_t[bufSize];
+		this->pBuf = static_cast<uint8_t*>(av_malloc(bufSize));
+        if (!pBuf) throw std::bad_alloc();
 		this->bufSize = bufSize;
 	}
 
 	~MemBuf() {
-		delete[] this->pBuf;
+		if (ownsBuffer) av_free(this->pBuf);
 	}
 
 	inline const uint8_t* getSrc() const {
@@ -70,22 +75,17 @@ public:
 	}
 
 	inline int64_t seek(int64_t offset, int whence) {
-		switch (whence) {
-		case SEEK_SET:
-			bufferIndex = 0 + offset;
-
-			return bufferIndex;
-		case SEEK_CUR:
-			bufferIndex = bufferIndex + offset;
-
-			return bufferIndex;
-		case SEEK_END:
-			bufferIndex = srcBufSize + offset;
-
-			return bufferIndex;
-		case AVSEEK_SIZE:
-		default:
-			return -1;
-		}
-	}
+        if (whence == AVSEEK_SIZE) return srcBufSize;
+        const int origin = whence & ~AVSEEK_FORCE;
+        int64_t base = 0;
+        switch (origin) {
+        case SEEK_SET: break;
+        case SEEK_CUR: base = bufferIndex; break;
+        case SEEK_END: base = srcBufSize; break;
+        default: return AVERROR(EINVAL);
+        }
+        if (offset < -base || offset > srcBufSize - base) return AVERROR(EINVAL);
+        bufferIndex = base + offset;
+        return bufferIndex;
+    }
 };

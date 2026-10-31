@@ -3,7 +3,7 @@
 #include <SDL.h>
 #include <SDL_mixer.h>
 
-constexpr auto SDLGeneral_BufferSize = 4096;
+#include "SDLAudioDefinition.h"
 
 constexpr auto SDLGeneral_OK = 0;
 constexpr auto SDLGeneralException_SDLInitFailed = -1;

@@ -254,9 +254,11 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <ItemGroup>
     <ClCompile Include="..\_3rdLib\FFMpeg.cpp" />
     <ClCompile Include="..\_3rdLib\FFMpegAdapter.cpp" />
+    <ClCompile Include="..\_3rdLib\FFMpegAdapterAndroid.cpp" />
     <ClCompile Include="..\_3rdLib\FFMpegAdapterD3D11.cpp" />
     <ClCompile Include="..\_DeLib\Encryption.cpp" />
     <ClCompile Include="CopyAdapter\CopyAdapter.cpp" />
+    <ClCompile Include="CopyAdapter\CopyAdapterAndroid.cpp" />
     <ClCompile Include="CopyAdapter\CopyAdapterBitmap.cpp" />
     <ClCompile Include="CopyAdapter\CopyAdapterD3D11.cpp" />
     <ClCompile Include="D3D\HookD3D.cpp" />
@@ -303,8 +305,11 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\..\Inc\WinMacro.h" />
     <ClInclude Include="..\_3rdLib\FFMpeg.h" />
     <ClInclude Include="..\_3rdLib\FFMpegAdapter.h" />
+    <ClInclude Include="..\_3rdLib\FFMpegAdapterAndroid.h" />
     <ClInclude Include="..\_3rdLib\FFMpegAdapterD3D11.h" />
     <ClInclude Include="..\_3rdLib\FFMpegDefinition.h" />
+    <ClInclude Include="..\_3rdLib\SDLAudioDefinition.h" />
+    <ClInclude Include="..\_3rdLib\FFMpegUtilities.h" />
     <ClInclude Include="..\_3rdLib\FFMpegDependencies.h" />
     <ClInclude Include="..\_3rdLib\MemBuf.h" />
     <ClInclude Include="..\_3rdLib\PacketQueue.h" />
@@ -316,6 +321,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="AudioInterface.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CopyAdapter\CopyAdapter.h" />
+    <ClInclude Include="CopyAdapter\CopyAdapterAndroid.h" />
     <ClInclude Include="CopyAdapter\CopyAdapterBitmap.h" />
     <ClInclude Include="CopyAdapter\CopyAdapterD3D11.h" />
     <ClInclude Include="D3D\D3DHandler.h" />

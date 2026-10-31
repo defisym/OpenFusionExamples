@@ -27,7 +27,7 @@
 #include "PacketQueue.h"
 
 #include "HoldHelper.h"
-#include "GeneralDefinition.h"
+#include "FFMpegUtilities.h"
 
 // FFMpeg
 extern "C" {
@@ -64,7 +64,7 @@ extern "C" {
 // SDL
 #include <SDL.h>
 #include <SDL_thread.h>
-#include <SDLUtilities.h>
+#include "SDLAudioDefinition.h"
 
 // SDL audio
 constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
@@ -111,7 +111,7 @@ constexpr auto FFMpegException_DecodeFailed = -3;
 constexpr auto FFMpegException_HWDecodeFailed = -4;
 constexpr auto FFMpegException_FilterInitFailed = -5;
 
-struct FFMpegException final :std::exception {
+struct FFMpegException final :std::runtime_error {
 	int _flag = 0;
 	static const char* GetInfo(int errorCode) {
         switch (errorCode) {
@@ -130,7 +130,7 @@ struct FFMpegException final :std::exception {
         }
 	}
 
-	explicit FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
+	explicit FFMpegException(const int flag) :std::runtime_error(GetInfo(flag)), _flag(flag) {}
 };
 
 #ifdef _DEBUG
@@ -141,6 +141,8 @@ constexpr auto FFMpegError_ENOMEM = AVERROR(ENOMEM);
 #endif
 
 // Defines				   
+constexpr auto SeekFlag_NoGoto = 0x0001 << 16;
+constexpr auto SeekFlag_NoRevert = 0x0002 << 16;
 constexpr auto SeekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto SeekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
 //constexpr auto SeekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
@@ -215,10 +217,13 @@ class FFMpegOptions {
 	}
 
 public:
-	DWORD flag = FFMpegFlag_Default;
+	uint32_t flag = FFMpegFlag_Default;
 	std::string videoCodecName;
 	std::string audioCodecName;
     int threadCount = 0;
+    // Opaque native output supplied by the platform binding (jobject Surface on Android).
+    void* platformSurface = nullptr;
+    AVPixelFormat outputFormat = PIXEL_FORMAT;
 
 	FFMpegOptions() = default;
 
@@ -233,7 +238,7 @@ public:
 
     inline static int GetValidThreadCount(int thread) {
         const auto concurrency = static_cast<int>(std::thread::hardware_concurrency());
-        thread = std::abs(thread);      // protect for minus
+        thread = static_cast<int>(std::min<int64_t>(std::abs(static_cast<int64_t>(thread)), INT_MAX));      // protect for minus
         return thread > concurrency ? concurrency : thread;
     }
 
@@ -357,8 +362,10 @@ private:
 	AVFrame* pAFilterFrame = nullptr;
 #endif //  AUDIO_TEMPO
 
-	float atempo = -1;
+	float atempo = ATEMPO_DEFAULT;
 	double tempoTimer = 0.0;
+    double externalPosition = 0.0;
+    double externalTimer = 0.0;
 
 	const AVCodec* pVCodec = nullptr;
 	AVCodecParameters* pVCodecParameters = nullptr;
@@ -395,6 +402,9 @@ private:
 	SwsContext* swsContext = nullptr;
 
 	bool bUpdateSwr = true;
+    bool audioFilterDraining = false;
+    bool audioClockStarted = false;
+    double audioDiscardBefore = 0;
 	SwrContext* swrContext = nullptr;
 	AVChannelLayout targetChannelLayout = {};
 
@@ -412,6 +422,8 @@ private:
 	int64_t totalDuration = 0;
 
     int64_t frameCount = 0;
+    bool stillImage = false;
+    bool imagePresented = false;
 
 	// buffer for format conversion
 	uint8_t* p_global_bgr_buffer = nullptr;
@@ -425,10 +437,12 @@ private:
 	uint8_t* audio_buf = nullptr;
 	// decoded audio data length
 	unsigned int audio_buf_size = 0;
+    int audio_buf_capacity = AUDIO_BUFFER_SIZE;
 	// total audio data write into stream
 	unsigned int audio_buf_index = 0;
 
 	double audioCallbackStartPts = 0;
+    double audioOutputClock = 0;
 	double audioCallbackStartTimer = 0;
 
 	// output
@@ -451,7 +465,7 @@ private:
 
 		av_make_error_string(buf, AV_ERROR_MAX_STRING_SIZE, errnum);
 
-		auto result = to_wide_string(buf);
+		auto result = FFMpegDetails::Wide(buf);
 
 		delete[] buf;
 
@@ -512,7 +526,6 @@ public:
         // release all context
         for (auto& [deviceType, pDeviceContext] : sharedHardwareDevice) {
             av_buffer_unref(&pDeviceContext);
-            auto p = pDeviceContext;
         }
 
         sharedHardwareDevice.clear();
@@ -545,6 +558,9 @@ private:
     }
     
     inline int hw_initDecoderDeviceContext(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
+        if (pAdapter && pAdapter->OwnsDecoderContext()) {
+            return pAdapter->InitDecoder(pCodecContext, options.platformSurface);
+        }
         int err = 0;
         if ((err = hw_updateDeviceContext(type)) < 0) {
             return err;
@@ -580,9 +596,7 @@ private:
 		this->bAudioCallbackPause = true;
 		this->audioQueue.pause();
 
-		SDL_AtomicLock(&audioLock);
-		
-		int ret;
+        int ret = 0;
 				
 		// release
 		avfilter_graph_free(&filter_graph);
@@ -692,7 +706,10 @@ private:
 			}
 
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
-			bUpdateSwr = true;
+            bUpdateSwr = true;
+            audioFilterDraining = false;
+            audio_buf_size = audio_buf_index = 0;
+            swr_free(&swrContext);
 
 			/* Print summary of the sink buffer
 			 * Note: args buffer is reused to store channel layout string */
@@ -712,9 +729,7 @@ private:
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);
 
-		SDL_AtomicUnlock(&audioLock);
-		
-		this->audioQueue.restore();
+        this->audioQueue.restore();
 		this->bAudioCallbackPause = false;
 
 		return ret;
@@ -722,7 +737,7 @@ private:
 #endif //  AUDIO_TEMPO
 
 	// probe video format
-	static inline const AVInputFormat* init_probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName = "") {
+	static inline const AVInputFormat* init_probe(uint8_t* pBuffer, const size_t bfSz, const char* pFileName = "") {
 		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -747,7 +762,7 @@ private:
 	// from file
 	static inline bool init_formatContext(AVFormatContext** ppFormatContext, const std::wstring& filePath,
 		const AVInputFormat* fmt = nullptr) {
-		return init_formatContext(ppFormatContext, to_byte_string(filePath, CP_UTF8).c_str(), fmt);
+		return init_formatContext(ppFormatContext, FFMpegDetails::UTF8(filePath).c_str(), fmt);
 	}
 	// from file
 	static inline bool init_formatContext(AVFormatContext** ppFormatContext, const char* pFilePath,
@@ -769,7 +784,7 @@ private:
 	static inline bool init_formatContext(AVFormatContext** ppFormatContext, AVIOContext** ppAvioContext,
 		MemBuf** ppBuf, unsigned char* pBuffer, const size_t bfSz,
 		const AVInputFormat* fmt = nullptr) {
-		if (pBuffer == nullptr) { return false; }
+		if (pBuffer == nullptr || bfSz > INT_MAX || bfSz == 0) { return false; }
 
 		(*ppBuf) = new MemBuf(pBuffer, static_cast<int>(bfSz));
 
@@ -784,13 +799,13 @@ private:
 				return pMemBuf->seek(offset, whence);
 			});
 
-		if (!*ppAvioContext) { return false; }
+        if (!*ppAvioContext) return false;
+        (*ppBuf)->releaseBuffer();
 
 		*ppFormatContext = avformat_alloc_context();
 		if (!*ppFormatContext) { return false; }
 
-		if (!fmt) { fmt = init_probe(pBuffer, bfSz); }
-		if (!fmt) { return false; }
+        // avformat probes through the padded custom AVIO buffer when fmt is null.
 
 		// might crash in avformat_open_input due to access violation if not set
 		// https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
@@ -841,7 +856,7 @@ private:
 
 			if (hw_initDecoderDeviceContext((*ppVCodecContext), hw_type) < 0) {
 				//throw FFMpegException_HWInitFailed;
-				bHWDecode = false;
+                return FFMpegException_HWInitFailed;
 			}
 		}
 #endif
@@ -850,9 +865,6 @@ private:
 			return FFMpegException_InitFailed;
 		}
 
-		if ((*ppVCodecContext)->pix_fmt == AV_PIX_FMT_NONE) {
-			return FFMpegException_InitFailed;
-		}
 
 		return 0;
 	}
@@ -891,7 +903,13 @@ private:
 
         if (bHWDecode) {
             // update pixel format
-            hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
+            pAdapter = FFMpegAdapterFactory(hw_type, nullptr);
+            // A caller's explicit decoder override takes precedence over automatic
+            // platform decoder selection, as it does on Windows.
+            if (!options.VideoCodecValid()) pVCodec = pAdapter->SelectDecoder(pVCodec);
+            hw_pix_fmt = pAdapter->PixelFormat(pVCodec);
+            if (hw_pix_fmt == AV_PIX_FMT_NONE && !pAdapter->OwnsDecoderContext())
+                hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
 
             if (hw_pix_fmt == AV_PIX_FMT_NONE) {
                 // enum types to get a valid device
@@ -926,7 +944,17 @@ private:
 #endif
 
         if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0) {
-            return FFMpegException_InitFailed;
+            if (!bHWDecode) return FFMpegException_InitFailed;
+            if (pAdapter) pAdapter->ReleaseDecoder(pVCodecContext);
+            avcodec_free_context(&pVCodecContext);
+            av_buffer_unref(&hw_device_ctx);
+            bHWDecode = bCopyToTexture = false;
+            hw_type = AV_HWDEVICE_TYPE_NONE;
+            VCodecCtxQpaque.hw_pix_fmt = AV_PIX_FMT_NONE;
+            pVCodec = options.VideoCodecValid() ? options.pVideoCodec
+                : avcodec_find_decoder(pVCodecParameters->codec_id);
+            if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0)
+                return FFMpegException_InitFailed;
         }
 
         // will create default adapter if not support or in software mode
@@ -1029,6 +1057,10 @@ private:
             && pVideoStream->avg_frame_rate.num != 0 && pVideoStream->avg_frame_rate.den != 0) {
             frameCount = static_cast<int64_t>(totalTime * av_q2d(pVideoStream->avg_frame_rate));
         }
+        const std::string formatName = pFormatContext->iformat->name;
+        stillImage = pVideoStream->nb_frames <= 1 && (formatName.find("_pipe") != std::string::npos
+            || formatName == "image2");
+        if (stillImage) frameCount = 1;
 #pragma endregion
 
 #pragma region AudioInit	
@@ -1037,8 +1069,9 @@ private:
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
-			set_audioTempo(ATEMPO_DEFAULT);
-			av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
+            av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
+            atempo = -1; // force the initial filter graph to be created
+            set_audioTempo(ATEMPO_DEFAULT);
 		}
 #pragma endregion
 
@@ -1049,9 +1082,9 @@ private:
 	// Seek
 	// ------------------------------------
 
-	inline int64_t get_protectedTimeInSecond(const int64_t ms) const {		
-		const auto protectedTimeInMs = Range(ms, static_cast<int64_t>(0), totalTimeInMs);
-		const auto protectedTimeInSecond = protectedTimeInMs / 1000;
+	inline double get_protectedTimeInSecond(const int64_t ms) const {
+		const auto protectedTimeInMs = std::clamp(ms, static_cast<int64_t>(0), totalTimeInMs);
+		const auto protectedTimeInSecond = protectedTimeInMs / 1000.0;
 
 		return protectedTimeInSecond;
 	}
@@ -1068,7 +1101,7 @@ private:
 		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
 		// (this may not be supported by all demuxers).
 		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME) {
-			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
+			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms) + timelineOrigin()) / av_q2d(pVideoStream->time_base);
 
 			return static_cast<int64_t>(protectedTimeStamp);
 		}
@@ -1076,7 +1109,7 @@ private:
 		// default
 		// all timestamps are in units of the stream selected by stream_index or if stream_index is -1, in AV_TIME_BASE units
 		// av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
+		const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms) + timelineOrigin()) / av_q2d(pVideoStream->time_base);
 
 		return static_cast<int64_t>(protectedTimeStamp);
 	}
@@ -1161,15 +1194,18 @@ private:
 				response = decode_vpacket(pCodecContext, frames.pPacket, frames.pFrame, frames.pLastFrame);
 
 				// wait until receive enough packets
-                if (response == AVERROR(EAGAIN)) { continue; }
+                if (response == AVERROR(EAGAIN)) { av_packet_unref(frames.pPacket); continue; }
 				if (response < 0) { break; }
 
 				// goto target
 				if (!bAccurateSeek) { break; }
-                if (videoClock > targetPts || NearlyEqualDBL(videoClock, targetPts)) { break; }
+                if (videoClock > targetPts || FFMpegDetails::NearlyEqual(videoClock, targetPts)) { break; }
 
 				//count++;
 			}
+            if (pFormatContext == this->pFormatContext
+                && frames.pPacket->stream_index == audio_stream_index)
+                audioQueue.put(frames.pPacket);
 #ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
             // if it's the audio stream
             if (frames.pPacket->stream_index == audio_stream_index) {
@@ -1211,8 +1247,9 @@ private:
 			int response = decode();
 
 			if (response == QUEUE_WAITING) {
-				fill_queueonce();
-				continue;
+                const int read = fill_queueonce();
+                if (read < 0 && read != AVERROR_EOF) return read;
+                continue;
 			}
 
 			if (response == AVERROR(EAGAIN)) {
@@ -1307,41 +1344,32 @@ private:
     // convert bitmap frame pixel format to PIXEL_FORMAT
     inline void convert_bitmapFrame(AVCodecContext* pCodecContext, 
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
-        // Convert data to Bitmap data
-        // https://zhuanlan.zhihu.com/p/53305541
-
-        // allocate buffer
-        if (p_global_bgr_buffer == nullptr) {
-            num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
-            p_global_bgr_buffer = new uint8_t[num_bytes];
+        // DWORD row alignment also preserves the Windows BGR24 bitmap contract.
+        const auto size = av_image_get_buffer_size(options.outputFormat, pFrame->width, pFrame->height, 4);
+        if (size < 0) throw FFMpegException(FFMpegException_DecodeFailed);
+        if (size != num_bytes) {
+            auto buffer = std::make_unique<uint8_t[]>(size);
+            delete[] p_global_bgr_buffer;
+            p_global_bgr_buffer = buffer.release();
+            num_bytes = size;
         }
-
-        // allocate sws
-        if (swsContext == nullptr) {
-            //auto pFormat = pFrame->format;
-
-            swsContext = sws_getContext(pFrame->width, pFrame->height,
-                static_cast<AVPixelFormat>(pFrame->format),
-                pFrame->width, pFrame->height,
-                PIXEL_FORMAT,
-                NULL, nullptr, nullptr, nullptr);
-        }
-
-        // make sure the sws_scale output is point to start.
-        const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
-
-        uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
-
-        sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-        //bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
-        callBack(bgr_buffer[0], linesize[0], pFrame->height);
+        swsContext = sws_getCachedContext(swsContext, pFrame->width, pFrame->height,
+            static_cast<AVPixelFormat>(pFrame->format), pFrame->width, pFrame->height,
+            options.outputFormat, SWS_BILINEAR, nullptr, nullptr, nullptr);
+        if (!swsContext) throw FFMpegException(FFMpegException_DecodeFailed);
+        uint8_t* output[4] = {};
+        int strides[4] = {};
+        if (av_image_fill_arrays(output, strides, p_global_bgr_buffer,
+                options.outputFormat, pFrame->width, pFrame->height, 4) < 0)
+            throw FFMpegException(FFMpegException_DecodeFailed);
+        sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, output, strides);
+        callBack(output[0], strides[0], pFrame->height);
     }
 
 	inline void convert_frame(AVCodecContext* pCodecContext, 
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
         // data invalid, do not trigger callback, in case of get a black frame
-        if (!pFrame->data[0]) { return; }
+        if (!pFrame->buf[0] && !pFrame->data[0]) { return; }
 
 #ifdef HW_DECODE
 		if (bHWDecode) {
@@ -1360,12 +1388,12 @@ private:
 		av_frame_unref(pFrame);
 	}
 
-	inline int decode_frame(const FrameDataCallBack& callBack) {
+	inline int decode_frame(const FrameDataCallBack& callBack, bool synchronize = true) {
 		SyncState syncState;
 
 		do {
 			// calc delay
-			syncState = get_syncState();			
+			syncState = synchronize ? get_syncState() : SyncState::SYNC_SYNC;
 
 			// decode
 			switch (syncState) {
@@ -1413,44 +1441,27 @@ private:
 		const bool& bBlockState, PacketQueue& queue,
 		AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame, AVFrame* pLastFrame,
 		Decoder decoder) {
-		BOOL bRespond = true;
-		
-		if (!bSendEAgain) {
-			bRespond = queue.get(pPacket, bBlockState);
-
-			if (bRespond == QUEUE_WAITING) {
-				return QUEUE_WAITING;
-			}
-		}
-
-		const auto bNoPacket = bRespond == false;
-		const auto pInputPacket = !bNoPacket ? pPacket : nullptr;
-
-		// Supply raw packet data as input to a decoder
-		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
-		int response = avcodec_send_packet(pCodecContext, pPacket);
-		bSendEAgain = (response == AVERROR(EAGAIN));
-
-		if (response < 0 && !bSendEAgain && response != AVERROR_EOF) {
-			av_packet_unref(pPacket);
-			return response;
-		}
-
-		response = (this->*decoder)(pCodecContext, pInputPacket, pFrame, pLastFrame);
-
-		bFinishState = (response == AVERROR_EOF);
-
-		// won't release if current packed didn't use
-		if (!bSendEAgain) {
-			av_packet_unref(pPacket);
-		}
-
-		if (bFinishState) {
-			return END_OF_QUEUE;
-		}
-
-		return response;
-	}
+        if (bFinishState) return END_OF_QUEUE;
+        // Receive everything already buffered before supplying another packet.
+        // This is essential for codecs producing several frames per packet and EOF drain.
+        int response = (this->*decoder)(pCodecContext, nullptr, pFrame, pLastFrame);
+        if (response == AVERROR_EOF) {
+            bFinishState = true;
+            return END_OF_QUEUE;
+        }
+        if (response != AVERROR(EAGAIN)) return response;
+        if (!bSendEAgain) {
+            const int available = queue.get(pPacket, bBlockState);
+            if (available == QUEUE_WAITING) return QUEUE_WAITING;
+            response = avcodec_send_packet(pCodecContext, available ? pPacket : nullptr);
+        } else {
+            response = avcodec_send_packet(pCodecContext, pPacket);
+        }
+        bSendEAgain = response == AVERROR(EAGAIN);
+        if (!bSendEAgain) av_packet_unref(pPacket);
+        if (response < 0 && response != AVERROR_EOF && !bSendEAgain) return response;
+        return AVERROR(EAGAIN);
+    }
 
 	inline int decode_videoFrame(AVFrame* pLastFrame) {
 		return decode_frameCore(bVideoFinish, bVideoSendEAgain,
@@ -1484,22 +1495,9 @@ private:
 			return response;
 		}
 
-		videoPts = static_cast<double>(pFrame->best_effort_timestamp);
-
-		if (pVPacket != nullptr) {
-			if (pVPacket->dts == AV_NOPTS_VALUE
-				&& pFrame->opaque
-				&& *static_cast<int64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
-				videoPts = static_cast<double>(*static_cast<uint64_t*>(pFrame->opaque));
-			}
-			else {
-				videoPts = static_cast<double>(pVPacket->dts != AV_NOPTS_VALUE
-					? pFrame->best_effort_timestamp
-					: 0);
-			}
-		}
-
-		videoPts *= av_q2d(pVideoStream->time_base);
+        videoPts = pFrame->best_effort_timestamp == AV_NOPTS_VALUE ? videoClock
+            : static_cast<double>(pFrame->best_effort_timestamp) * av_q2d(pVideoStream->time_base)
+                - timelineOrigin();
 
 #ifdef _CONSOLE
 		if (bJumped) {
@@ -1531,107 +1529,75 @@ private:
 	//https://github.com/brookicv/FFMPEG-study/blob/master/FFmpeg-playAudio.cpp
 	inline int decode_apacket(AVCodecContext* pACodecContext, const AVPacket* pAPacket,
 		AVFrame* pFrame, AVFrame* pLastFrame) {
-		int response = avcodec_receive_frame(pACodecContext, pFrame);
-
-		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-			av_frame_unref(pFrame);
-			return response;
-		}
-
-		if (response < 0) {
-			av_frame_unref(pFrame);
-			return response;
-		}
-
-		// frame to process
-		auto pBaseFrame = pFrame;
-
-		// a while loop is wrapped in, `av_buffersink_get_frame` to get filtered frame
-#ifdef AUDIO_TEMPO
-		pBaseFrame = pAFilterFrame;
-		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
-
-		if (response < 0) {
-			av_frame_unref(pFrame);
-			return response;
-		}
-
-		while (true) {
-			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
-			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-				break;
-			}
-
-			if (response < 0) {
-				av_frame_unref(pAFilterFrame);
-				av_frame_unref(pFrame);
-			}
-#endif //  AUDIO_TEMPO
-
-			if (pAPacket != nullptr && pAPacket->pts != AV_NOPTS_VALUE) {
-				audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
-#ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur audio clock: %f\n", audioClock);
-				}
-#endif
-			}
-
-			// update context to avoid crash
-			if (bUpdateSwr) {
-				init_swrContext(&pBaseFrame->ch_layout,
-					static_cast<AVSampleFormat>(pBaseFrame->format),
-					pBaseFrame->sample_rate);
-			}
-
-			// sample after convert: a * b / c
-			// https://ffmpeg.org/doxygen/7.0/resample_audio_8c-example.html
-			const int dst_nb_samples = 
-				static_cast<int>(av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
-				+ pBaseFrame->nb_samples,
-				TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, static_cast<AVRounding>(1)));
-
-			// return number of samples output per channel
-			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples,
-				pBaseFrame->data, pBaseFrame->nb_samples);
-
-			const auto channels = targetChannelLayout.nb_channels;
-			const auto pcm_bytes = 2 * channels;
-			const auto audioSize = channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
-            const auto clockOffset = static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
-
-			audioPts = audioClock;
-            audioClock += clockOffset;
-
-#ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
-            prevAudioClockOffset = clockOffset;
-#endif
-
-#ifdef AUDIO_TEMPO
-  			av_frame_unref(pAFilterFrame);
-#endif //  AUDIO_TEMPO
-
-			av_frame_unref(pFrame);
-
-			return audioSize;
-
-#ifdef AUDIO_TEMPO
-		}
-
-		av_frame_unref(pAFilterFrame);
-#endif //  AUDIO_TEMPO
-
-		av_frame_unref(pFrame);
-
-		return -1;
-	}
+        // Drain the filter before asking the decoder for more input. The old early
+        // return lost additional filter frames and the tempo/resampler tail at EOF.
+        for (;;) {
+            int response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
+            if (response == AVERROR(EAGAIN)) {
+                response = avcodec_receive_frame(pACodecContext, pFrame);
+                if (response == AVERROR(EAGAIN)) return response;
+                if (response == AVERROR_EOF) {
+                    if (!audioFilterDraining) {
+                        const int result = av_buffersrc_add_frame_flags(buffersrc_ctx, nullptr, 0);
+                        if (result < 0) return result;
+                        audioFilterDraining = true;
+                    }
+                } else if (response < 0) return response;
+                else {
+                    if (!audioClockStarted) {
+                        audioClock = pFrame->best_effort_timestamp == AV_NOPTS_VALUE ? audioDiscardBefore
+                            : pFrame->best_effort_timestamp * av_q2d(pAudioStream->time_base) - timelineOrigin();
+                        audioClockStarted = true;
+                    }
+                    response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, 0);
+                    av_frame_unref(pFrame);
+                    if (response < 0) return response;
+                }
+                continue;
+            }
+            const bool end = response == AVERROR_EOF;
+            if (response < 0 && !end) return response;
+            if (!swrContext && end) return AVERROR_EOF;
+            if (!end && bUpdateSwr) {
+                swr_free(&swrContext);
+                init_swrContext(&pAFilterFrame->ch_layout,
+                    static_cast<AVSampleFormat>(pAFilterFrame->format), pAFilterFrame->sample_rate);
+            }
+            const int samples = end ? 4096 : swr_get_out_samples(swrContext, pAFilterFrame->nb_samples);
+            if (samples < 0 || samples > INT_MAX / (TARGET_CHANNEL_NUMBER * 2))
+                return AVERROR(EINVAL);
+            const int required = (std::max)(samples * TARGET_CHANNEL_NUMBER * 2, 4);
+            if (required > audio_buf_capacity) {
+                auto next = std::make_unique<uint8_t[]>(required);
+                delete[] audio_buf;
+                audio_buf = next.release();
+                audio_buf_capacity = required;
+            }
+            const int count = swr_convert(swrContext, &audio_buf, samples,
+                end ? nullptr : pAFilterFrame->extended_data, end ? 0 : pAFilterFrame->nb_samples);
+            av_frame_unref(pAFilterFrame);
+            if (count < 0) return count;
+            if (!count) { if (end) return AVERROR_EOF; continue; }
+            audioPts = audioClock;
+            const double step = static_cast<double>(atempo) / TARGET_SAMPLE_RATE;
+            audioClock += count * step;
+            const int discard = static_cast<int>(std::clamp(std::ceil((audioDiscardBefore - audioPts) / step),
+                0.0, static_cast<double>(count)));
+            const int bytes = (count - discard) * TARGET_CHANNEL_NUMBER * 2;
+            if (discard) {
+                std::memmove(audio_buf, audio_buf + discard * TARGET_CHANNEL_NUMBER * 2, bytes);
+                audioPts += discard * step;
+            }
+            if (bytes) return bytes;
+        }
+    }
 
 	// ------------------------------------
 	// Synchronize
 	// ------------------------------------
 
 	inline double synchronize_video(const AVFrame* pVFrame, double videoPts) {		
-		if (!NearlyEqualDBL(videoPts, 0.0)) {
+		if (!FFMpegDetails::NearlyEqual(videoPts, 0.0)) {
 			videoClock = videoPts;
 		}
 		else {
@@ -1647,19 +1613,9 @@ private:
 	}
 
 	inline double get_externalClock() {
-		const auto curTime = get_curTime();
-		const auto pausedTime = get_pausedTime();
-		
-		// reset frameTimer with an extimate time		
-		if (NearlyEqualDBL(frameTimer, -1.0)) {
-			frameTimer = curTime - videoPts;
-			tempoTimer = curTime;
-		}
-
-		const auto timeTempo = curTime - pausedTime - tempoTimer;
-
-		return (tempoTimer - frameTimer) + timeTempo * static_cast<double>(this->atempo);
-	}
+        if (externalTimer == 0) externalTimer = get_curTime();
+        return externalPosition + (bPause ? 0.0 : (get_curTime() - externalTimer) * atempo);
+    }
 
 	inline double get_audioClock() {
 		double pts = audioClock; /* maintained in the audio thread */
@@ -1675,13 +1631,10 @@ private:
 #ifdef TIMER_OFFSET
 			const auto maxPtsOffset = static_cast<double>(this->audio_stream_len) / bytes_per_sec;
 
-			const auto curTime = get_curTime();
-			const auto pausedTime = get_pausedTime();
+            const auto timePlayed = bPause ? 0.0 : get_curTime() - audioCallbackStartTimer;
+			const auto protectedTimePlayed = std::clamp(timePlayed, 0.0, maxPtsOffset);
 
-			const auto timePlayed = curTime - pausedTime - audioCallbackStartTimer;		
-			const auto protectedTimePlayed = Range(timePlayed, 0.0, maxPtsOffset);
-
-			pts = audioCallbackStartPts + protectedTimePlayed;
+			pts = audioCallbackStartPts + protectedTimePlayed * atempo;
 #else
 			auto hw_buf_size = audio_buf_size - audio_buf_index;
 			pts -= static_cast<double>(hw_buf_size) / bytes_per_sec;
@@ -1733,7 +1686,9 @@ private:
 	}
 
 	inline void reset_sync(const double targetPts = 0) {
-		videoPts = targetPts;
+        externalPosition = targetPts;
+        externalTimer = get_curTime();
+        videoPts = targetPts;
 		audioPts = targetPts;
 
 		videoClock = targetPts;
@@ -1744,17 +1699,20 @@ private:
 		frameLastDelay = 40e-3;
 
 		reset_pausePts();
-		audioCallbackStartPts = 0;
+		audioOutputClock = audioCallbackStartPts = targetPts;
+        audioCallbackStartTimer = get_curTime();
 	}
 
 	inline void reset_finishState() {
 		bReadFinish = false;
 		bAudioFinish = false;
-		bVideoFinish = false;
-	}
+        bVideoFinish = false;
+        bVideoSendEAgain = bAudioSendEAgain = false;
+        bFinish = false;
+    }
 
 	static inline double get_curTime() {
-		return static_cast<double>(av_gettime()) / 1000000.0;
+		return static_cast<double>(av_gettime_relative()) / 1000000.0;
 	}
 
 	static inline double get_ptsMS(const AVPacket* pPacket, const AVStream* pStream) {
@@ -1779,9 +1737,16 @@ private:
 		return response;
 	}
 
+    double timelineOrigin() const {
+        return pFormatContext->start_time == AV_NOPTS_VALUE ? 0.0
+            : pFormatContext->start_time / static_cast<double>(AV_TIME_BASE);
+    }
+    FFMpeg() = default;
 public:
-	//Load from file
-	explicit FFMpeg(const std::wstring& filePath, const FFMpegOptions& opt = FFMpegOptions()) {
+    FFMpeg(const FFMpeg&) = delete;
+    FFMpeg& operator=(const FFMpeg&) = delete;
+    //Load from file
+	explicit FFMpeg(const std::wstring& filePath, const FFMpegOptions& opt = FFMpegOptions()) : FFMpeg() {
 		bFromMem = false;
 		this->options = opt;
 
@@ -1792,9 +1757,16 @@ public:
 		if (const auto ret = init_general(); ret != 0) { throw FFMpegException(ret); }
 	}
 
+    explicit FFMpeg(const std::string& filePath, const FFMpegOptions& opt = FFMpegOptions()) : FFMpeg() {
+        options = opt;
+        if (!init_formatContext(&pFormatContext, filePath.c_str()))
+            throw FFMpegException(FFMpegException_InitFailed);
+        if (const auto ret = init_general(); ret != 0) throw FFMpegException(ret);
+    }
+
 	//Load from memory
 	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
-	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const FFMpegOptions& opt = FFMpegOptions()) {
+	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const FFMpegOptions& opt = FFMpegOptions()) : FFMpeg() {
 		bFromMem = true;
 		this->options = opt;
 
@@ -1849,9 +1821,14 @@ public:
 
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
+        av_channel_layout_uninit(&targetChannelLayout);
 
-        pAdapter->FreeContext(VCodecCtxQpaque.hTextureCtx);        
-        pAdapter->FreeContext(VGetCodecCtxQpaque.hTextureCtx);
+        if (pAdapter) {
+            pAdapter->FreeContext(VCodecCtxQpaque.hTextureCtx);
+            pAdapter->FreeContext(VGetCodecCtxQpaque.hTextureCtx);
+            pAdapter->ReleaseDecoder(pVCodecContext);
+            pAdapter->ReleaseDecoder(pVGetCodecContext);
+        }
         
         avcodec_free_context(&pVCodecContext);
 		avcodec_free_context(&pVGetCodecContext);
@@ -1870,6 +1847,8 @@ public:
 			delete pSeekMemBuf;
 			pSeekMemBuf = nullptr;
 
+            if (pAvioContext) av_freep(&pAvioContext->buffer);
+            if (pSeekAvioContext) av_freep(&pSeekAvioContext->buffer);
             avio_context_free(&pAvioContext);
             avio_context_free(&pSeekAvioContext);
 		}
@@ -1888,16 +1867,17 @@ public:
 	}
 
 	inline void set_pause(const bool bPause, const bool bUpdatePts = true) {
-		this->bPause = bPause;
-		if (!bUpdatePts) { return; }
-
-		if (bPause) {
-			pausePts = get_curTime();
-		}
-		else {
-			unPausePts = get_curTime();
-		}
-	}
+        SpinLockHelper lockHelper(&audioLock);
+        if (this->bPause == bPause) return;
+        externalPosition = get_externalClock();
+        externalTimer = get_curTime();
+        audioCallbackStartPts = get_audioClock();
+        audioCallbackStartTimer = get_curTime();
+        this->bPause = bPause;
+        if (!bUpdatePts) return;
+        if (bPause) pausePts = get_curTime();
+        else unPausePts = get_curTime();
+    }
 
 	inline double get_pausedTime(bool bReset = true) {
 		const auto pausedTime = unPausePts - pausePts;
@@ -2020,40 +2000,40 @@ public:
 	}
 
 	inline static AVHWDeviceType get_hwDeviceTypeByName(const std::wstring& deviceName) {
-		if (StrIEqu(deviceName.c_str(), L"NONE")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"NONE")) {
 			return AV_HWDEVICE_TYPE_NONE;
 		}
-		if (StrIEqu(deviceName.c_str(), L"VDPAU")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"VDPAU")) {
 			return AV_HWDEVICE_TYPE_VDPAU;
 		}
-		if (StrIEqu(deviceName.c_str(), L"CUDA")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"CUDA")) {
 			return AV_HWDEVICE_TYPE_CUDA;
 		}
-		if (StrIEqu(deviceName.c_str(), L"VAAPI")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"VAAPI")) {
 			return AV_HWDEVICE_TYPE_VAAPI;
 		}
-		if (StrIEqu(deviceName.c_str(), L"DXVA2")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"DXVA2")) {
 			return AV_HWDEVICE_TYPE_DXVA2;
 		}
-		if (StrIEqu(deviceName.c_str(), L"QSV")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"QSV")) {
 			return AV_HWDEVICE_TYPE_QSV;
 		}
-		if (StrIEqu(deviceName.c_str(), L"VIDEOTOOLBOX")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"VIDEOTOOLBOX")) {
 			return AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
 		}
-		if (StrIEqu(deviceName.c_str(), L"D3D11VA")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"D3D11VA")) {
 			return AV_HWDEVICE_TYPE_D3D11VA;
 		}
-		if (StrIEqu(deviceName.c_str(), L"DRM")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"DRM")) {
 			return AV_HWDEVICE_TYPE_DRM;
 		}
-		if (StrIEqu(deviceName.c_str(), L"OPENCL")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"OPENCL")) {
 			return AV_HWDEVICE_TYPE_OPENCL;
 		}
-		if (StrIEqu(deviceName.c_str(), L"MEDIACODEC")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"MEDIACODEC")) {
 			return AV_HWDEVICE_TYPE_MEDIACODEC;
 		}
-		if (StrIEqu(deviceName.c_str(), L"VULKAN")) {
+		if (FFMpegDetails::EqualInsensitive(deviceName.c_str(), L"VULKAN")) {
 			return AV_HWDEVICE_TYPE_VULKAN;
 		}
 
@@ -2082,7 +2062,7 @@ public:
 
 		// protection	
 		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
-			? Range(ms, static_cast<int64_t>(0), get_videoDuration())
+			? std::clamp(ms, static_cast<int64_t>(0), get_videoDuration())
 			: ms;
         const auto targetPts = static_cast<double>(ms) / 1000.0;
 
@@ -2100,8 +2080,16 @@ public:
 			avcodec_flush_buffers(pACodecContext);
 		}
 
-		reset_sync(targetPts);
-		reset_finishState();
+        audio_buf_size = audio_buf_index = 0;
+        audioDiscardBefore = targetPts;
+        audioClockStarted = false;
+        if (!bNoAudio) {
+            const float tempo = atempo;
+            atempo = -1;
+            update_audioTempo(tempo);
+        }
+        reset_sync(targetPts);
+        reset_finishState();
 
 #ifdef _CONSOLE
 		bJumped = true;
@@ -2198,11 +2186,34 @@ public:
 		return response;
 	}
 
-	// read next frame and handle loop automatically
-	inline int get_nextFrame(const FrameDataCallBack& callBack) {
-		int response = handleLoop();
+    // Shared policy previously implemented in the Windows Fusion wrapper.
+    int seek(int64_t ms, int flags, bool accurate, const FrameDataCallBack& callback) {
+        ms = std::max<int64_t>(ms, 0);
+        const bool single = get_videoFrameCount() == 1;
+        const int nativeFlags = flags < 0 ? flags : flags & 0xffff;
+        int result = single ? 0 : set_videoPosition(ms, nativeFlags);
+        if (result < 0) return result;
+        if ((!(accurate && !(flags & AVSEEK_FLAG_BYTE)) && !single)
+            || (flags & SeekFlag_NoGoto)) return 0;
+        if (stillImage && imagePresented) return 0;
+        result = goto_videoPosition(ms, callback);
+        if (result < 0) return result;
+        imagePresented = true;
+        if (ms == 0 && !(flags & SeekFlag_NoRevert) && !single)
+            return set_videoPosition(ms, nativeFlags);
+        return 0;
+    }
 
-		if (!bFinish) { response = decode_frame(callBack); }
+	// read next frame and handle loop automatically
+	inline int get_nextFrame(const FrameDataCallBack& callBack, bool synchronize = true) {
+        if (stillImage && imagePresented) return 0;
+        int response = handleLoop();
+        SpinLockHelper lockHelper(&audioLock);
+
+        if (!bFinish) response = decode_frame([&](const unsigned char* data, int stride, int height) {
+            imagePresented = true;
+            callBack(data, stride, height);
+        }, synchronize);
 
 		//do not wait audio finish to get fluent loop
 		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
@@ -2215,13 +2226,30 @@ public:
 		return response;
 	}
 
+    bool has_audio() const { return !bNoAudio; }
+    bool audio_finished() {
+        SpinLockHelper lockHelper(&audioLock);
+        return bNoAudio || (bAudioFinish && audio_buf_index >= audio_buf_size);
+    }
+    bool playback_finished() {
+        SpinLockHelper lockHelper(&audioLock);
+        if (!bFinish || (!bNoAudio && (!bAudioFinish || audio_buf_index < audio_buf_size))) return false;
+        const double clock = bNoAudio ? get_externalClock() : get_audioClock();
+        return totalTimeInMs == INT64_MAX || clock * 1000.0 >= totalTimeInMs;
+    }
+    double get_playbackClock() {
+        SpinLockHelper lockHelper(&audioLock);
+        return (bNoAudio ? get_externalClock() : get_audioClock()) * 1000.0;
+    }
+
 	// ------------------------------------
 	// Volume
 	// ------------------------------------
 
 	// range: 0 ~ 100
 	inline void set_volume(const int volume) {
-		this->volume = static_cast<int>((Range(volume, 0, 100) / 100.0) * 128);
+        SpinLockHelper lockHelper(&audioLock);
+		this->volume = static_cast<int>((std::clamp(volume, 0, 100) / 100.0) * 128);
 	}
 
 	// range: 0 ~ 100
@@ -2231,7 +2259,8 @@ public:
 
 	// range: 0 ~ 128
 	inline void set_sdl_volume(const int volume) {
-		this->volume = Range(volume, 0, 128);
+        SpinLockHelper lockHelper(&audioLock);
+		this->volume = std::clamp(volume, 0, 128);
 	}
 
 	// range: 0 ~ 128
@@ -2243,7 +2272,12 @@ public:
 	// Audio control
 	// ------------------------------------
 
-	inline void set_audioTempo(float atempo) {
+    inline void set_audioTempo(float value) {
+        SpinLockHelper lockHelper(&audioLock);
+        update_audioTempo(value);
+    }
+private:
+    inline void update_audioTempo(float atempo) {
 #ifndef AUDIO_TEMPO
 		this->atempo = ATEMPO_DEFAULT;
 #else
@@ -2252,11 +2286,13 @@ public:
 			: ATEMPO_DEFAULT;
 
 		// won't update if param is the same		
-		if (NearlyEqualFLT(this->atempo, newTempo)) {
+		if (FFMpegDetails::NearlyEqual(this->atempo, newTempo)) {
 			return;
 		}
 
-		this->atempo = newTempo;
+        externalPosition = get_externalClock();
+        externalTimer = get_curTime();
+        this->atempo = newTempo;
 
 		// make sure member value is updated
 		if (this->bNoAudio) {
@@ -2286,10 +2322,12 @@ public:
 			fliters += std::format(",{}", filters_descr);
 		}
 
-		init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+        const int result = init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+        if (result < 0) throw FFMpegException(result);
 #endif //  AUDIO_TEMPO
 	}
 
+public:
 	inline float get_audioTempo() const {
 		return this->atempo;
 	}
@@ -2307,7 +2345,7 @@ public:
 		bool bValid = !bNoAudio && !bExit && !bPause && !bSeeking;
 		if (!bValid) { return 0; }
 
-		this->audioCallbackStartPts = audioClock;
+		this->audioCallbackStartPts = audioOutputClock;
 		this->audioCallbackStartTimer = get_curTime();
 
 		// check the lenth remain in audio cache
@@ -2323,32 +2361,45 @@ public:
 				});
 
 				// If error, output silence.
-				if (response < 0) {
-					audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
-					memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
-				}
+                if (response < 0) {
+                    audio_buf_size = audio_buf_index = 0;
+                    return static_cast<int>(audio_stream_len) - len;
+                }
 				else {
 					// return the audio data length
-					audio_buf_size = response;
-				}
+                    audio_buf_size = response;
+                }
 
 				// reset write index
 				audio_buf_index = 0;
 			}
 
+            // Preserve a source's delayed audio start as silence on the output
+            // timeline instead of jumping the video master clock to the first sample.
+            const double step = static_cast<double>(atempo) / (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER * 2);
+            const double bufferedPts = audioPts + audio_buf_index * step;
+            if (bufferedPts > audioOutputClock + step * 4) {
+                const int silence = static_cast<int>((std::min)(static_cast<double>(len / 4),
+                    std::ceil((bufferedPts - audioOutputClock) / (step * 4)))) * 4;
+                if (silence) {
+                    len -= silence; stream += silence; audioOutputClock += silence * step;
+                    continue;
+                }
+            }
 			// calculate the remain length of decode cache, protect if exceeds
 			int wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
 			if (wt_stream_len > len) { wt_stream_len = len; }
 
 			// mix audio steam from given index
-			mixer(stream, audio_buf + audio_buf_index, len, volume);
+			mixer(stream, audio_buf + audio_buf_index, wt_stream_len, volume);
 
 			// update
 			len -= wt_stream_len;
 			stream += wt_stream_len;
-			audio_buf_index += wt_stream_len;
+            audio_buf_index += wt_stream_len;
+            audioOutputClock += wt_stream_len * step;
 		}
 
-		return 0;
-	}
+        return static_cast<int>(audio_stream_len) - len;
+    }
 };
