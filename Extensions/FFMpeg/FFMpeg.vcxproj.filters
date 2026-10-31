@@ -82,6 +82,12 @@
     <ClCompile Include="CopyAdapter\CopyAdapterBitmap.cpp">
       <Filter>CopyAdapter</Filter>
     </ClCompile>
+    <ClCompile Include="..\_3rdLib\FFMpegAdapterAndroid.cpp">
+      <Filter>FFMpeg\FFMpegAdapter</Filter>
+    </ClCompile>
+    <ClCompile Include="CopyAdapter\CopyAdapterAndroid.cpp">
+      <Filter>CopyAdapter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Ext.def">
@@ -240,6 +246,18 @@
     </ClInclude>
     <ClInclude Include="..\_3rdLib\FFMpegDependencies.h">
       <Filter>FFMpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\FFMpegAdapterAndroid.h">
+      <Filter>FFMpeg\FFMpegAdapter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\FFMpegUtilities.h">
+      <Filter>FFMpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\_3rdLib\SDLAudioDefinition.h">
+      <Filter>FFMpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="CopyAdapter\CopyAdapterAndroid.h">
+      <Filter>CopyAdapter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

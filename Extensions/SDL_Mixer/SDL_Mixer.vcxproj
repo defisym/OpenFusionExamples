@@ -57,6 +57,10 @@
   <Import Project="..\_3rdLib\SoundTouch.props" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
+    <SDLMixerPackageAndroid Condition="'$(SDLMixerPackageAndroid)'=='' and '$(Configuration)'=='Run_Only Unicode'">true</SDLMixerPackageAndroid>
+    <DisableFastUpToDateCheck Condition="'$(SDLMixerPackageAndroid)'=='true' and '$(Configuration)'=='Run_Only Unicode'">true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <PropertyGroup>
     <_ProjectFileVersion>16.0.31515.66</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -321,4 +325,10 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="PackageSDLMixerAndroid" AfterTargets="Build"
+          Condition="'$(SDLMixerPackageAndroid)'=='true' and '$(Configuration)'=='Run_Only Unicode' and '$(DesignTimeBuild)'!='true'">
+    <Message Text="Packaging SDL Mixer Android extension ZIP" Importance="high" />
+    <Exec WorkingDirectory="$(ProjectDir)"
+          Command="call &quot;$(ProjectDir)..\_Script\SDL_Mixer_Android.bat&quot; --no-pause" />
+  </Target>
 </Project>

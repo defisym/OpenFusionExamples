@@ -1,0 +1,23 @@
+{
+  "SDL2": {
+    "repository": "libsdl-org/SDL",
+    "revision": "5d249570393f7a37e037abf22cd6012a4cc56a71",
+    "sha256": "10f1194f8d2e4a73ca1c7c553b3189d0b68ab9ef3544e8d2a268e4429456b373"
+  },
+  "MixerX": {
+    "repository": "WohlSoft/SDL-Mixer-X",
+    "revision": "72139aa7332062de541de50708742fe4ee2ae05c",
+    "sha256": "e4e273beba581a860814f33d7c8ae5bb6309470e49545b2d948d3987a0a97210"
+  },
+  "SoundTouch": {
+    "repository": "azahar-emu/soundtouch",
+    "origin": "https://codeberg.org/soundtouch/soundtouch.git",
+    "revision": "e83424d5928ab8513d2d082779c275765dee31b9",
+    "sha256": "8729abae5175970ec79e2ce6b98b28c4d490004043bcf5997ebe860ab6f93d72"
+  },
+  "AudioCodecs": {
+    "repository": "WohlSoft/AudioCodecs",
+    "revision": "bb11ca3cc1d7597b23a530d519b3e636dceb7b23",
+    "sha256": "66b28463f73255f9f108e905e0713996654206955527a95cb531f9910daaa5f9"
+  }
+}

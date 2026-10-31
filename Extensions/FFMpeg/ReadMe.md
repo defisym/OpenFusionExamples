@@ -39,3 +39,17 @@ The dependency target checks this file and its hash-named cache before downloadi
 For an offline build, add `-DOFE_FFMPEG_ARCHIVE="D:/Downloads/ffmpeg-n9.0-latest-win32-lgpl-shared-9.0.zip"`; the same pinned SHA-256 is still required. `-DOFE_FFMPEG_ROOT="D:/Dev/FFMpeg"` selects a different SDK destination for manual preparation; use the same path for `OfeFFmpegRoot` when compiling the plugin.
 
 After rebuilding the edit-time and runtime `.mfx` files, deploy the seven FFmpeg DLLs from the SDK's `bin` directory into the Fusion root and `Data/Runtime/Unicode`, alongside the matching SDL DLLs. Dependency preparation does not copy DLLs into a Fusion installation. Check the updated `GetDependencies()` names when replacing an existing installation.
+
+## Android JNI port
+
+See [Android build, rendering and compatibility notes](Android/README.md). The Android
+backend uses FFmpeg with MediaCodec/SurfaceTexture hardware rendering, RGBA software
+uploads, shared SDL Mixer X PCM output and Fusion's native Java runtime/file interfaces. `Run_Only Unicode` builds
+publish the four-ABI Android ZIP through `_Script/FFMpeg.py`, like FTW. Set
+`/p:FFMpegPackageAndroid=false` to build only the Windows runtime. Android publishing
+requires a separately prepared Android FFmpeg SDK (`OFE_FFMPEG_ROOT`) or the source
+build tools described in the Android notes.
+
+The [combined Android build/file guide](../Android_Gradle/Media-JNI.md) explains
+building/installing both ZIPs, shared dependency versions, native application
+storage, and readable paths/assets/embedded files/content URIs with Android grants.

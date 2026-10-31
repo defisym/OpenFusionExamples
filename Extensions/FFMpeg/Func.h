@@ -105,9 +105,6 @@ inline bool VideoSingleFrame(LPRDATA rdPtr) {
     return rdPtr->pFFMpeg->get_videoFrameCount() == 1;
 }
 
-constexpr auto SeekFlag_NoGoto = 0x0001 << 16;	// do not decode to next valid frame
-constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp is 0
-
 // seek video to given position, return false on decode error
 // by default, it will decode to first valid frame (accurate seek enabled & not `AVSEEK_FLAG_BYTE`)
 // and revert back if target timestamp is 0
@@ -115,37 +112,12 @@ constexpr auto SeekFlag_NoRevert = 0x0002 << 16;	// do not revert if timestamp i
 inline bool SetPositionGeneral(LPRDATA rdPtr, int ms, int flags = SeekFlags) {
     if (!rdPtr->bOpen) { return true; }
 
-    // add protection for minus position
-    ms = (std::max)(ms, 0);
-
-    // in case of only one frame, aka static picture, only use goto
-    // as seek for picture won't reset the context and cannot decode next time
-    const auto bSingleFrame = VideoSingleFrame(rdPtr);
-
-    int response = 0;
-
-    //auto pos = rdPtr->pFFMpeg->get_videoPosition();
-    if (!bSingleFrame) { response = rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
-    if (response < 0) { return false; }
-
-    const bool bGoto = rdPtr->bAccurateSeek && (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE;
-    if (!(bGoto || bSingleFrame) || flags & SeekFlag_NoGoto) { return true; }
-    response = rdPtr->pFFMpeg->goto_videoPosition(ms,
-        [&] (const unsigned char* pData, const int stride, const int height) {
-            // to avoid green screen at start
-            if (rdPtr->pFFMpeg->get_copyToTextureState()) { rdPtr->pFFMpeg->gpu_wait(); }
-
+    return rdPtr->pFFMpeg->seek(ms, flags, rdPtr->bAccurateSeek,
+        [&](const unsigned char* pData, const int stride, const int height) {
+            if (rdPtr->pFFMpeg->get_copyToTextureState()) rdPtr->pFFMpeg->gpu_wait();
             rdPtr->pCopyAdapter->CopyTexture(rdPtr->pDisplaySf, pData, stride, height);
             ReDisplay(rdPtr);
-        });
-    if (response < 0) { return false; }
-
-    // revert
-    if (ms != 0 || flags & SeekFlag_NoRevert) { return true; }
-    if (!bSingleFrame) { response = rdPtr->pFFMpeg->set_videoPosition(ms, flags); }
-    if (response < 0) { return false; }
-
-    return true;
+        }) >= 0;
 }
 
 inline bool GetVideoPlayState(LPRDATA rdPtr) {
