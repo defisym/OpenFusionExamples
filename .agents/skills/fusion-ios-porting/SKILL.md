@@ -7,6 +7,9 @@ description: Port Clickteam Fusion extensions to iOS using a shared C++ core, a 
 
 ## Scope and constraints
 
+Apply the [common porting rules](../fusion-extension-porting/SKILL.md), including
+Git checkout normalization and artifact hash verification, before this workflow.
+
 Use for iOS Runtime integration, native builds, exported Xcode projects, and .ext
 publishing. Derive paths, commands, SDK requirements and artifact names from the
 target extension's current project. Do not make FindTheWay settings mandatory
