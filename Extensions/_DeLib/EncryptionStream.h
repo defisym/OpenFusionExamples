@@ -1,133 +1,47 @@
 #pragma once
-
 #include "Encryption.h"
 
+// Historical push API. New code should use encryption::Cipher/DecryptReader.
 class EncryptionStreamHelper {
-private:
-    //Define Vars
-    BCRYPT_ALG_HANDLE       hAesAlg = NULL;
-    BCRYPT_KEY_HANDLE       hKey = NULL;
-    NTSTATUS                status = STATUS_UNSUCCESSFUL;
-
-    DWORD
-        cbData = 0,
-        cbKeyObject = 0,
-        cbBlockLen = 0;
-    PBYTE
-        pbKeyObject = NULL,
-        pbIV = NULL;
-
+    encryption::KeyIv material_;
+    bool valid_ = true;
 public:
-    EncryptionStreamHelper(const wchar_t* pKeyStr, LPCWSTR Algorithm = BCRYPT_AES_ALGORITHM) {
-        // make key
-        Encryption e;
-        e.GenerateKey(pKeyStr);
-
-        auto& [pKey, keyLength,
-            pIV, ivLength] = e.GetKeyInfo();
-
-        // General routine of En/Decrypt
-        // Open an algorithm handle.
-        if (!NT_SUCCESS(status = BCryptOpenAlgorithmProvider(
-            &hAesAlg,
-            Algorithm,
-            NULL,
-            0))) {
-            return;
-        }
-
-        // Calculate the size of the buffer to hold the KeyObject.
-        if (!NT_SUCCESS(status = BCryptGetProperty(
-            hAesAlg,
-            BCRYPT_OBJECT_LENGTH,
-            (PBYTE)&cbKeyObject, sizeof(DWORD),
-            &cbData, 0))) {
-            return;
-        }
-
-        // Allocate the key object on the heap.
-        pbKeyObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbKeyObject);
-        if (NULL == pbKeyObject) {
-            return;
-        }
-
-        // Calculate the block length for the IV.
-        if (!NT_SUCCESS(status = BCryptGetProperty(
-            hAesAlg,
-            BCRYPT_BLOCK_LENGTH,
-            (PBYTE)&cbBlockLen, sizeof(DWORD),
-            &cbData, 0))) {
-            return;
-        }
-
-        // Determine whether the cbBlockLen is not longer than the IV length.
-        if (cbBlockLen > ivLength) {
-            return;
-        }
-
-        // Allocate a buffer for the IV. The buffer is consumed during the 
-        // encrypt/decrypt process.
-        pbIV = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbBlockLen);
-        if (NULL == pbIV) {
-            return;
-        }
-
-        memcpy(pbIV, pIV, cbBlockLen);
-
-        if (!NT_SUCCESS(status = BCryptSetProperty(
-            hAesAlg,
-            BCRYPT_CHAINING_MODE,
-            (PBYTE)BCRYPT_CHAIN_MODE_CBC, sizeof(BCRYPT_CHAIN_MODE_CBC),
-            0))) {
-            return;
-        }
-
-        // Generate the key from supplied input key bytes.
-        if (!NT_SUCCESS(status = BCryptGenerateSymmetricKey(
-            hAesAlg,
-            &hKey,
-            pbKeyObject, cbKeyObject,
-            pKey, keyLength,
-            0))) {
-            return;
-        }
-
+    explicit EncryptionStreamHelper(const wchar_t* text,
+        LPCWSTR algorithm = BCRYPT_AES_ALGORITHM)
+        : material_(encryption::legacy::derive(encryption::legacy::utf16(text ? text : L""),
+              encryption::legacy::native_word_size)),
+          valid_(algorithm && std::wcscmp(algorithm, BCRYPT_AES_ALGORITHM) == 0) {}
+    EncryptionStreamHelper(const EncryptionStreamHelper&) = default;
+    EncryptionStreamHelper& operator=(const EncryptionStreamHelper&) = default;
+    size_t Stream(PBYTE input, size_t size, PBYTE output, size_t capacity,
+        encryption::Mode mode, bool padding) {
+        if (!valid_ || !output || (!input && size)) return 0;
+        if (size > (std::numeric_limits<size_t>::max)() - 16 ||
+            capacity < (mode == encryption::Mode::encrypt && padding ? size / 16 * 16 + 16 : size)) return 0;
+        try {
+            // Capture chaining input before writing (in-place decryption is allowed).
+            auto iv = material_.iv;
+            if (mode == encryption::Mode::decrypt && size >= 16)
+                std::copy_n(input + size - 16, 16, iv.begin());
+            const auto result = padding
+                ? encryption::transform_buffer(material_, mode, input, size)
+                : encryption::transform_blocks(material_, mode, input, size);
+            if (!result.empty()) std::memcpy(output, result.data(), result.size());
+            if (mode == encryption::Mode::encrypt && result.size() >= 16)
+                std::copy_n(result.end() - 16, 16, iv.begin());
+            material_.iv = iv;
+            if (padding) valid_ = false;
+            return result.size();
+        } catch (const encryption::Error&) { valid_ = false; return 0; }
     }
-    ~EncryptionStreamHelper() {
-        if (hAesAlg) {
-            BCryptCloseAlgorithmProvider(hAesAlg, 0);
-        }
-
-        if (hKey) {
-            BCryptDestroyKey(hKey);
-        }
-
-        if (pbKeyObject) {
-            HeapFree(GetProcessHeap(), 0, pbKeyObject);
-        }
-
-        if (pbIV) {
-            HeapFree(GetProcessHeap(), 0, pbIV);
-        }
-    }
-
+#ifdef _WIN32
     using HandlerType = decltype(BCryptEncrypt);
-
-    inline size_t Stream(PBYTE pInBuf, size_t inBufSz,
-    PBYTE pOutBuf, size_t outBufSz,
-    HandlerType handler,
-    bool bPadding) {
-        DWORD byteWrite = 0;
-
-        handler(
-            hKey,
-            pInBuf, inBufSz,
-            NULL,
-            pbIV, cbBlockLen,
-            pOutBuf, outBufSz,
-            &(byteWrite),
-            bPadding ? BCRYPT_BLOCK_PADDING : 0);
-
-            return byteWrite;
+    size_t Stream(PBYTE input, size_t size, PBYTE output, size_t capacity,
+        HandlerType handler, bool padding) {
+        // These function pointers are legacy mode tags; they are never called.
+        if (handler != BCryptEncrypt && handler != BCryptDecrypt) return 0;
+        return Stream(input, size, output, capacity,
+            handler == BCryptEncrypt ? encryption::Mode::encrypt : encryption::Mode::decrypt, padding);
     }
+#endif
 };
