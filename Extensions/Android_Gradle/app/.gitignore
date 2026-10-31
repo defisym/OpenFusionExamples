@@ -30,3 +30,7 @@
 
 !/src/main/java/Extensions/CExtLoad.java
 !/src/main/java/Extensions/CRunTemplate.java
+
+!/src/main/java/Extensions/CRunFFMpeg.java
+
+!/src/main/java/Extensions/CRunSDL_Mixer.java

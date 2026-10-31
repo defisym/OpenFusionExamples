@@ -18,4 +18,5 @@ Extensions/Android_Extensions.lnk
 
 # Generated FFmpeg SDK and dependency downloads
 /Extensions/_3rdLib/FFmpeg-sdk/
+/Extensions/_3rdLib/FFmpeg-sdk-Android/
 /Extensions/_3rdLib/FFmpeg-build/out/

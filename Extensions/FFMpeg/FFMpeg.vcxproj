@@ -57,6 +57,10 @@
   <Import Project="..\_3rdLib\FFmpeg.props" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
+    <FFMpegPackageAndroid Condition="'$(FFMpegPackageAndroid)'=='' and '$(Configuration)'=='Run_Only Unicode'">true</FFMpegPackageAndroid>
+    <DisableFastUpToDateCheck Condition="'$(FFMpegPackageAndroid)'=='true' and '$(Configuration)'=='Run_Only Unicode'">true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <PropertyGroup>
     <_ProjectFileVersion>16.0.31515.66</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
@@ -411,4 +415,10 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="PackageFFMpegAndroid" AfterTargets="Build"
+          Condition="'$(FFMpegPackageAndroid)'=='true' and '$(Configuration)'=='Run_Only Unicode' and '$(DesignTimeBuild)'!='true'">
+    <Message Text="Packaging FFMpeg Android extension ZIP" Importance="high" />
+    <Exec WorkingDirectory="$(ProjectDir)"
+          Command="call &quot;$(ProjectDir)..\_Script\FFMpeg.bat&quot; --no-pause" />
+  </Target>
 </Project>

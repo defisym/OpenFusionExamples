@@ -146,3 +146,19 @@ freely, subject to the following restrictions:
 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
+
+## Android JNI port
+
+The Android runtime is a JNI wrapper over the pinned SDL Mixer X backend. It
+preserves the Windows ACE IDs and supports exclusive/mixing streams, fades, AB
+loops, effects, encrypted inputs and handled-memory playback. See the
+[Android build and compatibility notes](Android/README.md) for upstream fixes,
+codec coverage, shared-device lifetime and validation limits.
+
+`Run_Only Unicode` publishes the four-ABI Android extension ZIP through
+`_Script/SDL_Mixer_Android.bat`; set `/p:SDLMixerPackageAndroid=false` to skip it.
+The existing Windows SDK and release-archive workflow remain available.
+
+See the [combined Android build/file guide](../Android_Gradle/Media-JNI.md) for
+coexistence with FFmpeg, application-owned cross-frame playback, the Windows-matched
+codec suite and Android file/URI permission requirements.

@@ -84,6 +84,14 @@ public class CExtLoad
 			// STARTCUT
 			// STARTCUT
 			// STARTCUT
+			if (name.compareToIgnoreCase("SDL_Mixer")==0)
+			{
+				object=new CRunSDL_Mixer();
+			}
+			if (name.compareToIgnoreCase("FFMpeg")==0)
+			{
+				object=new CRunFFMpeg();
+			}
 			if (name.compareToIgnoreCase("FindTheWay")==0)
 			{
 				object=new CRunFindTheWay();
