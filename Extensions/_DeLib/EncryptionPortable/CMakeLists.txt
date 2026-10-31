@@ -28,7 +28,15 @@ if(ENCRYPTION_BUILD_TESTS)
     add_executable(encryption_tests tests/core.cpp tests/c_api.c)
     target_link_libraries(encryption_tests PRIVATE encryption_portable)
     add_test(NAME encryption_tests COMMAND encryption_tests)
-
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(AVFORMAT QUIET IMPORTED_TARGET libavformat libavcodec libavutil)
+        if(AVFORMAT_FOUND)
+            add_executable(encryption_avio_tests tests/avio.cpp)
+            target_link_libraries(encryption_avio_tests PRIVATE encryption_portable PkgConfig::AVFORMAT)
+            add_test(NAME encryption_avio_tests COMMAND encryption_avio_tests)
+        endif()
+    endif()
 endif()
 
 include(GNUInstallDirs)
@@ -38,5 +46,5 @@ install(TARGETS encryption_portable
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES EncryptionPortable.h EncryptionPortableCallbacks.h EncryptionPortableStream.h
     EncryptionPortableBuffer.h EncryptionPortableFile.h
-    ../EncryptionCore.h ../EncryptionLegacy.h ../Encryption.h ../EncryptionStream.h
+    ../EncryptionCore.h ../EncryptionLegacy.h ../Encryption.h ../EncryptionAvio.h ../EncryptionStream.h
     DESTINATION include/encryption)

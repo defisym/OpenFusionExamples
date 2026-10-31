@@ -18,6 +18,9 @@ to the former BCrypt encryption/hash implementation.
   It reads only the last ciphertext block and its predecessor to validate padding
   and determine size, then caches at most 64 KiB of plaintext on demand. FileSource
   serializes positioned reads so clones can serve separate decoders safely.
+- `EncryptionAvio.h` adapts that reader to FFmpeg AVIO: EOF, byte seeks,
+  `AVSEEK_SIZE`, negative/overflow checks and independent secondary demuxers.
+  Close AVFormatContext before destroying its DecryptAvio.
 - `EncryptionPortable*.h` expose C functions with opaque, explicitly destroyed
   contexts, caller-owned buffers and exception-to-result translation. The C ABI
   supports incremental ciphers/hashes, callback streams, FILE adapters and pull
@@ -44,6 +47,11 @@ operations still collect output in the object for SaveFile; they do not overwrit
 the source. Rebuild existing extensions: C++ class layout/binary ABI is not retained.
 C++ callers should use the core for large/streamed assets instead of the legacy
 DWORD/full-buffer accessors. Copies of the facade now own independent buffers.
+
+FFMpeg's normal encrypted-file path uses DecryptAvio when memory caching is off.
+The existing explicit memory-cache option keeps its full-buffer behavior. Actions,
+expressions and file/key parameters retain their existing interface. Thumbnail /
+secondary frame decoding gets an independent stream, including while playback seeks.
 
 ## Existing asset compatibility
 
@@ -143,6 +151,8 @@ ctest --test-dir build --output-on-failure
 The suite covers NIST CBC answers, frozen old Win32/Win64 derivation vectors,
 Unicode, arbitrary chunks, finalization/errors, short reads, random/EOF seeking,
 >4 GiB offsets, bounded first-read I/O, facade operations and compilation/calls
-from real C. `.github/workflows/encryption.yml` builds with native VS MSBuild on
-Windows and CMake on Linux/macOS. Full Fusion .mfx, Android APK and Apple
-exporter/device validation are separate from these core tests.
+from real C. If pkg-config locates FFmpeg development libraries, CMake also tests
+real encrypted WAV demuxing, payload equality, AVIO sizes, timestamp seeking and
+independent primary/secondary contexts. `.github/workflows/encryption.yml` builds
+with native VS MSBuild on Windows and CMake on Linux/macOS. Full Fusion .mfx,
+Android APK and Apple device/exporter validation are separate from these core tests.
