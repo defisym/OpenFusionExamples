@@ -23,6 +23,8 @@
 #include <inttypes.h>
 
 #include "MemBuf.h"
+#include "EncryptionAvio.h"
+#include "EncryptionLegacy.h"
 #include "LockHelper.h"
 #include "PacketQueue.h"
 
@@ -319,6 +321,8 @@ class FFMpeg {
 	AVIOContext* pAvioContext = nullptr;
 	AVIOContext* pSeekAvioContext = nullptr;
 
+    std::unique_ptr<encryption::DecryptAvio> pEncryptedAvio;
+    std::unique_ptr<encryption::DecryptAvio> pSeekEncryptedAvio;
 	MemBuf* pMemBuf = nullptr;
 	MemBuf* pSeekMemBuf = nullptr;
 
@@ -1805,6 +1809,25 @@ public:
 		if (const auto ret = init_general(); ret != 0) { throw FFMpegException(ret); }
 	}
 
+    // Encrypted files use bounded, seekable AVIO instead of a full plaintext buffer.
+    FFMpeg(const std::wstring& filePath, const std::wstring& key,
+           const FFMpegOptions& opt = FFMpegOptions()) {
+        this->options = opt;
+        try {
+            auto source = std::make_shared<encryption::FileSource>(encryption::legacy::path(filePath.c_str()));
+            const auto material = encryption::legacy::derive(encryption::legacy::utf16(key),
+                encryption::legacy::native_word_size);
+            pEncryptedAvio = std::make_unique<encryption::DecryptAvio>(encryption::DecryptReader(source, material));
+            if (!pEncryptedAvio->open(&pFormatContext))
+                throw FFMpegException(FFMpegException_InitFailed);
+            if (const auto result = init_general(); result != 0) throw FFMpegException(result);
+        } catch (...) {
+            // A throwing constructor does not run ~FFMpeg.
+            avformat_close_input(&pFormatContext);
+            throw FFMpegException(FFMpegException_InitFailed);
+        }
+    }
+
 	~FFMpeg() {
 		bExit = true;
 
@@ -2152,14 +2175,22 @@ public:
 	// get video frame of given time stamp
 	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const FrameDataCallBack& callBack) {
 		// update context
-		if (!pSeekFormatContext) {
-			const auto bSuccess = bFromMem
-				? init_formatContext(&pSeekFormatContext, &pSeekAvioContext,
-					&pSeekMemBuf, const_cast<uint8_t*>(pMemBuf->getSrc()), pMemBuf->getSrcSize(),
-					pFormatContext->iformat)
-				: init_formatContext(&pSeekFormatContext, pFormatContext->url, pFormatContext->iformat);
-			if (!bSuccess) { return FFMpegException_InitFailed; }
-		}
+        if (!pSeekFormatContext) {
+            bool success = false;
+            try {
+                if (pEncryptedAvio) {
+                    pSeekEncryptedAvio = pEncryptedAvio->clone();
+                    success = pSeekEncryptedAvio->open(&pSeekFormatContext, pFormatContext->iformat);
+                } else if (bFromMem) {
+                    success = init_formatContext(&pSeekFormatContext, &pSeekAvioContext,
+                        &pSeekMemBuf, const_cast<uint8_t*>(pMemBuf->getSrc()), pMemBuf->getSrcSize(),
+                        pFormatContext->iformat);
+                } else {
+                    success = init_formatContext(&pSeekFormatContext, pFormatContext->url, pFormatContext->iformat);
+                }
+            } catch (...) { return FFMpegException_InitFailed; }
+            if (!success) return FFMpegException_InitFailed;
+        }
 
         if (!pVGetCodecContext ) {
             // force to share context

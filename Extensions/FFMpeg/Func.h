@@ -285,8 +285,12 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 			}
 
 			// Encrypted file
-			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
+			if (rdPtr->bCache) {
+                rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
+                rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
+            } else {
+                rdPtr->pFFMpeg = new FFMpeg(filePath, key, opt);
+            }
 		} while (false);
 
 		// update state

@@ -1,0 +1,53 @@
+name: Encryption core
+on:
+  pull_request:
+    paths:
+      - 'Extensions/_DeLib/Encryption*'
+      - 'Extensions/_DeLib/EncryptionPortable/**'
+      - 'Extensions/_3rdLib/FFMpeg.h'
+      - '.github/workflows/encryption.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Win32
+            triplet: x86-windows-static-md
+          - platform: x64
+            triplet: x64-windows-static-md
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - name: Build OpenSSL for the target MSVC ABI
+        shell: pwsh
+        run: '& "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install "openssl:${{ matrix.triplet }}"'
+      - name: Build with Visual Studio MSBuild (Release and Debug)
+        shell: pwsh
+        run: |
+          foreach ($configuration in @('Release', 'Debug')) {
+            & msbuild Extensions/_DeLib/EncryptionPortable/EncryptionPortable.sln /m /t:Build "/p:Configuration=$configuration" "/p:Platform=${{ matrix.platform }}" "/p:OfeOpenSSLRoot=$env:VCPKG_INSTALLATION_ROOT/installed/${{ matrix.triplet }}"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & "Extensions/_DeLib/EncryptionPortable/build/${{ matrix.platform }}/$configuration/EncryptionTests.exe"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libssl-dev libavformat-dev libavcodec-dev libavutil-dev pkg-config
+      - run: cmake -S Extensions/_DeLib/EncryptionPortable -B build -DENCRYPTION_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_C_FLAGS='-fsanitize=address,undefined' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+      - run: cmake --build build --parallel
+      - run: ctest --test-dir build --output-on-failure
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install openssl@3
+      - run: cmake -S Extensions/_DeLib/EncryptionPortable -B build -DENCRYPTION_BUILD_TESTS=ON -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build --parallel
+      - run: ctest --test-dir build --output-on-failure

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Import after the project's configurations and before Microsoft.Cpp.targets. -->
+  <PropertyGroup>
+    <OfeOpenSSLTriplet Condition="'$(Platform)'=='Win32'">x86-windows-static-md</OfeOpenSSLTriplet>
+    <OfeOpenSSLTriplet Condition="'$(Platform)'=='x64'">x64-windows-static-md</OfeOpenSSLTriplet>
+    <OfeOpenSSLRoot Condition="'$(OfeOpenSSLRoot)'=='' And '$(VcpkgInstalledDir)'!=''">$(VcpkgInstalledDir)\$(OfeOpenSSLTriplet)</OfeOpenSSLRoot>
+    <OfeOpenSSLRoot Condition="'$(OfeOpenSSLRoot)'=='' And '$(VCPKG_ROOT)'!=''">$(VCPKG_ROOT)\installed\$(OfeOpenSSLTriplet)</OfeOpenSSLRoot>
+    <OfeOpenSSLLibDir Condition="'$(OfeOpenSSLLibDir)'=='' And ('$(UseDebugLibraries)'=='true' Or $([System.String]::Copy('$(Configuration)').StartsWith('Debug')))">$(OfeOpenSSLRoot)\debug\lib</OfeOpenSSLLibDir>
+    <OfeOpenSSLLibDir Condition="'$(OfeOpenSSLLibDir)'==''">$(OfeOpenSSLRoot)\lib</OfeOpenSSLLibDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OfeOpenSSLRoot)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>OPENSSL_USE_STATIC_LIBS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OfeOpenSSLLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcrypto.lib;crypt32.lib;ws2_32.lib;advapi32.lib;user32.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Target Name="CheckOfeEncryptionSDK" BeforeTargets="ClCompile" Condition="'$(DesignTimeBuild)'!='true'">
+    <Error Condition="'$(OfeOpenSSLTriplet)'==''" Text="Encryption supports Win32 and x64." />
+    <Error Condition="!Exists('$(OfeOpenSSLRoot)\include\openssl\evp.h') Or !Exists('$(OfeOpenSSLLibDir)\libcrypto.lib')"
+      Text="Install static OpenSSL for $(OfeOpenSSLTriplet) and set OfeOpenSSLRoot (or VCPKG_ROOT). See _DeLib/EncryptionPortable/README.md. Use /MD for Release and /MDd for Debug." />
+  </Target>
+</Project>
