@@ -1,0 +1,80 @@
+name: Encryption core
+on:
+  pull_request:
+    paths:
+      - 'Extensions/_DeLib/Encryption*'
+      - 'Extensions/_DeLib/EncryptionPortable/**'
+      - 'Extensions/_3rdLib/FFMpeg.h'
+      - 'Extensions/_3rdLib/Encrypt-build/**'
+      - '.github/workflows/encryption.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Win32
+            triplet: x86-windows-static-md
+          - platform: x64
+            triplet: x64-windows-static-md
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - name: Prepare OpenSSL through the VS dependency project
+        shell: pwsh
+        run: |
+          msbuild Extensions/_3rdLib/Encrypt-build/EncryptDependencies.vcxproj /m /t:Build /p:Configuration=Release "/p:Platform=${{ matrix.platform }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build with Visual Studio MSBuild (Release and Debug)
+        shell: pwsh
+        run: |
+          foreach ($configuration in @('Release', 'Debug')) {
+            & msbuild Extensions/_DeLib/EncryptionPortable/EncryptionPortable.sln /m /t:Build "/p:Configuration=$configuration" "/p:Platform=${{ matrix.platform }}"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & "Extensions/_DeLib/EncryptionPortable/build/${{ matrix.platform }}/$configuration/EncryptionTests.exe"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Build a source SDK for future prebuilt releases
+        shell: pwsh
+        run: |
+          msbuild Extensions/_3rdLib/Encrypt-build/EncryptDependencies.vcxproj /m /t:Build /p:Configuration=Release "/p:Platform=${{ matrix.platform }}" /p:OfeEncryptBuildFromSource=true
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Package and verify a prebuilt SDK
+        shell: pwsh
+        run: |
+          $arch = if ('${{ matrix.platform }}' -eq 'Win32') { 'x86' } else { 'x64' }
+          $archive = "$env:RUNNER_TEMP/openssl-$arch.zip"
+          Push-Location "Extensions/_3rdLib/Encrypt-sdk/$arch"
+          cmake -E tar cf $archive --format=zip include lib debug share ofe-encryption-sdk.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          Set-Content "$archive.sha256" $hash
+          cmake "-DOFE_ARCH=$arch" "-DOFE_OPENSSL_ROOT=$env:RUNNER_TEMP/prebuilt-$arch" "-DOFE_WORK_DIR=$env:RUNNER_TEMP/staging" "-DOFE_PREBUILT_ARCHIVE=$archive" "-DOFE_PREBUILT_SHA256=$hash" -P Extensions/_3rdLib/Encrypt-build/EnsureSDK.cmake
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Encrypt-sdk-${{ matrix.platform }}
+          path: ${{ runner.temp }}/openssl-*.zip*
+          retention-days: 7
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 Extensions/_3rdLib/Encrypt-build/tests/test_sdk.py
+      - run: sudo apt-get update && sudo apt-get install -y libssl-dev libavformat-dev libavcodec-dev libavutil-dev pkg-config
+      - run: cmake -S Extensions/_DeLib/EncryptionPortable -B build -DENCRYPTION_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_C_FLAGS='-fsanitize=address,undefined' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+      - run: cmake --build build --parallel
+      - run: ctest --test-dir build --output-on-failure
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install openssl@3
+      - run: cmake -S Extensions/_DeLib/EncryptionPortable -B build -DENCRYPTION_BUILD_TESTS=ON -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build --parallel
+      - run: ctest --test-dir build --output-on-failure

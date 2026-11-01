@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_OfeEncryptDependencies>$(MSBuildThisFileDirectory)..\_3rdLib\</_OfeEncryptDependencies>
+    <OfeEncryptArch Condition="'$(Platform)'=='Win32'">x86</OfeEncryptArch>
+    <OfeEncryptArch Condition="'$(Platform)'=='x64'">x64</OfeEncryptArch>
+    <_OfeDefaultOpenSSLRoot>$(_OfeEncryptDependencies)Encrypt-sdk\$(OfeEncryptArch)</_OfeDefaultOpenSSLRoot>
+    <OfeOpenSSLRoot Condition="'$(OfeOpenSSLRoot)'==''">$(_OfeDefaultOpenSSLRoot)</OfeOpenSSLRoot>
+    <OfeAutoBuildEncrypt Condition="'$(OfeAutoBuildEncrypt)'=='' And '$(OfeOpenSSLRoot)'=='$(_OfeDefaultOpenSSLRoot)'">true</OfeAutoBuildEncrypt>
+    <OfeAutoBuildEncrypt Condition="'$(OfeAutoBuildEncrypt)'==''">false</OfeAutoBuildEncrypt>
+    <OfeEncryptBuildFromSource Condition="'$(OfeEncryptBuildFromSource)'==''">false</OfeEncryptBuildFromSource>
+    <OfeOpenSSLLibDir Condition="'$(OfeOpenSSLLibDir)'=='' And ('$(UseDebugLibraries)'=='true' Or $([System.String]::Copy('$(Configuration)').StartsWith('Debug')))">$(OfeOpenSSLRoot)\debug\lib</OfeOpenSSLLibDir>
+    <OfeOpenSSLLibDir Condition="'$(OfeOpenSSLLibDir)'==''">$(OfeOpenSSLRoot)\lib</OfeOpenSSLLibDir>
+    <OfeEncryptCMake Condition="'$(OfeEncryptCMake)'=='' And Exists('$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe')">$(VSInstallDir)Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</OfeEncryptCMake>
+    <OfeEncryptCMake Condition="'$(OfeEncryptCMake)'==''">cmake</OfeEncryptCMake>
+    <OfeEncryptWorkDir Condition="'$(OfeEncryptWorkDir)'==''">$(_OfeEncryptDependencies)Encrypt-build\out</OfeEncryptWorkDir>
+    <_OfeEncryptVSInstance Condition="'$(VSInstallDir)'!=''">$(VSInstallDir).</_OfeEncryptVSInstance>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OfeOpenSSLRoot)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OfeOpenSSLLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <!-- libcrypto's Windows system dependencies, not a legacy cipher backend. -->
+      <AdditionalDependencies>libcrypto.lib;crypt32.lib;ws2_32.lib;advapi32.lib;user32.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)'!='EncryptDependencies' And '$(OfeAutoBuildEncrypt)'=='true'">
+    <ProjectReference Include="$(_OfeEncryptDependencies)Encrypt-build\EncryptDependencies.vcxproj">
+      <Project>{F408ED35-2D66-4E36-A659-580895179F86}</Project>
+      <SetConfiguration>Configuration=Release</SetConfiguration>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="CheckOfeEncryptionSDK" BeforeTargets="ClCompile" Condition="'$(DesignTimeBuild)'!='true'">
+    <Error Condition="'$(OfeEncryptArch)'==''" Text="Encryption supports Win32 and x64." />
+    <Error Condition="!Exists('$(OfeOpenSSLRoot)\include\openssl\evp.h') Or !Exists('$(OfeOpenSSLLibDir)\libcrypto.lib')"
+      Text="Build EncryptDependencies or set OfeOpenSSLRoot to a matching static OpenSSL SDK. See _DeLib/EncryptionPortable/README.md." />
+  </Target>
+</Project>

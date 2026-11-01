@@ -303,6 +303,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <Image Include="EXTICON.BMP" />
     <Image Include="EXTIMG.BMP" />
   </ItemGroup>
+  <Import Project="..\_DeLib\Encryption.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

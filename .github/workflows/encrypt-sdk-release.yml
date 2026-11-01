@@ -1,0 +1,65 @@
+name: Publish encryption SDK
+
+on:
+  push:
+    tags: ['encrypt-sdk-*']
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Encryption core run containing both SDK artifacts
+        required: true
+        default: '41587062927'
+      tag:
+        description: Existing SDK tag to publish
+        required: true
+        default: encrypt-sdk-openssl-3.6.5-v143
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SDK_RUN: ${{ inputs.run_id || '41587062927' }}
+      SDK_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the source CI run
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SDK_RUN" > source-run.json
+          jq -e --arg repository "$GITHUB_REPOSITORY" \
+            '.conclusion == "success" and .head_repository.full_name == $repository and .path == ".github/workflows/encryption.yml"' source-run.json
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ env.SDK_RUN }}
+          pattern: Encrypt-sdk-*
+          merge-multiple: true
+          path: packages
+      - name: Verify archives and SDK layouts
+        run: |
+          for arch in x86 x64; do
+            archive="$PWD/packages/openssl-$arch.zip"
+            hash=$(tr -d '\r\n\357\273\277' < "$archive.sha256")
+            cmake "-DOFE_ARCH=$arch" "-DOFE_OPENSSL_ROOT=$RUNNER_TEMP/sdk-$arch" \
+              "-DOFE_WORK_DIR=$RUNNER_TEMP/stage" "-DOFE_PREBUILT_ARCHIVE=$archive" \
+              "-DOFE_PREBUILT_SHA256=$hash" -P Extensions/_3rdLib/Encrypt-build/EnsureSDK.cmake
+          done
+      - name: Publish versioned SDK assets
+        run: |
+          source_sha=$(jq -r .head_sha source-run.json)
+          cat > release-notes.md <<EOF
+          OpenSSL SDKs built and tested with Visual Studio 2022 (v143).
+
+          - Win32 and x64 static libraries, with /MD Release and /MDd Debug.
+          - Includes headers, licenses, SDK manifests and SHA256 files.
+          - Source commit: $source_sha
+          - Verified CI: https://github.com/$GITHUB_REPOSITORY/actions/runs/$SDK_RUN
+
+          These archives are consumed automatically by EncryptDependencies.
+          EOF
+          gh release create "$SDK_TAG" packages/openssl-*.zip packages/openssl-*.zip.sha256 \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --latest=false \
+            --title "Encryption SDK: OpenSSL 3.6.5 (VS 2022)" --notes-file release-notes.md
