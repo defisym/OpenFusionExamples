@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32"><Configuration>Release</Configuration><Platform>Win32</Platform></ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F408ED35-2D66-4E36-A659-580895179F86}</ProjectGuid>
+    <RootNamespace>EncryptDependencies</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration"><ConfigurationType>Utility</ConfigurationType><PlatformToolset>v143</PlatformToolset></PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <Import Project="..\..\_DeLib\Encryption.props" />
+  <PropertyGroup>
+    <IntDir>$(ProjectDir)out\msbuild\$(Platform)\</IntDir>
+    <OutDir>$(IntDir)</OutDir>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="EncryptVersion.cmake" /><None Include="vcpkg.json" />
+    <None Include="EnsureSDK.cmake" /><None Include="ValidateSDK.cmake" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Target Name="BuildEncryptDependencies" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)'!='true' And '$(OfeAutoBuildEncrypt)'=='true'">
+    <Message Importance="high" Text="Preparing OpenSSL SDK ($(OfeEncryptArch))..." />
+    <Exec StdOutEncoding="UTF-8" StdErrEncoding="UTF-8" UseUtf8Encoding="Always"
+      Command="chcp 65001 &gt;nul &amp; &quot;$(OfeEncryptCMake)&quot; &quot;-DOFE_OPENSSL_ROOT=$(OfeOpenSSLRoot)/.&quot; &quot;-DOFE_WORK_DIR=$(OfeEncryptWorkDir)/.&quot; &quot;-DOFE_ARCH=$(OfeEncryptArch)&quot; &quot;-DOFE_PLATFORM_TOOLSET=$(PlatformToolset)&quot; &quot;-DOFE_VS_INSTANCE=$(_OfeEncryptVSInstance)&quot; &quot;-DOFE_PREBUILT_URL=$(OfeEncryptPrebuiltUrl)&quot; &quot;-DOFE_PREBUILT_ARCHIVE=$(OfeEncryptPrebuiltArchive)&quot; &quot;-DOFE_PREBUILT_SHA256=$(OfeEncryptPrebuiltSha256)&quot; -P &quot;$(ProjectDir)EnsureSDK.cmake&quot;" />
+  </Target>
+</Project>
