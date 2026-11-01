@@ -33,6 +33,9 @@ The exported `Encryption_*` C function names are unchanged.
   It reads only the last ciphertext block and its predecessor to validate padding
   and determine size, then caches at most 64 KiB of plaintext on demand. FileSource
   serializes positioned reads so clones can serve separate decoders safely.
+- The FFmpeg integration lives in the FFMpeg plugin. Its `DecryptMemBuf` derives
+  from the existing `MemBuf` and forwards read/seek to a DecryptReader. Neither
+  the core nor its installed headers depend on FFmpeg.
 - `CAPI.h` exposes C functions with opaque, explicitly destroyed
   contexts, caller-owned buffers and exception-to-result translation. The C ABI
   supports incremental ciphers/hashes, callback streams, FILE adapters and pull
@@ -69,6 +72,30 @@ ClearEncryptData explicitly clears input, output and cached string/hash results,
 while retaining Key/IV and buffer settings. A cleared input is invalid; a supplied
 zero-length input is valid and has the standard empty-string/file hash.
 
+The FFMpeg extension selects cached memory or a streaming DecryptReader before
+constructing the player. Its thin `DecryptMemBuf : MemBuf` adapter is in
+`Extensions/FFMpeg/DecryptMemBuf.h`; it only translates read/seek and errors.
+The reusable DecryptReader remains independent of FFmpeg. MemBuf remains the
+simple memory implementation and base class, with virtual read/seek/clone.
+
+FFMpeg retains responsibility for AVIO allocation, its init_probe stage, format
+opening and cleanup. Probing uses FFmpeg's av_probe_input_buffer2 on AVIO, so it
+can inspect either input without requiring a complete plaintext buffer; FFmpeg
+retains the padded probe bytes for subsequent demuxing. The reader never probes
+formats or owns FFmpeg contexts.
+
+The existing file/options and memory constructors remain. The optional
+`FFMpegOptions::input` is a `shared_ptr<const MemBuf>` prototype: copies share only
+the prototype, while playback and preview clone independent cursors and own
+separate AVIO contexts. No new general input interface or AVIO wrapper is added.
+Without a custom MemBuf, file/URL input uses FFmpeg's normal protocols.
+
+Fusion actions, expressions and file/key parameters retain their interface.
+Explicit memory caching retains its full-buffer behavior. MemBuf borrows source
+memory, which must outlive playback and preview; get_memBufSrc() continues to
+provide its identity for cache-reference tracking. The player closes demuxers
+before freeing AVIO buffers and readers, including failed initialization.
+
 ## Existing asset compatibility
 
 `Encryption/KeyGen.h` is the string-to-Key/IV entry point. It accepts arbitrary-length
@@ -90,7 +117,7 @@ normalization is applied, and string_view lengths preserve embedded NUL units.
 This retains the existing asset mapping; it is not a new salted/password KDF.
 
 KeyGen is used by Encryption::GenerateKey, the C ABI string derivation
-functions. The shared global helpers in `UnicodeConversion.h`
+functions, and the FFMpeg extension's encrypted-input selection. The shared global helpers in `UnicodeConversion.h`
 also preserve the byte representation of old wide-string inputs. This header is a C++17
 utility with no OpenSSL, Windows API or iconv dependency and is included by the
 `GeneralDefinition.h` umbrella. File I/O uses `std::filesystem::path` directly; the C ABI
@@ -205,9 +232,12 @@ ctest --test-dir build --output-on-failure
 The suite covers NIST CBC answers, frozen old Win32/Win64 derivation vectors,
 Unicode, arbitrary chunks, finalization/errors, short reads, random/EOF seeking,
 >4 GiB offsets, bounded first-read I/O, facade operations and compilation/calls
-from real C. `.github/workflows/encryption.yml` builds with native VS MSBuild on
-Windows and CMake on Linux/macOS. Full Fusion .mfx, Android APK and Apple
-exporter/device validation are separate from these core tests.
+from real C. If pkg-config locates FFmpeg development libraries, CMake also tests
+real encrypted WAV demuxing, payload equality, AVIO sizes, timestamp seeking and
+independent primary/secondary contexts. `.github/workflows/encryption.yml` builds
+with native VS MSBuild on Windows and CMake on Linux/macOS. Full Fusion .mfx,
+Android APK and Apple device/exporter validation are separate from these core tests.
+
 
 The existing NeoPic `Test_Encrypt.dat` / `Test_Origin.jpg` sample pair is also an
 independent asset-format regression, using password `12345678ABCDEFGH`. Tests

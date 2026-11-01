@@ -306,6 +306,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="..\_3rdLib\FFMpegAdapterD3D11.h" />
     <ClInclude Include="..\_3rdLib\FFMpegDefinition.h" />
     <ClInclude Include="..\_3rdLib\FFMpegDependencies.h" />
+    <ClInclude Include="DecryptMemBuf.h" />
     <ClInclude Include="..\_3rdLib\MemBuf.h" />
     <ClInclude Include="..\_3rdLib\PacketQueue.h" />
     <ClInclude Include="..\_DeLib\Encryption.h" />

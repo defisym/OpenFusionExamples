@@ -27,7 +27,16 @@ if(ENCRYPTION_BUILD_TESTS)
     add_test(NAME encryption_tests COMMAND encryption_tests
         "${CMAKE_CURRENT_SOURCE_DIR}/../../NeoPic/ToInstall/Files/Examples/NeoPic/Test_Encrypt.dat"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../NeoPic/ToInstall/Files/Examples/NeoPic/Test_Origin.jpg")
-
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(AVFORMAT QUIET IMPORTED_TARGET libavformat libavcodec libavutil)
+        if(AVFORMAT_FOUND)
+            add_executable(encryption_avio_tests tests/avio.cpp)
+            target_include_directories(encryption_avio_tests PRIVATE ../../_3rdLib ../../FFMpeg)
+            target_link_libraries(encryption_avio_tests PRIVATE encryption PkgConfig::AVFORMAT)
+            add_test(NAME encryption_avio_tests COMMAND encryption_avio_tests)
+        endif()
+    endif()
 endif()
 
 include(GNUInstallDirs)

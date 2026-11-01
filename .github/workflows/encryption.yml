@@ -6,6 +6,8 @@ on:
       - 'Extensions/_DeLib/UnicodeConversion.h'
       - 'Extensions/_DeLib/Encryption/**'
       - 'Extensions/_3rdLib/FFMpeg.h'
+      - 'Extensions/_3rdLib/MemBuf.h'
+      - 'Extensions/FFMpeg/**'
       - 'Extensions/_3rdLib/Encrypt-build/**'
       - '.github/workflows/encryption.yml'
   workflow_dispatch:
