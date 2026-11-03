@@ -2,17 +2,17 @@
 
 #define USE_PROCESS_DIRECTLY
 
-inline bool EncryptCore(LPCTSTR pSrcFilePath, LPCTSTR pDesFilePath, LPCTSTR pKey, bool bEncrypt) {
+inline bool EncryptCore(LPCTSTR pSrcFilePath, LPCTSTR pDesFilePath, LPCTSTR pKey, encryption::Mode mode) {
     Encryption Encrypt;
 
     Encrypt.GenerateKey(pKey);
 
 #ifdef USE_PROCESS_DIRECTLY
-    auto ret = bEncrypt
+    auto ret = mode == encryption::Mode::encrypt
         ? Encrypt.EncryptFileDirectly(pSrcFilePath)
         : Encrypt.DecryptFileDirectly(pSrcFilePath);
 #else
-    auto ret = bEncrypt
+    auto ret = mode == encryption::Mode::encrypt
         ? Encrypt.EncryptFile(pSrcFilePath)
         : Encrypt.DecryptFile(pSrcFilePath);
 #endif

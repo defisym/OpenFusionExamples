@@ -44,6 +44,12 @@ operations still collect output in the object for SaveFile; they do not overwrit
 the source. Rebuild existing extensions: C++ class layout/binary ABI is not retained.
 C++ callers should use the core for large/streamed assets instead of the legacy
 32-bit/full-buffer accessors. Copies of the facade now own independent buffers.
+Instances already contain valid default Key/IV on construction, so GetKeyInfo
+returns them immediately; GenerateKey replaces the current values. Routine facade
+argument/algorithm failures use the existing false/null/empty-input results.
+The 32-bit length limit is checked at the compatibility buffer boundary, without
+adding that restriction to the core. Directly methods still read incrementally
+and keep the complete result in memory for GetOutputData/SaveFile.
 
 ## Existing asset compatibility
 

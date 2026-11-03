@@ -250,9 +250,53 @@ void compatibility() {
     CHECK(restored == src);
 
 }
+
+void facade_defaults_and_failures() {
+    Encryption encryption;
+    const auto check_default = [&] {
+        const auto [key, key_size, iv, iv_size] = encryption.GetKeyInfo();
+        CHECK(key && iv && key_size == 16 && iv_size == 16);
+        for (std::size_t i = 0; i < 16; ++i) CHECK(key[i] == i && iv[i] == i);
+    };
+    check_default();
+
+    const std::string input = "default key without GenerateKey";
+    encryption.SetEncryptStr(input);
+    CHECK(encryption.Encrypt());
+    const auto expected = transform_buffer(keygen::from_utf16(u""), Mode::encrypt,
+        reinterpret_cast<const Byte*>(input.data()), input.size());
+    CHECK(encryption.GetOutputDataLength() == expected.size());
+    CHECK(std::equal(expected.begin(), expected.end(), encryption.GetOutputData()));
+
+    encryption.GenerateKey(L"abc");
+    encryption.GenerateKey(nullptr);
+    check_default();
+
+    encryption.SetEncryptData(static_cast<const Byte*>(nullptr), 1);
+    CHECK(!encryption.GetInputData() && !encryption.GetOutputData() && !encryption.Encrypt());
+    encryption.SetEncryptStr(static_cast<const wchar_t*>(nullptr), 1);
+    CHECK(!encryption.GetInputData());
+
+    const std::uint64_t value = 0;
+    encryption.SetEncryptData(&value, (std::numeric_limits<std::uint32_t>::max)() / sizeof(value) + 1);
+    CHECK(!encryption.GetInputData()); // Reject an unrepresentable legacy length before copying.
+
+    encryption.SetEncryptData(static_cast<const Byte*>(nullptr), 0);
+    CHECK(encryption.GetInputData() && encryption.GetInputDataLength() == 0);
+    CHECK(std::wstring(encryption.GetHash()) == L"d41d8cd98f00b204e9800998ecf8427e");
+    CHECK(!encryption.GetHash(nullptr) && !encryption.GetOutputData());
+    CHECK(!encryption.GetHash(L"unsupported"));
+    CHECK(encryption.GetHash(L"SHA256") && encryption.GetOutputDataLength() == 32);
+    CHECK(!encryption.Encrypt(nullptr) && !encryption.GetOutputData());
+    CHECK(!encryption.OpenFile(nullptr) && !encryption.OpenFile(L""));
+    CHECK(!encryption.SaveFile(nullptr) && !encryption.SaveFile(L""));
+    CHECK(!encryption.EncryptFileDirectly(nullptr) && !encryption.DecryptFileDirectly(L""));
+}
+
 int main(int argc, char** argv) {
     try {
         test_windows_headers(); known_answers(); keygen_strings(); streaming_and_seeking(); large_offsets(); compatibility();
+        facade_defaults_and_failures();
         CHECK(test_c_api() == 0);
         test_existing_asset(argc, argv);
         std::cout << "PASS: NIST AES, legacy Win32/Win64 vectors, short reads, random seeks, >4GiB, facade, C ABI\n";

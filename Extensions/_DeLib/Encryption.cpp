@@ -1,28 +1,34 @@
 #include "Encryption.h"
 
+#include <optional>
+
 namespace {
 
-encryption::Digest digest(const wchar_t* name) {
-    encryption::require(name != nullptr, encryption::ErrorCode::argument, "Null digest");
+std::optional<encryption::Digest> digest(const wchar_t* name) {
+    if (!name) return std::nullopt;
+
     const std::wstring_view value(name);
     if (value == L"MD5") return encryption::Digest::md5;
     if (value == L"SHA1") return encryption::Digest::sha1;
     if (value == L"SHA256") return encryption::Digest::sha256;
     if (value == L"SHA384") return encryption::Digest::sha384;
     if (value == L"SHA512") return encryption::Digest::sha512;
-    throw encryption::Error(encryption::ErrorCode::argument, "Unsupported legacy digest");
+    return std::nullopt;
 }
 
 }
 
-void Encryption::store(encryption::Bytes& destination, const std::uint8_t* buffer, std::size_t size) {
-    encryption::require(buffer || size == 0, encryption::ErrorCode::argument, "Null legacy input");
-    encryption::require(size < (std::numeric_limits<std::uint32_t>::max)(),
-        encryption::ErrorCode::argument, "Legacy buffer exceeds the 32-bit size limit");
+bool Encryption::store(encryption::Bytes& destination, const std::uint8_t* buffer, std::size_t size) {
+    // The compatibility API exposes 32-bit lengths, including a string terminator.
+    if ((!buffer && size) || size >= (std::numeric_limits<std::uint32_t>::max)()) {
+        destination.clear();
+        return false;
+    }
 
     encryption::Bytes next(size + 1, 0);
     if (size) std::memcpy(next.data(), buffer, size);
     destination = std::move(next);
+    return true;
 }
 
 std::uint8_t* Encryption::data(const encryption::Bytes& buffer) noexcept {
@@ -47,8 +53,12 @@ void Encryption::SetEncryptStr(const std::wstring& text) {
 }
 
 void Encryption::SetEncryptStr(const wchar_t* text, std::uint32_t size) {
-    encryption::require(text || size == 0, encryption::ErrorCode::argument, "Null wide input");
-    SetEncryptStr(text ? std::wstring(text, size) : std::wstring());
+    if (!text) {
+        SetEncryptData(text, size);
+        return;
+    }
+
+    SetEncryptStr(std::wstring(text, size));
 }
 
 char* Encryption::GetInputStr() {
@@ -66,16 +76,15 @@ char* Encryption::GetOutputStr() {
 void Encryption::GenerateKey(const wchar_t* text) {
     material_ = encryption::keygen::from_utf16(encryption::text::utf16(text ? text : L""),
         encryption::keygen::native_seed_width);
-    key_generated_ = true;
 }
 
 bool Encryption::OpenFile(const wchar_t* file) {
     input_.clear(); output_.clear(); hash_string_.clear();
+    if (!file || !*file) return false;
 
     try {
         encryption::FileSource source(encryption::text::path(file));
-        encryption::require(source.size() < (std::numeric_limits<std::uint32_t>::max)(),
-            encryption::ErrorCode::argument, "Legacy file exceeds the 32-bit size limit");
+        if (source.size() >= (std::numeric_limits<std::uint32_t>::max)()) return false;
 
         encryption::Bytes next(static_cast<std::size_t>(source.size()) + 1, 0);
         source.read_exact(0, next.data(), next.size() - 1);
@@ -85,7 +94,7 @@ bool Encryption::OpenFile(const wchar_t* file) {
 }
 
 bool Encryption::SaveFile(const wchar_t* file, std::uint8_t* buffer, std::uint32_t size) {
-    if (!buffer) return false;
+    if (!file || !*file || !buffer) return false;
 
     try {
         const auto path = encryption::text::path(file);
@@ -111,12 +120,9 @@ bool Encryption::process(encryption::Mode mode, const wchar_t* algorithm) {
     if (input_.empty() || !algorithm || std::wcscmp(algorithm, L"AES")) return false;
 
     try {
-        if (!key_generated_) GenerateKey(L"");
-
         const auto bytes = encryption::transform_buffer(material_, mode, input_.data(), length(input_));
 
-        store(output_, bytes.data(), bytes.size());
-        return true;
+        return store(output_, bytes.data(), bytes.size());
     } catch (const encryption::Error&) { return false; }
 }
 
@@ -134,14 +140,10 @@ bool Encryption::DecryptFile(const wchar_t* file, const wchar_t* algorithm) {
 
 bool Encryption::process_file(const wchar_t* file, encryption::Mode mode, const wchar_t* algorithm) {
     input_.clear(); output_.clear(); hash_string_.clear();
-    if (!algorithm || std::wcscmp(algorithm, L"AES")) return false;
+    if (!file || !*file || !algorithm || std::wcscmp(algorithm, L"AES")) return false;
 
     try {
-        if (!key_generated_) GenerateKey(L"");
-
         encryption::FileSource source(encryption::text::path(file));
-        encryption::require(source.size() < (std::numeric_limits<std::uint32_t>::max)() - 16,
-            encryption::ErrorCode::argument, "Legacy file exceeds the 32-bit output limit");
 
         encryption::Bytes result;
         std::uint64_t position = 0;
@@ -157,17 +159,17 @@ bool Encryption::process_file(const wchar_t* file, encryption::Mode mode, const 
             result.insert(result.end(), bytes, bytes + size);
         });
 
-        store(output_, result.data(), result.size());
-        return true;
+        return store(output_, result.data(), result.size());
     } catch (const encryption::Error&) { return false; }
 }
 
 const wchar_t* Encryption::GetHash(const wchar_t* algorithm) {
     output_.clear(); hash_string_.clear();
-    if (input_.empty()) return nullptr;
+    const auto selected = digest(algorithm);
+    if (input_.empty() || !selected) return nullptr;
 
     try {
-        encryption::Hash hash(digest(algorithm));
+        encryption::Hash hash(*selected);
         hash.update(input_.data(), length(input_));
 
         const auto bytes = hash.finish();

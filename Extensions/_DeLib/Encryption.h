@@ -13,13 +13,7 @@
 #undef EncryptFile
 #undef DecryptFile
 
-inline constexpr bool ENCRY = true, DECRY = false;
-inline constexpr int KEY_LENGTH = 16, STR_LENGTH = 8;
 inline constexpr std::uint32_t BUFFER_SIZE = 1024 * 256;
-inline constexpr std::uint8_t DefaultKey[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-inline constexpr std::uint8_t DefaultIV[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-
-#define PROCESS_DIRECTLY
 
 class Encryption {
     encryption::Bytes input_, output_;
@@ -27,9 +21,8 @@ class Encryption {
     std::wstring hash_string_;
     encryption::KeyIv material_ = encryption::keygen::from_utf16(u"");
     std::uint32_t buffer_size_ = BUFFER_SIZE;
-    bool key_generated_ = false;
 
-    static void store(encryption::Bytes& destination, const std::uint8_t* data, std::size_t size);
+    static bool store(encryption::Bytes& destination, const std::uint8_t* data, std::size_t size);
     static std::uint8_t* data(const encryption::Bytes& buffer) noexcept;
     static std::uint32_t length(const encryption::Bytes& buffer) noexcept;
 
@@ -46,8 +39,8 @@ public:
     Encryption& operator=(Encryption&&) noexcept = default;
 
     auto GetKeyInfo() {
-        return std::make_tuple(key_generated_ ? material_.key.data() : nullptr, std::uint32_t{16},
-            key_generated_ ? material_.iv.data() : nullptr, std::uint32_t{16});
+        return std::make_tuple(material_.key.data(), std::uint32_t{16},
+            material_.iv.data(), std::uint32_t{16});
     }
 
     bool OpenFile(const wchar_t* file);
@@ -64,9 +57,10 @@ public:
     std::uint32_t GetOutputDataLength() const { return length(output_); }
 
     template<class T> void SetEncryptData(const T* buffer, std::uint32_t count) {
-        encryption::require(count <= (std::numeric_limits<std::uint32_t>::max)() / sizeof(T),
-            encryption::ErrorCode::argument, "Legacy input exceeds the 32-bit size limit");
-        store(input_, reinterpret_cast<const std::uint8_t*>(buffer), std::size_t(count) * sizeof(T));
+        if (count > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
+            input_.clear();
+        else
+            store(input_, reinterpret_cast<const std::uint8_t*>(buffer), std::size_t(count) * sizeof(T));
         output_.clear(); hash_string_.clear();
     }
 

@@ -18,7 +18,7 @@ inline constexpr SeedWidth native_seed_width =
 #endif
 
 template<class Word>
-inline KeyIv derive_impl(std::u16string_view text) {
+inline KeyIv generate_key_iv(std::u16string_view text) {
     std::array<std::uint16_t, 16> words{};
     if (text.empty()) {
         KeyIv result{};
@@ -58,8 +58,8 @@ inline KeyIv derive_impl(std::u16string_view text) {
     return result;
 }
 
-inline KeyIv from_utf16(std::u16string_view text, SeedWidth size = SeedWidth::bits32) {
-    return size == SeedWidth::bits32 ? derive_impl<std::uint32_t>(text) : derive_impl<std::uint64_t>(text);
+inline KeyIv from_utf16(std::u16string_view text, SeedWidth width = SeedWidth::bits32) {
+    return width == SeedWidth::bits32 ? generate_key_iv<std::uint32_t>(text) : generate_key_iv<std::uint64_t>(text);
 }
 
 inline KeyIv from_wide(std::wstring_view input, SeedWidth width = SeedWidth::bits32) {
