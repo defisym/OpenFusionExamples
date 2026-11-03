@@ -53,12 +53,14 @@ void Encryption::SetEncryptStr(const std::wstring& text) {
 }
 
 void Encryption::SetEncryptStr(const wchar_t* text, std::uint32_t size) {
-    if (!text) {
-        SetEncryptData(text, size);
+    if (!text && size) {
+        input_.clear();
+        output_.clear();
+        hash_string_.clear();
         return;
     }
 
-    SetEncryptStr(std::wstring(text, size));
+    SetEncryptStr(text ? std::wstring(text, size) : std::wstring());
 }
 
 char* Encryption::GetInputStr() {

@@ -284,6 +284,8 @@ void facade_defaults_and_failures() {
     encryption.SetEncryptData(static_cast<const Byte*>(nullptr), 0);
     CHECK(encryption.GetInputData() && encryption.GetInputDataLength() == 0);
     CHECK(std::wstring(encryption.GetHash()) == L"d41d8cd98f00b204e9800998ecf8427e");
+    encryption.SetEncryptStr(static_cast<const wchar_t*>(nullptr), 0);
+    CHECK(encryption.GetInputData() && encryption.GetInputDataLength() == 0);
     CHECK(!encryption.GetHash(nullptr) && !encryption.GetOutputData());
     CHECK(!encryption.GetHash(L"unsupported"));
     CHECK(encryption.GetHash(L"SHA256") && encryption.GetOutputDataLength() == 32);
