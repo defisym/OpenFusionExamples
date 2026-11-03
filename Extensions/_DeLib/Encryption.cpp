@@ -20,11 +20,13 @@ std::optional<encryption::Digest> digest(const wchar_t* name) {
 
 bool Encryption::store(encryption::Bytes& destination, const std::uint8_t* buffer, std::size_t size) {
     // The compatibility API exposes 32-bit lengths, including a string terminator.
-    if ((!buffer && size) || size >= (std::numeric_limits<std::uint32_t>::max)()) {
+    if ((buffer == nullptr && size != 0) || size >= (std::numeric_limits<std::uint32_t>::max)()) {
         destination.clear();
         return false;
     }
 
+    // Zero-length data is valid for empty-string/file hashes. Keep its trailing
+    // zero to distinguish a valid empty buffer from cleared/invalid input.
     encryption::Bytes next(size + 1, 0);
     if (size) std::memcpy(next.data(), buffer, size);
     destination = std::move(next);
@@ -39,8 +41,20 @@ std::uint32_t Encryption::length(const encryption::Bytes& buffer) noexcept {
     return buffer.empty() ? 0 : static_cast<std::uint32_t>(buffer.size() - 1);
 }
 
+void Encryption::ClearEncryptData() noexcept {
+    input_.clear();
+    output_.clear();
+    input_string_.clear();
+    output_string_.clear();
+    hash_string_.clear();
+}
+
 void Encryption::SetEncryptStr(const std::string& text) {
-    store(input_, reinterpret_cast<const std::uint8_t*>(text.data()), text.size());
+    if (!store(input_, reinterpret_cast<const std::uint8_t*>(text.data()), text.size())) {
+        ClearEncryptData();
+        return;
+    }
+
     output_.clear(); hash_string_.clear();
 }
 
@@ -48,15 +62,17 @@ void Encryption::SetEncryptStr(const char* text, std::uint32_t size) { SetEncryp
 
 void Encryption::SetEncryptStr(const std::wstring& text) {
     const auto bytes = encryption::text::utf16_bytes(text);
-    store(input_, bytes.data(), bytes.size());
+    if (!store(input_, bytes.data(), bytes.size())) {
+        ClearEncryptData();
+        return;
+    }
+
     output_.clear(); hash_string_.clear();
 }
 
 void Encryption::SetEncryptStr(const wchar_t* text, std::uint32_t size) {
-    if (!text && size) {
-        input_.clear();
-        output_.clear();
-        hash_string_.clear();
+    if (text == nullptr && size != 0) {
+        ClearEncryptData();
         return;
     }
 

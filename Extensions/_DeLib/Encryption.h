@@ -56,11 +56,19 @@ public:
     std::uint8_t* GetOutputData() const { return data(output_); }
     std::uint32_t GetOutputDataLength() const { return length(output_); }
 
+    // Reset data and cached results, retaining Key/IV and buffer settings.
+    void ClearEncryptData() noexcept;
+
     template<class T> void SetEncryptData(const T* buffer, std::uint32_t count) {
-        if (count > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
-            input_.clear();
-        else
-            store(input_, reinterpret_cast<const std::uint8_t*>(buffer), std::size_t(count) * sizeof(T));
+        if (count > (std::numeric_limits<std::size_t>::max)() / sizeof(T)) {
+            ClearEncryptData();
+            return;
+        }
+        if (!store(input_, reinterpret_cast<const std::uint8_t*>(buffer), std::size_t(count) * sizeof(T))) {
+            ClearEncryptData();
+            return;
+        }
+
         output_.clear(); hash_string_.clear();
     }
 

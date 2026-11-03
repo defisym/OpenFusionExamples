@@ -226,6 +226,7 @@ void compatibility() {
     const auto file = std::filesystem::temp_directory_path().wstring() + L"/ofe-\u5bc6\u6587-" + std::to_wstring(stamp);
     CHECK(e.SaveFile(file.c_str()));
     CHECK(e.OpenFile(file.c_str()) && e.GetInputDataLength() == 0);
+    CHECK(GetFileHash(file) == L"d41d8cd98f00b204e9800998ecf8427e");
     e.SetEncryptStr(text);
     CHECK(e.SaveFile(file.c_str(), true));
     CHECK(e.EncryptFileDirectly(file.c_str()));
@@ -269,13 +270,27 @@ void facade_defaults_and_failures() {
     CHECK(std::equal(expected.begin(), expected.end(), encryption.GetOutputData()));
 
     encryption.GenerateKey(L"abc");
+    CHECK(encryption.GetInputStr() && encryption.GetOutputStr() && encryption.GetHash());
+    encryption.ClearEncryptData();
+    CHECK(!encryption.GetInputData() && !encryption.GetOutputData());
+    CHECK(encryption.GetInputDataLength() == 0 && encryption.GetOutputDataLength() == 0);
+    CHECK(!encryption.GetInputStr() && !encryption.GetOutputStr() && !encryption.GetHash());
+    const auto [key, key_size, iv, iv_size] = encryption.GetKeyInfo();
+    const auto custom = keygen::from_utf16(u"abc", keygen::native_seed_width);
+    CHECK(key_size == 16 && iv_size == 16);
+    CHECK(std::equal(custom.key.begin(), custom.key.end(), key));
+    CHECK(std::equal(custom.iv.begin(), custom.iv.end(), iv));
+
     encryption.GenerateKey(nullptr);
     check_default();
 
     encryption.SetEncryptData(static_cast<const Byte*>(nullptr), 1);
     CHECK(!encryption.GetInputData() && !encryption.GetOutputData() && !encryption.Encrypt());
+    encryption.SetEncryptStr(input);
+    CHECK(encryption.GetInputStr() && encryption.Encrypt() && encryption.GetOutputStr());
     encryption.SetEncryptStr(static_cast<const wchar_t*>(nullptr), 1);
-    CHECK(!encryption.GetInputData());
+    CHECK(!encryption.GetInputData() && !encryption.GetOutputData());
+    CHECK(!encryption.GetInputStr() && !encryption.GetOutputStr());
 
     const std::uint64_t value = 0;
     encryption.SetEncryptData(&value, (std::numeric_limits<std::uint32_t>::max)() / sizeof(value) + 1);

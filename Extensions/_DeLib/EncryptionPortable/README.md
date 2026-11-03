@@ -50,6 +50,9 @@ argument/algorithm failures use the existing false/null/empty-input results.
 The 32-bit length limit is checked at the compatibility buffer boundary, without
 adding that restriction to the core. Directly methods still read incrementally
 and keep the complete result in memory for GetOutputData/SaveFile.
+ClearEncryptData explicitly clears input, output and cached string/hash results,
+while retaining Key/IV and buffer settings. A cleared input is invalid; a supplied
+zero-length input is valid and has the standard empty-string/file hash.
 
 ## Existing asset compatibility
 
