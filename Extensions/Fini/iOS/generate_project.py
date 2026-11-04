@@ -18,8 +18,8 @@ def build_model():
     objects={}
     def add(key,isa,**fields):
         objects[uid(key)]={'isa':isa,**fields};return uid(key)
-    source=add('source','PBXFileReference',lastKnownFileType='sourcecode.cpp.objcpp',path='../../iOS/Classes/Extensions/CRunFini.mm',sourceTree='SOURCE_ROOT')
-    header=add('header','PBXFileReference',lastKnownFileType='sourcecode.c.h',path='../../iOS/Classes/Extensions/CRunFini.h',sourceTree='SOURCE_ROOT')
+    source=add('source','PBXFileReference',lastKnownFileType='sourcecode.cpp.objcpp',path='Runtime/CRunFini.mm',sourceTree='SOURCE_ROOT')
+    header=add('header','PBXFileReference',lastKnownFileType='sourcecode.c.h',path='Runtime/CRunFini.h',sourceTree='SOURCE_ROOT')
     config=add('config','PBXFileReference',lastKnownFileType='text.xcconfig',path='Config/Fini.xcconfig',sourceTree='SOURCE_ROOT')
     product=add('product','PBXFileReference',explicitFileType='archive.ar',path='libFini.a',sourceTree='BUILT_PRODUCTS_DIR',includeInIndex='0')
     build_file=add('source.build','PBXBuildFile',fileRef=source)

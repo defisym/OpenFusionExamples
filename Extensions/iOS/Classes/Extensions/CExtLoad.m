@@ -28,7 +28,6 @@
 
 //F01
 #import "CRunTemplate.h"
-#import "CRunFini.h"
 #import "CRunFindTheWay.h"
 
 #import "CRunKcArray.h"
@@ -134,10 +133,6 @@
 	CRunExtension* object=nil;
 	
 //F02 			
-    if ([name caseInsensitiveCompare:@"Fini"]==0)
-    {
-        object=[[CRunFini alloc] init];
-    }
     if ([name caseInsensitiveCompare:@"Template"]==0)
     {
         object=[[CRunTemplate alloc] init];

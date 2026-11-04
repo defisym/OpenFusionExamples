@@ -1,6 +1,7 @@
 """Mac/Windows handoff fixtures, not Apple compilation or exporter validation."""
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 import plistlib
 import tempfile
@@ -42,6 +43,30 @@ class HandoffTest(unittest.TestCase):
             self.assertEqual(output.read_bytes(),b'known good')
             source.write_text('version1');(prebuilt/'Fini.xcframework.zip').write_bytes(b'bad')
             with self.assertRaisesRegex(ValueError,'Corrupt'):apple.validate(prebuilt,'Fini',root)
+    def test_windows_git_conversion_and_binary_newlines(self):
+        header='Extensions/_DeLib/Encryption/CAPI.h'
+        converted=subprocess.check_output(['git','-c','core.autocrlf=true','cat-file','--filters','HEAD:'+header],cwd=repo)
+        original=subprocess.check_output(['git','show','HEAD:'+header],cwd=repo)
+        self.assertIn(b'\r\n',converted)
+        self.assertEqual(original.replace(b'\r\n',b'\n'),converted.replace(b'\r\n',b'\n'))
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);(root/'public.h').write_bytes(original)
+            dependency=root/'library.a';dependency.write_bytes(b'!<arch>\n')
+            before=apple.source_digest(root,['library.a'])
+            dependency.write_bytes(b'!<arch>\r\n')
+            self.assertNotEqual(apple.source_digest(root,['library.a']),before)
+            native=framework(root,'Fini')
+            binary=native/'ios-arm64/libFini.a';binary.write_bytes(b'!<arch>\nfixture\n')
+            prebuilt=root/'Prebuilt';apple.stage(native,'Fini',['public.h'],prebuilt,repo=root)
+            (root/'public.h').write_bytes(converted)
+            self.assertIsNotNone(apple.validate(prebuilt,'Fini',root))
+            path=prebuilt/'Fini.xcframework.zip'
+            with zipfile.ZipFile(path) as zipped:payload={name:zipped.read(name) for name in zipped.namelist()}
+            payload['Fini.xcframework/ios-arm64/libFini.a']=payload['Fini.xcframework/ios-arm64/libFini.a'].replace(b'\n',b'\r\n')
+            with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED) as zipped:
+                for name,data in payload.items():zipped.writestr(name,data)
+            with self.assertRaisesRegex(ValueError,'Corrupt'):apple.validate(prebuilt,'Fini',root)
+
     def test_missing_and_incomplete_handoff(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);self.assertIsNone(apple.validate(root,'Fini'))

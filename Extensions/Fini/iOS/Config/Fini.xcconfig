@@ -1,5 +1,5 @@
 // Fini-owned standalone project. SDK code stays in the user's licensed export.
-FINI_RUNTIME_ROOT = $(SRCROOT)/Runtime
+FINI_RUNTIME_ROOT = $(SRCROOT)/SDK
 FINI_OPENSSL_BASE = $(SRCROOT)/../../../work/mobile-encryption/openssl/ios
 FINI_OUTPUT_ROOT = $(SRCROOT)/../../../work/fini-ios
 #include? "Local.xcconfig"

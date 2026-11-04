@@ -8,13 +8,13 @@
 		"25619D1565A8049216978411" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.cpp.objcpp";
-			"path" = "../../iOS/Classes/Extensions/CRunFini.mm";
+			"path" = "Runtime/CRunFini.mm";
 			"sourceTree" = "SOURCE_ROOT";
 		};
 		"DE505F91BAFC9AEDB3C97C1E" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.c.h";
-			"path" = "../../iOS/Classes/Extensions/CRunFini.h";
+			"path" = "Runtime/CRunFini.h";
 			"sourceTree" = "SOURCE_ROOT";
 		};
 		"986EDD7755335BC4166424BD" = {

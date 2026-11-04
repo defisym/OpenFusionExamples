@@ -10,6 +10,7 @@ TOOLCHAIN=json.loads((EXT/'Fini/Mobile/android-toolchain.json').read_text())
 sys.path.insert(0,str(EXT/'_DeLib/Encryption/Mobile'))
 import android_runtime as encryption_runtime
 import apple_artifacts
+import FiniIOS
 ABIS=encryption_runtime.ABIS
 validate_elf=encryption_runtime.validate_elf
 OWNED_JAVA=['Extensions/CRunFini.java','_DeLib/FiniNative.java']
@@ -21,8 +22,8 @@ def source_files():
         '_3rdLib/Base64.h','_3rdLib/Compress/zlibInterface.h','_3rdLib/Compress/zlib/zlib.h','_3rdLib/Compress/zlib/zconf.h','_3rdLib/simpleini/SimpleIni.h','_3rdLib/nlohmann/single_include/nlohmann/json.hpp',
         '_DeLib/PathUtilities.h','_DeLib/GeneralMacros.h','_DeLib/StringTraits.h','_DeLib/StrNum.h','_DeLib/StringUtilities.h','_DeLib/ArithmeticTraits.h','_DeLib/UnicodeConversion.h','_DeLib/Encryption/Core.h','_DeLib/Encryption/KeyGen.h','_DeLib/Encryption/CAPI.h','_DeLib/Encryption/CAPI.cpp',
         'Android_Gradle/cmake/Fini/CMakeLists.txt','Android_Gradle/app/src/main/cpp/FiniJNI.cpp',
-        'iOS/Classes/Extensions/CRunFini.h','iOS/Classes/Extensions/CRunFini.mm','_Script/Fini.py','_Script/Fini.bat','_Script/FiniNativeTools.py']
-    return [EXT/p for p in changed]+[JAVA/p for p in OWNED_JAVA]+[p for p in (EXT/'Android_Gradle/tests/fini').glob('*') if p.is_file() and p.suffix in ('.py','.cpp','.java')]+[p for p in (EXT/'Fini/iOS').rglob('*') if p.is_file() and 'xcuserdata' not in p.parts and '__pycache__' not in p.parts and p.name not in ('Local.xcconfig','.gitignore') and not any(name in p.parts for name in ('Prebuilt','Runtime','Dependencies')) and p.suffix in ('.py','.md','.xcconfig','.pbxproj','.xcscheme','.xcworkspacedata')]
+        'Fini/iOS/Runtime/CRunFini.h','Fini/iOS/Runtime/CRunFini.mm','_Script/Fini.py','_Script/Fini.bat','_Script/FiniNativeTools.py','_Script/FiniIOS.py','iOS/Tools/make_ext.py','iOS/Tools/xcode_project.py']
+    return [EXT/p for p in changed]+[JAVA/p for p in OWNED_JAVA]+[p for p in (EXT/'Android_Gradle/tests/fini').glob('*') if p.is_file() and p.suffix in ('.py','.cpp','.java')]+[p for p in (EXT/'Fini/iOS').rglob('*') if p.is_file() and 'xcuserdata' not in p.parts and '__pycache__' not in p.parts and p.name not in ('Local.xcconfig','.gitignore') and not any(name in p.parts for name in ('Prebuilt','Runtime','Dependencies','SDK')) and p.suffix in ('.py','.md','.xcconfig','.pbxproj','.xcscheme','.xcworkspacedata')]
 
 def package(destination,abi_dirs,include_sources=True,licenses=None):
     payload={f'app/src/main/java/{p}':(JAVA/p).read_bytes() for p in OWNED_JAVA}
@@ -61,21 +62,30 @@ def sync_apple(fusion=None):
     plugin=apple_artifacts.validate(EXT/'Fini/iOS/Prebuilt','Fini')
     common=apple_artifacts.validate(EXT/'_DeLib/Encryption/Mobile/Prebuilt/iOS','OFEEncryption')
     if plugin and not common:raise ValueError('Fini Apple handoff requires the separately committed common encryption artifact')
-    outputs=[]
-    if common:
-        path=EXT/'_DeLib/Encryption/Mobile/ToInstall/OFEEncryption-iOS.zip'
-        apple_artifacts.package(common,path);outputs.append(path)
-    if plugin:
-        path=EXT/'Fini/ToInstall/Files/Data/Runtime/iPhone/Fini-iOS.zip'
-        apple_artifacts.package(plugin,path,{'FiniConsumer.xcconfig':EXT/'Fini/iOS/Config/FiniConsumer.xcconfig','README.md':EXT/'Fini/iOS/README.md'})
-        outputs.append(path)
-    if not outputs:print('Apple libraries not staged yet; build/push on Mac, then pull and rebuild on Windows.')
-    for path in outputs:
-        if fusion:
-            target=fusion/'Data/Runtime/iPhone'/path.name
-            apple_artifacts.atomic_write(target,path.read_bytes())
+    if not plugin and not common:
+        print('Apple libraries not staged yet; build/push on Mac, then pull and rebuild on Windows.')
+        return []
+    if fusion and not (fusion/'Data/Runtime/iPhone').is_dir():raise ValueError('Fusion iPhone runtime directory is missing; set FusionRoot to the installed Fusion directory')
+    scratch=REPO/'work';scratch.mkdir(exist_ok=True)
+    prepared=[]
+    # Validate/generate every result before replacing any known-good output.
+    with tempfile.TemporaryDirectory(prefix='fini-apple-package-',dir=scratch) as temp:
+        temp=Path(temp)
+        if common:
+            path=EXT/'_DeLib/Encryption/Mobile/ToInstall/OFEEncryption-iOS.zip'
+            staged=temp/path.name;apple_artifacts.package(common,staged);prepared.append((path,staged.read_bytes()))
+        if plugin:
+            path=EXT/'Fini/ToInstall/Files/Data/Runtime/iPhone/Fini-iOS.zip'
+            staged=temp/path.name
+            apple_artifacts.package(plugin,staged,{'FiniConsumer.xcconfig':EXT/'Fini/iOS/Config/FiniConsumer.xcconfig','README.md':EXT/'Fini/iOS/README.md'})
+            prepared.append((path,staged.read_bytes()))
+            extension=path.with_name('Fini.ext');staged=temp/extension.name
+            FiniIOS.write(plugin,staged);prepared.append((extension,staged.read_bytes()))
+    for path,data in prepared:
+        apple_artifacts.atomic_write(path,data)
+        if fusion:apple_artifacts.atomic_write(fusion/'Data/Runtime/iPhone'/path.name,data)
         print('Updated pulled Apple package:',path)
-    return outputs
+    return [path for path,_ in prepared]
 
 
 def main():

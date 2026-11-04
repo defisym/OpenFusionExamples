@@ -10,7 +10,15 @@ description: Reuse and publish the common encryption runtime when porting or upd
 Use when a plugin consumes encryption, key derivation or encrypted assets, or when
 changing the shared mobile encryption library/build/distribution. This is a shared
 runtime contract, not permission to alter unrelated plugins or merge a PR.
-Read the platform-specific reference before making Android or iOS changes.
+Apply [common porting rules](../fusion-extension-porting/SKILL.md), including
+compiled-component assessment and text/binary digest policy. Read the relevant
+[Android](../fusion-android-porting/SKILL.md) or
+[iOS](../fusion-ios-porting/SKILL.md) workflow before platform changes.
+
+The shared encryption runtime is an explicit author requirement for this project.
+It does not imply that every utility header, template or plugin algorithm should
+be moved into a DLL. Keep small/stateless helpers modular; assess actual emitted
+code, state ownership and exporter deployment before introducing another boundary.
 
 ## Required architecture
 
@@ -41,9 +49,10 @@ VS RunOnly invokes the publisher to validate, generate and update distribution
 packages. Windows must not require Xcode or rebuild Apple code. Do not push
 unbuilt placeholders or claim Apple/device validation from project-generation tests.
 
-Preserve signing, runtime loader and exporter constraints. A generated ZIP is not
-proof that the proprietary exporter recognizes a dependency or a final `.ext`.
-Report unverified exporter packaging explicitly rather than relabeling artifacts.
+Preserve signing, runtime loader and exporter constraints. A generated ZIP is not proof of exporter integration. For the supported legacy
+format, reuse the independent `.ext` codec and validate the decoded payload and
+six project-insertion blocks. Distinguish a verified package from a successful
+export, final link or device test.
 Do not redistribute licensed exporter headers, Runtime sources or test projects.
 
 ## Validation and review

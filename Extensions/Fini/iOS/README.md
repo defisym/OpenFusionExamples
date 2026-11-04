@@ -41,14 +41,34 @@ Its `libFini.a` does not include encryption or libcrypto; **FiniXCFramework**
 builds the client library and the separate common runtime. The project targets iOS 17+ for the reused C++20
 library facilities. It is intended for Xcode 15+ with the corresponding SDK.
 
-Ensure the exported app's extension loader instantiates CRunFini for extension
-name Fini. A dynamic loader can use NSClassFromString; a loader with an explicit
-class table needs the Fini import/creation entry. The repository's local SDK
-CExtLoad.m contains that developer entry. If the app was exported without Fini,
-replace Application.cci with your Fini test application's export before testing;
-building a library alone does not add Fini events to an unrelated application.
-After exporter/device checks, create the final Fusion `.ext` using the licensed
-SDK's iOSExtMaker procedure. No `.ext` or successful Apple build is claimed here.
+## Windows .ext and exported-app integration
+
+Windows packaging now reuses the independently verified legacy `.ext` codec from
+PR #100 (`Extensions/iOS/Tools/make_ext.py`). It generates and decodes Fini.ext,
+checks all payload/CRC data and six PBX insertion blocks, and packages a thin
+loader plus the author's precompiled platform archives. The implementation is
+already in those archives; no second Runtime implementation is compiled on Windows.
+The separately owned OFEEncryption framework is not embedded in each plugin .ext.
+
+After Fusion exports on Mac, close Xcode and run the bundled configurator:
+
+```sh
+python3 configure_fini_export.py . --common /path/to/OFEEncryption.xcframework
+```
+
+It links device/simulator archives, adds one shared framework reference and
+Embed & Sign phase, preserves device signing/unrelated flags, fixes stale scheme
+references and keeps a higher deployment minimum. Use --dry-run to preview or
+--target for an export with multiple apps. Repeating it is a no-op; it refuses a
+conflicting shared framework. The source form is available at
+`Extensions/Fini/iOS/configure_export.py` for an existing export. Replace your
+Application.cci with the Fini test application's export where appropriate.
+
+This verifies encoding and project edits, not a Fusion export/Apple final link or
+device run. Those remain the author's platform checks. Unlike FTW's separately
+compiled algorithm core, Fini's present archive includes the Objective-C++ adapter;
+changes to that compiled adapter legitimately require a Mac rebuild. Export-only
+configurator/loader edits are packaged on Windows without rebuilding the library.
 
 The generated project and shared schemes have been checked on Linux for stable
 IDs, valid object references, correct source/configuration paths and scheme
@@ -83,5 +103,5 @@ No Mac binaries are included until the author builds them. Before that first
 build the publisher reports the missing handoff and leaves Apple outputs alone;
 an incomplete, corrupt or source-stale committed pair fails instead of replacing
 a known-good package. The handoff creates native XCFramework distribution ZIPs;
-these are not mislabeled as exporter-tested .ext files. Final .ext/exported-app
-integration still follows the licensed exporter's format and framework setup.
+Windows also generates a format-verified Fini.ext with the shared PR #100 codec.
+An actual exporter round trip, Apple final link and devices still require validation.

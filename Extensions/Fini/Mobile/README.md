@@ -130,11 +130,11 @@ Embed/sign OFEEncryption once in the consuming app; add Fini's library and retai
 its class with -ObjC. Link libc++, Foundation and libz. Other plugins use the same
 framework. Do not merge libcrypto into individual plugin archives.
 
-The local SDK source-build settings now reference the common framework as well;
-configure its framework search path/embedding in that developer application.
-Final Fusion .ext publishing uses the licensed SDK's iOSExtMaker workflow after
-an exporter application test. Apple compilation/device validation is delegated to
-the user's Mac, not claimed from this Linux host.
+Runtime sources live in Fini/iOS/Runtime; legacy SDK application scaffolding is
+not modified. Windows now creates and round-trips Fini.ext using the shared codec
+from PR #100. The exported configurator links native archives and embeds the
+common framework once. Apple compilation, Fusion export/final-link and device
+validation remain separate checks on the author's Mac.
 
 ## Validation performed in this environment
 
@@ -174,7 +174,7 @@ shared API exports, absence of crypto definitions in libfini, package ownership,
 and one-time common-runtime staging. Xcode project syntax was parsed with the
 independent OpenStep parser 2.0.3. Generated IDs/references/schemes were also checked.
 Not established here: Windows MSBuild, a full Fusion Android APK build, Apple
-compilation/linking, final .ext publishing and device validation.
+compilation/linking, real Fusion .ext export/final-link and device validation.
 
 A review source bundle (not an installable runtime) can be created with:
 
@@ -205,5 +205,5 @@ No Mac binaries are included until the author builds them. Before that first
 build the publisher reports the missing handoff and leaves Apple outputs alone;
 an incomplete, corrupt or source-stale committed pair fails instead of replacing
 a known-good package. The handoff creates native XCFramework distribution ZIPs;
-these are not mislabeled as exporter-tested .ext files. Final .ext/exported-app
-integration still follows the licensed exporter's format and framework setup.
+Windows also generates a format-verified Fini.ext with the shared PR #100 codec.
+Actual exporter round-trip, final-link and device checks remain separate.

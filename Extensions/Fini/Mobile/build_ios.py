@@ -26,7 +26,7 @@ def main():
         subprocess.run(list(map(str,command)),check=True)
     out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
     includes=[f'-I{classes}']+[f'-I{d}' for d in classes.iterdir() if d.is_dir()]+[f'-I{root.parent}/_DeLib']
-    source=root.parent/'iOS/Classes/Extensions/CRunFini.mm'
+    source=root/'iOS/Runtime/CRunFini.mm'
     headers=out/'Headers';headers.mkdir(exist_ok=True);shutil.copy2(source.with_suffix('.h'),headers/'CRunFini.h')
     with (out/'publisher.log').open('w') as log:
         def run(cmd):
@@ -48,7 +48,7 @@ def main():
         pending.rename(final)
         sys.path.insert(0,str(root.parent/'_DeLib/Encryption/Mobile'))
         from apple_artifacts import stage
-        sources=['Extensions/iOS/Classes/Extensions/CRunFini.mm','Extensions/iOS/Classes/Extensions/CRunFini.h','Extensions/Fini/Mobile/Core.h','Extensions/Fini/IniCore.h','Extensions/Fini/Mobile/build_ios.py','Extensions/_DeLib/Encryption/CAPI.h','Extensions/_DeLib/StrNum.h','Extensions/_DeLib/UnicodeConversion.h','Extensions/_3rdLib/Base64.h','Extensions/_3rdLib/Compress/zlibInterface.h','Extensions/_3rdLib/simpleini/SimpleIni.h','Extensions/_3rdLib/nlohmann/single_include/nlohmann/json.hpp','Extensions/_DeLib/StringUtilities.h','Extensions/_DeLib/StringTraits.h','Extensions/_DeLib/ArithmeticTraits.h','Extensions/_DeLib/PathUtilities.h','Extensions/_DeLib/GeneralMacros.h','Extensions/_3rdLib/Compress/zlib/zlib.h','Extensions/_3rdLib/Compress/zlib/zconf.h']
+        sources=['Extensions/Fini/iOS/Runtime/CRunFini.mm','Extensions/Fini/iOS/Runtime/CRunFini.h','Extensions/Fini/Mobile/Core.h','Extensions/Fini/IniCore.h','Extensions/Fini/Mobile/build_ios.py','Extensions/_DeLib/Encryption/CAPI.h','Extensions/_DeLib/StrNum.h','Extensions/_DeLib/UnicodeConversion.h','Extensions/_3rdLib/Base64.h','Extensions/_3rdLib/Compress/zlibInterface.h','Extensions/_3rdLib/simpleini/SimpleIni.h','Extensions/_3rdLib/nlohmann/single_include/nlohmann/json.hpp','Extensions/_DeLib/StringUtilities.h','Extensions/_DeLib/StringTraits.h','Extensions/_DeLib/ArithmeticTraits.h','Extensions/_DeLib/PathUtilities.h','Extensions/_DeLib/GeneralMacros.h','Extensions/_3rdLib/Compress/zlib/zlib.h','Extensions/_3rdLib/Compress/zlib/zconf.h']
         stage(final,'Fini',sources,root/'iOS/Prebuilt',requires=['OFEEncryption/1'])
         print('Built',final,'Link the common OFEEncryption.xcframework once, plus libc++, Foundation and libz. No crypto implementation is included in Fini.')
 if __name__=='__main__':main()

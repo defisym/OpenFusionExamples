@@ -35,6 +35,3 @@ main.m
 !/Classes/Extensions/CExtLoad.m
 !/Classes/Extensions/CRunTemplate.h
 !/Classes/Extensions/CRunTemplate.m
-
-!/Classes/Extensions/CRunFini.h
-!/Classes/Extensions/CRunFini.mm

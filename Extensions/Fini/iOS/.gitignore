@@ -1,5 +1,5 @@
 Config/Local.xcconfig
 Dependencies/
-Runtime/
+SDK/
 **/xcuserdata/
 **/__pycache__/

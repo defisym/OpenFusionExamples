@@ -10,14 +10,34 @@ import zipfile
 
 REPO=Path(__file__).resolve().parents[4]
 
+def source_bytes(path):
+    data=path.read_bytes()
+    if path.suffix in ('.h','.hpp','.c','.cpp','.m','.mm','.py','.txt','.json','.xcconfig'):
+        data=data.replace(b'\r\n',b'\n')
+    elif path.name=='Info.plist' and data.startswith(b'<?xml'):
+        data=data.replace(b'\r\n',b'\n')
+    return data
+
+
 def source_digest(repo,files):
     digest=hashlib.sha256()
     for name in sorted(files):
         path=Path(name)
         if path.is_absolute() or '..' in path.parts:raise ValueError('Unsafe source manifest path')
-        data=(repo/path).read_bytes().replace(b'\r\n',b'\n')
+        data=source_bytes(repo/path)
         digest.update(name.encode()+b'\0'+data+b'\0')
     return digest.hexdigest()
+
+
+def source_hashes(repo,files):
+    result={}
+    for name in files:
+        relative=Path(name)
+        if relative.is_absolute() or '..' in relative.parts:raise ValueError('Unsafe source manifest path')
+        path=repo/relative
+        if not path.is_file():raise ValueError('Missing source dependency: '+name)
+        result[name]=hashlib.sha256(source_bytes(path)).hexdigest()
+    return result
 
 
 def atomic_write(path,data):
@@ -35,6 +55,7 @@ def check_framework(archive,owner):
         root=owner+'.xcframework/'
         for name in zipped.namelist():
             if Path(name).is_absolute() or '..' in Path(name).parts or '\\' in name:raise ValueError('Unsafe Apple artifact path')
+            if not name.startswith((root,'Licenses/')):raise ValueError('Unexpected Apple artifact path: '+name)
         info=plistlib.loads(zipped.read(root+'Info.plist'));slices=set()
         for library in info.get('AvailableLibraries',[]):
             platform=library.get('SupportedPlatform');variant=library.get('SupportedPlatformVariant','device')
@@ -55,7 +76,7 @@ def stage(framework,owner,sources,destination,requires=(),extra_files=None,repo=
         for name,path in (extra_files or {}).items():zipped.write(path,'Licenses/'+name)
     data=payload.getvalue();check_framework(data,owner)
     filename=owner+'.xcframework.zip'
-    manifest={'format':1,'owner':owner,'file':filename,'sha256':hashlib.sha256(data).hexdigest(),'source_files':sorted(sources),'source_sha256':source_digest(repo,sources),'requires':list(requires)}
+    manifest={'format':1,'owner':owner,'file':filename,'sha256':hashlib.sha256(data).hexdigest(),'source_files':sorted(sources),'source_sha256':source_digest(repo,sources),'source_hashes':source_hashes(repo,sources),'requires':list(requires)}
     # Commit both files together; Windows rejects an interrupted or stale pair.
     atomic_write(Path(destination)/filename,data)
     atomic_write(Path(destination)/'manifest.json',(json.dumps(manifest,indent=2)+'\n').encode())
@@ -71,6 +92,10 @@ def validate(destination,owner,repo=REPO):
     if manifest.get('format')!=1 or manifest.get('owner')!=owner or manifest.get('file')!=binary.name:raise ValueError('Invalid Mac handoff manifest')
     data=binary.read_bytes()
     if hashlib.sha256(data).hexdigest()!=manifest['sha256']:raise ValueError('Corrupt Mac handoff: '+str(binary))
+    hashes=source_hashes(repo,manifest['source_files'])
+    if 'source_hashes' in manifest and hashes!=manifest['source_hashes']:
+        changed=sorted(name for name in set(hashes)|set(manifest['source_hashes']) if hashes.get(name)!=manifest['source_hashes'].get(name))
+        raise ValueError('Mac library is stale; changed source dependencies: '+', '.join(changed))
     if source_digest(repo,manifest['source_files'])!=manifest['source_sha256']:raise ValueError('Mac library is stale; rebuild after the source change: '+str(binary))
     check_framework(data,owner)
     return manifest,data

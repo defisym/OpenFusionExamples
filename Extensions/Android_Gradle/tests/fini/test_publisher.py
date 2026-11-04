@@ -1,6 +1,7 @@
 """Synthetic ELF fixtures test validation/ownership, never serve as release binaries."""
 import importlib.util,struct,tempfile,unittest,zipfile,io
 from pathlib import Path
+from unittest.mock import patch
 repo=Path(__file__).resolve().parents[4]
 spec=importlib.util.spec_from_file_location('fini_publish',repo/'Extensions/_Script/Fini.py');publisher=importlib.util.module_from_spec(spec);spec.loader.exec_module(publisher)
 def elf(machine=183,align=16384):
@@ -16,6 +17,12 @@ class PublisherTest(unittest.TestCase):
                 self.assertIn('app/src/main/jniLibs/arm64-v8a/libfini.so',names)
                 self.assertFalse(any(n.endswith('build.gradle') or '/Runtime/' in n or '/Objects/' in n for n in names))
                 with zipfile.ZipFile(io.BytesIO(z.read('app/libs/Fini-JNI-rules.jar'))) as rules:self.assertIn('META-INF/proguard/Fini.pro',rules.namelist())
+    def test_owned_ios_source_inventory_excludes_local_sdk_project(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);private=root/'Fini/iOS/SDK/Private.xcodeproj/project.pbxproj';private.parent.mkdir(parents=True);private.write_text('private export fixture')
+            with patch.object(publisher,'EXT',root):
+                self.assertNotIn(private,publisher.source_files())
+
     def test_invalid_architecture_alignment_and_atomic_failure(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);binary=root/'libfini.so';output=root/'Fini.zip';output.write_bytes(b'old output')

@@ -22,7 +22,11 @@ licensed SDK source. The author controls publishing compiled Apple files. Window
 skip Apple packaging while no Mac build is available, but must reject incomplete,
 corrupt or source-stale committed artifacts without replacing a known-good package.
 
-Record the actual output format. A native XCFramework handoff package is not an
-exporter-tested .ext; use the licensed exporter packaging mechanism where required.
+Preserve the verified PR #100 .ext flow: Windows consumes native artifacts and
+packages the current loader/adapter using the independent shared format codec.
+Verify decoded payload/CRC and PBX insertion blocks. A native XCFramework ZIP
+alone is not an installable .ext, and a valid .ext is not proof of final linkage.
+Use an idempotent target-aware configurator for missing exported project references;
+preserve device signing, unrelated extensions/flags and a higher deployment floor.
 Validate generated project syntax/references and the Mac/Windows manifest handoff
 without calling those checks an Apple build. The author supplies Apple/device results.

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-        F10100000000000000000001 /* CRunFini.mm in Sources */ = {isa = PBXBuildFile; fileRef = F10100000000000000000002; settings = {COMPILER_FLAGS = "-std=c++20 -I$(SRCROOT)/../_DeLib"; }; };
 		043EC9DB23548329007001F0 /* joydown.png in Resources */ = {isa = PBXBuildFile; fileRef = 043EC9DA23548328007001F0 /* joydown.png */; };
 		043EC9DD23548333007001F0 /* joydownd.png in Resources */ = {isa = PBXBuildFile; fileRef = 043EC9DC23548333007001F0 /* joydownd.png */; };
 		043EC9E423548352007001F0 /* joyup.png in Resources */ = {isa = PBXBuildFile; fileRef = 043EC9DE23548351007001F0 /* joyup.png */; };
@@ -371,8 +370,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-        F10100000000000000000002 /* CRunFini.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CRunFini.mm; sourceTree = "<group>"; };
-        F10100000000000000000003 /* CRunFini.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CRunFini.h; sourceTree = "<group>"; };
 		043EC9DA23548328007001F0 /* joydown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = joydown.png; path = Resources/joydown.png; sourceTree = "<group>"; };
 		043EC9DC23548333007001F0 /* joydownd.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = joydownd.png; path = Resources/joydownd.png; sourceTree = "<group>"; };
 		043EC9DE23548351007001F0 /* joyup.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = joyup.png; path = Resources/joyup.png; sourceTree = "<group>"; };
@@ -1576,9 +1573,7 @@
 				A72B5847151A16F800223DD0 /* CRunWargameMap.m */,
 				EDE55AF51D2D490500B5AA42 /* CRunWebView2.h */,
 				EDE55AF61D2D490500B5AA42 /* CRunWebView2.m */,
-				F10100000000000000000002 /* CRunFini.mm */,
-                F10100000000000000000003 /* CRunFini.h */,
-                81B13D8F27EC884000AF5BF4 /* CRunTemplate.h */,
+				81B13D8F27EC884000AF5BF4 /* CRunTemplate.h */,
 				81B13D9027EC884000AF5BF4 /* CRunTemplate.m */,
 				8103571A27EFE941000AD374 /* CRunFindTheWay.h */,
 				8103571B27EFE941000AD374 /* CRunFindTheWay.m */,
@@ -2065,8 +2060,7 @@
 				A72B5940151A16F800223DD0 /* CSound.m in Sources */,
 				A72B5941151A16F800223DD0 /* CSoundBank.m in Sources */,
 				A72B5942151A16F800223DD0 /* CEventProgram.m in Sources */,
-				F10100000000000000000001 /* CRunFini.mm in Sources */,
-                81B13D9127EC884000AF5BF4 /* CRunTemplate.m in Sources */,
+				81B13D9127EC884000AF5BF4 /* CRunTemplate.m in Sources */,
 				A72B5943151A16F800223DD0 /* CEvents.m in Sources */,
 				A72B5945151A16F800223DD0 /* CLoadQualifiers.m in Sources */,
 				A72B5946151A16F800223DD0 /* CQualToOiList.m in Sources */,
@@ -2339,7 +2333,7 @@
 				GCC_THUMB_SUPPORT = NO;
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)\"/**";
 				INFOPLIST_FILE = "SDK-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)",
@@ -2374,7 +2368,7 @@
 				GCC_THUMB_SUPPORT = NO;
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)\"/**";
 				INFOPLIST_FILE = "SDK-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)",
@@ -2419,7 +2413,7 @@
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
-				OTHER_LDFLAGS = ("$(inherited)", "-ObjC", "-framework", "OFEEncryption", "-lz");
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Classes/**";
@@ -2452,7 +2446,7 @@
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
-				OTHER_LDFLAGS = ("$(inherited)", "-ObjC", "-framework", "OFEEncryption", "-lz");
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Classes/**";
@@ -2506,7 +2500,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/*/**";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "-Wno-shift-negative-value";
 				PROVISIONING_PROFILE = "";
@@ -2563,7 +2557,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/*/**";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				OTHER_CFLAGS = "-Wno-shift-negative-value";
 				PROVISIONING_PROFILE = "";
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
