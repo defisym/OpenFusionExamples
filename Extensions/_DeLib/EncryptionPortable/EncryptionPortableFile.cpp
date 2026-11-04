@@ -2,8 +2,9 @@
 #include "EncryptionPortableBuffer.h"
 #include "EncryptionPortableStream.h"
 
-#include <array>
 #include <cstdio>
+#include <memory>
+#include <new>
 
 namespace {
 
@@ -114,17 +115,20 @@ EncryptionResult Encryption_HashFile(
     if (input_file == nullptr || output == nullptr || output_length == nullptr) {
         return ENCRYPTION_INVALID_ARGUMENT;
     }
+    constexpr size_t capacity = 64 * 1024;
+    std::unique_ptr<uint8_t[]> buffer(new (std::nothrow) uint8_t[capacity]);
+    if (!buffer) return ENCRYPTION_OUT_OF_MEMORY;
+
     EncryptionHashContext* context = nullptr;
     auto result = Encryption_HashCreate(algorithm, &context);
     if (result != ENCRYPTION_OK) return result;
 
     FileReader reader{input_file};
-    std::array<uint8_t, 64 * 1024> buffer{};
     for (;;) {
         size_t bytes_read = 0;
-        result = read_file(&reader, buffer.data(), buffer.size(), &bytes_read);
+        result = read_file(&reader, buffer.get(), capacity, &bytes_read);
         if (result != ENCRYPTION_OK || bytes_read == 0) break;
-        result = Encryption_HashUpdate(context, buffer.data(), bytes_read);
+        result = Encryption_HashUpdate(context, buffer.get(), bytes_read);
         if (result != ENCRYPTION_OK) break;
     }
     if (result == ENCRYPTION_OK) {

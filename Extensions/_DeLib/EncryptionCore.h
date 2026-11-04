@@ -306,8 +306,9 @@ public:
     std::uint64_t size() const override { return size_; }
 
     std::size_t read_at(std::uint64_t offset, Byte* output, std::size_t capacity) override {
-        require(output || capacity == 0, ErrorCode::argument, "Null source output");
         require(offset <= size_, ErrorCode::argument, "Source offset beyond EOF");
+        if (capacity == 0) return 0;
+        require(output != nullptr, ErrorCode::argument, "Null source output");
         const auto count = static_cast<std::size_t>((std::min)(size_ - offset,
                                         static_cast<std::uint64_t>(capacity)));
         if (!count) return 0;

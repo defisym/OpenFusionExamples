@@ -91,7 +91,7 @@ void keygen_strings() {
     fails([&] { keygen::from_utf8(std::string("\xc0\x80", 2)); }, ErrorCode::argument);
     fails([&] { keygen::from_utf8(std::string("\xf0\x9f", 2)); }, ErrorCode::argument);
     fails([&] { keygen::from_utf8(std::string("\xed\xa0\x80", 3)); }, ErrorCode::argument);
-    if (sizeof(wchar_t) > 2) {
+    if constexpr (sizeof(wchar_t) > 2) {
         const std::wstring invalid(1, static_cast<wchar_t>(0x110000));
         fails([&] { keygen::from_wide(invalid); }, ErrorCode::argument);
         Encryption facade;
@@ -190,7 +190,7 @@ void large_offsets() {
             const auto count = static_cast<std::size_t>((std::min)(std::uint64_t(capacity), size() - offset));
             std::fill_n(output, count, Byte{0});
             for (std::size_t i = 0; i < count; ++i)
-                if (offset + i >= size() - 16) output[i] = tail_[offset + i - (size() - 16)];
+                if (offset + i >= size() - 16) output[i] = tail_[static_cast<std::size_t>(offset + i - (size() - 16))];
             return count;
         }
     };
