@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #if defined(_WIN32) && defined(ENCRYPTION_SHARED)
 # ifdef ENCRYPTION_BUILD
@@ -49,6 +50,11 @@ typedef enum EncryptionHashAlgorithm {
 typedef struct EncryptionCipherContext EncryptionCipherContext;
 typedef struct EncryptionHashContext EncryptionHashContext;
 typedef struct EncryptionReaderContext EncryptionReaderContext;
+
+typedef EncryptionResult (*EncryptionReadCallback)(
+    void* user_data, uint8_t* buffer, size_t capacity, size_t* bytes_read);
+typedef EncryptionResult (*EncryptionWriteCallback)(
+    void* user_data, const uint8_t* data, size_t data_length);
 
 // Random access to caller-owned ciphertext. Callback and user_data must outlive
 // the reader. A successful short read is allowed; zero before EOF is an I/O error.
@@ -114,6 +120,102 @@ ENCRYPTION_API EncryptionResult Encryption_HashFinal(
     size_t output_capacity,
     size_t* output_length);
 ENCRYPTION_API void Encryption_HashDestroy(EncryptionHashContext* context);
+
+// ------------------------------------------
+// Callback streams
+// ------------------------------------------
+
+// Push-style streaming: reads until EOF and sends each result chunk to the
+// writer callback. bytes_read == 0 with ENCRYPTION_OK signals EOF.
+ENCRYPTION_API EncryptionResult Encryption_EncryptReader(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback,
+    void* read_user_data,
+    EncryptionWriteCallback write_callback,
+    void* write_user_data);
+ENCRYPTION_API EncryptionResult Encryption_DecryptReader(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback,
+    void* read_user_data,
+    EncryptionWriteCallback write_callback,
+    void* write_user_data);
+
+// ------------------------------------------
+// Memory buffers
+// ------------------------------------------
+
+// One-shot helpers for data already in memory. Encryption needs input_length
+// + 16 output bytes; decryption needs at most ciphertext length bytes.
+ENCRYPTION_API EncryptionResult Encryption_EncryptBuffer(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    const uint8_t* input, size_t input_length,
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+ENCRYPTION_API EncryptionResult Encryption_DecryptBuffer(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    const uint8_t* input, size_t input_length,
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+ENCRYPTION_API EncryptionResult Encryption_HashBuffer(
+    EncryptionHashAlgorithm algorithm,
+    const uint8_t* input, size_t input_length,
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+
+// Reads through a callback and collects the result in caller-owned memory.
+// Discard output if an error is returned.
+ENCRYPTION_API EncryptionResult Encryption_EncryptReaderToBuffer(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback, void* read_user_data,
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+ENCRYPTION_API EncryptionResult Encryption_DecryptReaderToBuffer(
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionReadCallback read_callback, void* read_user_data,
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+
+// ------------------------------------------
+// FILE handles
+// ------------------------------------------
+
+// FILE helpers use caller-owned handles from their current positions.
+// They neither rewind nor close handles. Source and destination must be
+// distinct files; discard partial output if an operation fails.
+ENCRYPTION_API EncryptionResult Encryption_EncryptFileStream(
+    FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionWriteCallback write_callback,
+    void* write_user_data);
+ENCRYPTION_API EncryptionResult Encryption_DecryptFileStream(
+    FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    EncryptionWriteCallback write_callback,
+    void* write_user_data);
+ENCRYPTION_API EncryptionResult Encryption_EncryptFile(
+    FILE* input_file, FILE* output_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE]);
+ENCRYPTION_API EncryptionResult Encryption_DecryptFile(
+    FILE* input_file, FILE* output_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE]);
+ENCRYPTION_API EncryptionResult Encryption_EncryptFileToBuffer(
+    FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+ENCRYPTION_API EncryptionResult Encryption_DecryptFileToBuffer(
+    FILE* input_file,
+    const uint8_t key[ENCRYPTION_AES_KEY_SIZE],
+    const uint8_t iv[ENCRYPTION_AES_IV_SIZE],
+    uint8_t* output, size_t output_capacity, size_t* output_length);
+ENCRYPTION_API EncryptionResult Encryption_HashFile(
+    FILE* input_file, EncryptionHashAlgorithm algorithm,
+    uint8_t* output, size_t output_capacity, size_t* output_length);
 
 #ifdef __cplusplus
 }  // extern "C"

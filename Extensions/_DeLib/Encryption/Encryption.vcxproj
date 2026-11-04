@@ -30,9 +30,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CAPI.cpp" />
-    <ClCompile Include="CAPIStream.cpp" />
-    <ClCompile Include="CAPIBuffer.cpp" />
-    <ClCompile Include="CAPIFile.cpp" />
     <ClCompile Include="..\Encryption.cpp" />
   </ItemGroup>
 

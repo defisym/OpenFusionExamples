@@ -13,7 +13,7 @@ New implementations, C adapters, build projects and tests live in this directory
 
 - `Core.h`: the C++ cipher, hash, file source and seekable decryption reader.
 - `KeyGen.h`: password-to-Key/IV mapping.
-- `CAPI*.h` / `CAPI*.cpp`: the C ABI and its stream, buffer and FILE adapters.
+- `CAPI.h` / `CAPI.cpp`: the C ABI and its stream, buffer and FILE adapters.
 - `Encryption.sln` / `Encryption.vcxproj`: VS library and tests; CMake target `encryption`.
 
 Public C++ and C headers use the same paths in the repository and after installation,
@@ -33,7 +33,7 @@ The exported `Encryption_*` C function names are unchanged.
   It reads only the last ciphertext block and its predecessor to validate padding
   and determine size, then caches at most 64 KiB of plaintext on demand. FileSource
   serializes positioned reads so clones can serve separate decoders safely.
-- `CAPI*.h` expose C functions with opaque, explicitly destroyed
+- `CAPI.h` exposes C functions with opaque, explicitly destroyed
   contexts, caller-owned buffers and exception-to-result translation. The C ABI
   supports incremental ciphers/hashes, callback streams, FILE adapters and pull
   readers (`Encryption_ReaderCreate/Read/Seek/Size/Destroy`). Callback storage must

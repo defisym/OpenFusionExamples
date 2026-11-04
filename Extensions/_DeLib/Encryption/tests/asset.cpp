@@ -1,5 +1,5 @@
 #include "Encryption.h"
-#include "Encryption/CAPIBuffer.h"
+#include "Encryption/CAPI.h"
 #include <fstream>
 #include <iostream>
 #include <iterator>

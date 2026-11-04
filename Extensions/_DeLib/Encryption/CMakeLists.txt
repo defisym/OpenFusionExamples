@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(Encryption LANGUAGES C CXX)
 find_package(OpenSSL 1.1.1 REQUIRED COMPONENTS Crypto)
-add_library(encryption
-    CAPI.cpp CAPIStream.cpp
-    CAPIBuffer.cpp CAPIFile.cpp ../Encryption.cpp)
+add_library(encryption CAPI.cpp ../Encryption.cpp)
 target_include_directories(encryption PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
     $<INSTALL_INTERFACE:include/encryption>)
@@ -39,6 +37,5 @@ install(TARGETS encryption
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ../Encryption.h ../EncryptionStream.h ../UnicodeConversion.h
     DESTINATION include/encryption)
-install(FILES Core.h KeyGen.h CAPI.h CAPICallbacks.h CAPIStream.h
-    CAPIBuffer.h CAPIFile.h
+install(FILES Core.h KeyGen.h CAPI.h
     DESTINATION include/encryption/Encryption)
