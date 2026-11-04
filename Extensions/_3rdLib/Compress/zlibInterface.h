@@ -1,12 +1,17 @@
 #pragma once
 
 #include "zlib/zlib.h"
-#include "GeneralDefinition.h"  // for macro RELATIVE_PATH
+#include "PathUtilities.h"  // only dependency: RELATIVE_PATH
+#include <limits>
+#include <algorithm>
 
+#ifdef _MSC_VER
 #ifdef _WIN64
 #pragma	comment(lib, RELATIVE_PATH("zlibstatic_x64.lib"))
 #else
 #pragma	comment(lib, RELATIVE_PATH("zlibstatic.lib"))
+#endif
+
 #endif
 
 #include <string>
@@ -54,8 +59,14 @@ inline std::string ZLIBI_Compress(const std::string& in,
 //      0 -> decompress buffer is 8 times larger than input
 //      other -> decompress buffer is input size * estimateRatio
 inline bool ZLIBI_UnCompress(const char* pSrc, const size_t srcSz,
-    std::string& out, const unsigned char estimateRatio = 4) {
-    size_t blockSz = !estimateRatio ? (srcSz << 3) : srcSz * estimateRatio;
+    std::string& out, const unsigned char estimateRatio = 4,
+    const size_t maxOutputSize = (std::numeric_limits<size_t>::max)()) {
+    if (!pSrc || !srcSz || !maxOutputSize || srcSz > (std::numeric_limits<uLong>::max)()) {
+        out.clear(); return false;
+    }
+    const size_t ratio = !estimateRatio ? 8 : estimateRatio;
+    size_t blockSz = srcSz > maxOutputSize / ratio ? maxOutputSize : srcSz * ratio;
+    blockSz = (std::max)(size_t{1}, (std::min)(blockSz, maxOutputSize));
 
     while (true) {
         out.clear();
@@ -68,7 +79,10 @@ inline bool ZLIBI_UnCompress(const char* pSrc, const size_t srcSz,
             static_cast<uLong>(srcSz));
 
         if (ret == Z_BUF_ERROR) {
-            blockSz = blockSz << 1;
+            if (blockSz >= maxOutputSize || blockSz > (std::numeric_limits<uLong>::max)() / 2) {
+                out.clear(); return false;
+            }
+            blockSz = blockSz > maxOutputSize / 2 ? maxOutputSize : blockSz * 2;
             continue;
         }
 

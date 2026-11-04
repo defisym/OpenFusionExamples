@@ -7,7 +7,7 @@
 #include <format>
 #include <stdint.h>
 
-#include "GeneralDefinition.h"
+#include "StringUtilities.h"
 #include "StringTraits.h"
 #include "ArithmeticTraits.h"
 

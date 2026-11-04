@@ -8,7 +8,7 @@ description: Port Clickteam Fusion C++ extensions to Android, or diagnose Androi
 ## Scope
 
 Apply the [common porting rules](../fusion-extension-porting/SKILL.md), including
-Git checkout normalization and artifact hash verification, before this workflow.
+Git checkout normalization and artifact verification, before this workflow.
 
 Use this skill only for Fusion Android/JNI implementation, builds, publishing, or troubleshooting.
 For a multi-platform task, apply it to the Android portion; still assess shared C++ changes for their
@@ -19,7 +19,22 @@ Keep algorithms in shared C++; use Java for Fusion Runtime integration and JNI m
 Compile native libraries during extension development/publishing, then let Fusion use its own
 default build templates when exporting an APK.
 
+If encryption or encrypted assets are involved, also read and follow
+[`fusion-shared-encryption`](../fusion-shared-encryption/SKILL.md). Reusing its source
+is not sufficient: mobile plugins must consume one shared encryption runtime.
+
 ## Establish the target
+
+Apply the common skill's standing repository-layout requirement to every plugin
+and dependency adaptation without asking the author to restate it.
+
+Keep Android implementation and development assets under
+`Extensions/Android_Gradle`, following its existing Java/JNI, `cmake/<Plugin>`
+and `tests/<plugin>` layout. `Extensions/<Plugin>` is the Windows VS project;
+do not add an Android or Mobile subtree there or in Windows library directories.
+Adapt an existing library in its original files with narrow macros, or put its
+Android-specific code under the corresponding app/src/main component directory.
+Preserve existing `ToInstall` distribution paths.
 
 1. Identify the extension, its Windows ACE definitions, existing mobile code, and the installed
    Fusion Runtime and development SDK versions.

@@ -1,0 +1,4 @@
+# Native handoff archives stay byte-exact across Mac and Windows checkouts.
+*.xcframework.zip binary
+*.a binary
+*.ext binary

@@ -17,15 +17,25 @@ for other plugins. Write this skill, references and operational docs in English.
 Preserve shared C++ interfaces; submit shared behavioral changes for author review.
 Keep private SDK/exporter material outside the public repository.
 
+Apply the common skill's standing repository-layout requirement to every plugin
+and dependency adaptation without asking the author to restate it. Adapt existing
+libraries in their original files with narrow macros, or put iOS-specific
+integration under the iOS project's corresponding component directory. Keep
+Apple build, packaging and handoff inputs there, outside Windows library trees.
+
+If encryption is involved, also apply
+[shared encryption](../fusion-shared-encryption/SKILL.md): that runtime is an
+author-approved shared service, not a rule to dynamically split every helper.
+
 ## Workflow
 
 1. Inspect current Windows ACE definitions, mobile adapters, the installed exporter
    and a real exported project. Inventory IDs, property layout, parameter decoding,
    events, selection, creation and unsupported operations before implementation.
 2. Treat the Windows C++ implementation as the behavioral oracle for portable
-   features. Add direct comparisons against its actual classes for paths, flags,
-   units/ZOC, area layers, line ranges, AOE and caching; do not use Android output
-   as the specification. Adapt only platform-specific I/O/object mechanics using
+   features. Add direct comparisons against its actual classes for the target
+   plugin's data, flags, numeric/string semantics and caching; do not use Android
+   output as the specification. Adapt only platform-specific I/O/object mechanics using
    the actual iOS SDK. Reuse computational algorithms in shared C++. Keep Runtime objects, selection,
    creation and event dispatch in an owned adapter. Compare helpers with current
    Windows and Android versions; preserve each Runtime's actual representations.
@@ -39,12 +49,16 @@ Keep private SDK/exporter material outside the public repository.
    fixed-width values, explicit buffer/string lengths and exception translation.
    Avoid STL and C++ layout exposure. Retain owners across callback reentrancy;
    snapshot iteration results and define destruction/replacement behavior.
-4. Keep each plugin's build project under Extensions/iOS/<Plugin>. Use CMake and
+4. Keep the plugin's iOS project, Runtime adapter, build scripts, tests and native
+   handoff inputs under Extensions/iOS/<Plugin>. Extensions/<Plugin> is its VS
+   project; do not put iOS or Mobile development trees there. Use CMake and
    Ninja/Make for scripted compilation; use Apple CLI tools for SDK selection and
    XCFramework creation. Full Xcode supplies iOS SDKs; standalone Command Line
    Tools are insufficient. Do not require opening Xcode GUI to build the core.
-5. Build separate iOS device and simulator platform slices. The current task
-   supports arm64 only; do not add Intel/Rosetta/32-bit targets. Use a static
+5. Build separate iOS device and simulator platform slices. Derive architectures
+   from the target project and author requirements. The FTW reference uses arm64
+   only; do not make that a universal rule or add Intel/Rosetta/32-bit slices
+   without a target requirement. Use a static
    XCFramework when it matches the exported project's linking model. Prebuilding
    isolates language settings, not the deployment availability of libc++ APIs.
 6. Stage binaries with source/configuration and per-file hashes, normalize Git
@@ -56,7 +70,9 @@ Keep private SDK/exporter material outside the public repository.
 7. Publish the extension as .ext, including required native and adapter material.
    Native-only manifests are valid inputs to a Windows packager: verify compiled
    dependencies, then package the current Runtime adapter there. Do not force a
-   Mac rebuild merely because the thin source adapter changed.
+   Mac rebuild for adapter sources shipped separately from the compiled core.
+   If an adapter is compiled into the transferred library, its changes do require
+   a rebuild; record that boundary instead of applying a blanket exemption.
    Validate its actual encoding and export round trip; do not rename an arbitrary
    ZIP to .ext. Fusion may export files without adding their Xcode references.
    Verify library/source references, include paths, system dependencies and final
@@ -95,8 +111,10 @@ Keep private SDK/exporter material outside the public repository.
 
 ## Reusable Runtime helpers and exported-project patches
 
-Use `Helpers/ObjectBase.h`, `ObjectSelection.h` and `ObjectCreation.h` as separate
-generic classes, with common OI access in ObjectBase. Compare the current Windows
+When lookup/selection/creation infrastructure is needed, use the maintained
+`Helpers/ObjectBase.h`, `ObjectSelection.h` and `ObjectCreation.h` as separate
+generic classes, with common OI access in ObjectBase. Do not add a plugin core
+dependency merely to obtain these helpers or import unused plugin semantics. Compare the current Windows
 `Extensions/_3rdLib/Object*.h` and Android `_3rdLib` counterparts, including APIs
 not yet used by the consuming extension. Do not rename them for that extension.
 

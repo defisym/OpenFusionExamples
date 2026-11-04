@@ -1,0 +1,7 @@
+{
+  "ndk": "28.2.13676358",
+  "cmake": "3.22.1",
+  "minimum_cmake": [3, 22],
+  "command_line_tools": "19.0",
+  "native_api": 26
+}

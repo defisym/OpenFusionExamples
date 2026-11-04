@@ -1,0 +1,4 @@
+// Add Fini.xcframework to the exporter's Frameworks/Libraries list separately.
+// Compile the adapter source OR link the XCFramework, never both.
+OTHER_LDFLAGS = $(inherited) -ObjC -lc++ -lz -framework Foundation -framework OFEEncryption
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
