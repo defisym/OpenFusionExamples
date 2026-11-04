@@ -8,3 +8,11 @@ Check the current Windows helpers for additions or behavior changes on every
 such update, synchronize portable behavior to Android, and preserve necessary
 platform-specific runtime implementations. The skill includes the comparison
 paths, reviewed revision, compatibility requirements and validation workflow.
+
+# iOS Runtime object helpers
+
+For iOS Runtime and object helper changes, follow
+[`fusion-ios-porting`](../.agents/skills/fusion-ios-porting/SKILL.md).
+Keep generic ObjectBase, ObjectSelection and ObjectCreation classes separate
+from plugin adapters. Compare their portable APIs with the current Windows and
+Android helpers, and validate generic helpers without linking a plugin core.

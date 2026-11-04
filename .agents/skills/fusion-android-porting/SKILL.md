@@ -7,6 +7,9 @@ description: Port Clickteam Fusion C++ extensions to Android, or diagnose Androi
 
 ## Scope
 
+Apply the [common porting rules](../fusion-extension-porting/SKILL.md), including
+Git checkout normalization and artifact hash verification, before this workflow.
+
 Use this skill only for Fusion Android/JNI implementation, builds, publishing, or troubleshooting.
 For a multi-platform task, apply it to the Android portion; still assess shared C++ changes for their
 effect on other platforms. Keep iOS/Objective-C++ and HTML5 workflows in separate skills.
