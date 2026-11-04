@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{BC8A1FFA-BEE3-4634-8014-F334798102B3}") = "EncryptionPortable", "EncryptionPortable.vcxproj", "{A6CE0358-BCA4-4803-BF84-21C812C0B399}"
+Project("{BC8A1FFA-BEE3-4634-8014-F334798102B3}") = "Encryption", "Encryption.vcxproj", "{A6CE0358-BCA4-4803-BF84-21C812C0B399}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F408ED35-2D66-4E36-A659-580895179F86} = {F408ED35-2D66-4E36-A659-580895179F86}
 	EndProjectSection

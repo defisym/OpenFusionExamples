@@ -1,11 +1,11 @@
-#ifndef ENCRYPTION_PORTABLE_H
-#define ENCRYPTION_PORTABLE_H
+#ifndef ENCRYPTION_CAPI_H
+#define ENCRYPTION_CAPI_H
 
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(_WIN32) && defined(ENCRYPTION_PORTABLE_SHARED)
-# ifdef ENCRYPTION_PORTABLE_BUILD
+#if defined(_WIN32) && defined(ENCRYPTION_SHARED)
+# ifdef ENCRYPTION_BUILD
 #  define ENCRYPTION_API __declspec(dllexport)
 # else
 #  define ENCRYPTION_API __declspec(dllimport)
@@ -119,4 +119,4 @@ ENCRYPTION_API void Encryption_HashDestroy(EncryptionHashContext* context);
 }  // extern "C"
 #endif
 
-#endif  // ENCRYPTION_PORTABLE_H
+#endif  // ENCRYPTION_CAPI_H

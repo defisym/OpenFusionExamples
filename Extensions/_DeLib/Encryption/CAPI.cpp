@@ -1,5 +1,5 @@
-#include "EncryptionPortableInternal.h"
-#include "../EncryptionKeyGen.h"
+#include "CAPIInternal.h"
+#include "KeyGen.h"
 
 using encryption::c_api::checked;
 using encryption::c_api::material;

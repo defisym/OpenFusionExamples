@@ -4,7 +4,7 @@ on:
     paths:
       - 'Extensions/_DeLib/Encryption*'
       - 'Extensions/_DeLib/UnicodeConversion.h'
-      - 'Extensions/_DeLib/EncryptionPortable/**'
+      - 'Extensions/_DeLib/Encryption/**'
       - 'Extensions/_3rdLib/FFMpeg.h'
       - 'Extensions/_3rdLib/Encrypt-build/**'
       - '.github/workflows/encryption.yml'
@@ -34,13 +34,13 @@ jobs:
         shell: pwsh
         run: |
           foreach ($configuration in @('Release', 'Debug')) {
-            & msbuild Extensions/_DeLib/EncryptionPortable/EncryptionPortable.sln /m /t:Build "/p:Configuration=$configuration" "/p:Platform=${{ matrix.platform }}"
+            & msbuild Extensions/_DeLib/Encryption/Encryption.sln /m /t:Build "/p:Configuration=$configuration" "/p:Platform=${{ matrix.platform }}"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & "Extensions/_DeLib/EncryptionPortable/build/${{ matrix.platform }}/$configuration/EncryptionTests.exe"
+            & "Extensions/_DeLib/Encryption/build/${{ matrix.platform }}/$configuration/EncryptionTests.exe"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
       - name: Analyze the core with MSVC
-        run: msbuild Extensions/_DeLib/EncryptionPortable/EncryptionPortable.vcxproj /m /t:Rebuild /p:Configuration=Debug "/p:Platform=${{ matrix.platform }}" /p:RunCodeAnalysis=true /p:EnablePREfast=true /p:CodeAnalysisTreatWarningsAsErrors=true
+        run: msbuild Extensions/_DeLib/Encryption/Encryption.vcxproj /m /t:Rebuild /p:Configuration=Debug "/p:Platform=${{ matrix.platform }}" /p:RunCodeAnalysis=true /p:EnablePREfast=true /p:CodeAnalysisTreatWarningsAsErrors=true
       - name: Build a source SDK for future prebuilt releases
         shell: pwsh
         run: |
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 Extensions/_3rdLib/Encrypt-build/tests/test_sdk.py
       - run: sudo apt-get update && sudo apt-get install -y libssl-dev libavformat-dev libavcodec-dev libavutil-dev pkg-config
-      - run: cmake -S Extensions/_DeLib/EncryptionPortable -B build -DENCRYPTION_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_C_FLAGS='-fsanitize=address,undefined' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
+      - run: cmake -S Extensions/_DeLib/Encryption -B build -DENCRYPTION_BUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' -DCMAKE_C_FLAGS='-fsanitize=address,undefined' -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined'
       - run: cmake --build build --parallel
       - run: ctest --test-dir build --output-on-failure
   macos:
@@ -78,6 +78,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: brew install openssl@3
-      - run: cmake -S Extensions/_DeLib/EncryptionPortable -B build -DENCRYPTION_BUILD_TESTS=ON -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" -DCMAKE_BUILD_TYPE=Release
+      - run: cmake -S Extensions/_DeLib/Encryption -B build -DENCRYPTION_BUILD_TESTS=ON -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build --parallel
       - run: ctest --test-dir build --output-on-failure

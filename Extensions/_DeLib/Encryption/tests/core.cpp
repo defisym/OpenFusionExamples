@@ -1,6 +1,6 @@
 #include "Encryption.h"
 #include "EncryptionStream.h"
-#include "EncryptionPortable.h"
+#include "Encryption/CAPI.h"
 #include <chrono>
 #include <iostream>
 #include <random>

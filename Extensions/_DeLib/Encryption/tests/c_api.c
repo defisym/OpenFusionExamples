@@ -1,7 +1,7 @@
-#include "EncryptionPortable.h"
-#include "EncryptionPortableBuffer.h"
-#include "EncryptionPortableStream.h"
-#include "EncryptionPortableFile.h"
+#include "Encryption/CAPI.h"
+#include "Encryption/CAPIBuffer.h"
+#include "Encryption/CAPIStream.h"
+#include "Encryption/CAPIFile.h"
 #include <string.h>
 #define CHECK(x) do { if (!(x)) return __LINE__; } while (0)
 struct Source { const unsigned char* bytes; size_t length; };

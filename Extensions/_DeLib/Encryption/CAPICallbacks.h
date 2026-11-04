@@ -1,7 +1,7 @@
-#ifndef ENCRYPTION_PORTABLE_CALLBACKS_H
-#define ENCRYPTION_PORTABLE_CALLBACKS_H
+#ifndef ENCRYPTION_CAPI_CALLBACKS_H
+#define ENCRYPTION_CAPI_CALLBACKS_H
 
-#include "EncryptionPortable.h"
+#include "CAPI.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,4 +16,4 @@ typedef EncryptionResult (*EncryptionWriteCallback)(
 }  // extern "C"
 #endif
 
-#endif  // ENCRYPTION_PORTABLE_CALLBACKS_H
+#endif  // ENCRYPTION_CAPI_CALLBACKS_H

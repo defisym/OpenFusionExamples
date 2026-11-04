@@ -1,6 +1,6 @@
-#include "EncryptionPortableFile.h"
-#include "EncryptionPortableBuffer.h"
-#include "EncryptionPortableStream.h"
+#include "CAPIFile.h"
+#include "CAPIBuffer.h"
+#include "CAPIStream.h"
 
 #include <cstdio>
 #include <memory>

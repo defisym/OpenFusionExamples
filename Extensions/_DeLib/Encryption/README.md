@@ -1,9 +1,24 @@
 # Shared encryption core and Fusion compatibility
 
 All platforms, **including Windows**, use the same OpenSSL EVP implementation.
-`EncryptionCore.h` is the C++17 API. `Encryption.h` / `Encryption.cpp` only retain
+`Encryption/Core.h` is the C++17 API. `Encryption.h` / `Encryption.cpp` only retain
 the historical Fusion interface and delegate to that core. There is no fallback
 to the former BCrypt encryption/hash implementation.
+
+## File layout
+
+The existing `../Encryption.h` and `../Encryption.cpp` remain the Fusion compatibility
+entry point. `../EncryptionStream.h` retains the historical push-stream interface.
+New implementations, C adapters, build projects and tests live in this directory:
+
+- `Core.h`: the C++ cipher, hash, file source and seekable decryption reader.
+- `KeyGen.h`: password-to-Key/IV mapping.
+- `CAPI*.h` / `CAPI*.cpp`: the C ABI and its stream, buffer and FILE adapters.
+- `Encryption.sln` / `Encryption.vcxproj`: VS library and tests; CMake target `encryption`.
+
+Public C++ and C headers use the same paths in the repository and after installation,
+for example `Encryption/Core.h`, `Encryption/KeyGen.h` and `Encryption/CAPI.h`.
+The exported `Encryption_*` C function names are unchanged.
 
 ## Interfaces and ownership
 
@@ -18,7 +33,7 @@ to the former BCrypt encryption/hash implementation.
   It reads only the last ciphertext block and its predecessor to validate padding
   and determine size, then caches at most 64 KiB of plaintext on demand. FileSource
   serializes positioned reads so clones can serve separate decoders safely.
-- `EncryptionPortable*.h` expose C functions with opaque, explicitly destroyed
+- `CAPI*.h` expose C functions with opaque, explicitly destroyed
   contexts, caller-owned buffers and exception-to-result translation. The C ABI
   supports incremental ciphers/hashes, callback streams, FILE adapters and pull
   readers (`Encryption_ReaderCreate/Read/Seek/Size/Destroy`). Callback storage must
@@ -26,7 +41,7 @@ to the former BCrypt encryption/hash implementation.
   discarded on failure; stream writers may already have received partial output.
 
 ```cpp
-#include "EncryptionCore.h"
+#include "Encryption/Core.h"
 
 auto source = std::make_shared<encryption::FileSource>(asset_path);
 encryption::DecryptReader reader(source, material); // explicit key + IV
@@ -56,14 +71,14 @@ zero-length input is valid and has the standard empty-string/file hash.
 
 ## Existing asset compatibility
 
-`EncryptionKeyGen.h` is the string-to-Key/IV entry point. It accepts arbitrary-length
+`Encryption/KeyGen.h` is the string-to-Key/IV entry point. It accepts arbitrary-length
 UTF-8, UTF-16 or wide strings, so callers can use meaningful asset passwords. It converts
 wide strings to Windows UTF-16 units and reproduces the original seed expansion
 for inputs shorter than 16 units, and XOR folding for longer inputs. Empty input
 retains bytes `00..0f`. The modern core does not interpret passwords or string encodings.
 
 ```cpp
-#include "EncryptionKeyGen.h"
+#include "Encryption/KeyGen.h"
 auto material = encryption::keygen::from_utf8("project/chapter-2/video-key");
 encryption::Cipher encryptor(material, encryption::Mode::encrypt);
 ```
@@ -107,7 +122,7 @@ all platforms. Caller-owned data is never freed.
 
 ## Windows: Visual Studio builds
 
-Open `EncryptionPortable.sln` in VS 2022 or build with MSBuild from a VS Developer
+Open `Encryption.sln` in VS 2022 or build with MSBuild from a VS Developer
 Command Prompt. Select Win32 for Fusion or x64 for native tools. Release and Debug
 use `/MD` and `/MDd`, matching the existing extension projects, and preserve the
 repository's `/Zc:wchar_t-` convention. Override PlatformToolset for another VS.
@@ -120,7 +135,7 @@ Ordinary builds do not need vcpkg, Perl or NASM.
 The default SDK destination is `Extensions/_3rdLib/Encrypt-sdk/x86` or `x64`.
 
 ```bat
-msbuild EncryptionPortable.sln /m /p:Configuration=Release /p:Platform=Win32
+msbuild Encryption.sln /m /p:Configuration=Release /p:Platform=Win32
 build\Win32\Release\EncryptionTests.exe
 ```
 

@@ -37,6 +37,6 @@
   <Target Name="CheckOfeEncryptionSDK" BeforeTargets="ClCompile" Condition="'$(DesignTimeBuild)'!='true'">
     <Error Condition="'$(OfeEncryptArch)'==''" Text="Encryption supports Win32 and x64." />
     <Error Condition="!Exists('$(OfeOpenSSLRoot)\include\openssl\evp.h') Or !Exists('$(OfeOpenSSLLibDir)\libcrypto.lib')"
-      Text="Build EncryptDependencies or set OfeOpenSSLRoot to a matching static OpenSSL SDK. See _DeLib/EncryptionPortable/README.md." />
+      Text="Build EncryptDependencies or set OfeOpenSSLRoot to a matching static OpenSSL SDK. See _DeLib/Encryption/README.md." />
   </Target>
 </Project>

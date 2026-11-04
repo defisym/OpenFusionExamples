@@ -2,7 +2,7 @@
 
 EncryptDependencies is a Visual Studio utility project, following the repository's
 FFmpeg/SDL dependency-project pattern. All nine existing Encryption consumers and
-the native EncryptionPortable solution reference it. Build the solution normally:
+the native Encryption solution reference it. Build the solution normally:
 preparation runs before ClCompile and reuses a complete matching SDK afterward.
 
 Default output:

@@ -1,7 +1,7 @@
-#ifndef ENCRYPTION_PORTABLE_STREAM_H
-#define ENCRYPTION_PORTABLE_STREAM_H
+#ifndef ENCRYPTION_CAPI_STREAM_H
+#define ENCRYPTION_CAPI_STREAM_H
 
-#include "EncryptionPortableCallbacks.h"
+#include "CAPICallbacks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,4 +28,4 @@ ENCRYPTION_API EncryptionResult Encryption_DecryptReader(
 }  // extern "C"
 #endif
 
-#endif  // ENCRYPTION_PORTABLE_STREAM_H
+#endif  // ENCRYPTION_CAPI_STREAM_H

@@ -2,7 +2,7 @@
 
 // Source-compatible Fusion facade; every operation delegates to the new core.
 
-#include "EncryptionKeyGen.h"
+#include "Encryption/KeyGen.h"
 
 #include <cstdint>
 #include <string>

@@ -1,7 +1,7 @@
-#ifndef ENCRYPTION_PORTABLE_BUFFER_H
-#define ENCRYPTION_PORTABLE_BUFFER_H
+#ifndef ENCRYPTION_CAPI_BUFFER_H
+#define ENCRYPTION_CAPI_BUFFER_H
 
-#include "EncryptionPortableCallbacks.h"
+#include "CAPICallbacks.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,4 +41,4 @@ ENCRYPTION_API EncryptionResult Encryption_DecryptReaderToBuffer(
 }  // extern "C"
 #endif
 
-#endif  // ENCRYPTION_PORTABLE_BUFFER_H
+#endif  // ENCRYPTION_CAPI_BUFFER_H

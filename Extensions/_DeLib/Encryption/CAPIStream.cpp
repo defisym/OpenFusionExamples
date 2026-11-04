@@ -1,5 +1,5 @@
-#include "EncryptionPortableStream.h"
-#include "EncryptionPortableInternal.h"
+#include "CAPIStream.h"
+#include "CAPIInternal.h"
 
 namespace {
 

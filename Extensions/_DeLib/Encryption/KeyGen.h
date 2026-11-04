@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EncryptionCore.h"
-#include "UnicodeConversion.h"
+#include "Core.h"
+#include "../UnicodeConversion.h"
 
 #include <string_view>
 

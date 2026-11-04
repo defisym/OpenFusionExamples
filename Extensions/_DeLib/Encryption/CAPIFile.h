@@ -1,7 +1,7 @@
-#ifndef ENCRYPTION_PORTABLE_FILE_H
-#define ENCRYPTION_PORTABLE_FILE_H
+#ifndef ENCRYPTION_CAPI_FILE_H
+#define ENCRYPTION_CAPI_FILE_H
 
-#include "EncryptionPortableCallbacks.h"
+#include "CAPICallbacks.h"
 
 #include <stdio.h>
 
@@ -50,4 +50,4 @@ ENCRYPTION_API EncryptionResult Encryption_HashFile(
 }  // extern "C"
 #endif
 
-#endif  // ENCRYPTION_PORTABLE_FILE_H
+#endif  // ENCRYPTION_CAPI_FILE_H

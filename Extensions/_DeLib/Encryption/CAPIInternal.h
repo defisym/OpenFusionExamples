@@ -2,8 +2,8 @@
 
 // Private C ABI boundary shared by the adapters, not an installed public header.
 
-#include "EncryptionPortable.h"
-#include "../EncryptionCore.h"
+#include "CAPI.h"
+#include "Core.h"
 
 #include <new>
 
