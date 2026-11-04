@@ -231,6 +231,7 @@ public:
 	std::string videoCodecName;
 	std::string audioCodecName;
     int threadCount = 0;
+    AVPixelFormat outputFormat = PIXEL_FORMAT;
 
 	FFMpegOptions() = default;
 
@@ -426,7 +427,7 @@ private:
     int64_t frameCount = 0;
 
 	// buffer for format conversion
-	uint8_t* p_global_bgr_buffer = nullptr;
+	uint8_t* pConvertedFrameBuffer = nullptr;
 	// conversion buffer size
 	int num_bytes = 0;
 
@@ -1282,38 +1283,29 @@ private:
         }
     }
     
-    // convert bitmap frame pixel format to PIXEL_FORMAT
+    // Convert a bitmap frame to the requested output pixel format.
     inline void convert_bitmapFrame(AVCodecContext* pCodecContext, 
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
-        // Convert data to Bitmap data
-        // https://zhuanlan.zhihu.com/p/53305541
-
-        // allocate buffer
-        if (p_global_bgr_buffer == nullptr) {
-            num_bytes = av_image_get_buffer_size(PIXEL_FORMAT, pFrame->linesize[0], pFrame->height, 1);
-            p_global_bgr_buffer = new uint8_t[num_bytes];
+        // DWORD row alignment also preserves the Windows BGR24 bitmap contract.
+        const auto size = av_image_get_buffer_size(options.outputFormat, pFrame->width, pFrame->height, 4);
+        if (size < 0) throw FFMpegException(FFMpegException_DecodeFailed);
+        if (size != num_bytes) {
+            auto buffer = std::make_unique<uint8_t[]>(size);
+            delete[] pConvertedFrameBuffer;
+            pConvertedFrameBuffer = buffer.release();
+            num_bytes = size;
         }
-
-        // allocate sws
-        if (swsContext == nullptr) {
-            //auto pFormat = pFrame->format;
-
-            swsContext = sws_getContext(pFrame->width, pFrame->height,
-                static_cast<AVPixelFormat>(pFrame->format),
-                pFrame->width, pFrame->height,
-                PIXEL_FORMAT,
-                NULL, nullptr, nullptr, nullptr);
-        }
-
-        // make sure the sws_scale output is point to start.
-        const int linesize[8] = { abs(pFrame->linesize[0] * PIXEL_BYTE) };
-
-        uint8_t* bgr_buffer[8] = { p_global_bgr_buffer };
-
-        sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, bgr_buffer, linesize);
-
-        //bgr_buffer[0] is the BGR raw data, aka p_global_bgr_buffer
-        callBack(bgr_buffer[0], linesize[0], pFrame->height);
+        swsContext = sws_getCachedContext(swsContext, pFrame->width, pFrame->height,
+            static_cast<AVPixelFormat>(pFrame->format), pFrame->width, pFrame->height,
+            options.outputFormat, SWS_BILINEAR, nullptr, nullptr, nullptr);
+        if (!swsContext) throw FFMpegException(FFMpegException_DecodeFailed);
+        uint8_t* output[4] = {};
+        int strides[4] = {};
+        if (av_image_fill_arrays(output, strides, pConvertedFrameBuffer,
+                options.outputFormat, pFrame->width, pFrame->height, 4) < 0)
+            throw FFMpegException(FFMpegException_DecodeFailed);
+        sws_scale(swsContext, pFrame->data, pFrame->linesize, 0, pFrame->height, output, strides);
+        callBack(output[0], strides[0], pFrame->height);
     }
 
 	inline void convert_frame(AVCodecContext* pCodecContext, 
@@ -1865,7 +1857,7 @@ public:
             avio_context_free(&pSeekAvioContext);
 		}
 
-		delete[] p_global_bgr_buffer;
+		delete[] pConvertedFrameBuffer;
 
 		SDL_AtomicUnlock(&audioLock);
 	}
