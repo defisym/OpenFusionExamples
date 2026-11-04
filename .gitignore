@@ -19,3 +19,7 @@ Extensions/Android_Extensions.lnk
 # Generated FFmpeg SDK and dependency downloads
 /Extensions/_3rdLib/FFmpeg-sdk/
 /Extensions/_3rdLib/FFmpeg-build/out/
+
+# Generated OpenSSL SDK, vcpkg checkout and dependency caches
+/Extensions/_3rdLib/Encrypt-sdk/
+/Extensions/_3rdLib/Encrypt-build/out/

@@ -14,6 +14,7 @@ platform behavior are unchanged by the split.
 | HashUtilities.h | Hash-combination constant and `HASHER_MOVE` |
 | StringTraits.h | Existing string/character concepts and traits |
 | StringConversion.h | Code-page conversion and BOM-aware `LoadData`/`SaveData` |
+| UnicodeConversion.h | Locale-independent UTF-8/wide to UTF-16 and UTF-16LE bytes |
 | StringUtilities.h | String copying, trimming, case conversion, and comparison |
 | StringSplit.h | Delimiter splitting and callback variants |
 | ArithmeticTraits.h | Existing arithmetic concept |
@@ -23,6 +24,12 @@ platform behavior are unchanged by the split.
 Each header declares its own include dependencies. `StringConversion.h` retains the Windows
 API / iconv backend selection; other functional headers do not pull in either backend.
 The umbrella continues to expose the previous standard-library and traits includes.
+`UnicodeConversion.h` also works independently in C++17 and uses standard types, without
+OpenSSL, Windows API or iconv. Its global `to_utf16_string` overloads preserve UTF-16 code
+units for KeyGen compatibility; `to_utf16_bytes` writes little-endian bytes independently
+of the host byte order. Invalid input throws `std::invalid_argument`; Encryption maps
+that exception to its existing argument error at its API boundary. File paths use `std::filesystem::path`
+at file I/O call sites rather than a general string-conversion helper.
 
 Platform differences are implemented in the existing shared helpers, which remain header-only.
 `FindTheWay.h` and `AOE.h` use `HASHER_MOVE`, `Range`, `InsertSortedUpperBound`, and `_itos` again.
