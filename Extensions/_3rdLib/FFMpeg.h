@@ -22,7 +22,7 @@
 #include <functional>
 #include <inttypes.h>
 
-#include "MemBuf.h"
+#include "MemView.h"
 #include "LockHelper.h"
 #include "PacketQueue.h"
 
@@ -45,6 +45,7 @@ extern "C" {
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/mem.h>
 
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
@@ -92,6 +93,9 @@ constexpr auto ATEMPO_DEFAULT = 1.0f;
 // Faster than this may lose sync
 constexpr auto ATEMPO_MAX = 32.0f;
 #endif
+
+// Custom IO working buffer
+constexpr auto AVIO_BUFFER_SIZE = 4 * 1024;
 
 // Probe
 constexpr auto PROBE_SIZE = 32 * 4096;
@@ -327,8 +331,8 @@ class FFMpeg {
 	AVIOContext* pAvioContext = nullptr;
 	AVIOContext* pSeekAvioContext = nullptr;
 
-	MemBuf* pMemBuf = nullptr;
-	MemBuf* pSeekMemBuf = nullptr;
+	MemView* pMemView = nullptr;
+	MemView* pSeekMemView = nullptr;
 
 	AVFormatContext* pFormatContext = nullptr;
 	AVFormatContext* pSeekFormatContext = nullptr;
@@ -729,29 +733,6 @@ private:
 	}
 #endif //  AUDIO_TEMPO
 
-	// probe video format
-	static inline const AVInputFormat* init_probe(uint8_t* pBuffer, const size_t bfSz, const char* pFileName = "") {
-		AVProbeData probeData = { };
-		probeData.buf = pBuffer;
-		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
-		probeData.filename = pFileName;
-
-		// Determine the input-format:
-		while (true) {
-			const auto iformat = av_probe_input_format(&probeData, 1);
-
-			if (iformat != nullptr) {
-				return iformat;
-			}
-
-			if (static_cast<size_t>(probeData.buf_size + 1) > bfSz) {
-				return nullptr;
-			}
-
-			probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(2 * probeData.buf_size), bfSz));
-		}
-	}
-
 	// from file
 	static inline bool init_formatContext(AVFormatContext** ppFormatContext, const std::wstring& filePath,
 		const AVInputFormat* fmt = nullptr) {
@@ -772,45 +753,35 @@ private:
 		return true;
 	}
 
-	// from memory
-	static inline bool init_formatContext(AVFormatContext** ppFormatContext, AVIOContext** ppAvioContext,
-		MemBuf** ppBuf, unsigned char* pBuffer, const size_t bfSz,
-		const AVInputFormat* fmt = nullptr) {
-		if (pBuffer == nullptr) { return false; }
+    // From memory: borrow source data and manage the AVIO working buffer separately.
+    static inline bool init_formatContext(AVFormatContext** ppFormatContext, AVIOContext** ppAvioContext,
+        MemView** ppView, const unsigned char* source, const size_t size,
+        const AVInputFormat* fmt = nullptr) {
+        if (!source || size == 0 || size > INT_MAX) return false;
 
-		(*ppBuf) = new MemBuf(pBuffer, static_cast<int>(bfSz));
+        *ppView = new MemView(source, static_cast<int>(size));
+        auto buffer = static_cast<uint8_t*>(av_malloc(AVIO_BUFFER_SIZE));
+        if (!buffer) return false;
+        *ppAvioContext = avio_alloc_context(buffer, AVIO_BUFFER_SIZE, 0, *ppView,
+            [](void* opaque, uint8_t* destination, int count) {
+                return static_cast<MemView*>(opaque)->read(destination, count);
+            }, nullptr,
+            [](void* opaque, int64_t offset, int whence) {
+                return static_cast<MemView*>(opaque)->seek(offset, whence);
+            });
+        if (!*ppAvioContext) {
+            av_free(buffer);
+            return false;
+        }
 
-		*ppAvioContext = avio_alloc_context((*ppBuf)->get(), (*ppBuf)->getSize(), 0, (*ppBuf),
-			[] (void* opaque, uint8_t* buf, const int buf_size) {
-				const auto pMemBuf = static_cast<MemBuf*>(opaque);
-				return pMemBuf->read(buf, buf_size);
-			},
-			nullptr,
-			[] (void* opaque, const int64_t offset, const int whence) {
-				const auto pMemBuf = static_cast<MemBuf*>(opaque);
-				return pMemBuf->seek(offset, whence);
-			});
-
-		if (!*ppAvioContext) { return false; }
-
-		*ppFormatContext = avformat_alloc_context();
-		if (!*ppFormatContext) { return false; }
-
-		if (!fmt) { fmt = init_probe(pBuffer, bfSz); }
-		if (!fmt) { return false; }
-
-		// might crash in avformat_open_input due to access violation if not set
-		// https://www.codeproject.com/Tips/489450/Creating-Custom-FFmpeg-IO-Context
-		(*ppFormatContext)->iformat = fmt;
-		(*ppFormatContext)->pb = *ppAvioContext;
-		(*ppFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
-
-		if (avformat_open_input(ppFormatContext, nullptr, nullptr, nullptr) < 0) {
-			return false;
-		}
-
-		return true;
-	}
+        *ppFormatContext = avformat_alloc_context();
+        if (!*ppFormatContext) return false;
+        (*ppFormatContext)->pb = *ppAvioContext;
+        (*ppFormatContext)->flags |= AVFMT_FLAG_CUSTOM_IO;
+        // With no format hint, avformat performs probing through custom IO using
+        // its own zero-padded probe storage. Cleanup frees the current AVIO buffer.
+        return avformat_open_input(ppFormatContext, nullptr, fmt, nullptr) >= 0;
+    }
 
 	// init the given AVCodecContext by pVCodec, which must be valid before calling this
     inline int init_videoCodecContext(AVCodecContext** ppVCodecContext, AVCodecCtxOpaque* pOpaque = nullptr) {
@@ -1786,9 +1757,12 @@ private:
 		return response;
 	}
 
+    FFMpeg() = default;
 public:
-	//Load from file
-	explicit FFMpeg(const std::wstring& filePath, const FFMpegOptions& opt = FFMpegOptions()) {
+    FFMpeg(const FFMpeg&) = delete;
+    FFMpeg& operator=(const FFMpeg&) = delete;
+    //Load from file
+	explicit FFMpeg(const std::wstring& filePath, const FFMpegOptions& opt = FFMpegOptions()) : FFMpeg() {
 		bFromMem = false;
 		this->options = opt;
 
@@ -1799,13 +1773,16 @@ public:
 		if (const auto ret = init_general(); ret != 0) { throw FFMpegException(ret); }
 	}
 
+    explicit FFMpeg(const std::string& filePath, const FFMpegOptions& opt = FFMpegOptions())
+        : FFMpeg(to_wide_string(filePath, CP_UTF8), opt) {}
+
 	//Load from memory
 	//https://blog.csdn.net/leixiaohua1020/article/details/12980423
-	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const FFMpegOptions& opt = FFMpegOptions()) {
+	FFMpeg(unsigned char* pBuffer, const size_t bfSz, const FFMpegOptions& opt = FFMpegOptions()) : FFMpeg() {
 		bFromMem = true;
 		this->options = opt;
 
-		if (!init_formatContext(&pFormatContext, &pAvioContext, &pMemBuf, pBuffer, bfSz)) {
+		if (!init_formatContext(&pFormatContext, &pAvioContext, &pMemView, pBuffer, bfSz)) {
 			throw FFMpegException(FFMpegException_InitFailed);
 		}
 
@@ -1856,9 +1833,14 @@ public:
 
 		sws_freeContext(swsContext);
 		swr_free(&swrContext);
+        av_channel_layout_uninit(&targetChannelLayout);
 
-        pAdapter->FreeContext(VCodecCtxQpaque.hTextureCtx);        
-        pAdapter->FreeContext(VGetCodecCtxQpaque.hTextureCtx);
+        // Delegated construction also runs this destructor when opening/probing
+        // or codec initialization fails before the adaptor factory is reached.
+        if (pAdapter) {
+            pAdapter->FreeContext(VCodecCtxQpaque.hTextureCtx);
+            pAdapter->FreeContext(VGetCodecCtxQpaque.hTextureCtx);
+        }
         
         avcodec_free_context(&pVCodecContext);
 		avcodec_free_context(&pVGetCodecContext);
@@ -1872,11 +1854,13 @@ public:
 #endif // HW_DECODE		
 
 		if (bFromMem) {
-			delete pMemBuf;
-			pMemBuf = nullptr;
-			delete pSeekMemBuf;
-			pSeekMemBuf = nullptr;
+			delete pMemView;
+			pMemView = nullptr;
+			delete pSeekMemView;
+			pSeekMemView = nullptr;
 
+            if (pAvioContext) av_freep(&pAvioContext->buffer);
+            if (pSeekAvioContext) av_freep(&pSeekAvioContext->buffer);
             avio_context_free(&pAvioContext);
             avio_context_free(&pSeekAvioContext);
 		}
@@ -1943,11 +1927,11 @@ public:
 			return nullptr;
 		}
 
-		if (pMemBuf == nullptr) {
+		if (pMemView == nullptr) {
 			return nullptr;
 		}
 
-		const auto pSrc = pMemBuf->getSrc();
+		const auto pSrc = pMemView->getSrc();
 
 		return pSrc;
 	}
@@ -2162,7 +2146,7 @@ public:
 		if (!pSeekFormatContext) {
 			const auto bSuccess = bFromMem
 				? init_formatContext(&pSeekFormatContext, &pSeekAvioContext,
-					&pSeekMemBuf, const_cast<uint8_t*>(pMemBuf->getSrc()), pMemBuf->getSrcSize(),
+					&pSeekMemView, pMemView->getSrc(), pMemView->getSrcSize(),
 					pFormatContext->iformat)
 				: init_formatContext(&pSeekFormatContext, pFormatContext->url, pFormatContext->iformat);
 			if (!bSuccess) { return FFMpegException_InitFailed; }

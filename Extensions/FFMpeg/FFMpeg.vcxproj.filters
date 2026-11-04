@@ -196,7 +196,7 @@
     <ClInclude Include="Definition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\_3rdLib\MemBuf.h">
+    <ClInclude Include="..\_3rdLib\MemView.h">
       <Filter>FFMpeg</Filter>
     </ClInclude>
     <ClInclude Include="..\_3rdLib\PacketQueue.h">
