@@ -1,174 +1,211 @@
 #include "Encryption.h"
 
-Encryption::~Encryption() {
-    Release(this->InputData);
-    Release(this->OutputData);
-    Release(this->Key);
-    Release(this->IV);
-    Release(this->InputStr);
-    Release(this->OutputStr);
+#include <optional>
 
-    Release(this->HashStr);
+namespace {
+
+std::optional<encryption::Digest> digest(const wchar_t* name) {
+    if (!name) return std::nullopt;
+
+    const std::wstring_view value(name);
+    if (value == L"MD5") return encryption::Digest::md5;
+    if (value == L"SHA1") return encryption::Digest::sha1;
+    if (value == L"SHA256") return encryption::Digest::sha256;
+    if (value == L"SHA384") return encryption::Digest::sha384;
+    if (value == L"SHA512") return encryption::Digest::sha512;
+    return std::nullopt;
 }
 
-bool Encryption::OpenFile(const wchar_t* FileName) {
-    return OpenFileGeneral(FileName, [this] (FILE* fp, long sz) {
-        this->InputData = new BYTE[this->InputLength];
-        fread(this->InputData, this->InputLength, 1, fp);
-        });
 }
 
-bool Encryption::SaveFile(const wchar_t* pFileName, PBYTE pData, DWORD sz) {
-	if (pData == nullptr) { return false; }
+bool Encryption::store(encryption::Bytes& destination, const std::uint8_t* buffer, std::size_t size) {
+    // The compatibility API exposes 32-bit lengths, including a string terminator.
+    if ((buffer == nullptr && size != 0) || size >= (std::numeric_limits<std::uint32_t>::max)()) {
+        destination.clear();
+        return false;
+    }
 
-	FILE* fp = nullptr;
-
-	const auto err = _wfopen_s(&fp, pFileName, L"wb");
-	if (err != 0|| fp == nullptr) { return false; }
-
-	const auto elementCount = fwrite(pData, sz, 1, fp);
-	const auto ret = fclose(fp);
-
-	return ret == 0;
+    // Zero-length data is valid for empty-string/file hashes. Keep its trailing
+    // zero to distinguish a valid empty buffer from cleared/invalid input.
+    encryption::Bytes next(size + 1, 0);
+    if (size) std::memcpy(next.data(), buffer, size);
+    destination = std::move(next);
+    return true;
 }
 
-bool Encryption::SaveFile(const wchar_t* FileName, bool SaveSrc) const {
-    PBYTE Output = SaveSrc ? this->InputData : this->OutputData;
-    DWORD Length = SaveSrc ? this->InputLength : this->OutputLength;
-
-	return SaveFile(FileName, Output, Length);
+std::uint8_t* Encryption::data(const encryption::Bytes& buffer) noexcept {
+    return buffer.empty() ? nullptr : const_cast<std::uint8_t*>(buffer.data());
 }
 
-template<typename T>
-void Encryption::SetEncryptData(const T* pBuf, DWORD sz) {
-    Release(this->InputData);
-
-    this->InputLength = sz * sizeof(T);
-    this->InputData = new BYTE[this->InputLength];
-    memcpy(this->InputData, pBuf, this->InputLength);
-
-    return;
+std::uint32_t Encryption::length(const encryption::Bytes& buffer) noexcept {
+    return buffer.empty() ? 0 : static_cast<std::uint32_t>(buffer.size() - 1);
 }
 
-void Encryption::SetEncryptStr(const std::string& Str) {
-    SetEncryptData(Str.c_str(), (DWORD)Str.length());
+void Encryption::ClearEncryptData() noexcept {
+    input_.clear();
+    output_.clear();
+    input_string_.clear();
+    output_string_.clear();
+    hash_string_.clear();
 }
 
-void Encryption::SetEncryptStr(const char* Str, DWORD StrLength) {
-    SetEncryptData(Str, StrLength);
+void Encryption::SetEncryptStr(const std::string& text) {
+    if (!store(input_, reinterpret_cast<const std::uint8_t*>(text.data()), text.size())) {
+        ClearEncryptData();
+        return;
+    }
+
+    output_.clear(); hash_string_.clear();
 }
 
-void Encryption::SetEncryptStr(const std::wstring& Str) {
-    SetEncryptData(Str.c_str(), (DWORD)Str.length());
+void Encryption::SetEncryptStr(const char* text, std::uint32_t size) { SetEncryptData(text, size); }
+
+void Encryption::SetEncryptStr(const std::wstring& text) {
+    encryption::Bytes bytes;
+    try { bytes = to_utf16_bytes(text); }
+    catch (const std::invalid_argument& error) { throw encryption::Error(encryption::ErrorCode::argument, error.what()); }
+
+    if (!store(input_, bytes.data(), bytes.size())) {
+        ClearEncryptData();
+        return;
+    }
+
+    output_.clear(); hash_string_.clear();
 }
 
-void Encryption::SetEncryptStr(const wchar_t* Str, DWORD StrLength) {
-    SetEncryptData(Str, StrLength);
+void Encryption::SetEncryptStr(const wchar_t* text, std::uint32_t size) {
+    if (text == nullptr && size != 0) {
+        ClearEncryptData();
+        return;
+    }
+
+    SetEncryptStr(text ? std::wstring(text, size) : std::wstring());
 }
 
 char* Encryption::GetInputStr() {
-    return GetStr(this->InputStr, this->InputData, this->InputLength);
-}
-
-DWORD Encryption::GetInputStrLength() const {
-    return this->InputLength + 1;
-}
-
-void Encryption::ReleaseInputStr() {
-    Release(this->InputStr);
-    this->InputLength = 0;
-}
-
-void Encryption::ReleaseInputData() {
-    Release(this->InputData);
-    this->InputLength = 0;
+    if (input_.empty()) return nullptr;
+    input_string_.assign(reinterpret_cast<const char*>(input_.data()), length(input_));
+    return input_string_.data();
 }
 
 char* Encryption::GetOutputStr() {
-    return GetStr(this->OutputStr, this->OutputData, this->OutputLength);
+    if (output_.empty()) return nullptr;
+    output_string_.assign(reinterpret_cast<const char*>(output_.data()), length(output_));
+    return output_string_.data();
 }
 
-DWORD Encryption::GetOutputStrLength() const {
-    return this->OutputLength + 1;
+void Encryption::GenerateKey(const wchar_t* text) {
+    material_ = encryption::keygen::from_wide(text ? text : L"",
+        encryption::keygen::native_seed_width);
 }
 
-void Encryption::ReleaseOutputStr() {
-    Release(this->OutputStr);
-    this->OutputLength = 0;
+bool Encryption::OpenFile(const wchar_t* file) {
+    input_.clear(); output_.clear(); hash_string_.clear();
+    if (!file || !*file) return false;
+
+    try {
+        encryption::FileSource source{std::filesystem::path(file)};
+        if (source.size() >= (std::numeric_limits<std::uint32_t>::max)()) return false;
+
+        encryption::Bytes next(static_cast<std::size_t>(source.size()) + 1, 0);
+        source.read_exact(0, next.data(), next.size() - 1);
+        input_ = std::move(next);
+        return true;
+    } catch (const encryption::Error&) { return false; }
+    catch (const std::filesystem::filesystem_error&) { return false; }
 }
 
-void Encryption::GenerateKey(const wchar_t* KeyStr) {
-	//release old
-	Release(this->Key);
-	Release(this->IV);
+bool Encryption::SaveFile(const wchar_t* file, std::uint8_t* buffer, std::uint32_t size) {
+    if (!file || !*file || !buffer) return false;
 
-	this->Key = new BYTE[KEY_LENGTH];
-	this->IV = new BYTE[KEY_LENGTH];
+    try {
+        const auto path = std::filesystem::path(file);
+#ifdef _WIN32
+        FILE* output = _wfopen(path.c_str(), L"wb");
+#else
+        FILE* output = std::fopen(path.c_str(), "wb");
+#endif
+        if (!output) return false;
+        const bool written = std::fwrite(buffer, 1, size, output) == size;
+        const bool closed = std::fclose(output) == 0;
+        return written && closed;
+    } catch (const encryption::Error&) { return false; }
+    catch (const std::filesystem::filesystem_error&) { return false; }
+}
 
-	// empty, use default string
-	if (KeyStr == nullptr || wcslen(KeyStr) == 0) {
-		memcpy(this->Key, DefaultKey, KEY_LENGTH);
-		memcpy(this->IV, DefaultIV, KEY_LENGTH);
+bool Encryption::SaveFile(const wchar_t* file, bool source) const {
+    return source ? SaveFile(file, GetInputData(), GetInputDataLength())
+                  : SaveFile(file, GetOutputData(), GetOutputDataLength());
+}
 
-		return;
-	}
+bool Encryption::process(encryption::Mode mode, const wchar_t* algorithm) {
+    output_.clear(); hash_string_.clear();
+    if (input_.empty() || !algorithm || std::wcscmp(algorithm, L"AES")) return false;
 
-	const auto keyStrLength = wcslen(KeyStr);
+    try {
+        const auto bytes = encryption::transform_buffer(material_, mode, input_.data(), length(input_));
 
-	const DWORD strLength = sizeof(wchar_t) * static_cast<DWORD>(keyStrLength);
-	const DWORD wantedLength = this->KeyLength + this->IVLength;
+        return store(output_, bytes.data(), bytes.size());
+    } catch (const encryption::Error&) { return false; }
+}
 
-	// length enough
-	if (strLength == wantedLength) {
-		memcpy(this->Key, KeyStr, KEY_LENGTH);
-		memcpy(this->IV, KeyStr + STR_LENGTH, KEY_LENGTH);
+bool Encryption::EncryptFile(const wchar_t* file, const wchar_t* algorithm) {
+    const bool result = OpenFile(file) && Encrypt(algorithm);
+    ReleaseInputData();
+    return result;
+}
 
-		return;
-	}
+bool Encryption::DecryptFile(const wchar_t* file, const wchar_t* algorithm) {
+    const bool result = OpenFile(file) && Decrypt(algorithm);
+    ReleaseInputData();
+    return result;
+}
 
-	// too long, do hash move
-	if (strLength > wantedLength) {
-		size_t loop = keyStrLength - KEY_LENGTH;
-		auto pChar = KeyStr + KEY_LENGTH;
+bool Encryption::process_file(const wchar_t* file, encryption::Mode mode, const wchar_t* algorithm) {
+    input_.clear(); output_.clear(); hash_string_.clear();
+    if (!file || !*file || !algorithm || std::wcscmp(algorithm, L"AES")) return false;
 
-		memcpy(this->Key, KeyStr, KEY_LENGTH);
-		memcpy(this->IV, KeyStr + STR_LENGTH, KEY_LENGTH);
+    try {
+        encryption::FileSource source{std::filesystem::path(file)};
 
-		for (; loop != 0; loop--) {
-			const auto curChar = pChar[0];
-			pChar++;
+        encryption::Bytes result;
+        std::uint64_t position = 0;
 
-			for (size_t pos = 0; pos < STR_LENGTH; pos++) {
-				(reinterpret_cast<wchar_t*>(this->Key) + pos)[0] ^= curChar;
-				(reinterpret_cast<wchar_t*>(this->IV) + pos)[0] ^= curChar;
-			}
-		}
+        const auto read = [&](std::uint8_t* buffer, std::size_t capacity) {
+            const auto requested = static_cast<std::size_t>((std::min)(std::uint64_t(capacity), std::uint64_t(buffer_size_) * 16));
+            const auto count = source.read_at(position, buffer, requested);
+            position += count;
+            return count;
+        };
 
-		return;
-	}
+        encryption::transform(material_, mode, read, [&](const std::uint8_t* bytes, std::size_t size) {
+            result.insert(result.end(), bytes, bytes + size);
+        });
 
-	// too short, loop to fill
-	size_t seed = keyStrLength;
+        return store(output_, result.data(), result.size());
+    } catch (const encryption::Error&) { return false; }
+    catch (const std::filesystem::filesystem_error&) { return false; }
+}
 
-	for (size_t loop = keyStrLength; loop != 0; loop--) {
-		seed ^= KeyStr[loop - 1] + HASHER_MOVE(seed);
-	}
+const wchar_t* Encryption::GetHash(const wchar_t* algorithm) {
+    output_.clear(); hash_string_.clear();
+    const auto selected = digest(algorithm);
+    if (input_.empty() || !selected) return nullptr;
 
-	const auto generatedKeyStr = new wchar_t[KEY_LENGTH];
-	memset(generatedKeyStr, 0, KEY_LENGTH * sizeof(wchar_t));
-	memcpy(generatedKeyStr, KeyStr, keyStrLength * sizeof(wchar_t));
+    try {
+        encryption::Hash hash(*selected);
+        hash.update(input_.data(), length(input_));
 
-	for (size_t loop = keyStrLength; loop < KEY_LENGTH; loop++) {
-		const auto pChar = generatedKeyStr + loop;
-		const wchar_t high = HIBYTE(seed);
-		const wchar_t low = LOBYTE(seed);
-		pChar[0] = high ^ low;
+        const auto bytes = hash.finish();
 
-		seed ^= pChar[0] + HASHER_MOVE(seed);
-	}
+        store(output_, bytes.data(), bytes.size());
 
-	memcpy(this->Key, generatedKeyStr, KEY_LENGTH);
-	memcpy(this->IV, generatedKeyStr + STR_LENGTH, KEY_LENGTH);
+        constexpr wchar_t hex[] = L"0123456789abcdef";
+        for (const auto byte : bytes) {
+            hash_string_.push_back(hex[byte >> 4]);
+            hash_string_.push_back(hex[byte & 15]);
+        }
 
-	delete[] generatedKeyStr;
+        return hash_string_.c_str();
+    } catch (const encryption::Error&) { return nullptr; }
 }

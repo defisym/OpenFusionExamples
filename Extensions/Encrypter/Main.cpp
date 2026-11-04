@@ -57,7 +57,7 @@ short WINAPI DLLExport Encrypt(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR pDesFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
     
-	EncryptCore(pSrcFilePath, pDesFilePath, pKey, ENCRY);
+	EncryptCore(pSrcFilePath, pDesFilePath, pKey, encryption::Mode::encrypt);
 
 	return 0;
 }
@@ -67,7 +67,7 @@ short WINAPI DLLExport Decrypt(LPRDATA rdPtr, long param1, long param2) {
 	LPCTSTR pDesFilePath = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 	LPCTSTR pKey = (LPCTSTR)CNC_GetStringParameter(rdPtr);
 
-	EncryptCore(pSrcFilePath, pDesFilePath, pKey, DECRY);
+	EncryptCore(pSrcFilePath, pDesFilePath, pKey, encryption::Mode::decrypt);
 
 	return 0;
 }

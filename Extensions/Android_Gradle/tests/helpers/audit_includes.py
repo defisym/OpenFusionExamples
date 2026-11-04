@@ -11,7 +11,8 @@ args = parser.parse_args()
 core = Path(__file__).resolve().parents[3] / '_DeLib'
 third = core.parent / '_3rdLib'
 probes = {
-    'GeneralDefinition.h': ('#include "GeneralDefinition.h"\nint main(){auto path=CUR_FOLDER;return path.size()==0;}\n', ['cfloat','filesystem']),
+    'ArithmeticUtilities.h': ('#include "ArithmeticUtilities.h"\nint main(){return NearlyEqualFLT(1,1)?0:1;}\n', ['cfloat']),
+    'PathUtilities.h': ('#include "PathUtilities.h"\nint main(){auto path=CUR_FOLDER;return path.size()==0;}\n', ['filesystem']),
     'StringTraits.h': ('#include "StringTraits.h"\nint main(){return CharType<std::string>::Length("x");}\n', ['cstring']),
     'Base64.h': ('#include "Base64.h"\nint main(){Base64<std::string> b;return b.base64_decode("YQ==").size()!=1;}\n', ['stdexcept','climits']),
 }

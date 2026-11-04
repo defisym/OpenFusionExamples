@@ -22,3 +22,6 @@ Extensions/Android_Extensions.lnk
 
 # Python caches
 __pycache__/
+# Generated OpenSSL SDK, vcpkg checkout and dependency caches
+/Extensions/_3rdLib/Encrypt-sdk/
+/Extensions/_3rdLib/Encrypt-build/out/
