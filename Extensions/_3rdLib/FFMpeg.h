@@ -27,7 +27,15 @@
 #include "PacketQueue.h"
 
 #include "HoldHelper.h"
-#include "GeneralDefinition.h"
+#include "ArithmeticUtilities.h"
+#include "StringUtilities.h"
+#include "StringConversion.h"
+#include <climits>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <stdexcept>
+#include <vector>
 
 // FFMpeg
 extern "C" {
@@ -755,7 +763,6 @@ private:
 		*ppFormatContext = avformat_alloc_context();
 		if (!*ppFormatContext) { return false; }
 		
-		//auto iformat = init_probe(nullptr, 0, pFilePath);
 
 		// convert to UTF-8 to avoid crash in some versions
 		if (avformat_open_input(ppFormatContext, pFilePath, fmt, nullptr) != 0) {
