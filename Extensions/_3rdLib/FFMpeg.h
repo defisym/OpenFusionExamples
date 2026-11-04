@@ -119,7 +119,7 @@ constexpr auto FFMpegException_DecodeFailed = -3;
 constexpr auto FFMpegException_HWDecodeFailed = -4;
 constexpr auto FFMpegException_FilterInitFailed = -5;
 
-struct FFMpegException final :std::exception {
+struct FFMpegException final :std::runtime_error {
 	int _flag = 0;
 	static const char* GetInfo(int errorCode) {
         switch (errorCode) {
@@ -138,7 +138,7 @@ struct FFMpegException final :std::exception {
         }
 	}
 
-	explicit FFMpegException(const int flag) :std::exception(GetInfo(flag)), _flag(flag) {}
+	explicit FFMpegException(const int flag) :std::runtime_error(GetInfo(flag)), _flag(flag) {}
 };
 
 #ifdef _DEBUG
@@ -223,7 +223,7 @@ class FFMpegOptions {
 	}
 
 public:
-	DWORD flag = FFMpegFlag_Default;
+	uint32_t flag = FFMpegFlag_Default;
 	std::string videoCodecName;
 	std::string audioCodecName;
     int threadCount = 0;
@@ -730,7 +730,7 @@ private:
 #endif //  AUDIO_TEMPO
 
 	// probe video format
-	static inline const AVInputFormat* init_probe(BYTE* pBuffer, const size_t bfSz, const LPCSTR pFileName = "") {
+	static inline const AVInputFormat* init_probe(uint8_t* pBuffer, const size_t bfSz, const char* pFileName = "") {
 		AVProbeData probeData = { };
 		probeData.buf = pBuffer;
 		probeData.buf_size = static_cast<int>((std::min)(static_cast<size_t>(MEM_BUFFER_SIZE), bfSz));
@@ -1420,7 +1420,7 @@ private:
 		const bool& bBlockState, PacketQueue& queue,
 		AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame, AVFrame* pLastFrame,
 		Decoder decoder) {
-		BOOL bRespond = true;
+		int bRespond = true;
 		
 		if (!bSendEAgain) {
 			bRespond = queue.get(pPacket, bBlockState);

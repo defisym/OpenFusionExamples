@@ -1,6 +1,8 @@
 #include "FFMpegAdapter.h"
 
+#ifdef _WIN32
 #include "FFMpegAdapterD3D11.h"
+#endif
 
 bool FFMpegAdapterSupport(const AVHWDeviceType type) {
     do {
