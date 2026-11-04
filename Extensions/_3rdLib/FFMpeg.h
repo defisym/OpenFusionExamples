@@ -2314,7 +2314,7 @@ public:
 			if (wt_stream_len > len) { wt_stream_len = len; }
 
 			// mix audio steam from given index
-			mixer(stream, audio_buf + audio_buf_index, len, volume);
+			mixer(stream, audio_buf + audio_buf_index, wt_stream_len, volume);
 
 			// update
 			len -= wt_stream_len;
