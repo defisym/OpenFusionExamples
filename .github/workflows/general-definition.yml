@@ -8,7 +8,7 @@ on:
       - 'Extensions/Android_Gradle/cmake/DeLibHelpers.cmake'
       - '.github/workflows/general-definition.yml'
   push:
-    branches: [master, refactor/general-definition-headers]
+    branches: [master]
     paths:
       - 'Extensions/_DeLib/**'
       - 'Extensions/Android_Gradle/tests/helpers/**'
