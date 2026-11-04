@@ -109,7 +109,7 @@ constexpr auto MAX_AUDIOQ_SIZE = 5 * 16 * 1024;
 constexpr auto MAX_VIDEOQ_SIZE = 5 * 256 * 1024;
 
 // Queue state
-constexpr auto END_OF_QUEUE = -5;
+constexpr auto END_OF_QUEUE = AVERROR_EOF;
 
 // time base
 constexpr AVRational time_base_q = { 1, AV_TIME_BASE };
@@ -1193,7 +1193,8 @@ private:
 			int response = decode();
 
 			if (response == QUEUE_WAITING) {
-				fill_queueonce();
+				const int read = fill_queueonce();
+				if (read < 0 && read != AVERROR_EOF) return read;
 				continue;
 			}
 
@@ -1352,6 +1353,9 @@ private:
 					return decode_videoFrame(pVLastFrame);
 				});
 
+                // The source can temporarily have no data. Retry on the next tick.
+                if (response == AVERROR(EAGAIN)) return 0;
+
 				if (response < 0) {
 					//auto e1 = AVERROR_EOF;
 					//auto e2 = AVERROR(EINVAL);
@@ -1387,7 +1391,7 @@ private:
 		AVCodecContext* pCodecContext, AVPacket* pPacket, AVFrame* pFrame, AVFrame* pLastFrame,
 		Decoder decoder) {
 		int bRespond = true;
-		
+
 		if (!bSendEAgain) {
 			bRespond = queue.get(pPacket, bBlockState);
 
@@ -1401,7 +1405,7 @@ private:
 
 		// Supply raw packet data as input to a decoder
 		// https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
-		int response = avcodec_send_packet(pCodecContext, pPacket);
+		int response = avcodec_send_packet(pCodecContext, pInputPacket);
 		bSendEAgain = (response == AVERROR(EAGAIN));
 
 		if (response < 0 && !bSendEAgain && response != AVERROR_EOF) {
@@ -1711,6 +1715,8 @@ private:
 		bReadFinish = false;
 		bAudioFinish = false;
 		bVideoFinish = false;
+		bVideoSendEAgain = bAudioSendEAgain = false;
+		bFinish = false;
 	}
 
 	static inline double get_curTime() {
