@@ -40,7 +40,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
       - name: Analyze the core with MSVC
-        run: msbuild Extensions/_DeLib/EncryptionPortable/EncryptionPortable.vcxproj /m /t:Rebuild /p:Configuration=Debug "/p:Platform=${{ matrix.platform }}" /p:EnablePREfast=true /p:CodeAnalysisTreatWarningsAsErrors=true
+        run: msbuild Extensions/_DeLib/EncryptionPortable/EncryptionPortable.vcxproj /m /t:Rebuild /p:Configuration=Debug "/p:Platform=${{ matrix.platform }}" /p:RunCodeAnalysis=true /p:EnablePREfast=true /p:CodeAnalysisTreatWarningsAsErrors=true
       - name: Build a source SDK for future prebuilt releases
         shell: pwsh
         run: |
