@@ -1,5 +1,29 @@
 # GeneralDefinition portability and review notes
 
+## Header layout
+
+`GeneralDefinition.h` is a compatibility umbrella. Existing includes and public names remain
+valid; new code can include the relevant functional header directly. Implementations and
+platform behavior are unchanged by the split.
+
+| Header | Responsibility |
+| --- | --- |
+| GeneralMacros.h | Fusion event/user-data macros and token/string macros |
+| PathUtilities.h | Source-relative path macros and non-Windows owning path strings |
+| MemoryConstants.h | Existing memory/cache thresholds |
+| HashUtilities.h | Hash-combination constant and `HASHER_MOVE` |
+| StringTraits.h | Existing string/character concepts and traits |
+| StringConversion.h | Code-page conversion and BOM-aware `LoadData`/`SaveData` |
+| StringUtilities.h | String copying, trimming, case conversion, and comparison |
+| StringSplit.h | Delimiter splitting and callback variants |
+| ArithmeticTraits.h | Existing arithmetic concept |
+| ArithmeticUtilities.h | Range clamping and floating-point comparisons |
+| ContainerUtilities.h | Sorted vector insertion helpers |
+
+Each header declares its own include dependencies. `StringConversion.h` retains the Windows
+API / iconv backend selection; other functional headers do not pull in either backend.
+The umbrella continues to expose the previous standard-library and traits includes.
+
 Platform differences are implemented in the existing shared helpers, which remain header-only.
 `FindTheWay.h` and `AOE.h` use `HASHER_MOVE`, `Range`, `InsertSortedUpperBound`, and `_itos` again.
 Other extensions can reuse the same implementations without expanding or replacing helpers at
@@ -114,9 +138,8 @@ removed. They describe the tested toolchain rather than a guarantee about transi
 
 | Include | Observed dependency |
 | --- | --- |
-| GeneralDefinition: cfloat | FLT/DBL/LDBL constants |
-| GeneralDefinition, non-Windows: filesystem | Path macros; this GCC header also provides limits/cwctype declarations |
-| GeneralDefinition, Windows: limits/cwctype | Existing declaration dependencies without filesystem |
+| ArithmeticUtilities: cfloat | FLT/DBL/LDBL constants |
+| PathUtilities, non-Windows: filesystem | Path macros and owning path strings |
 | Non-Windows: cerrno, iconv.h | errno/E2BIG and iconv APIs |
 | StringTraits: cstring | strlen |
 | Base64: stdexcept | std::invalid_argument |
@@ -136,6 +159,10 @@ With the required Linux compiler, JDK, and CMake available:
 python3 Extensions/Android_Gradle/tests/helpers/run_helper_tests.py --build-dir /tmp/delib-tests --sanitize
 python3 Extensions/Android_Gradle/tests/run_host_tests.py --build-dir /tmp/ftw-tests --sanitize
 ```
+
+The CMake build compiles every functional header independently, including the umbrella and
+existing traits. The `GeneralDefinition helpers` workflow runs these compile checks on Linux
+and Visual Studio, with the existing umbrella regression tests on both platforms.
 
 Helper checks cover multiple translation units, UTF-8 and legacy-code-page round trips, ACP
 overrides, malformed input, embedded NUL, long strings, stateful flushes, both iconv signatures,
