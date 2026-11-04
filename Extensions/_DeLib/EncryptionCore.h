@@ -1,6 +1,9 @@
 #pragma once
 
+#ifdef _MSC_VER
+#include <sal.h>
 #pragma warning(disable : 4996)
+#endif
 
 // Shared C++17 implementation. Every platform, including Windows, uses OpenSSL.
 // Legacy Fusion projects import Encryption.props and keep compiling Encryption.cpp.
@@ -41,6 +44,10 @@ public:
     Error(ErrorCode c, const char* message) : std::runtime_error(message), code(c) {}
 };
 
+#ifdef _MSC_VER
+// A normal return establishes the checked condition for callers of this guard.
+_Post_satisfies_(ok)
+#endif
 inline void require(bool ok, ErrorCode code, const char* message) {
     if (!ok) throw Error(code, message);
 }
@@ -55,7 +62,7 @@ class CbcBlocks {
 public:
 
     CbcBlocks(const KeyIv& material, Mode mode) {
-        require(context_ != nullptr, ErrorCode::crypto, "Allocate AES context");
+        require(static_cast<bool>(context_), ErrorCode::crypto, "Allocate AES context");
         require(EVP_CipherInit_ex(context_.get(), EVP_aes_128_cbc(), nullptr,
                     material.key.data(), material.iv.data(), mode == Mode::encrypt) == 1 &&
                 EVP_CIPHER_CTX_set_padding(context_.get(), 0) == 1,
@@ -208,7 +215,7 @@ public:
 template<class Reader, class Writer>
 void transform(const KeyIv& material, Mode mode, Reader&& read, Writer&& write) {
     Cipher cipher(material, mode);
-    std::array<Byte, 65536> input{};
+    Bytes input(65536);
 
     for (;;) {
         const auto count = read(input.data(), input.size());

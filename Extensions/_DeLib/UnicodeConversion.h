@@ -47,7 +47,8 @@ inline std::u16string to_utf16_string(std::wstring_view text) {
     std::u16string result;
     for (auto value : text) {
         const auto code = static_cast<std::uint32_t>(value);
-        if (sizeof(wchar_t) == 2 || code <= 0xffff) result.push_back(static_cast<char16_t>(code));
+        if constexpr (sizeof(wchar_t) == 2) result.push_back(static_cast<char16_t>(code));
+        else if (code <= 0xffff) result.push_back(static_cast<char16_t>(code));
         else {
             if (code > 0x10ffff) throw std::invalid_argument("Invalid wide character");
             result.push_back(static_cast<char16_t>(0xd800 + ((code - 0x10000) >> 10)));

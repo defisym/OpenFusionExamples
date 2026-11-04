@@ -15,7 +15,5 @@ inline bool EncryptCore(LPCTSTR pSrcFilePath, LPCTSTR pDesFilePath, LPCTSTR pKey
 		}
 	}()) { return false; }
 
-    Encrypt.SaveFile(pDesFilePath);
-
-    return true;
+    return Encrypt.SaveFile(pDesFilePath);
 }
