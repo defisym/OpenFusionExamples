@@ -16,6 +16,10 @@ Keep algorithms in shared C++; use Java for Fusion Runtime integration and JNI m
 Compile native libraries during extension development/publishing, then let Fusion use its own
 default build templates when exporting an APK.
 
+If encryption or encrypted assets are involved, also read and follow
+[`fusion-shared-encryption`](../fusion-shared-encryption/SKILL.md). Reusing its source
+is not sufficient: mobile plugins must consume one shared encryption runtime.
+
 ## Establish the target
 
 1. Identify the extension, its Windows ACE definitions, existing mobile code, and the installed

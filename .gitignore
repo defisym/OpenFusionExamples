@@ -23,3 +23,9 @@ Extensions/Android_Extensions.lnk
 # Generated OpenSSL SDK, vcpkg checkout and dependency caches
 /Extensions/_3rdLib/Encrypt-sdk/
 /Extensions/_3rdLib/Encrypt-build/out/
+
+# Local builds, toolchains, downloads and verification logs
+/work/
+
+# Generated Apple delivery packages (Mac handoff artifacts remain trackable)
+/Extensions/*/ToInstall/Files/Data/Runtime/iPhone/*-iOS.zip

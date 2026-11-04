@@ -11,6 +11,8 @@
 # else
 #  define ENCRYPTION_API __declspec(dllimport)
 # endif
+#elif defined(ENCRYPTION_SHARED) && (defined(__GNUC__) || defined(__clang__))
+# define ENCRYPTION_API __attribute__((visibility("default")))
 #else
 # define ENCRYPTION_API
 #endif

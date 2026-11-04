@@ -84,6 +84,10 @@ public class CExtLoad
 			// STARTCUT
 			// STARTCUT
 			// STARTCUT
+			if (name.compareToIgnoreCase("Fini")==0)
+			{
+				object=new CRunFini();
+			}
 			if (name.compareToIgnoreCase("FindTheWay")==0)
 			{
 				object=new CRunFindTheWay();

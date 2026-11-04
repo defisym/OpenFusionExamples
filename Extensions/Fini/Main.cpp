@@ -248,8 +248,8 @@ short WINAPI DLLExport Action_SetSecItem_Value(LPRDATA rdPtr, long param1, long 
     if (rdPtr->ini == nullptr) { InitIni(rdPtr); }
     if (StrEmpty(Section) || StrEmpty(Item)) { return 0; }
 
-	rdPtr->Modified = Modified(rdPtr->ini->SetValue(Section, Item,
-		std::format(L"{}", Value).c_str()))
+	rdPtr->Modified = FiniIni::Set(rdPtr->ini, Section, Item,
+		std::format(L"{}", Value).c_str())
 		|| rdPtr->Modified;
 
 	return 0;
@@ -263,7 +263,7 @@ short WINAPI DLLExport Action_SetSecItem_String(LPRDATA rdPtr, long param1, long
     if (rdPtr->ini == nullptr) { InitIni(rdPtr); }
     if (StrEmpty(Section) || StrEmpty(Item)) { return 0; }
 
-	rdPtr->Modified = Modified(rdPtr->ini->SetValue(Section, Item, String))
+	rdPtr->Modified = FiniIni::Set(rdPtr->ini, Section, Item, String)
 		|| rdPtr->Modified;
 
 	return 0;
@@ -281,19 +281,7 @@ short WINAPI DLLExport Action_CopySection(LPRDATA rdPtr, long param1, long param
 		return 0;
 	}
 
-	INILIST items;
-	rdPtr->ini->GetAllKeys(Src, items);
-
-	rdPtr->Modified = !items.empty() || rdPtr->Modified;
-
-	for (const auto & it: items) {
-		//need not to check if the value is string or number to set default value, cause src is valid
-		rdPtr->ini->SetValue(Des, it.pItem, rdPtr->ini->GetValue(Src, it.pItem));
-	}
-
-	if (DeleteSrc) {
-		rdPtr->ini->Delete(Src, nullptr, true);
-	}
+	rdPtr->Modified = FiniIni::Copy(rdPtr->ini, Src, Des, DeleteSrc) || rdPtr->Modified;
 
 	return 0;
 }
@@ -307,7 +295,7 @@ short WINAPI DLLExport Action_DeleteSecItem(LPRDATA rdPtr, long param1, long par
 
     if (StrEqu(Item, Empty_Str)) { Item = nullptr; }
 
-	rdPtr->Modified = rdPtr->ini->Delete(Section, Item, true)
+	rdPtr->Modified = FiniIni::Delete(rdPtr->ini, Section, Item)
 		|| rdPtr->Modified;
 
 	return 0;

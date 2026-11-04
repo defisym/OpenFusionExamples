@@ -308,4 +308,10 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Run_Only Unicode'">
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+  </PropertyGroup>
+  <Target Name="PublishFiniAndroid" AfterTargets="Build" Condition="'$(Configuration)'=='Run_Only Unicode'">
+    <Exec Command="&quot;$(ProjectDir)..\_Script\Fini.bat&quot;" />
+  </Target>
 </Project>

@@ -1,4 +1,5 @@
 #pragma once
+#include "IniCore.h"
 
 // ------------------------
 // forward declaration
@@ -21,8 +22,7 @@ inline void ReleaseIni(LPRDATA rdPtr);
 inline void InitIni(LPRDATA rdPtr) {
 	ReleaseIni(rdPtr);
 
-	rdPtr->ini = new INI;
-	rdPtr->ini->SetUnicode();
+	rdPtr->ini = FiniIni::Create<INI>();
 }
 
 inline void ReleaseIni(LPRDATA rdPtr) {

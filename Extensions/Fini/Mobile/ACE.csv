@@ -1,0 +1,36 @@
+Kind,ID,Name,Ordered parameters,Result / event
+condition,0,On iterate sections,loop:string,bool
+condition,1,On iterate items,loop:string,bool
+condition,2,Section has item,section:string;item:string,bool
+condition,3,Has section,section:string,bool
+action,0,New,,
+action,1,Release,,
+action,2,Load file,file:filename2;key:string,
+action,3,Save file,file:filename2;key:string,
+action,4,Set value,section:string;item:string;value:float,
+action,5,Set string,section:string;item:string;value:string,
+action,6,Delete,section:string;item:string,
+action,7,Iterate sections,loop:string,event 0
+action,8,Iterate items,section:string;loop:string,event 1
+action,9,Load string,data:string,
+action,10,Auto save on,file:filename2;key:string,
+action,11,Auto save off,,
+action,12,Copy section,source:string;destination:string;delete:integer,
+action,13,Load alterable values,fixed:integer;data:string,
+action,14,Load position,fixed:integer;data:string,
+action,15,Load compressed Base64,data:string,
+action,16,Load localization,file:filename2;key:string,
+action,17,Set language,language:string,
+action,18,Link localization,fixed:integer,
+action,19,Load Base64,data:string,
+expression,0,Get number,section:string;item:string,float
+expression,1,Get string,section:string;item:string,string
+expression,2,Current section,,string
+expression,3,Current item,,string
+expression,4,Save string,,string
+expression,5,Save alterable values,fixed:integer,string
+expression,6,Save position,fixed:integer,string
+expression,7,Save compressed Base64,,string
+expression,8,Save Base64,,string
+expression,9,Encode string,text:string;compressed:integer,string
+expression,10,Decode string,text:string;compressed:integer,string
