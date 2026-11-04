@@ -1,0 +1,36 @@
+name: GeneralDefinition helpers
+
+on:
+  pull_request:
+    paths:
+      - 'Extensions/_DeLib/**'
+      - 'Extensions/Android_Gradle/tests/helpers/**'
+      - 'Extensions/Android_Gradle/cmake/DeLibHelpers.cmake'
+      - '.github/workflows/general-definition.yml'
+  push:
+    branches: [master, refactor/general-definition-headers]
+    paths:
+      - 'Extensions/_DeLib/**'
+      - 'Extensions/Android_Gradle/tests/helpers/**'
+      - 'Extensions/Android_Gradle/cmake/DeLibHelpers.cmake'
+      - '.github/workflows/general-definition.yml'
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run shared helper checks
+        run: python3 Extensions/Android_Gradle/tests/helpers/run_helper_tests.py --build-dir "${{ runner.temp }}/delib-tests" --sanitize
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure with Visual Studio
+        run: cmake -S Extensions/Android_Gradle/tests/helpers -B "${{ runner.temp }}/delib-tests" -G "Visual Studio 17 2022" -A x64 -DCMAKE_CXX_FLAGS=/utf-8
+      - name: Build standalone headers and compatibility checks
+        run: cmake --build "${{ runner.temp }}/delib-tests" --config Release --target general_definition_headers general_definition_test --parallel 2
+      - name: Run compatibility checks
+        run: ctest --test-dir "${{ runner.temp }}/delib-tests" -C Release -R "^general_definition$" --output-on-failure
