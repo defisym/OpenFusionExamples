@@ -293,8 +293,8 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 			} else {
 				auto inputOptions = opt;
 				try {
-					auto source = std::make_shared<encryption::FileSource>(encryption::text::path(filePath.c_str()));
-					const auto material = encryption::keygen::from_utf16(encryption::text::utf16(key),
+					auto source = std::make_shared<encryption::FileSource>(std::filesystem::path(filePath));
+					const auto material = encryption::keygen::from_wide(key,
 						encryption::keygen::native_seed_width);
 					inputOptions.input = std::make_shared<DecryptMemBuf>(
 						encryption::DecryptReader(std::move(source), material));
