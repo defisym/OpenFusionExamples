@@ -20,6 +20,8 @@ Extensions/Android_Extensions.lnk
 /Extensions/_3rdLib/FFmpeg-sdk/
 /Extensions/_3rdLib/FFmpeg-build/out/
 
+# Python caches
+__pycache__/
 # Generated OpenSSL SDK, vcpkg checkout and dependency caches
 /Extensions/_3rdLib/Encrypt-sdk/
 /Extensions/_3rdLib/Encrypt-build/out/
