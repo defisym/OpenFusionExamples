@@ -9,7 +9,7 @@ import unittest
 import zipfile
 
 repo=Path(__file__).resolve().parents[4]
-spec=importlib.util.spec_from_file_location('apple_artifacts',repo/'Extensions/_DeLib/Encryption/Mobile/apple_artifacts.py')
+spec=importlib.util.spec_from_file_location('apple_artifacts',repo/'Extensions/iOS/Tools/apple_artifacts.py')
 apple=importlib.util.module_from_spec(spec);spec.loader.exec_module(apple)
 
 def framework(root,owner):

@@ -27,7 +27,10 @@ code, state ownership and exporter deployment before introducing another boundar
 - **Shared means shared by plugins at runtime**, not merely common source copied
   or statically linked into every plugin. Clients include `Encryption/CAPI.h`
   and call the stable `Encryption_*` C ABI. Keep algorithms, KeyGen and OpenSSL
-  inside the single common runtime owned by `Encryption/Mobile`.
+  inside the single common runtime. Its implementation stays in the original
+  `Encryption` sources; Android build integration lives under
+  `Android_Gradle/app/src/main/cpp/Encryption` and iOS build integration under
+  `iOS/Encryption`. Do not add a Mobile subtree to the Windows library.
 - Do not put libcrypto, a private encryption implementation, or a renamed copy of
   the common library in each plugin package. Interface headers are permitted.
   Publish/build/cache the common runtime independently and declare client dependencies.

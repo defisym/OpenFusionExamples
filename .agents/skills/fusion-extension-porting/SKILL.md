@@ -15,15 +15,23 @@ Write skills and repository documentation in English.
 
 ## Repository layout
 
+The original `Extensions` tree contains Windows Visual Studio projects and their
+libraries. Android_Gradle and iOS are independent platform project roots, even
+though their current repository paths are nested below Extensions. Do not treat
+that historical nesting as a reason to put mobile adaptations into Windows
+library directories.
+
 `Extensions/<Plugin>` is the Windows Visual Studio project directory. Keep iOS
 projects, adapters, build scripts, tests and native handoff inputs under
 `Extensions/iOS/<Plugin>`. Keep Android adapters, JNI sources, CMake/toolchain
 configuration, tests and documentation under `Extensions/Android_Gradle`, using
 its existing source/cmake/test directories. Do not nest `iOS`, `Android` or
-`Mobile` development trees inside the Windows plugin directory. Put portable
-code consumed by multiple platforms in the existing shared library hierarchy
-(for example `_DeLib/<Component>`); retain Windows-owned shared sources when
-appropriate. Existing `ToInstall` release layouts and VS publishing hooks remain
+`Mobile` development trees inside a Windows plugin or library directory. For
+library adaptations, either extend the original source with narrow platform or
+feature macros, or put platform-specific code under the corresponding platform
+project's component/source directory (Android uses app/src/main). Reuse the
+original implementation; do not create a second cipher or algorithm copy.
+Existing `ToInstall` release layouts and VS publishing hooks remain
 the distribution entry points, not platform development roots.
 
 Use the current Windows C++ implementation as the behavioral reference for

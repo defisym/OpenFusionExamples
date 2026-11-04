@@ -4,8 +4,9 @@
 
 Android development files live in this Gradle tree: `app/src/main` for the
 Java/JNI adapters, `cmake/Fini` for native/toolchain configuration and
-`tests/fini` for validation. The portable core and ACE contract live in
-`../_DeLib/Fini`; iOS development and Mac handoff inputs live in
+`tests/fini` for validation and the ACE contract. The portable C++ Runtime is
+enabled by `FINI_PORTABLE_RUNTIME` in the original `../Fini/IniCore.h`;
+iOS development and Mac handoff inputs live in
 `../iOS/Fini`. `../Fini` remains the Windows VS project and release staging area.
 
 Android uses `CRunFini.java` -> `FiniNative.java` -> JNI `libfini.so` -> the shared
@@ -18,8 +19,9 @@ JNI native objects have validated registry handles and explicit, idempotent clea
 Requests belong to Fusion's runtime thread. Java UTF-16 is converted explicitly,
 including supplementary characters and embedded NUL in string codec operations.
 
-Encryption is a shared runtime owned by `_DeLib/Encryption/Mobile`, not a
-private copy inside this plugin. Fini includes only CAPI.h and calls the existing
+Encryption uses the original `_DeLib/Encryption` sources. Android integration
+lives in `app/src/main/cpp/Encryption` and `cmake/Encryption`; iOS integration
+lives in `../iOS/Encryption`. Fini includes only CAPI.h and calls the existing
 Encryption_* C ABI. Android links libfini.so against libofe_encryption.so. iOS
 links Fini's adapter archive against a single dynamic OFEEncryption.framework.
 Only the common runtime links libcrypto. See the shared module's README for the
@@ -33,7 +35,7 @@ runtime. SDK sources are referenced locally and are never copied into plugin ZIP
 ## Windows compatibility and reviewed shared changes
 
 The original condition IDs 0..3, action IDs 0..19 and expression IDs 0..10 are
-preserved; `../_DeLib/Fini/ACE.csv` records parameter order/types and generated events. Version 2/3 edit properties and keep-over-frame state are supported.
+preserved; `tests/fini/ACE.csv` records parameter order/types and generated events. Version 2/3 edit properties and keep-over-frame state are supported.
 Object serialization uses Win32's 4-byte flags, 16-byte numeric CValue records,
 little-endian position integers and NUL-terminated UTF-16LE strings, with the
 target object's value/string counts. Invalid or mismatched object blobs are
@@ -98,7 +100,7 @@ The runtime ZIP owns the two Java classes, each selected ABI's libfini.so,
 additive JNI/R8 rules and the plugin's source/license material. It carries a
 manifest dependency on OFEEncryption/1, not a private crypto or STL implementation.
 The separate common package is
-`Extensions/_DeLib/Encryption/Mobile/ToInstall/OFEEncryption.zip`.
+`Extensions/Android_Gradle/cmake/Encryption/ToInstall/OFEEncryption.zip`.
 Stage it once in an exported Android project using the common module's installer
 or the publisher's `--android-project` option. Automatic dependency selection by
 Fusion itself has not been established; merely copying the common ZIP into
@@ -193,7 +195,7 @@ python3 Extensions/_Script/Fini.py --source-bundle work/Fini-mobile-source.zip
 After a successful FiniXCFramework build, the scripts stage these owned artifacts:
 
 - `Extensions/iOS/Fini/Prebuilt/Fini.xcframework.zip` and `manifest.json`.
-- `Extensions/_DeLib/Encryption/Mobile/Prebuilt/iOS/OFEEncryption.xcframework.zip`
+- `Extensions/iOS/Encryption/Prebuilt/OFEEncryption.xcframework.zip`
   and `manifest.json`, shared once by all dependent plugins.
 
 The author commits/pushes those four files after building on Mac. No script pushes

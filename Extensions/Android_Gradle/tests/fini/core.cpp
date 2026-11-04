@@ -1,4 +1,4 @@
-#include "Core.h"
+#include "IniCore.h"
 #include <iostream>
 using fini::check;
 using fini::Json;

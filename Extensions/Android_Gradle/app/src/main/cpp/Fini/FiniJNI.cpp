@@ -1,4 +1,4 @@
-#include "Core.h"
+#include "IniCore.h"
 #include <jni.h>
 #include <mutex>
 #include <unordered_map>

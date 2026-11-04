@@ -8,7 +8,7 @@ import plistlib
 import tempfile
 import zipfile
 
-REPO=Path(__file__).resolve().parents[4]
+REPO=Path(__file__).resolve().parents[3]
 
 def source_bytes(path):
     data=path.read_bytes()

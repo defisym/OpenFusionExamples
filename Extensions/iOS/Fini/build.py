@@ -21,7 +21,7 @@ def main():
     if a.encryption_framework:
         if not (a.encryption_framework/'Info.plist').is_file():raise SystemExit('Invalid shared encryption XCFramework')
     else:
-        command=[sys.executable,extensions/'_DeLib/Encryption/Mobile/build_ios.py','--openssl',a.openssl,'--output',common_output]
+        command=[sys.executable,extensions/'iOS/Encryption/build.py','--openssl',a.openssl,'--output',common_output]
         if a.prepare_openssl:command.append('--prepare-openssl')
         subprocess.run(list(map(str,command)),check=True)
     out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
@@ -36,7 +36,7 @@ def main():
             directory=out/f'{sdk}-{arch}';directory.mkdir(exist_ok=True)
             sysroot=subprocess.check_output(['xcrun','--sdk',sdk,'--show-sdk-path'],text=True).strip()
             target=f'{arch}-apple-ios17.0'+('-simulator' if sdk=='iphonesimulator' else '')
-            run(['xcrun','--sdk',sdk,'clang++','-std=c++20','-O2','-fno-objc-arc','-fobjc-exceptions','-fexceptions','-isysroot',sysroot,'-target',target,*includes,'-c',source,'-o',directory/'Fini.o'])
+            run(['xcrun','--sdk',sdk,'clang++','-std=c++20','-DFINI_PORTABLE_RUNTIME','-O2','-fno-objc-arc','-fobjc-exceptions','-fexceptions','-isysroot',sysroot,'-target',target,*includes,'-c',source,'-o',directory/'Fini.o'])
             run(['xcrun','libtool','-static','-o',directory/'libFini.a',directory/'Fini.o'])
             slices[(sdk,arch)]=directory/'libFini.a'
         simulator=out/'libFini-simulator.a'
@@ -46,9 +46,9 @@ def main():
         run(['xcodebuild','-create-xcframework','-library',slices[('iphoneos','arm64')],'-headers',headers,'-library',simulator,'-headers',headers,'-output',pending])
         if final.exists():shutil.rmtree(final)
         pending.rename(final)
-        sys.path.insert(0,str(extensions/'_DeLib/Encryption/Mobile'))
+        sys.path.insert(0,str(extensions/'iOS/Tools'))
         from apple_artifacts import stage
-        sources=['Extensions/iOS/Fini/Runtime/CRunFini.mm','Extensions/iOS/Fini/Runtime/CRunFini.h','Extensions/_DeLib/Fini/Core.h','Extensions/Fini/IniCore.h','Extensions/iOS/Fini/build.py','Extensions/_DeLib/Encryption/CAPI.h','Extensions/_DeLib/StrNum.h','Extensions/_DeLib/UnicodeConversion.h','Extensions/_3rdLib/Base64.h','Extensions/_3rdLib/Compress/zlibInterface.h','Extensions/_3rdLib/simpleini/SimpleIni.h','Extensions/_3rdLib/nlohmann/single_include/nlohmann/json.hpp','Extensions/_DeLib/StringUtilities.h','Extensions/_DeLib/StringTraits.h','Extensions/_DeLib/ArithmeticTraits.h','Extensions/_DeLib/PathUtilities.h','Extensions/_DeLib/GeneralMacros.h','Extensions/_3rdLib/Compress/zlib/zlib.h','Extensions/_3rdLib/Compress/zlib/zconf.h']
+        sources=['Extensions/iOS/Fini/Runtime/CRunFini.mm','Extensions/iOS/Fini/Runtime/CRunFini.h','Extensions/Fini/IniCore.h','Extensions/iOS/Fini/build.py','Extensions/_DeLib/Encryption/CAPI.h','Extensions/_DeLib/StrNum.h','Extensions/_DeLib/UnicodeConversion.h','Extensions/_3rdLib/Base64.h','Extensions/_3rdLib/Compress/zlibInterface.h','Extensions/_3rdLib/simpleini/SimpleIni.h','Extensions/_3rdLib/nlohmann/single_include/nlohmann/json.hpp','Extensions/_DeLib/StringUtilities.h','Extensions/_DeLib/StringTraits.h','Extensions/_DeLib/ArithmeticTraits.h','Extensions/_DeLib/PathUtilities.h','Extensions/_DeLib/GeneralMacros.h','Extensions/_3rdLib/Compress/zlib/zlib.h','Extensions/_3rdLib/Compress/zlib/zconf.h']
         stage(final,'Fini',sources,root/'Prebuilt',requires=['OFEEncryption/1'])
         print('Built',final,'Link the common OFEEncryption.xcframework once, plus libc++, Foundation and libz. No crypto implementation is included in Fini.')
 if __name__=='__main__':main()

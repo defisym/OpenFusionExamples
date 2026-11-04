@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 
 repo=Path(__file__).resolve().parents[4]
-root=repo/'Extensions/_DeLib/Encryption/Mobile'
+root=repo/'Extensions/Android_Gradle/cmake/Encryption'
 spec=importlib.util.spec_from_file_location('common_encryption',root/'android_runtime.py')
 common=importlib.util.module_from_spec(spec);spec.loader.exec_module(common)
 tools=json.loads((repo/'work/fini-android/toolchain.json').read_text())

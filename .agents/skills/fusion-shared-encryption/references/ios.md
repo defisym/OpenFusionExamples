@@ -3,8 +3,10 @@
 Use Objective-C++ to call the existing C++ plugin core and Encryption C ABI; JNI is
 Android-only. Fini's standalone project is an example, not a dependency for other ports.
 Build a client archive/XCFramework without libcrypto. Build one dynamic
-OFEEncryption.framework/XCFramework from Encryption/Mobile for all plugins, with a
+OFEEncryption.framework/XCFramework through `iOS/Encryption/build.py` for all plugins, with a
 stable install name and C export list. Embed/sign the common framework once in the app.
+Keep its native handoff inputs in `iOS/Encryption/Prebuilt` and build tooling in
+the iOS platform project; compile the original Encryption sources directly.
 
 Generate an actual .xcodeproj and shared schemes on the agent host. Configure local
 licensed Runtime header paths through an ignored local xcconfig. Keep public SDK

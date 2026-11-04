@@ -85,7 +85,7 @@ python3 Extensions/iOS/Fini/tests/test_project.py
 After a successful FiniXCFramework build, the scripts stage these owned artifacts:
 
 - `Extensions/iOS/Fini/Prebuilt/Fini.xcframework.zip` and `manifest.json`.
-- `Extensions/_DeLib/Encryption/Mobile/Prebuilt/iOS/OFEEncryption.xcframework.zip`
+- `Extensions/iOS/Encryption/Prebuilt/OFEEncryption.xcframework.zip`
   and `manifest.json`, shared once by all dependent plugins.
 
 The author commits/pushes those four files after building on Mac. No script pushes

@@ -56,7 +56,7 @@ class ExportTests(unittest.TestCase):
             (config/'README.md').write_text('owned fixture')
             runtime=extension/'Fini/ToInstall/Files/Data/Runtime/iPhone';runtime.mkdir(parents=True)
             previous=runtime/'Fini-iOS.zip';previous.write_bytes(b'known good client package')
-            common_output=extension/'_DeLib/Encryption/Mobile/ToInstall';common_output.mkdir(parents=True)
+            common_output=extension/'Android_Gradle/cmake/Encryption/ToInstall';common_output.mkdir(parents=True)
             previous_common=common_output/'OFEEncryption-iOS.zip';previous_common.write_bytes(b'known good common package')
             bad=artifact(b'// different interface\n')
             manifest=dict(bad[0],file='Fini.xcframework.zip',requires=['OFEEncryption/1'])

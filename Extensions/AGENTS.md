@@ -21,8 +21,11 @@ For Apple artifacts preserve Mac build/push -> Windows pull -> VS RunOnly packag
 
 Platform development belongs under `Extensions/iOS/<Plugin>` or the existing
 `Extensions/Android_Gradle` hierarchy. `Extensions/<Plugin>` is a Windows VS
-project, not a parent for platform development trees. Shared portable code belongs
-in the shared library hierarchy; preserve the existing ToInstall release layout.
+project, not a parent for platform development trees. These are independent
+platform roots despite the historical nesting under Extensions. Adapt libraries
+in their original files behind narrow macros, or in the corresponding platform
+component directory (Android native sources use app/src/main/cpp). Do not add
+Mobile build/package trees to Windows library directories. Preserve ToInstall.
 
 For any extension port, read
 [`fusion-extension-porting`](../.agents/skills/fusion-extension-porting/SKILL.md).

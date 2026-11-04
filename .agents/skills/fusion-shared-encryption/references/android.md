@@ -3,7 +3,10 @@
 Use alongside fusion-android-porting and android-runtime-parity. Keep Fusion object
 access/events in Java and algorithms in C++; use JNI to call the plugin native core.
 The plugin library imports libofe_encryption.so through the C ABI. Only that common
-library links libcrypto. Reuse Encryption/Mobile/CMakeLists.txt and android_runtime.py.
+library links libcrypto. Reuse
+`Android_Gradle/app/src/main/cpp/Encryption/CMakeLists.txt` and
+`Android_Gradle/cmake/Encryption/android_runtime.py`; both consume the original
+Encryption sources. Keep Android adaptations in its platform project.
 
 Use one common build/cache/output across plugins. Emit a separate OFEEncryption.zip
 with matching libc++_shared.so, licenses, ABI/version and hashes. Client ZIPs own only
