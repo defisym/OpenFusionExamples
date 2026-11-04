@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma warning(disable : 4996)
+
 // Shared C++17 implementation. Every platform, including Windows, uses OpenSSL.
 // Legacy Fusion projects import Encryption.props and keep compiling Encryption.cpp.
 
