@@ -1,5 +1,4 @@
 #include "Encryption.h"
-#include "EncryptionPath.h"
 
 #include <optional>
 
@@ -105,7 +104,7 @@ bool Encryption::OpenFile(const wchar_t* file) {
     if (!file || !*file) return false;
 
     try {
-        encryption::FileSource source(encryption::file_path(file));
+        encryption::FileSource source{std::filesystem::path(file)};
         if (source.size() >= (std::numeric_limits<std::uint32_t>::max)()) return false;
 
         encryption::Bytes next(static_cast<std::size_t>(source.size()) + 1, 0);
@@ -113,13 +112,14 @@ bool Encryption::OpenFile(const wchar_t* file) {
         input_ = std::move(next);
         return true;
     } catch (const encryption::Error&) { return false; }
+    catch (const std::filesystem::filesystem_error&) { return false; }
 }
 
 bool Encryption::SaveFile(const wchar_t* file, std::uint8_t* buffer, std::uint32_t size) {
     if (!file || !*file || !buffer) return false;
 
     try {
-        const auto path = encryption::file_path(file);
+        const auto path = std::filesystem::path(file);
 #ifdef _WIN32
         FILE* output = _wfopen(path.c_str(), L"wb");
 #else
@@ -130,6 +130,7 @@ bool Encryption::SaveFile(const wchar_t* file, std::uint8_t* buffer, std::uint32
         const bool closed = std::fclose(output) == 0;
         return written && closed;
     } catch (const encryption::Error&) { return false; }
+    catch (const std::filesystem::filesystem_error&) { return false; }
 }
 
 bool Encryption::SaveFile(const wchar_t* file, bool source) const {
@@ -165,7 +166,7 @@ bool Encryption::process_file(const wchar_t* file, encryption::Mode mode, const 
     if (!file || !*file || !algorithm || std::wcscmp(algorithm, L"AES")) return false;
 
     try {
-        encryption::FileSource source(encryption::file_path(file));
+        encryption::FileSource source{std::filesystem::path(file)};
 
         encryption::Bytes result;
         std::uint64_t position = 0;
@@ -183,6 +184,7 @@ bool Encryption::process_file(const wchar_t* file, encryption::Mode mode, const 
 
         return store(output_, result.data(), result.size());
     } catch (const encryption::Error&) { return false; }
+    catch (const std::filesystem::filesystem_error&) { return false; }
 }
 
 const wchar_t* Encryption::GetHash(const wchar_t* algorithm) {

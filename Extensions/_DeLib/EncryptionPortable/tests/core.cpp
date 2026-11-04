@@ -1,7 +1,6 @@
 #include "Encryption.h"
 #include "EncryptionStream.h"
 #include "EncryptionPortable.h"
-#include "EncryptionPath.h"
 #include <chrono>
 #include <iostream>
 #include <random>
@@ -242,7 +241,7 @@ void compatibility() {
     CHECK(e.DecryptFileDirectly(file.c_str()));
     CHECK(std::string(e.GetOutputStr(), e.GetOutputDataLength()) == text);
     CHECK(e.EncryptFile(L"/missing/ofe-asset") == false && !e.GetOutputData());
-    std::filesystem::remove(file_path(file.c_str()));
+    std::filesystem::remove(std::filesystem::path(file));
     EncryptionStreamHelper stream(L"abc");
     Bytes src(32, 42), result(48);
     auto n = stream.Stream(src.data(), 16, result.data(), result.size(), Mode::encrypt, false);

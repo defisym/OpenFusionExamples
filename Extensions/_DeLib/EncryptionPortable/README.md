@@ -78,8 +78,8 @@ KeyGen is used by Encryption::GenerateKey, the C ABI string derivation
 functions. The shared global helpers in `UnicodeConversion.h`
 also preserve the byte representation of old wide-string inputs. This header is a C++17
 utility with no OpenSSL, Windows API or iconv dependency and is included by the
-`GeneralDefinition.h` umbrella. Wide-path
-conversion remains in the encryption module (`EncryptionPath.h`). New
+`GeneralDefinition.h` umbrella. File I/O uses `std::filesystem::path` directly; the C ABI
+accepts caller-opened `FILE*` handles or callbacks. New
 Cipher/DecryptReader callers supply KeyIv directly and do not need password expansion.
 
 For an existing file, matching password-to-key/IV bytes is sufficient because the

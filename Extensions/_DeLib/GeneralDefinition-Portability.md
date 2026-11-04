@@ -28,8 +28,8 @@ The umbrella continues to expose the previous standard-library and traits includ
 OpenSSL, Windows API or iconv. Its global `to_utf16_string` overloads preserve UTF-16 code
 units for KeyGen compatibility; `to_utf16_bytes` writes little-endian bytes independently
 of the host byte order. Invalid input throws `std::invalid_argument`; Encryption maps
-that exception to its existing argument error at its API boundary. File-path conversion
-remains specific to the encryption module.
+that exception to its existing argument error at its API boundary. File paths use `std::filesystem::path`
+at file I/O call sites rather than a general string-conversion helper.
 
 Platform differences are implemented in the existing shared helpers, which remain header-only.
 `FindTheWay.h` and `AOE.h` use `HASHER_MOVE`, `Range`, `InsertSortedUpperBound`, and `_itos` again.
