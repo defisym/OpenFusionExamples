@@ -15,6 +15,10 @@ Write skills and repository documentation in English.
 
 ## Repository layout
 
+This is a standing author requirement for every plugin and library port, not a
+Fini-specific convention. Apply it automatically at the start of future work;
+do not wait for the author to repeat it or ask them to choose the layout again.
+
 The original `Extensions` tree contains Windows Visual Studio projects and their
 libraries. Android_Gradle and iOS are independent platform project roots, even
 though their current repository paths are nested below Extensions. Do not treat
@@ -33,6 +37,15 @@ project's component/source directory (Android uses app/src/main). Reuse the
 original implementation; do not create a second cipher or algorithm copy.
 Existing `ToInstall` release layouts and VS publishing hooks remain
 the distribution entry points, not platform development roots.
+
+Before creating or moving files, determine whether each file extends an existing
+shared implementation or belongs to a platform project. Use the original file
+with a narrow macro for the former, and the corresponding platform component
+directory for the latter. A shared runtime does not justify putting Android/iOS
+build, packaging or handoff trees in a Windows library directory. Follow existing
+platform paths; their historical nesting does not authorize relocating the whole
+platform project. After a move, update includes, build/project references,
+publishers, manifests and documentation, and verify the resulting source inventory.
 
 Use the current Windows C++ implementation as the behavioral reference for
 portable features. Reuse shared algorithms; adapt platform-specific object,

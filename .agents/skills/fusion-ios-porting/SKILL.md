@@ -17,6 +17,12 @@ for other plugins. Write this skill, references and operational docs in English.
 Preserve shared C++ interfaces; submit shared behavioral changes for author review.
 Keep private SDK/exporter material outside the public repository.
 
+Apply the common skill's standing repository-layout requirement to every plugin
+and dependency adaptation without asking the author to restate it. Adapt existing
+libraries in their original files with narrow macros, or put iOS-specific
+integration under the iOS project's corresponding component directory. Keep
+Apple build, packaging and handoff inputs there, outside Windows library trees.
+
 If encryption is involved, also apply
 [shared encryption](../fusion-shared-encryption/SKILL.md): that runtime is an
 author-approved shared service, not a rule to dynamically split every helper.

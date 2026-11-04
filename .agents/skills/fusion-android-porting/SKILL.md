@@ -25,6 +25,9 @@ is not sufficient: mobile plugins must consume one shared encryption runtime.
 
 ## Establish the target
 
+Apply the common skill's standing repository-layout requirement to every plugin
+and dependency adaptation without asking the author to restate it.
+
 Keep Android implementation and development assets under
 `Extensions/Android_Gradle`, following its existing Java/JNI, `cmake/<Plugin>`
 and `tests/<plugin>` layout. `Extensions/<Plugin>` is the Windows VS project;
