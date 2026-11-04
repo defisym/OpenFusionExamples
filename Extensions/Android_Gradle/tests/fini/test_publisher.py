@@ -19,7 +19,7 @@ class PublisherTest(unittest.TestCase):
                 with zipfile.ZipFile(io.BytesIO(z.read('app/libs/Fini-JNI-rules.jar'))) as rules:self.assertIn('META-INF/proguard/Fini.pro',rules.namelist())
     def test_owned_ios_source_inventory_excludes_local_sdk_project(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);private=root/'Fini/iOS/SDK/Private.xcodeproj/project.pbxproj';private.parent.mkdir(parents=True);private.write_text('private export fixture')
+            root=Path(temp);private=root/'iOS/Fini/SDK/Private.xcodeproj/project.pbxproj';private.parent.mkdir(parents=True);private.write_text('private export fixture')
             with patch.object(publisher,'EXT',root):
                 self.assertNotIn(private,publisher.source_files())
 

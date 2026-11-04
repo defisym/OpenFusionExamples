@@ -26,7 +26,8 @@ class ProjectTest(unittest.TestCase):
         self.assertEqual(native['productType'],'com.apple.product-type.library.static')
         self.assertEqual(objects[generator.uid('FiniXCFramework')]['isa'],'PBXAggregateTarget')
         script=objects[generator.uid('package')]['shellScript']
-        self.assertIn('build_ios.py',script);self.assertIn('FINI_OPENSSL_BASE',script)
+        self.assertIn('"$SRCROOT/build.py"',script);self.assertTrue((root/'build.py').is_file())
+        self.assertIn('FINI_OPENSSL_BASE',script)
     def test_generation_is_deterministic_and_schemes_match(self):
         with tempfile.TemporaryDirectory() as temp:
             output=Path(temp);project=generator.generate(output)

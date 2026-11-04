@@ -30,7 +30,7 @@ __asm__(".linker_option \\\"-lFini_iphoneos\\\"");
 __asm__(".linker_option \\\"-lc++\\\"");
 __asm__(".linker_option \\\"-lz\\\"");
 ''',
-        'configure_fini_export.py':(ROOT/'Fini/iOS/configure_export.py').read_bytes(),
+        'configure_fini_export.py':(ROOT/'iOS/Fini/configure_export.py').read_bytes(),
         'xcode_project.py':(ROOT/'iOS/Tools/xcode_project.py').read_bytes(),
     }
     with zipfile.ZipFile(io.BytesIO(data)) as archive:

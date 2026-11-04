@@ -25,7 +25,7 @@ def build_model():
     build_file=add('source.build','PBXBuildFile',fileRef=source)
     sources=add('sources','PBXSourcesBuildPhase',buildActionMask='2147483647',files=[build_file],runOnlyForDeploymentPostprocessing='0')
     frameworks=add('frameworks','PBXFrameworksBuildPhase',buildActionMask='2147483647',files=[],runOnlyForDeploymentPostprocessing='0')
-    packaging=add('package','PBXShellScriptBuildPhase',buildActionMask='2147483647',files=[],inputPaths=[],outputPaths=[],alwaysOutOfDate='1',runOnlyForDeploymentPostprocessing='0',shellPath='/bin/sh',shellScript='set -eu\npython3 "$SRCROOT/../Mobile/build_ios.py" --runtime "$FINI_RUNTIME_ROOT" --openssl "$FINI_OPENSSL_BASE" --output "$FINI_OUTPUT_ROOT" --prepare-openssl\n')
+    packaging=add('package','PBXShellScriptBuildPhase',buildActionMask='2147483647',files=[],inputPaths=[],outputPaths=[],alwaysOutOfDate='1',runOnlyForDeploymentPostprocessing='0',shellPath='/bin/sh',shellScript='set -eu\npython3 "$SRCROOT/build.py" --runtime "$FINI_RUNTIME_ROOT" --openssl "$FINI_OPENSSL_BASE" --output "$FINI_OUTPUT_ROOT" --prepare-openssl\n')
     configurations={}
     for target in ('project','Fini','FiniXCFramework'):
         configs=[]

@@ -25,6 +25,12 @@ is not sufficient: mobile plugins must consume one shared encryption runtime.
 
 ## Establish the target
 
+Keep Android implementation and development assets under
+`Extensions/Android_Gradle`, following its existing Java/JNI, `cmake/<Plugin>`
+and `tests/<plugin>` layout. `Extensions/<Plugin>` is the Windows VS project;
+do not add an Android or Mobile subtree there. Keep portable core code in the
+shared library hierarchy and preserve existing `ToInstall` distribution paths.
+
 1. Identify the extension, its Windows ACE definitions, existing mobile code, and the installed
    Fusion Runtime and development SDK versions.
 2. Inspect repository instructions, branch state, and local changes. Preserve unrelated work.

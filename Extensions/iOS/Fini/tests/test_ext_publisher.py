@@ -14,9 +14,9 @@ repo=Path(__file__).resolve().parents[4]
 sys.path.insert(0,str(repo/'Extensions/_Script'))
 import FiniIOS
 import Fini as publisher
-spec=importlib.util.spec_from_file_location('fini_configure',repo/'Extensions/Fini/iOS/configure_export.py')
+spec=importlib.util.spec_from_file_location('fini_configure',repo/'Extensions/iOS/Fini/configure_export.py')
 configure=importlib.util.module_from_spec(spec);spec.loader.exec_module(configure)
-sys.path.insert(0,str(repo/'Extensions/Fini/iOS'))
+sys.path.insert(0,str(repo/'Extensions/iOS/Fini'))
 import generate_project
 from xcode_project import Project,render
 
@@ -51,7 +51,7 @@ class ExportTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(),b'previous')
     def test_actual_publisher_preserves_all_outputs_on_bad_native_headers(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);extension=root/'Extensions';config=extension/'Fini/iOS';config.mkdir(parents=True)
+            root=Path(temp);extension=root/'Extensions';config=extension/'iOS/Fini';config.mkdir(parents=True)
             (config/'Config').mkdir();(config/'Config/FiniConsumer.xcconfig').write_text('// owned fixture')
             (config/'README.md').write_text('owned fixture')
             runtime=extension/'Fini/ToInstall/Files/Data/Runtime/iPhone';runtime.mkdir(parents=True)

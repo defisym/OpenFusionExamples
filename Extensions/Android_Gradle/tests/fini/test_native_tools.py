@@ -10,7 +10,7 @@ from unittest.mock import patch,Mock
 repo=Path(__file__).resolve().parents[4]
 spec=importlib.util.spec_from_file_location('fini_tools',repo/'Extensions/_Script/FiniNativeTools.py')
 tools=importlib.util.module_from_spec(spec);spec.loader.exec_module(tools)
-config=json.loads((repo/'Extensions/Fini/Mobile/android-toolchain.json').read_text())
+config=json.loads((repo/'Extensions/Android_Gradle/cmake/Fini/toolchain.json').read_text())
 
 def touch(path):
     path.parent.mkdir(parents=True,exist_ok=True);path.write_text('fixture');return path

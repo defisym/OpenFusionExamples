@@ -61,7 +61,7 @@
 			"alwaysOutOfDate" = "1";
 			"runOnlyForDeploymentPostprocessing" = "0";
 			"shellPath" = "/bin/sh";
-			"shellScript" = "set -eu\npython3 \"$SRCROOT/../Mobile/build_ios.py\" --runtime \"$FINI_RUNTIME_ROOT\" --openssl \"$FINI_OPENSSL_BASE\" --output \"$FINI_OUTPUT_ROOT\" --prepare-openssl\n";
+			"shellScript" = "set -eu\npython3 \"$SRCROOT/build.py\" --runtime \"$FINI_RUNTIME_ROOT\" --openssl \"$FINI_OPENSSL_BASE\" --output \"$FINI_OUTPUT_ROOT\" --prepare-openssl\n";
 		};
 		"302074DAA8E78094C2F9FEEB" = {
 			"isa" = "XCBuildConfiguration";

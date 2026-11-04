@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 try:
     from xcode_project import Project,render,words,version,payload_digest
 except ImportError:
-    sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'iOS/Tools'))
+    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'Tools'))
     from xcode_project import Project,render,words,version,payload_digest
 
 

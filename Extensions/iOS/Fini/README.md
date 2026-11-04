@@ -4,13 +4,13 @@ This is an owned, standalone Xcode project. Generation does not require Xcode.
 It reuses the existing C++ INI/encryption/codecs through CRunFini.mm and contains
 no licensed exporter Runtime sources or Windows crypto binaries.
 
-1. Keep this directory in its repository location: `Extensions/Fini/iOS`.
+1. Keep this directory in its repository location: `Extensions/iOS/Fini`.
 2. On your Mac, configure your licensed Fusion export and target OpenSSL:
 
    ```sh
-   python3 Extensions/Fini/iOS/generate_project.py \
+   python3 Extensions/iOS/Fini/generate_project.py \
      --runtime "/path/to/Fusion-export"
-   open Extensions/Fini/iOS/Fini.xcodeproj
+   open Extensions/iOS/Fini/Fini.xcodeproj
    ```
 
    The export must contain `Classes/Extensions/CRunExtension.h`. OpenSSL prefixes
@@ -61,7 +61,7 @@ Embed & Sign phase, preserves device signing/unrelated flags, fixes stale scheme
 references and keeps a higher deployment minimum. Use --dry-run to preview or
 --target for an export with multiple apps. Repeating it is a no-op; it refuses a
 conflicting shared framework. The source form is available at
-`Extensions/Fini/iOS/configure_export.py` for an existing export. Replace your
+`Extensions/iOS/Fini/configure_export.py` for an existing export. Replace your
 Application.cci with the Fini test application's export where appropriate.
 
 This verifies encoding and project edits, not a Fusion export/Apple final link or
@@ -76,15 +76,15 @@ references. Actual Xcode compilation and runtime validation must run on your Mac
 Regenerate the checked-in project after changing generate_project.py:
 
 ```sh
-python3 Extensions/Fini/iOS/generate_project.py
-python3 Extensions/Fini/iOS/tests/test_project.py
+python3 Extensions/iOS/Fini/generate_project.py
+python3 Extensions/iOS/Fini/tests/test_project.py
 ```
 
 ## Mac build/push -> Windows pull/VS packaging
 
 After a successful FiniXCFramework build, the scripts stage these owned artifacts:
 
-- `Extensions/Fini/iOS/Prebuilt/Fini.xcframework.zip` and `manifest.json`.
+- `Extensions/iOS/Fini/Prebuilt/Fini.xcframework.zip` and `manifest.json`.
 - `Extensions/_DeLib/Encryption/Mobile/Prebuilt/iOS/OFEEncryption.xcframework.zip`
   and `manifest.json`, shared once by all dependent plugins.
 

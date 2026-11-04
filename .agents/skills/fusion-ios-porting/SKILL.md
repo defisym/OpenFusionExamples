@@ -43,8 +43,9 @@ author-approved shared service, not a rule to dynamically split every helper.
    fixed-width values, explicit buffer/string lengths and exception translation.
    Avoid STL and C++ layout exposure. Retain owners across callback reentrancy;
    snapshot iteration results and define destruction/replacement behavior.
-4. Prefer Extensions/iOS/<Plugin> for a new plugin build project; honor an
-   established owned project layout without retaining a legacy SDK application. Use CMake and
+4. Keep the plugin's iOS project, Runtime adapter, build scripts, tests and native
+   handoff inputs under Extensions/iOS/<Plugin>. Extensions/<Plugin> is its VS
+   project; do not put iOS or Mobile development trees there. Use CMake and
    Ninja/Make for scripted compilation; use Apple CLI tools for SDK selection and
    XCFramework creation. Full Xcode supplies iOS SDKs; standalone Command Line
    Tools are insufficient. Do not require opening Xcode GUI to build the core.

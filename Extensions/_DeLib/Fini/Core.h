@@ -14,7 +14,7 @@
 #include "../../_DeLib/UnicodeConversion.h"
 #include "../../_3rdLib/Base64.h"
 #include "../../_3rdLib/Compress/zlibInterface.h"
-#include "../IniCore.h"
+#include "../../Fini/IniCore.h"
 #include <fstream>
 #include <cmath>
 #include "../../_DeLib/StrNum.h"

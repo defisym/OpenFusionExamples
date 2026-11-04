@@ -1,6 +1,12 @@
-# Fini mobile port
+# Fini Android JNI port
 
 ## Architecture
+
+Android development files live in this Gradle tree: `app/src/main` for the
+Java/JNI adapters, `cmake/Fini` for native/toolchain configuration and
+`tests/fini` for validation. The portable core and ACE contract live in
+`../_DeLib/Fini`; iOS development and Mac handoff inputs live in
+`../iOS/Fini`. `../Fini` remains the Windows VS project and release staging area.
 
 Android uses `CRunFini.java` -> `FiniNative.java` -> JNI `libfini.so` -> the shared
 C++ implementation. Java handles only Fusion parameters, runtime objects, events,
@@ -20,14 +26,14 @@ Only the common runtime links libcrypto. See the shared module's README for the
 one-time exported-app installation and framework embed/sign steps.
 
 For iOS, CRunFini.mm uses Objective-C++ and the same C++ core; JNI is Android only.
-The generated standalone `../iOS/Fini.xcodeproj` can be opened directly in Xcode.
+The generated standalone `../iOS/Fini/Fini.xcodeproj` can be opened directly in Xcode.
 Its FiniXCFramework scheme builds the adapter and prepares the separate shared
 runtime. SDK sources are referenced locally and are never copied into plugin ZIPs.
 
 ## Windows compatibility and reviewed shared changes
 
 The original condition IDs 0..3, action IDs 0..19 and expression IDs 0..10 are
-preserved; `ACE.csv` records parameter order/types and generated events. Version 2/3 edit properties and keep-over-frame state are supported.
+preserved; `../_DeLib/Fini/ACE.csv` records parameter order/types and generated events. Version 2/3 edit properties and keep-over-frame state are supported.
 Object serialization uses Win32's 4-byte flags, 16-byte numeric CValue records,
 little-endian position integers and NUL-terminated UTF-16LE strings, with the
 target object's value/string counts. Invalid or mismatched object blobs are
@@ -40,7 +46,7 @@ short-password assets require explicitly different derivation and are not
 silently auto-detected. INI and Base64 strings are UTF-8. SimpleIni emits native
 line endings (LF on mobile, CRLF on Windows); both load on either platform.
 
-Shared changes for author review (not committed or merged):
+Shared changes in the PR for author review:
 
 - Extracted SimpleIni create/set/delete/copy/save operations to `IniCore.h`.
   Windows create/set/delete/copy now call that code too.
@@ -114,11 +120,11 @@ replacements are excluded. Fusion's ordinary APK export does not compile this C+
 
 ## iOS developer build (separate workflow)
 
-The ready project and instructions are in `../iOS/README.md`. On your Mac:
+The ready project and instructions are in `../iOS/Fini/README.md`. On your Mac:
 
 ```sh
-python3 Extensions/Fini/iOS/generate_project.py --runtime /path/to/exported-project
-open Extensions/Fini/iOS/Fini.xcodeproj
+python3 Extensions/iOS/Fini/generate_project.py --runtime /path/to/exported-project
+open Extensions/iOS/Fini/Fini.xcodeproj
 ```
 
 Select FiniXCFramework and Product > Build. It uses Xcode 15+/iOS 17+, the licensed
@@ -130,8 +136,8 @@ Embed/sign OFEEncryption once in the consuming app; add Fini's library and retai
 its class with -ObjC. Link libc++, Foundation and libz. Other plugins use the same
 framework. Do not merge libcrypto into individual plugin archives.
 
-Runtime sources live in Fini/iOS/Runtime; legacy SDK application scaffolding is
-not modified. Windows now creates and round-trips Fini.ext using the shared codec
+Runtime sources live in iOS/Fini/Runtime; licensed SDK sources stay local.
+Windows creates and round-trips Fini.ext using the shared codec
 from PR #100. The exported configurator links native archives and embeds the
 common framework once. Apple compilation, Fusion export/final-link and device
 validation remain separate checks on the author's Mac.
@@ -186,7 +192,7 @@ python3 Extensions/_Script/Fini.py --source-bundle work/Fini-mobile-source.zip
 
 After a successful FiniXCFramework build, the scripts stage these owned artifacts:
 
-- `Extensions/Fini/iOS/Prebuilt/Fini.xcframework.zip` and `manifest.json`.
+- `Extensions/iOS/Fini/Prebuilt/Fini.xcframework.zip` and `manifest.json`.
 - `Extensions/_DeLib/Encryption/Mobile/Prebuilt/iOS/OFEEncryption.xcframework.zip`
   and `manifest.json`, shared once by all dependent plugins.
 

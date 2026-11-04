@@ -6,7 +6,7 @@ REPO=Path(__file__).resolve().parents[2]
 EXT=REPO/'Extensions';JAVA=EXT/'Android_Gradle/app/src/main/java'
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import FiniNativeTools
-TOOLCHAIN=json.loads((EXT/'Fini/Mobile/android-toolchain.json').read_text())
+TOOLCHAIN=json.loads((EXT/'Android_Gradle/cmake/Fini/toolchain.json').read_text())
 sys.path.insert(0,str(EXT/'_DeLib/Encryption/Mobile'))
 import android_runtime as encryption_runtime
 import apple_artifacts
@@ -18,12 +18,12 @@ RULES='-keep class Extensions.CRunFini { *; }\n-keep class _DeLib.FiniNative { *
 
 
 def source_files():
-    changed=['Fini/IniCore.h','Fini/Func.h','Fini/Main.cpp','Fini/Mobile/Core.h','Fini/Mobile/CMakeLists.txt','Fini/Mobile/README.md','Fini/Mobile/ACE.csv','Fini/Mobile/android-toolchain.json','Fini/Mobile/build_ios.py','_DeLib/Encryption/Mobile/prepare_openssl.py','_DeLib/Encryption/Mobile/CMakeLists.txt','_DeLib/Encryption/Mobile/build_ios.py','_DeLib/Encryption/Mobile/android_runtime.py','_DeLib/Encryption/Mobile/README.md','_DeLib/Encryption/Mobile/apple_artifacts.py',
+    changed=['Fini/IniCore.h','Fini/Func.h','Fini/Main.cpp','_DeLib/Fini/Core.h','_DeLib/Fini/CMakeLists.txt','Android_Gradle/Fini-JNI.md','_DeLib/Fini/ACE.csv','Android_Gradle/cmake/Fini/toolchain.json','iOS/Fini/build.py','_DeLib/Encryption/Mobile/prepare_openssl.py','_DeLib/Encryption/Mobile/CMakeLists.txt','_DeLib/Encryption/Mobile/build_ios.py','_DeLib/Encryption/Mobile/android_runtime.py','_DeLib/Encryption/Mobile/README.md','_DeLib/Encryption/Mobile/apple_artifacts.py',
         '_3rdLib/Base64.h','_3rdLib/Compress/zlibInterface.h','_3rdLib/Compress/zlib/zlib.h','_3rdLib/Compress/zlib/zconf.h','_3rdLib/simpleini/SimpleIni.h','_3rdLib/nlohmann/single_include/nlohmann/json.hpp',
         '_DeLib/PathUtilities.h','_DeLib/GeneralMacros.h','_DeLib/StringTraits.h','_DeLib/StrNum.h','_DeLib/StringUtilities.h','_DeLib/ArithmeticTraits.h','_DeLib/UnicodeConversion.h','_DeLib/Encryption/Core.h','_DeLib/Encryption/KeyGen.h','_DeLib/Encryption/CAPI.h','_DeLib/Encryption/CAPI.cpp',
         'Android_Gradle/cmake/Fini/CMakeLists.txt','Android_Gradle/app/src/main/cpp/FiniJNI.cpp',
-        'Fini/iOS/Runtime/CRunFini.h','Fini/iOS/Runtime/CRunFini.mm','_Script/Fini.py','_Script/Fini.bat','_Script/FiniNativeTools.py','_Script/FiniIOS.py','iOS/Tools/make_ext.py','iOS/Tools/xcode_project.py']
-    return [EXT/p for p in changed]+[JAVA/p for p in OWNED_JAVA]+[p for p in (EXT/'Android_Gradle/tests/fini').glob('*') if p.is_file() and p.suffix in ('.py','.cpp','.java')]+[p for p in (EXT/'Fini/iOS').rglob('*') if p.is_file() and 'xcuserdata' not in p.parts and '__pycache__' not in p.parts and p.name not in ('Local.xcconfig','.gitignore') and not any(name in p.parts for name in ('Prebuilt','Runtime','Dependencies','SDK')) and p.suffix in ('.py','.md','.xcconfig','.pbxproj','.xcscheme','.xcworkspacedata')]
+        'iOS/Fini/Runtime/CRunFini.h','iOS/Fini/Runtime/CRunFini.mm','_Script/Fini.py','_Script/Fini.bat','_Script/FiniNativeTools.py','_Script/FiniIOS.py','iOS/Tools/make_ext.py','iOS/Tools/xcode_project.py']
+    return [EXT/p for p in changed]+[JAVA/p for p in OWNED_JAVA]+[p for p in (EXT/'Android_Gradle/tests/fini').glob('*') if p.is_file() and p.suffix in ('.py','.cpp','.java')]+[p for p in (EXT/'iOS/Fini').rglob('*') if p.is_file() and 'xcuserdata' not in p.parts and '__pycache__' not in p.parts and p.name not in ('Local.xcconfig','.gitignore') and not any(name in p.parts for name in ('Prebuilt','Runtime','Dependencies','SDK')) and p.suffix in ('.py','.md','.xcconfig','.pbxproj','.xcscheme','.xcworkspacedata')]
 
 def package(destination,abi_dirs,include_sources=True,licenses=None):
     payload={f'app/src/main/java/{p}':(JAVA/p).read_bytes() for p in OWNED_JAVA}
@@ -59,7 +59,7 @@ def package(destination,abi_dirs,include_sources=True,licenses=None):
 
 
 def sync_apple(fusion=None):
-    plugin=apple_artifacts.validate(EXT/'Fini/iOS/Prebuilt','Fini')
+    plugin=apple_artifacts.validate(EXT/'iOS/Fini/Prebuilt','Fini')
     common=apple_artifacts.validate(EXT/'_DeLib/Encryption/Mobile/Prebuilt/iOS','OFEEncryption')
     if plugin and not common:raise ValueError('Fini Apple handoff requires the separately committed common encryption artifact')
     if not plugin and not common:
@@ -77,7 +77,7 @@ def sync_apple(fusion=None):
         if plugin:
             path=EXT/'Fini/ToInstall/Files/Data/Runtime/iPhone/Fini-iOS.zip'
             staged=temp/path.name
-            apple_artifacts.package(plugin,staged,{'FiniConsumer.xcconfig':EXT/'Fini/iOS/Config/FiniConsumer.xcconfig','README.md':EXT/'Fini/iOS/README.md'})
+            apple_artifacts.package(plugin,staged,{'FiniConsumer.xcconfig':EXT/'iOS/Fini/Config/FiniConsumer.xcconfig','README.md':EXT/'iOS/Fini/README.md'})
             prepared.append((path,staged.read_bytes()))
             extension=path.with_name('Fini.ext');staged=temp/extension.name
             FiniIOS.write(plugin,staged);prepared.append((extension,staged.read_bytes()))
@@ -130,7 +130,7 @@ def main():
     openssl=a.openssl or (Path(os.environ['FINI_OPENSSL_ROOT']) if os.environ.get('FINI_OPENSSL_ROOT') else None)
     if openssl is None:
         openssl=REPO/'work/mobile-encryption/openssl/android'
-        run([sys.executable,EXT/'_DeLib/Encryption/Mobile/prepare_openssl.py','_DeLib/Encryption/Mobile/CMakeLists.txt','_DeLib/Encryption/Mobile/build_ios.py','_DeLib/Encryption/Mobile/android_runtime.py','_DeLib/Encryption/Mobile/README.md','_DeLib/Encryption/Mobile/apple_artifacts.py','--platform','android','--ndk',ndk,'--abis',*a.abis,'--api',str(TOOLCHAIN['native_api']),'--output',openssl,'--work',REPO/'work/mobile-encryption/openssl-build'])
+        run([sys.executable,EXT/'_DeLib/Encryption/Mobile/prepare_openssl.py','--platform','android','--ndk',ndk,'--abis',*a.abis,'--api',str(TOOLCHAIN['native_api']),'--output',openssl,'--work',REPO/'work/mobile-encryption/openssl-build'])
     license_path=a.openssl_license or next((candidate for candidate in [openssl/'LICENSE.txt',openssl/'LICENSE',openssl/'LICENSE.md'] if candidate.is_file()),None)
     if license_path is None:raise RuntimeError('OpenSSL license missing; pass --openssl-license for redistribution')
     licenses={'licenses/OpenSSL.txt':license_path.read_bytes()}

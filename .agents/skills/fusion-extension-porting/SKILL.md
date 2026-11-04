@@ -13,6 +13,19 @@ or [iOS porting](../fusion-ios-porting/SKILL.md) for the relevant target.
 Derive paths and commands from the target project; do not require another plugin.
 Write skills and repository documentation in English.
 
+## Repository layout
+
+`Extensions/<Plugin>` is the Windows Visual Studio project directory. Keep iOS
+projects, adapters, build scripts, tests and native handoff inputs under
+`Extensions/iOS/<Plugin>`. Keep Android adapters, JNI sources, CMake/toolchain
+configuration, tests and documentation under `Extensions/Android_Gradle`, using
+its existing source/cmake/test directories. Do not nest `iOS`, `Android` or
+`Mobile` development trees inside the Windows plugin directory. Put portable
+code consumed by multiple platforms in the existing shared library hierarchy
+(for example `_DeLib/<Component>`); retain Windows-owned shared sources when
+appropriate. Existing `ToInstall` release layouts and VS publishing hooks remain
+the distribution entry points, not platform development roots.
+
 Use the current Windows C++ implementation as the behavioral reference for
 portable features. Reuse shared algorithms; adapt platform-specific object,
 resource and Runtime access through the actual target SDK. Keep shared C++

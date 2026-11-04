@@ -19,6 +19,11 @@ For Apple artifacts preserve Mac build/push -> Windows pull -> VS RunOnly packag
 
 # Common and iOS porting rules
 
+Platform development belongs under `Extensions/iOS/<Plugin>` or the existing
+`Extensions/Android_Gradle` hierarchy. `Extensions/<Plugin>` is a Windows VS
+project, not a parent for platform development trees. Shared portable code belongs
+in the shared library hierarchy; preserve the existing ToInstall release layout.
+
 For any extension port, read
 [`fusion-extension-porting`](../.agents/skills/fusion-extension-porting/SKILL.md).
 For Apple Runtime, project or publishing changes, also follow
