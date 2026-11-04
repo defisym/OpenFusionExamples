@@ -39,7 +39,8 @@
   <ItemGroup>
     <ClInclude Include="..\EncryptionCore.h" />
     <ClInclude Include="..\EncryptionKeyGen.h" />
-    <ClInclude Include="..\EncryptionText.h" />
+    <ClInclude Include="..\UnicodeConversion.h" />
+    <ClInclude Include="..\EncryptionPath.h" />
     <ClInclude Include="..\Encryption.h" />
     <ClInclude Include="EncryptionPortable.h" />
   </ItemGroup>

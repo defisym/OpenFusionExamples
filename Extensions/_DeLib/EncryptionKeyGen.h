@@ -1,6 +1,7 @@
 #pragma once
 
-#include "EncryptionText.h"
+#include "EncryptionCore.h"
+#include "UnicodeConversion.h"
 
 #include <string_view>
 
@@ -63,11 +64,13 @@ inline KeyIv from_utf16(std::u16string_view text, SeedWidth width = SeedWidth::b
 }
 
 inline KeyIv from_wide(std::wstring_view input, SeedWidth width = SeedWidth::bits32) {
-    return from_utf16(text::utf16(input), width);
+    try { return from_utf16(to_utf16_string(input), width); }
+    catch (const std::invalid_argument& error) { throw Error(ErrorCode::argument, error.what()); }
 }
 
 inline KeyIv from_utf8(std::string_view input, SeedWidth width = SeedWidth::bits32) {
-    return from_utf16(text::utf16_from_utf8(input), width);
+    try { return from_utf16(to_utf16_string(input), width); }
+    catch (const std::invalid_argument& error) { throw Error(ErrorCode::argument, error.what()); }
 }
 
 } // namespace encryption::keygen

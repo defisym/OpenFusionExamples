@@ -11,7 +11,7 @@ public:
 
     explicit EncryptionStreamHelper(const wchar_t* text,
         const wchar_t* algorithm = L"AES")
-        : material_(encryption::keygen::from_utf16(encryption::text::utf16(text ? text : L""),
+        : material_(encryption::keygen::from_wide(text ? text : L"",
               encryption::keygen::native_seed_width)),
           valid_(algorithm && std::wcscmp(algorithm, L"AES") == 0) {}
     EncryptionStreamHelper(const EncryptionStreamHelper&) = default;

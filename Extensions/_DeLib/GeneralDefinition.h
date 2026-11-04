@@ -10,6 +10,7 @@
 
 #include "StringTraits.h"
 #include "StringConversion.h"
+#include "UnicodeConversion.h"
 #include "StringUtilities.h"
 #include "StringSplit.h"
 

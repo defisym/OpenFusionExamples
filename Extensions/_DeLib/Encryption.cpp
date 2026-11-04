@@ -1,4 +1,5 @@
 #include "Encryption.h"
+#include "EncryptionPath.h"
 
 #include <optional>
 
@@ -61,7 +62,10 @@ void Encryption::SetEncryptStr(const std::string& text) {
 void Encryption::SetEncryptStr(const char* text, std::uint32_t size) { SetEncryptData(text, size); }
 
 void Encryption::SetEncryptStr(const std::wstring& text) {
-    const auto bytes = encryption::text::utf16_bytes(text);
+    encryption::Bytes bytes;
+    try { bytes = to_utf16_bytes(text); }
+    catch (const std::invalid_argument& error) { throw encryption::Error(encryption::ErrorCode::argument, error.what()); }
+
     if (!store(input_, bytes.data(), bytes.size())) {
         ClearEncryptData();
         return;
@@ -92,7 +96,7 @@ char* Encryption::GetOutputStr() {
 }
 
 void Encryption::GenerateKey(const wchar_t* text) {
-    material_ = encryption::keygen::from_utf16(encryption::text::utf16(text ? text : L""),
+    material_ = encryption::keygen::from_wide(text ? text : L"",
         encryption::keygen::native_seed_width);
 }
 
@@ -101,7 +105,7 @@ bool Encryption::OpenFile(const wchar_t* file) {
     if (!file || !*file) return false;
 
     try {
-        encryption::FileSource source(encryption::text::path(file));
+        encryption::FileSource source(encryption::file_path(file));
         if (source.size() >= (std::numeric_limits<std::uint32_t>::max)()) return false;
 
         encryption::Bytes next(static_cast<std::size_t>(source.size()) + 1, 0);
@@ -115,7 +119,7 @@ bool Encryption::SaveFile(const wchar_t* file, std::uint8_t* buffer, std::uint32
     if (!file || !*file || !buffer) return false;
 
     try {
-        const auto path = encryption::text::path(file);
+        const auto path = encryption::file_path(file);
 #ifdef _WIN32
         FILE* output = _wfopen(path.c_str(), L"wb");
 #else
@@ -161,7 +165,7 @@ bool Encryption::process_file(const wchar_t* file, encryption::Mode mode, const 
     if (!file || !*file || !algorithm || std::wcscmp(algorithm, L"AES")) return false;
 
     try {
-        encryption::FileSource source(encryption::text::path(file));
+        encryption::FileSource source(encryption::file_path(file));
 
         encryption::Bytes result;
         std::uint64_t position = 0;

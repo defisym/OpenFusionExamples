@@ -106,8 +106,8 @@ public:
 
 #ifdef _DEBUG
     bool CompareGeneratedKey(const wchar_t* left, const wchar_t* right) {
-        const auto a = encryption::keygen::from_utf16(encryption::text::utf16(left ? left : L""), encryption::keygen::native_seed_width);
-        const auto b = encryption::keygen::from_utf16(encryption::text::utf16(right ? right : L""), encryption::keygen::native_seed_width);
+        const auto a = encryption::keygen::from_wide(left ? left : L"", encryption::keygen::native_seed_width);
+        const auto b = encryption::keygen::from_wide(right ? right : L"", encryption::keygen::native_seed_width);
         return a.key == b.key && a.iv == b.iv;
     }
 #endif

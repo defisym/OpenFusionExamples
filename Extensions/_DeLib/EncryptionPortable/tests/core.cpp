@@ -1,6 +1,7 @@
 #include "Encryption.h"
 #include "EncryptionStream.h"
 #include "EncryptionPortable.h"
+#include "EncryptionPath.h"
 #include <chrono>
 #include <iostream>
 #include <random>
@@ -91,6 +92,12 @@ void keygen_strings() {
     fails([&] { keygen::from_utf8(std::string("\xc0\x80", 2)); }, ErrorCode::argument);
     fails([&] { keygen::from_utf8(std::string("\xf0\x9f", 2)); }, ErrorCode::argument);
     fails([&] { keygen::from_utf8(std::string("\xed\xa0\x80", 3)); }, ErrorCode::argument);
+    if (sizeof(wchar_t) > 2) {
+        const std::wstring invalid(1, static_cast<wchar_t>(0x110000));
+        fails([&] { keygen::from_wide(invalid); }, ErrorCode::argument);
+        Encryption facade;
+        fails([&] { facade.SetEncryptStr(invalid); }, ErrorCode::argument);
+    }
 }
 class MemorySource final : public RandomAccessSource {
 public:
@@ -235,7 +242,7 @@ void compatibility() {
     CHECK(e.DecryptFileDirectly(file.c_str()));
     CHECK(std::string(e.GetOutputStr(), e.GetOutputDataLength()) == text);
     CHECK(e.EncryptFile(L"/missing/ofe-asset") == false && !e.GetOutputData());
-    std::filesystem::remove(text::path(file.c_str()));
+    std::filesystem::remove(file_path(file.c_str()));
     EncryptionStreamHelper stream(L"abc");
     Bytes src(32, 42), result(48);
     auto n = stream.Stream(src.data(), 16, result.data(), result.size(), Mode::encrypt, false);

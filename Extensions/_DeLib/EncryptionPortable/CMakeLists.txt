@@ -40,5 +40,5 @@ install(TARGETS encryption_portable
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES EncryptionPortable.h EncryptionPortableCallbacks.h EncryptionPortableStream.h
     EncryptionPortableBuffer.h EncryptionPortableFile.h
-    ../EncryptionCore.h ../EncryptionKeyGen.h ../EncryptionText.h ../Encryption.h ../EncryptionStream.h
+    ../EncryptionCore.h ../EncryptionKeyGen.h ../UnicodeConversion.h ../EncryptionPath.h ../Encryption.h ../EncryptionStream.h
     DESTINATION include/encryption)

@@ -24,6 +24,7 @@ def run(command, env=None):
 run([args.cmake, '-S', tests, '-B', build / 'cmake', '-DCMAKE_BUILD_TYPE=Release', '-DDELIB_ACP_ENCODING=UTF-8'])
 run([args.cmake, '--build', build / 'cmake', '--parallel', '2'])
 run([build / 'cmake/general_definition_test'])
+run([build / 'cmake/unicode_conversion_test'])
 run([build / 'cmake/acp_override_test'])
 run([build / 'cmake/path_owner_thread_test'])
 run([build / 'cmake/map_data_test'])

@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'Extensions/_DeLib/Encryption*'
+      - 'Extensions/_DeLib/UnicodeConversion.h'
       - 'Extensions/_DeLib/EncryptionPortable/**'
       - 'Extensions/_3rdLib/FFMpeg.h'
       - 'Extensions/_3rdLib/Encrypt-build/**'

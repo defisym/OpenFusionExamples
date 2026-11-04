@@ -31,6 +31,6 @@ jobs:
       - name: Configure with Visual Studio
         run: cmake -S Extensions/Android_Gradle/tests/helpers -B "${{ runner.temp }}/delib-tests" -G "Visual Studio 17 2022" -A x64 -DCMAKE_CXX_FLAGS=/utf-8
       - name: Build standalone headers and compatibility checks
-        run: cmake --build "${{ runner.temp }}/delib-tests" --config Release --target general_definition_headers general_definition_test --parallel 2
+        run: cmake --build "${{ runner.temp }}/delib-tests" --config Release --target general_definition_headers general_definition_test unicode_conversion_test --parallel 2
       - name: Run compatibility checks
-        run: ctest --test-dir "${{ runner.temp }}/delib-tests" -C Release -R "^general_definition$" --output-on-failure
+        run: ctest --test-dir "${{ runner.temp }}/delib-tests" -C Release -R "^(general_definition|unicode_conversion)$" --output-on-failure
