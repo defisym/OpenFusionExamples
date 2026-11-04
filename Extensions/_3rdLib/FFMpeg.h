@@ -423,6 +423,7 @@ private:
 	double totalTime = 0;
 	int64_t totalTimeInMs = 0;
 	int64_t totalDuration = 0;
+    double timelineOriginSeconds = 0.0;
 
     int64_t frameCount = 0;
 
@@ -845,6 +846,8 @@ private:
 		if (avformat_find_stream_info(pFormatContext, nullptr) < 0) {
 			return FFMpegException_InitFailed;
 		}
+        timelineOriginSeconds = pFormatContext->start_time == AV_NOPTS_VALUE ? 0.0
+            : pFormatContext->start_time / static_cast<double>(AV_TIME_BASE);
 
 		//---------------------
 		// Video
@@ -1028,9 +1031,9 @@ private:
 	// Seek
 	// ------------------------------------
 
-	inline int64_t get_protectedTimeInSecond(const int64_t ms) const {		
+	inline double get_protectedTimeInSecond(const int64_t ms) const {
 		const auto protectedTimeInMs = Range(ms, static_cast<int64_t>(0), totalTimeInMs);
-		const auto protectedTimeInSecond = protectedTimeInMs / 1000;
+		const auto protectedTimeInSecond = protectedTimeInMs / 1000.0;
 
 		return protectedTimeInSecond;
 	}
@@ -1047,7 +1050,7 @@ private:
 		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
 		// (this may not be supported by all demuxers).
 		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME) {
-			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
+			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms) + timelineOriginSeconds) / av_q2d(pVideoStream->time_base);
 
 			return static_cast<int64_t>(protectedTimeStamp);
 		}
@@ -1055,7 +1058,7 @@ private:
 		// default
 		// all timestamps are in units of the stream selected by stream_index or if stream_index is -1, in AV_TIME_BASE units
 		// av_rescale_q(int64_t(ms * 1000.0), time_base_q, pFormatContext->streams[stream_index]->time_base);
-		const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms)) / av_q2d(pVideoStream->time_base);
+		const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms) + timelineOriginSeconds) / av_q2d(pVideoStream->time_base);
 
 		return static_cast<int64_t>(protectedTimeStamp);
 	}
@@ -1454,22 +1457,9 @@ private:
 			return response;
 		}
 
-		videoPts = static_cast<double>(pFrame->best_effort_timestamp);
-
-		if (pVPacket != nullptr) {
-			if (pVPacket->dts == AV_NOPTS_VALUE
-				&& pFrame->opaque
-				&& *static_cast<int64_t*>(pFrame->opaque) != AV_NOPTS_VALUE) {
-				videoPts = static_cast<double>(*static_cast<uint64_t*>(pFrame->opaque));
-			}
-			else {
-				videoPts = static_cast<double>(pVPacket->dts != AV_NOPTS_VALUE
-					? pFrame->best_effort_timestamp
-					: 0);
-			}
-		}
-
-		videoPts *= av_q2d(pVideoStream->time_base);
+        videoPts = pFrame->best_effort_timestamp == AV_NOPTS_VALUE ? videoClock
+            : static_cast<double>(pFrame->best_effort_timestamp) * av_q2d(pVideoStream->time_base)
+                - timelineOriginSeconds;
 
 #ifdef _CONSOLE
 		if (bJumped) {
