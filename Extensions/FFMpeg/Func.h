@@ -6,6 +6,8 @@
 
 #include "FFMpegAdapter.h"
 #include "CopyAdapter.h"
+#include "DecryptMemBuf.h"
+#include "Encryption/KeyGen.h"
 
 // -----------------------------
 // Forward declaration
@@ -284,9 +286,21 @@ inline void OpenGeneral(LPRDATA rdPtr, std::wstring& filePath, std::wstring& key
 				break;
 			}
 
-			// Encrypted file
-			rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
-			rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
+			// Encrypted file: build the decryption context in the event bridge.
+			if (rdPtr->bCache) {
+				rdPtr->pEncrypt = LoadMemVideo(rdPtr, filePath, key);
+				rdPtr->pFFMpeg = new FFMpeg(rdPtr->pEncrypt->GetOutputData(), rdPtr->pEncrypt->GetOutputDataLength(), opt);
+			} else {
+				auto inputOptions = opt;
+				try {
+					auto source = std::make_shared<encryption::FileSource>(std::filesystem::path(filePath));
+					const auto material = encryption::keygen::from_wide(key,
+						encryption::keygen::native_seed_width);
+					inputOptions.input = std::make_shared<DecryptMemBuf>(
+						encryption::DecryptReader(std::move(source), material));
+				} catch (...) { throw FFMpegException(FFMpegException_InitFailed); }
+				rdPtr->pFFMpeg = new FFMpeg(filePath, inputOptions);
+			}
 		} while (false);
 
 		// update state
