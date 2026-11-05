@@ -292,7 +292,6 @@ class FFMpeg {
 	double audioClock = 0;
 	double videoClock = 0;
 
-	double frameTimer = -1;
 	double frameLastPts = 0;
 	double frameLastDelay = 40e-3;
 
@@ -368,7 +367,8 @@ private:
 #endif //  AUDIO_TEMPO
 
 	float atempo = ATEMPO_DEFAULT;
-	double tempoTimer = 0.0;
+    double externalPosition = 0.0;
+    double externalTimer = 0.0;
 
 	const AVCodec* pVCodec = nullptr;
 	AVCodecParameters* pVCodecParameters = nullptr;
@@ -448,6 +448,8 @@ private:
 	unsigned int audio_buf_index = 0;
 
 	double audioCallbackStartPts = 0;
+    double audioOutputClock = 0;
+    float audioCallbackTempo = ATEMPO_DEFAULT;
 	double audioCallbackStartTimer = 0;
 
 	// output
@@ -1664,49 +1666,19 @@ private:
 	}
 
 	inline double get_externalClock() {
-		const auto curTime = get_curTime();
-		const auto pausedTime = get_pausedTime();
-		
-		// reset frameTimer with an extimate time		
-		if (NearlyEqualDBL(frameTimer, -1.0)) {
-			frameTimer = curTime - videoPts;
-			tempoTimer = curTime;
-		}
+        if (externalTimer == 0) externalTimer = get_curTime();
+        return externalPosition + (bPause ? 0.0 : (get_curTime() - externalTimer) * atempo);
+    }
 
-		const auto timeTempo = curTime - pausedTime - tempoTimer;
-
-		return (tempoTimer - frameTimer) + timeTempo * static_cast<double>(this->atempo);
-	}
-
-	inline double get_audioClock() {
-		double pts = audioClock; /* maintained in the audio thread */
-		auto bytes_per_sec = 0;
-
-		if (pAudioStream) {
-			bytes_per_sec = (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER) * 2;
-		}
-
-		if (bytes_per_sec) {
-#define TIMER_OFFSET
-
-#ifdef TIMER_OFFSET
-			const auto maxPtsOffset = static_cast<double>(this->audio_stream_len) / bytes_per_sec;
-
-			const auto curTime = get_curTime();
-			const auto pausedTime = get_pausedTime();
-
-			const auto timePlayed = curTime - pausedTime - audioCallbackStartTimer;		
-			const auto protectedTimePlayed = Range(timePlayed, 0.0, maxPtsOffset);
-
-			pts = audioCallbackStartPts + protectedTimePlayed;
-#else
-			auto hw_buf_size = audio_buf_size - audio_buf_index;
-			pts -= static_cast<double>(hw_buf_size) / bytes_per_sec;
-#endif
-		}
-
-		return pts;
-	}
+    inline double get_audioClock() {
+        if (!pAudioStream) return audioClock;
+        // Only interpolate through audio actually submitted in this callback.
+        // Decoded-but-buffered PCM and an unfilled EOF/starvation tail are not played.
+        const double submitted = (std::max)(0.0, audioOutputClock - audioCallbackStartPts);
+        const double elapsed = bPause ? 0.0
+            : (std::max)(0.0, get_curTime() - audioCallbackStartTimer);
+        return audioCallbackStartPts + (std::min)(elapsed * audioCallbackTempo, submitted);
+    }
 
 	inline SyncState get_syncState() {
 		auto delay = videoPts - frameLastPts;
@@ -1750,18 +1722,21 @@ private:
 	}
 
 	inline void reset_sync(const double targetPts = 0) {
-		videoPts = targetPts;
+        externalPosition = targetPts;
+        externalTimer = get_curTime();
+        videoPts = targetPts;
 		audioPts = targetPts;
 
 		videoClock = targetPts;
 		audioClock = targetPts;
 
-		frameTimer = -1;
 		frameLastPts = 0;
 		frameLastDelay = 40e-3;
 
 		reset_pausePts();
-		audioCallbackStartPts = 0;
+		audioOutputClock = audioCallbackStartPts = targetPts;
+        audioCallbackTempo = atempo;
+        audioCallbackStartTimer = get_curTime();
 	}
 
 	inline void reset_finishState() {
@@ -1773,7 +1748,7 @@ private:
 	}
 
 	static inline double get_curTime() {
-		return static_cast<double>(av_gettime()) / 1000000.0;
+		return static_cast<double>(av_gettime_relative()) / 1000000.0;
 	}
 
 	static inline double get_ptsMS(const AVPacket* pPacket, const AVStream* pStream) {
@@ -1920,16 +1895,17 @@ public:
 	}
 
 	inline void set_pause(const bool bPause, const bool bUpdatePts = true) {
-		this->bPause = bPause;
-		if (!bUpdatePts) { return; }
-
-		if (bPause) {
-			pausePts = get_curTime();
-		}
-		else {
-			unPausePts = get_curTime();
-		}
-	}
+        SpinLockHelper lockHelper(&audioLock);
+        if (this->bPause == bPause) return;
+        if (!bUpdatePts) { this->bPause = bPause; return; }
+        externalPosition = get_externalClock();
+        externalTimer = get_curTime();
+        audioCallbackStartPts = get_audioClock();
+        audioCallbackStartTimer = get_curTime();
+        this->bPause = bPause;
+        if (bPause) pausePts = get_curTime();
+        else unPausePts = get_curTime();
+    }
 
 	inline double get_pausedTime(bool bReset = true) {
 		const auto pausedTime = unPausePts - pausePts;
@@ -2155,39 +2131,34 @@ public:
 
 	// call set_videoPosition first to seek to target frame
 	// then call this to decode to next valid frame if needed
-	inline int goto_videoPosition(const size_t ms, const FrameDataCallBack& callBack) {
-		// As audio thread can affect the main format context, lock it here
-        SpinLockHelper lockHelper(&audioLock);
-        // clear video queue to clear old data, e.g., filled by audio thread with old context
-        // which may break decoder then return bad frames
-        if (video_stream_index >= 0) { videoQueue.flush(); }
-
-        // clear audio queue
-        if (audio_stream_index >= 0) {
-            audioQueue.flush();
-            // video packet will be used for decode while audio packet are dropped
-            // so flush is needed here
-            avcodec_flush_buffers(pACodecContext);
-        }
-
-		const auto targetPts = ms / 1000.0;
-		const auto response = forwardFrame(pFormatContext, pVCodecContext, targetPts, callBack);
-
-        // reset sync, or video will be treat as faster and playback won't continue
-        // until audio thread catches up, which causes a "jump" of video frame finally
-        // the frame will change in a very fast speed which is not demanded
+    inline int goto_videoPosition(const size_t ms, const FrameDataCallBack& callBack) {
+        const unsigned char* presented = nullptr;
+        int stride = 0, height = 0, response = 0;
+        bool updated = false;
+        {
+            SpinLockHelper lockHelper(&audioLock);
+            if (video_stream_index >= 0) videoQueue.flush();
+            if (audio_stream_index >= 0) {
+                audioQueue.flush();
+                avcodec_flush_buffers(pACodecContext);
+            }
+            response = forwardFrame(pFormatContext, pVCodecContext, ms / 1000.0,
+                [&](const unsigned char* data, int pitch, int rows) {
+                    presented = data; stride = pitch; height = rows; updated = true;
+                });
 #ifndef UPDATE_AUDIOCLOCK_WHEN_SEEKING
-        audioPts = videoPts;
-        audioClock = videoClock;
+            audioPts = videoPts;
+            audioClock = videoClock;
 #else
 #ifndef DECODE_AUDIO_WHEN_SEEKING
-        audioPts = seekingAudioClock;
-        audioClock = seekingAudioClock + prevAudioClockOffset;   
+            audioPts = seekingAudioClock;
+            audioClock = seekingAudioClock + prevAudioClockOffset;
 #endif
 #endif
-
-		return response;
-	}
+        }
+        if (updated) callBack(presented, stride, height);
+        return response;
+    }
 
 	// get video frame of given time stamp
 	inline int get_videoFrame(const size_t ms, const bool bAccurateSeek, const FrameDataCallBack& callBack) {
@@ -2261,6 +2232,7 @@ public:
 
 	// range: 0 ~ 100
 	inline void set_volume(const int volume) {
+        SpinLockHelper lockHelper(&audioLock);
 		this->volume = static_cast<int>((Range(volume, 0, 100) / 100.0) * 128);
 	}
 
@@ -2271,6 +2243,7 @@ public:
 
 	// range: 0 ~ 128
 	inline void set_sdl_volume(const int volume) {
+        SpinLockHelper lockHelper(&audioLock);
 		this->volume = Range(volume, 0, 128);
 	}
 
@@ -2302,12 +2275,12 @@ private:
 			return;
 		}
 
-		this->atempo = newTempo;
+        externalPosition = get_externalClock();
+        externalTimer = get_curTime();
+        this->atempo = newTempo;
 
 		// make sure member value is updated
 		if (this->bNoAudio) {
-			// reset timer, also trigger tempoTimer update
-			frameTimer = -1;
 
 			return;
 		}
@@ -2355,7 +2328,9 @@ public:
 		bool bValid = !bNoAudio && !bExit && !bPause && !bSeeking;
 		if (!bValid) { return 0; }
 
-		this->audioCallbackStartPts = audioClock;
+		this->audioCallbackStartPts = audioOutputClock;
+        // Tempo changes must not retroactively retime samples already submitted.
+        this->audioCallbackTempo = atempo;
 		this->audioCallbackStartTimer = get_curTime();
 
 		// check the lenth remain in audio cache
@@ -2384,6 +2359,18 @@ public:
 				audio_buf_index = 0;
 			}
 
+            // Preserve a source's delayed audio start as silence on the output
+            // timeline instead of jumping the video master clock to the first sample.
+            const double step = static_cast<double>(atempo) / (TARGET_SAMPLE_RATE * TARGET_CHANNEL_NUMBER * 2);
+            const double bufferedPts = audioPts + audio_buf_index * step;
+            if (bufferedPts > audioOutputClock + step * 4) {
+                const int silence = static_cast<int>((std::min)(static_cast<double>(len / 4),
+                    std::ceil((bufferedPts - audioOutputClock) / (step * 4)))) * 4;
+                if (silence) {
+                    len -= silence; stream += silence; audioOutputClock += silence * step;
+                    continue;
+                }
+            }
 			// calculate the remain length of decode cache, protect if exceeds
 			int wt_stream_len = static_cast<int>(audio_buf_size - audio_buf_index);
 			if (wt_stream_len > len) { wt_stream_len = len; }
@@ -2394,7 +2381,8 @@ public:
 			// update
 			len -= wt_stream_len;
 			stream += wt_stream_len;
-			audio_buf_index += wt_stream_len;
+            audio_buf_index += wt_stream_len;
+            audioOutputClock += wt_stream_len * step;
 		}
 
         return static_cast<int>(audio_stream_len) - len;
