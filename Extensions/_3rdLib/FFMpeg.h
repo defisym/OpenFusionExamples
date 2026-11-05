@@ -73,11 +73,8 @@ extern "C" {
 // SDL
 #include <SDL.h>
 #include <SDL_thread.h>
-#include <SDLUtilities.h>
 
 // SDL audio
-constexpr auto SDL_AUDIO_BUFFER_SIZE = SDLGeneral_BufferSize;
-
 constexpr auto MAX_AUDIO_FRAME_SIZE = 192000;
 constexpr auto AUDIO_BUFFER_SIZE = (MAX_AUDIO_FRAME_SIZE * 3) / 2;
 
@@ -370,7 +367,7 @@ private:
 	AVFrame* pAFilterFrame = nullptr;
 #endif //  AUDIO_TEMPO
 
-	float atempo = -1;
+	float atempo = ATEMPO_DEFAULT;
 	double tempoTimer = 0.0;
 
 	const AVCodec* pVCodec = nullptr;
@@ -408,6 +405,13 @@ private:
 	SwsContext* swsContext = nullptr;
 
 	bool bUpdateSwr = true;
+    bool audioFilterDraining = false;
+    bool audioClockStarted = false;
+    bool audioTimestampAnchored = false;
+    double audioUnanchoredInputDuration = 0;
+    double audioDiscardBefore = 0;
+    bool audioDiscardEnabled = true;
+    bool seekClockPending = false;
 	SwrContext* swrContext = nullptr;
 	AVChannelLayout targetChannelLayout = {};
 
@@ -439,6 +443,7 @@ private:
 	uint8_t* audio_buf = nullptr;
 	// decoded audio data length
 	unsigned int audio_buf_size = 0;
+    int audio_buf_capacity = AUDIO_BUFFER_SIZE;
 	// total audio data write into stream
 	unsigned int audio_buf_index = 0;
 
@@ -594,9 +599,7 @@ private:
 		this->bAudioCallbackPause = true;
 		this->audioQueue.pause();
 
-		SDL_AtomicLock(&audioLock);
-		
-		int ret;
+        int ret = 0;
 				
 		// release
 		avfilter_graph_free(&filter_graph);
@@ -706,7 +709,10 @@ private:
 			}
 
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
-			bUpdateSwr = true;
+            bUpdateSwr = true;
+            audioFilterDraining = false;
+            audio_buf_size = audio_buf_index = 0;
+            swr_free(&swrContext);
 
 			/* Print summary of the sink buffer
 			 * Note: args buffer is reused to store channel layout string */
@@ -726,9 +732,7 @@ private:
 		avfilter_inout_free(&inputs);
 		avfilter_inout_free(&outputs);
 
-		SDL_AtomicUnlock(&audioLock);
-		
-		this->audioQueue.restore();
+        this->audioQueue.restore();
 		this->bAudioCallbackPause = false;
 
 		return ret;
@@ -1019,8 +1023,8 @@ private:
 			audio_buf = new uint8_t [AUDIO_BUFFER_SIZE];
 			memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
 
-			set_audioTempo(ATEMPO_DEFAULT);
-			av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
+            av_channel_layout_default(&targetChannelLayout, TARGET_CHANNEL_NUMBER);
+            set_audioTempo(ATEMPO_DEFAULT);
 		}
 #pragma endregion
 
@@ -1039,17 +1043,19 @@ private:
 	}
 
 	inline int64_t get_protectedTimeStamp(const int64_t ms, const int flags = SeekFlags) const {
+        // Negative flags select avformat_seek_file; inspect the actual flag bits.
+        const int seekFlags = flags < 0 ? -flags : flags;
 		// seek by byte, do nothing
 		// If flags contain AVSEEK_FLAG_BYTE, then all timestamps are in bytes and are the file position
 		// (this may not be supported by all demuxers).
-		if ((flags & AVSEEK_FLAG_BYTE) == AVSEEK_FLAG_BYTE) {
+		if ((seekFlags & AVSEEK_FLAG_BYTE) == AVSEEK_FLAG_BYTE) {
 			return ms;
 		}
 
 		// seek by frame, do conversion
 		// If flags contain AVSEEK_FLAG_FRAME, then all timestamps are in frames in the stream with stream_index
 		// (this may not be supported by all demuxers).
-		if ((flags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME) {
+		if ((seekFlags & AVSEEK_FLAG_FRAME) == AVSEEK_FLAG_FRAME) {
 			const auto protectedTimeStamp = static_cast<double>(get_protectedTimeInSecond(ms) + timelineOriginSeconds) / av_q2d(pVideoStream->time_base);
 
 			return static_cast<int64_t>(protectedTimeStamp);
@@ -1464,6 +1470,11 @@ private:
         videoPts = pFrame->best_effort_timestamp == AV_NOPTS_VALUE ? videoClock
             : static_cast<double>(pFrame->best_effort_timestamp) * av_q2d(pVideoStream->time_base)
                 - timelineOriginSeconds;
+        if (seekClockPending && pVCodecContext == this->pVCodecContext
+            && pFrame->best_effort_timestamp != AV_NOPTS_VALUE) {
+            reset_sync(videoPts);
+            seekClockPending = false;
+        }
 
 #ifdef _CONSOLE
 		if (bJumped) {
@@ -1497,97 +1508,139 @@ private:
 		AVFrame* pFrame, AVFrame* pLastFrame) {
 		int response = avcodec_receive_frame(pACodecContext, pFrame);
 
-		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+		if (response == AVERROR(EAGAIN)) {
 			av_frame_unref(pFrame);
 			return response;
 		}
 
-		if (response < 0) {
+		if (response < 0 && response != AVERROR_EOF) {
 			av_frame_unref(pFrame);
 			return response;
 		}
+
+		const bool decoderEnd = response == AVERROR_EOF;
+        if (!decoderEnd && !audioTimestampAnchored) {
+            if (!audioClockStarted) {
+                audioClock = audioDiscardBefore;
+                audioClockStarted = true;
+            }
+            if (pFrame->best_effort_timestamp != AV_NOPTS_VALUE) {
+                // A missing first PTS must not prevent a later frame anchoring the clock.
+                // Account for input already buffered by the filter before that valid PTS.
+                const double firstPts = pFrame->best_effort_timestamp * av_q2d(pAudioStream->time_base)
+                    - timelineOriginSeconds - audioUnanchoredInputDuration;
+                audioClock += firstPts - audioDiscardBefore;
+                audioTimestampAnchored = true;
+                if (seekClockPending) {
+                    reset_sync(audioClock);
+                    seekClockPending = false;
+                }
+            } else {
+                audioUnanchoredInputDuration += static_cast<double>(pFrame->nb_samples) / pFrame->sample_rate;
+            }
+        }
 
 		// frame to process
 		auto pBaseFrame = pFrame;
+		int totalAudioSize = 0;
 
-		// a while loop is wrapped in, `av_buffersink_get_frame` to get filtered frame
+		// Submit the decoded frame first, then collect all available filter output.
 #ifdef AUDIO_TEMPO
 		pBaseFrame = pAFilterFrame;
-		response = av_buffersrc_add_frame_flags(buffersrc_ctx, pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
-
-		if (response < 0) {
-			av_frame_unref(pFrame);
-			return response;
-		}
-
-		while (true) {
-			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
-			if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
-				break;
-			}
+		if (!audioFilterDraining) {
+			response = av_buffersrc_add_frame_flags(buffersrc_ctx,
+				decoderEnd ? nullptr : pFrame, AV_BUFFERSRC_FLAG_KEEP_REF);
 
 			if (response < 0) {
+				av_frame_unref(pFrame);
+				return response;
+			}
+			audioFilterDraining = decoderEnd;
+		}
+#endif // AUDIO_TEMPO
+
+		while (true) {
+#ifdef AUDIO_TEMPO
+			response = av_buffersink_get_frame(buffersink_ctx, pAFilterFrame);
+			if (response == AVERROR(EAGAIN)) { break; }
+			const bool end = response == AVERROR_EOF;
+			if (response < 0 && !end) {
 				av_frame_unref(pAFilterFrame);
 				av_frame_unref(pFrame);
+				return response;
 			}
-#endif //  AUDIO_TEMPO
-
-			if (pAPacket != nullptr && pAPacket->pts != AV_NOPTS_VALUE) {
-				audioClock = av_q2d(pAudioStream->time_base) * static_cast<double>(pAPacket->pts);
-#ifdef _CONSOLE
-				if (bJumped) {
-					printf("Cur audio clock: %f\n", audioClock);
-				}
-#endif
-			}
+#else
+			const bool end = decoderEnd;
+#endif // AUDIO_TEMPO
+			if (end && !swrContext) { break; }
 
 			// update context to avoid crash
-			if (bUpdateSwr) {
+			if (!end && bUpdateSwr) {
 				init_swrContext(&pBaseFrame->ch_layout,
 					static_cast<AVSampleFormat>(pBaseFrame->format),
 					pBaseFrame->sample_rate);
 			}
 
-			// sample after convert: a * b / c
-			// https://ffmpeg.org/doxygen/7.0/resample_audio_8c-example.html
-			const int dst_nb_samples = 
-				static_cast<int>(av_rescale_rnd(swr_get_delay(swrContext, pBaseFrame->sample_rate)
-				+ pBaseFrame->nb_samples,
-				TARGET_SAMPLE_RATE, pBaseFrame->sample_rate, static_cast<AVRounding>(1)));
-
-			// return number of samples output per channel
-			const int nb = swr_convert(swrContext, &audio_buf, dst_nb_samples,
-				pBaseFrame->data, pBaseFrame->nb_samples);
-
 			const auto channels = targetChannelLayout.nb_channels;
-			const auto pcm_bytes = 2 * channels;
-			const auto audioSize = channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
-            const auto clockOffset = static_cast<double>(audioSize) / (static_cast<double>(pcm_bytes) * static_cast<double>(pACodecContext->sample_rate));
+			const auto pcm_bytes = channels * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
+			const int dst_nb_samples = end ? 4096 : swr_get_out_samples(swrContext, pBaseFrame->nb_samples);
+			if (dst_nb_samples < 0 || dst_nb_samples > (INT_MAX - totalAudioSize) / pcm_bytes) {
+				av_frame_unref(pBaseFrame);
+				av_frame_unref(pFrame);
+				return AVERROR(EINVAL);
+			}
+			const int required = (std::max)(totalAudioSize + dst_nb_samples * pcm_bytes, 4);
+			if (required > audio_buf_capacity) {
+				auto next = std::make_unique<uint8_t[]>(required);
+				std::memcpy(next.get(), audio_buf, totalAudioSize);
+				delete[] audio_buf;
+				audio_buf = next.release();
+				audio_buf_capacity = required;
+			}
 
-			audioPts = audioClock;
-            audioClock += clockOffset;
+			// Append each output block; flush remaining resampler samples at filter EOF.
+			auto pOutput = audio_buf + totalAudioSize;
+			const int nb = swr_convert(swrContext, &pOutput, dst_nb_samples,
+				end ? nullptr : pBaseFrame->extended_data, end ? 0 : pBaseFrame->nb_samples);
+#ifdef AUDIO_TEMPO
+			av_frame_unref(pAFilterFrame);
+#endif // AUDIO_TEMPO
+			if (nb < 0) {
+				av_frame_unref(pFrame);
+				return nb;
+			}
+			if (nb == 0 && end) { break; }
+
+			const auto audioSize = channels * nb * av_get_bytes_per_sample(TARGET_SAMPLE_FORMAT);
+			const auto clockOffset = static_cast<double>(nb) * atempo / TARGET_SAMPLE_RATE;
+			const double blockPts = audioClock;
+			if (totalAudioSize == 0) { audioPts = blockPts; }
+			audioClock += clockOffset;
 
 #ifdef UPDATE_AUDIOCLOCK_WHEN_SEEKING
-            prevAudioClockOffset = clockOffset;
+			prevAudioClockOffset = clockOffset;
 #endif
-
-#ifdef AUDIO_TEMPO
-  			av_frame_unref(pAFilterFrame);
-#endif //  AUDIO_TEMPO
-
-			av_frame_unref(pFrame);
-
-			return audioSize;
-
-#ifdef AUDIO_TEMPO
+			const double step = static_cast<double>(atempo) / TARGET_SAMPLE_RATE;
+			const int discard = audioDiscardEnabled
+                ? static_cast<int>(Range(std::ceil((audioDiscardBefore - blockPts) / step),
+                    0.0, static_cast<double>(nb))) : 0;
+			const int bytes = audioSize - discard * pcm_bytes;
+			if (discard) {
+				std::memmove(pOutput, pOutput + discard * pcm_bytes, bytes);
+				if (totalAudioSize == 0) { audioPts += discard * step; }
+			}
+			totalAudioSize += bytes;
+#ifndef AUDIO_TEMPO
+			if (!end) { break; }
+#endif
 		}
 
+#ifdef AUDIO_TEMPO
 		av_frame_unref(pAFilterFrame);
-#endif //  AUDIO_TEMPO
-
+#endif // AUDIO_TEMPO
 		av_frame_unref(pFrame);
-
-		return -1;
+		if (totalAudioSize > 0) { return totalAudioSize; }
+		return response == 0 ? AVERROR(EAGAIN) : response;
 	}
 
 	// ------------------------------------
@@ -2059,11 +2112,11 @@ public:
         const int steam_index = get_streamIndex();
         if (steam_index == -1) { return -1; }
 
-		// protection	
-		ms = (flags & AVSEEK_FLAG_BYTE) != AVSEEK_FLAG_BYTE
-			? Range(ms, static_cast<int64_t>(0), get_videoDuration())
-			: ms;
-        const auto targetPts = static_cast<double>(ms) / 1000.0;
+        const int seekFlags = flags < 0 ? -flags : flags;
+        const bool byteSeek = (seekFlags & AVSEEK_FLAG_BYTE) != 0;
+        if (!byteSeek) ms = Range(ms, static_cast<int64_t>(0), get_videoDuration());
+        // A byte offset has no known time. Anchor it to the first decoded PTS.
+        const double targetPts = byteSeek ? 0.0 : static_cast<double>(ms) / 1000.0;
 
 		int response = seekFrame(pFormatContext, steam_index, ms, flags);
 
@@ -2079,8 +2132,16 @@ public:
 			avcodec_flush_buffers(pACodecContext);
 		}
 
-		reset_sync(targetPts);
-		reset_finishState();
+        audio_buf_size = audio_buf_index = 0;
+        audioDiscardBefore = targetPts;
+        audioDiscardEnabled = !byteSeek;
+        seekClockPending = byteSeek;
+        audioClockStarted = false;
+        audioTimestampAnchored = false;
+        audioUnanchoredInputDuration = 0;
+        if (!bNoAudio) update_audioTempo(atempo, true);
+        reset_sync(targetPts);
+        reset_finishState();
 
 #ifdef _CONSOLE
 		bJumped = true;
@@ -2222,7 +2283,12 @@ public:
 	// Audio control
 	// ------------------------------------
 
-	inline void set_audioTempo(float atempo) {
+    inline void set_audioTempo(float value) {
+        SpinLockHelper lockHelper(&audioLock);
+        update_audioTempo(value);
+    }
+private:
+    inline void update_audioTempo(float atempo, bool rebuild = false) {
 #ifndef AUDIO_TEMPO
 		this->atempo = ATEMPO_DEFAULT;
 #else
@@ -2231,7 +2297,8 @@ public:
 			: ATEMPO_DEFAULT;
 
 		// won't update if param is the same		
-		if (NearlyEqualFLT(this->atempo, newTempo)) {
+		if (!rebuild && NearlyEqualFLT(this->atempo, newTempo)
+            && (bNoAudio || filter_graph != nullptr)) {
 			return;
 		}
 
@@ -2259,16 +2326,18 @@ public:
 			} while ((tempo *= 2) < 0.5f);
 		}
 
-		fliters += std::format("atempo={:1.1f}", tempo);
+		fliters += std::format("atempo={}", tempo);
 
 		if (strlen(filters_descr) != 0) {
 			fliters += std::format(",{}", filters_descr);
 		}
 
-		init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+        const int result = init_audioFilters(pFormatContext, pACodecContext, filter_graph, fliters.c_str());
+        if (result < 0) throw FFMpegException(result);
 #endif //  AUDIO_TEMPO
 	}
 
+public:
 	inline float get_audioTempo() const {
 		return this->atempo;
 	}
@@ -2302,14 +2371,14 @@ public:
 				});
 
 				// If error, output silence.
-				if (response < 0) {
-					audio_buf_size = SDL_AUDIO_BUFFER_SIZE;
-					memset(audio_buf, 0, AUDIO_BUFFER_SIZE);
-				}
+                if (response < 0) {
+                    audio_buf_size = audio_buf_index = 0;
+                    return static_cast<int>(audio_stream_len) - len;
+                }
 				else {
 					// return the audio data length
-					audio_buf_size = response;
-				}
+                    audio_buf_size = response;
+                }
 
 				// reset write index
 				audio_buf_index = 0;
@@ -2328,6 +2397,6 @@ public:
 			audio_buf_index += wt_stream_len;
 		}
 
-		return 0;
-	}
+        return static_cast<int>(audio_stream_len) - len;
+    }
 };
