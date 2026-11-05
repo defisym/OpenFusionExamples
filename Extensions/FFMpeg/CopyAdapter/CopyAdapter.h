@@ -6,6 +6,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
+#ifdef _WIN32
 struct tagRDATA;
 typedef struct tagRDATA RUNDATA;
 typedef	RUNDATA* LPRDATA;
@@ -35,3 +36,21 @@ bool CopyAdapterSupport(LPRDATA rdPtr, const AVHWDeviceType type);
 // always fallback to bitmap
 bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter, 
     LPRDATA rdPtr, const AVHWDeviceType type);
+#else
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+struct AndroidCopyTarget {
+    uint8_t* pixels = nullptr;
+    size_t capacity = 0;
+    int width = 0, height = 0, stride = 0;
+    bool premultiply = false;
+    int program = 0, external = 0, framebuffer = 0, vbo = 0;
+    float transform[16] = {};
+};
+struct CopyAdapter {
+    virtual ~CopyAdapter() = default;
+    virtual bool CopyTexture(const AndroidCopyTarget&, const unsigned char*) = 0;
+};
+std::unique_ptr<CopyAdapter> CopyAdapterFactory(AVHWDeviceType type);
+#endif

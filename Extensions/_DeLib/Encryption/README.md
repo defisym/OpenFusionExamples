@@ -186,6 +186,12 @@ consumer's native API level. Supply ABI-specific OpenSSL headers/libraries. The
 plugin's publisher must prebuild/package its owned native libraries and required
 STL/dependency binaries under jniLibs; do not replace Fusion's Gradle templates.
 The core needs no Java Runtime or JNI changes by itself.
+On Android's 32-bit ABIs at API 21–23, FileSource uses the available 64-bit
+descriptor I/O rather than unavailable 64-bit stdio declarations. The branch is
+guarded by Android/ABI/API macros; Windows, other operating systems, 64-bit
+Android and API 24+ retain their existing stdio path. Build with
+`_FILE_OFFSET_BITS=64`, as the CMake target already specifies.
+
 
 For iOS, compile separate device/simulator libraries with Apple's SDK and matching
 OpenSSL slices, then include the required libraries/headers in the consuming
