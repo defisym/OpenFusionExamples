@@ -26,6 +26,12 @@ struct FFMpegAdapter {
 
     FFMpegAdapter(AVHWDeviceContext* p) :pHWDCtx(p) {};
     virtual ~FFMpegAdapter() = default;
+    // Only platform decoder setup and output live in adaptors. Scheduling stays in FFMpeg.
+    virtual const AVCodec* SelectDecoder(const AVCodec* codec) { return codec; }
+    virtual AVPixelFormat PixelFormat(const AVCodec*) { return AV_PIX_FMT_NONE; }
+    virtual bool OwnsDecoderContext() const { return false; }
+    virtual int InitDecoder(AVCodecContext*, void*) { return 0; }
+    virtual void ReleaseDecoder(AVCodecContext*) {}
     virtual void gpu_flush() {}
     virtual void gpu_wait() {}
     virtual TextureContextHandle AllocContext() { return nullptr; }

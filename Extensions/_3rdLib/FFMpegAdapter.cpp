@@ -7,7 +7,7 @@
 bool FFMpegAdapterSupport(const AVHWDeviceType type) {
     do {
 #ifdef _WIN32
-        if (type == AV_HWDEVICE_TYPE_D3D11VA) { return true; }
+        if (type == AV_HWDEVICE_TYPE_D3D11VA && pHWDCtx) { return true; }
 #endif
     } while (false);
 
@@ -18,7 +18,7 @@ std::unique_ptr<FFMpegAdapter> FFMpegAdapterFactory(const AVHWDeviceType type,
     AVHWDeviceContext* pHWDCtx) {
     do {
 #ifdef _WIN32
-        if (type == AV_HWDEVICE_TYPE_D3D11VA) { 
+        if (type == AV_HWDEVICE_TYPE_D3D11VA && pHWDCtx) {
             return std::make_unique<FFMpegAdapterD3D11>(pHWDCtx);
         }
 #endif

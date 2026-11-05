@@ -231,6 +231,7 @@ public:
 	std::string audioCodecName;
     int threadCount = 0;
     AVPixelFormat outputFormat = PIXEL_FORMAT;
+    void* platformSurface = nullptr;
 
 	FFMpegOptions() = default;
 
@@ -570,6 +571,9 @@ private:
     }
     
     inline int hw_initDecoderDeviceContext(AVCodecContext* pCodecContext, const AVHWDeviceType type) {
+        if (pAdapter && pAdapter->OwnsDecoderContext()) {
+            return pAdapter->InitDecoder(pCodecContext, options.platformSurface);
+        }
         int err = 0;
         if ((err = hw_updateDeviceContext(type)) < 0) {
             return err;
@@ -831,7 +835,7 @@ private:
 
 			if (hw_initDecoderDeviceContext((*ppVCodecContext), hw_type) < 0) {
 				//throw FFMpegException_HWInitFailed;
-				bHWDecode = false;
+                return FFMpegException_HWInitFailed;
 			}
 		}
 #endif
@@ -840,9 +844,6 @@ private:
 			return FFMpegException_InitFailed;
 		}
 
-		if ((*ppVCodecContext)->pix_fmt == AV_PIX_FMT_NONE) {
-			return FFMpegException_InitFailed;
-		}
 
 		return 0;
 	}
@@ -883,7 +884,13 @@ private:
 
         if (bHWDecode) {
             // update pixel format
-            hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
+            pAdapter = FFMpegAdapterFactory(hw_type, nullptr);
+            // A caller's explicit decoder override takes precedence over automatic
+            // platform decoder selection, as it does on Windows.
+            if (!options.VideoCodecValid()) pVCodec = pAdapter->SelectDecoder(pVCodec);
+            hw_pix_fmt = pAdapter->PixelFormat(pVCodec);
+            if (hw_pix_fmt == AV_PIX_FMT_NONE && !pAdapter->OwnsDecoderContext())
+                hw_pix_fmt = hw_getPixelFormat(pVCodec, hw_type);
 
             if (hw_pix_fmt == AV_PIX_FMT_NONE) {
                 // enum types to get a valid device
@@ -918,7 +925,17 @@ private:
 #endif
 
         if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0) {
-            return FFMpegException_InitFailed;
+            if (!bHWDecode) return FFMpegException_InitFailed;
+            if (pAdapter) pAdapter->ReleaseDecoder(pVCodecContext);
+            avcodec_free_context(&pVCodecContext);
+            av_buffer_unref(&hw_device_ctx);
+            bHWDecode = bCopyToTexture = false;
+            hw_type = AV_HWDEVICE_TYPE_NONE;
+            VCodecCtxQpaque.hw_pix_fmt = AV_PIX_FMT_NONE;
+            pVCodec = options.VideoCodecValid() ? options.pVideoCodec
+                : avcodec_find_decoder(pVCodecParameters->codec_id);
+            if (init_videoCodecContext(&pVCodecContext, &VCodecCtxQpaque) != 0)
+                return FFMpegException_InitFailed;
         }
 
         // will create default adapter if not support or in software mode
@@ -1331,7 +1348,7 @@ private:
 	inline void convert_frame(AVCodecContext* pCodecContext, 
         AVFrame* pFrame, const FrameDataCallBack& callBack) {
         // data invalid, do not trigger callback, in case of get a black frame
-        if (!pFrame->data[0]) { return; }
+        if (!pFrame->buf[0] && !pFrame->data[0]) { return; }
 
 #ifdef HW_DECODE
 		if (bHWDecode) {
@@ -1864,6 +1881,8 @@ public:
         if (pAdapter) {
             pAdapter->FreeContext(VCodecCtxQpaque.hTextureCtx);
             pAdapter->FreeContext(VGetCodecCtxQpaque.hTextureCtx);
+            pAdapter->ReleaseDecoder(pVCodecContext);
+            pAdapter->ReleaseDecoder(pVGetCodecContext);
         }
         
         avcodec_free_context(&pVCodecContext);
