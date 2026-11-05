@@ -9,7 +9,9 @@
 
 #include <SDL_mutex.h>
 #include <SDL_atomic.h>
+#ifdef _WIN32
 #pragma comment(lib, "SDL2.lib")
+#endif
 
 #include <type_traits>
 
@@ -118,7 +120,7 @@ private:
     SpinLockHelper* pHelper = nullptr;
 public:
     explicit ManualLockHelper(SDL_SpinLock* plock) :_plock(plock) { }
-    explicit ManualLockHelper(Lock<SDL_SpinLock>& lock)
+    explicit ManualLockHelper(::Lock<SDL_SpinLock>& lock)
         :ManualLockHelper(lock.GetLock()) {
     }
     ~ManualLockHelper() { Unlock(); }
@@ -136,7 +138,7 @@ private:
     MutexLockHelper* pHelper = nullptr;
 public:
     explicit ManualLockHelper(SDL_mutex* plock) :_plock(plock) { }
-    explicit ManualLockHelper(Lock<SDL_mutex>& lock)
+    explicit ManualLockHelper(::Lock<SDL_mutex>& lock)
         :ManualLockHelper(lock.GetLock()) {
     }
     ~ManualLockHelper() { Unlock(); }

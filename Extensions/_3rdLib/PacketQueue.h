@@ -9,7 +9,8 @@ extern "C" {
 #include <SDL.h>
 #include <SDL_thread.h>
 
-constexpr auto QUEUE_WAITING = -1;
+// get(): 0 = finished, 1 = packet, 2 = waiting. Keep states distinct from errors.
+constexpr auto QUEUE_WAITING = 2;
 
 #define QUEUE_SPINLOCK
 

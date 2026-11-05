@@ -2,6 +2,7 @@
 #include "EncryptionStream.h"
 #include "Encryption/CAPI.h"
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <random>
 
@@ -316,9 +317,34 @@ void facade_defaults_and_failures() {
     CHECK(!encryption.EncryptFileDirectly(nullptr) && !encryption.DecryptFileDirectly(L""));
 }
 
+void sparse_file_offsets() {
+#ifndef _WIN32
+    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto path = std::filesystem::temp_directory_path() / ("encryption-lfs-" + std::to_string(stamp));
+    struct Remove { std::filesystem::path path; ~Remove() { std::error_code error; std::filesystem::remove(path,error); } } remove{path};
+    constexpr std::uint64_t offset = (std::uint64_t{1} << 32) + 17;
+    const std::array<char,4> expected{{'L','F','S','!'}};
+    {
+        std::ofstream file(path,std::ios::binary);
+        file.seekp(static_cast<std::streamoff>(offset));
+        file.write(expected.data(),expected.size());
+        CHECK(file.good());
+    }
+    FileSource source(path);
+    CHECK(source.size() == offset + expected.size());
+    std::array<Byte,4> output{};
+    CHECK(source.read_at(offset,output.data(),output.size()) == output.size());
+    CHECK(std::equal(expected.begin(),expected.end(),output.begin()));
+    CHECK(source.read_at(0,output.data(),output.size()) == output.size());
+    CHECK(std::all_of(output.begin(),output.end(),[](Byte b) { return b == 0; }));
+    CHECK(source.read_at(offset,output.data(),output.size()) == output.size());
+    CHECK(std::equal(expected.begin(),expected.end(),output.begin()));
+#endif
+}
+
 int main(int argc, char** argv) {
     try {
-        test_windows_headers(); known_answers(); keygen_strings(); streaming_and_seeking(); large_offsets(); compatibility();
+        test_windows_headers(); known_answers(); keygen_strings(); streaming_and_seeking(); large_offsets(); sparse_file_offsets(); compatibility();
         facade_defaults_and_failures();
         CHECK(test_c_api() == 0);
         test_existing_asset(argc, argv);

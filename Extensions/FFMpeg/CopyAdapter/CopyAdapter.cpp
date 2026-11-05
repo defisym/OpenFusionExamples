@@ -1,5 +1,6 @@
 #include "CopyAdapter.h"
 
+#ifdef _WIN32
 #include "Common.h"
 
 #include "CopyAdapterBitmap.h"
@@ -57,3 +58,10 @@ bool UpdateCopyAdapter(CopyAdapter*& pCopyAdapter,
    
     return false;
 }
+
+#else
+#include "CopyAdapterAndroid.h"
+std::unique_ptr<CopyAdapter> CopyAdapterFactory(AVHWDeviceType type) {
+    return std::make_unique<CopyAdapterAndroid>(type);
+}
+#endif

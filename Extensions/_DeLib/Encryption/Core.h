@@ -23,6 +23,9 @@
 #include <vector>
 
 #include <openssl/evp.h>
+#if defined(__ANDROID__) && !defined(__LP64__) && __ANDROID_API__ < 24
+#include <unistd.h>
+#endif
 
 namespace encryption {
 
@@ -280,7 +283,12 @@ class FileSource final : public RandomAccessSource {
         return _fseeki64(file, offset, whence);
 #else
         static_assert(sizeof(off_t) >= 8, "Build with _FILE_OFFSET_BITS=64");
+#if defined(__ANDROID__) && !defined(__LP64__) && __ANDROID_API__ < 24
+        // API 21-23 supports the 64-bit descriptor APIs but not 64-bit stdio.
+        return lseek(fileno(file), static_cast<off_t>(offset), whence) < 0 ? -1 : 0;
+#else
         return fseeko(file, static_cast<off_t>(offset), whence);
+#endif
 #endif
     }
 
@@ -296,6 +304,8 @@ public:
         require(seek(file_.get(), 0, SEEK_END) == 0, ErrorCode::io, "Seek asset");
 #ifdef _WIN32
         const auto size = _ftelli64(file_.get());
+#elif defined(__ANDROID__) && !defined(__LP64__) && __ANDROID_API__ < 24
+        const auto size = lseek(fileno(file_.get()), 0, SEEK_CUR);
 #else
         const auto size = ftello(file_.get());
 #endif
@@ -314,11 +324,19 @@ public:
         if (!count) return 0;
 
         std::lock_guard<std::mutex> lock(mutex_);
+#if defined(__ANDROID__) && !defined(__LP64__) && __ANDROID_API__ < 24
+        const auto read = pread(fileno(file_.get()), output,
+            (std::min)(count, static_cast<std::size_t>((std::numeric_limits<ssize_t>::max)())),
+            static_cast<off_t>(offset));
+        require(read >= 0, ErrorCode::io, "Read asset");
+        return static_cast<std::size_t>(read);
+#else
         require(seek(file_.get(), static_cast<std::int64_t>(offset), SEEK_SET) == 0,
                 ErrorCode::io, "Seek asset");
         const auto read = std::fread(output, 1, count, file_.get());
         require(!std::ferror(file_.get()), ErrorCode::io, "Read asset");
         return read;
+#endif
     }
 };
 
