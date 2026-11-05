@@ -150,6 +150,8 @@ constexpr auto FFMpegError_ENOMEM = AVERROR(ENOMEM);
 #endif
 
 // Defines				   
+constexpr auto SeekFlag_NoGoto = 0x0001 << 16;
+constexpr auto SeekFlag_NoRevert = 0x0002 << 16;
 constexpr auto SeekFlags = AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME;
 //constexpr auto SeekFlags = AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME;
 //constexpr auto SeekFlags = AVSEEK_FLAG_ANY | AVSEEK_FLAG_FRAME;
@@ -430,6 +432,8 @@ private:
     double timelineOriginSeconds = 0.0;
 
     int64_t frameCount = 0;
+    bool stillImage = false;
+    bool imagePresented = false;
 
 	// buffer for format conversion
 	uint8_t* pConvertedFrameBuffer = nullptr;
@@ -1017,6 +1021,10 @@ private:
             && pVideoStream->avg_frame_rate.num != 0 && pVideoStream->avg_frame_rate.den != 0) {
             frameCount = static_cast<int64_t>(totalTime * av_q2d(pVideoStream->avg_frame_rate));
         }
+        const std::string formatName = pFormatContext->iformat->name;
+        stillImage = pVideoStream->nb_frames <= 1 && (formatName.find("_pipe") != std::string::npos
+            || formatName == "image2");
+        if (stillImage) frameCount = 1;
 #pragma endregion
 
 #pragma region AudioInit	
@@ -1342,12 +1350,12 @@ private:
 		av_frame_unref(pFrame);
 	}
 
-	inline int decode_frame(const FrameDataCallBack& callBack) {
+	inline int decode_frame(const FrameDataCallBack& callBack, bool synchronize = true) {
 		SyncState syncState;
 
 		do {
 			// calc delay
-			syncState = get_syncState();			
+			syncState = synchronize ? get_syncState() : SyncState::SYNC_SYNC;
 
 			// decode
 			switch (syncState) {
@@ -2209,22 +2217,62 @@ public:
 		return response;
 	}
 
+    // Shared policy previously implemented in the Windows Fusion wrapper.
+    int seek(int64_t ms, int flags, bool accurate, const FrameDataCallBack& callback) {
+        ms = std::max<int64_t>(ms, 0);
+        const bool single = get_videoFrameCount() == 1;
+        const int nativeFlags = flags < 0 ? flags : flags & 0xffff;
+        int result = single ? 0 : set_videoPosition(ms, nativeFlags);
+        if (result < 0) return result;
+        if ((!(accurate && !(flags & AVSEEK_FLAG_BYTE)) && !single)
+            || (flags & SeekFlag_NoGoto)) return 0;
+        if (stillImage && imagePresented) return 0;
+        result = goto_videoPosition(ms, callback);
+        if (result < 0) return result;
+        imagePresented = true;
+        if (ms == 0 && !(flags & SeekFlag_NoRevert) && !single)
+            return set_videoPosition(ms, nativeFlags);
+        return 0;
+    }
+
 	// read next frame and handle loop automatically
-	inline int get_nextFrame(const FrameDataCallBack& callBack) {
-		int response = handleLoop();
-
-		if (!bFinish) { response = decode_frame(callBack); }
-
-		//do not wait audio finish to get fluent loop
-		//bFinish = bReadFinish && bVideoFinish && bAudioFinish;
-		bFinish = bReadFinish && bVideoFinish;
-
+    inline int get_nextFrame(const FrameDataCallBack& callBack, bool synchronize = true) {
+        if (stillImage && imagePresented) return 0;
+        int response = handleLoop();
+        const unsigned char* presented = nullptr;
+        int stride = 0, height = 0;
+        bool updated = false;
+        {
+            SpinLockHelper lockHelper(&audioLock);
+            if (!bFinish) response = decode_frame([&](const unsigned char* data, int pitch, int rows) {
+                imagePresented = true;
+                presented = data; stride = pitch; height = rows; updated = true;
+            }, synchronize);
+            // Preserve Windows' existing video-only fluent-loop policy.
+            bFinish = bReadFinish && bVideoFinish;
 #ifdef _CONSOLE
-		bJumped = false;
+            bJumped = false;
 #endif
+        }
+        if (updated) callBack(presented, stride, height);
+        return response;
+    }
 
-		return response;
-	}
+    bool has_audio() const { return !bNoAudio; }
+    bool audio_finished() {
+        SpinLockHelper lockHelper(&audioLock);
+        return bNoAudio || (bAudioFinish && audio_buf_index >= audio_buf_size);
+    }
+    bool playback_finished() {
+        SpinLockHelper lockHelper(&audioLock);
+        if (!bFinish || (!bNoAudio && (!bAudioFinish || audio_buf_index < audio_buf_size))) return false;
+        const double clock = bNoAudio ? get_externalClock() : get_audioClock();
+        return totalTimeInMs == INT64_MAX || clock * 1000.0 >= totalTimeInMs;
+    }
+    double get_playbackClock() {
+        SpinLockHelper lockHelper(&audioLock);
+        return (bNoAudio ? get_externalClock() : get_audioClock()) * 1000.0;
+    }
 
 	// ------------------------------------
 	// Volume
