@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <memory>
+#include "CaptureCompletion.h"
 #if NEOPIC_CAPTURE_BACKEND == 2
 #include "WgcCapture.h"
 #endif
@@ -10,6 +11,8 @@
 // Experimental paths deliberately do not fall back to DC or read pixels to CPU.
 struct FrameCapture {
     std::unique_ptr<cSurface> snapshot;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> sourceTexture;
+    CaptureCompletion completion;
     bool pending = false;
     int requestedLoop = 0;
     int attempts = 0;
@@ -33,6 +36,23 @@ struct FrameCapture {
 #else
         (void)rdPtr;
 #endif
+    }
+
+    ~FrameCapture() {
+        if (completion.InFlight()) {
+            Report(S_OK, "teardown waiting for GPU");
+            const HRESULT hr = completion.WaitForTeardown();
+            if (FAILED(hr)) Report(hr, "teardown GPU failure");
+        }
+        ReleaseCopySource();
+    }
+
+    void ReleaseCopySource() {
+        sourceTexture.Reset();
+#if NEOPIC_CAPTURE_BACKEND == 2
+        wgc.ReleaseCurrent();
+#endif
+        completion.Reset();
     }
 
     void Request(LPRDATA rdPtr) {
@@ -79,17 +99,38 @@ struct FrameCapture {
                 UINT support = 0;
                 const auto hr = sourceDevice->CheckFormatSupport(from.Format, &support);
                 if (FAILED(hr) || !(support & D3D11_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE)) return E_NOTIMPL;
+            }
+            // Query allocation can fail: do it before submitting any GPU copy.
+            const HRESULT prepared = completion.Prepare(sourceDevice.Get(), context);
+            if (FAILED(prepared)) return prepared;
+            if (from.SampleDesc.Count > 1) {
                 context->ResolveSubresource(target, 0, source, 0, from.Format);
             } else {
                 context->CopySubresourceRegion(target, 0, 0, 0, 0, source, 0, crop);
             }
         }
         snapshot = std::move(candidate);
+        sourceTexture = source;
+        completion.Submit();
+        Report(S_OK, "submitted (GPU pending)");
         return S_OK;
     }
 
     bool Update(LPRDATA rdPtr) {
         using Microsoft::WRL::ComPtr;
+        // Do not acquire another WGC frame, release the source, or publish the
+        // destination until the event says its GPU copy has actually finished.
+        if (completion.InFlight()) {
+            const HRESULT hr = completion.Poll();
+            if (hr == S_FALSE) return false;
+            pending = false;
+            if (FAILED(hr)) {
+                Report(hr, "GPU completion failed (image unchanged)");
+                snapshot.reset();
+            } else Report(S_OK, "ready (GPU completed)");
+            ReleaseCopySource();
+            return SUCCEEDED(hr);
+        }
         auto rh = rdPtr->rHo.hoAdRunHeader;
         ComPtr<ID3D11Texture2D> texture;
         D3D11_BOX crop{};
@@ -118,11 +159,13 @@ struct FrameCapture {
             if (SUCCEEDED(hr)) hr = CopyTexture(rdPtr, texture.Get(), &crop);
 #endif
         }
+        if (SUCCEEDED(hr)) return false; // submitted; poll on a later Handle
         if (hr == E_PENDING && ++attempts < 120) return false;
         pending = false;
-        Report(hr, SUCCEEDED(hr) ? "ready" : "failed (image unchanged)");
-        return SUCCEEDED(hr);
+        ReleaseCopySource();
+        Report(hr, "failed (image unchanged)");
+        return false;
     }
 
-    LPSURFACE TakeSurface() { return snapshot.release(); }
+    LPSURFACE TakeSurface() { return completion.InFlight() ? nullptr : snapshot.release(); }
 };

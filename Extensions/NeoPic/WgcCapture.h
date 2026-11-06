@@ -14,7 +14,9 @@ public:
     WgcCapture(const WgcCapture&) = delete;
     WgcCapture& operator=(const WgcCapture&) = delete;
     HRESULT Start(HWND frameWindow, ID3D11Device* device) noexcept;
-    // Returned texture remains backed by a retained capture frame until the next
-    // call/destruction. All methods are called on Fusion's runtime thread.
+    // Returned texture remains backed by a retained capture frame. Do not call
+    // again while its GPU copy is pending. ReleaseCurrent only after completion.
+    // All methods are called on Fusion's runtime thread.
     HRESULT LatestTexture(ID3D11Texture2D** texture, D3D11_BOX* crop) noexcept;
+    void ReleaseCurrent() noexcept;
 };

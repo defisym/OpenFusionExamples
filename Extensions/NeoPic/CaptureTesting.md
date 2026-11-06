@@ -13,7 +13,8 @@ change. The default remains `0`; no ACE IDs or saved object properties change.
 Modes 1 and 2 require the DX11 renderer. They never fall back to DC. A failed
 request leaves the current NeoPic image unchanged. Missing frames/secondary
 surfaces are retried for up to 120 Handle calls; duplicate pending requests are
-coalesced. Do not switch Fusion Frames or destroy the object before completion.
+coalesced. GPU-completion polling is separate from the source-acquisition retry
+limit. Keep the object/Frame alive until completion during normal tests.
 
 The experimental image is transferred as an owned Fusion RTT, avoiding the
 `CreateCloneSurface` path that can read HWA alpha back to CPU. Display/fade uses
@@ -57,16 +58,19 @@ For an exported EXE also build `Run_Only Unicode` and install that MFX in
 2. Add a normal NeoPic with **HWA enabled**, initially blank and hidden. Keep it
    in the Frame throughout the test. Press **C once** to invoke Capture Frame
    Area. Avoid an Always event that repeatedly captures its own displayed image.
-3. Wait a few loops (allow WGC roughly one second after startup), then press
-   **V** to show NeoPic. The result should include the three layer markers. Use
+3. Wait for debug output `ready (GPU completed)` (allow WGC roughly one second
+   after startup), then press **V** to show NeoPic. The result should include the three layer markers. Use
    NeoPic's normal blend coefficient to test fade. Keep the original scene
    visible until capture has completed.
 4. In a separate **S** event, use the existing save-current-image action with
    a writable absolute PNG path. This is the only step intended to read pixels
    back and write the snapshot to disk. Save once with each backend selected.
 5. Observe Visual Studio's native Debug output or DebugView for lines beginning
-   `NeoPic capture backend=`. `start`, `ready`, and `failed` include an HRESULT.
-   A missing secondary surface should eventually fail, never silently use DC.
+   `NeoPic capture backend=`. A successful request reports `submitted (GPU
+   pending)` first, then `ready (GPU completed)` on a later Handle. The latter
+   requires an event query to return `S_OK` and `done == TRUE`. Failures include
+   an HRESULT and preserve the previous image. A missing secondary surface
+   should eventually fail, never silently use DC.
 
 Repeat static and moving-counter tests under these configurations:
 
@@ -95,9 +99,23 @@ first-use allocation from repeated captures. This PR makes no measured speed cla
 - Both experimental sources are copied into independent RTTs using Fusion's DX11
   device, with format/dimension/device checks. Unsupported format conversions
   fail explicitly; no staging texture, Map, LockBuffer, or pixel loop is used.
-- WGC capture frames remain retained while their textures are copied. All Fusion
-  calls/copies happen on the runtime thread; there is no capture callback touching
-  Fusion. No GPU-idle wait is introduced.
+- Both backends allocate a `D3D11_QUERY_EVENT` before issuing a copy. After copy
+  submission they call `End` and one asynchronous `Flush`. A later Handle polls
+  once using `D3D11_ASYNC_GETDATA_DONOTFLUSH`; there is no spin/wait in Handle.
+  `S_FALSE` (or `S_OK` with `done == FALSE`) keeps the request pending. Only GPU
+  completion publishes the snapshot; errors discard it and keep the old image.
+- WGC does not acquire/close another frame while the copy is pending. Both the
+  source texture and destination RTT remain owned until query completion, and
+  only then is the borrowed WGC frame returned. All Fusion calls/copies happen
+  on the runtime thread; there is no capture callback touching Fusion.
+- Destruction with an outstanding copy is the one intentional blocking path:
+  it waits for that event (or a query/device failure) before closing WGC/releasing
+  the source. This can delay shutdown on a stalled GPU. Normal captures do not
+  wait, and no CPU bitmap conversion is used to force synchronization.
+- Event completion proves prior commands finished, not that the chosen source
+  contains the desired frame or that a void DX11 copy call was valid. Verify
+  layer/effect/counter pixels separately and use the DX11 debug layer to diagnose
+  invalid operations when available.
 - Device loss/session failure requires recreating the test object/application.
   The request timeout is a loop count, not a wall-clock deadline. Capture success
   is currently reported in debug output, not through a new Fusion condition.
@@ -109,10 +127,23 @@ c++ -std=c++20 -Wall -Wextra -Werror Extensions/NeoPic/tests/CaptureCropTest.cpp
 ./capture-crop-test
 ```
 
+The query control-flow regression test compiles the production completion helper
+against small mock DX11 interfaces (never included in the plugin build):
+
+```sh
+c++ -std=c++20 -Wall -Wextra -Werror -IExtensions/NeoPic/tests/completion-mocks Extensions/NeoPic/tests/CaptureCompletionTest.cpp -o capture-completion-test
+./capture-completion-test
+```
+
+It checks query allocation failure, deferred-context rejection, single ordered
+End/Flush, `S_FALSE`, `S_OK` with false/true `done`, error propagation, query/context reference
+release, nonblocking normal polling, and the explicit teardown wait. It does not
+simulate a GPU or establish WGC/runtime correctness.
+
 ## Validation status
 
 The development environment is Linux and cannot compile MSVC/C++/WinRT or run
-Fusion/DWM. The crop tests passed locally with AddressSanitizer and UBSan (leak detection
+Fusion/DWM. The crop and mocked completion tests passed locally with AddressSanitizer and UBSan (leak detection
 disabled because the execution environment uses ptrace). Project XML and source
 checks passed. The Windows compile
 script and the manual matrix above are provided for actual validation. Keep the

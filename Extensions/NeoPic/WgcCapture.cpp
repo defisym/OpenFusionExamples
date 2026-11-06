@@ -75,6 +75,12 @@ HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device) noexcept {
     } catch (...) { state.reset(); return winrt::to_hresult(); }
 }
 
+void WgcCapture::ReleaseCurrent() noexcept {
+    if (!state || !state->current) return;
+    try { state->current.Close(); } catch (...) {}
+    state->current = nullptr;
+}
+
 HRESULT WgcCapture::LatestTexture(ID3D11Texture2D** texture, D3D11_BOX* crop) noexcept {
     if (!texture || !crop) return E_POINTER;
     *texture = nullptr;

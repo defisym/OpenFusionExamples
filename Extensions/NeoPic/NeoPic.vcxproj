@@ -310,6 +310,7 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="FrameCapture.h" />
     <ClInclude Include="FrameCaptureDX11.h" />
     <ClInclude Include="CaptureCrop.h" />
+    <ClInclude Include="CaptureCompletion.h" />
     <ClInclude Include="WgcCapture.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Macro.h" />
