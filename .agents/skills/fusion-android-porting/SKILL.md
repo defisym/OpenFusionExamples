@@ -7,15 +7,17 @@ description: Port Clickteam Fusion C++ extensions to Android, or diagnose Androi
 
 ## Scope
 
-Apply the [common porting rules](../fusion-extension-porting/SKILL.md), including
-Git checkout normalization and artifact hash verification, before this workflow.
+Before research, design or code changes, read and follow the mandatory
+[common porting rules](../fusion-extension-porting/SKILL.md), including Git checkout
+normalization and artifact hash verification.
 
 Use this skill only for Fusion Android/JNI implementation, builds, publishing, or troubleshooting.
 For a multi-platform task, apply it to the Android portion; still assess shared C++ changes for their
 effect on other platforms. Keep iOS/Objective-C++ and HTML5 workflows in separate skills.
 Write this skill and its supporting repository documentation in English.
 
-Keep algorithms in shared C++; use Java for Fusion Runtime integration and JNI marshalling.
+All portable functionality must reuse the existing C++ core through JNI; use Java
+for Fusion Runtime integration and JNI marshalling.
 Compile native libraries during extension development/publishing, then let Fusion use its own
 default build templates when exporting an APK.
 
@@ -39,8 +41,11 @@ default build templates when exporting an APK.
 1. **Inventory ACEs.** Match condition/action/expression IDs, parameter order and types, return
    values, and generated events. Preserve Java switch dispatch IDs. Unsupported mobile features
    must still consume their parameters and return the documented failure or empty result.
-2. **Port shared dependencies.** Find assumptions about Windows PCHs, types, macros, strings, and
-   paths. Adapt common helpers using standard facilities and narrow platform guards; keep callers
+2. **Port shared dependencies.** Keep platform files under `Extensions/Android_Gradle`,
+   mirroring the logical plugin/common-library organization of `Extensions`. Adapt original C++
+   files with narrow macros; do not create mobile copies under Windows plugin directories.
+   Build common libraries as common component targets, not per-plugin implementations.
+   Find assumptions about Windows PCHs, types, macros, strings, and paths. Adapt common helpers using standard facilities and narrow platform guards; keep callers
    using those helpers instead of duplicating implementations.
 3. **Define the JNI boundary.** Keep algorithms and current data models in C++; handle Runtime
    objects, parameters, and events in Java. Keep legacy numeric/file-format compatibility in the
@@ -51,7 +56,11 @@ default build templates when exporting an APK.
 5. **Constrain package ownership.** Include explicit extension Java entry points and owned helpers.
    Exclude development SDK Runtime, Banks, Objects, and built-in extensions. Do not replace
    `app/build.gradle`, `settings.gradle`, application ProGuard files, or `RuntimeAndroid.zip`.
-6. **Keep one publishing entry point.** A batch launcher and Python publisher can discover tools,
+6. **Keep one configured publishing entry point.** Follow the common
+   [build contract](../fusion-extension-porting/references/build-contract.md). Extend existing
+   scripts to resolve shared dependencies once per variant and dispatch enabled platforms.
+   Keep Android implementation under its platform root and common orchestration shared.
+   A batch launcher and Python publisher can discover tools,
    prepare dependencies, build all ABIs incrementally, validate, package, install, and archive.
    Propagate failures and preserve logs. Do not pause for input when invoked by VS. In this
    repository, automatic Android publishing belongs to RunOnly; Release/Debug remain Windows builds.
@@ -82,7 +91,8 @@ default build templates when exporting an APK.
 - Maintain and execute the publishing entry point whenever sources, dependencies, or configuration
   change. A successful manual copy is not verification of the publisher.
 - Document the target extension's reproducible commands, versions, artifact paths, evidence, and
-  remaining validation. Keep commits reviewable and update the appropriate PR.
+  remaining validation. Split commits by functional logic: C++ core changes and focused
+  tests first, platform integration last. Update the appropriate PR and preserve existing review checkpoints.
 
 Read [workflow.md](references/workflow.md) for the reusable implementation procedure and
 [troubleshooting.md](references/troubleshooting.md) for diagnosis. Their optional repository

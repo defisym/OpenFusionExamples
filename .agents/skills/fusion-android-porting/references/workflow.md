@@ -1,5 +1,9 @@
 # Android porting workflow
 
+First read the mandatory [common baseline](../../fusion-extension-porting/SKILL.md)
+and [build contract](../../fusion-extension-porting/references/build-contract.md).
+They also apply to experiments and preliminary platform research.
+
 ## 1. Discover the extension's build contract
 
 Locate the target extension's ACE declarations, Java adapter, native sources, shared helpers,
@@ -18,6 +22,7 @@ failure or empty result. Define the resource state after failure; do not pretend
 
 ## 2. Port shared C++ dependencies
 
+- Adapt the original C++ sources with narrow platform/feature guards; never fork a mobile core.
 - Add required includes and verify headers without the Windows PCH.
 - Replace Windows-specific storage types with semantic project types. Separate the current data
   model from Fusion's numeric event representation.
@@ -33,6 +38,10 @@ failure or empty result. Define the resource state after failure; do not pretend
 - Keep JNI-local CMake and tests in the Android build area. Porting does not require a wholesale
   reorganization of historical header-only code.
 
+Keep shared libraries in common component targets under the Android platform root.
+Prefer a common dynamic Encryption component when deployment supports it; its consumers
+reuse the existing C ABI instead of linking independent crypto implementations.
+Self-contained cores without external dependencies may use static libraries internally.
 List shared C++ behavior changes for author review. Keep them out of the main branch until authorized.
 
 ## 3. Implement JNI and Runtime adapters
@@ -85,7 +94,9 @@ check coexistence with other extensions. Do not assume arbitrary NDK STL version
 ## 5. Build the extension package
 
 ```text
-Developer's VS RunOnly / publishing entry point
+Developer's VS RunOnly / configured common publishing entry point
+  -> resolve enabled platforms and common-component dependencies
+  -> build/verify common components once per variant before plugin clients
   -> verify dependencies and corresponding source
   -> compile shared C++ and JNI for each supported ABI
   -> collect owned Java, jniLibs, resources, consumer rules, and license material
