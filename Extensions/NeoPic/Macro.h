@@ -6,6 +6,15 @@
 
 // Macro that used in resource file should be defined here
 
+// Experimental capture backends: 0 = existing DC, 1 = Frame secondary, 2 = WGC.
+// Set consistently for the entire project and Rebuild after changing it.
+#ifndef NEOPIC_CAPTURE_BACKEND
+#define NEOPIC_CAPTURE_BACKEND 0
+#endif
+#if NEOPIC_CAPTURE_BACKEND < 0 || NEOPIC_CAPTURE_BACKEND > 2
+#error Invalid NEOPIC_CAPTURE_BACKEND
+#endif
+
 // only enable when needed to speed up build
 #define PERSPECTIVE_TRANSFORMATION
 

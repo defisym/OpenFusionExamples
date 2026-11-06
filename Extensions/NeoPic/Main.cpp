@@ -867,10 +867,13 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->pFrameCapture->Capture();
-
-	const auto capturedName = L"_TempCapture";
-	LoadFromPointer(rdPtr, capturedName, rdPtr->pFrameCapture->pCaptureSf);
+#if NEOPIC_CAPTURE_BACKEND == 0
+    rdPtr->pFrameCapture->Capture();
+    LoadFromPointer(rdPtr, L"_TempCapture", rdPtr->pFrameCapture->pCaptureSf);
+#else
+    // Events run after Handle. Consume the previous completed image next Handle.
+    rdPtr->pFrameCapture->Request(rdPtr);
+#endif
 
 	return 0;
 }
