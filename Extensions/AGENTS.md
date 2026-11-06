@@ -1,3 +1,21 @@
+# Mandatory baseline for every platform port
+
+Before feasibility research, design, prototypes or implementation for any platform
+(including HTML5 and future platforms), read and follow
+[`fusion-extension-porting`](../.agents/skills/fusion-extension-porting/SKILL.md)
+and its build contract, then the applicable platform skill. Reuse the original
+C++ core, common libraries and existing build/publishing tools. Do not start an
+independent implementation before checking these contracts. Platform details
+refine the baseline; an undecided platform does not waive it.
+
+For Android work, also read
+[`fusion-android-porting`](../.agents/skills/fusion-android-porting/SKILL.md).
+For iOS work, also read
+[`fusion-ios-porting`](../.agents/skills/fusion-ios-porting/SKILL.md).
+Split PR commits by functional logic, C++ core changes first and platform
+integration last. See the baseline for shared component, naming and directory
+requirements and configuration-driven RunOnly publishing.
+
 # Android runtime and Windows helper synchronization
 
 For every Android extension/runtime update, and changes to the Windows object

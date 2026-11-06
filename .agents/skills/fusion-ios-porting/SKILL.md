@@ -7,14 +7,17 @@ description: Port Clickteam Fusion extensions to iOS using a shared C++ core, a 
 
 ## Scope and constraints
 
-Apply the [common porting rules](../fusion-extension-porting/SKILL.md), including
-Git checkout normalization and artifact hash verification, before this workflow.
+Before research, design or code changes, read and follow the mandatory
+[common porting rules](../fusion-extension-porting/SKILL.md), including Git checkout
+normalization and artifact hash verification.
 
 Use for iOS Runtime integration, native builds, exported Xcode projects, and .ext
 publishing. Derive paths, commands, SDK requirements and artifact names from the
 target extension's current project. Do not make FindTheWay settings mandatory
 for other plugins. Write this skill, references and operational docs in English.
-Preserve shared C++ interfaces; submit shared behavioral changes for author review.
+Reuse all portable functionality from the existing C++ core. Modify original sources
+with narrow platform/feature macros when necessary; preserve shared interfaces and
+submit intentional behavioral changes for author review. Do not fork an iOS core.
 Keep private SDK/exporter material outside the public repository.
 
 ## Workflow
@@ -23,9 +26,10 @@ Keep private SDK/exporter material outside the public repository.
    and a real exported project. Inventory IDs, property layout, parameter decoding,
    events, selection, creation and unsupported operations before implementation.
 2. Treat the Windows C++ implementation as the behavioral oracle for portable
-   features. Add direct comparisons against its actual classes for paths, flags,
-   units/ZOC, area layers, line ranges, AOE and caching; do not use Android output
-   as the specification. Adapt only platform-specific I/O/object mechanics using
+   features. Compare against its actual classes using the target
+   extension's domain and legacy format/ACE contracts; do not use Android output
+   as the specification. Pathfinding cases are examples, not requirements for
+   unrelated plugins. Adapt only platform-specific I/O/object mechanics using
    the actual iOS SDK. Reuse computational algorithms in shared C++. Keep Runtime objects, selection,
    creation and event dispatch in an owned adapter. Compare helpers with current
    Windows and Android versions; preserve each Runtime's actual representations.
@@ -39,43 +43,65 @@ Keep private SDK/exporter material outside the public repository.
    fixed-width values, explicit buffer/string lengths and exception translation.
    Avoid STL and C++ layout exposure. Retain owners across callback reentrancy;
    snapshot iteration results and define destruction/replacement behavior.
-4. Keep each plugin's build project under Extensions/iOS/<Plugin>. Use CMake and
-   Ninja/Make for scripted compilation; use Apple CLI tools for SDK selection and
-   XCFramework creation. Full Xcode supplies iOS SDKs; standalone Command Line
-   Tools are insufficient. Do not require opening Xcode GUI to build the core.
-5. Build separate iOS device and simulator platform slices. The current task
-   supports arm64 only; do not add Intel/Rosetta/32-bit targets. Use a static
-   XCFramework when it matches the exported project's linking model. Prebuilding
-   isolates language settings, not the deployment availability of libc++ APIs.
+4. Keep each plugin's intermediate native-library project, adapter, tests and
+   configuration under `Extensions/iOS/<Plugin>`. Mirror Extensions' logical
+   ownership: common components such as Encryption and shared build tools have
+   sibling areas under iOS, not private copies under a plugin or Windows library.
+   Provide a **batch build script** under iOS that selects plugins, resolves their
+   transitive dependencies and generates/builds the intermediate library projects.
+   Follow the mandatory [build contract](../fusion-extension-porting/references/build-contract.md).
+   CMake can generate Xcode targets; maintained Xcode projects can use explicit
+   Target Dependencies, cross-project workspace references and shared Schemes.
+   A prebuilt file reference alone never builds its dependency. If Encryption is
+   missing/stale, one batch invocation builds it before its clients, once per
+   variant even when several selected plugins depend on it. Use Apple CLI tools
+   or `xcodebuild`; a GUI is optional. Full Xcode supplies the iOS SDKs, whereas
+   standalone Command Line Tools are insufficient.
+5. Build separate device and simulator platform slices, deriving architectures
+   and deployment targets from the target configuration; FTW's arm64-only choice
+   is not a rule for all future plugins. A self-contained core without external
+   dependencies may use a static library/XCFramework. For common Encryption,
+   evaluate a shared dynamic framework using the existing C ABI, with one owner
+   for the crypto dependency. Inspect actual Mach-O linkage rather than inferring
+   it from the XCFramework name. Dynamic products require correct install names,
+   runtime paths, embedding and signing; static products must not be embedded as
+   dynamic frameworks. Prebuilding isolates language settings, not availability
+   of libc++ APIs at the minimum deployment target.
 6. Stage binaries with source/configuration and per-file hashes, normalize Git
    text line endings for source fingerprints and transferred artifact text
    (public headers, XML metadata and integration notes). Windows Git checkout
-   can convert these to CRLF. Keep static archive/.ext hashes byte-exact.
+   can convert these to CRLF. Keep static/dynamic library and .ext hashes byte-exact.
    Publish only after all builds/verification succeed; preserve previous outputs
    on failure. Keep Build directories ignored and transfer only owned artifacts.
 7. Publish the extension as .ext, including required native and adapter material.
    Native-only manifests are valid inputs to a Windows packager: verify compiled
-   dependencies, then package the current Runtime adapter there. Do not force a
-   Mac rebuild merely because the thin source adapter changed.
+   dependencies, then package the current Runtime adapter there. An adapter
+   compiled into a native library is a native dependency and requires a rebuild
+   when changed. Only export-time source adapters can change without rebuilding
+   an otherwise unchanged native core.
    Validate its actual encoding and export round trip; do not rename an arbitrary
    ZIP to .ext. Fusion may export files without adding their Xcode references.
    Verify library/source references, include paths, system dependencies and final
    linkage; prefer an idempotent integration step if project references are missing.
    Check exported Scheme container/target references after project renaming,
    effective architecture settings at project and dependency levels, required
-   versus weak linkage of static libraries, and consistent deployment targets.
+   versus weak linkage, consistent deployment targets and one-time common
+   framework embedding/signing. Test multiple plugin consumers together.
    If template defaults need conversion, provide an idempotent, target-aware CLI
    with a dry-run mode; preserve unrelated flags, signing and SDK extensions.
-8. Prefer a one-way handoff: Mac compiles native artifacts; Windows stages the
-   adapter and creates .ext. Do not require returning a Windows-made .ext to Mac.
-   Retain useful official packaging utilities and usage guides; remove obsolete
-   application scaffolding selectively. A GUI utility is not evidence of a CLI.
-   Reference architecture is guidance, not proof that every mechanism is optimal.
-   Hook Windows publishing into the target extension's existing release entry
-   point before its final archive is produced. Install to the actual Fusion
-   iPhone runtime directory when requested; fail clearly for a missing directory.
-   Distinguish successful packaging from complete Runtime feature parity.
-   Put plugin-specific generated-output rules in that plugin's .gitignore.
+8. Use configured RunOnly orchestration to invoke the iOS batch builder on a
+   configured Mac or verify its existing handoff before Windows .ext packaging.
+   Windows alone cannot perform the Apple compile. Native-build mode builds missing
+   dependencies automatically; prebuilt mode rejects missing/stale artifacts and
+   reports the Mac batch command. Never silently disable iOS or call package-only
+   work a successful native build. Do not require returning a Windows-made .ext
+   to Mac. Reuse existing packaging utilities and the independent codec.
+   Generalize existing build scripts as part of the port: one configuration-driven
+   entry point handles enabled platforms and dependencies before the final archive,
+   with no duplicate per-platform VS hook. Future platforms use the same contract.
+   Install to the actual Fusion iPhone runtime directory when configured; fail
+   clearly for a missing destination. Keep generated-output ignore rules under
+   the relevant platform project. Distinguish packaging from Runtime feature parity.
 9. Image maps need CPU-readable pixels, including reloading purged Runtime data.
    Preserve sampling coordinates, red/green channels, row pitch and image format;
    distinguish logical colors from premultiplied display colors. Delegate paths
@@ -93,10 +119,21 @@ Keep private SDK/exporter material outside the public repository.
    not full ACE coverage or device correctness. Keep concise usage documentation;
    avoid committing investigation transcripts, temporary plans or redundant reports.
 
+## Review order
+
+Split commits by functional logic. Put each shared C++ problem and its focused
+validation first; put platform adapters and build/publishing integration last.
+Do not bury a shared-core behavior change in an Objective-C++ integration commit.
+Preserve existing author review checkpoints; passing tests is not approval.
+
 ## Reusable Runtime helpers and exported-project patches
 
-Use `Helpers/ObjectBase.h`, `ObjectSelection.h` and `ObjectCreation.h` as separate
-generic classes, with common OI access in ObjectBase. Compare the current Windows
+The existing export layout uses `Helpers/ObjectBase.h`, `ObjectSelection.h` and
+`ObjectCreation.h` as separate generic classes, with common OI access in ObjectBase. Platform-bound implementations
+are allowed, but filenames and portable interface names must match Windows.
+Keep shared ownership under the iOS platform root and explicitly map repository
+paths to export paths; do not create plugin-specific helper implementations.
+Compare the current Windows
 `Extensions/_3rdLib/Object*.h` and Android `_3rdLib` counterparts, including APIs
 not yet used by the consuming extension. Do not rename them for that extension.
 
@@ -171,12 +208,14 @@ group entries, Sources entries, header references, header group entries). Genera
 owned IDs and validate ZIP decryption/CRC plus payload contents before publishing.
 Do not put private SDK sources into regression fixtures or package them wholesale.
 
-A C/Objective-C Runtime pair can emit Mach-O .linker_option directives selecting
+The existing static FTW port uses a C/Objective-C Runtime pair with Mach-O
+.linker_option directives selecting
 separate device/simulator archives by TargetConditionals. Use this only after
 verifying the target exporter's library search paths and actual links. The supplied
 project searches SRCROOT, allowing both uniquely named archives at ZIP root.
-This can avoid manual framework-reference edits; it is not a universal exporter
-assumption. Retain the XCFramework as the native handoff representation.
+This static-only mechanism does not embed or sign dynamic frameworks. It is
+not a universal exporter assumption or a substitute for common-runtime deployment.
+Retain the XCFramework as the native handoff representation.
 
 Wine is optional validation material, not a publishing dependency. If it cannot
 run a legacy 32-bit maker reliably in the executor, report that limitation; do not

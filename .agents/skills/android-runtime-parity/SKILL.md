@@ -9,12 +9,16 @@ Use this skill whenever updating Android extensions, Android exporter/runtime
 integration, or the shared object selection/creation helpers. Also use it when
 changing their Windows counterparts so Android does not silently fall behind.
 
+Read the mandatory [common porting baseline](../fusion-extension-porting/SKILL.md)
+before investigation or changes. This skill describes the platform-bound Runtime
+exception, not permission to reimplement portable C++ functionality.
+
 ## Implementation boundary
 
 Keep Android runtime access in Java. These helpers manipulate Java objects,
 selection chains and event/action state directly; do not introduce JNI just to
-reuse the Windows helper classes. Pure computational plugin algorithms can have
-a separate native core when justified by that plugin's requirements.
+reuse the Windows helper classes. Portable plugin functionality must reuse the
+existing C++ core through JNI.
 
 Windows defines the shared helper capabilities and filtering behavior. Preserve
 Android-specific runtime representations and creation entry points. Port the
@@ -35,6 +39,12 @@ pointers, layouts or call tables.
    - `Extensions/Android_Gradle/app/src/main/java/_3rdLib/ObjectBaseClass.java`
    - `Extensions/Android_Gradle/app/src/main/java/_3rdLib/ObjectSelectionClass.java`
    - `Extensions/Android_Gradle/app/src/main/java/_3rdLib/ObjectCreationClass.java`
+
+   These `*Class.java` paths are existing compatibility names, not the naming
+   baseline for new helpers. Preserve Windows filename stems and interface names
+   for new platform-bound common libraries (with language-specific extensions).
+   Migrate existing names with all callers/build/package references and a thin
+   compatibility alias when needed; do not create a competing implementation.
 
 2. Read the last reviewed Windows revision in
    `Extensions/Android_Gradle/tests/object_helpers/README.md`. From the repository
