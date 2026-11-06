@@ -146,7 +146,7 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->hotSpotPos = static_cast<HotSpotPos>(edPtr->hotSpotComboID);
 	rdPtr->zoomScale = { 1.0,1.0 };
 
-	rdPtr->pFrameCapture = new FrameCapture(rdPtr->rHo.hoAdRunHeader->rhHEditWin);
+	rdPtr->pFrameCapture = new FrameCapture(rdPtr);
 
 	rdPtr->pAI = new AnimationInterface(rdPtr);
 	rdPtr->pNS = new NineSliceInterface(rdPtr);
@@ -263,6 +263,13 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
 
    At the end of the loop this code will run
 */
+
+#if NEOPIC_CAPTURE_BACKEND != 0
+    if (rdPtr->pFrameCapture->Update(rdPtr)) {
+        LoadFromPointer(rdPtr, L"_TempCapture", rdPtr->pFrameCapture->TakeSurface(),
+            LoadFromPointerFlags_TakeOwnership);
+    }
+#endif
 
 	rdPtr->pAI->UpdateAnimation();
 	rdPtr->pNS->Render();

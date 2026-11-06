@@ -1,5 +1,6 @@
 #pragma once
 
+#if NEOPIC_CAPTURE_BACKEND == 0
 struct FrameCapture {
 	LPSURFACE pCaptureSf = nullptr;
 	HDC pCaptureDC = nullptr;
@@ -10,8 +11,8 @@ struct FrameCapture {
 	int frameWidth = -1;
 	int frameHeight = -1;
 
-	FrameCapture(HWND hFrameWindowHandle) {
-		this->hFrameWindowHandle = hFrameWindowHandle;
+	FrameCapture(LPRDATA rdPtr) {
+		this->hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
 	}
 	~FrameCapture() {
 		ReleaseDC();
@@ -75,3 +76,7 @@ struct FrameCapture {
 #endif // _DEBUG
 	}
 };
+
+#else
+#include "FrameCaptureDX11.h"
+#endif
