@@ -3,6 +3,7 @@
 #include "WgcCapture.h"
 #include "CaptureCrop.h"
 #include <roapi.h>
+#include <cstdio>
 #include <dwmapi.h>
 #include <windows.graphics.capture.interop.h>
 #include <windows.graphics.directx.direct3d11.interop.h>
@@ -45,19 +46,39 @@ struct WgcCapture::State {
 WgcCapture::WgcCapture() = default;
 WgcCapture::~WgcCapture() = default;
 
+static void ReportWgcFailure(HRESULT hr, const char* stage, HWND frame, HWND root) noexcept {
+    char text[320];
+    sprintf_s(text, "NeoPic WGC %s failed hr=0x%08lX frame=%p root=%p frameVisible=%d rootVisible=%d\n",
+        stage, static_cast<unsigned long>(hr), static_cast<void*>(frame), static_cast<void*>(root),
+        IsWindowVisible(frame), IsWindowVisible(root));
+    OutputDebugStringA(text);
+}
+
 HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device) noexcept {
+    const HWND root = GetAncestor(frameWindow, GA_ROOT);
+    const char* stage = "initialize";
     try {
-        if (!IsWindow(frameWindow) || !device) return E_INVALIDARG;
+        if (!IsWindow(frameWindow) || !IsWindow(root) || !device) return E_INVALIDARG;
+        if (!IsWindowVisible(frameWindow) || !IsWindowVisible(root)) return E_PENDING;
         auto next = std::make_unique<State>();
         if (FAILED(next->apartment.result) && next->apartment.result != RPC_E_CHANGED_MODE)
             return next->apartment.result;
         if (!GraphicsCaptureSession::IsSupported()) return E_NOTIMPL;
         next->frameWindow = frameWindow;
         // Capture the top-level window and crop to Fusion's child client area.
-        next->rootWindow = GetAncestor(frameWindow, GA_ROOT);
+        next->rootWindow = root;
+        stage = "GraphicsCaptureItem factory";
         auto factory = winrt::get_activation_factory<GraphicsCaptureItem, IGraphicsCaptureItemInterop>();
-        winrt::check_hresult(factory->CreateForWindow(next->rootWindow,
-            winrt::guid_of<GraphicsCaptureItem>(), winrt::put_abi(next->item)));
+        stage = "CreateForWindow";
+        // Handle an expected initialization failure as an HRESULT, rather than
+        // explicitly throwing a hresult_error at this call site in the debugger.
+        const HRESULT created = factory->CreateForWindow(next->rootWindow,
+            winrt::guid_of<GraphicsCaptureItem>(), winrt::put_abi(next->item));
+        if (FAILED(created)) {
+            ReportWgcFailure(created, stage, frameWindow, root);
+            return created;
+        }
+        stage = "DXGI device interop";
         auto dxgi = winrt::com_ptr<ID3D11Device>{};
         dxgi.copy_from(device);
         auto dxgiDevice = dxgi.as<IDXGIDevice>();
@@ -65,14 +86,22 @@ HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device) noexcept {
         winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.get(), inspectable.put()));
         next->device = inspectable.as<IDirect3DDevice>();
         next->size = next->item.Size();
+        stage = "CreateFreeThreaded frame pool";
         next->pool = Direct3D11CaptureFramePool::CreateFreeThreaded(next->device,
             DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, next->size);
+        stage = "CreateCaptureSession";
         next->session = next->pool.CreateCaptureSession(next->item);
         // Default OS capture border/cursor behavior is intentionally retained.
+        stage = "StartCapture";
         next->session.StartCapture();
         state = std::move(next);
         return S_OK;
-    } catch (...) { state.reset(); return winrt::to_hresult(); }
+    } catch (...) {
+        const HRESULT hr = winrt::to_hresult();
+        ReportWgcFailure(hr, stage, frameWindow, root);
+        state.reset();
+        return hr;
+    }
 }
 
 void WgcCapture::ReleaseCurrent() noexcept {

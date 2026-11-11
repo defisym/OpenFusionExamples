@@ -1,150 +1,133 @@
-# Experimental DX11 frame capture
+# Experimental DX11 capture of Fusion's child client area
 
-The existing **Capture Frame Area** action can test three backends. Select
-`NEOPIC_CAPTURE_BACKEND` in `Macro.h` and **Rebuild the whole project** after each
-change. The default remains `0`; no ACE IDs or saved object properties change.
+Select `NEOPIC_CAPTURE_BACKEND` in `Macro.h` and **Rebuild the whole project**.
+The default is `0`. Existing ACE IDs and saved object properties are unchanged.
 
-| Value | Source | Action behavior |
+| Value | Source | Behavior |
 | --- | --- | --- |
-| `0` | Existing window DC | Existing synchronous capture |
-| `1` | `rhFrame->m_pSecondarySurface` | Request in events; GPU copy in a subsequent Handle |
-| `2` | Windows Graphics Capture | Session starts at object creation; copy the latest available window frame in a subsequent Handle |
+| `0` | Existing DC of `rhHEditWin` | Original baseline |
+| `1` | Frame secondary Surface | Synchronous Fusion GPU Surface blit, with conservative final-composition checks |
+| `2` | Windows Graphics Capture | Synchronous copy of an already available WGC frame, cropped to `rhHEditWin`'s client area |
 
-Modes 1 and 2 require the DX11 renderer. They never fall back to DC. A failed
-request leaves the current NeoPic image unchanged. Missing frames/secondary
-surfaces are retried for up to 120 Handle calls; duplicate pending requests are
-coalesced. GPU-completion polling is separate from the source-acquisition retry
-limit. Keep the object/Frame alive until completion during normal tests.
+## Required contract and current limits
 
-The experimental image is transferred as an owned Fusion RTT, avoiding the
-`CreateCloneSurface` path that can read HWA alpha back to CPU. Display/fade uses
-the normal NeoPic image and ink effects. Existing save actions perform CPU
-readback only when explicitly requested. These test backends are asynchronous:
-a save action immediately following Capture still sees the previous image.
+A successful Capture Frame Area action must finish its GPU operation and load the
+result through `LoadFromPointer(..., L"_TempCapture", ..., TakeOwnership)` **before
+returning**. Show or Save may follow in the same event. No screenshot request is
+deferred to another Handle. The action waits on a DX11 event query after one
+asynchronous Flush; CPU bitmap conversion is not used to force completion. This
+wait can cost time and is not a zero-latency/real-time deadline guarantee.
+
+The output area is the child client area of the same `rhHEditWin` used by the DC
+baseline, not the whole top-level window. WGC must capture the root window because
+of its API, then crops to that child's physical client rectangle.
+
+**WGC cannot guarantee the exact current Fusion Display frame.** Waiting for the
+GPU copy does not make an older compositor image fresh. Its producer is inherently
+asynchronous, so mode 2 remains an experiment rather than a solution to a strict
+current-display-frame requirement. If no frame is already available, the action
+fails immediately with `E_PENDING`; it does not wait for future frame arrival.
+
+Secondary is also not a documented final-window buffer. Mode 1 rejects a missing
+or non-RTT source, a logical size different from the runtime viewport, nonzero
+origin, an aspect ratio mismatch, Frame effects, or nonidentity Frame transforms whose final composition
+cannot be established. These are explicit failures, not a fallback to DC and not
+proof of support for every rendering configuration. A default scene may have no
+secondary Surface at all. Results still need Windows validation.
+
+## Changes after the first Windows test
+
+The first mode 1 implementation allocated its output from a native texture's
+`GetDesc()` size and directly copied its storage. That did not establish the
+mapping from the Fusion Surface's logical image to its underlying allocation.
+The user reported fragmented images. The exact cause is not established yet.
+
+Mode 1 now uses `source->GetWidth()/GetHeight()` and Fusion's own GPU `BlitEx`
+pass to interpret Surface type, format, internal UV/orientation/padding and scale
+the accepted viewport to the child client size. It no longer dereferences the
+secondary's native texture or assumes its storage describes the image layout.
+Unsupported composition is rejected rather than misrepresented as a screenshot.
+
+Mode 2 still copies only matching native formats. It logs source/target native
+sizes and formats and validates its source crop. The destination may have a
+larger padded allocation than its logical image; only the logical client region
+is written. It does not implement general format conversion or YUV decoding.
+
+WGC initialization previously ran in CreateRunObject. A reported VS exception at
+`check_hresult(CreateForWindow(...))` was caught, but session startup failed and
+no image was captured. Startup is now attempted from Handle only after the child
+and root are visible; an explicit action may retry. CreateForWindow failures are
+returned directly and logged with the HRESULT, child/root HWNDs and visibility.
+Other WinRT failures are caught and logged with their initialization stage.
+A debugger can still break on first-chance exceptions inside WinRT before a catch;
+continuing and reading the failure log distinguishes this from an unhandled exit.
 
 ## Build
 
-Use VS2022, Win32, and the existing Fusion SDK/dependencies. WGC additionally
-needs a current Windows SDK with C++/WinRT headers (10.0.19041 or newer is a
-suitable baseline) and Windows 10 1903 or newer on the test machine.
-`WgcCapture.cpp` uses native `wchar_t` in isolation, while the other project
-sources retain `/Zc:wchar_t-`. C++/WinRT does not cross that translation-unit ABI.
-WGC links `windowsapp.lib`, `runtimeobject.lib`, `d3d11.lib`, and `dwmapi.lib`; those dependencies are excluded in
-modes 0 and 1.
+Use VS2022, Win32, the existing SDK/dependencies and Fusion 296 / DX11.
+WGC needs Windows 10 1903+ and a current Windows SDK with C++/WinRT headers
+(10.0.19041+ is suitable). Its implementation uses native wchar_t in a separate
+translation unit; the Fusion sources retain `/Zc:wchar_t-`.
 
-From an x86 VS2022 Developer PowerShell, first check all three configurations:
+From an x86 VS2022 Developer PowerShell in the repository root:
 
 ```powershell
 ./Extensions/NeoPic/tests/CompileCapture.ps1
-```
-
-This runs MSVC syntax checks against the real `Main.cpp`, `Runtime.cpp`, and
-`WgcCapture.cpp`; it does not link an MFX or prove runtime capture correctness.
-Then set the selected macro in `Macro.h` and build:
-
-```powershell
 msbuild Extensions/NeoPic/NeoPic.vcxproj /t:Rebuild /p:Configuration="Release Unicode" /p:Platform=Win32
 ```
 
-Close Fusion, back up the installed NeoPic MFX, and install the resulting
-`Extensions/NeoPic/Obj/Unicode/Release/NeoPic.mfx` in `Extensions/Unicode`.
-For an exported EXE also build `Run_Only Unicode` and install that MFX in
-`Data/Runtime/Unicode`. The source-only PR does not include new MFX binaries.
+The first command syntax-checks all three backend configurations. After that,
+set the desired macro in Macro.h and Rebuild. Close Fusion, back up the installed
+NeoPic MFX, then install `Extensions/NeoPic/Obj/Unicode/Release/NeoPic.mfx` into
+Fusion's `Extensions/Unicode`. For exported EXEs also build Run_Only Unicode and
+install that MFX into `Data/Runtime/Unicode`. No new MFX is included in this PR.
 
-## Minimal test scene (Fusion 296 / DX11)
+## Minimal Windows retest
 
-1. Create a fixed-size Frame with three visibly labelled layers (`L1`, `L2`,
-   `L3`), different colored Active objects, and a counter updated every loop.
-2. Add a normal NeoPic with **HWA enabled**, initially blank and hidden. Keep it
-   in the Frame throughout the test. Press **C once** to invoke Capture Frame
-   Area. Avoid an Always event that repeatedly captures its own displayed image.
-3. Wait for debug output `ready (GPU completed)` (allow WGC roughly one second
-   after startup), then press **V** to show NeoPic. The result should include the three layer markers. Use
-   NeoPic's normal blend coefficient to test fade. Keep the original scene
-   visible until capture has completed.
-4. In a separate **S** event, use the existing save-current-image action with
-   a writable absolute PNG path. This is the only step intended to read pixels
-   back and write the snapshot to disk. Save once with each backend selected.
-5. Observe Visual Studio's native Debug output or DebugView for lines beginning
-   `NeoPic capture backend=`. A successful request reports `submitted (GPU
-   pending)` first, then `ready (GPU completed)` on a later Handle. The latter
-   requires an event query to return `S_OK` and `done == TRUE`. Failures include
-   an HRESULT and preserve the previous image. A missing secondary surface
-   should eventually fail, never silently use DC.
+1. Keep the same application, window, resolution and effects that reproduced the
+   issue. Capture mode 0 once as a baseline. Test mode 1 and mode 2 separately.
+2. Enable HWA on a normal NeoPic; keep its previous image hidden while capturing
+   to avoid recursively including it. Add visible markers near each edge of the
+   middle child area, plus different layer labels and an animated counter.
+3. On one keypress, call Capture Frame Area followed immediately by the existing
+   Save-current-image action with an absolute PNG path. A successful request now
+   publishes `_TempCapture` during that same action. On failure the old image is
+   preserved; do not mistake a file of the old image for a successful screenshot.
+4. Observe VS native debug output or DebugView. Success ends with
+   `ready (synchronous GPU completion)`. Failure includes an HRESULT. For mode 1
+   send the `secondary logical=... viewport=... rhHEditWin-client=...` line. For
+   mode 2 send any `WGC CreateForWindow failed ...`/other stage line and the
+   `native-source=... format=... client=... native-target=... format=...` line.
+5. Compare saved PNG content to the middle child area: no title/menu/outer frame,
+   no missing edges/layers, no fragmented pixels. Record image dimensions too.
+   When showing the image inside the same scene, global Frame effects may apply
+   again; use the PNG to distinguish a capture problem from a second effect pass.
+6. Let the original scene continue animating. The owned snapshot must remain
+   unchanged and support the usual NeoPic fade. Note that an event executes
+   before its subsequent Display: it cannot capture changes that have not yet
+   been rendered. WGC additionally has compositor/capture latency.
 
-Repeat static and moving-counter tests under these configurations:
+Return the logs, baseline/experimental PNGs, Windows version, GPU/driver and
+actual window/DPI/effect settings. For a debugger exception, the HRESULT is the
+error code (e.g. 0x80070057); the KernelBase instruction address is not the HRESULT.
 
-- No layer/Frame effects and no transitions (a missing secondary is possible).
-- An obvious layer effect plus an obvious Frame effect, with their names noted.
-- A configured Frame transition; first capture while staying in the same Frame.
-- WGC: partially cover Fusion with another window, resize, minimize/restore, and
-  move between monitors at different DPI scales. Check the client-area crop,
-  borders, menu exclusion and image orientation. A minimized window may time out.
-
-Record Windows/Fusion build, GPU/driver, backend macro, VSync/backbuffer settings,
-effects, screenshots, and debug output. Use the visible counter to compare frame
-age; WGC is not synchronized with a particular Fusion Display call. For timing,
-compare one-shot captures at the same resolution without saving files; separate
-first-use allocation from repeated captures. This PR makes no measured speed claim.
-
-## Expected limits
-
-- Secondary Surface availability, contents and inclusion of Frame effects are
-  deliberately under test. No runtime booleans or backbuffer counts are modified.
-  `m_pOldSecondarySurface` is not treated as the previous display frame.
-- WGC captures the root window, then maps the Fusion child client rectangle from
-  physical DWM bounds to capture coordinates. Resize/DPI mapping needs real tests.
-  Its default OS border/cursor behavior is retained; it does not capture native
-  child controls into a Fusion-only scene texture separately.
-- Both experimental sources are copied into independent RTTs using Fusion's DX11
-  device, with format/dimension/device checks. Unsupported format conversions
-  fail explicitly; no staging texture, Map, LockBuffer, or pixel loop is used.
-- Both backends allocate a `D3D11_QUERY_EVENT` before issuing a copy. After copy
-  submission they call `End` and one asynchronous `Flush`. A later Handle polls
-  once using `D3D11_ASYNC_GETDATA_DONOTFLUSH`; there is no spin/wait in Handle.
-  `S_FALSE` (or `S_OK` with `done == FALSE`) keeps the request pending. Only GPU
-  completion publishes the snapshot; errors discard it and keep the old image.
-- WGC does not acquire/close another frame while the copy is pending. Both the
-  source texture and destination RTT remain owned until query completion, and
-  only then is the borrowed WGC frame returned. All Fusion calls/copies happen
-  on the runtime thread; there is no capture callback touching Fusion.
-- Destruction with an outstanding copy is the one intentional blocking path:
-  it waits for that event (or a query/device failure) before closing WGC/releasing
-  the source. This can delay shutdown on a stalled GPU. Normal captures do not
-  wait, and no CPU bitmap conversion is used to force synchronization.
-- Event completion proves prior commands finished, not that the chosen source
-  contains the desired frame or that a void DX11 copy call was valid. Verify
-  layer/effect/counter pixels separately and use the DX11 debug layer to diagnose
-  invalid operations when available.
-- Device loss/session failure requires recreating the test object/application.
-  The request timeout is a loop count, not a wall-clock deadline. Capture success
-  is currently reported in debug output, not through a new Fusion condition.
-
-The client-crop arithmetic also has a portable test:
+## Regression tests and validation boundaries
 
 ```sh
 c++ -std=c++20 -Wall -Wextra -Werror Extensions/NeoPic/tests/CaptureCropTest.cpp -o capture-crop-test
 ./capture-crop-test
-```
-
-The query control-flow regression test compiles the production completion helper
-against small mock DX11 interfaces (never included in the plugin build):
-
-```sh
 c++ -std=c++20 -Wall -Wextra -Werror -IExtensions/NeoPic/tests/completion-mocks Extensions/NeoPic/tests/CaptureCompletionTest.cpp -o capture-completion-test
 ./capture-completion-test
 ```
 
-It checks query allocation failure, deferred-context rejection, single ordered
-End/Flush, `S_FALSE`, `S_OK` with false/true `done`, error propagation, query/context reference
-release, nonblocking normal polling, and the explicit teardown wait. It does not
-simulate a GPU or establish WGC/runtime correctness.
+Crop tests cover client mapping, scaling and negative monitor coordinates.
+Completion tests exercise the production helper against small mock interfaces:
+query allocation, immediate-context checks, ordered End/Flush, incomplete/complete
+results, synchronous waiting, teardown and errors. Mocks are never on the plugin
+include path and do not emulate a real GPU.
 
-## Validation status
-
-The development environment is Linux and cannot compile MSVC/C++/WinRT or run
-Fusion/DWM. The crop and mocked completion tests passed locally with AddressSanitizer and UBSan (leak detection
-disabled because the execution environment uses ptrace). Project XML and source
-checks passed. The Windows compile
-script and the manual matrix above are provided for actual validation. Keep the
-PR experimental until those results are available.
+The Linux development environment cannot compile/link MSVC or run Fusion/WGC.
+Portable tests pass with GCC, AddressSanitizer and UBSan (leak detection disabled
+under ptrace). Windows syntax checks, real pixels, initialization and performance
+remain unverified. The reported fragmentation and startup failure are not claimed
+fixed until a real Windows retest succeeds. No speed improvement is claimed.
