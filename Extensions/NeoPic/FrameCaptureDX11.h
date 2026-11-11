@@ -1,5 +1,11 @@
 #pragma once
 
+// The capture adapter uses the NeoPic/Fusion SDK preamble. Keep WgcCapture.cpp
+// independent: it includes WgcCapture.h, never this legacy-wchar_t adapter.
+#include "Common.h"
+
+#if NEOPIC_CAPTURE_BACKEND != 0
+
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <memory>
@@ -72,6 +78,7 @@ struct FrameCapture {
     }
 #endif
 
+#if NEOPIC_CAPTURE_BACKEND == 1
     // Secondary is a Fusion Surface, not a raw texture. Let Fusion's GPU blit
     // interpret its type, logical dimensions, UV/padding and pixel format.
     HRESULT CopySecondary(LPRDATA rdPtr) {
@@ -113,7 +120,10 @@ struct FrameCapture {
         if (!candidate || !candidate->IsValid()) return E_FAIL;
         BOOL drawn = FALSE;
         {
-            RenderHelper rendering{candidate.get(), TRUE, COLORREFATORGBA(0, 255)};
+            // COLORREFATORGBA(0, 255) is a signed int expression in the SDK;
+            // brace initialization into RGBAREF rejects its narrowing conversion.
+            constexpr RGBAREF opaqueBlack = static_cast<RGBAREF>(0xFF000000u);
+            RenderHelper rendering{candidate.get(), TRUE, opaqueBlack};
             const auto info = GetD3D11SurfaceInfo(candidate.get());
             if (info.m_nD3DVersion != 11 || !info.m_pD3D11Device || !info.m_pD3D11Context) return E_NOINTERFACE;
             const HRESULT hr = completion.Prepare(static_cast<ID3D11Device*>(info.m_pD3D11Device),
@@ -131,6 +141,9 @@ struct FrameCapture {
         return drawn ? S_OK : E_FAIL;
     }
 
+#endif
+
+#if NEOPIC_CAPTURE_BACKEND == 2
     // Texture formats/sample counts must agree; CopyResource cannot resize or
     // convert. The WGC path supplies a client-area crop in source coordinates.
     HRESULT CopyTexture(LPRDATA rdPtr, ID3D11Texture2D* source, const D3D11_BOX* crop) {
@@ -190,6 +203,8 @@ struct FrameCapture {
         return S_OK;
     }
 
+#endif
+
     // Synchronous action contract: never defer publication to another Handle.
     // A ready WGC image can still be older than the current compositor frame.
     bool Capture(LPRDATA rdPtr) {
@@ -220,3 +235,5 @@ struct FrameCapture {
 
     LPSURFACE TakeSurface() { return completion.InFlight() ? nullptr : snapshot.release(); }
 };
+
+#endif // NEOPIC_CAPTURE_BACKEND != 0

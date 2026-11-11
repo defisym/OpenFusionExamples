@@ -76,7 +76,10 @@ From an x86 VS2022 Developer PowerShell in the repository root:
 msbuild Extensions/NeoPic/NeoPic.vcxproj /t:Rebuild /p:Configuration="Release Unicode" /p:Platform=Win32
 ```
 
-The first command syntax-checks all three backend configurations. After that,
+The first command syntax-checks all three backend configurations, including a
+standalone capture-header translation unit to verify the Fusion preamble is
+available. Secondary-only implementation is excluded from the WGC configuration,
+and the opaque clear value is explicitly typed as RGBAREF to avoid C2398. After that,
 set the desired macro in Macro.h and Rebuild. Close Fusion, back up the installed
 NeoPic MFX, then install `Extensions/NeoPic/Obj/Unicode/Release/NeoPic.mfx` into
 Fusion's `Extensions/Unicode`. For exported EXEs also build Run_Only Unicode and

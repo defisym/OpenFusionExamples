@@ -16,7 +16,7 @@ foreach ($backend in $Backends) {
     # The PIMPL implementation has native wchar_t; Fusion keeps its existing ABI.
     & cl.exe @common '/Zc:wchar_t' "/DNEOPIC_CAPTURE_BACKEND=$backend" "$neo/WgcCapture.cpp"
     if ($LASTEXITCODE -ne 0) { throw "WGC translation unit failed for backend $backend" }
-    foreach ($source in @('Main.cpp', 'Runtime.cpp')) {
+    foreach ($source in @('Main.cpp', 'Runtime.cpp', 'tests/CaptureHeaderCompile.cpp')) {
         & cl.exe @common '/Zc:wchar_t-' "/DNEOPIC_CAPTURE_BACKEND=$backend" "$neo/$source"
         if ($LASTEXITCODE -ne 0) { throw "$source failed for backend $backend" }
     }
