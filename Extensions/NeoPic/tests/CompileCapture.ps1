@@ -21,8 +21,9 @@ if (-not $NativeOnly -and -not (Test-Path "$repo/Inc/ccxhdr.h")) {
 }
 foreach ($backend in $Backends) {
     foreach ($iterations in $BenchmarkIterations) {
-        Write-Host "Checking capture backend $backend benchmark iterations=$iterations"
-        $defines = @("/DNEOPIC_CAPTURE_BACKEND=$backend", "/DNEOPIC_CAPTURE_BENCHMARK_ITERATIONS=$iterations")
+        $benchmark = [int]($iterations -gt 0)
+        Write-Host "Checking capture backend $backend benchmark=$benchmark iterations=$iterations"
+        $defines = @("/DNEOPIC_CAPTURE_BACKEND=$backend", "/DNEOPIC_CAPTURE_BENCHMARK=$benchmark", "/DNEOPIC_CAPTURE_BENCHMARK_ITERATIONS=$iterations")
         # The PIMPL implementation has native wchar_t; Fusion keeps its existing ABI.
         & cl.exe @common '/Zc:wchar_t' @defines "$neo/WgcCapture.cpp"
         if ($LASTEXITCODE -ne 0) { throw "WGC translation unit failed for backend $backend benchmark=$iterations" }

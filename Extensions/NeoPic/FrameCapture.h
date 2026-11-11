@@ -10,9 +10,11 @@ struct FrameCapture {
 
 	int frameWidth = -1;
 	int frameHeight = -1;
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
     HRESULT lastResult = S_OK;
     void SetBenchmarking(bool) {}
     HRESULT GetLastResult() const { return lastResult; }
+#endif
 
 	FrameCapture(LPRDATA rdPtr) {
 		this->hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
@@ -55,7 +57,7 @@ struct FrameCapture {
 		frameHeight = frameRect.bottom - frameRect.top;
 
         int outputWidth = frameWidth, outputHeight = frameHeight;
-#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         // Compare the same area at the same logical output size as GPU backends.
         outputWidth = rdPtr->rHo.hoAdRunHeader->rh3.rh3WindowSx;
         outputHeight = rdPtr->rHo.hoAdRunHeader->rh3.rh3WindowSy;
@@ -73,7 +75,7 @@ struct FrameCapture {
 			_AddAlpha(pCaptureSf);
 
 			pCaptureDC = pCaptureSf->GetDC();
-#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
             const auto app = rdPtr->rHo.hoAdRunHeader->rhApp;
             const bool resample = app->m_pHdr2 && (app->m_pHdr2->dwOptions & AH2OPT_RESAMPLESTRETCH);
             if (pCaptureDC) {
@@ -90,12 +92,12 @@ struct FrameCapture {
         bool ok = hdcWindow && NewSurface(rdPtr);
         if (ok) ok = StretchBlt(pCaptureDC, 0, 0, pCaptureSf->GetWidth(), pCaptureSf->GetHeight(),
             hdcWindow, 0, 0, frameWidth, frameHeight, SRCCOPY) != FALSE;
-#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         // GDI batching must not look faster than an already GPU-complete result.
         if (ok) ok = GdiFlush() != FALSE;
-#endif
         const DWORD error = ok ? ERROR_SUCCESS : GetLastError();
         lastResult = ok ? S_OK : (error ? HRESULT_FROM_WIN32(error) : E_FAIL);
+#endif
         return ok;
     }
 

@@ -8,7 +8,7 @@
 
 // Common Include
 #include	"common.h"
-#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
 #include "CaptureBenchmark.h"
 #include "CaptureCompletion.h"
 #endif
@@ -871,12 +871,18 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
     int outputWidth = 0, outputHeight = 0;
     HRESULT iterationError = S_OK;
+#endif
     auto captureOnce = [&]() {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         iterationError = S_OK;
+#endif
         if (!rdPtr->pFrameCapture->Capture(rdPtr)) {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
             iterationError = rdPtr->pFrameCapture->GetLastResult();
+#endif
             return false;
         }
 #if NEOPIC_CAPTURE_BACKEND == 0
@@ -888,17 +894,21 @@ short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long 
 #if NEOPIC_CAPTURE_BACKEND != 0
             delete surface; // TakeSurface transferred ownership even on an invalid result.
 #endif
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
             iterationError = E_FAIL;
+#endif
             return false;
         }
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         outputWidth = surface->GetWidth();
         outputHeight = surface->GetHeight();
+#endif
 #if NEOPIC_CAPTURE_BACKEND == 0
         LoadFromPointer(rdPtr, L"_TempCapture", surface);
 #else
         LoadFromPointer(rdPtr, L"_TempCapture", surface, LoadFromPointerFlags_TakeOwnership);
 #endif
-#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0 && NEOPIC_CAPTURE_BACKEND == 0
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED && NEOPIC_CAPTURE_BACKEND == 0
         // Include the default path's CPU->GPU upload, not just the DIB copy.
         if (rdPtr->HWA && D3D11(rdPtr)) {
             const auto info = GetD3D11Info(rdPtr);
@@ -913,7 +923,7 @@ short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long 
 #endif
         return true;
     };
-#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
     LARGE_INTEGER frequency{};
     if (!QueryPerformanceFrequency(&frequency) || frequency.QuadPart <= 0) {
         OutputDebugStringA("NeoPic capture benchmark: QPC unavailable; doing one normal capture\n");

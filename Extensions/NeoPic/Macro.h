@@ -15,10 +15,17 @@
 #error Invalid NEOPIC_CAPTURE_BACKEND
 #endif
 
-// 0 keeps the normal single capture action. Set to e.g. 100 for a loop inside
-// ONE action invocation. Each sample includes capture, synchronization and load.
+// Master switch: 0 compiles out benchmark instrumentation and captures once.
+// Set to 1 for a loop inside ONE action invocation. Rebuild the whole project.
+#ifndef NEOPIC_CAPTURE_BENCHMARK
+#define NEOPIC_CAPTURE_BENCHMARK 0
+#endif
+#if NEOPIC_CAPTURE_BENCHMARK != 0 && NEOPIC_CAPTURE_BENCHMARK != 1
+#error Invalid NEOPIC_CAPTURE_BENCHMARK
+#endif
+// Counts are retained while the master switch is off.
 #ifndef NEOPIC_CAPTURE_BENCHMARK_ITERATIONS
-#define NEOPIC_CAPTURE_BENCHMARK_ITERATIONS 0
+#define NEOPIC_CAPTURE_BENCHMARK_ITERATIONS 100
 #endif
 #ifndef NEOPIC_CAPTURE_BENCHMARK_WARMUP
 #define NEOPIC_CAPTURE_BENCHMARK_WARMUP 10
@@ -29,6 +36,8 @@
 #if NEOPIC_CAPTURE_BENCHMARK_WARMUP < 0 || NEOPIC_CAPTURE_BENCHMARK_WARMUP > 10000
 #error Invalid NEOPIC_CAPTURE_BENCHMARK_WARMUP
 #endif
+// Derived condition; a zero iteration count also keeps the ordinary action.
+#define NEOPIC_CAPTURE_BENCHMARK_ENABLED (NEOPIC_CAPTURE_BENCHMARK && NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0)
 
 // only enable when needed to speed up build
 #define PERSPECTIVE_TRANSFORMATION

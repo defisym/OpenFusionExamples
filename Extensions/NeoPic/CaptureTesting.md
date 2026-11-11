@@ -159,13 +159,17 @@ In `Macro.h`, select one backend and change the benchmark definitions, then
 
 ```cpp
 #define NEOPIC_CAPTURE_BACKEND 0 // Repeat separately with 1 and 2.
+#define NEOPIC_CAPTURE_BENCHMARK 1 // Default is 0: normal single capture.
 #define NEOPIC_CAPTURE_BENCHMARK_ITERATIONS 100
 #define NEOPIC_CAPTURE_BENCHMARK_WARMUP 10
 ```
 
 The existing guarded defaults allow project-wide compiler definitions instead.
-`ITERATIONS=0` (the default) restores the ordinary single-capture action with no
-benchmark timer. No ACE IDs or MFA changes are needed.
+`NEOPIC_CAPTURE_BENCHMARK=0` (the default) compiles out the benchmark loop,
+timer, statistics and benchmark-only capture state. The action captures once,
+even if `ITERATIONS` remains 100 and `WARMUP` remains 10. Set the master switch to
+1 to enable measurement; `ITERATIONS=0` also keeps the ordinary action.
+Rebuild after changing the switch. No ACE IDs or MFA changes are needed.
 
 1. Use the same application, logical viewport, client size/DPI, resize filter,
    effects, GPU, NeoPic HWA/library settings and Release build for all three runs.

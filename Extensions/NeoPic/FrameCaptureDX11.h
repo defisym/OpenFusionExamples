@@ -22,8 +22,10 @@ struct FrameCapture {
     Microsoft::WRL::ComPtr<ID3D11Texture2D> sourceTexture;
     CaptureCompletion completion;
     CaptureBlit blit;
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
     bool benchmarking = false;
     HRESULT lastResult = S_OK;
+#endif
 #if NEOPIC_CAPTURE_BACKEND == 2
     bool wgcStarted = false;
     bool startAttempted = false;
@@ -33,7 +35,9 @@ struct FrameCapture {
 #endif
 
     void Report(HRESULT hr, const char* stage) {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         if (benchmarking) return;
+#endif
         char message[256];
         sprintf_s(message, "NeoPic capture backend=%d %s hr=0x%08lX\n",
             NEOPIC_CAPTURE_BACKEND, stage, static_cast<unsigned long>(hr));
@@ -54,11 +58,15 @@ struct FrameCapture {
     void ReleaseCopySource() {
         sourceTexture.Reset();
 #if NEOPIC_CAPTURE_BACKEND == 2
-        if (!benchmarking) wgc.ReleaseCurrent();
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
+        if (!benchmarking)
+#endif
+            wgc.ReleaseCurrent();
 #endif
         completion.Reset();
     }
 
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
     void SetBenchmarking(bool enabled) {
         if (!enabled && benchmarking) {
             if (completion.InFlight()) completion.Wait();
@@ -67,6 +75,7 @@ struct FrameCapture {
         } else benchmarking = enabled;
     }
     HRESULT GetLastResult() const { return lastResult; }
+#endif
 
 #if NEOPIC_CAPTURE_BACKEND == 2
     HRESULT StartWgc(LPRDATA rdPtr, bool retry) {
@@ -77,7 +86,11 @@ struct FrameCapture {
         if (!IsWindow(frame) || !IsWindowVisible(frame) || !IsWindowVisible(root)) return E_PENDING;
         if (startAttempted && !retry) return E_PENDING;
         startAttempted = true;
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         const HRESULT hr = wgc.Start(frame, static_cast<ID3D11Device*>(GetD3D11Device(rdPtr)), !benchmarking);
+#else
+        const HRESULT hr = wgc.Start(frame, static_cast<ID3D11Device*>(GetD3D11Device(rdPtr)));
+#endif
         wgcStarted = SUCCEEDED(hr);
         Report(hr, "start");
         return hr;
@@ -107,7 +120,10 @@ struct FrameCapture {
         const int sourceWidth = source->GetWidth(), sourceHeight = source->GetHeight();
         POINT origin{};
         source->GetOrigin(origin);
-        if (!benchmarking) {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
+        if (!benchmarking)
+#endif
+        {
             char details[384];
             sprintf_s(details, "NeoPic secondary logical=%dx%d depth=%d type=%d origin=%ld,%ld viewport=%dx%d rhHEditWin-client=%dx%d\n",
                 sourceWidth, sourceHeight, source->GetDepth(), source->GetType(), origin.x, origin.y,
@@ -123,7 +139,10 @@ struct FrameCapture {
             || origin.x != 0 || origin.y != 0
             || sourceWidth != rh->rh3.rh3WindowSx || sourceHeight != rh->rh3.rh3WindowSy
             || static_cast<std::int64_t>(width) * sourceHeight != static_cast<std::int64_t>(height) * sourceWidth) {
-            if (!benchmarking) {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
+            if (!benchmarking)
+#endif
+            {
                 char composition[320];
                 sprintf_s(composition, "NeoPic secondary rejected frameEffect=%u effectEx=%d scale=%.4f,%.4f angle=%.4f hotspot=%ld,%ld dest=%ld,%ld\n",
                     frame->m_pEffect ? unsigned(frame->m_pEffect->ffxInkEffect) : 0u, frame->m_pEffectEx != nullptr,
@@ -156,7 +175,10 @@ struct FrameCapture {
         // Client pixels identify the capture AREA, not NeoPic's scene-unit size.
         const int width = rh->rh3.rh3WindowSx, height = rh->rh3.rh3WindowSy;
         if (width <= 0 || height <= 0) return E_INVALIDARG;
-        if (!benchmarking) {
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
+        if (!benchmarking)
+#endif
+        {
             D3D11_TEXTURE2D_DESC input{};
             source->GetDesc(&input);
             char details[320];
@@ -215,7 +237,9 @@ struct FrameCapture {
         }
         ReleaseCopySource();
         if (FAILED(hr)) snapshot.reset();
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
         lastResult = hr;
+#endif
         Report(hr, SUCCEEDED(hr) ? "ready (synchronous GPU completion)" : "failed (image unchanged)");
         return SUCCEEDED(hr);
     }
