@@ -54,7 +54,7 @@ static void ReportWgcFailure(HRESULT hr, const char* stage, HWND frame, HWND roo
     OutputDebugStringA(text);
 }
 
-HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device) noexcept {
+HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device, bool diagnostics) noexcept {
     const HWND root = GetAncestor(frameWindow, GA_ROOT);
     const char* stage = "initialize";
     try {
@@ -75,7 +75,7 @@ HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device) noexcept {
         const HRESULT created = factory->CreateForWindow(next->rootWindow,
             winrt::guid_of<GraphicsCaptureItem>(), winrt::put_abi(next->item));
         if (FAILED(created)) {
-            ReportWgcFailure(created, stage, frameWindow, root);
+            if (diagnostics) ReportWgcFailure(created, stage, frameWindow, root);
             return created;
         }
         stage = "DXGI device interop";
@@ -98,7 +98,7 @@ HRESULT WgcCapture::Start(HWND frameWindow, ID3D11Device* device) noexcept {
         return S_OK;
     } catch (...) {
         const HRESULT hr = winrt::to_hresult();
-        ReportWgcFailure(hr, stage, frameWindow, root);
+        if (diagnostics) ReportWgcFailure(hr, stage, frameWindow, root);
         state.reset();
         return hr;
     }

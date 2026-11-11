@@ -13,7 +13,7 @@ public:
     ~WgcCapture();
     WgcCapture(const WgcCapture&) = delete;
     WgcCapture& operator=(const WgcCapture&) = delete;
-    HRESULT Start(HWND frameWindow, ID3D11Device* device) noexcept;
+    HRESULT Start(HWND frameWindow, ID3D11Device* device, bool diagnostics = true) noexcept;
     // Returned texture remains backed by a retained capture frame. Do not call
     // again while its GPU copy is pending. ReleaseCurrent only after completion.
     // All methods are called on Fusion's runtime thread.

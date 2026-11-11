@@ -22,6 +22,8 @@ struct FrameCapture {
     Microsoft::WRL::ComPtr<ID3D11Texture2D> sourceTexture;
     CaptureCompletion completion;
     CaptureBlit blit;
+    bool benchmarking = false;
+    HRESULT lastResult = S_OK;
 #if NEOPIC_CAPTURE_BACKEND == 2
     bool wgcStarted = false;
     bool startAttempted = false;
@@ -30,7 +32,8 @@ struct FrameCapture {
     WgcCapture wgc;
 #endif
 
-    static void Report(HRESULT hr, const char* stage) {
+    void Report(HRESULT hr, const char* stage) {
+        if (benchmarking) return;
         char message[256];
         sprintf_s(message, "NeoPic capture backend=%d %s hr=0x%08lX\n",
             NEOPIC_CAPTURE_BACKEND, stage, static_cast<unsigned long>(hr));
@@ -51,10 +54,19 @@ struct FrameCapture {
     void ReleaseCopySource() {
         sourceTexture.Reset();
 #if NEOPIC_CAPTURE_BACKEND == 2
-        wgc.ReleaseCurrent();
+        if (!benchmarking) wgc.ReleaseCurrent();
 #endif
         completion.Reset();
     }
+
+    void SetBenchmarking(bool enabled) {
+        if (!enabled && benchmarking) {
+            if (completion.InFlight()) completion.Wait();
+            benchmarking = false;
+            ReleaseCopySource();
+        } else benchmarking = enabled;
+    }
+    HRESULT GetLastResult() const { return lastResult; }
 
 #if NEOPIC_CAPTURE_BACKEND == 2
     HRESULT StartWgc(LPRDATA rdPtr, bool retry) {
@@ -65,7 +77,7 @@ struct FrameCapture {
         if (!IsWindow(frame) || !IsWindowVisible(frame) || !IsWindowVisible(root)) return E_PENDING;
         if (startAttempted && !retry) return E_PENDING;
         startAttempted = true;
-        const HRESULT hr = wgc.Start(frame, static_cast<ID3D11Device*>(GetD3D11Device(rdPtr)));
+        const HRESULT hr = wgc.Start(frame, static_cast<ID3D11Device*>(GetD3D11Device(rdPtr)), !benchmarking);
         wgcStarted = SUCCEEDED(hr);
         Report(hr, "start");
         return hr;
@@ -95,11 +107,13 @@ struct FrameCapture {
         const int sourceWidth = source->GetWidth(), sourceHeight = source->GetHeight();
         POINT origin{};
         source->GetOrigin(origin);
-        char details[384];
-        sprintf_s(details, "NeoPic secondary logical=%dx%d depth=%d type=%d origin=%ld,%ld viewport=%dx%d rhHEditWin-client=%dx%d\n",
-            sourceWidth, sourceHeight, source->GetDepth(), source->GetType(), origin.x, origin.y,
-            rh->rh3.rh3WindowSx, rh->rh3.rh3WindowSy, width, height);
-        OutputDebugStringA(details);
+        if (!benchmarking) {
+            char details[384];
+            sprintf_s(details, "NeoPic secondary logical=%dx%d depth=%d type=%d origin=%ld,%ld viewport=%dx%d rhHEditWin-client=%dx%d\n",
+                sourceWidth, sourceHeight, source->GetDepth(), source->GetType(), origin.x, origin.y,
+                rh->rh3.rh3WindowSx, rh->rh3.rh3WindowSy, width, height);
+            OutputDebugStringA(details);
+        }
         if (width <= 0 || height <= 0 || sourceWidth <= 0 || sourceHeight <= 0) return E_INVALIDARG;
         // A pre-effect/offscreen scene is not necessarily what rhHEditWin shows.
         // Refuse cases whose final composition cannot be reconstructed here.
@@ -109,12 +123,14 @@ struct FrameCapture {
             || origin.x != 0 || origin.y != 0
             || sourceWidth != rh->rh3.rh3WindowSx || sourceHeight != rh->rh3.rh3WindowSy
             || static_cast<std::int64_t>(width) * sourceHeight != static_cast<std::int64_t>(height) * sourceWidth) {
-            char composition[320];
-            sprintf_s(composition, "NeoPic secondary rejected frameEffect=%u effectEx=%d scale=%.4f,%.4f angle=%.4f hotspot=%ld,%ld dest=%ld,%ld\n",
-                frame->m_pEffect ? unsigned(frame->m_pEffect->ffxInkEffect) : 0u, frame->m_pEffectEx != nullptr,
-                double(frame->m_xScale), double(frame->m_yScale), double(frame->m_angle),
-                frame->m_hotSpot.x, frame->m_hotSpot.y, frame->m_destPoint.x, frame->m_destPoint.y);
-            OutputDebugStringA(composition);
+            if (!benchmarking) {
+                char composition[320];
+                sprintf_s(composition, "NeoPic secondary rejected frameEffect=%u effectEx=%d scale=%.4f,%.4f angle=%.4f hotspot=%ld,%ld dest=%ld,%ld\n",
+                    frame->m_pEffect ? unsigned(frame->m_pEffect->ffxInkEffect) : 0u, frame->m_pEffectEx != nullptr,
+                    double(frame->m_xScale), double(frame->m_yScale), double(frame->m_angle),
+                    frame->m_hotSpot.x, frame->m_hotSpot.y, frame->m_destPoint.x, frame->m_destPoint.y);
+                OutputDebugStringA(composition);
+            }
             Report(E_NOTIMPL, "secondary cannot establish final child-client composition");
             return E_NOTIMPL;
         }
@@ -140,12 +156,14 @@ struct FrameCapture {
         // Client pixels identify the capture AREA, not NeoPic's scene-unit size.
         const int width = rh->rh3.rh3WindowSx, height = rh->rh3.rh3WindowSy;
         if (width <= 0 || height <= 0) return E_INVALIDARG;
-        D3D11_TEXTURE2D_DESC input{};
-        source->GetDesc(&input);
-        char details[320];
-        sprintf_s(details, "NeoPic capture native-source=%ux%u format=%u valid=%u,%u..%u,%u output-logical=%dx%d\n",
-            input.Width, input.Height, unsigned(input.Format), region.left, region.top, region.right, region.bottom, width, height);
-        OutputDebugStringA(details);
+        if (!benchmarking) {
+            D3D11_TEXTURE2D_DESC input{};
+            source->GetDesc(&input);
+            char details[320];
+            sprintf_s(details, "NeoPic capture native-source=%ux%u format=%u valid=%u,%u..%u,%u output-logical=%dx%d\n",
+                input.Width, input.Height, unsigned(input.Format), region.left, region.top, region.right, region.bottom, width, height);
+            OutputDebugStringA(details);
+        }
         auto candidate = std::unique_ptr<cSurface>(CreateHWASurface(rdPtr, 32, width, height, ST_HWA_RTTEXTURE));
         if (!candidate || !candidate->IsValid()) return E_FAIL;
         // Mark the image as alpha-capable without initializing a CPU alpha plane;
@@ -197,6 +215,7 @@ struct FrameCapture {
         }
         ReleaseCopySource();
         if (FAILED(hr)) snapshot.reset();
+        lastResult = hr;
         Report(hr, SUCCEEDED(hr) ? "ready (synchronous GPU completion)" : "failed (image unchanged)");
         return SUCCEEDED(hr);
     }

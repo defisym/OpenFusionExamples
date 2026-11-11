@@ -36,7 +36,9 @@ or non-RTT source, a logical size different from the runtime viewport, nonzero
 origin, an aspect ratio mismatch, Frame effects, or nonidentity Frame transforms whose final composition
 cannot be established. These are explicit failures, not a fallback to DC and not
 proof of support for every rendering configuration. A default scene may have no
-secondary Surface at all. Results still need Windows validation.
+secondary Surface at all. The author confirmed both experimental backends now
+produce the correct image in the tested Fusion 296 / DX11 application; other
+rendering configurations still require validation.
 
 ## Changes after the first Windows test
 
@@ -46,8 +48,7 @@ mapping from the Fusion Surface's logical image to its underlying allocation.
 The user reported fragmented images. The exact cause is not established yet.
 
 The subsequent Surface BlitEx experiment produced a dark/black result in Windows
-testing. The cause (including whether source RGB itself is empty) remains to be
-verified. Both backends now share an explicit GPU normalization pass, modeled on
+testing. Both backends now share an explicit GPU normalization pass, modeled on
 the existing FFMpeg rendering approach and reusing D3DUtilities/ShaderCompiler.h:
 
 - Retain the native source before activating/clearing a new destination RTT.
@@ -63,9 +64,9 @@ the existing FFMpeg rendering approach and reusing D3DUtilities/ShaderCompiler.h
 
 BGRA/RGBA 8-bit RGB channel conversion is handled by SRV sampling and the target
 RTV. Unsupported YUV/HDR formats are rejected rather than interpreted as RGB.
-Windows/Fusion pixel validation is still required; an empty secondary's RGB cannot
-be repaired by an opaque output pass. Native/source crop/output dimensions are
-logged for comparison.
+The author confirmed the corrected output for both backends in their application.
+An empty secondary's RGB cannot be repaired by an opaque output pass. Native/source
+crop/output dimensions are logged for comparison when the benchmark is disabled.
 
 ### Yellow capture border
 
@@ -100,8 +101,10 @@ From an x86 VS2022 Developer PowerShell in the repository root:
 msbuild Extensions/NeoPic/NeoPic.vcxproj /t:Rebuild /p:Configuration="Release Unicode" /p:Platform=Win32
 ```
 
-The first command syntax-checks all three backend configurations, including a
-standalone capture-header translation unit. It also compiles/runs a native WARP
+The first command syntax-checks all three backend configurations with the
+benchmark disabled and enabled (0 and 100 iterations), including a standalone
+capture-header translation unit. It also compiles/runs the portable benchmark
+statistics tests with MSVC and a native WARP
 pixel test with the production normalization pass: an 8x8 padded RGBA texture
 contains only a 4x4 image with zero alpha, which must become a correctly oriented
 2x2 opaque BGRA image inside a padded target. The test verifies restored viewport
@@ -109,8 +112,9 @@ and topology too. It needs no Fusion runtime or capture permission. The test's
 staging readback is outside production capture code.
 
 The public Windows PR workflow uses `-NativeOnly -RunGpuSmokeTest`: it compiles
-the independent WGC translation unit under all three macro values and tests the
-production pixel pass. It does NOT select Fusion Main/Runtime/header compilation,
+the independent WGC translation unit under all three backend macro values, with
+the benchmark disabled/enabled, and tests the production pixel pass and benchmark
+statistics. It does NOT select Fusion Main/Runtime/header compilation,
 since the proprietary SDK headers are intentionally absent from the repository.
 The default local command above requires your Inc/ SDK headers and fails if they
 are missing. Neither scope proves an MFX link or a successful WGC/Fusion capture. After that,
@@ -148,6 +152,61 @@ Return the logs, baseline/experimental PNGs, Windows version, GPU/driver and
 actual window/DPI/effect settings. For a debugger exception, the HRESULT is the
 error code (e.g. 0x80070057); the KernelBase instruction address is not the HRESULT.
 
+## Benchmark inside the capture action
+
+In `Macro.h`, select one backend and change the benchmark definitions, then
+**Rebuild** and install the matching MFX as above:
+
+```cpp
+#define NEOPIC_CAPTURE_BACKEND 0 // Repeat separately with 1 and 2.
+#define NEOPIC_CAPTURE_BENCHMARK_ITERATIONS 100
+#define NEOPIC_CAPTURE_BENCHMARK_WARMUP 10
+```
+
+The existing guarded defaults allow project-wide compiler definitions instead.
+`ITERATIONS=0` (the default) restores the ordinary single-capture action with no
+benchmark timer. No ACE IDs or MFA changes are needed.
+
+1. Use the same application, logical viewport, client size/DPI, resize filter,
+   effects, GPU, NeoPic HWA/library settings and Release build for all three runs.
+   Keep the NeoPic's displayed screenshot hidden to avoid recursion. Start with
+   100 iterations, since the action deliberately blocks events and Display.
+2. Let the scene render first; for WGC, allow roughly a second for its session to
+   warm up. Press a key to call **Capture Frame Area once**. The loop runs inside
+   that action; no Fusion fast loop or Always event is needed.
+3. Copy the `NeoPic capture benchmark ...` summary from VS debug output or
+   DebugView. Repeat for backends 0, 1 and 2. Compare only runs with matching
+   `viewport`, `output`, HWA/library and filter settings, and `status=ok`.
+4. The last successful image remains available as `_TempCapture`. Show/save it
+   after the action if desired; writing a file is outside the benchmark.
+
+Each measured iteration includes Capture, allocation/normalization, synchronous
+GPU completion, and the ordinary `LoadFromPointer(..., L"_TempCapture", ...)`
+handoff (including replacement of the previous snapshot). For fair output sizes,
+the **benchmark-only** DC path scales to the same logical viewport as modes 1/2;
+it also flushes GDI and, with NeoPic HWA under DX11, waits for the handoff's GPU
+upload. The normal non-benchmark DC action retains its original output sizing.
+This compares the complete action path, not just a GPU copy command.
+
+Normal per-capture debug messages are suppressed during the loop. The summary
+reports warmup successes/failures, first-call wall time, measured successes and
+failures, measured batch wall time, successful-sample mean/min/median/P95/max,
+and completed copies per second. Warmup and summary output are excluded from the
+measured batch; `first_ms` is the first call of this batch, not necessarily a cold
+process start. P95 uses nearest rank. Failed attempts have separate timing and
+never enter successful percentiles. If every warmup attempt fails, measurement
+is skipped (`status=no_ready_source`); this is a failed run, not a speed result.
+
+**There is no new Fusion Display between iterations.** In benchmark mode WGC
+retains the latest valid frame until the loop finishes, refreshing it if another
+frame is already queued. It can therefore repeatedly copy the same image rather
+than report mostly fast `E_PENDING` failures. A successful benchmark measures
+snapshot processing throughput, not distinct captured frames per second, source
+freshness or display FPS. Timing uses QPC wall time, including CPU work and GPU
+waiting, rather than GPU timestamps. CaptureCompletion's existing 1 ms polling
+interval can affect these synchronous wall times. No speedup is assumed before
+comparing actual logs from the same machine.
+
 ## Regression tests and validation boundaries
 
 ```sh
@@ -155,17 +214,22 @@ c++ -std=c++20 -Wall -Wextra -Werror Extensions/NeoPic/tests/CaptureCropTest.cpp
 ./capture-crop-test
 c++ -std=c++20 -Wall -Wextra -Werror -IExtensions/NeoPic/tests/completion-mocks Extensions/NeoPic/tests/CaptureCompletionTest.cpp -o capture-completion-test
 ./capture-completion-test
+c++ -std=c++20 -Wall -Wextra -Werror Extensions/NeoPic/tests/CaptureBenchmarkTest.cpp -o capture-benchmark-test
+./capture-benchmark-test
 ```
 
 Crop tests cover client mapping, scaling and negative monitor coordinates.
 Completion tests exercise the production helper against small mock interfaces:
 query allocation, immediate-context checks, ordered End/Flush, incomplete/complete
 results, synchronous waiting, teardown and errors. Mocks are never on the plugin
-include path and do not emulate a real GPU.
+include path and do not emulate a real GPU. Benchmark tests use an injected clock
+and capture callback to check warmup exclusion, failed-sample separation,
+percentiles, unavailable sources and input validation.
 
 The Linux development environment cannot compile/link MSVC or run Fusion/WGC.
-The Windows workflow is provided for actual compiler/WARP evidence; its outcome
-must be checked before claiming those checks passed. Portable tests pass with GCC, AddressSanitizer and UBSan (leak detection disabled
-under ptrace). Windows syntax checks, real pixels, initialization and performance
-remain unverified. The reported fragmentation and startup failure are not claimed
-fixed until a real Windows retest succeeds. No speed improvement is claimed.
+Public Windows checks cover the independent components and WARP as described
+above, not the proprietary Fusion adapter or an MFX link. The author confirmed
+correct images for both experimental backends in their Windows application.
+Portable tests also run with GCC, AddressSanitizer and UBSan (leak detection
+disabled under ptrace). The benchmark itself still needs application performance
+measurements; no speed improvement is claimed.

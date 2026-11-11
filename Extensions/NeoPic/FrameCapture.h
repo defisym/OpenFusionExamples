@@ -10,6 +10,9 @@ struct FrameCapture {
 
 	int frameWidth = -1;
 	int frameHeight = -1;
+    HRESULT lastResult = S_OK;
+    void SetBenchmarking(bool) {}
+    HRESULT GetLastResult() const { return lastResult; }
 
 	FrameCapture(LPRDATA rdPtr) {
 		this->hFrameWindowHandle = rdPtr->rHo.hoAdRunHeader->rhHEditWin;
@@ -45,36 +48,57 @@ struct FrameCapture {
 		pCaptureSf = nullptr;
 	}
 
-	inline void NewSurface() {
+	inline bool NewSurface(LPRDATA rdPtr) {
 		RECT frameRect;
-		::GetWindowRect(hFrameWindowHandle, &frameRect);
+        if (!::GetWindowRect(hFrameWindowHandle, &frameRect)) return false;
 		frameWidth = frameRect.right - frameRect.left;
 		frameHeight = frameRect.bottom - frameRect.top;
 
+        int outputWidth = frameWidth, outputHeight = frameHeight;
+#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+        // Compare the same area at the same logical output size as GPU backends.
+        outputWidth = rdPtr->rHo.hoAdRunHeader->rh3.rh3WindowSx;
+        outputHeight = rdPtr->rHo.hoAdRunHeader->rh3.rh3WindowSy;
+#else
+        (void)rdPtr;
+#endif
+        if (frameWidth <= 0 || frameHeight <= 0 || outputWidth <= 0 || outputHeight <= 0) return false;
 		if (pCaptureSf == nullptr
-			|| pCaptureSf->GetWidth() != frameWidth
-			|| pCaptureSf->GetHeight() != frameHeight) {
+			|| pCaptureSf->GetWidth() != outputWidth
+			|| pCaptureSf->GetHeight() != outputHeight) {
 			ReleaseSurface();
 			
-			pCaptureSf = CreateSurface(24, frameWidth, frameHeight);
+			pCaptureSf = CreateSurface(24, outputWidth, outputHeight);
+            if (!pCaptureSf || !pCaptureSf->IsValid()) return false;
 			_AddAlpha(pCaptureSf);
 
 			pCaptureDC = pCaptureSf->GetDC();
+#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+            const auto app = rdPtr->rHo.hoAdRunHeader->rhApp;
+            const bool resample = app->m_pHdr2 && (app->m_pHdr2->dwOptions & AH2OPT_RESAMPLESTRETCH);
+            if (pCaptureDC) {
+                SetStretchBltMode(pCaptureDC, resample ? HALFTONE : COLORONCOLOR);
+                SetBrushOrgEx(pCaptureDC, 0, 0, nullptr);
+            }
+#endif
 		}
+        return pCaptureDC != nullptr;
 	}
 
-	inline void Capture() {
-		NewDC();
-		NewSurface();
-		StretchBlt(pCaptureDC, 0, 0, frameWidth, frameHeight
-			, hdcWindow, 0, 0, frameWidth, frameHeight
-			, SRCCOPY);
-		//_AddAlpha(pCaptureSf);
+    bool Capture(LPRDATA rdPtr) {
+        NewDC();
+        bool ok = hdcWindow && NewSurface(rdPtr);
+        if (ok) ok = StretchBlt(pCaptureDC, 0, 0, pCaptureSf->GetWidth(), pCaptureSf->GetHeight(),
+            hdcWindow, 0, 0, frameWidth, frameHeight, SRCCOPY) != FALSE;
+#if NEOPIC_CAPTURE_BENCHMARK_ITERATIONS > 0
+        // GDI batching must not look faster than an already GPU-complete result.
+        if (ok) ok = GdiFlush() != FALSE;
+#endif
+        const DWORD error = ok ? ERROR_SUCCESS : GetLastError();
+        lastResult = ok ? S_OK : (error ? HRESULT_FROM_WIN32(error) : E_FAIL);
+        return ok;
+    }
 
-#ifdef _DEBUG
-		//__SavetoClipBoard(pCaptureSf);
-#endif // _DEBUG
-	}
 };
 
 #else
