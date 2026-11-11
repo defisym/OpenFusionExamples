@@ -40,6 +40,28 @@ secondary Surface at all. The author confirmed both experimental backends now
 produce the correct image in the tested Fusion 296 / DX11 application; other
 rendering configurations still require validation.
 
+**Complex-project regression:** the author subsequently reported a blank mode 1
+image in a complex project. Mode 1 is therefore not established as a general
+capture solution. The SDK describes `m_pSecondarySurface` as the render target
+used for background or Frame effects, rather than a guaranteed last-presented
+image. `m_bAlwaysUseSecondarySurface` exists on both the app and frame; its state
+is logged for diagnosis, not used as proof of valid final pixels. The app's
+`m_pOldSecondarySurface` is for frame transitions and is not substituted as a
+previous-display-frame buffer.
+
+For this report, first distinguish `failed (image unchanged)` from `ready`:
+Frame effects/transforms and source/viewport mismatches are rejected by the
+current code, so an initially empty NeoPic can remain blank without any pixels
+being copied. `ready` only establishes completion of the GPU operation; it does
+not prove the source contained a complete scene. Send the `secondary state`,
+`secondary logical`, `secondary rejected` (if present), and final `ready`/`failed`
+lines from the same action with the benchmark disabled. The new state line logs
+both always-secondary flags, the current/old-transition surface identities,
+layer-effect-data presence and whether app/frame pointers agree. A non-null
+layer-effect-data pointer does not establish that a layer effect is active.
+Do not enable always-secondary flags or fall back to an unrelated canvas merely
+to hide this failure. No black-pixel heuristic is used: a black frame can be valid.
+
 ## Changes after the first Windows test
 
 The first mode 1 implementation allocated its output from a native texture's

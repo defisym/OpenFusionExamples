@@ -111,9 +111,31 @@ struct FrameCapture {
     HRESULT CopySecondary(LPRDATA rdPtr) {
         auto rh = rdPtr->rHo.hoAdRunHeader;
         auto frame = rh->rhFrame;
+        if (!frame) return E_PENDING;
         auto source = frame->m_pSecondarySurface;
-        if (!source || !source->IsValid()) return E_PENDING;
-        if (source->GetDriver() != SD_D3D11 || source->GetType() != ST_HWA_RTTEXTURE) return E_NOTIMPL;
+#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
+        if (!benchmarking)
+#endif
+        {
+            const auto app = rh->rhApp;
+            char state[384];
+            sprintf_s(state, "NeoPic secondary state appAlwaysSecondary=%d frameAlwaysSecondary=%d source=%p oldTransitionSurface=%p layerEffectData=%d appFrameMatches=%d\n",
+                app ? int(app->m_bAlwaysUseSecondarySurface) : -1,
+                int(frame->m_bAlwaysUseSecondarySurface), static_cast<void*>(source),
+                static_cast<void*>(app ? app->m_pOldSecondarySurface : nullptr),
+                frame->m_pLayerEffects != nullptr, app && app->m_Frame == frame);
+            OutputDebugStringA(state);
+        }
+        // Existence/type checks do not establish that this conditional runtime
+        // render target contains the last fully composed child-client image.
+        if (!source || !source->IsValid()) {
+            Report(E_PENDING, "secondary source unavailable");
+            return E_PENDING;
+        }
+        if (source->GetDriver() != SD_D3D11 || source->GetType() != ST_HWA_RTTEXTURE) {
+            Report(E_NOTIMPL, "secondary source is not a DX11 RTT");
+            return E_NOTIMPL;
+        }
         RECT client{};
         if (!GetClientRect(rh->rhHEditWin, &client)) return E_FAIL;
         const int width = client.right - client.left, height = client.bottom - client.top;
