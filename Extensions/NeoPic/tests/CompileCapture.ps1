@@ -1,4 +1,9 @@
-param([ValidateSet(0, 1, 2)][int[]]$Backends = @(0, 1, 2), [switch]$RunGpuSmokeTest, [switch]$NativeOnly)
+param(
+    [ValidateSet(0, 1, 2)][int[]]$Backends = @(0, 1, 2),
+    [ValidateRange(0, 100000)][int[]]$BenchmarkIterations = @(0, 100),
+    [switch]$RunGpuSmokeTest,
+    [switch]$NativeOnly
+)
 $ErrorActionPreference = 'Stop'
 # Run in an x86 VS2022 Developer PowerShell. No proprietary SDK .lib is needed
 # for this syntax-only check; building/linking the actual .mfx remains separate.
@@ -15,17 +20,20 @@ if (-not $NativeOnly -and -not (Test-Path "$repo/Inc/ccxhdr.h")) {
     throw 'Fusion SDK headers are required in Inc/ for full plugin syntax checks. -NativeOnly explicitly checks only the independent WGC/GPU components.'
 }
 foreach ($backend in $Backends) {
-    Write-Host "Checking capture backend $backend"
-    # The PIMPL implementation has native wchar_t; Fusion keeps its existing ABI.
-    & cl.exe @common '/Zc:wchar_t' "/DNEOPIC_CAPTURE_BACKEND=$backend" "$neo/WgcCapture.cpp"
-    if ($LASTEXITCODE -ne 0) { throw "WGC translation unit failed for backend $backend" }
-    if ($NativeOnly) {
-        Write-Host 'Native-only scope: Fusion Main/Runtime/header syntax checks are NOT selected.'
-        continue
-    }
-    foreach ($source in @('Main.cpp', 'Runtime.cpp', 'tests/CaptureHeaderCompile.cpp')) {
-        & cl.exe @common '/Zc:wchar_t-' "/DNEOPIC_CAPTURE_BACKEND=$backend" "$neo/$source"
-        if ($LASTEXITCODE -ne 0) { throw "$source failed for backend $backend" }
+    foreach ($iterations in $BenchmarkIterations) {
+        Write-Host "Checking capture backend $backend benchmark iterations=$iterations"
+        $defines = @("/DNEOPIC_CAPTURE_BACKEND=$backend", "/DNEOPIC_CAPTURE_BENCHMARK_ITERATIONS=$iterations")
+        # The PIMPL implementation has native wchar_t; Fusion keeps its existing ABI.
+        & cl.exe @common '/Zc:wchar_t' @defines "$neo/WgcCapture.cpp"
+        if ($LASTEXITCODE -ne 0) { throw "WGC translation unit failed for backend $backend benchmark=$iterations" }
+        if ($NativeOnly) {
+            Write-Host 'Native-only scope: Fusion Main/Runtime/header syntax checks are NOT selected.'
+            continue
+        }
+        foreach ($source in @('Main.cpp', 'Runtime.cpp', 'tests/CaptureHeaderCompile.cpp')) {
+            & cl.exe @common '/Zc:wchar_t-' @defines "$neo/$source"
+            if ($LASTEXITCODE -ne 0) { throw "$source failed for backend $backend benchmark=$iterations" }
+        }
     }
 }
 
@@ -39,6 +47,12 @@ if ($RunGpuSmokeTest) {
         if ($LASTEXITCODE -ne 0) { throw 'WARP test compilation failed' }
         & $exe
         if ($LASTEXITCODE -ne 0) { throw 'WARP capture-normalization pixel test failed' }
+        $exe = Join-Path $temp 'CaptureBenchmarkTest.exe'
+        $obj = Join-Path $temp 'CaptureBenchmarkTest.obj'
+        & cl.exe '/nologo' '/std:c++20' '/EHsc' '/W4' '/WX' "/Fe$exe" "/Fo$obj" "$neo/tests/CaptureBenchmarkTest.cpp"
+        if ($LASTEXITCODE -ne 0) { throw 'Benchmark statistics test compilation failed' }
+        & $exe
+        if ($LASTEXITCODE -ne 0) { throw 'Benchmark statistics test failed' }
     } finally {
         Remove-Item -Recurse -Force $temp
     }
