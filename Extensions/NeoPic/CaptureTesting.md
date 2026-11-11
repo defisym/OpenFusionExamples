@@ -108,9 +108,12 @@ contains only a 4x4 image with zero alpha, which must become a correctly oriente
 and topology too. It needs no Fusion runtime or capture permission. The test's
 staging readback is outside production capture code.
 
-The same command runs on Windows in the scoped PR workflow
-`.github/workflows/neopic-capture-compile.yml`. These are syntax/pixel-pass checks,
-not an MFX link or a successful WGC session/Fusion capture. After that,
+The public Windows PR workflow uses `-NativeOnly -RunGpuSmokeTest`: it compiles
+the independent WGC translation unit under all three macro values and tests the
+production pixel pass. It does NOT select Fusion Main/Runtime/header compilation,
+since the proprietary SDK headers are intentionally absent from the repository.
+The default local command above requires your Inc/ SDK headers and fails if they
+are missing. Neither scope proves an MFX link or a successful WGC/Fusion capture. After that,
 set the desired macro in Macro.h and Rebuild. Close Fusion, back up the installed
 NeoPic MFX, then install `Extensions/NeoPic/Obj/Unicode/Release/NeoPic.mfx` into
 Fusion's `Extensions/Unicode`. For exported EXEs also build Run_Only Unicode and
