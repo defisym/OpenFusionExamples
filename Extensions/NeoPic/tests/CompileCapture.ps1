@@ -1,4 +1,4 @@
-param([ValidateSet(0, 1, 2)][int[]]$Backends = @(0, 1, 2))
+param([ValidateSet(0, 1, 2)][int[]]$Backends = @(0, 1, 2), [switch]$RunGpuSmokeTest)
 $ErrorActionPreference = 'Stop'
 # Run in an x86 VS2022 Developer PowerShell. No proprietary SDK .lib is needed
 # for this syntax-only check; building/linking the actual .mfx remains separate.
@@ -19,5 +19,20 @@ foreach ($backend in $Backends) {
     foreach ($source in @('Main.cpp', 'Runtime.cpp', 'tests/CaptureHeaderCompile.cpp')) {
         & cl.exe @common '/Zc:wchar_t-' "/DNEOPIC_CAPTURE_BACKEND=$backend" "$neo/$source"
         if ($LASTEXITCODE -ne 0) { throw "$source failed for backend $backend" }
+    }
+}
+
+if ($RunGpuSmokeTest) {
+    $temp = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $temp | Out-Null
+    try {
+        $exe = Join-Path $temp 'CaptureBlitWarpTest.exe'
+        $obj = Join-Path $temp 'CaptureBlitWarpTest.obj'
+        & cl.exe '/nologo' '/std:c++20' '/EHsc' '/Zc:wchar_t' "/I$repo/Extensions/_3rdLib" "/Fe$exe" "/Fo$obj" "$neo/tests/CaptureBlitWarpTest.cpp"
+        if ($LASTEXITCODE -ne 0) { throw 'WARP test compilation failed' }
+        & $exe
+        if ($LASTEXITCODE -ne 0) { throw 'WARP capture-normalization pixel test failed' }
+    } finally {
+        Remove-Item -Recurse -Force $temp
     }
 }
