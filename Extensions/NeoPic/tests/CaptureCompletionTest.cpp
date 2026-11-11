@@ -49,7 +49,15 @@ int main() {
     completion.Submit();
     context.polls = 0;
     context.replies = {{S_FALSE, FALSE}, {S_OK, TRUE}};
-    assert(completion.WaitForTeardown() == S_OK);
-    assert(mockSleeps == 1); // the explicit teardown method is the only wait
+    assert(completion.Wait() == S_OK);
+    assert(mockSleeps == 1); // synchronous capture explicitly waits for done
+    completion.Reset();
+
+    assert(completion.Prepare(&device, &context) == S_OK);
+    completion.Submit();
+    context.polls = 0;
+    context.replies = {{S_FALSE, FALSE}, {E_FAIL, FALSE}};
+    assert(completion.WaitForTeardown() == E_FAIL);
+    assert(mockSleeps == 2); // an error ends the wait, never reports success
     completion.Reset();
 }

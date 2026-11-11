@@ -264,11 +264,8 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
-#if NEOPIC_CAPTURE_BACKEND != 0
-    if (rdPtr->pFrameCapture->Update(rdPtr)) {
-        LoadFromPointer(rdPtr, L"_TempCapture", rdPtr->pFrameCapture->TakeSurface(),
-            LoadFromPointerFlags_TakeOwnership);
-    }
+#if NEOPIC_CAPTURE_BACKEND == 2
+    rdPtr->pFrameCapture->Update(rdPtr); // warm WGC only; no deferred capture
 #endif
 
 	rdPtr->pAI->UpdateAnimation();

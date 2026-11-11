@@ -871,8 +871,10 @@ short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long 
     rdPtr->pFrameCapture->Capture();
     LoadFromPointer(rdPtr, L"_TempCapture", rdPtr->pFrameCapture->pCaptureSf);
 #else
-    // Events run after Handle. Consume the previous completed image next Handle.
-    rdPtr->pFrameCapture->Request(rdPtr);
+    if (rdPtr->pFrameCapture->Capture(rdPtr)) {
+        LoadFromPointer(rdPtr, L"_TempCapture", rdPtr->pFrameCapture->TakeSurface(),
+            LoadFromPointerFlags_TakeOwnership);
+    }
 #endif
 
 	return 0;

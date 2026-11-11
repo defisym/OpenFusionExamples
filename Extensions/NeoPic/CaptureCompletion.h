@@ -3,7 +3,7 @@
 #include <wrl/client.h>
 
 // An event query marks GPU execution completion, not the validity of the pixels.
-// Prepare before issuing a copy; Submit afterwards; Poll once per Handle.
+// Prepare before issuing GPU work; Submit afterwards; Wait for synchronous capture.
 class CaptureCompletion {
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
     Microsoft::WRL::ComPtr<ID3D11Query> query;
@@ -44,13 +44,15 @@ public:
         return E_UNEXPECTED;
     }
 
-    // Object destruction cannot return a borrowed WGC frame while its copy is
-    // still running. This wait is ONLY for teardown, never the Handle path.
-    HRESULT WaitForTeardown() const {
+    // Synchronous capture and teardown must not release a borrowed WGC frame
+    // until the submitted work finishes. Flush submits; this actually waits.
+    HRESULT Wait() const {
         HRESULT hr;
         while ((hr = Poll()) == S_FALSE) Sleep(1);
         return hr;
     }
+
+    HRESULT WaitForTeardown() const { return Wait(); }
 
     void Reset() {
         submitted = false;
