@@ -6,7 +6,7 @@ The default is `0`. Existing ACE IDs and saved object properties are unchanged.
 | Value | Source | Behavior |
 | --- | --- | --- |
 | `0` | Existing DC of `rhHEditWin` | Original baseline |
-| `1` | Frame secondary Surface | Synchronous Fusion GPU Surface blit, with conservative final-composition checks |
+| `1` | Frame secondary Surface | Synchronous RGB normalization pass, with conservative final-composition checks |
 | `2` | Windows Graphics Capture | Synchronous copy of an already available WGC frame, cropped to `rhHEditWin`'s client area |
 
 ## Required contract and current limits
@@ -19,7 +19,10 @@ asynchronous Flush; CPU bitmap conversion is not used to force completion. This
 wait can cost time and is not a zero-latency/real-time deadline guarantee.
 
 The output area is the child client area of the same `rhHEditWin` used by the DC
-baseline, not the whole top-level window. WGC must capture the root window because
+baseline, not the whole top-level window. The image's **logical size** is the
+runtime viewport (`rh3WindowSx/rh3WindowSy`), not the physical client pixel size.
+Putting a physical-pixel image into a scaled Fusion scene caused the oversized
+mode 2 result reported in Windows testing. WGC must capture the root window because
 of its API, then crops to that child's physical client rectangle.
 
 **WGC cannot guarantee the exact current Fusion Display frame.** Waiting for the
@@ -42,16 +45,37 @@ The first mode 1 implementation allocated its output from a native texture's
 mapping from the Fusion Surface's logical image to its underlying allocation.
 The user reported fragmented images. The exact cause is not established yet.
 
-Mode 1 now uses `source->GetWidth()/GetHeight()` and Fusion's own GPU `BlitEx`
-pass to interpret Surface type, format, internal UV/orientation/padding and scale
-the accepted viewport to the child client size. It no longer dereferences the
-secondary's native texture or assumes its storage describes the image layout.
-Unsupported composition is rejected rather than misrepresented as a screenshot.
+The subsequent Surface BlitEx experiment produced a dark/black result in Windows
+testing. The cause (including whether source RGB itself is empty) remains to be
+verified. Both backends now share an explicit GPU normalization pass, modeled on
+the existing FFMpeg rendering approach and reusing D3DUtilities/ShaderCompiler.h:
 
-Mode 2 still copies only matching native formats. It logs source/target native
-sizes and formats and validates its source crop. The destination may have a
-larger padded allocation than its logical image; only the logical client region
-is written. It does not implement general format conversion or YUV decoding.
+- Retain the native source before activating/clearing a new destination RTT.
+- Copy only the valid source region into a shader-readable texture, excluding
+  allocation padding. WGC uses the child-client crop; Secondary uses its logical
+  Surface region, with the existing conservative composition checks.
+- Render to a viewport of the Fusion **logical** dimensions. Point/linear
+  filtering follows the application's resize-filter option.
+- Write RGB with **alpha = 1**, with blending disabled, to avoid inheriting zero
+  or partial capture alpha and darkening the visible scene.
+- Preserve/restore the entire pipeline with a DX11.1 context-state object. A
+  missing DX11.1 interface fails explicitly instead of corrupting Fusion state.
+
+BGRA/RGBA 8-bit RGB channel conversion is handled by SRV sampling and the target
+RTV. Unsupported YUV/HDR formats are rejected rather than interpreted as RGB.
+Windows/Fusion pixel validation is still required; an empty secondary's RGB cannot
+be repaired by an opaque output pass. Native/source crop/output dimensions are
+logged for comparison.
+
+### Yellow capture border
+
+The yellow border is Windows' WGC capture indicator, not a Fusion window border
+or part of the generated RTT. This prototype keeps a WGC session warm so a frame
+may already exist when a synchronous action is called, hence the indicator can
+remain visible while the object is alive. Disabling it requires supported OS
+APIs and borderless-capture access; the prototype does **not** silently disable
+it or request additional consent. WGC therefore does not provide an invisible,
+exact-frame-synchronous replacement for the DC baseline.
 
 WGC initialization previously ran in CreateRunObject. A reported VS exception at
 `check_hresult(CreateForWindow(...))` was caught, but session startup failed and
@@ -72,14 +96,21 @@ translation unit; the Fusion sources retain `/Zc:wchar_t-`.
 From an x86 VS2022 Developer PowerShell in the repository root:
 
 ```powershell
-./Extensions/NeoPic/tests/CompileCapture.ps1
+./Extensions/NeoPic/tests/CompileCapture.ps1 -RunGpuSmokeTest
 msbuild Extensions/NeoPic/NeoPic.vcxproj /t:Rebuild /p:Configuration="Release Unicode" /p:Platform=Win32
 ```
 
 The first command syntax-checks all three backend configurations, including a
-standalone capture-header translation unit to verify the Fusion preamble is
-available. Secondary-only implementation is excluded from the WGC configuration,
-and the opaque clear value is explicitly typed as RGBAREF to avoid C2398. After that,
+standalone capture-header translation unit. It also compiles/runs a native WARP
+pixel test with the production normalization pass: an 8x8 padded RGBA texture
+contains only a 4x4 image with zero alpha, which must become a correctly oriented
+2x2 opaque BGRA image inside a padded target. The test verifies restored viewport
+and topology too. It needs no Fusion runtime or capture permission. The test's
+staging readback is outside production capture code.
+
+The same command runs on Windows in the scoped PR workflow
+`.github/workflows/neopic-capture-compile.yml`. These are syntax/pixel-pass checks,
+not an MFX link or a successful WGC session/Fusion capture. After that,
 set the desired macro in Macro.h and Rebuild. Close Fusion, back up the installed
 NeoPic MFX, then install `Extensions/NeoPic/Obj/Unicode/Release/NeoPic.mfx` into
 Fusion's `Extensions/Unicode`. For exported EXEs also build Run_Only Unicode and
@@ -130,7 +161,8 @@ results, synchronous waiting, teardown and errors. Mocks are never on the plugin
 include path and do not emulate a real GPU.
 
 The Linux development environment cannot compile/link MSVC or run Fusion/WGC.
-Portable tests pass with GCC, AddressSanitizer and UBSan (leak detection disabled
+The Windows workflow is provided for actual compiler/WARP evidence; its outcome
+must be checked before claiming those checks passed. Portable tests pass with GCC, AddressSanitizer and UBSan (leak detection disabled
 under ptrace). Windows syntax checks, real pixels, initialization and performance
 remain unverified. The reported fragmentation and startup failure are not claimed
 fixed until a real Windows retest succeeds. No speed improvement is claimed.

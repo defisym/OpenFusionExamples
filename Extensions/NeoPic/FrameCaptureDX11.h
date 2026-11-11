@@ -11,6 +11,7 @@
 #include <memory>
 #include <cstdint>
 #include "CaptureCompletion.h"
+#include "CaptureBlit.h"
 #if NEOPIC_CAPTURE_BACKEND == 2
 #include "WgcCapture.h"
 #endif
@@ -20,6 +21,7 @@ struct FrameCapture {
     std::unique_ptr<cSurface> snapshot;
     Microsoft::WRL::ComPtr<ID3D11Texture2D> sourceTexture;
     CaptureCompletion completion;
+    CaptureBlit blit;
 #if NEOPIC_CAPTURE_BACKEND == 2
     bool wgcStarted = false;
     bool startAttempted = false;
@@ -116,94 +118,60 @@ struct FrameCapture {
             Report(E_NOTIMPL, "secondary cannot establish final child-client composition");
             return E_NOTIMPL;
         }
+        // Capture the resource while this source RTT is active, then keep its
+        // native identity before activating the destination. Do not sample a
+        // Surface through mutable/current-target bookkeeping during the draw.
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> native;
+        {
+            RenderHelper reading{source, FALSE};
+            const auto info = GetD3D11SurfaceInfo(source);
+            if (info.m_nD3DVersion != 11 || !info.m_ppD3D11RenderTargetTexture) return E_NOINTERFACE;
+            native = *static_cast<ID3D11Texture2D**>(info.m_ppD3D11RenderTargetTexture);
+        }
+        if (!native) return E_POINTER;
+        const D3D11_BOX region{0, 0, 0, static_cast<UINT>(sourceWidth), static_cast<UINT>(sourceHeight), 1};
+        return Normalize(rdPtr, native.Get(), region);
+    }
+#endif
+
+    HRESULT Normalize(LPRDATA rdPtr, ID3D11Texture2D* source, const D3D11_BOX& region) {
+        if (!source) return E_POINTER;
+        auto rh = rdPtr->rHo.hoAdRunHeader;
+        // Client pixels identify the capture AREA, not NeoPic's scene-unit size.
+        const int width = rh->rh3.rh3WindowSx, height = rh->rh3.rh3WindowSy;
+        if (width <= 0 || height <= 0) return E_INVALIDARG;
+        D3D11_TEXTURE2D_DESC input{};
+        source->GetDesc(&input);
+        char details[320];
+        sprintf_s(details, "NeoPic capture native-source=%ux%u format=%u valid=%u,%u..%u,%u output-logical=%dx%d\n",
+            input.Width, input.Height, unsigned(input.Format), region.left, region.top, region.right, region.bottom, width, height);
+        OutputDebugStringA(details);
         auto candidate = std::unique_ptr<cSurface>(CreateHWASurface(rdPtr, 32, width, height, ST_HWA_RTTEXTURE));
         if (!candidate || !candidate->IsValid()) return E_FAIL;
-        BOOL drawn = FALSE;
+        // Mark the image as alpha-capable without initializing a CPU alpha plane;
+        // the shader writes alpha=1 for the whole logical image.
+        candidate->CreateAlpha();
+        HRESULT rendered = E_FAIL;
         {
-            // COLORREFATORGBA(0, 255) is a signed int expression in the SDK;
-            // brace initialization into RGBAREF rejects its narrowing conversion.
             constexpr RGBAREF opaqueBlack = static_cast<RGBAREF>(0xFF000000u);
             RenderHelper rendering{candidate.get(), TRUE, opaqueBlack};
             const auto info = GetD3D11SurfaceInfo(candidate.get());
-            if (info.m_nD3DVersion != 11 || !info.m_pD3D11Device || !info.m_pD3D11Context) return E_NOINTERFACE;
-            const HRESULT hr = completion.Prepare(static_cast<ID3D11Device*>(info.m_pD3D11Device),
-                static_cast<ID3D11DeviceContext*>(info.m_pD3D11Context));
-            if (FAILED(hr)) return hr;
-            POINT center{0, 0};
-            const DWORD stretchFlags = (rh->rhApp->m_pHdr2
-                && (rh->rhApp->m_pHdr2->dwOptions & AH2OPT_RESAMPLESTRETCH)) ? STRF_RESAMPLE : 0;
-            drawn = source->BlitEx(*candidate, 0.0f, 0.0f,
-                static_cast<float>(width) / sourceWidth, static_cast<float>(height) / sourceHeight,
-                0, 0, sourceWidth, sourceHeight, &center, 0.0f, BMODE_OPAQUE, BOP_COPY, 0, stretchFlags);
-        }
-        snapshot = std::move(candidate);
-        completion.Submit(); // even failed blits may have submitted GPU work
-        return drawn ? S_OK : E_FAIL;
-    }
-
-#endif
-
-#if NEOPIC_CAPTURE_BACKEND == 2
-    // Texture formats/sample counts must agree; CopyResource cannot resize or
-    // convert. The WGC path supplies a client-area crop in source coordinates.
-    HRESULT CopyTexture(LPRDATA rdPtr, ID3D11Texture2D* source, const D3D11_BOX* crop) {
-        if (!source) return E_POINTER;
-        D3D11_TEXTURE2D_DESC from{};
-        source->GetDesc(&from);
-        if (from.MipLevels != 1 || from.ArraySize != 1) return E_NOTIMPL;
-        const UINT width = crop ? crop->right - crop->left : from.Width;
-        const UINT height = crop ? crop->bottom - crop->top : from.Height;
-        if (!width || !height || (crop && (crop->left >= crop->right || crop->top >= crop->bottom
-            || crop->front != 0 || crop->back != 1 || crop->right > from.Width || crop->bottom > from.Height)))
-            return E_INVALIDARG;
-        auto candidate = std::unique_ptr<cSurface>(CreateHWASurface(rdPtr,
-            32, static_cast<int>(width), static_cast<int>(height), ST_HWA_RTTEXTURE));
-        if (!candidate || !candidate->IsValid()) return E_FAIL;
-        // Fusion.h matrix: RTT native render-target texture is valid only while
-        // rendering; its m_ppD3D11Texture must not be dereferenced.
-        {
-            RenderHelper rendering{candidate.get(), FALSE};
-            const auto info = GetD3D11SurfaceInfo(candidate.get());
-            if (info.m_nD3DVersion != 11 || !info.m_ppD3D11RenderTargetTexture
-                || !info.m_pD3D11Context) return E_NOINTERFACE;
-            auto target = *static_cast<ID3D11Texture2D**>(info.m_ppD3D11RenderTargetTexture);
+            if (info.m_nD3DVersion != 11 || !info.m_pD3D11Device || !info.m_pD3D11Context
+                || !info.m_ppD3D11RenderTargetView) return E_NOINTERFACE;
+            auto target = *static_cast<ID3D11RenderTargetView**>(info.m_ppD3D11RenderTargetView);
             if (!target) return E_POINTER;
-            Microsoft::WRL::ComPtr<ID3D11Device> sourceDevice;
-            source->GetDevice(&sourceDevice);
-            if (sourceDevice.Get() != info.m_pD3D11Device) return E_INVALIDARG;
-            D3D11_TEXTURE2D_DESC to{};
-            target->GetDesc(&to);
-            char details[256];
-            sprintf_s(details, "NeoPic WGC native-source=%ux%u format=%u client=%ux%u native-target=%ux%u format=%u\n",
-                from.Width, from.Height, unsigned(from.Format), width, height, to.Width, to.Height, unsigned(to.Format));
-            OutputDebugStringA(details);
-            if (from.Format != to.Format || to.MipLevels != 1 || to.ArraySize != 1
-                || to.Width < width || to.Height < height || to.SampleDesc.Count != 1)
-                return E_NOTIMPL;
             auto context = static_cast<ID3D11DeviceContext*>(info.m_pD3D11Context);
-            if (from.SampleDesc.Count > 1) {
-                if (crop || from.Width != to.Width || from.Height != to.Height) return E_NOTIMPL;
-                UINT support = 0;
-                const auto hr = sourceDevice->CheckFormatSupport(from.Format, &support);
-                if (FAILED(hr) || !(support & D3D11_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE)) return E_NOTIMPL;
-            }
-            // Query allocation can fail: do it before submitting any GPU copy.
-            const HRESULT prepared = completion.Prepare(sourceDevice.Get(), context);
+            const HRESULT prepared = completion.Prepare(static_cast<ID3D11Device*>(info.m_pD3D11Device), context);
             if (FAILED(prepared)) return prepared;
-            if (from.SampleDesc.Count > 1) {
-                context->ResolveSubresource(target, 0, source, 0, from.Format);
-            } else {
-                context->CopySubresourceRegion(target, 0, 0, 0, 0, source, 0, crop);
-            }
+            const bool resample = rh->rhApp->m_pHdr2
+                && (rh->rhApp->m_pHdr2->dwOptions & AH2OPT_RESAMPLESTRETCH);
+            rendered = blit.Draw(context, source, region, target, static_cast<UINT>(width), static_cast<UINT>(height), resample);
         }
         snapshot = std::move(candidate);
         sourceTexture = source;
-        completion.Submit();
-        Report(S_OK, "submitted (GPU pending)");
-        return S_OK;
+        completion.Submit(); // Drain even a failed pass's intermediate GPU work.
+        return rendered;
     }
-
-#endif
 
     // Synchronous action contract: never defer publication to another Handle.
     // A ready WGC image can still be older than the current compositor frame.
@@ -219,7 +187,7 @@ struct FrameCapture {
                 Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
                 D3D11_BOX crop{};
                 hr = wgc.LatestTexture(texture.GetAddressOf(), &crop);
-                if (SUCCEEDED(hr)) hr = CopyTexture(rdPtr, texture.Get(), &crop);
+                if (SUCCEEDED(hr)) hr = Normalize(rdPtr, texture.Get(), crop);
             }
 #endif
         }
