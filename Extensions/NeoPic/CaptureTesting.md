@@ -32,17 +32,21 @@ current-display-frame requirement. If no frame is already available, the action
 fails immediately with `E_PENDING`; it does not wait for future frame arrival.
 
 Secondary is also not a documented final-window buffer. Mode 1 rejects a missing
-or non-RTT source, a logical size different from the runtime viewport, nonzero
-origin, an aspect ratio mismatch, Frame effects, or nonidentity Frame transforms whose final composition
+or non-RTT source, nonzero origin, Frame effects, or nonidentity Frame transforms whose final composition
 cannot be established. These are explicit failures, not a fallback to DC and not
 proof of support for every rendering configuration. A default scene may have no
 secondary Surface at all. The author confirmed both experimental backends now
 produce the correct image in the tested Fusion 296 / DX11 application; other
 rendering configurations still require validation.
 
-**Complex-project regression:** the author subsequently reported a blank mode 1
-image in a complex project. Mode 1 is therefore not established as a general
-capture solution. The SDK describes `m_pSecondarySurface` as the render target
+**Resize regression:** after a temporary recovery on reloading, the author
+identified a repeatable trigger: fixed resolution presets work, but dragging a
+ratio-preserving window causes failure while the game still renders at 1080p.
+The old checks required an exact client/source aspect ratio and identical
+source/viewport dimensions. These constraints are now removed; source and output
+sizes are independent, matching the DC path's full-rectangle stretch operation.
+The Windows application retest after this change is still pending. Mode 1 is not
+yet established as a general final-composition capture solution. The SDK describes `m_pSecondarySurface` as the render target
 used for background or Frame effects, rather than a guaranteed last-presented
 image. `m_bAlwaysUseSecondarySurface` exists on both the app and frame; its state
 is logged for diagnosis, not used as proof of valid final pixels. The app's
@@ -50,8 +54,8 @@ is logged for diagnosis, not used as proof of valid final pixels. The app's
 previous-display-frame buffer.
 
 For this report, first distinguish `failed (image unchanged)` from `ready`:
-Frame effects/transforms and source/viewport mismatches are rejected by the
-current code, so an initially empty NeoPic can remain blank without any pixels
+Frame effects/transforms, invalid sources and nonzero origins are rejected by
+the current code, so an initially empty NeoPic can remain blank without any pixels
 being copied. `ready` only establishes completion of the GPU operation; it does
 not prove the source contained a complete scene. Send the `secondary state`,
 `secondary logical`, `secondary rejected` (if present), and final `ready`/`failed`
@@ -61,6 +65,38 @@ layer-effect-data presence and whether app/frame pointers agree. A non-null
 layer-effect-data pointer does not establish that a layer effect is active.
 Do not enable always-secondary flags or fall back to an unrelated canvas merely
 to hide this failure. No black-pixel heuristic is used: a black frame can be valid.
+
+## Window resizing and DC-style output scaling
+
+The full valid source rectangle is scaled to the requested output Surface size.
+Client size, source Surface size, native allocation size and output size are not
+interchangeable:
+
+- Secondary reads `[0, source->GetWidth()) x [0, source->GetHeight())`, excluding
+  native texture padding. Its logical source size may differ from the viewport.
+- WGC reads the complete cropped `rhHEditWin` client area, as before.
+- Both GPU paths stretch the full source rectangle to the output's logical
+  viewport dimensions, with the existing point/linear filter preference. They
+  do not crop the image to force a matching aspect ratio or allocate output from
+  the current client size/native padding. GPU completion and `_TempCapture`
+  ownership handoff remain synchronous.
+
+For example, a 1920x1080 source remains a 1920x1080 output when a user drags the
+window to 1281x720, 1365x768 or another client size. A differently sized valid
+Secondary Surface is scaled to the same output size. Neither different dimensions
+nor a different aspect ratio alone causes capture to fail. No one-pixel aspect
+tolerance is needed; the behavior follows `StretchBlt`'s independent source and
+destination rectangles. Genuine unsupported effects/transforms, invalid sources,
+out-of-allocation source regions and unsupported formats still fail explicitly.
+This size handling does not establish that every Secondary contains the final
+composited client image, including any post-composition borders or effects.
+
+Retest with the benchmark disabled: capture immediately after selecting each
+resolution preset, then after dragging both smaller and larger, and finally after
+returning to a preset. Save `_TempCapture` in the same event. Compare the full
+scene and its edge markers to the DC reference at the same output size; verify
+that the image remains at the logical output dimensions and has no clipped edge
+or stale snapshot. Include a drag size with an inexact ratio (e.g. 1281x720).
 
 ## Changes after the first Windows test
 
@@ -130,7 +166,9 @@ statistics tests with MSVC and a native WARP
 pixel test with the production normalization pass: an 8x8 padded RGBA texture
 contains only a 4x4 image with zero alpha, which must become a correctly oriented
 2x2 opaque BGRA image inside a padded target. The test verifies restored viewport
-and topology too. It needs no Fusion runtime or capture permission. The test's
+and topology too. The same pass/target is then reused at 6x3, 2x6 and 2x2 outputs
+to validate independent source/output aspect ratios, up/down scaling and repeated
+size changes. It needs no Fusion runtime or capture permission. The test's
 staging readback is outside production capture code.
 
 The public Windows PR workflow uses `-NativeOnly -RunGpuSmokeTest`: it compiles

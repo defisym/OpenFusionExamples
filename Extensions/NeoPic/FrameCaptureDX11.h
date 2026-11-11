@@ -106,8 +106,8 @@ struct FrameCapture {
 #endif
 
 #if NEOPIC_CAPTURE_BACKEND == 1
-    // Secondary is a Fusion Surface, not a raw texture. Let Fusion's GPU blit
-    // interpret its type, logical dimensions, UV/padding and pixel format.
+    // A Surface's logical dimensions describe the valid image independently
+    // of its native allocation padding and the physical window dimensions.
     HRESULT CopySecondary(LPRDATA rdPtr) {
         auto rh = rdPtr->rHo.hoAdRunHeader;
         auto frame = rh->rhFrame;
@@ -153,14 +153,15 @@ struct FrameCapture {
             OutputDebugStringA(details);
         }
         if (width <= 0 || height <= 0 || sourceWidth <= 0 || sourceHeight <= 0) return E_INVALIDARG;
+        // Match the DC path's size contract: consume the full valid source
+        // rectangle and stretch it to the output Surface. Client, source and
+        // output dimensions/aspect ratios are independent, including drag resize.
         // A pre-effect/offscreen scene is not necessarily what rhHEditWin shows.
         // Refuse cases whose final composition cannot be reconstructed here.
         if (frame->m_pEffectEx || (frame->m_pEffect && frame->m_pEffect->ffxInkEffect != 0)
             || frame->m_angle != 0 || frame->m_xScale != 1.0f || frame->m_yScale != 1.0f
             || frame->m_destPoint.x != frame->m_hotSpot.x || frame->m_destPoint.y != frame->m_hotSpot.y
-            || origin.x != 0 || origin.y != 0
-            || sourceWidth != rh->rh3.rh3WindowSx || sourceHeight != rh->rh3.rh3WindowSy
-            || static_cast<std::int64_t>(width) * sourceHeight != static_cast<std::int64_t>(height) * sourceWidth) {
+            || origin.x != 0 || origin.y != 0) {
 #if NEOPIC_CAPTURE_BENCHMARK_ENABLED
             if (!benchmarking)
 #endif

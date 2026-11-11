@@ -86,6 +86,35 @@ int main() {
         context->Unmap(staging.Get(), 0);
         Require(match, "logical size/crop/orientation/channel order/opaque alpha pixel mismatch");
         std::cout << "PASS: source padding, logical resize, RGBA-to-BGRA, opaque alpha, orientation, completion and state restore\n";
+        // DC-style scaling: independent source/output sizes and aspect ratios.
+        // Reuse the pass and target across size changes to catch stale dimensions.
+        // 6x3 uses exact sample centers: source x={0,1,1,2,3,3}, y={0,2,3}.
+        const unsigned outputSizes[][2]{{6,3}, {2,6}, {2,2}};
+        for (const auto& size : outputSizes) {
+            Check(completed.Prepare(device.Get(), context.Get()), "resized draw query");
+            Check(pass.Draw(context.Get(), source.Get(), content, view.Get(), size[0], size[1], false), "resized normalize pass");
+            completed.Submit();
+            Check(completed.Wait(), "resized draw completion");
+            completed.Reset();
+            Check(completed.Prepare(device.Get(), context.Get()), "resized readback query");
+            context->CopyResource(staging.Get(), target.Get());
+            completed.Submit();
+            Check(completed.Wait(), "resized readback completion");
+            completed.Reset();
+            Check(context->Map(staging.Get(), 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &map), "resized nonblocking Map");
+            match = true;
+            for (unsigned y = 0; y < size[1]; ++y) for (unsigned x = 0; x < size[0]; ++x) {
+                const unsigned sourceX = ((2 * x + 1) * 4) / (2 * size[0]);
+                const unsigned sourceY = ((2 * y + 1) * 4) / (2 * size[1]);
+                const auto actual = static_cast<const unsigned char*>(map.pData) + y * map.RowPitch + x * 4;
+                const auto expected = colors[(sourceY / 2) * 2 + sourceX / 2];
+                match &= actual[0] == expected[2] && actual[1] == expected[1]
+                    && actual[2] == expected[0] && actual[3] == 255;
+            }
+            context->Unmap(staging.Get(), 0);
+            Require(match, "resized output used stale dimensions, cropped content or changed aspect unexpectedly");
+        }
+        std::cout << "PASS: independent source/output aspect ratios, up/down scaling and repeated output resize\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
