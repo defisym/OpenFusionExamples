@@ -92,7 +92,12 @@ protected:
     }
 
 public:
-    ~Dx11FrameCapture() override { Drain(); }
+    ~Dx11FrameCapture() override {
+        Drain();
+        const bool initialized = blit.IsInitialized();
+        blit.Reset();
+        if (initialized) Report(S_OK, "native capture cache released (published snapshots have separate ownership)");
+    }
 };
 
 class SecondaryFrameCapture : public Dx11FrameCapture {

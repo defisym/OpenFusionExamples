@@ -30,7 +30,7 @@ static std::vector<std::string> CaptureObjects(ID3D11Debug* debug, ID3D11InfoQue
 }
 
 static void Batch(ID3D11Device* device, ID3D11DeviceContext* context,
-    ID3D11Debug* debug, ID3D11InfoQueue* queue, unsigned captures) {
+    ID3D11Debug* debug, ID3D11InfoQueue* queue, unsigned captures, bool reset) {
     D3D11_TEXTURE2D_DESC desc{};
     desc.Width = desc.Height = 16;
     desc.MipLevels = desc.ArraySize = desc.SampleDesc.Count = 1;
@@ -53,6 +53,18 @@ static void Batch(ID3D11Device* device, ID3D11DeviceContext* context,
     }
     if (CaptureObjects(debug, queue).empty())
         throw std::runtime_error("debug names/report collection did not detect the live capture objects");
+    if (reset) {
+        pass.Reset();
+        pass.Reset(); // Idempotent teardown.
+        if (pass.IsInitialized()) throw std::runtime_error("capture reset left its cache initialized");
+        CaptureCompletion completed;
+        Check(completed.Prepare(device, context), "post-reset query");
+        const D3D11_BOX box{0, 0, 0, 16, 16, 1};
+        Check(pass.Draw(context, source.Get(), box, view.Get(), 8, 8, false), "reinitialize after reset");
+        completed.Submit();
+        Check(completed.Wait(), "post-reset completion");
+        pass.Reset();
+    }
 }
 
 int main() {
@@ -73,8 +85,8 @@ int main() {
         Check(device.As(&queue), "info queue");
         Check(queue->PushEmptyStorageFilter(), "empty storage filter");
         Check(queue->PushEmptyRetrievalFilter(), "empty retrieval filter");
-        auto verify = [&](unsigned count) {
-            Batch(device.Get(), context.Get(), debug.Get(), queue.Get(), count);
+        auto verify = [&](unsigned count, bool reset) {
+            Batch(device.Get(), context.Get(), debug.Get(), queue.Get(), count, reset);
             // Do not ClearState, even in this standalone test: leaked capture
             // bindings must remain observable instead of being hidden by cleanup.
             context->Flush();
@@ -84,12 +96,13 @@ int main() {
                 throw std::runtime_error("capture objects still have external references after destruction");
             }
         };
-        verify(1);
-        verify(32);
-        for (unsigned i = 0; i < 8; ++i) verify(2);
+        verify(1, false);
+        verify(32, false);
+        verify(32, true);
+        for (unsigned i = 0; i < 8; ++i) verify(2, true);
         queue->PopRetrievalFilter();
         queue->PopStorageFilter();
-        std::cout << "PASS: real debug-layer capture objects released after 1/32 captures and repeated recreation, without ClearState\n";
+        std::cout << "PASS: real debug-layer capture objects released after 1/32 captures, reset/reinitialize and repeated recreation, without ClearState\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

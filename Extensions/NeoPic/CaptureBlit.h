@@ -31,8 +31,7 @@ class CaptureBlit {
 
     HRESULT Initialize(ID3D11Device* device) {
         if (owner.Get() == device && scratch) return S_OK;
-        owner.Reset();
-        scratch.Reset();
+        Reset();
         {
             Ptr<ID3D11Debug> debug;
             debugNames = SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(debug.GetAddressOf())));
@@ -126,6 +125,26 @@ float4 PS(V v) : SV_Target { return float4(image.Sample(imageSampler, v.uv).rgb,
         }
     }
 public:
+    bool IsInitialized() const { return owner && scratch; }
+
+    // Caller drains submitted work first. Release only our cached objects;
+    // never modify the shared context's restored Fusion pipeline state.
+    void Reset() {
+        sampleView.Reset();
+        sampleTexture.Reset();
+        resolved.Reset();
+        scratch.Reset();
+        vertex.Reset();
+        pixel.Reset();
+        pointSampler.Reset();
+        linearSampler.Reset();
+        rasterizer.Reset();
+        blend.Reset();
+        depth.Reset();
+        owner.Reset();
+        debugNames = false;
+    }
+
     HRESULT Draw(ID3D11DeviceContext* context, ID3D11Texture2D* source,
         const D3D11_BOX& box, ID3D11RenderTargetView* destination,
         UINT width, UINT height, bool resample) {

@@ -185,7 +185,10 @@ cannot identify owners or distinguish intended snapshot retention from a leak.
 When the device debug layer is enabled, objects created by the normalization pass
 are named `NeoPic.Capture.*`: shaders, context state, samplers, pipeline states,
 sampling/resolve textures and views, and the owned output texture/view. The shared
-Fusion device and input secondary are not renamed. Production code never calls
+Fusion device and input secondary are not renamed. Immutable sampler/blend/
+rasterizer/depth-state creation can return an existing shared interface, so a
+capture-prefixed state name does not by itself prove exclusive ownership or a
+NeoPic leak. Compare ownership and checkpoint reports. Production code never calls
 ClearState on Fusion's context to suppress live-object reports.
 
 Simple process-termination reporting may still omit names. Obtain a detailed
@@ -201,3 +204,12 @@ The standalone lifetime test isolates the native pass and its COM ownership.
 It cannot prove that Fusion calls every extension destructor or releases its
 image cache/WGC session in the same order. A passing test therefore does not by
 itself resolve the application's original exit warnings.
+
+DX11 source destruction now explicitly drains work and resets its owned native
+cache. A used source logs `native capture cache released (published snapshots
+have separate ownership)`. This confirms the native-cache teardown path ran; it
+does not claim that the separately owned `_TempCapture` image/library is gone.
+Compare this marker's presence/order with the final live-object report. The same
+reset is used when changing devices, so a failed reinitialization does not keep
+old-device cache objects alive. The lifetime test covers idempotent reset and
+reinitialization as well as ordinary destruction.
