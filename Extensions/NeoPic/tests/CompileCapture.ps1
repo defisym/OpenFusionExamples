@@ -38,12 +38,14 @@ if ($RunGpuSmokeTest) {
     $temp = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $temp | Out-Null
     try {
-        $exe = Join-Path $temp 'CaptureBlitWarpTest.exe'
-        $obj = Join-Path $temp 'CaptureBlitWarpTest.obj'
-        & cl.exe '/nologo' '/std:c++20' '/EHsc' '/Zc:wchar_t' "/I$repo/Extensions/_3rdLib" "/Fe$exe" "/Fo$obj" "$neo/tests/CaptureBlitWarpTest.cpp"
-        if ($LASTEXITCODE -ne 0) { throw 'WARP test compilation failed' }
-        & $exe
-        if ($LASTEXITCODE -ne 0) { throw 'WARP capture-normalization pixel test failed' }
+        foreach ($test in @('CaptureBlitWarpTest', 'CaptureLifetimeTest')) {
+            $exe = Join-Path $temp "$test.exe"
+            $obj = Join-Path $temp "$test.obj"
+            & cl.exe '/nologo' '/std:c++20' '/EHsc' '/Zc:wchar_t' "/I$repo/Extensions/_3rdLib" "/Fe$exe" "/Fo$obj" "$neo/tests/$test.cpp"
+            if ($LASTEXITCODE -ne 0) { throw "$test compilation failed" }
+            & $exe
+            if ($LASTEXITCODE -ne 0) { throw "$test failed" }
+        }
         foreach ($test in @('CaptureBenchmarkTest', 'EditDataUpgradeTest')) {
             $exe = Join-Path $temp "$test.exe"
             $obj = Join-Path $temp "$test.obj"

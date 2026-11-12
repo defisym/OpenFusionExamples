@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Check WGC, GPU pixels, capture inheritance and edit-data migration
+      - name: Check WGC, GPU pixels/lifetime, inheritance and edit-data migration
         shell: pwsh
         run: |
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"

@@ -150,6 +150,11 @@ Public Windows CI uses `-NativeOnly -RunGpuSmokeTest`, with explicit scope:
 - Production normalization runs with WARP: padded source cropping, logical
   resizing, RGBA/BGRA order, opaque alpha, completion and state restoration.
   Repeated 6x3, 2x6 and 2x2 outputs exercise independent aspect ratios and resizing.
+- With the D3D debug layer available, a real WARP lifetime test checks named
+  capture objects after one capture, 32 captures and repeated recreation. It
+  verifies that live objects are observable during use, then that no named objects
+  retain external references after destruction, without using ClearState. Missing
+  debug-layer support is printed as SKIP, not represented as lifetime validation.
 - Statistics tests check warmup, percentiles, failed samples and unavailable input.
 - Production V1/V2 payload definitions and upgrade defaults are tested with a mock
   SDK header, including 64-byte reserve and backend-value validation.
@@ -169,3 +174,30 @@ layers and image size against the intended child area. Test fixed resolution
 presets, drag smaller/larger, then return to a preset. Capture failures must
 preserve the old snapshot. Runtime resizing and the optional benchmark subclass
 need actual application retesting after this refactor.
+
+## Investigating D3D live-object warnings
+
+The author reported exit-time live-object warnings appearing after GPU capture
+was introduced. Treat this as a capture-resource regression to investigate, not
+as evidence that the warnings are harmless. The old anonymous shutdown report
+cannot identify owners or distinguish intended snapshot retention from a leak.
+
+When the device debug layer is enabled, objects created by the normalization pass
+are named `NeoPic.Capture.*`: shaders, context state, samplers, pipeline states,
+sampling/resolve textures and views, and the owned output texture/view. The shared
+Fusion device and input secondary are not renamed. Production code never calls
+ClearState on Fusion's context to suppress live-object reports.
+
+Simple process-termination reporting may still omit names. Obtain a detailed
+`ID3D11Debug::ReportLiveDeviceObjects(D3D11_RLDO_DETAIL)` report while the process is
+alive, at a controlled checkpoint after capture objects and published snapshots
+are released. A second report with `D3D11_RLDO_IGNORE_INTERNAL` helps separate
+objects with external references from driver/runtime internal retention. Compare
+no-capture, single-capture and repeated-capture runs at the same checkpoint.
+A snapshot intentionally retained in the image library is expected to remain live
+until the library releases it.
+
+The standalone lifetime test isolates the native pass and its COM ownership.
+It cannot prove that Fusion calls every extension destructor or releases its
+image cache/WGC session in the same order. A passing test therefore does not by
+itself resolve the application's original exit warnings.

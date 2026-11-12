@@ -1,9 +1,11 @@
 #pragma once
 #include <d3d11_1.h>
+#include <d3d11sdklayers.h>
 #include <wrl/client.h>
 #include <tuple>
 #include <cstring>
 #include "D3DUtilities/ShaderCompiler.h"
+#pragma comment(lib, "dxguid.lib")
 
 // Normalize a native RGB capture into a Fusion RTT: crop valid source pixels,
 // resize to scene coordinates, convert channel layout and write opaque alpha.
@@ -20,11 +22,21 @@ class CaptureBlit {
     Ptr<ID3D11DepthStencilState> depth;
     Ptr<ID3D11Texture2D> sampleTexture, resolved;
     Ptr<ID3D11ShaderResourceView> sampleView;
+    bool debugNames = false;
+
+    void Name(ID3D11DeviceChild* object, const char* value) const {
+        if (debugNames && object)
+            object->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(std::strlen(value)), value);
+    }
 
     HRESULT Initialize(ID3D11Device* device) {
         if (owner.Get() == device && scratch) return S_OK;
         owner.Reset();
         scratch.Reset();
+        {
+            Ptr<ID3D11Debug> debug;
+            debugNames = SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(debug.GetAddressOf())));
+        }
         Ptr<ID3D11Device1> device1;
         HRESULT hr = device->QueryInterface(IID_PPV_ARGS(device1.GetAddressOf()));
         if (FAILED(hr)) return hr;
@@ -34,6 +46,7 @@ class CaptureBlit {
         hr = device1->CreateDeviceContextState(0, &level, 1, D3D11_SDK_VERSION,
             __uuidof(ID3D11Device), &selected, nextState.GetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(nextState.Get(), "NeoPic.Capture.ContextState");
         constexpr const char* code = R"(
 struct V { float4 p : SV_Position; float2 uv : TEXCOORD0; };
 V VS(uint id : SV_VertexID) {
@@ -53,8 +66,10 @@ float4 PS(V v) : SV_Target { return float4(image.Sample(imageSampler, v.uv).rgb,
         }
         hr = device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, vertex.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(vertex.Get(), "NeoPic.Capture.VertexShader");
         hr = device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, pixel.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(pixel.Get(), "NeoPic.Capture.PixelShader");
         D3D11_SAMPLER_DESC sampler{};
         sampler.AddressU = sampler.AddressV = sampler.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
         sampler.MaxLOD = D3D11_FLOAT32_MAX;
@@ -62,13 +77,16 @@ float4 PS(V v) : SV_Target { return float4(image.Sample(imageSampler, v.uv).rgb,
         sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
         hr = device->CreateSamplerState(&sampler, pointSampler.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(pointSampler.Get(), "NeoPic.Capture.PointSampler");
         sampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         hr = device->CreateSamplerState(&sampler, linearSampler.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(linearSampler.Get(), "NeoPic.Capture.LinearSampler");
         D3D11_RASTERIZER_DESC rs{};
         rs.FillMode = D3D11_FILL_SOLID; rs.CullMode = D3D11_CULL_NONE; rs.DepthClipEnable = TRUE;
         hr = device->CreateRasterizerState(&rs, rasterizer.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(rasterizer.Get(), "NeoPic.Capture.Rasterizer");
         D3D11_BLEND_DESC bs{};
         auto& rt = bs.RenderTarget[0];
         rt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
@@ -77,6 +95,7 @@ float4 PS(V v) : SV_Target { return float4(image.Sample(imageSampler, v.uv).rgb,
         rt.BlendOp = rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
         hr = device->CreateBlendState(&bs, blend.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(blend.Get(), "NeoPic.Capture.Blend");
         D3D11_DEPTH_STENCIL_DESC ds{};
         ds.DepthFunc = D3D11_COMPARISON_ALWAYS;
         ds.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
@@ -86,6 +105,7 @@ float4 PS(V v) : SV_Target { return float4(image.Sample(imageSampler, v.uv).rgb,
         ds.BackFace = ds.FrontFace;
         hr = device->CreateDepthStencilState(&ds, depth.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(depth.Get(), "NeoPic.Capture.DepthStencil");
         owner = device;
         scratch = nextState;
         return S_OK;
@@ -137,6 +157,8 @@ public:
         if (target.Width < width || target.Height < height || target.SampleDesc.Count != 1) return E_INVALIDARG;
         hr = Initialize(device.Get());
         if (FAILED(hr)) return hr;
+        Name(output.Get(), "NeoPic.Capture.OutputTexture");
+        Name(destination, "NeoPic.Capture.OutputView");
         Ptr<ID3D11DeviceContext1> context1;
         hr = context->QueryInterface(IID_PPV_ARGS(context1.GetAddressOf()));
         if (FAILED(hr)) return hr;
@@ -147,6 +169,7 @@ public:
         sample.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         hr = device->CreateTexture2D(&sample, nullptr, sampleTexture.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(sampleTexture.Get(), "NeoPic.Capture.SampleTexture");
         ID3D11Texture2D* copySource = source;
         if (input.SampleDesc.Count > 1) {
             UINT support = 0;
@@ -157,12 +180,14 @@ public:
             resolve.Usage = D3D11_USAGE_DEFAULT; resolve.BindFlags = resolve.CPUAccessFlags = resolve.MiscFlags = 0;
             hr = device->CreateTexture2D(&resolve, nullptr, resolved.ReleaseAndGetAddressOf());
             if (FAILED(hr)) return hr;
+            Name(resolved.Get(), "NeoPic.Capture.ResolvedTexture");
             context->ResolveSubresource(resolved.Get(), 0, source, 0, input.Format);
             copySource = resolved.Get();
         }
         context->CopySubresourceRegion(sampleTexture.Get(), 0, 0, 0, 0, copySource, 0, &box);
         hr = device->CreateShaderResourceView(sampleTexture.Get(), nullptr, sampleView.ReleaseAndGetAddressOf());
         if (FAILED(hr)) return hr;
+        Name(sampleView.Get(), "NeoPic.Capture.SampleView");
         struct Restore {
             ID3D11DeviceContext1* context;
             Ptr<ID3DDeviceContextState> saved;
