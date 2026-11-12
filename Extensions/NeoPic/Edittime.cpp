@@ -46,6 +46,9 @@ enum {
 	PROPID_LOADCALLBACK_CHECK,
 	PROPID_LOADKEEPANGLE_CHECK,
 
+    PROPID_CAPTURE_TEXTTITLE,
+    PROPID_CAPTURE_BACKEND,
+
 };
 
 // Example of content of the PROPID_COMBO combo box
@@ -69,6 +72,14 @@ LPCWSTR HotSpotComboList[] = {
 	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_RM),
 	MAKEINTRESOURCE(IDS_PROP_HOTSPOT_RB),
 	NULL
+};
+
+LPCWSTR CaptureBackendComboList[] = {
+    0, // reserved by the property manager
+    MAKEINTRESOURCE(IDS_PROP_CAPTURE_DC),
+    MAKEINTRESOURCE(IDS_PROP_CAPTURE_SECONDARY),
+    MAKEINTRESOURCE(IDS_PROP_CAPTURE_WGC),
+    NULL
 };
 
 // Property definitions
@@ -124,6 +135,9 @@ PropData PropertiesDisplay[] = {
 
 	PropData_Group(PROPID_HOTSPOT_TEXTTITLE,	IDS_HOTSPOT_TEXTTITLE,		IDS_HOTSPOT_TEXTTITLE),
 	PropData_ComboBox(PROPID_HOTSPOT,	IDS_PROP_HOTSPOT,		IDS_PROP_HOTSPOT_INFO, HotSpotComboList),
+
+    PropData_Group(PROPID_CAPTURE_TEXTTITLE, IDS_PROP_CAPTURE_TEXTTITLE, IDS_PROP_CAPTURE_TEXTTITLE),
+    PropData_ComboBox(PROPID_CAPTURE_BACKEND, IDS_PROP_CAPTURE_BACKEND, IDS_PROP_CAPTURE_BACKEND_INFO, CaptureBackendComboList),
 	
 	PropData_End()
 };
@@ -416,6 +430,8 @@ int WINAPI DLLExport CreateObject(mv _far *mV, fpLevObj loPtr, LPEDATA edPtr)
 		edPtr->sizeLimit = CLEAR_NUMTHRESHOLD;
 
 		edPtr->hotSpotComboID = (size_t)HotSpotPos::MM;
+        edPtr->captureBackend = CaptureBackend::Dc;
+        std::fill_n(edPtr->reserved, sizeof(edPtr->reserved), std::uint8_t{});
 
 //
 //		// Call setup (remove this and return 0 if your object does not need a setup)
@@ -823,6 +839,8 @@ LPVOID WINAPI DLLExport GetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID)
 		return new CPropDWordValue(edPtr->sizeLimit);
 	case PROPID_HOTSPOT:
 		return new CPropDWordValue(edPtr->hotSpotComboID);
+    case PROPID_CAPTURE_BACKEND:
+        return new CPropDWordValue(static_cast<DWORD>(NormalizeCaptureBackend(static_cast<std::uint32_t>(edPtr->captureBackend))));
 	}
 
 #endif // !defined(RUN_ONLY)
@@ -930,6 +948,10 @@ void WINAPI DLLExport SetPropValue(LPMV mV, LPEDATA edPtr, UINT nPropID, LPVOID 
 	case PROPID_HOTSPOT: {
 		edPtr->hotSpotComboID= ((CPropDWordValue*)pValue)->m_dwValue;
 	}
+    break;
+    case PROPID_CAPTURE_BACKEND:
+        edPtr->captureBackend = NormalizeCaptureBackend(static_cast<std::uint32_t>(static_cast<CPropDWordValue*>(pValue)->m_dwValue));
+        break;
 	}
 
 	// You may want to have your object redrawn in the frame editor after the modifications,

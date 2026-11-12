@@ -1,77 +1,26 @@
 #pragma once
+#include <memory>
+#include "CaptureBackend.h"
 
-struct FrameCapture {
-	LPSURFACE pCaptureSf = nullptr;
-	HDC pCaptureDC = nullptr;
-
-	HWND hFrameWindowHandle = nullptr;
-	HDC hdcWindow = nullptr;
-
-	int frameWidth = -1;
-	int frameHeight = -1;
-
-	FrameCapture(HWND hFrameWindowHandle) {
-		this->hFrameWindowHandle = hFrameWindowHandle;
-	}
-	~FrameCapture() {
-		ReleaseDC();
-		ReleaseSurface();
-	}
-
-	inline void ReleaseDC() {
-		if (hdcWindow == nullptr) { return; }
-
-		::ReleaseDC(hFrameWindowHandle, hdcWindow);
-		hdcWindow = nullptr;
-	}
-
-
-	inline void NewDC() {
-		if (hdcWindow == nullptr) {
-			hdcWindow = GetDC(hFrameWindowHandle);
-		}
-	}
-
-	inline void ReleaseSurface() {
-		if (pCaptureSf == nullptr) { return; }
-
-		if (pCaptureDC != nullptr) {
-			pCaptureSf->ReleaseDC(pCaptureDC);
-			pCaptureDC = nullptr;
-		}
-
-		delete pCaptureSf;
-		pCaptureSf = nullptr;
-	}
-
-	inline void NewSurface() {
-		RECT frameRect;
-		::GetWindowRect(hFrameWindowHandle, &frameRect);
-		frameWidth = frameRect.right - frameRect.left;
-		frameHeight = frameRect.bottom - frameRect.top;
-
-		if (pCaptureSf == nullptr
-			|| pCaptureSf->GetWidth() != frameWidth
-			|| pCaptureSf->GetHeight() != frameHeight) {
-			ReleaseSurface();
-			
-			pCaptureSf = CreateSurface(24, frameWidth, frameHeight);
-			_AddAlpha(pCaptureSf);
-
-			pCaptureDC = pCaptureSf->GetDC();
-		}
-	}
-
-	inline void Capture() {
-		NewDC();
-		NewSurface();
-		StretchBlt(pCaptureDC, 0, 0, frameWidth, frameHeight
-			, hdcWindow, 0, 0, frameWidth, frameHeight
-			, SRCCOPY);
-		//_AddAlpha(pCaptureSf);
-
-#ifdef _DEBUG
-		//__SavetoClipBoard(pCaptureSf);
-#endif // _DEBUG
-	}
+// One synchronous capture and ownership handoff, independent of its source.
+// Optional subclasses can decorate this operation without changing the action.
+class FrameCapture {
+    CaptureBackend backend;
+protected:
+    explicit FrameCapture(CaptureBackend value) : backend(value) {}
+    virtual HRESULT CaptureSurface(LPRDATA rdPtr, std::unique_ptr<cSurface>& surface) = 0;
+    virtual SIZE OutputSize(LPRDATA rdPtr, SIZE sourceSize) const;
+    virtual bool DiagnosticsEnabled() const { return true; }
+    virtual void ReleaseInput() {}
+    void Report(HRESULT hr, const char* stage) const;
+public:
+    virtual ~FrameCapture() = default;
+    FrameCapture(const FrameCapture&) = delete;
+    FrameCapture& operator=(const FrameCapture&) = delete;
+    CaptureBackend Backend() const { return backend; }
+    virtual void Update(LPRDATA rdPtr) { (void)rdPtr; }
+    virtual HRESULT CaptureAndLoad(LPRDATA rdPtr, SIZE* outputSize = nullptr);
 };
+
+CaptureBackend ResolveFrameCaptureBackend(LPRDATA rdPtr, CaptureBackend requested);
+std::unique_ptr<FrameCapture> CreateFrameCapture(LPRDATA rdPtr, CaptureBackend backend);

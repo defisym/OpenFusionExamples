@@ -162,38 +162,8 @@
 // ---------------------
 // Used at edit time and saved in the MFA/CCN/EXE files
 
-typedef struct tagEDATA_V1
-{
-	// Header - required
-	extHeader		eHeader;
-
-	// Object's data
-	short			swidth;
-	short			sheight;
-
-	//Lib
-	bool isLib = false;
-
-	bool bLoadCallback = false;
-	bool bLoadKeepAngle = false;
-
-	//Display
-
-	//Settings
-	bool HWA = false;
-	bool stretchQuality = false;
-
-	size_t memoryLimit;
-	size_t sizeLimit;
-	bool autoClean;
-
-	size_t hotSpotComboID;
-
-} EDITDATA;
-typedef EDITDATA *			LPEDATA;
-
-// Object versions
-#define	KCX_CURRENT_VERSION			1
+// Versioned layout and V1 upgrade defaults; V2 includes 64 reserved bytes.
+#include "EditData.h"
 
 // --------------------------------
 // RUNNING OBJECT DATA STRUCTURE

@@ -254,7 +254,11 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClCompile Include="Edittime.cpp" />
     <ClCompile Include="General.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="FrameCapture.cpp" />
     <ClCompile Include="Runtime.cpp" />
+    <ClCompile Include="WgcCapture.cpp">
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\Help\ExtSdk.chm">
@@ -305,6 +309,16 @@ copy $(TargetPath) "C:\Steam\steamapps\common\Clickteam Fusion 2.5\Data\Runtime\
     <ClInclude Include="Common.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="FrameCapture.h" />
+    <ClInclude Include="FrameCaptureDC.h" />
+    <ClInclude Include="FrameCaptureBenchmark.h" />
+    <ClInclude Include="CaptureBackend.h" />
+    <ClInclude Include="EditData.h" />
+    <ClInclude Include="FrameCaptureDX11.h" />
+    <ClInclude Include="CaptureCrop.h" />
+    <ClInclude Include="CaptureCompletion.h" />
+    <ClInclude Include="CaptureBenchmark.h" />
+    <ClInclude Include="CaptureBlit.h" />
+    <ClInclude Include="WgcCapture.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="Macro.h" />
     <ClInclude Include="Main.h" />

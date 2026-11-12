@@ -1,0 +1,26 @@
+name: NeoPic capture Windows checks
+on:
+  pull_request:
+    paths:
+      - 'Extensions/NeoPic/**'
+      - 'Extensions/_DeLib/**'
+      - 'Extensions/_3rdLib/D3DUtilities/**'
+      - 'Inc/**'
+      - '.github/workflows/neopic-capture-compile.yml'
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check WGC, GPU pixels/lifetime, inheritance and edit-data migration
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'VS C++ tools not found' }
+          Import-Module "$vs\Common7\Tools\Microsoft.VisualStudio.DevShell.dll"
+          Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation -DevCmdArguments '-arch=x86 -host_arch=x64'
+          ./Extensions/NeoPic/tests/CompileCapture.ps1 -NativeOnly -RunGpuSmokeTest

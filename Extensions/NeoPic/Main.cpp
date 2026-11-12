@@ -867,12 +867,8 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
-	rdPtr->pFrameCapture->Capture();
-
-	const auto capturedName = L"_TempCapture";
-	LoadFromPointer(rdPtr, capturedName, rdPtr->pFrameCapture->pCaptureSf);
-
-	return 0;
+    rdPtr->pFrameCapture->CaptureAndLoad(rdPtr);
+    return 0;
 }
 
 short WINAPI DLLExport Action_SaveToFileWithStretch(LPRDATA rdPtr, long param1, long param2) {

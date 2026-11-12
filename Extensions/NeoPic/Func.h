@@ -730,6 +730,8 @@ inline void LoadFromDisplay(LPRDATA rdPtr, int Fixed, bool CopyCoef = false) {
 	return LoadFromDisplay(rdPtr, LproFromFixed(rdPtr, Fixed), CopyCoef);
 }
 
+// Consume an owned Surface instead of cloning it (including on failure).
+constexpr DWORD LoadFromPointerFlags_TakeOwnership = 0x2;
 constexpr auto LoadFromPointerFlags_NoFullPath = 0b0000'0000'0000'0000'0000'0000'0000'0001;
 
 inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf
@@ -748,7 +750,8 @@ inline void LoadFromPointer(LPRDATA rdPtr, LPCWSTR pFileName, LPSURFACE pSf
 	//	}
 	//	});
 
-	const auto pSave = CreateCloneSurface(rdPtr, pSf);
+	const auto pSave = (dwFlags & LoadFromPointerFlags_TakeOwnership)
+        ? pSf : CreateCloneSurface(rdPtr, pSf);
 
 	if (!pSave->IsValid()) {
 		delete pSave;

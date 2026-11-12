@@ -40,7 +40,7 @@
 enum class HotSpotPos;
 struct ZoomScale;
 
-struct FrameCapture;
+class FrameCapture;
 struct AnimationInterface;
 struct NineSliceInterface;
 
