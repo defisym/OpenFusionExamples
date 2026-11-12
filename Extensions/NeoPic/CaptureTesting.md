@@ -12,8 +12,18 @@ publishes `_TempCapture` synchronously.
 | 2 | Windows Graphics Capture | Root window cropped to the same child client area |
 
 The selection belongs to each object, including library objects, and is saved in
-the MFA/exported runtime data. Unknown stored values use DC. There is no silent
-fallback after a selected GPU backend fails.
+the MFA/exported runtime data. Unknown stored values use DC. In a Fusion DX9
+runtime, selecting either GPU backend resolves to DC at object creation. The
+ordinary and optional benchmark factories share this rule and log the fallback;
+the saved property is retained so switching the project back to DX11 restores the
+requested backend. DX11 captures still report their own failures rather than
+falling back on an unavailable frame or failed copy.
+
+WGC itself can capture DX9 windows. This particular backend reuses Fusion's DX11
+device and publishes a DX11 RTT; DX9 interop is not implemented, hence its current
+DX9 fallback to DC. The renderer is read from the window Surface metadata, or its
+app Surface prototype if the window Surface is not created yet. No pixels are
+copied from the current layer canvas to decide compatibility.
 
 ## Structure and ownership
 
@@ -170,7 +180,8 @@ and edit-data tests; native/compiler/GPU evidence comes from the Windows workflo
 After installation, verify an old V1 MFA retains its settings and selects DC.
 Select each new backend, save/reopen, and export to check persistence. On one
 keypress, Capture then Save `_TempCapture` in the same event. Compare edge markers,
-layers and image size against the intended child area. Test fixed resolution
+layers and image size against the intended child area. Test DX9 with each GPU property choice (the log must show DC fallback), then
+switch back to DX11 without changing the saved choice. Test fixed resolution
 presets, drag smaller/larger, then return to a preset. Capture failures must
 preserve the old snapshot. Runtime resizing and the optional benchmark subclass
 need actual application retesting after this refactor.

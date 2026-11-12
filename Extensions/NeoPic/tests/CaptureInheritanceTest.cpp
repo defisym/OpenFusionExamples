@@ -48,7 +48,34 @@ int main() {
     for (const auto backend : {CaptureBackend::Dc, CaptureBackend::Secondary, CaptureBackend::WindowsGraphicsCapture}) {
         auto capture = CreateFrameCapture(&rd, backend);
         assert(capture->Backend() == backend);
+        auto measured = CreateFrameCaptureBenchmark(&rd, backend, {2, 1});
+        assert(measured->Backend() == backend);
     }
+    rd.display.driver = SD_D3D9;
+    for (const auto backend : {CaptureBackend::Dc, CaptureBackend::Secondary, CaptureBackend::WindowsGraphicsCapture}) {
+        auto capture = CreateFrameCapture(&rd, backend);
+        auto measured = CreateFrameCaptureBenchmark(&rd, backend, {2, 1});
+        assert(capture->Backend() == CaptureBackend::Dc && dynamic_cast<DcFrameCapture*>(capture.get()));
+        assert(measured->Backend() == CaptureBackend::Dc
+            && dynamic_cast<FrameCaptureBenchmark<DcFrameCapture>*>(measured.get()));
+    }
+    rd.surfaceReady = false;
+    {
+        cSurface prototype;
+        prototype.driver = SD_D3D9;
+        app.m_protoLogScreen = &prototype;
+        assert(CreateFrameCapture(&rd, CaptureBackend::Secondary)->Backend() == CaptureBackend::Dc);
+        assert(CreateFrameCaptureBenchmark(&rd, CaptureBackend::WindowsGraphicsCapture)->Backend() == CaptureBackend::Dc);
+        app.m_protoLogScreen = nullptr;
+        // Unknown readiness is not proof of DX9; do not guess a different mode.
+        assert(CreateFrameCapture(&rd, CaptureBackend::Secondary)->Backend() == CaptureBackend::Secondary);
+    }
+    rd.surfaceReady = true;
+    rd.display.driver = 0; // Other renderer modes retain the existing failure policy.
+    assert(CreateFrameCapture(&rd, CaptureBackend::WindowsGraphicsCapture)->Backend() == CaptureBackend::WindowsGraphicsCapture);
+    rd.display.driver = SD_D3D11;
+    assert(CreateFrameCapture(&rd, CaptureBackend::Secondary)->Backend() == CaptureBackend::Secondary);
+    std::cout << "PASS: DX9 normal/benchmark fallback to DC, prototype readiness and DX11 selection\n";
     {
         auto capture = std::make_unique<ScriptedCapture>(&rd);
         FrameCapture* base = capture.get();

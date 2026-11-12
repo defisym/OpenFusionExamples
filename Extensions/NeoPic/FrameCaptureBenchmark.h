@@ -125,7 +125,7 @@ public:
 
 inline std::unique_ptr<FrameCapture> CreateFrameCaptureBenchmark(LPRDATA rdPtr, CaptureBackend backend,
     CaptureBenchmarkOptions options = {}) {
-    switch (backend) {
+    switch (ResolveFrameCaptureBackend(rdPtr, backend)) {
     case CaptureBackend::Secondary: return std::make_unique<FrameCaptureBenchmark<SecondaryFrameCapture>>(rdPtr, options);
     case CaptureBackend::WindowsGraphicsCapture: return std::make_unique<FrameCaptureBenchmark<WgcFrameCapture>>(rdPtr, options);
     default: return std::make_unique<FrameCaptureBenchmark<DcFrameCapture>>(rdPtr, options);

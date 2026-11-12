@@ -29,8 +29,28 @@ HRESULT FrameCapture::CaptureAndLoad(LPRDATA rdPtr, SIZE* outputSize) {
     return S_OK;
 }
 
+CaptureBackend ResolveFrameCaptureBackend(LPRDATA rdPtr, CaptureBackend requested) {
+    requested = NormalizeCaptureBackend(static_cast<std::uint32_t>(requested));
+    if (requested == CaptureBackend::Dc) return requested;
+    int driver = -1;
+    if (const auto surface = WinGetSurface(rdPtr)) driver = surface->GetDriver();
+    else {
+        // The window surface may not exist yet during object creation.
+        const auto app = rdPtr->rHo.hoAdRunHeader->rhApp;
+        if (app && app->m_protoLogScreen) driver = app->m_protoLogScreen->GetDriver();
+    }
+    if (driver == SD_D3D9) {
+        char message[160];
+        sprintf_s(message, "NeoPic capture requested backend=%u -> DC (Fusion DX9 runtime)\n",
+            static_cast<unsigned>(requested));
+        OutputDebugStringA(message);
+        return CaptureBackend::Dc;
+    }
+    return requested;
+}
+
 std::unique_ptr<FrameCapture> CreateFrameCapture(LPRDATA rdPtr, CaptureBackend backend) {
-    switch (backend) {
+    switch (ResolveFrameCaptureBackend(rdPtr, backend)) {
     case CaptureBackend::Secondary: return std::make_unique<SecondaryFrameCapture>(rdPtr);
     case CaptureBackend::WindowsGraphicsCapture: return std::make_unique<WgcFrameCapture>(rdPtr);
     default: return std::make_unique<DcFrameCapture>(rdPtr);

@@ -669,7 +669,7 @@ BEGIN
 
     IDS_PROP_CAPTURE_TEXTTITLE     "Frame Capture"
     IDS_PROP_CAPTURE_BACKEND       "Capture Backend"
-    IDS_PROP_CAPTURE_BACKEND_INFO  "Select DC, Secondary Surface (DX11), or Windows Graphics Capture (Windows 10 1903+). WGC shows the Windows capture indicator."
+    IDS_PROP_CAPTURE_BACKEND_INFO  "Select DC, Secondary Surface (DX11), or Windows Graphics Capture (Windows 10 1903+). DX9 uses DC for either GPU option. WGC shows the Windows capture indicator."
     IDS_PROP_CAPTURE_DC            "Window DC"
     IDS_PROP_CAPTURE_SECONDARY     "Secondary Surface (DX11)"
     IDS_PROP_CAPTURE_WGC           "Windows Graphics Capture"

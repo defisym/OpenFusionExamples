@@ -7,12 +7,13 @@
 #include <memory>
 #include <cstdint>
 
-constexpr int SD_D3D11 = 11, ST_HWA_RTTEXTURE = 5;
+constexpr int SD_D3D9 = 9, SD_D3D11 = 11, ST_HWA_RTTEXTURE = 5;
 constexpr DWORD AH2OPT_RESAMPLESTRETCH = 1;
 inline int mockSurfaceCount = 0;
 class cSurface {
     int width, height;
 public:
+    int driver = SD_D3D11;
     int generation = 0;
     cSurface(int w = 1, int h = 1) : width(w), height(h) { ++mockSurfaceCount; }
     ~cSurface() { --mockSurfaceCount; }
@@ -20,7 +21,7 @@ public:
     int GetWidth() const { return width; }
     int GetHeight() const { return height; }
     int GetDepth() const { return 32; }
-    int GetDriver() const { return SD_D3D11; }
+    int GetDriver() const { return driver; }
     int GetType() const { return ST_HWA_RTTEXTURE; }
     void GetOrigin(POINT& p) const { p = {}; }
     void CreateAlpha() {}
@@ -40,6 +41,7 @@ struct MockFrame {
 };
 struct MockHeader2 { DWORD dwOptions = 0; };
 struct MockApp {
+    cSurface* m_protoLogScreen = nullptr;
     MockHeader2* m_pHdr2 = nullptr;
     bool m_bAlwaysUseSecondarySurface = false;
     cSurface* m_pOldSecondarySurface = nullptr;
@@ -54,6 +56,11 @@ struct MockRunHeader {
 struct MockRunData {
     struct { MockRunHeader* hoAdRunHeader = nullptr; } rHo;
     bool HWA = false, isLib = false;
+    struct Display {
+        int driver = SD_D3D11;
+        int GetDriver() const { return driver; }
+    } display;
+    bool surfaceReady = true;
 };
 using LPRDATA = MockRunData*;
 struct MockSurfaceInfo {
@@ -63,7 +70,8 @@ struct MockSurfaceInfo {
     void* m_ppD3D11RenderTargetTexture = nullptr;
     void* m_ppD3D11RenderTargetView = nullptr;
 };
-inline bool D3D11(LPRDATA) { return true; }
+inline auto WinGetSurface(LPRDATA rdPtr) { return rdPtr->surfaceReady ? &rdPtr->display : nullptr; }
+inline bool D3D11(LPRDATA rdPtr) { return rdPtr->display.driver == SD_D3D11; }
 inline void* GetD3D11Device(LPRDATA) { return nullptr; }
 inline MockSurfaceInfo GetD3D11Info(LPRDATA) { return {}; }
 inline MockSurfaceInfo GetD3D11SurfaceInfo(cSurface*) { return {}; }

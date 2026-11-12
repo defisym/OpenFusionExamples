@@ -22,4 +22,5 @@ public:
     virtual HRESULT CaptureAndLoad(LPRDATA rdPtr, SIZE* outputSize = nullptr);
 };
 
+CaptureBackend ResolveFrameCaptureBackend(LPRDATA rdPtr, CaptureBackend requested);
 std::unique_ptr<FrameCapture> CreateFrameCapture(LPRDATA rdPtr, CaptureBackend backend);
