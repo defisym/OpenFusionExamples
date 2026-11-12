@@ -7,7 +7,7 @@
 #include <vector>
 #pragma comment(lib, "d3d11.lib")
 
-using Microsoft::WRL::ComPtr;
+template<class T> using LifetimePtr = Microsoft::WRL::ComPtr<T>;
 static void Check(HRESULT hr, const char* stage) {
     if (FAILED(hr)) throw std::runtime_error(std::string(stage) + " HRESULT=" + std::to_string(hr));
 }
@@ -37,8 +37,8 @@ static void Batch(ID3D11Device* device, ID3D11DeviceContext* context,
     desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     desc.Usage = D3D11_USAGE_DEFAULT;
     desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-    ComPtr<ID3D11Texture2D> source, output;
-    ComPtr<ID3D11RenderTargetView> view;
+    LifetimePtr<ID3D11Texture2D> source, output;
+    LifetimePtr<ID3D11RenderTargetView> view;
     Check(device->CreateTexture2D(&desc, nullptr, source.GetAddressOf()), "source");
     Check(device->CreateTexture2D(&desc, nullptr, output.GetAddressOf()), "output");
     Check(device->CreateRenderTargetView(output.Get(), nullptr, view.GetAddressOf()), "output view");
@@ -57,8 +57,8 @@ static void Batch(ID3D11Device* device, ID3D11DeviceContext* context,
 
 int main() {
     try {
-        ComPtr<ID3D11Device> device;
-        ComPtr<ID3D11DeviceContext> context;
+        LifetimePtr<ID3D11Device> device;
+        LifetimePtr<ID3D11DeviceContext> context;
         const HRESULT created = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, nullptr,
             D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG, nullptr, 0,
             D3D11_SDK_VERSION, device.GetAddressOf(), nullptr, context.GetAddressOf());
@@ -67,8 +67,8 @@ int main() {
             return 0;
         }
         Check(created, "debug WARP device");
-        ComPtr<ID3D11Debug> debug;
-        ComPtr<ID3D11InfoQueue> queue;
+        LifetimePtr<ID3D11Debug> debug;
+        LifetimePtr<ID3D11InfoQueue> queue;
         Check(device.As(&debug), "debug interface");
         Check(device.As(&queue), "info queue");
         Check(queue->PushEmptyStorageFilter(), "empty storage filter");
