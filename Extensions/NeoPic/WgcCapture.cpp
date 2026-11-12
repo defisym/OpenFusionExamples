@@ -1,5 +1,3 @@
-#include "Macro.h"
-#if NEOPIC_CAPTURE_BACKEND == 2
 #include "WgcCapture.h"
 #include "CaptureCrop.h"
 #include <roapi.h>
@@ -162,4 +160,3 @@ HRESULT WgcCapture::LatestTexture(ID3D11Texture2D** texture, D3D11_BOX* crop) no
         return S_OK;
     } catch (...) { return winrt::to_hresult(); }
 }
-#endif

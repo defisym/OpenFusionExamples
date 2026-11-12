@@ -146,7 +146,8 @@ short WINAPI DLLExport CreateRunObject(LPRDATA rdPtr, LPEDATA edPtr, fpcob cobPt
 	rdPtr->hotSpotPos = static_cast<HotSpotPos>(edPtr->hotSpotComboID);
 	rdPtr->zoomScale = { 1.0,1.0 };
 
-	rdPtr->pFrameCapture = new FrameCapture(rdPtr);
+	rdPtr->pFrameCapture = CreateFrameCapture(rdPtr,
+        NormalizeCaptureBackend(static_cast<std::uint32_t>(edPtr->captureBackend))).release();
 
 	rdPtr->pAI = new AnimationInterface(rdPtr);
 	rdPtr->pNS = new NineSliceInterface(rdPtr);
@@ -264,9 +265,7 @@ short WINAPI DLLExport HandleRunObject(LPRDATA rdPtr)
    At the end of the loop this code will run
 */
 
-#if NEOPIC_CAPTURE_BACKEND == 2
-    rdPtr->pFrameCapture->Update(rdPtr); // warm WGC only; no deferred capture
-#endif
+    rdPtr->pFrameCapture->Update(rdPtr); // Source preparation only; capture stays synchronous.
 
 	rdPtr->pAI->UpdateAnimation();
 	rdPtr->pNS->Render();

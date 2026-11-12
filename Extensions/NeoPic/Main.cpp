@@ -8,10 +8,6 @@
 
 // Common Include
 #include	"common.h"
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-#include "CaptureBenchmark.h"
-#include "CaptureCompletion.h"
-#endif
 
 // Quick memo: content of the eventInformations arrays
 // ---------------------------------------------------
@@ -871,112 +867,7 @@ short WINAPI DLLExport Action_SaveToFile(LPRDATA rdPtr, long param1, long param2
 }
 
 short WINAPI DLLExport Action_CaptureFrameArea(LPRDATA rdPtr, long param1, long param2) {
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-    int outputWidth = 0, outputHeight = 0;
-    HRESULT iterationError = S_OK;
-#endif
-    auto captureOnce = [&]() {
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-        iterationError = S_OK;
-#endif
-        if (!rdPtr->pFrameCapture->Capture(rdPtr)) {
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-            iterationError = rdPtr->pFrameCapture->GetLastResult();
-#endif
-            return false;
-        }
-#if NEOPIC_CAPTURE_BACKEND == 0
-        const auto surface = rdPtr->pFrameCapture->pCaptureSf;
-#else
-        const auto surface = rdPtr->pFrameCapture->TakeSurface();
-#endif
-        if (!surface || !surface->IsValid()) {
-#if NEOPIC_CAPTURE_BACKEND != 0
-            delete surface; // TakeSurface transferred ownership even on an invalid result.
-#endif
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-            iterationError = E_FAIL;
-#endif
-            return false;
-        }
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-        outputWidth = surface->GetWidth();
-        outputHeight = surface->GetHeight();
-#endif
-#if NEOPIC_CAPTURE_BACKEND == 0
-        LoadFromPointer(rdPtr, L"_TempCapture", surface);
-#else
-        LoadFromPointer(rdPtr, L"_TempCapture", surface, LoadFromPointerFlags_TakeOwnership);
-#endif
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED && NEOPIC_CAPTURE_BACKEND == 0
-        // Include the default path's CPU->GPU upload, not just the DIB copy.
-        if (rdPtr->HWA && D3D11(rdPtr)) {
-            const auto info = GetD3D11Info(rdPtr);
-            CaptureCompletion uploaded;
-            iterationError = uploaded.Prepare(static_cast<ID3D11Device*>(info.m_pD3D11Device),
-                static_cast<ID3D11DeviceContext*>(info.m_pD3D11Context));
-            if (FAILED(iterationError)) return false;
-            uploaded.Submit();
-            iterationError = uploaded.Wait();
-            if (FAILED(iterationError)) return false;
-        }
-#endif
-        return true;
-    };
-#if NEOPIC_CAPTURE_BENCHMARK_ENABLED
-    LARGE_INTEGER frequency{};
-    if (!QueryPerformanceFrequency(&frequency) || frequency.QuadPart <= 0) {
-        OutputDebugStringA("NeoPic capture benchmark: QPC unavailable; doing one normal capture\n");
-        captureOnce();
-        return 0;
-    }
-    auto now = []() { LARGE_INTEGER ticks{}; QueryPerformanceCounter(&ticks); return ticks.QuadPart; };
-    HRESULT firstFailure = S_OK;
-    auto measuredCapture = [&]() {
-        const bool ok = captureOnce();
-        if (!ok && firstFailure == S_OK) firstFailure = FAILED(iterationError) ? iterationError : E_FAIL;
-        return ok;
-    };
-    neopic_capture::BenchmarkResult result;
-    {
-        struct Scope {
-            FrameCapture* capture;
-            explicit Scope(FrameCapture* p) : capture(p) { capture->SetBenchmarking(true); }
-            ~Scope() { capture->SetBenchmarking(false); }
-        } scope(rdPtr->pFrameCapture);
-        result = neopic_capture::RunBenchmark(NEOPIC_CAPTURE_BENCHMARK_ITERATIONS,
-            NEOPIC_CAPTURE_BENCHMARK_WARMUP, measuredCapture, now, frequency.QuadPart);
-    }
-    auto rh = rdPtr->rHo.hoAdRunHeader;
-    RECT client{};
-    GetClientRect(rh->rhHEditWin, &client);
-    const bool resample = rh->rhApp->m_pHdr2 && (rh->rhApp->m_pHdr2->dwOptions & AH2OPT_RESAMPLESTRETCH);
-    char text[1800];
-    sprintf_s(text, "NeoPic capture benchmark backend=%d iterations=%d warmup=%d HWA=%d library=%d viewport=%dx%d client=%ldx%ld output=%dx%d resample=%d\n"
-        "warmup_ok=%llu warmup_failed=%llu first_ms=%.6f first_ok=%d first_failure_hr=0x%08lX\n"
-        "attempted=%llu ok=%llu failed=%llu total_ms=%.3f status=%s\n",
-        NEOPIC_CAPTURE_BACKEND, NEOPIC_CAPTURE_BENCHMARK_ITERATIONS, NEOPIC_CAPTURE_BENCHMARK_WARMUP,
-        rdPtr->HWA ? 1 : 0, rdPtr->isLib ? 1 : 0, rh->rh3.rh3WindowSx, rh->rh3.rh3WindowSy,
-        client.right - client.left, client.bottom - client.top, outputWidth, outputHeight, resample ? 1 : 0,
-        static_cast<unsigned long long>(result.warmupSuccess), static_cast<unsigned long long>(result.warmupFailure),
-        result.firstMs, result.firstSuccess ? 1 : 0, static_cast<unsigned long>(firstFailure),
-        static_cast<unsigned long long>(result.success.count + result.failure.count),
-        static_cast<unsigned long long>(result.success.count), static_cast<unsigned long long>(result.failure.count),
-        result.totalMs, result.noReadySource ? "no_ready_source" : (result.success.count ? (result.failure.count ? "partial" : "ok") : "all_failed"));
-    OutputDebugStringA(text);
-    if (result.success.count) {
-        sprintf_s(text, "success mean_ms=%.6f min_ms=%.6f median_ms=%.6f p95_ms=%.6f max_ms=%.6f copies_per_s=%.2f\n",
-            result.success.mean, result.success.minimum, result.success.median, result.success.p95, result.success.maximum,
-            result.totalMs > 0 ? result.success.count * 1000.0 / result.totalMs : 0.0);
-        OutputDebugStringA(text);
-    } else OutputDebugStringA("success timing: n/a (no successful measured capture)\n");
-    if (result.failure.count) {
-        sprintf_s(text, "failure mean_ms=%.6f (excluded from success percentiles)\n", result.failure.mean);
-        OutputDebugStringA(text);
-    }
-#else
-    captureOnce();
-#endif
+    rdPtr->pFrameCapture->CaptureAndLoad(rdPtr);
     return 0;
 }
 

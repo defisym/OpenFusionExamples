@@ -57,6 +57,13 @@
 #define IDS_PROP_HOTSPOT                  229
 #define IDS_PROP_HOTSPOT_INFO             230
 
+#define IDS_PROP_CAPTURE_TEXTTITLE         233
+#define IDS_PROP_CAPTURE_BACKEND           234
+#define IDS_PROP_CAPTURE_BACKEND_INFO      235
+#define IDS_PROP_CAPTURE_DC                236
+#define IDS_PROP_CAPTURE_SECONDARY         237
+#define IDS_PROP_CAPTURE_WGC               238
+
 // Dialog Box ID
 #define DB_SETUP                20003
 
